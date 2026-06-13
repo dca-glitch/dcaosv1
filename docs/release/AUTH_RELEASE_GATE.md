@@ -13,6 +13,7 @@ The auth release gate defines when authentication implementation can begin.
 - current user endpoint planned
 - logout behavior planned
 - audit event direction planned
+- auth gate design approved
 
 ## Not Allowed Before Gate
 
@@ -32,6 +33,7 @@ An auth gate review should produce:
 - frontend flow
 - validation plan
 - rollback note
+- session and tenant context design
 
 ## Rule
 

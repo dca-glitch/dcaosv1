@@ -6,6 +6,7 @@ Approved now:
 
 * documenting future auth shape
 * placeholder security requirements
+* auth gate design planning
 
 Blocked now:
 
@@ -21,3 +22,4 @@ Required before implementation:
 * confirm auth provider and session strategy
 * confirm whether auth is local-first or external-provider driven
 * confirm password policy and account lifecycle rules
+* approve [Auth Gate Design](../auth/AUTH_GATE_DESIGN.md)

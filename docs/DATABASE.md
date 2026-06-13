@@ -15,6 +15,7 @@ No application database access layer has been implemented yet.
 See also:
 
 - [Database Gate Design](./database/DATABASE_GATE_DESIGN.md)
+- [DB-1 Prisma Schema Plan](./database/DB_1_PRISMA_SCHEMA_PLAN.md)
 
 The canonical tenant-access term for future implementation is `TenantMembership`, even though the current foundation schema still uses `TenantUser` as placeholder wording.
 

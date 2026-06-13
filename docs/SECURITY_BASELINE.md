@@ -19,6 +19,7 @@ Blocked now:
 * `db push`
 * deployment
 * direct user-bound tenant roles in DB-1
+* auth implementation before Auth Gate approval
 
 Rules for contributors:
 
