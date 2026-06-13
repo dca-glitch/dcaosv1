@@ -14,10 +14,10 @@ No tenant middleware is included either. This document only maps the dependency 
 4. Prisma client and data access plan
 5. auth strategy approval
 6. session strategy approval
-7. auth middleware
-8. tenant context middleware
-9. RBAC permission middleware
-10. frontend protected shell
+7. auth middleware skeleton
+8. tenant context middleware skeleton
+9. RBAC permission middleware skeleton
+10. frontend protected shell planning
 
 ## 3. Data Dependencies
 
@@ -43,6 +43,8 @@ Future request context should include:
 - `requestId`
 
 No implementation is approved here.
+
+Current Phase 8 skeletons align the API type surface with this shape without mounting real enforcement.
 
 ## 5. Tenant Resolution Flow Later
 

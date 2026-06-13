@@ -47,6 +47,7 @@ Later permission loading should:
 - return safe 403
 - audit sensitive denies
 - do not leak tenant existence
+- deny by default when permission context is missing or incomplete
 
 ## 7. Client Portal Role Boundaries
 
@@ -69,3 +70,4 @@ No implementation yet.
 - permission caching strategy
 - whether system context can bypass tenant permission checks
 - whether denied audit events are required for every 403 or only sensitive actions
+- whether permission keys should be centralized in API or shared later with the data package

@@ -59,9 +59,9 @@ Plan for these cases:
 Suggested future locations only:
 
 - `apps/api/src/types/request-context.ts`
-- `apps/api/src/middleware/auth.middleware.ts`
-- `apps/api/src/middleware/tenant.middleware.ts`
-- `apps/api/src/middleware/permission.middleware.ts`
+- `apps/api/src/middlewares/auth.middleware.ts`
+- `apps/api/src/middlewares/tenant.middleware.ts`
+- `apps/api/src/middlewares/permission.middleware.ts`
 
 ## 9. Test Plan Later
 
@@ -75,3 +75,4 @@ Suggested future locations only:
 - tenant switch persistence
 - system-context handling
 - audit severity for repeated mismatch attempts
+- whether the request-context helper should live in API utils or middleware helpers

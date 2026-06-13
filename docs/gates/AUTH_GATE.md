@@ -9,6 +9,7 @@ Approved now:
 * auth gate design planning
 * auth and tenant dependency mapping
 * auth strategy decision planning
+* session strategy decision planning
 * tenant middleware planning
 * RBAC middleware planning
 * auth foundation implementation planning
@@ -24,6 +25,7 @@ Blocked now:
 * runtime auth middleware
 * runtime tenant middleware
 * runtime RBAC middleware
+* session runtime
 
 Required before implementation:
 
@@ -39,3 +41,4 @@ Current review status:
 * dependency mapping exists for later implementation planning
 * Prisma client and data access planning remain prerequisites
 * Phase 7 planning docs are approved for documentation-only work
+* session strategy planning is approved for documentation-only work
