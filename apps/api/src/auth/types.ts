@@ -75,6 +75,45 @@ export interface AuthLoginResponse {
   };
 }
 
+export interface AuthCurrentSessionSummary {
+  createdAt: string;
+  expiresAt: string;
+  lastSeenAt: string | null;
+  revokedAt: string | null;
+}
+
+export interface AuthCurrentUserResponse {
+  user: AuthLoginUserSummary;
+  session: AuthCurrentSessionSummary;
+  tenantContext: {
+    activeMembership: AuthTenantMembershipSummary | null;
+    memberships: AuthTenantMembershipSummary[];
+  };
+}
+
+export interface AuthLogoutResponse {
+  loggedOut: true;
+  revokedAt: string;
+}
+
+export interface AuthResolvedSessionContext {
+  user: AuthLoginUserSummary;
+  session: {
+    id: string;
+    createdAt: Date;
+    expiresAt: Date;
+    lastSeenAt: Date | null;
+  };
+  tenantContext: {
+    activeMembership: AuthTenantMembershipSummary | null;
+    memberships: AuthTenantMembershipSummary[];
+  };
+}
+
+export interface AuthSessionLocals {
+  authSession?: AuthResolvedSessionContext;
+}
+
 export interface AuthCallbackRequest {
   code?: string;
   state?: string;

@@ -6,6 +6,7 @@ import {
   startAuth
 } from "./auth.handlers";
 import { login } from "./login.runtime";
+import { requireAuth } from "../middlewares/auth.middleware";
 
 export function createAuthRouter() {
   const router = Router();
@@ -14,8 +15,8 @@ export function createAuthRouter() {
   router.post("/start", startAuth);
   router.get("/callback", handleAuthCallback);
   router.post("/login", login);
-  router.post("/logout", logout);
-  router.get("/me", getCurrentUser);
+  router.post("/logout", requireAuth, logout);
+  router.get("/me", requireAuth, getCurrentUser);
   router.post("/change-password", changePassword);
 
   return router;
