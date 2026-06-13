@@ -10,6 +10,7 @@ const files = [
   "src/auth/provider.ts",
   "src/auth/tenant-selection.ts",
   "src/auth/audit.ts",
+  "src/auth/auth.constants.ts",
   "src/auth/auth.handlers.ts",
   "src/auth/auth.routes.ts",
   "src/auth/index.ts",

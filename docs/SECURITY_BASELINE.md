@@ -14,6 +14,7 @@ Approved now:
 * local-only guarded DB-1 seed execution
 * frontend protected-shell planning and placeholder components
 * controlled password auth strategy planning and skeleton work after gate review
+* auth runtime preparation planning and boundary constants before real auth implementation
 
 Blocked now:
 

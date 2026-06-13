@@ -112,6 +112,24 @@ Goal: implement controlled local auth MVP.
 
 Scope depends on Block 18 approval.
 
+### Block 19A — Auth Runtime Preparation
+
+Goal: prepare auth runtime boundaries, constants, and validation guards without implementing login behavior.
+
+Deliverables:
+
+- runtime env naming
+- route and audit constants
+- skeleton validation guard updates
+- prep documentation
+
+Not allowed:
+
+- no real login
+- no cookie/session runtime
+- no DB access runtime
+- no password hashing runtime
+
 ### Block 20 — Tenant Context Foundation
 
 Goal: every API request can resolve tenant context safely.
