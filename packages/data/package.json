@@ -6,7 +6,7 @@
   "scripts": {
     "check": "node ../../scripts/check-package.mjs data && npm run prisma:validate",
     "build": "node ../../scripts/check-package.mjs data",
-    "prisma:validate": "node scripts/validate-prisma-schema.mjs"
+    "prisma:validate": "node scripts/validate-prisma-schema.mjs && node scripts/run-prisma-validate.mjs"
   },
   "devDependencies": {
     "prisma": "^5.15.0"

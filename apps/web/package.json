@@ -4,12 +4,12 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "check": "node ../../scripts/check-package.mjs web",
-    "build": "node ../../scripts/check-package.mjs web",
+    "check": "node ../../scripts/check-package.mjs web && tsc --noEmit",
+    "build": "vite build",
     "dev": "vite"
   },
   "dependencies": {
-    "@dca-os-v1/shared": "workspace:*",
+    "@dca-os-v1/shared": "0.1.0",
     "@vitejs/plugin-react": "^4.2.1",
     "vite": "^5.2.0",
     "react": "^18.2.0",

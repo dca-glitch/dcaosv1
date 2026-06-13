@@ -5,12 +5,12 @@
   "type": "module",
   "main": "src/server.ts",
   "scripts": {
-    "check": "node ../../scripts/check-package.mjs api",
-    "build": "node ../../scripts/check-package.mjs api",
+    "check": "node ../../scripts/check-package.mjs api && tsc --noEmit",
+    "build": "tsc --noEmit",
     "dev": "tsx src/server.ts"
   },
   "dependencies": {
-    "@dca-os-v1/shared": "workspace:*",
+    "@dca-os-v1/shared": "0.1.0",
     "express": "^4.19.2"
   },
   "devDependencies": {
