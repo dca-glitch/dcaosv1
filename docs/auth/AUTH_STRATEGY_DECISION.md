@@ -5,7 +5,8 @@
 For the DCA OS v1 MVP, use a controlled internal auth model:
 
 - admin-created users only
-- username/email + password login
+- email-first password login
+- username optional and deferred unless a later implementation gate proves it is needed
 - no public registration
 - no self-signup
 - no Google/OIDC required for MVP

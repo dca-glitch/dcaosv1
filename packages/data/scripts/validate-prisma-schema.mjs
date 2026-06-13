@@ -22,7 +22,6 @@ const requiredModels = [
 const forbiddenModels = [
   "UserProfile",
   "TenantUser",
-  "Session",
   "UserRole",
   "Module",
   "TenantModuleEntitlement",

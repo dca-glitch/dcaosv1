@@ -41,6 +41,7 @@ This plan is based on the approved database/security decisions:
 - TenantModule
 - TenantSetting
 - AuditLog
+- Session
 
 ### Explicitly excluded from DB-1
 
@@ -53,7 +54,7 @@ This plan is based on the approved database/security decisions:
 - AI workflow records
 - KnowledgeBase records
 - ClientPortal records
-- Session/Auth tables, unless Auth Gate later approves them
+- Session/Auth tables are approved separately via Auth Gate and may be included in the controlled auth foundation
 - Password/JWT/session implementation
 
 ## 4. Canonical Model Classification
@@ -71,6 +72,7 @@ This plan is based on the approved database/security decisions:
 | TenantModule | Tenant-scoped | tenantId required | Enables modules for a tenant | High |
 | TenantSetting | Tenant-scoped | tenantId required | Stores tenant-scoped configuration values | High |
 | AuditLog | Mixed/system/event | tenantId nullable only for system/platform events | Append-only security and activity history | High |
+| Session | Global/auth | no tenantId | DB-backed auth session store | High |
 
 ## 5. Proposed Model Field Plan
 
@@ -100,6 +102,20 @@ This plan is based on the approved database/security decisions:
 | createdAt | datetime | required | indexable | timestamps | standard |
 | updatedAt | datetime | required | indexable | timestamps | standard |
 | deletedAt | datetime nullable | optional | indexed | soft delete marker | future restore rules |
+
+### Session
+
+| Field | Type recommendation | Required/optional | Uniqueness/indexing | Relation notes | Security notes |
+|---|---|---|---|---|---|
+| id | string ID | required | primary key | session identifier | opaque browser session handle |
+| userId | string | required | indexed | belongs to User | revokes with user deactivation |
+| sessionTokenHash | string | required | unique | hashed browser token | never store plaintext token |
+| createdAt | datetime | required | indexable | timestamps | standard |
+| expiresAt | datetime | required | indexed | session expiration | required for revocation window |
+| revokedAt | datetime nullable | optional | indexed | revocation marker | logout/admin reset/user deactivation |
+| lastSeenAt | datetime nullable | optional | indexed | activity marker | optional but useful |
+| ipAddress | string nullable | optional | none | request origin | useful for audit review |
+| userAgent | string nullable | optional | none | client context | useful for security review |
 
 ### TenantMembership
 

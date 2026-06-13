@@ -21,6 +21,7 @@ Important naming rule:
 - `TenantMembership` connects `User` to `Tenant`
 - tenant roles attach to `TenantMembership`, not directly to `User`
 - DB-1 implementation uses `TenantMembership` directly; `TenantUser` is not part of the approved schema
+- `Session` is part of the approved auth foundation and may be added without enabling runtime auth yet
 
 ## 2. Database Goals
 
@@ -139,7 +140,7 @@ Planned identity concepts:
 - `TenantMembership` is the access boundary between user and tenant
 - `Role` is tenant-scoped in DB-1
 - `MembershipRole` captures role assignment to a membership
-- `Session` is not part of DB-1
+- `Session` is part of the approved auth foundation
 
 Not approved at this stage:
 
@@ -187,7 +188,7 @@ The first Prisma schema implementation after approval should cover the minimum p
 - AuditLog
 - basic timestamps and status fields
 
-Session is not part of DB-1 and should remain deferred until Auth Gate is approved.
+Session is part of the approved auth foundation and should remain implementation-only until runtime auth is approved.
 
 ### Phase DB-2 Later Candidates
 

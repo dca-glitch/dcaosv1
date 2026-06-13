@@ -2,7 +2,7 @@
 
 ## 1. Purpose
 
-Define the security requirements for the controlled username/email + password MVP.
+Define the security requirements for the controlled email-first password MVP.
 
 ## 2. Required Security Rules
 

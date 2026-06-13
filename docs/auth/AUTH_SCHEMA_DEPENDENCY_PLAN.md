@@ -19,7 +19,10 @@ Future `User` fields may include:
 - `forcePasswordChange`
 - `failedLoginCount`
 - `lockedUntil`
-- optional `username` if email-only login is not sufficient
+- `lastLoginAt`
+- optional `deletedAt` / `status` interaction notes for deactivation and session revocation
+
+Email-first login is the recommended MVP direction. A username field should stay deferred unless a later review proves it is necessary.
 
 ## 4. Likely Session Model
 
@@ -53,10 +56,13 @@ Audit action names should stay consistent with the controlled auth model. Propos
 - `auth.logout`
 - `auth.session.revoked`
 - `auth.password.reset_by_admin`
+- `auth.password.changed`
 - `auth.permission.denied`
 - `admin.user.created`
 - `admin.user.updated`
 - `admin.membership.updated`
+- `admin.role.updated`
+- `admin.module_access.updated`
 
 ## 7. Model Alignment Rules
 

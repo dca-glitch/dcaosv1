@@ -54,7 +54,8 @@ Auth should align with the database plan:
 
 Recommended safest practical v1 path:
 
-- controlled username/email + password login
+- email-first password login
+- username optional and deferred unless later implementation work needs it
 - admin-created users only
 - no public registration
 - no self-signup
