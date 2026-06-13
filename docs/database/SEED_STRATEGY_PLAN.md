@@ -2,7 +2,9 @@
 
 ## 1. Executive Summary
 
-No seed implementation now.
+Local-only DB-1 seed implementation is approved for planning and guarded local execution.
+
+No production seed is approved.
 
 ## 2. Seed Categories
 
@@ -32,6 +34,7 @@ No seed implementation now.
 - no secrets
 - no passwords
 - no real client data
+- refuse unsafe `DATABASE_URL` values
 
 ## 6. Audit Requirements
 
@@ -50,3 +53,4 @@ No seed implementation now.
 - whether reference seeds live in data package or a dedicated seed package later
 - whether production bootstrap needs a separate approval gate
 - whether seed output should include a dry-run summary file
+- whether the local placeholder admin email should be `admin@example.local` or `dca-admin@example.local`

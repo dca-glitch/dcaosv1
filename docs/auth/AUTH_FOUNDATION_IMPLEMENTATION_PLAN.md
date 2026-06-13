@@ -16,6 +16,8 @@ No auth implementation now.
 8. audit events
 9. tests
 
+The current task only approves planning and skeleton preparation, not runtime auth.
+
 ## 3. Session Design
 
 - cookie-based

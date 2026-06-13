@@ -10,6 +10,10 @@ For the first auth phase:
 - keep sessions and tenant context managed by the app
 - defer client portal auth to a later invite or magic-link based path
 - do not add first-party passwords in the first auth phase unless explicitly approved later
+- no provider credentials are configured now
+- no callback URLs are configured now
+- final provider vendor still requires human approval unless already chosen in a separate decision
+- implementation remains blocked
 
 ## 2. Rationale
 

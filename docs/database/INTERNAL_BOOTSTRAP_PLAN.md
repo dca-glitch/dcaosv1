@@ -2,7 +2,9 @@
 
 ## 1. Executive Summary
 
-No seed execution now.
+Local-only idempotent DB-1 seed implementation is approved for planning and safe local execution.
+
+No production seed is approved.
 
 ## 2. Bootstrap Goals
 
@@ -22,6 +24,7 @@ Include:
 - User: placeholder email only, no real secret
 - TenantMembership
 - Role: owner, admin, member, viewer maybe
+- owner/admin membership if safe
 - Permission catalog
 - ModuleDefinition catalog
 - TenantModule enablement
@@ -34,8 +37,10 @@ Include:
 - no production seed until deployment gate
 - no passwords
 - no real secrets
+- placeholder admin email only
 - idempotent seed
 - dry-run mode if possible later
+- refuse unsafe DATABASE_URL values
 
 ## 5. Human Inputs Needed
 
@@ -44,6 +49,7 @@ Include:
 - enabled modules
 - default role names
 - auth provider choice
+- whether the placeholder admin email should be `admin@example.local` or `dca-admin@example.local`
 
 ## 6. Future Seed Command
 
