@@ -1,11 +1,20 @@
+import { randomBytes, scryptSync } from "node:crypto";
 import { PrismaClient } from "@prisma/client";
 
-const allowedHosts = new Set(["localhost", "127.0.0.1"]);
 const expectedPort = "5434";
 const expectedDatabaseNames = [/dev/i, /local/i];
-const placeholderEmail = "dca-admin@example.local";
-const placeholderTenantSlug = "digital-cube-agency";
-const bootstrapAction = "bootstrap:db1";
+
+const seedTenantSlug = "dca-local";
+const seedTenantName = "Digital Cube Agency Local";
+const seedUserName = "Local Login Tester";
+const seedRoleKey = "local_tester";
+const seedRoleName = "Local Tester";
+
+const AUTH_PASSWORD_SCRYPT_KEY_LENGTH = 64;
+const AUTH_PASSWORD_SCRYPT_SALT_BYTES = 16;
+const AUTH_PASSWORD_SCRYPT_COST = 16384;
+const AUTH_PASSWORD_SCRYPT_BLOCK_SIZE = 8;
+const AUTH_PASSWORD_SCRYPT_PARALLELIZATION = 1;
 
 function fail(message) {
   throw new Error(`DB-1 seed refused: ${message}`);
@@ -28,8 +37,12 @@ function assertLocalDatabaseUrl() {
     fail("DATABASE_URL must use the postgresql protocol.");
   }
 
-  if (!allowedHosts.has(parsed.hostname)) {
-    fail(`DATABASE_URL host must be localhost or 127.0.0.1, got ${parsed.hostname}.`);
+  if (parsed.hostname !== "127.0.0.1") {
+    fail(`DATABASE_URL host must be 127.0.0.1, got ${parsed.hostname}.`);
+  }
+
+  if (parsed.hostname === "system.digitalcubeagency.net") {
+    fail("DATABASE_URL host must not target system.digitalcubeagency.net.");
   }
 
   if (parsed.port !== expectedPort) {
@@ -45,49 +58,127 @@ function assertLocalDatabaseUrl() {
     fail(`DATABASE_URL database name must look local/dev, got ${databaseName}.`);
   }
 
-  if (/prod|production|live/i.test(databaseName)) {
+  if (/prod|production|live|vps|public/i.test(databaseName)) {
     fail(`DATABASE_URL database name looks unsafe, got ${databaseName}.`);
   }
 
-  return { databaseName, hostname: parsed.hostname, port: parsed.port };
+  return {
+    databaseName,
+    hostname: parsed.hostname,
+    port: parsed.port
+  };
 }
 
-function json(value) {
+function readSeedEmail() {
+  const value = process.env.AUTH_SEED_TEST_EMAIL;
+  if (typeof value !== "string" || !value.trim()) {
+    fail("AUTH_SEED_TEST_EMAIL is required.");
+  }
+
+  return value.trim().toLowerCase();
+}
+
+function readSeedPassword() {
+  const value = process.env.AUTH_SEED_TEST_PASSWORD;
+  if (typeof value !== "string") {
+    fail("AUTH_SEED_TEST_PASSWORD is required.");
+  }
+
+  if (value.length === 0) {
+    fail("AUTH_SEED_TEST_PASSWORD must not be empty.");
+  }
+
   return value;
 }
 
-async function upsertTenant(prisma) {
-  return prisma.tenant.upsert({
-    where: { slug: placeholderTenantSlug },
-    update: {
-      name: "Digital Cube Agency",
-      status: "ACTIVE"
-    },
-    create: {
-      name: "Digital Cube Agency",
-      slug: placeholderTenantSlug,
-      status: "ACTIVE"
-    }
-  });
+function maskEmail(email) {
+  const [localPart, domain = ""] = email.split("@");
+  if (!domain) {
+    return "***";
+  }
+
+  const visiblePrefix = localPart.slice(0, 1) || "*";
+  return `${visiblePrefix}***@${domain}`;
 }
 
-async function upsertUser(prisma) {
-  return prisma.user.upsert({
-    where: { email: placeholderEmail },
+function hashPassword(plainPassword) {
+  const salt = randomBytes(AUTH_PASSWORD_SCRYPT_SALT_BYTES);
+  const derivedKey = scryptSync(plainPassword, salt, AUTH_PASSWORD_SCRYPT_KEY_LENGTH, {
+    cost: AUTH_PASSWORD_SCRYPT_COST,
+    blockSize: AUTH_PASSWORD_SCRYPT_BLOCK_SIZE,
+    parallelization: AUTH_PASSWORD_SCRYPT_PARALLELIZATION
+  });
+
+  return [
+    "scrypt",
+    `cost=${AUTH_PASSWORD_SCRYPT_COST}`,
+    `blockSize=${AUTH_PASSWORD_SCRYPT_BLOCK_SIZE}`,
+    `parallelization=${AUTH_PASSWORD_SCRYPT_PARALLELIZATION}`,
+    salt.toString("base64url"),
+    Buffer.from(derivedKey).toString("base64url")
+  ].join("$");
+}
+
+async function upsertTenant(prisma) {
+  const existing = await prisma.tenant.findUnique({
+    where: { slug: seedTenantSlug }
+  });
+
+  const tenant = await prisma.tenant.upsert({
+    where: { slug: seedTenantSlug },
     update: {
-      name: "DCA Admin Placeholder",
+      name: seedTenantName,
       status: "ACTIVE"
     },
     create: {
-      email: placeholderEmail,
-      name: "DCA Admin Placeholder",
+      name: seedTenantName,
+      slug: seedTenantSlug,
       status: "ACTIVE"
     }
   });
+
+  return { tenant, status: existing ? "updated" : "created" };
+}
+
+async function upsertUser(prisma, email, passwordHash) {
+  const existing = await prisma.user.findUnique({
+    where: { email }
+  });
+
+  const user = await prisma.user.upsert({
+    where: { email },
+    update: {
+      name: seedUserName,
+      status: "ACTIVE",
+      passwordHash,
+      forcePasswordChange: true,
+      failedLoginCount: 0,
+      lockedUntil: null,
+      lastLoginAt: null
+    },
+    create: {
+      email,
+      name: seedUserName,
+      status: "ACTIVE",
+      passwordHash,
+      forcePasswordChange: true
+    }
+  });
+
+  return { user, status: existing ? "updated" : "created" };
 }
 
 async function upsertMembership(prisma, tenantId, userId) {
-  return prisma.tenantMembership.upsert({
+  const existing = await prisma.tenantMembership.findUnique({
+    where: {
+      tenantId_userId: {
+        tenantId,
+        userId
+      }
+    }
+  });
+
+  const membership = await prisma.tenantMembership.upsert({
     where: {
       tenantId_userId: {
         tenantId,
@@ -103,64 +194,55 @@ async function upsertMembership(prisma, tenantId, userId) {
       status: "ACTIVE"
     }
   });
+
+  return { membership, status: existing ? "updated" : "created" };
 }
 
-async function upsertRole(prisma, tenantId, role) {
-  return prisma.role.upsert({
+async function upsertRole(prisma, tenantId) {
+  const existing = await prisma.role.findUnique({
     where: {
       tenantId_key: {
         tenantId,
-        key: role.key
+        key: seedRoleKey
+      }
+    }
+  });
+
+  const role = await prisma.role.upsert({
+    where: {
+      tenantId_key: {
+        tenantId,
+        key: seedRoleKey
       }
     },
     update: {
-      name: role.name,
-      description: role.description ?? null,
+      name: seedRoleName,
+      description: "Low-privilege local login test role",
       status: "ACTIVE"
     },
     create: {
       tenantId,
-      key: role.key,
-      name: role.name,
-      description: role.description ?? null,
+      key: seedRoleKey,
+      name: seedRoleName,
+      description: "Low-privilege local login test role",
       status: "ACTIVE"
     }
   });
-}
 
-async function upsertPermission(prisma, permission) {
-  return prisma.permission.upsert({
-    where: { key: permission.key },
-    update: {
-      moduleKey: permission.moduleKey ?? null,
-      description: permission.description ?? null
-    },
-    create: {
-      key: permission.key,
-      moduleKey: permission.moduleKey ?? null,
-      description: permission.description ?? null
-    }
-  });
-}
-
-async function upsertRolePermission(prisma, roleId, permissionId) {
-  return prisma.rolePermission.upsert({
-    where: {
-      roleId_permissionId: {
-        roleId,
-        permissionId
-      }
-    },
-    update: {},
-    create: {
-      roleId,
-      permissionId
-    }
-  });
+  return { role, status: existing ? "updated" : "created" };
 }
 
 async function upsertMembershipRole(prisma, tenantMembershipId, roleId) {
-  return prisma.membershipRole.upsert({
+  const existing = await prisma.membershipRole.findUnique({
+    where: {
+      tenantMembershipId_roleId: {
+        tenantMembershipId,
+        roleId
+      }
+    }
+  });
+
+  const membershipRole = await prisma.membershipRole.upsert({
     where: {
       tenantMembershipId_roleId: {
         tenantMembershipId,
@@ -173,250 +255,66 @@ async function upsertMembershipRole(prisma, tenantMembershipId, roleId) {
       roleId
     }
   });
-}
 
-async function upsertModuleDefinition(prisma, moduleDefinition) {
-  return prisma.moduleDefinition.upsert({
-    where: { key: moduleDefinition.key },
-    update: {
-      name: moduleDefinition.name,
-      description: moduleDefinition.description ?? null,
-      status: "ACTIVE"
-    },
-    create: {
-      key: moduleDefinition.key,
-      name: moduleDefinition.name,
-      description: moduleDefinition.description ?? null,
-      status: "ACTIVE"
-    }
-  });
-}
-
-async function upsertTenantModule(prisma, tenantId, moduleDefinitionId) {
-  return prisma.tenantModule.upsert({
-    where: {
-      tenantId_moduleDefinitionId: {
-        tenantId,
-        moduleDefinitionId
-      }
-    },
-    update: {
-      status: "ACTIVE"
-    },
-    create: {
-      tenantId,
-      moduleDefinitionId,
-      status: "ACTIVE"
-    }
-  });
-}
-
-async function upsertTenantSetting(prisma, tenantId, setting) {
-  return prisma.tenantSetting.upsert({
-    where: {
-      tenantId_key: {
-        tenantId,
-        key: setting.key
-      }
-    },
-    update: {
-      moduleKey: setting.moduleKey ?? null,
-      valueType: setting.valueType,
-      value: json(setting.value)
-    },
-    create: {
-      tenantId,
-      key: setting.key,
-      moduleKey: setting.moduleKey ?? null,
-      valueType: setting.valueType,
-      value: json(setting.value)
-    }
-  });
-}
-
-async function ensureBootstrapAuditLog(prisma, tenantId, userId) {
-  const existing = await prisma.auditLog.findFirst({
-    where: {
-      tenantId,
-      action: bootstrapAction,
-      entityType: "system",
-      entityId: placeholderTenantSlug
-    }
-  });
-
-  if (existing) {
-    return existing;
-  }
-
-  return prisma.auditLog.create({
-    data: {
-      tenantId,
-      actorType: "SYSTEM",
-      actorUserId: userId,
-      action: bootstrapAction,
-      entityType: "system",
-      entityId: placeholderTenantSlug,
-      metadata: {
-        seedVersion: "db1-local",
-        tenantSlug: placeholderTenantSlug
-      }
-    }
-  });
+  return { membershipRole, status: existing ? "updated" : "created" };
 }
 
 async function main() {
   const { databaseName, hostname, port } = assertLocalDatabaseUrl();
+  const email = readSeedEmail();
+  const password = readSeedPassword();
+  const passwordHash = hashPassword(password);
   const prisma = new PrismaClient();
 
   try {
-    console.log(`Seeding DB-1 local data into ${databaseName} at ${hostname}:${port}`);
-
     const result = await prisma.$transaction(async (tx) => {
       const tenant = await upsertTenant(tx);
-      const user = await upsertUser(tx);
-      const membership = await upsertMembership(tx, tenant.id, user.id);
-
-      const roles = {
-        owner: await upsertRole(tx, tenant.id, {
-          key: "owner",
-          name: "Owner"
-        }),
-        admin: await upsertRole(tx, tenant.id, {
-          key: "admin",
-          name: "Admin"
-        }),
-        member: await upsertRole(tx, tenant.id, {
-          key: "member",
-          name: "Member"
-        }),
-        viewer: await upsertRole(tx, tenant.id, {
-          key: "viewer",
-          name: "Viewer"
-        })
-      };
-
-      const permissions = {
-        settingsRead: await upsertPermission(tx, { key: "settings:read", moduleKey: "settings" }),
-        settingsUpdate: await upsertPermission(tx, { key: "settings:update", moduleKey: "settings" }),
-        usersRead: await upsertPermission(tx, { key: "users:read", moduleKey: "users" }),
-        usersInvite: await upsertPermission(tx, { key: "users:invite", moduleKey: "users" }),
-        rolesManage: await upsertPermission(tx, { key: "roles:manage", moduleKey: "roles" }),
-        modulesManage: await upsertPermission(tx, { key: "modules:manage", moduleKey: "modules" }),
-        auditRead: await upsertPermission(tx, { key: "audit:read", moduleKey: "audit" })
-      };
-
-      const moduleDefinitions = {
-        dashboard: await upsertModuleDefinition(tx, {
-          key: "dashboard",
-          name: "Dashboard"
-        }),
-        settings: await upsertModuleDefinition(tx, {
-          key: "settings",
-          name: "Settings"
-        }),
-        users: await upsertModuleDefinition(tx, {
-          key: "users",
-          name: "Users"
-        }),
-        roles: await upsertModuleDefinition(tx, {
-          key: "roles",
-          name: "Roles"
-        }),
-        audit: await upsertModuleDefinition(tx, {
-          key: "audit",
-          name: "Audit"
-        }),
-        modules: await upsertModuleDefinition(tx, {
-          key: "modules",
-          name: "Modules"
-        })
-      };
-
-      const rolePermissionMap = {
-        owner: Object.values(permissions),
-        admin: Object.values(permissions),
-        member: [permissions.settingsRead, permissions.usersRead, permissions.auditRead],
-        viewer: [permissions.settingsRead, permissions.auditRead]
-      };
-
-      for (const [roleKey, permissionRows] of Object.entries(rolePermissionMap)) {
-        const role = roles[roleKey];
-        for (const permission of permissionRows) {
-          await upsertRolePermission(tx, role.id, permission.id);
-        }
-      }
-
-      await upsertMembershipRole(tx, membership.id, roles.owner.id);
-      await upsertMembershipRole(tx, membership.id, roles.admin.id);
-
-      for (const moduleDefinition of Object.values(moduleDefinitions)) {
-        await upsertTenantModule(tx, tenant.id, moduleDefinition.id);
-      }
-
-      const settings = [
-        {
-          key: "platformName",
-          moduleKey: "settings",
-          valueType: "STRING",
-          value: "Digital Cube Agency"
-        },
-        {
-          key: "supportEmail",
-          moduleKey: "settings",
-          valueType: "STRING",
-          value: placeholderEmail
-        },
-        {
-          key: "seedVersion",
-          moduleKey: "settings",
-          valueType: "STRING",
-          value: "db1-local"
-        }
-      ];
-
-      for (const setting of settings) {
-        await upsertTenantSetting(tx, tenant.id, setting);
-      }
-
-      await ensureBootstrapAuditLog(tx, tenant.id, user.id);
+      const user = await upsertUser(tx, email, passwordHash);
+      const membership = await upsertMembership(tx, tenant.tenant.id, user.user.id);
+      const role = await upsertRole(tx, tenant.tenant.id);
+      const membershipRole = await upsertMembershipRole(
+        tx,
+        membership.membership.id,
+        role.role.id
+      );
 
       return {
-        tenantId: tenant.id,
-        userId: user.id,
-        membershipId: membership.id,
-        roleCount: Object.keys(roles).length,
-        permissionCount: Object.keys(permissions).length,
-        moduleCount: Object.keys(moduleDefinitions).length,
-        settingCount: settings.length
+        tenant,
+        user,
+        membership,
+        role,
+        membershipRole
       };
     });
-
-    const [tenantCount, userCount, membershipCount, roleCount, permissionCount, moduleCount, settingCount, auditCount] =
-      await Promise.all([
-        prisma.tenant.count(),
-        prisma.user.count(),
-        prisma.tenantMembership.count(),
-        prisma.role.count(),
-        prisma.permission.count(),
-        prisma.moduleDefinition.count(),
-        prisma.tenantSetting.count(),
-        prisma.auditLog.count()
-      ]);
 
     console.log(
       JSON.stringify(
         {
-          seed: "db1-local",
-          result,
-          counts: {
-            tenantCount,
-            userCount,
-            membershipCount,
-            roleCount,
-            permissionCount,
-            moduleCount,
-            settingCount,
-            auditCount
+          seed: "db1-local-auth-test",
+          database: {
+            host: hostname,
+            port,
+            name: databaseName
+          },
+          tenant: {
+            slug: seedTenantSlug,
+            name: seedTenantName,
+            status: result.tenant.status
+          },
+          user: {
+            email: maskEmail(email),
+            status: result.user.status
+          },
+          membership: {
+            status: result.membership.status
+          },
+          role: {
+            key: seedRoleKey,
+            name: seedRoleName,
+            status: result.role.status
+          },
+          membershipRole: {
+            status: result.membershipRole.status
           }
         },
         null,
