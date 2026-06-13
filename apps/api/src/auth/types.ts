@@ -79,3 +79,27 @@ export interface AuthContextEnvelope {
   requestContext: RequestContext;
   tenantContext?: TenantRequestContext;
 }
+
+export interface PasswordPolicyConfig {
+  minLength: number;
+}
+
+export interface PasswordPolicyValidationResult {
+  ok: boolean;
+  issues: string[];
+}
+
+export interface SessionCookieConfig {
+  cookieName: string;
+  httpOnly: true;
+  secureInProduction: boolean;
+  sameSite: "lax" | "strict";
+  ttlMinutes: number;
+  path: "/";
+  domain?: string;
+}
+
+export interface SessionTokenResult {
+  token: string;
+  byteLength: number;
+}

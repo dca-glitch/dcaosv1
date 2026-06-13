@@ -7,6 +7,8 @@ const files = [
   "src/config/index.ts",
   "src/auth/types.ts",
   "src/auth/session.ts",
+  "src/auth/password.service.ts",
+  "src/auth/session.service.ts",
   "src/auth/provider.ts",
   "src/auth/tenant-selection.ts",
   "src/auth/audit.ts",

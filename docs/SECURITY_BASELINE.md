@@ -15,6 +15,7 @@ Approved now:
 * frontend protected-shell planning and placeholder components
 * controlled password auth strategy planning and skeleton work after gate review
 * auth runtime preparation planning and boundary constants before real auth implementation
+* password helper foundation and session helper foundation without runtime auth
 
 Blocked now:
 
