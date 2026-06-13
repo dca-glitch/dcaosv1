@@ -6,7 +6,7 @@ This document describes the planned database direction for DCA OS v1.
 
 ## Current Status
 
-The project currently has a Prisma schema foundation and a separate database gate design document.
+The project currently has a DB-1 Prisma schema and a separate database gate design document.
 
 No database migration has been approved yet.
 
@@ -17,7 +17,7 @@ See also:
 - [Database Gate Design](./database/DATABASE_GATE_DESIGN.md)
 - [DB-1 Prisma Schema Plan](./database/DB_1_PRISMA_SCHEMA_PLAN.md)
 
-The canonical tenant-access term for future implementation is `TenantMembership`, even though the current foundation schema still uses `TenantUser` as placeholder wording.
+The canonical tenant-access term is `TenantMembership`.
 
 ## Planned Database Engine
 
@@ -31,21 +31,19 @@ The data package owns Prisma schema and database-related scripts.
 
 ## Core Data Areas
 
-The foundation schema is expected to cover:
+The DB-1 schema covers:
 
 - users
-- user profiles
-- tenants or companies
+- tenants
 - tenant memberships
-- sessions
 - roles
 - permissions
 - role permissions
-- user roles
-- modules
+- membership roles
+- module definitions
 - tenant module access
-- settings
-- audit and activity logs
+- tenant settings
+- audit logs
 
 ## Tenant Boundary
 

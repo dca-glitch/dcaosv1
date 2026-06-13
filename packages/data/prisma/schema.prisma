@@ -1,7 +1,3 @@
-// DCA OS v1 platform foundation schema.
-// This file is schema-only for the initial foundation block.
-// Do not run migrations, db push, seed scripts, or client generation from this block.
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -11,223 +7,220 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id              String       @id @default(uuid())
-  email           String       @unique
-  displayName     String?
-  passwordHash    String?
-  isActive        Boolean      @default(true)
-  profile         UserProfile?
-  memberships     TenantUser[]
-  sessions        Session[]
-  userRoles       UserRole[]
-  auditLogs       AuditLog[]   @relation("AuditActor")
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
-  deletedAt       DateTime?
+enum TenantStatus {
+  ACTIVE
+  INACTIVE
+  ARCHIVED
+  DELETED
 }
 
-model UserProfile {
-  id          String    @id @default(uuid())
-  userId      String    @unique
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  firstName   String?
-  lastName    String?
-  phone       String?
-  avatarUrl   String?
-  locale      String?
-  timezone    String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  deletedAt   DateTime?
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  DELETED
+}
+
+enum MembershipStatus {
+  INVITED
+  ACTIVE
+  SUSPENDED
+  REMOVED
+}
+
+enum RoleStatus {
+  ACTIVE
+  INACTIVE
+  ARCHIVED
+  DELETED
+}
+
+enum ModuleStatus {
+  PLANNED
+  ACTIVE
+  DEPRECATED
+  RETIRED
+}
+
+enum SettingValueType {
+  STRING
+  NUMBER
+  BOOLEAN
+  JSON
+  DATE
+}
+
+enum AuditActorType {
+  USER
+  SYSTEM
+  AUTOMATION
+  API
 }
 
 model Tenant {
-  id                  String                    @id @default(uuid())
-  name                String
-  slug                String                    @unique
-  legalName           String?
-  isActive            Boolean                   @default(true)
-  memberships         TenantUser[]
-  roles               Role[]
-  moduleEntitlements  TenantModuleEntitlement[]
-  settingValues       SettingValue[]
-  auditLogs           AuditLog[]
-  createdAt           DateTime                  @default(now())
-  updatedAt           DateTime                  @updatedAt
-  deletedAt           DateTime?
+  id            String            @id @default(uuid())
+  name          String
+  slug          String            @unique
+  status        TenantStatus
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  deletedAt     DateTime?
+  memberships   TenantMembership[]
+  roles         Role[]
+  tenantModules TenantModule[]
+  tenantSettings TenantSetting[]
+  auditLogs     AuditLog[]        @relation("TenantAuditLogs")
 }
 
-model TenantUser {
-  id          String     @id @default(uuid())
-  tenantId    String
-  userId      String
-  tenant      Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  title       String?
-  isOwner     Boolean    @default(false)
-  isActive    Boolean    @default(true)
-  userRoles   UserRole[]
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+model User {
+  id          String            @id @default(uuid())
+  email       String            @unique
+  name        String?
+  status      UserStatus
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
   deletedAt   DateTime?
+  memberships TenantMembership[]
+  auditLogs   AuditLog[]        @relation("UserAuditLogs")
+}
+
+model TenantMembership {
+  id              String            @id @default(uuid())
+  tenantId        String
+  userId          String
+  status          MembershipStatus
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  deletedAt       DateTime?
+  tenant          Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  membershipRoles MembershipRole[]
 
   @@unique([tenantId, userId])
+  @@index([tenantId])
   @@index([userId])
-}
-
-model Session {
-  id           String    @id @default(uuid())
-  userId       String
-  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  tokenHash    String    @unique
-  expiresAt    DateTime
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-  revokedAt    DateTime?
-  deletedAt    DateTime?
+  @@index([status])
 }
 
 model Role {
-  id               String           @id @default(uuid())
-  tenantId          String?
-  tenant            Tenant?          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  key               String
-  name              String
-  description       String?
-  isSystem          Boolean          @default(false)
-  userRoles         UserRole[]
-  rolePermissions   RolePermission[]
-  createdAt         DateTime         @default(now())
-  updatedAt         DateTime         @updatedAt
-  deletedAt         DateTime?
+  id              String            @id @default(uuid())
+  tenantId        String
+  key             String
+  name            String
+  description     String?
+  status          RoleStatus
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  deletedAt       DateTime?
+  tenant          Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  rolePermissions RolePermission[]
+  membershipRoles MembershipRole[]
 
   @@unique([tenantId, key])
+  @@index([tenantId])
 }
 
 model Permission {
-  id                String           @id @default(uuid())
-  key               String           @unique
-  name              String
-  description       String?
-  moduleId          String?
-  module            Module?          @relation(fields: [moduleId], references: [id], onDelete: SetNull)
-  rolePermissions   RolePermission[]
-  createdAt         DateTime         @default(now())
-  updatedAt         DateTime         @updatedAt
-  deletedAt         DateTime?
-}
+  id              String            @id @default(uuid())
+  key             String            @unique
+  moduleKey       String?
+  description     String?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  rolePermissions RolePermission[]
 
-model UserRole {
-  id              String      @id @default(uuid())
-  userId          String
-  tenantUserId    String?
-  roleId          String
-  user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  tenantUser      TenantUser? @relation(fields: [tenantUserId], references: [id], onDelete: Cascade)
-  role            Role        @relation(fields: [roleId], references: [id], onDelete: Cascade)
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
-  deletedAt       DateTime?
-
-  @@unique([userId, roleId, tenantUserId])
-  @@index([roleId])
+  @@index([moduleKey])
 }
 
 model RolePermission {
-  id             String      @id @default(uuid())
-  roleId         String
-  permissionId   String
-  role           Role        @relation(fields: [roleId], references: [id], onDelete: Cascade)
-  permission     Permission  @relation(fields: [permissionId], references: [id], onDelete: Cascade)
-  createdAt      DateTime    @default(now())
-  updatedAt      DateTime    @updatedAt
-  deletedAt      DateTime?
+  id           String       @id @default(uuid())
+  roleId       String
+  permissionId String
+  createdAt    DateTime     @default(now())
+  role         Role         @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission   @relation(fields: [permissionId], references: [id], onDelete: Cascade)
 
   @@unique([roleId, permissionId])
+  @@index([roleId])
+  @@index([permissionId])
 }
 
-model Module {
-  id                    String                    @id @default(uuid())
-  key                   String                    @unique
-  name                  String
-  description           String?
-  version               String?
-  isSystem              Boolean                   @default(false)
-  permissions           Permission[]
-  tenantEntitlements    TenantModuleEntitlement[]
-  settingDefinitions    SettingDefinition[]
-  auditLogs             AuditLog[]
-  createdAt             DateTime                  @default(now())
-  updatedAt             DateTime                  @updatedAt
-  deletedAt             DateTime?
+model MembershipRole {
+  id                String           @id @default(uuid())
+  tenantMembershipId String
+  roleId             String
+  createdAt          DateTime         @default(now())
+  tenantMembership   TenantMembership @relation(fields: [tenantMembershipId], references: [id], onDelete: Cascade)
+  role               Role             @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantMembershipId, roleId])
+  @@index([tenantMembershipId])
+  @@index([roleId])
 }
 
-model TenantModuleEntitlement {
-  id          String    @id @default(uuid())
+model ModuleDefinition {
+  id            String         @id @default(uuid())
+  key           String         @unique
+  name          String
+  description   String?
+  status        ModuleStatus
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  tenantModules TenantModule[]
+
+  @@index([status])
+}
+
+model TenantModule {
+  id                 String           @id @default(uuid())
+  tenantId           String
+  moduleDefinitionId String
+  status             ModuleStatus
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+  tenant             Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  moduleDefinition   ModuleDefinition  @relation(fields: [moduleDefinitionId], references: [id], onDelete: Restrict)
+
+  @@unique([tenantId, moduleDefinitionId])
+  @@index([tenantId])
+  @@index([moduleDefinitionId])
+  @@index([status])
+}
+
+model TenantSetting {
+  id          String            @id @default(uuid())
   tenantId    String
-  moduleId    String
-  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  module      Module    @relation(fields: [moduleId], references: [id], onDelete: Cascade)
-  isEnabled   Boolean   @default(true)
-  startsAt    DateTime?
-  endsAt      DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  deletedAt   DateTime?
+  key         String
+  moduleKey   String?
+  valueType   SettingValueType
+  value       Json
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  tenant      Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
-  @@unique([tenantId, moduleId])
-}
-
-model SettingDefinition {
-  id             String          @id @default(uuid())
-  key            String          @unique
-  label          String
-  description    String?
-  valueType      String
-  defaultValue   Json?
-  moduleId       String?
-  module         Module?         @relation(fields: [moduleId], references: [id], onDelete: SetNull)
-  values         SettingValue[]
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
-  deletedAt      DateTime?
-}
-
-model SettingValue {
-  id                    String              @id @default(uuid())
-  tenantId              String
-  settingDefinitionId   String
-  tenant                Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  settingDefinition     SettingDefinition   @relation(fields: [settingDefinitionId], references: [id], onDelete: Cascade)
-  value                 Json
-  createdAt             DateTime            @default(now())
-  updatedAt             DateTime            @updatedAt
-  deletedAt             DateTime?
-
-  @@unique([tenantId, settingDefinitionId])
+  @@unique([tenantId, key])
+  @@index([tenantId])
+  @@index([moduleKey])
 }
 
 model AuditLog {
-  id              String    @id @default(uuid())
-  tenantId        String?
-  actorUserId     String?
-  moduleId        String?
-  tenant          Tenant?   @relation(fields: [tenantId], references: [id], onDelete: SetNull)
-  actorUser       User?     @relation("AuditActor", fields: [actorUserId], references: [id], onDelete: SetNull)
-  module          Module?   @relation(fields: [moduleId], references: [id], onDelete: SetNull)
-  action          String
-  entityType      String?
-  entityId        String?
-  summary         String?
-  metadata        Json?
-  ipAddress       String?
-  userAgent       String?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  deletedAt       DateTime?
+  id          String         @id @default(uuid())
+  tenantId    String?
+  actorType   AuditActorType
+  actorUserId String?
+  action      String
+  entityType  String
+  entityId    String?
+  metadata    Json?
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime       @default(now())
+  tenant      Tenant?        @relation("TenantAuditLogs", fields: [tenantId], references: [id], onDelete: SetNull)
+  actorUser   User?          @relation("UserAuditLogs", fields: [actorUserId], references: [id], onDelete: SetNull)
 
-  @@index([tenantId, createdAt])
+  @@index([tenantId])
   @@index([actorUserId])
-  @@index([moduleId])
+  @@index([action])
+  @@index([entityType, entityId])
+  @@index([createdAt])
 }

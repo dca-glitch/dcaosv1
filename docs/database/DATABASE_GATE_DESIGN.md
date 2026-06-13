@@ -20,7 +20,7 @@ Important naming rule:
 - `User` is global identity only
 - `TenantMembership` connects `User` to `Tenant`
 - tenant roles attach to `TenantMembership`, not directly to `User`
-- `TenantUser` may still appear in the current foundation schema as placeholder wording, but DB-1 implementation must rename or align it to `TenantMembership` before implementation
+- DB-1 implementation uses `TenantMembership` directly; `TenantUser` is not part of the approved schema
 
 ## 2. Database Goals
 
@@ -137,9 +137,9 @@ Planned identity concepts:
 
 - `User` is the global platform identity record
 - `TenantMembership` is the access boundary between user and tenant
-- `Role` is tenant-aware or system-defined
+- `Role` is tenant-scoped in DB-1
 - `MembershipRole` captures role assignment to a membership
-- `Session` remains a placeholder concept for future auth integration only
+- `Session` is not part of DB-1
 
 Not approved at this stage:
 
@@ -187,7 +187,7 @@ The first Prisma schema implementation after approval should cover the minimum p
 - AuditLog
 - basic timestamps and status fields
 
-Session should remain a placeholder relation concept only and should not drive runtime auth behavior until Auth Gate is approved.
+Session is not part of DB-1 and should remain deferred until Auth Gate is approved.
 
 ### Phase DB-2 Later Candidates
 
@@ -565,7 +565,7 @@ Before DB implementation, the following decisions are still required:
 - settings storage approach approval
 - module enablement approach approval
 - approval or deferral of local PostgreSQL dev setup
-- approval of whether `TenantUser` must be renamed in DB-1 implementation or only aliased during transition
+- `TenantMembership` implementation approval
 
 ## 20. Implementation Gate Checklist
 

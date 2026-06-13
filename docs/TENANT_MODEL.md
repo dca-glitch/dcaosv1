@@ -28,7 +28,7 @@ A membership connects:
 
 Canonical design name: `TenantMembership`.
 
-Current foundation schema may still use `TenantUser` wording, but DB-1 implementation should align to `TenantMembership`.
+DB-1 implementation uses `TenantMembership` directly.
 
 ## Tenant Context
 

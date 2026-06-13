@@ -4,7 +4,7 @@ Status: design-only allowed.
 
 Approved now:
 
-* Prisma schema foundation
+* DB-1 Prisma schema
 * validation-only schema checks
 * placeholder environment documentation
 * database design review and planning docs
