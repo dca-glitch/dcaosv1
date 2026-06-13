@@ -56,6 +56,8 @@ API DB integration remains blocked until approved. Auth and tenant context are s
 - verify audit writes
 - add isolated tests
 
+Phase 8 adds non-mounted request-context, middleware, and service skeletons only.
+
 ## 8. Open Decisions
 
 - whether API uses thin services or richer domain services
@@ -65,4 +67,3 @@ API DB integration remains blocked until approved. Auth and tenant context are s
 ## 9. Recommended Next Step
 
 Keep runtime integration blocked until auth and tenant middleware are approved.
-

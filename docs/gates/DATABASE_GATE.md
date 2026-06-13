@@ -18,6 +18,7 @@ Approved now:
 * DB readiness and health planning
 * internal bootstrap planning
 * seed strategy planning
+* local-only DB-1 seed implementation
 
 Blocked now:
 
@@ -29,6 +30,7 @@ Blocked now:
 * runtime API DB integration
 * protected DB-backed routes
 * production bootstrap execution
+* unsafe local seed execution
 
 Required before implementation:
 
@@ -46,3 +48,4 @@ Current review status:
 * migrations beyond local dev remain blocked
 * runtime database access remains blocked
 * Phase 7 planning docs are allowed without runtime DB changes
+* local-only seed implementation is allowed when guarded by safety checks

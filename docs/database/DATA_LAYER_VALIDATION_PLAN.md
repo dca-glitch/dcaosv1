@@ -31,6 +31,8 @@ Current helper:
 
 - `npm.cmd run -w @dca-os-v1/data check:data-layer`
 
+Seed validation and API skeleton checks are handled separately from this helper.
+
 ## 4. Future Test Coverage
 
 - tenant-scoped repository signatures require tenant context

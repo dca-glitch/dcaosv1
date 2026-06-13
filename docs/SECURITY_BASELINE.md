@@ -11,6 +11,8 @@ Approved now:
 * placeholder environment documentation
 * local PostgreSQL dev setup planning and dev-only config
 * documentation-only auth, tenant, RBAC, bootstrap, and DB planning
+* local-only guarded DB-1 seed execution
+* frontend protected-shell planning and placeholder components
 
 Blocked now:
 
@@ -25,6 +27,7 @@ Blocked now:
 * runtime tenant middleware
 * runtime RBAC middleware
 * runtime API DB integration
+* unsafe local seed execution
 
 Rules for contributors:
 
