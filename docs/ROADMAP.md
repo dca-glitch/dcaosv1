@@ -92,6 +92,20 @@ Deliverables:
 - error normalization
 - no feature persistence yet unless approved
 
+Required sequence before implementation:
+
+1. Database Runtime Gate
+2. local PostgreSQL approval/setup
+3. Prisma migration approval
+4. seed/bootstrap approval
+5. data access runtime boundary
+6. auth runtime implementation
+
+Not allowed:
+
+- no runtime DB wiring before the gate sequence is complete
+- no auth runtime before the gate sequence is complete
+
 ### Block 18 — Auth Planning
 
 Goal: design auth before implementation.
@@ -105,6 +119,10 @@ Deliverables:
 - tenant membership resolution
 - permission evaluation model
 - password reset and lockout plan
+
+Not allowed:
+
+- no auth runtime before database runtime readiness is approved
 
 ### Block 19 — Auth Implementation MVP
 

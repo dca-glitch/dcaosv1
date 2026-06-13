@@ -21,6 +21,8 @@ Approved now:
 * permission resolver skeleton
 * module access resolver skeleton
 * auth implementation preflight gate
+* auth audit write strategy
+* database runtime gate
 
 Blocked now:
 

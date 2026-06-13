@@ -11,17 +11,25 @@
 
 ## Phase 2 - Database
 
-- local PostgreSQL
-- Prisma Client
-- database access layer
-- first migration
+- Database Runtime Gate
+- local PostgreSQL approval/setup
+- Prisma migration approval
+- seed/bootstrap approval
+- data access runtime boundary
 
 ## Phase 3 - Auth
 
-- login
-- logout
-- current user
-- session handling
+- auth runtime implementation
+- session persistence
+- login/logout/me
+- middleware
+- tenant/RBAC/module runtime
+- admin reset
+- frontend auth
+
+## Rule
+
+Complete the Database Runtime Gate and its prerequisite steps before any real auth runtime implementation.
 
 ## Phase 4 - Tenant Context
 
