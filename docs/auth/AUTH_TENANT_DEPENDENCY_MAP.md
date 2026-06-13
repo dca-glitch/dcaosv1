@@ -36,8 +36,8 @@ Auth and tenant context will depend on:
 Future request context should include:
 
 - `userId`
-- `activeTenantId`
-- `membershipId`
+- `tenantId`
+- `tenantMembershipId`
 - `roles`
 - `permissions`
 - `requestId`
@@ -71,4 +71,3 @@ No implementation is approved here.
 ## 8. Recommended Next Step
 
 Use this map after local DB and migration planning are approved.
-
