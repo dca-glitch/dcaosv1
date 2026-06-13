@@ -5,7 +5,8 @@
   "type": "module",
   "main": "src/server.ts",
   "scripts": {
-    "check": "node ../../scripts/check-package.mjs api && tsc --noEmit",
+    "check": "node ../../scripts/check-package.mjs api && npm run check:auth-skeleton && tsc --noEmit",
+    "check:auth-skeleton": "node scripts/check-auth-skeleton.mjs",
     "build": "tsc --noEmit",
     "dev": "tsx src/server.ts"
   },

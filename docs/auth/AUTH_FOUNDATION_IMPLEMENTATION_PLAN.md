@@ -2,7 +2,7 @@
 
 ## 1. Executive Summary
 
-No auth implementation now.
+No real auth implementation now. Limited provider-agnostic skeleton work is approved.
 
 ## 2. Recommended Implementation Phases
 
