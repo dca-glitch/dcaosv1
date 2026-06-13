@@ -94,12 +94,16 @@ Deliverables:
 
 Required sequence before implementation:
 
-1. Database Runtime Gate
-2. local PostgreSQL approval/setup
-3. Prisma migration approval
-4. seed/bootstrap approval
-5. data access runtime boundary
-6. auth runtime implementation
+1. Human Owner approves local DB start.
+2. Start local PostgreSQL.
+3. Confirm local DB health.
+4. Human Owner approves first local migration.
+5. Run migration.
+6. Review generated migration.
+7. Human Owner approves seed/bootstrap.
+8. Run seed/bootstrap.
+9. Create data access runtime boundary.
+10. Resume real auth runtime.
 
 Not allowed:
 

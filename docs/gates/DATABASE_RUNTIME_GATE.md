@@ -14,12 +14,16 @@ This gate is the next step after database design and local PostgreSQL planning. 
 
 ## Required Before Runtime Database Wiring
 
-- local PostgreSQL setup confirmed
-- Prisma Client/data access runtime readiness confirmed
-- migration approval recorded
-- seed/bootstrap approval recorded
-- rollback plan documented
-- audit write strategy approved
+1. Human Owner approves local DB start.
+2. Start local PostgreSQL.
+3. Confirm local DB health.
+4. Human Owner approves first local migration.
+5. Run migration.
+6. Review generated migration.
+7. Human Owner approves seed/bootstrap.
+8. Run seed/bootstrap.
+9. Create data access runtime boundary.
+10. Resume real auth runtime.
 
 ## Not Approved Here
 

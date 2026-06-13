@@ -11,10 +11,14 @@
 
 ## Phase 2 - Database
 
-- Database Runtime Gate
-- local PostgreSQL approval/setup
-- Prisma migration approval
+- Human Owner approves local DB start
+- local PostgreSQL start
+- local DB health confirmation
+- Human Owner approves first local migration
+- migration execution
+- migration review
 - seed/bootstrap approval
+- seed/bootstrap execution
 - data access runtime boundary
 
 ## Phase 3 - Auth
