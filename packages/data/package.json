@@ -6,10 +6,15 @@
   "scripts": {
     "check": "node ../../scripts/check-package.mjs data && npm run prisma:validate",
     "build": "node ../../scripts/check-package.mjs data",
+    "check:data-layer": "node scripts/check-data-layer.mjs",
     "prisma:validate": "node scripts/validate-prisma-schema.mjs && node scripts/run-prisma-validate.mjs",
+    "prisma:generate": "prisma generate",
     "prisma:migrate:dev": "prisma migrate dev"
   },
   "devDependencies": {
     "prisma": "^5.15.0"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.22.0"
   }
 }

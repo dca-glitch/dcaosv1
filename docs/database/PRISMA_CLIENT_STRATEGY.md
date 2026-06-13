@@ -2,17 +2,17 @@
 
 ## 1. Executive Summary
 
-Client generation is deferred, not completed.
+Client generation is completed for the local dev environment.
 
-The local migration succeeded, but Prisma attempted its post-migrate generate step and failed because the generator could not fetch an engine artifact in this environment. That means the Prisma Client boundary should be planned before any runtime integration.
+The earlier post-migrate generate failure was an engine-fetch/dependency-state problem, and that has been resolved by adding the matching `@prisma/client` dependency to the data workspace. The data package boundary remains the only place Prisma Client is exposed.
 
 ## 2. Current Package State
 
 - `packages/data` has Prisma CLI support
-- `packages/data/package.json` currently includes `prisma:validate` and `prisma:migrate:dev`
-- `@prisma/client` is not installed at the workspace root
-- no runtime data-access package exists yet
+- `packages/data/package.json` now includes `prisma:validate`, `prisma:generate`, and `prisma:migrate:dev`
+- `@prisma/client` is installed in the data workspace
 - the schema lives in `packages/data/prisma/schema.prisma`
+- the client boundary files exist in `packages/data/src/client`
 
 ## 3. Recommended Client Boundary
 
@@ -23,11 +23,11 @@ The local migration succeeded, but Prisma attempted its post-migrate generate st
 
 ## 4. Generation Command
 
-Future safe command:
+Safe command:
 
 - `npm.cmd run -w @dca-os-v1/data prisma:generate`
 
-That command should only be used once generation dependencies are approved and available locally.
+That command works in the current local setup and should remain confined to the data package boundary.
 
 ## 5. Runtime Integration Status
 
@@ -44,5 +44,4 @@ No API route should depend on Prisma Client yet.
 
 ## 7. Recommended Next Step
 
-Define the data access layer boundary and then decide whether Prisma Client generation should be approved for local development.
-
+Finalize repository and audit skeletons, then keep runtime API integration blocked until auth and tenant middleware are approved.
