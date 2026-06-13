@@ -1,6 +1,6 @@
 # Auth Gate
 
-Status: blocked.
+Status: blocked for runtime implementation. Planning is allowed.
 
 Approved now:
 
@@ -8,6 +8,10 @@ Approved now:
 * placeholder security requirements
 * auth gate design planning
 * auth and tenant dependency mapping
+* auth strategy decision planning
+* tenant middleware planning
+* RBAC middleware planning
+* auth foundation implementation planning
 
 Blocked now:
 
@@ -17,6 +21,9 @@ Blocked now:
 * password hashing flows
 * role enforcement
 * tenant-aware access logic
+* runtime auth middleware
+* runtime tenant middleware
+* runtime RBAC middleware
 
 Required before implementation:
 
@@ -31,3 +38,4 @@ Current review status:
 * tenant middleware remains blocked
 * dependency mapping exists for later implementation planning
 * Prisma client and data access planning remain prerequisites
+* Phase 7 planning docs are approved for documentation-only work
