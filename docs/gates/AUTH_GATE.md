@@ -1,6 +1,6 @@
 # Auth Gate
 
-Status: blocked for runtime implementation. Planning is allowed.
+Status: blocked for real runtime implementation. Limited skeleton implementation is approved by the auth implementation gate review.
 
 Approved now:
 
@@ -13,6 +13,8 @@ Approved now:
 * tenant middleware planning
 * RBAC middleware planning
 * auth foundation implementation planning
+* auth implementation gate review
+* auth implementation scope
 
 Blocked now:
 
@@ -26,6 +28,7 @@ Blocked now:
 * runtime tenant middleware
 * runtime RBAC middleware
 * session runtime
+* real provider runtime
 
 Required before implementation:
 
@@ -42,3 +45,4 @@ Current review status:
 * Prisma client and data access planning remain prerequisites
 * Phase 7 planning docs are approved for documentation-only work
 * session strategy planning is approved for documentation-only work
+* limited auth skeleton implementation is approved after gate review

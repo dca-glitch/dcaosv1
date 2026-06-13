@@ -13,6 +13,7 @@ Approved now:
 * documentation-only auth, tenant, RBAC, bootstrap, and DB planning
 * local-only guarded DB-1 seed execution
 * frontend protected-shell planning and placeholder components
+* limited auth skeleton implementation after gate review
 
 Blocked now:
 
@@ -23,7 +24,7 @@ Blocked now:
 * `db push`
 * deployment
 * direct user-bound tenant roles in DB-1
-* auth implementation before Auth Gate approval
+* real auth runtime before Auth Gate approval
 * runtime tenant middleware
 * runtime RBAC middleware
 * runtime API DB integration

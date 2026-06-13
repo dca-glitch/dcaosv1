@@ -8,12 +8,15 @@ The auth release gate defines when authentication implementation can begin.
 
 - auth planning completed
 - session model approved
-- password storage approach approved
+- auth implementation gate review approved
+- auth implementation scope documented
 - tenant selection flow planned
-- current user endpoint planned
-- logout behavior planned
+- current user endpoint planned or explicitly deferred as a skeleton
+- logout behavior planned or explicitly deferred as a skeleton
 - audit event direction planned
 - auth gate design approved
+
+If first-party passwords are ever introduced later, a separate password storage approval is required.
 
 ## Not Allowed Before Gate
 
@@ -22,6 +25,7 @@ The auth release gate defines when authentication implementation can begin.
 - session persistence
 - auth cookies
 - production auth settings
+- protected business routes
 
 ## Exit Output
 
@@ -34,6 +38,7 @@ An auth gate review should produce:
 - validation plan
 - rollback note
 - session and tenant context design
+- allowed next-phase auth scope
 
 ## Rule
 
