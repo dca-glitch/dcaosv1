@@ -40,6 +40,41 @@ export interface AuthStartResult {
   redirectUrl?: string;
 }
 
+export interface AuthLoginRequest {
+  email?: string;
+  password?: string;
+}
+
+export interface AuthTenantMembershipSummary {
+  tenantId: string;
+  tenantMembershipId: string;
+  roles: string[];
+}
+
+export interface AuthLoginSessionSummary {
+  token: string;
+  expiresAt: string;
+  ttlMinutes: number;
+}
+
+export interface AuthLoginUserSummary {
+  id: string;
+  email: string;
+  name?: string | null;
+  status: string;
+  forcePasswordChange: boolean;
+  lastLoginAt?: string | null;
+}
+
+export interface AuthLoginResponse {
+  user: AuthLoginUserSummary;
+  session: AuthLoginSessionSummary;
+  tenantContext: {
+    activeMembership: AuthTenantMembershipSummary | null;
+    memberships: AuthTenantMembershipSummary[];
+  };
+}
+
 export interface AuthCallbackRequest {
   code?: string;
   state?: string;

@@ -1,10 +1,11 @@
 import { Router } from "express";
-import { changePassword, getCurrentUser, login, logout } from "./auth.controller";
+import { changePassword, getCurrentUser, logout } from "./auth.controller";
 import {
   getAuthStatus,
   handleAuthCallback,
   startAuth
 } from "./auth.handlers";
+import { login } from "./login.runtime";
 
 export function createAuthRouter() {
   const router = Router();
