@@ -81,6 +81,24 @@ export interface AuthContextResolutionResult {
   message: string;
 }
 
+export type PermissionResolverState = "allowed" | "missing" | "blocked";
+
+export interface PermissionResolverResult {
+  state: PermissionResolverState;
+  ok: false;
+  permissionKey: string;
+  message: string;
+}
+
+export type ModuleAccessResolverState = "allowed" | "missing" | "blocked";
+
+export interface ModuleAccessResolverResult {
+  state: ModuleAccessResolverState;
+  ok: false;
+  moduleKey: string;
+  message: string;
+}
+
 export interface AuthConfigSnapshot {
   runtimeEnabled: false;
   mode: AuthMode;

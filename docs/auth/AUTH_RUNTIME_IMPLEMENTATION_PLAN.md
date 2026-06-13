@@ -53,6 +53,24 @@ This is a plan only. No runtime auth is implemented here.
 - no permission or module entitlement resolution
 - no protected-route wiring yet
 
+## 3E. Permission Resolver Skeleton
+
+- request-context-only inspection
+- no persistence-backed RBAC lookup
+- fail closed and unenforced
+
+## 3F. Module Access Resolver Skeleton
+
+- request-context-only inspection
+- no module entitlement lookup
+- fail closed and unenforced
+
+## 3G. Auth Implementation Preflight Gate
+
+- document the boundary before real auth runtime
+- stop auth implementation until database/runtime gate approval
+- no active route protection is wired yet
+
 ## 4. Login Flow
 
 1. validate credentials
@@ -112,6 +130,7 @@ Session cookie -> session lookup -> user -> selected tenant -> TenantMembership 
 - no `tenantId` from request body for protected operations
 - no cross-tenant role leaks
 - no runtime tenant lookup before gate approval
+- no runtime permission or module entitlement lookup before gate approval
 
 ## 12. Recommended Next Block
 

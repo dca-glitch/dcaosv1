@@ -130,6 +130,113 @@ Not allowed:
 - no DB access runtime
 - no password hashing runtime
 
+### Block 19B — Auth Implementation Preflight Gate
+
+Goal: document the auth runtime boundary before real implementation.
+
+Deliverables:
+
+- auth implementation preflight gate doc
+- completed skeleton and boundary summary
+- next-gate recommendation
+
+Not allowed:
+
+- no login/logout/me/change-password runtime
+- no DB-backed session persistence
+- no DB lookup work
+
+### Block 19C-Lite — Permission Resolver Skeleton
+
+Goal: add a fail-closed permission resolver boundary without RBAC runtime.
+
+Deliverables:
+
+- permission resolver skeleton
+- checker update for skeleton-only behavior
+
+Not allowed:
+
+- no RBAC lookup
+- no permission enforcement
+- no route protection wiring
+
+### Block 19C-Full — Module Access Resolver Skeleton
+
+Goal: add a fail-closed module access resolver boundary without entitlement runtime.
+
+Deliverables:
+
+- module access resolver skeleton
+- checker update for skeleton-only behavior
+
+Not allowed:
+
+- no module entitlement lookup
+- no access enforcement
+- no route protection wiring
+
+### Block 19D-Lite — Auth Context Summary
+
+Goal: document the auth-context and tenant-resolution boundary already in place.
+
+Deliverables:
+
+- auth context skeleton doc
+- tenant resolver skeleton doc
+
+Not allowed:
+
+- no middleware wiring into active routes
+
+### Block 19E-Lite — Runtime Plan Update
+
+Goal: keep the runtime implementation plan aligned with the latest skeleton boundaries.
+
+Deliverables:
+
+- runtime plan doc refresh
+
+Not allowed:
+
+- no runtime auth implementation
+
+### Block 19F-Lite — Security Baseline Update
+
+Goal: keep the security baseline aligned with the auth skeleton boundary.
+
+Deliverables:
+
+- security baseline doc refresh
+
+Not allowed:
+
+- no runtime auth implementation
+
+### Block 19G-Lite — Checker Hardening
+
+Goal: extend auth skeleton validation to include the new resolver boundaries.
+
+Deliverables:
+
+- `check-auth-skeleton.mjs` update
+
+Not allowed:
+
+- no brittle runtime assumptions
+
+### Block 19H-Lite — Preflight Gate Closeout
+
+Goal: summarize the current auth implementation state before real runtime work.
+
+Deliverables:
+
+- gate summary doc
+
+Not allowed:
+
+- no runtime auth implementation
+
 ### Block 20 — Tenant Context Foundation
 
 Goal: every API request can resolve tenant context safely.

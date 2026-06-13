@@ -18,6 +18,9 @@ Approved now:
 * password helper foundation and session helper foundation without runtime auth
 * auth context middleware skeleton
 * tenant access resolver skeleton
+* permission resolver skeleton
+* module access resolver skeleton
+* auth implementation preflight gate
 
 Blocked now:
 
@@ -32,6 +35,8 @@ Blocked now:
 * runtime tenant middleware
 * runtime RBAC middleware
 * runtime tenant access resolution
+* runtime permission resolution
+* runtime module entitlement resolution
 * runtime API DB integration
 * unsafe local seed execution
 

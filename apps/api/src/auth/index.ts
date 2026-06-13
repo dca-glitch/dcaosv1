@@ -9,8 +9,10 @@ export type {
   AuthProviderStatus,
   AuthStartRequest,
   AuthStartResult,
+  ModuleAccessResolverResult,
   PasswordPolicyConfig,
   PasswordPolicyValidationResult,
+  PermissionResolverResult,
   SessionOptionConfig,
   SessionStoreType,
   SessionCookieConfig,
@@ -48,3 +50,11 @@ export {
   hasTenantAccessContext,
   requireTenantAccessResolution
 } from "./tenant-access.resolver";
+export {
+  getPermissionResolverResult,
+  requirePermissionResolution
+} from "./permission.resolver";
+export {
+  getModuleAccessResolverResult,
+  requireModuleAccessResolution
+} from "./module-access.resolver";
