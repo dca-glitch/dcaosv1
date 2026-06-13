@@ -9,6 +9,7 @@ Approved now:
 * Prisma schema validation only
 * CI checks that do not require secrets or database services
 * placeholder environment documentation
+* local PostgreSQL dev setup planning and dev-only config
 
 Blocked now:
 

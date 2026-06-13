@@ -64,10 +64,16 @@ Soft deletion should use a nullable deleted timestamp.
 Before the first migration:
 
 - schema should be reviewed
-- local PostgreSQL setup should be prepared
+- local PostgreSQL setup should be prepared and dev-only
 - shadow database plan should be prepared
 - rollback notes should be written
 - migration command should be approved
+
+## Local Development Database
+
+The current local setup plan is a dev-only PostgreSQL container on `127.0.0.1:5434`.
+
+The placeholder `DATABASE_URL` and local compose file should stay dev-only and must not point at production infrastructure.
 
 ## Future Database Work
 
@@ -81,4 +87,4 @@ Future blocks should add:
 - repository patterns
 - tenant-aware query helpers
 
-All implementation remains blocked until the database gate design is approved.
+Runtime application database implementation remains blocked until the database gate design is approved.

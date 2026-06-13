@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: dcaosv1-postgres-dev
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:5434:5432"
+    environment:
+      POSTGRES_USER: dcaosv1_dev
+      POSTGRES_PASSWORD: dcaosv1_dev_password_change_me
+      POSTGRES_DB: dcaosv1_dev
+    volumes:
+      - dcaosv1_postgres_dev:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dcaosv1_dev -d dcaosv1_dev"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  dcaosv1_postgres_dev:

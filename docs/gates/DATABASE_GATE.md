@@ -7,6 +7,7 @@ Approved now:
 * DB-1 Prisma schema
 * validation-only schema checks
 * placeholder environment documentation
+* local PostgreSQL dev setup
 * database design review and planning docs
 * TenantMembership canonical naming and membership-bound role direction
 * DB-1 Prisma schema planning document
@@ -34,5 +35,6 @@ Required before implementation:
 Current review status:
 
 * DB-1 schema reviewed and valid
-* migrations remain blocked
+* local migration created and reviewed
+* migrations beyond local dev remain blocked
 * runtime database access remains blocked

@@ -2,9 +2,9 @@
 
 ## 1. Executive Summary
 
-Local PostgreSQL is not set up in this task.
+Local PostgreSQL setup is now defined for dev-only use, and the first DB-1 migration has been applied locally.
 
-No Docker or database commands were run. This is a planning-only document.
+The project uses a Docker Compose PostgreSQL container on `127.0.0.1:5434` with placeholder credentials and a named volume.
 
 ## 2. Goals
 
@@ -30,7 +30,7 @@ Useful later, but less safe as the first default because it increases credential
 
 Recommended safest default:
 
-- Docker Compose local Postgres later, isolated to dev
+- Docker Compose local Postgres, isolated to dev
 
 ## 4. Proposed Local Environment Variables
 
@@ -54,7 +54,7 @@ Future files or commands may include:
 - a local port binding
 - a healthcheck
 
-Do not create them yet unless explicitly approved later.
+The current repo uses `docker-compose.dev.yml` for this setup.
 
 ## 6. Safety Rules
 
@@ -79,5 +79,4 @@ Do not create them yet unless explicitly approved later.
 
 ## 9. Recommended Next Step
 
-Approve the local Postgres approach before any setup work.
-
+Proceed to Prisma Client strategy and data access layer planning.
