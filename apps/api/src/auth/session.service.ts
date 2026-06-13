@@ -7,7 +7,13 @@ import {
   AUTH_SESSION_TOKEN_BYTES,
   AUTH_SESSION_TOKEN_HASH_ALGORITHM
 } from "./auth.constants";
-import type { SessionCookieConfig, SessionTokenResult } from "./types";
+import type {
+  SessionCookieConfig,
+  SessionPersistenceBoundaryResult,
+  SessionPersistenceInput,
+  SessionPersistenceRecord,
+  SessionTokenResult
+} from "./types";
 
 export function generateSessionToken(byteLength = AUTH_SESSION_TOKEN_BYTES): SessionTokenResult {
   return {
@@ -37,4 +43,32 @@ export function getSessionCookieConfig(
     domain: undefined,
     ...overrides
   };
+}
+
+function notImplemented(message: string): SessionPersistenceBoundaryResult {
+  return {
+    ok: false,
+    code: "SESSION_DB_RUNTIME_BLOCKED",
+    message
+  };
+}
+
+export function createSession(_input: SessionPersistenceInput): SessionPersistenceBoundaryResult | SessionPersistenceRecord {
+  return notImplemented("Session persistence is not enabled until the database/runtime gate is approved.");
+}
+
+export function findActiveSessionByToken(_token: string): SessionPersistenceBoundaryResult | SessionPersistenceRecord {
+  return notImplemented("Session lookup is not enabled until the database/runtime gate is approved.");
+}
+
+export function revokeSession(_sessionId: string): SessionPersistenceBoundaryResult {
+  return notImplemented("Session revocation is not enabled until the database/runtime gate is approved.");
+}
+
+export function revokeUserSessions(_userId: string): SessionPersistenceBoundaryResult {
+  return notImplemented("Bulk session revocation is not enabled until the database/runtime gate is approved.");
+}
+
+export function touchSession(_sessionId: string): SessionPersistenceBoundaryResult {
+  return notImplemented("Session touch/update is not enabled until the database/runtime gate is approved.");
 }

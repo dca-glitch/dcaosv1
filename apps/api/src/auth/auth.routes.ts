@@ -1,8 +1,8 @@
 import { Router } from "express";
+import { changePassword, getCurrentUser, login, logout } from "./auth.controller";
 import {
   getAuthStatus,
   handleAuthCallback,
-  handleAuthLogout,
   startAuth
 } from "./auth.handlers";
 
@@ -12,7 +12,10 @@ export function createAuthRouter() {
   router.get("/status", getAuthStatus);
   router.post("/start", startAuth);
   router.get("/callback", handleAuthCallback);
-  router.post("/logout", handleAuthLogout);
+  router.post("/login", login);
+  router.post("/logout", logout);
+  router.get("/me", getCurrentUser);
+  router.post("/change-password", changePassword);
 
   return router;
 }

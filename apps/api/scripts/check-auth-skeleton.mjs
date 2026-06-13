@@ -13,6 +13,8 @@ const files = [
   "src/auth/tenant-selection.ts",
   "src/auth/audit.ts",
   "src/auth/auth.constants.ts",
+  "src/auth/auth.controller.ts",
+  "src/auth/auth.service.ts",
   "src/auth/auth.handlers.ts",
   "src/auth/auth.routes.ts",
   "src/auth/index.ts",
@@ -34,7 +36,8 @@ const forbiddenTokens = [
   "real auth",
   "provider credentials",
   "client secret",
-  "session secret"
+  "session secret",
+  "AUTH_RUNTIME_NOT_IMPLEMENTED"
 ];
 
 const requiredSkeletonTokens = ["mode: \"skeleton\"", "runtimeEnabled: false"];
@@ -72,16 +75,47 @@ if (
   !routesContent.includes("/status") ||
   !routesContent.includes("/start") ||
   !routesContent.includes("/callback") ||
-  !routesContent.includes("/logout")
+  !routesContent.includes("/login") ||
+  !routesContent.includes("/logout") ||
+  !routesContent.includes("/me") ||
+  !routesContent.includes("/change-password")
 ) {
   console.error("Auth skeleton check failed. Route skeleton endpoints are incomplete.");
   process.exit(1);
+}
+
+const routeForbiddenTokens = ["/register", "oauth", "oidc", "magic-link", "mfa"];
+for (const token of routeForbiddenTokens) {
+  if (routesContent.toLowerCase().includes(token)) {
+    console.error(`Auth skeleton check failed. Forbidden route token found in src/auth/auth.routes.ts: ${token}`);
+    process.exit(1);
+  }
 }
 
 const handlersContent = readFileSync(path.join(root, "src/auth/auth.handlers.ts"), "utf8");
 if (!handlersContent.includes("501") || !handlersContent.includes("AUTH_SKELETON_ONLY")) {
   console.error("Auth skeleton check failed. Placeholder auth handlers must clearly return disabled/skeleton responses.");
   process.exit(1);
+}
+
+const controllerContent = readFileSync(path.join(root, "src/auth/auth.controller.ts"), "utf8");
+if (!controllerContent.includes("501") || !controllerContent.includes("AUTH_SKELETON_ONLY")) {
+  console.error("Auth skeleton check failed. Placeholder auth controller must clearly return disabled/skeleton responses.");
+  process.exit(1);
+}
+
+const sessionServiceContent = readFileSync(path.join(root, "src/auth/session.service.ts"), "utf8");
+if (!sessionServiceContent.includes("SESSION_DB_RUNTIME_BLOCKED")) {
+  console.error("Auth skeleton check failed. Session service boundary must stay blocked until DB/runtime approval.");
+  process.exit(1);
+}
+
+const inMemorySessionStoreTokens = ["new Map(", "createMemorySession", "memory session", "in-memory session"];
+for (const token of inMemorySessionStoreTokens) {
+  if (sessionServiceContent.toLowerCase().includes(token.toLowerCase())) {
+    console.error(`Auth skeleton check failed. In-memory session store token found in src/auth/session.service.ts: ${token}`);
+    process.exit(1);
+  }
 }
 
 console.log("Auth skeleton structural check passed.");

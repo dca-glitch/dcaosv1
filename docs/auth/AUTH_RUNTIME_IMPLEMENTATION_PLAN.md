@@ -26,6 +26,20 @@ This is a plan only. No runtime auth is implemented here.
 - permission resolver
 - module entitlement resolver
 
+## 3A. Session Persistence Boundary
+
+- session persistence remains blocked until the database/runtime gate is approved
+- the current boundary functions return controlled not-implemented results
+- no Prisma DB access is wired yet
+
+## 3B. Route Skeleton
+
+- `POST /api/v1/auth/login`
+- `POST /api/v1/auth/logout`
+- `GET /api/v1/auth/me`
+- `POST /api/v1/auth/change-password`
+- existing placeholder auth routes remain as non-runtime skeletons
+
 ## 4. Login Flow
 
 1. validate credentials

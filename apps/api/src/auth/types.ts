@@ -103,3 +103,29 @@ export interface SessionTokenResult {
   token: string;
   byteLength: number;
 }
+
+export interface SessionPersistenceInput {
+  token: string;
+  userId: string;
+  expiresAt: Date;
+  ipAddress?: string;
+  userAgent?: string;
+}
+
+export interface SessionPersistenceRecord {
+  id: string;
+  userId: string;
+  sessionTokenHash: string;
+  createdAt: Date;
+  expiresAt: Date;
+  revokedAt?: Date | null;
+  lastSeenAt?: Date | null;
+  ipAddress?: string | null;
+  userAgent?: string | null;
+}
+
+export interface SessionPersistenceBoundaryResult {
+  ok: false;
+  code: "SESSION_DB_RUNTIME_BLOCKED";
+  message: string;
+}
