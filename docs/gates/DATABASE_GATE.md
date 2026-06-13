@@ -1,6 +1,6 @@
 # Database Gate
 
-Status: design-only allowed.
+Status: design-only allowed. Planning docs are approved.
 
 Approved now:
 
@@ -14,6 +14,10 @@ Approved now:
 * DB-1 schema security review
 * DB-1 Prisma relation and constraint review
 * migration readiness plan
+* API runtime DB integration skeleton plan
+* DB readiness and health planning
+* internal bootstrap planning
+* seed strategy planning
 
 Blocked now:
 
@@ -22,6 +26,9 @@ Blocked now:
 * database connection from runtime code
 * seed scripts
 * generated client dependency changes for production use
+* runtime API DB integration
+* protected DB-backed routes
+* production bootstrap execution
 
 Required before implementation:
 
@@ -38,3 +45,4 @@ Current review status:
 * local migration created and reviewed
 * migrations beyond local dev remain blocked
 * runtime database access remains blocked
+* Phase 7 planning docs are allowed without runtime DB changes
