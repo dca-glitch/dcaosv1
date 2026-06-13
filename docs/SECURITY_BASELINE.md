@@ -13,7 +13,7 @@ Approved now:
 * documentation-only auth, tenant, RBAC, bootstrap, and DB planning
 * local-only guarded DB-1 seed execution
 * frontend protected-shell planning and placeholder components
-* limited auth skeleton implementation after gate review
+* controlled password auth strategy planning and skeleton work after gate review
 
 Blocked now:
 

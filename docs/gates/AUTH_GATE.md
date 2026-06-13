@@ -1,6 +1,6 @@
 # Auth Gate
 
-Status: blocked for real runtime implementation. Limited skeleton implementation is approved by the auth implementation gate review.
+Status: blocked for real runtime implementation. Controlled password MVP planning is approved, but runtime auth remains blocked.
 
 Approved now:
 
@@ -10,6 +10,7 @@ Approved now:
 * auth and tenant dependency mapping
 * auth strategy decision planning
 * session strategy decision planning
+* password auth security requirements planning
 * tenant middleware planning
 * RBAC middleware planning
 * auth foundation implementation planning
@@ -18,23 +19,26 @@ Approved now:
 
 Blocked now:
 
-* login
-* session storage
+* login runtime
+* session storage runtime
 * JWT handling
-* password hashing flows
-* role enforcement
-* tenant-aware access logic
+* password hashing runtime
+* role enforcement runtime
+* tenant-aware access logic runtime
 * runtime auth middleware
 * runtime tenant middleware
 * runtime RBAC middleware
 * session runtime
 * real provider runtime
+* public registration
+* magic link runtime
+* managed auth provider runtime
 
 Required before implementation:
 
-* confirm auth provider and session strategy
-* confirm whether auth is local-first or external-provider driven
 * confirm password policy and account lifecycle rules
+* confirm hashing library
+* confirm session store and cookie rules
 * approve [Auth Gate Design](../auth/AUTH_GATE_DESIGN.md)
 
 Current review status:
@@ -43,6 +47,5 @@ Current review status:
 * tenant middleware remains blocked
 * dependency mapping exists for later implementation planning
 * Prisma client and data access planning remain prerequisites
-* Phase 7 planning docs are approved for documentation-only work
+* controlled password MVP planning is approved for documentation-only work
 * session strategy planning is approved for documentation-only work
-* limited auth skeleton implementation is approved after gate review

@@ -8,33 +8,34 @@ Define what the next auth implementation phase may and may not do.
 
 - auth config placeholder validation
 - session option types and config
-- auth route skeletons not wired to a real provider
+- auth route skeletons not wired to runtime auth
+- controlled password auth planning
 - local-only session status placeholder if it stays non-sensitive
-- provider abstraction interfaces
 - tenant selection planning and skeletons
 - audit event contract integration
-- tests and checks for no secrets and no password code
+- tests and checks for no secrets and no password leakage
 
 ## 3. Blocked in Next Phase
 
 - real provider credentials
 - production callback URLs
-- first-party password auth
+- auth runtime
+- password hashing runtime
+- login/logout endpoints
 - deployed auth
 - protected business routes
 - tenant data exposure
-- client portal auth
 - production DB
 - deployment
 
 ## 4. Required Human Decisions Before Real Provider Runtime
 
-- provider vendor
-- client ID and secret source
-- callback URL
+- password policy
+- hashing library
 - session store
 - cookie domain
 - CSRF and rate-limit timing
+- reset and lockout rules
 - admin email for local test
 
 ## 5. Validation Requirements

@@ -98,12 +98,13 @@ Goal: design auth before implementation.
 
 Deliverables:
 
+- controlled login model
 - session model
-- login flow
 - password hashing strategy
 - cookie/session security rules
 - tenant membership resolution
 - permission evaluation model
+- password reset and lockout plan
 
 ### Block 19 — Auth Implementation MVP
 
@@ -167,6 +168,7 @@ Required before first migration:
 
 Required before auth implementation:
 
+- controlled login model approved
 - session model approved
 - password hashing approved
 - cookie strategy approved

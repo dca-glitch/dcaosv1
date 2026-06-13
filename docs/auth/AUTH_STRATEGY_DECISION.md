@@ -2,59 +2,76 @@
 
 ## 1. Executive Decision
 
-Recommend an external provider or OIDC-first strategy for v1, with app-managed session and tenant context inside DCA OS.
+For the DCA OS v1 MVP, use a controlled internal auth model:
 
-For the first auth phase:
+- admin-created users only
+- username/email + password login
+- no public registration
+- no self-signup
+- no Google/OIDC required for MVP
+- no Keycloak/Auth0/Clerk required for MVP
+- no magic link required for MVP
+- manual password reset by a DCA admin for MVP
+- httpOnly cookie-based app sessions
+- DB-backed sessions
+- TenantMembership remains the tenant access boundary
+- RBAC remains membership-based
+- AuditLog remains required
 
-- use external/OIDC-first for internal DCA users later
-- keep sessions and tenant context managed by the app
-- defer client portal auth to a later invite or magic-link based path
-- do not add first-party passwords in the first auth phase unless explicitly approved later
-- no provider credentials are configured now
-- no callback URLs are configured now
-- final provider vendor still requires human approval unless already chosen in a separate decision
-- implementation remains blocked
+This is the preferred strategy for both DCA/internal users and client users in the first controlled release.
 
-## 2. Rationale
+## 2. Why This Fits DCA OS v1
 
-This approach is the safest practical choice for a small team because it:
+DCA OS v1 is a small controlled business platform, not a high-scale public SaaS. The team expects a limited number of users and companies, with access managed directly by DCA. In that environment, the simplest secure-enough path is the one that keeps ownership of identity, tenant assignment, and revocation inside the app.
 
-- reduces password handling liability
-- keeps secret handling minimal
-- fits the internal DCA user path first
-- stays compatible with tenant memberships and tenant-scoped permissions
-- supports auditability without forcing a full credential system into the app
-- leaves room for a client portal later without locking the project into a risky first implementation
+This approach:
+
+- keeps the login surface understandable
+- avoids provider lock-in for the first MVP
+- matches the small-user, small-tenant operating model
+- keeps tenant membership and permission resolution explicit
+- supports a clean audit trail
+- avoids introducing a second auth model for client users
 
 ## 3. Approved / Deferred Scope
 
 Approved for planning:
 
-- identity provider integration concept
-- session design
-- tenant context design
+- controlled password auth flow
+- admin-created user lifecycle
+- DB-backed session design
+- tenant membership resolution
 - RBAC sequence
+- audit event mapping
+- password reset by admin for MVP
+- lockout and throttling planning
 
 Deferred:
 
-- runtime implementation
-- provider credentials
+- auth runtime implementation
+- schema changes
+- password hashing implementation
 - login UI
-- protected routes
-- client portal auth
+- public registration
+- Google/OIDC runtime
+- managed auth provider runtime
+- magic link runtime
+- production deployment settings
 
 ## 4. Required Future Decisions
 
-- provider choice
-- session store
+- password hashing library
+- minimum password policy
+- session table shape
+- session expiration policy
+- revocation policy
 - cookie domain
-- callback URLs
-- invitation flow
-- client portal flow
-- rate limit and CSRF timing
+- CSRF timing for the first state-changing authenticated routes
+- forced password change after admin reset
+- lockout thresholds and reset rules
 
 ## 5. Gate Impact
 
-- auth implementation remains blocked
+- auth implementation remains blocked until the implementation gate approves runtime work
 - tenant middleware remains blocked
 - DB runtime integration remains blocked until explicitly approved

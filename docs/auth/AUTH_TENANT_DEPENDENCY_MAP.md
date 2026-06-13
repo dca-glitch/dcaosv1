@@ -2,7 +2,7 @@
 
 ## 1. Executive Summary
 
-No auth implementation is included in this task.
+No auth runtime implementation is included in this task.
 
 No tenant middleware is included either. This document only maps the dependency chain after the DB-1 schema.
 
@@ -14,10 +14,11 @@ No tenant middleware is included either. This document only maps the dependency 
 4. Prisma client and data access plan
 5. auth strategy approval
 6. session strategy approval
-7. auth middleware skeleton
-8. tenant context middleware skeleton
-9. RBAC permission middleware skeleton
-10. frontend protected shell planning
+7. password security requirements
+8. auth middleware skeleton
+9. tenant context middleware skeleton
+10. RBAC permission middleware skeleton
+11. frontend protected shell planning
 
 ## 3. Data Dependencies
 
@@ -64,11 +65,12 @@ Current Phase 8 skeletons align the API type surface with this shape without mou
 
 ## 7. Open Decisions
 
-- auth provider
+- password policy
+- hashing library
 - session store
 - tenant switch UX
-- client portal auth path
 - CSRF and rate-limit timing
+- forced password change after admin reset
 
 ## 8. Recommended Next Step
 

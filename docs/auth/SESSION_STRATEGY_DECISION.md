@@ -2,51 +2,58 @@
 
 ## 1. Executive Decision
 
-Recommended v1 session strategy:
+Use an httpOnly cookie session backed by a database session table.
 
-- cookie-based app session
+Recommended MVP session strategy:
+
 - httpOnly cookies
 - secure cookies in production
-- sameSite=lax initially unless cross-site needs require adjustment
-- session store decision deferred until DB/auth implementation
-- no JWT-as-primary-session for v1 unless later approved
+- sameSite=Lax by default
+- path `/`
+- cookie domain deferred until production cookie rules are approved
+- opaque session token in the browser cookie
+- session token hash stored in the database, not the raw token
+- DB-backed session expiration and revocation
+- no JWT as the primary session mechanism for MVP
 
 ## 2. Rationale
 
 This path is preferred because it:
 
-- improves revocation options
-- lowers token exposure
-- stays compatible with tenant context
-- supports server-side permission resolution
+- keeps the session model simple
+- supports server-side revocation
+- fits membership-based authorization
+- avoids exposing long-lived bearer tokens to client scripts
+- works cleanly with tenant context and audit requirements
 
 ## 3. Cookie Policy
 
-- httpOnly
-- secure in production
-- sameSite
-- path
-- domain later for `system.digitalcubeagency.net`
-- expiration
+- `httpOnly`
+- `Secure` in production
+- `SameSite=Lax` by default
+- `Path=/`
+- domain deferred until the production domain is approved
+- short and explicit expiration
 
-## 4. CSRF Plan
+## 4. Session Store Direction
 
-- sameSite baseline
-- CSRF token for state-changing routes later if needed
-- no state-changing auth writes implemented now
+The preferred direction is a DB-backed `Session` table with:
 
-## 5. Session Store Options
+- session id
+- user id
+- session token hash
+- created at
+- expires at
+- revoked at
+- last seen at
+- optional IP address
+- optional user agent
 
-Compare:
+## 5. CSRF Plan
 
-- database session table later
-- Redis later
-- encrypted cookie only
-
-Safest v1 planning recommendation:
-
-- prefer cookie-based app sessions with a future explicit session-store decision
-- do not introduce JWT as the primary session mechanism now
+- rely on same-site cookies as the baseline
+- add explicit CSRF protection if and when state-changing authenticated routes are introduced
+- do not implement session writes now
 
 ## 6. Blocked Items
 
@@ -57,8 +64,8 @@ Safest v1 planning recommendation:
 
 ## 7. Human Decisions Needed
 
-- final session store
+- session duration
+- idle timeout
 - cookie domain
-- session expiration policy
-- logout invalidation policy
-- CSRF timing for the first state-changing authenticated routes
+- revocation policy
+- forced logout behavior after password reset or user deactivation

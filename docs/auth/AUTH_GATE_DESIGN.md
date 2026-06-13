@@ -4,24 +4,24 @@
 
 This is design only.
 
-- no auth implementation is approved yet
-- no password/session/JWT code is approved yet
+- no auth runtime implementation is approved yet
+- no password/session/JWT runtime code is approved yet
 - database schema may include identity foundations only after DB-1 approval
 - tenant context depends on auth but is not implemented yet
 
-The auth gate should define a secure, simple, extensible path for internal DCA access first, with later support for client portal users.
+The auth gate should define a secure, simple, extensible path for a controlled admin-created password login system, with later expansion only if needed.
 
 ## 2. Auth Goals
 
 The auth system should:
 
 - secure access to DCA OS
-- support internal DCA users
-- support future client portal users
+- support internal DCA users and client users under the same controlled login model
 - remain aware of multi-tenant membership
 - apply least privilege
 - support auditability
 - stay ready for future deployment hardening
+- keep the first MVP small and manageable
 
 ## 3. Non-Goals
 
@@ -34,6 +34,9 @@ This gate does not approve:
 - session storage now
 - production secrets now
 - deployment now
+- public registration now
+- magic link now
+- managed auth provider runtime now
 
 ## 4. Identity Model Alignment
 
@@ -45,30 +48,28 @@ Auth should align with the database plan:
 - auth authenticates user identity
 - tenant context authorizes workspace access
 - no direct `UserRole` for tenant roles
+- permission is system-defined in DB-1
 
 ## 5. Recommended Auth Strategy for v1
 
-Options to consider:
-
-| Option | Strengths | Risks | Fit for DCA OS v1 |
-|---|---|---|---|
-| A. Email/password first-party auth | Familiar, self-contained | Password reset, storage, throttling, more security surface | Viable, but heavier for v1 |
-| B. Magic link | Simpler, no passwords | Email dependency, token delivery, token replay controls | Good for medium-security internal tools |
-| C. OAuth/Google Workspace | Strong for internal DCA users, less credential burden | Client portal may need additional paths | Strong fit for internal-first rollout |
-| D. External auth provider | Fastest way to production-grade auth controls | Provider lock-in, setup complexity | Good if the team already wants managed identity |
-
 Recommended safest practical v1 path:
 
-- use an external identity provider or Google Workspace-style OIDC flow for internal DCA users first
-- keep the session and tenant-context model inside DCA OS
-- plan a later invite or magic-link path for client portal users if needed
+- controlled username/email + password login
+- admin-created users only
+- no public registration
+- no self-signup
+- no Google/OIDC for MVP
+- no managed auth provider for MVP
+- manual admin password reset for MVP
+- DB-backed sessions with httpOnly cookies
 
 Why this is the safest practical path:
 
-- avoids storing passwords in the first auth pass
-- fits internal DCA users first
-- keeps later client portal expansion possible
-- reduces the amount of credential handling logic needed in the app itself
+- it matches the actual operating scale
+- it keeps identity ownership inside the business
+- it keeps the implementation understandable for a small team
+- it avoids introducing provider complexity before the app needs it
+- it keeps tenant membership and audit rules central
 
 ## 6. Session Strategy
 
@@ -81,28 +82,23 @@ Design direction:
 - protect state-changing requests with CSRF-aware controls as needed
 - keep sessions short-lived enough to reduce risk
 - define logout as session invalidation
+- store the session token as a hash in the database
 
 Session storage dependency:
 
 - session storage is not implemented in this gate
-- session storage may later live in a dedicated session store or in DB-1 if the auth and database gates explicitly approve that step
+- session storage should later live in a dedicated database session table if the auth and database gates explicitly approve that step
 
 ## 7. Password / Credential Strategy
-
-If first-party auth is later chosen:
 
 - passwords must be hashed with a modern password hashing algorithm
 - no plaintext passwords
 - password reset must be rate-limited
-- email verification should be part of the later flow
 - login throttling and lockout controls should be planned
+- forced password change after admin reset is recommended
+- failed login attempts should be audited
 
-If external auth or OIDC is used:
-
-- the provider handles primary credential verification
-- DCA OS should still manage session security, tenant context, and audit events
-
-No password code is approved yet.
+No password runtime code is approved yet.
 
 ## 8. Tenant Context Resolution
 
@@ -162,8 +158,7 @@ Events to audit later:
 
 - login success/failure
 - logout
-- password reset request/complete
-- invitation sent/accepted
+- password reset by admin
 - role changed
 - membership created/disabled
 - tenant switched
@@ -174,10 +169,9 @@ Events to audit later:
 
 Future env vars should remain placeholders until needed:
 
-- session secret
+- session store config
 - cookie domain
-- auth provider credentials if any
-- email provider keys if any
+- password reset operational settings if any
 
 Rules:
 
@@ -193,7 +187,6 @@ Before implementation:
 - session strategy is approved
 - credential strategy is approved
 - rate-limit strategy is approved
-- email/provider strategy is approved if needed
 - tenant context strategy is approved
 - RBAC middleware sequence is approved
 - audit events are approved
@@ -216,14 +209,14 @@ Before implementation:
 
 Open decisions:
 
-- should v1 use external auth provider/OIDC, magic link, or a first-party login system?
-- should internal DCA users authenticate through workspace SSO or a simpler invite-based path?
-- should client portal access reuse the same auth strategy or have a constrained separate path later?
-- should sessions be backed by a database table later or by another store?
-- should CSRF protections be implemented before any state-changing authenticated endpoints?
+- what exact password policy should v1 use?
+- what hashing library should be used at implementation time?
+- what session expiration and revocation rules should be used?
+- should forced password change after admin reset be mandatory?
+- what lockout thresholds should be used for the MVP?
 
 ## 17. Recommended Next Step
 
 Safest next task:
 
-**Proceed with DB-1 schema implementation without migrations first**
+**Proceed with auth schema dependency planning and password security review before any runtime implementation**
