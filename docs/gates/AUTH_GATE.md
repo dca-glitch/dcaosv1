@@ -30,3 +30,4 @@ Current review status:
 * auth remains blocked
 * tenant middleware remains blocked
 * dependency mapping exists for later implementation planning
+* Prisma client and data access planning remain prerequisites
