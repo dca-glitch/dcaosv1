@@ -61,6 +61,26 @@ export interface TenantSelectionResult {
   message: string;
 }
 
+export type TenantAccessResolverState = "selected" | "missing" | "blocked";
+
+export interface TenantAccessResolverResult {
+  state: TenantAccessResolverState;
+  ok: false;
+  tenantId?: string;
+  tenantMembershipId?: string;
+  message: string;
+}
+
+export type AuthContextResolutionState = "attached" | "missing" | "blocked";
+
+export interface AuthContextResolutionResult {
+  state: AuthContextResolutionState;
+  ok: false;
+  requestContext: RequestContext;
+  tenantContext?: TenantRequestContext;
+  message: string;
+}
+
 export interface AuthConfigSnapshot {
   runtimeEnabled: false;
   mode: AuthMode;

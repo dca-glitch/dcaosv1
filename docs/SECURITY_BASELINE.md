@@ -16,6 +16,8 @@ Approved now:
 * controlled password auth strategy planning and skeleton work after gate review
 * auth runtime preparation planning and boundary constants before real auth implementation
 * password helper foundation and session helper foundation without runtime auth
+* auth context middleware skeleton
+* tenant access resolver skeleton
 
 Blocked now:
 
@@ -29,6 +31,7 @@ Blocked now:
 * real auth runtime before Auth Gate approval
 * runtime tenant middleware
 * runtime RBAC middleware
+* runtime tenant access resolution
 * runtime API DB integration
 * unsafe local seed execution
 

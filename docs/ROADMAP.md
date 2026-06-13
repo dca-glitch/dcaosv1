@@ -134,6 +134,19 @@ Not allowed:
 
 Goal: every API request can resolve tenant context safely.
 
+Deliverables:
+
+- auth context middleware skeleton
+- tenant access resolver skeleton
+- fail-closed protected request flow
+
+Not allowed:
+
+- no DB tenant lookup
+- no permission resolution
+- no module entitlement resolution
+- no active route protection yet
+
 ### Block 21 — Users Module MVP
 
 Goal: implement reusable users module using approved auth and tenant context.

@@ -40,6 +40,19 @@ This is a plan only. No runtime auth is implemented here.
 - `POST /api/v1/auth/change-password`
 - existing placeholder auth routes remain as non-runtime skeletons
 
+## 3C. Auth Context Middleware Skeleton
+
+- auth context middleware remains fail closed
+- tenant and permission middleware remain skeleton-only
+- no active route protection is wired yet
+
+## 3D. Tenant Access Resolver Skeleton
+
+- request-context interpretation only
+- no `TenantMembership` database lookup
+- no permission or module entitlement resolution
+- no protected-route wiring yet
+
 ## 4. Login Flow
 
 1. validate credentials
@@ -98,6 +111,7 @@ Session cookie -> session lookup -> user -> selected tenant -> TenantMembership 
 - no public registration
 - no `tenantId` from request body for protected operations
 - no cross-tenant role leaks
+- no runtime tenant lookup before gate approval
 
 ## 12. Recommended Next Block
 

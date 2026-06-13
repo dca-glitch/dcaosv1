@@ -11,6 +11,7 @@ const files = [
   "src/auth/session.service.ts",
   "src/auth/provider.ts",
   "src/auth/tenant-selection.ts",
+  "src/auth/tenant-access.resolver.ts",
   "src/auth/audit.ts",
   "src/auth/auth.constants.ts",
   "src/auth/auth.controller.ts",
@@ -116,6 +117,22 @@ for (const token of inMemorySessionStoreTokens) {
     console.error(`Auth skeleton check failed. In-memory session store token found in src/auth/session.service.ts: ${token}`);
     process.exit(1);
   }
+}
+
+const tenantAccessResolverContent = readFileSync(path.join(root, "src/auth/tenant-access.resolver.ts"), "utf8");
+const tenantAccessForbiddenTokens = ["TenantMembership", "prisma", "findUnique(", "findMany(", "count("];
+for (const token of tenantAccessForbiddenTokens) {
+  if (tenantAccessResolverContent.includes(token)) {
+    console.error(`Auth skeleton check failed. Tenant access resolver must not perform DB lookup or Prisma access: ${token}`);
+    process.exit(1);
+  }
+}
+if (
+  !tenantAccessResolverContent.includes("skeleton-only") ||
+  !tenantAccessResolverContent.includes("blocked")
+) {
+  console.error("Auth skeleton check failed. Tenant access resolver must clearly remain skeleton-only and blocked.");
+  process.exit(1);
 }
 
 console.log("Auth skeleton structural check passed.");

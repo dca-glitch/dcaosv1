@@ -4,6 +4,7 @@ export type {
   AuthConfigSnapshot,
   AuthConfigValidationResult,
   AuthContextEnvelope,
+  AuthContextResolutionResult,
   AuthProviderProfile,
   AuthProviderStatus,
   AuthStartRequest,
@@ -14,6 +15,7 @@ export type {
   SessionStoreType,
   SessionCookieConfig,
   SessionTokenResult,
+  TenantAccessResolverResult,
   TenantSelectionResult,
   TenantSelectionState
 } from "./types";
@@ -41,3 +43,8 @@ export {
   hasTenantSelection,
   requireTenantSelection
 } from "./tenant-selection";
+export {
+  getTenantAccessResolution,
+  hasTenantAccessContext,
+  requireTenantAccessResolution
+} from "./tenant-access.resolver";
