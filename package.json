@@ -11,6 +11,7 @@
   "scripts": {
     "check": "node scripts/check-workspace.mjs && npm run --workspaces --if-present check",
     "build": "npm run --workspaces --if-present build",
+    "validate": "npm run check && npm run build",
     "dev:web": "npm run -w @dca-os-v1/web dev",
     "dev:api": "npm run -w @dca-os-v1/api dev"
   },

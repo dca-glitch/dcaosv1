@@ -14,3 +14,8 @@ updates:
     labels:
       - dependencies
       - npm
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
