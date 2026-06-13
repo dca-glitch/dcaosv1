@@ -1,0 +1,184 @@
+:root {
+  color: #17202a;
+  background: #f6f8fa;
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.app-shell {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  min-height: 100vh;
+}
+
+.sidebar {
+  border-right: 1px solid #d7dde4;
+  background: #ffffff;
+  padding: 24px;
+}
+
+.brand {
+  align-items: center;
+  display: flex;
+  font-weight: 700;
+  gap: 10px;
+  margin-bottom: 32px;
+}
+
+.brand-mark {
+  align-items: center;
+  background: #17202a;
+  border-radius: 6px;
+  color: #ffffff;
+  display: inline-flex;
+  height: 36px;
+  justify-content: center;
+  width: 48px;
+}
+
+.nav-list {
+  display: grid;
+  gap: 8px;
+}
+
+.nav-list a {
+  border-radius: 6px;
+  padding: 10px 12px;
+}
+
+.nav-list a:hover {
+  background: #eef2f6;
+}
+
+.main-shell {
+  display: grid;
+  gap: 24px;
+  padding: 32px;
+}
+
+.page-section,
+.module-shell {
+  display: grid;
+  gap: 20px;
+}
+
+.section-header {
+  align-items: end;
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.section-header p {
+  color: #667085;
+  margin: 0 0 4px;
+  text-transform: capitalize;
+}
+
+.section-header h1,
+.section-header h2 {
+  margin: 0;
+}
+
+.dashboard-grid,
+.module-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.dashboard-card,
+.detail-panel,
+.state-panel,
+.table-wrap,
+.form-grid {
+  background: #ffffff;
+  border: 1px solid #d7dde4;
+  border-radius: 8px;
+  padding: 18px;
+}
+
+.dashboard-card {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.dashboard-card h3,
+.detail-panel h3,
+.state-panel h3 {
+  margin: 0 0 6px;
+}
+
+.dashboard-card p,
+.detail-panel p,
+.state-panel p {
+  color: #667085;
+  margin: 0;
+}
+
+.state-panel-error {
+  border-color: #d92d20;
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+th,
+td {
+  border-bottom: 1px solid #eaecf0;
+  padding: 10px;
+  text-align: left;
+}
+
+.form-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.form-grid label {
+  display: grid;
+  gap: 6px;
+}
+
+input,
+textarea {
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font: inherit;
+  padding: 10px;
+}
+
+@media (max-width: 760px) {
+  .app-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    border-bottom: 1px solid #d7dde4;
+    border-right: 0;
+  }
+
+  .main-shell {
+    padding: 20px;
+  }
+}

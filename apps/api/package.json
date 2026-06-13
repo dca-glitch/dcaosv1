@@ -1,0 +1,22 @@
+{
+  "name": "@dca-os-v1/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "src/server.ts",
+  "scripts": {
+    "check": "node ../../scripts/check-package.mjs api",
+    "build": "node ../../scripts/check-package.mjs api",
+    "dev": "tsx src/server.ts"
+  },
+  "dependencies": {
+    "@dca-os-v1/shared": "workspace:*",
+    "express": "^4.19.2"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.14.0",
+    "tsx": "^4.15.0",
+    "typescript": "^5.4.0"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "name": "@dca-os-v1/data",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "node ../../scripts/check-package.mjs data && npm run prisma:validate",
+    "build": "node ../../scripts/check-package.mjs data",
+    "prisma:validate": "node scripts/validate-prisma-schema.mjs"
+  },
+  "devDependencies": {
+    "prisma": "^5.15.0"
+  }
+}

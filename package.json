@@ -1,0 +1,20 @@
+{
+  "name": "dca-os-v1",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Reusable SaaS operating system foundation for Digital Cube Agency.",
+  "packageManager": "npm",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "check": "node scripts/check-workspace.mjs && npm run --workspaces --if-present check",
+    "build": "npm run --workspaces --if-present build",
+    "dev:web": "npm run -w @dca-os-v1/web dev",
+    "dev:api": "npm run -w @dca-os-v1/api dev"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
