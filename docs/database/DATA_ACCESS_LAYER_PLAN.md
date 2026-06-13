@@ -5,6 +5,7 @@
 No API runtime integration yet.
 
 The local migration exists, but the data access layer should be planned as a tenant-safe boundary before any runtime wiring happens.
+The first skeleton files now exist under `packages/data/src`.
 
 ## 2. Goals
 
@@ -68,5 +69,4 @@ Prefer small, typed result objects or domain-specific errors instead of ad hoc t
 
 ## 10. Recommended Next Step
 
-Add the skeleton data package files and keep runtime integration blocked until Prisma Client strategy is approved.
-
+Keep runtime integration blocked until API integration is approved and the repository layer is fully reviewed.
