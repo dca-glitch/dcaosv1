@@ -10,6 +10,7 @@ Approved now:
 * CI checks that do not require secrets or database services
 * placeholder environment documentation
 * local PostgreSQL dev setup planning and dev-only config
+* documentation-only auth, tenant, RBAC, bootstrap, and DB planning
 
 Blocked now:
 
@@ -21,6 +22,9 @@ Blocked now:
 * deployment
 * direct user-bound tenant roles in DB-1
 * auth implementation before Auth Gate approval
+* runtime tenant middleware
+* runtime RBAC middleware
+* runtime API DB integration
 
 Rules for contributors:
 
