@@ -18,6 +18,7 @@ Blocked now:
 * migrations
 * `db push`
 * deployment
+* direct user-bound tenant roles in DB-1
 
 Rules for contributors:
 
@@ -25,3 +26,4 @@ Rules for contributors:
 * Do not commit real `.env` files.
 * Do not wire runtime code to a real database yet.
 * Keep validation commands non-destructive.
+* Keep tenant access and audit rules append-only or review-gated in design docs before implementation.

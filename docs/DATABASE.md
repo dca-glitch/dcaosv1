@@ -6,11 +6,17 @@ This document describes the planned database direction for DCA OS v1.
 
 ## Current Status
 
-The project currently has a Prisma schema foundation.
+The project currently has a Prisma schema foundation and a separate database gate design document.
 
 No database migration has been approved yet.
 
 No application database access layer has been implemented yet.
+
+See also:
+
+- [Database Gate Design](./database/DATABASE_GATE_DESIGN.md)
+
+The canonical tenant-access term for future implementation is `TenantMembership`, even though the current foundation schema still uses `TenantUser` as placeholder wording.
 
 ## Planned Database Engine
 
@@ -46,6 +52,8 @@ Tenant-owned records should include a tenant or company boundary.
 
 Global records should be explicitly designed as global.
 
+Tenant-scoped access must be derived from membership, not direct user role assignment, in the DB-1 design.
+
 ## Soft Delete Direction
 
 Important business records should support soft deletion where appropriate.
@@ -73,3 +81,5 @@ Future blocks should add:
 - database access layer
 - repository patterns
 - tenant-aware query helpers
+
+All implementation remains blocked until the database gate design is approved.

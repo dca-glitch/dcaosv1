@@ -23,8 +23,12 @@ A membership connects:
 
 - user
 - tenant
-- role assignments
+- role assignments through membership-bound roles
 - status
+
+Canonical design name: `TenantMembership`.
+
+Current foundation schema may still use `TenantUser` wording, but DB-1 implementation should align to `TenantMembership`.
 
 ## Tenant Context
 
@@ -76,3 +80,5 @@ Future backend middleware should resolve:
 ## Tenant Safety Rule
 
 A feature is not complete until tenant ownership and tenant access rules are clear.
+
+Tenant access rules should be derived from membership, not direct user role assignment.
