@@ -201,7 +201,7 @@ async function loginWithCredentials(
   const now = new Date();
   const normalizedEmail = email.toLowerCase();
 
-  return prisma.$transaction(async (tx) => {
+  return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     const user = await tx.user.findFirst({
       where: {
         email: {
