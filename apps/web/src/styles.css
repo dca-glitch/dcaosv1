@@ -140,7 +140,8 @@ input:focus {
 .state-panel,
 .summary-panel,
 .tenant-row,
-.module-card {
+.module-card,
+.table-wrap {
   background: #ffffff;
   border: 1px solid #d7dde4;
   border-radius: 8px;
@@ -304,6 +305,33 @@ input:focus {
 .module-status-idle {
   background: #f1f4f7;
   color: #475467;
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+table {
+  border-collapse: collapse;
+  min-width: 620px;
+  width: 100%;
+}
+
+th,
+td {
+  border-bottom: 1px solid #eaecf0;
+  padding: 12px;
+  text-align: left;
+  vertical-align: top;
+}
+
+th {
+  color: #475467;
+  font-size: 0.84rem;
+}
+
+td {
+  overflow-wrap: anywhere;
 }
 
 .primary-action,

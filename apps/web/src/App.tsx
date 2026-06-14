@@ -98,6 +98,26 @@ type TenantListResponse = {
   availableTenants: TenantMembershipCard[];
 };
 
+type TenantMemberSummary = {
+  tenantMembershipId: string;
+  user: UserSummary;
+  status: string;
+  roles: string[];
+  createdAt: string;
+  updatedAt: string;
+};
+
+type TenantMembersResponse = {
+  tenant: TenantSummary;
+  currentMembership: MembershipSummary;
+  members: TenantMemberSummary[];
+};
+
+type TenantSettingsResponse = {
+  tenant: TenantSummary;
+  currentMembership: MembershipSummary;
+};
+
 type ModuleListItem = {
   key: string;
   name: string;
@@ -220,9 +240,16 @@ function getErrorMessage(response: ApiFailure): string {
 }
 
 function hasModuleAdminAccess(context: AuthContextResponse | null): boolean {
+  return hasPermission(context, "modules:manage") || hasActiveRole(context, ["owner", "admin"]);
+}
+
+function hasPermission(context: AuthContextResponse | null, permission: string): boolean {
+  return Boolean(context?.effectivePermissions.includes(permission));
+}
+
+function hasActiveRole(context: AuthContextResponse | null, roles: string[]): boolean {
   return Boolean(
-    context?.effectivePermissions.includes("modules:manage") ||
-      context?.tenantContext.roles.some((role) => role === "owner" || role === "admin")
+    context?.tenantContext.roles.some((role) => roles.includes(role))
   );
 }
 
@@ -466,12 +493,114 @@ function PlaceholderView({ title, eyebrow }: { title: string; eyebrow: string })
   );
 }
 
+function TeamView({
+  authContext,
+  teamMembers
+}: {
+  authContext: AuthContextResponse | null;
+  teamMembers: TenantMembersResponse | null;
+}) {
+  const canReadUsers = hasPermission(authContext, "users:read") || hasActiveRole(authContext, ["owner", "admin"]);
+  const members = teamMembers?.members ?? [];
+
+  return (
+    <section className="view-section" aria-labelledby="team-title">
+      <div className="section-header">
+        <div>
+          <p className="eyebrow">Team</p>
+          <h1 id="team-title">Members</h1>
+        </div>
+      </div>
+      {!canReadUsers ? (
+        <StatusNotice tone="info" message="Member visibility requires tenant user read access." />
+      ) : null}
+      {canReadUsers && members.length === 0 ? (
+        <div className="state-panel">No active members were found for this tenant.</div>
+      ) : null}
+      {canReadUsers && members.length > 0 ? (
+        <div className="table-wrap" aria-label="Tenant members">
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Roles</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {members.map((member) => (
+                <tr key={member.tenantMembershipId}>
+                  <td>{member.user.name || "Unassigned"}</td>
+                  <td>{member.user.email}</td>
+                  <td>{member.roles.join(", ") || "None"}</td>
+                  <td>{member.status}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
+function SettingsView({
+  authContext,
+  currentUser,
+  tenantSettings
+}: {
+  authContext: AuthContextResponse | null;
+  currentUser: UserSummary;
+  tenantSettings: TenantSettingsResponse | null;
+}) {
+  const canReadSettings =
+    hasPermission(authContext, "settings:read") || hasActiveRole(authContext, ["owner", "admin"]);
+
+  return (
+    <section className="view-section" aria-labelledby="settings-title">
+      <div className="section-header">
+        <div>
+          <p className="eyebrow">Settings</p>
+          <h1 id="settings-title">Settings</h1>
+        </div>
+      </div>
+      <div className="summary-grid">
+        <article className="summary-panel">
+          <span>Profile</span>
+          <strong>{currentUser.name || currentUser.email}</strong>
+          <small>{currentUser.email}</small>
+        </article>
+        <article className="summary-panel">
+          <span>Tenant</span>
+          <strong>{tenantSettings?.tenant.name ?? "Unavailable"}</strong>
+          <small>{tenantSettings?.tenant.slug ?? "read-only context"}</small>
+        </article>
+        <article className="summary-panel">
+          <span>Access</span>
+          <strong>{canReadSettings ? "Readable" : "Limited"}</strong>
+          <small>{authContext?.effectivePermissions.length ?? 0} effective permissions</small>
+        </article>
+      </div>
+      {!canReadSettings ? (
+        <StatusNotice tone="info" message="Tenant settings visibility requires settings read access." />
+      ) : null}
+      <div className="state-panel">
+        Settings are read-only in this MVP shell. Password reset, OAuth, billing, invite flow, and destructive
+        tenant changes remain out of scope.
+      </div>
+    </section>
+  );
+}
+
 export function App() {
   const [activeView, setActiveView] = useState<ViewKey>(() => normalizeHash(window.location.hash));
   const [token, setToken] = useState<string | null>(() => getInitialToken());
   const [currentUser, setCurrentUser] = useState<AuthCurrentUserResponse | null>(null);
   const [authContext, setAuthContext] = useState<AuthContextResponse | null>(null);
   const [tenantContext, setTenantContext] = useState<TenantListResponse | null>(null);
+  const [teamMembers, setTeamMembers] = useState<TenantMembersResponse | null>(null);
+  const [tenantSettings, setTenantSettings] = useState<TenantSettingsResponse | null>(null);
   const [availableModules, setAvailableModules] = useState<ModuleListItem[]>([]);
   const [tenantModules, setTenantModules] = useState<TenantModuleSummary[]>([]);
   const [loading, setLoading] = useState(Boolean(token));
@@ -498,6 +627,8 @@ export function App() {
     setCurrentUser(null);
     setAuthContext(null);
     setTenantContext(null);
+    setTeamMembers(null);
+    setTenantSettings(null);
     setTenantModules([]);
   }, []);
 
@@ -512,13 +643,23 @@ export function App() {
       setAppMessage(null);
 
       try {
-        const [meResponse, contextResponse, tenantsResponse, modulesResponse, tenantModulesResponse] =
+        const [
+          meResponse,
+          contextResponse,
+          tenantsResponse,
+          modulesResponse,
+          tenantModulesResponse,
+          teamMembersResponse,
+          tenantSettingsResponse
+        ] =
           await Promise.all([
             apiRequest<AuthCurrentUserResponse>("/auth/me", { token: nextToken }),
             apiRequest<AuthContextResponse>("/auth/context", { token: nextToken }),
             apiRequest<TenantListResponse>("/tenants", { token: nextToken }),
             apiRequest<ModuleRegistryResponse>("/modules"),
-            apiRequest<TenantModulesResponse>("/modules/current", { token: nextToken })
+            apiRequest<TenantModulesResponse>("/modules/current", { token: nextToken }),
+            apiRequest<TenantMembersResponse>("/tenants/current/members", { token: nextToken }),
+            apiRequest<TenantSettingsResponse>("/tenants/current/settings", { token: nextToken })
           ]);
 
         if (!meResponse.ok) {
@@ -532,6 +673,8 @@ export function App() {
         setTenantContext(tenantsResponse.ok ? tenantsResponse.data : null);
         setAvailableModules(modulesResponse.ok ? modulesResponse.data.modules : []);
         setTenantModules(tenantModulesResponse.ok ? tenantModulesResponse.data.modules : []);
+        setTeamMembers(teamMembersResponse.ok ? teamMembersResponse.data : null);
+        setTenantSettings(tenantSettingsResponse.ok ? tenantSettingsResponse.data : null);
 
         if (!contextResponse.ok || !tenantsResponse.ok || !tenantModulesResponse.ok) {
           setAppMessage({
@@ -695,9 +838,15 @@ export function App() {
         />
       ) : null}
       {!loading && activeView === "settings" ? (
-        <PlaceholderView eyebrow="Settings" title="Settings" />
+        <SettingsView
+          authContext={authContext}
+          currentUser={currentUser.user}
+          tenantSettings={tenantSettings}
+        />
       ) : null}
-      {!loading && activeView === "team" ? <PlaceholderView eyebrow="Team" title="Team" /> : null}
+      {!loading && activeView === "team" ? (
+        <TeamView authContext={authContext} teamMembers={teamMembers} />
+      ) : null}
     </AppLayout>
   );
 }
