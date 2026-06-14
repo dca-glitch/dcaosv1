@@ -1,3 +1,10 @@
 export { createAuthMiddleware, requireAuth } from "./auth.middleware";
 export { createTenantMiddleware, requireTenant } from "./tenant.middleware";
-export { createPermissionMiddleware, requirePermission } from "./permission.middleware";
+export {
+  createPermissionMiddleware,
+  createRoleMiddleware,
+  requirePermission,
+  requireRole,
+  resolveActiveRoles,
+  resolveEffectivePermissions
+} from "./authorization.middleware";
