@@ -38,7 +38,7 @@ Status meanings:
 | R-019 | Frontend token storage needs final decision | Frontend/session | Partial | Session storage MVP documented | Browser storage risks remain | Token theft via XSS | Medium | Reassess token storage; prefer secure HttpOnly cookies if feasible | Security/Engineering | P1 | No | Yes |
 | R-020 | Database least privilege not verified | Database | Not verified | Local dev DB user only | No staging/prod role policy evidence | Excess DB impact after compromise | Medium | Create least-privilege staging/prod DB roles | Ops | P1 | Yes | Yes |
 | R-021 | Security headers/CSP/HSTS not verified | Deployment | Not verified | Reverse proxy plan only | No deployed headers evidence | XSS/clickjacking/session risk | Medium | Configure TLS, HSTS after domain, CSP, frame protections | Ops/Security | P1 | Yes | Yes |
-| R-022 | Build/runtime parity not validated on VPS | Deployment | Not verified | Local build passes | No VPS artifact/start strategy evidence | Staging drift | High | Add production start strategy and dry run | Engineering/Ops | P1 | Yes | Yes |
+| R-022 | Build/runtime parity not validated on VPS | Deployment | Partial | API compiled-output start script exists; local build passes | No VPS supervisor/start evidence yet | Staging drift | High | Dry-run compiled API start under approved VPS supervisor | Engineering/Ops | P1 | Yes | Yes |
 
 ## Medium
 

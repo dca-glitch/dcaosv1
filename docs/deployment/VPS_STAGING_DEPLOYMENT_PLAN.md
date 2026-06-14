@@ -27,7 +27,8 @@ The first staging target should prove that the API, web build, PostgreSQL connec
 - The web app is React/Vite and defaults to same-origin `/api/v1`.
 - The preferred staging shape is same-origin HTTPS through a reverse proxy.
 - No API CORS runtime is implemented yet.
-- The API production start strategy is not formalized yet; `tsx` dev start is local/dev only.
+- The API production-like repo strategy is compiled JavaScript started with Node.
+- The VPS still needs an approved external process supervisor/restart policy.
 - PostgreSQL staging must be separate from production and must contain no production data.
 - Prisma migrations are the only allowed schema-change path; `prisma db push` is forbidden for staging and production.
 
@@ -115,44 +116,72 @@ Staging smoke must use:
 
 Do not use `system.digitalcubeagency.net` for staging smoke unless the owner explicitly approves that host as the staging target.
 
-## Build Commands
+## Staging Host Build Commands
 
 Install and validate:
 
-```powershell
-npm.cmd ci
-npm.cmd run validate
-npm.cmd run -w @dca-os-v1/data prisma:validate
+```bash
+npm ci
+npm run validate
+npm run -w @dca-os-v1/data prisma:validate
 ```
 
 Build web output:
 
-```powershell
-npm.cmd run -w @dca-os-v1/web build
+```bash
+npm run -w @dca-os-v1/web build
 ```
 
-Build API type surface:
+Build API compiled output:
 
-```powershell
-npm.cmd run -w @dca-os-v1/api build
+```bash
+npm run -w @dca-os-v1/api build
+```
+
+The compiled API entry is:
+
+```text
+apps/api/dist/apps/api/src/server.js
 ```
 
 ## Start Commands
 
-Local development:
+Local Windows development:
 
 ```powershell
 npm.cmd run dev:api
 npm.cmd run dev:web
 ```
 
-Production-like API start is not yet formalized. The current API command is TypeScript/`tsx` based and suitable for local/dev validation only:
+Production-like API start after build:
 
-```powershell
-npm.cmd run -w @dca-os-v1/api dev
+```bash
+npm run -w @dca-os-v1/api start
 ```
 
-Before VPS deployment, add an approved production start strategy, such as a compiled API output or supervised Node process that does not depend on development-only assumptions.
+The staging VPS should run that command under an approved process supervisor/restart mechanism. Do not use `npm run -w @dca-os-v1/api dev` for staging runtime; it is TypeScript/`tsx` based and suitable for local development only.
+
+## Dry-Run Command Plan
+
+Run these from the repo root after pulling the approved commit on the staging host. This is a plan only; do not run on a VPS without explicit approval.
+
+```bash
+npm ci
+npm run validate
+npm run -w @dca-os-v1/data prisma:validate
+npm run -w @dca-os-v1/web build
+npm run -w @dca-os-v1/api build
+npm run -w @dca-os-v1/api start
+```
+
+After the API and web are served through the approved staging reverse proxy:
+
+```bash
+export MVP_SMOKE_API_BASE_URL="https://staging.system.digitalcubeagency.net/api/v1"
+npm run smoke:mvp:staging
+```
+
+Set staging-only smoke credentials in the shell before running smoke. Do not print passwords, tokens, cookies, auth headers, password hashes, session token hashes, or full database URLs.
 
 ## Migration Policy
 
@@ -185,13 +214,13 @@ The local smoke script intentionally refuses non-local API hosts.
 
 Staging API smoke, after staging-only credentials and the staging host are approved:
 
-```powershell
-$env:MVP_SMOKE_API_BASE_URL="https://staging.system.digitalcubeagency.net/api/v1"
-$env:AUTH_SEED_TEST_EMAIL="<staging-test-email>"
-$env:AUTH_SEED_TEST_PASSWORD="<staging-test-password>"
-$env:AUTH_SEED_TESTER_EMAIL="<staging-tester-email>"
-$env:AUTH_SEED_TESTER_PASSWORD="<staging-tester-password>"
-npm.cmd run smoke:mvp:staging
+```bash
+export MVP_SMOKE_API_BASE_URL="https://staging.system.digitalcubeagency.net/api/v1"
+export AUTH_SEED_TEST_EMAIL="<staging-test-email>"
+export AUTH_SEED_TEST_PASSWORD="<staging-test-password>"
+export AUTH_SEED_TESTER_EMAIL="<staging-tester-email>"
+export AUTH_SEED_TESTER_PASSWORD="<staging-tester-password>"
+npm run smoke:mvp:staging
 ```
 
 The staging smoke command refuses unknown hosts, non-HTTPS URLs, missing explicit `MVP_SMOKE_API_BASE_URL`, and API paths other than `/api/v1`.
@@ -229,6 +258,8 @@ The staging smoke command refuses unknown hosts, non-HTTPS URLs, missing explici
 - [ ] Staging host/domain confirmation.
 - [ ] Env var presence check by name only.
 - [ ] Build and validation logs.
+- [ ] API compiled-output path exists.
+- [ ] Process supervisor/restart policy recorded.
 - [ ] Migration command and result, if separately approved.
 - [ ] Health endpoint result.
 - [ ] Staging smoke result with secrets and tokens masked.
@@ -241,6 +272,7 @@ The staging smoke command refuses unknown hosts, non-HTTPS URLs, missing explici
 
 - Keep the previous working application revision available.
 - Keep database backups before any staging or production migration.
+- Record the previous process supervisor target before switching versions.
 - If application smoke fails before migration, roll back application revision only.
 - If migration smoke fails, stop and review before any further migration attempt.
 - Do not stack fixes directly on the VPS without committing and validating them locally first.

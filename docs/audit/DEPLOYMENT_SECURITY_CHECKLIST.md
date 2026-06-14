@@ -4,6 +4,8 @@
 
 - [ ] Repo is clean and synced.
 - [ ] CI is green.
+- [x] Production-like API build/start scripts are present.
+- [ ] VPS process supervisor/restart policy is approved.
 - [ ] Required env vars are prepared by name only in docs.
 - [ ] Staging DB is created.
 - [ ] Staging DB contains no production data.

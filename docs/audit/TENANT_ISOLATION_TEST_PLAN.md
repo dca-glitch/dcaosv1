@@ -28,7 +28,11 @@
 | Cannot access Tenant B members from Tenant A | Login Tenant A user; attempt member detail using Tenant B membership ID | 404 or 403 | Response must not reveal Tenant B name, user email, or ID validity. |
 | Cannot switch to tenant without membership | Login Tenant A user; POST Tenant B membership ID to `/tenants/current/switch` | 403 | Generic forbidden only. |
 | Cannot enable modules for unauthorized tenant | Login non-admin Tenant A user; call module enable | 403 | No module state mutation. |
+| Cannot enable or disable modules without permission | Login user without `modules:manage`; call module enable and disable | 403 | No module state mutation. |
+| Invalid module key returns standardized error | Login admin; call enable/disable/detail for unknown module key | 404 or generic standardized error | No stack trace or internal module registry details. |
+| Disabled module does not grant feature access | Disable module in Tenant A; call any protected feature route when added | 403/404 depending route | No disabled module data or action succeeds. |
 | Cannot read settings for unauthorized tenant | Login non-admin without `settings:read`; call settings | 403 | No tenant settings fields. |
+| Missing active tenant context is denied | Login user/session with no active membership; call tenant-aware routes | 403 | No tenant data returned. |
 | Cannot infer tenant data through errors | Use random and valid cross-tenant IDs | 403/404 generic | No existence oracle beyond allowed route behavior. |
 | Session context updates after tenant switch | Login multi-tenant user; switch membership; call `/auth/me`, `/auth/context`, `/tenants/current`, `/modules/current` | 200 | Active tenant and roles update consistently. |
 | Reused token denied after logout | Login, logout, reuse token on protected routes | 401 | No stale session access. |

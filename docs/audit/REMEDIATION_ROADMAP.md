@@ -4,7 +4,7 @@
 
 | Item | Risk addressed | Recommended implementation | Validation/smoke needed | Complexity | Dependency | Suggested phase |
 | --- | --- | --- | --- | --- | --- | --- |
-| Production-like API start strategy | VPS runtime drift | Add compiled or supervised start command/process | `npm run validate`, API health | Medium | Deployment target | Deploy Prep 1 |
+| VPS API supervisor policy | VPS runtime drift | Run compiled API start under an approved process supervisor/restart policy | `npm run validate`, API health | Medium | Deployment target | Deploy Prep 1 |
 | Staging env contract | Secret/config mistakes | Finalize env names and host secret handling | Env presence check without values | Small | VPS host | Deploy Prep 1 |
 | Staging DB safety | Wrong DB target | Create staging DB and least-privilege user | Prisma validate against staging only after approval | Medium | DB host | Deploy Prep 2 |
 | Migration runbook | Schema drift/data loss | Use migrations only; no `db push` | Staging migration dry run | Medium | Backup plan | Deploy Prep 2 |

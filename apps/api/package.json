@@ -7,8 +7,9 @@
   "scripts": {
     "check": "node ../../scripts/check-package.mjs api && npm run check:auth-skeleton && tsc --noEmit",
     "check:auth-skeleton": "node scripts/check-auth-skeleton.mjs",
-    "build": "tsc --noEmit",
-    "dev": "tsx src/server.ts"
+    "build": "node scripts/build-api.mjs",
+    "dev": "tsx src/server.ts",
+    "start": "node dist/apps/api/src/server.js"
   },
   "dependencies": {
     "@dca-os-v1/shared": "0.1.0",

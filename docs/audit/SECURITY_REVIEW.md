@@ -160,7 +160,7 @@ This review uses OWASP ASVS 5.0.0, OWASP Top 10 2025 awareness, OWASP Authentica
 
 ## 18. Recommended Remediation Roadmap
 
-- Must fix before VPS staging: staging env contract, production start strategy, staging DB safety, migration runbook, HTTPS/proxy plan, and staging smoke execution plan.
+- Must fix before VPS staging: staging env contract, VPS process supervisor/restart policy, staging DB safety, migration runbook, HTTPS/proxy plan, and staging smoke execution plan.
 - Must fix before client access: tenant isolation negative tests, external auth/session review, staging/client browser QA evidence, backup/restore test, admin audit logging, security headers/CSP, dependency review.
 - Should fix before beta: onboarding, password reset/admin recovery, monitoring, incident response, privacy retention.
 - Future hardening: SSO/OAuth if required, MFA, deeper module isolation, automated security tests.
