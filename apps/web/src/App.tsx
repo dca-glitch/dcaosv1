@@ -247,8 +247,7 @@ function storeToken(token: string | null): void {
 }
 
 function replaceHash(hash: string): void {
-  const nextUrl = `${window.location.pathname}${window.location.search}${hash}`;
-  window.history.replaceState(null, "", nextUrl);
+  window.history.replaceState(null, "", `/${hash}`);
   window.dispatchEvent(new HashChangeEvent("hashchange"));
 }
 
