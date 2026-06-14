@@ -1,13 +1,36 @@
+type AppLayoutNavigationItem = {
+  view: string;
+  label: string;
+  section: string;
+};
+
+type AppLayoutTenant = {
+  name: string;
+  slug: string;
+} | null;
+
+type AppLayoutUser = {
+  email: string;
+  name?: string | null;
+};
+
 type AppLayoutProps = {
-  navigationItems: Array<{
-    href: string;
-    label: string;
-    section: string;
-  }>;
+  activeView: string;
+  currentTenant: AppLayoutTenant;
+  navigationItems: AppLayoutNavigationItem[];
+  onLogout: () => void;
+  user: AppLayoutUser;
   children: React.ReactNode;
 };
 
-export function AppLayout({ navigationItems, children }: AppLayoutProps) {
+export function AppLayout({
+  activeView,
+  currentTenant,
+  navigationItems,
+  onLogout,
+  user,
+  children
+}: AppLayoutProps) {
   return (
     <div className="app-shell">
       <aside className="sidebar" aria-label="Primary navigation">
@@ -17,14 +40,27 @@ export function AppLayout({ navigationItems, children }: AppLayoutProps) {
         </div>
         <nav className="nav-list">
           {navigationItems.map((item) => (
-            <a key={item.href} href={item.href} data-section={item.section}>
+            <a
+              aria-current={activeView === item.view ? "page" : undefined}
+              data-section={item.section}
+              href={`#/${item.view}`}
+              key={item.view}
+            >
               {item.label}
             </a>
           ))}
         </nav>
         <div className="tenant-switch-placeholder">
           <span>Current tenant</span>
-          <strong>Selection placeholder</strong>
+          <strong>{currentTenant?.name ?? "No tenant selected"}</strong>
+          <small>{currentTenant?.slug ?? "missing context"}</small>
+        </div>
+        <div className="user-panel">
+          <span>{user.name || user.email}</span>
+          <small>{user.email}</small>
+          <button className="secondary-action" onClick={onLogout} type="button">
+            Logout
+          </button>
         </div>
       </aside>
       <main className="main-shell">{children}</main>
