@@ -31,6 +31,8 @@ COPY packages/shared/package.json packages/shared/package.json
 
 RUN npm ci --omit=dev
 
+COPY --from=build /app/node_modules/.prisma node_modules/.prisma
+COPY --from=build /app/node_modules/@prisma/client node_modules/@prisma/client
 COPY --from=build /app/apps/api/dist apps/api/dist
 COPY --from=build /app/apps/web/dist apps/web/dist
 COPY --from=build /app/packages/data/prisma packages/data/prisma
