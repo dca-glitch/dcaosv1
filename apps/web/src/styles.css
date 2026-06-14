@@ -141,6 +141,7 @@ input:focus {
 .summary-panel,
 .tenant-row,
 .module-card,
+.module-placeholder-panel,
 .table-wrap {
   background: #ffffff;
   border: 1px solid #d7dde4;
@@ -253,14 +254,16 @@ input:focus {
 .module-card {
   display: grid;
   gap: 18px;
-  grid-template-rows: 1fr auto auto;
+  grid-template-rows: 1fr auto auto auto;
   min-height: 270px;
   padding: 18px;
 }
 
 .module-card h2,
 .module-card p,
-.module-card dl {
+.module-card dl,
+.module-placeholder-panel h2,
+.module-placeholder-panel p {
   margin: 0;
 }
 
@@ -305,6 +308,21 @@ input:focus {
 .module-status-idle {
   background: #f1f4f7;
   color: #475467;
+}
+
+.module-link {
+  color: #145463;
+  font-weight: 700;
+}
+
+.module-placeholder-panel {
+  display: grid;
+  gap: 8px;
+  padding: 18px;
+}
+
+.module-placeholder-panel p {
+  color: #667085;
 }
 
 .table-wrap {

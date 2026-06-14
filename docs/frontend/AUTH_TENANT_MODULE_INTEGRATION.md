@@ -30,8 +30,16 @@
 - Dashboard shows the authenticated user, current tenant, active roles, and permission count.
 - Tenants lists available tenant memberships and switches the current session membership.
 - Modules shows the global module catalog and current tenant enablement.
+- Module cards open safe placeholder panels for future module screens.
 - Team lists current tenant members when the user has `users:read`.
 - Settings shows user profile context and tenant settings summary when the user has `settings:read`.
+
+## Smoke
+
+- `npm run smoke:mvp:local` runs the local API MVP smoke when the API is already running.
+- The command requires `AUTH_SEED_TEST_EMAIL` and `AUTH_SEED_TEST_PASSWORD` in the local shell.
+- Optional `AUTH_SEED_TESTER_EMAIL` and `AUTH_SEED_TESTER_PASSWORD` verify forbidden module mutation for a low-privilege user.
+- The smoke output is pass/fail only and must not print passwords, tokens, cookies, auth headers, password hashes, or session token hashes.
 
 ## Out Of Scope
 

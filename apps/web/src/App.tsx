@@ -239,6 +239,10 @@ function getErrorMessage(response: ApiFailure): string {
   return response.error.message || "Request could not be completed.";
 }
 
+function isUnauthorized(response: ApiResponse<unknown>): response is ApiFailure {
+  return !response.ok && response.error.code === "AUTH_UNAUTHORIZED";
+}
+
 function hasModuleAdminAccess(context: AuthContextResponse | null): boolean {
   return hasPermission(context, "modules:manage") || hasActiveRole(context, ["owner", "admin"]);
 }
@@ -414,12 +418,14 @@ function ModuleRegistryView({
   tenantModules,
   canManageModules,
   moduleActionKey,
+  selectedModuleKey,
   onSetModuleEnabled
 }: {
   availableModules: ModuleListItem[];
   tenantModules: TenantModuleSummary[];
   canManageModules: boolean;
   moduleActionKey: string | null;
+  selectedModuleKey: string | null;
   onSetModuleEnabled: (moduleKey: string, enabled: boolean) => Promise<void>;
 }) {
   const tenantModuleByKey = useMemo(
@@ -468,12 +474,25 @@ function ModuleRegistryView({
               >
                 {enabled ? "Disable" : "Enable"}
               </button>
+              <a className="module-link" href={`#/modules/${moduleItem.key}`}>
+                Open placeholder
+              </a>
             </article>
           );
         })}
       </div>
+      {selectedModuleKey ? (
+        <div className="module-placeholder-panel" aria-live="polite">
+          <p className="eyebrow">Module Placeholder</p>
+          <h2>{selectedModuleKey}</h2>
+          <p>
+            This module has a reserved route placeholder only. Finance Lite, marketplace loading, billing,
+            and dynamic plugin mounting are intentionally out of scope for this MVP shell.
+          </p>
+        </div>
+      ) : null}
       {!canManageModules ? (
-        <StatusNotice tone="info" message="Module actions require an owner or admin tenant role." />
+        <StatusNotice tone="info" message="Read-only access. Module actions require an owner or admin tenant role." />
       ) : null}
     </section>
   );
@@ -595,6 +614,9 @@ function SettingsView({
 
 export function App() {
   const [activeView, setActiveView] = useState<ViewKey>(() => normalizeHash(window.location.hash));
+  const [selectedModuleKey, setSelectedModuleKey] = useState<string | null>(() =>
+    window.location.hash.startsWith("#/modules/") ? window.location.hash.replace("#/modules/", "") : null
+  );
   const [token, setToken] = useState<string | null>(() => getInitialToken());
   const [currentUser, setCurrentUser] = useState<AuthCurrentUserResponse | null>(null);
   const [authContext, setAuthContext] = useState<AuthContextResponse | null>(null);
@@ -615,6 +637,9 @@ export function App() {
   useEffect(() => {
     function handleHashChange() {
       setActiveView(normalizeHash(window.location.hash));
+      setSelectedModuleKey(
+        window.location.hash.startsWith("#/modules/") ? window.location.hash.replace("#/modules/", "") : null
+      );
     }
 
     window.addEventListener("hashchange", handleHashChange);
@@ -665,6 +690,12 @@ export function App() {
         if (!meResponse.ok) {
           clearSession();
           setLoginError(getErrorMessage(meResponse));
+          return;
+        }
+
+        if (isUnauthorized(contextResponse) || isUnauthorized(tenantsResponse) || isUnauthorized(tenantModulesResponse)) {
+          clearSession();
+          setLoginError("Your session expired. Please sign in again.");
           return;
         }
 
@@ -761,6 +792,12 @@ export function App() {
       });
 
       if (!response.ok) {
+        if (response.error.code === "AUTH_UNAUTHORIZED") {
+          clearSession();
+          setLoginError("Your session expired. Please sign in again.");
+          return;
+        }
+
         setAppMessage({ tone: "error", text: getErrorMessage(response) });
         return;
       }
@@ -788,6 +825,12 @@ export function App() {
       });
 
       if (!response.ok) {
+        if (response.error.code === "AUTH_UNAUTHORIZED") {
+          clearSession();
+          setLoginError("Your session expired. Please sign in again.");
+          return;
+        }
+
         setAppMessage({ tone: "error", text: getErrorMessage(response) });
         return;
       }
@@ -834,6 +877,7 @@ export function App() {
           canManageModules={canManageModules}
           moduleActionKey={moduleActionKey}
           onSetModuleEnabled={handleSetModuleEnabled}
+          selectedModuleKey={selectedModuleKey}
           tenantModules={tenantModules}
         />
       ) : null}

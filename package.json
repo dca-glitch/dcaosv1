@@ -13,7 +13,8 @@
     "build": "npm run --workspaces --if-present build",
     "validate": "npm run check && npm run build",
     "dev:web": "npm run -w @dca-os-v1/web dev",
-    "dev:api": "npm run -w @dca-os-v1/api dev"
+    "dev:api": "npm run -w @dca-os-v1/api dev",
+    "smoke:mvp:local": "node scripts/smoke-mvp-local.mjs"
   },
   "engines": {
     "node": ">=20"
