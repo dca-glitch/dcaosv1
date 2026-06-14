@@ -5,6 +5,8 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "/api/v1";
 const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY ?? "";
 const SESSION_STORAGE_KEY = "dcaosv1.authToken";
 const TURNSTILE_SCRIPT_URL = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
+const LOGIN_HASH = "#/login";
+const DASHBOARD_HASH = "#/dashboard";
 
 type ApiSuccess<T> = {
   ok: true;
@@ -172,7 +174,6 @@ type TurnstileWidgetHandle = {
   ) => string;
   reset: (widgetId?: string) => void;
   remove: (widgetId?: string) => void;
-  ready: (callback: () => void) => void;
 };
 
 declare global {
@@ -201,13 +202,21 @@ function storeToken(token: string | null): void {
   try {
     if (token) {
       window.sessionStorage.setItem(SESSION_STORAGE_KEY, token);
+      window.localStorage.removeItem(SESSION_STORAGE_KEY);
       return;
     }
 
     window.sessionStorage.removeItem(SESSION_STORAGE_KEY);
+    window.localStorage.removeItem(SESSION_STORAGE_KEY);
   } catch {
     // In-memory state still handles the current tab when sessionStorage is unavailable.
   }
+}
+
+function replaceHash(hash: string): void {
+  const nextUrl = `${window.location.pathname}${window.location.search}${hash}`;
+  window.history.replaceState(null, "", nextUrl);
+  window.dispatchEvent(new HashChangeEvent("hashchange"));
 }
 
 function normalizeHash(hash: string): ViewKey {
@@ -317,15 +326,19 @@ function TurnstileWidget({
     let cancelled = false;
     let script = document.querySelector<HTMLScriptElement>("script[data-turnstile-script='true']");
 
+    const removeWidget = () => {
+      if (widgetIdRef.current && window.turnstile) {
+        window.turnstile.remove(widgetIdRef.current);
+        widgetIdRef.current = null;
+      }
+    };
+
     const renderWidget = () => {
       if (cancelled || !containerRef.current || !window.turnstile) {
         return;
       }
 
-      if (widgetIdRef.current) {
-        window.turnstile.remove(widgetIdRef.current);
-        widgetIdRef.current = null;
-      }
+      removeWidget();
 
       containerRef.current.innerHTML = "";
       widgetIdRef.current = window.turnstile.render(containerRef.current, {
@@ -339,33 +352,55 @@ function TurnstileWidget({
       });
     };
 
+    const handleScriptLoad = () => {
+      if (script) {
+        script.dataset.turnstileLoaded = "true";
+      }
+      renderWidget();
+    };
+
+    const handleScriptError = () => {
+      if (!cancelled) {
+        onTokenChange(null);
+      }
+    };
+
     const ensureScript = () => {
       if (!script) {
         script = document.createElement("script");
-        script.async = true;
-        script.defer = true;
+        script.async = false;
+        script.defer = false;
         script.src = TURNSTILE_SCRIPT_URL;
         script.dataset.turnstileScript = "true";
         document.head.appendChild(script);
+      } else {
+        script.async = false;
+        script.defer = false;
+        script.removeAttribute("async");
+        script.removeAttribute("defer");
       }
 
       if (window.turnstile) {
-        window.turnstile.ready(renderWidget);
+        renderWidget();
         return;
       }
 
-      script.addEventListener("load", renderWidget, { once: true });
+      if (script.dataset.turnstileLoaded === "true") {
+        renderWidget();
+        return;
+      }
+
+      script.addEventListener("load", handleScriptLoad);
+      script.addEventListener("error", handleScriptError);
     };
 
     ensureScript();
 
     return () => {
       cancelled = true;
-      script?.removeEventListener("load", renderWidget);
-      if (widgetIdRef.current && window.turnstile) {
-        window.turnstile.remove(widgetIdRef.current);
-        widgetIdRef.current = null;
-      }
+      script?.removeEventListener("load", handleScriptLoad);
+      script?.removeEventListener("error", handleScriptError);
+      removeWidget();
     };
   }, [onTokenChange, resetSignal, siteKey]);
 
@@ -773,6 +808,11 @@ export function App() {
   );
   const [moduleActionKey, setModuleActionKey] = useState<string | null>(null);
   const [switchingTenantMembershipId, setSwitchingTenantMembershipId] = useState<string | null>(null);
+  const tokenRef = useRef<string | null>(token);
+
+  useEffect(() => {
+    tokenRef.current = token;
+  }, [token]);
 
   useEffect(() => {
     function handleHashChange() {
@@ -786,7 +826,13 @@ export function App() {
     return () => window.removeEventListener("hashchange", handleHashChange);
   }, []);
 
+  const redirectToLogin = useCallback(() => {
+    setSelectedModuleKey(null);
+    replaceHash(LOGIN_HASH);
+  }, []);
+
   const clearSession = useCallback(() => {
+    tokenRef.current = null;
     setToken(null);
     storeToken(null);
     setCurrentUser(null);
@@ -795,12 +841,15 @@ export function App() {
     setTeamMembers(null);
     setTenantSettings(null);
     setTenantModules([]);
+    setAvailableModules([]);
+    setLoading(false);
   }, []);
 
   const loadProtectedState = useCallback(
     async (nextToken = token) => {
       if (!nextToken) {
         clearSession();
+        redirectToLogin();
         return;
       }
 
@@ -829,13 +878,19 @@ export function App() {
 
         if (!meResponse.ok) {
           clearSession();
+          redirectToLogin();
           setLoginError(getErrorMessage(meResponse));
           return;
         }
 
         if (isUnauthorized(contextResponse) || isUnauthorized(tenantsResponse) || isUnauthorized(tenantModulesResponse)) {
           clearSession();
+          redirectToLogin();
           setLoginError("Your session expired. Please sign in again.");
+          return;
+        }
+
+        if (tokenRef.current !== nextToken) {
           return;
         }
 
@@ -859,7 +914,7 @@ export function App() {
         setLoading(false);
       }
     },
-    [clearSession, token]
+    [clearSession, redirectToLogin, token]
   );
 
   useEffect(() => {
@@ -882,6 +937,7 @@ export function App() {
       }
 
       const nextToken = response.data.session.token;
+      tokenRef.current = nextToken;
       setToken(nextToken);
       storeToken(nextToken);
       setCurrentUser({
@@ -894,7 +950,7 @@ export function App() {
         },
         tenantContext: response.data.tenantContext
       });
-      window.location.hash = "#/dashboard";
+      replaceHash(DASHBOARD_HASH);
       await loadProtectedState(nextToken);
     } catch (error) {
       setLoginError(maskError(error));
@@ -906,6 +962,7 @@ export function App() {
   async function handleLogout() {
     if (!token) {
       clearSession();
+      redirectToLogin();
       return;
     }
 
@@ -913,7 +970,7 @@ export function App() {
       await apiRequest("/auth/logout", { method: "POST", token });
     } finally {
       clearSession();
-      window.location.hash = "#/dashboard";
+      redirectToLogin();
     }
   }
 
@@ -934,6 +991,7 @@ export function App() {
       if (!response.ok) {
         if (response.error.code === "AUTH_UNAUTHORIZED") {
           clearSession();
+          redirectToLogin();
           setLoginError("Your session expired. Please sign in again.");
           return;
         }
@@ -967,6 +1025,7 @@ export function App() {
       if (!response.ok) {
         if (response.error.code === "AUTH_UNAUTHORIZED") {
           clearSession();
+          redirectToLogin();
           setLoginError("Your session expired. Please sign in again.");
           return;
         }
