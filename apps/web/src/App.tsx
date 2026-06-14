@@ -1,8 +1,10 @@
-import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AppLayout } from "./components/AppLayout";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "/api/v1";
+const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY ?? "";
 const SESSION_STORAGE_KEY = "dcaosv1.authToken";
+const TURNSTILE_SCRIPT_URL = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
 
 type ApiSuccess<T> = {
   ok: true;
@@ -149,6 +151,36 @@ type RequestOptions = {
   token?: string | null;
 };
 
+type AuthLoginRequest = {
+  email: string;
+  password: string;
+  turnstileToken?: string;
+};
+
+type TurnstileWidgetHandle = {
+  render: (
+    container: string | HTMLElement,
+    options: {
+      sitekey: string;
+      callback?: (token: string) => void;
+      "error-callback"?: () => void;
+      "expired-callback"?: () => void;
+      "timeout-callback"?: () => void;
+      theme?: "light" | "dark" | "auto";
+      appearance?: "always" | "execute" | "interaction-only";
+    }
+  ) => string;
+  reset: (widgetId?: string) => void;
+  remove: (widgetId?: string) => void;
+  ready: (callback: () => void) => void;
+};
+
+declare global {
+  interface Window {
+    turnstile?: TurnstileWidgetHandle;
+  }
+}
+
 const navigationItems: Array<{ view: ViewKey; label: string; section: string }> = [
   { view: "dashboard", label: "Dashboard", section: "protected" },
   { view: "modules", label: "Modules", section: "protected" },
@@ -265,21 +297,117 @@ function StatusNotice({ tone, message }: { tone: "info" | "error" | "success"; m
   );
 }
 
+function TurnstileWidget({
+  siteKey,
+  resetSignal,
+  onTokenChange
+}: {
+  siteKey: string;
+  resetSignal: number;
+  onTokenChange: (token: string | null) => void;
+}) {
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const widgetIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!siteKey || !containerRef.current) {
+      return;
+    }
+
+    let cancelled = false;
+    let script = document.querySelector<HTMLScriptElement>("script[data-turnstile-script='true']");
+
+    const renderWidget = () => {
+      if (cancelled || !containerRef.current || !window.turnstile) {
+        return;
+      }
+
+      if (widgetIdRef.current) {
+        window.turnstile.remove(widgetIdRef.current);
+        widgetIdRef.current = null;
+      }
+
+      containerRef.current.innerHTML = "";
+      widgetIdRef.current = window.turnstile.render(containerRef.current, {
+        sitekey: siteKey,
+        theme: "auto",
+        appearance: "always",
+        callback: (token: string) => onTokenChange(token),
+        "error-callback": () => onTokenChange(null),
+        "expired-callback": () => onTokenChange(null),
+        "timeout-callback": () => onTokenChange(null)
+      });
+    };
+
+    const ensureScript = () => {
+      if (!script) {
+        script = document.createElement("script");
+        script.async = true;
+        script.defer = true;
+        script.src = TURNSTILE_SCRIPT_URL;
+        script.dataset.turnstileScript = "true";
+        document.head.appendChild(script);
+      }
+
+      if (window.turnstile) {
+        window.turnstile.ready(renderWidget);
+        return;
+      }
+
+      script.addEventListener("load", renderWidget, { once: true });
+    };
+
+    ensureScript();
+
+    return () => {
+      cancelled = true;
+      script?.removeEventListener("load", renderWidget);
+      if (widgetIdRef.current && window.turnstile) {
+        window.turnstile.remove(widgetIdRef.current);
+        widgetIdRef.current = null;
+      }
+    };
+  }, [onTokenChange, resetSignal, siteKey]);
+
+  if (!siteKey) {
+    return null;
+  }
+
+  return (
+    <div className="turnstile-panel">
+      <div className="turnstile-slot" ref={containerRef} />
+    </div>
+  );
+}
+
 function LoginScreen({
   onLogin,
   loading,
   error
 }: {
-  onLogin: (email: string, password: string) => Promise<void>;
+  onLogin: (email: string, password: string, turnstileToken?: string) => Promise<void>;
   loading: boolean;
   error: string | null;
 }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [turnstileResetSignal, setTurnstileResetSignal] = useState(0);
+
+  useEffect(() => {
+    if (error) {
+      setTurnstileToken(null);
+      setTurnstileResetSignal((value) => value + 1);
+    }
+  }, [error]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    await onLogin(email, password);
+    if (TURNSTILE_SITE_KEY && !turnstileToken) {
+      return;
+    }
+
+    await onLogin(email, password, turnstileToken ?? undefined);
   }
 
   return (
@@ -311,7 +439,19 @@ function LoginScreen({
               value={password}
             />
           </label>
-          <button className="primary-action" disabled={loading} type="submit">
+          {TURNSTILE_SITE_KEY ? (
+            <div className="turnstile-block">
+              <TurnstileWidget
+                onTokenChange={setTurnstileToken}
+                resetSignal={turnstileResetSignal}
+                siteKey={TURNSTILE_SITE_KEY}
+              />
+              <small className="turnstile-help">
+                Complete the verification challenge before signing in.
+              </small>
+            </div>
+          ) : null}
+          <button className="primary-action" disabled={loading || (Boolean(TURNSTILE_SITE_KEY) && !turnstileToken)} type="submit">
             {loading ? "Signing in" : "Sign in"}
           </button>
         </form>
@@ -726,14 +866,14 @@ export function App() {
     void loadProtectedState(token);
   }, [loadProtectedState, token]);
 
-  async function handleLogin(email: string, password: string) {
+  async function handleLogin(email: string, password: string, turnstileToken?: string) {
     setLoginLoading(true);
     setLoginError(null);
 
     try {
       const response = await apiRequest<AuthLoginResponse>("/auth/login", {
         method: "POST",
-        body: { email, password }
+        body: { email, password, turnstileToken }
       });
 
       if (!response.ok) {

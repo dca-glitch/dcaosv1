@@ -44,6 +44,7 @@ export interface AuthStartResult {
 export interface AuthLoginRequest {
   email?: string;
   password?: string;
+  turnstileToken?: string;
 }
 
 export interface AuthTenantMembershipSummary {

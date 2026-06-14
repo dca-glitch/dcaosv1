@@ -12,7 +12,9 @@ export const AUTH_RUNTIME_ENV = {
   sessionSameSite: "AUTH_SESSION_SAME_SITE",
   passwordMinLength: "AUTH_PASSWORD_MIN_LENGTH",
   loginMaxFailedAttempts: "AUTH_LOGIN_MAX_FAILED_ATTEMPTS",
-  loginLockoutMinutes: "AUTH_LOGIN_LOCKOUT_MINUTES"
+  loginLockoutMinutes: "AUTH_LOGIN_LOCKOUT_MINUTES",
+  turnstileEnabled: "TURNSTILE_ENABLED",
+  turnstileSecretKey: "TURNSTILE_SECRET_KEY"
 } as const;
 
 export const AUTH_PASSWORD_MIN_LENGTH_DEFAULT = 12;

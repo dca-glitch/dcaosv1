@@ -9,6 +9,7 @@ import {
 } from "./auth.constants";
 import { hashSessionToken, generateSessionToken } from "./session.service";
 import { verifyPassword } from "./password.service";
+import { verifyTurnstileToken } from "./turnstile.service";
 import type {
   AuthLoginRequest,
   AuthLoginResponse,
@@ -61,6 +62,10 @@ function toStringValue(value: unknown): string {
 }
 
 function toPasswordValue(value: unknown): string {
+  return typeof value === "string" ? value : "";
+}
+
+function toTurnstileValue(value: unknown): string {
   return typeof value === "string" ? value : "";
 }
 
@@ -199,10 +204,15 @@ async function getActiveMemberships(tx: PrismaTx, userId: string): Promise<AuthT
 async function loginWithCredentials(
   email: string,
   password: string,
+  turnstileToken: string,
   req: Request
 ): Promise<LoginAttemptResult> {
   const now = new Date();
   const normalizedEmail = email.toLowerCase();
+
+  if (!(await verifyTurnstileToken(turnstileToken, typeof req.ip === "string" ? req.ip : undefined))) {
+    return { ok: false };
+  }
 
   return prisma.$transaction(async (tx: Prisma.TransactionClient): Promise<LoginAttemptResult> => {
     const user = await tx.user.findFirst({
@@ -271,6 +281,7 @@ export const login: RequestHandler = async (req, res) => {
   const body = (req.body ?? {}) as AuthLoginRequest;
   const email = toStringValue(body.email);
   const password = toPasswordValue(body.password);
+  const turnstileToken = toTurnstileValue(body.turnstileToken);
 
   if (!email || !password) {
     res.status(401).json(failure("AUTH_LOGIN_FAILED", "Invalid email or password."));
@@ -278,7 +289,7 @@ export const login: RequestHandler = async (req, res) => {
   }
 
   try {
-    const result = await loginWithCredentials(email, password, req);
+    const result = await loginWithCredentials(email, password, turnstileToken, req);
     if (!result.ok) {
       res.status(401).json(failure("AUTH_LOGIN_FAILED", "Invalid email or password."));
       return;

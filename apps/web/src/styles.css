@@ -63,6 +63,34 @@ button:disabled {
   gap: 16px;
 }
 
+.turnstile-block {
+  display: grid;
+  gap: 8px;
+}
+
+.turnstile-panel {
+  align-items: center;
+  background: #f8fafc;
+  border: 1px solid #d7dde4;
+  border-radius: 8px;
+  display: flex;
+  justify-content: center;
+  min-height: 78px;
+  overflow: hidden;
+  padding: 10px;
+}
+
+.turnstile-slot {
+  display: flex;
+  justify-content: center;
+  min-height: 46px;
+}
+
+.turnstile-help {
+  color: #667085;
+  display: block;
+}
+
 .auth-form label {
   color: #344054;
   display: grid;
