@@ -5,6 +5,7 @@ const testerEmail = process.env.AUTH_SEED_TESTER_EMAIL;
 const testerPassword = process.env.AUTH_SEED_TESTER_PASSWORD;
 
 const results = [];
+const allowedLocalHosts = new Set(["127.0.0.1", "localhost"]);
 
 function record(name, ok, detail = "") {
   results.push({ name, ok, detail });
@@ -20,6 +21,18 @@ function requireEnv(name, value) {
 
   record(`env ${name}`, true, "present");
   return true;
+}
+
+function requireLocalApiBaseUrl(value) {
+  try {
+    const parsed = new URL(value);
+    const ok = allowedLocalHosts.has(parsed.hostname);
+    record("local API target", ok, ok ? parsed.hostname : "blocked non-local host");
+    return ok;
+  } catch {
+    record("local API target", false, "invalid URL");
+    return false;
+  }
 }
 
 async function request(path, options = {}) {
@@ -69,6 +82,11 @@ async function login(email, password) {
 }
 
 async function main() {
+  if (!requireLocalApiBaseUrl(apiBaseUrl)) {
+    process.exitCode = 1;
+    return;
+  }
+
   const hasAdminEmail = requireEnv("AUTH_SEED_TEST_EMAIL", adminEmail);
   const hasAdminPassword = requireEnv("AUTH_SEED_TEST_PASSWORD", adminPassword);
   if (!hasAdminEmail || !hasAdminPassword) {

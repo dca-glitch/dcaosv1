@@ -57,6 +57,19 @@ npm.cmd run smoke:mvp:local
 
 The smoke command prints pass/fail summaries only and must not print passwords, tokens, cookies, auth headers, password hashes, or session token hashes.
 
+The local smoke command intentionally refuses non-local API hosts. Add a separate reviewed staging smoke command before running smoke against a VPS.
+
+## Deployment Readiness Notes
+
+- `npm.cmd run validate` is the current full local/CI validation command.
+- `npm.cmd run -w @dca-os-v1/web build` creates the frontend build output.
+- `npm.cmd run -w @dca-os-v1/api build` currently type-checks the API; it does not emit production JavaScript.
+- `npm.cmd run -w @dca-os-v1/api dev` starts the API through `tsx` and is suitable for local validation only.
+- A production start strategy is still required before VPS deployment.
+- Same-origin reverse proxy routing is preferred so the frontend can use `/api/v1`.
+- No CORS environment contract is implemented yet.
+- See `docs/deployment/VPS_STAGING_DEPLOYMENT_PLAN.md` before any staging deployment.
+
 ## Out Of Scope
 
 - OAuth.

@@ -51,3 +51,9 @@ Only example names should be committed to the repository.
 ## Deployment Gate
 
 Deployment should not begin until database, auth, and environment planning are complete.
+
+## Staging Plan
+
+The current VPS staging preparation checklist lives in [VPS Staging Deployment Plan](deployment/VPS_STAGING_DEPLOYMENT_PLAN.md).
+
+This project is not deployed yet. Do not run production migrations, `prisma db push`, or VPS deployment commands until an explicit deployment gate is approved.
