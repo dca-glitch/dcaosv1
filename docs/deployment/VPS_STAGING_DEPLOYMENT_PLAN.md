@@ -6,6 +6,8 @@ Prepare DCA OS v1 for a future VPS staging deployment without deploying in this 
 
 The first staging target should prove that the API, web build, PostgreSQL connection, auth/session runtime, tenant context, module registry, Team read-only view, Settings read-only view, and MVP smoke checks work outside local development.
 
+Final execution approval boundaries are summarized in [VPS Staging Execution Approval Pack](VPS_STAGING_EXECUTION_APPROVAL_PACK.md).
+
 ## Pre-Deploy Checklist
 
 - CI is green on `main`.

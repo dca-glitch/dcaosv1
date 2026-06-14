@@ -13,6 +13,7 @@ This folder prepares DCA OS v1 for external security review before VPS staging a
 - [Remediation Roadmap](REMEDIATION_ROADMAP.md): ordered action plan by phase and complexity.
 - [Audit Evidence Index](AUDIT_EVIDENCE_INDEX.md): repo evidence, commands, scripts, endpoints, and evidence still to collect.
 - [Executive Summary For Owner](EXECUTIVE_SUMMARY_FOR_OWNER.md): non-technical owner summary and decision guidance.
+- [VPS Staging Execution Approval Pack](../deployment/VPS_STAGING_EXECUTION_APPROVAL_PACK.md): final owner approval boundaries before controlled VPS staging execution.
 
 ## Reference Frames
 

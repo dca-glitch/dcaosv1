@@ -56,4 +56,6 @@ Deployment should not begin until database, auth, and environment planning are c
 
 The current VPS staging preparation checklist lives in [VPS Staging Deployment Plan](deployment/VPS_STAGING_DEPLOYMENT_PLAN.md).
 
+The final pre-execution approval package lives in [VPS Staging Execution Approval Pack](deployment/VPS_STAGING_EXECUTION_APPROVAL_PACK.md).
+
 This project is not deployed yet. Do not run production migrations, `prisma db push`, or VPS deployment commands until an explicit deployment gate is approved.
