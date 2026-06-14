@@ -69,6 +69,7 @@ The local smoke command intentionally refuses non-local API hosts. Add a separat
 - Same-origin reverse proxy routing is preferred so the frontend can use `/api/v1`.
 - No CORS environment contract is implemented yet.
 - See `docs/deployment/VPS_STAGING_DEPLOYMENT_PLAN.md` before any staging deployment.
+- See `docs/audit/README.md` for the external audit preparation pack before VPS staging or client access.
 
 ## Out Of Scope
 
