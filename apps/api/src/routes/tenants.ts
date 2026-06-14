@@ -5,6 +5,7 @@ import {
   getTenantSettings,
   listTenantMembers,
   listTenants,
+  switchCurrentTenant,
   updateTenantSettings
 } from "../controllers/tenantController";
 import { requireAuth } from "../middlewares/auth.middleware";
@@ -16,6 +17,7 @@ export function createTenantRouter() {
 
   router.get("/", requireAuth, listTenants);
   router.get("/current", requireAuth, requireTenant, getCurrentTenant);
+  router.post("/current/switch", requireAuth, switchCurrentTenant);
   router.get(
     "/current/members",
     requireAuth,

@@ -87,6 +87,7 @@ function buildAuthResponse(
   sessionToken: string,
   sessionExpiresAt: Date,
   memberships: AuthTenantMembershipSummary[],
+  activeMembership: AuthTenantMembershipSummary | null,
   lastLoginAt: Date | null
 ): AuthLoginResponse {
   return {
@@ -104,7 +105,7 @@ function buildAuthResponse(
       ttlMinutes: getLoginPolicy().sessionTtlMinutes
     },
     tenantContext: {
-      activeMembership: memberships[0] ?? null,
+      activeMembership,
       memberships
     }
   };
@@ -136,6 +137,7 @@ async function recordSuccessfulLogin(
   userId: string,
   now: Date,
   sessionToken: string,
+  activeTenantMembershipId: string | null,
   req: Request
 ): Promise<{ sessionExpiresAt: Date }> {
   const policy = getLoginPolicy();
@@ -157,6 +159,7 @@ async function recordSuccessfulLogin(
     data: {
       userId,
       sessionTokenHash,
+      activeTenantMembershipId,
       expiresAt: sessionExpiresAt,
       ipAddress,
       userAgent
@@ -235,9 +238,17 @@ async function loginWithCredentials(
       return { ok: false };
     }
 
-    const sessionToken = generateSessionToken().token;
-    const { sessionExpiresAt } = await recordSuccessfulLogin(tx, user.id, now, sessionToken, req);
     const memberships = await getActiveMemberships(tx, user.id);
+    const activeMembership = memberships[0] ?? null;
+    const sessionToken = generateSessionToken().token;
+    const { sessionExpiresAt } = await recordSuccessfulLogin(
+      tx,
+      user.id,
+      now,
+      sessionToken,
+      activeMembership?.tenantMembershipId ?? null,
+      req
+    );
 
     return {
       ok: true,
@@ -249,6 +260,7 @@ async function loginWithCredentials(
         sessionToken,
         sessionExpiresAt,
         memberships,
+        activeMembership,
         now
       )
     };

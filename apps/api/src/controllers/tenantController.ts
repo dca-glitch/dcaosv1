@@ -7,9 +7,10 @@ import {
   getCurrentTenantSettings,
   getTenantListContext,
   listCurrentTenantMembers,
+  switchCurrentTenantMembership,
   updateCurrentTenantSettings
 } from "../tenants/tenant.runtime";
-import type { TenantSettingsUpdateRequest } from "../tenants/types";
+import type { TenantSettingsUpdateRequest, TenantSwitchRequest } from "../tenants/types";
 
 const TENANT_NAME_MAX_LENGTH = 120;
 
@@ -63,6 +64,40 @@ export const getCurrentTenant: RequestHandler = async (_req, res) => {
     );
   } catch {
     res.status(500).json(skeletonFailure("Tenant context could not be completed."));
+  }
+};
+
+export const switchCurrentTenant: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) {
+    res.status(401).json(failure("AUTH_UNAUTHORIZED", "Authorization is required."));
+    return;
+  }
+
+  const body = (req.body ?? {}) as TenantSwitchRequest;
+  const tenantMembershipId =
+    typeof body.tenantMembershipId === "string" ? body.tenantMembershipId.trim() : "";
+
+  if (!tenantMembershipId) {
+    res.status(400).json(failure("TENANT_SWITCH_INVALID", "Invalid tenant switch request."));
+    return;
+  }
+
+  try {
+    const response = await switchCurrentTenantMembership(authSession, tenantMembershipId);
+    if (!response) {
+      res.status(403).json(failure("AUTH_FORBIDDEN", "Access is forbidden."));
+      return;
+    }
+
+    res.json(
+      success(response, {
+        phase: "runtime",
+        scope: "tenant-backend-skeleton"
+      })
+    );
+  } catch {
+    res.status(500).json(skeletonFailure("Tenant switch could not be completed."));
   }
 };
 

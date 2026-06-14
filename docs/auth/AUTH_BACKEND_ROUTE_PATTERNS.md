@@ -30,9 +30,21 @@
 ## Tenant List And Current Route
 
 - `GET /api/v1/tenants` returns the authenticated user's available active memberships
-- `GET /api/v1/tenants/current` returns the server-derived current tenant context
-- selection persistence is not implemented yet because the current session schema does not store a selected tenant
-- explicit tenant switching should wait for a future schema/session decision
+- `GET /api/v1/tenants/current` returns the session-selected current tenant context
+- active tenant selection is stored on `Session.activeTenantMembershipId`
+- session context resolves the selected active membership when it still belongs to the authenticated user and remains active
+- if the stored selected membership is null or stale, session context falls back to the first active membership for compatibility
+- `/current` routes use the server-resolved session membership and do not accept tenant ids from body, query, or arbitrary headers
+
+## Tenant Switch Route
+
+- `POST /api/v1/tenants/current/switch` switches only the current authenticated session
+- request body must contain `tenantMembershipId`, not `tenantId`
+- route uses `requireAuth`; it validates the requested membership against the authenticated user
+- requested membership must belong to the authenticated user and be active
+- related tenant must be active
+- unauthorized, inactive, or unknown membership ids return a generic forbidden response
+- switching does not change roles, memberships, users, tenants, or any other session
 
 ## Tenant Member Route
 

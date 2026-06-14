@@ -92,18 +92,21 @@ model User {
 }
 
 model Session {
-  id                String    @id @default(uuid())
-  userId            String
-  sessionTokenHash  String    @unique
-  createdAt         DateTime  @default(now())
-  expiresAt         DateTime
-  revokedAt         DateTime?
-  lastSeenAt        DateTime?
-  ipAddress         String?
-  userAgent         String?
-  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                       String            @id @default(uuid())
+  userId                   String
+  sessionTokenHash         String            @unique
+  activeTenantMembershipId String?
+  createdAt                DateTime          @default(now())
+  expiresAt                DateTime
+  revokedAt                DateTime?
+  lastSeenAt               DateTime?
+  ipAddress                String?
+  userAgent                String?
+  user                     User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  activeTenantMembership   TenantMembership? @relation("SessionActiveTenantMembership", fields: [activeTenantMembershipId], references: [id], onDelete: SetNull)
 
   @@index([userId])
+  @@index([activeTenantMembershipId])
   @@index([expiresAt])
   @@index([revokedAt])
   @@index([createdAt])
@@ -120,6 +123,7 @@ model TenantMembership {
   tenant          Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   membershipRoles MembershipRole[]
+  activeSessions  Session[]         @relation("SessionActiveTenantMembership")
 
   @@unique([tenantId, userId])
   @@index([tenantId])

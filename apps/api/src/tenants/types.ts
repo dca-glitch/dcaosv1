@@ -63,3 +63,7 @@ export interface TenantSettingsResponse {
 export interface TenantSettingsUpdateRequest {
   name?: string;
 }
+
+export interface TenantSwitchRequest {
+  tenantMembershipId?: string;
+}

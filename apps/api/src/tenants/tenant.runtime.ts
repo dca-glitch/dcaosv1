@@ -404,3 +404,55 @@ export async function updateCurrentTenantSettings(
     };
   });
 }
+
+export async function switchCurrentTenantMembership(
+  authSession: AuthResolvedSessionContext,
+  tenantMembershipId: string
+): Promise<TenantCurrentResponse | null> {
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    const membership = await tx.tenantMembership.findFirst({
+      where: {
+        id: tenantMembershipId,
+        userId: authSession.user.id,
+        status: "ACTIVE",
+        tenant: {
+          status: "ACTIVE"
+        }
+      },
+      select: {
+        id: true
+      }
+    });
+
+    if (!membership) {
+      return null;
+    }
+
+    await tx.session.update({
+      where: {
+        id: authSession.session.id
+      },
+      data: {
+        activeTenantMembershipId: membership.id
+      }
+    });
+
+    const availableTenants = await listMembershipCards(tx, authSession.user.id);
+    const currentTenant = availableTenants.find((card) => card.tenantMembershipId === membership.id) ?? null;
+
+    if (!currentTenant) {
+      return null;
+    }
+
+    return {
+      user: {
+        id: authSession.user.id,
+        email: authSession.user.email,
+        name: authSession.user.name ?? null,
+        status: authSession.user.status
+      },
+      currentTenant,
+      availableTenants
+    };
+  });
+}

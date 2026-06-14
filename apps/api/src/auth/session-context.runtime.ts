@@ -14,6 +14,7 @@ type PrismaTx = Prisma.TransactionClient;
 
 type SessionLookupRecord = {
   id: string;
+  activeTenantMembershipId: string | null;
   createdAt: Date;
   expiresAt: Date;
   lastSeenAt: Date | null;
@@ -73,6 +74,10 @@ function toLoginUserSummary(user: SessionLookupRecord["user"]): AuthLoginUserSum
 
 function toResolvedSessionContext(record: SessionLookupRecord): AuthResolvedSessionContext {
   const memberships = toTenantMembershipSummaries(record.user.memberships);
+  const selectedMembership = record.activeTenantMembershipId
+    ? memberships.find((membership) => membership.tenantMembershipId === record.activeTenantMembershipId) ?? null
+    : null;
+  const activeMembership = selectedMembership ?? memberships[0] ?? null;
 
   return {
     user: toLoginUserSummary(record.user),
@@ -83,7 +88,7 @@ function toResolvedSessionContext(record: SessionLookupRecord): AuthResolvedSess
       lastSeenAt: record.lastSeenAt
     },
     tenantContext: {
-      activeMembership: memberships[0] ?? null,
+      activeMembership,
       memberships
     }
   };
@@ -107,6 +112,7 @@ export async function resolveAuthSessionContext(
       },
       select: {
         id: true,
+        activeTenantMembershipId: true,
         createdAt: true,
         expiresAt: true,
         lastSeenAt: true,
