@@ -1,13 +1,13 @@
-import type { AppModuleContract } from "@dca-os-v1/shared";
-
 type AppLayoutProps = {
-  modules: AppModuleContract[];
+  navigationItems: Array<{
+    href: string;
+    label: string;
+    section: string;
+  }>;
   children: React.ReactNode;
 };
 
-export function AppLayout({ modules, children }: AppLayoutProps) {
-  const navigation = modules.flatMap((moduleDefinition) => moduleDefinition.navigation);
-
+export function AppLayout({ navigationItems, children }: AppLayoutProps) {
   return (
     <div className="app-shell">
       <aside className="sidebar" aria-label="Primary navigation">
@@ -16,13 +16,16 @@ export function AppLayout({ modules, children }: AppLayoutProps) {
           <span>OS v1</span>
         </div>
         <nav className="nav-list">
-          <a href="#dashboard">Dashboard</a>
-          {navigation.map((item) => (
-            <a key={item.id} href={`#${item.href.replace("/", "")}`}>
+          {navigationItems.map((item) => (
+            <a key={item.href} href={item.href} data-section={item.section}>
               {item.label}
             </a>
           ))}
         </nav>
+        <div className="tenant-switch-placeholder">
+          <span>Current tenant</span>
+          <strong>Selection placeholder</strong>
+        </div>
       </aside>
       <main className="main-shell">{children}</main>
     </div>

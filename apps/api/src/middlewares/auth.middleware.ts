@@ -1,5 +1,5 @@
 import type { RequestHandler } from "express";
-import { failure } from "../utils/responses";
+import { unauthorizedFailure } from "../utils/responses";
 import { extractBearerToken, resolveAuthSessionContext } from "../auth/session-context.runtime";
 
 export function createAuthMiddleware(): RequestHandler {
@@ -7,7 +7,7 @@ export function createAuthMiddleware(): RequestHandler {
     const token = extractBearerToken(req.get("authorization"));
 
     if (!token) {
-      res.status(401).json(failure("AUTH_UNAUTHORIZED", "Authorization is required."));
+      res.status(401).json(unauthorizedFailure());
       return;
     }
 
@@ -15,14 +15,14 @@ export function createAuthMiddleware(): RequestHandler {
       const authSession = await resolveAuthSessionContext(token);
 
       if (!authSession) {
-        res.status(401).json(failure("AUTH_UNAUTHORIZED", "Authorization is required."));
+        res.status(401).json(unauthorizedFailure());
         return;
       }
 
       res.locals.authSession = authSession;
       next();
     } catch {
-      res.status(401).json(failure("AUTH_UNAUTHORIZED", "Authorization is required."));
+      res.status(401).json(unauthorizedFailure());
     }
   };
 }

@@ -1,5 +1,5 @@
 import type { RequestHandler } from "express";
-import { failure } from "../utils/responses";
+import { API_ERROR_CODES, API_ERROR_MESSAGES, failure, forbiddenFailure } from "../utils/responses";
 import type { AuthSessionLocals } from "../auth/types";
 import type { PermissionKey } from "../security/permission-keys";
 import { CORE_PERMISSION_KEYS } from "../security/permission-keys";
@@ -71,15 +71,15 @@ function getAuthorizationGuardFailure(authSession: AuthSessionLocals["authSessio
   if (!authSession) {
     return {
       status: 401,
-      code: "AUTH_UNAUTHORIZED",
-      message: "Authorization is required."
+      code: API_ERROR_CODES.authUnauthorized,
+      message: API_ERROR_MESSAGES.authorizationRequired
     };
   }
 
   return {
     status: 403,
-    code: "AUTH_FORBIDDEN",
-    message: "Access is forbidden."
+    code: API_ERROR_CODES.authForbidden,
+    message: API_ERROR_MESSAGES.accessForbidden
   };
 }
 
@@ -95,12 +95,12 @@ function createAuthorizationMiddleware(
     }
 
     if (!authSession.tenantContext.activeMembership) {
-      res.status(403).json(failure("AUTH_FORBIDDEN", "Access is forbidden."));
+      res.status(403).json(forbiddenFailure());
       return;
     }
 
     if (!evaluator(authSession)) {
-      res.status(403).json(failure("AUTH_FORBIDDEN", "Access is forbidden."));
+      res.status(403).json(forbiddenFailure());
       return;
     }
 

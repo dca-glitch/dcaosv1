@@ -163,4 +163,140 @@ for (const [relativePath, content] of resolverFiles) {
   }
 }
 
+function requireIncludes(relativePath, content, tokens, label) {
+  for (const token of tokens) {
+    if (!content.includes(token)) {
+      console.error(`${label} failed. Missing token in ${relativePath}: ${token}`);
+      process.exit(1);
+    }
+  }
+}
+
+function requireNotIncludes(relativePath, content, tokens, label) {
+  for (const token of tokens) {
+    if (content.includes(token)) {
+      console.error(`${label} failed. Forbidden token found in ${relativePath}: ${token}`);
+      process.exit(1);
+    }
+  }
+}
+
+const runtimeHardeningLabel = "Auth tenant runtime hardening check";
+const authRoutesRuntimeContent = readFileSync(path.join(root, "src/auth/auth.routes.ts"), "utf8");
+const authMiddlewareRuntimeContent = readFileSync(path.join(root, "src/middlewares/auth.middleware.ts"), "utf8");
+const authorizationMiddlewareRuntimeContent = readFileSync(path.join(root, "src/middlewares/authorization.middleware.ts"), "utf8");
+const tenantMiddlewareRuntimeContent = readFileSync(path.join(root, "src/middlewares/tenant.middleware.ts"), "utf8");
+const loginRuntimeContent = readFileSync(path.join(root, "src/auth/login.runtime.ts"), "utf8");
+const sessionContextRuntimeContent = readFileSync(path.join(root, "src/auth/session-context.runtime.ts"), "utf8");
+const tenantRoutesRuntimeContent = readFileSync(path.join(root, "src/routes/tenants.ts"), "utf8");
+const tenantControllerRuntimeContent = readFileSync(path.join(root, "src/controllers/tenantController.ts"), "utf8");
+const tenantRuntimeContent = readFileSync(path.join(root, "src/tenants/tenant.runtime.ts"), "utf8");
+const responsesContent = readFileSync(path.join(root, "src/utils/responses.ts"), "utf8");
+
+requireIncludes(
+  "src/auth/auth.routes.ts",
+  authRoutesRuntimeContent,
+  ["router.post(\"/login\", login)", "router.post(\"/logout\", requireAuth, logout)", "router.get(\"/me\", requireAuth, getCurrentUser)"],
+  runtimeHardeningLabel
+);
+
+if (authRoutesRuntimeContent.includes("router.post(\"/login\", requireAuth")) {
+  console.error(`${runtimeHardeningLabel} failed. Login must remain public.`);
+  process.exit(1);
+}
+
+requireIncludes(
+  "src/middlewares/auth.middleware.ts",
+  authMiddlewareRuntimeContent,
+  ["if (!token)", "res.status(401).json(unauthorizedFailure())", "if (!authSession)"],
+  runtimeHardeningLabel
+);
+
+requireIncludes(
+  "src/auth/session-context.runtime.ts",
+  sessionContextRuntimeContent,
+  ["revokedAt: null", "expiresAt:", "activeTenantMembershipId", "hashSessionToken(token)"],
+  runtimeHardeningLabel
+);
+
+requireIncludes(
+  "src/auth/login.runtime.ts",
+  loginRuntimeContent,
+  ["activeTenantMembershipId", "sessionTokenHash", "sessionToken", "buildAuthResponse", "token: sessionToken"],
+  runtimeHardeningLabel
+);
+
+requireIncludes(
+  "src/tenants/tenant.runtime.ts",
+  tenantRuntimeContent,
+  ["id: tenantMembershipId", "userId: authSession.user.id", "status: \"ACTIVE\"", "tenant:", "activeTenantMembershipId: membership.id"],
+  runtimeHardeningLabel
+);
+
+requireIncludes(
+  "src/controllers/tenantController.ts",
+  tenantControllerRuntimeContent,
+  ["tenantSwitchInvalidFailure()", "res.status(403).json(forbiddenFailure())", "tenantMemberNotFoundFailure()", "tenantSettingsInvalidFailure()"],
+  runtimeHardeningLabel
+);
+
+requireIncludes(
+  "src/routes/tenants.ts",
+  tenantRoutesRuntimeContent,
+  [
+    "router.get(\"/current\", requireAuth, requireTenant, getCurrentTenant)",
+    "router.post(\"/current/switch\", requireAuth, switchCurrentTenant)",
+    "requirePermission(PERMISSION_KEYS.usersRead)",
+    "requirePermission(PERMISSION_KEYS.settingsRead)",
+    "requirePermission(PERMISSION_KEYS.settingsUpdate)"
+  ],
+  runtimeHardeningLabel
+);
+
+requireIncludes(
+  "src/middlewares/authorization.middleware.ts",
+  authorizationMiddlewareRuntimeContent,
+  ["local_tester: []", "forbiddenFailure()", "API_ERROR_CODES.authForbidden"],
+  runtimeHardeningLabel
+);
+
+requireIncludes(
+  "src/middlewares/tenant.middleware.ts",
+  tenantMiddlewareRuntimeContent,
+  ["unauthorizedFailure()", "forbiddenFailure()"],
+  runtimeHardeningLabel
+);
+
+requireIncludes(
+  "src/utils/responses.ts",
+  responsesContent,
+  ["AUTH_UNAUTHORIZED", "AUTH_FORBIDDEN", "TENANT_SWITCH_INVALID", "TENANT_SETTINGS_INVALID", "TENANT_MEMBER_INVALID", "TENANT_MEMBER_NOT_FOUND"],
+  runtimeHardeningLabel
+);
+
+requireNotIncludes(
+  "src/auth/session-context.runtime.ts",
+  sessionContextRuntimeContent,
+  ["passwordHash"],
+  runtimeHardeningLabel
+);
+
+const responseSurfaceContent = [
+  authRoutesRuntimeContent,
+  authMiddlewareRuntimeContent,
+  authorizationMiddlewareRuntimeContent,
+  tenantMiddlewareRuntimeContent,
+  tenantRoutesRuntimeContent,
+  tenantControllerRuntimeContent,
+  tenantRuntimeContent,
+  responsesContent
+].join("\n");
+
+for (const token of ["passwordHash", "sessionTokenHash", "token: sessionToken"]) {
+  if (responseSurfaceContent.includes(token)) {
+    console.error(`${runtimeHardeningLabel} failed. Response-facing files must not expose ${token}.`);
+    process.exit(1);
+  }
+}
+
 console.log("Auth skeleton structural check passed.");

@@ -1,5 +1,5 @@
 import type { RequestHandler } from "express";
-import { failure } from "../utils/responses";
+import { forbiddenFailure, unauthorizedFailure } from "../utils/responses";
 import type { AuthSessionLocals } from "../auth/types";
 
 export function createTenantMiddleware(): RequestHandler {
@@ -7,12 +7,12 @@ export function createTenantMiddleware(): RequestHandler {
     const authSession = (res.locals as AuthSessionLocals).authSession;
 
     if (!authSession) {
-      res.status(401).json(failure("AUTH_UNAUTHORIZED", "Authorization is required."));
+      res.status(401).json(unauthorizedFailure());
       return;
     }
 
     if (!authSession.tenantContext.activeMembership) {
-      res.status(403).json(failure("AUTH_FORBIDDEN", "Access is forbidden."));
+      res.status(403).json(forbiddenFailure());
       return;
     }
 

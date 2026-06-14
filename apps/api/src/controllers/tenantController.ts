@@ -1,5 +1,14 @@
 import type { RequestHandler } from "express";
-import { failure, success } from "../utils/responses";
+import {
+  failure,
+  forbiddenFailure,
+  success,
+  tenantMemberInvalidFailure,
+  tenantMemberNotFoundFailure,
+  tenantSettingsInvalidFailure,
+  tenantSwitchInvalidFailure,
+  unauthorizedFailure
+} from "../utils/responses";
 import type { AuthSessionLocals } from "../auth/types";
 import {
   getCurrentTenantContext,
@@ -25,7 +34,7 @@ function skeletonFailure(message: string) {
 export const listTenants: RequestHandler = async (_req, res) => {
   const authSession = getAuthSession(res.locals);
   if (!authSession) {
-    res.status(401).json(failure("AUTH_UNAUTHORIZED", "Authorization is required."));
+    res.status(401).json(unauthorizedFailure());
     return;
   }
 
@@ -45,14 +54,14 @@ export const listTenants: RequestHandler = async (_req, res) => {
 export const getCurrentTenant: RequestHandler = async (_req, res) => {
   const authSession = getAuthSession(res.locals);
   if (!authSession) {
-    res.status(401).json(failure("AUTH_UNAUTHORIZED", "Authorization is required."));
+    res.status(401).json(unauthorizedFailure());
     return;
   }
 
   try {
     const response = await getCurrentTenantContext(authSession);
     if (!response) {
-      res.status(403).json(failure("AUTH_FORBIDDEN", "Access is forbidden."));
+      res.status(403).json(forbiddenFailure());
       return;
     }
 
@@ -70,7 +79,7 @@ export const getCurrentTenant: RequestHandler = async (_req, res) => {
 export const switchCurrentTenant: RequestHandler = async (req, res) => {
   const authSession = getAuthSession(res.locals);
   if (!authSession) {
-    res.status(401).json(failure("AUTH_UNAUTHORIZED", "Authorization is required."));
+    res.status(401).json(unauthorizedFailure());
     return;
   }
 
@@ -79,14 +88,14 @@ export const switchCurrentTenant: RequestHandler = async (req, res) => {
     typeof body.tenantMembershipId === "string" ? body.tenantMembershipId.trim() : "";
 
   if (!tenantMembershipId) {
-    res.status(400).json(failure("TENANT_SWITCH_INVALID", "Invalid tenant switch request."));
+    res.status(400).json(tenantSwitchInvalidFailure());
     return;
   }
 
   try {
     const response = await switchCurrentTenantMembership(authSession, tenantMembershipId);
     if (!response) {
-      res.status(403).json(failure("AUTH_FORBIDDEN", "Access is forbidden."));
+      res.status(403).json(forbiddenFailure());
       return;
     }
 
@@ -104,14 +113,14 @@ export const switchCurrentTenant: RequestHandler = async (req, res) => {
 export const listTenantMembers: RequestHandler = async (_req, res) => {
   const authSession = getAuthSession(res.locals);
   if (!authSession) {
-    res.status(401).json(failure("AUTH_UNAUTHORIZED", "Authorization is required."));
+    res.status(401).json(unauthorizedFailure());
     return;
   }
 
   try {
     const response = await listCurrentTenantMembers(authSession);
     if (!response) {
-      res.status(403).json(failure("AUTH_FORBIDDEN", "Access is forbidden."));
+      res.status(403).json(forbiddenFailure());
       return;
     }
 
@@ -129,20 +138,20 @@ export const listTenantMembers: RequestHandler = async (_req, res) => {
 export const getTenantMember: RequestHandler = async (req, res) => {
   const authSession = getAuthSession(res.locals);
   if (!authSession) {
-    res.status(401).json(failure("AUTH_UNAUTHORIZED", "Authorization is required."));
+    res.status(401).json(unauthorizedFailure());
     return;
   }
 
   const membershipId = typeof req.params.membershipId === "string" ? req.params.membershipId : "";
   if (!membershipId) {
-    res.status(400).json(failure("TENANT_MEMBER_INVALID", "Invalid tenant member request."));
+    res.status(400).json(tenantMemberInvalidFailure());
     return;
   }
 
   try {
     const response = await getCurrentTenantMember(authSession, membershipId);
     if (!response) {
-      res.status(404).json(failure("TENANT_MEMBER_NOT_FOUND", "Member was not found."));
+      res.status(404).json(tenantMemberNotFoundFailure());
       return;
     }
 
@@ -160,14 +169,14 @@ export const getTenantMember: RequestHandler = async (req, res) => {
 export const getTenantSettings: RequestHandler = async (_req, res) => {
   const authSession = getAuthSession(res.locals);
   if (!authSession) {
-    res.status(401).json(failure("AUTH_UNAUTHORIZED", "Authorization is required."));
+    res.status(401).json(unauthorizedFailure());
     return;
   }
 
   try {
     const response = await getCurrentTenantSettings(authSession);
     if (!response) {
-      res.status(403).json(failure("AUTH_FORBIDDEN", "Access is forbidden."));
+      res.status(403).json(forbiddenFailure());
       return;
     }
 
@@ -185,7 +194,7 @@ export const getTenantSettings: RequestHandler = async (_req, res) => {
 export const updateTenantSettings: RequestHandler = async (req, res) => {
   const authSession = getAuthSession(res.locals);
   if (!authSession) {
-    res.status(401).json(failure("AUTH_UNAUTHORIZED", "Authorization is required."));
+    res.status(401).json(unauthorizedFailure());
     return;
   }
 
@@ -193,14 +202,14 @@ export const updateTenantSettings: RequestHandler = async (req, res) => {
   const name = typeof body.name === "string" ? body.name.trim() : "";
 
   if (!name || name.length > TENANT_NAME_MAX_LENGTH) {
-    res.status(400).json(failure("TENANT_SETTINGS_INVALID", "Invalid tenant settings."));
+    res.status(400).json(tenantSettingsInvalidFailure());
     return;
   }
 
   try {
     const response = await updateCurrentTenantSettings(authSession, name);
     if (!response) {
-      res.status(403).json(failure("AUTH_FORBIDDEN", "Access is forbidden."));
+      res.status(403).json(forbiddenFailure());
       return;
     }
 

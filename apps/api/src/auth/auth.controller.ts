@@ -1,5 +1,5 @@
 import type { RequestHandler } from "express";
-import { failure, success } from "../utils/responses";
+import { failure, success, unauthorizedFailure } from "../utils/responses";
 import { resolveActiveRoles, resolveEffectivePermissions } from "../middlewares/authorization.middleware";
 import type { AuthSessionLocals } from "./types";
 import { revokeAuthSession, toCurrentUserResponse } from "./session-context.runtime";
@@ -42,7 +42,7 @@ export const login: RequestHandler = (_req, res) => {
 export const logout: RequestHandler = async (_req, res) => {
   const authSession = (res.locals as AuthSessionLocals).authSession;
   if (!authSession) {
-    res.status(401).json(failure("AUTH_UNAUTHORIZED", "Authorization is required."));
+    res.status(401).json(unauthorizedFailure());
     return;
   }
 
@@ -68,7 +68,7 @@ export const logout: RequestHandler = async (_req, res) => {
 export const getCurrentUser: RequestHandler = (_req, res) => {
   const authSession = (res.locals as AuthSessionLocals).authSession;
   if (!authSession) {
-    res.status(401).json(failure("AUTH_UNAUTHORIZED", "Authorization is required."));
+    res.status(401).json(unauthorizedFailure());
     return;
   }
 
@@ -83,7 +83,7 @@ export const getCurrentUser: RequestHandler = (_req, res) => {
 export const getAuthContext: RequestHandler = (_req, res) => {
   const authSession = (res.locals as AuthSessionLocals).authSession;
   if (!authSession) {
-    res.status(401).json(failure("AUTH_UNAUTHORIZED", "Authorization is required."));
+    res.status(401).json(unauthorizedFailure());
     return;
   }
 

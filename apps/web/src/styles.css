@@ -63,10 +63,97 @@ a {
   background: #eef2f6;
 }
 
+.tenant-switch-placeholder {
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  border-radius: 8px;
+  display: grid;
+  gap: 4px;
+  margin-top: 32px;
+  padding: 14px;
+}
+
+.tenant-switch-placeholder span,
+.eyebrow,
+.api-config-card span {
+  color: #667085;
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  margin: 0;
+  text-transform: uppercase;
+}
+
 .main-shell {
   display: grid;
   gap: 24px;
   padding: 32px;
+}
+
+.hero-shell {
+  align-items: stretch;
+  background: #17202a;
+  border-radius: 14px;
+  color: #ffffff;
+  display: grid;
+  gap: 24px;
+  grid-template-columns: minmax(0, 1fr) 260px;
+  padding: 28px;
+}
+
+.hero-shell h1,
+.hero-shell p {
+  margin: 0;
+}
+
+.hero-shell h1 {
+  font-size: clamp(2rem, 5vw, 4rem);
+  margin: 4px 0 10px;
+}
+
+.hero-shell .eyebrow {
+  color: #cbd5e1;
+}
+
+.api-config-card,
+.shell-card {
+  background: #ffffff;
+  border: 1px solid #d7dde4;
+  border-radius: 12px;
+  color: #17202a;
+  display: grid;
+  gap: 8px;
+  padding: 18px;
+}
+
+.api-config-card {
+  align-content: center;
+}
+
+.api-config-card strong {
+  font-size: 1.35rem;
+}
+
+.shell-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.shell-card h2,
+.shell-card p {
+  margin: 0;
+}
+
+.public-card {
+  border-top: 4px solid #2563eb;
+}
+
+.protected-card {
+  border-top: 4px solid #16a34a;
+}
+
+.settings-card {
+  border-top: 4px solid #7c3aed;
 }
 
 .page-section,
@@ -170,6 +257,10 @@ textarea {
 
 @media (max-width: 760px) {
   .app-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-shell {
     grid-template-columns: 1fr;
   }
 
