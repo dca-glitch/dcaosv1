@@ -19,7 +19,9 @@ a {
 }
 
 button,
-input {
+input,
+select,
+textarea {
   font: inherit;
 }
 
@@ -98,7 +100,9 @@ button:disabled {
   font-weight: 650;
 }
 
-input {
+input,
+select,
+textarea {
   background: #ffffff;
   border: 1px solid #b9c4d0;
   border-radius: 6px;
@@ -108,7 +112,13 @@ input {
   width: 100%;
 }
 
-input:focus {
+textarea {
+  resize: vertical;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
   border-color: #145463;
   outline: 3px solid rgba(20, 84, 99, 0.16);
 }
@@ -241,6 +251,147 @@ input:focus {
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
 }
 
+.toolbar {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.filter-bar {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.filter-chip.is-active {
+  background: #eaf3f5;
+  border-color: #145463;
+  color: #145463;
+}
+
+.entity-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+.entity-card,
+.entity-card-wide,
+.modal-panel {
+  background: #ffffff;
+  border: 1px solid #d7dde4;
+  border-radius: 8px;
+}
+
+.entity-card,
+.entity-card-wide {
+  display: grid;
+  gap: 18px;
+  padding: 18px;
+}
+
+.entity-card-wide {
+  grid-template-rows: auto auto;
+}
+
+.entity-card-header {
+  align-items: start;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.entity-card-header h2 {
+  margin: 8px 0 0;
+}
+
+.card-actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.entity-field-grid,
+.field-grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.entity-field-grid div,
+.field-grid label {
+  display: grid;
+  gap: 6px;
+}
+
+.entity-field-grid span,
+.field-grid label {
+  color: #667085;
+}
+
+.entity-field-grid strong {
+  overflow-wrap: anywhere;
+}
+
+.entity-span-2,
+.field-span-2 {
+  grid-column: span 2;
+}
+
+.entity-form {
+  display: grid;
+  gap: 16px;
+}
+
+.entity-form label {
+  color: #344054;
+  font-weight: 650;
+}
+
+.modal-backdrop {
+  align-items: center;
+  background: rgba(17, 24, 39, 0.4);
+  display: grid;
+  inset: 0;
+  justify-items: center;
+  padding: 24px;
+  position: fixed;
+  z-index: 40;
+}
+
+.modal-panel {
+  display: grid;
+  gap: 16px;
+  max-height: min(90vh, 900px);
+  max-width: min(920px, 100%);
+  overflow: auto;
+  padding: 20px;
+  width: min(920px, 100%);
+}
+
+.modal-header {
+  align-items: start;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+}
+
+.modal-body {
+  display: grid;
+  gap: 16px;
+}
+
+.modal-footer {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
 .summary-panel {
   display: grid;
   gap: 8px;
@@ -338,6 +489,25 @@ input:focus {
   color: #475467;
 }
 
+.entity-pill {
+  border-radius: 999px;
+  display: inline-flex;
+  font-size: 0.8rem;
+  font-weight: 700;
+  margin-bottom: 12px;
+  padding: 4px 10px;
+}
+
+.entity-pill-active {
+  background: #e5f6ed;
+  color: #067647;
+}
+
+.entity-pill-archived {
+  background: #f1f4f7;
+  color: #475467;
+}
+
 .module-link {
   color: #145463;
   font-weight: 700;
@@ -427,6 +597,23 @@ td {
   background: #ecfdf3;
   border: 1px solid #abefc6;
   color: #067647;
+}
+
+@media (max-width: 680px) {
+  .entity-field-grid,
+  .field-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .entity-span-2,
+  .field-span-2 {
+    grid-column: auto;
+  }
+
+  .entity-card-header,
+  .modal-header {
+    flex-direction: column;
+  }
 }
 
 @media (max-width: 800px) {

@@ -42,6 +42,26 @@ enum ModuleStatus {
   RETIRED
 }
 
+enum TaskPriority {
+  LOW
+  NORMAL
+  HIGH
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  DONE
+}
+
+enum TaskRecurringType {
+  NONE
+  DAILY
+  WEEKLY
+  MONTHLY
+  YEARLY
+}
+
 enum SettingValueType {
   STRING
   NUMBER
@@ -67,6 +87,9 @@ model Tenant {
   deletedAt     DateTime?
   memberships   TenantMembership[]
   roles         Role[]
+  clients       Client[]
+  projects      Project[]
+  tasks         Task[]
   tenantModules TenantModule[]
   tenantSettings TenantSetting[]
   auditLogs     AuditLog[]        @relation("TenantAuditLogs")
@@ -198,6 +221,89 @@ model ModuleDefinition {
   tenantModules TenantModule[]
 
   @@index([status])
+}
+
+model CompanyProfile {
+  id                   String   @id @default(uuid())
+  name                 String
+  legalName            String?
+  email                String?
+  phone                String?
+  website              String?
+  taxId                String?
+  registrationNumber   String?
+  billingAddress       String?
+  paymentInstructions  String?
+  logoUrl              String?
+  isActive             Boolean  @default(true)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  @@index([isActive])
+}
+
+model Client {
+  id              String    @id @default(uuid())
+  tenantId        String
+  name            String
+  email           String?
+  phone           String?
+  website         String?
+  billingDetails  String?
+  contactPerson   String?
+  notes           String?
+  isArchived      Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  tenant          Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  projects        Project[]
+
+  @@index([tenantId])
+  @@index([tenantId, isArchived])
+}
+
+model Project {
+  id          String    @id @default(uuid())
+  tenantId    String
+  clientId    String
+  name        String
+  description String?
+  startDate   DateTime?
+  dueDate     DateTime?
+  isArchived  Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  client      Client    @relation(fields: [clientId], references: [id], onDelete: Restrict)
+  tasks       Task[]
+
+  @@index([tenantId])
+  @@index([tenantId, isArchived])
+  @@index([tenantId, clientId])
+}
+
+model Task {
+  id             String            @id @default(uuid())
+  tenantId       String
+  projectId      String
+  title          String
+  description    String?
+  priority       TaskPriority      @default(NORMAL)
+  status         TaskStatus        @default(TODO)
+  dueDate        DateTime?
+  recurringType  TaskRecurringType @default(NONE)
+  isArchived     Boolean           @default(false)
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  tenant         Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  project        Project           @relation(fields: [projectId], references: [id], onDelete: Restrict)
+
+  @@index([tenantId])
+  @@index([tenantId, isArchived])
+  @@index([tenantId, projectId])
+  @@index([priority])
+  @@index([status])
+  @@index([recurringType])
 }
 
 model TenantModule {

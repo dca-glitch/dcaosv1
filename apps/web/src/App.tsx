@@ -1,5 +1,9 @@
-import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { type FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AppLayout } from "./components/AppLayout";
+import { CompanyProfilePage, type CompanyProfileFormValues, type CompanyProfileSummary } from "./pages/company-profile/CompanyProfilePage";
+import { ClientsPage, type ClientFormValues, type ClientSummary } from "./pages/clients/ClientsPage";
+import { ProjectsPage, type ProjectFormValues, type ProjectSummary } from "./pages/projects/ProjectsPage";
+import { TasksPage, type TaskFormValues, type TaskSummary } from "./pages/tasks/TasksPage";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "/api/v1";
 const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY ?? "";
@@ -145,7 +149,32 @@ type TenantModulesResponse = {
   modules: TenantModuleSummary[];
 };
 
-type ViewKey = "dashboard" | "modules" | "tenants" | "settings" | "team";
+type CompanyProfileResponse = {
+  companyProfile: CompanyProfileSummary | null;
+};
+
+type ClientsResponse = {
+  clients: ClientSummary[];
+};
+
+type ProjectsResponse = {
+  projects: ProjectSummary[];
+};
+
+type TasksResponse = {
+  tasks: TaskSummary[];
+};
+
+type ViewKey =
+  | "dashboard"
+  | "modules"
+  | "tenants"
+  | "clients"
+  | "projects"
+  | "tasks"
+  | "company-profile"
+  | "settings"
+  | "team";
 
 type RequestOptions = {
   method?: string;
@@ -186,6 +215,10 @@ const navigationItems: Array<{ view: ViewKey; label: string; section: string }> 
   { view: "dashboard", label: "Dashboard", section: "protected" },
   { view: "modules", label: "Modules", section: "protected" },
   { view: "tenants", label: "Tenants", section: "protected" },
+  { view: "clients", label: "Clients", section: "core" },
+  { view: "projects", label: "Projects", section: "core" },
+  { view: "tasks", label: "Tasks", section: "core" },
+  { view: "company-profile", label: "Company Profile", section: "settings" },
   { view: "settings", label: "Settings", section: "settings" },
   { view: "team", label: "Team", section: "settings" }
 ];
@@ -798,6 +831,10 @@ export function App() {
   const [tenantContext, setTenantContext] = useState<TenantListResponse | null>(null);
   const [teamMembers, setTeamMembers] = useState<TenantMembersResponse | null>(null);
   const [tenantSettings, setTenantSettings] = useState<TenantSettingsResponse | null>(null);
+  const [companyProfile, setCompanyProfile] = useState<CompanyProfileResponse | null>(null);
+  const [clients, setClients] = useState<ClientsResponse | null>(null);
+  const [projects, setProjects] = useState<ProjectsResponse | null>(null);
+  const [tasks, setTasks] = useState<TasksResponse | null>(null);
   const [availableModules, setAvailableModules] = useState<ModuleListItem[]>([]);
   const [tenantModules, setTenantModules] = useState<TenantModuleSummary[]>([]);
   const [loading, setLoading] = useState(Boolean(token));
@@ -840,8 +877,16 @@ export function App() {
     setTenantContext(null);
     setTeamMembers(null);
     setTenantSettings(null);
+    setCompanyProfile(null);
+    setClients(null);
+    setProjects(null);
+    setTasks(null);
     setTenantModules([]);
     setAvailableModules([]);
+    setAppMessage(null);
+    setLoginError(null);
+    setModuleActionKey(null);
+    setSwitchingTenantMembershipId(null);
     setLoading(false);
   }, []);
 
@@ -861,6 +906,10 @@ export function App() {
           meResponse,
           contextResponse,
           tenantsResponse,
+          companyProfileResponse,
+          clientsResponse,
+          projectsResponse,
+          tasksResponse,
           modulesResponse,
           tenantModulesResponse,
           teamMembersResponse,
@@ -870,6 +919,10 @@ export function App() {
             apiRequest<AuthCurrentUserResponse>("/auth/me", { token: nextToken }),
             apiRequest<AuthContextResponse>("/auth/context", { token: nextToken }),
             apiRequest<TenantListResponse>("/tenants", { token: nextToken }),
+            apiRequest<CompanyProfileResponse>("/company-profile", { token: nextToken }),
+            apiRequest<ClientsResponse>("/clients", { token: nextToken }),
+            apiRequest<ProjectsResponse>("/projects", { token: nextToken }),
+            apiRequest<TasksResponse>("/tasks", { token: nextToken }),
             apiRequest<ModuleRegistryResponse>("/modules"),
             apiRequest<TenantModulesResponse>("/modules/current", { token: nextToken }),
             apiRequest<TenantMembersResponse>("/tenants/current/members", { token: nextToken }),
@@ -883,7 +936,15 @@ export function App() {
           return;
         }
 
-        if (isUnauthorized(contextResponse) || isUnauthorized(tenantsResponse) || isUnauthorized(tenantModulesResponse)) {
+        if (
+          isUnauthorized(contextResponse) ||
+          isUnauthorized(tenantsResponse) ||
+          isUnauthorized(companyProfileResponse) ||
+          isUnauthorized(clientsResponse) ||
+          isUnauthorized(projectsResponse) ||
+          isUnauthorized(tasksResponse) ||
+          isUnauthorized(tenantModulesResponse)
+        ) {
           clearSession();
           redirectToLogin();
           setLoginError("Your session expired. Please sign in again.");
@@ -897,12 +958,24 @@ export function App() {
         setCurrentUser(meResponse.data);
         setAuthContext(contextResponse.ok ? contextResponse.data : null);
         setTenantContext(tenantsResponse.ok ? tenantsResponse.data : null);
+        setCompanyProfile(companyProfileResponse.ok ? companyProfileResponse.data : null);
+        setClients(clientsResponse.ok ? clientsResponse.data : null);
+        setProjects(projectsResponse.ok ? projectsResponse.data : null);
+        setTasks(tasksResponse.ok ? tasksResponse.data : null);
         setAvailableModules(modulesResponse.ok ? modulesResponse.data.modules : []);
         setTenantModules(tenantModulesResponse.ok ? tenantModulesResponse.data.modules : []);
         setTeamMembers(teamMembersResponse.ok ? teamMembersResponse.data : null);
         setTenantSettings(tenantSettingsResponse.ok ? tenantSettingsResponse.data : null);
 
-        if (!contextResponse.ok || !tenantsResponse.ok || !tenantModulesResponse.ok) {
+        if (
+          !contextResponse.ok ||
+          !tenantsResponse.ok ||
+          !companyProfileResponse.ok ||
+          !clientsResponse.ok ||
+          !projectsResponse.ok ||
+          !tasksResponse.ok ||
+          !tenantModulesResponse.ok
+        ) {
           setAppMessage({
             tone: "error",
             text: "Some protected context could not be loaded."
@@ -974,6 +1047,30 @@ export function App() {
     }
   }
 
+  async function runAuthenticatedRequest<T>(
+    path: string,
+    options: RequestOptions = {}
+  ): Promise<ApiResponse<T> | null> {
+    const activeToken = tokenRef.current;
+    if (!activeToken) {
+      return null;
+    }
+
+    const response = await apiRequest<T>(path, {
+      ...options,
+      token: activeToken
+    });
+
+    if (!response.ok && response.error.code === "AUTH_UNAUTHORIZED") {
+      clearSession();
+      redirectToLogin();
+      setLoginError("Your session expired. Please sign in again.");
+      return null;
+    }
+
+    return response;
+  }
+
   async function handleSwitchTenant(tenantMembershipId: string) {
     if (!token) {
       return;
@@ -1010,31 +1107,23 @@ export function App() {
   }
 
   async function handleSetModuleEnabled(moduleKey: string, enabled: boolean) {
-    if (!token) {
-      return;
-    }
-
     setModuleActionKey(moduleKey);
     setAppMessage(null);
     try {
-      const response = await apiRequest(`/modules/current/${moduleKey}/${enabled ? "enable" : "disable"}`, {
+      const response = await runAuthenticatedRequest(`/modules/current/${moduleKey}/${enabled ? "enable" : "disable"}`, {
         method: "POST",
-        token
       });
 
-      if (!response.ok) {
-        if (response.error.code === "AUTH_UNAUTHORIZED") {
-          clearSession();
-          redirectToLogin();
-          setLoginError("Your session expired. Please sign in again.");
-          return;
-        }
+      if (!response) {
+        return;
+      }
 
+      if (!response.ok) {
         setAppMessage({ tone: "error", text: getErrorMessage(response) });
         return;
       }
 
-      await loadProtectedState(token);
+      await loadProtectedState(tokenRef.current);
       setAppMessage({ tone: "success", text: `${moduleKey} ${enabled ? "enabled" : "disabled"}.` });
     } catch (error) {
       setAppMessage({ tone: "error", text: maskError(error) });
@@ -1043,7 +1132,199 @@ export function App() {
     }
   }
 
+  async function handleSaveCompanyProfile(values: CompanyProfileFormValues): Promise<boolean> {
+    setAppMessage(null);
+    try {
+      const response = await runAuthenticatedRequest<CompanyProfileResponse>("/company-profile", {
+        method: "PUT",
+        body: values
+      });
+
+      if (!response) {
+        return false;
+      }
+
+      if (!response.ok) {
+        setAppMessage({ tone: "error", text: getErrorMessage(response) });
+        return false;
+      }
+
+      await loadProtectedState(tokenRef.current);
+      setAppMessage({ tone: "success", text: "Company profile saved." });
+      return true;
+    } catch (error) {
+      setAppMessage({ tone: "error", text: maskError(error) });
+      return false;
+    }
+  }
+
+  async function handleSaveClient(clientId: string | null, values: ClientFormValues): Promise<boolean> {
+    setAppMessage(null);
+    try {
+      const response = await runAuthenticatedRequest<{ client: ClientSummary | null }>(
+        clientId ? `/clients/${clientId}` : "/clients",
+        {
+          method: clientId ? "PUT" : "POST",
+          body: values
+        }
+      );
+
+      if (!response) {
+        return false;
+      }
+
+      if (!response.ok) {
+        setAppMessage({ tone: "error", text: getErrorMessage(response) });
+        return false;
+      }
+
+      await loadProtectedState(tokenRef.current);
+      setAppMessage({ tone: "success", text: clientId ? "Client updated." : "Client created." });
+      return true;
+    } catch (error) {
+      setAppMessage({ tone: "error", text: maskError(error) });
+      return false;
+    }
+  }
+
+  async function handleArchiveClient(clientId: string): Promise<boolean> {
+    setAppMessage(null);
+    try {
+      const response = await runAuthenticatedRequest<{ client: ClientSummary | null }>(`/clients/${clientId}/archive`, {
+        method: "POST"
+      });
+
+      if (!response) {
+        return false;
+      }
+
+      if (!response.ok) {
+        setAppMessage({ tone: "error", text: getErrorMessage(response) });
+        return false;
+      }
+
+      await loadProtectedState(tokenRef.current);
+      setAppMessage({ tone: "success", text: "Client archived." });
+      return true;
+    } catch (error) {
+      setAppMessage({ tone: "error", text: maskError(error) });
+      return false;
+    }
+  }
+
+  async function handleSaveProject(projectId: string | null, values: ProjectFormValues): Promise<boolean> {
+    setAppMessage(null);
+    try {
+      const response = await runAuthenticatedRequest<{ project: ProjectSummary | null }>(
+        projectId ? `/projects/${projectId}` : "/projects",
+        {
+          method: projectId ? "PUT" : "POST",
+          body: values
+        }
+      );
+
+      if (!response) {
+        return false;
+      }
+
+      if (!response.ok) {
+        setAppMessage({ tone: "error", text: getErrorMessage(response) });
+        return false;
+      }
+
+      await loadProtectedState(tokenRef.current);
+      setAppMessage({ tone: "success", text: projectId ? "Project updated." : "Project created." });
+      return true;
+    } catch (error) {
+      setAppMessage({ tone: "error", text: maskError(error) });
+      return false;
+    }
+  }
+
+  async function handleArchiveProject(projectId: string): Promise<boolean> {
+    setAppMessage(null);
+    try {
+      const response = await runAuthenticatedRequest<{ project: ProjectSummary | null }>(
+        `/projects/${projectId}/archive`,
+        {
+          method: "POST"
+        }
+      );
+
+      if (!response) {
+        return false;
+      }
+
+      if (!response.ok) {
+        setAppMessage({ tone: "error", text: getErrorMessage(response) });
+        return false;
+      }
+
+      await loadProtectedState(tokenRef.current);
+      setAppMessage({ tone: "success", text: "Project archived." });
+      return true;
+    } catch (error) {
+      setAppMessage({ tone: "error", text: maskError(error) });
+      return false;
+    }
+  }
+
+  async function handleSaveTask(taskId: string | null, values: TaskFormValues): Promise<boolean> {
+    setAppMessage(null);
+    try {
+      const response = await runAuthenticatedRequest<{ task: TaskSummary | null }>(
+        taskId ? `/tasks/${taskId}` : "/tasks",
+        {
+          method: taskId ? "PUT" : "POST",
+          body: values
+        }
+      );
+
+      if (!response) {
+        return false;
+      }
+
+      if (!response.ok) {
+        setAppMessage({ tone: "error", text: getErrorMessage(response) });
+        return false;
+      }
+
+      await loadProtectedState(tokenRef.current);
+      setAppMessage({ tone: "success", text: taskId ? "Task updated." : "Task created." });
+      return true;
+    } catch (error) {
+      setAppMessage({ tone: "error", text: maskError(error) });
+      return false;
+    }
+  }
+
+  async function handleArchiveTask(taskId: string): Promise<boolean> {
+    setAppMessage(null);
+    try {
+      const response = await runAuthenticatedRequest<{ task: TaskSummary | null }>(`/tasks/${taskId}/archive`, {
+        method: "POST"
+      });
+
+      if (!response) {
+        return false;
+      }
+
+      if (!response.ok) {
+        setAppMessage({ tone: "error", text: getErrorMessage(response) });
+        return false;
+      }
+
+      await loadProtectedState(tokenRef.current);
+      setAppMessage({ tone: "success", text: "Task archived." });
+      return true;
+    } catch (error) {
+      setAppMessage({ tone: "error", text: maskError(error) });
+      return false;
+    }
+  }
+
   const canManageModules = hasModuleAdminAccess(authContext);
+  const canManageCore = hasActiveRole(authContext, ["owner", "admin"]);
   const currentTenant = tenantContext?.currentTenant?.tenant ?? null;
 
   if (!token || !currentUser) {
@@ -1078,6 +1359,47 @@ export function App() {
           onSetModuleEnabled={handleSetModuleEnabled}
           selectedModuleKey={selectedModuleKey}
           tenantModules={tenantModules}
+        />
+      ) : null}
+      {!loading && activeView === "company-profile" ? (
+        <CompanyProfilePage
+          canEdit={canManageCore}
+          companyProfile={companyProfile?.companyProfile ?? null}
+          error={null}
+          loading={false}
+          onSave={handleSaveCompanyProfile}
+        />
+      ) : null}
+      {!loading && activeView === "clients" ? (
+        <ClientsPage
+          canEdit={canManageCore}
+          clients={clients?.clients ?? []}
+          error={null}
+          loading={false}
+          onArchive={handleArchiveClient}
+          onSave={handleSaveClient}
+        />
+      ) : null}
+      {!loading && activeView === "projects" ? (
+        <ProjectsPage
+          canEdit={canManageCore}
+          clients={clients?.clients ?? []}
+          error={null}
+          loading={false}
+          onArchive={handleArchiveProject}
+          onSave={handleSaveProject}
+          projects={projects?.projects ?? []}
+        />
+      ) : null}
+      {!loading && activeView === "tasks" ? (
+        <TasksPage
+          canEdit={canManageCore}
+          error={null}
+          loading={false}
+          onArchive={handleArchiveTask}
+          onSave={handleSaveTask}
+          projects={projects?.projects ?? []}
+          tasks={tasks?.tasks ?? []}
         />
       ) : null}
       {!loading && activeView === "settings" ? (
