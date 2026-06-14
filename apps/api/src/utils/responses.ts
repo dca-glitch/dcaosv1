@@ -3,6 +3,9 @@ import type { ApiErrorResponse, ApiSuccessResponse } from "@dca-os-v1/shared";
 export const API_ERROR_CODES = {
   authUnauthorized: "AUTH_UNAUTHORIZED",
   authForbidden: "AUTH_FORBIDDEN",
+  moduleInvalid: "MODULE_INVALID",
+  moduleNotFound: "MODULE_NOT_FOUND",
+  moduleTenantContextInvalid: "MODULE_TENANT_CONTEXT_INVALID",
   tenantSwitchInvalid: "TENANT_SWITCH_INVALID",
   tenantSettingsInvalid: "TENANT_SETTINGS_INVALID",
   tenantMemberInvalid: "TENANT_MEMBER_INVALID",
@@ -12,6 +15,9 @@ export const API_ERROR_CODES = {
 export const API_ERROR_MESSAGES = {
   authorizationRequired: "Authorization is required.",
   accessForbidden: "Access is forbidden.",
+  moduleInvalid: "Invalid module request.",
+  moduleNotFound: "Module was not found.",
+  moduleTenantContextInvalid: "Module tenant context is required.",
   tenantSwitchInvalid: "Invalid tenant switch request.",
   tenantSettingsInvalid: "Invalid tenant settings.",
   tenantMemberInvalid: "Invalid tenant member request.",
@@ -47,6 +53,18 @@ export function unauthorizedFailure(): ApiErrorResponse {
 
 export function forbiddenFailure(): ApiErrorResponse {
   return failure(API_ERROR_CODES.authForbidden, API_ERROR_MESSAGES.accessForbidden);
+}
+
+export function moduleInvalidFailure(): ApiErrorResponse {
+  return failure(API_ERROR_CODES.moduleInvalid, API_ERROR_MESSAGES.moduleInvalid);
+}
+
+export function moduleNotFoundFailure(): ApiErrorResponse {
+  return failure(API_ERROR_CODES.moduleNotFound, API_ERROR_MESSAGES.moduleNotFound);
+}
+
+export function moduleTenantContextInvalidFailure(): ApiErrorResponse {
+  return failure(API_ERROR_CODES.moduleTenantContextInvalid, API_ERROR_MESSAGES.moduleTenantContextInvalid);
 }
 
 export function tenantSwitchInvalidFailure(): ApiErrorResponse {

@@ -58,6 +58,14 @@
 - `PATCH /api/v1/tenants/current/settings` updates only safe existing fields
 - keep updates limited to schema-backed fields already present on `Tenant`
 
+## Module Registry Route
+
+- `GET /api/v1/modules` returns the global module catalog
+- `GET /api/v1/modules/current` returns modules enabled for the current tenant
+- `POST /api/v1/modules/current/:moduleKey/enable` enables a module for the current tenant
+- `POST /api/v1/modules/current/:moduleKey/disable` disables a module for the current tenant
+- catalog data stays server-owned; tenant routes require auth, tenant context, and `modules:manage`
+
 ## Response Rule
 
 - never return password hashes, raw tokens, or DB objects
