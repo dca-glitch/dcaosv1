@@ -1,12 +1,38 @@
 import type { RequestHandler } from "express";
 import { failure, success } from "../utils/responses";
+import { resolveActiveRoles, resolveEffectivePermissions } from "../middlewares/authorization.middleware";
 import type { AuthSessionLocals } from "./types";
 import { revokeAuthSession, toCurrentUserResponse } from "./session-context.runtime";
+import type { AuthAuthorizationContextResponse } from "./types";
 
 function skeletonResponse(message: string) {
   return failure("AUTH_SKELETON_ONLY", message, {
     phase: "skeleton"
   });
+}
+
+function toAuthorizationContextResponse(
+  authSession: NonNullable<AuthSessionLocals["authSession"]>
+): AuthAuthorizationContextResponse {
+  const activeMembership = authSession.tenantContext.activeMembership;
+  const roles = resolveActiveRoles(authSession);
+  const effectivePermissions = resolveEffectivePermissions(authSession);
+
+  return {
+    user: authSession.user,
+    tenantContext: {
+      activeTenant: activeMembership
+        ? {
+            tenantId: activeMembership.tenantId,
+            tenantMembershipId: activeMembership.tenantMembershipId
+          }
+        : null,
+      activeMembership,
+      memberships: authSession.tenantContext.memberships,
+      roles
+    },
+    effectivePermissions
+  };
 }
 
 export const login: RequestHandler = (_req, res) => {
@@ -48,6 +74,21 @@ export const getCurrentUser: RequestHandler = (_req, res) => {
 
   res.json(
     success(toCurrentUserResponse(authSession), {
+      phase: "runtime",
+      auth: "controlled-mvp"
+    })
+  );
+};
+
+export const getAuthContext: RequestHandler = (_req, res) => {
+  const authSession = (res.locals as AuthSessionLocals).authSession;
+  if (!authSession) {
+    res.status(401).json(failure("AUTH_UNAUTHORIZED", "Authorization is required."));
+    return;
+  }
+
+  res.json(
+    success(toAuthorizationContextResponse(authSession), {
       phase: "runtime",
       auth: "controlled-mvp"
     })

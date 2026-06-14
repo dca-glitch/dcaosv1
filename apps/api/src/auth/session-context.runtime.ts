@@ -83,7 +83,7 @@ function toResolvedSessionContext(record: SessionLookupRecord): AuthResolvedSess
       lastSeenAt: record.lastSeenAt
     },
     tenantContext: {
-      activeMembership: memberships.length === 1 ? memberships[0] : null,
+      activeMembership: memberships[0] ?? null,
       memberships
     }
   };

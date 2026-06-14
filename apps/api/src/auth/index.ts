@@ -3,6 +3,8 @@ export type {
   AuthCallbackResult,
   AuthConfigSnapshot,
   AuthConfigValidationResult,
+  AuthAuthorizationContextResponse,
+  AuthAuthorizationTenantContext,
   AuthContextEnvelope,
   AuthContextResolutionResult,
   AuthProviderProfile,

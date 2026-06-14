@@ -104,7 +104,7 @@ function buildAuthResponse(
       ttlMinutes: getLoginPolicy().sessionTtlMinutes
     },
     tenantContext: {
-      activeMembership: memberships.length === 1 ? memberships[0] : null,
+      activeMembership: memberships[0] ?? null,
       memberships
     }
   };

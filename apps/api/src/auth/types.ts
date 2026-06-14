@@ -1,5 +1,6 @@
 import type { RequestContext, TenantRequestContext } from "../types";
 import type { AuthMode } from "../config";
+import type { PermissionKey } from "../security/permission-keys";
 
 export type SessionStoreType = "deferred" | "database" | "redis" | "encrypted-cookie";
 
@@ -89,6 +90,22 @@ export interface AuthCurrentUserResponse {
     activeMembership: AuthTenantMembershipSummary | null;
     memberships: AuthTenantMembershipSummary[];
   };
+}
+
+export interface AuthAuthorizationTenantContext {
+  activeTenant: {
+    tenantId: string;
+    tenantMembershipId: string;
+  } | null;
+  activeMembership: AuthTenantMembershipSummary | null;
+  memberships: AuthTenantMembershipSummary[];
+  roles: string[];
+}
+
+export interface AuthAuthorizationContextResponse {
+  user: AuthLoginUserSummary;
+  tenantContext: AuthAuthorizationTenantContext;
+  effectivePermissions: PermissionKey[];
 }
 
 export interface AuthLogoutResponse {
