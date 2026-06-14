@@ -5,13 +5,15 @@
 - [ ] Repo is clean and synced.
 - [ ] CI is green.
 - [x] Production-like API build/start scripts are present.
-- [ ] VPS process supervisor/restart policy is approved.
+- [x] Docker Compose runtime files are present.
+- [ ] VPS Docker Compose changes are approved.
 - [ ] Required env vars are prepared by name only in docs.
 - [ ] Staging DB is created.
 - [ ] Staging DB contains no production data.
 - [ ] Migration plan is approved.
 - [ ] `prisma db push` is not used.
 - [ ] Reverse proxy TLS plan is reviewed.
+- [ ] Shared Caddy route is reviewed.
 - [ ] CORS origin strategy is set; prefer same-origin `/api/v1`.
 - [x] Staging smoke script or reviewed allow-staging flag is prepared.
 - [ ] Backup snapshot is taken before migration.

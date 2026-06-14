@@ -94,10 +94,10 @@ This review uses OWASP ASVS 5.0.0, OWASP Top 10 2025 awareness, OWASP Authentica
 
 ## 11. Deployment And Infrastructure Security Review
 
-- Implemented controls: staging deployment plan exists; no deployment performed.
-- Evidence in repo: `docs/deployment/VPS_STAGING_DEPLOYMENT_PLAN.md`.
-- Gaps: TLS, HSTS, reverse proxy, security headers, monitoring, and start strategy not implemented.
-- Recommended solution: define supervised production API start and proxy config.
+- Implemented controls: staging deployment plan, Dockerfile, and Docker Compose files exist; no deployment performed.
+- Evidence in repo: `docs/deployment/VPS_STAGING_DEPLOYMENT_PLAN.md`, `Dockerfile`, `docker-compose.yml`.
+- Gaps: TLS, HSTS, shared Caddy route, security headers, monitoring, and Docker Compose run evidence are not verified.
+- Recommended solution: execute the approved Docker Compose staging plan and shared Caddy route after owner approval.
 - Staging requirement: HTTPS-only, HSTS after domain confirmation, security headers/CSP.
 - Client-access requirement: monitoring and rollback runbooks complete.
 
@@ -152,7 +152,7 @@ This review uses OWASP ASVS 5.0.0, OWASP Top 10 2025 awareness, OWASP Authentica
 - Staging smoke command exists but has not been run against VPS staging.
 - No real browser QA sign-off.
 - No password reset, invite flow, OAuth, billing, marketplace, or Finance Lite migration.
-- No production start strategy.
+- No VPS Docker Compose run evidence.
 - No CORS/security header verification.
 - No tenant isolation negative test evidence.
 - No backup/restore test.
@@ -160,7 +160,7 @@ This review uses OWASP ASVS 5.0.0, OWASP Top 10 2025 awareness, OWASP Authentica
 
 ## 18. Recommended Remediation Roadmap
 
-- Must fix before VPS staging: staging env contract, VPS process supervisor/restart policy, staging DB safety, migration runbook, HTTPS/proxy plan, and staging smoke execution plan.
+- Must fix before VPS staging: staging env contract, VPS Docker Compose approval, staging DB safety, migration runbook, HTTPS/shared Caddy plan, and staging smoke execution plan.
 - Must fix before client access: tenant isolation negative tests, external auth/session review, staging/client browser QA evidence, backup/restore test, admin audit logging, security headers/CSP, dependency review.
 - Should fix before beta: onboarding, password reset/admin recovery, monitoring, incident response, privacy retention.
 - Future hardening: SSO/OAuth if required, MFA, deeper module isolation, automated security tests.

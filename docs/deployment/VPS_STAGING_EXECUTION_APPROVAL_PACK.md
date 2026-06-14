@@ -4,9 +4,9 @@
 
 This pack is the final repo-side approval artifact before any controlled VPS staging deployment. It does not approve deployment by itself. It defines what the owner may approve in a future execution step and what remains forbidden.
 
-Current approved repo baseline:
+Future execution must pin an exact approved repo baseline:
 
-- Commit: `101fa9f` - Add production-like API start path for staging.
+- Commit: exact owner-approved commit hash.
 - Branch: `main`.
 - CI: must be green on the exact commit before execution.
 
@@ -21,24 +21,31 @@ Current approved repo baseline:
 - Staging smoke exists as `npm run smoke:mvp:staging`.
 - Local smoke remains local-only by default.
 
-No repo-side blocker remains for asking the owner to approve controlled VPS staging execution. Execution is still blocked until the owner approves VPS access, staging DB setup, secrets handling, migration scope, process supervisor choice, reverse proxy changes, and staging smoke/browser QA.
+No repo-side blocker remains for asking the owner to approve controlled VPS staging execution. Execution is still blocked until the owner approves VPS access, staging DB setup, secrets handling, migration scope, Docker Compose changes, reverse proxy changes, and staging smoke/browser QA.
 
-## Process Supervisor Recommendation
+## Docker Compose Runtime Recommendation
 
-| Option | Complexity | Reliability | Restart behavior | Logging | Fit now | Future fit |
-| --- | --- | --- | --- | --- | --- | --- |
-| systemd | Low/medium | High on a single VPS | Native restart policies | `journalctl` plus app logs | Best fit for early small-scale staging | Good until multi-service orchestration becomes necessary |
-| Docker Compose | Medium/high | High if VPS is already containerized | Container restart policies | Docker logs or external log stack | Good only if the VPS deployment standard is already container-first | Strong for future multi-service module stacks |
-| PM2 | Low | Good for Node apps | Node-specific process restart | PM2 logs | Acceptable but adds a Node-specific manager | Less general than systemd or Compose |
+VPS discovery shows the server is Docker Compose based, not systemd based. Docker Compose supersedes the earlier systemd recommendation for this VPS.
 
-Recommendation: use `systemd` first for early DCA OS v1 staging unless the VPS is already standardized around Docker Compose. Use PM2 only if the owner explicitly prefers a Node-specific process manager.
+Approved pattern:
+
+- Shared root orchestration: `/opt/dca/docker-compose.yml`.
+- App path: `/opt/dca/apps/dcaosv1/app`.
+- Shared Caddy container: `dca-caddy`.
+- Shared external Docker network: `dca_net`.
+- API service: `dcaosv1-api`.
+- Database service: `dcaosv1-postgres`.
+- API internal port: `4000`.
+- Optional localhost debug API binding only: `127.0.0.1:4010:4000`.
+- Optional localhost Postgres binding only: `127.0.0.1:5434:5432`.
+- Do not use host port `4000`; Finance Lite already uses that pattern.
 
 Approval gate:
 
-- Owner approves the process supervisor before deployment.
-- Supervisor config is reviewed before it is applied.
-- Previous service target/revision is recorded for rollback.
-- Supervisor logs and restart policy are captured as evidence.
+- Owner approves Docker Compose changes before deployment.
+- Compose files are reviewed before they are applied.
+- Previous image/revision is recorded for rollback.
+- Container status and logs are captured as evidence.
 
 ## Staging Database Strategy
 
@@ -88,11 +95,37 @@ Expected staging route:
 - Transport: HTTPS only.
 - Web: served through the reverse proxy.
 - API: served under `/api/v1` through the same origin.
+- API proxy target: `dcaosv1-api:4000`.
+- Web static mount into shared Caddy: `/opt/dca/apps/dcaosv1/app/apps/web/dist:/srv/dcaosv1/web/dist:ro`.
 - CORS: no API CORS runtime is currently implemented; same-origin proxying is the expected staging shape.
 - Smoke target: `https://system.digitalcubeagency.net/api/v1`.
 - Client access: blocked.
 
 Do not change DNS, Caddy, reverse proxy config, or VPS firewall rules until explicitly approved.
+
+Draft shared Caddy route:
+
+```caddyfile
+system.digitalcubeagency.net {
+  encode gzip
+
+  handle /api/v1/* {
+    reverse_proxy dcaosv1-api:4000
+  }
+
+  handle {
+    root * /srv/dcaosv1/web/dist
+    try_files {path} /index.html
+    file_server
+  }
+}
+```
+
+Expected shared Caddy mount:
+
+```yaml
+/opt/dca/apps/dcaosv1/app/apps/web/dist:/srv/dcaosv1/web/dist:ro
+```
 
 ## Migration Approval Gate
 
@@ -127,7 +160,7 @@ Required evidence before execution:
 - Current git commit recorded.
 - Staging DB backup created before migration.
 - Rollback app revision/path documented.
-- Process supervisor restart/rollback path documented.
+- Docker image/container rollback path documented.
 - Smoke failure stop condition documented.
 
 Stop conditions:
@@ -184,8 +217,8 @@ The owner may approve a future controlled staging execution that includes only:
 - Install dependencies.
 - Validate and build.
 - Configure staging env on the host.
-- Configure approved process supervisor.
-- Configure approved reverse proxy.
+- Configure approved Docker Compose services.
+- Configure approved shared Caddy route.
 - Create staging DB.
 - Run approved staging migration only.
 - Start staging app.
@@ -211,7 +244,7 @@ The owner may use this exact shape for the future execution gate:
 ```text
 I approve controlled VPS staging execution for DCA OS v1 commit <commit>.
 Approved host: system.digitalcubeagency.net.
-Approved process supervisor: <systemd|Docker Compose|PM2>.
+Approved runtime: Docker Compose using dcaosv1-api and dcaosv1-postgres on dca_net.
 Approved database target: staging-only PostgreSQL, no production/client data.
 Approved migration scope: Prisma migrations only, no db push.
 Approved smoke target: https://system.digitalcubeagency.net/api/v1.

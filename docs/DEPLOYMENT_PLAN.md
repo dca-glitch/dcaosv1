@@ -12,7 +12,7 @@ The planned production URL is system.digitalcubeagency.net.
 
 ## Deployment Target
 
-The planned target is a VPS-based deployment.
+The planned target is a VPS-based deployment using Docker Compose.
 
 ## Deployment Readiness
 
@@ -33,9 +33,9 @@ Before deployment, the project should have:
 Expected deployable parts:
 
 - frontend build
-- API service
-- PostgreSQL database
-- reverse proxy
+- API service container
+- PostgreSQL database container
+- shared Caddy reverse proxy container
 - environment configuration
 
 ## Health Checks

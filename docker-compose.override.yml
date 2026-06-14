@@ -1,0 +1,8 @@
+services:
+  dcaosv1-api:
+    ports:
+      - "127.0.0.1:4010:4000"
+
+  dcaosv1-postgres:
+    ports:
+      - "127.0.0.1:5434:5432"

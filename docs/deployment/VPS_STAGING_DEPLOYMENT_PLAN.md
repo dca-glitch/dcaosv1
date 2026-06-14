@@ -30,7 +30,12 @@ Final execution approval boundaries are summarized in [VPS Staging Execution App
 - The preferred staging shape is same-origin HTTPS through a reverse proxy.
 - No API CORS runtime is implemented yet.
 - The API production-like repo strategy is compiled JavaScript started with Node.
-- The VPS still needs an approved external process supervisor/restart policy.
+- The VPS uses Docker Compose, not host Node/systemd, for app runtime.
+- The shared Caddy container is `dca-caddy`.
+- The shared external Docker network is `dca_net`.
+- DCA OS API service is `dcaosv1-api`.
+- DCA OS database service is `dcaosv1-postgres`.
+- Do not use host port `4000`; Finance Lite already uses that pattern. Use `127.0.0.1:4010:4000` only as an optional localhost debug binding.
 - PostgreSQL staging must be separate from production and must contain no production data.
 - Prisma migrations are the only allowed schema-change path; `prisma db push` is forbidden for staging and production.
 
@@ -90,13 +95,14 @@ If cross-origin staging is required later, add a reviewed CORS implementation be
 
 ### Deployment / Runtime
 
-No deployment/runtime env contract is finalized beyond process manager configuration and `PORT`.
+Deployment runtime is Docker Compose based.
 
 Expected deployment-side values to document outside Git:
 
 - app directory/path
-- process name
-- Node.js version
+- Compose project/path
+- Docker image build result
+- container names
 - reverse proxy site host
 - TLS contact/email, if required by the proxy
 - log location
@@ -118,7 +124,7 @@ Staging smoke must use:
 
 Do not use any other host for controlled staging smoke unless the owner explicitly approves it.
 
-## Staging Host Build Commands
+## Docker Compose Build Commands
 
 Install and validate:
 
@@ -128,16 +134,10 @@ npm run validate
 npm run -w @dca-os-v1/data prisma:validate
 ```
 
-Build web output:
+Build the Docker image:
 
 ```bash
-npm run -w @dca-os-v1/web build
-```
-
-Build API compiled output:
-
-```bash
-npm run -w @dca-os-v1/api build
+docker compose build dcaosv1-api
 ```
 
 The compiled API entry is:
@@ -146,7 +146,15 @@ The compiled API entry is:
 apps/api/dist/apps/api/src/server.js
 ```
 
-## Start Commands
+The Docker build runs:
+
+```bash
+npm run -w @dca-os-v1/data prisma:generate
+npm run -w @dca-os-v1/api build
+npm run -w @dca-os-v1/web build
+```
+
+## Runtime Commands
 
 Local Windows development:
 
@@ -155,13 +163,13 @@ npm.cmd run dev:api
 npm.cmd run dev:web
 ```
 
-Production-like API start after build:
+Docker Compose staging runtime:
 
 ```bash
-npm run -w @dca-os-v1/api start
+docker compose up -d dcaosv1-postgres dcaosv1-api
 ```
 
-The staging VPS should run that command under an approved process supervisor/restart mechanism. Do not use `npm run -w @dca-os-v1/api dev` for staging runtime; it is TypeScript/`tsx` based and suitable for local development only.
+The API container starts compiled JavaScript through `npm run -w @dca-os-v1/api start`. Do not use `npm run -w @dca-os-v1/api dev` for staging runtime; it is TypeScript/`tsx` based and suitable for local development only.
 
 ## Dry-Run Command Plan
 
@@ -171,9 +179,8 @@ Run these from the repo root after pulling the approved commit on the staging ho
 npm ci
 npm run validate
 npm run -w @dca-os-v1/data prisma:validate
-npm run -w @dca-os-v1/web build
-npm run -w @dca-os-v1/api build
-npm run -w @dca-os-v1/api start
+docker compose build dcaosv1-api
+docker compose up -d dcaosv1-postgres dcaosv1-api
 ```
 
 After the API and web are served through the approved staging reverse proxy:
@@ -227,6 +234,34 @@ npm run smoke:mvp:staging
 
 The staging smoke command refuses unknown hosts, non-HTTPS URLs, missing explicit `MVP_SMOKE_API_BASE_URL`, and API paths other than `/api/v1`.
 
+## Shared Caddy Docker Route Snippet
+
+Do not edit the VPS Caddyfile until explicitly approved. The expected route shape for the shared `dca-caddy` container is:
+
+```caddyfile
+system.digitalcubeagency.net {
+  encode gzip
+
+  handle /api/v1/* {
+    reverse_proxy dcaosv1-api:4000
+  }
+
+  handle {
+    root * /srv/dcaosv1/web/dist
+    try_files {path} /index.html
+    file_server
+  }
+}
+```
+
+Expected shared Caddy web mount:
+
+```yaml
+/opt/dca/apps/dcaosv1/app/apps/web/dist:/srv/dcaosv1/web/dist:ro
+```
+
+The API proxy must use the Docker service name `dcaosv1-api:4000` on the external `dca_net` network.
+
 ## First Staging Smoke Checklist
 
 - Health endpoint returns ok.
@@ -261,7 +296,8 @@ The staging smoke command refuses unknown hosts, non-HTTPS URLs, missing explici
 - [ ] Env var presence check by name only.
 - [ ] Build and validation logs.
 - [ ] API compiled-output path exists.
-- [ ] Process supervisor/restart policy recorded.
+- [ ] Docker image build result recorded.
+- [ ] `dcaosv1-api` and `dcaosv1-postgres` container status recorded.
 - [ ] Migration command and result, if separately approved.
 - [ ] Health endpoint result.
 - [ ] Staging smoke result with secrets and tokens masked.
@@ -274,7 +310,7 @@ The staging smoke command refuses unknown hosts, non-HTTPS URLs, missing explici
 
 - Keep the previous working application revision available.
 - Keep database backups before any staging or production migration.
-- Record the previous process supervisor target before switching versions.
+- Record the previous Docker image/revision before switching versions.
 - If application smoke fails before migration, roll back application revision only.
 - If migration smoke fails, stop and review before any further migration attempt.
 - Do not stack fixes directly on the VPS without committing and validating them locally first.
