@@ -23,6 +23,7 @@ git diff --check
 
 ```powershell
 npm.cmd run smoke:mvp:local
+npm.cmd run smoke:mvp:staging
 ```
 
 Requires local-only env vars:
@@ -32,7 +33,9 @@ Requires local-only env vars:
 - Optional `AUTH_SEED_TESTER_EMAIL`
 - Optional `AUTH_SEED_TESTER_PASSWORD`
 
-Current coverage includes local health, login, auth/me, auth/context, current tenant, current modules, module enable/disable for admin, tenant members, tenant settings, optional tester forbidden module enable, logout, and reused-token denial. It does not currently cover invalid module keys, tenant switch negative cases, member-detail cross-tenant IDs, or missing active-tenant context.
+Current local coverage includes local health, login, auth/me, auth/context, current tenant, current modules, module enable/disable for admin, tenant members, tenant settings, optional tester forbidden module enable, logout, and reused-token denial. It does not currently cover invalid module keys, tenant switch negative cases, member-detail cross-tenant IDs, or missing active-tenant context.
+
+The staging smoke command is prepared but not yet executed. It requires an explicit HTTPS staging API URL and refuses unknown hosts.
 
 ## Docs Available
 
@@ -65,7 +68,7 @@ Current coverage includes local health, login, auth/me, auth/context, current te
 ## Current Known Limitations
 
 - Local MVP only; no VPS deployment.
-- No staging smoke command.
+- Staging smoke command exists but has not been run against VPS staging.
 - Local browser QA/dev-server smoke completed in prior gates; staging/client browser QA evidence still needs to be collected.
 - No password reset, invite flow, OAuth, billing, marketplace, or Finance Lite migration.
 - No production start strategy.

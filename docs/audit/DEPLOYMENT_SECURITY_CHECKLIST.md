@@ -11,7 +11,7 @@
 - [ ] `prisma db push` is not used.
 - [ ] Reverse proxy TLS plan is reviewed.
 - [ ] CORS origin strategy is set; prefer same-origin `/api/v1`.
-- [ ] Staging smoke script or reviewed allow-staging flag is prepared.
+- [x] Staging smoke script or reviewed allow-staging flag is prepared.
 - [ ] Backup snapshot is taken before migration.
 - [ ] Rollback path is documented.
 - [ ] No public client access is enabled.

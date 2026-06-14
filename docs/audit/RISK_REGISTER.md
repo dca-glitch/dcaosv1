@@ -21,7 +21,7 @@ Status meanings:
 
 | Risk ID | Title | Area | Current status | Evidence / current control | Gap | Impact | Likelihood | Recommended remediation | Owner | Priority | VPS blocker | Client blocker |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| R-005 | Staging smoke path missing | QA | Partial | `scripts/smoke-mvp-local.mjs` refuses non-local hosts | No staging-safe smoke command | Staging regressions missed | High | Add reviewed staging smoke command with allowlist | Engineering | P1 | Yes | Yes |
+| R-005 | Staging smoke path not executed | QA | Partial | `npm.cmd run smoke:mvp:staging` exists and refuses unapproved hosts | No staging host run or evidence yet | Staging regressions missed | High | Execute reviewed staging smoke after VPS staging is approved | Engineering | P1 | Yes | Yes |
 | R-006 | Staging/client browser QA evidence not collected | Frontend | Partial | Local browser QA/dev-server smoke was completed in prior gate | No VPS/client-browser screenshots or repeatable evidence attached to audit pack | UI/session bugs missed after deployment | Medium | Run staging browser QA checklist with screenshots | QA | P1 | Yes | Yes |
 | R-007 | Password reset not implemented | Auth | Missing | Out-of-scope docs | No recovery flow | Users can be locked out | High after clients | Decide admin reset vs password reset design | Product/Engineering | P1 | No | Yes |
 | R-008 | Invite/onboarding flow not implemented | Auth | Missing | Out-of-scope docs | No safe client onboarding | Manual user creation risk | High after clients | Design invite/onboarding flow with email security | Product/Engineering | P1 | No | Yes |

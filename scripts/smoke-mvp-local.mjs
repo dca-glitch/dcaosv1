@@ -1,4 +1,6 @@
-const apiBaseUrl = process.env.MVP_SMOKE_API_BASE_URL ?? "http://127.0.0.1:4000/api/v1";
+const smokeMode = process.argv.includes("--staging") ? "staging" : "local";
+const defaultLocalApiBaseUrl = "http://127.0.0.1:4000/api/v1";
+const apiBaseUrl = process.env.MVP_SMOKE_API_BASE_URL ?? defaultLocalApiBaseUrl;
 const adminEmail = process.env.AUTH_SEED_TEST_EMAIL;
 const adminPassword = process.env.AUTH_SEED_TEST_PASSWORD;
 const testerEmail = process.env.AUTH_SEED_TESTER_EMAIL;
@@ -6,6 +8,7 @@ const testerPassword = process.env.AUTH_SEED_TESTER_PASSWORD;
 
 const results = [];
 const allowedLocalHosts = new Set(["127.0.0.1", "localhost"]);
+const allowedStagingHosts = new Set(["staging.system.digitalcubeagency.net"]);
 
 function record(name, ok, detail = "") {
   results.push({ name, ok, detail });
@@ -23,14 +26,31 @@ function requireEnv(name, value) {
   return true;
 }
 
-function requireLocalApiBaseUrl(value) {
+function requireApiBaseUrl(value) {
   try {
     const parsed = new URL(value);
-    const ok = allowedLocalHosts.has(parsed.hostname);
-    record("local API target", ok, ok ? parsed.hostname : "blocked non-local host");
+    const pathOk = parsed.pathname.replace(/\/$/, "") === "/api/v1";
+
+    if (smokeMode === "local") {
+      const ok = allowedLocalHosts.has(parsed.hostname) && pathOk;
+      record("local API target", ok, ok ? parsed.hostname : "blocked non-local host or API path");
+      return ok;
+    }
+
+    const hasExplicitTarget = typeof process.env.MVP_SMOKE_API_BASE_URL === "string" &&
+      process.env.MVP_SMOKE_API_BASE_URL.length > 0;
+    const hostOk = allowedStagingHosts.has(parsed.hostname);
+    const protocolOk = parsed.protocol === "https:";
+    const ok = hasExplicitTarget && hostOk && protocolOk && pathOk;
+
+    record(
+      "staging API target",
+      ok,
+      ok ? parsed.hostname : "blocked unapproved host, protocol, missing explicit target, or API path"
+    );
     return ok;
   } catch {
-    record("local API target", false, "invalid URL");
+    record(`${smokeMode} API target`, false, "invalid URL");
     return false;
   }
 }
@@ -82,7 +102,7 @@ async function login(email, password) {
 }
 
 async function main() {
-  if (!requireLocalApiBaseUrl(apiBaseUrl)) {
+  if (!requireApiBaseUrl(apiBaseUrl)) {
     process.exitCode = 1;
     return;
   }

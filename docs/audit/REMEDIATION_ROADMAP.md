@@ -9,7 +9,7 @@
 | Staging DB safety | Wrong DB target | Create staging DB and least-privilege user | Prisma validate against staging only after approval | Medium | DB host | Deploy Prep 2 |
 | Migration runbook | Schema drift/data loss | Use migrations only; no `db push` | Staging migration dry run | Medium | Backup plan | Deploy Prep 2 |
 | TLS/reverse proxy plan | Transport/session risk | Configure HTTPS same-origin proxy | Health and smoke through proxy | Medium | Domain/DNS | Deploy Prep 3 |
-| Staging smoke path | Missed regressions | Add reviewed staging smoke command separate from local smoke | Staging smoke checklist | Small | Staging test user | Deploy Prep 3 |
+| Staging smoke execution | Missed regressions | Run reviewed staging smoke command after host and credentials are approved | Staging smoke checklist | Small | Staging test user | Deploy Prep 3 |
 | Browser QA checklist | UI/session defects | Manual browser QA with screenshots | Login/logout/module/team/settings | Small | Staging URL | Deploy Prep 4 |
 
 ## Must Fix Before Client Access

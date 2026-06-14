@@ -6,7 +6,7 @@ This review uses OWASP ASVS 5.0.0, OWASP Top 10 2025 awareness, OWASP Authentica
 
 - Implemented controls: local MVP auth/session, tenant context, permission guards, Prisma schema, local smoke, CI validation.
 - Evidence in repo: `apps/api/src/auth`, `apps/api/src/middlewares`, `packages/data/prisma/schema.prisma`, `scripts/smoke-mvp-local.mjs`, `.github/workflows/ci.yml`.
-- Gaps: no VPS deployment, no staging smoke, no staging/client browser QA evidence attached to this audit pack, no external tenant isolation review.
+- Gaps: no VPS deployment, staging smoke command is prepared but not executed, no staging/client browser QA evidence attached to this audit pack, no external tenant isolation review.
 - Recommended solution: complete staging dry run, negative tests, external review, and operations checklist.
 - Staging requirement: HTTPS, reverse proxy, staging DB, env separation, migration dry run.
 - Client-access requirement: external security review complete and high risks remediated.
@@ -149,7 +149,7 @@ This review uses OWASP ASVS 5.0.0, OWASP Top 10 2025 awareness, OWASP Authentica
 ## 17. Current Known Gaps
 
 - No VPS deployment.
-- No staging smoke.
+- Staging smoke command exists but has not been run against VPS staging.
 - No real browser QA sign-off.
 - No password reset, invite flow, OAuth, billing, marketplace, or Finance Lite migration.
 - No production start strategy.
@@ -160,7 +160,7 @@ This review uses OWASP ASVS 5.0.0, OWASP Top 10 2025 awareness, OWASP Authentica
 
 ## 18. Recommended Remediation Roadmap
 
-- Must fix before VPS staging: staging env contract, production start strategy, staging DB safety, migration runbook, HTTPS/proxy plan, staging smoke script.
+- Must fix before VPS staging: staging env contract, production start strategy, staging DB safety, migration runbook, HTTPS/proxy plan, and staging smoke execution plan.
 - Must fix before client access: tenant isolation negative tests, external auth/session review, staging/client browser QA evidence, backup/restore test, admin audit logging, security headers/CSP, dependency review.
 - Should fix before beta: onboarding, password reset/admin recovery, monitoring, incident response, privacy retention.
 - Future hardening: SSO/OAuth if required, MFA, deeper module isolation, automated security tests.

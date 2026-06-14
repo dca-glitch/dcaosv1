@@ -42,7 +42,7 @@ The system is not deployed to VPS and is not ready for client access.
 - Create a staging database with no production data.
 - Approve migration and rollback plan.
 - Configure HTTPS/reverse proxy plan.
-- Add or approve staging smoke path.
+- Run the approved staging smoke path and collect logs.
 - Run staging smoke and collect logs.
 
 ## What Must Happen Before Client Access
