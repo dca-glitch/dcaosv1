@@ -8,7 +8,7 @@ const testerPassword = process.env.AUTH_SEED_TESTER_PASSWORD;
 
 const results = [];
 const allowedLocalHosts = new Set(["127.0.0.1", "localhost"]);
-const allowedStagingHosts = new Set(["staging.system.digitalcubeagency.net"]);
+const allowedStagingHosts = new Set(["system.digitalcubeagency.net"]);
 
 function record(name, ok, detail = "") {
   results.push({ name, ok, detail });

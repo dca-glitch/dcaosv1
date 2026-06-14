@@ -23,8 +23,8 @@ Final execution approval boundaries are summarized in [VPS Staging Execution App
 
 ## Current Assumptions To Verify
 
-- Production domain is planned as `system.digitalcubeagency.net`.
-- Staging should use a separate staging host, currently expected as `staging.system.digitalcubeagency.net`.
+- DCA OS will be served from `system.digitalcubeagency.net`.
+- Controlled staging validation uses the final OS subdomain with no client access.
 - The API is Express under `/api/v1`.
 - The web app is React/Vite and defaults to same-origin `/api/v1`.
 - The preferred staging shape is same-origin HTTPS through a reverse proxy.
@@ -114,9 +114,9 @@ Smoke credentials are local/staging-only and must never be committed:
 
 Staging smoke must use:
 
-- `MVP_SMOKE_API_BASE_URL=https://staging.system.digitalcubeagency.net/api/v1`
+- `MVP_SMOKE_API_BASE_URL=https://system.digitalcubeagency.net/api/v1`
 
-Do not use `system.digitalcubeagency.net` for staging smoke unless the owner explicitly approves that host as the staging target.
+Do not use any other host for controlled staging smoke unless the owner explicitly approves it.
 
 ## Staging Host Build Commands
 
@@ -179,7 +179,7 @@ npm run -w @dca-os-v1/api start
 After the API and web are served through the approved staging reverse proxy:
 
 ```bash
-export MVP_SMOKE_API_BASE_URL="https://staging.system.digitalcubeagency.net/api/v1"
+export MVP_SMOKE_API_BASE_URL="https://system.digitalcubeagency.net/api/v1"
 npm run smoke:mvp:staging
 ```
 
@@ -217,7 +217,7 @@ The local smoke script intentionally refuses non-local API hosts.
 Staging API smoke, after staging-only credentials and the staging host are approved:
 
 ```bash
-export MVP_SMOKE_API_BASE_URL="https://staging.system.digitalcubeagency.net/api/v1"
+export MVP_SMOKE_API_BASE_URL="https://system.digitalcubeagency.net/api/v1"
 export AUTH_SEED_TEST_EMAIL="<staging-test-email>"
 export AUTH_SEED_TEST_PASSWORD="<staging-test-password>"
 export AUTH_SEED_TESTER_EMAIL="<staging-tester-email>"

@@ -84,12 +84,12 @@ Separation rule:
 
 Expected staging route:
 
-- Host: `staging.system.digitalcubeagency.net`.
+- Host: `system.digitalcubeagency.net`.
 - Transport: HTTPS only.
 - Web: served through the reverse proxy.
 - API: served under `/api/v1` through the same origin.
 - CORS: no API CORS runtime is currently implemented; same-origin proxying is the expected staging shape.
-- Smoke target: `https://staging.system.digitalcubeagency.net/api/v1`.
+- Smoke target: `https://system.digitalcubeagency.net/api/v1`.
 - Client access: blocked.
 
 Do not change DNS, Caddy, reverse proxy config, or VPS firewall rules until explicitly approved.
@@ -147,7 +147,7 @@ Staging smoke:
 - Command: `npm run smoke:mvp:staging`.
 - Requires explicit `MVP_SMOKE_API_BASE_URL`.
 - Requires HTTPS.
-- Allows only `staging.system.digitalcubeagency.net`.
+- Allows only `system.digitalcubeagency.net`.
 - Requires `/api/v1`.
 - Requires staging-only credentials supplied through the shell.
 - Must not print passwords, tokens, cookies, auth headers, password hashes, session token hashes, or full database URLs.
@@ -210,11 +210,11 @@ The owner may use this exact shape for the future execution gate:
 
 ```text
 I approve controlled VPS staging execution for DCA OS v1 commit <commit>.
-Approved host: staging.system.digitalcubeagency.net.
+Approved host: system.digitalcubeagency.net.
 Approved process supervisor: <systemd|Docker Compose|PM2>.
 Approved database target: staging-only PostgreSQL, no production/client data.
 Approved migration scope: Prisma migrations only, no db push.
-Approved smoke target: https://staging.system.digitalcubeagency.net/api/v1.
+Approved smoke target: https://system.digitalcubeagency.net/api/v1.
 Client access remains blocked.
 Secrets must not be printed.
 Stop if any command targets production, requests destructive reset, or smoke fails.
