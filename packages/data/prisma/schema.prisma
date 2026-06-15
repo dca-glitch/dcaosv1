@@ -62,6 +62,22 @@ enum TaskRecurringType {
   YEARLY
 }
 
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  PAID
+  OVERDUE
+  CANCELLED
+  VOIDED
+}
+
+enum RecurringInvoiceInterval {
+  DAILY
+  WEEKLY
+  MONTHLY
+  YEARLY
+}
+
 enum SettingValueType {
   STRING
   NUMBER
@@ -90,6 +106,9 @@ model Tenant {
   clients       Client[]
   projects      Project[]
   tasks         Task[]
+  invoices      Invoice[]
+  recurringInvoices RecurringInvoice[]
+  recurringInvoiceRuns RecurringInvoiceRun[]
   tenantModules TenantModule[]
   tenantSettings TenantSetting[]
   auditLogs     AuditLog[]        @relation("TenantAuditLogs")
@@ -257,6 +276,8 @@ model Client {
   updatedAt       DateTime  @updatedAt
   tenant          Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   projects        Project[]
+  invoices        Invoice[]
+  recurringInvoices RecurringInvoice[]
 
   @@index([tenantId])
   @@index([tenantId, isArchived])
@@ -276,6 +297,8 @@ model Project {
   tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   client      Client    @relation(fields: [clientId], references: [id], onDelete: Restrict)
   tasks       Task[]
+  invoices    Invoice[]
+  recurringInvoices RecurringInvoice[]
 
   @@index([tenantId])
   @@index([tenantId, isArchived])
@@ -304,6 +327,130 @@ model Task {
   @@index([priority])
   @@index([status])
   @@index([recurringType])
+}
+
+model Invoice {
+  id                  String        @id @default(uuid())
+  tenantId            String
+  clientId            String
+  projectId           String?
+  recurringInvoiceId  String?
+  invoiceNumber       String
+  status              InvoiceStatus @default(DRAFT)
+  issueDate           DateTime?
+  dueDate             DateTime?
+  paidAt              DateTime?
+  currency            String        @default("USD")
+  subtotalCents       Int           @default(0)
+  taxCents            Int           @default(0)
+  discountCents       Int           @default(0)
+  totalCents          Int           @default(0)
+  amountPaidCents     Int           @default(0)
+  title               String?
+  notes               String?
+  paymentInstructions String?
+  documentUrl         String?
+  documentStorageKey  String?
+  isArchived          Boolean       @default(false)
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+  tenant              Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  client              Client        @relation(fields: [clientId], references: [id], onDelete: Restrict)
+  project             Project?      @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  recurringInvoice    RecurringInvoice? @relation(fields: [recurringInvoiceId], references: [id], onDelete: SetNull)
+  lineItems           InvoiceLineItem[]
+
+  @@unique([tenantId, invoiceNumber])
+  @@index([tenantId])
+  @@index([tenantId, clientId])
+  @@index([tenantId, projectId])
+  @@index([tenantId, status])
+  @@index([tenantId, isArchived])
+  @@index([tenantId, dueDate])
+  @@index([recurringInvoiceId])
+}
+
+model InvoiceLineItem {
+  id             String   @id @default(uuid())
+  invoiceId      String
+  description    String
+  quantity       Int      @default(1)
+  unitPriceCents Int      @default(0)
+  totalCents     Int      @default(0)
+  sortOrder      Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  invoice        Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId])
+}
+
+model RecurringInvoice {
+  id                  String                   @id @default(uuid())
+  tenantId            String
+  clientId            String
+  projectId           String?
+  title               String?
+  interval            RecurringInvoiceInterval
+  startDate           DateTime
+  endDate             DateTime?
+  nextRunDate         DateTime
+  lastRunDate         DateTime?
+  currency            String                   @default("USD")
+  subtotalCents       Int                      @default(0)
+  taxCents            Int                      @default(0)
+  discountCents       Int                      @default(0)
+  totalCents          Int                      @default(0)
+  notes               String?
+  paymentInstructions String?
+  documentFolderHint  String?
+  isActive            Boolean                  @default(true)
+  isArchived          Boolean                  @default(false)
+  createdAt           DateTime                 @default(now())
+  updatedAt           DateTime                 @updatedAt
+  tenant              Tenant                   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  client              Client                   @relation(fields: [clientId], references: [id], onDelete: Restrict)
+  project             Project?                 @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  invoices            Invoice[]
+  lineItems           RecurringInvoiceLineItem[]
+  runs                RecurringInvoiceRun[]
+
+  @@index([tenantId])
+  @@index([tenantId, clientId])
+  @@index([tenantId, projectId])
+  @@index([tenantId, isActive, nextRunDate])
+  @@index([tenantId, isArchived])
+}
+
+model RecurringInvoiceLineItem {
+  id                 String           @id @default(uuid())
+  recurringInvoiceId String
+  description        String
+  quantity           Int              @default(1)
+  unitPriceCents     Int              @default(0)
+  totalCents         Int              @default(0)
+  sortOrder          Int              @default(0)
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+  recurringInvoice   RecurringInvoice @relation(fields: [recurringInvoiceId], references: [id], onDelete: Cascade)
+
+  @@index([recurringInvoiceId])
+}
+
+model RecurringInvoiceRun {
+  id                 String           @id @default(uuid())
+  tenantId           String
+  recurringInvoiceId String
+  scheduledFor       DateTime
+  generatedInvoiceId String?
+  status             String           @default("GENERATED")
+  createdAt          DateTime         @default(now())
+  tenant             Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  recurringInvoice   RecurringInvoice @relation(fields: [recurringInvoiceId], references: [id], onDelete: Cascade)
+
+  @@unique([recurringInvoiceId, scheduledFor])
+  @@index([tenantId])
+  @@index([tenantId, scheduledFor])
 }
 
 model TenantModule {

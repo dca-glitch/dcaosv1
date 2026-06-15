@@ -1,21 +1,35 @@
 import { Router } from "express";
 import {
   archiveClientHandler,
+  archiveInvoiceHandler,
   archiveProjectHandler,
+  archiveRecurringInvoiceHandler,
   archiveTaskHandler,
+  cancelInvoiceHandler,
   createClientHandler,
+  createInvoiceHandler,
   createProjectHandler,
+  createRecurringInvoiceHandler,
   createTaskHandler,
+  generateDueRecurringInvoiceHandler,
   getClientHandler,
   getCompanyProfileHandler,
+  getInvoiceHandler,
   getProjectHandler,
+  getRecurringInvoiceHandler,
   getTaskHandler,
   listClientsHandler,
+  listInvoicesHandler,
   listProjectsHandler,
+  listRecurringInvoicesHandler,
   listTasksHandler,
+  markInvoicePaidHandler,
+  markInvoiceSentHandler,
   saveCompanyProfileHandler,
   updateClientHandler,
+  updateInvoiceHandler,
   updateProjectHandler,
+  updateRecurringInvoiceHandler,
   updateTaskHandler
 } from "../controllers/coreController";
 import { requireAuth } from "../middlewares/auth.middleware";
@@ -44,6 +58,22 @@ export function createCoreRouter() {
   router.get("/tasks/:id", requireAuth, requireTenant, getTaskHandler);
   router.put("/tasks/:id", requireAuth, requireTenant, requireRole("owner", "admin"), updateTaskHandler);
   router.post("/tasks/:id/archive", requireAuth, requireTenant, requireRole("owner", "admin"), archiveTaskHandler);
+
+  router.get("/invoices", requireAuth, requireTenant, listInvoicesHandler);
+  router.post("/invoices", requireAuth, requireTenant, requireRole("owner", "admin"), createInvoiceHandler);
+  router.get("/invoices/:id", requireAuth, requireTenant, getInvoiceHandler);
+  router.put("/invoices/:id", requireAuth, requireTenant, requireRole("owner", "admin"), updateInvoiceHandler);
+  router.post("/invoices/:id/archive", requireAuth, requireTenant, requireRole("owner", "admin"), archiveInvoiceHandler);
+  router.post("/invoices/:id/mark-sent", requireAuth, requireTenant, requireRole("owner", "admin"), markInvoiceSentHandler);
+  router.post("/invoices/:id/mark-paid", requireAuth, requireTenant, requireRole("owner", "admin"), markInvoicePaidHandler);
+  router.post("/invoices/:id/cancel", requireAuth, requireTenant, requireRole("owner", "admin"), cancelInvoiceHandler);
+
+  router.get("/recurring-invoices", requireAuth, requireTenant, listRecurringInvoicesHandler);
+  router.post("/recurring-invoices", requireAuth, requireTenant, requireRole("owner", "admin"), createRecurringInvoiceHandler);
+  router.get("/recurring-invoices/:id", requireAuth, requireTenant, getRecurringInvoiceHandler);
+  router.put("/recurring-invoices/:id", requireAuth, requireTenant, requireRole("owner", "admin"), updateRecurringInvoiceHandler);
+  router.post("/recurring-invoices/:id/archive", requireAuth, requireTenant, requireRole("owner", "admin"), archiveRecurringInvoiceHandler);
+  router.post("/recurring-invoices/:id/generate-due", requireAuth, requireTenant, requireRole("owner", "admin"), generateDueRecurringInvoiceHandler);
 
   return router;
 }

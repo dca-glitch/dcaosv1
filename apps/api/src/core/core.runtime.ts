@@ -6,9 +6,15 @@ import type {
   ClientsResponse,
   CompanyProfileResponse,
   CompanyProfileUpdateRequest,
+  InvoiceInputRequest,
+  InvoiceResponse,
+  InvoicesResponse,
   ProjectInputRequest,
   ProjectResponse,
   ProjectsResponse,
+  RecurringInvoiceInputRequest,
+  RecurringInvoiceResponse,
+  RecurringInvoicesResponse,
   TaskInputRequest,
   TaskResponse,
   TasksResponse
@@ -21,6 +27,8 @@ type PrismaTx = Prisma.TransactionClient;
 type TaskPriority = "LOW" | "NORMAL" | "HIGH";
 type TaskStatus = "TODO" | "IN_PROGRESS" | "DONE";
 type TaskRecurringType = "NONE" | "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY";
+type InvoiceStatus = "DRAFT" | "SENT" | "PAID" | "OVERDUE" | "CANCELLED" | "VOIDED";
+type RecurringInvoiceInterval = "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY";
 
 function toNullableString(value: string | null | undefined): string | null {
   return typeof value === "string" && value.length > 0 ? value : null;
@@ -1176,4 +1184,951 @@ export async function archiveTask(
       task: toTaskSummary(archived)
     };
   });
+}
+
+const invoiceSelect = {
+  id: true,
+  clientId: true,
+  client: {
+    select: {
+      id: true,
+      name: true
+    }
+  },
+  projectId: true,
+  project: {
+    select: {
+      id: true,
+      name: true
+    }
+  },
+  recurringInvoiceId: true,
+  invoiceNumber: true,
+  status: true,
+  issueDate: true,
+  dueDate: true,
+  paidAt: true,
+  currency: true,
+  subtotalCents: true,
+  taxCents: true,
+  discountCents: true,
+  totalCents: true,
+  amountPaidCents: true,
+  title: true,
+  notes: true,
+  paymentInstructions: true,
+  documentUrl: true,
+  documentStorageKey: true,
+  isArchived: true,
+  lineItems: {
+    orderBy: {
+      sortOrder: "asc" as const
+    },
+    select: {
+      id: true,
+      description: true,
+      quantity: true,
+      unitPriceCents: true,
+      totalCents: true,
+      sortOrder: true,
+      createdAt: true,
+      updatedAt: true
+    }
+  },
+  createdAt: true,
+  updatedAt: true
+} as const;
+
+const recurringInvoiceSelect = {
+  id: true,
+  clientId: true,
+  client: {
+    select: {
+      id: true,
+      name: true
+    }
+  },
+  projectId: true,
+  project: {
+    select: {
+      id: true,
+      name: true
+    }
+  },
+  title: true,
+  interval: true,
+  startDate: true,
+  endDate: true,
+  nextRunDate: true,
+  lastRunDate: true,
+  currency: true,
+  subtotalCents: true,
+  taxCents: true,
+  discountCents: true,
+  totalCents: true,
+  notes: true,
+  paymentInstructions: true,
+  documentFolderHint: true,
+  isActive: true,
+  isArchived: true,
+  lineItems: {
+    orderBy: {
+      sortOrder: "asc" as const
+    },
+    select: {
+      id: true,
+      description: true,
+      quantity: true,
+      unitPriceCents: true,
+      totalCents: true,
+      sortOrder: true,
+      createdAt: true,
+      updatedAt: true
+    }
+  },
+  runs: {
+    orderBy: {
+      scheduledFor: "desc" as const
+    },
+    take: 10,
+    select: {
+      id: true,
+      scheduledFor: true,
+      generatedInvoiceId: true,
+      status: true,
+      createdAt: true
+    }
+  },
+  createdAt: true,
+  updatedAt: true
+} as const;
+
+function toInvoiceSummary(invoice: {
+  id: string;
+  clientId: string;
+  client: { id: string; name: string };
+  projectId: string | null;
+  project: { id: string; name: string } | null;
+  recurringInvoiceId: string | null;
+  invoiceNumber: string;
+  status: string;
+  issueDate: Date | null;
+  dueDate: Date | null;
+  paidAt: Date | null;
+  currency: string;
+  subtotalCents: number;
+  taxCents: number;
+  discountCents: number;
+  totalCents: number;
+  amountPaidCents: number;
+  title: string | null;
+  notes: string | null;
+  paymentInstructions: string | null;
+  documentUrl: string | null;
+  documentStorageKey: string | null;
+  isArchived: boolean;
+  lineItems: Array<{
+    id: string;
+    description: string;
+    quantity: number;
+    unitPriceCents: number;
+    totalCents: number;
+    sortOrder: number;
+    createdAt: Date;
+    updatedAt: Date;
+  }>;
+  createdAt: Date;
+  updatedAt: Date;
+}) {
+  return {
+    id: invoice.id,
+    clientId: invoice.clientId,
+    client: invoice.client,
+    projectId: invoice.projectId,
+    project: invoice.project,
+    recurringInvoiceId: invoice.recurringInvoiceId,
+    invoiceNumber: invoice.invoiceNumber,
+    status: invoice.status,
+    issueDate: toDateString(invoice.issueDate),
+    dueDate: toDateString(invoice.dueDate),
+    paidAt: toDateString(invoice.paidAt),
+    currency: invoice.currency,
+    subtotalCents: invoice.subtotalCents,
+    taxCents: invoice.taxCents,
+    discountCents: invoice.discountCents,
+    totalCents: invoice.totalCents,
+    amountPaidCents: invoice.amountPaidCents,
+    title: invoice.title,
+    notes: invoice.notes,
+    paymentInstructions: invoice.paymentInstructions,
+    documentUrl: invoice.documentUrl,
+    documentStorageKey: invoice.documentStorageKey,
+    isArchived: invoice.isArchived,
+    lineItems: invoice.lineItems.map((lineItem) => ({
+      ...lineItem,
+      createdAt: lineItem.createdAt.toISOString(),
+      updatedAt: lineItem.updatedAt.toISOString()
+    })),
+    createdAt: invoice.createdAt.toISOString(),
+    updatedAt: invoice.updatedAt.toISOString()
+  };
+}
+
+function toRecurringInvoiceSummary(recurringInvoice: {
+  id: string;
+  clientId: string;
+  client: { id: string; name: string };
+  projectId: string | null;
+  project: { id: string; name: string } | null;
+  title: string | null;
+  interval: string;
+  startDate: Date;
+  endDate: Date | null;
+  nextRunDate: Date;
+  lastRunDate: Date | null;
+  currency: string;
+  subtotalCents: number;
+  taxCents: number;
+  discountCents: number;
+  totalCents: number;
+  notes: string | null;
+  paymentInstructions: string | null;
+  documentFolderHint: string | null;
+  isActive: boolean;
+  isArchived: boolean;
+  lineItems: Array<{
+    id: string;
+    description: string;
+    quantity: number;
+    unitPriceCents: number;
+    totalCents: number;
+    sortOrder: number;
+    createdAt: Date;
+    updatedAt: Date;
+  }>;
+  runs: Array<{
+    id: string;
+    scheduledFor: Date;
+    generatedInvoiceId: string | null;
+    status: string;
+    createdAt: Date;
+  }>;
+  createdAt: Date;
+  updatedAt: Date;
+}) {
+  return {
+    id: recurringInvoice.id,
+    clientId: recurringInvoice.clientId,
+    client: recurringInvoice.client,
+    projectId: recurringInvoice.projectId,
+    project: recurringInvoice.project,
+    title: recurringInvoice.title,
+    interval: recurringInvoice.interval,
+    startDate: recurringInvoice.startDate.toISOString(),
+    endDate: toDateString(recurringInvoice.endDate),
+    nextRunDate: recurringInvoice.nextRunDate.toISOString(),
+    lastRunDate: toDateString(recurringInvoice.lastRunDate),
+    currency: recurringInvoice.currency,
+    subtotalCents: recurringInvoice.subtotalCents,
+    taxCents: recurringInvoice.taxCents,
+    discountCents: recurringInvoice.discountCents,
+    totalCents: recurringInvoice.totalCents,
+    notes: recurringInvoice.notes,
+    paymentInstructions: recurringInvoice.paymentInstructions,
+    documentFolderHint: recurringInvoice.documentFolderHint,
+    isActive: recurringInvoice.isActive,
+    isArchived: recurringInvoice.isArchived,
+    lineItems: recurringInvoice.lineItems.map((lineItem) => ({
+      ...lineItem,
+      createdAt: lineItem.createdAt.toISOString(),
+      updatedAt: lineItem.updatedAt.toISOString()
+    })),
+    runs: recurringInvoice.runs.map((run) => ({
+      id: run.id,
+      scheduledFor: run.scheduledFor.toISOString(),
+      generatedInvoiceId: run.generatedInvoiceId,
+      status: run.status,
+      createdAt: run.createdAt.toISOString()
+    })),
+    createdAt: recurringInvoice.createdAt.toISOString(),
+    updatedAt: recurringInvoice.updatedAt.toISOString()
+  };
+}
+
+async function getInvoiceRecord(tx: PrismaTx, tenantId: string, invoiceId: string) {
+  return tx.invoice.findFirst({
+    where: {
+      id: invoiceId,
+      tenantId
+    },
+    select: invoiceSelect
+  });
+}
+
+async function getRecurringInvoiceRecord(tx: PrismaTx, tenantId: string, recurringInvoiceId: string) {
+  return tx.recurringInvoice.findFirst({
+    where: {
+      id: recurringInvoiceId,
+      tenantId
+    },
+    select: recurringInvoiceSelect
+  });
+}
+
+async function getTenantClient(tx: PrismaTx, tenantId: string, clientId: string | undefined) {
+  if (!clientId) {
+    return null;
+  }
+
+  return tx.client.findFirst({
+    where: {
+      id: clientId,
+      tenantId
+    },
+    select: {
+      id: true
+    }
+  });
+}
+
+async function getTenantProject(
+  tx: PrismaTx,
+  tenantId: string,
+  clientId: string,
+  projectId: string | null | undefined
+) {
+  if (!projectId) {
+    return null;
+  }
+
+  return tx.project.findFirst({
+    where: {
+      id: projectId,
+      tenantId,
+      clientId
+    },
+    select: {
+      id: true
+    }
+  });
+}
+
+function getNextRecurringDate(value: Date, interval: RecurringInvoiceInterval): Date {
+  const nextDate = new Date(value.getTime());
+  if (interval === "DAILY") {
+    nextDate.setUTCDate(nextDate.getUTCDate() + 1);
+  } else if (interval === "WEEKLY") {
+    nextDate.setUTCDate(nextDate.getUTCDate() + 7);
+  } else if (interval === "MONTHLY") {
+    nextDate.setUTCMonth(nextDate.getUTCMonth() + 1);
+  } else {
+    nextDate.setUTCFullYear(nextDate.getUTCFullYear() + 1);
+  }
+  return nextDate;
+}
+
+export async function listInvoices(authSession: AuthResolvedSessionContext): Promise<InvoicesResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) {
+    return null;
+  }
+
+  const invoices = await prisma.invoice.findMany({
+    where: {
+      tenantId
+    },
+    orderBy: [
+      {
+        isArchived: "asc"
+      },
+      {
+        createdAt: "desc"
+      }
+    ],
+    select: invoiceSelect
+  });
+
+  return {
+    invoices: invoices.map(toInvoiceSummary)
+  };
+}
+
+export async function getInvoice(authSession: AuthResolvedSessionContext, invoiceId: string): Promise<InvoiceResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) {
+    return null;
+  }
+
+  const invoice = await prisma.$transaction(async (tx: PrismaTx) => getInvoiceRecord(tx, tenantId, invoiceId));
+  return {
+    invoice: invoice ? toInvoiceSummary(invoice) : null
+  };
+}
+
+export async function createInvoice(
+  authSession: AuthResolvedSessionContext,
+  input: InvoiceInputRequest
+): Promise<InvoiceResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId || !input.clientId || !input.invoiceNumber || !input.lineItems?.length) {
+    return null;
+  }
+  const clientId = input.clientId;
+  const invoiceNumber = input.invoiceNumber;
+  const lineItems = input.lineItems;
+
+  try {
+    return await prisma.$transaction(async (tx: PrismaTx) => {
+      const client = await getTenantClient(tx, tenantId, clientId);
+      if (!client) {
+        return null;
+      }
+
+      const project = await getTenantProject(tx, tenantId, client.id, input.projectId);
+      if (input.projectId && !project) {
+        return null;
+      }
+
+      const created = await tx.invoice.create({
+        data: {
+          tenantId,
+          clientId: client.id,
+          projectId: project?.id ?? null,
+          invoiceNumber,
+          status: (input.status as InvoiceStatus) ?? "DRAFT",
+          issueDate: input.issueDate ? new Date(input.issueDate) : null,
+          dueDate: input.dueDate ? new Date(input.dueDate) : null,
+          paidAt: input.paidAt ? new Date(input.paidAt) : null,
+          currency: input.currency ?? "USD",
+          subtotalCents: input.subtotalCents ?? 0,
+          taxCents: input.taxCents ?? 0,
+          discountCents: input.discountCents ?? 0,
+          totalCents: input.totalCents ?? 0,
+          amountPaidCents: input.amountPaidCents ?? 0,
+          title: toNullableString(input.title),
+          notes: toNullableString(input.notes),
+          paymentInstructions: toNullableString(input.paymentInstructions),
+          documentUrl: toNullableString(input.documentUrl),
+          documentStorageKey: toNullableString(input.documentStorageKey),
+          lineItems: {
+            create: lineItems.map((lineItem) => ({
+              description: lineItem.description ?? "",
+              quantity: lineItem.quantity ?? 1,
+              unitPriceCents: lineItem.unitPriceCents ?? 0,
+              totalCents: lineItem.totalCents ?? 0,
+              sortOrder: lineItem.sortOrder ?? 0
+            }))
+          }
+        },
+        select: invoiceSelect
+      });
+
+      return {
+        invoice: toInvoiceSummary(created)
+      };
+    });
+  } catch (error) {
+    if ((error as { code?: string }).code === "P2002") {
+      return null;
+    }
+    throw error;
+  }
+}
+
+export async function updateInvoice(
+  authSession: AuthResolvedSessionContext,
+  invoiceId: string,
+  input: InvoiceInputRequest
+): Promise<InvoiceResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId || !input.clientId || !input.invoiceNumber) {
+    return null;
+  }
+
+  try {
+    return await prisma.$transaction(async (tx: PrismaTx) => {
+      const existing = await getInvoiceRecord(tx, tenantId, invoiceId);
+      if (!existing) {
+        return null;
+      }
+
+      const client = await getTenantClient(tx, tenantId, input.clientId);
+      if (!client) {
+        return null;
+      }
+
+      const project = await getTenantProject(tx, tenantId, client.id, input.projectId);
+      if (input.projectId && !project) {
+        return null;
+      }
+
+      if (input.lineItems) {
+        await tx.invoiceLineItem.deleteMany({
+          where: {
+            invoiceId
+          }
+        });
+      }
+
+      const updated = await tx.invoice.update({
+        where: {
+          id: invoiceId
+        },
+        data: {
+          clientId: client.id,
+          projectId: project?.id ?? null,
+          invoiceNumber: input.invoiceNumber,
+          issueDate: input.issueDate ? new Date(input.issueDate) : null,
+          dueDate: input.dueDate ? new Date(input.dueDate) : null,
+          paidAt: input.paidAt ? new Date(input.paidAt) : existing.paidAt,
+          currency: input.currency ?? existing.currency,
+          subtotalCents: input.subtotalCents ?? existing.subtotalCents,
+          taxCents: input.taxCents ?? existing.taxCents,
+          discountCents: input.discountCents ?? existing.discountCents,
+          totalCents: input.totalCents ?? existing.totalCents,
+          amountPaidCents: input.amountPaidCents ?? existing.amountPaidCents,
+          title: toNullableString(input.title),
+          notes: toNullableString(input.notes),
+          paymentInstructions: toNullableString(input.paymentInstructions),
+          documentUrl: toNullableString(input.documentUrl),
+          documentStorageKey: toNullableString(input.documentStorageKey),
+          ...(input.lineItems
+            ? {
+                lineItems: {
+                  create: input.lineItems.map((lineItem) => ({
+                    description: lineItem.description ?? "",
+                    quantity: lineItem.quantity ?? 1,
+                    unitPriceCents: lineItem.unitPriceCents ?? 0,
+                    totalCents: lineItem.totalCents ?? 0,
+                    sortOrder: lineItem.sortOrder ?? 0
+                  }))
+                }
+              }
+            : {})
+        },
+        select: invoiceSelect
+      });
+
+      return {
+        invoice: toInvoiceSummary(updated)
+      };
+    });
+  } catch (error) {
+    if ((error as { code?: string }).code === "P2002") {
+      return null;
+    }
+    throw error;
+  }
+}
+
+export async function archiveInvoice(
+  authSession: AuthResolvedSessionContext,
+  invoiceId: string
+): Promise<InvoiceResponse | null> {
+  return updateInvoiceStatus(authSession, invoiceId, { isArchived: true });
+}
+
+export async function markInvoiceSent(
+  authSession: AuthResolvedSessionContext,
+  invoiceId: string
+): Promise<InvoiceResponse | null> {
+  return updateInvoiceStatus(authSession, invoiceId, { status: "SENT", setIssueDateIfMissing: true });
+}
+
+export async function markInvoicePaid(
+  authSession: AuthResolvedSessionContext,
+  invoiceId: string
+): Promise<InvoiceResponse | null> {
+  return updateInvoiceStatus(authSession, invoiceId, { status: "PAID", setPaidAt: true, markFullPaid: true });
+}
+
+export async function cancelInvoice(
+  authSession: AuthResolvedSessionContext,
+  invoiceId: string
+): Promise<InvoiceResponse | null> {
+  return updateInvoiceStatus(authSession, invoiceId, { status: "CANCELLED" });
+}
+
+async function updateInvoiceStatus(
+  authSession: AuthResolvedSessionContext,
+  invoiceId: string,
+  options: {
+    status?: InvoiceStatus;
+    isArchived?: boolean;
+    setIssueDateIfMissing?: boolean;
+    setPaidAt?: boolean;
+    markFullPaid?: boolean;
+  }
+): Promise<InvoiceResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) {
+    return null;
+  }
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    const existing = await getInvoiceRecord(tx, tenantId, invoiceId);
+    if (!existing) {
+      return null;
+    }
+
+    const updated = await tx.invoice.update({
+      where: {
+        id: invoiceId
+      },
+      data: {
+        ...(options.status ? { status: options.status } : {}),
+        ...(options.isArchived === undefined ? {} : { isArchived: options.isArchived }),
+        ...(options.setIssueDateIfMissing && !existing.issueDate ? { issueDate: new Date() } : {}),
+        ...(options.setPaidAt ? { paidAt: new Date() } : {}),
+        ...(options.markFullPaid ? { amountPaidCents: existing.totalCents } : {})
+      },
+      select: invoiceSelect
+    });
+
+    return {
+      invoice: toInvoiceSummary(updated)
+    };
+  });
+}
+
+export async function listRecurringInvoices(
+  authSession: AuthResolvedSessionContext
+): Promise<RecurringInvoicesResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) {
+    return null;
+  }
+
+  const recurringInvoices = await prisma.recurringInvoice.findMany({
+    where: {
+      tenantId
+    },
+    orderBy: [
+      {
+        isArchived: "asc"
+      },
+      {
+        nextRunDate: "asc"
+      }
+    ],
+    select: recurringInvoiceSelect
+  });
+
+  return {
+    recurringInvoices: recurringInvoices.map(toRecurringInvoiceSummary)
+  };
+}
+
+export async function getRecurringInvoice(
+  authSession: AuthResolvedSessionContext,
+  recurringInvoiceId: string
+): Promise<RecurringInvoiceResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) {
+    return null;
+  }
+
+  const recurringInvoice = await prisma.$transaction((tx: PrismaTx) =>
+    getRecurringInvoiceRecord(tx, tenantId, recurringInvoiceId)
+  );
+
+  return {
+    recurringInvoice: recurringInvoice ? toRecurringInvoiceSummary(recurringInvoice) : null
+  };
+}
+
+export async function createRecurringInvoice(
+  authSession: AuthResolvedSessionContext,
+  input: RecurringInvoiceInputRequest
+): Promise<RecurringInvoiceResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId || !input.clientId || !input.interval || !input.startDate || !input.lineItems?.length) {
+    return null;
+  }
+  const clientId = input.clientId;
+  const interval = input.interval;
+  const startDate = input.startDate;
+  const lineItems = input.lineItems;
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    const client = await getTenantClient(tx, tenantId, clientId);
+    if (!client) {
+      return null;
+    }
+
+    const project = await getTenantProject(tx, tenantId, client.id, input.projectId);
+    if (input.projectId && !project) {
+      return null;
+    }
+
+    const created = await tx.recurringInvoice.create({
+      data: {
+        tenantId,
+        clientId: client.id,
+        projectId: project?.id ?? null,
+        title: toNullableString(input.title),
+        interval: interval as RecurringInvoiceInterval,
+        startDate: new Date(startDate),
+        endDate: input.endDate ? new Date(input.endDate) : null,
+        nextRunDate: input.nextRunDate ? new Date(input.nextRunDate) : new Date(startDate),
+        currency: input.currency ?? "USD",
+        subtotalCents: input.subtotalCents ?? 0,
+        taxCents: input.taxCents ?? 0,
+        discountCents: input.discountCents ?? 0,
+        totalCents: input.totalCents ?? 0,
+        notes: toNullableString(input.notes),
+        paymentInstructions: toNullableString(input.paymentInstructions),
+        documentFolderHint: toNullableString(input.documentFolderHint),
+        isActive: input.isActive ?? true,
+        lineItems: {
+          create: lineItems.map((lineItem) => ({
+            description: lineItem.description ?? "",
+            quantity: lineItem.quantity ?? 1,
+            unitPriceCents: lineItem.unitPriceCents ?? 0,
+            totalCents: lineItem.totalCents ?? 0,
+            sortOrder: lineItem.sortOrder ?? 0
+          }))
+        }
+      },
+      select: recurringInvoiceSelect
+    });
+
+    return {
+      recurringInvoice: toRecurringInvoiceSummary(created)
+    };
+  });
+}
+
+export async function updateRecurringInvoice(
+  authSession: AuthResolvedSessionContext,
+  recurringInvoiceId: string,
+  input: RecurringInvoiceInputRequest
+): Promise<RecurringInvoiceResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId || !input.clientId || !input.interval || !input.startDate) {
+    return null;
+  }
+  const startDate = input.startDate;
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    const existing = await getRecurringInvoiceRecord(tx, tenantId, recurringInvoiceId);
+    if (!existing) {
+      return null;
+    }
+
+    const client = await getTenantClient(tx, tenantId, input.clientId);
+    if (!client) {
+      return null;
+    }
+
+    const project = await getTenantProject(tx, tenantId, client.id, input.projectId);
+    if (input.projectId && !project) {
+      return null;
+    }
+
+    if (input.lineItems) {
+      await tx.recurringInvoiceLineItem.deleteMany({
+        where: {
+          recurringInvoiceId
+        }
+      });
+    }
+
+    const updated = await tx.recurringInvoice.update({
+      where: {
+        id: recurringInvoiceId
+      },
+      data: {
+        clientId: client.id,
+        projectId: project?.id ?? null,
+        title: toNullableString(input.title),
+        interval: input.interval as RecurringInvoiceInterval,
+        startDate: new Date(startDate),
+        endDate: input.endDate ? new Date(input.endDate) : null,
+        nextRunDate: input.nextRunDate ? new Date(input.nextRunDate) : existing.nextRunDate,
+        currency: input.currency ?? existing.currency,
+        subtotalCents: input.subtotalCents ?? existing.subtotalCents,
+        taxCents: input.taxCents ?? existing.taxCents,
+        discountCents: input.discountCents ?? existing.discountCents,
+        totalCents: input.totalCents ?? existing.totalCents,
+        notes: toNullableString(input.notes),
+        paymentInstructions: toNullableString(input.paymentInstructions),
+        documentFolderHint: toNullableString(input.documentFolderHint),
+        isActive: input.isActive ?? existing.isActive,
+        ...(input.lineItems
+          ? {
+              lineItems: {
+                create: input.lineItems.map((lineItem) => ({
+                  description: lineItem.description ?? "",
+                  quantity: lineItem.quantity ?? 1,
+                  unitPriceCents: lineItem.unitPriceCents ?? 0,
+                  totalCents: lineItem.totalCents ?? 0,
+                  sortOrder: lineItem.sortOrder ?? 0
+                }))
+              }
+            }
+          : {})
+      },
+      select: recurringInvoiceSelect
+    });
+
+    return {
+      recurringInvoice: toRecurringInvoiceSummary(updated)
+    };
+  });
+}
+
+export async function archiveRecurringInvoice(
+  authSession: AuthResolvedSessionContext,
+  recurringInvoiceId: string
+): Promise<RecurringInvoiceResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) {
+    return null;
+  }
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    const existing = await getRecurringInvoiceRecord(tx, tenantId, recurringInvoiceId);
+    if (!existing) {
+      return null;
+    }
+
+    const updated = await tx.recurringInvoice.update({
+      where: {
+        id: recurringInvoiceId
+      },
+      data: {
+        isArchived: true,
+        isActive: false
+      },
+      select: recurringInvoiceSelect
+    });
+
+    return {
+      recurringInvoice: toRecurringInvoiceSummary(updated)
+    };
+  });
+}
+
+export async function generateDueRecurringInvoice(
+  authSession: AuthResolvedSessionContext,
+  recurringInvoiceId: string,
+  targetDate?: string | null
+): Promise<InvoiceResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) {
+    return null;
+  }
+
+  try {
+    return await prisma.$transaction(async (tx: PrismaTx) => {
+      const recurringInvoice = await tx.recurringInvoice.findFirst({
+        where: {
+          id: recurringInvoiceId,
+          tenantId
+        },
+        select: recurringInvoiceSelect
+      });
+
+      if (!recurringInvoice || recurringInvoice.isArchived || !recurringInvoice.isActive) {
+        return null;
+      }
+
+      const scheduledFor = targetDate ? new Date(targetDate) : recurringInvoice.nextRunDate;
+      const existingRun = await tx.recurringInvoiceRun.findFirst({
+        where: {
+          recurringInvoiceId,
+          scheduledFor
+        },
+        select: {
+          generatedInvoiceId: true
+        }
+      });
+
+      if (existingRun?.generatedInvoiceId) {
+        const existingInvoice = await getInvoiceRecord(tx, tenantId, existingRun.generatedInvoiceId);
+        return {
+          invoice: existingInvoice ? toInvoiceSummary(existingInvoice) : null
+        };
+      }
+
+      const invoiceNumber = `REC-${recurringInvoice.id.slice(0, 8)}-${scheduledFor.toISOString().slice(0, 10)}`;
+      const createdInvoice = await tx.invoice.create({
+        data: {
+          tenantId,
+          clientId: recurringInvoice.clientId,
+          projectId: recurringInvoice.projectId,
+          recurringInvoiceId: recurringInvoice.id,
+          invoiceNumber,
+          status: "DRAFT",
+          issueDate: scheduledFor,
+          currency: recurringInvoice.currency,
+          subtotalCents: recurringInvoice.subtotalCents,
+          taxCents: recurringInvoice.taxCents,
+          discountCents: recurringInvoice.discountCents,
+          totalCents: recurringInvoice.totalCents,
+          title: recurringInvoice.title,
+          notes: recurringInvoice.notes,
+          paymentInstructions: recurringInvoice.paymentInstructions,
+          lineItems: {
+            create: recurringInvoice.lineItems.map((lineItem) => ({
+              description: lineItem.description,
+              quantity: lineItem.quantity,
+              unitPriceCents: lineItem.unitPriceCents,
+              totalCents: lineItem.totalCents,
+              sortOrder: lineItem.sortOrder
+            }))
+          }
+        },
+        select: invoiceSelect
+      });
+
+      await tx.recurringInvoiceRun.create({
+        data: {
+          tenantId,
+          recurringInvoiceId,
+          scheduledFor,
+          generatedInvoiceId: createdInvoice.id,
+          status: "GENERATED"
+        }
+      });
+
+      const nextRunDate = getNextRecurringDate(scheduledFor, recurringInvoice.interval as RecurringInvoiceInterval);
+      const shouldDeactivate = recurringInvoice.endDate ? nextRunDate > recurringInvoice.endDate : false;
+      await tx.recurringInvoice.update({
+        where: {
+          id: recurringInvoiceId
+        },
+        data: {
+          lastRunDate: scheduledFor,
+          nextRunDate: shouldDeactivate ? recurringInvoice.nextRunDate : nextRunDate,
+          isActive: shouldDeactivate ? false : recurringInvoice.isActive
+        }
+      });
+
+      return {
+        invoice: toInvoiceSummary(createdInvoice)
+      };
+    });
+  } catch (error) {
+    if ((error as { code?: string }).code === "P2002") {
+      const existingRun = await prisma.recurringInvoiceRun.findFirst({
+        where: {
+          recurringInvoiceId,
+          tenantId,
+          scheduledFor: targetDate ? new Date(targetDate) : undefined
+        },
+        select: {
+          generatedInvoiceId: true
+        }
+      });
+
+      if (existingRun?.generatedInvoiceId) {
+        return getInvoice(authSession, existingRun.generatedInvoiceId);
+      }
+
+      return null;
+    }
+    throw error;
+  }
 }

@@ -138,3 +138,176 @@ export interface TaskInputRequest {
   dueDate?: string | null;
   recurringType?: string;
 }
+
+export interface InvoiceLineItemSummary {
+  id: string;
+  description: string;
+  quantity: number;
+  unitPriceCents: number;
+  totalCents: number;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface InvoiceSummary {
+  id: string;
+  clientId: string;
+  client: {
+    id: string;
+    name: string;
+  };
+  projectId: string | null;
+  project: {
+    id: string;
+    name: string;
+  } | null;
+  recurringInvoiceId: string | null;
+  invoiceNumber: string;
+  status: string;
+  issueDate: string | null;
+  dueDate: string | null;
+  paidAt: string | null;
+  currency: string;
+  subtotalCents: number;
+  taxCents: number;
+  discountCents: number;
+  totalCents: number;
+  amountPaidCents: number;
+  title: string | null;
+  notes: string | null;
+  paymentInstructions: string | null;
+  documentUrl: string | null;
+  documentStorageKey: string | null;
+  isArchived: boolean;
+  lineItems: InvoiceLineItemSummary[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface InvoiceResponse {
+  invoice: InvoiceSummary | null;
+}
+
+export interface InvoicesResponse {
+  invoices: InvoiceSummary[];
+}
+
+export interface InvoiceLineItemInputRequest {
+  description?: string;
+  quantity?: number;
+  unitPriceCents?: number;
+  totalCents?: number;
+  sortOrder?: number;
+}
+
+export interface InvoiceInputRequest {
+  clientId?: string;
+  projectId?: string | null;
+  invoiceNumber?: string;
+  status?: string;
+  issueDate?: string | null;
+  dueDate?: string | null;
+  paidAt?: string | null;
+  currency?: string;
+  subtotalCents?: number;
+  taxCents?: number;
+  discountCents?: number;
+  totalCents?: number;
+  amountPaidCents?: number;
+  title?: string | null;
+  notes?: string | null;
+  paymentInstructions?: string | null;
+  documentUrl?: string | null;
+  documentStorageKey?: string | null;
+  lineItems?: InvoiceLineItemInputRequest[];
+}
+
+export interface RecurringInvoiceLineItemSummary {
+  id: string;
+  description: string;
+  quantity: number;
+  unitPriceCents: number;
+  totalCents: number;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface RecurringInvoiceRunSummary {
+  id: string;
+  scheduledFor: string;
+  generatedInvoiceId: string | null;
+  status: string;
+  createdAt: string;
+}
+
+export interface RecurringInvoiceSummary {
+  id: string;
+  clientId: string;
+  client: {
+    id: string;
+    name: string;
+  };
+  projectId: string | null;
+  project: {
+    id: string;
+    name: string;
+  } | null;
+  title: string | null;
+  interval: string;
+  startDate: string;
+  endDate: string | null;
+  nextRunDate: string;
+  lastRunDate: string | null;
+  currency: string;
+  subtotalCents: number;
+  taxCents: number;
+  discountCents: number;
+  totalCents: number;
+  notes: string | null;
+  paymentInstructions: string | null;
+  documentFolderHint: string | null;
+  isActive: boolean;
+  isArchived: boolean;
+  lineItems: RecurringInvoiceLineItemSummary[];
+  runs: RecurringInvoiceRunSummary[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface RecurringInvoiceResponse {
+  recurringInvoice: RecurringInvoiceSummary | null;
+}
+
+export interface RecurringInvoicesResponse {
+  recurringInvoices: RecurringInvoiceSummary[];
+}
+
+export interface RecurringInvoiceLineItemInputRequest {
+  description?: string;
+  quantity?: number;
+  unitPriceCents?: number;
+  totalCents?: number;
+  sortOrder?: number;
+}
+
+export interface RecurringInvoiceInputRequest {
+  clientId?: string;
+  projectId?: string | null;
+  title?: string | null;
+  interval?: string;
+  startDate?: string;
+  endDate?: string | null;
+  nextRunDate?: string;
+  currency?: string;
+  subtotalCents?: number;
+  taxCents?: number;
+  discountCents?: number;
+  totalCents?: number;
+  notes?: string | null;
+  paymentInstructions?: string | null;
+  documentFolderHint?: string | null;
+  isActive?: boolean;
+  lineItems?: RecurringInvoiceLineItemInputRequest[];
+}
