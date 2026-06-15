@@ -1,6 +1,13 @@
 import { type FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AppLayout } from "./components/AppLayout";
-import { BillsPage, type BillFormValues, type BillSummary, type VendorFormValues, type VendorSummary } from "./pages/bills/BillsPage";
+import {
+  BillsPage,
+  type BillDocumentUploadValues,
+  type BillFormValues,
+  type BillSummary,
+  type VendorFormValues,
+  type VendorSummary
+} from "./pages/bills/BillsPage";
 import { CompanyProfilePage, type CompanyProfileFormValues, type CompanyProfileSummary } from "./pages/company-profile/CompanyProfilePage";
 import { ClientsPage, type ClientFormValues, type ClientSummary } from "./pages/clients/ClientsPage";
 import {
@@ -290,6 +297,18 @@ function maskError(error: unknown): string {
   }
 
   return "Request could not be completed.";
+}
+
+async function fileToBase64(file: File): Promise<string> {
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  const chunkSize = 0x8000;
+  let binary = "";
+
+  for (let index = 0; index < bytes.length; index += chunkSize) {
+    binary += String.fromCharCode(...bytes.slice(index, index + chunkSize));
+  }
+
+  return btoa(binary);
 }
 
 async function apiRequest<T>(path: string, options: RequestOptions = {}): Promise<ApiResponse<T>> {
@@ -1551,7 +1570,7 @@ export function App() {
     }
   }
 
-  async function handleSaveBill(billId: string | null, values: BillFormValues): Promise<boolean> {
+  async function handleSaveBill(billId: string | null, values: BillFormValues): Promise<BillSummary | null> {
     setAppMessage(null);
     try {
       const response = await runAuthenticatedRequest<{ bill: BillSummary | null }>(
@@ -1563,20 +1582,53 @@ export function App() {
       );
 
       if (!response) {
-        return false;
+        return null;
       }
 
       if (!response.ok) {
         setAppMessage({ tone: "error", text: getErrorMessage(response) });
-        return false;
+        return null;
       }
 
       await loadProtectedState(tokenRef.current);
       setAppMessage({ tone: "success", text: billId ? "Bill updated." : "Bill created." });
-      return true;
+      return response.data.bill;
     } catch (error) {
       setAppMessage({ tone: "error", text: maskError(error) });
-      return false;
+      return null;
+    }
+  }
+
+  async function handleUploadBillDocument(
+    billId: string,
+    values: BillDocumentUploadValues
+  ): Promise<BillSummary | null> {
+    setAppMessage(null);
+    try {
+      const response = await runAuthenticatedRequest<{ bill: BillSummary | null }>(`/bills/${billId}/document`, {
+        method: "POST",
+        body: {
+          contentBase64: await fileToBase64(values.file),
+          fileName: values.file.name,
+          mimeType: values.file.type
+        }
+      });
+
+      if (!response) {
+        return null;
+      }
+
+      if (!response.ok) {
+        setAppMessage({ tone: "error", text: getErrorMessage(response) });
+        return null;
+      }
+
+      await loadProtectedState(tokenRef.current);
+      setAppMessage({ tone: "success", text: "Bill document uploaded." });
+      return response.data.bill;
+    } catch (error) {
+      setAppMessage({ tone: "error", text: maskError(error) });
+      return null;
     }
   }
 
@@ -1721,6 +1773,7 @@ export function App() {
           onCreateVendor={handleCreateVendor}
           onRestoreBill={handleRestoreBill}
           onSaveBill={handleSaveBill}
+          onUploadBillDocument={handleUploadBillDocument}
           vendors={vendors?.vendors ?? []}
         />
       ) : null}

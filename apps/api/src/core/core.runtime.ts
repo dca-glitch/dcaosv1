@@ -1,6 +1,7 @@
 import type { Prisma } from "@prisma/client";
 import { createPrismaClient } from "../../../../packages/data/src/client";
 import type {
+  BillDocumentUploadRequest,
   BillInputRequest,
   BillResponse,
   BillsResponse,
@@ -26,6 +27,7 @@ import type {
   VendorsResponse
 } from "./core.types";
 import type { AuthResolvedSessionContext } from "../auth/types";
+import { uploadR2Object } from "../storage/r2.service";
 
 const prisma = createPrismaClient();
 
@@ -2420,6 +2422,72 @@ export async function updateBill(
       bill: toBillSummary(updated)
     };
   });
+}
+
+export async function uploadBillDocument(
+  authSession: AuthResolvedSessionContext,
+  billId: string,
+  input: BillDocumentUploadRequest
+): Promise<BillResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId || !billId || !input.fileName || !input.mimeType || !input.contentBase64) {
+    return null;
+  }
+
+  const bill = await prisma.bill.findFirst({
+    where: {
+      id: billId,
+      tenantId
+    },
+    select: {
+      id: true,
+      paymentDate: true,
+      billDate: true
+    }
+  });
+
+  if (!bill) {
+    return null;
+  }
+
+  const tenant = await prisma.tenant.findUnique({
+    where: {
+      id: tenantId
+    },
+    select: {
+      id: true,
+      slug: true
+    }
+  });
+
+  if (!tenant) {
+    return null;
+  }
+
+  const upload = await uploadR2Object({
+    body: Buffer.from(input.contentBase64, "base64"),
+    documentDate: bill.paymentDate ?? bill.billDate ?? new Date(),
+    documentType: "bills",
+    mimeType: input.mimeType,
+    originalFileName: input.fileName,
+    projectSlugOrId: null,
+    tenantSlugOrId: tenant.slug || tenant.id
+  });
+
+  const updated = await prisma.bill.update({
+    where: {
+      id: bill.id
+    },
+    data: {
+      documentStorageKey: upload.storageKey,
+      documentUrl: upload.publicUrl
+    },
+    select: billSelect
+  });
+
+  return {
+    bill: toBillSummary(updated)
+  };
 }
 
 async function updateBillArchiveState(

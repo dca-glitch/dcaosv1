@@ -57,9 +57,11 @@ import {
   updateInvoice,
   updateProject,
   updateRecurringInvoice,
-  updateTask
+  updateTask,
+  uploadBillDocument
 } from "../core/core.runtime";
 import type {
+  BillDocumentUploadRequest,
   BillInputRequest,
   ClientInputRequest,
   CompanyProfileUpdateRequest,
@@ -222,6 +224,8 @@ const TASK_RECURRING_TYPES = new Set(["NONE", "DAILY", "WEEKLY", "MONTHLY", "YEA
 const INVOICE_STATUSES = new Set(["DRAFT", "SENT", "PAID", "OVERDUE", "CANCELLED", "VOIDED"]);
 const RECURRING_INVOICE_INTERVALS = new Set(["DAILY", "WEEKLY", "MONTHLY", "YEARLY"]);
 const BILL_PAYMENT_FORMS = new Set(["CASH", "REVOLUT_BANK", "WISE_BANK", "REVOLUT_CARD", "WISE_CARD", "OTHER"]);
+const FILE_NAME_MAX_LENGTH = 255;
+const BASE64_UPLOAD_MAX_LENGTH = 7 * 1024 * 1024;
 
 function getOptionalBoolean(value: unknown): boolean | undefined {
   return typeof value === "boolean" ? value : undefined;
@@ -395,6 +399,23 @@ function getBillInput(body: unknown): BillInputRequest | null {
     notes: getOptionalString(value.notes, TEXT_FIELD_MAX_LENGTH),
     documentUrl: getOptionalUrl(value.documentUrl),
     documentStorageKey: getOptionalString(value.documentStorageKey, LOGO_URL_MAX_LENGTH)
+  };
+}
+
+function getBillDocumentUploadInput(body: unknown): BillDocumentUploadRequest | null {
+  const value = (body ?? {}) as Record<string, unknown>;
+  const fileName = getRequiredString(value.fileName, FILE_NAME_MAX_LENGTH);
+  const mimeType = getRequiredString(value.mimeType, SHORT_TEXT_FIELD_MAX_LENGTH);
+  const contentBase64 = getRequiredString(value.contentBase64, BASE64_UPLOAD_MAX_LENGTH);
+
+  if (!fileName || !mimeType || !contentBase64 || !/^[A-Za-z0-9+/]+={0,2}$/.test(contentBase64)) {
+    return null;
+  }
+
+  return {
+    contentBase64,
+    fileName,
+    mimeType
   };
 }
 
@@ -1096,6 +1117,43 @@ export const updateBillHandler: RequestHandler = async (req, res) => {
     res.json(success(response, { phase: "runtime", scope: "bills-module" }));
   } catch {
     res.status(500).json(failure("BILL_RUNTIME_ERROR", "Bill update could not be completed."));
+  }
+};
+
+export const uploadBillDocumentHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) {
+    res.status(401).json(unauthorizedFailure());
+    return;
+  }
+
+  const billId = typeof req.params.id === "string" ? req.params.id.trim() : "";
+  const input = getBillDocumentUploadInput(req.body);
+  if (!billId || !input) {
+    res.status(400).json(billInvalidFailure());
+    return;
+  }
+
+  try {
+    const response = await uploadBillDocument(authSession, billId, input);
+    if (!response?.bill) {
+      res.status(404).json(billNotFoundFailure());
+      return;
+    }
+
+    res.status(201).json(success(response, { phase: "runtime", scope: "r2-storage-foundation" }));
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "";
+    if (message.includes("not configured")) {
+      res.status(503).json(failure("R2_STORAGE_NOT_CONFIGURED", "R2 storage is not configured."));
+      return;
+    }
+    if (message.includes("validation failed")) {
+      res.status(400).json(billInvalidFailure());
+      return;
+    }
+
+    res.status(500).json(failure("BILL_DOCUMENT_UPLOAD_ERROR", "Bill document upload could not be completed."));
   }
 };
 

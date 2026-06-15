@@ -37,7 +37,8 @@ import {
   updateInvoiceHandler,
   updateProjectHandler,
   updateRecurringInvoiceHandler,
-  updateTaskHandler
+  updateTaskHandler,
+  uploadBillDocumentHandler
 } from "../controllers/coreController";
 import { requireAuth } from "../middlewares/auth.middleware";
 import { requireRole, requireTenant } from "../middlewares";
@@ -88,6 +89,7 @@ export function createCoreRouter() {
   router.get("/bills", requireAuth, requireTenant, listBillsHandler);
   router.post("/bills", requireAuth, requireTenant, requireRole("owner", "admin"), createBillHandler);
   router.put("/bills/:id", requireAuth, requireTenant, requireRole("owner", "admin"), updateBillHandler);
+  router.post("/bills/:id/document", requireAuth, requireTenant, requireRole("owner", "admin"), uploadBillDocumentHandler);
   router.post("/bills/:id/archive", requireAuth, requireTenant, requireRole("owner", "admin"), archiveBillHandler);
   router.post("/bills/:id/restore", requireAuth, requireTenant, requireRole("owner", "admin"), restoreBillHandler);
 

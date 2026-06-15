@@ -376,3 +376,9 @@ export interface BillInputRequest {
   documentUrl?: string | null;
   documentStorageKey?: string | null;
 }
+
+export interface BillDocumentUploadRequest {
+  fileName?: string;
+  mimeType?: string;
+  contentBase64?: string;
+}

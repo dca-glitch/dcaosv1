@@ -53,6 +53,10 @@ export type VendorFormValues = {
   name: string;
 };
 
+export type BillDocumentUploadValues = {
+  file: File;
+};
+
 type BillsPageProps = {
   bills: BillSummary[];
   vendors: VendorSummary[];
@@ -62,7 +66,8 @@ type BillsPageProps = {
   onArchiveBill: (billId: string) => Promise<boolean>;
   onCreateVendor: (values: VendorFormValues) => Promise<boolean>;
   onRestoreBill: (billId: string) => Promise<boolean>;
-  onSaveBill: (billId: string | null, values: BillFormValues) => Promise<boolean>;
+  onSaveBill: (billId: string | null, values: BillFormValues) => Promise<BillSummary | null>;
+  onUploadBillDocument: (billId: string, values: BillDocumentUploadValues) => Promise<BillSummary | null>;
 };
 
 const paymentFormOptions = [
@@ -129,13 +134,15 @@ export function BillsPage({
   onArchiveBill,
   onCreateVendor,
   onRestoreBill,
-  onSaveBill
+  onSaveBill,
+  onUploadBillDocument
 }: BillsPageProps) {
   const [filter, setFilter] = useState<"active" | "archived" | "all">("active");
   const [billEditorId, setBillEditorId] = useState<string | null>(null);
   const [isBillEditorOpen, setIsBillEditorOpen] = useState(false);
   const [isVendorEditorOpen, setIsVendorEditorOpen] = useState(false);
   const [billDraft, setBillDraft] = useState<BillFormValues>(emptyBillForm());
+  const [documentFile, setDocumentFile] = useState<File | null>(null);
   const [vendorDraft, setVendorDraft] = useState<VendorFormValues>({ name: "" });
   const [saving, setSaving] = useState(false);
 
@@ -169,6 +176,7 @@ export function BillsPage({
   function openCreateBillModal() {
     setBillEditorId(null);
     setBillDraft(emptyBillForm(firstActiveVendorId(vendors)));
+    setDocumentFile(null);
     setIsBillEditorOpen(true);
   }
 
@@ -187,6 +195,7 @@ export function BillsPage({
       documentUrl: bill.documentUrl ?? "",
       documentStorageKey: bill.documentStorageKey ?? ""
     });
+    setDocumentFile(null);
     setIsBillEditorOpen(true);
   }
 
@@ -194,10 +203,18 @@ export function BillsPage({
     event.preventDefault();
     setSaving(true);
     try {
-      const ok = await onSaveBill(billEditorId, billDraft);
-      if (ok) {
+      const savedBill = await onSaveBill(billEditorId, billDraft);
+      if (savedBill && documentFile) {
+        const uploadedBill = await onUploadBillDocument(savedBill.id, { file: documentFile });
+        if (!uploadedBill) {
+          return;
+        }
+      }
+
+      if (savedBill) {
         setBillEditorId(null);
         setBillDraft(emptyBillForm(firstActiveVendorId(vendors)));
+        setDocumentFile(null);
         setIsBillEditorOpen(false);
       }
     } finally {
@@ -328,6 +345,7 @@ export function BillsPage({
           onClose={() => {
             setBillEditorId(null);
             setBillDraft(emptyBillForm(firstActiveVendorId(vendors)));
+            setDocumentFile(null);
             setIsBillEditorOpen(false);
           }}
           title={billEditorId ? "Edit Bill" : "Add Bill"}
@@ -406,6 +424,15 @@ export function BillsPage({
               <label className="field-span-2">
                 Document storage key
                 <input maxLength={2048} onChange={(event) => setBillDraft((current) => ({ ...current, documentStorageKey: event.target.value }))} value={billDraft.documentStorageKey} />
+              </label>
+              <label className="field-span-2">
+                Upload document
+                <input
+                  accept=".pdf,.png,.jpg,.jpeg,.webp,application/pdf,image/png,image/jpeg,image/webp"
+                  onChange={(event) => setDocumentFile(event.target.files?.[0] ?? null)}
+                  type="file"
+                />
+                <small>Optional. Allowed: PDF, PNG, JPG, WebP up to 5 MB.</small>
               </label>
             </div>
             <div className="modal-footer">

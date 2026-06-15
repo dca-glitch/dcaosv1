@@ -6,7 +6,7 @@ import { failure } from "./utils/responses";
 export function createApp() {
   const app = express();
 
-  app.use(express.json());
+  app.use(express.json({ limit: "8mb" }));
   app.use("/api/v1", createV1Router());
 
   app.use((_req, res) => {
