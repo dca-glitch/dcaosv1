@@ -1,16 +1,19 @@
 import { Router } from "express";
 import {
+  archiveBillHandler,
   archiveClientHandler,
   archiveInvoiceHandler,
   archiveProjectHandler,
   archiveRecurringInvoiceHandler,
   archiveTaskHandler,
   cancelInvoiceHandler,
+  createBillHandler,
   createClientHandler,
   createInvoiceHandler,
   createProjectHandler,
   createRecurringInvoiceHandler,
   createTaskHandler,
+  createVendorHandler,
   generateDueRecurringInvoiceHandler,
   getClientHandler,
   getCompanyProfileHandler,
@@ -18,14 +21,18 @@ import {
   getProjectHandler,
   getRecurringInvoiceHandler,
   getTaskHandler,
+  listBillsHandler,
   listClientsHandler,
   listInvoicesHandler,
   listProjectsHandler,
   listRecurringInvoicesHandler,
   listTasksHandler,
+  listVendorsHandler,
   markInvoicePaidHandler,
   markInvoiceSentHandler,
+  restoreBillHandler,
   saveCompanyProfileHandler,
+  updateBillHandler,
   updateClientHandler,
   updateInvoiceHandler,
   updateProjectHandler,
@@ -74,6 +81,15 @@ export function createCoreRouter() {
   router.put("/recurring-invoices/:id", requireAuth, requireTenant, requireRole("owner", "admin"), updateRecurringInvoiceHandler);
   router.post("/recurring-invoices/:id/archive", requireAuth, requireTenant, requireRole("owner", "admin"), archiveRecurringInvoiceHandler);
   router.post("/recurring-invoices/:id/generate-due", requireAuth, requireTenant, requireRole("owner", "admin"), generateDueRecurringInvoiceHandler);
+
+  router.get("/vendors", requireAuth, requireTenant, listVendorsHandler);
+  router.post("/vendors", requireAuth, requireTenant, requireRole("owner", "admin"), createVendorHandler);
+
+  router.get("/bills", requireAuth, requireTenant, listBillsHandler);
+  router.post("/bills", requireAuth, requireTenant, requireRole("owner", "admin"), createBillHandler);
+  router.put("/bills/:id", requireAuth, requireTenant, requireRole("owner", "admin"), updateBillHandler);
+  router.post("/bills/:id/archive", requireAuth, requireTenant, requireRole("owner", "admin"), archiveBillHandler);
+  router.post("/bills/:id/restore", requireAuth, requireTenant, requireRole("owner", "admin"), restoreBillHandler);
 
   return router;
 }

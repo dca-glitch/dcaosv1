@@ -14,6 +14,8 @@ export const API_ERROR_CODES = {
   invoiceNotFound: "INVOICE_NOT_FOUND",
   recurringInvoiceInvalid: "RECURRING_INVOICE_INVALID",
   recurringInvoiceNotFound: "RECURRING_INVOICE_NOT_FOUND",
+  billInvalid: "BILL_INVALID",
+  billNotFound: "BILL_NOT_FOUND",
   moduleInvalid: "MODULE_INVALID",
   moduleNotFound: "MODULE_NOT_FOUND",
   moduleTenantContextInvalid: "MODULE_TENANT_CONTEXT_INVALID",
@@ -37,6 +39,8 @@ export const API_ERROR_MESSAGES = {
   invoiceNotFound: "Invoice was not found.",
   recurringInvoiceInvalid: "Invalid recurring invoice request.",
   recurringInvoiceNotFound: "Recurring invoice was not found.",
+  billInvalid: "Invalid bill request.",
+  billNotFound: "Bill was not found.",
   moduleInvalid: "Invalid module request.",
   moduleNotFound: "Module was not found.",
   moduleTenantContextInvalid: "Module tenant context is required.",
@@ -119,6 +123,14 @@ export function recurringInvoiceInvalidFailure(): ApiErrorResponse {
 
 export function recurringInvoiceNotFoundFailure(): ApiErrorResponse {
   return failure(API_ERROR_CODES.recurringInvoiceNotFound, API_ERROR_MESSAGES.recurringInvoiceNotFound);
+}
+
+export function billInvalidFailure(): ApiErrorResponse {
+  return failure(API_ERROR_CODES.billInvalid, API_ERROR_MESSAGES.billInvalid);
+}
+
+export function billNotFoundFailure(): ApiErrorResponse {
+  return failure(API_ERROR_CODES.billNotFound, API_ERROR_MESSAGES.billNotFound);
 }
 
 export function moduleInvalidFailure(): ApiErrorResponse {

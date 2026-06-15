@@ -78,6 +78,15 @@ enum RecurringInvoiceInterval {
   YEARLY
 }
 
+enum BillPaymentForm {
+  CASH
+  REVOLUT_BANK
+  WISE_BANK
+  REVOLUT_CARD
+  WISE_CARD
+  OTHER
+}
+
 enum SettingValueType {
   STRING
   NUMBER
@@ -109,6 +118,8 @@ model Tenant {
   invoices      Invoice[]
   recurringInvoices RecurringInvoice[]
   recurringInvoiceRuns RecurringInvoiceRun[]
+  vendors       Vendor[]
+  bills         Bill[]
   tenantModules TenantModule[]
   tenantSettings TenantSetting[]
   auditLogs     AuditLog[]        @relation("TenantAuditLogs")
@@ -451,6 +462,48 @@ model RecurringInvoiceRun {
   @@unique([recurringInvoiceId, scheduledFor])
   @@index([tenantId])
   @@index([tenantId, scheduledFor])
+}
+
+model Vendor {
+  id          String    @id @default(uuid())
+  tenantId    String
+  name        String
+  isArchived  Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  bills       Bill[]
+
+  @@unique([tenantId, name])
+  @@index([tenantId])
+  @@index([tenantId, isArchived])
+}
+
+model Bill {
+  id                 String          @id @default(uuid())
+  tenantId           String
+  vendorId           String
+  amountCents        Int
+  paymentForm        BillPaymentForm
+  paymentDate        DateTime
+  billDate           DateTime?
+  dueDate            DateTime?
+  referenceNumber    String?
+  category           String?
+  notes              String?
+  documentUrl        String?
+  documentStorageKey String?
+  isArchived         Boolean         @default(false)
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+  tenant             Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  vendor             Vendor          @relation(fields: [vendorId], references: [id], onDelete: Restrict)
+
+  @@index([tenantId])
+  @@index([tenantId, vendorId])
+  @@index([tenantId, isArchived])
+  @@index([tenantId, paymentDate])
+  @@index([tenantId, category])
 }
 
 model TenantModule {

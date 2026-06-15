@@ -1,5 +1,6 @@
 import { type FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AppLayout } from "./components/AppLayout";
+import { BillsPage, type BillFormValues, type BillSummary, type VendorFormValues, type VendorSummary } from "./pages/bills/BillsPage";
 import { CompanyProfilePage, type CompanyProfileFormValues, type CompanyProfileSummary } from "./pages/company-profile/CompanyProfilePage";
 import { ClientsPage, type ClientFormValues, type ClientSummary } from "./pages/clients/ClientsPage";
 import {
@@ -180,6 +181,14 @@ type RecurringInvoicesResponse = {
   recurringInvoices: RecurringInvoiceSummary[];
 };
 
+type VendorsResponse = {
+  vendors: VendorSummary[];
+};
+
+type BillsResponse = {
+  bills: BillSummary[];
+};
+
 type ViewKey =
   | "dashboard"
   | "modules"
@@ -188,6 +197,7 @@ type ViewKey =
   | "projects"
   | "tasks"
   | "invoices"
+  | "bills"
   | "company-profile"
   | "settings"
   | "team";
@@ -235,6 +245,7 @@ const navigationItems: Array<{ view: ViewKey; label: string; section: string }> 
   { view: "projects", label: "Projects", section: "core" },
   { view: "tasks", label: "Tasks", section: "core" },
   { view: "invoices", label: "Invoices", section: "core" },
+  { view: "bills", label: "Bills", section: "core" },
   { view: "company-profile", label: "Company Profile", section: "settings" },
   { view: "settings", label: "Settings", section: "settings" },
   { view: "team", label: "Team", section: "settings" }
@@ -853,6 +864,8 @@ export function App() {
   const [tasks, setTasks] = useState<TasksResponse | null>(null);
   const [invoices, setInvoices] = useState<InvoicesResponse | null>(null);
   const [recurringInvoices, setRecurringInvoices] = useState<RecurringInvoicesResponse | null>(null);
+  const [vendors, setVendors] = useState<VendorsResponse | null>(null);
+  const [bills, setBills] = useState<BillsResponse | null>(null);
   const [availableModules, setAvailableModules] = useState<ModuleListItem[]>([]);
   const [tenantModules, setTenantModules] = useState<TenantModuleSummary[]>([]);
   const [loading, setLoading] = useState(Boolean(token));
@@ -901,6 +914,8 @@ export function App() {
     setTasks(null);
     setInvoices(null);
     setRecurringInvoices(null);
+    setVendors(null);
+    setBills(null);
     setTenantModules([]);
     setAvailableModules([]);
     setAppMessage(null);
@@ -932,6 +947,8 @@ export function App() {
           tasksResponse,
           invoicesResponse,
           recurringInvoicesResponse,
+          vendorsResponse,
+          billsResponse,
           modulesResponse,
           tenantModulesResponse,
           teamMembersResponse,
@@ -947,6 +964,8 @@ export function App() {
             apiRequest<TasksResponse>("/tasks", { token: nextToken }),
             apiRequest<InvoicesResponse>("/invoices", { token: nextToken }),
             apiRequest<RecurringInvoicesResponse>("/recurring-invoices", { token: nextToken }),
+            apiRequest<VendorsResponse>("/vendors", { token: nextToken }),
+            apiRequest<BillsResponse>("/bills", { token: nextToken }),
             apiRequest<ModuleRegistryResponse>("/modules"),
             apiRequest<TenantModulesResponse>("/modules/current", { token: nextToken }),
             apiRequest<TenantMembersResponse>("/tenants/current/members", { token: nextToken }),
@@ -969,6 +988,8 @@ export function App() {
           isUnauthorized(tasksResponse) ||
           isUnauthorized(invoicesResponse) ||
           isUnauthorized(recurringInvoicesResponse) ||
+          isUnauthorized(vendorsResponse) ||
+          isUnauthorized(billsResponse) ||
           isUnauthorized(tenantModulesResponse)
         ) {
           clearSession();
@@ -990,6 +1011,8 @@ export function App() {
         setTasks(tasksResponse.ok ? tasksResponse.data : null);
         setInvoices(invoicesResponse.ok ? invoicesResponse.data : null);
         setRecurringInvoices(recurringInvoicesResponse.ok ? recurringInvoicesResponse.data : null);
+        setVendors(vendorsResponse.ok ? vendorsResponse.data : null);
+        setBills(billsResponse.ok ? billsResponse.data : null);
         setAvailableModules(modulesResponse.ok ? modulesResponse.data.modules : []);
         setTenantModules(tenantModulesResponse.ok ? tenantModulesResponse.data.modules : []);
         setTeamMembers(teamMembersResponse.ok ? teamMembersResponse.data : null);
@@ -1004,6 +1027,8 @@ export function App() {
           !tasksResponse.ok ||
           !invoicesResponse.ok ||
           !recurringInvoicesResponse.ok ||
+          !vendorsResponse.ok ||
+          !billsResponse.ok ||
           !tenantModulesResponse.ok
         ) {
           setAppMessage({
@@ -1500,6 +1525,94 @@ export function App() {
     }
   }
 
+  async function handleCreateVendor(values: VendorFormValues): Promise<boolean> {
+    setAppMessage(null);
+    try {
+      const response = await runAuthenticatedRequest<{ vendor: VendorSummary | null }>("/vendors", {
+        method: "POST",
+        body: values
+      });
+
+      if (!response) {
+        return false;
+      }
+
+      if (!response.ok) {
+        setAppMessage({ tone: "error", text: getErrorMessage(response) });
+        return false;
+      }
+
+      await loadProtectedState(tokenRef.current);
+      setAppMessage({ tone: "success", text: "Vendor created." });
+      return true;
+    } catch (error) {
+      setAppMessage({ tone: "error", text: maskError(error) });
+      return false;
+    }
+  }
+
+  async function handleSaveBill(billId: string | null, values: BillFormValues): Promise<boolean> {
+    setAppMessage(null);
+    try {
+      const response = await runAuthenticatedRequest<{ bill: BillSummary | null }>(
+        billId ? `/bills/${billId}` : "/bills",
+        {
+          method: billId ? "PUT" : "POST",
+          body: values
+        }
+      );
+
+      if (!response) {
+        return false;
+      }
+
+      if (!response.ok) {
+        setAppMessage({ tone: "error", text: getErrorMessage(response) });
+        return false;
+      }
+
+      await loadProtectedState(tokenRef.current);
+      setAppMessage({ tone: "success", text: billId ? "Bill updated." : "Bill created." });
+      return true;
+    } catch (error) {
+      setAppMessage({ tone: "error", text: maskError(error) });
+      return false;
+    }
+  }
+
+  async function handleArchiveBill(billId: string): Promise<boolean> {
+    return runBillAction(`/bills/${billId}/archive`, "Bill archived.");
+  }
+
+  async function handleRestoreBill(billId: string): Promise<boolean> {
+    return runBillAction(`/bills/${billId}/restore`, "Bill restored.");
+  }
+
+  async function runBillAction(path: string, successMessage: string): Promise<boolean> {
+    setAppMessage(null);
+    try {
+      const response = await runAuthenticatedRequest<{ bill: BillSummary | null }>(path, {
+        method: "POST"
+      });
+
+      if (!response) {
+        return false;
+      }
+
+      if (!response.ok) {
+        setAppMessage({ tone: "error", text: getErrorMessage(response) });
+        return false;
+      }
+
+      await loadProtectedState(tokenRef.current);
+      setAppMessage({ tone: "success", text: successMessage });
+      return true;
+    } catch (error) {
+      setAppMessage({ tone: "error", text: maskError(error) });
+      return false;
+    }
+  }
+
   const canManageModules = hasModuleAdminAccess(authContext);
   const canManageCore = hasActiveRole(authContext, ["owner", "admin"]);
   const currentTenant = tenantContext?.currentTenant?.tenant ?? null;
@@ -1596,6 +1709,19 @@ export function App() {
           onSaveRecurringInvoice={handleSaveRecurringInvoice}
           projects={projects?.projects ?? []}
           recurringInvoices={recurringInvoices?.recurringInvoices ?? []}
+        />
+      ) : null}
+      {!loading && activeView === "bills" ? (
+        <BillsPage
+          bills={bills?.bills ?? []}
+          canEdit={canManageCore}
+          errorMessage={null}
+          isLoading={false}
+          onArchiveBill={handleArchiveBill}
+          onCreateVendor={handleCreateVendor}
+          onRestoreBill={handleRestoreBill}
+          onSaveBill={handleSaveBill}
+          vendors={vendors?.vendors ?? []}
         />
       ) : null}
       {!loading && activeView === "settings" ? (

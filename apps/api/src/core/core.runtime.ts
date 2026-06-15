@@ -1,6 +1,9 @@
 import type { Prisma } from "@prisma/client";
 import { createPrismaClient } from "../../../../packages/data/src/client";
 import type {
+  BillInputRequest,
+  BillResponse,
+  BillsResponse,
   ClientInputRequest,
   ClientResponse,
   ClientsResponse,
@@ -17,7 +20,10 @@ import type {
   RecurringInvoicesResponse,
   TaskInputRequest,
   TaskResponse,
-  TasksResponse
+  TasksResponse,
+  VendorInputRequest,
+  VendorResponse,
+  VendorsResponse
 } from "./core.types";
 import type { AuthResolvedSessionContext } from "../auth/types";
 
@@ -29,6 +35,7 @@ type TaskStatus = "TODO" | "IN_PROGRESS" | "DONE";
 type TaskRecurringType = "NONE" | "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY";
 type InvoiceStatus = "DRAFT" | "SENT" | "PAID" | "OVERDUE" | "CANCELLED" | "VOIDED";
 type RecurringInvoiceInterval = "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY";
+type BillPaymentForm = "CASH" | "REVOLUT_BANK" | "WISE_BANK" | "REVOLUT_CARD" | "WISE_CARD" | "OTHER";
 
 function toNullableString(value: string | null | undefined): string | null {
   return typeof value === "string" && value.length > 0 ? value : null;
@@ -2131,4 +2138,332 @@ export async function generateDueRecurringInvoice(
     }
     throw error;
   }
+}
+
+const vendorSelect = {
+  id: true,
+  name: true,
+  isArchived: true,
+  createdAt: true,
+  updatedAt: true,
+  _count: {
+    select: {
+      bills: true
+    }
+  }
+} as const;
+
+const billSelect = {
+  id: true,
+  vendorId: true,
+  vendor: {
+    select: {
+      id: true,
+      name: true
+    }
+  },
+  amountCents: true,
+  paymentForm: true,
+  paymentDate: true,
+  billDate: true,
+  dueDate: true,
+  referenceNumber: true,
+  category: true,
+  notes: true,
+  documentUrl: true,
+  documentStorageKey: true,
+  isArchived: true,
+  createdAt: true,
+  updatedAt: true
+} as const;
+
+function toVendorSummary(vendor: {
+  id: string;
+  name: string;
+  isArchived: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  _count: {
+    bills: number;
+  };
+}) {
+  return {
+    id: vendor.id,
+    name: vendor.name,
+    isArchived: vendor.isArchived,
+    billCount: vendor._count.bills,
+    createdAt: vendor.createdAt.toISOString(),
+    updatedAt: vendor.updatedAt.toISOString()
+  };
+}
+
+function toBillSummary(bill: {
+  id: string;
+  vendorId: string;
+  vendor: { id: string; name: string };
+  amountCents: number;
+  paymentForm: string;
+  paymentDate: Date;
+  billDate: Date | null;
+  dueDate: Date | null;
+  referenceNumber: string | null;
+  category: string | null;
+  notes: string | null;
+  documentUrl: string | null;
+  documentStorageKey: string | null;
+  isArchived: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}) {
+  return {
+    id: bill.id,
+    vendorId: bill.vendorId,
+    vendor: bill.vendor,
+    amountCents: bill.amountCents,
+    paymentForm: bill.paymentForm,
+    paymentDate: bill.paymentDate.toISOString(),
+    billDate: toDateString(bill.billDate),
+    dueDate: toDateString(bill.dueDate),
+    referenceNumber: bill.referenceNumber,
+    category: bill.category,
+    notes: bill.notes,
+    documentUrl: bill.documentUrl,
+    documentStorageKey: bill.documentStorageKey,
+    isArchived: bill.isArchived,
+    createdAt: bill.createdAt.toISOString(),
+    updatedAt: bill.updatedAt.toISOString()
+  };
+}
+
+async function getVendorRecord(tx: PrismaTx, tenantId: string, vendorId: string) {
+  return tx.vendor.findFirst({
+    where: {
+      id: vendorId,
+      tenantId
+    },
+    select: vendorSelect
+  });
+}
+
+async function getBillRecord(tx: PrismaTx, tenantId: string, billId: string) {
+  return tx.bill.findFirst({
+    where: {
+      id: billId,
+      tenantId
+    },
+    select: billSelect
+  });
+}
+
+export async function listVendors(authSession: AuthResolvedSessionContext): Promise<VendorsResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) {
+    return null;
+  }
+
+  const vendors = await prisma.vendor.findMany({
+    where: {
+      tenantId
+    },
+    orderBy: [
+      {
+        isArchived: "asc"
+      },
+      {
+        name: "asc"
+      }
+    ],
+    select: vendorSelect
+  });
+
+  return {
+    vendors: vendors.map(toVendorSummary)
+  };
+}
+
+export async function createVendor(
+  authSession: AuthResolvedSessionContext,
+  input: VendorInputRequest
+): Promise<VendorResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId || !input.name) {
+    return null;
+  }
+
+  try {
+    const created = await prisma.vendor.create({
+      data: {
+        tenantId,
+        name: input.name
+      },
+      select: vendorSelect
+    });
+
+    return {
+      vendor: toVendorSummary(created)
+    };
+  } catch (error) {
+    if ((error as { code?: string }).code === "P2002") {
+      return null;
+    }
+    throw error;
+  }
+}
+
+export async function listBills(authSession: AuthResolvedSessionContext): Promise<BillsResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) {
+    return null;
+  }
+
+  const bills = await prisma.bill.findMany({
+    where: {
+      tenantId
+    },
+    orderBy: [
+      {
+        isArchived: "asc"
+      },
+      {
+        paymentDate: "desc"
+      }
+    ],
+    select: billSelect
+  });
+
+  return {
+    bills: bills.map(toBillSummary)
+  };
+}
+
+export async function createBill(
+  authSession: AuthResolvedSessionContext,
+  input: BillInputRequest
+): Promise<BillResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId || !input.vendorId || input.amountCents === undefined || !input.paymentForm || !input.paymentDate) {
+    return null;
+  }
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    const vendor = await getVendorRecord(tx, tenantId, input.vendorId ?? "");
+    if (!vendor || vendor.isArchived) {
+      return null;
+    }
+
+    const created = await tx.bill.create({
+      data: {
+        tenantId,
+        vendorId: vendor.id,
+        amountCents: input.amountCents ?? 0,
+        paymentForm: input.paymentForm as BillPaymentForm,
+        paymentDate: new Date(input.paymentDate ?? ""),
+        billDate: input.billDate ? new Date(input.billDate) : null,
+        dueDate: input.dueDate ? new Date(input.dueDate) : null,
+        referenceNumber: toNullableString(input.referenceNumber),
+        category: toNullableString(input.category),
+        notes: toNullableString(input.notes),
+        documentUrl: toNullableString(input.documentUrl),
+        documentStorageKey: toNullableString(input.documentStorageKey)
+      },
+      select: billSelect
+    });
+
+    return {
+      bill: toBillSummary(created)
+    };
+  });
+}
+
+export async function updateBill(
+  authSession: AuthResolvedSessionContext,
+  billId: string,
+  input: BillInputRequest
+): Promise<BillResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId || !input.vendorId || input.amountCents === undefined || !input.paymentForm || !input.paymentDate) {
+    return null;
+  }
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    const existing = await getBillRecord(tx, tenantId, billId);
+    if (!existing) {
+      return null;
+    }
+
+    const vendor = await getVendorRecord(tx, tenantId, input.vendorId ?? "");
+    if (!vendor || vendor.isArchived) {
+      return null;
+    }
+
+    const updated = await tx.bill.update({
+      where: {
+        id: billId
+      },
+      data: {
+        vendorId: vendor.id,
+        amountCents: input.amountCents ?? existing.amountCents,
+        paymentForm: input.paymentForm as BillPaymentForm,
+        paymentDate: new Date(input.paymentDate ?? existing.paymentDate),
+        billDate: input.billDate ? new Date(input.billDate) : null,
+        dueDate: input.dueDate ? new Date(input.dueDate) : null,
+        referenceNumber: toNullableString(input.referenceNumber),
+        category: toNullableString(input.category),
+        notes: toNullableString(input.notes),
+        documentUrl: toNullableString(input.documentUrl),
+        documentStorageKey: toNullableString(input.documentStorageKey)
+      },
+      select: billSelect
+    });
+
+    return {
+      bill: toBillSummary(updated)
+    };
+  });
+}
+
+async function updateBillArchiveState(
+  authSession: AuthResolvedSessionContext,
+  billId: string,
+  isArchived: boolean
+): Promise<BillResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) {
+    return null;
+  }
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    const existing = await getBillRecord(tx, tenantId, billId);
+    if (!existing) {
+      return null;
+    }
+
+    const updated = await tx.bill.update({
+      where: {
+        id: billId
+      },
+      data: {
+        isArchived
+      },
+      select: billSelect
+    });
+
+    return {
+      bill: toBillSummary(updated)
+    };
+  });
+}
+
+export async function archiveBill(
+  authSession: AuthResolvedSessionContext,
+  billId: string
+): Promise<BillResponse | null> {
+  return updateBillArchiveState(authSession, billId, true);
+}
+
+export async function restoreBill(
+  authSession: AuthResolvedSessionContext,
+  billId: string
+): Promise<BillResponse | null> {
+  return updateBillArchiveState(authSession, billId, false);
 }

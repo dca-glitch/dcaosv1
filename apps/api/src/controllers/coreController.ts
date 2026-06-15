@@ -1,5 +1,7 @@
 import type { RequestHandler } from "express";
 import {
+  billInvalidFailure,
+  billNotFoundFailure,
   clientInvalidFailure,
   clientNotFoundFailure,
   companyProfileInvalidFailure,
@@ -19,17 +21,21 @@ import {
 import type { AuthSessionLocals } from "../auth/types";
 import {
   archiveClient,
+  archiveBill,
   archiveInvoice,
   archiveProject,
   archiveRecurringInvoice,
   archiveTask,
   cancelInvoice,
+  createBill,
   createClient,
   createInvoice,
   createProject,
   createRecurringInvoice,
   createTask,
+  createVendor,
   generateDueRecurringInvoice,
+  listBills,
   getClient,
   getCompanyProfile,
   getInvoice,
@@ -41,9 +47,12 @@ import {
   listProjects,
   listRecurringInvoices,
   listTasks,
+  listVendors,
   markInvoicePaid,
   markInvoiceSent,
+  restoreBill,
   saveCompanyProfile,
+  updateBill,
   updateClient,
   updateInvoice,
   updateProject,
@@ -51,6 +60,7 @@ import {
   updateTask
 } from "../core/core.runtime";
 import type {
+  BillInputRequest,
   ClientInputRequest,
   CompanyProfileUpdateRequest,
   InvoiceInputRequest,
@@ -58,7 +68,8 @@ import type {
   ProjectInputRequest,
   RecurringInvoiceInputRequest,
   RecurringInvoiceLineItemInputRequest,
-  TaskInputRequest
+  TaskInputRequest,
+  VendorInputRequest
 } from "../core/core.types";
 
 const TEXT_FIELD_MAX_LENGTH = 4000;
@@ -210,6 +221,7 @@ const TASK_STATUSES = new Set(["TODO", "IN_PROGRESS", "DONE"]);
 const TASK_RECURRING_TYPES = new Set(["NONE", "DAILY", "WEEKLY", "MONTHLY", "YEARLY"]);
 const INVOICE_STATUSES = new Set(["DRAFT", "SENT", "PAID", "OVERDUE", "CANCELLED", "VOIDED"]);
 const RECURRING_INVOICE_INTERVALS = new Set(["DAILY", "WEEKLY", "MONTHLY", "YEARLY"]);
+const BILL_PAYMENT_FORMS = new Set(["CASH", "REVOLUT_BANK", "WISE_BANK", "REVOLUT_CARD", "WISE_CARD", "OTHER"]);
 
 function getOptionalBoolean(value: unknown): boolean | undefined {
   return typeof value === "boolean" ? value : undefined;
@@ -348,6 +360,41 @@ function getRecurringInvoiceInput(body: unknown): RecurringInvoiceInputRequest |
     documentFolderHint: getOptionalString(value.documentFolderHint, LOGO_URL_MAX_LENGTH),
     isActive: getOptionalBoolean(value.isActive),
     lineItems
+  };
+}
+
+function getVendorInput(body: unknown): VendorInputRequest | null {
+  const value = (body ?? {}) as Record<string, unknown>;
+  const name = getRequiredString(value.name, SHORT_TEXT_FIELD_MAX_LENGTH);
+
+  return name ? { name } : null;
+}
+
+function getBillInput(body: unknown): BillInputRequest | null {
+  const value = (body ?? {}) as Record<string, unknown>;
+  const vendorId = getRequiredString(value.vendorId, SHORT_TEXT_FIELD_MAX_LENGTH);
+  const amountCents = getPositiveInteger(value.amountCents, 0);
+  const paymentForm = typeof value.paymentForm === "string" ? value.paymentForm.trim().toUpperCase() : "";
+  const paymentDate = parseDateInput(value.paymentDate);
+  const billDate = parseDateInput(value.billDate);
+  const dueDate = parseDateInput(value.dueDate);
+
+  if (!vendorId || amountCents === null || amountCents <= 0 || !BILL_PAYMENT_FORMS.has(paymentForm) || !paymentDate || billDate === undefined || dueDate === undefined) {
+    return null;
+  }
+
+  return {
+    vendorId,
+    amountCents,
+    paymentForm,
+    paymentDate: paymentDate.toISOString(),
+    billDate: billDate?.toISOString() ?? null,
+    dueDate: dueDate?.toISOString() ?? null,
+    referenceNumber: getOptionalString(value.referenceNumber, SHORT_TEXT_FIELD_MAX_LENGTH),
+    category: getOptionalString(value.category, SHORT_TEXT_FIELD_MAX_LENGTH),
+    notes: getOptionalString(value.notes, TEXT_FIELD_MAX_LENGTH),
+    documentUrl: getOptionalUrl(value.documentUrl),
+    documentStorageKey: getOptionalString(value.documentStorageKey, LOGO_URL_MAX_LENGTH)
   };
 }
 
@@ -930,6 +977,164 @@ async function runInvoiceAction(
     res.json(success(response, { phase: "runtime", scope: "invoices-module" }));
   } catch {
     res.status(500).json(failure("INVOICE_RUNTIME_ERROR", errorMessage));
+  }
+}
+
+export const listVendorsHandler: RequestHandler = async (_req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) {
+    res.status(401).json(unauthorizedFailure());
+    return;
+  }
+
+  try {
+    const response = await listVendors(authSession);
+    if (!response) {
+      res.status(403).json(forbiddenFailure());
+      return;
+    }
+
+    res.json(success(response, { phase: "runtime", scope: "bills-module" }));
+  } catch {
+    res.status(500).json(failure("VENDOR_RUNTIME_ERROR", "Vendor list could not be completed."));
+  }
+};
+
+export const createVendorHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) {
+    res.status(401).json(unauthorizedFailure());
+    return;
+  }
+
+  const input = getVendorInput(req.body);
+  if (!input) {
+    res.status(400).json(billInvalidFailure());
+    return;
+  }
+
+  try {
+    const response = await createVendor(authSession, input);
+    if (!response?.vendor) {
+      res.status(400).json(billInvalidFailure());
+      return;
+    }
+
+    res.status(201).json(success(response, { phase: "runtime", scope: "bills-module" }));
+  } catch {
+    res.status(500).json(failure("VENDOR_RUNTIME_ERROR", "Vendor create could not be completed."));
+  }
+};
+
+export const listBillsHandler: RequestHandler = async (_req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) {
+    res.status(401).json(unauthorizedFailure());
+    return;
+  }
+
+  try {
+    const response = await listBills(authSession);
+    if (!response) {
+      res.status(403).json(forbiddenFailure());
+      return;
+    }
+
+    res.json(success(response, { phase: "runtime", scope: "bills-module" }));
+  } catch {
+    res.status(500).json(failure("BILL_RUNTIME_ERROR", "Bill list could not be completed."));
+  }
+};
+
+export const createBillHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) {
+    res.status(401).json(unauthorizedFailure());
+    return;
+  }
+
+  const input = getBillInput(req.body);
+  if (!input) {
+    res.status(400).json(billInvalidFailure());
+    return;
+  }
+
+  try {
+    const response = await createBill(authSession, input);
+    if (!response?.bill) {
+      res.status(400).json(billInvalidFailure());
+      return;
+    }
+
+    res.status(201).json(success(response, { phase: "runtime", scope: "bills-module" }));
+  } catch {
+    res.status(500).json(failure("BILL_RUNTIME_ERROR", "Bill create could not be completed."));
+  }
+};
+
+export const updateBillHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) {
+    res.status(401).json(unauthorizedFailure());
+    return;
+  }
+
+  const billId = typeof req.params.id === "string" ? req.params.id.trim() : "";
+  const input = getBillInput(req.body);
+  if (!billId || !input) {
+    res.status(400).json(billInvalidFailure());
+    return;
+  }
+
+  try {
+    const response = await updateBill(authSession, billId, input);
+    if (!response?.bill) {
+      res.status(404).json(billNotFoundFailure());
+      return;
+    }
+
+    res.json(success(response, { phase: "runtime", scope: "bills-module" }));
+  } catch {
+    res.status(500).json(failure("BILL_RUNTIME_ERROR", "Bill update could not be completed."));
+  }
+};
+
+export const archiveBillHandler: RequestHandler = async (req, res) => {
+  await runBillAction(req, res, archiveBill, "Bill archive could not be completed.");
+};
+
+export const restoreBillHandler: RequestHandler = async (req, res) => {
+  await runBillAction(req, res, restoreBill, "Bill restore could not be completed.");
+};
+
+async function runBillAction(
+  req: Parameters<RequestHandler>[0],
+  res: Parameters<RequestHandler>[1],
+  action: typeof archiveBill,
+  errorMessage: string
+) {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) {
+    res.status(401).json(unauthorizedFailure());
+    return;
+  }
+
+  const billId = typeof req.params.id === "string" ? req.params.id.trim() : "";
+  if (!billId) {
+    res.status(400).json(billInvalidFailure());
+    return;
+  }
+
+  try {
+    const response = await action(authSession, billId);
+    if (!response?.bill) {
+      res.status(404).json(billNotFoundFailure());
+      return;
+    }
+
+    res.json(success(response, { phase: "runtime", scope: "bills-module" }));
+  } catch {
+    res.status(500).json(failure("BILL_RUNTIME_ERROR", errorMessage));
   }
 }
 

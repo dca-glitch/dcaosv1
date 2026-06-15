@@ -311,3 +311,68 @@ export interface RecurringInvoiceInputRequest {
   isActive?: boolean;
   lineItems?: RecurringInvoiceLineItemInputRequest[];
 }
+
+export interface VendorSummary {
+  id: string;
+  name: string;
+  isArchived: boolean;
+  billCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface VendorResponse {
+  vendor: VendorSummary | null;
+}
+
+export interface VendorsResponse {
+  vendors: VendorSummary[];
+}
+
+export interface VendorInputRequest {
+  name?: string;
+}
+
+export interface BillSummary {
+  id: string;
+  vendorId: string;
+  vendor: {
+    id: string;
+    name: string;
+  };
+  amountCents: number;
+  paymentForm: string;
+  paymentDate: string;
+  billDate: string | null;
+  dueDate: string | null;
+  referenceNumber: string | null;
+  category: string | null;
+  notes: string | null;
+  documentUrl: string | null;
+  documentStorageKey: string | null;
+  isArchived: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface BillResponse {
+  bill: BillSummary | null;
+}
+
+export interface BillsResponse {
+  bills: BillSummary[];
+}
+
+export interface BillInputRequest {
+  vendorId?: string;
+  amountCents?: number;
+  paymentForm?: string;
+  paymentDate?: string;
+  billDate?: string | null;
+  dueDate?: string | null;
+  referenceNumber?: string | null;
+  category?: string | null;
+  notes?: string | null;
+  documentUrl?: string | null;
+  documentStorageKey?: string | null;
+}
