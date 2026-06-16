@@ -36,18 +36,29 @@ export function AppLayout({
       <aside className="sidebar" aria-label="Primary navigation">
         <div className="brand">
           <span className="brand-mark">DCA</span>
-          <span>OS v1</span>
+          <span className="brand-copy">
+            <strong>DCA OS Lite</strong>
+            <small>Operations Command</small>
+          </span>
         </div>
-        <nav className="nav-list">
-          {navigationItems.map((item) => (
-            <a
-              aria-current={activeView === item.view ? "page" : undefined}
-              data-section={item.section}
-              href={`#/${item.view}`}
-              key={item.view}
-            >
-              {item.label}
-            </a>
+        <nav className="nav-list" aria-label="Workspace modules">
+          {Array.from(new Set(navigationItems.map((item) => item.section))).map((section) => (
+            <div className="nav-section" key={section}>
+              <span className="nav-section-label">{section === "protected" ? "Product" : section}</span>
+              {navigationItems
+                .filter((item) => item.section === section)
+                .map((item) => (
+                  <a
+                    aria-current={activeView === item.view ? "page" : undefined}
+                    data-section={item.section}
+                    href={`#/${item.view}`}
+                    key={item.view}
+                  >
+                    <span className="nav-dot" aria-hidden="true" />
+                    {item.label}
+                  </a>
+                ))}
+            </div>
           ))}
         </nav>
         <div className="tenant-switch-placeholder">
