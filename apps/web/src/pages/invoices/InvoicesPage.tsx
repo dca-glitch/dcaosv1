@@ -14,6 +14,19 @@ export type InvoiceLineItemFormValues = {
   sortOrder: number;
 };
 
+export type InvoicePaymentSummary = {
+  id: string;
+  invoiceId: string;
+  paymentMethod: string;
+  amountIssuedCents: number;
+  amountReceivedCents: number;
+  differenceCents: number;
+  paymentDate: string;
+  notes: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type InvoiceSummary = {
   id: string;
   clientId: string;
@@ -42,6 +55,7 @@ export type InvoiceSummary = {
   documentUrl: string | null;
   documentStorageKey: string | null;
   lineItems: InvoiceLineItemFormValues[];
+  payment: InvoicePaymentSummary | null;
   isArchived: boolean;
   createdAt: string;
   updatedAt: string;
@@ -120,6 +134,14 @@ export type RecurringInvoiceFormValues = {
   lineItems: InvoiceLineItemFormValues[];
 };
 
+export type InvoicePaymentFormValues = {
+  paymentMethod: string;
+  amountIssuedCents: number;
+  amountReceivedCents: number;
+  paymentDate: string;
+  notes: string;
+};
+
 type InvoicesPageProps = {
   invoices: InvoiceSummary[];
   recurringInvoices: RecurringInvoiceSummary[];
@@ -131,8 +153,8 @@ type InvoicesPageProps = {
   onSaveInvoice: (invoiceId: string | null, values: InvoiceFormValues) => Promise<boolean>;
   onArchiveInvoice: (invoiceId: string) => Promise<boolean>;
   onMarkInvoiceSent: (invoiceId: string) => Promise<boolean>;
-  onMarkInvoicePaid: (invoiceId: string) => Promise<boolean>;
   onCancelInvoice: (invoiceId: string) => Promise<boolean>;
+  onRegisterInvoicePayment: (invoiceId: string, values: InvoicePaymentFormValues) => Promise<boolean>;
   onSaveRecurringInvoice: (recurringInvoiceId: string | null, values: RecurringInvoiceFormValues) => Promise<boolean>;
   onArchiveRecurringInvoice: (recurringInvoiceId: string) => Promise<boolean>;
   onGenerateDueRecurringInvoice: (recurringInvoiceId: string, targetDate: string) => Promise<boolean>;
@@ -140,6 +162,15 @@ type InvoicesPageProps = {
 
 const invoiceStatusOptions = ["DRAFT", "SENT", "PAID", "CANCELLED"] as const;
 const recurringIntervalOptions = ["WEEKLY", "MONTHLY", "YEARLY"] as const;
+const paymentMethodOptions = [
+  { label: "Cash", value: "CASH" },
+  { label: "Revolut bank", value: "REVOLUT_BANK" },
+  { label: "Wise bank", value: "WISE_BANK" },
+  { label: "Revolut card", value: "REVOLUT_CARD" },
+  { label: "Wise card", value: "WISE_CARD" },
+  { label: "Card processor", value: "CARD_PROCESSOR" },
+  { label: "Other", value: "OTHER" }
+] as const;
 
 const emptyLineItem = (sortOrder = 0): InvoiceLineItemFormValues => ({
   description: "",
@@ -190,6 +221,14 @@ const emptyRecurringForm = (clientId = ""): RecurringInvoiceFormValues => ({
   lineItems: [emptyLineItem()]
 });
 
+const emptyPaymentForm = (): InvoicePaymentFormValues => ({
+  paymentMethod: "CASH",
+  amountIssuedCents: 0,
+  amountReceivedCents: 0,
+  paymentDate: toLocalDateInputValue(),
+  notes: ""
+});
+
 function toDateInputValue(value: string | null): string {
   return value ? value.slice(0, 10) : "";
 }
@@ -214,6 +253,10 @@ function formatMoney(cents: number, currency: string): string {
   return new Intl.NumberFormat(undefined, { currency, style: "currency" }).format(cents / 100);
 }
 
+function formatPaymentMethod(value: string): string {
+  return paymentMethodOptions.find((option) => option.value === value)?.label ?? value;
+}
+
 function firstClientId(clients: ClientSummary[]): string {
   return clients.find((client) => !client.isArchived)?.id ?? clients[0]?.id ?? "";
 }
@@ -229,8 +272,8 @@ export function InvoicesPage({
   onSaveInvoice,
   onArchiveInvoice,
   onMarkInvoiceSent,
-  onMarkInvoicePaid,
   onCancelInvoice,
+  onRegisterInvoicePayment,
   onSaveRecurringInvoice,
   onArchiveRecurringInvoice,
   onGenerateDueRecurringInvoice
@@ -238,10 +281,13 @@ export function InvoicesPage({
   const [tab, setTab] = useState<"invoices" | "recurring">("invoices");
   const [invoiceEditorId, setInvoiceEditorId] = useState<string | null>(null);
   const [recurringEditorId, setRecurringEditorId] = useState<string | null>(null);
+  const [paymentInvoice, setPaymentInvoice] = useState<InvoiceSummary | null>(null);
   const [isInvoiceEditorOpen, setIsInvoiceEditorOpen] = useState(false);
   const [isRecurringEditorOpen, setIsRecurringEditorOpen] = useState(false);
+  const [isPaymentEditorOpen, setIsPaymentEditorOpen] = useState(false);
   const [invoiceDraft, setInvoiceDraft] = useState<InvoiceFormValues>(emptyInvoiceForm());
   const [recurringDraft, setRecurringDraft] = useState<RecurringInvoiceFormValues>(emptyRecurringForm());
+  const [paymentDraft, setPaymentDraft] = useState<InvoicePaymentFormValues>(emptyPaymentForm());
   const [saving, setSaving] = useState(false);
 
   const projectByClientId = useMemo(() => {
@@ -319,6 +365,16 @@ export function InvoicesPage({
     setIsRecurringEditorOpen(true);
   }
 
+  function openPaymentModal(invoice: InvoiceSummary) {
+    setPaymentInvoice(invoice);
+    setPaymentDraft({
+      ...emptyPaymentForm(),
+      amountIssuedCents: invoice.totalCents,
+      amountReceivedCents: invoice.totalCents
+    });
+    setIsPaymentEditorOpen(true);
+  }
+
   async function handleInvoiceSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSaving(true);
@@ -343,6 +399,25 @@ export function InvoicesPage({
         setRecurringEditorId(null);
         setRecurringDraft(emptyRecurringForm(firstClientId(clients)));
         setIsRecurringEditorOpen(false);
+      }
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handlePaymentSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!paymentInvoice) {
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const ok = await onRegisterInvoicePayment(paymentInvoice.id, paymentDraft);
+      if (ok) {
+        setPaymentInvoice(null);
+        setPaymentDraft(emptyPaymentForm());
+        setIsPaymentEditorOpen(false);
       }
     } finally {
       setSaving(false);
@@ -407,8 +482,8 @@ export function InvoicesPage({
           onArchiveInvoice={onArchiveInvoice}
           onCancelInvoice={onCancelInvoice}
           onEditInvoice={openEditInvoiceModal}
-          onMarkInvoicePaid={onMarkInvoicePaid}
           onMarkInvoiceSent={onMarkInvoiceSent}
+          onRegisterInvoicePayment={openPaymentModal}
         />
       ) : (
         <RecurringInvoiceCards
@@ -593,6 +668,73 @@ export function InvoicesPage({
           </form>
         </Modal>
       ) : null}
+
+      {isPaymentEditorOpen ? (
+        <Modal
+          onClose={() => {
+            setPaymentInvoice(null);
+            setPaymentDraft(emptyPaymentForm());
+            setIsPaymentEditorOpen(false);
+          }}
+          title="Register Payment"
+        >
+          <form className="entity-form" onSubmit={handlePaymentSubmit}>
+            <div className="field-grid">
+              <label>
+                Payment method
+                <select
+                  onChange={(event) => setPaymentDraft((current) => ({ ...current, paymentMethod: event.target.value }))}
+                  required
+                  value={paymentDraft.paymentMethod}
+                >
+                  {paymentMethodOptions.map((option) => (
+                    <option key={option.value} value={option.value}>{option.label}</option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                Payment date
+                <input
+                  onChange={(event) => setPaymentDraft((current) => ({ ...current, paymentDate: event.target.value }))}
+                  required
+                  type="date"
+                  value={paymentDraft.paymentDate}
+                />
+              </label>
+              <label>
+                Amount issued cents
+                <input
+                  min={0}
+                  onChange={(event) => setPaymentDraft((current) => ({ ...current, amountIssuedCents: event.target.valueAsNumber || 0 }))}
+                  required
+                  type="number"
+                  value={paymentDraft.amountIssuedCents}
+                />
+              </label>
+              <label>
+                Amount received cents
+                <input
+                  min={0}
+                  onChange={(event) => setPaymentDraft((current) => ({ ...current, amountReceivedCents: event.target.valueAsNumber || 0 }))}
+                  required
+                  type="number"
+                  value={paymentDraft.amountReceivedCents}
+                />
+              </label>
+              <label className="field-span-2">
+                Notes
+                <textarea
+                  maxLength={4000}
+                  onChange={(event) => setPaymentDraft((current) => ({ ...current, notes: event.target.value }))}
+                  rows={3}
+                  value={paymentDraft.notes}
+                />
+              </label>
+            </div>
+            <ModalActions disabled={saving || !paymentDraft.paymentDate} onCancel={() => setIsPaymentEditorOpen(false)} saving={saving} />
+          </form>
+        </Modal>
+      ) : null}
     </section>
   );
 }
@@ -603,11 +745,15 @@ type InvoiceCardsProps = {
   onEditInvoice: (invoice: InvoiceSummary) => void;
   onArchiveInvoice: (invoiceId: string) => Promise<boolean>;
   onMarkInvoiceSent: (invoiceId: string) => Promise<boolean>;
-  onMarkInvoicePaid: (invoiceId: string) => Promise<boolean>;
   onCancelInvoice: (invoiceId: string) => Promise<boolean>;
+  onRegisterInvoicePayment: (invoice: InvoiceSummary) => void;
 };
 
-function InvoiceCards({ invoices, canEdit, onEditInvoice, onArchiveInvoice, onMarkInvoiceSent, onMarkInvoicePaid, onCancelInvoice }: InvoiceCardsProps) {
+function canRegisterPayment(invoice: InvoiceSummary): boolean {
+  return !invoice.payment && !invoice.isArchived && !["PAID", "VOIDED", "CANCELLED", "UNCOLLECTIBLE"].includes(invoice.status);
+}
+
+function InvoiceCards({ invoices, canEdit, onEditInvoice, onArchiveInvoice, onMarkInvoiceSent, onCancelInvoice, onRegisterInvoicePayment }: InvoiceCardsProps) {
   if (invoices.length === 0) {
     return <EmptyState message="No invoices have been created yet." title="No invoices" />;
   }
@@ -624,7 +770,7 @@ function InvoiceCards({ invoices, canEdit, onEditInvoice, onArchiveInvoice, onMa
             <div className="card-actions">
               {canEdit ? <button className="secondary-action" onClick={() => onEditInvoice(invoice)} type="button">Edit</button> : null}
               {canEdit ? <button className="secondary-action" onClick={() => void onMarkInvoiceSent(invoice.id)} type="button">Mark sent</button> : null}
-              {canEdit ? <button className="secondary-action" onClick={() => void onMarkInvoicePaid(invoice.id)} type="button">Mark paid</button> : null}
+              {canEdit && canRegisterPayment(invoice) ? <button className="secondary-action" onClick={() => onRegisterInvoicePayment(invoice)} type="button">Register payment</button> : null}
               {canEdit ? <button className="secondary-action" onClick={() => void onCancelInvoice(invoice.id)} type="button">Cancel</button> : null}
               {canEdit && !invoice.isArchived ? <button className="secondary-action" onClick={() => void onArchiveInvoice(invoice.id)} type="button">Archive</button> : null}
             </div>
@@ -648,8 +794,22 @@ function InvoiceCards({ invoices, canEdit, onEditInvoice, onArchiveInvoice, onMa
             taxCents={invoice.taxCents}
             totalCents={invoice.totalCents}
           />
+          {invoice.payment ? <PaymentDetails currency={invoice.currency} payment={invoice.payment} /> : null}
         </article>
       ))}
+    </div>
+  );
+}
+
+function PaymentDetails({ currency, payment }: { currency: string; payment: InvoicePaymentSummary }) {
+  return (
+    <div className="entity-field-grid">
+      <div><span>Payment method</span><strong>{formatPaymentMethod(payment.paymentMethod)}</strong></div>
+      <div><span>Payment date</span><strong>{formatDateLabel(payment.paymentDate)}</strong></div>
+      <div><span>Amount issued</span><strong>{formatMoney(payment.amountIssuedCents, currency)}</strong></div>
+      <div><span>Amount received</span><strong>{formatMoney(payment.amountReceivedCents, currency)}</strong></div>
+      <div><span>Difference</span><strong>{formatMoney(payment.differenceCents, currency)}</strong></div>
+      <div className="entity-span-2"><span>Payment notes</span><strong>{payment.notes || "Not set"}</strong></div>
     </div>
   );
 }

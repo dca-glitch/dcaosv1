@@ -14,6 +14,7 @@ import { ClientsPage, type ClientFormValues, type ClientSummary } from "./pages/
 import {
   InvoicesPage,
   type InvoiceFormValues,
+  type InvoicePaymentFormValues,
   type InvoiceSummary,
   type RecurringInvoiceFormValues,
   type RecurringInvoiceSummary
@@ -1463,12 +1464,37 @@ export function App() {
     return runInvoiceAction(`/invoices/${invoiceId}/mark-sent`, "Invoice marked sent.");
   }
 
-  async function handleMarkInvoicePaid(invoiceId: string): Promise<boolean> {
-    return runInvoiceAction(`/invoices/${invoiceId}/mark-paid`, "Invoice marked paid.");
-  }
-
   async function handleCancelInvoice(invoiceId: string): Promise<boolean> {
     return runInvoiceAction(`/invoices/${invoiceId}/cancel`, "Invoice cancelled.");
+  }
+
+  async function handleRegisterInvoicePayment(
+    invoiceId: string,
+    values: InvoicePaymentFormValues
+  ): Promise<boolean> {
+    setAppMessage(null);
+    try {
+      const response = await runAuthenticatedRequest<{ invoice: InvoiceSummary | null }>(`/invoices/${invoiceId}/payment`, {
+        method: "POST",
+        body: values
+      });
+
+      if (!response) {
+        return false;
+      }
+
+      if (!response.ok) {
+        setAppMessage({ tone: "error", text: getErrorMessage(response) });
+        return false;
+      }
+
+      await loadProtectedState(tokenRef.current);
+      setAppMessage({ tone: "success", text: "Payment registered." });
+      return true;
+    } catch (error) {
+      setAppMessage({ tone: "error", text: maskError(error) });
+      return false;
+    }
   }
 
   async function runInvoiceAction(path: string, successMessage: string): Promise<boolean> {
@@ -1849,8 +1875,8 @@ export function App() {
           onArchiveRecurringInvoice={handleArchiveRecurringInvoice}
           onCancelInvoice={handleCancelInvoice}
           onGenerateDueRecurringInvoice={handleGenerateDueRecurringInvoice}
-          onMarkInvoicePaid={handleMarkInvoicePaid}
           onMarkInvoiceSent={handleMarkInvoiceSent}
+          onRegisterInvoicePayment={handleRegisterInvoicePayment}
           onSaveInvoice={handleSaveInvoice}
           onSaveRecurringInvoice={handleSaveRecurringInvoice}
           projects={projects?.projects ?? []}
