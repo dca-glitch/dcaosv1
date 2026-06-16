@@ -27,9 +27,12 @@ import {
   archiveRecurringInvoice,
   archiveTask,
   cancelInvoice,
+  archiveInvoiceItem,
   createBill,
   createClient,
+  createCreditNote,
   createInvoice,
+  createInvoiceItem,
   createProject,
   createRecurringInvoice,
   createTask,
@@ -38,23 +41,34 @@ import {
   listBills,
   getClient,
   getCompanyProfile,
+  getBillDocumentDownload,
+  getCreditNoteDocumentDownload,
+  getInvoiceDocumentDownload,
   getInvoice,
   getProject,
   getRecurringInvoice,
   getTask,
   listInvoices,
+  listInvoiceItems,
+  issueCreditNote,
   listClients,
+  listCreditNotes,
   listProjects,
   listRecurringInvoices,
   listTasks,
   listVendors,
   markInvoicePaid,
   markInvoiceSent,
+  markInvoiceUncollectible,
+  registerInvoicePayment,
+  restoreInvoiceItem,
   restoreBill,
   saveCompanyProfile,
   updateBill,
   updateClient,
+  updateInvoiceItem,
   updateInvoice,
+  voidCreditNote,
   updateProject,
   updateRecurringInvoice,
   updateTask,
@@ -226,6 +240,7 @@ const RECURRING_INVOICE_INTERVALS = new Set(["DAILY", "WEEKLY", "MONTHLY", "YEAR
 const BILL_PAYMENT_FORMS = new Set(["CASH", "REVOLUT_BANK", "WISE_BANK", "REVOLUT_CARD", "WISE_CARD", "OTHER"]);
 const FILE_NAME_MAX_LENGTH = 255;
 const BASE64_UPLOAD_MAX_LENGTH = 7 * 1024 * 1024;
+const PAYMENT_METHODS = new Set(["CASH", "REVOLUT_BANK", "WISE_BANK", "REVOLUT_CARD", "WISE_CARD", "CARD_PROCESSOR", "OTHER"]);
 
 function getOptionalBoolean(value: unknown): boolean | undefined {
   return typeof value === "boolean" ? value : undefined;
@@ -417,6 +432,33 @@ function getBillDocumentUploadInput(body: unknown): BillDocumentUploadRequest | 
     fileName,
     mimeType
   };
+}
+
+function getInvoiceItemInput(body: unknown) {
+  const value = (body ?? {}) as Record<string, unknown>;
+  const name = getRequiredString(value.name, SHORT_TEXT_FIELD_MAX_LENGTH);
+  const unitPriceCents = getNonNegativeInteger(value.unitPriceCents);
+  if (!name || unitPriceCents === null) return null;
+  return { name, description: getOptionalString(value.description, TEXT_FIELD_MAX_LENGTH), unitPriceCents };
+}
+
+function getPaymentInput(body: unknown) {
+  const value = (body ?? {}) as Record<string, unknown>;
+  const paymentMethod = typeof value.paymentMethod === "string" ? value.paymentMethod.trim().toUpperCase() : "";
+  const amountIssuedCents = getNonNegativeInteger(value.amountIssuedCents);
+  const amountReceivedCents = getNonNegativeInteger(value.amountReceivedCents);
+  const paymentDate = parseDateInput(value.paymentDate);
+  if (!PAYMENT_METHODS.has(paymentMethod) || amountIssuedCents === null || amountReceivedCents === null || !paymentDate) return null;
+  return { paymentMethod, amountIssuedCents, amountReceivedCents, paymentDate: paymentDate.toISOString(), notes: getOptionalString(value.notes, TEXT_FIELD_MAX_LENGTH) };
+}
+
+function getCreditNoteInput(body: unknown) {
+  const value = (body ?? {}) as Record<string, unknown>;
+  const reason = getRequiredString(value.reason, TEXT_FIELD_MAX_LENGTH);
+  const amountCents = getPositiveInteger(value.amountCents, 0);
+  const currency = getCurrency(value.currency);
+  if (!reason || amountCents === null || amountCents <= 0 || !currency) return null;
+  return { reason, amountCents, currency };
 }
 
 function getTaskInput(body: unknown): TaskInputRequest | null {
@@ -969,6 +1011,95 @@ export const markInvoicePaidHandler: RequestHandler = async (req, res) => {
 export const cancelInvoiceHandler: RequestHandler = async (req, res) => {
   await runInvoiceAction(req, res, cancelInvoice, "Invoice cancel could not be completed.");
 };
+
+export const markInvoiceUncollectibleHandler: RequestHandler = async (req, res) => {
+  await runInvoiceAction(req, res, markInvoiceUncollectible, "Invoice uncollectible update could not be completed.");
+};
+
+export const registerInvoicePaymentHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  const invoiceId = typeof req.params.id === "string" ? req.params.id.trim() : "";
+  const input = getPaymentInput(req.body);
+  if (!authSession) return void res.status(401).json(unauthorizedFailure());
+  if (!invoiceId || !input) return void res.status(400).json(invoiceInvalidFailure());
+  try {
+    const response = await registerInvoicePayment(authSession, invoiceId, input);
+    if (!response?.invoice) return void res.status(400).json(invoiceInvalidFailure());
+    res.status(201).json(success(response, { phase: "runtime", scope: "invoice-payments" }));
+  } catch {
+    res.status(500).json(failure("INVOICE_PAYMENT_RUNTIME_ERROR", "Invoice payment could not be registered."));
+  }
+};
+
+export const listInvoiceItemsHandler: RequestHandler = async (_req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) return void res.status(401).json(unauthorizedFailure());
+  try { res.json(success(await listInvoiceItems(authSession), { phase: "runtime", scope: "invoice-items" })); } catch { res.status(500).json(failure("INVOICE_ITEM_RUNTIME_ERROR", "Invoice items could not be listed.")); }
+};
+
+export const createInvoiceItemHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals); const input = getInvoiceItemInput(req.body);
+  if (!authSession) return void res.status(401).json(unauthorizedFailure());
+  if (!input) return void res.status(400).json(invoiceInvalidFailure());
+  const response = await createInvoiceItem(authSession, input);
+  if (!response?.invoiceItem) return void res.status(400).json(invoiceInvalidFailure());
+  res.status(201).json(success(response, { phase: "runtime", scope: "invoice-items" }));
+};
+
+export const updateInvoiceItemHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals); const itemId = typeof req.params.id === "string" ? req.params.id.trim() : ""; const input = getInvoiceItemInput(req.body);
+  if (!authSession) return void res.status(401).json(unauthorizedFailure());
+  if (!itemId || !input) return void res.status(400).json(invoiceInvalidFailure());
+  const response = await updateInvoiceItem(authSession, itemId, input);
+  if (!response?.invoiceItem) return void res.status(404).json(invoiceNotFoundFailure());
+  res.json(success(response, { phase: "runtime", scope: "invoice-items" }));
+};
+
+export const archiveInvoiceItemHandler: RequestHandler = async (req, res) => runInvoiceItemAction(req, res, archiveInvoiceItem);
+export const restoreInvoiceItemHandler: RequestHandler = async (req, res) => runInvoiceItemAction(req, res, restoreInvoiceItem);
+
+async function runInvoiceItemAction(req: Parameters<RequestHandler>[0], res: Parameters<RequestHandler>[1], action: typeof archiveInvoiceItem) {
+  const authSession = getAuthSession(res.locals); const itemId = typeof req.params.id === "string" ? req.params.id.trim() : "";
+  if (!authSession) return void res.status(401).json(unauthorizedFailure());
+  if (!itemId) return void res.status(400).json(invoiceInvalidFailure());
+  const response = await action(authSession, itemId);
+  if (!response?.invoiceItem) return void res.status(404).json(invoiceNotFoundFailure());
+  res.json(success(response, { phase: "runtime", scope: "invoice-items" }));
+}
+
+export const createCreditNoteHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals); const invoiceId = typeof req.params.id === "string" ? req.params.id.trim() : ""; const input = getCreditNoteInput(req.body);
+  if (!authSession) return void res.status(401).json(unauthorizedFailure());
+  if (!invoiceId || !input) return void res.status(400).json(invoiceInvalidFailure());
+  const response = await createCreditNote(authSession, invoiceId, input);
+  if (!response?.creditNote) return void res.status(404).json(invoiceNotFoundFailure());
+  res.status(201).json(success(response, { phase: "runtime", scope: "credit-notes" }));
+};
+
+export const issueCreditNoteHandler: RequestHandler = async (req, res) => runCreditNoteAction(req, res, issueCreditNote);
+export const voidCreditNoteHandler: RequestHandler = async (req, res) => runCreditNoteAction(req, res, voidCreditNote);
+
+async function runCreditNoteAction(req: Parameters<RequestHandler>[0], res: Parameters<RequestHandler>[1], action: typeof issueCreditNote) {
+  const authSession = getAuthSession(res.locals); const creditNoteId = typeof req.params.id === "string" ? req.params.id.trim() : "";
+  if (!authSession) return void res.status(401).json(unauthorizedFailure());
+  if (!creditNoteId) return void res.status(400).json(invoiceInvalidFailure());
+  const response = await action(authSession, creditNoteId);
+  if (!response?.creditNote) return void res.status(404).json(invoiceNotFoundFailure());
+  res.json(success(response, { phase: "runtime", scope: "credit-notes" }));
+}
+
+export const downloadInvoiceDocumentHandler: RequestHandler = async (req, res) => runDownload(req, res, getInvoiceDocumentDownload, req.params.id);
+export const downloadBillDocumentHandler: RequestHandler = async (req, res) => runDownload(req, res, getBillDocumentDownload, req.params.id);
+export const downloadCreditNoteDocumentHandler: RequestHandler = async (req, res) => runDownload(req, res, getCreditNoteDocumentDownload, req.params.id);
+
+async function runDownload(req: Parameters<RequestHandler>[0], res: Parameters<RequestHandler>[1], action: typeof getInvoiceDocumentDownload, idValue: unknown) {
+  const authSession = getAuthSession(res.locals); const id = typeof idValue === "string" ? idValue.trim() : "";
+  if (!authSession) return void res.status(401).json(unauthorizedFailure());
+  if (!id) return void res.status(400).json(invoiceInvalidFailure());
+  const response = await action(authSession, id);
+  if (!response) return void res.status(404).json(failure("DOCUMENT_NOT_FOUND", "Document is not available."));
+  res.json(success(response, { phase: "runtime", scope: "secure-downloads" }));
+}
 
 async function runInvoiceAction(
   req: Parameters<RequestHandler>[0],

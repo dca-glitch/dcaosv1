@@ -17,6 +17,10 @@ export type CompanyProfileSummary = {
   paymentInstructions: string | null;
   logoUrl: string | null;
   isActive: boolean;
+  currency: string;
+  invoiceTemplateKey: string;
+  invoicePrefix: string | null;
+  creditNotePrefix: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -32,6 +36,10 @@ export type CompanyProfileFormValues = {
   billingAddress: string;
   paymentInstructions: string;
   logoUrl: string;
+  currency: string;
+  invoiceTemplateKey: string;
+  invoicePrefix: string;
+  creditNotePrefix: string;
 };
 
 type CompanyProfilePageProps = {
@@ -52,7 +60,11 @@ const emptyForm = (): CompanyProfileFormValues => ({
   registrationNumber: "",
   billingAddress: "",
   paymentInstructions: "",
-  logoUrl: ""
+  logoUrl: "",
+  currency: "USD",
+  invoiceTemplateKey: "classic",
+  invoicePrefix: "DCA-INV",
+  creditNotePrefix: "DCA-CN"
 });
 
 export function CompanyProfilePage({ companyProfile, canEdit, error, loading, onSave }: CompanyProfilePageProps) {
@@ -70,7 +82,11 @@ export function CompanyProfilePage({ companyProfile, canEdit, error, loading, on
           registrationNumber: companyProfile.registrationNumber ?? "",
           billingAddress: companyProfile.billingAddress ?? "",
           paymentInstructions: companyProfile.paymentInstructions ?? "",
-          logoUrl: companyProfile.logoUrl ?? ""
+          logoUrl: companyProfile.logoUrl ?? "",
+          currency: companyProfile.currency ?? "USD",
+          invoiceTemplateKey: companyProfile.invoiceTemplateKey ?? "classic",
+          invoicePrefix: companyProfile.invoicePrefix ?? "DCA-INV",
+          creditNotePrefix: companyProfile.creditNotePrefix ?? "DCA-CN"
         }
       : emptyForm()
   );
@@ -88,7 +104,11 @@ export function CompanyProfilePage({ companyProfile, canEdit, error, loading, on
             registrationNumber: companyProfile.registrationNumber ?? "",
             billingAddress: companyProfile.billingAddress ?? "",
             paymentInstructions: companyProfile.paymentInstructions ?? "",
-            logoUrl: companyProfile.logoUrl ?? ""
+            logoUrl: companyProfile.logoUrl ?? "",
+            currency: companyProfile.currency ?? "USD",
+            invoiceTemplateKey: companyProfile.invoiceTemplateKey ?? "classic",
+            invoicePrefix: companyProfile.invoicePrefix ?? "DCA-INV",
+            creditNotePrefix: companyProfile.creditNotePrefix ?? "DCA-CN"
           }
         : emptyForm()
     );
@@ -174,6 +194,22 @@ export function CompanyProfilePage({ companyProfile, canEdit, error, loading, on
               <span>Registration number</span>
               <strong>{companyProfile.registrationNumber || "Not set"}</strong>
             </div>
+            <div>
+              <span>Currency</span>
+              <strong>{companyProfile.currency || "USD"}</strong>
+            </div>
+            <div>
+              <span>Invoice template</span>
+              <strong>{companyProfile.invoiceTemplateKey || "classic"}</strong>
+            </div>
+            <div>
+              <span>Invoice prefix</span>
+              <strong>{companyProfile.invoicePrefix || "DCA-INV"}</strong>
+            </div>
+            <div>
+              <span>Credit note prefix</span>
+              <strong>{companyProfile.creditNotePrefix || "DCA-CN"}</strong>
+            </div>
             <div className="entity-span-2">
               <span>Billing address</span>
               <strong>{companyProfile.billingAddress || "Not set"}</strong>
@@ -244,6 +280,22 @@ export function CompanyProfilePage({ companyProfile, canEdit, error, loading, on
                   onChange={(event) => setDraft((current) => ({ ...current, taxId: event.target.value }))}
                   value={draft.taxId}
                 />
+              </label>
+              <label>
+                Currency
+                <input maxLength={3} onChange={(event) => setDraft((current) => ({ ...current, currency: event.target.value.toUpperCase() }))} required value={draft.currency} />
+              </label>
+              <label>
+                Invoice template
+                <input maxLength={120} onChange={(event) => setDraft((current) => ({ ...current, invoiceTemplateKey: event.target.value }))} required value={draft.invoiceTemplateKey} />
+              </label>
+              <label>
+                Invoice prefix
+                <input maxLength={120} onChange={(event) => setDraft((current) => ({ ...current, invoicePrefix: event.target.value }))} required value={draft.invoicePrefix} />
+              </label>
+              <label>
+                Credit note prefix
+                <input maxLength={120} onChange={(event) => setDraft((current) => ({ ...current, creditNotePrefix: event.target.value }))} required value={draft.creditNotePrefix} />
               </label>
               <label>
                 Registration number

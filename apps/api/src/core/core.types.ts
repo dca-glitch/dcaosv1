@@ -87,8 +87,39 @@ export interface ProjectSummary {
   isArchived: boolean;
   taskCount: number;
   openTaskCount: number;
+  documents?: ProjectDocumentSummary[];
   createdAt: string;
   updatedAt: string;
+}
+
+export interface ProjectDocumentSummary {
+  id: string;
+  projectId: string;
+  fileName: string;
+  mimeType: string;
+  sizeBytes: number;
+  documentType: string | null;
+  documentDate: string | null;
+  isArchived: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ProjectDocumentsResponse {
+  documents: ProjectDocumentSummary[];
+}
+
+export interface ProjectDocumentResponse {
+  document: ProjectDocumentSummary | null;
+}
+
+export interface ProjectDocumentUploadRequest {
+  fileName?: string;
+  mimeType?: string;
+  sizeBytes?: number;
+  documentType?: string | null;
+  documentDate?: string | null;
+  contentBase64?: string;
 }
 
 export interface ProjectResponse {
@@ -158,6 +189,33 @@ export interface InvoiceLineItemSummary {
   updatedAt: string;
 }
 
+export interface InvoicePaymentSummary {
+  id: string;
+  invoiceId: string;
+  paymentMethod: string;
+  amountIssuedCents: number;
+  amountReceivedCents: number;
+  differenceCents: number;
+  paymentDate: string;
+  notes: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreditNoteSummary {
+  id: string;
+  invoiceId: string;
+  creditNoteNumber: string;
+  status: string;
+  issueDate: string | null;
+  reason: string;
+  amountCents: number;
+  currency: string;
+  isArchived: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface InvoiceSummary {
   id: string;
   clientId: string;
@@ -189,6 +247,8 @@ export interface InvoiceSummary {
   documentStorageKey: string | null;
   isArchived: boolean;
   lineItems: InvoiceLineItemSummary[];
+  payment: InvoicePaymentSummary | null;
+  creditNotes: CreditNoteSummary[];
   createdAt: string;
   updatedAt: string;
 }
@@ -229,6 +289,61 @@ export interface InvoiceInputRequest {
   documentUrl?: string | null;
   documentStorageKey?: string | null;
   lineItems?: InvoiceLineItemInputRequest[];
+}
+
+export interface InvoiceItemSummary {
+  id: string;
+  name: string;
+  description: string | null;
+  unitPriceCents: number;
+  isArchived: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface InvoiceItemsResponse {
+  invoiceItems: InvoiceItemSummary[];
+}
+
+export interface InvoiceItemResponse {
+  invoiceItem: InvoiceItemSummary | null;
+}
+
+export interface InvoiceItemInputRequest {
+  name?: string;
+  description?: string | null;
+  unitPriceCents?: number;
+}
+
+export interface InvoicePaymentResponse {
+  invoice: InvoiceSummary | null;
+}
+
+export interface InvoicePaymentInputRequest {
+  paymentMethod?: string;
+  amountIssuedCents?: number;
+  amountReceivedCents?: number;
+  paymentDate?: string;
+  notes?: string | null;
+}
+
+export interface CreditNotesResponse {
+  creditNotes: CreditNoteSummary[];
+}
+
+export interface CreditNoteResponse {
+  creditNote: CreditNoteSummary | null;
+}
+
+export interface CreditNoteInputRequest {
+  reason?: string;
+  amountCents?: number;
+  currency?: string;
+}
+
+export interface DocumentDownloadResponse {
+  downloadUrl: string;
+  expiresSeconds: number;
 }
 
 export interface RecurringInvoiceLineItemSummary {

@@ -10,9 +10,21 @@ import type {
   ClientsResponse,
   CompanyProfileResponse,
   CompanyProfileUpdateRequest,
+  CreditNoteInputRequest,
+  CreditNoteResponse,
+  CreditNotesResponse,
+  DocumentDownloadResponse,
   InvoiceInputRequest,
+  InvoiceItemInputRequest,
+  InvoiceItemResponse,
+  InvoiceItemsResponse,
+  InvoicePaymentInputRequest,
+  InvoicePaymentResponse,
   InvoiceResponse,
   InvoicesResponse,
+  ProjectDocumentResponse,
+  ProjectDocumentsResponse,
+  ProjectDocumentUploadRequest,
   ProjectInputRequest,
   ProjectResponse,
   ProjectsResponse,
@@ -27,7 +39,7 @@ import type {
   VendorsResponse
 } from "./core.types";
 import type { AuthResolvedSessionContext } from "../auth/types";
-import { uploadR2Object } from "../storage/r2.service";
+import { getSignedR2ReadUrl, uploadR2Object } from "../storage/r2.service";
 
 const prisma = createPrismaClient();
 
@@ -36,6 +48,8 @@ type TaskPriority = "LOW" | "NORMAL" | "HIGH";
 type TaskStatus = "TODO" | "IN_PROGRESS" | "DONE";
 type TaskRecurringType = "NONE" | "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY";
 type InvoiceStatus = "DRAFT" | "ISSUED" | "PAID" | "VOIDED" | "UNCOLLECTIBLE";
+type CreditNoteStatus = "DRAFT" | "ISSUED" | "VOIDED";
+type PaymentMethod = "CASH" | "REVOLUT_BANK" | "WISE_BANK" | "REVOLUT_CARD" | "WISE_CARD" | "CARD_PROCESSOR" | "OTHER";
 type RecurringInvoiceInterval = "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY";
 type BillPaymentForm = "CASH" | "REVOLUT_BANK" | "WISE_BANK" | "REVOLUT_CARD" | "WISE_CARD" | "OTHER";
 
@@ -274,8 +288,8 @@ export async function saveCompanyProfile(
           logoUrl: toNullableString(input.logoUrl),
           currency: input.currency ?? "USD",
           invoiceTemplateKey: input.invoiceTemplateKey ?? "classic",
-          invoicePrefix: toNullableString(input.invoicePrefix),
-          creditNotePrefix: toNullableString(input.creditNotePrefix),
+          invoicePrefix: toNullableString(input.invoicePrefix) ?? "DCA-INV",
+          creditNotePrefix: toNullableString(input.creditNotePrefix) ?? "DCA-CN",
           isActive: true
         }
       });
@@ -298,6 +312,10 @@ export async function saveCompanyProfile(
         billingAddress: toNullableString(input.billingAddress),
         paymentInstructions: toNullableString(input.paymentInstructions),
         logoUrl: toNullableString(input.logoUrl),
+        currency: input.currency ?? "USD",
+        invoiceTemplateKey: input.invoiceTemplateKey ?? "classic",
+        invoicePrefix: toNullableString(input.invoicePrefix) ?? "DCA-INV",
+        creditNotePrefix: toNullableString(input.creditNotePrefix) ?? "DCA-CN",
         isActive: true
       }
     });
@@ -1267,6 +1285,35 @@ const invoiceSelect = {
       updatedAt: true
     }
   },
+  payment: {
+    select: {
+      id: true,
+      invoiceId: true,
+      paymentMethod: true,
+      amountIssuedCents: true,
+      amountReceivedCents: true,
+      paymentDate: true,
+      notes: true,
+      createdAt: true,
+      updatedAt: true
+    }
+  },
+  creditNotes: {
+    orderBy: { createdAt: "desc" as const },
+    select: {
+      id: true,
+      invoiceId: true,
+      creditNoteNumber: true,
+      status: true,
+      issueDate: true,
+      reason: true,
+      amountCents: true,
+      currency: true,
+      isArchived: true,
+      createdAt: true,
+      updatedAt: true
+    }
+  },
   createdAt: true,
   updatedAt: true
 } as const;
@@ -1369,6 +1416,30 @@ function toInvoiceSummary(invoice: {
     createdAt: Date;
     updatedAt: Date;
   }>;
+  payment: {
+    id: string;
+    invoiceId: string;
+    paymentMethod: string;
+    amountIssuedCents: number;
+    amountReceivedCents: number;
+    paymentDate: Date;
+    notes: string | null;
+    createdAt: Date;
+    updatedAt: Date;
+  } | null;
+  creditNotes: Array<{
+    id: string;
+    invoiceId: string;
+    creditNoteNumber: string;
+    status: string;
+    issueDate: Date | null;
+    reason: string;
+    amountCents: number;
+    currency: string;
+    isArchived: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+  }>;
   createdAt: Date;
   updatedAt: Date;
 }) {
@@ -1400,6 +1471,21 @@ function toInvoiceSummary(invoice: {
       ...lineItem,
       createdAt: lineItem.createdAt.toISOString(),
       updatedAt: lineItem.updatedAt.toISOString()
+    })),
+    payment: invoice.payment
+      ? {
+          ...invoice.payment,
+          differenceCents: invoice.payment.amountReceivedCents - invoice.payment.amountIssuedCents,
+          paymentDate: invoice.payment.paymentDate.toISOString(),
+          createdAt: invoice.payment.createdAt.toISOString(),
+          updatedAt: invoice.payment.updatedAt.toISOString()
+        }
+      : null,
+    creditNotes: invoice.creditNotes.map((creditNote) => ({
+      ...creditNote,
+      issueDate: toDateString(creditNote.issueDate),
+      createdAt: creditNote.createdAt.toISOString(),
+      updatedAt: creditNote.updatedAt.toISOString()
     })),
     createdAt: invoice.createdAt.toISOString(),
     updatedAt: invoice.updatedAt.toISOString()
@@ -1798,6 +1884,13 @@ export async function cancelInvoice(
   return updateInvoiceStatus(authSession, invoiceId, { status: "VOIDED" });
 }
 
+export async function markInvoiceUncollectible(
+  authSession: AuthResolvedSessionContext,
+  invoiceId: string
+): Promise<InvoiceResponse | null> {
+  return updateInvoiceStatus(authSession, invoiceId, { status: "UNCOLLECTIBLE" });
+}
+
 async function updateInvoiceStatus(
   authSession: AuthResolvedSessionContext,
   invoiceId: string,
@@ -1826,6 +1919,8 @@ async function updateInvoiceStatus(
       },
       data: {
         ...(options.status ? { status: options.status } : {}),
+        ...(options.status === "VOIDED" ? { voidedAt: new Date() } : {}),
+        ...(options.status === "UNCOLLECTIBLE" ? { uncollectibleAt: new Date() } : {}),
         ...(options.isArchived === undefined ? {} : { isArchived: options.isArchived }),
         ...(options.setIssueDateIfMissing && !existing.issueDate ? { issueDate: new Date() } : {}),
         ...(options.setPaidAt ? { paidAt: new Date() } : {}),
@@ -1839,6 +1934,209 @@ async function updateInvoiceStatus(
       invoice: hydrated ? toInvoiceSummary(hydrated) : null
     };
   });
+}
+
+const invoiceItemSelect = {
+  id: true,
+  name: true,
+  description: true,
+  unitPriceCents: true,
+  isArchived: true,
+  createdAt: true,
+  updatedAt: true
+} as const;
+
+function toInvoiceItemSummary(item: { id: string; name: string; description: string | null; unitPriceCents: number; isArchived: boolean; createdAt: Date; updatedAt: Date }) {
+  return {
+    ...item,
+    createdAt: item.createdAt.toISOString(),
+    updatedAt: item.updatedAt.toISOString()
+  };
+}
+
+export async function listInvoiceItems(authSession: AuthResolvedSessionContext): Promise<InvoiceItemsResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) return null;
+  const invoiceItems = await prisma.invoiceItem.findMany({
+    where: { tenantId },
+    orderBy: [{ isArchived: "asc" }, { name: "asc" }],
+    select: invoiceItemSelect
+  });
+  return { invoiceItems: invoiceItems.map(toInvoiceItemSummary) };
+}
+
+async function getInvoiceItemRecord(tx: PrismaTx, tenantId: string, itemId: string) {
+  return tx.invoiceItem.findFirst({ where: { id: itemId, tenantId }, select: invoiceItemSelect });
+}
+
+export async function createInvoiceItem(authSession: AuthResolvedSessionContext, input: InvoiceItemInputRequest): Promise<InvoiceItemResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId || !input.name || input.unitPriceCents === undefined) return null;
+  try {
+    const invoiceItem = await prisma.invoiceItem.create({
+      data: { tenantId, name: input.name, description: toNullableString(input.description), unitPriceCents: input.unitPriceCents },
+      select: invoiceItemSelect
+    });
+    return { invoiceItem: toInvoiceItemSummary(invoiceItem) };
+  } catch (error) {
+    if ((error as { code?: string }).code === "P2002") return null;
+    throw error;
+  }
+}
+
+export async function updateInvoiceItem(authSession: AuthResolvedSessionContext, itemId: string, input: InvoiceItemInputRequest): Promise<InvoiceItemResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId || !input.name || input.unitPriceCents === undefined) return null;
+  return prisma.$transaction(async (tx) => {
+    const existing = await getInvoiceItemRecord(tx, tenantId, itemId);
+    if (!existing) return null;
+    const invoiceItem = await tx.invoiceItem.update({
+      where: { id: itemId },
+      data: { name: input.name, description: toNullableString(input.description), unitPriceCents: input.unitPriceCents },
+      select: invoiceItemSelect
+    });
+    return { invoiceItem: toInvoiceItemSummary(invoiceItem) };
+  });
+}
+
+async function updateInvoiceItemArchiveState(authSession: AuthResolvedSessionContext, itemId: string, isArchived: boolean): Promise<InvoiceItemResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) return null;
+  return prisma.$transaction(async (tx) => {
+    const existing = await getInvoiceItemRecord(tx, tenantId, itemId);
+    if (!existing) return null;
+    const invoiceItem = await tx.invoiceItem.update({ where: { id: itemId }, data: { isArchived }, select: invoiceItemSelect });
+    return { invoiceItem: toInvoiceItemSummary(invoiceItem) };
+  });
+}
+
+export async function archiveInvoiceItem(authSession: AuthResolvedSessionContext, itemId: string) {
+  return updateInvoiceItemArchiveState(authSession, itemId, true);
+}
+
+export async function restoreInvoiceItem(authSession: AuthResolvedSessionContext, itemId: string) {
+  return updateInvoiceItemArchiveState(authSession, itemId, false);
+}
+
+export async function registerInvoicePayment(authSession: AuthResolvedSessionContext, invoiceId: string, input: InvoicePaymentInputRequest): Promise<InvoicePaymentResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId || !input.paymentMethod || input.amountIssuedCents === undefined || input.amountReceivedCents === undefined || !input.paymentDate) return null;
+  const paymentMethod = input.paymentMethod;
+  const amountIssuedCents = input.amountIssuedCents;
+  const amountReceivedCents = input.amountReceivedCents;
+  const paymentDate = input.paymentDate;
+  return prisma.$transaction(async (tx) => {
+    const invoice = await getInvoiceRecord(tx, tenantId, invoiceId);
+    if (!invoice || invoice.payment || invoice.status === "VOIDED" || invoice.status === "UNCOLLECTIBLE") return null;
+    await tx.invoicePayment.create({
+      data: {
+        tenantId,
+        invoiceId,
+        paymentMethod: paymentMethod as PaymentMethod,
+        amountIssuedCents,
+        amountReceivedCents,
+        paymentDate: new Date(paymentDate),
+        notes: toNullableString(input.notes)
+      }
+    });
+    const updated = await tx.invoice.update({ where: { id: invoiceId }, data: { status: "PAID", paidAt: new Date(paymentDate), amountPaidCents: amountReceivedCents }, select: invoiceSelect });
+    return { invoice: toInvoiceSummary(updated) };
+  });
+}
+
+async function getCompanyPrefixes(tx: PrismaTx, tenantId: string) {
+  const profile = await tx.companyProfile.findUnique({ where: { tenantId }, select: { invoicePrefix: true, creditNotePrefix: true } });
+  return { invoicePrefix: profile?.invoicePrefix || "DCA-INV", creditNotePrefix: profile?.creditNotePrefix || "DCA-CN" };
+}
+
+async function nextCreditNoteNumber(tx: PrismaTx, tenantId: string) {
+  const year = new Date().getUTCFullYear();
+  const { creditNotePrefix } = await getCompanyPrefixes(tx, tenantId);
+  const startsWith = `${creditNotePrefix}-${year}-`;
+  const count = await tx.creditNote.count({ where: { tenantId, creditNoteNumber: { startsWith } } });
+  return `${startsWith}${String(count + 1).padStart(4, "0")}`;
+}
+
+const creditNoteSelect = {
+  id: true,
+  invoiceId: true,
+  creditNoteNumber: true,
+  status: true,
+  issueDate: true,
+  reason: true,
+  amountCents: true,
+  currency: true,
+  isArchived: true,
+  createdAt: true,
+  updatedAt: true
+} as const;
+
+function toCreditNoteSummary(note: { id: string; invoiceId: string; creditNoteNumber: string; status: string; issueDate: Date | null; reason: string; amountCents: number; currency: string; isArchived: boolean; createdAt: Date; updatedAt: Date }) {
+  return { ...note, issueDate: toDateString(note.issueDate), createdAt: note.createdAt.toISOString(), updatedAt: note.updatedAt.toISOString() };
+}
+
+export async function listCreditNotes(authSession: AuthResolvedSessionContext, invoiceId?: string): Promise<CreditNotesResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) return null;
+  const creditNotes = await prisma.creditNote.findMany({ where: { tenantId, ...(invoiceId ? { invoiceId } : {}) }, orderBy: { createdAt: "desc" }, select: creditNoteSelect });
+  return { creditNotes: creditNotes.map(toCreditNoteSummary) };
+}
+
+export async function createCreditNote(authSession: AuthResolvedSessionContext, invoiceId: string, input: CreditNoteInputRequest): Promise<CreditNoteResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId || !input.reason || input.amountCents === undefined) return null;
+  const reason = input.reason;
+  const amountCents = input.amountCents;
+  return prisma.$transaction(async (tx) => {
+    const invoice = await getInvoiceRecord(tx, tenantId, invoiceId);
+    if (!invoice) return null;
+    const creditNote = await tx.creditNote.create({
+      data: { tenantId, invoiceId, creditNoteNumber: await nextCreditNoteNumber(tx, tenantId), reason, amountCents, currency: input.currency || invoice.currency },
+      select: creditNoteSelect
+    });
+    return { creditNote: toCreditNoteSummary(creditNote) };
+  });
+}
+
+async function updateCreditNoteStatus(authSession: AuthResolvedSessionContext, creditNoteId: string, status: CreditNoteStatus): Promise<CreditNoteResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) return null;
+  return prisma.$transaction(async (tx) => {
+    const existing = await tx.creditNote.findFirst({ where: { id: creditNoteId, tenantId }, select: { id: true } });
+    if (!existing) return null;
+    const creditNote = await tx.creditNote.update({ where: { id: creditNoteId }, data: { status, ...(status === "ISSUED" ? { issueDate: new Date() } : {}) }, select: creditNoteSelect });
+    return { creditNote: toCreditNoteSummary(creditNote) };
+  });
+}
+
+export async function issueCreditNote(authSession: AuthResolvedSessionContext, creditNoteId: string) { return updateCreditNoteStatus(authSession, creditNoteId, "ISSUED"); }
+export async function voidCreditNote(authSession: AuthResolvedSessionContext, creditNoteId: string) { return updateCreditNoteStatus(authSession, creditNoteId, "VOIDED"); }
+
+export async function getInvoiceDocumentDownload(authSession: AuthResolvedSessionContext, invoiceId: string): Promise<DocumentDownloadResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) return null;
+  const invoice = await prisma.invoice.findFirst({ where: { id: invoiceId, tenantId }, select: { documentStorageKey: true } });
+  if (!invoice?.documentStorageKey) return null;
+  const downloadUrl = getSignedR2ReadUrl(invoice.documentStorageKey);
+  return downloadUrl ? { downloadUrl, expiresSeconds: 300 } : null;
+}
+
+export async function getBillDocumentDownload(authSession: AuthResolvedSessionContext, billId: string): Promise<DocumentDownloadResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) return null;
+  const bill = await prisma.bill.findFirst({ where: { id: billId, tenantId }, select: { documentStorageKey: true } });
+  if (!bill?.documentStorageKey) return null;
+  const downloadUrl = getSignedR2ReadUrl(bill.documentStorageKey);
+  return downloadUrl ? { downloadUrl, expiresSeconds: 300 } : null;
+}
+
+export async function getCreditNoteDocumentDownload(authSession: AuthResolvedSessionContext, creditNoteId: string): Promise<DocumentDownloadResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) return null;
+  const creditNote = await prisma.creditNote.findFirst({ where: { id: creditNoteId, tenantId }, select: { documentStorageKey: true } });
+  if (!creditNote?.documentStorageKey) return null;
+  const downloadUrl = getSignedR2ReadUrl(creditNote.documentStorageKey);
+  return downloadUrl ? { downloadUrl, expiresSeconds: 300 } : null;
 }
 
 export async function listRecurringInvoices(
