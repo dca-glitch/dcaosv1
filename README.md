@@ -144,3 +144,18 @@ Terminal-dependent work should be handled by Codex/cloud or local PowerShell. Sa
 8. Tenant context foundation
 9. Users module MVP
 10. Roles and permissions MVP
+
+## DCA OS Lite production operating target
+
+Before any production-related Codex/Cline/VPS/database/deployment task, read:
+
+docs/ops/DCA_OS_LITE_OPERATING_TARGETS.md
+
+Important:
+- Production VPS: deploy@system.digitalcubeagency.net
+- Expected hostname: DCA01
+- Production API container: dcaosv1-api
+- Production DB container: dcaosv1-postgres
+- Do not use local Windows Docker context as production.
+- Read-only first.
+- No deletes, migrations, deploys, restarts, or Finance Lite actions without explicit approval.
