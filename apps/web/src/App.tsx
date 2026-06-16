@@ -1,5 +1,6 @@
 import { type FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AppLayout } from "./components/AppLayout";
+import { MetricCard, PageHeader, SectionPanel, StatusBadge } from "./components/ui";
 import {
   BillsPage,
   type BillDocumentUploadValues,
@@ -526,10 +527,17 @@ function LoginScreen({
 
   return (
     <main className="login-page">
+      <div className="login-hero" aria-hidden="true">
+        <span className="brand-mark login-brand-mark">DCA</span>
+        <p className="eyebrow">DCA OS v1 / Lite</p>
+        <h2>Run your agency operations from one nebula-dark command center.</h2>
+        <p>Clients, projects, tasks, invoices, bills, modules, and team context stay connected without changing your existing workflow.</p>
+      </div>
       <section className="login-panel" aria-labelledby="login-title">
         <div>
-          <p className="eyebrow">DCA OS v1</p>
+          <p className="eyebrow">DCA OS v1 / Lite</p>
           <h1 id="login-title">Sign In</h1>
+          <p className="login-helper">Access the secure operations workspace.</p>
         </div>
         {error ? <StatusNotice tone="error" message={error} /> : null}
         <form className="auth-form" onSubmit={handleSubmit}>
@@ -585,31 +593,53 @@ function DashboardView({
 }) {
   const activeTenant = tenants?.currentTenant?.tenant;
   const roles = context?.tenantContext.roles ?? [];
+  const permissionCount = context?.effectivePermissions.length ?? 0;
 
   return (
     <section className="view-section" aria-labelledby="dashboard-title">
-      <div className="section-header">
-        <div>
-          <p className="eyebrow">Overview</p>
-          <h1 id="dashboard-title">Dashboard</h1>
-        </div>
+      <PageHeader
+        eyebrow="Operations"
+        title="Dashboard"
+        titleId="dashboard-title"
+        description="A focused command view for tenant context, core workflows, finance status, and next actions."
+        meta={<StatusBadge status={user.status || "Active"} />}
+      />
+      <div className="summary-grid metric-grid">
+        <MetricCard label="Signed in as" value={user.name || user.email} helper={user.email} accent="cyan" />
+        <MetricCard label="Active tenant" value={activeTenant?.name ?? "No tenant"} helper={activeTenant?.slug ?? "not selected"} />
+        <MetricCard label="Role coverage" value={roles.length ? roles.join(", ") : "None"} helper={`${permissionCount} effective permissions`} accent="purple" />
+        <MetricCard label="Workspace state" value={activeTenant ? "Ready" : "Limited"} helper="Frontend-safe operational summary" accent={activeTenant ? "success" : "warning"} />
       </div>
-      <div className="summary-grid">
-        <article className="summary-panel">
-          <span>User</span>
-          <strong>{user.name || user.email}</strong>
-          <small>{user.status}</small>
-        </article>
-        <article className="summary-panel">
-          <span>Tenant</span>
-          <strong>{activeTenant?.name ?? "No active tenant"}</strong>
-          <small>{activeTenant?.slug ?? "not selected"}</small>
-        </article>
-        <article className="summary-panel">
-          <span>Roles</span>
-          <strong>{roles.length ? roles.join(", ") : "None"}</strong>
-          <small>{context?.effectivePermissions.length ?? 0} permissions</small>
-        </article>
+      <div className="dashboard-grid">
+        <SectionPanel title="Recent Activity" description="Live activity feed will appear here when backend events are available.">
+          <div className="timeline-list">
+            <div className="timeline-item"><span />Tenant context loaded for {activeTenant?.name ?? "the current session"}.</div>
+            <div className="timeline-item"><span />User profile recognized as {user.name || user.email}.</div>
+            <div className="timeline-item muted"><span />No additional activity feed is exposed by the current frontend payload.</div>
+          </div>
+        </SectionPanel>
+        <SectionPanel title="Upcoming Tasks" description="Use the Tasks workspace for live task details and due dates.">
+          <div className="quick-link-list">
+            <a href="#/tasks">Review active tasks</a>
+            <a href="#/projects">Check project delivery</a>
+          </div>
+        </SectionPanel>
+        <SectionPanel title="Invoice / Finance Status" description="Finance summaries are available in Invoices and Bills.">
+          <div className="quick-link-list">
+            <a href="#/invoices">Open invoices</a>
+            <a href="#/bills">Open bills</a>
+          </div>
+        </SectionPanel>
+        <SectionPanel title="Quick Actions" description="Jump directly to the module that owns the action.">
+          <div className="quick-action-grid">
+            <a className="secondary-action" href="#/clients">Add Client</a>
+            <a className="secondary-action" href="#/projects">Create Project</a>
+            <a className="secondary-action" href="#/tasks">Add Task</a>
+            <a className="secondary-action" href="#/invoices">Create Invoice</a>
+            <a className="secondary-action" href="#/bills">Add Bill</a>
+            <a className="primary-action" href="#/modules">Manage Modules</a>
+          </div>
+        </SectionPanel>
       </div>
     </section>
   );
@@ -689,12 +719,7 @@ function ModuleRegistryView({
 
   return (
     <section className="view-section" aria-labelledby="modules-title">
-      <div className="section-header">
-        <div>
-          <p className="eyebrow">Module Registry</p>
-          <h1 id="modules-title">Modules</h1>
-        </div>
-      </div>
+      <PageHeader eyebrow="Module Registry" title="Modules" titleId="modules-title" description="Enable, disable, and inspect frontend-safe module placeholders for DCA OS Lite." />
       <div className="module-grid">
         {availableModules.map((moduleItem) => {
           const tenantModule = tenantModuleByKey.get(moduleItem.key);
@@ -704,9 +729,7 @@ function ModuleRegistryView({
           return (
             <article className="module-card" key={moduleItem.key}>
               <div>
-                <span className={`module-status module-status-${enabled ? "enabled" : "idle"}`}>
-                  {enabled ? "Enabled" : "Disabled"}
-                </span>
+                <StatusBadge status={enabled ? "Enabled" : "Disabled"} className="module-status" />
                 <h2>{moduleItem.name}</h2>
                 <p>{moduleItem.description}</p>
               </div>
@@ -778,12 +801,7 @@ function TeamView({
 
   return (
     <section className="view-section" aria-labelledby="team-title">
-      <div className="section-header">
-        <div>
-          <p className="eyebrow">Team</p>
-          <h1 id="team-title">Members</h1>
-        </div>
-      </div>
+      <PageHeader eyebrow="Team" title="Members" titleId="team-title" description="Tenant members, roles, and visibility status for the current workspace." />
       {!canReadUsers ? (
         <StatusNotice tone="info" message="Member visibility requires tenant user read access." />
       ) : null}
@@ -807,7 +825,7 @@ function TeamView({
                   <td>{member.user.name || "Unassigned"}</td>
                   <td>{member.user.email}</td>
                   <td>{member.roles.join(", ") || "None"}</td>
-                  <td>{member.status}</td>
+                  <td><StatusBadge status={member.status} /></td>
                 </tr>
               ))}
             </tbody>
@@ -832,28 +850,11 @@ function SettingsView({
 
   return (
     <section className="view-section" aria-labelledby="settings-title">
-      <div className="section-header">
-        <div>
-          <p className="eyebrow">Settings</p>
-          <h1 id="settings-title">Settings</h1>
-        </div>
-      </div>
+      <PageHeader eyebrow="Settings" title="Settings" titleId="settings-title" description="Read-only tenant and profile context for this MVP shell." />
       <div className="summary-grid">
-        <article className="summary-panel">
-          <span>Profile</span>
-          <strong>{currentUser.name || currentUser.email}</strong>
-          <small>{currentUser.email}</small>
-        </article>
-        <article className="summary-panel">
-          <span>Tenant</span>
-          <strong>{tenantSettings?.tenant.name ?? "Unavailable"}</strong>
-          <small>{tenantSettings?.tenant.slug ?? "read-only context"}</small>
-        </article>
-        <article className="summary-panel">
-          <span>Access</span>
-          <strong>{canReadSettings ? "Readable" : "Limited"}</strong>
-          <small>{authContext?.effectivePermissions.length ?? 0} effective permissions</small>
-        </article>
+        <MetricCard label="Profile" value={currentUser.name || currentUser.email} helper={currentUser.email} accent="cyan" />
+        <MetricCard label="Tenant" value={tenantSettings?.tenant.name ?? "Unavailable"} helper={tenantSettings?.tenant.slug ?? "read-only context"} />
+        <MetricCard label="Access" value={canReadSettings ? "Readable" : "Limited"} helper={`${authContext?.effectivePermissions.length ?? 0} effective permissions`} accent={canReadSettings ? "success" : "warning"} />
       </div>
       {!canReadSettings ? (
         <StatusNotice tone="info" message="Tenant settings visibility requires settings read access." />
