@@ -530,8 +530,8 @@ function LoginScreen({
       <div className="login-hero" aria-hidden="true">
         <span className="brand-mark login-brand-mark">DCA</span>
         <p className="eyebrow">DCA OS v1 / Lite</p>
-        <h2>Run your agency operations from one nebula-dark command center.</h2>
-        <p>Clients, projects, tasks, invoices, bills, modules, and team context stay connected without changing your existing workflow.</p>
+        <h2>Run your operations from DCA OS command center.</h2>
+        <p>Clients, Projects, Tasks, Invoices, Bills, Modules, Revenue Hub, SEO Hub, and AI Workflow stay visible in one product workspace.</p>
       </div>
       <section className="login-panel" aria-labelledby="login-title">
         <div>
@@ -601,7 +601,7 @@ function DashboardView({
         eyebrow="Operations"
         title="Dashboard"
         titleId="dashboard-title"
-        description="A focused command view for tenant context, core workflows, finance status, and next actions."
+        description="A focused command view for Clients, Projects, Tasks, Invoices, Bills, Modules, Revenue Hub, SEO Hub, and AI Workflow."
         meta={<StatusBadge status={user.status || "Active"} />}
       />
       <div className="summary-grid metric-grid">
@@ -630,7 +630,7 @@ function DashboardView({
             <a href="#/bills">Open bills</a>
           </div>
         </SectionPanel>
-        <SectionPanel title="Quick Actions" description="Jump directly to the module that owns the action.">
+        <SectionPanel title="Quick Actions" description="Jump to active workspaces; Revenue Hub, SEO Hub, and AI Workflow are shown as future module labels only.">
           <div className="quick-action-grid">
             <a className="secondary-action" href="#/clients">Add Client</a>
             <a className="secondary-action" href="#/projects">Create Project</a>
@@ -638,6 +638,9 @@ function DashboardView({
             <a className="secondary-action" href="#/invoices">Create Invoice</a>
             <a className="secondary-action" href="#/bills">Add Bill</a>
             <a className="primary-action" href="#/modules">Manage Modules</a>
+            <span className="module-preview-pill">Revenue Hub</span>
+            <span className="module-preview-pill">SEO Hub</span>
+            <span className="module-preview-pill">AI Workflow</span>
           </div>
         </SectionPanel>
       </div>
@@ -719,7 +722,7 @@ function ModuleRegistryView({
 
   return (
     <section className="view-section" aria-labelledby="modules-title">
-      <PageHeader eyebrow="Module Registry" title="Modules" titleId="modules-title" description="Enable, disable, and inspect frontend-safe module placeholders for DCA OS Lite." />
+      <PageHeader eyebrow="Module Registry" title="Modules" titleId="modules-title" description="Manage Clients, Projects, Tasks, Invoices, Bills, Modules, and preview future Revenue Hub, SEO Hub, and AI Workflow labels without adding routes or backend logic." />
       <div className="module-grid">
         {availableModules.map((moduleItem) => {
           const tenantModule = tenantModuleByKey.get(moduleItem.key);
