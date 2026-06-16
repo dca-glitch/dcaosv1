@@ -35,7 +35,7 @@ type PrismaTx = Prisma.TransactionClient;
 type TaskPriority = "LOW" | "NORMAL" | "HIGH";
 type TaskStatus = "TODO" | "IN_PROGRESS" | "DONE";
 type TaskRecurringType = "NONE" | "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY";
-type InvoiceStatus = "DRAFT" | "SENT" | "PAID" | "OVERDUE" | "CANCELLED" | "VOIDED";
+type InvoiceStatus = "DRAFT" | "ISSUED" | "PAID" | "VOIDED" | "UNCOLLECTIBLE";
 type RecurringInvoiceInterval = "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY";
 type BillPaymentForm = "CASH" | "REVOLUT_BANK" | "WISE_BANK" | "REVOLUT_CARD" | "WISE_CARD" | "OTHER";
 
@@ -60,6 +60,10 @@ function toCompanyProfileSummary(profile: {
   paymentInstructions: string | null;
   logoUrl: string | null;
   isActive: boolean;
+  currency: string;
+  invoiceTemplateKey: string;
+  invoicePrefix: string | null;
+  creditNotePrefix: string | null;
   createdAt: Date;
   updatedAt: Date;
 }) {
@@ -76,6 +80,10 @@ function toCompanyProfileSummary(profile: {
     paymentInstructions: profile.paymentInstructions,
     logoUrl: profile.logoUrl,
     isActive: profile.isActive,
+    currency: profile.currency,
+    invoiceTemplateKey: profile.invoiceTemplateKey,
+    invoicePrefix: profile.invoicePrefix,
+    creditNotePrefix: profile.creditNotePrefix,
     createdAt: profile.createdAt.toISOString(),
     updatedAt: profile.updatedAt.toISOString()
   };
@@ -115,11 +123,11 @@ function toClientSummary(client: {
 
 function toProjectSummary(project: {
   id: string;
-  clientId: string;
+  clientId: string | null;
   client: {
     id: string;
     name: string;
-  };
+  } | null;
   name: string;
   description: string | null;
   startDate: Date | null;
@@ -136,10 +144,12 @@ function toProjectSummary(project: {
   return {
     id: project.id,
     clientId: project.clientId,
-    client: {
-      id: project.client.id,
-      name: project.client.name
-    },
+    client: project.client
+      ? {
+          id: project.client.id,
+          name: project.client.name
+        }
+      : null,
     name: project.name,
     description: project.description,
     startDate: toDateString(project.startDate),
@@ -154,15 +164,15 @@ function toProjectSummary(project: {
 
 function toTaskSummary(task: {
   id: string;
-  projectId: string;
+  projectId: string | null;
   project: {
     id: string;
     name: string;
     client: {
       id: string;
       name: string;
-    };
-  };
+    } | null;
+  } | null;
   title: string;
   description: string | null;
   priority: string;
@@ -176,14 +186,18 @@ function toTaskSummary(task: {
   return {
     id: task.id,
     projectId: task.projectId,
-    project: {
-      id: task.project.id,
-      name: task.project.name,
-      client: {
-        id: task.project.client.id,
-        name: task.project.client.name
-      }
-    },
+    project: task.project
+      ? {
+          id: task.project.id,
+          name: task.project.name,
+          client: task.project.client
+            ? {
+                id: task.project.client.id,
+                name: task.project.client.name
+              }
+            : null
+        }
+      : null,
     title: task.title,
     description: task.description,
     priority: task.priority,
@@ -200,9 +214,14 @@ function getActiveTenantId(authSession: AuthResolvedSessionContext): string | nu
   return authSession.tenantContext.activeMembership?.tenantId ?? null;
 }
 
-export async function getCompanyProfile(): Promise<CompanyProfileResponse> {
+export async function getCompanyProfile(authSession: AuthResolvedSessionContext): Promise<CompanyProfileResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) {
+    return null;
+  }
   const companyProfile = await prisma.companyProfile.findFirst({
     where: {
+      tenantId,
       isActive: true
     },
     orderBy: {
@@ -216,10 +235,19 @@ export async function getCompanyProfile(): Promise<CompanyProfileResponse> {
 }
 
 export async function saveCompanyProfile(
+  authSession: AuthResolvedSessionContext,
   input: Required<Pick<CompanyProfileUpdateRequest, "name">> & CompanyProfileUpdateRequest
-): Promise<CompanyProfileResponse> {
+): Promise<CompanyProfileResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) {
+    return null;
+  }
+
   return prisma.$transaction(async (tx: PrismaTx) => {
     const existing = await tx.companyProfile.findFirst({
+      where: {
+        tenantId
+      },
       orderBy: {
         updatedAt: "desc"
       },
@@ -244,18 +272,11 @@ export async function saveCompanyProfile(
           billingAddress: toNullableString(input.billingAddress),
           paymentInstructions: toNullableString(input.paymentInstructions),
           logoUrl: toNullableString(input.logoUrl),
+          currency: input.currency ?? "USD",
+          invoiceTemplateKey: input.invoiceTemplateKey ?? "classic",
+          invoicePrefix: toNullableString(input.invoicePrefix),
+          creditNotePrefix: toNullableString(input.creditNotePrefix),
           isActive: true
-        }
-      });
-
-      await tx.companyProfile.updateMany({
-        where: {
-          id: {
-            not: updated.id
-          }
-        },
-        data: {
-          isActive: false
         }
       });
 
@@ -266,6 +287,7 @@ export async function saveCompanyProfile(
 
     const created = await tx.companyProfile.create({
       data: {
+        tenantId,
         name: input.name,
         legalName: toNullableString(input.legalName),
         email: toNullableString(input.email),
@@ -277,17 +299,6 @@ export async function saveCompanyProfile(
         paymentInstructions: toNullableString(input.paymentInstructions),
         logoUrl: toNullableString(input.logoUrl),
         isActive: true
-      }
-    });
-
-    await tx.companyProfile.updateMany({
-      where: {
-        id: {
-          not: created.id
-        }
-      },
-      data: {
-        isActive: false
       }
     });
 
@@ -680,29 +691,32 @@ export async function createProject(
   input: ProjectInputRequest
 ): Promise<ProjectResponse | null> {
   const tenantId = getActiveTenantId(authSession);
-  if (!tenantId || !input.clientId) {
+  if (!tenantId) {
     return null;
   }
 
   return prisma.$transaction(async (tx: PrismaTx) => {
-    const client = await tx.client.findFirst({
-      where: {
-        id: input.clientId,
-        tenantId
-      },
-      select: {
-        id: true
-      }
-    });
+    const clientId = toNullableString(input.clientId);
+    const client = clientId
+      ? await tx.client.findFirst({
+          where: {
+            id: clientId,
+            tenantId
+          },
+          select: {
+            id: true
+          }
+        })
+      : null;
 
-    if (!client) {
+    if (clientId && !client) {
       return null;
     }
 
     const created = await tx.project.create({
       data: {
         tenantId,
-        clientId: client.id,
+        clientId: client?.id ?? null,
         name: input.name ?? "",
         description: toNullableString(input.description),
         startDate: input.startDate ? new Date(input.startDate) : null,
@@ -747,7 +761,7 @@ export async function updateProject(
   input: ProjectInputRequest
 ): Promise<ProjectResponse | null> {
   const tenantId = getActiveTenantId(authSession);
-  if (!tenantId || !input.clientId) {
+  if (!tenantId) {
     return null;
   }
 
@@ -757,17 +771,20 @@ export async function updateProject(
       return null;
     }
 
-    const client = await tx.client.findFirst({
-      where: {
-        id: input.clientId,
-        tenantId
-      },
-      select: {
-        id: true
-      }
-    });
+    const clientId = toNullableString(input.clientId);
+    const client = clientId
+      ? await tx.client.findFirst({
+          where: {
+            id: clientId,
+            tenantId
+          },
+          select: {
+            id: true
+          }
+        })
+      : null;
 
-    if (!client) {
+    if (clientId && !client) {
       return null;
     }
 
@@ -776,7 +793,7 @@ export async function updateProject(
         id: projectId
       },
       data: {
-        clientId: client.id,
+        clientId: client?.id ?? null,
         name: input.name ?? existing.name,
         description: toNullableString(input.description),
         startDate: input.startDate ? new Date(input.startDate) : null,
@@ -1001,29 +1018,32 @@ export async function createTask(
   input: TaskInputRequest
 ): Promise<TaskResponse | null> {
   const tenantId = getActiveTenantId(authSession);
-  if (!tenantId || !input.projectId) {
+  if (!tenantId) {
     return null;
   }
 
   return prisma.$transaction(async (tx: PrismaTx) => {
-    const project = await tx.project.findFirst({
-      where: {
-        id: input.projectId,
-        tenantId
-      },
-      select: {
-        id: true
-      }
-    });
+    const projectId = toNullableString(input.projectId);
+    const project = projectId
+      ? await tx.project.findFirst({
+          where: {
+            id: projectId,
+            tenantId
+          },
+          select: {
+            id: true
+          }
+        })
+      : null;
 
-    if (!project) {
+    if (projectId && !project) {
       return null;
     }
 
     const created = await tx.task.create({
       data: {
         tenantId,
-        projectId: project.id,
+        projectId: project?.id ?? null,
         title: input.title ?? "",
         description: toNullableString(input.description),
         priority: (input.priority as TaskPriority) ?? "NORMAL",
@@ -1070,7 +1090,7 @@ export async function updateTask(
   input: TaskInputRequest
 ): Promise<TaskResponse | null> {
   const tenantId = getActiveTenantId(authSession);
-  if (!tenantId || !input.projectId) {
+  if (!tenantId) {
     return null;
   }
 
@@ -1080,17 +1100,20 @@ export async function updateTask(
       return null;
     }
 
-    const project = await tx.project.findFirst({
-      where: {
-        id: input.projectId,
-        tenantId
-      },
-      select: {
-        id: true
-      }
-    });
+    const projectId = input.projectId === undefined ? existing.projectId : toNullableString(input.projectId);
+    const project = projectId
+      ? await tx.project.findFirst({
+          where: {
+            id: projectId,
+            tenantId
+          },
+          select: {
+            id: true
+          }
+        })
+      : null;
 
-    if (!project) {
+    if (projectId && !project) {
       return null;
     }
 
@@ -1099,7 +1122,7 @@ export async function updateTask(
         id: taskId
       },
       data: {
-        projectId: project.id,
+        projectId: project?.id ?? null,
         title: input.title ?? existing.title,
         description: toNullableString(input.description),
         priority: (input.priority as TaskPriority) ?? existing.priority,
@@ -1522,6 +1545,22 @@ async function getTenantProject(
   });
 }
 
+function normalizeInvoiceStatus(value: string | null | undefined): InvoiceStatus {
+  if (value === "SENT") {
+    return "ISSUED";
+  }
+  if (value === "CANCELLED") {
+    return "VOIDED";
+  }
+  if (value === "OVERDUE") {
+    return "ISSUED";
+  }
+  if (value === "ISSUED" || value === "PAID" || value === "VOIDED" || value === "UNCOLLECTIBLE") {
+    return value;
+  }
+  return "DRAFT";
+}
+
 function getNextRecurringDate(value: Date, interval: RecurringInvoiceInterval): Date {
   const nextDate = new Date(value.getTime());
   if (interval === "DAILY") {
@@ -1604,7 +1643,7 @@ export async function createInvoice(
           clientId: client.id,
           projectId: project?.id ?? null,
           invoiceNumber,
-          status: (input.status as InvoiceStatus) ?? "DRAFT",
+          status: normalizeInvoiceStatus(input.status),
           issueDate: input.issueDate ? new Date(input.issueDate) : null,
           dueDate: input.dueDate ? new Date(input.dueDate) : null,
           paidAt: input.paidAt ? new Date(input.paidAt) : null,
@@ -1632,8 +1671,9 @@ export async function createInvoice(
         select: invoiceSelect
       });
 
+      const hydrated = await getInvoiceRecord(tx, tenantId, created.id);
       return {
-        invoice: toInvoiceSummary(created)
+        invoice: hydrated ? toInvoiceSummary(hydrated) : null
       };
     });
   } catch (error) {
@@ -1741,7 +1781,7 @@ export async function markInvoiceSent(
   authSession: AuthResolvedSessionContext,
   invoiceId: string
 ): Promise<InvoiceResponse | null> {
-  return updateInvoiceStatus(authSession, invoiceId, { status: "SENT", setIssueDateIfMissing: true });
+  return updateInvoiceStatus(authSession, invoiceId, { status: "ISSUED", setIssueDateIfMissing: true });
 }
 
 export async function markInvoicePaid(
@@ -1755,7 +1795,7 @@ export async function cancelInvoice(
   authSession: AuthResolvedSessionContext,
   invoiceId: string
 ): Promise<InvoiceResponse | null> {
-  return updateInvoiceStatus(authSession, invoiceId, { status: "CANCELLED" });
+  return updateInvoiceStatus(authSession, invoiceId, { status: "VOIDED" });
 }
 
 async function updateInvoiceStatus(
@@ -1794,8 +1834,9 @@ async function updateInvoiceStatus(
       select: invoiceSelect
     });
 
+    const hydrated = await getInvoiceRecord(tx, tenantId, updated.id);
     return {
-      invoice: toInvoiceSummary(updated)
+      invoice: hydrated ? toInvoiceSummary(hydrated) : null
     };
   });
 }

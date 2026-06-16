@@ -64,11 +64,10 @@ enum TaskRecurringType {
 
 enum InvoiceStatus {
   DRAFT
-  SENT
+  ISSUED
   PAID
-  OVERDUE
-  CANCELLED
   VOIDED
+  UNCOLLECTIBLE
 }
 
 enum RecurringInvoiceInterval {
@@ -103,45 +102,51 @@ enum AuditActorType {
 }
 
 model Tenant {
-  id            String            @id @default(uuid())
-  name          String
-  slug          String            @unique
-  status        TenantStatus
-  createdAt     DateTime          @default(now())
-  updatedAt     DateTime          @updatedAt
-  deletedAt     DateTime?
-  memberships   TenantMembership[]
-  roles         Role[]
-  clients       Client[]
-  projects      Project[]
-  tasks         Task[]
-  invoices      Invoice[]
-  recurringInvoices RecurringInvoice[]
+  id                   String                @id @default(uuid())
+  name                 String
+  slug                 String                @unique
+  status               TenantStatus
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  deletedAt            DateTime?
+  memberships          TenantMembership[]
+  roles                Role[]
+  clients              Client[]
+  projects             Project[]
+  tasks                Task[]
+  invoices             Invoice[]
+  recurringInvoices    RecurringInvoice[]
   recurringInvoiceRuns RecurringInvoiceRun[]
-  vendors       Vendor[]
-  bills         Bill[]
-  tenantModules TenantModule[]
-  tenantSettings TenantSetting[]
-  auditLogs     AuditLog[]        @relation("TenantAuditLogs")
+  vendors              Vendor[]
+  bills                Bill[]
+  tenantModules        TenantModule[]
+  tenantSettings       TenantSetting[]
+  auditLogs            AuditLog[]            @relation("TenantAuditLogs")
+  companyProfile       CompanyProfile?
+  invoiceItems         InvoiceItem[]
+  invoicePayments      InvoicePayment[]
+  creditNotes          CreditNote[]
+  projectDocuments     ProjectDocument[]
 }
 
 model User {
-  id                 String            @id @default(uuid())
-  email              String            @unique
-  name               String?
-  status             UserStatus
-  passwordHash       String?
-  passwordChangedAt   DateTime?
-  forcePasswordChange Boolean           @default(false)
-  failedLoginCount    Int               @default(0)
-  lockedUntil        DateTime?
-  lastLoginAt        DateTime?
-  createdAt          DateTime          @default(now())
-  updatedAt          DateTime          @updatedAt
-  deletedAt          DateTime?
-  memberships        TenantMembership[]
-  sessions           Session[]
-  auditLogs          AuditLog[]        @relation("UserAuditLogs")
+  id                       String             @id @default(uuid())
+  email                    String             @unique
+  name                     String?
+  status                   UserStatus
+  passwordHash             String?
+  passwordChangedAt        DateTime?
+  forcePasswordChange      Boolean            @default(false)
+  failedLoginCount         Int                @default(0)
+  lockedUntil              DateTime?
+  lastLoginAt              DateTime?
+  createdAt                DateTime           @default(now())
+  updatedAt                DateTime           @updatedAt
+  deletedAt                DateTime?
+  memberships              TenantMembership[]
+  sessions                 Session[]
+  auditLogs                AuditLog[]         @relation("UserAuditLogs")
+  uploadedProjectDocuments ProjectDocument[]  @relation("ProjectDocumentUploadedBy")
 }
 
 model Session {
@@ -166,17 +171,17 @@ model Session {
 }
 
 model TenantMembership {
-  id              String            @id @default(uuid())
+  id              String           @id @default(uuid())
   tenantId        String
   userId          String
   status          MembershipStatus
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
   deletedAt       DateTime?
-  tenant          Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tenant          Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   membershipRoles MembershipRole[]
-  activeSessions  Session[]         @relation("SessionActiveTenantMembership")
+  activeSessions  Session[]        @relation("SessionActiveTenantMembership")
 
   @@unique([tenantId, userId])
   @@index([tenantId])
@@ -185,16 +190,16 @@ model TenantMembership {
 }
 
 model Role {
-  id              String            @id @default(uuid())
+  id              String           @id @default(uuid())
   tenantId        String
   key             String
   name            String
   description     String?
   status          RoleStatus
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
   deletedAt       DateTime?
-  tenant          Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant          Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   rolePermissions RolePermission[]
   membershipRoles MembershipRole[]
 
@@ -203,24 +208,24 @@ model Role {
 }
 
 model Permission {
-  id              String            @id @default(uuid())
-  key             String            @unique
+  id              String           @id @default(uuid())
+  key             String           @unique
   moduleKey       String?
   description     String?
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
   rolePermissions RolePermission[]
 
   @@index([moduleKey])
 }
 
 model RolePermission {
-  id           String       @id @default(uuid())
+  id           String     @id @default(uuid())
   roleId       String
   permissionId String
-  createdAt    DateTime     @default(now())
-  role         Role         @relation(fields: [roleId], references: [id], onDelete: Cascade)
-  permission   Permission   @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  createdAt    DateTime   @default(now())
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
 
   @@unique([roleId, permissionId])
   @@index([roleId])
@@ -228,7 +233,7 @@ model RolePermission {
 }
 
 model MembershipRole {
-  id                String           @id @default(uuid())
+  id                 String           @id @default(uuid())
   tenantMembershipId String
   roleId             String
   createdAt          DateTime         @default(now())
@@ -254,40 +259,48 @@ model ModuleDefinition {
 }
 
 model CompanyProfile {
-  id                   String   @id @default(uuid())
-  name                 String
-  legalName            String?
-  email                String?
-  phone                String?
-  website              String?
-  taxId                String?
-  registrationNumber   String?
-  billingAddress       String?
-  paymentInstructions  String?
-  logoUrl              String?
-  isActive             Boolean  @default(true)
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
+  id                  String   @id @default(uuid())
+  tenantId            String
+  tenant              Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name                String
+  legalName           String?
+  email               String?
+  phone               String?
+  website             String?
+  taxId               String?
+  registrationNumber  String?
+  billingAddress      String?
+  paymentInstructions String?
+  logoUrl             String?
+  isActive            Boolean  @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  currency            String   @default("USD")
+  invoiceTemplateKey  String   @default("classic")
+  invoicePrefix       String?
+  creditNotePrefix    String?
 
+  @@unique([tenantId])
   @@index([isActive])
+  @@index([tenantId])
 }
 
 model Client {
-  id              String    @id @default(uuid())
-  tenantId        String
-  name            String
-  email           String?
-  phone           String?
-  website         String?
-  billingDetails  String?
-  contactPerson   String?
-  notes           String?
-  isArchived      Boolean   @default(false)
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  tenant          Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  projects        Project[]
-  invoices        Invoice[]
+  id                String             @id @default(uuid())
+  tenantId          String
+  name              String
+  email             String?
+  phone             String?
+  website           String?
+  billingDetails    String?
+  contactPerson     String?
+  notes             String?
+  isArchived        Boolean            @default(false)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  tenant            Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  projects          Project[]
+  invoices          Invoice[]
   recurringInvoices RecurringInvoice[]
 
   @@index([tenantId])
@@ -295,21 +308,22 @@ model Client {
 }
 
 model Project {
-  id          String    @id @default(uuid())
-  tenantId    String
-  clientId    String
-  name        String
-  description String?
-  startDate   DateTime?
-  dueDate     DateTime?
-  isArchived  Boolean   @default(false)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  client      Client    @relation(fields: [clientId], references: [id], onDelete: Restrict)
-  tasks       Task[]
-  invoices    Invoice[]
+  id                String             @id @default(uuid())
+  tenantId          String
+  clientId          String?
+  name              String
+  description       String?
+  startDate         DateTime?
+  dueDate           DateTime?
+  isArchived        Boolean            @default(false)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  tenant            Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  client            Client?            @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  tasks             Task[]
+  invoices          Invoice[]
   recurringInvoices RecurringInvoice[]
+  documents         ProjectDocument[]
 
   @@index([tenantId])
   @@index([tenantId, isArchived])
@@ -317,20 +331,20 @@ model Project {
 }
 
 model Task {
-  id             String            @id @default(uuid())
-  tenantId       String
-  projectId      String
-  title          String
-  description    String?
-  priority       TaskPriority      @default(NORMAL)
-  status         TaskStatus        @default(TODO)
-  dueDate        DateTime?
-  recurringType  TaskRecurringType @default(NONE)
-  isArchived     Boolean           @default(false)
-  createdAt      DateTime          @default(now())
-  updatedAt      DateTime          @updatedAt
-  tenant         Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  project        Project           @relation(fields: [projectId], references: [id], onDelete: Restrict)
+  id            String            @id @default(uuid())
+  tenantId      String
+  projectId     String?
+  title         String
+  description   String?
+  priority      TaskPriority      @default(NORMAL)
+  status        TaskStatus        @default(TODO)
+  dueDate       DateTime?
+  recurringType TaskRecurringType @default(NONE)
+  isArchived    Boolean           @default(false)
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  tenant        Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  project       Project?          @relation(fields: [projectId], references: [id], onDelete: SetNull)
 
   @@index([tenantId])
   @@index([tenantId, isArchived])
@@ -341,35 +355,40 @@ model Task {
 }
 
 model Invoice {
-  id                  String        @id @default(uuid())
+  id                  String            @id @default(uuid())
   tenantId            String
   clientId            String
   projectId           String?
   recurringInvoiceId  String?
   invoiceNumber       String
-  status              InvoiceStatus @default(DRAFT)
+  status              InvoiceStatus     @default(DRAFT)
   issueDate           DateTime?
   dueDate             DateTime?
   paidAt              DateTime?
-  currency            String        @default("USD")
-  subtotalCents       Int           @default(0)
-  taxCents            Int           @default(0)
-  discountCents       Int           @default(0)
-  totalCents          Int           @default(0)
-  amountPaidCents     Int           @default(0)
+  currency            String            @default("USD")
+  subtotalCents       Int               @default(0)
+  taxCents            Int               @default(0)
+  discountCents       Int               @default(0)
+  totalCents          Int               @default(0)
+  amountPaidCents     Int               @default(0)
   title               String?
   notes               String?
   paymentInstructions String?
   documentUrl         String?
   documentStorageKey  String?
-  isArchived          Boolean       @default(false)
-  createdAt           DateTime      @default(now())
-  updatedAt           DateTime      @updatedAt
-  tenant              Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  client              Client        @relation(fields: [clientId], references: [id], onDelete: Restrict)
-  project             Project?      @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  isArchived          Boolean           @default(false)
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+  tenant              Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  client              Client            @relation(fields: [clientId], references: [id], onDelete: Restrict)
+  project             Project?          @relation(fields: [projectId], references: [id], onDelete: SetNull)
   recurringInvoice    RecurringInvoice? @relation(fields: [recurringInvoiceId], references: [id], onDelete: SetNull)
   lineItems           InvoiceLineItem[]
+  voidedAt            DateTime?
+  uncollectibleAt     DateTime?
+  statusReason        String?
+  payment             InvoicePayment?
+  creditNotes         CreditNote[]
 
   @@unique([tenantId, invoiceNumber])
   @@index([tenantId])
@@ -397,7 +416,7 @@ model InvoiceLineItem {
 }
 
 model RecurringInvoice {
-  id                  String                   @id @default(uuid())
+  id                  String                     @id @default(uuid())
   tenantId            String
   clientId            String
   projectId           String?
@@ -407,21 +426,21 @@ model RecurringInvoice {
   endDate             DateTime?
   nextRunDate         DateTime
   lastRunDate         DateTime?
-  currency            String                   @default("USD")
-  subtotalCents       Int                      @default(0)
-  taxCents            Int                      @default(0)
-  discountCents       Int                      @default(0)
-  totalCents          Int                      @default(0)
+  currency            String                     @default("USD")
+  subtotalCents       Int                        @default(0)
+  taxCents            Int                        @default(0)
+  discountCents       Int                        @default(0)
+  totalCents          Int                        @default(0)
   notes               String?
   paymentInstructions String?
   documentFolderHint  String?
-  isActive            Boolean                  @default(true)
-  isArchived          Boolean                  @default(false)
-  createdAt           DateTime                 @default(now())
-  updatedAt           DateTime                 @updatedAt
-  tenant              Tenant                   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  client              Client                   @relation(fields: [clientId], references: [id], onDelete: Restrict)
-  project             Project?                 @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  isActive            Boolean                    @default(true)
+  isArchived          Boolean                    @default(false)
+  createdAt           DateTime                   @default(now())
+  updatedAt           DateTime                   @updatedAt
+  tenant              Tenant                     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  client              Client                     @relation(fields: [clientId], references: [id], onDelete: Restrict)
+  project             Project?                   @relation(fields: [projectId], references: [id], onDelete: SetNull)
   invoices            Invoice[]
   lineItems           RecurringInvoiceLineItem[]
   runs                RecurringInvoiceRun[]
@@ -465,14 +484,14 @@ model RecurringInvoiceRun {
 }
 
 model Vendor {
-  id          String    @id @default(uuid())
-  tenantId    String
-  name        String
-  isArchived  Boolean   @default(false)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  bills       Bill[]
+  id         String   @id @default(uuid())
+  tenantId   String
+  name       String
+  isArchived Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  bills      Bill[]
 
   @@unique([tenantId, name])
   @@index([tenantId])
@@ -514,7 +533,7 @@ model TenantModule {
   createdAt          DateTime         @default(now())
   updatedAt          DateTime         @updatedAt
   tenant             Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  moduleDefinition   ModuleDefinition  @relation(fields: [moduleDefinitionId], references: [id], onDelete: Restrict)
+  moduleDefinition   ModuleDefinition @relation(fields: [moduleDefinitionId], references: [id], onDelete: Restrict)
 
   @@unique([tenantId, moduleDefinitionId])
   @@index([tenantId])
@@ -523,15 +542,15 @@ model TenantModule {
 }
 
 model TenantSetting {
-  id          String            @id @default(uuid())
-  tenantId    String
-  key         String
-  moduleKey   String?
-  valueType   SettingValueType
-  value       Json
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
-  tenant      Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  id        String           @id @default(uuid())
+  tenantId  String
+  key       String
+  moduleKey String?
+  valueType SettingValueType
+  value     Json
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+  tenant    Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@unique([tenantId, key])
   @@index([tenantId])
@@ -558,4 +577,109 @@ model AuditLog {
   @@index([action])
   @@index([entityType, entityId])
   @@index([createdAt])
+}
+
+enum PaymentMethod {
+  CASH
+  REVOLUT_BANK
+  WISE_BANK
+  REVOLUT_CARD
+  WISE_CARD
+  CARD_PROCESSOR
+  OTHER
+}
+
+enum CreditNoteStatus {
+  DRAFT
+  ISSUED
+  VOIDED
+}
+
+model InvoiceItem {
+  id             String   @id @default(uuid())
+  tenantId       String
+  name           String
+  description    String?
+  unitPriceCents Int      @default(0)
+  isArchived     Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, name])
+  @@index([tenantId])
+  @@index([tenantId, isArchived])
+}
+
+model InvoicePayment {
+  id                  String        @id @default(uuid())
+  tenantId            String
+  invoiceId           String        @unique
+  paymentMethod       PaymentMethod
+  amountIssuedCents   Int
+  amountReceivedCents Int
+  paymentDate         DateTime
+  notes               String?
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+
+  tenant  Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([tenantId, invoiceId])
+  @@index([tenantId, paymentDate])
+}
+
+model CreditNote {
+  id                 String           @id @default(uuid())
+  tenantId           String
+  invoiceId          String
+  creditNoteNumber   String
+  status             CreditNoteStatus @default(DRAFT)
+  issueDate          DateTime?
+  reason             String
+  amountCents        Int
+  currency           String           @default("USD")
+  documentUrl        String?
+  documentStorageKey String?
+  isArchived         Boolean          @default(false)
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+
+  tenant  Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Restrict)
+
+  @@unique([tenantId, creditNoteNumber])
+  @@index([tenantId])
+  @@index([tenantId, invoiceId])
+  @@index([tenantId, status])
+  @@index([tenantId, isArchived])
+}
+
+model ProjectDocument {
+  id                 String    @id @default(uuid())
+  tenantId           String
+  projectId          String
+  fileName           String
+  mimeType           String
+  sizeBytes          Int
+  documentType       String?
+  documentDate       DateTime?
+  documentUrl        String?
+  documentStorageKey String
+  uploadedByUserId   String?
+  isArchived         Boolean   @default(false)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  tenant         Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  project        Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  uploadedByUser User?   @relation("ProjectDocumentUploadedBy", fields: [uploadedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@index([tenantId, projectId])
+  @@index([tenantId, isArchived])
+  @@index([tenantId, documentDate])
 }

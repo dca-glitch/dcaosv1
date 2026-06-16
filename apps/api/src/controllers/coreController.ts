@@ -221,7 +221,7 @@ function getProjectInput(body: unknown): ProjectInputRequest | null {
 const TASK_PRIORITIES = new Set(["LOW", "NORMAL", "HIGH"]);
 const TASK_STATUSES = new Set(["TODO", "IN_PROGRESS", "DONE"]);
 const TASK_RECURRING_TYPES = new Set(["NONE", "DAILY", "WEEKLY", "MONTHLY", "YEARLY"]);
-const INVOICE_STATUSES = new Set(["DRAFT", "SENT", "PAID", "OVERDUE", "CANCELLED", "VOIDED"]);
+const INVOICE_STATUSES = new Set(["DRAFT", "ISSUED", "PAID", "VOIDED", "UNCOLLECTIBLE"]);
 const RECURRING_INVOICE_INTERVALS = new Set(["DAILY", "WEEKLY", "MONTHLY", "YEARLY"]);
 const BILL_PAYMENT_FORMS = new Set(["CASH", "REVOLUT_BANK", "WISE_BANK", "REVOLUT_CARD", "WISE_CARD", "OTHER"]);
 const FILE_NAME_MAX_LENGTH = 255;
@@ -455,7 +455,7 @@ function getTaskInput(body: unknown): TaskInputRequest | null {
 
 export const getCompanyProfileHandler: RequestHandler = async (_req, res) => {
   try {
-    res.json(success(await getCompanyProfile(), { phase: "runtime", scope: "core-module-skeleton" }));
+    res.json(success(await getCompanyProfile(res.locals.authSession), { phase: "runtime", scope: "core-module-skeleton" }));
   } catch {
     res.status(500).json(failure("COMPANY_PROFILE_RUNTIME_ERROR", "Company profile could not be completed."));
   }
@@ -471,7 +471,7 @@ export const saveCompanyProfileHandler: RequestHandler = async (req, res) => {
   try {
     res.json(
       success(
-        await saveCompanyProfile(input as Parameters<typeof saveCompanyProfile>[0]),
+        await saveCompanyProfile(res.locals.authSession, input as Parameters<typeof saveCompanyProfile>[1]),
         { phase: "runtime", scope: "core-module-skeleton" }
       )
     );
@@ -1347,3 +1347,4 @@ export const generateDueRecurringInvoiceHandler: RequestHandler = async (req, re
     res.status(500).json(failure("RECURRING_INVOICE_RUNTIME_ERROR", "Recurring invoice generation could not be completed."));
   }
 };
+

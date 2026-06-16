@@ -46,8 +46,8 @@ import { requireRole, requireTenant } from "../middlewares";
 export function createCoreRouter() {
   const router = Router();
 
-  router.get("/company-profile", requireAuth, getCompanyProfileHandler);
-  router.put("/company-profile", requireAuth, requireRole("owner", "admin"), saveCompanyProfileHandler);
+  router.get("/company-profile", requireAuth, requireTenant, getCompanyProfileHandler);
+  router.put("/company-profile", requireAuth, requireTenant, requireRole("owner", "admin"), saveCompanyProfileHandler);
 
   router.get("/clients", requireAuth, requireTenant, listClientsHandler);
   router.post("/clients", requireAuth, requireTenant, requireRole("owner", "admin"), createClientHandler);

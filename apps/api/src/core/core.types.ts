@@ -12,6 +12,10 @@ export interface CompanyProfileSummary {
   logoUrl: string | null;
   isActive: boolean;
   createdAt: string;
+  currency: string;
+  invoiceTemplateKey: string;
+  invoicePrefix: string | null;
+  creditNotePrefix: string | null;
   updatedAt: string;
 }
 
@@ -30,6 +34,10 @@ export interface CompanyProfileUpdateRequest {
   billingAddress?: string | null;
   paymentInstructions?: string | null;
   logoUrl?: string | null;
+  currency?: string;
+  invoiceTemplateKey?: string;
+  invoicePrefix?: string | null;
+  creditNotePrefix?: string | null;
 }
 
 export interface ClientSummary {
@@ -67,11 +75,11 @@ export interface ClientInputRequest {
 
 export interface ProjectSummary {
   id: string;
-  clientId: string;
+  clientId: string | null;
   client: {
     id: string;
     name: string;
-  };
+  } | null;
   name: string;
   description: string | null;
   startDate: string | null;
@@ -101,15 +109,15 @@ export interface ProjectInputRequest {
 
 export interface TaskSummary {
   id: string;
-  projectId: string;
+  projectId: string | null;
   project: {
     id: string;
     name: string;
     client: {
       id: string;
       name: string;
-    };
-  };
+    } | null;
+  } | null;
   title: string;
   description: string | null;
   priority: string;
@@ -130,7 +138,7 @@ export interface TasksResponse {
 }
 
 export interface TaskInputRequest {
-  projectId?: string;
+  projectId?: string | null;
   title?: string;
   description?: string | null;
   priority?: string;
