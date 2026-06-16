@@ -1031,40 +1031,63 @@ export const registerInvoicePaymentHandler: RequestHandler = async (req, res) =>
   }
 };
 
-export const listInvoiceItemsHandler: RequestHandler = async (_req, res) => {
+export const listInvoiceItemsHandler: RequestHandler = async (req, res) => {
   const authSession = getAuthSession(res.locals);
   if (!authSession) return void res.status(401).json(unauthorizedFailure());
-  try { res.json(success(await listInvoiceItems(authSession), { phase: "runtime", scope: "invoice-items" })); } catch { res.status(500).json(failure("INVOICE_ITEM_RUNTIME_ERROR", "Invoice items could not be listed.")); }
+  try {
+    const archived = req.query.archived === "true";
+    const response = await listInvoiceItems(authSession, { archived });
+    if (!response) return void res.status(403).json(forbiddenFailure());
+    res.json(success(response, { phase: "runtime", scope: "invoice-items" }));
+  } catch {
+    res.status(500).json(failure("INVOICE_ITEM_RUNTIME_ERROR", "Invoice items could not be listed."));
+  }
 };
 
 export const createInvoiceItemHandler: RequestHandler = async (req, res) => {
-  const authSession = getAuthSession(res.locals); const input = getInvoiceItemInput(req.body);
+  const authSession = getAuthSession(res.locals);
+  const input = getInvoiceItemInput(req.body);
   if (!authSession) return void res.status(401).json(unauthorizedFailure());
   if (!input) return void res.status(400).json(invoiceInvalidFailure());
-  const response = await createInvoiceItem(authSession, input);
-  if (!response?.invoiceItem) return void res.status(400).json(invoiceInvalidFailure());
-  res.status(201).json(success(response, { phase: "runtime", scope: "invoice-items" }));
+  try {
+    const response = await createInvoiceItem(authSession, input);
+    if (!response?.invoiceItem) return void res.status(400).json(invoiceInvalidFailure());
+    res.status(201).json(success(response, { phase: "runtime", scope: "invoice-items" }));
+  } catch {
+    res.status(500).json(failure("INVOICE_ITEM_RUNTIME_ERROR", "Invoice item could not be created."));
+  }
 };
 
 export const updateInvoiceItemHandler: RequestHandler = async (req, res) => {
-  const authSession = getAuthSession(res.locals); const itemId = typeof req.params.id === "string" ? req.params.id.trim() : ""; const input = getInvoiceItemInput(req.body);
+  const authSession = getAuthSession(res.locals);
+  const itemId = typeof req.params.id === "string" ? req.params.id.trim() : "";
+  const input = getInvoiceItemInput(req.body);
   if (!authSession) return void res.status(401).json(unauthorizedFailure());
   if (!itemId || !input) return void res.status(400).json(invoiceInvalidFailure());
-  const response = await updateInvoiceItem(authSession, itemId, input);
-  if (!response?.invoiceItem) return void res.status(404).json(invoiceNotFoundFailure());
-  res.json(success(response, { phase: "runtime", scope: "invoice-items" }));
+  try {
+    const response = await updateInvoiceItem(authSession, itemId, input);
+    if (!response?.invoiceItem) return void res.status(404).json(invoiceNotFoundFailure());
+    res.json(success(response, { phase: "runtime", scope: "invoice-items" }));
+  } catch {
+    res.status(500).json(failure("INVOICE_ITEM_RUNTIME_ERROR", "Invoice item could not be updated."));
+  }
 };
 
 export const archiveInvoiceItemHandler: RequestHandler = async (req, res) => runInvoiceItemAction(req, res, archiveInvoiceItem);
 export const restoreInvoiceItemHandler: RequestHandler = async (req, res) => runInvoiceItemAction(req, res, restoreInvoiceItem);
 
 async function runInvoiceItemAction(req: Parameters<RequestHandler>[0], res: Parameters<RequestHandler>[1], action: typeof archiveInvoiceItem) {
-  const authSession = getAuthSession(res.locals); const itemId = typeof req.params.id === "string" ? req.params.id.trim() : "";
+  const authSession = getAuthSession(res.locals);
+  const itemId = typeof req.params.id === "string" ? req.params.id.trim() : "";
   if (!authSession) return void res.status(401).json(unauthorizedFailure());
   if (!itemId) return void res.status(400).json(invoiceInvalidFailure());
-  const response = await action(authSession, itemId);
-  if (!response?.invoiceItem) return void res.status(404).json(invoiceNotFoundFailure());
-  res.json(success(response, { phase: "runtime", scope: "invoice-items" }));
+  try {
+    const response = await action(authSession, itemId);
+    if (!response?.invoiceItem) return void res.status(404).json(invoiceNotFoundFailure());
+    res.json(success(response, { phase: "runtime", scope: "invoice-items" }));
+  } catch {
+    res.status(500).json(failure("INVOICE_ITEM_RUNTIME_ERROR", "Invoice item archive state could not be updated."));
+  }
 }
 
 export const createCreditNoteHandler: RequestHandler = async (req, res) => {

@@ -1954,12 +1954,15 @@ function toInvoiceItemSummary(item: { id: string; name: string; description: str
   };
 }
 
-export async function listInvoiceItems(authSession: AuthResolvedSessionContext): Promise<InvoiceItemsResponse | null> {
+export async function listInvoiceItems(
+  authSession: AuthResolvedSessionContext,
+  options: { archived?: boolean } = {}
+): Promise<InvoiceItemsResponse | null> {
   const tenantId = getActiveTenantId(authSession);
   if (!tenantId) return null;
   const invoiceItems = await prisma.invoiceItem.findMany({
-    where: { tenantId },
-    orderBy: [{ isArchived: "asc" }, { name: "asc" }],
+    where: { tenantId, isArchived: options.archived ?? false },
+    orderBy: [{ name: "asc" }, { createdAt: "asc" }],
     select: invoiceItemSelect
   });
   return { invoiceItems: invoiceItems.map(toInvoiceItemSummary) };

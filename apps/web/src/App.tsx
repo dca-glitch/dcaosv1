@@ -18,6 +18,11 @@ import {
   type RecurringInvoiceFormValues,
   type RecurringInvoiceSummary
 } from "./pages/invoices/InvoicesPage";
+import {
+  InvoiceItemsPage,
+  type InvoiceItemFormValues,
+  type InvoiceItemSummary
+} from "./pages/invoice-items/InvoiceItemsPage";
 import { ProjectsPage, type ProjectFormValues, type ProjectSummary } from "./pages/projects/ProjectsPage";
 import { TasksPage, type TaskFormValues, type TaskSummary } from "./pages/tasks/TasksPage";
 
@@ -189,6 +194,10 @@ type RecurringInvoicesResponse = {
   recurringInvoices: RecurringInvoiceSummary[];
 };
 
+type InvoiceItemsResponse = {
+  invoiceItems: InvoiceItemSummary[];
+};
+
 type VendorsResponse = {
   vendors: VendorSummary[];
 };
@@ -205,6 +214,7 @@ type ViewKey =
   | "projects"
   | "tasks"
   | "invoices"
+  | "invoice-items"
   | "bills"
   | "company-profile"
   | "settings"
@@ -253,6 +263,7 @@ const navigationItems: Array<{ view: ViewKey; label: string; section: string }> 
   { view: "projects", label: "Projects", section: "core" },
   { view: "tasks", label: "Tasks", section: "core" },
   { view: "invoices", label: "Invoices", section: "core" },
+  { view: "invoice-items", label: "Services Library", section: "core" },
   { view: "bills", label: "Bills", section: "core" },
   { view: "company-profile", label: "Company Profile", section: "settings" },
   { view: "settings", label: "Settings", section: "settings" },
@@ -887,6 +898,8 @@ export function App() {
   const [tasks, setTasks] = useState<TasksResponse | null>(null);
   const [invoices, setInvoices] = useState<InvoicesResponse | null>(null);
   const [recurringInvoices, setRecurringInvoices] = useState<RecurringInvoicesResponse | null>(null);
+  const [invoiceItems, setInvoiceItems] = useState<InvoiceItemsResponse | null>(null);
+  const [archivedInvoiceItems, setArchivedInvoiceItems] = useState<InvoiceItemsResponse | null>(null);
   const [vendors, setVendors] = useState<VendorsResponse | null>(null);
   const [bills, setBills] = useState<BillsResponse | null>(null);
   const [availableModules, setAvailableModules] = useState<ModuleListItem[]>([]);
@@ -937,6 +950,8 @@ export function App() {
     setTasks(null);
     setInvoices(null);
     setRecurringInvoices(null);
+    setInvoiceItems(null);
+    setArchivedInvoiceItems(null);
     setVendors(null);
     setBills(null);
     setTenantModules([]);
@@ -970,6 +985,8 @@ export function App() {
           tasksResponse,
           invoicesResponse,
           recurringInvoicesResponse,
+          invoiceItemsResponse,
+          archivedInvoiceItemsResponse,
           vendorsResponse,
           billsResponse,
           modulesResponse,
@@ -987,6 +1004,8 @@ export function App() {
             apiRequest<TasksResponse>("/tasks", { token: nextToken }),
             apiRequest<InvoicesResponse>("/invoices", { token: nextToken }),
             apiRequest<RecurringInvoicesResponse>("/recurring-invoices", { token: nextToken }),
+            apiRequest<InvoiceItemsResponse>("/invoice-items", { token: nextToken }),
+            apiRequest<InvoiceItemsResponse>("/invoice-items?archived=true", { token: nextToken }),
             apiRequest<VendorsResponse>("/vendors", { token: nextToken }),
             apiRequest<BillsResponse>("/bills", { token: nextToken }),
             apiRequest<ModuleRegistryResponse>("/modules"),
@@ -1011,6 +1030,8 @@ export function App() {
           isUnauthorized(tasksResponse) ||
           isUnauthorized(invoicesResponse) ||
           isUnauthorized(recurringInvoicesResponse) ||
+          isUnauthorized(invoiceItemsResponse) ||
+          isUnauthorized(archivedInvoiceItemsResponse) ||
           isUnauthorized(vendorsResponse) ||
           isUnauthorized(billsResponse) ||
           isUnauthorized(tenantModulesResponse)
@@ -1034,6 +1055,8 @@ export function App() {
         setTasks(tasksResponse.ok ? tasksResponse.data : null);
         setInvoices(invoicesResponse.ok ? invoicesResponse.data : null);
         setRecurringInvoices(recurringInvoicesResponse.ok ? recurringInvoicesResponse.data : null);
+        setInvoiceItems(invoiceItemsResponse.ok ? invoiceItemsResponse.data : null);
+        setArchivedInvoiceItems(archivedInvoiceItemsResponse.ok ? archivedInvoiceItemsResponse.data : null);
         setVendors(vendorsResponse.ok ? vendorsResponse.data : null);
         setBills(billsResponse.ok ? billsResponse.data : null);
         setAvailableModules(modulesResponse.ok ? modulesResponse.data.modules : []);
@@ -1050,6 +1073,8 @@ export function App() {
           !tasksResponse.ok ||
           !invoicesResponse.ok ||
           !recurringInvoicesResponse.ok ||
+          !invoiceItemsResponse.ok ||
+          !archivedInvoiceItemsResponse.ok ||
           !vendorsResponse.ok ||
           !billsResponse.ok ||
           !tenantModulesResponse.ok
@@ -1471,6 +1496,71 @@ export function App() {
     }
   }
 
+  async function handleSaveInvoiceItem(
+    invoiceItemId: string | null,
+    values: InvoiceItemFormValues
+  ): Promise<boolean> {
+    setAppMessage(null);
+    try {
+      const response = await runAuthenticatedRequest<{ invoiceItem: InvoiceItemSummary | null }>(
+        invoiceItemId ? `/invoice-items/${invoiceItemId}` : "/invoice-items",
+        {
+          method: invoiceItemId ? "PUT" : "POST",
+          body: values
+        }
+      );
+
+      if (!response) {
+        return false;
+      }
+
+      if (!response.ok) {
+        setAppMessage({ tone: "error", text: getErrorMessage(response) });
+        return false;
+      }
+
+      await loadProtectedState(tokenRef.current);
+      setAppMessage({ tone: "success", text: invoiceItemId ? "Service updated." : "Service created." });
+      return true;
+    } catch (error) {
+      setAppMessage({ tone: "error", text: maskError(error) });
+      return false;
+    }
+  }
+
+  async function handleArchiveInvoiceItem(invoiceItemId: string): Promise<boolean> {
+    return runInvoiceItemAction(`/invoice-items/${invoiceItemId}/archive`, "Service archived.");
+  }
+
+  async function handleRestoreInvoiceItem(invoiceItemId: string): Promise<boolean> {
+    return runInvoiceItemAction(`/invoice-items/${invoiceItemId}/restore`, "Service restored.");
+  }
+
+  async function runInvoiceItemAction(path: string, successMessage: string): Promise<boolean> {
+    setAppMessage(null);
+    try {
+      const response = await runAuthenticatedRequest<{ invoiceItem: InvoiceItemSummary | null }>(path, {
+        method: "POST"
+      });
+
+      if (!response) {
+        return false;
+      }
+
+      if (!response.ok) {
+        setAppMessage({ tone: "error", text: getErrorMessage(response) });
+        return false;
+      }
+
+      await loadProtectedState(tokenRef.current);
+      setAppMessage({ tone: "success", text: successMessage });
+      return true;
+    } catch (error) {
+      setAppMessage({ tone: "error", text: maskError(error) });
+      return false;
+    }
+  }
+
   async function handleSaveRecurringInvoice(
     recurringInvoiceId: string | null,
     values: RecurringInvoiceFormValues
@@ -1765,6 +1855,18 @@ export function App() {
           onSaveRecurringInvoice={handleSaveRecurringInvoice}
           projects={projects?.projects ?? []}
           recurringInvoices={recurringInvoices?.recurringInvoices ?? []}
+        />
+      ) : null}
+      {!loading && activeView === "invoice-items" ? (
+        <InvoiceItemsPage
+          activeItems={invoiceItems?.invoiceItems ?? []}
+          archivedItems={archivedInvoiceItems?.invoiceItems ?? []}
+          canEdit={canManageCore}
+          errorMessage={null}
+          isLoading={false}
+          onArchiveInvoiceItem={handleArchiveInvoiceItem}
+          onRestoreInvoiceItem={handleRestoreInvoiceItem}
+          onSaveInvoiceItem={handleSaveInvoiceItem}
         />
       ) : null}
       {!loading && activeView === "bills" ? (
