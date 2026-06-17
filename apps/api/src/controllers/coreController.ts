@@ -170,8 +170,10 @@ function parseDateInput(value: unknown): Date | null | undefined {
 function getCompanyProfileInput(body: unknown): CompanyProfileUpdateRequest | null {
   const value = (body ?? {}) as Record<string, unknown>;
   const name = getRequiredString(value.name, SHORT_TEXT_FIELD_MAX_LENGTH);
+  const currency = getCurrency(value.currency);
+  const invoiceTemplateKey = getOptionalString(value.invoiceTemplateKey, SHORT_TEXT_FIELD_MAX_LENGTH);
 
-  if (!name) {
+  if (!name || !currency) {
     return null;
   }
 
@@ -185,7 +187,11 @@ function getCompanyProfileInput(body: unknown): CompanyProfileUpdateRequest | nu
     registrationNumber: getOptionalString(value.registrationNumber, SHORT_TEXT_FIELD_MAX_LENGTH),
     billingAddress: getOptionalString(value.billingAddress, TEXT_FIELD_MAX_LENGTH),
     paymentInstructions: getOptionalString(value.paymentInstructions, TEXT_FIELD_MAX_LENGTH),
-    logoUrl: getOptionalUrl(value.logoUrl)
+    logoUrl: getOptionalUrl(value.logoUrl),
+    currency,
+    invoiceTemplateKey: invoiceTemplateKey ?? undefined,
+    invoicePrefix: getOptionalString(value.invoicePrefix, SHORT_TEXT_FIELD_MAX_LENGTH),
+    creditNotePrefix: getOptionalString(value.creditNotePrefix, SHORT_TEXT_FIELD_MAX_LENGTH)
   };
 }
 
