@@ -249,7 +249,10 @@ function getProjectInput(body: unknown): ProjectInputRequest | null {
 
   const startDate = parseDateInput(value.startDate);
   const dueDate = parseDateInput(value.dueDate);
-  if (startDate === undefined || dueDate === undefined) {
+  const hasStartDate = value.startDate !== undefined && value.startDate !== null && value.startDate !== "";
+  const hasDueDate = value.dueDate !== undefined && value.dueDate !== null && value.dueDate !== "";
+
+  if ((hasStartDate && startDate === undefined) || (hasDueDate && dueDate === undefined)) {
     return null;
   }
 
