@@ -4,6 +4,7 @@ import { ErrorState } from "../../components/ErrorState";
 import { LoadingState } from "../../components/LoadingState";
 import { Modal } from "../../components/Modal";
 import type { ClientSummary } from "../clients/ClientsPage";
+import type { TaskSummary } from "../tasks/TasksPage";
 
 export type ProjectSummary = {
   id: string;
@@ -34,6 +35,7 @@ export type ProjectFormValues = {
 type ProjectsPageProps = {
   projects: ProjectSummary[];
   clients: ClientSummary[];
+  tasks: TaskSummary[];
   canEdit: boolean;
   error: string | null;
   loading: boolean;
@@ -62,12 +64,20 @@ function formatDateLabel(value: string | null): string {
   return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString();
 }
 
-export function ProjectsPage({ projects, clients, canEdit, error, loading, onArchive, onSave }: ProjectsPageProps) {
+export function ProjectsPage({ projects, clients, tasks, canEdit, error, loading, onArchive, onSave }: ProjectsPageProps) {
   const [filter, setFilter] = useState<"all" | "active" | "archived">("active");
   const [editorProjectId, setEditorProjectId] = useState<string | null>(null);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [draft, setDraft] = useState<ProjectFormValues>(emptyForm());
   const [saving, setSaving] = useState(false);
+  const selectedProject = useMemo(
+    () => projects.find((project) => project.id === editorProjectId) ?? null,
+    [editorProjectId, projects]
+  );
+  const selectedProjectTasks = useMemo(
+    () => tasks.filter((task) => task.projectId === selectedProject?.id),
+    [selectedProject, tasks]
+  );
 
   const filteredProjects = useMemo(
     () =>
@@ -282,6 +292,20 @@ export function ProjectsPage({ projects, clients, canEdit, error, loading, onArc
                 />
               </label>
             </div>
+            {selectedProject ? (
+              <section className="field-span-2" aria-labelledby="project-tasks-title">
+                <h3 id="project-tasks-title">Tasks for this project</h3>
+                {selectedProjectTasks.length === 0 ? (
+                  <p>No tasks for this project.</p>
+                ) : (
+                  <div>
+                    {selectedProjectTasks.map((task) => (
+                      <p key={task.id}>{task.title}</p>
+                    ))}
+                  </div>
+                )}
+              </section>
+            ) : null}
             <div className="modal-footer">
               <button
                 className="secondary-action"

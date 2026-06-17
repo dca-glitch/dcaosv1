@@ -1878,6 +1878,7 @@ export function App() {
           onArchive={handleArchiveProject}
           onSave={handleSaveProject}
           projects={projects?.projects ?? []}
+          tasks={tasks?.tasks ?? []}
         />
       ) : null}
       {!loading && activeView === "tasks" ? (
