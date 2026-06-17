@@ -13,9 +13,9 @@ function Write-Fail {
 
 try {
   Write-Host "Running browser smoke tests..." -ForegroundColor Cyan
-  npx playwright test --project=chromium
+  node scripts/smoke-browser-local.mjs
   if ($LASTEXITCODE -ne 0) {
-    throw "Playwright chromium smoke tests failed."
+    throw "Browser smoke script failed."
   }
 
   Write-Pass "Browser smoke completed."

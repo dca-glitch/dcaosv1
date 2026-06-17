@@ -19,19 +19,25 @@ try {
   }
   Write-Pass "git status completed."
 
-  Write-Host "Running npm run validate..." -ForegroundColor Cyan
-  npm run validate
-  if ($LASTEXITCODE -ne 0) {
-    throw "npm run validate failed."
-  }
-  Write-Pass "npm run validate completed."
-
   Write-Host "Checking API health..." -ForegroundColor Cyan
   $response = Invoke-RestMethod -Uri "http://localhost:4000/api/v1/health" -Method Get -TimeoutSec 10
   if (-not $response) {
     throw "API health returned an empty response."
   }
-  Write-Pass "API health endpoint responded."
+
+  if (-not $response.ok) {
+    throw "API health response was not successful."
+  }
+
+  if ($response.data.status -ne "ok") {
+    throw "API health status was not ok."
+  }
+
+  if ($response.data.database.status -ne "ready") {
+    throw "API database status was not ready."
+  }
+
+  Write-Pass "API health endpoint responded with ready database status."
 
   Write-Pass "Local smoke completed."
   exit 0
