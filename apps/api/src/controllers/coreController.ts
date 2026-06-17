@@ -187,6 +187,7 @@ function getCompanyProfileInput(body: unknown): CompanyProfileUpdateRequest | nu
     phone: getOptionalString(value.phone, SHORT_TEXT_FIELD_MAX_LENGTH),
     website: getOptionalString(value.website, LOGO_URL_MAX_LENGTH),
     taxId: getOptionalString(value.taxId, SHORT_TEXT_FIELD_MAX_LENGTH),
+    country: getOptionalString(value.country, SHORT_TEXT_FIELD_MAX_LENGTH),
     registrationNumber: getOptionalString(value.registrationNumber, SHORT_TEXT_FIELD_MAX_LENGTH),
     billingAddress: getOptionalString(value.billingAddress, TEXT_FIELD_MAX_LENGTH),
     paymentInstructions: getOptionalString(value.paymentInstructions, TEXT_FIELD_MAX_LENGTH),

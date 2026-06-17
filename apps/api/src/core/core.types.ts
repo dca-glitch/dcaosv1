@@ -6,6 +6,7 @@ export interface CompanyProfileSummary {
   phone: string | null;
   website: string | null;
   taxId: string | null;
+  country: string | null;
   registrationNumber: string | null;
   billingAddress: string | null;
   paymentInstructions: string | null;
@@ -30,6 +31,7 @@ export interface CompanyProfileUpdateRequest {
   phone?: string | null;
   website?: string | null;
   taxId?: string | null;
+  country?: string | null;
   registrationNumber?: string | null;
   billingAddress?: string | null;
   paymentInstructions?: string | null;

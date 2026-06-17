@@ -12,6 +12,7 @@ export type CompanyProfileSummary = {
   phone: string | null;
   website: string | null;
   taxId: string | null;
+  country: string | null;
   registrationNumber: string | null;
   billingAddress: string | null;
   paymentInstructions: string | null;
@@ -32,6 +33,7 @@ export type CompanyProfileFormValues = {
   phone: string;
   website: string;
   taxId: string;
+  country: string;
   registrationNumber: string;
   billingAddress: string;
   paymentInstructions: string;
@@ -57,6 +59,7 @@ const emptyForm = (): CompanyProfileFormValues => ({
   phone: "",
   website: "",
   taxId: "",
+  country: "",
   registrationNumber: "",
   billingAddress: "",
   paymentInstructions: "",
@@ -79,6 +82,7 @@ export function CompanyProfilePage({ companyProfile, canEdit, error, loading, on
           phone: companyProfile.phone ?? "",
           website: companyProfile.website ?? "",
           taxId: companyProfile.taxId ?? "",
+          country: companyProfile.country ?? "",
           registrationNumber: companyProfile.registrationNumber ?? "",
           billingAddress: companyProfile.billingAddress ?? "",
           paymentInstructions: companyProfile.paymentInstructions ?? "",
@@ -101,6 +105,7 @@ export function CompanyProfilePage({ companyProfile, canEdit, error, loading, on
             phone: companyProfile.phone ?? "",
             website: companyProfile.website ?? "",
             taxId: companyProfile.taxId ?? "",
+            country: companyProfile.country ?? "",
             registrationNumber: companyProfile.registrationNumber ?? "",
             billingAddress: companyProfile.billingAddress ?? "",
             paymentInstructions: companyProfile.paymentInstructions ?? "",
@@ -191,6 +196,10 @@ export function CompanyProfilePage({ companyProfile, canEdit, error, loading, on
               <strong>{companyProfile.taxId || "Not set"}</strong>
             </div>
             <div>
+              <span>Country</span>
+              <strong>{companyProfile.country || "Not set"}</strong>
+            </div>
+            <div>
               <span>Registration number</span>
               <strong>{companyProfile.registrationNumber || "Not set"}</strong>
             </div>
@@ -279,6 +288,14 @@ export function CompanyProfilePage({ companyProfile, canEdit, error, loading, on
                   maxLength={100}
                   onChange={(event) => setDraft((current) => ({ ...current, taxId: event.target.value }))}
                   value={draft.taxId}
+                />
+              </label>
+              <label>
+                Country
+                <input
+                  maxLength={100}
+                  onChange={(event) => setDraft((current) => ({ ...current, country: event.target.value }))}
+                  value={draft.country}
                 />
               </label>
               <label>

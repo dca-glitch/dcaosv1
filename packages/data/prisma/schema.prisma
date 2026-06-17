@@ -268,6 +268,7 @@ model CompanyProfile {
   phone               String?
   website             String?
   taxId               String?
+  country             String?
   registrationNumber  String?
   billingAddress      String?
   paymentInstructions String?

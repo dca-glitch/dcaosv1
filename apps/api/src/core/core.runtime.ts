@@ -70,6 +70,7 @@ function toCompanyProfileSummary(profile: {
   phone: string | null;
   website: string | null;
   taxId: string | null;
+  country: string | null;
   registrationNumber: string | null;
   billingAddress: string | null;
   paymentInstructions: string | null;
@@ -90,6 +91,7 @@ function toCompanyProfileSummary(profile: {
     phone: profile.phone,
     website: profile.website,
     taxId: profile.taxId,
+    country: profile.country,
     registrationNumber: profile.registrationNumber,
     billingAddress: profile.billingAddress,
     paymentInstructions: profile.paymentInstructions,
@@ -283,6 +285,7 @@ export async function saveCompanyProfile(
           phone: toNullableString(input.phone),
           website: toNullableString(input.website),
           taxId: toNullableString(input.taxId),
+          country: toNullableString(input.country),
           registrationNumber: toNullableString(input.registrationNumber),
           billingAddress: toNullableString(input.billingAddress),
           paymentInstructions: toNullableString(input.paymentInstructions),
@@ -309,6 +312,7 @@ export async function saveCompanyProfile(
         phone: toNullableString(input.phone),
         website: toNullableString(input.website),
         taxId: toNullableString(input.taxId),
+        country: toNullableString(input.country),
         registrationNumber: toNullableString(input.registrationNumber),
         billingAddress: toNullableString(input.billingAddress),
         paymentInstructions: toNullableString(input.paymentInstructions),
