@@ -292,11 +292,18 @@ export function CompanyProfilePage({ companyProfile, canEdit, error, loading, on
               </label>
               <label>
                 Country
-                <input
-                  maxLength={100}
+                <select
                   onChange={(event) => setDraft((current) => ({ ...current, country: event.target.value }))}
                   value={draft.country}
-                />
+                >
+                  <option value="">Select country</option>
+                  <option value="Indonesia">Indonesia</option>
+                  <option value="Poland">Poland</option>
+                  <option value="United States">United States</option>
+                  <option value="United Kingdom">United Kingdom</option>
+                  <option value="Singapore">Singapore</option>
+                  <option value="Australia">Australia</option>
+                </select>
               </label>
               <label>
                 Currency
