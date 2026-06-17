@@ -97,6 +97,7 @@ const SHORT_TEXT_FIELD_MAX_LENGTH = 500;
 const LOGO_URL_MAX_LENGTH = 2048;
 const NAME_MAX_LENGTH = 255;
 const CLIENT_COUNTRIES = new Set(["Indonesia", "Poland", "United States", "United Kingdom", "Singapore", "Australia"]);
+const PROJECT_STATUSES = new Set(["Active", "Paused", "Completed", "Archived"]);
 
 function getAuthSession(resLocals: unknown) {
   return (resLocals as AuthSessionLocals | undefined)?.authSession;
@@ -233,6 +234,16 @@ function getProjectInput(body: unknown): ProjectInputRequest | null {
     return null;
   }
 
+  const status =
+    value.status === undefined
+      ? "Active"
+      : typeof value.status === "string"
+        ? value.status.trim()
+        : null;
+  if (!status || !PROJECT_STATUSES.has(status)) {
+    return null;
+  }
+
   const startDate = parseDateInput(value.startDate);
   const dueDate = parseDateInput(value.dueDate);
   if (startDate === undefined || dueDate === undefined) {
@@ -244,7 +255,8 @@ function getProjectInput(body: unknown): ProjectInputRequest | null {
     name,
     description: getOptionalString(value.description, TEXT_FIELD_MAX_LENGTH),
     startDate: startDate?.toISOString() ?? null,
-    dueDate: dueDate?.toISOString() ?? null
+    dueDate: dueDate?.toISOString() ?? null,
+    status
   };
 }
 

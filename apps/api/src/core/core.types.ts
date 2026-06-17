@@ -84,6 +84,7 @@ export interface ProjectSummary {
   description: string | null;
   startDate: string | null;
   dueDate: string | null;
+  status: string;
   isArchived: boolean;
   taskCount: number;
   openTaskCount: number;
@@ -136,6 +137,7 @@ export interface ProjectInputRequest {
   description?: string | null;
   startDate?: string | null;
   dueDate?: string | null;
+  status?: string;
 }
 
 export interface TaskSummary {

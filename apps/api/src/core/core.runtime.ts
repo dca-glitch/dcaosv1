@@ -147,6 +147,7 @@ function toProjectSummary(project: {
   description: string | null;
   startDate: Date | null;
   dueDate: Date | null;
+  status: string;
   isArchived: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -169,6 +170,7 @@ function toProjectSummary(project: {
     description: project.description,
     startDate: toDateString(project.startDate),
     dueDate: toDateString(project.dueDate),
+    status: project.status,
     isArchived: project.isArchived,
     taskCount: project.taskCount ?? project._count?.tasks ?? 0,
     openTaskCount: project.openTaskCount ?? 0,
@@ -227,6 +229,10 @@ function toTaskSummary(task: {
 
 function getActiveTenantId(authSession: AuthResolvedSessionContext): string | null {
   return authSession.tenantContext.activeMembership?.tenantId ?? null;
+}
+
+function toProjectStatus(value: string | undefined | null): string {
+  return value === "Paused" || value === "Completed" || value === "Archived" ? value : "Active";
 }
 
 export async function getCompanyProfile(authSession: AuthResolvedSessionContext): Promise<CompanyProfileResponse | null> {
@@ -648,6 +654,7 @@ export async function listProjects(
       description: true,
       startDate: true,
       dueDate: true,
+      status: true,
       isArchived: true,
       createdAt: true,
       updatedAt: true,
@@ -709,6 +716,7 @@ async function getProjectRecord(tx: PrismaTx, tenantId: string, projectId: strin
       description: true,
       startDate: true,
       dueDate: true,
+      status: true,
       isArchived: true,
       createdAt: true,
       updatedAt: true,
@@ -792,7 +800,8 @@ export async function createProject(
         name: input.name ?? "",
         description: toNullableString(input.description),
         startDate: input.startDate ? new Date(input.startDate) : null,
-        dueDate: input.dueDate ? new Date(input.dueDate) : null
+        dueDate: input.dueDate ? new Date(input.dueDate) : null,
+        status: toProjectStatus(input.status)
       },
       select: {
         id: true,
@@ -807,6 +816,7 @@ export async function createProject(
         description: true,
         startDate: true,
         dueDate: true,
+        status: true,
         isArchived: true,
         createdAt: true,
         updatedAt: true,
@@ -869,7 +879,8 @@ export async function updateProject(
         name: input.name ?? existing.name,
         description: toNullableString(input.description),
         startDate: input.startDate ? new Date(input.startDate) : null,
-        dueDate: input.dueDate ? new Date(input.dueDate) : null
+        dueDate: input.dueDate ? new Date(input.dueDate) : null,
+        status: toProjectStatus(input.status)
       },
       select: {
         id: true,
@@ -884,6 +895,7 @@ export async function updateProject(
         description: true,
         startDate: true,
         dueDate: true,
+        status: true,
         isArchived: true,
         createdAt: true,
         updatedAt: true,
@@ -951,6 +963,7 @@ export async function archiveProject(
         description: true,
         startDate: true,
         dueDate: true,
+        status: true,
         isArchived: true,
         createdAt: true,
         updatedAt: true,

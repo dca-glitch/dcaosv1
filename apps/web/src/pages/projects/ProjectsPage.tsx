@@ -17,6 +17,7 @@ export type ProjectSummary = {
   description: string | null;
   startDate: string | null;
   dueDate: string | null;
+  status: string;
   isArchived: boolean;
   taskCount: number;
   openTaskCount: number;
@@ -30,6 +31,7 @@ export type ProjectFormValues = {
   description: string;
   startDate: string;
   dueDate: string;
+  status: string;
 };
 
 type ProjectsPageProps = {
@@ -48,8 +50,11 @@ const emptyForm = (clientId = ""): ProjectFormValues => ({
   name: "",
   description: "",
   startDate: "",
-  dueDate: ""
+  dueDate: "",
+  status: "Active"
 });
+
+const PROJECT_STATUS_OPTIONS = ["Active", "Paused", "Completed", "Archived"] as const;
 
 function toDateInputValue(value: string | null): string {
   return value ? value.slice(0, 10) : "";
@@ -109,7 +114,8 @@ export function ProjectsPage({ projects, clients, tasks, canEdit, error, loading
       name: project.name,
       description: project.description ?? "",
       startDate: toDateInputValue(project.startDate),
-      dueDate: toDateInputValue(project.dueDate)
+      dueDate: toDateInputValue(project.dueDate),
+      status: project.status
     });
     setIsEditorOpen(true);
   }
@@ -213,6 +219,10 @@ export function ProjectsPage({ projects, clients, tasks, canEdit, error, loading
                   <strong>{project.openTaskCount}</strong>
                 </div>
                 <div>
+                  <span>Status</span>
+                  <strong>{project.status}</strong>
+                </div>
+                <div>
                   <span>Start date</span>
                   <strong>{formatDateLabel(project.startDate)}</strong>
                 </div>
@@ -281,6 +291,19 @@ export function ProjectsPage({ projects, clients, tasks, canEdit, error, loading
                   type="date"
                   value={draft.dueDate}
                 />
+              </label>
+              <label>
+                Status
+                <select
+                  onChange={(event) => setDraft((current) => ({ ...current, status: event.target.value }))}
+                  value={draft.status}
+                >
+                  {PROJECT_STATUS_OPTIONS.map((status) => (
+                    <option key={status} value={status}>
+                      {status}
+                    </option>
+                  ))}
+                </select>
               </label>
               <label className="field-span-2">
                 Description

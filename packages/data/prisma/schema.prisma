@@ -318,6 +318,7 @@ model Project {
   description       String?
   startDate         DateTime?
   dueDate           DateTime?
+  status            String             @default("Active")
   isArchived        Boolean            @default(false)
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
