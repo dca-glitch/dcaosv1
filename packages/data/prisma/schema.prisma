@@ -640,22 +640,42 @@ model CreditNote {
   status             CreditNoteStatus @default(DRAFT)
   issueDate          DateTime?
   reason             String
-  amountCents        Int
+  amountCents        Int              @default(0)
   currency           String           @default("USD")
+  subtotalCents      Int              @default(0)
+  taxCents           Int              @default(0)
+  discountCents      Int              @default(0)
+  totalCents         Int              @default(0)
   documentUrl        String?
   documentStorageKey String?
   isArchived         Boolean          @default(false)
   createdAt          DateTime         @default(now())
   updatedAt          DateTime         @updatedAt
 
-  tenant  Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Restrict)
+  tenant    Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  invoice   Invoice              @relation(fields: [invoiceId], references: [id], onDelete: Restrict)
+  lineItems CreditNoteLineItem[]
 
   @@unique([tenantId, creditNoteNumber])
   @@index([tenantId])
   @@index([tenantId, invoiceId])
   @@index([tenantId, status])
   @@index([tenantId, isArchived])
+}
+
+model CreditNoteLineItem {
+  id             String     @id @default(uuid())
+  creditNoteId   String
+  description    String
+  quantity       Int        @default(1)
+  unitPriceCents Int        @default(0)
+  totalCents     Int        @default(0)
+  sortOrder      Int        @default(0)
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+  creditNote     CreditNote @relation(fields: [creditNoteId], references: [id], onDelete: Cascade)
+
+  @@index([creditNoteId])
 }
 
 model ProjectDocument {
