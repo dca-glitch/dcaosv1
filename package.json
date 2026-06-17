@@ -14,6 +14,7 @@
     "validate": "npm run -w @dca-os-v1/data prisma:generate && npm run check && npm run build",
     "dev:web": "npm run -w @dca-os-v1/web dev",
     "dev:api": "npm run -w @dca-os-v1/api dev",
+    "restore:local-admin": "tsx scripts/restore-local-admin.mjs",
     "smoke:local": "powershell -ExecutionPolicy Bypass -File scripts/smoke-local.ps1",
     "smoke:browser": "powershell -ExecutionPolicy Bypass -File scripts/smoke-browser.ps1",
     "smoke:mvp:local": "node scripts/smoke-mvp-local.mjs",
