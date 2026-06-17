@@ -1866,6 +1866,7 @@ export function App() {
           onArchive={handleArchiveClient}
           onRestore={handleRestoreClient}
           onSave={handleSaveClient}
+          projects={projects?.projects ?? []}
         />
       ) : null}
       {!loading && activeView === "projects" ? (

@@ -3,6 +3,7 @@ import { EmptyState } from "../../components/EmptyState";
 import { ErrorState } from "../../components/ErrorState";
 import { LoadingState } from "../../components/LoadingState";
 import { Modal } from "../../components/Modal";
+import type { ProjectSummary } from "../projects/ProjectsPage";
 
 export type ClientSummary = {
   id: string;
@@ -29,6 +30,7 @@ export type ClientFormValues = {
 
 type ClientsPageProps = {
   clients: ClientSummary[];
+  projects: ProjectSummary[];
   canEdit: boolean;
   error: string | null;
   loading: boolean;
@@ -48,12 +50,29 @@ const emptyForm = (): ClientFormValues => ({
   country: ""
 });
 
-export function ClientsPage({ clients, canEdit, error, loading, onArchive, onRestore, onSave }: ClientsPageProps) {
+export function ClientsPage({
+  clients,
+  projects,
+  canEdit,
+  error,
+  loading,
+  onArchive,
+  onRestore,
+  onSave
+}: ClientsPageProps) {
   const [filter, setFilter] = useState<"all" | "active" | "archived">("active");
   const [editorClientId, setEditorClientId] = useState<string | null>(null);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [draft, setDraft] = useState<ClientFormValues>(emptyForm());
   const [saving, setSaving] = useState(false);
+  const selectedClient = useMemo(
+    () => clients.find((client) => client.id === editorClientId) ?? null,
+    [clients, editorClientId]
+  );
+  const selectedClientProjects = useMemo(
+    () => projects.filter((project) => project.clientId === selectedClient?.id),
+    [projects, selectedClient]
+  );
 
   const filteredClients = useMemo(
     () =>
@@ -279,6 +298,20 @@ export function ClientsPage({ clients, canEdit, error, loading, onArchive, onRes
                 </select>
               </label>
             </div>
+            {selectedClient ? (
+              <section className="entity-span-2" aria-labelledby="client-projects-title">
+                <h3 id="client-projects-title">Projects for this client</h3>
+                {selectedClientProjects.length === 0 ? (
+                  <p>No projects for this client.</p>
+                ) : (
+                  <div>
+                    {selectedClientProjects.map((project) => (
+                      <p key={project.id}>{project.name}</p>
+                    ))}
+                  </div>
+                )}
+              </section>
+            ) : null}
             <div className="modal-footer">
               <button className="secondary-action" disabled={saving} onClick={() => setEditorClientId(null)} type="button">
                 Cancel
