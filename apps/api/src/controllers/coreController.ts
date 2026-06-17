@@ -531,6 +531,10 @@ function getTaskInput(body: unknown): TaskInputRequest | null {
     return null;
   }
 
+  if (value.dueDate === undefined || value.dueDate === null || value.dueDate === "") {
+    return null;
+  }
+
   const dueDate = parseDateInput(value.dueDate);
   if (dueDate === undefined) {
     return null;

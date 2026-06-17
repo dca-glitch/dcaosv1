@@ -31,7 +31,6 @@ export type TaskFormValues = {
   projectId: string;
   title: string;
   description: string;
-  priority: string;
   status: string;
   dueDate: string;
   recurringType: string;
@@ -48,7 +47,6 @@ type TasksPageProps = {
   onSave: (taskId: string | null, values: TaskFormValues) => Promise<boolean>;
 };
 
-const priorityOptions = ["LOW", "NORMAL", "HIGH"] as const;
 const statusOptions = ["TODO", "IN_PROGRESS", "DONE"] as const;
 const recurringOptions = ["NONE", "DAILY", "WEEKLY", "MONTHLY", "YEARLY"] as const;
 
@@ -56,7 +54,6 @@ const emptyForm = (projectId = ""): TaskFormValues => ({
   projectId,
   title: "",
   description: "",
-  priority: "NORMAL",
   status: "TODO",
   dueDate: "",
   recurringType: "NONE"
@@ -73,6 +70,40 @@ function formatDateLabel(value: string | null): string {
 
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString();
+}
+
+function formatStatusLabel(status: string, isArchived: boolean): string {
+  if (isArchived) {
+    return "Archived";
+  }
+
+  switch (status) {
+    case "TODO":
+      return "To Do";
+    case "IN_PROGRESS":
+      return "In Progress";
+    case "DONE":
+      return "Done";
+    default:
+      return status;
+  }
+}
+
+function formatRecurringLabel(recurringType: string): string {
+  switch (recurringType) {
+    case "NONE":
+      return "None";
+    case "DAILY":
+      return "Daily";
+    case "WEEKLY":
+      return "Weekly";
+    case "MONTHLY":
+      return "Monthly";
+    case "YEARLY":
+      return "Yearly";
+    default:
+      return recurringType;
+  }
 }
 
 export function TasksPage({ tasks, projects, canEdit, error, loading, onArchive, onRestore, onSave }: TasksPageProps) {
@@ -113,9 +144,6 @@ export function TasksPage({ tasks, projects, canEdit, error, loading, onArchive,
       projectId: task.projectId,
       title: task.title,
       description: task.description ?? "",
-      priority: priorityOptions.includes(task.priority as (typeof priorityOptions)[number])
-        ? task.priority
-        : "NORMAL",
       status: statusOptions.includes(task.status as (typeof statusOptions)[number]) ? task.status : "TODO",
       dueDate: toDateInputValue(task.dueDate),
       recurringType: recurringOptions.includes(task.recurringType as (typeof recurringOptions)[number])
@@ -225,16 +253,12 @@ export function TasksPage({ tasks, projects, canEdit, error, loading, onArchive,
                   <strong>{task.project.client.name}</strong>
                 </div>
                 <div>
-                  <span>Priority</span>
-                  <strong>{task.priority}</strong>
-                </div>
-                <div>
                   <span>Status</span>
-                  <strong>{task.status}</strong>
+                  <strong>{formatStatusLabel(task.status, task.isArchived)}</strong>
                 </div>
                 <div>
                   <span>Recurring</span>
-                  <strong>{task.recurringType}</strong>
+                  <strong>{formatRecurringLabel(task.recurringType)}</strong>
                 </div>
                 <div>
                   <span>Due date</span>
@@ -287,19 +311,6 @@ export function TasksPage({ tasks, projects, canEdit, error, loading, onArchive,
                 />
               </label>
               <label>
-                Priority
-                <select
-                  onChange={(event) => setDraft((current) => ({ ...current, priority: event.target.value }))}
-                  value={draft.priority}
-                >
-                  {priorityOptions.map((priority) => (
-                    <option key={priority} value={priority}>
-                      {priority}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
                 Status
                 <select
                   onChange={(event) => setDraft((current) => ({ ...current, status: event.target.value }))}
@@ -307,7 +318,7 @@ export function TasksPage({ tasks, projects, canEdit, error, loading, onArchive,
                 >
                   {statusOptions.map((status) => (
                     <option key={status} value={status}>
-                      {status}
+                      {formatStatusLabel(status, false)}
                     </option>
                   ))}
                 </select>
@@ -320,7 +331,7 @@ export function TasksPage({ tasks, projects, canEdit, error, loading, onArchive,
                 >
                   {recurringOptions.map((recurringType) => (
                     <option key={recurringType} value={recurringType}>
-                      {recurringType}
+                      {formatRecurringLabel(recurringType)}
                     </option>
                   ))}
                 </select>
@@ -330,6 +341,7 @@ export function TasksPage({ tasks, projects, canEdit, error, loading, onArchive,
                 <input
                   onChange={(event) => setDraft((current) => ({ ...current, dueDate: event.target.value }))}
                   type="date"
+                  required
                   value={draft.dueDate}
                 />
               </label>
