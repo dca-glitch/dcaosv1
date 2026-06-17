@@ -112,16 +112,15 @@ export function ProjectsPage({
   );
 
   function openCreateModal() {
-    const firstClientId = clients.find((client) => !client.isArchived)?.id ?? clients[0]?.id ?? "";
     setEditorProjectId(null);
-    setDraft(emptyForm(firstClientId));
+    setDraft(emptyForm());
     setIsEditorOpen(true);
   }
 
   function openEditModal(project: ProjectSummary) {
     setEditorProjectId(project.id);
     setDraft({
-      clientId: project.clientId,
+      clientId: project.clientId ?? "",
       name: project.name,
       description: project.description ?? "",
       startDate: toDateInputValue(project.startDate),
@@ -138,7 +137,7 @@ export function ProjectsPage({
       const ok = await onSave(editorProjectId, draft);
       if (ok) {
         setEditorProjectId(null);
-        setDraft(emptyForm(clients[0]?.id ?? ""));
+        setDraft(emptyForm());
         setIsEditorOpen(false);
       }
     } finally {
@@ -176,19 +175,12 @@ export function ProjectsPage({
             ))}
           </div>
           {canEdit ? (
-            <button className="primary-action" disabled={clients.length === 0} onClick={openCreateModal} type="button">
+            <button className="primary-action" onClick={openCreateModal} type="button">
               Add Project
             </button>
           ) : null}
         </div>
       </div>
-
-      {canEdit && clients.length === 0 ? (
-        <EmptyState
-          title="Add a client first"
-          message="Projects need a client to attach to. Create a client before adding projects."
-        />
-      ) : null}
 
       {filteredProjects.length === 0 ? (
         <EmptyState message="No projects match the current filter." title="No projects" />
@@ -224,7 +216,7 @@ export function ProjectsPage({
               <div className="entity-field-grid">
                 <div>
                   <span>Client</span>
-                  <strong>{project.client.name}</strong>
+                  <strong>{project.client?.name ?? "No client"}</strong>
                 </div>
                 <div>
                   <span>Tasks</span>
@@ -270,12 +262,10 @@ export function ProjectsPage({
               <label>
                 Client
                 <select
-                  disabled={clients.length === 0}
                   onChange={(event) => setDraft((current) => ({ ...current, clientId: event.target.value }))}
-                  required
                   value={draft.clientId}
                 >
-                  <option value="">Select client</option>
+                  <option value="">No client</option>
                   {clients.map((client) => (
                     <option key={client.id} value={client.id}>
                       {client.name}
@@ -351,14 +341,14 @@ export function ProjectsPage({
                 disabled={saving}
                 onClick={() => {
                   setEditorProjectId(null);
-                  setDraft(emptyForm(clients[0]?.id ?? ""));
+                  setDraft(emptyForm());
                   setIsEditorOpen(false);
                 }}
                 type="button"
               >
                 Cancel
               </button>
-              <button className="primary-action" disabled={saving || clients.length === 0} type="submit">
+              <button className="primary-action" disabled={saving} type="submit">
                 {saving ? "Saving" : "Save"}
               </button>
             </div>

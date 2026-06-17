@@ -228,12 +228,13 @@ function getClientInput(body: unknown): ClientInputRequest | null {
 
 function getProjectInput(body: unknown): ProjectInputRequest | null {
   const value = (body ?? {}) as Record<string, unknown>;
-  const clientId = getRequiredString(value.clientId, SHORT_TEXT_FIELD_MAX_LENGTH);
   const name = getRequiredString(value.name, SHORT_TEXT_FIELD_MAX_LENGTH);
 
-  if (!clientId || !name) {
+  if (!name) {
     return null;
   }
+
+  const clientId = getOptionalString(value.clientId, SHORT_TEXT_FIELD_MAX_LENGTH);
 
   const status =
     value.status === undefined
@@ -252,7 +253,7 @@ function getProjectInput(body: unknown): ProjectInputRequest | null {
   }
 
   return {
-    clientId,
+    clientId: clientId ?? undefined,
     name,
     description: getOptionalString(value.description, TEXT_FIELD_MAX_LENGTH),
     startDate: startDate?.toISOString() ?? null,
