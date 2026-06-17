@@ -1,0 +1,58 @@
+# DCA OS Lite - Cline Rules
+
+These are the operating rules for AI-assisted work in this repository.
+
+## Project context
+
+- Project: DCA OS Lite
+- Frontend: React + Vite + TypeScript
+- Backend: Node.js + Express
+- Database: Prisma + PostgreSQL
+- Runtime/development topology: Docker Compose + Caddy reverse proxy
+- Local platform: Windows
+- Shell policy: PowerShell only
+- Local repo path: C:\dcaosv1
+- Local API port: 4000
+- Local web port: 5173
+
+## Hard rules
+
+- Do not touch production deployment files unless explicitly requested.
+- Do not modify package manifests, Prisma schema, source code, or tests unless explicitly requested.
+- Do not modify Docker/Caddy config unless explicitly requested.
+- Do not read, edit, print, or expose `.env` secrets.
+- Do not run `npm audit fix --force`.
+- Do not run destructive git commands unless explicitly requested.
+- Do not run production deploy commands.
+- Before editing auth, API, or Prisma startup code, verify `.env` is loaded before importing app, auth, or Prisma modules.
+- Never change login or auth behavior until local env boot order is confirmed.
+- Always use Windows PowerShell commands.
+- Always keep changes small and scoped.
+- Always show `git diff --stat` before recommending a commit.
+- Always include repeatable PowerShell smoke and validation scripts as part of workflow deliverables when adding stability, validation, smoke tests, or module workflow.
+- Treat scripts as part of the deliverable, not optional documentation.
+- Stop after 2 failed attempts on the same runtime error.
+- Stop if a migration would drop columns or tables.
+- Stop if files outside allowed scope are modified.
+- No broad module builds. Use small sealed work blocks.
+
+## Validation commands
+
+Use these commands when validating work:
+
+```powershell
+npm run validate
+npm run smoke:local
+npm run smoke:browser
+npx prisma validate
+npx prisma migrate status
+```
+
+## Browser smoke rule
+
+- Playwright smoke must be used to detect browser/runtime failures.
+- Browser smoke must pass before feature work is considered complete.
+
+## Production rule
+
+- Never recommend production deployment until local validation and browser smoke pass.
