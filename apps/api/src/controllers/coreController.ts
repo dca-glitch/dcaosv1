@@ -515,10 +515,10 @@ function getCreditNoteInput(body: unknown): CreditNoteInputRequest | null {
 
 function getTaskInput(body: unknown): TaskInputRequest | null {
   const value = (body ?? {}) as Record<string, unknown>;
-  const projectId = getRequiredString(value.projectId, SHORT_TEXT_FIELD_MAX_LENGTH);
+  const projectId = getOptionalString(value.projectId, SHORT_TEXT_FIELD_MAX_LENGTH);
   const title = getRequiredString(value.title, SHORT_TEXT_FIELD_MAX_LENGTH);
 
-  if (!projectId || !title) {
+  if (!title) {
     return null;
   }
 

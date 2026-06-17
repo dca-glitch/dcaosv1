@@ -7,7 +7,7 @@ import type { ProjectSummary } from "../projects/ProjectsPage";
 
 export type TaskSummary = {
   id: string;
-  projectId: string;
+  projectId: string | null;
   project: {
     id: string;
     name: string;
@@ -15,7 +15,7 @@ export type TaskSummary = {
       id: string;
       name: string;
     };
-  };
+  } | null;
   title: string;
   description: string | null;
   priority: string;
@@ -132,16 +132,15 @@ export function TasksPage({ tasks, projects, canEdit, error, loading, onArchive,
   const projectById = useMemo(() => new Map(projects.map((project) => [project.id, project])), [projects]);
 
   function openCreateModal() {
-    const firstProjectId = projects.find((project) => !project.isArchived)?.id ?? projects[0]?.id ?? "";
     setEditorTaskId(null);
-    setDraft(emptyForm(firstProjectId));
+    setDraft(emptyForm(""));
     setIsEditorOpen(true);
   }
 
   function openEditModal(task: TaskSummary) {
     setEditorTaskId(task.id);
     setDraft({
-      projectId: task.projectId,
+      projectId: task.projectId ?? "",
       title: task.title,
       description: task.description ?? "",
       status: statusOptions.includes(task.status as (typeof statusOptions)[number]) ? task.status : "TODO",
@@ -160,7 +159,7 @@ export function TasksPage({ tasks, projects, canEdit, error, loading, onArchive,
       const ok = await onSave(editorTaskId, draft);
       if (ok) {
         setEditorTaskId(null);
-        setDraft(emptyForm(projects[0]?.id ?? ""));
+        setDraft(emptyForm(""));
         setIsEditorOpen(false);
       }
     } finally {
@@ -198,19 +197,12 @@ export function TasksPage({ tasks, projects, canEdit, error, loading, onArchive,
             ))}
           </div>
           {canEdit ? (
-            <button className="primary-action" disabled={projects.length === 0} onClick={openCreateModal} type="button">
+            <button className="primary-action" onClick={openCreateModal} type="button">
               Add Task
             </button>
           ) : null}
         </div>
       </div>
-
-      {canEdit && projects.length === 0 ? (
-        <EmptyState
-          title="Add a project first"
-          message="Tasks need a project to attach to. Create a project before adding tasks."
-        />
-      ) : null}
 
       {filteredTasks.length === 0 ? (
         <EmptyState message="No tasks match the current filter." title="No tasks" />
@@ -246,11 +238,11 @@ export function TasksPage({ tasks, projects, canEdit, error, loading, onArchive,
               <div className="entity-field-grid">
                 <div>
                   <span>Project</span>
-                  <strong>{task.project.name}</strong>
+                  <strong>{task.project?.name ?? "No project"}</strong>
                 </div>
                 <div>
                   <span>Client</span>
-                  <strong>{task.project.client.name}</strong>
+                  <strong>{task.project?.client?.name ?? "No client"}</strong>
                 </div>
                 <div>
                   <span>Status</span>
@@ -278,7 +270,7 @@ export function TasksPage({ tasks, projects, canEdit, error, loading, onArchive,
         <Modal
           onClose={() => {
             setEditorTaskId(null);
-            setDraft(emptyForm(projects[0]?.id ?? ""));
+            setDraft(emptyForm(""));
             setIsEditorOpen(false);
           }}
           title={editorTaskId ? "Edit Task" : "Add Task"}
@@ -288,12 +280,10 @@ export function TasksPage({ tasks, projects, canEdit, error, loading, onArchive,
               <label>
                 Project
                 <select
-                  disabled={projects.length === 0}
                   onChange={(event) => setDraft((current) => ({ ...current, projectId: event.target.value }))}
-                  required
                   value={draft.projectId}
                 >
-                  <option value="">Select project</option>
+                  <option value="">No project</option>
                   {projects.map((project) => (
                     <option key={project.id} value={project.id}>
                       {project.name} ({project.client.name})
@@ -361,14 +351,14 @@ export function TasksPage({ tasks, projects, canEdit, error, loading, onArchive,
                 disabled={saving}
                 onClick={() => {
                   setEditorTaskId(null);
-                  setDraft(emptyForm(projects[0]?.id ?? ""));
+                  setDraft(emptyForm(""));
                   setIsEditorOpen(false);
                 }}
                 type="button"
               >
                 Cancel
               </button>
-              <button className="primary-action" disabled={saving || projects.length === 0} type="submit">
+              <button className="primary-action" disabled={saving} type="submit">
                 {saving ? "Saving" : "Save"}
               </button>
             </div>
