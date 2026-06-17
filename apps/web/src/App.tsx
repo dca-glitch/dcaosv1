@@ -1869,6 +1869,7 @@ export function App() {
           canEdit={canManageCore}
           clients={clients?.clients ?? []}
           errorMessage={null}
+          invoiceItems={invoiceItems?.invoiceItems ?? []}
           invoices={invoices?.invoices ?? []}
           isLoading={false}
           onArchiveInvoice={handleArchiveInvoice}

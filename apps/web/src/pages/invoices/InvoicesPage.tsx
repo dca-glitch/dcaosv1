@@ -4,6 +4,7 @@ import { ErrorState } from "../../components/ErrorState";
 import { LoadingState } from "../../components/LoadingState";
 import { Modal } from "../../components/Modal";
 import type { ClientSummary } from "../clients/ClientsPage";
+import type { InvoiceItemSummary } from "../invoice-items/InvoiceItemsPage";
 import type { ProjectSummary } from "../projects/ProjectsPage";
 
 export type InvoiceLineItemFormValues = {
@@ -101,6 +102,7 @@ export type InvoiceFormValues = {
   status: string;
   issueDate: string;
   dueDate: string;
+  paidAt?: string | null;
   currency: string;
   subtotalCents: number;
   taxCents: number;
@@ -145,6 +147,7 @@ export type InvoicePaymentFormValues = {
 type InvoicesPageProps = {
   invoices: InvoiceSummary[];
   recurringInvoices: RecurringInvoiceSummary[];
+  invoiceItems: InvoiceItemSummary[];
   clients: ClientSummary[];
   projects: ProjectSummary[];
   canEdit: boolean;
@@ -160,7 +163,13 @@ type InvoicesPageProps = {
   onGenerateDueRecurringInvoice: (recurringInvoiceId: string, targetDate: string) => Promise<boolean>;
 };
 
-const invoiceStatusOptions = ["DRAFT", "SENT", "PAID", "CANCELLED"] as const;
+const invoiceStatusOptions = [
+  { label: "Draft", value: "DRAFT" },
+  { label: "Issued", value: "ISSUED" },
+  { label: "Paid", value: "PAID" },
+  { label: "Voided", value: "VOIDED" },
+  { label: "Uncollectible", value: "UNCOLLECTIBLE" }
+] as const;
 const recurringIntervalOptions = ["WEEKLY", "MONTHLY", "YEARLY"] as const;
 const paymentMethodOptions = [
   { label: "Cash", value: "CASH" },
@@ -253,6 +262,72 @@ function formatMoney(cents: number, currency: string): string {
   return new Intl.NumberFormat(undefined, { currency, style: "currency" }).format(cents / 100);
 }
 
+function moneyFieldLabel(label: string, currency: string): string {
+  return `${label} (${currency || "USD"})`;
+}
+
+function centsToMajorInput(cents: number): string {
+  return (cents / 100).toFixed(2);
+}
+
+function majorInputToCents(value: string): number {
+  const amount = Number.parseFloat(value);
+  return Number.isFinite(amount) ? Math.max(0, Math.round(amount * 100)) : 0;
+}
+
+function toNonNegativeInteger(value: number): number {
+  return Number.isFinite(value) ? Math.max(0, Math.round(value)) : 0;
+}
+
+function percentInputToNumber(value: string): number {
+  const amount = Number.parseFloat(value);
+  return Number.isFinite(amount) ? Math.max(0, amount) : 0;
+}
+
+function calculateInvoiceTotals(lineItems: InvoiceLineItemFormValues[], taxPercentInput: string, discountPercentInput: string) {
+  const subtotalCents = lineItems.reduce((sum, item) => sum + item.totalCents, 0);
+  const taxCents = Math.round((subtotalCents * percentInputToNumber(taxPercentInput)) / 100);
+  const discountCents = Math.round((subtotalCents * percentInputToNumber(discountPercentInput)) / 100);
+  const totalCents = subtotalCents + taxCents - discountCents;
+  return { subtotalCents, taxCents, discountCents, totalCents };
+}
+
+function buildSafeInvoiceLineItems(lineItems: InvoiceLineItemFormValues[], fallbackDescription: string): InvoiceLineItemFormValues[] {
+  return lineItems.map((item, index) => {
+    const quantity = Math.max(1, toNonNegativeInteger(item.quantity));
+    const unitPriceCents = toNonNegativeInteger(item.unitPriceCents);
+    return {
+      description: item.description.trim() || fallbackDescription,
+      quantity,
+      unitPriceCents,
+      totalCents: toNonNegativeInteger(quantity * unitPriceCents),
+      sortOrder: index
+    };
+  });
+}
+
+function percentFromCents(amountCents: number, subtotalCents: number): string {
+  if (subtotalCents <= 0 || amountCents <= 0) {
+    return "0";
+  }
+
+  return String(Math.round((amountCents / subtotalCents) * 10000) / 100);
+}
+
+function normalizeInvoiceStatus(value: string): string {
+  const status = value.trim().toUpperCase();
+  return invoiceStatusOptions.some((option) => option.value === status) ? status : "DRAFT";
+}
+
+function normalizeRecurringInterval(value: string): string {
+  const interval = value.trim().toUpperCase();
+  return recurringIntervalOptions.includes(interval as (typeof recurringIntervalOptions)[number]) ? interval : "MONTHLY";
+}
+
+function formatInvoiceStatus(value: string): string {
+  return invoiceStatusOptions.find((option) => option.value === normalizeInvoiceStatus(value))?.label ?? value;
+}
+
 function formatPaymentMethod(value: string): string {
   return paymentMethodOptions.find((option) => option.value === value)?.label ?? value;
 }
@@ -264,6 +339,7 @@ function firstClientId(clients: ClientSummary[]): string {
 export function InvoicesPage({
   invoices,
   recurringInvoices,
+  invoiceItems,
   clients,
   projects,
   canEdit,
@@ -288,6 +364,14 @@ export function InvoicesPage({
   const [invoiceDraft, setInvoiceDraft] = useState<InvoiceFormValues>(emptyInvoiceForm());
   const [recurringDraft, setRecurringDraft] = useState<RecurringInvoiceFormValues>(emptyRecurringForm());
   const [paymentDraft, setPaymentDraft] = useState<InvoicePaymentFormValues>(emptyPaymentForm());
+  const [invoiceUnitPriceInputs, setInvoiceUnitPriceInputs] = useState<string[]>([centsToMajorInput(0)]);
+  const [recurringUnitPriceInputs, setRecurringUnitPriceInputs] = useState<string[]>([centsToMajorInput(0)]);
+  const [invoiceTaxPercentInput, setInvoiceTaxPercentInput] = useState("0");
+  const [invoiceDiscountPercentInput, setInvoiceDiscountPercentInput] = useState("0");
+  const [recurringTaxPercentInput, setRecurringTaxPercentInput] = useState("0");
+  const [recurringDiscountPercentInput, setRecurringDiscountPercentInput] = useState("0");
+  const [paymentAmountIssuedInput, setPaymentAmountIssuedInput] = useState(centsToMajorInput(0));
+  const [paymentAmountReceivedInput, setPaymentAmountReceivedInput] = useState(centsToMajorInput(0));
   const [saving, setSaving] = useState(false);
 
   const projectByClientId = useMemo(() => {
@@ -302,20 +386,93 @@ export function InvoicesPage({
   const invoiceProjects = projectByClientId.get(invoiceDraft.clientId) ?? [];
   const recurringProjects = projectByClientId.get(recurringDraft.clientId) ?? [];
 
+  function setInvoiceDraftWithCalculatedTotals(
+    values: InvoiceFormValues,
+    taxPercentInput = invoiceTaxPercentInput,
+    discountPercentInput = invoiceDiscountPercentInput
+  ) {
+    const lineItems = values.lineItems.map((item, index) => ({
+      ...item,
+      totalCents: Math.round(item.quantity * item.unitPriceCents),
+      sortOrder: index
+    }));
+    const totals = calculateInvoiceTotals(lineItems, taxPercentInput, discountPercentInput);
+    setInvoiceDraft({ ...values, ...totals, lineItems });
+  }
+
+  function updateInvoiceLineItems(
+    lineItems: InvoiceLineItemFormValues[],
+    taxPercentInput = invoiceTaxPercentInput,
+    discountPercentInput = invoiceDiscountPercentInput
+  ) {
+    setInvoiceDraft((current) => {
+      const normalizedLineItems = lineItems.map((item, index) => ({
+        ...item,
+        totalCents: Math.round(item.quantity * item.unitPriceCents),
+        sortOrder: index
+      }));
+      return {
+        ...current,
+        ...calculateInvoiceTotals(normalizedLineItems, taxPercentInput, discountPercentInput),
+        lineItems: normalizedLineItems
+      };
+    });
+  }
+
+  function setRecurringDraftWithCalculatedTotals(
+    values: RecurringInvoiceFormValues,
+    taxPercentInput = recurringTaxPercentInput,
+    discountPercentInput = recurringDiscountPercentInput
+  ) {
+    const lineItems = values.lineItems.map((item, index) => ({
+      ...item,
+      totalCents: Math.round(item.quantity * item.unitPriceCents),
+      sortOrder: index
+    }));
+    const totals = calculateInvoiceTotals(lineItems, taxPercentInput, discountPercentInput);
+    setRecurringDraft({ ...values, ...totals, lineItems });
+  }
+
+  function updateRecurringLineItems(
+    lineItems: InvoiceLineItemFormValues[],
+    taxPercentInput = recurringTaxPercentInput,
+    discountPercentInput = recurringDiscountPercentInput
+  ) {
+    setRecurringDraft((current) => {
+      const normalizedLineItems = lineItems.map((item, index) => ({
+        ...item,
+        totalCents: Math.round(item.quantity * item.unitPriceCents),
+        sortOrder: index
+      }));
+      return {
+        ...current,
+        ...calculateInvoiceTotals(normalizedLineItems, taxPercentInput, discountPercentInput),
+        lineItems: normalizedLineItems
+      };
+    });
+  }
+
   function openCreateInvoiceModal() {
+    const nextDraft = emptyInvoiceForm(firstClientId(clients));
     setInvoiceEditorId(null);
-    setInvoiceDraft(emptyInvoiceForm(firstClientId(clients)));
+    setInvoiceUnitPriceInputs(nextDraft.lineItems.map((item) => centsToMajorInput(item.unitPriceCents)));
+    setInvoiceTaxPercentInput("0");
+    setInvoiceDiscountPercentInput("0");
+    setInvoiceDraftWithCalculatedTotals(nextDraft, "0", "0");
     setIsInvoiceEditorOpen(true);
   }
 
   function openEditInvoiceModal(invoice: InvoiceSummary) {
-    setInvoiceEditorId(invoice.id);
-    setInvoiceDraft({
+    const lineItems = invoice.lineItems.length > 0 ? invoice.lineItems : [emptyLineItem()];
+    const subtotalCents = lineItems.reduce((sum, item) => sum + item.totalCents, 0);
+    const taxPercentInput = percentFromCents(invoice.taxCents, subtotalCents);
+    const discountPercentInput = percentFromCents(invoice.discountCents, subtotalCents);
+    const nextDraft = {
       clientId: invoice.clientId,
       projectId: invoice.projectId ?? "",
       invoiceNumber: invoice.invoiceNumber,
       title: invoice.title,
-      status: invoiceStatusOptions.includes(invoice.status as (typeof invoiceStatusOptions)[number]) ? invoice.status : "DRAFT",
+      status: normalizeInvoiceStatus(invoice.status),
       issueDate: toDateInputValue(invoice.issueDate),
       dueDate: toDateInputValue(invoice.dueDate),
       currency: invoice.currency,
@@ -328,20 +485,33 @@ export function InvoicesPage({
       paymentInstructions: invoice.paymentInstructions ?? "",
       documentUrl: invoice.documentUrl ?? "",
       documentStorageKey: invoice.documentStorageKey ?? "",
-      lineItems: invoice.lineItems.length > 0 ? invoice.lineItems : [emptyLineItem()]
-    });
+      lineItems
+    };
+    setInvoiceEditorId(invoice.id);
+    setInvoiceUnitPriceInputs(lineItems.map((item) => centsToMajorInput(item.unitPriceCents)));
+    setInvoiceTaxPercentInput(taxPercentInput);
+    setInvoiceDiscountPercentInput(discountPercentInput);
+    setInvoiceDraftWithCalculatedTotals(nextDraft, taxPercentInput, discountPercentInput);
     setIsInvoiceEditorOpen(true);
   }
 
   function openCreateRecurringModal() {
+    const nextDraft = emptyRecurringForm(firstClientId(clients));
     setRecurringEditorId(null);
-    setRecurringDraft(emptyRecurringForm(firstClientId(clients)));
+    setRecurringUnitPriceInputs(nextDraft.lineItems.map((item) => centsToMajorInput(item.unitPriceCents)));
+    setRecurringTaxPercentInput("0");
+    setRecurringDiscountPercentInput("0");
+    setRecurringDraftWithCalculatedTotals(nextDraft, "0", "0");
     setIsRecurringEditorOpen(true);
   }
 
   function openEditRecurringModal(recurringInvoice: RecurringInvoiceSummary) {
+    const lineItems = recurringInvoice.lineItems.length > 0 ? recurringInvoice.lineItems : [emptyLineItem()];
+    const subtotalCents = lineItems.reduce((sum, item) => sum + item.totalCents, 0);
+    const taxPercentInput = percentFromCents(recurringInvoice.taxCents, subtotalCents);
+    const discountPercentInput = percentFromCents(recurringInvoice.discountCents, subtotalCents);
     setRecurringEditorId(recurringInvoice.id);
-    setRecurringDraft({
+    const nextDraft = {
       clientId: recurringInvoice.clientId,
       projectId: recurringInvoice.projectId ?? "",
       title: recurringInvoice.title,
@@ -360,29 +530,54 @@ export function InvoicesPage({
       paymentInstructions: recurringInvoice.paymentInstructions ?? "",
       documentFolderHint: recurringInvoice.documentFolderHint ?? "",
       isActive: recurringInvoice.isActive,
-      lineItems: recurringInvoice.lineItems.length > 0 ? recurringInvoice.lineItems : [emptyLineItem()]
-    });
+      lineItems
+    };
+    setRecurringUnitPriceInputs(lineItems.map((item) => centsToMajorInput(item.unitPriceCents)));
+    setRecurringTaxPercentInput(taxPercentInput);
+    setRecurringDiscountPercentInput(discountPercentInput);
+    setRecurringDraftWithCalculatedTotals(nextDraft, taxPercentInput, discountPercentInput);
     setIsRecurringEditorOpen(true);
   }
 
   function openPaymentModal(invoice: InvoiceSummary) {
+    const amountInput = centsToMajorInput(invoice.totalCents);
     setPaymentInvoice(invoice);
     setPaymentDraft({
       ...emptyPaymentForm(),
       amountIssuedCents: invoice.totalCents,
       amountReceivedCents: invoice.totalCents
     });
+    setPaymentAmountIssuedInput(amountInput);
+    setPaymentAmountReceivedInput(amountInput);
     setIsPaymentEditorOpen(true);
   }
 
   async function handleInvoiceSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const fallbackTitle = invoiceDraft.title.trim() || invoiceDraft.invoiceNumber.trim() || "Untitled invoice";
+    const lineItems = buildSafeInvoiceLineItems(invoiceDraft.lineItems, fallbackTitle);
+    const totals = calculateInvoiceTotals(lineItems, invoiceTaxPercentInput, invoiceDiscountPercentInput);
     setSaving(true);
     try {
-      const ok = await onSaveInvoice(invoiceEditorId, invoiceDraft);
+      const ok = await onSaveInvoice(invoiceEditorId, {
+        ...invoiceDraft,
+        amountPaidCents: toNonNegativeInteger(invoiceDraft.amountPaidCents),
+        currency: invoiceDraft.currency.trim().toUpperCase(),
+        discountCents: toNonNegativeInteger(totals.discountCents),
+        lineItems,
+        paidAt: null,
+        status: normalizeInvoiceStatus(invoiceDraft.status),
+        subtotalCents: toNonNegativeInteger(totals.subtotalCents),
+        taxCents: toNonNegativeInteger(totals.taxCents),
+        title: fallbackTitle,
+        totalCents: toNonNegativeInteger(totals.totalCents)
+      });
       if (ok) {
         setInvoiceEditorId(null);
         setInvoiceDraft(emptyInvoiceForm(firstClientId(clients)));
+        setInvoiceUnitPriceInputs([centsToMajorInput(0)]);
+        setInvoiceTaxPercentInput("0");
+        setInvoiceDiscountPercentInput("0");
         setIsInvoiceEditorOpen(false);
       }
     } finally {
@@ -392,12 +587,34 @@ export function InvoicesPage({
 
   async function handleRecurringSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const firstLineItemDescription = recurringDraft.lineItems.find((item) => item.description.trim())?.description.trim();
+    const fallbackTitle = recurringDraft.title.trim() || firstLineItemDescription || "Recurring invoice";
+    const lineItems = buildSafeInvoiceLineItems(recurringDraft.lineItems, fallbackTitle);
+    const totals = calculateInvoiceTotals(lineItems, recurringTaxPercentInput, recurringDiscountPercentInput);
+    const startDate = recurringDraft.startDate || toLocalDateInputValue();
+    const nextRunDate = recurringDraft.nextRunDate || startDate;
     setSaving(true);
     try {
-      const ok = await onSaveRecurringInvoice(recurringEditorId, recurringDraft);
+      const ok = await onSaveRecurringInvoice(recurringEditorId, {
+        ...recurringDraft,
+        currency: recurringDraft.currency.trim().toUpperCase(),
+        discountCents: toNonNegativeInteger(totals.discountCents),
+        endDate: recurringDraft.endDate,
+        interval: normalizeRecurringInterval(recurringDraft.interval),
+        lineItems,
+        nextRunDate,
+        startDate,
+        subtotalCents: toNonNegativeInteger(totals.subtotalCents),
+        taxCents: toNonNegativeInteger(totals.taxCents),
+        title: fallbackTitle,
+        totalCents: toNonNegativeInteger(totals.totalCents)
+      });
       if (ok) {
         setRecurringEditorId(null);
         setRecurringDraft(emptyRecurringForm(firstClientId(clients)));
+        setRecurringUnitPriceInputs([centsToMajorInput(0)]);
+        setRecurringTaxPercentInput("0");
+        setRecurringDiscountPercentInput("0");
         setIsRecurringEditorOpen(false);
       }
     } finally {
@@ -417,6 +634,8 @@ export function InvoicesPage({
       if (ok) {
         setPaymentInvoice(null);
         setPaymentDraft(emptyPaymentForm());
+        setPaymentAmountIssuedInput(centsToMajorInput(0));
+        setPaymentAmountReceivedInput(centsToMajorInput(0));
         setIsPaymentEditorOpen(false);
       }
     } finally {
@@ -500,6 +719,9 @@ export function InvoicesPage({
           onClose={() => {
             setInvoiceEditorId(null);
             setInvoiceDraft(emptyInvoiceForm(firstClientId(clients)));
+            setInvoiceUnitPriceInputs([centsToMajorInput(0)]);
+            setInvoiceTaxPercentInput("0");
+            setInvoiceDiscountPercentInput("0");
             setIsInvoiceEditorOpen(false);
           }}
           title={invoiceEditorId ? "Edit Invoice" : "Add Invoice"}
@@ -524,43 +746,90 @@ export function InvoicesPage({
                 />
               </label>
               <label>
-                Title
-                <input
-                  maxLength={255}
-                  onChange={(event) => setInvoiceDraft((current) => ({ ...current, title: event.target.value }))}
-                  required
-                  value={invoiceDraft.title}
-                />
-              </label>
-              <label>
                 Status
                 <select onChange={(event) => setInvoiceDraft((current) => ({ ...current, status: event.target.value }))} value={invoiceDraft.status}>
                   {invoiceStatusOptions.map((status) => (
-                    <option key={status} value={status}>
-                      {status}
+                    <option key={status.value} value={status.value}>
+                      {status.label}
                     </option>
                   ))}
                 </select>
               </label>
-              <DateAndMoneyFields
-                currency={invoiceDraft.currency}
-                discountCents={invoiceDraft.discountCents}
-                dueDate={invoiceDraft.dueDate}
-                firstDateLabel="Issue date"
-                firstDateValue={invoiceDraft.issueDate}
-                onChange={(values) => setInvoiceDraft((current) => ({ ...current, ...values }))}
-                secondDateLabel="Due date"
-                subtotalCents={invoiceDraft.subtotalCents}
-                taxCents={invoiceDraft.taxCents}
-                totalCents={invoiceDraft.totalCents}
-              />
               <label>
-                Amount paid cents
+                Issue date
+                <input
+                  onChange={(event) => setInvoiceDraft((current) => ({ ...current, issueDate: event.target.value }))}
+                  type="date"
+                  value={invoiceDraft.issueDate}
+                />
+              </label>
+              <label>
+                Due date
+                <input
+                  onChange={(event) => setInvoiceDraft((current) => ({ ...current, dueDate: event.target.value }))}
+                  type="date"
+                  value={invoiceDraft.dueDate}
+                />
+              </label>
+              <label>
+                Currency
+                <input
+                  maxLength={3}
+                  onChange={(event) => setInvoiceDraft((current) => ({ ...current, currency: event.target.value.toUpperCase() }))}
+                  required
+                  value={invoiceDraft.currency}
+                />
+              </label>
+            </div>
+            <LineItemsEditor
+              currency={invoiceDraft.currency}
+              invoiceItems={invoiceItems}
+              lineItems={invoiceDraft.lineItems}
+              onChange={updateInvoiceLineItems}
+              onUnitPriceInputsChange={setInvoiceUnitPriceInputs}
+              unitPriceInputs={invoiceUnitPriceInputs}
+            />
+            <div className="field-grid">
+              <label>
+                {moneyFieldLabel("Subtotal", invoiceDraft.currency)}
+                <input
+                  readOnly
+                  value={centsToMajorInput(invoiceDraft.subtotalCents)}
+                />
+              </label>
+              <label>
+                Tax (%)
                 <input
                   min={0}
-                  onChange={(event) => setInvoiceDraft((current) => ({ ...current, amountPaidCents: event.target.valueAsNumber || 0 }))}
+                  onChange={(event) => {
+                    const taxPercentInput = event.target.value;
+                    setInvoiceTaxPercentInput(taxPercentInput);
+                    updateInvoiceLineItems(invoiceDraft.lineItems, taxPercentInput, invoiceDiscountPercentInput);
+                  }}
+                  step="0.01"
                   type="number"
-                  value={invoiceDraft.amountPaidCents}
+                  value={invoiceTaxPercentInput}
+                />
+              </label>
+              <label>
+                Discount (%)
+                <input
+                  min={0}
+                  onChange={(event) => {
+                    const discountPercentInput = event.target.value;
+                    setInvoiceDiscountPercentInput(discountPercentInput);
+                    updateInvoiceLineItems(invoiceDraft.lineItems, invoiceTaxPercentInput, discountPercentInput);
+                  }}
+                  step="0.01"
+                  type="number"
+                  value={invoiceDiscountPercentInput}
+                />
+              </label>
+              <label>
+                {moneyFieldLabel("Total", invoiceDraft.currency)}
+                <input
+                  readOnly
+                  value={centsToMajorInput(invoiceDraft.totalCents)}
                 />
               </label>
               <TextAreaFields
@@ -569,14 +838,10 @@ export function InvoicesPage({
                 notes={invoiceDraft.notes}
                 onChange={(values) => setInvoiceDraft((current) => ({ ...current, ...values }))}
                 paymentInstructions={invoiceDraft.paymentInstructions}
-                storageLabel="Document storage key"
+                storageLabel={null}
                 storageValue={invoiceDraft.documentStorageKey}
               />
             </div>
-            <LineItemsEditor
-              lineItems={invoiceDraft.lineItems}
-              onChange={(lineItems) => setInvoiceDraft((current) => ({ ...current, lineItems }))}
-            />
             <ModalActions disabled={saving || clients.length === 0} onCancel={() => setIsInvoiceEditorOpen(false)} saving={saving} />
           </form>
         </Modal>
@@ -587,6 +852,9 @@ export function InvoicesPage({
           onClose={() => {
             setRecurringEditorId(null);
             setRecurringDraft(emptyRecurringForm(firstClientId(clients)));
+            setRecurringUnitPriceInputs([centsToMajorInput(0)]);
+            setRecurringTaxPercentInput("0");
+            setRecurringDiscountPercentInput("0");
             setIsRecurringEditorOpen(false);
           }}
           title={recurringEditorId ? "Edit Recurring Invoice" : "Add Recurring Invoice"}
@@ -601,15 +869,6 @@ export function InvoicesPage({
                 projectId={recurringDraft.projectId}
                 projects={recurringProjects}
               />
-              <label>
-                Title
-                <input
-                  maxLength={255}
-                  onChange={(event) => setRecurringDraft((current) => ({ ...current, title: event.target.value }))}
-                  required
-                  value={recurringDraft.title}
-                />
-              </label>
               <label>
                 Interval
                 <select onChange={(event) => setRecurringDraft((current) => ({ ...current, interval: event.target.value }))} value={recurringDraft.interval}>
@@ -630,18 +889,31 @@ export function InvoicesPage({
                   <option value="false">Paused</option>
                 </select>
               </label>
-              <DateAndMoneyFields
-                currency={recurringDraft.currency}
-                discountCents={recurringDraft.discountCents}
-                dueDate={recurringDraft.endDate}
-                firstDateLabel="Start date"
-                firstDateValue={recurringDraft.startDate}
-                onChange={(values) => setRecurringDraft((current) => ({ ...current, ...values }))}
-                secondDateLabel="End date"
-                subtotalCents={recurringDraft.subtotalCents}
-                taxCents={recurringDraft.taxCents}
-                totalCents={recurringDraft.totalCents}
-              />
+              <label>
+                Start date
+                <input
+                  onChange={(event) => setRecurringDraft((current) => ({ ...current, startDate: event.target.value }))}
+                  type="date"
+                  value={recurringDraft.startDate}
+                />
+              </label>
+              <label>
+                End date
+                <input
+                  onChange={(event) => setRecurringDraft((current) => ({ ...current, endDate: event.target.value }))}
+                  type="date"
+                  value={recurringDraft.endDate}
+                />
+              </label>
+              <label>
+                Currency
+                <input
+                  maxLength={3}
+                  onChange={(event) => setRecurringDraft((current) => ({ ...current, currency: event.target.value.toUpperCase() }))}
+                  required
+                  value={recurringDraft.currency}
+                />
+              </label>
               <label>
                 Next run date
                 <input
@@ -661,9 +933,57 @@ export function InvoicesPage({
               />
             </div>
             <LineItemsEditor
+              currency={recurringDraft.currency}
+              invoiceItems={invoiceItems}
               lineItems={recurringDraft.lineItems}
-              onChange={(lineItems) => setRecurringDraft((current) => ({ ...current, lineItems }))}
+              onChange={updateRecurringLineItems}
+              onUnitPriceInputsChange={setRecurringUnitPriceInputs}
+              unitPriceInputs={recurringUnitPriceInputs}
             />
+            <div className="field-grid">
+              <label>
+                {moneyFieldLabel("Subtotal", recurringDraft.currency)}
+                <input
+                  readOnly
+                  value={centsToMajorInput(recurringDraft.subtotalCents)}
+                />
+              </label>
+              <label>
+                Tax (%)
+                <input
+                  min={0}
+                  onChange={(event) => {
+                    const taxPercentInput = event.target.value;
+                    setRecurringTaxPercentInput(taxPercentInput);
+                    updateRecurringLineItems(recurringDraft.lineItems, taxPercentInput, recurringDiscountPercentInput);
+                  }}
+                  step="0.01"
+                  type="number"
+                  value={recurringTaxPercentInput}
+                />
+              </label>
+              <label>
+                Discount (%)
+                <input
+                  min={0}
+                  onChange={(event) => {
+                    const discountPercentInput = event.target.value;
+                    setRecurringDiscountPercentInput(discountPercentInput);
+                    updateRecurringLineItems(recurringDraft.lineItems, recurringTaxPercentInput, discountPercentInput);
+                  }}
+                  step="0.01"
+                  type="number"
+                  value={recurringDiscountPercentInput}
+                />
+              </label>
+              <label>
+                {moneyFieldLabel("Total", recurringDraft.currency)}
+                <input
+                  readOnly
+                  value={centsToMajorInput(recurringDraft.totalCents)}
+                />
+              </label>
+            </div>
             <ModalActions disabled={saving || clients.length === 0} onCancel={() => setIsRecurringEditorOpen(false)} saving={saving} />
           </form>
         </Modal>
@@ -674,6 +994,8 @@ export function InvoicesPage({
           onClose={() => {
             setPaymentInvoice(null);
             setPaymentDraft(emptyPaymentForm());
+            setPaymentAmountIssuedInput(centsToMajorInput(0));
+            setPaymentAmountReceivedInput(centsToMajorInput(0));
             setIsPaymentEditorOpen(false);
           }}
           title="Register Payment"
@@ -702,23 +1024,33 @@ export function InvoicesPage({
                 />
               </label>
               <label>
-                Amount issued cents
+                {moneyFieldLabel("Amount issued", paymentInvoice?.currency ?? "USD")}
                 <input
                   min={0}
-                  onChange={(event) => setPaymentDraft((current) => ({ ...current, amountIssuedCents: event.target.valueAsNumber || 0 }))}
+                  onChange={(event) => {
+                    const amountInput = event.target.value;
+                    setPaymentAmountIssuedInput(amountInput);
+                    setPaymentDraft((current) => ({ ...current, amountIssuedCents: majorInputToCents(amountInput) }));
+                  }}
                   required
+                  step="0.01"
                   type="number"
-                  value={paymentDraft.amountIssuedCents}
+                  value={paymentAmountIssuedInput}
                 />
               </label>
               <label>
-                Amount received cents
+                {moneyFieldLabel("Amount received", paymentInvoice?.currency ?? "USD")}
                 <input
                   min={0}
-                  onChange={(event) => setPaymentDraft((current) => ({ ...current, amountReceivedCents: event.target.valueAsNumber || 0 }))}
+                  onChange={(event) => {
+                    const amountInput = event.target.value;
+                    setPaymentAmountReceivedInput(amountInput);
+                    setPaymentDraft((current) => ({ ...current, amountReceivedCents: majorInputToCents(amountInput) }));
+                  }}
                   required
+                  step="0.01"
                   type="number"
-                  value={paymentDraft.amountReceivedCents}
+                  value={paymentAmountReceivedInput}
                 />
               </label>
               <label className="field-span-2">
@@ -764,7 +1096,7 @@ function InvoiceCards({ invoices, canEdit, onEditInvoice, onArchiveInvoice, onMa
         <article className="entity-card" key={invoice.id}>
           <div className="entity-card-header">
             <div>
-              <span className={`entity-pill entity-pill-${invoice.isArchived ? "archived" : "active"}`}>{invoice.status}</span>
+              <span className={`entity-pill entity-pill-${invoice.isArchived ? "archived" : "active"}`}>{formatInvoiceStatus(invoice.status)}</span>
               <h2>{invoice.title}</h2>
             </div>
             <div className="card-actions">
@@ -970,10 +1302,10 @@ function DateAndMoneyFields(props: DateAndMoneyFieldsProps) {
       <label>{props.firstDateLabel}<input onChange={(event) => props.onChange({ [props.firstDateLabel === "Issue date" ? "issueDate" : "startDate"]: event.target.value })} type="date" value={props.firstDateValue} /></label>
       <label>{props.secondDateLabel}<input onChange={(event) => props.onChange({ [props.secondDateLabel === "Due date" ? "dueDate" : "endDate"]: event.target.value })} type="date" value={props.dueDate} /></label>
       <label>Currency<input maxLength={3} onChange={(event) => props.onChange({ currency: event.target.value.toUpperCase() })} required value={props.currency} /></label>
-      <label>Subtotal cents<input min={0} onChange={(event) => props.onChange({ subtotalCents: event.target.valueAsNumber || 0 })} type="number" value={props.subtotalCents} /></label>
-      <label>Tax cents<input min={0} onChange={(event) => props.onChange({ taxCents: event.target.valueAsNumber || 0 })} type="number" value={props.taxCents} /></label>
-      <label>Discount cents<input min={0} onChange={(event) => props.onChange({ discountCents: event.target.valueAsNumber || 0 })} type="number" value={props.discountCents} /></label>
-      <label>Total cents<input min={0} onChange={(event) => props.onChange({ totalCents: event.target.valueAsNumber || 0 })} type="number" value={props.totalCents} /></label>
+      <label>{moneyFieldLabel("Subtotal", props.currency)}<input min={0} onChange={(event) => props.onChange({ subtotalCents: majorInputToCents(event.target.value) })} step="0.01" type="number" value={centsToMajorInput(props.subtotalCents)} /></label>
+      <label>{moneyFieldLabel("Tax", props.currency)}<input min={0} onChange={(event) => props.onChange({ taxCents: majorInputToCents(event.target.value) })} step="0.01" type="number" value={centsToMajorInput(props.taxCents)} /></label>
+      <label>{moneyFieldLabel("Discount", props.currency)}<input min={0} onChange={(event) => props.onChange({ discountCents: majorInputToCents(event.target.value) })} step="0.01" type="number" value={centsToMajorInput(props.discountCents)} /></label>
+      <label>{moneyFieldLabel("Total", props.currency)}<input min={0} onChange={(event) => props.onChange({ totalCents: majorInputToCents(event.target.value) })} step="0.01" type="number" value={centsToMajorInput(props.totalCents)} /></label>
     </>
   );
 }
@@ -1000,13 +1332,53 @@ function TextAreaFields(props: TextAreaFieldsProps) {
 }
 
 type LineItemsEditorProps = {
+  currency: string;
+  invoiceItems: InvoiceItemSummary[];
   lineItems: InvoiceLineItemFormValues[];
   onChange: (lineItems: InvoiceLineItemFormValues[]) => void;
+  unitPriceInputs?: string[];
+  onUnitPriceInputsChange?: (unitPriceInputs: string[]) => void;
 };
 
-function LineItemsEditor({ lineItems, onChange }: LineItemsEditorProps) {
+function LineItemsEditor({ currency, invoiceItems, lineItems, onChange, unitPriceInputs, onUnitPriceInputsChange }: LineItemsEditorProps) {
   function updateLineItem(index: number, values: Partial<InvoiceLineItemFormValues>) {
     onChange(lineItems.map((item, itemIndex) => (itemIndex === index ? { ...item, ...values } : item)));
+  }
+
+  function updateUnitPriceInput(index: number, value: string) {
+    onUnitPriceInputsChange?.(lineItems.map((item, itemIndex) => (itemIndex === index ? value : unitPriceInputs?.[itemIndex] ?? centsToMajorInput(item.unitPriceCents))));
+  }
+
+  function selectInvoiceItem(index: number, invoiceItemId: string) {
+    const invoiceItem = invoiceItems.find((item) => item.id === invoiceItemId);
+    if (!invoiceItem) {
+      return;
+    }
+
+    const quantity = 1;
+    updateLineItem(index, {
+      description: [invoiceItem.name, invoiceItem.description].filter(Boolean).join(" — "),
+      quantity,
+      unitPriceCents: invoiceItem.unitPriceCents,
+      totalCents: quantity * invoiceItem.unitPriceCents
+    });
+    updateUnitPriceInput(index, centsToMajorInput(invoiceItem.unitPriceCents));
+  }
+
+  function updateQuantity(index: number, quantity: number) {
+    const item = lineItems[index];
+    updateLineItem(index, {
+      quantity,
+      totalCents: quantity * (item?.unitPriceCents ?? 0)
+    });
+  }
+
+  function updateUnitPrice(index: number, unitPriceCents: number) {
+    const item = lineItems[index];
+    updateLineItem(index, {
+      unitPriceCents,
+      totalCents: (item?.quantity ?? 0) * unitPriceCents
+    });
   }
 
   return (
@@ -1014,17 +1386,25 @@ function LineItemsEditor({ lineItems, onChange }: LineItemsEditorProps) {
       <h3>Line items</h3>
       {lineItems.map((item, index) => (
         <div className="field-grid" key={index}>
-          <label className="field-span-2">Description<input maxLength={500} onChange={(event) => updateLineItem(index, { description: event.target.value })} value={item.description} /></label>
-          <label>Quantity<input min={0} onChange={(event) => updateLineItem(index, { quantity: event.target.valueAsNumber || 0 })} type="number" value={item.quantity} /></label>
-          <label>Unit price cents<input min={0} onChange={(event) => updateLineItem(index, { unitPriceCents: event.target.valueAsNumber || 0 })} type="number" value={item.unitPriceCents} /></label>
-          <label>Total cents<input min={0} onChange={(event) => updateLineItem(index, { totalCents: event.target.valueAsNumber || 0 })} type="number" value={item.totalCents} /></label>
-          <label>Sort order<input min={0} onChange={(event) => updateLineItem(index, { sortOrder: event.target.valueAsNumber || 0 })} type="number" value={item.sortOrder} /></label>
+          <label className="field-span-2">
+            Service / Item
+            <select onChange={(event) => selectInvoiceItem(index, event.target.value)} value="">
+              <option value="">Select service</option>
+              {invoiceItems.map((invoiceItem) => (
+                <option key={invoiceItem.id} value={invoiceItem.id}>{invoiceItem.name}</option>
+              ))}
+            </select>
+          </label>
+          <label className="field-span-2">Description / Details<textarea maxLength={500} onChange={(event) => updateLineItem(index, { description: event.target.value })} rows={3} value={item.description} /></label>
+          <label>Quantity<input min={0} onChange={(event) => updateQuantity(index, event.target.valueAsNumber || 0)} type="number" value={item.quantity} /></label>
+          <label>{moneyFieldLabel("Unit price", currency)}<input min={0} onChange={(event) => { updateUnitPriceInput(index, event.target.value); updateUnitPrice(index, majorInputToCents(event.target.value)); }} step="0.01" type="number" value={unitPriceInputs?.[index] ?? centsToMajorInput(item.unitPriceCents)} /></label>
+          <label>{moneyFieldLabel("Line total", currency)}<input readOnly value={centsToMajorInput(item.totalCents)} /></label>
           <div className="card-actions">
-            <button className="secondary-action" disabled={lineItems.length === 1} onClick={() => onChange(lineItems.filter((_, itemIndex) => itemIndex !== index))} type="button">Remove line</button>
+            <button className="secondary-action" disabled={lineItems.length === 1} onClick={() => { onChange(lineItems.filter((_, itemIndex) => itemIndex !== index)); onUnitPriceInputsChange?.((unitPriceInputs ?? []).filter((_, itemIndex) => itemIndex !== index)); }} type="button">Remove line</button>
           </div>
         </div>
       ))}
-      <button className="secondary-action" onClick={() => onChange([...lineItems, emptyLineItem(lineItems.length)])} type="button">Add line item</button>
+      <button className="secondary-action" onClick={() => { onChange([...lineItems, emptyLineItem(lineItems.length)]); onUnitPriceInputsChange?.([...(unitPriceInputs ?? lineItems.map((item) => centsToMajorInput(item.unitPriceCents))), centsToMajorInput(0)]); }} type="button">Add line item</button>
     </div>
   );
 }
