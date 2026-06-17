@@ -847,7 +847,11 @@ export const archiveProjectHandler: RequestHandler = async (req, res) => {
     }
 
     res.json(success(response, { phase: "runtime", scope: "core-module-skeleton" }));
-  } catch {
+  } catch (error) {
+    if ((error as { message?: string }).message === "PROJECT_ARCHIVE_BLOCKED") {
+      res.status(409).json(failure("PROJECT_ARCHIVE_BLOCKED", "Project cannot be archived while it has active tasks."));
+      return;
+    }
     res.status(500).json(failure("PROJECT_RUNTIME_ERROR", "Project archive could not be completed."));
   }
 };

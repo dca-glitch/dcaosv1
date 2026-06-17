@@ -943,6 +943,20 @@ export async function archiveProject(
       return null;
     }
 
+    const activeTaskCount = await tx.task.count({
+      where: {
+        tenantId,
+        projectId,
+        isArchived: false,
+        status: {
+          in: ["TODO", "IN_PROGRESS"]
+        }
+      }
+    });
+    if (activeTaskCount > 0) {
+      throw new Error("PROJECT_ARCHIVE_BLOCKED");
+    }
+
     const archived = await tx.project.update({
       where: {
         id: projectId

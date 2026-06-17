@@ -369,6 +369,10 @@ function getErrorMessage(response: ApiFailure): string {
     return "You do not have access to that action.";
   }
 
+  if (response.error.code === "PROJECT_ARCHIVE_BLOCKED") {
+    return "Project cannot be archived while it has active tasks.";
+  }
+
   return response.error.message || "Request could not be completed.";
 }
 
