@@ -8,11 +8,10 @@ export type ClientSummary = {
   id: string;
   name: string;
   email: string | null;
-  phone: string | null;
-  website: string | null;
-  billingDetails: string | null;
   contactPerson: string | null;
-  notes: string | null;
+  billingAddress: string | null;
+  taxId: string | null;
+  country: string | null;
   isArchived: boolean;
   projectCount: number;
   createdAt: string;
@@ -22,11 +21,10 @@ export type ClientSummary = {
 export type ClientFormValues = {
   name: string;
   email: string;
-  phone: string;
-  website: string;
-  billingDetails: string;
   contactPerson: string;
-  notes: string;
+  billingAddress: string;
+  taxId: string;
+  country: string;
 };
 
 type ClientsPageProps = {
@@ -35,20 +33,22 @@ type ClientsPageProps = {
   error: string | null;
   loading: boolean;
   onArchive: (clientId: string) => Promise<boolean>;
+  onRestore: (clientId: string) => Promise<boolean>;
   onSave: (clientId: string | null, values: ClientFormValues) => Promise<boolean>;
 };
+
+const COUNTRY_OPTIONS = ["Indonesia", "Poland", "United States", "United Kingdom", "Singapore", "Australia"];
 
 const emptyForm = (): ClientFormValues => ({
   name: "",
   email: "",
-  phone: "",
-  website: "",
-  billingDetails: "",
   contactPerson: "",
-  notes: ""
+  billingAddress: "",
+  taxId: "",
+  country: ""
 });
 
-export function ClientsPage({ clients, canEdit, error, loading, onArchive, onSave }: ClientsPageProps) {
+export function ClientsPage({ clients, canEdit, error, loading, onArchive, onRestore, onSave }: ClientsPageProps) {
   const [filter, setFilter] = useState<"all" | "active" | "archived">("active");
   const [editorClientId, setEditorClientId] = useState<string | null>(null);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
@@ -82,11 +82,10 @@ export function ClientsPage({ clients, canEdit, error, loading, onArchive, onSav
     setDraft({
       name: client.name,
       email: client.email ?? "",
-      phone: client.phone ?? "",
-      website: client.website ?? "",
-      billingDetails: client.billingDetails ?? "",
       contactPerson: client.contactPerson ?? "",
-      notes: client.notes ?? ""
+      billingAddress: client.billingAddress ?? "",
+      taxId: client.taxId ?? "",
+      country: client.country ?? ""
     });
     setIsEditorOpen(true);
   }
@@ -163,8 +162,19 @@ export function ClientsPage({ clients, canEdit, error, loading, onArchive, onSav
                     </button>
                   ) : null}
                   {canEdit && !client.isArchived ? (
-                    <button className="secondary-action" onClick={() => void onArchive(client.id)} type="button">
+                    <button
+                      className="secondary-action"
+                      disabled={client.projectCount > 0}
+                      onClick={() => void onArchive(client.id)}
+                      title={client.projectCount > 0 ? "Archive blocked while active projects exist." : undefined}
+                      type="button"
+                    >
                       Archive
+                    </button>
+                  ) : null}
+                  {canEdit && client.isArchived ? (
+                    <button className="secondary-action" onClick={() => void onRestore(client.id)} type="button">
+                      Restore
                     </button>
                   ) : null}
                 </div>
@@ -179,20 +189,20 @@ export function ClientsPage({ clients, canEdit, error, loading, onArchive, onSav
                   <strong>{client.email || "Not set"}</strong>
                 </div>
                 <div>
-                  <span>Phone</span>
-                  <strong>{client.phone || "Not set"}</strong>
+                  <span>Country</span>
+                  <strong>{client.country || "Not set"}</strong>
+                </div>
+                <div>
+                  <span>Tax/VAT ID</span>
+                  <strong>{client.taxId || "Not set"}</strong>
                 </div>
                 <div>
                   <span>Projects</span>
                   <strong>{client.projectCount}</strong>
                 </div>
                 <div className="entity-span-2">
-                  <span>Billing details</span>
-                  <strong>{client.billingDetails || "Not set"}</strong>
-                </div>
-                <div className="entity-span-2">
-                  <span>Notes</span>
-                  <strong>{client.notes || "Not set"}</strong>
+                  <span>Billing address</span>
+                  <strong>{client.billingAddress || "Not set"}</strong>
                 </div>
               </div>
             </article>
@@ -237,40 +247,36 @@ export function ClientsPage({ clients, canEdit, error, loading, onArchive, onSav
                   value={draft.email}
                 />
               </label>
-              <label>
-                Phone
-                <input
-                  maxLength={60}
-                  onChange={(event) => setDraft((current) => ({ ...current, phone: event.target.value }))}
-                  value={draft.phone}
-                />
-              </label>
-              <label>
-                Website
-                <input
-                  maxLength={2048}
-                  onChange={(event) => setDraft((current) => ({ ...current, website: event.target.value }))}
-                  type="url"
-                  value={draft.website}
-                />
-              </label>
               <label className="field-span-2">
-                Billing details
+                Billing address
                 <textarea
                   maxLength={4000}
-                  onChange={(event) => setDraft((current) => ({ ...current, billingDetails: event.target.value }))}
+                  onChange={(event) => setDraft((current) => ({ ...current, billingAddress: event.target.value }))}
                   rows={4}
-                  value={draft.billingDetails}
+                  value={draft.billingAddress}
                 />
               </label>
-              <label className="field-span-2">
-                Notes
-                <textarea
-                  maxLength={4000}
-                  onChange={(event) => setDraft((current) => ({ ...current, notes: event.target.value }))}
-                  rows={4}
-                  value={draft.notes}
+              <label>
+                Tax/VAT ID
+                <input
+                  maxLength={100}
+                  onChange={(event) => setDraft((current) => ({ ...current, taxId: event.target.value }))}
+                  value={draft.taxId}
                 />
+              </label>
+              <label>
+                Country
+                <select
+                  onChange={(event) => setDraft((current) => ({ ...current, country: event.target.value }))}
+                  value={draft.country}
+                >
+                  <option value="">Select country</option>
+                  {COUNTRY_OPTIONS.map((country) => (
+                    <option key={country} value={country}>
+                      {country}
+                    </option>
+                  ))}
+                </select>
               </label>
             </div>
             <div className="modal-footer">

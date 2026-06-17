@@ -46,11 +46,10 @@ export interface ClientSummary {
   id: string;
   name: string;
   email: string | null;
-  phone: string | null;
-  website: string | null;
-  billingDetails: string | null;
   contactPerson: string | null;
-  notes: string | null;
+  billingAddress: string | null;
+  taxId: string | null;
+  country: string | null;
   isArchived: boolean;
   projectCount: number;
   createdAt: string;
@@ -68,11 +67,10 @@ export interface ClientsResponse {
 export interface ClientInputRequest {
   name?: string;
   email?: string | null;
-  phone?: string | null;
-  website?: string | null;
-  billingDetails?: string | null;
   contactPerson?: string | null;
-  notes?: string | null;
+  billingAddress?: string | null;
+  taxId?: string | null;
+  country?: string | null;
 }
 
 export interface ProjectSummary {

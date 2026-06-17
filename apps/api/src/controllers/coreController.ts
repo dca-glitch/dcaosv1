@@ -64,6 +64,7 @@ import {
   registerInvoicePayment,
   restoreInvoiceItem,
   restoreBill,
+  restoreClient,
   saveCompanyProfile,
   updateBill,
   updateClient,
@@ -95,6 +96,7 @@ const TEXT_FIELD_MAX_LENGTH = 4000;
 const SHORT_TEXT_FIELD_MAX_LENGTH = 500;
 const LOGO_URL_MAX_LENGTH = 2048;
 const NAME_MAX_LENGTH = 255;
+const CLIENT_COUNTRIES = new Set(["Indonesia", "Poland", "United States", "United Kingdom", "Singapore", "Australia"]);
 
 function getAuthSession(resLocals: unknown) {
   return (resLocals as AuthSessionLocals | undefined)?.authSession;
@@ -207,14 +209,18 @@ function getClientInput(body: unknown): ClientInputRequest | null {
     return null;
   }
 
+  const country = getOptionalString(value.country, SHORT_TEXT_FIELD_MAX_LENGTH);
+  if (country !== undefined && country !== null && !CLIENT_COUNTRIES.has(country)) {
+    return null;
+  }
+
   return {
     name,
     email: getOptionalString(value.email, SHORT_TEXT_FIELD_MAX_LENGTH),
-    phone: getOptionalString(value.phone, SHORT_TEXT_FIELD_MAX_LENGTH),
-    website: getOptionalUrl(value.website),
-    billingDetails: getOptionalString(value.billingDetails, TEXT_FIELD_MAX_LENGTH),
     contactPerson: getOptionalString(value.contactPerson, SHORT_TEXT_FIELD_MAX_LENGTH),
-    notes: getOptionalString(value.notes, TEXT_FIELD_MAX_LENGTH)
+    billingAddress: getOptionalString(value.billingAddress, TEXT_FIELD_MAX_LENGTH),
+    taxId: getOptionalString(value.taxId, SHORT_TEXT_FIELD_MAX_LENGTH),
+    country
   };
 }
 
@@ -673,8 +679,38 @@ export const archiveClientHandler: RequestHandler = async (req, res) => {
     }
 
     res.json(success(response, { phase: "runtime", scope: "core-module-skeleton" }));
-  } catch {
+  } catch (error) {
+    if ((error as { message?: string }).message === "CLIENT_HAS_ACTIVE_PROJECTS") {
+      res.status(409).json(failure("CLIENT_ARCHIVE_BLOCKED", "Client cannot be archived while active projects exist."));
+      return;
+    }
     res.status(500).json(failure("CLIENT_RUNTIME_ERROR", "Client archive could not be completed."));
+  }
+};
+
+export const restoreClientHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) {
+    res.status(401).json(unauthorizedFailure());
+    return;
+  }
+
+  const clientId = typeof req.params.id === "string" ? req.params.id.trim() : "";
+  if (!clientId) {
+    res.status(400).json(clientInvalidFailure());
+    return;
+  }
+
+  try {
+    const response = await restoreClient(authSession, clientId);
+    if (!response?.client) {
+      res.status(404).json(clientNotFoundFailure());
+      return;
+    }
+
+    res.json(success(response, { phase: "runtime", scope: "core-module-skeleton" }));
+  } catch {
+    res.status(500).json(failure("CLIENT_RUNTIME_ERROR", "Client restore could not be completed."));
   }
 };
 

@@ -40,6 +40,7 @@ import {
   markInvoiceUncollectibleHandler,
   registerInvoicePaymentHandler,
   restoreBillHandler,
+  restoreClientHandler,
   restoreInvoiceItemHandler,
   saveCompanyProfileHandler,
   issueCreditNoteHandler,
@@ -68,6 +69,7 @@ export function createCoreRouter() {
   router.get("/clients/:id", requireAuth, requireTenant, getClientHandler);
   router.put("/clients/:id", requireAuth, requireTenant, requireRole("owner", "admin"), updateClientHandler);
   router.post("/clients/:id/archive", requireAuth, requireTenant, requireRole("owner", "admin"), archiveClientHandler);
+  router.post("/clients/:id/restore", requireAuth, requireTenant, requireRole("owner", "admin"), restoreClientHandler);
 
   router.get("/projects", requireAuth, requireTenant, listProjectsHandler);
   router.post("/projects", requireAuth, requireTenant, requireRole("owner", "admin"), createProjectHandler);

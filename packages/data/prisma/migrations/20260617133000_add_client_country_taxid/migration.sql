@@ -1,0 +1,2 @@
+ALTER TABLE "Client" ADD COLUMN "taxId" TEXT;
+ALTER TABLE "Client" ADD COLUMN "country" TEXT;

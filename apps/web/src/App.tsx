@@ -1316,6 +1316,31 @@ export function App() {
     }
   }
 
+  async function handleRestoreClient(clientId: string): Promise<boolean> {
+    setAppMessage(null);
+    try {
+      const response = await runAuthenticatedRequest<{ client: ClientSummary | null }>(`/clients/${clientId}/restore`, {
+        method: "POST"
+      });
+
+      if (!response) {
+        return false;
+      }
+
+      if (!response.ok) {
+        setAppMessage({ tone: "error", text: getErrorMessage(response) });
+        return false;
+      }
+
+      await loadProtectedState(tokenRef.current);
+      setAppMessage({ tone: "success", text: "Client restored." });
+      return true;
+    } catch (error) {
+      setAppMessage({ tone: "error", text: maskError(error) });
+      return false;
+    }
+  }
+
   async function handleSaveProject(projectId: string | null, values: ProjectFormValues): Promise<boolean> {
     setAppMessage(null);
     try {
@@ -1839,6 +1864,7 @@ export function App() {
           error={null}
           loading={false}
           onArchive={handleArchiveClient}
+          onRestore={handleRestoreClient}
           onSave={handleSaveClient}
         />
       ) : null}

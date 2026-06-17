@@ -110,11 +110,10 @@ function toClientSummary(client: {
   id: string;
   name: string;
   email: string | null;
-  phone: string | null;
-  website: string | null;
   billingDetails: string | null;
   contactPerson: string | null;
-  notes: string | null;
+  taxId: string | null;
+  country: string | null;
   isArchived: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -126,11 +125,10 @@ function toClientSummary(client: {
     id: client.id,
     name: client.name,
     email: client.email,
-    phone: client.phone,
-    website: client.website,
-    billingDetails: client.billingDetails,
     contactPerson: client.contactPerson,
-    notes: client.notes,
+    billingAddress: client.billingDetails,
+    taxId: client.taxId,
+    country: client.country,
     isArchived: client.isArchived,
     projectCount: client._count.projects,
     createdAt: client.createdAt.toISOString(),
@@ -355,11 +353,10 @@ export async function listClients(
       id: true,
       name: true,
       email: true,
-      phone: true,
-      website: true,
       billingDetails: true,
       contactPerson: true,
-      notes: true,
+      taxId: true,
+      country: true,
       isArchived: true,
       createdAt: true,
       updatedAt: true,
@@ -386,11 +383,10 @@ async function getClientRecord(tx: PrismaTx, tenantId: string, clientId: string)
       id: true,
       name: true,
       email: true,
-      phone: true,
-      website: true,
       billingDetails: true,
       contactPerson: true,
-      notes: true,
+      taxId: true,
+      country: true,
       isArchived: true,
       createdAt: true,
       updatedAt: true,
@@ -431,21 +427,19 @@ export async function createClient(
         tenantId,
         name: input.name ?? "",
         email: toNullableString(input.email),
-        phone: toNullableString(input.phone),
-        website: toNullableString(input.website),
-        billingDetails: toNullableString(input.billingDetails),
         contactPerson: toNullableString(input.contactPerson),
-        notes: toNullableString(input.notes)
+        billingDetails: toNullableString(input.billingAddress),
+        taxId: toNullableString(input.taxId),
+        country: toNullableString(input.country)
       },
       select: {
         id: true,
         name: true,
         email: true,
-        phone: true,
-        website: true,
         billingDetails: true,
         contactPerson: true,
-        notes: true,
+        taxId: true,
+        country: true,
         isArchived: true,
         createdAt: true,
         updatedAt: true,
@@ -486,21 +480,19 @@ export async function updateClient(
       data: {
         name: input.name ?? existing.name,
         email: toNullableString(input.email),
-        phone: toNullableString(input.phone),
-        website: toNullableString(input.website),
-        billingDetails: toNullableString(input.billingDetails),
         contactPerson: toNullableString(input.contactPerson),
-        notes: toNullableString(input.notes)
+        billingDetails: toNullableString(input.billingAddress),
+        taxId: toNullableString(input.taxId),
+        country: toNullableString(input.country)
       },
       select: {
         id: true,
         name: true,
         email: true,
-        phone: true,
-        website: true,
         billingDetails: true,
         contactPerson: true,
-        notes: true,
+        taxId: true,
+        country: true,
         isArchived: true,
         createdAt: true,
         updatedAt: true,
@@ -533,6 +525,17 @@ export async function archiveClient(
       return null;
     }
 
+    const activeProjectCount = await tx.project.count({
+      where: {
+        tenantId,
+        clientId,
+        isArchived: false
+      }
+    });
+    if (activeProjectCount > 0) {
+      throw new Error("CLIENT_HAS_ACTIVE_PROJECTS");
+    }
+
     const archived = await tx.client.update({
       where: {
         id: clientId
@@ -544,11 +547,10 @@ export async function archiveClient(
         id: true,
         name: true,
         email: true,
-        phone: true,
-        website: true,
         billingDetails: true,
         contactPerson: true,
-        notes: true,
+        taxId: true,
+        country: true,
         isArchived: true,
         createdAt: true,
         updatedAt: true,
@@ -562,6 +564,53 @@ export async function archiveClient(
 
     return {
       client: toClientSummary(archived)
+    };
+  });
+}
+
+export async function restoreClient(
+  authSession: AuthResolvedSessionContext,
+  clientId: string
+): Promise<ClientResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) {
+    return null;
+  }
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    const existing = await getClientRecord(tx, tenantId, clientId);
+    if (!existing) {
+      return null;
+    }
+
+    const restored = await tx.client.update({
+      where: {
+        id: clientId
+      },
+      data: {
+        isArchived: false
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        billingDetails: true,
+        contactPerson: true,
+        taxId: true,
+        country: true,
+        isArchived: true,
+        createdAt: true,
+        updatedAt: true,
+        _count: {
+          select: {
+            projects: true
+          }
+        }
+      }
+    });
+
+    return {
+      client: toClientSummary(restored)
     };
   });
 }

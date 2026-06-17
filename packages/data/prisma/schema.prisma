@@ -295,6 +295,8 @@ model Client {
   website           String?
   billingDetails    String?
   contactPerson     String?
+  taxId             String?
+  country           String?
   notes             String?
   isArchived        Boolean            @default(false)
   createdAt         DateTime           @default(now())
