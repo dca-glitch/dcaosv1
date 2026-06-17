@@ -1004,7 +1004,12 @@ export const archiveTaskHandler: RequestHandler = async (req, res) => {
     }
 
     res.json(success(response, { phase: "runtime", scope: "core-module-skeleton" }));
-  } catch {
+  } catch (error) {
+    if (error instanceof Error && error.message === "TASK_ARCHIVE_BLOCKED") {
+      res.status(409).json(failure("TASK_ARCHIVE_BLOCKED", "Only done tasks can be archived."));
+      return;
+    }
+
     res.status(500).json(failure("TASK_RUNTIME_ERROR", "Task archive could not be completed."));
   }
 };

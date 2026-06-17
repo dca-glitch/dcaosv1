@@ -373,6 +373,10 @@ function getErrorMessage(response: ApiFailure): string {
     return "Project cannot be archived while it has active tasks.";
   }
 
+  if (response.error.code === "TASK_ARCHIVE_BLOCKED") {
+    return "Only done tasks can be archived.";
+  }
+
   return response.error.message || "Request could not be completed.";
 }
 

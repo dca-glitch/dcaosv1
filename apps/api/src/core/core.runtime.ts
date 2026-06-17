@@ -1346,6 +1346,10 @@ export async function archiveTask(
       return null;
     }
 
+    if (existing.status !== "DONE") {
+      throw new Error("TASK_ARCHIVE_BLOCKED");
+    }
+
     const archived = await tx.task.update({
       where: {
         id: taskId
