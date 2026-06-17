@@ -1386,6 +1386,62 @@ export async function archiveTask(
   });
 }
 
+export async function restoreTask(
+  authSession: AuthResolvedSessionContext,
+  taskId: string
+): Promise<TaskResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) {
+    return null;
+  }
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    const existing = await getTaskRecord(tx, tenantId, taskId);
+    if (!existing) {
+      return null;
+    }
+
+    const restored = await tx.task.update({
+      where: {
+        id: taskId
+      },
+      data: {
+        isArchived: false,
+        status: (existing.status as string) === "ARCHIVED" ? "TODO" : existing.status
+      },
+      select: {
+        id: true,
+        projectId: true,
+        project: {
+          select: {
+            id: true,
+            name: true,
+            client: {
+              select: {
+                id: true,
+                name: true
+              }
+            }
+          }
+        },
+        title: true,
+        description: true,
+        priority: true,
+        status: true,
+        dueDate: true,
+        recurringType: true,
+        isArchived: true,
+        createdAt: true,
+        updatedAt: true
+      }
+    });
+
+    return {
+      task: toTaskSummary(restored)
+    };
+  });
+}
+
 const invoiceSelect = {
   id: true,
   clientId: true,

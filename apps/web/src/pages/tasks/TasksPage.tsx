@@ -44,6 +44,7 @@ type TasksPageProps = {
   error: string | null;
   loading: boolean;
   onArchive: (taskId: string) => Promise<boolean>;
+  onRestore: (taskId: string) => Promise<boolean>;
   onSave: (taskId: string | null, values: TaskFormValues) => Promise<boolean>;
 };
 
@@ -74,7 +75,7 @@ function formatDateLabel(value: string | null): string {
   return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString();
 }
 
-export function TasksPage({ tasks, projects, canEdit, error, loading, onArchive, onSave }: TasksPageProps) {
+export function TasksPage({ tasks, projects, canEdit, error, loading, onArchive, onRestore, onSave }: TasksPageProps) {
   const [filter, setFilter] = useState<"all" | "active" | "archived">("active");
   const [editorTaskId, setEditorTaskId] = useState<string | null>(null);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
@@ -205,6 +206,11 @@ export function TasksPage({ tasks, projects, canEdit, error, loading, onArchive,
                   {canEdit && !task.isArchived ? (
                     <button className="secondary-action" onClick={() => void onArchive(task.id)} type="button">
                       Archive
+                    </button>
+                  ) : null}
+                  {canEdit && filter === "archived" && task.isArchived ? (
+                    <button className="secondary-action" onClick={() => void onRestore(task.id)} type="button">
+                      Restore
                     </button>
                   ) : null}
                 </div>

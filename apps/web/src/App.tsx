@@ -1481,6 +1481,31 @@ export function App() {
     }
   }
 
+  async function handleRestoreTask(taskId: string): Promise<boolean> {
+    setAppMessage(null);
+    try {
+      const response = await runAuthenticatedRequest<{ task: TaskSummary | null }>(`/tasks/${taskId}/restore`, {
+        method: "POST"
+      });
+
+      if (!response) {
+        return false;
+      }
+
+      if (!response.ok) {
+        setAppMessage({ tone: "error", text: getErrorMessage(response) });
+        return false;
+      }
+
+      await loadProtectedState(tokenRef.current);
+      setAppMessage({ tone: "success", text: "Task restored." });
+      return true;
+    } catch (error) {
+      setAppMessage({ tone: "error", text: maskError(error) });
+      return false;
+    }
+  }
+
   async function handleSaveInvoice(invoiceId: string | null, values: InvoiceFormValues): Promise<boolean> {
     setAppMessage(null);
     try {
@@ -1917,6 +1942,7 @@ export function App() {
           error={null}
           loading={false}
           onArchive={handleArchiveTask}
+          onRestore={handleRestoreTask}
           onSave={handleSaveTask}
           projects={projects?.projects ?? []}
           tasks={tasks?.tasks ?? []}

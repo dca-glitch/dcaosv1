@@ -66,6 +66,7 @@ import {
   restoreBill,
   restoreClient,
   restoreProject,
+  restoreTask,
   saveCompanyProfile,
   updateBill,
   updateClient,
@@ -1005,6 +1006,32 @@ export const archiveTaskHandler: RequestHandler = async (req, res) => {
     res.json(success(response, { phase: "runtime", scope: "core-module-skeleton" }));
   } catch {
     res.status(500).json(failure("TASK_RUNTIME_ERROR", "Task archive could not be completed."));
+  }
+};
+
+export const restoreTaskHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) {
+    res.status(401).json(unauthorizedFailure());
+    return;
+  }
+
+  const taskId = typeof req.params.id === "string" ? req.params.id.trim() : "";
+  if (!taskId) {
+    res.status(400).json(taskInvalidFailure());
+    return;
+  }
+
+  try {
+    const response = await restoreTask(authSession, taskId);
+    if (!response?.task) {
+      res.status(404).json(taskNotFoundFailure());
+      return;
+    }
+
+    res.json(success(response, { phase: "runtime", scope: "core-module-skeleton" }));
+  } catch {
+    res.status(500).json(failure("TASK_RUNTIME_ERROR", "Task restore could not be completed."));
   }
 };
 
