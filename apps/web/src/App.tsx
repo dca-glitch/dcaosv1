@@ -1398,6 +1398,31 @@ export function App() {
     }
   }
 
+  async function handleRestoreProject(projectId: string): Promise<boolean> {
+    setAppMessage(null);
+    try {
+      const response = await runAuthenticatedRequest<{ project: ProjectSummary | null }>(`/projects/${projectId}/restore`, {
+        method: "POST"
+      });
+
+      if (!response) {
+        return false;
+      }
+
+      if (!response.ok) {
+        setAppMessage({ tone: "error", text: getErrorMessage(response) });
+        return false;
+      }
+
+      await loadProtectedState(tokenRef.current);
+      setAppMessage({ tone: "success", text: "Project restored." });
+      return true;
+    } catch (error) {
+      setAppMessage({ tone: "error", text: maskError(error) });
+      return false;
+    }
+  }
+
   async function handleSaveTask(taskId: string | null, values: TaskFormValues): Promise<boolean> {
     setAppMessage(null);
     try {
@@ -1876,6 +1901,7 @@ export function App() {
           error={null}
           loading={false}
           onArchive={handleArchiveProject}
+          onRestore={handleRestoreProject}
           onSave={handleSaveProject}
           projects={projects?.projects ?? []}
           tasks={tasks?.tasks ?? []}

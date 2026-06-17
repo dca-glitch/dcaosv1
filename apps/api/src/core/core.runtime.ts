@@ -996,6 +996,75 @@ export async function archiveProject(
   });
 }
 
+export async function restoreProject(
+  authSession: AuthResolvedSessionContext,
+  projectId: string
+): Promise<ProjectResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) {
+    return null;
+  }
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    const existing = await getProjectRecord(tx, tenantId, projectId);
+    if (!existing) {
+      return null;
+    }
+
+    const restored = await tx.project.update({
+      where: {
+        id: projectId
+      },
+      data: {
+        isArchived: false,
+        status: "Active"
+      },
+      select: {
+        id: true,
+        clientId: true,
+        client: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
+        name: true,
+        description: true,
+        startDate: true,
+        dueDate: true,
+        status: true,
+        isArchived: true,
+        createdAt: true,
+        updatedAt: true,
+        _count: {
+          select: {
+            tasks: true
+          }
+        }
+      }
+    });
+
+    const openTaskCount = await tx.task.count({
+      where: {
+        projectId: restored.id,
+        tenantId,
+        isArchived: false,
+        status: {
+          in: ["TODO", "IN_PROGRESS"]
+        }
+      }
+    });
+
+    return {
+      project: toProjectSummary({
+        ...restored,
+        taskCount: restored._count.tasks,
+        openTaskCount
+      })
+    };
+  });
+}
+
 export async function listTasks(
   authSession: AuthResolvedSessionContext
 ): Promise<TasksResponse | null> {

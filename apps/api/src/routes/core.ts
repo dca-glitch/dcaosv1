@@ -42,6 +42,7 @@ import {
   restoreBillHandler,
   restoreClientHandler,
   restoreInvoiceItemHandler,
+  restoreProjectHandler,
   saveCompanyProfileHandler,
   issueCreditNoteHandler,
   updateBillHandler,
@@ -76,6 +77,7 @@ export function createCoreRouter() {
   router.get("/projects/:id", requireAuth, requireTenant, getProjectHandler);
   router.put("/projects/:id", requireAuth, requireTenant, requireRole("owner", "admin"), updateProjectHandler);
   router.post("/projects/:id/archive", requireAuth, requireTenant, requireRole("owner", "admin"), archiveProjectHandler);
+  router.post("/projects/:id/restore", requireAuth, requireTenant, requireRole("owner", "admin"), restoreProjectHandler);
 
   router.get("/tasks", requireAuth, requireTenant, listTasksHandler);
   router.post("/tasks", requireAuth, requireTenant, requireRole("owner", "admin"), createTaskHandler);

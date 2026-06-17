@@ -65,6 +65,7 @@ import {
   restoreInvoiceItem,
   restoreBill,
   restoreClient,
+  restoreProject,
   saveCompanyProfile,
   updateBill,
   updateClient,
@@ -848,6 +849,32 @@ export const archiveProjectHandler: RequestHandler = async (req, res) => {
     res.json(success(response, { phase: "runtime", scope: "core-module-skeleton" }));
   } catch {
     res.status(500).json(failure("PROJECT_RUNTIME_ERROR", "Project archive could not be completed."));
+  }
+};
+
+export const restoreProjectHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) {
+    res.status(401).json(unauthorizedFailure());
+    return;
+  }
+
+  const projectId = typeof req.params.id === "string" ? req.params.id.trim() : "";
+  if (!projectId) {
+    res.status(400).json(projectInvalidFailure());
+    return;
+  }
+
+  try {
+    const response = await restoreProject(authSession, projectId);
+    if (!response?.project) {
+      res.status(404).json(projectNotFoundFailure());
+      return;
+    }
+
+    res.json(success(response, { phase: "runtime", scope: "core-module-skeleton" }));
+  } catch {
+    res.status(500).json(failure("PROJECT_RUNTIME_ERROR", "Project restore could not be completed."));
   }
 };
 

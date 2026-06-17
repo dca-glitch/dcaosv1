@@ -42,6 +42,7 @@ type ProjectsPageProps = {
   error: string | null;
   loading: boolean;
   onArchive: (projectId: string) => Promise<boolean>;
+  onRestore: (projectId: string) => Promise<boolean>;
   onSave: (projectId: string | null, values: ProjectFormValues) => Promise<boolean>;
 };
 
@@ -69,7 +70,17 @@ function formatDateLabel(value: string | null): string {
   return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString();
 }
 
-export function ProjectsPage({ projects, clients, tasks, canEdit, error, loading, onArchive, onSave }: ProjectsPageProps) {
+export function ProjectsPage({
+  projects,
+  clients,
+  tasks,
+  canEdit,
+  error,
+  loading,
+  onArchive,
+  onRestore,
+  onSave
+}: ProjectsPageProps) {
   const [filter, setFilter] = useState<"all" | "active" | "archived">("active");
   const [editorProjectId, setEditorProjectId] = useState<string | null>(null);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
@@ -201,6 +212,11 @@ export function ProjectsPage({ projects, clients, tasks, canEdit, error, loading
                   {canEdit && !project.isArchived ? (
                     <button className="secondary-action" onClick={() => void onArchive(project.id)} type="button">
                       Archive
+                    </button>
+                  ) : null}
+                  {canEdit && project.isArchived ? (
+                    <button className="secondary-action" onClick={() => void onRestore(project.id)} type="button">
+                      Restore
                     </button>
                   ) : null}
                 </div>
