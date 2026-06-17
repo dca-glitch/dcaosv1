@@ -53,6 +53,7 @@ import {
   issueCreditNote,
   listClients,
   listCreditNotes,
+  updateCreditNote,
   listProjects,
   listRecurringInvoices,
   listTasks,
@@ -79,6 +80,8 @@ import type {
   BillInputRequest,
   ClientInputRequest,
   CompanyProfileUpdateRequest,
+  CreditNoteInputRequest,
+  CreditNoteLineItemInputRequest,
   InvoiceInputRequest,
   InvoiceLineItemInputRequest,
   ProjectInputRequest,
@@ -300,6 +303,11 @@ function getRecurringInvoiceLineItems(value: unknown): RecurringInvoiceLineItemI
   return lineItems;
 }
 
+function getCreditNoteLineItems(value: unknown): CreditNoteLineItemInputRequest[] | null {
+  const lineItems = getInvoiceLineItems(value);
+  return lineItems;
+}
+
 function getInvoiceInput(body: unknown): InvoiceInputRequest | null {
   const value = (body ?? {}) as Record<string, unknown>;
   const clientId = getRequiredString(value.clientId, SHORT_TEXT_FIELD_MAX_LENGTH);
@@ -458,13 +466,29 @@ function getPaymentInput(body: unknown) {
   return { paymentMethod, amountIssuedCents, amountReceivedCents, paymentDate: paymentDate.toISOString(), notes: getOptionalString(value.notes, TEXT_FIELD_MAX_LENGTH) };
 }
 
-function getCreditNoteInput(body: unknown) {
+function getCreditNoteInput(body: unknown): CreditNoteInputRequest | null {
   const value = (body ?? {}) as Record<string, unknown>;
   const reason = getRequiredString(value.reason, TEXT_FIELD_MAX_LENGTH);
-  const amountCents = getPositiveInteger(value.amountCents, 0);
   const currency = getCurrency(value.currency);
-  if (!reason || amountCents === null || amountCents <= 0 || !currency) return null;
-  return { reason, amountCents, currency };
+  const amountCents = getNonNegativeInteger(value.amountCents);
+  const subtotalCents = getNonNegativeInteger(value.subtotalCents);
+  const taxCents = getNonNegativeInteger(value.taxCents);
+  const discountCents = getNonNegativeInteger(value.discountCents);
+  const totalCents = getNonNegativeInteger(value.totalCents);
+  const lineItems = getCreditNoteLineItems(value.lineItems);
+  if (!reason || !currency || amountCents === null || subtotalCents === null || taxCents === null || discountCents === null || totalCents === null) return null;
+  return {
+    reason,
+    amountCents,
+    currency,
+    subtotalCents,
+    taxCents,
+    discountCents,
+    totalCents,
+    documentUrl: getOptionalUrl(value.documentUrl),
+    documentStorageKey: getOptionalString(value.documentStorageKey, LOGO_URL_MAX_LENGTH),
+    lineItems: lineItems ?? undefined
+  };
 }
 
 function getTaskInput(body: unknown): TaskInputRequest | null {
@@ -1100,9 +1124,26 @@ export const createCreditNoteHandler: RequestHandler = async (req, res) => {
   const authSession = getAuthSession(res.locals); const invoiceId = typeof req.params.id === "string" ? req.params.id.trim() : ""; const input = getCreditNoteInput(req.body);
   if (!authSession) return void res.status(401).json(unauthorizedFailure());
   if (!invoiceId || !input) return void res.status(400).json(invoiceInvalidFailure());
-  const response = await createCreditNote(authSession, invoiceId, input);
-  if (!response?.creditNote) return void res.status(404).json(invoiceNotFoundFailure());
-  res.status(201).json(success(response, { phase: "runtime", scope: "credit-notes" }));
+  try {
+    const response = await createCreditNote(authSession, invoiceId, input);
+    if (!response?.creditNote) return void res.status(404).json(invoiceNotFoundFailure());
+    res.status(201).json(success(response, { phase: "runtime", scope: "credit-notes" }));
+  } catch {
+    res.status(500).json(failure("CREDIT_NOTE_RUNTIME_ERROR", "Credit note create could not be completed."));
+  }
+};
+
+export const updateCreditNoteHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals); const creditNoteId = typeof req.params.id === "string" ? req.params.id.trim() : ""; const input = getCreditNoteInput(req.body);
+  if (!authSession) return void res.status(401).json(unauthorizedFailure());
+  if (!creditNoteId || !input) return void res.status(400).json(invoiceInvalidFailure());
+  try {
+    const response = await updateCreditNote(authSession, creditNoteId, input);
+    if (!response?.creditNote) return void res.status(404).json(invoiceNotFoundFailure());
+    res.json(success(response, { phase: "runtime", scope: "credit-notes" }));
+  } catch {
+    res.status(500).json(failure("CREDIT_NOTE_RUNTIME_ERROR", "Credit note update could not be completed."));
+  }
 };
 
 export const issueCreditNoteHandler: RequestHandler = async (req, res) => runCreditNoteAction(req, res, issueCreditNote);
@@ -1112,9 +1153,13 @@ async function runCreditNoteAction(req: Parameters<RequestHandler>[0], res: Para
   const authSession = getAuthSession(res.locals); const creditNoteId = typeof req.params.id === "string" ? req.params.id.trim() : "";
   if (!authSession) return void res.status(401).json(unauthorizedFailure());
   if (!creditNoteId) return void res.status(400).json(invoiceInvalidFailure());
-  const response = await action(authSession, creditNoteId);
-  if (!response?.creditNote) return void res.status(404).json(invoiceNotFoundFailure());
-  res.json(success(response, { phase: "runtime", scope: "credit-notes" }));
+  try {
+    const response = await action(authSession, creditNoteId);
+    if (!response?.creditNote) return void res.status(404).json(invoiceNotFoundFailure());
+    res.json(success(response, { phase: "runtime", scope: "credit-notes" }));
+  } catch {
+    res.status(500).json(failure("CREDIT_NOTE_RUNTIME_ERROR", "Credit note status update could not be completed."));
+  }
 }
 
 export const downloadInvoiceDocumentHandler: RequestHandler = async (req, res) => runDownload(req, res, getInvoiceDocumentDownload, req.params.id);

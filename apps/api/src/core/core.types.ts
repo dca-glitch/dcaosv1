@@ -202,6 +202,17 @@ export interface InvoicePaymentSummary {
   updatedAt: string;
 }
 
+export interface CreditNoteLineItemSummary {
+  id: string;
+  description: string;
+  quantity: number;
+  unitPriceCents: number;
+  totalCents: number;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface CreditNoteSummary {
   id: string;
   invoiceId: string;
@@ -211,7 +222,12 @@ export interface CreditNoteSummary {
   reason: string;
   amountCents: number;
   currency: string;
+  subtotalCents: number;
+  taxCents: number;
+  discountCents: number;
+  totalCents: number;
   isArchived: boolean;
+  lineItems: CreditNoteLineItemSummary[];
   createdAt: string;
   updatedAt: string;
 }
@@ -335,10 +351,25 @@ export interface CreditNoteResponse {
   creditNote: CreditNoteSummary | null;
 }
 
+export interface CreditNoteLineItemInputRequest {
+  description?: string;
+  quantity?: number;
+  unitPriceCents?: number;
+  totalCents?: number;
+  sortOrder?: number;
+}
+
 export interface CreditNoteInputRequest {
   reason?: string;
   amountCents?: number;
   currency?: string;
+  subtotalCents?: number;
+  taxCents?: number;
+  discountCents?: number;
+  totalCents?: number;
+  documentUrl?: string | null;
+  documentStorageKey?: string | null;
+  lineItems?: CreditNoteLineItemInputRequest[];
 }
 
 export interface DocumentDownloadResponse {

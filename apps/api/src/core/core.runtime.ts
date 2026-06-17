@@ -11,6 +11,7 @@ import type {
   CompanyProfileResponse,
   CompanyProfileUpdateRequest,
   CreditNoteInputRequest,
+  CreditNoteLineItemInputRequest,
   CreditNoteResponse,
   CreditNotesResponse,
   DocumentDownloadResponse,
@@ -1309,7 +1310,28 @@ const invoiceSelect = {
       reason: true,
       amountCents: true,
       currency: true,
+      subtotalCents: true,
+      taxCents: true,
+      discountCents: true,
+      totalCents: true,
+      documentUrl: true,
+      documentStorageKey: true,
       isArchived: true,
+      lineItems: {
+        orderBy: {
+          sortOrder: "asc" as const
+        },
+        select: {
+          id: true,
+          description: true,
+          quantity: true,
+          unitPriceCents: true,
+          totalCents: true,
+          sortOrder: true,
+          createdAt: true,
+          updatedAt: true
+        }
+      },
       createdAt: true,
       updatedAt: true
     }
@@ -1436,7 +1458,23 @@ function toInvoiceSummary(invoice: {
     reason: string;
     amountCents: number;
     currency: string;
+    subtotalCents: number;
+    taxCents: number;
+    discountCents: number;
+    totalCents: number;
+    documentUrl: string | null;
+    documentStorageKey: string | null;
     isArchived: boolean;
+    lineItems: Array<{
+      id: string;
+      description: string;
+      quantity: number;
+      unitPriceCents: number;
+      totalCents: number;
+      sortOrder: number;
+      createdAt: Date;
+      updatedAt: Date;
+    }>;
     createdAt: Date;
     updatedAt: Date;
   }>;
@@ -1481,12 +1519,7 @@ function toInvoiceSummary(invoice: {
           updatedAt: invoice.payment.updatedAt.toISOString()
         }
       : null,
-    creditNotes: invoice.creditNotes.map((creditNote) => ({
-      ...creditNote,
-      issueDate: toDateString(creditNote.issueDate),
-      createdAt: creditNote.createdAt.toISOString(),
-      updatedAt: creditNote.updatedAt.toISOString()
-    })),
+    creditNotes: invoice.creditNotes.map(toCreditNoteSummary),
     createdAt: invoice.createdAt.toISOString(),
     updatedAt: invoice.updatedAt.toISOString()
   };
@@ -2069,13 +2102,100 @@ const creditNoteSelect = {
   reason: true,
   amountCents: true,
   currency: true,
+  subtotalCents: true,
+  taxCents: true,
+  discountCents: true,
+  totalCents: true,
+  documentUrl: true,
+  documentStorageKey: true,
   isArchived: true,
+  lineItems: {
+    orderBy: {
+      sortOrder: "asc" as const
+    },
+    select: {
+      id: true,
+      description: true,
+      quantity: true,
+      unitPriceCents: true,
+      totalCents: true,
+      sortOrder: true,
+      createdAt: true,
+      updatedAt: true
+    }
+  },
   createdAt: true,
   updatedAt: true
 } as const;
 
-function toCreditNoteSummary(note: { id: string; invoiceId: string; creditNoteNumber: string; status: string; issueDate: Date | null; reason: string; amountCents: number; currency: string; isArchived: boolean; createdAt: Date; updatedAt: Date }) {
-  return { ...note, issueDate: toDateString(note.issueDate), createdAt: note.createdAt.toISOString(), updatedAt: note.updatedAt.toISOString() };
+function toCreditNoteSummary(note: {
+  id: string;
+  invoiceId: string;
+  creditNoteNumber: string;
+  status: string;
+  issueDate: Date | null;
+  reason: string;
+  amountCents: number;
+  currency: string;
+  subtotalCents: number;
+  taxCents: number;
+  discountCents: number;
+  totalCents: number;
+  documentUrl: string | null;
+  documentStorageKey: string | null;
+  isArchived: boolean;
+  lineItems: Array<{
+    id: string;
+    description: string;
+    quantity: number;
+    unitPriceCents: number;
+    totalCents: number;
+    sortOrder: number;
+    createdAt: Date;
+    updatedAt: Date;
+  }>;
+  createdAt: Date;
+  updatedAt: Date;
+}) {
+  return {
+    ...note,
+    subtotalCents: note.subtotalCents || note.amountCents,
+    totalCents: note.totalCents || note.amountCents,
+    issueDate: toDateString(note.issueDate),
+    lineItems: note.lineItems.map((lineItem) => ({
+      ...lineItem,
+      createdAt: lineItem.createdAt.toISOString(),
+      updatedAt: lineItem.updatedAt.toISOString()
+    })),
+    createdAt: note.createdAt.toISOString(),
+    updatedAt: note.updatedAt.toISOString()
+  };
+}
+
+async function getCreditNoteRecord(tx: PrismaTx, tenantId: string, creditNoteId: string) {
+  return tx.creditNote.findFirst({ where: { id: creditNoteId, tenantId }, select: creditNoteSelect });
+}
+
+function normalizeCreditNoteLineItems(lineItems: CreditNoteLineItemInputRequest[]) {
+  return lineItems.map((lineItem, index) => {
+    const quantity = Math.max(1, Math.round(lineItem.quantity ?? 1));
+    const unitPriceCents = Math.max(0, Math.round(lineItem.unitPriceCents ?? 0));
+    return {
+      description: lineItem.description ?? "",
+      quantity,
+      unitPriceCents,
+      totalCents: Math.max(0, Math.round(lineItem.totalCents ?? quantity * unitPriceCents)),
+      sortOrder: Math.max(0, Math.round(lineItem.sortOrder ?? index))
+    };
+  });
+}
+
+function getCreditNoteTotals(input: CreditNoteInputRequest, lineItems: ReturnType<typeof normalizeCreditNoteLineItems>) {
+  const subtotalCents = Math.max(0, Math.round(input.subtotalCents ?? lineItems.reduce((sum, lineItem) => sum + lineItem.totalCents, 0)));
+  const taxCents = Math.max(0, Math.round(input.taxCents ?? 0));
+  const discountCents = Math.max(0, Math.round(input.discountCents ?? 0));
+  const totalCents = Math.max(0, Math.round(input.totalCents ?? subtotalCents + taxCents - discountCents));
+  return { subtotalCents, taxCents, discountCents, totalCents };
 }
 
 export async function listCreditNotes(authSession: AuthResolvedSessionContext, invoiceId?: string): Promise<CreditNotesResponse | null> {
@@ -2087,14 +2207,68 @@ export async function listCreditNotes(authSession: AuthResolvedSessionContext, i
 
 export async function createCreditNote(authSession: AuthResolvedSessionContext, invoiceId: string, input: CreditNoteInputRequest): Promise<CreditNoteResponse | null> {
   const tenantId = getActiveTenantId(authSession);
-  if (!tenantId || !input.reason || input.amountCents === undefined) return null;
+  if (!tenantId || !input.reason) return null;
   const reason = input.reason;
-  const amountCents = input.amountCents;
-  return prisma.$transaction(async (tx) => {
+  return prisma.$transaction(async (tx: PrismaTx) => {
     const invoice = await getInvoiceRecord(tx, tenantId, invoiceId);
-    if (!invoice) return null;
+    if (!invoice || invoice.isArchived) return null;
+    const sourceLineItems = input.lineItems?.length ? input.lineItems : invoice.lineItems;
+    if (!sourceLineItems.length) return null;
+    const lineItems = normalizeCreditNoteLineItems(sourceLineItems);
+    const totals = getCreditNoteTotals(input, lineItems);
+    if (totals.totalCents <= 0) return null;
     const creditNote = await tx.creditNote.create({
-      data: { tenantId, invoiceId, creditNoteNumber: await nextCreditNoteNumber(tx, tenantId), reason, amountCents, currency: input.currency || invoice.currency },
+      data: {
+        tenantId,
+        invoiceId,
+        creditNoteNumber: await nextCreditNoteNumber(tx, tenantId),
+        status: "DRAFT",
+        reason,
+        amountCents: totals.totalCents,
+        currency: input.currency || invoice.currency,
+        subtotalCents: totals.subtotalCents,
+        taxCents: totals.taxCents,
+        discountCents: totals.discountCents,
+        totalCents: totals.totalCents,
+        documentUrl: toNullableString(input.documentUrl),
+        documentStorageKey: toNullableString(input.documentStorageKey),
+        lineItems: {
+          create: lineItems
+        }
+      },
+      select: creditNoteSelect
+    });
+    return { creditNote: toCreditNoteSummary(creditNote) };
+  });
+}
+
+export async function updateCreditNote(authSession: AuthResolvedSessionContext, creditNoteId: string, input: CreditNoteInputRequest): Promise<CreditNoteResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId || !input.reason || !input.lineItems?.length) return null;
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    const existing = await getCreditNoteRecord(tx, tenantId, creditNoteId);
+    if (!existing || existing.status !== "DRAFT" || existing.isArchived) return null;
+    const lineItems = normalizeCreditNoteLineItems(input.lineItems ?? []);
+    const totals = getCreditNoteTotals(input, lineItems);
+    if (totals.totalCents <= 0) return null;
+
+    await tx.creditNoteLineItem.deleteMany({ where: { creditNoteId } });
+    const creditNote = await tx.creditNote.update({
+      where: { id: creditNoteId },
+      data: {
+        reason: input.reason,
+        amountCents: totals.totalCents,
+        currency: input.currency || existing.currency,
+        subtotalCents: totals.subtotalCents,
+        taxCents: totals.taxCents,
+        discountCents: totals.discountCents,
+        totalCents: totals.totalCents,
+        documentUrl: toNullableString(input.documentUrl),
+        documentStorageKey: toNullableString(input.documentStorageKey),
+        lineItems: {
+          create: lineItems
+        }
+      },
       select: creditNoteSelect
     });
     return { creditNote: toCreditNoteSummary(creditNote) };
@@ -2104,9 +2278,13 @@ export async function createCreditNote(authSession: AuthResolvedSessionContext, 
 async function updateCreditNoteStatus(authSession: AuthResolvedSessionContext, creditNoteId: string, status: CreditNoteStatus): Promise<CreditNoteResponse | null> {
   const tenantId = getActiveTenantId(authSession);
   if (!tenantId) return null;
-  return prisma.$transaction(async (tx) => {
-    const existing = await tx.creditNote.findFirst({ where: { id: creditNoteId, tenantId }, select: { id: true } });
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    const existing = await getCreditNoteRecord(tx, tenantId, creditNoteId);
     if (!existing) return null;
+    if (status === "ISSUED") {
+      const totalCents = existing.totalCents || existing.amountCents;
+      if (existing.status !== "DRAFT" || existing.isArchived || !existing.reason || totalCents <= 0 || existing.lineItems.length === 0) return null;
+    }
     const creditNote = await tx.creditNote.update({ where: { id: creditNoteId }, data: { status, ...(status === "ISSUED" ? { issueDate: new Date() } : {}) }, select: creditNoteSelect });
     return { creditNote: toCreditNoteSummary(creditNote) };
   });

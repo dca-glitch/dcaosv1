@@ -45,6 +45,7 @@ import {
   issueCreditNoteHandler,
   updateBillHandler,
   updateClientHandler,
+  updateCreditNoteHandler,
   updateInvoiceHandler,
   updateInvoiceItemHandler,
   updateProjectHandler,
@@ -97,6 +98,7 @@ export function createCoreRouter() {
   router.post("/invoices/:id/cancel", requireAuth, requireTenant, requireRole("owner", "admin"), cancelInvoiceHandler);
   router.post("/invoices/:id/mark-uncollectible", requireAuth, requireTenant, requireRole("owner", "admin"), markInvoiceUncollectibleHandler);
   router.post("/invoices/:id/credit-notes", requireAuth, requireTenant, requireRole("owner", "admin"), createCreditNoteHandler);
+  router.put("/credit-notes/:id", requireAuth, requireTenant, requireRole("owner", "admin"), updateCreditNoteHandler);
   router.post("/credit-notes/:id/issue", requireAuth, requireTenant, requireRole("owner", "admin"), issueCreditNoteHandler);
   router.post("/credit-notes/:id/void", requireAuth, requireTenant, requireRole("owner", "admin"), voidCreditNoteHandler);
   router.get("/credit-notes/:id/document/download", requireAuth, requireTenant, downloadCreditNoteDocumentHandler);
