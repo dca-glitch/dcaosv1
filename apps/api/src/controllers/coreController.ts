@@ -82,7 +82,10 @@ import {
   updateProject,
   updateRecurringInvoice,
   updateTask,
-  uploadBillDocument
+  uploadBillDocument,
+  requestAiDeliveryBriefClientInput,
+  requestAiDeliveryBriefClientRevision,
+  approveFinalAiDeliveryBrief
 } from "../core/core.runtime";
 import type {
   AiDeliveryProjectInputRequest,
@@ -1014,6 +1017,88 @@ export const archiveAiDeliveryProjectHandler: RequestHandler = async (req, res) 
     res.json(success(response, { phase: "runtime", scope: "ai-delivery-projects" }));
   } catch {
     res.status(500).json(failure("AI_DELIVERY_PROJECT_RUNTIME_ERROR", "AI Delivery project archive could not be completed."));
+  }
+};
+
+export const requestAiDeliveryBriefClientInputHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) {
+    res.status(401).json(unauthorizedFailure());
+    return;
+  }
+
+  const aiDeliveryProjectId = typeof req.params.id === "string" ? req.params.id.trim() : "";
+  if (!aiDeliveryProjectId) {
+    res.status(400).json(aiDeliveryProjectInvalidFailure());
+    return;
+  }
+
+  try {
+    const response = await requestAiDeliveryBriefClientInput(authSession, aiDeliveryProjectId);
+    if (!response?.aiDeliveryProject) {
+      res.status(404).json(aiDeliveryProjectNotFoundFailure());
+      return;
+    }
+
+    res.json(success(response, { phase: "runtime", scope: "ai-delivery-projects" }));
+  } catch {
+    res.status(500).json(failure("AI_DELIVERY_BRIEF_RUNTIME_ERROR", "Requesting client input could not be completed."));
+  }
+};
+
+export const requestAiDeliveryBriefClientRevisionHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) {
+    res.status(401).json(unauthorizedFailure());
+    return;
+  }
+
+  const aiDeliveryProjectId = typeof req.params.id === "string" ? req.params.id.trim() : "";
+  if (!aiDeliveryProjectId) {
+    res.status(400).json(aiDeliveryProjectInvalidFailure());
+    return;
+  }
+
+  try {
+    const response = await requestAiDeliveryBriefClientRevision(authSession, aiDeliveryProjectId);
+    if (!response?.aiDeliveryProject) {
+      res.status(404).json(aiDeliveryProjectNotFoundFailure());
+      return;
+    }
+
+    res.json(success(response, { phase: "runtime", scope: "ai-delivery-projects" }));
+  } catch (error) {
+    if (error instanceof Error && error.message === "BRIEF_REVISION_LIMIT_REACHED") {
+      res.status(409).json(failure("AI_DELIVERY_BRIEF_REVISION_LIMIT_REACHED", "Brief revision limit reached."));
+      return;
+    }
+    res.status(500).json(failure("AI_DELIVERY_BRIEF_RUNTIME_ERROR", "Requesting client revision could not be completed."));
+  }
+};
+
+export const approveFinalAiDeliveryBriefHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) {
+    res.status(401).json(unauthorizedFailure());
+    return;
+  }
+
+  const aiDeliveryProjectId = typeof req.params.id === "string" ? req.params.id.trim() : "";
+  if (!aiDeliveryProjectId) {
+    res.status(400).json(aiDeliveryProjectInvalidFailure());
+    return;
+  }
+
+  try {
+    const response = await approveFinalAiDeliveryBrief(authSession, aiDeliveryProjectId);
+    if (!response?.aiDeliveryProject) {
+      res.status(404).json(aiDeliveryProjectNotFoundFailure());
+      return;
+    }
+
+    res.json(success(response, { phase: "runtime", scope: "ai-delivery-projects" }));
+  } catch {
+    res.status(500).json(failure("AI_DELIVERY_BRIEF_RUNTIME_ERROR", "Approving final brief could not be completed."));
   }
 };
 

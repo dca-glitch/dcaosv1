@@ -38,6 +38,9 @@ import {
   listRecurringInvoicesHandler,
   listTasksHandler,
   listVendorsHandler,
+  requestAiDeliveryBriefClientInputHandler,
+  requestAiDeliveryBriefClientRevisionHandler,
+  approveFinalAiDeliveryBriefHandler,
   markInvoicePaidHandler,
   markInvoiceSentHandler,
   markInvoiceUncollectibleHandler,
@@ -88,6 +91,9 @@ export function createCoreRouter() {
   router.post("/ai-delivery-projects", requireAuth, requireTenant, requireRole("owner", "admin"), createAiDeliveryProjectHandler);
   router.put("/ai-delivery-projects/:id", requireAuth, requireTenant, requireRole("owner", "admin"), updateAiDeliveryProjectHandler);
   router.post("/ai-delivery-projects/:id/archive", requireAuth, requireTenant, requireRole("owner", "admin"), archiveAiDeliveryProjectHandler);
+  router.post("/ai-delivery-projects/:id/brief/request-client-input", requireAuth, requireTenant, requireRole("owner", "admin"), requestAiDeliveryBriefClientInputHandler);
+  router.post("/ai-delivery-projects/:id/brief/request-client-revision", requireAuth, requireTenant, requireRole("owner", "admin"), requestAiDeliveryBriefClientRevisionHandler);
+  router.post("/ai-delivery-projects/:id/brief/approve-final", requireAuth, requireTenant, requireRole("owner", "admin"), approveFinalAiDeliveryBriefHandler);
 
   router.get("/tasks", requireAuth, requireTenant, listTasksHandler);
   router.post("/tasks", requireAuth, requireTenant, requireRole("owner", "admin"), createTaskHandler);

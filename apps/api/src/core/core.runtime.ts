@@ -1373,6 +1373,117 @@ export async function archiveAiDeliveryProject(
   });
 }
 
+export async function requestAiDeliveryBriefClientInput(
+  authSession: AuthResolvedSessionContext,
+  aiDeliveryProjectId: string
+): Promise<AiDeliveryProjectResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) return null;
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    const existing = await getAiDeliveryProjectRecord(tx, tenantId, aiDeliveryProjectId);
+    if (!existing) return null;
+
+    const brief = await tx.aiDeliveryBrief.findFirst({
+      where: { aiDeliveryProjectId, tenantId },
+      select: { id: true }
+    });
+    if (!brief) return null;
+
+    // Update the related brief status to CLIENT_INPUT_REQUESTED
+    const updated = await getAiDeliveryProjectDelegate(tx).update({
+      where: { id: aiDeliveryProjectId },
+      data: {
+        brief: {
+          update: {
+            status: "CLIENT_INPUT_REQUESTED"
+          }
+        }
+      },
+      select: aiDeliveryProjectSelect
+    });
+
+    return {
+      aiDeliveryProject: toAiDeliveryProjectSummary(updated as Parameters<typeof toAiDeliveryProjectSummary>[0])
+    };
+  });
+}
+
+export async function requestAiDeliveryBriefClientRevision(
+  authSession: AuthResolvedSessionContext,
+  aiDeliveryProjectId: string
+): Promise<AiDeliveryProjectResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) return null;
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    // load brief with revisionCount
+    const brief = await tx.aiDeliveryBrief.findFirst({
+      where: { aiDeliveryProjectId, tenantId },
+      select: { id: true, revisionCount: true }
+    });
+
+    if (!brief) return null;
+
+    if (brief.revisionCount >= 1) {
+      throw new Error("BRIEF_REVISION_LIMIT_REACHED");
+    }
+
+    const updated = await getAiDeliveryProjectDelegate(tx).update({
+      where: { id: aiDeliveryProjectId },
+      data: {
+        brief: {
+          update: {
+            status: "REVISION_REQUESTED",
+            revisionRequestedAt: new Date()
+          }
+        }
+      },
+      select: aiDeliveryProjectSelect
+    });
+
+    return {
+      aiDeliveryProject: toAiDeliveryProjectSummary(updated as Parameters<typeof toAiDeliveryProjectSummary>[0])
+    };
+  });
+}
+
+export async function approveFinalAiDeliveryBrief(
+  authSession: AuthResolvedSessionContext,
+  aiDeliveryProjectId: string
+): Promise<AiDeliveryProjectResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) return null;
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    const existing = await getAiDeliveryProjectRecord(tx, tenantId, aiDeliveryProjectId);
+    if (!existing) return null;
+
+    const brief = await tx.aiDeliveryBrief.findFirst({
+      where: { aiDeliveryProjectId, tenantId },
+      select: { id: true }
+    });
+    if (!brief) return null;
+
+    const updated = await getAiDeliveryProjectDelegate(tx).update({
+      where: { id: aiDeliveryProjectId },
+      data: {
+        brief: {
+          update: {
+            status: "ADMIN_APPROVED",
+            approvedAt: new Date()
+          }
+        }
+      },
+      select: aiDeliveryProjectSelect
+    });
+
+    return {
+      aiDeliveryProject: toAiDeliveryProjectSummary(updated as Parameters<typeof toAiDeliveryProjectSummary>[0])
+    };
+  });
+}
+
 export async function listTasks(
   authSession: AuthResolvedSessionContext
 ): Promise<TasksResponse | null> {
