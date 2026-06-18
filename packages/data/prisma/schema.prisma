@@ -101,6 +101,15 @@ enum AuditActorType {
   API
 }
 
+enum AiDeliveryBriefStatus {
+  DRAFT
+  CLIENT_INPUT_REQUESTED
+  CLIENT_SUBMITTED
+  REVISION_REQUESTED
+  CLIENT_REVISED
+  ADMIN_APPROVED
+}
+
 model Tenant {
   id                   String                @id @default(uuid())
   name                 String
@@ -127,6 +136,8 @@ model Tenant {
   invoicePayments      InvoicePayment[]
   creditNotes          CreditNote[]
   projectDocuments     ProjectDocument[]
+  aiDeliveryProjects   AiDeliveryProject[]
+  aiDeliveryBriefs     AiDeliveryBrief[]
 }
 
 model User {
@@ -305,6 +316,7 @@ model Client {
   projects          Project[]
   invoices          Invoice[]
   recurringInvoices RecurringInvoice[]
+  aiDeliveryProjects AiDeliveryProject[]
 
   @@index([tenantId])
   @@index([tenantId, isArchived])
@@ -328,10 +340,61 @@ model Project {
   invoices          Invoice[]
   recurringInvoices RecurringInvoice[]
   documents         ProjectDocument[]
+  aiDeliveryProjects AiDeliveryProject[]
 
   @@index([tenantId])
   @@index([tenantId, isArchived])
   @@index([tenantId, clientId])
+}
+
+model AiDeliveryProject {
+  id                       String           @id @default(uuid())
+  tenantId                 String
+  clientId                 String
+  projectId                String?
+  name                     String
+  targetMonth              DateTime
+  plannedContentScopeNotes String?
+  isArchived               Boolean          @default(false)
+  createdAt                DateTime         @default(now())
+  updatedAt                DateTime         @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  client Client @relation(fields: [clientId], references: [id], onDelete: Restrict)
+  project Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  brief AiDeliveryBrief?
+
+  @@index([tenantId])
+  @@index([tenantId, isArchived])
+  @@index([tenantId, clientId])
+  @@index([tenantId, projectId])
+  @@index([tenantId, targetMonth])
+}
+
+model AiDeliveryBrief {
+  id                    String                @id @default(uuid())
+  tenantId              String
+  aiDeliveryProjectId   String                @unique
+  status                AiDeliveryBriefStatus @default(DRAFT)
+  clientPriorities      String?
+  productsServicesFocus String?
+  targetAudience        String?
+  marketsCompetitors    String?
+  notes                 String?
+  revisionCount         Int                   @default(0)
+  submittedAt           DateTime?
+  revisionRequestedAt   DateTime?
+  revisedAt             DateTime?
+  approvedAt            DateTime?
+  createdAt             DateTime              @default(now())
+  updatedAt             DateTime              @updatedAt
+
+  tenant            Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  aiDeliveryProject AiDeliveryProject @relation(fields: [aiDeliveryProjectId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([tenantId, status])
+  @@index([tenantId, aiDeliveryProjectId])
 }
 
 model Task {

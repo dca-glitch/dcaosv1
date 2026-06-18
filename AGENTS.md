@@ -182,3 +182,16 @@ Follow both documents strictly.
 ```
 
 This keeps approved UI direction and production safety rules stored at repository level, not only in chat memory.
+
+## DCA OS Lite AI Delivery / Cost-Control Rules
+
+- New modules start with read-only inspection.
+- Codex must work one block/layer at a time.
+- Prompts must include GATE with mode, scope, max commands, max file reads, allowed files, forbidden files, validation rule, commit rule, deploy rule, and stop condition.
+- No broad schema + API + UI prompts.
+- No generated mass rewrite scripts.
+- No deployment or commits without explicit user approval.
+- For AI Delivery Build Block 1, implementation order is docs guardrails, schema/migration only, backend only, frontend only.
+- Use term “monthly content plan,” not “package.”
+- Client archive is read-only.
+- No public approval links in MVP.
