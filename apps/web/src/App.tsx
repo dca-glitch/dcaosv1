@@ -11,6 +11,7 @@ import {
 } from "./pages/bills/BillsPage";
 import { CompanyProfilePage, type CompanyProfileFormValues, type CompanyProfileSummary } from "./pages/company-profile/CompanyProfilePage";
 import { ClientsPage, type ClientFormValues, type ClientSummary } from "./pages/clients/ClientsPage";
+import { CreditNotesPage, type CreditNoteFormValues, type CreditNoteSummary } from "./pages/credit-notes/CreditNotesPage";
 import {
   InvoicesPage,
   type InvoiceFormValues,
@@ -215,6 +216,7 @@ type ViewKey =
   | "projects"
   | "tasks"
   | "invoices"
+  | "credit-notes"
   | "invoice-items"
   | "bills"
   | "company-profile"
@@ -264,6 +266,7 @@ const navigationItems: Array<{ view: ViewKey; label: string; section: string }> 
   { view: "projects", label: "Projects", section: "core" },
   { view: "tasks", label: "Tasks", section: "core" },
   { view: "invoices", label: "Invoices", section: "core" },
+  { view: "credit-notes", label: "Credit Notes", section: "core" },
   { view: "invoice-items", label: "Services Library", section: "core" },
   { view: "bills", label: "Bills", section: "core" },
   { view: "company-profile", label: "Company Profile", section: "settings" },
@@ -1605,6 +1608,72 @@ export function App() {
     }
   }
 
+  async function handleSaveCreditNote(
+    invoiceId: string,
+    creditNoteId: string | null,
+    values: CreditNoteFormValues
+  ): Promise<boolean> {
+    setAppMessage(null);
+    try {
+      const response = await runAuthenticatedRequest<{ creditNote: CreditNoteSummary | null }>(
+        creditNoteId ? `/credit-notes/${creditNoteId}` : `/invoices/${invoiceId}/credit-notes`,
+        {
+          method: creditNoteId ? "PUT" : "POST",
+          body: values
+        }
+      );
+
+      if (!response) {
+        return false;
+      }
+
+      if (!response.ok) {
+        setAppMessage({ tone: "error", text: getErrorMessage(response) });
+        return false;
+      }
+
+      await loadProtectedState(tokenRef.current);
+      setAppMessage({ tone: "success", text: creditNoteId ? "Credit note updated." : "Credit note created." });
+      return true;
+    } catch (error) {
+      setAppMessage({ tone: "error", text: maskError(error) });
+      return false;
+    }
+  }
+
+  async function handleIssueCreditNote(creditNoteId: string): Promise<boolean> {
+    return runCreditNoteAction(`/credit-notes/${creditNoteId}/issue`, "Credit note issued.");
+  }
+
+  async function handleVoidCreditNote(creditNoteId: string): Promise<boolean> {
+    return runCreditNoteAction(`/credit-notes/${creditNoteId}/void`, "Credit note voided.");
+  }
+
+  async function runCreditNoteAction(path: string, successMessage: string): Promise<boolean> {
+    setAppMessage(null);
+    try {
+      const response = await runAuthenticatedRequest<{ creditNote: CreditNoteSummary | null }>(path, {
+        method: "POST"
+      });
+
+      if (!response) {
+        return false;
+      }
+
+      if (!response.ok) {
+        setAppMessage({ tone: "error", text: getErrorMessage(response) });
+        return false;
+      }
+
+      await loadProtectedState(tokenRef.current);
+      setAppMessage({ tone: "success", text: successMessage });
+      return true;
+    } catch (error) {
+      setAppMessage({ tone: "error", text: maskError(error) });
+      return false;
+    }
+  }
+
   async function handleSaveInvoiceItem(
     invoiceItemId: string | null,
     values: InvoiceItemFormValues
@@ -1970,6 +2039,18 @@ export function App() {
           onSaveRecurringInvoice={handleSaveRecurringInvoice}
           projects={projects?.projects ?? []}
           recurringInvoices={recurringInvoices?.recurringInvoices ?? []}
+        />
+      ) : null}
+      {!loading && activeView === "credit-notes" ? (
+        <CreditNotesPage
+          canEdit={canManageCore}
+          errorMessage={null}
+          invoiceItems={invoiceItems?.invoiceItems ?? []}
+          invoices={invoices?.invoices ?? []}
+          isLoading={false}
+          onIssueCreditNote={handleIssueCreditNote}
+          onSaveCreditNote={handleSaveCreditNote}
+          onVoidCreditNote={handleVoidCreditNote}
         />
       ) : null}
       {!loading && activeView === "invoice-items" ? (
