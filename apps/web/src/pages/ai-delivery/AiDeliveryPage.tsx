@@ -77,8 +77,10 @@ export function AiDeliveryPage({
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [draft, setDraft] = useState<AiDeliveryProjectFormValues>(emptyForm());
   const [saving, setSaving] = useState(false);
+  const [openBriefId, setOpenBriefId] = useState<string | null>(null);
 
   const selectedProject = useMemo(() => projects.find((p) => p.id === editorProjectId) ?? null, [editorProjectId, projects]);
+  const openProject = useMemo(() => projects.find((p) => p.id === openBriefId) ?? null, [openBriefId, projects]);
 
   function openCreateModal() {
     setEditorProjectId(null);
@@ -173,6 +175,9 @@ export function AiDeliveryPage({
                     <>
                       <button className="secondary-action" onClick={() => openEditModal(p)} type="button">
                         Edit
+                      </button>
+                      <button className="secondary-action" onClick={() => setOpenBriefId(p.id)} type="button" disabled={!p.brief}>
+                        Open brief
                       </button>
                       {!p.isArchived ? (
                         <button className="secondary-action" onClick={() => void onArchive(p.id)} type="button">
@@ -313,6 +318,48 @@ export function AiDeliveryPage({
               </button>
             </div>
           </form>
+        </Modal>
+      ) : null}
+      {openBriefId ? (
+        <Modal
+          onClose={() => setOpenBriefId(null)}
+          title="AI Delivery Brief"
+        >
+          {openProject ? (
+            openProject.brief ? (
+              <div>
+                <dl className="brief-grid">
+                  <div>
+                    <dt>Status</dt>
+                    <dd>{openProject.brief.status}</dd>
+                  </div>
+                  <div>
+                    <dt>Revisions</dt>
+                    <dd>{openProject.brief.revisionCount ?? 0}</dd>
+                  </div>
+                  <div>
+                    <dt>Created</dt>
+                    <dd>{new Date(openProject.brief.createdAt).toLocaleString()}</dd>
+                  </div>
+                  <div>
+                    <dt>Updated</dt>
+                    <dd>{new Date(openProject.brief.updatedAt).toLocaleString()}</dd>
+                  </div>
+                </dl>
+                <section className="field-panel">
+                  <h3>Planned content scope notes</h3>
+                  <pre style={{ whiteSpace: 'pre-wrap' }}>{openProject.plannedContentScopeNotes ?? 'Not set'}</pre>
+                </section>
+                <div className="modal-footer">
+                  <button className="secondary-action" onClick={() => setOpenBriefId(null)} type="button">Close</button>
+                </div>
+              </div>
+            ) : (
+              <div>No brief available for this project.</div>
+            )
+          ) : (
+            <div>Project not found.</div>
+          )}
         </Modal>
       ) : null}
     </section>
