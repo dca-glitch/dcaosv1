@@ -1,6 +1,9 @@
 import type { Prisma } from "@prisma/client";
 import { createPrismaClient } from "../../../../packages/data/src/client";
 import type {
+  AiDeliveryProjectInputRequest,
+  AiDeliveryProjectResponse,
+  AiDeliveryProjectsResponse,
   BillDocumentUploadRequest,
   BillInputRequest,
   BillResponse,
@@ -53,9 +56,19 @@ type CreditNoteStatus = "DRAFT" | "ISSUED" | "VOIDED";
 type PaymentMethod = "CASH" | "REVOLUT_BANK" | "WISE_BANK" | "REVOLUT_CARD" | "WISE_CARD" | "CARD_PROCESSOR" | "OTHER";
 type RecurringInvoiceInterval = "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY";
 type BillPaymentForm = "CASH" | "REVOLUT_BANK" | "WISE_BANK" | "REVOLUT_CARD" | "WISE_CARD" | "OTHER";
+type AiDeliveryProjectDelegate = {
+  findFirst: (args: unknown) => Promise<unknown>;
+  findMany: (args: unknown) => Promise<unknown[]>;
+  create: (args: unknown) => Promise<unknown>;
+  update: (args: unknown) => Promise<unknown>;
+};
 
 function toNullableString(value: string | null | undefined): string | null {
   return typeof value === "string" && value.length > 0 ? value : null;
+}
+
+function getAiDeliveryProjectDelegate(client: PrismaTx | typeof prisma): AiDeliveryProjectDelegate {
+  return (client as unknown as { aiDeliveryProject: AiDeliveryProjectDelegate }).aiDeliveryProject;
 }
 
 function toDateString(value: Date | null | undefined): string | null {
@@ -176,6 +189,85 @@ function toProjectSummary(project: {
     openTaskCount: project.openTaskCount ?? 0,
     createdAt: project.createdAt.toISOString(),
     updatedAt: project.updatedAt.toISOString()
+  };
+}
+
+const aiDeliveryProjectSelect = {
+  id: true,
+  clientId: true,
+  client: {
+    select: {
+      id: true,
+      name: true
+    }
+  },
+  projectId: true,
+  project: {
+    select: {
+      id: true,
+      name: true
+    }
+  },
+  name: true,
+  targetMonth: true,
+  plannedContentScopeNotes: true,
+  isArchived: true,
+  brief: {
+    select: {
+      id: true,
+      status: true,
+      createdAt: true,
+      updatedAt: true
+    }
+  },
+  createdAt: true,
+  updatedAt: true
+} as const;
+
+function toAiDeliveryProjectSummary(aiDeliveryProject: {
+  id: string;
+  clientId: string;
+  client: { id: string; name: string } | null;
+  projectId: string | null;
+  project: { id: string; name: string } | null;
+  name: string;
+  targetMonth: string;
+  plannedContentScopeNotes: string | null;
+  isArchived: boolean;
+  brief: { id: string; status: string; createdAt: Date; updatedAt: Date } | null;
+  createdAt: Date;
+  updatedAt: Date;
+}) {
+  return {
+    id: aiDeliveryProject.id,
+    clientId: aiDeliveryProject.clientId,
+    client: aiDeliveryProject.client
+      ? {
+          id: aiDeliveryProject.client.id,
+          name: aiDeliveryProject.client.name
+        }
+      : null,
+    projectId: aiDeliveryProject.projectId,
+    project: aiDeliveryProject.project
+      ? {
+          id: aiDeliveryProject.project.id,
+          name: aiDeliveryProject.project.name
+        }
+      : null,
+    name: aiDeliveryProject.name,
+    targetMonth: aiDeliveryProject.targetMonth,
+    plannedContentScopeNotes: aiDeliveryProject.plannedContentScopeNotes,
+    isArchived: aiDeliveryProject.isArchived,
+    brief: aiDeliveryProject.brief
+      ? {
+          id: aiDeliveryProject.brief.id,
+          status: aiDeliveryProject.brief.status,
+          createdAt: aiDeliveryProject.brief.createdAt.toISOString(),
+          updatedAt: aiDeliveryProject.brief.updatedAt.toISOString()
+        }
+      : null,
+    createdAt: aiDeliveryProject.createdAt.toISOString(),
+    updatedAt: aiDeliveryProject.updatedAt.toISOString()
   };
 }
 
@@ -1075,6 +1167,208 @@ export async function restoreProject(
         taskCount: restored._count.tasks,
         openTaskCount
       })
+    };
+  });
+}
+
+async function getAiDeliveryProjectRecord(tx: PrismaTx, tenantId: string, aiDeliveryProjectId: string) {
+  return getAiDeliveryProjectDelegate(tx).findFirst({
+    where: {
+      id: aiDeliveryProjectId,
+      tenantId
+    },
+    select: aiDeliveryProjectSelect
+  });
+}
+
+async function getAiDeliveryTenantClient(tx: PrismaTx, tenantId: string, clientId: string | undefined) {
+  if (!clientId) {
+    return null;
+  }
+
+  return tx.client.findFirst({
+    where: {
+      id: clientId,
+      tenantId
+    },
+    select: {
+      id: true
+    }
+  });
+}
+
+async function getAiDeliveryTenantProject(
+  tx: PrismaTx,
+  tenantId: string,
+  clientId: string,
+  projectId: string | null | undefined
+) {
+  if (!projectId) {
+    return null;
+  }
+
+  return tx.project.findFirst({
+    where: {
+      id: projectId,
+      tenantId,
+      clientId
+    },
+    select: {
+      id: true
+    }
+  });
+}
+
+export async function listAiDeliveryProjects(
+  authSession: AuthResolvedSessionContext
+): Promise<AiDeliveryProjectsResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) {
+    return null;
+  }
+
+  const aiDeliveryProjects = await getAiDeliveryProjectDelegate(prisma).findMany({
+    where: {
+      tenantId
+    },
+    orderBy: [
+      {
+        isArchived: "asc"
+      },
+      {
+        targetMonth: "desc"
+      },
+      {
+        createdAt: "desc"
+      }
+    ],
+    select: aiDeliveryProjectSelect
+  });
+
+  return {
+    aiDeliveryProjects: aiDeliveryProjects.map((aiDeliveryProject) =>
+      toAiDeliveryProjectSummary(aiDeliveryProject as Parameters<typeof toAiDeliveryProjectSummary>[0])
+    )
+  };
+}
+
+export async function createAiDeliveryProject(
+  authSession: AuthResolvedSessionContext,
+  input: AiDeliveryProjectInputRequest
+): Promise<AiDeliveryProjectResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId || !input.clientId || !input.name || !input.targetMonth) {
+    return null;
+  }
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    const client = await getAiDeliveryTenantClient(tx, tenantId, input.clientId);
+    if (!client) {
+      return null;
+    }
+
+    const project = await getAiDeliveryTenantProject(tx, tenantId, client.id, input.projectId);
+    if (input.projectId && !project) {
+      return null;
+    }
+
+    const created = await getAiDeliveryProjectDelegate(tx).create({
+      data: {
+        tenantId,
+        clientId: client.id,
+        projectId: project?.id ?? null,
+        name: input.name,
+        targetMonth: input.targetMonth,
+        plannedContentScopeNotes: toNullableString(input.plannedContentScopeNotes),
+        brief: {
+          create: {
+            tenantId,
+            status: "DRAFT"
+          }
+        }
+      },
+      select: aiDeliveryProjectSelect
+    });
+
+    return {
+      aiDeliveryProject: toAiDeliveryProjectSummary(created as Parameters<typeof toAiDeliveryProjectSummary>[0])
+    };
+  });
+}
+
+export async function updateAiDeliveryProject(
+  authSession: AuthResolvedSessionContext,
+  aiDeliveryProjectId: string,
+  input: AiDeliveryProjectInputRequest
+): Promise<AiDeliveryProjectResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId || !input.clientId || !input.name || !input.targetMonth) {
+    return null;
+  }
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    const existing = await getAiDeliveryProjectRecord(tx, tenantId, aiDeliveryProjectId);
+    if (!existing) {
+      return null;
+    }
+
+    const client = await getAiDeliveryTenantClient(tx, tenantId, input.clientId);
+    if (!client) {
+      return null;
+    }
+
+    const project = await getAiDeliveryTenantProject(tx, tenantId, client.id, input.projectId);
+    if (input.projectId && !project) {
+      return null;
+    }
+
+    const updated = await getAiDeliveryProjectDelegate(tx).update({
+      where: {
+        id: aiDeliveryProjectId
+      },
+      data: {
+        clientId: client.id,
+        projectId: project?.id ?? null,
+        name: input.name,
+        targetMonth: input.targetMonth,
+        plannedContentScopeNotes: toNullableString(input.plannedContentScopeNotes)
+      },
+      select: aiDeliveryProjectSelect
+    });
+
+    return {
+      aiDeliveryProject: toAiDeliveryProjectSummary(updated as Parameters<typeof toAiDeliveryProjectSummary>[0])
+    };
+  });
+}
+
+export async function archiveAiDeliveryProject(
+  authSession: AuthResolvedSessionContext,
+  aiDeliveryProjectId: string
+): Promise<AiDeliveryProjectResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) {
+    return null;
+  }
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    const existing = await getAiDeliveryProjectRecord(tx, tenantId, aiDeliveryProjectId);
+    if (!existing) {
+      return null;
+    }
+
+    const archived = await getAiDeliveryProjectDelegate(tx).update({
+      where: {
+        id: aiDeliveryProjectId
+      },
+      data: {
+        isArchived: true
+      },
+      select: aiDeliveryProjectSelect
+    });
+
+    return {
+      aiDeliveryProject: toAiDeliveryProjectSummary(archived as Parameters<typeof toAiDeliveryProjectSummary>[0])
     };
   });
 }

@@ -1,5 +1,6 @@
 import { Router } from "express";
 import {
+  archiveAiDeliveryProjectHandler,
   archiveBillHandler,
   archiveClientHandler,
   archiveInvoiceHandler,
@@ -8,6 +9,7 @@ import {
   archiveRecurringInvoiceHandler,
   archiveTaskHandler,
   cancelInvoiceHandler,
+  createAiDeliveryProjectHandler,
   createCreditNoteHandler,
   createBillHandler,
   createClientHandler,
@@ -27,6 +29,7 @@ import {
   getProjectHandler,
   getRecurringInvoiceHandler,
   getTaskHandler,
+  listAiDeliveryProjectsHandler,
   listBillsHandler,
   listClientsHandler,
   listInvoiceItemsHandler,
@@ -46,6 +49,7 @@ import {
   restoreTaskHandler,
   saveCompanyProfileHandler,
   issueCreditNoteHandler,
+  updateAiDeliveryProjectHandler,
   updateBillHandler,
   updateClientHandler,
   updateCreditNoteHandler,
@@ -79,6 +83,11 @@ export function createCoreRouter() {
   router.put("/projects/:id", requireAuth, requireTenant, requireRole("owner", "admin"), updateProjectHandler);
   router.post("/projects/:id/archive", requireAuth, requireTenant, requireRole("owner", "admin"), archiveProjectHandler);
   router.post("/projects/:id/restore", requireAuth, requireTenant, requireRole("owner", "admin"), restoreProjectHandler);
+
+  router.get("/ai-delivery-projects", requireAuth, requireTenant, requireRole("owner", "admin"), listAiDeliveryProjectsHandler);
+  router.post("/ai-delivery-projects", requireAuth, requireTenant, requireRole("owner", "admin"), createAiDeliveryProjectHandler);
+  router.put("/ai-delivery-projects/:id", requireAuth, requireTenant, requireRole("owner", "admin"), updateAiDeliveryProjectHandler);
+  router.post("/ai-delivery-projects/:id/archive", requireAuth, requireTenant, requireRole("owner", "admin"), archiveAiDeliveryProjectHandler);
 
   router.get("/tasks", requireAuth, requireTenant, listTasksHandler);
   router.post("/tasks", requireAuth, requireTenant, requireRole("owner", "admin"), createTaskHandler);

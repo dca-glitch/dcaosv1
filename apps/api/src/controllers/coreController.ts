@@ -1,5 +1,7 @@
 import type { RequestHandler } from "express";
 import {
+  aiDeliveryProjectInvalidFailure,
+  aiDeliveryProjectNotFoundFailure,
   billInvalidFailure,
   billNotFoundFailure,
   clientInvalidFailure,
@@ -20,6 +22,7 @@ import {
 } from "../utils/responses";
 import type { AuthSessionLocals } from "../auth/types";
 import {
+  archiveAiDeliveryProject,
   archiveClient,
   archiveBill,
   archiveInvoice,
@@ -29,6 +32,7 @@ import {
   cancelInvoice,
   archiveInvoiceItem,
   createBill,
+  createAiDeliveryProject,
   createClient,
   createCreditNote,
   createInvoice,
@@ -48,6 +52,7 @@ import {
   getProject,
   getRecurringInvoice,
   getTask,
+  listAiDeliveryProjects,
   listInvoices,
   listInvoiceItems,
   issueCreditNote,
@@ -68,6 +73,7 @@ import {
   restoreProject,
   restoreTask,
   saveCompanyProfile,
+  updateAiDeliveryProject,
   updateBill,
   updateClient,
   updateInvoiceItem,
@@ -79,6 +85,7 @@ import {
   uploadBillDocument
 } from "../core/core.runtime";
 import type {
+  AiDeliveryProjectInputRequest,
   BillDocumentUploadRequest,
   BillInputRequest,
   ClientInputRequest,
@@ -263,6 +270,26 @@ function getProjectInput(body: unknown): ProjectInputRequest | null {
     startDate: startDate?.toISOString() ?? null,
     dueDate: dueDate?.toISOString() ?? null,
     status
+  };
+}
+
+function getAiDeliveryProjectInput(body: unknown): AiDeliveryProjectInputRequest | null {
+  const value = (body ?? {}) as Record<string, unknown>;
+  const clientId = getRequiredString(value.clientId, SHORT_TEXT_FIELD_MAX_LENGTH);
+  const projectId = getOptionalString(value.projectId, SHORT_TEXT_FIELD_MAX_LENGTH);
+  const name = getRequiredString(value.name, SHORT_TEXT_FIELD_MAX_LENGTH);
+  const targetMonth = getRequiredString(value.targetMonth, SHORT_TEXT_FIELD_MAX_LENGTH);
+
+  if (!clientId || !name || !targetMonth || !/^\d{4}-(0[1-9]|1[0-2])$/.test(targetMonth)) {
+    return null;
+  }
+
+  return {
+    clientId,
+    projectId: projectId ?? null,
+    name,
+    targetMonth,
+    plannedContentScopeNotes: getOptionalString(value.plannedContentScopeNotes, TEXT_FIELD_MAX_LENGTH)
   };
 }
 
@@ -888,6 +915,105 @@ export const restoreProjectHandler: RequestHandler = async (req, res) => {
     res.json(success(response, { phase: "runtime", scope: "core-module-skeleton" }));
   } catch {
     res.status(500).json(failure("PROJECT_RUNTIME_ERROR", "Project restore could not be completed."));
+  }
+};
+
+export const listAiDeliveryProjectsHandler: RequestHandler = async (_req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) {
+    res.status(401).json(unauthorizedFailure());
+    return;
+  }
+
+  try {
+    const response = await listAiDeliveryProjects(authSession);
+    if (!response) {
+      res.status(403).json(forbiddenFailure());
+      return;
+    }
+
+    res.json(success(response, { phase: "runtime", scope: "ai-delivery-projects" }));
+  } catch {
+    res.status(500).json(failure("AI_DELIVERY_PROJECT_RUNTIME_ERROR", "AI Delivery project list could not be completed."));
+  }
+};
+
+export const createAiDeliveryProjectHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) {
+    res.status(401).json(unauthorizedFailure());
+    return;
+  }
+
+  const input = getAiDeliveryProjectInput(req.body);
+  if (!input) {
+    res.status(400).json(aiDeliveryProjectInvalidFailure());
+    return;
+  }
+
+  try {
+    const response = await createAiDeliveryProject(authSession, input);
+    if (!response?.aiDeliveryProject) {
+      res.status(403).json(forbiddenFailure());
+      return;
+    }
+
+    res.status(201).json(success(response, { phase: "runtime", scope: "ai-delivery-projects" }));
+  } catch {
+    res.status(500).json(failure("AI_DELIVERY_PROJECT_RUNTIME_ERROR", "AI Delivery project create could not be completed."));
+  }
+};
+
+export const updateAiDeliveryProjectHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) {
+    res.status(401).json(unauthorizedFailure());
+    return;
+  }
+
+  const aiDeliveryProjectId = typeof req.params.id === "string" ? req.params.id.trim() : "";
+  const input = getAiDeliveryProjectInput(req.body);
+  if (!aiDeliveryProjectId || !input) {
+    res.status(400).json(aiDeliveryProjectInvalidFailure());
+    return;
+  }
+
+  try {
+    const response = await updateAiDeliveryProject(authSession, aiDeliveryProjectId, input);
+    if (!response?.aiDeliveryProject) {
+      res.status(404).json(aiDeliveryProjectNotFoundFailure());
+      return;
+    }
+
+    res.json(success(response, { phase: "runtime", scope: "ai-delivery-projects" }));
+  } catch {
+    res.status(500).json(failure("AI_DELIVERY_PROJECT_RUNTIME_ERROR", "AI Delivery project update could not be completed."));
+  }
+};
+
+export const archiveAiDeliveryProjectHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) {
+    res.status(401).json(unauthorizedFailure());
+    return;
+  }
+
+  const aiDeliveryProjectId = typeof req.params.id === "string" ? req.params.id.trim() : "";
+  if (!aiDeliveryProjectId) {
+    res.status(400).json(aiDeliveryProjectInvalidFailure());
+    return;
+  }
+
+  try {
+    const response = await archiveAiDeliveryProject(authSession, aiDeliveryProjectId);
+    if (!response?.aiDeliveryProject) {
+      res.status(404).json(aiDeliveryProjectNotFoundFailure());
+      return;
+    }
+
+    res.json(success(response, { phase: "runtime", scope: "ai-delivery-projects" }));
+  } catch {
+    res.status(500).json(failure("AI_DELIVERY_PROJECT_RUNTIME_ERROR", "AI Delivery project archive could not be completed."));
   }
 };
 
@@ -1672,4 +1798,3 @@ export const generateDueRecurringInvoiceHandler: RequestHandler = async (req, re
     res.status(500).json(failure("RECURRING_INVOICE_RUNTIME_ERROR", "Recurring invoice generation could not be completed."));
   }
 };
-

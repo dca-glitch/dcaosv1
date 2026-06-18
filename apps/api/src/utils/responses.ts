@@ -8,6 +8,8 @@ export const API_ERROR_CODES = {
   clientNotFound: "CLIENT_NOT_FOUND",
   projectInvalid: "PROJECT_INVALID",
   projectNotFound: "PROJECT_NOT_FOUND",
+  aiDeliveryProjectInvalid: "AI_DELIVERY_PROJECT_INVALID",
+  aiDeliveryProjectNotFound: "AI_DELIVERY_PROJECT_NOT_FOUND",
   taskInvalid: "TASK_INVALID",
   taskNotFound: "TASK_NOT_FOUND",
   invoiceInvalid: "INVOICE_INVALID",
@@ -33,6 +35,8 @@ export const API_ERROR_MESSAGES = {
   clientNotFound: "Client was not found.",
   projectInvalid: "Invalid project request.",
   projectNotFound: "Project was not found.",
+  aiDeliveryProjectInvalid: "Invalid AI Delivery project request.",
+  aiDeliveryProjectNotFound: "AI Delivery project was not found.",
   taskInvalid: "Invalid task request.",
   taskNotFound: "Task was not found.",
   invoiceInvalid: "Invalid invoice request.",
@@ -99,6 +103,14 @@ export function projectInvalidFailure(): ApiErrorResponse {
 
 export function projectNotFoundFailure(): ApiErrorResponse {
   return failure(API_ERROR_CODES.projectNotFound, API_ERROR_MESSAGES.projectNotFound);
+}
+
+export function aiDeliveryProjectInvalidFailure(): ApiErrorResponse {
+  return failure(API_ERROR_CODES.aiDeliveryProjectInvalid, API_ERROR_MESSAGES.aiDeliveryProjectInvalid);
+}
+
+export function aiDeliveryProjectNotFoundFailure(): ApiErrorResponse {
+  return failure(API_ERROR_CODES.aiDeliveryProjectNotFound, API_ERROR_MESSAGES.aiDeliveryProjectNotFound);
 }
 
 export function taskInvalidFailure(): ApiErrorResponse {

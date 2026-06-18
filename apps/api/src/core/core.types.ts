@@ -140,6 +140,50 @@ export interface ProjectInputRequest {
   status?: string;
 }
 
+export interface AiDeliveryBriefSummary {
+  id: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AiDeliveryProjectSummary {
+  id: string;
+  clientId: string;
+  client: {
+    id: string;
+    name: string;
+  } | null;
+  projectId: string | null;
+  project: {
+    id: string;
+    name: string;
+  } | null;
+  name: string;
+  targetMonth: string;
+  plannedContentScopeNotes: string | null;
+  isArchived: boolean;
+  brief: AiDeliveryBriefSummary | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AiDeliveryProjectsResponse {
+  aiDeliveryProjects: AiDeliveryProjectSummary[];
+}
+
+export interface AiDeliveryProjectResponse {
+  aiDeliveryProject: AiDeliveryProjectSummary | null;
+}
+
+export interface AiDeliveryProjectInputRequest {
+  clientId?: string;
+  projectId?: string | null;
+  name?: string;
+  targetMonth?: string;
+  plannedContentScopeNotes?: string | null;
+}
+
 export interface TaskSummary {
   id: string;
   projectId: string | null;
