@@ -41,6 +41,8 @@ import {
   requestAiDeliveryBriefClientInputHandler,
   requestAiDeliveryBriefClientRevisionHandler,
   approveFinalAiDeliveryBriefHandler,
+  getAiDeliveryBriefHandler,
+  saveAiDeliveryBriefHandler,
   markInvoicePaidHandler,
   markInvoiceSentHandler,
   markInvoiceUncollectibleHandler,
@@ -94,6 +96,8 @@ export function createCoreRouter() {
   router.post("/ai-delivery-projects/:id/brief/request-client-input", requireAuth, requireTenant, requireRole("owner", "admin"), requestAiDeliveryBriefClientInputHandler);
   router.post("/ai-delivery-projects/:id/brief/request-client-revision", requireAuth, requireTenant, requireRole("owner", "admin"), requestAiDeliveryBriefClientRevisionHandler);
   router.post("/ai-delivery-projects/:id/brief/approve-final", requireAuth, requireTenant, requireRole("owner", "admin"), approveFinalAiDeliveryBriefHandler);
+  router.get("/ai-delivery-projects/:id/brief", requireAuth, requireTenant, requireRole("owner", "admin"), getAiDeliveryBriefHandler);
+  router.put("/ai-delivery-projects/:id/brief", requireAuth, requireTenant, requireRole("owner", "admin"), saveAiDeliveryBriefHandler);
 
   router.get("/tasks", requireAuth, requireTenant, listTasksHandler);
   router.post("/tasks", requireAuth, requireTenant, requireRole("owner", "admin"), createTaskHandler);

@@ -1534,6 +1534,61 @@ export function App() {
     }
   }
 
+  async function handleFetchAiDeliveryBrief(projectId: string): Promise<null | {
+    id: string;
+    status: string;
+    clientPriorities: string | null;
+    productsServicesFocus: string | null;
+    targetAudience: string | null;
+    marketsCompetitors: string | null;
+    notes: string | null;
+    revisionCount: number;
+    submittedAt: string | null;
+    revisionRequestedAt: string | null;
+    revisedAt: string | null;
+    approvedAt: string | null;
+    createdAt: string;
+    updatedAt: string;
+  }> {
+    setAppMessage(null);
+    try {
+      const response = await runAuthenticatedRequest<{ brief: any }>(`/ai-delivery-projects/${projectId}/brief`, { method: "GET" });
+      if (!response) return null;
+      if (!response.ok) {
+        setAppMessage({ tone: "error", text: getErrorMessage(response) });
+        return null;
+      }
+      return response.data.brief ?? null;
+    } catch (error) {
+      setAppMessage({ tone: "error", text: maskError(error) });
+      return null;
+    }
+  }
+
+  async function handleSaveAiDeliveryBrief(projectId: string, values: {
+    clientPriorities?: string | null;
+    productsServicesFocus?: string | null;
+    targetAudience?: string | null;
+    marketsCompetitors?: string | null;
+    notes?: string | null;
+  }): Promise<boolean> {
+    setAppMessage(null);
+    try {
+      const response = await runAuthenticatedRequest<{ brief: any }>(`/ai-delivery-projects/${projectId}/brief`, { method: "PUT", body: values });
+      if (!response) return false;
+      if (!response.ok) {
+        setAppMessage({ tone: "error", text: getErrorMessage(response) });
+        return false;
+      }
+      await loadProtectedState(tokenRef.current);
+      setAppMessage({ tone: "success", text: "Brief saved." });
+      return true;
+    } catch (error) {
+      setAppMessage({ tone: "error", text: maskError(error) });
+      return false;
+    }
+  }
+
   async function handleRestoreProject(projectId: string): Promise<boolean> {
     setAppMessage(null);
     try {
@@ -2147,6 +2202,8 @@ export function App() {
           onRequestClientInput={handleRequestBriefClientInput}
           onRequestClientRevision={handleRequestBriefClientRevision}
           onApproveFinal={handleApproveFinalBrief}
+          onFetchBrief={handleFetchAiDeliveryBrief}
+          onSaveBrief={handleSaveAiDeliveryBrief}
         />
       ) : null}
       {!loading && activeView === "tasks" ? (

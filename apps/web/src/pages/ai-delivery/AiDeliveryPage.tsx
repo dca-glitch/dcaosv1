@@ -49,6 +49,29 @@ export type AiDeliveryProjectsProps = {
   onRequestClientInput: (projectId: string) => Promise<boolean>;
   onRequestClientRevision: (projectId: string) => Promise<boolean>;
   onApproveFinal: (projectId: string) => Promise<boolean>;
+  onFetchBrief?: (projectId: string) => Promise<null | {
+    id: string;
+    status: string;
+    clientPriorities: string | null;
+    productsServicesFocus: string | null;
+    targetAudience: string | null;
+    marketsCompetitors: string | null;
+    notes: string | null;
+    revisionCount: number;
+    submittedAt: string | null;
+    revisionRequestedAt: string | null;
+    revisedAt: string | null;
+    approvedAt: string | null;
+    createdAt: string;
+    updatedAt: string;
+  }>;
+  onSaveBrief?: (projectId: string, values: {
+    clientPriorities?: string | null;
+    productsServicesFocus?: string | null;
+    targetAudience?: string | null;
+    marketsCompetitors?: string | null;
+    notes?: string | null;
+  }) => Promise<boolean>;
 };
 
 const emptyForm = (clientId = ""): AiDeliveryProjectFormValues => ({
@@ -70,7 +93,9 @@ export function AiDeliveryPage({
   onSave,
   onRequestClientInput,
   onRequestClientRevision,
-  onApproveFinal
+  onApproveFinal,
+  onFetchBrief,
+  onSaveBrief
 }: AiDeliveryProjectsProps) {
   const [filter, setFilter] = useState<"all" | "active" | "archived">("active");
   const [editorProjectId, setEditorProjectId] = useState<string | null>(null);
@@ -78,6 +103,23 @@ export function AiDeliveryPage({
   const [draft, setDraft] = useState<AiDeliveryProjectFormValues>(emptyForm());
   const [saving, setSaving] = useState(false);
   const [openBriefId, setOpenBriefId] = useState<string | null>(null);
+  const [briefLoading, setBriefLoading] = useState(false);
+  const [briefDetail, setBriefDetail] = useState<null | {
+    id: string;
+    status: string;
+    clientPriorities: string | null;
+    productsServicesFocus: string | null;
+    targetAudience: string | null;
+    marketsCompetitors: string | null;
+    notes: string | null;
+    revisionCount: number;
+    submittedAt: string | null;
+    revisionRequestedAt: string | null;
+    revisedAt: string | null;
+    approvedAt: string | null;
+    createdAt: string;
+    updatedAt: string;
+  }>(null);
 
   const selectedProject = useMemo(() => projects.find((p) => p.id === editorProjectId) ?? null, [editorProjectId, projects]);
   const openProject = useMemo(() => projects.find((p) => p.id === openBriefId) ?? null, [openBriefId, projects]);
@@ -112,6 +154,36 @@ export function AiDeliveryPage({
       }
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function openBrief(projectId: string) {
+    setOpenBriefId(projectId);
+    setBriefLoading(true);
+    setBriefDetail(null);
+    try {
+      if (typeof onFetchBrief === "function") {
+        const b = await onFetchBrief(projectId);
+        setBriefDetail(b);
+      }
+    } finally {
+      setBriefLoading(false);
+    }
+  }
+
+  async function handleSaveBrief(projectId: string) {
+    if (!briefDetail) return;
+    if (typeof onSaveBrief !== "function") return;
+    const ok = await onSaveBrief(projectId, {
+      clientPriorities: briefDetail.clientPriorities,
+      productsServicesFocus: briefDetail.productsServicesFocus,
+      targetAudience: briefDetail.targetAudience,
+      marketsCompetitors: briefDetail.marketsCompetitors,
+      notes: briefDetail.notes
+    });
+    if (ok) {
+      setOpenBriefId(null);
+      setBriefDetail(null);
     }
   }
 
@@ -176,7 +248,7 @@ export function AiDeliveryPage({
                       <button className="secondary-action" onClick={() => openEditModal(p)} type="button">
                         Edit
                       </button>
-                      <button className="secondary-action" onClick={() => setOpenBriefId(p.id)} type="button" disabled={!p.brief}>
+                      <button className="secondary-action" onClick={() => void openBrief(p.id)} type="button" disabled={!p.brief}>
                         Open brief
                       </button>
                       {!p.isArchived ? (
@@ -322,11 +394,109 @@ export function AiDeliveryPage({
       ) : null}
       {openBriefId ? (
         <Modal
-          onClose={() => setOpenBriefId(null)}
+          onClose={() => {
+            setOpenBriefId(null);
+            setBriefDetail(null);
+          }}
           title="AI Delivery Brief"
         >
-          {openProject ? (
-            openProject.brief ? (
+          {briefLoading ? (
+            <LoadingState label="Loading brief" />
+          ) : openProject ? (
+            briefDetail ? (
+              <div>
+                <dl className="brief-grid">
+                  <div>
+                    <dt>Status</dt>
+                    <dd>{briefDetail.status}</dd>
+                  </div>
+                  <div>
+                    <dt>Revisions</dt>
+                    <dd>{briefDetail.revisionCount ?? 0}</dd>
+                  </div>
+                  <div>
+                    <dt>Created</dt>
+                    <dd>{new Date(briefDetail.createdAt).toLocaleString()}</dd>
+                  </div>
+                  <div>
+                    <dt>Updated</dt>
+                    <dd>{new Date(briefDetail.updatedAt).toLocaleString()}</dd>
+                  </div>
+                </dl>
+
+                <section className="field-panel">
+                  <h3>Client priorities</h3>
+                  {canEdit && typeof onSaveBrief === "function" ? (
+                    <textarea
+                      rows={3}
+                      value={briefDetail.clientPriorities ?? ""}
+                      onChange={(e) => setBriefDetail({ ...briefDetail, clientPriorities: e.target.value })}
+                    />
+                  ) : (
+                    <pre style={{ whiteSpace: "pre-wrap" }}>{briefDetail.clientPriorities ?? "Not set"}</pre>
+                  )}
+                </section>
+
+                <section className="field-panel">
+                  <h3>Products / services focus</h3>
+                  {canEdit && typeof onSaveBrief === "function" ? (
+                    <textarea
+                      rows={3}
+                      value={briefDetail.productsServicesFocus ?? ""}
+                      onChange={(e) => setBriefDetail({ ...briefDetail, productsServicesFocus: e.target.value })}
+                    />
+                  ) : (
+                    <pre style={{ whiteSpace: "pre-wrap" }}>{briefDetail.productsServicesFocus ?? "Not set"}</pre>
+                  )}
+                </section>
+
+                <section className="field-panel">
+                  <h3>Target audience</h3>
+                  {canEdit && typeof onSaveBrief === "function" ? (
+                    <textarea
+                      rows={3}
+                      value={briefDetail.targetAudience ?? ""}
+                      onChange={(e) => setBriefDetail({ ...briefDetail, targetAudience: e.target.value })}
+                    />
+                  ) : (
+                    <pre style={{ whiteSpace: "pre-wrap" }}>{briefDetail.targetAudience ?? "Not set"}</pre>
+                  )}
+                </section>
+
+                <section className="field-panel">
+                  <h3>Markets / competitors</h3>
+                  {canEdit && typeof onSaveBrief === "function" ? (
+                    <textarea
+                      rows={3}
+                      value={briefDetail.marketsCompetitors ?? ""}
+                      onChange={(e) => setBriefDetail({ ...briefDetail, marketsCompetitors: e.target.value })}
+                    />
+                  ) : (
+                    <pre style={{ whiteSpace: "pre-wrap" }}>{briefDetail.marketsCompetitors ?? "Not set"}</pre>
+                  )}
+                </section>
+
+                <section className="field-panel">
+                  <h3>Research summary / notes</h3>
+                  {canEdit && typeof onSaveBrief === "function" ? (
+                    <textarea
+                      rows={6}
+                      value={briefDetail.notes ?? ""}
+                      onChange={(e) => setBriefDetail({ ...briefDetail, notes: e.target.value })}
+                    />
+                  ) : (
+                    <pre style={{ whiteSpace: "pre-wrap" }}>{briefDetail.notes ?? "Not set"}</pre>
+                  )}
+                </section>
+
+                <div className="modal-footer">
+                  <button className="secondary-action" onClick={() => { setOpenBriefId(null); setBriefDetail(null); }} type="button">Close</button>
+                  {canEdit && typeof onSaveBrief === "function" ? (
+                    <button className="primary-action" onClick={() => void handleSaveBrief(openProject.id)} type="button">Save</button>
+                  ) : null}
+                </div>
+              </div>
+            ) : openProject.brief ? (
               <div>
                 <dl className="brief-grid">
                   <div>
@@ -351,7 +521,7 @@ export function AiDeliveryPage({
                   <pre style={{ whiteSpace: 'pre-wrap' }}>{openProject.plannedContentScopeNotes ?? 'Not set'}</pre>
                 </section>
                 <div className="modal-footer">
-                  <button className="secondary-action" onClick={() => setOpenBriefId(null)} type="button">Close</button>
+                  <button className="secondary-action" onClick={() => { setOpenBriefId(null); setBriefDetail(null); }} type="button">Close</button>
                 </div>
               </div>
             ) : (

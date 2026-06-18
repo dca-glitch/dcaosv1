@@ -1252,6 +1252,152 @@ export async function listAiDeliveryProjects(
   };
 }
 
+// --- Brief detail and save helpers ---
+export async function getAiDeliveryBriefDetail(
+  authSession: AuthResolvedSessionContext,
+  aiDeliveryProjectId: string
+): Promise<{ brief: {
+  id: string;
+  status: string;
+  clientPriorities: string | null;
+  productsServicesFocus: string | null;
+  targetAudience: string | null;
+  marketsCompetitors: string | null;
+  notes: string | null;
+  revisionCount: number;
+  submittedAt: string | null;
+  revisionRequestedAt: string | null;
+  revisedAt: string | null;
+  approvedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+} | null } | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) return null;
+
+  const brief = await prisma.aiDeliveryBrief.findFirst({
+    where: { tenantId, aiDeliveryProjectId },
+    select: {
+      id: true,
+      status: true,
+      clientPriorities: true,
+      productsServicesFocus: true,
+      targetAudience: true,
+      marketsCompetitors: true,
+      notes: true,
+      revisionCount: true,
+      submittedAt: true,
+      revisionRequestedAt: true,
+      revisedAt: true,
+      approvedAt: true,
+      createdAt: true,
+      updatedAt: true
+    }
+  });
+
+  if (!brief) return null;
+
+  return {
+    brief: {
+      id: brief.id,
+      status: brief.status,
+      clientPriorities: brief.clientPriorities,
+      productsServicesFocus: brief.productsServicesFocus,
+      targetAudience: brief.targetAudience,
+      marketsCompetitors: brief.marketsCompetitors,
+      notes: brief.notes,
+      revisionCount: brief.revisionCount,
+      submittedAt: brief.submittedAt ? brief.submittedAt.toISOString() : null,
+      revisionRequestedAt: brief.revisionRequestedAt ? brief.revisionRequestedAt.toISOString() : null,
+      revisedAt: brief.revisedAt ? brief.revisedAt.toISOString() : null,
+      approvedAt: brief.approvedAt ? brief.approvedAt.toISOString() : null,
+      createdAt: brief.createdAt.toISOString(),
+      updatedAt: brief.updatedAt.toISOString()
+    }
+  };
+}
+
+export async function saveAiDeliveryBrief(
+  authSession: AuthResolvedSessionContext,
+  aiDeliveryProjectId: string,
+  input: {
+    clientPriorities?: string | null;
+    productsServicesFocus?: string | null;
+    targetAudience?: string | null;
+    marketsCompetitors?: string | null;
+    notes?: string | null;
+  }
+): Promise<{ brief: {
+  id: string;
+  status: string;
+  clientPriorities: string | null;
+  productsServicesFocus: string | null;
+  targetAudience: string | null;
+  marketsCompetitors: string | null;
+  notes: string | null;
+  revisionCount: number;
+  submittedAt: string | null;
+  revisionRequestedAt: string | null;
+  revisedAt: string | null;
+  approvedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+} | null } | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) return null;
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    const existing = await tx.aiDeliveryBrief.findFirst({ where: { tenantId, aiDeliveryProjectId } });
+    if (!existing) return null;
+
+    const updated = await tx.aiDeliveryBrief.update({
+      where: { id: existing.id },
+      data: {
+        clientPriorities: typeof input.clientPriorities === "string" ? input.clientPriorities : input.clientPriorities ?? null,
+        productsServicesFocus: typeof input.productsServicesFocus === "string" ? input.productsServicesFocus : input.productsServicesFocus ?? null,
+        targetAudience: typeof input.targetAudience === "string" ? input.targetAudience : input.targetAudience ?? null,
+        marketsCompetitors: typeof input.marketsCompetitors === "string" ? input.marketsCompetitors : input.marketsCompetitors ?? null,
+        notes: typeof input.notes === "string" ? input.notes : input.notes ?? null
+      },
+      select: {
+        id: true,
+        status: true,
+        clientPriorities: true,
+        productsServicesFocus: true,
+        targetAudience: true,
+        marketsCompetitors: true,
+        notes: true,
+        revisionCount: true,
+        submittedAt: true,
+        revisionRequestedAt: true,
+        revisedAt: true,
+        approvedAt: true,
+        createdAt: true,
+        updatedAt: true
+      }
+    });
+
+    return {
+      brief: {
+        id: updated.id,
+        status: updated.status,
+        clientPriorities: updated.clientPriorities,
+        productsServicesFocus: updated.productsServicesFocus,
+        targetAudience: updated.targetAudience,
+        marketsCompetitors: updated.marketsCompetitors,
+        notes: updated.notes,
+        revisionCount: updated.revisionCount,
+        submittedAt: updated.submittedAt ? updated.submittedAt.toISOString() : null,
+        revisionRequestedAt: updated.revisionRequestedAt ? updated.revisionRequestedAt.toISOString() : null,
+        revisedAt: updated.revisedAt ? updated.revisedAt.toISOString() : null,
+        approvedAt: updated.approvedAt ? updated.approvedAt.toISOString() : null,
+        createdAt: updated.createdAt.toISOString(),
+        updatedAt: updated.updatedAt.toISOString()
+      }
+    };
+  });
+}
+
 export async function createAiDeliveryProject(
   authSession: AuthResolvedSessionContext,
   input: AiDeliveryProjectInputRequest

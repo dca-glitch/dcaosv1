@@ -85,7 +85,9 @@ import {
   uploadBillDocument,
   requestAiDeliveryBriefClientInput,
   requestAiDeliveryBriefClientRevision,
-  approveFinalAiDeliveryBrief
+  approveFinalAiDeliveryBrief,
+  getAiDeliveryBriefDetail,
+  saveAiDeliveryBrief
 } from "../core/core.runtime";
 import type {
   AiDeliveryProjectInputRequest,
@@ -1099,6 +1101,71 @@ export const approveFinalAiDeliveryBriefHandler: RequestHandler = async (req, re
     res.json(success(response, { phase: "runtime", scope: "ai-delivery-projects" }));
   } catch {
     res.status(500).json(failure("AI_DELIVERY_BRIEF_RUNTIME_ERROR", "Approving final brief could not be completed."));
+  }
+};
+
+export const getAiDeliveryBriefHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) {
+    res.status(401).json(unauthorizedFailure());
+    return;
+  }
+
+  const aiDeliveryProjectId = typeof req.params.id === "string" ? req.params.id.trim() : "";
+  if (!aiDeliveryProjectId) {
+    res.status(400).json(aiDeliveryProjectInvalidFailure());
+    return;
+  }
+
+  try {
+    const response = await getAiDeliveryBriefDetail(authSession, aiDeliveryProjectId);
+    if (!response?.brief) {
+      res.status(404).json(aiDeliveryProjectNotFoundFailure());
+      return;
+    }
+
+    res.json(success(response, { phase: "runtime", scope: "ai-delivery-projects" }));
+  } catch {
+    res.status(500).json(failure("AI_DELIVERY_BRIEF_RUNTIME_ERROR", "Fetching brief could not be completed."));
+  }
+};
+
+export const saveAiDeliveryBriefHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) {
+    res.status(401).json(unauthorizedFailure());
+    return;
+  }
+
+  const aiDeliveryProjectId = typeof req.params.id === "string" ? req.params.id.trim() : "";
+  if (!aiDeliveryProjectId) {
+    res.status(400).json(aiDeliveryProjectInvalidFailure());
+    return;
+  }
+
+  const clientPriorities = getOptionalString(req.body.clientPriorities);
+  const productsServicesFocus = getOptionalString(req.body.productsServicesFocus);
+  const targetAudience = getOptionalString(req.body.targetAudience);
+  const marketsCompetitors = getOptionalString(req.body.marketsCompetitors);
+  const notes = getOptionalString(req.body.notes);
+
+  try {
+    const response = await saveAiDeliveryBrief(authSession, aiDeliveryProjectId, {
+      clientPriorities,
+      productsServicesFocus,
+      targetAudience,
+      marketsCompetitors,
+      notes
+    });
+
+    if (!response?.brief) {
+      res.status(404).json(aiDeliveryProjectNotFoundFailure());
+      return;
+    }
+
+    res.json(success(response, { phase: "runtime", scope: "ai-delivery-projects" }));
+  } catch {
+    res.status(500).json(failure("AI_DELIVERY_BRIEF_RUNTIME_ERROR", "Saving brief could not be completed."));
   }
 };
 
