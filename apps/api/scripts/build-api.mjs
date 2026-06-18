@@ -7,6 +7,7 @@ const apiRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..")
 const repoRoot = path.resolve(apiRoot, "..", "..");
 const distRoot = path.join(apiRoot, "dist");
 const sharedEntry = path.join(distRoot, "packages", "shared", "src", "index.js");
+const distGuardScript = path.join(apiRoot, "scripts", "check-dist-esm.mjs");
 
 function runTsc() {
   rmSync(distRoot, { recursive: true, force: true });
@@ -56,14 +57,15 @@ function toPosixRelativeImport(fromFile, toFile) {
 }
 
 function resolveRelativeSpecifier(fromFile, specifier) {
-  const absoluteTarget = path.resolve(path.dirname(fromFile), specifier);
+  const normalizedSpecifier = specifier.endsWith("/") ? specifier.slice(0, -1) : specifier;
+  const absoluteTarget = path.resolve(path.dirname(fromFile), normalizedSpecifier);
   if (existsSync(`${absoluteTarget}.js`)) {
-    return `${specifier}.js`;
+    return `${normalizedSpecifier}.js`;
   }
 
   const indexTarget = path.join(absoluteTarget, "index.js");
   if (existsSync(indexTarget)) {
-    return `${specifier.replace(/\/$/, "")}/index.js`;
+    return `${normalizedSpecifier}/index.js`;
   }
 
   return specifier;
@@ -89,6 +91,9 @@ function rewriteImports(file) {
     )
     .replaceAll(/(import\s+["'])([^"']+)(["'])/g, (_match, prefix, specifier, suffix) =>
       `${prefix}${rewriteSpecifier(file, specifier)}${suffix}`
+    )
+    .replaceAll(/(import\s*\(\s*["'])([^"']+)(["']\s*\))/g, (_match, prefix, specifier, suffix) =>
+      `${prefix}${rewriteSpecifier(file, specifier)}${suffix}`
     );
 
   if (rewritten !== source) {
@@ -100,6 +105,21 @@ runTsc();
 
 for (const file of listJavaScriptFiles(distRoot)) {
   rewriteImports(file);
+}
+
+const distGuard = spawnSync(process.execPath, [distGuardScript], {
+  cwd: apiRoot,
+  stdio: "inherit",
+  shell: false
+});
+
+if (distGuard.error) {
+  console.error(`API build failed to start dist guard: ${distGuard.error.message}`);
+  process.exit(1);
+}
+
+if (distGuard.status !== 0) {
+  process.exit(distGuard.status ?? 1);
 }
 
 const serverEntry = path.join(distRoot, "apps", "api", "src", "server.js");

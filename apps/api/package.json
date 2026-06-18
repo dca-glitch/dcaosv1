@@ -7,6 +7,7 @@
   "scripts": {
     "check": "node ../../scripts/check-package.mjs api && npm run check:auth-skeleton && tsc --noEmit",
     "check:auth-skeleton": "node scripts/check-auth-skeleton.mjs",
+    "check:dist-esm": "node scripts/check-dist-esm.mjs",
     "build": "node scripts/build-api.mjs",
     "dev": "tsx src/server.ts",
     "start": "node dist/apps/api/src/server.js"
