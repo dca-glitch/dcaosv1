@@ -26,7 +26,7 @@ import {
   type InvoiceItemSummary
 } from "./pages/invoice-items/InvoiceItemsPage";
 import { ProjectsPage, type ProjectFormValues, type ProjectSummary } from "./pages/projects/ProjectsPage";
-import { AiDeliveryPage, type AiDeliveryProjectSummary } from "./pages/ai-delivery/AiDeliveryPage";
+import { AiDeliveryPage, type AiDeliveryProjectSummary, type AiDeliveryProjectFormValues } from "./pages/ai-delivery/AiDeliveryPage";
 import { TasksPage, type TaskFormValues, type TaskSummary } from "./pages/tasks/TasksPage";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "/api/v1";
@@ -1451,6 +1451,89 @@ export function App() {
     }
   }
 
+  async function handleSaveAiDeliveryProject(projectId: string | null, values: AiDeliveryProjectFormValues): Promise<boolean> {
+    setAppMessage(null);
+    try {
+      const response = await runAuthenticatedRequest<{ aiDeliveryProject: AiDeliveryProjectSummary | null }>(
+        projectId ? `/ai-delivery-projects/${projectId}` : "/ai-delivery-projects",
+        {
+          method: projectId ? "PUT" : "POST",
+          body: values
+        }
+      );
+
+      if (!response) {
+        return false;
+      }
+
+      if (!response.ok) {
+        setAppMessage({ tone: "error", text: getErrorMessage(response) });
+        return false;
+      }
+
+      await loadProtectedState(tokenRef.current);
+      setAppMessage({ tone: "success", text: projectId ? "AI Delivery project updated." : "AI Delivery project created." });
+      return true;
+    } catch (error) {
+      setAppMessage({ tone: "error", text: maskError(error) });
+      return false;
+    }
+  }
+
+  async function handleRequestBriefClientInput(projectId: string): Promise<boolean> {
+    setAppMessage(null);
+    try {
+      const response = await runAuthenticatedRequest(`/ai-delivery-projects/${projectId}/brief/request-client-input`, { method: "POST" });
+      if (!response) return false;
+      if (!response.ok) {
+        setAppMessage({ tone: "error", text: getErrorMessage(response) });
+        return false;
+      }
+      await loadProtectedState(tokenRef.current);
+      setAppMessage({ tone: "success", text: "Requested client input for brief." });
+      return true;
+    } catch (error) {
+      setAppMessage({ tone: "error", text: maskError(error) });
+      return false;
+    }
+  }
+
+  async function handleRequestBriefClientRevision(projectId: string): Promise<boolean> {
+    setAppMessage(null);
+    try {
+      const response = await runAuthenticatedRequest(`/ai-delivery-projects/${projectId}/brief/request-client-revision`, { method: "POST" });
+      if (!response) return false;
+      if (!response.ok) {
+        setAppMessage({ tone: "error", text: getErrorMessage(response) });
+        return false;
+      }
+      await loadProtectedState(tokenRef.current);
+      setAppMessage({ tone: "success", text: "Requested client revision for brief." });
+      return true;
+    } catch (error) {
+      setAppMessage({ tone: "error", text: maskError(error) });
+      return false;
+    }
+  }
+
+  async function handleApproveFinalBrief(projectId: string): Promise<boolean> {
+    setAppMessage(null);
+    try {
+      const response = await runAuthenticatedRequest(`/ai-delivery-projects/${projectId}/brief/approve-final`, { method: "POST" });
+      if (!response) return false;
+      if (!response.ok) {
+        setAppMessage({ tone: "error", text: getErrorMessage(response) });
+        return false;
+      }
+      await loadProtectedState(tokenRef.current);
+      setAppMessage({ tone: "success", text: "Brief approved final." });
+      return true;
+    } catch (error) {
+      setAppMessage({ tone: "error", text: maskError(error) });
+      return false;
+    }
+  }
+
   async function handleRestoreProject(projectId: string): Promise<boolean> {
     setAppMessage(null);
     try {
@@ -2055,9 +2138,15 @@ export function App() {
         <AiDeliveryPage
           canEdit={canManageCore}
           projects={aiDeliveryProjects?.aiDeliveryProjects ?? []}
+          clients={clients?.clients ?? []}
+          projectsList={projects?.projects ?? []}
           error={null}
           loading={false}
           onArchive={handleArchiveAiDeliveryProject}
+          onSave={handleSaveAiDeliveryProject}
+          onRequestClientInput={handleRequestBriefClientInput}
+          onRequestClientRevision={handleRequestBriefClientRevision}
+          onApproveFinal={handleApproveFinalBrief}
         />
       ) : null}
       {!loading && activeView === "tasks" ? (
