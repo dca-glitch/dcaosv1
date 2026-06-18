@@ -26,6 +26,7 @@ import {
   type InvoiceItemSummary
 } from "./pages/invoice-items/InvoiceItemsPage";
 import { ProjectsPage, type ProjectFormValues, type ProjectSummary } from "./pages/projects/ProjectsPage";
+import { AiDeliveryPage, type AiDeliveryProjectSummary } from "./pages/ai-delivery/AiDeliveryPage";
 import { TasksPage, type TaskFormValues, type TaskSummary } from "./pages/tasks/TasksPage";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "/api/v1";
@@ -184,6 +185,10 @@ type ProjectsResponse = {
   projects: ProjectSummary[];
 };
 
+type AiDeliveryProjectsResponse = {
+  aiDeliveryProjects: AiDeliveryProjectSummary[];
+};
+
 type TasksResponse = {
   tasks: TaskSummary[];
 };
@@ -214,6 +219,7 @@ type ViewKey =
   | "tenants"
   | "clients"
   | "projects"
+  | "ai-delivery"
   | "tasks"
   | "invoices"
   | "credit-notes"
@@ -264,6 +270,7 @@ const navigationItems: Array<{ view: ViewKey; label: string; section: string }> 
   { view: "tenants", label: "Tenants", section: "protected" },
   { view: "clients", label: "Clients", section: "core" },
   { view: "projects", label: "Projects", section: "core" },
+  { view: "ai-delivery", label: "AI Delivery", section: "core" },
   { view: "tasks", label: "Tasks", section: "core" },
   { view: "invoices", label: "Invoices", section: "core" },
   { view: "credit-notes", label: "Credit Notes", section: "core" },
@@ -907,6 +914,7 @@ export function App() {
   const [companyProfile, setCompanyProfile] = useState<CompanyProfileResponse | null>(null);
   const [clients, setClients] = useState<ClientsResponse | null>(null);
   const [projects, setProjects] = useState<ProjectsResponse | null>(null);
+  const [aiDeliveryProjects, setAiDeliveryProjects] = useState<AiDeliveryProjectsResponse | null>(null);
   const [tasks, setTasks] = useState<TasksResponse | null>(null);
   const [invoices, setInvoices] = useState<InvoicesResponse | null>(null);
   const [recurringInvoices, setRecurringInvoices] = useState<RecurringInvoicesResponse | null>(null);
@@ -959,6 +967,7 @@ export function App() {
     setCompanyProfile(null);
     setClients(null);
     setProjects(null);
+    setAiDeliveryProjects(null);
     setTasks(null);
     setInvoices(null);
     setRecurringInvoices(null);
@@ -994,6 +1003,7 @@ export function App() {
           companyProfileResponse,
           clientsResponse,
           projectsResponse,
+          aiDeliveryResponse,
           tasksResponse,
           invoicesResponse,
           recurringInvoicesResponse,
@@ -1013,6 +1023,7 @@ export function App() {
             apiRequest<CompanyProfileResponse>("/company-profile", { token: nextToken }),
             apiRequest<ClientsResponse>("/clients", { token: nextToken }),
             apiRequest<ProjectsResponse>("/projects", { token: nextToken }),
+            apiRequest<AiDeliveryProjectsResponse>("/ai-delivery-projects", { token: nextToken }),
             apiRequest<TasksResponse>("/tasks", { token: nextToken }),
             apiRequest<InvoicesResponse>("/invoices", { token: nextToken }),
             apiRequest<RecurringInvoicesResponse>("/recurring-invoices", { token: nextToken }),
@@ -1039,6 +1050,7 @@ export function App() {
           isUnauthorized(companyProfileResponse) ||
           isUnauthorized(clientsResponse) ||
           isUnauthorized(projectsResponse) ||
+          isUnauthorized(aiDeliveryResponse) ||
           isUnauthorized(tasksResponse) ||
           isUnauthorized(invoicesResponse) ||
           isUnauthorized(recurringInvoicesResponse) ||
@@ -1064,6 +1076,7 @@ export function App() {
         setCompanyProfile(companyProfileResponse.ok ? companyProfileResponse.data : null);
         setClients(clientsResponse.ok ? clientsResponse.data : null);
         setProjects(projectsResponse.ok ? projectsResponse.data : null);
+        setAiDeliveryProjects(aiDeliveryResponse.ok ? aiDeliveryResponse.data : null);
         setTasks(tasksResponse.ok ? tasksResponse.data : null);
         setInvoices(invoicesResponse.ok ? invoicesResponse.data : null);
         setRecurringInvoices(recurringInvoicesResponse.ok ? recurringInvoicesResponse.data : null);
@@ -1082,6 +1095,7 @@ export function App() {
           !companyProfileResponse.ok ||
           !clientsResponse.ok ||
           !projectsResponse.ok ||
+          !aiDeliveryResponse.ok ||
           !tasksResponse.ok ||
           !invoicesResponse.ok ||
           !recurringInvoicesResponse.ok ||
@@ -1402,6 +1416,34 @@ export function App() {
 
       await loadProtectedState(tokenRef.current);
       setAppMessage({ tone: "success", text: "Project archived." });
+      return true;
+    } catch (error) {
+      setAppMessage({ tone: "error", text: maskError(error) });
+      return false;
+    }
+  }
+
+  async function handleArchiveAiDeliveryProject(projectId: string): Promise<boolean> {
+    setAppMessage(null);
+    try {
+      const response = await runAuthenticatedRequest<{ project: AiDeliveryProjectSummary | null }>(
+        `/ai-delivery-projects/${projectId}/archive`,
+        {
+          method: "POST"
+        }
+      );
+
+      if (!response) {
+        return false;
+      }
+
+      if (!response.ok) {
+        setAppMessage({ tone: "error", text: getErrorMessage(response) });
+        return false;
+      }
+
+      await loadProtectedState(tokenRef.current);
+      setAppMessage({ tone: "success", text: "AI Delivery project archived." });
       return true;
     } catch (error) {
       setAppMessage({ tone: "error", text: maskError(error) });
@@ -2007,6 +2049,15 @@ export function App() {
           onSave={handleSaveProject}
           projects={projects?.projects ?? []}
           tasks={tasks?.tasks ?? []}
+        />
+      ) : null}
+      {!loading && activeView === "ai-delivery" ? (
+        <AiDeliveryPage
+          canEdit={canManageCore}
+          projects={aiDeliveryProjects?.aiDeliveryProjects ?? []}
+          error={null}
+          loading={false}
+          onArchive={handleArchiveAiDeliveryProject}
         />
       ) : null}
       {!loading && activeView === "tasks" ? (
