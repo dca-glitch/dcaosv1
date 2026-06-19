@@ -279,6 +279,11 @@ function formatContentPlanReviewStatus(plan: AiDeliveryContentPlanSummary | null
   return plan.status;
 }
 
+function formatEnumLabel(value?: string | null): string {
+  if (!value) return "Not set";
+  return String(value).toLowerCase().replace(/_/g, " ").replace(/(^|\s)\S/g, (s) => s.toUpperCase());
+}
+
 export function AiDeliveryPage({
   projects,
   clients,
@@ -777,11 +782,9 @@ export function AiDeliveryPage({
                 <div className="card-actions">
                   {canEdit ? (
                     <>
-                      <button className="secondary-action" onClick={() => openEditModal(p)} type="button">
-                        Edit
-                      </button>
+                      {/* Workflow actions - ordered for admin flow */}
                       <button className="secondary-action" onClick={() => void openBrief(p.id)} type="button" disabled={!p.brief}>
-                        Open brief
+                        Brief
                       </button>
                       <button className="secondary-action" onClick={() => void openContentPlan(p.id)} type="button">
                         Content plan
@@ -794,6 +797,10 @@ export function AiDeliveryPage({
                       </button>
                       <button className="secondary-action" onClick={() => void openDeliverables(p.id)} type="button">
                         Deliverables
+                      </button>
+                      {/* Secondary actions */}
+                      <button className="secondary-action" onClick={() => openEditModal(p)} type="button">
+                        Edit
                       </button>
                       {!p.isArchived ? (
                         <button className="secondary-action" onClick={() => void onArchive(p.id)} type="button">
@@ -819,7 +826,13 @@ export function AiDeliveryPage({
                 </div>
                 <div>
                   <span>Brief status</span>
-                  <strong>{p.brief?.status ?? "No brief"}</strong>
+                  <strong>{formatEnumLabel(p.brief?.status ?? null)}</strong>
+                </div>
+                <div>
+                  <span>Workflow</span>
+                  <strong>
+                    Brief: {p.brief ? formatEnumLabel(p.brief.status) : "No"} - Plan: Not set - Drafts: - - Images: - - Deliverables: -
+                  </strong>
                 </div>
                 <div className="entity-span-2">
                   <span>Notes</span>

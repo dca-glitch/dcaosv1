@@ -174,3 +174,9 @@ Admin/owner-only deliverable records for packaging approved content or image req
 Notes: Allowed delivery types: CONTENT_PACKAGE, ARTICLE_DRAFT, ARTICLE_IMAGE, CLIENT_HANDOFF, OTHER. Allowed statuses: DRAFT, READY, DELIVERED, REVISION_REQUESTED, ACCEPTED, ARCHIVED.
 
 This foundation intentionally excludes any export generation, WordPress publishing, R2 writes/uploads, AI generation calls, or client-facing delivery portal - those are out of scope for Block 7I.
+
+Admin UX notes:
+
+- The AI Delivery admin UI is intentionally manual and admin-operated. Project cards now include a compact workflow summary (Brief, Content plan, Content drafts, Article images, Deliverables) to help operators quickly review progress without triggering additional background loads.
+- Action buttons are ordered to follow the admin flow: Brief -> Content plan -> Content drafts -> Article images -> Deliverables -> Edit -> Archive.
+- These are UI-only polish notes; no backend or export behavior is implied.
