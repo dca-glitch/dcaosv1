@@ -1442,6 +1442,212 @@ export async function createAiDeliveryProject(
   });
 }
 
+// --- Content plan runtime helpers ---
+function getAiDeliveryContentPlanDelegate(client: PrismaTx | typeof prisma) {
+  return (client as unknown as { aiDeliveryContentPlan: { findFirst: (args: unknown) => Promise<unknown>; findMany: (args: unknown) => Promise<unknown[]>; create: (args: unknown) => Promise<unknown>; update: (args: unknown) => Promise<unknown>; delete: (args: unknown) => Promise<unknown>; } }).aiDeliveryContentPlan;
+}
+
+const aiDeliveryContentPlanItemSelect = {
+  id: true,
+  title: true,
+  targetKeyword: true,
+  contentType: true,
+  notes: true,
+  sortOrder: true,
+  approvalStatus: true,
+  clientComment: true,
+  createdAt: true,
+  updatedAt: true
+} as const;
+
+const aiDeliveryContentPlanSelect = {
+  id: true,
+  aiDeliveryProjectId: true,
+  status: true,
+  revisionCount: true,
+  reviewRequestedAt: true,
+  approvedAt: true,
+  createdAt: true,
+  updatedAt: true,
+  items: {
+    select: aiDeliveryContentPlanItemSelect,
+    orderBy: { sortOrder: "asc" }
+  }
+} as const;
+
+export async function getAiDeliveryContentPlanDetail(
+  authSession: AuthResolvedSessionContext,
+  aiDeliveryProjectId: string
+): Promise<{ contentPlan: any | null } | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) return null;
+
+  const plan = await prisma.aiDeliveryContentPlan.findFirst({
+    where: { tenantId, aiDeliveryProjectId },
+    select: aiDeliveryContentPlanSelect
+  });
+
+  if (!plan) return null;
+
+  return {
+    contentPlan: {
+      id: (plan as any).id,
+      aiDeliveryProjectId: (plan as any).aiDeliveryProjectId,
+      status: (plan as any).status,
+      revisionCount: (plan as any).revisionCount,
+      reviewRequestedAt: (plan as any).reviewRequestedAt ? (plan as any).reviewRequestedAt.toISOString() : null,
+      approvedAt: (plan as any).approvedAt ? (plan as any).approvedAt.toISOString() : null,
+      items: ((plan as any).items ?? []).map((it: any) => ({
+        id: it.id,
+        title: it.title,
+        targetKeyword: it.targetKeyword,
+        contentType: it.contentType,
+        notes: it.notes,
+        sortOrder: it.sortOrder,
+        approvalStatus: it.approvalStatus ?? null,
+        clientComment: it.clientComment ?? null,
+        createdAt: it.createdAt.toISOString(),
+        updatedAt: it.updatedAt.toISOString()
+      })),
+      createdAt: (plan as any).createdAt.toISOString(),
+      updatedAt: (plan as any).updatedAt.toISOString()
+    }
+  };
+}
+
+export async function createAiDeliveryContentPlan(
+  authSession: AuthResolvedSessionContext,
+  aiDeliveryProjectId: string,
+  input?: { items?: { title: string; targetKeyword?: string | null; contentType?: string | null; notes?: string | null; sortOrder?: number | null; approvalStatus?: string | null; clientComment?: string | null }[] }
+): Promise<{ contentPlan: any | null; created: boolean } | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) return null;
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    const existingProject = await getAiDeliveryProjectRecord(tx, tenantId, aiDeliveryProjectId);
+    if (!existingProject) return null;
+
+    const existingPlan = await tx.aiDeliveryContentPlan.findFirst({ where: { tenantId, aiDeliveryProjectId } });
+    if (existingPlan) {
+      const found = await tx.aiDeliveryContentPlan.findFirst({ where: { id: existingPlan.id }, select: aiDeliveryContentPlanSelect });
+      return { contentPlan: found, created: false };
+    }
+
+    const created = await tx.aiDeliveryContentPlan.create({
+      data: {
+        tenantId,
+        aiDeliveryProjectId,
+        status: "DRAFT",
+        revisionCount: 0,
+        items: input?.items && input.items.length > 0 ? {
+          create: input.items.map((it) => ({
+            title: it.title,
+            targetKeyword: it.targetKeyword ?? null,
+            contentType: it.contentType ?? "article",
+            notes: it.notes ?? null,
+            sortOrder: it.sortOrder ?? 0,
+            approvalStatus: it.approvalStatus ? (it.approvalStatus as any) : null,
+            clientComment: it.clientComment ?? null,
+            tenant: { connect: { id: tenantId } }
+          }))
+        } : undefined
+      },
+      select: aiDeliveryContentPlanSelect
+    });
+
+    return { contentPlan: created, created: true };
+  });
+}
+
+export async function updateAiDeliveryContentPlan(
+  authSession: AuthResolvedSessionContext,
+  aiDeliveryProjectId: string,
+  input: { status?: string | null; revisionCount?: number | null; items?: { title: string; targetKeyword?: string | null; contentType?: string | null; notes?: string | null; sortOrder?: number | null; approvalStatus?: string | null; clientComment?: string | null }[] }
+): Promise<{ contentPlan: any | null } | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) return null;
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    const existing = await tx.aiDeliveryContentPlan.findFirst({ where: { tenantId, aiDeliveryProjectId } });
+    if (!existing) return null;
+
+    const updated = await tx.aiDeliveryContentPlan.update({
+      where: { id: existing.id },
+      data: {
+        status: typeof input.status === "string" ? (input.status as any) : existing.status,
+        revisionCount: typeof input.revisionCount === "number" ? input.revisionCount : existing.revisionCount
+      },
+      select: { id: true }
+    });
+
+    // replace items deterministically
+    await tx.aiDeliveryContentPlanItem.deleteMany({ where: { contentPlanId: updated.id, tenantId } });
+
+    if (Array.isArray(input.items) && input.items.length > 0) {
+      for (const it of input.items) {
+        await tx.aiDeliveryContentPlanItem.create({
+          data: {
+            tenantId,
+            contentPlanId: updated.id,
+            title: it.title,
+            targetKeyword: it.targetKeyword ?? null,
+            contentType: it.contentType ?? "article",
+            notes: it.notes ?? null,
+            sortOrder: it.sortOrder ?? 0,
+            approvalStatus: it.approvalStatus ? (it.approvalStatus as any) : null,
+            clientComment: it.clientComment ?? null
+          }
+        });
+      }
+    }
+
+    const found = await tx.aiDeliveryContentPlan.findFirst({ where: { id: updated.id }, select: aiDeliveryContentPlanSelect });
+    return { contentPlan: found };
+  });
+}
+
+export async function requestAiDeliveryContentPlanClientReview(
+  authSession: AuthResolvedSessionContext,
+  aiDeliveryProjectId: string
+): Promise<{ contentPlan: any | null } | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) return null;
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    const existing = await tx.aiDeliveryContentPlan.findFirst({ where: { tenantId, aiDeliveryProjectId } });
+    if (!existing) return null;
+
+    const updated = await tx.aiDeliveryContentPlan.update({
+      where: { id: existing.id },
+      data: { status: "CLIENT_REVIEW_REQUESTED", reviewRequestedAt: new Date() },
+      select: aiDeliveryContentPlanSelect
+    });
+
+    return { contentPlan: updated };
+  });
+}
+
+export async function approveAiDeliveryContentPlan(
+  authSession: AuthResolvedSessionContext,
+  aiDeliveryProjectId: string
+): Promise<{ contentPlan: any | null } | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) return null;
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    const existing = await tx.aiDeliveryContentPlan.findFirst({ where: { tenantId, aiDeliveryProjectId } });
+    if (!existing) return null;
+
+    const updated = await tx.aiDeliveryContentPlan.update({
+      where: { id: existing.id },
+      data: { status: "CLIENT_APPROVED", approvedAt: new Date() },
+      select: aiDeliveryContentPlanSelect
+    });
+
+    return { contentPlan: updated };
+  });
+}
+
 export async function updateAiDeliveryProject(
   authSession: AuthResolvedSessionContext,
   aiDeliveryProjectId: string,

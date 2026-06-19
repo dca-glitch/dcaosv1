@@ -43,6 +43,12 @@ import {
   approveFinalAiDeliveryBriefHandler,
   getAiDeliveryBriefHandler,
   saveAiDeliveryBriefHandler,
+  // Monthly content plan handlers
+  getAiDeliveryContentPlanHandler,
+  createAiDeliveryContentPlanHandler,
+  updateAiDeliveryContentPlanHandler,
+  requestAiDeliveryContentPlanClientReviewHandler,
+  approveAiDeliveryContentPlanHandler,
   markInvoicePaidHandler,
   markInvoiceSentHandler,
   markInvoiceUncollectibleHandler,
@@ -98,6 +104,13 @@ export function createCoreRouter() {
   router.post("/ai-delivery-projects/:id/brief/approve-final", requireAuth, requireTenant, requireRole("owner", "admin"), approveFinalAiDeliveryBriefHandler);
   router.get("/ai-delivery-projects/:id/brief", requireAuth, requireTenant, requireRole("owner", "admin"), getAiDeliveryBriefHandler);
   router.put("/ai-delivery-projects/:id/brief", requireAuth, requireTenant, requireRole("owner", "admin"), saveAiDeliveryBriefHandler);
+
+  // Monthly content plan endpoints (admin/owner only)
+  router.get("/ai-delivery-projects/:id/content-plan", requireAuth, requireTenant, requireRole("owner", "admin"), getAiDeliveryContentPlanHandler);
+  router.post("/ai-delivery-projects/:id/content-plan", requireAuth, requireTenant, requireRole("owner", "admin"), createAiDeliveryContentPlanHandler);
+  router.put("/ai-delivery-projects/:id/content-plan", requireAuth, requireTenant, requireRole("owner", "admin"), updateAiDeliveryContentPlanHandler);
+  router.post("/ai-delivery-projects/:id/content-plan/request-client-review", requireAuth, requireTenant, requireRole("owner", "admin"), requestAiDeliveryContentPlanClientReviewHandler);
+  router.post("/ai-delivery-projects/:id/content-plan/approve", requireAuth, requireTenant, requireRole("owner", "admin"), approveAiDeliveryContentPlanHandler);
 
   router.get("/tasks", requireAuth, requireTenant, listTasksHandler);
   router.post("/tasks", requireAuth, requireTenant, requireRole("owner", "admin"), createTaskHandler);

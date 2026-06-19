@@ -87,7 +87,13 @@ import {
   requestAiDeliveryBriefClientRevision,
   approveFinalAiDeliveryBrief,
   getAiDeliveryBriefDetail,
-  saveAiDeliveryBrief
+  saveAiDeliveryBrief,
+  // Content plan runtime functions
+  getAiDeliveryContentPlanDetail,
+  createAiDeliveryContentPlan,
+  updateAiDeliveryContentPlan,
+  requestAiDeliveryContentPlanClientReview,
+  approveAiDeliveryContentPlan
 } from "../core/core.runtime";
 import type {
   AiDeliveryProjectInputRequest,
@@ -1166,6 +1172,119 @@ export const saveAiDeliveryBriefHandler: RequestHandler = async (req, res) => {
     res.json(success(response, { phase: "runtime", scope: "ai-delivery-projects" }));
   } catch {
     res.status(500).json(failure("AI_DELIVERY_BRIEF_RUNTIME_ERROR", "Saving brief could not be completed."));
+  }
+};
+
+// --- Content plan handlers ---
+export const getAiDeliveryContentPlanHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) return void res.status(401).json(unauthorizedFailure());
+
+  const aiDeliveryProjectId = typeof req.params.id === "string" ? req.params.id.trim() : "";
+  if (!aiDeliveryProjectId) return void res.status(400).json(aiDeliveryProjectInvalidFailure());
+
+  try {
+    const response = await getAiDeliveryContentPlanDetail(authSession, aiDeliveryProjectId as string);
+    if (!response?.contentPlan) return void res.status(404).json(aiDeliveryProjectNotFoundFailure());
+    res.json(success(response, { phase: "runtime", scope: "ai-delivery-projects" }));
+  } catch {
+    res.status(500).json(failure("AI_DELIVERY_CONTENT_PLAN_RUNTIME_ERROR", "Fetching content plan could not be completed."));
+  }
+};
+
+export const createAiDeliveryContentPlanHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) return void res.status(401).json(unauthorizedFailure());
+
+  const aiDeliveryProjectId = typeof req.params.id === "string" ? req.params.id.trim() : "";
+  if (!aiDeliveryProjectId) return void res.status(400).json(aiDeliveryProjectInvalidFailure());
+
+  const rawItems = Array.isArray(req.body?.items) ? req.body.items : undefined;
+  const items = rawItems
+    ? rawItems.map((it: any) => ({
+        title: getRequiredString(it.title, SHORT_TEXT_FIELD_MAX_LENGTH) ?? "",
+        targetKeyword: getOptionalString(it.targetKeyword),
+        contentType: getOptionalString(it.contentType) ?? "article",
+        notes: getOptionalString(it.notes),
+        sortOrder: Number.isInteger(it.sortOrder) ? it.sortOrder : 0,
+        approvalStatus: typeof it.approvalStatus === "string" ? it.approvalStatus : null,
+        clientComment: getOptionalString(it.clientComment)
+      })).filter((i: any) => i.title && i.title.length > 0)
+    : undefined;
+
+  try {
+    const response = await createAiDeliveryContentPlan(authSession, aiDeliveryProjectId, { items });
+    if (!response?.contentPlan) return void res.status(404).json(aiDeliveryProjectNotFoundFailure());
+    if (response.created) {
+      res.status(201).json(success({ contentPlan: response.contentPlan }, { phase: "runtime", scope: "ai-delivery-projects" }));
+    } else {
+      res.json(success({ contentPlan: response.contentPlan }, { phase: "runtime", scope: "ai-delivery-projects" }));
+    }
+  } catch {
+    res.status(500).json(failure("AI_DELIVERY_CONTENT_PLAN_RUNTIME_ERROR", "Creating content plan could not be completed."));
+  }
+};
+
+export const updateAiDeliveryContentPlanHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) return void res.status(401).json(unauthorizedFailure());
+
+  const aiDeliveryProjectId = typeof req.params.id === "string" ? req.params.id.trim() : "";
+  if (!aiDeliveryProjectId) return void res.status(400).json(aiDeliveryProjectInvalidFailure());
+
+  const status = typeof req.body?.status === "string" ? req.body.status : undefined;
+  const revisionCount = Number.isInteger(req.body?.revisionCount) ? req.body.revisionCount : undefined;
+  const rawItems = Array.isArray(req.body?.items) ? req.body.items : undefined;
+  const items = rawItems
+    ? rawItems.map((it: any) => ({
+        title: getRequiredString(it.title, SHORT_TEXT_FIELD_MAX_LENGTH) ?? "",
+        targetKeyword: getOptionalString(it.targetKeyword),
+        contentType: getOptionalString(it.contentType) ?? "article",
+        notes: getOptionalString(it.notes),
+        sortOrder: Number.isInteger(it.sortOrder) ? it.sortOrder : 0,
+        approvalStatus: typeof it.approvalStatus === "string" ? it.approvalStatus : null,
+        clientComment: getOptionalString(it.clientComment)
+      })).filter((i: any) => i.title && i.title.length > 0)
+    : [];
+
+  try {
+    const response = await updateAiDeliveryContentPlan(authSession, aiDeliveryProjectId, { status, revisionCount, items });
+    if (!response?.contentPlan) return void res.status(404).json(aiDeliveryProjectNotFoundFailure());
+    res.json(success(response, { phase: "runtime", scope: "ai-delivery-projects" }));
+  } catch {
+    res.status(500).json(failure("AI_DELIVERY_CONTENT_PLAN_RUNTIME_ERROR", "Updating content plan could not be completed."));
+  }
+};
+
+export const requestAiDeliveryContentPlanClientReviewHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) return void res.status(401).json(unauthorizedFailure());
+
+  const aiDeliveryProjectId = typeof req.params.id === "string" ? req.params.id.trim() : "";
+  if (!aiDeliveryProjectId) return void res.status(400).json(aiDeliveryProjectInvalidFailure());
+
+  try {
+    const response = await requestAiDeliveryContentPlanClientReview(authSession, aiDeliveryProjectId);
+    if (!response?.contentPlan) return void res.status(404).json(aiDeliveryProjectNotFoundFailure());
+    res.json(success(response, { phase: "runtime", scope: "ai-delivery-projects" }));
+  } catch {
+    res.status(500).json(failure("AI_DELIVERY_CONTENT_PLAN_RUNTIME_ERROR", "Requesting client review could not be completed."));
+  }
+};
+
+export const approveAiDeliveryContentPlanHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) return void res.status(401).json(unauthorizedFailure());
+
+  const aiDeliveryProjectId = typeof req.params.id === "string" ? req.params.id.trim() : "";
+  if (!aiDeliveryProjectId) return void res.status(400).json(aiDeliveryProjectInvalidFailure());
+
+  try {
+    const response = await approveAiDeliveryContentPlan(authSession, aiDeliveryProjectId);
+    if (!response?.contentPlan) return void res.status(404).json(aiDeliveryProjectNotFoundFailure());
+    res.json(success(response, { phase: "runtime", scope: "ai-delivery-projects" }));
+  } catch {
+    res.status(500).json(failure("AI_DELIVERY_CONTENT_PLAN_RUNTIME_ERROR", "Approving content plan could not be completed."));
   }
 };
 
