@@ -140,6 +140,7 @@ model Tenant {
   aiDeliveryBriefs     AiDeliveryBrief[]
   aiDeliveryContentPlans AiDeliveryContentPlan[]
   aiDeliveryContentPlanItems AiDeliveryContentPlanItem[]
+  aiDeliveryContentDrafts AiDeliveryContentDraft[]
   clientUserAccesses   ClientUserAccess[]
 }
 
@@ -392,6 +393,7 @@ model AiDeliveryProject {
   project Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
   brief AiDeliveryBrief?
   contentPlans AiDeliveryContentPlan[]
+  contentDrafts AiDeliveryContentDraft[]
 
   @@index([tenantId])
   @@index([tenantId, isArchived])
@@ -476,10 +478,36 @@ model AiDeliveryContentPlanItem {
 
   tenant        Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   contentPlan   AiDeliveryContentPlan @relation(fields: [contentPlanId], references: [id], onDelete: Cascade)
+  contentDrafts AiDeliveryContentDraft[]
 
   @@index([tenantId])
   @@index([tenantId, contentPlanId])
   @@index([tenantId, sortOrder])
+}
+
+model AiDeliveryContentDraft {
+  id                  String   @id @default(uuid())
+  tenantId            String
+  aiDeliveryProjectId String
+  contentPlanItemId   String?
+  title               String
+  slug                String?
+  draftBody           String
+  status              String   @default("DRAFT")
+  notes               String?
+  isArchived          Boolean  @default(false)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  tenant              Tenant                    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  aiDeliveryProject   AiDeliveryProject         @relation(fields: [aiDeliveryProjectId], references: [id], onDelete: Cascade)
+  contentPlanItem     AiDeliveryContentPlanItem? @relation(fields: [contentPlanItemId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@index([tenantId, aiDeliveryProjectId])
+  @@index([tenantId, contentPlanItemId])
+  @@index([tenantId, status])
+  @@index([tenantId, isArchived])
 }
 
 model Task {

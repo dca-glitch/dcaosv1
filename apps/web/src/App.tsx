@@ -28,6 +28,8 @@ import {
 import { ProjectsPage, type ProjectFormValues, type ProjectSummary } from "./pages/projects/ProjectsPage";
 import {
   AiDeliveryPage,
+  type AiDeliveryContentDraftFormValues,
+  type AiDeliveryContentDraftSummary,
   type AiDeliveryContentPlanFormValues,
   type AiDeliveryContentPlanSummary,
   type AiDeliveryProjectSummary,
@@ -201,6 +203,14 @@ type AiDeliveryProjectsResponse = {
 
 type AiDeliveryContentPlanResponse = {
   contentPlan: AiDeliveryContentPlanSummary | null;
+};
+
+type AiDeliveryContentDraftsResponse = {
+  contentDrafts: AiDeliveryContentDraftSummary[];
+};
+
+type AiDeliveryContentDraftResponse = {
+  contentDraft: AiDeliveryContentDraftSummary | null;
 };
 
 type ClientContentPlanReviewResponse = AiDeliveryContentPlanResponse;
@@ -1915,6 +1925,63 @@ export function App() {
     }
   }
 
+  async function handleFetchAiDeliveryContentDrafts(projectId: string): Promise<AiDeliveryContentDraftSummary[]> {
+    setAppMessage(null);
+    try {
+      const response = await runAuthenticatedRequest<AiDeliveryContentDraftsResponse>(`/ai-delivery-projects/${projectId}/content-drafts`);
+      if (!response) return [];
+      if (!response.ok) {
+        setAppMessage({ tone: "error", text: getErrorMessage(response) });
+        return [];
+      }
+      return response.data.contentDrafts;
+    } catch (error) {
+      setAppMessage({ tone: "error", text: maskError(error) });
+      return [];
+    }
+  }
+
+  async function handleSaveAiDeliveryContentDraft(
+    projectId: string,
+    draftId: string | null,
+    values: AiDeliveryContentDraftFormValues
+  ): Promise<AiDeliveryContentDraftSummary | null> {
+    setAppMessage(null);
+    try {
+      const response = await runAuthenticatedRequest<AiDeliveryContentDraftResponse>(
+        draftId ? `/ai-delivery-projects/${projectId}/content-drafts/${draftId}` : `/ai-delivery-projects/${projectId}/content-drafts`,
+        { method: draftId ? "PUT" : "POST", body: values }
+      );
+      if (!response) return null;
+      if (!response.ok) {
+        setAppMessage({ tone: "error", text: getErrorMessage(response) });
+        return null;
+      }
+      setAppMessage({ tone: "success", text: draftId ? "Content draft saved." : "Content draft created." });
+      return response.data.contentDraft ?? null;
+    } catch (error) {
+      setAppMessage({ tone: "error", text: maskError(error) });
+      return null;
+    }
+  }
+
+  async function handleArchiveAiDeliveryContentDraft(projectId: string, draftId: string): Promise<AiDeliveryContentDraftSummary | null> {
+    setAppMessage(null);
+    try {
+      const response = await runAuthenticatedRequest<AiDeliveryContentDraftResponse>(`/ai-delivery-projects/${projectId}/content-drafts/${draftId}/archive`, { method: "POST" });
+      if (!response) return null;
+      if (!response.ok) {
+        setAppMessage({ tone: "error", text: getErrorMessage(response) });
+        return null;
+      }
+      setAppMessage({ tone: "success", text: "Content draft archived." });
+      return response.data.contentDraft ?? null;
+    } catch (error) {
+      setAppMessage({ tone: "error", text: maskError(error) });
+      return null;
+    }
+  }
+
   async function handleFetchClientContentPlanReview(projectId: string): Promise<AiDeliveryContentPlanSummary | null> {
     return runClientContentPlanReviewAction(
       `/ai-delivery-projects/${projectId}/content-plan/client-review`,
@@ -2588,6 +2655,9 @@ export function App() {
           onSaveContentPlan={handleSaveAiDeliveryContentPlan}
           onRequestContentPlanReview={handleRequestAiDeliveryContentPlanReview}
           onApproveContentPlan={handleApproveAiDeliveryContentPlan}
+          onFetchContentDrafts={handleFetchAiDeliveryContentDrafts}
+          onSaveContentDraft={handleSaveAiDeliveryContentDraft}
+          onArchiveContentDraft={handleArchiveAiDeliveryContentDraft}
         />
       ) : null}
       {!loading && activeView === "content-plan-review" ? (

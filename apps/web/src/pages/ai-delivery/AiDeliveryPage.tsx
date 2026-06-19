@@ -73,6 +73,30 @@ export type AiDeliveryContentPlanFormValues = {
   }>;
 };
 
+export type AiDeliveryContentDraftSummary = {
+  id: string;
+  aiDeliveryProjectId: string;
+  contentPlanItemId: string | null;
+  contentPlanItem: { id: string; title: string; sortOrder: number } | null;
+  title: string;
+  slug: string | null;
+  draftBody: string;
+  status: string;
+  notes: string | null;
+  isArchived: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type AiDeliveryContentDraftFormValues = {
+  contentPlanItemId: string | null;
+  title: string;
+  slug: string;
+  draftBody: string;
+  status: string;
+  notes: string;
+};
+
 type ContentPlanItemDraft = {
   localId: string;
   title: string;
@@ -121,6 +145,9 @@ export type AiDeliveryProjectsProps = {
   onSaveContentPlan?: (projectId: string, values: AiDeliveryContentPlanFormValues) => Promise<AiDeliveryContentPlanSummary | null>;
   onRequestContentPlanReview?: (projectId: string) => Promise<AiDeliveryContentPlanSummary | null>;
   onApproveContentPlan?: (projectId: string) => Promise<AiDeliveryContentPlanSummary | null>;
+  onFetchContentDrafts?: (projectId: string) => Promise<AiDeliveryContentDraftSummary[]>;
+  onSaveContentDraft?: (projectId: string, draftId: string | null, values: AiDeliveryContentDraftFormValues) => Promise<AiDeliveryContentDraftSummary | null>;
+  onArchiveContentDraft?: (projectId: string, draftId: string) => Promise<AiDeliveryContentDraftSummary | null>;
 };
 
 const emptyForm = (clientId = ""): AiDeliveryProjectFormValues => ({
@@ -144,6 +171,15 @@ const emptyContentPlanItem = (): ContentPlanItemDraft => ({
   title: "",
   targetKeyword: "",
   contentType: "article",
+  notes: ""
+});
+
+const emptyContentDraft = (): AiDeliveryContentDraftFormValues => ({
+  contentPlanItemId: null,
+  title: "",
+  slug: "",
+  draftBody: "",
+  status: "DRAFT",
   notes: ""
 });
 
@@ -178,7 +214,10 @@ export function AiDeliveryPage({
   onCreateContentPlan,
   onSaveContentPlan,
   onRequestContentPlanReview,
-  onApproveContentPlan
+  onApproveContentPlan,
+  onFetchContentDrafts,
+  onSaveContentDraft,
+  onArchiveContentDraft
 }: AiDeliveryProjectsProps) {
   const [filter, setFilter] = useState<"all" | "active" | "archived">("active");
   const [editorProjectId, setEditorProjectId] = useState<string | null>(null);
@@ -208,10 +247,18 @@ export function AiDeliveryPage({
   const [contentPlanSaving, setContentPlanSaving] = useState(false);
   const [contentPlanDetail, setContentPlanDetail] = useState<AiDeliveryContentPlanSummary | null>(null);
   const [contentPlanItems, setContentPlanItems] = useState<ContentPlanItemDraft[]>([]);
+  const [openContentDraftsId, setOpenContentDraftsId] = useState<string | null>(null);
+  const [contentDraftsLoading, setContentDraftsLoading] = useState(false);
+  const [contentDraftsSaving, setContentDraftsSaving] = useState(false);
+  const [contentDrafts, setContentDrafts] = useState<AiDeliveryContentDraftSummary[]>([]);
+  const [contentDraftEditorId, setContentDraftEditorId] = useState<string | null>(null);
+  const [contentDraftForm, setContentDraftForm] = useState<AiDeliveryContentDraftFormValues>(emptyContentDraft());
+  const [contentDraftPlan, setContentDraftPlan] = useState<AiDeliveryContentPlanSummary | null>(null);
 
   const selectedProject = useMemo(() => projects.find((p) => p.id === editorProjectId) ?? null, [editorProjectId, projects]);
   const openProject = useMemo(() => projects.find((p) => p.id === openBriefId) ?? null, [openBriefId, projects]);
   const openContentPlanProject = useMemo(() => projects.find((p) => p.id === openContentPlanId) ?? null, [openContentPlanId, projects]);
+  const openContentDraftsProject = useMemo(() => projects.find((p) => p.id === openContentDraftsId) ?? null, [openContentDraftsId, projects]);
 
   function openCreateModal() {
     setEditorProjectId(null);
@@ -351,6 +398,70 @@ export function AiDeliveryPage({
     setContentPlanItems([]);
   }
 
+  async function openContentDrafts(projectId: string) {
+    setOpenContentDraftsId(projectId);
+    setContentDraftsLoading(true);
+    setContentDrafts([]);
+    setContentDraftEditorId(null);
+    setContentDraftForm(emptyContentDraft());
+    try {
+      const [drafts, plan] = await Promise.all([
+        typeof onFetchContentDrafts === "function" ? onFetchContentDrafts(projectId) : Promise.resolve([]),
+        typeof onFetchContentPlan === "function" ? onFetchContentPlan(projectId) : Promise.resolve(null)
+      ]);
+      setContentDrafts(drafts);
+      setContentDraftPlan(plan);
+    } finally {
+      setContentDraftsLoading(false);
+    }
+  }
+
+  function editContentDraft(draftItem: AiDeliveryContentDraftSummary) {
+    setContentDraftEditorId(draftItem.id);
+    setContentDraftForm({
+      contentPlanItemId: draftItem.contentPlanItemId,
+      title: draftItem.title,
+      slug: draftItem.slug ?? "",
+      draftBody: draftItem.draftBody,
+      status: draftItem.status,
+      notes: draftItem.notes ?? ""
+    });
+  }
+
+  async function saveContentDraft(projectId: string) {
+    if (typeof onSaveContentDraft !== "function") return;
+    setContentDraftsSaving(true);
+    try {
+      const saved = await onSaveContentDraft(projectId, contentDraftEditorId, contentDraftForm);
+      if (saved && typeof onFetchContentDrafts === "function") {
+        setContentDrafts(await onFetchContentDrafts(projectId));
+        setContentDraftEditorId(null);
+        setContentDraftForm(emptyContentDraft());
+      }
+    } finally {
+      setContentDraftsSaving(false);
+    }
+  }
+
+  async function archiveContentDraft(projectId: string, draftId: string) {
+    if (typeof onArchiveContentDraft !== "function" || typeof onFetchContentDrafts !== "function") return;
+    setContentDraftsSaving(true);
+    try {
+      await onArchiveContentDraft(projectId, draftId);
+      setContentDrafts(await onFetchContentDrafts(projectId));
+    } finally {
+      setContentDraftsSaving(false);
+    }
+  }
+
+  function closeContentDrafts() {
+    setOpenContentDraftsId(null);
+    setContentDrafts([]);
+    setContentDraftEditorId(null);
+    setContentDraftForm(emptyContentDraft());
+    setContentDraftPlan(null);
+  }
+
   if (loading) return <LoadingState label="Loading AI delivery projects" />;
   if (error) return <ErrorState title="AI delivery unavailable" message={error} />;
 
@@ -417,6 +528,9 @@ export function AiDeliveryPage({
                       </button>
                       <button className="secondary-action" onClick={() => void openContentPlan(p.id)} type="button">
                         Content plan
+                      </button>
+                      <button className="secondary-action" onClick={() => void openContentDrafts(p.id)} type="button">
+                        Content drafts
                       </button>
                       {!p.isArchived ? (
                         <button className="secondary-action" onClick={() => void onArchive(p.id)} type="button">
@@ -847,6 +961,79 @@ export function AiDeliveryPage({
           ) : (
             <div>Project not found.</div>
           )}
+        </Modal>
+      ) : null}
+      {openContentDraftsId ? (
+        <Modal onClose={closeContentDrafts} title="Content Drafts">
+          {contentDraftsLoading ? (
+            <LoadingState label="Loading content drafts" />
+          ) : openContentDraftsProject ? (
+            <div>
+              <section className="field-panel">
+                <h3>Draft editor</h3>
+                <div className="field-grid">
+                  <label>
+                    Linked content plan item
+                    <select value={contentDraftForm.contentPlanItemId ?? ""} onChange={(event) => setContentDraftForm((current) => ({ ...current, contentPlanItemId: event.target.value || null }))}>
+                      <option value="">Manual / unlinked</option>
+                      {(contentDraftPlan?.items ?? []).map((item) => (
+                        <option key={item.id} value={item.id}>{item.sortOrder}. {item.title}</option>
+                      ))}
+                    </select>
+                  </label>
+                  <label>
+                    Status
+                    <select value={contentDraftForm.status} onChange={(event) => setContentDraftForm((current) => ({ ...current, status: event.target.value }))}>
+                      {(["DRAFT", "READY_FOR_REVIEW", "APPROVED", "CHANGES_REQUESTED", "ARCHIVED"] as const).map((status) => <option key={status} value={status}>{status}</option>)}
+                    </select>
+                  </label>
+                  <label>
+                    Title
+                    <input maxLength={255} required value={contentDraftForm.title} onChange={(event) => setContentDraftForm((current) => ({ ...current, title: event.target.value }))} />
+                  </label>
+                  <label>
+                    Slug
+                    <input maxLength={255} value={contentDraftForm.slug} onChange={(event) => setContentDraftForm((current) => ({ ...current, slug: event.target.value }))} />
+                  </label>
+                  <label className="field-span-2">
+                    Draft body
+                    <textarea rows={10} value={contentDraftForm.draftBody} onChange={(event) => setContentDraftForm((current) => ({ ...current, draftBody: event.target.value }))} />
+                  </label>
+                  <label className="field-span-2">
+                    Admin notes
+                    <textarea maxLength={4000} rows={3} value={contentDraftForm.notes} onChange={(event) => setContentDraftForm((current) => ({ ...current, notes: event.target.value }))} />
+                  </label>
+                </div>
+                <div className="modal-footer">
+                  <button className="secondary-action" disabled={contentDraftsSaving} onClick={() => { setContentDraftEditorId(null); setContentDraftForm(emptyContentDraft()); }} type="button">New draft</button>
+                  <button className="primary-action" disabled={contentDraftsSaving || !contentDraftForm.title.trim()} onClick={() => void saveContentDraft(openContentDraftsProject.id)} type="button">
+                    {contentDraftsSaving ? "Saving" : contentDraftEditorId ? "Save draft" : "Create draft"}
+                  </button>
+                </div>
+              </section>
+
+              <section className="field-panel">
+                <h3>Existing drafts</h3>
+                {contentDrafts.length === 0 ? <div className="state-panel">No content drafts have been created yet.</div> : null}
+                {contentDrafts.map((draftItem) => (
+                  <article className="entity-card" key={draftItem.id} style={{ marginBottom: "1rem" }}>
+                    <div className="entity-card-header">
+                      <div>
+                        <StatusBadge status={draftItem.isArchived ? "Archived" : draftItem.status} />
+                        <h3>{draftItem.title}</h3>
+                        <p>{draftItem.contentPlanItem ? `Linked to: ${draftItem.contentPlanItem.title}` : "Manual / unlinked draft"}</p>
+                      </div>
+                      <div className="card-actions">
+                        <button className="secondary-action" disabled={contentDraftsSaving} onClick={() => editContentDraft(draftItem)} type="button">Edit</button>
+                        {!draftItem.isArchived ? <button className="secondary-action" disabled={contentDraftsSaving} onClick={() => void archiveContentDraft(openContentDraftsProject.id, draftItem.id)} type="button">Archive</button> : null}
+                      </div>
+                    </div>
+                  </article>
+                ))}
+              </section>
+              <div className="modal-footer"><button className="secondary-action" onClick={closeContentDrafts} type="button">Close</button></div>
+            </div>
+          ) : <div>Project not found.</div>}
         </Modal>
       ) : null}
     </section>

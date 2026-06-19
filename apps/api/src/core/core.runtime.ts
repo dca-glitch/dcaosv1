@@ -1,6 +1,9 @@
 import type { Prisma } from "@prisma/client";
 import { createPrismaClient } from "../../../../packages/data/src/client";
 import type {
+  AiDeliveryContentDraftInputRequest,
+  AiDeliveryContentDraftResponse,
+  AiDeliveryContentDraftsResponse,
   AiDeliveryProjectInputRequest,
   AiDeliveryProjectResponse,
   AiDeliveryProjectsResponse,
@@ -52,6 +55,7 @@ type TaskPriority = "LOW" | "NORMAL" | "HIGH";
 type TaskStatus = "TODO" | "IN_PROGRESS" | "DONE";
 type TaskRecurringType = "NONE" | "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY";
 type InvoiceStatus = "DRAFT" | "ISSUED" | "PAID" | "VOIDED" | "UNCOLLECTIBLE";
+type AiDeliveryContentDraftStatus = "DRAFT" | "READY_FOR_REVIEW" | "APPROVED" | "CHANGES_REQUESTED" | "ARCHIVED";
 type CreditNoteStatus = "DRAFT" | "ISSUED" | "VOIDED";
 type PaymentMethod = "CASH" | "REVOLUT_BANK" | "WISE_BANK" | "REVOLUT_CARD" | "WISE_CARD" | "CARD_PROCESSOR" | "OTHER";
 type RecurringInvoiceInterval = "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY";
@@ -1656,6 +1660,10 @@ function getAiDeliveryContentPlanDelegate(client: PrismaTx | typeof prisma) {
   return (client as unknown as { aiDeliveryContentPlan: { findFirst: (args: unknown) => Promise<unknown>; findMany: (args: unknown) => Promise<unknown[]>; create: (args: unknown) => Promise<unknown>; update: (args: unknown) => Promise<unknown>; delete: (args: unknown) => Promise<unknown>; } }).aiDeliveryContentPlan;
 }
 
+function getAiDeliveryContentDraftDelegate(client: PrismaTx | typeof prisma) {
+  return (client as unknown as { aiDeliveryContentDraft: { findFirst: (args: unknown) => Promise<unknown>; findMany: (args: unknown) => Promise<unknown[]>; create: (args: unknown) => Promise<unknown>; update: (args: unknown) => Promise<unknown>; } }).aiDeliveryContentDraft;
+}
+
 const aiDeliveryContentPlanItemSelect = {
   id: true,
   title: true,
@@ -1707,6 +1715,152 @@ function toAiDeliveryContentPlanSummary(plan: any) {
     createdAt: plan.createdAt.toISOString(),
     updatedAt: plan.updatedAt.toISOString()
   };
+}
+
+const AI_DELIVERY_CONTENT_DRAFT_STATUSES = new Set(["DRAFT", "READY_FOR_REVIEW", "APPROVED", "CHANGES_REQUESTED", "ARCHIVED"]);
+
+const aiDeliveryContentDraftSelect = {
+  id: true,
+  aiDeliveryProjectId: true,
+  contentPlanItemId: true,
+  contentPlanItem: { select: { id: true, title: true, sortOrder: true } },
+  title: true,
+  slug: true,
+  draftBody: true,
+  status: true,
+  notes: true,
+  isArchived: true,
+  createdAt: true,
+  updatedAt: true
+} as const;
+
+function normalizeAiDeliveryContentDraftStatus(value: string | null | undefined): AiDeliveryContentDraftStatus {
+  return value && AI_DELIVERY_CONTENT_DRAFT_STATUSES.has(value) ? value as AiDeliveryContentDraftStatus : "DRAFT";
+}
+
+function toAiDeliveryContentDraftSummary(draft: any) {
+  return {
+    id: draft.id,
+    aiDeliveryProjectId: draft.aiDeliveryProjectId,
+    contentPlanItemId: draft.contentPlanItemId,
+    contentPlanItem: draft.contentPlanItem ?? null,
+    title: draft.title,
+    slug: draft.slug,
+    draftBody: draft.draftBody,
+    status: draft.status,
+    notes: draft.notes,
+    isArchived: draft.isArchived,
+    createdAt: draft.createdAt.toISOString(),
+    updatedAt: draft.updatedAt.toISOString()
+  };
+}
+
+async function getAiDeliveryProjectForDraft(tx: PrismaTx, tenantId: string, aiDeliveryProjectId: string) {
+  return tx.aiDeliveryProject.findFirst({ where: { id: aiDeliveryProjectId, tenantId, isArchived: false }, select: { id: true } });
+}
+
+async function getContentPlanItemForDraft(tx: PrismaTx, tenantId: string, aiDeliveryProjectId: string, contentPlanItemId: string | null | undefined) {
+  if (!contentPlanItemId) return null;
+  return tx.aiDeliveryContentPlanItem.findFirst({
+    where: { id: contentPlanItemId, tenantId, contentPlan: { tenantId, aiDeliveryProjectId } },
+    select: { id: true }
+  });
+}
+
+export async function listAiDeliveryContentDrafts(
+  authSession: AuthResolvedSessionContext,
+  aiDeliveryProjectId: string
+): Promise<AiDeliveryContentDraftsResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) return null;
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    const project = await getAiDeliveryProjectForDraft(tx, tenantId, aiDeliveryProjectId);
+    if (!project) return null;
+    const drafts = await getAiDeliveryContentDraftDelegate(tx).findMany({
+      where: { tenantId, aiDeliveryProjectId },
+      orderBy: [{ isArchived: "asc" }, { updatedAt: "desc" }],
+      select: aiDeliveryContentDraftSelect
+    }) as any[];
+    return { contentDrafts: drafts.map(toAiDeliveryContentDraftSummary) };
+  });
+}
+
+export async function createAiDeliveryContentDraft(
+  authSession: AuthResolvedSessionContext,
+  aiDeliveryProjectId: string,
+  input: AiDeliveryContentDraftInputRequest
+): Promise<AiDeliveryContentDraftResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId || !input.title || input.draftBody === undefined) return null;
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    const project = await getAiDeliveryProjectForDraft(tx, tenantId, aiDeliveryProjectId);
+    if (!project) return null;
+    const contentPlanItem = await getContentPlanItemForDraft(tx, tenantId, aiDeliveryProjectId, input.contentPlanItemId);
+    if (input.contentPlanItemId && !contentPlanItem) return null;
+    const created = await getAiDeliveryContentDraftDelegate(tx).create({
+      data: {
+        tenantId,
+        aiDeliveryProjectId,
+        contentPlanItemId: contentPlanItem?.id ?? null,
+        title: input.title,
+        slug: toNullableString(input.slug),
+        draftBody: input.draftBody,
+        status: normalizeAiDeliveryContentDraftStatus(input.status),
+        notes: toNullableString(input.notes)
+      },
+      select: aiDeliveryContentDraftSelect
+    }) as any;
+    return { contentDraft: toAiDeliveryContentDraftSummary(created) };
+  });
+}
+
+export async function updateAiDeliveryContentDraft(
+  authSession: AuthResolvedSessionContext,
+  aiDeliveryProjectId: string,
+  contentDraftId: string,
+  input: AiDeliveryContentDraftInputRequest
+): Promise<AiDeliveryContentDraftResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId || !input.title || input.draftBody === undefined) return null;
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    const existing = await getAiDeliveryContentDraftDelegate(tx).findFirst({ where: { id: contentDraftId, tenantId, aiDeliveryProjectId }, select: aiDeliveryContentDraftSelect }) as any;
+    if (!existing) return null;
+    const contentPlanItem = await getContentPlanItemForDraft(tx, tenantId, aiDeliveryProjectId, input.contentPlanItemId);
+    if (input.contentPlanItemId && !contentPlanItem) return null;
+    const updated = await getAiDeliveryContentDraftDelegate(tx).update({
+      where: { id: contentDraftId },
+      data: {
+        contentPlanItemId: contentPlanItem?.id ?? null,
+        title: input.title,
+        slug: toNullableString(input.slug),
+        draftBody: input.draftBody,
+        status: normalizeAiDeliveryContentDraftStatus(input.status),
+        notes: toNullableString(input.notes),
+        isArchived: normalizeAiDeliveryContentDraftStatus(input.status) === "ARCHIVED" ? true : existing.isArchived
+      },
+      select: aiDeliveryContentDraftSelect
+    }) as any;
+    return { contentDraft: toAiDeliveryContentDraftSummary(updated) };
+  });
+}
+
+export async function archiveAiDeliveryContentDraft(
+  authSession: AuthResolvedSessionContext,
+  aiDeliveryProjectId: string,
+  contentDraftId: string
+): Promise<AiDeliveryContentDraftResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) return null;
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    const existing = await getAiDeliveryContentDraftDelegate(tx).findFirst({ where: { id: contentDraftId, tenantId, aiDeliveryProjectId }, select: { id: true } }) as any;
+    if (!existing) return null;
+    const archived = await getAiDeliveryContentDraftDelegate(tx).update({ where: { id: contentDraftId }, data: { isArchived: true, status: "ARCHIVED" }, select: aiDeliveryContentDraftSelect }) as any;
+    return { contentDraft: toAiDeliveryContentDraftSummary(archived) };
+  });
 }
 
 export async function getAiDeliveryContentPlanDetail(

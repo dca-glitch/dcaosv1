@@ -184,6 +184,38 @@ export interface AiDeliveryProjectInputRequest {
   plannedContentScopeNotes?: string | null;
 }
 
+export interface AiDeliveryContentDraftSummary {
+  id: string;
+  aiDeliveryProjectId: string;
+  contentPlanItemId: string | null;
+  contentPlanItem: { id: string; title: string; sortOrder: number } | null;
+  title: string;
+  slug: string | null;
+  draftBody: string;
+  status: string;
+  notes: string | null;
+  isArchived: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AiDeliveryContentDraftsResponse {
+  contentDrafts: AiDeliveryContentDraftSummary[];
+}
+
+export interface AiDeliveryContentDraftResponse {
+  contentDraft: AiDeliveryContentDraftSummary | null;
+}
+
+export interface AiDeliveryContentDraftInputRequest {
+  contentPlanItemId?: string | null;
+  title?: string;
+  slug?: string | null;
+  draftBody?: string;
+  status?: string;
+  notes?: string | null;
+}
+
 export interface TaskSummary {
   id: string;
   projectId: string | null;

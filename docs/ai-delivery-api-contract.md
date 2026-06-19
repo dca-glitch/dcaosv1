@@ -87,3 +87,21 @@ Authenticated tenant users may review monthly content plans only when `userCanAc
   - Moves the plan to `CLIENT_CHANGES_REQUESTED`, increments `revisionCount`, and stores the comment on the first plan item `clientComment` as the existing schema-supported revision note.
 
 No public token routes or magic links are exposed.
+
+## Admin content draft foundation
+
+Admin/owner-only content draft endpoints are scoped to an AI Delivery project and tenant:
+
+- `GET /api/v1/core/ai-delivery-projects/:id/content-drafts`
+  - Lists manual content draft records for the AI Delivery project.
+- `POST /api/v1/core/ai-delivery-projects/:id/content-drafts`
+  - Body: `{ contentPlanItemId?, title, slug?, draftBody, status, notes? }`
+  - Creates a manual content draft, optionally linked to a monthly content plan item from the same project.
+- `PUT /api/v1/core/ai-delivery-projects/:id/content-drafts/:draftId`
+  - Updates title, slug, body, status, notes, and optional content plan item link.
+- `POST /api/v1/core/ai-delivery-projects/:id/content-drafts/:draftId/archive`
+  - Archives a draft and sets status to `ARCHIVED`.
+
+Allowed runtime statuses: `DRAFT`, `READY_FOR_REVIEW`, `APPROVED`, `CHANGES_REQUESTED`, `ARCHIVED`.
+
+This block is admin-operated only. It does not add AI writing calls, WordPress publishing, export/delivery workflow, image workflow, or client-facing content review.

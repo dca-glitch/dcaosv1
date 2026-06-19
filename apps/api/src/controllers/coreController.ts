@@ -23,6 +23,7 @@ import {
 import type { AuthSessionLocals } from "../auth/types";
 import {
   archiveAiDeliveryProject,
+  archiveAiDeliveryContentDraft,
   archiveClient,
   archiveClientUserAccess,
   archiveBill,
@@ -33,6 +34,7 @@ import {
   cancelInvoice,
   archiveInvoiceItem,
   createBill,
+  createAiDeliveryContentDraft,
   createAiDeliveryProject,
   createClient,
   createCreditNote,
@@ -91,6 +93,8 @@ import {
   approveFinalAiDeliveryBrief,
   getAiDeliveryBriefDetail,
   saveAiDeliveryBrief,
+  listAiDeliveryContentDrafts,
+  updateAiDeliveryContentDraft,
   // Content plan runtime functions
   getAiDeliveryContentPlanDetail,
   createAiDeliveryContentPlan,
@@ -102,6 +106,7 @@ import {
   requestClientAiDeliveryContentPlanRevision
 } from "../core/core.runtime";
 import type {
+  AiDeliveryContentDraftInputRequest,
   AiDeliveryProjectInputRequest,
   BillDocumentUploadRequest,
   BillInputRequest,
@@ -124,6 +129,7 @@ const LOGO_URL_MAX_LENGTH = 2048;
 const NAME_MAX_LENGTH = 255;
 const CLIENT_COUNTRIES = new Set(["Indonesia", "Poland", "United States", "United Kingdom", "Singapore", "Australia"]);
 const PROJECT_STATUSES = new Set(["Active", "Paused", "Completed", "Archived"]);
+const AI_DELIVERY_CONTENT_DRAFT_STATUSES = new Set(["DRAFT", "READY_FOR_REVIEW", "APPROVED", "CHANGES_REQUESTED", "ARCHIVED"]);
 
 function getAuthSession(resLocals: unknown) {
   return (resLocals as AuthSessionLocals | undefined)?.authSession;
@@ -307,6 +313,26 @@ function getAiDeliveryProjectInput(body: unknown): AiDeliveryProjectInputRequest
     name,
     targetMonth,
     plannedContentScopeNotes: getOptionalString(value.plannedContentScopeNotes, TEXT_FIELD_MAX_LENGTH)
+  };
+}
+
+function getAiDeliveryContentDraftInput(body: unknown): AiDeliveryContentDraftInputRequest | null {
+  const value = (body ?? {}) as Record<string, unknown>;
+  const title = getRequiredString(value.title, SHORT_TEXT_FIELD_MAX_LENGTH);
+  const status = typeof value.status === "string" ? value.status.trim().toUpperCase() : "DRAFT";
+  const draftBody = typeof value.draftBody === "string" ? value.draftBody : null;
+
+  if (!title || draftBody === null || !AI_DELIVERY_CONTENT_DRAFT_STATUSES.has(status)) {
+    return null;
+  }
+
+  return {
+    contentPlanItemId: getOptionalString(value.contentPlanItemId, SHORT_TEXT_FIELD_MAX_LENGTH) ?? null,
+    title,
+    slug: getOptionalString(value.slug, SHORT_TEXT_FIELD_MAX_LENGTH),
+    draftBody,
+    status,
+    notes: getOptionalString(value.notes, TEXT_FIELD_MAX_LENGTH)
   };
 }
 
@@ -1419,6 +1445,70 @@ export const requestClientAiDeliveryContentPlanRevisionHandler: RequestHandler =
     res.json(success(response, { phase: "runtime", scope: "ai-delivery-client-review" }));
   } catch {
     res.status(500).json(failure("AI_DELIVERY_CONTENT_PLAN_RUNTIME_ERROR", "Content plan revision request could not be completed."));
+  }
+};
+
+export const listAiDeliveryContentDraftsHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  const aiDeliveryProjectId = typeof req.params.id === "string" ? req.params.id.trim() : "";
+  if (!authSession) return void res.status(401).json(unauthorizedFailure());
+  if (!aiDeliveryProjectId) return void res.status(400).json(aiDeliveryProjectInvalidFailure());
+
+  try {
+    const response = await listAiDeliveryContentDrafts(authSession, aiDeliveryProjectId);
+    if (!response) return void res.status(404).json(aiDeliveryProjectNotFoundFailure());
+    res.json(success(response, { phase: "runtime", scope: "ai-delivery-content-drafts" }));
+  } catch {
+    res.status(500).json(failure("AI_DELIVERY_CONTENT_DRAFT_RUNTIME_ERROR", "Content drafts could not be listed."));
+  }
+};
+
+export const createAiDeliveryContentDraftHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  const aiDeliveryProjectId = typeof req.params.id === "string" ? req.params.id.trim() : "";
+  const input = getAiDeliveryContentDraftInput(req.body);
+  if (!authSession) return void res.status(401).json(unauthorizedFailure());
+  if (!aiDeliveryProjectId || !input) return void res.status(400).json(aiDeliveryProjectInvalidFailure());
+
+  try {
+    const response = await createAiDeliveryContentDraft(authSession, aiDeliveryProjectId, input);
+    if (!response?.contentDraft) return void res.status(404).json(aiDeliveryProjectNotFoundFailure());
+    res.status(201).json(success(response, { phase: "runtime", scope: "ai-delivery-content-drafts" }));
+  } catch {
+    res.status(500).json(failure("AI_DELIVERY_CONTENT_DRAFT_RUNTIME_ERROR", "Content draft could not be created."));
+  }
+};
+
+export const updateAiDeliveryContentDraftHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  const aiDeliveryProjectId = typeof req.params.id === "string" ? req.params.id.trim() : "";
+  const contentDraftId = typeof req.params.draftId === "string" ? req.params.draftId.trim() : "";
+  const input = getAiDeliveryContentDraftInput(req.body);
+  if (!authSession) return void res.status(401).json(unauthorizedFailure());
+  if (!aiDeliveryProjectId || !contentDraftId || !input) return void res.status(400).json(aiDeliveryProjectInvalidFailure());
+
+  try {
+    const response = await updateAiDeliveryContentDraft(authSession, aiDeliveryProjectId, contentDraftId, input);
+    if (!response?.contentDraft) return void res.status(404).json(aiDeliveryProjectNotFoundFailure());
+    res.json(success(response, { phase: "runtime", scope: "ai-delivery-content-drafts" }));
+  } catch {
+    res.status(500).json(failure("AI_DELIVERY_CONTENT_DRAFT_RUNTIME_ERROR", "Content draft could not be updated."));
+  }
+};
+
+export const archiveAiDeliveryContentDraftHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  const aiDeliveryProjectId = typeof req.params.id === "string" ? req.params.id.trim() : "";
+  const contentDraftId = typeof req.params.draftId === "string" ? req.params.draftId.trim() : "";
+  if (!authSession) return void res.status(401).json(unauthorizedFailure());
+  if (!aiDeliveryProjectId || !contentDraftId) return void res.status(400).json(aiDeliveryProjectInvalidFailure());
+
+  try {
+    const response = await archiveAiDeliveryContentDraft(authSession, aiDeliveryProjectId, contentDraftId);
+    if (!response?.contentDraft) return void res.status(404).json(aiDeliveryProjectNotFoundFailure());
+    res.json(success(response, { phase: "runtime", scope: "ai-delivery-content-drafts" }));
+  } catch {
+    res.status(500).json(failure("AI_DELIVERY_CONTENT_DRAFT_RUNTIME_ERROR", "Content draft could not be archived."));
   }
 };
 
