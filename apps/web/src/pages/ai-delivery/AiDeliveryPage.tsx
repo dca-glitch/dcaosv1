@@ -83,6 +83,10 @@ export type AiDeliveryContentDraftSummary = {
   draftBody: string;
   status: string;
   notes: string | null;
+  reviewRequestedAt: string | null;
+  approvedAt: string | null;
+  revisionCount: number;
+  clientComment: string | null;
   isArchived: boolean;
   createdAt: string;
   updatedAt: string;
@@ -148,6 +152,7 @@ export type AiDeliveryProjectsProps = {
   onFetchContentDrafts?: (projectId: string) => Promise<AiDeliveryContentDraftSummary[]>;
   onSaveContentDraft?: (projectId: string, draftId: string | null, values: AiDeliveryContentDraftFormValues) => Promise<AiDeliveryContentDraftSummary | null>;
   onArchiveContentDraft?: (projectId: string, draftId: string) => Promise<AiDeliveryContentDraftSummary | null>;
+  onRequestContentDraftReview?: (projectId: string, draftId: string) => Promise<AiDeliveryContentDraftSummary | null>;
 };
 
 const emptyForm = (clientId = ""): AiDeliveryProjectFormValues => ({
@@ -217,7 +222,8 @@ export function AiDeliveryPage({
   onApproveContentPlan,
   onFetchContentDrafts,
   onSaveContentDraft,
-  onArchiveContentDraft
+  onArchiveContentDraft,
+  onRequestContentDraftReview
 }: AiDeliveryProjectsProps) {
   const [filter, setFilter] = useState<"all" | "active" | "archived">("active");
   const [editorProjectId, setEditorProjectId] = useState<string | null>(null);
@@ -448,6 +454,17 @@ export function AiDeliveryPage({
     setContentDraftsSaving(true);
     try {
       await onArchiveContentDraft(projectId, draftId);
+      setContentDrafts(await onFetchContentDrafts(projectId));
+    } finally {
+      setContentDraftsSaving(false);
+    }
+  }
+
+  async function requestContentDraftReview(projectId: string, draftId: string) {
+    if (typeof onRequestContentDraftReview !== "function" || typeof onFetchContentDrafts !== "function") return;
+    setContentDraftsSaving(true);
+    try {
+      await onRequestContentDraftReview(projectId, draftId);
       setContentDrafts(await onFetchContentDrafts(projectId));
     } finally {
       setContentDraftsSaving(false);
@@ -1025,9 +1042,28 @@ export function AiDeliveryPage({
                       </div>
                       <div className="card-actions">
                         <button className="secondary-action" disabled={contentDraftsSaving} onClick={() => editContentDraft(draftItem)} type="button">Edit</button>
+                        {!draftItem.isArchived ? <button className="secondary-action" disabled={contentDraftsSaving} onClick={() => void requestContentDraftReview(openContentDraftsProject.id, draftItem.id)} type="button">Request client review</button> : null}
                         {!draftItem.isArchived ? <button className="secondary-action" disabled={contentDraftsSaving} onClick={() => void archiveContentDraft(openContentDraftsProject.id, draftItem.id)} type="button">Archive</button> : null}
                       </div>
                     </div>
+                    <dl className="brief-grid">
+                      <div>
+                        <dt>Review requested</dt>
+                        <dd>{formatOptionalDate(draftItem.reviewRequestedAt)}</dd>
+                      </div>
+                      <div>
+                        <dt>Approved</dt>
+                        <dd>{formatOptionalDate(draftItem.approvedAt)}</dd>
+                      </div>
+                      <div>
+                        <dt>Revisions</dt>
+                        <dd>{draftItem.revisionCount ?? 0}</dd>
+                      </div>
+                      <div>
+                        <dt>Client comment</dt>
+                        <dd>{draftItem.clientComment ?? "No client comment"}</dd>
+                      </div>
+                    </dl>
                   </article>
                 ))}
               </section>

@@ -94,6 +94,10 @@ import {
   getAiDeliveryBriefDetail,
   saveAiDeliveryBrief,
   listAiDeliveryContentDrafts,
+  listClientAiDeliveryContentDraftReviews,
+  approveClientAiDeliveryContentDraftReview,
+  requestClientAiDeliveryContentDraftRevision,
+  requestAiDeliveryContentDraftClientReview,
   updateAiDeliveryContentDraft,
   // Content plan runtime functions
   getAiDeliveryContentPlanDetail,
@@ -1509,6 +1513,70 @@ export const archiveAiDeliveryContentDraftHandler: RequestHandler = async (req, 
     res.json(success(response, { phase: "runtime", scope: "ai-delivery-content-drafts" }));
   } catch {
     res.status(500).json(failure("AI_DELIVERY_CONTENT_DRAFT_RUNTIME_ERROR", "Content draft could not be archived."));
+  }
+};
+
+export const requestAiDeliveryContentDraftClientReviewHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  const aiDeliveryProjectId = typeof req.params.id === "string" ? req.params.id.trim() : "";
+  const contentDraftId = typeof req.params.draftId === "string" ? req.params.draftId.trim() : "";
+  if (!authSession) return void res.status(401).json(unauthorizedFailure());
+  if (!aiDeliveryProjectId || !contentDraftId) return void res.status(400).json(aiDeliveryProjectInvalidFailure());
+
+  try {
+    const response = await requestAiDeliveryContentDraftClientReview(authSession, aiDeliveryProjectId, contentDraftId);
+    if (!response?.contentDraft) return void res.status(404).json(aiDeliveryProjectNotFoundFailure());
+    res.json(success(response, { phase: "runtime", scope: "ai-delivery-content-draft-client-review" }));
+  } catch {
+    res.status(500).json(failure("AI_DELIVERY_CONTENT_DRAFT_RUNTIME_ERROR", "Content draft review request could not be completed."));
+  }
+};
+
+export const listClientAiDeliveryContentDraftReviewsHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  const aiDeliveryProjectId = typeof req.params.id === "string" ? req.params.id.trim() : "";
+  if (!authSession) return void res.status(401).json(unauthorizedFailure());
+  if (!aiDeliveryProjectId) return void res.status(400).json(aiDeliveryProjectInvalidFailure());
+
+  try {
+    const response = await listClientAiDeliveryContentDraftReviews(authSession, aiDeliveryProjectId);
+    if (!response) return void res.status(404).json(aiDeliveryProjectNotFoundFailure());
+    res.json(success(response, { phase: "runtime", scope: "ai-delivery-content-draft-client-review" }));
+  } catch {
+    res.status(500).json(failure("AI_DELIVERY_CONTENT_DRAFT_RUNTIME_ERROR", "Content draft reviews could not be loaded."));
+  }
+};
+
+export const approveClientAiDeliveryContentDraftReviewHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  const aiDeliveryProjectId = typeof req.params.id === "string" ? req.params.id.trim() : "";
+  const contentDraftId = typeof req.params.draftId === "string" ? req.params.draftId.trim() : "";
+  if (!authSession) return void res.status(401).json(unauthorizedFailure());
+  if (!aiDeliveryProjectId || !contentDraftId) return void res.status(400).json(aiDeliveryProjectInvalidFailure());
+
+  try {
+    const response = await approveClientAiDeliveryContentDraftReview(authSession, aiDeliveryProjectId, contentDraftId);
+    if (!response?.contentDraft) return void res.status(404).json(aiDeliveryProjectNotFoundFailure());
+    res.json(success(response, { phase: "runtime", scope: "ai-delivery-content-draft-client-review" }));
+  } catch {
+    res.status(500).json(failure("AI_DELIVERY_CONTENT_DRAFT_RUNTIME_ERROR", "Content draft approval could not be completed."));
+  }
+};
+
+export const requestClientAiDeliveryContentDraftRevisionHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  const aiDeliveryProjectId = typeof req.params.id === "string" ? req.params.id.trim() : "";
+  const contentDraftId = typeof req.params.draftId === "string" ? req.params.draftId.trim() : "";
+  const comment = getClientRevisionComment(req.body);
+  if (!authSession) return void res.status(401).json(unauthorizedFailure());
+  if (!aiDeliveryProjectId || !contentDraftId || !comment) return void res.status(400).json(aiDeliveryProjectInvalidFailure());
+
+  try {
+    const response = await requestClientAiDeliveryContentDraftRevision(authSession, aiDeliveryProjectId, contentDraftId, comment);
+    if (!response?.contentDraft) return void res.status(404).json(aiDeliveryProjectNotFoundFailure());
+    res.json(success(response, { phase: "runtime", scope: "ai-delivery-content-draft-client-review" }));
+  } catch {
+    res.status(500).json(failure("AI_DELIVERY_CONTENT_DRAFT_RUNTIME_ERROR", "Content draft revision request could not be completed."));
   }
 };
 

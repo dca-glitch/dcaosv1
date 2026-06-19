@@ -495,6 +495,10 @@ model AiDeliveryContentDraft {
   draftBody           String
   status              String   @default("DRAFT")
   notes               String?
+  reviewRequestedAt   DateTime?
+  approvedAt          DateTime?
+  revisionCount       Int      @default(0)
+  clientComment       String?
   isArchived          Boolean  @default(false)
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt

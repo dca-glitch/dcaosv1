@@ -105,3 +105,31 @@ Admin/owner-only content draft endpoints are scoped to an AI Delivery project an
 Allowed runtime statuses: `DRAFT`, `READY_FOR_REVIEW`, `APPROVED`, `CHANGES_REQUESTED`, `ARCHIVED`.
 
 This block is admin-operated only. It does not add AI writing calls, WordPress publishing, export/delivery workflow, image workflow, or client-facing content review.
+
+## Content draft client review routes
+
+Content draft review uses normal authenticated sessions only. No public token routes, public approval links, or magic links are exposed. Client access is tenant-scoped and requires `userCanAccessClient(authSession, clientId)` for the AI Delivery Project client. Archived AI Delivery projects and archived content drafts are not exposed to client review routes.
+
+Schema review metadata on `AiDeliveryContentDraft`:
+
+- `reviewRequestedAt DateTime?`
+- `approvedAt DateTime?`
+- `revisionCount Int @default(0)`
+- `clientComment String?`
+
+Admin/owner-only endpoint:
+
+- `POST /api/v1/core/ai-delivery-projects/:id/content-drafts/:draftId/request-client-review`
+  - Sets draft status to `READY_FOR_REVIEW`, sets `reviewRequestedAt`, and clears `approvedAt`.
+
+Authenticated client-safe endpoints:
+
+- `GET /api/v1/core/ai-delivery-projects/:id/content-drafts/client-review`
+  - Lists non-archived content drafts for the AI Delivery project with status `READY_FOR_REVIEW`, `APPROVED`, or `CHANGES_REQUESTED`.
+- `POST /api/v1/core/ai-delivery-projects/:id/content-drafts/:draftId/client-review/approve`
+  - Sets draft status to `APPROVED` and sets `approvedAt`.
+- `POST /api/v1/core/ai-delivery-projects/:id/content-drafts/:draftId/client-review/request-revision`
+  - Body: `{ comment }`
+  - Requires a non-empty comment, sets draft status to `CHANGES_REQUESTED`, increments `revisionCount`, and stores `clientComment`.
+
+The client UI route is `#/content-draft-review` and requires the user to be signed in before loading reviewable drafts.

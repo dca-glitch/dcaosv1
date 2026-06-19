@@ -194,6 +194,10 @@ export interface AiDeliveryContentDraftSummary {
   draftBody: string;
   status: string;
   notes: string | null;
+  reviewRequestedAt: string | null;
+  approvedAt: string | null;
+  revisionCount: number;
+  clientComment: string | null;
   isArchived: boolean;
   createdAt: string;
   updatedAt: string;

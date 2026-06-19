@@ -213,6 +213,8 @@ type AiDeliveryContentDraftResponse = {
   contentDraft: AiDeliveryContentDraftSummary | null;
 };
 
+type ClientContentDraftReviewResponse = AiDeliveryContentDraftsResponse;
+
 type ClientContentPlanReviewResponse = AiDeliveryContentPlanResponse;
 
 type TasksResponse = {
@@ -247,6 +249,7 @@ type ViewKey =
   | "projects"
   | "ai-delivery"
   | "content-plan-review"
+  | "content-draft-review"
   | "tasks"
   | "invoices"
   | "credit-notes"
@@ -299,6 +302,7 @@ const navigationItems: Array<{ view: ViewKey; label: string; section: string }> 
   { view: "projects", label: "Projects", section: "core" },
   { view: "ai-delivery", label: "AI Delivery", section: "core" },
   { view: "content-plan-review", label: "Content Plan Review", section: "client" },
+  { view: "content-draft-review", label: "Content Draft Review", section: "client" },
   { view: "tasks", label: "Tasks", section: "core" },
   { view: "invoices", label: "Invoices", section: "core" },
   { view: "credit-notes", label: "Credit Notes", section: "core" },
@@ -1082,6 +1086,133 @@ function ClientContentPlanReviewView({
           </div>
         </SectionPanel>
       ) : null}
+    </section>
+  );
+}
+
+function ClientContentDraftReviewView({
+  onApprove,
+  onLoad,
+  onRequestRevision
+}: {
+  onApprove: (projectId: string, draftId: string) => Promise<AiDeliveryContentDraftSummary | null>;
+  onLoad: (projectId: string) => Promise<AiDeliveryContentDraftSummary[]>;
+  onRequestRevision: (projectId: string, draftId: string, comment: string) => Promise<AiDeliveryContentDraftSummary | null>;
+}) {
+  const [projectId, setProjectId] = useState("");
+  const [drafts, setDrafts] = useState<AiDeliveryContentDraftSummary[]>([]);
+  const [comments, setComments] = useState<Record<string, string>>({});
+  const [loadingDrafts, setLoadingDrafts] = useState(false);
+  const [savingDraftId, setSavingDraftId] = useState<string | null>(null);
+
+  async function reloadDrafts(id: string) {
+    setDrafts(await onLoad(id));
+  }
+
+  async function handleLoad(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const id = projectId.trim();
+    if (!id) return;
+    setLoadingDrafts(true);
+    try {
+      await reloadDrafts(id);
+    } finally {
+      setLoadingDrafts(false);
+    }
+  }
+
+  async function handleApprove(draftId: string) {
+    const id = projectId.trim();
+    if (!id) return;
+    setSavingDraftId(draftId);
+    try {
+      await onApprove(id, draftId);
+      await reloadDrafts(id);
+      setComments((current) => ({ ...current, [draftId]: "" }));
+    } finally {
+      setSavingDraftId(null);
+    }
+  }
+
+  async function handleRequestRevision(draftId: string) {
+    const id = projectId.trim();
+    const comment = (comments[draftId] ?? "").trim();
+    if (!id || !comment) return;
+    setSavingDraftId(draftId);
+    try {
+      await onRequestRevision(id, draftId, comment);
+      await reloadDrafts(id);
+    } finally {
+      setSavingDraftId(null);
+    }
+  }
+
+  return (
+    <section className="view-section" aria-labelledby="content-draft-review-title">
+      <PageHeader
+        eyebrow="Client review"
+        title="Content Draft Review"
+        titleId="content-draft-review-title"
+        description="Review client-visible content drafts for an assigned AI Delivery project. Access requires your authenticated client relationship."
+      />
+      <SectionPanel title="Open draft review" description="Enter the AI Delivery project ID shared by your team to load reviewable drafts.">
+        <form className="entity-form" onSubmit={handleLoad}>
+          <div className="field-grid">
+            <label className="field-span-2">
+              AI Delivery project ID
+              <input maxLength={255} onChange={(event) => setProjectId(event.target.value)} required value={projectId} />
+            </label>
+          </div>
+          <div className="modal-footer">
+            <button className="primary-action" disabled={loadingDrafts || !projectId.trim()} type="submit">
+              {loadingDrafts ? "Loading" : "Load content drafts"}
+            </button>
+          </div>
+        </form>
+      </SectionPanel>
+
+      <SectionPanel title="Reviewable drafts" description="Approve a draft or request changes with a required comment.">
+        {drafts.length === 0 ? <div className="state-panel">No reviewable content drafts loaded.</div> : null}
+        {drafts.map((draft) => (
+          <article className="entity-card" key={draft.id} style={{ marginBottom: "1rem" }}>
+            <div className="entity-card-header">
+              <div>
+                <StatusBadge status={draft.status} />
+                <h3>{draft.title}</h3>
+                <p>{draft.contentPlanItem ? `Linked to: ${draft.contentPlanItem.title}` : "Manual / unlinked draft"}</p>
+              </div>
+            </div>
+            <dl className="brief-grid">
+              <div><dt>Review requested</dt><dd>{draft.reviewRequestedAt ? new Date(draft.reviewRequestedAt).toLocaleString() : "Not set"}</dd></div>
+              <div><dt>Approved</dt><dd>{draft.approvedAt ? new Date(draft.approvedAt).toLocaleString() : "Not approved"}</dd></div>
+              <div><dt>Revisions</dt><dd>{draft.revisionCount ?? 0}</dd></div>
+              <div><dt>Admin notes</dt><dd>{draft.notes ?? "No admin notes"}</dd></div>
+            </dl>
+            <section className="field-panel">
+              <h4>Draft body</h4>
+              <pre style={{ whiteSpace: "pre-wrap" }}>{draft.draftBody}</pre>
+            </section>
+            <section className="field-panel">
+              <h4>Request changes</h4>
+              <textarea
+                maxLength={500}
+                onChange={(event) => setComments((current) => ({ ...current, [draft.id]: event.target.value }))}
+                placeholder="Add a short required comment for the requested revision."
+                rows={3}
+                value={comments[draft.id] ?? ""}
+              />
+            </section>
+            <div className="modal-footer">
+              <button className="secondary-action" disabled={savingDraftId === draft.id || !(comments[draft.id] ?? "").trim()} onClick={() => void handleRequestRevision(draft.id)} type="button">
+                {savingDraftId === draft.id ? "Saving" : "Request revision"}
+              </button>
+              <button className="primary-action" disabled={savingDraftId === draft.id} onClick={() => void handleApprove(draft.id)} type="button">
+                {savingDraftId === draft.id ? "Saving" : "Approve draft"}
+              </button>
+            </div>
+          </article>
+        ))}
+      </SectionPanel>
     </section>
   );
 }
@@ -1982,6 +2113,62 @@ export function App() {
     }
   }
 
+  async function handleRequestAiDeliveryContentDraftReview(projectId: string, draftId: string): Promise<AiDeliveryContentDraftSummary | null> {
+    return runContentDraftAction(
+      `/ai-delivery-projects/${projectId}/content-drafts/${draftId}/request-client-review`,
+      "Content draft client review requested."
+    );
+  }
+
+  async function handleFetchClientContentDraftReview(projectId: string): Promise<AiDeliveryContentDraftSummary[]> {
+    setAppMessage(null);
+    try {
+      const response = await runAuthenticatedRequest<ClientContentDraftReviewResponse>(`/ai-delivery-projects/${projectId}/content-drafts/client-review`);
+      if (!response) return [];
+      if (!response.ok) {
+        setAppMessage({ tone: "error", text: getErrorMessage(response) });
+        return [];
+      }
+      setAppMessage({ tone: "success", text: "Content draft review loaded." });
+      return response.data.contentDrafts;
+    } catch (error) {
+      setAppMessage({ tone: "error", text: maskError(error) });
+      return [];
+    }
+  }
+
+  async function handleApproveClientContentDraftReview(projectId: string, draftId: string): Promise<AiDeliveryContentDraftSummary | null> {
+    return runContentDraftAction(
+      `/ai-delivery-projects/${projectId}/content-drafts/${draftId}/client-review/approve`,
+      "Content draft approved."
+    );
+  }
+
+  async function handleRequestClientContentDraftRevision(projectId: string, draftId: string, comment: string): Promise<AiDeliveryContentDraftSummary | null> {
+    return runContentDraftAction(
+      `/ai-delivery-projects/${projectId}/content-drafts/${draftId}/client-review/request-revision`,
+      "Content draft revision requested.",
+      { comment }
+    );
+  }
+
+  async function runContentDraftAction(path: string, successMessage: string, body?: unknown): Promise<AiDeliveryContentDraftSummary | null> {
+    setAppMessage(null);
+    try {
+      const response = await runAuthenticatedRequest<AiDeliveryContentDraftResponse>(path, { method: "POST", body });
+      if (!response) return null;
+      if (!response.ok) {
+        setAppMessage({ tone: "error", text: getErrorMessage(response) });
+        return null;
+      }
+      setAppMessage({ tone: "success", text: successMessage });
+      return response.data.contentDraft ?? null;
+    } catch (error) {
+      setAppMessage({ tone: "error", text: maskError(error) });
+      return null;
+    }
+  }
+
   async function handleFetchClientContentPlanReview(projectId: string): Promise<AiDeliveryContentPlanSummary | null> {
     return runClientContentPlanReviewAction(
       `/ai-delivery-projects/${projectId}/content-plan/client-review`,
@@ -2658,6 +2845,7 @@ export function App() {
           onFetchContentDrafts={handleFetchAiDeliveryContentDrafts}
           onSaveContentDraft={handleSaveAiDeliveryContentDraft}
           onArchiveContentDraft={handleArchiveAiDeliveryContentDraft}
+          onRequestContentDraftReview={handleRequestAiDeliveryContentDraftReview}
         />
       ) : null}
       {!loading && activeView === "content-plan-review" ? (
@@ -2665,6 +2853,13 @@ export function App() {
           onApprove={handleApproveClientContentPlanReview}
           onLoad={handleFetchClientContentPlanReview}
           onRequestRevision={handleRequestClientContentPlanRevision}
+        />
+      ) : null}
+      {!loading && activeView === "content-draft-review" ? (
+        <ClientContentDraftReviewView
+          onApprove={handleApproveClientContentDraftReview}
+          onLoad={handleFetchClientContentDraftReview}
+          onRequestRevision={handleRequestClientContentDraftRevision}
         />
       ) : null}
       {!loading && activeView === "tasks" ? (

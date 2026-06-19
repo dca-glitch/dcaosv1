@@ -34,6 +34,10 @@ import {
   getTaskHandler,
   listAiDeliveryProjectsHandler,
   listAiDeliveryContentDraftsHandler,
+  listClientAiDeliveryContentDraftReviewsHandler,
+  approveClientAiDeliveryContentDraftReviewHandler,
+  requestClientAiDeliveryContentDraftRevisionHandler,
+  requestAiDeliveryContentDraftClientReviewHandler,
   listBillsHandler,
   listClientUserAccessHandler,
   listClientsHandler,
@@ -128,9 +132,13 @@ export function createCoreRouter() {
   router.post("/ai-delivery-projects/:id/content-drafts", requireAuth, requireTenant, requireRole("owner", "admin"), createAiDeliveryContentDraftHandler);
   router.put("/ai-delivery-projects/:id/content-drafts/:draftId", requireAuth, requireTenant, requireRole("owner", "admin"), updateAiDeliveryContentDraftHandler);
   router.post("/ai-delivery-projects/:id/content-drafts/:draftId/archive", requireAuth, requireTenant, requireRole("owner", "admin"), archiveAiDeliveryContentDraftHandler);
+  router.post("/ai-delivery-projects/:id/content-drafts/:draftId/request-client-review", requireAuth, requireTenant, requireRole("owner", "admin"), requestAiDeliveryContentDraftClientReviewHandler);
   router.get("/ai-delivery-projects/:id/content-plan/client-review", requireAuth, requireTenant, getClientAiDeliveryContentPlanReviewHandler);
   router.post("/ai-delivery-projects/:id/content-plan/client-review/approve", requireAuth, requireTenant, approveClientAiDeliveryContentPlanReviewHandler);
   router.post("/ai-delivery-projects/:id/content-plan/client-review/request-revision", requireAuth, requireTenant, requestClientAiDeliveryContentPlanRevisionHandler);
+  router.get("/ai-delivery-projects/:id/content-drafts/client-review", requireAuth, requireTenant, listClientAiDeliveryContentDraftReviewsHandler);
+  router.post("/ai-delivery-projects/:id/content-drafts/:draftId/client-review/approve", requireAuth, requireTenant, approveClientAiDeliveryContentDraftReviewHandler);
+  router.post("/ai-delivery-projects/:id/content-drafts/:draftId/client-review/request-revision", requireAuth, requireTenant, requestClientAiDeliveryContentDraftRevisionHandler);
 
   router.get("/tasks", requireAuth, requireTenant, listTasksHandler);
   router.post("/tasks", requireAuth, requireTenant, requireRole("owner", "admin"), createTaskHandler);

@@ -1729,6 +1729,10 @@ const aiDeliveryContentDraftSelect = {
   draftBody: true,
   status: true,
   notes: true,
+  reviewRequestedAt: true,
+  approvedAt: true,
+  revisionCount: true,
+  clientComment: true,
   isArchived: true,
   createdAt: true,
   updatedAt: true
@@ -1749,6 +1753,10 @@ function toAiDeliveryContentDraftSummary(draft: any) {
     draftBody: draft.draftBody,
     status: draft.status,
     notes: draft.notes,
+    reviewRequestedAt: toDateString(draft.reviewRequestedAt),
+    approvedAt: toDateString(draft.approvedAt),
+    revisionCount: draft.revisionCount ?? 0,
+    clientComment: draft.clientComment ?? null,
     isArchived: draft.isArchived,
     createdAt: draft.createdAt.toISOString(),
     updatedAt: draft.updatedAt.toISOString()
@@ -1756,7 +1764,7 @@ function toAiDeliveryContentDraftSummary(draft: any) {
 }
 
 async function getAiDeliveryProjectForDraft(tx: PrismaTx, tenantId: string, aiDeliveryProjectId: string) {
-  return tx.aiDeliveryProject.findFirst({ where: { id: aiDeliveryProjectId, tenantId, isArchived: false }, select: { id: true } });
+  return tx.aiDeliveryProject.findFirst({ where: { id: aiDeliveryProjectId, tenantId, isArchived: false }, select: { id: true, clientId: true, tenantId: true, isArchived: true } });
 }
 
 async function getContentPlanItemForDraft(tx: PrismaTx, tenantId: string, aiDeliveryProjectId: string, contentPlanItemId: string | null | undefined) {
@@ -1861,6 +1869,100 @@ export async function archiveAiDeliveryContentDraft(
     const archived = await getAiDeliveryContentDraftDelegate(tx).update({ where: { id: contentDraftId }, data: { isArchived: true, status: "ARCHIVED" }, select: aiDeliveryContentDraftSelect }) as any;
     return { contentDraft: toAiDeliveryContentDraftSummary(archived) };
   });
+}
+
+export async function requestAiDeliveryContentDraftClientReview(
+  authSession: AuthResolvedSessionContext,
+  aiDeliveryProjectId: string,
+  contentDraftId: string
+): Promise<AiDeliveryContentDraftResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) return null;
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    const project = await getAiDeliveryProjectForDraft(tx, tenantId, aiDeliveryProjectId);
+    if (!project) return null;
+    const existing = await getAiDeliveryContentDraftDelegate(tx).findFirst({
+      where: { id: contentDraftId, tenantId, aiDeliveryProjectId, isArchived: false },
+      select: { id: true }
+    }) as any;
+    if (!existing) return null;
+    const updated = await getAiDeliveryContentDraftDelegate(tx).update({
+      where: { id: contentDraftId },
+      data: { status: "READY_FOR_REVIEW", reviewRequestedAt: new Date(), approvedAt: null },
+      select: aiDeliveryContentDraftSelect
+    }) as any;
+    return { contentDraft: toAiDeliveryContentDraftSummary(updated) };
+  });
+}
+
+async function getClientAccessibleContentDrafts(
+  authSession: AuthResolvedSessionContext,
+  aiDeliveryProjectId: string
+) {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) return null;
+
+  const project = await prisma.aiDeliveryProject.findFirst({
+    where: { id: aiDeliveryProjectId, tenantId, isArchived: false },
+    select: { id: true, tenantId: true, clientId: true, isArchived: true }
+  });
+
+  if (!project || !project.clientId || !(await userCanAccessClient(authSession, project.clientId))) return null;
+
+  const drafts = await getAiDeliveryContentDraftDelegate(prisma).findMany({
+    where: { tenantId, aiDeliveryProjectId, isArchived: false, status: { in: ["READY_FOR_REVIEW", "APPROVED", "CHANGES_REQUESTED"] } },
+    orderBy: [{ updatedAt: "desc" }],
+    select: aiDeliveryContentDraftSelect
+  }) as any[];
+
+  return drafts;
+}
+
+export async function listClientAiDeliveryContentDraftReviews(
+  authSession: AuthResolvedSessionContext,
+  aiDeliveryProjectId: string
+): Promise<AiDeliveryContentDraftsResponse | null> {
+  const drafts = await getClientAccessibleContentDrafts(authSession, aiDeliveryProjectId);
+  if (!drafts) return null;
+  return { contentDrafts: drafts.map(toAiDeliveryContentDraftSummary) };
+}
+
+export async function approveClientAiDeliveryContentDraftReview(
+  authSession: AuthResolvedSessionContext,
+  aiDeliveryProjectId: string,
+  contentDraftId: string
+): Promise<AiDeliveryContentDraftResponse | null> {
+  const drafts = await getClientAccessibleContentDrafts(authSession, aiDeliveryProjectId);
+  const draft = drafts?.find((item) => item.id === contentDraftId);
+  if (!draft) return null;
+
+  const updated = await getAiDeliveryContentDraftDelegate(prisma).update({
+    where: { id: contentDraftId },
+    data: { status: "APPROVED", approvedAt: new Date() },
+    select: aiDeliveryContentDraftSelect
+  }) as any;
+
+  return { contentDraft: toAiDeliveryContentDraftSummary(updated) };
+}
+
+export async function requestClientAiDeliveryContentDraftRevision(
+  authSession: AuthResolvedSessionContext,
+  aiDeliveryProjectId: string,
+  contentDraftId: string,
+  comment: string
+): Promise<AiDeliveryContentDraftResponse | null> {
+  const drafts = await getClientAccessibleContentDrafts(authSession, aiDeliveryProjectId);
+  const draft = drafts?.find((item) => item.id === contentDraftId);
+  if (!draft || !comment.trim()) return null;
+
+  const updated = await getAiDeliveryContentDraftDelegate(prisma).update({
+    where: { id: contentDraftId },
+    data: { status: "CHANGES_REQUESTED", revisionCount: { increment: 1 }, clientComment: comment.trim() },
+    select: aiDeliveryContentDraftSelect
+  }) as any;
+
+  return { contentDraft: toAiDeliveryContentDraftSummary(updated) };
 }
 
 export async function getAiDeliveryContentPlanDetail(
