@@ -3,6 +3,7 @@ import { EmptyState } from "../../components/EmptyState";
 import { ErrorState } from "../../components/ErrorState";
 import { LoadingState } from "../../components/LoadingState";
 import { Modal } from "../../components/Modal";
+import { StatusBadge } from "../../components/ui";
 import type { ClientSummary } from "../clients/ClientsPage";
 import type { ProjectSummary as ProjectLinkSummary } from "../projects/ProjectsPage";
 
@@ -148,6 +149,15 @@ const emptyContentPlanItem = (): ContentPlanItemDraft => ({
 
 function formatOptionalDate(value: string | null | undefined): string {
   return value ? new Date(value).toLocaleString() : "Not set";
+}
+
+function formatContentPlanReviewStatus(plan: AiDeliveryContentPlanSummary | null): string {
+  if (!plan) return "Pending / not requested";
+  if (plan.status === "CLIENT_REVIEW_REQUESTED") return "Client review requested";
+  if (plan.status === "CLIENT_APPROVED") return "Client approved";
+  if (plan.status === "CLIENT_CHANGES_REQUESTED") return "Client changes requested";
+  if (!plan.reviewRequestedAt) return "Pending / not requested";
+  return plan.status;
 }
 
 export function AiDeliveryPage({
@@ -699,7 +709,7 @@ export function AiDeliveryPage({
                 <dl className="brief-grid">
                   <div>
                     <dt>Status</dt>
-                    <dd>{contentPlanDetail.status}</dd>
+                    <dd><StatusBadge status={formatContentPlanReviewStatus(contentPlanDetail)} /></dd>
                   </div>
                   <div>
                     <dt>Revisions</dt>
@@ -714,6 +724,28 @@ export function AiDeliveryPage({
                     <dd>{formatOptionalDate(contentPlanDetail.approvedAt)}</dd>
                   </div>
                 </dl>
+
+                <section className="field-panel">
+                  <h3>Client review visibility</h3>
+                  <dl className="brief-grid">
+                    <div>
+                      <dt>Review state</dt>
+                      <dd>{formatContentPlanReviewStatus(contentPlanDetail)}</dd>
+                    </div>
+                    <div>
+                      <dt>Revision count</dt>
+                      <dd>{contentPlanDetail.revisionCount ?? 0}</dd>
+                    </div>
+                    <div>
+                      <dt>Review requested</dt>
+                      <dd>{formatOptionalDate(contentPlanDetail.reviewRequestedAt)}</dd>
+                    </div>
+                    <div>
+                      <dt>Approved</dt>
+                      <dd>{formatOptionalDate(contentPlanDetail.approvedAt)}</dd>
+                    </div>
+                  </dl>
+                </section>
 
                 <section className="field-panel">
                   <h3>Proposed content items</h3>
@@ -751,6 +783,10 @@ export function AiDeliveryPage({
                         <span>Sort order</span>
                         <strong>{index + 1}</strong>
                       </div>
+                      <div>
+                        <span>Client item status</span>
+                        <strong>{contentPlanDetail.items[index]?.approvalStatus ?? "No client status"}</strong>
+                      </div>
                       <label className="field-span-2">
                         Notes
                         <textarea
@@ -760,6 +796,10 @@ export function AiDeliveryPage({
                           value={item.notes}
                         />
                       </label>
+                      <div className="field-span-2">
+                        <span>Client comment</span>
+                        <strong>{contentPlanDetail.items[index]?.clientComment ?? "No client comment"}</strong>
+                      </div>
                       <div className="field-span-2">
                         <button
                           className="secondary-action"
