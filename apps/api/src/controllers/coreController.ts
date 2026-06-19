@@ -96,7 +96,10 @@ import {
   createAiDeliveryContentPlan,
   updateAiDeliveryContentPlan,
   requestAiDeliveryContentPlanClientReview,
-  approveAiDeliveryContentPlan
+  approveAiDeliveryContentPlan,
+  getClientAiDeliveryContentPlanReview,
+  approveClientAiDeliveryContentPlanReview,
+  requestClientAiDeliveryContentPlanRevision
 } from "../core/core.runtime";
 import type {
   AiDeliveryProjectInputRequest,
@@ -530,6 +533,11 @@ function getPaymentInput(body: unknown) {
   const paymentDate = parseDateInput(value.paymentDate);
   if (!PAYMENT_METHODS.has(paymentMethod) || amountIssuedCents === null || amountReceivedCents === null || !paymentDate) return null;
   return { paymentMethod, amountIssuedCents, amountReceivedCents, paymentDate: paymentDate.toISOString(), notes: getOptionalString(value.notes, TEXT_FIELD_MAX_LENGTH) };
+}
+
+function getClientRevisionComment(body: unknown): string | null {
+  const value = (body ?? {}) as Record<string, unknown>;
+  return getRequiredString(value.comment, SHORT_TEXT_FIELD_MAX_LENGTH);
 }
 
 function getCreditNoteInput(body: unknown): CreditNoteInputRequest | null {
@@ -1368,6 +1376,49 @@ export const approveAiDeliveryContentPlanHandler: RequestHandler = async (req, r
     res.json(success(response, { phase: "runtime", scope: "ai-delivery-projects" }));
   } catch {
     res.status(500).json(failure("AI_DELIVERY_CONTENT_PLAN_RUNTIME_ERROR", "Approving content plan could not be completed."));
+  }
+};
+
+export const getClientAiDeliveryContentPlanReviewHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  const aiDeliveryProjectId = typeof req.params.id === "string" ? req.params.id.trim() : "";
+  if (!authSession) return void res.status(401).json(unauthorizedFailure());
+  if (!aiDeliveryProjectId) return void res.status(400).json(aiDeliveryProjectInvalidFailure());
+  try {
+    const response = await getClientAiDeliveryContentPlanReview(authSession, aiDeliveryProjectId);
+    if (!response?.contentPlan) return void res.status(404).json(aiDeliveryProjectNotFoundFailure());
+    res.json(success(response, { phase: "runtime", scope: "ai-delivery-client-review" }));
+  } catch {
+    res.status(500).json(failure("AI_DELIVERY_CONTENT_PLAN_RUNTIME_ERROR", "Content plan review lookup could not be completed."));
+  }
+};
+
+export const approveClientAiDeliveryContentPlanReviewHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  const aiDeliveryProjectId = typeof req.params.id === "string" ? req.params.id.trim() : "";
+  if (!authSession) return void res.status(401).json(unauthorizedFailure());
+  if (!aiDeliveryProjectId) return void res.status(400).json(aiDeliveryProjectInvalidFailure());
+  try {
+    const response = await approveClientAiDeliveryContentPlanReview(authSession, aiDeliveryProjectId);
+    if (!response?.contentPlan) return void res.status(404).json(aiDeliveryProjectNotFoundFailure());
+    res.json(success(response, { phase: "runtime", scope: "ai-delivery-client-review" }));
+  } catch {
+    res.status(500).json(failure("AI_DELIVERY_CONTENT_PLAN_RUNTIME_ERROR", "Content plan approval could not be completed."));
+  }
+};
+
+export const requestClientAiDeliveryContentPlanRevisionHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  const aiDeliveryProjectId = typeof req.params.id === "string" ? req.params.id.trim() : "";
+  const comment = getClientRevisionComment(req.body);
+  if (!authSession) return void res.status(401).json(unauthorizedFailure());
+  if (!aiDeliveryProjectId || !comment) return void res.status(400).json(aiDeliveryProjectInvalidFailure());
+  try {
+    const response = await requestClientAiDeliveryContentPlanRevision(authSession, aiDeliveryProjectId, comment);
+    if (!response?.contentPlan) return void res.status(404).json(aiDeliveryProjectNotFoundFailure());
+    res.json(success(response, { phase: "runtime", scope: "ai-delivery-client-review" }));
+  } catch {
+    res.status(500).json(failure("AI_DELIVERY_CONTENT_PLAN_RUNTIME_ERROR", "Content plan revision request could not be completed."));
   }
 };
 

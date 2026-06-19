@@ -10,7 +10,7 @@ import {
   type VendorSummary
 } from "./pages/bills/BillsPage";
 import { CompanyProfilePage, type CompanyProfileFormValues, type CompanyProfileSummary } from "./pages/company-profile/CompanyProfilePage";
-import { ClientsPage, type ClientFormValues, type ClientSummary } from "./pages/clients/ClientsPage";
+import { ClientsPage, type ClientAccessUserSummary, type ClientFormValues, type ClientSummary } from "./pages/clients/ClientsPage";
 import { CreditNotesPage, type CreditNoteFormValues, type CreditNoteSummary } from "./pages/credit-notes/CreditNotesPage";
 import {
   InvoicesPage,
@@ -185,6 +185,10 @@ type CompanyProfileResponse = {
 
 type ClientsResponse = {
   clients: ClientSummary[];
+};
+
+type ClientAccessResponse = {
+  users: ClientAccessUserSummary[];
 };
 
 type ProjectsResponse = {
@@ -1376,6 +1380,60 @@ export function App() {
     }
   }
 
+  async function handleLoadClientUserAccess(clientId: string): Promise<ClientAccessUserSummary[]> {
+    try {
+      const response = await runAuthenticatedRequest<ClientAccessResponse>(`/clients/${clientId}/users`);
+      if (!response) return [];
+      if (!response.ok) {
+        setAppMessage({ tone: "error", text: getErrorMessage(response) });
+        return [];
+      }
+      return response.data.users;
+    } catch (error) {
+      setAppMessage({ tone: "error", text: maskError(error) });
+      return [];
+    }
+  }
+
+  async function handleLinkClientUserAccess(clientId: string, userId: string): Promise<boolean> {
+    setAppMessage(null);
+    try {
+      const response = await runAuthenticatedRequest(`/clients/${clientId}/users`, {
+        method: "POST",
+        body: { userId }
+      });
+      if (!response) return false;
+      if (!response.ok) {
+        setAppMessage({ tone: "error", text: getErrorMessage(response) });
+        return false;
+      }
+      setAppMessage({ tone: "success", text: "Client access linked." });
+      return true;
+    } catch (error) {
+      setAppMessage({ tone: "error", text: maskError(error) });
+      return false;
+    }
+  }
+
+  async function handleArchiveClientUserAccess(clientId: string, userId: string): Promise<boolean> {
+    setAppMessage(null);
+    try {
+      const response = await runAuthenticatedRequest(`/clients/${clientId}/users/${userId}/archive`, {
+        method: "POST"
+      });
+      if (!response) return false;
+      if (!response.ok) {
+        setAppMessage({ tone: "error", text: getErrorMessage(response) });
+        return false;
+      }
+      setAppMessage({ tone: "success", text: "Client access removed." });
+      return true;
+    } catch (error) {
+      setAppMessage({ tone: "error", text: maskError(error) });
+      return false;
+    }
+  }
+
   async function handleSaveProject(projectId: string | null, values: ProjectFormValues): Promise<boolean> {
     setAppMessage(null);
     try {
@@ -2277,9 +2335,13 @@ export function App() {
           error={null}
           loading={false}
           onArchive={handleArchiveClient}
+          onArchiveUserAccess={handleArchiveClientUserAccess}
+          onLoadUserAccess={handleLoadClientUserAccess}
+          onLinkUserAccess={handleLinkClientUserAccess}
           onRestore={handleRestoreClient}
           onSave={handleSaveClient}
           projects={projects?.projects ?? []}
+          tenantUsers={(teamMembers?.members ?? []).map((member) => member.user)}
         />
       ) : null}
       {!loading && activeView === "projects" ? (

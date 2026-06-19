@@ -1684,6 +1684,31 @@ const aiDeliveryContentPlanSelect = {
   }
 } as const;
 
+function toAiDeliveryContentPlanSummary(plan: any) {
+  return {
+    id: plan.id,
+    aiDeliveryProjectId: plan.aiDeliveryProjectId,
+    status: plan.status,
+    revisionCount: plan.revisionCount,
+    reviewRequestedAt: plan.reviewRequestedAt ? plan.reviewRequestedAt.toISOString() : null,
+    approvedAt: plan.approvedAt ? plan.approvedAt.toISOString() : null,
+    items: (plan.items ?? []).map((it: any) => ({
+      id: it.id,
+      title: it.title,
+      targetKeyword: it.targetKeyword,
+      contentType: it.contentType,
+      notes: it.notes,
+      sortOrder: it.sortOrder,
+      approvalStatus: it.approvalStatus ?? null,
+      clientComment: it.clientComment ?? null,
+      createdAt: it.createdAt.toISOString(),
+      updatedAt: it.updatedAt.toISOString()
+    })),
+    createdAt: plan.createdAt.toISOString(),
+    updatedAt: plan.updatedAt.toISOString()
+  };
+}
+
 export async function getAiDeliveryContentPlanDetail(
   authSession: AuthResolvedSessionContext,
   aiDeliveryProjectId: string
@@ -1698,30 +1723,81 @@ export async function getAiDeliveryContentPlanDetail(
 
   if (!plan) return null;
 
-  return {
-    contentPlan: {
-      id: (plan as any).id,
-      aiDeliveryProjectId: (plan as any).aiDeliveryProjectId,
-      status: (plan as any).status,
-      revisionCount: (plan as any).revisionCount,
-      reviewRequestedAt: (plan as any).reviewRequestedAt ? (plan as any).reviewRequestedAt.toISOString() : null,
-      approvedAt: (plan as any).approvedAt ? (plan as any).approvedAt.toISOString() : null,
-      items: ((plan as any).items ?? []).map((it: any) => ({
-        id: it.id,
-        title: it.title,
-        targetKeyword: it.targetKeyword,
-        contentType: it.contentType,
-        notes: it.notes,
-        sortOrder: it.sortOrder,
-        approvalStatus: it.approvalStatus ?? null,
-        clientComment: it.clientComment ?? null,
-        createdAt: it.createdAt.toISOString(),
-        updatedAt: it.updatedAt.toISOString()
-      })),
-      createdAt: (plan as any).createdAt.toISOString(),
-      updatedAt: (plan as any).updatedAt.toISOString()
+  return { contentPlan: toAiDeliveryContentPlanSummary(plan) };
+}
+
+async function getClientAccessibleContentPlan(
+  authSession: AuthResolvedSessionContext,
+  aiDeliveryProjectId: string
+) {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) return null;
+
+  const plan = await prisma.aiDeliveryContentPlan.findFirst({
+    where: { tenantId, aiDeliveryProjectId },
+    select: {
+      ...aiDeliveryContentPlanSelect,
+      aiDeliveryProject: { select: { id: true, tenantId: true, clientId: true, isArchived: true } }
     }
-  };
+  });
+
+  if (!plan || (plan as any).aiDeliveryProject?.tenantId !== tenantId || (plan as any).aiDeliveryProject?.isArchived) return null;
+  const clientId = (plan as any).aiDeliveryProject.clientId;
+  if (!clientId || !(await userCanAccessClient(authSession, clientId))) return null;
+  return plan;
+}
+
+export async function getClientAiDeliveryContentPlanReview(
+  authSession: AuthResolvedSessionContext,
+  aiDeliveryProjectId: string
+): Promise<{ contentPlan: any | null } | null> {
+  const plan = await getClientAccessibleContentPlan(authSession, aiDeliveryProjectId);
+  if (!plan) return null;
+  return { contentPlan: toAiDeliveryContentPlanSummary(plan) };
+}
+
+export async function approveClientAiDeliveryContentPlanReview(
+  authSession: AuthResolvedSessionContext,
+  aiDeliveryProjectId: string
+): Promise<{ contentPlan: any | null } | null> {
+  const plan = await getClientAccessibleContentPlan(authSession, aiDeliveryProjectId);
+  if (!plan) return null;
+
+  const updated = await prisma.aiDeliveryContentPlan.update({
+    where: { id: (plan as any).id },
+    data: { status: "CLIENT_APPROVED", approvedAt: new Date() },
+    select: aiDeliveryContentPlanSelect
+  });
+  return { contentPlan: toAiDeliveryContentPlanSummary(updated) };
+}
+
+export async function requestClientAiDeliveryContentPlanRevision(
+  authSession: AuthResolvedSessionContext,
+  aiDeliveryProjectId: string,
+  comment: string
+): Promise<{ contentPlan: any | null } | null> {
+  const plan = await getClientAccessibleContentPlan(authSession, aiDeliveryProjectId);
+  if (!plan) return null;
+
+  const updated = await prisma.$transaction(async (tx: PrismaTx) => {
+    const contentPlan = await tx.aiDeliveryContentPlan.update({
+      where: { id: (plan as any).id },
+      data: { status: "CLIENT_CHANGES_REQUESTED", revisionCount: { increment: 1 } },
+      select: { id: true }
+    });
+
+    const firstItem = (plan as any).items?.[0];
+    if (firstItem) {
+      await tx.aiDeliveryContentPlanItem.update({
+        where: { id: firstItem.id },
+        data: { approvalStatus: "CLIENT_CHANGES_REQUESTED", clientComment: comment }
+      });
+    }
+
+    return tx.aiDeliveryContentPlan.findFirst({ where: { id: contentPlan.id }, select: aiDeliveryContentPlanSelect });
+  });
+
+  return { contentPlan: updated ? toAiDeliveryContentPlanSummary(updated) : null };
 }
 
 export async function createAiDeliveryContentPlan(

@@ -73,3 +73,17 @@ Block 7D.0 adds the backend foundation only:
   - `userCanAccessClient(authSession, clientId)` verifies active tenant context, client tenant ownership, non-archived user access, and owner/admin override.
 
 AI Delivery client review routes remain intentionally out of scope until this helper is used by the review endpoints.
+
+## Monthly content plan client review routes
+
+Authenticated tenant users may review monthly content plans only when `userCanAccessClient(authSession, clientId)` passes for the AI Delivery Project client.
+
+- `GET /api/v1/core/ai-delivery-projects/:id/content-plan/client-review`
+  - Returns the monthly content plan for the project when the authenticated user can access the project client.
+- `POST /api/v1/core/ai-delivery-projects/:id/content-plan/client-review/approve`
+  - Moves the plan to `CLIENT_APPROVED` and sets `approvedAt`.
+- `POST /api/v1/core/ai-delivery-projects/:id/content-plan/client-review/request-revision`
+  - Body: `{ comment }`
+  - Moves the plan to `CLIENT_CHANGES_REQUESTED`, increments `revisionCount`, and stores the comment on the first plan item `clientComment` as the existing schema-supported revision note.
+
+No public token routes or magic links are exposed.

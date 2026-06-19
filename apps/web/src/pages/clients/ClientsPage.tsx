@@ -28,6 +28,27 @@ export type ClientFormValues = {
   country: string;
 };
 
+export type ClientAccessUserSummary = {
+  id: string;
+  clientId: string;
+  user: {
+    id: string;
+    email: string;
+    name: string | null;
+    status: string;
+  };
+  isArchived: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ClientAccessTenantUser = {
+  id: string;
+  email: string;
+  name?: string | null;
+  status: string;
+};
+
 type ClientsPageProps = {
   clients: ClientSummary[];
   projects: ProjectSummary[];
@@ -35,8 +56,12 @@ type ClientsPageProps = {
   error: string | null;
   loading: boolean;
   onArchive: (clientId: string) => Promise<boolean>;
+  onArchiveUserAccess: (clientId: string, userId: string) => Promise<boolean>;
+  onLoadUserAccess: (clientId: string) => Promise<ClientAccessUserSummary[]>;
+  onLinkUserAccess: (clientId: string, userId: string) => Promise<boolean>;
   onRestore: (clientId: string) => Promise<boolean>;
   onSave: (clientId: string | null, values: ClientFormValues) => Promise<boolean>;
+  tenantUsers: ClientAccessTenantUser[];
 };
 
 const COUNTRY_OPTIONS = ["Indonesia", "Poland", "United States", "United Kingdom", "Singapore", "Australia"];
@@ -57,14 +82,21 @@ export function ClientsPage({
   error,
   loading,
   onArchive,
+  onArchiveUserAccess,
+  onLoadUserAccess,
+  onLinkUserAccess,
   onRestore,
-  onSave
+  onSave,
+  tenantUsers
 }: ClientsPageProps) {
   const [filter, setFilter] = useState<"all" | "active" | "archived">("active");
   const [editorClientId, setEditorClientId] = useState<string | null>(null);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [draft, setDraft] = useState<ClientFormValues>(emptyForm());
   const [saving, setSaving] = useState(false);
+  const [clientAccessUsers, setClientAccessUsers] = useState<ClientAccessUserSummary[]>([]);
+  const [accessUserId, setAccessUserId] = useState("");
+  const [accessLoading, setAccessLoading] = useState(false);
   const selectedClient = useMemo(
     () => clients.find((client) => client.id === editorClientId) ?? null,
     [clients, editorClientId]
@@ -72,6 +104,13 @@ export function ClientsPage({
   const selectedClientProjects = useMemo(
     () => projects.filter((project) => project.clientId === selectedClient?.id),
     [projects, selectedClient]
+  );
+  const linkableTenantUsers = useMemo(
+    () => {
+      const linkedUserIds = new Set(clientAccessUsers.map((access) => access.user.id));
+      return tenantUsers.filter((user) => user.status === "ACTIVE" && !linkedUserIds.has(user.id));
+    },
+    [clientAccessUsers, tenantUsers]
   );
 
   const filteredClients = useMemo(
@@ -96,7 +135,7 @@ export function ClientsPage({
     setIsEditorOpen(true);
   }
 
-  function openEditModal(client: ClientSummary) {
+  async function openEditModal(client: ClientSummary) {
     setEditorClientId(client.id);
     setDraft({
       name: client.name,
@@ -106,7 +145,42 @@ export function ClientsPage({
       taxId: client.taxId ?? "",
       country: client.country ?? ""
     });
+    setClientAccessUsers([]);
+    setAccessUserId("");
     setIsEditorOpen(true);
+    setAccessLoading(true);
+    try {
+      setClientAccessUsers(await onLoadUserAccess(client.id));
+    } finally {
+      setAccessLoading(false);
+    }
+  }
+
+  async function handleLinkAccess() {
+    if (!selectedClient || !accessUserId) return;
+    setAccessLoading(true);
+    try {
+      const ok = await onLinkUserAccess(selectedClient.id, accessUserId);
+      if (ok) {
+        setAccessUserId("");
+        setClientAccessUsers(await onLoadUserAccess(selectedClient.id));
+      }
+    } finally {
+      setAccessLoading(false);
+    }
+  }
+
+  async function handleArchiveAccess(userId: string) {
+    if (!selectedClient) return;
+    setAccessLoading(true);
+    try {
+      const ok = await onArchiveUserAccess(selectedClient.id, userId);
+      if (ok) {
+        setClientAccessUsers(await onLoadUserAccess(selectedClient.id));
+      }
+    } finally {
+      setAccessLoading(false);
+    }
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -176,7 +250,7 @@ export function ClientsPage({
                 </div>
                 <div className="card-actions">
                   {canEdit ? (
-                    <button className="secondary-action" onClick={() => openEditModal(client)} type="button">
+                    <button className="secondary-action" onClick={() => void openEditModal(client)} type="button">
                       Edit
                     </button>
                   ) : null}
@@ -234,6 +308,8 @@ export function ClientsPage({
           onClose={() => {
             setEditorClientId(null);
             setDraft(emptyForm());
+            setClientAccessUsers([]);
+            setAccessUserId("");
             setIsEditorOpen(false);
           }}
           title={editorClientId ? "Edit Client" : "Add Client"}
@@ -310,6 +386,47 @@ export function ClientsPage({
                     ))}
                   </div>
                 )}
+              </section>
+            ) : null}
+            {selectedClient && canEdit ? (
+              <section className="entity-span-2" aria-labelledby="client-access-title">
+                <h3 id="client-access-title">Client access</h3>
+                {accessLoading ? <p>Loading client access...</p> : null}
+                {!accessLoading && clientAccessUsers.length === 0 ? <p>No users linked to this client.</p> : null}
+                {clientAccessUsers.length > 0 ? (
+                  <div>
+                    {clientAccessUsers.map((access) => (
+                      <p key={access.id}>
+                        <strong>{access.user.name || access.user.email}</strong> {access.user.name ? access.user.email : ""}
+                        <button
+                          className="secondary-action"
+                          disabled={accessLoading}
+                          onClick={() => void handleArchiveAccess(access.user.id)}
+                          type="button"
+                        >
+                          Remove access
+                        </button>
+                      </p>
+                    ))}
+                  </div>
+                ) : null}
+                <div className="field-grid">
+                  <label>
+                    Link tenant user
+                    <select disabled={accessLoading || linkableTenantUsers.length === 0} onChange={(event) => setAccessUserId(event.target.value)} value={accessUserId}>
+                      <option value="">Select active user</option>
+                      {linkableTenantUsers.map((user) => (
+                        <option key={user.id} value={user.id}>{user.name ? `${user.name} (${user.email})` : user.email}</option>
+                      ))}
+                    </select>
+                  </label>
+                  <div>
+                    <span>&nbsp;</span>
+                    <button className="secondary-action" disabled={accessLoading || !accessUserId} onClick={() => void handleLinkAccess()} type="button">
+                      Link user
+                    </button>
+                  </div>
+                </div>
               </section>
             ) : null}
             <div className="modal-footer">
