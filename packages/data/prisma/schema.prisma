@@ -142,6 +142,7 @@ model Tenant {
   aiDeliveryContentPlanItems AiDeliveryContentPlanItem[]
   aiDeliveryContentDrafts AiDeliveryContentDraft[]
   aiDeliveryArticleImages AiDeliveryArticleImage[]
+  aiDeliveryDeliverables AiDeliveryDeliverable[]
   clientUserAccesses   ClientUserAccess[]
 }
 
@@ -396,6 +397,7 @@ model AiDeliveryProject {
   contentPlans AiDeliveryContentPlan[]
   contentDrafts AiDeliveryContentDraft[]
   articleImages AiDeliveryArticleImage[]
+  deliverables AiDeliveryDeliverable[]
 
   @@index([tenantId])
   @@index([tenantId, isArchived])
@@ -509,6 +511,7 @@ model AiDeliveryContentDraft {
   aiDeliveryProject   AiDeliveryProject         @relation(fields: [aiDeliveryProjectId], references: [id], onDelete: Cascade)
   contentPlanItem     AiDeliveryContentPlanItem? @relation(fields: [contentPlanItemId], references: [id], onDelete: SetNull)
   articleImages       AiDeliveryArticleImage[]
+  deliverables         AiDeliveryDeliverable[]
 
   @@index([tenantId])
   @@index([tenantId, aiDeliveryProjectId])
@@ -537,12 +540,61 @@ model AiDeliveryArticleImage {
   tenant              Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   aiDeliveryProject   AiDeliveryProject       @relation(fields: [aiDeliveryProjectId], references: [id], onDelete: Cascade)
   contentDraft        AiDeliveryContentDraft  @relation(fields: [contentDraftId], references: [id], onDelete: Cascade)
+  deliverables         AiDeliveryDeliverable[]
 
   @@index([tenantId])
   @@index([tenantId, aiDeliveryProjectId])
   @@index([tenantId, contentDraftId])
   @@index([tenantId, status])
   @@index([tenantId, isArchived])
+}
+
+// AI Delivery Deliverables
+enum AiDeliveryDeliverableDeliveryType {
+  CONTENT_PACKAGE
+  ARTICLE_DRAFT
+  ARTICLE_IMAGE
+  CLIENT_HANDOFF
+  OTHER
+}
+
+enum AiDeliveryDeliverableStatus {
+  DRAFT
+  READY
+  DELIVERED
+  REVISION_REQUESTED
+  ACCEPTED
+  ARCHIVED
+}
+
+model AiDeliveryDeliverable {
+  id                  String   @id @default(uuid())
+  tenantId            String
+  aiDeliveryProjectId String
+  contentDraftId      String?
+  articleImageId      String?
+  title               String
+  description         String?
+  deliveryType        AiDeliveryDeliverableDeliveryType @default(CONTENT_PACKAGE)
+  status              AiDeliveryDeliverableStatus @default(DRAFT)
+  exportUrl           String?
+  storageKey          String?
+  notes               String?
+  isArchived          Boolean  @default(false)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  tenant              Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  aiDeliveryProject   AiDeliveryProject       @relation(fields: [aiDeliveryProjectId], references: [id], onDelete: Cascade)
+  contentDraft        AiDeliveryContentDraft? @relation(fields: [contentDraftId], references: [id], onDelete: SetNull)
+  articleImage        AiDeliveryArticleImage? @relation(fields: [articleImageId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@index([tenantId, aiDeliveryProjectId])
+  @@index([tenantId, status])
+  @@index([tenantId, isArchived])
+  @@index([tenantId, contentDraftId])
+  @@index([tenantId, articleImageId])
 }
 
 model Task {

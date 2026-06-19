@@ -35,6 +35,10 @@ import {
   getRecurringInvoiceHandler,
   getTaskHandler,
   listAiDeliveryArticleImagesHandler,
+  listAiDeliveryDeliverablesHandler,
+  createAiDeliveryDeliverableHandler,
+  updateAiDeliveryDeliverableHandler,
+  archiveAiDeliveryDeliverableHandler,
   listAiDeliveryProjectsHandler,
   listAiDeliveryContentDraftsHandler,
   listClientAiDeliveryContentDraftReviewsHandler,
@@ -141,6 +145,10 @@ export function createCoreRouter() {
   router.post("/ai-delivery-projects/:id/article-images", requireAuth, requireTenant, requireRole("owner", "admin"), createAiDeliveryArticleImageHandler);
   router.put("/ai-delivery-projects/:id/article-images/:imageId", requireAuth, requireTenant, requireRole("owner", "admin"), updateAiDeliveryArticleImageHandler);
   router.post("/ai-delivery-projects/:id/article-images/:imageId/archive", requireAuth, requireTenant, requireRole("owner", "admin"), archiveAiDeliveryArticleImageHandler);
+  router.get("/ai-delivery-projects/:id/deliverables", requireAuth, requireTenant, requireRole("owner", "admin"), listAiDeliveryDeliverablesHandler);
+  router.post("/ai-delivery-projects/:id/deliverables", requireAuth, requireTenant, requireRole("owner", "admin"), createAiDeliveryDeliverableHandler);
+  router.put("/ai-delivery-projects/:id/deliverables/:deliverableId", requireAuth, requireTenant, requireRole("owner", "admin"), updateAiDeliveryDeliverableHandler);
+  router.post("/ai-delivery-projects/:id/deliverables/:deliverableId/archive", requireAuth, requireTenant, requireRole("owner", "admin"), archiveAiDeliveryDeliverableHandler);
   router.get("/ai-delivery-projects/:id/content-plan/client-review", requireAuth, requireTenant, getClientAiDeliveryContentPlanReviewHandler);
   router.post("/ai-delivery-projects/:id/content-plan/client-review/approve", requireAuth, requireTenant, approveClientAiDeliveryContentPlanReviewHandler);
   router.post("/ai-delivery-projects/:id/content-plan/client-review/request-revision", requireAuth, requireTenant, requestClientAiDeliveryContentPlanRevisionHandler);

@@ -151,3 +151,26 @@ Admin/owner-only article image endpoints are scoped to an AI Delivery project an
 Allowed runtime statuses: `DRAFT`, `READY_FOR_GENERATION`, `PREVIEW_READY`, `APPROVED`, `FINAL_READY`, `CHANGES_REQUESTED`, `ARCHIVED`.
 
 This block is admin-operated only. It does not add AI image generation, AI calls, upload buttons, R2 write/upload behavior, WordPress/export workflow, public/client review, or client approval links.
+
+## Deliverables foundation
+
+Admin/owner-only deliverable records for packaging approved content or image requests. Tenant-scoped and project-scoped; manual records only (no export generation, no uploads, no WordPress/R2/client portal).
+
+- GET /api/v1/core/ai-delivery-projects/:id/deliverables
+  - Lists deliverables for the ai delivery project (tenant-scoped).
+  - Response: { deliverables: [{ id, tenantId, aiDeliveryProjectId, contentDraftId?, articleImageId?, title, description?, deliveryType, status, exportUrl?, storageKey?, notes?, isArchived, createdAt, updatedAt }] }
+
+- POST /api/v1/core/ai-delivery-projects/:id/deliverables
+  - Create a deliverable record.
+  - Body: { contentDraftId?, articleImageId?, title, description?, deliveryType?, status?, exportUrl?, storageKey?, notes? }
+  - Validates linked draft/image belong to same tenant/project when provided.
+
+- PUT /api/v1/core/ai-delivery-projects/:id/deliverables/:deliverableId
+  - Update deliverable fields (title, description, links, deliveryType, status, exportUrl, storageKey, notes).
+
+- POST /api/v1/core/ai-delivery-projects/:id/deliverables/:deliverableId/archive
+  - Archives the deliverable and sets status to `ARCHIVED`.
+
+Notes: Allowed delivery types: CONTENT_PACKAGE, ARTICLE_DRAFT, ARTICLE_IMAGE, CLIENT_HANDOFF, OTHER. Allowed statuses: DRAFT, READY, DELIVERED, REVISION_REQUESTED, ACCEPTED, ARCHIVED.
+
+This foundation intentionally excludes any export generation, WordPress publishing, R2 writes/uploads, AI generation calls, or client-facing delivery portal - those are out of scope for Block 7I.

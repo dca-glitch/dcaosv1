@@ -131,6 +131,36 @@ export type AiDeliveryArticleImageFormValues = {
   notes: string;
 };
 
+export type AiDeliveryDeliverableSummary = {
+  id: string;
+  aiDeliveryProjectId: string;
+  contentDraftId?: string | null;
+  articleImageId?: string | null;
+  title: string;
+  description?: string | null;
+  deliveryType: string;
+  status: string;
+  exportUrl?: string | null;
+  storageKey?: string | null;
+  notes?: string | null;
+  isArchived: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type AiDeliveryDeliverableFormValues = {
+  contentDraftId: string | null;
+  articleImageId: string | null;
+  title: string;
+  description?: string | null;
+  deliveryType: string;
+  status: string;
+  exportUrl?: string | null;
+  storageKey?: string | null;
+  notes?: string | null;
+  isArchived?: boolean;
+};
+
 type ContentPlanItemDraft = {
   localId: string;
   title: string;
@@ -186,6 +216,9 @@ export type AiDeliveryProjectsProps = {
   onFetchArticleImages?: (projectId: string) => Promise<AiDeliveryArticleImageSummary[]>;
   onSaveArticleImage?: (projectId: string, imageId: string | null, values: AiDeliveryArticleImageFormValues) => Promise<AiDeliveryArticleImageSummary | null>;
   onArchiveArticleImage?: (projectId: string, imageId: string) => Promise<AiDeliveryArticleImageSummary | null>;
+  onFetchDeliverables?: (projectId: string) => Promise<AiDeliveryDeliverableSummary[]>;
+  onSaveDeliverable?: (projectId: string, deliverableId: string | null, values: AiDeliveryDeliverableFormValues) => Promise<AiDeliveryDeliverableSummary | null>;
+  onArchiveDeliverable?: (projectId: string, deliverableId: string) => Promise<boolean>;
 };
 
 const emptyForm = (clientId = ""): AiDeliveryProjectFormValues => ({
@@ -271,7 +304,10 @@ export function AiDeliveryPage({
   onRequestContentDraftReview,
   onFetchArticleImages,
   onSaveArticleImage,
-  onArchiveArticleImage
+  onArchiveArticleImage,
+  onFetchDeliverables,
+  onSaveDeliverable,
+  onArchiveDeliverable
 }: AiDeliveryProjectsProps) {
   const [filter, setFilter] = useState<"all" | "active" | "archived">("active");
   const [editorProjectId, setEditorProjectId] = useState<string | null>(null);
@@ -315,12 +351,19 @@ export function AiDeliveryPage({
   const [articleImageEditorId, setArticleImageEditorId] = useState<string | null>(null);
   const [articleImageForm, setArticleImageForm] = useState<AiDeliveryArticleImageFormValues>(emptyArticleImage());
   const [articleImageDrafts, setArticleImageDrafts] = useState<AiDeliveryContentDraftSummary[]>([]);
+  const [openDeliverablesId, setOpenDeliverablesId] = useState<string | null>(null);
+  const [deliverablesLoading, setDeliverablesLoading] = useState(false);
+  const [deliverablesSaving, setDeliverablesSaving] = useState(false);
+  const [deliverables, setDeliverables] = useState<AiDeliveryDeliverableSummary[]>([]);
+  const [deliverableEditorId, setDeliverableEditorId] = useState<string | null>(null);
+  const [deliverableForm, setDeliverableForm] = useState<AiDeliveryDeliverableFormValues>({ contentDraftId: null, articleImageId: null, title: "", description: null, deliveryType: "CONTENT_PACKAGE", status: "DRAFT", exportUrl: null, storageKey: null, notes: null, isArchived: false });
 
   const selectedProject = useMemo(() => projects.find((p) => p.id === editorProjectId) ?? null, [editorProjectId, projects]);
   const openProject = useMemo(() => projects.find((p) => p.id === openBriefId) ?? null, [openBriefId, projects]);
   const openContentPlanProject = useMemo(() => projects.find((p) => p.id === openContentPlanId) ?? null, [openContentPlanId, projects]);
   const openContentDraftsProject = useMemo(() => projects.find((p) => p.id === openContentDraftsId) ?? null, [openContentDraftsId, projects]);
   const openArticleImagesProject = useMemo(() => projects.find((p) => p.id === openArticleImagesId) ?? null, [openArticleImagesId, projects]);
+  const openDeliverablesProject = useMemo(() => projects.find((p) => p.id === openDeliverablesId) ?? null, [openDeliverablesId, projects]);
 
   function openCreateModal() {
     setEditorProjectId(null);
@@ -605,6 +648,77 @@ export function AiDeliveryPage({
     setArticleImageForm(emptyArticleImage());
   }
 
+  async function openDeliverables(projectId: string) {
+    setOpenDeliverablesId(projectId);
+    setDeliverablesLoading(true);
+    setDeliverables([]);
+    setDeliverableEditorId(null);
+    setDeliverableForm({ contentDraftId: null, articleImageId: null, title: "", description: null, deliveryType: "CONTENT_PACKAGE", status: "DRAFT", exportUrl: null, storageKey: null, notes: null, isArchived: false });
+    try {
+      const [items, drafts, images] = await Promise.all([
+        typeof onFetchDeliverables === "function" ? onFetchDeliverables(projectId) : Promise.resolve([]),
+        typeof onFetchContentDrafts === "function" ? onFetchContentDrafts(projectId) : Promise.resolve([]),
+        typeof onFetchArticleImages === "function" ? onFetchArticleImages(projectId) : Promise.resolve([])
+      ]);
+      const activeDrafts = drafts.filter((d) => !d.isArchived);
+      setDeliverables(items);
+      setArticleImageDrafts(activeDrafts);
+      setArticleImages(images);
+      setDeliverableForm((current: AiDeliveryDeliverableFormValues) => ({ ...current, contentDraftId: activeDrafts[0]?.id ?? null }));
+    } finally {
+      setDeliverablesLoading(false);
+    }
+  }
+
+  function editDeliverable(item: AiDeliveryDeliverableSummary) {
+    setDeliverableEditorId(item.id);
+    setDeliverableForm({
+      contentDraftId: item.contentDraftId ?? null,
+      articleImageId: item.articleImageId ?? null,
+      title: item.title,
+      description: item.description ?? null,
+      deliveryType: item.deliveryType,
+      status: item.status,
+      exportUrl: item.exportUrl ?? null,
+      storageKey: item.storageKey ?? null,
+      notes: item.notes ?? null,
+      isArchived: item.isArchived
+    });
+  }
+
+  async function saveDeliverable(projectId: string) {
+    if (typeof onSaveDeliverable !== "function") return;
+    setDeliverablesSaving(true);
+    try {
+      const saved = await onSaveDeliverable(projectId, deliverableEditorId, deliverableForm);
+      if (saved && typeof onFetchDeliverables === "function") {
+        setDeliverables(await onFetchDeliverables(projectId));
+        setDeliverableEditorId(null);
+        setDeliverableForm({ contentDraftId: null, articleImageId: null, title: "", description: null, deliveryType: "CONTENT_PACKAGE", status: "DRAFT", exportUrl: null, storageKey: null, notes: null, isArchived: false });
+      }
+    } finally {
+      setDeliverablesSaving(false);
+    }
+  }
+
+  async function archiveDeliverable(projectId: string, deliverableId: string) {
+    if (typeof onArchiveDeliverable !== "function" || typeof onFetchDeliverables !== "function") return;
+    setDeliverablesSaving(true);
+    try {
+      await onArchiveDeliverable(projectId, deliverableId);
+      setDeliverables(await onFetchDeliverables(projectId));
+    } finally {
+      setDeliverablesSaving(false);
+    }
+  }
+
+  function closeDeliverables() {
+    setOpenDeliverablesId(null);
+    setDeliverables([]);
+    setDeliverableEditorId(null);
+    setDeliverableForm({ contentDraftId: null, articleImageId: null, title: "", description: null, deliveryType: "CONTENT_PACKAGE", status: "DRAFT", exportUrl: null, storageKey: null, notes: null, isArchived: false });
+  }
+
   if (loading) return <LoadingState label="Loading AI delivery projects" />;
   if (error) return <ErrorState title="AI delivery unavailable" message={error} />;
 
@@ -677,6 +791,9 @@ export function AiDeliveryPage({
                       </button>
                       <button className="secondary-action" onClick={() => void openArticleImages(p.id)} type="button">
                         Article images
+                      </button>
+                      <button className="secondary-action" onClick={() => void openDeliverables(p.id)} type="button">
+                        Deliverables
                       </button>
                       {!p.isArchived ? (
                         <button className="secondary-action" onClick={() => void onArchive(p.id)} type="button">
@@ -1201,6 +1318,112 @@ export function AiDeliveryPage({
           ) : <div>Project not found.</div>}
         </Modal>
       ) : null}
+      {openDeliverablesId ? (
+        <Modal onClose={closeDeliverables} title="Deliverables">
+          {deliverablesLoading ? (
+            <LoadingState label="Loading deliverables" />
+          ) : openDeliverablesProject ? (
+            <div>
+              <section className="field-panel">
+                <h3>Deliverable editor</h3>
+                <p className="muted-text">Admin-operated deliverable records only. No export generation, upload, R2 write, WordPress, or client portal in this block.</p>
+                <div className="field-grid">
+                  <label>
+                    Linked content draft
+                    <select value={deliverableForm.contentDraftId || ""} onChange={(e) => setDeliverableForm((current: AiDeliveryDeliverableFormValues) => ({ ...current, contentDraftId: e.target.value || null }))}>
+                      <option value="">None</option>
+                      {articleImageDrafts.map((draftItem) => (
+                        <option key={draftItem.id} value={draftItem.id}>{draftItem.title}</option>
+                      ))}
+                    </select>
+                  </label>
+                  <label>
+                    Linked article image
+                    <select value={deliverableForm.articleImageId || ""} onChange={(e) => setDeliverableForm((current: AiDeliveryDeliverableFormValues) => ({ ...current, articleImageId: e.target.value || null }))}>
+                      <option value="">None</option>
+                      {articleImages.map((ai) => (
+                        <option key={ai.id} value={ai.id}>{ai.title}</option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="field-span-2">
+                    Title
+                    <input maxLength={255} required value={deliverableForm.title || ""} onChange={(e) => setDeliverableForm((current: AiDeliveryDeliverableFormValues) => ({ ...current, title: e.target.value }))} />
+                  </label>
+                  <label className="field-span-2">
+                    Description
+                    <textarea maxLength={4000} rows={3} value={deliverableForm.description || ""} onChange={(e) => setDeliverableForm((current: AiDeliveryDeliverableFormValues) => ({ ...current, description: e.target.value }))} />
+                  </label>
+                  <label>
+                    Delivery type
+                    <select value={deliverableForm.deliveryType || "CONTENT_PACKAGE"} onChange={(e) => setDeliverableForm((current: AiDeliveryDeliverableFormValues) => ({ ...current, deliveryType: e.target.value }))}>
+                      {(["CONTENT_PACKAGE","ARTICLE_DRAFT","ARTICLE_IMAGE","CLIENT_HANDOFF","OTHER"] as const).map((dt) => <option key={dt} value={dt}>{dt}</option>)}
+                    </select>
+                  </label>
+                  <label>
+                    Status
+                    <select value={deliverableForm.status || "DRAFT"} onChange={(e) => setDeliverableForm((current: AiDeliveryDeliverableFormValues) => ({ ...current, status: e.target.value }))}>
+                      {(["DRAFT","READY","DELIVERED","REVISION_REQUESTED","ACCEPTED","ARCHIVED"] as const).map((s) => <option key={s} value={s}>{s}</option>)}
+                    </select>
+                  </label>
+                  <label>
+                    Export URL
+                    <input maxLength={2048} type="url" value={deliverableForm.exportUrl || ""} onChange={(e) => setDeliverableForm((current: AiDeliveryDeliverableFormValues) => ({ ...current, exportUrl: e.target.value }))} />
+                  </label>
+                  <label className="field-span-2">
+                    Storage key
+                    <input maxLength={1024} value={deliverableForm.storageKey || ""} onChange={(e) => setDeliverableForm((current: AiDeliveryDeliverableFormValues) => ({ ...current, storageKey: e.target.value }))} />
+                  </label>
+                  <label className="field-span-2">
+                    Notes
+                    <textarea maxLength={4000} rows={3} value={deliverableForm.notes || ""} onChange={(e) => setDeliverableForm((current: AiDeliveryDeliverableFormValues) => ({ ...current, notes: e.target.value }))} />
+                  </label>
+                </div>
+                <div className="modal-footer">
+                  <button className="secondary-action" disabled={deliverablesSaving} onClick={() => { setDeliverableEditorId(null); setDeliverableForm({ contentDraftId: null, articleImageId: null, title: "", description: null, deliveryType: "CONTENT_PACKAGE", status: "DRAFT", exportUrl: null, storageKey: null, notes: null, isArchived: false }); }} type="button">New deliverable</button>
+                  <button className="primary-action" disabled={deliverablesSaving || !(deliverableForm.title || "").trim()} onClick={() => void saveDeliverable(openDeliverablesProject.id)} type="button">{deliverablesSaving ? "Saving" : deliverableEditorId ? "Save deliverable" : "Create deliverable"}</button>
+                </div>
+              </section>
+
+              <section className="field-panel">
+                <h3>Existing deliverables</h3>
+                {deliverables.length === 0 ? <div className="state-panel">No deliverables have been created yet.</div> : null}
+                {deliverables.map((d) => (
+                  <article className="entity-card" key={d.id} style={{ marginBottom: "1rem" }}>
+                    <div className="entity-card-header">
+                      <div>
+                        <StatusBadge status={d.isArchived ? "Archived" : d.status} />
+                        <h3>{d.title}</h3>
+                        <p>{d.deliveryType}</p>
+                      </div>
+                      <div className="card-actions">
+                        <button className="secondary-action" disabled={deliverablesSaving} onClick={() => editDeliverable(d)} type="button">Edit</button>
+                        {!d.isArchived ? <button className="secondary-action" disabled={deliverablesSaving} onClick={() => void archiveDeliverable(openDeliverablesProject.id, d.id)} type="button">Archive</button> : null}
+                      </div>
+                    </div>
+                    <dl className="brief-grid">
+                      <div>
+                        <dt>Export URL</dt>
+                        <dd>{d.exportUrl || "Not set"}</dd>
+                      </div>
+                      <div>
+                        <dt>Storage key</dt>
+                        <dd>{d.storageKey || "Not set"}</dd>
+                      </div>
+                      <div className="field-span-2">
+                        <dt>Notes</dt>
+                        <dd>{d.notes || "No notes"}</dd>
+                      </div>
+                    </dl>
+                  </article>
+                ))}
+              </section>
+              <div className="modal-footer"><button className="secondary-action" onClick={closeDeliverables} type="button">Close</button></div>
+            </div>
+          ) : <div>Project not found.</div>}
+        </Modal>
+      ) : null}
+
       {openArticleImagesId ? (
         <Modal onClose={closeArticleImages} title="Article Images">
           {articleImagesLoading ? (

@@ -656,3 +656,41 @@ export interface BillDocumentUploadRequest {
   mimeType?: string;
   contentBase64?: string;
 }
+
+export interface AiDeliveryDeliverableSummary {
+  id: string;
+  tenantId: string;
+  aiDeliveryProjectId: string;
+  contentDraftId?: string | null;
+  articleImageId?: string | null;
+  title: string;
+  description?: string | null;
+  deliveryType: string;
+  status: string;
+  exportUrl?: string | null;
+  storageKey?: string | null;
+  notes?: string | null;
+  isArchived: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AiDeliveryDeliverablesResponse {
+  deliverables: AiDeliveryDeliverableSummary[];
+}
+
+export interface AiDeliveryDeliverableResponse {
+  deliverable: AiDeliveryDeliverableSummary | null;
+}
+
+export interface AiDeliveryDeliverableInputRequest {
+  contentDraftId?: string | null;
+  articleImageId?: string | null;
+  title?: string;
+  description?: string | null;
+  deliveryType?: string;
+  status?: string;
+  exportUrl?: string | null;
+  storageKey?: string | null;
+  notes?: string | null;
+}

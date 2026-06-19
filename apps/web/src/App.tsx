@@ -223,6 +223,32 @@ type AiDeliveryArticleImageResponse = {
   articleImage: AiDeliveryArticleImageSummary | null;
 };
 
+type AiDeliveryDeliverableSummary = {
+  id: string;
+  tenantId: string;
+  aiDeliveryProjectId: string;
+  contentDraftId?: string | null;
+  articleImageId?: string | null;
+  title: string;
+  description?: string | null;
+  deliveryType: string;
+  status: string;
+  exportUrl?: string | null;
+  storageKey?: string | null;
+  notes?: string | null;
+  isArchived: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+type AiDeliveryDeliverablesResponse = {
+  deliverables: AiDeliveryDeliverableSummary[];
+};
+
+type AiDeliveryDeliverableResponse = {
+  deliverable: AiDeliveryDeliverableSummary | null;
+};
+
 type ClientContentDraftReviewResponse = AiDeliveryContentDraftsResponse;
 
 type ClientContentPlanReviewResponse = AiDeliveryContentPlanResponse;
@@ -2146,6 +2172,66 @@ export function App() {
     }
   }
 
+  async function handleFetchAiDeliveryDeliverables(projectId: string): Promise<AiDeliveryDeliverableSummary[]> {
+    setAppMessage(null);
+    try {
+      const response = await runAuthenticatedRequest<AiDeliveryDeliverablesResponse>(`/ai-delivery-projects/${projectId}/deliverables`);
+      if (!response) return [];
+      if (!response.ok) {
+        setAppMessage({ tone: "error", text: getErrorMessage(response) });
+        return [];
+      }
+      return response.data.deliverables;
+    } catch (error) {
+      setAppMessage({ tone: "error", text: maskError(error) });
+      return [];
+    }
+  }
+
+  async function handleSaveAiDeliveryDeliverable(
+    projectId: string,
+    deliverableId: string | null,
+    values: Partial<AiDeliveryDeliverableSummary>
+  ): Promise<AiDeliveryDeliverableSummary | null> {
+    setAppMessage(null);
+    try {
+      const response = await runAuthenticatedRequest<AiDeliveryDeliverableResponse>(
+        deliverableId ? `/ai-delivery-projects/${projectId}/deliverables/${deliverableId}` : `/ai-delivery-projects/${projectId}/deliverables`,
+        { method: deliverableId ? "PUT" : "POST", body: values }
+      );
+      if (!response) return null;
+      if (!response.ok) {
+        setAppMessage({ tone: "error", text: getErrorMessage(response) });
+        return null;
+      }
+      return response.data.deliverable;
+    } catch (error) {
+      setAppMessage({ tone: "error", text: maskError(error) });
+      return null;
+    }
+  }
+
+  async function handleArchiveAiDeliveryDeliverable(projectId: string, deliverableId: string): Promise<boolean> {
+    setAppMessage(null);
+    try {
+      const response = await runAuthenticatedRequest<{ deliverable: AiDeliveryDeliverableSummary | null }>(
+        `/ai-delivery-projects/${projectId}/deliverables/${deliverableId}/archive`,
+        { method: "POST" }
+      );
+      if (!response) return false;
+      if (!response.ok) {
+        setAppMessage({ tone: "error", text: getErrorMessage(response) });
+        return false;
+      }
+      await loadProtectedState(tokenRef.current);
+      setAppMessage({ tone: "success", text: "Deliverable archived." });
+      return true;
+    } catch (error) {
+      setAppMessage({ tone: "error", text: maskError(error) });
+      return false;
+    }
+  }
+
   async function handleSaveAiDeliveryArticleImage(
     projectId: string,
     imageId: string | null,
@@ -2916,6 +3002,9 @@ export function App() {
           onFetchArticleImages={handleFetchAiDeliveryArticleImages}
           onSaveArticleImage={handleSaveAiDeliveryArticleImage}
           onArchiveArticleImage={handleArchiveAiDeliveryArticleImage}
+          onFetchDeliverables={handleFetchAiDeliveryDeliverables}
+          onSaveDeliverable={handleSaveAiDeliveryDeliverable}
+          onArchiveDeliverable={handleArchiveAiDeliveryDeliverable}
         />
       ) : null}
       {!loading && activeView === "content-plan-review" ? (
