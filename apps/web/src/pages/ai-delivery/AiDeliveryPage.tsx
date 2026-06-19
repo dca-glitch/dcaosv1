@@ -37,6 +37,49 @@ export type AiDeliveryProjectFormValues = {
   plannedContentScopeNotes: string;
 };
 
+export type AiDeliveryContentPlanItemSummary = {
+  id?: string;
+  title: string;
+  targetKeyword: string | null;
+  contentType: string | null;
+  notes: string | null;
+  sortOrder: number;
+  approvalStatus?: string | null;
+  clientComment?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export type AiDeliveryContentPlanSummary = {
+  id: string;
+  aiDeliveryProjectId: string;
+  status: string;
+  revisionCount: number;
+  reviewRequestedAt: string | null;
+  approvedAt: string | null;
+  items: AiDeliveryContentPlanItemSummary[];
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type AiDeliveryContentPlanFormValues = {
+  items: Array<{
+    title: string;
+    targetKeyword?: string | null;
+    contentType?: string | null;
+    notes?: string | null;
+    sortOrder: number;
+  }>;
+};
+
+type ContentPlanItemDraft = {
+  localId: string;
+  title: string;
+  targetKeyword: string;
+  contentType: string;
+  notes: string;
+};
+
 export type AiDeliveryProjectsProps = {
   projects: AiDeliveryProjectSummary[];
   clients: ClientSummary[];
@@ -72,6 +115,11 @@ export type AiDeliveryProjectsProps = {
     marketsCompetitors?: string | null;
     notes?: string | null;
   }) => Promise<boolean>;
+  onFetchContentPlan?: (projectId: string) => Promise<AiDeliveryContentPlanSummary | null>;
+  onCreateContentPlan?: (projectId: string) => Promise<AiDeliveryContentPlanSummary | null>;
+  onSaveContentPlan?: (projectId: string, values: AiDeliveryContentPlanFormValues) => Promise<AiDeliveryContentPlanSummary | null>;
+  onRequestContentPlanReview?: (projectId: string) => Promise<AiDeliveryContentPlanSummary | null>;
+  onApproveContentPlan?: (projectId: string) => Promise<AiDeliveryContentPlanSummary | null>;
 };
 
 const emptyForm = (clientId = ""): AiDeliveryProjectFormValues => ({
@@ -81,6 +129,26 @@ const emptyForm = (clientId = ""): AiDeliveryProjectFormValues => ({
   targetMonth: "",
   plannedContentScopeNotes: ""
 });
+
+const itemDraftFromPlanItem = (item: AiDeliveryContentPlanItemSummary, index: number): ContentPlanItemDraft => ({
+  localId: item.id ?? `item-${index}-${Date.now()}`,
+  title: item.title,
+  targetKeyword: item.targetKeyword ?? "",
+  contentType: item.contentType ?? "article",
+  notes: item.notes ?? ""
+});
+
+const emptyContentPlanItem = (): ContentPlanItemDraft => ({
+  localId: `new-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+  title: "",
+  targetKeyword: "",
+  contentType: "article",
+  notes: ""
+});
+
+function formatOptionalDate(value: string | null | undefined): string {
+  return value ? new Date(value).toLocaleString() : "Not set";
+}
 
 export function AiDeliveryPage({
   projects,
@@ -95,7 +163,12 @@ export function AiDeliveryPage({
   onRequestClientRevision,
   onApproveFinal,
   onFetchBrief,
-  onSaveBrief
+  onSaveBrief,
+  onFetchContentPlan,
+  onCreateContentPlan,
+  onSaveContentPlan,
+  onRequestContentPlanReview,
+  onApproveContentPlan
 }: AiDeliveryProjectsProps) {
   const [filter, setFilter] = useState<"all" | "active" | "archived">("active");
   const [editorProjectId, setEditorProjectId] = useState<string | null>(null);
@@ -120,9 +193,15 @@ export function AiDeliveryPage({
     createdAt: string;
     updatedAt: string;
   }>(null);
+  const [openContentPlanId, setOpenContentPlanId] = useState<string | null>(null);
+  const [contentPlanLoading, setContentPlanLoading] = useState(false);
+  const [contentPlanSaving, setContentPlanSaving] = useState(false);
+  const [contentPlanDetail, setContentPlanDetail] = useState<AiDeliveryContentPlanSummary | null>(null);
+  const [contentPlanItems, setContentPlanItems] = useState<ContentPlanItemDraft[]>([]);
 
   const selectedProject = useMemo(() => projects.find((p) => p.id === editorProjectId) ?? null, [editorProjectId, projects]);
   const openProject = useMemo(() => projects.find((p) => p.id === openBriefId) ?? null, [openBriefId, projects]);
+  const openContentPlanProject = useMemo(() => projects.find((p) => p.id === openContentPlanId) ?? null, [openContentPlanId, projects]);
 
   function openCreateModal() {
     setEditorProjectId(null);
@@ -185,6 +264,81 @@ export function AiDeliveryPage({
       setOpenBriefId(null);
       setBriefDetail(null);
     }
+  }
+
+  async function openContentPlan(projectId: string) {
+    setOpenContentPlanId(projectId);
+    setContentPlanLoading(true);
+    setContentPlanDetail(null);
+    setContentPlanItems([]);
+    try {
+      if (typeof onFetchContentPlan === "function") {
+        const plan = await onFetchContentPlan(projectId);
+        setContentPlanDetail(plan);
+        setContentPlanItems(plan?.items.map(itemDraftFromPlanItem) ?? []);
+      }
+    } finally {
+      setContentPlanLoading(false);
+    }
+  }
+
+  async function handleCreateContentPlan(projectId: string) {
+    if (typeof onCreateContentPlan !== "function") return;
+    setContentPlanSaving(true);
+    try {
+      const plan = await onCreateContentPlan(projectId);
+      if (plan) {
+        setContentPlanDetail(plan);
+        setContentPlanItems(plan.items.map(itemDraftFromPlanItem));
+      }
+    } finally {
+      setContentPlanSaving(false);
+    }
+  }
+
+  async function handleSaveContentPlan(projectId: string) {
+    if (typeof onSaveContentPlan !== "function") return;
+    setContentPlanSaving(true);
+    try {
+      const plan = await onSaveContentPlan(projectId, {
+        items: contentPlanItems.map((item, index) => ({
+          title: item.title.trim(),
+          targetKeyword: item.targetKeyword.trim() || null,
+          contentType: item.contentType.trim() || "article",
+          notes: item.notes.trim() || null,
+          sortOrder: index + 1
+        }))
+      });
+      if (plan) {
+        setContentPlanDetail(plan);
+        setContentPlanItems(plan.items.map(itemDraftFromPlanItem));
+      }
+    } finally {
+      setContentPlanSaving(false);
+    }
+  }
+
+  async function handleContentPlanAction(
+    projectId: string,
+    action: ((projectId: string) => Promise<AiDeliveryContentPlanSummary | null>) | undefined
+  ) {
+    if (typeof action !== "function") return;
+    setContentPlanSaving(true);
+    try {
+      const plan = await action(projectId);
+      if (plan) {
+        setContentPlanDetail(plan);
+        setContentPlanItems(plan.items.map(itemDraftFromPlanItem));
+      }
+    } finally {
+      setContentPlanSaving(false);
+    }
+  }
+
+  function closeContentPlan() {
+    setOpenContentPlanId(null);
+    setContentPlanDetail(null);
+    setContentPlanItems([]);
   }
 
   if (loading) return <LoadingState label="Loading AI delivery projects" />;
@@ -250,6 +404,9 @@ export function AiDeliveryPage({
                       </button>
                       <button className="secondary-action" onClick={() => void openBrief(p.id)} type="button" disabled={!p.brief}>
                         Open brief
+                      </button>
+                      <button className="secondary-action" onClick={() => void openContentPlan(p.id)} type="button">
+                        Content plan
                       </button>
                       {!p.isArchived ? (
                         <button className="secondary-action" onClick={() => void onArchive(p.id)} type="button">
@@ -526,6 +683,126 @@ export function AiDeliveryPage({
               </div>
             ) : (
               <div>No brief available for this project.</div>
+            )
+          ) : (
+            <div>Project not found.</div>
+          )}
+        </Modal>
+      ) : null}
+      {openContentPlanId ? (
+        <Modal onClose={closeContentPlan} title="Monthly Content Plan">
+          {contentPlanLoading ? (
+            <LoadingState label="Loading content plan" />
+          ) : openContentPlanProject ? (
+            contentPlanDetail ? (
+              <div>
+                <dl className="brief-grid">
+                  <div>
+                    <dt>Status</dt>
+                    <dd>{contentPlanDetail.status}</dd>
+                  </div>
+                  <div>
+                    <dt>Revisions</dt>
+                    <dd>{contentPlanDetail.revisionCount ?? 0}</dd>
+                  </div>
+                  <div>
+                    <dt>Review requested</dt>
+                    <dd>{formatOptionalDate(contentPlanDetail.reviewRequestedAt)}</dd>
+                  </div>
+                  <div>
+                    <dt>Approved</dt>
+                    <dd>{formatOptionalDate(contentPlanDetail.approvedAt)}</dd>
+                  </div>
+                </dl>
+
+                <section className="field-panel">
+                  <h3>Proposed content items</h3>
+                  {contentPlanItems.length === 0 ? (
+                    <div className="state-panel">No content items have been added yet.</div>
+                  ) : null}
+                  {contentPlanItems.map((item, index) => (
+                    <div className="field-grid" key={item.localId} style={{ marginBottom: "1rem" }}>
+                      <label>
+                        Title
+                        <input
+                          maxLength={255}
+                          onChange={(event) => setContentPlanItems((current) => current.map((draftItem) => draftItem.localId === item.localId ? { ...draftItem, title: event.target.value } : draftItem))}
+                          required
+                          value={item.title}
+                        />
+                      </label>
+                      <label>
+                        Content type
+                        <input
+                          maxLength={80}
+                          onChange={(event) => setContentPlanItems((current) => current.map((draftItem) => draftItem.localId === item.localId ? { ...draftItem, contentType: event.target.value } : draftItem))}
+                          value={item.contentType}
+                        />
+                      </label>
+                      <label>
+                        Target keyword
+                        <input
+                          maxLength={255}
+                          onChange={(event) => setContentPlanItems((current) => current.map((draftItem) => draftItem.localId === item.localId ? { ...draftItem, targetKeyword: event.target.value } : draftItem))}
+                          value={item.targetKeyword}
+                        />
+                      </label>
+                      <div>
+                        <span>Sort order</span>
+                        <strong>{index + 1}</strong>
+                      </div>
+                      <label className="field-span-2">
+                        Notes
+                        <textarea
+                          maxLength={4000}
+                          onChange={(event) => setContentPlanItems((current) => current.map((draftItem) => draftItem.localId === item.localId ? { ...draftItem, notes: event.target.value } : draftItem))}
+                          rows={3}
+                          value={item.notes}
+                        />
+                      </label>
+                      <div className="field-span-2">
+                        <button
+                          className="secondary-action"
+                          disabled={contentPlanSaving}
+                          onClick={() => setContentPlanItems((current) => current.filter((draftItem) => draftItem.localId !== item.localId))}
+                          type="button"
+                        >
+                          Remove item
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                  <button
+                    className="secondary-action"
+                    disabled={contentPlanSaving}
+                    onClick={() => setContentPlanItems((current) => [...current, emptyContentPlanItem()])}
+                    type="button"
+                  >
+                    Add content item
+                  </button>
+                </section>
+
+                <div className="modal-footer">
+                  <button className="secondary-action" disabled={contentPlanSaving} onClick={closeContentPlan} type="button">Close</button>
+                  <button className="secondary-action" disabled={contentPlanSaving} onClick={() => void handleContentPlanAction(openContentPlanProject.id, onRequestContentPlanReview)} type="button">Request client review</button>
+                  <button className="secondary-action" disabled={contentPlanSaving} onClick={() => void handleContentPlanAction(openContentPlanProject.id, onApproveContentPlan)} type="button">Approve plan</button>
+                  <button className="primary-action" disabled={contentPlanSaving || contentPlanItems.some((item) => !item.title.trim())} onClick={() => void handleSaveContentPlan(openContentPlanProject.id)} type="button">
+                    {contentPlanSaving ? "Saving" : "Save plan"}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div>
+                <div className="state-panel">
+                  No monthly content plan exists for {openContentPlanProject.name}. Create one to start adding proposed content items.
+                </div>
+                <div className="modal-footer">
+                  <button className="secondary-action" disabled={contentPlanSaving} onClick={closeContentPlan} type="button">Close</button>
+                  <button className="primary-action" disabled={contentPlanSaving} onClick={() => void handleCreateContentPlan(openContentPlanProject.id)} type="button">
+                    {contentPlanSaving ? "Creating" : "Create content plan"}
+                  </button>
+                </div>
+              </div>
             )
           ) : (
             <div>Project not found.</div>

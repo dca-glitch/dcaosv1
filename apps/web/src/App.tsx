@@ -26,7 +26,13 @@ import {
   type InvoiceItemSummary
 } from "./pages/invoice-items/InvoiceItemsPage";
 import { ProjectsPage, type ProjectFormValues, type ProjectSummary } from "./pages/projects/ProjectsPage";
-import { AiDeliveryPage, type AiDeliveryProjectSummary, type AiDeliveryProjectFormValues } from "./pages/ai-delivery/AiDeliveryPage";
+import {
+  AiDeliveryPage,
+  type AiDeliveryContentPlanFormValues,
+  type AiDeliveryContentPlanSummary,
+  type AiDeliveryProjectSummary,
+  type AiDeliveryProjectFormValues
+} from "./pages/ai-delivery/AiDeliveryPage";
 import { TasksPage, type TaskFormValues, type TaskSummary } from "./pages/tasks/TasksPage";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "/api/v1";
@@ -187,6 +193,10 @@ type ProjectsResponse = {
 
 type AiDeliveryProjectsResponse = {
   aiDeliveryProjects: AiDeliveryProjectSummary[];
+};
+
+type AiDeliveryContentPlanResponse = {
+  contentPlan: AiDeliveryContentPlanSummary | null;
 };
 
 type TasksResponse = {
@@ -1589,6 +1599,102 @@ export function App() {
     }
   }
 
+  async function handleFetchAiDeliveryContentPlan(projectId: string): Promise<AiDeliveryContentPlanSummary | null> {
+    setAppMessage(null);
+    try {
+      const response = await runAuthenticatedRequest<AiDeliveryContentPlanResponse>(
+        `/ai-delivery-projects/${projectId}/content-plan`,
+        { method: "GET" }
+      );
+      if (!response) return null;
+      if (!response.ok) {
+        setAppMessage({ tone: "error", text: getErrorMessage(response) });
+        return null;
+      }
+      return response.data.contentPlan ?? null;
+    } catch (error) {
+      setAppMessage({ tone: "error", text: maskError(error) });
+      return null;
+    }
+  }
+
+  async function handleCreateAiDeliveryContentPlan(projectId: string): Promise<AiDeliveryContentPlanSummary | null> {
+    setAppMessage(null);
+    try {
+      const response = await runAuthenticatedRequest<AiDeliveryContentPlanResponse>(
+        `/ai-delivery-projects/${projectId}/content-plan`,
+        { method: "POST", body: { items: [] } }
+      );
+      if (!response) return null;
+      if (!response.ok) {
+        setAppMessage({ tone: "error", text: getErrorMessage(response) });
+        return null;
+      }
+      setAppMessage({ tone: "success", text: "Monthly content plan created." });
+      return response.data.contentPlan ?? null;
+    } catch (error) {
+      setAppMessage({ tone: "error", text: maskError(error) });
+      return null;
+    }
+  }
+
+  async function handleSaveAiDeliveryContentPlan(
+    projectId: string,
+    values: AiDeliveryContentPlanFormValues
+  ): Promise<AiDeliveryContentPlanSummary | null> {
+    setAppMessage(null);
+    try {
+      const response = await runAuthenticatedRequest<AiDeliveryContentPlanResponse>(
+        `/ai-delivery-projects/${projectId}/content-plan`,
+        { method: "PUT", body: values }
+      );
+      if (!response) return null;
+      if (!response.ok) {
+        setAppMessage({ tone: "error", text: getErrorMessage(response) });
+        return null;
+      }
+      setAppMessage({ tone: "success", text: "Monthly content plan saved." });
+      return response.data.contentPlan ?? null;
+    } catch (error) {
+      setAppMessage({ tone: "error", text: maskError(error) });
+      return null;
+    }
+  }
+
+  async function handleRequestAiDeliveryContentPlanReview(projectId: string): Promise<AiDeliveryContentPlanSummary | null> {
+    return runAiDeliveryContentPlanAction(
+      `/ai-delivery-projects/${projectId}/content-plan/request-client-review`,
+      "Monthly content plan review requested."
+    );
+  }
+
+  async function handleApproveAiDeliveryContentPlan(projectId: string): Promise<AiDeliveryContentPlanSummary | null> {
+    return runAiDeliveryContentPlanAction(
+      `/ai-delivery-projects/${projectId}/content-plan/approve`,
+      "Monthly content plan approved."
+    );
+  }
+
+  async function runAiDeliveryContentPlanAction(
+    path: string,
+    successMessage: string
+  ): Promise<AiDeliveryContentPlanSummary | null> {
+    setAppMessage(null);
+    try {
+      const response = await runAuthenticatedRequest<AiDeliveryContentPlanResponse>(path, { method: "POST" });
+      if (!response) return null;
+      if (!response.ok) {
+        setAppMessage({ tone: "error", text: getErrorMessage(response) });
+        return null;
+      }
+      setAppMessage({ tone: "success", text: successMessage });
+      return response.data.contentPlan ?? null;
+    } catch (error) {
+      setAppMessage({ tone: "error", text: maskError(error) });
+      return null;
+    }
+  }
+
   async function handleRestoreProject(projectId: string): Promise<boolean> {
     setAppMessage(null);
     try {
@@ -2204,6 +2310,11 @@ export function App() {
           onApproveFinal={handleApproveFinalBrief}
           onFetchBrief={handleFetchAiDeliveryBrief}
           onSaveBrief={handleSaveAiDeliveryBrief}
+          onFetchContentPlan={handleFetchAiDeliveryContentPlan}
+          onCreateContentPlan={handleCreateAiDeliveryContentPlan}
+          onSaveContentPlan={handleSaveAiDeliveryContentPlan}
+          onRequestContentPlanReview={handleRequestAiDeliveryContentPlanReview}
+          onApproveContentPlan={handleApproveAiDeliveryContentPlan}
         />
       ) : null}
       {!loading && activeView === "tasks" ? (
