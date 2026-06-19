@@ -1,6 +1,9 @@
 import type { Prisma } from "@prisma/client";
 import { createPrismaClient } from "../../../../packages/data/src/client";
 import type {
+  AiDeliveryArticleImageInputRequest,
+  AiDeliveryArticleImageResponse,
+  AiDeliveryArticleImagesResponse,
   AiDeliveryContentDraftInputRequest,
   AiDeliveryContentDraftResponse,
   AiDeliveryContentDraftsResponse,
@@ -56,6 +59,7 @@ type TaskStatus = "TODO" | "IN_PROGRESS" | "DONE";
 type TaskRecurringType = "NONE" | "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY";
 type InvoiceStatus = "DRAFT" | "ISSUED" | "PAID" | "VOIDED" | "UNCOLLECTIBLE";
 type AiDeliveryContentDraftStatus = "DRAFT" | "READY_FOR_REVIEW" | "APPROVED" | "CHANGES_REQUESTED" | "ARCHIVED";
+type AiDeliveryArticleImageStatus = "DRAFT" | "READY_FOR_GENERATION" | "PREVIEW_READY" | "APPROVED" | "FINAL_READY" | "CHANGES_REQUESTED" | "ARCHIVED";
 type CreditNoteStatus = "DRAFT" | "ISSUED" | "VOIDED";
 type PaymentMethod = "CASH" | "REVOLUT_BANK" | "WISE_BANK" | "REVOLUT_CARD" | "WISE_CARD" | "CARD_PROCESSOR" | "OTHER";
 type RecurringInvoiceInterval = "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY";
@@ -86,6 +90,10 @@ function toNullableString(value: string | null | undefined): string | null {
 
 function getAiDeliveryProjectDelegate(client: PrismaTx | typeof prisma): AiDeliveryProjectDelegate {
   return (client as unknown as { aiDeliveryProject: AiDeliveryProjectDelegate }).aiDeliveryProject;
+}
+
+function getAiDeliveryArticleImageDelegate(client: PrismaTx | typeof prisma) {
+  return (client as unknown as { aiDeliveryArticleImage: { findFirst: (args: unknown) => Promise<unknown>; findMany: (args: unknown) => Promise<unknown[]>; create: (args: unknown) => Promise<unknown>; update: (args: unknown) => Promise<unknown>; } }).aiDeliveryArticleImage;
 }
 
 function toDateString(value: Date | null | undefined): string | null {
@@ -1963,6 +1971,176 @@ export async function requestClientAiDeliveryContentDraftRevision(
   }) as any;
 
   return { contentDraft: toAiDeliveryContentDraftSummary(updated) };
+}
+
+const AI_DELIVERY_ARTICLE_IMAGE_STATUSES = new Set(["DRAFT", "READY_FOR_GENERATION", "PREVIEW_READY", "APPROVED", "FINAL_READY", "CHANGES_REQUESTED", "ARCHIVED"]);
+
+const aiDeliveryArticleImageSelect = {
+  id: true,
+  aiDeliveryProjectId: true,
+  contentDraftId: true,
+  contentDraft: { select: { id: true, title: true } },
+  title: true,
+  prompt: true,
+  styleNotes: true,
+  status: true,
+  previewImageUrl: true,
+  finalImageUrl: true,
+  storageKey: true,
+  notes: true,
+  isArchived: true,
+  createdAt: true,
+  updatedAt: true
+} as const;
+
+function normalizeAiDeliveryArticleImageStatus(value: string | null | undefined): AiDeliveryArticleImageStatus {
+  return value && AI_DELIVERY_ARTICLE_IMAGE_STATUSES.has(value) ? value as AiDeliveryArticleImageStatus : "DRAFT";
+}
+
+function toAiDeliveryArticleImageSummary(image: any) {
+  return {
+    id: image.id,
+    aiDeliveryProjectId: image.aiDeliveryProjectId,
+    contentDraftId: image.contentDraftId,
+    contentDraft: image.contentDraft,
+    title: image.title,
+    prompt: image.prompt,
+    styleNotes: image.styleNotes,
+    status: image.status,
+    previewImageUrl: image.previewImageUrl,
+    finalImageUrl: image.finalImageUrl,
+    storageKey: image.storageKey,
+    notes: image.notes,
+    isArchived: image.isArchived,
+    createdAt: image.createdAt.toISOString(),
+    updatedAt: image.updatedAt.toISOString()
+  };
+}
+
+async function getContentDraftForArticleImage(
+  tx: PrismaTx,
+  tenantId: string,
+  aiDeliveryProjectId: string,
+  contentDraftId: string | undefined
+): Promise<{ id: string } | null> {
+  if (!contentDraftId) return null;
+  return getAiDeliveryContentDraftDelegate(tx).findFirst({
+    where: { id: contentDraftId, tenantId, aiDeliveryProjectId },
+    select: { id: true }
+  }) as Promise<{ id: string } | null>;
+}
+
+export async function listAiDeliveryArticleImages(
+  authSession: AuthResolvedSessionContext,
+  aiDeliveryProjectId: string
+): Promise<AiDeliveryArticleImagesResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) return null;
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    const project = await getAiDeliveryProjectForDraft(tx, tenantId, aiDeliveryProjectId);
+    if (!project) return null;
+    const articleImages = await getAiDeliveryArticleImageDelegate(tx).findMany({
+      where: { tenantId, aiDeliveryProjectId },
+      orderBy: [{ isArchived: "asc" }, { updatedAt: "desc" }],
+      select: aiDeliveryArticleImageSelect
+    }) as any[];
+    return { articleImages: articleImages.map(toAiDeliveryArticleImageSummary) };
+  });
+}
+
+export async function createAiDeliveryArticleImage(
+  authSession: AuthResolvedSessionContext,
+  aiDeliveryProjectId: string,
+  input: AiDeliveryArticleImageInputRequest
+): Promise<AiDeliveryArticleImageResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId || !input.contentDraftId || !input.title || !input.prompt) return null;
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    const project = await getAiDeliveryProjectForDraft(tx, tenantId, aiDeliveryProjectId);
+    if (!project) return null;
+    const contentDraft = await getContentDraftForArticleImage(tx, tenantId, aiDeliveryProjectId, input.contentDraftId);
+    if (!contentDraft) return null;
+    const created = await getAiDeliveryArticleImageDelegate(tx).create({
+      data: {
+        tenantId,
+        aiDeliveryProjectId,
+        contentDraftId: contentDraft.id,
+        title: input.title,
+        prompt: input.prompt,
+        styleNotes: toNullableString(input.styleNotes),
+        status: normalizeAiDeliveryArticleImageStatus(input.status),
+        previewImageUrl: toNullableString(input.previewImageUrl),
+        finalImageUrl: toNullableString(input.finalImageUrl),
+        storageKey: toNullableString(input.storageKey),
+        notes: toNullableString(input.notes)
+      },
+      select: aiDeliveryArticleImageSelect
+    }) as any;
+    return { articleImage: toAiDeliveryArticleImageSummary(created) };
+  });
+}
+
+export async function updateAiDeliveryArticleImage(
+  authSession: AuthResolvedSessionContext,
+  aiDeliveryProjectId: string,
+  articleImageId: string,
+  input: AiDeliveryArticleImageInputRequest
+): Promise<AiDeliveryArticleImageResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId || !input.contentDraftId || !input.title || !input.prompt) return null;
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    const existing = await getAiDeliveryArticleImageDelegate(tx).findFirst({
+      where: { id: articleImageId, tenantId, aiDeliveryProjectId },
+      select: aiDeliveryArticleImageSelect
+    }) as any;
+    if (!existing) return null;
+    const contentDraft = await getContentDraftForArticleImage(tx, tenantId, aiDeliveryProjectId, input.contentDraftId);
+    if (!contentDraft) return null;
+    const status = normalizeAiDeliveryArticleImageStatus(input.status);
+    const updated = await getAiDeliveryArticleImageDelegate(tx).update({
+      where: { id: articleImageId },
+      data: {
+        contentDraftId: contentDraft.id,
+        title: input.title,
+        prompt: input.prompt,
+        styleNotes: toNullableString(input.styleNotes),
+        status,
+        previewImageUrl: toNullableString(input.previewImageUrl),
+        finalImageUrl: toNullableString(input.finalImageUrl),
+        storageKey: toNullableString(input.storageKey),
+        notes: toNullableString(input.notes),
+        isArchived: status === "ARCHIVED" ? true : existing.isArchived
+      },
+      select: aiDeliveryArticleImageSelect
+    }) as any;
+    return { articleImage: toAiDeliveryArticleImageSummary(updated) };
+  });
+}
+
+export async function archiveAiDeliveryArticleImage(
+  authSession: AuthResolvedSessionContext,
+  aiDeliveryProjectId: string,
+  articleImageId: string
+): Promise<AiDeliveryArticleImageResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) return null;
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    const existing = await getAiDeliveryArticleImageDelegate(tx).findFirst({
+      where: { id: articleImageId, tenantId, aiDeliveryProjectId },
+      select: { id: true }
+    }) as any;
+    if (!existing) return null;
+    const archived = await getAiDeliveryArticleImageDelegate(tx).update({
+      where: { id: articleImageId },
+      data: { isArchived: true, status: "ARCHIVED" },
+      select: aiDeliveryArticleImageSelect
+    }) as any;
+    return { articleImage: toAiDeliveryArticleImageSummary(archived) };
+  });
 }
 
 export async function getAiDeliveryContentPlanDetail(

@@ -28,6 +28,8 @@ import {
 import { ProjectsPage, type ProjectFormValues, type ProjectSummary } from "./pages/projects/ProjectsPage";
 import {
   AiDeliveryPage,
+  type AiDeliveryArticleImageFormValues,
+  type AiDeliveryArticleImageSummary,
   type AiDeliveryContentDraftFormValues,
   type AiDeliveryContentDraftSummary,
   type AiDeliveryContentPlanFormValues,
@@ -211,6 +213,14 @@ type AiDeliveryContentDraftsResponse = {
 
 type AiDeliveryContentDraftResponse = {
   contentDraft: AiDeliveryContentDraftSummary | null;
+};
+
+type AiDeliveryArticleImagesResponse = {
+  articleImages: AiDeliveryArticleImageSummary[];
+};
+
+type AiDeliveryArticleImageResponse = {
+  articleImage: AiDeliveryArticleImageSummary | null;
 };
 
 type ClientContentDraftReviewResponse = AiDeliveryContentDraftsResponse;
@@ -2120,6 +2130,63 @@ export function App() {
     );
   }
 
+  async function handleFetchAiDeliveryArticleImages(projectId: string): Promise<AiDeliveryArticleImageSummary[]> {
+    setAppMessage(null);
+    try {
+      const response = await runAuthenticatedRequest<AiDeliveryArticleImagesResponse>(`/ai-delivery-projects/${projectId}/article-images`);
+      if (!response) return [];
+      if (!response.ok) {
+        setAppMessage({ tone: "error", text: getErrorMessage(response) });
+        return [];
+      }
+      return response.data.articleImages;
+    } catch (error) {
+      setAppMessage({ tone: "error", text: maskError(error) });
+      return [];
+    }
+  }
+
+  async function handleSaveAiDeliveryArticleImage(
+    projectId: string,
+    imageId: string | null,
+    values: AiDeliveryArticleImageFormValues
+  ): Promise<AiDeliveryArticleImageSummary | null> {
+    setAppMessage(null);
+    try {
+      const response = await runAuthenticatedRequest<AiDeliveryArticleImageResponse>(
+        imageId ? `/ai-delivery-projects/${projectId}/article-images/${imageId}` : `/ai-delivery-projects/${projectId}/article-images`,
+        { method: imageId ? "PUT" : "POST", body: values }
+      );
+      if (!response) return null;
+      if (!response.ok) {
+        setAppMessage({ tone: "error", text: getErrorMessage(response) });
+        return null;
+      }
+      setAppMessage({ tone: "success", text: imageId ? "Article image request saved." : "Article image request created." });
+      return response.data.articleImage ?? null;
+    } catch (error) {
+      setAppMessage({ tone: "error", text: maskError(error) });
+      return null;
+    }
+  }
+
+  async function handleArchiveAiDeliveryArticleImage(projectId: string, imageId: string): Promise<AiDeliveryArticleImageSummary | null> {
+    setAppMessage(null);
+    try {
+      const response = await runAuthenticatedRequest<AiDeliveryArticleImageResponse>(`/ai-delivery-projects/${projectId}/article-images/${imageId}/archive`, { method: "POST" });
+      if (!response) return null;
+      if (!response.ok) {
+        setAppMessage({ tone: "error", text: getErrorMessage(response) });
+        return null;
+      }
+      setAppMessage({ tone: "success", text: "Article image request archived." });
+      return response.data.articleImage ?? null;
+    } catch (error) {
+      setAppMessage({ tone: "error", text: maskError(error) });
+      return null;
+    }
+  }
+
   async function handleFetchClientContentDraftReview(projectId: string): Promise<AiDeliveryContentDraftSummary[]> {
     setAppMessage(null);
     try {
@@ -2846,6 +2913,9 @@ export function App() {
           onSaveContentDraft={handleSaveAiDeliveryContentDraft}
           onArchiveContentDraft={handleArchiveAiDeliveryContentDraft}
           onRequestContentDraftReview={handleRequestAiDeliveryContentDraftReview}
+          onFetchArticleImages={handleFetchAiDeliveryArticleImages}
+          onSaveArticleImage={handleSaveAiDeliveryArticleImage}
+          onArchiveArticleImage={handleArchiveAiDeliveryArticleImage}
         />
       ) : null}
       {!loading && activeView === "content-plan-review" ? (

@@ -141,6 +141,7 @@ model Tenant {
   aiDeliveryContentPlans AiDeliveryContentPlan[]
   aiDeliveryContentPlanItems AiDeliveryContentPlanItem[]
   aiDeliveryContentDrafts AiDeliveryContentDraft[]
+  aiDeliveryArticleImages AiDeliveryArticleImage[]
   clientUserAccesses   ClientUserAccess[]
 }
 
@@ -394,6 +395,7 @@ model AiDeliveryProject {
   brief AiDeliveryBrief?
   contentPlans AiDeliveryContentPlan[]
   contentDrafts AiDeliveryContentDraft[]
+  articleImages AiDeliveryArticleImage[]
 
   @@index([tenantId])
   @@index([tenantId, isArchived])
@@ -506,10 +508,39 @@ model AiDeliveryContentDraft {
   tenant              Tenant                    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   aiDeliveryProject   AiDeliveryProject         @relation(fields: [aiDeliveryProjectId], references: [id], onDelete: Cascade)
   contentPlanItem     AiDeliveryContentPlanItem? @relation(fields: [contentPlanItemId], references: [id], onDelete: SetNull)
+  articleImages       AiDeliveryArticleImage[]
 
   @@index([tenantId])
   @@index([tenantId, aiDeliveryProjectId])
   @@index([tenantId, contentPlanItemId])
+  @@index([tenantId, status])
+  @@index([tenantId, isArchived])
+}
+
+model AiDeliveryArticleImage {
+  id                  String   @id @default(uuid())
+  tenantId            String
+  aiDeliveryProjectId String
+  contentDraftId      String
+  title               String
+  prompt              String
+  styleNotes          String?
+  status              String   @default("DRAFT")
+  previewImageUrl     String?
+  finalImageUrl       String?
+  storageKey          String?
+  notes               String?
+  isArchived          Boolean  @default(false)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  tenant              Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  aiDeliveryProject   AiDeliveryProject       @relation(fields: [aiDeliveryProjectId], references: [id], onDelete: Cascade)
+  contentDraft        AiDeliveryContentDraft  @relation(fields: [contentDraftId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([tenantId, aiDeliveryProjectId])
+  @@index([tenantId, contentDraftId])
   @@index([tenantId, status])
   @@index([tenantId, isArchived])
 }

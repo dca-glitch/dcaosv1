@@ -22,6 +22,7 @@ import {
 } from "../utils/responses";
 import type { AuthSessionLocals } from "../auth/types";
 import {
+  archiveAiDeliveryArticleImage,
   archiveAiDeliveryProject,
   archiveAiDeliveryContentDraft,
   archiveClient,
@@ -34,6 +35,7 @@ import {
   cancelInvoice,
   archiveInvoiceItem,
   createBill,
+  createAiDeliveryArticleImage,
   createAiDeliveryContentDraft,
   createAiDeliveryProject,
   createClient,
@@ -56,6 +58,7 @@ import {
   getProject,
   getRecurringInvoice,
   getTask,
+  listAiDeliveryArticleImages,
   listAiDeliveryProjects,
   listInvoices,
   listInvoiceItems,
@@ -78,6 +81,7 @@ import {
   restoreProject,
   restoreTask,
   saveCompanyProfile,
+  updateAiDeliveryArticleImage,
   updateAiDeliveryProject,
   updateBill,
   updateClient,
@@ -110,6 +114,7 @@ import {
   requestClientAiDeliveryContentPlanRevision
 } from "../core/core.runtime";
 import type {
+  AiDeliveryArticleImageInputRequest,
   AiDeliveryContentDraftInputRequest,
   AiDeliveryProjectInputRequest,
   BillDocumentUploadRequest,
@@ -134,6 +139,7 @@ const NAME_MAX_LENGTH = 255;
 const CLIENT_COUNTRIES = new Set(["Indonesia", "Poland", "United States", "United Kingdom", "Singapore", "Australia"]);
 const PROJECT_STATUSES = new Set(["Active", "Paused", "Completed", "Archived"]);
 const AI_DELIVERY_CONTENT_DRAFT_STATUSES = new Set(["DRAFT", "READY_FOR_REVIEW", "APPROVED", "CHANGES_REQUESTED", "ARCHIVED"]);
+const AI_DELIVERY_ARTICLE_IMAGE_STATUSES = new Set(["DRAFT", "READY_FOR_GENERATION", "PREVIEW_READY", "APPROVED", "FINAL_READY", "CHANGES_REQUESTED", "ARCHIVED"]);
 
 function getAuthSession(resLocals: unknown) {
   return (resLocals as AuthSessionLocals | undefined)?.authSession;
@@ -336,6 +342,30 @@ function getAiDeliveryContentDraftInput(body: unknown): AiDeliveryContentDraftIn
     slug: getOptionalString(value.slug, SHORT_TEXT_FIELD_MAX_LENGTH),
     draftBody,
     status,
+    notes: getOptionalString(value.notes, TEXT_FIELD_MAX_LENGTH)
+  };
+}
+
+function getAiDeliveryArticleImageInput(body: unknown): AiDeliveryArticleImageInputRequest | null {
+  const value = (body ?? {}) as Record<string, unknown>;
+  const contentDraftId = getRequiredString(value.contentDraftId, SHORT_TEXT_FIELD_MAX_LENGTH);
+  const title = getRequiredString(value.title, SHORT_TEXT_FIELD_MAX_LENGTH);
+  const prompt = typeof value.prompt === "string" ? value.prompt.trim() : "";
+  const status = typeof value.status === "string" ? value.status.trim().toUpperCase() : "DRAFT";
+
+  if (!contentDraftId || !title || !prompt || prompt.length > TEXT_FIELD_MAX_LENGTH || !AI_DELIVERY_ARTICLE_IMAGE_STATUSES.has(status)) {
+    return null;
+  }
+
+  return {
+    contentDraftId,
+    title,
+    prompt,
+    styleNotes: getOptionalString(value.styleNotes, TEXT_FIELD_MAX_LENGTH),
+    status,
+    previewImageUrl: getOptionalUrl(value.previewImageUrl),
+    finalImageUrl: getOptionalUrl(value.finalImageUrl),
+    storageKey: getOptionalString(value.storageKey, LOGO_URL_MAX_LENGTH),
     notes: getOptionalString(value.notes, TEXT_FIELD_MAX_LENGTH)
   };
 }
@@ -1513,6 +1543,70 @@ export const archiveAiDeliveryContentDraftHandler: RequestHandler = async (req, 
     res.json(success(response, { phase: "runtime", scope: "ai-delivery-content-drafts" }));
   } catch {
     res.status(500).json(failure("AI_DELIVERY_CONTENT_DRAFT_RUNTIME_ERROR", "Content draft could not be archived."));
+  }
+};
+
+export const listAiDeliveryArticleImagesHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  const aiDeliveryProjectId = typeof req.params.id === "string" ? req.params.id.trim() : "";
+  if (!authSession) return void res.status(401).json(unauthorizedFailure());
+  if (!aiDeliveryProjectId) return void res.status(400).json(aiDeliveryProjectInvalidFailure());
+
+  try {
+    const response = await listAiDeliveryArticleImages(authSession, aiDeliveryProjectId);
+    if (!response) return void res.status(404).json(aiDeliveryProjectNotFoundFailure());
+    res.json(success(response, { phase: "runtime", scope: "ai-delivery-article-images" }));
+  } catch {
+    res.status(500).json(failure("AI_DELIVERY_ARTICLE_IMAGE_RUNTIME_ERROR", "Article images could not be listed."));
+  }
+};
+
+export const createAiDeliveryArticleImageHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  const aiDeliveryProjectId = typeof req.params.id === "string" ? req.params.id.trim() : "";
+  const input = getAiDeliveryArticleImageInput(req.body);
+  if (!authSession) return void res.status(401).json(unauthorizedFailure());
+  if (!aiDeliveryProjectId || !input) return void res.status(400).json(aiDeliveryProjectInvalidFailure());
+
+  try {
+    const response = await createAiDeliveryArticleImage(authSession, aiDeliveryProjectId, input);
+    if (!response?.articleImage) return void res.status(404).json(aiDeliveryProjectNotFoundFailure());
+    res.status(201).json(success(response, { phase: "runtime", scope: "ai-delivery-article-images" }));
+  } catch {
+    res.status(500).json(failure("AI_DELIVERY_ARTICLE_IMAGE_RUNTIME_ERROR", "Article image could not be created."));
+  }
+};
+
+export const updateAiDeliveryArticleImageHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  const aiDeliveryProjectId = typeof req.params.id === "string" ? req.params.id.trim() : "";
+  const articleImageId = typeof req.params.imageId === "string" ? req.params.imageId.trim() : "";
+  const input = getAiDeliveryArticleImageInput(req.body);
+  if (!authSession) return void res.status(401).json(unauthorizedFailure());
+  if (!aiDeliveryProjectId || !articleImageId || !input) return void res.status(400).json(aiDeliveryProjectInvalidFailure());
+
+  try {
+    const response = await updateAiDeliveryArticleImage(authSession, aiDeliveryProjectId, articleImageId, input);
+    if (!response?.articleImage) return void res.status(404).json(aiDeliveryProjectNotFoundFailure());
+    res.json(success(response, { phase: "runtime", scope: "ai-delivery-article-images" }));
+  } catch {
+    res.status(500).json(failure("AI_DELIVERY_ARTICLE_IMAGE_RUNTIME_ERROR", "Article image could not be updated."));
+  }
+};
+
+export const archiveAiDeliveryArticleImageHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  const aiDeliveryProjectId = typeof req.params.id === "string" ? req.params.id.trim() : "";
+  const articleImageId = typeof req.params.imageId === "string" ? req.params.imageId.trim() : "";
+  if (!authSession) return void res.status(401).json(unauthorizedFailure());
+  if (!aiDeliveryProjectId || !articleImageId) return void res.status(400).json(aiDeliveryProjectInvalidFailure());
+
+  try {
+    const response = await archiveAiDeliveryArticleImage(authSession, aiDeliveryProjectId, articleImageId);
+    if (!response?.articleImage) return void res.status(404).json(aiDeliveryProjectNotFoundFailure());
+    res.json(success(response, { phase: "runtime", scope: "ai-delivery-article-images" }));
+  } catch {
+    res.status(500).json(failure("AI_DELIVERY_ARTICLE_IMAGE_RUNTIME_ERROR", "Article image could not be archived."));
   }
 };
 

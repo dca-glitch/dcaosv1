@@ -220,6 +220,44 @@ export interface AiDeliveryContentDraftInputRequest {
   notes?: string | null;
 }
 
+export interface AiDeliveryArticleImageSummary {
+  id: string;
+  aiDeliveryProjectId: string;
+  contentDraftId: string;
+  contentDraft: { id: string; title: string };
+  title: string;
+  prompt: string;
+  styleNotes: string | null;
+  status: string;
+  previewImageUrl: string | null;
+  finalImageUrl: string | null;
+  storageKey: string | null;
+  notes: string | null;
+  isArchived: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AiDeliveryArticleImagesResponse {
+  articleImages: AiDeliveryArticleImageSummary[];
+}
+
+export interface AiDeliveryArticleImageResponse {
+  articleImage: AiDeliveryArticleImageSummary | null;
+}
+
+export interface AiDeliveryArticleImageInputRequest {
+  contentDraftId?: string;
+  title?: string;
+  prompt?: string;
+  styleNotes?: string | null;
+  status?: string;
+  previewImageUrl?: string | null;
+  finalImageUrl?: string | null;
+  storageKey?: string | null;
+  notes?: string | null;
+}
+
 export interface TaskSummary {
   id: string;
   projectId: string | null;

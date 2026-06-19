@@ -133,3 +133,21 @@ Authenticated client-safe endpoints:
   - Requires a non-empty comment, sets draft status to `CHANGES_REQUESTED`, increments `revisionCount`, and stores `clientComment`.
 
 The client UI route is `#/content-draft-review` and requires the user to be signed in before loading reviewable drafts.
+
+## Admin article image foundation
+
+Admin/owner-only article image endpoints are scoped to an AI Delivery project and tenant. Article image requests are manually operated records linked to existing content drafts from the same AI Delivery project.
+
+- `GET /api/v1/core/ai-delivery-projects/:id/article-images`
+  - Lists manual article image request records for the AI Delivery project.
+- `POST /api/v1/core/ai-delivery-projects/:id/article-images`
+  - Body: `{ contentDraftId, title, prompt, styleNotes?, status, previewImageUrl?, finalImageUrl?, storageKey?, notes? }`
+  - Creates a manual article image request linked to an existing content draft.
+- `PUT /api/v1/core/ai-delivery-projects/:id/article-images/:imageId`
+  - Updates the linked content draft, title, prompt, style notes, status, preview URL, final URL, storage key, and notes.
+- `POST /api/v1/core/ai-delivery-projects/:id/article-images/:imageId/archive`
+  - Archives an article image request and sets status to `ARCHIVED`.
+
+Allowed runtime statuses: `DRAFT`, `READY_FOR_GENERATION`, `PREVIEW_READY`, `APPROVED`, `FINAL_READY`, `CHANGES_REQUESTED`, `ARCHIVED`.
+
+This block is admin-operated only. It does not add AI image generation, AI calls, upload buttons, R2 write/upload behavior, WordPress/export workflow, public/client review, or client approval links.

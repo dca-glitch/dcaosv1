@@ -101,6 +101,36 @@ export type AiDeliveryContentDraftFormValues = {
   notes: string;
 };
 
+export type AiDeliveryArticleImageSummary = {
+  id: string;
+  aiDeliveryProjectId: string;
+  contentDraftId: string;
+  contentDraft: { id: string; title: string };
+  title: string;
+  prompt: string;
+  styleNotes: string | null;
+  status: string;
+  previewImageUrl: string | null;
+  finalImageUrl: string | null;
+  storageKey: string | null;
+  notes: string | null;
+  isArchived: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type AiDeliveryArticleImageFormValues = {
+  contentDraftId: string;
+  title: string;
+  prompt: string;
+  styleNotes: string;
+  status: string;
+  previewImageUrl: string;
+  finalImageUrl: string;
+  storageKey: string;
+  notes: string;
+};
+
 type ContentPlanItemDraft = {
   localId: string;
   title: string;
@@ -153,6 +183,9 @@ export type AiDeliveryProjectsProps = {
   onSaveContentDraft?: (projectId: string, draftId: string | null, values: AiDeliveryContentDraftFormValues) => Promise<AiDeliveryContentDraftSummary | null>;
   onArchiveContentDraft?: (projectId: string, draftId: string) => Promise<AiDeliveryContentDraftSummary | null>;
   onRequestContentDraftReview?: (projectId: string, draftId: string) => Promise<AiDeliveryContentDraftSummary | null>;
+  onFetchArticleImages?: (projectId: string) => Promise<AiDeliveryArticleImageSummary[]>;
+  onSaveArticleImage?: (projectId: string, imageId: string | null, values: AiDeliveryArticleImageFormValues) => Promise<AiDeliveryArticleImageSummary | null>;
+  onArchiveArticleImage?: (projectId: string, imageId: string) => Promise<AiDeliveryArticleImageSummary | null>;
 };
 
 const emptyForm = (clientId = ""): AiDeliveryProjectFormValues => ({
@@ -185,6 +218,18 @@ const emptyContentDraft = (): AiDeliveryContentDraftFormValues => ({
   slug: "",
   draftBody: "",
   status: "DRAFT",
+  notes: ""
+});
+
+const emptyArticleImage = (): AiDeliveryArticleImageFormValues => ({
+  contentDraftId: "",
+  title: "",
+  prompt: "",
+  styleNotes: "",
+  status: "DRAFT",
+  previewImageUrl: "",
+  finalImageUrl: "",
+  storageKey: "",
   notes: ""
 });
 
@@ -223,7 +268,10 @@ export function AiDeliveryPage({
   onFetchContentDrafts,
   onSaveContentDraft,
   onArchiveContentDraft,
-  onRequestContentDraftReview
+  onRequestContentDraftReview,
+  onFetchArticleImages,
+  onSaveArticleImage,
+  onArchiveArticleImage
 }: AiDeliveryProjectsProps) {
   const [filter, setFilter] = useState<"all" | "active" | "archived">("active");
   const [editorProjectId, setEditorProjectId] = useState<string | null>(null);
@@ -260,11 +308,19 @@ export function AiDeliveryPage({
   const [contentDraftEditorId, setContentDraftEditorId] = useState<string | null>(null);
   const [contentDraftForm, setContentDraftForm] = useState<AiDeliveryContentDraftFormValues>(emptyContentDraft());
   const [contentDraftPlan, setContentDraftPlan] = useState<AiDeliveryContentPlanSummary | null>(null);
+  const [openArticleImagesId, setOpenArticleImagesId] = useState<string | null>(null);
+  const [articleImagesLoading, setArticleImagesLoading] = useState(false);
+  const [articleImagesSaving, setArticleImagesSaving] = useState(false);
+  const [articleImages, setArticleImages] = useState<AiDeliveryArticleImageSummary[]>([]);
+  const [articleImageEditorId, setArticleImageEditorId] = useState<string | null>(null);
+  const [articleImageForm, setArticleImageForm] = useState<AiDeliveryArticleImageFormValues>(emptyArticleImage());
+  const [articleImageDrafts, setArticleImageDrafts] = useState<AiDeliveryContentDraftSummary[]>([]);
 
   const selectedProject = useMemo(() => projects.find((p) => p.id === editorProjectId) ?? null, [editorProjectId, projects]);
   const openProject = useMemo(() => projects.find((p) => p.id === openBriefId) ?? null, [openBriefId, projects]);
   const openContentPlanProject = useMemo(() => projects.find((p) => p.id === openContentPlanId) ?? null, [openContentPlanId, projects]);
   const openContentDraftsProject = useMemo(() => projects.find((p) => p.id === openContentDraftsId) ?? null, [openContentDraftsId, projects]);
+  const openArticleImagesProject = useMemo(() => projects.find((p) => p.id === openArticleImagesId) ?? null, [openArticleImagesId, projects]);
 
   function openCreateModal() {
     setEditorProjectId(null);
@@ -479,6 +535,76 @@ export function AiDeliveryPage({
     setContentDraftPlan(null);
   }
 
+  async function openArticleImages(projectId: string) {
+    setOpenArticleImagesId(projectId);
+    setArticleImagesLoading(true);
+    setArticleImages([]);
+    setArticleImageDrafts([]);
+    setArticleImageEditorId(null);
+    setArticleImageForm(emptyArticleImage());
+    try {
+      const [images, drafts] = await Promise.all([
+        typeof onFetchArticleImages === "function" ? onFetchArticleImages(projectId) : Promise.resolve([]),
+        typeof onFetchContentDrafts === "function" ? onFetchContentDrafts(projectId) : Promise.resolve([])
+      ]);
+      const activeDrafts = drafts.filter((draftItem) => !draftItem.isArchived);
+      setArticleImages(images);
+      setArticleImageDrafts(activeDrafts);
+      setArticleImageForm((current) => ({ ...current, contentDraftId: activeDrafts[0]?.id ?? current.contentDraftId }));
+    } finally {
+      setArticleImagesLoading(false);
+    }
+  }
+
+  function editArticleImage(image: AiDeliveryArticleImageSummary) {
+    setArticleImageEditorId(image.id);
+    setArticleImageForm({
+      contentDraftId: image.contentDraftId,
+      title: image.title,
+      prompt: image.prompt,
+      styleNotes: image.styleNotes ?? "",
+      status: image.status,
+      previewImageUrl: image.previewImageUrl ?? "",
+      finalImageUrl: image.finalImageUrl ?? "",
+      storageKey: image.storageKey ?? "",
+      notes: image.notes ?? ""
+    });
+  }
+
+  async function saveArticleImage(projectId: string) {
+    if (typeof onSaveArticleImage !== "function") return;
+    setArticleImagesSaving(true);
+    try {
+      const saved = await onSaveArticleImage(projectId, articleImageEditorId, articleImageForm);
+      if (saved && typeof onFetchArticleImages === "function") {
+        setArticleImages(await onFetchArticleImages(projectId));
+        setArticleImageEditorId(null);
+        setArticleImageForm((current) => ({ ...emptyArticleImage(), contentDraftId: current.contentDraftId }));
+      }
+    } finally {
+      setArticleImagesSaving(false);
+    }
+  }
+
+  async function archiveArticleImage(projectId: string, imageId: string) {
+    if (typeof onArchiveArticleImage !== "function" || typeof onFetchArticleImages !== "function") return;
+    setArticleImagesSaving(true);
+    try {
+      await onArchiveArticleImage(projectId, imageId);
+      setArticleImages(await onFetchArticleImages(projectId));
+    } finally {
+      setArticleImagesSaving(false);
+    }
+  }
+
+  function closeArticleImages() {
+    setOpenArticleImagesId(null);
+    setArticleImages([]);
+    setArticleImageDrafts([]);
+    setArticleImageEditorId(null);
+    setArticleImageForm(emptyArticleImage());
+  }
+
   if (loading) return <LoadingState label="Loading AI delivery projects" />;
   if (error) return <ErrorState title="AI delivery unavailable" message={error} />;
 
@@ -548,6 +674,9 @@ export function AiDeliveryPage({
                       </button>
                       <button className="secondary-action" onClick={() => void openContentDrafts(p.id)} type="button">
                         Content drafts
+                      </button>
+                      <button className="secondary-action" onClick={() => void openArticleImages(p.id)} type="button">
+                        Article images
                       </button>
                       {!p.isArchived ? (
                         <button className="secondary-action" onClick={() => void onArchive(p.id)} type="button">
@@ -1068,6 +1197,118 @@ export function AiDeliveryPage({
                 ))}
               </section>
               <div className="modal-footer"><button className="secondary-action" onClick={closeContentDrafts} type="button">Close</button></div>
+            </div>
+          ) : <div>Project not found.</div>}
+        </Modal>
+      ) : null}
+      {openArticleImagesId ? (
+        <Modal onClose={closeArticleImages} title="Article Images">
+          {articleImagesLoading ? (
+            <LoadingState label="Loading article image requests" />
+          ) : openArticleImagesProject ? (
+            <div>
+              <section className="field-panel">
+                <h3>Image request editor</h3>
+                <p className="muted-text">Admin-operated image planning only. No AI generation, upload, R2 write, client review, or publishing action is available in this block.</p>
+                <div className="field-grid">
+                  <label>
+                    Linked content draft
+                    <select required value={articleImageForm.contentDraftId} onChange={(event) => setArticleImageForm((current) => ({ ...current, contentDraftId: event.target.value }))}>
+                      <option value="">Select draft</option>
+                      {articleImageDrafts.map((draftItem) => (
+                        <option key={draftItem.id} value={draftItem.id}>{draftItem.title}</option>
+                      ))}
+                    </select>
+                  </label>
+                  <label>
+                    Status
+                    <select value={articleImageForm.status} onChange={(event) => setArticleImageForm((current) => ({ ...current, status: event.target.value }))}>
+                      {(["DRAFT", "READY_FOR_GENERATION", "PREVIEW_READY", "APPROVED", "FINAL_READY", "CHANGES_REQUESTED", "ARCHIVED"] as const).map((status) => <option key={status} value={status}>{status}</option>)}
+                    </select>
+                  </label>
+                  <label className="field-span-2">
+                    Title
+                    <input maxLength={255} required value={articleImageForm.title} onChange={(event) => setArticleImageForm((current) => ({ ...current, title: event.target.value }))} />
+                  </label>
+                  <label className="field-span-2">
+                    Prompt
+                    <textarea maxLength={4000} required rows={5} value={articleImageForm.prompt} onChange={(event) => setArticleImageForm((current) => ({ ...current, prompt: event.target.value }))} />
+                  </label>
+                  <label className="field-span-2">
+                    Style notes
+                    <textarea maxLength={4000} rows={3} value={articleImageForm.styleNotes} onChange={(event) => setArticleImageForm((current) => ({ ...current, styleNotes: event.target.value }))} />
+                  </label>
+                  <label>
+                    Preview URL
+                    <input maxLength={2048} type="url" value={articleImageForm.previewImageUrl} onChange={(event) => setArticleImageForm((current) => ({ ...current, previewImageUrl: event.target.value }))} />
+                  </label>
+                  <label>
+                    Final URL
+                    <input maxLength={2048} type="url" value={articleImageForm.finalImageUrl} onChange={(event) => setArticleImageForm((current) => ({ ...current, finalImageUrl: event.target.value }))} />
+                  </label>
+                  <label className="field-span-2">
+                    Storage key
+                    <input maxLength={1024} value={articleImageForm.storageKey} onChange={(event) => setArticleImageForm((current) => ({ ...current, storageKey: event.target.value }))} />
+                  </label>
+                  <label className="field-span-2">
+                    Notes
+                    <textarea maxLength={4000} rows={3} value={articleImageForm.notes} onChange={(event) => setArticleImageForm((current) => ({ ...current, notes: event.target.value }))} />
+                  </label>
+                </div>
+                <div className="modal-footer">
+                  <button className="secondary-action" disabled={articleImagesSaving} onClick={() => { setArticleImageEditorId(null); setArticleImageForm((current) => ({ ...emptyArticleImage(), contentDraftId: current.contentDraftId })); }} type="button">New image request</button>
+                  <button className="primary-action" disabled={articleImagesSaving || !articleImageForm.contentDraftId || !articleImageForm.title.trim() || !articleImageForm.prompt.trim()} onClick={() => void saveArticleImage(openArticleImagesProject.id)} type="button">
+                    {articleImagesSaving ? "Saving" : articleImageEditorId ? "Save image request" : "Create image request"}
+                  </button>
+                </div>
+              </section>
+
+              <section className="field-panel">
+                <h3>Existing image requests</h3>
+                {articleImages.length === 0 ? <div className="state-panel">No article image requests have been created yet.</div> : null}
+                {articleImages.map((image) => (
+                  <article className="entity-card" key={image.id} style={{ marginBottom: "1rem" }}>
+                    <div className="entity-card-header">
+                      <div>
+                        <StatusBadge status={image.isArchived ? "Archived" : image.status} />
+                        <h3>{image.title}</h3>
+                        <p>{image.contentDraft ? `Linked to draft: ${image.contentDraft.title}` : "No linked draft"}</p>
+                      </div>
+                      <div className="card-actions">
+                        <button className="secondary-action" disabled={articleImagesSaving} onClick={() => editArticleImage(image)} type="button">Edit</button>
+                        {!image.isArchived ? <button className="secondary-action" disabled={articleImagesSaving} onClick={() => void archiveArticleImage(openArticleImagesProject.id, image.id)} type="button">Archive</button> : null}
+                      </div>
+                    </div>
+                    <dl className="brief-grid">
+                      <div>
+                        <dt>Preview URL</dt>
+                        <dd>{image.previewImageUrl || "Not set"}</dd>
+                      </div>
+                      <div>
+                        <dt>Final URL</dt>
+                        <dd>{image.finalImageUrl || "Not set"}</dd>
+                      </div>
+                      <div>
+                        <dt>Storage key</dt>
+                        <dd>{image.storageKey || "Not set"}</dd>
+                      </div>
+                      <div>
+                        <dt>Updated</dt>
+                        <dd>{formatOptionalDate(image.updatedAt)}</dd>
+                      </div>
+                      <div className="field-span-2">
+                        <dt>Prompt</dt>
+                        <dd>{image.prompt}</dd>
+                      </div>
+                      <div className="field-span-2">
+                        <dt>Notes</dt>
+                        <dd>{image.notes || "No notes"}</dd>
+                      </div>
+                    </dl>
+                  </article>
+                ))}
+              </section>
+              <div className="modal-footer"><button className="secondary-action" onClick={closeArticleImages} type="button">Close</button></div>
             </div>
           ) : <div>Project not found.</div>}
         </Modal>

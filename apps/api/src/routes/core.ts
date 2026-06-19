@@ -1,5 +1,6 @@
 import { Router } from "express";
 import {
+  archiveAiDeliveryArticleImageHandler,
   archiveAiDeliveryProjectHandler,
   archiveAiDeliveryContentDraftHandler,
   archiveBillHandler,
@@ -12,6 +13,7 @@ import {
   archiveTaskHandler,
   cancelInvoiceHandler,
   createAiDeliveryProjectHandler,
+  createAiDeliveryArticleImageHandler,
   createAiDeliveryContentDraftHandler,
   createCreditNoteHandler,
   createBillHandler,
@@ -32,6 +34,7 @@ import {
   getProjectHandler,
   getRecurringInvoiceHandler,
   getTaskHandler,
+  listAiDeliveryArticleImagesHandler,
   listAiDeliveryProjectsHandler,
   listAiDeliveryContentDraftsHandler,
   listClientAiDeliveryContentDraftReviewsHandler,
@@ -74,6 +77,7 @@ import {
   saveCompanyProfileHandler,
   issueCreditNoteHandler,
   updateAiDeliveryProjectHandler,
+  updateAiDeliveryArticleImageHandler,
   updateAiDeliveryContentDraftHandler,
   updateBillHandler,
   updateClientHandler,
@@ -133,6 +137,10 @@ export function createCoreRouter() {
   router.put("/ai-delivery-projects/:id/content-drafts/:draftId", requireAuth, requireTenant, requireRole("owner", "admin"), updateAiDeliveryContentDraftHandler);
   router.post("/ai-delivery-projects/:id/content-drafts/:draftId/archive", requireAuth, requireTenant, requireRole("owner", "admin"), archiveAiDeliveryContentDraftHandler);
   router.post("/ai-delivery-projects/:id/content-drafts/:draftId/request-client-review", requireAuth, requireTenant, requireRole("owner", "admin"), requestAiDeliveryContentDraftClientReviewHandler);
+  router.get("/ai-delivery-projects/:id/article-images", requireAuth, requireTenant, requireRole("owner", "admin"), listAiDeliveryArticleImagesHandler);
+  router.post("/ai-delivery-projects/:id/article-images", requireAuth, requireTenant, requireRole("owner", "admin"), createAiDeliveryArticleImageHandler);
+  router.put("/ai-delivery-projects/:id/article-images/:imageId", requireAuth, requireTenant, requireRole("owner", "admin"), updateAiDeliveryArticleImageHandler);
+  router.post("/ai-delivery-projects/:id/article-images/:imageId/archive", requireAuth, requireTenant, requireRole("owner", "admin"), archiveAiDeliveryArticleImageHandler);
   router.get("/ai-delivery-projects/:id/content-plan/client-review", requireAuth, requireTenant, getClientAiDeliveryContentPlanReviewHandler);
   router.post("/ai-delivery-projects/:id/content-plan/client-review/approve", requireAuth, requireTenant, approveClientAiDeliveryContentPlanReviewHandler);
   router.post("/ai-delivery-projects/:id/content-plan/client-review/request-revision", requireAuth, requireTenant, requestClientAiDeliveryContentPlanRevisionHandler);
