@@ -56,6 +56,19 @@ type CreditNoteStatus = "DRAFT" | "ISSUED" | "VOIDED";
 type PaymentMethod = "CASH" | "REVOLUT_BANK" | "WISE_BANK" | "REVOLUT_CARD" | "WISE_CARD" | "CARD_PROCESSOR" | "OTHER";
 type RecurringInvoiceInterval = "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY";
 type BillPaymentForm = "CASH" | "REVOLUT_BANK" | "WISE_BANK" | "REVOLUT_CARD" | "WISE_CARD" | "OTHER";
+type ClientUserAccessSummary = {
+  id: string;
+  clientId: string;
+  user: {
+    id: string;
+    email: string;
+    name: string | null;
+    status: string;
+  };
+  isArchived: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
 type AiDeliveryProjectDelegate = {
   findFirst: (args: unknown) => Promise<unknown>;
   findMany: (args: unknown) => Promise<unknown[]>;
@@ -321,6 +334,63 @@ function toTaskSummary(task: {
 
 function getActiveTenantId(authSession: AuthResolvedSessionContext): string | null {
   return authSession.tenantContext.activeMembership?.tenantId ?? null;
+}
+
+function userHasActiveTenantRole(authSession: AuthResolvedSessionContext, roles: string[]): boolean {
+  return Boolean(authSession.tenantContext.activeMembership?.roles.some((role) => roles.includes(role)));
+}
+
+function toClientUserAccessSummary(access: {
+  id: string;
+  clientId: string;
+  user: { id: string; email: string; name: string | null; status: string };
+  isArchived: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}): ClientUserAccessSummary {
+  return {
+    id: access.id,
+    clientId: access.clientId,
+    user: access.user,
+    isArchived: access.isArchived,
+    createdAt: access.createdAt.toISOString(),
+    updatedAt: access.updatedAt.toISOString()
+  };
+}
+
+export async function userCanAccessClient(
+  authSession: AuthResolvedSessionContext,
+  clientId: string
+): Promise<boolean> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) {
+    return false;
+  }
+
+  const client = await prisma.client.findFirst({
+    where: { id: clientId, tenantId },
+    select: { id: true }
+  });
+
+  if (!client) {
+    return false;
+  }
+
+  if (userHasActiveTenantRole(authSession, ["owner", "admin"])) {
+    return true;
+  }
+
+  const access = await prisma.clientUserAccess.findFirst({
+    where: {
+      tenantId,
+      clientId,
+      userId: authSession.user.id,
+      isArchived: false
+    },
+    select: { id: true }
+  });
+
+  return Boolean(access);
 }
 
 function toProjectStatus(value: string | undefined | null): string {
@@ -710,6 +780,145 @@ export async function restoreClient(
     return {
       client: toClientSummary(restored)
     };
+  });
+}
+
+export async function listClientUserAccess(
+  authSession: AuthResolvedSessionContext,
+  clientId: string
+): Promise<{ users: ClientUserAccessSummary[] } | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) {
+    return null;
+  }
+
+  const client = await prisma.client.findFirst({
+    where: { id: clientId, tenantId },
+    select: { id: true }
+  });
+
+  if (!client) {
+    return null;
+  }
+
+  const users = await prisma.clientUserAccess.findMany({
+    where: { tenantId, clientId, isArchived: false },
+    orderBy: { createdAt: "asc" },
+    select: {
+      id: true,
+      clientId: true,
+      isArchived: true,
+      createdAt: true,
+      updatedAt: true,
+      user: {
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          status: true
+        }
+      }
+    }
+  });
+
+  return { users: users.map(toClientUserAccessSummary) };
+}
+
+export async function linkClientUserAccess(
+  authSession: AuthResolvedSessionContext,
+  clientId: string,
+  userId: string
+): Promise<{ access: ClientUserAccessSummary } | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) {
+    return null;
+  }
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    const client = await tx.client.findFirst({
+      where: { id: clientId, tenantId },
+      select: { id: true }
+    });
+
+    if (!client) {
+      return null;
+    }
+
+    const membership = await tx.tenantMembership.findFirst({
+      where: { tenantId, userId, status: "ACTIVE" },
+      select: { id: true }
+    });
+
+    if (!membership) {
+      return null;
+    }
+
+    const access = await tx.clientUserAccess.upsert({
+      where: { tenantId_clientId_userId: { tenantId, clientId, userId } },
+      create: { tenantId, clientId, userId },
+      update: { isArchived: false },
+      select: {
+        id: true,
+        clientId: true,
+        isArchived: true,
+        createdAt: true,
+        updatedAt: true,
+        user: {
+          select: {
+            id: true,
+            email: true,
+            name: true,
+            status: true
+          }
+        }
+      }
+    });
+
+    return { access: toClientUserAccessSummary(access) };
+  });
+}
+
+export async function archiveClientUserAccess(
+  authSession: AuthResolvedSessionContext,
+  clientId: string,
+  userId: string
+): Promise<{ access: ClientUserAccessSummary } | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) {
+    return null;
+  }
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    const existing = await tx.clientUserAccess.findFirst({
+      where: { tenantId, clientId, userId },
+      select: { id: true }
+    });
+
+    if (!existing) {
+      return null;
+    }
+
+    const access = await tx.clientUserAccess.update({
+      where: { id: existing.id },
+      data: { isArchived: true },
+      select: {
+        id: true,
+        clientId: true,
+        isArchived: true,
+        createdAt: true,
+        updatedAt: true,
+        user: {
+          select: {
+            id: true,
+            email: true,
+            name: true,
+            status: true
+          }
+        }
+      }
+    });
+
+    return { access: toClientUserAccessSummary(access) };
   });
 }
 

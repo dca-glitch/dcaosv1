@@ -3,6 +3,7 @@ import {
   archiveAiDeliveryProjectHandler,
   archiveBillHandler,
   archiveClientHandler,
+  archiveClientUserAccessHandler,
   archiveInvoiceHandler,
   archiveInvoiceItemHandler,
   archiveProjectHandler,
@@ -31,6 +32,7 @@ import {
   getTaskHandler,
   listAiDeliveryProjectsHandler,
   listBillsHandler,
+  listClientUserAccessHandler,
   listClientsHandler,
   listInvoiceItemsHandler,
   listInvoicesHandler,
@@ -38,6 +40,7 @@ import {
   listRecurringInvoicesHandler,
   listTasksHandler,
   listVendorsHandler,
+  linkClientUserAccessHandler,
   requestAiDeliveryBriefClientInputHandler,
   requestAiDeliveryBriefClientRevisionHandler,
   approveFinalAiDeliveryBriefHandler,
@@ -83,6 +86,9 @@ export function createCoreRouter() {
 
   router.get("/clients", requireAuth, requireTenant, listClientsHandler);
   router.post("/clients", requireAuth, requireTenant, requireRole("owner", "admin"), createClientHandler);
+  router.get("/clients/:id/users", requireAuth, requireTenant, requireRole("owner", "admin"), listClientUserAccessHandler);
+  router.post("/clients/:id/users", requireAuth, requireTenant, requireRole("owner", "admin"), linkClientUserAccessHandler);
+  router.post("/clients/:id/users/:userId/archive", requireAuth, requireTenant, requireRole("owner", "admin"), archiveClientUserAccessHandler);
   router.get("/clients/:id", requireAuth, requireTenant, getClientHandler);
   router.put("/clients/:id", requireAuth, requireTenant, requireRole("owner", "admin"), updateClientHandler);
   router.post("/clients/:id/archive", requireAuth, requireTenant, requireRole("owner", "admin"), archiveClientHandler);

@@ -24,6 +24,7 @@ import type { AuthSessionLocals } from "../auth/types";
 import {
   archiveAiDeliveryProject,
   archiveClient,
+  archiveClientUserAccess,
   archiveBill,
   archiveInvoice,
   archiveProject,
@@ -43,6 +44,7 @@ import {
   createVendor,
   generateDueRecurringInvoice,
   listBills,
+  listClientUserAccess,
   getClient,
   getCompanyProfile,
   getBillDocumentDownload,
@@ -63,6 +65,7 @@ import {
   listRecurringInvoices,
   listTasks,
   listVendors,
+  linkClientUserAccess,
   markInvoicePaid,
   markInvoiceSent,
   markInvoiceUncollectible,
@@ -771,6 +774,86 @@ export const restoreClientHandler: RequestHandler = async (req, res) => {
     res.json(success(response, { phase: "runtime", scope: "core-module-skeleton" }));
   } catch {
     res.status(500).json(failure("CLIENT_RUNTIME_ERROR", "Client restore could not be completed."));
+  }
+};
+
+export const listClientUserAccessHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) {
+    res.status(401).json(unauthorizedFailure());
+    return;
+  }
+
+  const clientId = typeof req.params.id === "string" ? req.params.id.trim() : "";
+  if (!clientId) {
+    res.status(400).json(clientInvalidFailure());
+    return;
+  }
+
+  try {
+    const response = await listClientUserAccess(authSession, clientId);
+    if (!response) {
+      res.status(404).json(clientNotFoundFailure());
+      return;
+    }
+
+    res.json(success(response, { phase: "runtime", scope: "client-access-foundation" }));
+  } catch {
+    res.status(500).json(failure("CLIENT_ACCESS_RUNTIME_ERROR", "Client user access list could not be completed."));
+  }
+};
+
+export const linkClientUserAccessHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) {
+    res.status(401).json(unauthorizedFailure());
+    return;
+  }
+
+  const clientId = typeof req.params.id === "string" ? req.params.id.trim() : "";
+  const userId = getRequiredString(req.body?.userId, SHORT_TEXT_FIELD_MAX_LENGTH);
+  if (!clientId || !userId) {
+    res.status(400).json(clientInvalidFailure());
+    return;
+  }
+
+  try {
+    const response = await linkClientUserAccess(authSession, clientId, userId);
+    if (!response?.access) {
+      res.status(404).json(clientNotFoundFailure());
+      return;
+    }
+
+    res.status(201).json(success(response, { phase: "runtime", scope: "client-access-foundation" }));
+  } catch {
+    res.status(500).json(failure("CLIENT_ACCESS_RUNTIME_ERROR", "Client user access link could not be completed."));
+  }
+};
+
+export const archiveClientUserAccessHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) {
+    res.status(401).json(unauthorizedFailure());
+    return;
+  }
+
+  const clientId = typeof req.params.id === "string" ? req.params.id.trim() : "";
+  const userId = typeof req.params.userId === "string" ? req.params.userId.trim() : "";
+  if (!clientId || !userId) {
+    res.status(400).json(clientInvalidFailure());
+    return;
+  }
+
+  try {
+    const response = await archiveClientUserAccess(authSession, clientId, userId);
+    if (!response?.access) {
+      res.status(404).json(clientNotFoundFailure());
+      return;
+    }
+
+    res.json(success(response, { phase: "runtime", scope: "client-access-foundation" }));
+  } catch {
+    res.status(500).json(failure("CLIENT_ACCESS_RUNTIME_ERROR", "Client user access archive could not be completed."));
   }
 };
 

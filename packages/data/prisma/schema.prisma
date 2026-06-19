@@ -140,6 +140,7 @@ model Tenant {
   aiDeliveryBriefs     AiDeliveryBrief[]
   aiDeliveryContentPlans AiDeliveryContentPlan[]
   aiDeliveryContentPlanItems AiDeliveryContentPlanItem[]
+  clientUserAccesses   ClientUserAccess[]
 }
 
 model User {
@@ -160,6 +161,7 @@ model User {
   sessions                 Session[]
   auditLogs                AuditLog[]         @relation("UserAuditLogs")
   uploadedProjectDocuments ProjectDocument[]  @relation("ProjectDocumentUploadedBy")
+  clientUserAccesses       ClientUserAccess[]
 }
 
 model Session {
@@ -319,8 +321,32 @@ model Client {
   invoices          Invoice[]
   recurringInvoices RecurringInvoice[]
   aiDeliveryProjects AiDeliveryProject[]
+  userAccesses       ClientUserAccess[]
 
   @@index([tenantId])
+  @@index([tenantId, isArchived])
+}
+
+model ClientUserAccess {
+  id         String   @id @default(uuid())
+  tenantId   String
+  clientId   String
+  userId     String
+  isArchived Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, clientId, userId])
+  @@index([tenantId])
+  @@index([clientId])
+  @@index([userId])
+  @@index([isArchived])
+  @@index([tenantId, clientId])
+  @@index([tenantId, userId])
   @@index([tenantId, isArchived])
 }
 
@@ -829,4 +855,3 @@ model ProjectDocument {
   @@index([tenantId, isArchived])
   @@index([tenantId, documentDate])
 }
-
