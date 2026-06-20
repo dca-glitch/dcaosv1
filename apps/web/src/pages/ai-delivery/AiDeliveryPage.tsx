@@ -894,6 +894,7 @@ export function AiDeliveryPage({
                       projectId: null
                     }))
                   }
+                  required
                   value={draft.clientId}
                 >
                   <option value="">No client</option>
@@ -935,6 +936,7 @@ export function AiDeliveryPage({
                 <input
                   type="month"
                   onChange={(event) => setDraft((current) => ({ ...current, targetMonth: event.target.value }))}
+                  required
                   value={draft.targetMonth}
                 />
               </label>
