@@ -235,6 +235,23 @@ Allowed review statuses:
 - `APPROVED`
 - `ARCHIVED`
 
+Admin/owner-only runtime endpoints:
+
+- `GET /api/v1/core/ai-delivery-projects/:id/deliverables/:deliverableId/reviews`
+  - Lists admin/operator deliverable review placeholder records for the deliverable.
+  - Enforces tenant ownership and verifies the deliverable belongs to the AI Delivery project.
+  - Response: `{ deliverableReviews: [{ id, tenantId, aiDeliveryProjectId, deliverableId, workflowRunId?, status, reviewerName?, reviewNotes?, createdAt, updatedAt }] }`
+
+- `POST /api/v1/core/ai-delivery-projects/:id/deliverables/:deliverableId/reviews`
+  - Creates an admin/operator deliverable review placeholder.
+  - Body: `{ status?, reviewerName?, reviewNotes?, workflowRunId? }`
+  - Optional `workflowRunId` is accepted only when it belongs to the same tenant and AI Delivery project.
+
+- `PUT /api/v1/core/ai-delivery-projects/:id/deliverables/:deliverableId/reviews/:reviewId`
+  - Updates `status`, `reviewerName`, `reviewNotes`, and optional `workflowRunId` for an existing review placeholder.
+  - The review must belong to the same tenant, AI Delivery project, and deliverable.
+  - Optional `workflowRunId` is accepted only when it belongs to the same tenant and AI Delivery project.
+
 This is a local backend/data foundation only. It intentionally does not add client login, client portal routes, public review links, token approvals, real email sending, Resend integration, API key handling, external services, AI calls, crawling, WordPress, GA/GSC, deployment, or VPS behavior.
 
 Admin UX notes:

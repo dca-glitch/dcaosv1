@@ -118,7 +118,10 @@ import {
   listAiDeliveryDeliverables,
   createAiDeliveryDeliverable,
   updateAiDeliveryDeliverable,
-  archiveAiDeliveryDeliverable
+  archiveAiDeliveryDeliverable,
+  listAiDeliveryDeliverableReviews,
+  createAiDeliveryDeliverableReview,
+  updateAiDeliveryDeliverableReview
 } from "../core/core.runtime";
 import type {
   AiDeliveryArticleImageInputRequest,
@@ -138,6 +141,7 @@ import type {
   TaskInputRequest,
   VendorInputRequest,
   AiDeliveryDeliverableInputRequest,
+  AiDeliveryDeliverableReviewInputRequest,
   AiDeliveryDeliverableResponse,
   AiDeliveryDeliverablesResponse
 } from "../core/core.types";
@@ -151,6 +155,7 @@ const PROJECT_STATUSES = new Set(["Active", "Paused", "Completed", "Archived"]);
 const AI_DELIVERY_WORKFLOW_RUN_STATUSES = new Set(["DRAFT", "READY", "IN_PROGRESS", "REVIEW", "COMPLETED", "ARCHIVED"]);
 const AI_DELIVERY_CONTENT_DRAFT_STATUSES = new Set(["DRAFT", "READY_FOR_REVIEW", "APPROVED", "CHANGES_REQUESTED", "ARCHIVED"]);
 const AI_DELIVERY_ARTICLE_IMAGE_STATUSES = new Set(["DRAFT", "READY_FOR_GENERATION", "PREVIEW_READY", "APPROVED", "FINAL_READY", "CHANGES_REQUESTED", "ARCHIVED"]);
+const AI_DELIVERY_DELIVERABLE_REVIEW_STATUSES = new Set(["NOT_STARTED", "ADMIN_REVIEW", "CHANGES_REQUESTED", "APPROVED", "ARCHIVED"]);
 
 function getAuthSession(resLocals: unknown) {
   return (resLocals as AuthSessionLocals | undefined)?.authSession;
@@ -686,6 +691,23 @@ function getTaskInput(body: unknown): TaskInputRequest | null {
     status,
     dueDate: dueDate?.toISOString() ?? null,
     recurringType
+  };
+}
+
+function getAiDeliveryDeliverableReviewInput(body: unknown): AiDeliveryDeliverableReviewInputRequest | null {
+  const value = (body ?? {}) as Record<string, unknown>;
+  const status = typeof value.status === "string" ? value.status.trim().toUpperCase() : undefined;
+  if (status && !AI_DELIVERY_DELIVERABLE_REVIEW_STATUSES.has(status)) {
+    return null;
+  }
+
+  return {
+    status,
+    reviewerName: getOptionalString(value.reviewerName, SHORT_TEXT_FIELD_MAX_LENGTH),
+    reviewNotes: getOptionalString(value.reviewNotes, TEXT_FIELD_MAX_LENGTH),
+    deliverableId: getOptionalString(value.deliverableId, SHORT_TEXT_FIELD_MAX_LENGTH),
+    aiDeliveryProjectId: getOptionalString(value.aiDeliveryProjectId, SHORT_TEXT_FIELD_MAX_LENGTH),
+    workflowRunId: getOptionalString(value.workflowRunId, SHORT_TEXT_FIELD_MAX_LENGTH)
   };
 }
 
@@ -1786,6 +1808,57 @@ export const archiveAiDeliveryDeliverableHandler: RequestHandler = async (req, r
     res.json(success(response, { phase: "runtime", scope: "ai-delivery-deliverables" }));
   } catch {
     res.status(500).json(failure("AI_DELIVERY_DELIVERABLE_RUNTIME_ERROR", "Deliverable could not be archived."));
+  }
+};
+
+export const listAiDeliveryDeliverableReviewsHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  const aiDeliveryProjectId = typeof req.params.id === "string" ? req.params.id.trim() : "";
+  const deliverableId = typeof req.params.deliverableId === "string" ? req.params.deliverableId.trim() : "";
+  if (!authSession) return void res.status(401).json(unauthorizedFailure());
+  if (!aiDeliveryProjectId || !deliverableId) return void res.status(400).json(aiDeliveryProjectInvalidFailure());
+
+  try {
+    const response = await listAiDeliveryDeliverableReviews(authSession, aiDeliveryProjectId, deliverableId);
+    if (!response) return void res.status(404).json(aiDeliveryProjectNotFoundFailure());
+    res.json(success(response, { phase: "runtime", scope: "ai-delivery-deliverable-reviews" }));
+  } catch {
+    res.status(500).json(failure("AI_DELIVERY_DELIVERABLE_REVIEW_RUNTIME_ERROR", "Deliverable reviews could not be listed."));
+  }
+};
+
+export const createAiDeliveryDeliverableReviewHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  const aiDeliveryProjectId = typeof req.params.id === "string" ? req.params.id.trim() : "";
+  const deliverableId = typeof req.params.deliverableId === "string" ? req.params.deliverableId.trim() : "";
+  const input = getAiDeliveryDeliverableReviewInput(req.body);
+  if (!authSession) return void res.status(401).json(unauthorizedFailure());
+  if (!aiDeliveryProjectId || !deliverableId || !input) return void res.status(400).json(aiDeliveryProjectInvalidFailure());
+
+  try {
+    const response = await createAiDeliveryDeliverableReview(authSession, aiDeliveryProjectId, deliverableId, input);
+    if (!response?.deliverableReview) return void res.status(404).json(aiDeliveryProjectNotFoundFailure());
+    res.status(201).json(success(response, { phase: "runtime", scope: "ai-delivery-deliverable-reviews" }));
+  } catch {
+    res.status(500).json(failure("AI_DELIVERY_DELIVERABLE_REVIEW_RUNTIME_ERROR", "Deliverable review could not be created."));
+  }
+};
+
+export const updateAiDeliveryDeliverableReviewHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  const aiDeliveryProjectId = typeof req.params.id === "string" ? req.params.id.trim() : "";
+  const deliverableId = typeof req.params.deliverableId === "string" ? req.params.deliverableId.trim() : "";
+  const reviewId = typeof req.params.reviewId === "string" ? req.params.reviewId.trim() : "";
+  const input = getAiDeliveryDeliverableReviewInput(req.body);
+  if (!authSession) return void res.status(401).json(unauthorizedFailure());
+  if (!aiDeliveryProjectId || !deliverableId || !reviewId || !input) return void res.status(400).json(aiDeliveryProjectInvalidFailure());
+
+  try {
+    const response = await updateAiDeliveryDeliverableReview(authSession, aiDeliveryProjectId, deliverableId, reviewId, input);
+    if (!response?.deliverableReview) return void res.status(404).json(aiDeliveryProjectNotFoundFailure());
+    res.json(success(response, { phase: "runtime", scope: "ai-delivery-deliverable-reviews" }));
+  } catch {
+    res.status(500).json(failure("AI_DELIVERY_DELIVERABLE_REVIEW_RUNTIME_ERROR", "Deliverable review could not be updated."));
   }
 };
 

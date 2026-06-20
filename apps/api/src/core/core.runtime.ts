@@ -16,6 +16,9 @@ import type {
   AiDeliveryDeliverableInputRequest,
   AiDeliveryDeliverableResponse,
   AiDeliveryDeliverablesResponse,
+  AiDeliveryDeliverableReviewInputRequest,
+  AiDeliveryDeliverableReviewResponse,
+  AiDeliveryDeliverableReviewsResponse,
   BillDocumentUploadRequest,
   BillInputRequest,
   BillResponse,
@@ -70,6 +73,7 @@ type AiDeliveryArticleImageStatus = "DRAFT" | "READY_FOR_GENERATION" | "PREVIEW_
 // Deliverable types for AI Delivery
 type AiDeliveryDeliverableDeliveryType = "CONTENT_PACKAGE" | "ARTICLE_DRAFT" | "ARTICLE_IMAGE" | "CLIENT_HANDOFF" | "OTHER";
 type AiDeliveryDeliverableStatus = "DRAFT" | "READY" | "DELIVERED" | "REVISION_REQUESTED" | "ACCEPTED" | "ARCHIVED";
+type AiDeliveryDeliverableReviewStatus = "NOT_STARTED" | "ADMIN_REVIEW" | "CHANGES_REQUESTED" | "APPROVED" | "ARCHIVED";
 type CreditNoteStatus = "DRAFT" | "ISSUED" | "VOIDED";
 type PaymentMethod = "CASH" | "REVOLUT_BANK" | "WISE_BANK" | "REVOLUT_CARD" | "WISE_CARD" | "CARD_PROCESSOR" | "OTHER";
 type RecurringInvoiceInterval = "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY";
@@ -5132,5 +5136,153 @@ export async function archiveAiDeliveryDeliverable(
     });
 
     return { deliverable: toAiDeliveryDeliverableSummary(archived) };
+  });
+}
+
+// AiDeliveryDeliverableReview runtime functions
+function getAiDeliveryDeliverableReviewDelegate(client: PrismaTx | typeof prisma) {
+  return (client as unknown as { aiDeliveryDeliverableReview: { findFirst: (args: unknown) => Promise<unknown>; findMany: (args: unknown) => Promise<unknown[]>; create: (args: unknown) => Promise<unknown>; update: (args: unknown) => Promise<unknown>; } }).aiDeliveryDeliverableReview;
+}
+
+const aiDeliveryDeliverableReviewSelect = {
+  id: true,
+  tenantId: true,
+  aiDeliveryProjectId: true,
+  deliverableId: true,
+  workflowRunId: true,
+  status: true,
+  reviewerName: true,
+  reviewNotes: true,
+  createdAt: true,
+  updatedAt: true
+} as const;
+
+function normalizeAiDeliveryDeliverableReviewStatus(value: string | null | undefined): AiDeliveryDeliverableReviewStatus {
+  const v = value ? value.trim().toUpperCase() : null;
+  return v && ["NOT_STARTED", "ADMIN_REVIEW", "CHANGES_REQUESTED", "APPROVED", "ARCHIVED"].includes(v) ? (v as AiDeliveryDeliverableReviewStatus) : "NOT_STARTED";
+}
+
+function toAiDeliveryDeliverableReviewSummary(review: any) {
+  return {
+    id: review.id,
+    tenantId: review.tenantId,
+    aiDeliveryProjectId: review.aiDeliveryProjectId,
+    deliverableId: review.deliverableId,
+    workflowRunId: review.workflowRunId ?? null,
+    status: review.status,
+    reviewerName: review.reviewerName ?? null,
+    reviewNotes: review.reviewNotes ?? null,
+    createdAt: review.createdAt.toISOString(),
+    updatedAt: review.updatedAt.toISOString()
+  };
+}
+
+async function getAiDeliveryProjectDeliverable(tx: PrismaTx, tenantId: string, aiDeliveryProjectId: string, deliverableId: string) {
+  const project = await tx.aiDeliveryProject.findFirst({ where: { id: aiDeliveryProjectId, tenantId, isArchived: false }, select: { id: true } });
+  if (!project) return null;
+
+  return getAiDeliveryDeliverableDelegate(tx).findFirst({ where: { id: deliverableId, tenantId, aiDeliveryProjectId }, select: { id: true } });
+}
+
+async function getAiDeliveryProjectWorkflowRun(tx: PrismaTx, tenantId: string, aiDeliveryProjectId: string, workflowRunId: string) {
+  return getAiDeliveryWorkflowRunDelegate(tx).findFirst({ where: { id: workflowRunId, tenantId, aiDeliveryProjectId }, select: { id: true } });
+}
+
+export async function listAiDeliveryDeliverableReviews(
+  authSession: AuthResolvedSessionContext,
+  aiDeliveryProjectId: string,
+  deliverableId: string
+): Promise<AiDeliveryDeliverableReviewsResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) return null;
+
+  const deliverable = await prisma.$transaction((tx: PrismaTx) => getAiDeliveryProjectDeliverable(tx, tenantId, aiDeliveryProjectId, deliverableId));
+  if (!deliverable) return null;
+
+  const deliverableReviews = await getAiDeliveryDeliverableReviewDelegate(prisma).findMany({
+    where: { tenantId, aiDeliveryProjectId, deliverableId },
+    orderBy: { createdAt: "asc" },
+    select: aiDeliveryDeliverableReviewSelect
+  });
+
+  return { deliverableReviews: deliverableReviews.map(toAiDeliveryDeliverableReviewSummary) };
+}
+
+export async function createAiDeliveryDeliverableReview(
+  authSession: AuthResolvedSessionContext,
+  aiDeliveryProjectId: string,
+  deliverableId: string,
+  input: AiDeliveryDeliverableReviewInputRequest
+): Promise<AiDeliveryDeliverableReviewResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) return null;
+  if ((input.aiDeliveryProjectId && input.aiDeliveryProjectId !== aiDeliveryProjectId) || (input.deliverableId && input.deliverableId !== deliverableId)) return null;
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    const deliverable = await getAiDeliveryProjectDeliverable(tx, tenantId, aiDeliveryProjectId, deliverableId);
+    if (!deliverable) return null;
+
+    const workflowRunId = toNullableString(input.workflowRunId);
+    if (workflowRunId) {
+      const workflowRun = await getAiDeliveryProjectWorkflowRun(tx, tenantId, aiDeliveryProjectId, workflowRunId);
+      if (!workflowRun) return null;
+    }
+
+    const created = await getAiDeliveryDeliverableReviewDelegate(tx).create({
+      data: {
+        tenantId,
+        aiDeliveryProjectId,
+        deliverableId,
+        workflowRunId,
+        status: normalizeAiDeliveryDeliverableReviewStatus(input.status),
+        reviewerName: toNullableString(input.reviewerName),
+        reviewNotes: toNullableString(input.reviewNotes)
+      },
+      select: aiDeliveryDeliverableReviewSelect
+    });
+
+    return { deliverableReview: toAiDeliveryDeliverableReviewSummary(created) };
+  });
+}
+
+export async function updateAiDeliveryDeliverableReview(
+  authSession: AuthResolvedSessionContext,
+  aiDeliveryProjectId: string,
+  deliverableId: string,
+  reviewId: string,
+  input: AiDeliveryDeliverableReviewInputRequest
+): Promise<AiDeliveryDeliverableReviewResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) return null;
+  if ((input.aiDeliveryProjectId && input.aiDeliveryProjectId !== aiDeliveryProjectId) || (input.deliverableId && input.deliverableId !== deliverableId)) return null;
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    const deliverable = await getAiDeliveryProjectDeliverable(tx, tenantId, aiDeliveryProjectId, deliverableId);
+    if (!deliverable) return null;
+
+    const existing = await getAiDeliveryDeliverableReviewDelegate(tx).findFirst({ where: { id: reviewId, tenantId, aiDeliveryProjectId, deliverableId }, select: aiDeliveryDeliverableReviewSelect }) as any;
+    if (!existing) return null;
+
+    let workflowRunId: string | null | undefined;
+    if (input.workflowRunId !== undefined) {
+      workflowRunId = toNullableString(input.workflowRunId);
+      if (workflowRunId) {
+        const workflowRun = await getAiDeliveryProjectWorkflowRun(tx, tenantId, aiDeliveryProjectId, workflowRunId);
+        if (!workflowRun) return null;
+      }
+    }
+
+    const updated = await getAiDeliveryDeliverableReviewDelegate(tx).update({
+      where: { id: reviewId },
+      data: {
+        status: input.status ? normalizeAiDeliveryDeliverableReviewStatus(input.status) : existing.status,
+        reviewerName: input.reviewerName === undefined ? existing.reviewerName : toNullableString(input.reviewerName),
+        reviewNotes: input.reviewNotes === undefined ? existing.reviewNotes : toNullableString(input.reviewNotes),
+        ...(workflowRunId !== undefined ? { workflowRunId } : {})
+      },
+      select: aiDeliveryDeliverableReviewSelect
+    });
+
+    return { deliverableReview: toAiDeliveryDeliverableReviewSummary(updated) };
   });
 }

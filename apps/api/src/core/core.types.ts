@@ -720,3 +720,33 @@ export interface AiDeliveryDeliverableInputRequest {
   storageKey?: string | null;
   notes?: string | null;
 }
+
+export interface AiDeliveryDeliverableReviewSummary {
+  id: string;
+  tenantId: string;
+  aiDeliveryProjectId: string;
+  deliverableId: string;
+  workflowRunId?: string | null;
+  status: string;
+  reviewerName?: string | null;
+  reviewNotes?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AiDeliveryDeliverableReviewsResponse {
+  deliverableReviews: AiDeliveryDeliverableReviewSummary[];
+}
+
+export interface AiDeliveryDeliverableReviewResponse {
+  deliverableReview: AiDeliveryDeliverableReviewSummary | null;
+}
+
+export interface AiDeliveryDeliverableReviewInputRequest {
+  status?: string;
+  reviewerName?: string | null;
+  reviewNotes?: string | null;
+  deliverableId?: string | null;
+  aiDeliveryProjectId?: string | null;
+  workflowRunId?: string | null;
+}
