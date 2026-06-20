@@ -733,10 +733,6 @@ export function AiDeliveryPage({
     return true;
   });
 
-  if (!projects || projects.length === 0) {
-    return <EmptyState title="No AI delivery projects" message="No AI delivery projects found for this tenant." />;
-  }
-
   return (
     <section className="view-section" aria-labelledby="ai-delivery-title">
       <div className="section-header">
@@ -758,7 +754,7 @@ export function AiDeliveryPage({
               </button>
             ))}
           </div>
-          {canEdit ? (
+          {canEdit && projects.length > 0 ? (
             <button className="primary-action" onClick={openCreateModal} type="button">
               Add AI Delivery
             </button>
@@ -767,7 +763,17 @@ export function AiDeliveryPage({
       </div>
 
       {filteredProjects.length === 0 ? (
-        <EmptyState message="No AI delivery projects match the current filter." title="No AI delivery projects" />
+        <EmptyState
+          action={
+            canEdit && projects.length === 0 ? (
+              <button className="primary-action" onClick={openCreateModal} type="button">
+                Add AI Delivery
+              </button>
+            ) : null
+          }
+          message={projects.length === 0 ? "No AI delivery projects found for this tenant." : "No AI delivery projects match the current filter."}
+          title="No AI delivery projects"
+        />
       ) : (
         <div className="entity-grid">
           {filteredProjects.map((p) => (
