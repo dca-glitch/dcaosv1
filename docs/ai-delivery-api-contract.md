@@ -8,6 +8,46 @@ Backend routes currently expected:
 - POST /api/v1/core/ai-delivery-projects
 - PUT /api/v1/core/ai-delivery-projects/:id
 - POST /api/v1/core/ai-delivery-projects/:id/archive
+- GET /api/v1/core/ai-delivery-projects/:id/brief
+- PUT /api/v1/core/ai-delivery-projects/:id/brief
+- POST /api/v1/core/ai-delivery-projects/:id/brief/request-client-input
+- POST /api/v1/core/ai-delivery-projects/:id/brief/request-client-revision
+- POST /api/v1/core/ai-delivery-projects/:id/brief/approve-final
+
+Project response summary fields:
+
+- id
+- clientId and client { id, name }
+- optional projectId and project { id, name }
+- name
+- targetMonth as `YYYY-MM`
+- plannedContentScopeNotes
+- isArchived
+- brief summary { id, status, createdAt, updatedAt }
+- createdAt, updatedAt
+
+Admin brief detail fields:
+
+- status
+- clientPriorities
+- productsServicesFocus
+- targetAudience
+- marketsCompetitors
+- notes
+- revisionCount
+- submittedAt
+- revisionRequestedAt
+- revisedAt
+- approvedAt
+- createdAt, updatedAt
+
+Admin brief update body:
+
+- clientPriorities optional
+- productsServicesFocus optional
+- targetAudience optional
+- marketsCompetitors optional
+- notes optional
 
 Admin form fields:
 
