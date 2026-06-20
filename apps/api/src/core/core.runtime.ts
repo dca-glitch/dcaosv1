@@ -10,6 +10,9 @@ import type {
   AiDeliveryProjectInputRequest,
   AiDeliveryProjectResponse,
   AiDeliveryProjectsResponse,
+  AiDeliveryWorkflowRunInputRequest,
+  AiDeliveryWorkflowRunResponse,
+  AiDeliveryWorkflowRunsResponse,
   AiDeliveryDeliverableInputRequest,
   AiDeliveryDeliverableResponse,
   AiDeliveryDeliverablesResponse,
@@ -61,6 +64,7 @@ type TaskPriority = "LOW" | "NORMAL" | "HIGH";
 type TaskStatus = "TODO" | "IN_PROGRESS" | "DONE";
 type TaskRecurringType = "NONE" | "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY";
 type InvoiceStatus = "DRAFT" | "ISSUED" | "PAID" | "VOIDED" | "UNCOLLECTIBLE";
+type AiDeliveryWorkflowRunStatus = "DRAFT" | "READY" | "IN_PROGRESS" | "REVIEW" | "COMPLETED" | "ARCHIVED";
 type AiDeliveryContentDraftStatus = "DRAFT" | "READY_FOR_REVIEW" | "APPROVED" | "CHANGES_REQUESTED" | "ARCHIVED";
 type AiDeliveryArticleImageStatus = "DRAFT" | "READY_FOR_GENERATION" | "PREVIEW_READY" | "APPROVED" | "FINAL_READY" | "CHANGES_REQUESTED" | "ARCHIVED";
 // Deliverable types for AI Delivery
@@ -2585,6 +2589,144 @@ export async function approveFinalAiDeliveryBrief(
     return {
       aiDeliveryProject: toAiDeliveryProjectSummary(updated as Parameters<typeof toAiDeliveryProjectSummary>[0])
     };
+  });
+}
+
+function getAiDeliveryWorkflowRunDelegate(client: PrismaTx | typeof prisma) {
+  return (client as unknown as { aiDeliveryWorkflowRun: { findFirst: (args: unknown) => Promise<unknown>; findMany: (args: unknown) => Promise<unknown[]>; create: (args: unknown) => Promise<unknown>; update: (args: unknown) => Promise<unknown>; } }).aiDeliveryWorkflowRun;
+}
+
+const aiDeliveryWorkflowRunSelect = {
+  id: true,
+  tenantId: true,
+  aiDeliveryProjectId: true,
+  status: true,
+  adminNotes: true,
+  resultPlaceholder: true,
+  createdAt: true,
+  updatedAt: true,
+  aiDeliveryProject: {
+    select: {
+      brief: {
+        select: {
+          id: true,
+          status: true,
+          createdAt: true,
+          updatedAt: true
+        }
+      }
+    }
+  }
+} as const;
+
+function normalizeAiDeliveryWorkflowRunStatus(value: string | null | undefined): AiDeliveryWorkflowRunStatus {
+  const status = value ? value.trim().toUpperCase() : null;
+  return status && ["DRAFT", "READY", "IN_PROGRESS", "REVIEW", "COMPLETED", "ARCHIVED"].includes(status)
+    ? (status as AiDeliveryWorkflowRunStatus)
+    : "DRAFT";
+}
+
+function toAiDeliveryWorkflowRunSummary(run: any) {
+  const brief = run.aiDeliveryProject?.brief ?? null;
+  return {
+    id: run.id,
+    tenantId: run.tenantId,
+    aiDeliveryProjectId: run.aiDeliveryProjectId,
+    status: run.status,
+    adminNotes: run.adminNotes ?? null,
+    resultPlaceholder: run.resultPlaceholder ?? null,
+    brief: brief
+      ? {
+          id: brief.id,
+          status: brief.status,
+          createdAt: brief.createdAt.toISOString(),
+          updatedAt: brief.updatedAt.toISOString()
+        }
+      : null,
+    createdAt: run.createdAt.toISOString(),
+    updatedAt: run.updatedAt.toISOString()
+  };
+}
+
+export async function listAiDeliveryWorkflowRuns(
+  authSession: AuthResolvedSessionContext,
+  aiDeliveryProjectId: string
+): Promise<AiDeliveryWorkflowRunsResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) return null;
+
+  const project = await prisma.aiDeliveryProject.findFirst({
+    where: { id: aiDeliveryProjectId, tenantId, isArchived: false },
+    select: { id: true }
+  });
+  if (!project) return null;
+
+  const workflowRuns = await getAiDeliveryWorkflowRunDelegate(prisma).findMany({
+    where: { tenantId, aiDeliveryProjectId },
+    orderBy: { createdAt: "desc" },
+    select: aiDeliveryWorkflowRunSelect
+  });
+
+  return { workflowRuns: workflowRuns.map(toAiDeliveryWorkflowRunSummary) };
+}
+
+export async function createAiDeliveryWorkflowRun(
+  authSession: AuthResolvedSessionContext,
+  aiDeliveryProjectId: string,
+  input: AiDeliveryWorkflowRunInputRequest
+): Promise<AiDeliveryWorkflowRunResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) return null;
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    const project = await tx.aiDeliveryProject.findFirst({
+      where: { id: aiDeliveryProjectId, tenantId, isArchived: false },
+      select: { id: true, brief: { select: { id: true } } }
+    });
+    if (!project?.brief) return null;
+
+    const created = await getAiDeliveryWorkflowRunDelegate(tx).create({
+      data: {
+        tenantId,
+        aiDeliveryProjectId: project.id,
+        status: normalizeAiDeliveryWorkflowRunStatus(input.status),
+        adminNotes: toNullableString(input.adminNotes),
+        resultPlaceholder: toNullableString(input.resultPlaceholder)
+      },
+      select: aiDeliveryWorkflowRunSelect
+    });
+
+    return { workflowRun: toAiDeliveryWorkflowRunSummary(created) };
+  });
+}
+
+export async function updateAiDeliveryWorkflowRun(
+  authSession: AuthResolvedSessionContext,
+  aiDeliveryProjectId: string,
+  workflowRunId: string,
+  input: AiDeliveryWorkflowRunInputRequest
+): Promise<AiDeliveryWorkflowRunResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) return null;
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    const existing = await getAiDeliveryWorkflowRunDelegate(tx).findFirst({
+      where: { id: workflowRunId, tenantId, aiDeliveryProjectId },
+      select: aiDeliveryWorkflowRunSelect
+    }) as any;
+    if (!existing) return null;
+
+    const updated = await getAiDeliveryWorkflowRunDelegate(tx).update({
+      where: { id: workflowRunId },
+      data: {
+        status: normalizeAiDeliveryWorkflowRunStatus(input.status ?? existing.status),
+        adminNotes: toNullableString(input.adminNotes),
+        resultPlaceholder: toNullableString(input.resultPlaceholder)
+      },
+      select: aiDeliveryWorkflowRunSelect
+    });
+
+    return { workflowRun: toAiDeliveryWorkflowRunSummary(updated) };
   });
 }
 

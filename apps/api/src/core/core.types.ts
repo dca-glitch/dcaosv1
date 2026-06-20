@@ -184,6 +184,32 @@ export interface AiDeliveryProjectInputRequest {
   plannedContentScopeNotes?: string | null;
 }
 
+export interface AiDeliveryWorkflowRunSummary {
+  id: string;
+  tenantId: string;
+  aiDeliveryProjectId: string;
+  status: string;
+  adminNotes: string | null;
+  resultPlaceholder: string | null;
+  brief: AiDeliveryBriefSummary | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AiDeliveryWorkflowRunsResponse {
+  workflowRuns: AiDeliveryWorkflowRunSummary[];
+}
+
+export interface AiDeliveryWorkflowRunResponse {
+  workflowRun: AiDeliveryWorkflowRunSummary | null;
+}
+
+export interface AiDeliveryWorkflowRunInputRequest {
+  status?: string;
+  adminNotes?: string | null;
+  resultPlaceholder?: string | null;
+}
+
 export interface AiDeliveryContentDraftSummary {
   id: string;
   aiDeliveryProjectId: string;

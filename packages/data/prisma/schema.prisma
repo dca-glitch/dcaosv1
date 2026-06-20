@@ -143,6 +143,7 @@ model Tenant {
   aiDeliveryContentDrafts AiDeliveryContentDraft[]
   aiDeliveryArticleImages AiDeliveryArticleImage[]
   aiDeliveryDeliverables AiDeliveryDeliverable[]
+  aiDeliveryWorkflowRuns AiDeliveryWorkflowRun[]
   clientUserAccesses   ClientUserAccess[]
 }
 
@@ -398,6 +399,7 @@ model AiDeliveryProject {
   contentDrafts AiDeliveryContentDraft[]
   articleImages AiDeliveryArticleImage[]
   deliverables AiDeliveryDeliverable[]
+  workflowRuns AiDeliveryWorkflowRun[]
 
   @@index([tenantId])
   @@index([tenantId, isArchived])
@@ -595,6 +597,34 @@ model AiDeliveryDeliverable {
   @@index([tenantId, isArchived])
   @@index([tenantId, contentDraftId])
   @@index([tenantId, articleImageId])
+}
+
+enum AiDeliveryWorkflowRunStatus {
+  DRAFT
+  READY
+  IN_PROGRESS
+  REVIEW
+  COMPLETED
+  ARCHIVED
+}
+
+model AiDeliveryWorkflowRun {
+  id                  String                      @id @default(uuid())
+  tenantId            String
+  aiDeliveryProjectId String
+  status              AiDeliveryWorkflowRunStatus @default(DRAFT)
+  adminNotes          String?
+  resultPlaceholder   String?
+  createdAt           DateTime                    @default(now())
+  updatedAt           DateTime                    @updatedAt
+
+  tenant              Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  aiDeliveryProject   AiDeliveryProject @relation(fields: [aiDeliveryProjectId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([tenantId, aiDeliveryProjectId])
+  @@index([tenantId, status])
+  @@index([createdAt])
 }
 
 model Task {

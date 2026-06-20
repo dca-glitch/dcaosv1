@@ -38,6 +38,7 @@ import {
   createAiDeliveryArticleImage,
   createAiDeliveryContentDraft,
   createAiDeliveryProject,
+  createAiDeliveryWorkflowRun,
   createClient,
   createCreditNote,
   createInvoice,
@@ -60,6 +61,7 @@ import {
   getTask,
   listAiDeliveryArticleImages,
   listAiDeliveryProjects,
+  listAiDeliveryWorkflowRuns,
   listInvoices,
   listInvoiceItems,
   issueCreditNote,
@@ -83,6 +85,7 @@ import {
   saveCompanyProfile,
   updateAiDeliveryArticleImage,
   updateAiDeliveryProject,
+  updateAiDeliveryWorkflowRun,
   updateBill,
   updateClient,
   updateInvoiceItem,
@@ -145,6 +148,7 @@ const LOGO_URL_MAX_LENGTH = 2048;
 const NAME_MAX_LENGTH = 255;
 const CLIENT_COUNTRIES = new Set(["Indonesia", "Poland", "United States", "United Kingdom", "Singapore", "Australia"]);
 const PROJECT_STATUSES = new Set(["Active", "Paused", "Completed", "Archived"]);
+const AI_DELIVERY_WORKFLOW_RUN_STATUSES = new Set(["DRAFT", "READY", "IN_PROGRESS", "REVIEW", "COMPLETED", "ARCHIVED"]);
 const AI_DELIVERY_CONTENT_DRAFT_STATUSES = new Set(["DRAFT", "READY_FOR_REVIEW", "APPROVED", "CHANGES_REQUESTED", "ARCHIVED"]);
 const AI_DELIVERY_ARTICLE_IMAGE_STATUSES = new Set(["DRAFT", "READY_FOR_GENERATION", "PREVIEW_READY", "APPROVED", "FINAL_READY", "CHANGES_REQUESTED", "ARCHIVED"]);
 
@@ -374,6 +378,21 @@ function getAiDeliveryArticleImageInput(body: unknown): AiDeliveryArticleImageIn
     finalImageUrl: getOptionalUrl(value.finalImageUrl),
     storageKey: getOptionalString(value.storageKey, LOGO_URL_MAX_LENGTH),
     notes: getOptionalString(value.notes, TEXT_FIELD_MAX_LENGTH)
+  };
+}
+
+function getAiDeliveryWorkflowRunInput(body: unknown) {
+  const value = (body ?? {}) as Record<string, unknown>;
+  const status = typeof value.status === "string" ? value.status.trim().toUpperCase() : "DRAFT";
+
+  if (!AI_DELIVERY_WORKFLOW_RUN_STATUSES.has(status)) {
+    return null;
+  }
+
+  return {
+    status,
+    adminNotes: getOptionalString(value.adminNotes, TEXT_FIELD_MAX_LENGTH),
+    resultPlaceholder: getOptionalString(value.resultPlaceholder, TEXT_FIELD_MAX_LENGTH)
   };
 }
 
@@ -1183,6 +1202,87 @@ export const archiveAiDeliveryProjectHandler: RequestHandler = async (req, res) 
     res.json(success(response, { phase: "runtime", scope: "ai-delivery-projects" }));
   } catch {
     res.status(500).json(failure("AI_DELIVERY_PROJECT_RUNTIME_ERROR", "AI Delivery project archive could not be completed."));
+  }
+};
+
+export const listAiDeliveryWorkflowRunsHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) {
+    res.status(401).json(unauthorizedFailure());
+    return;
+  }
+
+  const aiDeliveryProjectId = typeof req.params.projectId === "string" ? req.params.projectId.trim() : "";
+  if (!aiDeliveryProjectId) {
+    res.status(400).json(aiDeliveryProjectInvalidFailure());
+    return;
+  }
+
+  try {
+    const response = await listAiDeliveryWorkflowRuns(authSession, aiDeliveryProjectId);
+    if (!response) {
+      res.status(404).json(aiDeliveryProjectNotFoundFailure());
+      return;
+    }
+
+    res.json(success(response, { phase: "runtime", scope: "ai-delivery-workflow-runs" }));
+  } catch {
+    res.status(500).json(failure("AI_DELIVERY_WORKFLOW_RUN_RUNTIME_ERROR", "AI Delivery workflow run list could not be completed."));
+  }
+};
+
+export const createAiDeliveryWorkflowRunHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) {
+    res.status(401).json(unauthorizedFailure());
+    return;
+  }
+
+  const aiDeliveryProjectId = typeof req.params.projectId === "string" ? req.params.projectId.trim() : "";
+  const input = getAiDeliveryWorkflowRunInput(req.body);
+  if (!aiDeliveryProjectId || !input) {
+    res.status(400).json(aiDeliveryProjectInvalidFailure());
+    return;
+  }
+
+  try {
+    const response = await createAiDeliveryWorkflowRun(authSession, aiDeliveryProjectId, input);
+    if (!response?.workflowRun) {
+      res.status(404).json(aiDeliveryProjectNotFoundFailure());
+      return;
+    }
+
+    res.status(201).json(success(response, { phase: "runtime", scope: "ai-delivery-workflow-runs" }));
+  } catch {
+    res.status(500).json(failure("AI_DELIVERY_WORKFLOW_RUN_RUNTIME_ERROR", "AI Delivery workflow run create could not be completed."));
+  }
+};
+
+export const updateAiDeliveryWorkflowRunHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) {
+    res.status(401).json(unauthorizedFailure());
+    return;
+  }
+
+  const aiDeliveryProjectId = typeof req.params.projectId === "string" ? req.params.projectId.trim() : "";
+  const workflowRunId = typeof req.params.workflowRunId === "string" ? req.params.workflowRunId.trim() : "";
+  const input = getAiDeliveryWorkflowRunInput(req.body);
+  if (!aiDeliveryProjectId || !workflowRunId || !input) {
+    res.status(400).json(aiDeliveryProjectInvalidFailure());
+    return;
+  }
+
+  try {
+    const response = await updateAiDeliveryWorkflowRun(authSession, aiDeliveryProjectId, workflowRunId, input);
+    if (!response?.workflowRun) {
+      res.status(404).json(aiDeliveryProjectNotFoundFailure());
+      return;
+    }
+
+    res.json(success(response, { phase: "runtime", scope: "ai-delivery-workflow-runs" }));
+  } catch {
+    res.status(500).json(failure("AI_DELIVERY_WORKFLOW_RUN_RUNTIME_ERROR", "AI Delivery workflow run update could not be completed."));
   }
 };
 

@@ -15,6 +15,7 @@ import {
   createAiDeliveryProjectHandler,
   createAiDeliveryArticleImageHandler,
   createAiDeliveryContentDraftHandler,
+  createAiDeliveryWorkflowRunHandler,
   createCreditNoteHandler,
   createBillHandler,
   createClientHandler,
@@ -40,6 +41,7 @@ import {
   updateAiDeliveryDeliverableHandler,
   archiveAiDeliveryDeliverableHandler,
   listAiDeliveryProjectsHandler,
+  listAiDeliveryWorkflowRunsHandler,
   listAiDeliveryContentDraftsHandler,
   listClientAiDeliveryContentDraftReviewsHandler,
   approveClientAiDeliveryContentDraftReviewHandler,
@@ -83,6 +85,7 @@ import {
   updateAiDeliveryProjectHandler,
   updateAiDeliveryArticleImageHandler,
   updateAiDeliveryContentDraftHandler,
+  updateAiDeliveryWorkflowRunHandler,
   updateBillHandler,
   updateClientHandler,
   updateCreditNoteHandler,
@@ -124,6 +127,9 @@ export function createCoreRouter() {
   router.post("/ai-delivery-projects", requireAuth, requireTenant, requireRole("owner", "admin"), createAiDeliveryProjectHandler);
   router.put("/ai-delivery-projects/:id", requireAuth, requireTenant, requireRole("owner", "admin"), updateAiDeliveryProjectHandler);
   router.post("/ai-delivery-projects/:id/archive", requireAuth, requireTenant, requireRole("owner", "admin"), archiveAiDeliveryProjectHandler);
+  router.get("/ai-delivery/projects/:projectId/workflow-runs", requireAuth, requireTenant, requireRole("owner", "admin"), listAiDeliveryWorkflowRunsHandler);
+  router.post("/ai-delivery/projects/:projectId/workflow-runs", requireAuth, requireTenant, requireRole("owner", "admin"), createAiDeliveryWorkflowRunHandler);
+  router.put("/ai-delivery/projects/:projectId/workflow-runs/:workflowRunId", requireAuth, requireTenant, requireRole("owner", "admin"), updateAiDeliveryWorkflowRunHandler);
   router.post("/ai-delivery-projects/:id/brief/request-client-input", requireAuth, requireTenant, requireRole("owner", "admin"), requestAiDeliveryBriefClientInputHandler);
   router.post("/ai-delivery-projects/:id/brief/request-client-revision", requireAuth, requireTenant, requireRole("owner", "admin"), requestAiDeliveryBriefClientRevisionHandler);
   router.post("/ai-delivery-projects/:id/brief/approve-final", requireAuth, requireTenant, requireRole("owner", "admin"), approveFinalAiDeliveryBriefHandler);
