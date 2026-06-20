@@ -74,6 +74,7 @@ type CreditNoteStatus = "DRAFT" | "ISSUED" | "VOIDED";
 type PaymentMethod = "CASH" | "REVOLUT_BANK" | "WISE_BANK" | "REVOLUT_CARD" | "WISE_CARD" | "CARD_PROCESSOR" | "OTHER";
 type RecurringInvoiceInterval = "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY";
 type BillPaymentForm = "CASH" | "REVOLUT_BANK" | "WISE_BANK" | "REVOLUT_CARD" | "WISE_CARD" | "OTHER";
+const AI_DELIVERY_WORKFLOW_RUN_STATUS_ORDER: AiDeliveryWorkflowRunStatus[] = ["DRAFT", "READY", "IN_PROGRESS", "REVIEW", "COMPLETED", "ARCHIVED"];
 type ClientUserAccessSummary = {
   id: string;
   clientId: string;
@@ -2621,9 +2622,22 @@ const aiDeliveryWorkflowRunSelect = {
 
 function normalizeAiDeliveryWorkflowRunStatus(value: string | null | undefined): AiDeliveryWorkflowRunStatus {
   const status = value ? value.trim().toUpperCase() : null;
-  return status && ["DRAFT", "READY", "IN_PROGRESS", "REVIEW", "COMPLETED", "ARCHIVED"].includes(status)
+  return status && AI_DELIVERY_WORKFLOW_RUN_STATUS_ORDER.includes(status as AiDeliveryWorkflowRunStatus)
     ? (status as AiDeliveryWorkflowRunStatus)
     : "DRAFT";
+}
+
+function canTransitionAiDeliveryWorkflowRunStatus(
+  currentStatus: AiDeliveryWorkflowRunStatus,
+  nextStatus: AiDeliveryWorkflowRunStatus
+): boolean {
+  if (currentStatus === nextStatus) {
+    return true;
+  }
+
+  const currentIndex = AI_DELIVERY_WORKFLOW_RUN_STATUS_ORDER.indexOf(currentStatus);
+  const nextIndex = AI_DELIVERY_WORKFLOW_RUN_STATUS_ORDER.indexOf(nextStatus);
+  return currentIndex >= 0 && nextIndex === currentIndex + 1;
 }
 
 function toAiDeliveryWorkflowRunSummary(run: any) {
@@ -2685,11 +2699,16 @@ export async function createAiDeliveryWorkflowRun(
     });
     if (!project?.brief) return null;
 
+    const status = normalizeAiDeliveryWorkflowRunStatus(input.status);
+    if (status !== "DRAFT") {
+      throw new Error("AI_DELIVERY_WORKFLOW_RUN_INVALID_STATUS_TRANSITION");
+    }
+
     const created = await getAiDeliveryWorkflowRunDelegate(tx).create({
       data: {
         tenantId,
         aiDeliveryProjectId: project.id,
-        status: normalizeAiDeliveryWorkflowRunStatus(input.status),
+        status,
         adminNotes: toNullableString(input.adminNotes),
         resultPlaceholder: toNullableString(input.resultPlaceholder)
       },
@@ -2716,10 +2735,16 @@ export async function updateAiDeliveryWorkflowRun(
     }) as any;
     if (!existing) return null;
 
+    const currentStatus = normalizeAiDeliveryWorkflowRunStatus(existing.status);
+    const nextStatus = normalizeAiDeliveryWorkflowRunStatus(input.status ?? existing.status);
+    if (!canTransitionAiDeliveryWorkflowRunStatus(currentStatus, nextStatus)) {
+      throw new Error("AI_DELIVERY_WORKFLOW_RUN_INVALID_STATUS_TRANSITION");
+    }
+
     const updated = await getAiDeliveryWorkflowRunDelegate(tx).update({
       where: { id: workflowRunId },
       data: {
-        status: normalizeAiDeliveryWorkflowRunStatus(input.status ?? existing.status),
+        status: nextStatus,
         adminNotes: toNullableString(input.adminNotes),
         resultPlaceholder: toNullableString(input.resultPlaceholder)
       },

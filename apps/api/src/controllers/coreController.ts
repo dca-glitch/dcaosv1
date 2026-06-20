@@ -383,9 +383,9 @@ function getAiDeliveryArticleImageInput(body: unknown): AiDeliveryArticleImageIn
 
 function getAiDeliveryWorkflowRunInput(body: unknown) {
   const value = (body ?? {}) as Record<string, unknown>;
-  const status = typeof value.status === "string" ? value.status.trim().toUpperCase() : "DRAFT";
+  const status = value.status === undefined ? undefined : typeof value.status === "string" ? value.status.trim().toUpperCase() : null;
 
-  if (!AI_DELIVERY_WORKFLOW_RUN_STATUSES.has(status)) {
+  if (status !== undefined && (!status || !AI_DELIVERY_WORKFLOW_RUN_STATUSES.has(status))) {
     return null;
   }
 
@@ -1253,7 +1253,11 @@ export const createAiDeliveryWorkflowRunHandler: RequestHandler = async (req, re
     }
 
     res.status(201).json(success(response, { phase: "runtime", scope: "ai-delivery-workflow-runs" }));
-  } catch {
+  } catch (error) {
+    if ((error as { message?: string }).message === "AI_DELIVERY_WORKFLOW_RUN_INVALID_STATUS_TRANSITION") {
+      res.status(400).json(failure("AI_DELIVERY_WORKFLOW_RUN_STATUS_GATE_BLOCKED", "Workflow run status must move in order: DRAFT -> READY -> IN_PROGRESS -> REVIEW -> COMPLETED -> ARCHIVED."));
+      return;
+    }
     res.status(500).json(failure("AI_DELIVERY_WORKFLOW_RUN_RUNTIME_ERROR", "AI Delivery workflow run create could not be completed."));
   }
 };
@@ -1281,7 +1285,11 @@ export const updateAiDeliveryWorkflowRunHandler: RequestHandler = async (req, re
     }
 
     res.json(success(response, { phase: "runtime", scope: "ai-delivery-workflow-runs" }));
-  } catch {
+  } catch (error) {
+    if ((error as { message?: string }).message === "AI_DELIVERY_WORKFLOW_RUN_INVALID_STATUS_TRANSITION") {
+      res.status(400).json(failure("AI_DELIVERY_WORKFLOW_RUN_STATUS_GATE_BLOCKED", "Workflow run status must move in order: DRAFT -> READY -> IN_PROGRESS -> REVIEW -> COMPLETED -> ARCHIVED."));
+      return;
+    }
     res.status(500).json(failure("AI_DELIVERY_WORKFLOW_RUN_RUNTIME_ERROR", "AI Delivery workflow run update could not be completed."));
   }
 };

@@ -242,6 +242,39 @@ export type AiDeliveryProjectsProps = {
 };
 
 const workflowRunStatuses = ["DRAFT", "READY", "IN_PROGRESS", "REVIEW", "COMPLETED", "ARCHIVED"] as const;
+type WorkflowRunStatus = (typeof workflowRunStatuses)[number];
+const workflowRunStatusLabels: Record<WorkflowRunStatus, string> = {
+  DRAFT: "Draft",
+  READY: "Ready",
+  IN_PROGRESS: "In progress",
+  REVIEW: "Review",
+  COMPLETED: "Completed",
+  ARCHIVED: "Archived"
+};
+
+function normalizeWorkflowRunStatus(status: string | null | undefined): WorkflowRunStatus {
+  return workflowRunStatuses.includes(status as WorkflowRunStatus) ? (status as WorkflowRunStatus) : "DRAFT";
+}
+
+function getWorkflowRunNextStatus(status: string | null | undefined): WorkflowRunStatus | null {
+  const currentIndex = workflowRunStatuses.indexOf(normalizeWorkflowRunStatus(status));
+  return currentIndex >= 0 && currentIndex < workflowRunStatuses.length - 1 ? workflowRunStatuses[currentIndex + 1] : null;
+}
+
+function getWorkflowRunStatusOptions(status: string | null | undefined): WorkflowRunStatus[] {
+  if (!status) return ["DRAFT"];
+  const currentStatus = normalizeWorkflowRunStatus(status);
+  const nextStatus = getWorkflowRunNextStatus(currentStatus);
+  return nextStatus ? [currentStatus, nextStatus] : [currentStatus];
+}
+
+function getWorkflowRunStatusHelper(status: string | null | undefined): string {
+  if (!status) return "New workflow runs start in Draft.";
+  const currentStatus = normalizeWorkflowRunStatus(status);
+  const nextStatus = getWorkflowRunNextStatus(currentStatus);
+  if (!nextStatus) return "No further status transitions are available. Same-status save is allowed for notes/result edits.";
+  return `Allowed next status: ${workflowRunStatusLabels[nextStatus]}. Same-status save is allowed for notes/result edits.`;
+}
 
 const emptyForm = (clientId = ""): AiDeliveryProjectFormValues => ({
   clientId,
@@ -412,6 +445,10 @@ export function AiDeliveryPage({
   const openArticleImagesProject = useMemo(() => projects.find((p) => p.id === openArticleImagesId) ?? null, [openArticleImagesId, projects]);
   const openDeliverablesProject = useMemo(() => projects.find((p) => p.id === openDeliverablesId) ?? null, [openDeliverablesId, projects]);
   const openWorkflowRunsProject = useMemo(() => projects.find((p) => p.id === openWorkflowRunsId) ?? null, [openWorkflowRunsId, projects]);
+  const workflowRunBeingEdited = useMemo(() => workflowRuns.find((run) => run.id === workflowRunEditorId) ?? null, [workflowRunEditorId, workflowRuns]);
+  const workflowRunStatusOptions = useMemo(() => getWorkflowRunStatusOptions(workflowRunBeingEdited?.status ?? null), [workflowRunBeingEdited?.status]);
+  const workflowRunStatusHelper = useMemo(() => getWorkflowRunStatusHelper(workflowRunBeingEdited?.status ?? null), [workflowRunBeingEdited?.status]);
+  const isWorkflowRunStatusAllowed = workflowRunStatusOptions.includes(normalizeWorkflowRunStatus(workflowRunForm.status));
   const linkableProjects = useMemo(
     () => projectsList.filter((project) => project.clientId === draft.clientId),
     [draft.clientId, projectsList]
@@ -801,6 +838,7 @@ export function AiDeliveryPage({
 
   async function saveWorkflowRun(projectId: string) {
     if (typeof onSaveWorkflowRun !== "function") return;
+    if (!isWorkflowRunStatusAllowed) return;
     setWorkflowRunsSaving(true);
     try {
       const saved = await onSaveWorkflowRun(projectId, workflowRunEditorId, workflowRunForm);
@@ -1366,8 +1404,9 @@ export function AiDeliveryPage({
                   <label>
                     Status
                     <select value={workflowRunForm.status} onChange={(event) => setWorkflowRunForm((current) => ({ ...current, status: event.target.value }))}>
-                      {workflowRunStatuses.map((status) => <option key={status} value={status}>{status}</option>)}
+                      {workflowRunStatusOptions.map((status) => <option key={status} value={status}>{status}</option>)}
                     </select>
+                    <span className="muted-text">{workflowRunStatusHelper}</span>
                   </label>
                   <label className="field-span-2">
                     Admin notes
@@ -1380,7 +1419,7 @@ export function AiDeliveryPage({
                 </div>
                 <div className="modal-footer">
                   <button className="secondary-action" disabled={workflowRunsSaving} onClick={() => { setWorkflowRunEditorId(null); setWorkflowRunForm(emptyWorkflowRun()); }} type="button">New workflow run</button>
-                  <button className="primary-action" disabled={workflowRunsSaving} onClick={() => void saveWorkflowRun(openWorkflowRunsProject.id)} type="button">
+                  <button className="primary-action" disabled={workflowRunsSaving || !isWorkflowRunStatusAllowed} onClick={() => void saveWorkflowRun(openWorkflowRunsProject.id)} type="button">
                     {workflowRunsSaving ? "Saving" : workflowRunEditorId ? "Save workflow run" : "Create Workflow Run"}
                   </button>
                 </div>
