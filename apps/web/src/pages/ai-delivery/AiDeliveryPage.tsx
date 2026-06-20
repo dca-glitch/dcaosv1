@@ -378,6 +378,19 @@ function formatEnumLabel(value?: string | null): string {
   return String(value).toLowerCase().replace(/_/g, " ").replace(/(^|\s)\S/g, (s) => s.toUpperCase());
 }
 
+function getErrorMessage(error: unknown, fallback: string): string {
+  return error instanceof Error && error.message ? error.message : fallback;
+}
+
+function getMostRecentReview(reviews: AiDeliveryDeliverableReviewSummary[]): AiDeliveryDeliverableReviewSummary | null {
+  return reviews.reduce<AiDeliveryDeliverableReviewSummary | null>((latest, review) => {
+    if (!latest) return review;
+    const latestTime = new Date(latest.updatedAt || latest.createdAt).getTime();
+    const reviewTime = new Date(review.updatedAt || review.createdAt).getTime();
+    return reviewTime > latestTime ? review : latest;
+  }, null);
+}
+
 export function AiDeliveryPage({
   projects,
   clients,
@@ -457,12 +470,14 @@ export function AiDeliveryPage({
   const [openDeliverablesId, setOpenDeliverablesId] = useState<string | null>(null);
   const [deliverablesLoading, setDeliverablesLoading] = useState(false);
   const [deliverablesSaving, setDeliverablesSaving] = useState(false);
+  const [deliverablesError, setDeliverablesError] = useState<string | null>(null);
   const [deliverables, setDeliverables] = useState<AiDeliveryDeliverableSummary[]>([]);
   const [deliverableEditorId, setDeliverableEditorId] = useState<string | null>(null);
   const [deliverableForm, setDeliverableForm] = useState<AiDeliveryDeliverableFormValues>({ contentDraftId: null, articleImageId: null, title: "", description: null, deliveryType: "CONTENT_PACKAGE", status: "DRAFT", exportUrl: null, storageKey: null, notes: null, isArchived: false });
   const [selectedReviewDeliverableId, setSelectedReviewDeliverableId] = useState<string | null>(null);
   const [deliverableReviewsLoading, setDeliverableReviewsLoading] = useState(false);
   const [deliverableReviewsSaving, setDeliverableReviewsSaving] = useState(false);
+  const [deliverableReviewsError, setDeliverableReviewsError] = useState<string | null>(null);
   const [deliverableReviews, setDeliverableReviews] = useState<AiDeliveryDeliverableReviewSummary[]>([]);
   const [deliverableReviewEditorId, setDeliverableReviewEditorId] = useState<string | null>(null);
   const [deliverableReviewForm, setDeliverableReviewForm] = useState<AiDeliveryDeliverableReviewFormValues>(emptyDeliverableReview());
@@ -480,6 +495,16 @@ export function AiDeliveryPage({
   const openArticleImagesProject = useMemo(() => projects.find((p) => p.id === openArticleImagesId) ?? null, [openArticleImagesId, projects]);
   const openDeliverablesProject = useMemo(() => projects.find((p) => p.id === openDeliverablesId) ?? null, [openDeliverablesId, projects]);
   const selectedReviewDeliverable = useMemo(() => deliverables.find((item) => item.id === selectedReviewDeliverableId) ?? null, [deliverables, selectedReviewDeliverableId]);
+  const visibleDeliverables = useMemo(
+    () => [...deliverables].sort((a, b) => {
+      if (a.isArchived !== b.isArchived) return a.isArchived ? 1 : -1;
+      return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+    }),
+    [deliverables]
+  );
+  const activeDeliverableCount = useMemo(() => deliverables.filter((item) => !item.isArchived).length, [deliverables]);
+  const archivedDeliverableCount = deliverables.length - activeDeliverableCount;
+  const latestSelectedReview = useMemo(() => getMostRecentReview(deliverableReviews), [deliverableReviews]);
   const openWorkflowRunsProject = useMemo(() => projects.find((p) => p.id === openWorkflowRunsId) ?? null, [openWorkflowRunsId, projects]);
   const workflowRunBeingEdited = useMemo(() => workflowRuns.find((run) => run.id === workflowRunEditorId) ?? null, [workflowRunEditorId, workflowRuns]);
   const workflowRunStatusOptions = useMemo(() => getWorkflowRunStatusOptions(workflowRunBeingEdited?.status ?? null), [workflowRunBeingEdited?.status]);
@@ -780,6 +805,8 @@ export function AiDeliveryPage({
   async function openDeliverables(projectId: string) {
     setOpenDeliverablesId(projectId);
     setDeliverablesLoading(true);
+    setDeliverablesError(null);
+    setDeliverableReviewsError(null);
     setDeliverables([]);
     setDeliverableEditorId(null);
     setDeliverableForm({ contentDraftId: null, articleImageId: null, title: "", description: null, deliveryType: "CONTENT_PACKAGE", status: "DRAFT", exportUrl: null, storageKey: null, notes: null, isArchived: false });
@@ -798,6 +825,8 @@ export function AiDeliveryPage({
       setArticleImageDrafts(activeDrafts);
       setArticleImages(images);
       setDeliverableForm((current: AiDeliveryDeliverableFormValues) => ({ ...current, contentDraftId: activeDrafts[0]?.id ?? null }));
+    } catch (error) {
+      setDeliverablesError(getErrorMessage(error, "Unable to load deliverables for this project."));
     } finally {
       setDeliverablesLoading(false);
     }
@@ -822,6 +851,7 @@ export function AiDeliveryPage({
   async function saveDeliverable(projectId: string) {
     if (typeof onSaveDeliverable !== "function") return;
     setDeliverablesSaving(true);
+    setDeliverablesError(null);
     try {
       const saved = await onSaveDeliverable(projectId, deliverableEditorId, deliverableForm);
       if (saved && typeof onFetchDeliverables === "function") {
@@ -829,6 +859,8 @@ export function AiDeliveryPage({
         setDeliverableEditorId(null);
         setDeliverableForm({ contentDraftId: null, articleImageId: null, title: "", description: null, deliveryType: "CONTENT_PACKAGE", status: "DRAFT", exportUrl: null, storageKey: null, notes: null, isArchived: false });
       }
+    } catch (error) {
+      setDeliverablesError(getErrorMessage(error, "Unable to save this deliverable."));
     } finally {
       setDeliverablesSaving(false);
     }
@@ -837,6 +869,7 @@ export function AiDeliveryPage({
   async function archiveDeliverable(projectId: string, deliverableId: string) {
     if (typeof onArchiveDeliverable !== "function" || typeof onFetchDeliverables !== "function") return;
     setDeliverablesSaving(true);
+    setDeliverablesError(null);
     try {
       await onArchiveDeliverable(projectId, deliverableId);
       setDeliverables(await onFetchDeliverables(projectId));
@@ -846,6 +879,8 @@ export function AiDeliveryPage({
         setDeliverableReviewEditorId(null);
         setDeliverableReviewForm(emptyDeliverableReview());
       }
+    } catch (error) {
+      setDeliverablesError(getErrorMessage(error, "Unable to archive this deliverable."));
     } finally {
       setDeliverablesSaving(false);
     }
@@ -854,6 +889,7 @@ export function AiDeliveryPage({
   async function openDeliverableReviews(projectId: string, deliverableId: string) {
     setSelectedReviewDeliverableId(deliverableId);
     setDeliverableReviewsLoading(true);
+    setDeliverableReviewsError(null);
     setDeliverableReviews([]);
     setDeliverableReviewEditorId(null);
     setDeliverableReviewForm(emptyDeliverableReview());
@@ -861,6 +897,8 @@ export function AiDeliveryPage({
       if (typeof onFetchDeliverableReviews === "function") {
         setDeliverableReviews(await onFetchDeliverableReviews(projectId, deliverableId));
       }
+    } catch (error) {
+      setDeliverableReviewsError(getErrorMessage(error, "Unable to load review placeholders for this deliverable."));
     } finally {
       setDeliverableReviewsLoading(false);
     }
@@ -878,6 +916,7 @@ export function AiDeliveryPage({
   async function saveDeliverableReview(projectId: string) {
     if (!selectedReviewDeliverableId || typeof onSaveDeliverableReview !== "function") return;
     setDeliverableReviewsSaving(true);
+    setDeliverableReviewsError(null);
     try {
       const saved = await onSaveDeliverableReview(projectId, selectedReviewDeliverableId, deliverableReviewEditorId, deliverableReviewForm);
       if (saved && typeof onFetchDeliverableReviews === "function") {
@@ -885,6 +924,8 @@ export function AiDeliveryPage({
         setDeliverableReviewEditorId(null);
         setDeliverableReviewForm(emptyDeliverableReview());
       }
+    } catch (error) {
+      setDeliverableReviewsError(getErrorMessage(error, "Unable to save this review placeholder."));
     } finally {
       setDeliverableReviewsSaving(false);
     }
@@ -893,10 +934,12 @@ export function AiDeliveryPage({
   function closeDeliverables() {
     setOpenDeliverablesId(null);
     setDeliverables([]);
+    setDeliverablesError(null);
     setDeliverableEditorId(null);
     setDeliverableForm({ contentDraftId: null, articleImageId: null, title: "", description: null, deliveryType: "CONTENT_PACKAGE", status: "DRAFT", exportUrl: null, storageKey: null, notes: null, isArchived: false });
     setSelectedReviewDeliverableId(null);
     setDeliverableReviews([]);
+    setDeliverableReviewsError(null);
     setDeliverableReviewEditorId(null);
     setDeliverableReviewForm(emptyDeliverableReview());
   }
@@ -1716,14 +1759,20 @@ export function AiDeliveryPage({
 
               <section className="field-panel">
                 <h3>Existing deliverables</h3>
-                {deliverables.length === 0 ? <div className="state-panel">No deliverables have been created yet.</div> : null}
-                {deliverables.map((d) => (
+                <p className="muted-text">
+                  Showing active deliverables first, then archived records. Active: {activeDeliverableCount}. Archived: {archivedDeliverableCount}.
+                </p>
+                {deliverablesError ? <ErrorState title="Deliverables unavailable" message={deliverablesError} /> : null}
+                {!deliverablesError && deliverables.length === 0 ? (
+                  <div className="state-panel">No deliverables have been created yet. Create a deliverable above before opening review placeholders.</div>
+                ) : null}
+                {visibleDeliverables.map((d) => (
                   <article className="entity-card" key={d.id} style={{ marginBottom: "1rem" }}>
                     <div className="entity-card-header">
                       <div>
                         <StatusBadge status={d.isArchived ? "Archived" : d.status} />
                         <h3>{d.title}</h3>
-                        <p>{d.deliveryType}</p>
+                        <p>{formatEnumLabel(d.deliveryType)} - Updated {formatOptionalDate(d.updatedAt)}</p>
                       </div>
                       <div className="card-actions">
                         <button className="secondary-action" disabled={deliverablesSaving} onClick={() => editDeliverable(d)} type="button">Edit</button>
@@ -1740,6 +1789,14 @@ export function AiDeliveryPage({
                         <dt>Storage key</dt>
                         <dd>{d.storageKey || "Not set"}</dd>
                       </div>
+                      <div>
+                        <dt>Visibility</dt>
+                        <dd>{d.isArchived ? "Archived deliverable" : "Visible in active admin list"}</dd>
+                      </div>
+                      <div>
+                        <dt>Status</dt>
+                        <dd><StatusBadge status={d.isArchived ? "Archived" : d.status} /></dd>
+                      </div>
                       <div className="field-span-2">
                         <dt>Notes</dt>
                         <dd>{d.notes || "No notes"}</dd>
@@ -1748,19 +1805,44 @@ export function AiDeliveryPage({
                   </article>
                 ))}
               </section>
+              {!selectedReviewDeliverable && deliverables.length > 0 ? (
+                <div className="state-panel">Select Reviews on a deliverable to view or create admin/operator review placeholders.</div>
+              ) : null}
               {selectedReviewDeliverable ? (
                 <section className="field-panel">
                   <h3>Deliverable reviews: {selectedReviewDeliverable.title}</h3>
                   <p className="muted-text">Admin/operator placeholders only. No client portal, public review links, token approvals, or email actions are created from this screen.</p>
+                  <dl className="brief-grid">
+                    <div>
+                      <dt>Deliverable status</dt>
+                      <dd><StatusBadge status={selectedReviewDeliverable.isArchived ? "Archived" : selectedReviewDeliverable.status} /></dd>
+                    </div>
+                    <div>
+                      <dt>Latest review status</dt>
+                      <dd>{latestSelectedReview ? <StatusBadge status={latestSelectedReview.status} /> : "No review placeholder yet"}</dd>
+                    </div>
+                    <div>
+                      <dt>Review placeholders</dt>
+                      <dd>{deliverableReviews.length}</dd>
+                    </div>
+                    <div>
+                      <dt>Last review update</dt>
+                      <dd>{latestSelectedReview ? formatOptionalDate(latestSelectedReview.updatedAt) : "Not set"}</dd>
+                    </div>
+                  </dl>
+                  {selectedReviewDeliverable.isArchived ? (
+                    <div className="state-panel">This deliverable is archived. Existing review placeholders remain visible for admin history.</div>
+                  ) : null}
                   {deliverableReviewsLoading ? (
                     <LoadingState label="Loading deliverable reviews" />
                   ) : (
                     <>
+                      {deliverableReviewsError ? <ErrorState title="Deliverable reviews unavailable" message={deliverableReviewsError} /> : null}
                       <div className="field-grid">
                         <label>
                           Review status
                           <select value={deliverableReviewForm.status} onChange={(event) => setDeliverableReviewForm((current) => ({ ...current, status: event.target.value }))}>
-                            {(["NOT_STARTED", "ADMIN_REVIEW", "CHANGES_REQUESTED", "APPROVED", "ARCHIVED"] as const).map((status) => <option key={status} value={status}>{status}</option>)}
+                            {(["NOT_STARTED", "ADMIN_REVIEW", "CHANGES_REQUESTED", "APPROVED", "ARCHIVED"] as const).map((status) => <option key={status} value={status}>{formatEnumLabel(status)}</option>)}
                           </select>
                         </label>
                         <label>
@@ -1779,10 +1861,12 @@ export function AiDeliveryPage({
                         </button>
                       </div>
 
-                      <h4>Existing review placeholders</h4>
-                      {deliverableReviews.length === 0 ? <div className="state-panel">No review placeholders have been created for this deliverable.</div> : null}
-                      {deliverableReviews.map((review) => (
-                        <article className="entity-card" key={review.id}>
+                      <h4>Existing review placeholders ({deliverableReviews.length})</h4>
+                      {!deliverableReviewsError && deliverableReviews.length === 0 ? (
+                        <div className="state-panel">No review placeholders have been created for this deliverable. Use the form above to add the first admin/operator review record.</div>
+                      ) : null}
+                      {[...deliverableReviews].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()).map((review) => (
+                        <article className="entity-card" key={review.id} style={{ marginBottom: "1rem" }}>
                           <div className="entity-card-header">
                             <div>
                               <StatusBadge status={review.status} />
@@ -1800,7 +1884,11 @@ export function AiDeliveryPage({
                             </div>
                             <div>
                               <dt>Status</dt>
-                              <dd>{review.status}</dd>
+                              <dd><StatusBadge status={review.status} /></dd>
+                            </div>
+                            <div>
+                              <dt>Reviewer</dt>
+                              <dd>{review.reviewerName || "Unnamed reviewer"}</dd>
                             </div>
                             <div className="field-span-2">
                               <dt>Review notes</dt>
