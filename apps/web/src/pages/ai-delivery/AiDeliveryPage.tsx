@@ -161,6 +161,25 @@ export type AiDeliveryDeliverableFormValues = {
   isArchived?: boolean;
 };
 
+export type AiDeliveryDeliverableReviewSummary = {
+  id: string;
+  tenantId?: string;
+  aiDeliveryProjectId: string;
+  deliverableId: string;
+  workflowRunId?: string | null;
+  status: string;
+  reviewerName?: string | null;
+  reviewNotes?: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type AiDeliveryDeliverableReviewFormValues = {
+  status: string;
+  reviewerName: string;
+  reviewNotes: string;
+};
+
 export type AiDeliveryWorkflowRunSummary = {
   id: string;
   tenantId: string;
@@ -237,6 +256,8 @@ export type AiDeliveryProjectsProps = {
   onFetchDeliverables?: (projectId: string) => Promise<AiDeliveryDeliverableSummary[]>;
   onSaveDeliverable?: (projectId: string, deliverableId: string | null, values: AiDeliveryDeliverableFormValues) => Promise<AiDeliveryDeliverableSummary | null>;
   onArchiveDeliverable?: (projectId: string, deliverableId: string) => Promise<boolean>;
+  onFetchDeliverableReviews?: (projectId: string, deliverableId: string) => Promise<AiDeliveryDeliverableReviewSummary[]>;
+  onSaveDeliverableReview?: (projectId: string, deliverableId: string, reviewId: string | null, values: AiDeliveryDeliverableReviewFormValues) => Promise<AiDeliveryDeliverableReviewSummary | null>;
   onFetchWorkflowRuns?: (projectId: string) => Promise<AiDeliveryWorkflowRunSummary[]>;
   onSaveWorkflowRun?: (projectId: string, workflowRunId: string | null, values: AiDeliveryWorkflowRunFormValues) => Promise<AiDeliveryWorkflowRunSummary | null>;
 };
@@ -321,6 +342,12 @@ const emptyArticleImage = (): AiDeliveryArticleImageFormValues => ({
   notes: ""
 });
 
+const emptyDeliverableReview = (): AiDeliveryDeliverableReviewFormValues => ({
+  status: "NOT_STARTED",
+  reviewerName: "",
+  reviewNotes: ""
+});
+
 const emptyWorkflowRun = (): AiDeliveryWorkflowRunFormValues => ({
   status: "DRAFT",
   adminNotes: "",
@@ -380,6 +407,8 @@ export function AiDeliveryPage({
   onFetchDeliverables,
   onSaveDeliverable,
   onArchiveDeliverable,
+  onFetchDeliverableReviews,
+  onSaveDeliverableReview,
   onFetchWorkflowRuns,
   onSaveWorkflowRun
 }: AiDeliveryProjectsProps) {
@@ -431,6 +460,12 @@ export function AiDeliveryPage({
   const [deliverables, setDeliverables] = useState<AiDeliveryDeliverableSummary[]>([]);
   const [deliverableEditorId, setDeliverableEditorId] = useState<string | null>(null);
   const [deliverableForm, setDeliverableForm] = useState<AiDeliveryDeliverableFormValues>({ contentDraftId: null, articleImageId: null, title: "", description: null, deliveryType: "CONTENT_PACKAGE", status: "DRAFT", exportUrl: null, storageKey: null, notes: null, isArchived: false });
+  const [selectedReviewDeliverableId, setSelectedReviewDeliverableId] = useState<string | null>(null);
+  const [deliverableReviewsLoading, setDeliverableReviewsLoading] = useState(false);
+  const [deliverableReviewsSaving, setDeliverableReviewsSaving] = useState(false);
+  const [deliverableReviews, setDeliverableReviews] = useState<AiDeliveryDeliverableReviewSummary[]>([]);
+  const [deliverableReviewEditorId, setDeliverableReviewEditorId] = useState<string | null>(null);
+  const [deliverableReviewForm, setDeliverableReviewForm] = useState<AiDeliveryDeliverableReviewFormValues>(emptyDeliverableReview());
   const [openWorkflowRunsId, setOpenWorkflowRunsId] = useState<string | null>(null);
   const [workflowRunsLoading, setWorkflowRunsLoading] = useState(false);
   const [workflowRunsSaving, setWorkflowRunsSaving] = useState(false);
@@ -444,6 +479,7 @@ export function AiDeliveryPage({
   const openContentDraftsProject = useMemo(() => projects.find((p) => p.id === openContentDraftsId) ?? null, [openContentDraftsId, projects]);
   const openArticleImagesProject = useMemo(() => projects.find((p) => p.id === openArticleImagesId) ?? null, [openArticleImagesId, projects]);
   const openDeliverablesProject = useMemo(() => projects.find((p) => p.id === openDeliverablesId) ?? null, [openDeliverablesId, projects]);
+  const selectedReviewDeliverable = useMemo(() => deliverables.find((item) => item.id === selectedReviewDeliverableId) ?? null, [deliverables, selectedReviewDeliverableId]);
   const openWorkflowRunsProject = useMemo(() => projects.find((p) => p.id === openWorkflowRunsId) ?? null, [openWorkflowRunsId, projects]);
   const workflowRunBeingEdited = useMemo(() => workflowRuns.find((run) => run.id === workflowRunEditorId) ?? null, [workflowRunEditorId, workflowRuns]);
   const workflowRunStatusOptions = useMemo(() => getWorkflowRunStatusOptions(workflowRunBeingEdited?.status ?? null), [workflowRunBeingEdited?.status]);
@@ -747,6 +783,10 @@ export function AiDeliveryPage({
     setDeliverables([]);
     setDeliverableEditorId(null);
     setDeliverableForm({ contentDraftId: null, articleImageId: null, title: "", description: null, deliveryType: "CONTENT_PACKAGE", status: "DRAFT", exportUrl: null, storageKey: null, notes: null, isArchived: false });
+    setSelectedReviewDeliverableId(null);
+    setDeliverableReviews([]);
+    setDeliverableReviewEditorId(null);
+    setDeliverableReviewForm(emptyDeliverableReview());
     try {
       const [items, drafts, images] = await Promise.all([
         typeof onFetchDeliverables === "function" ? onFetchDeliverables(projectId) : Promise.resolve([]),
@@ -800,8 +840,53 @@ export function AiDeliveryPage({
     try {
       await onArchiveDeliverable(projectId, deliverableId);
       setDeliverables(await onFetchDeliverables(projectId));
+      if (selectedReviewDeliverableId === deliverableId) {
+        setSelectedReviewDeliverableId(null);
+        setDeliverableReviews([]);
+        setDeliverableReviewEditorId(null);
+        setDeliverableReviewForm(emptyDeliverableReview());
+      }
     } finally {
       setDeliverablesSaving(false);
+    }
+  }
+
+  async function openDeliverableReviews(projectId: string, deliverableId: string) {
+    setSelectedReviewDeliverableId(deliverableId);
+    setDeliverableReviewsLoading(true);
+    setDeliverableReviews([]);
+    setDeliverableReviewEditorId(null);
+    setDeliverableReviewForm(emptyDeliverableReview());
+    try {
+      if (typeof onFetchDeliverableReviews === "function") {
+        setDeliverableReviews(await onFetchDeliverableReviews(projectId, deliverableId));
+      }
+    } finally {
+      setDeliverableReviewsLoading(false);
+    }
+  }
+
+  function editDeliverableReview(review: AiDeliveryDeliverableReviewSummary) {
+    setDeliverableReviewEditorId(review.id);
+    setDeliverableReviewForm({
+      status: review.status,
+      reviewerName: review.reviewerName ?? "",
+      reviewNotes: review.reviewNotes ?? ""
+    });
+  }
+
+  async function saveDeliverableReview(projectId: string) {
+    if (!selectedReviewDeliverableId || typeof onSaveDeliverableReview !== "function") return;
+    setDeliverableReviewsSaving(true);
+    try {
+      const saved = await onSaveDeliverableReview(projectId, selectedReviewDeliverableId, deliverableReviewEditorId, deliverableReviewForm);
+      if (saved && typeof onFetchDeliverableReviews === "function") {
+        setDeliverableReviews(await onFetchDeliverableReviews(projectId, selectedReviewDeliverableId));
+        setDeliverableReviewEditorId(null);
+        setDeliverableReviewForm(emptyDeliverableReview());
+      }
+    } finally {
+      setDeliverableReviewsSaving(false);
     }
   }
 
@@ -810,6 +895,10 @@ export function AiDeliveryPage({
     setDeliverables([]);
     setDeliverableEditorId(null);
     setDeliverableForm({ contentDraftId: null, articleImageId: null, title: "", description: null, deliveryType: "CONTENT_PACKAGE", status: "DRAFT", exportUrl: null, storageKey: null, notes: null, isArchived: false });
+    setSelectedReviewDeliverableId(null);
+    setDeliverableReviews([]);
+    setDeliverableReviewEditorId(null);
+    setDeliverableReviewForm(emptyDeliverableReview());
   }
 
   async function openWorkflowRuns(projectId: string) {
@@ -1638,6 +1727,7 @@ export function AiDeliveryPage({
                       </div>
                       <div className="card-actions">
                         <button className="secondary-action" disabled={deliverablesSaving} onClick={() => editDeliverable(d)} type="button">Edit</button>
+                        <button className="secondary-action" disabled={deliverablesSaving || deliverableReviewsLoading} onClick={() => void openDeliverableReviews(openDeliverablesProject.id, d.id)} type="button">Reviews</button>
                         {!d.isArchived ? <button className="secondary-action" disabled={deliverablesSaving} onClick={() => void archiveDeliverable(openDeliverablesProject.id, d.id)} type="button">Archive</button> : null}
                       </div>
                     </div>
@@ -1658,6 +1748,71 @@ export function AiDeliveryPage({
                   </article>
                 ))}
               </section>
+              {selectedReviewDeliverable ? (
+                <section className="field-panel">
+                  <h3>Deliverable reviews: {selectedReviewDeliverable.title}</h3>
+                  <p className="muted-text">Admin/operator placeholders only. No client portal, public review links, token approvals, or email actions are created from this screen.</p>
+                  {deliverableReviewsLoading ? (
+                    <LoadingState label="Loading deliverable reviews" />
+                  ) : (
+                    <>
+                      <div className="field-grid">
+                        <label>
+                          Review status
+                          <select value={deliverableReviewForm.status} onChange={(event) => setDeliverableReviewForm((current) => ({ ...current, status: event.target.value }))}>
+                            {(["NOT_STARTED", "ADMIN_REVIEW", "CHANGES_REQUESTED", "APPROVED", "ARCHIVED"] as const).map((status) => <option key={status} value={status}>{status}</option>)}
+                          </select>
+                        </label>
+                        <label>
+                          Reviewer name
+                          <input maxLength={255} value={deliverableReviewForm.reviewerName} onChange={(event) => setDeliverableReviewForm((current) => ({ ...current, reviewerName: event.target.value }))} />
+                        </label>
+                        <label className="field-span-2">
+                          Review notes
+                          <textarea maxLength={4000} rows={3} value={deliverableReviewForm.reviewNotes} onChange={(event) => setDeliverableReviewForm((current) => ({ ...current, reviewNotes: event.target.value }))} />
+                        </label>
+                      </div>
+                      <div className="modal-footer">
+                        <button className="secondary-action" disabled={deliverableReviewsSaving} onClick={() => { setDeliverableReviewEditorId(null); setDeliverableReviewForm(emptyDeliverableReview()); }} type="button">New review placeholder</button>
+                        <button className="primary-action" disabled={deliverableReviewsSaving} onClick={() => void saveDeliverableReview(openDeliverablesProject.id)} type="button">
+                          {deliverableReviewsSaving ? "Saving" : deliverableReviewEditorId ? "Save review" : "Create review placeholder"}
+                        </button>
+                      </div>
+
+                      <h4>Existing review placeholders</h4>
+                      {deliverableReviews.length === 0 ? <div className="state-panel">No review placeholders have been created for this deliverable.</div> : null}
+                      {deliverableReviews.map((review) => (
+                        <article className="entity-card" key={review.id}>
+                          <div className="entity-card-header">
+                            <div>
+                              <StatusBadge status={review.status} />
+                              <h3>{review.reviewerName || "Unnamed reviewer"}</h3>
+                              <p>Updated {formatOptionalDate(review.updatedAt)}</p>
+                            </div>
+                            <div className="card-actions">
+                              <button className="secondary-action" disabled={deliverableReviewsSaving} onClick={() => editDeliverableReview(review)} type="button">Edit review</button>
+                            </div>
+                          </div>
+                          <dl className="brief-grid">
+                            <div>
+                              <dt>Created</dt>
+                              <dd>{formatOptionalDate(review.createdAt)}</dd>
+                            </div>
+                            <div>
+                              <dt>Status</dt>
+                              <dd>{review.status}</dd>
+                            </div>
+                            <div className="field-span-2">
+                              <dt>Review notes</dt>
+                              <dd>{review.reviewNotes || "No review notes"}</dd>
+                            </div>
+                          </dl>
+                        </article>
+                      ))}
+                    </>
+                  )}
+                </section>
+              ) : null}
               <div className="modal-footer"><button className="secondary-action" onClick={closeDeliverables} type="button">Close</button></div>
             </div>
           ) : <div>Project not found.</div>}

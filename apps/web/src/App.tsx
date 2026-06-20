@@ -34,6 +34,8 @@ import {
   type AiDeliveryContentDraftSummary,
   type AiDeliveryContentPlanFormValues,
   type AiDeliveryContentPlanSummary,
+  type AiDeliveryDeliverableReviewFormValues,
+  type AiDeliveryDeliverableReviewSummary,
   type AiDeliveryWorkflowRunFormValues,
   type AiDeliveryWorkflowRunSummary,
   type AiDeliveryProjectSummary,
@@ -249,6 +251,14 @@ type AiDeliveryDeliverablesResponse = {
 
 type AiDeliveryDeliverableResponse = {
   deliverable: AiDeliveryDeliverableSummary | null;
+};
+
+type AiDeliveryDeliverableReviewsResponse = {
+  deliverableReviews: AiDeliveryDeliverableReviewSummary[];
+};
+
+type AiDeliveryDeliverableReviewResponse = {
+  deliverableReview: AiDeliveryDeliverableReviewSummary | null;
 };
 
 type AiDeliveryWorkflowRunsResponse = {
@@ -2222,6 +2232,54 @@ export function App() {
     }
   }
 
+  async function handleFetchAiDeliveryDeliverableReviews(
+    projectId: string,
+    deliverableId: string
+  ): Promise<AiDeliveryDeliverableReviewSummary[]> {
+    setAppMessage(null);
+    try {
+      const response = await runAuthenticatedRequest<AiDeliveryDeliverableReviewsResponse>(
+        `/ai-delivery-projects/${projectId}/deliverables/${deliverableId}/reviews`
+      );
+      if (!response) return [];
+      if (!response.ok) {
+        setAppMessage({ tone: "error", text: getErrorMessage(response) });
+        return [];
+      }
+      return response.data.deliverableReviews;
+    } catch (error) {
+      setAppMessage({ tone: "error", text: maskError(error) });
+      return [];
+    }
+  }
+
+  async function handleSaveAiDeliveryDeliverableReview(
+    projectId: string,
+    deliverableId: string,
+    reviewId: string | null,
+    values: AiDeliveryDeliverableReviewFormValues
+  ): Promise<AiDeliveryDeliverableReviewSummary | null> {
+    setAppMessage(null);
+    try {
+      const response = await runAuthenticatedRequest<AiDeliveryDeliverableReviewResponse>(
+        reviewId
+          ? `/ai-delivery-projects/${projectId}/deliverables/${deliverableId}/reviews/${reviewId}`
+          : `/ai-delivery-projects/${projectId}/deliverables/${deliverableId}/reviews`,
+        { method: reviewId ? "PUT" : "POST", body: values }
+      );
+      if (!response) return null;
+      if (!response.ok) {
+        setAppMessage({ tone: "error", text: getErrorMessage(response) });
+        return null;
+      }
+      setAppMessage({ tone: "success", text: reviewId ? "Deliverable review saved." : "Deliverable review placeholder created." });
+      return response.data.deliverableReview;
+    } catch (error) {
+      setAppMessage({ tone: "error", text: maskError(error) });
+      return null;
+    }
+  }
+
   async function handleFetchAiDeliveryWorkflowRuns(projectId: string): Promise<AiDeliveryWorkflowRunSummary[]> {
     setAppMessage(null);
     try {
@@ -3056,6 +3114,8 @@ export function App() {
           onFetchDeliverables={handleFetchAiDeliveryDeliverables}
           onSaveDeliverable={handleSaveAiDeliveryDeliverable}
           onArchiveDeliverable={handleArchiveAiDeliveryDeliverable}
+          onFetchDeliverableReviews={handleFetchAiDeliveryDeliverableReviews}
+          onSaveDeliverableReview={handleSaveAiDeliveryDeliverableReview}
           onFetchWorkflowRuns={handleFetchAiDeliveryWorkflowRuns}
           onSaveWorkflowRun={handleSaveAiDeliveryWorkflowRun}
         />
