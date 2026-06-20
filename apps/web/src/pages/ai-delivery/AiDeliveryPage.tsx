@@ -369,6 +369,10 @@ export function AiDeliveryPage({
   const openContentDraftsProject = useMemo(() => projects.find((p) => p.id === openContentDraftsId) ?? null, [openContentDraftsId, projects]);
   const openArticleImagesProject = useMemo(() => projects.find((p) => p.id === openArticleImagesId) ?? null, [openArticleImagesId, projects]);
   const openDeliverablesProject = useMemo(() => projects.find((p) => p.id === openDeliverablesId) ?? null, [openDeliverablesId, projects]);
+  const linkableProjects = useMemo(
+    () => projectsList.filter((project) => project.clientId === draft.clientId),
+    [draft.clientId, projectsList]
+  );
 
   function openCreateModal() {
     setEditorProjectId(null);
@@ -392,7 +396,11 @@ export function AiDeliveryPage({
     event.preventDefault();
     setSaving(true);
     try {
-      const ok = await onSave(editorProjectId, draft);
+      const linkedProject = projectsList.find((project) => project.id === draft.projectId) ?? null;
+      const ok = await onSave(editorProjectId, {
+        ...draft,
+        projectId: linkedProject?.clientId === draft.clientId ? draft.projectId : null
+      });
       if (ok) {
         setEditorProjectId(null);
         setDraft(emptyForm());
@@ -879,7 +887,13 @@ export function AiDeliveryPage({
               <label>
                 Client
                 <select
-                  onChange={(event) => setDraft((current) => ({ ...current, clientId: event.target.value }))}
+                  onChange={(event) =>
+                    setDraft((current) => ({
+                      ...current,
+                      clientId: event.target.value,
+                      projectId: null
+                    }))
+                  }
                   value={draft.clientId}
                 >
                   <option value="">No client</option>
@@ -898,7 +912,7 @@ export function AiDeliveryPage({
                   value={draft.projectId ?? ""}
                 >
                   <option value="">(none)</option>
-                  {projectsList.map((proj) => (
+                  {linkableProjects.map((proj) => (
                     <option key={proj.id} value={proj.id}>
                       {proj.name}
                     </option>
