@@ -1,30 +1,41 @@
 # Development Workflow
 
-This repository is foundation-only for now.
+This repository is local-first DCA OS Lite foundation and module work. Use Windows PowerShell from `C:\dcaosv1` unless a task explicitly says otherwise.
+
+ChatGPT acts as scope controller/reviewer/task writer. Codex/Copilot/local tooling executes sealed tasks. Do not commit, push, deploy, edit GitHub cloud directly, or touch VPS/production unless explicitly approved after review.
 
 Approved local commands:
 
-```sh
-npm.cmd run check
-npm.cmd run build
-npm.cmd run -w @dca-os-v1/data prisma:validate
-npm.cmd run -w @dca-os-v1/data check
+```powershell
+npm.cmd run validate
+npm.cmd run smoke:local
+npm.cmd run smoke:browser
+npm.cmd run smoke:ai-delivery-reviews
 ```
+
+Use smoke commands only when they are in scope for the task. Stability, regression, smoke, and module workflow work must include repeatable PowerShell/scripted validation as part of the deliverable.
 
 Recommended sequence:
 
 1. Make focused changes.
-2. Run `npm.cmd run check`.
-3. Run `npm.cmd run build`.
-4. Run Prisma validation from `packages/data`.
-5. Review `git status --short --branch` and `git diff --check`.
+2. Run the task-approved validation command, usually `npm.cmd run validate`.
+3. Run scoped smoke scripts when required by the task.
+4. Review `git status --short --branch`, `git diff --check`, and `git diff --stat` before recommending any commit.
 
 Forbidden for this phase:
 
-* migrations
+* unapproved migrations
 * `db push`
-* database connections
-* auth implementation
-* deployment
+* unapproved database/auth/runtime changes
+* production deployment
+* VPS access
 * commits unless explicitly approved
 * pushes unless explicitly approved
+* GitHub cloud edits unless explicitly approved
+
+Current AI Delivery / email constraints:
+
+* AI Delivery remains admin/operator-side.
+* Client Access / Client Portal is postponed until admin/operator modules are stable.
+* Email Notifications remains EN1 only: provider defaults exist, `notifications.digitalcubeagency.net` is verified for Resend, no API key is added, and no real sending is active.
+* EN2 event wiring remains paused.

@@ -78,7 +78,7 @@ The local smoke command intentionally refuses non-local API hosts. Add a separat
 - Password reset.
 - Billing.
 - Marketplace.
-- Finance Lite migration.
+- Legacy finance migration.
 - VPS deployment.
 - Production database use.
 - Role editing UI.

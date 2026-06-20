@@ -1,6 +1,10 @@
 # AI Delivery API Contract
 
-Docs-only checklist for the feature branch.
+Docs-only checklist and current-state contract for the feature branch.
+
+Current state: AI Delivery is local-first and admin/operator-side. Completed foundations include project/brief records, workflow runs, deliverables, deliverable review data, deliverable review admin API, deliverable review admin UI, and local deliverable review smoke. Client Access / Client Portal is intentionally postponed until admin/operator modules are stable.
+
+Explicitly not active: AI calls, crawling, WordPress, GA/GSC, Resend sending, client portal, public approval links, VPS, or production deployment.
 
 Backend routes currently expected:
 
@@ -97,7 +101,7 @@ Notes: Tenant-owned and admin/owner-only endpoints. This is backend-only foundat
 
 ## Client access foundation for review routes
 
-Before any AI Delivery client review endpoints or UI are exposed, the system must have an explicit tenant-scoped mapping from an authenticated system user to a client. This prevents relying on email, project ownership assumptions, or implicit tenant membership alone.
+Client Access / Client Portal must not be treated as current active behavior. Before any AI Delivery client review endpoints or UI are exposed to clients, the system must have an explicitly approved tenant-scoped mapping from an authenticated system user to a client. This prevents relying on email, project ownership assumptions, or implicit tenant membership alone.
 
 Block 7D.0 adds the backend foundation only:
 
@@ -112,9 +116,11 @@ Block 7D.0 adds the backend foundation only:
 - Internal helper:
   - `userCanAccessClient(authSession, clientId)` verifies active tenant context, client tenant ownership, non-archived user access, and owner/admin override.
 
-AI Delivery client review routes remain intentionally out of scope until this helper is used by the review endpoints.
+AI Delivery client-facing review remains intentionally paused until Client Access / Client Portal is explicitly resumed and approved.
 
 ## Monthly content plan client review routes
+
+Current status: paused/future. These routes document a possible authenticated review contract, but Client Access / Client Portal is not active now.
 
 Authenticated tenant users may review monthly content plans only when `userCanAccessClient(authSession, clientId)` passes for the AI Delivery Project client.
 
@@ -148,6 +154,8 @@ This block is admin-operated only. It does not add AI writing calls, WordPress p
 
 ## Content draft client review routes
 
+Current status: paused/future. Future client review may build on review records later, but client-facing review is not active now.
+
 Content draft review uses normal authenticated sessions only. No public token routes, public approval links, or magic links are exposed. Client access is tenant-scoped and requires `userCanAccessClient(authSession, clientId)` for the AI Delivery Project client. Archived AI Delivery projects and archived content drafts are not exposed to client review routes.
 
 Schema review metadata on `AiDeliveryContentDraft`:
@@ -172,7 +180,7 @@ Authenticated client-safe endpoints:
   - Body: `{ comment }`
   - Requires a non-empty comment, sets draft status to `CHANGES_REQUESTED`, increments `revisionCount`, and stores `clientComment`.
 
-The client UI route is `#/content-draft-review` and requires the user to be signed in before loading reviewable drafts.
+If explicitly resumed later, a client UI route such as `#/content-draft-review` must require the user to be signed in before loading reviewable drafts.
 
 ## Admin article image foundation
 
@@ -213,7 +221,7 @@ Admin/owner-only deliverable records for packaging approved content or image req
 
 Notes: Allowed delivery types: CONTENT_PACKAGE, ARTICLE_DRAFT, ARTICLE_IMAGE, CLIENT_HANDOFF, OTHER. Allowed statuses: DRAFT, READY, DELIVERED, REVISION_REQUESTED, ACCEPTED, ARCHIVED.
 
-This foundation intentionally excludes any export generation, WordPress publishing, R2 writes/uploads, AI generation calls, or client-facing delivery portal - those are out of scope for Block 7I.
+This foundation intentionally excludes any export generation, WordPress publishing, R2 writes/uploads, AI generation calls, or active client-facing delivery portal - those remain out of scope.
 
 ## Deliverable review foundation
 
@@ -252,7 +260,7 @@ Admin/owner-only runtime endpoints:
   - The review must belong to the same tenant, AI Delivery project, and deliverable.
   - Optional `workflowRunId` is accepted only when it belongs to the same tenant and AI Delivery project.
 
-This is a local backend/data foundation only. It intentionally does not add client login, client portal routes, public review links, token approvals, real email sending, Resend integration, API key handling, external services, AI calls, crawling, WordPress, GA/GSC, deployment, or VPS behavior.
+This is a local backend/data/admin foundation only. It intentionally does not add active client login, active client portal routes, public review links, token approvals, real email sending, Resend API key handling, external services, AI calls, crawling, WordPress, GA/GSC, deployment, or VPS behavior. Resend domain verification exists outside this contract; no API key is added and no sending is active.
 
 Admin UX notes:
 

@@ -24,6 +24,7 @@ These are the operating rules for AI-assisted work in this repository.
 - Do not run `npm audit fix --force`.
 - Do not run destructive git commands unless explicitly requested.
 - Do not run production deploy commands.
+- Do not commit, push, deploy, or touch VPS/production unless explicitly requested after review.
 - Before editing auth, API, or Prisma startup code, verify `.env` is loaded before importing app, auth, or Prisma modules.
 - Never change login or auth behavior until local env boot order is confirmed.
 - Always use Windows PowerShell commands.
@@ -35,15 +36,18 @@ These are the operating rules for AI-assisted work in this repository.
 - Stop if a migration would drop columns or tables.
 - Stop if files outside allowed scope are modified.
 - No broad module builds. Use small sealed work blocks.
+- ChatGPT is the scope controller/reviewer/task writer. Codex/Copilot/local tooling executes sealed tasks.
+- AI Delivery remains admin/operator-side until Client Access / Client Portal work is explicitly resumed.
+- Email Notifications remains EN1 only: provider defaults exist, `notifications.digitalcubeagency.net` is verified for Resend, no API key is added, and no real sending is active.
 
 ## Validation commands
 
 Use these commands when validating work:
 
 ```powershell
-npm run validate
-npm run smoke:local
-npm run smoke:browser
+npm.cmd run validate
+npm.cmd run smoke:local
+npm.cmd run smoke:browser
 npx prisma validate
 npx prisma migrate status
 ```

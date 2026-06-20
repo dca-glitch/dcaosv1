@@ -34,4 +34,4 @@ Tenant-specific enablement is not stored in the shared metadata. It is resolved 
 - No billing.
 - No dynamic plugin loading.
 - No module package loader.
-- No Finance Lite migration.
+- No legacy finance migration.

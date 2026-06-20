@@ -1,12 +1,14 @@
 # Email Notifications Backend Foundation Contract
 
-Status: EN1 backend foundation only.
+Status: EN1 backend foundation only. EN2 event wiring remains paused until modules are stable.
 
 ## Purpose
 
 The Email Notifications foundation provides a safe, general backend contract for recording outbound email notification attempts before any production email provider is enabled.
 
 EN1 is persistence and runtime scaffolding only. It does not send real email.
+
+Current state note: provider defaults exist and the Resend domain `notifications.digitalcubeagency.net` is verified. No `RESEND_API_KEY` has been added, no real sending is active, and no module events are wired to send notifications.
 
 ## Environment configuration
 
@@ -76,6 +78,7 @@ The utility returns the email log id, final status, provider, provider message i
 EN1 does not include:
 
 - real email sending in local mode
+- real Resend sending
 - API keys or secrets in the repository
 - UI
 - Client Access behavior changes
@@ -86,4 +89,5 @@ EN1 does not include:
 - marketing/newsletter email
 - background queue
 - cron or scheduled jobs
+- EN2 event wiring
 - VPS/deploy changes

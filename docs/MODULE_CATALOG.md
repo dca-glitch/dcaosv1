@@ -20,6 +20,7 @@ Invoices
 Bills
 Reports
 Client Plans
+AI Delivery
 
 ## Automation Modules
 
@@ -28,7 +29,11 @@ Content Planning
 AI Workflows
 Report Automation
 
-## First Module Priority
+## Current State Note
+
+AI Delivery is currently admin/operator-side and local-first. Client Access / Client Portal is postponed until admin/operator modules are stable. No AI calls, crawling, WordPress, GA/GSC, Resend sending, or production deployment is active.
+
+## Historical First Module Priority
 
 1. Users
 2. Roles and permissions

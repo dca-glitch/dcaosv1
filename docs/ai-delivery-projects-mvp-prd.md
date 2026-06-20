@@ -7,12 +7,16 @@ DCA OS Lite — AI Delivery Projects MVP.
 ## 2. Roles
 
 - **DCA Admin** operates monthly SEO/content delivery, manages setup, reviews client input, approves briefs, prepares plans, produces content, and controls publishing/release steps.
-- **Client** logs into DCA OS Lite to provide priorities, revise the brief once, review/approve monthly content plans, review/approve articles and images, and access a read-only archive.
+- **Client** is a future reviewed role for authenticated review/approval flows. Client Access / Client Portal is not active now and is intentionally postponed until admin/operator modules are stable.
+
+## Current state note
+
+AI Delivery is currently admin/operator-side. Completed local foundations include project/brief records, workflow runs, deliverables, deliverable review data, deliverable review admin API, deliverable review admin UI, local deliverable review smoke, and Email Notifications EN1. No AI calls, crawling, WordPress, GA/GSC, Resend sending, client portal, or production deployment has been added.
 
 ## 3. Core user outcomes
 
 - DCA manages recurring monthly AI-supported SEO/content delivery inside DCA OS Lite.
-- Clients use one authenticated portal for inputs, reviews, approvals, comments, and archive access.
+- Future clients may use authenticated review flows after Client Access / Client Portal is explicitly resumed and approved.
 - Delivery work is structured by client, month, project, brief, content plan, article/image approvals, and later reporting.
 - The MVP stays admin-operated and cost-controlled instead of autonomous.
 
@@ -21,24 +25,24 @@ DCA OS Lite — AI Delivery Projects MVP.
 1. Admin creates monthly AI Delivery Project, for example `Client Name — SEO July 2026`.
 2. Admin defines planned content scope for the month.
 3. Admin collects client priorities, products, and services.
-4. Admin later runs research/crawl.
-5. Client sees research summary / market intelligence.
-6. Client fills or revises brief once.
+4. Admin may later run research/crawl after explicit approval.
+5. Future client review may show research summary / market intelligence.
+6. Future client review may allow brief input/revision.
 7. Admin approves final brief.
-8. Admin/AI later prepares monthly content plan.
-9. Client reviews monthly content plan with comments per item.
-10. Client can suggest new topics.
+8. Admin may later prepare a monthly content plan with explicitly approved AI assistance.
+9. Future client review may allow monthly content plan comments per item.
+10. Future client review may allow suggested new topics.
 11. Monthly content plan can have multiple revision cycles.
 12. After approval, admin produces content.
 13. Each article has 1 header image and 2 illustrative images.
-14. Client approves each article and image set before publication.
-15. Client has one change request round per article/image set.
-16. Final approval must come from client.
-17. Admin later creates real WordPress draft through API.
+14. Future client review may approve each article and image set before publication.
+15. Future client review may allow one change request round per article/image set.
+16. Future final approval policy needs confirmation before client-facing implementation.
+17. Admin may later create real WordPress drafts through API after explicit approval.
 18. Admin publishes/releases.
 19. System later generates monthly report.
 20. Admin approves report.
-21. Client sees report and read-only archive.
+21. Future client review may show reports and a read-only archive.
 
 ## 5. Ratified build sequence
 
@@ -74,6 +78,8 @@ Each implementation layer is reviewed and validated before the next layer begins
 - Brief statuses.
 - One client brief revision rule.
 - Client archive read-only behavior.
+
+Current state clarification: Client Access / Client Portal is not active; client-facing behavior in this PRD is future intent unless separately marked completed.
 
 ## 8. Out of scope for Build Block 1
 
@@ -140,7 +146,7 @@ Each implementation layer is reviewed and validated before the next layer begins
 - Brief status lifecycle matches the approved enum.
 - `revisionCount` supports the one client brief revision rule.
 - Build Block 1 remains local-first and admin-operated.
-- Client access remains authenticated inside DCA OS Lite.
+- Future client access must remain authenticated inside DCA OS Lite when explicitly resumed and approved.
 
 ## 12. Cost-control and implementation rules
 
@@ -265,3 +271,29 @@ Explicit exclusions confirmed at closure:
 - No background jobs.
 - No deliverable generation.
 - No deploy/VPS.
+
+## 16. Current foundation alignment note
+
+The current approved AI Delivery foundation is local-first and admin/operator-side:
+
+- Project/brief foundation is complete.
+- Workflow run foundation is complete.
+- Deliverables foundation is complete.
+- Deliverable review data foundation is complete.
+- Deliverable review admin API is complete.
+- Deliverable review admin UI is complete.
+- Local deliverable review smoke script exists.
+- Email notification backend foundation EN1 exists only.
+
+Still not implemented or active:
+
+- AI calls.
+- Crawling.
+- WordPress publishing/draft creation.
+- GA/GSC integration.
+- Resend sending or API key handling.
+- Client Portal / active Client Access workflows.
+- Public approval links.
+- Production deployment or VPS behavior.
+
+EN2 email event wiring remains paused until modules are stable.

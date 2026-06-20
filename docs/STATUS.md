@@ -2,19 +2,27 @@
 
 ## Current Phase
 
-Foundation phase.
+DCA OS Lite is in local-first admin/operator foundation work. Production is frozen unless explicitly approved.
 
-## Completed
+## Completed Local Foundations
 
-- Repository initialized
-- Workspace created
-- Dependencies installed
-- Lockfile committed
-- Real validation enabled
-- CI workflow added
-- Dependency monitoring added
-- Documentation started
-- Module planning started
+- Repository/workspace, validation, CI, dependency monitoring, and documentation foundations.
+- Local auth/session/tenant/module foundations.
+- Dark Nebula frontend UI direction and reusable UI foundation.
+- AI Delivery project/brief foundation.
+- AI Delivery workflow run foundation.
+- AI Delivery deliverables foundation.
+- AI Delivery deliverable review data foundation, admin API, admin UI, and local smoke script.
+- Email Notifications EN1 backend foundation only.
+
+## Current Constraints
+
+- Work is local-first on Windows PowerShell.
+- ChatGPT controls/reviews scope; Codex/Copilot/local tooling executes sealed tasks.
+- No commit, push, deploy, VPS, or production action unless explicitly approved after review.
+- Client Access / Client Portal is postponed until admin/operator modules are stable.
+- No AI calls, crawling, WordPress, GA/GSC, Resend sending, client portal, or production deployment is active.
+- EN2 email event wiring remains paused until modules are stable.
 
 ## Current Repository Areas
 
@@ -23,15 +31,12 @@ Foundation phase.
 - packages/shared
 - packages/data
 - docs
-- .github
+- scripts
+- tests
 
 ## Next Work
 
-- Review CI result
-- Review dependency audit
-- Plan local database setup
-- Plan Prisma Client usage
-- Plan database access layer
-- Plan authentication
-- Plan tenant context
-- Implement platform modules after gates
+- Keep foundational docs/rules aligned with current assumptions.
+- Stabilize AI Delivery admin/operator workflows with repeatable validation/smoke scripts.
+- Resume Email Notifications EN2 only after explicit approval.
+- Treat future client review as a later design/build block, not current behavior.
