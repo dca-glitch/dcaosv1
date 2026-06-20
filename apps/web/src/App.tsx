@@ -34,6 +34,8 @@ import {
   type AiDeliveryContentDraftSummary,
   type AiDeliveryContentPlanFormValues,
   type AiDeliveryContentPlanSummary,
+  type AiDeliveryWorkflowRunFormValues,
+  type AiDeliveryWorkflowRunSummary,
   type AiDeliveryProjectSummary,
   type AiDeliveryProjectFormValues
 } from "./pages/ai-delivery/AiDeliveryPage";
@@ -247,6 +249,14 @@ type AiDeliveryDeliverablesResponse = {
 
 type AiDeliveryDeliverableResponse = {
   deliverable: AiDeliveryDeliverableSummary | null;
+};
+
+type AiDeliveryWorkflowRunsResponse = {
+  workflowRuns: AiDeliveryWorkflowRunSummary[];
+};
+
+type AiDeliveryWorkflowRunResponse = {
+  workflowRun: AiDeliveryWorkflowRunSummary | null;
 };
 
 type ClientContentDraftReviewResponse = AiDeliveryContentDraftsResponse;
@@ -2212,6 +2222,46 @@ export function App() {
     }
   }
 
+  async function handleFetchAiDeliveryWorkflowRuns(projectId: string): Promise<AiDeliveryWorkflowRunSummary[]> {
+    setAppMessage(null);
+    try {
+      const response = await runAuthenticatedRequest<AiDeliveryWorkflowRunsResponse>(`/ai-delivery/projects/${projectId}/workflow-runs`);
+      if (!response) return [];
+      if (!response.ok) {
+        setAppMessage({ tone: "error", text: getErrorMessage(response) });
+        return [];
+      }
+      return response.data.workflowRuns;
+    } catch (error) {
+      setAppMessage({ tone: "error", text: maskError(error) });
+      return [];
+    }
+  }
+
+  async function handleSaveAiDeliveryWorkflowRun(
+    projectId: string,
+    workflowRunId: string | null,
+    values: AiDeliveryWorkflowRunFormValues
+  ): Promise<AiDeliveryWorkflowRunSummary | null> {
+    setAppMessage(null);
+    try {
+      const response = await runAuthenticatedRequest<AiDeliveryWorkflowRunResponse>(
+        workflowRunId ? `/ai-delivery/projects/${projectId}/workflow-runs/${workflowRunId}` : `/ai-delivery/projects/${projectId}/workflow-runs`,
+        { method: workflowRunId ? "PUT" : "POST", body: values }
+      );
+      if (!response) return null;
+      if (!response.ok) {
+        setAppMessage({ tone: "error", text: getErrorMessage(response) });
+        return null;
+      }
+      setAppMessage({ tone: "success", text: workflowRunId ? "Workflow run saved." : "Workflow run created." });
+      return response.data.workflowRun;
+    } catch (error) {
+      setAppMessage({ tone: "error", text: maskError(error) });
+      return null;
+    }
+  }
+
   async function handleArchiveAiDeliveryDeliverable(projectId: string, deliverableId: string): Promise<boolean> {
     setAppMessage(null);
     try {
@@ -3006,6 +3056,8 @@ export function App() {
           onFetchDeliverables={handleFetchAiDeliveryDeliverables}
           onSaveDeliverable={handleSaveAiDeliveryDeliverable}
           onArchiveDeliverable={handleArchiveAiDeliveryDeliverable}
+          onFetchWorkflowRuns={handleFetchAiDeliveryWorkflowRuns}
+          onSaveWorkflowRun={handleSaveAiDeliveryWorkflowRun}
         />
       ) : null}
       {!loading && activeView === "content-plan-review" ? (

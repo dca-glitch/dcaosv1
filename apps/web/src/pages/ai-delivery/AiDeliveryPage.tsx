@@ -161,6 +161,24 @@ export type AiDeliveryDeliverableFormValues = {
   isArchived?: boolean;
 };
 
+export type AiDeliveryWorkflowRunSummary = {
+  id: string;
+  tenantId: string;
+  aiDeliveryProjectId: string;
+  status: string;
+  adminNotes: string | null;
+  resultPlaceholder: string | null;
+  brief: AiDeliveryBriefSummary | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type AiDeliveryWorkflowRunFormValues = {
+  status: string;
+  adminNotes: string;
+  resultPlaceholder: string;
+};
+
 type ContentPlanItemDraft = {
   localId: string;
   title: string;
@@ -219,7 +237,11 @@ export type AiDeliveryProjectsProps = {
   onFetchDeliverables?: (projectId: string) => Promise<AiDeliveryDeliverableSummary[]>;
   onSaveDeliverable?: (projectId: string, deliverableId: string | null, values: AiDeliveryDeliverableFormValues) => Promise<AiDeliveryDeliverableSummary | null>;
   onArchiveDeliverable?: (projectId: string, deliverableId: string) => Promise<boolean>;
+  onFetchWorkflowRuns?: (projectId: string) => Promise<AiDeliveryWorkflowRunSummary[]>;
+  onSaveWorkflowRun?: (projectId: string, workflowRunId: string | null, values: AiDeliveryWorkflowRunFormValues) => Promise<AiDeliveryWorkflowRunSummary | null>;
 };
+
+const workflowRunStatuses = ["DRAFT", "READY", "IN_PROGRESS", "REVIEW", "COMPLETED", "ARCHIVED"] as const;
 
 const emptyForm = (clientId = ""): AiDeliveryProjectFormValues => ({
   clientId,
@@ -266,8 +288,20 @@ const emptyArticleImage = (): AiDeliveryArticleImageFormValues => ({
   notes: ""
 });
 
+const emptyWorkflowRun = (): AiDeliveryWorkflowRunFormValues => ({
+  status: "DRAFT",
+  adminNotes: "",
+  resultPlaceholder: ""
+});
+
 function formatOptionalDate(value: string | null | undefined): string {
   return value ? new Date(value).toLocaleString() : "Not set";
+}
+
+function formatPreview(value: string | null | undefined): string {
+  const text = (value ?? "").trim();
+  if (!text) return "Not set";
+  return text.length > 160 ? `${text.slice(0, 157)}...` : text;
 }
 
 function formatContentPlanReviewStatus(plan: AiDeliveryContentPlanSummary | null): string {
@@ -312,7 +346,9 @@ export function AiDeliveryPage({
   onArchiveArticleImage,
   onFetchDeliverables,
   onSaveDeliverable,
-  onArchiveDeliverable
+  onArchiveDeliverable,
+  onFetchWorkflowRuns,
+  onSaveWorkflowRun
 }: AiDeliveryProjectsProps) {
   const [filter, setFilter] = useState<"all" | "active" | "archived">("active");
   const [editorProjectId, setEditorProjectId] = useState<string | null>(null);
@@ -362,6 +398,12 @@ export function AiDeliveryPage({
   const [deliverables, setDeliverables] = useState<AiDeliveryDeliverableSummary[]>([]);
   const [deliverableEditorId, setDeliverableEditorId] = useState<string | null>(null);
   const [deliverableForm, setDeliverableForm] = useState<AiDeliveryDeliverableFormValues>({ contentDraftId: null, articleImageId: null, title: "", description: null, deliveryType: "CONTENT_PACKAGE", status: "DRAFT", exportUrl: null, storageKey: null, notes: null, isArchived: false });
+  const [openWorkflowRunsId, setOpenWorkflowRunsId] = useState<string | null>(null);
+  const [workflowRunsLoading, setWorkflowRunsLoading] = useState(false);
+  const [workflowRunsSaving, setWorkflowRunsSaving] = useState(false);
+  const [workflowRuns, setWorkflowRuns] = useState<AiDeliveryWorkflowRunSummary[]>([]);
+  const [workflowRunEditorId, setWorkflowRunEditorId] = useState<string | null>(null);
+  const [workflowRunForm, setWorkflowRunForm] = useState<AiDeliveryWorkflowRunFormValues>(emptyWorkflowRun());
 
   const selectedProject = useMemo(() => projects.find((p) => p.id === editorProjectId) ?? null, [editorProjectId, projects]);
   const openProject = useMemo(() => projects.find((p) => p.id === openBriefId) ?? null, [openBriefId, projects]);
@@ -369,6 +411,7 @@ export function AiDeliveryPage({
   const openContentDraftsProject = useMemo(() => projects.find((p) => p.id === openContentDraftsId) ?? null, [openContentDraftsId, projects]);
   const openArticleImagesProject = useMemo(() => projects.find((p) => p.id === openArticleImagesId) ?? null, [openArticleImagesId, projects]);
   const openDeliverablesProject = useMemo(() => projects.find((p) => p.id === openDeliverablesId) ?? null, [openDeliverablesId, projects]);
+  const openWorkflowRunsProject = useMemo(() => projects.find((p) => p.id === openWorkflowRunsId) ?? null, [openWorkflowRunsId, projects]);
   const linkableProjects = useMemo(
     () => projectsList.filter((project) => project.clientId === draft.clientId),
     [draft.clientId, projectsList]
@@ -732,6 +775,52 @@ export function AiDeliveryPage({
     setDeliverableForm({ contentDraftId: null, articleImageId: null, title: "", description: null, deliveryType: "CONTENT_PACKAGE", status: "DRAFT", exportUrl: null, storageKey: null, notes: null, isArchived: false });
   }
 
+  async function openWorkflowRuns(projectId: string) {
+    setOpenWorkflowRunsId(projectId);
+    setWorkflowRunsLoading(true);
+    setWorkflowRuns([]);
+    setWorkflowRunEditorId(null);
+    setWorkflowRunForm(emptyWorkflowRun());
+    try {
+      if (typeof onFetchWorkflowRuns === "function") {
+        setWorkflowRuns(await onFetchWorkflowRuns(projectId));
+      }
+    } finally {
+      setWorkflowRunsLoading(false);
+    }
+  }
+
+  function editWorkflowRun(run: AiDeliveryWorkflowRunSummary) {
+    setWorkflowRunEditorId(run.id);
+    setWorkflowRunForm({
+      status: run.status,
+      adminNotes: run.adminNotes ?? "",
+      resultPlaceholder: run.resultPlaceholder ?? ""
+    });
+  }
+
+  async function saveWorkflowRun(projectId: string) {
+    if (typeof onSaveWorkflowRun !== "function") return;
+    setWorkflowRunsSaving(true);
+    try {
+      const saved = await onSaveWorkflowRun(projectId, workflowRunEditorId, workflowRunForm);
+      if (saved && typeof onFetchWorkflowRuns === "function") {
+        setWorkflowRuns(await onFetchWorkflowRuns(projectId));
+        setWorkflowRunEditorId(null);
+        setWorkflowRunForm(emptyWorkflowRun());
+      }
+    } finally {
+      setWorkflowRunsSaving(false);
+    }
+  }
+
+  function closeWorkflowRuns() {
+    setOpenWorkflowRunsId(null);
+    setWorkflowRuns([]);
+    setWorkflowRunEditorId(null);
+    setWorkflowRunForm(emptyWorkflowRun());
+  }
+
   if (loading) return <LoadingState label="Loading AI delivery projects" />;
   if (error) return <ErrorState title="AI delivery unavailable" message={error} />;
 
@@ -802,6 +891,9 @@ export function AiDeliveryPage({
                       </button>
                       <button className="secondary-action" onClick={() => void openContentPlan(p.id)} type="button">
                         Content plan
+                      </button>
+                      <button className="secondary-action" onClick={() => void openWorkflowRuns(p.id)} type="button">
+                        Workflow runs
                       </button>
                       <button className="secondary-action" onClick={() => void openContentDrafts(p.id)} type="button">
                         Content drafts
@@ -1259,6 +1351,80 @@ export function AiDeliveryPage({
           ) : (
             <div>Project not found.</div>
           )}
+        </Modal>
+      ) : null}
+      {openWorkflowRunsId ? (
+        <Modal onClose={closeWorkflowRuns} title="Workflow Runs">
+          {workflowRunsLoading ? (
+            <LoadingState label="Loading workflow runs" />
+          ) : openWorkflowRunsProject ? (
+            <div>
+              <section className="field-panel">
+                <h3>Workflow run editor</h3>
+                <p className="muted-text">Admin-operated workflow run records only. No AI calls, crawling, publishing, automation, or deliverable generation runs from this screen.</p>
+                <div className="field-grid">
+                  <label>
+                    Status
+                    <select value={workflowRunForm.status} onChange={(event) => setWorkflowRunForm((current) => ({ ...current, status: event.target.value }))}>
+                      {workflowRunStatuses.map((status) => <option key={status} value={status}>{status}</option>)}
+                    </select>
+                  </label>
+                  <label className="field-span-2">
+                    Admin notes
+                    <textarea maxLength={4000} rows={4} value={workflowRunForm.adminNotes} onChange={(event) => setWorkflowRunForm((current) => ({ ...current, adminNotes: event.target.value }))} />
+                  </label>
+                  <label className="field-span-2">
+                    Result placeholder
+                    <textarea maxLength={4000} rows={4} value={workflowRunForm.resultPlaceholder} onChange={(event) => setWorkflowRunForm((current) => ({ ...current, resultPlaceholder: event.target.value }))} />
+                  </label>
+                </div>
+                <div className="modal-footer">
+                  <button className="secondary-action" disabled={workflowRunsSaving} onClick={() => { setWorkflowRunEditorId(null); setWorkflowRunForm(emptyWorkflowRun()); }} type="button">New workflow run</button>
+                  <button className="primary-action" disabled={workflowRunsSaving} onClick={() => void saveWorkflowRun(openWorkflowRunsProject.id)} type="button">
+                    {workflowRunsSaving ? "Saving" : workflowRunEditorId ? "Save workflow run" : "Create Workflow Run"}
+                  </button>
+                </div>
+              </section>
+
+              <section className="field-panel">
+                <h3>Existing workflow runs</h3>
+                {workflowRuns.length === 0 ? <div className="state-panel">No workflow runs have been created yet.</div> : null}
+                {workflowRuns.map((run) => (
+                  <article className="entity-card" key={run.id} style={{ marginBottom: "1rem" }}>
+                    <div className="entity-card-header">
+                      <div>
+                        <StatusBadge status={run.status} />
+                        <h3>Workflow run</h3>
+                        <p>Created {formatOptionalDate(run.createdAt)}</p>
+                      </div>
+                      <div className="card-actions">
+                        <button className="secondary-action" disabled={workflowRunsSaving} onClick={() => editWorkflowRun(run)} type="button">Edit</button>
+                      </div>
+                    </div>
+                    <dl className="brief-grid">
+                      <div>
+                        <dt>Status</dt>
+                        <dd>{run.status}</dd>
+                      </div>
+                      <div>
+                        <dt>Created</dt>
+                        <dd>{formatOptionalDate(run.createdAt)}</dd>
+                      </div>
+                      <div className="field-span-2">
+                        <dt>Admin notes preview</dt>
+                        <dd>{formatPreview(run.adminNotes)}</dd>
+                      </div>
+                      <div className="field-span-2">
+                        <dt>Result placeholder preview</dt>
+                        <dd>{formatPreview(run.resultPlaceholder)}</dd>
+                      </div>
+                    </dl>
+                  </article>
+                ))}
+              </section>
+              <div className="modal-footer"><button className="secondary-action" onClick={closeWorkflowRuns} type="button">Close</button></div>
+            </div>
+          ) : <div>Project not found.</div>}
         </Modal>
       ) : null}
       {openContentDraftsId ? (
