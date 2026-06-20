@@ -215,6 +215,28 @@ Notes: Allowed delivery types: CONTENT_PACKAGE, ARTICLE_DRAFT, ARTICLE_IMAGE, CL
 
 This foundation intentionally excludes any export generation, WordPress publishing, R2 writes/uploads, AI generation calls, or client-facing delivery portal - those are out of scope for Block 7I.
 
+## Deliverable review foundation
+
+Admin/operator-side review records are stored separately from deliverable package records so future client review can be added without changing the current admin data model.
+
+Data model: `AiDeliveryDeliverableReview`
+
+- Tenant-owned through `tenantId`.
+- Linked to `AiDeliveryProject` and a required `AiDeliveryDeliverable`.
+- Optionally linked to `AiDeliveryWorkflowRun` when a review belongs to a manual workflow run.
+- Tracks placeholder review state with `status`, `reviewerName`, and `reviewNotes`.
+- Includes `createdAt` and `updatedAt` timestamps.
+
+Allowed review statuses:
+
+- `NOT_STARTED`
+- `ADMIN_REVIEW`
+- `CHANGES_REQUESTED`
+- `APPROVED`
+- `ARCHIVED`
+
+This is a local backend/data foundation only. It intentionally does not add client login, client portal routes, public review links, token approvals, real email sending, Resend integration, API key handling, external services, AI calls, crawling, WordPress, GA/GSC, deployment, or VPS behavior.
+
 Admin UX notes:
 
 - The AI Delivery admin UI is intentionally manual and admin-operated. Project cards now include a compact workflow summary (Brief, Content plan, Content drafts, Article images, Deliverables) to help operators quickly review progress without triggering additional background loads.

@@ -159,6 +159,7 @@ model Tenant {
   aiDeliveryContentDrafts AiDeliveryContentDraft[]
   aiDeliveryArticleImages AiDeliveryArticleImage[]
   aiDeliveryDeliverables AiDeliveryDeliverable[]
+  aiDeliveryDeliverableReviews AiDeliveryDeliverableReview[]
   aiDeliveryWorkflowRuns AiDeliveryWorkflowRun[]
   clientUserAccesses   ClientUserAccess[]
   emailLogs            EmailLog[]            @relation("TenantEmailLogs")
@@ -416,6 +417,7 @@ model AiDeliveryProject {
   contentDrafts AiDeliveryContentDraft[]
   articleImages AiDeliveryArticleImage[]
   deliverables AiDeliveryDeliverable[]
+  deliverableReviews AiDeliveryDeliverableReview[]
   workflowRuns AiDeliveryWorkflowRun[]
 
   @@index([tenantId])
@@ -607,6 +609,7 @@ model AiDeliveryDeliverable {
   aiDeliveryProject   AiDeliveryProject       @relation(fields: [aiDeliveryProjectId], references: [id], onDelete: Cascade)
   contentDraft        AiDeliveryContentDraft? @relation(fields: [contentDraftId], references: [id], onDelete: SetNull)
   articleImage        AiDeliveryArticleImage? @relation(fields: [articleImageId], references: [id], onDelete: SetNull)
+  reviews             AiDeliveryDeliverableReview[]
 
   @@index([tenantId])
   @@index([tenantId, aiDeliveryProjectId])
@@ -614,6 +617,38 @@ model AiDeliveryDeliverable {
   @@index([tenantId, isArchived])
   @@index([tenantId, contentDraftId])
   @@index([tenantId, articleImageId])
+}
+
+enum AiDeliveryDeliverableReviewStatus {
+  NOT_STARTED
+  ADMIN_REVIEW
+  CHANGES_REQUESTED
+  APPROVED
+  ARCHIVED
+}
+
+model AiDeliveryDeliverableReview {
+  id                  String                              @id @default(uuid())
+  tenantId            String
+  aiDeliveryProjectId String
+  deliverableId       String
+  workflowRunId       String?
+  status              AiDeliveryDeliverableReviewStatus  @default(NOT_STARTED)
+  reviewerName        String?
+  reviewNotes         String?
+  createdAt           DateTime                            @default(now())
+  updatedAt           DateTime                            @updatedAt
+
+  tenant              Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  aiDeliveryProject   AiDeliveryProject       @relation(fields: [aiDeliveryProjectId], references: [id], onDelete: Cascade)
+  deliverable         AiDeliveryDeliverable   @relation(fields: [deliverableId], references: [id], onDelete: Cascade)
+  workflowRun         AiDeliveryWorkflowRun?  @relation(fields: [workflowRunId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@index([tenantId, aiDeliveryProjectId])
+  @@index([tenantId, deliverableId])
+  @@index([tenantId, workflowRunId])
+  @@index([tenantId, status])
 }
 
 enum AiDeliveryWorkflowRunStatus {
@@ -637,6 +672,7 @@ model AiDeliveryWorkflowRun {
 
   tenant              Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   aiDeliveryProject   AiDeliveryProject @relation(fields: [aiDeliveryProjectId], references: [id], onDelete: Cascade)
+  deliverableReviews  AiDeliveryDeliverableReview[]
 
   @@index([tenantId])
   @@index([tenantId, aiDeliveryProjectId])
