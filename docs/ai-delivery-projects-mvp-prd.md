@@ -153,3 +153,38 @@ Each implementation layer is reviewed and validated before the next layer begins
 - Use the term “monthly content plan,” not “package.”
 - Client archive is read-only.
 - Public approval links are outside MVP.
+
+## 13. Build Block 1 closure note
+
+Build Block 1 — AI Delivery Project + Brief Foundation is closed for the local foundation layer.
+
+Completed project foundation:
+
+- Admin create, edit, list, and archive behavior.
+- Client/project link filtering.
+- `targetMonth` persistence.
+- Empty-state create action.
+
+Completed brief foundation:
+
+- Open, edit, save, and refresh behavior.
+- Brief routes documented.
+- Manual brief round-trip passed.
+
+Evidence:
+
+- `npm.cmd run validate` passed.
+- `npm.cmd run smoke:local` passed.
+- Manual brief round-trip passed.
+
+Explicitly out of scope for this block:
+
+- AI calls.
+- Crawling.
+- WordPress.
+- GA/GSC.
+- Deployment.
+- Deliverable generation.
+- Automation or background agents.
+
+Next intended block: AI Delivery Workflow Foundation / admin-run workflow. AI calls remain out of scope unless separately approved.
