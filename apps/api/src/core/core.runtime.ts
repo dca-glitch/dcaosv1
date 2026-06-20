@@ -94,6 +94,23 @@ function toNullableString(value: string | null | undefined): string | null {
   return typeof value === "string" && value.length > 0 ? value : null;
 }
 
+function parseAiDeliveryTargetMonth(value: string): Date | null {
+  const match = /^(\d{4})-(0[1-9]|1[0-2])$/.exec(value);
+  if (!match) {
+    return null;
+  }
+
+  const year = Number(match[1]);
+  const monthIndex = Number(match[2]) - 1;
+  const date = new Date(Date.UTC(year, monthIndex, 1));
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function formatAiDeliveryTargetMonth(value: Date | string): string {
+  const date = value instanceof Date ? value : new Date(value);
+  return Number.isNaN(date.getTime()) ? "" : date.toISOString().slice(0, 7);
+}
+
 function getAiDeliveryProjectDelegate(client: PrismaTx | typeof prisma): AiDeliveryProjectDelegate {
   return (client as unknown as { aiDeliveryProject: AiDeliveryProjectDelegate }).aiDeliveryProject;
 }
@@ -262,7 +279,7 @@ function toAiDeliveryProjectSummary(aiDeliveryProject: {
   projectId: string | null;
   project: { id: string; name: string } | null;
   name: string;
-  targetMonth: string;
+  targetMonth: Date | string;
   plannedContentScopeNotes: string | null;
   isArchived: boolean;
   brief: { id: string; status: string; createdAt: Date; updatedAt: Date } | null;
@@ -286,7 +303,7 @@ function toAiDeliveryProjectSummary(aiDeliveryProject: {
         }
       : null,
     name: aiDeliveryProject.name,
-    targetMonth: aiDeliveryProject.targetMonth,
+    targetMonth: formatAiDeliveryTargetMonth(aiDeliveryProject.targetMonth),
     plannedContentScopeNotes: aiDeliveryProject.plannedContentScopeNotes,
     isArchived: aiDeliveryProject.isArchived,
     brief: aiDeliveryProject.brief
@@ -1634,6 +1651,11 @@ export async function createAiDeliveryProject(
     return null;
   }
 
+  const targetMonth = parseAiDeliveryTargetMonth(input.targetMonth);
+  if (!targetMonth) {
+    return null;
+  }
+
   return prisma.$transaction(async (tx: PrismaTx) => {
     const client = await getAiDeliveryTenantClient(tx, tenantId, input.clientId);
     if (!client) {
@@ -1651,7 +1673,7 @@ export async function createAiDeliveryProject(
         clientId: client.id,
         projectId: project?.id ?? null,
         name: input.name,
-        targetMonth: input.targetMonth,
+        targetMonth,
         plannedContentScopeNotes: toNullableString(input.plannedContentScopeNotes),
         brief: {
           create: {
@@ -2383,6 +2405,11 @@ export async function updateAiDeliveryProject(
     return null;
   }
 
+  const targetMonth = parseAiDeliveryTargetMonth(input.targetMonth);
+  if (!targetMonth) {
+    return null;
+  }
+
   return prisma.$transaction(async (tx: PrismaTx) => {
     const existing = await getAiDeliveryProjectRecord(tx, tenantId, aiDeliveryProjectId);
     if (!existing) {
@@ -2407,7 +2434,7 @@ export async function updateAiDeliveryProject(
         clientId: client.id,
         projectId: project?.id ?? null,
         name: input.name,
-        targetMonth: input.targetMonth,
+        targetMonth,
         plannedContentScopeNotes: toNullableString(input.plannedContentScopeNotes)
       },
       select: aiDeliveryProjectSelect
