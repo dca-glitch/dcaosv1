@@ -101,6 +101,22 @@ enum AuditActorType {
   API
 }
 
+enum EmailStatus {
+  QUEUED
+  SENT
+  FAILED
+  SKIPPED
+}
+
+enum EmailTemplateKey {
+  CLIENT_INVITE
+  PASSWORD_RESET
+  AI_DELIVERY_BRIEF_REQUEST
+  AI_DELIVERY_REVIEW_REQUEST
+  AI_DELIVERY_APPROVED
+  INVOICE_ISSUED
+}
+
 enum AiDeliveryBriefStatus {
   DRAFT
   CLIENT_INPUT_REQUESTED
@@ -145,6 +161,7 @@ model Tenant {
   aiDeliveryDeliverables AiDeliveryDeliverable[]
   aiDeliveryWorkflowRuns AiDeliveryWorkflowRun[]
   clientUserAccesses   ClientUserAccess[]
+  emailLogs            EmailLog[]            @relation("TenantEmailLogs")
 }
 
 model User {
@@ -873,6 +890,29 @@ model AuditLog {
   @@index([actorUserId])
   @@index([action])
   @@index([entityType, entityId])
+  @@index([createdAt])
+}
+
+model EmailLog {
+  id                String           @id @default(uuid())
+  tenantId          String?
+  recipientEmail    String
+  subject           String
+  templateKey       EmailTemplateKey
+  status            EmailStatus
+  relatedModule     String?
+  relatedEntityId   String?
+  providerMessageId String?
+  errorMessage      String?
+  createdAt         DateTime         @default(now())
+  sentAt            DateTime?
+  tenant            Tenant?          @relation("TenantEmailLogs", fields: [tenantId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@index([recipientEmail])
+  @@index([templateKey])
+  @@index([status])
+  @@index([relatedModule, relatedEntityId])
   @@index([createdAt])
 }
 
