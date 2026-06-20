@@ -188,3 +188,80 @@ Explicitly out of scope for this block:
 - Automation or background agents.
 
 Next intended block: AI Delivery Workflow Foundation / admin-run workflow. AI calls remain out of scope unless separately approved.
+
+## 14. Build Block 2 contract — Workflow run admin tracking
+
+Build Block 2 adds a manual Workflow Run tracking layer for AI Delivery Projects.
+
+Workflow run records exist for manual admin-run workflow tracking only. Each record is linked to an AI Delivery Project and uses the existing Brief context as the operational baseline for tracking the run. The record is not an automation trigger and does not imply AI, crawl, publishing, analytics, or delivery execution.
+
+Tracked fields:
+
+- `status`
+- `adminNotes`
+- `resultPlaceholder`
+- `createdAt`, `updatedAt`
+
+Approved status order:
+
+```text
+DRAFT -> READY -> IN_PROGRESS -> REVIEW -> COMPLETED -> ARCHIVED
+```
+
+Approved status gate:
+
+- One-step forward transitions only.
+- Same-status saves are allowed for admin notes and result placeholder edits.
+- Backward transitions and skipped forward transitions are excluded.
+
+API endpoints:
+
+- `GET /api/v1/ai-delivery/projects/:projectId/workflow-runs`
+- `POST /api/v1/ai-delivery/projects/:projectId/workflow-runs`
+- `PUT /api/v1/ai-delivery/projects/:projectId/workflow-runs/:workflowRunId`
+
+UI location:
+
+- Workflow runs action/modal inside AI Delivery project cards.
+
+Explicitly out of scope for Build Block 2:
+
+- AI calls.
+- Crawling.
+- WordPress.
+- GA/GSC.
+- Automation.
+- Background jobs.
+- Deliverable generation.
+- Deploy/VPS.
+
+## 15. Build Block 2 closure note
+
+Build Block 2 — AI Delivery Workflow Run Foundation is closed for the local manual admin-run workflow layer.
+
+Completed BB2 slices:
+
+- 2A workflow run backend/schema/API foundation.
+- 2B workflow run minimal UI.
+- 2C workflow run status gate.
+- Result placeholder exists and is editable.
+- Validation passed.
+- Manual UI QA passed.
+- No deploy or VPS actions were performed.
+
+Closure evidence:
+
+- Current synced head: `f118c0f Gate AI Delivery workflow run statuses`.
+- `npm.cmd run validate` passed for the completed block before closure documentation.
+- Manual UI QA passed for the workflow runs action/modal inside AI Delivery project cards.
+
+Explicit exclusions confirmed at closure:
+
+- No AI calls.
+- No crawling.
+- No WordPress.
+- No GA/GSC.
+- No automation.
+- No background jobs.
+- No deliverable generation.
+- No deploy/VPS.

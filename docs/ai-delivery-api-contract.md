@@ -220,3 +220,49 @@ Admin UX notes:
 - The AI Delivery admin UI is intentionally manual and admin-operated. Project cards now include a compact workflow summary (Brief, Content plan, Content drafts, Article images, Deliverables) to help operators quickly review progress without triggering additional background loads.
 - Action buttons are ordered to follow the admin flow: Brief -> Content plan -> Content drafts -> Article images -> Deliverables -> Edit -> Archive.
 - These are UI-only polish notes; no backend or export behavior is implied.
+
+## Workflow run admin tracking foundation
+
+Workflow run records provide manual admin-run workflow tracking only. They are linked to an AI Delivery Project and use the existing Brief context as the operational baseline for the run.
+
+Tracked fields:
+
+- `status`
+- `adminNotes`
+- `resultPlaceholder`
+- `createdAt`, `updatedAt`
+
+Status order:
+
+```text
+DRAFT -> READY -> IN_PROGRESS -> REVIEW -> COMPLETED -> ARCHIVED
+```
+
+Status gate:
+
+- A workflow run may move only one status step forward at a time.
+- Saving the same status is allowed for admin note and result placeholder edits.
+- Skipping forward, moving backward, or using an unknown status is outside the accepted workflow-run contract.
+
+Admin/owner-only API endpoints:
+
+- `GET /api/v1/ai-delivery/projects/:projectId/workflow-runs`
+  - Lists manual workflow run records for the AI Delivery project.
+- `POST /api/v1/ai-delivery/projects/:projectId/workflow-runs`
+  - Creates a manual workflow run record linked to the AI Delivery project and existing Brief context.
+- `PUT /api/v1/ai-delivery/projects/:projectId/workflow-runs/:workflowRunId`
+  - Updates the workflow run status, admin notes, and result placeholder subject to the one-step-forward status gate.
+
+UI location:
+
+- Workflow runs are managed from the Workflow runs action/modal inside AI Delivery project cards.
+
+Explicit exclusions:
+
+- No AI calls.
+- No crawling.
+- No WordPress integration.
+- No GA/GSC integration.
+- No automation or background jobs.
+- No deliverable generation.
+- No deploy or VPS behavior.
