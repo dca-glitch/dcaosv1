@@ -1025,7 +1025,7 @@ function ClientContentPlanReviewView({
         eyebrow="Client review"
         title="Monthly Content Plan Review"
         titleId="content-plan-review-title"
-        description="Review the monthly content plan for a client-linked AI Delivery project. Access is checked by the authenticated client relationship."
+        description="Client-only view: review the monthly content plan for your AI Delivery project. Access requires a client-linked account."
       />
       <SectionPanel title="Open review" description="Enter the AI Delivery project ID shared by your team to load the client-safe review view.">
         <form className="entity-form" onSubmit={handleLoad}>
@@ -1034,6 +1034,7 @@ function ClientContentPlanReviewView({
               AI Delivery project ID
               <input
                 maxLength={255}
+                placeholder="Project ID (provided by your team)"
                 onChange={(event) => setProjectId(event.target.value)}
                 required
                 value={projectId}
@@ -1107,14 +1108,14 @@ function ClientContentPlanReviewView({
             <textarea
               maxLength={500}
               onChange={(event) => setComment(event.target.value)}
-              placeholder="Add a short required comment for the requested revision."
+              placeholder="Describe the changes you'd like (required)."
               rows={4}
               value={comment}
             />
           </div>
           <div className="modal-footer">
             <button className="secondary-action" disabled={savingReview || !comment.trim()} onClick={() => void handleRequestRevision()} type="button">
-              {savingReview ? "Saving" : "Request revision"}
+              {savingReview ? "Saving" : "Request changes"}
             </button>
             <button className="primary-action" disabled={savingReview} onClick={() => void handleApprove()} type="button">
               {savingReview ? "Saving" : "Approve plan"}
@@ -1189,14 +1190,14 @@ function ClientContentDraftReviewView({
         eyebrow="Client review"
         title="Content Draft Review"
         titleId="content-draft-review-title"
-        description="Review client-visible content drafts for an assigned AI Delivery project. Access requires your authenticated client relationship."
+        description="Client-only view: review content drafts for your AI Delivery project. Requires a client-linked account."
       />
       <SectionPanel title="Open draft review" description="Enter the AI Delivery project ID shared by your team to load reviewable drafts.">
         <form className="entity-form" onSubmit={handleLoad}>
           <div className="field-grid">
             <label className="field-span-2">
               AI Delivery project ID
-              <input maxLength={255} onChange={(event) => setProjectId(event.target.value)} required value={projectId} />
+              <input maxLength={255} placeholder="Project ID (provided by your team)" onChange={(event) => setProjectId(event.target.value)} required value={projectId} />
             </label>
           </div>
           <div className="modal-footer">
@@ -1233,14 +1234,14 @@ function ClientContentDraftReviewView({
               <textarea
                 maxLength={500}
                 onChange={(event) => setComments((current) => ({ ...current, [draft.id]: event.target.value }))}
-                placeholder="Add a short required comment for the requested revision."
+                placeholder="Describe the changes you'd like (required)."
                 rows={3}
                 value={comments[draft.id] ?? ""}
               />
             </section>
             <div className="modal-footer">
               <button className="secondary-action" disabled={savingDraftId === draft.id || !(comments[draft.id] ?? "").trim()} onClick={() => void handleRequestRevision(draft.id)} type="button">
-                {savingDraftId === draft.id ? "Saving" : "Request revision"}
+                {savingDraftId === draft.id ? "Saving" : "Request changes"}
               </button>
               <button className="primary-action" disabled={savingDraftId === draft.id} onClick={() => void handleApprove(draft.id)} type="button">
                 {savingDraftId === draft.id ? "Saving" : "Approve draft"}

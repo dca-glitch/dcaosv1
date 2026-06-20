@@ -25,7 +25,16 @@ export function getStatusTone(status: string): string {
   return "neutral";
 }
 
+function formatEnumLabel(value?: string | null): string {
+  if (!value) return "Not set";
+  return String(value)
+    .toLowerCase()
+    .replace(/_/g, " ")
+    .replace(/(^|\s)\S/g, (s) => s.toUpperCase());
+}
+
 export function StatusBadge({ status, className }: StatusBadgeProps) {
   const tone = getStatusTone(status);
-  return <span className={["status-badge", `status-badge-${tone}`, className].filter(Boolean).join(" ")}>{status}</span>;
+  const label = formatEnumLabel(status);
+  return <span className={["status-badge", `status-badge-${tone}`, className].filter(Boolean).join(" ")}>{label}</span>;
 }
