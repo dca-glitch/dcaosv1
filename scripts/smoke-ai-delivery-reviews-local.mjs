@@ -1,4 +1,8 @@
+import { existsSync, readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { chromium } from "@playwright/test";
+
+const { PrismaClient } = await import("@prisma/client");
 
 const defaultLocalApiBaseUrl = "http://127.0.0.1:4000/api/v1";
 const defaultLocalWebUrl = "http://localhost:5173/#/ai-delivery";
@@ -7,10 +11,53 @@ const webUrl = process.env.AI_DELIVERY_REVIEW_SMOKE_WEB_URL ?? defaultLocalWebUr
 const adminEmail = process.env.AUTH_SEED_TEST_EMAIL;
 const adminPassword = process.env.AUTH_SEED_TEST_PASSWORD;
 const allowedLocalHosts = new Set(["127.0.0.1", "localhost"]);
+const smokeProjectMarker = "[SMOKE][AI_DELIVERY_REVIEWS]";
+const smokeMainProjectName = `${smokeProjectMarker} Main project`;
+const smokeCrossProjectName = `${smokeProjectMarker} Cross-project guard`;
+const smokeProjectTargetMonth = "2026-06";
+
+function loadRepoEnvForPrismaSmoke() {
+  const envPath = resolve(process.cwd(), ".env");
+  if (!existsSync(envPath)) {
+    return;
+  }
+
+  const envText = readFileSync(envPath, "utf8");
+  for (const rawLine of envText.split(/\r?\n/)) {
+    const line = rawLine.trim();
+    if (!line || line.startsWith("#")) {
+      continue;
+    }
+
+    const eq = line.indexOf("=");
+    if (eq <= 0) {
+      continue;
+    }
+
+    const key = line.slice(0, eq).trim();
+    let value = line.slice(eq + 1).trim();
+
+    if (!key || process.env[key] !== undefined) {
+      continue;
+    }
+
+    if (
+      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'"))
+    ) {
+      value = value.slice(1, -1);
+    }
+
+    process.env[key] = value;
+  }
+}
+
+loadRepoEnvForPrismaSmoke();
+
+const prisma = new PrismaClient();
 
 function fail(message) {
-  console.error(`FAIL: ${message}`);
-  process.exit(1);
+  throw new Error(message);
 }
 
 function pass(message) {
@@ -62,6 +109,21 @@ function requireEnv(name, value) {
   }
 }
 
+function requireExactSmokeProjectMarker() {
+  const marker = smokeProjectMarker.trim();
+  if (marker.length < 12) {
+    fail("Smoke cleanup marker must be at least 12 characters long.");
+  }
+  if (marker !== "[SMOKE][AI_DELIVERY_REVIEWS]") {
+    fail("Smoke cleanup marker must match the exact AI Delivery reviews marker.");
+  }
+  return marker;
+}
+
+function projectHasSmokeMarker(project, marker) {
+  return project.name.includes(marker) || project.plannedContentScopeNotes?.includes(marker);
+}
+
 async function request(path, options = {}) {
   const headers = {
     Accept: "application/json"
@@ -107,7 +169,173 @@ async function login() {
   return token;
 }
 
-async function runAiDeliveryApiRegression(token) {
+async function getActiveTenantId(token) {
+  const authContext = requireOkResponse(
+    "Auth context",
+    await request("/auth/context", { token })
+  );
+  const tenantId = authContext?.tenantContext?.activeTenant?.tenantId;
+  if (typeof tenantId !== "string" || tenantId.length === 0) {
+    fail("Auth context did not return an active tenant id for smoke cleanup.");
+  }
+  return tenantId;
+}
+
+async function resolveSmokeFixtureBase(tenantId) {
+  const client = await prisma.client.findFirst({
+    where: {
+      tenantId,
+      isArchived: false
+    },
+    orderBy: [
+      { createdAt: "asc" },
+      { id: "asc" }
+    ],
+    select: {
+      id: true,
+      name: true
+    }
+  });
+  if (!client?.id) {
+    fail("AI Delivery smoke requires at least one active client in the active tenant.");
+  }
+
+  const project = await prisma.project.findFirst({
+    where: {
+      tenantId,
+      clientId: client.id,
+      isArchived: false
+    },
+    orderBy: [
+      { createdAt: "asc" },
+      { id: "asc" }
+    ],
+    select: {
+      id: true,
+      name: true
+    }
+  });
+
+  note(`Resolved smoke fixture base client: ${client.name}${project?.name ? ` (linked project: ${project.name})` : ""}.`);
+
+  return {
+    clientId: client.id,
+    projectId: project?.id ?? null
+  };
+}
+
+function getSmokeProjectWhere(tenantId, marker) {
+  return {
+    tenantId,
+    OR: [
+      { name: { contains: marker } },
+      { plannedContentScopeNotes: { contains: marker } }
+    ]
+  };
+}
+
+async function cleanupSmokeProjects(tenantId, phaseLabel) {
+  const marker = requireExactSmokeProjectMarker();
+  const matchingProjects = await prisma.aiDeliveryProject.findMany({
+    where: getSmokeProjectWhere(tenantId, marker),
+    orderBy: [
+      { createdAt: "asc" },
+      { id: "asc" }
+    ],
+    select: {
+      id: true,
+      name: true,
+      plannedContentScopeNotes: true
+    }
+  });
+
+  for (const project of matchingProjects) {
+    if (!projectHasSmokeMarker(project, marker)) {
+      fail(`${phaseLabel} found a project without the exact smoke marker.`);
+    }
+  }
+
+  if (matchingProjects.length === 0) {
+    note(`${phaseLabel}: removed 0 smoke-owned AI Delivery project(s).`);
+    return 0;
+  }
+
+  const deleted = await prisma.aiDeliveryProject.deleteMany({
+    where: {
+      tenantId,
+      id: {
+        in: matchingProjects.map((project) => project.id)
+      }
+    }
+  });
+
+  if (deleted.count !== matchingProjects.length) {
+    fail(`${phaseLabel} removed ${deleted.count} smoke-owned project(s) but expected ${matchingProjects.length}.`);
+  }
+
+  const remaining = await prisma.aiDeliveryProject.count({
+    where: getSmokeProjectWhere(tenantId, marker)
+  });
+  if (remaining !== 0) {
+    fail(`${phaseLabel} left ${remaining} smoke-owned AI Delivery project(s) behind.`);
+  }
+
+  pass(`${phaseLabel}: removed ${deleted.count} smoke-owned AI Delivery project(s).`);
+  return deleted.count;
+}
+
+async function createSmokeProject(token, fixtureBase, projectName, plannedContentScopeNotes) {
+  const aiDeliveryProject = requireOkResponse(
+    `AI Delivery smoke project create (${projectName})`,
+    await request("/ai-delivery-projects", {
+      method: "POST",
+      token,
+      body: {
+        clientId: fixtureBase.clientId,
+        projectId: fixtureBase.projectId,
+        name: projectName,
+        targetMonth: smokeProjectTargetMonth,
+        plannedContentScopeNotes
+      }
+    })
+  )?.aiDeliveryProject;
+
+  if (
+    !aiDeliveryProject?.id ||
+    aiDeliveryProject.name !== projectName ||
+    !projectHasSmokeMarker(
+      {
+        name: aiDeliveryProject.name,
+        plannedContentScopeNotes: aiDeliveryProject.plannedContentScopeNotes ?? null
+      },
+      requireExactSmokeProjectMarker()
+    )
+  ) {
+    fail(`AI Delivery smoke project create did not return the expected marked project for ${projectName}.`);
+  }
+
+  pass(`AI Delivery smoke project create returned the expected marked project for ${projectName}.`);
+  return aiDeliveryProject;
+}
+
+async function createSmokeProjects(token, fixtureBase) {
+  const mainProject = await createSmokeProject(
+    token,
+    fixtureBase,
+    smokeMainProjectName,
+    `${smokeProjectMarker} Dedicated main fixture for local AI Delivery review smoke only.`
+  );
+  const crossProject = await createSmokeProject(
+    token,
+    fixtureBase,
+    smokeCrossProjectName,
+    `${smokeProjectMarker} Dedicated cross-project guard fixture for local AI Delivery review smoke only.`
+  );
+
+  return { mainProject, crossProject };
+}
+
+async function runAiDeliveryApiRegression(token, fixtureProjects) {
   const projectsData = requireOkResponse(
     "AI Delivery projects list",
     await request("/ai-delivery-projects", { token })
@@ -119,14 +347,13 @@ async function runAiDeliveryApiRegression(token) {
   }
   pass("AI Delivery projects/brief foundation list endpoint returned cleanly.");
 
-  const project = projects.find((item) => item && item.isArchived !== true) ?? null;
+  const project = projects.find((item) => item?.id === fixtureProjects.mainProject.id) ?? null;
   if (!project) {
-    note("No active AI Delivery project is available in local data. Project list base flow passed; brief, workflow run, deliverable, and review detail checks were skipped.");
-    return;
+    fail("AI Delivery projects list did not return the dedicated smoke-owned main project.");
   }
 
   if (!project.brief?.id || typeof project.brief.status !== "string") {
-    fail("Selected active AI Delivery project is missing its brief summary.");
+    fail("Dedicated smoke-owned AI Delivery project is missing its brief summary.");
   }
 
   const briefData = requireOkResponse(
@@ -845,24 +1072,11 @@ async function runAiDeliveryApiRegression(token) {
   }
   pass(`AI Delivery deliverables list endpoint returned cleanly (${deliverables.length} local deliverable(s)).`);
 
-  const crossProject = requireOkResponse(
-    "AI Delivery project create for cross-project deliverable guard",
-    await request("/ai-delivery-projects", {
-      method: "POST",
-      token,
-      body: {
-        clientId: project.clientId,
-        projectId: project.projectId,
-        name: "Smoke deliverable cross-project guard",
-        targetMonth: "2026-06",
-        plannedContentScopeNotes: "Used only to prove cross-project deliverable linkage stays blocked."
-      }
-    })
-  )?.aiDeliveryProject;
+  const crossProject = fixtureProjects.crossProject;
   if (!crossProject?.id) {
     fail("AI Delivery project create did not return a reusable cross-project record.");
   }
-  pass("AI Delivery project create returned a second project for cross-project deliverable linkage coverage.");
+  pass("AI Delivery smoke setup returned a second project for cross-project deliverable linkage coverage.");
 
   const crossProjectContentPlan = requireOkResponse(
     "Cross-project content plan create",
@@ -1139,23 +1353,7 @@ async function runAiDeliveryApiRegression(token) {
   pass(`AI Delivery deliverable reviews list endpoint returned cleanly (${reviewsData.deliverableReviews.length} local review(s)).`);
 }
 
-async function main() {
-  requireLocalUrl("AI_DELIVERY_REVIEW_SMOKE_API_BASE_URL", apiBaseUrl, "/api/v1");
-  requireLocalUrl("AI_DELIVERY_REVIEW_SMOKE_WEB_URL", webUrl);
-  requireEnv("AUTH_SEED_TEST_EMAIL", adminEmail);
-  requireEnv("AUTH_SEED_TEST_PASSWORD", adminPassword);
-
-  const health = await request("/health");
-  if (health.status !== 200 || health.body?.ok !== true || health.body?.data?.database?.status !== "ready") {
-    fail(`API health/database check failed with HTTP ${health.status}.`);
-  }
-  pass("Local API health/database ready.");
-
-  const token = await login();
-  pass("Local admin API login succeeded.");
-
-  await runAiDeliveryApiRegression(token);
-
+async function runAiDeliveryBrowserRegression(token, mainProject) {
   const browser = await chromium.launch({ headless: true });
   const page = await browser.newPage();
   const browserErrors = [];
@@ -1187,102 +1385,73 @@ async function main() {
     await page.getByText("Reviews in focus").first().waitFor({ state: "visible", timeout: 15000 });
     pass("AI Delivery admin UI loaded without crashing.");
 
-    const workflowRunButtons = page.getByRole("button", { name: "Workflow runs" });
-    const workflowRunButtonCount = await workflowRunButtons.count();
-    if (workflowRunButtonCount > 0) {
-      const firstProjectCard = page.locator("article.entity-card").first();
-      await firstProjectCard.getByText("Planning workflow").waitFor({ state: "visible", timeout: 15000 });
-      await firstProjectCard.getByText("Review / packaging").waitFor({ state: "visible", timeout: 15000 });
-      await firstProjectCard.getByText("Project actions").waitFor({ state: "visible", timeout: 15000 });
-      await firstProjectCard.getByText("Admin workflow order").waitFor({ state: "visible", timeout: 15000 });
-      await firstProjectCard.getByRole("button", { name: "Research / Sources" }).waitFor({ state: "visible", timeout: 15000 });
-      await firstProjectCard.getByRole("button", { name: "AI SEO / Content Plan" }).waitFor({ state: "visible", timeout: 15000 });
-      await firstProjectCard.getByRole("button", { name: "Content production" }).waitFor({ state: "visible", timeout: 15000 });
-      await firstProjectCard.getByRole("button", { name: "Deliverables" }).waitFor({ state: "visible", timeout: 15000 });
-      pass("AI Delivery project card rendered grouped workflow navigation.");
+    const smokeProjectCard = page.locator("article.entity-card").filter({ hasText: mainProject.name }).first();
+    await smokeProjectCard.waitFor({ state: "visible", timeout: 15000 });
+    await smokeProjectCard.getByText("Planning workflow").waitFor({ state: "visible", timeout: 15000 });
+    await smokeProjectCard.getByText("Review / packaging").waitFor({ state: "visible", timeout: 15000 });
+    await smokeProjectCard.getByText("Project actions").waitFor({ state: "visible", timeout: 15000 });
+    await smokeProjectCard.getByText("Admin workflow order").waitFor({ state: "visible", timeout: 15000 });
+    await smokeProjectCard.getByRole("button", { name: "Workflow runs" }).waitFor({ state: "visible", timeout: 15000 });
+    await smokeProjectCard.getByRole("button", { name: "Research / Sources" }).waitFor({ state: "visible", timeout: 15000 });
+    await smokeProjectCard.getByRole("button", { name: "AI SEO / Content Plan" }).waitFor({ state: "visible", timeout: 15000 });
+    await smokeProjectCard.getByRole("button", { name: "Content production" }).waitFor({ state: "visible", timeout: 15000 });
+    await smokeProjectCard.getByRole("button", { name: "Deliverables" }).waitFor({ state: "visible", timeout: 15000 });
+    pass("AI Delivery smoke-owned project card rendered grouped workflow navigation.");
 
-      await workflowRunButtons.first().click();
-      await page.getByRole("dialog", { name: "Workflow Runs" }).waitFor({ state: "visible", timeout: 15000 });
-      await page.getByRole("heading", { name: "Existing workflow runs" }).waitFor({ state: "visible", timeout: 15000 });
-      await page.getByText("Workflow run editor").first().waitFor({ state: "visible", timeout: 15000 });
-      await page.getByText("Execution log").first().waitFor({ state: "visible", timeout: 15000 });
-      pass("Workflow runs panel opened and rendered execution details.");
-      await page.getByRole("button", { name: "Close" }).first().click();
-    }
+    await smokeProjectCard.getByRole("button", { name: "Workflow runs" }).click();
+    await page.getByRole("dialog", { name: "Workflow Runs" }).waitFor({ state: "visible", timeout: 15000 });
+    await page.getByRole("heading", { name: "Existing workflow runs" }).waitFor({ state: "visible", timeout: 15000 });
+    await page.getByText("Workflow run editor").first().waitFor({ state: "visible", timeout: 15000 });
+    await page.getByText("Execution log").first().waitFor({ state: "visible", timeout: 15000 });
+    pass("Workflow runs panel opened and rendered execution details.");
+    await page.getByRole("button", { name: "Close" }).first().click();
 
-    const contentPlanButtons = page.getByRole("button", { name: "AI SEO / Content Plan" });
-    const contentPlanButtonCount = await contentPlanButtons.count();
-    if (contentPlanButtonCount > 0) {
-      await contentPlanButtons.first().click();
-      await page.getByRole("dialog", { name: "AI SEO / Content Plan" }).waitFor({ state: "visible", timeout: 15000 });
-      await page.getByRole("heading", { name: "Current content plan status" }).waitFor({ state: "visible", timeout: 15000 });
-      await page.getByRole("heading", { name: "SEO topics / research records" }).waitFor({ state: "visible", timeout: 15000 });
-      await page.getByRole("button", { name: "Mark ready for review" }).first().waitFor({ state: "visible", timeout: 15000 });
-      pass("AI SEO / Content Plan panel opened and rendered stable approval workflow structure.");
-      await page.getByRole("button", { name: "Close" }).first().click();
-    }
+    await smokeProjectCard.getByRole("button", { name: "AI SEO / Content Plan" }).click();
+    await page.getByRole("dialog", { name: "AI SEO / Content Plan" }).waitFor({ state: "visible", timeout: 15000 });
+    await page.getByRole("heading", { name: "Current content plan status" }).waitFor({ state: "visible", timeout: 15000 });
+    await page.getByRole("heading", { name: "SEO topics / research records" }).waitFor({ state: "visible", timeout: 15000 });
+    await page.getByRole("button", { name: "Mark ready for review" }).first().waitFor({ state: "visible", timeout: 15000 });
+    pass("AI SEO / Content Plan panel opened and rendered stable approval workflow structure.");
+    await page.getByRole("button", { name: "Close" }).first().click();
 
-    const contentDraftButtons = page.getByRole("button", { name: "Content production" });
-    const contentDraftButtonCount = await contentDraftButtons.count();
-    if (contentDraftButtonCount > 0) {
-      await contentDraftButtons.first().click();
-      await page.getByRole("dialog", { name: "AI Content Production Foundation" }).waitFor({ state: "visible", timeout: 15000 });
-      await page.getByRole("heading", { name: "Article production planning" }).waitFor({ state: "visible", timeout: 15000 });
-      await page.getByRole("heading", { name: "Approved / planned content plan items" }).waitFor({ state: "visible", timeout: 15000 });
-      await page.getByRole("heading", { name: "Existing article production records" }).waitFor({ state: "visible", timeout: 15000 });
+    await smokeProjectCard.getByRole("button", { name: "Content production" }).click();
+    await page.getByRole("dialog", { name: "AI Content Production Foundation" }).waitFor({ state: "visible", timeout: 15000 });
+    await page.getByRole("heading", { name: "Article production planning" }).waitFor({ state: "visible", timeout: 15000 });
+    await page.getByRole("heading", { name: "Approved / planned content plan items" }).waitFor({ state: "visible", timeout: 15000 });
+    await page.getByRole("heading", { name: "Existing article production records" }).waitFor({ state: "visible", timeout: 15000 });
+    pass("AI Content Production panel opened and rendered stable draft workflow structure.");
+    await page.getByRole("button", { name: "Close" }).first().click();
 
-      pass("AI Content Production panel opened and rendered stable draft workflow structure.");
-      await page.getByRole("button", { name: "Close" }).first().click();
-    }
+    await smokeProjectCard.getByRole("button", { name: "Article images" }).click();
+    await page.getByRole("dialog", { name: "Image Production Planning" }).waitFor({ state: "visible", timeout: 15000 });
+    await page.getByRole("heading", { name: "Image production planning" }).waitFor({ state: "visible", timeout: 15000 });
+    await page.getByRole("heading", { name: "Existing image production records" }).waitFor({ state: "visible", timeout: 15000 });
+    await page.getByRole("button", { name: "Mark preview ready" }).first().waitFor({ state: "visible", timeout: 15000 });
+    pass("Image Production Planning panel opened and rendered stable image workflow structure.");
+    await page.getByRole("button", { name: "Close" }).first().click();
 
-    const articleImageButtons = page.getByRole("button", { name: "Article images" });
-    const articleImageButtonCount = await articleImageButtons.count();
-    if (articleImageButtonCount > 0) {
-      await articleImageButtons.first().click();
-      await page.getByRole("dialog", { name: "Image Production Planning" }).waitFor({ state: "visible", timeout: 15000 });
-      await page.getByRole("heading", { name: "Image production planning" }).waitFor({ state: "visible", timeout: 15000 });
-      await page.getByRole("heading", { name: "Existing image production records" }).waitFor({ state: "visible", timeout: 15000 });
+    await smokeProjectCard.getByRole("button", { name: "Research / Sources" }).click();
+    await page.getByRole("dialog", { name: "Research / Sources" }).waitFor({ state: "visible", timeout: 15000 });
+    await page.getByRole("heading", { name: "Research request editor" }).waitFor({ state: "visible", timeout: 15000 });
+    await page.getByRole("heading", { name: "Existing research requests" }).waitFor({ state: "visible", timeout: 15000 });
+    await page.getByRole("heading", { name: "Research summary editor" }).waitFor({ state: "visible", timeout: 15000 });
+    await page.getByRole("heading", { name: "Existing research summaries" }).waitFor({ state: "visible", timeout: 15000 });
+    await page.getByRole("heading", { name: "Research source editor" }).waitFor({ state: "visible", timeout: 15000 });
+    await page.getByRole("heading", { name: "Existing research sources" }).waitFor({ state: "visible", timeout: 15000 });
+    pass("Research / Sources panel opened and rendered stable request, summary, and source structure.");
+    await page.getByRole("button", { name: "Close" }).first().click();
 
-      await page.getByRole("button", { name: "Mark preview ready" }).first().waitFor({ state: "visible", timeout: 15000 });
-      pass("Image Production Planning panel opened and rendered stable image workflow structure.");
-      await page.getByRole("button", { name: "Close" }).first().click();
-    }
-
-    const researchButtons = page.getByRole("button", { name: "Research / Sources" });
-    const researchButtonCount = await researchButtons.count();
-    if (researchButtonCount > 0) {
-      await researchButtons.first().click();
-      await page.getByRole("dialog", { name: "Research / Sources" }).waitFor({ state: "visible", timeout: 15000 });
-      await page.getByRole("heading", { name: "Research request editor" }).waitFor({ state: "visible", timeout: 15000 });
-      await page.getByRole("heading", { name: "Existing research requests" }).waitFor({ state: "visible", timeout: 15000 });
-      await page.getByRole("heading", { name: "Research summary editor" }).waitFor({ state: "visible", timeout: 15000 });
-      await page.getByRole("heading", { name: "Existing research summaries" }).waitFor({ state: "visible", timeout: 15000 });
-      await page.getByRole("heading", { name: "Research source editor" }).waitFor({ state: "visible", timeout: 15000 });
-      await page.getByRole("heading", { name: "Existing research sources" }).waitFor({ state: "visible", timeout: 15000 });
-      pass("Research / Sources panel opened and rendered stable request, summary, and source structure.");
-      await page.getByRole("button", { name: "Close" }).first().click();
-    }
-
-    const deliverablesButtons = page.getByRole("button", { name: "Deliverables" });
-    const deliverablesButtonCount = await deliverablesButtons.count();
-    if (deliverablesButtonCount === 0) {
-      note("No AI Delivery project is available in local data. Manual precondition for full review smoke: create an active AI Delivery project with at least one deliverable.");
-      return;
-    }
-
-    await deliverablesButtons.first().click();
+    await smokeProjectCard.getByRole("button", { name: "Deliverables" }).click();
     await page.getByRole("dialog", { name: "Deliverables" }).waitFor({ state: "visible", timeout: 15000 });
     await page.getByRole("heading", { name: "Deliverable editor" }).waitFor({ state: "visible", timeout: 15000 });
     await page.getByRole("heading", { name: "Existing deliverables" }).waitFor({ state: "visible", timeout: 15000 });
-
     await page.getByRole("button", { name: "Mark ready" }).first().waitFor({ state: "visible", timeout: 15000 });
     pass("Deliverables panel opened and rendered stable packaging structure.");
 
     const reviewsButtons = page.getByRole("button", { name: "Reviews" });
     const reviewsButtonCount = await reviewsButtons.count();
     if (reviewsButtonCount === 0) {
-      note("No deliverable is available for the selected local AI Delivery project. Manual precondition for full review smoke: add at least one deliverable to an AI Delivery project.");
-      return;
+      fail("Deliverables dialog did not render a Reviews button for the smoke-owned project.");
     }
 
     await reviewsButtons.first().click();
@@ -1301,6 +1470,43 @@ async function main() {
   }
 }
 
+async function main() {
+  requireLocalUrl("AI_DELIVERY_REVIEW_SMOKE_API_BASE_URL", apiBaseUrl, "/api/v1");
+  requireLocalUrl("AI_DELIVERY_REVIEW_SMOKE_WEB_URL", webUrl);
+  requireEnv("AUTH_SEED_TEST_EMAIL", adminEmail);
+  requireEnv("AUTH_SEED_TEST_PASSWORD", adminPassword);
+  requireExactSmokeProjectMarker();
+
+  let tenantId = null;
+
+  try {
+    const health = await request("/health");
+    if (health.status !== 200 || health.body?.ok !== true || health.body?.data?.database?.status !== "ready") {
+      fail(`API health/database check failed with HTTP ${health.status}.`);
+    }
+    pass("Local API health/database ready.");
+
+    const token = await login();
+    pass("Local admin API login succeeded.");
+
+    tenantId = await getActiveTenantId(token);
+    pass(`Active tenant resolved for smoke cleanup: ${tenantId}.`);
+
+    const fixtureBase = await resolveSmokeFixtureBase(tenantId);
+    await cleanupSmokeProjects(tenantId, "Pre-run cleanup");
+    const fixtureProjects = await createSmokeProjects(token, fixtureBase);
+
+    await runAiDeliveryApiRegression(token, fixtureProjects);
+    await runAiDeliveryBrowserRegression(token, fixtureProjects.mainProject);
+  } finally {
+    if (tenantId) {
+      await cleanupSmokeProjects(tenantId, "Post-run cleanup");
+    }
+    await prisma.$disconnect().catch(() => {});
+  }
+}
+
 main().catch((error) => {
-  fail(error instanceof Error ? error.message : "AI Delivery review smoke failed.");
+  console.error(`FAIL: ${error instanceof Error ? error.message : "AI Delivery review smoke failed."}`);
+  process.exit(1);
 });
