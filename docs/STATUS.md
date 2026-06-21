@@ -13,6 +13,8 @@ DCA OS Lite is in local-first admin/operator foundation work. Production is froz
 - AI Delivery workflow run foundation.
 - AI Delivery deliverables foundation.
 - AI Delivery deliverable review data foundation, admin API, admin UI, and local smoke script.
+- AI Delivery deliverable export/download admin actions.
+- AI Delivery operator summary, AI SEO foundation UI, and AI Content Production foundation UI.
 - Email Notifications EN1 backend foundation only.
 
 ## Current Constraints

@@ -133,6 +133,8 @@ ce8db8f Add CI validation workflow
 - Deliverable review admin API.
 - Deliverable review admin UI.
 - Local deliverable review smoke script.
+- Deliverable export/download admin actions.
+- Operator summary, AI SEO foundation UI, and AI Content Production foundation UI.
 - Email notification backend foundation EN1 only.
 
 ## Development Discipline
