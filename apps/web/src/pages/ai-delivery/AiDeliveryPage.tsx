@@ -1040,6 +1040,12 @@ export function AiDeliveryPage({
   const workflowRunsHelper = openWorkflowRunsId
     ? formatStatusBreakdown(workflowRuns, "No workflow runs loaded for the open project")
     : "Open a project's Workflow runs to load per-project counts.";
+  const seoTopicsHelper = openContentPlanId
+    ? `${contentPlanItems.length} topic/research planning record(s) loaded for the open project.`
+    : "Open a project's SEO research to load topic/research planning records.";
+  const contentProductionHelper = openContentDraftsId || openArticleImagesId
+    ? `Draft planning records loaded: ${openContentDraftsId ? contentDrafts.length : "-"} - Image planning records loaded: ${openArticleImagesId ? articleImages.length : "-"}`
+    : "Open Content production or Article images to load article/image planning records.";
   const deliverablesHelper = openDeliverablesId
     ? `${formatStatusBreakdown(deliverables, "No deliverables loaded for the open project")} - Active: ${activeDeliverableCount} - Archived: ${archivedDeliverableCount}`
     : "Open a project's Deliverables to load per-project counts.";
@@ -1080,7 +1086,7 @@ export function AiDeliveryPage({
 
       <SectionPanel
         title="Operator summary"
-        description="Read-only AI Delivery overview using already loaded admin data. Project totals are tenant-level; workflow, deliverable, and review counts reflect the currently opened project/detail panels only."
+        description="Read-only AI Delivery overview using already loaded admin data. Project totals are tenant-level; SEO, production, workflow, deliverable, and review counts reflect the currently opened project/detail panels only."
       >
         <div className="summary-grid" aria-label="AI Delivery operator summary">
           <MetricCard
@@ -1100,6 +1106,18 @@ export function AiDeliveryPage({
             label="Workflow runs loaded"
             value={openWorkflowRunsId ? workflowRuns.length : "-"}
             helper={workflowRunsHelper}
+          />
+          <MetricCard
+            accent="cyan"
+            label="SEO topics loaded"
+            value={openContentPlanId ? contentPlanItems.length : "-"}
+            helper={seoTopicsHelper}
+          />
+          <MetricCard
+            accent="violet"
+            label="Production planning loaded"
+            value={openContentDraftsId || openArticleImagesId ? `${openContentDraftsId ? contentDrafts.length : "-"}/${openArticleImagesId ? articleImages.length : "-"}` : "-"}
+            helper={contentProductionHelper}
           />
           <MetricCard
             accent="success"
@@ -1147,13 +1165,13 @@ export function AiDeliveryPage({
                         Brief
                       </button>
                       <button className="secondary-action" onClick={() => void openContentPlan(p.id)} type="button">
-                        Content plan
+                        SEO research
                       </button>
                       <button className="secondary-action" onClick={() => void openWorkflowRuns(p.id)} type="button">
                         Workflow runs
                       </button>
                       <button className="secondary-action" onClick={() => void openContentDrafts(p.id)} type="button">
-                        Content drafts
+                        Content production
                       </button>
                       <button className="secondary-action" onClick={() => void openArticleImages(p.id)} type="button">
                         Article images
@@ -1194,7 +1212,7 @@ export function AiDeliveryPage({
                 <div>
                   <span>Workflow</span>
                   <strong>
-                    Brief: {p.brief ? formatEnumLabel(p.brief.status) : "No"} - Plan: Not set - Drafts: - - Images: - - Deliverables: -
+                    Brief: {p.brief ? formatEnumLabel(p.brief.status) : "No"} - SEO topics: open to load - Production: open to load - Deliverables: open to load
                   </strong>
                 </div>
                 <div className="entity-span-2">
@@ -1461,12 +1479,16 @@ export function AiDeliveryPage({
         </Modal>
       ) : null}
       {openContentPlanId ? (
-        <Modal onClose={closeContentPlan} title="Monthly Content Plan">
+        <Modal onClose={closeContentPlan} title="AI SEO Foundation">
           {contentPlanLoading ? (
             <LoadingState label="Loading content plan" />
           ) : openContentPlanProject ? (
             contentPlanDetail ? (
               <div>
+                <section className="field-panel">
+                  <h3>SEO topic/research planning</h3>
+                  <p className="muted-text">Admin/operator-side foundation only. Use these monthly content plan items to capture target topics, keywords, research notes, and content type intent. No AI generation, crawling, scraping, GA/GSC integration, publishing, or external service calls run from this screen.</p>
+                </section>
                 <dl className="brief-grid">
                   <div>
                     <dt>Status</dt>
@@ -1509,14 +1531,14 @@ export function AiDeliveryPage({
                 </section>
 
                 <section className="field-panel">
-                  <h3>Proposed content items</h3>
+                  <h3>SEO topics / research records</h3>
                   {contentPlanItems.length === 0 ? (
-                    <div className="state-panel">No content items have been added yet.</div>
+                    <div className="state-panel">No SEO topic or research planning records have been added yet.</div>
                   ) : null}
                   {contentPlanItems.map((item, index) => (
                     <div className="field-grid" key={item.localId} style={{ marginBottom: "1rem" }}>
                       <label>
-                        Title
+                        Topic / working title
                         <input
                           maxLength={255}
                           onChange={(event) => setContentPlanItems((current) => current.map((draftItem) => draftItem.localId === item.localId ? { ...draftItem, title: event.target.value } : draftItem))}
@@ -1525,7 +1547,7 @@ export function AiDeliveryPage({
                         />
                       </label>
                       <label>
-                        Content type
+                        Production type
                         <input
                           maxLength={80}
                           onChange={(event) => setContentPlanItems((current) => current.map((draftItem) => draftItem.localId === item.localId ? { ...draftItem, contentType: event.target.value } : draftItem))}
@@ -1533,7 +1555,7 @@ export function AiDeliveryPage({
                         />
                       </label>
                       <label>
-                        Target keyword
+                        Target keyword / theme
                         <input
                           maxLength={255}
                           onChange={(event) => setContentPlanItems((current) => current.map((draftItem) => draftItem.localId === item.localId ? { ...draftItem, targetKeyword: event.target.value } : draftItem))}
@@ -1549,7 +1571,7 @@ export function AiDeliveryPage({
                         <strong>{contentPlanDetail.items[index]?.approvalStatus ?? "No client status"}</strong>
                       </div>
                       <label className="field-span-2">
-                        Notes
+                        Research notes / search intent
                         <textarea
                           maxLength={4000}
                           onChange={(event) => setContentPlanItems((current) => current.map((draftItem) => draftItem.localId === item.localId ? { ...draftItem, notes: event.target.value } : draftItem))}
@@ -1568,7 +1590,7 @@ export function AiDeliveryPage({
                           onClick={() => setContentPlanItems((current) => current.filter((draftItem) => draftItem.localId !== item.localId))}
                           type="button"
                         >
-                          Remove item
+                          Remove topic
                         </button>
                       </div>
                     </div>
@@ -1579,7 +1601,7 @@ export function AiDeliveryPage({
                     onClick={() => setContentPlanItems((current) => [...current, emptyContentPlanItem()])}
                     type="button"
                   >
-                    Add content item
+                    Add SEO topic
                   </button>
                 </section>
 
@@ -1588,14 +1610,14 @@ export function AiDeliveryPage({
                   <button className="secondary-action" disabled={contentPlanSaving} onClick={() => void handleContentPlanAction(openContentPlanProject.id, onRequestContentPlanReview)} type="button">Request client review</button>
                   <button className="secondary-action" disabled={contentPlanSaving} onClick={() => void handleContentPlanAction(openContentPlanProject.id, onApproveContentPlan)} type="button">Approve plan</button>
                   <button className="primary-action" disabled={contentPlanSaving || contentPlanItems.some((item) => !item.title.trim())} onClick={() => void handleSaveContentPlan(openContentPlanProject.id)} type="button">
-                    {contentPlanSaving ? "Saving" : "Save plan"}
+                    {contentPlanSaving ? "Saving" : "Save SEO plan"}
                   </button>
                 </div>
               </div>
             ) : (
               <div>
                 <div className="state-panel">
-                  No monthly content plan exists for {openContentPlanProject.name}. Create one to start adding proposed content items.
+                  No monthly content plan exists for {openContentPlanProject.name}. Create one to start adding SEO topic/research planning records. This creates admin-side planning placeholders only; it does not generate, crawl, publish, or call external services.
                 </div>
                 <div className="modal-footer">
                   <button className="secondary-action" disabled={contentPlanSaving} onClick={closeContentPlan} type="button">Close</button>
@@ -1686,18 +1708,19 @@ export function AiDeliveryPage({
         </Modal>
       ) : null}
       {openContentDraftsId ? (
-        <Modal onClose={closeContentDrafts} title="Content Drafts">
+        <Modal onClose={closeContentDrafts} title="AI Content Production Foundation">
           {contentDraftsLoading ? (
             <LoadingState label="Loading content drafts" />
           ) : openContentDraftsProject ? (
             <div>
               <section className="field-panel">
-                <h3>Draft editor</h3>
+                <h3>Article production planning</h3>
+                <p className="muted-text">Admin/operator-side foundation only. Capture planned article records, draft placeholders, slugs, status, and notes. No AI writing, generation, publishing, WordPress integration, or external service calls run from this screen.</p>
                 <div className="field-grid">
                   <label>
-                    Linked content plan item
+                    Linked SEO topic / monthly content plan item
                     <select value={contentDraftForm.contentPlanItemId ?? ""} onChange={(event) => setContentDraftForm((current) => ({ ...current, contentPlanItemId: event.target.value || null }))}>
-                      <option value="">Manual / unlinked</option>
+                      <option value="">Manual / unlinked production record</option>
                       {(contentDraftPlan?.items ?? []).map((item) => (
                         <option key={item.id} value={item.id}>{item.sortOrder}. {item.title}</option>
                       ))}
@@ -1718,7 +1741,7 @@ export function AiDeliveryPage({
                     <input maxLength={255} value={contentDraftForm.slug} onChange={(event) => setContentDraftForm((current) => ({ ...current, slug: event.target.value }))} />
                   </label>
                   <label className="field-span-2">
-                    Draft body
+                    Article outline / draft placeholder
                     <textarea rows={10} value={contentDraftForm.draftBody} onChange={(event) => setContentDraftForm((current) => ({ ...current, draftBody: event.target.value }))} />
                   </label>
                   <label className="field-span-2">
@@ -1729,21 +1752,21 @@ export function AiDeliveryPage({
                 <div className="modal-footer">
                   <button className="secondary-action" disabled={contentDraftsSaving} onClick={() => { setContentDraftEditorId(null); setContentDraftForm(emptyContentDraft()); }} type="button">New draft</button>
                   <button className="primary-action" disabled={contentDraftsSaving || !contentDraftForm.title.trim()} onClick={() => void saveContentDraft(openContentDraftsProject.id)} type="button">
-                    {contentDraftsSaving ? "Saving" : contentDraftEditorId ? "Save draft" : "Create draft"}
+                    {contentDraftsSaving ? "Saving" : contentDraftEditorId ? "Save production record" : "Create production record"}
                   </button>
                 </div>
               </section>
 
               <section className="field-panel">
-                <h3>Existing drafts</h3>
-                {contentDrafts.length === 0 ? <div className="state-panel">No content drafts have been created yet.</div> : null}
+                <h3>Existing article production records</h3>
+                {contentDrafts.length === 0 ? <div className="state-panel">No article production planning records have been created yet.</div> : null}
                 {contentDrafts.map((draftItem) => (
                   <article className="entity-card" key={draftItem.id} style={{ marginBottom: "1rem" }}>
                     <div className="entity-card-header">
                       <div>
                         <StatusBadge status={draftItem.isArchived ? "Archived" : draftItem.status} />
                         <h3>{draftItem.title}</h3>
-                        <p>{draftItem.contentPlanItem ? `Linked to: ${draftItem.contentPlanItem.title}` : "Manual / unlinked draft"}</p>
+                        <p>{draftItem.contentPlanItem ? `Linked to SEO topic: ${draftItem.contentPlanItem.title}` : "Manual / unlinked production record"}</p>
                       </div>
                       <div className="card-actions">
                         <button className="secondary-action" disabled={contentDraftsSaving} onClick={() => editContentDraft(draftItem)} type="button">Edit</button>
@@ -2005,14 +2028,14 @@ export function AiDeliveryPage({
       ) : null}
 
       {openArticleImagesId ? (
-        <Modal onClose={closeArticleImages} title="Article Images">
+        <Modal onClose={closeArticleImages} title="Image Production Planning">
           {articleImagesLoading ? (
             <LoadingState label="Loading article image requests" />
           ) : openArticleImagesProject ? (
             <div>
               <section className="field-panel">
-                <h3>Image request editor</h3>
-                <p className="muted-text">Admin-operated image planning only. No AI generation, upload, R2 write, client review, or publishing action is available in this block.</p>
+                <h3>Image production planning</h3>
+                <p className="muted-text">Admin/operator-side image planning only. Capture image intent, prompt placeholder, style notes, and status. No AI generation, upload, R2 write, client review, WordPress, or publishing action is available in this block.</p>
                 <div className="field-grid">
                   <label>
                     Linked content draft
@@ -2067,8 +2090,8 @@ export function AiDeliveryPage({
               </section>
 
               <section className="field-panel">
-                <h3>Existing image requests</h3>
-                {articleImages.length === 0 ? <div className="state-panel">No article image requests have been created yet.</div> : null}
+                <h3>Existing image production records</h3>
+                {articleImages.length === 0 ? <div className="state-panel">No image production planning records have been created yet.</div> : null}
                 {articleImages.map((image) => (
                   <article className="entity-card" key={image.id} style={{ marginBottom: "1rem" }}>
                     <div className="entity-card-header">
