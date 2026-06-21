@@ -3,7 +3,7 @@ import { EmptyState } from "../../components/EmptyState";
 import { ErrorState } from "../../components/ErrorState";
 import { LoadingState } from "../../components/LoadingState";
 import { Modal } from "../../components/Modal";
-import { StatusBadge } from "../../components/ui";
+import { MetricCard, SectionPanel, StatusBadge } from "../../components/ui";
 import type { ClientSummary } from "../clients/ClientsPage";
 import type { ProjectSummary as ProjectLinkSummary } from "../projects/ProjectsPage";
 
@@ -408,6 +408,18 @@ function getMostRecentReview(reviews: AiDeliveryDeliverableReviewSummary[]): AiD
     const reviewTime = new Date(review.updatedAt || review.createdAt).getTime();
     return reviewTime > latestTime ? review : latest;
   }, null);
+}
+
+function formatStatusBreakdown(items: Array<{ status: string }>, fallback = "No records loaded"): string {
+  if (items.length === 0) return fallback;
+  const counts = items.reduce<Record<string, number>>((summary, item) => {
+    summary[item.status] = (summary[item.status] ?? 0) + 1;
+    return summary;
+  }, {});
+  return Object.entries(counts)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([status, count]) => `${formatEnumLabel(status)}: ${count}`)
+    .join(" - ");
 }
 
 export function AiDeliveryPage({
@@ -1018,6 +1030,24 @@ export function AiDeliveryPage({
     if (filter === "archived") return project.isArchived;
     return true;
   });
+  const activeProjectCount = projects.filter((project) => !project.isArchived).length;
+  const archivedProjectCount = projects.length - activeProjectCount;
+  const projectBriefCounts = {
+    available: projects.filter((project) => project.brief).length,
+    pending: projects.filter((project) => !project.brief).length
+  };
+  const pendingDeliverableReviewCount = deliverableReviews.filter((review) => ["NOT_STARTED", "ADMIN_REVIEW"].includes(review.status)).length;
+  const workflowRunsHelper = openWorkflowRunsId
+    ? formatStatusBreakdown(workflowRuns, "No workflow runs loaded for the open project")
+    : "Open a project's Workflow runs to load per-project counts.";
+  const deliverablesHelper = openDeliverablesId
+    ? `${formatStatusBreakdown(deliverables, "No deliverables loaded for the open project")} - Active: ${activeDeliverableCount} - Archived: ${archivedDeliverableCount}`
+    : "Open a project's Deliverables to load per-project counts.";
+  const reviewsHelper = selectedReviewDeliverableId
+    ? `${formatStatusBreakdown(deliverableReviews, "No review placeholders loaded for the selected deliverable")} - Pending placeholders: ${pendingDeliverableReviewCount}`
+    : openDeliverablesId
+      ? "Select Reviews on a deliverable to load review placeholder counts."
+      : "Open Deliverables, then select Reviews to load review placeholder counts.";
 
   return (
     <section className="view-section" aria-labelledby="ai-delivery-title">
@@ -1047,6 +1077,44 @@ export function AiDeliveryPage({
           ) : null}
         </div>
       </div>
+
+      <SectionPanel
+        title="Operator summary"
+        description="Read-only AI Delivery overview using already loaded admin data. Project totals are tenant-level; workflow, deliverable, and review counts reflect the currently opened project/detail panels only."
+      >
+        <div className="summary-grid" aria-label="AI Delivery operator summary">
+          <MetricCard
+            accent="cyan"
+            label="AI Delivery projects"
+            value={projects.length}
+            helper={`Active: ${activeProjectCount} - Archived: ${archivedProjectCount} - Visible: ${filteredProjects.length}`}
+          />
+          <MetricCard
+            accent="violet"
+            label="Project briefs"
+            value={projectBriefCounts.available}
+            helper={`Available: ${projectBriefCounts.available} - Pending/not loaded: ${projectBriefCounts.pending}`}
+          />
+          <MetricCard
+            accent="purple"
+            label="Workflow runs loaded"
+            value={openWorkflowRunsId ? workflowRuns.length : "-"}
+            helper={workflowRunsHelper}
+          />
+          <MetricCard
+            accent="success"
+            label="Deliverables loaded"
+            value={openDeliverablesId ? deliverables.length : "-"}
+            helper={deliverablesHelper}
+          />
+          <MetricCard
+            accent="warning"
+            label="Review placeholders loaded"
+            value={selectedReviewDeliverableId ? deliverableReviews.length : "-"}
+            helper={reviewsHelper}
+          />
+        </div>
+      </SectionPanel>
 
       {filteredProjects.length === 0 ? (
         <EmptyState
