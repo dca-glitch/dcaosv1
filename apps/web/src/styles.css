@@ -943,6 +943,13 @@ textarea:focus-visible {
   max-width: 72ch;
 }
 
+.section-header > div,
+.section-panel-header > div {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
 .page-header h1,
 .section-header h1 {
   font-size: clamp(2.2rem, 5vw, 4.2rem);
@@ -959,6 +966,12 @@ textarea:focus-visible {
 .action-bar,
 .toolbar {
   align-items: center;
+  justify-content: flex-end;
+}
+
+.section-panel-action {
+  align-items: center;
+  display: flex;
   justify-content: flex-end;
 }
 
@@ -1151,6 +1164,20 @@ textarea:focus-visible {
 .entity-card-header h2 {
   font-size: 1.28rem;
   line-height: 1.12;
+}
+
+.entity-card-header > div:first-child {
+  min-width: 0;
+}
+
+.entity-card-header h2,
+.entity-card-header strong {
+  overflow-wrap: anywhere;
+}
+
+.card-actions {
+  align-items: center;
+  row-gap: 10px;
 }
 
 .entity-field-grid,
@@ -1441,12 +1468,21 @@ th {
   text-transform: uppercase;
 }
 
+th,
+td {
+  white-space: normal;
+}
+
 td {
   color: var(--text-soft);
 }
 
 tbody tr:nth-child(even) td {
   background: rgba(255, 255, 255, 0.015);
+}
+
+tbody tr:last-child td {
+  border-bottom: 0;
 }
 
 tr:hover td {
@@ -1506,6 +1542,19 @@ tr:hover td {
 
   .main-shell {
     padding: 18px;
+  }
+
+  .toolbar,
+  .action-bar,
+  .section-panel-action,
+  .card-actions {
+    justify-content: stretch;
+  }
+
+  .toolbar > *,
+  .action-bar > *,
+  .section-panel-action > * {
+    width: 100%;
   }
 
   .modal-backdrop {
