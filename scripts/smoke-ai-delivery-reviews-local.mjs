@@ -21,6 +21,22 @@ function note(message) {
   console.log(`NOTE: ${message}`);
 }
 
+function responseHasSensitiveFields(response) {
+  return /passwordHash|sessionTokenHash/i.test(response.text);
+}
+
+function requireOkResponse(name, response) {
+  if (response.status !== 200 || response.body?.ok !== true) {
+    fail(`${name} failed with HTTP ${response.status}.`);
+  }
+
+  if (responseHasSensitiveFields(response)) {
+    fail(`${name} response exposed sensitive fields.`);
+  }
+
+  return response.body.data;
+}
+
 function requireLocalUrl(name, value, expectedPathPrefix = "") {
   let parsed;
   try {
@@ -91,6 +107,72 @@ async function login() {
   return token;
 }
 
+async function runAiDeliveryApiRegression(token) {
+  const projectsData = requireOkResponse(
+    "AI Delivery projects list",
+    await request("/ai-delivery-projects", { token })
+  );
+  const projects = projectsData?.aiDeliveryProjects;
+
+  if (!Array.isArray(projects)) {
+    fail("AI Delivery projects list did not return an aiDeliveryProjects array.");
+  }
+  pass("AI Delivery projects/brief foundation list endpoint returned cleanly.");
+
+  const project = projects.find((item) => item && item.isArchived !== true) ?? null;
+  if (!project) {
+    note("No active AI Delivery project is available in local data. Project list base flow passed; brief, workflow run, deliverable, and review detail checks were skipped.");
+    return;
+  }
+
+  if (!project.brief?.id || typeof project.brief.status !== "string") {
+    fail("Selected active AI Delivery project is missing its brief summary.");
+  }
+
+  const briefData = requireOkResponse(
+    "AI Delivery brief detail",
+    await request(`/ai-delivery-projects/${project.id}/brief`, { token })
+  );
+  if (!briefData?.brief?.id || typeof briefData.brief.status !== "string") {
+    fail("AI Delivery brief detail did not return a valid brief.");
+  }
+  pass("AI Delivery project brief detail endpoint returned cleanly.");
+
+  const workflowRunsData = requireOkResponse(
+    "AI Delivery workflow runs list",
+    await request(`/ai-delivery/projects/${project.id}/workflow-runs`, { token })
+  );
+  if (!Array.isArray(workflowRunsData?.workflowRuns)) {
+    fail("AI Delivery workflow runs list did not return a workflowRuns array.");
+  }
+  pass(`AI Delivery workflow runs list endpoint returned cleanly (${workflowRunsData.workflowRuns.length} local run(s)).`);
+
+  const deliverablesData = requireOkResponse(
+    "AI Delivery deliverables list",
+    await request(`/ai-delivery-projects/${project.id}/deliverables`, { token })
+  );
+  const deliverables = deliverablesData?.deliverables;
+  if (!Array.isArray(deliverables)) {
+    fail("AI Delivery deliverables list did not return a deliverables array.");
+  }
+  pass(`AI Delivery deliverables list endpoint returned cleanly (${deliverables.length} local deliverable(s)).`);
+
+  const deliverable = deliverables.find((item) => item && item.isArchived !== true) ?? deliverables[0] ?? null;
+  if (!deliverable) {
+    note("No deliverable is available for the selected local AI Delivery project. Deliverables base flow passed; deliverable review detail API check was skipped.");
+    return;
+  }
+
+  const reviewsData = requireOkResponse(
+    "AI Delivery deliverable reviews list",
+    await request(`/ai-delivery-projects/${project.id}/deliverables/${deliverable.id}/reviews`, { token })
+  );
+  if (!Array.isArray(reviewsData?.deliverableReviews)) {
+    fail("AI Delivery deliverable reviews list did not return a deliverableReviews array.");
+  }
+  pass(`AI Delivery deliverable reviews list endpoint returned cleanly (${reviewsData.deliverableReviews.length} local review(s)).`);
+}
+
 async function main() {
   requireLocalUrl("AI_DELIVERY_REVIEW_SMOKE_API_BASE_URL", apiBaseUrl, "/api/v1");
   requireLocalUrl("AI_DELIVERY_REVIEW_SMOKE_WEB_URL", webUrl);
@@ -105,6 +187,8 @@ async function main() {
 
   const token = await login();
   pass("Local admin API login succeeded.");
+
+  await runAiDeliveryApiRegression(token);
 
   const browser = await chromium.launch({ headless: true });
   const page = await browser.newPage();
