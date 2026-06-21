@@ -657,6 +657,7 @@ enum AiDeliveryWorkflowRunStatus {
   IN_PROGRESS
   REVIEW
   COMPLETED
+  FAILED
   ARCHIVED
 }
 
@@ -667,6 +668,10 @@ model AiDeliveryWorkflowRun {
   status              AiDeliveryWorkflowRunStatus @default(DRAFT)
   adminNotes          String?
   resultPlaceholder   String?
+  executionLog        String?
+  executionError      String?
+  startedAt           DateTime?
+  finishedAt          DateTime?
   createdAt           DateTime                    @default(now())
   updatedAt           DateTime                    @updatedAt
 
