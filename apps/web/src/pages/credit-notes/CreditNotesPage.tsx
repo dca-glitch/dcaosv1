@@ -3,6 +3,7 @@ import { EmptyState } from "../../components/EmptyState";
 import { ErrorState } from "../../components/ErrorState";
 import { LoadingState } from "../../components/LoadingState";
 import { Modal } from "../../components/Modal";
+import { ModalActions } from "../../components/ui/ModalActions";
 import type { InvoiceItemSummary } from "../invoice-items/InvoiceItemsPage";
 import type { InvoiceSummary } from "../invoices/InvoicesPage";
 
@@ -405,7 +406,7 @@ export function CreditNotesPage({
         <Modal onClose={resetEditor} title={editorId ? "Edit Credit Note" : "Add Credit Note"}>
           <form className="entity-form" onSubmit={handleSubmit}>
             <p className="muted-text">Used to document a refund, correction, or billing adjustment. This does not register a payment by itself.</p>
-            <CreditNoteModalActions
+            <ModalActions
               disabled={saving || !invoiceId || draft.totalCents <= 0}
               label={submitLabel}
               onCancel={resetEditor}
@@ -544,7 +545,7 @@ export function CreditNotesPage({
                 <span className="muted-text">Visible only to admin team.</span>
               </label>
             </div>
-            <CreditNoteModalActions
+            <ModalActions
               disabled={saving || !invoiceId || draft.totalCents <= 0}
               label={submitLabel}
               onCancel={resetEditor}
@@ -733,22 +734,6 @@ function CreditNoteLineItemsEditor({
       >
         Add line item
       </button>
-    </div>
-  );
-}
-
-type CreditNoteModalActionsProps = {
-  disabled: boolean;
-  label: string;
-  onCancel: () => void;
-  saving: boolean;
-};
-
-function CreditNoteModalActions({ disabled, label, onCancel, saving }: CreditNoteModalActionsProps) {
-  return (
-    <div className="modal-footer">
-      <button className="secondary-action" disabled={saving} onClick={onCancel} type="button">Cancel</button>
-      <button className="primary-action" disabled={disabled} type="submit">{saving ? "Saving" : label}</button>
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { EmptyState } from "../../components/EmptyState";
 import { ErrorState } from "../../components/ErrorState";
 import { LoadingState } from "../../components/LoadingState";
 import { Modal } from "../../components/Modal";
+import { ModalActions } from "../../components/ui/ModalActions";
 
 export type CompanyProfileSummary = {
   id: string;
@@ -245,7 +246,7 @@ export function CompanyProfilePage({ companyProfile, canEdit, error, loading, on
         <Modal onClose={closeEditor} title={companyProfile ? "Edit Company Profile" : "Create Company Profile"}>
           <form className="entity-form" onSubmit={handleSubmit}>
             <p className="muted-text">Used as issuer details on finance documents. Visible only to admin team unless used on generated documents.</p>
-            <CompanyProfileModalActions disabled={saving} label={submitLabel} onCancel={closeEditor} saving={saving} />
+            <ModalActions disabled={saving} label={submitLabel} onCancel={closeEditor} saving={saving} />
             <div className="field-grid">
               <label>
                 Company name - Required
@@ -418,26 +419,10 @@ export function CompanyProfilePage({ companyProfile, canEdit, error, loading, on
                 <span className="muted-text">Visible only to admin team unless used on generated documents.</span>
               </label>
             </div>
-            <CompanyProfileModalActions disabled={saving} label={submitLabel} onCancel={closeEditor} saving={saving} />
+            <ModalActions disabled={saving} label={submitLabel} onCancel={closeEditor} saving={saving} />
           </form>
         </Modal>
       ) : null}
     </section>
-  );
-}
-
-type CompanyProfileModalActionsProps = {
-  disabled: boolean;
-  label: string;
-  onCancel: () => void;
-  saving: boolean;
-};
-
-function CompanyProfileModalActions({ disabled, label, onCancel, saving }: CompanyProfileModalActionsProps) {
-  return (
-    <div className="modal-footer">
-      <button className="secondary-action" disabled={saving} onClick={onCancel} type="button">Cancel</button>
-      <button className="primary-action" disabled={disabled} type="submit">{saving ? "Saving" : label}</button>
-    </div>
   );
 }

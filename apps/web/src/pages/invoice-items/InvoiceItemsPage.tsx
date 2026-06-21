@@ -4,6 +4,7 @@ import { ErrorState } from "../../components/ErrorState";
 import { LoadingState } from "../../components/LoadingState";
 import { Modal } from "../../components/Modal";
 import { MetricCard, PageHeader, SectionPanel, StatusBadge } from "../../components/ui";
+import { ModalActions } from "../../components/ui/ModalActions";
 
 export type InvoiceItemSummary = {
   id: string;
@@ -191,7 +192,7 @@ export function InvoiceItemsPage({
         >
           <form className="entity-form" onSubmit={handleSubmit}>
             <p className="muted-text">Used as reusable invoice line items. Changing this does not update existing invoices.</p>
-            <InvoiceItemModalActions disabled={saving || !draft.name.trim()} label={submitLabel} onCancel={closeEditor} saving={saving} />
+            <ModalActions disabled={saving || !draft.name.trim()} label={submitLabel} onCancel={closeEditor} saving={saving} />
             <div className="field-grid">
               <label>
                 Service name - Required
@@ -228,26 +229,10 @@ export function InvoiceItemsPage({
                 <span className="muted-text">Stored as the reusable default price for future invoice drafting.</span>
               </label>
             </div>
-            <InvoiceItemModalActions disabled={saving || !draft.name.trim()} label={submitLabel} onCancel={closeEditor} saving={saving} />
+            <ModalActions disabled={saving || !draft.name.trim()} label={submitLabel} onCancel={closeEditor} saving={saving} />
           </form>
         </Modal>
       ) : null}
     </section>
-  );
-}
-
-type InvoiceItemModalActionsProps = {
-  disabled: boolean;
-  label: string;
-  onCancel: () => void;
-  saving: boolean;
-};
-
-function InvoiceItemModalActions({ disabled, label, onCancel, saving }: InvoiceItemModalActionsProps) {
-  return (
-    <div className="modal-footer">
-      <button className="secondary-action" disabled={saving} onClick={onCancel} type="button">Cancel</button>
-      <button className="primary-action" disabled={disabled} type="submit">{saving ? "Saving" : label}</button>
-    </div>
   );
 }

@@ -3,6 +3,7 @@ import { EmptyState } from "../../components/EmptyState";
 import { ErrorState } from "../../components/ErrorState";
 import { LoadingState } from "../../components/LoadingState";
 import { Modal } from "../../components/Modal";
+import { ModalActions } from "../../components/ui/ModalActions";
 import type { ProjectSummary } from "../projects/ProjectsPage";
 
 export type ClientSummary = {
@@ -317,7 +318,7 @@ export function ClientsPage({
         >
           <form className="entity-form" onSubmit={handleSubmit}>
             <p className="muted-text">Used by admin team to organize work and billing. Archived clients are hidden from active work but can be restored.</p>
-            <ClientModalActions disabled={saving} label={submitLabel} onCancel={closeEditor} saving={saving} />
+            <ModalActions disabled={saving} label={submitLabel} onCancel={closeEditor} saving={saving} />
             <div className="field-grid">
               <label>
                 Client name - Required
@@ -444,26 +445,10 @@ export function ClientsPage({
                 </div>
               </section>
             ) : null}
-            <ClientModalActions disabled={saving} label={submitLabel} onCancel={closeEditor} saving={saving} />
+            <ModalActions disabled={saving} label={submitLabel} onCancel={closeEditor} saving={saving} />
           </form>
         </Modal>
       ) : null}
     </section>
-  );
-}
-
-type ClientModalActionsProps = {
-  disabled: boolean;
-  label: string;
-  onCancel: () => void;
-  saving: boolean;
-};
-
-function ClientModalActions({ disabled, label, onCancel, saving }: ClientModalActionsProps) {
-  return (
-    <div className="modal-footer">
-      <button className="secondary-action" disabled={saving} onClick={onCancel} type="button">Cancel</button>
-      <button className="primary-action" disabled={disabled} type="submit">{saving ? "Saving" : label}</button>
-    </div>
   );
 }
