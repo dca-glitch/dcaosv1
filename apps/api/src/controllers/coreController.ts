@@ -1,4 +1,4 @@
-import type { RequestHandler } from "express";
+import type { RequestHandler, Response } from "express";
 import {
   aiDeliveryProjectInvalidFailure,
   aiDeliveryProjectNotFoundFailure,
@@ -23,6 +23,7 @@ import {
 import type { AuthSessionLocals } from "../auth/types";
 import {
   archiveAiDeliveryArticleImage,
+  isAiDeliveryGuardError,
   archiveAiDeliveryProject,
   archiveAiDeliveryContentDraft,
   archiveClient,
@@ -192,6 +193,15 @@ const AI_DELIVERY_DELIVERABLE_REVIEW_STATUSES = new Set(["NOT_STARTED", "ADMIN_R
 
 function getAuthSession(resLocals: unknown) {
   return (resLocals as AuthSessionLocals | undefined)?.authSession;
+}
+
+function handleAiDeliveryGuardError(res: Response, error: unknown): boolean {
+  if (!isAiDeliveryGuardError(error)) {
+    return false;
+  }
+
+  res.status(error.status).json(failure(error.code, error.message));
+  return true;
 }
 
 function getRequiredString(value: unknown, maxLength = NAME_MAX_LENGTH): string | null {
@@ -1322,7 +1332,8 @@ export const createAiDeliveryProjectHandler: RequestHandler = async (req, res) =
     }
 
     res.status(201).json(success(response, { phase: "runtime", scope: "ai-delivery-projects" }));
-  } catch {
+  } catch (error) {
+    if (handleAiDeliveryGuardError(res, error)) return;
     res.status(500).json(failure("AI_DELIVERY_PROJECT_RUNTIME_ERROR", "AI Delivery project create could not be completed."));
   }
 };
@@ -1349,7 +1360,8 @@ export const updateAiDeliveryProjectHandler: RequestHandler = async (req, res) =
     }
 
     res.json(success(response, { phase: "runtime", scope: "ai-delivery-projects" }));
-  } catch {
+  } catch (error) {
+    if (handleAiDeliveryGuardError(res, error)) return;
     res.status(500).json(failure("AI_DELIVERY_PROJECT_RUNTIME_ERROR", "AI Delivery project update could not be completed."));
   }
 };
@@ -1562,7 +1574,8 @@ export const createAiDeliveryResearchRequestHandler: RequestHandler = async (req
     }
 
     res.status(201).json(success(response, { phase: "runtime", scope: "ai-delivery-research-requests" }));
-  } catch {
+  } catch (error) {
+    if (handleAiDeliveryGuardError(res, error)) return;
     res.status(500).json(failure("AI_DELIVERY_RESEARCH_REQUEST_RUNTIME_ERROR", "AI Delivery research request create could not be completed."));
   }
 };
@@ -1590,7 +1603,8 @@ export const updateAiDeliveryResearchRequestHandler: RequestHandler = async (req
     }
 
     res.json(success(response, { phase: "runtime", scope: "ai-delivery-research-requests" }));
-  } catch {
+  } catch (error) {
+    if (handleAiDeliveryGuardError(res, error)) return;
     res.status(500).json(failure("AI_DELIVERY_RESEARCH_REQUEST_RUNTIME_ERROR", "AI Delivery research request update could not be completed."));
   }
 };
@@ -1643,7 +1657,8 @@ export const createAiDeliveryResearchSummaryHandler: RequestHandler = async (req
     }
 
     res.status(201).json(success(response, { phase: "runtime", scope: "ai-delivery-research-summaries" }));
-  } catch {
+  } catch (error) {
+    if (handleAiDeliveryGuardError(res, error)) return;
     res.status(500).json(failure("AI_DELIVERY_RESEARCH_SUMMARY_RUNTIME_ERROR", "AI Delivery research summary create could not be completed."));
   }
 };
@@ -1671,7 +1686,8 @@ export const updateAiDeliveryResearchSummaryHandler: RequestHandler = async (req
     }
 
     res.json(success(response, { phase: "runtime", scope: "ai-delivery-research-summaries" }));
-  } catch {
+  } catch (error) {
+    if (handleAiDeliveryGuardError(res, error)) return;
     res.status(500).json(failure("AI_DELIVERY_RESEARCH_SUMMARY_RUNTIME_ERROR", "AI Delivery research summary update could not be completed."));
   }
 };
@@ -1725,7 +1741,8 @@ export const listAiDeliveryResearchSourcesHandler: RequestHandler = async (req, 
     }
 
     res.json(success(response, { phase: "runtime", scope: "ai-delivery-research-sources" }));
-  } catch {
+  } catch (error) {
+    if (handleAiDeliveryGuardError(res, error)) return;
     res.status(500).json(failure("AI_DELIVERY_RESEARCH_SOURCE_RUNTIME_ERROR", "AI Delivery research source list could not be completed."));
   }
 };
@@ -1752,7 +1769,8 @@ export const createAiDeliveryResearchSourceHandler: RequestHandler = async (req,
     }
 
     res.status(201).json(success(response, { phase: "runtime", scope: "ai-delivery-research-sources" }));
-  } catch {
+  } catch (error) {
+    if (handleAiDeliveryGuardError(res, error)) return;
     res.status(500).json(failure("AI_DELIVERY_RESEARCH_SOURCE_RUNTIME_ERROR", "AI Delivery research source create could not be completed."));
   }
 };
@@ -1780,7 +1798,8 @@ export const updateAiDeliveryResearchSourceHandler: RequestHandler = async (req,
     }
 
     res.json(success(response, { phase: "runtime", scope: "ai-delivery-research-sources" }));
-  } catch {
+  } catch (error) {
+    if (handleAiDeliveryGuardError(res, error)) return;
     res.status(500).json(failure("AI_DELIVERY_RESEARCH_SOURCE_RUNTIME_ERROR", "AI Delivery research source update could not be completed."));
   }
 };
@@ -2156,7 +2175,8 @@ export const createAiDeliveryContentDraftHandler: RequestHandler = async (req, r
     const response = await createAiDeliveryContentDraft(authSession, aiDeliveryProjectId, input);
     if (!response?.contentDraft) return void res.status(404).json(aiDeliveryProjectNotFoundFailure());
     res.status(201).json(success(response, { phase: "runtime", scope: "ai-delivery-content-drafts" }));
-  } catch {
+  } catch (error) {
+    if (handleAiDeliveryGuardError(res, error)) return;
     res.status(500).json(failure("AI_DELIVERY_CONTENT_DRAFT_RUNTIME_ERROR", "Content draft could not be created."));
   }
 };
@@ -2173,7 +2193,8 @@ export const updateAiDeliveryContentDraftHandler: RequestHandler = async (req, r
     const response = await updateAiDeliveryContentDraft(authSession, aiDeliveryProjectId, contentDraftId, input);
     if (!response?.contentDraft) return void res.status(404).json(aiDeliveryProjectNotFoundFailure());
     res.json(success(response, { phase: "runtime", scope: "ai-delivery-content-drafts" }));
-  } catch {
+  } catch (error) {
+    if (handleAiDeliveryGuardError(res, error)) return;
     res.status(500).json(failure("AI_DELIVERY_CONTENT_DRAFT_RUNTIME_ERROR", "Content draft could not be updated."));
   }
 };
@@ -2220,7 +2241,8 @@ export const createAiDeliveryArticleImageHandler: RequestHandler = async (req, r
     const response = await createAiDeliveryArticleImage(authSession, aiDeliveryProjectId, input);
     if (!response?.articleImage) return void res.status(404).json(aiDeliveryProjectNotFoundFailure());
     res.status(201).json(success(response, { phase: "runtime", scope: "ai-delivery-article-images" }));
-  } catch {
+  } catch (error) {
+    if (handleAiDeliveryGuardError(res, error)) return;
     res.status(500).json(failure("AI_DELIVERY_ARTICLE_IMAGE_RUNTIME_ERROR", "Article image could not be created."));
   }
 };
@@ -2237,7 +2259,8 @@ export const updateAiDeliveryArticleImageHandler: RequestHandler = async (req, r
     const response = await updateAiDeliveryArticleImage(authSession, aiDeliveryProjectId, articleImageId, input);
     if (!response?.articleImage) return void res.status(404).json(aiDeliveryProjectNotFoundFailure());
     res.json(success(response, { phase: "runtime", scope: "ai-delivery-article-images" }));
-  } catch {
+  } catch (error) {
+    if (handleAiDeliveryGuardError(res, error)) return;
     res.status(500).json(failure("AI_DELIVERY_ARTICLE_IMAGE_RUNTIME_ERROR", "Article image could not be updated."));
   }
 };
@@ -2269,7 +2292,8 @@ export const markAiDeliveryArticleImagePreviewReadyHandler: RequestHandler = asy
     const response = await markAiDeliveryArticleImagePreviewReady(authSession, aiDeliveryProjectId, articleImageId);
     if (!response?.articleImage) return void res.status(404).json(aiDeliveryProjectNotFoundFailure());
     res.json(success(response, { phase: "runtime", scope: "ai-delivery-article-images" }));
-  } catch {
+  } catch (error) {
+    if (handleAiDeliveryGuardError(res, error)) return;
     res.status(500).json(failure("AI_DELIVERY_ARTICLE_IMAGE_RUNTIME_ERROR", "Article image preview-ready action could not be completed."));
   }
 };
@@ -2285,7 +2309,8 @@ export const requestAiDeliveryArticleImageChangesHandler: RequestHandler = async
     const response = await requestAiDeliveryArticleImageChanges(authSession, aiDeliveryProjectId, articleImageId);
     if (!response?.articleImage) return void res.status(404).json(aiDeliveryProjectNotFoundFailure());
     res.json(success(response, { phase: "runtime", scope: "ai-delivery-article-images" }));
-  } catch {
+  } catch (error) {
+    if (handleAiDeliveryGuardError(res, error)) return;
     res.status(500).json(failure("AI_DELIVERY_ARTICLE_IMAGE_RUNTIME_ERROR", "Article image request-changes action could not be completed."));
   }
 };
@@ -2301,7 +2326,8 @@ export const approveAiDeliveryArticleImageHandler: RequestHandler = async (req, 
     const response = await approveAiDeliveryArticleImage(authSession, aiDeliveryProjectId, articleImageId);
     if (!response?.articleImage) return void res.status(404).json(aiDeliveryProjectNotFoundFailure());
     res.json(success(response, { phase: "runtime", scope: "ai-delivery-article-images" }));
-  } catch {
+  } catch (error) {
+    if (handleAiDeliveryGuardError(res, error)) return;
     res.status(500).json(failure("AI_DELIVERY_ARTICLE_IMAGE_RUNTIME_ERROR", "Article image approve action could not be completed."));
   }
 };
@@ -2317,7 +2343,8 @@ export const markAiDeliveryArticleImageFinalReadyHandler: RequestHandler = async
     const response = await markAiDeliveryArticleImageFinalReady(authSession, aiDeliveryProjectId, articleImageId);
     if (!response?.articleImage) return void res.status(404).json(aiDeliveryProjectNotFoundFailure());
     res.json(success(response, { phase: "runtime", scope: "ai-delivery-article-images" }));
-  } catch {
+  } catch (error) {
+    if (handleAiDeliveryGuardError(res, error)) return;
     res.status(500).json(failure("AI_DELIVERY_ARTICLE_IMAGE_RUNTIME_ERROR", "Article image final-ready action could not be completed."));
   }
 };
@@ -2348,7 +2375,8 @@ export const createAiDeliveryDeliverableHandler: RequestHandler = async (req, re
     const response = await createAiDeliveryDeliverable(authSession, aiDeliveryProjectId, input);
     if (!response?.deliverable) return void res.status(404).json(aiDeliveryProjectNotFoundFailure());
     res.status(201).json(success(response, { phase: "runtime", scope: "ai-delivery-deliverables" }));
-  } catch {
+  } catch (error) {
+    if (handleAiDeliveryGuardError(res, error)) return;
     res.status(500).json(failure("AI_DELIVERY_DELIVERABLE_RUNTIME_ERROR", "Deliverable could not be created."));
   }
 };
@@ -2365,7 +2393,8 @@ export const updateAiDeliveryDeliverableHandler: RequestHandler = async (req, re
     const response = await updateAiDeliveryDeliverable(authSession, aiDeliveryProjectId, deliverableId, input);
     if (!response?.deliverable) return void res.status(404).json(aiDeliveryProjectNotFoundFailure());
     res.json(success(response, { phase: "runtime", scope: "ai-delivery-deliverables" }));
-  } catch {
+  } catch (error) {
+    if (handleAiDeliveryGuardError(res, error)) return;
     res.status(500).json(failure("AI_DELIVERY_DELIVERABLE_RUNTIME_ERROR", "Deliverable could not be updated."));
   }
 };
@@ -2397,7 +2426,8 @@ export const restoreAiDeliveryDeliverableHandler: RequestHandler = async (req, r
     const response = await restoreAiDeliveryDeliverable(authSession, aiDeliveryProjectId, deliverableId);
     if (!response?.deliverable) return void res.status(404).json(aiDeliveryProjectNotFoundFailure());
     res.json(success(response, { phase: "runtime", scope: "ai-delivery-deliverables" }));
-  } catch {
+  } catch (error) {
+    if (handleAiDeliveryGuardError(res, error)) return;
     res.status(500).json(failure("AI_DELIVERY_DELIVERABLE_RUNTIME_ERROR", "Deliverable could not be restored."));
   }
 };
@@ -2413,7 +2443,8 @@ export const markAiDeliveryDeliverableReadyHandler: RequestHandler = async (req,
     const response = await markAiDeliveryDeliverableReady(authSession, aiDeliveryProjectId, deliverableId);
     if (!response?.deliverable) return void res.status(404).json(aiDeliveryProjectNotFoundFailure());
     res.json(success(response, { phase: "runtime", scope: "ai-delivery-deliverables" }));
-  } catch {
+  } catch (error) {
+    if (handleAiDeliveryGuardError(res, error)) return;
     res.status(500).json(failure("AI_DELIVERY_DELIVERABLE_RUNTIME_ERROR", "Deliverable ready action could not be completed."));
   }
 };
@@ -2429,7 +2460,8 @@ export const requestAiDeliveryDeliverableRevisionHandler: RequestHandler = async
     const response = await requestAiDeliveryDeliverableRevision(authSession, aiDeliveryProjectId, deliverableId);
     if (!response?.deliverable) return void res.status(404).json(aiDeliveryProjectNotFoundFailure());
     res.json(success(response, { phase: "runtime", scope: "ai-delivery-deliverables" }));
-  } catch {
+  } catch (error) {
+    if (handleAiDeliveryGuardError(res, error)) return;
     res.status(500).json(failure("AI_DELIVERY_DELIVERABLE_RUNTIME_ERROR", "Deliverable revision action could not be completed."));
   }
 };
@@ -2445,7 +2477,8 @@ export const acceptAiDeliveryDeliverableHandler: RequestHandler = async (req, re
     const response = await acceptAiDeliveryDeliverable(authSession, aiDeliveryProjectId, deliverableId);
     if (!response?.deliverable) return void res.status(404).json(aiDeliveryProjectNotFoundFailure());
     res.json(success(response, { phase: "runtime", scope: "ai-delivery-deliverables" }));
-  } catch {
+  } catch (error) {
+    if (handleAiDeliveryGuardError(res, error)) return;
     res.status(500).json(failure("AI_DELIVERY_DELIVERABLE_RUNTIME_ERROR", "Deliverable accept action could not be completed."));
   }
 };
@@ -2478,7 +2511,8 @@ export const createAiDeliveryDeliverableReviewHandler: RequestHandler = async (r
     const response = await createAiDeliveryDeliverableReview(authSession, aiDeliveryProjectId, deliverableId, input);
     if (!response?.deliverableReview) return void res.status(404).json(aiDeliveryProjectNotFoundFailure());
     res.status(201).json(success(response, { phase: "runtime", scope: "ai-delivery-deliverable-reviews" }));
-  } catch {
+  } catch (error) {
+    if (handleAiDeliveryGuardError(res, error)) return;
     res.status(500).json(failure("AI_DELIVERY_DELIVERABLE_REVIEW_RUNTIME_ERROR", "Deliverable review could not be created."));
   }
 };
@@ -2496,7 +2530,8 @@ export const updateAiDeliveryDeliverableReviewHandler: RequestHandler = async (r
     const response = await updateAiDeliveryDeliverableReview(authSession, aiDeliveryProjectId, deliverableId, reviewId, input);
     if (!response?.deliverableReview) return void res.status(404).json(aiDeliveryProjectNotFoundFailure());
     res.json(success(response, { phase: "runtime", scope: "ai-delivery-deliverable-reviews" }));
-  } catch {
+  } catch (error) {
+    if (handleAiDeliveryGuardError(res, error)) return;
     res.status(500).json(failure("AI_DELIVERY_DELIVERABLE_REVIEW_RUNTIME_ERROR", "Deliverable review could not be updated."));
   }
 };
@@ -2512,7 +2547,8 @@ export const requestAiDeliveryContentDraftClientReviewHandler: RequestHandler = 
     const response = await requestAiDeliveryContentDraftClientReview(authSession, aiDeliveryProjectId, contentDraftId);
     if (!response?.contentDraft) return void res.status(404).json(aiDeliveryProjectNotFoundFailure());
     res.json(success(response, { phase: "runtime", scope: "ai-delivery-content-draft-client-review" }));
-  } catch {
+  } catch (error) {
+    if (handleAiDeliveryGuardError(res, error)) return;
     res.status(500).json(failure("AI_DELIVERY_CONTENT_DRAFT_RUNTIME_ERROR", "Content draft review request could not be completed."));
   }
 };
@@ -2528,7 +2564,8 @@ export const returnAiDeliveryContentDraftToDraftHandler: RequestHandler = async 
     const response = await returnAiDeliveryContentDraftToDraft(authSession, aiDeliveryProjectId, contentDraftId);
     if (!response?.contentDraft) return void res.status(404).json(aiDeliveryProjectNotFoundFailure());
     res.json(success(response, { phase: "runtime", scope: "ai-delivery-content-drafts" }));
-  } catch {
+  } catch (error) {
+    if (handleAiDeliveryGuardError(res, error)) return;
     res.status(500).json(failure("AI_DELIVERY_CONTENT_DRAFT_RUNTIME_ERROR", "Content draft could not be returned to draft."));
   }
 };

@@ -104,6 +104,30 @@ const AI_DELIVERY_RESEARCH_REQUEST_STATUSES: AiDeliveryResearchRequestStatus[] =
 const AI_DELIVERY_RESEARCH_SUMMARY_STATUSES: AiDeliveryResearchSummaryStatus[] = ["DRAFT", "IN_REVIEW", "FINALIZED", "ARCHIVED"];
 const AI_DELIVERY_RESEARCH_SOURCE_STATUSES: AiDeliveryResearchSourceStatus[] = ["PROPOSED", "APPROVED", "REJECTED", "ARCHIVED"];
 const AI_DELIVERY_RESEARCH_SOURCE_TYPES: AiDeliveryResearchSourceType[] = ["WEBSITE", "DOCUMENT", "OTHER"];
+
+export class AiDeliveryGuardError extends Error {
+  readonly status: number;
+  readonly code: string;
+
+  constructor(status: number, code: string, message: string) {
+    super(message);
+    this.name = "AiDeliveryGuardError";
+    this.status = status;
+    this.code = code;
+  }
+}
+
+export function isAiDeliveryGuardError(error: unknown): error is AiDeliveryGuardError {
+  return error instanceof AiDeliveryGuardError;
+}
+
+function throwAiDeliveryBadRequest(code: string, message: string): never {
+  throw new AiDeliveryGuardError(400, code, message);
+}
+
+function throwAiDeliveryConflict(code: string, message: string): never {
+  throw new AiDeliveryGuardError(409, code, message);
+}
 type ClientUserAccessSummary = {
   id: string;
   clientId: string;
@@ -1715,12 +1739,12 @@ export async function createAiDeliveryProject(
   return prisma.$transaction(async (tx: PrismaTx) => {
     const client = await getAiDeliveryTenantClient(tx, tenantId, input.clientId);
     if (!client) {
-      return null;
+      throwAiDeliveryBadRequest("AI_DELIVERY_PROJECT_CLIENT_LINK_INVALID", "Client must belong to the active tenant.");
     }
 
     const project = await getAiDeliveryTenantProject(tx, tenantId, client.id, input.projectId);
     if (input.projectId && !project) {
-      return null;
+      throwAiDeliveryBadRequest("AI_DELIVERY_PROJECT_OPTIONAL_PROJECT_LINK_INVALID", "Project link must belong to the selected client in the active tenant.");
     }
 
     const created = await getAiDeliveryProjectDelegate(tx).create({
@@ -1931,7 +1955,9 @@ export async function createAiDeliveryContentDraft(
     const project = await getAiDeliveryProjectForDraft(tx, tenantId, aiDeliveryProjectId);
     if (!project) return null;
     const contentPlanItem = await getContentPlanItemForDraft(tx, tenantId, aiDeliveryProjectId, input.contentPlanItemId);
-    if (input.contentPlanItemId && !contentPlanItem) return null;
+    if (input.contentPlanItemId && !contentPlanItem) {
+      throwAiDeliveryBadRequest("AI_DELIVERY_CONTENT_DRAFT_CONTENT_PLAN_ITEM_LINK_INVALID", "Content plan item must belong to the same AI Delivery project.");
+    }
     const nextStatus = normalizeAiDeliveryContentDraftAdminStatus(input.status);
     const reviewRequestedAt = nextStatus === "READY_FOR_REVIEW" ? new Date() : null;
     const created = await getAiDeliveryContentDraftDelegate(tx).create({
@@ -1976,7 +2002,9 @@ export async function updateAiDeliveryContentDraft(
     const existing = await getAiDeliveryContentDraftDelegate(tx).findFirst({ where: { id: contentDraftId, tenantId, aiDeliveryProjectId }, select: aiDeliveryContentDraftSelect }) as any;
     if (!existing) return null;
     const contentPlanItem = await getContentPlanItemForDraft(tx, tenantId, aiDeliveryProjectId, input.contentPlanItemId);
-    if (input.contentPlanItemId && !contentPlanItem) return null;
+    if (input.contentPlanItemId && !contentPlanItem) {
+      throwAiDeliveryBadRequest("AI_DELIVERY_CONTENT_DRAFT_CONTENT_PLAN_ITEM_LINK_INVALID", "Content plan item must belong to the same AI Delivery project.");
+    }
     const nextStatus = normalizeAiDeliveryContentDraftAdminStatus(input.status ?? existing.status);
     const lifecycleUpdate = nextStatus === "READY_FOR_REVIEW"
       ? { reviewRequestedAt: existing.reviewRequestedAt ?? new Date(), approvedAt: null }
@@ -2040,11 +2068,16 @@ export async function requestAiDeliveryContentDraftClientReview(
     const project = await getAiDeliveryProjectForDraft(tx, tenantId, aiDeliveryProjectId);
     if (!project) return null;
     const existing = await getAiDeliveryContentDraftDelegate(tx).findFirst({
-      where: { id: contentDraftId, tenantId, aiDeliveryProjectId, isArchived: false },
-      select: { id: true, draftBody: true, title: true }
+      where: { id: contentDraftId, tenantId, aiDeliveryProjectId },
+      select: { id: true, draftBody: true, title: true, isArchived: true }
     }) as any;
     if (!existing) return null;
-    if (!existing.title.trim() || !existing.draftBody.trim()) return null;
+    if (existing.isArchived) {
+      throwAiDeliveryConflict("AI_DELIVERY_CONTENT_DRAFT_ARCHIVED_ACTION_BLOCKED", "Archived content drafts cannot be moved to client review.");
+    }
+    if (!existing.title.trim() || !existing.draftBody.trim()) {
+      throwAiDeliveryConflict("AI_DELIVERY_CONTENT_DRAFT_REVIEW_BLOCKED", "Only drafts with both a title and body can be moved to client review.");
+    }
     const updated = await getAiDeliveryContentDraftDelegate(tx).update({
       where: { id: contentDraftId },
       data: { status: "READY_FOR_REVIEW", reviewRequestedAt: new Date(), approvedAt: null },
@@ -2073,10 +2106,13 @@ export async function returnAiDeliveryContentDraftToDraft(
 
   return prisma.$transaction(async (tx: PrismaTx) => {
     const existing = await getAiDeliveryContentDraftDelegate(tx).findFirst({
-      where: { id: contentDraftId, tenantId, aiDeliveryProjectId, isArchived: false },
-      select: { id: true }
+      where: { id: contentDraftId, tenantId, aiDeliveryProjectId },
+      select: { id: true, isArchived: true }
     }) as any;
     if (!existing) return null;
+    if (existing.isArchived) {
+      throwAiDeliveryConflict("AI_DELIVERY_CONTENT_DRAFT_ARCHIVED_ACTION_BLOCKED", "Archived content drafts cannot be returned to draft.");
+    }
 
     const updated = await getAiDeliveryContentDraftDelegate(tx).update({
       where: { id: contentDraftId },
@@ -2302,7 +2338,9 @@ export async function createAiDeliveryArticleImage(
     const project = await getAiDeliveryProjectForDraft(tx, tenantId, aiDeliveryProjectId);
     if (!project) return null;
     const contentDraft = await getContentDraftForArticleImage(tx, tenantId, aiDeliveryProjectId, input.contentDraftId);
-    if (!contentDraft) return null;
+    if (!contentDraft) {
+      throwAiDeliveryBadRequest("AI_DELIVERY_ARTICLE_IMAGE_CONTENT_DRAFT_LINK_INVALID", "Content draft must belong to the same AI Delivery project.");
+    }
     const created = await getAiDeliveryArticleImageDelegate(tx).create({
       data: {
         tenantId,
@@ -2348,7 +2386,9 @@ export async function updateAiDeliveryArticleImage(
     }) as any;
     if (!existing) return null;
     const contentDraft = await getContentDraftForArticleImage(tx, tenantId, aiDeliveryProjectId, input.contentDraftId);
-    if (!contentDraft) return null;
+    if (!contentDraft) {
+      throwAiDeliveryBadRequest("AI_DELIVERY_ARTICLE_IMAGE_CONTENT_DRAFT_LINK_INVALID", "Content draft must belong to the same AI Delivery project.");
+    }
     const status = normalizeAiDeliveryArticleImageStatus(input.status);
     const updated = await getAiDeliveryArticleImageDelegate(tx).update({
       where: { id: articleImageId },
@@ -2400,13 +2440,22 @@ async function transitionAiDeliveryArticleImageStatus(
 
   return prisma.$transaction(async (tx: PrismaTx) => {
     const existing = await getAiDeliveryArticleImageDelegate(tx).findFirst({
-      where: { id: articleImageId, tenantId, aiDeliveryProjectId, isArchived: false },
+      where: { id: articleImageId, tenantId, aiDeliveryProjectId },
       select: aiDeliveryArticleImageSelect
     }) as any;
     if (!existing) return null;
-    if (!options.allowedFrom.includes(existing.status)) return null;
-    if (options.requiresPreview && !hasArticleImagePreviewReference(existing)) return null;
-    if (options.requiresFinal && !hasArticleImageFinalReference(existing)) return null;
+    if (existing.isArchived) {
+      throwAiDeliveryConflict("AI_DELIVERY_ARTICLE_IMAGE_ARCHIVED_ACTION_BLOCKED", "Archived article images cannot be updated through status actions.");
+    }
+    if (!options.allowedFrom.includes(existing.status)) {
+      throwAiDeliveryConflict("AI_DELIVERY_ARTICLE_IMAGE_ACTION_BLOCKED", `Article image action is not allowed from status ${existing.status}.`);
+    }
+    if (options.requiresPreview && !hasArticleImagePreviewReference(existing)) {
+      throwAiDeliveryConflict("AI_DELIVERY_ARTICLE_IMAGE_PREVIEW_REFERENCE_REQUIRED", "Preview or final image reference is required before this action.");
+    }
+    if (options.requiresFinal && !hasArticleImageFinalReference(existing)) {
+      throwAiDeliveryConflict("AI_DELIVERY_ARTICLE_IMAGE_FINAL_REFERENCE_REQUIRED", "Final image URL or storage key is required before this action.");
+    }
 
     const updated = await getAiDeliveryArticleImageDelegate(tx).update({
       where: { id: articleImageId },
@@ -2829,12 +2878,12 @@ export async function updateAiDeliveryProject(
 
     const client = await getAiDeliveryTenantClient(tx, tenantId, input.clientId);
     if (!client) {
-      return null;
+      throwAiDeliveryBadRequest("AI_DELIVERY_PROJECT_CLIENT_LINK_INVALID", "Client must belong to the active tenant.");
     }
 
     const project = await getAiDeliveryTenantProject(tx, tenantId, client.id, input.projectId);
     if (input.projectId && !project) {
-      return null;
+      throwAiDeliveryBadRequest("AI_DELIVERY_PROJECT_OPTIONAL_PROJECT_LINK_INVALID", "Project link must belong to the selected client in the active tenant.");
     }
 
     const updated = await getAiDeliveryProjectDelegate(tx).update({
@@ -3561,7 +3610,9 @@ export async function createAiDeliveryResearchRequest(
     const workflowRunId = toNullableString(input.workflowRunId);
     if (workflowRunId) {
       const workflowRun = await getAiDeliveryProjectWorkflowRun(tx, tenantId, aiDeliveryProjectId, workflowRunId);
-      if (!workflowRun) return null;
+      if (!workflowRun) {
+        throwAiDeliveryBadRequest("AI_DELIVERY_RESEARCH_REQUEST_WORKFLOW_RUN_LINK_INVALID", "Workflow run must belong to the same AI Delivery project.");
+      }
     }
 
     const created = await getAiDeliveryResearchRequestDelegate(tx).create({
@@ -3616,7 +3667,9 @@ export async function updateAiDeliveryResearchRequest(
       workflowRunId = toNullableString(input.workflowRunId);
       if (workflowRunId) {
         const workflowRun = await getAiDeliveryProjectWorkflowRun(tx, tenantId, aiDeliveryProjectId, workflowRunId);
-        if (!workflowRun) return null;
+        if (!workflowRun) {
+          throwAiDeliveryBadRequest("AI_DELIVERY_RESEARCH_REQUEST_WORKFLOW_RUN_LINK_INVALID", "Workflow run must belong to the same AI Delivery project.");
+        }
       }
     }
 
@@ -3661,7 +3714,9 @@ export async function listAiDeliveryResearchSources(
   const normalizedResearchRequestId = toNullableString(researchRequestId ?? null);
   if (normalizedResearchRequestId) {
     const request = await getAiDeliveryProjectResearchRequest(prisma, tenantId, aiDeliveryProjectId, normalizedResearchRequestId);
-    if (!request) return null;
+    if (!request) {
+      throwAiDeliveryBadRequest("AI_DELIVERY_RESEARCH_SOURCE_FILTER_REQUEST_LINK_INVALID", "Research request filter must belong to the same AI Delivery project.");
+    }
   }
 
   const researchSources = await getAiDeliveryResearchSourceDelegate(prisma).findMany({
@@ -3692,13 +3747,17 @@ export async function createAiDeliveryResearchSource(
     const researchRequestId = toNullableString(input.researchRequestId);
     if (researchRequestId) {
       const request = await getAiDeliveryProjectResearchRequest(tx, tenantId, aiDeliveryProjectId, researchRequestId);
-      if (!request) return null;
+      if (!request) {
+        throwAiDeliveryBadRequest("AI_DELIVERY_RESEARCH_SOURCE_REQUEST_LINK_INVALID", "Research request must belong to the same AI Delivery project.");
+      }
     }
 
     const workflowRunId = toNullableString(input.workflowRunId);
     if (workflowRunId) {
       const workflowRun = await getAiDeliveryProjectWorkflowRun(tx, tenantId, aiDeliveryProjectId, workflowRunId);
-      if (!workflowRun) return null;
+      if (!workflowRun) {
+        throwAiDeliveryBadRequest("AI_DELIVERY_RESEARCH_SOURCE_WORKFLOW_RUN_LINK_INVALID", "Workflow run must belong to the same AI Delivery project.");
+      }
     }
 
     const created = await getAiDeliveryResearchSourceDelegate(tx).create({
@@ -3755,7 +3814,9 @@ export async function updateAiDeliveryResearchSource(
       researchRequestId = toNullableString(input.researchRequestId);
       if (researchRequestId) {
         const request = await getAiDeliveryProjectResearchRequest(tx, tenantId, aiDeliveryProjectId, researchRequestId);
-        if (!request) return null;
+        if (!request) {
+          throwAiDeliveryBadRequest("AI_DELIVERY_RESEARCH_SOURCE_REQUEST_LINK_INVALID", "Research request must belong to the same AI Delivery project.");
+        }
       }
     }
 
@@ -3764,7 +3825,9 @@ export async function updateAiDeliveryResearchSource(
       workflowRunId = toNullableString(input.workflowRunId);
       if (workflowRunId) {
         const workflowRun = await getAiDeliveryProjectWorkflowRun(tx, tenantId, aiDeliveryProjectId, workflowRunId);
-        if (!workflowRun) return null;
+        if (!workflowRun) {
+          throwAiDeliveryBadRequest("AI_DELIVERY_RESEARCH_SOURCE_WORKFLOW_RUN_LINK_INVALID", "Workflow run must belong to the same AI Delivery project.");
+        }
       }
     }
 
@@ -3916,7 +3979,9 @@ export async function createAiDeliveryResearchSummary(
     const workflowRunId = toNullableString(input.workflowRunId);
     if (workflowRunId) {
       const workflowRun = await getAiDeliveryProjectWorkflowRun(tx, tenantId, aiDeliveryProjectId, workflowRunId);
-      if (!workflowRun) return null;
+      if (!workflowRun) {
+        throwAiDeliveryBadRequest("AI_DELIVERY_RESEARCH_SUMMARY_WORKFLOW_RUN_LINK_INVALID", "Workflow run must belong to the same AI Delivery project.");
+      }
     }
 
     const status = normalizeAiDeliveryResearchSummaryStatus(input.status);
@@ -3980,7 +4045,9 @@ export async function updateAiDeliveryResearchSummary(
       workflowRunId = toNullableString(input.workflowRunId);
       if (workflowRunId) {
         const workflowRun = await getAiDeliveryProjectWorkflowRun(tx, tenantId, aiDeliveryProjectId, workflowRunId);
-        if (!workflowRun) return null;
+        if (!workflowRun) {
+          throwAiDeliveryBadRequest("AI_DELIVERY_RESEARCH_SUMMARY_WORKFLOW_RUN_LINK_INVALID", "Workflow run must belong to the same AI Delivery project.");
+        }
       }
     }
 
@@ -6408,19 +6475,22 @@ async function updateAiDeliveryDeliverableStatus(
 
   return prisma.$transaction(async (tx: PrismaTx) => {
     const existing = await getAiDeliveryDeliverableDelegate(tx).findFirst({
-      where: { id: deliverableId, tenantId, aiDeliveryProjectId, isArchived: false },
+      where: { id: deliverableId, tenantId, aiDeliveryProjectId },
       select: aiDeliveryDeliverableSelect as any
     }) as any;
     if (!existing) return null;
+    if (existing.isArchived) {
+      throwAiDeliveryConflict("AI_DELIVERY_DELIVERABLE_ARCHIVED_ACTION_BLOCKED", "Archived deliverables cannot be moved through active workflow actions.");
+    }
 
     if (nextStatus === "READY" && !["DRAFT", "REVISION_REQUESTED"].includes(existing.status)) {
-      return null;
+      throwAiDeliveryConflict("AI_DELIVERY_DELIVERABLE_ACTION_BLOCKED", `Deliverable action is not allowed from status ${existing.status}.`);
     }
     if (nextStatus === "REVISION_REQUESTED" && !["READY", "ACCEPTED", "DELIVERED"].includes(existing.status)) {
-      return null;
+      throwAiDeliveryConflict("AI_DELIVERY_DELIVERABLE_ACTION_BLOCKED", `Deliverable action is not allowed from status ${existing.status}.`);
     }
     if (nextStatus === "ACCEPTED" && !["READY", "DELIVERED"].includes(existing.status)) {
-      return null;
+      throwAiDeliveryConflict("AI_DELIVERY_DELIVERABLE_ACTION_BLOCKED", `Deliverable action is not allowed from status ${existing.status}.`);
     }
 
     const contentDraft = existing.contentDraftId
@@ -6430,7 +6500,7 @@ async function updateAiDeliveryDeliverableStatus(
       ? await getArticleImageForDeliverable(tx, tenantId, aiDeliveryProjectId, existing.articleImageId)
       : null;
     if (!validateDeliverableReadyLinks(nextStatus, contentDraft, articleImage)) {
-      return null;
+      throwAiDeliveryConflict("AI_DELIVERY_DELIVERABLE_READY_LINKS_BLOCKED", "Ready, delivered, and accepted deliverables require approved same-project draft or image links.");
     }
 
     const updated = await getAiDeliveryDeliverableDelegate(tx).update({
@@ -6494,10 +6564,13 @@ export async function createAiDeliveryDeliverable(
       ? await getArticleImageForDeliverable(tx, tenantId, aiDeliveryProjectId, articleImageId)
       : null;
     if ((contentDraftId && !contentDraft) || (articleImageId && !articleImage)) {
-      return null;
+      if (contentDraftId && !contentDraft) {
+        throwAiDeliveryBadRequest("AI_DELIVERY_DELIVERABLE_CONTENT_DRAFT_LINK_INVALID", "Content draft must belong to the same AI Delivery project.");
+      }
+      throwAiDeliveryBadRequest("AI_DELIVERY_DELIVERABLE_ARTICLE_IMAGE_LINK_INVALID", "Article image must belong to the same AI Delivery project.");
     }
     if (!validateDeliverableReadyLinks(status, contentDraft, articleImage)) {
-      return null;
+      throwAiDeliveryBadRequest("AI_DELIVERY_DELIVERABLE_READY_LINKS_BLOCKED", "Ready, delivered, and accepted deliverables require approved same-project draft or image links.");
     }
 
     const created = await getAiDeliveryDeliverableDelegate(tx).create({
@@ -6554,11 +6627,14 @@ export async function updateAiDeliveryDeliverable(
       ? await getArticleImageForDeliverable(tx, tenantId, aiDeliveryProjectId, articleImageId)
       : null;
     if ((contentDraftId && !contentDraft) || (articleImageId && !articleImage)) {
-      return null;
+      if (contentDraftId && !contentDraft) {
+        throwAiDeliveryBadRequest("AI_DELIVERY_DELIVERABLE_CONTENT_DRAFT_LINK_INVALID", "Content draft must belong to the same AI Delivery project.");
+      }
+      throwAiDeliveryBadRequest("AI_DELIVERY_DELIVERABLE_ARTICLE_IMAGE_LINK_INVALID", "Article image must belong to the same AI Delivery project.");
     }
     const status = normalizeAiDeliveryDeliverableStatus(input.status);
     if (!validateDeliverableReadyLinks(status, contentDraft, articleImage)) {
-      return null;
+      throwAiDeliveryBadRequest("AI_DELIVERY_DELIVERABLE_READY_LINKS_BLOCKED", "Ready, delivered, and accepted deliverables require approved same-project draft or image links.");
     }
 
     const updated = await getAiDeliveryDeliverableDelegate(tx).update({
@@ -6691,7 +6767,10 @@ export async function restoreAiDeliveryDeliverable(
       where: { id: deliverableId, tenantId, aiDeliveryProjectId },
       select: aiDeliveryDeliverableSelect as any
     }) as any;
-    if (!existing || !existing.isArchived) return null;
+    if (!existing) return null;
+    if (!existing.isArchived) {
+      throwAiDeliveryConflict("AI_DELIVERY_DELIVERABLE_RESTORE_BLOCKED", "Only archived deliverables can be restored.");
+    }
 
     const restored = await getAiDeliveryDeliverableDelegate(tx).update({
       where: { id: deliverableId },
@@ -6790,7 +6869,9 @@ export async function createAiDeliveryDeliverableReview(
 ): Promise<AiDeliveryDeliverableReviewResponse | null> {
   const tenantId = getActiveTenantId(authSession);
   if (!tenantId) return null;
-  if ((input.aiDeliveryProjectId && input.aiDeliveryProjectId !== aiDeliveryProjectId) || (input.deliverableId && input.deliverableId !== deliverableId)) return null;
+  if ((input.aiDeliveryProjectId && input.aiDeliveryProjectId !== aiDeliveryProjectId) || (input.deliverableId && input.deliverableId !== deliverableId)) {
+    throwAiDeliveryBadRequest("AI_DELIVERY_DELIVERABLE_REVIEW_ROUTE_LINK_INVALID", "Deliverable review payload links must match the route project and deliverable.");
+  }
 
   return prisma.$transaction(async (tx: PrismaTx) => {
     const deliverable = await getAiDeliveryProjectDeliverable(tx, tenantId, aiDeliveryProjectId, deliverableId);
@@ -6799,7 +6880,9 @@ export async function createAiDeliveryDeliverableReview(
     const workflowRunId = toNullableString(input.workflowRunId);
     if (workflowRunId) {
       const workflowRun = await getAiDeliveryProjectWorkflowRun(tx, tenantId, aiDeliveryProjectId, workflowRunId);
-      if (!workflowRun) return null;
+      if (!workflowRun) {
+        throwAiDeliveryBadRequest("AI_DELIVERY_DELIVERABLE_REVIEW_WORKFLOW_RUN_LINK_INVALID", "Workflow run must belong to the same AI Delivery project.");
+      }
     }
 
     const created = await getAiDeliveryDeliverableReviewDelegate(tx).create({
@@ -6839,7 +6922,9 @@ export async function updateAiDeliveryDeliverableReview(
 ): Promise<AiDeliveryDeliverableReviewResponse | null> {
   const tenantId = getActiveTenantId(authSession);
   if (!tenantId) return null;
-  if ((input.aiDeliveryProjectId && input.aiDeliveryProjectId !== aiDeliveryProjectId) || (input.deliverableId && input.deliverableId !== deliverableId)) return null;
+  if ((input.aiDeliveryProjectId && input.aiDeliveryProjectId !== aiDeliveryProjectId) || (input.deliverableId && input.deliverableId !== deliverableId)) {
+    throwAiDeliveryBadRequest("AI_DELIVERY_DELIVERABLE_REVIEW_ROUTE_LINK_INVALID", "Deliverable review payload links must match the route project and deliverable.");
+  }
 
   return prisma.$transaction(async (tx: PrismaTx) => {
     const deliverable = await getAiDeliveryProjectDeliverable(tx, tenantId, aiDeliveryProjectId, deliverableId);
@@ -6853,7 +6938,9 @@ export async function updateAiDeliveryDeliverableReview(
       workflowRunId = toNullableString(input.workflowRunId);
       if (workflowRunId) {
         const workflowRun = await getAiDeliveryProjectWorkflowRun(tx, tenantId, aiDeliveryProjectId, workflowRunId);
-        if (!workflowRun) return null;
+        if (!workflowRun) {
+          throwAiDeliveryBadRequest("AI_DELIVERY_DELIVERABLE_REVIEW_WORKFLOW_RUN_LINK_INVALID", "Workflow run must belong to the same AI Delivery project.");
+        }
       }
     }
 
