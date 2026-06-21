@@ -343,6 +343,7 @@ export type AiDeliveryProjectsProps = {
   onSaveContentDraft?: (projectId: string, draftId: string | null, values: AiDeliveryContentDraftFormValues) => Promise<AiDeliveryContentDraftSummary | null>;
   onArchiveContentDraft?: (projectId: string, draftId: string) => Promise<AiDeliveryContentDraftSummary | null>;
   onRequestContentDraftReview?: (projectId: string, draftId: string) => Promise<AiDeliveryContentDraftSummary | null>;
+  onReturnContentDraftToDraft?: (projectId: string, draftId: string) => Promise<AiDeliveryContentDraftSummary | null>;
   onFetchArticleImages?: (projectId: string) => Promise<AiDeliveryArticleImageSummary[]>;
   onSaveArticleImage?: (projectId: string, imageId: string | null, values: AiDeliveryArticleImageFormValues) => Promise<AiDeliveryArticleImageSummary | null>;
   onArchiveArticleImage?: (projectId: string, imageId: string) => Promise<AiDeliveryArticleImageSummary | null>;
@@ -561,6 +562,15 @@ function formatContentPlanItemApprovalStatus(value?: string | null): string {
   return formatEnumLabel(value);
 }
 
+function formatContentDraftStatus(value?: string | null): string {
+  if (!value || value === "DRAFT") return "Draft / preparing";
+  if (value === "READY_FOR_REVIEW") return "Ready for review";
+  if (value === "APPROVED") return "Approved";
+  if (value === "CHANGES_REQUESTED") return "Changes requested";
+  if (value === "ARCHIVED") return "Archived";
+  return formatEnumLabel(value);
+}
+
 function formatEnumLabel(value?: string | null): string {
   if (!value) return "Not set";
   return String(value).toLowerCase().replace(/_/g, " ").replace(/(^|\s)\S/g, (s) => s.toUpperCase());
@@ -634,6 +644,7 @@ export function AiDeliveryPage({
   onSaveContentDraft,
   onArchiveContentDraft,
   onRequestContentDraftReview,
+  onReturnContentDraftToDraft,
   onFetchArticleImages,
   onSaveArticleImage,
   onArchiveArticleImage,
@@ -735,6 +746,21 @@ export function AiDeliveryPage({
   const openContentPlanProject = useMemo(() => projects.find((p) => p.id === openContentPlanId) ?? null, [openContentPlanId, projects]);
   const openContentDraftsProject = useMemo(() => projects.find((p) => p.id === openContentDraftsId) ?? null, [openContentDraftsId, projects]);
   const openArticleImagesProject = useMemo(() => projects.find((p) => p.id === openArticleImagesId) ?? null, [openArticleImagesId, projects]);
+  const activeContentDraftRecord = useMemo(
+    () => contentDrafts.find((item) => item.id === contentDraftEditorId) ?? null,
+    [contentDraftEditorId, contentDrafts]
+  );
+  const eligibleContentDraftPlanItems = useMemo(
+    () => (contentDraftPlan?.items ?? [])
+      .filter((item) => (item.approvalStatus ?? "DRAFT") !== "CLIENT_CHANGES_REQUESTED")
+      .sort((left, right) => {
+        const leftPriority = left.approvalStatus === "CLIENT_APPROVED" ? 0 : 1;
+        const rightPriority = right.approvalStatus === "CLIENT_APPROVED" ? 0 : 1;
+        if (leftPriority !== rightPriority) return leftPriority - rightPriority;
+        return left.sortOrder - right.sortOrder;
+      }),
+    [contentDraftPlan]
+  );
   const openDeliverablesProject = useMemo(() => projects.find((p) => p.id === openDeliverablesId) ?? null, [openDeliverablesId, projects]);
   const selectedReviewDeliverable = useMemo(() => deliverables.find((item) => item.id === selectedReviewDeliverableId) ?? null, [deliverables, selectedReviewDeliverableId]);
   const visibleDeliverables = useMemo(
@@ -938,6 +964,24 @@ export function AiDeliveryPage({
     });
   }
 
+  function startContentDraftFromPlanItem(item: AiDeliveryContentPlanItemSummary) {
+    const linkedDraft = contentDrafts.find((draftItem) => draftItem.contentPlanItemId === item.id && !draftItem.isArchived) ?? null;
+    if (linkedDraft) {
+      editContentDraft(linkedDraft);
+      return;
+    }
+
+    setContentDraftEditorId(null);
+    setContentDraftForm({
+      contentPlanItemId: item.id ?? null,
+      title: item.title,
+      slug: "",
+      draftBody: "",
+      status: "DRAFT",
+      notes: item.notes ?? ""
+    });
+  }
+
   async function saveContentDraft(projectId: string) {
     if (typeof onSaveContentDraft !== "function") return;
     setContentDraftsSaving(true);
@@ -970,6 +1014,22 @@ export function AiDeliveryPage({
     try {
       await onRequestContentDraftReview(projectId, draftId);
       setContentDrafts(await onFetchContentDrafts(projectId));
+    } finally {
+      setContentDraftsSaving(false);
+    }
+  }
+
+  async function returnContentDraftToDraft(projectId: string, draftId: string) {
+    if (typeof onReturnContentDraftToDraft !== "function" || typeof onFetchContentDrafts !== "function") return;
+    setContentDraftsSaving(true);
+    try {
+      await onReturnContentDraftToDraft(projectId, draftId);
+      const refreshedDrafts = await onFetchContentDrafts(projectId);
+      setContentDrafts(refreshedDrafts);
+      const refreshedActiveDraft = refreshedDrafts.find((item) => item.id === draftId) ?? null;
+      if (refreshedActiveDraft) {
+        editContentDraft(refreshedActiveDraft);
+      }
     } finally {
       setContentDraftsSaving(false);
     }
@@ -2623,36 +2683,124 @@ export function AiDeliveryPage({
             <div>
               <section className="field-panel">
                 <h3>Article production planning</h3>
-                <p className="muted-text">Admin/operator-side foundation only. Capture planned article records, draft placeholders, slugs, status, and notes. Visible only to admin team. Not published or sent to client from this screen. No AI writing, generation, publishing, WordPress integration, or external service calls run from this screen.</p>
+                <p className="muted-text">This is a manual content production and approval foundation. No AI generation, image generation, publishing, storage upload, or external services are performed.</p>
                 <div className="modal-footer">
                   <button className="secondary-action" disabled={contentDraftsSaving} onClick={() => { setContentDraftEditorId(null); setContentDraftForm(emptyContentDraft()); }} type="button">New draft</button>
                   <button className="secondary-action" disabled={contentDraftsSaving} onClick={closeContentDrafts} type="button">Close</button>
                   <button className="primary-action" disabled={contentDraftsSaving || !contentDraftForm.title.trim()} onClick={() => void saveContentDraft(openContentDraftsProject.id)} type="button">
                     {contentDraftsSaving ? "Saving" : contentDraftEditorId ? "Save production record" : "Create production record"}
                   </button>
+                  {activeContentDraftRecord && !activeContentDraftRecord.isArchived ? (
+                    <button
+                      className="primary-action"
+                      disabled={contentDraftsSaving || !activeContentDraftRecord.draftBody.trim() || activeContentDraftRecord.status === "READY_FOR_REVIEW"}
+                      onClick={() => void requestContentDraftReview(openContentDraftsProject.id, activeContentDraftRecord.id)}
+                      type="button"
+                    >
+                      Mark ready for review
+                    </button>
+                  ) : null}
+                  {activeContentDraftRecord && !activeContentDraftRecord.isArchived && activeContentDraftRecord.status !== "DRAFT" ? (
+                    <button className="secondary-action" disabled={contentDraftsSaving} onClick={() => void returnContentDraftToDraft(openContentDraftsProject.id, activeContentDraftRecord.id)} type="button">
+                      Return to draft
+                    </button>
+                  ) : null}
                 </div>
+                <div className="field-panel" style={{ marginBottom: "1rem" }}>
+                  <h4>Approved / planned content plan items</h4>
+                  <p className="muted-text">Use approved or still-planned monthly content plan items to start a linked content draft. Items already marked as changes requested stay out of this picker until the plan is corrected.</p>
+                  {eligibleContentDraftPlanItems.length === 0 ? <div className="state-panel">No approved or planned content plan items are available for draft production yet.</div> : null}
+                  {eligibleContentDraftPlanItems.map((item) => {
+                    const linkedDraft = contentDrafts.find((draftItem) => draftItem.contentPlanItemId === item.id && !draftItem.isArchived) ?? null;
+                    return (
+                      <article className="entity-card" key={item.id ?? `${item.sortOrder}-${item.title}`} style={{ marginBottom: "1rem" }}>
+                        <div className="entity-card-header">
+                          <div>
+                            <StatusBadge status={formatContentPlanItemApprovalStatus(item.approvalStatus)} />
+                            <h4>{item.sortOrder}. {item.title}</h4>
+                            <p>{item.targetKeyword ? `Target keyword: ${item.targetKeyword}` : "No target keyword recorded yet."}</p>
+                          </div>
+                          <div className="card-actions">
+                            <button className="secondary-action" disabled={contentDraftsSaving} onClick={() => startContentDraftFromPlanItem(item)} type="button">
+                              {linkedDraft ? "Edit linked draft" : "Create linked draft"}
+                            </button>
+                          </div>
+                        </div>
+                        <dl className="brief-grid">
+                          <div>
+                            <dt>Plan approval</dt>
+                            <dd>{formatContentPlanItemApprovalStatus(item.approvalStatus)}</dd>
+                          </div>
+                          <div>
+                            <dt>Linked draft</dt>
+                            <dd>{linkedDraft ? linkedDraft.title : "No active draft linked yet"}</dd>
+                          </div>
+                          <div className="field-span-2">
+                            <dt>Planning notes</dt>
+                            <dd>{item.notes ?? "No plan item notes"}</dd>
+                          </div>
+                          <div className="field-span-2">
+                            <dt>Client note</dt>
+                            <dd>{item.clientComment ?? "No client note"}</dd>
+                          </div>
+                        </dl>
+                      </article>
+                    );
+                  })}
+                </div>
+                {activeContentDraftRecord ? (
+                  <div className="field-panel" style={{ marginBottom: "1rem" }}>
+                    <h4>Saved draft review status</h4>
+                    <dl className="brief-grid">
+                      <div>
+                        <dt>Status</dt>
+                        <dd>{formatContentDraftStatus(activeContentDraftRecord.status)}</dd>
+                      </div>
+                      <div>
+                        <dt>Linked plan item</dt>
+                        <dd>{activeContentDraftRecord.contentPlanItem ? `${activeContentDraftRecord.contentPlanItem.sortOrder}. ${activeContentDraftRecord.contentPlanItem.title}` : "Manual / unlinked production record"}</dd>
+                      </div>
+                      <div>
+                        <dt>Review requested</dt>
+                        <dd>{formatOptionalDate(activeContentDraftRecord.reviewRequestedAt)}</dd>
+                      </div>
+                      <div>
+                        <dt>Approved</dt>
+                        <dd>{formatOptionalDate(activeContentDraftRecord.approvedAt)}</dd>
+                      </div>
+                      <div>
+                        <dt>Revision count</dt>
+                        <dd>{activeContentDraftRecord.revisionCount ?? 0}</dd>
+                      </div>
+                      <div>
+                        <dt>Client comment</dt>
+                        <dd>{activeContentDraftRecord.clientComment ?? "No client comment"}</dd>
+                      </div>
+                    </dl>
+                  </div>
+                ) : null}
                 <div className="field-grid">
                   <label>
                     Status - Required
                     <select value={contentDraftForm.status} onChange={(event) => setContentDraftForm((current) => ({ ...current, status: event.target.value }))}>
-                      {(["DRAFT", "READY_FOR_REVIEW", "APPROVED", "CHANGES_REQUESTED", "ARCHIVED"] as const).map((status) => <option key={status} value={status}>{status}</option>)}
+                      {(["DRAFT", "READY_FOR_REVIEW", "CHANGES_REQUESTED", "ARCHIVED"] as const).map((status) => <option key={status} value={status}>{formatContentDraftStatus(status)}</option>)}
                     </select>
-                    <span className="muted-text">Admin-only production state for this draft record.</span>
+                    <span className="muted-text">Admin-only production state. Client approval remains on the authenticated review route.</span>
                   </label>
                   <label>
                     Linked SEO topic / monthly content plan item - Optional
                     <select value={contentDraftForm.contentPlanItemId ?? ""} onChange={(event) => setContentDraftForm((current) => ({ ...current, contentPlanItemId: event.target.value || null }))}>
                       <option value="">Manual / unlinked production record</option>
-                      {(contentDraftPlan?.items ?? []).map((item) => (
-                        <option key={item.id} value={item.id}>{item.sortOrder}. {item.title}</option>
+                      {eligibleContentDraftPlanItems.map((item) => (
+                        <option key={item.id} value={item.id}>{item.sortOrder}. {item.title} ({formatContentPlanItemApprovalStatus(item.approvalStatus)})</option>
                       ))}
                     </select>
-                    <span className="muted-text">Optional link back to the monthly SEO plan item that informed this draft.</span>
+                    <span className="muted-text">Link this draft to the approved or planned monthly content plan item it fulfills.</span>
                   </label>
                   <label className="field-span-2">
                     Title - Required
                     <input maxLength={255} placeholder="Working article title or draft headline" required value={contentDraftForm.title} onChange={(event) => setContentDraftForm((current) => ({ ...current, title: event.target.value }))} />
-                    <span className="muted-text">Used by admin to prepare monthly content work.</span>
+                    <span className="muted-text">Used by admin to prepare a platform-neutral article or content draft.</span>
                   </label>
                   <label>
                     Slug - Optional
@@ -2660,21 +2808,37 @@ export function AiDeliveryPage({
                     <span className="muted-text">Visible only to admin team.</span>
                   </label>
                   <label className="field-span-2">
-                    Article brief / draft placeholder - Optional
-                    <textarea maxLength={4000} placeholder="Audience, angle, target keyword, and required sections" rows={10} value={contentDraftForm.draftBody} onChange={(event) => setContentDraftForm((current) => ({ ...current, draftBody: event.target.value }))} />
-                    <span className="muted-text">Foundation record only; no AI writing runs here yet.</span>
+                    Draft body - Required before client review
+                    <textarea maxLength={4000} placeholder="Manual draft body, article outline, sections, and review-ready copy" rows={10} value={contentDraftForm.draftBody} onChange={(event) => setContentDraftForm((current) => ({ ...current, draftBody: event.target.value }))} />
+                    <span className="muted-text">Manual content only. Save it here before using the ready-for-review action.</span>
                   </label>
                   <label className="field-span-2">
                     Review / admin notes - Optional
-                    <textarea maxLength={4000} placeholder="Admin comments, blockers, or handoff notes" rows={3} value={contentDraftForm.notes} onChange={(event) => setContentDraftForm((current) => ({ ...current, notes: event.target.value }))} />
-                    <span className="muted-text">Visible only to admin team. Not published or sent to client from this screen.</span>
+                    <textarea maxLength={4000} placeholder="Admin comments, blockers, revision guidance, or handoff notes" rows={3} value={contentDraftForm.notes} onChange={(event) => setContentDraftForm((current) => ({ ...current, notes: event.target.value }))} />
+                    <span className="muted-text">Visible only to admin team. Client review comments stay visible in the saved draft status panel.</span>
                   </label>
                 </div>
                 <div className="modal-footer">
                   <button className="secondary-action" disabled={contentDraftsSaving} onClick={() => { setContentDraftEditorId(null); setContentDraftForm(emptyContentDraft()); }} type="button">New draft</button>
+                  <button className="secondary-action" disabled={contentDraftsSaving} onClick={closeContentDrafts} type="button">Close</button>
                   <button className="primary-action" disabled={contentDraftsSaving || !contentDraftForm.title.trim()} onClick={() => void saveContentDraft(openContentDraftsProject.id)} type="button">
                     {contentDraftsSaving ? "Saving" : contentDraftEditorId ? "Save production record" : "Create production record"}
                   </button>
+                  {activeContentDraftRecord && !activeContentDraftRecord.isArchived ? (
+                    <button
+                      className="primary-action"
+                      disabled={contentDraftsSaving || !activeContentDraftRecord.draftBody.trim() || activeContentDraftRecord.status === "READY_FOR_REVIEW"}
+                      onClick={() => void requestContentDraftReview(openContentDraftsProject.id, activeContentDraftRecord.id)}
+                      type="button"
+                    >
+                      Mark ready for review
+                    </button>
+                  ) : null}
+                  {activeContentDraftRecord && !activeContentDraftRecord.isArchived && activeContentDraftRecord.status !== "DRAFT" ? (
+                    <button className="secondary-action" disabled={contentDraftsSaving} onClick={() => void returnContentDraftToDraft(openContentDraftsProject.id, activeContentDraftRecord.id)} type="button">
+                      Return to draft
+                    </button>
+                  ) : null}
                 </div>
               </section>
 
@@ -2685,17 +2849,26 @@ export function AiDeliveryPage({
                   <article className="entity-card" key={draftItem.id} style={{ marginBottom: "1rem" }}>
                     <div className="entity-card-header">
                       <div>
-                        <StatusBadge status={draftItem.isArchived ? "Archived" : draftItem.status} />
+                        <StatusBadge status={formatContentDraftStatus(draftItem.isArchived ? "ARCHIVED" : draftItem.status)} />
                         <h3>{draftItem.title}</h3>
                         <p>{draftItem.contentPlanItem ? `Linked to SEO topic: ${draftItem.contentPlanItem.title}` : "Manual / unlinked production record"}</p>
                       </div>
                       <div className="card-actions">
                         <button className="secondary-action" disabled={contentDraftsSaving} onClick={() => editContentDraft(draftItem)} type="button">Edit</button>
-                        {!draftItem.isArchived ? <button className="secondary-action" disabled={contentDraftsSaving} onClick={() => void requestContentDraftReview(openContentDraftsProject.id, draftItem.id)} type="button">Request client review</button> : null}
+                        {!draftItem.isArchived ? <button className="secondary-action" disabled={contentDraftsSaving || !draftItem.draftBody.trim() || draftItem.status === "READY_FOR_REVIEW"} onClick={() => void requestContentDraftReview(openContentDraftsProject.id, draftItem.id)} type="button">Mark ready for review</button> : null}
+                        {!draftItem.isArchived && draftItem.status !== "DRAFT" ? <button className="secondary-action" disabled={contentDraftsSaving} onClick={() => void returnContentDraftToDraft(openContentDraftsProject.id, draftItem.id)} type="button">Return to draft</button> : null}
                         {!draftItem.isArchived ? <button className="secondary-action" disabled={contentDraftsSaving} onClick={() => void archiveContentDraft(openContentDraftsProject.id, draftItem.id)} type="button">Archive</button> : null}
                       </div>
                     </div>
                     <dl className="brief-grid">
+                      <div>
+                        <dt>Status</dt>
+                        <dd>{formatContentDraftStatus(draftItem.status)}</dd>
+                      </div>
+                      <div>
+                        <dt>Slug</dt>
+                        <dd>{draftItem.slug ?? "Not set"}</dd>
+                      </div>
                       <div>
                         <dt>Review requested</dt>
                         <dd>{formatOptionalDate(draftItem.reviewRequestedAt)}</dd>
@@ -2711,6 +2884,14 @@ export function AiDeliveryPage({
                       <div>
                         <dt>Client comment</dt>
                         <dd>{draftItem.clientComment ?? "No client comment"}</dd>
+                      </div>
+                      <div className="field-span-2">
+                        <dt>Draft body preview</dt>
+                        <dd>{formatPreview(draftItem.draftBody)}</dd>
+                      </div>
+                      <div className="field-span-2">
+                        <dt>Admin notes preview</dt>
+                        <dd>{formatPreview(draftItem.notes)}</dd>
                       </div>
                     </dl>
                   </article>

@@ -228,6 +228,178 @@ async function runAiDeliveryApiRegression(token) {
   }
   pass("AI Delivery content plan approve action persisted the expected approved state.");
 
+  const contentPlanItem = approvedContentPlan.items?.[0] ?? null;
+  if (!contentPlanItem?.id) {
+    fail("AI Delivery content plan approval flow did not leave a reusable content plan item for content draft smoke.");
+  }
+
+  const initialContentDrafts = requireOkResponse(
+    "AI Delivery content drafts list",
+    await request(`/ai-delivery-projects/${project.id}/content-drafts`, { token })
+  )?.contentDrafts;
+  if (!Array.isArray(initialContentDrafts)) {
+    fail("AI Delivery content drafts list did not return a contentDrafts array.");
+  }
+  pass(`AI Delivery content drafts list endpoint returned cleanly (${initialContentDrafts.length} local draft(s)).`);
+
+  const createdContentDraft = requireOkResponse(
+    "AI Delivery content draft create",
+    await request(`/ai-delivery-projects/${project.id}/content-drafts`, {
+      method: "POST",
+      token,
+      body: {
+        contentPlanItemId: contentPlanItem.id,
+        title: "Smoke content draft",
+        slug: "smoke-content-draft",
+        draftBody: "Manual smoke draft body for client review coverage.",
+        status: "DRAFT",
+        notes: "Linked to the approved monthly content plan item."
+      }
+    })
+  )?.contentDraft;
+  if (
+    !createdContentDraft?.id ||
+    createdContentDraft.contentPlanItemId !== contentPlanItem.id ||
+    createdContentDraft.status !== "DRAFT"
+  ) {
+    fail("AI Delivery content draft create did not return the expected project-scoped draft record.");
+  }
+  pass("AI Delivery content draft create returned the expected linked draft.");
+
+  const updatedContentDraft = requireOkResponse(
+    "AI Delivery content draft update",
+    await request(`/ai-delivery-projects/${project.id}/content-drafts/${createdContentDraft.id}`, {
+      method: "PUT",
+      token,
+      body: {
+        contentPlanItemId: contentPlanItem.id,
+        title: "Smoke content draft",
+        slug: "smoke-content-draft",
+        draftBody: "Manual smoke draft body updated for review coverage.",
+        status: "DRAFT",
+        notes: "Updated admin draft notes from local smoke."
+      }
+    })
+  )?.contentDraft;
+  if (
+    !updatedContentDraft ||
+    updatedContentDraft.draftBody !== "Manual smoke draft body updated for review coverage." ||
+    updatedContentDraft.notes !== "Updated admin draft notes from local smoke."
+  ) {
+    fail("AI Delivery content draft update did not persist the expected draft body and notes.");
+  }
+  pass("AI Delivery content draft update persisted the expected body and admin notes.");
+
+  const reviewableDraftsBeforeRequest = requireOkResponse(
+    "AI Delivery content draft client review list before request",
+    await request(`/ai-delivery-projects/${project.id}/content-drafts/client-review`, { token })
+  )?.contentDrafts;
+  if (!Array.isArray(reviewableDraftsBeforeRequest)) {
+    fail("AI Delivery content draft client review list did not return a contentDrafts array.");
+  }
+  if (reviewableDraftsBeforeRequest.some((draft) => draft.id === createdContentDraft.id)) {
+    fail("Client content draft review list exposed a draft that was not yet marked ready for review.");
+  }
+  pass("Client content draft review list excluded draft-only records before review was requested.");
+
+  const reviewRequestedDraft = requireOkResponse(
+    "AI Delivery content draft request client review",
+    await request(`/ai-delivery-projects/${project.id}/content-drafts/${createdContentDraft.id}/request-client-review`, {
+      method: "POST",
+      token
+    })
+  )?.contentDraft;
+  if (!reviewRequestedDraft || reviewRequestedDraft.status !== "READY_FOR_REVIEW" || typeof reviewRequestedDraft.reviewRequestedAt !== "string") {
+    fail("AI Delivery content draft ready-for-review action did not persist the expected review state.");
+  }
+  pass("AI Delivery content draft ready-for-review action persisted the expected review state.");
+
+  const reviewableDraftsAfterRequest = requireOkResponse(
+    "AI Delivery content draft client review list after request",
+    await request(`/ai-delivery-projects/${project.id}/content-drafts/client-review`, { token })
+  )?.contentDrafts;
+  if (
+    !Array.isArray(reviewableDraftsAfterRequest) ||
+    !reviewableDraftsAfterRequest.some((draft) => draft.id === createdContentDraft.id) ||
+    reviewableDraftsAfterRequest.some((draft) => !["READY_FOR_REVIEW", "APPROVED", "CHANGES_REQUESTED"].includes(draft.status))
+  ) {
+    fail("Client content draft review list did not contain only reviewable draft states after review was requested.");
+  }
+  pass("Client content draft review list returned only reviewable draft states after review was requested.");
+
+  const invalidRevisionRequest = await request(`/ai-delivery-projects/${project.id}/content-drafts/${createdContentDraft.id}/client-review/request-revision`, {
+    method: "POST",
+    token,
+    body: { comment: "" }
+  });
+  if (invalidRevisionRequest.status !== 400 || invalidRevisionRequest.body?.ok !== false) {
+    fail("Client content draft revision request accepted an empty comment.");
+  }
+  pass("Client content draft revision request rejected an empty comment.");
+
+  const changesRequestedDraft = requireOkResponse(
+    "AI Delivery content draft client revision request",
+    await request(`/ai-delivery-projects/${project.id}/content-drafts/${createdContentDraft.id}/client-review/request-revision`, {
+      method: "POST",
+      token,
+      body: { comment: "Please tighten the opening section and CTA." }
+    })
+  )?.contentDraft;
+  if (
+    !changesRequestedDraft ||
+    changesRequestedDraft.status !== "CHANGES_REQUESTED" ||
+    changesRequestedDraft.clientComment !== "Please tighten the opening section and CTA." ||
+    (changesRequestedDraft.revisionCount ?? 0) < 1
+  ) {
+    fail("Client content draft revision request did not persist the expected revision status and comment.");
+  }
+  pass("Client content draft revision request persisted the expected revision status and comment.");
+
+  const returnedToDraft = requireOkResponse(
+    "AI Delivery content draft return to draft",
+    await request(`/ai-delivery-projects/${project.id}/content-drafts/${createdContentDraft.id}/return-to-draft`, {
+      method: "POST",
+      token
+    })
+  )?.contentDraft;
+  if (
+    !returnedToDraft ||
+    returnedToDraft.status !== "DRAFT" ||
+    returnedToDraft.reviewRequestedAt !== null ||
+    returnedToDraft.approvedAt !== null
+  ) {
+    fail("AI Delivery content draft return-to-draft action did not restore the expected draft state.");
+  }
+  pass("AI Delivery content draft return-to-draft action restored the expected draft state.");
+
+  const reviewableDraftsAfterReturn = requireOkResponse(
+    "AI Delivery content draft client review list after return to draft",
+    await request(`/ai-delivery-projects/${project.id}/content-drafts/client-review`, { token })
+  )?.contentDrafts;
+  if (!Array.isArray(reviewableDraftsAfterReturn) || reviewableDraftsAfterReturn.some((draft) => draft.id === createdContentDraft.id)) {
+    fail("Client content draft review list still exposed a draft after it was returned to draft.");
+  }
+  pass("Client content draft review list excluded a draft returned to draft.");
+
+  requireOkResponse(
+    "AI Delivery content draft request client review again",
+    await request(`/ai-delivery-projects/${project.id}/content-drafts/${createdContentDraft.id}/request-client-review`, {
+      method: "POST",
+      token
+    })
+  );
+  const approvedDraft = requireOkResponse(
+    "AI Delivery content draft client approve",
+    await request(`/ai-delivery-projects/${project.id}/content-drafts/${createdContentDraft.id}/client-review/approve`, {
+      method: "POST",
+      token
+    })
+  )?.contentDraft;
+  if (!approvedDraft || approvedDraft.status !== "APPROVED" || typeof approvedDraft.approvedAt !== "string") {
+    fail("Client content draft approve path did not persist the expected approved state.");
+  }
+  pass("Client content draft approve path persisted the expected approved state.");
+
   const workflowRunsData = requireOkResponse(
     "AI Delivery workflow runs list",
     await request(`/ai-delivery/projects/${project.id}/workflow-runs`, { token })
@@ -610,6 +782,19 @@ async function main() {
       await page.getByText("This is an approval workflow foundation. Use these monthly content plan items to capture target topics, keywords, research notes, and content type intent. Visible only to admin team from this screen. No AI generation, crawling, publishing, or external services are performed.").first().waitFor({ state: "visible", timeout: 15000 });
       await page.getByRole("button", { name: "Mark ready for review" }).first().waitFor({ state: "visible", timeout: 15000 });
       pass("AI SEO / Content Plan panel opened and rendered approval workflow helper text.");
+      await page.getByRole("button", { name: "Close" }).first().click();
+    }
+
+    const contentDraftButtons = page.getByRole("button", { name: "Content production" });
+    const contentDraftButtonCount = await contentDraftButtons.count();
+    if (contentDraftButtonCount > 0) {
+      await contentDraftButtons.first().click();
+      await page.getByRole("dialog", { name: "AI Content Production Foundation" }).waitFor({ state: "visible", timeout: 15000 });
+      await page.getByRole("heading", { name: "Article production planning" }).waitFor({ state: "visible", timeout: 15000 });
+      await page.getByText("This is a manual content production and approval foundation. No AI generation, image generation, publishing, storage upload, or external services are performed.").first().waitFor({ state: "visible", timeout: 15000 });
+      await page.getByRole("heading", { name: "Approved / planned content plan items" }).waitFor({ state: "visible", timeout: 15000 });
+      await page.getByRole("heading", { name: "Existing article production records" }).waitFor({ state: "visible", timeout: 15000 });
+      pass("AI Content Production panel opened and rendered draft production helper text.");
       await page.getByRole("button", { name: "Close" }).first().click();
     }
 

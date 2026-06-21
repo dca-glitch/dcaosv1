@@ -116,6 +116,7 @@ import {
   approveClientAiDeliveryContentDraftReview,
   requestClientAiDeliveryContentDraftRevision,
   requestAiDeliveryContentDraftClientReview,
+  returnAiDeliveryContentDraftToDraft,
   updateAiDeliveryContentDraft,
   // Content plan runtime functions
   getAiDeliveryContentPlanDetail,
@@ -175,7 +176,7 @@ const AI_DELIVERY_RESEARCH_REQUEST_STATUSES = new Set(["DRAFT", "READY", "IN_REV
 const AI_DELIVERY_RESEARCH_SUMMARY_STATUSES = new Set(["DRAFT", "IN_REVIEW", "FINALIZED", "ARCHIVED"]);
 const AI_DELIVERY_RESEARCH_SOURCE_STATUSES = new Set(["PROPOSED", "APPROVED", "REJECTED", "ARCHIVED"]);
 const AI_DELIVERY_RESEARCH_SOURCE_TYPES = new Set(["WEBSITE", "DOCUMENT", "OTHER"]);
-const AI_DELIVERY_CONTENT_DRAFT_STATUSES = new Set(["DRAFT", "READY_FOR_REVIEW", "APPROVED", "CHANGES_REQUESTED", "ARCHIVED"]);
+const AI_DELIVERY_CONTENT_DRAFT_STATUSES = new Set(["DRAFT", "READY_FOR_REVIEW", "CHANGES_REQUESTED", "ARCHIVED"]);
 const AI_DELIVERY_ARTICLE_IMAGE_STATUSES = new Set(["DRAFT", "READY_FOR_GENERATION", "PREVIEW_READY", "APPROVED", "FINAL_READY", "CHANGES_REQUESTED", "ARCHIVED"]);
 const AI_DELIVERY_DELIVERABLE_REVIEW_STATUSES = new Set(["NOT_STARTED", "ADMIN_REVIEW", "CHANGES_REQUESTED", "APPROVED", "ARCHIVED"]);
 
@@ -2353,6 +2354,22 @@ export const requestAiDeliveryContentDraftClientReviewHandler: RequestHandler = 
     res.json(success(response, { phase: "runtime", scope: "ai-delivery-content-draft-client-review" }));
   } catch {
     res.status(500).json(failure("AI_DELIVERY_CONTENT_DRAFT_RUNTIME_ERROR", "Content draft review request could not be completed."));
+  }
+};
+
+export const returnAiDeliveryContentDraftToDraftHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  const aiDeliveryProjectId = typeof req.params.id === "string" ? req.params.id.trim() : "";
+  const contentDraftId = typeof req.params.draftId === "string" ? req.params.draftId.trim() : "";
+  if (!authSession) return void res.status(401).json(unauthorizedFailure());
+  if (!aiDeliveryProjectId || !contentDraftId) return void res.status(400).json(aiDeliveryProjectInvalidFailure());
+
+  try {
+    const response = await returnAiDeliveryContentDraftToDraft(authSession, aiDeliveryProjectId, contentDraftId);
+    if (!response?.contentDraft) return void res.status(404).json(aiDeliveryProjectNotFoundFailure());
+    res.json(success(response, { phase: "runtime", scope: "ai-delivery-content-drafts" }));
+  } catch {
+    res.status(500).json(failure("AI_DELIVERY_CONTENT_DRAFT_RUNTIME_ERROR", "Content draft could not be returned to draft."));
   }
 };
 

@@ -2231,6 +2231,13 @@ export function App() {
     );
   }
 
+  async function handleReturnAiDeliveryContentDraftToDraft(projectId: string, draftId: string): Promise<AiDeliveryContentDraftSummary | null> {
+    return runContentDraftAction(
+      `/ai-delivery-projects/${projectId}/content-drafts/${draftId}/return-to-draft`,
+      "Content draft moved back to draft."
+    );
+  }
+
   async function handleFetchAiDeliveryArticleImages(projectId: string): Promise<AiDeliveryArticleImageSummary[]> {
     setAppMessage(null);
     try {
@@ -3352,6 +3359,7 @@ export function App() {
           onSaveContentDraft={handleSaveAiDeliveryContentDraft}
           onArchiveContentDraft={handleArchiveAiDeliveryContentDraft}
           onRequestContentDraftReview={handleRequestAiDeliveryContentDraftReview}
+          onReturnContentDraftToDraft={handleReturnAiDeliveryContentDraftToDraft}
           onFetchArticleImages={handleFetchAiDeliveryArticleImages}
           onSaveArticleImage={handleSaveAiDeliveryArticleImage}
           onArchiveArticleImage={handleArchiveAiDeliveryArticleImage}

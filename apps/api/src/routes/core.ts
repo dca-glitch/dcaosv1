@@ -59,6 +59,7 @@ import {
   approveClientAiDeliveryContentDraftReviewHandler,
   requestClientAiDeliveryContentDraftRevisionHandler,
   requestAiDeliveryContentDraftClientReviewHandler,
+  returnAiDeliveryContentDraftToDraftHandler,
   listBillsHandler,
   listClientUserAccessHandler,
   listClientsHandler,
@@ -175,6 +176,7 @@ export function createCoreRouter() {
   router.put("/ai-delivery-projects/:id/content-drafts/:draftId", requireAuth, requireTenant, requireRole("owner", "admin"), updateAiDeliveryContentDraftHandler);
   router.post("/ai-delivery-projects/:id/content-drafts/:draftId/archive", requireAuth, requireTenant, requireRole("owner", "admin"), archiveAiDeliveryContentDraftHandler);
   router.post("/ai-delivery-projects/:id/content-drafts/:draftId/request-client-review", requireAuth, requireTenant, requireRole("owner", "admin"), requestAiDeliveryContentDraftClientReviewHandler);
+  router.post("/ai-delivery-projects/:id/content-drafts/:draftId/return-to-draft", requireAuth, requireTenant, requireRole("owner", "admin"), returnAiDeliveryContentDraftToDraftHandler);
   router.get("/ai-delivery-projects/:id/article-images", requireAuth, requireTenant, requireRole("owner", "admin"), listAiDeliveryArticleImagesHandler);
   router.post("/ai-delivery-projects/:id/article-images", requireAuth, requireTenant, requireRole("owner", "admin"), createAiDeliveryArticleImageHandler);
   router.put("/ai-delivery-projects/:id/article-images/:imageId", requireAuth, requireTenant, requireRole("owner", "admin"), updateAiDeliveryArticleImageHandler);
