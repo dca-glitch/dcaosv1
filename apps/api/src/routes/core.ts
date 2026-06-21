@@ -44,6 +44,7 @@ import {
   getProjectHandler,
   getRecurringInvoiceHandler,
   getTaskHandler,
+  listActivityAuditLogsHandler,
   listAiDeliveryArticleImagesHandler,
   listAiDeliveryDeliverablesHandler,
   listAiDeliveryDeliverableReviewsHandler,
@@ -130,6 +131,7 @@ export function createCoreRouter() {
 
   router.get("/company-profile", requireAuth, requireTenant, getCompanyProfileHandler);
   router.put("/company-profile", requireAuth, requireTenant, requireRole("owner", "admin"), saveCompanyProfileHandler);
+  router.get("/activity/audit-logs", requireAuth, requireTenant, requireRole("owner", "admin"), listActivityAuditLogsHandler);
 
   router.get("/clients", requireAuth, requireTenant, listClientsHandler);
   router.post("/clients", requireAuth, requireTenant, requireRole("owner", "admin"), createClientHandler);

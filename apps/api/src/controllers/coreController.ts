@@ -21,6 +21,7 @@ import {
   unauthorizedFailure
 } from "../utils/responses";
 import type { AuthSessionLocals } from "../auth/types";
+import { listTenantAuditLogs } from "../security/audit-log.service";
 import {
   archiveAiDeliveryArticleImage,
   isAiDeliveryGuardError,
@@ -190,9 +191,56 @@ const AI_DELIVERY_ARTICLE_IMAGE_STATUSES = new Set(["DRAFT", "READY_FOR_GENERATI
 const AI_DELIVERY_DELIVERABLE_TYPES = new Set(["CONTENT_PACKAGE", "ARTICLE_DRAFT", "ARTICLE_IMAGE", "CLIENT_HANDOFF", "OTHER"]);
 const AI_DELIVERY_DELIVERABLE_STATUSES = new Set(["DRAFT", "READY", "DELIVERED", "REVISION_REQUESTED", "ACCEPTED", "ARCHIVED"]);
 const AI_DELIVERY_DELIVERABLE_REVIEW_STATUSES = new Set(["NOT_STARTED", "ADMIN_REVIEW", "CHANGES_REQUESTED", "APPROVED", "ARCHIVED"]);
+const ACTIVITY_AUDIT_LOG_LIMIT_DEFAULT = 50;
+const ACTIVITY_AUDIT_LOG_LIMIT_MAX = 100;
 
 function getAuthSession(resLocals: unknown) {
   return (resLocals as AuthSessionLocals | undefined)?.authSession;
+}
+
+function getOptionalQueryValue(value: unknown): string | null {
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
+function parseActivityAuditLogDate(value: unknown): Date | null | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  const trimmed = getOptionalQueryValue(value);
+  if (!trimmed) {
+    return undefined;
+  }
+
+  const parsed = new Date(trimmed);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function parseActivityAuditLogLimit(value: unknown): number | null {
+  if (value === undefined) {
+    return ACTIVITY_AUDIT_LOG_LIMIT_DEFAULT;
+  }
+
+  const trimmed = getOptionalQueryValue(value);
+  if (!trimmed) {
+    return ACTIVITY_AUDIT_LOG_LIMIT_DEFAULT;
+  }
+
+  if (!/^\d+$/.test(trimmed)) {
+    return null;
+  }
+
+  const parsed = Number.parseInt(trimmed, 10);
+  if (!Number.isInteger(parsed) || parsed <= 0) {
+    return null;
+  }
+
+  return Math.min(parsed, ACTIVITY_AUDIT_LOG_LIMIT_MAX);
 }
 
 function handleAiDeliveryGuardError(res: Response, error: unknown): boolean {
@@ -918,6 +966,60 @@ export const listClientsHandler: RequestHandler = async (_req, res) => {
     res.json(success(response, { phase: "runtime", scope: "core-module-skeleton" }));
   } catch {
     res.status(500).json(failure("CLIENT_RUNTIME_ERROR", "Client list could not be completed."));
+  }
+};
+
+export const listActivityAuditLogsHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) {
+    res.status(401).json(unauthorizedFailure());
+    return;
+  }
+
+  const tenantId = authSession.tenantContext.activeMembership?.tenantId ?? null;
+  if (!tenantId) {
+    res.status(403).json(forbiddenFailure());
+    return;
+  }
+
+  const createdAfter = parseActivityAuditLogDate(req.query.createdAfter);
+  if (createdAfter === null) {
+    res.status(400).json(failure("ACTIVITY_AUDIT_LOG_INVALID", "Invalid createdAfter value."));
+    return;
+  }
+
+  const createdBefore = parseActivityAuditLogDate(req.query.createdBefore);
+  if (createdBefore === null) {
+    res.status(400).json(failure("ACTIVITY_AUDIT_LOG_INVALID", "Invalid createdBefore value."));
+    return;
+  }
+
+  if (createdAfter && createdBefore && createdAfter > createdBefore) {
+    res.status(400).json(failure("ACTIVITY_AUDIT_LOG_INVALID", "createdAfter must be earlier than or equal to createdBefore."));
+    return;
+  }
+
+  const limit = parseActivityAuditLogLimit(req.query.limit);
+  if (limit === null) {
+    res.status(400).json(failure("ACTIVITY_AUDIT_LOG_INVALID", "Invalid limit value."));
+    return;
+  }
+
+  try {
+    const response = await listTenantAuditLogs({
+      tenantId,
+      actorUserId: getOptionalQueryValue(req.query.actorUserId) ?? undefined,
+      action: getOptionalQueryValue(req.query.action) ?? undefined,
+      entityType: getOptionalQueryValue(req.query.entityType) ?? undefined,
+      entityId: getOptionalQueryValue(req.query.entityId) ?? undefined,
+      createdAfter,
+      createdBefore,
+      limit
+    });
+
+    res.json(success(response, { phase: "runtime", scope: "activity-audit-logs" }));
+  } catch {
+    res.status(500).json(failure("ACTIVITY_AUDIT_LOG_RUNTIME_ERROR", "Activity audit logs could not be listed."));
   }
 };
 
