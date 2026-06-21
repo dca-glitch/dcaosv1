@@ -193,6 +193,10 @@ function firstAvailableInvoice(invoices: InvoiceWithCreditNotes[]): InvoiceWithC
   return invoices.find((invoice) => !invoice.isArchived) ?? invoices[0] ?? null;
 }
 
+function formatInvoiceOptionLabel(invoice: InvoiceWithCreditNotes): string {
+  return [invoice.invoiceNumber, invoice.client.name, invoice.project?.name].filter(Boolean).join(" — ");
+}
+
 export function CreditNotesPage({
   invoices,
   invoiceItems,
@@ -231,6 +235,8 @@ export function CreditNotesPage({
       voidedCount: creditNotes.filter((creditNote) => creditNote.status === "VOIDED").length
     };
   }, [creditNotes]);
+  const selectedInvoice = useMemo(() => invoices.find((invoice) => invoice.id === invoiceId) ?? null, [invoiceId, invoices]);
+  const submitLabel = editorId ? "Update credit note" : "Create credit note";
 
   function setDraftWithCalculatedTotals(values: CreditNoteFormValues, nextTaxPercent = taxPercentInput, nextDiscountPercent = discountPercentInput) {
     const lineItems = values.lineItems.map((item, index) => ({
@@ -398,9 +404,16 @@ export function CreditNotesPage({
       {isEditorOpen ? (
         <Modal onClose={resetEditor} title={editorId ? "Edit Credit Note" : "Add Credit Note"}>
           <form className="entity-form" onSubmit={handleSubmit}>
+            <p className="muted-text">Used to document a refund, correction, or billing adjustment. This does not register a payment by itself.</p>
+            <CreditNoteModalActions
+              disabled={saving || !invoiceId || draft.totalCents <= 0}
+              label={submitLabel}
+              onCancel={resetEditor}
+              saving={saving}
+            />
             <div className="field-grid">
               <label>
-                Invoice
+                Linked invoice - Required
                 <select
                   disabled={Boolean(editorId)}
                   onChange={(event) => {
@@ -412,38 +425,49 @@ export function CreditNotesPage({
                   required
                   value={invoiceId}
                 >
-                  <option value="">Select invoice</option>
+                  <option value="">Invoice this credit note corrects, if applicable</option>
                   {invoices.map((invoice) => (
-                    <option key={invoice.id} value={invoice.id}>{invoice.invoiceNumber} — {invoice.client.name}</option>
+                    <option key={invoice.id} value={invoice.id}>{formatInvoiceOptionLabel(invoice)}</option>
                   ))}
                 </select>
+                <span className="muted-text">
+                  {selectedInvoice
+                    ? `Client: ${selectedInvoice.client.name}${selectedInvoice.project ? `; Project: ${selectedInvoice.project.name}.` : "."} Use when the credit note relates to a specific invoice.`
+                    : "Client and project context come from the selected invoice. Use when the credit note relates to a specific invoice."}
+                </span>
               </label>
               <label>
-                Status
+                Status - Automatic
                 <input readOnly value={editorId ? "DRAFT" : "DRAFT"} />
+                <span className="muted-text">Starts as draft here. Issue and void actions stay separate from save and cancel.</span>
               </label>
               <label>
-                Issue date
+                Credit note date - Automatic
                 <input readOnly value="Set when issued" />
+                <span className="muted-text">Recorded when the credit note is issued.</span>
               </label>
               <label>
-                Currency
+                Currency - Required
                 <input
                   maxLength={3}
                   onChange={(event) => setDraft((current) => ({ ...current, currency: event.target.value.toUpperCase() }))}
+                  placeholder="Three-letter currency code such as USD"
                   required
                   value={draft.currency}
                 />
+                <span className="muted-text">Used for line item amounts and totals on this credit note.</span>
               </label>
               <label className="field-span-2">
-                Reason / notes
+                Reason - Required
                 <textarea
                   maxLength={4000}
                   onChange={(event) => setDraft((current) => ({ ...current, reason: event.target.value }))}
+                  placeholder="Refund, correction, overpayment, billing adjustment"
                   required
                   rows={3}
                   value={draft.reason}
                 />
+                <span className="muted-text">Used to document a refund, correction, or billing adjustment.</span>
               </label>
             </div>
 
@@ -457,9 +481,13 @@ export function CreditNotesPage({
             />
 
             <div className="field-grid">
-              <label>{moneyFieldLabel("Subtotal", draft.currency)}<input readOnly value={centsToMajorInput(draft.subtotalCents)} /></label>
               <label>
-                Tax (%)
+                {moneyFieldLabel("Subtotal", draft.currency)}
+                <input readOnly value={centsToMajorInput(draft.subtotalCents)} />
+                <span className="muted-text">Calculated from the credit note line items below.</span>
+              </label>
+              <label>
+                Tax (%) - Optional
                 <input
                   min={0}
                   onChange={(event) => {
@@ -467,13 +495,15 @@ export function CreditNotesPage({
                     setTaxPercentInput(nextTaxPercent);
                     updateLineItems(draft.lineItems, nextTaxPercent, discountPercentInput);
                   }}
+                  placeholder="Tax percentage for this credit note"
                   step="0.01"
                   type="number"
                   value={taxPercentInput}
                 />
+                <span className="muted-text">Applied after the subtotal when needed.</span>
               </label>
               <label>
-                Discount (%)
+                Discount (%) - Optional
                 <input
                   min={0}
                   onChange={(event) => {
@@ -481,35 +511,45 @@ export function CreditNotesPage({
                     setDiscountPercentInput(nextDiscountPercent);
                     updateLineItems(draft.lineItems, taxPercentInput, nextDiscountPercent);
                   }}
+                  placeholder="Discount percentage for this credit note"
                   step="0.01"
                   type="number"
                   value={discountPercentInput}
                 />
+                <span className="muted-text">Use for admin-side adjustments before issuing the credit note.</span>
               </label>
-              <label>{moneyFieldLabel("Total", draft.currency)}<input readOnly value={centsToMajorInput(draft.totalCents)} /></label>
+              <label>
+                {moneyFieldLabel("Total", draft.currency)}
+                <input readOnly value={centsToMajorInput(draft.totalCents)} />
+                <span className="muted-text">Credit amount to be issued. This does not register a payment by itself.</span>
+              </label>
               <label className="field-span-2">
-                Document URL
+                Document URL / reference - Optional
                 <input
                   maxLength={2048}
                   onChange={(event) => setDraft((current) => ({ ...current, documentUrl: event.target.value }))}
+                  placeholder="Credit note file, folder link, or internal reference"
                   value={draft.documentUrl}
                 />
+                <span className="muted-text">Shown only in admin records.</span>
               </label>
               <label className="field-span-2">
-                Document storage key
+                Document storage key - Optional
                 <input
                   maxLength={2048}
                   onChange={(event) => setDraft((current) => ({ ...current, documentStorageKey: event.target.value }))}
+                  placeholder="Storage key or internal document path"
                   value={draft.documentStorageKey}
                 />
+                <span className="muted-text">Visible only to admin team.</span>
               </label>
             </div>
-            <div className="modal-footer">
-              <button className="secondary-action" disabled={saving} onClick={resetEditor} type="button">Cancel</button>
-              <button className="primary-action" disabled={saving || !invoiceId || draft.totalCents <= 0} type="submit">
-                {saving ? "Saving" : "Save"}
-              </button>
-            </div>
+            <CreditNoteModalActions
+              disabled={saving || !invoiceId || draft.totalCents <= 0}
+              label={submitLabel}
+              onCancel={resetEditor}
+              saving={saving}
+            />
           </form>
         </Modal>
       ) : null}
@@ -609,35 +649,46 @@ function CreditNoteLineItemsEditor({
   return (
     <div className="entity-form">
       <h3>Line items</h3>
+      <p className="muted-text">Use line items to define the credited amount. These rows feed the subtotal and total above.</p>
       {lineItems.map((item, index) => (
         <div className="field-grid" key={index}>
           <label className="field-span-2">
-            Service / item
+            Service / item - Optional
             <select onChange={(event) => selectInvoiceItem(index, event.target.value)} value="">
-              <option value="">Select service</option>
+              <option value="">Select a reusable service from the linked invoice</option>
               {invoiceItems.map((invoiceItem) => (
                 <option key={invoiceItem.id} value={invoiceItem.id}>{invoiceItem.name}</option>
               ))}
             </select>
+            <span className="muted-text">Pick a reusable service to prefill the credit line.</span>
           </label>
           <label className="field-span-2">
-            Description / details
-            <textarea maxLength={500} onChange={(event) => updateLineItem(index, { description: event.target.value })} rows={3} value={item.description} />
+            Description / details - Optional
+            <textarea
+              maxLength={500}
+              onChange={(event) => updateLineItem(index, { description: event.target.value })}
+              placeholder="What is being refunded, corrected, or adjusted"
+              rows={3}
+              value={item.description}
+            />
+            <span className="muted-text">Shown on the credit note to explain the adjustment.</span>
           </label>
           <label>
-            Quantity
+            Quantity - Required
             <input
               min={1}
               onChange={(event) => {
                 const quantity = Math.max(1, event.target.valueAsNumber || 1);
                 updateLineItem(index, { quantity, totalCents: quantity * item.unitPriceCents });
               }}
+              placeholder="Number of units being credited"
               type="number"
               value={item.quantity}
             />
+            <span className="muted-text">Used to calculate the line total.</span>
           </label>
           <label>
-            {moneyFieldLabel("Unit price", currency)}
+            {moneyFieldLabel("Unit price", currency)} - Required
             <input
               min={0}
               onChange={(event) => {
@@ -645,12 +696,18 @@ function CreditNoteLineItemsEditor({
                 updateUnitPriceInput(index, event.target.value);
                 updateLineItem(index, { totalCents: item.quantity * unitPriceCents, unitPriceCents });
               }}
+              placeholder="Credit amount per unit before tax or discount"
               step="0.01"
               type="number"
               value={unitPriceInputs[index] ?? centsToMajorInput(item.unitPriceCents)}
             />
+            <span className="muted-text">Sets the credited rate for this line item.</span>
           </label>
-          <label>{moneyFieldLabel("Line total", currency)}<input readOnly value={centsToMajorInput(item.totalCents)} /></label>
+          <label>
+            {moneyFieldLabel("Line total", currency)}
+            <input readOnly value={centsToMajorInput(item.totalCents)} />
+            <span className="muted-text">Calculated from quantity and unit price.</span>
+          </label>
           <div className="card-actions">
             <button
               className="secondary-action"
@@ -676,6 +733,22 @@ function CreditNoteLineItemsEditor({
       >
         Add line item
       </button>
+    </div>
+  );
+}
+
+type CreditNoteModalActionsProps = {
+  disabled: boolean;
+  label: string;
+  onCancel: () => void;
+  saving: boolean;
+};
+
+function CreditNoteModalActions({ disabled, label, onCancel, saving }: CreditNoteModalActionsProps) {
+  return (
+    <div className="modal-footer">
+      <button className="secondary-action" disabled={saving} onClick={onCancel} type="button">Cancel</button>
+      <button className="primary-action" disabled={disabled} type="submit">{saving ? "Saving" : label}</button>
     </div>
   );
 }
