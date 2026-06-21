@@ -339,6 +339,24 @@ type BillsResponse = {
   bills: BillSummary[];
 };
 
+type ActivityAuditMetadataSummaryValue = string | number | boolean | null;
+
+type ActivityAuditLogItem = {
+  id: string;
+  tenantId: string;
+  actorType: string;
+  actorUserId: string | null;
+  action: string;
+  entityType: string;
+  entityId: string | null;
+  createdAt: string;
+  metadataSummary: Record<string, ActivityAuditMetadataSummaryValue> | null;
+};
+
+type ActivityAuditLogsResponse = {
+  auditLogs: ActivityAuditLogItem[];
+};
+
 type ViewKey =
   | "dashboard"
   | "modules"
@@ -538,6 +556,37 @@ function hasActiveRole(context: AuthContextResponse | null, roles: string[]): bo
   return Boolean(
     context?.tenantContext.roles.some((role) => roles.includes(role))
   );
+}
+
+function formatAuditActorLabel(activity: ActivityAuditLogItem): string {
+  if (activity.actorType === "USER" && activity.actorUserId) {
+    return "User action";
+  }
+
+  if (activity.actorType === "USER") {
+    return "User context";
+  }
+
+  return "System action";
+}
+
+function formatAuditTimestamp(value: string): string {
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? value : parsed.toLocaleString();
+}
+
+function formatAuditMetadataSummary(
+  metadataSummary: Record<string, ActivityAuditMetadataSummaryValue> | null
+): string | null {
+  if (!metadataSummary) {
+    return null;
+  }
+
+  const summary = Object.entries(metadataSummary)
+    .map(([key, value]) => `${key}: ${value ?? "none"}`)
+    .join(" • ");
+
+  return summary.length > 0 ? summary : null;
 }
 
 function StatusNotice({ tone, message }: { tone: "info" | "error" | "success"; message: string }) {
@@ -747,15 +796,22 @@ function LoginScreen({
 function DashboardView({
   user,
   context,
-  tenants
+  tenants,
+  activityAuditLogs,
+  activityAuditLogsError,
+  activityAuditLogsLoading
 }: {
   user: UserSummary;
   context: AuthContextResponse | null;
   tenants: TenantListResponse | null;
+  activityAuditLogs: ActivityAuditLogsResponse | null;
+  activityAuditLogsError: string | null;
+  activityAuditLogsLoading: boolean;
 }) {
   const activeTenant = tenants?.currentTenant?.tenant;
   const roles = context?.tenantContext.roles ?? [];
   const permissionCount = context?.effectivePermissions.length ?? 0;
+  const auditLogs = activityAuditLogs?.auditLogs ?? [];
 
   return (
     <section className="view-section" aria-labelledby="dashboard-title">
@@ -773,12 +829,34 @@ function DashboardView({
         <MetricCard label="Workspace state" value={activeTenant ? "Ready" : "Limited"} helper="Frontend-safe operational summary" accent={activeTenant ? "success" : "warning"} />
       </div>
       <div className="dashboard-grid">
-        <SectionPanel title="Recent Activity" description="Live activity feed will appear here when backend events are available.">
-          <div className="timeline-list">
-            <div className="timeline-item"><span />Tenant context loaded for {activeTenant?.name ?? "the current session"}.</div>
-            <div className="timeline-item"><span />User profile recognized as {user.name || user.email}.</div>
-            <div className="timeline-item muted"><span />No additional activity feed is exposed by the current frontend payload.</div>
-          </div>
+        <SectionPanel title="Recent Activity" description="Recent tenant-scoped audit events from the active workspace.">
+          {activityAuditLogsLoading ? (
+            <div className="state-panel">Loading recent activity.</div>
+          ) : activityAuditLogsError ? (
+            <div className="state-panel">{activityAuditLogsError}</div>
+          ) : auditLogs.length === 0 ? (
+            <div className="state-panel">No recent activity is available for this tenant yet.</div>
+          ) : (
+            <div className="timeline-list">
+              {auditLogs.map((activity) => {
+                const metadataSummary = formatAuditMetadataSummary(activity.metadataSummary);
+                return (
+                  <div className="timeline-item" key={activity.id}>
+                    <span />
+                    <div>
+                      <strong>{activity.action}</strong>
+                      <div>{formatAuditActorLabel(activity)} - {formatAuditTimestamp(activity.createdAt)}</div>
+                      <div>
+                        {activity.entityType}
+                        {activity.entityId ? ` - ${activity.entityId}` : ""}
+                      </div>
+                      {metadataSummary ? <div>{metadataSummary}</div> : null}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </SectionPanel>
         <SectionPanel title="Upcoming Tasks" description="Use the Tasks workspace for live task details and due dates.">
           <div className="quick-link-list">
@@ -1347,6 +1425,8 @@ export function App() {
   const [bills, setBills] = useState<BillsResponse | null>(null);
   const [availableModules, setAvailableModules] = useState<ModuleListItem[]>([]);
   const [tenantModules, setTenantModules] = useState<TenantModuleSummary[]>([]);
+  const [activityAuditLogs, setActivityAuditLogs] = useState<ActivityAuditLogsResponse | null>(null);
+  const [activityAuditLogsError, setActivityAuditLogsError] = useState<string | null>(null);
   const [loading, setLoading] = useState(Boolean(token));
   const [loginLoading, setLoginLoading] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
@@ -1400,6 +1480,8 @@ export function App() {
     setBills(null);
     setTenantModules([]);
     setAvailableModules([]);
+    setActivityAuditLogs(null);
+    setActivityAuditLogsError(null);
     setAppMessage(null);
     setLoginError(null);
     setModuleActionKey(null);
@@ -1435,6 +1517,7 @@ export function App() {
           vendorsResponse,
           billsResponse,
           modulesResponse,
+          activityAuditLogsResponse,
           tenantModulesResponse,
           teamMembersResponse,
           tenantSettingsResponse
@@ -1455,6 +1538,7 @@ export function App() {
             apiRequest<VendorsResponse>("/vendors", { token: nextToken }),
             apiRequest<BillsResponse>("/bills", { token: nextToken }),
             apiRequest<ModuleRegistryResponse>("/modules"),
+            apiRequest<ActivityAuditLogsResponse>("/activity/audit-logs?limit=5", { token: nextToken }),
             apiRequest<TenantModulesResponse>("/modules/current", { token: nextToken }),
             apiRequest<TenantMembersResponse>("/tenants/current/members", { token: nextToken }),
             apiRequest<TenantSettingsResponse>("/tenants/current/settings", { token: nextToken })
@@ -1481,6 +1565,7 @@ export function App() {
           isUnauthorized(archivedInvoiceItemsResponse) ||
           isUnauthorized(vendorsResponse) ||
           isUnauthorized(billsResponse) ||
+          isUnauthorized(activityAuditLogsResponse) ||
           isUnauthorized(tenantModulesResponse)
         ) {
           clearSession();
@@ -1508,6 +1593,10 @@ export function App() {
         setVendors(vendorsResponse.ok ? vendorsResponse.data : null);
         setBills(billsResponse.ok ? billsResponse.data : null);
         setAvailableModules(modulesResponse.ok ? modulesResponse.data.modules : []);
+        setActivityAuditLogs(activityAuditLogsResponse.ok ? activityAuditLogsResponse.data : null);
+        setActivityAuditLogsError(
+          activityAuditLogsResponse.ok ? null : getErrorMessage(activityAuditLogsResponse)
+        );
         setTenantModules(tenantModulesResponse.ok ? tenantModulesResponse.data.modules : []);
         setTeamMembers(teamMembersResponse.ok ? teamMembersResponse.data : null);
         setTenantSettings(tenantSettingsResponse.ok ? tenantSettingsResponse.data : null);
@@ -3315,7 +3404,14 @@ export function App() {
       {appMessage ? <StatusNotice message={appMessage.text} tone={appMessage.tone} /> : null}
       {loading ? <div className="state-panel">Loading</div> : null}
       {!loading && activeView === "dashboard" ? (
-        <DashboardView context={authContext} tenants={tenantContext} user={currentUser.user} />
+        <DashboardView
+          activityAuditLogs={activityAuditLogs}
+          activityAuditLogsError={activityAuditLogsError}
+          activityAuditLogsLoading={loading}
+          context={authContext}
+          tenants={tenantContext}
+          user={currentUser.user}
+        />
       ) : null}
       {!loading && activeView === "tenants" ? (
         <TenantView
