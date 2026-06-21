@@ -347,6 +347,10 @@ export type AiDeliveryProjectsProps = {
   onFetchArticleImages?: (projectId: string) => Promise<AiDeliveryArticleImageSummary[]>;
   onSaveArticleImage?: (projectId: string, imageId: string | null, values: AiDeliveryArticleImageFormValues) => Promise<AiDeliveryArticleImageSummary | null>;
   onArchiveArticleImage?: (projectId: string, imageId: string) => Promise<AiDeliveryArticleImageSummary | null>;
+  onMarkArticleImagePreviewReady?: (projectId: string, imageId: string) => Promise<AiDeliveryArticleImageSummary | null>;
+  onRequestArticleImageChanges?: (projectId: string, imageId: string) => Promise<AiDeliveryArticleImageSummary | null>;
+  onApproveArticleImage?: (projectId: string, imageId: string) => Promise<AiDeliveryArticleImageSummary | null>;
+  onMarkArticleImageFinalReady?: (projectId: string, imageId: string) => Promise<AiDeliveryArticleImageSummary | null>;
   onFetchDeliverables?: (projectId: string) => Promise<AiDeliveryDeliverableSummary[]>;
   onSaveDeliverable?: (projectId: string, deliverableId: string | null, values: AiDeliveryDeliverableFormValues) => Promise<AiDeliveryDeliverableSummary | null>;
   onArchiveDeliverable?: (projectId: string, deliverableId: string) => Promise<boolean>;
@@ -571,6 +575,17 @@ function formatContentDraftStatus(value?: string | null): string {
   return formatEnumLabel(value);
 }
 
+function formatArticleImageStatus(value?: string | null): string {
+  if (!value || value === "DRAFT") return "Draft / preparing";
+  if (value === "READY_FOR_GENERATION") return "Preparing preview";
+  if (value === "PREVIEW_READY") return "Preview ready";
+  if (value === "CHANGES_REQUESTED") return "Changes requested";
+  if (value === "APPROVED") return "Approved";
+  if (value === "FINAL_READY") return "Final ready";
+  if (value === "ARCHIVED") return "Archived";
+  return formatEnumLabel(value);
+}
+
 function formatEnumLabel(value?: string | null): string {
   if (!value) return "Not set";
   return String(value).toLowerCase().replace(/_/g, " ").replace(/(^|\s)\S/g, (s) => s.toUpperCase());
@@ -648,6 +663,10 @@ export function AiDeliveryPage({
   onFetchArticleImages,
   onSaveArticleImage,
   onArchiveArticleImage,
+  onMarkArticleImagePreviewReady,
+  onRequestArticleImageChanges,
+  onApproveArticleImage,
+  onMarkArticleImageFinalReady,
   onFetchDeliverables,
   onSaveDeliverable,
   onArchiveDeliverable,
@@ -760,6 +779,10 @@ export function AiDeliveryPage({
         return left.sortOrder - right.sortOrder;
       }),
     [contentDraftPlan]
+  );
+  const activeArticleImageRecord = useMemo(
+    () => articleImages.find((item) => item.id === articleImageEditorId) ?? null,
+    [articleImageEditorId, articleImages]
   );
   const openDeliverablesProject = useMemo(() => projects.find((p) => p.id === openDeliverablesId) ?? null, [openDeliverablesId, projects]);
   const selectedReviewDeliverable = useMemo(() => deliverables.find((item) => item.id === selectedReviewDeliverableId) ?? null, [deliverables, selectedReviewDeliverableId]);
@@ -1103,6 +1126,42 @@ export function AiDeliveryPage({
     } finally {
       setArticleImagesSaving(false);
     }
+  }
+
+  async function runArticleImageAction(
+    projectId: string,
+    imageId: string,
+    action: ((projectId: string, imageId: string) => Promise<AiDeliveryArticleImageSummary | null>) | undefined
+  ) {
+    if (typeof action !== "function" || typeof onFetchArticleImages !== "function") return;
+    setArticleImagesSaving(true);
+    try {
+      await action(projectId, imageId);
+      const refreshedImages = await onFetchArticleImages(projectId);
+      setArticleImages(refreshedImages);
+      const refreshedActiveImage = refreshedImages.find((item) => item.id === imageId) ?? null;
+      if (refreshedActiveImage) {
+        editArticleImage(refreshedActiveImage);
+      }
+    } finally {
+      setArticleImagesSaving(false);
+    }
+  }
+
+  async function markArticleImagePreviewReady(projectId: string, imageId: string) {
+    await runArticleImageAction(projectId, imageId, onMarkArticleImagePreviewReady);
+  }
+
+  async function requestArticleImageChanges(projectId: string, imageId: string) {
+    await runArticleImageAction(projectId, imageId, onRequestArticleImageChanges);
+  }
+
+  async function approveArticleImage(projectId: string, imageId: string) {
+    await runArticleImageAction(projectId, imageId, onApproveArticleImage);
+  }
+
+  async function markArticleImageFinalReady(projectId: string, imageId: string) {
+    await runArticleImageAction(projectId, imageId, onMarkArticleImageFinalReady);
   }
 
   function closeArticleImages() {
@@ -3164,57 +3223,185 @@ export function AiDeliveryPage({
             <div>
               <section className="field-panel">
                 <h3>Image production planning</h3>
-                <p className="muted-text">Admin/operator-side image planning only. Capture image intent, prompt placeholder, style notes, and status. No AI generation, upload, R2 write, client review, WordPress, or publishing action is available in this block.</p>
+                <p className="muted-text">This is an admin-only image approval foundation. No AI image generation, upscaling, upload, public links, publishing, or client image review is performed.</p>
+                <div className="modal-footer">
+                  <button className="secondary-action" disabled={articleImagesSaving} onClick={() => { setArticleImageEditorId(null); setArticleImageForm((current) => ({ ...emptyArticleImage(), contentDraftId: current.contentDraftId })); }} type="button">New image request</button>
+                  <button className="secondary-action" disabled={articleImagesSaving} onClick={closeArticleImages} type="button">Close</button>
+                  <button className="primary-action" disabled={articleImagesSaving || !articleImageForm.contentDraftId || !articleImageForm.title.trim() || !articleImageForm.prompt.trim()} onClick={() => void saveArticleImage(openArticleImagesProject.id)} type="button">
+                    {articleImagesSaving ? "Saving" : articleImageEditorId ? "Save image request" : "Create image request"}
+                  </button>
+                  {activeArticleImageRecord && !activeArticleImageRecord.isArchived ? (
+                    <button
+                      className="primary-action"
+                      disabled={articleImagesSaving || !(activeArticleImageRecord.previewImageUrl ?? "").trim() || activeArticleImageRecord.status === "PREVIEW_READY"}
+                      onClick={() => void markArticleImagePreviewReady(openArticleImagesProject.id, activeArticleImageRecord.id)}
+                      type="button"
+                    >
+                      Mark preview ready
+                    </button>
+                  ) : null}
+                  {activeArticleImageRecord && !activeArticleImageRecord.isArchived ? (
+                    <button
+                      className="secondary-action"
+                      disabled={articleImagesSaving || !((activeArticleImageRecord.previewImageUrl ?? "").trim() || (activeArticleImageRecord.finalImageUrl ?? "").trim())}
+                      onClick={() => void requestArticleImageChanges(openArticleImagesProject.id, activeArticleImageRecord.id)}
+                      type="button"
+                    >
+                      Request changes
+                    </button>
+                  ) : null}
+                  {activeArticleImageRecord && !activeArticleImageRecord.isArchived ? (
+                    <button
+                      className="secondary-action"
+                      disabled={articleImagesSaving || !((activeArticleImageRecord.previewImageUrl ?? "").trim() || (activeArticleImageRecord.finalImageUrl ?? "").trim()) || activeArticleImageRecord.status === "APPROVED"}
+                      onClick={() => void approveArticleImage(openArticleImagesProject.id, activeArticleImageRecord.id)}
+                      type="button"
+                    >
+                      Approve image
+                    </button>
+                  ) : null}
+                  {activeArticleImageRecord && !activeArticleImageRecord.isArchived ? (
+                    <button
+                      className="secondary-action"
+                      disabled={articleImagesSaving || !((activeArticleImageRecord.finalImageUrl ?? "").trim() || (activeArticleImageRecord.storageKey ?? "").trim()) || activeArticleImageRecord.status === "FINAL_READY"}
+                      onClick={() => void markArticleImageFinalReady(openArticleImagesProject.id, activeArticleImageRecord.id)}
+                      type="button"
+                    >
+                      Mark final ready
+                    </button>
+                  ) : null}
+                </div>
+                {activeArticleImageRecord ? (
+                  <div className="field-panel" style={{ marginBottom: "1rem" }}>
+                    <h4>Saved image approval status</h4>
+                    <dl className="brief-grid">
+                      <div>
+                        <dt>Status</dt>
+                        <dd>{formatArticleImageStatus(activeArticleImageRecord.status)}</dd>
+                      </div>
+                      <div>
+                        <dt>Linked content draft</dt>
+                        <dd>{activeArticleImageRecord.contentDraft?.title ?? "Not linked"}</dd>
+                      </div>
+                      <div>
+                        <dt>Preview image</dt>
+                        <dd>{activeArticleImageRecord.previewImageUrl || "Not set"}</dd>
+                      </div>
+                      <div>
+                        <dt>Final image</dt>
+                        <dd>{activeArticleImageRecord.finalImageUrl || "Not set"}</dd>
+                      </div>
+                      <div>
+                        <dt>Storage reference</dt>
+                        <dd>{activeArticleImageRecord.storageKey || "Not set"}</dd>
+                      </div>
+                      <div>
+                        <dt>Updated</dt>
+                        <dd>{formatOptionalDate(activeArticleImageRecord.updatedAt)}</dd>
+                      </div>
+                    </dl>
+                  </div>
+                ) : null}
                 <div className="field-grid">
                   <label>
-                    Linked content draft
+                    Linked content draft - Required
                     <select required value={articleImageForm.contentDraftId} onChange={(event) => setArticleImageForm((current) => ({ ...current, contentDraftId: event.target.value }))}>
                       <option value="">Select draft</option>
                       {articleImageDrafts.map((draftItem) => (
-                        <option key={draftItem.id} value={draftItem.id}>{draftItem.title}</option>
+                        <option key={draftItem.id} value={draftItem.id}>{draftItem.title} ({formatContentDraftStatus(draftItem.status)})</option>
                       ))}
                     </select>
+                    <span className="muted-text">Link this image record to the same-project content draft it supports.</span>
                   </label>
                   <label>
-                    Status
+                    Status - Required
                     <select value={articleImageForm.status} onChange={(event) => setArticleImageForm((current) => ({ ...current, status: event.target.value }))}>
-                      {(["DRAFT", "READY_FOR_GENERATION", "PREVIEW_READY", "APPROVED", "FINAL_READY", "CHANGES_REQUESTED", "ARCHIVED"] as const).map((status) => <option key={status} value={status}>{status}</option>)}
+                      {(["DRAFT", "READY_FOR_GENERATION", "PREVIEW_READY", "CHANGES_REQUESTED", "APPROVED", "FINAL_READY", "ARCHIVED"] as const).map((status) => <option key={status} value={status}>{formatArticleImageStatus(status)}</option>)}
                     </select>
+                    <span className="muted-text">Admin-only status. Use the action buttons for preview, approval, and final-ready transitions.</span>
                   </label>
                   <label className="field-span-2">
-                    Title
+                    Title - Required
                     <input maxLength={255} required value={articleImageForm.title} onChange={(event) => setArticleImageForm((current) => ({ ...current, title: event.target.value }))} />
+                    <span className="muted-text">Working asset name for the linked article image.</span>
                   </label>
                   <label className="field-span-2">
-                    Prompt
+                    Prompt - Required
                     <textarea maxLength={4000} required rows={5} value={articleImageForm.prompt} onChange={(event) => setArticleImageForm((current) => ({ ...current, prompt: event.target.value }))} />
+                    <span className="muted-text">Admin-only prompt placeholder. Never exposed to clients from this block.</span>
                   </label>
                   <label className="field-span-2">
-                    Style notes
+                    Style notes - Optional
                     <textarea maxLength={4000} rows={3} value={articleImageForm.styleNotes} onChange={(event) => setArticleImageForm((current) => ({ ...current, styleNotes: event.target.value }))} />
+                    <span className="muted-text">Internal visual direction only.</span>
                   </label>
                   <label>
-                    Preview URL
+                    Preview image URL - Optional
                     <input maxLength={2048} type="url" value={articleImageForm.previewImageUrl} onChange={(event) => setArticleImageForm((current) => ({ ...current, previewImageUrl: event.target.value }))} />
+                    <span className="muted-text">Manual admin record for a preview asset. No public link behavior is created here.</span>
                   </label>
                   <label>
-                    Final URL
+                    Final image URL - Optional
                     <input maxLength={2048} type="url" value={articleImageForm.finalImageUrl} onChange={(event) => setArticleImageForm((current) => ({ ...current, finalImageUrl: event.target.value }))} />
+                    <span className="muted-text">Manual admin record for the final asset reference only.</span>
                   </label>
                   <label className="field-span-2">
-                    Storage key
+                    Storage key reference - Optional
                     <input maxLength={1024} value={articleImageForm.storageKey} onChange={(event) => setArticleImageForm((current) => ({ ...current, storageKey: event.target.value }))} />
+                    <span className="muted-text">Internal storage reference only. No signed or public image link is generated from this field.</span>
                   </label>
                   <label className="field-span-2">
-                    Notes
+                    Notes - Optional
                     <textarea maxLength={4000} rows={3} value={articleImageForm.notes} onChange={(event) => setArticleImageForm((current) => ({ ...current, notes: event.target.value }))} />
+                    <span className="muted-text">Admin-only review context, revision notes, or handoff details.</span>
                   </label>
                 </div>
                 <div className="modal-footer">
                   <button className="secondary-action" disabled={articleImagesSaving} onClick={() => { setArticleImageEditorId(null); setArticleImageForm((current) => ({ ...emptyArticleImage(), contentDraftId: current.contentDraftId })); }} type="button">New image request</button>
+                  <button className="secondary-action" disabled={articleImagesSaving} onClick={closeArticleImages} type="button">Close</button>
                   <button className="primary-action" disabled={articleImagesSaving || !articleImageForm.contentDraftId || !articleImageForm.title.trim() || !articleImageForm.prompt.trim()} onClick={() => void saveArticleImage(openArticleImagesProject.id)} type="button">
                     {articleImagesSaving ? "Saving" : articleImageEditorId ? "Save image request" : "Create image request"}
                   </button>
+                  {activeArticleImageRecord && !activeArticleImageRecord.isArchived ? (
+                    <button
+                      className="primary-action"
+                      disabled={articleImagesSaving || !(activeArticleImageRecord.previewImageUrl ?? "").trim() || activeArticleImageRecord.status === "PREVIEW_READY"}
+                      onClick={() => void markArticleImagePreviewReady(openArticleImagesProject.id, activeArticleImageRecord.id)}
+                      type="button"
+                    >
+                      Mark preview ready
+                    </button>
+                  ) : null}
+                  {activeArticleImageRecord && !activeArticleImageRecord.isArchived ? (
+                    <button
+                      className="secondary-action"
+                      disabled={articleImagesSaving || !((activeArticleImageRecord.previewImageUrl ?? "").trim() || (activeArticleImageRecord.finalImageUrl ?? "").trim())}
+                      onClick={() => void requestArticleImageChanges(openArticleImagesProject.id, activeArticleImageRecord.id)}
+                      type="button"
+                    >
+                      Request changes
+                    </button>
+                  ) : null}
+                  {activeArticleImageRecord && !activeArticleImageRecord.isArchived ? (
+                    <button
+                      className="secondary-action"
+                      disabled={articleImagesSaving || !((activeArticleImageRecord.previewImageUrl ?? "").trim() || (activeArticleImageRecord.finalImageUrl ?? "").trim()) || activeArticleImageRecord.status === "APPROVED"}
+                      onClick={() => void approveArticleImage(openArticleImagesProject.id, activeArticleImageRecord.id)}
+                      type="button"
+                    >
+                      Approve image
+                    </button>
+                  ) : null}
+                  {activeArticleImageRecord && !activeArticleImageRecord.isArchived ? (
+                    <button
+                      className="secondary-action"
+                      disabled={articleImagesSaving || !((activeArticleImageRecord.finalImageUrl ?? "").trim() || (activeArticleImageRecord.storageKey ?? "").trim()) || activeArticleImageRecord.status === "FINAL_READY"}
+                      onClick={() => void markArticleImageFinalReady(openArticleImagesProject.id, activeArticleImageRecord.id)}
+                      type="button"
+                    >
+                      Mark final ready
+                    </button>
+                  ) : null}
                 </div>
               </section>
 
@@ -3225,16 +3412,24 @@ export function AiDeliveryPage({
                   <article className="entity-card" key={image.id} style={{ marginBottom: "1rem" }}>
                     <div className="entity-card-header">
                       <div>
-                        <StatusBadge status={image.isArchived ? "Archived" : image.status} />
+                        <StatusBadge status={formatArticleImageStatus(image.isArchived ? "ARCHIVED" : image.status)} />
                         <h3>{image.title}</h3>
                         <p>{image.contentDraft ? `Linked to draft: ${image.contentDraft.title}` : "No linked draft"}</p>
                       </div>
                       <div className="card-actions">
                         <button className="secondary-action" disabled={articleImagesSaving} onClick={() => editArticleImage(image)} type="button">Edit</button>
+                        {!image.isArchived ? <button className="secondary-action" disabled={articleImagesSaving || !image.previewImageUrl || image.status === "PREVIEW_READY"} onClick={() => void markArticleImagePreviewReady(openArticleImagesProject.id, image.id)} type="button">Mark preview ready</button> : null}
+                        {!image.isArchived ? <button className="secondary-action" disabled={articleImagesSaving || !(image.previewImageUrl || image.finalImageUrl)} onClick={() => void requestArticleImageChanges(openArticleImagesProject.id, image.id)} type="button">Request changes</button> : null}
+                        {!image.isArchived ? <button className="secondary-action" disabled={articleImagesSaving || !(image.previewImageUrl || image.finalImageUrl) || image.status === "APPROVED"} onClick={() => void approveArticleImage(openArticleImagesProject.id, image.id)} type="button">Approve image</button> : null}
+                        {!image.isArchived ? <button className="secondary-action" disabled={articleImagesSaving || !(image.finalImageUrl || image.storageKey) || image.status === "FINAL_READY"} onClick={() => void markArticleImageFinalReady(openArticleImagesProject.id, image.id)} type="button">Mark final ready</button> : null}
                         {!image.isArchived ? <button className="secondary-action" disabled={articleImagesSaving} onClick={() => void archiveArticleImage(openArticleImagesProject.id, image.id)} type="button">Archive</button> : null}
                       </div>
                     </div>
                     <dl className="brief-grid">
+                      <div>
+                        <dt>Status</dt>
+                        <dd>{formatArticleImageStatus(image.status)}</dd>
+                      </div>
                       <div>
                         <dt>Preview URL</dt>
                         <dd>{image.previewImageUrl || "Not set"}</dd>
@@ -3250,6 +3445,10 @@ export function AiDeliveryPage({
                       <div>
                         <dt>Updated</dt>
                         <dd>{formatOptionalDate(image.updatedAt)}</dd>
+                      </div>
+                      <div className="field-span-2">
+                        <dt>Style notes</dt>
+                        <dd>{image.styleNotes || "No style notes"}</dd>
                       </div>
                       <div className="field-span-2">
                         <dt>Prompt</dt>

@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
   archiveAiDeliveryArticleImageHandler,
+  approveAiDeliveryArticleImageHandler,
   archiveAiDeliveryProjectHandler,
   archiveAiDeliveryContentDraftHandler,
   archiveBillHandler,
@@ -33,6 +34,8 @@ import {
   downloadCreditNoteDocumentHandler,
   downloadInvoiceDocumentHandler,
   executeAiDeliveryWorkflowRunHandler,
+  markAiDeliveryArticleImageFinalReadyHandler,
+  markAiDeliveryArticleImagePreviewReadyHandler,
   applyAiDeliveryResearchSummaryToBriefHandler,
   getClientHandler,
   getCompanyProfileHandler,
@@ -59,6 +62,7 @@ import {
   approveClientAiDeliveryContentDraftReviewHandler,
   requestClientAiDeliveryContentDraftRevisionHandler,
   requestAiDeliveryContentDraftClientReviewHandler,
+  requestAiDeliveryArticleImageChangesHandler,
   returnAiDeliveryContentDraftToDraftHandler,
   listBillsHandler,
   listClientUserAccessHandler,
@@ -181,6 +185,10 @@ export function createCoreRouter() {
   router.post("/ai-delivery-projects/:id/article-images", requireAuth, requireTenant, requireRole("owner", "admin"), createAiDeliveryArticleImageHandler);
   router.put("/ai-delivery-projects/:id/article-images/:imageId", requireAuth, requireTenant, requireRole("owner", "admin"), updateAiDeliveryArticleImageHandler);
   router.post("/ai-delivery-projects/:id/article-images/:imageId/archive", requireAuth, requireTenant, requireRole("owner", "admin"), archiveAiDeliveryArticleImageHandler);
+  router.post("/ai-delivery-projects/:id/article-images/:imageId/mark-preview-ready", requireAuth, requireTenant, requireRole("owner", "admin"), markAiDeliveryArticleImagePreviewReadyHandler);
+  router.post("/ai-delivery-projects/:id/article-images/:imageId/request-changes", requireAuth, requireTenant, requireRole("owner", "admin"), requestAiDeliveryArticleImageChangesHandler);
+  router.post("/ai-delivery-projects/:id/article-images/:imageId/approve", requireAuth, requireTenant, requireRole("owner", "admin"), approveAiDeliveryArticleImageHandler);
+  router.post("/ai-delivery-projects/:id/article-images/:imageId/mark-final-ready", requireAuth, requireTenant, requireRole("owner", "admin"), markAiDeliveryArticleImageFinalReadyHandler);
   router.get("/ai-delivery-projects/:id/deliverables", requireAuth, requireTenant, requireRole("owner", "admin"), listAiDeliveryDeliverablesHandler);
   router.post("/ai-delivery-projects/:id/deliverables", requireAuth, requireTenant, requireRole("owner", "admin"), createAiDeliveryDeliverableHandler);
   router.put("/ai-delivery-projects/:id/deliverables/:deliverableId", requireAuth, requireTenant, requireRole("owner", "admin"), updateAiDeliveryDeliverableHandler);

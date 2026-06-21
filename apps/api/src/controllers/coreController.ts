@@ -92,6 +92,10 @@ import {
   restoreTask,
   saveCompanyProfile,
   updateAiDeliveryArticleImage,
+  markAiDeliveryArticleImagePreviewReady,
+  requestAiDeliveryArticleImageChanges,
+  approveAiDeliveryArticleImage,
+  markAiDeliveryArticleImageFinalReady,
   updateAiDeliveryProject,
   updateAiDeliveryResearchRequest,
   updateAiDeliveryResearchSummary,
@@ -2223,6 +2227,70 @@ export const archiveAiDeliveryArticleImageHandler: RequestHandler = async (req, 
     res.json(success(response, { phase: "runtime", scope: "ai-delivery-article-images" }));
   } catch {
     res.status(500).json(failure("AI_DELIVERY_ARTICLE_IMAGE_RUNTIME_ERROR", "Article image could not be archived."));
+  }
+};
+
+export const markAiDeliveryArticleImagePreviewReadyHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  const aiDeliveryProjectId = typeof req.params.id === "string" ? req.params.id.trim() : "";
+  const articleImageId = typeof req.params.imageId === "string" ? req.params.imageId.trim() : "";
+  if (!authSession) return void res.status(401).json(unauthorizedFailure());
+  if (!aiDeliveryProjectId || !articleImageId) return void res.status(400).json(aiDeliveryProjectInvalidFailure());
+
+  try {
+    const response = await markAiDeliveryArticleImagePreviewReady(authSession, aiDeliveryProjectId, articleImageId);
+    if (!response?.articleImage) return void res.status(404).json(aiDeliveryProjectNotFoundFailure());
+    res.json(success(response, { phase: "runtime", scope: "ai-delivery-article-images" }));
+  } catch {
+    res.status(500).json(failure("AI_DELIVERY_ARTICLE_IMAGE_RUNTIME_ERROR", "Article image preview-ready action could not be completed."));
+  }
+};
+
+export const requestAiDeliveryArticleImageChangesHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  const aiDeliveryProjectId = typeof req.params.id === "string" ? req.params.id.trim() : "";
+  const articleImageId = typeof req.params.imageId === "string" ? req.params.imageId.trim() : "";
+  if (!authSession) return void res.status(401).json(unauthorizedFailure());
+  if (!aiDeliveryProjectId || !articleImageId) return void res.status(400).json(aiDeliveryProjectInvalidFailure());
+
+  try {
+    const response = await requestAiDeliveryArticleImageChanges(authSession, aiDeliveryProjectId, articleImageId);
+    if (!response?.articleImage) return void res.status(404).json(aiDeliveryProjectNotFoundFailure());
+    res.json(success(response, { phase: "runtime", scope: "ai-delivery-article-images" }));
+  } catch {
+    res.status(500).json(failure("AI_DELIVERY_ARTICLE_IMAGE_RUNTIME_ERROR", "Article image request-changes action could not be completed."));
+  }
+};
+
+export const approveAiDeliveryArticleImageHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  const aiDeliveryProjectId = typeof req.params.id === "string" ? req.params.id.trim() : "";
+  const articleImageId = typeof req.params.imageId === "string" ? req.params.imageId.trim() : "";
+  if (!authSession) return void res.status(401).json(unauthorizedFailure());
+  if (!aiDeliveryProjectId || !articleImageId) return void res.status(400).json(aiDeliveryProjectInvalidFailure());
+
+  try {
+    const response = await approveAiDeliveryArticleImage(authSession, aiDeliveryProjectId, articleImageId);
+    if (!response?.articleImage) return void res.status(404).json(aiDeliveryProjectNotFoundFailure());
+    res.json(success(response, { phase: "runtime", scope: "ai-delivery-article-images" }));
+  } catch {
+    res.status(500).json(failure("AI_DELIVERY_ARTICLE_IMAGE_RUNTIME_ERROR", "Article image approve action could not be completed."));
+  }
+};
+
+export const markAiDeliveryArticleImageFinalReadyHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  const aiDeliveryProjectId = typeof req.params.id === "string" ? req.params.id.trim() : "";
+  const articleImageId = typeof req.params.imageId === "string" ? req.params.imageId.trim() : "";
+  if (!authSession) return void res.status(401).json(unauthorizedFailure());
+  if (!aiDeliveryProjectId || !articleImageId) return void res.status(400).json(aiDeliveryProjectInvalidFailure());
+
+  try {
+    const response = await markAiDeliveryArticleImageFinalReady(authSession, aiDeliveryProjectId, articleImageId);
+    if (!response?.articleImage) return void res.status(404).json(aiDeliveryProjectNotFoundFailure());
+    res.json(success(response, { phase: "runtime", scope: "ai-delivery-article-images" }));
+  } catch {
+    res.status(500).json(failure("AI_DELIVERY_ARTICLE_IMAGE_RUNTIME_ERROR", "Article image final-ready action could not be completed."));
   }
 };
 

@@ -2629,6 +2629,51 @@ export function App() {
     }
   }
 
+  async function handleMarkAiDeliveryArticleImagePreviewReady(projectId: string, imageId: string): Promise<AiDeliveryArticleImageSummary | null> {
+    return runArticleImageAction(
+      `/ai-delivery-projects/${projectId}/article-images/${imageId}/mark-preview-ready`,
+      "Article image marked preview ready."
+    );
+  }
+
+  async function handleRequestAiDeliveryArticleImageChanges(projectId: string, imageId: string): Promise<AiDeliveryArticleImageSummary | null> {
+    return runArticleImageAction(
+      `/ai-delivery-projects/${projectId}/article-images/${imageId}/request-changes`,
+      "Article image moved to changes requested."
+    );
+  }
+
+  async function handleApproveAiDeliveryArticleImage(projectId: string, imageId: string): Promise<AiDeliveryArticleImageSummary | null> {
+    return runArticleImageAction(
+      `/ai-delivery-projects/${projectId}/article-images/${imageId}/approve`,
+      "Article image approved."
+    );
+  }
+
+  async function handleMarkAiDeliveryArticleImageFinalReady(projectId: string, imageId: string): Promise<AiDeliveryArticleImageSummary | null> {
+    return runArticleImageAction(
+      `/ai-delivery-projects/${projectId}/article-images/${imageId}/mark-final-ready`,
+      "Article image marked final ready."
+    );
+  }
+
+  async function runArticleImageAction(path: string, successMessage: string): Promise<AiDeliveryArticleImageSummary | null> {
+    setAppMessage(null);
+    try {
+      const response = await runAuthenticatedRequest<AiDeliveryArticleImageResponse>(path, { method: "POST" });
+      if (!response) return null;
+      if (!response.ok) {
+        setAppMessage({ tone: "error", text: getErrorMessage(response) });
+        return null;
+      }
+      setAppMessage({ tone: "success", text: successMessage });
+      return response.data.articleImage ?? null;
+    } catch (error) {
+      setAppMessage({ tone: "error", text: maskError(error) });
+      return null;
+    }
+  }
+
   async function handleFetchClientContentDraftReview(projectId: string): Promise<AiDeliveryContentDraftSummary[]> {
     setAppMessage(null);
     try {
@@ -3363,6 +3408,10 @@ export function App() {
           onFetchArticleImages={handleFetchAiDeliveryArticleImages}
           onSaveArticleImage={handleSaveAiDeliveryArticleImage}
           onArchiveArticleImage={handleArchiveAiDeliveryArticleImage}
+          onMarkArticleImagePreviewReady={handleMarkAiDeliveryArticleImagePreviewReady}
+          onRequestArticleImageChanges={handleRequestAiDeliveryArticleImageChanges}
+          onApproveArticleImage={handleApproveAiDeliveryArticleImage}
+          onMarkArticleImageFinalReady={handleMarkAiDeliveryArticleImageFinalReady}
           onFetchDeliverables={handleFetchAiDeliveryDeliverables}
           onSaveDeliverable={handleSaveAiDeliveryDeliverable}
           onArchiveDeliverable={handleArchiveAiDeliveryDeliverable}

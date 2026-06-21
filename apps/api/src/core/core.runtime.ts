@@ -2224,6 +2224,20 @@ function normalizeAiDeliveryArticleImageStatus(value: string | null | undefined)
   return value && AI_DELIVERY_ARTICLE_IMAGE_STATUSES.has(value) ? value as AiDeliveryArticleImageStatus : "DRAFT";
 }
 
+function hasArticleImagePreviewReference(image: {
+  previewImageUrl?: string | null;
+  finalImageUrl?: string | null;
+}) {
+  return Boolean((image.previewImageUrl ?? "").trim() || (image.finalImageUrl ?? "").trim());
+}
+
+function hasArticleImageFinalReference(image: {
+  finalImageUrl?: string | null;
+  storageKey?: string | null;
+}) {
+  return Boolean((image.finalImageUrl ?? "").trim() || (image.storageKey ?? "").trim());
+}
+
 function toAiDeliveryArticleImageSummary(image: any) {
   return {
     id: image.id,
@@ -2305,6 +2319,15 @@ export async function createAiDeliveryArticleImage(
       },
       select: aiDeliveryArticleImageSelect
     }) as any;
+    await recordAiDeliverySystemEvent(
+      {
+        tenantId,
+        aiDeliveryProjectId,
+        eventName: "AI_DELIVERY_ARTICLE_IMAGE_CREATED",
+        relatedEntityId: created.id
+      },
+      tx
+    );
     return { articleImage: toAiDeliveryArticleImageSummary(created) };
   });
 }
@@ -2343,7 +2366,117 @@ export async function updateAiDeliveryArticleImage(
       },
       select: aiDeliveryArticleImageSelect
     }) as any;
+    await recordAiDeliverySystemEvent(
+      {
+        tenantId,
+        aiDeliveryProjectId,
+        eventName: "AI_DELIVERY_ARTICLE_IMAGE_UPDATED",
+        relatedEntityId: updated.id
+      },
+      tx
+    );
     return { articleImage: toAiDeliveryArticleImageSummary(updated) };
+  });
+}
+
+async function transitionAiDeliveryArticleImageStatus(
+  authSession: AuthResolvedSessionContext,
+  aiDeliveryProjectId: string,
+  articleImageId: string,
+  options: {
+    allowedFrom: AiDeliveryArticleImageStatus[];
+    nextStatus: AiDeliveryArticleImageStatus;
+    eventName:
+      | "AI_DELIVERY_ARTICLE_IMAGE_PREVIEW_READY"
+      | "AI_DELIVERY_ARTICLE_IMAGE_CHANGES_REQUESTED"
+      | "AI_DELIVERY_ARTICLE_IMAGE_APPROVED"
+      | "AI_DELIVERY_ARTICLE_IMAGE_FINAL_READY";
+    requiresPreview?: boolean;
+    requiresFinal?: boolean;
+  }
+): Promise<AiDeliveryArticleImageResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) return null;
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    const existing = await getAiDeliveryArticleImageDelegate(tx).findFirst({
+      where: { id: articleImageId, tenantId, aiDeliveryProjectId, isArchived: false },
+      select: aiDeliveryArticleImageSelect
+    }) as any;
+    if (!existing) return null;
+    if (!options.allowedFrom.includes(existing.status)) return null;
+    if (options.requiresPreview && !hasArticleImagePreviewReference(existing)) return null;
+    if (options.requiresFinal && !hasArticleImageFinalReference(existing)) return null;
+
+    const updated = await getAiDeliveryArticleImageDelegate(tx).update({
+      where: { id: articleImageId },
+      data: { status: options.nextStatus },
+      select: aiDeliveryArticleImageSelect
+    }) as any;
+
+    await recordAiDeliverySystemEvent(
+      {
+        tenantId,
+        aiDeliveryProjectId,
+        eventName: options.eventName,
+        relatedEntityId: updated.id
+      },
+      tx
+    );
+
+    return { articleImage: toAiDeliveryArticleImageSummary(updated) };
+  });
+}
+
+export async function markAiDeliveryArticleImagePreviewReady(
+  authSession: AuthResolvedSessionContext,
+  aiDeliveryProjectId: string,
+  articleImageId: string
+): Promise<AiDeliveryArticleImageResponse | null> {
+  return transitionAiDeliveryArticleImageStatus(authSession, aiDeliveryProjectId, articleImageId, {
+    allowedFrom: ["DRAFT", "READY_FOR_GENERATION", "CHANGES_REQUESTED"],
+    nextStatus: "PREVIEW_READY",
+    eventName: "AI_DELIVERY_ARTICLE_IMAGE_PREVIEW_READY",
+    requiresPreview: true
+  });
+}
+
+export async function requestAiDeliveryArticleImageChanges(
+  authSession: AuthResolvedSessionContext,
+  aiDeliveryProjectId: string,
+  articleImageId: string
+): Promise<AiDeliveryArticleImageResponse | null> {
+  return transitionAiDeliveryArticleImageStatus(authSession, aiDeliveryProjectId, articleImageId, {
+    allowedFrom: ["PREVIEW_READY", "APPROVED", "FINAL_READY"],
+    nextStatus: "CHANGES_REQUESTED",
+    eventName: "AI_DELIVERY_ARTICLE_IMAGE_CHANGES_REQUESTED",
+    requiresPreview: true
+  });
+}
+
+export async function approveAiDeliveryArticleImage(
+  authSession: AuthResolvedSessionContext,
+  aiDeliveryProjectId: string,
+  articleImageId: string
+): Promise<AiDeliveryArticleImageResponse | null> {
+  return transitionAiDeliveryArticleImageStatus(authSession, aiDeliveryProjectId, articleImageId, {
+    allowedFrom: ["PREVIEW_READY", "CHANGES_REQUESTED"],
+    nextStatus: "APPROVED",
+    eventName: "AI_DELIVERY_ARTICLE_IMAGE_APPROVED",
+    requiresPreview: true
+  });
+}
+
+export async function markAiDeliveryArticleImageFinalReady(
+  authSession: AuthResolvedSessionContext,
+  aiDeliveryProjectId: string,
+  articleImageId: string
+): Promise<AiDeliveryArticleImageResponse | null> {
+  return transitionAiDeliveryArticleImageStatus(authSession, aiDeliveryProjectId, articleImageId, {
+    allowedFrom: ["APPROVED", "PREVIEW_READY"],
+    nextStatus: "FINAL_READY",
+    eventName: "AI_DELIVERY_ARTICLE_IMAGE_FINAL_READY",
+    requiresFinal: true
   });
 }
 

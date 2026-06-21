@@ -400,6 +400,146 @@ async function runAiDeliveryApiRegression(token) {
   }
   pass("Client content draft approve path persisted the expected approved state.");
 
+  const initialArticleImages = requireOkResponse(
+    "AI Delivery article images list",
+    await request(`/ai-delivery-projects/${project.id}/article-images`, { token })
+  )?.articleImages;
+  if (!Array.isArray(initialArticleImages)) {
+    fail("AI Delivery article images list did not return an articleImages array.");
+  }
+  pass(`AI Delivery article images list endpoint returned cleanly (${initialArticleImages.length} local image record(s)).`);
+
+  const createdArticleImageResponse = await request(`/ai-delivery-projects/${project.id}/article-images`, {
+    method: "POST",
+    token,
+    body: {
+      contentDraftId: createdContentDraft.id,
+      title: "Smoke article header image",
+      prompt: "Clean service-themed header image for smoke coverage.",
+      styleNotes: "Use a polished admin-safe preview reference only.",
+      status: "DRAFT",
+      previewImageUrl: "",
+      finalImageUrl: "",
+      storageKey: "",
+      notes: "Manual-only image planning record from local smoke."
+    }
+  });
+  const createdArticleImage = requireOkResponse(
+    "AI Delivery article image create",
+    createdArticleImageResponse
+  )?.articleImage;
+  if (
+    !createdArticleImage?.id ||
+    createdArticleImage.contentDraftId !== createdContentDraft.id ||
+    createdArticleImage.status !== "DRAFT" ||
+    /downloadUrl/i.test(createdArticleImageResponse.text)
+  ) {
+    fail("AI Delivery article image create did not return the expected same-project draft linkage or leaked a download field.");
+  }
+  pass("AI Delivery article image create returned the expected linked admin-only image record.");
+
+  const updatedArticleImage = requireOkResponse(
+    "AI Delivery article image update",
+    await request(`/ai-delivery-projects/${project.id}/article-images/${createdArticleImage.id}`, {
+      method: "PUT",
+      token,
+      body: {
+        contentDraftId: createdContentDraft.id,
+        title: "Smoke article header image",
+        prompt: "Clean service-themed header image for smoke coverage.",
+        styleNotes: "Updated style notes for smoke coverage.",
+        status: "DRAFT",
+        previewImageUrl: "https://example.com/smoke-image-preview.png",
+        finalImageUrl: "",
+        storageKey: "",
+        notes: "Updated admin-only image notes."
+      }
+    })
+  )?.articleImage;
+  if (
+    !updatedArticleImage ||
+    updatedArticleImage.previewImageUrl !== "https://example.com/smoke-image-preview.png" ||
+    updatedArticleImage.styleNotes !== "Updated style notes for smoke coverage."
+  ) {
+    fail("AI Delivery article image update did not persist the expected preview reference and style notes.");
+  }
+  pass("AI Delivery article image update persisted the expected preview reference and style notes.");
+
+  const previewReadyArticleImage = requireOkResponse(
+    "AI Delivery article image preview ready",
+    await request(`/ai-delivery-projects/${project.id}/article-images/${createdArticleImage.id}/mark-preview-ready`, {
+      method: "POST",
+      token
+    })
+  )?.articleImage;
+  if (!previewReadyArticleImage || previewReadyArticleImage.status !== "PREVIEW_READY") {
+    fail("AI Delivery article image preview-ready action did not persist the expected status.");
+  }
+  pass("AI Delivery article image preview-ready action persisted the expected status.");
+
+  const changesRequestedArticleImage = requireOkResponse(
+    "AI Delivery article image request changes",
+    await request(`/ai-delivery-projects/${project.id}/article-images/${createdArticleImage.id}/request-changes`, {
+      method: "POST",
+      token
+    })
+  )?.articleImage;
+  if (!changesRequestedArticleImage || changesRequestedArticleImage.status !== "CHANGES_REQUESTED") {
+    fail("AI Delivery article image request-changes action did not persist the expected status.");
+  }
+  pass("AI Delivery article image request-changes action persisted the expected status.");
+
+  const approvedArticleImage = requireOkResponse(
+    "AI Delivery article image approve",
+    await request(`/ai-delivery-projects/${project.id}/article-images/${createdArticleImage.id}/approve`, {
+      method: "POST",
+      token
+    })
+  )?.articleImage;
+  if (!approvedArticleImage || approvedArticleImage.status !== "APPROVED") {
+    fail("AI Delivery article image approve action did not persist the expected approved state.");
+  }
+  pass("AI Delivery article image approve action persisted the expected approved state.");
+
+  const finalReadyUpdatedImage = requireOkResponse(
+    "AI Delivery article image final reference update",
+    await request(`/ai-delivery-projects/${project.id}/article-images/${createdArticleImage.id}`, {
+      method: "PUT",
+      token,
+      body: {
+        contentDraftId: createdContentDraft.id,
+        title: "Smoke article header image",
+        prompt: "Clean service-themed header image for smoke coverage.",
+        styleNotes: "Updated style notes for smoke coverage.",
+        status: "APPROVED",
+        previewImageUrl: "https://example.com/smoke-image-preview.png",
+        finalImageUrl: "https://example.com/smoke-image-final.png",
+        storageKey: "ai-delivery/smoke/final-image-reference.png",
+        notes: "Final asset references recorded without any upload flow."
+      }
+    })
+  )?.articleImage;
+  if (
+    !finalReadyUpdatedImage ||
+    finalReadyUpdatedImage.finalImageUrl !== "https://example.com/smoke-image-final.png" ||
+    finalReadyUpdatedImage.storageKey !== "ai-delivery/smoke/final-image-reference.png"
+  ) {
+    fail("AI Delivery article image final reference update did not persist the expected final URL and storage key.");
+  }
+  pass("AI Delivery article image final reference update persisted the expected final URL and storage key.");
+
+  const finalReadyArticleImage = requireOkResponse(
+    "AI Delivery article image final ready",
+    await request(`/ai-delivery-projects/${project.id}/article-images/${createdArticleImage.id}/mark-final-ready`, {
+      method: "POST",
+      token
+    })
+  )?.articleImage;
+  if (!finalReadyArticleImage || finalReadyArticleImage.status !== "FINAL_READY") {
+    fail("AI Delivery article image final-ready action did not persist the expected status.");
+  }
+  pass("AI Delivery article image final-ready action persisted the expected status.");
+
   const workflowRunsData = requireOkResponse(
     "AI Delivery workflow runs list",
     await request(`/ai-delivery/projects/${project.id}/workflow-runs`, { token })
@@ -795,6 +935,18 @@ async function main() {
       await page.getByRole("heading", { name: "Approved / planned content plan items" }).waitFor({ state: "visible", timeout: 15000 });
       await page.getByRole("heading", { name: "Existing article production records" }).waitFor({ state: "visible", timeout: 15000 });
       pass("AI Content Production panel opened and rendered draft production helper text.");
+      await page.getByRole("button", { name: "Close" }).first().click();
+    }
+
+    const articleImageButtons = page.getByRole("button", { name: "Article images" });
+    const articleImageButtonCount = await articleImageButtons.count();
+    if (articleImageButtonCount > 0) {
+      await articleImageButtons.first().click();
+      await page.getByRole("dialog", { name: "Image Production Planning" }).waitFor({ state: "visible", timeout: 15000 });
+      await page.getByRole("heading", { name: "Image production planning" }).waitFor({ state: "visible", timeout: 15000 });
+      await page.getByText("This is an admin-only image approval foundation. No AI image generation, upscaling, upload, public links, publishing, or client image review is performed.").first().waitFor({ state: "visible", timeout: 15000 });
+      await page.getByRole("button", { name: "Mark preview ready" }).first().waitFor({ state: "visible", timeout: 15000 });
+      pass("Image Production Planning panel opened and rendered admin-only image approval helper text.");
       await page.getByRole("button", { name: "Close" }).first().click();
     }
 
