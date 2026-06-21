@@ -1177,15 +1177,34 @@ async function main() {
     }, token);
 
     await page.goto(webUrl, { waitUntil: "domcontentloaded" });
-    await page.getByRole("heading", { name: "AI Delivery" }).waitFor({ state: "visible", timeout: 15000 });
+    await page.getByRole("heading", { name: "AI Delivery Projects" }).waitFor({ state: "visible", timeout: 15000 });
+    await page.getByText("Operator summary").first().waitFor({ state: "visible", timeout: 15000 });
+    await page.getByText("Workflow runs in focus").first().waitFor({ state: "visible", timeout: 15000 });
+    await page.getByText("Research in focus").first().waitFor({ state: "visible", timeout: 15000 });
+    await page.getByText("Content plan in focus").first().waitFor({ state: "visible", timeout: 15000 });
+    await page.getByText("Production in focus").first().waitFor({ state: "visible", timeout: 15000 });
+    await page.getByText("Deliverables in focus").first().waitFor({ state: "visible", timeout: 15000 });
+    await page.getByText("Reviews in focus").first().waitFor({ state: "visible", timeout: 15000 });
     pass("AI Delivery admin UI loaded without crashing.");
 
     const workflowRunButtons = page.getByRole("button", { name: "Workflow runs" });
     const workflowRunButtonCount = await workflowRunButtons.count();
     if (workflowRunButtonCount > 0) {
+      const firstProjectCard = page.locator("article.entity-card").first();
+      await firstProjectCard.getByText("Planning workflow").waitFor({ state: "visible", timeout: 15000 });
+      await firstProjectCard.getByText("Review / packaging").waitFor({ state: "visible", timeout: 15000 });
+      await firstProjectCard.getByText("Project actions").waitFor({ state: "visible", timeout: 15000 });
+      await firstProjectCard.getByText("Admin workflow order").waitFor({ state: "visible", timeout: 15000 });
+      await firstProjectCard.getByRole("button", { name: "Research / Sources" }).waitFor({ state: "visible", timeout: 15000 });
+      await firstProjectCard.getByRole("button", { name: "AI SEO / Content Plan" }).waitFor({ state: "visible", timeout: 15000 });
+      await firstProjectCard.getByRole("button", { name: "Content production" }).waitFor({ state: "visible", timeout: 15000 });
+      await firstProjectCard.getByRole("button", { name: "Deliverables" }).waitFor({ state: "visible", timeout: 15000 });
+      pass("AI Delivery project card rendered grouped workflow navigation.");
+
       await workflowRunButtons.first().click();
       await page.getByRole("dialog", { name: "Workflow Runs" }).waitFor({ state: "visible", timeout: 15000 });
       await page.getByRole("heading", { name: "Existing workflow runs" }).waitFor({ state: "visible", timeout: 15000 });
+      await page.getByText("Workflow run editor").first().waitFor({ state: "visible", timeout: 15000 });
       await page.getByText("Execution log").first().waitFor({ state: "visible", timeout: 15000 });
       pass("Workflow runs panel opened and rendered execution details.");
       await page.getByRole("button", { name: "Close" }).first().click();
@@ -1196,10 +1215,10 @@ async function main() {
     if (contentPlanButtonCount > 0) {
       await contentPlanButtons.first().click();
       await page.getByRole("dialog", { name: "AI SEO / Content Plan" }).waitFor({ state: "visible", timeout: 15000 });
-      await page.getByRole("heading", { name: "Approval workflow status" }).waitFor({ state: "visible", timeout: 15000 });
-      await page.getByText("This is an approval workflow foundation. Use these monthly content plan items to capture target topics, keywords, research notes, and content type intent. Visible only to admin team from this screen. No AI generation, crawling, publishing, or external services are performed.").first().waitFor({ state: "visible", timeout: 15000 });
+      await page.getByRole("heading", { name: "Current content plan status" }).waitFor({ state: "visible", timeout: 15000 });
+      await page.getByRole("heading", { name: "SEO topics / research records" }).waitFor({ state: "visible", timeout: 15000 });
       await page.getByRole("button", { name: "Mark ready for review" }).first().waitFor({ state: "visible", timeout: 15000 });
-      pass("AI SEO / Content Plan panel opened and rendered approval workflow helper text.");
+      pass("AI SEO / Content Plan panel opened and rendered stable approval workflow structure.");
       await page.getByRole("button", { name: "Close" }).first().click();
     }
 
@@ -1209,10 +1228,10 @@ async function main() {
       await contentDraftButtons.first().click();
       await page.getByRole("dialog", { name: "AI Content Production Foundation" }).waitFor({ state: "visible", timeout: 15000 });
       await page.getByRole("heading", { name: "Article production planning" }).waitFor({ state: "visible", timeout: 15000 });
-      await page.getByText("This is a manual content production and approval foundation. No AI generation, image generation, publishing, storage upload, or external services are performed.").first().waitFor({ state: "visible", timeout: 15000 });
       await page.getByRole("heading", { name: "Approved / planned content plan items" }).waitFor({ state: "visible", timeout: 15000 });
       await page.getByRole("heading", { name: "Existing article production records" }).waitFor({ state: "visible", timeout: 15000 });
-      pass("AI Content Production panel opened and rendered draft production helper text.");
+
+      pass("AI Content Production panel opened and rendered stable draft workflow structure.");
       await page.getByRole("button", { name: "Close" }).first().click();
     }
 
@@ -1222,9 +1241,10 @@ async function main() {
       await articleImageButtons.first().click();
       await page.getByRole("dialog", { name: "Image Production Planning" }).waitFor({ state: "visible", timeout: 15000 });
       await page.getByRole("heading", { name: "Image production planning" }).waitFor({ state: "visible", timeout: 15000 });
-      await page.getByText("This is an admin-only image approval foundation. No AI image generation, upscaling, upload, public links, publishing, or client image review is performed.").first().waitFor({ state: "visible", timeout: 15000 });
+      await page.getByRole("heading", { name: "Existing image production records" }).waitFor({ state: "visible", timeout: 15000 });
+
       await page.getByRole("button", { name: "Mark preview ready" }).first().waitFor({ state: "visible", timeout: 15000 });
-      pass("Image Production Planning panel opened and rendered admin-only image approval helper text.");
+      pass("Image Production Planning panel opened and rendered stable image workflow structure.");
       await page.getByRole("button", { name: "Close" }).first().click();
     }
 
@@ -1233,11 +1253,13 @@ async function main() {
     if (researchButtonCount > 0) {
       await researchButtons.first().click();
       await page.getByRole("dialog", { name: "Research / Sources" }).waitFor({ state: "visible", timeout: 15000 });
+      await page.getByRole("heading", { name: "Research request editor" }).waitFor({ state: "visible", timeout: 15000 });
       await page.getByRole("heading", { name: "Existing research requests" }).waitFor({ state: "visible", timeout: 15000 });
+      await page.getByRole("heading", { name: "Research summary editor" }).waitFor({ state: "visible", timeout: 15000 });
       await page.getByRole("heading", { name: "Existing research summaries" }).waitFor({ state: "visible", timeout: 15000 });
-      await page.getByText("Source records are manual only in this foundation. No crawling or external fetching is performed.").first().waitFor({ state: "visible", timeout: 15000 });
-      await page.getByText("Research summaries are admin-authored in this foundation. No AI generation, crawling, or external fetching is performed.").first().waitFor({ state: "visible", timeout: 15000 });
-      pass("Research / Sources panel opened and rendered request, summary, and source foundation helper text.");
+      await page.getByRole("heading", { name: "Research source editor" }).waitFor({ state: "visible", timeout: 15000 });
+      await page.getByRole("heading", { name: "Existing research sources" }).waitFor({ state: "visible", timeout: 15000 });
+      pass("Research / Sources panel opened and rendered stable request, summary, and source structure.");
       await page.getByRole("button", { name: "Close" }).first().click();
     }
 
@@ -1250,10 +1272,11 @@ async function main() {
 
     await deliverablesButtons.first().click();
     await page.getByRole("dialog", { name: "Deliverables" }).waitFor({ state: "visible", timeout: 15000 });
+    await page.getByRole("heading", { name: "Deliverable editor" }).waitFor({ state: "visible", timeout: 15000 });
     await page.getByRole("heading", { name: "Existing deliverables" }).waitFor({ state: "visible", timeout: 15000 });
-    await page.getByText("This is an admin-only packaging foundation. No client handoff, public links, storage upload, export generation, publishing, or client download is performed.").waitFor({ state: "visible", timeout: 15000 });
+
     await page.getByRole("button", { name: "Mark ready" }).first().waitFor({ state: "visible", timeout: 15000 });
-    pass("Deliverables panel opened and rendered admin-only packaging helper text.");
+    pass("Deliverables panel opened and rendered stable packaging structure.");
 
     const reviewsButtons = page.getByRole("button", { name: "Reviews" });
     const reviewsButtonCount = await reviewsButtons.count();
@@ -1264,7 +1287,8 @@ async function main() {
 
     await reviewsButtons.first().click();
     await page.getByRole("heading", { name: /Deliverable reviews:/ }).waitFor({ state: "visible", timeout: 15000 });
-    await page.getByText("Admin/operator placeholders only.").waitFor({ state: "visible", timeout: 15000 });
+    await page.getByText("Deliverable context").first().waitFor({ state: "visible", timeout: 15000 });
+    await page.getByText("Review placeholders").first().waitFor({ state: "visible", timeout: 15000 });
     await page.getByText("Existing review placeholders").waitFor({ state: "visible", timeout: 15000 });
     pass("Deliverable reviews panel opened and rendered.");
   } finally {
