@@ -36,12 +36,14 @@ Locally proven admin/operator foundation:
 - `npm.cmd run smoke:local` has passed as the local gate for completed implementation slices.
 - The focused AI Delivery smoke has been hardened for repeated local regression work.
 - Focused smoke fixture isolation now uses dedicated smoke-owned AI Delivery projects instead of mutating arbitrary local dev projects.
+- EN2 now has a schema-free platform AuditLog writer foundation for logout, tenant switch, tenant settings update, and module enable/disable actions.
+- Local proof confirmed a reversible module enable/disable action created a `module.enabled` `AuditLog` row with tenant, actor, entity, and metadata context and no `EmailLog` side effects.
 - No deploy has been performed. Production remains frozen unless explicitly approved.
 
 Still intentionally not active:
 
 - Client Portal / client archive delivery.
-- EN2/email event wiring.
+- real provider email sending from EN2/event wiring.
 - Live AI calls.
 - Crawling or research ingestion.
 - Export generation for Google Docs, PDF, JSON, Markdown/MDX, or equivalent.
@@ -92,7 +94,7 @@ Keep the next implementation blocks sealed and layer-specific:
 
 1. Docs-only, UI-only, smoke-only, and API-only blocks may be combined only when the scope remains reviewable and runtime-safe.
 2. Do not combine schema + API + UI in one block unless explicitly approved.
-3. Do not activate Client Portal or EN2/email wiring unless explicitly selected.
+3. Do not activate Client Portal, provider sending, queues, or broader EN2/email delivery wiring unless explicitly selected.
 4. Do not deploy without separate approval.
 5. Preserve the current platform-neutral AI Delivery model so future delivery/export adapters can target WordPress, Next.js/custom React, headless CMS, Markdown/MDX, JSON packages, Google Docs, and PDF without changing the core admin workflow records.
 

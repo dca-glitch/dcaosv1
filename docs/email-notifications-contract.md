@@ -1,6 +1,6 @@
 # Email Notifications Backend Foundation Contract
 
-Status: EN1 backend foundation only. EN2 event wiring remains paused until modules are stable.
+Status: EN1 backend notification scaffolding is complete. EN2 now includes a schema-free platform AuditLog writer foundation. Real provider sending remains inactive.
 
 ## Purpose
 
@@ -8,7 +8,7 @@ The Email Notifications foundation provides a safe, general backend contract for
 
 EN1 is persistence and runtime scaffolding only. It does not send real email.
 
-Current state note: provider defaults exist and the Resend domain `notifications.digitalcubeagency.net` is verified. No `RESEND_API_KEY` has been added, no real sending is active, and no module events are wired to send notifications.
+Current state note: provider defaults exist and the Resend domain `notifications.digitalcubeagency.net` is verified. No `RESEND_API_KEY` has been added, no real sending is active, and no module events are wired to send notifications. Platform audit events now write to `AuditLog`; `EmailLog` remains non-sending notification scaffolding only.
 
 ## Environment configuration
 
@@ -73,6 +73,41 @@ The backend utility `sendEmailNotification` logs an `EmailLog` record for every 
 
 The utility returns the email log id, final status, provider, provider message id, and error message. It does not expose secret values.
 
+## EN2 schema-free platform audit foundation
+
+EN2 currently adds a schema-free platform audit foundation without enabling provider delivery, queues, background jobs, or Client Portal behavior.
+
+Canonical event trail:
+
+- `AuditLog` is the canonical append-only platform event trail.
+- `EmailLog` remains EN1 notification scaffolding and is not the source of truth for platform audit history.
+
+Currently wired platform actions:
+
+- auth logout
+- tenant switch
+- tenant settings update
+- module enable
+- module disable
+
+Current EN2 scope notes:
+
+- audit writes use the existing `AuditLog` model only
+- no schema or migration changes were required for this slice
+- no email provider send path is triggered by these audit writes
+- no queue, background job, cron, or Client Portal behavior is enabled
+
+## Local non-sending proof
+
+Local proof completed with a reversible module action:
+
+- selected action: enable `finance-lite`, then restore the original disabled state
+- observed result: one `AuditLog` row for `module.enabled`
+- populated fields observed: `tenantId`, `actorType`, `actorUserId`, `entityType`, `entityId`, and metadata with module context
+- local state was restored after the proof
+- `EmailLog` rows created during the proof: `0`
+- no provider/send path was triggered
+
 ## Explicit exclusions
 
 EN1 does not include:
@@ -89,5 +124,5 @@ EN1 does not include:
 - marketing/newsletter email
 - background queue
 - cron or scheduled jobs
-- EN2 event wiring
+- real provider delivery from EN2 audit events
 - VPS/deploy changes

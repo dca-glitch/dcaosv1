@@ -16,6 +16,7 @@ DCA OS Lite is in local-first admin/operator foundation work. Production is froz
 - AI Delivery deliverable export/download admin actions.
 - AI Delivery operator summary, AI SEO foundation UI, and AI Content Production foundation UI.
 - Email Notifications EN1 backend foundation only.
+- EN2 schema-free platform AuditLog writer foundation for logout, tenant switch, tenant settings update, and module enable/disable.
 
 ## Current Constraints
 
@@ -24,7 +25,7 @@ DCA OS Lite is in local-first admin/operator foundation work. Production is froz
 - No commit, push, deploy, VPS, or production action unless explicitly approved after review.
 - Client Access / Client Portal is postponed until admin/operator modules are stable.
 - No AI calls, crawling, WordPress, GA/GSC, Resend sending, client portal, or production deployment is active.
-- EN2 email event wiring remains paused until modules are stable.
+- EN2 real provider sending, queues/background jobs, and Client Portal delivery remain inactive.
 
 ## Current Repository Areas
 
@@ -40,5 +41,5 @@ DCA OS Lite is in local-first admin/operator foundation work. Production is froz
 
 - Keep foundational docs/rules aligned with current assumptions.
 - Stabilize AI Delivery admin/operator workflows with repeatable validation/smoke scripts.
-- Resume Email Notifications EN2 only after explicit approval.
+- Resume broader EN2 notification delivery only after explicit approval.
 - Treat future client review as a later design/build block, not current behavior.
