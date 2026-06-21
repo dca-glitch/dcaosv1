@@ -727,6 +727,12 @@ export function InvoicesPage({
           title={invoiceEditorId ? "Edit Invoice" : "Add Invoice"}
         >
           <form className="entity-form" onSubmit={handleInvoiceSubmit}>
+            <ModalActions
+              actionLabel={invoiceEditorId ? "Update invoice" : "Create invoice"}
+              disabled={saving || clients.length === 0}
+              onCancel={() => setIsInvoiceEditorOpen(false)}
+              saving={saving}
+            />
             <div className="field-grid">
               <ClientProjectFields
                 clients={clients}
@@ -736,49 +742,68 @@ export function InvoicesPage({
                 projectId={invoiceDraft.projectId}
                 projects={invoiceProjects}
               />
+              <label className="field-span-2">
+                Invoice title / reference - Optional
+                <input
+                  maxLength={255}
+                  onChange={(event) => setInvoiceDraft((current) => ({ ...current, title: event.target.value }))}
+                  placeholder="PO number, client code, or internal reference"
+                  value={invoiceDraft.title}
+                />
+                <span className="muted-text">Used on invoice cards and internal records.</span>
+              </label>
               <label>
-                Invoice number
+                Invoice number - Required
                 <input
                   maxLength={120}
                   onChange={(event) => setInvoiceDraft((current) => ({ ...current, invoiceNumber: event.target.value }))}
                   required
+                  placeholder="Client invoice number or internal billing reference"
                   value={invoiceDraft.invoiceNumber}
                 />
+                <span className="muted-text">Shown on the client-facing invoice.</span>
               </label>
               <label>
-                Status
-                <select onChange={(event) => setInvoiceDraft((current) => ({ ...current, status: event.target.value }))} value={invoiceDraft.status}>
+                Invoice date - Required
+                <input
+                  onChange={(event) => setInvoiceDraft((current) => ({ ...current, issueDate: event.target.value }))}
+                  required
+                  type="date"
+                  value={invoiceDraft.issueDate}
+                />
+                <span className="muted-text">Used for invoice due tracking.</span>
+              </label>
+              <label>
+                Due date - Required
+                <input
+                  onChange={(event) => setInvoiceDraft((current) => ({ ...current, dueDate: event.target.value }))}
+                  required
+                  type="date"
+                  value={invoiceDraft.dueDate}
+                />
+                <span className="muted-text">Used for invoice due tracking.</span>
+              </label>
+              <label>
+                Currency - Required
+                <input
+                  maxLength={3}
+                  onChange={(event) => setInvoiceDraft((current) => ({ ...current, currency: event.target.value.toUpperCase() }))}
+                  required
+                  placeholder="USD"
+                  value={invoiceDraft.currency}
+                />
+                <span className="muted-text">Used for invoice totals and line items.</span>
+              </label>
+              <label>
+                Status - Required
+                <select onChange={(event) => setInvoiceDraft((current) => ({ ...current, status: event.target.value }))} required value={invoiceDraft.status}>
                   {invoiceStatusOptions.map((status) => (
                     <option key={status.value} value={status.value}>
                       {status.label}
                     </option>
                   ))}
                 </select>
-              </label>
-              <label>
-                Issue date
-                <input
-                  onChange={(event) => setInvoiceDraft((current) => ({ ...current, issueDate: event.target.value }))}
-                  type="date"
-                  value={invoiceDraft.issueDate}
-                />
-              </label>
-              <label>
-                Due date
-                <input
-                  onChange={(event) => setInvoiceDraft((current) => ({ ...current, dueDate: event.target.value }))}
-                  type="date"
-                  value={invoiceDraft.dueDate}
-                />
-              </label>
-              <label>
-                Currency
-                <input
-                  maxLength={3}
-                  onChange={(event) => setInvoiceDraft((current) => ({ ...current, currency: event.target.value.toUpperCase() }))}
-                  required
-                  value={invoiceDraft.currency}
-                />
+                <span className="muted-text">Controls invoice lifecycle only. It does not register payment.</span>
               </label>
             </div>
             <LineItemsEditor
@@ -842,7 +867,12 @@ export function InvoicesPage({
                 storageValue={invoiceDraft.documentStorageKey}
               />
             </div>
-            <ModalActions disabled={saving || clients.length === 0} onCancel={() => setIsInvoiceEditorOpen(false)} saving={saving} />
+            <ModalActions
+              actionLabel={invoiceEditorId ? "Update invoice" : "Create invoice"}
+              disabled={saving || clients.length === 0}
+              onCancel={() => setIsInvoiceEditorOpen(false)}
+              saving={saving}
+            />
           </form>
         </Modal>
       ) : null}
@@ -860,6 +890,12 @@ export function InvoicesPage({
           title={recurringEditorId ? "Edit Recurring Invoice" : "Add Recurring Invoice"}
         >
           <form className="entity-form" onSubmit={handleRecurringSubmit}>
+            <ModalActions
+              actionLabel={recurringEditorId ? "Update recurring invoice" : "Create recurring invoice"}
+              disabled={saving || clients.length === 0}
+              onCancel={() => setIsRecurringEditorOpen(false)}
+              saving={saving}
+            />
             <div className="field-grid">
               <ClientProjectFields
                 clients={clients}
@@ -869,68 +905,78 @@ export function InvoicesPage({
                 projectId={recurringDraft.projectId}
                 projects={recurringProjects}
               />
+              <label className="field-span-2">
+                Recurring title / reference - Optional
+                <input
+                  maxLength={255}
+                  onChange={(event) => setRecurringDraft((current) => ({ ...current, title: event.target.value }))}
+                  placeholder="Billing cycle title or internal recurring reference"
+                  value={recurringDraft.title}
+                />
+                <span className="muted-text">Used on recurring invoice cards and internal records.</span>
+              </label>
               <label>
-                Interval
-                <select onChange={(event) => setRecurringDraft((current) => ({ ...current, interval: event.target.value }))} value={recurringDraft.interval}>
+                Start date - Required
+                <input
+                  onChange={(event) => setRecurringDraft((current) => ({ ...current, startDate: event.target.value }))}
+                  required
+                  type="date"
+                  value={recurringDraft.startDate}
+                />
+                <span className="muted-text">Used for the first scheduled billing cycle.</span>
+              </label>
+              <label>
+                Frequency - Required
+                <select onChange={(event) => setRecurringDraft((current) => ({ ...current, interval: event.target.value }))} required value={recurringDraft.interval}>
                   {recurringIntervalOptions.map((interval) => (
                     <option key={interval} value={interval}>
                       {interval}
                     </option>
                   ))}
                 </select>
+                <span className="muted-text">Controls how often the recurring invoice is due.</span>
               </label>
               <label>
-                Active
-                <select
-                  onChange={(event) => setRecurringDraft((current) => ({ ...current, isActive: event.target.value === "true" }))}
-                  value={recurringDraft.isActive ? "true" : "false"}
-                >
-                  <option value="true">Active</option>
-                  <option value="false">Paused</option>
-                </select>
-              </label>
-              <label>
-                Start date
-                <input
-                  onChange={(event) => setRecurringDraft((current) => ({ ...current, startDate: event.target.value }))}
-                  type="date"
-                  value={recurringDraft.startDate}
-                />
-              </label>
-              <label>
-                End date
-                <input
-                  onChange={(event) => setRecurringDraft((current) => ({ ...current, endDate: event.target.value }))}
-                  type="date"
-                  value={recurringDraft.endDate}
-                />
-              </label>
-              <label>
-                Currency
-                <input
-                  maxLength={3}
-                  onChange={(event) => setRecurringDraft((current) => ({ ...current, currency: event.target.value.toUpperCase() }))}
-                  required
-                  value={recurringDraft.currency}
-                />
-              </label>
-              <label>
-                Next run date
+                Next run date - Optional
                 <input
                   onChange={(event) => setRecurringDraft((current) => ({ ...current, nextRunDate: event.target.value }))}
                   type="date"
                   value={recurringDraft.nextRunDate}
                 />
+                <span className="muted-text">Used for the next due record when present.</span>
               </label>
-              <TextAreaFields
-                documentLabel="Document folder hint"
-                documentValue={recurringDraft.documentFolderHint}
-                notes={recurringDraft.notes}
-                onChange={(values) => setRecurringDraft((current) => ({ ...current, ...values }))}
-                paymentInstructions={recurringDraft.paymentInstructions}
-                storageLabel={null}
-                storageValue=""
-              />
+              <label>
+                Active - Required
+                <select
+                  onChange={(event) => setRecurringDraft((current) => ({ ...current, isActive: event.target.value === "true" }))}
+                  required
+                  value={recurringDraft.isActive ? "true" : "false"}
+                >
+                  <option value="true">Active</option>
+                  <option value="false">Paused</option>
+                </select>
+                <span className="muted-text">Paused recurring invoices stay in history and do not generate due records.</span>
+              </label>
+              <label>
+                End date - Optional
+                <input
+                  onChange={(event) => setRecurringDraft((current) => ({ ...current, endDate: event.target.value }))}
+                  type="date"
+                  value={recurringDraft.endDate}
+                />
+                <span className="muted-text">Optional stop date for the schedule.</span>
+              </label>
+              <label>
+                Currency - Required
+                <input
+                  maxLength={3}
+                  onChange={(event) => setRecurringDraft((current) => ({ ...current, currency: event.target.value.toUpperCase() }))}
+                  required
+                  placeholder="USD"
+                  value={recurringDraft.currency}
+                />
+                <span className="muted-text">Used for recurring invoice totals and line items.</span>
+              </label>
             </div>
             <LineItemsEditor
               currency={recurringDraft.currency}
@@ -983,8 +1029,22 @@ export function InvoicesPage({
                   value={centsToMajorInput(recurringDraft.totalCents)}
                 />
               </label>
+              <TextAreaFields
+                documentLabel="Document folder hint"
+                documentValue={recurringDraft.documentFolderHint}
+                notes={recurringDraft.notes}
+                onChange={(values) => setRecurringDraft((current) => ({ ...current, ...values }))}
+                paymentInstructions={recurringDraft.paymentInstructions}
+                storageLabel={null}
+                storageValue=""
+              />
             </div>
-            <ModalActions disabled={saving || clients.length === 0} onCancel={() => setIsRecurringEditorOpen(false)} saving={saving} />
+            <ModalActions
+              actionLabel={recurringEditorId ? "Update recurring invoice" : "Create recurring invoice"}
+              disabled={saving || clients.length === 0}
+              onCancel={() => setIsRecurringEditorOpen(false)}
+              saving={saving}
+            />
           </form>
         </Modal>
       ) : null}
@@ -1262,22 +1322,24 @@ function ClientProjectFields({ clients, projects, clientId, projectId, onClientC
   return (
     <>
       <label>
-        Client
+        Client - Required
         <select disabled={clients.length === 0} onChange={(event) => onClientChange(event.target.value)} required value={clientId}>
           <option value="">Select client</option>
           {clients.map((client) => (
             <option key={client.id} value={client.id}>{client.name}</option>
           ))}
         </select>
+        <span className="muted-text">Required billing owner for this record.</span>
       </label>
       <label>
-        Project
+        Project / reference - Optional
         <select onChange={(event) => onProjectChange(event.target.value)} value={projectId}>
-          <option value="">No project</option>
+          <option value="">No project / reference</option>
           {projects.map((project) => (
             <option key={project.id} value={project.id}>{project.name}</option>
           ))}
         </select>
+        <span className="muted-text">Optional billing context for this record.</span>
       </label>
     </>
   );
@@ -1323,10 +1385,50 @@ type TextAreaFieldsProps = {
 function TextAreaFields(props: TextAreaFieldsProps) {
   return (
     <>
-      <label className="field-span-2">Notes<textarea maxLength={4000} onChange={(event) => props.onChange({ notes: event.target.value })} rows={3} value={props.notes} /></label>
-      <label className="field-span-2">Payment instructions<textarea maxLength={4000} onChange={(event) => props.onChange({ paymentInstructions: event.target.value })} rows={3} value={props.paymentInstructions} /></label>
-      <label className="field-span-2">{props.documentLabel}<input maxLength={2048} onChange={(event) => props.onChange(props.storageLabel ? { documentUrl: event.target.value } : { documentFolderHint: event.target.value })} value={props.documentValue} /></label>
-      {props.storageLabel ? <label className="field-span-2">{props.storageLabel}<input maxLength={2048} onChange={(event) => props.onChange({ documentStorageKey: event.target.value })} value={props.storageValue} /></label> : null}
+      <label className="field-span-2">
+        Payment instructions - Optional
+        <textarea
+          maxLength={4000}
+          onChange={(event) => props.onChange({ paymentInstructions: event.target.value })}
+          placeholder="Payment terms or client-facing invoice note"
+          rows={3}
+          value={props.paymentInstructions}
+        />
+        <span className="muted-text">Shown on client-facing invoice.</span>
+      </label>
+      <label className="field-span-2">
+        Internal notes - Optional
+        <textarea
+          maxLength={4000}
+          onChange={(event) => props.onChange({ notes: event.target.value })}
+          placeholder="Notes for admin team only"
+          rows={3}
+          value={props.notes}
+        />
+        <span className="muted-text">Visible only to admin team.</span>
+      </label>
+      <label className="field-span-2">
+        {props.documentLabel} - Optional
+        <input
+          maxLength={2048}
+          onChange={(event) => props.onChange(props.storageLabel ? { documentUrl: event.target.value } : { documentFolderHint: event.target.value })}
+          placeholder={props.storageLabel ? "PO number, client code, or internal reference" : "Admin document URL or folder hint"}
+          value={props.documentValue}
+        />
+        <span className="muted-text">{props.storageLabel ? "Shown only in admin record." : "Used for admin reference."}</span>
+      </label>
+      {props.storageLabel ? (
+        <label className="field-span-2">
+          {props.storageLabel} - Optional
+          <input
+            maxLength={2048}
+            onChange={(event) => props.onChange({ documentStorageKey: event.target.value })}
+            placeholder="Storage key or internal document path"
+            value={props.storageValue}
+          />
+          <span className="muted-text">Visible only to admin team.</span>
+        </label>
+      ) : null}
     </>
   );
 }
@@ -1384,21 +1486,52 @@ function LineItemsEditor({ currency, invoiceItems, lineItems, onChange, unitPric
   return (
     <div className="entity-form">
       <h3>Line items</h3>
+      <p className="muted-text">Add billing rows for the work being invoiced. Line descriptions appear on the invoice and feed the totals below.</p>
       {lineItems.map((item, index) => (
         <div className="field-grid" key={index}>
           <label className="field-span-2">
-            Service / Item
+            Service / item - Optional
             <select onChange={(event) => selectInvoiceItem(index, event.target.value)} value="">
-              <option value="">Select service</option>
+              <option value="">Select a reusable service</option>
               {invoiceItems.map((invoiceItem) => (
                 <option key={invoiceItem.id} value={invoiceItem.id}>{invoiceItem.name}</option>
               ))}
             </select>
+            <span className="muted-text">Pick a reusable service to prefill the row.</span>
           </label>
-          <label className="field-span-2">Description / Details<textarea maxLength={500} onChange={(event) => updateLineItem(index, { description: event.target.value })} rows={3} value={item.description} /></label>
-          <label>Quantity<input min={0} onChange={(event) => updateQuantity(index, event.target.valueAsNumber || 0)} type="number" value={item.quantity} /></label>
-          <label>{moneyFieldLabel("Unit price", currency)}<input min={0} onChange={(event) => { updateUnitPriceInput(index, event.target.value); updateUnitPrice(index, majorInputToCents(event.target.value)); }} step="0.01" type="number" value={unitPriceInputs?.[index] ?? centsToMajorInput(item.unitPriceCents)} /></label>
-          <label>{moneyFieldLabel("Line total", currency)}<input readOnly value={centsToMajorInput(item.totalCents)} /></label>
+          <label className="field-span-2">
+            Description / details - Optional
+            <textarea
+              maxLength={500}
+              onChange={(event) => updateLineItem(index, { description: event.target.value })}
+              placeholder="Service, deliverable, or billing item"
+              rows={3}
+              value={item.description}
+            />
+            <span className="muted-text">Shown on the client-facing invoice.</span>
+          </label>
+          <label>
+            Quantity - Required
+            <input min={0} onChange={(event) => updateQuantity(index, event.target.valueAsNumber || 0)} placeholder="Number of units, hours, or items" type="number" value={item.quantity} />
+            <span className="muted-text">Used to calculate the line total.</span>
+          </label>
+          <label>
+            {moneyFieldLabel("Unit price", currency)} - Required
+            <input
+              min={0}
+              onChange={(event) => { updateUnitPriceInput(index, event.target.value); updateUnitPrice(index, majorInputToCents(event.target.value)); }}
+              placeholder="Price per unit before tax or discount"
+              step="0.01"
+              type="number"
+              value={unitPriceInputs?.[index] ?? centsToMajorInput(item.unitPriceCents)}
+            />
+            <span className="muted-text">Shown as the pre-tax rate for this row.</span>
+          </label>
+          <label>
+            {moneyFieldLabel("Line total", currency)}
+            <input readOnly value={centsToMajorInput(item.totalCents)} />
+            <span className="muted-text">Calculated from quantity and unit price.</span>
+          </label>
           <div className="card-actions">
             <button className="secondary-action" disabled={lineItems.length === 1} onClick={() => { onChange(lineItems.filter((_, itemIndex) => itemIndex !== index)); onUnitPriceInputsChange?.((unitPriceInputs ?? []).filter((_, itemIndex) => itemIndex !== index)); }} type="button">Remove line</button>
           </div>
@@ -1413,13 +1546,14 @@ type ModalActionsProps = {
   disabled: boolean;
   saving: boolean;
   onCancel: () => void;
+  actionLabel?: string;
 };
 
-function ModalActions({ disabled, saving, onCancel }: ModalActionsProps) {
+function ModalActions({ disabled, saving, onCancel, actionLabel = "Save" }: ModalActionsProps) {
   return (
     <div className="modal-footer">
       <button className="secondary-action" disabled={saving} onClick={onCancel} type="button">Cancel</button>
-      <button className="primary-action" disabled={disabled} type="submit">{saving ? "Saving" : "Save"}</button>
+      <button className="primary-action" disabled={disabled} type="submit">{saving ? "Saving" : actionLabel}</button>
     </div>
   );
 }
