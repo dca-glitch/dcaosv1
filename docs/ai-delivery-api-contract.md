@@ -2,7 +2,7 @@
 
 Docs-only checklist and current-state contract for the feature branch.
 
-Current state: AI Delivery is local-first and admin/operator-side. The current admin foundation slice is closed for its present scope. Completed foundations on this branch include project/brief records, workflow runs with controlled execution logging, research requests/sources, research summaries, monthly content plan approval, content draft workflow, article image workflow, deliverable packaging, deliverable review admin API/UI, and local AI Delivery regression smoke. Client Access / Client Portal remains intentionally limited until admin/operator modules are stable.
+Current state: AI Delivery is local-first and admin/operator-side. AI Delivery admin foundation closed for the current MVP admin scope. This closed admin foundation covers projects, client/month brief foundation, workflow runs foundation, content plans, content drafts, article image planning, research requests/sources/summaries, deliverables, deliverable reviews, and activity/audit read model support where relevant. Client Access / Client Portal remains intentionally limited until admin/operator modules are stable.
 
 Platform-neutral rule: AI Delivery records, content assets, article images, and deliverables are not modeled as WordPress-only objects. WordPress is only one optional future publishing connector alongside Next.js/custom React, headless CMS, Markdown/MDX, JSON packages, Google Docs, and PDF delivery targets.
 
@@ -10,7 +10,7 @@ Explicitly not active: live AI calls, crawling, real publishing connectors, Word
 
 ## Private object storage environment
 
-Private object storage is optional in local development. When the storage configuration is absent, admin-only private upload endpoints stay guarded and return `R2_STORAGE_NOT_CONFIGURED` instead of persisting a storage reference.
+Private object storage is optional in local development. R2/private storage foundation closed for the current MVP admin scope. When the storage configuration is absent, admin-only private upload endpoints stay guarded and return `R2_STORAGE_NOT_CONFIGURED` instead of persisting a storage reference.
 
 Exact environment variables currently used by the API storage helpers:
 
@@ -21,6 +21,7 @@ Current behavior:
 
 - Missing required storage configuration keeps private storage disabled locally.
 - Upload/download flows use authenticated admin API routes and return a temporary `downloadUrl` plus `expiresSeconds`.
+- Successful private uploads persist `storageKey` on the linked admin record.
 - No client self-service download route or public asset link is created by this block.
 
 ## Current admin workflow order
@@ -59,28 +60,27 @@ Purpose: prevent repeated local test data pollution while preserving the existin
 
 ## Current readiness framing
 
-- Admin/operator foundation: closed for the current foundation scope.
+- Admin/operator foundation: admin foundation closed for the current MVP admin scope.
 - July-ready internal MVP: partial.
 - Full client-facing module: not complete.
 - Full AI modules roadmap: early stage.
 
 ## Admin foundation closure
 
-The AI Delivery admin foundation slice is closed for the current local admin/operator scope.
+AI Delivery admin foundation closed for the current MVP admin scope.
 
 Implemented admin surfaces:
 
 - projects
-- briefs
-- workflow runs
-- research requests
-- research sources
-- research summaries
-- monthly content plan
+- client/month brief foundation
+- workflow runs foundation
+- research requests/sources/summaries
+- content plans
 - content drafts
-- article images
+- article image planning
 - deliverables
 - deliverable reviews
+- activity/audit read model support where relevant
 
 Focused smoke evidence covers the core admin workflow transitions, including article image create/update, preview-ready, request-changes, approve, and final-ready paths.
 
@@ -90,15 +90,34 @@ Closure evidence:
 - `npm.cmd run smoke:local` passed.
 - `npm.cmd run smoke:ai-delivery-reviews` passed.
 
-Not included in this closed admin foundation slice:
+This wording marks the admin foundation as closed for the present admin scope only. It does not mean the full AI Delivery MVP is complete.
+
+## Private storage foundation closure
+
+R2/private storage foundation closed for the current MVP admin scope.
+
+Closed private storage scope:
+
+- deliverable private document upload/open
+- article image private final upload/open
+- admin UI wiring
+- env/docs coverage
+- guarded local `R2_STORAGE_NOT_CONFIGURED`
+- `storageKey` persistence
+- temporary authenticated download URL behavior
+- no client/public asset exposure
+
+Deferred items below are explicitly not blockers for this closed admin foundation:
 
 - Client Portal
+- client-facing approvals/archive
+- real production configured-bucket proof
 - real AI execution
+- PDF/Google Docs export flows
 - crawling
 - WordPress publishing/export connectors
 - GA/GSC reporting
-- provider sending
-- queues/background jobs
+- real AI provider execution
 - deployment
 
 Backend routes currently expected:
@@ -430,7 +449,7 @@ Readiness rules:
 
 Current admin UI wiring includes private deliverable document upload/open actions for deliverable records.
 
-This foundation intentionally excludes export generation, publishing connectors, AI generation calls, signed client downloads, public links, or active client-facing delivery portal behavior. Future client-safe handoff should expose final/reviewable deliverables rather than raw workflow execution internals.
+This foundation intentionally excludes export generation, publishing connectors, AI generation calls, signed client downloads, public links, or active client-facing delivery portal behavior. Future client-safe handoff should expose final/reviewable deliverables rather than raw workflow execution internals. Those deferred items are not blockers to the current admin foundation closure.
 
 ## Deliverable review foundation
 

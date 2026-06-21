@@ -11,7 +11,7 @@ DCA OS Lite — AI Delivery Projects MVP.
 
 ## Current state note
 
-AI Delivery is currently admin/operator-side. Completed local foundations include project/brief records, workflow runs with controlled execution, research requests/sources, research summaries, monthly content plan approval, content draft workflow, article image workflow, deliverable packaging, deliverable review data/admin API/admin UI, operator summary/project-card workflow navigation, focused AI Delivery smoke coverage, and smoke fixture isolation. No live AI calls, crawling, publishing connectors, client handoff portal delivery, or production deployment has been added.
+AI Delivery is currently admin/operator-side. AI Delivery admin foundation closed for the current MVP admin scope. This closed admin foundation covers projects, client/month brief foundation, workflow runs foundation, content plans, content drafts, article image planning, research requests/sources/summaries, deliverables, deliverable reviews, and activity/audit read model support where relevant. R2/private storage foundation is also closed for the same admin scope, covering deliverable private document upload/open, article image private final upload/open, admin UI wiring, env/docs coverage, guarded local `R2_STORAGE_NOT_CONFIGURED`, `storageKey` persistence, temporary authenticated download URL behavior, and no client/public asset exposure. This does not mean the full AI Delivery MVP is complete. No live AI calls, crawling, publishing connectors, client handoff portal delivery, or production deployment has been added.
 
 Current operator-facing admin surface order:
 
@@ -26,7 +26,7 @@ Current operator-facing admin surface order:
 
 Readiness framing:
 
-- Admin/operator foundation: mostly ready.
+- Admin/operator foundation: admin foundation closed for the current MVP admin scope.
 - July-ready internal MVP: partial.
 - Full client-facing module: not complete.
 - Full AI modules roadmap: early stage.
@@ -300,32 +300,44 @@ Explicit exclusions confirmed at closure:
 
 ## 16. Current foundation alignment note
 
-The current approved AI Delivery foundation is local-first, admin/operator-side, and platform-neutral:
+The current approved AI Delivery foundation is local-first, admin/operator-side, and platform-neutral. Admin foundation closed for the current MVP admin scope:
 
-- Project/brief foundation is complete.
-- Workflow run foundation is complete.
-- Research requests and sources foundation is complete.
-- Research summary foundation is complete.
-- Monthly content plan approval foundation is complete.
-- Content draft workflow foundation is complete.
-- Article image workflow foundation is complete.
-- Deliverables foundation is complete.
-- Deliverable packaging workflow is complete.
-- Deliverable review data foundation is complete.
-- Deliverable review admin API is complete.
-- Deliverable review admin UI is complete.
+- Projects.
+- Client/month brief foundation.
+- Workflow runs foundation.
+- Research requests/sources/summaries.
+- Content plans.
+- Content drafts.
+- Article image planning.
+- Deliverables.
+- Deliverable reviews.
+- Activity/audit read model support where relevant.
 - Operator summary and project-card workflow navigation polish are complete.
 - Focused AI Delivery smoke coverage exists and is isolated from real local dev AI Delivery data.
 
-Still not implemented or active:
+R2/private storage foundation closed for the current MVP admin scope:
 
+- Deliverable private document upload/open.
+- Article image private final upload/open.
+- Admin UI wiring.
+- Env/docs coverage.
+- Guarded local `R2_STORAGE_NOT_CONFIGURED`.
+- `storageKey` persistence.
+- Temporary authenticated download URL behavior.
+- No client/public asset exposure.
+
+Deferred items below are explicitly not blockers for the current admin foundation closure:
+
+- Client Portal delivery/private links.
+- Real production configured-bucket proof.
+- Real AI provider execution.
+- PDF/Google Docs export flows.
+- WordPress draft publishing.
+- GA/GSC/monthly reporting.
+- Client-facing approvals/archive.
 - AI calls.
 - Crawling or research ingestion.
 - Connector-specific publishing or export execution.
-- GA/GSC integration.
-- Google Docs / PDF / JSON / Markdown/MDX export generation or equivalent.
-- Client Portal / active Client Access workflows.
-- Client archive / historical client-safe module flow.
 - Public approval links.
 - Monthly report generation.
 - Production deployment or VPS behavior.
