@@ -11,7 +11,7 @@ DCA OS Lite — AI Delivery Projects MVP.
 
 ## Current state note
 
-AI Delivery is currently admin/operator-side. Completed local foundations include project/brief records, workflow runs, deliverables, deliverable review data, deliverable review admin API, deliverable review admin UI, local deliverable review smoke, and Email Notifications EN1. No AI calls, crawling, WordPress, GA/GSC, Resend sending, client portal, or production deployment has been added.
+AI Delivery is currently admin/operator-side. Completed local foundations include project/brief records, workflow runs with controlled execution, research requests/sources, research summaries, monthly content plan approval, content draft workflow, article image workflow, deliverable packaging, deliverable review data/admin API/admin UI, local AI Delivery regression smoke, and Email Notifications EN1. No live AI calls, crawling, publishing connectors, client handoff portal delivery, or production deployment has been added.
 
 ## 3. Core user outcomes
 
@@ -38,8 +38,8 @@ AI Delivery is currently admin/operator-side. Completed local foundations includ
 14. Future client review may approve each article and image set before publication.
 15. Future client review may allow one change request round per article/image set.
 16. Future final approval policy needs confirmation before client-facing implementation.
-17. Admin may later create real WordPress drafts through API after explicit approval.
-18. Admin publishes/releases.
+17. Admin may later prepare publish-ready or export-ready deliverables for optional targets such as WordPress, Next.js/custom React, headless CMS, Markdown/MDX, JSON packages, Google Docs, and PDF after explicit approval.
+18. Admin publishes/releases through future connector adapters where appropriate.
 19. System later generates monthly report.
 20. Admin approves report.
 21. Future client review may show reports and a read-only archive.
@@ -52,10 +52,10 @@ AI Delivery is currently admin/operator-side. Completed local foundations includ
 4. Research Summary + Brief Revision
 5. Monthly Content Plan Approval
 6. Content Item Production + Approval
-7. WordPress Draft API
+7. Publishing / Delivery Connector Adapters
 8. Monthly Report Foundation
 9. GA/GSC Metrics Integration
-10. Google Docs Export / Import
+10. Platform-neutral Export / Delivery Adapters
 
 ## 6. Local implementation order for Build Block 1
 
@@ -90,10 +90,10 @@ Current state clarification: Client Access / Client Portal is not active; client
 - Monthly content plan approval.
 - Content item production.
 - Article/image approval.
-- WordPress draft API.
+- Publishing / delivery connector adapters.
 - Monthly reports.
 - GA/GSC.
-- Google Docs.
+- Google Docs / PDF export behavior.
 - Autonomous agents.
 - Finance repair, credit notes, finance reports, billing, or invoicing changes.
 - Deployment.
@@ -187,7 +187,7 @@ Explicitly out of scope for this block:
 
 - AI calls.
 - Crawling.
-- WordPress.
+- Publishing connectors, including WordPress.
 - GA/GSC.
 - Deployment.
 - Deliverable generation.
@@ -234,7 +234,7 @@ Explicitly out of scope for Build Block 2:
 
 - AI calls.
 - Crawling.
-- WordPress.
+- Publishing connectors, including WordPress.
 - GA/GSC.
 - Automation.
 - Background jobs.
@@ -274,11 +274,17 @@ Explicit exclusions confirmed at closure:
 
 ## 16. Current foundation alignment note
 
-The current approved AI Delivery foundation is local-first and admin/operator-side:
+The current approved AI Delivery foundation is local-first, admin/operator-side, and platform-neutral:
 
 - Project/brief foundation is complete.
 - Workflow run foundation is complete.
+- Research requests and sources foundation is complete.
+- Research summary foundation is complete.
+- Monthly content plan approval foundation is complete.
+- Content draft workflow foundation is complete.
+- Article image workflow foundation is complete.
 - Deliverables foundation is complete.
+- Deliverable packaging workflow is complete.
 - Deliverable review data foundation is complete.
 - Deliverable review admin API is complete.
 - Deliverable review admin UI is complete.
@@ -289,7 +295,7 @@ Still not implemented or active:
 
 - AI calls.
 - Crawling.
-- WordPress publishing/draft creation.
+- Connector-specific publishing or export execution.
 - GA/GSC integration.
 - Resend sending or API key handling.
 - Client Portal / active Client Access workflows.
@@ -297,3 +303,10 @@ Still not implemented or active:
 - Production deployment or VPS behavior.
 
 EN2 email event wiring remains paused until modules are stable.
+
+Platform-neutral delivery rule:
+
+- WordPress is one optional future connector only.
+- Article images are deliverable assets, not WordPress-only media records.
+- Deliverable packaging must remain reusable for WordPress, Next.js/custom React, headless CMS, Markdown/MDX, JSON packages, Google Docs, and PDF targets.
+- Connector adapters are future delivery layers, not core assumptions in the current data model.

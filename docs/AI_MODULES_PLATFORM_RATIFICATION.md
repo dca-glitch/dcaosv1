@@ -15,7 +15,14 @@ Completed AI Delivery foundation includes:
 - AI Delivery projects.
 - AI Delivery brief foundation.
 - Workflow runs.
+- Workflow execution tracking with deterministic local execution proof.
+- Research requests and manual source records.
+- Research summaries.
+- Monthly content plan approval.
+- Content draft workflow and authenticated review foundation.
+- Article image workflow as deliverable asset planning.
 - Deliverables.
+- Deliverable packaging.
 - Deliverable reviews.
 - Deliverable export/download admin actions.
 - Operator summary.
@@ -103,9 +110,19 @@ The system must help DCA:
 - Run AI-supported workflows under admin control.
 - Store and export final deliverables.
 - Produce reports.
-- Publish or prepare approved content.
+- Publish or prepare approved content through future connector adapters.
 - Track revenue across multiple site and commerce sources.
 - Reuse the same AI, storage, event, approval, and reporting foundations across all modules.
+
+For AI Delivery specifically, the shared delivery layer should stay platform-neutral so that the same approved content draft, article image, and deliverable package records can later target:
+
+- WordPress.
+- Next.js/custom React.
+- Headless CMS.
+- Markdown/MDX.
+- JSON packages.
+- Google Docs.
+- PDF.
 
 ## Client Perspective
 
