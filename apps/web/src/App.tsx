@@ -2129,7 +2129,7 @@ export function App() {
   async function handleRequestAiDeliveryContentPlanReview(projectId: string): Promise<AiDeliveryContentPlanSummary | null> {
     return runAiDeliveryContentPlanAction(
       `/ai-delivery-projects/${projectId}/content-plan/request-client-review`,
-      "Monthly content plan review requested."
+      "Monthly content plan marked ready for review."
     );
   }
 
@@ -2137,6 +2137,13 @@ export function App() {
     return runAiDeliveryContentPlanAction(
       `/ai-delivery-projects/${projectId}/content-plan/approve`,
       "Monthly content plan approved."
+    );
+  }
+
+  async function handleRequestAiDeliveryContentPlanChanges(projectId: string): Promise<AiDeliveryContentPlanSummary | null> {
+    return runAiDeliveryContentPlanAction(
+      `/ai-delivery-projects/${projectId}/content-plan/request-changes`,
+      "Monthly content plan moved back to changes requested."
     );
   }
 
@@ -3340,6 +3347,7 @@ export function App() {
           onSaveContentPlan={handleSaveAiDeliveryContentPlan}
           onRequestContentPlanReview={handleRequestAiDeliveryContentPlanReview}
           onApproveContentPlan={handleApproveAiDeliveryContentPlan}
+          onRequestContentPlanChanges={handleRequestAiDeliveryContentPlanChanges}
           onFetchContentDrafts={handleFetchAiDeliveryContentDrafts}
           onSaveContentDraft={handleSaveAiDeliveryContentDraft}
           onArchiveContentDraft={handleArchiveAiDeliveryContentDraft}

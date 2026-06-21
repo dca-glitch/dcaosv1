@@ -82,6 +82,8 @@ type TaskStatus = "TODO" | "IN_PROGRESS" | "DONE";
 type TaskRecurringType = "NONE" | "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY";
 type InvoiceStatus = "DRAFT" | "ISSUED" | "PAID" | "VOIDED" | "UNCOLLECTIBLE";
 type AiDeliveryWorkflowRunStatus = "DRAFT" | "READY" | "IN_PROGRESS" | "REVIEW" | "COMPLETED" | "FAILED" | "ARCHIVED";
+type AiDeliveryContentPlanStatus = "DRAFT" | "CLIENT_REVIEW_REQUESTED" | "CLIENT_CHANGES_REQUESTED" | "CLIENT_APPROVED";
+type AiDeliveryContentPlanItemApprovalStatus = "DRAFT" | "CLIENT_CHANGES_REQUESTED" | "CLIENT_APPROVED";
 type AiDeliveryResearchRequestStatus = "DRAFT" | "READY" | "IN_REVIEW" | "COMPLETED" | "ARCHIVED";
 type AiDeliveryResearchSummaryStatus = "DRAFT" | "IN_REVIEW" | "FINALIZED" | "ARCHIVED";
 type AiDeliveryResearchSourceStatus = "PROPOSED" | "APPROVED" | "REJECTED" | "ARCHIVED";
@@ -1793,6 +1795,21 @@ const aiDeliveryContentPlanSelect = {
   }
 } as const;
 
+const AI_DELIVERY_CONTENT_PLAN_STATUSES = new Set(["DRAFT", "CLIENT_REVIEW_REQUESTED", "CLIENT_CHANGES_REQUESTED", "CLIENT_APPROVED"]);
+const AI_DELIVERY_CONTENT_PLAN_ITEM_APPROVAL_STATUSES = new Set(["DRAFT", "CLIENT_CHANGES_REQUESTED", "CLIENT_APPROVED"]);
+
+function normalizeAiDeliveryContentPlanStatus(value: string | null | undefined): AiDeliveryContentPlanStatus {
+  return value && AI_DELIVERY_CONTENT_PLAN_STATUSES.has(value) ? value as AiDeliveryContentPlanStatus : "DRAFT";
+}
+
+function normalizeAiDeliveryContentPlanItemApprovalStatus(
+  value: string | null | undefined
+): AiDeliveryContentPlanItemApprovalStatus | null {
+  return value && AI_DELIVERY_CONTENT_PLAN_ITEM_APPROVAL_STATUSES.has(value)
+    ? (value as AiDeliveryContentPlanItemApprovalStatus)
+    : null;
+}
+
 function toAiDeliveryContentPlanSummary(plan: any) {
   return {
     id: plan.id,
@@ -2358,7 +2375,7 @@ export async function createAiDeliveryContentPlan(
             contentType: it.contentType ?? "article",
             notes: it.notes ?? null,
             sortOrder: it.sortOrder ?? 0,
-            approvalStatus: it.approvalStatus ? (it.approvalStatus as any) : null,
+            approvalStatus: normalizeAiDeliveryContentPlanItemApprovalStatus(it.approvalStatus),
             clientComment: it.clientComment ?? null,
             tenant: { connect: { id: tenantId } }
           }))
@@ -2366,6 +2383,16 @@ export async function createAiDeliveryContentPlan(
       },
       select: aiDeliveryContentPlanSelect
     });
+
+    await recordAiDeliverySystemEvent(
+      {
+        tenantId,
+        aiDeliveryProjectId,
+        eventName: "AI_DELIVERY_CONTENT_PLAN_CREATED",
+        relatedEntityId: created.id
+      },
+      tx
+    );
 
     return { contentPlan: created, created: true };
   });
@@ -2383,37 +2410,51 @@ export async function updateAiDeliveryContentPlan(
     const existing = await tx.aiDeliveryContentPlan.findFirst({ where: { tenantId, aiDeliveryProjectId } });
     if (!existing) return null;
 
+    const nextStatus = input.status === undefined || input.status === null
+      ? existing.status
+      : normalizeAiDeliveryContentPlanStatus(input.status);
     const updated = await tx.aiDeliveryContentPlan.update({
       where: { id: existing.id },
       data: {
-        status: typeof input.status === "string" ? (input.status as any) : existing.status,
+        status: nextStatus,
         revisionCount: typeof input.revisionCount === "number" ? input.revisionCount : existing.revisionCount
       },
       select: { id: true }
     });
 
-    // replace items deterministically
-    await tx.aiDeliveryContentPlanItem.deleteMany({ where: { contentPlanId: updated.id, tenantId } });
+    if (Array.isArray(input.items)) {
+      // replace items deterministically when the caller explicitly sends item edits
+      await tx.aiDeliveryContentPlanItem.deleteMany({ where: { contentPlanId: updated.id, tenantId } });
 
-    if (Array.isArray(input.items) && input.items.length > 0) {
-      for (const it of input.items) {
-        await tx.aiDeliveryContentPlanItem.create({
-          data: {
-            tenantId,
-            contentPlanId: updated.id,
-            title: it.title,
-            targetKeyword: it.targetKeyword ?? null,
-            contentType: it.contentType ?? "article",
-            notes: it.notes ?? null,
-            sortOrder: it.sortOrder ?? 0,
-            approvalStatus: it.approvalStatus ? (it.approvalStatus as any) : null,
-            clientComment: it.clientComment ?? null
-          }
-        });
+      if (input.items.length > 0) {
+        for (const it of input.items) {
+          await tx.aiDeliveryContentPlanItem.create({
+            data: {
+              tenantId,
+              contentPlanId: updated.id,
+              title: it.title,
+              targetKeyword: it.targetKeyword ?? null,
+              contentType: it.contentType ?? "article",
+              notes: it.notes ?? null,
+              sortOrder: it.sortOrder ?? 0,
+              approvalStatus: normalizeAiDeliveryContentPlanItemApprovalStatus(it.approvalStatus),
+              clientComment: it.clientComment ?? null
+            }
+          });
+        }
       }
     }
 
     const found = await tx.aiDeliveryContentPlan.findFirst({ where: { id: updated.id }, select: aiDeliveryContentPlanSelect });
+    await recordAiDeliverySystemEvent(
+      {
+        tenantId,
+        aiDeliveryProjectId,
+        eventName: "AI_DELIVERY_CONTENT_PLAN_UPDATED",
+        relatedEntityId: updated.id
+      },
+      tx
+    );
     return { contentPlan: found };
   });
 }
@@ -2435,6 +2476,16 @@ export async function requestAiDeliveryContentPlanClientReview(
       select: aiDeliveryContentPlanSelect
     });
 
+    await recordAiDeliverySystemEvent(
+      {
+        tenantId,
+        aiDeliveryProjectId,
+        eventName: "AI_DELIVERY_CONTENT_PLAN_REVIEW_REQUESTED",
+        relatedEntityId: updated.id
+      },
+      tx
+    );
+
     return { contentPlan: updated };
   });
 }
@@ -2455,6 +2506,51 @@ export async function approveAiDeliveryContentPlan(
       data: { status: "CLIENT_APPROVED", approvedAt: new Date() },
       select: aiDeliveryContentPlanSelect
     });
+
+    await recordAiDeliverySystemEvent(
+      {
+        tenantId,
+        aiDeliveryProjectId,
+        eventName: "AI_DELIVERY_CONTENT_PLAN_APPROVED",
+        relatedEntityId: updated.id
+      },
+      tx
+    );
+
+    return { contentPlan: updated };
+  });
+}
+
+export async function requestAiDeliveryContentPlanChanges(
+  authSession: AuthResolvedSessionContext,
+  aiDeliveryProjectId: string
+): Promise<{ contentPlan: any | null } | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) return null;
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    const existing = await tx.aiDeliveryContentPlan.findFirst({ where: { tenantId, aiDeliveryProjectId } });
+    if (!existing) return null;
+
+    const updated = await tx.aiDeliveryContentPlan.update({
+      where: { id: existing.id },
+      data: {
+        status: "CLIENT_CHANGES_REQUESTED",
+        revisionCount: { increment: 1 },
+        approvedAt: null
+      },
+      select: aiDeliveryContentPlanSelect
+    });
+
+    await recordAiDeliverySystemEvent(
+      {
+        tenantId,
+        aiDeliveryProjectId,
+        eventName: "AI_DELIVERY_CONTENT_PLAN_CHANGES_REQUESTED",
+        relatedEntityId: updated.id
+      },
+      tx
+    );
 
     return { contentPlan: updated };
   });

@@ -70,6 +70,8 @@ export type AiDeliveryContentPlanFormValues = {
     contentType?: string | null;
     notes?: string | null;
     sortOrder: number;
+    approvalStatus?: string | null;
+    clientComment?: string | null;
   }>;
 };
 
@@ -292,6 +294,8 @@ type ContentPlanItemDraft = {
   targetKeyword: string;
   contentType: string;
   notes: string;
+  approvalStatus: string;
+  clientComment: string;
 };
 
 export type AiDeliveryProjectsProps = {
@@ -334,6 +338,7 @@ export type AiDeliveryProjectsProps = {
   onSaveContentPlan?: (projectId: string, values: AiDeliveryContentPlanFormValues) => Promise<AiDeliveryContentPlanSummary | null>;
   onRequestContentPlanReview?: (projectId: string) => Promise<AiDeliveryContentPlanSummary | null>;
   onApproveContentPlan?: (projectId: string) => Promise<AiDeliveryContentPlanSummary | null>;
+  onRequestContentPlanChanges?: (projectId: string) => Promise<AiDeliveryContentPlanSummary | null>;
   onFetchContentDrafts?: (projectId: string) => Promise<AiDeliveryContentDraftSummary[]>;
   onSaveContentDraft?: (projectId: string, draftId: string | null, values: AiDeliveryContentDraftFormValues) => Promise<AiDeliveryContentDraftSummary | null>;
   onArchiveContentDraft?: (projectId: string, draftId: string) => Promise<AiDeliveryContentDraftSummary | null>;
@@ -359,6 +364,7 @@ export type AiDeliveryProjectsProps = {
 };
 
 const workflowRunStatuses = ["DRAFT", "READY", "IN_PROGRESS", "REVIEW", "COMPLETED", "FAILED", "ARCHIVED"] as const;
+const contentPlanItemApprovalStatuses = ["DRAFT", "CLIENT_APPROVED", "CLIENT_CHANGES_REQUESTED"] as const;
 const researchRequestStatuses = ["DRAFT", "READY", "IN_REVIEW", "COMPLETED", "ARCHIVED"] as const;
 const researchSummaryStatuses = ["DRAFT", "IN_REVIEW", "FINALIZED", "ARCHIVED"] as const;
 const researchSourceStatuses = ["PROPOSED", "APPROVED", "REJECTED", "ARCHIVED"] as const;
@@ -426,7 +432,9 @@ const itemDraftFromPlanItem = (item: AiDeliveryContentPlanItemSummary, index: nu
   title: item.title,
   targetKeyword: item.targetKeyword ?? "",
   contentType: item.contentType ?? "article",
-  notes: item.notes ?? ""
+  notes: item.notes ?? "",
+  approvalStatus: item.approvalStatus ?? "DRAFT",
+  clientComment: item.clientComment ?? ""
 });
 
 const emptyContentPlanItem = (): ContentPlanItemDraft => ({
@@ -434,7 +442,9 @@ const emptyContentPlanItem = (): ContentPlanItemDraft => ({
   title: "",
   targetKeyword: "",
   contentType: "article",
-  notes: ""
+  notes: "",
+  approvalStatus: "DRAFT",
+  clientComment: ""
 });
 
 const emptyContentDraft = (): AiDeliveryContentDraftFormValues => ({
@@ -538,11 +548,17 @@ function formatPreview(value: string | null | undefined): string {
 
 function formatContentPlanReviewStatus(plan: AiDeliveryContentPlanSummary | null): string {
   if (!plan) return "Pending / not requested";
-  if (plan.status === "CLIENT_REVIEW_REQUESTED") return "Client review requested";
-  if (plan.status === "CLIENT_APPROVED") return "Client approved";
-  if (plan.status === "CLIENT_CHANGES_REQUESTED") return "Client changes requested";
-  if (!plan.reviewRequestedAt) return "Pending / not requested";
-  return plan.status;
+  if (plan.status === "CLIENT_REVIEW_REQUESTED") return "Ready for review";
+  if (plan.status === "CLIENT_APPROVED") return "Approved";
+  if (plan.status === "CLIENT_CHANGES_REQUESTED") return "Changes requested";
+  return "Draft / preparing";
+}
+
+function formatContentPlanItemApprovalStatus(value?: string | null): string {
+  if (!value || value === "DRAFT") return "Planned";
+  if (value === "CLIENT_APPROVED") return "Approved";
+  if (value === "CLIENT_CHANGES_REQUESTED") return "Changes requested";
+  return formatEnumLabel(value);
 }
 
 function formatEnumLabel(value?: string | null): string {
@@ -613,6 +629,7 @@ export function AiDeliveryPage({
   onSaveContentPlan,
   onRequestContentPlanReview,
   onApproveContentPlan,
+  onRequestContentPlanChanges,
   onFetchContentDrafts,
   onSaveContentDraft,
   onArchiveContentDraft,
@@ -854,7 +871,9 @@ export function AiDeliveryPage({
           targetKeyword: item.targetKeyword.trim() || null,
           contentType: item.contentType.trim() || "article",
           notes: item.notes.trim() || null,
-          sortOrder: index + 1
+          sortOrder: index + 1,
+          approvalStatus: item.approvalStatus || "DRAFT",
+          clientComment: item.clientComment.trim() || null
         }))
       });
       if (plan) {
@@ -1414,7 +1433,7 @@ export function AiDeliveryPage({
     : "Open a project's Research / Sources panel to load manual research records.";
   const seoTopicsHelper = openContentPlanId
     ? `${contentPlanItems.length} topic/research planning record(s) loaded for the open project.`
-    : "Open a project's SEO research to load topic/research planning records.";
+    : "Open a project's AI SEO / Content Plan area to load topic and approval planning records.";
   const contentProductionHelper = openContentDraftsId || openArticleImagesId
     ? `Draft planning records loaded: ${openContentDraftsId ? contentDrafts.length : "-"} - Image planning records loaded: ${openArticleImagesId ? articleImages.length : "-"}`
     : "Open Content production or Article images to load article/image planning records.";
@@ -1546,7 +1565,7 @@ export function AiDeliveryPage({
                         Research / Sources
                       </button>
                       <button className="secondary-action" onClick={() => void openContentPlan(p.id)} type="button">
-                        SEO research
+                        AI SEO / Content Plan
                       </button>
                       <button className="secondary-action" onClick={() => void openWorkflowRuns(p.id)} type="button">
                         Workflow runs
@@ -1915,7 +1934,7 @@ export function AiDeliveryPage({
         </Modal>
       ) : null}
       {openContentPlanId ? (
-        <Modal onClose={closeContentPlan} title="AI SEO Foundation">
+        <Modal onClose={closeContentPlan} title="AI SEO / Content Plan">
           {contentPlanLoading ? (
             <LoadingState label="Loading content plan" />
           ) : openContentPlanProject ? (
@@ -1923,14 +1942,15 @@ export function AiDeliveryPage({
               <div>
                 <section className="field-panel">
                   <h3>SEO topic/research planning</h3>
-                  <p className="muted-text">Admin/operator-side foundation only. Use these monthly content plan items to capture target topics, keywords, research notes, and content type intent. Visible only to admin team. Not published or sent to client from this screen. No AI generation, crawling, scraping, GA/GSC integration, publishing, or external service calls run from this screen.</p>
+                  <p className="muted-text">This is an approval workflow foundation. Use these monthly content plan items to capture target topics, keywords, research notes, and content type intent. Visible only to admin team from this screen. No AI generation, crawling, publishing, or external services are performed.</p>
                 </section>
                 <div className="modal-footer">
                   <button className="secondary-action" disabled={contentPlanSaving} onClick={closeContentPlan} type="button">Close</button>
-                  <button className="secondary-action" disabled={contentPlanSaving} onClick={() => void handleContentPlanAction(openContentPlanProject.id, onRequestContentPlanReview)} type="button">Request client review</button>
+                  <button className="secondary-action" disabled={contentPlanSaving} onClick={() => void handleContentPlanAction(openContentPlanProject.id, onRequestContentPlanReview)} type="button">Mark ready for review</button>
+                  <button className="secondary-action" disabled={contentPlanSaving} onClick={() => void handleContentPlanAction(openContentPlanProject.id, onRequestContentPlanChanges)} type="button">Request changes</button>
                   <button className="secondary-action" disabled={contentPlanSaving} onClick={() => void handleContentPlanAction(openContentPlanProject.id, onApproveContentPlan)} type="button">Approve plan</button>
                   <button className="primary-action" disabled={contentPlanSaving || contentPlanItems.some((item) => !item.title.trim())} onClick={() => void handleSaveContentPlan(openContentPlanProject.id)} type="button">
-                    {contentPlanSaving ? "Saving" : "Save SEO plan"}
+                    {contentPlanSaving ? "Saving" : "Save draft"}
                   </button>
                 </div>
                 <dl className="brief-grid">
@@ -1953,10 +1973,11 @@ export function AiDeliveryPage({
                 </dl>
 
                 <section className="field-panel">
-                  <h3>Client review visibility</h3>
+                  <h3>Approval workflow status</h3>
+                  <p className="muted-text">Admin can prepare the monthly content plan, mark it ready for review, approve it internally, or send it back for revisions. Existing client review routes remain separate and unchanged.</p>
                   <dl className="brief-grid">
                     <div>
-                      <dt>Review state</dt>
+                      <dt>Approval state</dt>
                       <dd>{formatContentPlanReviewStatus(contentPlanDetail)}</dd>
                     </div>
                     <div>
@@ -1990,7 +2011,7 @@ export function AiDeliveryPage({
                           required
                           value={item.title}
                         />
-                        <span className="muted-text">Used by admin to prepare monthly SEO/content work.</span>
+                        <span className="muted-text">Used by admin to prepare monthly platform-neutral SEO/content work.</span>
                       </label>
                       <label>
                         Target keyword / theme - Optional
@@ -2023,20 +2044,45 @@ export function AiDeliveryPage({
                         />
                         <span className="muted-text">Internal planning label for the monthly content plan.</span>
                       </label>
+                      <label>
+                        Item approval status - Required
+                        <select
+                          value={item.approvalStatus}
+                          onChange={(event) => setContentPlanItems((current) => current.map((draftItem) => draftItem.localId === item.localId ? { ...draftItem, approvalStatus: event.target.value } : draftItem))}
+                        >
+                          {contentPlanItemApprovalStatuses.map((status) => (
+                            <option key={status} value={status}>{formatContentPlanItemApprovalStatus(status)}</option>
+                          ))}
+                        </select>
+                        <span className="muted-text">Track whether this item is still planned, approved, or sent back for revision.</span>
+                      </label>
                       <div>
                         <span>Sort order</span>
                         <strong>{index + 1}</strong>
                         <span className="muted-text">Determined by the list order.</span>
                       </div>
                       <div>
-                        <span>Client item status</span>
-                        <strong>{contentPlanDetail.items[index]?.approvalStatus ?? "No client status"}</strong>
-                        <span className="muted-text">Existing review state for this record.</span>
+                        <span>Saved item status</span>
+                        <strong>{formatContentPlanItemApprovalStatus(contentPlanDetail.items[index]?.approvalStatus)}</strong>
+                        <span className="muted-text">Latest persisted approval state for this record.</span>
                       </div>
                       <div className="field-span-2">
-                        <span>Client comment</span>
-                        <strong>{contentPlanDetail.items[index]?.clientComment ?? "No client comment"}</strong>
-                        <span className="muted-text">Existing review feedback for this item.</span>
+                        <label>
+                          Approval / revision note - Optional
+                          <textarea
+                            maxLength={4000}
+                            placeholder="Why this item is approved, still planned, or needs revision before review"
+                            onChange={(event) => setContentPlanItems((current) => current.map((draftItem) => draftItem.localId === item.localId ? { ...draftItem, clientComment: event.target.value } : draftItem))}
+                            rows={3}
+                            value={item.clientComment}
+                          />
+                          <span className="muted-text">Use for internal approval context and any revision note that may later support review handling.</span>
+                        </label>
+                      </div>
+                      <div className="field-span-2">
+                        <span>Saved approval / revision note</span>
+                        <strong>{contentPlanDetail.items[index]?.clientComment ?? "No saved approval note"}</strong>
+                        <span className="muted-text">Latest persisted approval or revision note for this item.</span>
                       </div>
                       <div className="field-span-2">
                         <button
@@ -2062,10 +2108,11 @@ export function AiDeliveryPage({
 
                 <div className="modal-footer">
                   <button className="secondary-action" disabled={contentPlanSaving} onClick={closeContentPlan} type="button">Close</button>
-                  <button className="secondary-action" disabled={contentPlanSaving} onClick={() => void handleContentPlanAction(openContentPlanProject.id, onRequestContentPlanReview)} type="button">Request client review</button>
+                  <button className="secondary-action" disabled={contentPlanSaving} onClick={() => void handleContentPlanAction(openContentPlanProject.id, onRequestContentPlanReview)} type="button">Mark ready for review</button>
+                  <button className="secondary-action" disabled={contentPlanSaving} onClick={() => void handleContentPlanAction(openContentPlanProject.id, onRequestContentPlanChanges)} type="button">Request changes</button>
                   <button className="secondary-action" disabled={contentPlanSaving} onClick={() => void handleContentPlanAction(openContentPlanProject.id, onApproveContentPlan)} type="button">Approve plan</button>
                   <button className="primary-action" disabled={contentPlanSaving || contentPlanItems.some((item) => !item.title.trim())} onClick={() => void handleSaveContentPlan(openContentPlanProject.id)} type="button">
-                    {contentPlanSaving ? "Saving" : "Save SEO plan"}
+                    {contentPlanSaving ? "Saving" : "Save draft"}
                   </button>
                 </div>
               </div>
@@ -2078,7 +2125,7 @@ export function AiDeliveryPage({
                   </button>
                 </div>
                 <div className="state-panel">
-                  No monthly content plan exists for {openContentPlanProject.name}. Create one to start adding SEO topic/research planning records. This creates admin-side planning placeholders only; it does not generate, crawl, publish, or call external services.
+                  No monthly content plan exists for {openContentPlanProject.name}. Create one to start adding monthly topic and approval-planning records. This creates admin-side placeholders only; it does not generate, crawl, publish, or call external services.
                 </div>
                 <div className="modal-footer">
                   <button className="secondary-action" disabled={contentPlanSaving} onClick={closeContentPlan} type="button">Close</button>

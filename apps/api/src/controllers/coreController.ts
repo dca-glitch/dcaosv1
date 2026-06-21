@@ -123,6 +123,7 @@ import {
   updateAiDeliveryContentPlan,
   requestAiDeliveryContentPlanClientReview,
   approveAiDeliveryContentPlan,
+  requestAiDeliveryContentPlanChanges,
   getClientAiDeliveryContentPlanReview,
   approveClientAiDeliveryContentPlanReview,
   requestClientAiDeliveryContentPlanRevision,
@@ -168,6 +169,8 @@ const NAME_MAX_LENGTH = 255;
 const CLIENT_COUNTRIES = new Set(["Indonesia", "Poland", "United States", "United Kingdom", "Singapore", "Australia"]);
 const PROJECT_STATUSES = new Set(["Active", "Paused", "Completed", "Archived"]);
 const AI_DELIVERY_WORKFLOW_RUN_STATUSES = new Set(["DRAFT", "READY", "IN_PROGRESS", "REVIEW", "COMPLETED", "FAILED", "ARCHIVED"]);
+const AI_DELIVERY_CONTENT_PLAN_STATUSES = new Set(["DRAFT", "CLIENT_REVIEW_REQUESTED", "CLIENT_CHANGES_REQUESTED", "CLIENT_APPROVED"]);
+const AI_DELIVERY_CONTENT_PLAN_ITEM_APPROVAL_STATUSES = new Set(["DRAFT", "CLIENT_CHANGES_REQUESTED", "CLIENT_APPROVED"]);
 const AI_DELIVERY_RESEARCH_REQUEST_STATUSES = new Set(["DRAFT", "READY", "IN_REVIEW", "COMPLETED", "ARCHIVED"]);
 const AI_DELIVERY_RESEARCH_SUMMARY_STATUSES = new Set(["DRAFT", "IN_REVIEW", "FINALIZED", "ARCHIVED"]);
 const AI_DELIVERY_RESEARCH_SOURCE_STATUSES = new Set(["PROPOSED", "APPROVED", "REJECTED", "ARCHIVED"]);
@@ -1896,6 +1899,44 @@ export const saveAiDeliveryBriefHandler: RequestHandler = async (req, res) => {
   }
 };
 
+function getAiDeliveryContentPlanItemsInput(body: unknown) {
+  const rawItems = Array.isArray((body as { items?: unknown[] } | null | undefined)?.items)
+    ? ((body as { items?: unknown[] }).items as unknown[])
+    : undefined;
+  if (!rawItems) return undefined;
+
+  const items = [];
+  for (const rawItem of rawItems) {
+    const item = (rawItem ?? {}) as Record<string, unknown>;
+    const title = getRequiredString(item.title, SHORT_TEXT_FIELD_MAX_LENGTH);
+    if (!title) {
+      continue;
+    }
+
+    const approvalStatus =
+      item.approvalStatus === undefined
+        ? null
+        : typeof item.approvalStatus === "string"
+          ? item.approvalStatus.trim().toUpperCase()
+          : null;
+    if (approvalStatus && !AI_DELIVERY_CONTENT_PLAN_ITEM_APPROVAL_STATUSES.has(approvalStatus)) {
+      return null;
+    }
+
+    items.push({
+      title,
+      targetKeyword: getOptionalString(item.targetKeyword),
+      contentType: getOptionalString(item.contentType) ?? "article",
+      notes: getOptionalString(item.notes),
+      sortOrder: Number.isInteger(item.sortOrder) ? Number(item.sortOrder) : 0,
+      approvalStatus,
+      clientComment: getOptionalString(item.clientComment)
+    });
+  }
+
+  return items;
+}
+
 // --- Content plan handlers ---
 export const getAiDeliveryContentPlanHandler: RequestHandler = async (req, res) => {
   const authSession = getAuthSession(res.locals);
@@ -1920,18 +1961,8 @@ export const createAiDeliveryContentPlanHandler: RequestHandler = async (req, re
   const aiDeliveryProjectId = typeof req.params.id === "string" ? req.params.id.trim() : "";
   if (!aiDeliveryProjectId) return void res.status(400).json(aiDeliveryProjectInvalidFailure());
 
-  const rawItems = Array.isArray(req.body?.items) ? req.body.items : undefined;
-  const items = rawItems
-    ? rawItems.map((it: any) => ({
-        title: getRequiredString(it.title, SHORT_TEXT_FIELD_MAX_LENGTH) ?? "",
-        targetKeyword: getOptionalString(it.targetKeyword),
-        contentType: getOptionalString(it.contentType) ?? "article",
-        notes: getOptionalString(it.notes),
-        sortOrder: Number.isInteger(it.sortOrder) ? it.sortOrder : 0,
-        approvalStatus: typeof it.approvalStatus === "string" ? it.approvalStatus : null,
-        clientComment: getOptionalString(it.clientComment)
-      })).filter((i: any) => i.title && i.title.length > 0)
-    : undefined;
+  const items = getAiDeliveryContentPlanItemsInput(req.body);
+  if (items === null) return void res.status(400).json(aiDeliveryProjectInvalidFailure());
 
   try {
     const response = await createAiDeliveryContentPlan(authSession, aiDeliveryProjectId, { items });
@@ -1953,20 +1984,18 @@ export const updateAiDeliveryContentPlanHandler: RequestHandler = async (req, re
   const aiDeliveryProjectId = typeof req.params.id === "string" ? req.params.id.trim() : "";
   if (!aiDeliveryProjectId) return void res.status(400).json(aiDeliveryProjectInvalidFailure());
 
-  const status = typeof req.body?.status === "string" ? req.body.status : undefined;
+  const status =
+    req.body?.status === undefined
+      ? undefined
+      : typeof req.body.status === "string"
+        ? req.body.status.trim().toUpperCase()
+        : null;
+  if (status === null || (status && !AI_DELIVERY_CONTENT_PLAN_STATUSES.has(status))) {
+    return void res.status(400).json(aiDeliveryProjectInvalidFailure());
+  }
   const revisionCount = Number.isInteger(req.body?.revisionCount) ? req.body.revisionCount : undefined;
-  const rawItems = Array.isArray(req.body?.items) ? req.body.items : undefined;
-  const items = rawItems
-    ? rawItems.map((it: any) => ({
-        title: getRequiredString(it.title, SHORT_TEXT_FIELD_MAX_LENGTH) ?? "",
-        targetKeyword: getOptionalString(it.targetKeyword),
-        contentType: getOptionalString(it.contentType) ?? "article",
-        notes: getOptionalString(it.notes),
-        sortOrder: Number.isInteger(it.sortOrder) ? it.sortOrder : 0,
-        approvalStatus: typeof it.approvalStatus === "string" ? it.approvalStatus : null,
-        clientComment: getOptionalString(it.clientComment)
-      })).filter((i: any) => i.title && i.title.length > 0)
-    : [];
+  const items = getAiDeliveryContentPlanItemsInput(req.body);
+  if (items === null) return void res.status(400).json(aiDeliveryProjectInvalidFailure());
 
   try {
     const response = await updateAiDeliveryContentPlan(authSession, aiDeliveryProjectId, { status, revisionCount, items });
@@ -2006,6 +2035,22 @@ export const approveAiDeliveryContentPlanHandler: RequestHandler = async (req, r
     res.json(success(response, { phase: "runtime", scope: "ai-delivery-projects" }));
   } catch {
     res.status(500).json(failure("AI_DELIVERY_CONTENT_PLAN_RUNTIME_ERROR", "Approving content plan could not be completed."));
+  }
+};
+
+export const requestAiDeliveryContentPlanChangesHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) return void res.status(401).json(unauthorizedFailure());
+
+  const aiDeliveryProjectId = typeof req.params.id === "string" ? req.params.id.trim() : "";
+  if (!aiDeliveryProjectId) return void res.status(400).json(aiDeliveryProjectInvalidFailure());
+
+  try {
+    const response = await requestAiDeliveryContentPlanChanges(authSession, aiDeliveryProjectId);
+    if (!response?.contentPlan) return void res.status(404).json(aiDeliveryProjectNotFoundFailure());
+    res.json(success(response, { phase: "runtime", scope: "ai-delivery-projects" }));
+  } catch {
+    res.status(500).json(failure("AI_DELIVERY_CONTENT_PLAN_RUNTIME_ERROR", "Requesting content plan changes could not be completed."));
   }
 };
 

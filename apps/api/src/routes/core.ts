@@ -80,6 +80,7 @@ import {
   updateAiDeliveryContentPlanHandler,
   requestAiDeliveryContentPlanClientReviewHandler,
   approveAiDeliveryContentPlanHandler,
+  requestAiDeliveryContentPlanChangesHandler,
   getClientAiDeliveryContentPlanReviewHandler,
   approveClientAiDeliveryContentPlanReviewHandler,
   requestClientAiDeliveryContentPlanRevisionHandler,
@@ -168,6 +169,7 @@ export function createCoreRouter() {
   router.put("/ai-delivery-projects/:id/content-plan", requireAuth, requireTenant, requireRole("owner", "admin"), updateAiDeliveryContentPlanHandler);
   router.post("/ai-delivery-projects/:id/content-plan/request-client-review", requireAuth, requireTenant, requireRole("owner", "admin"), requestAiDeliveryContentPlanClientReviewHandler);
   router.post("/ai-delivery-projects/:id/content-plan/approve", requireAuth, requireTenant, requireRole("owner", "admin"), approveAiDeliveryContentPlanHandler);
+  router.post("/ai-delivery-projects/:id/content-plan/request-changes", requireAuth, requireTenant, requireRole("owner", "admin"), requestAiDeliveryContentPlanChangesHandler);
   router.get("/ai-delivery-projects/:id/content-drafts", requireAuth, requireTenant, requireRole("owner", "admin"), listAiDeliveryContentDraftsHandler);
   router.post("/ai-delivery-projects/:id/content-drafts", requireAuth, requireTenant, requireRole("owner", "admin"), createAiDeliveryContentDraftHandler);
   router.put("/ai-delivery-projects/:id/content-drafts/:draftId", requireAuth, requireTenant, requireRole("owner", "admin"), updateAiDeliveryContentDraftHandler);

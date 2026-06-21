@@ -138,6 +138,96 @@ async function runAiDeliveryApiRegression(token) {
   }
   pass("AI Delivery project brief detail endpoint returned cleanly.");
 
+  const existingContentPlanResponse = await request(`/ai-delivery-projects/${project.id}/content-plan`, { token });
+  let contentPlan = null;
+  if (existingContentPlanResponse.status === 404) {
+    contentPlan = requireOkResponse(
+      "AI Delivery content plan create",
+      await request(`/ai-delivery-projects/${project.id}/content-plan`, {
+        method: "POST",
+        token,
+        body: { items: [] }
+      })
+    )?.contentPlan;
+    if (!contentPlan?.id || contentPlan.status !== "DRAFT") {
+      fail("AI Delivery content plan create did not return the expected draft plan.");
+    }
+    pass("AI Delivery content plan create returned the expected draft plan.");
+  } else {
+    contentPlan = requireOkResponse("AI Delivery content plan detail", existingContentPlanResponse)?.contentPlan;
+    if (!contentPlan?.id || !Array.isArray(contentPlan.items)) {
+      fail("AI Delivery content plan detail did not return a valid plan.");
+    }
+    pass("AI Delivery content plan detail endpoint returned cleanly.");
+  }
+
+  const updatedContentPlan = requireOkResponse(
+    "AI Delivery content plan update",
+    await request(`/ai-delivery-projects/${project.id}/content-plan`, {
+      method: "PUT",
+      token,
+      body: {
+        items: [
+          {
+            title: "Smoke monthly content topic",
+            targetKeyword: "monthly content approval foundation",
+            contentType: "article",
+            notes: "Admin-only planning record from local smoke.",
+            sortOrder: 1,
+            approvalStatus: "CLIENT_CHANGES_REQUESTED",
+            clientComment: "Needs revision before approval."
+          }
+        ]
+      }
+    })
+  )?.contentPlan;
+  if (
+    !updatedContentPlan?.id ||
+    !Array.isArray(updatedContentPlan.items) ||
+    updatedContentPlan.items.length !== 1 ||
+    updatedContentPlan.items[0]?.approvalStatus !== "CLIENT_CHANGES_REQUESTED" ||
+    updatedContentPlan.items[0]?.clientComment !== "Needs revision before approval."
+  ) {
+    fail("AI Delivery content plan update did not persist the expected item approval status and note.");
+  }
+  pass("AI Delivery content plan update persisted the expected item approval status and note.");
+
+  const reviewRequestedContentPlan = requireOkResponse(
+    "AI Delivery content plan mark ready for review",
+    await request(`/ai-delivery-projects/${project.id}/content-plan/request-client-review`, {
+      method: "POST",
+      token
+    })
+  )?.contentPlan;
+  if (!reviewRequestedContentPlan || reviewRequestedContentPlan.status !== "CLIENT_REVIEW_REQUESTED" || typeof reviewRequestedContentPlan.reviewRequestedAt !== "string") {
+    fail("AI Delivery content plan ready-for-review action did not persist the expected status.");
+  }
+  pass("AI Delivery content plan ready-for-review action persisted the expected status.");
+
+  const changesRequestedContentPlan = requireOkResponse(
+    "AI Delivery content plan request changes",
+    await request(`/ai-delivery-projects/${project.id}/content-plan/request-changes`, {
+      method: "POST",
+      token
+    })
+  )?.contentPlan;
+  if (!changesRequestedContentPlan || changesRequestedContentPlan.status !== "CLIENT_CHANGES_REQUESTED") {
+    fail("AI Delivery content plan request-changes action did not persist the expected status.");
+  }
+  pass("AI Delivery content plan request-changes action persisted the expected status.");
+
+  const approvedContentPlan = requireOkResponse(
+    "AI Delivery content plan approve",
+    await request(`/ai-delivery-projects/${project.id}/content-plan/approve`, {
+      method: "POST",
+      token
+    })
+  )?.contentPlan;
+  if (!approvedContentPlan || approvedContentPlan.status !== "CLIENT_APPROVED" || typeof approvedContentPlan.approvedAt !== "string") {
+    fail("AI Delivery content plan approve action did not persist the expected approved state.");
+  }
+  pass("AI Delivery content plan approve action persisted the expected approved state.");
+
   const workflowRunsData = requireOkResponse(
     "AI Delivery workflow runs list",
     await request(`/ai-delivery/projects/${project.id}/workflow-runs`, { token })
@@ -508,6 +598,18 @@ async function main() {
       await page.getByRole("heading", { name: "Existing workflow runs" }).waitFor({ state: "visible", timeout: 15000 });
       await page.getByText("Execution log").first().waitFor({ state: "visible", timeout: 15000 });
       pass("Workflow runs panel opened and rendered execution details.");
+      await page.getByRole("button", { name: "Close" }).first().click();
+    }
+
+    const contentPlanButtons = page.getByRole("button", { name: "AI SEO / Content Plan" });
+    const contentPlanButtonCount = await contentPlanButtons.count();
+    if (contentPlanButtonCount > 0) {
+      await contentPlanButtons.first().click();
+      await page.getByRole("dialog", { name: "AI SEO / Content Plan" }).waitFor({ state: "visible", timeout: 15000 });
+      await page.getByRole("heading", { name: "Approval workflow status" }).waitFor({ state: "visible", timeout: 15000 });
+      await page.getByText("This is an approval workflow foundation. Use these monthly content plan items to capture target topics, keywords, research notes, and content type intent. Visible only to admin team from this screen. No AI generation, crawling, publishing, or external services are performed.").first().waitFor({ state: "visible", timeout: 15000 });
+      await page.getByRole("button", { name: "Mark ready for review" }).first().waitFor({ state: "visible", timeout: 15000 });
+      pass("AI SEO / Content Plan panel opened and rendered approval workflow helper text.");
       await page.getByRole("button", { name: "Close" }).first().click();
     }
 
