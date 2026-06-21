@@ -14,13 +14,14 @@ Current AI Delivery admin workflow foundation order:
 
 1. Project + brief.
 2. Workflow runs.
-3. Research requests, manual sources, and research summaries.
-4. Content plan approval.
-5. Content drafts and review foundation.
-6. Article image workflow.
-7. Deliverable packaging and reviews.
-8. Operator summary and project-card workflow navigation.
-9. Focused AI Delivery smoke coverage.
+3. Research / Sources.
+4. AI SEO / Content Plan.
+5. AI Content Production.
+6. Image Production Planning.
+7. Deliverables.
+8. Deliverable reviews.
+9. Operator summary and project-card workflow navigation.
+10. Focused AI Delivery smoke coverage.
 
 Readiness framing:
 

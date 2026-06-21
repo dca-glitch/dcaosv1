@@ -12,13 +12,14 @@ Explicitly not active: live AI calls, crawling, real publishing connectors, Word
 
 1. Project + brief
 2. Workflow runs
-3. Research requests / sources / summaries
-4. Content plan approval
-5. Content drafts / review foundation
-6. Article image workflow
-7. Deliverable packaging / reviews
-8. Operator summary / project-card workflow navigation
-9. Focused smoke coverage
+3. Research / Sources
+4. AI SEO / Content Plan
+5. AI Content Production
+6. Image Production Planning
+7. Deliverables
+8. Deliverable reviews
+9. Operator summary / project-card workflow navigation
+10. Focused smoke coverage
 
 ## Locally proven on the current branch
 
@@ -150,6 +151,25 @@ Monthly content plan API (backend foundation):
   - Moves status to CLIENT_APPROVED and sets approvedAt.
 
 Notes: Tenant-owned and admin/owner-only endpoints. This is backend-only foundation; no client-facing routes UI in this block.
+
+## Research requests foundation
+
+Research requests are project-scoped manual admin records used to track what research work should be reviewed, gathered, or synthesized before source and summary follow-up. They do not trigger live AI calls, crawling, or external fetching.
+
+- `GET /api/v1/ai-delivery/projects/:projectId/research-requests`
+  - Lists project-scoped research requests.
+- `POST /api/v1/ai-delivery/projects/:projectId/research-requests`
+  - Body: `{ workflowRunId?, title, description?, requestType?, status? }`
+- `PUT /api/v1/ai-delivery/projects/:projectId/research-requests/:researchRequestId`
+  - Updates the linked workflow run, title, description, request type, and status.
+
+Allowed runtime statuses: `DRAFT`, `READY`, `IN_REVIEW`, `COMPLETED`, `ARCHIVED`.
+
+Notes:
+
+- Requests are tenant-owned and may optionally link to a workflow run from the same AI Delivery project.
+- Guarded link validation rejects workflow runs from another project or tenant.
+- Records remain internal planning inputs for admin/operator use only.
 
 ## Research sources foundation
 
@@ -376,8 +396,9 @@ This is a local backend/data/admin foundation only. It intentionally does not ad
 
 Admin UX notes:
 
-- The AI Delivery admin UI is intentionally manual and admin-operated. Project cards now include a compact workflow summary (Brief, Content plan, Content drafts, Article images, Deliverables) to help operators quickly review progress without triggering additional background loads.
-- Action buttons are ordered to follow the admin flow: Brief -> Content plan -> Content drafts -> Article images -> Deliverables -> Edit -> Archive.
+- The AI Delivery admin UI is intentionally manual and admin-operated. Project cards include operator summary context plus grouped workflow navigation for Brief, Research / Sources, AI SEO / Content Plan, Workflow runs, AI Content Production, Image Production Planning, and Deliverables.
+- Deliverable reviews are opened from the Deliverables modal for the selected package record rather than from the project card itself.
+- Project-card actions stay grouped as Planning workflow, Review / packaging, and Project actions so operators can move through the current admin surface without implying connector-specific delivery behavior.
 - These are UI-only polish notes; no backend or export behavior is implied.
 
 ## Workflow run admin tracking foundation

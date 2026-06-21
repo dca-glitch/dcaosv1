@@ -13,6 +13,17 @@ DCA OS Lite — AI Delivery Projects MVP.
 
 AI Delivery is currently admin/operator-side. Completed local foundations include project/brief records, workflow runs with controlled execution, research requests/sources, research summaries, monthly content plan approval, content draft workflow, article image workflow, deliverable packaging, deliverable review data/admin API/admin UI, operator summary/project-card workflow navigation, focused AI Delivery smoke coverage, and smoke fixture isolation. No live AI calls, crawling, publishing connectors, client handoff portal delivery, or production deployment has been added.
 
+Current operator-facing admin surface order:
+
+1. Project + brief
+2. Workflow runs
+3. Research / Sources
+4. AI SEO / Content Plan
+5. AI Content Production
+6. Image Production Planning
+7. Deliverables
+8. Deliverable reviews
+
 Readiness framing:
 
 - Admin/operator foundation: mostly ready.
