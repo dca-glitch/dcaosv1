@@ -96,6 +96,9 @@ import {
   requestAiDeliveryArticleImageChanges,
   approveAiDeliveryArticleImage,
   markAiDeliveryArticleImageFinalReady,
+  markAiDeliveryDeliverableReady,
+  requestAiDeliveryDeliverableRevision,
+  acceptAiDeliveryDeliverable,
   updateAiDeliveryProject,
   updateAiDeliveryResearchRequest,
   updateAiDeliveryResearchSummary,
@@ -137,6 +140,7 @@ import {
   createAiDeliveryDeliverable,
   updateAiDeliveryDeliverable,
   archiveAiDeliveryDeliverable,
+  restoreAiDeliveryDeliverable,
   listAiDeliveryDeliverableReviews,
   createAiDeliveryDeliverableReview,
   updateAiDeliveryDeliverableReview
@@ -182,6 +186,8 @@ const AI_DELIVERY_RESEARCH_SOURCE_STATUSES = new Set(["PROPOSED", "APPROVED", "R
 const AI_DELIVERY_RESEARCH_SOURCE_TYPES = new Set(["WEBSITE", "DOCUMENT", "OTHER"]);
 const AI_DELIVERY_CONTENT_DRAFT_STATUSES = new Set(["DRAFT", "READY_FOR_REVIEW", "CHANGES_REQUESTED", "ARCHIVED"]);
 const AI_DELIVERY_ARTICLE_IMAGE_STATUSES = new Set(["DRAFT", "READY_FOR_GENERATION", "PREVIEW_READY", "APPROVED", "FINAL_READY", "CHANGES_REQUESTED", "ARCHIVED"]);
+const AI_DELIVERY_DELIVERABLE_TYPES = new Set(["CONTENT_PACKAGE", "ARTICLE_DRAFT", "ARTICLE_IMAGE", "CLIENT_HANDOFF", "OTHER"]);
+const AI_DELIVERY_DELIVERABLE_STATUSES = new Set(["DRAFT", "READY", "DELIVERED", "REVISION_REQUESTED", "ACCEPTED", "ARCHIVED"]);
 const AI_DELIVERY_DELIVERABLE_REVIEW_STATUSES = new Set(["NOT_STARTED", "ADMIN_REVIEW", "CHANGES_REQUESTED", "APPROVED", "ARCHIVED"]);
 
 function getAuthSession(resLocals: unknown) {
@@ -833,6 +839,28 @@ function getAiDeliveryDeliverableReviewInput(body: unknown): AiDeliveryDeliverab
     deliverableId: getOptionalString(value.deliverableId, SHORT_TEXT_FIELD_MAX_LENGTH),
     aiDeliveryProjectId: getOptionalString(value.aiDeliveryProjectId, SHORT_TEXT_FIELD_MAX_LENGTH),
     workflowRunId: getOptionalString(value.workflowRunId, SHORT_TEXT_FIELD_MAX_LENGTH)
+  };
+}
+
+function getAiDeliveryDeliverableInput(body: unknown): AiDeliveryDeliverableInputRequest | null {
+  const value = (body ?? {}) as Record<string, unknown>;
+  const title = getRequiredString(value.title, SHORT_TEXT_FIELD_MAX_LENGTH);
+  const deliveryType = typeof value.deliveryType === "string" ? value.deliveryType.trim().toUpperCase() : "CONTENT_PACKAGE";
+  const status = typeof value.status === "string" ? value.status.trim().toUpperCase() : "DRAFT";
+  if (!title || !AI_DELIVERY_DELIVERABLE_TYPES.has(deliveryType) || !AI_DELIVERY_DELIVERABLE_STATUSES.has(status)) {
+    return null;
+  }
+
+  return {
+    contentDraftId: getOptionalString(value.contentDraftId, SHORT_TEXT_FIELD_MAX_LENGTH),
+    articleImageId: getOptionalString(value.articleImageId, SHORT_TEXT_FIELD_MAX_LENGTH),
+    title,
+    description: getOptionalString(value.description, TEXT_FIELD_MAX_LENGTH),
+    deliveryType,
+    status,
+    exportUrl: getOptionalString(value.exportUrl, LOGO_URL_MAX_LENGTH),
+    storageKey: getOptionalString(value.storageKey, 1024),
+    notes: getOptionalString(value.notes, TEXT_FIELD_MAX_LENGTH)
   };
 }
 
@@ -2312,7 +2340,7 @@ export const listAiDeliveryDeliverablesHandler: RequestHandler = async (req, res
 export const createAiDeliveryDeliverableHandler: RequestHandler = async (req, res) => {
   const authSession = getAuthSession(res.locals);
   const aiDeliveryProjectId = typeof req.params.id === "string" ? req.params.id.trim() : "";
-  const input = req.body as AiDeliveryDeliverableInputRequest | undefined;
+  const input = getAiDeliveryDeliverableInput(req.body);
   if (!authSession) return void res.status(401).json(unauthorizedFailure());
   if (!aiDeliveryProjectId || !input) return void res.status(400).json(aiDeliveryProjectInvalidFailure());
 
@@ -2329,7 +2357,7 @@ export const updateAiDeliveryDeliverableHandler: RequestHandler = async (req, re
   const authSession = getAuthSession(res.locals);
   const aiDeliveryProjectId = typeof req.params.id === "string" ? req.params.id.trim() : "";
   const deliverableId = typeof req.params.deliverableId === "string" ? req.params.deliverableId.trim() : "";
-  const input = req.body as AiDeliveryDeliverableInputRequest | undefined;
+  const input = getAiDeliveryDeliverableInput(req.body);
   if (!authSession) return void res.status(401).json(unauthorizedFailure());
   if (!aiDeliveryProjectId || !deliverableId || !input) return void res.status(400).json(aiDeliveryProjectInvalidFailure());
 
@@ -2355,6 +2383,70 @@ export const archiveAiDeliveryDeliverableHandler: RequestHandler = async (req, r
     res.json(success(response, { phase: "runtime", scope: "ai-delivery-deliverables" }));
   } catch {
     res.status(500).json(failure("AI_DELIVERY_DELIVERABLE_RUNTIME_ERROR", "Deliverable could not be archived."));
+  }
+};
+
+export const restoreAiDeliveryDeliverableHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  const aiDeliveryProjectId = typeof req.params.id === "string" ? req.params.id.trim() : "";
+  const deliverableId = typeof req.params.deliverableId === "string" ? req.params.deliverableId.trim() : "";
+  if (!authSession) return void res.status(401).json(unauthorizedFailure());
+  if (!aiDeliveryProjectId || !deliverableId) return void res.status(400).json(aiDeliveryProjectInvalidFailure());
+
+  try {
+    const response = await restoreAiDeliveryDeliverable(authSession, aiDeliveryProjectId, deliverableId);
+    if (!response?.deliverable) return void res.status(404).json(aiDeliveryProjectNotFoundFailure());
+    res.json(success(response, { phase: "runtime", scope: "ai-delivery-deliverables" }));
+  } catch {
+    res.status(500).json(failure("AI_DELIVERY_DELIVERABLE_RUNTIME_ERROR", "Deliverable could not be restored."));
+  }
+};
+
+export const markAiDeliveryDeliverableReadyHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  const aiDeliveryProjectId = typeof req.params.id === "string" ? req.params.id.trim() : "";
+  const deliverableId = typeof req.params.deliverableId === "string" ? req.params.deliverableId.trim() : "";
+  if (!authSession) return void res.status(401).json(unauthorizedFailure());
+  if (!aiDeliveryProjectId || !deliverableId) return void res.status(400).json(aiDeliveryProjectInvalidFailure());
+
+  try {
+    const response = await markAiDeliveryDeliverableReady(authSession, aiDeliveryProjectId, deliverableId);
+    if (!response?.deliverable) return void res.status(404).json(aiDeliveryProjectNotFoundFailure());
+    res.json(success(response, { phase: "runtime", scope: "ai-delivery-deliverables" }));
+  } catch {
+    res.status(500).json(failure("AI_DELIVERY_DELIVERABLE_RUNTIME_ERROR", "Deliverable ready action could not be completed."));
+  }
+};
+
+export const requestAiDeliveryDeliverableRevisionHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  const aiDeliveryProjectId = typeof req.params.id === "string" ? req.params.id.trim() : "";
+  const deliverableId = typeof req.params.deliverableId === "string" ? req.params.deliverableId.trim() : "";
+  if (!authSession) return void res.status(401).json(unauthorizedFailure());
+  if (!aiDeliveryProjectId || !deliverableId) return void res.status(400).json(aiDeliveryProjectInvalidFailure());
+
+  try {
+    const response = await requestAiDeliveryDeliverableRevision(authSession, aiDeliveryProjectId, deliverableId);
+    if (!response?.deliverable) return void res.status(404).json(aiDeliveryProjectNotFoundFailure());
+    res.json(success(response, { phase: "runtime", scope: "ai-delivery-deliverables" }));
+  } catch {
+    res.status(500).json(failure("AI_DELIVERY_DELIVERABLE_RUNTIME_ERROR", "Deliverable revision action could not be completed."));
+  }
+};
+
+export const acceptAiDeliveryDeliverableHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  const aiDeliveryProjectId = typeof req.params.id === "string" ? req.params.id.trim() : "";
+  const deliverableId = typeof req.params.deliverableId === "string" ? req.params.deliverableId.trim() : "";
+  if (!authSession) return void res.status(401).json(unauthorizedFailure());
+  if (!aiDeliveryProjectId || !deliverableId) return void res.status(400).json(aiDeliveryProjectInvalidFailure());
+
+  try {
+    const response = await acceptAiDeliveryDeliverable(authSession, aiDeliveryProjectId, deliverableId);
+    if (!response?.deliverable) return void res.status(404).json(aiDeliveryProjectNotFoundFailure());
+    res.json(success(response, { phase: "runtime", scope: "ai-delivery-deliverables" }));
+  } catch {
+    res.status(500).json(failure("AI_DELIVERY_DELIVERABLE_RUNTIME_ERROR", "Deliverable accept action could not be completed."));
   }
 };
 

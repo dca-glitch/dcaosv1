@@ -6285,12 +6285,15 @@ const aiDeliveryDeliverableSelect = {
   createdAt: true,
   updatedAt: true,
   contentDraft: {
-    select: { id: true, title: true }
+    select: { id: true, title: true, status: true, approvedAt: true }
   },
   articleImage: {
-    select: { id: true, title: true }
+    select: { id: true, title: true, status: true }
   }
 } as const;
+
+const AI_DELIVERY_READY_DELIVERABLE_STATUSES = new Set<AiDeliveryDeliverableStatus>(["READY", "DELIVERED", "ACCEPTED"]);
+const AI_DELIVERY_READY_ARTICLE_IMAGE_STATUSES = new Set(["APPROVED", "FINAL_READY"]);
 
 function normalizeAiDeliveryDeliverableDeliveryType(value: string | null | undefined): AiDeliveryDeliverableDeliveryType {
   const v = value ? value.trim().toUpperCase() : null;
@@ -6319,9 +6322,135 @@ function toAiDeliveryDeliverableSummary(d: any) {
     isArchived: d.isArchived,
     createdAt: d.createdAt.toISOString(),
     updatedAt: d.updatedAt.toISOString(),
-    contentDraft: d.contentDraft ? { id: d.contentDraft.id, title: d.contentDraft.title } : null,
-    articleImage: d.articleImage ? { id: d.articleImage.id, title: d.articleImage.title } : null
+    contentDraft: d.contentDraft ? {
+      id: d.contentDraft.id,
+      title: d.contentDraft.title,
+      status: d.contentDraft.status,
+      approvedAt: d.contentDraft.approvedAt ? d.contentDraft.approvedAt.toISOString() : null
+    } : null,
+    articleImage: d.articleImage ? {
+      id: d.articleImage.id,
+      title: d.articleImage.title,
+      status: d.articleImage.status
+    } : null
   };
+}
+
+async function getAiDeliveryProjectForDeliverable(tx: PrismaTx, tenantId: string, aiDeliveryProjectId: string) {
+  return tx.aiDeliveryProject.findFirst({
+    where: { id: aiDeliveryProjectId, tenantId, isArchived: false },
+    select: { id: true }
+  });
+}
+
+async function getContentDraftForDeliverable(tx: PrismaTx, tenantId: string, aiDeliveryProjectId: string, contentDraftId: string) {
+  return tx.aiDeliveryContentDraft.findFirst({
+    where: { id: contentDraftId, tenantId, aiDeliveryProjectId },
+    select: { id: true, title: true, status: true, approvedAt: true, isArchived: true }
+  });
+}
+
+async function getArticleImageForDeliverable(tx: PrismaTx, tenantId: string, aiDeliveryProjectId: string, articleImageId: string) {
+  return tx.aiDeliveryArticleImage.findFirst({
+    where: { id: articleImageId, tenantId, aiDeliveryProjectId },
+    select: { id: true, title: true, status: true, isArchived: true }
+  });
+}
+
+function canPackageContentDraftForDeliverable(draft: { status: string; isArchived: boolean } | null) {
+  return !!draft && draft.isArchived !== true && draft.status === "APPROVED";
+}
+
+function canPackageArticleImageForDeliverable(image: { status: string; isArchived: boolean } | null) {
+  return !!image && image.isArchived !== true && AI_DELIVERY_READY_ARTICLE_IMAGE_STATUSES.has(image.status);
+}
+
+function deliverableStatusRequiresReadyLinks(status: AiDeliveryDeliverableStatus) {
+  return AI_DELIVERY_READY_DELIVERABLE_STATUSES.has(status);
+}
+
+function validateDeliverableReadyLinks(
+  status: AiDeliveryDeliverableStatus,
+  contentDraft: { status: string; isArchived: boolean } | null,
+  articleImage: { status: string; isArchived: boolean } | null
+) {
+  if (!deliverableStatusRequiresReadyLinks(status)) {
+    return true;
+  }
+
+  if (!contentDraft && !articleImage) {
+    return false;
+  }
+
+  if (contentDraft && !canPackageContentDraftForDeliverable(contentDraft)) {
+    return false;
+  }
+
+  if (articleImage && !canPackageArticleImageForDeliverable(articleImage)) {
+    return false;
+  }
+
+  return true;
+}
+
+async function updateAiDeliveryDeliverableStatus(
+  authSession: AuthResolvedSessionContext,
+  aiDeliveryProjectId: string,
+  deliverableId: string,
+  nextStatus: AiDeliveryDeliverableStatus,
+  eventName:
+    | "AI_DELIVERY_DELIVERABLE_READY"
+    | "AI_DELIVERY_DELIVERABLE_REVISION_REQUESTED"
+    | "AI_DELIVERY_DELIVERABLE_ACCEPTED"
+) {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) return null;
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    const existing = await getAiDeliveryDeliverableDelegate(tx).findFirst({
+      where: { id: deliverableId, tenantId, aiDeliveryProjectId, isArchived: false },
+      select: aiDeliveryDeliverableSelect as any
+    }) as any;
+    if (!existing) return null;
+
+    if (nextStatus === "READY" && !["DRAFT", "REVISION_REQUESTED"].includes(existing.status)) {
+      return null;
+    }
+    if (nextStatus === "REVISION_REQUESTED" && !["READY", "ACCEPTED", "DELIVERED"].includes(existing.status)) {
+      return null;
+    }
+    if (nextStatus === "ACCEPTED" && !["READY", "DELIVERED"].includes(existing.status)) {
+      return null;
+    }
+
+    const contentDraft = existing.contentDraftId
+      ? await getContentDraftForDeliverable(tx, tenantId, aiDeliveryProjectId, existing.contentDraftId)
+      : null;
+    const articleImage = existing.articleImageId
+      ? await getArticleImageForDeliverable(tx, tenantId, aiDeliveryProjectId, existing.articleImageId)
+      : null;
+    if (!validateDeliverableReadyLinks(nextStatus, contentDraft, articleImage)) {
+      return null;
+    }
+
+    const updated = await getAiDeliveryDeliverableDelegate(tx).update({
+      where: { id: deliverableId },
+      data: { status: nextStatus },
+      select: aiDeliveryDeliverableSelect
+    }) as any;
+
+    await recordAiDeliverySystemEvent(
+      {
+        tenantId,
+        aiDeliveryProjectId,
+        eventName,
+        relatedEntityId: updated.id
+      },
+      tx
+    );
+
+    return { deliverable: toAiDeliveryDeliverableSummary(updated) };
+  });
 }
 
 export async function listAiDeliveryDeliverables(
@@ -6336,7 +6465,7 @@ export async function listAiDeliveryDeliverables(
 
   const deliverables = await getAiDeliveryDeliverableDelegate(prisma).findMany({
     where: { tenantId, aiDeliveryProjectId },
-    orderBy: { createdAt: "asc" },
+    orderBy: [{ isArchived: "asc" }, { updatedAt: "desc" }],
     select: aiDeliveryDeliverableSelect
   });
 
@@ -6349,40 +6478,54 @@ export async function createAiDeliveryDeliverable(
   input: AiDeliveryDeliverableInputRequest
 ): Promise<AiDeliveryDeliverableResponse | null> {
   const tenantId = getActiveTenantId(authSession);
-  if (!tenantId) return null;
+  if (!tenantId || !input.title) return null;
 
   return prisma.$transaction(async (tx: PrismaTx) => {
-    const project = await tx.aiDeliveryProject.findFirst({ where: { id: aiDeliveryProjectId, tenantId, isArchived: false }, select: { id: true } });
+    const project = await getAiDeliveryProjectForDeliverable(tx, tenantId, aiDeliveryProjectId);
     if (!project) return null;
 
-      const payload = input as any;
+    const contentDraftId = toNullableString(input.contentDraftId);
+    const articleImageId = toNullableString(input.articleImageId);
+    const status = normalizeAiDeliveryDeliverableStatus(input.status);
+    const contentDraft = contentDraftId
+      ? await getContentDraftForDeliverable(tx, tenantId, aiDeliveryProjectId, contentDraftId)
+      : null;
+    const articleImage = articleImageId
+      ? await getArticleImageForDeliverable(tx, tenantId, aiDeliveryProjectId, articleImageId)
+      : null;
+    if ((contentDraftId && !contentDraft) || (articleImageId && !articleImage)) {
+      return null;
+    }
+    if (!validateDeliverableReadyLinks(status, contentDraft, articleImage)) {
+      return null;
+    }
 
-      if (payload.contentDraftId) {
-        const draft = await tx.aiDeliveryContentDraft.findFirst({ where: { id: payload.contentDraftId, tenantId, aiDeliveryProjectId } });
-        if (!draft) return null;
-      }
+    const created = await getAiDeliveryDeliverableDelegate(tx).create({
+      data: {
+        tenantId,
+        aiDeliveryProjectId: project.id,
+        contentDraftId,
+        articleImageId,
+        title: input.title,
+        description: toNullableString(input.description),
+        deliveryType: normalizeAiDeliveryDeliverableDeliveryType(input.deliveryType),
+        status,
+        exportUrl: toNullableString(input.exportUrl),
+        storageKey: toNullableString(input.storageKey),
+        notes: toNullableString(input.notes)
+      },
+      select: aiDeliveryDeliverableSelect
+    }) as any;
 
-      if (payload.articleImageId) {
-        const image = await tx.aiDeliveryArticleImage.findFirst({ where: { id: payload.articleImageId, tenantId, aiDeliveryProjectId } });
-        if (!image) return null;
-      }
-
-      const created = await getAiDeliveryDeliverableDelegate(tx).create({
-        data: {
-          tenantId,
-          aiDeliveryProjectId: project.id,
-          contentDraftId: payload.contentDraftId ?? null,
-          articleImageId: payload.articleImageId ?? null,
-          title: payload.title ?? "",
-          description: payload.description ?? null,
-          deliveryType: normalizeAiDeliveryDeliverableDeliveryType(payload.deliveryType),
-          status: normalizeAiDeliveryDeliverableStatus(payload.status),
-          exportUrl: payload.exportUrl ?? null,
-          storageKey: payload.storageKey ?? null,
-          notes: payload.notes ?? null
-        },
-        select: aiDeliveryDeliverableSelect
-      });
+    await recordAiDeliverySystemEvent(
+      {
+        tenantId,
+        aiDeliveryProjectId,
+        eventName: "AI_DELIVERY_DELIVERABLE_CREATED",
+        relatedEntityId: created.id
+      },
+      tx
+    );
 
     return { deliverable: toAiDeliveryDeliverableSummary(created) };
   });
@@ -6395,43 +6538,82 @@ export async function updateAiDeliveryDeliverable(
   input: AiDeliveryDeliverableInputRequest
 ): Promise<AiDeliveryDeliverableResponse | null> {
   const tenantId = getActiveTenantId(authSession);
-  if (!tenantId) return null;
+  if (!tenantId || !input.title) return null;
 
   return prisma.$transaction(async (tx: PrismaTx) => {
     const existing = await getAiDeliveryDeliverableDelegate(tx).findFirst({ where: { id: deliverableId, tenantId }, select: aiDeliveryDeliverableSelect as any }) as any;
     if (!existing) return null;
     if (existing.aiDeliveryProjectId !== aiDeliveryProjectId) return null;
 
-    const payload = input as any;
-
-    if (payload.contentDraftId) {
-      const draft = await tx.aiDeliveryContentDraft.findFirst({ where: { id: payload.contentDraftId, tenantId, aiDeliveryProjectId } });
-      if (!draft) return null;
+    const contentDraftId = input.contentDraftId === undefined ? existing.contentDraftId ?? null : toNullableString(input.contentDraftId);
+    const articleImageId = input.articleImageId === undefined ? existing.articleImageId ?? null : toNullableString(input.articleImageId);
+    const contentDraft = contentDraftId
+      ? await getContentDraftForDeliverable(tx, tenantId, aiDeliveryProjectId, contentDraftId)
+      : null;
+    const articleImage = articleImageId
+      ? await getArticleImageForDeliverable(tx, tenantId, aiDeliveryProjectId, articleImageId)
+      : null;
+    if ((contentDraftId && !contentDraft) || (articleImageId && !articleImage)) {
+      return null;
     }
-
-    if (payload.articleImageId) {
-      const image = await tx.aiDeliveryArticleImage.findFirst({ where: { id: payload.articleImageId, tenantId, aiDeliveryProjectId } });
-      if (!image) return null;
+    const status = normalizeAiDeliveryDeliverableStatus(input.status);
+    if (!validateDeliverableReadyLinks(status, contentDraft, articleImage)) {
+      return null;
     }
 
     const updated = await getAiDeliveryDeliverableDelegate(tx).update({
       where: { id: deliverableId },
       data: {
-        contentDraftId: payload.contentDraftId ?? existing.contentDraftId,
-        articleImageId: payload.articleImageId ?? existing.articleImageId,
-        title: payload.title ?? existing.title,
-        description: payload.description ?? existing.description,
-        deliveryType: normalizeAiDeliveryDeliverableDeliveryType(payload.deliveryType),
-        status: normalizeAiDeliveryDeliverableStatus(payload.status),
-        exportUrl: payload.exportUrl ?? existing.exportUrl,
-        storageKey: payload.storageKey ?? existing.storageKey,
-        notes: payload.notes ?? existing.notes
+        contentDraftId,
+        articleImageId,
+        title: input.title,
+        description: input.description === undefined ? existing.description : toNullableString(input.description),
+        deliveryType: normalizeAiDeliveryDeliverableDeliveryType(input.deliveryType),
+        status,
+        exportUrl: input.exportUrl === undefined ? existing.exportUrl : toNullableString(input.exportUrl),
+        storageKey: input.storageKey === undefined ? existing.storageKey : toNullableString(input.storageKey),
+        notes: input.notes === undefined ? existing.notes : toNullableString(input.notes),
+        isArchived: status === "ARCHIVED" ? true : existing.isArchived
       },
       select: aiDeliveryDeliverableSelect
-    });
+    }) as any;
+
+    await recordAiDeliverySystemEvent(
+      {
+        tenantId,
+        aiDeliveryProjectId,
+        eventName: "AI_DELIVERY_DELIVERABLE_UPDATED",
+        relatedEntityId: updated.id
+      },
+      tx
+    );
 
     return { deliverable: toAiDeliveryDeliverableSummary(updated) };
   });
+}
+
+export async function markAiDeliveryDeliverableReady(
+  authSession: AuthResolvedSessionContext,
+  aiDeliveryProjectId: string,
+  deliverableId: string
+): Promise<AiDeliveryDeliverableResponse | null> {
+  return updateAiDeliveryDeliverableStatus(authSession, aiDeliveryProjectId, deliverableId, "READY", "AI_DELIVERY_DELIVERABLE_READY");
+}
+
+export async function requestAiDeliveryDeliverableRevision(
+  authSession: AuthResolvedSessionContext,
+  aiDeliveryProjectId: string,
+  deliverableId: string
+): Promise<AiDeliveryDeliverableResponse | null> {
+  return updateAiDeliveryDeliverableStatus(authSession, aiDeliveryProjectId, deliverableId, "REVISION_REQUESTED", "AI_DELIVERY_DELIVERABLE_REVISION_REQUESTED");
+}
+
+export async function acceptAiDeliveryDeliverable(
+  authSession: AuthResolvedSessionContext,
+  aiDeliveryProjectId: string,
+  deliverableId: string
+): Promise<AiDeliveryDeliverableResponse | null> {
+  return updateAiDeliveryDeliverableStatus(authSession, aiDeliveryProjectId, deliverableId, "ACCEPTED", "AI_DELIVERY_DELIVERABLE_ACCEPTED");
 }
 
 export async function getAiDeliveryDeliverableDownload(
@@ -6480,9 +6662,54 @@ export async function archiveAiDeliveryDeliverable(
       where: { id: existing.id },
       data: { isArchived: true, status: "ARCHIVED" },
       select: aiDeliveryDeliverableSelect
-    });
+    }) as any;
+
+    await recordAiDeliverySystemEvent(
+      {
+        tenantId,
+        aiDeliveryProjectId,
+        eventName: "AI_DELIVERY_DELIVERABLE_ARCHIVED",
+        relatedEntityId: archived.id
+      },
+      tx
+    );
 
     return { deliverable: toAiDeliveryDeliverableSummary(archived) };
+  });
+}
+
+export async function restoreAiDeliveryDeliverable(
+  authSession: AuthResolvedSessionContext,
+  aiDeliveryProjectId: string,
+  deliverableId: string
+): Promise<AiDeliveryDeliverableResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) return null;
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    const existing = await getAiDeliveryDeliverableDelegate(tx).findFirst({
+      where: { id: deliverableId, tenantId, aiDeliveryProjectId },
+      select: aiDeliveryDeliverableSelect as any
+    }) as any;
+    if (!existing || !existing.isArchived) return null;
+
+    const restored = await getAiDeliveryDeliverableDelegate(tx).update({
+      where: { id: deliverableId },
+      data: { isArchived: false, status: "DRAFT" },
+      select: aiDeliveryDeliverableSelect
+    }) as any;
+
+    await recordAiDeliverySystemEvent(
+      {
+        tenantId,
+        aiDeliveryProjectId,
+        eventName: "AI_DELIVERY_DELIVERABLE_RESTORED",
+        relatedEntityId: restored.id
+      },
+      tx
+    );
+
+    return { deliverable: toAiDeliveryDeliverableSummary(restored) };
   });
 }
 

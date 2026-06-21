@@ -845,11 +845,286 @@ async function runAiDeliveryApiRegression(token) {
   }
   pass(`AI Delivery deliverables list endpoint returned cleanly (${deliverables.length} local deliverable(s)).`);
 
-  const deliverable = deliverables.find((item) => item && item.isArchived !== true) ?? deliverables[0] ?? null;
-  if (!deliverable) {
-    note("No deliverable is available for the selected local AI Delivery project. Deliverables base flow passed; deliverable review detail API check was skipped.");
-    return;
+  const crossProject = requireOkResponse(
+    "AI Delivery project create for cross-project deliverable guard",
+    await request("/ai-delivery-projects", {
+      method: "POST",
+      token,
+      body: {
+        clientId: project.clientId,
+        projectId: project.projectId,
+        name: "Smoke deliverable cross-project guard",
+        targetMonth: "2026-06",
+        plannedContentScopeNotes: "Used only to prove cross-project deliverable linkage stays blocked."
+      }
+    })
+  )?.aiDeliveryProject;
+  if (!crossProject?.id) {
+    fail("AI Delivery project create did not return a reusable cross-project record.");
   }
+  pass("AI Delivery project create returned a second project for cross-project deliverable linkage coverage.");
+
+  const crossProjectContentPlan = requireOkResponse(
+    "Cross-project content plan create",
+    await request(`/ai-delivery-projects/${crossProject.id}/content-plan`, {
+      method: "POST",
+      token,
+      body: {
+        items: [
+          {
+            title: "Cross-project smoke topic",
+            targetKeyword: "cross project deliverable guard",
+            contentType: "article",
+            notes: "Guard-only item.",
+            sortOrder: 1,
+            approvalStatus: "CLIENT_APPROVED",
+            clientComment: "Approved for guard coverage."
+          }
+        ]
+      }
+    })
+  )?.contentPlan;
+  const crossProjectContentPlanItem = crossProjectContentPlan?.items?.[0] ?? null;
+  if (!crossProjectContentPlanItem?.id) {
+    fail("Cross-project content plan create did not return a reusable item.");
+  }
+
+  const crossProjectDraft = requireOkResponse(
+    "Cross-project content draft create",
+    await request(`/ai-delivery-projects/${crossProject.id}/content-drafts`, {
+      method: "POST",
+      token,
+      body: {
+        contentPlanItemId: crossProjectContentPlanItem.id,
+        title: "Cross-project draft",
+        slug: "cross-project-draft",
+        draftBody: "Cross-project content draft for linkage guard coverage.",
+        status: "DRAFT",
+        notes: "Guard-only draft."
+      }
+    })
+  )?.contentDraft;
+  if (!crossProjectDraft?.id || crossProjectDraft.status !== "DRAFT") {
+    fail("Cross-project content draft create did not return a valid guard draft.");
+  }
+  pass("Cross-project content draft create returned a guard draft for linkage coverage.");
+
+  const invalidCrossProjectDeliverable = await request(`/ai-delivery-projects/${project.id}/deliverables`, {
+    method: "POST",
+    token,
+    body: {
+      contentDraftId: crossProjectDraft.id,
+      title: "Invalid cross-project deliverable",
+      description: "Should be rejected because the linked draft belongs to another project.",
+      deliveryType: "ARTICLE_DRAFT",
+      status: "DRAFT",
+      notes: "Cross-project linkage must fail."
+    }
+  });
+  if (![404, 400].includes(invalidCrossProjectDeliverable.status) || invalidCrossProjectDeliverable.body?.ok !== false) {
+    fail("AI Delivery deliverable create accepted a cross-project content draft link.");
+  }
+  pass("AI Delivery deliverable create rejected a cross-project content draft link.");
+
+  const notReadyLocalDraft = requireOkResponse(
+    "Same-project draft create for ready guard",
+    await request(`/ai-delivery-projects/${project.id}/content-drafts`, {
+      method: "POST",
+      token,
+      body: {
+        contentPlanItemId: contentPlanItem.id,
+        title: "Same-project draft guard",
+        slug: "same-project-draft-guard",
+        draftBody: "Local draft used to prove ready packaging requires approval.",
+        status: "DRAFT",
+        notes: "Guard-only local draft."
+      }
+    })
+  )?.contentDraft;
+  if (!notReadyLocalDraft?.id || notReadyLocalDraft.status !== "DRAFT") {
+    fail("Same-project guard draft create did not return a draft record.");
+  }
+  pass("Same-project guard draft create returned a draft record for ready-state validation.");
+
+  const invalidReadyDeliverableResponse = await request(`/ai-delivery-projects/${project.id}/deliverables`, {
+    method: "POST",
+    token,
+    body: {
+      contentDraftId: notReadyLocalDraft.id,
+      title: "Invalid ready deliverable",
+      description: "Should be rejected because the linked draft is not approved.",
+      deliveryType: "ARTICLE_DRAFT",
+      status: "READY",
+      notes: "Ready state must require approved links."
+    }
+  });
+  if (![404, 400].includes(invalidReadyDeliverableResponse.status) || invalidReadyDeliverableResponse.body?.ok !== false) {
+    fail("AI Delivery deliverable create accepted a ready status without approved assets.");
+  }
+  pass("AI Delivery deliverable create rejected a ready status without approved assets.");
+
+  const createdDeliverable = requireOkResponse(
+    "AI Delivery deliverable create",
+    await request(`/ai-delivery-projects/${project.id}/deliverables`, {
+      method: "POST",
+      token,
+      body: {
+        contentDraftId: approvedDraft.id,
+        articleImageId: finalReadyArticleImage.id,
+        title: "Smoke admin packaging deliverable",
+        description: "Admin-only package record for approved draft and final-ready image coverage.",
+        deliveryType: "CONTENT_PACKAGE",
+        status: "DRAFT",
+        exportUrl: "https://example.com/admin-reference-only",
+        storageKey: "deliverables/smoke-admin-package.zip",
+        notes: "Admin-only packaging notes."
+      }
+    })
+  )?.deliverable;
+  if (
+    !createdDeliverable?.id ||
+    createdDeliverable.contentDraftId !== approvedDraft.id ||
+    createdDeliverable.articleImageId !== finalReadyArticleImage.id ||
+    createdDeliverable.status !== "DRAFT"
+  ) {
+    fail("AI Delivery deliverable create did not return the expected project-scoped package record.");
+  }
+  pass("AI Delivery deliverable create returned the expected linked admin package record.");
+
+  const updatedDeliverable = requireOkResponse(
+    "AI Delivery deliverable update",
+    await request(`/ai-delivery-projects/${project.id}/deliverables/${createdDeliverable.id}`, {
+      method: "PUT",
+      token,
+      body: {
+        contentDraftId: approvedDraft.id,
+        articleImageId: finalReadyArticleImage.id,
+        title: "Smoke admin packaging deliverable",
+        description: "Updated admin-only package record for approved draft and final-ready image coverage.",
+        deliveryType: "CONTENT_PACKAGE",
+        status: "DRAFT",
+        exportUrl: "https://example.com/admin-reference-only-updated",
+        storageKey: "deliverables/smoke-admin-package-v2.zip",
+        notes: "Updated admin-only packaging notes."
+      }
+    })
+  )?.deliverable;
+  if (
+    !updatedDeliverable ||
+    updatedDeliverable.exportUrl !== "https://example.com/admin-reference-only-updated" ||
+    updatedDeliverable.storageKey !== "deliverables/smoke-admin-package-v2.zip"
+  ) {
+    fail("AI Delivery deliverable update did not persist the expected admin references.");
+  }
+  pass("AI Delivery deliverable update persisted the expected admin reference fields.");
+
+  const readyDeliverable = requireOkResponse(
+    "AI Delivery deliverable mark ready",
+    await request(`/ai-delivery-projects/${project.id}/deliverables/${createdDeliverable.id}/mark-ready`, {
+      method: "POST",
+      token
+    })
+  )?.deliverable;
+  if (!readyDeliverable || readyDeliverable.status !== "READY") {
+    fail("AI Delivery deliverable mark-ready action did not persist the expected ready state.");
+  }
+  pass("AI Delivery deliverable mark-ready action persisted the expected ready state.");
+
+  const acceptedDeliverable = requireOkResponse(
+    "AI Delivery deliverable accept",
+    await request(`/ai-delivery-projects/${project.id}/deliverables/${createdDeliverable.id}/accept`, {
+      method: "POST",
+      token
+    })
+  )?.deliverable;
+  if (!acceptedDeliverable || acceptedDeliverable.status !== "ACCEPTED") {
+    fail("AI Delivery deliverable accept action did not persist the expected accepted state.");
+  }
+  pass("AI Delivery deliverable accept action persisted the expected accepted state.");
+
+  const revisionRequestedDeliverable = requireOkResponse(
+    "AI Delivery deliverable request revision",
+    await request(`/ai-delivery-projects/${project.id}/deliverables/${createdDeliverable.id}/request-revision`, {
+      method: "POST",
+      token
+    })
+  )?.deliverable;
+  if (!revisionRequestedDeliverable || revisionRequestedDeliverable.status !== "REVISION_REQUESTED") {
+    fail("AI Delivery deliverable request-revision action did not persist the expected revision state.");
+  }
+  pass("AI Delivery deliverable request-revision action persisted the expected revision state.");
+
+  const archivedDeliverable = requireOkResponse(
+    "AI Delivery deliverable archive",
+    await request(`/ai-delivery-projects/${project.id}/deliverables/${createdDeliverable.id}/archive`, {
+      method: "POST",
+      token
+    })
+  )?.deliverable;
+  if (!archivedDeliverable || archivedDeliverable.isArchived !== true || archivedDeliverable.status !== "ARCHIVED") {
+    fail("AI Delivery deliverable archive action did not persist the expected archived state.");
+  }
+  pass("AI Delivery deliverable archive action persisted the expected archived state.");
+
+  const restoredDeliverable = requireOkResponse(
+    "AI Delivery deliverable restore",
+    await request(`/ai-delivery-projects/${project.id}/deliverables/${createdDeliverable.id}/restore`, {
+      method: "POST",
+      token
+    })
+  )?.deliverable;
+  if (!restoredDeliverable || restoredDeliverable.isArchived !== false || restoredDeliverable.status !== "DRAFT") {
+    fail("AI Delivery deliverable restore action did not persist the expected draft state.");
+  }
+  pass("AI Delivery deliverable restore action persisted the expected draft state.");
+
+  const readyDeliverableAgain = requireOkResponse(
+    "AI Delivery deliverable mark ready again",
+    await request(`/ai-delivery-projects/${project.id}/deliverables/${createdDeliverable.id}/mark-ready`, {
+      method: "POST",
+      token
+    })
+  )?.deliverable;
+  if (!readyDeliverableAgain || readyDeliverableAgain.status !== "READY") {
+    fail("AI Delivery deliverable second mark-ready action did not persist the expected ready state.");
+  }
+  pass("AI Delivery deliverable second mark-ready action persisted the expected ready state.");
+
+  const createdDeliverableReview = requireOkResponse(
+    "AI Delivery deliverable review create",
+    await request(`/ai-delivery-projects/${project.id}/deliverables/${createdDeliverable.id}/reviews`, {
+      method: "POST",
+      token,
+      body: {
+        status: "ADMIN_REVIEW",
+        reviewerName: "Smoke Reviewer",
+        reviewNotes: "Internal packaging QA placeholder."
+      }
+    })
+  )?.deliverableReview;
+  if (!createdDeliverableReview?.id || createdDeliverableReview.status !== "ADMIN_REVIEW") {
+    fail("AI Delivery deliverable review create did not return the expected admin placeholder.");
+  }
+  pass("AI Delivery deliverable review create returned the expected admin placeholder.");
+
+  const updatedDeliverableReview = requireOkResponse(
+    "AI Delivery deliverable review update",
+    await request(`/ai-delivery-projects/${project.id}/deliverables/${createdDeliverable.id}/reviews/${createdDeliverableReview.id}`, {
+      method: "PUT",
+      token,
+      body: {
+        status: "APPROVED",
+        reviewerName: "Smoke Reviewer",
+        reviewNotes: "Approved for internal packaging handoff preparation."
+      }
+    })
+  )?.deliverableReview;
+  if (!updatedDeliverableReview || updatedDeliverableReview.status !== "APPROVED") {
+    fail("AI Delivery deliverable review update did not persist the expected approved placeholder state.");
+  }
+  pass("AI Delivery deliverable review update persisted the expected approved placeholder state.");
+
+  const deliverable = readyDeliverableAgain;
 
   const reviewsData = requireOkResponse(
     "AI Delivery deliverable reviews list",
@@ -857,6 +1132,9 @@ async function runAiDeliveryApiRegression(token) {
   );
   if (!Array.isArray(reviewsData?.deliverableReviews)) {
     fail("AI Delivery deliverable reviews list did not return a deliverableReviews array.");
+  }
+  if (!reviewsData.deliverableReviews.some((review) => review.id === createdDeliverableReview.id)) {
+    fail("AI Delivery deliverable reviews list did not return the created admin review placeholder.");
   }
   pass(`AI Delivery deliverable reviews list endpoint returned cleanly (${reviewsData.deliverableReviews.length} local review(s)).`);
 }
@@ -973,7 +1251,9 @@ async function main() {
     await deliverablesButtons.first().click();
     await page.getByRole("dialog", { name: "Deliverables" }).waitFor({ state: "visible", timeout: 15000 });
     await page.getByRole("heading", { name: "Existing deliverables" }).waitFor({ state: "visible", timeout: 15000 });
-    pass("Deliverables panel opened.");
+    await page.getByText("This is an admin-only packaging foundation. No client handoff, public links, storage upload, export generation, publishing, or client download is performed.").waitFor({ state: "visible", timeout: 15000 });
+    await page.getByRole("button", { name: "Mark ready" }).first().waitFor({ state: "visible", timeout: 15000 });
+    pass("Deliverables panel opened and rendered admin-only packaging helper text.");
 
     const reviewsButtons = page.getByRole("button", { name: "Reviews" });
     const reviewsButtonCount = await reviewsButtons.count();

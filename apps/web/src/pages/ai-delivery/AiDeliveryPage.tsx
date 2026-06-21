@@ -138,6 +138,8 @@ export type AiDeliveryDeliverableSummary = {
   aiDeliveryProjectId: string;
   contentDraftId?: string | null;
   articleImageId?: string | null;
+  contentDraft?: { id: string; title: string; status: string; approvedAt?: string | null } | null;
+  articleImage?: { id: string; title: string; status: string } | null;
   title: string;
   description?: string | null;
   deliveryType: string;
@@ -354,6 +356,10 @@ export type AiDeliveryProjectsProps = {
   onFetchDeliverables?: (projectId: string) => Promise<AiDeliveryDeliverableSummary[]>;
   onSaveDeliverable?: (projectId: string, deliverableId: string | null, values: AiDeliveryDeliverableFormValues) => Promise<AiDeliveryDeliverableSummary | null>;
   onArchiveDeliverable?: (projectId: string, deliverableId: string) => Promise<boolean>;
+  onRestoreDeliverable?: (projectId: string, deliverableId: string) => Promise<AiDeliveryDeliverableSummary | null>;
+  onMarkDeliverableReady?: (projectId: string, deliverableId: string) => Promise<AiDeliveryDeliverableSummary | null>;
+  onRequestDeliverableRevision?: (projectId: string, deliverableId: string) => Promise<AiDeliveryDeliverableSummary | null>;
+  onAcceptDeliverable?: (projectId: string, deliverableId: string) => Promise<AiDeliveryDeliverableSummary | null>;
   onFetchDeliverableReviews?: (projectId: string, deliverableId: string) => Promise<AiDeliveryDeliverableReviewSummary[]>;
   onSaveDeliverableReview?: (projectId: string, deliverableId: string, reviewId: string | null, values: AiDeliveryDeliverableReviewFormValues) => Promise<AiDeliveryDeliverableReviewSummary | null>;
   onFetchWorkflowRuns?: (projectId: string) => Promise<AiDeliveryWorkflowRunSummary[]>;
@@ -586,28 +592,25 @@ function formatArticleImageStatus(value?: string | null): string {
   return formatEnumLabel(value);
 }
 
+function formatDeliverableStatus(value?: string | null): string {
+  if (!value || value === "DRAFT") return "Draft / packaging";
+  if (value === "READY") return "Ready for internal handoff";
+  if (value === "REVISION_REQUESTED") return "Revision requested";
+  if (value === "ACCEPTED") return "Internally accepted";
+  if (value === "DELIVERED") return "Delivered record";
+  if (value === "ARCHIVED") return "Archived";
+  return formatEnumLabel(value);
+}
+
 function formatEnumLabel(value?: string | null): string {
   if (!value) return "Not set";
   return String(value).toLowerCase().replace(/_/g, " ").replace(/(^|\s)\S/g, (s) => s.toUpperCase());
 }
 
-function getSafeDeliverableExportUrl(value?: string | null): string | null {
-  const exportUrl = (value ?? "").trim();
-  if (!exportUrl) return null;
-  if (exportUrl.startsWith("/") && !exportUrl.startsWith("//")) return exportUrl;
-  try {
-    const parsedUrl = new URL(exportUrl);
-    return ["http:", "https:"].includes(parsedUrl.protocol) ? exportUrl : null;
-  } catch {
-    return null;
-  }
-}
-
 function getDeliverableExportState(item: AiDeliveryDeliverableSummary): string {
-  if (getSafeDeliverableExportUrl(item.exportUrl)) return "Export URL available";
-  if ((item.exportUrl ?? "").trim()) return "Export URL is not a safe HTTP(S) or app-relative link.";
-  if ((item.storageKey ?? "").trim()) return "Storage key recorded; direct download unavailable until a safe admin download URL is provided.";
-  return "No export/download target available.";
+  if ((item.exportUrl ?? "").trim()) return "Export reference recorded for admin use only.";
+  if ((item.storageKey ?? "").trim()) return "Storage reference recorded for admin use only.";
+  return "No export or storage reference recorded.";
 }
 
 function getErrorMessage(error: unknown, fallback: string): string {
@@ -670,6 +673,10 @@ export function AiDeliveryPage({
   onFetchDeliverables,
   onSaveDeliverable,
   onArchiveDeliverable,
+  onRestoreDeliverable,
+  onMarkDeliverableReady,
+  onRequestDeliverableRevision,
+  onAcceptDeliverable,
   onFetchDeliverableReviews,
   onSaveDeliverableReview,
   onFetchWorkflowRuns,
@@ -785,6 +792,7 @@ export function AiDeliveryPage({
     [articleImageEditorId, articleImages]
   );
   const openDeliverablesProject = useMemo(() => projects.find((p) => p.id === openDeliverablesId) ?? null, [openDeliverablesId, projects]);
+  const activeDeliverableRecord = useMemo(() => deliverables.find((item) => item.id === deliverableEditorId) ?? null, [deliverableEditorId, deliverables]);
   const selectedReviewDeliverable = useMemo(() => deliverables.find((item) => item.id === selectedReviewDeliverableId) ?? null, [deliverables, selectedReviewDeliverableId]);
   const visibleDeliverables = useMemo(
     () => [...deliverables].sort((a, b) => {
@@ -796,6 +804,16 @@ export function AiDeliveryPage({
   const activeDeliverableCount = useMemo(() => deliverables.filter((item) => !item.isArchived).length, [deliverables]);
   const archivedDeliverableCount = deliverables.length - activeDeliverableCount;
   const latestSelectedReview = useMemo(() => getMostRecentReview(deliverableReviews), [deliverableReviews]);
+  const deliverableDraftOptions = useMemo(() => {
+    const eligible = articleImageDrafts.filter((draft) => draft.status === "APPROVED");
+    const selectedDraft = articleImageDrafts.find((draft) => draft.id === deliverableForm.contentDraftId) ?? null;
+    return selectedDraft && !eligible.some((draft) => draft.id === selectedDraft.id) ? [selectedDraft, ...eligible] : eligible;
+  }, [articleImageDrafts, deliverableForm.contentDraftId]);
+  const deliverableArticleImageOptions = useMemo(() => {
+    const eligible = articleImages.filter((image) => !image.isArchived && ["APPROVED", "FINAL_READY"].includes(image.status));
+    const selectedImage = articleImages.find((image) => image.id === deliverableForm.articleImageId) ?? null;
+    return selectedImage && !eligible.some((image) => image.id === selectedImage.id) ? [selectedImage, ...eligible] : eligible;
+  }, [articleImages, deliverableForm.articleImageId]);
   const openWorkflowRunsProject = useMemo(() => projects.find((p) => p.id === openWorkflowRunsId) ?? null, [openWorkflowRunsId, projects]);
   const workflowRunBeingEdited = useMemo(() => workflowRuns.find((run) => run.id === workflowRunEditorId) ?? null, [workflowRunEditorId, workflowRuns]);
   const workflowRunStatusOptions = useMemo(() => getWorkflowRunStatusOptions(workflowRunBeingEdited?.status ?? null), [workflowRunBeingEdited?.status]);
@@ -1236,24 +1254,54 @@ export function AiDeliveryPage({
     }
   }
 
-  async function archiveDeliverable(projectId: string, deliverableId: string) {
-    if (typeof onArchiveDeliverable !== "function" || typeof onFetchDeliverables !== "function") return;
+  async function runDeliverableAction(
+    projectId: string,
+    deliverableId: string,
+    action: ((projectId: string, deliverableId: string) => Promise<AiDeliveryDeliverableSummary | null>) | undefined
+  ) {
+    if (typeof action !== "function" || typeof onFetchDeliverables !== "function") return;
     setDeliverablesSaving(true);
     setDeliverablesError(null);
     try {
-      await onArchiveDeliverable(projectId, deliverableId);
-      setDeliverables(await onFetchDeliverables(projectId));
-      if (selectedReviewDeliverableId === deliverableId) {
-        setSelectedReviewDeliverableId(null);
-        setDeliverableReviews([]);
-        setDeliverableReviewEditorId(null);
-        setDeliverableReviewForm(emptyDeliverableReview());
+      await action(projectId, deliverableId);
+      const refreshedDeliverables = await onFetchDeliverables(projectId);
+      setDeliverables(refreshedDeliverables);
+      const refreshedActiveDeliverable = refreshedDeliverables.find((item) => item.id === deliverableId) ?? null;
+      if (refreshedActiveDeliverable) {
+        editDeliverable(refreshedActiveDeliverable);
+      }
+      if (selectedReviewDeliverableId === deliverableId && typeof onFetchDeliverableReviews === "function") {
+        setDeliverableReviews(await onFetchDeliverableReviews(projectId, deliverableId));
       }
     } catch (error) {
-      setDeliverablesError(getErrorMessage(error, "Unable to archive this deliverable."));
+      setDeliverablesError(getErrorMessage(error, "Unable to update this deliverable."));
     } finally {
       setDeliverablesSaving(false);
     }
+  }
+
+  async function markDeliverableReady(projectId: string, deliverableId: string) {
+    await runDeliverableAction(projectId, deliverableId, onMarkDeliverableReady);
+  }
+
+  async function requestDeliverableRevision(projectId: string, deliverableId: string) {
+    await runDeliverableAction(projectId, deliverableId, onRequestDeliverableRevision);
+  }
+
+  async function acceptDeliverable(projectId: string, deliverableId: string) {
+    await runDeliverableAction(projectId, deliverableId, onAcceptDeliverable);
+  }
+
+  async function archiveDeliverable(projectId: string, deliverableId: string) {
+    if (typeof onArchiveDeliverable !== "function") return;
+    await runDeliverableAction(projectId, deliverableId, async (activeProjectId, activeDeliverableId) => {
+      const archived = await onArchiveDeliverable(activeProjectId, activeDeliverableId);
+      return archived ? ({ id: activeDeliverableId } as AiDeliveryDeliverableSummary) : null;
+    });
+  }
+
+  async function restoreDeliverable(projectId: string, deliverableId: string) {
+    await runDeliverableAction(projectId, deliverableId, onRestoreDeliverable);
   }
 
   async function openDeliverableReviews(projectId: string, deliverableId: string) {
@@ -2969,62 +3017,132 @@ export function AiDeliveryPage({
             <div>
               <section className="field-panel">
                 <h3>Deliverable editor</h3>
-                <p className="muted-text">Admin-operated deliverable records only. No export generation, upload, R2 write, WordPress, or client portal in this block.</p>
+                <p className="muted-text">This is an admin-only packaging foundation. No client handoff, public links, storage upload, export generation, publishing, or client download is performed.</p>
+                <div className="modal-footer">
+                  <button className="secondary-action" disabled={deliverablesSaving} onClick={() => { setDeliverableEditorId(null); setDeliverableForm({ contentDraftId: null, articleImageId: null, title: "", description: null, deliveryType: "CONTENT_PACKAGE", status: "DRAFT", exportUrl: null, storageKey: null, notes: null, isArchived: false }); }} type="button">New deliverable</button>
+                  <button className="secondary-action" disabled={deliverablesSaving} onClick={closeDeliverables} type="button">Close</button>
+                  <button className="primary-action" disabled={deliverablesSaving || !(deliverableForm.title || "").trim()} onClick={() => void saveDeliverable(openDeliverablesProject.id)} type="button">{deliverablesSaving ? "Saving" : deliverableEditorId ? "Save deliverable" : "Create deliverable"}</button>
+                  {activeDeliverableRecord && !activeDeliverableRecord.isArchived ? (
+                    <button className="primary-action" disabled={deliverablesSaving || activeDeliverableRecord.status === "READY"} onClick={() => void markDeliverableReady(openDeliverablesProject.id, activeDeliverableRecord.id)} type="button">Mark ready</button>
+                  ) : null}
+                  {activeDeliverableRecord && !activeDeliverableRecord.isArchived ? (
+                    <button className="secondary-action" disabled={deliverablesSaving || !["READY", "ACCEPTED", "DELIVERED"].includes(activeDeliverableRecord.status)} onClick={() => void requestDeliverableRevision(openDeliverablesProject.id, activeDeliverableRecord.id)} type="button">Request revision</button>
+                  ) : null}
+                  {activeDeliverableRecord && !activeDeliverableRecord.isArchived ? (
+                    <button className="secondary-action" disabled={deliverablesSaving || !["READY", "DELIVERED"].includes(activeDeliverableRecord.status)} onClick={() => void acceptDeliverable(openDeliverablesProject.id, activeDeliverableRecord.id)} type="button">Internal accept</button>
+                  ) : null}
+                  {activeDeliverableRecord?.isArchived ? (
+                    <button className="secondary-action" disabled={deliverablesSaving} onClick={() => void restoreDeliverable(openDeliverablesProject.id, activeDeliverableRecord.id)} type="button">Restore deliverable</button>
+                  ) : null}
+                </div>
+                {activeDeliverableRecord ? (
+                  <div className="field-panel" style={{ marginBottom: "1rem" }}>
+                    <h4>Saved packaging status</h4>
+                    <dl className="brief-grid">
+                      <div>
+                        <dt>Status</dt>
+                        <dd>{formatDeliverableStatus(activeDeliverableRecord.isArchived ? "ARCHIVED" : activeDeliverableRecord.status)}</dd>
+                      </div>
+                      <div>
+                        <dt>Linked content draft</dt>
+                        <dd>{activeDeliverableRecord.contentDraft ? `${activeDeliverableRecord.contentDraft.title} (${formatContentDraftStatus(activeDeliverableRecord.contentDraft.status)})` : "Not linked"}</dd>
+                      </div>
+                      <div>
+                        <dt>Linked article image</dt>
+                        <dd>{activeDeliverableRecord.articleImage ? `${activeDeliverableRecord.articleImage.title} (${formatArticleImageStatus(activeDeliverableRecord.articleImage.status)})` : "Not linked"}</dd>
+                      </div>
+                      <div>
+                        <dt>Export reference</dt>
+                        <dd>{activeDeliverableRecord.exportUrl || "Not set"}</dd>
+                      </div>
+                      <div>
+                        <dt>Storage reference</dt>
+                        <dd>{activeDeliverableRecord.storageKey || "Not set"}</dd>
+                      </div>
+                      <div>
+                        <dt>Archived state</dt>
+                        <dd>{activeDeliverableRecord.isArchived ? "Archived" : "Active admin packaging record"}</dd>
+                      </div>
+                    </dl>
+                  </div>
+                ) : null}
                 <div className="field-grid">
                   <label>
-                    Linked content draft
+                    Linked content draft - Optional
                     <select value={deliverableForm.contentDraftId || ""} onChange={(e) => setDeliverableForm((current: AiDeliveryDeliverableFormValues) => ({ ...current, contentDraftId: e.target.value || null }))}>
                       <option value="">None</option>
-                      {articleImageDrafts.map((draftItem) => (
-                        <option key={draftItem.id} value={draftItem.id}>{draftItem.title}</option>
+                      {deliverableDraftOptions.map((draftItem) => (
+                        <option key={draftItem.id} value={draftItem.id}>{draftItem.title} ({formatContentDraftStatus(draftItem.status)})</option>
                       ))}
                     </select>
+                    <span className="muted-text">Approved content draft to package in this admin-only deliverable record.</span>
                   </label>
                   <label>
-                    Linked article image
+                    Linked article image - Optional
                     <select value={deliverableForm.articleImageId || ""} onChange={(e) => setDeliverableForm((current: AiDeliveryDeliverableFormValues) => ({ ...current, articleImageId: e.target.value || null }))}>
                       <option value="">None</option>
-                      {articleImages.map((ai) => (
-                        <option key={ai.id} value={ai.id}>{ai.title}</option>
+                      {deliverableArticleImageOptions.map((ai) => (
+                        <option key={ai.id} value={ai.id}>{ai.title} ({formatArticleImageStatus(ai.status)})</option>
                       ))}
                     </select>
+                    <span className="muted-text">Approved or final-ready article image to include in the package record.</span>
                   </label>
                   <label className="field-span-2">
-                    Title
-                    <input maxLength={255} required value={deliverableForm.title || ""} onChange={(e) => setDeliverableForm((current: AiDeliveryDeliverableFormValues) => ({ ...current, title: e.target.value }))} />
+                    Title - Required
+                    <input maxLength={255} placeholder="Internal package name for this content or image handoff record" required value={deliverableForm.title || ""} onChange={(e) => setDeliverableForm((current: AiDeliveryDeliverableFormValues) => ({ ...current, title: e.target.value }))} />
+                    <span className="muted-text">Platform-neutral name for the deliverable package record.</span>
                   </label>
                   <label className="field-span-2">
-                    Description
-                    <textarea maxLength={4000} rows={3} value={deliverableForm.description || ""} onChange={(e) => setDeliverableForm((current: AiDeliveryDeliverableFormValues) => ({ ...current, description: e.target.value }))} />
+                    Description - Optional
+                    <textarea maxLength={4000} placeholder="What this deliverable contains and what stage it is in" rows={3} value={deliverableForm.description || ""} onChange={(e) => setDeliverableForm((current: AiDeliveryDeliverableFormValues) => ({ ...current, description: e.target.value }))} />
+                    <span className="muted-text">Internal packaging summary only. Not exposed to clients in this block.</span>
                   </label>
                   <label>
-                    Delivery type
+                    Delivery type - Required
                     <select value={deliverableForm.deliveryType || "CONTENT_PACKAGE"} onChange={(e) => setDeliverableForm((current: AiDeliveryDeliverableFormValues) => ({ ...current, deliveryType: e.target.value }))}>
                       {(["CONTENT_PACKAGE","ARTICLE_DRAFT","ARTICLE_IMAGE","CLIENT_HANDOFF","OTHER"] as const).map((dt) => <option key={dt} value={dt}>{dt}</option>)}
                     </select>
+                    <span className="muted-text">Package classification only. Keep this platform-neutral rather than connector-specific.</span>
                   </label>
                   <label>
-                    Status
+                    Status - Required
                     <select value={deliverableForm.status || "DRAFT"} onChange={(e) => setDeliverableForm((current: AiDeliveryDeliverableFormValues) => ({ ...current, status: e.target.value }))}>
                       {(["DRAFT","READY","DELIVERED","REVISION_REQUESTED","ACCEPTED","ARCHIVED"] as const).map((s) => <option key={s} value={s}>{s}</option>)}
                     </select>
+                    <span className="muted-text">Use the action buttons for ready, revision, accept, archive, and restore transitions.</span>
                   </label>
                   <label>
-                    Export URL
-                    <input maxLength={2048} type="url" value={deliverableForm.exportUrl || ""} onChange={(e) => setDeliverableForm((current: AiDeliveryDeliverableFormValues) => ({ ...current, exportUrl: e.target.value }))} />
+                    Export reference - Optional
+                    <input maxLength={2048} type="url" placeholder="Existing admin-only export reference, if already created elsewhere" value={deliverableForm.exportUrl || ""} onChange={(e) => setDeliverableForm((current: AiDeliveryDeliverableFormValues) => ({ ...current, exportUrl: e.target.value }))} />
+                    <span className="muted-text">Admin reference only. No export generation or client delivery is performed here.</span>
                   </label>
                   <label className="field-span-2">
-                    Storage key
-                    <input maxLength={1024} value={deliverableForm.storageKey || ""} onChange={(e) => setDeliverableForm((current: AiDeliveryDeliverableFormValues) => ({ ...current, storageKey: e.target.value }))} />
+                    Storage key reference - Optional
+                    <input maxLength={1024} placeholder="Internal private-storage reference, if already assigned elsewhere" value={deliverableForm.storageKey || ""} onChange={(e) => setDeliverableForm((current: AiDeliveryDeliverableFormValues) => ({ ...current, storageKey: e.target.value }))} />
+                    <span className="muted-text">Internal reference only. No upload, signed client download, or public link is created from this field.</span>
                   </label>
                   <label className="field-span-2">
-                    Notes
-                    <textarea maxLength={4000} rows={3} value={deliverableForm.notes || ""} onChange={(e) => setDeliverableForm((current: AiDeliveryDeliverableFormValues) => ({ ...current, notes: e.target.value }))} />
+                    Packaging notes - Optional
+                    <textarea maxLength={4000} placeholder="Internal QA notes, packaging context, or revision details for the admin team" rows={3} value={deliverableForm.notes || ""} onChange={(e) => setDeliverableForm((current: AiDeliveryDeliverableFormValues) => ({ ...current, notes: e.target.value }))} />
+                    <span className="muted-text">Visible only to admin team and review placeholders.</span>
                   </label>
                 </div>
                 <div className="modal-footer">
                   <button className="secondary-action" disabled={deliverablesSaving} onClick={() => { setDeliverableEditorId(null); setDeliverableForm({ contentDraftId: null, articleImageId: null, title: "", description: null, deliveryType: "CONTENT_PACKAGE", status: "DRAFT", exportUrl: null, storageKey: null, notes: null, isArchived: false }); }} type="button">New deliverable</button>
+                  <button className="secondary-action" disabled={deliverablesSaving} onClick={closeDeliverables} type="button">Close</button>
                   <button className="primary-action" disabled={deliverablesSaving || !(deliverableForm.title || "").trim()} onClick={() => void saveDeliverable(openDeliverablesProject.id)} type="button">{deliverablesSaving ? "Saving" : deliverableEditorId ? "Save deliverable" : "Create deliverable"}</button>
+                  {activeDeliverableRecord && !activeDeliverableRecord.isArchived ? (
+                    <button className="primary-action" disabled={deliverablesSaving || activeDeliverableRecord.status === "READY"} onClick={() => void markDeliverableReady(openDeliverablesProject.id, activeDeliverableRecord.id)} type="button">Mark ready</button>
+                  ) : null}
+                  {activeDeliverableRecord && !activeDeliverableRecord.isArchived ? (
+                    <button className="secondary-action" disabled={deliverablesSaving || !["READY", "ACCEPTED", "DELIVERED"].includes(activeDeliverableRecord.status)} onClick={() => void requestDeliverableRevision(openDeliverablesProject.id, activeDeliverableRecord.id)} type="button">Request revision</button>
+                  ) : null}
+                  {activeDeliverableRecord && !activeDeliverableRecord.isArchived ? (
+                    <button className="secondary-action" disabled={deliverablesSaving || !["READY", "DELIVERED"].includes(activeDeliverableRecord.status)} onClick={() => void acceptDeliverable(openDeliverablesProject.id, activeDeliverableRecord.id)} type="button">Internal accept</button>
+                  ) : null}
+                  {activeDeliverableRecord?.isArchived ? (
+                    <button className="secondary-action" disabled={deliverablesSaving} onClick={() => void restoreDeliverable(openDeliverablesProject.id, activeDeliverableRecord.id)} type="button">Restore deliverable</button>
+                  ) : null}
                 </div>
               </section>
 
@@ -3041,42 +3159,48 @@ export function AiDeliveryPage({
                   <article className="entity-card" key={d.id} style={{ marginBottom: "1rem" }}>
                     <div className="entity-card-header">
                       <div>
-                        <StatusBadge status={d.isArchived ? "Archived" : d.status} />
+                        <StatusBadge status={formatDeliverableStatus(d.isArchived ? "ARCHIVED" : d.status)} />
                         <h3>{d.title}</h3>
                         <p>{formatEnumLabel(d.deliveryType)} - Updated {formatOptionalDate(d.updatedAt)}</p>
                       </div>
                       <div className="card-actions">
-                        {getSafeDeliverableExportUrl(d.exportUrl) ? (
-                          <>
-                            <a className="secondary-action" href={getSafeDeliverableExportUrl(d.exportUrl) ?? undefined} rel="noreferrer" target="_blank">Open export</a>
-                            <a className="secondary-action" download href={getSafeDeliverableExportUrl(d.exportUrl) ?? undefined}>Download</a>
-                          </>
-                        ) : null}
                         <button className="secondary-action" disabled={deliverablesSaving} onClick={() => editDeliverable(d)} type="button">Edit</button>
+                        {!d.isArchived ? <button className="secondary-action" disabled={deliverablesSaving || d.status === "READY"} onClick={() => void markDeliverableReady(openDeliverablesProject.id, d.id)} type="button">Mark ready</button> : null}
+                        {!d.isArchived ? <button className="secondary-action" disabled={deliverablesSaving || !["READY", "ACCEPTED", "DELIVERED"].includes(d.status)} onClick={() => void requestDeliverableRevision(openDeliverablesProject.id, d.id)} type="button">Request revision</button> : null}
+                        {!d.isArchived ? <button className="secondary-action" disabled={deliverablesSaving || !["READY", "DELIVERED"].includes(d.status)} onClick={() => void acceptDeliverable(openDeliverablesProject.id, d.id)} type="button">Internal accept</button> : null}
                         <button className="secondary-action" disabled={deliverablesSaving || deliverableReviewsLoading} onClick={() => void openDeliverableReviews(openDeliverablesProject.id, d.id)} type="button">Reviews</button>
                         {!d.isArchived ? <button className="secondary-action" disabled={deliverablesSaving} onClick={() => void archiveDeliverable(openDeliverablesProject.id, d.id)} type="button">Archive</button> : null}
+                        {d.isArchived ? <button className="secondary-action" disabled={deliverablesSaving} onClick={() => void restoreDeliverable(openDeliverablesProject.id, d.id)} type="button">Restore</button> : null}
                       </div>
                     </div>
                     <dl className="brief-grid">
                       <div>
-                        <dt>Export URL</dt>
-                        <dd>{getSafeDeliverableExportUrl(d.exportUrl) ? <a href={getSafeDeliverableExportUrl(d.exportUrl) ?? undefined} rel="noreferrer" target="_blank">{d.exportUrl}</a> : d.exportUrl || "Not set"}</dd>
+                        <dt>Linked content draft</dt>
+                        <dd>{d.contentDraft ? `${d.contentDraft.title} (${formatContentDraftStatus(d.contentDraft.status)})` : "Not linked"}</dd>
                       </div>
                       <div>
-                        <dt>Storage key</dt>
-                        <dd>{d.storageKey ? "Recorded for admin reference" : "Not set"}</dd>
+                        <dt>Linked article image</dt>
+                        <dd>{d.articleImage ? `${d.articleImage.title} (${formatArticleImageStatus(d.articleImage.status)})` : "Not linked"}</dd>
                       </div>
                       <div>
-                        <dt>Export/download</dt>
+                        <dt>Export reference</dt>
+                        <dd>{d.exportUrl || "Not set"}</dd>
+                      </div>
+                      <div>
+                        <dt>Storage key reference</dt>
+                        <dd>{d.storageKey || "Not set"}</dd>
+                      </div>
+                      <div>
+                        <dt>Export / storage state</dt>
                         <dd>{getDeliverableExportState(d)}</dd>
                       </div>
                       <div>
                         <dt>Visibility</dt>
-                        <dd>{d.isArchived ? "Archived deliverable" : "Visible in active admin list"}</dd>
+                        <dd>{d.isArchived ? "Archived admin packaging record" : "Visible in active admin list only"}</dd>
                       </div>
                       <div>
                         <dt>Status</dt>
-                        <dd><StatusBadge status={d.isArchived ? "Archived" : d.status} /></dd>
+                        <dd><StatusBadge status={formatDeliverableStatus(d.isArchived ? "ARCHIVED" : d.status)} /></dd>
                       </div>
                       <div className="field-span-2">
                         <dt>Notes</dt>
@@ -3096,7 +3220,7 @@ export function AiDeliveryPage({
                   <dl className="brief-grid">
                     <div>
                       <dt>Deliverable status</dt>
-                      <dd><StatusBadge status={selectedReviewDeliverable.isArchived ? "Archived" : selectedReviewDeliverable.status} /></dd>
+                      <dd><StatusBadge status={formatDeliverableStatus(selectedReviewDeliverable.isArchived ? "ARCHIVED" : selectedReviewDeliverable.status)} /></dd>
                     </div>
                     <div>
                       <dt>Latest review status</dt>

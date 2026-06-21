@@ -273,6 +273,8 @@ type AiDeliveryDeliverableSummary = {
   aiDeliveryProjectId: string;
   contentDraftId?: string | null;
   articleImageId?: string | null;
+  contentDraft?: { id: string; title: string; status: string; approvedAt?: string | null } | null;
+  articleImage?: { id: string; title: string; status: string } | null;
   title: string;
   description?: string | null;
   deliveryType: string;
@@ -2568,23 +2570,55 @@ export function App() {
   }
 
   async function handleArchiveAiDeliveryDeliverable(projectId: string, deliverableId: string): Promise<boolean> {
+    const deliverable = await runDeliverableAction(
+      `/ai-delivery-projects/${projectId}/deliverables/${deliverableId}/archive`,
+      "Deliverable archived."
+    );
+    return !!deliverable;
+  }
+
+  async function handleRestoreAiDeliveryDeliverable(projectId: string, deliverableId: string): Promise<AiDeliveryDeliverableSummary | null> {
+    return runDeliverableAction(
+      `/ai-delivery-projects/${projectId}/deliverables/${deliverableId}/restore`,
+      "Deliverable restored to draft."
+    );
+  }
+
+  async function handleMarkAiDeliveryDeliverableReady(projectId: string, deliverableId: string): Promise<AiDeliveryDeliverableSummary | null> {
+    return runDeliverableAction(
+      `/ai-delivery-projects/${projectId}/deliverables/${deliverableId}/mark-ready`,
+      "Deliverable marked ready."
+    );
+  }
+
+  async function handleRequestAiDeliveryDeliverableRevision(projectId: string, deliverableId: string): Promise<AiDeliveryDeliverableSummary | null> {
+    return runDeliverableAction(
+      `/ai-delivery-projects/${projectId}/deliverables/${deliverableId}/request-revision`,
+      "Deliverable moved to revision requested."
+    );
+  }
+
+  async function handleAcceptAiDeliveryDeliverable(projectId: string, deliverableId: string): Promise<AiDeliveryDeliverableSummary | null> {
+    return runDeliverableAction(
+      `/ai-delivery-projects/${projectId}/deliverables/${deliverableId}/accept`,
+      "Deliverable accepted for internal packaging."
+    );
+  }
+
+  async function runDeliverableAction(path: string, successMessage: string): Promise<AiDeliveryDeliverableSummary | null> {
     setAppMessage(null);
     try {
-      const response = await runAuthenticatedRequest<{ deliverable: AiDeliveryDeliverableSummary | null }>(
-        `/ai-delivery-projects/${projectId}/deliverables/${deliverableId}/archive`,
-        { method: "POST" }
-      );
-      if (!response) return false;
+      const response = await runAuthenticatedRequest<AiDeliveryDeliverableResponse>(path, { method: "POST" });
+      if (!response) return null;
       if (!response.ok) {
         setAppMessage({ tone: "error", text: getErrorMessage(response) });
-        return false;
+        return null;
       }
-      await loadProtectedState(tokenRef.current);
-      setAppMessage({ tone: "success", text: "Deliverable archived." });
-      return true;
+      setAppMessage({ tone: "success", text: successMessage });
+      return response.data.deliverable;
     } catch (error) {
       setAppMessage({ tone: "error", text: maskError(error) });
-      return false;
+      return null;
     }
   }
 
@@ -3415,6 +3449,10 @@ export function App() {
           onFetchDeliverables={handleFetchAiDeliveryDeliverables}
           onSaveDeliverable={handleSaveAiDeliveryDeliverable}
           onArchiveDeliverable={handleArchiveAiDeliveryDeliverable}
+          onRestoreDeliverable={handleRestoreAiDeliveryDeliverable}
+          onMarkDeliverableReady={handleMarkAiDeliveryDeliverableReady}
+          onRequestDeliverableRevision={handleRequestAiDeliveryDeliverableRevision}
+          onAcceptDeliverable={handleAcceptAiDeliveryDeliverable}
           onFetchDeliverableReviews={handleFetchAiDeliveryDeliverableReviews}
           onSaveDeliverableReview={handleSaveAiDeliveryDeliverableReview}
           onFetchWorkflowRuns={handleFetchAiDeliveryWorkflowRuns}

@@ -810,6 +810,17 @@ export interface AiDeliveryDeliverableSummary {
   aiDeliveryProjectId: string;
   contentDraftId?: string | null;
   articleImageId?: string | null;
+  contentDraft?: {
+    id: string;
+    title: string;
+    status: string;
+    approvedAt?: string | null;
+  } | null;
+  articleImage?: {
+    id: string;
+    title: string;
+    status: string;
+  } | null;
   title: string;
   description?: string | null;
   deliveryType: string;
