@@ -8,6 +8,21 @@ Platform-neutral rule: AI Delivery records, content assets, article images, and 
 
 Explicitly not active: live AI calls, crawling, real publishing connectors, WordPress-only assumptions, GA/GSC, Resend sending, client portal delivery, public approval links, VPS, or production deployment.
 
+## Private object storage environment
+
+Private object storage is optional in local development. When the storage configuration is absent, admin-only private upload endpoints stay guarded and return `R2_STORAGE_NOT_CONFIGURED` instead of persisting a storage reference.
+
+Exact environment variables currently used by the API storage helpers:
+
+- Required for private storage writes: `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME`
+- Optional helper overrides: `R2_ENDPOINT`, `R2_PUBLIC_BASE_URL`
+
+Current behavior:
+
+- Missing required storage configuration keeps private storage disabled locally.
+- Upload/download flows use authenticated admin API routes and return a temporary `downloadUrl` plus `expiresSeconds`.
+- No client self-service download route or public asset link is created by this block.
+
 ## Current admin workflow order
 
 1. Project + brief
@@ -344,13 +359,26 @@ Admin/owner-only article image endpoints are scoped to an AI Delivery project an
 
 Allowed runtime statuses: `DRAFT`, `READY_FOR_GENERATION`, `PREVIEW_READY`, `APPROVED`, `FINAL_READY`, `CHANGES_REQUESTED`, `ARCHIVED`.
 
-This block is admin-operated only. It does not add AI image generation, AI calls, upload buttons, R2 write/upload behavior, connector-specific publishing workflow, public/client review, or client approval links.
+Private final asset storage:
+
+- `POST /api/v1/ai-delivery-projects/:id/article-images/:imageId/final-image`
+  - Body: `{ fileName, mimeType, contentBase64 }`
+  - Admin/owner-only authenticated upload for a private final article image asset.
+  - Successful upload persists `storageKey` and clears `finalImageUrl` so the private asset becomes the current final asset reference.
+  - Missing local storage configuration returns guarded `R2_STORAGE_NOT_CONFIGURED`.
+- `GET /api/v1/ai-delivery-projects/:id/article-images/:imageId/download`
+  - Admin/owner-only authenticated open/download endpoint.
+  - Returns a temporary signed `downloadUrl` and `expiresSeconds` when `storageKey` exists.
+
+Current admin UI wiring includes private final image upload/open actions for article image records.
+
+This block is admin-operated only. It does not add AI image generation, AI calls, preview image private upload, connector-specific publishing workflow, public/client review, or client approval links.
 
 Article images are platform-neutral deliverable assets. They may later support WordPress, Next.js/custom React, headless CMS, Markdown/MDX, JSON packages, Google Docs, PDF, or other delivery targets through separate adapters, but they are not modeled as WordPress-only media records in this foundation.
 
 ## Deliverables foundation
 
-Admin/owner-only deliverable records for packaging approved content drafts and approved/final-ready article image assets. Tenant-scoped and project-scoped; manual records only (no export generation, no uploads, no connector publishing, and no client portal delivery in this block).
+Admin/owner-only deliverable records for packaging approved content drafts and approved/final-ready article image assets. Tenant-scoped and project-scoped; manual records only (no export generation, no connector publishing, and no client portal delivery in this block).
 
 - GET /api/v1/ai-delivery-projects/:id/deliverables
   - Lists deliverables for the ai delivery project (tenant-scoped).
@@ -363,6 +391,12 @@ Admin/owner-only deliverable records for packaging approved content drafts and a
 
 - PUT /api/v1/ai-delivery-projects/:id/deliverables/:deliverableId
   - Update deliverable fields (title, description, links, deliveryType, status, exportUrl, storageKey, notes).
+
+- POST /api/v1/ai-delivery-projects/:id/deliverables/:deliverableId/document
+  - Body: `{ fileName, mimeType, contentBase64 }`
+  - Admin/owner-only authenticated upload for a private deliverable document.
+  - Successful upload persists `storageKey` and clears `exportUrl` so the private asset becomes the current stored document reference.
+  - Missing local storage configuration returns guarded `R2_STORAGE_NOT_CONFIGURED`.
 
 - POST /api/v1/ai-delivery-projects/:id/deliverables/:deliverableId/mark-ready
   - Moves the deliverable to `READY` when linked assets meet current readiness rules.
@@ -379,6 +413,10 @@ Admin/owner-only deliverable records for packaging approved content drafts and a
 - POST /api/v1/ai-delivery-projects/:id/deliverables/:deliverableId/restore
   - Restores an archived deliverable and returns it to `DRAFT`.
 
+- GET /api/v1/ai-delivery-projects/:id/deliverables/:deliverableId/download
+  - Admin/owner-only authenticated open/download endpoint.
+  - Returns a temporary signed `downloadUrl` and `expiresSeconds` when `storageKey` exists.
+
 Notes: Allowed delivery types: CONTENT_PACKAGE, ARTICLE_DRAFT, ARTICLE_IMAGE, CLIENT_HANDOFF, OTHER. Allowed statuses: DRAFT, READY, DELIVERED, REVISION_REQUESTED, ACCEPTED, ARCHIVED.
 
 Readiness rules:
@@ -390,7 +428,9 @@ Readiness rules:
 - `exportUrl` is an admin reference only in this block.
 - `storageKey` is an internal storage reference only in this block.
 
-This foundation intentionally excludes export generation, publishing connectors, R2 writes/uploads, AI generation calls, signed client downloads, public links, or active client-facing delivery portal behavior. Future client-safe handoff should expose final/reviewable deliverables rather than raw workflow execution internals.
+Current admin UI wiring includes private deliverable document upload/open actions for deliverable records.
+
+This foundation intentionally excludes export generation, publishing connectors, AI generation calls, signed client downloads, public links, or active client-facing delivery portal behavior. Future client-safe handoff should expose final/reviewable deliverables rather than raw workflow execution internals.
 
 ## Deliverable review foundation
 
