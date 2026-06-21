@@ -59,6 +59,7 @@ import type {
 } from "./core.types";
 import type { AuthResolvedSessionContext } from "../auth/types";
 import { getSignedR2ReadUrl, uploadR2Object } from "../storage/r2.service";
+import { recordAiDeliverySystemEvent } from "../services/system-events.service";
 
 const prisma = createPrismaClient();
 
@@ -1630,6 +1631,16 @@ export async function saveAiDeliveryBrief(
       }
     });
 
+    await recordAiDeliverySystemEvent(
+      {
+        tenantId,
+        aiDeliveryProjectId,
+        eventName: "AI_DELIVERY_BRIEF_SAVED",
+        relatedEntityId: updated.id
+      },
+      tx
+    );
+
     return {
       brief: {
         id: updated.id,
@@ -1694,8 +1705,19 @@ export async function createAiDeliveryProject(
       select: aiDeliveryProjectSelect
     });
 
+    const createdProject = created as Parameters<typeof toAiDeliveryProjectSummary>[0];
+    await recordAiDeliverySystemEvent(
+      {
+        tenantId,
+        aiDeliveryProjectId: createdProject.id,
+        eventName: "AI_DELIVERY_PROJECT_CREATED",
+        relatedEntityId: createdProject.id
+      },
+      tx
+    );
+
     return {
-      aiDeliveryProject: toAiDeliveryProjectSummary(created as Parameters<typeof toAiDeliveryProjectSummary>[0])
+      aiDeliveryProject: toAiDeliveryProjectSummary(createdProject)
     };
   });
 }
@@ -2449,8 +2471,19 @@ export async function updateAiDeliveryProject(
       select: aiDeliveryProjectSelect
     });
 
+    const updatedProject = updated as Parameters<typeof toAiDeliveryProjectSummary>[0];
+    await recordAiDeliverySystemEvent(
+      {
+        tenantId,
+        aiDeliveryProjectId,
+        eventName: "AI_DELIVERY_PROJECT_UPDATED",
+        relatedEntityId: updatedProject.id
+      },
+      tx
+    );
+
     return {
-      aiDeliveryProject: toAiDeliveryProjectSummary(updated as Parameters<typeof toAiDeliveryProjectSummary>[0])
+      aiDeliveryProject: toAiDeliveryProjectSummary(updatedProject)
     };
   });
 }
@@ -2480,8 +2513,19 @@ export async function archiveAiDeliveryProject(
       select: aiDeliveryProjectSelect
     });
 
+    const archivedProject = archived as Parameters<typeof toAiDeliveryProjectSummary>[0];
+    await recordAiDeliverySystemEvent(
+      {
+        tenantId,
+        aiDeliveryProjectId,
+        eventName: "AI_DELIVERY_PROJECT_ARCHIVED",
+        relatedEntityId: archivedProject.id
+      },
+      tx
+    );
+
     return {
-      aiDeliveryProject: toAiDeliveryProjectSummary(archived as Parameters<typeof toAiDeliveryProjectSummary>[0])
+      aiDeliveryProject: toAiDeliveryProjectSummary(archivedProject)
     };
   });
 }
@@ -2515,6 +2559,16 @@ export async function requestAiDeliveryBriefClientInput(
       },
       select: aiDeliveryProjectSelect
     });
+
+    await recordAiDeliverySystemEvent(
+      {
+        tenantId,
+        aiDeliveryProjectId,
+        eventName: "AI_DELIVERY_BRIEF_CLIENT_INPUT_REQUESTED",
+        relatedEntityId: brief.id
+      },
+      tx
+    );
 
     return {
       aiDeliveryProject: toAiDeliveryProjectSummary(updated as Parameters<typeof toAiDeliveryProjectSummary>[0])
@@ -2555,6 +2609,16 @@ export async function requestAiDeliveryBriefClientRevision(
       select: aiDeliveryProjectSelect
     });
 
+    await recordAiDeliverySystemEvent(
+      {
+        tenantId,
+        aiDeliveryProjectId,
+        eventName: "AI_DELIVERY_BRIEF_REVISION_REQUESTED",
+        relatedEntityId: brief.id
+      },
+      tx
+    );
+
     return {
       aiDeliveryProject: toAiDeliveryProjectSummary(updated as Parameters<typeof toAiDeliveryProjectSummary>[0])
     };
@@ -2590,6 +2654,16 @@ export async function approveFinalAiDeliveryBrief(
       },
       select: aiDeliveryProjectSelect
     });
+
+    await recordAiDeliverySystemEvent(
+      {
+        tenantId,
+        aiDeliveryProjectId,
+        eventName: "AI_DELIVERY_BRIEF_APPROVED",
+        relatedEntityId: brief.id
+      },
+      tx
+    );
 
     return {
       aiDeliveryProject: toAiDeliveryProjectSummary(updated as Parameters<typeof toAiDeliveryProjectSummary>[0])
@@ -2719,7 +2793,18 @@ export async function createAiDeliveryWorkflowRun(
       select: aiDeliveryWorkflowRunSelect
     });
 
-    return { workflowRun: toAiDeliveryWorkflowRunSummary(created) };
+    const createdWorkflowRun = toAiDeliveryWorkflowRunSummary(created);
+    await recordAiDeliverySystemEvent(
+      {
+        tenantId,
+        aiDeliveryProjectId: project.id,
+        eventName: "AI_DELIVERY_WORKFLOW_RUN_CREATED",
+        relatedEntityId: createdWorkflowRun.id
+      },
+      tx
+    );
+
+    return { workflowRun: createdWorkflowRun };
   });
 }
 
@@ -2755,7 +2840,18 @@ export async function updateAiDeliveryWorkflowRun(
       select: aiDeliveryWorkflowRunSelect
     });
 
-    return { workflowRun: toAiDeliveryWorkflowRunSummary(updated) };
+    const updatedWorkflowRun = toAiDeliveryWorkflowRunSummary(updated);
+    await recordAiDeliverySystemEvent(
+      {
+        tenantId,
+        aiDeliveryProjectId,
+        eventName: "AI_DELIVERY_WORKFLOW_RUN_UPDATED",
+        relatedEntityId: updatedWorkflowRun.id
+      },
+      tx
+    );
+
+    return { workflowRun: updatedWorkflowRun };
   });
 }
 
@@ -5241,7 +5337,18 @@ export async function createAiDeliveryDeliverableReview(
       select: aiDeliveryDeliverableReviewSelect
     });
 
-    return { deliverableReview: toAiDeliveryDeliverableReviewSummary(created) };
+    const createdReview = toAiDeliveryDeliverableReviewSummary(created);
+    await recordAiDeliverySystemEvent(
+      {
+        tenantId,
+        aiDeliveryProjectId,
+        eventName: "AI_DELIVERY_DELIVERABLE_REVIEW_CREATED",
+        relatedEntityId: createdReview.id
+      },
+      tx
+    );
+
+    return { deliverableReview: createdReview };
   });
 }
 
@@ -5283,6 +5390,17 @@ export async function updateAiDeliveryDeliverableReview(
       select: aiDeliveryDeliverableReviewSelect
     });
 
-    return { deliverableReview: toAiDeliveryDeliverableReviewSummary(updated) };
+    const updatedReview = toAiDeliveryDeliverableReviewSummary(updated);
+    await recordAiDeliverySystemEvent(
+      {
+        tenantId,
+        aiDeliveryProjectId,
+        eventName: "AI_DELIVERY_DELIVERABLE_REVIEW_UPDATED",
+        relatedEntityId: updatedReview.id
+      },
+      tx
+    );
+
+    return { deliverableReview: updatedReview };
   });
 }
