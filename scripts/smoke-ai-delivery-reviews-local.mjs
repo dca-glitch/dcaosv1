@@ -659,6 +659,7 @@ async function runAiDeliveryApiRegression(token, fixtureProjects) {
     !createdArticleImage?.id ||
     createdArticleImage.contentDraftId !== createdContentDraft.id ||
     createdArticleImage.status !== "DRAFT" ||
+    createdArticleImage.storageKey !== null ||
     /downloadUrl/i.test(createdArticleImageResponse.text)
   ) {
     fail("AI Delivery article image create did not return the expected same-project draft linkage or leaked a download field.");
@@ -686,7 +687,8 @@ async function runAiDeliveryApiRegression(token, fixtureProjects) {
   if (
     !updatedArticleImage ||
     updatedArticleImage.previewImageUrl !== "https://example.com/smoke-image-preview.png" ||
-    updatedArticleImage.styleNotes !== "Updated style notes for smoke coverage."
+    updatedArticleImage.styleNotes !== "Updated style notes for smoke coverage." ||
+    updatedArticleImage.storageKey !== null
   ) {
     fail("AI Delivery article image update did not persist the expected preview reference and style notes.");
   }
@@ -728,32 +730,111 @@ async function runAiDeliveryApiRegression(token, fixtureProjects) {
   }
   pass("AI Delivery article image approve action persisted the expected approved state.");
 
-  const finalReadyUpdatedImage = requireOkResponse(
-    "AI Delivery article image final reference update",
-    await request(`/ai-delivery-projects/${project.id}/article-images/${createdArticleImage.id}`, {
-      method: "PUT",
-      token,
-      body: {
-        contentDraftId: createdContentDraft.id,
-        title: "Smoke article header image",
-        prompt: "Clean service-themed header image for smoke coverage.",
-        styleNotes: "Updated style notes for smoke coverage.",
-        status: "APPROVED",
-        previewImageUrl: "https://example.com/smoke-image-preview.png",
-        finalImageUrl: "https://example.com/smoke-image-final.png",
-        storageKey: "ai-delivery/smoke/final-image-reference.png",
-        notes: "Final asset references recorded without any upload flow."
-      }
-    })
-  )?.articleImage;
-  if (
-    !finalReadyUpdatedImage ||
-    finalReadyUpdatedImage.finalImageUrl !== "https://example.com/smoke-image-final.png" ||
-    finalReadyUpdatedImage.storageKey !== "ai-delivery/smoke/final-image-reference.png"
-  ) {
-    fail("AI Delivery article image final reference update did not persist the expected final URL and storage key.");
+  const tinyPngBase64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9WnG1ioAAAAASUVORK5CYII=";
+  const finalImageUploadResponse = await request(`/ai-delivery-projects/${project.id}/article-images/${createdArticleImage.id}/final-image`, {
+    method: "POST",
+    token,
+    body: {
+      fileName: "smoke-final-image.png",
+      mimeType: "image/png",
+      contentBase64: tinyPngBase64
+    }
+  });
+
+  if (finalImageUploadResponse.status === 503) {
+    if (
+      finalImageUploadResponse.body?.ok !== false ||
+      finalImageUploadResponse.body?.error?.code !== "R2_STORAGE_NOT_CONFIGURED"
+    ) {
+      fail("AI Delivery article image final upload did not return the expected storage-not-configured guard.");
+    }
+
+    const articleImagesAfterRejectedUpload = requireOkResponse(
+      "AI Delivery article images list after guarded final upload",
+      await request(`/ai-delivery-projects/${project.id}/article-images`, { token })
+    )?.articleImages;
+    const articleImageAfterRejectedUpload = Array.isArray(articleImagesAfterRejectedUpload)
+      ? articleImagesAfterRejectedUpload.find((articleImage) => articleImage.id === createdArticleImage.id)
+      : null;
+    if (
+      !articleImageAfterRejectedUpload ||
+      articleImageAfterRejectedUpload.storageKey !== null ||
+      articleImageAfterRejectedUpload.finalImageUrl !== null
+    ) {
+      fail("AI Delivery article image final upload guard changed persisted final asset references while storage was unavailable.");
+    }
+    pass("AI Delivery article image final upload returned the expected storage-not-configured guard without persisting a storage key.");
+
+    const finalReadyUpdatedImage = requireOkResponse(
+      "AI Delivery article image final reference update",
+      await request(`/ai-delivery-projects/${project.id}/article-images/${createdArticleImage.id}`, {
+        method: "PUT",
+        token,
+        body: {
+          contentDraftId: createdContentDraft.id,
+          title: "Smoke article header image",
+          prompt: "Clean service-themed header image for smoke coverage.",
+          styleNotes: "Updated style notes for smoke coverage.",
+          status: "APPROVED",
+          previewImageUrl: "https://example.com/smoke-image-preview.png",
+          finalImageUrl: "https://example.com/smoke-image-final.png",
+          storageKey: "",
+          notes: "Final asset URL recorded when private storage is unavailable."
+        }
+      })
+    )?.articleImage;
+    if (
+      !finalReadyUpdatedImage ||
+      finalReadyUpdatedImage.finalImageUrl !== "https://example.com/smoke-image-final.png" ||
+      finalReadyUpdatedImage.storageKey !== null
+    ) {
+      fail("AI Delivery article image final reference update did not persist the expected fallback final URL.");
+    }
+    pass("AI Delivery article image final reference update preserved the manual final URL fallback when storage is unavailable.");
+  } else {
+    const uploadedArticleImage = requireOkResponse(
+      "AI Delivery article image final upload",
+      finalImageUploadResponse
+    )?.articleImage;
+    if (
+      !uploadedArticleImage ||
+      uploadedArticleImage.id !== createdArticleImage.id ||
+      typeof uploadedArticleImage.storageKey !== "string" ||
+      uploadedArticleImage.storageKey.length === 0 ||
+      uploadedArticleImage.finalImageUrl !== null
+    ) {
+      fail("AI Delivery article image final upload did not return the expected private final asset reference.");
+    }
+
+    const articleImagesAfterUpload = requireOkResponse(
+      "AI Delivery article images list after final upload",
+      await request(`/ai-delivery-projects/${project.id}/article-images`, { token })
+    )?.articleImages;
+    const persistedUploadedArticleImage = Array.isArray(articleImagesAfterUpload)
+      ? articleImagesAfterUpload.find((articleImage) => articleImage.id === createdArticleImage.id)
+      : null;
+    if (
+      !persistedUploadedArticleImage ||
+      persistedUploadedArticleImage.storageKey !== uploadedArticleImage.storageKey ||
+      persistedUploadedArticleImage.finalImageUrl !== null
+    ) {
+      fail("AI Delivery article image final upload did not persist the expected private storage key.");
+    }
+
+    const articleImageDownload = requireOkResponse(
+      "AI Delivery article image secure download",
+      await request(`/ai-delivery-projects/${project.id}/article-images/${createdArticleImage.id}/download`, { token })
+    );
+    if (
+      typeof articleImageDownload?.downloadUrl !== "string" ||
+      articleImageDownload.downloadUrl.length === 0 ||
+      typeof articleImageDownload.expiresSeconds !== "number" ||
+      articleImageDownload.expiresSeconds <= 0
+    ) {
+      fail("AI Delivery article image secure download did not return a signed download reference.");
+    }
+    pass("AI Delivery article image final upload persisted a private storage key, cleared finalImageUrl, and returned a secure download reference.");
   }
-  pass("AI Delivery article image final reference update persisted the expected final URL and storage key.");
 
   const finalReadyArticleImage = requireOkResponse(
     "AI Delivery article image final ready",

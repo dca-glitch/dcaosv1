@@ -405,6 +405,12 @@ export interface AiDeliveryArticleImageInputRequest {
   notes?: string | null;
 }
 
+export interface AiDeliveryArticleImageUploadRequest {
+  fileName?: string;
+  mimeType?: string;
+  contentBase64?: string;
+}
+
 export interface TaskSummary {
   id: string;
   projectId: string | null;

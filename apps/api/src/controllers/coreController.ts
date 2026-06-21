@@ -60,6 +60,7 @@ import {
   getCompanyProfile,
   getBillDocumentDownload,
   getCreditNoteDocumentDownload,
+  getAiDeliveryArticleImageDownload,
   getAiDeliveryDeliverableDownload,
   getInvoiceDocumentDownload,
   getInvoice,
@@ -98,6 +99,7 @@ import {
   requestAiDeliveryArticleImageChanges,
   approveAiDeliveryArticleImage,
   markAiDeliveryArticleImageFinalReady,
+  uploadAiDeliveryArticleImageFinalAsset,
   uploadAiDeliveryDeliverableDocument,
   markAiDeliveryDeliverableReady,
   requestAiDeliveryDeliverableRevision,
@@ -149,6 +151,7 @@ import {
   updateAiDeliveryDeliverableReview
 } from "../core/core.runtime";
 import type {
+  AiDeliveryArticleImageUploadRequest,
   AiDeliveryArticleImageInputRequest,
   AiDeliveryContentDraftInputRequest,
   AiDeliveryProjectInputRequest,
@@ -800,6 +803,23 @@ function getBillDocumentUploadInput(body: unknown): BillDocumentUploadRequest | 
 }
 
 function getAiDeliveryDeliverableUploadInput(body: unknown): AiDeliveryDeliverableUploadRequest | null {
+  const value = (body ?? {}) as Record<string, unknown>;
+  const fileName = getRequiredString(value.fileName, FILE_NAME_MAX_LENGTH);
+  const mimeType = getRequiredString(value.mimeType, SHORT_TEXT_FIELD_MAX_LENGTH);
+  const contentBase64 = getRequiredString(value.contentBase64, BASE64_UPLOAD_MAX_LENGTH);
+
+  if (!fileName || !mimeType || !contentBase64 || !/^[A-Za-z0-9+/]+={0,2}$/.test(contentBase64)) {
+    return null;
+  }
+
+  return {
+    contentBase64,
+    fileName,
+    mimeType
+  };
+}
+
+function getAiDeliveryArticleImageUploadInput(body: unknown): AiDeliveryArticleImageUploadRequest | null {
   const value = (body ?? {}) as Record<string, unknown>;
   const fileName = getRequiredString(value.fileName, FILE_NAME_MAX_LENGTH);
   const mimeType = getRequiredString(value.mimeType, SHORT_TEXT_FIELD_MAX_LENGTH);
@@ -2470,6 +2490,32 @@ export const markAiDeliveryArticleImageFinalReadyHandler: RequestHandler = async
   }
 };
 
+export const uploadAiDeliveryArticleImageFinalAssetHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  const aiDeliveryProjectId = typeof req.params.id === "string" ? req.params.id.trim() : "";
+  const articleImageId = typeof req.params.imageId === "string" ? req.params.imageId.trim() : "";
+  const input = getAiDeliveryArticleImageUploadInput(req.body);
+  if (!authSession) return void res.status(401).json(unauthorizedFailure());
+  if (!aiDeliveryProjectId || !articleImageId || !input) return void res.status(400).json(aiDeliveryProjectInvalidFailure());
+
+  try {
+    const response = await uploadAiDeliveryArticleImageFinalAsset(authSession, aiDeliveryProjectId, articleImageId, input);
+    if (!response?.articleImage) return void res.status(404).json(aiDeliveryProjectNotFoundFailure());
+    res.status(201).json(success(response, { phase: "runtime", scope: "r2-storage-foundation" }));
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "";
+    if (message.includes("not configured")) {
+      res.status(503).json(failure("R2_STORAGE_NOT_CONFIGURED", "R2 storage is not configured."));
+      return;
+    }
+    if (message.includes("validation failed")) {
+      res.status(400).json(aiDeliveryProjectInvalidFailure());
+      return;
+    }
+    res.status(500).json(failure("AI_DELIVERY_ARTICLE_IMAGE_RUNTIME_ERROR", "Article image final asset upload could not be completed."));
+  }
+};
+
 export const listAiDeliveryDeliverablesHandler: RequestHandler = async (req, res) => {
   const authSession = getAuthSession(res.locals);
   const aiDeliveryProjectId = typeof req.params.id === "string" ? req.params.id.trim() : "";
@@ -3166,6 +3212,17 @@ export const downloadAiDeliveryDeliverableHandler: RequestHandler = async (req, 
   if (!authSession) return void res.status(401).json(unauthorizedFailure());
   if (!aiDeliveryProjectId || !deliverableId) return void res.status(400).json(aiDeliveryProjectInvalidFailure());
   const response = await getAiDeliveryDeliverableDownload(authSession, aiDeliveryProjectId, deliverableId);
+  if (!response) return void res.status(404).json(failure("DOCUMENT_NOT_FOUND", "Document is not available."));
+  res.json(success(response, { phase: "runtime", scope: "secure-downloads" }));
+};
+
+export const downloadAiDeliveryArticleImageHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  const aiDeliveryProjectId = typeof req.params.id === "string" ? req.params.id.trim() : "";
+  const articleImageId = typeof req.params.imageId === "string" ? req.params.imageId.trim() : "";
+  if (!authSession) return void res.status(401).json(unauthorizedFailure());
+  if (!aiDeliveryProjectId || !articleImageId) return void res.status(400).json(aiDeliveryProjectInvalidFailure());
+  const response = await getAiDeliveryArticleImageDownload(authSession, aiDeliveryProjectId, articleImageId);
   if (!response) return void res.status(404).json(failure("DOCUMENT_NOT_FOUND", "Document is not available."));
   res.json(success(response, { phase: "runtime", scope: "secure-downloads" }));
 };

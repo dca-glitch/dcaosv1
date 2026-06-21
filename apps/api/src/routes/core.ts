@@ -50,7 +50,9 @@ import {
   listAiDeliveryDeliverableReviewsHandler,
   createAiDeliveryDeliverableHandler,
   createAiDeliveryDeliverableReviewHandler,
+  downloadAiDeliveryArticleImageHandler,
   downloadAiDeliveryDeliverableHandler,
+  uploadAiDeliveryArticleImageFinalAssetHandler,
   uploadAiDeliveryDeliverableDocumentHandler,
   markAiDeliveryDeliverableReadyHandler,
   updateAiDeliveryDeliverableHandler,
@@ -195,7 +197,9 @@ export function createCoreRouter() {
   router.post("/ai-delivery-projects/:id/article-images/:imageId/mark-preview-ready", requireAuth, requireTenant, requireRole("owner", "admin"), markAiDeliveryArticleImagePreviewReadyHandler);
   router.post("/ai-delivery-projects/:id/article-images/:imageId/request-changes", requireAuth, requireTenant, requireRole("owner", "admin"), requestAiDeliveryArticleImageChangesHandler);
   router.post("/ai-delivery-projects/:id/article-images/:imageId/approve", requireAuth, requireTenant, requireRole("owner", "admin"), approveAiDeliveryArticleImageHandler);
+  router.post("/ai-delivery-projects/:id/article-images/:imageId/final-image", requireAuth, requireTenant, requireRole("owner", "admin"), uploadAiDeliveryArticleImageFinalAssetHandler);
   router.post("/ai-delivery-projects/:id/article-images/:imageId/mark-final-ready", requireAuth, requireTenant, requireRole("owner", "admin"), markAiDeliveryArticleImageFinalReadyHandler);
+  router.get("/ai-delivery-projects/:id/article-images/:imageId/download", requireAuth, requireTenant, requireRole("owner", "admin"), downloadAiDeliveryArticleImageHandler);
   router.get("/ai-delivery-projects/:id/deliverables", requireAuth, requireTenant, requireRole("owner", "admin"), listAiDeliveryDeliverablesHandler);
   router.post("/ai-delivery-projects/:id/deliverables", requireAuth, requireTenant, requireRole("owner", "admin"), createAiDeliveryDeliverableHandler);
   router.put("/ai-delivery-projects/:id/deliverables/:deliverableId", requireAuth, requireTenant, requireRole("owner", "admin"), updateAiDeliveryDeliverableHandler);

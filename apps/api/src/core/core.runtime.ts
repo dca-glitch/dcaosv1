@@ -1,6 +1,7 @@
 import type { Prisma } from "@prisma/client";
 import { createPrismaClient } from "../../../../packages/data/src/client";
 import type {
+  AiDeliveryArticleImageUploadRequest,
   AiDeliveryArticleImageInputRequest,
   AiDeliveryArticleImageResponse,
   AiDeliveryArticleImagesResponse,
@@ -2550,6 +2551,120 @@ export async function archiveAiDeliveryArticleImage(
       select: aiDeliveryArticleImageSelect
     }) as any;
     return { articleImage: toAiDeliveryArticleImageSummary(archived) };
+  });
+}
+
+export async function getAiDeliveryArticleImageDownload(
+  authSession: AuthResolvedSessionContext,
+  aiDeliveryProjectId: string,
+  articleImageId: string
+): Promise<DocumentDownloadResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId || !aiDeliveryProjectId || !articleImageId) {
+    return null;
+  }
+
+  const articleImage = await getAiDeliveryArticleImageDelegate(prisma).findFirst({
+    where: {
+      id: articleImageId,
+      tenantId,
+      aiDeliveryProjectId,
+      isArchived: false
+    },
+    select: {
+      storageKey: true
+    }
+  }) as { storageKey?: string | null } | null;
+
+  if (!articleImage?.storageKey) {
+    return null;
+  }
+
+  return getPrivateStorageDownloadReference(articleImage.storageKey);
+}
+
+export async function uploadAiDeliveryArticleImageFinalAsset(
+  authSession: AuthResolvedSessionContext,
+  aiDeliveryProjectId: string,
+  articleImageId: string,
+  input: AiDeliveryArticleImageUploadRequest
+): Promise<AiDeliveryArticleImageResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId || !aiDeliveryProjectId || !articleImageId || !input.fileName || !input.mimeType || !input.contentBase64) {
+    return null;
+  }
+  const { contentBase64, fileName, mimeType } = input;
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    const project = await getAiDeliveryProjectForDraft(tx, tenantId, aiDeliveryProjectId);
+    if (!project) {
+      return null;
+    }
+
+    const existing = await getAiDeliveryArticleImageDelegate(tx).findFirst({
+      where: {
+        id: articleImageId,
+        tenantId,
+        aiDeliveryProjectId,
+        isArchived: false
+      },
+      select: aiDeliveryArticleImageSelect as any
+    }) as any;
+    if (!existing) {
+      return null;
+    }
+
+    const tenant = await tx.tenant.findUnique({
+      where: {
+        id: tenantId
+      },
+      select: {
+        id: true,
+        slug: true
+      }
+    });
+    if (!tenant) {
+      return null;
+    }
+
+    const upload = await putPrivateStorageObject({
+      body: Buffer.from(contentBase64, "base64"),
+      documentDate: new Date(),
+      mimeType,
+      namespace: "ai-delivery-asset",
+      originalFileName: fileName,
+      projectSlugOrId: aiDeliveryProjectId,
+      tenantSlugOrId: tenant.slug || tenant.id
+    });
+
+    if (!upload) {
+      throw new Error("Private storage is not configured.");
+    }
+
+    const updated = await getAiDeliveryArticleImageDelegate(tx).update({
+      where: {
+        id: existing.id
+      },
+      data: {
+        storageKey: upload.storageKey,
+        finalImageUrl: null
+      },
+      select: aiDeliveryArticleImageSelect
+    }) as any;
+
+    await recordAiDeliverySystemEvent(
+      {
+        tenantId,
+        aiDeliveryProjectId,
+        eventName: "AI_DELIVERY_ARTICLE_IMAGE_UPDATED",
+        relatedEntityId: updated.id
+      },
+      tx
+    );
+
+    return {
+      articleImage: toAiDeliveryArticleImageSummary(updated)
+    };
   });
 }
 
