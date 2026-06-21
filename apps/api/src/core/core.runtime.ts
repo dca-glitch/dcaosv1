@@ -13,6 +13,10 @@ import type {
   AiDeliveryResearchRequestInputRequest,
   AiDeliveryResearchRequestResponse,
   AiDeliveryResearchRequestsResponse,
+  AiDeliveryResearchSummaryApplyResponse,
+  AiDeliveryResearchSummaryInputRequest,
+  AiDeliveryResearchSummaryResponse,
+  AiDeliveryResearchSummariesResponse,
   AiDeliveryResearchSourceInputRequest,
   AiDeliveryResearchSourceResponse,
   AiDeliveryResearchSourcesResponse,
@@ -79,6 +83,7 @@ type TaskRecurringType = "NONE" | "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY";
 type InvoiceStatus = "DRAFT" | "ISSUED" | "PAID" | "VOIDED" | "UNCOLLECTIBLE";
 type AiDeliveryWorkflowRunStatus = "DRAFT" | "READY" | "IN_PROGRESS" | "REVIEW" | "COMPLETED" | "FAILED" | "ARCHIVED";
 type AiDeliveryResearchRequestStatus = "DRAFT" | "READY" | "IN_REVIEW" | "COMPLETED" | "ARCHIVED";
+type AiDeliveryResearchSummaryStatus = "DRAFT" | "IN_REVIEW" | "FINALIZED" | "ARCHIVED";
 type AiDeliveryResearchSourceStatus = "PROPOSED" | "APPROVED" | "REJECTED" | "ARCHIVED";
 type AiDeliveryResearchSourceType = "WEBSITE" | "DOCUMENT" | "OTHER";
 type AiDeliveryContentDraftStatus = "DRAFT" | "READY_FOR_REVIEW" | "APPROVED" | "CHANGES_REQUESTED" | "ARCHIVED";
@@ -94,6 +99,7 @@ type BillPaymentForm = "CASH" | "REVOLUT_BANK" | "WISE_BANK" | "REVOLUT_CARD" | 
 const AI_DELIVERY_WORKFLOW_RUN_STATUSES: AiDeliveryWorkflowRunStatus[] = ["DRAFT", "READY", "IN_PROGRESS", "REVIEW", "COMPLETED", "FAILED", "ARCHIVED"];
 const AI_DELIVERY_WORKFLOW_RUN_STATUS_ORDER: AiDeliveryWorkflowRunStatus[] = ["DRAFT", "READY", "IN_PROGRESS", "REVIEW", "COMPLETED", "ARCHIVED"];
 const AI_DELIVERY_RESEARCH_REQUEST_STATUSES: AiDeliveryResearchRequestStatus[] = ["DRAFT", "READY", "IN_REVIEW", "COMPLETED", "ARCHIVED"];
+const AI_DELIVERY_RESEARCH_SUMMARY_STATUSES: AiDeliveryResearchSummaryStatus[] = ["DRAFT", "IN_REVIEW", "FINALIZED", "ARCHIVED"];
 const AI_DELIVERY_RESEARCH_SOURCE_STATUSES: AiDeliveryResearchSourceStatus[] = ["PROPOSED", "APPROVED", "REJECTED", "ARCHIVED"];
 const AI_DELIVERY_RESEARCH_SOURCE_TYPES: AiDeliveryResearchSourceType[] = ["WEBSITE", "DOCUMENT", "OTHER"];
 type ClientUserAccessSummary = {
@@ -151,6 +157,10 @@ function getAiDeliveryResearchRequestDelegate(client: PrismaTx | typeof prisma) 
 
 function getAiDeliveryResearchSourceDelegate(client: PrismaTx | typeof prisma) {
   return (client as unknown as { aiDeliveryResearchSource: { findFirst: (args: unknown) => Promise<unknown>; findMany: (args: unknown) => Promise<unknown[]>; create: (args: unknown) => Promise<unknown>; update: (args: unknown) => Promise<unknown>; } }).aiDeliveryResearchSource;
+}
+
+function getAiDeliveryResearchSummaryDelegate(client: PrismaTx | typeof prisma) {
+  return (client as unknown as { aiDeliveryResearchSummary: { findFirst: (args: unknown) => Promise<unknown>; findMany: (args: unknown) => Promise<unknown[]>; create: (args: unknown) => Promise<unknown>; update: (args: unknown) => Promise<unknown>; } }).aiDeliveryResearchSummary;
 }
 
 function toDateString(value: Date | null | undefined): string | null {
@@ -3438,6 +3448,285 @@ export async function updateAiDeliveryResearchSource(
     );
 
     return { researchSource: updatedSource };
+  });
+}
+
+const aiDeliveryResearchSummarySelect = {
+  id: true,
+  tenantId: true,
+  aiDeliveryProjectId: true,
+  workflowRunId: true,
+  title: true,
+  status: true,
+  summaryText: true,
+  keyFindings: true,
+  audienceInsights: true,
+  competitorInsights: true,
+  keywordOpportunities: true,
+  contentRecommendations: true,
+  briefRevisionNotes: true,
+  sourceNotes: true,
+  finalizedAt: true,
+  createdAt: true,
+  updatedAt: true,
+  workflowRun: {
+    select: {
+      id: true,
+      status: true
+    }
+  }
+} as const;
+
+function normalizeAiDeliveryResearchSummaryStatus(value: string | null | undefined): AiDeliveryResearchSummaryStatus {
+  const status = value ? value.trim().toUpperCase() : null;
+  return status && AI_DELIVERY_RESEARCH_SUMMARY_STATUSES.includes(status as AiDeliveryResearchSummaryStatus)
+    ? (status as AiDeliveryResearchSummaryStatus)
+    : "DRAFT";
+}
+
+function toAiDeliveryResearchSummarySummary(summary: any) {
+  return {
+    id: summary.id,
+    tenantId: summary.tenantId,
+    aiDeliveryProjectId: summary.aiDeliveryProjectId,
+    workflowRunId: summary.workflowRunId ?? null,
+    workflowRun: summary.workflowRun
+      ? {
+          id: summary.workflowRun.id,
+          status: summary.workflowRun.status
+        }
+      : null,
+    title: summary.title,
+    status: summary.status,
+    summaryText: summary.summaryText,
+    keyFindings: summary.keyFindings ?? null,
+    audienceInsights: summary.audienceInsights ?? null,
+    competitorInsights: summary.competitorInsights ?? null,
+    keywordOpportunities: summary.keywordOpportunities ?? null,
+    contentRecommendations: summary.contentRecommendations ?? null,
+    briefRevisionNotes: summary.briefRevisionNotes ?? null,
+    sourceNotes: summary.sourceNotes ?? null,
+    finalizedAt: summary.finalizedAt ? summary.finalizedAt.toISOString() : null,
+    createdAt: summary.createdAt.toISOString(),
+    updatedAt: summary.updatedAt.toISOString()
+  };
+}
+
+function buildAiDeliveryBriefNotesFromResearchSummary(summary: ReturnType<typeof toAiDeliveryResearchSummarySummary>): string {
+  const sections = [
+    `Research summary applied: ${summary.title}`,
+    `Status: ${summary.status}`,
+    `Summary: ${summary.summaryText}`,
+    summary.keyFindings ? `Key findings: ${summary.keyFindings}` : null,
+    summary.audienceInsights ? `Audience insights: ${summary.audienceInsights}` : null,
+    summary.competitorInsights ? `Competitor insights: ${summary.competitorInsights}` : null,
+    summary.keywordOpportunities ? `Keyword opportunities: ${summary.keywordOpportunities}` : null,
+    summary.contentRecommendations ? `Content recommendations: ${summary.contentRecommendations}` : null,
+    summary.briefRevisionNotes ? `Brief revision notes: ${summary.briefRevisionNotes}` : null,
+    summary.sourceNotes ? `Source notes: ${summary.sourceNotes}` : null
+  ].filter(Boolean) as string[];
+
+  return sections.join("\n");
+}
+
+async function getAiDeliveryProjectBrief(tx: PrismaTx, tenantId: string, aiDeliveryProjectId: string) {
+  return tx.aiDeliveryBrief.findFirst({
+    where: { tenantId, aiDeliveryProjectId },
+    select: { id: true, notes: true, updatedAt: true }
+  });
+}
+
+export async function listAiDeliveryResearchSummaries(
+  authSession: AuthResolvedSessionContext,
+  aiDeliveryProjectId: string
+): Promise<AiDeliveryResearchSummariesResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) return null;
+
+  const project = await getAiDeliveryActiveProject(prisma, tenantId, aiDeliveryProjectId);
+  if (!project) return null;
+
+  const researchSummaries = await getAiDeliveryResearchSummaryDelegate(prisma).findMany({
+    where: { tenantId, aiDeliveryProjectId },
+    orderBy: { updatedAt: "desc" },
+    select: aiDeliveryResearchSummarySelect
+  });
+
+  return { researchSummaries: researchSummaries.map(toAiDeliveryResearchSummarySummary) };
+}
+
+export async function createAiDeliveryResearchSummary(
+  authSession: AuthResolvedSessionContext,
+  aiDeliveryProjectId: string,
+  input: AiDeliveryResearchSummaryInputRequest
+): Promise<AiDeliveryResearchSummaryResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) return null;
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    const project = await getAiDeliveryActiveProject(tx, tenantId, aiDeliveryProjectId);
+    if (!project) return null;
+
+    const workflowRunId = toNullableString(input.workflowRunId);
+    if (workflowRunId) {
+      const workflowRun = await getAiDeliveryProjectWorkflowRun(tx, tenantId, aiDeliveryProjectId, workflowRunId);
+      if (!workflowRun) return null;
+    }
+
+    const status = normalizeAiDeliveryResearchSummaryStatus(input.status);
+    const finalizedAt = status === "FINALIZED" ? new Date() : null;
+    const created = await getAiDeliveryResearchSummaryDelegate(tx).create({
+      data: {
+        tenantId,
+        aiDeliveryProjectId,
+        workflowRunId,
+        title: input.title?.trim() ?? "",
+        status,
+        summaryText: input.summaryText?.trim() ?? "",
+        keyFindings: toNullableString(input.keyFindings),
+        audienceInsights: toNullableString(input.audienceInsights),
+        competitorInsights: toNullableString(input.competitorInsights),
+        keywordOpportunities: toNullableString(input.keywordOpportunities),
+        contentRecommendations: toNullableString(input.contentRecommendations),
+        briefRevisionNotes: toNullableString(input.briefRevisionNotes),
+        sourceNotes: toNullableString(input.sourceNotes),
+        finalizedAt
+      },
+      select: aiDeliveryResearchSummarySelect
+    });
+
+    const createdSummary = toAiDeliveryResearchSummarySummary(created);
+    await recordAiDeliverySystemEvent(
+      {
+        tenantId,
+        aiDeliveryProjectId,
+        eventName: "AI_DELIVERY_RESEARCH_SUMMARY_CREATED",
+        relatedEntityId: createdSummary.id
+      },
+      tx
+    );
+
+    return { researchSummary: createdSummary };
+  });
+}
+
+export async function updateAiDeliveryResearchSummary(
+  authSession: AuthResolvedSessionContext,
+  aiDeliveryProjectId: string,
+  researchSummaryId: string,
+  input: AiDeliveryResearchSummaryInputRequest
+): Promise<AiDeliveryResearchSummaryResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) return null;
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    const project = await getAiDeliveryActiveProject(tx, tenantId, aiDeliveryProjectId);
+    if (!project) return null;
+
+    const existing = await getAiDeliveryResearchSummaryDelegate(tx).findFirst({
+      where: { id: researchSummaryId, tenantId, aiDeliveryProjectId },
+      select: aiDeliveryResearchSummarySelect
+    }) as any;
+    if (!existing) return null;
+
+    let workflowRunId: string | null | undefined;
+    if (input.workflowRunId !== undefined) {
+      workflowRunId = toNullableString(input.workflowRunId);
+      if (workflowRunId) {
+        const workflowRun = await getAiDeliveryProjectWorkflowRun(tx, tenantId, aiDeliveryProjectId, workflowRunId);
+        if (!workflowRun) return null;
+      }
+    }
+
+    const nextStatus = input.status ? normalizeAiDeliveryResearchSummaryStatus(input.status) : existing.status;
+    const updated = await getAiDeliveryResearchSummaryDelegate(tx).update({
+      where: { id: researchSummaryId },
+      data: {
+        title: input.title === undefined ? existing.title : input.title.trim(),
+        status: nextStatus,
+        summaryText: input.summaryText === undefined ? existing.summaryText : input.summaryText.trim(),
+        keyFindings: input.keyFindings === undefined ? existing.keyFindings : toNullableString(input.keyFindings),
+        audienceInsights: input.audienceInsights === undefined ? existing.audienceInsights : toNullableString(input.audienceInsights),
+        competitorInsights: input.competitorInsights === undefined ? existing.competitorInsights : toNullableString(input.competitorInsights),
+        keywordOpportunities: input.keywordOpportunities === undefined ? existing.keywordOpportunities : toNullableString(input.keywordOpportunities),
+        contentRecommendations: input.contentRecommendations === undefined ? existing.contentRecommendations : toNullableString(input.contentRecommendations),
+        briefRevisionNotes: input.briefRevisionNotes === undefined ? existing.briefRevisionNotes : toNullableString(input.briefRevisionNotes),
+        sourceNotes: input.sourceNotes === undefined ? existing.sourceNotes : toNullableString(input.sourceNotes),
+        finalizedAt: nextStatus === "FINALIZED" ? existing.finalizedAt ?? new Date() : existing.finalizedAt,
+        ...(workflowRunId !== undefined ? { workflowRunId } : {})
+      },
+      select: aiDeliveryResearchSummarySelect
+    });
+
+    const updatedSummary = toAiDeliveryResearchSummarySummary(updated);
+    await recordAiDeliverySystemEvent(
+      {
+        tenantId,
+        aiDeliveryProjectId,
+        eventName: "AI_DELIVERY_RESEARCH_SUMMARY_UPDATED",
+        relatedEntityId: updatedSummary.id
+      },
+      tx
+    );
+
+    return { researchSummary: updatedSummary };
+  });
+}
+
+export async function applyAiDeliveryResearchSummaryToBrief(
+  authSession: AuthResolvedSessionContext,
+  aiDeliveryProjectId: string,
+  researchSummaryId: string
+): Promise<AiDeliveryResearchSummaryApplyResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) return null;
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    const project = await getAiDeliveryActiveProject(tx, tenantId, aiDeliveryProjectId);
+    if (!project) return null;
+
+    const summary = await getAiDeliveryResearchSummaryDelegate(tx).findFirst({
+      where: { id: researchSummaryId, tenantId, aiDeliveryProjectId },
+      select: aiDeliveryResearchSummarySelect
+    }) as any;
+    if (!summary) return null;
+
+    const brief = await getAiDeliveryProjectBrief(tx, tenantId, aiDeliveryProjectId);
+    if (!brief) return null;
+
+    const summaryRecord = toAiDeliveryResearchSummarySummary(summary);
+    const appliedBlock = buildAiDeliveryBriefNotesFromResearchSummary(summaryRecord);
+    const nextNotes = [brief.notes?.trim(), appliedBlock].filter(Boolean).join("\n\n");
+    const updatedBrief = await tx.aiDeliveryBrief.update({
+      where: { id: brief.id },
+      data: {
+        notes: nextNotes
+      },
+      select: {
+        id: true,
+        notes: true,
+        updatedAt: true
+      }
+    });
+
+    await recordAiDeliverySystemEvent(
+      {
+        tenantId,
+        aiDeliveryProjectId,
+        eventName: "AI_DELIVERY_RESEARCH_SUMMARY_APPLIED_TO_BRIEF",
+        relatedEntityId: summaryRecord.id
+      },
+      tx
+    );
+
+    return {
+      researchSummary: summaryRecord,
+      brief: {
+        id: updatedBrief.id,
+        notes: updatedBrief.notes ?? null,
+        updatedAt: updatedBrief.updatedAt.toISOString()
+      }
+    };
   });
 }
 

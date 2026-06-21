@@ -39,6 +39,7 @@ import {
   createAiDeliveryContentDraft,
   createAiDeliveryProject,
   createAiDeliveryResearchRequest,
+  createAiDeliveryResearchSummary,
   createAiDeliveryResearchSource,
   executeAiDeliveryWorkflowRun,
   createAiDeliveryWorkflowRun,
@@ -66,6 +67,7 @@ import {
   listAiDeliveryArticleImages,
   listAiDeliveryProjects,
   listAiDeliveryResearchRequests,
+  listAiDeliveryResearchSummaries,
   listAiDeliveryResearchSources,
   listAiDeliveryWorkflowRuns,
   listInvoices,
@@ -92,6 +94,7 @@ import {
   updateAiDeliveryArticleImage,
   updateAiDeliveryProject,
   updateAiDeliveryResearchRequest,
+  updateAiDeliveryResearchSummary,
   updateAiDeliveryResearchSource,
   updateAiDeliveryWorkflowRun,
   updateBill,
@@ -123,6 +126,7 @@ import {
   getClientAiDeliveryContentPlanReview,
   approveClientAiDeliveryContentPlanReview,
   requestClientAiDeliveryContentPlanRevision,
+  applyAiDeliveryResearchSummaryToBrief,
   listAiDeliveryDeliverables,
   createAiDeliveryDeliverable,
   updateAiDeliveryDeliverable,
@@ -136,6 +140,7 @@ import type {
   AiDeliveryContentDraftInputRequest,
   AiDeliveryProjectInputRequest,
   AiDeliveryResearchRequestInputRequest,
+  AiDeliveryResearchSummaryInputRequest,
   AiDeliveryResearchSourceInputRequest,
   BillDocumentUploadRequest,
   BillInputRequest,
@@ -164,6 +169,7 @@ const CLIENT_COUNTRIES = new Set(["Indonesia", "Poland", "United States", "Unite
 const PROJECT_STATUSES = new Set(["Active", "Paused", "Completed", "Archived"]);
 const AI_DELIVERY_WORKFLOW_RUN_STATUSES = new Set(["DRAFT", "READY", "IN_PROGRESS", "REVIEW", "COMPLETED", "FAILED", "ARCHIVED"]);
 const AI_DELIVERY_RESEARCH_REQUEST_STATUSES = new Set(["DRAFT", "READY", "IN_REVIEW", "COMPLETED", "ARCHIVED"]);
+const AI_DELIVERY_RESEARCH_SUMMARY_STATUSES = new Set(["DRAFT", "IN_REVIEW", "FINALIZED", "ARCHIVED"]);
 const AI_DELIVERY_RESEARCH_SOURCE_STATUSES = new Set(["PROPOSED", "APPROVED", "REJECTED", "ARCHIVED"]);
 const AI_DELIVERY_RESEARCH_SOURCE_TYPES = new Set(["WEBSITE", "DOCUMENT", "OTHER"]);
 const AI_DELIVERY_CONTENT_DRAFT_STATUSES = new Set(["DRAFT", "READY_FOR_REVIEW", "APPROVED", "CHANGES_REQUESTED", "ARCHIVED"]);
@@ -449,6 +455,38 @@ function getAiDeliveryResearchRequestInput(body: unknown): AiDeliveryResearchReq
     description: getOptionalString(value.description, TEXT_FIELD_MAX_LENGTH),
     requestType: getOptionalString(value.requestType, SHORT_TEXT_FIELD_MAX_LENGTH),
     status
+  };
+}
+
+function getAiDeliveryResearchSummaryInput(body: unknown): AiDeliveryResearchSummaryInputRequest | null {
+  const value = (body ?? {}) as Record<string, unknown>;
+  const status = value.status === undefined ? undefined : typeof value.status === "string" ? value.status.trim().toUpperCase() : null;
+  if (status !== undefined && (!status || !AI_DELIVERY_RESEARCH_SUMMARY_STATUSES.has(status))) {
+    return null;
+  }
+
+  const title = value.title === undefined ? undefined : getRequiredString(value.title, SHORT_TEXT_FIELD_MAX_LENGTH);
+  if (value.title !== undefined && !title) {
+    return null;
+  }
+
+  const summaryText = value.summaryText === undefined ? undefined : getRequiredString(value.summaryText, TEXT_FIELD_MAX_LENGTH);
+  if (value.summaryText !== undefined && !summaryText) {
+    return null;
+  }
+
+  return {
+    workflowRunId: getOptionalString(value.workflowRunId, SHORT_TEXT_FIELD_MAX_LENGTH),
+    title: title ?? undefined,
+    status,
+    summaryText: summaryText ?? undefined,
+    keyFindings: getOptionalString(value.keyFindings, TEXT_FIELD_MAX_LENGTH),
+    audienceInsights: getOptionalString(value.audienceInsights, TEXT_FIELD_MAX_LENGTH),
+    competitorInsights: getOptionalString(value.competitorInsights, TEXT_FIELD_MAX_LENGTH),
+    keywordOpportunities: getOptionalString(value.keywordOpportunities, TEXT_FIELD_MAX_LENGTH),
+    contentRecommendations: getOptionalString(value.contentRecommendations, TEXT_FIELD_MAX_LENGTH),
+    briefRevisionNotes: getOptionalString(value.briefRevisionNotes, TEXT_FIELD_MAX_LENGTH),
+    sourceNotes: getOptionalString(value.sourceNotes, TEXT_FIELD_MAX_LENGTH)
   };
 }
 
@@ -1518,6 +1556,114 @@ export const updateAiDeliveryResearchRequestHandler: RequestHandler = async (req
     res.json(success(response, { phase: "runtime", scope: "ai-delivery-research-requests" }));
   } catch {
     res.status(500).json(failure("AI_DELIVERY_RESEARCH_REQUEST_RUNTIME_ERROR", "AI Delivery research request update could not be completed."));
+  }
+};
+
+export const listAiDeliveryResearchSummariesHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) {
+    res.status(401).json(unauthorizedFailure());
+    return;
+  }
+
+  const aiDeliveryProjectId = typeof req.params.projectId === "string" ? req.params.projectId.trim() : "";
+  if (!aiDeliveryProjectId) {
+    res.status(400).json(aiDeliveryProjectInvalidFailure());
+    return;
+  }
+
+  try {
+    const response = await listAiDeliveryResearchSummaries(authSession, aiDeliveryProjectId);
+    if (!response) {
+      res.status(404).json(aiDeliveryProjectNotFoundFailure());
+      return;
+    }
+
+    res.json(success(response, { phase: "runtime", scope: "ai-delivery-research-summaries" }));
+  } catch {
+    res.status(500).json(failure("AI_DELIVERY_RESEARCH_SUMMARY_RUNTIME_ERROR", "AI Delivery research summary list could not be completed."));
+  }
+};
+
+export const createAiDeliveryResearchSummaryHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) {
+    res.status(401).json(unauthorizedFailure());
+    return;
+  }
+
+  const aiDeliveryProjectId = typeof req.params.projectId === "string" ? req.params.projectId.trim() : "";
+  const input = getAiDeliveryResearchSummaryInput(req.body);
+  if (!aiDeliveryProjectId || !input?.title || !input.summaryText) {
+    res.status(400).json(aiDeliveryProjectInvalidFailure());
+    return;
+  }
+
+  try {
+    const response = await createAiDeliveryResearchSummary(authSession, aiDeliveryProjectId, input);
+    if (!response?.researchSummary) {
+      res.status(404).json(aiDeliveryProjectNotFoundFailure());
+      return;
+    }
+
+    res.status(201).json(success(response, { phase: "runtime", scope: "ai-delivery-research-summaries" }));
+  } catch {
+    res.status(500).json(failure("AI_DELIVERY_RESEARCH_SUMMARY_RUNTIME_ERROR", "AI Delivery research summary create could not be completed."));
+  }
+};
+
+export const updateAiDeliveryResearchSummaryHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) {
+    res.status(401).json(unauthorizedFailure());
+    return;
+  }
+
+  const aiDeliveryProjectId = typeof req.params.projectId === "string" ? req.params.projectId.trim() : "";
+  const researchSummaryId = typeof req.params.researchSummaryId === "string" ? req.params.researchSummaryId.trim() : "";
+  const input = getAiDeliveryResearchSummaryInput(req.body);
+  if (!aiDeliveryProjectId || !researchSummaryId || !input) {
+    res.status(400).json(aiDeliveryProjectInvalidFailure());
+    return;
+  }
+
+  try {
+    const response = await updateAiDeliveryResearchSummary(authSession, aiDeliveryProjectId, researchSummaryId, input);
+    if (!response?.researchSummary) {
+      res.status(404).json(aiDeliveryProjectNotFoundFailure());
+      return;
+    }
+
+    res.json(success(response, { phase: "runtime", scope: "ai-delivery-research-summaries" }));
+  } catch {
+    res.status(500).json(failure("AI_DELIVERY_RESEARCH_SUMMARY_RUNTIME_ERROR", "AI Delivery research summary update could not be completed."));
+  }
+};
+
+export const applyAiDeliveryResearchSummaryToBriefHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) {
+    res.status(401).json(unauthorizedFailure());
+    return;
+  }
+
+  const aiDeliveryProjectId = typeof req.params.projectId === "string" ? req.params.projectId.trim() : "";
+  const researchSummaryId = typeof req.params.researchSummaryId === "string" ? req.params.researchSummaryId.trim() : "";
+  if (!aiDeliveryProjectId || !researchSummaryId) {
+    res.status(400).json(aiDeliveryProjectInvalidFailure());
+    return;
+  }
+
+  try {
+    const response = await applyAiDeliveryResearchSummaryToBrief(authSession, aiDeliveryProjectId, researchSummaryId);
+    if (!response?.researchSummary || !response.brief) {
+      res.status(404).json(aiDeliveryProjectNotFoundFailure());
+      return;
+    }
+
+    res.json(success(response, { phase: "runtime", scope: "ai-delivery-research-summaries" }));
+  } catch {
+    res.status(500).json(failure("AI_DELIVERY_RESEARCH_SUMMARY_RUNTIME_ERROR", "AI Delivery research summary apply-to-brief could not be completed."));
   }
 };
 

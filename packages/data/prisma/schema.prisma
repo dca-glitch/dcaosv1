@@ -163,6 +163,7 @@ model Tenant {
   aiDeliveryWorkflowRuns AiDeliveryWorkflowRun[]
   aiDeliveryResearchRequests AiDeliveryResearchRequest[]
   aiDeliveryResearchSources AiDeliveryResearchSource[]
+  aiDeliveryResearchSummaries AiDeliveryResearchSummary[]
   clientUserAccesses   ClientUserAccess[]
   emailLogs            EmailLog[]            @relation("TenantEmailLogs")
 }
@@ -423,6 +424,7 @@ model AiDeliveryProject {
   workflowRuns AiDeliveryWorkflowRun[]
   researchRequests AiDeliveryResearchRequest[]
   researchSources AiDeliveryResearchSource[]
+  researchSummaries AiDeliveryResearchSummary[]
 
   @@index([tenantId])
   @@index([tenantId, isArchived])
@@ -684,6 +686,7 @@ model AiDeliveryWorkflowRun {
   deliverableReviews  AiDeliveryDeliverableReview[]
   researchRequests    AiDeliveryResearchRequest[]
   researchSources     AiDeliveryResearchSource[]
+  researchSummaries   AiDeliveryResearchSummary[]
 
   @@index([tenantId])
   @@index([tenantId, aiDeliveryProjectId])
@@ -757,6 +760,42 @@ model AiDeliveryResearchSource {
   @@index([tenantId])
   @@index([tenantId, aiDeliveryProjectId])
   @@index([tenantId, researchRequestId])
+  @@index([tenantId, workflowRunId])
+  @@index([tenantId, status])
+}
+
+enum AiDeliveryResearchSummaryStatus {
+  DRAFT
+  IN_REVIEW
+  FINALIZED
+  ARCHIVED
+}
+
+model AiDeliveryResearchSummary {
+  id                     String                         @id @default(uuid())
+  tenantId               String
+  aiDeliveryProjectId    String
+  workflowRunId          String?
+  title                  String
+  status                 AiDeliveryResearchSummaryStatus @default(DRAFT)
+  summaryText            String
+  keyFindings            String?
+  audienceInsights       String?
+  competitorInsights     String?
+  keywordOpportunities   String?
+  contentRecommendations String?
+  briefRevisionNotes     String?
+  sourceNotes            String?
+  finalizedAt            DateTime?
+  createdAt              DateTime                       @default(now())
+  updatedAt              DateTime                       @updatedAt
+
+  tenant              Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  aiDeliveryProject   AiDeliveryProject      @relation(fields: [aiDeliveryProjectId], references: [id], onDelete: Cascade)
+  workflowRun         AiDeliveryWorkflowRun? @relation(fields: [workflowRunId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@index([tenantId, aiDeliveryProjectId])
   @@index([tenantId, workflowRunId])
   @@index([tenantId, status])
 }

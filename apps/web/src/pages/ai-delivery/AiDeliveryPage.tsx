@@ -224,6 +224,41 @@ export type AiDeliveryResearchRequestFormValues = {
   status: string;
 };
 
+export type AiDeliveryResearchSummarySummary = {
+  id: string;
+  tenantId: string;
+  aiDeliveryProjectId: string;
+  workflowRunId: string | null;
+  workflowRun: { id: string; status: string } | null;
+  title: string;
+  status: string;
+  summaryText: string;
+  keyFindings: string | null;
+  audienceInsights: string | null;
+  competitorInsights: string | null;
+  keywordOpportunities: string | null;
+  contentRecommendations: string | null;
+  briefRevisionNotes: string | null;
+  sourceNotes: string | null;
+  finalizedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type AiDeliveryResearchSummaryFormValues = {
+  workflowRunId: string | null;
+  title: string;
+  status: string;
+  summaryText: string;
+  keyFindings: string;
+  audienceInsights: string;
+  competitorInsights: string;
+  keywordOpportunities: string;
+  contentRecommendations: string;
+  briefRevisionNotes: string;
+  sourceNotes: string;
+};
+
 export type AiDeliveryResearchSourceSummary = {
   id: string;
   tenantId: string;
@@ -316,12 +351,16 @@ export type AiDeliveryProjectsProps = {
   onExecuteWorkflowRun?: (projectId: string, workflowRunId: string) => Promise<AiDeliveryWorkflowRunSummary | null>;
   onFetchResearchRequests?: (projectId: string) => Promise<AiDeliveryResearchRequestSummary[]>;
   onSaveResearchRequest?: (projectId: string, researchRequestId: string | null, values: AiDeliveryResearchRequestFormValues) => Promise<AiDeliveryResearchRequestSummary | null>;
+  onFetchResearchSummaries?: (projectId: string) => Promise<AiDeliveryResearchSummarySummary[]>;
+  onSaveResearchSummary?: (projectId: string, researchSummaryId: string | null, values: AiDeliveryResearchSummaryFormValues) => Promise<AiDeliveryResearchSummarySummary | null>;
+  onApplyResearchSummaryToBrief?: (projectId: string, researchSummaryId: string) => Promise<{ researchSummary: AiDeliveryResearchSummarySummary | null; brief: { id: string; notes: string | null; updatedAt: string } | null } | null>;
   onFetchResearchSources?: (projectId: string, researchRequestId?: string | null) => Promise<AiDeliveryResearchSourceSummary[]>;
   onSaveResearchSource?: (projectId: string, researchSourceId: string | null, values: AiDeliveryResearchSourceFormValues) => Promise<AiDeliveryResearchSourceSummary | null>;
 };
 
 const workflowRunStatuses = ["DRAFT", "READY", "IN_PROGRESS", "REVIEW", "COMPLETED", "FAILED", "ARCHIVED"] as const;
 const researchRequestStatuses = ["DRAFT", "READY", "IN_REVIEW", "COMPLETED", "ARCHIVED"] as const;
+const researchSummaryStatuses = ["DRAFT", "IN_REVIEW", "FINALIZED", "ARCHIVED"] as const;
 const researchSourceStatuses = ["PROPOSED", "APPROVED", "REJECTED", "ARCHIVED"] as const;
 const researchSourceTypes = ["WEBSITE", "DOCUMENT", "OTHER"] as const;
 const workflowRunLifecycleStatuses = ["DRAFT", "READY", "IN_PROGRESS", "REVIEW", "COMPLETED", "ARCHIVED"] as const;
@@ -439,6 +478,20 @@ const emptyResearchRequest = (): AiDeliveryResearchRequestFormValues => ({
   status: "DRAFT"
 });
 
+const emptyResearchSummary = (): AiDeliveryResearchSummaryFormValues => ({
+  workflowRunId: null,
+  title: "",
+  status: "DRAFT",
+  summaryText: "",
+  keyFindings: "",
+  audienceInsights: "",
+  competitorInsights: "",
+  keywordOpportunities: "",
+  contentRecommendations: "",
+  briefRevisionNotes: "",
+  sourceNotes: ""
+});
+
 const emptyResearchSource = (): AiDeliveryResearchSourceFormValues => ({
   researchRequestId: null,
   workflowRunId: null,
@@ -457,6 +510,20 @@ const researchSourceFormFromSummary = (source: AiDeliveryResearchSourceSummary):
   sourceType: source.sourceType,
   status: source.status,
   reviewNotes: source.reviewNotes ?? ""
+});
+
+const researchSummaryFormFromSummary = (summary: AiDeliveryResearchSummarySummary): AiDeliveryResearchSummaryFormValues => ({
+  workflowRunId: summary.workflowRunId,
+  title: summary.title,
+  status: summary.status,
+  summaryText: summary.summaryText,
+  keyFindings: summary.keyFindings ?? "",
+  audienceInsights: summary.audienceInsights ?? "",
+  competitorInsights: summary.competitorInsights ?? "",
+  keywordOpportunities: summary.keywordOpportunities ?? "",
+  contentRecommendations: summary.contentRecommendations ?? "",
+  briefRevisionNotes: summary.briefRevisionNotes ?? "",
+  sourceNotes: summary.sourceNotes ?? ""
 });
 
 function formatOptionalDate(value: string | null | undefined): string {
@@ -563,6 +630,9 @@ export function AiDeliveryPage({
   onExecuteWorkflowRun,
   onFetchResearchRequests,
   onSaveResearchRequest,
+  onFetchResearchSummaries,
+  onSaveResearchSummary,
+  onApplyResearchSummaryToBrief,
   onFetchResearchSources,
   onSaveResearchSource
 }: AiDeliveryProjectsProps) {
@@ -633,10 +703,13 @@ export function AiDeliveryPage({
   const [researchLoading, setResearchLoading] = useState(false);
   const [researchSaving, setResearchSaving] = useState(false);
   const [researchRequests, setResearchRequests] = useState<AiDeliveryResearchRequestSummary[]>([]);
+  const [researchSummaries, setResearchSummaries] = useState<AiDeliveryResearchSummarySummary[]>([]);
   const [researchSources, setResearchSources] = useState<AiDeliveryResearchSourceSummary[]>([]);
   const [researchWorkflowRuns, setResearchWorkflowRuns] = useState<AiDeliveryWorkflowRunSummary[]>([]);
   const [researchRequestEditorId, setResearchRequestEditorId] = useState<string | null>(null);
   const [researchRequestForm, setResearchRequestForm] = useState<AiDeliveryResearchRequestFormValues>(emptyResearchRequest());
+  const [researchSummaryEditorId, setResearchSummaryEditorId] = useState<string | null>(null);
+  const [researchSummaryForm, setResearchSummaryForm] = useState<AiDeliveryResearchSummaryFormValues>(emptyResearchSummary());
   const [researchSourceEditorId, setResearchSourceEditorId] = useState<string | null>(null);
   const [researchSourceForm, setResearchSourceForm] = useState<AiDeliveryResearchSourceFormValues>(emptyResearchSource());
 
@@ -1167,12 +1240,14 @@ export function AiDeliveryPage({
   }
 
   async function loadResearchSources(projectId: string) {
-    const [requests, sources, runs] = await Promise.all([
+    const [requests, summaries, sources, runs] = await Promise.all([
       typeof onFetchResearchRequests === "function" ? onFetchResearchRequests(projectId) : Promise.resolve([]),
+      typeof onFetchResearchSummaries === "function" ? onFetchResearchSummaries(projectId) : Promise.resolve([]),
       typeof onFetchResearchSources === "function" ? onFetchResearchSources(projectId) : Promise.resolve([]),
       typeof onFetchWorkflowRuns === "function" ? onFetchWorkflowRuns(projectId) : Promise.resolve([])
     ]);
     setResearchRequests(requests);
+    setResearchSummaries(summaries);
     setResearchSources(sources);
     setResearchWorkflowRuns(runs);
   }
@@ -1181,10 +1256,13 @@ export function AiDeliveryPage({
     setOpenResearchSourcesId(projectId);
     setResearchLoading(true);
     setResearchRequests([]);
+    setResearchSummaries([]);
     setResearchSources([]);
     setResearchWorkflowRuns([]);
     setResearchRequestEditorId(null);
     setResearchRequestForm(emptyResearchRequest());
+    setResearchSummaryEditorId(null);
+    setResearchSummaryForm(emptyResearchSummary());
     setResearchSourceEditorId(null);
     setResearchSourceForm(emptyResearchSource());
     try {
@@ -1208,6 +1286,11 @@ export function AiDeliveryPage({
   function editResearchSource(source: AiDeliveryResearchSourceSummary) {
     setResearchSourceEditorId(source.id);
     setResearchSourceForm(researchSourceFormFromSummary(source));
+  }
+
+  function editResearchSummary(summary: AiDeliveryResearchSummarySummary) {
+    setResearchSummaryEditorId(summary.id);
+    setResearchSummaryForm(researchSummaryFormFromSummary(summary));
   }
 
   async function saveResearchRequest(projectId: string) {
@@ -1240,6 +1323,47 @@ export function AiDeliveryPage({
     }
   }
 
+  async function saveResearchSummary(projectId: string) {
+    if (typeof onSaveResearchSummary !== "function" || !researchSummaryForm.title.trim() || !researchSummaryForm.summaryText.trim()) return;
+    setResearchSaving(true);
+    try {
+      const saved = await onSaveResearchSummary(projectId, researchSummaryEditorId, researchSummaryForm);
+      if (saved) {
+        await loadResearchSources(projectId);
+        setResearchSummaryEditorId(null);
+        setResearchSummaryForm(emptyResearchSummary());
+      }
+    } finally {
+      setResearchSaving(false);
+    }
+  }
+
+  async function setResearchSummaryStatus(projectId: string, summary: AiDeliveryResearchSummarySummary, status: string) {
+    if (typeof onSaveResearchSummary !== "function") return;
+    setResearchSaving(true);
+    try {
+      const saved = await onSaveResearchSummary(projectId, summary.id, { ...researchSummaryFormFromSummary(summary), status });
+      if (saved) {
+        await loadResearchSources(projectId);
+      }
+    } finally {
+      setResearchSaving(false);
+    }
+  }
+
+  async function applyResearchSummaryToBrief(projectId: string, summaryId: string) {
+    if (typeof onApplyResearchSummaryToBrief !== "function") return;
+    setResearchSaving(true);
+    try {
+      const applied = await onApplyResearchSummaryToBrief(projectId, summaryId);
+      if (applied?.researchSummary) {
+        await loadResearchSources(projectId);
+      }
+    } finally {
+      setResearchSaving(false);
+    }
+  }
+
   async function setResearchSourceStatus(projectId: string, source: AiDeliveryResearchSourceSummary, status: string) {
     if (typeof onSaveResearchSource !== "function") return;
     setResearchSaving(true);
@@ -1256,10 +1380,13 @@ export function AiDeliveryPage({
   function closeResearchSources() {
     setOpenResearchSourcesId(null);
     setResearchRequests([]);
+    setResearchSummaries([]);
     setResearchSources([]);
     setResearchWorkflowRuns([]);
     setResearchRequestEditorId(null);
     setResearchRequestForm(emptyResearchRequest());
+    setResearchSummaryEditorId(null);
+    setResearchSummaryForm(emptyResearchSummary());
     setResearchSourceEditorId(null);
     setResearchSourceForm(emptyResearchSource());
   }
@@ -1283,7 +1410,7 @@ export function AiDeliveryPage({
     ? formatStatusBreakdown(workflowRuns, "No workflow runs loaded for the open project")
     : "Open a project's Workflow runs to load per-project counts.";
   const researchHelper = openResearchSourcesId
-    ? `Requests: ${formatStatusBreakdown(researchRequests, "No research requests loaded")} - Sources: ${formatStatusBreakdown(researchSources, "No research sources loaded")}`
+    ? `Requests: ${formatStatusBreakdown(researchRequests, "No research requests loaded")} - Summaries: ${formatStatusBreakdown(researchSummaries, "No research summaries loaded")} - Sources: ${formatStatusBreakdown(researchSources, "No research sources loaded")}`
     : "Open a project's Research / Sources panel to load manual research records.";
   const seoTopicsHelper = openContentPlanId
     ? `${contentPlanItems.length} topic/research planning record(s) loaded for the open project.`
@@ -1355,7 +1482,7 @@ export function AiDeliveryPage({
           <MetricCard
             accent="warning"
             label="Research loaded"
-            value={openResearchSourcesId ? `${researchRequests.length}/${researchSources.length}` : "-"}
+            value={openResearchSourcesId ? `${researchRequests.length}/${researchSummaries.length}/${researchSources.length}` : "-"}
             helper={researchHelper}
           />
           <MetricCard
@@ -2058,6 +2185,139 @@ export function AiDeliveryPage({
                       <div className="field-span-2">
                         <dt>Description</dt>
                         <dd>{formatPreview(request.description)}</dd>
+                      </div>
+                    </dl>
+                  </article>
+                ))}
+              </section>
+
+              <section className="field-panel">
+                <h3>Research summary editor</h3>
+                <p className="muted-text">Research summaries are admin-authored in this foundation. No AI generation, crawling, or external fetching is performed.</p>
+                <div className="modal-footer">
+                  <button className="secondary-action" disabled={researchSaving} onClick={closeResearchSources} type="button">Close</button>
+                  <button className="secondary-action" disabled={researchSaving} onClick={() => { setResearchSummaryEditorId(null); setResearchSummaryForm(emptyResearchSummary()); }} type="button">New summary</button>
+                  <button className="primary-action" disabled={researchSaving || !researchSummaryForm.title.trim() || !researchSummaryForm.summaryText.trim()} onClick={() => void saveResearchSummary(openResearchSourcesProject.id)} type="button">
+                    {researchSaving ? "Saving" : researchSummaryEditorId ? "Save summary" : "Create summary"}
+                  </button>
+                </div>
+                <div className="field-grid">
+                  <label>
+                    Status - Required
+                    <select value={researchSummaryForm.status} onChange={(event) => setResearchSummaryForm((current) => ({ ...current, status: event.target.value }))}>
+                      {researchSummaryStatuses.map((status) => <option key={status} value={status}>{formatEnumLabel(status)}</option>)}
+                    </select>
+                    <span className="muted-text">Admin-controlled lifecycle for the internal research summary.</span>
+                  </label>
+                  <label>
+                    Linked workflow run - Optional
+                    <select value={researchSummaryForm.workflowRunId ?? ""} onChange={(event) => setResearchSummaryForm((current) => ({ ...current, workflowRunId: event.target.value || null }))}>
+                      <option value="">Manual / unlinked summary</option>
+                      {researchWorkflowRuns.map((run) => <option key={run.id} value={run.id}>Workflow run - {formatEnumLabel(run.status)}</option>)}
+                    </select>
+                    <span className="muted-text">Use only when the linked workflow run belongs to this same AI Delivery project.</span>
+                  </label>
+                  <label className="field-span-2">
+                    Title - Required
+                    <input maxLength={255} placeholder="SEO findings summary for brief revision and content planning" value={researchSummaryForm.title} onChange={(event) => setResearchSummaryForm((current) => ({ ...current, title: event.target.value }))} />
+                    <span className="muted-text">Internal title for the admin-authored summary of approved research findings.</span>
+                  </label>
+                  <label className="field-span-2">
+                    Summary - Required
+                    <textarea maxLength={4000} placeholder="Summarize the research findings, business context, and what should influence planning next" rows={5} value={researchSummaryForm.summaryText} onChange={(event) => setResearchSummaryForm((current) => ({ ...current, summaryText: event.target.value }))} />
+                    <span className="muted-text">Core internal summary for the project team. No AI generation or external fetch runs here.</span>
+                  </label>
+                  <label className="field-span-2">
+                    Key findings - Optional
+                    <textarea maxLength={4000} placeholder="Top findings the admin team wants to preserve from the manual research review" rows={3} value={researchSummaryForm.keyFindings} onChange={(event) => setResearchSummaryForm((current) => ({ ...current, keyFindings: event.target.value }))} />
+                    <span className="muted-text">Use for the most important takeaways that should guide brief refinement.</span>
+                  </label>
+                  <label className="field-span-2">
+                    Audience insights - Optional
+                    <textarea maxLength={4000} placeholder="Audience problems, intent signals, and messaging cues discovered during research" rows={3} value={researchSummaryForm.audienceInsights} onChange={(event) => setResearchSummaryForm((current) => ({ ...current, audienceInsights: event.target.value }))} />
+                    <span className="muted-text">Visible only to admin team.</span>
+                  </label>
+                  <label className="field-span-2">
+                    Competitor insights - Optional
+                    <textarea maxLength={4000} placeholder="Competitor positioning, gaps, and useful benchmark observations" rows={3} value={researchSummaryForm.competitorInsights} onChange={(event) => setResearchSummaryForm((current) => ({ ...current, competitorInsights: event.target.value }))} />
+                    <span className="muted-text">Use for internal competitive context only.</span>
+                  </label>
+                  <label className="field-span-2">
+                    Keyword opportunities - Optional
+                    <textarea maxLength={4000} placeholder="Search themes, target keyword opportunities, and promising topic clusters" rows={3} value={researchSummaryForm.keywordOpportunities} onChange={(event) => setResearchSummaryForm((current) => ({ ...current, keywordOpportunities: event.target.value }))} />
+                    <span className="muted-text">Supports future platform-neutral planning for content and SEO deliverables.</span>
+                  </label>
+                  <label className="field-span-2">
+                    Content recommendations - Optional
+                    <textarea maxLength={4000} placeholder="Recommended content directions, angles, and deliverable ideas for later planning" rows={3} value={researchSummaryForm.contentRecommendations} onChange={(event) => setResearchSummaryForm((current) => ({ ...current, contentRecommendations: event.target.value }))} />
+                    <span className="muted-text">Keep recommendations platform-neutral rather than tied to any one publishing connector.</span>
+                  </label>
+                  <label className="field-span-2">
+                    Brief revision notes - Optional
+                    <textarea maxLength={4000} placeholder="What should be revised or clarified in the project brief before planning continues" rows={3} value={researchSummaryForm.briefRevisionNotes} onChange={(event) => setResearchSummaryForm((current) => ({ ...current, briefRevisionNotes: event.target.value }))} />
+                    <span className="muted-text">Use this to guide safe admin-controlled updates into brief notes.</span>
+                  </label>
+                  <label className="field-span-2">
+                    Source notes - Optional
+                    <textarea maxLength={4000} placeholder="Manual notes about approved sources used for this summary and any limitations to keep in mind" rows={3} value={researchSummaryForm.sourceNotes} onChange={(event) => setResearchSummaryForm((current) => ({ ...current, sourceNotes: event.target.value }))} />
+                    <span className="muted-text">Use when source linkage stays manual in this foundation.</span>
+                  </label>
+                </div>
+                <div className="modal-footer">
+                  <button className="secondary-action" disabled={researchSaving} onClick={closeResearchSources} type="button">Close</button>
+                  <button className="secondary-action" disabled={researchSaving} onClick={() => { setResearchSummaryEditorId(null); setResearchSummaryForm(emptyResearchSummary()); }} type="button">New summary</button>
+                  <button className="primary-action" disabled={researchSaving || !researchSummaryForm.title.trim() || !researchSummaryForm.summaryText.trim()} onClick={() => void saveResearchSummary(openResearchSourcesProject.id)} type="button">
+                    {researchSaving ? "Saving" : researchSummaryEditorId ? "Save summary" : "Create summary"}
+                  </button>
+                </div>
+              </section>
+
+              <section className="field-panel">
+                <h3>Existing research summaries</h3>
+                {researchSummaries.length === 0 ? <div className="state-panel">No research summaries have been created yet.</div> : null}
+                {researchSummaries.map((summary) => (
+                  <article className="entity-card" key={summary.id} style={{ marginBottom: "1rem" }}>
+                    <div className="entity-card-header">
+                      <div>
+                        <StatusBadge status={summary.status} />
+                        <h3>{summary.title}</h3>
+                        <p>Updated {formatOptionalDate(summary.updatedAt)}</p>
+                      </div>
+                      <div className="card-actions">
+                        <button className="secondary-action" disabled={researchSaving} onClick={() => editResearchSummary(summary)} type="button">Edit</button>
+                        {summary.status !== "FINALIZED" ? <button className="secondary-action" disabled={researchSaving} onClick={() => void setResearchSummaryStatus(openResearchSourcesProject.id, summary, "FINALIZED")} type="button">Finalize</button> : null}
+                        {summary.status !== "ARCHIVED" ? <button className="secondary-action" disabled={researchSaving} onClick={() => void setResearchSummaryStatus(openResearchSourcesProject.id, summary, "ARCHIVED")} type="button">Archive</button> : null}
+                        <button className="secondary-action" disabled={researchSaving} onClick={() => void applyResearchSummaryToBrief(openResearchSourcesProject.id, summary.id)} type="button">Apply to brief notes</button>
+                      </div>
+                    </div>
+                    <dl className="brief-grid">
+                      <div>
+                        <dt>Status</dt>
+                        <dd>{formatEnumLabel(summary.status)}</dd>
+                      </div>
+                      <div>
+                        <dt>Workflow run</dt>
+                        <dd>{summary.workflowRun ? formatEnumLabel(summary.workflowRun.status) : "Manual / none"}</dd>
+                      </div>
+                      <div>
+                        <dt>Finalized</dt>
+                        <dd>{formatOptionalDate(summary.finalizedAt)}</dd>
+                      </div>
+                      <div>
+                        <dt>Created</dt>
+                        <dd>{formatOptionalDate(summary.createdAt)}</dd>
+                      </div>
+                      <div className="field-span-2">
+                        <dt>Summary</dt>
+                        <dd>{formatPreview(summary.summaryText)}</dd>
+                      </div>
+                      <div className="field-span-2">
+                        <dt>Key findings</dt>
+                        <dd>{formatPreview(summary.keyFindings)}</dd>
+                      </div>
+                      <div className="field-span-2">
+                        <dt>Brief revision notes</dt>
+                        <dd>{formatPreview(summary.briefRevisionNotes)}</dd>
                       </div>
                     </dl>
                   </article>

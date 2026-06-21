@@ -279,6 +279,58 @@ export interface AiDeliveryResearchSourceInputRequest {
   reviewNotes?: string | null;
 }
 
+export interface AiDeliveryResearchSummarySummary {
+  id: string;
+  tenantId: string;
+  aiDeliveryProjectId: string;
+  workflowRunId: string | null;
+  workflowRun: { id: string; status: string } | null;
+  title: string;
+  status: string;
+  summaryText: string;
+  keyFindings: string | null;
+  audienceInsights: string | null;
+  competitorInsights: string | null;
+  keywordOpportunities: string | null;
+  contentRecommendations: string | null;
+  briefRevisionNotes: string | null;
+  sourceNotes: string | null;
+  finalizedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AiDeliveryResearchSummariesResponse {
+  researchSummaries: AiDeliveryResearchSummarySummary[];
+}
+
+export interface AiDeliveryResearchSummaryResponse {
+  researchSummary: AiDeliveryResearchSummarySummary | null;
+}
+
+export interface AiDeliveryResearchSummaryApplyResponse {
+  researchSummary: AiDeliveryResearchSummarySummary | null;
+  brief: {
+    id: string;
+    notes: string | null;
+    updatedAt: string;
+  } | null;
+}
+
+export interface AiDeliveryResearchSummaryInputRequest {
+  workflowRunId?: string | null;
+  title?: string;
+  status?: string;
+  summaryText?: string;
+  keyFindings?: string | null;
+  audienceInsights?: string | null;
+  competitorInsights?: string | null;
+  keywordOpportunities?: string | null;
+  contentRecommendations?: string | null;
+  briefRevisionNotes?: string | null;
+  sourceNotes?: string | null;
+}
+
 export interface AiDeliveryContentDraftSummary {
   id: string;
   aiDeliveryProjectId: string;

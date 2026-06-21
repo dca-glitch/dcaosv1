@@ -274,6 +274,15 @@ async function runAiDeliveryApiRegression(token) {
   }
   pass("AI Delivery research request update persisted the expected status.");
 
+  const researchSummariesData = requireOkResponse(
+    "AI Delivery research summaries list",
+    await request(`/ai-delivery/projects/${project.id}/research-summaries`, { token })
+  );
+  if (!Array.isArray(researchSummariesData?.researchSummaries)) {
+    fail("AI Delivery research summaries list did not return a researchSummaries array.");
+  }
+  pass(`AI Delivery research summaries list endpoint returned cleanly (${researchSummariesData.researchSummaries.length} local summary record(s)).`);
+
   const researchSourcesData = requireOkResponse(
     "AI Delivery research sources list",
     await request(`/ai-delivery/projects/${project.id}/research-sources`, { token })
@@ -351,6 +360,78 @@ async function runAiDeliveryApiRegression(token) {
     fail("AI Delivery research source update did not persist the expected approval fields.");
   }
   pass("AI Delivery research source update persisted the expected approval fields.");
+
+  const createdResearchSummary = requireOkResponse(
+    "AI Delivery research summary create",
+    await request(`/ai-delivery/projects/${project.id}/research-summaries`, {
+      method: "POST",
+      token,
+      body: {
+        workflowRunId: successRun.id,
+        title: "Smoke SEO research summary",
+        status: "DRAFT",
+        summaryText: "Manual summary from local smoke for brief revision coverage.",
+        keyFindings: "Manual-only findings captured locally.",
+        audienceInsights: "Audience needs concise service explanations.",
+        competitorInsights: "Competitors under-explain implementation process.",
+        keywordOpportunities: "Project brief foundation, delivery workflow, admin review.",
+        contentRecommendations: "Keep deliverables platform-neutral for future publishing connectors.",
+        briefRevisionNotes: "Append these findings into brief notes only when explicitly approved.",
+        sourceNotes: "Approved manual source: Smoke manual source."
+      }
+    })
+  )?.researchSummary;
+  if (
+    !createdResearchSummary?.id
+    || createdResearchSummary.title !== "Smoke SEO research summary"
+    || createdResearchSummary.workflowRunId !== successRun.id
+    || createdResearchSummary.status !== "DRAFT"
+  ) {
+    fail("AI Delivery research summary create did not return the expected project-scoped summary.");
+  }
+  pass("AI Delivery research summary create returned the expected project-scoped record.");
+
+  const updatedResearchSummary = requireOkResponse(
+    "AI Delivery research summary update",
+    await request(`/ai-delivery/projects/${project.id}/research-summaries/${createdResearchSummary.id}`, {
+      method: "PUT",
+      token,
+      body: {
+        workflowRunId: successRun.id,
+        title: "Smoke SEO research summary",
+        status: "FINALIZED",
+        summaryText: "Manual summary from local smoke for brief revision coverage.",
+        keyFindings: "Manual-only findings captured locally.",
+        audienceInsights: "Audience needs concise service explanations.",
+        competitorInsights: "Competitors under-explain implementation process.",
+        keywordOpportunities: "Project brief foundation, delivery workflow, admin review.",
+        contentRecommendations: "Keep deliverables platform-neutral for future publishing connectors.",
+        briefRevisionNotes: "Append these findings into brief notes only when explicitly approved.",
+        sourceNotes: "Approved manual source: Smoke manual source."
+      }
+    })
+  )?.researchSummary;
+  if (!updatedResearchSummary || updatedResearchSummary.status !== "FINALIZED" || typeof updatedResearchSummary.finalizedAt !== "string") {
+    fail("AI Delivery research summary update did not persist the expected finalized state.");
+  }
+  pass("AI Delivery research summary update persisted the expected finalized state.");
+
+  const appliedResearchSummary = requireOkResponse(
+    "AI Delivery research summary apply to brief",
+    await request(`/ai-delivery/projects/${project.id}/research-summaries/${createdResearchSummary.id}/apply-to-brief`, {
+      method: "POST",
+      token
+    })
+  );
+  if (
+    !appliedResearchSummary?.researchSummary?.id
+    || !appliedResearchSummary?.brief?.id
+    || typeof appliedResearchSummary?.brief?.notes !== "string"
+    || !appliedResearchSummary.brief.notes.includes("Research summary applied: Smoke SEO research summary")
+  ) {
+    fail("AI Delivery research summary apply-to-brief did not append the expected brief notes.");
+  }
+  pass("AI Delivery research summary apply-to-brief appended the expected brief notes.");
 
   const deliverablesData = requireOkResponse(
     "AI Delivery deliverables list",
@@ -436,8 +517,10 @@ async function main() {
       await researchButtons.first().click();
       await page.getByRole("dialog", { name: "Research / Sources" }).waitFor({ state: "visible", timeout: 15000 });
       await page.getByRole("heading", { name: "Existing research requests" }).waitFor({ state: "visible", timeout: 15000 });
+      await page.getByRole("heading", { name: "Existing research summaries" }).waitFor({ state: "visible", timeout: 15000 });
       await page.getByText("Source records are manual only in this foundation. No crawling or external fetching is performed.").first().waitFor({ state: "visible", timeout: 15000 });
-      pass("Research / Sources panel opened and rendered manual-only helper text.");
+      await page.getByText("Research summaries are admin-authored in this foundation. No AI generation, crawling, or external fetching is performed.").first().waitFor({ state: "visible", timeout: 15000 });
+      pass("Research / Sources panel opened and rendered request, summary, and source foundation helper text.");
       await page.getByRole("button", { name: "Close" }).first().click();
     }
 

@@ -39,6 +39,8 @@ import {
   type AiDeliveryDeliverableReviewSummary,
   type AiDeliveryResearchRequestFormValues,
   type AiDeliveryResearchRequestSummary,
+  type AiDeliveryResearchSummaryFormValues,
+  type AiDeliveryResearchSummarySummary,
   type AiDeliveryResearchSourceFormValues,
   type AiDeliveryResearchSourceSummary,
   type AiDeliveryWorkflowRunFormValues,
@@ -226,6 +228,23 @@ type AiDeliveryResearchSourcesResponse = {
 
 type AiDeliveryResearchSourceResponse = {
   researchSource: AiDeliveryResearchSourceSummary | null;
+};
+
+type AiDeliveryResearchSummariesResponse = {
+  researchSummaries: AiDeliveryResearchSummarySummary[];
+};
+
+type AiDeliveryResearchSummaryResponse = {
+  researchSummary: AiDeliveryResearchSummarySummary | null;
+};
+
+type AiDeliveryResearchSummaryApplyResponse = {
+  researchSummary: AiDeliveryResearchSummarySummary | null;
+  brief: {
+    id: string;
+    notes: string | null;
+    updatedAt: string;
+  } | null;
 };
 
 type AiDeliveryContentPlanResponse = {
@@ -2469,6 +2488,71 @@ export function App() {
     }
   }
 
+  async function handleFetchAiDeliveryResearchSummaries(projectId: string): Promise<AiDeliveryResearchSummarySummary[]> {
+    setAppMessage(null);
+    try {
+      const response = await runAuthenticatedRequest<AiDeliveryResearchSummariesResponse>(`/ai-delivery/projects/${projectId}/research-summaries`);
+      if (!response) return [];
+      if (!response.ok) {
+        setAppMessage({ tone: "error", text: getErrorMessage(response) });
+        return [];
+      }
+      return response.data.researchSummaries;
+    } catch (error) {
+      setAppMessage({ tone: "error", text: maskError(error) });
+      return [];
+    }
+  }
+
+  async function handleSaveAiDeliveryResearchSummary(
+    projectId: string,
+    researchSummaryId: string | null,
+    values: AiDeliveryResearchSummaryFormValues
+  ): Promise<AiDeliveryResearchSummarySummary | null> {
+    setAppMessage(null);
+    try {
+      const response = await runAuthenticatedRequest<AiDeliveryResearchSummaryResponse>(
+        researchSummaryId
+          ? `/ai-delivery/projects/${projectId}/research-summaries/${researchSummaryId}`
+          : `/ai-delivery/projects/${projectId}/research-summaries`,
+        { method: researchSummaryId ? "PUT" : "POST", body: values }
+      );
+      if (!response) return null;
+      if (!response.ok) {
+        setAppMessage({ tone: "error", text: getErrorMessage(response) });
+        return null;
+      }
+      setAppMessage({ tone: "success", text: researchSummaryId ? "Research summary saved." : "Research summary created." });
+      return response.data.researchSummary;
+    } catch (error) {
+      setAppMessage({ tone: "error", text: maskError(error) });
+      return null;
+    }
+  }
+
+  async function handleApplyAiDeliveryResearchSummaryToBrief(
+    projectId: string,
+    researchSummaryId: string
+  ): Promise<AiDeliveryResearchSummaryApplyResponse | null> {
+    setAppMessage(null);
+    try {
+      const response = await runAuthenticatedRequest<AiDeliveryResearchSummaryApplyResponse>(
+        `/ai-delivery/projects/${projectId}/research-summaries/${researchSummaryId}/apply-to-brief`,
+        { method: "POST" }
+      );
+      if (!response) return null;
+      if (!response.ok) {
+        setAppMessage({ tone: "error", text: getErrorMessage(response) });
+        return null;
+      }
+      setAppMessage({ tone: "success", text: "Research summary copied into brief notes." });
+      return response.data;
+    } catch (error) {
+      setAppMessage({ tone: "error", text: maskError(error) });
+      return null;
+    }
+  }
+
   async function handleArchiveAiDeliveryDeliverable(projectId: string, deliverableId: string): Promise<boolean> {
     setAppMessage(null);
     try {
@@ -3273,6 +3357,9 @@ export function App() {
           onExecuteWorkflowRun={handleExecuteAiDeliveryWorkflowRun}
           onFetchResearchRequests={handleFetchAiDeliveryResearchRequests}
           onSaveResearchRequest={handleSaveAiDeliveryResearchRequest}
+          onFetchResearchSummaries={handleFetchAiDeliveryResearchSummaries}
+          onSaveResearchSummary={handleSaveAiDeliveryResearchSummary}
+          onApplyResearchSummaryToBrief={handleApplyAiDeliveryResearchSummaryToBrief}
           onFetchResearchSources={handleFetchAiDeliveryResearchSources}
           onSaveResearchSource={handleSaveAiDeliveryResearchSource}
         />

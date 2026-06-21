@@ -14,6 +14,7 @@ import {
   cancelInvoiceHandler,
   createAiDeliveryProjectHandler,
   createAiDeliveryResearchRequestHandler,
+  createAiDeliveryResearchSummaryHandler,
   createAiDeliveryResearchSourceHandler,
   createAiDeliveryArticleImageHandler,
   createAiDeliveryContentDraftHandler,
@@ -32,6 +33,7 @@ import {
   downloadCreditNoteDocumentHandler,
   downloadInvoiceDocumentHandler,
   executeAiDeliveryWorkflowRunHandler,
+  applyAiDeliveryResearchSummaryToBriefHandler,
   getClientHandler,
   getCompanyProfileHandler,
   getInvoiceHandler,
@@ -49,6 +51,7 @@ import {
   archiveAiDeliveryDeliverableHandler,
   listAiDeliveryProjectsHandler,
   listAiDeliveryResearchRequestsHandler,
+  listAiDeliveryResearchSummariesHandler,
   listAiDeliveryResearchSourcesHandler,
   listAiDeliveryWorkflowRunsHandler,
   listAiDeliveryContentDraftsHandler,
@@ -93,6 +96,7 @@ import {
   issueCreditNoteHandler,
   updateAiDeliveryProjectHandler,
   updateAiDeliveryResearchRequestHandler,
+  updateAiDeliveryResearchSummaryHandler,
   updateAiDeliveryResearchSourceHandler,
   updateAiDeliveryArticleImageHandler,
   updateAiDeliveryContentDraftHandler,
@@ -145,6 +149,10 @@ export function createCoreRouter() {
   router.get("/ai-delivery/projects/:projectId/research-requests", requireAuth, requireTenant, requireRole("owner", "admin"), listAiDeliveryResearchRequestsHandler);
   router.post("/ai-delivery/projects/:projectId/research-requests", requireAuth, requireTenant, requireRole("owner", "admin"), createAiDeliveryResearchRequestHandler);
   router.put("/ai-delivery/projects/:projectId/research-requests/:researchRequestId", requireAuth, requireTenant, requireRole("owner", "admin"), updateAiDeliveryResearchRequestHandler);
+  router.get("/ai-delivery/projects/:projectId/research-summaries", requireAuth, requireTenant, requireRole("owner", "admin"), listAiDeliveryResearchSummariesHandler);
+  router.post("/ai-delivery/projects/:projectId/research-summaries", requireAuth, requireTenant, requireRole("owner", "admin"), createAiDeliveryResearchSummaryHandler);
+  router.put("/ai-delivery/projects/:projectId/research-summaries/:researchSummaryId", requireAuth, requireTenant, requireRole("owner", "admin"), updateAiDeliveryResearchSummaryHandler);
+  router.post("/ai-delivery/projects/:projectId/research-summaries/:researchSummaryId/apply-to-brief", requireAuth, requireTenant, requireRole("owner", "admin"), applyAiDeliveryResearchSummaryToBriefHandler);
   router.get("/ai-delivery/projects/:projectId/research-sources", requireAuth, requireTenant, requireRole("owner", "admin"), listAiDeliveryResearchSourcesHandler);
   router.post("/ai-delivery/projects/:projectId/research-sources", requireAuth, requireTenant, requireRole("owner", "admin"), createAiDeliveryResearchSourceHandler);
   router.put("/ai-delivery/projects/:projectId/research-sources/:researchSourceId", requireAuth, requireTenant, requireRole("owner", "admin"), updateAiDeliveryResearchSourceHandler);
