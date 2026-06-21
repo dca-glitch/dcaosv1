@@ -1190,7 +1190,6 @@ async function runAiDeliveryApiRegression(token, fixtureProjects) {
         deliveryType: "CONTENT_PACKAGE",
         status: "DRAFT",
         exportUrl: "https://example.com/admin-reference-only",
-        storageKey: "deliverables/smoke-admin-package.zip",
         notes: "Admin-only packaging notes."
       }
     })
@@ -1199,7 +1198,8 @@ async function runAiDeliveryApiRegression(token, fixtureProjects) {
     !createdDeliverable?.id ||
     createdDeliverable.contentDraftId !== approvedDraft.id ||
     createdDeliverable.articleImageId !== finalReadyArticleImage.id ||
-    createdDeliverable.status !== "DRAFT"
+    createdDeliverable.status !== "DRAFT" ||
+    createdDeliverable.storageKey !== null
   ) {
     fail("AI Delivery deliverable create did not return the expected project-scoped package record.");
   }
@@ -1218,7 +1218,6 @@ async function runAiDeliveryApiRegression(token, fixtureProjects) {
         deliveryType: "CONTENT_PACKAGE",
         status: "DRAFT",
         exportUrl: "https://example.com/admin-reference-only-updated",
-        storageKey: "deliverables/smoke-admin-package-v2.zip",
         notes: "Updated admin-only packaging notes."
       }
     })
@@ -1226,11 +1225,91 @@ async function runAiDeliveryApiRegression(token, fixtureProjects) {
   if (
     !updatedDeliverable ||
     updatedDeliverable.exportUrl !== "https://example.com/admin-reference-only-updated" ||
-    updatedDeliverable.storageKey !== "deliverables/smoke-admin-package-v2.zip"
+    updatedDeliverable.storageKey !== null
   ) {
     fail("AI Delivery deliverable update did not persist the expected admin references.");
   }
   pass("AI Delivery deliverable update persisted the expected admin reference fields.");
+
+  const deliverableUploadResponse = await request(`/ai-delivery-projects/${project.id}/deliverables/${createdDeliverable.id}/document`, {
+    method: "POST",
+    token,
+    body: {
+      fileName: "smoke-deliverable-proof.pdf",
+      mimeType: "application/pdf",
+      contentBase64: Buffer.from("Smoke deliverable private upload proof.", "utf8").toString("base64")
+    }
+  });
+
+  if (deliverableUploadResponse.status === 503) {
+    if (
+      deliverableUploadResponse.body?.ok !== false ||
+      deliverableUploadResponse.body?.error?.code !== "R2_STORAGE_NOT_CONFIGURED"
+    ) {
+      fail("AI Delivery deliverable document upload did not return the expected storage-not-configured guard.");
+    }
+
+    const deliverablesAfterRejectedUpload = requireOkResponse(
+      "AI Delivery deliverables list after guarded upload",
+      await request(`/ai-delivery-projects/${project.id}/deliverables`, { token })
+    )?.deliverables;
+    const deliverableAfterRejectedUpload = Array.isArray(deliverablesAfterRejectedUpload)
+      ? deliverablesAfterRejectedUpload.find((deliverable) => deliverable.id === createdDeliverable.id)
+      : null;
+    if (
+      !deliverableAfterRejectedUpload ||
+      deliverableAfterRejectedUpload.storageKey !== null ||
+      deliverableAfterRejectedUpload.exportUrl !== "https://example.com/admin-reference-only-updated"
+    ) {
+      fail("AI Delivery deliverable document upload guard changed persisted references while storage was unavailable.");
+    }
+
+    pass("AI Delivery deliverable document upload returned the expected storage-not-configured guard without persisting a storage key.");
+  } else {
+    const uploadedDeliverable = requireOkResponse(
+      "AI Delivery deliverable document upload",
+      deliverableUploadResponse
+    )?.deliverable;
+    if (
+      !uploadedDeliverable ||
+      uploadedDeliverable.id !== createdDeliverable.id ||
+      typeof uploadedDeliverable.storageKey !== "string" ||
+      uploadedDeliverable.storageKey.length === 0 ||
+      uploadedDeliverable.exportUrl !== null
+    ) {
+      fail("AI Delivery deliverable document upload did not return the expected private storage reference.");
+    }
+
+    const deliverablesAfterUpload = requireOkResponse(
+      "AI Delivery deliverables list after upload",
+      await request(`/ai-delivery-projects/${project.id}/deliverables`, { token })
+    )?.deliverables;
+    const persistedUploadedDeliverable = Array.isArray(deliverablesAfterUpload)
+      ? deliverablesAfterUpload.find((deliverable) => deliverable.id === createdDeliverable.id)
+      : null;
+    if (
+      !persistedUploadedDeliverable ||
+      persistedUploadedDeliverable.storageKey !== uploadedDeliverable.storageKey ||
+      persistedUploadedDeliverable.exportUrl !== null
+    ) {
+      fail("AI Delivery deliverable document upload did not persist the expected private storage key.");
+    }
+
+    const deliverableDownload = requireOkResponse(
+      "AI Delivery deliverable secure download",
+      await request(`/ai-delivery-projects/${project.id}/deliverables/${createdDeliverable.id}/download`, { token })
+    );
+    if (
+      typeof deliverableDownload?.downloadUrl !== "string" ||
+      deliverableDownload.downloadUrl.length === 0 ||
+      typeof deliverableDownload.expiresSeconds !== "number" ||
+      deliverableDownload.expiresSeconds <= 0
+    ) {
+      fail("AI Delivery deliverable secure download did not return a signed download reference.");
+    }
+
+    pass("AI Delivery deliverable document upload persisted a private storage key, cleared exportUrl, and returned a secure download reference.");
+  }
 
   const readyDeliverable = requireOkResponse(
     "AI Delivery deliverable mark ready",

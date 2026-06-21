@@ -24,6 +24,7 @@ import type {
   AiDeliveryWorkflowRunResponse,
   AiDeliveryWorkflowRunsResponse,
   AiDeliveryDeliverableInputRequest,
+  AiDeliveryDeliverableUploadRequest,
   AiDeliveryDeliverableResponse,
   AiDeliveryDeliverablesResponse,
   AiDeliveryDeliverableReviewInputRequest,
@@ -6719,6 +6720,99 @@ export async function getAiDeliveryDeliverableDownload(
   }
 
   return getPrivateStorageDownloadReference(deliverable.storageKey);
+}
+export async function uploadAiDeliveryDeliverableDocument(
+  authSession: AuthResolvedSessionContext,
+  aiDeliveryProjectId: string,
+  deliverableId: string,
+  input: AiDeliveryDeliverableUploadRequest
+): Promise<AiDeliveryDeliverableResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId || !aiDeliveryProjectId || !deliverableId || !input.fileName || !input.mimeType || !input.contentBase64) {
+    return null;
+  }
+  const { contentBase64, fileName, mimeType } = input;
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    const project = await tx.aiDeliveryProject.findFirst({
+      where: {
+        id: aiDeliveryProjectId,
+        tenantId,
+        isArchived: false
+      },
+      select: {
+        id: true
+      }
+    });
+    if (!project) {
+      return null;
+    }
+
+    const existing = await getAiDeliveryDeliverableDelegate(tx).findFirst({
+      where: {
+        id: deliverableId,
+        tenantId,
+        aiDeliveryProjectId,
+        isArchived: false
+      },
+      select: aiDeliveryDeliverableSelect as any
+    }) as any;
+    if (!existing) {
+      return null;
+    }
+
+    const tenant = await tx.tenant.findUnique({
+      where: {
+        id: tenantId
+      },
+      select: {
+        id: true,
+        slug: true
+      }
+    });
+    if (!tenant) {
+      return null;
+    }
+
+    const upload = await putPrivateStorageObject({
+      body: Buffer.from(contentBase64, "base64"),
+      documentDate: new Date(),
+      mimeType,
+      namespace: "ai-delivery-deliverable",
+      originalFileName: fileName,
+      projectSlugOrId: aiDeliveryProjectId,
+      tenantSlugOrId: tenant.slug || tenant.id
+    });
+
+    if (!upload) {
+      throw new Error("Private storage is not configured.");
+    }
+
+    const updated = await getAiDeliveryDeliverableDelegate(tx).update({
+      where: {
+        id: existing.id
+      },
+      data: {
+        storageKey: upload.storageKey,
+        exportUrl: null
+      },
+      select: aiDeliveryDeliverableSelect
+    }) as any;
+
+    await recordAiDeliverySystemEvent(
+      {
+        tenantId,
+        aiDeliveryProjectId,
+        eventName: "AI_DELIVERY_DELIVERABLE_UPDATED",
+        relatedEntityId: updated.id
+      },
+      tx
+    );
+
+    return {
+      deliverable: toAiDeliveryDeliverableSummary(updated)
+    };
+  });
 }
 
 export async function archiveAiDeliveryDeliverable(

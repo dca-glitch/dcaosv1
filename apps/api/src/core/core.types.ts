@@ -853,6 +853,12 @@ export interface AiDeliveryDeliverableInputRequest {
   notes?: string | null;
 }
 
+export interface AiDeliveryDeliverableUploadRequest {
+  fileName?: string;
+  mimeType?: string;
+  contentBase64?: string;
+}
+
 export interface AiDeliveryDeliverableReviewSummary {
   id: string;
   tenantId: string;

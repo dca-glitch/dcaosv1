@@ -98,6 +98,7 @@ import {
   requestAiDeliveryArticleImageChanges,
   approveAiDeliveryArticleImage,
   markAiDeliveryArticleImageFinalReady,
+  uploadAiDeliveryDeliverableDocument,
   markAiDeliveryDeliverableReady,
   requestAiDeliveryDeliverableRevision,
   acceptAiDeliveryDeliverable,
@@ -151,6 +152,7 @@ import type {
   AiDeliveryArticleImageInputRequest,
   AiDeliveryContentDraftInputRequest,
   AiDeliveryProjectInputRequest,
+  AiDeliveryDeliverableUploadRequest,
   AiDeliveryResearchRequestInputRequest,
   AiDeliveryResearchSummaryInputRequest,
   AiDeliveryResearchSourceInputRequest,
@@ -781,6 +783,23 @@ function getBillInput(body: unknown): BillInputRequest | null {
 }
 
 function getBillDocumentUploadInput(body: unknown): BillDocumentUploadRequest | null {
+  const value = (body ?? {}) as Record<string, unknown>;
+  const fileName = getRequiredString(value.fileName, FILE_NAME_MAX_LENGTH);
+  const mimeType = getRequiredString(value.mimeType, SHORT_TEXT_FIELD_MAX_LENGTH);
+  const contentBase64 = getRequiredString(value.contentBase64, BASE64_UPLOAD_MAX_LENGTH);
+
+  if (!fileName || !mimeType || !contentBase64 || !/^[A-Za-z0-9+/]+={0,2}$/.test(contentBase64)) {
+    return null;
+  }
+
+  return {
+    contentBase64,
+    fileName,
+    mimeType
+  };
+}
+
+function getAiDeliveryDeliverableUploadInput(body: unknown): AiDeliveryDeliverableUploadRequest | null {
   const value = (body ?? {}) as Record<string, unknown>;
   const fileName = getRequiredString(value.fileName, FILE_NAME_MAX_LENGTH);
   const mimeType = getRequiredString(value.mimeType, SHORT_TEXT_FIELD_MAX_LENGTH);
@@ -2498,6 +2517,32 @@ export const updateAiDeliveryDeliverableHandler: RequestHandler = async (req, re
   } catch (error) {
     if (handleAiDeliveryGuardError(res, error)) return;
     res.status(500).json(failure("AI_DELIVERY_DELIVERABLE_RUNTIME_ERROR", "Deliverable could not be updated."));
+  }
+};
+
+export const uploadAiDeliveryDeliverableDocumentHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  const aiDeliveryProjectId = typeof req.params.id === "string" ? req.params.id.trim() : "";
+  const deliverableId = typeof req.params.deliverableId === "string" ? req.params.deliverableId.trim() : "";
+  const input = getAiDeliveryDeliverableUploadInput(req.body);
+  if (!authSession) return void res.status(401).json(unauthorizedFailure());
+  if (!aiDeliveryProjectId || !deliverableId || !input) return void res.status(400).json(aiDeliveryProjectInvalidFailure());
+
+  try {
+    const response = await uploadAiDeliveryDeliverableDocument(authSession, aiDeliveryProjectId, deliverableId, input);
+    if (!response?.deliverable) return void res.status(404).json(aiDeliveryProjectNotFoundFailure());
+    res.status(201).json(success(response, { phase: "runtime", scope: "r2-storage-foundation" }));
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "";
+    if (message.includes("not configured")) {
+      res.status(503).json(failure("R2_STORAGE_NOT_CONFIGURED", "R2 storage is not configured."));
+      return;
+    }
+    if (message.includes("validation failed")) {
+      res.status(400).json(aiDeliveryProjectInvalidFailure());
+      return;
+    }
+    res.status(500).json(failure("AI_DELIVERY_DELIVERABLE_RUNTIME_ERROR", "Deliverable upload could not be completed."));
   }
 };
 

@@ -51,6 +51,7 @@ import {
   createAiDeliveryDeliverableHandler,
   createAiDeliveryDeliverableReviewHandler,
   downloadAiDeliveryDeliverableHandler,
+  uploadAiDeliveryDeliverableDocumentHandler,
   markAiDeliveryDeliverableReadyHandler,
   updateAiDeliveryDeliverableHandler,
   updateAiDeliveryDeliverableReviewHandler,
@@ -198,6 +199,7 @@ export function createCoreRouter() {
   router.get("/ai-delivery-projects/:id/deliverables", requireAuth, requireTenant, requireRole("owner", "admin"), listAiDeliveryDeliverablesHandler);
   router.post("/ai-delivery-projects/:id/deliverables", requireAuth, requireTenant, requireRole("owner", "admin"), createAiDeliveryDeliverableHandler);
   router.put("/ai-delivery-projects/:id/deliverables/:deliverableId", requireAuth, requireTenant, requireRole("owner", "admin"), updateAiDeliveryDeliverableHandler);
+  router.post("/ai-delivery-projects/:id/deliverables/:deliverableId/document", requireAuth, requireTenant, requireRole("owner", "admin"), uploadAiDeliveryDeliverableDocumentHandler);
   router.post("/ai-delivery-projects/:id/deliverables/:deliverableId/mark-ready", requireAuth, requireTenant, requireRole("owner", "admin"), markAiDeliveryDeliverableReadyHandler);
   router.post("/ai-delivery-projects/:id/deliverables/:deliverableId/request-revision", requireAuth, requireTenant, requireRole("owner", "admin"), requestAiDeliveryDeliverableRevisionHandler);
   router.post("/ai-delivery-projects/:id/deliverables/:deliverableId/accept", requireAuth, requireTenant, requireRole("owner", "admin"), acceptAiDeliveryDeliverableHandler);
