@@ -10,6 +10,12 @@ import type {
   AiDeliveryProjectInputRequest,
   AiDeliveryProjectResponse,
   AiDeliveryProjectsResponse,
+  AiDeliveryResearchRequestInputRequest,
+  AiDeliveryResearchRequestResponse,
+  AiDeliveryResearchRequestsResponse,
+  AiDeliveryResearchSourceInputRequest,
+  AiDeliveryResearchSourceResponse,
+  AiDeliveryResearchSourcesResponse,
   AiDeliveryWorkflowRunInputRequest,
   AiDeliveryWorkflowRunResponse,
   AiDeliveryWorkflowRunsResponse,
@@ -72,6 +78,9 @@ type TaskStatus = "TODO" | "IN_PROGRESS" | "DONE";
 type TaskRecurringType = "NONE" | "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY";
 type InvoiceStatus = "DRAFT" | "ISSUED" | "PAID" | "VOIDED" | "UNCOLLECTIBLE";
 type AiDeliveryWorkflowRunStatus = "DRAFT" | "READY" | "IN_PROGRESS" | "REVIEW" | "COMPLETED" | "FAILED" | "ARCHIVED";
+type AiDeliveryResearchRequestStatus = "DRAFT" | "READY" | "IN_REVIEW" | "COMPLETED" | "ARCHIVED";
+type AiDeliveryResearchSourceStatus = "PROPOSED" | "APPROVED" | "REJECTED" | "ARCHIVED";
+type AiDeliveryResearchSourceType = "WEBSITE" | "DOCUMENT" | "OTHER";
 type AiDeliveryContentDraftStatus = "DRAFT" | "READY_FOR_REVIEW" | "APPROVED" | "CHANGES_REQUESTED" | "ARCHIVED";
 type AiDeliveryArticleImageStatus = "DRAFT" | "READY_FOR_GENERATION" | "PREVIEW_READY" | "APPROVED" | "FINAL_READY" | "CHANGES_REQUESTED" | "ARCHIVED";
 // Deliverable types for AI Delivery
@@ -84,6 +93,9 @@ type RecurringInvoiceInterval = "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY";
 type BillPaymentForm = "CASH" | "REVOLUT_BANK" | "WISE_BANK" | "REVOLUT_CARD" | "WISE_CARD" | "OTHER";
 const AI_DELIVERY_WORKFLOW_RUN_STATUSES: AiDeliveryWorkflowRunStatus[] = ["DRAFT", "READY", "IN_PROGRESS", "REVIEW", "COMPLETED", "FAILED", "ARCHIVED"];
 const AI_DELIVERY_WORKFLOW_RUN_STATUS_ORDER: AiDeliveryWorkflowRunStatus[] = ["DRAFT", "READY", "IN_PROGRESS", "REVIEW", "COMPLETED", "ARCHIVED"];
+const AI_DELIVERY_RESEARCH_REQUEST_STATUSES: AiDeliveryResearchRequestStatus[] = ["DRAFT", "READY", "IN_REVIEW", "COMPLETED", "ARCHIVED"];
+const AI_DELIVERY_RESEARCH_SOURCE_STATUSES: AiDeliveryResearchSourceStatus[] = ["PROPOSED", "APPROVED", "REJECTED", "ARCHIVED"];
+const AI_DELIVERY_RESEARCH_SOURCE_TYPES: AiDeliveryResearchSourceType[] = ["WEBSITE", "DOCUMENT", "OTHER"];
 type ClientUserAccessSummary = {
   id: string;
   clientId: string;
@@ -131,6 +143,14 @@ function getAiDeliveryProjectDelegate(client: PrismaTx | typeof prisma): AiDeliv
 
 function getAiDeliveryArticleImageDelegate(client: PrismaTx | typeof prisma) {
   return (client as unknown as { aiDeliveryArticleImage: { findFirst: (args: unknown) => Promise<unknown>; findMany: (args: unknown) => Promise<unknown[]>; create: (args: unknown) => Promise<unknown>; update: (args: unknown) => Promise<unknown>; } }).aiDeliveryArticleImage;
+}
+
+function getAiDeliveryResearchRequestDelegate(client: PrismaTx | typeof prisma) {
+  return (client as unknown as { aiDeliveryResearchRequest: { findFirst: (args: unknown) => Promise<unknown>; findMany: (args: unknown) => Promise<unknown[]>; create: (args: unknown) => Promise<unknown>; update: (args: unknown) => Promise<unknown>; } }).aiDeliveryResearchRequest;
+}
+
+function getAiDeliveryResearchSourceDelegate(client: PrismaTx | typeof prisma) {
+  return (client as unknown as { aiDeliveryResearchSource: { findFirst: (args: unknown) => Promise<unknown>; findMany: (args: unknown) => Promise<unknown[]>; create: (args: unknown) => Promise<unknown>; update: (args: unknown) => Promise<unknown>; } }).aiDeliveryResearchSource;
 }
 
 function toDateString(value: Date | null | undefined): string | null {
@@ -3015,6 +3035,409 @@ export async function executeAiDeliveryWorkflowRun(
     );
 
     return { workflowRun: toAiDeliveryWorkflowRunSummary(reviewed) };
+  });
+}
+
+const aiDeliveryResearchRequestSelect = {
+  id: true,
+  tenantId: true,
+  aiDeliveryProjectId: true,
+  workflowRunId: true,
+  title: true,
+  description: true,
+  requestType: true,
+  status: true,
+  createdAt: true,
+  updatedAt: true,
+  workflowRun: {
+    select: {
+      id: true,
+      status: true
+    }
+  }
+} as const;
+
+const aiDeliveryResearchSourceSelect = {
+  id: true,
+  tenantId: true,
+  aiDeliveryProjectId: true,
+  researchRequestId: true,
+  workflowRunId: true,
+  sourceUrl: true,
+  sourceTitle: true,
+  sourceType: true,
+  status: true,
+  reviewNotes: true,
+  createdAt: true,
+  updatedAt: true,
+  researchRequest: {
+    select: {
+      id: true,
+      title: true,
+      status: true
+    }
+  },
+  workflowRun: {
+    select: {
+      id: true,
+      status: true
+    }
+  }
+} as const;
+
+function normalizeAiDeliveryResearchRequestStatus(value: string | null | undefined): AiDeliveryResearchRequestStatus {
+  const status = value ? value.trim().toUpperCase() : null;
+  return status && AI_DELIVERY_RESEARCH_REQUEST_STATUSES.includes(status as AiDeliveryResearchRequestStatus)
+    ? (status as AiDeliveryResearchRequestStatus)
+    : "DRAFT";
+}
+
+function normalizeAiDeliveryResearchSourceStatus(value: string | null | undefined): AiDeliveryResearchSourceStatus {
+  const status = value ? value.trim().toUpperCase() : null;
+  return status && AI_DELIVERY_RESEARCH_SOURCE_STATUSES.includes(status as AiDeliveryResearchSourceStatus)
+    ? (status as AiDeliveryResearchSourceStatus)
+    : "PROPOSED";
+}
+
+function normalizeAiDeliveryResearchSourceType(value: string | null | undefined): AiDeliveryResearchSourceType {
+  const sourceType = value ? value.trim().toUpperCase() : null;
+  return sourceType && AI_DELIVERY_RESEARCH_SOURCE_TYPES.includes(sourceType as AiDeliveryResearchSourceType)
+    ? (sourceType as AiDeliveryResearchSourceType)
+    : "WEBSITE";
+}
+
+function toAiDeliveryResearchRequestSummary(request: any) {
+  return {
+    id: request.id,
+    tenantId: request.tenantId,
+    aiDeliveryProjectId: request.aiDeliveryProjectId,
+    workflowRunId: request.workflowRunId ?? null,
+    workflowRun: request.workflowRun
+      ? {
+          id: request.workflowRun.id,
+          status: request.workflowRun.status
+        }
+      : null,
+    title: request.title,
+    description: request.description ?? null,
+    requestType: request.requestType ?? null,
+    status: request.status,
+    createdAt: request.createdAt.toISOString(),
+    updatedAt: request.updatedAt.toISOString()
+  };
+}
+
+function toAiDeliveryResearchSourceSummary(source: any) {
+  return {
+    id: source.id,
+    tenantId: source.tenantId,
+    aiDeliveryProjectId: source.aiDeliveryProjectId,
+    researchRequestId: source.researchRequestId ?? null,
+    workflowRunId: source.workflowRunId ?? null,
+    researchRequest: source.researchRequest
+      ? {
+          id: source.researchRequest.id,
+          title: source.researchRequest.title,
+          status: source.researchRequest.status
+        }
+      : null,
+    workflowRun: source.workflowRun
+      ? {
+          id: source.workflowRun.id,
+          status: source.workflowRun.status
+        }
+      : null,
+    sourceUrl: source.sourceUrl,
+    sourceTitle: source.sourceTitle ?? null,
+    sourceType: source.sourceType,
+    status: source.status,
+    reviewNotes: source.reviewNotes ?? null,
+    createdAt: source.createdAt.toISOString(),
+    updatedAt: source.updatedAt.toISOString()
+  };
+}
+
+async function getAiDeliveryActiveProject(tx: PrismaTx | typeof prisma, tenantId: string, aiDeliveryProjectId: string) {
+  return tx.aiDeliveryProject.findFirst({
+    where: { id: aiDeliveryProjectId, tenantId, isArchived: false },
+    select: { id: true }
+  });
+}
+
+async function getAiDeliveryProjectResearchRequest(tx: PrismaTx | typeof prisma, tenantId: string, aiDeliveryProjectId: string, researchRequestId: string) {
+  return getAiDeliveryResearchRequestDelegate(tx).findFirst({
+    where: { id: researchRequestId, tenantId, aiDeliveryProjectId },
+    select: { id: true }
+  });
+}
+
+export async function listAiDeliveryResearchRequests(
+  authSession: AuthResolvedSessionContext,
+  aiDeliveryProjectId: string
+): Promise<AiDeliveryResearchRequestsResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) return null;
+
+  const project = await getAiDeliveryActiveProject(prisma, tenantId, aiDeliveryProjectId);
+  if (!project) return null;
+
+  const researchRequests = await getAiDeliveryResearchRequestDelegate(prisma).findMany({
+    where: { tenantId, aiDeliveryProjectId },
+    orderBy: { updatedAt: "desc" },
+    select: aiDeliveryResearchRequestSelect
+  });
+
+  return { researchRequests: researchRequests.map(toAiDeliveryResearchRequestSummary) };
+}
+
+export async function createAiDeliveryResearchRequest(
+  authSession: AuthResolvedSessionContext,
+  aiDeliveryProjectId: string,
+  input: AiDeliveryResearchRequestInputRequest
+): Promise<AiDeliveryResearchRequestResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) return null;
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    const project = await getAiDeliveryActiveProject(tx, tenantId, aiDeliveryProjectId);
+    if (!project) return null;
+
+    const workflowRunId = toNullableString(input.workflowRunId);
+    if (workflowRunId) {
+      const workflowRun = await getAiDeliveryProjectWorkflowRun(tx, tenantId, aiDeliveryProjectId, workflowRunId);
+      if (!workflowRun) return null;
+    }
+
+    const created = await getAiDeliveryResearchRequestDelegate(tx).create({
+      data: {
+        tenantId,
+        aiDeliveryProjectId,
+        workflowRunId,
+        title: input.title?.trim() ?? "",
+        description: toNullableString(input.description),
+        requestType: toNullableString(input.requestType),
+        status: normalizeAiDeliveryResearchRequestStatus(input.status)
+      },
+      select: aiDeliveryResearchRequestSelect
+    });
+
+    const createdRequest = toAiDeliveryResearchRequestSummary(created);
+    await recordAiDeliverySystemEvent(
+      {
+        tenantId,
+        aiDeliveryProjectId,
+        eventName: "AI_DELIVERY_RESEARCH_REQUEST_CREATED",
+        relatedEntityId: createdRequest.id
+      },
+      tx
+    );
+
+    return { researchRequest: createdRequest };
+  });
+}
+
+export async function updateAiDeliveryResearchRequest(
+  authSession: AuthResolvedSessionContext,
+  aiDeliveryProjectId: string,
+  researchRequestId: string,
+  input: AiDeliveryResearchRequestInputRequest
+): Promise<AiDeliveryResearchRequestResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) return null;
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    const project = await getAiDeliveryActiveProject(tx, tenantId, aiDeliveryProjectId);
+    if (!project) return null;
+
+    const existing = await getAiDeliveryResearchRequestDelegate(tx).findFirst({
+      where: { id: researchRequestId, tenantId, aiDeliveryProjectId },
+      select: aiDeliveryResearchRequestSelect
+    }) as any;
+    if (!existing) return null;
+
+    let workflowRunId: string | null | undefined;
+    if (input.workflowRunId !== undefined) {
+      workflowRunId = toNullableString(input.workflowRunId);
+      if (workflowRunId) {
+        const workflowRun = await getAiDeliveryProjectWorkflowRun(tx, tenantId, aiDeliveryProjectId, workflowRunId);
+        if (!workflowRun) return null;
+      }
+    }
+
+    const updated = await getAiDeliveryResearchRequestDelegate(tx).update({
+      where: { id: researchRequestId },
+      data: {
+        title: input.title === undefined ? existing.title : input.title.trim(),
+        description: input.description === undefined ? existing.description : toNullableString(input.description),
+        requestType: input.requestType === undefined ? existing.requestType : toNullableString(input.requestType),
+        status: input.status ? normalizeAiDeliveryResearchRequestStatus(input.status) : existing.status,
+        ...(workflowRunId !== undefined ? { workflowRunId } : {})
+      },
+      select: aiDeliveryResearchRequestSelect
+    });
+
+    const updatedRequest = toAiDeliveryResearchRequestSummary(updated);
+    await recordAiDeliverySystemEvent(
+      {
+        tenantId,
+        aiDeliveryProjectId,
+        eventName: "AI_DELIVERY_RESEARCH_REQUEST_UPDATED",
+        relatedEntityId: updatedRequest.id
+      },
+      tx
+    );
+
+    return { researchRequest: updatedRequest };
+  });
+}
+
+export async function listAiDeliveryResearchSources(
+  authSession: AuthResolvedSessionContext,
+  aiDeliveryProjectId: string,
+  researchRequestId?: string | null
+): Promise<AiDeliveryResearchSourcesResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) return null;
+
+  const project = await getAiDeliveryActiveProject(prisma, tenantId, aiDeliveryProjectId);
+  if (!project) return null;
+
+  const normalizedResearchRequestId = toNullableString(researchRequestId ?? null);
+  if (normalizedResearchRequestId) {
+    const request = await getAiDeliveryProjectResearchRequest(prisma, tenantId, aiDeliveryProjectId, normalizedResearchRequestId);
+    if (!request) return null;
+  }
+
+  const researchSources = await getAiDeliveryResearchSourceDelegate(prisma).findMany({
+    where: {
+      tenantId,
+      aiDeliveryProjectId,
+      ...(normalizedResearchRequestId ? { researchRequestId: normalizedResearchRequestId } : {})
+    },
+    orderBy: { updatedAt: "desc" },
+    select: aiDeliveryResearchSourceSelect
+  });
+
+  return { researchSources: researchSources.map(toAiDeliveryResearchSourceSummary) };
+}
+
+export async function createAiDeliveryResearchSource(
+  authSession: AuthResolvedSessionContext,
+  aiDeliveryProjectId: string,
+  input: AiDeliveryResearchSourceInputRequest
+): Promise<AiDeliveryResearchSourceResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) return null;
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    const project = await getAiDeliveryActiveProject(tx, tenantId, aiDeliveryProjectId);
+    if (!project) return null;
+
+    const researchRequestId = toNullableString(input.researchRequestId);
+    if (researchRequestId) {
+      const request = await getAiDeliveryProjectResearchRequest(tx, tenantId, aiDeliveryProjectId, researchRequestId);
+      if (!request) return null;
+    }
+
+    const workflowRunId = toNullableString(input.workflowRunId);
+    if (workflowRunId) {
+      const workflowRun = await getAiDeliveryProjectWorkflowRun(tx, tenantId, aiDeliveryProjectId, workflowRunId);
+      if (!workflowRun) return null;
+    }
+
+    const created = await getAiDeliveryResearchSourceDelegate(tx).create({
+      data: {
+        tenantId,
+        aiDeliveryProjectId,
+        researchRequestId,
+        workflowRunId,
+        sourceUrl: input.sourceUrl?.trim() ?? "",
+        sourceTitle: toNullableString(input.sourceTitle),
+        sourceType: normalizeAiDeliveryResearchSourceType(input.sourceType),
+        status: normalizeAiDeliveryResearchSourceStatus(input.status),
+        reviewNotes: toNullableString(input.reviewNotes)
+      },
+      select: aiDeliveryResearchSourceSelect
+    });
+
+    const createdSource = toAiDeliveryResearchSourceSummary(created);
+    await recordAiDeliverySystemEvent(
+      {
+        tenantId,
+        aiDeliveryProjectId,
+        eventName: "AI_DELIVERY_RESEARCH_SOURCE_CREATED",
+        relatedEntityId: createdSource.id
+      },
+      tx
+    );
+
+    return { researchSource: createdSource };
+  });
+}
+
+export async function updateAiDeliveryResearchSource(
+  authSession: AuthResolvedSessionContext,
+  aiDeliveryProjectId: string,
+  researchSourceId: string,
+  input: AiDeliveryResearchSourceInputRequest
+): Promise<AiDeliveryResearchSourceResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) return null;
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    const project = await getAiDeliveryActiveProject(tx, tenantId, aiDeliveryProjectId);
+    if (!project) return null;
+
+    const existing = await getAiDeliveryResearchSourceDelegate(tx).findFirst({
+      where: { id: researchSourceId, tenantId, aiDeliveryProjectId },
+      select: aiDeliveryResearchSourceSelect
+    }) as any;
+    if (!existing) return null;
+
+    let researchRequestId: string | null | undefined;
+    if (input.researchRequestId !== undefined) {
+      researchRequestId = toNullableString(input.researchRequestId);
+      if (researchRequestId) {
+        const request = await getAiDeliveryProjectResearchRequest(tx, tenantId, aiDeliveryProjectId, researchRequestId);
+        if (!request) return null;
+      }
+    }
+
+    let workflowRunId: string | null | undefined;
+    if (input.workflowRunId !== undefined) {
+      workflowRunId = toNullableString(input.workflowRunId);
+      if (workflowRunId) {
+        const workflowRun = await getAiDeliveryProjectWorkflowRun(tx, tenantId, aiDeliveryProjectId, workflowRunId);
+        if (!workflowRun) return null;
+      }
+    }
+
+    const updated = await getAiDeliveryResearchSourceDelegate(tx).update({
+      where: { id: researchSourceId },
+      data: {
+        sourceUrl: input.sourceUrl === undefined ? existing.sourceUrl : input.sourceUrl.trim(),
+        sourceTitle: input.sourceTitle === undefined ? existing.sourceTitle : toNullableString(input.sourceTitle),
+        sourceType: input.sourceType ? normalizeAiDeliveryResearchSourceType(input.sourceType) : existing.sourceType,
+        status: input.status ? normalizeAiDeliveryResearchSourceStatus(input.status) : existing.status,
+        reviewNotes: input.reviewNotes === undefined ? existing.reviewNotes : toNullableString(input.reviewNotes),
+        ...(researchRequestId !== undefined ? { researchRequestId } : {}),
+        ...(workflowRunId !== undefined ? { workflowRunId } : {})
+      },
+      select: aiDeliveryResearchSourceSelect
+    });
+
+    const updatedSource = toAiDeliveryResearchSourceSummary(updated);
+    await recordAiDeliverySystemEvent(
+      {
+        tenantId,
+        aiDeliveryProjectId,
+        eventName: "AI_DELIVERY_RESEARCH_SOURCE_UPDATED",
+        relatedEntityId: updatedSource.id
+      },
+      tx
+    );
+
+    return { researchSource: updatedSource };
   });
 }
 

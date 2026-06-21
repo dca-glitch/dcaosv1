@@ -37,6 +37,10 @@ import {
   type AiDeliveryContentPlanSummary,
   type AiDeliveryDeliverableReviewFormValues,
   type AiDeliveryDeliverableReviewSummary,
+  type AiDeliveryResearchRequestFormValues,
+  type AiDeliveryResearchRequestSummary,
+  type AiDeliveryResearchSourceFormValues,
+  type AiDeliveryResearchSourceSummary,
   type AiDeliveryWorkflowRunFormValues,
   type AiDeliveryWorkflowRunSummary,
   type AiDeliveryProjectSummary,
@@ -206,6 +210,22 @@ type ProjectsResponse = {
 
 type AiDeliveryProjectsResponse = {
   aiDeliveryProjects: AiDeliveryProjectSummary[];
+};
+
+type AiDeliveryResearchRequestsResponse = {
+  researchRequests: AiDeliveryResearchRequestSummary[];
+};
+
+type AiDeliveryResearchRequestResponse = {
+  researchRequest: AiDeliveryResearchRequestSummary | null;
+};
+
+type AiDeliveryResearchSourcesResponse = {
+  researchSources: AiDeliveryResearchSourceSummary[];
+};
+
+type AiDeliveryResearchSourceResponse = {
+  researchSource: AiDeliveryResearchSourceSummary | null;
 };
 
 type AiDeliveryContentPlanResponse = {
@@ -2355,6 +2375,100 @@ export function App() {
     }
   }
 
+  async function handleFetchAiDeliveryResearchRequests(projectId: string): Promise<AiDeliveryResearchRequestSummary[]> {
+    setAppMessage(null);
+    try {
+      const response = await runAuthenticatedRequest<AiDeliveryResearchRequestsResponse>(`/ai-delivery/projects/${projectId}/research-requests`);
+      if (!response) return [];
+      if (!response.ok) {
+        setAppMessage({ tone: "error", text: getErrorMessage(response) });
+        return [];
+      }
+      return response.data.researchRequests;
+    } catch (error) {
+      setAppMessage({ tone: "error", text: maskError(error) });
+      return [];
+    }
+  }
+
+  async function handleSaveAiDeliveryResearchRequest(
+    projectId: string,
+    researchRequestId: string | null,
+    values: AiDeliveryResearchRequestFormValues
+  ): Promise<AiDeliveryResearchRequestSummary | null> {
+    setAppMessage(null);
+    try {
+      const response = await runAuthenticatedRequest<AiDeliveryResearchRequestResponse>(
+        researchRequestId
+          ? `/ai-delivery/projects/${projectId}/research-requests/${researchRequestId}`
+          : `/ai-delivery/projects/${projectId}/research-requests`,
+        { method: researchRequestId ? "PUT" : "POST", body: values }
+      );
+      if (!response) return null;
+      if (!response.ok) {
+        setAppMessage({ tone: "error", text: getErrorMessage(response) });
+        return null;
+      }
+      setAppMessage({ tone: "success", text: researchRequestId ? "Research request saved." : "Research request created." });
+      return response.data.researchRequest;
+    } catch (error) {
+      setAppMessage({ tone: "error", text: maskError(error) });
+      return null;
+    }
+  }
+
+  async function handleFetchAiDeliveryResearchSources(
+    projectId: string,
+    researchRequestId?: string | null
+  ): Promise<AiDeliveryResearchSourceSummary[]> {
+    setAppMessage(null);
+    try {
+      const params = new URLSearchParams();
+      if (researchRequestId) {
+        params.set("researchRequestId", researchRequestId);
+      }
+      const suffix = params.size > 0 ? `?${params.toString()}` : "";
+      const response = await runAuthenticatedRequest<AiDeliveryResearchSourcesResponse>(
+        `/ai-delivery/projects/${projectId}/research-sources${suffix}`
+      );
+      if (!response) return [];
+      if (!response.ok) {
+        setAppMessage({ tone: "error", text: getErrorMessage(response) });
+        return [];
+      }
+      return response.data.researchSources;
+    } catch (error) {
+      setAppMessage({ tone: "error", text: maskError(error) });
+      return [];
+    }
+  }
+
+  async function handleSaveAiDeliveryResearchSource(
+    projectId: string,
+    researchSourceId: string | null,
+    values: AiDeliveryResearchSourceFormValues
+  ): Promise<AiDeliveryResearchSourceSummary | null> {
+    setAppMessage(null);
+    try {
+      const response = await runAuthenticatedRequest<AiDeliveryResearchSourceResponse>(
+        researchSourceId
+          ? `/ai-delivery/projects/${projectId}/research-sources/${researchSourceId}`
+          : `/ai-delivery/projects/${projectId}/research-sources`,
+        { method: researchSourceId ? "PUT" : "POST", body: values }
+      );
+      if (!response) return null;
+      if (!response.ok) {
+        setAppMessage({ tone: "error", text: getErrorMessage(response) });
+        return null;
+      }
+      setAppMessage({ tone: "success", text: researchSourceId ? "Research source saved." : "Research source created." });
+      return response.data.researchSource;
+    } catch (error) {
+      setAppMessage({ tone: "error", text: maskError(error) });
+      return null;
+    }
+  }
+
   async function handleArchiveAiDeliveryDeliverable(projectId: string, deliverableId: string): Promise<boolean> {
     setAppMessage(null);
     try {
@@ -3157,6 +3271,10 @@ export function App() {
           onFetchWorkflowRuns={handleFetchAiDeliveryWorkflowRuns}
           onSaveWorkflowRun={handleSaveAiDeliveryWorkflowRun}
           onExecuteWorkflowRun={handleExecuteAiDeliveryWorkflowRun}
+          onFetchResearchRequests={handleFetchAiDeliveryResearchRequests}
+          onSaveResearchRequest={handleSaveAiDeliveryResearchRequest}
+          onFetchResearchSources={handleFetchAiDeliveryResearchSources}
+          onSaveResearchSource={handleSaveAiDeliveryResearchSource}
         />
       ) : null}
       {!loading && activeView === "content-plan-review" ? (

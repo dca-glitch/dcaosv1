@@ -223,6 +223,135 @@ async function runAiDeliveryApiRegression(token) {
   }
   pass("AI Delivery workflow run execute failure path persisted failed status and error/log fields.");
 
+  const researchRequestsData = requireOkResponse(
+    "AI Delivery research requests list",
+    await request(`/ai-delivery/projects/${project.id}/research-requests`, { token })
+  );
+  if (!Array.isArray(researchRequestsData?.researchRequests)) {
+    fail("AI Delivery research requests list did not return a researchRequests array.");
+  }
+  pass(`AI Delivery research requests list endpoint returned cleanly (${researchRequestsData.researchRequests.length} local request(s)).`);
+
+  const createdResearchRequest = requireOkResponse(
+    "AI Delivery research request create",
+    await request(`/ai-delivery/projects/${project.id}/research-requests`, {
+      method: "POST",
+      token,
+      body: {
+        title: "Smoke manual source review request",
+        description: "Manual-only source validation record from local smoke.",
+        requestType: "COMPETITOR_REVIEW",
+        status: "DRAFT",
+        workflowRunId: successRun.id
+      }
+    })
+  )?.researchRequest;
+  if (
+    !createdResearchRequest?.id
+    || createdResearchRequest.title !== "Smoke manual source review request"
+    || createdResearchRequest.workflowRunId !== successRun.id
+  ) {
+    fail("AI Delivery research request create did not return the expected project-scoped request.");
+  }
+  pass("AI Delivery research request create returned the expected project-scoped record.");
+
+  const updatedResearchRequest = requireOkResponse(
+    "AI Delivery research request update",
+    await request(`/ai-delivery/projects/${project.id}/research-requests/${createdResearchRequest.id}`, {
+      method: "PUT",
+      token,
+      body: {
+        status: "READY",
+        title: "Smoke manual source review request",
+        description: "Manual-only source validation record updated by local smoke.",
+        requestType: "COMPETITOR_REVIEW",
+        workflowRunId: successRun.id
+      }
+    })
+  )?.researchRequest;
+  if (!updatedResearchRequest || updatedResearchRequest.status !== "READY") {
+    fail("AI Delivery research request update did not persist the expected READY status.");
+  }
+  pass("AI Delivery research request update persisted the expected status.");
+
+  const researchSourcesData = requireOkResponse(
+    "AI Delivery research sources list",
+    await request(`/ai-delivery/projects/${project.id}/research-sources`, { token })
+  );
+  if (!Array.isArray(researchSourcesData?.researchSources)) {
+    fail("AI Delivery research sources list did not return a researchSources array.");
+  }
+  pass(`AI Delivery research sources list endpoint returned cleanly (${researchSourcesData.researchSources.length} local source(s)).`);
+
+  const createdResearchSource = requireOkResponse(
+    "AI Delivery research source create",
+    await request(`/ai-delivery/projects/${project.id}/research-sources`, {
+      method: "POST",
+      token,
+      body: {
+        researchRequestId: createdResearchRequest.id,
+        workflowRunId: successRun.id,
+        sourceUrl: "https://example.com/manual-research-source",
+        sourceTitle: "Smoke manual source",
+        sourceType: "WEBSITE",
+        status: "PROPOSED",
+        reviewNotes: "Manual-only source record from local smoke."
+      }
+    })
+  )?.researchSource;
+  if (
+    !createdResearchSource?.id
+    || createdResearchSource.sourceUrl !== "https://example.com/manual-research-source"
+    || createdResearchSource.researchRequestId !== createdResearchRequest.id
+  ) {
+    fail("AI Delivery research source create did not return the expected project-scoped source record.");
+  }
+  pass("AI Delivery research source create returned the expected project-scoped source record.");
+
+  const filteredResearchSources = requireOkResponse(
+    "AI Delivery research sources list by request",
+    await request(`/ai-delivery/projects/${project.id}/research-sources?researchRequestId=${createdResearchRequest.id}`, { token })
+  )?.researchSources;
+  if (!Array.isArray(filteredResearchSources) || !filteredResearchSources.some((source) => source.id === createdResearchSource.id)) {
+    fail("AI Delivery research sources list by request did not return the created source.");
+  }
+  pass("AI Delivery research sources list by request returned the expected manual source.");
+
+  const invalidResearchSourceResponse = await request(`/ai-delivery/projects/${project.id}/research-sources`, {
+    method: "POST",
+    token,
+    body: {
+      sourceUrl: "ftp://example.com/not-allowed",
+      sourceType: "WEBSITE",
+      status: "PROPOSED"
+    }
+  });
+  if (invalidResearchSourceResponse.status !== 400 || invalidResearchSourceResponse.body?.ok !== false) {
+    fail("AI Delivery research source invalid scheme was not rejected.");
+  }
+  pass("AI Delivery research source invalid scheme was rejected without any external fetch.");
+
+  const updatedResearchSource = requireOkResponse(
+    "AI Delivery research source update",
+    await request(`/ai-delivery/projects/${project.id}/research-sources/${createdResearchSource.id}`, {
+      method: "PUT",
+      token,
+      body: {
+        researchRequestId: createdResearchRequest.id,
+        workflowRunId: successRun.id,
+        sourceUrl: "https://example.com/manual-research-source",
+        sourceTitle: "Smoke manual source",
+        sourceType: "WEBSITE",
+        status: "APPROVED",
+        reviewNotes: "Approved by local smoke."
+      }
+    })
+  )?.researchSource;
+  if (!updatedResearchSource || updatedResearchSource.status !== "APPROVED" || updatedResearchSource.reviewNotes !== "Approved by local smoke.") {
+    fail("AI Delivery research source update did not persist the expected approval fields.");
+  }
+  pass("AI Delivery research source update persisted the expected approval fields.");
+
   const deliverablesData = requireOkResponse(
     "AI Delivery deliverables list",
     await request(`/ai-delivery-projects/${project.id}/deliverables`, { token })
@@ -298,6 +427,17 @@ async function main() {
       await page.getByRole("heading", { name: "Existing workflow runs" }).waitFor({ state: "visible", timeout: 15000 });
       await page.getByText("Execution log").first().waitFor({ state: "visible", timeout: 15000 });
       pass("Workflow runs panel opened and rendered execution details.");
+      await page.getByRole("button", { name: "Close" }).first().click();
+    }
+
+    const researchButtons = page.getByRole("button", { name: "Research / Sources" });
+    const researchButtonCount = await researchButtons.count();
+    if (researchButtonCount > 0) {
+      await researchButtons.first().click();
+      await page.getByRole("dialog", { name: "Research / Sources" }).waitFor({ state: "visible", timeout: 15000 });
+      await page.getByRole("heading", { name: "Existing research requests" }).waitFor({ state: "visible", timeout: 15000 });
+      await page.getByText("Source records are manual only in this foundation. No crawling or external fetching is performed.").first().waitFor({ state: "visible", timeout: 15000 });
+      pass("Research / Sources panel opened and rendered manual-only helper text.");
       await page.getByRole("button", { name: "Close" }).first().click();
     }
 

@@ -202,6 +202,55 @@ export type AiDeliveryWorkflowRunFormValues = {
   resultPlaceholder: string;
 };
 
+export type AiDeliveryResearchRequestSummary = {
+  id: string;
+  tenantId: string;
+  aiDeliveryProjectId: string;
+  workflowRunId: string | null;
+  workflowRun: { id: string; status: string } | null;
+  title: string;
+  description: string | null;
+  requestType: string | null;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type AiDeliveryResearchRequestFormValues = {
+  workflowRunId: string | null;
+  title: string;
+  description: string;
+  requestType: string;
+  status: string;
+};
+
+export type AiDeliveryResearchSourceSummary = {
+  id: string;
+  tenantId: string;
+  aiDeliveryProjectId: string;
+  researchRequestId: string | null;
+  workflowRunId: string | null;
+  researchRequest: { id: string; title: string; status: string } | null;
+  workflowRun: { id: string; status: string } | null;
+  sourceUrl: string;
+  sourceTitle: string | null;
+  sourceType: string;
+  status: string;
+  reviewNotes: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type AiDeliveryResearchSourceFormValues = {
+  researchRequestId: string | null;
+  workflowRunId: string | null;
+  sourceUrl: string;
+  sourceTitle: string;
+  sourceType: string;
+  status: string;
+  reviewNotes: string;
+};
+
 type ContentPlanItemDraft = {
   localId: string;
   title: string;
@@ -265,9 +314,16 @@ export type AiDeliveryProjectsProps = {
   onFetchWorkflowRuns?: (projectId: string) => Promise<AiDeliveryWorkflowRunSummary[]>;
   onSaveWorkflowRun?: (projectId: string, workflowRunId: string | null, values: AiDeliveryWorkflowRunFormValues) => Promise<AiDeliveryWorkflowRunSummary | null>;
   onExecuteWorkflowRun?: (projectId: string, workflowRunId: string) => Promise<AiDeliveryWorkflowRunSummary | null>;
+  onFetchResearchRequests?: (projectId: string) => Promise<AiDeliveryResearchRequestSummary[]>;
+  onSaveResearchRequest?: (projectId: string, researchRequestId: string | null, values: AiDeliveryResearchRequestFormValues) => Promise<AiDeliveryResearchRequestSummary | null>;
+  onFetchResearchSources?: (projectId: string, researchRequestId?: string | null) => Promise<AiDeliveryResearchSourceSummary[]>;
+  onSaveResearchSource?: (projectId: string, researchSourceId: string | null, values: AiDeliveryResearchSourceFormValues) => Promise<AiDeliveryResearchSourceSummary | null>;
 };
 
 const workflowRunStatuses = ["DRAFT", "READY", "IN_PROGRESS", "REVIEW", "COMPLETED", "FAILED", "ARCHIVED"] as const;
+const researchRequestStatuses = ["DRAFT", "READY", "IN_REVIEW", "COMPLETED", "ARCHIVED"] as const;
+const researchSourceStatuses = ["PROPOSED", "APPROVED", "REJECTED", "ARCHIVED"] as const;
+const researchSourceTypes = ["WEBSITE", "DOCUMENT", "OTHER"] as const;
 const workflowRunLifecycleStatuses = ["DRAFT", "READY", "IN_PROGRESS", "REVIEW", "COMPLETED", "ARCHIVED"] as const;
 type WorkflowRunStatus = (typeof workflowRunStatuses)[number];
 const workflowRunStatusLabels: Record<WorkflowRunStatus, string> = {
@@ -375,6 +431,34 @@ const emptyWorkflowRun = (): AiDeliveryWorkflowRunFormValues => ({
   resultPlaceholder: ""
 });
 
+const emptyResearchRequest = (): AiDeliveryResearchRequestFormValues => ({
+  workflowRunId: null,
+  title: "",
+  description: "",
+  requestType: "",
+  status: "DRAFT"
+});
+
+const emptyResearchSource = (): AiDeliveryResearchSourceFormValues => ({
+  researchRequestId: null,
+  workflowRunId: null,
+  sourceUrl: "",
+  sourceTitle: "",
+  sourceType: "WEBSITE",
+  status: "PROPOSED",
+  reviewNotes: ""
+});
+
+const researchSourceFormFromSummary = (source: AiDeliveryResearchSourceSummary): AiDeliveryResearchSourceFormValues => ({
+  researchRequestId: source.researchRequestId,
+  workflowRunId: source.workflowRunId,
+  sourceUrl: source.sourceUrl,
+  sourceTitle: source.sourceTitle ?? "",
+  sourceType: source.sourceType,
+  status: source.status,
+  reviewNotes: source.reviewNotes ?? ""
+});
+
 function formatOptionalDate(value: string | null | undefined): string {
   return value ? new Date(value).toLocaleString() : "Not set";
 }
@@ -476,7 +560,11 @@ export function AiDeliveryPage({
   onSaveDeliverableReview,
   onFetchWorkflowRuns,
   onSaveWorkflowRun,
-  onExecuteWorkflowRun
+  onExecuteWorkflowRun,
+  onFetchResearchRequests,
+  onSaveResearchRequest,
+  onFetchResearchSources,
+  onSaveResearchSource
 }: AiDeliveryProjectsProps) {
   const [filter, setFilter] = useState<"all" | "active" | "archived">("active");
   const [editorProjectId, setEditorProjectId] = useState<string | null>(null);
@@ -541,6 +629,16 @@ export function AiDeliveryPage({
   const [workflowRuns, setWorkflowRuns] = useState<AiDeliveryWorkflowRunSummary[]>([]);
   const [workflowRunEditorId, setWorkflowRunEditorId] = useState<string | null>(null);
   const [workflowRunForm, setWorkflowRunForm] = useState<AiDeliveryWorkflowRunFormValues>(emptyWorkflowRun());
+  const [openResearchSourcesId, setOpenResearchSourcesId] = useState<string | null>(null);
+  const [researchLoading, setResearchLoading] = useState(false);
+  const [researchSaving, setResearchSaving] = useState(false);
+  const [researchRequests, setResearchRequests] = useState<AiDeliveryResearchRequestSummary[]>([]);
+  const [researchSources, setResearchSources] = useState<AiDeliveryResearchSourceSummary[]>([]);
+  const [researchWorkflowRuns, setResearchWorkflowRuns] = useState<AiDeliveryWorkflowRunSummary[]>([]);
+  const [researchRequestEditorId, setResearchRequestEditorId] = useState<string | null>(null);
+  const [researchRequestForm, setResearchRequestForm] = useState<AiDeliveryResearchRequestFormValues>(emptyResearchRequest());
+  const [researchSourceEditorId, setResearchSourceEditorId] = useState<string | null>(null);
+  const [researchSourceForm, setResearchSourceForm] = useState<AiDeliveryResearchSourceFormValues>(emptyResearchSource());
 
   const selectedProject = useMemo(() => projects.find((p) => p.id === editorProjectId) ?? null, [editorProjectId, projects]);
   const openProject = useMemo(() => projects.find((p) => p.id === openBriefId) ?? null, [openBriefId, projects]);
@@ -564,6 +662,7 @@ export function AiDeliveryPage({
   const workflowRunStatusOptions = useMemo(() => getWorkflowRunStatusOptions(workflowRunBeingEdited?.status ?? null), [workflowRunBeingEdited?.status]);
   const workflowRunStatusHelper = useMemo(() => getWorkflowRunStatusHelper(workflowRunBeingEdited?.status ?? null), [workflowRunBeingEdited?.status]);
   const isWorkflowRunStatusAllowed = workflowRunStatusOptions.includes(normalizeWorkflowRunStatus(workflowRunForm.status));
+  const openResearchSourcesProject = useMemo(() => projects.find((p) => p.id === openResearchSourcesId) ?? null, [openResearchSourcesId, projects]);
   const linkableProjects = useMemo(
     () => projectsList.filter((project) => project.clientId === draft.clientId),
     [draft.clientId, projectsList]
@@ -1067,6 +1166,104 @@ export function AiDeliveryPage({
     setWorkflowRunExecutingId(null);
   }
 
+  async function loadResearchSources(projectId: string) {
+    const [requests, sources, runs] = await Promise.all([
+      typeof onFetchResearchRequests === "function" ? onFetchResearchRequests(projectId) : Promise.resolve([]),
+      typeof onFetchResearchSources === "function" ? onFetchResearchSources(projectId) : Promise.resolve([]),
+      typeof onFetchWorkflowRuns === "function" ? onFetchWorkflowRuns(projectId) : Promise.resolve([])
+    ]);
+    setResearchRequests(requests);
+    setResearchSources(sources);
+    setResearchWorkflowRuns(runs);
+  }
+
+  async function openResearchSources(projectId: string) {
+    setOpenResearchSourcesId(projectId);
+    setResearchLoading(true);
+    setResearchRequests([]);
+    setResearchSources([]);
+    setResearchWorkflowRuns([]);
+    setResearchRequestEditorId(null);
+    setResearchRequestForm(emptyResearchRequest());
+    setResearchSourceEditorId(null);
+    setResearchSourceForm(emptyResearchSource());
+    try {
+      await loadResearchSources(projectId);
+    } finally {
+      setResearchLoading(false);
+    }
+  }
+
+  function editResearchRequest(request: AiDeliveryResearchRequestSummary) {
+    setResearchRequestEditorId(request.id);
+    setResearchRequestForm({
+      workflowRunId: request.workflowRunId,
+      title: request.title,
+      description: request.description ?? "",
+      requestType: request.requestType ?? "",
+      status: request.status
+    });
+  }
+
+  function editResearchSource(source: AiDeliveryResearchSourceSummary) {
+    setResearchSourceEditorId(source.id);
+    setResearchSourceForm(researchSourceFormFromSummary(source));
+  }
+
+  async function saveResearchRequest(projectId: string) {
+    if (typeof onSaveResearchRequest !== "function" || !researchRequestForm.title.trim()) return;
+    setResearchSaving(true);
+    try {
+      const saved = await onSaveResearchRequest(projectId, researchRequestEditorId, researchRequestForm);
+      if (saved) {
+        await loadResearchSources(projectId);
+        setResearchRequestEditorId(null);
+        setResearchRequestForm(emptyResearchRequest());
+      }
+    } finally {
+      setResearchSaving(false);
+    }
+  }
+
+  async function saveResearchSource(projectId: string) {
+    if (typeof onSaveResearchSource !== "function" || !researchSourceForm.sourceUrl.trim()) return;
+    setResearchSaving(true);
+    try {
+      const saved = await onSaveResearchSource(projectId, researchSourceEditorId, researchSourceForm);
+      if (saved) {
+        await loadResearchSources(projectId);
+        setResearchSourceEditorId(null);
+        setResearchSourceForm(emptyResearchSource());
+      }
+    } finally {
+      setResearchSaving(false);
+    }
+  }
+
+  async function setResearchSourceStatus(projectId: string, source: AiDeliveryResearchSourceSummary, status: string) {
+    if (typeof onSaveResearchSource !== "function") return;
+    setResearchSaving(true);
+    try {
+      const saved = await onSaveResearchSource(projectId, source.id, { ...researchSourceFormFromSummary(source), status });
+      if (saved) {
+        await loadResearchSources(projectId);
+      }
+    } finally {
+      setResearchSaving(false);
+    }
+  }
+
+  function closeResearchSources() {
+    setOpenResearchSourcesId(null);
+    setResearchRequests([]);
+    setResearchSources([]);
+    setResearchWorkflowRuns([]);
+    setResearchRequestEditorId(null);
+    setResearchRequestForm(emptyResearchRequest());
+    setResearchSourceEditorId(null);
+    setResearchSourceForm(emptyResearchSource());
+  }
+
   if (loading) return <LoadingState label="Loading AI delivery projects" />;
   if (error) return <ErrorState title="AI delivery unavailable" message={error} />;
 
@@ -1085,6 +1282,9 @@ export function AiDeliveryPage({
   const workflowRunsHelper = openWorkflowRunsId
     ? formatStatusBreakdown(workflowRuns, "No workflow runs loaded for the open project")
     : "Open a project's Workflow runs to load per-project counts.";
+  const researchHelper = openResearchSourcesId
+    ? `Requests: ${formatStatusBreakdown(researchRequests, "No research requests loaded")} - Sources: ${formatStatusBreakdown(researchSources, "No research sources loaded")}`
+    : "Open a project's Research / Sources panel to load manual research records.";
   const seoTopicsHelper = openContentPlanId
     ? `${contentPlanItems.length} topic/research planning record(s) loaded for the open project.`
     : "Open a project's SEO research to load topic/research planning records.";
@@ -1153,6 +1353,12 @@ export function AiDeliveryPage({
             helper={workflowRunsHelper}
           />
           <MetricCard
+            accent="warning"
+            label="Research loaded"
+            value={openResearchSourcesId ? `${researchRequests.length}/${researchSources.length}` : "-"}
+            helper={researchHelper}
+          />
+          <MetricCard
             accent="cyan"
             label="SEO topics loaded"
             value={openContentPlanId ? contentPlanItems.length : "-"}
@@ -1209,6 +1415,9 @@ export function AiDeliveryPage({
                       <button className="secondary-action" onClick={() => void openBrief(p.id)} type="button" disabled={!p.brief}>
                         Brief
                       </button>
+                      <button className="secondary-action" onClick={() => void openResearchSources(p.id)} type="button">
+                        Research / Sources
+                      </button>
                       <button className="secondary-action" onClick={() => void openContentPlan(p.id)} type="button">
                         SEO research
                       </button>
@@ -1257,7 +1466,7 @@ export function AiDeliveryPage({
                 <div>
                   <span>Workflow</span>
                   <strong>
-                    Brief: {p.brief ? formatEnumLabel(p.brief.status) : "No"} - SEO topics: open to load - Production: open to load - Deliverables: open to load
+                    Brief: {p.brief ? formatEnumLabel(p.brief.status) : "No"} - Research sources: open to load - SEO topics: open to load - Production: open to load - Deliverables: open to load
                   </strong>
                 </div>
                 <div className="entity-span-2">
@@ -1755,6 +1964,222 @@ export function AiDeliveryPage({
           ) : (
             <div>Project not found.</div>
           )}
+        </Modal>
+      ) : null}
+      {openResearchSourcesId ? (
+        <Modal onClose={closeResearchSources} title="Research / Sources">
+          {researchLoading ? (
+            <LoadingState label="Loading research requests and sources" />
+          ) : openResearchSourcesProject ? (
+            <div>
+              <section className="field-panel">
+                <h3>Research request editor</h3>
+                <p className="muted-text">Source records are manual only in this foundation. No crawling or external fetching is performed.</p>
+                <div className="modal-footer">
+                  <button className="secondary-action" disabled={researchSaving} onClick={closeResearchSources} type="button">Close</button>
+                  <button className="secondary-action" disabled={researchSaving} onClick={() => { setResearchRequestEditorId(null); setResearchRequestForm(emptyResearchRequest()); }} type="button">New request</button>
+                  <button className="primary-action" disabled={researchSaving || !researchRequestForm.title.trim()} onClick={() => void saveResearchRequest(openResearchSourcesProject.id)} type="button">
+                    {researchSaving ? "Saving" : researchRequestEditorId ? "Save request" : "Create request"}
+                  </button>
+                </div>
+                <div className="field-grid">
+                  <label>
+                    Status - Required
+                    <select value={researchRequestForm.status} onChange={(event) => setResearchRequestForm((current) => ({ ...current, status: event.target.value }))}>
+                      {researchRequestStatuses.map((status) => <option key={status} value={status}>{formatEnumLabel(status)}</option>)}
+                    </select>
+                    <span className="muted-text">Admin-only lifecycle state for this manual research request.</span>
+                  </label>
+                  <label>
+                    Linked workflow run - Optional
+                    <select value={researchRequestForm.workflowRunId ?? ""} onChange={(event) => setResearchRequestForm((current) => ({ ...current, workflowRunId: event.target.value || null }))}>
+                      <option value="">Manual / unlinked request</option>
+                      {researchWorkflowRuns.map((run) => <option key={run.id} value={run.id}>Workflow run - {formatEnumLabel(run.status)}</option>)}
+                    </select>
+                    <span className="muted-text">Only link a request to a workflow run from the same AI Delivery project.</span>
+                  </label>
+                  <label className="field-span-2">
+                    Title - Required
+                    <input maxLength={255} placeholder="Competitor review, source gathering, keyword gap, audience research" value={researchRequestForm.title} onChange={(event) => setResearchRequestForm((current) => ({ ...current, title: event.target.value }))} />
+                    <span className="muted-text">Working title for the research work the admin team wants to track manually.</span>
+                  </label>
+                  <label>
+                    Request type / topic - Optional
+                    <input maxLength={255} placeholder="Competitors, sources, SERP notes, local intent" value={researchRequestForm.requestType} onChange={(event) => setResearchRequestForm((current) => ({ ...current, requestType: event.target.value }))} />
+                    <span className="muted-text">Short category used to group similar research work.</span>
+                  </label>
+                  <label className="field-span-2">
+                    Description / notes - Optional
+                    <textarea maxLength={4000} placeholder="What should be reviewed, what to collect manually, and what the source list should prove" rows={4} value={researchRequestForm.description} onChange={(event) => setResearchRequestForm((current) => ({ ...current, description: event.target.value }))} />
+                    <span className="muted-text">Visible only to admin team. No external fetching is triggered from this screen.</span>
+                  </label>
+                </div>
+                <div className="modal-footer">
+                  <button className="secondary-action" disabled={researchSaving} onClick={closeResearchSources} type="button">Close</button>
+                  <button className="secondary-action" disabled={researchSaving} onClick={() => { setResearchRequestEditorId(null); setResearchRequestForm(emptyResearchRequest()); }} type="button">New request</button>
+                  <button className="primary-action" disabled={researchSaving || !researchRequestForm.title.trim()} onClick={() => void saveResearchRequest(openResearchSourcesProject.id)} type="button">
+                    {researchSaving ? "Saving" : researchRequestEditorId ? "Save request" : "Create request"}
+                  </button>
+                </div>
+              </section>
+
+              <section className="field-panel">
+                <h3>Existing research requests</h3>
+                {researchRequests.length === 0 ? <div className="state-panel">No research requests have been created yet.</div> : null}
+                {researchRequests.map((request) => (
+                  <article className="entity-card" key={request.id} style={{ marginBottom: "1rem" }}>
+                    <div className="entity-card-header">
+                      <div>
+                        <StatusBadge status={request.status} />
+                        <h3>{request.title}</h3>
+                        <p>Updated {formatOptionalDate(request.updatedAt)}</p>
+                      </div>
+                      <div className="card-actions">
+                        <button className="secondary-action" disabled={researchSaving} onClick={() => editResearchRequest(request)} type="button">Edit</button>
+                      </div>
+                    </div>
+                    <dl className="brief-grid">
+                      <div>
+                        <dt>Status</dt>
+                        <dd>{formatEnumLabel(request.status)}</dd>
+                      </div>
+                      <div>
+                        <dt>Linked workflow</dt>
+                        <dd>{request.workflowRun ? formatEnumLabel(request.workflowRun.status) : "Manual / none"}</dd>
+                      </div>
+                      <div>
+                        <dt>Type</dt>
+                        <dd>{request.requestType ?? "Not set"}</dd>
+                      </div>
+                      <div>
+                        <dt>Created</dt>
+                        <dd>{formatOptionalDate(request.createdAt)}</dd>
+                      </div>
+                      <div className="field-span-2">
+                        <dt>Description</dt>
+                        <dd>{formatPreview(request.description)}</dd>
+                      </div>
+                    </dl>
+                  </article>
+                ))}
+              </section>
+
+              <section className="field-panel">
+                <h3>Research source editor</h3>
+                <p className="muted-text">Source records are manual only in this foundation. No crawling or external fetching is performed.</p>
+                <div className="modal-footer">
+                  <button className="secondary-action" disabled={researchSaving} onClick={closeResearchSources} type="button">Close</button>
+                  <button className="secondary-action" disabled={researchSaving} onClick={() => { setResearchSourceEditorId(null); setResearchSourceForm(emptyResearchSource()); }} type="button">New source</button>
+                  <button className="primary-action" disabled={researchSaving || !researchSourceForm.sourceUrl.trim()} onClick={() => void saveResearchSource(openResearchSourcesProject.id)} type="button">
+                    {researchSaving ? "Saving" : researchSourceEditorId ? "Save source" : "Create source"}
+                  </button>
+                </div>
+                <div className="field-grid">
+                  <label>
+                    Status - Required
+                    <select value={researchSourceForm.status} onChange={(event) => setResearchSourceForm((current) => ({ ...current, status: event.target.value }))}>
+                      {researchSourceStatuses.map((status) => <option key={status} value={status}>{formatEnumLabel(status)}</option>)}
+                    </select>
+                    <span className="muted-text">Approve, reject, or archive the manual source record here.</span>
+                  </label>
+                  <label>
+                    Source type - Required
+                    <select value={researchSourceForm.sourceType} onChange={(event) => setResearchSourceForm((current) => ({ ...current, sourceType: event.target.value }))}>
+                      {researchSourceTypes.map((sourceType) => <option key={sourceType} value={sourceType}>{formatEnumLabel(sourceType)}</option>)}
+                    </select>
+                    <span className="muted-text">Manual classification only. No document parsing or scraping runs here.</span>
+                  </label>
+                  <label>
+                    Linked research request - Optional
+                    <select value={researchSourceForm.researchRequestId ?? ""} onChange={(event) => setResearchSourceForm((current) => ({ ...current, researchRequestId: event.target.value || null }))}>
+                      <option value="">Manual / unlinked source</option>
+                      {researchRequests.map((request) => <option key={request.id} value={request.id}>{request.title}</option>)}
+                    </select>
+                    <span className="muted-text">Use when the source supports a specific tracked research request.</span>
+                  </label>
+                  <label>
+                    Linked workflow run - Optional
+                    <select value={researchSourceForm.workflowRunId ?? ""} onChange={(event) => setResearchSourceForm((current) => ({ ...current, workflowRunId: event.target.value || null }))}>
+                      <option value="">Manual / unlinked source</option>
+                      {researchWorkflowRuns.map((run) => <option key={run.id} value={run.id}>Workflow run - {formatEnumLabel(run.status)}</option>)}
+                    </select>
+                    <span className="muted-text">Optional internal link back to a workflow run in the same project.</span>
+                  </label>
+                  <label className="field-span-2">
+                    Source URL - Required
+                    <input maxLength={2048} placeholder="https://example.com/source-page" value={researchSourceForm.sourceUrl} onChange={(event) => setResearchSourceForm((current) => ({ ...current, sourceUrl: event.target.value }))} />
+                    <span className="muted-text">Manual http/https URL only. The system records the link but does not fetch or crawl it in this foundation.</span>
+                  </label>
+                  <label className="field-span-2">
+                    Source title - Optional
+                    <input maxLength={255} placeholder="Human-friendly source label for the admin team" value={researchSourceForm.sourceTitle} onChange={(event) => setResearchSourceForm((current) => ({ ...current, sourceTitle: event.target.value }))} />
+                    <span className="muted-text">Useful when the page title is not obvious from the URL alone.</span>
+                  </label>
+                  <label className="field-span-2">
+                    Review notes - Optional
+                    <textarea maxLength={4000} placeholder="Why this source was approved, rejected, or archived for manual research use" rows={4} value={researchSourceForm.reviewNotes} onChange={(event) => setResearchSourceForm((current) => ({ ...current, reviewNotes: event.target.value }))} />
+                    <span className="muted-text">Visible only to admin team.</span>
+                  </label>
+                </div>
+                <div className="modal-footer">
+                  <button className="secondary-action" disabled={researchSaving} onClick={closeResearchSources} type="button">Close</button>
+                  <button className="secondary-action" disabled={researchSaving} onClick={() => { setResearchSourceEditorId(null); setResearchSourceForm(emptyResearchSource()); }} type="button">New source</button>
+                  <button className="primary-action" disabled={researchSaving || !researchSourceForm.sourceUrl.trim()} onClick={() => void saveResearchSource(openResearchSourcesProject.id)} type="button">
+                    {researchSaving ? "Saving" : researchSourceEditorId ? "Save source" : "Create source"}
+                  </button>
+                </div>
+              </section>
+
+              <section className="field-panel">
+                <h3>Existing research sources</h3>
+                {researchSources.length === 0 ? <div className="state-panel">No research sources have been recorded yet.</div> : null}
+                {researchSources.map((source) => (
+                  <article className="entity-card" key={source.id} style={{ marginBottom: "1rem" }}>
+                    <div className="entity-card-header">
+                      <div>
+                        <StatusBadge status={source.status} />
+                        <h3>{source.sourceTitle ?? source.sourceUrl}</h3>
+                        <p>Updated {formatOptionalDate(source.updatedAt)}</p>
+                      </div>
+                      <div className="card-actions">
+                        <button className="secondary-action" disabled={researchSaving} onClick={() => editResearchSource(source)} type="button">Edit</button>
+                        {source.status !== "APPROVED" ? <button className="secondary-action" disabled={researchSaving} onClick={() => void setResearchSourceStatus(openResearchSourcesProject.id, source, "APPROVED")} type="button">Approve</button> : null}
+                        {source.status !== "REJECTED" ? <button className="secondary-action" disabled={researchSaving} onClick={() => void setResearchSourceStatus(openResearchSourcesProject.id, source, "REJECTED")} type="button">Reject</button> : null}
+                        {source.status !== "ARCHIVED" ? <button className="secondary-action" disabled={researchSaving} onClick={() => void setResearchSourceStatus(openResearchSourcesProject.id, source, "ARCHIVED")} type="button">Archive</button> : null}
+                      </div>
+                    </div>
+                    <dl className="brief-grid">
+                      <div>
+                        <dt>Status</dt>
+                        <dd>{formatEnumLabel(source.status)}</dd>
+                      </div>
+                      <div>
+                        <dt>Type</dt>
+                        <dd>{formatEnumLabel(source.sourceType)}</dd>
+                      </div>
+                      <div className="field-span-2">
+                        <dt>Source URL</dt>
+                        <dd>{source.sourceUrl}</dd>
+                      </div>
+                      <div>
+                        <dt>Request</dt>
+                        <dd>{source.researchRequest?.title ?? "Manual / none"}</dd>
+                      </div>
+                      <div>
+                        <dt>Workflow run</dt>
+                        <dd>{source.workflowRun ? formatEnumLabel(source.workflowRun.status) : "Manual / none"}</dd>
+                      </div>
+                      <div className="field-span-2">
+                        <dt>Review notes</dt>
+                        <dd>{formatPreview(source.reviewNotes)}</dd>
+                      </div>
+                    </dl>
+                  </article>
+                ))}
+              </section>
+              <div className="modal-footer"><button className="secondary-action" onClick={closeResearchSources} type="button">Close</button></div>
+            </div>
+          ) : <div>Project not found.</div>}
         </Modal>
       ) : null}
       {openWorkflowRunsId ? (

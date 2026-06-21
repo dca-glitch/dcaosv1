@@ -38,6 +38,8 @@ import {
   createAiDeliveryArticleImage,
   createAiDeliveryContentDraft,
   createAiDeliveryProject,
+  createAiDeliveryResearchRequest,
+  createAiDeliveryResearchSource,
   executeAiDeliveryWorkflowRun,
   createAiDeliveryWorkflowRun,
   createClient,
@@ -63,6 +65,8 @@ import {
   getTask,
   listAiDeliveryArticleImages,
   listAiDeliveryProjects,
+  listAiDeliveryResearchRequests,
+  listAiDeliveryResearchSources,
   listAiDeliveryWorkflowRuns,
   listInvoices,
   listInvoiceItems,
@@ -87,6 +91,8 @@ import {
   saveCompanyProfile,
   updateAiDeliveryArticleImage,
   updateAiDeliveryProject,
+  updateAiDeliveryResearchRequest,
+  updateAiDeliveryResearchSource,
   updateAiDeliveryWorkflowRun,
   updateBill,
   updateClient,
@@ -129,6 +135,8 @@ import type {
   AiDeliveryArticleImageInputRequest,
   AiDeliveryContentDraftInputRequest,
   AiDeliveryProjectInputRequest,
+  AiDeliveryResearchRequestInputRequest,
+  AiDeliveryResearchSourceInputRequest,
   BillDocumentUploadRequest,
   BillInputRequest,
   ClientInputRequest,
@@ -155,6 +163,9 @@ const NAME_MAX_LENGTH = 255;
 const CLIENT_COUNTRIES = new Set(["Indonesia", "Poland", "United States", "United Kingdom", "Singapore", "Australia"]);
 const PROJECT_STATUSES = new Set(["Active", "Paused", "Completed", "Archived"]);
 const AI_DELIVERY_WORKFLOW_RUN_STATUSES = new Set(["DRAFT", "READY", "IN_PROGRESS", "REVIEW", "COMPLETED", "FAILED", "ARCHIVED"]);
+const AI_DELIVERY_RESEARCH_REQUEST_STATUSES = new Set(["DRAFT", "READY", "IN_REVIEW", "COMPLETED", "ARCHIVED"]);
+const AI_DELIVERY_RESEARCH_SOURCE_STATUSES = new Set(["PROPOSED", "APPROVED", "REJECTED", "ARCHIVED"]);
+const AI_DELIVERY_RESEARCH_SOURCE_TYPES = new Set(["WEBSITE", "DOCUMENT", "OTHER"]);
 const AI_DELIVERY_CONTENT_DRAFT_STATUSES = new Set(["DRAFT", "READY_FOR_REVIEW", "APPROVED", "CHANGES_REQUESTED", "ARCHIVED"]);
 const AI_DELIVERY_ARTICLE_IMAGE_STATUSES = new Set(["DRAFT", "READY_FOR_GENERATION", "PREVIEW_READY", "APPROVED", "FINAL_READY", "CHANGES_REQUESTED", "ARCHIVED"]);
 const AI_DELIVERY_DELIVERABLE_REVIEW_STATUSES = new Set(["NOT_STARTED", "ADMIN_REVIEW", "CHANGES_REQUESTED", "APPROVED", "ARCHIVED"]);
@@ -205,6 +216,23 @@ function getOptionalUrl(value: unknown): string | null | undefined {
 
   try {
     const parsed = new URL(maybeString);
+    return parsed.toString();
+  } catch {
+    return null;
+  }
+}
+
+function getOptionalHttpUrl(value: unknown): string | null | undefined {
+  const maybeString = getOptionalString(value, LOGO_URL_MAX_LENGTH);
+  if (maybeString === undefined || maybeString === null) {
+    return maybeString;
+  }
+
+  try {
+    const parsed = new URL(maybeString);
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+      return null;
+    }
     return parsed.toString();
   } catch {
     return null;
@@ -400,6 +428,55 @@ function getAiDeliveryWorkflowRunInput(body: unknown) {
     status,
     adminNotes: getOptionalString(value.adminNotes, TEXT_FIELD_MAX_LENGTH),
     resultPlaceholder: getOptionalString(value.resultPlaceholder, TEXT_FIELD_MAX_LENGTH)
+  };
+}
+
+function getAiDeliveryResearchRequestInput(body: unknown): AiDeliveryResearchRequestInputRequest | null {
+  const value = (body ?? {}) as Record<string, unknown>;
+  const status = value.status === undefined ? undefined : typeof value.status === "string" ? value.status.trim().toUpperCase() : null;
+  if (status !== undefined && (!status || !AI_DELIVERY_RESEARCH_REQUEST_STATUSES.has(status))) {
+    return null;
+  }
+
+  const title = value.title === undefined ? undefined : getRequiredString(value.title, SHORT_TEXT_FIELD_MAX_LENGTH);
+  if (value.title !== undefined && !title) {
+    return null;
+  }
+
+  return {
+    workflowRunId: getOptionalString(value.workflowRunId, SHORT_TEXT_FIELD_MAX_LENGTH),
+    title: title ?? undefined,
+    description: getOptionalString(value.description, TEXT_FIELD_MAX_LENGTH),
+    requestType: getOptionalString(value.requestType, SHORT_TEXT_FIELD_MAX_LENGTH),
+    status
+  };
+}
+
+function getAiDeliveryResearchSourceInput(body: unknown): AiDeliveryResearchSourceInputRequest | null {
+  const value = (body ?? {}) as Record<string, unknown>;
+  const status = value.status === undefined ? undefined : typeof value.status === "string" ? value.status.trim().toUpperCase() : null;
+  if (status !== undefined && (!status || !AI_DELIVERY_RESEARCH_SOURCE_STATUSES.has(status))) {
+    return null;
+  }
+
+  const sourceType = value.sourceType === undefined ? undefined : typeof value.sourceType === "string" ? value.sourceType.trim().toUpperCase() : null;
+  if (sourceType !== undefined && (!sourceType || !AI_DELIVERY_RESEARCH_SOURCE_TYPES.has(sourceType))) {
+    return null;
+  }
+
+  const sourceUrl = value.sourceUrl === undefined ? undefined : getOptionalHttpUrl(value.sourceUrl);
+  if (value.sourceUrl !== undefined && !sourceUrl) {
+    return null;
+  }
+
+  return {
+    researchRequestId: getOptionalString(value.researchRequestId, SHORT_TEXT_FIELD_MAX_LENGTH),
+    workflowRunId: getOptionalString(value.workflowRunId, SHORT_TEXT_FIELD_MAX_LENGTH),
+    sourceUrl: sourceUrl ?? undefined,
+    sourceTitle: getOptionalString(value.sourceTitle, SHORT_TEXT_FIELD_MAX_LENGTH),
+    sourceType,
+    status,
+    reviewNotes: getOptionalString(value.reviewNotes, TEXT_FIELD_MAX_LENGTH)
   };
 }
 
@@ -1360,6 +1437,169 @@ export const executeAiDeliveryWorkflowRunHandler: RequestHandler = async (req, r
     }
 
     res.status(500).json(failure("AI_DELIVERY_WORKFLOW_RUN_EXECUTION_RUNTIME_ERROR", "AI Delivery workflow run execution could not be completed."));
+  }
+};
+
+export const listAiDeliveryResearchRequestsHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) {
+    res.status(401).json(unauthorizedFailure());
+    return;
+  }
+
+  const aiDeliveryProjectId = typeof req.params.projectId === "string" ? req.params.projectId.trim() : "";
+  if (!aiDeliveryProjectId) {
+    res.status(400).json(aiDeliveryProjectInvalidFailure());
+    return;
+  }
+
+  try {
+    const response = await listAiDeliveryResearchRequests(authSession, aiDeliveryProjectId);
+    if (!response) {
+      res.status(404).json(aiDeliveryProjectNotFoundFailure());
+      return;
+    }
+
+    res.json(success(response, { phase: "runtime", scope: "ai-delivery-research-requests" }));
+  } catch {
+    res.status(500).json(failure("AI_DELIVERY_RESEARCH_REQUEST_RUNTIME_ERROR", "AI Delivery research request list could not be completed."));
+  }
+};
+
+export const createAiDeliveryResearchRequestHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) {
+    res.status(401).json(unauthorizedFailure());
+    return;
+  }
+
+  const aiDeliveryProjectId = typeof req.params.projectId === "string" ? req.params.projectId.trim() : "";
+  const input = getAiDeliveryResearchRequestInput(req.body);
+  if (!aiDeliveryProjectId || !input?.title) {
+    res.status(400).json(aiDeliveryProjectInvalidFailure());
+    return;
+  }
+
+  try {
+    const response = await createAiDeliveryResearchRequest(authSession, aiDeliveryProjectId, input);
+    if (!response?.researchRequest) {
+      res.status(404).json(aiDeliveryProjectNotFoundFailure());
+      return;
+    }
+
+    res.status(201).json(success(response, { phase: "runtime", scope: "ai-delivery-research-requests" }));
+  } catch {
+    res.status(500).json(failure("AI_DELIVERY_RESEARCH_REQUEST_RUNTIME_ERROR", "AI Delivery research request create could not be completed."));
+  }
+};
+
+export const updateAiDeliveryResearchRequestHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) {
+    res.status(401).json(unauthorizedFailure());
+    return;
+  }
+
+  const aiDeliveryProjectId = typeof req.params.projectId === "string" ? req.params.projectId.trim() : "";
+  const researchRequestId = typeof req.params.researchRequestId === "string" ? req.params.researchRequestId.trim() : "";
+  const input = getAiDeliveryResearchRequestInput(req.body);
+  if (!aiDeliveryProjectId || !researchRequestId || !input) {
+    res.status(400).json(aiDeliveryProjectInvalidFailure());
+    return;
+  }
+
+  try {
+    const response = await updateAiDeliveryResearchRequest(authSession, aiDeliveryProjectId, researchRequestId, input);
+    if (!response?.researchRequest) {
+      res.status(404).json(aiDeliveryProjectNotFoundFailure());
+      return;
+    }
+
+    res.json(success(response, { phase: "runtime", scope: "ai-delivery-research-requests" }));
+  } catch {
+    res.status(500).json(failure("AI_DELIVERY_RESEARCH_REQUEST_RUNTIME_ERROR", "AI Delivery research request update could not be completed."));
+  }
+};
+
+export const listAiDeliveryResearchSourcesHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) {
+    res.status(401).json(unauthorizedFailure());
+    return;
+  }
+
+  const aiDeliveryProjectId = typeof req.params.projectId === "string" ? req.params.projectId.trim() : "";
+  const researchRequestId = typeof req.query.researchRequestId === "string" ? req.query.researchRequestId.trim() : null;
+  if (!aiDeliveryProjectId) {
+    res.status(400).json(aiDeliveryProjectInvalidFailure());
+    return;
+  }
+
+  try {
+    const response = await listAiDeliveryResearchSources(authSession, aiDeliveryProjectId, researchRequestId);
+    if (!response) {
+      res.status(404).json(aiDeliveryProjectNotFoundFailure());
+      return;
+    }
+
+    res.json(success(response, { phase: "runtime", scope: "ai-delivery-research-sources" }));
+  } catch {
+    res.status(500).json(failure("AI_DELIVERY_RESEARCH_SOURCE_RUNTIME_ERROR", "AI Delivery research source list could not be completed."));
+  }
+};
+
+export const createAiDeliveryResearchSourceHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) {
+    res.status(401).json(unauthorizedFailure());
+    return;
+  }
+
+  const aiDeliveryProjectId = typeof req.params.projectId === "string" ? req.params.projectId.trim() : "";
+  const input = getAiDeliveryResearchSourceInput(req.body);
+  if (!aiDeliveryProjectId || !input?.sourceUrl) {
+    res.status(400).json(aiDeliveryProjectInvalidFailure());
+    return;
+  }
+
+  try {
+    const response = await createAiDeliveryResearchSource(authSession, aiDeliveryProjectId, input);
+    if (!response?.researchSource) {
+      res.status(404).json(aiDeliveryProjectNotFoundFailure());
+      return;
+    }
+
+    res.status(201).json(success(response, { phase: "runtime", scope: "ai-delivery-research-sources" }));
+  } catch {
+    res.status(500).json(failure("AI_DELIVERY_RESEARCH_SOURCE_RUNTIME_ERROR", "AI Delivery research source create could not be completed."));
+  }
+};
+
+export const updateAiDeliveryResearchSourceHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) {
+    res.status(401).json(unauthorizedFailure());
+    return;
+  }
+
+  const aiDeliveryProjectId = typeof req.params.projectId === "string" ? req.params.projectId.trim() : "";
+  const researchSourceId = typeof req.params.researchSourceId === "string" ? req.params.researchSourceId.trim() : "";
+  const input = getAiDeliveryResearchSourceInput(req.body);
+  if (!aiDeliveryProjectId || !researchSourceId || !input) {
+    res.status(400).json(aiDeliveryProjectInvalidFailure());
+    return;
+  }
+
+  try {
+    const response = await updateAiDeliveryResearchSource(authSession, aiDeliveryProjectId, researchSourceId, input);
+    if (!response?.researchSource) {
+      res.status(404).json(aiDeliveryProjectNotFoundFailure());
+      return;
+    }
+
+    res.json(success(response, { phase: "runtime", scope: "ai-delivery-research-sources" }));
+  } catch {
+    res.status(500).json(failure("AI_DELIVERY_RESEARCH_SOURCE_RUNTIME_ERROR", "AI Delivery research source update could not be completed."));
   }
 };
 

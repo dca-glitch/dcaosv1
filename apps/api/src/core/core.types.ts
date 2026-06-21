@@ -214,6 +214,71 @@ export interface AiDeliveryWorkflowRunInputRequest {
   resultPlaceholder?: string | null;
 }
 
+export interface AiDeliveryResearchRequestSummary {
+  id: string;
+  tenantId: string;
+  aiDeliveryProjectId: string;
+  workflowRunId: string | null;
+  workflowRun: { id: string; status: string } | null;
+  title: string;
+  description: string | null;
+  requestType: string | null;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AiDeliveryResearchRequestsResponse {
+  researchRequests: AiDeliveryResearchRequestSummary[];
+}
+
+export interface AiDeliveryResearchRequestResponse {
+  researchRequest: AiDeliveryResearchRequestSummary | null;
+}
+
+export interface AiDeliveryResearchRequestInputRequest {
+  workflowRunId?: string | null;
+  title?: string;
+  description?: string | null;
+  requestType?: string | null;
+  status?: string;
+}
+
+export interface AiDeliveryResearchSourceSummary {
+  id: string;
+  tenantId: string;
+  aiDeliveryProjectId: string;
+  researchRequestId: string | null;
+  workflowRunId: string | null;
+  researchRequest: { id: string; title: string; status: string } | null;
+  workflowRun: { id: string; status: string } | null;
+  sourceUrl: string;
+  sourceTitle: string | null;
+  sourceType: string;
+  status: string;
+  reviewNotes: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AiDeliveryResearchSourcesResponse {
+  researchSources: AiDeliveryResearchSourceSummary[];
+}
+
+export interface AiDeliveryResearchSourceResponse {
+  researchSource: AiDeliveryResearchSourceSummary | null;
+}
+
+export interface AiDeliveryResearchSourceInputRequest {
+  researchRequestId?: string | null;
+  workflowRunId?: string | null;
+  sourceUrl?: string;
+  sourceTitle?: string | null;
+  sourceType?: string;
+  status?: string;
+  reviewNotes?: string | null;
+}
+
 export interface AiDeliveryContentDraftSummary {
   id: string;
   aiDeliveryProjectId: string;
