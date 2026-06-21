@@ -50,15 +50,15 @@ Purpose: prevent repeated local test data pollution while preserving the existin
 
 Backend routes currently expected:
 
-- GET /api/v1/core/ai-delivery-projects
-- POST /api/v1/core/ai-delivery-projects
-- PUT /api/v1/core/ai-delivery-projects/:id
-- POST /api/v1/core/ai-delivery-projects/:id/archive
-- GET /api/v1/core/ai-delivery-projects/:id/brief
-- PUT /api/v1/core/ai-delivery-projects/:id/brief
-- POST /api/v1/core/ai-delivery-projects/:id/brief/request-client-input
-- POST /api/v1/core/ai-delivery-projects/:id/brief/request-client-revision
-- POST /api/v1/core/ai-delivery-projects/:id/brief/approve-final
+- GET /api/v1/ai-delivery-projects
+- POST /api/v1/ai-delivery-projects
+- PUT /api/v1/ai-delivery-projects/:id
+- POST /api/v1/ai-delivery-projects/:id/archive
+- GET /api/v1/ai-delivery-projects/:id/brief
+- PUT /api/v1/ai-delivery-projects/:id/brief
+- POST /api/v1/ai-delivery-projects/:id/brief/request-client-input
+- POST /api/v1/ai-delivery-projects/:id/brief/request-client-revision
+- POST /api/v1/ai-delivery-projects/:id/brief/approve-final
 
 Project response summary fields:
 
@@ -131,22 +131,22 @@ Current proof target for the focused smoke:
 
 Monthly content plan API (backend foundation):
 
-- GET /api/v1/core/ai-delivery-projects/:id/content-plan
+- GET /api/v1/ai-delivery-projects/:id/content-plan
   - Returns latest monthly content plan for the ai delivery project, including items.
   - Response: { contentPlan: { id, aiDeliveryProjectId, status, revisionCount, reviewRequestedAt, approvedAt, items: [{id,title,targetKeyword,contentType,notes,sortOrder,approvalStatus,clientComment,createdAt,updatedAt}], createdAt,updatedAt } }
 
-- POST /api/v1/core/ai-delivery-projects/:id/content-plan
+- POST /api/v1/ai-delivery-projects/:id/content-plan
   - Create a content plan if none exists. Optional body: { items: [ { title, targetKeyword, contentType, notes, sortOrder, approvalStatus, clientComment } ] }
   - Returns created or existing content plan.
 
-- PUT /api/v1/core/ai-delivery-projects/:id/content-plan
+- PUT /api/v1/ai-delivery-projects/:id/content-plan
   - Replace/update plan fields and items. Simple deterministic replacement of items.
   - Body: { status?, revisionCount?, items: [...] }
 
-- POST /api/v1/core/ai-delivery-projects/:id/content-plan/request-client-review
+- POST /api/v1/ai-delivery-projects/:id/content-plan/request-client-review
   - Moves status to CLIENT_REVIEW_REQUESTED and sets reviewRequestedAt.
 
-- POST /api/v1/core/ai-delivery-projects/:id/content-plan/approve
+- POST /api/v1/ai-delivery-projects/:id/content-plan/approve
   - Moves status to CLIENT_APPROVED and sets approvedAt.
 
 Notes: Tenant-owned and admin/owner-only endpoints. This is backend-only foundation; no client-facing routes UI in this block.
@@ -213,11 +213,11 @@ Current status: paused/future. These routes document a possible authenticated re
 
 Authenticated tenant users may review monthly content plans only when `userCanAccessClient(authSession, clientId)` passes for the AI Delivery Project client.
 
-- `GET /api/v1/core/ai-delivery-projects/:id/content-plan/client-review`
+- `GET /api/v1/ai-delivery-projects/:id/content-plan/client-review`
   - Returns the monthly content plan for the project when the authenticated user can access the project client.
-- `POST /api/v1/core/ai-delivery-projects/:id/content-plan/client-review/approve`
+- `POST /api/v1/ai-delivery-projects/:id/content-plan/client-review/approve`
   - Moves the plan to `CLIENT_APPROVED` and sets `approvedAt`.
-- `POST /api/v1/core/ai-delivery-projects/:id/content-plan/client-review/request-revision`
+- `POST /api/v1/ai-delivery-projects/:id/content-plan/client-review/request-revision`
   - Body: `{ comment }`
   - Moves the plan to `CLIENT_CHANGES_REQUESTED`, increments `revisionCount`, and stores the comment on the first plan item `clientComment` as the existing schema-supported revision note.
 
@@ -227,14 +227,14 @@ No public token routes or magic links are exposed.
 
 Admin/owner-only content draft endpoints are scoped to an AI Delivery project and tenant:
 
-- `GET /api/v1/core/ai-delivery-projects/:id/content-drafts`
+- `GET /api/v1/ai-delivery-projects/:id/content-drafts`
   - Lists manual content draft records for the AI Delivery project.
-- `POST /api/v1/core/ai-delivery-projects/:id/content-drafts`
+- `POST /api/v1/ai-delivery-projects/:id/content-drafts`
   - Body: `{ contentPlanItemId?, title, slug?, draftBody, status, notes? }`
   - Creates a manual content draft, optionally linked to a monthly content plan item from the same project.
-- `PUT /api/v1/core/ai-delivery-projects/:id/content-drafts/:draftId`
+- `PUT /api/v1/ai-delivery-projects/:id/content-drafts/:draftId`
   - Updates title, slug, body, status, notes, and optional content plan item link.
-- `POST /api/v1/core/ai-delivery-projects/:id/content-drafts/:draftId/archive`
+- `POST /api/v1/ai-delivery-projects/:id/content-drafts/:draftId/archive`
   - Archives a draft and sets status to `ARCHIVED`.
 
 Allowed runtime statuses: `DRAFT`, `READY_FOR_REVIEW`, `APPROVED`, `CHANGES_REQUESTED`, `ARCHIVED`.
@@ -256,16 +256,16 @@ Schema review metadata on `AiDeliveryContentDraft`:
 
 Admin/owner-only endpoint:
 
-- `POST /api/v1/core/ai-delivery-projects/:id/content-drafts/:draftId/request-client-review`
+- `POST /api/v1/ai-delivery-projects/:id/content-drafts/:draftId/request-client-review`
   - Sets draft status to `READY_FOR_REVIEW`, sets `reviewRequestedAt`, and clears `approvedAt`.
 
 Authenticated client-safe endpoints:
 
-- `GET /api/v1/core/ai-delivery-projects/:id/content-drafts/client-review`
+- `GET /api/v1/ai-delivery-projects/:id/content-drafts/client-review`
   - Lists non-archived content drafts for the AI Delivery project with status `READY_FOR_REVIEW`, `APPROVED`, or `CHANGES_REQUESTED`.
-- `POST /api/v1/core/ai-delivery-projects/:id/content-drafts/:draftId/client-review/approve`
+- `POST /api/v1/ai-delivery-projects/:id/content-drafts/:draftId/client-review/approve`
   - Sets draft status to `APPROVED` and sets `approvedAt`.
-- `POST /api/v1/core/ai-delivery-projects/:id/content-drafts/:draftId/client-review/request-revision`
+- `POST /api/v1/ai-delivery-projects/:id/content-drafts/:draftId/client-review/request-revision`
   - Body: `{ comment }`
   - Requires a non-empty comment, sets draft status to `CHANGES_REQUESTED`, increments `revisionCount`, and stores `clientComment`.
 
@@ -275,14 +275,14 @@ If explicitly resumed later, a client UI route such as `#/content-draft-review` 
 
 Admin/owner-only article image endpoints are scoped to an AI Delivery project and tenant. Article image requests are manually operated records linked to existing content drafts from the same AI Delivery project.
 
-- `GET /api/v1/core/ai-delivery-projects/:id/article-images`
+- `GET /api/v1/ai-delivery-projects/:id/article-images`
   - Lists manual article image request records for the AI Delivery project.
-- `POST /api/v1/core/ai-delivery-projects/:id/article-images`
+- `POST /api/v1/ai-delivery-projects/:id/article-images`
   - Body: `{ contentDraftId, title, prompt, styleNotes?, status, previewImageUrl?, finalImageUrl?, storageKey?, notes? }`
   - Creates a manual article image request linked to an existing content draft.
-- `PUT /api/v1/core/ai-delivery-projects/:id/article-images/:imageId`
+- `PUT /api/v1/ai-delivery-projects/:id/article-images/:imageId`
   - Updates the linked content draft, title, prompt, style notes, status, preview URL, final URL, storage key, and notes.
-- `POST /api/v1/core/ai-delivery-projects/:id/article-images/:imageId/archive`
+- `POST /api/v1/ai-delivery-projects/:id/article-images/:imageId/archive`
   - Archives an article image request and sets status to `ARCHIVED`.
 
 Allowed runtime statuses: `DRAFT`, `READY_FOR_GENERATION`, `PREVIEW_READY`, `APPROVED`, `FINAL_READY`, `CHANGES_REQUESTED`, `ARCHIVED`.
@@ -295,31 +295,31 @@ Article images are platform-neutral deliverable assets. They may later support W
 
 Admin/owner-only deliverable records for packaging approved content drafts and approved/final-ready article image assets. Tenant-scoped and project-scoped; manual records only (no export generation, no uploads, no connector publishing, and no client portal delivery in this block).
 
-- GET /api/v1/core/ai-delivery-projects/:id/deliverables
+- GET /api/v1/ai-delivery-projects/:id/deliverables
   - Lists deliverables for the ai delivery project (tenant-scoped).
   - Response: { deliverables: [{ id, tenantId, aiDeliveryProjectId, contentDraftId?, articleImageId?, title, description?, deliveryType, status, exportUrl?, storageKey?, notes?, isArchived, createdAt, updatedAt }] }
 
-- POST /api/v1/core/ai-delivery-projects/:id/deliverables
+- POST /api/v1/ai-delivery-projects/:id/deliverables
   - Create a deliverable record.
   - Body: { contentDraftId?, articleImageId?, title, description?, deliveryType?, status?, exportUrl?, storageKey?, notes? }
   - Validates linked draft/image belong to same tenant/project when provided.
 
-- PUT /api/v1/core/ai-delivery-projects/:id/deliverables/:deliverableId
+- PUT /api/v1/ai-delivery-projects/:id/deliverables/:deliverableId
   - Update deliverable fields (title, description, links, deliveryType, status, exportUrl, storageKey, notes).
 
-- POST /api/v1/core/ai-delivery-projects/:id/deliverables/:deliverableId/mark-ready
+- POST /api/v1/ai-delivery-projects/:id/deliverables/:deliverableId/mark-ready
   - Moves the deliverable to `READY` when linked assets meet current readiness rules.
 
-- POST /api/v1/core/ai-delivery-projects/:id/deliverables/:deliverableId/request-revision
+- POST /api/v1/ai-delivery-projects/:id/deliverables/:deliverableId/request-revision
   - Moves the deliverable to `REVISION_REQUESTED`.
 
-- POST /api/v1/core/ai-delivery-projects/:id/deliverables/:deliverableId/accept
+- POST /api/v1/ai-delivery-projects/:id/deliverables/:deliverableId/accept
   - Moves the deliverable to `ACCEPTED` for internal packaging approval.
 
-- POST /api/v1/core/ai-delivery-projects/:id/deliverables/:deliverableId/archive
+- POST /api/v1/ai-delivery-projects/:id/deliverables/:deliverableId/archive
   - Archives the deliverable and sets status to `ARCHIVED`.
 
-- POST /api/v1/core/ai-delivery-projects/:id/deliverables/:deliverableId/restore
+- POST /api/v1/ai-delivery-projects/:id/deliverables/:deliverableId/restore
   - Restores an archived deliverable and returns it to `DRAFT`.
 
 Notes: Allowed delivery types: CONTENT_PACKAGE, ARTICLE_DRAFT, ARTICLE_IMAGE, CLIENT_HANDOFF, OTHER. Allowed statuses: DRAFT, READY, DELIVERED, REVISION_REQUESTED, ACCEPTED, ARCHIVED.
@@ -357,17 +357,17 @@ Allowed review statuses:
 
 Admin/owner-only runtime endpoints:
 
-- `GET /api/v1/core/ai-delivery-projects/:id/deliverables/:deliverableId/reviews`
+- `GET /api/v1/ai-delivery-projects/:id/deliverables/:deliverableId/reviews`
   - Lists admin/operator deliverable review placeholder records for the deliverable.
   - Enforces tenant ownership and verifies the deliverable belongs to the AI Delivery project.
   - Response: `{ deliverableReviews: [{ id, tenantId, aiDeliveryProjectId, deliverableId, workflowRunId?, status, reviewerName?, reviewNotes?, createdAt, updatedAt }] }`
 
-- `POST /api/v1/core/ai-delivery-projects/:id/deliverables/:deliverableId/reviews`
+- `POST /api/v1/ai-delivery-projects/:id/deliverables/:deliverableId/reviews`
   - Creates an admin/operator deliverable review placeholder.
   - Body: `{ status?, reviewerName?, reviewNotes?, workflowRunId? }`
   - Optional `workflowRunId` is accepted only when it belongs to the same tenant and AI Delivery project.
 
-- `PUT /api/v1/core/ai-delivery-projects/:id/deliverables/:deliverableId/reviews/:reviewId`
+- `PUT /api/v1/ai-delivery-projects/:id/deliverables/:deliverableId/reviews/:reviewId`
   - Updates `status`, `reviewerName`, `reviewNotes`, and optional `workflowRunId` for an existing review placeholder.
   - The review must belong to the same tenant, AI Delivery project, and deliverable.
   - Optional `workflowRunId` is accepted only when it belongs to the same tenant and AI Delivery project.
