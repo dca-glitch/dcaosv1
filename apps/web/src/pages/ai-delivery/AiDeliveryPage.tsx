@@ -1721,40 +1721,53 @@ export function AiDeliveryPage({
                   </span>
                   <h2>{p.name}</h2>
                 </div>
-                <div className="card-actions">
+                <div className="card-actions" style={{ alignItems: "flex-end", flexDirection: "column", gap: "0.75rem" }}>
                   {canEdit ? (
                     <>
-                      {/* Workflow actions - ordered for admin flow */}
-                      <button className="secondary-action" onClick={() => void openBrief(p.id)} type="button" disabled={!p.brief}>
-                        Brief
-                      </button>
-                      <button className="secondary-action" onClick={() => void openResearchSources(p.id)} type="button">
-                        Research / Sources
-                      </button>
-                      <button className="secondary-action" onClick={() => void openContentPlan(p.id)} type="button">
-                        AI SEO / Content Plan
-                      </button>
-                      <button className="secondary-action" onClick={() => void openWorkflowRuns(p.id)} type="button">
-                        Workflow runs
-                      </button>
-                      <button className="secondary-action" onClick={() => void openContentDrafts(p.id)} type="button">
-                        Content production
-                      </button>
-                      <button className="secondary-action" onClick={() => void openArticleImages(p.id)} type="button">
-                        Article images
-                      </button>
-                      <button className="secondary-action" onClick={() => void openDeliverables(p.id)} type="button">
-                        Deliverables
-                      </button>
-                      {/* Secondary actions */}
-                      <button className="secondary-action" onClick={() => openEditModal(p)} type="button">
-                        Edit
-                      </button>
-                      {!p.isArchived ? (
-                        <button className="secondary-action" onClick={() => void onArchive(p.id)} type="button">
-                          Archive
-                        </button>
-                      ) : null}
+                      <div>
+                        <span className="muted-text">Planning workflow</span>
+                        <div className="brief-actions">
+                          <button className="secondary-action" onClick={() => void openBrief(p.id)} type="button" disabled={!p.brief}>
+                            Brief
+                          </button>
+                          <button className="secondary-action" onClick={() => void openResearchSources(p.id)} type="button">
+                            Research / Sources
+                          </button>
+                          <button className="secondary-action" onClick={() => void openContentPlan(p.id)} type="button">
+                            AI SEO / Content Plan
+                          </button>
+                          <button className="secondary-action" onClick={() => void openWorkflowRuns(p.id)} type="button">
+                            Workflow runs
+                          </button>
+                          <button className="secondary-action" onClick={() => void openContentDrafts(p.id)} type="button">
+                            Content production
+                          </button>
+                        </div>
+                      </div>
+                      <div>
+                        <span className="muted-text">Review / packaging</span>
+                        <div className="brief-actions">
+                          <button className="secondary-action" onClick={() => void openArticleImages(p.id)} type="button">
+                            Article images
+                          </button>
+                          <button className="secondary-action" onClick={() => void openDeliverables(p.id)} type="button">
+                            Deliverables
+                          </button>
+                        </div>
+                      </div>
+                      <div>
+                        <span className="muted-text">Project actions</span>
+                        <div className="brief-actions">
+                          <button className="secondary-action" onClick={() => openEditModal(p)} type="button">
+                            Edit
+                          </button>
+                          {!p.isArchived ? (
+                            <button className="secondary-action" onClick={() => void onArchive(p.id)} type="button">
+                              Archive
+                            </button>
+                          ) : null}
+                        </div>
+                      </div>
                     </>
                   ) : null}
                 </div>
@@ -1776,11 +1789,12 @@ export function AiDeliveryPage({
                   <span>Brief status</span>
                   <strong>{formatEnumLabel(p.brief?.status ?? null)}</strong>
                 </div>
-                <div>
-                  <span>Workflow</span>
-                  <strong>
-                    Brief: {p.brief ? formatEnumLabel(p.brief.status) : "No"} - Research sources: open to load - SEO topics: open to load - Production: open to load - Deliverables: open to load
-                  </strong>
+                <div className="entity-span-2">
+                  <span>Admin workflow order</span>
+                  <strong>Brief -&gt; Research -&gt; Content plan -&gt; Workflow runs -&gt; Content production -&gt; Article images -&gt; Deliverables</strong>
+                  <span className="muted-text">
+                    Current checkpoint: {p.brief ? `Brief ${formatEnumLabel(p.brief.status)}` : "Brief not started yet"}.
+                  </span>
                 </div>
                 <div className="entity-span-2">
                   <span>Notes</span>
