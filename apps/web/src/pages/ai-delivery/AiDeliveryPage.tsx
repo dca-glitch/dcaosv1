@@ -1548,8 +1548,16 @@ export function AiDeliveryPage({
               <div>
                 <section className="field-panel">
                   <h3>SEO topic/research planning</h3>
-                  <p className="muted-text">Admin/operator-side foundation only. Use these monthly content plan items to capture target topics, keywords, research notes, and content type intent. No AI generation, crawling, scraping, GA/GSC integration, publishing, or external service calls run from this screen.</p>
+                  <p className="muted-text">Admin/operator-side foundation only. Use these monthly content plan items to capture target topics, keywords, research notes, and content type intent. Visible only to admin team. Not published or sent to client from this screen. No AI generation, crawling, scraping, GA/GSC integration, publishing, or external service calls run from this screen.</p>
                 </section>
+                <div className="modal-footer">
+                  <button className="secondary-action" disabled={contentPlanSaving} onClick={closeContentPlan} type="button">Close</button>
+                  <button className="secondary-action" disabled={contentPlanSaving} onClick={() => void handleContentPlanAction(openContentPlanProject.id, onRequestContentPlanReview)} type="button">Request client review</button>
+                  <button className="secondary-action" disabled={contentPlanSaving} onClick={() => void handleContentPlanAction(openContentPlanProject.id, onApproveContentPlan)} type="button">Approve plan</button>
+                  <button className="primary-action" disabled={contentPlanSaving || contentPlanItems.some((item) => !item.title.trim())} onClick={() => void handleSaveContentPlan(openContentPlanProject.id)} type="button">
+                    {contentPlanSaving ? "Saving" : "Save SEO plan"}
+                  </button>
+                </div>
                 <dl className="brief-grid">
                   <div>
                     <dt>Status</dt>
@@ -1598,51 +1606,62 @@ export function AiDeliveryPage({
                   ) : null}
                   {contentPlanItems.map((item, index) => (
                     <div className="field-grid" key={item.localId} style={{ marginBottom: "1rem" }}>
-                      <label>
-                        Topic / working title
+                      <label className="field-span-2">
+                        Topic / working title - Required
                         <input
                           maxLength={255}
+                          placeholder="Main topic, keyword cluster, or service page focus"
                           onChange={(event) => setContentPlanItems((current) => current.map((draftItem) => draftItem.localId === item.localId ? { ...draftItem, title: event.target.value } : draftItem))}
                           required
                           value={item.title}
                         />
+                        <span className="muted-text">Used by admin to prepare monthly SEO/content work.</span>
                       </label>
                       <label>
-                        Production type
+                        Target keyword / theme - Optional
                         <input
                           maxLength={80}
-                          onChange={(event) => setContentPlanItems((current) => current.map((draftItem) => draftItem.localId === item.localId ? { ...draftItem, contentType: event.target.value } : draftItem))}
-                          value={item.contentType}
-                        />
-                      </label>
-                      <label>
-                        Target keyword / theme
-                        <input
-                          maxLength={255}
+                          placeholder="Primary keyword or search phrase"
                           onChange={(event) => setContentPlanItems((current) => current.map((draftItem) => draftItem.localId === item.localId ? { ...draftItem, targetKeyword: event.target.value } : draftItem))}
                           value={item.targetKeyword}
                         />
+                        <span className="muted-text">Visible only to admin team.</span>
                       </label>
-                      <div>
-                        <span>Sort order</span>
-                        <strong>{index + 1}</strong>
-                      </div>
-                      <div>
-                        <span>Client item status</span>
-                        <strong>{contentPlanDetail.items[index]?.approvalStatus ?? "No client status"}</strong>
-                      </div>
                       <label className="field-span-2">
-                        Research notes / search intent
+                        Research notes / search intent - Optional
                         <textarea
                           maxLength={4000}
+                          placeholder="Informational, commercial, local, or transactional intent"
                           onChange={(event) => setContentPlanItems((current) => current.map((draftItem) => draftItem.localId === item.localId ? { ...draftItem, notes: event.target.value } : draftItem))}
                           rows={3}
                           value={item.notes}
                         />
+                        <span className="muted-text">Foundation record only; no AI generation runs here yet.</span>
                       </label>
+                      <label>
+                        Production type - Optional
+                        <input
+                          maxLength={80}
+                          placeholder="Blog post, service page, landing page, or other"
+                          onChange={(event) => setContentPlanItems((current) => current.map((draftItem) => draftItem.localId === item.localId ? { ...draftItem, contentType: event.target.value } : draftItem))}
+                          value={item.contentType}
+                        />
+                        <span className="muted-text">Internal planning label for the monthly content plan.</span>
+                      </label>
+                      <div>
+                        <span>Sort order</span>
+                        <strong>{index + 1}</strong>
+                        <span className="muted-text">Determined by the list order.</span>
+                      </div>
+                      <div>
+                        <span>Client item status</span>
+                        <strong>{contentPlanDetail.items[index]?.approvalStatus ?? "No client status"}</strong>
+                        <span className="muted-text">Existing review state for this record.</span>
+                      </div>
                       <div className="field-span-2">
                         <span>Client comment</span>
                         <strong>{contentPlanDetail.items[index]?.clientComment ?? "No client comment"}</strong>
+                        <span className="muted-text">Existing review feedback for this item.</span>
                       </div>
                       <div className="field-span-2">
                         <button
@@ -1677,6 +1696,12 @@ export function AiDeliveryPage({
               </div>
             ) : (
               <div>
+                <div className="modal-footer">
+                  <button className="secondary-action" disabled={contentPlanSaving} onClick={closeContentPlan} type="button">Close</button>
+                  <button className="primary-action" disabled={contentPlanSaving} onClick={() => void handleCreateContentPlan(openContentPlanProject.id)} type="button">
+                    {contentPlanSaving ? "Creating" : "Create content plan"}
+                  </button>
+                </div>
                 <div className="state-panel">
                   No monthly content plan exists for {openContentPlanProject.name}. Create one to start adding SEO topic/research planning records. This creates admin-side planning placeholders only; it does not generate, crawl, publish, or call external services.
                 </div>
@@ -1803,38 +1828,51 @@ export function AiDeliveryPage({
             <div>
               <section className="field-panel">
                 <h3>Article production planning</h3>
-                <p className="muted-text">Admin/operator-side foundation only. Capture planned article records, draft placeholders, slugs, status, and notes. No AI writing, generation, publishing, WordPress integration, or external service calls run from this screen.</p>
+                <p className="muted-text">Admin/operator-side foundation only. Capture planned article records, draft placeholders, slugs, status, and notes. Visible only to admin team. Not published or sent to client from this screen. No AI writing, generation, publishing, WordPress integration, or external service calls run from this screen.</p>
+                <div className="modal-footer">
+                  <button className="secondary-action" disabled={contentDraftsSaving} onClick={() => { setContentDraftEditorId(null); setContentDraftForm(emptyContentDraft()); }} type="button">New draft</button>
+                  <button className="secondary-action" disabled={contentDraftsSaving} onClick={closeContentDrafts} type="button">Close</button>
+                  <button className="primary-action" disabled={contentDraftsSaving || !contentDraftForm.title.trim()} onClick={() => void saveContentDraft(openContentDraftsProject.id)} type="button">
+                    {contentDraftsSaving ? "Saving" : contentDraftEditorId ? "Save production record" : "Create production record"}
+                  </button>
+                </div>
                 <div className="field-grid">
                   <label>
-                    Linked SEO topic / monthly content plan item
+                    Status - Required
+                    <select value={contentDraftForm.status} onChange={(event) => setContentDraftForm((current) => ({ ...current, status: event.target.value }))}>
+                      {(["DRAFT", "READY_FOR_REVIEW", "APPROVED", "CHANGES_REQUESTED", "ARCHIVED"] as const).map((status) => <option key={status} value={status}>{status}</option>)}
+                    </select>
+                    <span className="muted-text">Admin-only production state for this draft record.</span>
+                  </label>
+                  <label>
+                    Linked SEO topic / monthly content plan item - Optional
                     <select value={contentDraftForm.contentPlanItemId ?? ""} onChange={(event) => setContentDraftForm((current) => ({ ...current, contentPlanItemId: event.target.value || null }))}>
                       <option value="">Manual / unlinked production record</option>
                       {(contentDraftPlan?.items ?? []).map((item) => (
                         <option key={item.id} value={item.id}>{item.sortOrder}. {item.title}</option>
                       ))}
                     </select>
-                  </label>
-                  <label>
-                    Status
-                    <select value={contentDraftForm.status} onChange={(event) => setContentDraftForm((current) => ({ ...current, status: event.target.value }))}>
-                      {(["DRAFT", "READY_FOR_REVIEW", "APPROVED", "CHANGES_REQUESTED", "ARCHIVED"] as const).map((status) => <option key={status} value={status}>{status}</option>)}
-                    </select>
-                  </label>
-                  <label>
-                    Title
-                    <input maxLength={255} required value={contentDraftForm.title} onChange={(event) => setContentDraftForm((current) => ({ ...current, title: event.target.value }))} />
-                  </label>
-                  <label>
-                    Slug
-                    <input maxLength={255} value={contentDraftForm.slug} onChange={(event) => setContentDraftForm((current) => ({ ...current, slug: event.target.value }))} />
+                    <span className="muted-text">Optional link back to the monthly SEO plan item that informed this draft.</span>
                   </label>
                   <label className="field-span-2">
-                    Article outline / draft placeholder
-                    <textarea rows={10} value={contentDraftForm.draftBody} onChange={(event) => setContentDraftForm((current) => ({ ...current, draftBody: event.target.value }))} />
+                    Title - Required
+                    <input maxLength={255} placeholder="Working article title or draft headline" required value={contentDraftForm.title} onChange={(event) => setContentDraftForm((current) => ({ ...current, title: event.target.value }))} />
+                    <span className="muted-text">Used by admin to prepare monthly content work.</span>
+                  </label>
+                  <label>
+                    Slug - Optional
+                    <input maxLength={255} placeholder="Optional URL slug or short working slug" value={contentDraftForm.slug} onChange={(event) => setContentDraftForm((current) => ({ ...current, slug: event.target.value }))} />
+                    <span className="muted-text">Visible only to admin team.</span>
                   </label>
                   <label className="field-span-2">
-                    Admin notes
-                    <textarea maxLength={4000} rows={3} value={contentDraftForm.notes} onChange={(event) => setContentDraftForm((current) => ({ ...current, notes: event.target.value }))} />
+                    Article brief / draft placeholder - Optional
+                    <textarea maxLength={4000} placeholder="Audience, angle, target keyword, and required sections" rows={10} value={contentDraftForm.draftBody} onChange={(event) => setContentDraftForm((current) => ({ ...current, draftBody: event.target.value }))} />
+                    <span className="muted-text">Foundation record only; no AI writing runs here yet.</span>
+                  </label>
+                  <label className="field-span-2">
+                    Review / admin notes - Optional
+                    <textarea maxLength={4000} placeholder="Admin comments, blockers, or handoff notes" rows={3} value={contentDraftForm.notes} onChange={(event) => setContentDraftForm((current) => ({ ...current, notes: event.target.value }))} />
+                    <span className="muted-text">Visible only to admin team. Not published or sent to client from this screen.</span>
                   </label>
                 </div>
                 <div className="modal-footer">
