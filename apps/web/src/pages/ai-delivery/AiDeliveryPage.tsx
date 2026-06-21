@@ -564,6 +564,12 @@ export function AiDeliveryPage({
     setIsEditorOpen(true);
   }
 
+  function closeProjectEditor() {
+    setEditorProjectId(null);
+    setDraft(emptyForm(clients[0]?.id ?? ""));
+    setIsEditorOpen(false);
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSaving(true);
@@ -1242,17 +1248,21 @@ export function AiDeliveryPage({
 
       {isEditorOpen ? (
         <Modal
-          onClose={() => {
-            setEditorProjectId(null);
-            setDraft(emptyForm(clients[0]?.id ?? ""));
-            setIsEditorOpen(false);
-          }}
+          onClose={closeProjectEditor}
           title={editorProjectId ? "Edit AI Delivery" : "Add AI Delivery"}
         >
           <form className="entity-form" onSubmit={handleSubmit}>
+            <div className="modal-footer">
+              <button className="secondary-action" disabled={saving} onClick={closeProjectEditor} type="button">
+                Cancel
+              </button>
+              <button className="primary-action" disabled={saving} type="submit">
+                {saving ? "Saving" : editorProjectId ? "Update AI Delivery" : "Create AI Delivery"}
+              </button>
+            </div>
             <div className="field-grid">
               <label>
-                Client
+                Client - Required
                 <select
                   onChange={(event) =>
                     setDraft((current) => ({
@@ -1271,68 +1281,84 @@ export function AiDeliveryPage({
                     </option>
                   ))}
                 </select>
+                <span className="muted-text">Client this AI Delivery work belongs to.</span>
               </label>
 
               <label>
-                Project (link)
+                Target month - Required
+                <input
+                  aria-describedby="ai-delivery-target-month-help"
+                  type="month"
+                  onChange={(event) => setDraft((current) => ({ ...current, targetMonth: event.target.value }))}
+                  required
+                  value={draft.targetMonth}
+                />
+                <span className="muted-text" id="ai-delivery-target-month-help">Month this AI Delivery work is planned for.</span>
+              </label>
+
+              <label>
+                Project name - Required
+                <input
+                  maxLength={255}
+                  onChange={(event) => setDraft((current) => ({ ...current, name: event.target.value }))}
+                  placeholder="AI SEO & Content - June 2026"
+                  required
+                  value={draft.name}
+                />
+                <span className="muted-text">Used to group monthly AI Delivery work.</span>
+              </label>
+
+              <div>
+                <span>Project status</span>
+                <strong>{selectedProject?.isArchived ? "Archived" : "Active / new"}</strong>
+                <span className="muted-text">Current internal status for this AI Delivery project.</span>
+              </div>
+
+              <div>
+                <span>Brief status</span>
+                <strong>{formatEnumLabel(selectedProject?.brief?.status ?? null)}</strong>
+                <span className="muted-text">Revision/final approval status for the linked brief.</span>
+              </div>
+
+              <label className="field-span-2">
+                Scope / summary / notes - Optional
+                <textarea
+                  maxLength={4000}
+                  onChange={(event) => setDraft((current) => ({ ...current, plannedContentScopeNotes: event.target.value }))}
+                  placeholder="Notes for admin team only"
+                  rows={4}
+                  value={draft.plannedContentScopeNotes}
+                />
+                <span className="muted-text">Visible only to admin team. Use this for scope, summary, or planning notes.</span>
+              </label>
+
+              <label>
+                Linked internal project - Optional
                 <select
                   onChange={(event) => setDraft((current) => ({ ...current, projectId: event.target.value || null }))}
                   value={draft.projectId ?? ""}
                 >
-                  <option value="">(none)</option>
+                  <option value="">No internal project link</option>
                   {linkableProjects.map((proj) => (
                     <option key={proj.id} value={proj.id}>
                       {proj.name}
                     </option>
                   ))}
                 </select>
-              </label>
-
-              <label>
-                Name
-                <input
-                  maxLength={255}
-                  onChange={(event) => setDraft((current) => ({ ...current, name: event.target.value }))}
-                  required
-                  value={draft.name}
-                />
-              </label>
-
-              <label>
-                Target month
-                <input
-                  type="month"
-                  onChange={(event) => setDraft((current) => ({ ...current, targetMonth: event.target.value }))}
-                  required
-                  value={draft.targetMonth}
-                />
-              </label>
-
-              <label className="field-span-2">
-                Notes
-                <textarea
-                  maxLength={4000}
-                  onChange={(event) => setDraft((current) => ({ ...current, plannedContentScopeNotes: event.target.value }))}
-                  rows={4}
-                  value={draft.plannedContentScopeNotes}
-                />
+                <span className="muted-text">Optional internal reference. Not shown to client.</span>
               </label>
             </div>
             <div className="modal-footer">
               <button
                 className="secondary-action"
                 disabled={saving}
-                onClick={() => {
-                  setEditorProjectId(null);
-                  setDraft(emptyForm());
-                  setIsEditorOpen(false);
-                }}
+                onClick={closeProjectEditor}
                 type="button"
               >
                 Cancel
               </button>
               <button className="primary-action" disabled={saving} type="submit">
-                {saving ? "Saving" : "Save"}
+                {saving ? "Saving" : editorProjectId ? "Update AI Delivery" : "Create AI Delivery"}
               </button>
             </div>
           </form>
@@ -1353,8 +1379,16 @@ export function AiDeliveryPage({
               <div>
                 <dl className="brief-grid">
                   <div>
-                    <dt>Status</dt>
-                    <dd>{briefDetail.status}</dd>
+                    <dt>Client</dt>
+                    <dd>{openProject.client?.name ?? "No client"}</dd>
+                  </div>
+                  <div>
+                    <dt>AI Delivery project</dt>
+                    <dd>{openProject.name}</dd>
+                  </div>
+                  <div>
+                    <dt>Brief status</dt>
+                    <dd>{formatEnumLabel(briefDetail.status)}</dd>
                   </div>
                   <div>
                     <dt>Revisions</dt>
@@ -1370,66 +1404,93 @@ export function AiDeliveryPage({
                   </div>
                 </dl>
 
-                <section className="field-panel">
-                  <h3>Client priorities</h3>
+                <div className="modal-footer">
+                  <button className="secondary-action" onClick={() => { setOpenBriefId(null); setBriefDetail(null); }} type="button">Close</button>
                   {canEdit && typeof onSaveBrief === "function" ? (
-                    <textarea
-                      rows={3}
-                      value={briefDetail.clientPriorities ?? ""}
-                      onChange={(e) => setBriefDetail({ ...briefDetail, clientPriorities: e.target.value })}
-                    />
+                    <button className="primary-action" onClick={() => void handleSaveBrief(openProject.id)} type="button">Save brief</button>
+                  ) : null}
+                </div>
+
+                <section className="field-panel">
+                  <h3>Client input / priorities - Optional</h3>
+                  {canEdit && typeof onSaveBrief === "function" ? (
+                    <>
+                      <textarea
+                        placeholder="Client priorities, requested topics, or campaign focus"
+                        rows={3}
+                        value={briefDetail.clientPriorities ?? ""}
+                        onChange={(e) => setBriefDetail({ ...briefDetail, clientPriorities: e.target.value })}
+                      />
+                      <span className="muted-text">Client-provided direction used to guide this monthly AI Delivery work.</span>
+                    </>
                   ) : (
                     <pre style={{ whiteSpace: "pre-wrap" }}>{briefDetail.clientPriorities ?? "Not set"}</pre>
                   )}
                 </section>
 
                 <section className="field-panel">
-                  <h3>Products / services focus</h3>
+                  <h3>Products / services focus - Optional</h3>
                   {canEdit && typeof onSaveBrief === "function" ? (
-                    <textarea
-                      rows={3}
-                      value={briefDetail.productsServicesFocus ?? ""}
-                      onChange={(e) => setBriefDetail({ ...briefDetail, productsServicesFocus: e.target.value })}
-                    />
+                    <>
+                      <textarea
+                        placeholder="Products, services, or offers to emphasize"
+                        rows={3}
+                        value={briefDetail.productsServicesFocus ?? ""}
+                        onChange={(e) => setBriefDetail({ ...briefDetail, productsServicesFocus: e.target.value })}
+                      />
+                      <span className="muted-text">Helps admins keep content aligned with current client priorities.</span>
+                    </>
                   ) : (
                     <pre style={{ whiteSpace: "pre-wrap" }}>{briefDetail.productsServicesFocus ?? "Not set"}</pre>
                   )}
                 </section>
 
                 <section className="field-panel">
-                  <h3>Target audience</h3>
+                  <h3>Target audience - Optional</h3>
                   {canEdit && typeof onSaveBrief === "function" ? (
-                    <textarea
-                      rows={3}
-                      value={briefDetail.targetAudience ?? ""}
-                      onChange={(e) => setBriefDetail({ ...briefDetail, targetAudience: e.target.value })}
-                    />
+                    <>
+                      <textarea
+                        placeholder="Audience segments, buyer roles, or reader context"
+                        rows={3}
+                        value={briefDetail.targetAudience ?? ""}
+                        onChange={(e) => setBriefDetail({ ...briefDetail, targetAudience: e.target.value })}
+                      />
+                      <span className="muted-text">Used by the admin team when planning briefs, topics, and drafts.</span>
+                    </>
                   ) : (
                     <pre style={{ whiteSpace: "pre-wrap" }}>{briefDetail.targetAudience ?? "Not set"}</pre>
                   )}
                 </section>
 
                 <section className="field-panel">
-                  <h3>Markets / competitors</h3>
+                  <h3>Research / admin feedback - Optional</h3>
                   {canEdit && typeof onSaveBrief === "function" ? (
-                    <textarea
-                      rows={3}
-                      value={briefDetail.marketsCompetitors ?? ""}
-                      onChange={(e) => setBriefDetail({ ...briefDetail, marketsCompetitors: e.target.value })}
-                    />
+                    <>
+                      <textarea
+                        placeholder="Markets, competitors, research findings, or admin feedback"
+                        rows={3}
+                        value={briefDetail.marketsCompetitors ?? ""}
+                        onChange={(e) => setBriefDetail({ ...briefDetail, marketsCompetitors: e.target.value })}
+                      />
+                      <span className="muted-text">Visible only to admin team.</span>
+                    </>
                   ) : (
                     <pre style={{ whiteSpace: "pre-wrap" }}>{briefDetail.marketsCompetitors ?? "Not set"}</pre>
                   )}
                 </section>
 
                 <section className="field-panel">
-                  <h3>Research summary / notes</h3>
+                  <h3>Optional internal notes</h3>
                   {canEdit && typeof onSaveBrief === "function" ? (
-                    <textarea
-                      rows={6}
-                      value={briefDetail.notes ?? ""}
-                      onChange={(e) => setBriefDetail({ ...briefDetail, notes: e.target.value })}
-                    />
+                    <>
+                      <textarea
+                        placeholder="Notes for admin team only"
+                        rows={6}
+                        value={briefDetail.notes ?? ""}
+                        onChange={(e) => setBriefDetail({ ...briefDetail, notes: e.target.value })}
+                      />
+                      <span className="muted-text">Not shown to client.</span>
+                    </>
                   ) : (
                     <pre style={{ whiteSpace: "pre-wrap" }}>{briefDetail.notes ?? "Not set"}</pre>
                   )}
@@ -1438,7 +1499,7 @@ export function AiDeliveryPage({
                 <div className="modal-footer">
                   <button className="secondary-action" onClick={() => { setOpenBriefId(null); setBriefDetail(null); }} type="button">Close</button>
                   {canEdit && typeof onSaveBrief === "function" ? (
-                    <button className="primary-action" onClick={() => void handleSaveBrief(openProject.id)} type="button">Save</button>
+                    <button className="primary-action" onClick={() => void handleSaveBrief(openProject.id)} type="button">Save brief</button>
                   ) : null}
                 </div>
               </div>
@@ -1641,27 +1702,54 @@ export function AiDeliveryPage({
               <section className="field-panel">
                 <h3>Workflow run editor</h3>
                 <p className="muted-text">Admin-operated workflow run records only. No AI calls, crawling, publishing, automation, or deliverable generation runs from this screen.</p>
+                <div className="modal-footer">
+                  <button className="secondary-action" disabled={workflowRunsSaving} onClick={closeWorkflowRuns} type="button">Close</button>
+                  <button className="secondary-action" disabled={workflowRunsSaving} onClick={() => { setWorkflowRunEditorId(null); setWorkflowRunForm(emptyWorkflowRun()); }} type="button">New workflow run</button>
+                  <button className="primary-action" disabled={workflowRunsSaving || !isWorkflowRunStatusAllowed} onClick={() => void saveWorkflowRun(openWorkflowRunsProject.id)} type="button">
+                    {workflowRunsSaving ? "Saving" : workflowRunEditorId ? "Save workflow run" : "Create workflow run"}
+                  </button>
+                </div>
                 <div className="field-grid">
+                  <div>
+                    <span>Run type / name</span>
+                    <strong>{workflowRunEditorId ? "Existing workflow run" : "New workflow run"}</strong>
+                    <span className="muted-text">Admin workflow run record for this AI Delivery project.</span>
+                  </div>
                   <label>
-                    Status
+                    Status - Required
                     <select value={workflowRunForm.status} onChange={(event) => setWorkflowRunForm((current) => ({ ...current, status: event.target.value }))}>
-                      {workflowRunStatusOptions.map((status) => <option key={status} value={status}>{status}</option>)}
+                      {workflowRunStatusOptions.map((status) => <option key={status} value={status}>{workflowRunStatusLabels[status]}</option>)}
                     </select>
-                    <span className="muted-text">{workflowRunStatusHelper}</span>
+                    <span className="muted-text">Current internal status of this workflow run. {workflowRunStatusHelper}</span>
                   </label>
                   <label className="field-span-2">
-                    Admin notes
-                    <textarea maxLength={4000} rows={4} value={workflowRunForm.adminNotes} onChange={(event) => setWorkflowRunForm((current) => ({ ...current, adminNotes: event.target.value }))} />
+                    Input / context and review notes - Optional
+                    <textarea
+                      maxLength={4000}
+                      placeholder="Workflow inputs, admin context, blockers, or review notes"
+                      rows={4}
+                      value={workflowRunForm.adminNotes}
+                      onChange={(event) => setWorkflowRunForm((current) => ({ ...current, adminNotes: event.target.value }))}
+                    />
+                    <span className="muted-text">Visible only to admin team. Not shown to client.</span>
                   </label>
                   <label className="field-span-2">
-                    Result placeholder
-                    <textarea maxLength={4000} rows={4} value={workflowRunForm.resultPlaceholder} onChange={(event) => setWorkflowRunForm((current) => ({ ...current, resultPlaceholder: event.target.value }))} />
+                    Output / result summary - Optional
+                    <textarea
+                      maxLength={4000}
+                      placeholder="Summary of output, result, or next handoff step"
+                      rows={4}
+                      value={workflowRunForm.resultPlaceholder}
+                      onChange={(event) => setWorkflowRunForm((current) => ({ ...current, resultPlaceholder: event.target.value }))}
+                    />
+                    <span className="muted-text">Internal result summary only. No AI generation runs from this form.</span>
                   </label>
                 </div>
                 <div className="modal-footer">
+                  <button className="secondary-action" disabled={workflowRunsSaving} onClick={closeWorkflowRuns} type="button">Close</button>
                   <button className="secondary-action" disabled={workflowRunsSaving} onClick={() => { setWorkflowRunEditorId(null); setWorkflowRunForm(emptyWorkflowRun()); }} type="button">New workflow run</button>
                   <button className="primary-action" disabled={workflowRunsSaving || !isWorkflowRunStatusAllowed} onClick={() => void saveWorkflowRun(openWorkflowRunsProject.id)} type="button">
-                    {workflowRunsSaving ? "Saving" : workflowRunEditorId ? "Save workflow run" : "Create Workflow Run"}
+                    {workflowRunsSaving ? "Saving" : workflowRunEditorId ? "Save workflow run" : "Create workflow run"}
                   </button>
                 </div>
               </section>
@@ -1958,23 +2046,50 @@ export function AiDeliveryPage({
                   ) : (
                     <>
                       {deliverableReviewsError ? <ErrorState title="Deliverable reviews unavailable" message={deliverableReviewsError} /> : null}
+                      <div className="modal-footer">
+                        <button className="secondary-action" disabled={deliverableReviewsSaving} onClick={closeDeliverables} type="button">Close</button>
+                        <button className="secondary-action" disabled={deliverableReviewsSaving} onClick={() => { setDeliverableReviewEditorId(null); setDeliverableReviewForm(emptyDeliverableReview()); }} type="button">New review placeholder</button>
+                        <button className="primary-action" disabled={deliverableReviewsSaving} onClick={() => void saveDeliverableReview(openDeliverablesProject.id)} type="button">
+                          {deliverableReviewsSaving ? "Saving" : deliverableReviewEditorId ? "Save review" : "Create review placeholder"}
+                        </button>
+                      </div>
                       <div className="field-grid">
+                        <div className="field-span-2">
+                          <span>Deliverable context</span>
+                          <strong>{selectedReviewDeliverable.title}</strong>
+                          <span className="muted-text">Review placeholder for this deliverable only.</span>
+                        </div>
                         <label>
-                          Review status
+                          Review status - Required
                           <select value={deliverableReviewForm.status} onChange={(event) => setDeliverableReviewForm((current) => ({ ...current, status: event.target.value }))}>
                             {(["NOT_STARTED", "ADMIN_REVIEW", "CHANGES_REQUESTED", "APPROVED", "ARCHIVED"] as const).map((status) => <option key={status} value={status}>{formatEnumLabel(status)}</option>)}
                           </select>
+                          <span className="muted-text">Current internal review status for this deliverable.</span>
                         </label>
                         <label>
-                          Reviewer name
-                          <input maxLength={255} value={deliverableReviewForm.reviewerName} onChange={(event) => setDeliverableReviewForm((current) => ({ ...current, reviewerName: event.target.value }))} />
+                          Reviewer name - Optional
+                          <input
+                            maxLength={255}
+                            placeholder="Admin reviewer or operator name"
+                            value={deliverableReviewForm.reviewerName}
+                            onChange={(event) => setDeliverableReviewForm((current) => ({ ...current, reviewerName: event.target.value }))}
+                          />
+                          <span className="muted-text">Visible only to admin team.</span>
                         </label>
                         <label className="field-span-2">
-                          Review notes
-                          <textarea maxLength={4000} rows={3} value={deliverableReviewForm.reviewNotes} onChange={(event) => setDeliverableReviewForm((current) => ({ ...current, reviewNotes: event.target.value }))} />
+                          Review notes / change request - Optional
+                          <textarea
+                            maxLength={4000}
+                            placeholder="Change requests, approval notes, or internal review context"
+                            rows={3}
+                            value={deliverableReviewForm.reviewNotes}
+                            onChange={(event) => setDeliverableReviewForm((current) => ({ ...current, reviewNotes: event.target.value }))}
+                          />
+                          <span className="muted-text">Not shown to client. Use for admin review context or requested fixes.</span>
                         </label>
                       </div>
                       <div className="modal-footer">
+                        <button className="secondary-action" disabled={deliverableReviewsSaving} onClick={closeDeliverables} type="button">Close</button>
                         <button className="secondary-action" disabled={deliverableReviewsSaving} onClick={() => { setDeliverableReviewEditorId(null); setDeliverableReviewForm(emptyDeliverableReview()); }} type="button">New review placeholder</button>
                         <button className="primary-action" disabled={deliverableReviewsSaving} onClick={() => void saveDeliverableReview(openDeliverablesProject.id)} type="button">
                           {deliverableReviewsSaving ? "Saving" : deliverableReviewEditorId ? "Save review" : "Create review placeholder"}
