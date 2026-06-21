@@ -63,10 +63,16 @@ export function InvoiceItemsPage({
     () => activeItems.reduce((total, item) => total + item.unitPriceCents, 0),
     [activeItems]
   );
+  const submitLabel = editorId ? "Update service" : "Create service";
 
-  function openCreateModal() {
+  function closeEditor() {
     setEditorId(null);
     setDraft(emptyInvoiceItemForm);
+    setIsEditorOpen(false);
+  }
+
+  function openCreateModal() {
+    closeEditor();
     setIsEditorOpen(true);
   }
 
@@ -86,9 +92,7 @@ export function InvoiceItemsPage({
     try {
       const ok = await onSaveInvoiceItem(editorId, draft);
       if (ok) {
-        setEditorId(null);
-        setDraft(emptyInvoiceItemForm);
-        setIsEditorOpen(false);
+        closeEditor();
       }
     } finally {
       setSaving(false);
@@ -182,51 +186,68 @@ export function InvoiceItemsPage({
 
       {isEditorOpen ? (
         <Modal
-          onClose={() => {
-            setEditorId(null);
-            setDraft(emptyInvoiceItemForm);
-            setIsEditorOpen(false);
-          }}
+          onClose={closeEditor}
           title={editorId ? "Edit Service" : "Add Service"}
         >
           <form className="entity-form" onSubmit={handleSubmit}>
+            <p className="muted-text">Used as reusable invoice line items. Changing this does not update existing invoices.</p>
+            <InvoiceItemModalActions disabled={saving || !draft.name.trim()} label={submitLabel} onCancel={closeEditor} saving={saving} />
             <div className="field-grid">
               <label>
-                Name
+                Service name - Required
                 <input
                   maxLength={255}
                   onChange={(event) => setDraft((current) => ({ ...current, name: event.target.value }))}
+                  placeholder="SEO article, monthly retainer, website maintenance"
                   required
                   value={draft.name}
                 />
+                <span className="muted-text">Used as reusable invoice line items.</span>
+              </label>
+              <label className="field-span-2">
+                Description - Optional
+                <textarea
+                  maxLength={4000}
+                  onChange={(event) => setDraft((current) => ({ ...current, description: event.target.value }))}
+                  placeholder="Default line item description used on invoices"
+                  rows={4}
+                  value={draft.description}
+                />
+                <span className="muted-text">Changing this does not update existing invoices.</span>
               </label>
               <label>
-                Unit price cents
+                Unit price - Required
                 <input
                   min={0}
                   onChange={(event) => setDraft((current) => ({ ...current, unitPriceCents: event.target.valueAsNumber || 0 }))}
+                  placeholder="Default price before tax or discount"
                   required
                   type="number"
                   value={draft.unitPriceCents}
                 />
-              </label>
-              <label className="field-span-2">
-                Description
-                <textarea
-                  maxLength={4000}
-                  onChange={(event) => setDraft((current) => ({ ...current, description: event.target.value }))}
-                  rows={4}
-                  value={draft.description}
-                />
+                <span className="muted-text">Stored as the reusable default price for future invoice drafting.</span>
               </label>
             </div>
-            <div className="modal-footer">
-              <button className="secondary-action" disabled={saving} onClick={() => setIsEditorOpen(false)} type="button">Cancel</button>
-              <button className="primary-action" disabled={saving || !draft.name.trim()} type="submit">{saving ? "Saving" : "Save"}</button>
-            </div>
+            <InvoiceItemModalActions disabled={saving || !draft.name.trim()} label={submitLabel} onCancel={closeEditor} saving={saving} />
           </form>
         </Modal>
       ) : null}
     </section>
+  );
+}
+
+type InvoiceItemModalActionsProps = {
+  disabled: boolean;
+  label: string;
+  onCancel: () => void;
+  saving: boolean;
+};
+
+function InvoiceItemModalActions({ disabled, label, onCancel, saving }: InvoiceItemModalActionsProps) {
+  return (
+    <div className="modal-footer">
+      <button className="secondary-action" disabled={saving} onClick={onCancel} type="button">Cancel</button>
+      <button className="primary-action" disabled={disabled} type="submit">{saving ? "Saving" : label}</button>
+    </div>
   );
 }
