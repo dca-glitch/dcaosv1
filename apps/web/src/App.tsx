@@ -922,9 +922,14 @@ function TeamView({
 
   return (
     <section className="view-section" aria-labelledby="team-title">
-      <PageHeader eyebrow="Team" title="Members" titleId="team-title" description="Tenant members, roles, and visibility status for the current workspace." />
+      <PageHeader eyebrow="Team" title="Members" titleId="team-title" description="User identity, access roles, and visibility status for the current company workspace." />
       {!canReadUsers ? (
         <StatusNotice tone="info" message="Member visibility requires tenant user read access." />
+      ) : null}
+      {canReadUsers ? (
+        <div className="state-panel">
+          This section is read-only in the current shell. Role controls what this user can access inside the company.
+        </div>
       ) : null}
       {canReadUsers && members.length === 0 ? (
         <div className="state-panel">No active members were found for this tenant.</div>
@@ -934,9 +939,9 @@ function TeamView({
           <table>
             <thead>
               <tr>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Roles</th>
+                <th>User name</th>
+                <th>User email</th>
+                <th>Role / access level</th>
                 <th>Status</th>
               </tr>
             </thead>
