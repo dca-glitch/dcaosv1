@@ -29,6 +29,7 @@ import {
   downloadBillDocumentHandler,
   downloadCreditNoteDocumentHandler,
   downloadInvoiceDocumentHandler,
+  executeAiDeliveryWorkflowRunHandler,
   getClientHandler,
   getCompanyProfileHandler,
   getInvoiceHandler,
@@ -134,6 +135,7 @@ export function createCoreRouter() {
   router.get("/ai-delivery/projects/:projectId/workflow-runs", requireAuth, requireTenant, requireRole("owner", "admin"), listAiDeliveryWorkflowRunsHandler);
   router.post("/ai-delivery/projects/:projectId/workflow-runs", requireAuth, requireTenant, requireRole("owner", "admin"), createAiDeliveryWorkflowRunHandler);
   router.put("/ai-delivery/projects/:projectId/workflow-runs/:workflowRunId", requireAuth, requireTenant, requireRole("owner", "admin"), updateAiDeliveryWorkflowRunHandler);
+  router.post("/ai-delivery/projects/:projectId/workflow-runs/:workflowRunId/execute", requireAuth, requireTenant, requireRole("owner", "admin"), executeAiDeliveryWorkflowRunHandler);
   router.post("/ai-delivery-projects/:id/brief/request-client-input", requireAuth, requireTenant, requireRole("owner", "admin"), requestAiDeliveryBriefClientInputHandler);
   router.post("/ai-delivery-projects/:id/brief/request-client-revision", requireAuth, requireTenant, requireRole("owner", "admin"), requestAiDeliveryBriefClientRevisionHandler);
   router.post("/ai-delivery-projects/:id/brief/approve-final", requireAuth, requireTenant, requireRole("owner", "admin"), approveFinalAiDeliveryBriefHandler);

@@ -191,6 +191,10 @@ export interface AiDeliveryWorkflowRunSummary {
   status: string;
   adminNotes: string | null;
   resultPlaceholder: string | null;
+  executionLog: string | null;
+  executionError: string | null;
+  startedAt: string | null;
+  finishedAt: string | null;
   brief: AiDeliveryBriefSummary | null;
   createdAt: string;
   updatedAt: string;

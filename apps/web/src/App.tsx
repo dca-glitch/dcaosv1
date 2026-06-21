@@ -2328,6 +2328,33 @@ export function App() {
     }
   }
 
+  async function handleExecuteAiDeliveryWorkflowRun(
+    projectId: string,
+    workflowRunId: string
+  ): Promise<AiDeliveryWorkflowRunSummary | null> {
+    setAppMessage(null);
+    try {
+      const response = await runAuthenticatedRequest<AiDeliveryWorkflowRunResponse>(
+        `/ai-delivery/projects/${projectId}/workflow-runs/${workflowRunId}/execute`,
+        { method: "POST" }
+      );
+      if (!response) return null;
+      if (!response.ok) {
+        setAppMessage({ tone: "error", text: getErrorMessage(response) });
+        return null;
+      }
+      const executedRun = response.data.workflowRun;
+      setAppMessage({
+        tone: executedRun?.status === "FAILED" ? "error" : "success",
+        text: executedRun?.status === "FAILED" ? "Workflow run failed in controlled stub mode." : "Workflow run executed in controlled stub mode."
+      });
+      return executedRun;
+    } catch (error) {
+      setAppMessage({ tone: "error", text: maskError(error) });
+      return null;
+    }
+  }
+
   async function handleArchiveAiDeliveryDeliverable(projectId: string, deliverableId: string): Promise<boolean> {
     setAppMessage(null);
     try {
@@ -3129,6 +3156,7 @@ export function App() {
           onSaveDeliverableReview={handleSaveAiDeliveryDeliverableReview}
           onFetchWorkflowRuns={handleFetchAiDeliveryWorkflowRuns}
           onSaveWorkflowRun={handleSaveAiDeliveryWorkflowRun}
+          onExecuteWorkflowRun={handleExecuteAiDeliveryWorkflowRun}
         />
       ) : null}
       {!loading && activeView === "content-plan-review" ? (

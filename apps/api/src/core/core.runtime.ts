@@ -71,7 +71,7 @@ type TaskPriority = "LOW" | "NORMAL" | "HIGH";
 type TaskStatus = "TODO" | "IN_PROGRESS" | "DONE";
 type TaskRecurringType = "NONE" | "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY";
 type InvoiceStatus = "DRAFT" | "ISSUED" | "PAID" | "VOIDED" | "UNCOLLECTIBLE";
-type AiDeliveryWorkflowRunStatus = "DRAFT" | "READY" | "IN_PROGRESS" | "REVIEW" | "COMPLETED" | "ARCHIVED";
+type AiDeliveryWorkflowRunStatus = "DRAFT" | "READY" | "IN_PROGRESS" | "REVIEW" | "COMPLETED" | "FAILED" | "ARCHIVED";
 type AiDeliveryContentDraftStatus = "DRAFT" | "READY_FOR_REVIEW" | "APPROVED" | "CHANGES_REQUESTED" | "ARCHIVED";
 type AiDeliveryArticleImageStatus = "DRAFT" | "READY_FOR_GENERATION" | "PREVIEW_READY" | "APPROVED" | "FINAL_READY" | "CHANGES_REQUESTED" | "ARCHIVED";
 // Deliverable types for AI Delivery
@@ -82,6 +82,7 @@ type CreditNoteStatus = "DRAFT" | "ISSUED" | "VOIDED";
 type PaymentMethod = "CASH" | "REVOLUT_BANK" | "WISE_BANK" | "REVOLUT_CARD" | "WISE_CARD" | "CARD_PROCESSOR" | "OTHER";
 type RecurringInvoiceInterval = "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY";
 type BillPaymentForm = "CASH" | "REVOLUT_BANK" | "WISE_BANK" | "REVOLUT_CARD" | "WISE_CARD" | "OTHER";
+const AI_DELIVERY_WORKFLOW_RUN_STATUSES: AiDeliveryWorkflowRunStatus[] = ["DRAFT", "READY", "IN_PROGRESS", "REVIEW", "COMPLETED", "FAILED", "ARCHIVED"];
 const AI_DELIVERY_WORKFLOW_RUN_STATUS_ORDER: AiDeliveryWorkflowRunStatus[] = ["DRAFT", "READY", "IN_PROGRESS", "REVIEW", "COMPLETED", "ARCHIVED"];
 type ClientUserAccessSummary = {
   id: string;
@@ -2685,6 +2686,10 @@ const aiDeliveryWorkflowRunSelect = {
   status: true,
   adminNotes: true,
   resultPlaceholder: true,
+  executionLog: true,
+  executionError: true,
+  startedAt: true,
+  finishedAt: true,
   createdAt: true,
   updatedAt: true,
   aiDeliveryProject: {
@@ -2703,7 +2708,7 @@ const aiDeliveryWorkflowRunSelect = {
 
 function normalizeAiDeliveryWorkflowRunStatus(value: string | null | undefined): AiDeliveryWorkflowRunStatus {
   const status = value ? value.trim().toUpperCase() : null;
-  return status && AI_DELIVERY_WORKFLOW_RUN_STATUS_ORDER.includes(status as AiDeliveryWorkflowRunStatus)
+  return status && AI_DELIVERY_WORKFLOW_RUN_STATUSES.includes(status as AiDeliveryWorkflowRunStatus)
     ? (status as AiDeliveryWorkflowRunStatus)
     : "DRAFT";
 }
@@ -2714,6 +2719,14 @@ function canTransitionAiDeliveryWorkflowRunStatus(
 ): boolean {
   if (currentStatus === nextStatus) {
     return true;
+  }
+
+  if (currentStatus === "FAILED" && nextStatus === "ARCHIVED") {
+    return true;
+  }
+
+  if (nextStatus === "FAILED") {
+    return currentStatus === "IN_PROGRESS" || currentStatus === "REVIEW";
   }
 
   const currentIndex = AI_DELIVERY_WORKFLOW_RUN_STATUS_ORDER.indexOf(currentStatus);
@@ -2730,6 +2743,10 @@ function toAiDeliveryWorkflowRunSummary(run: any) {
     status: run.status,
     adminNotes: run.adminNotes ?? null,
     resultPlaceholder: run.resultPlaceholder ?? null,
+    executionLog: run.executionLog ?? null,
+    executionError: run.executionError ?? null,
+    startedAt: run.startedAt ? run.startedAt.toISOString() : null,
+    finishedAt: run.finishedAt ? run.finishedAt.toISOString() : null,
     brief: brief
       ? {
           id: brief.id,
@@ -2741,6 +2758,15 @@ function toAiDeliveryWorkflowRunSummary(run: any) {
     createdAt: run.createdAt.toISOString(),
     updatedAt: run.updatedAt.toISOString()
   };
+}
+
+function appendAiDeliveryWorkflowExecutionLog(existingLog: string | null | undefined, lines: string[]): string {
+  const parts = [existingLog?.trim(), ...lines.map((line) => line.trim()).filter(Boolean)].filter(Boolean) as string[];
+  return parts.join("\n");
+}
+
+function shouldSimulateAiDeliveryWorkflowFailure(adminNotes: string | null | undefined): boolean {
+  return (adminNotes ?? "").toLowerCase().includes("[stub-fail]");
 }
 
 export async function listAiDeliveryWorkflowRuns(
@@ -2855,6 +2881,140 @@ export async function updateAiDeliveryWorkflowRun(
     );
 
     return { workflowRun: updatedWorkflowRun };
+  });
+}
+
+export async function executeAiDeliveryWorkflowRun(
+  authSession: AuthResolvedSessionContext,
+  aiDeliveryProjectId: string,
+  workflowRunId: string
+): Promise<AiDeliveryWorkflowRunResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) return null;
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    const project = await tx.aiDeliveryProject.findFirst({
+      where: { id: aiDeliveryProjectId, tenantId, isArchived: false },
+      select: {
+        id: true,
+        name: true,
+        targetMonth: true,
+        brief: { select: { id: true, status: true } }
+      }
+    });
+    if (!project?.brief) return null;
+
+    const existing = await getAiDeliveryWorkflowRunDelegate(tx).findFirst({
+      where: { id: workflowRunId, tenantId, aiDeliveryProjectId },
+      select: aiDeliveryWorkflowRunSelect
+    }) as any;
+    if (!existing) return null;
+
+    const currentStatus = normalizeAiDeliveryWorkflowRunStatus(existing.status);
+    if (currentStatus === "ARCHIVED") {
+      throw new Error("AI_DELIVERY_WORKFLOW_RUN_EXECUTION_ARCHIVED");
+    }
+    if (currentStatus === "COMPLETED") {
+      throw new Error("AI_DELIVERY_WORKFLOW_RUN_EXECUTION_COMPLETED");
+    }
+    if (currentStatus === "IN_PROGRESS") {
+      throw new Error("AI_DELIVERY_WORKFLOW_RUN_EXECUTION_ALREADY_RUNNING");
+    }
+    if (currentStatus === "REVIEW") {
+      throw new Error("AI_DELIVERY_WORKFLOW_RUN_EXECUTION_REVIEW_PENDING");
+    }
+
+    const startedAt = new Date();
+    const startedLog = appendAiDeliveryWorkflowExecutionLog(existing.executionLog, [
+      `[${startedAt.toISOString()}] Stub execution started.`,
+      `[${startedAt.toISOString()}] Project "${project.name}" for ${project.targetMonth}; brief status ${project.brief.status}.`,
+      `[${startedAt.toISOString()}] Local deterministic execution only. No external AI services were called.`
+    ]);
+
+    await getAiDeliveryWorkflowRunDelegate(tx).update({
+      where: { id: workflowRunId },
+      data: {
+        status: "IN_PROGRESS",
+        startedAt,
+        finishedAt: null,
+        executionError: null,
+        executionLog: startedLog
+      }
+    });
+
+    await recordAiDeliverySystemEvent(
+      {
+        tenantId,
+        aiDeliveryProjectId,
+        eventName: "AI_DELIVERY_WORKFLOW_RUN_EXECUTION_STARTED",
+        relatedEntityId: workflowRunId
+      },
+      tx
+    );
+
+    const finishedAt = new Date();
+    const shouldFail = shouldSimulateAiDeliveryWorkflowFailure(existing.adminNotes);
+
+    if (shouldFail) {
+      const executionError = "Stub execution failed because admin notes include [stub-fail].";
+      const failedLog = appendAiDeliveryWorkflowExecutionLog(startedLog, [
+        `[${finishedAt.toISOString()}] Stub execution failed: ${executionError}`
+      ]);
+
+      const failed = await getAiDeliveryWorkflowRunDelegate(tx).update({
+        where: { id: workflowRunId },
+        data: {
+          status: "FAILED",
+          finishedAt,
+          executionError,
+          executionLog: failedLog
+        },
+        select: aiDeliveryWorkflowRunSelect
+      });
+
+      await recordAiDeliverySystemEvent(
+        {
+          tenantId,
+          aiDeliveryProjectId,
+          eventName: "AI_DELIVERY_WORKFLOW_RUN_EXECUTION_FAILED",
+          relatedEntityId: workflowRunId
+        },
+        tx
+      );
+
+      return { workflowRun: toAiDeliveryWorkflowRunSummary(failed) };
+    }
+
+    const resultPlaceholder = toNullableString(existing.resultPlaceholder)
+      ?? `Stub workflow output prepared for admin review for ${project.name} (${project.targetMonth}). No external AI services were called.`;
+    const completedLog = appendAiDeliveryWorkflowExecutionLog(startedLog, [
+      `[${finishedAt.toISOString()}] Stub execution completed successfully.`,
+      `[${finishedAt.toISOString()}] Result placeholder prepared and moved to admin review.`
+    ]);
+
+    const reviewed = await getAiDeliveryWorkflowRunDelegate(tx).update({
+      where: { id: workflowRunId },
+      data: {
+        status: "REVIEW",
+        finishedAt,
+        executionError: null,
+        executionLog: completedLog,
+        resultPlaceholder
+      },
+      select: aiDeliveryWorkflowRunSelect
+    });
+
+    await recordAiDeliverySystemEvent(
+      {
+        tenantId,
+        aiDeliveryProjectId,
+        eventName: "AI_DELIVERY_WORKFLOW_RUN_EXECUTION_COMPLETED",
+        relatedEntityId: workflowRunId
+      },
+      tx
+    );
+
+    return { workflowRun: toAiDeliveryWorkflowRunSummary(reviewed) };
   });
 }
 

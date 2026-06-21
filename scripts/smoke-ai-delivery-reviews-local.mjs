@@ -26,7 +26,7 @@ function responseHasSensitiveFields(response) {
 }
 
 function requireOkResponse(name, response) {
-  if (response.status !== 200 || response.body?.ok !== true) {
+  if (![200, 201].includes(response.status) || response.body?.ok !== true) {
     fail(`${name} failed with HTTP ${response.status}.`);
   }
 
@@ -147,6 +147,82 @@ async function runAiDeliveryApiRegression(token) {
   }
   pass(`AI Delivery workflow runs list endpoint returned cleanly (${workflowRunsData.workflowRuns.length} local run(s)).`);
 
+  const createdSuccessRun = requireOkResponse(
+    "AI Delivery workflow run create success candidate",
+    await request(`/ai-delivery/projects/${project.id}/workflow-runs`, {
+      method: "POST",
+      token,
+      body: {
+        status: "DRAFT",
+        adminNotes: "Smoke stub execution success path",
+        resultPlaceholder: ""
+      }
+    })
+  );
+  const successRun = createdSuccessRun?.workflowRun;
+  if (!successRun?.id) {
+    fail("AI Delivery workflow run create did not return a workflowRun id for success execution.");
+  }
+
+  const executedSuccess = requireOkResponse(
+    "AI Delivery workflow run execute success path",
+    await request(`/ai-delivery/projects/${project.id}/workflow-runs/${successRun.id}/execute`, {
+      method: "POST",
+      token
+    })
+  )?.workflowRun;
+  if (
+    !executedSuccess ||
+    executedSuccess.status !== "REVIEW" ||
+    typeof executedSuccess.executionLog !== "string" ||
+    executedSuccess.executionLog.length === 0 ||
+    typeof executedSuccess.startedAt !== "string" ||
+    typeof executedSuccess.finishedAt !== "string" ||
+    typeof executedSuccess.resultPlaceholder !== "string" ||
+    executedSuccess.resultPlaceholder.length === 0 ||
+    executedSuccess.executionError !== null
+  ) {
+    fail("AI Delivery workflow run execute success path did not persist the expected status/result/log fields.");
+  }
+  pass("AI Delivery workflow run execute success path persisted status, timestamps, and stub result fields.");
+
+  const createdFailureRun = requireOkResponse(
+    "AI Delivery workflow run create failure candidate",
+    await request(`/ai-delivery/projects/${project.id}/workflow-runs`, {
+      method: "POST",
+      token,
+      body: {
+        status: "DRAFT",
+        adminNotes: "[stub-fail] Smoke stub execution failure path",
+        resultPlaceholder: ""
+      }
+    })
+  );
+  const failureRun = createdFailureRun?.workflowRun;
+  if (!failureRun?.id) {
+    fail("AI Delivery workflow run create did not return a workflowRun id for failure execution.");
+  }
+
+  const executedFailure = requireOkResponse(
+    "AI Delivery workflow run execute failure path",
+    await request(`/ai-delivery/projects/${project.id}/workflow-runs/${failureRun.id}/execute`, {
+      method: "POST",
+      token
+    })
+  )?.workflowRun;
+  if (
+    !executedFailure ||
+    executedFailure.status !== "FAILED" ||
+    typeof executedFailure.executionError !== "string" ||
+    executedFailure.executionError.length === 0 ||
+    typeof executedFailure.executionLog !== "string" ||
+    executedFailure.executionLog.length === 0 ||
+    typeof executedFailure.finishedAt !== "string"
+  ) {
+    fail("AI Delivery workflow run execute failure path did not persist the expected failed/error/log fields.");
+  }
+  pass("AI Delivery workflow run execute failure path persisted failed status and error/log fields.");
+
   const deliverablesData = requireOkResponse(
     "AI Delivery deliverables list",
     await request(`/ai-delivery-projects/${project.id}/deliverables`, { token })
@@ -213,6 +289,17 @@ async function main() {
     await page.goto(webUrl, { waitUntil: "domcontentloaded" });
     await page.getByRole("heading", { name: "AI Delivery" }).waitFor({ state: "visible", timeout: 15000 });
     pass("AI Delivery admin UI loaded without crashing.");
+
+    const workflowRunButtons = page.getByRole("button", { name: "Workflow runs" });
+    const workflowRunButtonCount = await workflowRunButtons.count();
+    if (workflowRunButtonCount > 0) {
+      await workflowRunButtons.first().click();
+      await page.getByRole("dialog", { name: "Workflow Runs" }).waitFor({ state: "visible", timeout: 15000 });
+      await page.getByRole("heading", { name: "Existing workflow runs" }).waitFor({ state: "visible", timeout: 15000 });
+      await page.getByText("Execution log").first().waitFor({ state: "visible", timeout: 15000 });
+      pass("Workflow runs panel opened and rendered execution details.");
+      await page.getByRole("button", { name: "Close" }).first().click();
+    }
 
     const deliverablesButtons = page.getByRole("button", { name: "Deliverables" });
     const deliverablesButtonCount = await deliverablesButtons.count();

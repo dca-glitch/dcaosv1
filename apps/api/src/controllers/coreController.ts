@@ -38,6 +38,7 @@ import {
   createAiDeliveryArticleImage,
   createAiDeliveryContentDraft,
   createAiDeliveryProject,
+  executeAiDeliveryWorkflowRun,
   createAiDeliveryWorkflowRun,
   createClient,
   createCreditNote,
@@ -153,7 +154,7 @@ const LOGO_URL_MAX_LENGTH = 2048;
 const NAME_MAX_LENGTH = 255;
 const CLIENT_COUNTRIES = new Set(["Indonesia", "Poland", "United States", "United Kingdom", "Singapore", "Australia"]);
 const PROJECT_STATUSES = new Set(["Active", "Paused", "Completed", "Archived"]);
-const AI_DELIVERY_WORKFLOW_RUN_STATUSES = new Set(["DRAFT", "READY", "IN_PROGRESS", "REVIEW", "COMPLETED", "ARCHIVED"]);
+const AI_DELIVERY_WORKFLOW_RUN_STATUSES = new Set(["DRAFT", "READY", "IN_PROGRESS", "REVIEW", "COMPLETED", "FAILED", "ARCHIVED"]);
 const AI_DELIVERY_CONTENT_DRAFT_STATUSES = new Set(["DRAFT", "READY_FOR_REVIEW", "APPROVED", "CHANGES_REQUESTED", "ARCHIVED"]);
 const AI_DELIVERY_ARTICLE_IMAGE_STATUSES = new Set(["DRAFT", "READY_FOR_GENERATION", "PREVIEW_READY", "APPROVED", "FINAL_READY", "CHANGES_REQUESTED", "ARCHIVED"]);
 const AI_DELIVERY_DELIVERABLE_REVIEW_STATUSES = new Set(["NOT_STARTED", "ADMIN_REVIEW", "CHANGES_REQUESTED", "APPROVED", "ARCHIVED"]);
@@ -1278,7 +1279,7 @@ export const createAiDeliveryWorkflowRunHandler: RequestHandler = async (req, re
     res.status(201).json(success(response, { phase: "runtime", scope: "ai-delivery-workflow-runs" }));
   } catch (error) {
     if ((error as { message?: string }).message === "AI_DELIVERY_WORKFLOW_RUN_INVALID_STATUS_TRANSITION") {
-      res.status(400).json(failure("AI_DELIVERY_WORKFLOW_RUN_STATUS_GATE_BLOCKED", "Workflow run status must move in order: DRAFT -> READY -> IN_PROGRESS -> REVIEW -> COMPLETED -> ARCHIVED."));
+      res.status(400).json(failure("AI_DELIVERY_WORKFLOW_RUN_STATUS_GATE_BLOCKED", "Workflow run status transition is not allowed from the current state."));
       return;
     }
     res.status(500).json(failure("AI_DELIVERY_WORKFLOW_RUN_RUNTIME_ERROR", "AI Delivery workflow run create could not be completed."));
@@ -1310,10 +1311,55 @@ export const updateAiDeliveryWorkflowRunHandler: RequestHandler = async (req, re
     res.json(success(response, { phase: "runtime", scope: "ai-delivery-workflow-runs" }));
   } catch (error) {
     if ((error as { message?: string }).message === "AI_DELIVERY_WORKFLOW_RUN_INVALID_STATUS_TRANSITION") {
-      res.status(400).json(failure("AI_DELIVERY_WORKFLOW_RUN_STATUS_GATE_BLOCKED", "Workflow run status must move in order: DRAFT -> READY -> IN_PROGRESS -> REVIEW -> COMPLETED -> ARCHIVED."));
+      res.status(400).json(failure("AI_DELIVERY_WORKFLOW_RUN_STATUS_GATE_BLOCKED", "Workflow run status transition is not allowed from the current state."));
       return;
     }
     res.status(500).json(failure("AI_DELIVERY_WORKFLOW_RUN_RUNTIME_ERROR", "AI Delivery workflow run update could not be completed."));
+  }
+};
+
+export const executeAiDeliveryWorkflowRunHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) {
+    res.status(401).json(unauthorizedFailure());
+    return;
+  }
+
+  const aiDeliveryProjectId = typeof req.params.projectId === "string" ? req.params.projectId.trim() : "";
+  const workflowRunId = typeof req.params.workflowRunId === "string" ? req.params.workflowRunId.trim() : "";
+  if (!aiDeliveryProjectId || !workflowRunId) {
+    res.status(400).json(aiDeliveryProjectInvalidFailure());
+    return;
+  }
+
+  try {
+    const response = await executeAiDeliveryWorkflowRun(authSession, aiDeliveryProjectId, workflowRunId);
+    if (!response?.workflowRun) {
+      res.status(404).json(aiDeliveryProjectNotFoundFailure());
+      return;
+    }
+
+    res.json(success(response, { phase: "runtime", scope: "ai-delivery-workflow-runs" }));
+  } catch (error) {
+    const message = (error as { message?: string }).message;
+    if (message === "AI_DELIVERY_WORKFLOW_RUN_EXECUTION_ARCHIVED") {
+      res.status(400).json(failure("AI_DELIVERY_WORKFLOW_RUN_EXECUTION_ARCHIVED", "Archived workflow runs cannot be executed."));
+      return;
+    }
+    if (message === "AI_DELIVERY_WORKFLOW_RUN_EXECUTION_COMPLETED") {
+      res.status(400).json(failure("AI_DELIVERY_WORKFLOW_RUN_EXECUTION_COMPLETED", "Completed workflow runs cannot be executed again from this screen."));
+      return;
+    }
+    if (message === "AI_DELIVERY_WORKFLOW_RUN_EXECUTION_ALREADY_RUNNING") {
+      res.status(400).json(failure("AI_DELIVERY_WORKFLOW_RUN_EXECUTION_ALREADY_RUNNING", "Workflow run is already in progress."));
+      return;
+    }
+    if (message === "AI_DELIVERY_WORKFLOW_RUN_EXECUTION_REVIEW_PENDING") {
+      res.status(400).json(failure("AI_DELIVERY_WORKFLOW_RUN_EXECUTION_REVIEW_PENDING", "Workflow run is already awaiting admin review."));
+      return;
+    }
+
+    res.status(500).json(failure("AI_DELIVERY_WORKFLOW_RUN_EXECUTION_RUNTIME_ERROR", "AI Delivery workflow run execution could not be completed."));
   }
 };
 

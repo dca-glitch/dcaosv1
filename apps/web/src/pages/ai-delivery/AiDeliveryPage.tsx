@@ -187,6 +187,10 @@ export type AiDeliveryWorkflowRunSummary = {
   status: string;
   adminNotes: string | null;
   resultPlaceholder: string | null;
+  executionLog: string | null;
+  executionError: string | null;
+  startedAt: string | null;
+  finishedAt: string | null;
   brief: AiDeliveryBriefSummary | null;
   createdAt: string;
   updatedAt: string;
@@ -260,9 +264,11 @@ export type AiDeliveryProjectsProps = {
   onSaveDeliverableReview?: (projectId: string, deliverableId: string, reviewId: string | null, values: AiDeliveryDeliverableReviewFormValues) => Promise<AiDeliveryDeliverableReviewSummary | null>;
   onFetchWorkflowRuns?: (projectId: string) => Promise<AiDeliveryWorkflowRunSummary[]>;
   onSaveWorkflowRun?: (projectId: string, workflowRunId: string | null, values: AiDeliveryWorkflowRunFormValues) => Promise<AiDeliveryWorkflowRunSummary | null>;
+  onExecuteWorkflowRun?: (projectId: string, workflowRunId: string) => Promise<AiDeliveryWorkflowRunSummary | null>;
 };
 
-const workflowRunStatuses = ["DRAFT", "READY", "IN_PROGRESS", "REVIEW", "COMPLETED", "ARCHIVED"] as const;
+const workflowRunStatuses = ["DRAFT", "READY", "IN_PROGRESS", "REVIEW", "COMPLETED", "FAILED", "ARCHIVED"] as const;
+const workflowRunLifecycleStatuses = ["DRAFT", "READY", "IN_PROGRESS", "REVIEW", "COMPLETED", "ARCHIVED"] as const;
 type WorkflowRunStatus = (typeof workflowRunStatuses)[number];
 const workflowRunStatusLabels: Record<WorkflowRunStatus, string> = {
   DRAFT: "Draft",
@@ -270,6 +276,7 @@ const workflowRunStatusLabels: Record<WorkflowRunStatus, string> = {
   IN_PROGRESS: "In progress",
   REVIEW: "Review",
   COMPLETED: "Completed",
+  FAILED: "Failed",
   ARCHIVED: "Archived"
 };
 
@@ -278,23 +285,37 @@ function normalizeWorkflowRunStatus(status: string | null | undefined): Workflow
 }
 
 function getWorkflowRunNextStatus(status: string | null | undefined): WorkflowRunStatus | null {
-  const currentIndex = workflowRunStatuses.indexOf(normalizeWorkflowRunStatus(status));
-  return currentIndex >= 0 && currentIndex < workflowRunStatuses.length - 1 ? workflowRunStatuses[currentIndex + 1] : null;
+  const currentIndex = workflowRunLifecycleStatuses.indexOf(normalizeWorkflowRunStatus(status) as (typeof workflowRunLifecycleStatuses)[number]);
+  return currentIndex >= 0 && currentIndex < workflowRunLifecycleStatuses.length - 1 ? workflowRunLifecycleStatuses[currentIndex + 1] : null;
 }
 
 function getWorkflowRunStatusOptions(status: string | null | undefined): WorkflowRunStatus[] {
   if (!status) return ["DRAFT"];
   const currentStatus = normalizeWorkflowRunStatus(status);
+  if (currentStatus === "FAILED") {
+    return ["FAILED", "ARCHIVED"];
+  }
   const nextStatus = getWorkflowRunNextStatus(currentStatus);
-  return nextStatus ? [currentStatus, nextStatus] : [currentStatus];
+  const options: WorkflowRunStatus[] = nextStatus ? [currentStatus, nextStatus] : [currentStatus];
+  if (currentStatus === "IN_PROGRESS" || currentStatus === "REVIEW") {
+    options.push("FAILED");
+  }
+  return options;
 }
 
 function getWorkflowRunStatusHelper(status: string | null | undefined): string {
   if (!status) return "New workflow runs start in Draft.";
   const currentStatus = normalizeWorkflowRunStatus(status);
+  if (currentStatus === "FAILED") return "Failed runs can be archived or rerun through the controlled stub execution action.";
   const nextStatus = getWorkflowRunNextStatus(currentStatus);
-  if (!nextStatus) return "No further status transitions are available. Same-status save is allowed for notes/result edits.";
-  return `Allowed next status: ${workflowRunStatusLabels[nextStatus]}. Same-status save is allowed for notes/result edits.`;
+  const failedNote = currentStatus === "IN_PROGRESS" || currentStatus === "REVIEW" ? " You can also mark the run as Failed." : "";
+  if (!nextStatus) return `No further status transitions are available. Same-status save is allowed for notes/result edits.${failedNote}`;
+  return `Allowed next status: ${workflowRunStatusLabels[nextStatus]}. Same-status save is allowed for notes/result edits.${failedNote}`;
+}
+
+function canExecuteWorkflowRun(status: string | null | undefined): boolean {
+  const currentStatus = normalizeWorkflowRunStatus(status);
+  return currentStatus === "DRAFT" || currentStatus === "READY" || currentStatus === "FAILED";
 }
 
 const emptyForm = (clientId = ""): AiDeliveryProjectFormValues => ({
@@ -454,7 +475,8 @@ export function AiDeliveryPage({
   onFetchDeliverableReviews,
   onSaveDeliverableReview,
   onFetchWorkflowRuns,
-  onSaveWorkflowRun
+  onSaveWorkflowRun,
+  onExecuteWorkflowRun
 }: AiDeliveryProjectsProps) {
   const [filter, setFilter] = useState<"all" | "active" | "archived">("active");
   const [editorProjectId, setEditorProjectId] = useState<string | null>(null);
@@ -515,6 +537,7 @@ export function AiDeliveryPage({
   const [openWorkflowRunsId, setOpenWorkflowRunsId] = useState<string | null>(null);
   const [workflowRunsLoading, setWorkflowRunsLoading] = useState(false);
   const [workflowRunsSaving, setWorkflowRunsSaving] = useState(false);
+  const [workflowRunExecutingId, setWorkflowRunExecutingId] = useState<string | null>(null);
   const [workflowRuns, setWorkflowRuns] = useState<AiDeliveryWorkflowRunSummary[]>([]);
   const [workflowRunEditorId, setWorkflowRunEditorId] = useState<string | null>(null);
   const [workflowRunForm, setWorkflowRunForm] = useState<AiDeliveryWorkflowRunFormValues>(emptyWorkflowRun());
@@ -1021,11 +1044,27 @@ export function AiDeliveryPage({
     }
   }
 
+  async function executeWorkflowRun(projectId: string, workflowRunId: string) {
+    if (typeof onExecuteWorkflowRun !== "function") return;
+    setWorkflowRunExecutingId(workflowRunId);
+    try {
+      const executed = await onExecuteWorkflowRun(projectId, workflowRunId);
+      if (executed && typeof onFetchWorkflowRuns === "function") {
+        setWorkflowRuns(await onFetchWorkflowRuns(projectId));
+        setWorkflowRunEditorId(null);
+        setWorkflowRunForm(emptyWorkflowRun());
+      }
+    } finally {
+      setWorkflowRunExecutingId(null);
+    }
+  }
+
   function closeWorkflowRuns() {
     setOpenWorkflowRunsId(null);
     setWorkflowRuns([]);
     setWorkflowRunEditorId(null);
     setWorkflowRunForm(emptyWorkflowRun());
+    setWorkflowRunExecutingId(null);
   }
 
   if (loading) return <LoadingState label="Loading AI delivery projects" />;
@@ -1726,11 +1765,11 @@ export function AiDeliveryPage({
             <div>
               <section className="field-panel">
                 <h3>Workflow run editor</h3>
-                <p className="muted-text">Admin-operated workflow run records only. No AI calls, crawling, publishing, automation, or deliverable generation runs from this screen.</p>
+                <p className="muted-text">Admin-operated workflow run records only. Local deterministic stub execution only. No AI calls, crawling, publishing, automation, or client delivery runs from this screen.</p>
                 <div className="modal-footer">
-                  <button className="secondary-action" disabled={workflowRunsSaving} onClick={closeWorkflowRuns} type="button">Close</button>
-                  <button className="secondary-action" disabled={workflowRunsSaving} onClick={() => { setWorkflowRunEditorId(null); setWorkflowRunForm(emptyWorkflowRun()); }} type="button">New workflow run</button>
-                  <button className="primary-action" disabled={workflowRunsSaving || !isWorkflowRunStatusAllowed} onClick={() => void saveWorkflowRun(openWorkflowRunsProject.id)} type="button">
+                  <button className="secondary-action" disabled={workflowRunsSaving || Boolean(workflowRunExecutingId)} onClick={closeWorkflowRuns} type="button">Close</button>
+                  <button className="secondary-action" disabled={workflowRunsSaving || Boolean(workflowRunExecutingId)} onClick={() => { setWorkflowRunEditorId(null); setWorkflowRunForm(emptyWorkflowRun()); }} type="button">New workflow run</button>
+                  <button className="primary-action" disabled={workflowRunsSaving || Boolean(workflowRunExecutingId) || !isWorkflowRunStatusAllowed} onClick={() => void saveWorkflowRun(openWorkflowRunsProject.id)} type="button">
                     {workflowRunsSaving ? "Saving" : workflowRunEditorId ? "Save workflow run" : "Create workflow run"}
                   </button>
                 </div>
@@ -1756,7 +1795,7 @@ export function AiDeliveryPage({
                       value={workflowRunForm.adminNotes}
                       onChange={(event) => setWorkflowRunForm((current) => ({ ...current, adminNotes: event.target.value }))}
                     />
-                    <span className="muted-text">Visible only to admin team. Not shown to client.</span>
+                    <span className="muted-text">Visible only to admin team. Not shown to client. Include [stub-fail] to simulate a controlled local failure.</span>
                   </label>
                   <label className="field-span-2">
                     Output / result summary - Optional
@@ -1767,13 +1806,13 @@ export function AiDeliveryPage({
                       value={workflowRunForm.resultPlaceholder}
                       onChange={(event) => setWorkflowRunForm((current) => ({ ...current, resultPlaceholder: event.target.value }))}
                     />
-                    <span className="muted-text">Internal result summary only. No AI generation runs from this form.</span>
+                    <span className="muted-text">Internal result summary only. Local stub execution can populate this automatically when it is empty.</span>
                   </label>
                 </div>
                 <div className="modal-footer">
-                  <button className="secondary-action" disabled={workflowRunsSaving} onClick={closeWorkflowRuns} type="button">Close</button>
-                  <button className="secondary-action" disabled={workflowRunsSaving} onClick={() => { setWorkflowRunEditorId(null); setWorkflowRunForm(emptyWorkflowRun()); }} type="button">New workflow run</button>
-                  <button className="primary-action" disabled={workflowRunsSaving || !isWorkflowRunStatusAllowed} onClick={() => void saveWorkflowRun(openWorkflowRunsProject.id)} type="button">
+                  <button className="secondary-action" disabled={workflowRunsSaving || Boolean(workflowRunExecutingId)} onClick={closeWorkflowRuns} type="button">Close</button>
+                  <button className="secondary-action" disabled={workflowRunsSaving || Boolean(workflowRunExecutingId)} onClick={() => { setWorkflowRunEditorId(null); setWorkflowRunForm(emptyWorkflowRun()); }} type="button">New workflow run</button>
+                  <button className="primary-action" disabled={workflowRunsSaving || Boolean(workflowRunExecutingId) || !isWorkflowRunStatusAllowed} onClick={() => void saveWorkflowRun(openWorkflowRunsProject.id)} type="button">
                     {workflowRunsSaving ? "Saving" : workflowRunEditorId ? "Save workflow run" : "Create workflow run"}
                   </button>
                 </div>
@@ -1791,7 +1830,15 @@ export function AiDeliveryPage({
                         <p>Created {formatOptionalDate(run.createdAt)}</p>
                       </div>
                       <div className="card-actions">
-                        <button className="secondary-action" disabled={workflowRunsSaving} onClick={() => editWorkflowRun(run)} type="button">Edit</button>
+                        <button className="secondary-action" disabled={workflowRunsSaving || Boolean(workflowRunExecutingId)} onClick={() => editWorkflowRun(run)} type="button">Edit</button>
+                        <button
+                          className="primary-action"
+                          disabled={workflowRunsSaving || Boolean(workflowRunExecutingId) || !canExecuteWorkflowRun(run.status)}
+                          onClick={() => void executeWorkflowRun(openWorkflowRunsProject.id, run.id)}
+                          type="button"
+                        >
+                          {workflowRunExecutingId === run.id ? "Running" : "Run workflow"}
+                        </button>
                       </div>
                     </div>
                     <dl className="brief-grid">
@@ -1803,6 +1850,14 @@ export function AiDeliveryPage({
                         <dt>Created</dt>
                         <dd>{formatOptionalDate(run.createdAt)}</dd>
                       </div>
+                      <div>
+                        <dt>Started</dt>
+                        <dd>{formatOptionalDate(run.startedAt)}</dd>
+                      </div>
+                      <div>
+                        <dt>Finished</dt>
+                        <dd>{formatOptionalDate(run.finishedAt)}</dd>
+                      </div>
                       <div className="field-span-2">
                         <dt>Admin notes preview</dt>
                         <dd>{formatPreview(run.adminNotes)}</dd>
@@ -1810,6 +1865,14 @@ export function AiDeliveryPage({
                       <div className="field-span-2">
                         <dt>Result placeholder preview</dt>
                         <dd>{formatPreview(run.resultPlaceholder)}</dd>
+                      </div>
+                      <div className="field-span-2">
+                        <dt>Execution log</dt>
+                        <dd>{formatPreview(run.executionLog)}</dd>
+                      </div>
+                      <div className="field-span-2">
+                        <dt>Execution error</dt>
+                        <dd>{formatPreview(run.executionError)}</dd>
                       </div>
                     </dl>
                   </article>
