@@ -1593,25 +1593,25 @@ export function AiDeliveryPage({
   };
   const pendingDeliverableReviewCount = deliverableReviews.filter((review) => ["NOT_STARTED", "ADMIN_REVIEW"].includes(review.status)).length;
   const workflowRunsHelper = openWorkflowRunsId
-    ? formatStatusBreakdown(workflowRuns, "No workflow runs loaded for the open project")
-    : "Open a project's Workflow runs to load per-project counts.";
+    ? `Current status mix: ${formatStatusBreakdown(workflowRuns, "No workflow runs in focus yet")}`
+    : "Open Workflow runs to review current status and next-step context.";
   const researchHelper = openResearchSourcesId
-    ? `Requests: ${formatStatusBreakdown(researchRequests, "No research requests loaded")} - Summaries: ${formatStatusBreakdown(researchSummaries, "No research summaries loaded")} - Sources: ${formatStatusBreakdown(researchSources, "No research sources loaded")}`
-    : "Open a project's Research / Sources panel to load manual research records.";
+    ? `Requests: ${formatStatusBreakdown(researchRequests, "No requests in focus yet")} - Summaries: ${formatStatusBreakdown(researchSummaries, "No summaries in focus yet")} - Sources: ${formatStatusBreakdown(researchSources, "No sources in focus yet")}`
+    : "Open Research / Sources to review manual research status and next steps.";
   const seoTopicsHelper = openContentPlanId
-    ? `${contentPlanItems.length} topic/research planning record(s) loaded for the open project.`
-    : "Open a project's AI SEO / Content Plan area to load topic and approval planning records.";
+    ? `${contentPlanItems.length} topic record(s) in focus for the current content plan.`
+    : "Open AI SEO / Content Plan to review planning status and approval context.";
   const contentProductionHelper = openContentDraftsId || openArticleImagesId
-    ? `Draft planning records loaded: ${openContentDraftsId ? contentDrafts.length : "-"} - Image planning records loaded: ${openArticleImagesId ? articleImages.length : "-"}`
-    : "Open Content production or Article images to load article/image planning records.";
+    ? `Drafts in focus: ${openContentDraftsId ? contentDrafts.length : "-"} - Images in focus: ${openArticleImagesId ? articleImages.length : "-"}`
+    : "Open Content production or Article images to review current production status.";
   const deliverablesHelper = openDeliverablesId
-    ? `${formatStatusBreakdown(deliverables, "No deliverables loaded for the open project")} - Active: ${activeDeliverableCount} - Archived: ${archivedDeliverableCount}`
-    : "Open a project's Deliverables to load per-project counts.";
+    ? `Current status mix: ${formatStatusBreakdown(deliverables, "No deliverables in focus yet")} - Active: ${activeDeliverableCount} - Archived: ${archivedDeliverableCount}`
+    : "Open Deliverables to review package status and packaging readiness.";
   const reviewsHelper = selectedReviewDeliverableId
-    ? `${formatStatusBreakdown(deliverableReviews, "No review placeholders loaded for the selected deliverable")} - Pending placeholders: ${pendingDeliverableReviewCount}`
+    ? `Current review mix: ${formatStatusBreakdown(deliverableReviews, "No review placeholders in focus yet")} - Pending: ${pendingDeliverableReviewCount}`
     : openDeliverablesId
-      ? "Select Reviews on a deliverable to load review placeholder counts."
-      : "Open Deliverables, then select Reviews to load review placeholder counts.";
+      ? "Select Reviews on a deliverable to review internal QA status."
+      : "Open Deliverables, then select Reviews to review internal QA status.";
 
   return (
     <section className="view-section" aria-labelledby="ai-delivery-title">
@@ -1644,7 +1644,7 @@ export function AiDeliveryPage({
 
       <SectionPanel
         title="Operator summary"
-        description="Read-only AI Delivery overview using already loaded admin data. Project totals are tenant-level; SEO, production, workflow, deliverable, and review counts reflect the currently opened project/detail panels only."
+        description="Read-only operator overview. Project totals are tenant-level; workflow, research, planning, production, deliverable, and review context reflects the project area currently in focus."
       >
         <div className="summary-grid" aria-label="AI Delivery operator summary">
           <MetricCard
@@ -1661,37 +1661,37 @@ export function AiDeliveryPage({
           />
           <MetricCard
             accent="purple"
-            label="Workflow runs loaded"
+            label="Workflow runs in focus"
             value={openWorkflowRunsId ? workflowRuns.length : "-"}
             helper={workflowRunsHelper}
           />
           <MetricCard
             accent="warning"
-            label="Research loaded"
+            label="Research in focus"
             value={openResearchSourcesId ? `${researchRequests.length}/${researchSummaries.length}/${researchSources.length}` : "-"}
             helper={researchHelper}
           />
           <MetricCard
             accent="cyan"
-            label="SEO topics loaded"
+            label="Content plan in focus"
             value={openContentPlanId ? contentPlanItems.length : "-"}
             helper={seoTopicsHelper}
           />
           <MetricCard
             accent="violet"
-            label="Production planning loaded"
+            label="Production in focus"
             value={openContentDraftsId || openArticleImagesId ? `${openContentDraftsId ? contentDrafts.length : "-"}/${openArticleImagesId ? articleImages.length : "-"}` : "-"}
             helper={contentProductionHelper}
           />
           <MetricCard
             accent="success"
-            label="Deliverables loaded"
+            label="Deliverables in focus"
             value={openDeliverablesId ? deliverables.length : "-"}
             helper={deliverablesHelper}
           />
           <MetricCard
             accent="warning"
-            label="Review placeholders loaded"
+            label="Reviews in focus"
             value={selectedReviewDeliverableId ? deliverableReviews.length : "-"}
             helper={reviewsHelper}
           />
@@ -1707,7 +1707,7 @@ export function AiDeliveryPage({
               </button>
             ) : null
           }
-          message={projects.length === 0 ? "No AI delivery projects found for this tenant." : "No AI delivery projects match the current filter."}
+          message={projects.length === 0 ? "No AI Delivery projects yet. Add one to begin the admin workflow." : "No AI Delivery projects match this filter. Switch filters to continue."}
           title="No AI delivery projects"
         />
       ) : (
@@ -1978,6 +1978,7 @@ export function AiDeliveryPage({
                     <dd>{new Date(briefDetail.updatedAt).toLocaleString()}</dd>
                   </div>
                 </dl>
+                <p className="muted-text">Current status is shown above. Next step: update the brief fields or use the project-card review actions. This screen does not run research, planning, or delivery actions.</p>
 
                 <div className="modal-footer">
                   <button className="secondary-action" onClick={() => { setOpenBriefId(null); setBriefDetail(null); }} type="button">Close</button>
@@ -2107,7 +2108,7 @@ export function AiDeliveryPage({
                 </div>
               </div>
             ) : (
-              <div>No brief available for this project.</div>
+              <div className="state-panel">No brief is available for this project yet. Create or open the project record to continue briefing.</div>
             )
           ) : (
             <div>Project not found.</div>
@@ -2123,7 +2124,7 @@ export function AiDeliveryPage({
               <div>
                 <section className="field-panel">
                   <h3>SEO topic/research planning</h3>
-                  <p className="muted-text">This is an approval workflow foundation. Use these monthly content plan items to capture target topics, keywords, research notes, and content type intent. Visible only to admin team from this screen. No AI generation, crawling, publishing, or external services are performed.</p>
+                  <p className="muted-text">Current status is shown below. Next step: add or refine topics, save the plan, then move it into review when ready. This screen does not run AI generation, crawling, publishing, or external services.</p>
                 </section>
                 <div className="modal-footer">
                   <button className="secondary-action" disabled={contentPlanSaving} onClick={closeContentPlan} type="button">Close</button>
@@ -2154,8 +2155,8 @@ export function AiDeliveryPage({
                 </dl>
 
                 <section className="field-panel">
-                  <h3>Approval workflow status</h3>
-                  <p className="muted-text">Admin can prepare the monthly content plan, mark it ready for review, approve it internally, or send it back for revisions. Existing client review routes remain separate and unchanged.</p>
+                  <h3>Current content plan status</h3>
+                  <p className="muted-text">Review the current approval state here, then use the action buttons for the next admin step. Existing client review routes remain separate and unchanged.</p>
                   <dl className="brief-grid">
                     <div>
                       <dt>Approval state</dt>
@@ -2179,7 +2180,7 @@ export function AiDeliveryPage({
                 <section className="field-panel">
                   <h3>SEO topics / research records</h3>
                   {contentPlanItems.length === 0 ? (
-                    <div className="state-panel">No SEO topic or research planning records have been added yet.</div>
+                    <div className="state-panel">No SEO topics yet. Add a topic to continue planning.</div>
                   ) : null}
                   {contentPlanItems.map((item, index) => (
                     <div className="field-grid" key={item.localId} style={{ marginBottom: "1rem" }}>
@@ -2243,7 +2244,7 @@ export function AiDeliveryPage({
                         <span className="muted-text">Determined by the list order.</span>
                       </div>
                       <div>
-                        <span>Saved item status</span>
+                        <span>Current item status</span>
                         <strong>{formatContentPlanItemApprovalStatus(contentPlanDetail.items[index]?.approvalStatus)}</strong>
                         <span className="muted-text">Latest persisted approval state for this record.</span>
                       </div>
@@ -2262,7 +2263,7 @@ export function AiDeliveryPage({
                       </div>
                       <div className="field-span-2">
                         <span>Saved approval / revision note</span>
-                        <strong>{contentPlanDetail.items[index]?.clientComment ?? "No saved approval note"}</strong>
+                        <strong>{contentPlanDetail.items[index]?.clientComment ?? "No approval note yet"}</strong>
                         <span className="muted-text">Latest persisted approval or revision note for this item.</span>
                       </div>
                       <div className="field-span-2">
@@ -2306,7 +2307,7 @@ export function AiDeliveryPage({
                   </button>
                 </div>
                 <div className="state-panel">
-                  No monthly content plan exists for {openContentPlanProject.name}. Create one to start adding monthly topic and approval-planning records. This creates admin-side placeholders only; it does not generate, crawl, publish, or call external services.
+                  No content plan exists for {openContentPlanProject.name} yet. Create one to continue planning. This screen records admin-side planning only; it does not generate, crawl, publish, or call external services.
                 </div>
                 <div className="modal-footer">
                   <button className="secondary-action" disabled={contentPlanSaving} onClick={closeContentPlan} type="button">Close</button>
@@ -2329,7 +2330,7 @@ export function AiDeliveryPage({
             <div>
               <section className="field-panel">
                 <h3>Research request editor</h3>
-                <p className="muted-text">Source records are manual only in this foundation. No crawling or external fetching is performed.</p>
+                <p className="muted-text">Current status is set in the request record. Next step: create a request, then add summaries or sources as the work becomes clearer. This screen does not crawl or fetch external content.</p>
                 <div className="modal-footer">
                   <button className="secondary-action" disabled={researchSaving} onClick={closeResearchSources} type="button">Close</button>
                   <button className="secondary-action" disabled={researchSaving} onClick={() => { setResearchRequestEditorId(null); setResearchRequestForm(emptyResearchRequest()); }} type="button">New request</button>
@@ -2380,7 +2381,7 @@ export function AiDeliveryPage({
 
               <section className="field-panel">
                 <h3>Existing research requests</h3>
-                {researchRequests.length === 0 ? <div className="state-panel">No research requests have been created yet.</div> : null}
+                {researchRequests.length === 0 ? <div className="state-panel">No research requests yet. Add a request to continue.</div> : null}
                 {researchRequests.map((request) => (
                   <article className="entity-card" key={request.id} style={{ marginBottom: "1rem" }}>
                     <div className="entity-card-header">
@@ -2421,7 +2422,7 @@ export function AiDeliveryPage({
 
               <section className="field-panel">
                 <h3>Research summary editor</h3>
-                <p className="muted-text">Research summaries are admin-authored in this foundation. No AI generation, crawling, or external fetching is performed.</p>
+                <p className="muted-text">Current status is set in the summary record. Next step: capture findings, then finalize or apply them to brief notes when ready. This screen does not run AI generation, crawling, or external fetching.</p>
                 <div className="modal-footer">
                   <button className="secondary-action" disabled={researchSaving} onClick={closeResearchSources} type="button">Close</button>
                   <button className="secondary-action" disabled={researchSaving} onClick={() => { setResearchSummaryEditorId(null); setResearchSummaryForm(emptyResearchSummary()); }} type="button">New summary</button>
@@ -2502,7 +2503,7 @@ export function AiDeliveryPage({
 
               <section className="field-panel">
                 <h3>Existing research summaries</h3>
-                {researchSummaries.length === 0 ? <div className="state-panel">No research summaries have been created yet.</div> : null}
+                {researchSummaries.length === 0 ? <div className="state-panel">No research summaries yet. Add a summary after reviewing sources.</div> : null}
                 {researchSummaries.map((summary) => (
                   <article className="entity-card" key={summary.id} style={{ marginBottom: "1rem" }}>
                     <div className="entity-card-header">
@@ -2554,7 +2555,7 @@ export function AiDeliveryPage({
 
               <section className="field-panel">
                 <h3>Research source editor</h3>
-                <p className="muted-text">Source records are manual only in this foundation. No crawling or external fetching is performed.</p>
+                <p className="muted-text">Current status is set in the source record. Next step: add a source, then approve, reject, or archive it. This screen does not crawl or fetch external content.</p>
                 <div className="modal-footer">
                   <button className="secondary-action" disabled={researchSaving} onClick={closeResearchSources} type="button">Close</button>
                   <button className="secondary-action" disabled={researchSaving} onClick={() => { setResearchSourceEditorId(null); setResearchSourceForm(emptyResearchSource()); }} type="button">New source</button>
@@ -2620,7 +2621,7 @@ export function AiDeliveryPage({
 
               <section className="field-panel">
                 <h3>Existing research sources</h3>
-                {researchSources.length === 0 ? <div className="state-panel">No research sources have been recorded yet.</div> : null}
+                {researchSources.length === 0 ? <div className="state-panel">No research sources yet. Add a source to continue.</div> : null}
                 {researchSources.map((source) => (
                   <article className="entity-card" key={source.id} style={{ marginBottom: "1rem" }}>
                     <div className="entity-card-header">
@@ -2678,7 +2679,7 @@ export function AiDeliveryPage({
             <div>
               <section className="field-panel">
                 <h3>Workflow run editor</h3>
-                <p className="muted-text">Admin-operated workflow run records only. Local deterministic stub execution only. No AI calls, crawling, publishing, automation, or client delivery runs from this screen.</p>
+                <p className="muted-text">Current status is set in the workflow run record. Next step: save the run, then execute the local stub when ready. This screen does not run AI calls, crawling, publishing, automation, or client delivery.</p>
                 <div className="modal-footer">
                   <button className="secondary-action" disabled={workflowRunsSaving || Boolean(workflowRunExecutingId)} onClick={closeWorkflowRuns} type="button">Close</button>
                   <button className="secondary-action" disabled={workflowRunsSaving || Boolean(workflowRunExecutingId)} onClick={() => { setWorkflowRunEditorId(null); setWorkflowRunForm(emptyWorkflowRun()); }} type="button">New workflow run</button>
@@ -2733,7 +2734,7 @@ export function AiDeliveryPage({
 
               <section className="field-panel">
                 <h3>Existing workflow runs</h3>
-                {workflowRuns.length === 0 ? <div className="state-panel">No workflow runs have been created yet.</div> : null}
+                {workflowRuns.length === 0 ? <div className="state-panel">No workflow runs yet. Create one to track the next admin step.</div> : null}
                 {workflowRuns.map((run) => (
                   <article className="entity-card" key={run.id} style={{ marginBottom: "1rem" }}>
                     <div className="entity-card-header">
@@ -2804,7 +2805,7 @@ export function AiDeliveryPage({
             <div>
               <section className="field-panel">
                 <h3>Article production planning</h3>
-                <p className="muted-text">This is a manual content production and approval foundation. No AI generation, image generation, publishing, storage upload, or external services are performed.</p>
+                <p className="muted-text">Current status is shown below. Next step: create a draft from the content plan, then move it into review when ready. This screen does not run AI generation, image generation, publishing, storage upload, or external services.</p>
                 <div className="modal-footer">
                   <button className="secondary-action" disabled={contentDraftsSaving} onClick={() => { setContentDraftEditorId(null); setContentDraftForm(emptyContentDraft()); }} type="button">New draft</button>
                   <button className="secondary-action" disabled={contentDraftsSaving} onClick={closeContentDrafts} type="button">Close</button>
@@ -2830,7 +2831,7 @@ export function AiDeliveryPage({
                 <div className="field-panel" style={{ marginBottom: "1rem" }}>
                   <h4>Approved / planned content plan items</h4>
                   <p className="muted-text">Use approved or still-planned monthly content plan items to start a linked content draft. Items already marked as changes requested stay out of this picker until the plan is corrected.</p>
-                  {eligibleContentDraftPlanItems.length === 0 ? <div className="state-panel">No approved or planned content plan items are available for draft production yet.</div> : null}
+                  {eligibleContentDraftPlanItems.length === 0 ? <div className="state-panel">No ready plan items yet. Approve or add content plan items to continue draft production.</div> : null}
                   {eligibleContentDraftPlanItems.map((item) => {
                     const linkedDraft = contentDrafts.find((draftItem) => draftItem.contentPlanItemId === item.id && !draftItem.isArchived) ?? null;
                     return (
@@ -2871,7 +2872,7 @@ export function AiDeliveryPage({
                 </div>
                 {activeContentDraftRecord ? (
                   <div className="field-panel" style={{ marginBottom: "1rem" }}>
-                    <h4>Saved draft review status</h4>
+                    <h4>Current draft status</h4>
                     <dl className="brief-grid">
                       <div>
                         <dt>Status</dt>
@@ -2965,7 +2966,7 @@ export function AiDeliveryPage({
 
               <section className="field-panel">
                 <h3>Existing article production records</h3>
-                {contentDrafts.length === 0 ? <div className="state-panel">No article production planning records have been created yet.</div> : null}
+                {contentDrafts.length === 0 ? <div className="state-panel">No content drafts yet. Create a draft after the content plan is ready.</div> : null}
                 {contentDrafts.map((draftItem) => (
                   <article className="entity-card" key={draftItem.id} style={{ marginBottom: "1rem" }}>
                     <div className="entity-card-header">
@@ -3031,7 +3032,7 @@ export function AiDeliveryPage({
             <div>
               <section className="field-panel">
                 <h3>Deliverable editor</h3>
-                <p className="muted-text">This is an admin-only packaging foundation. No client handoff, public links, storage upload, export generation, publishing, or client download is performed.</p>
+                <p className="muted-text">Current status is shown below. Next step: package approved assets, then use review placeholders when internal QA is needed. This screen does not perform client handoff, public links, storage upload, export generation, publishing, or client download.</p>
                 <div className="modal-footer">
                   <button className="secondary-action" disabled={deliverablesSaving} onClick={() => { setDeliverableEditorId(null); setDeliverableForm({ contentDraftId: null, articleImageId: null, title: "", description: null, deliveryType: "CONTENT_PACKAGE", status: "DRAFT", exportUrl: null, storageKey: null, notes: null, isArchived: false }); }} type="button">New deliverable</button>
                   <button className="secondary-action" disabled={deliverablesSaving} onClick={closeDeliverables} type="button">Close</button>
@@ -3051,7 +3052,7 @@ export function AiDeliveryPage({
                 </div>
                 {activeDeliverableRecord ? (
                   <div className="field-panel" style={{ marginBottom: "1rem" }}>
-                    <h4>Saved packaging status</h4>
+                    <h4>Current deliverable status</h4>
                     <dl className="brief-grid">
                       <div>
                         <dt>Status</dt>
@@ -3167,7 +3168,7 @@ export function AiDeliveryPage({
                 </p>
                 {deliverablesError ? <ErrorState title="Deliverables unavailable" message={deliverablesError} /> : null}
                 {!deliverablesError && deliverables.length === 0 ? (
-                  <div className="state-panel">No deliverables have been created yet. Create a deliverable above before opening review placeholders.</div>
+                  <div className="state-panel">No deliverables yet. Package approved assets when ready.</div>
                 ) : null}
                 {visibleDeliverables.map((d) => (
                   <article className="entity-card" key={d.id} style={{ marginBottom: "1rem" }}>
@@ -3230,7 +3231,7 @@ export function AiDeliveryPage({
               {selectedReviewDeliverable ? (
                 <section className="field-panel">
                   <h3>Deliverable reviews: {selectedReviewDeliverable.title}</h3>
-                  <p className="muted-text">Admin/operator placeholders only. No client portal, public review links, token approvals, or email actions are created from this screen.</p>
+                  <p className="muted-text">Current review status is shown below. Next step: add or update an internal review placeholder. This screen does not create client portal, public review, token approval, or email actions.</p>
                   <dl className="brief-grid">
                     <div>
                       <dt>Deliverable status</dt>
@@ -3309,7 +3310,7 @@ export function AiDeliveryPage({
 
                       <h4>Existing review placeholders ({deliverableReviews.length})</h4>
                       {!deliverableReviewsError && deliverableReviews.length === 0 ? (
-                        <div className="state-panel">No review placeholders have been created for this deliverable. Use the form above to add the first admin/operator review record.</div>
+                        <div className="state-panel">No review placeholders yet. Add one to continue internal QA.</div>
                       ) : null}
                       {[...deliverableReviews].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()).map((review) => (
                         <article className="entity-card" key={review.id} style={{ marginBottom: "1rem" }}>
@@ -3361,7 +3362,7 @@ export function AiDeliveryPage({
             <div>
               <section className="field-panel">
                 <h3>Image production planning</h3>
-                <p className="muted-text">This is an admin-only image approval foundation. No AI image generation, upscaling, upload, public links, publishing, or client image review is performed.</p>
+                <p className="muted-text">Current status is shown below. Next step: link a draft, save the request, then move it through preview and final-ready actions. This screen does not run AI image generation, upscaling, upload, public links, publishing, or client image review.</p>
                 <div className="modal-footer">
                   <button className="secondary-action" disabled={articleImagesSaving} onClick={() => { setArticleImageEditorId(null); setArticleImageForm((current) => ({ ...emptyArticleImage(), contentDraftId: current.contentDraftId })); }} type="button">New image request</button>
                   <button className="secondary-action" disabled={articleImagesSaving} onClick={closeArticleImages} type="button">Close</button>
@@ -3411,7 +3412,7 @@ export function AiDeliveryPage({
                 </div>
                 {activeArticleImageRecord ? (
                   <div className="field-panel" style={{ marginBottom: "1rem" }}>
-                    <h4>Saved image approval status</h4>
+                    <h4>Current image status</h4>
                     <dl className="brief-grid">
                       <div>
                         <dt>Status</dt>
@@ -3545,7 +3546,7 @@ export function AiDeliveryPage({
 
               <section className="field-panel">
                 <h3>Existing image production records</h3>
-                {articleImages.length === 0 ? <div className="state-panel">No image production planning records have been created yet.</div> : null}
+                {articleImages.length === 0 ? <div className="state-panel">No article image records yet. Add an image request after a content draft is ready.</div> : null}
                 {articleImages.map((image) => (
                   <article className="entity-card" key={image.id} style={{ marginBottom: "1rem" }}>
                     <div className="entity-card-header">
