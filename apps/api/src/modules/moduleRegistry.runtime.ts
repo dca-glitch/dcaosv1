@@ -3,6 +3,8 @@ import type { Prisma } from "@prisma/client";
 import { moduleRegistry } from "@dca-os-v1/shared";
 import { createPrismaClient } from "../../../../packages/data/src/client";
 import type { AuthResolvedSessionContext, AuthTenantMembershipSummary } from "../auth/types";
+import { AUDIT_EVENTS } from "../security/audit-events";
+import { recordPlatformAuditEvent } from "../security/audit-log.service";
 import type { ModuleListItem } from "../services/moduleService";
 
 export interface TenantModuleSummary extends ModuleListItem {
@@ -196,6 +198,21 @@ export async function enableCurrentTenantModule(
       }
     });
 
+    await recordPlatformAuditEvent(
+      {
+        tenantId,
+        actorUserId: authSession.user.id,
+        action: AUDIT_EVENTS.moduleEnabled,
+        entityType: "tenant_module",
+        entityId: tenantModule.id,
+        metadata: {
+          moduleKey: moduleDefinition.metadata.key,
+          tenantModuleStatus: tenantModule.status
+        }
+      },
+      tx
+    );
+
     return {
       currentMembership: activeMembership,
       module: toTenantModuleSummary(moduleDefinition, tenantModule)
@@ -248,6 +265,21 @@ export async function disableCurrentTenantModule(
         }
       }
     });
+
+    await recordPlatformAuditEvent(
+      {
+        tenantId,
+        actorUserId: authSession.user.id,
+        action: AUDIT_EVENTS.moduleDisabled,
+        entityType: "tenant_module",
+        entityId: tenantModule.id,
+        metadata: {
+          moduleKey: moduleDefinition.metadata.key,
+          tenantModuleStatus: tenantModule.status
+        }
+      },
+      tx
+    );
 
     return {
       currentMembership: activeMembership,

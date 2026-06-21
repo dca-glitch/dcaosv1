@@ -1,6 +1,8 @@
 import type { RequestHandler } from "express";
 import { failure, success, unauthorizedFailure } from "../utils/responses";
 import { resolveActiveRoles, resolveEffectivePermissions } from "../middlewares/authorization.middleware";
+import { AUDIT_EVENTS } from "../security/audit-events";
+import { recordPlatformAuditEvent } from "../security/audit-log.service";
 import type { AuthSessionLocals } from "./types";
 import { revokeAuthSession, toCurrentUserResponse } from "./session-context.runtime";
 import type { AuthAuthorizationContextResponse } from "./types";
@@ -39,7 +41,7 @@ export const login: RequestHandler = (_req, res) => {
   res.status(501).json(skeletonResponse("Auth login is not enabled in this phase."));
 };
 
-export const logout: RequestHandler = async (_req, res) => {
+export const logout: RequestHandler = async (req, res) => {
   const authSession = (res.locals as AuthSessionLocals).authSession;
   if (!authSession) {
     res.status(401).json(unauthorizedFailure());
@@ -48,6 +50,18 @@ export const logout: RequestHandler = async (_req, res) => {
 
   try {
     const revokedAt = await revokeAuthSession(authSession.session.id);
+    await recordPlatformAuditEvent({
+      tenantId: authSession.tenantContext.activeMembership?.tenantId ?? null,
+      actorUserId: authSession.user.id,
+      action: AUDIT_EVENTS.authLogout,
+      entityType: "auth_session",
+      entityId: authSession.session.id,
+      metadata: {
+        revokedAt: revokedAt.toISOString()
+      },
+      ipAddress: req.ip,
+      userAgent: req.get("user-agent") ?? null
+    });
     res.json(
       success(
         {
