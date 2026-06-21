@@ -10,26 +10,44 @@ The system must not be built as separate isolated workflows for each business us
 
 DCA OS Lite is currently in local-first admin/operator foundation work.
 
-Completed AI Delivery foundation includes:
+Current AI Delivery admin workflow foundation order:
 
-- AI Delivery projects.
-- AI Delivery brief foundation.
-- Workflow runs.
-- Workflow execution tracking with deterministic local execution proof.
-- Research requests and manual source records.
-- Research summaries.
-- Monthly content plan approval.
-- Content draft workflow and authenticated review foundation.
-- Article image workflow as deliverable asset planning.
-- Deliverables.
-- Deliverable packaging.
-- Deliverable reviews.
-- Deliverable export/download admin actions.
-- Operator summary.
-- AI SEO foundation UI.
-- AI Content Production foundation UI.
-- Local validation and AI Delivery regression smoke.
-- Status documentation update.
+1. Project + brief.
+2. Workflow runs.
+3. Research requests, manual sources, and research summaries.
+4. Content plan approval.
+5. Content drafts and review foundation.
+6. Article image workflow.
+7. Deliverable packaging and reviews.
+8. Operator summary and project-card workflow navigation.
+9. Focused AI Delivery smoke coverage.
+
+Readiness framing:
+
+- Admin/operator foundation: mostly ready.
+- July-ready internal MVP: partial.
+- Full client-facing module: not complete.
+- Full AI modules roadmap: still early stage.
+
+Locally proven admin/operator foundation:
+
+- `npm.cmd run validate` has passed on the current branch foundations.
+- `npm.cmd run smoke:local` has passed as the local gate for completed implementation slices.
+- The focused AI Delivery smoke has been hardened for repeated local regression work.
+- Focused smoke fixture isolation now uses dedicated smoke-owned AI Delivery projects instead of mutating arbitrary local dev projects.
+- No deploy has been performed. Production remains frozen unless explicitly approved.
+
+Still intentionally not active:
+
+- Client Portal / client archive delivery.
+- EN2/email event wiring.
+- Live AI calls.
+- Crawling or research ingestion.
+- Export generation for Google Docs, PDF, JSON, Markdown/MDX, or equivalent.
+- Publishing connectors such as WordPress, Next.js/custom React, or headless CMS.
+- GA/GSC reporting.
+- Monthly report generation.
+- Production deploy/hardening.
 
 Production remains frozen unless explicitly approved.
 
@@ -66,6 +84,16 @@ Vertical modules should be built after these shared layers are stable.
 11. Directory / Listings engine.
 12. Product / POD pipeline.
 13. Market Intelligence layer.
+
+## Next Safe Implementation Guidance
+
+Keep the next implementation blocks sealed and layer-specific:
+
+1. Docs-only, UI-only, smoke-only, and API-only blocks may be combined only when the scope remains reviewable and runtime-safe.
+2. Do not combine schema + API + UI in one block unless explicitly approved.
+3. Do not activate Client Portal or EN2/email wiring unless explicitly selected.
+4. Do not deploy without separate approval.
+5. Preserve the current platform-neutral AI Delivery model so future delivery/export adapters can target WordPress, Next.js/custom React, headless CMS, Markdown/MDX, JSON packages, Google Docs, and PDF without changing the core admin workflow records.
 
 ## Revenue Hub Requirement
 

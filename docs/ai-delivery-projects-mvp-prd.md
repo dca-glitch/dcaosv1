@@ -11,7 +11,22 @@ DCA OS Lite — AI Delivery Projects MVP.
 
 ## Current state note
 
-AI Delivery is currently admin/operator-side. Completed local foundations include project/brief records, workflow runs with controlled execution, research requests/sources, research summaries, monthly content plan approval, content draft workflow, article image workflow, deliverable packaging, deliverable review data/admin API/admin UI, local AI Delivery regression smoke, and Email Notifications EN1. No live AI calls, crawling, publishing connectors, client handoff portal delivery, or production deployment has been added.
+AI Delivery is currently admin/operator-side. Completed local foundations include project/brief records, workflow runs with controlled execution, research requests/sources, research summaries, monthly content plan approval, content draft workflow, article image workflow, deliverable packaging, deliverable review data/admin API/admin UI, operator summary/project-card workflow navigation, focused AI Delivery smoke coverage, and smoke fixture isolation. No live AI calls, crawling, publishing connectors, client handoff portal delivery, or production deployment has been added.
+
+Readiness framing:
+
+- Admin/operator foundation: mostly ready.
+- July-ready internal MVP: partial.
+- Full client-facing module: not complete.
+- Full AI modules roadmap: early stage.
+
+Locally proven on the current branch:
+
+- `npm.cmd run validate` passed.
+- `npm.cmd run smoke:local` passed.
+- Focused `npm.cmd run smoke:ai-delivery-reviews` passed twice.
+- Focused smoke now creates dedicated smoke-owned AI Delivery projects and cleans up only exact-marker smoke-owned AI Delivery projects.
+- Real local dev AI Delivery projects should not be mutated by the focused smoke.
 
 ## 3. Core user outcomes
 
@@ -288,18 +303,20 @@ The current approved AI Delivery foundation is local-first, admin/operator-side,
 - Deliverable review data foundation is complete.
 - Deliverable review admin API is complete.
 - Deliverable review admin UI is complete.
-- Local deliverable review smoke script exists.
-- Email notification backend foundation EN1 exists only.
+- Operator summary and project-card workflow navigation polish are complete.
+- Focused AI Delivery smoke coverage exists and is isolated from real local dev AI Delivery data.
 
 Still not implemented or active:
 
 - AI calls.
-- Crawling.
+- Crawling or research ingestion.
 - Connector-specific publishing or export execution.
 - GA/GSC integration.
-- Resend sending or API key handling.
+- Google Docs / PDF / JSON / Markdown/MDX export generation or equivalent.
 - Client Portal / active Client Access workflows.
+- Client archive / historical client-safe module flow.
 - Public approval links.
+- Monthly report generation.
 - Production deployment or VPS behavior.
 
 EN2 email event wiring remains paused until modules are stable.
@@ -310,3 +327,20 @@ Platform-neutral delivery rule:
 - Article images are deliverable assets, not WordPress-only media records.
 - Deliverable packaging must remain reusable for WordPress, Next.js/custom React, headless CMS, Markdown/MDX, JSON packages, Google Docs, and PDF targets.
 - Connector adapters are future delivery layers, not core assumptions in the current data model.
+
+Focused smoke fixture isolation note:
+
+- Marker: `[SMOKE][AI_DELIVERY_REVIEWS]`
+- Cleanup is tenant-scoped.
+- Cleanup is project-level only.
+- Cleanup uses a strict exact-marker guard.
+- Cleanup runs before the focused smoke and again in `finally`.
+- Purpose: prevent repeated local AI Delivery smoke data pollution while preserving focused regression coverage.
+
+Next safe implementation guidance:
+
+1. Keep future blocks sealed and layer-specific.
+2. Combine docs-only, UI-only, smoke-only, or API-only blocks only when the diff stays reviewable and runtime-safe.
+3. Avoid combining schema + API + UI unless explicitly approved.
+4. Do not deploy without separate approval.
+5. Do not activate Client Portal or EN2/email wiring unless explicitly selected.

@@ -8,6 +8,46 @@ Platform-neutral rule: AI Delivery records, content assets, article images, and 
 
 Explicitly not active: live AI calls, crawling, real publishing connectors, WordPress-only assumptions, GA/GSC, Resend sending, client portal delivery, public approval links, VPS, or production deployment.
 
+## Current admin workflow order
+
+1. Project + brief
+2. Workflow runs
+3. Research requests / sources / summaries
+4. Content plan approval
+5. Content drafts / review foundation
+6. Article image workflow
+7. Deliverable packaging / reviews
+8. Operator summary / project-card workflow navigation
+9. Focused smoke coverage
+
+## Locally proven on the current branch
+
+- `npm.cmd run validate` passed for the current admin/operator foundations.
+- `npm.cmd run smoke:local` passed as the local API readiness gate for completed implementation slices.
+- `npm.cmd run smoke:ai-delivery-reviews` passed twice in focused local regression coverage after browser assertion hardening and fixture isolation.
+- Focused smoke now creates dedicated smoke-owned AI Delivery projects instead of selecting an arbitrary existing local AI Delivery project.
+- Focused smoke should not mutate real local dev AI Delivery projects when used as intended.
+
+## Focused smoke fixture isolation notes
+
+Purpose: prevent repeated local test data pollution while preserving the existing focused AI Delivery API/browser regression intent.
+
+- Marker: `[SMOKE][AI_DELIVERY_REVIEWS]`
+- Cleanup is tenant-scoped.
+- Cleanup targets AI Delivery projects only.
+- Cleanup is project-level only.
+- Cleanup requires the exact marker guard before deletion is allowed.
+- Cleanup runs at the start of the focused smoke and again in `finally`.
+- The smoke-owned main project and smoke-owned cross-project guard project are both created inside the active local tenant.
+- Cleanup must never fuzzy-delete by generic child record names such as `Smoke` alone.
+
+## Current readiness framing
+
+- Admin/operator foundation: mostly ready.
+- July-ready internal MVP: partial.
+- Full client-facing module: not complete.
+- Full AI modules roadmap: early stage.
+
 Backend routes currently expected:
 
 - GET /api/v1/core/ai-delivery-projects
@@ -77,7 +117,17 @@ Validation checklist:
 - git --no-pager diff --check
 - npm.cmd run validate
 - npm.cmd run smoke:local
-- npm.cmd run smoke:browser
+- set `AUTH_SEED_TEST_EMAIL` and `AUTH_SEED_TEST_PASSWORD`
+- npm.cmd run smoke:ai-delivery-reviews
+- npm.cmd run smoke:ai-delivery-reviews
+
+Current proof target for the focused smoke:
+
+- stable admin/operator UI structure checks
+- dedicated smoke-owned project creation
+- pre-run cleanup of prior exact-marker smoke fixtures
+- post-run cleanup in `finally`
+- no mutation of real local dev AI Delivery projects
 
 Monthly content plan API (backend foundation):
 
