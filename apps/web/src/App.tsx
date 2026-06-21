@@ -30,6 +30,7 @@ import { ProjectsPage, type ProjectFormValues, type ProjectSummary } from "./pag
 import {
   AiDeliveryPage,
   type AiDeliveryArticleImageFormValues,
+  type AiDeliveryPrivateAssetUploadValues,
   type AiDeliveryArticleImageSummary,
   type AiDeliveryContentDraftFormValues,
   type AiDeliveryContentDraftSummary,
@@ -73,6 +74,11 @@ type ApiFailure = {
 };
 
 type ApiResponse<T> = ApiSuccess<T> | ApiFailure;
+
+type DocumentDownloadResponse = {
+  downloadUrl: string;
+  expiresSeconds: number;
+};
 
 type UserSummary = {
   id: string;
@@ -2380,6 +2386,57 @@ export function App() {
     }
   }
 
+  async function handleUploadAiDeliveryDeliverableDocument(
+    projectId: string,
+    deliverableId: string,
+    values: AiDeliveryPrivateAssetUploadValues
+  ): Promise<AiDeliveryDeliverableSummary | null> {
+    setAppMessage(null);
+    try {
+      const response = await runAuthenticatedRequest<AiDeliveryDeliverableResponse>(
+        `/ai-delivery-projects/${projectId}/deliverables/${deliverableId}/document`,
+        {
+          method: "POST",
+          body: {
+            contentBase64: await fileToBase64(values.file),
+            fileName: values.file.name,
+            mimeType: values.file.type
+          }
+        }
+      );
+      if (!response) return null;
+      if (!response.ok) {
+        throwAiDeliveryResponseError(response);
+      }
+      setAppMessage({ tone: "success", text: "Deliverable private document uploaded." });
+      return response.data.deliverable;
+    } catch (error) {
+      return rethrowAiDeliveryRuntimeError(error);
+    }
+  }
+
+  async function handleOpenAiDeliveryDeliverableDocument(projectId: string, deliverableId: string): Promise<boolean> {
+    setAppMessage(null);
+    try {
+      const response = await runAuthenticatedRequest<DocumentDownloadResponse>(
+        `/ai-delivery-projects/${projectId}/deliverables/${deliverableId}/download`
+      );
+      if (!response) return false;
+      if (!response.ok) {
+        throwAiDeliveryResponseError(response);
+      }
+      const downloadUrl = response.data.downloadUrl;
+      const opened = window.open(downloadUrl, "_blank", "noopener,noreferrer");
+      if (!opened) {
+        window.location.assign(downloadUrl);
+      }
+      setAppMessage({ tone: "success", text: "Deliverable private document opened." });
+      return true;
+    } catch (error) {
+      return rethrowAiDeliveryRuntimeError(error);
+    }
+  }
+
   async function handleFetchAiDeliveryDeliverableReviews(
     projectId: string,
     deliverableId: string
@@ -2744,6 +2801,57 @@ export function App() {
       `/ai-delivery-projects/${projectId}/article-images/${imageId}/mark-final-ready`,
       "Article image marked final ready."
     );
+  }
+
+  async function handleUploadAiDeliveryArticleImageFinalAsset(
+    projectId: string,
+    imageId: string,
+    values: AiDeliveryPrivateAssetUploadValues
+  ): Promise<AiDeliveryArticleImageSummary | null> {
+    setAppMessage(null);
+    try {
+      const response = await runAuthenticatedRequest<AiDeliveryArticleImageResponse>(
+        `/ai-delivery-projects/${projectId}/article-images/${imageId}/final-image`,
+        {
+          method: "POST",
+          body: {
+            contentBase64: await fileToBase64(values.file),
+            fileName: values.file.name,
+            mimeType: values.file.type
+          }
+        }
+      );
+      if (!response) return null;
+      if (!response.ok) {
+        throwAiDeliveryResponseError(response);
+      }
+      setAppMessage({ tone: "success", text: "Article image private final asset uploaded." });
+      return response.data.articleImage ?? null;
+    } catch (error) {
+      return rethrowAiDeliveryRuntimeError(error);
+    }
+  }
+
+  async function handleOpenAiDeliveryArticleImage(projectId: string, imageId: string): Promise<boolean> {
+    setAppMessage(null);
+    try {
+      const response = await runAuthenticatedRequest<DocumentDownloadResponse>(
+        `/ai-delivery-projects/${projectId}/article-images/${imageId}/download`
+      );
+      if (!response) return false;
+      if (!response.ok) {
+        throwAiDeliveryResponseError(response);
+      }
+      const downloadUrl = response.data.downloadUrl;
+      const opened = window.open(downloadUrl, "_blank", "noopener,noreferrer");
+      if (!opened) {
+        window.location.assign(downloadUrl);
+      }
+      setAppMessage({ tone: "success", text: "Article image private final asset opened." });
+      return true;
+    } catch (error) {
+      return rethrowAiDeliveryRuntimeError(error);
+    }
   }
 
   async function runArticleImageAction(path: string, successMessage: string): Promise<AiDeliveryArticleImageSummary | null> {
@@ -3500,12 +3608,16 @@ export function App() {
           onFetchArticleImages={handleFetchAiDeliveryArticleImages}
           onSaveArticleImage={handleSaveAiDeliveryArticleImage}
           onArchiveArticleImage={handleArchiveAiDeliveryArticleImage}
+          onUploadArticleImageFinalAsset={handleUploadAiDeliveryArticleImageFinalAsset}
+          onOpenArticleImage={handleOpenAiDeliveryArticleImage}
           onMarkArticleImagePreviewReady={handleMarkAiDeliveryArticleImagePreviewReady}
           onRequestArticleImageChanges={handleRequestAiDeliveryArticleImageChanges}
           onApproveArticleImage={handleApproveAiDeliveryArticleImage}
           onMarkArticleImageFinalReady={handleMarkAiDeliveryArticleImageFinalReady}
           onFetchDeliverables={handleFetchAiDeliveryDeliverables}
           onSaveDeliverable={handleSaveAiDeliveryDeliverable}
+          onUploadDeliverableDocument={handleUploadAiDeliveryDeliverableDocument}
+          onOpenDeliverableDocument={handleOpenAiDeliveryDeliverableDocument}
           onArchiveDeliverable={handleArchiveAiDeliveryDeliverable}
           onRestoreDeliverable={handleRestoreAiDeliveryDeliverable}
           onMarkDeliverableReady={handleMarkAiDeliveryDeliverableReady}

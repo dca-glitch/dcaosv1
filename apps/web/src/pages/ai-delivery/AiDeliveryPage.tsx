@@ -133,6 +133,10 @@ export type AiDeliveryArticleImageFormValues = {
   notes: string;
 };
 
+export type AiDeliveryPrivateAssetUploadValues = {
+  file: File;
+};
+
 export type AiDeliveryDeliverableSummary = {
   id: string;
   aiDeliveryProjectId: string;
@@ -349,12 +353,16 @@ export type AiDeliveryProjectsProps = {
   onFetchArticleImages?: (projectId: string) => Promise<AiDeliveryArticleImageSummary[]>;
   onSaveArticleImage?: (projectId: string, imageId: string | null, values: AiDeliveryArticleImageFormValues) => Promise<AiDeliveryArticleImageSummary | null>;
   onArchiveArticleImage?: (projectId: string, imageId: string) => Promise<AiDeliveryArticleImageSummary | null>;
+  onUploadArticleImageFinalAsset?: (projectId: string, imageId: string, values: AiDeliveryPrivateAssetUploadValues) => Promise<AiDeliveryArticleImageSummary | null>;
+  onOpenArticleImage?: (projectId: string, imageId: string) => Promise<boolean>;
   onMarkArticleImagePreviewReady?: (projectId: string, imageId: string) => Promise<AiDeliveryArticleImageSummary | null>;
   onRequestArticleImageChanges?: (projectId: string, imageId: string) => Promise<AiDeliveryArticleImageSummary | null>;
   onApproveArticleImage?: (projectId: string, imageId: string) => Promise<AiDeliveryArticleImageSummary | null>;
   onMarkArticleImageFinalReady?: (projectId: string, imageId: string) => Promise<AiDeliveryArticleImageSummary | null>;
   onFetchDeliverables?: (projectId: string) => Promise<AiDeliveryDeliverableSummary[]>;
   onSaveDeliverable?: (projectId: string, deliverableId: string | null, values: AiDeliveryDeliverableFormValues) => Promise<AiDeliveryDeliverableSummary | null>;
+  onUploadDeliverableDocument?: (projectId: string, deliverableId: string, values: AiDeliveryPrivateAssetUploadValues) => Promise<AiDeliveryDeliverableSummary | null>;
+  onOpenDeliverableDocument?: (projectId: string, deliverableId: string) => Promise<boolean>;
   onArchiveDeliverable?: (projectId: string, deliverableId: string) => Promise<boolean>;
   onRestoreDeliverable?: (projectId: string, deliverableId: string) => Promise<AiDeliveryDeliverableSummary | null>;
   onMarkDeliverableReady?: (projectId: string, deliverableId: string) => Promise<AiDeliveryDeliverableSummary | null>;
@@ -705,12 +713,16 @@ export function AiDeliveryPage({
   onFetchArticleImages,
   onSaveArticleImage,
   onArchiveArticleImage,
+  onUploadArticleImageFinalAsset,
+  onOpenArticleImage,
   onMarkArticleImagePreviewReady,
   onRequestArticleImageChanges,
   onApproveArticleImage,
   onMarkArticleImageFinalReady,
   onFetchDeliverables,
   onSaveDeliverable,
+  onUploadDeliverableDocument,
+  onOpenDeliverableDocument,
   onArchiveDeliverable,
   onRestoreDeliverable,
   onMarkDeliverableReady,
@@ -772,6 +784,9 @@ export function AiDeliveryPage({
   const [articleImagesSaving, setArticleImagesSaving] = useState(false);
   const [articleImagesError, setArticleImagesError] = useState<string | null>(null);
   const [articleImages, setArticleImages] = useState<AiDeliveryArticleImageSummary[]>([]);
+  const [articleImageFinalAssetFiles, setArticleImageFinalAssetFiles] = useState<Record<string, File | null>>({});
+  const [articleImageUploadTargetId, setArticleImageUploadTargetId] = useState<string | null>(null);
+  const [articleImageDownloadTargetId, setArticleImageDownloadTargetId] = useState<string | null>(null);
   const [articleImageEditorId, setArticleImageEditorId] = useState<string | null>(null);
   const [articleImageForm, setArticleImageForm] = useState<AiDeliveryArticleImageFormValues>(emptyArticleImage());
   const [articleImageDrafts, setArticleImageDrafts] = useState<AiDeliveryContentDraftSummary[]>([]);
@@ -780,6 +795,9 @@ export function AiDeliveryPage({
   const [deliverablesSaving, setDeliverablesSaving] = useState(false);
   const [deliverablesError, setDeliverablesError] = useState<string | null>(null);
   const [deliverables, setDeliverables] = useState<AiDeliveryDeliverableSummary[]>([]);
+  const [deliverableDocumentFiles, setDeliverableDocumentFiles] = useState<Record<string, File | null>>({});
+  const [deliverableUploadTargetId, setDeliverableUploadTargetId] = useState<string | null>(null);
+  const [deliverableDownloadTargetId, setDeliverableDownloadTargetId] = useState<string | null>(null);
   const [deliverableEditorId, setDeliverableEditorId] = useState<string | null>(null);
   const [deliverableForm, setDeliverableForm] = useState<AiDeliveryDeliverableFormValues>({ contentDraftId: null, articleImageId: null, title: "", description: null, deliveryType: "CONTENT_PACKAGE", status: "DRAFT", exportUrl: null, storageKey: null, notes: null, isArchived: false });
   const [selectedReviewDeliverableId, setSelectedReviewDeliverableId] = useState<string | null>(null);
@@ -972,6 +990,42 @@ export function AiDeliveryPage({
     }
   }
 
+  async function uploadArticleImageFinalAsset(projectId: string, imageId: string) {
+    const file = articleImageFinalAssetFiles[imageId] ?? null;
+    if (!file || typeof onUploadArticleImageFinalAsset !== "function" || typeof onFetchArticleImages !== "function") return;
+    setArticleImagesSaving(true);
+    setArticleImagesError(null);
+    setArticleImageUploadTargetId(imageId);
+    try {
+      await onUploadArticleImageFinalAsset(projectId, imageId, { file });
+      const refreshedImages = await onFetchArticleImages(projectId);
+      setArticleImages(refreshedImages);
+      setArticleImageFinalAssetFiles((current) => ({ ...current, [imageId]: null }));
+      const refreshedActiveImage = refreshedImages.find((item) => item.id === imageId) ?? null;
+      if (refreshedActiveImage) {
+        editArticleImage(refreshedActiveImage);
+      }
+    } catch (error) {
+      setArticleImagesError(getErrorMessage(error, "Unable to upload the private final asset for this article image."));
+    } finally {
+      setArticleImageUploadTargetId(null);
+      setArticleImagesSaving(false);
+    }
+  }
+
+  async function openArticleImageDownload(projectId: string, imageId: string) {
+    if (typeof onOpenArticleImage !== "function") return;
+    setArticleImagesError(null);
+    setArticleImageDownloadTargetId(imageId);
+    try {
+      await onOpenArticleImage(projectId, imageId);
+    } catch (error) {
+      setArticleImagesError(getErrorMessage(error, "Unable to open the private final asset for this article image."));
+    } finally {
+      setArticleImageDownloadTargetId(null);
+    }
+  }
+
   async function openBrief(projectId: string) {
     setOpenBriefId(projectId);
     setBriefLoading(true);
@@ -986,6 +1040,45 @@ export function AiDeliveryPage({
       setBriefError(getErrorMessage(error, "Unable to load the current brief."));
     } finally {
       setBriefLoading(false);
+    }
+  }
+
+  async function uploadDeliverableDocument(projectId: string, deliverableId: string) {
+    const file = deliverableDocumentFiles[deliverableId] ?? null;
+    if (!file || typeof onUploadDeliverableDocument !== "function" || typeof onFetchDeliverables !== "function") return;
+    setDeliverablesSaving(true);
+    setDeliverablesError(null);
+    setDeliverableUploadTargetId(deliverableId);
+    try {
+      await onUploadDeliverableDocument(projectId, deliverableId, { file });
+      const refreshedDeliverables = await onFetchDeliverables(projectId);
+      setDeliverables(refreshedDeliverables);
+      setDeliverableDocumentFiles((current) => ({ ...current, [deliverableId]: null }));
+      const refreshedActiveDeliverable = refreshedDeliverables.find((item) => item.id === deliverableId) ?? null;
+      if (refreshedActiveDeliverable) {
+        editDeliverable(refreshedActiveDeliverable);
+      }
+      if (selectedReviewDeliverableId === deliverableId && typeof onFetchDeliverableReviews === "function") {
+        setDeliverableReviews(await onFetchDeliverableReviews(projectId, deliverableId));
+      }
+    } catch (error) {
+      setDeliverablesError(getErrorMessage(error, "Unable to upload the private document for this deliverable."));
+    } finally {
+      setDeliverableUploadTargetId(null);
+      setDeliverablesSaving(false);
+    }
+  }
+
+  async function openDeliverableDocument(projectId: string, deliverableId: string) {
+    if (typeof onOpenDeliverableDocument !== "function") return;
+    setDeliverablesError(null);
+    setDeliverableDownloadTargetId(deliverableId);
+    try {
+      await onOpenDeliverableDocument(projectId, deliverableId);
+    } catch (error) {
+      setDeliverablesError(getErrorMessage(error, "Unable to open the private document for this deliverable."));
+    } finally {
+      setDeliverableDownloadTargetId(null);
     }
   }
 
@@ -1230,6 +1323,9 @@ export function AiDeliveryPage({
     setArticleImagesLoading(true);
     setArticleImagesError(null);
     setArticleImages([]);
+    setArticleImageFinalAssetFiles({});
+    setArticleImageUploadTargetId(null);
+    setArticleImageDownloadTargetId(null);
     setArticleImageDrafts([]);
     setArticleImageEditorId(null);
     setArticleImageForm(emptyArticleImage());
@@ -1240,6 +1336,7 @@ export function AiDeliveryPage({
       ]);
       const activeDrafts = drafts.filter((draftItem) => !draftItem.isArchived);
       setArticleImages(images);
+      setArticleImageFinalAssetFiles({});
       setArticleImageDrafts(activeDrafts);
       setArticleImageForm((current) => ({ ...current, contentDraftId: activeDrafts[0]?.id ?? current.contentDraftId }));
     } catch (error) {
@@ -1364,6 +1461,7 @@ export function AiDeliveryPage({
       ]);
       const activeDrafts = drafts.filter((d) => !d.isArchived);
       setDeliverables(items);
+      setDeliverableDocumentFiles({});
       setArticleImageDrafts(activeDrafts);
       setArticleImages(images);
       setDeliverableForm((current: AiDeliveryDeliverableFormValues) => ({ ...current, contentDraftId: activeDrafts[0]?.id ?? null }));
@@ -1507,6 +1605,9 @@ export function AiDeliveryPage({
     setOpenDeliverablesId(null);
     setDeliverables([]);
     setDeliverablesError(null);
+    setDeliverableDocumentFiles({});
+    setDeliverableUploadTargetId(null);
+    setDeliverableDownloadTargetId(null);
     setDeliverableEditorId(null);
     setDeliverableForm({ contentDraftId: null, articleImageId: null, title: "", description: null, deliveryType: "CONTENT_PACKAGE", status: "DRAFT", exportUrl: null, storageKey: null, notes: null, isArchived: false });
     setSelectedReviewDeliverableId(null);
@@ -3231,7 +3332,7 @@ export function AiDeliveryPage({
               {deliverablesError ? <ErrorState title="Deliverable action blocked" message={deliverablesError} /> : null}
               <section className="field-panel">
                 <h3>Deliverable editor</h3>
-                <p className="muted-text">Current status is shown below. Next step: package approved assets, then use review placeholders when internal QA is needed. This screen does not perform client handoff, public links, storage upload, export generation, publishing, or client download.</p>
+                <p className="muted-text">Current status is shown below. Next step: package approved assets, upload a private document when needed, then use review placeholders when internal QA is needed. This screen does not perform client handoff, public links, export generation, publishing, or client self-service download.</p>
                 <div className="state-panel" role="status">{deliverableActionGuidance}</div>
                 <div className="modal-footer">
                   <button className="secondary-action" disabled={deliverablesSaving} onClick={() => { setDeliverableEditorId(null); setDeliverableForm({ contentDraftId: null, articleImageId: null, title: "", description: null, deliveryType: "CONTENT_PACKAGE", status: "DRAFT", exportUrl: null, storageKey: null, notes: null, isArchived: false }); }} type="button">New deliverable</button>
@@ -3334,7 +3435,7 @@ export function AiDeliveryPage({
                   <label className="field-span-2">
                     Storage key reference - Optional
                     <input maxLength={1024} placeholder="Internal private-storage reference, if already assigned elsewhere" value={deliverableForm.storageKey || ""} onChange={(e) => setDeliverableForm((current: AiDeliveryDeliverableFormValues) => ({ ...current, storageKey: e.target.value }))} />
-                    <span className="muted-text">Internal reference only. No upload, signed client download, or public link is created from this field.</span>
+                    <span className="muted-text">Internal reference only. Use the per-record private document controls below when you need to upload or open a stored asset.</span>
                   </label>
                   <label className="field-span-2">
                     Packaging notes - Optional
@@ -3413,6 +3514,10 @@ export function AiDeliveryPage({
                         <dd>{d.isArchived ? "Archived admin packaging record" : "Visible in active admin list only"}</dd>
                       </div>
                       <div>
+                        <dt>Private asset</dt>
+                        <dd>{d.storageKey ? "Private asset stored" : "Not stored yet"}</dd>
+                      </div>
+                      <div>
                         <dt>Status</dt>
                         <dd><StatusBadge status={formatDeliverableStatus(d.isArchived ? "ARCHIVED" : d.status)} /></dd>
                       </div>
@@ -3421,6 +3526,46 @@ export function AiDeliveryPage({
                         <dd>{d.notes || "No notes"}</dd>
                       </div>
                     </dl>
+                    {!d.isArchived ? (
+                      <div className="field-grid" style={{ marginTop: "0.75rem" }}>
+                        <label className="field-span-2">
+                          Private document upload - Optional
+                          <input
+                            accept=".pdf,image/png,image/jpeg,image/webp"
+                            onChange={(event) =>
+                              setDeliverableDocumentFiles((current) => ({
+                                ...current,
+                                [d.id]: event.target.files?.[0] ?? null
+                              }))
+                            }
+                            type="file"
+                          />
+                          <span className="muted-text">Upload a private deliverable asset for this record. Manual export references remain visible where already recorded.</span>
+                        </label>
+                      </div>
+                    ) : null}
+                    <div className="card-actions" style={{ marginTop: "0.75rem" }}>
+                      {!d.isArchived ? (
+                        <button
+                          className="secondary-action"
+                          disabled={deliverablesSaving || !deliverableDocumentFiles[d.id]}
+                          onClick={() => void uploadDeliverableDocument(openDeliverablesProject.id, d.id)}
+                          type="button"
+                        >
+                          {deliverableUploadTargetId === d.id ? "Uploading" : "Upload private document"}
+                        </button>
+                      ) : null}
+                      {d.storageKey ? (
+                        <button
+                          className="secondary-action"
+                          disabled={deliverableDownloadTargetId === d.id}
+                          onClick={() => void openDeliverableDocument(openDeliverablesProject.id, d.id)}
+                          type="button"
+                        >
+                          {deliverableDownloadTargetId === d.id ? "Opening" : "Open private document"}
+                        </button>
+                      ) : null}
+                    </div>
                   </article>
                 ))}
               </section>
@@ -3563,7 +3708,7 @@ export function AiDeliveryPage({
               {articleImagesError ? <ErrorState title="Article image action blocked" message={articleImagesError} /> : null}
               <section className="field-panel">
                 <h3>Image production planning</h3>
-                <p className="muted-text">Current status is shown below. Next step: link a draft, save the request, then move it through preview and final-ready actions. This screen does not run AI image generation, upscaling, upload, public links, publishing, or client image review.</p>
+                <p className="muted-text">Current status is shown below. Next step: link a draft, save the request, record preview references manually, upload a private final asset when needed, then move it through preview and final-ready actions. This screen does not run AI image generation, upscaling, public links, publishing, or client image review.</p>
                 <div className="state-panel" role="status">{articleImageActionGuidance}</div>
                 <div className="modal-footer">
                   <button className="secondary-action" disabled={articleImagesSaving} onClick={() => { setArticleImageEditorId(null); setArticleImageForm((current) => ({ ...emptyArticleImage(), contentDraftId: current.contentDraftId })); }} type="button">New image request</button>
@@ -3689,7 +3834,7 @@ export function AiDeliveryPage({
                   <label className="field-span-2">
                     Storage key reference - Optional
                     <input maxLength={1024} value={articleImageForm.storageKey} onChange={(event) => setArticleImageForm((current) => ({ ...current, storageKey: event.target.value }))} />
-                    <span className="muted-text">Internal storage reference only. No signed or public image link is generated from this field.</span>
+                    <span className="muted-text">Internal storage reference only. Use the per-record private final asset controls below when you need to upload or open a stored final image.</span>
                   </label>
                   <label className="field-span-2">
                     Notes - Optional
@@ -3787,6 +3932,10 @@ export function AiDeliveryPage({
                         <dt>Updated</dt>
                         <dd>{formatOptionalDate(image.updatedAt)}</dd>
                       </div>
+                      <div>
+                        <dt>Private asset</dt>
+                        <dd>{image.storageKey ? "Private final asset stored" : "Not stored yet"}</dd>
+                      </div>
                       <div className="field-span-2">
                         <dt>Style notes</dt>
                         <dd>{image.styleNotes || "No style notes"}</dd>
@@ -3800,6 +3949,46 @@ export function AiDeliveryPage({
                         <dd>{image.notes || "No notes"}</dd>
                       </div>
                     </dl>
+                    {!image.isArchived ? (
+                      <div className="field-grid" style={{ marginTop: "0.75rem" }}>
+                        <label className="field-span-2">
+                          Private final image upload - Optional
+                          <input
+                            accept="image/png,image/jpeg,image/webp"
+                            onChange={(event) =>
+                              setArticleImageFinalAssetFiles((current) => ({
+                                ...current,
+                                [image.id]: event.target.files?.[0] ?? null
+                              }))
+                            }
+                            type="file"
+                          />
+                          <span className="muted-text">Upload a private final asset for this image record. Preview URL handling remains manual in this block.</span>
+                        </label>
+                      </div>
+                    ) : null}
+                    <div className="card-actions" style={{ marginTop: "0.75rem" }}>
+                      {!image.isArchived ? (
+                        <button
+                          className="secondary-action"
+                          disabled={articleImagesSaving || !articleImageFinalAssetFiles[image.id]}
+                          onClick={() => void uploadArticleImageFinalAsset(openArticleImagesProject.id, image.id)}
+                          type="button"
+                        >
+                          {articleImageUploadTargetId === image.id ? "Uploading" : "Upload final asset"}
+                        </button>
+                      ) : null}
+                      {image.storageKey ? (
+                        <button
+                          className="secondary-action"
+                          disabled={articleImageDownloadTargetId === image.id}
+                          onClick={() => void openArticleImageDownload(openArticleImagesProject.id, image.id)}
+                          type="button"
+                        >
+                          {articleImageDownloadTargetId === image.id ? "Opening" : "Open private final asset"}
+                        </button>
+                      ) : null}
+                    </div>
                   </article>
                 ))}
               </section>
