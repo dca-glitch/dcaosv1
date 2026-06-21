@@ -378,6 +378,25 @@ function formatEnumLabel(value?: string | null): string {
   return String(value).toLowerCase().replace(/_/g, " ").replace(/(^|\s)\S/g, (s) => s.toUpperCase());
 }
 
+function getSafeDeliverableExportUrl(value?: string | null): string | null {
+  const exportUrl = (value ?? "").trim();
+  if (!exportUrl) return null;
+  if (exportUrl.startsWith("/") && !exportUrl.startsWith("//")) return exportUrl;
+  try {
+    const parsedUrl = new URL(exportUrl);
+    return ["http:", "https:"].includes(parsedUrl.protocol) ? exportUrl : null;
+  } catch {
+    return null;
+  }
+}
+
+function getDeliverableExportState(item: AiDeliveryDeliverableSummary): string {
+  if (getSafeDeliverableExportUrl(item.exportUrl)) return "Export URL available";
+  if ((item.exportUrl ?? "").trim()) return "Export URL is not a safe HTTP(S) or app-relative link.";
+  if ((item.storageKey ?? "").trim()) return "Storage key recorded; direct download unavailable until a safe admin download URL is provided.";
+  return "No export/download target available.";
+}
+
 function getErrorMessage(error: unknown, fallback: string): string {
   return error instanceof Error && error.message ? error.message : fallback;
 }
@@ -1775,6 +1794,12 @@ export function AiDeliveryPage({
                         <p>{formatEnumLabel(d.deliveryType)} - Updated {formatOptionalDate(d.updatedAt)}</p>
                       </div>
                       <div className="card-actions">
+                        {getSafeDeliverableExportUrl(d.exportUrl) ? (
+                          <>
+                            <a className="secondary-action" href={getSafeDeliverableExportUrl(d.exportUrl) ?? undefined} rel="noreferrer" target="_blank">Open export</a>
+                            <a className="secondary-action" download href={getSafeDeliverableExportUrl(d.exportUrl) ?? undefined}>Download</a>
+                          </>
+                        ) : null}
                         <button className="secondary-action" disabled={deliverablesSaving} onClick={() => editDeliverable(d)} type="button">Edit</button>
                         <button className="secondary-action" disabled={deliverablesSaving || deliverableReviewsLoading} onClick={() => void openDeliverableReviews(openDeliverablesProject.id, d.id)} type="button">Reviews</button>
                         {!d.isArchived ? <button className="secondary-action" disabled={deliverablesSaving} onClick={() => void archiveDeliverable(openDeliverablesProject.id, d.id)} type="button">Archive</button> : null}
@@ -1783,11 +1808,15 @@ export function AiDeliveryPage({
                     <dl className="brief-grid">
                       <div>
                         <dt>Export URL</dt>
-                        <dd>{d.exportUrl || "Not set"}</dd>
+                        <dd>{getSafeDeliverableExportUrl(d.exportUrl) ? <a href={getSafeDeliverableExportUrl(d.exportUrl) ?? undefined} rel="noreferrer" target="_blank">{d.exportUrl}</a> : d.exportUrl || "Not set"}</dd>
                       </div>
                       <div>
                         <dt>Storage key</dt>
-                        <dd>{d.storageKey || "Not set"}</dd>
+                        <dd>{d.storageKey ? "Recorded for admin reference" : "Not set"}</dd>
+                      </div>
+                      <div>
+                        <dt>Export/download</dt>
+                        <dd>{getDeliverableExportState(d)}</dd>
                       </div>
                       <div>
                         <dt>Visibility</dt>
