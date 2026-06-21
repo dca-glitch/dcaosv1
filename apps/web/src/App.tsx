@@ -11,6 +11,7 @@ import {
 } from "./pages/bills/BillsPage";
 import { CompanyProfilePage, type CompanyProfileFormValues, type CompanyProfileSummary } from "./pages/company-profile/CompanyProfilePage";
 import { ClientsPage, type ClientAccessUserSummary, type ClientFormValues, type ClientSummary } from "./pages/clients/ClientsPage";
+import { ClientPortalPage } from "./pages/client-portal/ClientPortalPage";
 import { CreditNotesPage, type CreditNoteFormValues, type CreditNoteSummary } from "./pages/credit-notes/CreditNotesPage";
 import {
   InvoicesPage,
@@ -301,6 +302,7 @@ type ViewKey =
   | "dashboard"
   | "modules"
   | "tenants"
+  | "client-portal"
   | "clients"
   | "projects"
   | "ai-delivery"
@@ -354,6 +356,7 @@ const navigationItems: Array<{ view: ViewKey; label: string; section: string }> 
   { view: "dashboard", label: "Dashboard", section: "protected" },
   { view: "modules", label: "Modules", section: "protected" },
   { view: "tenants", label: "Tenants", section: "protected" },
+  { view: "client-portal", label: "Client Portal", section: "client" },
   { view: "clients", label: "Clients", section: "core" },
   { view: "projects", label: "Projects", section: "core" },
   { view: "ai-delivery", label: "AI Delivery", section: "core" },
@@ -3059,6 +3062,9 @@ export function App() {
           loading={false}
           onSave={handleSaveCompanyProfile}
         />
+      ) : null}
+      {!loading && activeView === "client-portal" ? (
+        <ClientPortalPage />
       ) : null}
       {!loading && activeView === "clients" ? (
         <ClientsPage
