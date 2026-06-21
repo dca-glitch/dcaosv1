@@ -617,6 +617,45 @@ function getErrorMessage(error: unknown, fallback: string): string {
   return error instanceof Error && error.message ? error.message : fallback;
 }
 
+function canPackageApprovedContentDraft(draft: Pick<AiDeliveryContentDraftSummary, "isArchived" | "status"> | null | undefined) {
+  return !!draft && draft.isArchived !== true && draft.status === "APPROVED";
+}
+
+function canPackageApprovedArticleImage(image: Pick<AiDeliveryArticleImageSummary, "isArchived" | "status"> | null | undefined) {
+  return !!image && image.isArchived !== true && ["APPROVED", "FINAL_READY"].includes(image.status);
+}
+
+function deliverableStatusNeedsApprovedLinks(status: string | null | undefined) {
+  return ["READY", "DELIVERED", "ACCEPTED"].includes((status ?? "").trim().toUpperCase());
+}
+
+function deliverableFormHasReadyLinks(
+  form: AiDeliveryDeliverableFormValues,
+  drafts: AiDeliveryContentDraftSummary[],
+  images: AiDeliveryArticleImageSummary[]
+) {
+  if (!deliverableStatusNeedsApprovedLinks(form.status)) {
+    return true;
+  }
+
+  const linkedDraft = drafts.find((draft) => draft.id === form.contentDraftId) ?? null;
+  const linkedImage = images.find((image) => image.id === form.articleImageId) ?? null;
+
+  if (!linkedDraft && !linkedImage) {
+    return false;
+  }
+
+  if (linkedDraft && !canPackageApprovedContentDraft(linkedDraft)) {
+    return false;
+  }
+
+  if (linkedImage && !canPackageApprovedArticleImage(linkedImage)) {
+    return false;
+  }
+
+  return true;
+}
+
 function getMostRecentReview(reviews: AiDeliveryDeliverableReviewSummary[]): AiDeliveryDeliverableReviewSummary | null {
   return reviews.reduce<AiDeliveryDeliverableReviewSummary | null>((latest, review) => {
     if (!latest) return review;
@@ -697,6 +736,7 @@ export function AiDeliveryPage({
   const [saving, setSaving] = useState(false);
   const [openBriefId, setOpenBriefId] = useState<string | null>(null);
   const [briefLoading, setBriefLoading] = useState(false);
+  const [briefError, setBriefError] = useState<string | null>(null);
   const [briefDetail, setBriefDetail] = useState<null | {
     id: string;
     status: string;
@@ -716,11 +756,13 @@ export function AiDeliveryPage({
   const [openContentPlanId, setOpenContentPlanId] = useState<string | null>(null);
   const [contentPlanLoading, setContentPlanLoading] = useState(false);
   const [contentPlanSaving, setContentPlanSaving] = useState(false);
+  const [contentPlanError, setContentPlanError] = useState<string | null>(null);
   const [contentPlanDetail, setContentPlanDetail] = useState<AiDeliveryContentPlanSummary | null>(null);
   const [contentPlanItems, setContentPlanItems] = useState<ContentPlanItemDraft[]>([]);
   const [openContentDraftsId, setOpenContentDraftsId] = useState<string | null>(null);
   const [contentDraftsLoading, setContentDraftsLoading] = useState(false);
   const [contentDraftsSaving, setContentDraftsSaving] = useState(false);
+  const [contentDraftsError, setContentDraftsError] = useState<string | null>(null);
   const [contentDrafts, setContentDrafts] = useState<AiDeliveryContentDraftSummary[]>([]);
   const [contentDraftEditorId, setContentDraftEditorId] = useState<string | null>(null);
   const [contentDraftForm, setContentDraftForm] = useState<AiDeliveryContentDraftFormValues>(emptyContentDraft());
@@ -728,6 +770,7 @@ export function AiDeliveryPage({
   const [openArticleImagesId, setOpenArticleImagesId] = useState<string | null>(null);
   const [articleImagesLoading, setArticleImagesLoading] = useState(false);
   const [articleImagesSaving, setArticleImagesSaving] = useState(false);
+  const [articleImagesError, setArticleImagesError] = useState<string | null>(null);
   const [articleImages, setArticleImages] = useState<AiDeliveryArticleImageSummary[]>([]);
   const [articleImageEditorId, setArticleImageEditorId] = useState<string | null>(null);
   const [articleImageForm, setArticleImageForm] = useState<AiDeliveryArticleImageFormValues>(emptyArticleImage());
@@ -750,12 +793,14 @@ export function AiDeliveryPage({
   const [workflowRunsLoading, setWorkflowRunsLoading] = useState(false);
   const [workflowRunsSaving, setWorkflowRunsSaving] = useState(false);
   const [workflowRunExecutingId, setWorkflowRunExecutingId] = useState<string | null>(null);
+  const [workflowRunsError, setWorkflowRunsError] = useState<string | null>(null);
   const [workflowRuns, setWorkflowRuns] = useState<AiDeliveryWorkflowRunSummary[]>([]);
   const [workflowRunEditorId, setWorkflowRunEditorId] = useState<string | null>(null);
   const [workflowRunForm, setWorkflowRunForm] = useState<AiDeliveryWorkflowRunFormValues>(emptyWorkflowRun());
   const [openResearchSourcesId, setOpenResearchSourcesId] = useState<string | null>(null);
   const [researchLoading, setResearchLoading] = useState(false);
   const [researchSaving, setResearchSaving] = useState(false);
+  const [researchError, setResearchError] = useState<string | null>(null);
   const [researchRequests, setResearchRequests] = useState<AiDeliveryResearchRequestSummary[]>([]);
   const [researchSummaries, setResearchSummaries] = useState<AiDeliveryResearchSummarySummary[]>([]);
   const [researchSources, setResearchSources] = useState<AiDeliveryResearchSourceSummary[]>([]);
@@ -820,6 +865,65 @@ export function AiDeliveryPage({
   const workflowRunStatusHelper = useMemo(() => getWorkflowRunStatusHelper(workflowRunBeingEdited?.status ?? null), [workflowRunBeingEdited?.status]);
   const isWorkflowRunStatusAllowed = workflowRunStatusOptions.includes(normalizeWorkflowRunStatus(workflowRunForm.status));
   const openResearchSourcesProject = useMemo(() => projects.find((p) => p.id === openResearchSourcesId) ?? null, [openResearchSourcesId, projects]);
+  const contentDraftActionGuidance = useMemo(() => {
+    if (!activeContentDraftRecord) {
+      return "Mark ready for review only after the draft has both a title and body.";
+    }
+    if (activeContentDraftRecord.isArchived) {
+      return "Archived drafts stay visible for admin history and cannot move through review actions.";
+    }
+    if (!activeContentDraftRecord.title.trim() || !activeContentDraftRecord.draftBody.trim()) {
+      return "Mark ready for review requires both a title and draft body.";
+    }
+    if (activeContentDraftRecord.status === "READY_FOR_REVIEW") {
+      return "This draft is already ready for review. Use Return to draft only when the workflow needs to move backward.";
+    }
+    if (activeContentDraftRecord.status !== "DRAFT") {
+      return "Return to draft is available after review or revision states when the workflow needs another editing pass.";
+    }
+    return "Mark ready for review moves this draft into the admin review queue once title and body are complete.";
+  }, [activeContentDraftRecord]);
+  const articleImageActionGuidance = useMemo(() => {
+    if (!activeArticleImageRecord) {
+      return "Preview-ready requires a preview or final reference. Final-ready requires a final URL or storage key.";
+    }
+    if (activeArticleImageRecord.isArchived) {
+      return "Archived image records remain visible for admin history and cannot use active workflow actions.";
+    }
+    const hasPreviewReference = Boolean((activeArticleImageRecord.previewImageUrl ?? "").trim() || (activeArticleImageRecord.finalImageUrl ?? "").trim());
+    const hasFinalReference = Boolean((activeArticleImageRecord.finalImageUrl ?? "").trim() || (activeArticleImageRecord.storageKey ?? "").trim());
+    if (!hasPreviewReference) {
+      return "Mark preview ready and Request changes require a preview or final reference on the active image record.";
+    }
+    if (!hasFinalReference) {
+      return "Mark final ready requires either a final image URL or storage key on the active image record.";
+    }
+    return "Use the image action buttons only after the linked draft and the required preview/final references are recorded.";
+  }, [activeArticleImageRecord]);
+  const deliverableActionGuidance = useMemo(() => {
+    if (activeDeliverableRecord?.isArchived) {
+      return "Restore applies only to archived deliverables and returns the record to Draft.";
+    }
+    if (!deliverableFormHasReadyLinks(deliverableForm, articleImageDrafts, articleImages)) {
+      return "Ready, Delivered, and Accepted states require an approved same-project draft or approved/final-ready image link.";
+    }
+    if (deliverableStatusNeedsApprovedLinks(deliverableForm.status)) {
+      return "This ready-state package is linked to approved same-project assets and can stay in the guarded packaging workflow.";
+    }
+    return "Mark ready and Internal accept stay guarded by approved same-project draft or image links.";
+  }, [activeDeliverableRecord?.isArchived, articleImageDrafts, articleImages, deliverableForm]);
+  const workflowRunActionGuidance = useMemo(() => {
+    if (workflowRunExecutingId) {
+      return "Run workflow is locked while the current local stub execution is in progress.";
+    }
+    if (!workflowRunBeingEdited) {
+      return "Only Draft, Ready, or Failed runs can execute through the local stub. Save a run first to use Run workflow.";
+    }
+    if (!canExecuteWorkflowRun(workflowRunBeingEdited.status)) {
+      return "This workflow run is not in an executable state. Use the allowed next status shown above before retrying.";
+    }
+    return "Run workflow uses the local stub only. Use [stub-fail] in admin notes when you need a controlled failure path.";
+  }, [workflowRunBeingEdited, workflowRunExecutingId]);
   const linkableProjects = useMemo(
     () => projectsList.filter((project) => project.clientId === draft.clientId),
     [draft.clientId, projectsList]
@@ -871,12 +975,15 @@ export function AiDeliveryPage({
   async function openBrief(projectId: string) {
     setOpenBriefId(projectId);
     setBriefLoading(true);
+    setBriefError(null);
     setBriefDetail(null);
     try {
       if (typeof onFetchBrief === "function") {
         const b = await onFetchBrief(projectId);
         setBriefDetail(b);
       }
+    } catch (error) {
+      setBriefError(getErrorMessage(error, "Unable to load the current brief."));
     } finally {
       setBriefLoading(false);
     }
@@ -885,22 +992,28 @@ export function AiDeliveryPage({
   async function handleSaveBrief(projectId: string) {
     if (!briefDetail) return;
     if (typeof onSaveBrief !== "function") return;
-    const ok = await onSaveBrief(projectId, {
-      clientPriorities: briefDetail.clientPriorities,
-      productsServicesFocus: briefDetail.productsServicesFocus,
-      targetAudience: briefDetail.targetAudience,
-      marketsCompetitors: briefDetail.marketsCompetitors,
-      notes: briefDetail.notes
-    });
-    if (ok) {
-      setOpenBriefId(null);
-      setBriefDetail(null);
+    setBriefError(null);
+    try {
+      const ok = await onSaveBrief(projectId, {
+        clientPriorities: briefDetail.clientPriorities,
+        productsServicesFocus: briefDetail.productsServicesFocus,
+        targetAudience: briefDetail.targetAudience,
+        marketsCompetitors: briefDetail.marketsCompetitors,
+        notes: briefDetail.notes
+      });
+      if (ok) {
+        setOpenBriefId(null);
+        setBriefDetail(null);
+      }
+    } catch (error) {
+      setBriefError(getErrorMessage(error, "Unable to save the current brief."));
     }
   }
 
   async function openContentPlan(projectId: string) {
     setOpenContentPlanId(projectId);
     setContentPlanLoading(true);
+    setContentPlanError(null);
     setContentPlanDetail(null);
     setContentPlanItems([]);
     try {
@@ -909,6 +1022,8 @@ export function AiDeliveryPage({
         setContentPlanDetail(plan);
         setContentPlanItems(plan?.items.map(itemDraftFromPlanItem) ?? []);
       }
+    } catch (error) {
+      setContentPlanError(getErrorMessage(error, "Unable to load the current content plan."));
     } finally {
       setContentPlanLoading(false);
     }
@@ -917,12 +1032,15 @@ export function AiDeliveryPage({
   async function handleCreateContentPlan(projectId: string) {
     if (typeof onCreateContentPlan !== "function") return;
     setContentPlanSaving(true);
+    setContentPlanError(null);
     try {
       const plan = await onCreateContentPlan(projectId);
       if (plan) {
         setContentPlanDetail(plan);
         setContentPlanItems(plan.items.map(itemDraftFromPlanItem));
       }
+    } catch (error) {
+      setContentPlanError(getErrorMessage(error, "Unable to create a content plan for this project."));
     } finally {
       setContentPlanSaving(false);
     }
@@ -931,6 +1049,7 @@ export function AiDeliveryPage({
   async function handleSaveContentPlan(projectId: string) {
     if (typeof onSaveContentPlan !== "function") return;
     setContentPlanSaving(true);
+    setContentPlanError(null);
     try {
       const plan = await onSaveContentPlan(projectId, {
         items: contentPlanItems.map((item, index) => ({
@@ -947,6 +1066,8 @@ export function AiDeliveryPage({
         setContentPlanDetail(plan);
         setContentPlanItems(plan.items.map(itemDraftFromPlanItem));
       }
+    } catch (error) {
+      setContentPlanError(getErrorMessage(error, "Unable to save this content plan."));
     } finally {
       setContentPlanSaving(false);
     }
@@ -958,12 +1079,15 @@ export function AiDeliveryPage({
   ) {
     if (typeof action !== "function") return;
     setContentPlanSaving(true);
+    setContentPlanError(null);
     try {
       const plan = await action(projectId);
       if (plan) {
         setContentPlanDetail(plan);
         setContentPlanItems(plan.items.map(itemDraftFromPlanItem));
       }
+    } catch (error) {
+      setContentPlanError(getErrorMessage(error, "Unable to update the current content plan status."));
     } finally {
       setContentPlanSaving(false);
     }
@@ -971,6 +1095,7 @@ export function AiDeliveryPage({
 
   function closeContentPlan() {
     setOpenContentPlanId(null);
+    setContentPlanError(null);
     setContentPlanDetail(null);
     setContentPlanItems([]);
   }
@@ -978,6 +1103,7 @@ export function AiDeliveryPage({
   async function openContentDrafts(projectId: string) {
     setOpenContentDraftsId(projectId);
     setContentDraftsLoading(true);
+    setContentDraftsError(null);
     setContentDrafts([]);
     setContentDraftEditorId(null);
     setContentDraftForm(emptyContentDraft());
@@ -988,6 +1114,8 @@ export function AiDeliveryPage({
       ]);
       setContentDrafts(drafts);
       setContentDraftPlan(plan);
+    } catch (error) {
+      setContentDraftsError(getErrorMessage(error, "Unable to load content production records for this project."));
     } finally {
       setContentDraftsLoading(false);
     }
@@ -1026,6 +1154,7 @@ export function AiDeliveryPage({
   async function saveContentDraft(projectId: string) {
     if (typeof onSaveContentDraft !== "function") return;
     setContentDraftsSaving(true);
+    setContentDraftsError(null);
     try {
       const saved = await onSaveContentDraft(projectId, contentDraftEditorId, contentDraftForm);
       if (saved && typeof onFetchContentDrafts === "function") {
@@ -1033,6 +1162,8 @@ export function AiDeliveryPage({
         setContentDraftEditorId(null);
         setContentDraftForm(emptyContentDraft());
       }
+    } catch (error) {
+      setContentDraftsError(getErrorMessage(error, "Unable to save this content draft."));
     } finally {
       setContentDraftsSaving(false);
     }
@@ -1041,9 +1172,12 @@ export function AiDeliveryPage({
   async function archiveContentDraft(projectId: string, draftId: string) {
     if (typeof onArchiveContentDraft !== "function" || typeof onFetchContentDrafts !== "function") return;
     setContentDraftsSaving(true);
+    setContentDraftsError(null);
     try {
       await onArchiveContentDraft(projectId, draftId);
       setContentDrafts(await onFetchContentDrafts(projectId));
+    } catch (error) {
+      setContentDraftsError(getErrorMessage(error, "Unable to archive this content draft."));
     } finally {
       setContentDraftsSaving(false);
     }
@@ -1052,9 +1186,12 @@ export function AiDeliveryPage({
   async function requestContentDraftReview(projectId: string, draftId: string) {
     if (typeof onRequestContentDraftReview !== "function" || typeof onFetchContentDrafts !== "function") return;
     setContentDraftsSaving(true);
+    setContentDraftsError(null);
     try {
       await onRequestContentDraftReview(projectId, draftId);
       setContentDrafts(await onFetchContentDrafts(projectId));
+    } catch (error) {
+      setContentDraftsError(getErrorMessage(error, "Unable to move this draft into review."));
     } finally {
       setContentDraftsSaving(false);
     }
@@ -1063,6 +1200,7 @@ export function AiDeliveryPage({
   async function returnContentDraftToDraft(projectId: string, draftId: string) {
     if (typeof onReturnContentDraftToDraft !== "function" || typeof onFetchContentDrafts !== "function") return;
     setContentDraftsSaving(true);
+    setContentDraftsError(null);
     try {
       await onReturnContentDraftToDraft(projectId, draftId);
       const refreshedDrafts = await onFetchContentDrafts(projectId);
@@ -1071,6 +1209,8 @@ export function AiDeliveryPage({
       if (refreshedActiveDraft) {
         editContentDraft(refreshedActiveDraft);
       }
+    } catch (error) {
+      setContentDraftsError(getErrorMessage(error, "Unable to return this draft to Draft."));
     } finally {
       setContentDraftsSaving(false);
     }
@@ -1078,6 +1218,7 @@ export function AiDeliveryPage({
 
   function closeContentDrafts() {
     setOpenContentDraftsId(null);
+    setContentDraftsError(null);
     setContentDrafts([]);
     setContentDraftEditorId(null);
     setContentDraftForm(emptyContentDraft());
@@ -1087,6 +1228,7 @@ export function AiDeliveryPage({
   async function openArticleImages(projectId: string) {
     setOpenArticleImagesId(projectId);
     setArticleImagesLoading(true);
+    setArticleImagesError(null);
     setArticleImages([]);
     setArticleImageDrafts([]);
     setArticleImageEditorId(null);
@@ -1100,6 +1242,8 @@ export function AiDeliveryPage({
       setArticleImages(images);
       setArticleImageDrafts(activeDrafts);
       setArticleImageForm((current) => ({ ...current, contentDraftId: activeDrafts[0]?.id ?? current.contentDraftId }));
+    } catch (error) {
+      setArticleImagesError(getErrorMessage(error, "Unable to load article image records for this project."));
     } finally {
       setArticleImagesLoading(false);
     }
@@ -1123,6 +1267,7 @@ export function AiDeliveryPage({
   async function saveArticleImage(projectId: string) {
     if (typeof onSaveArticleImage !== "function") return;
     setArticleImagesSaving(true);
+    setArticleImagesError(null);
     try {
       const saved = await onSaveArticleImage(projectId, articleImageEditorId, articleImageForm);
       if (saved && typeof onFetchArticleImages === "function") {
@@ -1130,6 +1275,8 @@ export function AiDeliveryPage({
         setArticleImageEditorId(null);
         setArticleImageForm((current) => ({ ...emptyArticleImage(), contentDraftId: current.contentDraftId }));
       }
+    } catch (error) {
+      setArticleImagesError(getErrorMessage(error, "Unable to save this article image record."));
     } finally {
       setArticleImagesSaving(false);
     }
@@ -1138,9 +1285,12 @@ export function AiDeliveryPage({
   async function archiveArticleImage(projectId: string, imageId: string) {
     if (typeof onArchiveArticleImage !== "function" || typeof onFetchArticleImages !== "function") return;
     setArticleImagesSaving(true);
+    setArticleImagesError(null);
     try {
       await onArchiveArticleImage(projectId, imageId);
       setArticleImages(await onFetchArticleImages(projectId));
+    } catch (error) {
+      setArticleImagesError(getErrorMessage(error, "Unable to archive this article image record."));
     } finally {
       setArticleImagesSaving(false);
     }
@@ -1153,6 +1303,7 @@ export function AiDeliveryPage({
   ) {
     if (typeof action !== "function" || typeof onFetchArticleImages !== "function") return;
     setArticleImagesSaving(true);
+    setArticleImagesError(null);
     try {
       await action(projectId, imageId);
       const refreshedImages = await onFetchArticleImages(projectId);
@@ -1161,6 +1312,8 @@ export function AiDeliveryPage({
       if (refreshedActiveImage) {
         editArticleImage(refreshedActiveImage);
       }
+    } catch (error) {
+      setArticleImagesError(getErrorMessage(error, "Unable to update this article image status."));
     } finally {
       setArticleImagesSaving(false);
     }
@@ -1184,6 +1337,7 @@ export function AiDeliveryPage({
 
   function closeArticleImages() {
     setOpenArticleImagesId(null);
+    setArticleImagesError(null);
     setArticleImages([]);
     setArticleImageDrafts([]);
     setArticleImageEditorId(null);
@@ -1365,6 +1519,7 @@ export function AiDeliveryPage({
   async function openWorkflowRuns(projectId: string) {
     setOpenWorkflowRunsId(projectId);
     setWorkflowRunsLoading(true);
+    setWorkflowRunsError(null);
     setWorkflowRuns([]);
     setWorkflowRunEditorId(null);
     setWorkflowRunForm(emptyWorkflowRun());
@@ -1372,6 +1527,8 @@ export function AiDeliveryPage({
       if (typeof onFetchWorkflowRuns === "function") {
         setWorkflowRuns(await onFetchWorkflowRuns(projectId));
       }
+    } catch (error) {
+      setWorkflowRunsError(getErrorMessage(error, "Unable to load workflow runs for this project."));
     } finally {
       setWorkflowRunsLoading(false);
     }
@@ -1390,6 +1547,7 @@ export function AiDeliveryPage({
     if (typeof onSaveWorkflowRun !== "function") return;
     if (!isWorkflowRunStatusAllowed) return;
     setWorkflowRunsSaving(true);
+    setWorkflowRunsError(null);
     try {
       const saved = await onSaveWorkflowRun(projectId, workflowRunEditorId, workflowRunForm);
       if (saved && typeof onFetchWorkflowRuns === "function") {
@@ -1397,6 +1555,8 @@ export function AiDeliveryPage({
         setWorkflowRunEditorId(null);
         setWorkflowRunForm(emptyWorkflowRun());
       }
+    } catch (error) {
+      setWorkflowRunsError(getErrorMessage(error, "Unable to save this workflow run."));
     } finally {
       setWorkflowRunsSaving(false);
     }
@@ -1405,6 +1565,7 @@ export function AiDeliveryPage({
   async function executeWorkflowRun(projectId: string, workflowRunId: string) {
     if (typeof onExecuteWorkflowRun !== "function") return;
     setWorkflowRunExecutingId(workflowRunId);
+    setWorkflowRunsError(null);
     try {
       const executed = await onExecuteWorkflowRun(projectId, workflowRunId);
       if (executed && typeof onFetchWorkflowRuns === "function") {
@@ -1412,6 +1573,8 @@ export function AiDeliveryPage({
         setWorkflowRunEditorId(null);
         setWorkflowRunForm(emptyWorkflowRun());
       }
+    } catch (error) {
+      setWorkflowRunsError(getErrorMessage(error, "Unable to execute this workflow run."));
     } finally {
       setWorkflowRunExecutingId(null);
     }
@@ -1419,6 +1582,7 @@ export function AiDeliveryPage({
 
   function closeWorkflowRuns() {
     setOpenWorkflowRunsId(null);
+    setWorkflowRunsError(null);
     setWorkflowRuns([]);
     setWorkflowRunEditorId(null);
     setWorkflowRunForm(emptyWorkflowRun());
@@ -1441,6 +1605,7 @@ export function AiDeliveryPage({
   async function openResearchSources(projectId: string) {
     setOpenResearchSourcesId(projectId);
     setResearchLoading(true);
+    setResearchError(null);
     setResearchRequests([]);
     setResearchSummaries([]);
     setResearchSources([]);
@@ -1453,6 +1618,8 @@ export function AiDeliveryPage({
     setResearchSourceForm(emptyResearchSource());
     try {
       await loadResearchSources(projectId);
+    } catch (error) {
+      setResearchError(getErrorMessage(error, "Unable to load research records for this project."));
     } finally {
       setResearchLoading(false);
     }
@@ -1482,6 +1649,7 @@ export function AiDeliveryPage({
   async function saveResearchRequest(projectId: string) {
     if (typeof onSaveResearchRequest !== "function" || !researchRequestForm.title.trim()) return;
     setResearchSaving(true);
+    setResearchError(null);
     try {
       const saved = await onSaveResearchRequest(projectId, researchRequestEditorId, researchRequestForm);
       if (saved) {
@@ -1489,6 +1657,8 @@ export function AiDeliveryPage({
         setResearchRequestEditorId(null);
         setResearchRequestForm(emptyResearchRequest());
       }
+    } catch (error) {
+      setResearchError(getErrorMessage(error, "Unable to save this research request."));
     } finally {
       setResearchSaving(false);
     }
@@ -1497,6 +1667,7 @@ export function AiDeliveryPage({
   async function saveResearchSource(projectId: string) {
     if (typeof onSaveResearchSource !== "function" || !researchSourceForm.sourceUrl.trim()) return;
     setResearchSaving(true);
+    setResearchError(null);
     try {
       const saved = await onSaveResearchSource(projectId, researchSourceEditorId, researchSourceForm);
       if (saved) {
@@ -1504,6 +1675,8 @@ export function AiDeliveryPage({
         setResearchSourceEditorId(null);
         setResearchSourceForm(emptyResearchSource());
       }
+    } catch (error) {
+      setResearchError(getErrorMessage(error, "Unable to save this research source."));
     } finally {
       setResearchSaving(false);
     }
@@ -1512,6 +1685,7 @@ export function AiDeliveryPage({
   async function saveResearchSummary(projectId: string) {
     if (typeof onSaveResearchSummary !== "function" || !researchSummaryForm.title.trim() || !researchSummaryForm.summaryText.trim()) return;
     setResearchSaving(true);
+    setResearchError(null);
     try {
       const saved = await onSaveResearchSummary(projectId, researchSummaryEditorId, researchSummaryForm);
       if (saved) {
@@ -1519,6 +1693,8 @@ export function AiDeliveryPage({
         setResearchSummaryEditorId(null);
         setResearchSummaryForm(emptyResearchSummary());
       }
+    } catch (error) {
+      setResearchError(getErrorMessage(error, "Unable to save this research summary."));
     } finally {
       setResearchSaving(false);
     }
@@ -1527,11 +1703,14 @@ export function AiDeliveryPage({
   async function setResearchSummaryStatus(projectId: string, summary: AiDeliveryResearchSummarySummary, status: string) {
     if (typeof onSaveResearchSummary !== "function") return;
     setResearchSaving(true);
+    setResearchError(null);
     try {
       const saved = await onSaveResearchSummary(projectId, summary.id, { ...researchSummaryFormFromSummary(summary), status });
       if (saved) {
         await loadResearchSources(projectId);
       }
+    } catch (error) {
+      setResearchError(getErrorMessage(error, "Unable to update this research summary status."));
     } finally {
       setResearchSaving(false);
     }
@@ -1540,11 +1719,14 @@ export function AiDeliveryPage({
   async function applyResearchSummaryToBrief(projectId: string, summaryId: string) {
     if (typeof onApplyResearchSummaryToBrief !== "function") return;
     setResearchSaving(true);
+    setResearchError(null);
     try {
       const applied = await onApplyResearchSummaryToBrief(projectId, summaryId);
       if (applied?.researchSummary) {
         await loadResearchSources(projectId);
       }
+    } catch (error) {
+      setResearchError(getErrorMessage(error, "Unable to apply this research summary to brief notes."));
     } finally {
       setResearchSaving(false);
     }
@@ -1553,11 +1735,14 @@ export function AiDeliveryPage({
   async function setResearchSourceStatus(projectId: string, source: AiDeliveryResearchSourceSummary, status: string) {
     if (typeof onSaveResearchSource !== "function") return;
     setResearchSaving(true);
+    setResearchError(null);
     try {
       const saved = await onSaveResearchSource(projectId, source.id, { ...researchSourceFormFromSummary(source), status });
       if (saved) {
         await loadResearchSources(projectId);
       }
+    } catch (error) {
+      setResearchError(getErrorMessage(error, "Unable to update this research source status."));
     } finally {
       setResearchSaving(false);
     }
@@ -1565,6 +1750,7 @@ export function AiDeliveryPage({
 
   function closeResearchSources() {
     setOpenResearchSourcesId(null);
+    setResearchError(null);
     setResearchRequests([]);
     setResearchSummaries([]);
     setResearchSources([]);
@@ -1943,6 +2129,7 @@ export function AiDeliveryPage({
         <Modal
           onClose={() => {
             setOpenBriefId(null);
+            setBriefError(null);
             setBriefDetail(null);
           }}
           title="AI Delivery Brief"
@@ -1952,6 +2139,7 @@ export function AiDeliveryPage({
           ) : openProject ? (
             briefDetail ? (
               <div>
+                {briefError ? <ErrorState title="Brief action blocked" message={briefError} /> : null}
                 <dl className="brief-grid">
                   <div>
                     <dt>Client</dt>
@@ -1981,7 +2169,7 @@ export function AiDeliveryPage({
                 <p className="muted-text">Current status is shown above. Next step: update the brief fields or use the project-card review actions. This screen does not run research, planning, or delivery actions.</p>
 
                 <div className="modal-footer">
-                  <button className="secondary-action" onClick={() => { setOpenBriefId(null); setBriefDetail(null); }} type="button">Close</button>
+                  <button className="secondary-action" onClick={() => { setOpenBriefId(null); setBriefError(null); setBriefDetail(null); }} type="button">Close</button>
                   {canEdit && typeof onSaveBrief === "function" ? (
                     <button className="primary-action" onClick={() => void handleSaveBrief(openProject.id)} type="button">Save brief</button>
                   ) : null}
@@ -2073,7 +2261,7 @@ export function AiDeliveryPage({
                 </section>
 
                 <div className="modal-footer">
-                  <button className="secondary-action" onClick={() => { setOpenBriefId(null); setBriefDetail(null); }} type="button">Close</button>
+                  <button className="secondary-action" onClick={() => { setOpenBriefId(null); setBriefError(null); setBriefDetail(null); }} type="button">Close</button>
                   {canEdit && typeof onSaveBrief === "function" ? (
                     <button className="primary-action" onClick={() => void handleSaveBrief(openProject.id)} type="button">Save brief</button>
                   ) : null}
@@ -2081,6 +2269,7 @@ export function AiDeliveryPage({
               </div>
             ) : openProject.brief ? (
               <div>
+                {briefError ? <ErrorState title="Brief action blocked" message={briefError} /> : null}
                 <dl className="brief-grid">
                   <div>
                     <dt>Status</dt>
@@ -2104,7 +2293,7 @@ export function AiDeliveryPage({
                   <pre style={{ whiteSpace: 'pre-wrap' }}>{openProject.plannedContentScopeNotes ?? 'Not set'}</pre>
                 </section>
                 <div className="modal-footer">
-                  <button className="secondary-action" onClick={() => { setOpenBriefId(null); setBriefDetail(null); }} type="button">Close</button>
+                  <button className="secondary-action" onClick={() => { setOpenBriefId(null); setBriefError(null); setBriefDetail(null); }} type="button">Close</button>
                 </div>
               </div>
             ) : (
@@ -2122,9 +2311,11 @@ export function AiDeliveryPage({
           ) : openContentPlanProject ? (
             contentPlanDetail ? (
               <div>
+                {contentPlanError ? <ErrorState title="Content plan action blocked" message={contentPlanError} /> : null}
                 <section className="field-panel">
                   <h3>SEO topic/research planning</h3>
                   <p className="muted-text">Current status is shown below. Next step: add or refine topics, save the plan, then move it into review when ready. This screen does not run AI generation, crawling, publishing, or external services.</p>
+                  <div className="state-panel" role="status">Review actions follow the current content plan state shown below. If a transition is blocked, the reason stays in this modal.</div>
                 </section>
                 <div className="modal-footer">
                   <button className="secondary-action" disabled={contentPlanSaving} onClick={closeContentPlan} type="button">Close</button>
@@ -2300,6 +2491,7 @@ export function AiDeliveryPage({
               </div>
             ) : (
               <div>
+                {contentPlanError ? <ErrorState title="Content plan action blocked" message={contentPlanError} /> : null}
                 <div className="modal-footer">
                   <button className="secondary-action" disabled={contentPlanSaving} onClick={closeContentPlan} type="button">Close</button>
                   <button className="primary-action" disabled={contentPlanSaving} onClick={() => void handleCreateContentPlan(openContentPlanProject.id)} type="button">
@@ -2328,9 +2520,11 @@ export function AiDeliveryPage({
             <LoadingState label="Loading research requests and sources" />
           ) : openResearchSourcesProject ? (
             <div>
+              {researchError ? <ErrorState title="Research action blocked" message={researchError} /> : null}
               <section className="field-panel">
                 <h3>Research request editor</h3>
                 <p className="muted-text">Current status is set in the request record. Next step: create a request, then add summaries or sources as the work becomes clearer. This screen does not crawl or fetch external content.</p>
+                <div className="state-panel" role="status">Workflow run links must stay inside this same AI Delivery project. Guarded save failures remain visible in this modal.</div>
                 <div className="modal-footer">
                   <button className="secondary-action" disabled={researchSaving} onClick={closeResearchSources} type="button">Close</button>
                   <button className="secondary-action" disabled={researchSaving} onClick={() => { setResearchRequestEditorId(null); setResearchRequestForm(emptyResearchRequest()); }} type="button">New request</button>
@@ -2677,9 +2871,11 @@ export function AiDeliveryPage({
             <LoadingState label="Loading workflow runs" />
           ) : openWorkflowRunsProject ? (
             <div>
+              {workflowRunsError ? <ErrorState title="Workflow run action blocked" message={workflowRunsError} /> : null}
               <section className="field-panel">
                 <h3>Workflow run editor</h3>
                 <p className="muted-text">Current status is set in the workflow run record. Next step: save the run, then execute the local stub when ready. This screen does not run AI calls, crawling, publishing, automation, or client delivery.</p>
+                <div className="state-panel" role="status">{workflowRunActionGuidance}</div>
                 <div className="modal-footer">
                   <button className="secondary-action" disabled={workflowRunsSaving || Boolean(workflowRunExecutingId)} onClick={closeWorkflowRuns} type="button">Close</button>
                   <button className="secondary-action" disabled={workflowRunsSaving || Boolean(workflowRunExecutingId)} onClick={() => { setWorkflowRunEditorId(null); setWorkflowRunForm(emptyWorkflowRun()); }} type="button">New workflow run</button>
@@ -2803,9 +2999,11 @@ export function AiDeliveryPage({
             <LoadingState label="Loading content drafts" />
           ) : openContentDraftsProject ? (
             <div>
+              {contentDraftsError ? <ErrorState title="Content draft action blocked" message={contentDraftsError} /> : null}
               <section className="field-panel">
                 <h3>Article production planning</h3>
                 <p className="muted-text">Current status is shown below. Next step: create a draft from the content plan, then move it into review when ready. This screen does not run AI generation, image generation, publishing, storage upload, or external services.</p>
+                <div className="state-panel" role="status">{contentDraftActionGuidance}</div>
                 <div className="modal-footer">
                   <button className="secondary-action" disabled={contentDraftsSaving} onClick={() => { setContentDraftEditorId(null); setContentDraftForm(emptyContentDraft()); }} type="button">New draft</button>
                   <button className="secondary-action" disabled={contentDraftsSaving} onClick={closeContentDrafts} type="button">Close</button>
@@ -3030,9 +3228,11 @@ export function AiDeliveryPage({
             <LoadingState label="Loading deliverables" />
           ) : openDeliverablesProject ? (
             <div>
+              {deliverablesError ? <ErrorState title="Deliverable action blocked" message={deliverablesError} /> : null}
               <section className="field-panel">
                 <h3>Deliverable editor</h3>
                 <p className="muted-text">Current status is shown below. Next step: package approved assets, then use review placeholders when internal QA is needed. This screen does not perform client handoff, public links, storage upload, export generation, publishing, or client download.</p>
+                <div className="state-panel" role="status">{deliverableActionGuidance}</div>
                 <div className="modal-footer">
                   <button className="secondary-action" disabled={deliverablesSaving} onClick={() => { setDeliverableEditorId(null); setDeliverableForm({ contentDraftId: null, articleImageId: null, title: "", description: null, deliveryType: "CONTENT_PACKAGE", status: "DRAFT", exportUrl: null, storageKey: null, notes: null, isArchived: false }); }} type="button">New deliverable</button>
                   <button className="secondary-action" disabled={deliverablesSaving} onClick={closeDeliverables} type="button">Close</button>
@@ -3166,7 +3366,6 @@ export function AiDeliveryPage({
                 <p className="muted-text">
                   Showing active deliverables first, then archived records. Active: {activeDeliverableCount}. Archived: {archivedDeliverableCount}.
                 </p>
-                {deliverablesError ? <ErrorState title="Deliverables unavailable" message={deliverablesError} /> : null}
                 {!deliverablesError && deliverables.length === 0 ? (
                   <div className="state-panel">No deliverables yet. Package approved assets when ready.</div>
                 ) : null}
@@ -3258,6 +3457,7 @@ export function AiDeliveryPage({
                   ) : (
                     <>
                       {deliverableReviewsError ? <ErrorState title="Deliverable reviews unavailable" message={deliverableReviewsError} /> : null}
+                      <div className="state-panel" role="status">Review placeholders stay internal to the admin team. Archived deliverables keep history, but restore applies only to archived records.</div>
                       <div className="modal-footer">
                         <button className="secondary-action" disabled={deliverableReviewsSaving} onClick={closeDeliverables} type="button">Close</button>
                         <button className="secondary-action" disabled={deliverableReviewsSaving} onClick={() => { setDeliverableReviewEditorId(null); setDeliverableReviewForm(emptyDeliverableReview()); }} type="button">New review placeholder</button>
@@ -3360,9 +3560,11 @@ export function AiDeliveryPage({
             <LoadingState label="Loading article image requests" />
           ) : openArticleImagesProject ? (
             <div>
+              {articleImagesError ? <ErrorState title="Article image action blocked" message={articleImagesError} /> : null}
               <section className="field-panel">
                 <h3>Image production planning</h3>
                 <p className="muted-text">Current status is shown below. Next step: link a draft, save the request, then move it through preview and final-ready actions. This screen does not run AI image generation, upscaling, upload, public links, publishing, or client image review.</p>
+                <div className="state-panel" role="status">{articleImageActionGuidance}</div>
                 <div className="modal-footer">
                   <button className="secondary-action" disabled={articleImagesSaving} onClick={() => { setArticleImageEditorId(null); setArticleImageForm((current) => ({ ...emptyArticleImage(), contentDraftId: current.contentDraftId })); }} type="button">New image request</button>
                   <button className="secondary-action" disabled={articleImagesSaving} onClick={closeArticleImages} type="button">Close</button>

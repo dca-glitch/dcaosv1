@@ -2011,6 +2011,26 @@ export function App() {
     }
   }
 
+  function throwAiDeliveryUiError(message: string): never {
+    setAppMessage({ tone: "error", text: message });
+    throw new Error(message);
+  }
+
+  function throwAiDeliveryResponseError(response: ApiFailure): never {
+    throwAiDeliveryUiError(getErrorMessage(response));
+  }
+
+  function rethrowAiDeliveryRuntimeError(error: unknown): never {
+    if (error instanceof Error) {
+      setAppMessage({ tone: "error", text: error.message });
+      throw error;
+    }
+
+    const message = maskError(error);
+    setAppMessage({ tone: "error", text: message });
+    throw new Error(message);
+  }
+
   async function handleFetchAiDeliveryBrief(projectId: string): Promise<null | {
     id: string;
     status: string;
@@ -2032,13 +2052,11 @@ export function App() {
       const response = await runAuthenticatedRequest<{ brief: any }>(`/ai-delivery-projects/${projectId}/brief`, { method: "GET" });
       if (!response) return null;
       if (!response.ok) {
-        setAppMessage({ tone: "error", text: getErrorMessage(response) });
-        return null;
+        throwAiDeliveryResponseError(response);
       }
       return response.data.brief ?? null;
     } catch (error) {
-      setAppMessage({ tone: "error", text: maskError(error) });
-      return null;
+      return rethrowAiDeliveryRuntimeError(error);
     }
   }
 
@@ -2054,15 +2072,13 @@ export function App() {
       const response = await runAuthenticatedRequest<{ brief: any }>(`/ai-delivery-projects/${projectId}/brief`, { method: "PUT", body: values });
       if (!response) return false;
       if (!response.ok) {
-        setAppMessage({ tone: "error", text: getErrorMessage(response) });
-        return false;
+        throwAiDeliveryResponseError(response);
       }
       await loadProtectedState(tokenRef.current);
       setAppMessage({ tone: "success", text: "Brief saved." });
       return true;
     } catch (error) {
-      setAppMessage({ tone: "error", text: maskError(error) });
-      return false;
+      return rethrowAiDeliveryRuntimeError(error);
     }
   }
 
@@ -2075,13 +2091,11 @@ export function App() {
       );
       if (!response) return null;
       if (!response.ok) {
-        setAppMessage({ tone: "error", text: getErrorMessage(response) });
-        return null;
+        throwAiDeliveryResponseError(response);
       }
       return response.data.contentPlan ?? null;
     } catch (error) {
-      setAppMessage({ tone: "error", text: maskError(error) });
-      return null;
+      return rethrowAiDeliveryRuntimeError(error);
     }
   }
 
@@ -2094,14 +2108,12 @@ export function App() {
       );
       if (!response) return null;
       if (!response.ok) {
-        setAppMessage({ tone: "error", text: getErrorMessage(response) });
-        return null;
+        throwAiDeliveryResponseError(response);
       }
       setAppMessage({ tone: "success", text: "Monthly content plan created." });
       return response.data.contentPlan ?? null;
     } catch (error) {
-      setAppMessage({ tone: "error", text: maskError(error) });
-      return null;
+      return rethrowAiDeliveryRuntimeError(error);
     }
   }
 
@@ -2117,14 +2129,12 @@ export function App() {
       );
       if (!response) return null;
       if (!response.ok) {
-        setAppMessage({ tone: "error", text: getErrorMessage(response) });
-        return null;
+        throwAiDeliveryResponseError(response);
       }
       setAppMessage({ tone: "success", text: "Monthly content plan saved." });
       return response.data.contentPlan ?? null;
     } catch (error) {
-      setAppMessage({ tone: "error", text: maskError(error) });
-      return null;
+      return rethrowAiDeliveryRuntimeError(error);
     }
   }
 
@@ -2158,14 +2168,12 @@ export function App() {
       const response = await runAuthenticatedRequest<AiDeliveryContentPlanResponse>(path, { method: "POST" });
       if (!response) return null;
       if (!response.ok) {
-        setAppMessage({ tone: "error", text: getErrorMessage(response) });
-        return null;
+        throwAiDeliveryResponseError(response);
       }
       setAppMessage({ tone: "success", text: successMessage });
       return response.data.contentPlan ?? null;
     } catch (error) {
-      setAppMessage({ tone: "error", text: maskError(error) });
-      return null;
+      return rethrowAiDeliveryRuntimeError(error);
     }
   }
 
@@ -2175,13 +2183,11 @@ export function App() {
       const response = await runAuthenticatedRequest<AiDeliveryContentDraftsResponse>(`/ai-delivery-projects/${projectId}/content-drafts`);
       if (!response) return [];
       if (!response.ok) {
-        setAppMessage({ tone: "error", text: getErrorMessage(response) });
-        return [];
+        throwAiDeliveryResponseError(response);
       }
       return response.data.contentDrafts;
     } catch (error) {
-      setAppMessage({ tone: "error", text: maskError(error) });
-      return [];
+      return rethrowAiDeliveryRuntimeError(error);
     }
   }
 
@@ -2198,14 +2204,12 @@ export function App() {
       );
       if (!response) return null;
       if (!response.ok) {
-        setAppMessage({ tone: "error", text: getErrorMessage(response) });
-        return null;
+        throwAiDeliveryResponseError(response);
       }
       setAppMessage({ tone: "success", text: draftId ? "Content draft saved." : "Content draft created." });
       return response.data.contentDraft ?? null;
     } catch (error) {
-      setAppMessage({ tone: "error", text: maskError(error) });
-      return null;
+      return rethrowAiDeliveryRuntimeError(error);
     }
   }
 
@@ -2215,14 +2219,12 @@ export function App() {
       const response = await runAuthenticatedRequest<AiDeliveryContentDraftResponse>(`/ai-delivery-projects/${projectId}/content-drafts/${draftId}/archive`, { method: "POST" });
       if (!response) return null;
       if (!response.ok) {
-        setAppMessage({ tone: "error", text: getErrorMessage(response) });
-        return null;
+        throwAiDeliveryResponseError(response);
       }
       setAppMessage({ tone: "success", text: "Content draft archived." });
       return response.data.contentDraft ?? null;
     } catch (error) {
-      setAppMessage({ tone: "error", text: maskError(error) });
-      return null;
+      return rethrowAiDeliveryRuntimeError(error);
     }
   }
 
@@ -2246,13 +2248,11 @@ export function App() {
       const response = await runAuthenticatedRequest<AiDeliveryArticleImagesResponse>(`/ai-delivery-projects/${projectId}/article-images`);
       if (!response) return [];
       if (!response.ok) {
-        setAppMessage({ tone: "error", text: getErrorMessage(response) });
-        return [];
+        throwAiDeliveryResponseError(response);
       }
       return response.data.articleImages;
     } catch (error) {
-      setAppMessage({ tone: "error", text: maskError(error) });
-      return [];
+      return rethrowAiDeliveryRuntimeError(error);
     }
   }
 
@@ -2262,13 +2262,11 @@ export function App() {
       const response = await runAuthenticatedRequest<AiDeliveryDeliverablesResponse>(`/ai-delivery-projects/${projectId}/deliverables`);
       if (!response) return [];
       if (!response.ok) {
-        setAppMessage({ tone: "error", text: getErrorMessage(response) });
-        return [];
+        throwAiDeliveryResponseError(response);
       }
       return response.data.deliverables;
     } catch (error) {
-      setAppMessage({ tone: "error", text: maskError(error) });
-      return [];
+      return rethrowAiDeliveryRuntimeError(error);
     }
   }
 
@@ -2285,13 +2283,11 @@ export function App() {
       );
       if (!response) return null;
       if (!response.ok) {
-        setAppMessage({ tone: "error", text: getErrorMessage(response) });
-        return null;
+        throwAiDeliveryResponseError(response);
       }
       return response.data.deliverable;
     } catch (error) {
-      setAppMessage({ tone: "error", text: maskError(error) });
-      return null;
+      return rethrowAiDeliveryRuntimeError(error);
     }
   }
 
@@ -2306,13 +2302,11 @@ export function App() {
       );
       if (!response) return [];
       if (!response.ok) {
-        setAppMessage({ tone: "error", text: getErrorMessage(response) });
-        return [];
+        throwAiDeliveryResponseError(response);
       }
       return response.data.deliverableReviews;
     } catch (error) {
-      setAppMessage({ tone: "error", text: maskError(error) });
-      return [];
+      return rethrowAiDeliveryRuntimeError(error);
     }
   }
 
@@ -2332,14 +2326,12 @@ export function App() {
       );
       if (!response) return null;
       if (!response.ok) {
-        setAppMessage({ tone: "error", text: getErrorMessage(response) });
-        return null;
+        throwAiDeliveryResponseError(response);
       }
       setAppMessage({ tone: "success", text: reviewId ? "Deliverable review saved." : "Deliverable review placeholder created." });
       return response.data.deliverableReview;
     } catch (error) {
-      setAppMessage({ tone: "error", text: maskError(error) });
-      return null;
+      return rethrowAiDeliveryRuntimeError(error);
     }
   }
 
@@ -2349,13 +2341,11 @@ export function App() {
       const response = await runAuthenticatedRequest<AiDeliveryWorkflowRunsResponse>(`/ai-delivery/projects/${projectId}/workflow-runs`);
       if (!response) return [];
       if (!response.ok) {
-        setAppMessage({ tone: "error", text: getErrorMessage(response) });
-        return [];
+        throwAiDeliveryResponseError(response);
       }
       return response.data.workflowRuns;
     } catch (error) {
-      setAppMessage({ tone: "error", text: maskError(error) });
-      return [];
+      return rethrowAiDeliveryRuntimeError(error);
     }
   }
 
@@ -2372,14 +2362,12 @@ export function App() {
       );
       if (!response) return null;
       if (!response.ok) {
-        setAppMessage({ tone: "error", text: getErrorMessage(response) });
-        return null;
+        throwAiDeliveryResponseError(response);
       }
       setAppMessage({ tone: "success", text: workflowRunId ? "Workflow run saved." : "Workflow run created." });
       return response.data.workflowRun;
     } catch (error) {
-      setAppMessage({ tone: "error", text: maskError(error) });
-      return null;
+      return rethrowAiDeliveryRuntimeError(error);
     }
   }
 
@@ -2395,8 +2383,7 @@ export function App() {
       );
       if (!response) return null;
       if (!response.ok) {
-        setAppMessage({ tone: "error", text: getErrorMessage(response) });
-        return null;
+        throwAiDeliveryResponseError(response);
       }
       const executedRun = response.data.workflowRun;
       setAppMessage({
@@ -2405,8 +2392,7 @@ export function App() {
       });
       return executedRun;
     } catch (error) {
-      setAppMessage({ tone: "error", text: maskError(error) });
-      return null;
+      return rethrowAiDeliveryRuntimeError(error);
     }
   }
 
@@ -2416,13 +2402,11 @@ export function App() {
       const response = await runAuthenticatedRequest<AiDeliveryResearchRequestsResponse>(`/ai-delivery/projects/${projectId}/research-requests`);
       if (!response) return [];
       if (!response.ok) {
-        setAppMessage({ tone: "error", text: getErrorMessage(response) });
-        return [];
+        throwAiDeliveryResponseError(response);
       }
       return response.data.researchRequests;
     } catch (error) {
-      setAppMessage({ tone: "error", text: maskError(error) });
-      return [];
+      return rethrowAiDeliveryRuntimeError(error);
     }
   }
 
@@ -2441,14 +2425,12 @@ export function App() {
       );
       if (!response) return null;
       if (!response.ok) {
-        setAppMessage({ tone: "error", text: getErrorMessage(response) });
-        return null;
+        throwAiDeliveryResponseError(response);
       }
       setAppMessage({ tone: "success", text: researchRequestId ? "Research request saved." : "Research request created." });
       return response.data.researchRequest;
     } catch (error) {
-      setAppMessage({ tone: "error", text: maskError(error) });
-      return null;
+      return rethrowAiDeliveryRuntimeError(error);
     }
   }
 
@@ -2468,13 +2450,11 @@ export function App() {
       );
       if (!response) return [];
       if (!response.ok) {
-        setAppMessage({ tone: "error", text: getErrorMessage(response) });
-        return [];
+        throwAiDeliveryResponseError(response);
       }
       return response.data.researchSources;
     } catch (error) {
-      setAppMessage({ tone: "error", text: maskError(error) });
-      return [];
+      return rethrowAiDeliveryRuntimeError(error);
     }
   }
 
@@ -2493,14 +2473,12 @@ export function App() {
       );
       if (!response) return null;
       if (!response.ok) {
-        setAppMessage({ tone: "error", text: getErrorMessage(response) });
-        return null;
+        throwAiDeliveryResponseError(response);
       }
       setAppMessage({ tone: "success", text: researchSourceId ? "Research source saved." : "Research source created." });
       return response.data.researchSource;
     } catch (error) {
-      setAppMessage({ tone: "error", text: maskError(error) });
-      return null;
+      return rethrowAiDeliveryRuntimeError(error);
     }
   }
 
@@ -2510,13 +2488,11 @@ export function App() {
       const response = await runAuthenticatedRequest<AiDeliveryResearchSummariesResponse>(`/ai-delivery/projects/${projectId}/research-summaries`);
       if (!response) return [];
       if (!response.ok) {
-        setAppMessage({ tone: "error", text: getErrorMessage(response) });
-        return [];
+        throwAiDeliveryResponseError(response);
       }
       return response.data.researchSummaries;
     } catch (error) {
-      setAppMessage({ tone: "error", text: maskError(error) });
-      return [];
+      return rethrowAiDeliveryRuntimeError(error);
     }
   }
 
@@ -2535,14 +2511,12 @@ export function App() {
       );
       if (!response) return null;
       if (!response.ok) {
-        setAppMessage({ tone: "error", text: getErrorMessage(response) });
-        return null;
+        throwAiDeliveryResponseError(response);
       }
       setAppMessage({ tone: "success", text: researchSummaryId ? "Research summary saved." : "Research summary created." });
       return response.data.researchSummary;
     } catch (error) {
-      setAppMessage({ tone: "error", text: maskError(error) });
-      return null;
+      return rethrowAiDeliveryRuntimeError(error);
     }
   }
 
@@ -2558,14 +2532,12 @@ export function App() {
       );
       if (!response) return null;
       if (!response.ok) {
-        setAppMessage({ tone: "error", text: getErrorMessage(response) });
-        return null;
+        throwAiDeliveryResponseError(response);
       }
       setAppMessage({ tone: "success", text: "Research summary copied into brief notes." });
       return response.data;
     } catch (error) {
-      setAppMessage({ tone: "error", text: maskError(error) });
-      return null;
+      return rethrowAiDeliveryRuntimeError(error);
     }
   }
 
@@ -2611,14 +2583,12 @@ export function App() {
       const response = await runAuthenticatedRequest<AiDeliveryDeliverableResponse>(path, { method: "POST" });
       if (!response) return null;
       if (!response.ok) {
-        setAppMessage({ tone: "error", text: getErrorMessage(response) });
-        return null;
+        throwAiDeliveryResponseError(response);
       }
       setAppMessage({ tone: "success", text: successMessage });
       return response.data.deliverable;
     } catch (error) {
-      setAppMessage({ tone: "error", text: maskError(error) });
-      return null;
+      return rethrowAiDeliveryRuntimeError(error);
     }
   }
 
@@ -2635,14 +2605,12 @@ export function App() {
       );
       if (!response) return null;
       if (!response.ok) {
-        setAppMessage({ tone: "error", text: getErrorMessage(response) });
-        return null;
+        throwAiDeliveryResponseError(response);
       }
       setAppMessage({ tone: "success", text: imageId ? "Article image request saved." : "Article image request created." });
       return response.data.articleImage ?? null;
     } catch (error) {
-      setAppMessage({ tone: "error", text: maskError(error) });
-      return null;
+      return rethrowAiDeliveryRuntimeError(error);
     }
   }
 
@@ -2652,14 +2620,12 @@ export function App() {
       const response = await runAuthenticatedRequest<AiDeliveryArticleImageResponse>(`/ai-delivery-projects/${projectId}/article-images/${imageId}/archive`, { method: "POST" });
       if (!response) return null;
       if (!response.ok) {
-        setAppMessage({ tone: "error", text: getErrorMessage(response) });
-        return null;
+        throwAiDeliveryResponseError(response);
       }
       setAppMessage({ tone: "success", text: "Article image request archived." });
       return response.data.articleImage ?? null;
     } catch (error) {
-      setAppMessage({ tone: "error", text: maskError(error) });
-      return null;
+      return rethrowAiDeliveryRuntimeError(error);
     }
   }
 
@@ -2697,14 +2663,12 @@ export function App() {
       const response = await runAuthenticatedRequest<AiDeliveryArticleImageResponse>(path, { method: "POST" });
       if (!response) return null;
       if (!response.ok) {
-        setAppMessage({ tone: "error", text: getErrorMessage(response) });
-        return null;
+        throwAiDeliveryResponseError(response);
       }
       setAppMessage({ tone: "success", text: successMessage });
       return response.data.articleImage ?? null;
     } catch (error) {
-      setAppMessage({ tone: "error", text: maskError(error) });
-      return null;
+      return rethrowAiDeliveryRuntimeError(error);
     }
   }
 
@@ -2746,14 +2710,12 @@ export function App() {
       const response = await runAuthenticatedRequest<AiDeliveryContentDraftResponse>(path, { method: "POST", body });
       if (!response) return null;
       if (!response.ok) {
-        setAppMessage({ tone: "error", text: getErrorMessage(response) });
-        return null;
+        throwAiDeliveryResponseError(response);
       }
       setAppMessage({ tone: "success", text: successMessage });
       return response.data.contentDraft ?? null;
     } catch (error) {
-      setAppMessage({ tone: "error", text: maskError(error) });
-      return null;
+      return rethrowAiDeliveryRuntimeError(error);
     }
   }
 
