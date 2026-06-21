@@ -2,7 +2,7 @@
 
 Docs-only checklist and current-state contract for the feature branch.
 
-Current state: AI Delivery is local-first and admin/operator-side. Completed foundations on this branch include project/brief records, workflow runs with controlled execution logging, research requests/sources, research summaries, monthly content plan approval, content draft workflow, article image workflow, deliverable packaging, deliverable review admin API/UI, and local AI Delivery regression smoke. Client Access / Client Portal remains intentionally limited until admin/operator modules are stable.
+Current state: AI Delivery is local-first and admin/operator-side. The current admin foundation slice is closed for its present scope. Completed foundations on this branch include project/brief records, workflow runs with controlled execution logging, research requests/sources, research summaries, monthly content plan approval, content draft workflow, article image workflow, deliverable packaging, deliverable review admin API/UI, and local AI Delivery regression smoke. Client Access / Client Portal remains intentionally limited until admin/operator modules are stable.
 
 Platform-neutral rule: AI Delivery records, content assets, article images, and deliverables are not modeled as WordPress-only objects. WordPress is only one optional future publishing connector alongside Next.js/custom React, headless CMS, Markdown/MDX, JSON packages, Google Docs, and PDF delivery targets.
 
@@ -44,10 +44,47 @@ Purpose: prevent repeated local test data pollution while preserving the existin
 
 ## Current readiness framing
 
-- Admin/operator foundation: mostly ready.
+- Admin/operator foundation: closed for the current foundation scope.
 - July-ready internal MVP: partial.
 - Full client-facing module: not complete.
 - Full AI modules roadmap: early stage.
+
+## Admin foundation closure
+
+The AI Delivery admin foundation slice is closed for the current local admin/operator scope.
+
+Implemented admin surfaces:
+
+- projects
+- briefs
+- workflow runs
+- research requests
+- research sources
+- research summaries
+- monthly content plan
+- content drafts
+- article images
+- deliverables
+- deliverable reviews
+
+Focused smoke evidence covers the core admin workflow transitions, including article image create/update, preview-ready, request-changes, approve, and final-ready paths.
+
+Closure evidence:
+
+- `npm.cmd run validate` passed.
+- `npm.cmd run smoke:local` passed.
+- `npm.cmd run smoke:ai-delivery-reviews` passed.
+
+Not included in this closed admin foundation slice:
+
+- Client Portal
+- real AI execution
+- crawling
+- WordPress publishing/export connectors
+- GA/GSC reporting
+- provider sending
+- queues/background jobs
+- deployment
 
 Backend routes currently expected:
 
