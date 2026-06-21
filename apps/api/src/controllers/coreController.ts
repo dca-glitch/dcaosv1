@@ -54,6 +54,7 @@ import {
   getCompanyProfile,
   getBillDocumentDownload,
   getCreditNoteDocumentDownload,
+  getAiDeliveryDeliverableDownload,
   getInvoiceDocumentDownload,
   getInvoice,
   getProject,
@@ -2320,6 +2321,16 @@ async function runCreditNoteAction(req: Parameters<RequestHandler>[0], res: Para
 export const downloadInvoiceDocumentHandler: RequestHandler = async (req, res) => runDownload(req, res, getInvoiceDocumentDownload, req.params.id);
 export const downloadBillDocumentHandler: RequestHandler = async (req, res) => runDownload(req, res, getBillDocumentDownload, req.params.id);
 export const downloadCreditNoteDocumentHandler: RequestHandler = async (req, res) => runDownload(req, res, getCreditNoteDocumentDownload, req.params.id);
+export const downloadAiDeliveryDeliverableHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  const aiDeliveryProjectId = typeof req.params.id === "string" ? req.params.id.trim() : "";
+  const deliverableId = typeof req.params.deliverableId === "string" ? req.params.deliverableId.trim() : "";
+  if (!authSession) return void res.status(401).json(unauthorizedFailure());
+  if (!aiDeliveryProjectId || !deliverableId) return void res.status(400).json(aiDeliveryProjectInvalidFailure());
+  const response = await getAiDeliveryDeliverableDownload(authSession, aiDeliveryProjectId, deliverableId);
+  if (!response) return void res.status(404).json(failure("DOCUMENT_NOT_FOUND", "Document is not available."));
+  res.json(success(response, { phase: "runtime", scope: "secure-downloads" }));
+};
 
 async function runDownload(req: Parameters<RequestHandler>[0], res: Parameters<RequestHandler>[1], action: typeof getInvoiceDocumentDownload, idValue: unknown) {
   const authSession = getAuthSession(res.locals); const id = typeof idValue === "string" ? idValue.trim() : "";

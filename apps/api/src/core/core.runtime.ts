@@ -58,7 +58,10 @@ import type {
   VendorsResponse
 } from "./core.types";
 import type { AuthResolvedSessionContext } from "../auth/types";
-import { getSignedR2ReadUrl, uploadR2Object } from "../storage/r2.service";
+import {
+  getPrivateStorageDownloadReference,
+  putPrivateStorageObject
+} from "../storage/private-storage.service";
 import { recordAiDeliverySystemEvent } from "../services/system-events.service";
 
 const prisma = createPrismaClient();
@@ -4283,8 +4286,7 @@ export async function getInvoiceDocumentDownload(authSession: AuthResolvedSessio
   if (!tenantId) return null;
   const invoice = await prisma.invoice.findFirst({ where: { id: invoiceId, tenantId }, select: { documentStorageKey: true } });
   if (!invoice?.documentStorageKey) return null;
-  const downloadUrl = getSignedR2ReadUrl(invoice.documentStorageKey);
-  return downloadUrl ? { downloadUrl, expiresSeconds: 300 } : null;
+  return getPrivateStorageDownloadReference(invoice.documentStorageKey);
 }
 
 export async function getBillDocumentDownload(authSession: AuthResolvedSessionContext, billId: string): Promise<DocumentDownloadResponse | null> {
@@ -4292,8 +4294,7 @@ export async function getBillDocumentDownload(authSession: AuthResolvedSessionCo
   if (!tenantId) return null;
   const bill = await prisma.bill.findFirst({ where: { id: billId, tenantId }, select: { documentStorageKey: true } });
   if (!bill?.documentStorageKey) return null;
-  const downloadUrl = getSignedR2ReadUrl(bill.documentStorageKey);
-  return downloadUrl ? { downloadUrl, expiresSeconds: 300 } : null;
+  return getPrivateStorageDownloadReference(bill.documentStorageKey);
 }
 
 export async function getCreditNoteDocumentDownload(authSession: AuthResolvedSessionContext, creditNoteId: string): Promise<DocumentDownloadResponse | null> {
@@ -4301,8 +4302,7 @@ export async function getCreditNoteDocumentDownload(authSession: AuthResolvedSes
   if (!tenantId) return null;
   const creditNote = await prisma.creditNote.findFirst({ where: { id: creditNoteId, tenantId }, select: { documentStorageKey: true } });
   if (!creditNote?.documentStorageKey) return null;
-  const downloadUrl = getSignedR2ReadUrl(creditNote.documentStorageKey);
-  return downloadUrl ? { downloadUrl, expiresSeconds: 300 } : null;
+  return getPrivateStorageDownloadReference(creditNote.documentStorageKey);
 }
 
 export async function listRecurringInvoices(
@@ -4969,15 +4969,19 @@ export async function uploadBillDocument(
     return null;
   }
 
-  const upload = await uploadR2Object({
+  const upload = await putPrivateStorageObject({
     body: Buffer.from(input.contentBase64, "base64"),
     documentDate: bill.paymentDate ?? bill.billDate ?? new Date(),
-    documentType: "bills",
     mimeType: input.mimeType,
+    namespace: "bill-document",
     originalFileName: input.fileName,
     projectSlugOrId: null,
     tenantSlugOrId: tenant.slug || tenant.id
   });
+
+  if (!upload) {
+    throw new Error("Private storage is not configured.");
+  }
 
   const updated = await prisma.bill.update({
     where: {
@@ -4985,7 +4989,7 @@ export async function uploadBillDocument(
     },
     data: {
       documentStorageKey: upload.storageKey,
-      documentUrl: upload.publicUrl
+      documentUrl: null
     },
     select: billSelect
   });
@@ -5210,6 +5214,35 @@ export async function updateAiDeliveryDeliverable(
 
     return { deliverable: toAiDeliveryDeliverableSummary(updated) };
   });
+}
+
+export async function getAiDeliveryDeliverableDownload(
+  authSession: AuthResolvedSessionContext,
+  aiDeliveryProjectId: string,
+  deliverableId: string
+): Promise<DocumentDownloadResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId || !aiDeliveryProjectId || !deliverableId) {
+    return null;
+  }
+
+  const deliverable = await getAiDeliveryDeliverableDelegate(prisma).findFirst({
+    where: {
+      id: deliverableId,
+      tenantId,
+      aiDeliveryProjectId,
+      isArchived: false
+    },
+    select: {
+      storageKey: true
+    }
+  }) as { storageKey?: string | null } | null;
+
+  if (!deliverable?.storageKey) {
+    return null;
+  }
+
+  return getPrivateStorageDownloadReference(deliverable.storageKey);
 }
 
 export async function archiveAiDeliveryDeliverable(
