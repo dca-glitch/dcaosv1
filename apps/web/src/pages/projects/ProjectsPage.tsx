@@ -111,9 +111,16 @@ export function ProjectsPage({
     [filter, projects]
   );
 
-  function openCreateModal() {
+  const submitLabel = editorProjectId ? "Update project" : "Create project";
+
+  function closeEditor() {
     setEditorProjectId(null);
     setDraft(emptyForm());
+    setIsEditorOpen(false);
+  }
+
+  function openCreateModal() {
+    closeEditor();
     setIsEditorOpen(true);
   }
 
@@ -136,9 +143,7 @@ export function ProjectsPage({
     try {
       const ok = await onSave(editorProjectId, draft);
       if (ok) {
-        setEditorProjectId(null);
-        setDraft(emptyForm());
-        setIsEditorOpen(false);
+        closeEditor();
       }
     } finally {
       setSaving(false);
@@ -250,56 +255,41 @@ export function ProjectsPage({
 
       {isEditorOpen ? (
         <Modal
-          onClose={() => {
-            setEditorProjectId(null);
-            setDraft(emptyForm(clients[0]?.id ?? ""));
-            setIsEditorOpen(false);
-          }}
+          onClose={closeEditor}
           title={editorProjectId ? "Edit Project" : "Add Project"}
         >
           <form className="entity-form" onSubmit={handleSubmit}>
+            <p className="muted-text">Used by admin team to organize work and billing. Archived items are hidden from active work but can be restored.</p>
+            <ProjectModalActions disabled={saving} label={submitLabel} onCancel={closeEditor} saving={saving} />
             <div className="field-grid">
               <label>
-                Client
+                Project name - Required
+                <input
+                  maxLength={255}
+                  onChange={(event) => setDraft((current) => ({ ...current, name: event.target.value }))}
+                  placeholder="Website build, SEO retainer, monthly content, support"
+                  required
+                  value={draft.name}
+                />
+                <span className="muted-text">Used by admin team to organize work and billing.</span>
+              </label>
+              <label>
+                Client - Optional
                 <select
                   onChange={(event) => setDraft((current) => ({ ...current, clientId: event.target.value }))}
                   value={draft.clientId}
                 >
-                  <option value="">No client</option>
+                  <option value="">Client can be added later if this is internal work</option>
                   {clients.map((client) => (
                     <option key={client.id} value={client.id}>
                       {client.name}
                     </option>
                   ))}
                 </select>
+                <span className="muted-text">Client can be added later if this is internal work.</span>
               </label>
               <label>
-                Name
-                <input
-                  maxLength={255}
-                  onChange={(event) => setDraft((current) => ({ ...current, name: event.target.value }))}
-                  required
-                  value={draft.name}
-                />
-              </label>
-              <label>
-                Start date
-                <input
-                  onChange={(event) => setDraft((current) => ({ ...current, startDate: event.target.value }))}
-                  type="date"
-                  value={draft.startDate}
-                />
-              </label>
-              <label>
-                Due date
-                <input
-                  onChange={(event) => setDraft((current) => ({ ...current, dueDate: event.target.value }))}
-                  type="date"
-                  value={draft.dueDate}
-                />
-              </label>
-              <label>
-                Status
+                Project status - Required
                 <select
                   onChange={(event) => setDraft((current) => ({ ...current, status: event.target.value }))}
                   value={draft.status}
@@ -310,20 +300,42 @@ export function ProjectsPage({
                     </option>
                   ))}
                 </select>
+                <span className="muted-text">Used to show whether delivery is active, paused, completed, or archived.</span>
               </label>
               <label className="field-span-2">
-                Description
+                Description - Optional
                 <textarea
                   maxLength={4000}
                   onChange={(event) => setDraft((current) => ({ ...current, description: event.target.value }))}
+                  placeholder="What this project covers, key scope, or delivery notes"
                   rows={4}
                   value={draft.description}
                 />
+                <span className="muted-text">Shown only in admin records.</span>
+              </label>
+              <label>
+                Start date - Optional
+                <input
+                  onChange={(event) => setDraft((current) => ({ ...current, startDate: event.target.value }))}
+                  type="date"
+                  value={draft.startDate}
+                />
+                <span className="muted-text">Use when the project has a defined start date.</span>
+              </label>
+              <label>
+                Due date - Optional
+                <input
+                  onChange={(event) => setDraft((current) => ({ ...current, dueDate: event.target.value }))}
+                  type="date"
+                  value={draft.dueDate}
+                />
+                <span className="muted-text">Use when delivery has a target completion date.</span>
               </label>
             </div>
             {selectedProject ? (
               <section className="field-span-2" aria-labelledby="project-tasks-title">
                 <h3 id="project-tasks-title">Tasks for this project</h3>
+                <p className="muted-text">Related tasks help the admin team track delivery progress for this project.</p>
                 {selectedProjectTasks.length === 0 ? (
                   <p>No tasks for this project.</p>
                 ) : (
@@ -335,26 +347,26 @@ export function ProjectsPage({
                 )}
               </section>
             ) : null}
-            <div className="modal-footer">
-              <button
-                className="secondary-action"
-                disabled={saving}
-                onClick={() => {
-                  setEditorProjectId(null);
-                  setDraft(emptyForm());
-                  setIsEditorOpen(false);
-                }}
-                type="button"
-              >
-                Cancel
-              </button>
-              <button className="primary-action" disabled={saving} type="submit">
-                {saving ? "Saving" : "Save"}
-              </button>
-            </div>
+            <ProjectModalActions disabled={saving} label={submitLabel} onCancel={closeEditor} saving={saving} />
           </form>
         </Modal>
       ) : null}
     </section>
+  );
+}
+
+type ProjectModalActionsProps = {
+  disabled: boolean;
+  label: string;
+  onCancel: () => void;
+  saving: boolean;
+};
+
+function ProjectModalActions({ disabled, label, onCancel, saving }: ProjectModalActionsProps) {
+  return (
+    <div className="modal-footer">
+      <button className="secondary-action" disabled={saving} onClick={onCancel} type="button">Cancel</button>
+      <button className="primary-action" disabled={disabled} type="submit">{saving ? "Saving" : label}</button>
+    </div>
   );
 }

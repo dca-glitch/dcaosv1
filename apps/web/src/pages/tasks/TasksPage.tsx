@@ -131,9 +131,16 @@ export function TasksPage({ tasks, projects, canEdit, error, loading, onArchive,
 
   const projectById = useMemo(() => new Map(projects.map((project) => [project.id, project])), [projects]);
 
-  function openCreateModal() {
+  const submitLabel = editorTaskId ? "Update task" : "Create task";
+
+  function closeEditor() {
     setEditorTaskId(null);
     setDraft(emptyForm(""));
+    setIsEditorOpen(false);
+  }
+
+  function openCreateModal() {
+    closeEditor();
     setIsEditorOpen(true);
   }
 
@@ -158,9 +165,7 @@ export function TasksPage({ tasks, projects, canEdit, error, loading, onArchive,
     try {
       const ok = await onSave(editorTaskId, draft);
       if (ok) {
-        setEditorTaskId(null);
-        setDraft(emptyForm(""));
-        setIsEditorOpen(false);
+        closeEditor();
       }
     } finally {
       setSaving(false);
@@ -268,53 +273,51 @@ export function TasksPage({ tasks, projects, canEdit, error, loading, onArchive,
 
       {isEditorOpen ? (
         <Modal
-          onClose={() => {
-            setEditorTaskId(null);
-            setDraft(emptyForm(""));
-            setIsEditorOpen(false);
-          }}
+          onClose={closeEditor}
           title={editorTaskId ? "Edit Task" : "Add Task"}
         >
           <form className="entity-form" onSubmit={handleSubmit}>
+            <p className="muted-text">Used by admin team to organize work and delivery. Archived items are hidden from active work but can be restored.</p>
+            <TaskModalActions disabled={saving} label={submitLabel} onCancel={closeEditor} saving={saving} />
             <div className="field-grid">
               <label>
-                Project
+                Task name - Required
+                <input
+                  maxLength={255}
+                  onChange={(event) => setDraft((current) => ({ ...current, title: event.target.value }))}
+                  placeholder="Short action the team needs to complete"
+                  required
+                  value={draft.title}
+                />
+                <span className="muted-text">Used by admin team to track the work that needs to be completed.</span>
+              </label>
+              <label>
+                Project - Optional
                 <select
                   onChange={(event) => setDraft((current) => ({ ...current, projectId: event.target.value }))}
                   value={draft.projectId}
                 >
-                  <option value="">No project</option>
+                  <option value="">Tasks can exist without a project</option>
                   {projects.map((project) => (
                     <option key={project.id} value={project.id}>
-                      {project.name} ({project.client.name})
+                      {project.name} ({project.client?.name ?? "No client"})
                     </option>
                   ))}
                 </select>
+                <span className="muted-text">Tasks can exist without a project.</span>
               </label>
               <label>
-                Title
+                Due date - Required
                 <input
-                  maxLength={255}
-                  onChange={(event) => setDraft((current) => ({ ...current, title: event.target.value }))}
+                  onChange={(event) => setDraft((current) => ({ ...current, dueDate: event.target.value }))}
                   required
-                  value={draft.title}
+                  type="date"
+                  value={draft.dueDate}
                 />
+                <span className="muted-text">When this task should be completed.</span>
               </label>
               <label>
-                Status
-                <select
-                  onChange={(event) => setDraft((current) => ({ ...current, status: event.target.value }))}
-                  value={draft.status}
-                >
-                  {statusOptions.map((status) => (
-                    <option key={status} value={status}>
-                      {formatStatusLabel(status, false)}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                Recurring
+                Recurring - Optional
                 <select
                   onChange={(event) => setDraft((current) => ({ ...current, recurringType: event.target.value }))}
                   value={draft.recurringType}
@@ -325,46 +328,54 @@ export function TasksPage({ tasks, projects, canEdit, error, loading, onArchive,
                     </option>
                   ))}
                 </select>
+                <span className="muted-text">Use only for work that repeats on a schedule.</span>
               </label>
               <label>
-                Due date
-                <input
-                  onChange={(event) => setDraft((current) => ({ ...current, dueDate: event.target.value }))}
-                  type="date"
-                  required
-                  value={draft.dueDate}
-                />
+                Status - Required
+                <select
+                  onChange={(event) => setDraft((current) => ({ ...current, status: event.target.value }))}
+                  value={draft.status}
+                >
+                  {statusOptions.map((status) => (
+                    <option key={status} value={status}>
+                      {formatStatusLabel(status, false)}
+                    </option>
+                  ))}
+                </select>
+                <span className="muted-text">Tracks delivery progress without changing archive rules.</span>
               </label>
               <label className="field-span-2">
-                Description
+                Description - Optional
                 <textarea
                   maxLength={4000}
                   onChange={(event) => setDraft((current) => ({ ...current, description: event.target.value }))}
+                  placeholder="Context, handoff details, or completion notes"
                   rows={4}
                   value={draft.description}
                 />
+                <span className="muted-text">Shown only in admin records.</span>
               </label>
             </div>
-            <div className="modal-footer">
-              <button
-                className="secondary-action"
-                disabled={saving}
-                onClick={() => {
-                  setEditorTaskId(null);
-                  setDraft(emptyForm(""));
-                  setIsEditorOpen(false);
-                }}
-                type="button"
-              >
-                Cancel
-              </button>
-              <button className="primary-action" disabled={saving} type="submit">
-                {saving ? "Saving" : "Save"}
-              </button>
-            </div>
+            <TaskModalActions disabled={saving} label={submitLabel} onCancel={closeEditor} saving={saving} />
           </form>
         </Modal>
       ) : null}
     </section>
+  );
+}
+
+type TaskModalActionsProps = {
+  disabled: boolean;
+  label: string;
+  onCancel: () => void;
+  saving: boolean;
+};
+
+function TaskModalActions({ disabled, label, onCancel, saving }: TaskModalActionsProps) {
+  return (
+    <div className="modal-footer">
+      <button className="secondary-action" disabled={saving} onClick={onCancel} type="button">Cancel</button>
+      <button className="primary-action" disabled={disabled} type="submit">{saving ? "Saving" : label}</button>
+    </div>
   );
 }

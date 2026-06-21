@@ -129,9 +129,18 @@ export function ClientsPage({
     [clients, filter]
   );
 
-  function openCreateModal() {
+  const submitLabel = editorClientId ? "Update client" : "Create client";
+
+  function closeEditor() {
     setEditorClientId(null);
     setDraft(emptyForm());
+    setClientAccessUsers([]);
+    setAccessUserId("");
+    setIsEditorOpen(false);
+  }
+
+  function openCreateModal() {
+    closeEditor();
     setIsEditorOpen(true);
   }
 
@@ -189,9 +198,7 @@ export function ClientsPage({
     try {
       const ok = await onSave(editorClientId, draft);
       if (ok) {
-        setEditorClientId(null);
-        setDraft(emptyForm());
-        setIsEditorOpen(false);
+        closeEditor();
       }
     } finally {
       setSaving(false);
@@ -305,78 +312,86 @@ export function ClientsPage({
 
       {isEditorOpen ? (
         <Modal
-          onClose={() => {
-            setEditorClientId(null);
-            setDraft(emptyForm());
-            setClientAccessUsers([]);
-            setAccessUserId("");
-            setIsEditorOpen(false);
-          }}
+          onClose={closeEditor}
           title={editorClientId ? "Edit Client" : "Add Client"}
         >
           <form className="entity-form" onSubmit={handleSubmit}>
+            <p className="muted-text">Used by admin team to organize work and billing. Archived clients are hidden from active work but can be restored.</p>
+            <ClientModalActions disabled={saving} label={submitLabel} onCancel={closeEditor} saving={saving} />
             <div className="field-grid">
               <label>
-                Name
+                Client name - Required
                 <input
                   maxLength={255}
                   onChange={(event) => setDraft((current) => ({ ...current, name: event.target.value }))}
+                  placeholder="Business or person this work is for"
                   required
                   value={draft.name}
                 />
+                <span className="muted-text">Used by admin team to organize work and billing.</span>
               </label>
               <label>
-                Contact person
+                Contact person - Optional
                 <input
                   maxLength={255}
                   onChange={(event) => setDraft((current) => ({ ...current, contactPerson: event.target.value }))}
+                  placeholder="Main person for approvals or communication"
                   value={draft.contactPerson}
                 />
+                <span className="muted-text">Used for day-to-day approvals and communication.</span>
               </label>
               <label>
-                Email
+                Email - Optional
                 <input
                   maxLength={320}
                   onChange={(event) => setDraft((current) => ({ ...current, email: event.target.value }))}
+                  placeholder="Client billing or primary contact email"
                   type="email"
                   value={draft.email}
                 />
-              </label>
-              <label className="field-span-2">
-                Billing address
-                <textarea
-                  maxLength={4000}
-                  onChange={(event) => setDraft((current) => ({ ...current, billingAddress: event.target.value }))}
-                  rows={4}
-                  value={draft.billingAddress}
-                />
+                <span className="muted-text">Shown only in admin records.</span>
               </label>
               <label>
-                Tax/VAT ID
+                Tax/VAT ID - Optional
                 <input
                   maxLength={100}
                   onChange={(event) => setDraft((current) => ({ ...current, taxId: event.target.value }))}
+                  placeholder="Client tax number if used for billing"
                   value={draft.taxId}
                 />
+                <span className="muted-text">Shown only in admin records.</span>
+              </label>
+              <label className="field-span-2">
+                Billing address - Optional
+                <textarea
+                  maxLength={4000}
+                  onChange={(event) => setDraft((current) => ({ ...current, billingAddress: event.target.value }))}
+                  placeholder="Billing address used on invoices or contracts"
+                  rows={4}
+                  value={draft.billingAddress}
+                />
+                <span className="muted-text">Used by admin team for billing records.</span>
               </label>
               <label>
-                Country
+                Country - Optional
                 <select
                   onChange={(event) => setDraft((current) => ({ ...current, country: event.target.value }))}
                   value={draft.country}
                 >
-                  <option value="">Select country</option>
+                  <option value="">Country for billing or tax context</option>
                   {COUNTRY_OPTIONS.map((country) => (
                     <option key={country} value={country}>
                       {country}
                     </option>
                   ))}
                 </select>
+                <span className="muted-text">Used by admin team to organize work and billing.</span>
               </label>
             </div>
             {selectedClient ? (
               <section className="entity-span-2" aria-labelledby="client-projects-title">
                 <h3 id="client-projects-title">Projects for this client</h3>
+                <p className="muted-text">Related projects help the admin team track delivery and billing context.</p>
                 {selectedClientProjects.length === 0 ? (
                   <p>No projects for this client.</p>
                 ) : (
@@ -429,17 +444,26 @@ export function ClientsPage({
                 </div>
               </section>
             ) : null}
-            <div className="modal-footer">
-              <button className="secondary-action" disabled={saving} onClick={() => setEditorClientId(null)} type="button">
-                Cancel
-              </button>
-              <button className="primary-action" disabled={saving} type="submit">
-                {saving ? "Saving" : "Save"}
-              </button>
-            </div>
+            <ClientModalActions disabled={saving} label={submitLabel} onCancel={closeEditor} saving={saving} />
           </form>
         </Modal>
       ) : null}
     </section>
+  );
+}
+
+type ClientModalActionsProps = {
+  disabled: boolean;
+  label: string;
+  onCancel: () => void;
+  saving: boolean;
+};
+
+function ClientModalActions({ disabled, label, onCancel, saving }: ClientModalActionsProps) {
+  return (
+    <div className="modal-footer">
+      <button className="secondary-action" disabled={saving} onClick={onCancel} type="button">Cancel</button>
+      <button className="primary-action" disabled={disabled} type="submit">{saving ? "Saving" : label}</button>
+    </div>
   );
 }
