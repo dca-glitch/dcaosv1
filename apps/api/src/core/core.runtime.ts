@@ -75,6 +75,7 @@ import {
   putPrivateStorageObject
 } from "../storage/private-storage.service";
 import { recordAiDeliverySystemEvent } from "../services/system-events.service";
+import { localAiDeliveryWorkflowExecutionAdapter } from "./ai-delivery-workflow-execution.adapter";
 
 const prisma = createPrismaClient();
 
@@ -3326,10 +3327,6 @@ function appendAiDeliveryWorkflowExecutionLog(existingLog: string | null | undef
   return parts.join("\n");
 }
 
-function shouldSimulateAiDeliveryWorkflowFailure(adminNotes: string | null | undefined): boolean {
-  return (adminNotes ?? "").toLowerCase().includes("[stub-fail]");
-}
-
 export async function listAiDeliveryWorkflowRuns(
   authSession: AuthResolvedSessionContext,
   aiDeliveryProjectId: string
@@ -3486,11 +3483,12 @@ export async function executeAiDeliveryWorkflowRun(
     }
 
     const startedAt = new Date();
-    const startedLog = appendAiDeliveryWorkflowExecutionLog(existing.executionLog, [
-      `[${startedAt.toISOString()}] Stub execution started.`,
-      `[${startedAt.toISOString()}] Project "${project.name}" for ${project.targetMonth}; brief status ${project.brief.status}.`,
-      `[${startedAt.toISOString()}] Local deterministic execution only. No external AI services were called.`
-    ]);
+    const startedLog = appendAiDeliveryWorkflowExecutionLog(existing.executionLog, localAiDeliveryWorkflowExecutionAdapter.createStartedLogEntries({
+      projectName: project.name,
+      targetMonth: String(project.targetMonth),
+      briefStatus: project.brief.status,
+      startedAtIso: startedAt.toISOString()
+    }));
 
     await getAiDeliveryWorkflowRunDelegate(tx).update({
       where: { id: workflowRunId },
@@ -3514,20 +3512,23 @@ export async function executeAiDeliveryWorkflowRun(
     );
 
     const finishedAt = new Date();
-    const shouldFail = shouldSimulateAiDeliveryWorkflowFailure(existing.adminNotes);
+    const executionPlan = localAiDeliveryWorkflowExecutionAdapter.execute({
+      projectName: project.name,
+      targetMonth: String(project.targetMonth),
+      adminNotes: existing.adminNotes,
+      existingResultPlaceholder: toNullableString(existing.resultPlaceholder),
+      finishedAtIso: finishedAt.toISOString()
+    });
 
-    if (shouldFail) {
-      const executionError = "Stub execution failed because admin notes include [stub-fail].";
-      const failedLog = appendAiDeliveryWorkflowExecutionLog(startedLog, [
-        `[${finishedAt.toISOString()}] Stub execution failed: ${executionError}`
-      ]);
+    if (executionPlan.finalStatus === "FAILED") {
+      const failedLog = appendAiDeliveryWorkflowExecutionLog(startedLog, executionPlan.finishedLogEntries);
 
       const failed = await getAiDeliveryWorkflowRunDelegate(tx).update({
         where: { id: workflowRunId },
         data: {
           status: "FAILED",
           finishedAt,
-          executionError,
+          executionError: executionPlan.executionError,
           executionLog: failedLog
         },
         select: aiDeliveryWorkflowRunSelect
@@ -3546,12 +3547,7 @@ export async function executeAiDeliveryWorkflowRun(
       return { workflowRun: toAiDeliveryWorkflowRunSummary(failed) };
     }
 
-    const resultPlaceholder = toNullableString(existing.resultPlaceholder)
-      ?? `Stub workflow output prepared for admin review for ${project.name} (${project.targetMonth}). No external AI services were called.`;
-    const completedLog = appendAiDeliveryWorkflowExecutionLog(startedLog, [
-      `[${finishedAt.toISOString()}] Stub execution completed successfully.`,
-      `[${finishedAt.toISOString()}] Result placeholder prepared and moved to admin review.`
-    ]);
+    const completedLog = appendAiDeliveryWorkflowExecutionLog(startedLog, executionPlan.finishedLogEntries);
 
     const reviewed = await getAiDeliveryWorkflowRunDelegate(tx).update({
       where: { id: workflowRunId },
@@ -3560,7 +3556,7 @@ export async function executeAiDeliveryWorkflowRun(
         finishedAt,
         executionError: null,
         executionLog: completedLog,
-        resultPlaceholder
+        resultPlaceholder: executionPlan.resultPlaceholder
       },
       select: aiDeliveryWorkflowRunSelect
     });
