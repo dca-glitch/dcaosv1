@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, type RequestHandler } from "express";
 import {
   archiveAiDeliveryArticleImageHandler,
   approveAiDeliveryArticleImageHandler,
@@ -66,9 +66,6 @@ import {
   listAiDeliveryResearchSourcesHandler,
   listAiDeliveryWorkflowRunsHandler,
   listAiDeliveryContentDraftsHandler,
-  listClientAiDeliveryContentDraftReviewsHandler,
-  approveClientAiDeliveryContentDraftReviewHandler,
-  requestClientAiDeliveryContentDraftRevisionHandler,
   requestAiDeliveryContentDraftClientReviewHandler,
   requestAiDeliveryArticleImageChangesHandler,
   returnAiDeliveryContentDraftToDraftHandler,
@@ -94,9 +91,6 @@ import {
   requestAiDeliveryContentPlanClientReviewHandler,
   approveAiDeliveryContentPlanHandler,
   requestAiDeliveryContentPlanChangesHandler,
-  getClientAiDeliveryContentPlanReviewHandler,
-  approveClientAiDeliveryContentPlanReviewHandler,
-  requestClientAiDeliveryContentPlanRevisionHandler,
   markInvoicePaidHandler,
   markInvoiceSentHandler,
   markInvoiceUncollectibleHandler,
@@ -126,11 +120,20 @@ import {
   uploadBillDocumentHandler,
   voidCreditNoteHandler
 } from "../controllers/coreController";
+import { failure } from "../utils/responses";
 import { requireAuth } from "../middlewares/auth.middleware";
 import { requireRole, requireTenant } from "../middlewares";
 
 export function createCoreRouter() {
   const router = Router();
+  const clientPortalDeferredHandler: RequestHandler = (_req, res) => {
+    res.status(403).json(
+      failure(
+        "CLIENT_PORTAL_DEFERRED",
+        "Client review access is deferred until the Client Portal foundation is enabled."
+      )
+    );
+  };
 
   router.get("/company-profile", requireAuth, requireTenant, getCompanyProfileHandler);
   router.put("/company-profile", requireAuth, requireTenant, requireRole("owner", "admin"), saveCompanyProfileHandler);
@@ -213,12 +216,12 @@ export function createCoreRouter() {
   router.get("/ai-delivery-projects/:id/deliverables/:deliverableId/reviews", requireAuth, requireTenant, requireRole("owner", "admin"), listAiDeliveryDeliverableReviewsHandler);
   router.post("/ai-delivery-projects/:id/deliverables/:deliverableId/reviews", requireAuth, requireTenant, requireRole("owner", "admin"), createAiDeliveryDeliverableReviewHandler);
   router.put("/ai-delivery-projects/:id/deliverables/:deliverableId/reviews/:reviewId", requireAuth, requireTenant, requireRole("owner", "admin"), updateAiDeliveryDeliverableReviewHandler);
-  router.get("/ai-delivery-projects/:id/content-plan/client-review", requireAuth, requireTenant, getClientAiDeliveryContentPlanReviewHandler);
-  router.post("/ai-delivery-projects/:id/content-plan/client-review/approve", requireAuth, requireTenant, approveClientAiDeliveryContentPlanReviewHandler);
-  router.post("/ai-delivery-projects/:id/content-plan/client-review/request-revision", requireAuth, requireTenant, requestClientAiDeliveryContentPlanRevisionHandler);
-  router.get("/ai-delivery-projects/:id/content-drafts/client-review", requireAuth, requireTenant, listClientAiDeliveryContentDraftReviewsHandler);
-  router.post("/ai-delivery-projects/:id/content-drafts/:draftId/client-review/approve", requireAuth, requireTenant, approveClientAiDeliveryContentDraftReviewHandler);
-  router.post("/ai-delivery-projects/:id/content-drafts/:draftId/client-review/request-revision", requireAuth, requireTenant, requestClientAiDeliveryContentDraftRevisionHandler);
+  router.get("/ai-delivery-projects/:id/content-plan/client-review", clientPortalDeferredHandler);
+  router.post("/ai-delivery-projects/:id/content-plan/client-review/approve", clientPortalDeferredHandler);
+  router.post("/ai-delivery-projects/:id/content-plan/client-review/request-revision", clientPortalDeferredHandler);
+  router.get("/ai-delivery-projects/:id/content-drafts/client-review", clientPortalDeferredHandler);
+  router.post("/ai-delivery-projects/:id/content-drafts/:draftId/client-review/approve", clientPortalDeferredHandler);
+  router.post("/ai-delivery-projects/:id/content-drafts/:draftId/client-review/request-revision", clientPortalDeferredHandler);
 
   router.get("/tasks", requireAuth, requireTenant, listTasksHandler);
   router.post("/tasks", requireAuth, requireTenant, requireRole("owner", "admin"), createTaskHandler);

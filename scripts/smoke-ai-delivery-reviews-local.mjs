@@ -84,6 +84,19 @@ function requireOkResponse(name, response) {
   return response.body.data;
 }
 
+function getErrorCode(response) {
+  return typeof response.body?.error?.code === "string" ? response.body.error.code : null;
+}
+
+function requireClientPortalDeferred(name, response) {
+  const errorCode = getErrorCode(response);
+  if (response.status !== 403 || response.body?.ok !== false || errorCode !== "CLIENT_PORTAL_DEFERRED") {
+    fail(`${name} did not return CLIENT_PORTAL_DEFERRED. HTTP ${response.status}${errorCode ? ` ${errorCode}` : ""}.`);
+  }
+
+  pass(`${name} returned CLIENT_PORTAL_DEFERRED.`);
+}
+
 function requireLocalUrl(name, value, expectedPathPrefix = "") {
   let parsed;
   try {
@@ -431,6 +444,26 @@ async function runAiDeliveryApiRegression(token, fixtureProjects) {
   }
   pass("AI Delivery content plan ready-for-review action persisted the expected status.");
 
+  requireClientPortalDeferred(
+    "AI Delivery content plan client review list",
+    await request(`/ai-delivery-projects/${project.id}/content-plan/client-review`, { token })
+  );
+  requireClientPortalDeferred(
+    "AI Delivery content plan client review approve",
+    await request(`/ai-delivery-projects/${project.id}/content-plan/client-review/approve`, {
+      method: "POST",
+      token
+    })
+  );
+  requireClientPortalDeferred(
+    "AI Delivery content plan client review request revision",
+    await request(`/ai-delivery-projects/${project.id}/content-plan/client-review/request-revision`, {
+      method: "POST",
+      token,
+      body: { comment: "Please simplify the topic cluster." }
+    })
+  );
+
   const changesRequestedContentPlan = requireOkResponse(
     "AI Delivery content plan request changes",
     await request(`/ai-delivery-projects/${project.id}/content-plan/request-changes`, {
@@ -517,18 +550,6 @@ async function runAiDeliveryApiRegression(token, fixtureProjects) {
   }
   pass("AI Delivery content draft update persisted the expected body and admin notes.");
 
-  const reviewableDraftsBeforeRequest = requireOkResponse(
-    "AI Delivery content draft client review list before request",
-    await request(`/ai-delivery-projects/${project.id}/content-drafts/client-review`, { token })
-  )?.contentDrafts;
-  if (!Array.isArray(reviewableDraftsBeforeRequest)) {
-    fail("AI Delivery content draft client review list did not return a contentDrafts array.");
-  }
-  if (reviewableDraftsBeforeRequest.some((draft) => draft.id === createdContentDraft.id)) {
-    fail("Client content draft review list exposed a draft that was not yet marked ready for review.");
-  }
-  pass("Client content draft review list excluded draft-only records before review was requested.");
-
   const reviewRequestedDraft = requireOkResponse(
     "AI Delivery content draft request client review",
     await request(`/ai-delivery-projects/${project.id}/content-drafts/${createdContentDraft.id}/request-client-review`, {
@@ -541,46 +562,25 @@ async function runAiDeliveryApiRegression(token, fixtureProjects) {
   }
   pass("AI Delivery content draft ready-for-review action persisted the expected review state.");
 
-  const reviewableDraftsAfterRequest = requireOkResponse(
-    "AI Delivery content draft client review list after request",
+  requireClientPortalDeferred(
+    "AI Delivery content draft client review list",
     await request(`/ai-delivery-projects/${project.id}/content-drafts/client-review`, { token })
-  )?.contentDrafts;
-  if (
-    !Array.isArray(reviewableDraftsAfterRequest) ||
-    !reviewableDraftsAfterRequest.some((draft) => draft.id === createdContentDraft.id) ||
-    reviewableDraftsAfterRequest.some((draft) => !["READY_FOR_REVIEW", "APPROVED", "CHANGES_REQUESTED"].includes(draft.status))
-  ) {
-    fail("Client content draft review list did not contain only reviewable draft states after review was requested.");
-  }
-  pass("Client content draft review list returned only reviewable draft states after review was requested.");
-
-  const invalidRevisionRequest = await request(`/ai-delivery-projects/${project.id}/content-drafts/${createdContentDraft.id}/client-review/request-revision`, {
-    method: "POST",
-    token,
-    body: { comment: "" }
-  });
-  if (invalidRevisionRequest.status !== 400 || invalidRevisionRequest.body?.ok !== false) {
-    fail("Client content draft revision request accepted an empty comment.");
-  }
-  pass("Client content draft revision request rejected an empty comment.");
-
-  const changesRequestedDraft = requireOkResponse(
-    "AI Delivery content draft client revision request",
+  );
+  requireClientPortalDeferred(
+    "AI Delivery content draft client review approve",
+    await request(`/ai-delivery-projects/${project.id}/content-drafts/${createdContentDraft.id}/client-review/approve`, {
+      method: "POST",
+      token
+    })
+  );
+  requireClientPortalDeferred(
+    "AI Delivery content draft client review request revision",
     await request(`/ai-delivery-projects/${project.id}/content-drafts/${createdContentDraft.id}/client-review/request-revision`, {
       method: "POST",
       token,
       body: { comment: "Please tighten the opening section and CTA." }
     })
-  )?.contentDraft;
-  if (
-    !changesRequestedDraft ||
-    changesRequestedDraft.status !== "CHANGES_REQUESTED" ||
-    changesRequestedDraft.clientComment !== "Please tighten the opening section and CTA." ||
-    (changesRequestedDraft.revisionCount ?? 0) < 1
-  ) {
-    fail("Client content draft revision request did not persist the expected revision status and comment.");
-  }
-  pass("Client content draft revision request persisted the expected revision status and comment.");
+  );
 
   const returnedToDraft = requireOkResponse(
     "AI Delivery content draft return to draft",
@@ -599,15 +599,6 @@ async function runAiDeliveryApiRegression(token, fixtureProjects) {
   }
   pass("AI Delivery content draft return-to-draft action restored the expected draft state.");
 
-  const reviewableDraftsAfterReturn = requireOkResponse(
-    "AI Delivery content draft client review list after return to draft",
-    await request(`/ai-delivery-projects/${project.id}/content-drafts/client-review`, { token })
-  )?.contentDrafts;
-  if (!Array.isArray(reviewableDraftsAfterReturn) || reviewableDraftsAfterReturn.some((draft) => draft.id === createdContentDraft.id)) {
-    fail("Client content draft review list still exposed a draft after it was returned to draft.");
-  }
-  pass("Client content draft review list excluded a draft returned to draft.");
-
   requireOkResponse(
     "AI Delivery content draft request client review again",
     await request(`/ai-delivery-projects/${project.id}/content-drafts/${createdContentDraft.id}/request-client-review`, {
@@ -615,17 +606,8 @@ async function runAiDeliveryApiRegression(token, fixtureProjects) {
       token
     })
   );
-  const approvedDraft = requireOkResponse(
-    "AI Delivery content draft client approve",
-    await request(`/ai-delivery-projects/${project.id}/content-drafts/${createdContentDraft.id}/client-review/approve`, {
-      method: "POST",
-      token
-    })
-  )?.contentDraft;
-  if (!approvedDraft || approvedDraft.status !== "APPROVED" || typeof approvedDraft.approvedAt !== "string") {
-    fail("Client content draft approve path did not persist the expected approved state.");
-  }
-  pass("Client content draft approve path persisted the expected approved state.");
+  const approvedDraft = createdContentDraft;
+  note("Client Portal deferred: using the admin-created draft for DRAFT deliverable packaging only; positive ready-state approval remains gated.");
 
   const initialArticleImages = requireOkResponse(
     "AI Delivery article images list",
@@ -1392,41 +1374,14 @@ async function runAiDeliveryApiRegression(token, fixtureProjects) {
     pass("AI Delivery deliverable document upload persisted a private storage key, cleared exportUrl, and returned a secure download reference.");
   }
 
-  const readyDeliverable = requireOkResponse(
-    "AI Delivery deliverable mark ready",
-    await request(`/ai-delivery-projects/${project.id}/deliverables/${createdDeliverable.id}/mark-ready`, {
-      method: "POST",
-      token
-    })
-  )?.deliverable;
-  if (!readyDeliverable || readyDeliverable.status !== "READY") {
-    fail("AI Delivery deliverable mark-ready action did not persist the expected ready state.");
+  const deferredReadyDeliverableResponse = await request(`/ai-delivery-projects/${project.id}/deliverables/${createdDeliverable.id}/mark-ready`, {
+    method: "POST",
+    token
+  });
+  if (![400, 409].includes(deferredReadyDeliverableResponse.status) || deferredReadyDeliverableResponse.body?.ok !== false) {
+    fail("AI Delivery deliverable mark-ready accepted a draft while Client Portal approval is deferred.");
   }
-  pass("AI Delivery deliverable mark-ready action persisted the expected ready state.");
-
-  const acceptedDeliverable = requireOkResponse(
-    "AI Delivery deliverable accept",
-    await request(`/ai-delivery-projects/${project.id}/deliverables/${createdDeliverable.id}/accept`, {
-      method: "POST",
-      token
-    })
-  )?.deliverable;
-  if (!acceptedDeliverable || acceptedDeliverable.status !== "ACCEPTED") {
-    fail("AI Delivery deliverable accept action did not persist the expected accepted state.");
-  }
-  pass("AI Delivery deliverable accept action persisted the expected accepted state.");
-
-  const revisionRequestedDeliverable = requireOkResponse(
-    "AI Delivery deliverable request revision",
-    await request(`/ai-delivery-projects/${project.id}/deliverables/${createdDeliverable.id}/request-revision`, {
-      method: "POST",
-      token
-    })
-  )?.deliverable;
-  if (!revisionRequestedDeliverable || revisionRequestedDeliverable.status !== "REVISION_REQUESTED") {
-    fail("AI Delivery deliverable request-revision action did not persist the expected revision state.");
-  }
-  pass("AI Delivery deliverable request-revision action persisted the expected revision state.");
+  pass("AI Delivery deliverable mark-ready remained blocked until client approval is enabled.");
 
   const archivedDeliverable = requireOkResponse(
     "AI Delivery deliverable archive",
@@ -1452,18 +1407,7 @@ async function runAiDeliveryApiRegression(token, fixtureProjects) {
   }
   pass("AI Delivery deliverable restore action persisted the expected draft state.");
 
-  const readyDeliverableAgain = requireOkResponse(
-    "AI Delivery deliverable mark ready again",
-    await request(`/ai-delivery-projects/${project.id}/deliverables/${createdDeliverable.id}/mark-ready`, {
-      method: "POST",
-      token
-    })
-  )?.deliverable;
-  if (!readyDeliverableAgain || readyDeliverableAgain.status !== "READY") {
-    fail("AI Delivery deliverable second mark-ready action did not persist the expected ready state.");
-  }
-  pass("AI Delivery deliverable second mark-ready action persisted the expected ready state.");
-
+  const deliverable = restoredDeliverable;
   const createdDeliverableReview = requireOkResponse(
     "AI Delivery deliverable review create",
     await request(`/ai-delivery-projects/${project.id}/deliverables/${createdDeliverable.id}/reviews`, {
@@ -1497,8 +1441,6 @@ async function runAiDeliveryApiRegression(token, fixtureProjects) {
     fail("AI Delivery deliverable review update did not persist the expected approved placeholder state.");
   }
   pass("AI Delivery deliverable review update persisted the expected approved placeholder state.");
-
-  const deliverable = readyDeliverableAgain;
 
   const reviewsData = requireOkResponse(
     "AI Delivery deliverable reviews list",

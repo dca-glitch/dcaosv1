@@ -12,8 +12,8 @@ export function ClientPortalPage() {
 
       <div className="summary-grid metric-grid">
         <MetricCard accent="cyan" helper="Read-only foundation only" label="Projects" value="Placeholder" />
-        <MetricCard accent="violet" helper="Existing internal review screen" label="Content plan reviews" value="Available" />
-        <MetricCard accent="purple" helper="Existing internal review screen" label="Content draft reviews" value="Available" />
+        <MetricCard accent="violet" helper="Client Portal deferred" label="Content plan reviews" value="Deferred" />
+        <MetricCard accent="purple" helper="Client Portal deferred" label="Content draft reviews" value="Deferred" />
         <MetricCard accent="warning" helper="No publishing or downloads exposed" label="Deliverables / approvals" value="Coming soon" />
       </div>
 
@@ -28,21 +28,19 @@ export function ClientPortalPage() {
 
       <SectionPanel
         title="Content Plan Reviews"
-        description="Uses the existing authenticated review route already present in the app shell."
-        action={<a className="primary-action" href="#/content-plan-review">Open content plan review</a>}
+        description="Deferred until the Client Portal foundation is enabled."
       >
         <p className="muted-text">
-          This link opens the existing internal review screen. No new portal-specific approval workflow is created here.
+          Client-facing monthly plan review is not active yet. The internal admin workflow stays separate and the review route remains deferred.
         </p>
       </SectionPanel>
 
       <SectionPanel
         title="Content Draft Reviews"
-        description="Uses the existing authenticated draft review route already present in the app shell."
-        action={<a className="primary-action" href="#/content-draft-review">Open content draft review</a>}
+        description="Deferred until the Client Portal foundation is enabled."
       >
         <p className="muted-text">
-          This link opens the existing internal review screen. No new publishing, commenting, or messaging behavior is added.
+          Client-facing draft review is not active yet. No portal approval, revision, or messaging workflow is exposed from this shell.
         </p>
       </SectionPanel>
 

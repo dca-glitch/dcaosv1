@@ -1038,6 +1038,30 @@ function PlaceholderView({ title, eyebrow }: { title: string; eyebrow: string })
   );
 }
 
+function DeferredClientPortalView({
+  title,
+  titleId
+}: {
+  title: string;
+  titleId: string;
+}) {
+  return (
+    <section className="view-section" aria-labelledby={titleId}>
+      <PageHeader
+        eyebrow="Client review"
+        title={title}
+        titleId={titleId}
+        description="Client review access is deferred until the Client Portal foundation is enabled."
+      />
+      <SectionPanel title="Not available" description="This route is intentionally paused in the current branch.">
+        <div className="state-panel">
+          Client review loading is disabled for now. The admin workflow stays intact, but client-facing review pages remain deferred until the Client Portal block is approved.
+        </div>
+      </SectionPanel>
+    </section>
+  );
+}
+
 function TeamView({
   authContext,
   teamMembers
@@ -3638,18 +3662,10 @@ export function App() {
         />
       ) : null}
       {!loading && activeView === "content-plan-review" ? (
-        <ClientContentPlanReviewView
-          onApprove={handleApproveClientContentPlanReview}
-          onLoad={handleFetchClientContentPlanReview}
-          onRequestRevision={handleRequestClientContentPlanRevision}
-        />
+        <DeferredClientPortalView title="Monthly Content Plan Review" titleId="content-plan-review-title" />
       ) : null}
       {!loading && activeView === "content-draft-review" ? (
-        <ClientContentDraftReviewView
-          onApprove={handleApproveClientContentDraftReview}
-          onLoad={handleFetchClientContentDraftReview}
-          onRequestRevision={handleRequestClientContentDraftRevision}
-        />
+        <DeferredClientPortalView title="Content Draft Review" titleId="content-draft-review-title" />
       ) : null}
       {!loading && activeView === "tasks" ? (
         <TasksPage
