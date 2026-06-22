@@ -932,15 +932,15 @@ export function AiDeliveryPage({
   }, [activeDeliverableRecord?.isArchived, articleImageDrafts, articleImages, deliverableForm]);
   const workflowRunActionGuidance = useMemo(() => {
     if (workflowRunExecutingId) {
-      return "Run workflow is locked while the current local stub execution is in progress.";
+      return "Execute is locked while the current local stub execution is in progress.";
     }
     if (!workflowRunBeingEdited) {
-      return "Only Draft, Ready, or Failed runs can execute through the local stub. Save a run first to use Run workflow.";
+      return "Only Draft, Ready, or Failed runs can execute through the local stub. Save a run first to use Execute.";
     }
     if (!canExecuteWorkflowRun(workflowRunBeingEdited.status)) {
       return "This workflow run is not in an executable state. Use the allowed next status shown above before retrying.";
     }
-    return "Run workflow uses the local stub only. Use [stub-fail] in admin notes when you need a controlled failure path.";
+    return "Execute uses the local stub only. Use [stub-fail] in admin notes when you need a controlled failure path.";
   }, [workflowRunBeingEdited, workflowRunExecutingId]);
   const linkableProjects = useMemo(
     () => projectsList.filter((project) => project.clientId === draft.clientId),
@@ -3042,14 +3042,16 @@ export function AiDeliveryPage({
                       </div>
                       <div className="card-actions">
                         <button className="secondary-action" disabled={workflowRunsSaving || Boolean(workflowRunExecutingId)} onClick={() => editWorkflowRun(run)} type="button">Edit</button>
-                        <button
-                          className="primary-action"
-                          disabled={workflowRunsSaving || Boolean(workflowRunExecutingId) || !canExecuteWorkflowRun(run.status)}
-                          onClick={() => void executeWorkflowRun(openWorkflowRunsProject.id, run.id)}
-                          type="button"
-                        >
-                          {workflowRunExecutingId === run.id ? "Running" : "Run workflow"}
-                        </button>
+                        {canExecuteWorkflowRun(run.status) ? (
+                          <button
+                            className="primary-action"
+                            disabled={workflowRunsSaving || Boolean(workflowRunExecutingId)}
+                            onClick={() => void executeWorkflowRun(openWorkflowRunsProject.id, run.id)}
+                            type="button"
+                          >
+                            {workflowRunExecutingId === run.id ? "Running" : "Execute"}
+                          </button>
+                        ) : null}
                       </div>
                     </div>
                     <dl className="brief-grid">
