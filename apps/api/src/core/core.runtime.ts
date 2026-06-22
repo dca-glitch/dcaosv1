@@ -130,6 +130,26 @@ function throwAiDeliveryBadRequest(code: string, message: string): never {
 function throwAiDeliveryConflict(code: string, message: string): never {
   throw new AiDeliveryGuardError(409, code, message);
 }
+
+export class FinanceIntegrityError extends Error {
+  readonly status: number;
+  readonly code: string;
+
+  constructor(status: number, code: string, message: string) {
+    super(message);
+    this.name = "FinanceIntegrityError";
+    this.status = status;
+    this.code = code;
+  }
+}
+
+export function isFinanceIntegrityError(error: unknown): error is FinanceIntegrityError {
+  return error instanceof FinanceIntegrityError;
+}
+
+function throwFinanceConflict(code: string, message: string): never {
+  throw new FinanceIntegrityError(409, code, message);
+}
 type ClientUserAccessSummary = {
   id: string;
   clientId: string;
@@ -5335,6 +5355,17 @@ async function updateInvoiceStatus(
       return null;
     }
 
+    if (
+      options.markFullPaid &&
+      existing.amountPaidCents > 0 &&
+      existing.amountPaidCents < existing.totalCents
+    ) {
+      throwFinanceConflict(
+        "INVOICE_MARK_PAID_BLOCKED_PARTIAL_PAYMENT",
+        "Invoice has a partial payment recorded and cannot be marked paid."
+      );
+    }
+
     const updated = await tx.invoice.update({
       where: {
         id: invoiceId
@@ -5947,6 +5978,31 @@ export async function generateDueRecurringInvoice(
 
       if (!recurringInvoice || recurringInvoice.isArchived || !recurringInvoice.isActive) {
         return null;
+      }
+
+      const recurringClient = await tx.client.findFirst({
+        where: {
+          id: recurringInvoice.clientId,
+          tenantId
+        },
+        select: {
+          id: true,
+          isArchived: true
+        }
+      });
+
+      if (!recurringClient) {
+        throwFinanceConflict(
+          "RECURRING_INVOICE_CLIENT_MISSING",
+          "Recurring invoice client is no longer available in the active tenant."
+        );
+      }
+
+      if (recurringClient.isArchived) {
+        throwFinanceConflict(
+          "RECURRING_INVOICE_CLIENT_ARCHIVED",
+          "Recurring invoice client is archived and cannot receive generated invoices."
+        );
       }
 
       const scheduledFor = targetDate ? new Date(targetDate) : recurringInvoice.nextRunDate;

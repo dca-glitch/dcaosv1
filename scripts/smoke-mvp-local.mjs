@@ -101,6 +101,340 @@ async function login(email, password) {
   });
 }
 
+function makeSmokeId(prefix) {
+  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function requireOkData(name, response, expectedStatus = 201) {
+  const ok =
+    response.status === expectedStatus &&
+    response.body?.ok === true &&
+    !responseHasSensitiveFields(response);
+  record(name, ok, `${response.status}`);
+  if (!ok) {
+    throw new Error(`${name} failed with HTTP ${response.status}.`);
+  }
+  return response.body.data;
+}
+
+async function runLocalFinanceIntegrityChecks(adminToken) {
+  const activeClientName = `[SMOKE][FINANCE] Active ${makeSmokeId("client")}`;
+  const archivedClientName = `[SMOKE][FINANCE] Archived ${makeSmokeId("client")}`;
+  let activeClientId = null;
+  let archivedClientId = null;
+  let createdInvoiceId = null;
+  let createdRecurringInvoiceId = null;
+  const activeClient = requireOkData(
+    "finance create active client",
+    await request("/clients", {
+      method: "POST",
+      token: adminToken,
+      body: {
+        name: activeClientName,
+        country: "United States"
+      }
+    })
+  ).client;
+  activeClientId = activeClient.id;
+
+  const archivedClient = requireOkData(
+    "finance create archived client",
+    await request("/clients", {
+      method: "POST",
+      token: adminToken,
+      body: {
+        name: archivedClientName,
+        country: "United States"
+      }
+    })
+  ).client;
+  archivedClientId = archivedClient.id;
+
+  const invoiceNumber = `SMOKE-INV-${Date.now()}`;
+  const recurringTitle = `[SMOKE][FINANCE] ${makeSmokeId("recurring")}`;
+  const invoiceLineItems = [
+    {
+      description: "Smoke finance integrity invoice item",
+      quantity: 1,
+      unitPriceCents: 1000,
+      totalCents: 1000,
+      sortOrder: 0
+    }
+  ];
+
+  try {
+    const createdInvoice = requireOkData(
+      "finance create invoice",
+      await request("/invoices", {
+        method: "POST",
+        token: adminToken,
+        body: {
+          clientId: activeClient.id,
+          invoiceNumber,
+          status: "ISSUED",
+          issueDate: "2026-06-01T00:00:00.000Z",
+          dueDate: "2026-06-30T00:00:00.000Z",
+          paidAt: null,
+          currency: "USD",
+          subtotalCents: 1000,
+          taxCents: 0,
+          discountCents: 0,
+          totalCents: 1000,
+          amountPaidCents: 0,
+          lineItems: invoiceLineItems
+        }
+      })
+    ).invoice;
+    createdInvoiceId = createdInvoice.id;
+
+    const paymentResponse = await request(`/invoices/${createdInvoice.id}/payment`, {
+      method: "POST",
+      token: adminToken,
+      body: {
+        paymentMethod: "OTHER",
+        amountIssuedCents: 400,
+        amountReceivedCents: 400,
+        paymentDate: "2026-06-15T00:00:00.000Z"
+      }
+    });
+    const paymentData = requireOkData("finance register partial payment", paymentResponse).invoice;
+    record(
+      "finance partial payment persisted",
+      paymentData.amountPaidCents === 400,
+      `amountPaid=${paymentData.amountPaidCents}`
+    );
+
+    const markPaidResponse = await request(`/invoices/${createdInvoice.id}/mark-paid`, {
+      method: "POST",
+      token: adminToken
+    });
+    record(
+      "finance mark paid blocked after partial payment",
+      markPaidResponse.status === 409 &&
+        getErrorCode(markPaidResponse) === "INVOICE_MARK_PAID_BLOCKED_PARTIAL_PAYMENT",
+      `${markPaidResponse.status} ${getErrorCode(markPaidResponse)}`
+    );
+
+    const invoiceAfterBlockedMarkPaid = await request(`/invoices/${createdInvoice.id}`, {
+      token: adminToken
+    });
+    const invoiceAfterBlockedMarkPaidData = requireOkData(
+      "finance invoice lookup after blocked mark paid",
+      invoiceAfterBlockedMarkPaid,
+      200
+    ).invoice;
+    record(
+      "finance partial payment amount unchanged",
+      invoiceAfterBlockedMarkPaidData.amountPaidCents === 400,
+      `amountPaid=${invoiceAfterBlockedMarkPaidData.amountPaidCents}`
+    );
+
+    const mixedInvalidInvoiceResponse = await request("/invoices", {
+      method: "POST",
+      token: adminToken,
+        body: {
+          clientId: activeClient.id,
+          invoiceNumber: `SMOKE-INV-BAD-${Date.now()}`,
+          status: "DRAFT",
+          issueDate: "2026-06-01T00:00:00.000Z",
+          dueDate: "2026-06-30T00:00:00.000Z",
+          paidAt: null,
+          currency: "USD",
+          subtotalCents: 1000,
+          taxCents: 0,
+        discountCents: 0,
+        totalCents: 1000,
+        amountPaidCents: 0,
+        lineItems: [
+          ...invoiceLineItems,
+          {
+            description: "Broken invoice item",
+            quantity: "oops",
+            unitPriceCents: 500,
+            totalCents: 500,
+            sortOrder: 1
+          }
+        ]
+      }
+    });
+    record(
+      "finance mixed invalid invoice line items rejected",
+      mixedInvalidInvoiceResponse.status === 400 &&
+        getErrorCode(mixedInvalidInvoiceResponse) === "INVOICE_LINE_ITEMS_INVALID",
+      `${mixedInvalidInvoiceResponse.status} ${getErrorCode(mixedInvalidInvoiceResponse)}`
+    );
+
+    const createdRecurringInvoice = requireOkData(
+      "finance create recurring invoice",
+      await request("/recurring-invoices", {
+        method: "POST",
+        token: adminToken,
+        body: {
+          clientId: archivedClient.id,
+          title: recurringTitle,
+          interval: "MONTHLY",
+          startDate: "2026-06-01T00:00:00.000Z",
+          endDate: null,
+          nextRunDate: "2026-06-01T00:00:00.000Z",
+          currency: "USD",
+          subtotalCents: 1000,
+          taxCents: 0,
+          discountCents: 0,
+          totalCents: 1000,
+          isActive: true,
+          lineItems: invoiceLineItems
+        }
+      })
+    ).recurringInvoice;
+    createdRecurringInvoiceId = createdRecurringInvoice.id;
+
+    const mixedInvalidRecurringInvoiceResponse = await request("/recurring-invoices", {
+      method: "POST",
+      token: adminToken,
+      body: {
+        clientId: activeClient.id,
+        title: `[SMOKE][FINANCE] ${makeSmokeId("bad-recurring")}`,
+        interval: "MONTHLY",
+        startDate: "2026-06-01T00:00:00.000Z",
+        endDate: null,
+        nextRunDate: "2026-06-01T00:00:00.000Z",
+        currency: "USD",
+        subtotalCents: 1000,
+        taxCents: 0,
+        discountCents: 0,
+        totalCents: 1000,
+        isActive: true,
+        lineItems: [
+          ...invoiceLineItems,
+          {
+            description: "Broken recurring item",
+            quantity: 1,
+            unitPriceCents: "bad",
+            totalCents: 500,
+            sortOrder: 1
+          }
+        ]
+      }
+    });
+    record(
+      "finance mixed invalid recurring invoice line items rejected",
+      mixedInvalidRecurringInvoiceResponse.status === 400 &&
+        getErrorCode(mixedInvalidRecurringInvoiceResponse) === "RECURRING_INVOICE_LINE_ITEMS_INVALID",
+      `${mixedInvalidRecurringInvoiceResponse.status} ${getErrorCode(mixedInvalidRecurringInvoiceResponse)}`
+    );
+
+    const archiveArchivedClientResponse = await request(`/clients/${archivedClient.id}/archive`, {
+      method: "POST",
+      token: adminToken
+    });
+    requireOkData("finance archive recurring client", archiveArchivedClientResponse, 200);
+
+    const generateArchivedClientInvoiceResponse = await request(
+      `/recurring-invoices/${createdRecurringInvoice.id}/generate-due`,
+      {
+        method: "POST",
+        token: adminToken,
+        body: {
+          targetDate: "2026-06-01T00:00:00.000Z"
+        }
+      }
+    );
+    record(
+      "finance archived client recurring invoice blocked",
+      generateArchivedClientInvoiceResponse.status === 409 &&
+        getErrorCode(generateArchivedClientInvoiceResponse) === "RECURRING_INVOICE_CLIENT_ARCHIVED",
+      `${generateArchivedClientInvoiceResponse.status} ${getErrorCode(generateArchivedClientInvoiceResponse)}`
+    );
+
+    const mixedInvalidCreditNoteResponse = await request(`/invoices/${createdInvoice.id}/credit-notes`, {
+      method: "POST",
+      token: adminToken,
+      body: {
+        reason: "Smoke invalid credit note line item rejection",
+        amountCents: 1000,
+        currency: "USD",
+        subtotalCents: 1000,
+        taxCents: 0,
+        discountCents: 0,
+        totalCents: 1000,
+        lineItems: [
+          ...invoiceLineItems,
+          {
+            description: "Broken credit note item",
+            quantity: 1,
+            unitPriceCents: 500,
+            totalCents: "bad",
+            sortOrder: 1
+          }
+        ]
+      }
+    });
+    record(
+      "finance mixed invalid credit note line items rejected",
+      mixedInvalidCreditNoteResponse.status === 400 &&
+        getErrorCode(mixedInvalidCreditNoteResponse) === "CREDIT_NOTE_LINE_ITEMS_INVALID",
+      `${mixedInvalidCreditNoteResponse.status} ${getErrorCode(mixedInvalidCreditNoteResponse)}`
+    );
+
+    const archiveRecurringInvoiceResponse = await request(
+      `/recurring-invoices/${createdRecurringInvoice.id}/archive`,
+      {
+        method: "POST",
+        token: adminToken
+      }
+    );
+    requireOkData("finance archive recurring invoice", archiveRecurringInvoiceResponse, 200);
+    createdRecurringInvoiceId = null;
+
+    const archiveInvoiceResponse = await request(`/invoices/${createdInvoice.id}/archive`, {
+      method: "POST",
+      token: adminToken
+    });
+    requireOkData("finance archive invoice", archiveInvoiceResponse, 200);
+    createdInvoiceId = null;
+
+    const archiveActiveClientResponse = await request(`/clients/${activeClient.id}/archive`, {
+      method: "POST",
+      token: adminToken
+    });
+    requireOkData("finance archive active client", archiveActiveClientResponse, 200);
+    activeClientId = null;
+    archivedClientId = null;
+  } catch (error) {
+    record(
+      "finance integrity smoke runtime",
+      false,
+      error instanceof Error ? error.message : "unknown error"
+    );
+    throw error;
+  } finally {
+    if (createdRecurringInvoiceId) {
+      await request(`/recurring-invoices/${createdRecurringInvoiceId}/archive`, {
+        method: "POST",
+        token: adminToken
+      }).catch(() => undefined);
+    }
+    if (createdInvoiceId) {
+      await request(`/invoices/${createdInvoiceId}/archive`, {
+        method: "POST",
+        token: adminToken
+      }).catch(() => undefined);
+    }
+    if (activeClientId) {
+      await request(`/clients/${activeClientId}/archive`, {
+        method: "POST",
+        token: adminToken
+      }).catch(() => undefined);
+    }
+    if (archivedClientId) {
+      await request(`/clients/${archivedClientId}/archive`, {
+        method: "POST",
+        token: adminToken
+      }).catch(() => undefined);
+    }
+  }
+}
+
 async function main() {
   if (!requireApiBaseUrl(apiBaseUrl)) {
     process.exitCode = 1;
@@ -187,6 +521,12 @@ async function main() {
     }
   } else {
     record("module enable forbidden for tester", true, "skipped optional tester env");
+  }
+
+  if (smokeMode === "local") {
+    await runLocalFinanceIntegrityChecks(adminToken);
+  } else {
+    record("finance integrity checks", true, "skipped outside local mode");
   }
 
   const logout = await request("/auth/logout", { method: "POST", token: adminToken });

@@ -25,6 +25,7 @@ import { listTenantAuditLogs } from "../security/audit-log.service";
 import {
   archiveAiDeliveryArticleImage,
   isAiDeliveryGuardError,
+  isFinanceIntegrityError,
   archiveAiDeliveryProject,
   archiveAiDeliveryContentDraft,
   archiveClient,
@@ -250,6 +251,15 @@ function parseActivityAuditLogLimit(value: unknown): number | null {
 
 function handleAiDeliveryGuardError(res: Response, error: unknown): boolean {
   if (!isAiDeliveryGuardError(error)) {
+    return false;
+  }
+
+  res.status(error.status).json(failure(error.code, error.message));
+  return true;
+}
+
+function handleFinanceIntegrityError(res: Response, error: unknown): boolean {
+  if (!isFinanceIntegrityError(error)) {
     return false;
   }
 
@@ -634,11 +644,20 @@ function getCurrency(value: unknown): string | null {
   return /^[A-Z]{3}$/.test(currency) ? currency : null;
 }
 
-function getInvoiceLineItems(value: unknown): InvoiceLineItemInputRequest[] | null {
+const INVALID_LINE_ITEMS = Symbol("INVALID_LINE_ITEMS");
+
+type ParsedInvoiceLineItems =
+  | InvoiceLineItemInputRequest[]
+  | typeof INVALID_LINE_ITEMS
+  | null;
+
+function parseInvoiceLineItems(value: unknown): ParsedInvoiceLineItems {
   if (!Array.isArray(value) || value.length === 0) {
     return null;
   }
-  return value.map((item, index) => {
+
+  const lineItems: InvoiceLineItemInputRequest[] = [];
+  for (const [index, item] of value.entries()) {
     const record = (item ?? {}) as Record<string, unknown>;
     const description = getRequiredString(record.description, SHORT_TEXT_FIELD_MAX_LENGTH);
     const quantity = getPositiveInteger(record.quantity);
@@ -646,10 +665,18 @@ function getInvoiceLineItems(value: unknown): InvoiceLineItemInputRequest[] | nu
     const totalCents = getNonNegativeInteger(record.totalCents);
     const sortOrder = getNonNegativeInteger(record.sortOrder, index);
     if (!description || quantity === null || unitPriceCents === null || totalCents === null || sortOrder === null) {
-      return null;
+      return INVALID_LINE_ITEMS;
     }
-    return { description, quantity, unitPriceCents, totalCents, sortOrder };
-  }).filter(Boolean) as InvoiceLineItemInputRequest[];
+
+    lineItems.push({ description, quantity, unitPriceCents, totalCents, sortOrder });
+  }
+
+  return lineItems;
+}
+
+function getInvoiceLineItems(value: unknown): InvoiceLineItemInputRequest[] | null {
+  const parsed = parseInvoiceLineItems(value);
+  return parsed === INVALID_LINE_ITEMS ? null : parsed;
 }
 
 function getRecurringInvoiceLineItems(value: unknown): RecurringInvoiceLineItemInputRequest[] | null {
@@ -660,6 +687,31 @@ function getRecurringInvoiceLineItems(value: unknown): RecurringInvoiceLineItemI
 function getCreditNoteLineItems(value: unknown): CreditNoteLineItemInputRequest[] | null {
   const lineItems = getInvoiceLineItems(value);
   return lineItems;
+}
+
+function hasInvalidLineItems(value: unknown): boolean {
+  return parseInvoiceLineItems(value) === INVALID_LINE_ITEMS;
+}
+
+function invoiceLineItemsInvalidFailure() {
+  return failure(
+    "INVOICE_LINE_ITEMS_INVALID",
+    "Invoice line items must all include description, quantity, unitPriceCents, totalCents, and sortOrder."
+  );
+}
+
+function recurringInvoiceLineItemsInvalidFailure() {
+  return failure(
+    "RECURRING_INVOICE_LINE_ITEMS_INVALID",
+    "Recurring invoice line items must all include description, quantity, unitPriceCents, totalCents, and sortOrder."
+  );
+}
+
+function creditNoteLineItemsInvalidFailure() {
+  return failure(
+    "CREDIT_NOTE_LINE_ITEMS_INVALID",
+    "Credit note line items must all include description, quantity, unitPriceCents, totalCents, and sortOrder."
+  );
 }
 
 function getInvoiceInput(body: unknown): InvoiceInputRequest | null {
@@ -868,7 +920,11 @@ function getCreditNoteInput(body: unknown): CreditNoteInputRequest | null {
   const taxCents = getNonNegativeInteger(value.taxCents);
   const discountCents = getNonNegativeInteger(value.discountCents);
   const totalCents = getNonNegativeInteger(value.totalCents);
-  const lineItems = getCreditNoteLineItems(value.lineItems);
+  const rawLineItems = value.lineItems;
+  if (rawLineItems !== undefined && (!Array.isArray(rawLineItems) || hasInvalidLineItems(rawLineItems))) {
+    return null;
+  }
+  const lineItems = getCreditNoteLineItems(rawLineItems);
   if (!reason || !currency || amountCents === null || subtotalCents === null || taxCents === null || discountCents === null || totalCents === null) return null;
   return {
     reason,
@@ -3022,6 +3078,10 @@ export const createInvoiceHandler: RequestHandler = async (req, res) => {
 
   const input = getInvoiceInput(req.body);
   if (!input) {
+    if (hasInvalidLineItems((req.body as Record<string, unknown> | undefined)?.lineItems)) {
+      res.status(400).json(invoiceLineItemsInvalidFailure());
+      return;
+    }
     res.status(400).json(invoiceInvalidFailure());
     return;
   }
@@ -3049,6 +3109,10 @@ export const updateInvoiceHandler: RequestHandler = async (req, res) => {
   const invoiceId = typeof req.params.id === "string" ? req.params.id.trim() : "";
   const input = getInvoiceInput(req.body);
   if (!invoiceId || !input) {
+    if (hasInvalidLineItems((req.body as Record<string, unknown> | undefined)?.lineItems)) {
+      res.status(400).json(invoiceLineItemsInvalidFailure());
+      return;
+    }
     res.status(400).json(invoiceInvalidFailure());
     return;
   }
@@ -3163,7 +3227,12 @@ async function runInvoiceItemAction(req: Parameters<RequestHandler>[0], res: Par
 export const createCreditNoteHandler: RequestHandler = async (req, res) => {
   const authSession = getAuthSession(res.locals); const invoiceId = typeof req.params.id === "string" ? req.params.id.trim() : ""; const input = getCreditNoteInput(req.body);
   if (!authSession) return void res.status(401).json(unauthorizedFailure());
-  if (!invoiceId || !input) return void res.status(400).json(invoiceInvalidFailure());
+  if (!invoiceId || !input) {
+    if (hasInvalidLineItems((req.body as Record<string, unknown> | undefined)?.lineItems)) {
+      return void res.status(400).json(creditNoteLineItemsInvalidFailure());
+    }
+    return void res.status(400).json(invoiceInvalidFailure());
+  }
   try {
     const response = await createCreditNote(authSession, invoiceId, input);
     if (!response?.creditNote) return void res.status(404).json(invoiceNotFoundFailure());
@@ -3176,7 +3245,12 @@ export const createCreditNoteHandler: RequestHandler = async (req, res) => {
 export const updateCreditNoteHandler: RequestHandler = async (req, res) => {
   const authSession = getAuthSession(res.locals); const creditNoteId = typeof req.params.id === "string" ? req.params.id.trim() : ""; const input = getCreditNoteInput(req.body);
   if (!authSession) return void res.status(401).json(unauthorizedFailure());
-  if (!creditNoteId || !input) return void res.status(400).json(invoiceInvalidFailure());
+  if (!creditNoteId || !input) {
+    if (hasInvalidLineItems((req.body as Record<string, unknown> | undefined)?.lineItems)) {
+      return void res.status(400).json(creditNoteLineItemsInvalidFailure());
+    }
+    return void res.status(400).json(invoiceInvalidFailure());
+  }
   try {
     const response = await updateCreditNote(authSession, creditNoteId, input);
     if (!response?.creditNote) return void res.status(404).json(invoiceNotFoundFailure());
@@ -3262,7 +3336,10 @@ async function runInvoiceAction(
     }
 
     res.json(success(response, { phase: "runtime", scope: "invoices-module" }));
-  } catch {
+  } catch (error) {
+    if (handleFinanceIntegrityError(res, error)) {
+      return;
+    }
     res.status(500).json(failure("INVOICE_RUNTIME_ERROR", errorMessage));
   }
 }
@@ -3517,6 +3594,10 @@ export const createRecurringInvoiceHandler: RequestHandler = async (req, res) =>
 
   const input = getRecurringInvoiceInput(req.body);
   if (!input) {
+    if (hasInvalidLineItems((req.body as Record<string, unknown> | undefined)?.lineItems)) {
+      res.status(400).json(recurringInvoiceLineItemsInvalidFailure());
+      return;
+    }
     res.status(400).json(recurringInvoiceInvalidFailure());
     return;
   }
@@ -3544,6 +3625,10 @@ export const updateRecurringInvoiceHandler: RequestHandler = async (req, res) =>
   const recurringInvoiceId = typeof req.params.id === "string" ? req.params.id.trim() : "";
   const input = getRecurringInvoiceInput(req.body);
   if (!recurringInvoiceId || !input) {
+    if (hasInvalidLineItems((req.body as Record<string, unknown> | undefined)?.lineItems)) {
+      res.status(400).json(recurringInvoiceLineItemsInvalidFailure());
+      return;
+    }
     res.status(400).json(recurringInvoiceInvalidFailure());
     return;
   }
@@ -3609,7 +3694,10 @@ export const generateDueRecurringInvoiceHandler: RequestHandler = async (req, re
     }
 
     res.status(201).json(success(response, { phase: "runtime", scope: "invoices-module" }));
-  } catch {
+  } catch (error) {
+    if (handleFinanceIntegrityError(res, error)) {
+      return;
+    }
     res.status(500).json(failure("RECURRING_INVOICE_RUNTIME_ERROR", "Recurring invoice generation could not be completed."));
   }
 };
