@@ -267,6 +267,17 @@ export type AiDeliveryResearchSummaryFormValues = {
   sourceNotes: string;
 };
 
+type WorkflowRunResultPreview = {
+  version: string | null;
+  gateway: string | null;
+  model: string | null;
+  outputType: string | null;
+  title: string | null;
+  summary: string | null;
+  generatedAt: string | null;
+  safeError: string | null;
+};
+
 export type AiDeliveryResearchSourceSummary = {
   id: string;
   tenantId: string;
@@ -613,6 +624,32 @@ function formatDeliverableStatus(value?: string | null): string {
 function formatEnumLabel(value?: string | null): string {
   if (!value) return "Not set";
   return String(value).toLowerCase().replace(/_/g, " ").replace(/(^|\s)\S/g, (s) => s.toUpperCase());
+}
+
+function parseWorkflowRunResultPreview(value: string | null | undefined): WorkflowRunResultPreview | null {
+  const text = (value ?? "").trim();
+  if (!text.startsWith("{")) return null;
+
+  try {
+    const parsed: unknown = JSON.parse(text);
+    if (!parsed || typeof parsed !== "object") {
+      return null;
+    }
+
+    const record = parsed as Record<string, unknown>;
+    return {
+      version: typeof record.version === "string" ? record.version : null,
+      gateway: typeof record.gateway === "string" ? record.gateway : null,
+      model: typeof record.model === "string" ? record.model : null,
+      outputType: typeof record.outputType === "string" ? record.outputType : null,
+      title: typeof record.title === "string" ? record.title : null,
+      summary: typeof record.summary === "string" ? record.summary : null,
+      generatedAt: typeof record.generatedAt === "string" ? record.generatedAt : null,
+      safeError: typeof record.safeError === "string" ? record.safeError : null
+    };
+  } catch {
+    return null;
+  }
 }
 
 function getDeliverableExportState(item: AiDeliveryDeliverableSummary): string {
@@ -1046,6 +1083,16 @@ export function AiDeliveryPage({
   const workflowRunStatusOptions = useMemo(() => getWorkflowRunStatusOptions(workflowRunBeingEdited?.status ?? null), [workflowRunBeingEdited?.status]);
   const workflowRunStatusHelper = useMemo(() => getWorkflowRunStatusHelper(workflowRunBeingEdited?.status ?? null), [workflowRunBeingEdited?.status]);
   const isWorkflowRunStatusAllowed = workflowRunStatusOptions.includes(normalizeWorkflowRunStatus(workflowRunForm.status));
+  const latestWorkflowRun = useMemo(() => workflowRuns.reduce<AiDeliveryWorkflowRunSummary | null>((latest, run) => {
+    if (!latest) return run;
+    const latestTime = new Date(latest.updatedAt || latest.createdAt).getTime();
+    const runTime = new Date(run.updatedAt || run.createdAt).getTime();
+    return runTime > latestTime ? run : latest;
+  }, null), [workflowRuns]);
+  const workflowRunEditorResultPreview = useMemo(
+    () => parseWorkflowRunResultPreview(workflowRunBeingEdited?.resultPlaceholder),
+    [workflowRunBeingEdited?.resultPlaceholder]
+  );
   const openResearchSourcesProject = useMemo(() => projects.find((p) => p.id === openResearchSourcesId) ?? null, [openResearchSourcesId, projects]);
   const contentDraftActionGuidance = useMemo(() => {
     if (!activeContentDraftRecord) {
@@ -3319,8 +3366,94 @@ export function AiDeliveryPage({
               {workflowRunsError ? <ErrorState title="Workflow run action blocked" message={workflowRunsError} /> : null}
               <section className="field-panel">
                 <h3>Workflow run editor</h3>
-                <p className="muted-text">Current status is set in the workflow run record. Next step: save the run, then execute the local stub when ready. This screen does not run AI calls, crawling, publishing, automation, or client delivery.</p>
+                <p className="muted-text">Current status is set in the workflow run record. Next step: save the run, then execute the existing guarded workflow path when ready. This screen is admin-only execution history and operator context. It does not create client delivery, publishing, automation, or public review.</p>
                 <div className="state-panel" role="status">{workflowRunActionGuidance}</div>
+                <div className="field-panel" style={{ marginBottom: "1rem" }}>
+                  <h4>Execution visibility summary</h4>
+                  <dl className="brief-grid">
+                    <div>
+                      <dt>Runs in focus</dt>
+                      <dd>{workflowRuns.length}</dd>
+                    </div>
+                    <div>
+                      <dt>Status mix</dt>
+                      <dd>{formatStatusBreakdown(workflowRuns, "No workflow runs in focus yet")}</dd>
+                    </div>
+                    <div>
+                      <dt>Latest update</dt>
+                      <dd>{latestWorkflowRun ? formatOptionalDate(latestWorkflowRun.updatedAt) : "Not set"}</dd>
+                    </div>
+                    <div>
+                      <dt>Latest result state</dt>
+                      <dd>
+                        {latestWorkflowRun?.executionError
+                          ? "Latest run ended with a safe error"
+                          : latestWorkflowRun?.resultPlaceholder
+                            ? "Latest run recorded a result"
+                            : "No result recorded yet"}
+                      </dd>
+                    </div>
+                  </dl>
+                </div>
+                {workflowRunBeingEdited ? (
+                  <div className="field-panel" style={{ marginBottom: "1rem" }}>
+                    <h4>Current execution record</h4>
+                    <dl className="brief-grid">
+                      <div>
+                        <dt>Status</dt>
+                        <dd>{workflowRunStatusLabels[normalizeWorkflowRunStatus(workflowRunBeingEdited.status)]}</dd>
+                      </div>
+                      <div>
+                        <dt>Execution mode</dt>
+                        <dd>{canExecuteWorkflowRun(workflowRunBeingEdited.status) ? "Ready for admin-triggered execute" : "History / review state only"}</dd>
+                      </div>
+                      <div>
+                        <dt>Brief snapshot</dt>
+                        <dd>{workflowRunBeingEdited.brief ? formatEnumLabel(workflowRunBeingEdited.brief.status) : "No brief snapshot linked"}</dd>
+                      </div>
+                      <div>
+                        <dt>Created</dt>
+                        <dd>{formatOptionalDate(workflowRunBeingEdited.createdAt)}</dd>
+                      </div>
+                      <div>
+                        <dt>Started</dt>
+                        <dd>{formatOptionalDate(workflowRunBeingEdited.startedAt)}</dd>
+                      </div>
+                      <div>
+                        <dt>Finished</dt>
+                        <dd>{formatOptionalDate(workflowRunBeingEdited.finishedAt)}</dd>
+                      </div>
+                      <div>
+                        <dt>Gateway</dt>
+                        <dd>{workflowRunEditorResultPreview?.gateway ? formatEnumLabel(workflowRunEditorResultPreview.gateway) : "Not recorded in current result"}</dd>
+                      </div>
+                      <div>
+                        <dt>Model</dt>
+                        <dd>{workflowRunEditorResultPreview?.model || "Not recorded in current result"}</dd>
+                      </div>
+                      <div>
+                        <dt>Workflow output</dt>
+                        <dd>{workflowRunEditorResultPreview?.outputType ? formatEnumLabel(workflowRunEditorResultPreview.outputType) : "Not recorded in current result"}</dd>
+                      </div>
+                      <div>
+                        <dt>Result contract</dt>
+                        <dd>{workflowRunEditorResultPreview?.version || "Manual / summary placeholder only"}</dd>
+                      </div>
+                      <div className="field-span-2">
+                        <dt>Result summary</dt>
+                        <dd>{workflowRunEditorResultPreview?.summary || formatPreview(workflowRunBeingEdited.resultPlaceholder)}</dd>
+                      </div>
+                      <div className="field-span-2">
+                        <dt>Execution log preview</dt>
+                        <dd>{formatPreview(workflowRunBeingEdited.executionLog)}</dd>
+                      </div>
+                      <div className="field-span-2">
+                        <dt>Execution error preview</dt>
+                        <dd>{formatPreview(workflowRunBeingEdited.executionError || workflowRunEditorResultPreview?.safeError)}</dd>
+                      </div>
+                    </dl>
+                  </div>
+                ) : null}
                 <div className="modal-footer">
                   <button className="secondary-action" disabled={workflowRunsSaving || Boolean(workflowRunExecutingId)} onClick={closeWorkflowRuns} type="button">Close</button>
                   <button className="secondary-action" disabled={workflowRunsSaving || Boolean(workflowRunExecutingId)} onClick={() => { setWorkflowRunEditorId(null); setWorkflowRunForm(emptyWorkflowRun()); }} type="button">New workflow run</button>
@@ -3376,64 +3509,90 @@ export function AiDeliveryPage({
               <section className="field-panel">
                 <h3>Existing workflow runs</h3>
                 {workflowRuns.length === 0 ? <div className="state-panel">No workflow runs yet. Create one to track the next admin step.</div> : null}
-                {workflowRuns.map((run) => (
-                  <article className="entity-card" key={run.id} style={{ marginBottom: "1rem" }}>
-                    <div className="entity-card-header">
-                      <div>
-                        <StatusBadge status={run.status} />
-                        <h3>Workflow run</h3>
-                        <p>Created {formatOptionalDate(run.createdAt)}</p>
+                {workflowRuns.map((run) => {
+                  const resultPreview = parseWorkflowRunResultPreview(run.resultPlaceholder);
+                  return (
+                    <article className="entity-card" key={run.id} style={{ marginBottom: "1rem" }}>
+                      <div className="entity-card-header">
+                        <div>
+                          <StatusBadge status={run.status} />
+                          <h3>Workflow run</h3>
+                          <p>
+                            {resultPreview?.outputType ? `${formatEnumLabel(resultPreview.outputType)} - ` : ""}
+                            Created {formatOptionalDate(run.createdAt)}
+                          </p>
+                        </div>
+                        <div className="card-actions">
+                          <button className="secondary-action" disabled={workflowRunsSaving || Boolean(workflowRunExecutingId)} onClick={() => editWorkflowRun(run)} type="button">Edit</button>
+                          {canExecuteWorkflowRun(run.status) ? (
+                            <button
+                              className="primary-action"
+                              disabled={workflowRunsSaving || Boolean(workflowRunExecutingId)}
+                              onClick={() => void executeWorkflowRun(openWorkflowRunsProject.id, run.id)}
+                              type="button"
+                            >
+                              {workflowRunExecutingId === run.id ? "Running" : "Execute"}
+                            </button>
+                          ) : null}
+                        </div>
                       </div>
-                      <div className="card-actions">
-                        <button className="secondary-action" disabled={workflowRunsSaving || Boolean(workflowRunExecutingId)} onClick={() => editWorkflowRun(run)} type="button">Edit</button>
-                        {canExecuteWorkflowRun(run.status) ? (
-                          <button
-                            className="primary-action"
-                            disabled={workflowRunsSaving || Boolean(workflowRunExecutingId)}
-                            onClick={() => void executeWorkflowRun(openWorkflowRunsProject.id, run.id)}
-                            type="button"
-                          >
-                            {workflowRunExecutingId === run.id ? "Running" : "Execute"}
-                          </button>
-                        ) : null}
-                      </div>
-                    </div>
-                    <dl className="brief-grid">
-                      <div>
-                        <dt>Status</dt>
-                        <dd>{run.status}</dd>
-                      </div>
-                      <div>
-                        <dt>Created</dt>
-                        <dd>{formatOptionalDate(run.createdAt)}</dd>
-                      </div>
-                      <div>
-                        <dt>Started</dt>
-                        <dd>{formatOptionalDate(run.startedAt)}</dd>
-                      </div>
-                      <div>
-                        <dt>Finished</dt>
-                        <dd>{formatOptionalDate(run.finishedAt)}</dd>
-                      </div>
-                      <div className="field-span-2">
-                        <dt>Admin notes preview</dt>
-                        <dd>{formatPreview(run.adminNotes)}</dd>
-                      </div>
-                      <div className="field-span-2">
-                        <dt>Result placeholder preview</dt>
-                        <dd>{formatPreview(run.resultPlaceholder)}</dd>
-                      </div>
-                      <div className="field-span-2">
-                        <dt>Execution log</dt>
-                        <dd>{formatPreview(run.executionLog)}</dd>
-                      </div>
-                      <div className="field-span-2">
-                        <dt>Execution error</dt>
-                        <dd>{formatPreview(run.executionError)}</dd>
-                      </div>
-                    </dl>
-                  </article>
-                ))}
+                      <dl className="brief-grid">
+                        <div>
+                          <dt>Status</dt>
+                          <dd>{workflowRunStatusLabels[normalizeWorkflowRunStatus(run.status)]}</dd>
+                        </div>
+                        <div>
+                          <dt>Execution mode</dt>
+                          <dd>{canExecuteWorkflowRun(run.status) ? "Admin-triggerable" : "History / review state"}</dd>
+                        </div>
+                        <div>
+                          <dt>Started</dt>
+                          <dd>{formatOptionalDate(run.startedAt)}</dd>
+                        </div>
+                        <div>
+                          <dt>Finished</dt>
+                          <dd>{formatOptionalDate(run.finishedAt)}</dd>
+                        </div>
+                        <div>
+                          <dt>Gateway</dt>
+                          <dd>{resultPreview?.gateway ? formatEnumLabel(resultPreview.gateway) : "Not recorded"}</dd>
+                        </div>
+                        <div>
+                          <dt>Model</dt>
+                          <dd>{resultPreview?.model || "Not recorded"}</dd>
+                        </div>
+                        <div>
+                          <dt>Workflow output</dt>
+                          <dd>{resultPreview?.outputType ? formatEnumLabel(resultPreview.outputType) : "Manual / summary only"}</dd>
+                        </div>
+                        <div>
+                          <dt>Generated at</dt>
+                          <dd>{formatOptionalDate(resultPreview?.generatedAt)}</dd>
+                        </div>
+                        <div className="field-span-2">
+                          <dt>Result title</dt>
+                          <dd>{resultPreview?.title || "No structured result title recorded"}</dd>
+                        </div>
+                        <div className="field-span-2">
+                          <dt>Admin notes preview</dt>
+                          <dd>{formatPreview(run.adminNotes)}</dd>
+                        </div>
+                        <div className="field-span-2">
+                          <dt>Result placeholder preview</dt>
+                          <dd>{resultPreview?.summary || formatPreview(run.resultPlaceholder)}</dd>
+                        </div>
+                        <div className="field-span-2">
+                          <dt>Execution log</dt>
+                          <dd>{formatPreview(run.executionLog)}</dd>
+                        </div>
+                        <div className="field-span-2">
+                          <dt>Execution error</dt>
+                          <dd>{formatPreview(run.executionError || resultPreview?.safeError)}</dd>
+                        </div>
+                      </dl>
+                    </article>
+                  );
+                })}
               </section>
               <div className="modal-footer"><button className="secondary-action" onClick={closeWorkflowRuns} type="button">Close</button></div>
             </div>
