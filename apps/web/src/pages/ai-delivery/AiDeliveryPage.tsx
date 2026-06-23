@@ -1,4 +1,4 @@
-import React, { FormEvent, useMemo, useState } from "react";
+import React, { FormEvent, useEffect, useMemo, useState } from "react";
 import { EmptyState } from "../../components/EmptyState";
 import { ErrorState } from "../../components/ErrorState";
 import { LoadingState } from "../../components/LoadingState";
@@ -870,11 +870,11 @@ export function AiDeliveryPage({
   const [researchSourceEditorId, setResearchSourceEditorId] = useState<string | null>(null);
   const [researchSourceForm, setResearchSourceForm] = useState<AiDeliveryResearchSourceFormValues>(emptyResearchSource());
   const [deliverableDownloadRefLoading, setDeliverableDownloadRefLoading] = useState(false);
-  const [deliverableDownloadRefError, setDeliverableDownloadRefError] = useState<string | null>(null);
-  const [deliverableDownloadRef, setDeliverableDownloadRef] = useState<{ storageKey: string; downloadUrl: string | null; expiresSeconds: number | null } | null>(null);
+  const [deliverableDownloadRefError, setDeliverableDownloadRefError] = useState<{ recordId: string; message: string } | null>(null);
+  const [deliverableDownloadRef, setDeliverableDownloadRef] = useState<{ recordId: string; storageKey: string; downloadUrl: string | null; expiresSeconds: number | null } | null>(null);
   const [articleImageDownloadRefLoading, setArticleImageDownloadRefLoading] = useState(false);
-  const [articleImageDownloadRefError, setArticleImageDownloadRefError] = useState<string | null>(null);
-  const [articleImageDownloadRef, setArticleImageDownloadRef] = useState<{ storageKey: string; downloadUrl: string | null; expiresSeconds: number | null } | null>(null);
+  const [articleImageDownloadRefError, setArticleImageDownloadRefError] = useState<{ recordId: string; message: string } | null>(null);
+  const [articleImageDownloadRef, setArticleImageDownloadRef] = useState<{ recordId: string; storageKey: string; downloadUrl: string | null; expiresSeconds: number | null } | null>(null);
 
   const selectedProject = useMemo(() => projects.find((p) => p.id === editorProjectId) ?? null, [editorProjectId, projects]);
   const openProject = useMemo(() => projects.find((p) => p.id === openBriefId) ?? null, [openBriefId, projects]);
@@ -1001,6 +1001,14 @@ export function AiDeliveryPage({
   );
   const openDeliverablesProject = useMemo(() => projects.find((p) => p.id === openDeliverablesId) ?? null, [openDeliverablesId, projects]);
   const activeDeliverableRecord = useMemo(() => deliverables.find((item) => item.id === deliverableEditorId) ?? null, [deliverableEditorId, deliverables]);
+  useEffect(() => {
+    setDeliverableDownloadRefError(null);
+    setDeliverableDownloadRef(null);
+  }, [activeDeliverableRecord?.id]);
+  useEffect(() => {
+    setArticleImageDownloadRefError(null);
+    setArticleImageDownloadRef(null);
+  }, [activeArticleImageRecord?.id]);
   const selectedReviewDeliverable = useMemo(() => deliverables.find((item) => item.id === selectedReviewDeliverableId) ?? null, [deliverables, selectedReviewDeliverableId]);
   const visibleDeliverables = useMemo(
     () => [...deliverables].sort((a, b) => {
@@ -1302,6 +1310,7 @@ export function AiDeliveryPage({
 
   async function fetchDeliverableDownloadReference(projectId: string, deliverableId: string) {
     if (!openDeliverablesProject || !activeDeliverableRecord?.storageKey) return;
+    const requestedRecordId = deliverableId;
     const deliverableStorageKey = activeDeliverableRecord.storageKey;
     setDeliverableDownloadRefLoading(true);
     setDeliverableDownloadRefError(null);
@@ -1313,16 +1322,23 @@ export function AiDeliveryPage({
       }
       const data = await response.json();
       if (data.data?.downloadReference) {
-        setDeliverableDownloadRef(data.data.downloadReference);
+        setDeliverableDownloadRef({
+          recordId: requestedRecordId,
+          ...data.data.downloadReference
+        });
       } else {
         setDeliverableDownloadRef({
+          recordId: requestedRecordId,
           storageKey: deliverableStorageKey,
           downloadUrl: null,
           expiresSeconds: null
         });
       }
     } catch (error) {
-      setDeliverableDownloadRefError(getErrorMessage(error, "Unable to fetch the R2 download reference."));
+      setDeliverableDownloadRefError({
+        recordId: requestedRecordId,
+        message: getErrorMessage(error, "Unable to fetch the R2 download reference.")
+      });
     } finally {
       setDeliverableDownloadRefLoading(false);
     }
@@ -1330,6 +1346,7 @@ export function AiDeliveryPage({
 
   async function fetchArticleImageDownloadReference(projectId: string, imageId: string) {
     if (!openArticleImagesProject || !activeArticleImageRecord?.storageKey) return;
+    const requestedRecordId = imageId;
     const articleImageStorageKey = activeArticleImageRecord.storageKey;
     setArticleImageDownloadRefLoading(true);
     setArticleImageDownloadRefError(null);
@@ -1341,16 +1358,23 @@ export function AiDeliveryPage({
       }
       const data = await response.json();
       if (data.data?.downloadReference) {
-        setArticleImageDownloadRef(data.data.downloadReference);
+        setArticleImageDownloadRef({
+          recordId: requestedRecordId,
+          ...data.data.downloadReference
+        });
       } else {
         setArticleImageDownloadRef({
+          recordId: requestedRecordId,
           storageKey: articleImageStorageKey,
           downloadUrl: null,
           expiresSeconds: null
         });
       }
     } catch (error) {
-      setArticleImageDownloadRefError(getErrorMessage(error, "Unable to fetch the R2 download reference."));
+      setArticleImageDownloadRefError({
+        recordId: requestedRecordId,
+        message: getErrorMessage(error, "Unable to fetch the R2 download reference.")
+      });
     } finally {
       setArticleImageDownloadRefLoading(false);
     }
@@ -4028,12 +4052,12 @@ export function AiDeliveryPage({
                         >
                           {deliverableDownloadRefLoading ? "Fetching..." : "Get R2 URL"}
                         </button>
-                        {deliverableDownloadRefError ? (
+                        {deliverableDownloadRefError && deliverableDownloadRefError.recordId === activeDeliverableRecord.id ? (
                           <div className="state-panel" role="alert" style={{ marginTop: "0.5rem", color: "var(--color-error)" }}>
-                            {deliverableDownloadRefError}
+                            {deliverableDownloadRefError.message}
                           </div>
                         ) : null}
-                        {deliverableDownloadRef ? (
+                        {deliverableDownloadRef && deliverableDownloadRef.recordId === activeDeliverableRecord.id ? (
                           <div className="state-panel" style={{ marginTop: "0.5rem" }}>
                             {deliverableDownloadRef.downloadUrl ? (
                               <div>
@@ -4553,12 +4577,12 @@ export function AiDeliveryPage({
                         >
                           {articleImageDownloadRefLoading ? "Fetching..." : "Get R2 URL"}
                         </button>
-                        {articleImageDownloadRefError ? (
+                        {articleImageDownloadRefError && articleImageDownloadRefError.recordId === activeArticleImageRecord.id ? (
                           <div className="state-panel" role="alert" style={{ marginTop: "0.5rem", color: "var(--color-error)" }}>
-                            {articleImageDownloadRefError}
+                            {articleImageDownloadRefError.message}
                           </div>
                         ) : null}
-                        {articleImageDownloadRef ? (
+                        {articleImageDownloadRef && articleImageDownloadRef.recordId === activeArticleImageRecord.id ? (
                           <div className="state-panel" style={{ marginTop: "0.5rem" }}>
                             {articleImageDownloadRef.downloadUrl ? (
                               <div>
