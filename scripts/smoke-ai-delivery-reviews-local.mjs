@@ -1746,6 +1746,25 @@ async function runAiDeliveryBrowserRegression(token, mainProject) {
     await page.getByRole("button", { name: "Mark ready" }).first().waitFor({ state: "visible", timeout: 15000 });
     pass("Deliverables panel opened and rendered stable packaging structure.");
 
+    const prepareWordPressDraftButtons = page.getByRole("button", { name: "Prepare WordPress draft" });
+    const prepareWordPressDraftButtonCount = await prepareWordPressDraftButtons.count();
+    if (prepareWordPressDraftButtonCount === 0) {
+      fail("Deliverables dialog did not render a Prepare WordPress draft button for the smoke-owned project.");
+    }
+    await prepareWordPressDraftButtons.first().click();
+    const preparedDraftPanel = page.locator(".state-panel").filter({ hasText: "WordPress prepared draft" }).first();
+    await preparedDraftPanel.waitFor({ state: "visible", timeout: 15000 });
+    await preparedDraftPanel.getByText("Title").waitFor({ state: "visible", timeout: 15000 });
+    await preparedDraftPanel.getByText("Source type").waitFor({ state: "visible", timeout: 15000 });
+    await preparedDraftPanel.getByText("Source ID").waitFor({ state: "visible", timeout: 15000 });
+    await preparedDraftPanel.getByText("Body preview").waitFor({ state: "visible", timeout: 15000 });
+    await preparedDraftPanel.getByText("WordPress API execution is deferred/not configured.").waitFor({ state: "visible", timeout: 15000 });
+    const preparedDraftPanelText = ((await preparedDraftPanel.textContent()) ?? "").toLowerCase();
+    if (preparedDraftPanelText.includes("published")) {
+      fail("Prepared WordPress draft UI displayed published wording.");
+    }
+    pass("Deliverables panel prepared WordPress draft action rendered expected inline draft details without published wording.");
+
     const reviewsButtons = page.getByRole("button", { name: "Reviews" });
     const reviewsButtonCount = await reviewsButtons.count();
     if (reviewsButtonCount === 0) {

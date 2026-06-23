@@ -1021,6 +1021,7 @@ export function AiDeliveryPage({
     setDeliverableDownloadRef(null);
   }, [activeDeliverableRecord?.id]);
   useEffect(() => {
+    setDeliverableWordPressDraftTargetId(null);
     setDeliverableWordPressDraftError(null);
     setDeliverableWordPressDraft(null);
   }, [activeDeliverableRecord?.id]);
@@ -1405,8 +1406,16 @@ export function AiDeliveryPage({
     setDeliverableWordPressDraftError(null);
     setDeliverableWordPressDraft(null);
     try {
+      const token = window.sessionStorage.getItem("dcaosv1.authToken");
+      if (!token) {
+        throw new Error("Missing auth token.");
+      }
       const response = await fetch(`/api/v1/ai-delivery-projects/${projectId}/deliverables/${deliverableId}/prepare-wordpress-draft`, {
-        method: "POST"
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`
+        }
       });
       if (!response.ok) {
         throw new Error(`API error: ${response.status}`);
@@ -4324,7 +4333,7 @@ export function AiDeliveryPage({
                         {!d.isArchived ? <button className="secondary-action" disabled={deliverablesSaving || !["READY", "ACCEPTED", "DELIVERED"].includes(d.status)} onClick={() => void requestDeliverableRevision(openDeliverablesProject.id, d.id)} type="button">Request revision</button> : null}
                         {!d.isArchived ? <button className="secondary-action" disabled={deliverablesSaving || !["READY", "DELIVERED"].includes(d.status)} onClick={() => void acceptDeliverable(openDeliverablesProject.id, d.id)} type="button">Internal accept</button> : null}
                         {!d.isArchived ? (
-                          <button className="secondary-action" disabled={deliverableWordPressDraftTargetId === d.id} onClick={() => void prepareDeliverableWordPressDraft(openDeliverablesProject.id, d.id)} type="button">
+                          <button className="secondary-action" disabled={deliverablesSaving || deliverableWordPressDraftTargetId === d.id} onClick={() => void prepareDeliverableWordPressDraft(openDeliverablesProject.id, d.id)} type="button">
                             {deliverableWordPressDraftTargetId === d.id ? "Fetching..." : "Prepare WordPress draft"}
                           </button>
                         ) : null}
