@@ -1,0 +1,119 @@
+# DCA OS Lite - Copilot Operating Model
+
+## Overview
+
+This document describes how AI coding agents are used in DCA OS Lite. It covers the two primary loops, role boundaries, cost controls, and human gate points.
+
+---
+
+## Level 2 - Repository memory
+
+Repository memory is stored in:
+
+- `AGENTS.md` - project overview, stack, commands, role boundaries, safety rules
+- `.github/copilot-instructions.md` - repo-wide Copilot instructions (auto-loaded by Copilot CLI and GitHub Copilot)
+- `.github/instructions/*.instructions.md` - scoped instruction files for modes and modules
+- `.github/agents/*.agent.md` - custom agent instruction files
+
+These files are loaded automatically by Copilot CLI and GitHub Copilot cloud agents. They reduce repeated human instructions.
+
+---
+
+## Level 3 - Issue -> agent -> branch/PR factory
+
+The intended loop for structured delivery:
+
+```
+GitHub Issue (ai-block.yml form)
+  -> ChatGPT reviews and approves scope
+    -> Copilot CLI or cloud agent executes block
+      -> Agent produces branch + diff + final report
+        -> Human reviews diff and final report
+          -> Human commits and pushes
+            -> PR opened against target branch
+              -> ChatGPT or human reviews PR
+                -> KEEP / FIX / REVERT / STOP decision
+                  -> Human merges
+```
+
+---
+
+## Local Copilot CLI loop
+
+Use for: quick focused blocks, short diffs, single-module work.
+
+```
+1. ChatGPT produces scoped block prompt
+2. Human pastes prompt into Copilot CLI
+3. Agent executes on C:\dcaosv1 (Windows PowerShell)
+4. Agent runs: git diff --check -> npm.cmd run validate -> smoke (if required)
+5. Agent produces final report
+6. Human reviews diff and report
+7. Human runs: git add -> git commit -> git push (separately, with approval)
+```
+
+---
+
+## GitHub issue/PR loop (cloud agent)
+
+Use for: larger blocks, multi-file work, async execution.
+
+```
+1. Human opens GitHub Issue using ai-block.yml form
+2. ChatGPT reviews scope and approves
+3. Human assigns issue to Copilot cloud agent (or triggers manually)
+4. Cloud agent creates branch, implements block, opens PR
+5. PR template auto-fills: files changed, validation, smoke, risk notes
+6. ChatGPT or human reviews PR
+7. Human merges with explicit approval
+```
+
+---
+
+## When to use local CLI vs cloud agent
+
+| Scenario | Use |
+|---|---|
+| Short focused block, 1-5 files | Local Copilot CLI |
+| Scaffolding / docs only | Local Copilot CLI |
+| Complex multi-file implementation | Cloud agent |
+| Async / background execution needed | Cloud agent |
+| Requires full repo context at scale | Cloud agent |
+
+---
+
+## Cost control rules
+
+- No autonomous AI agents that incur LLM cost run without explicit per-block approval.
+- Admin controls all AI workflow runs in the AI Delivery module.
+- No background polling, scheduled agents, or auto-triggered generation pipelines unless explicitly scoped.
+- Cost guardrails and input guardrails in `AI_WORKFLOW_RESULT_V1` are preserved unless explicitly changed.
+
+---
+
+## Human gate points
+
+| Gate | Required |
+|---|---|
+| Block scope approval | ChatGPT reviews and approves before execution |
+| Validation pass | Agent must pass validate before smoke |
+| Diff review | Human reviews before commit |
+| Commit | Human runs `git commit` explicitly |
+| Push | Human runs `git push` explicitly - separate approval |
+| Merge | Human merges PR explicitly |
+| Deploy | Human deploys explicitly - never triggered by agent |
+
+---
+
+## Deferred - not yet enabled
+
+The following are planned but not yet implemented:
+
+- GitHub Actions CI pipeline
+- Pre-commit or pre-push hooks
+- Automated PR assignment to cloud agent
+- Third-party agent router
+- Automated deployment from CI
+- Slack or notification automation
+
+These will be added in future blocks when explicitly scoped and approved.

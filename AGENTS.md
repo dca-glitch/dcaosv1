@@ -195,3 +195,93 @@ This keeps approved UI direction and production safety rules stored at repositor
 - Use term “monthly content plan,” not “package.”
 - Client archive is read-only.
 - No public approval links in MVP.
+
+---
+
+## Copilot CLI / Cloud Agent Workflow
+
+### Repo
+
+- Path: `C:\dcaosv1`
+- Active branch convention: `feature/*`
+- OS: Windows - PowerShell only
+
+### Stack
+
+| Layer | Technology |
+|---|---|
+| `apps/web` | React + Vite + TypeScript |
+| `apps/api` | Node.js + Express |
+| `packages/data` | Prisma + PostgreSQL |
+| `packages/shared` | Shared TypeScript |
+
+### Local start commands
+
+```powershell
+# API
+cd C:\dcaosv1
+npm.cmd run dev:api   # http://localhost:4000
+
+# Web
+cd C:\dcaosv1
+npm.cmd run dev:web   # http://localhost:5173
+```
+
+### Validation commands
+
+```powershell
+cd C:\dcaosv1
+git diff --check
+npm.cmd run validate
+```
+
+### Smoke commands
+
+```powershell
+npm.cmd run smoke:ai-delivery-reviews
+npm.cmd run smoke:local
+npm.cmd run smoke:browser
+```
+
+### Role boundaries
+
+| Role | Responsibility |
+|---|---|
+| ChatGPT | Planner, scope controller, reviewer, decision gate |
+| Copilot CLI / cloud agent | Executor - implements approved block only |
+| Human | Approves commit and push |
+
+### Safety rules
+
+- No commit, push, or deploy without explicit human approval.
+- No app source changes unless explicitly scoped.
+- No schema / migration changes unless explicitly approved.
+- No package installs unless explicitly scoped.
+- No secrets or credentials in any output or file.
+- Stop on validation failure. Do not run smoke after a failed validate.
+
+### Final report format
+
+Every block must end with:
+
+1. Files changed
+2. Exact behavior / scaffolding added
+3. Backend / schema / provider / runtime changes - yes/no; describe if yes
+4. Validation results
+5. Smoke results or skipped tests and why
+6. Risk notes
+7. Git status
+8. Confirm no commit / push / deploy
+
+### Agent instruction files
+
+| File | Purpose |
+|---|---|
+| `.github/copilot-instructions.md` | Repo-wide Copilot instructions |
+| `.github/instructions/dca-mode.instructions.md` | Working rules and decision model |
+| `.github/instructions/validation.instructions.md` | Validation order and commands |
+| `.github/instructions/ai-delivery.instructions.md` | AI Delivery module rules |
+| `.github/agents/dca-planner.agent.md` | Planning / discovery agent |
+| `.github/agents/dca-implementation.agent.md` | Implementation agent |
+| `.github/agents/dca-reviewer.agent.md` | Review agent |
+| `docs/ai-delivery/copilot-operating-model.md` | Operating model overview |
