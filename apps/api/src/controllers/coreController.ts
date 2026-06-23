@@ -62,6 +62,7 @@ import {
   getBillDocumentDownload,
   getCreditNoteDocumentDownload,
   getAiDeliveryArticleImageDownload,
+  getAiDeliveryArticleImageDownloadReference,
   getAiDeliveryDeliverableDownload,
   getAiDeliveryDeliverableDownloadReference,
   getInvoiceDocumentDownload,
@@ -3326,6 +3327,23 @@ export const downloadAiDeliveryArticleImageHandler: RequestHandler = async (req,
   const response = await getAiDeliveryArticleImageDownload(authSession, aiDeliveryProjectId, articleImageId);
   if (!response) return void res.status(404).json(failure("DOCUMENT_NOT_FOUND", "Document is not available."));
   res.json(success(response, { phase: "runtime", scope: "secure-downloads" }));
+};
+
+export const getAiDeliveryArticleImageDownloadReferenceHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  const aiDeliveryProjectId = typeof req.params.id === "string" ? req.params.id.trim() : "";
+  const articleImageId = typeof req.params.imageId === "string" ? req.params.imageId.trim() : "";
+  if (!authSession) return void res.status(401).json(unauthorizedFailure());
+  if (!aiDeliveryProjectId || !articleImageId) return void res.status(400).json(aiDeliveryProjectInvalidFailure());
+
+  try {
+    const response = await getAiDeliveryArticleImageDownloadReference(authSession, aiDeliveryProjectId, articleImageId);
+    if (!response) return void res.status(404).json(aiDeliveryProjectNotFoundFailure());
+    res.json(success(response, { phase: "runtime", scope: "ai-delivery-article-images" }));
+  } catch (error) {
+    if (handleAiDeliveryGuardError(res, error)) return;
+    res.status(500).json(failure("AI_DELIVERY_ARTICLE_IMAGE_RUNTIME_ERROR", "Download reference could not be retrieved."));
+  }
 };
 
 async function runDownload(req: Parameters<RequestHandler>[0], res: Parameters<RequestHandler>[1], action: typeof getInvoiceDocumentDownload, idValue: unknown) {

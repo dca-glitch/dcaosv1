@@ -2620,6 +2620,44 @@ export async function getAiDeliveryArticleImageDownload(
   return getPrivateStorageDownloadReference(articleImage.storageKey);
 }
 
+export async function getAiDeliveryArticleImageDownloadReference(
+  authSession: AuthResolvedSessionContext,
+  aiDeliveryProjectId: string,
+  articleImageId: string
+): Promise<AiDeliveryDeliverableDownloadReferenceResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId || !aiDeliveryProjectId || !articleImageId) {
+    return null;
+  }
+
+  const articleImage = await getAiDeliveryArticleImageDelegate(prisma).findFirst({
+    where: {
+      id: articleImageId,
+      tenantId,
+      aiDeliveryProjectId,
+      isArchived: false
+    },
+    select: {
+      storageKey: true
+    }
+  }) as { storageKey?: string | null } | null;
+
+  if (!articleImage?.storageKey) {
+    return { downloadReference: null };
+  }
+
+  const downloadRef = getPrivateStorageDownloadReference(articleImage.storageKey);
+  return {
+    downloadReference: downloadRef
+      ? {
+          storageKey: articleImage.storageKey,
+          downloadUrl: downloadRef.downloadUrl || null,
+          expiresSeconds: downloadRef.expiresSeconds || null
+        }
+      : null
+  };
+}
+
 export async function uploadAiDeliveryArticleImageFinalAsset(
   authSession: AuthResolvedSessionContext,
   aiDeliveryProjectId: string,
