@@ -152,6 +152,8 @@ Use for: larger blocks, multi-file work, async execution.
 - If a secret is needed, stop and ask the human to provide it as a temporary process environment variable.
 - Use temporary env vars only when the human explicitly provides them in the session.
 - No production, VPS, deploy, or remote server actions without explicit human scope and approval.
+- Local auth flows use `admin@dca.local` as the admin email and `$env:AUTH_SEED_TEST_PASSWORD` as the password source.
+- The password must remain local and must never be committed, printed, or written into any repo file or doc.
 
 ---
 

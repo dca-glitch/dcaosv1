@@ -272,6 +272,12 @@ Key points:
 - Secrets must never be searched, printed, persisted, or committed.
 - Stop and ask the human if a secret or credential is needed.
 
+### Local admin credentials
+
+- Local admin email is `admin@dca.local`.
+- Local admin password must come from `$env:AUTH_SEED_TEST_PASSWORD` only; never from repo files.
+- If the env var is missing, stop and ask the human to set it locally. Do not print its value.
+
 ### Final report format
 
 Every block must end with:

@@ -72,6 +72,13 @@ Use PowerShell commands only. Do not use bash, Unix pipes, or Unix redirects.
 - Stop `node.exe` only for Prisma EPERM recovery or before a fresh local smoke startup.
 - Never run smoke after a failed validate.
 
+## Local admin auth for smoke
+
+- Local smoke and auth commands may use `$env:AUTH_SEED_TEST_PASSWORD` for the local admin account (`admin@dca.local`).
+- Do not ask the human for the local admin password if `$env:AUTH_SEED_TEST_PASSWORD` already exists in the session.
+- Do not print the value of `$env:AUTH_SEED_TEST_PASSWORD`.
+- If the variable is missing, stop and ask the human to set it as a temporary local environment variable.
+
 ## Rules summary
 
 - Never run smoke after a failed validate.

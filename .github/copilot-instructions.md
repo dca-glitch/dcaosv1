@@ -47,6 +47,15 @@
 - Never print, persist, or commit secrets.
 - Never use production URLs, VPS, Caddy, containers, deployment commands, or remote server commands unless explicitly scoped and approved.
 
+### Local admin auth
+
+- Local admin email for local smoke and auth flows is `admin@dca.local`.
+- If a local admin password is needed, use `$env:AUTH_SEED_TEST_PASSWORD`.
+- If `$env:AUTH_SEED_TEST_PASSWORD` exists in the current session, do not ask the human for the password.
+- If `$env:AUTH_SEED_TEST_PASSWORD` is missing, stop and ask the human to set it as a temporary local user environment variable.
+- Never print, persist, commit, log, search for, or infer the password value.
+- Never write the password value into repo files, docs, prompts, logs, or GitHub issues.
+
 ## Working rules
 
 - Make small, sealed diffs scoped to the approved block only.
