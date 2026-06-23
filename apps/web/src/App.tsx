@@ -2543,13 +2543,14 @@ export function App() {
 
   async function handleExecuteAiDeliveryWorkflowRun(
     projectId: string,
-    workflowRunId: string
+    workflowRunId: string,
+    input?: { contentPlanItemId?: string | null }
   ): Promise<AiDeliveryWorkflowRunSummary | null> {
     setAppMessage(null);
     try {
       const response = await runAuthenticatedRequest<AiDeliveryWorkflowRunResponse>(
         `/ai-delivery/projects/${projectId}/workflow-runs/${workflowRunId}/execute`,
-        { method: "POST" }
+        { method: "POST", body: input }
       );
       if (!response) return null;
       if (!response.ok) {
@@ -2558,7 +2559,11 @@ export function App() {
       const executedRun = response.data.workflowRun;
       setAppMessage({
         tone: executedRun?.status === "FAILED" ? "error" : "success",
-        text: executedRun?.status === "FAILED" ? "Workflow run failed in controlled stub mode." : "Workflow run executed in controlled stub mode."
+        text: executedRun?.status === "FAILED"
+          ? "Workflow run failed in controlled stub mode."
+          : input?.contentPlanItemId
+            ? "Admin content draft generation completed in controlled mode."
+            : "Workflow run executed in controlled stub mode."
       });
       return executedRun;
     } catch (error) {

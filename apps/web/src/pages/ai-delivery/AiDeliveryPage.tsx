@@ -372,7 +372,7 @@ export type AiDeliveryProjectsProps = {
   onSaveDeliverableReview?: (projectId: string, deliverableId: string, reviewId: string | null, values: AiDeliveryDeliverableReviewFormValues) => Promise<AiDeliveryDeliverableReviewSummary | null>;
   onFetchWorkflowRuns?: (projectId: string) => Promise<AiDeliveryWorkflowRunSummary[]>;
   onSaveWorkflowRun?: (projectId: string, workflowRunId: string | null, values: AiDeliveryWorkflowRunFormValues) => Promise<AiDeliveryWorkflowRunSummary | null>;
-  onExecuteWorkflowRun?: (projectId: string, workflowRunId: string) => Promise<AiDeliveryWorkflowRunSummary | null>;
+  onExecuteWorkflowRun?: (projectId: string, workflowRunId: string, input?: { contentPlanItemId?: string | null }) => Promise<AiDeliveryWorkflowRunSummary | null>;
   onFetchResearchRequests?: (projectId: string) => Promise<AiDeliveryResearchRequestSummary[]>;
   onSaveResearchRequest?: (projectId: string, researchRequestId: string | null, values: AiDeliveryResearchRequestFormValues) => Promise<AiDeliveryResearchRequestSummary | null>;
   onFetchResearchSummaries?: (projectId: string) => Promise<AiDeliveryResearchSummarySummary[]>;
@@ -768,7 +768,9 @@ export function AiDeliveryPage({
   const [openContentPlanId, setOpenContentPlanId] = useState<string | null>(null);
   const [contentPlanLoading, setContentPlanLoading] = useState(false);
   const [contentPlanSaving, setContentPlanSaving] = useState(false);
+  const [contentPlanGeneratingItemId, setContentPlanGeneratingItemId] = useState<string | null>(null);
   const [contentPlanError, setContentPlanError] = useState<string | null>(null);
+  const [contentPlanGenerationMessage, setContentPlanGenerationMessage] = useState<string | null>(null);
   const [contentPlanDetail, setContentPlanDetail] = useState<AiDeliveryContentPlanSummary | null>(null);
   const [contentPlanItems, setContentPlanItems] = useState<ContentPlanItemDraft[]>([]);
   const [openContentDraftsId, setOpenContentDraftsId] = useState<string | null>(null);
@@ -942,6 +944,7 @@ export function AiDeliveryPage({
     }
     return "Execute uses the local stub only. Use [stub-fail] in admin notes when you need a controlled failure path.";
   }, [workflowRunBeingEdited, workflowRunExecutingId]);
+  const isContentPlanBusy = contentPlanSaving || Boolean(contentPlanGeneratingItemId);
   const linkableProjects = useMemo(
     () => projectsList.filter((project) => project.clientId === draft.clientId),
     [draft.clientId, projectsList]
@@ -1107,14 +1110,20 @@ export function AiDeliveryPage({
     setOpenContentPlanId(projectId);
     setContentPlanLoading(true);
     setContentPlanError(null);
+    setContentPlanGenerationMessage(null);
+    setContentPlanGeneratingItemId(null);
     setContentPlanDetail(null);
     setContentPlanItems([]);
     try {
+      const [plan, drafts] = await Promise.all([
+        typeof onFetchContentPlan === "function" ? onFetchContentPlan(projectId) : Promise.resolve(null),
+        typeof onFetchContentDrafts === "function" ? onFetchContentDrafts(projectId) : Promise.resolve(contentDrafts)
+      ]);
       if (typeof onFetchContentPlan === "function") {
-        const plan = await onFetchContentPlan(projectId);
         setContentPlanDetail(plan);
         setContentPlanItems(plan?.items.map(itemDraftFromPlanItem) ?? []);
       }
+      setContentDrafts(drafts);
     } catch (error) {
       setContentPlanError(getErrorMessage(error, "Unable to load the current content plan."));
     } finally {
@@ -1126,6 +1135,7 @@ export function AiDeliveryPage({
     if (typeof onCreateContentPlan !== "function") return;
     setContentPlanSaving(true);
     setContentPlanError(null);
+    setContentPlanGenerationMessage(null);
     try {
       const plan = await onCreateContentPlan(projectId);
       if (plan) {
@@ -1143,6 +1153,7 @@ export function AiDeliveryPage({
     if (typeof onSaveContentPlan !== "function") return;
     setContentPlanSaving(true);
     setContentPlanError(null);
+    setContentPlanGenerationMessage(null);
     try {
       const plan = await onSaveContentPlan(projectId, {
         items: contentPlanItems.map((item, index) => ({
@@ -1173,6 +1184,7 @@ export function AiDeliveryPage({
     if (typeof action !== "function") return;
     setContentPlanSaving(true);
     setContentPlanError(null);
+    setContentPlanGenerationMessage(null);
     try {
       const plan = await action(projectId);
       if (plan) {
@@ -1189,6 +1201,8 @@ export function AiDeliveryPage({
   function closeContentPlan() {
     setOpenContentPlanId(null);
     setContentPlanError(null);
+    setContentPlanGenerationMessage(null);
+    setContentPlanGeneratingItemId(null);
     setContentPlanDetail(null);
     setContentPlanItems([]);
   }
@@ -1663,12 +1677,12 @@ export function AiDeliveryPage({
     }
   }
 
-  async function executeWorkflowRun(projectId: string, workflowRunId: string) {
+  async function executeWorkflowRun(projectId: string, workflowRunId: string, input?: { contentPlanItemId?: string | null }) {
     if (typeof onExecuteWorkflowRun !== "function") return;
     setWorkflowRunExecutingId(workflowRunId);
     setWorkflowRunsError(null);
     try {
-      const executed = await onExecuteWorkflowRun(projectId, workflowRunId);
+      const executed = await onExecuteWorkflowRun(projectId, workflowRunId, input);
       if (executed && typeof onFetchWorkflowRuns === "function") {
         setWorkflowRuns(await onFetchWorkflowRuns(projectId));
         setWorkflowRunEditorId(null);
@@ -1678,6 +1692,74 @@ export function AiDeliveryPage({
       setWorkflowRunsError(getErrorMessage(error, "Unable to execute this workflow run."));
     } finally {
       setWorkflowRunExecutingId(null);
+    }
+  }
+
+  async function generateContentDraftFromPlanItem(projectId: string, item: AiDeliveryContentPlanItemSummary) {
+    if (!item.id || typeof onSaveWorkflowRun !== "function" || typeof onExecuteWorkflowRun !== "function" || typeof onFetchContentDrafts !== "function") {
+      return;
+    }
+
+    setContentPlanGeneratingItemId(item.id);
+    setContentPlanError(null);
+    setContentPlanGenerationMessage(null);
+
+    try {
+      const createdRun = await onSaveWorkflowRun(projectId, null, {
+        status: "DRAFT",
+        adminNotes: `Generate admin review content draft from content plan item: ${item.title}`,
+        resultPlaceholder: ""
+      });
+
+      if (!createdRun?.id) {
+        setContentPlanError("Unable to create the workflow run needed for admin draft generation.");
+        return;
+      }
+
+      const executedRun = await onExecuteWorkflowRun(projectId, createdRun.id, { contentPlanItemId: item.id });
+      if (typeof onFetchWorkflowRuns === "function" && openWorkflowRunsId === projectId) {
+        setWorkflowRuns(await onFetchWorkflowRuns(projectId));
+      }
+
+      if (!executedRun) {
+        setContentPlanError("Unable to execute the workflow run for this content plan item.");
+        return;
+      }
+
+      const [drafts, plan] = await Promise.all([
+        onFetchContentDrafts(projectId),
+        typeof onFetchContentPlan === "function" ? onFetchContentPlan(projectId) : Promise.resolve(contentPlanDetail)
+      ]);
+      const linkedDraft = drafts.find((draftItem) => draftItem.contentPlanItemId === item.id && !draftItem.isArchived) ?? null;
+
+      if (!linkedDraft) {
+        if (executedRun.status === "FAILED") {
+          setContentPlanError(executedRun.executionError ?? "Admin draft generation failed in the current workflow run.");
+        } else {
+          setContentPlanGenerationMessage("Workflow run completed for admin review, but no linked content draft was persisted. Review the workflow result before retrying.");
+        }
+        return;
+      }
+
+      setContentPlanGenerationMessage(`Admin draft generation completed for "${item.title}". Review the generated draft below before any review handoff.`);
+      setContentDraftsError(null);
+      setContentDrafts(drafts);
+      setContentDraftPlan(plan);
+      setContentDraftEditorId(linkedDraft.id);
+      setContentDraftForm({
+        contentPlanItemId: linkedDraft.contentPlanItemId,
+        title: linkedDraft.title,
+        slug: linkedDraft.slug ?? "",
+        draftBody: linkedDraft.draftBody,
+        status: linkedDraft.status,
+        notes: linkedDraft.notes ?? ""
+      });
+      setOpenContentPlanId(null);
+      setOpenContentDraftsId(projectId);
+    } catch (error) {
+      setContentPlanError(getErrorMessage(error, "Unable to generate an admin content draft from this content plan item."));
+    } finally {
+      setContentPlanGeneratingItemId(null);
     }
   }
 
@@ -2415,15 +2497,16 @@ export function AiDeliveryPage({
                 {contentPlanError ? <ErrorState title="Content plan action blocked" message={contentPlanError} /> : null}
                 <section className="field-panel">
                   <h3>SEO topic/research planning</h3>
-                  <p className="muted-text">Current status is shown below. Next step: add or refine topics, save the plan, then move it into review when ready. This screen does not run AI generation, crawling, publishing, or external services.</p>
+                  <p className="muted-text">Current status is shown below. Next step: add or refine topics, save the plan, then move it into review when ready. Saved plan items can run admin-only draft generation; this screen does not publish, deliver to clients, crawl, or run external services directly.</p>
                   <div className="state-panel" role="status">Review actions follow the current content plan state shown below. If a transition is blocked, the reason stays in this modal.</div>
+                  {contentPlanGenerationMessage ? <div className="state-panel" role="status">{contentPlanGenerationMessage}</div> : null}
                 </section>
                 <div className="modal-footer">
-                  <button className="secondary-action" disabled={contentPlanSaving} onClick={closeContentPlan} type="button">Close</button>
-                  <button className="secondary-action" disabled={contentPlanSaving} onClick={() => void handleContentPlanAction(openContentPlanProject.id, onRequestContentPlanReview)} type="button">Mark ready for review</button>
-                  <button className="secondary-action" disabled={contentPlanSaving} onClick={() => void handleContentPlanAction(openContentPlanProject.id, onRequestContentPlanChanges)} type="button">Request changes</button>
-                  <button className="secondary-action" disabled={contentPlanSaving} onClick={() => void handleContentPlanAction(openContentPlanProject.id, onApproveContentPlan)} type="button">Approve plan</button>
-                  <button className="primary-action" disabled={contentPlanSaving || contentPlanItems.some((item) => !item.title.trim())} onClick={() => void handleSaveContentPlan(openContentPlanProject.id)} type="button">
+                  <button className="secondary-action" disabled={isContentPlanBusy} onClick={closeContentPlan} type="button">Close</button>
+                  <button className="secondary-action" disabled={isContentPlanBusy} onClick={() => void handleContentPlanAction(openContentPlanProject.id, onRequestContentPlanReview)} type="button">Mark ready for review</button>
+                  <button className="secondary-action" disabled={isContentPlanBusy} onClick={() => void handleContentPlanAction(openContentPlanProject.id, onRequestContentPlanChanges)} type="button">Request changes</button>
+                  <button className="secondary-action" disabled={isContentPlanBusy} onClick={() => void handleContentPlanAction(openContentPlanProject.id, onApproveContentPlan)} type="button">Approve plan</button>
+                  <button className="primary-action" disabled={isContentPlanBusy || contentPlanItems.some((item) => !item.title.trim())} onClick={() => void handleSaveContentPlan(openContentPlanProject.id)} type="button">
                     {contentPlanSaving ? "Saving" : "Save draft"}
                   </button>
                 </div>
@@ -2474,7 +2557,13 @@ export function AiDeliveryPage({
                   {contentPlanItems.length === 0 ? (
                     <div className="state-panel">No SEO topics yet. Add a topic to continue planning.</div>
                   ) : null}
-                  {contentPlanItems.map((item, index) => (
+                  {contentPlanItems.map((item, index) => {
+                    const persistedItem = contentPlanDetail.items.find((planItem) => planItem.id === item.localId) ?? null;
+                    const linkedDraft = persistedItem?.id
+                      ? contentDrafts.find((draftItem) => draftItem.contentPlanItemId === persistedItem.id && !draftItem.isArchived) ?? null
+                      : null;
+
+                    return (
                     <div className="field-grid" key={item.localId} style={{ marginBottom: "1rem" }}>
                       <label className="field-span-2">
                         Topic / working title - Required
@@ -2555,13 +2644,26 @@ export function AiDeliveryPage({
                       </div>
                       <div className="field-span-2">
                         <span>Saved approval / revision note</span>
-                        <strong>{contentPlanDetail.items[index]?.clientComment ?? "No approval note yet"}</strong>
+                        <strong>{persistedItem?.clientComment ?? "No approval note yet"}</strong>
                         <span className="muted-text">Latest persisted approval or revision note for this item.</span>
+                      </div>
+                      <div className="field-span-2">
+                        <div className="modal-footer" style={{ justifyContent: "flex-start", padding: 0 }}>
+                          <button
+                            className="primary-action"
+                            disabled={isContentPlanBusy || !persistedItem?.id || persistedItem.approvalStatus === "CLIENT_CHANGES_REQUESTED"}
+                            onClick={() => persistedItem ? void generateContentDraftFromPlanItem(openContentPlanProject.id, persistedItem) : undefined}
+                            type="button"
+                          >
+                            {contentPlanGeneratingItemId === persistedItem?.id ? "Generating draft" : linkedDraft ? "Regenerate admin draft" : "Generate admin draft"}
+                          </button>
+                        </div>
+                        <span className="muted-text">Runs admin-only draft generation from this saved content plan item. It does not publish, deliver to client, or open client review.</span>
                       </div>
                       <div className="field-span-2">
                         <button
                           className="secondary-action"
-                          disabled={contentPlanSaving}
+                          disabled={isContentPlanBusy}
                           onClick={() => setContentPlanItems((current) => current.filter((draftItem) => draftItem.localId !== item.localId))}
                           type="button"
                         >
@@ -2569,10 +2671,11 @@ export function AiDeliveryPage({
                         </button>
                       </div>
                     </div>
-                  ))}
+                    );
+                  })}
                   <button
                     className="secondary-action"
-                    disabled={contentPlanSaving}
+                    disabled={isContentPlanBusy}
                     onClick={() => setContentPlanItems((current) => [...current, emptyContentPlanItem()])}
                     type="button"
                   >
@@ -2581,11 +2684,11 @@ export function AiDeliveryPage({
                 </section>
 
                 <div className="modal-footer">
-                  <button className="secondary-action" disabled={contentPlanSaving} onClick={closeContentPlan} type="button">Close</button>
-                  <button className="secondary-action" disabled={contentPlanSaving} onClick={() => void handleContentPlanAction(openContentPlanProject.id, onRequestContentPlanReview)} type="button">Mark ready for review</button>
-                  <button className="secondary-action" disabled={contentPlanSaving} onClick={() => void handleContentPlanAction(openContentPlanProject.id, onRequestContentPlanChanges)} type="button">Request changes</button>
-                  <button className="secondary-action" disabled={contentPlanSaving} onClick={() => void handleContentPlanAction(openContentPlanProject.id, onApproveContentPlan)} type="button">Approve plan</button>
-                  <button className="primary-action" disabled={contentPlanSaving || contentPlanItems.some((item) => !item.title.trim())} onClick={() => void handleSaveContentPlan(openContentPlanProject.id)} type="button">
+                  <button className="secondary-action" disabled={isContentPlanBusy} onClick={closeContentPlan} type="button">Close</button>
+                  <button className="secondary-action" disabled={isContentPlanBusy} onClick={() => void handleContentPlanAction(openContentPlanProject.id, onRequestContentPlanReview)} type="button">Mark ready for review</button>
+                  <button className="secondary-action" disabled={isContentPlanBusy} onClick={() => void handleContentPlanAction(openContentPlanProject.id, onRequestContentPlanChanges)} type="button">Request changes</button>
+                  <button className="secondary-action" disabled={isContentPlanBusy} onClick={() => void handleContentPlanAction(openContentPlanProject.id, onApproveContentPlan)} type="button">Approve plan</button>
+                  <button className="primary-action" disabled={isContentPlanBusy || contentPlanItems.some((item) => !item.title.trim())} onClick={() => void handleSaveContentPlan(openContentPlanProject.id)} type="button">
                     {contentPlanSaving ? "Saving" : "Save draft"}
                   </button>
                 </div>
@@ -2594,8 +2697,8 @@ export function AiDeliveryPage({
               <div>
                 {contentPlanError ? <ErrorState title="Content plan action blocked" message={contentPlanError} /> : null}
                 <div className="modal-footer">
-                  <button className="secondary-action" disabled={contentPlanSaving} onClick={closeContentPlan} type="button">Close</button>
-                  <button className="primary-action" disabled={contentPlanSaving} onClick={() => void handleCreateContentPlan(openContentPlanProject.id)} type="button">
+                  <button className="secondary-action" disabled={isContentPlanBusy} onClick={closeContentPlan} type="button">Close</button>
+                  <button className="primary-action" disabled={isContentPlanBusy} onClick={() => void handleCreateContentPlan(openContentPlanProject.id)} type="button">
                     {contentPlanSaving ? "Creating" : "Create content plan"}
                   </button>
                 </div>
@@ -2603,8 +2706,8 @@ export function AiDeliveryPage({
                   No content plan exists for {openContentPlanProject.name} yet. Create one to continue planning. This screen records admin-side planning only; it does not generate, crawl, publish, or call external services.
                 </div>
                 <div className="modal-footer">
-                  <button className="secondary-action" disabled={contentPlanSaving} onClick={closeContentPlan} type="button">Close</button>
-                  <button className="primary-action" disabled={contentPlanSaving} onClick={() => void handleCreateContentPlan(openContentPlanProject.id)} type="button">
+                  <button className="secondary-action" disabled={isContentPlanBusy} onClick={closeContentPlan} type="button">Close</button>
+                  <button className="primary-action" disabled={isContentPlanBusy} onClick={() => void handleCreateContentPlan(openContentPlanProject.id)} type="button">
                     {contentPlanSaving ? "Creating" : "Create content plan"}
                   </button>
                 </div>
