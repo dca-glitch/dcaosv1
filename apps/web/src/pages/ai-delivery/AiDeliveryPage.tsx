@@ -948,6 +948,14 @@ export function AiDeliveryPage({
     () => articleImages.find((item) => item.id === articleImageEditorId) ?? null,
     [articleImageEditorId, articleImages]
   );
+  const activeContentDraftLinkedImages = useMemo(
+    () => activeContentDraftRecord ? articleImages.filter((item) => !item.isArchived && item.contentDraftId === activeContentDraftRecord.id) : [],
+    [activeContentDraftRecord, articleImages]
+  );
+  const activeContentDraftLinkedDeliverables = useMemo(
+    () => activeContentDraftRecord ? deliverables.filter((item) => !item.isArchived && item.contentDraftId === activeContentDraftRecord.id) : [],
+    [activeContentDraftRecord, deliverables]
+  );
   const openDeliverablesProject = useMemo(() => projects.find((p) => p.id === openDeliverablesId) ?? null, [openDeliverablesId, projects]);
   const activeDeliverableRecord = useMemo(() => deliverables.find((item) => item.id === deliverableEditorId) ?? null, [deliverableEditorId, deliverables]);
   const selectedReviewDeliverable = useMemo(() => deliverables.find((item) => item.id === selectedReviewDeliverableId) ?? null, [deliverables, selectedReviewDeliverableId]);
@@ -961,6 +969,68 @@ export function AiDeliveryPage({
   const activeDeliverableCount = useMemo(() => deliverables.filter((item) => !item.isArchived).length, [deliverables]);
   const archivedDeliverableCount = deliverables.length - activeDeliverableCount;
   const latestSelectedReview = useMemo(() => getMostRecentReview(deliverableReviews), [deliverableReviews]);
+  const deliverableLinkedDraftRecord = useMemo(() => {
+    const linkedDraftId = deliverableForm.contentDraftId ?? activeDeliverableRecord?.contentDraftId ?? null;
+    return linkedDraftId ? contentDrafts.find((draft) => draft.id === linkedDraftId) ?? null : null;
+  }, [activeDeliverableRecord?.contentDraftId, contentDrafts, deliverableForm.contentDraftId]);
+  const deliverableLinkedImageRecord = useMemo(() => {
+    const linkedImageId = deliverableForm.articleImageId ?? activeDeliverableRecord?.articleImageId ?? null;
+    return linkedImageId ? articleImages.find((image) => image.id === linkedImageId) ?? null : null;
+  }, [activeDeliverableRecord?.articleImageId, articleImages, deliverableForm.articleImageId]);
+  const deliverableRelatedImages = useMemo(() => {
+    const linkedDraftId = deliverableLinkedDraftRecord?.id ?? deliverableForm.contentDraftId ?? activeDeliverableRecord?.contentDraftId ?? null;
+    const related = linkedDraftId
+      ? articleImages.filter((image) => !image.isArchived && image.contentDraftId === linkedDraftId)
+      : [];
+
+    if (deliverableLinkedImageRecord && !related.some((image) => image.id === deliverableLinkedImageRecord.id)) {
+      return [deliverableLinkedImageRecord, ...related];
+    }
+
+    return related;
+  }, [
+    activeDeliverableRecord?.contentDraftId,
+    articleImages,
+    deliverableForm.contentDraftId,
+    deliverableLinkedDraftRecord?.id,
+    deliverableLinkedImageRecord
+  ]);
+  const deliverableHasRecordedReference = Boolean(
+    (deliverableForm.exportUrl ?? activeDeliverableRecord?.exportUrl ?? "").trim()
+    || (deliverableForm.storageKey ?? activeDeliverableRecord?.storageKey ?? "").trim()
+  );
+  const deliverableReadinessBlockers = useMemo(() => {
+    const blockers: string[] = [];
+
+    if (!deliverableLinkedDraftRecord) {
+      blockers.push("Link the approved content draft that this admin package is handing off.");
+    } else if (!canPackageApprovedContentDraft(deliverableLinkedDraftRecord)) {
+      blockers.push(`Linked draft is ${formatContentDraftStatus(deliverableLinkedDraftRecord.status).toLowerCase()}; ready-state packaging expects an approved draft.`);
+    }
+
+    if (deliverableRelatedImages.length === 0) {
+      blockers.push("No same-project article image planning records are linked to this draft yet.");
+    } else if (!deliverableRelatedImages.some((image) => canPackageApprovedArticleImage(image))) {
+      blockers.push("Linked image planning exists, but no image is approved or final-ready yet.");
+    }
+
+    if (!deliverableHasRecordedReference) {
+      blockers.push("No export or private-storage reference is recorded for the final admin handoff yet.");
+    }
+
+    if (deliverableStatusNeedsApprovedLinks(deliverableForm.status) && !deliverableFormHasReadyLinks(deliverableForm, contentDrafts, articleImages)) {
+      blockers.push("Current ready-state packaging is missing the approved same-project draft or image links required by the guard.");
+    }
+
+    return blockers;
+  }, [
+    articleImages,
+    contentDrafts,
+    deliverableForm,
+    deliverableHasRecordedReference,
+    deliverableLinkedDraftRecord,
+    deliverableRelatedImages
+  ]);
   const deliverableDraftOptions = useMemo(() => {
     const eligible = articleImageDrafts.filter((draft) => draft.status === "APPROVED");
     const selectedDraft = articleImageDrafts.find((draft) => draft.id === deliverableForm.contentDraftId) ?? null;
@@ -1308,12 +1378,16 @@ export function AiDeliveryPage({
     setContentDraftEditorId(null);
     setContentDraftForm(emptyContentDraft());
     try {
-      const [drafts, plan] = await Promise.all([
+      const [drafts, plan, images, deliverableItems] = await Promise.all([
         typeof onFetchContentDrafts === "function" ? onFetchContentDrafts(projectId) : Promise.resolve([]),
-        typeof onFetchContentPlan === "function" ? onFetchContentPlan(projectId) : Promise.resolve(null)
+        typeof onFetchContentPlan === "function" ? onFetchContentPlan(projectId) : Promise.resolve(null),
+        typeof onFetchArticleImages === "function" ? onFetchArticleImages(projectId) : Promise.resolve([]),
+        typeof onFetchDeliverables === "function" ? onFetchDeliverables(projectId) : Promise.resolve([])
       ]);
       setContentDrafts(drafts);
       setContentDraftPlan(plan);
+      setArticleImages(images);
+      setDeliverables(deliverableItems);
     } catch (error) {
       setContentDraftsError(getErrorMessage(error, "Unable to load content production records for this project."));
     } finally {
@@ -1455,7 +1529,7 @@ export function AiDeliveryPage({
     setContentDraftPlan(null);
   }
 
-  async function openArticleImages(projectId: string) {
+  async function openArticleImages(projectId: string, options?: { contentDraftId?: string | null; articleImageId?: string | null }) {
     setOpenArticleImagesId(projectId);
     setArticleImagesLoading(true);
     setArticleImagesError(null);
@@ -1472,15 +1546,29 @@ export function AiDeliveryPage({
         typeof onFetchContentDrafts === "function" ? onFetchContentDrafts(projectId) : Promise.resolve([])
       ]);
       const activeDrafts = drafts.filter((draftItem) => !draftItem.isArchived);
+      const preferredDraftId = options?.contentDraftId ?? activeDrafts[0]?.id ?? "";
+      const preferredImage = options?.articleImageId
+        ? images.find((image) => image.id === options.articleImageId) ?? null
+        : images.find((image) => !image.isArchived && image.contentDraftId === preferredDraftId) ?? null;
       setArticleImages(images);
       setArticleImageFinalAssetFiles({});
+      setContentDrafts(drafts);
       setArticleImageDrafts(activeDrafts);
-      setArticleImageForm((current) => ({ ...current, contentDraftId: activeDrafts[0]?.id ?? current.contentDraftId }));
+      if (preferredImage) {
+        editArticleImage(preferredImage);
+      } else {
+        setArticleImageForm((current) => ({ ...current, contentDraftId: preferredDraftId || current.contentDraftId }));
+      }
     } catch (error) {
       setArticleImagesError(getErrorMessage(error, "Unable to load article image records for this project."));
     } finally {
       setArticleImagesLoading(false);
     }
+  }
+
+  async function handoffContentDraftToArticleImages(projectId: string, draftId: string) {
+    setOpenContentDraftsId(null);
+    await openArticleImages(projectId, { contentDraftId: draftId });
   }
 
   function editArticleImage(image: AiDeliveryArticleImageSummary) {
@@ -1578,7 +1666,10 @@ export function AiDeliveryPage({
     setArticleImageForm(emptyArticleImage());
   }
 
-  async function openDeliverables(projectId: string) {
+  async function openDeliverables(
+    projectId: string,
+    options?: { contentDraftId?: string | null; articleImageId?: string | null; deliverableId?: string | null }
+  ) {
     setOpenDeliverablesId(projectId);
     setDeliverablesLoading(true);
     setDeliverablesError(null);
@@ -1597,16 +1688,42 @@ export function AiDeliveryPage({
         typeof onFetchArticleImages === "function" ? onFetchArticleImages(projectId) : Promise.resolve([])
       ]);
       const activeDrafts = drafts.filter((d) => !d.isArchived);
+      const preferredDraftId = options?.contentDraftId ?? activeDrafts[0]?.id ?? null;
+      const preferredDeliverable = options?.deliverableId
+        ? items.find((item) => item.id === options.deliverableId) ?? null
+        : items.find((item) => !item.isArchived && (
+          (options?.articleImageId ? item.articleImageId === options.articleImageId : false)
+          || (preferredDraftId ? item.contentDraftId === preferredDraftId : false)
+        )) ?? null;
       setDeliverables(items);
       setDeliverableDocumentFiles({});
+      setContentDrafts(drafts);
       setArticleImageDrafts(activeDrafts);
       setArticleImages(images);
-      setDeliverableForm((current: AiDeliveryDeliverableFormValues) => ({ ...current, contentDraftId: activeDrafts[0]?.id ?? null }));
+      if (preferredDeliverable) {
+        editDeliverable(preferredDeliverable);
+      } else {
+        setDeliverableForm((current: AiDeliveryDeliverableFormValues) => ({
+          ...current,
+          contentDraftId: preferredDraftId,
+          articleImageId: options?.articleImageId ?? null
+        }));
+      }
     } catch (error) {
       setDeliverablesError(getErrorMessage(error, "Unable to load deliverables for this project."));
     } finally {
       setDeliverablesLoading(false);
     }
+  }
+
+  async function handoffContentDraftToDeliverables(projectId: string, draftId: string) {
+    setOpenContentDraftsId(null);
+    await openDeliverables(projectId, { contentDraftId: draftId });
+  }
+
+  async function handoffArticleImageToDeliverables(projectId: string, image: AiDeliveryArticleImageSummary) {
+    setOpenArticleImagesId(null);
+    await openDeliverables(projectId, { contentDraftId: image.contentDraftId, articleImageId: image.id });
   }
 
   function editDeliverable(item: AiDeliveryDeliverableSummary) {
@@ -3452,6 +3569,48 @@ export function AiDeliveryPage({
                     </dl>
                   </div>
                 ) : null}
+                {activeContentDraftRecord ? (
+                  <div className="field-panel" style={{ marginBottom: "1rem" }}>
+                    <h4>Operator handoff path</h4>
+                    <p className="muted-text">Use existing same-project image planning and deliverable records only. This handoff stays internal to the admin workflow and does not publish, export, or expose client delivery.</p>
+                    <dl className="brief-grid">
+                      <div>
+                        <dt>Linked image records</dt>
+                        <dd>{activeContentDraftLinkedImages.length}</dd>
+                      </div>
+                      <div>
+                        <dt>Image status mix</dt>
+                        <dd>{formatStatusBreakdown(activeContentDraftLinkedImages, "No linked image records yet")}</dd>
+                      </div>
+                      <div>
+                        <dt>Linked deliverables</dt>
+                        <dd>{activeContentDraftLinkedDeliverables.length}</dd>
+                      </div>
+                      <div>
+                        <dt>Deliverable status mix</dt>
+                        <dd>{formatStatusBreakdown(activeContentDraftLinkedDeliverables, "No linked deliverables yet")}</dd>
+                      </div>
+                    </dl>
+                    <div className="card-actions" style={{ marginTop: "0.75rem" }}>
+                      <button
+                        className="secondary-action"
+                        disabled={contentDraftsSaving}
+                        onClick={() => void handoffContentDraftToArticleImages(openContentDraftsProject.id, activeContentDraftRecord.id)}
+                        type="button"
+                      >
+                        Open image planning
+                      </button>
+                      <button
+                        className="secondary-action"
+                        disabled={contentDraftsSaving}
+                        onClick={() => void handoffContentDraftToDeliverables(openContentDraftsProject.id, activeContentDraftRecord.id)}
+                        type="button"
+                      >
+                        Open deliverable packaging
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
                 <div className="field-grid">
                   <label>
                     Status - Required
@@ -3634,6 +3793,95 @@ export function AiDeliveryPage({
                     </dl>
                   </div>
                 ) : null}
+                <div className="field-panel" style={{ marginBottom: "1rem" }}>
+                  <h4>Package completeness summary</h4>
+                  <p className="muted-text">This is an internal admin readiness check built only from the linked draft, image, and deliverable data already loaded here. It does not generate exports, publish content, upload assets, or create client delivery access.</p>
+                  <dl className="brief-grid">
+                    <div>
+                      <dt>Linked content draft</dt>
+                      <dd>{deliverableLinkedDraftRecord ? `${deliverableLinkedDraftRecord.title} (${formatContentDraftStatus(deliverableLinkedDraftRecord.status)})` : "Missing"}</dd>
+                    </div>
+                    <div>
+                      <dt>Linked image records</dt>
+                      <dd>{formatStatusBreakdown(deliverableRelatedImages, "No linked image records yet")}</dd>
+                    </div>
+                    <div>
+                      <dt>Direct package image</dt>
+                      <dd>{deliverableLinkedImageRecord ? `${deliverableLinkedImageRecord.title} (${formatArticleImageStatus(deliverableLinkedImageRecord.status)})` : "Not linked"}</dd>
+                    </div>
+                    <div>
+                      <dt>Final reference</dt>
+                      <dd>{deliverableHasRecordedReference ? "Recorded" : "Missing"}</dd>
+                    </div>
+                    <div>
+                      <dt>Package status</dt>
+                      <dd>{formatDeliverableStatus(deliverableForm.status)}</dd>
+                    </div>
+                    <div>
+                      <dt>Ready-state guard</dt>
+                      <dd>{deliverableReadinessBlockers.length === 0 ? "Clear" : "Blocked"}</dd>
+                    </div>
+                  </dl>
+                  <div className="state-panel" role="status">
+                    {deliverableReadinessBlockers.length === 0
+                      ? "This admin package has the linked draft, image readiness, and final reference details needed for internal handoff tracking."
+                      : `Ready-state blockers: ${deliverableReadinessBlockers.join(" ")}`}
+                  </div>
+                </div>
+                <div className="field-panel" style={{ marginBottom: "1rem" }}>
+                  <h4>Internal final handoff view</h4>
+                  <p className="muted-text">Internal admin handoff only. This view summarizes the article draft, image planning, package record, and internal notes already loaded in this screen. It does not create client delivery, public links, publication, WordPress transfer, or export output.</p>
+                  <dl className="brief-grid">
+                    <div>
+                      <dt>Article / package title</dt>
+                      <dd>{deliverableLinkedDraftRecord?.title || activeDeliverableRecord?.title || deliverableForm.title || "Not set"}</dd>
+                    </div>
+                    <div>
+                      <dt>Draft status</dt>
+                      <dd>{deliverableLinkedDraftRecord ? formatContentDraftStatus(deliverableLinkedDraftRecord.status) : "No linked draft loaded"}</dd>
+                    </div>
+                    <div className="field-span-2">
+                      <dt>Draft body preview</dt>
+                      <dd>{deliverableLinkedDraftRecord ? formatPreview(deliverableLinkedDraftRecord.draftBody) : "No linked draft body available"}</dd>
+                    </div>
+                    <div>
+                      <dt>Image planning records</dt>
+                      <dd>{deliverableRelatedImages.length}</dd>
+                    </div>
+                    <div>
+                      <dt>Image readiness mix</dt>
+                      <dd>{formatStatusBreakdown(deliverableRelatedImages, "No linked image records yet")}</dd>
+                    </div>
+                    <div className="field-span-2">
+                      <dt>Image references</dt>
+                      <dd>
+                        {deliverableRelatedImages.length > 0
+                          ? deliverableRelatedImages.map((image) => `${image.title}: ${image.finalImageUrl || image.storageKey || image.previewImageUrl || "No reference yet"}`).join(" | ")
+                          : "No linked image references yet"}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Package delivery type</dt>
+                      <dd>{formatEnumLabel(deliverableForm.deliveryType)}</dd>
+                    </div>
+                    <div>
+                      <dt>Package status</dt>
+                      <dd>{formatDeliverableStatus(activeDeliverableRecord?.isArchived ? "ARCHIVED" : deliverableForm.status)}</dd>
+                    </div>
+                    <div className="field-span-2">
+                      <dt>Package notes</dt>
+                      <dd>{formatPreview(deliverableForm.notes ?? activeDeliverableRecord?.notes)}</dd>
+                    </div>
+                    <div className="field-span-2">
+                      <dt>Latest internal review notes</dt>
+                      <dd>
+                        {selectedReviewDeliverableId === activeDeliverableRecord?.id && latestSelectedReview
+                          ? formatPreview(latestSelectedReview.reviewNotes)
+                          : "Open Reviews on this deliverable to load internal review placeholder notes."}
+                      </dd>
+                    </div>
+                  </dl>
+                </div>
                 <div className="field-grid">
                   <label>
                     Linked content draft - Optional
@@ -4038,6 +4286,40 @@ export function AiDeliveryPage({
                         <dd>{formatOptionalDate(activeArticleImageRecord.updatedAt)}</dd>
                       </div>
                     </dl>
+                  </div>
+                ) : null}
+                {activeArticleImageRecord ? (
+                  <div className="field-panel" style={{ marginBottom: "1rem" }}>
+                    <h4>Packaging handoff</h4>
+                    <p className="muted-text">This image record can hand off into the existing admin deliverable workflow when the linked draft and final references are ready. No image generation, export automation, upload automation, or client delivery happens from this section.</p>
+                    <dl className="brief-grid">
+                      <div>
+                        <dt>Linked draft</dt>
+                        <dd>{activeArticleImageRecord.contentDraft?.title ?? "Not linked"}</dd>
+                      </div>
+                      <div>
+                        <dt>Image readiness</dt>
+                        <dd>{formatArticleImageStatus(activeArticleImageRecord.status)}</dd>
+                      </div>
+                      <div>
+                        <dt>Preview reference</dt>
+                        <dd>{activeArticleImageRecord.previewImageUrl || "Not set"}</dd>
+                      </div>
+                      <div>
+                        <dt>Final reference</dt>
+                        <dd>{activeArticleImageRecord.finalImageUrl || activeArticleImageRecord.storageKey || "Not set"}</dd>
+                      </div>
+                    </dl>
+                    <div className="card-actions" style={{ marginTop: "0.75rem" }}>
+                      <button
+                        className="secondary-action"
+                        disabled={articleImagesSaving}
+                        onClick={() => void handoffArticleImageToDeliverables(openArticleImagesProject.id, activeArticleImageRecord)}
+                        type="button"
+                      >
+                        Open deliverable packaging
+                      </button>
+                    </div>
                   </div>
                 ) : null}
                 <div className="field-grid">
