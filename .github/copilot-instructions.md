@@ -56,6 +56,12 @@
 - Never print, persist, commit, log, search for, or infer the password value.
 - Never write the password value into repo files, docs, prompts, logs, or GitHub issues.
 
+## Local Copilot CLI permissions
+
+- For local Copilot CLI work, prefer the safe permission launch documented in `docs/ai-delivery/copilot-cli-permissions.md`.
+- Do not request or assume --allow-all / --yolo unless the block explicitly approves it.
+- Commit, push, deploy, SSH, Caddy, Docker, production URLs, .env, and secrets remain blocked unless explicitly scoped in the block.
+
 ## Working rules
 
 - Make small, sealed diffs scoped to the approved block only.

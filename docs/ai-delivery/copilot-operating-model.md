@@ -143,6 +143,21 @@ Use for: larger blocks, multi-file work, async execution.
 
 ---
 
+## Safe local permissions
+
+Copilot CLI should be launched with safe permission flags, not --allow-all or --yolo.
+
+The recommended launch modes are documented in:
+
+- `docs/ai-delivery/copilot-cli-permissions.md`
+
+Key points:
+- Default is local safe permissions (write + limited git + blocked commit/push/deploy).
+- Commit, push, and deploy remain human-only actions under all launch modes.
+- Do not create a permanent alias that always applies --allow-all.
+
+---
+
 ## Local execution discipline
 
 - Work from `C:\dcaosv1` only. Do not navigate outside the repo.

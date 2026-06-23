@@ -272,6 +272,12 @@ Key points:
 - Secrets must never be searched, printed, persisted, or committed.
 - Stop and ask the human if a secret or credential is needed.
 
+### Safe Copilot CLI launch
+
+- Safe Copilot CLI launch modes are documented in `docs/ai-delivery/copilot-cli-permissions.md`.
+- Human still controls commit, push, and deploy under all launch modes.
+- Do not use --allow-all or --yolo as the default.
+
 ### Local admin credentials
 
 - Local admin email is `admin@dca.local`.
