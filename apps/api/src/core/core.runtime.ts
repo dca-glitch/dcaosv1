@@ -76,7 +76,12 @@ import {
 } from "../storage/private-storage.service";
 import { recordAiDeliverySystemEvent } from "../services/system-events.service";
 import { getAiProviderConfig } from "../config";
-import { createAiDeliveryWorkflowExecutionAdapter } from "./ai-delivery-workflow-execution.adapter";
+import {
+  createAiDeliveryWorkflowExecutionAdapter,
+  type AiDeliveryGeneratedContentPlanItem,
+  type AiDeliveryWorkflowExecutionResearchSummaryContext,
+  type AiDeliveryWorkflowExecutionSourceContext
+} from "./ai-delivery-workflow-execution.adapter";
 
 const prisma = createPrismaClient();
 
@@ -3328,6 +3333,125 @@ function appendAiDeliveryWorkflowExecutionLog(existingLog: string | null | undef
   return parts.join("\n");
 }
 
+function buildAiDeliveryWorkflowLogEntries(timestamp: string, lines: string[]): string[] {
+  return lines.map((line) => `[${timestamp}] ${line}`);
+}
+
+async function persistGeneratedAiDeliveryContentPlan(
+  tx: PrismaTx,
+  input: {
+    tenantId: string;
+    aiDeliveryProjectId: string;
+    generatedItems: AiDeliveryGeneratedContentPlanItem[];
+    finishedAtIso: string;
+  }
+): Promise<string[]> {
+  const existingPlan = await tx.aiDeliveryContentPlan.findFirst({
+    where: { tenantId: input.tenantId, aiDeliveryProjectId: input.aiDeliveryProjectId },
+    select: {
+      id: true,
+      status: true,
+      revisionCount: true
+    }
+  });
+
+  if (!existingPlan) {
+    const createdPlan = await tx.aiDeliveryContentPlan.create({
+      data: {
+        tenantId: input.tenantId,
+        aiDeliveryProjectId: input.aiDeliveryProjectId,
+        status: "DRAFT",
+        revisionCount: 0
+      },
+      select: { id: true }
+    });
+
+    for (const item of input.generatedItems) {
+      await tx.aiDeliveryContentPlanItem.create({
+        data: {
+          tenantId: input.tenantId,
+          contentPlanId: createdPlan.id,
+          title: item.title,
+          targetKeyword: item.targetKeyword,
+          contentType: item.contentType,
+          notes: item.notes,
+          sortOrder: item.sortOrder,
+          approvalStatus: item.approvalStatus,
+          clientComment: item.clientComment
+        }
+      });
+    }
+
+    await recordAiDeliverySystemEvent(
+      {
+        tenantId: input.tenantId,
+        aiDeliveryProjectId: input.aiDeliveryProjectId,
+        eventName: "AI_DELIVERY_CONTENT_PLAN_CREATED",
+        relatedEntityId: createdPlan.id
+      },
+      tx
+    );
+
+    return buildAiDeliveryWorkflowLogEntries(input.finishedAtIso, [
+      `Generated draft content plan created with ${input.generatedItems.length} item(s).`
+    ]);
+  }
+
+  const planStatus = normalizeAiDeliveryContentPlanStatus(existingPlan.status);
+  if (planStatus === "CLIENT_REVIEW_REQUESTED" || planStatus === "CLIENT_APPROVED") {
+    return buildAiDeliveryWorkflowLogEntries(input.finishedAtIso, [
+      `Generated draft content plan was not persisted because the existing content plan is ${planStatus}.`
+    ]);
+  }
+
+  await tx.aiDeliveryContentPlan.update({
+    where: { id: existingPlan.id },
+    data: {
+      status: "DRAFT",
+      reviewRequestedAt: null,
+      approvedAt: null
+    },
+    select: { id: true }
+  });
+
+  await tx.aiDeliveryContentPlanItem.deleteMany({
+    where: {
+      tenantId: input.tenantId,
+      contentPlanId: existingPlan.id
+    }
+  });
+
+  for (const item of input.generatedItems) {
+    await tx.aiDeliveryContentPlanItem.create({
+      data: {
+        tenantId: input.tenantId,
+        contentPlanId: existingPlan.id,
+        title: item.title,
+        targetKeyword: item.targetKeyword,
+        contentType: item.contentType,
+        notes: item.notes,
+        sortOrder: item.sortOrder,
+        approvalStatus: item.approvalStatus,
+        clientComment: item.clientComment
+      }
+    });
+  }
+
+  await recordAiDeliverySystemEvent(
+    {
+      tenantId: input.tenantId,
+      aiDeliveryProjectId: input.aiDeliveryProjectId,
+      eventName: "AI_DELIVERY_CONTENT_PLAN_UPDATED",
+      relatedEntityId: existingPlan.id
+    },
+    tx
+  );
+
+  return buildAiDeliveryWorkflowLogEntries(input.finishedAtIso, [
+    `Generated draft content plan updated with ${input.generatedItems.length} item(s).`
+  ]);
+}
+
 export async function listAiDeliveryWorkflowRuns(
   authSession: AuthResolvedSessionContext,
   aiDeliveryProjectId: string
@@ -3458,7 +3582,8 @@ export async function executeAiDeliveryWorkflowRun(
         id: true,
         name: true,
         targetMonth: true,
-        brief: { select: { id: true, status: true } }
+        plannedContentScopeNotes: true,
+        brief: { select: { id: true, status: true, notes: true } }
       }
     });
     if (!project?.brief) return null;
@@ -3483,12 +3608,63 @@ export async function executeAiDeliveryWorkflowRun(
       throw new Error("AI_DELIVERY_WORKFLOW_RUN_EXECUTION_REVIEW_PENDING");
     }
 
+    const researchSummaries = await getAiDeliveryResearchSummaryDelegate(tx).findMany({
+      where: {
+        tenantId,
+        aiDeliveryProjectId,
+        status: "FINALIZED"
+      },
+      orderBy: [
+        { updatedAt: "desc" },
+        { id: "desc" }
+      ],
+      take: 3,
+      select: {
+        title: true,
+        summaryText: true,
+        keyFindings: true,
+        keywordOpportunities: true,
+        contentRecommendations: true
+      }
+    }) as AiDeliveryWorkflowExecutionResearchSummaryContext[];
+
+    const approvedSourceMetadata = await getAiDeliveryResearchSourceDelegate(tx).findMany({
+      where: {
+        tenantId,
+        aiDeliveryProjectId,
+        status: "APPROVED"
+      },
+      orderBy: [
+        { updatedAt: "desc" },
+        { id: "desc" }
+      ],
+      take: 4,
+      select: {
+        sourceTitle: true,
+        sourceType: true,
+        reviewNotes: true,
+        researchRequest: {
+          select: {
+            title: true
+          }
+        }
+      }
+    }) as Array<{
+      sourceTitle: string | null;
+      sourceType: string;
+      reviewNotes: string | null;
+      researchRequest: {
+        title: string;
+      } | null;
+    }>;
+
     const executionAdapter = createAiDeliveryWorkflowExecutionAdapter(getAiProviderConfig());
     const startedAt = new Date();
     const startedLog = appendAiDeliveryWorkflowExecutionLog(existing.executionLog, executionAdapter.createStartedLogEntries({
       projectName: project.name,
       targetMonth: String(project.targetMonth),
       briefStatus: project.brief.status,
+      adminNotes: existing.adminNotes,
       startedAtIso: startedAt.toISOString()
     }));
 
@@ -3518,8 +3694,17 @@ export async function executeAiDeliveryWorkflowRun(
       projectName: project.name,
       targetMonth: String(project.targetMonth),
       briefStatus: project.brief.status,
+      briefNotes: toNullableString(project.brief.notes),
+      plannedContentScopeNotes: toNullableString(project.plannedContentScopeNotes),
       adminNotes: existing.adminNotes,
       existingResultPlaceholder: toNullableString(existing.resultPlaceholder),
+      researchSummaries,
+      approvedSourceMetadata: approvedSourceMetadata.map((source): AiDeliveryWorkflowExecutionSourceContext => ({
+        sourceTitle: source.sourceTitle ?? null,
+        sourceType: source.sourceType,
+        reviewNotes: source.reviewNotes ?? null,
+        researchRequestTitle: source.researchRequest?.title ?? null
+      })),
       startedLog
     };
   });
@@ -3531,8 +3716,12 @@ export async function executeAiDeliveryWorkflowRun(
     projectName: startedExecution.projectName,
     targetMonth: startedExecution.targetMonth,
     briefStatus: startedExecution.briefStatus,
+    briefNotes: startedExecution.briefNotes,
+    plannedContentScopeNotes: startedExecution.plannedContentScopeNotes,
     adminNotes: startedExecution.adminNotes,
     existingResultPlaceholder: startedExecution.existingResultPlaceholder,
+    researchSummaries: startedExecution.researchSummaries,
+    approvedSourceMetadata: startedExecution.approvedSourceMetadata,
     finishedAtIso: finishedAt.toISOString()
   });
 
@@ -3574,7 +3763,19 @@ export async function executeAiDeliveryWorkflowRun(
       return { workflowRun: toAiDeliveryWorkflowRunSummary(failed) };
     }
 
-    const completedLog = appendAiDeliveryWorkflowExecutionLog(startedExecution.startedLog, executionPlan.finishedLogEntries);
+    const contentPlanPersistenceLogEntries = executionPlan.generatedContentPlanItems
+      ? await persistGeneratedAiDeliveryContentPlan(tx, {
+          tenantId,
+          aiDeliveryProjectId,
+          generatedItems: executionPlan.generatedContentPlanItems,
+          finishedAtIso: finishedAt.toISOString()
+        })
+      : [];
+
+    const completedLog = appendAiDeliveryWorkflowExecutionLog(
+      startedExecution.startedLog,
+      [...executionPlan.finishedLogEntries, ...contentPlanPersistenceLogEntries]
+    );
 
     const reviewed = await getAiDeliveryWorkflowRunDelegate(tx).update({
       where: { id: workflowRunId },

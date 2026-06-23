@@ -14,6 +14,7 @@ const allowedLocalHosts = new Set(["127.0.0.1", "localhost"]);
 const smokeProjectMarker = "[SMOKE][AI_DELIVERY_REVIEWS]";
 const smokeMainProjectName = `${smokeProjectMarker} Main project`;
 const smokeCrossProjectName = `${smokeProjectMarker} Cross-project guard`;
+const smokeGeneratedPlanProjectName = `${smokeProjectMarker} Generated content plan`;
 const smokeProjectTargetMonth = "2026-06";
 
 function loadRepoEnvForPrismaSmoke() {
@@ -345,7 +346,14 @@ async function createSmokeProjects(token, fixtureBase) {
     `${smokeProjectMarker} Dedicated cross-project guard fixture for local AI Delivery review smoke only.`
   );
 
-  return { mainProject, crossProject };
+  const generationProject = await createSmokeProject(
+    token,
+    fixtureBase,
+    smokeGeneratedPlanProjectName,
+    `${smokeProjectMarker} Dedicated generated content plan fixture for local AI workflow smoke only.`
+  );
+
+  return { mainProject, crossProject, generationProject };
 }
 
 async function runAiDeliveryApiRegression(token, fixtureProjects) {
@@ -914,6 +922,59 @@ async function runAiDeliveryApiRegression(token, fixtureProjects) {
     fail("AI Delivery workflow run execute failure path did not persist the expected failed/error/log fields.");
   }
   pass("AI Delivery workflow run execute failure path persisted failed status and error/log fields.");
+
+  const generationProject = fixtureProjects.generationProject;
+  if (!generationProject?.id) {
+    fail("AI Delivery smoke setup did not return a dedicated content-plan generation project.");
+  }
+
+  const createdGenerationRun = requireOkResponse(
+    "AI Delivery workflow run create generated content plan candidate",
+    await request(`/ai-delivery/projects/${generationProject.id}/workflow-runs`, {
+      method: "POST",
+      token,
+      body: {
+        status: "DRAFT",
+        adminNotes: "[generate-content-plan] Smoke stub content plan generation path",
+        resultPlaceholder: ""
+      }
+    })
+  )?.workflowRun;
+  if (!createdGenerationRun?.id) {
+    fail("AI Delivery generated content plan workflow run create did not return a workflowRun id.");
+  }
+
+  const executedGenerationRun = requireOkResponse(
+    "AI Delivery workflow run execute generated content plan path",
+    await request(`/ai-delivery/projects/${generationProject.id}/workflow-runs/${createdGenerationRun.id}/execute`, {
+      method: "POST",
+      token
+    })
+  )?.workflowRun;
+  if (
+    !executedGenerationRun ||
+    executedGenerationRun.status !== "REVIEW" ||
+    typeof executedGenerationRun.resultPlaceholder !== "string" ||
+    !executedGenerationRun.resultPlaceholder.includes("\"version\": \"AI_WORKFLOW_RESULT_V1\"") ||
+    executedGenerationRun.executionError !== null
+  ) {
+    fail("AI Delivery workflow run execute generated content plan path did not return the expected review/result fields.");
+  }
+
+  const generatedContentPlan = requireOkResponse(
+    "AI Delivery generated content plan detail",
+    await request(`/ai-delivery-projects/${generationProject.id}/content-plan`, { token })
+  )?.contentPlan;
+  if (
+    !generatedContentPlan?.id ||
+    generatedContentPlan.status !== "DRAFT" ||
+    !Array.isArray(generatedContentPlan.items) ||
+    generatedContentPlan.items.length === 0 ||
+    generatedContentPlan.items.some((item) => typeof item.title !== "string" || item.title.length === 0 || item.approvalStatus !== "DRAFT")
+  ) {
+    fail("AI Delivery generated content plan path did not persist the expected draft content plan items.");
+  }
+  pass("AI Delivery workflow run generated content plan path persisted a draft content plan with draft items.");
 
   const researchRequestsData = requireOkResponse(
     "AI Delivery research requests list",

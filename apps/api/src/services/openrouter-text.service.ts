@@ -2,18 +2,19 @@ import type { AiProviderConfig } from "../config";
 
 const OPENROUTER_REQUEST_TIMEOUT_MS = 20000;
 
-export interface OpenRouterTextSummaryInput {
+export interface OpenRouterTextRequestInput {
   config: AiProviderConfig;
-  projectName: string;
-  targetMonth: string;
-  briefStatus: string;
-  adminNotes: string | null;
+  model: string;
+  systemPrompt: string;
+  userPrompt: string;
+  maxOutputTokens: number;
+  temperature: number;
 }
 
-export interface OpenRouterTextSummaryResult {
+export interface OpenRouterTextRequestResult {
   ok: boolean;
   content: string | null;
-  model: string | null;
+  model: string;
   errorMessage: string | null;
 }
 
@@ -34,31 +35,18 @@ function normalizeBaseUrl(value: string): string {
   return value.replace(/\/+$/, "");
 }
 
-function buildOpenRouterPrompt(input: OpenRouterTextSummaryInput): string {
-  return [
-    "Create a short admin-facing execution summary for this DCA OS Lite AI Delivery workflow run.",
-    "Do not claim client-facing delivery, publication, approval, scraping, or autonomous execution.",
-    "",
-    `Project: ${input.projectName}`,
-    `Target month: ${input.targetMonth}`,
-    `Brief status: ${input.briefStatus}`,
-    `Admin notes: ${input.adminNotes?.trim() || "None"}`
-  ].join("\n");
-}
-
 function getSafeOpenRouterError(status: number): string {
   return `OpenRouter request failed with HTTP ${status}.`;
 }
 
-export async function executeOpenRouterTextSummary(input: OpenRouterTextSummaryInput): Promise<OpenRouterTextSummaryResult> {
+export async function executeOpenRouterTextRequest(input: OpenRouterTextRequestInput): Promise<OpenRouterTextRequestResult> {
   const apiKey = readOpenRouterApiKey();
-  const model = input.config.openRouterTextPrimaryModel;
 
-  if (!apiKey || !model) {
+  if (!apiKey || !input.model) {
     return {
       ok: false,
       content: null,
-      model,
+      model: input.model,
       errorMessage: "OpenRouter is not fully configured."
     };
   }
@@ -75,19 +63,19 @@ export async function executeOpenRouterTextSummary(input: OpenRouterTextSummaryI
         "X-Title": "DCA OS Lite"
       },
       body: JSON.stringify({
-        model,
+        model: input.model,
         messages: [
           {
             role: "system",
-            content: "You write concise admin-only workflow execution summaries. Do not include secrets or claim client delivery."
+            content: input.systemPrompt
           },
           {
             role: "user",
-            content: buildOpenRouterPrompt(input)
+            content: input.userPrompt
           }
         ],
-        temperature: 0.2,
-        max_tokens: 350
+        temperature: input.temperature,
+        max_tokens: input.maxOutputTokens
       }),
       signal: abortController.signal
     });
@@ -96,7 +84,7 @@ export async function executeOpenRouterTextSummary(input: OpenRouterTextSummaryI
       return {
         ok: false,
         content: null,
-        model,
+        model: input.model,
         errorMessage: getSafeOpenRouterError(response.status)
       };
     }
@@ -109,7 +97,7 @@ export async function executeOpenRouterTextSummary(input: OpenRouterTextSummaryI
       return {
         ok: false,
         content: null,
-        model,
+        model: input.model,
         errorMessage: "OpenRouter response did not include text content."
       };
     }
@@ -117,7 +105,7 @@ export async function executeOpenRouterTextSummary(input: OpenRouterTextSummaryI
     return {
       ok: true,
       content: text,
-      model,
+      model: input.model,
       errorMessage: null
     };
   } catch (error) {
@@ -125,7 +113,7 @@ export async function executeOpenRouterTextSummary(input: OpenRouterTextSummaryI
     return {
       ok: false,
       content: null,
-      model,
+      model: input.model,
       errorMessage: errorName === "AbortError" ? "OpenRouter request timed out." : "OpenRouter request could not be completed."
     };
   } finally {
