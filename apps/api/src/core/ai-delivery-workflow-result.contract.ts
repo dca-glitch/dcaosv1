@@ -14,7 +14,7 @@ export interface AiWorkflowResultV1 {
 }
 
 export function serializeAiWorkflowResultForPlaceholder(result: AiWorkflowResultV1): string {
-  if (result.outputType === "content_plan_draft") {
+  if (result.outputType !== "summary") {
     return JSON.stringify(result, null, 2);
   }
 

@@ -78,6 +78,7 @@ import { recordAiDeliverySystemEvent } from "../services/system-events.service";
 import { getAiProviderConfig } from "../config";
 import {
   createAiDeliveryWorkflowExecutionAdapter,
+  type AiDeliveryWorkflowExecutionContentPlanItemContext,
   type AiDeliveryGeneratedContentPlanItem,
   type AiDeliveryWorkflowExecutionResearchSummaryContext,
   type AiDeliveryWorkflowExecutionSourceContext
@@ -1949,7 +1950,15 @@ async function getContentPlanItemForDraft(tx: PrismaTx, tenantId: string, aiDeli
   if (!contentPlanItemId) return null;
   return tx.aiDeliveryContentPlanItem.findFirst({
     where: { id: contentPlanItemId, tenantId, contentPlan: { tenantId, aiDeliveryProjectId } },
-    select: { id: true }
+    select: {
+      id: true,
+      title: true,
+      targetKeyword: true,
+      contentType: true,
+      notes: true,
+      sortOrder: true,
+      approvalStatus: true
+    }
   });
 }
 
@@ -3452,6 +3461,104 @@ async function persistGeneratedAiDeliveryContentPlan(
   ]);
 }
 
+async function persistGeneratedAiDeliveryContentDraft(
+  tx: PrismaTx,
+  input: {
+    tenantId: string;
+    aiDeliveryProjectId: string;
+    generatedDraft: {
+      title: string;
+      slug: string | null;
+      draftBody: string;
+      notes: string | null;
+      contentPlanItemId: string;
+    };
+    finishedAtIso: string;
+  }
+): Promise<string[]> {
+  const existingDraft = await getAiDeliveryContentDraftDelegate(tx).findFirst({
+    where: {
+      tenantId: input.tenantId,
+      aiDeliveryProjectId: input.aiDeliveryProjectId,
+      contentPlanItemId: input.generatedDraft.contentPlanItemId,
+      isArchived: false
+    },
+    orderBy: [
+      { updatedAt: "desc" },
+      { id: "desc" }
+    ],
+    select: aiDeliveryContentDraftSelect
+  }) as any;
+
+  if (!existingDraft) {
+    const created = (await getAiDeliveryContentDraftDelegate(tx).create({
+      data: {
+        tenantId: input.tenantId,
+        aiDeliveryProjectId: input.aiDeliveryProjectId,
+        contentPlanItemId: input.generatedDraft.contentPlanItemId,
+        title: input.generatedDraft.title,
+        slug: input.generatedDraft.slug,
+        draftBody: input.generatedDraft.draftBody,
+        status: "DRAFT",
+        notes: input.generatedDraft.notes,
+        reviewRequestedAt: null,
+        approvedAt: null,
+        isArchived: false
+      },
+      select: { id: true }
+    })) as { id: string };
+
+    await recordAiDeliverySystemEvent(
+      {
+        tenantId: input.tenantId,
+        aiDeliveryProjectId: input.aiDeliveryProjectId,
+        eventName: "AI_DELIVERY_CONTENT_DRAFT_CREATED",
+        relatedEntityId: created.id
+      },
+      tx
+    );
+
+    return buildAiDeliveryWorkflowLogEntries(input.finishedAtIso, [
+      `Generated content draft created for selected content plan item ${input.generatedDraft.contentPlanItemId}.`
+    ]);
+  }
+
+  const existingStatus = normalizeAiDeliveryContentDraftStatus(existingDraft.status);
+  if (existingStatus === "READY_FOR_REVIEW" || existingStatus === "APPROVED") {
+    return buildAiDeliveryWorkflowLogEntries(input.finishedAtIso, [
+      `Generated content draft was not persisted because the existing content draft is ${existingStatus}.`
+    ]);
+  }
+
+  await getAiDeliveryContentDraftDelegate(tx).update({
+    where: { id: existingDraft.id },
+    data: {
+      title: input.generatedDraft.title,
+      slug: input.generatedDraft.slug,
+      draftBody: input.generatedDraft.draftBody,
+      status: "DRAFT",
+      notes: input.generatedDraft.notes,
+      reviewRequestedAt: null,
+      approvedAt: null
+    },
+    select: { id: true }
+  });
+
+  await recordAiDeliverySystemEvent(
+    {
+      tenantId: input.tenantId,
+      aiDeliveryProjectId: input.aiDeliveryProjectId,
+      eventName: "AI_DELIVERY_CONTENT_DRAFT_UPDATED",
+      relatedEntityId: existingDraft.id
+    },
+    tx
+  );
+
+  return buildAiDeliveryWorkflowLogEntries(input.finishedAtIso, [
+    `Generated content draft updated for selected content plan item ${input.generatedDraft.contentPlanItemId}.`
+  ]);
+}
+
 export async function listAiDeliveryWorkflowRuns(
   authSession: AuthResolvedSessionContext,
   aiDeliveryProjectId: string
@@ -3570,7 +3677,8 @@ export async function updateAiDeliveryWorkflowRun(
 export async function executeAiDeliveryWorkflowRun(
   authSession: AuthResolvedSessionContext,
   aiDeliveryProjectId: string,
-  workflowRunId: string
+  workflowRunId: string,
+  input?: { contentPlanItemId?: string | null }
 ): Promise<AiDeliveryWorkflowRunResponse | null> {
   const tenantId = getActiveTenantId(authSession);
   if (!tenantId) return null;
@@ -3606,6 +3714,11 @@ export async function executeAiDeliveryWorkflowRun(
     }
     if (currentStatus === "REVIEW") {
       throw new Error("AI_DELIVERY_WORKFLOW_RUN_EXECUTION_REVIEW_PENDING");
+    }
+
+    const selectedContentPlanItem = await getContentPlanItemForDraft(tx, tenantId, aiDeliveryProjectId, input?.contentPlanItemId);
+    if (input?.contentPlanItemId && !selectedContentPlanItem) {
+      throwAiDeliveryBadRequest("AI_DELIVERY_WORKFLOW_RUN_CONTENT_PLAN_ITEM_LINK_INVALID", "Selected content plan item must belong to the same AI Delivery project.");
     }
 
     const researchSummaries = await getAiDeliveryResearchSummaryDelegate(tx).findMany({
@@ -3665,6 +3778,17 @@ export async function executeAiDeliveryWorkflowRun(
       targetMonth: String(project.targetMonth),
       briefStatus: project.brief.status,
       adminNotes: existing.adminNotes,
+      selectedContentPlanItem: selectedContentPlanItem
+        ? {
+            id: selectedContentPlanItem.id,
+            title: selectedContentPlanItem.title,
+            targetKeyword: selectedContentPlanItem.targetKeyword ?? null,
+            contentType: selectedContentPlanItem.contentType,
+            notes: selectedContentPlanItem.notes ?? null,
+            sortOrder: selectedContentPlanItem.sortOrder,
+            approvalStatus: selectedContentPlanItem.approvalStatus ?? null
+          }
+        : null,
       startedAtIso: startedAt.toISOString()
     }));
 
@@ -3705,6 +3829,17 @@ export async function executeAiDeliveryWorkflowRun(
         reviewNotes: source.reviewNotes ?? null,
         researchRequestTitle: source.researchRequest?.title ?? null
       })),
+      selectedContentPlanItem: selectedContentPlanItem
+        ? {
+            id: selectedContentPlanItem.id,
+            title: selectedContentPlanItem.title,
+            targetKeyword: selectedContentPlanItem.targetKeyword ?? null,
+            contentType: selectedContentPlanItem.contentType,
+            notes: selectedContentPlanItem.notes ?? null,
+            sortOrder: selectedContentPlanItem.sortOrder,
+            approvalStatus: selectedContentPlanItem.approvalStatus ?? null
+          } satisfies AiDeliveryWorkflowExecutionContentPlanItemContext
+        : null,
       startedLog
     };
   });
@@ -3722,6 +3857,7 @@ export async function executeAiDeliveryWorkflowRun(
     existingResultPlaceholder: startedExecution.existingResultPlaceholder,
     researchSummaries: startedExecution.researchSummaries,
     approvedSourceMetadata: startedExecution.approvedSourceMetadata,
+    selectedContentPlanItem: startedExecution.selectedContentPlanItem,
     finishedAtIso: finishedAt.toISOString()
   });
 
@@ -3771,10 +3907,18 @@ export async function executeAiDeliveryWorkflowRun(
           finishedAtIso: finishedAt.toISOString()
         })
       : [];
+    const contentDraftPersistenceLogEntries = executionPlan.generatedContentDraft
+      ? await persistGeneratedAiDeliveryContentDraft(tx, {
+          tenantId,
+          aiDeliveryProjectId,
+          generatedDraft: executionPlan.generatedContentDraft,
+          finishedAtIso: finishedAt.toISOString()
+        })
+      : [];
 
     const completedLog = appendAiDeliveryWorkflowExecutionLog(
       startedExecution.startedLog,
-      [...executionPlan.finishedLogEntries, ...contentPlanPersistenceLogEntries]
+      [...executionPlan.finishedLogEntries, ...contentPlanPersistenceLogEntries, ...contentDraftPersistenceLogEntries]
     );
 
     const reviewed = await getAiDeliveryWorkflowRunDelegate(tx).update({

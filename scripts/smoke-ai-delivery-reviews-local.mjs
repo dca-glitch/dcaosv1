@@ -976,6 +976,66 @@ async function runAiDeliveryApiRegression(token, fixtureProjects) {
   }
   pass("AI Delivery workflow run generated content plan path persisted a draft content plan with draft items.");
 
+  const generatedContentPlanItem = generatedContentPlan.items[0] ?? null;
+  if (!generatedContentPlanItem?.id) {
+    fail("AI Delivery generated content plan path did not leave a reusable content plan item for content draft generation.");
+  }
+
+  const createdDraftGenerationRun = requireOkResponse(
+    "AI Delivery workflow run create generated content draft candidate",
+    await request(`/ai-delivery/projects/${generationProject.id}/workflow-runs`, {
+      method: "POST",
+      token,
+      body: {
+        status: "DRAFT",
+        adminNotes: "Smoke stub content draft generation path",
+        resultPlaceholder: ""
+      }
+    })
+  )?.workflowRun;
+  if (!createdDraftGenerationRun?.id) {
+    fail("AI Delivery generated content draft workflow run create did not return a workflowRun id.");
+  }
+
+  const executedDraftGenerationRun = requireOkResponse(
+    "AI Delivery workflow run execute generated content draft path",
+    await request(`/ai-delivery/projects/${generationProject.id}/workflow-runs/${createdDraftGenerationRun.id}/execute`, {
+      method: "POST",
+      token,
+      body: {
+        contentPlanItemId: generatedContentPlanItem.id
+      }
+    })
+  )?.workflowRun;
+  if (
+    !executedDraftGenerationRun ||
+    executedDraftGenerationRun.status !== "REVIEW" ||
+    typeof executedDraftGenerationRun.resultPlaceholder !== "string" ||
+    !executedDraftGenerationRun.resultPlaceholder.includes("\"outputType\": \"article_draft\"") ||
+    executedDraftGenerationRun.executionError !== null
+  ) {
+    fail("AI Delivery workflow run execute generated content draft path did not return the expected review/result fields.");
+  }
+
+  const generatedDrafts = requireOkResponse(
+    "AI Delivery generated content drafts list",
+    await request(`/ai-delivery-projects/${generationProject.id}/content-drafts`, { token })
+  )?.contentDrafts;
+  const generatedDraft = Array.isArray(generatedDrafts)
+    ? generatedDrafts.find((draft) => draft.contentPlanItemId === generatedContentPlanItem.id && draft.isArchived !== true)
+    : null;
+  if (
+    !generatedDraft ||
+    generatedDraft.status !== "DRAFT" ||
+    typeof generatedDraft.title !== "string" ||
+    generatedDraft.title.length === 0 ||
+    typeof generatedDraft.draftBody !== "string" ||
+    generatedDraft.draftBody.length === 0
+  ) {
+    fail("AI Delivery generated content draft path did not persist the expected linked draft content.");
+  }
+  pass("AI Delivery workflow run generated content draft path persisted a linked draft content record for the selected content plan item.");
+
   const researchRequestsData = requireOkResponse(
     "AI Delivery research requests list",
     await request(`/ai-delivery/projects/${project.id}/research-requests`, { token })

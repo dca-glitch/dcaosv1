@@ -524,6 +524,13 @@ function getAiDeliveryWorkflowRunInput(body: unknown) {
   };
 }
 
+function getAiDeliveryWorkflowRunExecuteInput(body: unknown) {
+  const value = (body ?? {}) as Record<string, unknown>;
+  return {
+    contentPlanItemId: getOptionalString(value.contentPlanItemId, SHORT_TEXT_FIELD_MAX_LENGTH) ?? null
+  };
+}
+
 function getAiDeliveryResearchRequestInput(body: unknown): AiDeliveryResearchRequestInputRequest | null {
   const value = (body ?? {}) as Record<string, unknown>;
   const status = value.status === undefined ? undefined : typeof value.status === "string" ? value.status.trim().toUpperCase() : null;
@@ -1687,13 +1694,14 @@ export const executeAiDeliveryWorkflowRunHandler: RequestHandler = async (req, r
 
   const aiDeliveryProjectId = typeof req.params.projectId === "string" ? req.params.projectId.trim() : "";
   const workflowRunId = typeof req.params.workflowRunId === "string" ? req.params.workflowRunId.trim() : "";
+  const input = getAiDeliveryWorkflowRunExecuteInput(req.body);
   if (!aiDeliveryProjectId || !workflowRunId) {
     res.status(400).json(aiDeliveryProjectInvalidFailure());
     return;
   }
 
   try {
-    const response = await executeAiDeliveryWorkflowRun(authSession, aiDeliveryProjectId, workflowRunId);
+    const response = await executeAiDeliveryWorkflowRun(authSession, aiDeliveryProjectId, workflowRunId, input);
     if (!response?.workflowRun) {
       res.status(404).json(aiDeliveryProjectNotFoundFailure());
       return;
@@ -1701,6 +1709,7 @@ export const executeAiDeliveryWorkflowRunHandler: RequestHandler = async (req, r
 
     res.json(success(response, { phase: "runtime", scope: "ai-delivery-workflow-runs" }));
   } catch (error) {
+    if (handleAiDeliveryGuardError(res, error)) return;
     const message = (error as { message?: string }).message;
     if (message === "AI_DELIVERY_WORKFLOW_RUN_EXECUTION_ARCHIVED") {
       res.status(400).json(failure("AI_DELIVERY_WORKFLOW_RUN_EXECUTION_ARCHIVED", "Archived workflow runs cannot be executed."));

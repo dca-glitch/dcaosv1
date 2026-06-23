@@ -27,11 +27,22 @@ export interface AiDeliveryWorkflowExecutionSourceContext {
   researchRequestTitle: string | null;
 }
 
+export interface AiDeliveryWorkflowExecutionContentPlanItemContext {
+  id: string;
+  title: string;
+  targetKeyword: string | null;
+  contentType: string;
+  notes: string | null;
+  sortOrder: number;
+  approvalStatus: string | null;
+}
+
 export interface AiDeliveryWorkflowExecutionStartInput {
   projectName: string;
   targetMonth: string;
   briefStatus: string;
   adminNotes: string | null;
+  selectedContentPlanItem: AiDeliveryWorkflowExecutionContentPlanItemContext | null;
   startedAtIso: string;
 }
 
@@ -45,6 +56,7 @@ export interface AiDeliveryWorkflowExecutionAdapterInput {
   existingResultPlaceholder: string | null;
   researchSummaries: AiDeliveryWorkflowExecutionResearchSummaryContext[];
   approvedSourceMetadata: AiDeliveryWorkflowExecutionSourceContext[];
+  selectedContentPlanItem: AiDeliveryWorkflowExecutionContentPlanItemContext | null;
   finishedAtIso: string;
 }
 
@@ -65,6 +77,13 @@ export interface AiDeliveryWorkflowExecutionAdapterOutput {
   finalStatus: "FAILED" | "REVIEW";
   workflowResult: AiWorkflowResultV1;
   generatedContentPlanItems: AiDeliveryGeneratedContentPlanItem[] | null;
+  generatedContentDraft: {
+    title: string;
+    slug: string | null;
+    draftBody: string;
+    notes: string | null;
+    contentPlanItemId: string;
+  } | null;
 }
 
 export interface AiDeliveryWorkflowExecutionAdapter {
@@ -86,6 +105,14 @@ const MAX_RESEARCH_SUMMARY_LENGTH = 220;
 const MAX_RESEARCH_FIELD_LENGTH = 160;
 const MAX_SOURCE_NOTE_LENGTH = 120;
 const MAX_RESULT_SUMMARY_LENGTH = 500;
+
+function getWorkflowOutputType(input: Pick<AiDeliveryWorkflowExecutionAdapterInput, "adminNotes" | "selectedContentPlanItem">): AiWorkflowOutputType {
+  if (input.selectedContentPlanItem) {
+    return "article_draft";
+  }
+
+  return shouldGenerateContentPlan(input.adminNotes) ? "content_plan_draft" : "summary";
+}
 
 function truncateText(value: string | null | undefined, maxLength: number): string | null {
   const normalized = value?.trim();
@@ -157,6 +184,17 @@ function buildCompactContextText(input: AiDeliveryWorkflowExecutionAdapterInput)
   const adminNotes = truncateText(sanitizeAdminNotesForPrompt(input.adminNotes), MAX_ADMIN_NOTES_LENGTH);
   if (adminNotes) {
     sections.push(`Admin notes: ${adminNotes}`);
+  }
+
+  if (input.selectedContentPlanItem) {
+    sections.push("Selected content plan item:");
+    sections.push([
+      input.selectedContentPlanItem.title,
+      input.selectedContentPlanItem.targetKeyword ? `Keyword: ${input.selectedContentPlanItem.targetKeyword}` : null,
+      `Type: ${input.selectedContentPlanItem.contentType}`,
+      input.selectedContentPlanItem.notes ? `Notes: ${truncateText(input.selectedContentPlanItem.notes, MAX_RESEARCH_SUMMARY_LENGTH)}` : null,
+      input.selectedContentPlanItem.approvalStatus ? `Approval status: ${input.selectedContentPlanItem.approvalStatus}` : null
+    ].filter(Boolean).join(" | "));
   }
 
   if (input.researchSummaries.length > 0) {
@@ -367,6 +405,123 @@ function buildContentPlanPrompt(contextText: string): { systemPrompt: string; us
   };
 }
 
+function buildSlugFromText(value: string): string | null {
+  const normalized = value
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+
+  return normalized ? normalized.slice(0, 80) : null;
+}
+
+function buildDeterministicContentDraft(input: AiDeliveryWorkflowExecutionAdapterInput): {
+  title: string;
+  slug: string | null;
+  draftBody: string;
+  notes: string | null;
+  summary: string;
+} {
+  const selectedItem = input.selectedContentPlanItem;
+  if (!selectedItem) {
+    return {
+      title: `${input.projectName} content draft`,
+      slug: buildSlugFromText(`${input.projectName} content draft`),
+      draftBody: `# ${input.projectName} content draft\n\nAdmin-only deterministic draft placeholder.`,
+      notes: "Generated without a selected content plan item.",
+      summary: "Local deterministic content draft prepared for admin review."
+    };
+  }
+
+  const title = selectedItem.title.trim();
+  const primaryKeyword = truncateText(selectedItem.targetKeyword, 120) ?? buildSlugFromText(title)?.replace(/-/g, " ") ?? input.projectName;
+  const supportingNote = truncateText(selectedItem.notes, 220) ?? "Focus this article on a practical, admin-reviewable draft aligned to the selected content plan item.";
+  const draftBody = [
+    `# ${title}`,
+    "",
+    `## Overview`,
+    `${input.projectName} is preparing a ${selectedItem.contentType} draft for ${input.targetMonth} focused on ${primaryKeyword}. This admin-only draft is intended for internal review before any client-facing workflow.`,
+    "",
+    `## Why This Topic Matters`,
+    `The selected content plan item emphasizes ${primaryKeyword}. Use this section to frame the audience problem, the business relevance, and the angle that best matches the current brief status of ${input.briefStatus}.`,
+    "",
+    `## Draft Outline`,
+    `- Introduce the core audience challenge tied to ${primaryKeyword}.`,
+    `- Explain the recommended approach, examples, or service angle for ${input.projectName}.`,
+    `- Close with a practical next step or CTA suitable for later admin review.`,
+    "",
+    `## Working Notes`,
+    supportingNote
+  ].join("\n");
+
+  return {
+    title,
+    slug: buildSlugFromText(selectedItem.targetKeyword ?? title),
+    draftBody,
+    notes: truncateText(`Generated from content plan item "${title}" for ${input.targetMonth}.`, 220),
+    summary: `Local deterministic content draft prepared for admin review from selected content plan item "${title}".`
+  };
+}
+
+function parseContentDraftFromProviderText(text: string): {
+  title: string;
+  slug: string | null;
+  summary: string;
+  draftBody: string;
+  notes: string | null;
+} | null {
+  const jsonText = extractJsonObject(text);
+  if (!jsonText) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(jsonText) as {
+      title?: unknown;
+      slug?: unknown;
+      summary?: unknown;
+      draftBody?: unknown;
+      notes?: unknown;
+    };
+
+    const title = typeof parsed.title === "string" ? parsed.title.trim() : "";
+    const summary = typeof parsed.summary === "string" ? parsed.summary.trim() : "";
+    const draftBody = typeof parsed.draftBody === "string" ? parsed.draftBody.trim() : "";
+    const slugCandidate = typeof parsed.slug === "string" ? parsed.slug.trim() : "";
+    const notes = typeof parsed.notes === "string" ? parsed.notes.trim() : null;
+
+    if (!title || !summary || !draftBody) {
+      return null;
+    }
+
+    return {
+      title,
+      slug: buildSlugFromText(slugCandidate || title),
+      summary,
+      draftBody,
+      notes: truncateText(notes, 220)
+    };
+  } catch {
+    return null;
+  }
+}
+
+function buildContentDraftPrompt(contextText: string): { systemPrompt: string; userPrompt: string } {
+  return {
+    systemPrompt:
+      "You create concise admin-only article drafts from a selected content plan item. Return valid JSON only. Do not claim publication, client delivery, approvals, crawling, or autonomous execution.",
+    userPrompt: [
+      "Produce a short admin-facing article draft from the selected content plan item.",
+      "Return valid JSON only with this shape:",
+      '{"title":"string","slug":"string","summary":"string","draftBody":"string","notes":"string"}',
+      "Keep the draft practical, reviewable, and internally focused.",
+      "",
+      contextText
+    ].join("\n")
+  };
+}
+
 function buildSummaryPrompt(contextText: string): { systemPrompt: string; userPrompt: string } {
   return {
     systemPrompt:
@@ -382,7 +537,7 @@ function buildSummaryPrompt(contextText: string): { systemPrompt: string; userPr
 export function createLocalAiDeliveryWorkflowExecutionAdapter(): AiDeliveryWorkflowExecutionAdapter {
   return {
     createStartedLogEntries(input) {
-      const outputType = shouldGenerateContentPlan(input.adminNotes) ? "content_plan_draft" : "summary";
+      const outputType = getWorkflowOutputType(input);
       return buildExecutionLogEntries(input.startedAtIso, [
         "Stub execution started.",
         `Project "${input.projectName}" for ${input.targetMonth}; brief status ${input.briefStatus}.`,
@@ -417,11 +572,12 @@ export function createLocalAiDeliveryWorkflowExecutionAdapter(): AiDeliveryWorkf
           resultPlaceholder: null,
           finalStatus: "FAILED",
           workflowResult,
-          generatedContentPlanItems: null
+          generatedContentPlanItems: null,
+          generatedContentDraft: null
         };
       }
 
-      const outputType: AiWorkflowOutputType = shouldGenerateContentPlan(input.adminNotes) ? "content_plan_draft" : "summary";
+      const outputType = getWorkflowOutputType(input);
       const contextText = buildCompactContextText(input);
       const approximateInputTokens = estimateApproximateInputTokens(contextText);
       const effectiveBudgetDecision = getAiTextBudgetDecision(outputType, approximateInputTokens);
@@ -459,7 +615,55 @@ export function createLocalAiDeliveryWorkflowExecutionAdapter(): AiDeliveryWorkf
           resultPlaceholder: serializeAiWorkflowResultForPlaceholder(workflowResult),
           finalStatus: "REVIEW",
           workflowResult,
-          generatedContentPlanItems
+          generatedContentPlanItems,
+          generatedContentDraft: null
+        };
+      }
+
+      if (outputType === "article_draft") {
+        const generatedContentDraft = buildDeterministicContentDraft(input);
+        const workflowResult = createWorkflowResult(
+          "local",
+          "local-deterministic",
+          outputType,
+          input.finishedAtIso,
+          generatedContentDraft.title,
+          generatedContentDraft.summary,
+          {
+            slug: generatedContentDraft.slug,
+            draftBody: generatedContentDraft.draftBody,
+            notes: generatedContentDraft.notes,
+            contentPlanItemId: input.selectedContentPlanItem?.id ?? null
+          },
+          null,
+          effectiveBudgetDecision.maxOutputTokens,
+          effectiveBudgetDecision.approximateInputTokens
+        );
+
+        return {
+          finishedLogEntries: buildExecutionLogEntries(input.finishedAtIso, [
+            "Stub content draft generated successfully.",
+            `Gateway: ${workflowResult.gateway}.`,
+            `Model: ${workflowResult.model}.`,
+            `Output type: ${workflowResult.outputType}.`,
+            `Approximate input tokens: ${workflowResult.budget.approximateInputTokens}.`,
+            `Max output tokens: ${workflowResult.budget.maxOutputTokens}.`,
+            `Budget policy: ${workflowResult.budget.budgetPolicy}.`
+          ]),
+          executionError: null,
+          resultPlaceholder: serializeAiWorkflowResultForPlaceholder(workflowResult),
+          finalStatus: "REVIEW",
+          workflowResult,
+          generatedContentPlanItems: null,
+          generatedContentDraft: input.selectedContentPlanItem
+            ? {
+                title: generatedContentDraft.title,
+                slug: generatedContentDraft.slug,
+                draftBody: generatedContentDraft.draftBody,
+                notes: generatedContentDraft.notes,
+                contentPlanItemId: input.selectedContentPlanItem.id
+              }
+            : null
         };
       }
 
@@ -493,7 +697,8 @@ export function createLocalAiDeliveryWorkflowExecutionAdapter(): AiDeliveryWorkf
         resultPlaceholder: serializeAiWorkflowResultForPlaceholder(workflowResult),
         finalStatus: "REVIEW",
         workflowResult,
-        generatedContentPlanItems: null
+        generatedContentPlanItems: null,
+        generatedContentDraft: null
       };
     }
   };
@@ -525,7 +730,7 @@ export function createAiDeliveryWorkflowExecutionAdapter(config: AiProviderConfi
 
   return {
     createStartedLogEntries(input) {
-      const outputType = shouldGenerateContentPlan(input.adminNotes) ? "content_plan_draft" : "summary";
+      const outputType = getWorkflowOutputType(input);
       return buildExecutionLogEntries(input.startedAtIso, [
         "OpenRouter text execution started.",
         `Project "${input.projectName}" for ${input.targetMonth}; brief status ${input.briefStatus}.`,
@@ -534,7 +739,7 @@ export function createAiDeliveryWorkflowExecutionAdapter(config: AiProviderConfi
       ]);
     },
     async execute(input) {
-      const outputType: AiWorkflowOutputType = shouldGenerateContentPlan(input.adminNotes) ? "content_plan_draft" : "summary";
+      const outputType = getWorkflowOutputType(input);
       const contextText = buildCompactContextText(input);
       const approximateInputTokens = estimateApproximateInputTokens(contextText);
       const budgetDecision = getAiTextBudgetDecision(outputType, approximateInputTokens);
@@ -564,14 +769,17 @@ export function createAiDeliveryWorkflowExecutionAdapter(config: AiProviderConfi
           resultPlaceholder: null,
           finalStatus: "FAILED",
           workflowResult,
-          generatedContentPlanItems: null
+          generatedContentPlanItems: null,
+          generatedContentDraft: null
         };
       }
 
       const selectedModel = selectOpenRouterModel(config, budgetDecision.approximateInputTokens);
       const prompts = outputType === "content_plan_draft"
         ? buildContentPlanPrompt(contextText)
-        : buildSummaryPrompt(contextText);
+        : outputType === "article_draft"
+          ? buildContentDraftPrompt(contextText)
+          : buildSummaryPrompt(contextText);
 
       const providerResult = await executeOpenRouterTextRequest({
         config,
@@ -610,7 +818,8 @@ export function createAiDeliveryWorkflowExecutionAdapter(config: AiProviderConfi
           resultPlaceholder: null,
           finalStatus: "FAILED",
           workflowResult,
-          generatedContentPlanItems: null
+          generatedContentPlanItems: null,
+          generatedContentDraft: null
         };
       }
 
@@ -646,7 +855,8 @@ export function createAiDeliveryWorkflowExecutionAdapter(config: AiProviderConfi
             resultPlaceholder: serializeAiWorkflowResultForPlaceholder(workflowResult),
             finalStatus: "REVIEW",
             workflowResult,
-            generatedContentPlanItems: null
+            generatedContentPlanItems: null,
+            generatedContentDraft: null
           };
         }
 
@@ -680,7 +890,90 @@ export function createAiDeliveryWorkflowExecutionAdapter(config: AiProviderConfi
           resultPlaceholder: serializeAiWorkflowResultForPlaceholder(workflowResult),
           finalStatus: "REVIEW",
           workflowResult,
-          generatedContentPlanItems: parsed.items
+          generatedContentPlanItems: parsed.items,
+          generatedContentDraft: null
+        };
+      }
+
+      if (outputType === "article_draft") {
+        const providerContent = providerResult.content ?? "";
+        const parsed = parseContentDraftFromProviderText(providerContent);
+        if (!parsed) {
+          const safeSummary = "OpenRouter returned a response, but it was not safely parseable as the expected article draft JSON. No content draft was persisted.";
+          const safeError = "Provider output was not safely parseable as structured article draft JSON.";
+          const workflowResult = createWorkflowResult(
+            "openrouter",
+            providerResult.model,
+            outputType,
+            input.finishedAtIso,
+            `${input.projectName} content draft needs admin review`,
+            safeSummary,
+            null,
+            safeError,
+            budgetDecision.maxOutputTokens,
+            budgetDecision.approximateInputTokens
+          );
+          return {
+            finishedLogEntries: buildExecutionLogEntries(input.finishedAtIso, [
+              "OpenRouter content draft response was not safely parseable as JSON.",
+              `Model slot: ${selectedModel.slot}.`,
+              `Model: ${providerResult.model}.`,
+              `Output type: ${outputType}.`,
+              `Approximate input tokens: ${budgetDecision.approximateInputTokens}.`,
+              `Max output tokens: ${budgetDecision.maxOutputTokens}.`,
+              `Budget policy: ${budgetDecision.budgetPolicy}.`
+            ]),
+            executionError: null,
+            resultPlaceholder: serializeAiWorkflowResultForPlaceholder(workflowResult),
+            finalStatus: "REVIEW",
+            workflowResult,
+            generatedContentPlanItems: null,
+            generatedContentDraft: null
+          };
+        }
+
+        const workflowResult = createWorkflowResult(
+          "openrouter",
+          providerResult.model,
+          outputType,
+          input.finishedAtIso,
+          parsed.title,
+          parsed.summary,
+          {
+            slug: parsed.slug,
+            draftBody: parsed.draftBody,
+            notes: parsed.notes,
+            contentPlanItemId: input.selectedContentPlanItem?.id ?? null
+          },
+          null,
+          budgetDecision.maxOutputTokens,
+          budgetDecision.approximateInputTokens
+        );
+
+        return {
+          finishedLogEntries: buildExecutionLogEntries(input.finishedAtIso, [
+            "OpenRouter text execution completed successfully.",
+            `Model slot: ${selectedModel.slot}.`,
+            `Model: ${providerResult.model}.`,
+            `Output type: ${outputType}.`,
+            `Approximate input tokens: ${budgetDecision.approximateInputTokens}.`,
+            `Max output tokens: ${budgetDecision.maxOutputTokens}.`,
+            `Budget policy: ${budgetDecision.budgetPolicy}.`
+          ]),
+          executionError: null,
+          resultPlaceholder: serializeAiWorkflowResultForPlaceholder(workflowResult),
+          finalStatus: "REVIEW",
+          workflowResult,
+          generatedContentPlanItems: null,
+          generatedContentDraft: input.selectedContentPlanItem
+            ? {
+                title: parsed.title,
+                slug: parsed.slug,
+                draftBody: parsed.draftBody,
+                notes: parsed.notes,
+                contentPlanItemId: input.selectedContentPlanItem.id
+              }
+            : null
         };
       }
 
@@ -711,7 +1004,8 @@ export function createAiDeliveryWorkflowExecutionAdapter(config: AiProviderConfi
         resultPlaceholder: serializeAiWorkflowResultForPlaceholder(workflowResult),
         finalStatus: "REVIEW",
         workflowResult,
-        generatedContentPlanItems: null
+        generatedContentPlanItems: null,
+        generatedContentDraft: null
       };
     }
   };
