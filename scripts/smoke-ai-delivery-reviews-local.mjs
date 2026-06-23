@@ -1433,6 +1433,45 @@ async function runAiDeliveryApiRegression(token, fixtureProjects) {
   }
   pass("AI Delivery deliverable update persisted the expected admin reference fields.");
 
+  const wordpressDraftPreparedData = requireOkResponse(
+    "AI Delivery deliverable prepare WordPress draft",
+    await request(`/ai-delivery-projects/${project.id}/deliverables/${createdDeliverable.id}/prepare-wordpress-draft`, {
+      method: "POST",
+      token
+    })
+  );
+  const wordpressDraftPrepared = wordpressDraftPreparedData?.wordpressDraft;
+  if (
+    !wordpressDraftPrepared ||
+    wordpressDraftPrepared.status !== "PREPARED" ||
+    typeof wordpressDraftPrepared.title !== "string" ||
+    wordpressDraftPrepared.title.trim().length === 0 ||
+    typeof wordpressDraftPrepared.body !== "string" ||
+    wordpressDraftPrepared.body.trim().length === 0 ||
+    ![null, "string"].includes(typeof wordpressDraftPrepared.excerpt) ||
+    !["DELIVERABLE", "CONTENT_DRAFT"].includes(wordpressDraftPrepared.sourceType) ||
+    typeof wordpressDraftPrepared.sourceId !== "string" ||
+    wordpressDraftPrepared.sourceId.trim().length === 0 ||
+    wordpressDraftPrepared.externalPostId !== null ||
+    wordpressDraftPrepared.externalEditUrl !== null ||
+    wordpressDraftPrepared.note !== "WordPress API execution is deferred/not configured."
+  ) {
+    fail("AI Delivery deliverable prepare WordPress draft did not return the expected local prepared contract.");
+  }
+  pass("AI Delivery deliverable prepare WordPress draft returned the expected local prepared contract.");
+
+  const crossProjectWordPressDraftResponse = await request(
+    `/ai-delivery-projects/${crossProject.id}/deliverables/${createdDeliverable.id}/prepare-wordpress-draft`,
+    {
+      method: "POST",
+      token
+    }
+  );
+  if ([200, 201].includes(crossProjectWordPressDraftResponse.status) && crossProjectWordPressDraftResponse.body?.ok === true) {
+    fail("AI Delivery deliverable prepare WordPress draft accepted a cross-project deliverable reference.");
+  }
+  pass("AI Delivery deliverable prepare WordPress draft rejected a cross-project deliverable reference.");
+
   const deliverableUploadResponse = await request(`/ai-delivery-projects/${project.id}/deliverables/${createdDeliverable.id}/document`, {
     method: "POST",
     token,
