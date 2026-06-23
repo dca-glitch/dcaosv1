@@ -869,6 +869,12 @@ export function AiDeliveryPage({
   const [researchSummaryForm, setResearchSummaryForm] = useState<AiDeliveryResearchSummaryFormValues>(emptyResearchSummary());
   const [researchSourceEditorId, setResearchSourceEditorId] = useState<string | null>(null);
   const [researchSourceForm, setResearchSourceForm] = useState<AiDeliveryResearchSourceFormValues>(emptyResearchSource());
+  const [deliverableDownloadRefLoading, setDeliverableDownloadRefLoading] = useState(false);
+  const [deliverableDownloadRefError, setDeliverableDownloadRefError] = useState<string | null>(null);
+  const [deliverableDownloadRef, setDeliverableDownloadRef] = useState<{ storageKey: string; downloadUrl: string | null; expiresSeconds: number | null } | null>(null);
+  const [articleImageDownloadRefLoading, setArticleImageDownloadRefLoading] = useState(false);
+  const [articleImageDownloadRefError, setArticleImageDownloadRefError] = useState<string | null>(null);
+  const [articleImageDownloadRef, setArticleImageDownloadRef] = useState<{ storageKey: string; downloadUrl: string | null; expiresSeconds: number | null } | null>(null);
 
   const selectedProject = useMemo(() => projects.find((p) => p.id === editorProjectId) ?? null, [editorProjectId, projects]);
   const openProject = useMemo(() => projects.find((p) => p.id === openBriefId) ?? null, [openBriefId, projects]);
@@ -1294,6 +1300,62 @@ export function AiDeliveryPage({
     }
   }
 
+  async function fetchDeliverableDownloadReference(projectId: string, deliverableId: string) {
+    if (!openDeliverablesProject || !activeDeliverableRecord?.storageKey) return;
+    const deliverableStorageKey = activeDeliverableRecord.storageKey;
+    setDeliverableDownloadRefLoading(true);
+    setDeliverableDownloadRefError(null);
+    setDeliverableDownloadRef(null);
+    try {
+      const response = await fetch(`/api/v1/ai-delivery-projects/${projectId}/deliverables/${deliverableId}/download-reference`);
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+      const data = await response.json();
+      if (data.data?.downloadReference) {
+        setDeliverableDownloadRef(data.data.downloadReference);
+      } else {
+        setDeliverableDownloadRef({
+          storageKey: deliverableStorageKey,
+          downloadUrl: null,
+          expiresSeconds: null
+        });
+      }
+    } catch (error) {
+      setDeliverableDownloadRefError(getErrorMessage(error, "Unable to fetch the R2 download reference."));
+    } finally {
+      setDeliverableDownloadRefLoading(false);
+    }
+  }
+
+  async function fetchArticleImageDownloadReference(projectId: string, imageId: string) {
+    if (!openArticleImagesProject || !activeArticleImageRecord?.storageKey) return;
+    const articleImageStorageKey = activeArticleImageRecord.storageKey;
+    setArticleImageDownloadRefLoading(true);
+    setArticleImageDownloadRefError(null);
+    setArticleImageDownloadRef(null);
+    try {
+      const response = await fetch(`/api/v1/ai-delivery-projects/${projectId}/article-images/${imageId}/download-reference`);
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+      const data = await response.json();
+      if (data.data?.downloadReference) {
+        setArticleImageDownloadRef(data.data.downloadReference);
+      } else {
+        setArticleImageDownloadRef({
+          storageKey: articleImageStorageKey,
+          downloadUrl: null,
+          expiresSeconds: null
+        });
+      }
+    } catch (error) {
+      setArticleImageDownloadRefError(getErrorMessage(error, "Unable to fetch the R2 download reference."));
+    } finally {
+      setArticleImageDownloadRefLoading(false);
+    }
+  }
+
   async function handleSaveBrief(projectId: string) {
     if (!briefDetail) return;
     if (typeof onSaveBrief !== "function") return;
@@ -1711,6 +1773,9 @@ export function AiDeliveryPage({
     setArticleImageDrafts([]);
     setArticleImageEditorId(null);
     setArticleImageForm(emptyArticleImage());
+    setArticleImageDownloadRefLoading(false);
+    setArticleImageDownloadRefError(null);
+    setArticleImageDownloadRef(null);
   }
 
   async function openDeliverables(
@@ -1916,6 +1981,9 @@ export function AiDeliveryPage({
     setDeliverableReviewsError(null);
     setDeliverableReviewEditorId(null);
     setDeliverableReviewForm(emptyDeliverableReview());
+    setDeliverableDownloadRefLoading(false);
+    setDeliverableDownloadRefError(null);
+    setDeliverableDownloadRef(null);
   }
 
   async function openWorkflowRuns(projectId: string) {
@@ -3950,6 +4018,36 @@ export function AiDeliveryPage({
                         <dd>{activeDeliverableRecord.isArchived ? "Archived" : "Active admin packaging record"}</dd>
                       </div>
                     </dl>
+                    {activeDeliverableRecord.storageKey ? (
+                      <div style={{ marginTop: "1rem", paddingTop: "1rem", borderTop: "1px solid var(--color-border)" }}>
+                        <button
+                          className="secondary-action"
+                          disabled={deliverableDownloadRefLoading}
+                          onClick={() => void fetchDeliverableDownloadReference(openDeliverablesProject.id, activeDeliverableRecord.id)}
+                          type="button"
+                        >
+                          {deliverableDownloadRefLoading ? "Fetching..." : "Get R2 URL"}
+                        </button>
+                        {deliverableDownloadRefError ? (
+                          <div className="state-panel" role="alert" style={{ marginTop: "0.5rem", color: "var(--color-error)" }}>
+                            {deliverableDownloadRefError}
+                          </div>
+                        ) : null}
+                        {deliverableDownloadRef ? (
+                          <div className="state-panel" style={{ marginTop: "0.5rem" }}>
+                            {deliverableDownloadRef.downloadUrl ? (
+                              <div>
+                                Download URL available:&nbsp;
+                                <a href={deliverableDownloadRef.downloadUrl} target="_blank" rel="noopener noreferrer">{deliverableDownloadRef.storageKey}</a>
+                                {deliverableDownloadRef.expiresSeconds ? <span className="muted-text"> (Expires in {Math.floor(deliverableDownloadRef.expiresSeconds / 3600)} hours)</span> : null}
+                              </div>
+                            ) : (
+                              "Storage reference exists, but no download URL is available. Storage may be unconfigured."
+                            )}
+                          </div>
+                        ) : null}
+                      </div>
+                    ) : null}
                   </div>
                 ) : null}
                 <div className="field-panel" style={{ marginBottom: "1rem" }}>
@@ -4445,6 +4543,36 @@ export function AiDeliveryPage({
                         <dd>{formatOptionalDate(activeArticleImageRecord.updatedAt)}</dd>
                       </div>
                     </dl>
+                    {activeArticleImageRecord.storageKey ? (
+                      <div style={{ marginTop: "1rem", paddingTop: "1rem", borderTop: "1px solid var(--color-border)" }}>
+                        <button
+                          className="secondary-action"
+                          disabled={articleImageDownloadRefLoading}
+                          onClick={() => void fetchArticleImageDownloadReference(openArticleImagesProject.id, activeArticleImageRecord.id)}
+                          type="button"
+                        >
+                          {articleImageDownloadRefLoading ? "Fetching..." : "Get R2 URL"}
+                        </button>
+                        {articleImageDownloadRefError ? (
+                          <div className="state-panel" role="alert" style={{ marginTop: "0.5rem", color: "var(--color-error)" }}>
+                            {articleImageDownloadRefError}
+                          </div>
+                        ) : null}
+                        {articleImageDownloadRef ? (
+                          <div className="state-panel" style={{ marginTop: "0.5rem" }}>
+                            {articleImageDownloadRef.downloadUrl ? (
+                              <div>
+                                Download URL available:&nbsp;
+                                <a href={articleImageDownloadRef.downloadUrl} target="_blank" rel="noopener noreferrer">{articleImageDownloadRef.storageKey}</a>
+                                {articleImageDownloadRef.expiresSeconds ? <span className="muted-text"> (Expires in {Math.floor(articleImageDownloadRef.expiresSeconds / 3600)} hours)</span> : null}
+                              </div>
+                            ) : (
+                              "Storage reference exists, but no download URL is available. Storage may be unconfigured."
+                            )}
+                          </div>
+                        ) : null}
+                      </div>
+                    ) : null}
                   </div>
                 ) : null}
                 {activeArticleImageRecord ? (
