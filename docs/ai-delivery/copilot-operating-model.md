@@ -105,6 +105,44 @@ Use for: larger blocks, multi-file work, async execution.
 
 ---
 
+## Copilot Max operating rules
+
+### Model and execution defaults
+
+- Local Copilot CLI is the default for small focused blocks (1-5 files, docs, UI polish).
+- Cloud agent is for async issue-to-PR work only, after scope is fully defined in an ai-block.yml issue.
+- Use Auto/default model first for low and medium risk work.
+- Escalate to a stronger model only after discovery shows architectural risk or after repeated failed fixes.
+- If a stronger model is used, the final report must state the reason.
+
+### Parallelism and autonomy limits
+
+- Do not run multiple agents on overlapping files.
+- Do not let a cloud agent start without a completed ai-block.yml issue scope.
+- Do not start a long autonomous session without explicit human approval.
+- Do not use parallel, fleet, or multi-agent execution unless it is explicitly listed in the block scope.
+
+### Human gate points (required for every block)
+
+1. Scope approval - ChatGPT or human approves before execution starts
+2. Validation proof - agent must show validate passed before smoke
+3. Diff review - human reviews all changed files before commit
+4. Commit approval - human runs git commit explicitly
+5. Push approval - human runs git push separately and explicitly
+6. Deploy approval - human deploys explicitly; agents never trigger deploy
+
+### Cost minimization practices
+
+- Write short prompts. Rely on repo memory files instead of repeating context in each prompt.
+- Scope allowed files exactly. Avoid open-ended "change what you need" instructions.
+- Keep diffs small. One block per session.
+- Run focused smokes only (smoke:ai-delivery-reviews before smoke:local or smoke:browser).
+- Avoid unnecessary browser/screenshot work unless UI changed.
+- Avoid broad repo search when exact file paths are already known.
+- Do not start exploratory sessions without a clear allowed-files list.
+
+---
+
 ## Deferred - not yet enabled
 
 The following are planned but not yet implemented:

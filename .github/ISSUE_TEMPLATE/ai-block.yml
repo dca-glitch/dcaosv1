@@ -94,15 +94,46 @@ body:
       required: true
 
   - type: dropdown
-    id: model-recommendation
+    id: budget-class
     attributes:
-      label: Model recommendation
+      label: Budget class
       options:
-        - Standard (Copilot CLI default)
-        - Extended thinking / Sonnet for complex reasoning
-        - Cloud agent for multi-file autonomous work
+        - "Low - docs / scaffolding / single-file"
+        - "Medium - backend, schema, or multi-file"
+        - "High - auth, payments, AI cost guardrails, cross-module"
     validations:
-      required: false
+      required: true
+
+  - type: dropdown
+    id: execution-mode
+    attributes:
+      label: Execution mode
+      options:
+        - Local Copilot CLI
+        - GitHub cloud agent
+        - Planner / discovery only
+        - Reviewer only
+    validations:
+      required: true
+
+  - type: dropdown
+    id: model-policy
+    attributes:
+      label: Model policy
+      options:
+        - "Auto / default"
+        - "Strong model approved - reason required in final report"
+        - "Cloud agent approved"
+    validations:
+      required: true
+
+  - type: input
+    id: max-files
+    attributes:
+      label: Max files allowed
+      placeholder: "e.g. 5"
+    validations:
+      required: true
 
   - type: checkboxes
     id: safety-checklist
@@ -118,6 +149,14 @@ body:
         - label: No secrets or credentials in output
           required: true
         - label: Stop on validation failure - do not run smoke
+          required: true
+        - label: Avoid broad repo search unless exact files are unknown
+          required: true
+        - label: Stop before parallel / fleet / multi-agent execution unless scoped
+          required: true
+        - label: No long autonomous session without explicit human approval
+          required: true
+        - label: If stronger model is used, reason must appear in final report
           required: true
 
   - type: checkboxes

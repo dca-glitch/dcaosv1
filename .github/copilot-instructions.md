@@ -51,6 +51,30 @@ If `prisma generate` fails with EPERM during validate:
 - **ChatGPT** - planner, scope controller, reviewer, decision gate.
 - **Copilot CLI / cloud agent** - executor only. Must not make scope decisions independently.
 
+## Copilot Max / AI credit policy
+
+- Default to Auto/model auto-selection for normal docs, UI polish, and small scoped changes.
+- Use a stronger or more expensive model only when the block explicitly involves:
+  - architecture decisions
+  - auth or security changes
+  - provider integrations
+  - AI cost guardrail changes
+  - transactions or data integrity
+  - repeated failed fixes
+  - cross-module refactors
+- Do not use broad repo exploration unless the exact files are unknown and cannot be inferred.
+- Prefer inspecting exact known files first before any search.
+- Keep prompts short by relying on repo memory files instead of repeating context.
+- Do not start long autonomous sessions without explicit human approval.
+- Do not use parallel, fleet, or multi-agent execution unless explicitly scoped in the block.
+- For cloud-agent work, require a GitHub Issue created from ai-block.yml with:
+  - clear allowed files
+  - forbidden areas
+  - stop conditions
+  - validation requirements
+  - final report checklist
+- Do not hard-code subscription prices, credit limits, or plan claims in repo files.
+
 ## Reference files
 
 - `AGENTS.md` - agent-facing project overview and safety rules

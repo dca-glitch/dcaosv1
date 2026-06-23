@@ -25,6 +25,23 @@ The executor must not commit, push, or deploy without explicit human approval.
 - Do not change runtime behavior outside the scoped area.
 - If a change requires touching app source, schema, migrations, or runtime config outside scope: stop and report.
 
+## Budget and model discipline
+
+Every block must declare a budget level before execution starts.
+
+| Budget level | When to use |
+|---|---|
+| Low | Docs, scaffolding, UI polish, single-file changes |
+| Medium | Backend changes, schema changes, multi-file refactors |
+| High | Auth, payments, AI cost guardrails, provider integrations, cross-module work |
+
+- Default budget is low for docs-only and single-file changes.
+- Cloud agent execution is medium or high unless the block is explicitly docs-only.
+- If a stronger model is used, the final report must state why.
+- If the agent needs more autonomy or more files than scoped, it must stop and request scope approval from the human.
+- Do not run broad repo search if the relevant files are already known.
+- Do not start a parallel or multi-agent session unless explicitly approved in the block scope.
+
 ## Required final report
 
 Every block execution must end with a report in this format:

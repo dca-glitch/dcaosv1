@@ -39,6 +39,16 @@ smoke:browser:
 
 <!-- If any smoke was skipped, state why. -->
 
+## Execution and model policy
+
+- Execution mode used: <!-- Local Copilot CLI / GitHub cloud agent / Planner only / Reviewer only -->
+- Budget class: <!-- Low / Medium / High -->
+- Model/budget policy followed: <!-- Auto/default / Strong model approved / Cloud agent approved -->
+- Strong model used? <!-- Yes - reason: ___ / No -->
+- Cloud agent used? <!-- Yes / No -->
+- Max files limit respected? <!-- Yes / No - explain if no -->
+- Broad repo search avoided? <!-- Yes / No - explain if no -->
+
 ## Screenshots
 
 <!-- Only include if UI changed and a screenshot is available. Skip otherwise. -->
