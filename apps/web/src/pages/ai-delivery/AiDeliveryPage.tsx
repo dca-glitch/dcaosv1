@@ -777,6 +777,7 @@ export function AiDeliveryPage({
   const [contentDraftsLoading, setContentDraftsLoading] = useState(false);
   const [contentDraftsSaving, setContentDraftsSaving] = useState(false);
   const [contentDraftsError, setContentDraftsError] = useState<string | null>(null);
+  const [contentDraftHandoffMessage, setContentDraftHandoffMessage] = useState<string | null>(null);
   const [contentDrafts, setContentDrafts] = useState<AiDeliveryContentDraftSummary[]>([]);
   const [contentDraftEditorId, setContentDraftEditorId] = useState<string | null>(null);
   const [contentDraftForm, setContentDraftForm] = useState<AiDeliveryContentDraftFormValues>(emptyContentDraft());
@@ -841,6 +842,97 @@ export function AiDeliveryPage({
     () => contentDrafts.find((item) => item.id === contentDraftEditorId) ?? null,
     [contentDraftEditorId, contentDrafts]
   );
+  const selectedContentDraftPlanItem = useMemo(
+    () => (contentDraftPlan?.items ?? []).find((item) => item.id === contentDraftForm.contentPlanItemId) ?? null,
+    [contentDraftForm.contentPlanItemId, contentDraftPlan]
+  );
+  const contentDraftHasUnsavedChanges = useMemo(() => {
+    if (activeContentDraftRecord) {
+      return (
+        (activeContentDraftRecord.contentPlanItemId ?? null) !== (contentDraftForm.contentPlanItemId ?? null)
+        || activeContentDraftRecord.title !== contentDraftForm.title
+        || (activeContentDraftRecord.slug ?? "") !== contentDraftForm.slug
+        || activeContentDraftRecord.draftBody !== contentDraftForm.draftBody
+        || activeContentDraftRecord.status !== contentDraftForm.status
+        || (activeContentDraftRecord.notes ?? "") !== contentDraftForm.notes
+      );
+    }
+
+    return Boolean(
+      contentDraftForm.contentPlanItemId
+      || contentDraftForm.title.trim()
+      || contentDraftForm.slug.trim()
+      || contentDraftForm.draftBody.trim()
+      || contentDraftForm.notes.trim()
+      || contentDraftForm.status !== "DRAFT"
+    );
+  }, [activeContentDraftRecord, contentDraftForm]);
+  const contentDraftReviewReadiness = useMemo(() => {
+    if (!contentDraftForm.title.trim()) {
+      return {
+        ready: false,
+        message: "Add a title before moving this draft through admin review."
+      };
+    }
+    if (!contentDraftForm.draftBody.trim()) {
+      return {
+        ready: false,
+        message: "Add draft body content before marking this draft ready for review."
+      };
+    }
+    if (activeContentDraftRecord?.isArchived) {
+      return {
+        ready: false,
+        message: "Archived drafts stay visible for admin history and cannot move into review."
+      };
+    }
+    if (activeContentDraftRecord?.status === "READY_FOR_REVIEW") {
+      return {
+        ready: false,
+        message: "This draft is already ready for admin review. Return it to Draft before editing again."
+      };
+    }
+    if (contentDraftHasUnsavedChanges) {
+      return {
+        ready: false,
+        message: "Save the current draft edits before using the review transition."
+      };
+    }
+
+    return {
+      ready: true,
+      message: "This admin draft is saved and ready to move into internal review when you are satisfied with the copy."
+    };
+  }, [activeContentDraftRecord, contentDraftForm.draftBody, contentDraftForm.title, contentDraftHasUnsavedChanges]);
+  const contentDraftEditorLinkedPlanLabel = useMemo(() => {
+    if (activeContentDraftRecord?.contentPlanItem) {
+      return `${activeContentDraftRecord.contentPlanItem.sortOrder}. ${activeContentDraftRecord.contentPlanItem.title}`;
+    }
+    if (selectedContentDraftPlanItem?.id) {
+      return `${selectedContentDraftPlanItem.sortOrder}. ${selectedContentDraftPlanItem.title}`;
+    }
+    return "Manual / unlinked production record";
+  }, [activeContentDraftRecord, selectedContentDraftPlanItem]);
+  const contentDraftSaveStateLabel = useMemo(() => {
+    if (activeContentDraftRecord) {
+      return contentDraftHasUnsavedChanges ? "Unsaved edits" : "Saved";
+    }
+    return contentDraftHasUnsavedChanges ? "New draft with unsaved content" : "New empty draft";
+  }, [activeContentDraftRecord, contentDraftHasUnsavedChanges]);
+  const canSaveContentDraftForm = Boolean(contentDraftForm.title.trim());
+  const canMarkReadyCurrentDraft = Boolean(
+    activeContentDraftRecord
+    && !activeContentDraftRecord.isArchived
+    && contentDraftReviewReadiness.ready
+  );
+  const canReturnCurrentDraft = Boolean(
+    activeContentDraftRecord
+    && !activeContentDraftRecord.isArchived
+    && activeContentDraftRecord.status !== "DRAFT"
+  );
+  const contentDraftPrimaryActionLabel = contentDraftEditorId
+    ? (contentDraftHasUnsavedChanges ? "Save draft changes" : "Save draft")
+    : "Create production record";
   const eligibleContentDraftPlanItems = useMemo(
     () => (contentDraftPlan?.items ?? [])
       .filter((item) => (item.approvalStatus ?? "DRAFT") !== "CLIENT_CHANGES_REQUESTED")
@@ -1211,6 +1303,7 @@ export function AiDeliveryPage({
     setOpenContentDraftsId(projectId);
     setContentDraftsLoading(true);
     setContentDraftsError(null);
+    setContentDraftHandoffMessage(null);
     setContentDrafts([]);
     setContentDraftEditorId(null);
     setContentDraftForm(emptyContentDraft());
@@ -1229,6 +1322,7 @@ export function AiDeliveryPage({
   }
 
   function editContentDraft(draftItem: AiDeliveryContentDraftSummary) {
+    setContentDraftHandoffMessage(null);
     setContentDraftEditorId(draftItem.id);
     setContentDraftForm({
       contentPlanItemId: draftItem.contentPlanItemId,
@@ -1241,6 +1335,7 @@ export function AiDeliveryPage({
   }
 
   function startContentDraftFromPlanItem(item: AiDeliveryContentPlanItemSummary) {
+    setContentDraftHandoffMessage(null);
     const linkedDraft = contentDrafts.find((draftItem) => draftItem.contentPlanItemId === item.id && !draftItem.isArchived) ?? null;
     if (linkedDraft) {
       editContentDraft(linkedDraft);
@@ -1265,9 +1360,23 @@ export function AiDeliveryPage({
     try {
       const saved = await onSaveContentDraft(projectId, contentDraftEditorId, contentDraftForm);
       if (saved && typeof onFetchContentDrafts === "function") {
-        setContentDrafts(await onFetchContentDrafts(projectId));
-        setContentDraftEditorId(null);
-        setContentDraftForm(emptyContentDraft());
+        const refreshedDrafts = await onFetchContentDrafts(projectId);
+        setContentDrafts(refreshedDrafts);
+        const refreshedActiveDraft = refreshedDrafts.find((draftItem) => draftItem.id === saved.id) ?? null;
+        if (refreshedActiveDraft) {
+          setContentDraftEditorId(refreshedActiveDraft.id);
+          setContentDraftForm({
+            contentPlanItemId: refreshedActiveDraft.contentPlanItemId,
+            title: refreshedActiveDraft.title,
+            slug: refreshedActiveDraft.slug ?? "",
+            draftBody: refreshedActiveDraft.draftBody,
+            status: refreshedActiveDraft.status,
+            notes: refreshedActiveDraft.notes ?? ""
+          });
+        } else {
+          setContentDraftEditorId(null);
+          setContentDraftForm(emptyContentDraft());
+        }
       }
     } catch (error) {
       setContentDraftsError(getErrorMessage(error, "Unable to save this content draft."));
@@ -1296,7 +1405,20 @@ export function AiDeliveryPage({
     setContentDraftsError(null);
     try {
       await onRequestContentDraftReview(projectId, draftId);
-      setContentDrafts(await onFetchContentDrafts(projectId));
+      const refreshedDrafts = await onFetchContentDrafts(projectId);
+      setContentDrafts(refreshedDrafts);
+      const refreshedActiveDraft = refreshedDrafts.find((item) => item.id === draftId) ?? null;
+      if (refreshedActiveDraft) {
+        setContentDraftEditorId(refreshedActiveDraft.id);
+        setContentDraftForm({
+          contentPlanItemId: refreshedActiveDraft.contentPlanItemId,
+          title: refreshedActiveDraft.title,
+          slug: refreshedActiveDraft.slug ?? "",
+          draftBody: refreshedActiveDraft.draftBody,
+          status: refreshedActiveDraft.status,
+          notes: refreshedActiveDraft.notes ?? ""
+        });
+      }
     } catch (error) {
       setContentDraftsError(getErrorMessage(error, "Unable to move this draft into review."));
     } finally {
@@ -1326,6 +1448,7 @@ export function AiDeliveryPage({
   function closeContentDrafts() {
     setOpenContentDraftsId(null);
     setContentDraftsError(null);
+    setContentDraftHandoffMessage(null);
     setContentDrafts([]);
     setContentDraftEditorId(null);
     setContentDraftForm(emptyContentDraft());
@@ -1742,6 +1865,7 @@ export function AiDeliveryPage({
       }
 
       setContentPlanGenerationMessage(`Admin draft generation completed for "${item.title}". Review the generated draft below before any review handoff.`);
+      setContentDraftHandoffMessage(`Generated draft handoff: "${item.title}" is open for admin editing and internal review preparation only. This does not publish, deliver to the client, or send content to WordPress.`);
       setContentDraftsError(null);
       setContentDrafts(drafts);
       setContentDraftPlan(plan);
@@ -3208,18 +3332,41 @@ export function AiDeliveryPage({
               {contentDraftsError ? <ErrorState title="Content draft action blocked" message={contentDraftsError} /> : null}
               <section className="field-panel">
                 <h3>Article production planning</h3>
-                <p className="muted-text">Current status is shown below. Next step: create a draft from the content plan, then move it into review when ready. This screen does not run AI generation, image generation, publishing, storage upload, or external services.</p>
+                <p className="muted-text">Current status is shown below. Next step: review or edit the admin draft, save your changes, then move it into internal review when ready. This screen does not publish, deliver to the client, open the Client Portal, send content to WordPress, or trigger external services.</p>
                 <div className="state-panel" role="status">{contentDraftActionGuidance}</div>
+                {contentDraftHandoffMessage ? <div className="state-panel" role="status">{contentDraftHandoffMessage}</div> : null}
+                <div className="field-panel" style={{ marginBottom: "1rem" }}>
+                  <h4>Current editor state</h4>
+                  <dl className="brief-grid">
+                    <div>
+                      <dt>Editor mode</dt>
+                      <dd>{contentDraftEditorId ? "Editing saved draft" : "Preparing new draft"}</dd>
+                    </div>
+                    <div>
+                      <dt>Save state</dt>
+                      <dd>{contentDraftSaveStateLabel}</dd>
+                    </div>
+                    <div>
+                      <dt>Linked plan item</dt>
+                      <dd>{contentDraftEditorLinkedPlanLabel}</dd>
+                    </div>
+                    <div>
+                      <dt>Review readiness</dt>
+                      <dd>{contentDraftReviewReadiness.ready ? "Ready for admin review" : "Needs attention before review"}</dd>
+                    </div>
+                  </dl>
+                  <p className="muted-text">{contentDraftReviewReadiness.message}</p>
+                </div>
                 <div className="modal-footer">
-                  <button className="secondary-action" disabled={contentDraftsSaving} onClick={() => { setContentDraftEditorId(null); setContentDraftForm(emptyContentDraft()); }} type="button">New draft</button>
+                  <button className="secondary-action" disabled={contentDraftsSaving} onClick={() => { setContentDraftHandoffMessage(null); setContentDraftEditorId(null); setContentDraftForm(emptyContentDraft()); }} type="button">New draft</button>
                   <button className="secondary-action" disabled={contentDraftsSaving} onClick={closeContentDrafts} type="button">Close</button>
-                  <button className="primary-action" disabled={contentDraftsSaving || !contentDraftForm.title.trim()} onClick={() => void saveContentDraft(openContentDraftsProject.id)} type="button">
-                    {contentDraftsSaving ? "Saving" : contentDraftEditorId ? "Save production record" : "Create production record"}
+                  <button className="primary-action" disabled={contentDraftsSaving || !canSaveContentDraftForm} onClick={() => void saveContentDraft(openContentDraftsProject.id)} type="button">
+                    {contentDraftsSaving ? "Saving" : contentDraftPrimaryActionLabel}
                   </button>
                   {activeContentDraftRecord && !activeContentDraftRecord.isArchived ? (
                     <button
                       className="primary-action"
-                      disabled={contentDraftsSaving || !activeContentDraftRecord.draftBody.trim() || activeContentDraftRecord.status === "READY_FOR_REVIEW"}
+                      disabled={contentDraftsSaving || !canMarkReadyCurrentDraft}
                       onClick={() => void requestContentDraftReview(openContentDraftsProject.id, activeContentDraftRecord.id)}
                       type="button"
                     >
@@ -3284,7 +3431,7 @@ export function AiDeliveryPage({
                       </div>
                       <div>
                         <dt>Linked plan item</dt>
-                        <dd>{activeContentDraftRecord.contentPlanItem ? `${activeContentDraftRecord.contentPlanItem.sortOrder}. ${activeContentDraftRecord.contentPlanItem.title}` : "Manual / unlinked production record"}</dd>
+                        <dd>{contentDraftEditorLinkedPlanLabel}</dd>
                       </div>
                       <div>
                         <dt>Review requested</dt>
@@ -3311,7 +3458,7 @@ export function AiDeliveryPage({
                     <select value={contentDraftForm.status} onChange={(event) => setContentDraftForm((current) => ({ ...current, status: event.target.value }))}>
                       {(["DRAFT", "READY_FOR_REVIEW", "CHANGES_REQUESTED", "ARCHIVED"] as const).map((status) => <option key={status} value={status}>{formatContentDraftStatus(status)}</option>)}
                     </select>
-                    <span className="muted-text">Admin-only production state. Client approval remains on the authenticated review route.</span>
+                    <span className="muted-text">Admin-only production state. Saving here does not publish, deliver to the client, or trigger the Client Portal.</span>
                   </label>
                   <label>
                     Linked SEO topic / monthly content plan item - Optional
@@ -3336,7 +3483,7 @@ export function AiDeliveryPage({
                   <label className="field-span-2">
                     Draft body - Required before client review
                     <textarea maxLength={4000} placeholder="Manual draft body, article outline, sections, and review-ready copy" rows={10} value={contentDraftForm.draftBody} onChange={(event) => setContentDraftForm((current) => ({ ...current, draftBody: event.target.value }))} />
-                    <span className="muted-text">Manual content only. Save it here before using the ready-for-review action.</span>
+                    <span className="muted-text">Admin review/editing only. Save changes here before using the ready-for-review action.</span>
                   </label>
                   <label className="field-span-2">
                     Review / admin notes - Optional
@@ -3345,15 +3492,15 @@ export function AiDeliveryPage({
                   </label>
                 </div>
                 <div className="modal-footer">
-                  <button className="secondary-action" disabled={contentDraftsSaving} onClick={() => { setContentDraftEditorId(null); setContentDraftForm(emptyContentDraft()); }} type="button">New draft</button>
+                  <button className="secondary-action" disabled={contentDraftsSaving} onClick={() => { setContentDraftHandoffMessage(null); setContentDraftEditorId(null); setContentDraftForm(emptyContentDraft()); }} type="button">New draft</button>
                   <button className="secondary-action" disabled={contentDraftsSaving} onClick={closeContentDrafts} type="button">Close</button>
-                  <button className="primary-action" disabled={contentDraftsSaving || !contentDraftForm.title.trim()} onClick={() => void saveContentDraft(openContentDraftsProject.id)} type="button">
-                    {contentDraftsSaving ? "Saving" : contentDraftEditorId ? "Save production record" : "Create production record"}
+                  <button className="primary-action" disabled={contentDraftsSaving || !canSaveContentDraftForm} onClick={() => void saveContentDraft(openContentDraftsProject.id)} type="button">
+                    {contentDraftsSaving ? "Saving" : contentDraftPrimaryActionLabel}
                   </button>
                   {activeContentDraftRecord && !activeContentDraftRecord.isArchived ? (
                     <button
                       className="primary-action"
-                      disabled={contentDraftsSaving || !activeContentDraftRecord.draftBody.trim() || activeContentDraftRecord.status === "READY_FOR_REVIEW"}
+                      disabled={contentDraftsSaving || !canMarkReadyCurrentDraft}
                       onClick={() => void requestContentDraftReview(openContentDraftsProject.id, activeContentDraftRecord.id)}
                       type="button"
                     >
@@ -3361,7 +3508,7 @@ export function AiDeliveryPage({
                     </button>
                   ) : null}
                   {activeContentDraftRecord && !activeContentDraftRecord.isArchived && activeContentDraftRecord.status !== "DRAFT" ? (
-                    <button className="secondary-action" disabled={contentDraftsSaving} onClick={() => void returnContentDraftToDraft(openContentDraftsProject.id, activeContentDraftRecord.id)} type="button">
+                    <button className="secondary-action" disabled={contentDraftsSaving || !canReturnCurrentDraft} onClick={() => void returnContentDraftToDraft(openContentDraftsProject.id, activeContentDraftRecord.id)} type="button">
                       Return to draft
                     </button>
                   ) : null}
