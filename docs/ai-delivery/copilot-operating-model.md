@@ -143,6 +143,18 @@ Use for: larger blocks, multi-file work, async execution.
 
 ---
 
+## Local execution discipline
+
+- Work from `C:\dcaosv1` only. Do not navigate outside the repo.
+- Use the repo map in `.github/copilot-instructions.md` before searching.
+- Start API or web only when validation, smoke, or browser proof requires it.
+- Do not inspect `.env` files or search for secrets or credentials.
+- If a secret is needed, stop and ask the human to provide it as a temporary process environment variable.
+- Use temporary env vars only when the human explicitly provides them in the session.
+- No production, VPS, deploy, or remote server actions without explicit human scope and approval.
+
+---
+
 ## Deferred - not yet enabled
 
 The following are planned but not yet implemented:

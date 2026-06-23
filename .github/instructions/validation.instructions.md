@@ -62,6 +62,16 @@ notepad "$env:TEMP\dca-validate.log"
 
 Use PowerShell commands only. Do not use bash, Unix pipes, or Unix redirects.
 
+## Service startup rules
+
+- Do not start API or web for docs-only or scaffolding-only changes.
+- Start API or web only when smoke or browser proof requires it.
+- API: `npm.cmd run dev:api` from `C:\dcaosv1`
+- Web: `npm.cmd run dev:web` from `C:\dcaosv1`
+- If local smoke needs readiness confirmation, check API health: `http://localhost:4000/api/v1/health`
+- Stop `node.exe` only for Prisma EPERM recovery or before a fresh local smoke startup.
+- Never run smoke after a failed validate.
+
 ## Rules summary
 
 - Never run smoke after a failed validate.

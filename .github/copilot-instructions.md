@@ -14,6 +14,39 @@
 - Local API: `http://localhost:4000`
 - Local web: `http://localhost:5173`
 
+## Local navigation and services
+
+- Repo root is always `C:\dcaosv1`. Work from this directory only.
+- Use Windows PowerShell only. No bash, no Unix paths.
+- Do not search outside the repo unless explicitly instructed.
+- Do not wander through unrelated folders or applications.
+- Use the known repo map before any search:
+
+  | Key area | Path |
+  |---|---|
+  | Web app | `apps/web` |
+  | API app | `apps/api` |
+  | Prisma/data package | `packages/data` |
+  | Shared package | `packages/shared` |
+  | AI Delivery UI | `apps/web/src/pages/ai-delivery/AiDeliveryPage.tsx` |
+  | AI Delivery focused smoke | `scripts/smoke-ai-delivery-reviews-local.mjs` |
+
+- Broad repo search is allowed only when exact file paths are unknown and cannot be inferred from the repo map.
+- Start API only when validation, smoke, or browser proof requires it: `npm.cmd run dev:api`
+- Start web only when validation, smoke, or browser proof requires it: `npm.cmd run dev:web`
+- Do not start API or web for docs-only, scaffolding-only, or static review blocks.
+- API health check: `http://localhost:4000/api/v1/health`
+- Web URL: `http://localhost:5173`
+- Stop `node.exe` only for known Prisma EPERM recovery or before a fresh local smoke startup.
+
+### Secret safety
+
+- Do not search for passwords, tokens, API keys, secrets, or credentials.
+- Do not inspect `.env` files unless explicitly scoped by the human.
+- If a secret is needed, stop and ask the human to provide it as a temporary process environment variable.
+- Never print, persist, or commit secrets.
+- Never use production URLs, VPS, Caddy, containers, deployment commands, or remote server commands unless explicitly scoped and approved.
+
 ## Working rules
 
 - Make small, sealed diffs scoped to the approved block only.

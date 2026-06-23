@@ -260,6 +260,18 @@ npm.cmd run smoke:browser
 - No secrets or credentials in any output or file.
 - Stop on validation failure. Do not run smoke after a failed validate.
 
+### Local navigation and secret safety
+
+Full local navigation and service startup rules are in `.github/copilot-instructions.md` under "Local navigation and services".
+Validation and service startup rules are in `.github/instructions/validation.instructions.md` under "Service startup rules".
+
+Key points:
+- Work from `C:\dcaosv1` only. Do not wander outside the repo.
+- Use the repo map in `.github/copilot-instructions.md` before any search.
+- Do not start API or web unless smoke or browser proof requires it.
+- Secrets must never be searched, printed, persisted, or committed.
+- Stop and ask the human if a secret or credential is needed.
+
 ### Final report format
 
 Every block must end with:
