@@ -29,6 +29,7 @@ import type {
   AiDeliveryDeliverableResponse,
   AiDeliveryDeliverablesResponse,
   AiDeliveryDeliverableDownloadReferenceResponse,
+  AiDeliveryWordPressDraftResponse,
   AiDeliveryDeliverableReviewInputRequest,
   AiDeliveryDeliverableReviewResponse,
   AiDeliveryDeliverableReviewsResponse,
@@ -7335,6 +7336,109 @@ export async function getAiDeliveryDeliverableDownloadReference(
           expiresSeconds: downloadRef.expiresSeconds || null
         }
       : null
+  };
+}
+
+export async function prepareAiDeliveryDeliverableWordPressDraft(
+  authSession: AuthResolvedSessionContext,
+  aiDeliveryProjectId: string,
+  deliverableId: string
+): Promise<AiDeliveryWordPressDraftResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId || !aiDeliveryProjectId || !deliverableId) {
+    return null;
+  }
+
+  const project = await prisma.aiDeliveryProject.findFirst({
+    where: {
+      id: aiDeliveryProjectId,
+      tenantId,
+      isArchived: false
+    },
+    select: {
+      id: true
+    }
+  });
+  if (!project) {
+    return null;
+  }
+
+  const deliverable = await getAiDeliveryDeliverableDelegate(prisma).findFirst({
+    where: {
+      id: deliverableId,
+      tenantId,
+      aiDeliveryProjectId,
+      isArchived: false
+    },
+    select: {
+      id: true,
+      title: true,
+      description: true,
+      notes: true,
+      contentDraft: {
+        select: {
+          id: true,
+          title: true,
+          draftBody: true,
+          status: true,
+          approvedAt: true,
+          isArchived: true
+        }
+      }
+    }
+  }) as {
+    id: string;
+    title: string;
+    description?: string | null;
+    notes?: string | null;
+    contentDraft?: {
+      id: string;
+      title: string;
+      draftBody: string;
+      status: string;
+      approvedAt?: Date | null;
+      isArchived: boolean;
+    } | null;
+  } | null;
+  if (!deliverable) {
+    return null;
+  }
+
+  const linkedDraft = deliverable.contentDraft ?? null;
+  if (linkedDraft?.isArchived) {
+    throwAiDeliveryConflict("AI_DELIVERY_WORDPRESS_DRAFT_SOURCE_BLOCKED", "Linked content draft is archived.");
+  }
+
+  const useContentDraftSource = Boolean(linkedDraft && linkedDraft.approvedAt);
+  const sourceType: "DELIVERABLE" | "CONTENT_DRAFT" = useContentDraftSource ? "CONTENT_DRAFT" : "DELIVERABLE";
+  const sourceId = useContentDraftSource ? linkedDraft!.id : deliverable.id;
+  const title = useContentDraftSource
+    ? (linkedDraft!.title || "").trim()
+    : (deliverable.title || "").trim();
+  const body = useContentDraftSource
+    ? (linkedDraft!.draftBody || "").trim()
+    : ((deliverable.description ?? deliverable.notes ?? "") || "").trim();
+
+  if (!title) {
+    throwAiDeliveryConflict("AI_DELIVERY_WORDPRESS_DRAFT_TITLE_REQUIRED", "A title is required to prepare a WordPress draft.");
+  }
+  if (!body) {
+    throwAiDeliveryConflict("AI_DELIVERY_WORDPRESS_DRAFT_BODY_REQUIRED", "Content is required to prepare a WordPress draft.");
+  }
+
+  const excerptCandidate = (deliverable.description ?? "").trim();
+  return {
+    wordpressDraft: {
+      status: "PREPARED",
+      title,
+      body,
+      excerpt: excerptCandidate || null,
+      sourceType,
+      sourceId,
+      externalPostId: null,
+      externalEditUrl: null,
+      note: "WordPress API execution is deferred/not configured."
+    }
   };
 }
 export async function uploadAiDeliveryDeliverableDocument(

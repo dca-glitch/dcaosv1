@@ -658,6 +658,22 @@ export interface AiDeliveryDeliverableDownloadReferenceResponse {
   } | null;
 }
 
+export interface AiDeliveryWordPressDraftPrepared {
+  status: "PREPARED";
+  title: string;
+  body: string;
+  excerpt: string | null;
+  sourceType: "DELIVERABLE" | "CONTENT_DRAFT";
+  sourceId: string;
+  externalPostId: null;
+  externalEditUrl: null;
+  note: string;
+}
+
+export interface AiDeliveryWordPressDraftResponse {
+  wordpressDraft: AiDeliveryWordPressDraftPrepared;
+}
+
 export interface RecurringInvoiceLineItemSummary {
   id: string;
   description: string;
