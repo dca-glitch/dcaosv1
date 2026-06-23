@@ -1,3 +1,6 @@
+import type { AiProviderConfig } from "../config";
+import { executeOpenRouterTextSummary } from "../services/openrouter-text.service";
+
 export interface AiDeliveryWorkflowExecutionStartInput {
   projectName: string;
   targetMonth: string;
@@ -8,6 +11,7 @@ export interface AiDeliveryWorkflowExecutionStartInput {
 export interface AiDeliveryWorkflowExecutionAdapterInput {
   projectName: string;
   targetMonth: string;
+  briefStatus: string;
   adminNotes: string | null;
   existingResultPlaceholder: string | null;
   finishedAtIso: string;
@@ -22,7 +26,7 @@ export interface AiDeliveryWorkflowExecutionAdapterOutput {
 
 export interface AiDeliveryWorkflowExecutionAdapter {
   createStartedLogEntries(input: AiDeliveryWorkflowExecutionStartInput): string[];
-  execute(input: AiDeliveryWorkflowExecutionAdapterInput): AiDeliveryWorkflowExecutionAdapterOutput;
+  execute(input: AiDeliveryWorkflowExecutionAdapterInput): Promise<AiDeliveryWorkflowExecutionAdapterOutput>;
 }
 
 function shouldSimulateAiDeliveryWorkflowFailure(adminNotes: string | null): boolean {
@@ -42,7 +46,7 @@ export function createLocalAiDeliveryWorkflowExecutionAdapter(): AiDeliveryWorkf
         "Local deterministic execution only. No external AI services were called."
       ]);
     },
-    execute(input) {
+    async execute(input) {
       if (shouldSimulateAiDeliveryWorkflowFailure(input.adminNotes)) {
         const executionError = "Stub execution failed because admin notes include [stub-fail].";
         return {
@@ -64,6 +68,86 @@ export function createLocalAiDeliveryWorkflowExecutionAdapter(): AiDeliveryWorkf
         ]),
         executionError: null,
         resultPlaceholder,
+        finalStatus: "REVIEW"
+      };
+    }
+  };
+}
+
+function getOpenRouterFallbackReason(config: AiProviderConfig): string | null {
+  if (config.textGateway !== "openrouter") {
+    return null;
+  }
+
+  if (!config.hasOpenRouterApiKey) {
+    return "OpenRouter API key is not configured";
+  }
+
+  if (!config.openRouterTextPrimaryModel) {
+    return "OpenRouter primary text model is not configured";
+  }
+
+  return null;
+}
+
+export function createAiDeliveryWorkflowExecutionAdapter(config: AiProviderConfig): AiDeliveryWorkflowExecutionAdapter {
+  const localAdapter = createLocalAiDeliveryWorkflowExecutionAdapter();
+
+  if (config.textGateway !== "openrouter") {
+    return localAdapter;
+  }
+
+  const fallbackReason = getOpenRouterFallbackReason(config);
+  if (fallbackReason) {
+    return {
+      createStartedLogEntries(input) {
+        return [
+          ...localAdapter.createStartedLogEntries(input),
+          ...buildExecutionLogEntries(input.startedAtIso, [
+            `OpenRouter gateway requested but not fully configured (${fallbackReason}); falling back to local deterministic adapter.`
+          ])
+        ];
+      },
+      execute(input) {
+        return localAdapter.execute(input);
+      }
+    };
+  }
+
+  return {
+    createStartedLogEntries(input) {
+      return buildExecutionLogEntries(input.startedAtIso, [
+        "OpenRouter text execution started.",
+        `Project "${input.projectName}" for ${input.targetMonth}; brief status ${input.briefStatus}.`,
+        `Admin-only provider/model: OpenRouter / ${config.openRouterTextPrimaryModel}.`
+      ]);
+    },
+    async execute(input) {
+      const result = await executeOpenRouterTextSummary({
+        config,
+        projectName: input.projectName,
+        targetMonth: input.targetMonth,
+        briefStatus: input.briefStatus,
+        adminNotes: input.adminNotes
+      });
+
+      if (!result.ok) {
+        const executionError = result.errorMessage ?? "OpenRouter text execution failed.";
+        return {
+          finishedLogEntries: buildExecutionLogEntries(input.finishedAtIso, [`OpenRouter text execution failed: ${executionError}`]),
+          executionError,
+          resultPlaceholder: null,
+          finalStatus: "FAILED"
+        };
+      }
+
+      return {
+        finishedLogEntries: buildExecutionLogEntries(input.finishedAtIso, [
+          "OpenRouter text execution completed successfully.",
+          `Result placeholder prepared with admin-facing OpenRouter summary using model ${result.model}.`
+        ]),
+        executionError: null,
+        resultPlaceholder: result.content,
         finalStatus: "REVIEW"
       };
     }

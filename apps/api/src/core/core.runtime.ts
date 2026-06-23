@@ -75,7 +75,8 @@ import {
   putPrivateStorageObject
 } from "../storage/private-storage.service";
 import { recordAiDeliverySystemEvent } from "../services/system-events.service";
-import { localAiDeliveryWorkflowExecutionAdapter } from "./ai-delivery-workflow-execution.adapter";
+import { getAiProviderConfig } from "../config";
+import { createAiDeliveryWorkflowExecutionAdapter } from "./ai-delivery-workflow-execution.adapter";
 
 const prisma = createPrismaClient();
 
@@ -3450,7 +3451,7 @@ export async function executeAiDeliveryWorkflowRun(
   const tenantId = getActiveTenantId(authSession);
   if (!tenantId) return null;
 
-  return prisma.$transaction(async (tx: PrismaTx) => {
+  const startedExecution = await prisma.$transaction(async (tx: PrismaTx) => {
     const project = await tx.aiDeliveryProject.findFirst({
       where: { id: aiDeliveryProjectId, tenantId, isArchived: false },
       select: {
@@ -3482,8 +3483,9 @@ export async function executeAiDeliveryWorkflowRun(
       throw new Error("AI_DELIVERY_WORKFLOW_RUN_EXECUTION_REVIEW_PENDING");
     }
 
+    const executionAdapter = createAiDeliveryWorkflowExecutionAdapter(getAiProviderConfig());
     const startedAt = new Date();
-    const startedLog = appendAiDeliveryWorkflowExecutionLog(existing.executionLog, localAiDeliveryWorkflowExecutionAdapter.createStartedLogEntries({
+    const startedLog = appendAiDeliveryWorkflowExecutionLog(existing.executionLog, executionAdapter.createStartedLogEntries({
       projectName: project.name,
       targetMonth: String(project.targetMonth),
       briefStatus: project.brief.status,
@@ -3511,17 +3513,42 @@ export async function executeAiDeliveryWorkflowRun(
       tx
     );
 
-    const finishedAt = new Date();
-    const executionPlan = localAiDeliveryWorkflowExecutionAdapter.execute({
+    return {
+      executionAdapter,
       projectName: project.name,
       targetMonth: String(project.targetMonth),
+      briefStatus: project.brief.status,
       adminNotes: existing.adminNotes,
       existingResultPlaceholder: toNullableString(existing.resultPlaceholder),
-      finishedAtIso: finishedAt.toISOString()
-    });
+      startedLog
+    };
+  });
+
+  if (!startedExecution) return null;
+
+  const finishedAt = new Date();
+  const executionPlan = await startedExecution.executionAdapter.execute({
+    projectName: startedExecution.projectName,
+    targetMonth: startedExecution.targetMonth,
+    briefStatus: startedExecution.briefStatus,
+    adminNotes: startedExecution.adminNotes,
+    existingResultPlaceholder: startedExecution.existingResultPlaceholder,
+    finishedAtIso: finishedAt.toISOString()
+  });
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    const current = await getAiDeliveryWorkflowRunDelegate(tx).findFirst({
+      where: { id: workflowRunId, tenantId, aiDeliveryProjectId },
+      select: aiDeliveryWorkflowRunSelect
+    }) as any;
+    if (!current) return null;
+
+    if (normalizeAiDeliveryWorkflowRunStatus(current.status) !== "IN_PROGRESS") {
+      return { workflowRun: toAiDeliveryWorkflowRunSummary(current) };
+    }
 
     if (executionPlan.finalStatus === "FAILED") {
-      const failedLog = appendAiDeliveryWorkflowExecutionLog(startedLog, executionPlan.finishedLogEntries);
+      const failedLog = appendAiDeliveryWorkflowExecutionLog(startedExecution.startedLog, executionPlan.finishedLogEntries);
 
       const failed = await getAiDeliveryWorkflowRunDelegate(tx).update({
         where: { id: workflowRunId },
@@ -3547,7 +3574,7 @@ export async function executeAiDeliveryWorkflowRun(
       return { workflowRun: toAiDeliveryWorkflowRunSummary(failed) };
     }
 
-    const completedLog = appendAiDeliveryWorkflowExecutionLog(startedLog, executionPlan.finishedLogEntries);
+    const completedLog = appendAiDeliveryWorkflowExecutionLog(startedExecution.startedLog, executionPlan.finishedLogEntries);
 
     const reviewed = await getAiDeliveryWorkflowRunDelegate(tx).update({
       where: { id: workflowRunId },
