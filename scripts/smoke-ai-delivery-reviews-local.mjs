@@ -826,6 +826,24 @@ async function runAiDeliveryApiRegression(token, fixtureProjects) {
     pass("AI Delivery article image final upload persisted a private storage key, cleared finalImageUrl, and returned a secure download reference.");
   }
 
+  const articleImageDownloadReferenceData = requireOkResponse(
+    "AI Delivery article image download-reference",
+    await request(`/ai-delivery-projects/${project.id}/article-images/${createdArticleImage.id}/download-reference`, { token })
+  );
+  const articleImageDownloadReference = articleImageDownloadReferenceData?.downloadReference ?? null;
+  if (articleImageDownloadReference === null) {
+    note("AI Delivery article image download-reference returned null; storage may be unconfigured or no storage key is available.");
+  } else if (
+    typeof articleImageDownloadReference.storageKey !== "string" ||
+    articleImageDownloadReference.storageKey.length === 0 ||
+    ![null, "string"].includes(typeof articleImageDownloadReference.downloadUrl) ||
+    ![null, "number"].includes(typeof articleImageDownloadReference.expiresSeconds)
+  ) {
+    fail("AI Delivery article image download-reference did not return the expected response shape.");
+  } else {
+    pass("AI Delivery article image download-reference returned the expected response shape.");
+  }
+
   const finalReadyArticleImage = requireOkResponse(
     "AI Delivery article image final ready",
     await request(`/ai-delivery-projects/${project.id}/article-images/${createdArticleImage.id}/mark-final-ready`, {
@@ -1493,6 +1511,24 @@ async function runAiDeliveryApiRegression(token, fixtureProjects) {
     }
 
     pass("AI Delivery deliverable document upload persisted a private storage key, cleared exportUrl, and returned a secure download reference.");
+  }
+
+  const deliverableDownloadReferenceData = requireOkResponse(
+    "AI Delivery deliverable download-reference",
+    await request(`/ai-delivery-projects/${project.id}/deliverables/${createdDeliverable.id}/download-reference`, { token })
+  );
+  const deliverableDownloadReference = deliverableDownloadReferenceData?.downloadReference ?? null;
+  if (deliverableDownloadReference === null) {
+    note("AI Delivery deliverable download-reference returned null; storage may be unconfigured or no storage key is available.");
+  } else if (
+    typeof deliverableDownloadReference.storageKey !== "string" ||
+    deliverableDownloadReference.storageKey.length === 0 ||
+    ![null, "string"].includes(typeof deliverableDownloadReference.downloadUrl) ||
+    ![null, "number"].includes(typeof deliverableDownloadReference.expiresSeconds)
+  ) {
+    fail("AI Delivery deliverable download-reference did not return the expected response shape.");
+  } else {
+    pass("AI Delivery deliverable download-reference returned the expected response shape.");
   }
 
   const deferredReadyDeliverableResponse = await request(`/ai-delivery-projects/${project.id}/deliverables/${createdDeliverable.id}/mark-ready`, {
