@@ -650,6 +650,14 @@ export interface DocumentDownloadResponse {
   expiresSeconds: number;
 }
 
+export interface AiDeliveryDeliverableDownloadReferenceResponse {
+  downloadReference: {
+    storageKey: string;
+    downloadUrl: string | null;
+    expiresSeconds: number | null;
+  } | null;
+}
+
 export interface RecurringInvoiceLineItemSummary {
   id: string;
   description: string;

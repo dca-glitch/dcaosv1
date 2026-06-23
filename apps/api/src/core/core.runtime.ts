@@ -28,6 +28,7 @@ import type {
   AiDeliveryDeliverableUploadRequest,
   AiDeliveryDeliverableResponse,
   AiDeliveryDeliverablesResponse,
+  AiDeliveryDeliverableDownloadReferenceResponse,
   AiDeliveryDeliverableReviewInputRequest,
   AiDeliveryDeliverableReviewResponse,
   AiDeliveryDeliverableReviewsResponse,
@@ -7259,6 +7260,44 @@ export async function getAiDeliveryDeliverableDownload(
   }
 
   return getPrivateStorageDownloadReference(deliverable.storageKey);
+}
+
+export async function getAiDeliveryDeliverableDownloadReference(
+  authSession: AuthResolvedSessionContext,
+  aiDeliveryProjectId: string,
+  deliverableId: string
+): Promise<AiDeliveryDeliverableDownloadReferenceResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId || !aiDeliveryProjectId || !deliverableId) {
+    return null;
+  }
+
+  const deliverable = await getAiDeliveryDeliverableDelegate(prisma).findFirst({
+    where: {
+      id: deliverableId,
+      tenantId,
+      aiDeliveryProjectId,
+      isArchived: false
+    },
+    select: {
+      storageKey: true
+    }
+  }) as { storageKey?: string | null } | null;
+
+  if (!deliverable?.storageKey) {
+    return { downloadReference: null };
+  }
+
+  const downloadRef = getPrivateStorageDownloadReference(deliverable.storageKey);
+  return {
+    downloadReference: downloadRef
+      ? {
+          storageKey: deliverable.storageKey,
+          downloadUrl: downloadRef.downloadUrl || null,
+          expiresSeconds: downloadRef.expiresSeconds || null
+        }
+      : null
+  };
 }
 export async function uploadAiDeliveryDeliverableDocument(
   authSession: AuthResolvedSessionContext,
