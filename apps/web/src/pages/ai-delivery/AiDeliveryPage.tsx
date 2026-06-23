@@ -169,6 +169,18 @@ export type AiDeliveryDeliverableFormValues = {
   isArchived?: boolean;
 };
 
+export type AiDeliveryWordPressPreparedDraft = {
+  status: "PREPARED";
+  title: string;
+  body: string;
+  excerpt: string | null;
+  sourceType: "DELIVERABLE" | "CONTENT_DRAFT";
+  sourceId: string;
+  externalPostId: null;
+  externalEditUrl: null;
+  note: string;
+};
+
 export type AiDeliveryDeliverableReviewSummary = {
   id: string;
   tenantId?: string;
@@ -872,6 +884,9 @@ export function AiDeliveryPage({
   const [deliverableDownloadRefLoading, setDeliverableDownloadRefLoading] = useState(false);
   const [deliverableDownloadRefError, setDeliverableDownloadRefError] = useState<{ recordId: string; message: string } | null>(null);
   const [deliverableDownloadRef, setDeliverableDownloadRef] = useState<{ recordId: string; storageKey: string; downloadUrl: string | null; expiresSeconds: number | null } | null>(null);
+  const [deliverableWordPressDraftTargetId, setDeliverableWordPressDraftTargetId] = useState<string | null>(null);
+  const [deliverableWordPressDraftError, setDeliverableWordPressDraftError] = useState<{ recordId: string; message: string } | null>(null);
+  const [deliverableWordPressDraft, setDeliverableWordPressDraft] = useState<{ recordId: string; wordpressDraft: AiDeliveryWordPressPreparedDraft } | null>(null);
   const [articleImageDownloadRefLoading, setArticleImageDownloadRefLoading] = useState(false);
   const [articleImageDownloadRefError, setArticleImageDownloadRefError] = useState<{ recordId: string; message: string } | null>(null);
   const [articleImageDownloadRef, setArticleImageDownloadRef] = useState<{ recordId: string; storageKey: string; downloadUrl: string | null; expiresSeconds: number | null } | null>(null);
@@ -1004,6 +1019,10 @@ export function AiDeliveryPage({
   useEffect(() => {
     setDeliverableDownloadRefError(null);
     setDeliverableDownloadRef(null);
+  }, [activeDeliverableRecord?.id]);
+  useEffect(() => {
+    setDeliverableWordPressDraftError(null);
+    setDeliverableWordPressDraft(null);
   }, [activeDeliverableRecord?.id]);
   useEffect(() => {
     setArticleImageDownloadRefError(null);
@@ -1377,6 +1396,43 @@ export function AiDeliveryPage({
       });
     } finally {
       setArticleImageDownloadRefLoading(false);
+    }
+  }
+
+  async function prepareDeliverableWordPressDraft(projectId: string, deliverableId: string) {
+    if (!openDeliverablesProject || !deliverableId) return;
+    setDeliverableWordPressDraftTargetId(deliverableId);
+    setDeliverableWordPressDraftError(null);
+    setDeliverableWordPressDraft(null);
+    try {
+      const response = await fetch(`/api/v1/ai-delivery-projects/${projectId}/deliverables/${deliverableId}/prepare-wordpress-draft`, {
+        method: "POST"
+      });
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+      const data = await response.json();
+      const preparedDraft = data?.data?.wordpressDraft as AiDeliveryWordPressPreparedDraft | undefined;
+      if (
+        !preparedDraft
+        || preparedDraft.status !== "PREPARED"
+        || typeof preparedDraft.title !== "string"
+        || typeof preparedDraft.body !== "string"
+        || !["DELIVERABLE", "CONTENT_DRAFT"].includes(preparedDraft.sourceType)
+      ) {
+        throw new Error("Invalid prepared draft response.");
+      }
+      setDeliverableWordPressDraft({
+        recordId: deliverableId,
+        wordpressDraft: preparedDraft
+      });
+    } catch (error) {
+      setDeliverableWordPressDraftError({
+        recordId: deliverableId,
+        message: getErrorMessage(error, "Unable to prepare WordPress draft for this deliverable.")
+      });
+    } finally {
+      setDeliverableWordPressDraftTargetId(null);
     }
   }
 
@@ -2008,6 +2064,9 @@ export function AiDeliveryPage({
     setDeliverableDownloadRefLoading(false);
     setDeliverableDownloadRefError(null);
     setDeliverableDownloadRef(null);
+    setDeliverableWordPressDraftTargetId(null);
+    setDeliverableWordPressDraftError(null);
+    setDeliverableWordPressDraft(null);
   }
 
   async function openWorkflowRuns(projectId: string) {
@@ -4264,6 +4323,11 @@ export function AiDeliveryPage({
                         {!d.isArchived ? <button className="secondary-action" disabled={deliverablesSaving || d.status === "READY"} onClick={() => void markDeliverableReady(openDeliverablesProject.id, d.id)} type="button">Mark ready</button> : null}
                         {!d.isArchived ? <button className="secondary-action" disabled={deliverablesSaving || !["READY", "ACCEPTED", "DELIVERED"].includes(d.status)} onClick={() => void requestDeliverableRevision(openDeliverablesProject.id, d.id)} type="button">Request revision</button> : null}
                         {!d.isArchived ? <button className="secondary-action" disabled={deliverablesSaving || !["READY", "DELIVERED"].includes(d.status)} onClick={() => void acceptDeliverable(openDeliverablesProject.id, d.id)} type="button">Internal accept</button> : null}
+                        {!d.isArchived ? (
+                          <button className="secondary-action" disabled={deliverableWordPressDraftTargetId === d.id} onClick={() => void prepareDeliverableWordPressDraft(openDeliverablesProject.id, d.id)} type="button">
+                            {deliverableWordPressDraftTargetId === d.id ? "Fetching..." : "Prepare WordPress draft"}
+                          </button>
+                        ) : null}
                         <button className="secondary-action" disabled={deliverablesSaving || deliverableReviewsLoading} onClick={() => void openDeliverableReviews(openDeliverablesProject.id, d.id)} type="button">Reviews</button>
                         {!d.isArchived ? <button className="secondary-action" disabled={deliverablesSaving} onClick={() => void archiveDeliverable(openDeliverablesProject.id, d.id)} type="button">Archive</button> : null}
                         {d.isArchived ? <button className="secondary-action" disabled={deliverablesSaving} onClick={() => void restoreDeliverable(openDeliverablesProject.id, d.id)} type="button">Restore</button> : null}
@@ -4307,6 +4371,38 @@ export function AiDeliveryPage({
                         <dd>{d.notes || "No notes"}</dd>
                       </div>
                     </dl>
+                    {deliverableWordPressDraftError && deliverableWordPressDraftError.recordId === d.id ? (
+                      <div className="state-panel" role="alert" style={{ marginTop: "0.75rem", color: "var(--color-error)" }}>
+                        {deliverableWordPressDraftError.message}
+                      </div>
+                    ) : null}
+                    {deliverableWordPressDraft && deliverableWordPressDraft.recordId === d.id ? (
+                      <div className="state-panel" style={{ marginTop: "0.75rem" }}>
+                        <strong>WordPress prepared draft</strong>
+                        <dl className="brief-grid" style={{ marginTop: "0.5rem" }}>
+                          <div>
+                            <dt>Title</dt>
+                            <dd>{deliverableWordPressDraft.wordpressDraft.title}</dd>
+                          </div>
+                          <div>
+                            <dt>Source type</dt>
+                            <dd>{deliverableWordPressDraft.wordpressDraft.sourceType}</dd>
+                          </div>
+                          <div>
+                            <dt>Source ID</dt>
+                            <dd>{deliverableWordPressDraft.wordpressDraft.sourceId}</dd>
+                          </div>
+                          <div className="field-span-2">
+                            <dt>Body preview</dt>
+                            <dd>{formatPreview(deliverableWordPressDraft.wordpressDraft.body)}</dd>
+                          </div>
+                          <div className="field-span-2">
+                            <dt>Note</dt>
+                            <dd>{deliverableWordPressDraft.wordpressDraft.note}</dd>
+                          </div>
+                        </dl>
+                      </div>
+                    ) : null}
                     {!d.isArchived ? (
                       <div className="field-grid" style={{ marginTop: "0.75rem" }}>
                         <label className="field-span-2">
