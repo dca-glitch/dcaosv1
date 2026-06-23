@@ -46,6 +46,12 @@ Clients see only client-safe transformed outputs.
 
 Prompts, raw sources, provider details, and internal workflow logs remain admin-only.
 
-## 5. Explicit Exclusions
+## 5. Config Boundary
+
+The API may expose a safe planning configuration boundary for future AI provider settings. This boundary may name `local` and `openrouter` as supported text gateway values and may expose non-secret booleans such as whether an OpenRouter API key is configured.
+
+This boundary must not require provider secrets at startup, print provider secrets, call provider APIs, import provider SDKs, or change the local deterministic execution adapter behavior.
+
+## 6. Explicit Exclusions
 
 This decision record does not add code, SDK dependencies, environment variables, API keys, schema changes, migrations, runtime provider calls, Client Portal behavior, deployment, commits, or pushes.
