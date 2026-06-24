@@ -918,3 +918,107 @@ export interface AiDeliveryDeliverableReviewInputRequest {
   aiDeliveryProjectId?: string | null;
   workflowRunId?: string | null;
 }
+
+export interface MarketIntelligenceProjectSummary {
+  id: string;
+  title: string;
+  description: string | null;
+  status: string;
+  isArchived: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MarketIntelligenceProjectResponse {
+  project: MarketIntelligenceProjectSummary | null;
+}
+
+export interface MarketIntelligenceProjectsResponse {
+  projects: MarketIntelligenceProjectSummary[];
+}
+
+export interface MarketIntelligenceProjectInputRequest {
+  title?: string | null;
+  description?: string | null;
+  status?: string | null;
+}
+
+export interface MarketIntelligenceSourceSummary {
+  id: string;
+  projectId: string;
+  title: string;
+  sourceType: string | null;
+  sourceUrl: string | null;
+  sourceNotes: string | null;
+  isArchived: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MarketIntelligenceSourceResponse {
+  source: MarketIntelligenceSourceSummary | null;
+}
+
+export interface MarketIntelligenceSourcesResponse {
+  sources: MarketIntelligenceSourceSummary[];
+}
+
+export interface MarketIntelligenceSourceInputRequest {
+  projectId?: string | null;
+  title?: string | null;
+  sourceType?: string | null;
+  sourceUrl?: string | null;
+  sourceNotes?: string | null;
+}
+
+export interface MarketIntelligenceResearchRunSummary {
+  id: string;
+  projectId: string;
+  status: string;
+  resultSummary: string | null;
+  executedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MarketIntelligenceResearchRunResponse {
+  researchRun: MarketIntelligenceResearchRunSummary | null;
+}
+
+export interface MarketIntelligenceResearchRunsResponse {
+  researchRuns: MarketIntelligenceResearchRunSummary[];
+}
+
+export interface MarketIntelligenceResearchRunInputRequest {
+  projectId?: string | null;
+  status?: string | null;
+  resultSummary?: string | null;
+}
+
+export interface MarketIntelligenceInsightSummary {
+  id: string;
+  projectId: string;
+  title: string;
+  summary: string | null;
+  status: string;
+  reviewerNotes: string | null;
+  isArchived: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MarketIntelligenceInsightResponse {
+  insight: MarketIntelligenceInsightSummary | null;
+}
+
+export interface MarketIntelligenceInsightsResponse {
+  insights: MarketIntelligenceInsightSummary[];
+}
+
+export interface MarketIntelligenceInsightInputRequest {
+  projectId?: string | null;
+  title?: string | null;
+  summary?: string | null;
+  status?: string | null;
+  reviewerNotes?: string | null;
+}

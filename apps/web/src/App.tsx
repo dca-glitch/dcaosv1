@@ -50,6 +50,7 @@ import {
   type AiDeliveryProjectSummary,
   type AiDeliveryProjectFormValues
 } from "./pages/ai-delivery/AiDeliveryPage";
+import { AiMarketIntelligencePage } from "./pages/ai-market-intelligence/AiMarketIntelligencePage";
 import { TasksPage, type TaskFormValues, type TaskSummary } from "./pages/tasks/TasksPage";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "/api/v1";
@@ -372,6 +373,7 @@ type ViewKey =
   | "clients"
   | "projects"
   | "ai-delivery"
+  | "ai-market-intelligence"
   | "content-plan-review"
   | "content-draft-review"
   | "tasks"
@@ -426,6 +428,7 @@ const navigationItems: Array<{ view: ViewKey; label: string; section: string }> 
   { view: "clients", label: "Clients", section: "core" },
   { view: "projects", label: "Projects", section: "core" },
   { view: "ai-delivery", label: "AI Delivery", section: "core" },
+  { view: "ai-market-intelligence", label: "Market Intelligence", section: "core" },
   { view: "content-plan-review", label: "Content Plan Review", section: "client" },
   { view: "content-draft-review", label: "Content Draft Review", section: "client" },
   { view: "tasks", label: "Tasks", section: "core" },
@@ -3765,6 +3768,9 @@ export function App() {
           onFetchResearchSources={handleFetchAiDeliveryResearchSources}
           onSaveResearchSource={handleSaveAiDeliveryResearchSource}
         />
+      ) : null}
+      {!loading && activeView === "ai-market-intelligence" ? (
+        <AiMarketIntelligencePage />
       ) : null}
       {!loading && activeView === "content-plan-review" ? (
         <DeferredClientPortalView title="Monthly Content Plan Review" titleId="content-plan-review-title" />

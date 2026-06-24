@@ -69,7 +69,23 @@ import type {
   TasksResponse,
   VendorInputRequest,
   VendorResponse,
-  VendorsResponse
+  VendorsResponse,
+  MarketIntelligenceProjectSummary,
+  MarketIntelligenceProjectResponse,
+  MarketIntelligenceProjectsResponse,
+  MarketIntelligenceProjectInputRequest,
+  MarketIntelligenceSourceSummary,
+  MarketIntelligenceSourceResponse,
+  MarketIntelligenceSourcesResponse,
+  MarketIntelligenceSourceInputRequest,
+  MarketIntelligenceResearchRunSummary,
+  MarketIntelligenceResearchRunResponse,
+  MarketIntelligenceResearchRunsResponse,
+  MarketIntelligenceResearchRunInputRequest,
+  MarketIntelligenceInsightSummary,
+  MarketIntelligenceInsightResponse,
+  MarketIntelligenceInsightsResponse,
+  MarketIntelligenceInsightInputRequest
 } from "./core.types";
 import type { AuthResolvedSessionContext } from "../auth/types";
 import {
@@ -8126,4 +8142,613 @@ export async function saveAiDeliveryWordPressConfigForTenant(
       warnings: []
     }
   };
+}
+
+// Market Intelligence functions
+
+export async function listMarketIntelligenceProjects(
+  authSession: AuthResolvedSessionContext
+): Promise<MarketIntelligenceProjectsResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) {
+    return null;
+  }
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    const projects = await tx.marketIntelligenceProject.findMany({
+      where: {
+        tenantId,
+        isArchived: false
+      },
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        status: true,
+        isArchived: true,
+        createdAt: true,
+        updatedAt: true
+      },
+      orderBy: { createdAt: "desc" }
+    });
+
+    return {
+      projects: projects.map((p) => ({
+        ...p,
+        createdAt: p.createdAt.toISOString(),
+        updatedAt: p.updatedAt.toISOString()
+      }))
+    };
+  });
+}
+
+export async function createMarketIntelligenceProject(
+  authSession: AuthResolvedSessionContext,
+  input: MarketIntelligenceProjectInputRequest
+): Promise<MarketIntelligenceProjectResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) {
+    return null;
+  }
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    const project = await tx.marketIntelligenceProject.create({
+      data: {
+        tenantId,
+        title: input.title ?? "New Project",
+        description: toNullableString(input.description),
+        status: input.status ?? "ACTIVE"
+      },
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        status: true,
+        isArchived: true,
+        createdAt: true,
+        updatedAt: true
+      }
+    });
+
+    return {
+      project: {
+        ...project,
+        createdAt: project.createdAt.toISOString(),
+        updatedAt: project.updatedAt.toISOString()
+      }
+    };
+  });
+}
+
+export async function updateMarketIntelligenceProject(
+  authSession: AuthResolvedSessionContext,
+  projectId: string,
+  input: MarketIntelligenceProjectInputRequest
+): Promise<MarketIntelligenceProjectResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) {
+    return null;
+  }
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    const updateData: any = {};
+    if (input.title !== undefined && input.title !== null) {
+      updateData.title = input.title;
+    }
+    if (input.description !== undefined) {
+      updateData.description = input.description;
+    }
+    if (input.status !== undefined && input.status !== null) {
+      updateData.status = input.status;
+    }
+
+    const project = await tx.marketIntelligenceProject.update({
+      where: { id: projectId },
+      data: updateData,
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        status: true,
+        isArchived: true,
+        createdAt: true,
+        updatedAt: true
+      }
+    });
+
+    return {
+      project: {
+        ...project,
+        createdAt: project.createdAt.toISOString(),
+        updatedAt: project.updatedAt.toISOString()
+      }
+    };
+  });
+}
+
+export async function archiveMarketIntelligenceProject(
+  authSession: AuthResolvedSessionContext,
+  projectId: string
+): Promise<MarketIntelligenceProjectResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) {
+    return null;
+  }
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    const project = await tx.marketIntelligenceProject.update({
+      where: { id: projectId },
+      data: { isArchived: true },
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        status: true,
+        isArchived: true,
+        createdAt: true,
+        updatedAt: true
+      }
+    });
+
+    return {
+      project: {
+        ...project,
+        createdAt: project.createdAt.toISOString(),
+        updatedAt: project.updatedAt.toISOString()
+      }
+    };
+  });
+}
+
+export async function listMarketIntelligenceSources(
+  authSession: AuthResolvedSessionContext,
+  projectId: string
+): Promise<MarketIntelligenceSourcesResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) {
+    return null;
+  }
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    const sources = await tx.marketIntelligenceSource.findMany({
+      where: {
+        tenantId,
+        projectId,
+        isArchived: false
+      },
+      select: {
+        id: true,
+        projectId: true,
+        title: true,
+        sourceType: true,
+        sourceUrl: true,
+        sourceNotes: true,
+        isArchived: true,
+        createdAt: true,
+        updatedAt: true
+      },
+      orderBy: { createdAt: "desc" }
+    });
+
+    return {
+      sources: sources.map((s) => ({
+        ...s,
+        createdAt: s.createdAt.toISOString(),
+        updatedAt: s.updatedAt.toISOString()
+      }))
+    };
+  });
+}
+
+export async function createMarketIntelligenceSource(
+  authSession: AuthResolvedSessionContext,
+  input: MarketIntelligenceSourceInputRequest
+): Promise<MarketIntelligenceSourceResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) {
+    return null;
+  }
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    const source = await tx.marketIntelligenceSource.create({
+      data: {
+        tenantId,
+        projectId: input.projectId ?? "",
+        title: input.title ?? "New Source",
+        sourceType: toNullableString(input.sourceType),
+        sourceUrl: toNullableString(input.sourceUrl),
+        sourceNotes: toNullableString(input.sourceNotes)
+      },
+      select: {
+        id: true,
+        projectId: true,
+        title: true,
+        sourceType: true,
+        sourceUrl: true,
+        sourceNotes: true,
+        isArchived: true,
+        createdAt: true,
+        updatedAt: true
+      }
+    });
+
+    return {
+      source: {
+        ...source,
+        createdAt: source.createdAt.toISOString(),
+        updatedAt: source.updatedAt.toISOString()
+      }
+    };
+  });
+}
+
+export async function updateMarketIntelligenceSource(
+  authSession: AuthResolvedSessionContext,
+  sourceId: string,
+  input: MarketIntelligenceSourceInputRequest
+): Promise<MarketIntelligenceSourceResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) {
+    return null;
+  }
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    const updateData: any = {};
+    if (input.title !== undefined && input.title !== null) {
+      updateData.title = input.title;
+    }
+    if (input.sourceType !== undefined) {
+      updateData.sourceType = input.sourceType;
+    }
+    if (input.sourceUrl !== undefined) {
+      updateData.sourceUrl = input.sourceUrl;
+    }
+    if (input.sourceNotes !== undefined) {
+      updateData.sourceNotes = input.sourceNotes;
+    }
+
+    const source = await tx.marketIntelligenceSource.update({
+      where: { id: sourceId },
+      data: updateData,
+      select: {
+        id: true,
+        projectId: true,
+        title: true,
+        sourceType: true,
+        sourceUrl: true,
+        sourceNotes: true,
+        isArchived: true,
+        createdAt: true,
+        updatedAt: true
+      }
+    });
+
+    return {
+      source: {
+        ...source,
+        createdAt: source.createdAt.toISOString(),
+        updatedAt: source.updatedAt.toISOString()
+      }
+    };
+  });
+}
+
+export async function archiveMarketIntelligenceSource(
+  authSession: AuthResolvedSessionContext,
+  sourceId: string
+): Promise<MarketIntelligenceSourceResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) {
+    return null;
+  }
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    const source = await tx.marketIntelligenceSource.update({
+      where: { id: sourceId },
+      data: { isArchived: true },
+      select: {
+        id: true,
+        projectId: true,
+        title: true,
+        sourceType: true,
+        sourceUrl: true,
+        sourceNotes: true,
+        isArchived: true,
+        createdAt: true,
+        updatedAt: true
+      }
+    });
+
+    return {
+      source: {
+        ...source,
+        createdAt: source.createdAt.toISOString(),
+        updatedAt: source.updatedAt.toISOString()
+      }
+    };
+  });
+}
+
+export async function listMarketIntelligenceResearchRuns(
+  authSession: AuthResolvedSessionContext,
+  projectId: string
+): Promise<MarketIntelligenceResearchRunsResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) {
+    return null;
+  }
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    const runs = await tx.marketIntelligenceResearchRun.findMany({
+      where: {
+        tenantId,
+        projectId
+      },
+      select: {
+        id: true,
+        projectId: true,
+        status: true,
+        resultSummary: true,
+        executedAt: true,
+        createdAt: true,
+        updatedAt: true
+      },
+      orderBy: { createdAt: "desc" }
+    });
+
+    return {
+      researchRuns: runs.map((r) => ({
+        ...r,
+        executedAt: r.executedAt?.toISOString() ?? null,
+        createdAt: r.createdAt.toISOString(),
+        updatedAt: r.updatedAt.toISOString()
+      }))
+    };
+  });
+}
+
+export async function createMarketIntelligenceResearchRun(
+  authSession: AuthResolvedSessionContext,
+  input: MarketIntelligenceResearchRunInputRequest
+): Promise<MarketIntelligenceResearchRunResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) {
+    return null;
+  }
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    const run = await tx.marketIntelligenceResearchRun.create({
+      data: {
+        tenantId,
+        projectId: input.projectId ?? "",
+        status: input.status ?? "PENDING",
+        resultSummary: toNullableString(input.resultSummary)
+      },
+      select: {
+        id: true,
+        projectId: true,
+        status: true,
+        resultSummary: true,
+        executedAt: true,
+        createdAt: true,
+        updatedAt: true
+      }
+    });
+
+    return {
+      researchRun: {
+        ...run,
+        executedAt: run.executedAt?.toISOString() ?? null,
+        createdAt: run.createdAt.toISOString(),
+        updatedAt: run.updatedAt.toISOString()
+      }
+    };
+  });
+}
+
+export async function executeMarketIntelligenceResearchRun(
+  authSession: AuthResolvedSessionContext,
+  runId: string
+): Promise<MarketIntelligenceResearchRunResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) {
+    return null;
+  }
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    const run = await tx.marketIntelligenceResearchRun.update({
+      where: { id: runId },
+      data: {
+        status: "EXECUTED",
+        executedAt: new Date()
+      },
+      select: {
+        id: true,
+        projectId: true,
+        status: true,
+        resultSummary: true,
+        executedAt: true,
+        createdAt: true,
+        updatedAt: true
+      }
+    });
+
+    return {
+      researchRun: {
+        ...run,
+        executedAt: run.executedAt?.toISOString() ?? null,
+        createdAt: run.createdAt.toISOString(),
+        updatedAt: run.updatedAt.toISOString()
+      }
+    };
+  });
+}
+
+export async function listMarketIntelligenceInsights(
+  authSession: AuthResolvedSessionContext,
+  projectId: string
+): Promise<MarketIntelligenceInsightsResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) {
+    return null;
+  }
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    const insights = await tx.marketIntelligenceInsight.findMany({
+      where: {
+        tenantId,
+        projectId,
+        isArchived: false
+      },
+      select: {
+        id: true,
+        projectId: true,
+        title: true,
+        summary: true,
+        status: true,
+        reviewerNotes: true,
+        isArchived: true,
+        createdAt: true,
+        updatedAt: true
+      },
+      orderBy: { createdAt: "desc" }
+    });
+
+    return {
+      insights: insights.map((i) => ({
+        ...i,
+        createdAt: i.createdAt.toISOString(),
+        updatedAt: i.updatedAt.toISOString()
+      }))
+    };
+  });
+}
+
+export async function createMarketIntelligenceInsight(
+  authSession: AuthResolvedSessionContext,
+  input: MarketIntelligenceInsightInputRequest
+): Promise<MarketIntelligenceInsightResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) {
+    return null;
+  }
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    const insight = await tx.marketIntelligenceInsight.create({
+      data: {
+        tenantId,
+        projectId: input.projectId ?? "",
+        title: input.title ?? "New Insight",
+        summary: toNullableString(input.summary),
+        status: input.status ?? "DRAFT",
+        reviewerNotes: toNullableString(input.reviewerNotes)
+      },
+      select: {
+        id: true,
+        projectId: true,
+        title: true,
+        summary: true,
+        status: true,
+        reviewerNotes: true,
+        isArchived: true,
+        createdAt: true,
+        updatedAt: true
+      }
+    });
+
+    return {
+      insight: {
+        ...insight,
+        createdAt: insight.createdAt.toISOString(),
+        updatedAt: insight.updatedAt.toISOString()
+      }
+    };
+  });
+}
+
+export async function updateMarketIntelligenceInsight(
+  authSession: AuthResolvedSessionContext,
+  insightId: string,
+  input: MarketIntelligenceInsightInputRequest
+): Promise<MarketIntelligenceInsightResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) {
+    return null;
+  }
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    const updateData: any = {};
+    if (input.title !== undefined && input.title !== null) {
+      updateData.title = input.title;
+    }
+    if (input.summary !== undefined) {
+      updateData.summary = input.summary;
+    }
+    if (input.status !== undefined && input.status !== null) {
+      updateData.status = input.status;
+    }
+    if (input.reviewerNotes !== undefined) {
+      updateData.reviewerNotes = input.reviewerNotes;
+    }
+
+    const insight = await tx.marketIntelligenceInsight.update({
+      where: { id: insightId },
+      data: updateData,
+      select: {
+        id: true,
+        projectId: true,
+        title: true,
+        summary: true,
+        status: true,
+        reviewerNotes: true,
+        isArchived: true,
+        createdAt: true,
+        updatedAt: true
+      }
+    });
+
+    return {
+      insight: {
+        ...insight,
+        createdAt: insight.createdAt.toISOString(),
+        updatedAt: insight.updatedAt.toISOString()
+      }
+    };
+  });
+}
+
+export async function archiveMarketIntelligenceInsight(
+  authSession: AuthResolvedSessionContext,
+  insightId: string
+): Promise<MarketIntelligenceInsightResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) {
+    return null;
+  }
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    const insight = await tx.marketIntelligenceInsight.update({
+      where: { id: insightId },
+      data: { isArchived: true },
+      select: {
+        id: true,
+        projectId: true,
+        title: true,
+        summary: true,
+        status: true,
+        reviewerNotes: true,
+        isArchived: true,
+        createdAt: true,
+        updatedAt: true
+      }
+    });
+
+    return {
+      insight: {
+        ...insight,
+        createdAt: insight.createdAt.toISOString(),
+        updatedAt: insight.updatedAt.toISOString()
+      }
+    };
+  });
 }

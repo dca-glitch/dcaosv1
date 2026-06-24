@@ -5,3 +5,4 @@ export * from "./demoModule";
 export * from "./modules";
 export * from "./navigation";
 export * from "./permissions";
+export * from "./market-intelligence";

@@ -164,6 +164,10 @@ model Tenant {
   aiDeliveryResearchRequests AiDeliveryResearchRequest[]
   aiDeliveryResearchSources AiDeliveryResearchSource[]
   aiDeliveryResearchSummaries AiDeliveryResearchSummary[]
+  marketIntelligenceProjects MarketIntelligenceProject[]
+  marketIntelligenceSources MarketIntelligenceSource[]
+  marketIntelligenceResearchRuns MarketIntelligenceResearchRun[]
+  marketIntelligenceInsights MarketIntelligenceInsight[]
   clientUserAccesses   ClientUserAccess[]
   emailLogs            EmailLog[]            @relation("TenantEmailLogs")
 }
@@ -1195,4 +1199,83 @@ model ProjectDocument {
   @@index([tenantId, projectId])
   @@index([tenantId, isArchived])
   @@index([tenantId, documentDate])
+}
+
+model MarketIntelligenceProject {
+  id            String                         @id @default(uuid())
+  tenantId      String
+  title         String
+  description   String?
+  status        String                         @default("ACTIVE")
+  isArchived    Boolean                        @default(false)
+  createdAt     DateTime                       @default(now())
+  updatedAt     DateTime                       @updatedAt
+
+  tenant        Tenant                         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  sources       MarketIntelligenceSource[]
+  researchRuns  MarketIntelligenceResearchRun[]
+  insights      MarketIntelligenceInsight[]
+
+  @@index([tenantId])
+  @@index([tenantId, status])
+  @@index([tenantId, isArchived])
+}
+
+model MarketIntelligenceSource {
+  id            String                  @id @default(uuid())
+  tenantId      String
+  projectId     String
+  title         String
+  sourceType    String?
+  sourceUrl     String?
+  sourceNotes   String?
+  isArchived    Boolean                 @default(false)
+  createdAt     DateTime                @default(now())
+  updatedAt     DateTime                @updatedAt
+
+  tenant        Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  project       MarketIntelligenceProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([tenantId, projectId])
+  @@index([tenantId, isArchived])
+}
+
+model MarketIntelligenceResearchRun {
+  id            String                  @id @default(uuid())
+  tenantId      String
+  projectId     String
+  status        String                  @default("PENDING")
+  resultSummary String?
+  executedAt    DateTime?
+  createdAt     DateTime                @default(now())
+  updatedAt     DateTime                @updatedAt
+
+  tenant        Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  project       MarketIntelligenceProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([tenantId, projectId])
+  @@index([tenantId, status])
+}
+
+model MarketIntelligenceInsight {
+  id            String                  @id @default(uuid())
+  tenantId      String
+  projectId     String
+  title         String
+  summary       String?
+  status        String                  @default("DRAFT")
+  reviewerNotes String?
+  isArchived    Boolean                 @default(false)
+  createdAt     DateTime                @default(now())
+  updatedAt     DateTime                @updatedAt
+
+  tenant        Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  project       MarketIntelligenceProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([tenantId, projectId])
+  @@index([tenantId, status])
+  @@index([tenantId, isArchived])
 }

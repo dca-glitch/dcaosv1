@@ -127,7 +127,22 @@ import {
   updateRecurringInvoiceHandler,
   updateTaskHandler,
   uploadBillDocumentHandler,
-  voidCreditNoteHandler
+  voidCreditNoteHandler,
+  listMarketIntelligenceProjectsHandler,
+  createMarketIntelligenceProjectHandler,
+  updateMarketIntelligenceProjectHandler,
+  archiveMarketIntelligenceProjectHandler,
+  listMarketIntelligenceSourcesHandler,
+  createMarketIntelligenceSourceHandler,
+  updateMarketIntelligenceSourceHandler,
+  archiveMarketIntelligenceSourceHandler,
+  listMarketIntelligenceResearchRunsHandler,
+  createMarketIntelligenceResearchRunHandler,
+  executeMarketIntelligenceResearchRunHandler,
+  listMarketIntelligenceInsightsHandler,
+  createMarketIntelligenceInsightHandler,
+  updateMarketIntelligenceInsightHandler,
+  archiveMarketIntelligenceInsightHandler
 } from "../controllers/coreController";
 import { failure } from "../utils/responses";
 import { requireAuth } from "../middlewares/auth.middleware";
@@ -287,6 +302,26 @@ export function createCoreRouter() {
   router.get("/bills/:id/document/download", requireAuth, requireTenant, downloadBillDocumentHandler);
   router.post("/bills/:id/archive", requireAuth, requireTenant, requireRole("owner", "admin"), archiveBillHandler);
   router.post("/bills/:id/restore", requireAuth, requireTenant, requireRole("owner", "admin"), restoreBillHandler);
+
+  // Market Intelligence routes
+  router.get("/market-intelligence-projects", requireAuth, requireTenant, requireRole("owner", "admin"), listMarketIntelligenceProjectsHandler);
+  router.post("/market-intelligence-projects", requireAuth, requireTenant, requireRole("owner", "admin"), createMarketIntelligenceProjectHandler);
+  router.put("/market-intelligence-projects/:id", requireAuth, requireTenant, requireRole("owner", "admin"), updateMarketIntelligenceProjectHandler);
+  router.post("/market-intelligence-projects/:id/archive", requireAuth, requireTenant, requireRole("owner", "admin"), archiveMarketIntelligenceProjectHandler);
+
+  router.get("/market-intelligence-projects/:projectId/sources", requireAuth, requireTenant, requireRole("owner", "admin"), listMarketIntelligenceSourcesHandler);
+  router.post("/market-intelligence-projects/:projectId/sources", requireAuth, requireTenant, requireRole("owner", "admin"), createMarketIntelligenceSourceHandler);
+  router.put("/market-intelligence-projects/:projectId/sources/:sourceId", requireAuth, requireTenant, requireRole("owner", "admin"), updateMarketIntelligenceSourceHandler);
+  router.post("/market-intelligence-projects/:projectId/sources/:sourceId/archive", requireAuth, requireTenant, requireRole("owner", "admin"), archiveMarketIntelligenceSourceHandler);
+
+  router.get("/market-intelligence-projects/:projectId/research-runs", requireAuth, requireTenant, requireRole("owner", "admin"), listMarketIntelligenceResearchRunsHandler);
+  router.post("/market-intelligence-projects/:projectId/research-runs", requireAuth, requireTenant, requireRole("owner", "admin"), createMarketIntelligenceResearchRunHandler);
+  router.post("/market-intelligence-projects/:projectId/research-runs/:runId/execute", requireAuth, requireTenant, requireRole("owner", "admin"), executeMarketIntelligenceResearchRunHandler);
+
+  router.get("/market-intelligence-projects/:projectId/insights", requireAuth, requireTenant, requireRole("owner", "admin"), listMarketIntelligenceInsightsHandler);
+  router.post("/market-intelligence-projects/:projectId/insights", requireAuth, requireTenant, requireRole("owner", "admin"), createMarketIntelligenceInsightHandler);
+  router.put("/market-intelligence-projects/:projectId/insights/:insightId", requireAuth, requireTenant, requireRole("owner", "admin"), updateMarketIntelligenceInsightHandler);
+  router.post("/market-intelligence-projects/:projectId/insights/:insightId/archive", requireAuth, requireTenant, requireRole("owner", "admin"), archiveMarketIntelligenceInsightHandler);
 
   return router;
 }

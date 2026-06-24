@@ -158,7 +158,22 @@ import {
   restoreAiDeliveryDeliverable,
   listAiDeliveryDeliverableReviews,
   createAiDeliveryDeliverableReview,
-  updateAiDeliveryDeliverableReview
+  updateAiDeliveryDeliverableReview,
+  listMarketIntelligenceProjects,
+  createMarketIntelligenceProject,
+  updateMarketIntelligenceProject,
+  archiveMarketIntelligenceProject,
+  listMarketIntelligenceSources,
+  createMarketIntelligenceSource,
+  updateMarketIntelligenceSource,
+  archiveMarketIntelligenceSource,
+  listMarketIntelligenceResearchRuns,
+  createMarketIntelligenceResearchRun,
+  executeMarketIntelligenceResearchRun,
+  listMarketIntelligenceInsights,
+  createMarketIntelligenceInsight,
+  updateMarketIntelligenceInsight,
+  archiveMarketIntelligenceInsight
 } from "../core/core.runtime";
 import type {
   AiDeliveryArticleImageUploadRequest,
@@ -185,7 +200,11 @@ import type {
   AiDeliveryDeliverableInputRequest,
   AiDeliveryDeliverableReviewInputRequest,
   AiDeliveryDeliverableResponse,
-  AiDeliveryDeliverablesResponse
+  AiDeliveryDeliverablesResponse,
+  MarketIntelligenceProjectInputRequest,
+  MarketIntelligenceSourceInputRequest,
+  MarketIntelligenceResearchRunInputRequest,
+  MarketIntelligenceInsightInputRequest
 } from "../core/core.types";
 
 const TEXT_FIELD_MAX_LENGTH = 4000;
@@ -3891,3 +3910,462 @@ export const saveAiDeliveryWordPressConfigHandler: RequestHandler = async (req, 
     res.status(500).json(failure("WORDPRESS_CONFIG_RUNTIME_ERROR", "WordPress config save could not be completed."));
   }
 };
+
+// Market Intelligence handlers
+
+export const listMarketIntelligenceProjectsHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) {
+    res.status(401).json(unauthorizedFailure());
+    return;
+  }
+
+  try {
+    const response = await listMarketIntelligenceProjects(authSession);
+    if (!response) {
+      res.status(403).json(forbiddenFailure());
+      return;
+    }
+    res.status(200).json(success(response, { phase: "runtime", scope: "market-intelligence" }));
+  } catch {
+    res.status(500).json(failure("MARKET_INTELLIGENCE_RUNTIME_ERROR", "Could not list projects."));
+  }
+};
+
+export const createMarketIntelligenceProjectHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) {
+    res.status(401).json(unauthorizedFailure());
+    return;
+  }
+
+  const input = getMarketIntelligenceProjectInput(req.body);
+  if (!input) {
+    res.status(400).json(failure("MARKET_INTELLIGENCE_PROJECT_INVALID", "Project input is invalid."));
+    return;
+  }
+
+  try {
+    const response = await createMarketIntelligenceProject(authSession, input);
+    if (!response?.project) {
+      res.status(403).json(forbiddenFailure());
+      return;
+    }
+    res.status(201).json(success(response, { phase: "runtime", scope: "market-intelligence" }));
+  } catch {
+    res.status(500).json(failure("MARKET_INTELLIGENCE_RUNTIME_ERROR", "Project create could not be completed."));
+  }
+};
+
+export const updateMarketIntelligenceProjectHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) {
+    res.status(401).json(unauthorizedFailure());
+    return;
+  }
+
+  const projectId = typeof req.params.id === "string" ? req.params.id.trim() : "";
+  if (!projectId) {
+    res.status(400).json(failure("MARKET_INTELLIGENCE_PROJECT_INVALID", "Project ID is invalid."));
+    return;
+  }
+
+  const input = getMarketIntelligenceProjectInput(req.body);
+  if (!input) {
+    res.status(400).json(failure("MARKET_INTELLIGENCE_PROJECT_INVALID", "Project input is invalid."));
+    return;
+  }
+
+  try {
+    const response = await updateMarketIntelligenceProject(authSession, projectId, input);
+    if (!response?.project) {
+      res.status(403).json(forbiddenFailure());
+      return;
+    }
+    res.status(200).json(success(response, { phase: "runtime", scope: "market-intelligence" }));
+  } catch {
+    res.status(500).json(failure("MARKET_INTELLIGENCE_RUNTIME_ERROR", "Project update could not be completed."));
+  }
+};
+
+export const archiveMarketIntelligenceProjectHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) {
+    res.status(401).json(unauthorizedFailure());
+    return;
+  }
+
+  const projectId = typeof req.params.id === "string" ? req.params.id.trim() : "";
+  if (!projectId) {
+    res.status(400).json(failure("MARKET_INTELLIGENCE_PROJECT_INVALID", "Project ID is invalid."));
+    return;
+  }
+
+  try {
+    const response = await archiveMarketIntelligenceProject(authSession, projectId);
+    if (!response?.project) {
+      res.status(403).json(forbiddenFailure());
+      return;
+    }
+    res.status(200).json(success(response, { phase: "runtime", scope: "market-intelligence" }));
+  } catch {
+    res.status(500).json(failure("MARKET_INTELLIGENCE_RUNTIME_ERROR", "Project archive could not be completed."));
+  }
+};
+
+export const listMarketIntelligenceSourcesHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) {
+    res.status(401).json(unauthorizedFailure());
+    return;
+  }
+
+  const projectId = typeof req.params.projectId === "string" ? req.params.projectId.trim() : "";
+  if (!projectId) {
+    res.status(400).json(failure("MARKET_INTELLIGENCE_PROJECT_INVALID", "Project ID is invalid."));
+    return;
+  }
+
+  try {
+    const response = await listMarketIntelligenceSources(authSession, projectId);
+    if (!response) {
+      res.status(403).json(forbiddenFailure());
+      return;
+    }
+    res.status(200).json(success(response, { phase: "runtime", scope: "market-intelligence" }));
+  } catch {
+    res.status(500).json(failure("MARKET_INTELLIGENCE_RUNTIME_ERROR", "Could not list sources."));
+  }
+};
+
+export const createMarketIntelligenceSourceHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) {
+    res.status(401).json(unauthorizedFailure());
+    return;
+  }
+
+  const projectId = typeof req.params.projectId === "string" ? req.params.projectId.trim() : "";
+  if (!projectId) {
+    res.status(400).json(failure("MARKET_INTELLIGENCE_SOURCE_INVALID", "Project ID is invalid."));
+    return;
+  }
+
+  const input = getMarketIntelligenceSourceInput(req.body);
+  if (!input) {
+    res.status(400).json(failure("MARKET_INTELLIGENCE_SOURCE_INVALID", "Source input is invalid."));
+    return;
+  }
+
+  try {
+    const response = await createMarketIntelligenceSource(authSession, { ...input, projectId });
+    if (!response?.source) {
+      res.status(403).json(forbiddenFailure());
+      return;
+    }
+    res.status(201).json(success(response, { phase: "runtime", scope: "market-intelligence" }));
+  } catch {
+    res.status(500).json(failure("MARKET_INTELLIGENCE_RUNTIME_ERROR", "Source create could not be completed."));
+  }
+};
+
+export const updateMarketIntelligenceSourceHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) {
+    res.status(401).json(unauthorizedFailure());
+    return;
+  }
+
+  const sourceId = typeof req.params.sourceId === "string" ? req.params.sourceId.trim() : "";
+  if (!sourceId) {
+    res.status(400).json(failure("MARKET_INTELLIGENCE_SOURCE_INVALID", "Source ID is invalid."));
+    return;
+  }
+
+  const input = getMarketIntelligenceSourceInput(req.body);
+  if (!input) {
+    res.status(400).json(failure("MARKET_INTELLIGENCE_SOURCE_INVALID", "Source input is invalid."));
+    return;
+  }
+
+  try {
+    const response = await updateMarketIntelligenceSource(authSession, sourceId, input);
+    if (!response?.source) {
+      res.status(403).json(forbiddenFailure());
+      return;
+    }
+    res.status(200).json(success(response, { phase: "runtime", scope: "market-intelligence" }));
+  } catch {
+    res.status(500).json(failure("MARKET_INTELLIGENCE_RUNTIME_ERROR", "Source update could not be completed."));
+  }
+};
+
+export const archiveMarketIntelligenceSourceHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) {
+    res.status(401).json(unauthorizedFailure());
+    return;
+  }
+
+  const sourceId = typeof req.params.sourceId === "string" ? req.params.sourceId.trim() : "";
+  if (!sourceId) {
+    res.status(400).json(failure("MARKET_INTELLIGENCE_SOURCE_INVALID", "Source ID is invalid."));
+    return;
+  }
+
+  try {
+    const response = await archiveMarketIntelligenceSource(authSession, sourceId);
+    if (!response?.source) {
+      res.status(403).json(forbiddenFailure());
+      return;
+    }
+    res.status(200).json(success(response, { phase: "runtime", scope: "market-intelligence" }));
+  } catch {
+    res.status(500).json(failure("MARKET_INTELLIGENCE_RUNTIME_ERROR", "Source archive could not be completed."));
+  }
+};
+
+export const listMarketIntelligenceResearchRunsHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) {
+    res.status(401).json(unauthorizedFailure());
+    return;
+  }
+
+  const projectId = typeof req.params.projectId === "string" ? req.params.projectId.trim() : "";
+  if (!projectId) {
+    res.status(400).json(failure("MARKET_INTELLIGENCE_PROJECT_INVALID", "Project ID is invalid."));
+    return;
+  }
+
+  try {
+    const response = await listMarketIntelligenceResearchRuns(authSession, projectId);
+    if (!response) {
+      res.status(403).json(forbiddenFailure());
+      return;
+    }
+    res.status(200).json(success(response, { phase: "runtime", scope: "market-intelligence" }));
+  } catch {
+    res.status(500).json(failure("MARKET_INTELLIGENCE_RUNTIME_ERROR", "Could not list research runs."));
+  }
+};
+
+export const createMarketIntelligenceResearchRunHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) {
+    res.status(401).json(unauthorizedFailure());
+    return;
+  }
+
+  const input = getMarketIntelligenceResearchRunInput(req.body);
+  if (!input) {
+    res.status(400).json(failure("MARKET_INTELLIGENCE_RESEARCH_RUN_INVALID", "Research run input is invalid."));
+    return;
+  }
+
+  try {
+    const response = await createMarketIntelligenceResearchRun(authSession, input);
+    if (!response?.researchRun) {
+      res.status(403).json(forbiddenFailure());
+      return;
+    }
+    res.status(201).json(success(response, { phase: "runtime", scope: "market-intelligence" }));
+  } catch {
+    res.status(500).json(failure("MARKET_INTELLIGENCE_RUNTIME_ERROR", "Research run create could not be completed."));
+  }
+};
+
+export const executeMarketIntelligenceResearchRunHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) {
+    res.status(401).json(unauthorizedFailure());
+    return;
+  }
+
+  const runId = typeof req.params.runId === "string" ? req.params.runId.trim() : "";
+  if (!runId) {
+    res.status(400).json(failure("MARKET_INTELLIGENCE_RESEARCH_RUN_INVALID", "Run ID is invalid."));
+    return;
+  }
+
+  try {
+    const response = await executeMarketIntelligenceResearchRun(authSession, runId);
+    if (!response?.researchRun) {
+      res.status(403).json(forbiddenFailure());
+      return;
+    }
+    res.status(200).json(success(response, { phase: "runtime", scope: "market-intelligence" }));
+  } catch {
+    res.status(500).json(failure("MARKET_INTELLIGENCE_RUNTIME_ERROR", "Research run execute could not be completed."));
+  }
+};
+
+export const listMarketIntelligenceInsightsHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) {
+    res.status(401).json(unauthorizedFailure());
+    return;
+  }
+
+  const projectId = typeof req.params.projectId === "string" ? req.params.projectId.trim() : "";
+  if (!projectId) {
+    res.status(400).json(failure("MARKET_INTELLIGENCE_PROJECT_INVALID", "Project ID is invalid."));
+    return;
+  }
+
+  try {
+    const response = await listMarketIntelligenceInsights(authSession, projectId);
+    if (!response) {
+      res.status(403).json(forbiddenFailure());
+      return;
+    }
+    res.status(200).json(success(response, { phase: "runtime", scope: "market-intelligence" }));
+  } catch {
+    res.status(500).json(failure("MARKET_INTELLIGENCE_RUNTIME_ERROR", "Could not list insights."));
+  }
+};
+
+export const createMarketIntelligenceInsightHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) {
+    res.status(401).json(unauthorizedFailure());
+    return;
+  }
+
+  const projectId = typeof req.params.projectId === "string" ? req.params.projectId.trim() : "";
+  if (!projectId) {
+    res.status(400).json(failure("MARKET_INTELLIGENCE_INSIGHT_INVALID", "Project ID is invalid."));
+    return;
+  }
+
+  const input = getMarketIntelligenceInsightInput(req.body);
+  if (!input) {
+    res.status(400).json(failure("MARKET_INTELLIGENCE_INSIGHT_INVALID", "Insight input is invalid."));
+    return;
+  }
+
+  try {
+    const response = await createMarketIntelligenceInsight(authSession, { ...input, projectId });
+    if (!response?.insight) {
+      res.status(403).json(forbiddenFailure());
+      return;
+    }
+    res.status(201).json(success(response, { phase: "runtime", scope: "market-intelligence" }));
+  } catch {
+    res.status(500).json(failure("MARKET_INTELLIGENCE_RUNTIME_ERROR", "Insight create could not be completed."));
+  }
+};
+
+export const updateMarketIntelligenceInsightHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) {
+    res.status(401).json(unauthorizedFailure());
+    return;
+  }
+
+  const insightId = typeof req.params.insightId === "string" ? req.params.insightId.trim() : "";
+  if (!insightId) {
+    res.status(400).json(failure("MARKET_INTELLIGENCE_INSIGHT_INVALID", "Insight ID is invalid."));
+    return;
+  }
+
+  const input = getMarketIntelligenceInsightInput(req.body);
+  if (!input) {
+    res.status(400).json(failure("MARKET_INTELLIGENCE_INSIGHT_INVALID", "Insight input is invalid."));
+    return;
+  }
+
+  try {
+    const response = await updateMarketIntelligenceInsight(authSession, insightId, input);
+    if (!response?.insight) {
+      res.status(403).json(forbiddenFailure());
+      return;
+    }
+    res.status(200).json(success(response, { phase: "runtime", scope: "market-intelligence" }));
+  } catch {
+    res.status(500).json(failure("MARKET_INTELLIGENCE_RUNTIME_ERROR", "Insight update could not be completed."));
+  }
+};
+
+export const archiveMarketIntelligenceInsightHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) {
+    res.status(401).json(unauthorizedFailure());
+    return;
+  }
+
+  const insightId = typeof req.params.insightId === "string" ? req.params.insightId.trim() : "";
+  if (!insightId) {
+    res.status(400).json(failure("MARKET_INTELLIGENCE_INSIGHT_INVALID", "Insight ID is invalid."));
+    return;
+  }
+
+  try {
+    const response = await archiveMarketIntelligenceInsight(authSession, insightId);
+    if (!response?.insight) {
+      res.status(403).json(forbiddenFailure());
+      return;
+    }
+    res.status(200).json(success(response, { phase: "runtime", scope: "market-intelligence" }));
+  } catch {
+    res.status(500).json(failure("MARKET_INTELLIGENCE_RUNTIME_ERROR", "Insight archive could not be completed."));
+  }
+};
+
+// Market Intelligence input validators
+
+function getMarketIntelligenceProjectInput(value: unknown): MarketIntelligenceProjectInputRequest | null {
+  if (typeof value !== "object" || value === null) {
+    return null;
+  }
+
+  const obj = value as Record<string, unknown>;
+  return {
+    title: getOptionalString(obj.title),
+    description: getOptionalString(obj.description),
+    status: getOptionalString(obj.status)
+  };
+}
+
+function getMarketIntelligenceSourceInput(value: unknown): MarketIntelligenceSourceInputRequest | null {
+  if (typeof value !== "object" || value === null) {
+    return null;
+  }
+
+  const obj = value as Record<string, unknown>;
+  return {
+    projectId: getOptionalString(obj.projectId),
+    title: getOptionalString(obj.title),
+    sourceType: getOptionalString(obj.sourceType),
+    sourceUrl: getOptionalString(obj.sourceUrl),
+    sourceNotes: getOptionalString(obj.sourceNotes)
+  };
+}
+
+function getMarketIntelligenceResearchRunInput(value: unknown): MarketIntelligenceResearchRunInputRequest | null {
+  if (typeof value !== "object" || value === null) {
+    return null;
+  }
+
+  const obj = value as Record<string, unknown>;
+  return {
+    projectId: getOptionalString(obj.projectId),
+    status: getOptionalString(obj.status),
+    resultSummary: getOptionalString(obj.resultSummary)
+  };
+}
+
+function getMarketIntelligenceInsightInput(value: unknown): MarketIntelligenceInsightInputRequest | null {
+  if (typeof value !== "object" || value === null) {
+    return null;
+  }
+
+  const obj = value as Record<string, unknown>;
+  return {
+    projectId: getOptionalString(obj.projectId),
+    title: getOptionalString(obj.title),
+    summary: getOptionalString(obj.summary),
+    status: getOptionalString(obj.status),
+    reviewerNotes: getOptionalString(obj.reviewerNotes)
+  };
+}
