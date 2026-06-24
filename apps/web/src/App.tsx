@@ -3139,6 +3139,10 @@ export function App() {
     return runInvoiceAction(`/invoices/${invoiceId}/cancel`, "Invoice cancelled.");
   }
 
+  async function handleMarkInvoiceUncollectible(invoiceId: string): Promise<boolean> {
+    return runInvoiceAction(`/invoices/${invoiceId}/mark-uncollectible`, "Invoice marked uncollectible.");
+  }
+
   async function handleRegisterInvoicePayment(
     invoiceId: string,
     values: InvoicePaymentFormValues
@@ -3695,6 +3699,7 @@ export function App() {
           onArchiveInvoice={handleArchiveInvoice}
           onArchiveRecurringInvoice={handleArchiveRecurringInvoice}
           onCancelInvoice={handleCancelInvoice}
+          onMarkInvoiceUncollectible={handleMarkInvoiceUncollectible}
           onGenerateDueRecurringInvoice={handleGenerateDueRecurringInvoice}
           onMarkInvoiceSent={handleMarkInvoiceSent}
           onRegisterInvoicePayment={handleRegisterInvoicePayment}

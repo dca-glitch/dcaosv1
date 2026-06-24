@@ -157,6 +157,7 @@ type InvoicesPageProps = {
   onArchiveInvoice: (invoiceId: string) => Promise<boolean>;
   onMarkInvoiceSent: (invoiceId: string) => Promise<boolean>;
   onCancelInvoice: (invoiceId: string) => Promise<boolean>;
+  onMarkInvoiceUncollectible: (invoiceId: string) => Promise<boolean>;
   onRegisterInvoicePayment: (invoiceId: string, values: InvoicePaymentFormValues) => Promise<boolean>;
   onSaveRecurringInvoice: (recurringInvoiceId: string | null, values: RecurringInvoiceFormValues) => Promise<boolean>;
   onArchiveRecurringInvoice: (recurringInvoiceId: string) => Promise<boolean>;
@@ -349,6 +350,7 @@ export function InvoicesPage({
   onArchiveInvoice,
   onMarkInvoiceSent,
   onCancelInvoice,
+  onMarkInvoiceUncollectible,
   onRegisterInvoicePayment,
   onSaveRecurringInvoice,
   onArchiveRecurringInvoice,
@@ -702,6 +704,7 @@ export function InvoicesPage({
           onCancelInvoice={onCancelInvoice}
           onEditInvoice={openEditInvoiceModal}
           onMarkInvoiceSent={onMarkInvoiceSent}
+          onMarkInvoiceUncollectible={onMarkInvoiceUncollectible}
           onRegisterInvoicePayment={openPaymentModal}
         />
       ) : (
@@ -1138,6 +1141,7 @@ type InvoiceCardsProps = {
   onArchiveInvoice: (invoiceId: string) => Promise<boolean>;
   onMarkInvoiceSent: (invoiceId: string) => Promise<boolean>;
   onCancelInvoice: (invoiceId: string) => Promise<boolean>;
+  onMarkInvoiceUncollectible: (invoiceId: string) => Promise<boolean>;
   onRegisterInvoicePayment: (invoice: InvoiceSummary) => void;
 };
 
@@ -1145,7 +1149,11 @@ function canRegisterPayment(invoice: InvoiceSummary): boolean {
   return !invoice.payment && !invoice.isArchived && !["PAID", "VOIDED", "CANCELLED", "UNCOLLECTIBLE"].includes(invoice.status);
 }
 
-function InvoiceCards({ invoices, canEdit, onEditInvoice, onArchiveInvoice, onMarkInvoiceSent, onCancelInvoice, onRegisterInvoicePayment }: InvoiceCardsProps) {
+function canMarkUncollectible(invoice: InvoiceSummary): boolean {
+  return invoice.status === "ISSUED" && !invoice.isArchived;
+}
+
+function InvoiceCards({ invoices, canEdit, onEditInvoice, onArchiveInvoice, onMarkInvoiceSent, onCancelInvoice, onMarkInvoiceUncollectible, onRegisterInvoicePayment }: InvoiceCardsProps) {
   if (invoices.length === 0) {
     return <EmptyState message="No invoices have been created yet." title="No invoices" />;
   }
@@ -1164,6 +1172,7 @@ function InvoiceCards({ invoices, canEdit, onEditInvoice, onArchiveInvoice, onMa
               {canEdit ? <button className="secondary-action" onClick={() => void onMarkInvoiceSent(invoice.id)} type="button">Mark sent</button> : null}
               {canEdit && canRegisterPayment(invoice) ? <button className="secondary-action" onClick={() => onRegisterInvoicePayment(invoice)} type="button">Register payment</button> : null}
               {canEdit ? <button className="secondary-action" onClick={() => void onCancelInvoice(invoice.id)} type="button">Cancel</button> : null}
+              {canEdit && canMarkUncollectible(invoice) ? <button className="secondary-action" onClick={() => void onMarkInvoiceUncollectible(invoice.id)} type="button">Mark uncollectible</button> : null}
               {canEdit && !invoice.isArchived ? <button className="secondary-action" onClick={() => void onArchiveInvoice(invoice.id)} type="button">Archive</button> : null}
             </div>
           </div>
