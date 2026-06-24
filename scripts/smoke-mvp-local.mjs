@@ -435,6 +435,97 @@ async function runLocalFinanceIntegrityChecks(adminToken) {
   }
 }
 
+async function runLocalInvoiceItemChecks(adminToken) {
+  const itemName = `[SMOKE][SVC] ${makeSmokeId("item")}`;
+  const updatedName = `[SMOKE][SVC] ${makeSmokeId("item-updated")}`;
+  let createdItemId = null;
+
+  try {
+    const createResponse = await request("/invoice-items", {
+      method: "POST",
+      token: adminToken,
+      body: {
+        name: itemName,
+        description: "Smoke services library item",
+        unitPriceCents: 5000
+      }
+    });
+    const created = requireOkData("services library create", createResponse, 201).invoiceItem;
+    createdItemId = created.id;
+    record(
+      "services library create fields",
+      created.name === itemName && created.unitPriceCents === 5000 && created.isArchived === false,
+      `name=${created.name} price=${created.unitPriceCents} archived=${created.isArchived}`
+    );
+
+    const listResponse = await request("/invoice-items", { token: adminToken });
+    const listData = requireOkData("services library list", listResponse, 200);
+    const foundInList = listData.invoiceItems.some((i) => i.id === createdItemId);
+    record("services library list contains created item", foundInList, createdItemId);
+
+    const updateResponse = await request(`/invoice-items/${createdItemId}`, {
+      method: "PUT",
+      token: adminToken,
+      body: {
+        name: updatedName,
+        description: "Smoke services library item updated",
+        unitPriceCents: 7500
+      }
+    });
+    const updated = requireOkData("services library update", updateResponse, 200).invoiceItem;
+    record(
+      "services library update fields",
+      updated.name === updatedName && updated.unitPriceCents === 7500,
+      `name=${updated.name} price=${updated.unitPriceCents}`
+    );
+
+    const archiveResponse = await request(`/invoice-items/${createdItemId}/archive`, {
+      method: "POST",
+      token: adminToken
+    });
+    const archived = requireOkData("services library archive", archiveResponse, 200).invoiceItem;
+    record("services library archive state", archived.isArchived === true, `archived=${archived.isArchived}`);
+
+    const archivedListResponse = await request("/invoice-items?archived=true", { token: adminToken });
+    const archivedListData = requireOkData("services library archived list", archivedListResponse, 200);
+    const foundInArchived = archivedListData.invoiceItems.some((i) => i.id === createdItemId);
+    record("services library archived list contains item", foundInArchived, createdItemId);
+
+    const restoreResponse = await request(`/invoice-items/${createdItemId}/restore`, {
+      method: "POST",
+      token: adminToken
+    });
+    const restored = requireOkData("services library restore", restoreResponse, 200).invoiceItem;
+    record("services library restore state", restored.isArchived === false, `archived=${restored.isArchived}`);
+
+    const activeListAfterRestore = await request("/invoice-items", { token: adminToken });
+    const activeListData = requireOkData("services library active list after restore", activeListAfterRestore, 200);
+    const foundActive = activeListData.invoiceItems.some((i) => i.id === createdItemId);
+    record("services library active list contains restored item", foundActive, createdItemId);
+
+    const archiveCleanup = await request(`/invoice-items/${createdItemId}/archive`, {
+      method: "POST",
+      token: adminToken
+    });
+    requireOkData("services library cleanup archive", archiveCleanup, 200);
+    createdItemId = null;
+  } catch (error) {
+    record(
+      "services library smoke runtime",
+      false,
+      error instanceof Error ? error.message : "unknown error"
+    );
+    throw error;
+  } finally {
+    if (createdItemId) {
+      await request(`/invoice-items/${createdItemId}/archive`, {
+        method: "POST",
+        token: adminToken
+      }).catch(() => undefined);
+    }
+  }
+}
+
 async function main() {
   if (!requireApiBaseUrl(apiBaseUrl)) {
     process.exitCode = 1;
@@ -525,8 +616,10 @@ async function main() {
 
   if (smokeMode === "local") {
     await runLocalFinanceIntegrityChecks(adminToken);
+    await runLocalInvoiceItemChecks(adminToken);
   } else {
     record("finance integrity checks", true, "skipped outside local mode");
+    record("services library checks", true, "skipped outside local mode");
   }
 
   const logout = await request("/auth/logout", { method: "POST", token: adminToken });
