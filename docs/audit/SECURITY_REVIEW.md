@@ -24,8 +24,8 @@ This review uses OWASP ASVS 5.0.0, OWASP Top 10 2025 awareness, OWASP Authentica
 
 - Implemented controls: controlled MVP login, generic login failure, scrypt password verification, no password trimming before verification, failed login counters and lockout fields.
 - Evidence in repo: `apps/api/src/auth/login.runtime.ts`, `apps/api/src/auth/password.service.ts`, `packages/data/prisma/schema.prisma`.
-- Gaps: no password reset, invite flow, OAuth, MFA, or full rate limiting.
-- Recommended solution: add recovery/onboarding design before client access; add app/proxy rate limit.
+- Gaps: no password reset, invite flow, OAuth, or MFA; proxy/shared-store rate limiting remains open.
+- Recommended solution: app-level MVP rate limiting is in place; add recovery/onboarding design and decide on proxy/shared-store limiting before client access.
 - Staging requirement: verify lockout behavior and generic failures.
 - Client-access requirement: approve password reset/admin recovery and onboarding flow.
 
@@ -51,8 +51,8 @@ This review uses OWASP ASVS 5.0.0, OWASP Top 10 2025 awareness, OWASP Authentica
 
 - Implemented controls: current tenant routes derive tenant from active session membership; tenant switch validates membership belongs to authenticated user.
 - Evidence in repo: `apps/api/src/tenants/tenant.runtime.ts`, `apps/api/src/auth/session-context.runtime.ts`.
-- Gaps: cross-tenant negative tests are not automated.
-- Recommended solution: execute `TENANT_ISOLATION_TEST_PLAN.md`.
+- Gaps: full cross-tenant negative proof still needs a real second tenant fixture; current Finance smoke only proves tenantId spoof handling when the local seed is single-tenant.
+- Recommended solution: execute `TENANT_ISOLATION_TEST_PLAN.md` with a true two-tenant fixture.
 - Staging requirement: create multi-tenant fixture and verify negative cases.
 - Client-access requirement: auditor sign-off on tenant isolation.
 
@@ -60,8 +60,8 @@ This review uses OWASP ASVS 5.0.0, OWASP Top 10 2025 awareness, OWASP Authentica
 
 - Implemented controls: standardized responses, generic auth errors, protected current tenant/module routes.
 - Evidence in repo: `apps/api/src/utils/responses.ts`, controllers and routes.
-- Gaps: no request rate limit, body size policy beyond Express defaults, CORS allowlist, or security headers.
-- Recommended solution: add proxy/app limits, CORS allowlist if cross-origin, and API negative tests.
+- Gaps: CORS allowlist and body-size policy review remain open; security headers/CSP and in-memory MVP rate limiting are now present.
+- Recommended solution: add a CORS allowlist if cross-origin becomes necessary, and decide whether proxy/shared-store limiting is needed before client access.
 - Staging requirement: verify unauthorized vs forbidden behavior.
 - Client-access requirement: complete API security tests.
 
@@ -69,8 +69,8 @@ This review uses OWASP ASVS 5.0.0, OWASP Top 10 2025 awareness, OWASP Authentica
 
 - Implemented controls: frontend hides/disables admin module actions for non-admin contexts, clears session on unauthorized responses, avoids printing secrets.
 - Evidence in repo: `apps/web/src/App.tsx`.
-- Gaps: local browser QA passed in prior gates, but staging/client browser QA evidence is not attached to this audit pack; token in `sessionStorage`; CSP not verified.
-- Recommended solution: manual browser QA, CSP/security headers, token transport review.
+- Gaps: local browser QA passed in prior gates, but staging/client browser QA evidence is not attached to this audit pack; token in `sessionStorage`; CSP is now present in the API baseline.
+- Recommended solution: manual browser QA and token transport review before client access.
 - Staging requirement: verify UI on HTTPS staging.
 - Client-access requirement: browser QA screenshots and session storage decision.
 
@@ -132,8 +132,8 @@ This review uses OWASP ASVS 5.0.0, OWASP Top 10 2025 awareness, OWASP Authentica
 
 - Implemented controls: backup is required in deployment plan.
 - Evidence in repo: `docs/deployment/VPS_STAGING_DEPLOYMENT_PLAN.md`.
-- Gaps: no backup/restore drill evidence.
-- Recommended solution: run restore drill before production/client access.
+- Gaps: no backup/restore drill evidence yet, but backup/restore and staging migration runbooks now exist.
+- Recommended solution: run the restore drill before production/client access.
 - Staging requirement: snapshot before migration.
 - Client-access requirement: backup/restore tested and documented.
 
@@ -153,25 +153,30 @@ This review uses OWASP ASVS 5.0.0, OWASP Top 10 2025 awareness, OWASP Authentica
 - No real browser QA sign-off.
 - No password reset, invite flow, OAuth, billing, or marketplace.
 - No VPS Docker Compose run evidence.
-- No security headers/CSP verification.
-- No broader automated tenant isolation negative tests (Market Intelligence isolation proven; generalized pattern not applied to all modules).
-- No backup/restore test.
+- No broader automated tenant isolation negative tests (Market Intelligence isolation proven; Finance smoke proves spoof handling and optionally runs cross-tenant checks, but full two-tenant proof still needs a fixture).
+- No backup/restore drill evidence.
 - No monitoring/incident runbook.
 - No session storage decision (token in sessionStorage currently; HttpOnly cookie security decision pending).
 - No CORS allowlist verification (currently not restricted; decision pending if cross-origin needed).
-- No app-level or proxy-level rate limiting.
+- No proxy/shared-store rate limiting.
 
 ## 18. Recently Fixed Gaps (current branch)
 
 - ✓ Market Intelligence tenant/project ownership hardening completed (cross-project spoof proof in smoke)
 - ✓ Feature branch CI validation added (immediate feedback on feature branch commits)
 - ✓ GitHub Actions runtime warnings removed (actions/checkout@v7, actions/setup-node@v6)
+- ✓ API security headers/CSP baseline added
+- ✓ API in-memory MVP rate limiting added
+- ✓ Market Intelligence auth token storage aligned to sessionStorage
+- ✓ Backup/restore runbook added
+- ✓ Staging migration runbook added
+- ✓ Finance smoke now proves tenantId spoof handling and conditionally wires optional second-tenant cross-tenant checks
 - ✓ Copilot and DCA mode operating instructions hardened for safety/security
 - ✓ Docs/instructions consistency cleanup completed
 
 ## 19. Recommended Remediation Roadmap
 
-- Must fix before VPS staging: staging env contract, VPS Docker Compose approval, staging DB safety, migration runbook, HTTPS/shared Caddy plan, and staging smoke execution plan.
-- Must fix before client access: broader tenant isolation negative tests (generalize Market Intelligence pattern), external auth/session review, staging/client browser QA evidence, backup/restore test, admin audit logging, security headers/CSP, session storage decision, CORS allowlist definition, rate limit policy.
+- Must fix before VPS staging: staging env contract, VPS Docker Compose approval, staging DB safety, migration runbook execution, HTTPS/shared Caddy plan, and staging smoke execution plan.
+- Must fix before client access: broader tenant isolation negative tests (generalize Market Intelligence pattern), external auth/session review, staging/client browser QA evidence, backup/restore drill/test, admin audit logging, session storage decision, CORS allowlist definition, and proxy/shared-store rate limiting decision.
 - Should fix before beta: onboarding, password reset/admin recovery, monitoring, incident response, privacy retention.
 - Future hardening: SSO/OAuth if required, MFA, deeper module isolation, automated security tests.

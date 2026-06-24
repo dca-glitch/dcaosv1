@@ -65,6 +65,10 @@ The local smoke command intentionally refuses non-local API hosts. Add a separat
 - `npm.cmd run -w @dca-os-v1/web build` creates the frontend build output.
 - `npm.cmd run -w @dca-os-v1/api build` currently type-checks the API; it does not emit production JavaScript.
 - `npm.cmd run -w @dca-os-v1/api dev` starts the API through `tsx` and is suitable for local validation only.
+- API security headers/CSP baseline and in-memory MVP rate limiting are now present.
+- Market Intelligence auth token reads now use sessionStorage consistently.
+- Backup/restore and staging migration runbooks are documented.
+- Finance smoke proves tenantId spoof handling locally and skips full cross-tenant proof without a real second tenant.
 - A production start strategy is still required before VPS deployment.
 - Same-origin reverse proxy routing is preferred so the frontend can use `/api/v1`.
 - No CORS environment contract is implemented yet.

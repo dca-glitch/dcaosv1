@@ -11,8 +11,12 @@ DCA OS v1 has a clean reusable foundation, dependency lockfile, real validation,
 - **Market Intelligence admin foundation**: Active/local/admin-only (Research, Insight — bounded analysis, tenant/project-isolated, smoke validated)
 - **Feature branch CI validation**: Active (pushes to feature/* branches now validate; feature-branch feedback immediate)
 - **GitHub Actions runtime**: Updated to latest versions; Node 20 deprecation warnings removed
+- **API security headers + rate limiting**: Active (headers/CSP baseline and in-memory MVP rate limiting are in place)
+- **Frontend auth token storage**: Aligned to sessionStorage for Market Intelligence
 - **R2/private storage foundation**: Exists (docs/deployment planned; no implementation)
 - **Audit/Activity foundation**: Exists (schema, local smoke; admin logging incomplete)
+- **Backup/restore + staging migration runbooks**: Added
+- **Finance tenant isolation smoke**: Local spoof handling is proven; full cross-tenant proof still needs a real second tenant fixture
 - **Client Portal**: Remains deferred
 - **Production deployment**: Remains frozen unless explicitly approved by owner
 
