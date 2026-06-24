@@ -1801,6 +1801,23 @@ async function runAiDeliveryBrowserRegression(token, mainProject) {
     }
     pass("Deliverables panel prepared WordPress draft action rendered expected inline draft details without published wording.");
 
+    const publishWordPressButtons = page.getByRole("button", { name: /Test WordPress publish/ });
+    const publishButtonCount = await publishWordPressButtons.count();
+    if (publishButtonCount === 0) {
+      fail("Deliverables panel did not render a 'Test WordPress publish' button for the smoke-owned project.");
+    }
+    await publishWordPressButtons.first().click();
+    const publishResultPanel = page.locator(".state-panel", { has: page.locator("strong", { hasText: "WordPress publish test result" }) }).first();
+    await publishResultPanel.waitFor({ state: "visible", timeout: 10000 });
+    const publishResultText = ((await publishResultPanel.textContent()) ?? "").toLowerCase();
+    if (!publishResultText.includes("provider_disabled") && !publishResultText.includes("provider disabled")) {
+      fail("WordPress publish test result did not show provider_disabled status.");
+    }
+    if (publishResultText.includes("external post") && !publishResultText.includes("none")) {
+      fail("WordPress publish test result incorrectly showed external post creation.");
+    }
+    pass("Deliverables panel publish WordPress action rendered expected provider-disabled test result without external post creation.");
+
     const reviewsButtons = page.getByRole("button", { name: "Reviews" });
     const reviewsButtonCount = await reviewsButtons.count();
     if (reviewsButtonCount === 0) {

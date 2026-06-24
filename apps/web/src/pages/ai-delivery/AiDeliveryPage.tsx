@@ -181,6 +181,16 @@ export type AiDeliveryWordPressPreparedDraft = {
   note: string;
 };
 
+export type AiDeliveryWordPressPublishResult = {
+  ok: boolean;
+  wordpressPostId: string | null;
+  wordpressPostUrl: string | null;
+  wordpressEditUrl: string | null;
+  status: "published" | "draft_prepared" | "provider_disabled" | "error";
+  errorMessage: string | null;
+  providerDisabledReason?: string;
+};
+
 export type AiDeliveryDeliverableReviewSummary = {
   id: string;
   tenantId?: string;
@@ -887,6 +897,9 @@ export function AiDeliveryPage({
   const [deliverableWordPressDraftTargetId, setDeliverableWordPressDraftTargetId] = useState<string | null>(null);
   const [deliverableWordPressDraftError, setDeliverableWordPressDraftError] = useState<{ recordId: string; message: string } | null>(null);
   const [deliverableWordPressDraft, setDeliverableWordPressDraft] = useState<{ recordId: string; wordpressDraft: AiDeliveryWordPressPreparedDraft } | null>(null);
+  const [deliverableWordPressPublishTargetId, setDeliverableWordPressPublishTargetId] = useState<string | null>(null);
+  const [deliverableWordPressPublishError, setDeliverableWordPressPublishError] = useState<{ recordId: string; message: string } | null>(null);
+  const [deliverableWordPressPublishResult, setDeliverableWordPressPublishResult] = useState<{ recordId: string; result: AiDeliveryWordPressPublishResult } | null>(null);
   const [articleImageDownloadRefLoading, setArticleImageDownloadRefLoading] = useState(false);
   const [articleImageDownloadRefError, setArticleImageDownloadRefError] = useState<{ recordId: string; message: string } | null>(null);
   const [articleImageDownloadRef, setArticleImageDownloadRef] = useState<{ recordId: string; storageKey: string; downloadUrl: string | null; expiresSeconds: number | null } | null>(null);
@@ -1442,6 +1455,49 @@ export function AiDeliveryPage({
       });
     } finally {
       setDeliverableWordPressDraftTargetId(null);
+    }
+  }
+
+  async function publishDeliverableToWordPress(projectId: string, deliverableId: string) {
+    if (!openDeliverablesProject || !deliverableId) return;
+    setDeliverableWordPressPublishTargetId(deliverableId);
+    setDeliverableWordPressPublishError(null);
+    setDeliverableWordPressPublishResult(null);
+    try {
+      const token = window.sessionStorage.getItem("dcaosv1.authToken");
+      if (!token) {
+        throw new Error("Missing auth token.");
+      }
+      const response = await fetch(`/api/v1/ai-delivery-projects/${projectId}/deliverables/${deliverableId}/publish-wordpress`, {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`
+        }
+      });
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+      const data = await response.json();
+      const publishResult = data?.data?.publishResult as AiDeliveryWordPressPublishResult | undefined;
+      if (
+        !publishResult
+        || typeof publishResult.ok !== "boolean"
+        || !["published", "draft_prepared", "provider_disabled", "error"].includes(publishResult.status)
+      ) {
+        throw new Error("Invalid publish result response.");
+      }
+      setDeliverableWordPressPublishResult({
+        recordId: deliverableId,
+        result: publishResult
+      });
+    } catch (error) {
+      setDeliverableWordPressPublishError({
+        recordId: deliverableId,
+        message: getErrorMessage(error, "Unable to publish this deliverable to WordPress.")
+      });
+    } finally {
+      setDeliverableWordPressPublishTargetId(null);
     }
   }
 
@@ -2076,6 +2132,9 @@ export function AiDeliveryPage({
     setDeliverableWordPressDraftTargetId(null);
     setDeliverableWordPressDraftError(null);
     setDeliverableWordPressDraft(null);
+    setDeliverableWordPressPublishTargetId(null);
+    setDeliverableWordPressPublishError(null);
+    setDeliverableWordPressPublishResult(null);
   }
 
   async function openWorkflowRuns(projectId: string) {
@@ -4337,6 +4396,11 @@ export function AiDeliveryPage({
                             {deliverableWordPressDraftTargetId === d.id ? "Fetching..." : "Prepare WordPress draft"}
                           </button>
                         ) : null}
+                        {!d.isArchived ? (
+                          <button className="secondary-action" disabled={deliverablesSaving || deliverableWordPressPublishTargetId === d.id} onClick={() => void publishDeliverableToWordPress(openDeliverablesProject.id, d.id)} type="button">
+                            {deliverableWordPressPublishTargetId === d.id ? "Publishing..." : "Test WordPress publish"}
+                          </button>
+                        ) : null}
                         <button className="secondary-action" disabled={deliverablesSaving || deliverableReviewsLoading} onClick={() => void openDeliverableReviews(openDeliverablesProject.id, d.id)} type="button">Reviews</button>
                         {!d.isArchived ? <button className="secondary-action" disabled={deliverablesSaving} onClick={() => void archiveDeliverable(openDeliverablesProject.id, d.id)} type="button">Archive</button> : null}
                         {d.isArchived ? <button className="secondary-action" disabled={deliverablesSaving} onClick={() => void restoreDeliverable(openDeliverablesProject.id, d.id)} type="button">Restore</button> : null}
@@ -4410,6 +4474,30 @@ export function AiDeliveryPage({
                             <dd>{deliverableWordPressDraft.wordpressDraft.note}</dd>
                           </div>
                         </dl>
+                      </div>
+                    ) : null}
+                    {deliverableWordPressPublishError && deliverableWordPressPublishError.recordId === d.id ? (
+                      <div className="state-panel" role="alert" style={{ marginTop: "0.75rem", color: "var(--color-error)" }}>
+                       {deliverableWordPressPublishError.message}
+                      </div>
+                    ) : null}
+                    {deliverableWordPressPublishResult && deliverableWordPressPublishResult.recordId === d.id ? (
+                      <div className="state-panel" style={{ marginTop: "0.75rem" }}>
+                       <strong>WordPress publish test result</strong>
+                       <dl className="brief-grid" style={{ marginTop: "0.5rem" }}>
+                         <div>
+                           <dt>Provider status</dt>
+                           <dd><StatusBadge status={deliverableWordPressPublishResult.result.status} /></dd>
+                         </div>
+                         <div>
+                           <dt>External post ID</dt>
+                           <dd>{deliverableWordPressPublishResult.result.wordpressPostId || "None (provider disabled)"}</dd>
+                         </div>
+                         <div className="field-span-2">
+                           <dt>Message</dt>
+                           <dd>{deliverableWordPressPublishResult.result.providerDisabledReason || deliverableWordPressPublishResult.result.errorMessage || "No external WordPress call was made; real integration is future block."}</dd>
+                         </div>
+                       </dl>
                       </div>
                     ) : null}
                     {!d.isArchived ? (
