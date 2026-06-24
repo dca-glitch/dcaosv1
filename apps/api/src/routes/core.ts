@@ -57,6 +57,8 @@ import {
   getAiDeliveryDeliverableDownloadReferenceHandler,
   prepareAiDeliveryDeliverableWordPressDraftHandler,
   publishAiDeliveryDeliverableToWordPressHandler,
+  getAiDeliveryWordPressConfigHandler,
+  saveAiDeliveryWordPressConfigHandler,
   uploadAiDeliveryArticleImageFinalAssetHandler,
   uploadAiDeliveryDeliverableDocumentHandler,
   markAiDeliveryDeliverableReadyHandler,
@@ -144,6 +146,8 @@ export function createCoreRouter() {
 
   router.get("/company-profile", requireAuth, requireTenant, getCompanyProfileHandler);
   router.put("/company-profile", requireAuth, requireTenant, requireRole("owner", "admin"), saveCompanyProfileHandler);
+  router.get("/tenant/wordpress-config", requireAuth, requireTenant, requireRole("owner", "admin"), getAiDeliveryWordPressConfigHandler);
+  router.post("/tenant/wordpress-config", requireAuth, requireTenant, requireRole("owner", "admin"), saveAiDeliveryWordPressConfigHandler);
   router.get("/activity/audit-logs", requireAuth, requireTenant, requireRole("owner", "admin"), listActivityAuditLogsHandler);
 
   router.get("/clients", requireAuth, requireTenant, listClientsHandler);

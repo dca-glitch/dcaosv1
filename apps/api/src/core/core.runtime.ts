@@ -77,6 +77,7 @@ import {
   putPrivateStorageObject
 } from "../storage/private-storage.service";
 import { recordAiDeliverySystemEvent } from "../services/system-events.service";
+import { recordPlatformAuditEvent } from "../security/audit-log.service";
 import type { AiDeliveryWordPressPublishResult } from "../services/wordpress.service";
 import { getAiProviderConfig } from "../config";
 import {
@@ -7964,4 +7965,165 @@ export async function updateAiDeliveryDeliverableReview(
 
     return { deliverableReview: updatedReview };
   });
+}
+
+// WordPress non-secret tenant config functions
+export interface AiDeliveryWordPressTenantConfig {
+  siteUrl: string;
+  siteSlug?: string | null;
+  wordPressComSite: boolean;
+}
+
+export interface AiDeliveryWordPressTenantConfigResponse {
+  config: AiDeliveryWordPressTenantConfig | null;
+  validation: { ok: boolean; issues: string[]; warnings: string[] };
+}
+
+const WORDPRESS_CONFIG_KEY = "ai_delivery_wordpress_connection";
+const FORBIDDEN_SECRET_KEYWORDS = ["password", "token", "apikey", "applicati onpassword", "bearertoken", "authheader", "secret", "clientsecret", "refreshtoken", "accesstoken"];
+
+function isForbiddenSecretField(obj: Record<string, any>): boolean {
+  const keys = Object.keys(obj || {}).map((k) => k.toLowerCase());
+  return keys.some((key) => FORBIDDEN_SECRET_KEYWORDS.some((secret) => key.includes(secret)));
+}
+
+export async function getAiDeliveryWordPressConfigForTenant(
+  authSession: AuthResolvedSessionContext
+): Promise<AiDeliveryWordPressTenantConfigResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) {
+    return null;
+  }
+
+  const setting = await prisma.tenantSetting.findUnique({
+    where: {
+      tenantId_key: {
+        tenantId,
+        key: WORDPRESS_CONFIG_KEY
+      }
+    },
+    select: {
+      value: true
+    }
+  });
+
+  if (!setting) {
+    return {
+      config: null,
+      validation: {
+        ok: false,
+        issues: ["WordPress configuration not yet configured."],
+        warnings: []
+      }
+    };
+  }
+
+  const config = setting.value as any;
+  return {
+    config: {
+      siteUrl: config.siteUrl || "",
+      siteSlug: config.siteSlug || null,
+      wordPressComSite: Boolean(config.wordPressComSite)
+    },
+    validation: {
+      ok: true,
+      issues: [],
+      warnings: []
+    }
+  };
+}
+
+export async function saveAiDeliveryWordPressConfigForTenant(
+  authSession: AuthResolvedSessionContext,
+  input: Record<string, any>
+): Promise<AiDeliveryWordPressTenantConfigResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) {
+    return null;
+  }
+
+  if (isForbiddenSecretField(input)) {
+    return {
+      config: null,
+      validation: {
+        ok: false,
+        issues: ["Request contains forbidden secret-like fields (password, token, apiKey, etc)."],
+        warnings: []
+      }
+    };
+  }
+
+  const siteUrl = String(input.siteUrl || "").trim();
+  const siteSlug = String(input.siteSlug || "").trim() || null;
+  const wordPressComSite = Boolean(input.wordPressComSite);
+
+  if (!siteUrl) {
+    return {
+      config: null,
+      validation: {
+        ok: false,
+        issues: ["WordPress site URL is required."],
+        warnings: []
+      }
+    };
+  }
+
+  try {
+    new URL(siteUrl);
+  } catch {
+    return {
+      config: null,
+      validation: {
+        ok: false,
+        issues: ["WordPress site URL must be a valid HTTP/HTTPS URL."],
+        warnings: []
+      }
+    };
+  }
+
+  const normalizedUrl = siteUrl.replace(/\/+$/, "");
+  const config: AiDeliveryWordPressTenantConfig = {
+    siteUrl: normalizedUrl,
+    siteSlug,
+    wordPressComSite
+  };
+
+  await prisma.tenantSetting.upsert({
+    where: {
+      tenantId_key: {
+        tenantId,
+        key: WORDPRESS_CONFIG_KEY
+      }
+    },
+    update: {
+      value: config as any,
+      updatedAt: new Date()
+    },
+    create: {
+      tenantId,
+      key: WORDPRESS_CONFIG_KEY,
+      valueType: "JSON",
+      value: config as any
+    }
+  });
+
+  await recordPlatformAuditEvent({
+    tenantId,
+    action: "WORDPRESS_CONFIG_UPDATED",
+    entityType: "WORDPRESS_TENANT_CONFIG",
+    entityId: tenantId,
+    metadata: {
+      configPresent: true,
+      siteUrlHost: new URL(normalizedUrl).hostname
+    }
+  });
+
+  return {
+    config,
+    validation: {
+      ok: true,
+      issues: [],
+      warnings: []
+    }
+  };
 }

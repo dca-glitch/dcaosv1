@@ -68,6 +68,8 @@ import {
   getAiDeliveryDeliverableDownloadReference,
   prepareAiDeliveryDeliverableWordPressDraft,
   publishAiDeliveryDeliverableToWordPress,
+  getAiDeliveryWordPressConfigForTenant,
+  saveAiDeliveryWordPressConfigForTenant,
   getInvoiceDocumentDownload,
   getInvoice,
   getProject,
@@ -3853,5 +3855,39 @@ export const generateDueRecurringInvoiceHandler: RequestHandler = async (req, re
       return;
     }
     res.status(500).json(failure("RECURRING_INVOICE_RUNTIME_ERROR", "Recurring invoice generation could not be completed."));
+  }
+};
+
+export const getAiDeliveryWordPressConfigHandler: RequestHandler = async (_req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) return void res.status(401).json(unauthorizedFailure());
+
+  try {
+    const response = await getAiDeliveryWordPressConfigForTenant(authSession);
+    if (!response) return void res.status(403).json(forbiddenFailure());
+    res.json(success(response, { phase: "runtime", scope: "ai-delivery-wordpress-config" }));
+  } catch {
+    res.status(500).json(failure("WORDPRESS_CONFIG_RUNTIME_ERROR", "WordPress config retrieval could not be completed."));
+  }
+};
+
+export const saveAiDeliveryWordPressConfigHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) return void res.status(401).json(unauthorizedFailure());
+
+  const input = req.body as Record<string, unknown> | undefined;
+  if (!input || typeof input !== "object") {
+    return void res.status(400).json(failure("WORDPRESS_CONFIG_INVALID", "WordPress config request is invalid."));
+  }
+
+  try {
+    const response = await saveAiDeliveryWordPressConfigForTenant(authSession, input);
+    if (!response) return void res.status(403).json(forbiddenFailure());
+    if (!response.validation.ok) {
+      return void res.status(400).json(failure("WORDPRESS_CONFIG_INVALID", response.validation.issues?.[0] || "WordPress config is invalid."));
+    }
+    res.json(success(response, { phase: "runtime", scope: "ai-delivery-wordpress-config" }));
+  } catch {
+    res.status(500).json(failure("WORDPRESS_CONFIG_RUNTIME_ERROR", "WordPress config save could not be completed."));
   }
 };

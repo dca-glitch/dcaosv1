@@ -920,6 +920,56 @@ async function runLocalCreditNoteChecks(adminToken) {
   }
 }
 
+async function runLocalWordPressConfigChecks(adminToken) {
+  try {
+    const siteUrl = "https://example-smoke-wordpress.com";
+    const saveResponse = await request("/tenant/wordpress-config", {
+      method: "POST",
+      token: adminToken,
+      body: {
+        siteUrl,
+        siteSlug: "example-smoke",
+        wordPressComSite: true
+      }
+    });
+    const saveData = requireOkData("wordpress config save", saveResponse, 200);
+    record(
+      "wordpress config save fields",
+      saveData.config.siteUrl === siteUrl && saveData.config.wordPressComSite === true,
+      `siteUrl=${saveData.config.siteUrl} wordPressComSite=${saveData.config.wordPressComSite}`
+    );
+
+    const getResponse = await request("/tenant/wordpress-config", { token: adminToken });
+    const getData = requireOkData("wordpress config get", getResponse, 200);
+    record(
+      "wordpress config persisted",
+      getData.config.siteUrl === siteUrl,
+      `siteUrl=${getData.config.siteUrl}`
+    );
+
+    const forbiddenResponse = await request("/tenant/wordpress-config", {
+      method: "POST",
+      token: adminToken,
+      body: {
+        siteUrl,
+        apiKey: "secret-key-should-be-rejected"
+      }
+    });
+    record(
+      "wordpress config rejects forbidden secret field",
+      forbiddenResponse.status === 400 && getErrorCode(forbiddenResponse) === "WORDPRESS_CONFIG_INVALID",
+      `${forbiddenResponse.status} ${getErrorCode(forbiddenResponse)}`
+    );
+  } catch (error) {
+    record(
+      "wordpress config checks",
+      false,
+      error instanceof Error ? error.message : "unknown error"
+    );
+    throw error;
+  }
+}
+
 async function main() {
   if (!requireApiBaseUrl(apiBaseUrl)) {
     process.exitCode = 1;
@@ -1014,12 +1064,14 @@ async function main() {
     await runLocalVendorCrudChecks(adminToken);
     await runLocalBillsChecks(adminToken);
     await runLocalCreditNoteChecks(adminToken);
+    await runLocalWordPressConfigChecks(adminToken);
   } else {
     record("finance integrity checks", true, "skipped outside local mode");
     record("services library checks", true, "skipped outside local mode");
     record("vendor crud checks", true, "skipped outside local mode");
     record("bills checks", true, "skipped outside local mode");
     record("credit-note checks", true, "skipped outside local mode");
+    record("wordpress config checks", true, "skipped outside local mode");
   }
 
   const logout = await request("/auth/logout", { method: "POST", token: adminToken });
