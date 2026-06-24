@@ -798,7 +798,6 @@ async function main() {
                 }
               }
             : "skipped - AUTH_SEED_TESTER_EMAIL/AUTH_SEED_TESTER_PASSWORD not set"
-          }
         },
         null,
         2
