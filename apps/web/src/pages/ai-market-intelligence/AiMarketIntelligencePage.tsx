@@ -336,7 +336,18 @@ export function AiMarketIntelligencePage() {
                        }}
                      >
                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.75rem" }}>
-                         <span style={{ fontSize: "0.875rem", fontWeight: "500" }}>Status: {run.status}</span>
+                         <span
+                           style={{
+                             fontSize: "0.875rem",
+                             fontWeight: "500",
+                             padding: "0.25rem 0.5rem",
+                             backgroundColor: run.status === "EXECUTED" ? "#10b981" : run.status === "PENDING" ? "#f59e0b" : "var(--color-bg-secondary)",
+                             color: run.status === "EXECUTED" || run.status === "PENDING" ? "white" : "inherit",
+                             borderRadius: "3px"
+                           }}
+                         >
+                           {run.status}
+                         </span>
                          {run.status === "PENDING" && (
                            <button
                              onClick={() => handleExecuteRun(run.id)}
@@ -354,15 +365,30 @@ export function AiMarketIntelligencePage() {
                            </button>
                          )}
                        </div>
+                       {(run as any).sourceCount !== undefined && (
+                         <p style={{ fontSize: "0.75rem", color: "var(--color-text-muted)", marginBottom: "0.5rem" }}>
+                           Analyzed {(run as any).sourceCount} source{(run as any).sourceCount !== 1 ? 's' : ''}
+                         </p>
+                       )}
                        {run.resultSummary && (
                          <p style={{ fontSize: "0.875rem", color: "var(--color-text-muted)", marginBottom: "0.5rem" }}>
                            {run.resultSummary}
                          </p>
                        )}
+                       {(run as any).generatedInsightId && (
+                         <p style={{ fontSize: "0.75rem", color: "var(--color-secondary)", marginBottom: "0.5rem", fontWeight: "500" }}>
+                           ✓ Generated Insight (see Market Insights section)
+                         </p>
+                       )}
                        {(run as any).executionLog && (
-                         <pre style={{ fontSize: "0.75rem", color: "var(--color-text-muted)", backgroundColor: "var(--color-bg-secondary)", padding: "0.5rem", borderRadius: "4px", overflowX: "auto", whiteSpace: "pre-wrap" }}>
-                           {(run as any).executionLog}
-                         </pre>
+                         <details style={{ marginTop: "0.5rem" }}>
+                           <summary style={{ fontSize: "0.75rem", color: "var(--color-text-muted)", cursor: "pointer", marginBottom: "0.5rem" }}>
+                             Execution Log
+                           </summary>
+                           <pre style={{ fontSize: "0.75rem", color: "var(--color-text-muted)", backgroundColor: "var(--color-bg-secondary)", padding: "0.5rem", borderRadius: "4px", overflowX: "auto", whiteSpace: "pre-wrap", marginTop: "0.25rem" }}>
+                             {(run as any).executionLog}
+                           </pre>
+                         </details>
                        )}
                      </div>
                    ))}
@@ -401,7 +427,14 @@ export function AiMarketIntelligencePage() {
                        }}
                      >
                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", marginBottom: "0.75rem" }}>
-                         <h4 style={{ marginBottom: "0" }}>{insight.title}</h4>
+                         <div>
+                           <h4 style={{ marginBottom: "0.25rem" }}>{insight.title}</h4>
+                           {(insight as any).sourceCount !== undefined && (
+                             <p style={{ fontSize: "0.75rem", color: "var(--color-text-muted)", margin: "0" }}>
+                               Evidence: Based on {(insight as any).sourceCount} project source{(insight as any).sourceCount !== 1 ? 's' : ''}
+                             </p>
+                           )}
+                         </div>
                          <select
                            value={insight.status}
                            onChange={async (e) => {
@@ -416,7 +449,13 @@ export function AiMarketIntelligencePage() {
                            }}
                            style={{
                              padding: "0.25rem 0.5rem",
-                             backgroundColor: "var(--color-bg-secondary)",
+                             backgroundColor:
+                               insight.status === "APPROVED" ? "#10b981" :
+                               insight.status === "REVIEWED" ? "#3b82f6" :
+                               insight.status === "NEEDS_REVISION" ? "#f59e0b" :
+                               "var(--color-bg-secondary)",
+                             color:
+                               insight.status === "APPROVED" || insight.status === "REVIEWED" || insight.status === "NEEDS_REVISION" ? "white" : "inherit",
                              border: "1px solid var(--color-border)",
                              borderRadius: "3px",
                              fontSize: "0.75rem",
@@ -427,7 +466,7 @@ export function AiMarketIntelligencePage() {
                            <option value="DRAFT">DRAFT</option>
                            <option value="NEEDS_REVISION">NEEDS_REVISION</option>
                            <option value="REVIEWED">REVIEWED</option>
-                           <option value="FINAL">FINAL</option>
+                           <option value="APPROVED">APPROVED</option>
                          </select>
                        </div>
                        {insight.summary && (
@@ -458,9 +497,20 @@ export function AiMarketIntelligencePage() {
                          </div>
                        )}
                        {insight.reviewerNotes && (
-                         <p style={{ fontSize: "0.75rem", color: "var(--color-text-muted)", fontStyle: "italic" }}>
-                           Review: {insight.reviewerNotes}
-                         </p>
+                         <div style={{
+                           marginTop: "0.75rem",
+                           padding: "0.75rem",
+                           backgroundColor: "var(--color-bg-secondary)",
+                           borderLeft: "3px solid var(--color-secondary)",
+                           borderRadius: "4px"
+                         }}>
+                           <p style={{ fontSize: "0.75rem", fontWeight: "600", marginBottom: "0.25rem", color: "var(--color-text)" }}>
+                             Reviewer Notes:
+                           </p>
+                           <p style={{ fontSize: "0.875rem", color: "var(--color-text-muted)", margin: "0" }}>
+                             {insight.reviewerNotes}
+                           </p>
+                         </div>
                        )}
                      </div>
                    ))}

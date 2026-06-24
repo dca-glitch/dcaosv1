@@ -29,6 +29,8 @@ export interface MarketIntelligenceResearchRunSummary {
   executedAt: string | null;
   createdAt: string;
   updatedAt: string;
+  sourceCount?: number; // Number of sources analyzed (evidence context)
+  generatedInsightId?: string | null; // ID of the insight generated from this run
 }
 
 export interface MarketIntelligenceInsightResultV1 {
@@ -55,4 +57,5 @@ export interface MarketIntelligenceInsightSummary {
   isArchived: boolean;
   createdAt: string;
   updatedAt: string;
+  sourceCount?: number; // Number of sources in the project (evidence context)
 }

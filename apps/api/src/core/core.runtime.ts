@@ -8479,6 +8479,15 @@ export async function listMarketIntelligenceResearchRuns(
   }
 
   return prisma.$transaction(async (tx: PrismaTx) => {
+    // Get source count for evidence context
+    const sourceCount = await tx.marketIntelligenceSource.count({
+      where: {
+        tenantId,
+        projectId,
+        isArchived: false
+      }
+    });
+
     const runs = await tx.marketIntelligenceResearchRun.findMany({
       where: {
         tenantId,
@@ -8497,13 +8506,42 @@ export async function listMarketIntelligenceResearchRuns(
       orderBy: { createdAt: "desc" }
     });
 
+    // For each executed run, try to find the generated insight by matching timestamps
+    const runsWithInsightLinks = await Promise.all(
+      runs.map(async (run) => {
+        let generatedInsightId: string | null = null;
+        if (run.status === "EXECUTED" && run.executedAt) {
+          // Find insights created shortly after this run executed
+          const insights = await tx.marketIntelligenceInsight.findMany({
+            where: {
+              tenantId,
+              projectId,
+              createdAt: {
+                gte: new Date(run.executedAt.getTime() - 1000), // 1 second before
+                lte: new Date(run.executedAt.getTime() + 60000) // 1 minute after
+              }
+            },
+            orderBy: { createdAt: "asc" },
+            take: 1
+          });
+          if (insights.length > 0) {
+            generatedInsightId = insights[0].id;
+          }
+        }
+
+        return {
+          ...run,
+          sourceCount, // Include source count for evidence context
+          generatedInsightId,
+          executedAt: run.executedAt?.toISOString() ?? null,
+          createdAt: run.createdAt.toISOString(),
+          updatedAt: run.updatedAt.toISOString()
+        };
+      })
+    );
+
     return {
-      researchRuns: runs.map((r) => ({
-        ...r,
-        executedAt: r.executedAt?.toISOString() ?? null,
-        createdAt: r.createdAt.toISOString(),
-        updatedAt: r.updatedAt.toISOString()
-      }))
+      researchRuns: runsWithInsightLinks
     };
   });
 }
@@ -8648,6 +8686,15 @@ export async function listMarketIntelligenceInsights(
   }
 
   return prisma.$transaction(async (tx: PrismaTx) => {
+    // Get source count for evidence context
+    const sourceCount = await tx.marketIntelligenceSource.count({
+      where: {
+        tenantId,
+        projectId,
+        isArchived: false
+      }
+    });
+
     const insights = await tx.marketIntelligenceInsight.findMany({
       where: {
         tenantId,
@@ -8673,6 +8720,7 @@ export async function listMarketIntelligenceInsights(
       insights: insights.map((i) => ({
         ...i,
         resultData: i.resultData as any,
+        sourceCount, // Include source count for evidence context
         createdAt: i.createdAt.toISOString(),
         updatedAt: i.updatedAt.toISOString()
       }))

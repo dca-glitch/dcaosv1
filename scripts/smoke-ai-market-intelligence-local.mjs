@@ -91,9 +91,9 @@ async function main() {
     }
     console.log(`✅ Created project: ${projectId}\n`);
 
-    // Step 4: Add research sources
-    console.log("📋 Step 4: Adding research sources...");
-    const createSourceResponse = await apiCall(
+    // Step 4: Add multiple research sources for evidence context
+    console.log("📋 Step 4: Adding multiple research sources...");
+    const createSourceResponse1 = await apiCall(
       "POST",
       `/market-intelligence-projects/${projectId}/sources`,
       {
@@ -105,13 +105,49 @@ async function main() {
       token
     );
 
-    sourceId = createSourceResponse.data?.source?.id;
-    if (!sourceId) {
-      throw new Error("Failed to create source");
+    const sourceId1 = createSourceResponse1.data?.source?.id;
+    if (!sourceId1) {
+      throw new Error("Failed to create source 1");
     }
-    console.log(`✅ Created source: ${sourceId}\n`);
+    console.log(`✅ Created source 1: ${sourceId1}`);
 
-    // Step 5: List sources
+    const createSourceResponse2 = await apiCall(
+      "POST",
+      `/market-intelligence-projects/${projectId}/sources`,
+      {
+        title: "Industry Report",
+        sourceType: "REPORT",
+        sourceUrl: "https://industry-analysis.example.com/q2-2026",
+        sourceNotes: "Market trends and forecasts"
+      },
+      token
+    );
+
+    const sourceId2 = createSourceResponse2.data?.source?.id;
+    if (!sourceId2) {
+      throw new Error("Failed to create source 2");
+    }
+    console.log(`✅ Created source 2: ${sourceId2}`);
+
+    const createSourceResponse3 = await apiCall(
+      "POST",
+      `/market-intelligence-projects/${projectId}/sources`,
+      {
+        title: "Customer Feedback Survey",
+        sourceType: "SURVEY",
+        sourceUrl: "https://internal.example.com/survey-results",
+        sourceNotes: "Pain points and feature requests"
+      },
+      token
+    );
+
+    const sourceId3 = createSourceResponse3.data?.source?.id;
+    if (!sourceId3) {
+      throw new Error("Failed to create source 3");
+    }
+    console.log(`✅ Created source 3: ${sourceId3}\n`);
+
+    // Step 5: List sources and verify count
     console.log("📋 Step 5: Listing research sources...");
     const sourcesResponse = await apiCall(
       "GET",
@@ -119,7 +155,11 @@ async function main() {
       undefined,
       token
     );
-    console.log(`✅ Found ${sourcesResponse.data?.sources?.length || 0} sources\n`);
+    const sourceCount = sourcesResponse.data?.sources?.length || 0;
+    if (sourceCount !== 3) {
+      throw new Error(`Expected 3 sources, found ${sourceCount}`);
+    }
+    console.log(`✅ Found ${sourceCount} sources (evidence context)\n`);
 
     // Step 6: Create research run
     console.log("📋 Step 6: Creating research run...");
@@ -156,24 +196,60 @@ async function main() {
     }
     console.log(`✅ Research run executed: ${runId}\n`);
 
-    console.log("📋 Step 7.5: Verifying auto-generated insight...");
+    console.log("📋 Step 7.5: Verifying auto-generated insight with evidence context...");
     const autoInsightsResponse = await apiCall("GET", `/market-intelligence-projects/${projectId}/insights`, undefined, token);
     const autoInsight = autoInsightsResponse.data?.insights?.find(i => i.title.startsWith("Generated Insight"));
     if (!autoInsight || !autoInsight.resultData) {
       throw new Error("Failed to find auto-generated insight with structured resultData");
     }
-    await apiCall("PUT", `/market-intelligence-projects/${projectId}/insights/${autoInsight.id}`, { status: "REVIEWED" }, token);
-    console.log(`✅ Auto-generated insight verified and updated to REVIEWED: ${autoInsight.id}\n`);
+    if (autoInsight.sourceCount !== 3) {
+      throw new Error(`Expected insight to have sourceCount=3, found ${autoInsight.sourceCount}`);
+    }
+    console.log(`✅ Auto-generated insight has sourceCount=${autoInsight.sourceCount} (evidence context)`);
 
-    // Step 8: List research runs
-    console.log("📋 Step 8: Listing research runs...");
+    // Update to APPROVED status
+    await apiCall("PUT", `/market-intelligence-projects/${projectId}/insights/${autoInsight.id}`, {
+      status: "APPROVED",
+      reviewerNotes: "Verified - evidence from 3 sources looks solid"
+    }, token);
+    console.log(`✅ Auto-generated insight updated to APPROVED with reviewer notes: ${autoInsight.id}\n`);
+
+    // Verify status update persisted
+    const updatedInsightResponse = await apiCall("GET", `/market-intelligence-projects/${projectId}/insights`, undefined, token);
+    const updatedInsight = updatedInsightResponse.data?.insights?.find(i => i.id === autoInsight.id);
+    if (updatedInsight?.status !== "APPROVED") {
+      throw new Error(`Expected status APPROVED, found ${updatedInsight?.status}`);
+    }
+    if (!updatedInsight?.reviewerNotes?.includes("Verified")) {
+      throw new Error("Reviewer notes not persisted");
+    }
+    console.log(`✅ Status update persisted: ${updatedInsight.status}\n`);
+
+    // Step 8: List research runs with traceability
+    console.log("📋 Step 8: Listing research runs with evidence context...");
     const runsResponse = await apiCall(
       "GET",
       `/market-intelligence-projects/${projectId}/research-runs`,
       undefined,
       token
     );
-    console.log(`✅ Found ${runsResponse.data?.researchRuns?.length || 0} research runs\n`);
+    const runsCount = runsResponse.data?.researchRuns?.length || 0;
+    if (runsCount < 1) {
+      throw new Error("Expected at least 1 research run");
+    }
+    console.log(`✅ Found ${runsCount} research run(s)`);
+
+    const executedRun = runsResponse.data?.researchRuns?.find(r => r.id === runId);
+    if (!executedRun) {
+      throw new Error("Failed to find executed run in list");
+    }
+    if (executedRun.sourceCount !== 3) {
+      throw new Error(`Expected run to have sourceCount=3, found ${executedRun.sourceCount}`);
+    }
+    if (!executedRun.generatedInsightId) {
+      throw new Error("Expected run to have generatedInsightId");
+    }
+    console.log(`✅ Run has sourceCount=${executedRun.sourceCount} and generatedInsightId=${executedRun.generatedInsightId} (traceability)\n`);
 
     // Step 9: Create market insight
     console.log("📋 Step 9: Creating market insight...");
@@ -194,15 +270,26 @@ async function main() {
     }
     console.log(`✅ Created insight: ${insightId}\n`);
 
-    // Step 10: List insights
-    console.log("📋 Step 10: Listing market insights...");
+    // Step 10: List insights with evidence context
+    console.log("📋 Step 10: Listing market insights with evidence context...");
     const insightsResponse = await apiCall(
       "GET",
       `/market-intelligence-projects/${projectId}/insights`,
       undefined,
       token
     );
-    console.log(`✅ Found ${insightsResponse.data?.insights?.length || 0} insights\n`);
+    const insightsCount = insightsResponse.data?.insights?.length || 0;
+    if (insightsCount < 2) {
+      throw new Error(`Expected at least 2 insights (1 manual + 1 auto-generated), found ${insightsCount}`);
+    }
+    console.log(`✅ Found ${insightsCount} insights`);
+
+    // Verify all insights include source count
+    const insightsWithoutSourceCount = insightsResponse.data?.insights?.filter(i => i.sourceCount === undefined);
+    if (insightsWithoutSourceCount && insightsWithoutSourceCount.length > 0) {
+      throw new Error(`Found ${insightsWithoutSourceCount.length} insights without sourceCount`);
+    }
+    console.log(`✅ All insights include sourceCount evidence context\n`);
 
     // Step 11: Browser test (optional, requires playwright)
     if (process.env.BROWSER_TEST === "true") {

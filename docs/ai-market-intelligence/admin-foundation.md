@@ -94,7 +94,48 @@ Market Intelligence includes a bounded AI Insight workflow that allows an admin 
    - `sourceNotes`
    - `confidenceNotes`
 4. **Persistence:** The structured result is safely stored in the Research Run's `executionLog` and `resultSummary`, and a linked Market Insight is automatically generated.
-5. **Review Flow:** Admins can view the structured Insight in the UI and update its status through a simple dropdown (DRAFT, NEEDS_REVISION, REVIEWED, FINAL).
+5. **Review Flow:** Admins can view the structured Insight in the UI and update its status through a simple dropdown (DRAFT, NEEDS_REVISION, REVIEWED, APPROVED).
+
+### Source Evidence and Traceability
+
+Market Intelligence insights include source evidence context to support admin review and decision-making:
+
+1. **Project-Level Sources:** All Research Sources belong to a Research Project. When a Research Run executes, it analyzes all active sources for that project.
+2. **Source Count Display:** Insights and Research Runs display the number of sources that informed the analysis (e.g., "Based on 3 project sources").
+3. **Run-to-Insight Linking:** When a Research Run executes successfully, it automatically creates a linked Market Insight. The UI indicates which insights were generated from runs.
+4. **Review Context:** The structured insight result includes `sourceNotes` and `confidenceNotes` fields to help admins understand the evidence basis.
+5. **No Deep Source Content Storage:** Sources store metadata (title, URL, notes) only. The system does not crawl, fetch, or store full source content in this MVP.
+
+### Review Workflow
+
+Insights support a simple admin review workflow with four statuses:
+
+- **DRAFT** - Initial state; insight has not been reviewed
+- **NEEDS_REVISION** - Admin marked the insight as requiring changes or updates
+- **REVIEWED** - Admin has reviewed the insight and it appears accurate
+- **APPROVED** - Admin has approved the insight for use in business decisions
+
+Admins can also add **Reviewer Notes** when updating an insight's status to document their assessment or questions.
+
+### Traceability Chain
+
+The system supports this traceability flow:
+
+```
+Research Sources (curated by admin)
+  ↓
+Research Run (executes bounded analysis)
+  ↓
+Market Insight (auto-generated with structured data)
+  ↓
+Admin Review (status + notes)
+```
+
+This allows admins to answer:
+- Which sources informed this insight?
+- Which research run generated it?
+- What is the review status and any reviewer notes?
+- Is this insight approved for business use?
 
 ### Database Schema
 
