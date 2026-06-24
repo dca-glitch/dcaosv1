@@ -1317,11 +1317,30 @@ async function main() {
         method: "POST",
         token: testerToken
       });
-      record(
-        "module enable forbidden for tester",
-        testerEnable.status === 403 && getErrorCode(testerEnable) === "AUTH_FORBIDDEN",
-        `${testerEnable.status} ${getErrorCode(testerEnable)}`
+
+      // Branch on the tester's actual active role so the check reflects the fixture type:
+      // - admin/owner fixture (used for Finance cross-tenant proof): module enable is
+      //   allowed in the tester's own tenant and a 200 is the correct expected result.
+      // - low-priv/local_tester fixture: module enable must be forbidden (403 AUTH_FORBIDDEN).
+      const testerActiveRoles =
+        testerLoginResponse.body?.data?.tenantContext?.activeMembership?.roles ?? [];
+      const testerHasAdminRole = testerActiveRoles.some(
+        (r) => r === "owner" || r === "admin"
       );
+
+      if (testerHasAdminRole) {
+        record(
+          "tester module enable allowed for admin fixture",
+          testerEnable.status === 200,
+          `${testerEnable.status}`
+        );
+      } else {
+        record(
+          "tester module enable forbidden for low-priv tester",
+          testerEnable.status === 403 && getErrorCode(testerEnable) === "AUTH_FORBIDDEN",
+          `${testerEnable.status} ${getErrorCode(testerEnable)}`
+        );
+      }
     }
   } else {
     record("module enable forbidden for tester", true, "skipped optional tester env");
