@@ -867,6 +867,7 @@ export function AiDeliveryPage({
   const [deliverableReviewsSaving, setDeliverableReviewsSaving] = useState(false);
   const [deliverableReviewsError, setDeliverableReviewsError] = useState<string | null>(null);
   const [deliverableReviews, setDeliverableReviews] = useState<AiDeliveryDeliverableReviewSummary[]>([]);
+  const [loadedDeliverableReviews, setLoadedDeliverableReviews] = useState<Record<string, AiDeliveryDeliverableReviewSummary[]>>({});
   const [deliverableReviewEditorId, setDeliverableReviewEditorId] = useState<string | null>(null);
   const [deliverableReviewForm, setDeliverableReviewForm] = useState<AiDeliveryDeliverableReviewFormValues>(emptyDeliverableReview());
   const [openWorkflowRunsId, setOpenWorkflowRunsId] = useState<string | null>(null);
@@ -2085,7 +2086,9 @@ export function AiDeliveryPage({
     setDeliverableReviewForm(emptyDeliverableReview());
     try {
       if (typeof onFetchDeliverableReviews === "function") {
-        setDeliverableReviews(await onFetchDeliverableReviews(projectId, deliverableId));
+        const reviews = await onFetchDeliverableReviews(projectId, deliverableId);
+        setDeliverableReviews(reviews);
+        setLoadedDeliverableReviews((current) => ({ ...current, [deliverableId]: reviews }));
       }
     } catch (error) {
       setDeliverableReviewsError(getErrorMessage(error, "Unable to load review placeholders for this deliverable."));
@@ -2110,7 +2113,9 @@ export function AiDeliveryPage({
     try {
       const saved = await onSaveDeliverableReview(projectId, selectedReviewDeliverableId, deliverableReviewEditorId, deliverableReviewForm);
       if (saved && typeof onFetchDeliverableReviews === "function") {
-        setDeliverableReviews(await onFetchDeliverableReviews(projectId, selectedReviewDeliverableId));
+        const reviews = await onFetchDeliverableReviews(projectId, selectedReviewDeliverableId);
+        setDeliverableReviews(reviews);
+        setLoadedDeliverableReviews((current) => ({ ...current, [selectedReviewDeliverableId]: reviews }));
         setDeliverableReviewEditorId(null);
         setDeliverableReviewForm(emptyDeliverableReview());
       }
@@ -4243,7 +4248,16 @@ export function AiDeliveryPage({
                   <div className="state-panel" role="status">
                     {deliverableReadinessBlockers.length === 0
                       ? "This admin package has the linked draft, image readiness, and final reference details needed for internal handoff tracking."
-                      : `Ready-state blockers: ${deliverableReadinessBlockers.join(" ")}`}
+                      : (
+                        <div>
+                          <strong>Ready-state blockers:</strong>
+                          <ul style={{ marginTop: "0.5rem", marginBottom: "0" }}>
+                            {deliverableReadinessBlockers.map((blocker, index) => (
+                              <li key={index}>{blocker}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
                   </div>
                 </div>
                 <div className="field-panel" style={{ marginBottom: "1rem" }}>
@@ -4416,7 +4430,7 @@ export function AiDeliveryPage({
                         {d.isArchived ? <button className="secondary-action" disabled={deliverablesSaving} onClick={() => void restoreDeliverable(openDeliverablesProject.id, d.id)} type="button">Restore</button> : null}
                       </div>
                     </div>
-                    <dl className="brief-grid">
+                     <dl className="brief-grid">
                       <div>
                         <dt>Linked content draft</dt>
                         <dd>{d.contentDraft ? `${d.contentDraft.title} (${formatContentDraftStatus(d.contentDraft.status)})` : "Not linked"}</dd>
@@ -4448,6 +4462,21 @@ export function AiDeliveryPage({
                       <div>
                         <dt>Status</dt>
                         <dd><StatusBadge status={formatDeliverableStatus(d.isArchived ? "ARCHIVED" : d.status)} /></dd>
+                      </div>
+                      <div>
+                        <dt>Latest internal review</dt>
+                        <dd>
+                          {loadedDeliverableReviews[d.id] ? (
+                            (() => {
+                              const latestReview = getMostRecentReview(loadedDeliverableReviews[d.id]);
+                              return latestReview ? (
+                                <span>
+                                  <StatusBadge status={latestReview.status} /> {latestReview.reviewerName ? `by ${latestReview.reviewerName}` : "(no reviewer name)"} • {formatOptionalDate(latestReview.updatedAt)}
+                                </span>
+                              ) : "No review placeholders yet";
+                            })()
+                          ) : "Open Reviews to load review status."}
+                        </dd>
                       </div>
                       <div className="field-span-2">
                         <dt>Notes</dt>
