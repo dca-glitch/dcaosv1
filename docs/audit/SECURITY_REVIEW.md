@@ -151,16 +151,27 @@ This review uses OWASP ASVS 5.0.0, OWASP Top 10 2025 awareness, OWASP Authentica
 - No VPS deployment.
 - Staging smoke command exists but has not been run against VPS staging.
 - No real browser QA sign-off.
-- No password reset, invite flow, OAuth, billing, marketplace, or Finance Lite migration.
+- No password reset, invite flow, OAuth, billing, or marketplace.
 - No VPS Docker Compose run evidence.
-- No CORS/security header verification.
-- No tenant isolation negative test evidence.
+- No security headers/CSP verification.
+- No broader automated tenant isolation negative tests (Market Intelligence isolation proven; generalized pattern not applied to all modules).
 - No backup/restore test.
 - No monitoring/incident runbook.
+- No session storage decision (token in sessionStorage currently; HttpOnly cookie security decision pending).
+- No CORS allowlist verification (currently not restricted; decision pending if cross-origin needed).
+- No app-level or proxy-level rate limiting.
 
-## 18. Recommended Remediation Roadmap
+## 18. Recently Fixed Gaps (current branch)
+
+- ✓ Market Intelligence tenant/project ownership hardening completed (cross-project spoof proof in smoke)
+- ✓ Feature branch CI validation added (immediate feedback on feature branch commits)
+- ✓ GitHub Actions runtime warnings removed (actions/checkout@v7, actions/setup-node@v6)
+- ✓ Copilot and DCA mode operating instructions hardened for safety/security
+- ✓ Docs/instructions consistency cleanup completed
+
+## 19. Recommended Remediation Roadmap
 
 - Must fix before VPS staging: staging env contract, VPS Docker Compose approval, staging DB safety, migration runbook, HTTPS/shared Caddy plan, and staging smoke execution plan.
-- Must fix before client access: tenant isolation negative tests, external auth/session review, staging/client browser QA evidence, backup/restore test, admin audit logging, security headers/CSP, dependency review.
+- Must fix before client access: broader tenant isolation negative tests (generalize Market Intelligence pattern), external auth/session review, staging/client browser QA evidence, backup/restore test, admin audit logging, security headers/CSP, session storage decision, CORS allowlist definition, rate limit policy.
 - Should fix before beta: onboarding, password reset/admin recovery, monitoring, incident response, privacy retention.
 - Future hardening: SSO/OAuth if required, MFA, deeper module isolation, automated security tests.

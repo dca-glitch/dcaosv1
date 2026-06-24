@@ -4,6 +4,18 @@
 
 DCA OS v1 has a clean reusable foundation, dependency lockfile, real validation, CI, dependency monitoring, and project context documentation.
 
+### Current Snapshot (after foundation hardening)
+
+- **Finance foundation**: Active (Invoices, Bills, CreditNotes, InvoiceItems implemented)
+- **AI Delivery admin foundation**: Active/local/admin-only (Project, Brief, Workflow, Deliverable, Review — bounded deterministic workflow, no live provider execution)
+- **Market Intelligence admin foundation**: Active/local/admin-only (Research, Insight — bounded analysis, tenant/project-isolated, smoke validated)
+- **Feature branch CI validation**: Active (pushes to feature/* branches now validate; feature-branch feedback immediate)
+- **GitHub Actions runtime**: Updated to latest versions; Node 20 deprecation warnings removed
+- **R2/private storage foundation**: Exists (docs/deployment planned; no implementation)
+- **Audit/Activity foundation**: Exists (schema, local smoke; admin logging incomplete)
+- **Client Portal**: Remains deferred
+- **Production deployment**: Remains frozen unless explicitly approved by owner
+
 ## Completed
 
 - Block 0: repository initialization and identity verification
