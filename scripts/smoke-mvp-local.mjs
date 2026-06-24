@@ -613,6 +613,122 @@ async function runLocalVendorCrudChecks(adminToken) {
   }
 }
 
+async function runLocalBillsChecks(adminToken) {
+  const billReference = `[SMOKE][BILL] ${makeSmokeId("bill")}`;
+  let createdVendorId = null;
+  let createdBillId = null;
+
+  try {
+    // Create a vendor for this bill
+    const vendorName = `[SMOKE][BILL-VENDOR] ${makeSmokeId("vendor")}`;
+    const vendorResponse = await request("/vendors", {
+      method: "POST",
+      token: adminToken,
+      body: { name: vendorName }
+    });
+    const vendor = requireOkData("bills smoke vendor create", vendorResponse, 201).vendor;
+    createdVendorId = vendor.id;
+    record(
+      "bills smoke vendor created",
+      createdVendorId && vendor.isArchived === false,
+      `vendorId=${createdVendorId}`
+    );
+
+    // Create a bill with all required fields
+    const billResponse = await request("/bills", {
+      method: "POST",
+      token: adminToken,
+      body: {
+        vendorId: createdVendorId,
+        amountCents: 50000,
+        paymentForm: "OTHER",
+        paymentDate: "2026-06-15T00:00:00.000Z",
+        billDate: "2026-06-01T00:00:00.000Z",
+        dueDate: "2026-06-30T00:00:00.000Z",
+        referenceNumber: billReference
+      }
+    });
+    const bill = requireOkData("bills create", billResponse, 201).bill;
+    createdBillId = bill.id;
+    record(
+      "bills create fields",
+      bill.vendorId === createdVendorId && bill.amountCents === 50000 && bill.isArchived === false,
+      `vendorId=${bill.vendorId} amount=${bill.amountCents} archived=${bill.isArchived}`
+    );
+
+    // List bills and verify
+    const listResponse = await request("/bills", { token: adminToken });
+    const listData = requireOkData("bills list", listResponse, 200);
+    const foundInList = listData.bills.some((b) => b.id === createdBillId);
+    record("bills list contains created bill", foundInList, createdBillId);
+
+    // Archive bill
+    const archiveResponse = await request(`/bills/${createdBillId}/archive`, {
+      method: "POST",
+      token: adminToken
+    });
+    const archived = requireOkData("bills archive", archiveResponse, 200).bill;
+    record("bills archive state", archived.isArchived === true, `archived=${archived.isArchived}`);
+
+    // List archived bills and verify
+    const archivedListResponse = await request("/bills?archived=true", { token: adminToken });
+    const archivedListData = requireOkData("bills archived list", archivedListResponse, 200);
+    const foundInArchived = archivedListData.bills.some((b) => b.id === createdBillId);
+    record("bills archived list contains bill", foundInArchived, createdBillId);
+
+    // Restore bill
+    const restoreResponse = await request(`/bills/${createdBillId}/restore`, {
+      method: "POST",
+      token: adminToken
+    });
+    const restored = requireOkData("bills restore", restoreResponse, 200).bill;
+    record("bills restore state", restored.isArchived === false, `archived=${restored.isArchived}`);
+
+    // List active bills and verify restored
+    const activeListAfterRestore = await request("/bills", { token: adminToken });
+    const activeListData = requireOkData("bills active list after restore", activeListAfterRestore, 200);
+    const foundActive = activeListData.bills.some((b) => b.id === createdBillId);
+    record("bills active list contains restored bill", foundActive, createdBillId);
+
+    // Archive for cleanup
+    const archiveCleanup = await request(`/bills/${createdBillId}/archive`, {
+      method: "POST",
+      token: adminToken
+    });
+    requireOkData("bills cleanup archive", archiveCleanup, 200);
+    createdBillId = null;
+
+    // Archive vendor for cleanup
+    if (createdVendorId) {
+      await request(`/vendors/${createdVendorId}/archive`, {
+        method: "POST",
+        token: adminToken
+      }).catch(() => undefined);
+      createdVendorId = null;
+    }
+  } catch (error) {
+    record(
+      "bills smoke runtime",
+      false,
+      error instanceof Error ? error.message : "unknown error"
+    );
+    throw error;
+  } finally {
+    if (createdBillId) {
+      await request(`/bills/${createdBillId}/archive`, {
+        method: "POST",
+        token: adminToken
+      }).catch(() => undefined);
+    }
+    if (createdVendorId) {
+      await request(`/vendors/${createdVendorId}/archive`, {
+        method: "POST",
+        token: adminToken
+      }).catch(() => undefined);
+    }
+  }
+}
+
 async function main() {
   if (!requireApiBaseUrl(apiBaseUrl)) {
     process.exitCode = 1;
@@ -705,10 +821,12 @@ async function main() {
     await runLocalFinanceIntegrityChecks(adminToken);
     await runLocalInvoiceItemChecks(adminToken);
     await runLocalVendorCrudChecks(adminToken);
+    await runLocalBillsChecks(adminToken);
   } else {
     record("finance integrity checks", true, "skipped outside local mode");
     record("services library checks", true, "skipped outside local mode");
     record("vendor crud checks", true, "skipped outside local mode");
+    record("bills checks", true, "skipped outside local mode");
   }
 
   const logout = await request("/auth/logout", { method: "POST", token: adminToken });
