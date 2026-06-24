@@ -205,6 +205,30 @@ function readSeedPassword() {
   return value;
 }
 
+function readTesterCredentials() {
+  const email = process.env.AUTH_SEED_TESTER_EMAIL;
+  const password = process.env.AUTH_SEED_TESTER_PASSWORD;
+  const hasEmail = typeof email === "string" && email.trim().length > 0;
+  const hasPassword = typeof password === "string" && password.length > 0;
+
+  if (!hasEmail && !hasPassword) {
+    return null;
+  }
+
+  if (hasEmail && !hasPassword) {
+    fail("AUTH_SEED_TESTER_EMAIL is set but AUTH_SEED_TESTER_PASSWORD is missing.");
+  }
+
+  if (!hasEmail && hasPassword) {
+    fail("AUTH_SEED_TESTER_PASSWORD is set but AUTH_SEED_TESTER_EMAIL is missing.");
+  }
+
+  return {
+    email: email.trim().toLowerCase(),
+    passwordHash: hashPassword(password)
+  };
+}
+
 function maskEmail(email) {
   const [localPart, domain = ""] = email.split("@");
   if (!domain) {
@@ -622,11 +646,43 @@ async function upsertDcaFoundationBootstrap(prisma) {
   };
 }
 
+async function upsertTesterFixture(prisma, testerCredentials, dcaTenantId) {
+  const testerUser = await upsertUser(prisma, testerCredentials.email, testerCredentials.passwordHash);
+  const testerMembership = await upsertMembership(prisma, dcaTenantId, testerUser.user.id);
+
+  // The local_tester role has zero permissions (ROLE_PERMISSION_MAP local_tester: []).
+  // Finance routes require requireRole("owner", "admin"). Assigning local_tester would
+  // cause 403 on all Finance endpoints due to RBAC, not tenant isolation, making
+  // cross-tenant blocking indistinguishable from role-based blocking. Use the existing
+  // admin role already seeded by upsertDcaFoundationBootstrap in the second tenant.
+  const adminRole = await prisma.role.findUnique({
+    where: { tenantId_key: { tenantId: dcaTenantId, key: "admin" } }
+  });
+
+  if (!adminRole) {
+    fail("admin role not found in DCA foundation tenant; upsertDcaFoundationBootstrap must run before upsertTesterFixture.");
+  }
+
+  const testerMembershipRole = await upsertMembershipRole(
+    prisma,
+    testerMembership.membership.id,
+    adminRole.id
+  );
+
+  return {
+    user: testerUser,
+    membership: testerMembership,
+    roleKey: adminRole.key,
+    membershipRole: testerMembershipRole
+  };
+}
+
 async function main() {
   const { databaseName, databaseTarget, hostname, port } = assertSafeDatabaseUrl();
   const email = readSeedEmail();
   const password = readSeedPassword();
   const passwordHash = hashPassword(password);
+  const testerCredentials = readTesterCredentials();
   const prisma = new PrismaClient();
 
   try {
@@ -642,13 +698,23 @@ async function main() {
       );
       const dcaFoundation = await upsertDcaFoundationBootstrap(tx);
 
+      let testerFixture = null;
+      if (testerCredentials) {
+        testerFixture = await upsertTesterFixture(
+          tx,
+          testerCredentials,
+          dcaFoundation.tenant.tenant.id
+        );
+      }
+
       return {
         tenant,
         user,
         membership,
         role,
         membershipRole,
-        dcaFoundation
+        dcaFoundation,
+        testerFixture
       };
     });
 
@@ -712,6 +778,26 @@ async function main() {
               key: dcaModuleDefinitions[index]?.key ?? "unknown",
               status: tenantModule.status
             }))
+          },
+          testerFixture: result.testerFixture
+            ? {
+                tenant: {
+                  slug: dcaTenantSlug,
+                  name: dcaTenantName
+                },
+                user: {
+                  email: maskEmail(testerCredentials.email),
+                  status: result.testerFixture.user.status
+                },
+                membership: {
+                  status: result.testerFixture.membership.status
+                },
+                role: {
+                  key: result.testerFixture.roleKey,
+                  status: result.testerFixture.membershipRole.status
+                }
+              }
+            : "skipped - AUTH_SEED_TESTER_EMAIL/AUTH_SEED_TESTER_PASSWORD not set"
           }
         },
         null,
