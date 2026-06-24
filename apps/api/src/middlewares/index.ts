@@ -8,3 +8,4 @@ export {
   resolveActiveRoles,
   resolveEffectivePermissions
 } from "./authorization.middleware";
+export { createSecurityHeadersMiddleware, securityHeaders } from "./security-headers.middleware";
