@@ -6,6 +6,7 @@ import {
   archiveAiDeliveryProjectHandler,
   archiveAiDeliveryContentDraftHandler,
   archiveBillHandler,
+  archiveVendorHandler,
   archiveClientHandler,
   archiveClientUserAccessHandler,
   archiveInvoiceHandler,
@@ -99,6 +100,7 @@ import {
   markInvoiceUncollectibleHandler,
   registerInvoicePaymentHandler,
   restoreBillHandler,
+  restoreVendorHandler,
   restoreClientHandler,
   restoreInvoiceItemHandler,
   restoreProjectHandler,
@@ -114,6 +116,7 @@ import {
   updateAiDeliveryWorkflowRunHandler,
   updateBillHandler,
   updateClientHandler,
+  updateVendorHandler,
   updateCreditNoteHandler,
   updateInvoiceHandler,
   updateInvoiceItemHandler,
@@ -267,6 +270,9 @@ export function createCoreRouter() {
 
   router.get("/vendors", requireAuth, requireTenant, listVendorsHandler);
   router.post("/vendors", requireAuth, requireTenant, requireRole("owner", "admin"), createVendorHandler);
+  router.put("/vendors/:id", requireAuth, requireTenant, requireRole("owner", "admin"), updateVendorHandler);
+  router.post("/vendors/:id/archive", requireAuth, requireTenant, requireRole("owner", "admin"), archiveVendorHandler);
+  router.post("/vendors/:id/restore", requireAuth, requireTenant, requireRole("owner", "admin"), restoreVendorHandler);
 
   router.get("/bills", requireAuth, requireTenant, listBillsHandler);
   router.post("/bills", requireAuth, requireTenant, requireRole("owner", "admin"), createBillHandler);

@@ -3431,6 +3431,44 @@ export function App() {
     }
   }
 
+  async function handleSaveVendor(vendorId: string | null, values: VendorFormValues): Promise<boolean> {
+    if (!vendorId) {
+      return handleCreateVendor(values);
+    }
+
+    setAppMessage(null);
+    try {
+      const response = await runAuthenticatedRequest<{ vendor: VendorSummary | null }>(`/vendors/${vendorId}`, {
+        method: "PUT",
+        body: values
+      });
+
+      if (!response) {
+        return false;
+      }
+
+      if (!response.ok) {
+        setAppMessage({ tone: "error", text: getErrorMessage(response) });
+        return false;
+      }
+
+      await loadProtectedState(tokenRef.current);
+      setAppMessage({ tone: "success", text: "Vendor updated." });
+      return true;
+    } catch (error) {
+      setAppMessage({ tone: "error", text: maskError(error) });
+      return false;
+    }
+  }
+
+  async function handleArchiveVendor(vendorId: string): Promise<boolean> {
+    return runVendorAction(`/vendors/${vendorId}/archive`, "Vendor archived.");
+  }
+
+  async function handleRestoreVendor(vendorId: string): Promise<boolean> {
+    return runVendorAction(`/vendors/${vendorId}/restore`, "Vendor restored.");
+  }
+
   async function handleSaveBill(billId: string | null, values: BillFormValues): Promise<BillSummary | null> {
     setAppMessage(null);
     try {
@@ -3505,6 +3543,31 @@ export function App() {
     setAppMessage(null);
     try {
       const response = await runAuthenticatedRequest<{ bill: BillSummary | null }>(path, {
+        method: "POST"
+      });
+
+      if (!response) {
+        return false;
+      }
+
+      if (!response.ok) {
+        setAppMessage({ tone: "error", text: getErrorMessage(response) });
+        return false;
+      }
+
+      await loadProtectedState(tokenRef.current);
+      setAppMessage({ tone: "success", text: successMessage });
+      return true;
+    } catch (error) {
+      setAppMessage({ tone: "error", text: maskError(error) });
+      return false;
+    }
+  }
+
+  async function runVendorAction(path: string, successMessage: string): Promise<boolean> {
+    setAppMessage(null);
+    try {
+      const response = await runAuthenticatedRequest<{ vendor: VendorSummary | null }>(path, {
         method: "POST"
       });
 
@@ -3740,9 +3803,12 @@ export function App() {
           errorMessage={null}
           isLoading={false}
           onArchiveBill={handleArchiveBill}
+          onArchiveVendor={handleArchiveVendor}
           onCreateVendor={handleCreateVendor}
+          onRestoreVendor={handleRestoreVendor}
           onRestoreBill={handleRestoreBill}
           onSaveBill={handleSaveBill}
+          onSaveVendor={handleSaveVendor}
           onUploadBillDocument={handleUploadBillDocument}
           vendors={vendors?.vendors ?? []}
         />

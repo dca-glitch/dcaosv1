@@ -6682,6 +6682,87 @@ export async function createVendor(
   }
 }
 
+export async function updateVendor(
+  authSession: AuthResolvedSessionContext,
+  vendorId: string,
+  input: VendorInputRequest
+): Promise<VendorResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId || !vendorId || !input.name) {
+    return null;
+  }
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    const existing = await getVendorRecord(tx, tenantId, vendorId);
+    if (!existing) {
+      return null;
+    }
+
+    try {
+      const updated = await tx.vendor.update({
+        where: {
+          id: vendorId
+        },
+        data: {
+          name: input.name
+        },
+        select: vendorSelect
+      });
+
+      return {
+        vendor: toVendorSummary(updated)
+      };
+    } catch (error) {
+      if ((error as { code?: string }).code === "P2002") {
+        return {
+          vendor: null
+        };
+      }
+      throw error;
+    }
+  });
+}
+
+async function updateVendorArchiveState(
+  authSession: AuthResolvedSessionContext,
+  vendorId: string,
+  isArchived: boolean
+): Promise<VendorResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId || !vendorId) {
+    return null;
+  }
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    const existing = await getVendorRecord(tx, tenantId, vendorId);
+    if (!existing) {
+      return null;
+    }
+
+    const updated = await tx.vendor.update({
+      where: {
+        id: vendorId
+      },
+      data: {
+        isArchived
+      },
+      select: vendorSelect
+    });
+
+    return {
+      vendor: toVendorSummary(updated)
+    };
+  });
+}
+
+export async function archiveVendor(authSession: AuthResolvedSessionContext, vendorId: string) {
+  return updateVendorArchiveState(authSession, vendorId, true);
+}
+
+export async function restoreVendor(authSession: AuthResolvedSessionContext, vendorId: string) {
+  return updateVendorArchiveState(authSession, vendorId, false);
+}
+
 export async function listBills(authSession: AuthResolvedSessionContext): Promise<BillsResponse | null> {
   const tenantId = getActiveTenantId(authSession);
   if (!tenantId) {

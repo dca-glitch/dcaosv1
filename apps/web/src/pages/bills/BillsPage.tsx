@@ -64,9 +64,12 @@ type BillsPageProps = {
   errorMessage: string | null;
   isLoading: boolean;
   onArchiveBill: (billId: string) => Promise<boolean>;
+  onArchiveVendor: (vendorId: string) => Promise<boolean>;
   onCreateVendor: (values: VendorFormValues) => Promise<boolean>;
   onRestoreBill: (billId: string) => Promise<boolean>;
+  onRestoreVendor: (vendorId: string) => Promise<boolean>;
   onSaveBill: (billId: string | null, values: BillFormValues) => Promise<BillSummary | null>;
+  onSaveVendor: (vendorId: string | null, values: VendorFormValues) => Promise<boolean>;
   onUploadBillDocument: (billId: string, values: BillDocumentUploadValues) => Promise<BillSummary | null>;
 };
 
@@ -94,7 +97,7 @@ const emptyBillForm = (vendorId = ""): BillFormValues => ({
 });
 
 function firstActiveVendorId(vendors: VendorSummary[]): string {
-  return vendors.find((vendor) => !vendor.isArchived)?.id ?? vendors[0]?.id ?? "";
+  return vendors.find((vendor) => !vendor.isArchived)?.id ?? "";
 }
 
 function toDateInputValue(value: string | null): string {
@@ -132,19 +135,25 @@ export function BillsPage({
   errorMessage,
   isLoading,
   onArchiveBill,
+  onArchiveVendor,
   onCreateVendor,
+  onRestoreVendor,
   onRestoreBill,
   onSaveBill,
+  onSaveVendor,
   onUploadBillDocument
 }: BillsPageProps) {
   const [filter, setFilter] = useState<"active" | "archived" | "all">("active");
   const [billEditorId, setBillEditorId] = useState<string | null>(null);
   const [isBillEditorOpen, setIsBillEditorOpen] = useState(false);
   const [isVendorEditorOpen, setIsVendorEditorOpen] = useState(false);
+  const [vendorEditorId, setVendorEditorId] = useState<string | null>(null);
   const [billDraft, setBillDraft] = useState<BillFormValues>(emptyBillForm());
   const [documentFile, setDocumentFile] = useState<File | null>(null);
   const [vendorDraft, setVendorDraft] = useState<VendorFormValues>({ name: "" });
   const [saving, setSaving] = useState(false);
+  const activeVendorCount = vendors.filter((vendor) => !vendor.isArchived).length;
+  const hasActiveVendors = activeVendorCount > 0;
 
   const filteredBills = useMemo(
     () =>
@@ -226,14 +235,27 @@ export function BillsPage({
     event.preventDefault();
     setSaving(true);
     try {
-      const ok = await onCreateVendor(vendorDraft);
+      const ok = vendorEditorId ? await onSaveVendor(vendorEditorId, vendorDraft) : await onCreateVendor(vendorDraft);
       if (ok) {
         setVendorDraft({ name: "" });
+        setVendorEditorId(null);
         setIsVendorEditorOpen(false);
       }
     } finally {
       setSaving(false);
     }
+  }
+
+  function openCreateVendorModal() {
+    setVendorEditorId(null);
+    setVendorDraft({ name: "" });
+    setIsVendorEditorOpen(true);
+  }
+
+  function openEditVendorModal(vendor: VendorSummary) {
+    setVendorEditorId(vendor.id);
+    setVendorDraft({ name: vendor.name });
+    setIsVendorEditorOpen(true);
   }
 
   if (isLoading) {
@@ -267,12 +289,12 @@ export function BillsPage({
           </div>
           {canEdit ? (
             <>
-              <button className="secondary-action" onClick={() => setIsVendorEditorOpen(true)} type="button">
+              <button className="secondary-action" onClick={openCreateVendorModal} type="button">
                 Add Vendor
               </button>
               <button
                 className="primary-action"
-                disabled={vendors.length === 0}
+                disabled={!hasActiveVendors}
                 onClick={openCreateBillModal}
                 type="button"
               >
@@ -296,13 +318,39 @@ export function BillsPage({
         </article>
         <article className="summary-panel">
           <span>Vendors</span>
-          <strong>{vendors.filter((vendor) => !vendor.isArchived).length}</strong>
+          <strong>{activeVendorCount}</strong>
           <small>{vendors.length} total</small>
         </article>
       </div>
 
-      {canEdit && vendors.length === 0 ? (
+      {canEdit && !hasActiveVendors ? (
         <EmptyState title="Add a vendor first" message="Bills need a vendor before they can be created." />
+      ) : null}
+
+      {vendors.length > 0 ? (
+        <div className="entity-grid">
+          {vendors.map((vendor) => (
+            <article className="entity-card" key={vendor.id}>
+              <div className="entity-card-header">
+                <div>
+                  <span className={`entity-pill entity-pill-${vendor.isArchived ? "archived" : "active"}`}>
+                    {vendor.isArchived ? "Archived" : "Active"}
+                  </span>
+                  <h2>{vendor.name}</h2>
+                </div>
+                <div className="card-actions">
+                  {canEdit ? <button className="secondary-action" onClick={() => openEditVendorModal(vendor)} type="button">Edit</button> : null}
+                  {canEdit && !vendor.isArchived ? <button className="secondary-action" onClick={() => void onArchiveVendor(vendor.id)} type="button">Archive</button> : null}
+                  {canEdit && vendor.isArchived ? <button className="secondary-action" onClick={() => void onRestoreVendor(vendor.id)} type="button">Restore</button> : null}
+                </div>
+              </div>
+              <div className="entity-field-grid">
+                <div><span>Bills</span><strong>{vendor.billCount}</strong></div>
+                <div><span>Last updated</span><strong>{formatDateLabel(vendor.updatedAt)}</strong></div>
+              </div>
+            </article>
+          ))}
+        </div>
       ) : null}
 
       {filteredBills.length === 0 ? (
@@ -353,7 +401,7 @@ export function BillsPage({
           <form className="entity-form" onSubmit={handleBillSubmit}>
             <div className="modal-footer">
               <button className="secondary-action" disabled={saving} onClick={() => setIsBillEditorOpen(false)} type="button">Cancel</button>
-              <button className="primary-action" disabled={saving || vendors.length === 0} type="submit">{saving ? "Saving" : billEditorId ? "Update bill" : "Create bill"}</button>
+              <button className="primary-action" disabled={saving || !hasActiveVendors} type="submit">{saving ? "Saving" : billEditorId ? "Update bill" : "Create bill"}</button>
             </div>
             <div className="field-grid">
               <label>
@@ -488,14 +536,14 @@ export function BillsPage({
             </div>
             <div className="modal-footer">
               <button className="secondary-action" disabled={saving} onClick={() => setIsBillEditorOpen(false)} type="button">Cancel</button>
-              <button className="primary-action" disabled={saving || vendors.length === 0} type="submit">{saving ? "Saving" : billEditorId ? "Update bill" : "Create bill"}</button>
+              <button className="primary-action" disabled={saving || !hasActiveVendors} type="submit">{saving ? "Saving" : billEditorId ? "Update bill" : "Create bill"}</button>
             </div>
           </form>
         </Modal>
       ) : null}
 
       {isVendorEditorOpen ? (
-        <Modal onClose={() => setIsVendorEditorOpen(false)} title="Add Vendor">
+        <Modal onClose={() => setIsVendorEditorOpen(false)} title={vendorEditorId ? "Edit Vendor" : "Add Vendor"}>
           <form className="entity-form" onSubmit={handleVendorSubmit}>
             <div className="field-grid">
               <label className="field-span-2">
@@ -510,7 +558,7 @@ export function BillsPage({
             </div>
             <div className="modal-footer">
               <button className="secondary-action" disabled={saving} onClick={() => setIsVendorEditorOpen(false)} type="button">Cancel</button>
-              <button className="primary-action" disabled={saving} type="submit">{saving ? "Saving" : "Save Vendor"}</button>
+              <button className="primary-action" disabled={saving} type="submit">{saving ? "Saving" : vendorEditorId ? "Update Vendor" : "Save Vendor"}</button>
             </div>
           </form>
         </Modal>

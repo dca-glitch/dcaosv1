@@ -31,6 +31,7 @@ import {
   archiveClient,
   archiveClientUserAccess,
   archiveBill,
+  archiveVendor,
   archiveInvoice,
   archiveProject,
   archiveRecurringInvoice,
@@ -94,6 +95,7 @@ import {
   registerInvoicePayment,
   restoreInvoiceItem,
   restoreBill,
+  restoreVendor,
   restoreClient,
   restoreProject,
   restoreTask,
@@ -115,6 +117,7 @@ import {
   updateAiDeliveryWorkflowRun,
   updateBill,
   updateClient,
+  updateVendor,
   updateInvoiceItem,
   updateInvoice,
   voidCreditNote,
@@ -3452,6 +3455,76 @@ export const createVendorHandler: RequestHandler = async (req, res) => {
     res.status(500).json(failure("VENDOR_RUNTIME_ERROR", "Vendor create could not be completed."));
   }
 };
+
+export const updateVendorHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) {
+    res.status(401).json(unauthorizedFailure());
+    return;
+  }
+
+  const vendorId = typeof req.params.id === "string" ? req.params.id.trim() : "";
+  const input = getVendorInput(req.body);
+  if (!vendorId || !input) {
+    res.status(400).json(failure("VENDOR_INVALID", "Vendor request is invalid."));
+    return;
+  }
+
+  try {
+    const response = await updateVendor(authSession, vendorId, input);
+    if (!response) {
+      res.status(404).json(failure("VENDOR_NOT_FOUND", "Vendor was not found for this tenant."));
+      return;
+    }
+    if (!response.vendor) {
+      res.status(400).json(failure("VENDOR_INVALID", "Vendor request is invalid."));
+      return;
+    }
+
+    res.json(success(response, { phase: "runtime", scope: "bills-module" }));
+  } catch {
+    res.status(500).json(failure("VENDOR_RUNTIME_ERROR", "Vendor update could not be completed."));
+  }
+};
+
+export const archiveVendorHandler: RequestHandler = async (req, res) => {
+  await runVendorAction(req, res, archiveVendor, "Vendor archive could not be completed.");
+};
+
+export const restoreVendorHandler: RequestHandler = async (req, res) => {
+  await runVendorAction(req, res, restoreVendor, "Vendor restore could not be completed.");
+};
+
+async function runVendorAction(
+  req: Parameters<RequestHandler>[0],
+  res: Parameters<RequestHandler>[1],
+  action: typeof archiveVendor,
+  errorMessage: string
+) {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) {
+    res.status(401).json(unauthorizedFailure());
+    return;
+  }
+
+  const vendorId = typeof req.params.id === "string" ? req.params.id.trim() : "";
+  if (!vendorId) {
+    res.status(400).json(failure("VENDOR_INVALID", "Vendor request is invalid."));
+    return;
+  }
+
+  try {
+    const response = await action(authSession, vendorId);
+    if (!response?.vendor) {
+      res.status(404).json(failure("VENDOR_NOT_FOUND", "Vendor was not found for this tenant."));
+      return;
+    }
+
+    res.json(success(response, { phase: "runtime", scope: "bills-module" }));
+  } catch {
+    res.status(500).json(failure("VENDOR_RUNTIME_ERROR", errorMessage));
+  }
+}
 
 export const listBillsHandler: RequestHandler = async (_req, res) => {
   const authSession = getAuthSession(res.locals);
