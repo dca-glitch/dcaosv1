@@ -4351,7 +4351,8 @@ function getMarketIntelligenceResearchRunInput(value: unknown): MarketIntelligen
   return {
     projectId: getOptionalString(obj.projectId),
     status: getOptionalString(obj.status),
-    resultSummary: getOptionalString(obj.resultSummary)
+    resultSummary: getOptionalString(obj.resultSummary),
+    executionLog: getOptionalString(obj.executionLog)
   };
 }
 
@@ -4365,6 +4366,7 @@ function getMarketIntelligenceInsightInput(value: unknown): MarketIntelligenceIn
     projectId: getOptionalString(obj.projectId),
     title: getOptionalString(obj.title),
     summary: getOptionalString(obj.summary),
+    resultData: obj.resultData,
     status: getOptionalString(obj.status),
     reviewerNotes: getOptionalString(obj.reviewerNotes)
   };

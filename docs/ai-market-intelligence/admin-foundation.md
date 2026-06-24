@@ -9,7 +9,7 @@ Market Intelligence is an admin-only MVP module for research project setup and s
 Admins can use Market Intelligence to:
 
 - Create and manage Research Projects
-- Curate and track Research Sources  
+- Curate and track Research Sources
 - Create bounded Research Runs
 - Document and review Market Insights
 - Track competitive trends and opportunities
@@ -75,6 +75,26 @@ POST   /api/v1/market-intelligence-projects/:projectId/insights
 PUT    /api/v1/market-intelligence-projects/:projectId/insights/:insightId
 POST   /api/v1/market-intelligence-projects/:projectId/insights/:insightId/archive
 ```
+
+### AI Insight Workflow
+
+Market Intelligence includes a bounded AI Insight workflow that allows an admin to generate structured insights from curated sources.
+
+1. **Trigger:** The admin manually creates and executes a Research Run.
+2. **Generation:** The execution aggregates the project sources and runs a bounded, deterministic local generation.
+3. **Result Contract (MARKET_INTELLIGENCE_RESULT_V1):** The execution produces a structured JSON result including:
+   - `summary`
+   - `competitors`
+   - `marketTrends`
+   - `opportunities`
+   - `threats`
+   - `pricingSignals`
+   - `contentOrSeoAngles`
+   - `recommendedNextActions`
+   - `sourceNotes`
+   - `confidenceNotes`
+4. **Persistence:** The structured result is safely stored in the Research Run's `executionLog` and `resultSummary`, and a linked Market Insight is automatically generated.
+5. **Review Flow:** Admins can view the structured Insight in the UI and update its status through a simple dropdown (DRAFT, NEEDS_REVISION, REVIEWED, FINAL).
 
 ### Database Schema
 

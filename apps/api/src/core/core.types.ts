@@ -976,6 +976,7 @@ export interface MarketIntelligenceResearchRunSummary {
   projectId: string;
   status: string;
   resultSummary: string | null;
+  executionLog: string | null;
   executedAt: string | null;
   createdAt: string;
   updatedAt: string;
@@ -993,6 +994,7 @@ export interface MarketIntelligenceResearchRunInputRequest {
   projectId?: string | null;
   status?: string | null;
   resultSummary?: string | null;
+  executionLog?: string | null;
 }
 
 export interface MarketIntelligenceInsightSummary {
@@ -1000,6 +1002,7 @@ export interface MarketIntelligenceInsightSummary {
   projectId: string;
   title: string;
   summary: string | null;
+  resultData: unknown | null;
   status: string;
   reviewerNotes: string | null;
   isArchived: boolean;
@@ -1019,6 +1022,7 @@ export interface MarketIntelligenceInsightInputRequest {
   projectId?: string | null;
   title?: string | null;
   summary?: string | null;
+  resultData?: unknown | null;
   status?: string | null;
   reviewerNotes?: string | null;
 }

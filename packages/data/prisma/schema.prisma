@@ -1247,6 +1247,7 @@ model MarketIntelligenceResearchRun {
   projectId     String
   status        String                  @default("PENDING")
   resultSummary String?
+  executionLog  String?
   executedAt    DateTime?
   createdAt     DateTime                @default(now())
   updatedAt     DateTime                @updatedAt
@@ -1265,6 +1266,7 @@ model MarketIntelligenceInsight {
   projectId     String
   title         String
   summary       String?
+  resultData    Json?
   status        String                  @default("DRAFT")
   reviewerNotes String?
   isArchived    Boolean                 @default(false)

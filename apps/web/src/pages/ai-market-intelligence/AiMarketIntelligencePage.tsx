@@ -158,6 +158,25 @@ export function AiMarketIntelligencePage() {
      }
    }, [selectedProjectId, insightForm]);
 
+
+   const handleCreateRun = useCallback(async () => {
+     if (!selectedProjectId) return;
+
+     try {
+       const result = await apiCall(
+         `/market-intelligence-projects/${selectedProjectId}/research-runs`,
+         "POST",
+         { projectId: selectedProjectId, status: "PENDING" }
+       );
+       if (result?.researchRun) {
+         await loadProjectData(selectedProjectId);
+       }
+     } catch (error) {
+       console.error("Failed to create run:", error);
+       alert("Failed to create run");
+     }
+   }, [selectedProjectId]);
+
    const handleExecuteRun = useCallback(async (runId: string) => {
      if (!selectedProjectId) return;
 
@@ -288,7 +307,23 @@ export function AiMarketIntelligencePage() {
 
                {/* Research Runs Section */}
                <div style={{ marginBottom: "2rem" }}>
-                 <h3 style={{ marginBottom: "1rem" }}>Research Runs</h3>
+                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
+                   <h3>Research Runs</h3>
+                   <button
+                     onClick={handleCreateRun}
+                     style={{
+                       padding: "0.5rem 0.75rem",
+                       backgroundColor: "var(--color-secondary)",
+                       color: "white",
+                       border: "none",
+                       borderRadius: "4px",
+                       cursor: "pointer",
+                       fontSize: "0.875rem"
+                     }}
+                   >
+                     + Create Run
+                   </button>
+                 </div>
                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))", gap: "1rem" }}>
                    {runs.map((run) => (
                      <div
@@ -320,9 +355,14 @@ export function AiMarketIntelligencePage() {
                          )}
                        </div>
                        {run.resultSummary && (
-                         <p style={{ fontSize: "0.875rem", color: "var(--color-text-muted)" }}>
+                         <p style={{ fontSize: "0.875rem", color: "var(--color-text-muted)", marginBottom: "0.5rem" }}>
                            {run.resultSummary}
                          </p>
+                       )}
+                       {(run as any).executionLog && (
+                         <pre style={{ fontSize: "0.75rem", color: "var(--color-text-muted)", backgroundColor: "var(--color-bg-secondary)", padding: "0.5rem", borderRadius: "4px", overflowX: "auto", whiteSpace: "pre-wrap" }}>
+                           {(run as any).executionLog}
+                         </pre>
                        )}
                      </div>
                    ))}
@@ -362,23 +402,60 @@ export function AiMarketIntelligencePage() {
                      >
                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", marginBottom: "0.75rem" }}>
                          <h4 style={{ marginBottom: "0" }}>{insight.title}</h4>
-                         <span
+                         <select
+                           value={insight.status}
+                           onChange={async (e) => {
+                             const newStatus = e.target.value;
+                             try {
+                               await apiCall(`/market-intelligence-projects/${selectedProjectId}/insights/${insight.id}`, "PUT", { status: newStatus });
+                               await loadProjectData(selectedProjectId!);
+                             } catch (err) {
+                               console.error(err);
+                               alert("Failed to update status");
+                             }
+                           }}
                            style={{
-                             display: "inline-block",
                              padding: "0.25rem 0.5rem",
                              backgroundColor: "var(--color-bg-secondary)",
+                             border: "1px solid var(--color-border)",
                              borderRadius: "3px",
                              fontSize: "0.75rem",
-                             fontWeight: "500"
+                             fontWeight: "500",
+                             cursor: "pointer"
                            }}
                          >
-                           {insight.status}
-                         </span>
+                           <option value="DRAFT">DRAFT</option>
+                           <option value="NEEDS_REVISION">NEEDS_REVISION</option>
+                           <option value="REVIEWED">REVIEWED</option>
+                           <option value="FINAL">FINAL</option>
+                         </select>
                        </div>
                        {insight.summary && (
                          <p style={{ fontSize: "0.875rem", color: "var(--color-text-muted)", marginBottom: "0.75rem" }}>
                            {insight.summary}
                          </p>
+                       )}
+                       {(insight as any).resultData && (
+                         <div style={{ marginTop: "1rem", borderTop: "1px solid var(--color-border)", paddingTop: "1rem" }}>
+                           <h5 style={{ marginBottom: "0.5rem", fontSize: "0.875rem" }}>Structured Output</h5>
+                           <div style={{ fontSize: "0.875rem", color: "var(--color-text-muted)" }}>
+                             {Object.entries((insight as any).resultData).map(([key, value]) => {
+                               if (!value || (Array.isArray(value) && value.length === 0)) return null;
+                               return (
+                                 <div key={key} style={{ marginBottom: "0.5rem" }}>
+                                   <strong>{key}:</strong>
+                                   {Array.isArray(value) ? (
+                                     <ul style={{ margin: "0.25rem 0", paddingLeft: "1.5rem" }}>
+                                       {value.map((v, i) => <li key={i}>{v}</li>)}
+                                     </ul>
+                                   ) : (
+                                     <span style={{ marginLeft: "0.25rem" }}>{String(value)}</span>
+                                   )}
+                                 </div>
+                               );
+                             })}
+                           </div>
+                         </div>
                        )}
                        {insight.reviewerNotes && (
                          <p style={{ fontSize: "0.75rem", color: "var(--color-text-muted)", fontStyle: "italic" }}>

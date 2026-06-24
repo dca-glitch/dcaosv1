@@ -8489,6 +8489,7 @@ export async function listMarketIntelligenceResearchRuns(
         projectId: true,
         status: true,
         resultSummary: true,
+        executionLog: true,
         executedAt: true,
         createdAt: true,
         updatedAt: true
@@ -8522,13 +8523,15 @@ export async function createMarketIntelligenceResearchRun(
         tenantId,
         projectId: input.projectId ?? "",
         status: input.status ?? "PENDING",
-        resultSummary: toNullableString(input.resultSummary)
+        resultSummary: toNullableString(input.resultSummary),
+        executionLog: toNullableString(input.executionLog)
       },
       select: {
         id: true,
         projectId: true,
         status: true,
         resultSummary: true,
+        executionLog: true,
         executedAt: true,
         createdAt: true,
         updatedAt: true
@@ -8555,21 +8558,72 @@ export async function executeMarketIntelligenceResearchRun(
     return null;
   }
 
+  const existingRun = await prisma.marketIntelligenceResearchRun.findUnique({
+    where: { id: runId },
+    select: { tenantId: true, projectId: true }
+  });
+
+  if (!existingRun || existingRun.tenantId !== tenantId) {
+    return null;
+  }
+
+  const sources = await prisma.marketIntelligenceSource.findMany({
+    where: { tenantId, projectId: existingRun.projectId, isArchived: false }
+  });
+
+  const project = await prisma.marketIntelligenceProject.findUnique({
+    where: { id: existingRun.projectId }
+  });
+
+  // Mock deterministic generation
+  const mockResultData = {
+    summary: `Market insight generated for ${project?.title || 'Project'}`,
+    competitors: sources.map((s, idx) => `Competitor ${idx + 1}: ${s.title}`),
+    marketTrends: ["Shift to AI-driven insights", "Automation of manual research"],
+    opportunities: ["Leverage bounded AI for efficiency", "Integrate CRM with intelligence"],
+    threats: ["Data privacy regulations", "Model hallucination risks"],
+    pricingSignals: ["Competitors moving to usage-based pricing"],
+    contentOrSeoAngles: ["How AI transforms market research"],
+    recommendedNextActions: ["Review generated insights", "Finalize report for stakeholders"],
+    sourceNotes: `Analyzed ${sources.length} active sources.`,
+    confidenceNotes: "High confidence (Deterministic Mock)"
+  };
+
+  const executionLog = `[INFO] Started research run ${runId}
+[INFO] Found ${sources.length} sources to analyze.
+[INFO] Generating deterministic insight mock.
+[INFO] Finished generation successfully.`;
+
   return prisma.$transaction(async (tx: PrismaTx) => {
     const run = await tx.marketIntelligenceResearchRun.update({
       where: { id: runId },
       data: {
         status: "EXECUTED",
-        executedAt: new Date()
+        executedAt: new Date(),
+        resultSummary: mockResultData.summary,
+        executionLog: executionLog
       },
       select: {
         id: true,
         projectId: true,
         status: true,
         resultSummary: true,
+        executionLog: true,
         executedAt: true,
         createdAt: true,
         updatedAt: true
+      }
+    });
+
+    // create insight linked to this run's results
+    await tx.marketIntelligenceInsight.create({
+      data: {
+        tenantId,
+        projectId: existingRun.projectId,
+        title: `Generated Insight ${new Date().toISOString().substring(0, 10)}`,
+        summary: mockResultData.summary,
+        resultData: mockResultData as any,
+        status: "DRAFT"
       }
     });
 
@@ -8605,6 +8659,7 @@ export async function listMarketIntelligenceInsights(
         projectId: true,
         title: true,
         summary: true,
+        resultData: true,
         status: true,
         reviewerNotes: true,
         isArchived: true,
@@ -8617,6 +8672,7 @@ export async function listMarketIntelligenceInsights(
     return {
       insights: insights.map((i) => ({
         ...i,
+        resultData: i.resultData as any,
         createdAt: i.createdAt.toISOString(),
         updatedAt: i.updatedAt.toISOString()
       }))
@@ -8640,6 +8696,7 @@ export async function createMarketIntelligenceInsight(
         projectId: input.projectId ?? "",
         title: input.title ?? "New Insight",
         summary: toNullableString(input.summary),
+        resultData: input.resultData !== undefined ? (input.resultData as any) : null,
         status: input.status ?? "DRAFT",
         reviewerNotes: toNullableString(input.reviewerNotes)
       },
@@ -8648,6 +8705,7 @@ export async function createMarketIntelligenceInsight(
         projectId: true,
         title: true,
         summary: true,
+        resultData: true,
         status: true,
         reviewerNotes: true,
         isArchived: true,
@@ -8684,6 +8742,9 @@ export async function updateMarketIntelligenceInsight(
     if (input.summary !== undefined) {
       updateData.summary = input.summary;
     }
+    if (input.resultData !== undefined) {
+      updateData.resultData = input.resultData;
+    }
     if (input.status !== undefined && input.status !== null) {
       updateData.status = input.status;
     }
@@ -8699,6 +8760,7 @@ export async function updateMarketIntelligenceInsight(
         projectId: true,
         title: true,
         summary: true,
+        resultData: true,
         status: true,
         reviewerNotes: true,
         isArchived: true,
@@ -8710,6 +8772,7 @@ export async function updateMarketIntelligenceInsight(
     return {
       insight: {
         ...insight,
+        resultData: insight.resultData as any,
         createdAt: insight.createdAt.toISOString(),
         updatedAt: insight.updatedAt.toISOString()
       }
@@ -8735,6 +8798,7 @@ export async function archiveMarketIntelligenceInsight(
         projectId: true,
         title: true,
         summary: true,
+        resultData: true,
         status: true,
         reviewerNotes: true,
         isArchived: true,
@@ -8746,6 +8810,7 @@ export async function archiveMarketIntelligenceInsight(
     return {
       insight: {
         ...insight,
+        resultData: insight.resultData as any,
         createdAt: insight.createdAt.toISOString(),
         updatedAt: insight.updatedAt.toISOString()
       }

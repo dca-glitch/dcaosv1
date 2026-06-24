@@ -25,9 +25,23 @@ export interface MarketIntelligenceResearchRunSummary {
   projectId: string;
   status: string;
   resultSummary: string | null;
+  executionLog: string | null;
   executedAt: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface MarketIntelligenceInsightResultV1 {
+  summary: string | null;
+  competitors: string[] | null;
+  marketTrends: string[] | null;
+  opportunities: string[] | null;
+  threats: string[] | null;
+  pricingSignals: string[] | null;
+  contentOrSeoAngles: string[] | null;
+  recommendedNextActions: string[] | null;
+  sourceNotes: string | null;
+  confidenceNotes: string | null;
 }
 
 export interface MarketIntelligenceInsightSummary {
@@ -35,6 +49,7 @@ export interface MarketIntelligenceInsightSummary {
   projectId: string;
   title: string;
   summary: string | null;
+  resultData: MarketIntelligenceInsightResultV1 | null;
   status: string;
   reviewerNotes: string | null;
   isArchived: boolean;

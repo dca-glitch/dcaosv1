@@ -151,7 +151,19 @@ async function main() {
     if (executeRunResponse.data?.researchRun?.status !== "EXECUTED") {
       throw new Error("Failed to execute research run");
     }
+    if (!executeRunResponse.data?.researchRun?.resultSummary || !executeRunResponse.data?.researchRun?.executionLog) {
+      throw new Error("Execution did not produce resultSummary or executionLog");
+    }
     console.log(`✅ Research run executed: ${runId}\n`);
+
+    console.log("📋 Step 7.5: Verifying auto-generated insight...");
+    const autoInsightsResponse = await apiCall("GET", `/market-intelligence-projects/${projectId}/insights`, undefined, token);
+    const autoInsight = autoInsightsResponse.data?.insights?.find(i => i.title.startsWith("Generated Insight"));
+    if (!autoInsight || !autoInsight.resultData) {
+      throw new Error("Failed to find auto-generated insight with structured resultData");
+    }
+    await apiCall("PUT", `/market-intelligence-projects/${projectId}/insights/${autoInsight.id}`, { status: "REVIEWED" }, token);
+    console.log(`✅ Auto-generated insight verified and updated to REVIEWED: ${autoInsight.id}\n`);
 
     // Step 8: List research runs
     console.log("📋 Step 8: Listing research runs...");
