@@ -1,5 +1,5 @@
 import express from "express";
-import { securityHeaders } from "./middlewares";
+import { rateLimit, securityHeaders } from "./middlewares";
 import { errorMiddleware } from "./middleware/errorMiddleware";
 import { createV1Router } from "./routes/v1";
 import { failure } from "./utils/responses";
@@ -8,6 +8,7 @@ export function createApp() {
   const app = express();
 
   app.use(securityHeaders);
+  app.use(rateLimit);
   app.use(express.json({ limit: "8mb" }));
   app.use("/api/v1", createV1Router());
 
