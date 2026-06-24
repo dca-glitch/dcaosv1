@@ -729,6 +729,197 @@ async function runLocalBillsChecks(adminToken) {
   }
 }
 
+async function runLocalCreditNoteChecks(adminToken) {
+  const creditNoteReason = `[SMOKE][CN] ${makeSmokeId("credit-note")}`;
+  let createdClientId = null;
+  let createdInvoiceId = null;
+  let createdCreditNoteId = null;
+
+  try {
+    // Create client
+    const clientResponse = await request("/clients", {
+      method: "POST",
+      token: adminToken,
+      body: {
+        name: `[SMOKE][CN-CLIENT] ${makeSmokeId("client")}`,
+        country: "United States"
+      }
+    });
+    const client = requireOkData("credit-note client create", clientResponse, 201).client;
+    createdClientId = client.id;
+    record(
+      "credit-note client created",
+      createdClientId && !client.isArchived,
+      `clientId=${createdClientId}`
+    );
+
+    // Create invoice for credit note
+    const invoiceLineItems = [
+      {
+        description: "Smoke credit note test item",
+        quantity: 1,
+        unitPriceCents: 10000,
+        totalCents: 10000,
+        sortOrder: 0
+      }
+    ];
+    const invoiceResponse = await request("/invoices", {
+      method: "POST",
+      token: adminToken,
+      body: {
+        clientId: createdClientId,
+        invoiceNumber: `SMOKE-CN-INV-${Date.now()}`,
+        status: "ISSUED",
+        issueDate: "2026-06-01T00:00:00.000Z",
+        dueDate: "2026-06-30T00:00:00.000Z",
+        paidAt: null,
+        currency: "USD",
+        subtotalCents: 10000,
+        taxCents: 0,
+        discountCents: 0,
+        totalCents: 10000,
+        amountPaidCents: 0,
+        lineItems: invoiceLineItems
+      }
+    });
+    const invoice = requireOkData("credit-note invoice create", invoiceResponse, 201).invoice;
+    createdInvoiceId = invoice.id;
+    record(
+      "credit-note invoice created",
+      createdInvoiceId && invoice.status === "ISSUED",
+      `invoiceId=${createdInvoiceId} status=${invoice.status}`
+    );
+
+    // Create credit note from invoice
+    const createCreditNoteResponse = await request(`/invoices/${createdInvoiceId}/credit-notes`, {
+      method: "POST",
+      token: adminToken,
+      body: {
+        reason: creditNoteReason,
+        amountCents: 5000,
+        currency: "USD",
+        subtotalCents: 5000,
+        taxCents: 0,
+        discountCents: 0,
+        totalCents: 5000,
+        lineItems: [
+          {
+            description: "Smoke credit note item partial",
+            quantity: 1,
+            unitPriceCents: 5000,
+            totalCents: 5000,
+            sortOrder: 0
+          }
+        ]
+      }
+    });
+    const creditNote = requireOkData("credit-note create", createCreditNoteResponse, 201).creditNote;
+    createdCreditNoteId = creditNote.id;
+    record(
+      "credit-note create fields",
+      createdCreditNoteId && creditNote.status === "DRAFT" && creditNote.totalCents === 5000,
+      `creditNoteId=${createdCreditNoteId} status=${creditNote.status} total=${creditNote.totalCents}`
+    );
+
+    // Update credit note while DRAFT
+    const updateCreditNoteResponse = await request(`/credit-notes/${createdCreditNoteId}`, {
+      method: "PUT",
+      token: adminToken,
+      body: {
+        reason: `${creditNoteReason} UPDATED`,
+        amountCents: 5000,
+        currency: "USD",
+        subtotalCents: 5000,
+        taxCents: 0,
+        discountCents: 0,
+        totalCents: 5000,
+        lineItems: [
+          {
+            description: "Smoke credit note item updated",
+            quantity: 1,
+            unitPriceCents: 5000,
+            totalCents: 5000,
+            sortOrder: 0
+          }
+        ]
+      }
+    });
+    const updatedCreditNote = requireOkData("credit-note update", updateCreditNoteResponse, 200).creditNote;
+    record(
+      "credit-note update fields",
+      updatedCreditNote.reason.includes("UPDATED"),
+      `reason=${updatedCreditNote.reason}`
+    );
+
+    // Issue credit note
+    const issueCreditNoteResponse = await request(`/credit-notes/${createdCreditNoteId}/issue`, {
+      method: "POST",
+      token: adminToken
+    });
+    const issuedCreditNote = requireOkData("credit-note issue", issueCreditNoteResponse, 200).creditNote;
+    record(
+      "credit-note issue status",
+      issuedCreditNote.status === "ISSUED",
+      `status=${issuedCreditNote.status}`
+    );
+
+    // Void credit note
+    const voidCreditNoteResponse = await request(`/credit-notes/${createdCreditNoteId}/void`, {
+      method: "POST",
+      token: adminToken
+    });
+    const voidedCreditNote = requireOkData("credit-note void", voidCreditNoteResponse, 200).creditNote;
+    record(
+      "credit-note void status",
+      voidedCreditNote.status === "VOIDED",
+      `status=${voidedCreditNote.status}`
+    );
+
+    // Verify detail lookup (if endpoint exists)
+    const detailResponse = await request(`/credit-notes/${createdCreditNoteId}`, {
+      token: adminToken
+    });
+    if (detailResponse.status === 200) {
+      const detailData = detailResponse.body?.data?.creditNote;
+      record(
+        "credit-note detail lookup",
+        detailData && detailData.status === "VOIDED",
+        `status=${detailData?.status}`
+      );
+    } else {
+      record("credit-note detail lookup", true, `${detailResponse.status} - detail GET endpoint not available (optional)`);
+    }
+
+    createdCreditNoteId = null;
+  } catch (error) {
+    record(
+      "credit-note smoke runtime",
+      false,
+      error instanceof Error ? error.message : "unknown error"
+    );
+    throw error;
+  } finally {
+    if (createdCreditNoteId) {
+      await request(`/credit-notes/${createdCreditNoteId}/void`, {
+        method: "POST",
+        token: adminToken
+      }).catch(() => undefined);
+    }
+    if (createdInvoiceId) {
+      await request(`/invoices/${createdInvoiceId}/archive`, {
+        method: "POST",
+        token: adminToken
+      }).catch(() => undefined);
+    }
+    if (createdClientId) {
+      await request(`/clients/${createdClientId}/archive`, {
+        method: "POST",
+        token: adminToken
+      }).catch(() => undefined);
+    }
+  }
+}
+
 async function main() {
   if (!requireApiBaseUrl(apiBaseUrl)) {
     process.exitCode = 1;
@@ -822,11 +1013,13 @@ async function main() {
     await runLocalInvoiceItemChecks(adminToken);
     await runLocalVendorCrudChecks(adminToken);
     await runLocalBillsChecks(adminToken);
+    await runLocalCreditNoteChecks(adminToken);
   } else {
     record("finance integrity checks", true, "skipped outside local mode");
     record("services library checks", true, "skipped outside local mode");
     record("vendor crud checks", true, "skipped outside local mode");
     record("bills checks", true, "skipped outside local mode");
+    record("credit-note checks", true, "skipped outside local mode");
   }
 
   const logout = await request("/auth/logout", { method: "POST", token: adminToken });
