@@ -29,7 +29,7 @@ Admins can use Market Intelligence to:
 - Tenant-scoped access control (owner/admin roles only)
 - Basic archiving for projects, sources, and insights
 - Research run status tracking (PENDING, EXECUTED)
-- Insight status workflow (DRAFT, REVIEW, FINAL)
+- Insight status workflow (DRAFT, NEEDS_REVISION, REVIEWED, APPROVED)
 - Simple web-based UI with modals for create/edit
 
 ### Field Coverage

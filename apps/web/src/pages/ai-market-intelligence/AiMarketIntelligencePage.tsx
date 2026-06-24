@@ -806,8 +806,9 @@ export function AiMarketIntelligencePage() {
                  }}
                >
                  <option value="DRAFT">Draft</option>
-                 <option value="REVIEW">Under Review</option>
-                 <option value="FINAL">Final</option>
+                 <option value="NEEDS_REVISION">Needs Revision</option>
+                 <option value="REVIEWED">Reviewed</option>
+                 <option value="APPROVED">Approved</option>
                </select>
              </div>
              <div style={{ display: "flex", gap: "0.75rem", justifyContent: "flex-end" }}>
