@@ -117,9 +117,11 @@ Run in this exact order. Stop on first failure.
 ### Known Windows / Prisma EPERM
 
 If `prisma generate` fails with EPERM during validate:
-1. Stop `node.exe` processes.
-2. Retry `npm.cmd run validate` once.
-3. If it still fails, stop and report. Do not proceed.
+1. List relevant `node.exe` process IDs: `Get-Process -Name node | Select-Object Id, StartTime`
+2. Stop only explicit process IDs: `Stop-Process -Id <PID1>, <PID2> -Force`
+3. **Do not use `Stop-Process -Name node`** - this can kill unrelated processes
+4. Retry `npm.cmd run validate` once.
+5. If it still fails, stop and report. Do not proceed.
 
 ## Role model
 

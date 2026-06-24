@@ -122,8 +122,9 @@ If Prisma EPERM occurs during validation:
 
 ### Migration and environment handling
 
-- If migration/env is needed, use existing repo-approved pattern without printing `DATABASE_URL` or secrets.
-- Use safe migration script: `node scripts/run-migration-local.mjs <migration-name>`
+- Migrations require explicit human approval before execution.
+- Use existing repo-approved migration pattern only; do not invent migration script names.
+- Never print `DATABASE_URL` or other secrets when handling migrations.
 
 ## Budget and model discipline
 

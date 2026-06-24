@@ -1,4 +1,4 @@
-﻿import type { AppModuleContract } from "@dca-os-v1/shared";
+import type { AppModuleContract } from "@dca-os-v1/shared";
 import type { Prisma } from "@prisma/client";
 import { moduleRegistry } from "@dca-os-v1/shared";
 import { createPrismaClient } from "../../../../packages/data/src/client";

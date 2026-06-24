@@ -89,12 +89,14 @@ The current foundation intentionally avoids:
 - production deployment or production data changes
 - production secrets
 - payment flows
-- AI runtime/provider calls
+- real external provider execution (local deterministic/bounded AI only)
 - crawling
-- WordPress integration
+- WordPress publishing integration (draft preparation foundation exists; full integration gated)
 - GA/GSC integration
 - Resend sending or API key handling
 - active Client Portal / Client Access workflows
+
+Note: AI Delivery project/brief/workflow/deliverable/review admin foundation is present but local/admin-only. Market Intelligence research/insight admin foundation is present but local/admin-only. Real external provider integrations, Client Portal, and production deployment remain guarded gates.
 
 These areas will be implemented in controlled future blocks.
 
