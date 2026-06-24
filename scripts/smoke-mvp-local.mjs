@@ -526,6 +526,93 @@ async function runLocalInvoiceItemChecks(adminToken) {
   }
 }
 
+async function runLocalVendorCrudChecks(adminToken) {
+  const vendorName = `[SMOKE][VENDOR] ${makeSmokeId("vendor")}`;
+  const updatedName = `[SMOKE][VENDOR] ${makeSmokeId("vendor-updated")}`;
+  let createdVendorId = null;
+
+  try {
+    const createResponse = await request("/vendors", {
+      method: "POST",
+      token: adminToken,
+      body: {
+        name: vendorName
+      }
+    });
+    const created = requireOkData("vendor create", createResponse, 201).vendor;
+    createdVendorId = created.id;
+    record(
+      "vendor create fields",
+      created.name === vendorName && created.isArchived === false,
+      `name=${created.name} archived=${created.isArchived}`
+    );
+
+    const listResponse = await request("/vendors", { token: adminToken });
+    const listData = requireOkData("vendor list", listResponse, 200);
+    const foundInList = listData.vendors.some((v) => v.id === createdVendorId);
+    record("vendor list contains created vendor", foundInList, createdVendorId);
+
+    const updateResponse = await request(`/vendors/${createdVendorId}`, {
+      method: "PUT",
+      token: adminToken,
+      body: {
+        name: updatedName
+      }
+    });
+    const updated = requireOkData("vendor update", updateResponse, 200).vendor;
+    record(
+      "vendor update fields",
+      updated.name === updatedName,
+      `name=${updated.name}`
+    );
+
+    const archiveResponse = await request(`/vendors/${createdVendorId}/archive`, {
+      method: "POST",
+      token: adminToken
+    });
+    const archived = requireOkData("vendor archive", archiveResponse, 200).vendor;
+    record("vendor archive state", archived.isArchived === true, `archived=${archived.isArchived}`);
+
+    const archivedListResponse = await request("/vendors?archived=true", { token: adminToken });
+    const archivedListData = requireOkData("vendor archived list", archivedListResponse, 200);
+    const foundInArchived = archivedListData.vendors.some((v) => v.id === createdVendorId);
+    record("vendor archived list contains vendor", foundInArchived, createdVendorId);
+
+    const restoreResponse = await request(`/vendors/${createdVendorId}/restore`, {
+      method: "POST",
+      token: adminToken
+    });
+    const restored = requireOkData("vendor restore", restoreResponse, 200).vendor;
+    record("vendor restore state", restored.isArchived === false, `archived=${restored.isArchived}`);
+
+    const activeListAfterRestore = await request("/vendors", { token: adminToken });
+    const activeListData = requireOkData("vendor active list after restore", activeListAfterRestore, 200);
+    const foundActive = activeListData.vendors.some((v) => v.id === createdVendorId);
+    record("vendor active list contains restored vendor", foundActive, createdVendorId);
+
+    const archiveCleanup = await request(`/vendors/${createdVendorId}/archive`, {
+      method: "POST",
+      token: adminToken
+    });
+    requireOkData("vendor cleanup archive", archiveCleanup, 200);
+    createdVendorId = null;
+  } catch (error) {
+    record(
+      "vendor smoke runtime",
+      false,
+      error instanceof Error ? error.message : "unknown error"
+    );
+    throw error;
+  } finally {
+    if (createdVendorId) {
+      await request(`/vendors/${createdVendorId}/archive`, {
+        method: "POST",
+        token: adminToken
+      }).catch(() => undefined);
+    }
+  }
+}
+
 async function main() {
   if (!requireApiBaseUrl(apiBaseUrl)) {
     process.exitCode = 1;
@@ -617,9 +704,11 @@ async function main() {
   if (smokeMode === "local") {
     await runLocalFinanceIntegrityChecks(adminToken);
     await runLocalInvoiceItemChecks(adminToken);
+    await runLocalVendorCrudChecks(adminToken);
   } else {
     record("finance integrity checks", true, "skipped outside local mode");
     record("services library checks", true, "skipped outside local mode");
+    record("vendor crud checks", true, "skipped outside local mode");
   }
 
   const logout = await request("/auth/logout", { method: "POST", token: adminToken });
