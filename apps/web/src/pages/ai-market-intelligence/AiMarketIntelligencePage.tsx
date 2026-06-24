@@ -12,7 +12,7 @@ async function apiCall(endpoint: string, method: string = "GET", body?: unknown)
    const headers: Record<string, string> = {
      "Content-Type": "application/json"
    };
-   const token = localStorage.getItem("dcaosv1.authToken");
+   const token = window.sessionStorage.getItem("dcaosv1.authToken");
    if (token) {
      headers.Authorization = `Bearer ${token}`;
    }
