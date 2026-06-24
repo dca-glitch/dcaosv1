@@ -4,6 +4,7 @@ import { ErrorState } from "../../components/ErrorState";
 import { LoadingState } from "../../components/LoadingState";
 import { Modal } from "../../components/Modal";
 import { ModalActions } from "../../components/ui/ModalActions";
+import { WordPressConfigPanel, type WordPressConfig } from "./WordPressConfigPanel";
 
 export type CompanyProfileSummary = {
   id: string;
@@ -51,6 +52,8 @@ type CompanyProfilePageProps = {
   error: string | null;
   loading: boolean;
   onSave: (values: CompanyProfileFormValues) => Promise<boolean>;
+  wordPressConfig: WordPressConfig | null;
+  onSaveWordPressConfig: (values: WordPressConfig) => Promise<boolean>;
 };
 
 const emptyForm = (): CompanyProfileFormValues => ({
@@ -71,7 +74,7 @@ const emptyForm = (): CompanyProfileFormValues => ({
   creditNotePrefix: "DCA-CN"
 });
 
-export function CompanyProfilePage({ companyProfile, canEdit, error, loading, onSave }: CompanyProfilePageProps) {
+export function CompanyProfilePage({ companyProfile, canEdit, error, loading, onSave, wordPressConfig, onSaveWordPressConfig }: CompanyProfilePageProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [draft, setDraft] = useState<CompanyProfileFormValues>(
@@ -241,6 +244,14 @@ export function CompanyProfilePage({ companyProfile, canEdit, error, loading, on
           </div>
         </article>
       )}
+
+      <WordPressConfigPanel
+        canEdit={canEdit}
+        config={wordPressConfig}
+        error={null}
+        loading={false}
+        onSave={onSaveWordPressConfig}
+      />
 
       {isEditing ? (
         <Modal onClose={closeEditor} title={companyProfile ? "Edit Company Profile" : "Create Company Profile"}>

@@ -10,6 +10,7 @@ import {
   type VendorSummary
 } from "./pages/bills/BillsPage";
 import { CompanyProfilePage, type CompanyProfileFormValues, type CompanyProfileSummary } from "./pages/company-profile/CompanyProfilePage";
+import { type WordPressConfig } from "./pages/company-profile/WordPressConfigPanel";
 import { ClientsPage, type ClientAccessUserSummary, type ClientFormValues, type ClientSummary } from "./pages/clients/ClientsPage";
 import { ClientPortalPage } from "./pages/client-portal/ClientPortalPage";
 import { CreditNotesPage, type CreditNoteFormValues, type CreditNoteSummary } from "./pages/credit-notes/CreditNotesPage";
@@ -1443,6 +1444,7 @@ export function App() {
   const [teamMembers, setTeamMembers] = useState<TenantMembersResponse | null>(null);
   const [tenantSettings, setTenantSettings] = useState<TenantSettingsResponse | null>(null);
   const [companyProfile, setCompanyProfile] = useState<CompanyProfileResponse | null>(null);
+  const [wordPressConfig, setWordPressConfig] = useState<{ config: WordPressConfig | null } | null>(null);
   const [clients, setClients] = useState<ClientsResponse | null>(null);
   const [projects, setProjects] = useState<ProjectsResponse | null>(null);
   const [aiDeliveryProjects, setAiDeliveryProjects] = useState<AiDeliveryProjectsResponse | null>(null);
@@ -1550,7 +1552,8 @@ export function App() {
           activityAuditLogsResponse,
           tenantModulesResponse,
           teamMembersResponse,
-          tenantSettingsResponse
+          tenantSettingsResponse,
+          wordPressConfigResponse
         ] =
           await Promise.all([
             apiRequest<AuthCurrentUserResponse>("/auth/me", { token: nextToken }),
@@ -1571,7 +1574,8 @@ export function App() {
             apiRequest<ActivityAuditLogsResponse>("/activity/audit-logs?limit=5", { token: nextToken }),
             apiRequest<TenantModulesResponse>("/modules/current", { token: nextToken }),
             apiRequest<TenantMembersResponse>("/tenants/current/members", { token: nextToken }),
-            apiRequest<TenantSettingsResponse>("/tenants/current/settings", { token: nextToken })
+            apiRequest<TenantSettingsResponse>("/tenants/current/settings", { token: nextToken }),
+            apiRequest<{ config: WordPressConfig | null }>("/tenant/wordpress-config", { token: nextToken })
           ]);
 
         if (!meResponse.ok) {
@@ -1630,6 +1634,7 @@ export function App() {
         setTenantModules(tenantModulesResponse.ok ? tenantModulesResponse.data.modules : []);
         setTeamMembers(teamMembersResponse.ok ? teamMembersResponse.data : null);
         setTenantSettings(tenantSettingsResponse.ok ? tenantSettingsResponse.data : null);
+        setWordPressConfig(wordPressConfigResponse.ok ? wordPressConfigResponse.data : null);
 
         if (
           !contextResponse.ok ||
@@ -1822,6 +1827,32 @@ export function App() {
 
       await loadProtectedState(tokenRef.current);
       setAppMessage({ tone: "success", text: "Company profile saved." });
+      return true;
+    } catch (error) {
+      setAppMessage({ tone: "error", text: maskError(error) });
+      return false;
+    }
+  }
+
+  async function handleSaveWordPressConfig(values: WordPressConfig): Promise<boolean> {
+    setAppMessage(null);
+    try {
+      const response = await runAuthenticatedRequest<{ config: WordPressConfig | null }>("/tenant/wordpress-config", {
+        method: "POST",
+        body: values
+      });
+
+      if (!response) {
+        return false;
+      }
+
+      if (!response.ok) {
+        setAppMessage({ tone: "error", text: getErrorMessage(response) });
+        return false;
+      }
+
+      setWordPressConfig(response.data);
+      setAppMessage({ tone: "success", text: "WordPress site config saved." });
       return true;
     } catch (error) {
       setAppMessage({ tone: "error", text: maskError(error) });
@@ -3641,6 +3672,8 @@ export function App() {
           error={null}
           loading={false}
           onSave={handleSaveCompanyProfile}
+          wordPressConfig={wordPressConfig?.config ?? null}
+          onSaveWordPressConfig={handleSaveWordPressConfig}
         />
       ) : null}
       {!loading && activeView === "client-portal" ? (
