@@ -2006,9 +2006,18 @@ export function AiDeliveryPage({
     try {
       const saved = await onSaveDeliverable(projectId, deliverableEditorId, deliverableForm);
       if (saved && typeof onFetchDeliverables === "function") {
-        setDeliverables(await onFetchDeliverables(projectId));
-        setDeliverableEditorId(null);
-        setDeliverableForm({ contentDraftId: null, articleImageId: null, title: "", description: null, deliveryType: "CONTENT_PACKAGE", status: "DRAFT", exportUrl: null, storageKey: null, notes: null, isArchived: false });
+        const refreshedDeliverables = await onFetchDeliverables(projectId);
+        setDeliverables(refreshedDeliverables);
+        // Keep the saved deliverable as the active record so admin can view status/download immediately
+        // Use the returned saved deliverable directly (for new deliverables with newly assigned IDs)
+        // Fall back to searching by deliverableEditorId (for existing deliverables being updated)
+        if (saved.id) {
+          editDeliverable(saved);
+        } else {
+          // fallback to clearing if saved object has no ID
+          setDeliverableEditorId(null);
+          setDeliverableForm({ contentDraftId: null, articleImageId: null, title: "", description: null, deliveryType: "CONTENT_PACKAGE", status: "DRAFT", exportUrl: null, storageKey: null, notes: null, isArchived: false });
+        }
       }
     } catch (error) {
       setDeliverablesError(getErrorMessage(error, "Unable to save this deliverable."));
@@ -4177,23 +4186,24 @@ export function AiDeliveryPage({
                           onClick={() => void fetchDeliverableDownloadReference(openDeliverablesProject.id, activeDeliverableRecord.id)}
                           type="button"
                         >
-                          {deliverableDownloadRefLoading ? "Fetching..." : "Get R2 URL"}
+                          {deliverableDownloadRefLoading ? "Preparing download..." : "Download private document"}
                         </button>
                         {deliverableDownloadRefError && deliverableDownloadRefError.recordId === activeDeliverableRecord.id ? (
-                          <div className="state-panel" role="alert" style={{ marginTop: "0.5rem", color: "var(--color-error)" }}>
-                            {deliverableDownloadRefError.message}
+                          <div className="state-panel" role="alert" style={{ marginTop: "0.5rem", paddingLeft: "1rem", borderLeft: "4px solid var(--color-error)" }}>
+                            <strong>Download unavailable:</strong> {deliverableDownloadRefError.message.includes("503") || deliverableDownloadRefError.message.includes("unconfigured") ? "Private document storage is not configured. Contact your administrator." : deliverableDownloadRefError.message}
                           </div>
                         ) : null}
                         {deliverableDownloadRef && deliverableDownloadRef.recordId === activeDeliverableRecord.id ? (
                           <div className="state-panel" style={{ marginTop: "0.5rem" }}>
                             {deliverableDownloadRef.downloadUrl ? (
                               <div>
-                                Download URL available:&nbsp;
-                                <a href={deliverableDownloadRef.downloadUrl} target="_blank" rel="noopener noreferrer">{deliverableDownloadRef.storageKey}</a>
-                                {deliverableDownloadRef.expiresSeconds ? <span className="muted-text"> (Expires in {Math.floor(deliverableDownloadRef.expiresSeconds / 3600)} hours)</span> : null}
+                                <strong>Download ready:</strong> <a href={deliverableDownloadRef.downloadUrl} target="_blank" rel="noopener noreferrer">Open private document</a>
+                                {deliverableDownloadRef.expiresSeconds ? <span className="muted-text"> (Link expires in {Math.floor(deliverableDownloadRef.expiresSeconds / 60)} minutes)</span> : null}
                               </div>
                             ) : (
-                              "Storage reference exists, but no download URL is available. Storage may be unconfigured."
+                              <div>
+                                <strong>Storage not available:</strong> The document reference exists but storage is unavailable. Contact your administrator to configure storage.
+                              </div>
                             )}
                           </div>
                         ) : null}
@@ -4768,23 +4778,24 @@ export function AiDeliveryPage({
                           onClick={() => void fetchArticleImageDownloadReference(openArticleImagesProject.id, activeArticleImageRecord.id)}
                           type="button"
                         >
-                          {articleImageDownloadRefLoading ? "Fetching..." : "Get R2 URL"}
+                          {articleImageDownloadRefLoading ? "Preparing download..." : "Download private image"}
                         </button>
                         {articleImageDownloadRefError && articleImageDownloadRefError.recordId === activeArticleImageRecord.id ? (
-                          <div className="state-panel" role="alert" style={{ marginTop: "0.5rem", color: "var(--color-error)" }}>
-                            {articleImageDownloadRefError.message}
+                          <div className="state-panel" role="alert" style={{ marginTop: "0.5rem", paddingLeft: "1rem", borderLeft: "4px solid var(--color-error)" }}>
+                            <strong>Download unavailable:</strong> {articleImageDownloadRefError.message.includes("503") || articleImageDownloadRefError.message.includes("unconfigured") ? "Private image storage is not configured. Contact your administrator." : articleImageDownloadRefError.message}
                           </div>
                         ) : null}
                         {articleImageDownloadRef && articleImageDownloadRef.recordId === activeArticleImageRecord.id ? (
                           <div className="state-panel" style={{ marginTop: "0.5rem" }}>
                             {articleImageDownloadRef.downloadUrl ? (
                               <div>
-                                Download URL available:&nbsp;
-                                <a href={articleImageDownloadRef.downloadUrl} target="_blank" rel="noopener noreferrer">{articleImageDownloadRef.storageKey}</a>
-                                {articleImageDownloadRef.expiresSeconds ? <span className="muted-text"> (Expires in {Math.floor(articleImageDownloadRef.expiresSeconds / 3600)} hours)</span> : null}
+                                <strong>Download ready:</strong> <a href={articleImageDownloadRef.downloadUrl} target="_blank" rel="noopener noreferrer">Open private image</a>
+                                {articleImageDownloadRef.expiresSeconds ? <span className="muted-text"> (Link expires in {Math.floor(articleImageDownloadRef.expiresSeconds / 60)} minutes)</span> : null}
                               </div>
                             ) : (
-                              "Storage reference exists, but no download URL is available. Storage may be unconfigured."
+                              <div>
+                                <strong>Storage not available:</strong> The image reference exists but storage is unavailable. Contact your administrator to configure storage.
+                              </div>
                             )}
                           </div>
                         ) : null}
