@@ -150,6 +150,8 @@ Documentation-only commits may be made separately when explicitly requested.
 
 Every agent must report:
 
+**GATE: KEEP/FIX/REVERT/STOP | agent: yes/no | budget: low/medium/high | mistakes: <count>**
+
 1. Branch name
 2. Files changed
 3. Commits created
@@ -158,6 +160,14 @@ Every agent must report:
 6. Known blockers
 7. Remaining polish items
 8. Confirmation that backend/API/auth/schema/VPS/deploy were not touched
+
+## Gate and approval flow
+
+- One scoped task only. No second block without explicit approval.
+- No commit unless user approves commit after validation/proof.
+- No push unless user separately approves push after commit.
+- Commit and push require separate, explicit approvals.
+- No deploy/merge/VPS/prod/Caddy/container work unless explicitly approved.
 
 ## Stop conditions
 

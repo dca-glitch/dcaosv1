@@ -23,12 +23,11 @@ npm.cmd run validate
 
 If `prisma generate` fails with an EPERM file-lock error:
 
-```powershell
-Stop-Process -Name node -Force -ErrorAction SilentlyContinue
-npm.cmd run validate
-```
-
-Retry once only. If validate still fails after one retry, stop and report.
+1. List relevant `node.exe` process IDs: `Get-Process -Name node | Select-Object Id, StartTime`
+2. Stop only explicit process IDs: `Stop-Process -Id <PID1>, <PID2> -Force`
+3. **Do not use `Stop-Process -Name node`** - this can kill unrelated processes
+4. Retry validation: `npm.cmd run validate`
+5. Retry once only. If validate still fails after one retry, stop and report.
 
 ## Step 3 - Focused smoke (only after validate passes)
 
@@ -81,7 +80,14 @@ Use PowerShell commands only. Do not use bash, Unix pipes, or Unix redirects.
 
 ## Rules summary
 
-- Never run smoke after a failed validate.
+- **Never run smoke after a failed validate.**
 - Never skip `git diff --check`.
 - Never use `bash`, `sh`, or Unix-style commands on this repo.
 - Prefer `npm.cmd` over `npm` on Windows to avoid path resolution issues.
+- **If backend/API proof passes but UI fails, compare browser payload/form state against backend contract. Do not repeat login/session guessing.**
+
+## Loop control
+
+- If the same command fails repeatedly, stop and report the issue.
+- Do not retry the same approach more than twice without changing strategy.
+- If validation fails and the fix is not obvious, stop and ask for guidance.

@@ -93,6 +93,10 @@ Use for: larger blocks, multi-file work, async execution.
 
 ## Human gate points
 
+Every task must follow the DCA gate format in project reports:
+
+**GATE: KEEP/FIX/REVERT/STOP | agent: yes/no | budget: low/medium/high | mistakes: <count>**
+
 | Gate | Required |
 |---|---|
 | Block scope approval | ChatGPT reviews and approves before execution |
@@ -103,6 +107,12 @@ Use for: larger blocks, multi-file work, async execution.
 | Merge | Human merges PR explicitly |
 | Deploy | Human deploys explicitly - never triggered by agent |
 
+### Critical validation discipline
+
+- Run `npm.cmd run validate` before any smoke.
+- **Stop immediately on validation failure.** Do not run smoke after failed validation.
+- If backend/API proof passes but UI fails, compare browser payload/form state against backend contract. Do not repeat login/session guessing.
+
 ---
 
 ## Copilot Max operating rules
@@ -111,9 +121,24 @@ Use for: larger blocks, multi-file work, async execution.
 
 - Local Copilot CLI is the default for small focused blocks (1-5 files, docs, UI polish).
 - Cloud agent is for async issue-to-PR work only, after scope is fully defined in an ai-block.yml issue.
-- Use Auto/default model first for low and medium risk work.
-- Escalate to a stronger model only after discovery shows architectural risk or after repeated failed fixes.
+- **Default to cheapest suitable model (Claude Haiku 4.5)** for docs/simple fixes.
+- Escalate to a stronger model (Gemini Pro or Sonnet) only for:
+  - Schema/migration work
+  - Auth/RBAC/security changes
+  - Provider/external integrations
+  - Secrets/credentials design
+  - Complex API/runtime/UI blocks
+  - Failed validation/smoke repair
+  - Contradictory findings
 - If a stronger model is used, the final report must state the reason.
+- **Important:** Copilot may not auto-switch models from prompt text. The agent must clearly state recommended model before starting demanding tasks.
+
+### Loop control
+
+- If an edit/search repeats or the agent is not progressing, **stop and return status.**
+- **Do not keep listing directories or rerunning the same search.**
+- If a tool reports multiple matches, inspect a narrower range or ask for targeted context; **do not loop.**
+- If the same file is being edited repeatedly without progress, stop and report the issue.
 
 ### Parallelism and autonomy limits
 
@@ -169,6 +194,22 @@ Key points:
 - No production, VPS, deploy, or remote server actions without explicit human scope and approval.
 - Local auth flows use `admin@dca.local` as the admin email and `$env:AUTH_SEED_TEST_PASSWORD` as the password source.
 - The password must remain local and must never be committed, printed, or written into any repo file or doc.
+
+### PowerShell and log discipline
+
+- Use Windows PowerShell only. No bash, no Unix paths.
+- Any command output intended for user review **must** write to `$env:TEMP` log and open Notepad automatically.
+- **Do not add `Read-Host` pauses** unless explicitly requested.
+- **Do not use `exit`** in PowerShell snippets.
+- **Do not close the user's PowerShell window.**
+
+### File editing discipline
+
+- Avoid UTF-8 BOM on all source files.
+- **Do not use `Set-Content -Encoding utf8`** on source/schema/config files.
+- Use no-BOM writes: `[System.IO.File]::WriteAllText($path, $text, [System.Text.UTF8Encoding]::new($false))`
+- For text replacements, use fail-hard Node script or exact targeted edit.
+- **Do not loop fragile PowerShell replacements.**
 
 ---
 

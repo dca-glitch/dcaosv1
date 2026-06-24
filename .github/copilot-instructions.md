@@ -75,6 +75,33 @@
 - Avoid fragile PowerShell string-replacement loops on structured files.
 - Keep final reports factual. No marketing language. No unsupported claims.
 
+## PowerShell and log behavior
+
+### Required PowerShell discipline
+
+- Use Windows PowerShell only. No bash, no Unix paths.
+- Any command output intended for user review **must** write to `$env:TEMP` log and open Notepad automatically.
+- **Do not add `Read-Host` pauses** unless explicitly requested.
+- **Do not use `exit`** in PowerShell snippets.
+- **Do not close the user's PowerShell window.**
+- Do not spam explanations around Notepad/log behavior.
+
+### Safe log file pattern
+
+Prefer building output into a variable/list and then writing the log with safe file writes:
+
+```powershell
+$log = Join-Path $env:TEMP "dcaos-task-name.log"
+$out = @()
+$out += "=== Section ==="
+$out += (command output 2>&1)
+[System.IO.File]::WriteAllLines($log, $out)
+if (Test-Path $log) { notepad $log }
+```
+
+- Test-Path before opening Notepad if file creation could fail.
+- Do not print secrets into logs.
+
 ## Validation order
 
 Run in this exact order. Stop on first failure.
@@ -122,6 +149,33 @@ If `prisma generate` fails with EPERM during validate:
   - validation requirements
   - final report checklist
 - Do not hard-code subscription prices, credit limits, or plan claims in repo files.
+
+## Model selection policy
+
+**Default to cheapest suitable model** (Claude Haiku 4.5) for:
+- Docs-only changes
+- Simple fixes
+- UI polish
+- Single-file edits
+
+**Use Gemini Pro or Sonnet for:**
+- Schema/migration work
+- Auth/RBAC/security changes
+- Provider/external integrations
+- Secrets/credentials design
+- Complex API/runtime/UI blocks
+- Failed validation/smoke repair
+- Contradictory findings
+- Large repo comparison
+
+**Important:** Copilot may not auto-switch models from prompt text. The agent must clearly state recommended model at the start of demanding tasks.
+
+## Loop control
+
+- If an edit/search repeats or the agent is not progressing, **stop and return status.**
+- **Do not keep listing directories or rerunning the same search.**
+- If a tool reports multiple matches, inspect a narrower range or ask for targeted context; **do not loop.**
+- If the same file is being edited repeatedly without progress, stop and report the issue.
 
 ## Reference files
 
