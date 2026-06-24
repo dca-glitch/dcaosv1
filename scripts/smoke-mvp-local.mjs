@@ -1,7 +1,7 @@
 const smokeMode = process.argv.includes("--staging") ? "staging" : "local";
 const defaultLocalApiBaseUrl = "http://127.0.0.1:4000/api/v1";
 const apiBaseUrl = process.env.MVP_SMOKE_API_BASE_URL ?? defaultLocalApiBaseUrl;
-const adminEmail = process.env.AUTH_SEED_TEST_EMAIL;
+const adminEmail = process.env.AUTH_SEED_TEST_EMAIL ?? "admin@dca.local";
 const adminPassword = process.env.AUTH_SEED_TEST_PASSWORD;
 const testerEmail = process.env.AUTH_SEED_TESTER_EMAIL;
 const testerPassword = process.env.AUTH_SEED_TESTER_PASSWORD;
@@ -91,6 +91,10 @@ function getErrorCode(response) {
   return response.body?.error?.code ?? "";
 }
 
+function isSafeTenantAccessBlock(response) {
+  return response.status === 403 || response.status === 404;
+}
+
 async function login(email, password) {
   return request("/auth/login", {
     method: "POST",
@@ -99,6 +103,114 @@ async function login(email, password) {
       password
     }
   });
+}
+
+function getLoginSource(label, email, password, loginResponse) {
+  return {
+    label,
+    email,
+    password,
+    token: loginResponse.body?.data?.session?.token ?? null,
+    activeMembership: loginResponse.body?.data?.tenantContext?.activeMembership ?? null,
+    memberships: loginResponse.body?.data?.tenantContext?.memberships ?? []
+  };
+}
+
+function findMembershipForTenant(source, tenantId) {
+  return source.memberships.find((membership) => membership.tenantId === tenantId) ?? null;
+}
+
+function getDistinctTenantEntries(sources) {
+  const entries = [];
+  const seenTenantIds = new Set();
+
+  for (const source of sources) {
+    for (const membership of source.memberships) {
+      if (seenTenantIds.has(membership.tenantId)) {
+        continue;
+      }
+
+      seenTenantIds.add(membership.tenantId);
+      entries.push({
+        source,
+        membership
+      });
+    }
+  }
+
+  return entries;
+}
+
+async function loginAndSelectMembership(source, tenantMembershipId) {
+  const loginResponse = await login(source.email, source.password);
+  const token = loginResponse.body?.data?.session?.token ?? null;
+  if (!token) {
+    return null;
+  }
+
+  const activeMembershipId = loginResponse.body?.data?.tenantContext?.activeMembership?.tenantMembershipId ?? null;
+  if (activeMembershipId !== tenantMembershipId) {
+    const switchResponse = await request("/tenants/current/switch", {
+      method: "POST",
+      token,
+      body: {
+        tenantMembershipId
+      }
+    });
+
+    if (switchResponse.status !== 200 || switchResponse.body?.ok !== true) {
+      return null;
+    }
+  }
+
+  return {
+    token,
+    loginResponse
+  };
+}
+
+async function resolveTenantIsolationFixture(adminSource, testerSource) {
+  const entries = getDistinctTenantEntries([adminSource, testerSource].filter(Boolean));
+  if (entries.length < 2) {
+    return null;
+  }
+
+  const firstEntry = entries[0];
+  const secondEntry = entries[1];
+
+  const firstTenantMembershipId = firstEntry.membership.tenantMembershipId;
+  const secondTenantMembershipId = secondEntry.membership.tenantMembershipId;
+
+  const firstSession =
+    firstEntry.source === secondEntry.source
+      ? await loginAndSelectMembership(firstEntry.source, firstTenantMembershipId)
+      : await loginAndSelectMembership(firstEntry.source, firstTenantMembershipId);
+
+  if (!firstSession) {
+    return null;
+  }
+
+  const secondSession =
+    firstEntry.source === secondEntry.source
+      ? await loginAndSelectMembership(secondEntry.source, secondTenantMembershipId)
+      : await loginAndSelectMembership(secondEntry.source, secondTenantMembershipId);
+
+  if (!secondSession) {
+    return null;
+  }
+
+  return {
+    tenantA: {
+      token: firstSession.token,
+      tenantId: firstEntry.membership.tenantId,
+      tenantMembershipId: firstTenantMembershipId
+    },
+    tenantB: {
+      token: secondSession.token,
+      tenantId: secondEntry.membership.tenantId,
+      tenantMembershipId: secondTenantMembershipId
+    }
+  };
 }
 
 function makeSmokeId(prefix) {
@@ -117,7 +229,7 @@ function requireOkData(name, response, expectedStatus = 201) {
   return response.body.data;
 }
 
-async function runLocalFinanceIntegrityChecks(adminToken) {
+async function runLocalFinanceIntegrityChecks(adminToken, financeIsolationFixture) {
   const activeClientName = `[SMOKE][FINANCE] Active ${makeSmokeId("client")}`;
   const archivedClientName = `[SMOKE][FINANCE] Archived ${makeSmokeId("client")}`;
   let activeClientId = null;
@@ -376,6 +488,89 @@ async function runLocalFinanceIntegrityChecks(adminToken) {
       `${mixedInvalidCreditNoteResponse.status} ${getErrorCode(mixedInvalidCreditNoteResponse)}`
     );
 
+    const financeTenantBToken = financeIsolationFixture?.tenantB?.token ?? null;
+    const invoiceSpoofTenantId = "00000000-0000-0000-0000-000000000001";
+
+    if (financeTenantBToken) {
+      const invoiceCrossTenantReadResponse = await request(`/invoices/${createdInvoice.id}`, {
+        token: financeTenantBToken
+      });
+      record(
+        "finance invoice cross-tenant read blocked",
+        isSafeTenantAccessBlock(invoiceCrossTenantReadResponse),
+        `${invoiceCrossTenantReadResponse.status}`
+      );
+
+      const invoiceCrossTenantUpdateResponse = await request(`/invoices/${createdInvoice.id}`, {
+        method: "PUT",
+        token: financeTenantBToken,
+        body: {
+          clientId: activeClient.id,
+          invoiceNumber: `${invoiceNumber}-TENANT-B`,
+          status: "ISSUED",
+          issueDate: "2026-06-01T00:00:00.000Z",
+          dueDate: "2026-06-30T00:00:00.000Z",
+          paidAt: null,
+          currency: "USD",
+          subtotalCents: 1000,
+          taxCents: 0,
+          discountCents: 0,
+          totalCents: 1000,
+          amountPaidCents: 0,
+          lineItems: invoiceLineItems
+        }
+      });
+      record(
+        "finance invoice cross-tenant update blocked",
+        isSafeTenantAccessBlock(invoiceCrossTenantUpdateResponse),
+        `${invoiceCrossTenantUpdateResponse.status}`
+      );
+
+      const invoiceCrossTenantArchiveResponse = await request(`/invoices/${createdInvoice.id}/archive`, {
+        method: "POST",
+        token: financeTenantBToken
+      });
+      record(
+        "finance invoice cross-tenant archive blocked",
+        isSafeTenantAccessBlock(invoiceCrossTenantArchiveResponse),
+        `${invoiceCrossTenantArchiveResponse.status}`
+      );
+    } else {
+      record("finance invoice cross-tenant checks", true, "skipped - no second-tenant fixture; cross-tenant isolation proof not run");
+    }
+
+    const spoofedInvoiceResponse = await request("/invoices", {
+      method: "POST",
+      token: adminToken,
+      body: {
+        tenantId: invoiceSpoofTenantId,
+        clientId: activeClient.id,
+        invoiceNumber: `${invoiceNumber}-SPOOF`,
+        status: "ISSUED",
+        issueDate: "2026-06-02T00:00:00.000Z",
+        dueDate: "2026-06-30T00:00:00.000Z",
+        paidAt: null,
+        currency: "USD",
+        subtotalCents: 1000,
+        taxCents: 0,
+        discountCents: 0,
+        totalCents: 1000,
+        amountPaidCents: 0,
+        lineItems: invoiceLineItems
+      }
+    });
+    const spoofedInvoice = requireOkData("finance invoice tenant spoof create", spoofedInvoiceResponse, 201).invoice;
+    const spoofedInvoiceReadback = await request(`/invoices/${spoofedInvoice.id}`, { token: adminToken });
+    record(
+      "finance invoice tenant spoof ignored",
+      spoofedInvoiceReadback.status === 200,
+      `readback=${spoofedInvoiceReadback.status} - invoice in admin tenant not spoofed tenant`
+    );
+    await request(`/invoices/${spoofedInvoice.id}/archive`, {
+      method: "POST",
+      token: adminToken
+    }).catch(() => undefined);
+
     const archiveRecurringInvoiceResponse = await request(
       `/recurring-invoices/${createdRecurringInvoice.id}/archive`,
       {
@@ -613,7 +808,7 @@ async function runLocalVendorCrudChecks(adminToken) {
   }
 }
 
-async function runLocalBillsChecks(adminToken) {
+async function runLocalBillsChecks(adminToken, financeIsolationFixture) {
   const billReference = `[SMOKE][BILL] ${makeSmokeId("bill")}`;
   let createdVendorId = null;
   let createdBillId = null;
@@ -683,6 +878,78 @@ async function runLocalBillsChecks(adminToken) {
     });
     const restored = requireOkData("bills restore", restoreResponse, 200).bill;
     record("bills restore state", restored.isArchived === false, `archived=${restored.isArchived}`);
+
+    const billTenantBToken = financeIsolationFixture?.tenantB?.token ?? null;
+    const billSpoofTenantId = "00000000-0000-0000-0000-000000000001";
+
+    if (billTenantBToken) {
+      const billCrossTenantReadResponse = await request(`/bills/${createdBillId}`, {
+        token: billTenantBToken
+      });
+      record(
+        "bills cross-tenant read blocked",
+        isSafeTenantAccessBlock(billCrossTenantReadResponse),
+        `${billCrossTenantReadResponse.status}`
+      );
+
+      const billCrossTenantUpdateResponse = await request(`/bills/${createdBillId}`, {
+        method: "PUT",
+        token: billTenantBToken,
+        body: {
+          vendorId: createdVendorId,
+          amountCents: 50000,
+          paymentForm: "OTHER",
+          paymentDate: "2026-06-15T00:00:00.000Z",
+          billDate: "2026-06-01T00:00:00.000Z",
+          dueDate: "2026-06-30T00:00:00.000Z",
+          referenceNumber: `${billReference}-TENANT-B`
+        }
+      });
+      record(
+        "bills cross-tenant update blocked",
+        isSafeTenantAccessBlock(billCrossTenantUpdateResponse),
+        `${billCrossTenantUpdateResponse.status}`
+      );
+
+      const billCrossTenantArchiveResponse = await request(`/bills/${createdBillId}/archive`, {
+        method: "POST",
+        token: billTenantBToken
+      });
+      record(
+        "bills cross-tenant archive blocked",
+        isSafeTenantAccessBlock(billCrossTenantArchiveResponse),
+        `${billCrossTenantArchiveResponse.status}`
+      );
+    } else {
+      record("bills cross-tenant checks", true, "skipped - no second-tenant fixture; cross-tenant isolation proof not run");
+    }
+
+    const spoofedBillResponse = await request("/bills", {
+      method: "POST",
+      token: adminToken,
+      body: {
+        tenantId: billSpoofTenantId,
+        vendorId: createdVendorId,
+        amountCents: 50000,
+        paymentForm: "OTHER",
+        paymentDate: "2026-06-15T00:00:00.000Z",
+        billDate: "2026-06-01T00:00:00.000Z",
+        dueDate: "2026-06-30T00:00:00.000Z",
+        referenceNumber: `${billReference}-SPOOF`
+      }
+    });
+    const spoofedBill = requireOkData("bills tenant spoof create", spoofedBillResponse, 201).bill;
+    const spoofedBillListResponse = await request("/bills?archived=false", { token: adminToken });
+    const spoofedBillList = spoofedBillListResponse.body?.data?.bills ?? [];
+    record(
+      "bills tenant spoof ignored",
+      spoofedBillListResponse.status === 200 && spoofedBillList.some((b) => b.id === spoofedBill.id),
+      `bill in admin active list - spoof tenantId ignored`
+    );
+    await request(`/bills/${spoofedBill.id}/archive`, {
+      method: "POST",
+      token: adminToken
+    }).catch(() => undefined);
 
     // List active bills and verify restored
     const activeListAfterRestore = await request("/bills", { token: adminToken });
@@ -976,9 +1243,8 @@ async function main() {
     return;
   }
 
-  const hasAdminEmail = requireEnv("AUTH_SEED_TEST_EMAIL", adminEmail);
   const hasAdminPassword = requireEnv("AUTH_SEED_TEST_PASSWORD", adminPassword);
-  if (!hasAdminEmail || !hasAdminPassword) {
+  if (!hasAdminPassword) {
     process.exitCode = 1;
     return;
   }
@@ -1008,6 +1274,9 @@ async function main() {
     process.exitCode = 1;
     return;
   }
+
+  const adminSource = getLoginSource("admin", adminEmail, adminPassword, adminLogin);
+  let testerLoginResponse = null;
 
   const checks = [
     ["auth/me", () => request("/auth/me", { token: adminToken }), 200],
@@ -1039,9 +1308,9 @@ async function main() {
   }
 
   if (testerEmail && testerPassword) {
-    const testerLogin = await login(testerEmail, testerPassword);
-    const testerToken = testerLogin.body?.data?.session?.token;
-    record("tester login", testerLogin.status === 200 && typeof testerToken === "string", `${testerLogin.status}`);
+    testerLoginResponse = await login(testerEmail, testerPassword);
+    const testerToken = testerLoginResponse.body?.data?.session?.token;
+    record("tester login", testerLoginResponse.status === 200 && typeof testerToken === "string", `${testerLoginResponse.status}`);
 
     if (testerToken) {
       const testerEnable = await request("/modules/current/finance-lite/enable", {
@@ -1058,11 +1327,23 @@ async function main() {
     record("module enable forbidden for tester", true, "skipped optional tester env");
   }
 
+  const financeIsolationFixture = await resolveTenantIsolationFixture(
+    adminSource,
+    testerLoginResponse ? getLoginSource("tester", testerEmail, testerPassword, testerLoginResponse) : null
+  );
+  record(
+    "finance tenant isolation fixture",
+    true,
+    financeIsolationFixture
+      ? `tenantA=${financeIsolationFixture.tenantA.tenantId} tenantB=${financeIsolationFixture.tenantB.tenantId}`
+      : "single-tenant seed; cross-tenant tests will skip; set AUTH_SEED_TESTER_EMAIL/PASSWORD on a second tenant to enable"
+  );
+
   if (smokeMode === "local") {
-    await runLocalFinanceIntegrityChecks(adminToken);
+    await runLocalFinanceIntegrityChecks(adminToken, financeIsolationFixture);
     await runLocalInvoiceItemChecks(adminToken);
     await runLocalVendorCrudChecks(adminToken);
-    await runLocalBillsChecks(adminToken);
+    await runLocalBillsChecks(adminToken, financeIsolationFixture);
     await runLocalCreditNoteChecks(adminToken);
     await runLocalWordPressConfigChecks(adminToken);
   } else {
