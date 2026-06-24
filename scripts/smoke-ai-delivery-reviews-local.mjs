@@ -1472,6 +1472,42 @@ async function runAiDeliveryApiRegression(token, fixtureProjects) {
   }
   pass("AI Delivery deliverable prepare WordPress draft rejected a cross-project deliverable reference.");
 
+  const wordpressPublishResponse = await request(`/ai-delivery-projects/${project.id}/deliverables/${createdDeliverable.id}/publish-wordpress`, {
+    method: "POST",
+    token
+  });
+  const wordpressPublishData = requireOkResponse(
+    "AI Delivery deliverable publish WordPress",
+    wordpressPublishResponse
+  );
+  const publishResult = wordpressPublishData?.publishResult;
+  if (
+    !publishResult ||
+    typeof publishResult.ok !== "boolean" ||
+    publishResult.ok !== false ||
+    publishResult.status !== "provider_disabled" ||
+    publishResult.wordpressPostId !== null ||
+    publishResult.wordpressPostUrl !== null ||
+    publishResult.wordpressEditUrl !== null ||
+    typeof publishResult.providerDisabledReason !== "string" ||
+    publishResult.providerDisabledReason.trim().length === 0
+  ) {
+    fail("AI Delivery deliverable publish WordPress did not return the expected provider-disabled mock result.");
+  }
+  pass("AI Delivery deliverable publish WordPress returned the expected provider-disabled mock result.");
+
+  const crossProjectWordPressPublishResponse = await request(
+    `/ai-delivery-projects/${crossProject.id}/deliverables/${createdDeliverable.id}/publish-wordpress`,
+    {
+      method: "POST",
+      token
+    }
+  );
+  if ([200, 201].includes(crossProjectWordPressPublishResponse.status) && crossProjectWordPressPublishResponse.body?.ok === true) {
+    fail("AI Delivery deliverable publish WordPress accepted a cross-project deliverable reference.");
+  }
+  pass("AI Delivery deliverable publish WordPress rejected a cross-project deliverable reference.");
+
   const deliverableUploadResponse = await request(`/ai-delivery-projects/${project.id}/deliverables/${createdDeliverable.id}/document`, {
     method: "POST",
     token,

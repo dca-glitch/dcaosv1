@@ -67,6 +67,7 @@ import {
   getAiDeliveryDeliverableDownload,
   getAiDeliveryDeliverableDownloadReference,
   prepareAiDeliveryDeliverableWordPressDraft,
+  publishAiDeliveryDeliverableToWordPress,
   getInvoiceDocumentDownload,
   getInvoice,
   getProject,
@@ -3336,6 +3337,23 @@ export const prepareAiDeliveryDeliverableWordPressDraftHandler: RequestHandler =
   } catch (error) {
     if (handleAiDeliveryGuardError(res, error)) return;
     res.status(500).json(failure("AI_DELIVERY_WORDPRESS_DRAFT_RUNTIME_ERROR", "WordPress draft could not be prepared."));
+  }
+};
+
+export const publishAiDeliveryDeliverableToWordPressHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  const aiDeliveryProjectId = typeof req.params.id === "string" ? req.params.id.trim() : "";
+  const deliverableId = typeof req.params.deliverableId === "string" ? req.params.deliverableId.trim() : "";
+  if (!authSession) return void res.status(401).json(unauthorizedFailure());
+  if (!aiDeliveryProjectId || !deliverableId) return void res.status(400).json(aiDeliveryProjectInvalidFailure());
+
+  try {
+    const response = await publishAiDeliveryDeliverableToWordPress(authSession, aiDeliveryProjectId, deliverableId);
+    if (!response) return void res.status(404).json(aiDeliveryProjectNotFoundFailure());
+    res.json(success(response, { phase: "runtime", scope: "ai-delivery-deliverables" }));
+  } catch (error) {
+    if (handleAiDeliveryGuardError(res, error)) return;
+    res.status(500).json(failure("AI_DELIVERY_WORDPRESS_PUBLISH_RUNTIME_ERROR", "WordPress publish could not be processed."));
   }
 };
 
