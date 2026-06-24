@@ -8231,6 +8231,14 @@ export async function updateMarketIntelligenceProject(
   }
 
   return prisma.$transaction(async (tx: PrismaTx) => {
+    const existing = await tx.marketIntelligenceProject.findFirst({
+      where: { id: projectId, tenantId },
+      select: { id: true }
+    });
+    if (!existing) {
+      return { project: null };
+    }
+
     const updateData: any = {};
     if (input.title !== undefined && input.title !== null) {
       updateData.title = input.title;
@@ -8276,6 +8284,14 @@ export async function archiveMarketIntelligenceProject(
   }
 
   return prisma.$transaction(async (tx: PrismaTx) => {
+    const existing = await tx.marketIntelligenceProject.findFirst({
+      where: { id: projectId, tenantId },
+      select: { id: true }
+    });
+    if (!existing) {
+      return { project: null };
+    }
+
     const project = await tx.marketIntelligenceProject.update({
       where: { id: projectId },
       data: { isArchived: true },
@@ -8340,6 +8356,16 @@ export async function listMarketIntelligenceSources(
   });
 }
 
+// Helper: verify that a project exists, belongs to the active tenant, and is not archived.
+// Returns true only when the caller may create or modify children of the project.
+async function verifyMiProjectAccess(tx: PrismaTx, tenantId: string, projectId: string): Promise<boolean> {
+  const project = await tx.marketIntelligenceProject.findFirst({
+    where: { id: projectId, tenantId, isArchived: false },
+    select: { id: true }
+  });
+  return !!project;
+}
+
 export async function createMarketIntelligenceSource(
   authSession: AuthResolvedSessionContext,
   input: MarketIntelligenceSourceInputRequest
@@ -8350,6 +8376,10 @@ export async function createMarketIntelligenceSource(
   }
 
   return prisma.$transaction(async (tx: PrismaTx) => {
+    if (!await verifyMiProjectAccess(tx, tenantId, input.projectId ?? "")) {
+      return null;
+    }
+
     const source = await tx.marketIntelligenceSource.create({
       data: {
         tenantId,
@@ -8385,6 +8415,7 @@ export async function createMarketIntelligenceSource(
 export async function updateMarketIntelligenceSource(
   authSession: AuthResolvedSessionContext,
   sourceId: string,
+  projectId: string,
   input: MarketIntelligenceSourceInputRequest
 ): Promise<MarketIntelligenceSourceResponse | null> {
   const tenantId = getActiveTenantId(authSession);
@@ -8393,6 +8424,14 @@ export async function updateMarketIntelligenceSource(
   }
 
   return prisma.$transaction(async (tx: PrismaTx) => {
+    const existing = await tx.marketIntelligenceSource.findFirst({
+      where: { id: sourceId, tenantId, projectId },
+      select: { id: true }
+    });
+    if (!existing) {
+      return { source: null };
+    }
+
     const updateData: any = {};
     if (input.title !== undefined && input.title !== null) {
       updateData.title = input.title;
@@ -8435,7 +8474,8 @@ export async function updateMarketIntelligenceSource(
 
 export async function archiveMarketIntelligenceSource(
   authSession: AuthResolvedSessionContext,
-  sourceId: string
+  sourceId: string,
+  projectId: string
 ): Promise<MarketIntelligenceSourceResponse | null> {
   const tenantId = getActiveTenantId(authSession);
   if (!tenantId) {
@@ -8443,6 +8483,14 @@ export async function archiveMarketIntelligenceSource(
   }
 
   return prisma.$transaction(async (tx: PrismaTx) => {
+    const existing = await tx.marketIntelligenceSource.findFirst({
+      where: { id: sourceId, tenantId, projectId },
+      select: { id: true }
+    });
+    if (!existing) {
+      return { source: null };
+    }
+
     const source = await tx.marketIntelligenceSource.update({
       where: { id: sourceId },
       data: { isArchived: true },
@@ -8548,6 +8596,7 @@ export async function listMarketIntelligenceResearchRuns(
 
 export async function createMarketIntelligenceResearchRun(
   authSession: AuthResolvedSessionContext,
+  projectId: string,
   input: MarketIntelligenceResearchRunInputRequest
 ): Promise<MarketIntelligenceResearchRunResponse | null> {
   const tenantId = getActiveTenantId(authSession);
@@ -8556,10 +8605,14 @@ export async function createMarketIntelligenceResearchRun(
   }
 
   return prisma.$transaction(async (tx: PrismaTx) => {
+    if (!await verifyMiProjectAccess(tx, tenantId, projectId)) {
+      return null;
+    }
+
     const run = await tx.marketIntelligenceResearchRun.create({
       data: {
         tenantId,
-        projectId: input.projectId ?? "",
+        projectId,
         status: input.status ?? "PENDING",
         resultSummary: toNullableString(input.resultSummary),
         executionLog: toNullableString(input.executionLog)
@@ -8589,7 +8642,8 @@ export async function createMarketIntelligenceResearchRun(
 
 export async function executeMarketIntelligenceResearchRun(
   authSession: AuthResolvedSessionContext,
-  runId: string
+  runId: string,
+  projectId: string
 ): Promise<MarketIntelligenceResearchRunResponse | null> {
   const tenantId = getActiveTenantId(authSession);
   if (!tenantId) {
@@ -8601,7 +8655,7 @@ export async function executeMarketIntelligenceResearchRun(
     select: { tenantId: true, projectId: true }
   });
 
-  if (!existingRun || existingRun.tenantId !== tenantId) {
+  if (!existingRun || existingRun.tenantId !== tenantId || existingRun.projectId !== projectId) {
     return null;
   }
 
@@ -8609,8 +8663,8 @@ export async function executeMarketIntelligenceResearchRun(
     where: { tenantId, projectId: existingRun.projectId, isArchived: false }
   });
 
-  const project = await prisma.marketIntelligenceProject.findUnique({
-    where: { id: existingRun.projectId }
+  const project = await prisma.marketIntelligenceProject.findFirst({
+    where: { id: existingRun.projectId, tenantId }
   });
 
   // Mock deterministic generation
@@ -8738,6 +8792,10 @@ export async function createMarketIntelligenceInsight(
   }
 
   return prisma.$transaction(async (tx: PrismaTx) => {
+    if (!await verifyMiProjectAccess(tx, tenantId, input.projectId ?? "")) {
+      return null;
+    }
+
     const insight = await tx.marketIntelligenceInsight.create({
       data: {
         tenantId,
@@ -8775,6 +8833,7 @@ export async function createMarketIntelligenceInsight(
 export async function updateMarketIntelligenceInsight(
   authSession: AuthResolvedSessionContext,
   insightId: string,
+  projectId: string,
   input: MarketIntelligenceInsightInputRequest
 ): Promise<MarketIntelligenceInsightResponse | null> {
   const tenantId = getActiveTenantId(authSession);
@@ -8783,6 +8842,14 @@ export async function updateMarketIntelligenceInsight(
   }
 
   return prisma.$transaction(async (tx: PrismaTx) => {
+    const existing = await tx.marketIntelligenceInsight.findFirst({
+      where: { id: insightId, tenantId, projectId },
+      select: { id: true }
+    });
+    if (!existing) {
+      return { insight: null };
+    }
+
     const updateData: any = {};
     if (input.title !== undefined && input.title !== null) {
       updateData.title = input.title;
@@ -8830,7 +8897,8 @@ export async function updateMarketIntelligenceInsight(
 
 export async function archiveMarketIntelligenceInsight(
   authSession: AuthResolvedSessionContext,
-  insightId: string
+  insightId: string,
+  projectId: string
 ): Promise<MarketIntelligenceInsightResponse | null> {
   const tenantId = getActiveTenantId(authSession);
   if (!tenantId) {
@@ -8838,6 +8906,14 @@ export async function archiveMarketIntelligenceInsight(
   }
 
   return prisma.$transaction(async (tx: PrismaTx) => {
+    const existing = await tx.marketIntelligenceInsight.findFirst({
+      where: { id: insightId, tenantId, projectId },
+      select: { id: true }
+    });
+    if (!existing) {
+      return { insight: null };
+    }
+
     const insight = await tx.marketIntelligenceInsight.update({
       where: { id: insightId },
       data: { isArchived: true },

@@ -4076,6 +4076,12 @@ export const updateMarketIntelligenceSourceHandler: RequestHandler = async (req,
     return;
   }
 
+  const projectId = typeof req.params.projectId === "string" ? req.params.projectId.trim() : "";
+  if (!projectId) {
+    res.status(400).json(failure("MARKET_INTELLIGENCE_PROJECT_INVALID", "Project ID is invalid."));
+    return;
+  }
+
   const sourceId = typeof req.params.sourceId === "string" ? req.params.sourceId.trim() : "";
   if (!sourceId) {
     res.status(400).json(failure("MARKET_INTELLIGENCE_SOURCE_INVALID", "Source ID is invalid."));
@@ -4089,7 +4095,7 @@ export const updateMarketIntelligenceSourceHandler: RequestHandler = async (req,
   }
 
   try {
-    const response = await updateMarketIntelligenceSource(authSession, sourceId, input);
+    const response = await updateMarketIntelligenceSource(authSession, sourceId, projectId, input);
     if (!response?.source) {
       res.status(403).json(forbiddenFailure());
       return;
@@ -4107,6 +4113,12 @@ export const archiveMarketIntelligenceSourceHandler: RequestHandler = async (req
     return;
   }
 
+  const projectId = typeof req.params.projectId === "string" ? req.params.projectId.trim() : "";
+  if (!projectId) {
+    res.status(400).json(failure("MARKET_INTELLIGENCE_PROJECT_INVALID", "Project ID is invalid."));
+    return;
+  }
+
   const sourceId = typeof req.params.sourceId === "string" ? req.params.sourceId.trim() : "";
   if (!sourceId) {
     res.status(400).json(failure("MARKET_INTELLIGENCE_SOURCE_INVALID", "Source ID is invalid."));
@@ -4114,7 +4126,7 @@ export const archiveMarketIntelligenceSourceHandler: RequestHandler = async (req
   }
 
   try {
-    const response = await archiveMarketIntelligenceSource(authSession, sourceId);
+    const response = await archiveMarketIntelligenceSource(authSession, sourceId, projectId);
     if (!response?.source) {
       res.status(403).json(forbiddenFailure());
       return;
@@ -4157,6 +4169,12 @@ export const createMarketIntelligenceResearchRunHandler: RequestHandler = async 
     return;
   }
 
+  const projectId = typeof req.params.projectId === "string" ? req.params.projectId.trim() : "";
+  if (!projectId) {
+    res.status(400).json(failure("MARKET_INTELLIGENCE_PROJECT_INVALID", "Project ID is invalid."));
+    return;
+  }
+
   const input = getMarketIntelligenceResearchRunInput(req.body);
   if (!input) {
     res.status(400).json(failure("MARKET_INTELLIGENCE_RESEARCH_RUN_INVALID", "Research run input is invalid."));
@@ -4164,7 +4182,7 @@ export const createMarketIntelligenceResearchRunHandler: RequestHandler = async 
   }
 
   try {
-    const response = await createMarketIntelligenceResearchRun(authSession, input);
+    const response = await createMarketIntelligenceResearchRun(authSession, projectId, input);
     if (!response?.researchRun) {
       res.status(403).json(forbiddenFailure());
       return;
@@ -4182,6 +4200,12 @@ export const executeMarketIntelligenceResearchRunHandler: RequestHandler = async
     return;
   }
 
+  const projectId = typeof req.params.projectId === "string" ? req.params.projectId.trim() : "";
+  if (!projectId) {
+    res.status(400).json(failure("MARKET_INTELLIGENCE_PROJECT_INVALID", "Project ID is invalid."));
+    return;
+  }
+
   const runId = typeof req.params.runId === "string" ? req.params.runId.trim() : "";
   if (!runId) {
     res.status(400).json(failure("MARKET_INTELLIGENCE_RESEARCH_RUN_INVALID", "Run ID is invalid."));
@@ -4189,7 +4213,7 @@ export const executeMarketIntelligenceResearchRunHandler: RequestHandler = async
   }
 
   try {
-    const response = await executeMarketIntelligenceResearchRun(authSession, runId);
+    const response = await executeMarketIntelligenceResearchRun(authSession, runId, projectId);
     if (!response?.researchRun) {
       res.status(403).json(forbiddenFailure());
       return;
@@ -4263,6 +4287,12 @@ export const updateMarketIntelligenceInsightHandler: RequestHandler = async (req
     return;
   }
 
+  const projectId = typeof req.params.projectId === "string" ? req.params.projectId.trim() : "";
+  if (!projectId) {
+    res.status(400).json(failure("MARKET_INTELLIGENCE_PROJECT_INVALID", "Project ID is invalid."));
+    return;
+  }
+
   const insightId = typeof req.params.insightId === "string" ? req.params.insightId.trim() : "";
   if (!insightId) {
     res.status(400).json(failure("MARKET_INTELLIGENCE_INSIGHT_INVALID", "Insight ID is invalid."));
@@ -4276,7 +4306,7 @@ export const updateMarketIntelligenceInsightHandler: RequestHandler = async (req
   }
 
   try {
-    const response = await updateMarketIntelligenceInsight(authSession, insightId, input);
+    const response = await updateMarketIntelligenceInsight(authSession, insightId, projectId, input);
     if (!response?.insight) {
       res.status(403).json(forbiddenFailure());
       return;
@@ -4294,6 +4324,12 @@ export const archiveMarketIntelligenceInsightHandler: RequestHandler = async (re
     return;
   }
 
+  const projectId = typeof req.params.projectId === "string" ? req.params.projectId.trim() : "";
+  if (!projectId) {
+    res.status(400).json(failure("MARKET_INTELLIGENCE_PROJECT_INVALID", "Project ID is invalid."));
+    return;
+  }
+
   const insightId = typeof req.params.insightId === "string" ? req.params.insightId.trim() : "";
   if (!insightId) {
     res.status(400).json(failure("MARKET_INTELLIGENCE_INSIGHT_INVALID", "Insight ID is invalid."));
@@ -4301,7 +4337,7 @@ export const archiveMarketIntelligenceInsightHandler: RequestHandler = async (re
   }
 
   try {
-    const response = await archiveMarketIntelligenceInsight(authSession, insightId);
+    const response = await archiveMarketIntelligenceInsight(authSession, insightId, projectId);
     if (!response?.insight) {
       res.status(403).json(forbiddenFailure());
       return;

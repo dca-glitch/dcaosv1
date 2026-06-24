@@ -9,6 +9,8 @@
  * - Add research sources
  * - Create and execute a research run
  * - Create and list market insights
+ * - Cross-project negative isolation proof
+ * - Body projectId spoof proof
  */
 
 import { chromium } from "playwright";
@@ -41,6 +43,28 @@ async function apiCall(method, path, body, token) {
   return response.json();
 }
 
+// Used for negative tests: asserts the request fails (non-2xx) and returns the status code.
+async function apiCallExpectFailure(method, path, body, token) {
+  const headers = { "Content-Type": "application/json" };
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  const response = await fetch(`${API_BASE}${path}`, {
+    method,
+    headers,
+    body: body ? JSON.stringify(body) : undefined
+  });
+
+  if (response.ok) {
+    throw new Error(
+      `Expected failure for ${method} ${path} but got ${response.status} (expected 4xx)`
+    );
+  }
+
+  return response.status;
+}
+
 async function main() {
   console.log("🔍 Starting Market Intelligence smoke test...\n");
 
@@ -50,6 +74,7 @@ async function main() {
 
   let token = "";
   let projectId = "";
+  let projectBId = "";
   let sourceId = "";
   let runId = "";
 
@@ -89,7 +114,7 @@ async function main() {
     if (!projectId) {
       throw new Error("Failed to create project");
     }
-    console.log(`✅ Created project: ${projectId}\n`);
+    console.log(`✅ Created project A: ${projectId}\n`);
 
     // Step 4: Add multiple research sources for evidence context
     console.log("📋 Step 4: Adding multiple research sources...");
@@ -291,9 +316,157 @@ async function main() {
     }
     console.log(`✅ All insights include sourceCount evidence context\n`);
 
-    // Step 11: Browser test (optional, requires playwright)
+    // =========================================================================
+    // Step 11: Cross-project negative isolation proof
+    // Resources from Project A must not be accessible or mutable via Project B URL.
+    // =========================================================================
+    console.log("📋 Step 11: Cross-project negative isolation proof...");
+
+    const createProjectBResponse = await apiCall(
+      "POST",
+      "/market-intelligence-projects",
+      {
+        title: "Isolation Test Project B",
+        description: "Used only for cross-project isolation proof",
+        status: "ACTIVE"
+      },
+      token
+    );
+
+    projectBId = createProjectBResponse.data?.project?.id;
+    if (!projectBId) {
+      throw new Error("Failed to create project B for isolation test");
+    }
+    console.log(`✅ Created project B: ${projectBId}`);
+
+    // 11a: Update Project A source via Project B URL must fail
+    const s11a = await apiCallExpectFailure(
+      "PUT",
+      `/market-intelligence-projects/${projectBId}/sources/${sourceId1}`,
+      { title: "Should Not Update" },
+      token
+    );
+    if (s11a < 400 || s11a >= 600) {
+      throw new Error(`Expected 4xx for cross-project source update, got ${s11a}`);
+    }
+    console.log(`✅ Cross-project source update correctly rejected (${s11a})`);
+
+    // 11b: Archive Project A source via Project B URL must fail
+    const s11b = await apiCallExpectFailure(
+      "POST",
+      `/market-intelligence-projects/${projectBId}/sources/${sourceId1}/archive`,
+      {},
+      token
+    );
+    if (s11b < 400 || s11b >= 600) {
+      throw new Error(`Expected 4xx for cross-project source archive, got ${s11b}`);
+    }
+    console.log(`✅ Cross-project source archive correctly rejected (${s11b})`);
+
+    // 11c: Execute Project A run via Project B URL must fail
+    const s11c = await apiCallExpectFailure(
+      "POST",
+      `/market-intelligence-projects/${projectBId}/research-runs/${runId}/execute`,
+      {},
+      token
+    );
+    if (s11c < 400 || s11c >= 600) {
+      throw new Error(`Expected 4xx for cross-project run execute, got ${s11c}`);
+    }
+    console.log(`✅ Cross-project run execute correctly rejected (${s11c})`);
+
+    // 11d: Update Project A insight via Project B URL must fail
+    const s11d = await apiCallExpectFailure(
+      "PUT",
+      `/market-intelligence-projects/${projectBId}/insights/${insightId}`,
+      { status: "APPROVED" },
+      token
+    );
+    if (s11d < 400 || s11d >= 600) {
+      throw new Error(`Expected 4xx for cross-project insight update, got ${s11d}`);
+    }
+    console.log(`✅ Cross-project insight update correctly rejected (${s11d})`);
+
+    // 11e: Archive Project A insight via Project B URL must fail
+    const s11e = await apiCallExpectFailure(
+      "POST",
+      `/market-intelligence-projects/${projectBId}/insights/${insightId}/archive`,
+      {},
+      token
+    );
+    if (s11e < 400 || s11e >= 600) {
+      throw new Error(`Expected 4xx for cross-project insight archive, got ${s11e}`);
+    }
+    console.log(`✅ Cross-project insight archive correctly rejected (${s11e})\n`);
+
+    // =========================================================================
+    // Step 12: Body projectId spoof proof
+    // Creating resources via Project A URL with body.projectId set to Project B
+    // must attach records to Project A, never Project B.
+    // =========================================================================
+    console.log("📋 Step 12: Body projectId spoof proof...");
+
+    // 12a: Create source via Project A URL, body contains projectBId
+    const spoofSourceResponse = await apiCall(
+      "POST",
+      `/market-intelligence-projects/${projectId}/sources`,
+      {
+        projectId: projectBId,
+        title: "Spoof Source Test",
+        sourceType: "OTHER",
+        sourceNotes: "Must belong to project A despite body projectId"
+      },
+      token
+    );
+    const spoofSourceProjectId = spoofSourceResponse.data?.source?.projectId;
+    if (spoofSourceProjectId !== projectId) {
+      throw new Error(
+        `Spoof source attached to wrong project: expected ${projectId}, got ${spoofSourceProjectId}`
+      );
+    }
+    console.log(`✅ Source spoof rejected — source belongs to project A (${spoofSourceProjectId})`);
+
+    // 12b: Create research run via Project A URL, body contains projectBId
+    const spoofRunResponse = await apiCall(
+      "POST",
+      `/market-intelligence-projects/${projectId}/research-runs`,
+      {
+        projectId: projectBId,
+        status: "PENDING"
+      },
+      token
+    );
+    const spoofRunProjectId = spoofRunResponse.data?.researchRun?.projectId;
+    if (spoofRunProjectId !== projectId) {
+      throw new Error(
+        `Spoof run attached to wrong project: expected ${projectId}, got ${spoofRunProjectId}`
+      );
+    }
+    console.log(`✅ Run spoof rejected — run belongs to project A (${spoofRunProjectId})`);
+
+    // 12c: Create insight via Project A URL, body contains projectBId
+    const spoofInsightResponse = await apiCall(
+      "POST",
+      `/market-intelligence-projects/${projectId}/insights`,
+      {
+        projectId: projectBId,
+        title: "Spoof Insight Test",
+        summary: "Must belong to project A despite body projectId",
+        status: "DRAFT"
+      },
+      token
+    );
+    const spoofInsightProjectId = spoofInsightResponse.data?.insight?.projectId;
+    if (spoofInsightProjectId !== projectId) {
+      throw new Error(
+        `Spoof insight attached to wrong project: expected ${projectId}, got ${spoofInsightProjectId}`
+      );
+    }
+    console.log(`✅ Insight spoof rejected — insight belongs to project A (${spoofInsightProjectId})\n`);
+
+    // Step 13: Browser test (optional, requires playwright)
     if (process.env.BROWSER_TEST === "true") {
-      console.log("📋 Step 11: Browser smoke test (optional)...");
+      console.log("📋 Step 13: Browser smoke test (optional)...");
       const browser = await chromium.launch();
       const page = await browser.newPage();
 
