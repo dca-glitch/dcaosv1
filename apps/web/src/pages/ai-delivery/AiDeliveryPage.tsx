@@ -1237,6 +1237,67 @@ export function AiDeliveryPage({
     }
     return "Execute uses the local stub only. Use [stub-fail] in admin notes when you need a controlled failure path.";
   }, [workflowRunBeingEdited, workflowRunExecutingId]);
+  const aiSeoWorkflowShell = useMemo(() => {
+    const hasResearchRequests = researchRequests.length > 0;
+    const hasResearchSources = researchSources.length > 0;
+    const hasResearchSummaries = researchSummaries.length > 0;
+    const hasPlan = Boolean(contentPlanDetail);
+    const hasPlanItems = contentPlanItems.length > 0;
+    const hasDraftHandOff = contentDrafts.some((draft) => !draft.isArchived && draft.contentPlanItemId);
+    const researchStep = hasResearchRequests ? "Research requests in flight" : "Start with manual research requests";
+    const sourceStep = hasResearchSources ? "Sources recorded" : "Add sources after review";
+    const summaryStep = hasResearchSummaries ? "Summary ready" : "Write an internal research summary";
+    const planStep = hasPlan ? (contentPlanDetail?.approvedAt ? "Content plan approved" : "Content plan in review") : "Create the monthly content plan";
+    const draftStep = hasDraftHandOff ? "Draft handoff available" : "Generate admin drafts from approved plan items";
+
+    let readiness = "Start with research requests";
+    if (!hasResearchRequests) {
+      readiness = "Research not started";
+    } else if (!hasResearchSources) {
+      readiness = "Collect sources next";
+    } else if (!hasResearchSummaries) {
+      readiness = "Summarize the research";
+    } else if (!hasPlan) {
+      readiness = "Create the content plan";
+    } else if (!hasPlanItems) {
+      readiness = "Add SEO topics to the plan";
+    } else if (!contentPlanDetail?.approvedAt) {
+      readiness = "Move the plan to approval";
+    } else if (!hasDraftHandOff) {
+      readiness = "Generate draft handoff records";
+    } else {
+      readiness = "Draft handoff ready";
+    }
+
+    const guidance = !hasPlan
+      ? "Research, sources, and summaries feed the monthly content plan. Live crawling, live providers, and OAuth sync remain deferred."
+      : !hasPlanItems
+        ? "Add topics to the saved plan, then save and review the draft before generating content."
+        : !contentPlanDetail?.approvedAt
+          ? "Review the plan, send it through the admin approval actions, then generate linked drafts from approved items."
+          : "Use the approved plan items to generate admin drafts and move the handoff forward. Client metrics exposure remains deferred.";
+
+    return {
+      readiness,
+      guidance,
+      researchStep,
+      sourceStep,
+      summaryStep,
+      planStep,
+      draftStep,
+      hasResearchRequests,
+      hasResearchSources,
+      hasResearchSummaries,
+      hasPlan,
+      hasPlanItems,
+      hasDraftHandOff,
+      researchCount: researchRequests.length,
+      sourceCount: researchSources.length,
+      summaryCount: researchSummaries.length,
+      planItemCount: contentPlanItems.length,
+      draftCount: contentDrafts.filter((draft) => !draft.isArchived).length
+    };
+  }, [contentDrafts, contentPlanDetail, contentPlanItems.length, researchRequests, researchSources, researchSummaries]);
   const isContentPlanBusy = contentPlanSaving || Boolean(contentPlanGeneratingItemId);
   const linkableProjects = useMemo(
     () => projectsList.filter((project) => project.clientId === draft.clientId),
@@ -3066,53 +3127,79 @@ export function AiDeliveryPage({
           {contentPlanLoading ? (
             <LoadingState label="Loading content plan" />
           ) : openContentPlanProject ? (
-            contentPlanDetail ? (
-              <div>
-                {contentPlanError ? <ErrorState title="Content plan action blocked" message={contentPlanError} /> : null}
-                <section className="field-panel">
-                  <h3>SEO topic/research planning</h3>
-                  <p className="muted-text">Current status is shown below. Next step: add or refine topics, save the plan, then move it into review when ready. Saved plan items can run admin-only draft generation; this screen does not publish, deliver to clients, crawl, or run external services directly.</p>
-                  <div className="state-panel" role="status">Review actions follow the current content plan state shown below. If a transition is blocked, the reason stays in this modal.</div>
-                  {contentPlanGenerationMessage ? <div className="state-panel" role="status">{contentPlanGenerationMessage}</div> : null}
-                </section>
-                <div className="modal-footer">
-                  <button className="secondary-action" disabled={isContentPlanBusy} onClick={closeContentPlan} type="button">Close</button>
-                  <button className="secondary-action" disabled={isContentPlanBusy} onClick={() => void handleContentPlanAction(openContentPlanProject.id, onRequestContentPlanReview)} type="button">Mark ready for review</button>
-                  <button className="secondary-action" disabled={isContentPlanBusy} onClick={() => void handleContentPlanAction(openContentPlanProject.id, onRequestContentPlanChanges)} type="button">Request changes</button>
-                  <button className="secondary-action" disabled={isContentPlanBusy} onClick={() => void handleContentPlanAction(openContentPlanProject.id, onApproveContentPlan)} type="button">Approve plan</button>
-                  <button className="primary-action" disabled={isContentPlanBusy || contentPlanItems.some((item) => !item.title.trim())} onClick={() => void handleSaveContentPlan(openContentPlanProject.id)} type="button">
-                    {contentPlanSaving ? "Saving" : "Save draft"}
-                  </button>
+            <div>
+              {contentPlanError ? <ErrorState title="Content plan action blocked" message={contentPlanError} /> : null}
+              <SectionPanel
+                title="AI SEO workflow shell"
+                description="Research, sources, summaries, content plan, and admin draft handoff move through one operator-owned workflow. Live crawling, provider execution, OAuth sync, and client metrics remain deferred."
+                className="metrics-section"
+              >
+                <div className="state-panel" role="status">
+                  <strong>AI SEO readiness:</strong> {aiSeoWorkflowShell.readiness}
+                  <p className="muted-text" style={{ marginTop: "0.25rem" }}>{aiSeoWorkflowShell.guidance}</p>
                 </div>
-                <dl className="brief-grid">
+                <dl className="brief-grid" style={{ marginTop: "1rem" }}>
                   <div>
-                    <dt>Status</dt>
-                    <dd><StatusBadge status={formatContentPlanReviewStatus(contentPlanDetail)} /></dd>
+                    <dt>Research requests</dt>
+                    <dd>{aiSeoWorkflowShell.researchCount}</dd>
                   </div>
                   <div>
-                    <dt>Revisions</dt>
-                    <dd>{contentPlanDetail.revisionCount ?? 0}</dd>
+                    <dt>Research sources</dt>
+                    <dd>{aiSeoWorkflowShell.sourceCount}</dd>
                   </div>
                   <div>
-                    <dt>Review requested</dt>
-                    <dd>{formatOptionalDate(contentPlanDetail.reviewRequestedAt)}</dd>
+                    <dt>Research summaries</dt>
+                    <dd>{aiSeoWorkflowShell.summaryCount}</dd>
                   </div>
                   <div>
-                    <dt>Approved</dt>
-                    <dd>{formatOptionalDate(contentPlanDetail.approvedAt)}</dd>
+                    <dt>Content plan items</dt>
+                    <dd>{aiSeoWorkflowShell.planItemCount}</dd>
+                  </div>
+                  <div>
+                    <dt>Draft handoffs</dt>
+                    <dd>{aiSeoWorkflowShell.draftCount}</dd>
+                  </div>
+                  <div>
+                    <dt>Plan state</dt>
+                    <dd>{aiSeoWorkflowShell.hasPlan ? formatContentPlanReviewStatus(contentPlanDetail) : "Not created yet"}</dd>
                   </div>
                 </dl>
-
-                <section className="field-panel">
-                  <h3>Current content plan status</h3>
-                  <p className="muted-text">Review the current approval state here, then use the action buttons for the next admin step. Existing client review routes remain separate and unchanged.</p>
+                <div className="field-panel" style={{ marginTop: "1rem" }}>
+                  <h3>Flow summary</h3>
+                  <p className="muted-text">Research requests become sources, sources become summaries, summaries inform the monthly content plan, and approved plan items become admin draft handoff records.</p>
+                  <div className="summary-grid" style={{ marginTop: "1rem" }}>
+                    <MetricCard accent="violet" label="Research" value={aiSeoWorkflowShell.hasResearchRequests ? "Started" : "Pending"} helper={aiSeoWorkflowShell.researchStep} />
+                    <MetricCard accent="cyan" label="Sources" value={aiSeoWorkflowShell.hasResearchSources ? "Recorded" : "Pending"} helper={aiSeoWorkflowShell.sourceStep} />
+                    <MetricCard accent="warning" label="Summaries" value={aiSeoWorkflowShell.hasResearchSummaries ? "Ready" : "Pending"} helper={aiSeoWorkflowShell.summaryStep} />
+                    <MetricCard accent="success" label="Content plan" value={aiSeoWorkflowShell.hasPlan ? "Open" : "Pending"} helper={aiSeoWorkflowShell.planStep} />
+                    <MetricCard accent="purple" label="Draft handoff" value={aiSeoWorkflowShell.hasDraftHandOff ? "Ready" : "Pending"} helper={aiSeoWorkflowShell.draftStep} />
+                  </div>
+                </div>
+              </SectionPanel>
+              {contentPlanDetail ? (
+                <>
+                  <section className="field-panel">
+                    <h3>SEO topic/research planning</h3>
+                    <p className="muted-text">Current status is shown below. Next step: add or refine topics, save the plan, then move it into review when ready. Saved plan items can run admin-only draft generation; this screen does not publish, deliver to clients, crawl, or run external services directly.</p>
+                    <div className="state-panel" role="status">Review actions follow the current content plan state shown below. If a transition is blocked, the reason stays in this modal.</div>
+                    {contentPlanGenerationMessage ? <div className="state-panel" role="status">{contentPlanGenerationMessage}</div> : null}
+                  </section>
+                  <div className="modal-footer">
+                    <button className="secondary-action" disabled={isContentPlanBusy} onClick={closeContentPlan} type="button">Close</button>
+                    <button className="secondary-action" disabled={isContentPlanBusy} onClick={() => void handleContentPlanAction(openContentPlanProject.id, onRequestContentPlanReview)} type="button">Mark ready for review</button>
+                    <button className="secondary-action" disabled={isContentPlanBusy} onClick={() => void handleContentPlanAction(openContentPlanProject.id, onRequestContentPlanChanges)} type="button">Request changes</button>
+                    <button className="secondary-action" disabled={isContentPlanBusy} onClick={() => void handleContentPlanAction(openContentPlanProject.id, onApproveContentPlan)} type="button">Approve plan</button>
+                    <button className="primary-action" disabled={isContentPlanBusy || contentPlanItems.some((item) => !item.title.trim())} onClick={() => void handleSaveContentPlan(openContentPlanProject.id)} type="button">
+                      {contentPlanSaving ? "Saving" : "Save draft"}
+                    </button>
+                  </div>
                   <dl className="brief-grid">
                     <div>
-                      <dt>Approval state</dt>
-                      <dd>{formatContentPlanReviewStatus(contentPlanDetail)}</dd>
+                      <dt>Status</dt>
+                      <dd><StatusBadge status={formatContentPlanReviewStatus(contentPlanDetail)} /></dd>
                     </div>
                     <div>
-                      <dt>Revision count</dt>
+                      <dt>Revisions</dt>
                       <dd>{contentPlanDetail.revisionCount ?? 0}</dd>
                     </div>
                     <div>
@@ -3124,169 +3211,188 @@ export function AiDeliveryPage({
                       <dd>{formatOptionalDate(contentPlanDetail.approvedAt)}</dd>
                     </div>
                   </dl>
-                </section>
 
-                <section className="field-panel">
-                  <h3>SEO topics / research records</h3>
-                  {contentPlanItems.length === 0 ? (
-                    <div className="state-panel">No SEO topics yet. Add a topic to continue planning.</div>
-                  ) : null}
-                  {contentPlanItems.map((item, index) => {
-                    const persistedItem = contentPlanDetail.items.find((planItem) => planItem.id === item.localId) ?? null;
-                    const linkedDraft = persistedItem?.id
-                      ? contentDrafts.find((draftItem) => draftItem.contentPlanItemId === persistedItem.id && !draftItem.isArchived) ?? null
-                      : null;
-
-                    return (
-                    <div className="field-grid" key={item.localId} style={{ marginBottom: "1rem" }}>
-                      <label className="field-span-2">
-                        Topic / working title - Required
-                        <input
-                          maxLength={255}
-                          placeholder="Main topic, keyword cluster, or service page focus"
-                          onChange={(event) => setContentPlanItems((current) => current.map((draftItem) => draftItem.localId === item.localId ? { ...draftItem, title: event.target.value } : draftItem))}
-                          required
-                          value={item.title}
-                        />
-                        <span className="muted-text">Used by admin to prepare monthly platform-neutral SEO/content work.</span>
-                      </label>
-                      <label>
-                        Target keyword / theme - Optional
-                        <input
-                          maxLength={80}
-                          placeholder="Primary keyword or search phrase"
-                          onChange={(event) => setContentPlanItems((current) => current.map((draftItem) => draftItem.localId === item.localId ? { ...draftItem, targetKeyword: event.target.value } : draftItem))}
-                          value={item.targetKeyword}
-                        />
-                        <span className="muted-text">Visible only to admin team.</span>
-                      </label>
-                      <label className="field-span-2">
-                        Research notes / search intent - Optional
-                        <textarea
-                          maxLength={4000}
-                          placeholder="Informational, commercial, local, or transactional intent"
-                          onChange={(event) => setContentPlanItems((current) => current.map((draftItem) => draftItem.localId === item.localId ? { ...draftItem, notes: event.target.value } : draftItem))}
-                          rows={3}
-                          value={item.notes}
-                        />
-                        <span className="muted-text">Foundation record only; no AI generation runs here yet.</span>
-                      </label>
-                      <label>
-                        Production type - Optional
-                        <input
-                          maxLength={80}
-                          placeholder="Blog post, service page, landing page, or other"
-                          onChange={(event) => setContentPlanItems((current) => current.map((draftItem) => draftItem.localId === item.localId ? { ...draftItem, contentType: event.target.value } : draftItem))}
-                          value={item.contentType}
-                        />
-                        <span className="muted-text">Internal planning label for the monthly content plan.</span>
-                      </label>
-                      <label>
-                        Item approval status - Required
-                        <select
-                          value={item.approvalStatus}
-                          onChange={(event) => setContentPlanItems((current) => current.map((draftItem) => draftItem.localId === item.localId ? { ...draftItem, approvalStatus: event.target.value } : draftItem))}
-                        >
-                          {contentPlanItemApprovalStatuses.map((status) => (
-                            <option key={status} value={status}>{formatContentPlanItemApprovalStatus(status)}</option>
-                          ))}
-                        </select>
-                        <span className="muted-text">Track whether this item is still planned, approved, or sent back for revision.</span>
-                      </label>
+                  <section className="field-panel">
+                    <h3>Current content plan status</h3>
+                    <p className="muted-text">Review the current approval state here, then use the action buttons for the next admin step. Existing client review routes remain separate and unchanged.</p>
+                    <dl className="brief-grid">
                       <div>
-                        <span>Sort order</span>
-                        <strong>{index + 1}</strong>
-                        <span className="muted-text">Determined by the list order.</span>
+                        <dt>Approval state</dt>
+                        <dd>{formatContentPlanReviewStatus(contentPlanDetail)}</dd>
                       </div>
                       <div>
-                        <span>Current item status</span>
-                        <strong>{formatContentPlanItemApprovalStatus(contentPlanDetail.items[index]?.approvalStatus)}</strong>
-                        <span className="muted-text">Latest persisted approval state for this record.</span>
+                        <dt>Revision count</dt>
+                        <dd>{contentPlanDetail.revisionCount ?? 0}</dd>
                       </div>
-                      <div className="field-span-2">
+                      <div>
+                        <dt>Review requested</dt>
+                        <dd>{formatOptionalDate(contentPlanDetail.reviewRequestedAt)}</dd>
+                      </div>
+                      <div>
+                        <dt>Approved</dt>
+                        <dd>{formatOptionalDate(contentPlanDetail.approvedAt)}</dd>
+                      </div>
+                    </dl>
+                  </section>
+
+                  <section className="field-panel">
+                    <h3>SEO topics / research records</h3>
+                    {contentPlanItems.length === 0 ? (
+                      <div className="state-panel">No SEO topics yet. Add a topic to continue planning.</div>
+                    ) : null}
+                    {contentPlanItems.map((item, index) => {
+                      const persistedItem = contentPlanDetail.items.find((planItem) => planItem.id === item.localId) ?? null;
+                      const linkedDraft = persistedItem?.id
+                        ? contentDrafts.find((draftItem) => draftItem.contentPlanItemId === persistedItem.id && !draftItem.isArchived) ?? null
+                        : null;
+
+                      return (
+                      <div className="field-grid" key={item.localId} style={{ marginBottom: "1rem" }}>
+                        <label className="field-span-2">
+                          Topic / working title - Required
+                          <input
+                            maxLength={255}
+                            placeholder="Main topic, keyword cluster, or service page focus"
+                            onChange={(event) => setContentPlanItems((current) => current.map((draftItem) => draftItem.localId === item.localId ? { ...draftItem, title: event.target.value } : draftItem))}
+                            required
+                            value={item.title}
+                          />
+                          <span className="muted-text">Used by admin to prepare monthly platform-neutral SEO/content work.</span>
+                        </label>
                         <label>
-                          Approval / revision note - Optional
+                          Target keyword / theme - Optional
+                          <input
+                            maxLength={80}
+                            placeholder="Primary keyword or search phrase"
+                            onChange={(event) => setContentPlanItems((current) => current.map((draftItem) => draftItem.localId === item.localId ? { ...draftItem, targetKeyword: event.target.value } : draftItem))}
+                            value={item.targetKeyword}
+                          />
+                          <span className="muted-text">Visible only to admin team.</span>
+                        </label>
+                        <label className="field-span-2">
+                          Research notes / search intent - Optional
                           <textarea
                             maxLength={4000}
-                            placeholder="Why this item is approved, still planned, or needs revision before review"
-                            onChange={(event) => setContentPlanItems((current) => current.map((draftItem) => draftItem.localId === item.localId ? { ...draftItem, clientComment: event.target.value } : draftItem))}
+                            placeholder="Informational, commercial, local, or transactional intent"
+                            onChange={(event) => setContentPlanItems((current) => current.map((draftItem) => draftItem.localId === item.localId ? { ...draftItem, notes: event.target.value } : draftItem))}
                             rows={3}
-                            value={item.clientComment}
+                            value={item.notes}
                           />
-                          <span className="muted-text">Use for internal approval context and any revision note that may later support review handling.</span>
+                          <span className="muted-text">Foundation record only; no AI generation runs here yet.</span>
                         </label>
-                      </div>
-                      <div className="field-span-2">
-                        <span>Saved approval / revision note</span>
-                        <strong>{persistedItem?.clientComment ?? "No approval note yet"}</strong>
-                        <span className="muted-text">Latest persisted approval or revision note for this item.</span>
-                      </div>
-                      <div className="field-span-2">
-                        <div className="modal-footer" style={{ justifyContent: "flex-start", padding: 0 }}>
+                        <label>
+                          Production type - Optional
+                          <input
+                            maxLength={80}
+                            placeholder="Blog post, service page, landing page, or other"
+                            onChange={(event) => setContentPlanItems((current) => current.map((draftItem) => draftItem.localId === item.localId ? { ...draftItem, contentType: event.target.value } : draftItem))}
+                            value={item.contentType}
+                          />
+                          <span className="muted-text">Internal planning label for the monthly content plan.</span>
+                        </label>
+                        <label>
+                          Item approval status - Required
+                          <select
+                            value={item.approvalStatus}
+                            onChange={(event) => setContentPlanItems((current) => current.map((draftItem) => draftItem.localId === item.localId ? { ...draftItem, approvalStatus: event.target.value } : draftItem))}
+                          >
+                            {contentPlanItemApprovalStatuses.map((status) => (
+                              <option key={status} value={status}>{formatContentPlanItemApprovalStatus(status)}</option>
+                            ))}
+                          </select>
+                          <span className="muted-text">Track whether this item is still planned, approved, or sent back for revision.</span>
+                        </label>
+                        <div>
+                          <span>Sort order</span>
+                          <strong>{index + 1}</strong>
+                          <span className="muted-text">Determined by the list order.</span>
+                        </div>
+                        <div>
+                          <span>Current item status</span>
+                          <strong>{formatContentPlanItemApprovalStatus(contentPlanDetail.items[index]?.approvalStatus)}</strong>
+                          <span className="muted-text">Latest persisted approval state for this record.</span>
+                        </div>
+                        <div className="field-span-2">
+                          <label>
+                            Approval / revision note - Optional
+                            <textarea
+                              maxLength={4000}
+                              placeholder="Why this item is approved, still planned, or needs revision before review"
+                              onChange={(event) => setContentPlanItems((current) => current.map((draftItem) => draftItem.localId === item.localId ? { ...draftItem, clientComment: event.target.value } : draftItem))}
+                              rows={3}
+                              value={item.clientComment}
+                            />
+                            <span className="muted-text">Use for internal approval context and any revision note that may later support review handling.</span>
+                          </label>
+                        </div>
+                        <div className="field-span-2">
+                          <span>Saved approval / revision note</span>
+                          <strong>{persistedItem?.clientComment ?? "No approval note yet"}</strong>
+                          <span className="muted-text">Latest persisted approval or revision note for this item.</span>
+                        </div>
+                        <div className="field-span-2">
+                          <div className="modal-footer" style={{ justifyContent: "flex-start", padding: 0 }}>
+                            <button
+                              className="primary-action"
+                              disabled={isContentPlanBusy || !persistedItem?.id || persistedItem.approvalStatus === "CLIENT_CHANGES_REQUESTED"}
+                              onClick={() => persistedItem ? void generateContentDraftFromPlanItem(openContentPlanProject.id, persistedItem) : undefined}
+                              type="button"
+                            >
+                              {contentPlanGeneratingItemId === persistedItem?.id ? "Generating draft" : linkedDraft ? "Regenerate admin draft" : "Generate admin draft"}
+                            </button>
+                          </div>
+                          <span className="muted-text">Runs admin-only draft generation from this saved content plan item. It does not publish, deliver to client, or open client review.</span>
+                        </div>
+                        <div className="field-span-2">
                           <button
-                            className="primary-action"
-                            disabled={isContentPlanBusy || !persistedItem?.id || persistedItem.approvalStatus === "CLIENT_CHANGES_REQUESTED"}
-                            onClick={() => persistedItem ? void generateContentDraftFromPlanItem(openContentPlanProject.id, persistedItem) : undefined}
+                            className="secondary-action"
+                            disabled={isContentPlanBusy}
+                            onClick={() => setContentPlanItems((current) => current.filter((draftItem) => draftItem.localId !== item.localId))}
                             type="button"
                           >
-                            {contentPlanGeneratingItemId === persistedItem?.id ? "Generating draft" : linkedDraft ? "Regenerate admin draft" : "Generate admin draft"}
+                            Remove topic
                           </button>
                         </div>
-                        <span className="muted-text">Runs admin-only draft generation from this saved content plan item. It does not publish, deliver to client, or open client review.</span>
                       </div>
-                      <div className="field-span-2">
-                        <button
-                          className="secondary-action"
-                          disabled={isContentPlanBusy}
-                          onClick={() => setContentPlanItems((current) => current.filter((draftItem) => draftItem.localId !== item.localId))}
-                          type="button"
-                        >
-                          Remove topic
-                        </button>
-                      </div>
-                    </div>
-                    );
-                  })}
-                  <button
-                    className="secondary-action"
-                    disabled={isContentPlanBusy}
-                    onClick={() => setContentPlanItems((current) => [...current, emptyContentPlanItem()])}
-                    type="button"
-                  >
-                    Add SEO topic
-                  </button>
-                </section>
+                      );
+                    })}
+                    <button
+                      className="secondary-action"
+                      disabled={isContentPlanBusy}
+                      onClick={() => setContentPlanItems((current) => [...current, emptyContentPlanItem()])}
+                      type="button"
+                    >
+                      Add SEO topic
+                    </button>
+                  </section>
 
-                <div className="modal-footer">
-                  <button className="secondary-action" disabled={isContentPlanBusy} onClick={closeContentPlan} type="button">Close</button>
-                  <button className="secondary-action" disabled={isContentPlanBusy} onClick={() => void handleContentPlanAction(openContentPlanProject.id, onRequestContentPlanReview)} type="button">Mark ready for review</button>
-                  <button className="secondary-action" disabled={isContentPlanBusy} onClick={() => void handleContentPlanAction(openContentPlanProject.id, onRequestContentPlanChanges)} type="button">Request changes</button>
-                  <button className="secondary-action" disabled={isContentPlanBusy} onClick={() => void handleContentPlanAction(openContentPlanProject.id, onApproveContentPlan)} type="button">Approve plan</button>
-                  <button className="primary-action" disabled={isContentPlanBusy || contentPlanItems.some((item) => !item.title.trim())} onClick={() => void handleSaveContentPlan(openContentPlanProject.id)} type="button">
-                    {contentPlanSaving ? "Saving" : "Save draft"}
-                  </button>
+                  <div className="modal-footer">
+                    <button className="secondary-action" disabled={isContentPlanBusy} onClick={closeContentPlan} type="button">Close</button>
+                    <button className="secondary-action" disabled={isContentPlanBusy} onClick={() => void handleContentPlanAction(openContentPlanProject.id, onRequestContentPlanReview)} type="button">Mark ready for review</button>
+                    <button className="secondary-action" disabled={isContentPlanBusy} onClick={() => void handleContentPlanAction(openContentPlanProject.id, onRequestContentPlanChanges)} type="button">Request changes</button>
+                    <button className="secondary-action" disabled={isContentPlanBusy} onClick={() => void handleContentPlanAction(openContentPlanProject.id, onApproveContentPlan)} type="button">Approve plan</button>
+                    <button className="primary-action" disabled={isContentPlanBusy || contentPlanItems.some((item) => !item.title.trim())} onClick={() => void handleSaveContentPlan(openContentPlanProject.id)} type="button">
+                      {contentPlanSaving ? "Saving" : "Save draft"}
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <div>
+                  <EmptyState
+                    title="No AI SEO content plan yet"
+                    message="Start with research requests and sources, then add a summary and create the monthly content plan. Live crawling, provider sync, and client metrics remain deferred."
+                    action={(
+                      <button className="primary-action" disabled={isContentPlanBusy} onClick={() => void handleCreateContentPlan(openContentPlanProject.id)} type="button">
+                        {contentPlanSaving ? "Creating" : "Create content plan"}
+                      </button>
+                    )}
+                  />
+                  <div className="state-panel" role="status" style={{ marginTop: "1rem" }}>
+                    Research requests, sources, summaries, and workflow runs stay admin-only in this workflow shell.
+                  </div>
                 </div>
-              </div>
-            ) : (
-              <div>
-                {contentPlanError ? <ErrorState title="Content plan action blocked" message={contentPlanError} /> : null}
-                <div className="modal-footer">
-                  <button className="secondary-action" disabled={isContentPlanBusy} onClick={closeContentPlan} type="button">Close</button>
-                  <button className="primary-action" disabled={isContentPlanBusy} onClick={() => void handleCreateContentPlan(openContentPlanProject.id)} type="button">
-                    {contentPlanSaving ? "Creating" : "Create content plan"}
-                  </button>
-                </div>
-                <div className="state-panel">
-                  No content plan exists for {openContentPlanProject.name} yet. Create one to continue planning. This screen records admin-side planning only; it does not generate, crawl, publish, or call external services.
-                </div>
-                <div className="modal-footer">
-                  <button className="secondary-action" disabled={isContentPlanBusy} onClick={closeContentPlan} type="button">Close</button>
-                  <button className="primary-action" disabled={isContentPlanBusy} onClick={() => void handleCreateContentPlan(openContentPlanProject.id)} type="button">
-                    {contentPlanSaving ? "Creating" : "Create content plan"}
-                  </button>
-                </div>
-              </div>
-            )
+              )}
+            </div>
           ) : (
             <div>Project not found.</div>
           )}
@@ -4773,7 +4879,7 @@ export function AiDeliveryPage({
             <div>
               {articleImagesError ? <ErrorState title="Article image action blocked" message={articleImagesError} /> : null}
               <section className="field-panel">
-                <h3>Image production planning</h3>
+                <h3>Image planning workflow</h3>
                 <p className="muted-text">Current status is shown below. Next step: link a draft, save the request, record preview references manually, upload a private final asset when needed, then move it through preview and final-ready actions. This screen does not run AI image generation, upscaling, public links, publishing, or client image review.</p>
                 <div className="state-panel" role="status">{articleImageActionGuidance}</div>
                 <div className="modal-footer">
