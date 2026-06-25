@@ -4,6 +4,10 @@
 
 Market Intelligence is an admin-only MVP module for research project setup and scoped insights. It provides DCA OS Lite with a foundation for competitive analysis, market research, trend tracking, and admin-reviewed insights.
 
+## Closure Note
+
+The admin MVP is implemented and locally validated. Proof exists in `npm.cmd run smoke:ai-market-intelligence`, including tenant/project isolation and body projectId spoof checks. Client-visible Market Intelligence output, export handoff, and any future client portal archive remain deferred.
+
 ## Purpose
 
 Admins can use Market Intelligence to:

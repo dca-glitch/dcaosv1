@@ -18,6 +18,7 @@ DCA OS Lite is in local-first admin/operator foundation work. Production is froz
 - AI Delivery client portal archive proof hardening and contract note.
 - AI Delivery client delivery readiness closure checkpoint and smoke index.
 - AI Delivery operator summary, AI SEO foundation UI, and AI Content Production foundation UI.
+- Market Intelligence admin MVP closure note documented.
 - Email Notifications EN1 backend foundation only.
 - EN2 schema-free platform AuditLog writer foundation for logout, tenant switch, tenant settings update, and module enable/disable.
 - API security headers/CSP baseline and in-memory MVP rate limiting.

@@ -5,7 +5,7 @@
 DCA OS v1 now includes two admin-only AI Delivery foundations:
 
 - **AI Delivery**: Project/Brief/Workflow/Deliverable/Review - admin-operated research coordination with WordPress draft preparation support (full publishing integration gated).
-- **Market Intelligence**: Research/Insight - admin-operated competitive and market research with bounded deterministic analysis.
+- **Market Intelligence**: Research/Insight - admin-operated competitive and market research with bounded deterministic analysis; locally closed and smoke validated.
 
 Both modules are admin-operated, bounded, and review-gated. Local deterministic paths exist; live provider execution remains guarded/config-gated. Human review is required before any publish or use.
 
