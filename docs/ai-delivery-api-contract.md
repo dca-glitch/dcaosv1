@@ -478,15 +478,37 @@ Monthly Report Phase 1 is a schema-free admin summary read model, not a persiste
   - Final deliverables are limited to non-archived `DELIVERED` and `ACCEPTED` records.
   - The response does not return `storageKey`, `tenantId`, `workflowRunId`, `executionLog`, `executionError`, `draftBody`, `prompt`, `styleNotes`, `reviewNotes`, `reviewerName`, `resultPlaceholder`, or `adminNotes`.
 
+## Monthly report persisted contract
+
+Monthly Report Phase 2 adds the persisted `AiDeliveryMonthlyReport` model and admin CRUD API. This is still admin-only. No client portal route exists yet.
+
+Model: `AiDeliveryMonthlyReport` — tenant-scoped, one per `AiDeliveryProject` via `@@unique([tenantId, aiDeliveryProjectId])`.
+
+Allowed statuses: `DRAFT → ADMIN_REVIEW → FINAL → ARCHIVED`. `DRAFT → FINAL` is also accepted (single-step finalize). No reverse transitions except `FINAL → ARCHIVED`.
+
+Admin-only endpoints (`requireAuth + requireTenant + requireRole("owner", "admin")`):
+
+- `GET /api/v1/ai-delivery/reports/monthly/:projectId` — get the persisted report for a project; `404` if none exists.
+- `POST /api/v1/ai-delivery/reports/monthly/:projectId` — create a `DRAFT` report; `clientId` and `tenantId` derived from the tenant-scoped project; `409` if a report already exists.
+- `PUT /api/v1/ai-delivery/reports/monthly/:reportId/update` — update `title`, `adminSummaryNotes`, `recommendationsText`, `exportUrl`, `storageKey`; body `tenantId`/`clientId`/`aiDeliveryProjectId` are ignored.
+- `POST /api/v1/ai-delivery/reports/monthly/:reportId/status` — status transition with body `{ status }`; sets `finalizedAt` on `FINAL`; rejects invalid transitions with `400`.
+- `POST /api/v1/ai-delivery/reports/monthly/:reportId/archive` — soft-archive; sets `isArchived = true` and `status = ARCHIVED`.
+- `POST /api/v1/ai-delivery/reports/monthly/:reportId/restore` — restore; sets `isArchived = false` and `status = DRAFT`.
+
+Admin response includes `storageKey` (internal use only; never route to client). `adminSummaryNotes` and raw `tenantId` are admin-only fields that must not be included in any future client portal response.
+
+Client-safe fields when `FINAL`: `id`, `title`, `recommendationsText`, `exportUrl`, `finalizedAt`, `createdAt`, `updatedAt`.
+
+Deferred for a separate block:
+- Client portal monthly report route (`/client-portal/projects/:projectId/report`).
+- PDF/R2 upload for reports.
+- GA/GSC metrics and 12-month trends.
+- Persisted recommendations beyond `recommendationsText`.
+
 Proof:
 
 - `npm.cmd run validate`
-- `npm.cmd run smoke:monthly-report:local`
-
-Future boundary:
-
-- Persisted monthly reports, PDF/export handoff, GA/GSC metrics, and 12-month trends remain separate future blocks.
-- Client portal monthly reports remain deferred until a separate approved client-safe report block is added.
+- `npm.cmd run smoke:monthly-report:local` (52 PASS / 0 FAIL, covers Phase 1 + Phase 2)
 
 ## Export handoff foundation
 

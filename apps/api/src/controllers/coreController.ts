@@ -174,7 +174,13 @@ import {
   createMarketIntelligenceInsight,
   updateMarketIntelligenceInsight,
   archiveMarketIntelligenceInsight,
-  getAiDeliveryMonthlySummary
+  getAiDeliveryMonthlySummary,
+  getAiDeliveryMonthlyReport,
+  createAiDeliveryMonthlyReport,
+  updateAiDeliveryMonthlyReport,
+  updateAiDeliveryMonthlyReportStatus,
+  archiveAiDeliveryMonthlyReport,
+  restoreAiDeliveryMonthlyReport
 } from "../core/core.runtime";
 import type {
   AiDeliveryArticleImageUploadRequest,
@@ -205,7 +211,9 @@ import type {
   MarketIntelligenceProjectInputRequest,
   MarketIntelligenceSourceInputRequest,
   MarketIntelligenceResearchRunInputRequest,
-  MarketIntelligenceInsightInputRequest
+  MarketIntelligenceInsightInputRequest,
+  AiDeliveryMonthlyReportInputRequest,
+  AiDeliveryMonthlyReportStatusRequest
 } from "../core/core.types";
 
 const TEXT_FIELD_MAX_LENGTH = 4000;
@@ -4365,6 +4373,125 @@ export const archiveMarketIntelligenceInsightHandler: RequestHandler = async (re
   }
 };
 
+const AI_DELIVERY_MONTHLY_REPORT_STATUSES = new Set(["DRAFT", "ADMIN_REVIEW", "FINAL", "ARCHIVED"]);
+
+// Monthly Report handlers
+
+export const getAiDeliveryMonthlyReportHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) return void res.status(401).json(unauthorizedFailure());
+
+  const projectId = typeof req.params.projectId === "string" ? req.params.projectId.trim() : "";
+  if (!projectId) return void res.status(400).json(aiDeliveryProjectInvalidFailure());
+
+  try {
+    const response = await getAiDeliveryMonthlyReport(authSession, projectId);
+    if (!response) return void res.status(404).json(aiDeliveryProjectNotFoundFailure());
+    if (!response.report) return void res.status(404).json(failure("AI_DELIVERY_MONTHLY_REPORT_NOT_FOUND", "Monthly report not found."));
+    res.json(success(response, { phase: "runtime", scope: "ai-delivery-monthly-report" }));
+  } catch {
+    res.status(500).json(failure("AI_DELIVERY_MONTHLY_REPORT_ERROR", "Monthly report could not be retrieved."));
+  }
+};
+
+export const createAiDeliveryMonthlyReportHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) return void res.status(401).json(unauthorizedFailure());
+
+  const projectId = typeof req.params.projectId === "string" ? req.params.projectId.trim() : "";
+  if (!projectId) return void res.status(400).json(aiDeliveryProjectInvalidFailure());
+
+  const input = getAiDeliveryMonthlyReportInput(req.body);
+
+  try {
+    const response = await createAiDeliveryMonthlyReport(authSession, projectId, input);
+    if (!response) return void res.status(404).json(aiDeliveryProjectNotFoundFailure());
+    res.status(201).json(success(response, { phase: "runtime", scope: "ai-delivery-monthly-report" }));
+  } catch (err) {
+    if (isAiDeliveryGuardError(err)) {
+      return void res.status(err.status).json(failure(err.code, err.message));
+    }
+    res.status(500).json(failure("AI_DELIVERY_MONTHLY_REPORT_ERROR", "Monthly report could not be created."));
+  }
+};
+
+export const updateAiDeliveryMonthlyReportHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) return void res.status(401).json(unauthorizedFailure());
+
+  const reportId = typeof req.params.reportId === "string" ? req.params.reportId.trim() : "";
+  if (!reportId) return void res.status(400).json(failure("AI_DELIVERY_MONTHLY_REPORT_INVALID", "Report ID is invalid."));
+
+  const input = getAiDeliveryMonthlyReportInput(req.body);
+
+  try {
+    const response = await updateAiDeliveryMonthlyReport(authSession, reportId, input);
+    if (!response) return void res.status(404).json(failure("AI_DELIVERY_MONTHLY_REPORT_NOT_FOUND", "Monthly report not found."));
+    res.json(success(response, { phase: "runtime", scope: "ai-delivery-monthly-report" }));
+  } catch (err) {
+    if (isAiDeliveryGuardError(err)) {
+      return void res.status(err.status).json(failure(err.code, err.message));
+    }
+    res.status(500).json(failure("AI_DELIVERY_MONTHLY_REPORT_ERROR", "Monthly report could not be updated."));
+  }
+};
+
+export const updateAiDeliveryMonthlyReportStatusHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) return void res.status(401).json(unauthorizedFailure());
+
+  const reportId = typeof req.params.reportId === "string" ? req.params.reportId.trim() : "";
+  if (!reportId) return void res.status(400).json(failure("AI_DELIVERY_MONTHLY_REPORT_INVALID", "Report ID is invalid."));
+
+  const statusInput = getAiDeliveryMonthlyReportStatusInput(req.body);
+  if (!statusInput.status || !AI_DELIVERY_MONTHLY_REPORT_STATUSES.has(statusInput.status.toUpperCase())) {
+    return void res.status(400).json(failure("AI_DELIVERY_MONTHLY_REPORT_STATUS_INVALID", "Report status is invalid."));
+  }
+
+  try {
+    const response = await updateAiDeliveryMonthlyReportStatus(authSession, reportId, statusInput);
+    if (!response) return void res.status(404).json(failure("AI_DELIVERY_MONTHLY_REPORT_NOT_FOUND", "Monthly report not found."));
+    res.json(success(response, { phase: "runtime", scope: "ai-delivery-monthly-report" }));
+  } catch (err) {
+    if (isAiDeliveryGuardError(err)) {
+      return void res.status(err.status).json(failure(err.code, err.message));
+    }
+    res.status(500).json(failure("AI_DELIVERY_MONTHLY_REPORT_ERROR", "Monthly report status could not be updated."));
+  }
+};
+
+export const archiveAiDeliveryMonthlyReportHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) return void res.status(401).json(unauthorizedFailure());
+
+  const reportId = typeof req.params.reportId === "string" ? req.params.reportId.trim() : "";
+  if (!reportId) return void res.status(400).json(failure("AI_DELIVERY_MONTHLY_REPORT_INVALID", "Report ID is invalid."));
+
+  try {
+    const response = await archiveAiDeliveryMonthlyReport(authSession, reportId);
+    if (!response) return void res.status(404).json(failure("AI_DELIVERY_MONTHLY_REPORT_NOT_FOUND", "Monthly report not found."));
+    res.json(success(response, { phase: "runtime", scope: "ai-delivery-monthly-report" }));
+  } catch {
+    res.status(500).json(failure("AI_DELIVERY_MONTHLY_REPORT_ERROR", "Monthly report could not be archived."));
+  }
+};
+
+export const restoreAiDeliveryMonthlyReportHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) return void res.status(401).json(unauthorizedFailure());
+
+  const reportId = typeof req.params.reportId === "string" ? req.params.reportId.trim() : "";
+  if (!reportId) return void res.status(400).json(failure("AI_DELIVERY_MONTHLY_REPORT_INVALID", "Report ID is invalid."));
+
+  try {
+    const response = await restoreAiDeliveryMonthlyReport(authSession, reportId);
+    if (!response) return void res.status(404).json(failure("AI_DELIVERY_MONTHLY_REPORT_NOT_FOUND", "Monthly report not found."));
+    res.json(success(response, { phase: "runtime", scope: "ai-delivery-monthly-report" }));
+  } catch {
+    res.status(500).json(failure("AI_DELIVERY_MONTHLY_REPORT_ERROR", "Monthly report could not be restored."));
+  }
+};
+
 // Market Intelligence input validators
 
 function getMarketIntelligenceProjectInput(value: unknown): MarketIntelligenceProjectInputRequest | null {
@@ -4422,5 +4549,29 @@ function getMarketIntelligenceInsightInput(value: unknown): MarketIntelligenceIn
     resultData: obj.resultData,
     status: getOptionalString(obj.status),
     reviewerNotes: getOptionalString(obj.reviewerNotes)
+  };
+}
+
+function getAiDeliveryMonthlyReportInput(value: unknown): AiDeliveryMonthlyReportInputRequest {
+  if (typeof value !== "object" || value === null) {
+    return {};
+  }
+  const obj = value as Record<string, unknown>;
+  return {
+    title: getOptionalString(obj.title),
+    adminSummaryNotes: getOptionalString(obj.adminSummaryNotes),
+    recommendationsText: getOptionalString(obj.recommendationsText),
+    exportUrl: getOptionalString(obj.exportUrl),
+    storageKey: getOptionalString(obj.storageKey)
+  };
+}
+
+function getAiDeliveryMonthlyReportStatusInput(value: unknown): AiDeliveryMonthlyReportStatusRequest {
+  if (typeof value !== "object" || value === null) {
+    return {};
+  }
+  const obj = value as Record<string, unknown>;
+  return {
+    status: getOptionalString(obj.status)
   };
 }

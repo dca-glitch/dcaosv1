@@ -170,6 +170,7 @@ model Tenant {
   marketIntelligenceInsights MarketIntelligenceInsight[]
   clientUserAccesses   ClientUserAccess[]
   emailLogs            EmailLog[]            @relation("TenantEmailLogs")
+  aiDeliveryMonthlyReports AiDeliveryMonthlyReport[]
 }
 
 model User {
@@ -351,6 +352,7 @@ model Client {
   recurringInvoices RecurringInvoice[]
   aiDeliveryProjects AiDeliveryProject[]
   userAccesses       ClientUserAccess[]
+  aiDeliveryMonthlyReports AiDeliveryMonthlyReport[]
 
   @@index([tenantId])
   @@index([tenantId, isArchived])
@@ -429,6 +431,7 @@ model AiDeliveryProject {
   researchRequests AiDeliveryResearchRequest[]
   researchSources AiDeliveryResearchSource[]
   researchSummaries AiDeliveryResearchSummary[]
+  monthlyReports AiDeliveryMonthlyReport[]
 
   @@index([tenantId])
   @@index([tenantId, isArchived])
@@ -802,6 +805,41 @@ model AiDeliveryResearchSummary {
   @@index([tenantId, aiDeliveryProjectId])
   @@index([tenantId, workflowRunId])
   @@index([tenantId, status])
+}
+
+// AI Delivery Monthly Report
+enum AiDeliveryMonthlyReportStatus {
+  DRAFT
+  ADMIN_REVIEW
+  FINAL
+  ARCHIVED
+}
+
+model AiDeliveryMonthlyReport {
+  id                  String                        @id @default(uuid())
+  tenantId            String
+  aiDeliveryProjectId String
+  clientId            String
+  status              AiDeliveryMonthlyReportStatus @default(DRAFT)
+  title               String?
+  adminSummaryNotes   String?
+  recommendationsText String?
+  exportUrl           String?
+  storageKey          String?
+  isArchived          Boolean                       @default(false)
+  finalizedAt         DateTime?
+  createdAt           DateTime                      @default(now())
+  updatedAt           DateTime                      @updatedAt
+
+  tenant            Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  aiDeliveryProject AiDeliveryProject @relation(fields: [aiDeliveryProjectId], references: [id], onDelete: Cascade)
+  client            Client            @relation(fields: [clientId], references: [id], onDelete: Restrict)
+
+  @@unique([tenantId, aiDeliveryProjectId])
+  @@index([tenantId])
+  @@index([tenantId, status])
+  @@index([tenantId, clientId])
+  @@index([tenantId, isArchived])
 }
 
 model Task {

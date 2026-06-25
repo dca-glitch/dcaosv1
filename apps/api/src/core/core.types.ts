@@ -962,6 +962,44 @@ export interface AiDeliveryMonthlySummaryResponse {
     };
   };
 }
+
+export interface AiDeliveryMonthlyReportSummary {
+  id: string;
+  aiDeliveryProjectId: string;
+  clientId: string;
+  status: string;
+  title: string | null;
+  adminSummaryNotes: string | null;
+  recommendationsText: string | null;
+  exportUrl: string | null;
+  storageKey: string | null;
+  isArchived: boolean;
+  finalizedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  project: {
+    name: string;
+    targetMonth: string;
+    clientName: string | null;
+  } | null;
+}
+
+export interface AiDeliveryMonthlyReportResponse {
+  report: AiDeliveryMonthlyReportSummary | null;
+}
+
+export interface AiDeliveryMonthlyReportInputRequest {
+  title?: string | null;
+  adminSummaryNotes?: string | null;
+  recommendationsText?: string | null;
+  exportUrl?: string | null;
+  storageKey?: string | null;
+}
+
+export interface AiDeliveryMonthlyReportStatusRequest {
+  status?: string | null;
+}
+
 export interface MarketIntelligenceProjectSummary {
   id: string;
   title: string;

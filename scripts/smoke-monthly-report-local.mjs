@@ -358,6 +358,268 @@ async function main() {
   console.log("  ℹ️  Tenant isolation is enforced at runtime by tenantId scoping (same pattern as all other AI Delivery endpoints).");
   console.log("  ℹ️  Not claiming PASS here; a full cross-tenant proof should be added when a second-tenant smoke fixture is available.\n");
 
+  // ─── Phase 2: Persisted AiDeliveryMonthlyReport ───────────────────────────
+
+  let reportId = "";
+
+  // Step P1: Create persisted report for project
+  console.log("Step P1: POST monthly report for project");
+  {
+    const { status, ok, json } = await apiCall(
+      "POST",
+      `/ai-delivery/reports/monthly/${projectId}`,
+      { title: "June 2026 Smoke Report", recommendationsText: "Focus on SEO fundamentals." },
+      token
+    );
+    reportId = json.data?.report?.id ?? "";
+    if (ok && status === 201 && reportId) {
+      pass(`Monthly report created: ${reportId}`);
+    } else {
+      fail("Create monthly report", `status=${status} ${JSON.stringify(json.error)}`);
+      throw new Error("Cannot continue without monthly report");
+    }
+    // Assert server-derived linkage
+    if (json.data?.report?.aiDeliveryProjectId === projectId) {
+      pass("aiDeliveryProjectId derived from route (server side)");
+    } else {
+      fail("aiDeliveryProjectId linkage", `got ${json.data?.report?.aiDeliveryProjectId}`);
+    }
+    if (json.data?.report?.clientId === clientId) {
+      pass("clientId derived from project (server side)");
+    } else {
+      fail("clientId linkage", `got ${json.data?.report?.clientId}`);
+    }
+    if (json.data?.report?.status === "DRAFT") {
+      pass("status is DRAFT on create");
+    } else {
+      fail("initial status", `got ${json.data?.report?.status}`);
+    }
+  }
+  console.log();
+
+  // Step P2: Duplicate create returns 409 conflict
+  console.log("Step P2: Duplicate create → 409 conflict");
+  {
+    const { status, json } = await apiCall(
+      "POST",
+      `/ai-delivery/reports/monthly/${projectId}`,
+      { title: "Duplicate" },
+      token
+    );
+    if (status === 409) {
+      pass("Duplicate create returns 409 conflict");
+    } else {
+      fail("Duplicate create", `expected 409 got ${status} — ${JSON.stringify(json.error)}`);
+    }
+  }
+  console.log();
+
+  // Step P3: GET report by project
+  console.log("Step P3: GET report by project");
+  {
+    const { status, ok, json } = await apiCall(
+      "GET",
+      `/ai-delivery/reports/monthly/${projectId}`,
+      undefined,
+      token
+    );
+    if (ok && status === 200 && json.data?.report?.id === reportId) {
+      pass("GET report by project returns correct report");
+    } else {
+      fail("GET report by project", `status=${status} ${JSON.stringify(json.error)}`);
+    }
+    if (json.data?.report?.project?.targetMonth === "2026-06") {
+      pass("project.targetMonth populated on report");
+    } else {
+      fail("project.targetMonth on report", `got ${json.data?.report?.project?.targetMonth}`);
+    }
+  }
+  console.log();
+
+  // Step P4: Body spoof — tenantId/clientId/aiDeliveryProjectId in body must be ignored
+  console.log("Step P4: Forbidden body mutation proof");
+  {
+    const fakeClientId = "00000000-0000-0000-0000-000000000099";
+    const { status, json } = await apiCall(
+      "PUT",
+      `/ai-delivery/reports/monthly/${reportId}/update`,
+      {
+        title: "Updated Title",
+        tenantId: "spoofed-tenant",
+        clientId: fakeClientId,
+        aiDeliveryProjectId: "spoofed-project"
+      },
+      token
+    );
+    if (status === 200) {
+      const storedClientId = json.data?.report?.clientId;
+      if (storedClientId === clientId) {
+        pass("clientId body spoof ignored — stored value unchanged");
+      } else {
+        fail("clientId body spoof", `expected ${clientId} got ${storedClientId}`);
+      }
+      if (json.data?.report?.title === "Updated Title") {
+        pass("title updated correctly");
+      } else {
+        fail("title update", `got ${json.data?.report?.title}`);
+      }
+    } else {
+      fail("PUT report update", `status=${status} ${JSON.stringify(json.error)}`);
+    }
+  }
+  console.log();
+
+  // Step P5: Update fields
+  console.log("Step P5: Update adminSummaryNotes and exportUrl");
+  {
+    const { status, ok, json } = await apiCall(
+      "PUT",
+      `/ai-delivery/reports/monthly/${reportId}/update`,
+      {
+        adminSummaryNotes: "Smoke admin summary notes.",
+        recommendationsText: "Updated recommendation.",
+        exportUrl: "https://docs.example.com/smoke-june-report"
+      },
+      token
+    );
+    if (ok && status === 200) {
+      pass("PUT update returns 200");
+    } else {
+      fail("PUT update", `status=${status} ${JSON.stringify(json.error)}`);
+    }
+    if (json.data?.report?.adminSummaryNotes === "Smoke admin summary notes.") {
+      pass("adminSummaryNotes updated");
+    } else {
+      fail("adminSummaryNotes", `got ${json.data?.report?.adminSummaryNotes}`);
+    }
+    if (json.data?.report?.exportUrl === "https://docs.example.com/smoke-june-report") {
+      pass("exportUrl updated");
+    } else {
+      fail("exportUrl", `got ${json.data?.report?.exportUrl}`);
+    }
+  }
+  console.log();
+
+  // Step P6: Status transition DRAFT → ADMIN_REVIEW
+  console.log("Step P6: Status DRAFT → ADMIN_REVIEW");
+  {
+    const { status, ok, json } = await apiCall(
+      "POST",
+      `/ai-delivery/reports/monthly/${reportId}/status`,
+      { status: "ADMIN_REVIEW" },
+      token
+    );
+    if (ok && status === 200 && json.data?.report?.status === "ADMIN_REVIEW") {
+      pass("DRAFT → ADMIN_REVIEW transition succeeds");
+    } else {
+      fail("DRAFT → ADMIN_REVIEW", `status=${status} reportStatus=${json.data?.report?.status} ${JSON.stringify(json.error)}`);
+    }
+  }
+  console.log();
+
+  // Step P7: Status transition ADMIN_REVIEW → FINAL, finalizedAt set
+  console.log("Step P7: Status ADMIN_REVIEW → FINAL");
+  {
+    const { status, ok, json } = await apiCall(
+      "POST",
+      `/ai-delivery/reports/monthly/${reportId}/status`,
+      { status: "FINAL" },
+      token
+    );
+    if (ok && status === 200 && json.data?.report?.status === "FINAL") {
+      pass("ADMIN_REVIEW → FINAL transition succeeds");
+    } else {
+      fail("ADMIN_REVIEW → FINAL", `status=${status} reportStatus=${json.data?.report?.status} ${JSON.stringify(json.error)}`);
+    }
+    if (json.data?.report?.finalizedAt) {
+      pass("finalizedAt set on FINAL");
+    } else {
+      fail("finalizedAt", `got ${json.data?.report?.finalizedAt}`);
+    }
+  }
+  console.log();
+
+  // Step P8: Invalid transition FINAL → DRAFT rejected
+  console.log("Step P8: Invalid transition FINAL → DRAFT rejected");
+  {
+    const { status } = await apiCall(
+      "POST",
+      `/ai-delivery/reports/monthly/${reportId}/status`,
+      { status: "DRAFT" },
+      token
+    );
+    if (status === 400) {
+      pass("Invalid transition FINAL → DRAFT returns 400");
+    } else {
+      fail("Invalid transition", `expected 400 got ${status}`);
+    }
+  }
+  console.log();
+
+  // Step P9: Archive report
+  console.log("Step P9: Archive report");
+  {
+    const { status, ok, json } = await apiCall(
+      "POST",
+      `/ai-delivery/reports/monthly/${reportId}/archive`,
+      undefined,
+      token
+    );
+    if (ok && status === 200 && json.data?.report?.isArchived === true && json.data?.report?.status === "ARCHIVED") {
+      pass("Archive: isArchived=true and status=ARCHIVED");
+    } else {
+      fail("Archive report", `status=${status} isArchived=${json.data?.report?.isArchived} reportStatus=${json.data?.report?.status}`);
+    }
+  }
+  console.log();
+
+  // Step P10: Restore report
+  console.log("Step P10: Restore report");
+  {
+    const { status, ok, json } = await apiCall(
+      "POST",
+      `/ai-delivery/reports/monthly/${reportId}/restore`,
+      undefined,
+      token
+    );
+    if (ok && status === 200 && json.data?.report?.isArchived === false && json.data?.report?.status === "DRAFT") {
+      pass("Restore: isArchived=false and status=DRAFT");
+    } else {
+      fail("Restore report", `status=${status} isArchived=${json.data?.report?.isArchived} reportStatus=${json.data?.report?.status}`);
+    }
+  }
+  console.log();
+
+  // Step P11: Missing/fake project returns 404
+  console.log("Step P11: Missing project for GET → 404");
+  {
+    const { status } = await apiCall(
+      "GET",
+      "/ai-delivery/reports/monthly/00000000-0000-0000-0000-000000000000",
+      undefined,
+      token
+    );
+    if (status === 404) {
+      pass("Fake project GET returns 404");
+    } else {
+      fail("Fake project GET", `expected 404 got ${status}`);
+    }
+  }
+  {
+    const { status } = await apiCall(
+      "POST",
+      "/ai-delivery/reports/monthly/00000000-0000-0000-0000-000000000000",
+      { title: "Ghost" },
+      token
+    );
+    if (status === 404) {
+      pass("Fake project POST returns 404");
+    } else {
+      fail("Fake project POST", `expected 404 got ${status}`);
+    }
+  }
+  console.log();
+
   // Summary
   console.log("─────────────────────────────────────────────");
   console.log(`Monthly Report smoke: ${passed} PASS / ${failed} FAIL`);

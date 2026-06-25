@@ -34,6 +34,10 @@ import type {
   AiDeliveryDeliverableReviewResponse,
   AiDeliveryDeliverableReviewsResponse,
   AiDeliveryMonthlySummaryResponse,
+  AiDeliveryMonthlyReportSummary,
+  AiDeliveryMonthlyReportResponse,
+  AiDeliveryMonthlyReportInputRequest,
+  AiDeliveryMonthlyReportStatusRequest,
   BillDocumentUploadRequest,
   BillInputRequest,
   BillResponse,
@@ -7324,6 +7328,258 @@ export async function getAiDeliveryMonthlySummary(
       }
     }
   };
+}
+
+type AiDeliveryMonthlyReportStatus = "DRAFT" | "ADMIN_REVIEW" | "FINAL" | "ARCHIVED";
+
+const AI_DELIVERY_MONTHLY_REPORT_STATUSES: AiDeliveryMonthlyReportStatus[] = ["DRAFT", "ADMIN_REVIEW", "FINAL", "ARCHIVED"];
+
+const ALLOWED_MONTHLY_REPORT_TRANSITIONS: Record<AiDeliveryMonthlyReportStatus, AiDeliveryMonthlyReportStatus[]> = {
+  DRAFT: ["ADMIN_REVIEW", "FINAL"],
+  ADMIN_REVIEW: ["FINAL"],
+  FINAL: ["ARCHIVED"],
+  ARCHIVED: []
+};
+
+const aiDeliveryMonthlyReportSelect = {
+  id: true,
+  aiDeliveryProjectId: true,
+  clientId: true,
+  status: true,
+  title: true,
+  adminSummaryNotes: true,
+  recommendationsText: true,
+  exportUrl: true,
+  storageKey: true,
+  isArchived: true,
+  finalizedAt: true,
+  createdAt: true,
+  updatedAt: true,
+  aiDeliveryProject: {
+    select: {
+      name: true,
+      targetMonth: true,
+      client: { select: { name: true } }
+    }
+  }
+} as const;
+
+function toAiDeliveryMonthlyReportSummary(r: {
+  id: string;
+  aiDeliveryProjectId: string;
+  clientId: string;
+  status: string;
+  title: string | null;
+  adminSummaryNotes: string | null;
+  recommendationsText: string | null;
+  exportUrl: string | null;
+  storageKey: string | null;
+  isArchived: boolean;
+  finalizedAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+  aiDeliveryProject: {
+    name: string;
+    targetMonth: Date;
+    client: { name: string } | null;
+  } | null;
+}): AiDeliveryMonthlyReportSummary {
+  return {
+    id: r.id,
+    aiDeliveryProjectId: r.aiDeliveryProjectId,
+    clientId: r.clientId,
+    status: r.status,
+    title: r.title ?? null,
+    adminSummaryNotes: r.adminSummaryNotes ?? null,
+    recommendationsText: r.recommendationsText ?? null,
+    exportUrl: r.exportUrl ?? null,
+    storageKey: r.storageKey ?? null,
+    isArchived: r.isArchived,
+    finalizedAt: r.finalizedAt ? r.finalizedAt.toISOString() : null,
+    createdAt: r.createdAt.toISOString(),
+    updatedAt: r.updatedAt.toISOString(),
+    project: r.aiDeliveryProject
+      ? {
+          name: r.aiDeliveryProject.name,
+          targetMonth: formatAiDeliveryTargetMonth(r.aiDeliveryProject.targetMonth),
+          clientName: r.aiDeliveryProject.client?.name ?? null
+        }
+      : null
+  };
+}
+
+export async function getAiDeliveryMonthlyReport(
+  authSession: AuthResolvedSessionContext,
+  projectId: string
+): Promise<AiDeliveryMonthlyReportResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) return null;
+
+  const project = await prisma.aiDeliveryProject.findFirst({
+    where: { id: projectId, tenantId },
+    select: { id: true }
+  });
+  if (!project) return null;
+
+  const report = await (prisma as any).aiDeliveryMonthlyReport.findFirst({
+    where: { tenantId, aiDeliveryProjectId: projectId },
+    select: aiDeliveryMonthlyReportSelect
+  }) as any;
+
+  return { report: report ? toAiDeliveryMonthlyReportSummary(report) : null };
+}
+
+export async function createAiDeliveryMonthlyReport(
+  authSession: AuthResolvedSessionContext,
+  projectId: string,
+  input: AiDeliveryMonthlyReportInputRequest
+): Promise<AiDeliveryMonthlyReportResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) return null;
+
+  const project = await prisma.aiDeliveryProject.findFirst({
+    where: { id: projectId, tenantId },
+    select: { id: true, clientId: true }
+  });
+  if (!project) return null;
+
+  const existing = await (prisma as any).aiDeliveryMonthlyReport.findFirst({
+    where: { tenantId, aiDeliveryProjectId: projectId },
+    select: { id: true }
+  }) as any;
+  if (existing) {
+    throwAiDeliveryConflict("AI_DELIVERY_MONTHLY_REPORT_CONFLICT", "A monthly report already exists for this project.");
+  }
+
+  const created = await (prisma as any).aiDeliveryMonthlyReport.create({
+    data: {
+      tenantId,
+      aiDeliveryProjectId: project.id,
+      clientId: project.clientId,
+      status: "DRAFT",
+      title: toNullableString(input.title),
+      adminSummaryNotes: toNullableString(input.adminSummaryNotes),
+      recommendationsText: toNullableString(input.recommendationsText),
+      exportUrl: toNullableString(input.exportUrl)
+    },
+    select: aiDeliveryMonthlyReportSelect
+  }) as any;
+
+  return { report: toAiDeliveryMonthlyReportSummary(created) };
+}
+
+export async function updateAiDeliveryMonthlyReport(
+  authSession: AuthResolvedSessionContext,
+  reportId: string,
+  input: AiDeliveryMonthlyReportInputRequest
+): Promise<AiDeliveryMonthlyReportResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) return null;
+
+  const existing = await (prisma as any).aiDeliveryMonthlyReport.findFirst({
+    where: { id: reportId, tenantId },
+    select: { id: true, status: true, isArchived: true }
+  }) as any;
+  if (!existing) return null;
+  if (existing.isArchived) {
+    throwAiDeliveryBadRequest("AI_DELIVERY_MONTHLY_REPORT_ARCHIVED", "Cannot edit an archived monthly report.");
+  }
+
+  const updated = await (prisma as any).aiDeliveryMonthlyReport.update({
+    where: { id: reportId },
+    data: {
+      title: input.title === undefined ? undefined : toNullableString(input.title),
+      adminSummaryNotes: input.adminSummaryNotes === undefined ? undefined : toNullableString(input.adminSummaryNotes),
+      recommendationsText: input.recommendationsText === undefined ? undefined : toNullableString(input.recommendationsText),
+      exportUrl: input.exportUrl === undefined ? undefined : toNullableString(input.exportUrl),
+      storageKey: input.storageKey === undefined ? undefined : toNullableString(input.storageKey)
+    },
+    select: aiDeliveryMonthlyReportSelect
+  }) as any;
+
+  return { report: toAiDeliveryMonthlyReportSummary(updated) };
+}
+
+export async function updateAiDeliveryMonthlyReportStatus(
+  authSession: AuthResolvedSessionContext,
+  reportId: string,
+  input: AiDeliveryMonthlyReportStatusRequest
+): Promise<AiDeliveryMonthlyReportResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) return null;
+
+  const existing = await (prisma as any).aiDeliveryMonthlyReport.findFirst({
+    where: { id: reportId, tenantId },
+    select: { id: true, status: true, isArchived: true }
+  }) as any;
+  if (!existing) return null;
+
+  const newStatus = (input.status ?? "").trim().toUpperCase() as AiDeliveryMonthlyReportStatus;
+  if (!AI_DELIVERY_MONTHLY_REPORT_STATUSES.includes(newStatus)) {
+    throwAiDeliveryBadRequest("AI_DELIVERY_MONTHLY_REPORT_STATUS_INVALID", `Status "${newStatus}" is not valid.`);
+  }
+
+  const allowedNext = ALLOWED_MONTHLY_REPORT_TRANSITIONS[existing.status as AiDeliveryMonthlyReportStatus] ?? [];
+  if (!allowedNext.includes(newStatus)) {
+    throwAiDeliveryBadRequest(
+      "AI_DELIVERY_MONTHLY_REPORT_TRANSITION_INVALID",
+      `Cannot transition from ${existing.status} to ${newStatus}.`
+    );
+  }
+
+  const finalizedAt = newStatus === "FINAL" ? new Date() : undefined;
+
+  const updated = await (prisma as any).aiDeliveryMonthlyReport.update({
+    where: { id: reportId },
+    data: { status: newStatus, ...(finalizedAt !== undefined ? { finalizedAt } : {}) },
+    select: aiDeliveryMonthlyReportSelect
+  }) as any;
+
+  return { report: toAiDeliveryMonthlyReportSummary(updated) };
+}
+
+export async function archiveAiDeliveryMonthlyReport(
+  authSession: AuthResolvedSessionContext,
+  reportId: string
+): Promise<AiDeliveryMonthlyReportResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) return null;
+
+  const existing = await (prisma as any).aiDeliveryMonthlyReport.findFirst({
+    where: { id: reportId, tenantId },
+    select: { id: true }
+  }) as any;
+  if (!existing) return null;
+
+  const updated = await (prisma as any).aiDeliveryMonthlyReport.update({
+    where: { id: reportId },
+    data: { isArchived: true, status: "ARCHIVED" },
+    select: aiDeliveryMonthlyReportSelect
+  }) as any;
+
+  return { report: toAiDeliveryMonthlyReportSummary(updated) };
+}
+
+export async function restoreAiDeliveryMonthlyReport(
+  authSession: AuthResolvedSessionContext,
+  reportId: string
+): Promise<AiDeliveryMonthlyReportResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) return null;
+
+  const existing = await (prisma as any).aiDeliveryMonthlyReport.findFirst({
+    where: { id: reportId, tenantId },
+    select: { id: true, isArchived: true }
+  }) as any;
+  if (!existing) return null;
+
+  const updated = await (prisma as any).aiDeliveryMonthlyReport.update({
+    where: { id: reportId },
+    data: { isArchived: false, status: "DRAFT" },
+    select: aiDeliveryMonthlyReportSelect
+  }) as any;
+
+  return { report: toAiDeliveryMonthlyReportSummary(updated) };
 }
 
 export async function createAiDeliveryDeliverable(
