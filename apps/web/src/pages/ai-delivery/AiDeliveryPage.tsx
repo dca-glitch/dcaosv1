@@ -4000,11 +4000,11 @@ export function AiDeliveryPage({
               {contentDraftsError ? <ErrorState title="Content draft action blocked" message={contentDraftsError} /> : null}
               <section className="field-panel">
                 <h3>Article production planning</h3>
-                <p className="muted-text">Current status is shown below. Next step: review or edit the admin draft, save your changes, then move it into internal review when ready. This screen does not publish, deliver to the client, open the Client Portal, send content to WordPress, or trigger external services.</p>
+                <p className="muted-text">Current status is shown below. Next step: start from an approved or planned content plan item, generate or edit the draft, save changes, then move it into internal review when ready. Client draft review remains deferred, and final export, PDF, R2 storage, Google Docs, WordPress, and external services are outside this block.</p>
                 <div className="state-panel" role="status">{contentDraftActionGuidance}</div>
                 {contentDraftHandoffMessage ? <div className="state-panel" role="status">{contentDraftHandoffMessage}</div> : null}
                 <div className="field-panel" style={{ marginBottom: "1rem" }}>
-                  <h4>Current editor state</h4>
+                  <h4>AI Content Production readiness summary</h4>
                   <dl className="brief-grid">
                     <div>
                       <dt>Editor mode</dt>
@@ -4025,27 +4025,58 @@ export function AiDeliveryPage({
                   </dl>
                   <p className="muted-text">{contentDraftReviewReadiness.message}</p>
                 </div>
-                <div className="modal-footer">
-                  <button className="secondary-action" disabled={contentDraftsSaving} onClick={() => { setContentDraftHandoffMessage(null); setContentDraftEditorId(null); setContentDraftForm(emptyContentDraft()); }} type="button">New draft</button>
-                  <button className="secondary-action" disabled={contentDraftsSaving} onClick={closeContentDrafts} type="button">Close</button>
-                  <button className="primary-action" disabled={contentDraftsSaving || !canSaveContentDraftForm} onClick={() => void saveContentDraft(openContentDraftsProject.id)} type="button">
-                    {contentDraftsSaving ? "Saving" : contentDraftPrimaryActionLabel}
-                  </button>
-                  {activeContentDraftRecord && !activeContentDraftRecord.isArchived ? (
-                    <button
-                      className="primary-action"
-                      disabled={contentDraftsSaving || !canMarkReadyCurrentDraft}
-                      onClick={() => void requestContentDraftReview(openContentDraftsProject.id, activeContentDraftRecord.id)}
-                      type="button"
-                    >
-                      Mark ready for review
+                <div className="field-panel" style={{ marginBottom: "1rem" }}>
+                  <h4>Plan item to draft handoff</h4>
+                  <p className="muted-text">Use the approved or planned monthly content plan item below to create the linked draft the admin team will edit. This is the internal handoff from monthly planning into production; it does not publish, hand off to clients, or expose draft review flows.</p>
+                  <dl className="brief-grid">
+                    <div>
+                      <dt>Linked plan item</dt>
+                      <dd>{contentDraftEditorLinkedPlanLabel}</dd>
+                    </div>
+                    <div>
+                      <dt>Ready items available</dt>
+                      <dd>{eligibleContentDraftPlanItems.length}</dd>
+                    </div>
+                    <div>
+                      <dt>Linked images</dt>
+                      <dd>{activeContentDraftRecord ? activeContentDraftLinkedImages.length : 0}</dd>
+                    </div>
+                    <div>
+                      <dt>Linked deliverables</dt>
+                      <dd>{activeContentDraftRecord ? activeContentDraftLinkedDeliverables.length : 0}</dd>
+                    </div>
+                  </dl>
+                  <div className="state-panel" role="status">
+                    {activeContentDraftRecord
+                      ? `This draft is tied to ${contentDraftEditorLinkedPlanLabel}. Save edits before using the review or archive actions.`
+                      : "Choose a ready plan item below to generate a new draft, or create a manual draft and link it back to the approved monthly plan item it fulfills."}
+                  </div>
+                </div>
+                <div className="field-panel" style={{ marginBottom: "1rem" }}>
+                  <h4>Draft actions</h4>
+                  <p className="muted-text">Keep the saved draft editable here, then use the existing actions for generation, review, reset, and archive transitions. Client review remains deferred in this block.</p>
+                  <div className="modal-footer">
+                    <button className="secondary-action" disabled={contentDraftsSaving} onClick={() => { setContentDraftHandoffMessage(null); setContentDraftEditorId(null); setContentDraftForm(emptyContentDraft()); }} type="button">New draft</button>
+                    <button className="secondary-action" disabled={contentDraftsSaving} onClick={closeContentDrafts} type="button">Close</button>
+                    <button className="primary-action" disabled={contentDraftsSaving || !canSaveContentDraftForm} onClick={() => void saveContentDraft(openContentDraftsProject.id)} type="button">
+                      {contentDraftsSaving ? "Saving" : contentDraftPrimaryActionLabel}
                     </button>
-                  ) : null}
-                  {activeContentDraftRecord && !activeContentDraftRecord.isArchived && activeContentDraftRecord.status !== "DRAFT" ? (
-                    <button className="secondary-action" disabled={contentDraftsSaving} onClick={() => void returnContentDraftToDraft(openContentDraftsProject.id, activeContentDraftRecord.id)} type="button">
-                      Return to draft
-                    </button>
-                  ) : null}
+                    {activeContentDraftRecord && !activeContentDraftRecord.isArchived ? (
+                      <button
+                        className="primary-action"
+                        disabled={contentDraftsSaving || !canMarkReadyCurrentDraft}
+                        onClick={() => void requestContentDraftReview(openContentDraftsProject.id, activeContentDraftRecord.id)}
+                        type="button"
+                      >
+                        Mark ready for review
+                      </button>
+                    ) : null}
+                    {activeContentDraftRecord && !activeContentDraftRecord.isArchived && activeContentDraftRecord.status !== "DRAFT" ? (
+                      <button className="secondary-action" disabled={contentDraftsSaving} onClick={() => void returnContentDraftToDraft(openContentDraftsProject.id, activeContentDraftRecord.id)} type="button">
+                        Return to draft
+                      </button>
+                    ) : null}
+                  </div>
                 </div>
                 <div className="field-panel" style={{ marginBottom: "1rem" }}>
                   <h4>Approved / planned content plan items</h4>
@@ -4227,7 +4258,7 @@ export function AiDeliveryPage({
 
               <section className="field-panel">
                 <h3>Existing article production records</h3>
-                {contentDrafts.length === 0 ? <div className="state-panel">No content drafts yet. Create a draft after the content plan is ready.</div> : null}
+                {contentDrafts.length === 0 ? <div className="state-panel">No content drafts yet. Approve or select a plan item above, then generate the first linked draft for admin editing.</div> : null}
                 {contentDrafts.map((draftItem) => (
                   <article className="entity-card" key={draftItem.id} style={{ marginBottom: "1rem" }}>
                     <div className="entity-card-header">
