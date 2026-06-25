@@ -20,6 +20,7 @@ DCA OS Lite is in local-first admin/operator foundation work. Production is froz
 - AI Delivery monthly report phase 1 schema-free summary API closure.
 - AI Delivery monthly report phase 2 persisted model + admin CRUD API.
 - AI Delivery monthly report admin UI + browser smoke closure.
+- Client Portal monthly reports archive route + browser proof closure.
 - AI Delivery operator summary, AI SEO foundation UI, and AI Content Production foundation UI.
 - Market Intelligence admin MVP closure note documented.
 - Email Notifications EN1 backend foundation only.

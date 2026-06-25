@@ -8,6 +8,8 @@ Platform-neutral rule: AI Delivery records, content assets, article images, and 
 
 Explicitly not active: live AI calls, crawling, real publishing connectors, WordPress-only assumptions, GA/GSC, Resend sending, client portal delivery, public approval links, VPS, or production deployment.
 
+Client Portal monthly reports are now implemented and browser-proven as a read-only archive surface for linked client users. The contract is `GET /api/v1/client-portal/projects/:projectId/monthly-reports`; access requires an authenticated client portal session, an active tenant, `ClientUserAccess`, and a project that belongs to the accessible client. The endpoint returns FINAL, non-archived monthly reports only and excludes `storageKey`, `adminSummaryNotes`, `tenantId`, workflow internals, and other admin-only fields.
+
 ## Private object storage environment
 
 Private object storage is optional in local development. R2/private storage foundation closed for the current MVP admin scope. When the storage configuration is absent, admin-only private upload endpoints stay guarded and return `R2_STORAGE_NOT_CONFIGURED` instead of persisting a storage reference.
