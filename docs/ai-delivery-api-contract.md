@@ -10,6 +10,8 @@ Explicitly not active: live AI calls, crawling, real publishing connectors, Word
 
 Client Portal monthly reports are now implemented and browser-proven as a read-only archive surface for linked client users. The contract is `GET /api/v1/client-portal/projects/:projectId/monthly-reports`; access requires an authenticated client portal session, an active tenant, `ClientUserAccess`, and a project that belongs to the accessible client. The endpoint returns FINAL, non-archived monthly reports only and excludes `storageKey`, `adminSummaryNotes`, `tenantId`, workflow internals, and other admin-only fields.
 
+Monthly Report document handoff is also implemented and smoke-proven. Admin document upload uses `POST /api/v1/ai-delivery/reports/monthly/:reportId/document`, admin reference/download uses `GET /api/v1/ai-delivery/reports/monthly/:reportId/download`, and client download uses `GET /api/v1/client-portal/projects/:projectId/monthly-reports/:reportId/download`. `storageKey` stays internal, `hasDocument` is the safe signal, and generic monthly report PUT no longer accepts `storageKey`.
+
 ## Private object storage environment
 
 Private object storage is optional in local development. R2/private storage foundation closed for the current MVP admin scope. When the storage configuration is absent, admin-only private upload endpoints stay guarded and return `R2_STORAGE_NOT_CONFIGURED` instead of persisting a storage reference.
@@ -44,8 +46,10 @@ Current behavior:
 - `npm.cmd run validate` passed for the current admin/operator foundations.
 - `npm.cmd run smoke:local` passed as the local API readiness gate for completed implementation slices.
 - `npm.cmd run smoke:ai-delivery-reviews` passed twice in focused local regression coverage after browser assertion hardening and fixture isolation.
-- `npm.cmd run smoke:monthly-report:local` passed (52 PASS / 0 FAIL) for the monthly report backend contract.
+- `npm.cmd run smoke:monthly-report:local` passed (58 PASS / 0 FAIL) for the monthly report backend contract and document handoff.
 - `npm.cmd run smoke:monthly-report:browser` passed for the admin Monthly Report UI open/create/edit/status/archive/restore/reopen flow.
+- `npm.cmd run smoke:client-portal:local` passed (27 PASS / 0 FAIL).
+- `npm.cmd run smoke:client-portal-monthly-report:browser` passed (35 OK) for FINAL-only client report visibility and forbidden-field non-exposure.
 - Focused smoke now creates dedicated smoke-owned AI Delivery projects instead of selecting an arbitrary existing local AI Delivery project.
 - Focused smoke should not mutate real local dev AI Delivery projects when used as intended.
 

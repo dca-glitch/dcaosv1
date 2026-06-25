@@ -14,9 +14,7 @@ The Reports module provides reusable reporting screens and report definitions.
 - AI Delivery monthly report persisted model (admin-only, `AiDeliveryMonthlyReport`, migration applied)
 - AI Delivery monthly report admin UI and browser smoke proof
 - Client Portal monthly reports archive surface (FINAL-only, browser-proven)
-- Monthly Report PDF/document upload (admin): `POST /api/v1/ai-delivery/reports/monthly/:reportId/document`
-- Monthly Report admin signed download: `GET /api/v1/ai-delivery/reports/monthly/:reportId/download`
-- Monthly Report client portal signed download: `GET /api/v1/client-portal/projects/:projectId/monthly-reports/:reportId/download`
+- Monthly Report document handoff (admin upload + admin download + client portal download)
 - `storageKey` hidden from all admin and client outputs; only written via upload endpoint
 - `hasDocument` boolean flag exposed to admin and client portal; computed from `!!storageKey`
 - Local smoke proves: upload → 503 R2_STORAGE_NOT_CONFIGURED, download reference → null, storageKey tightened on PUT

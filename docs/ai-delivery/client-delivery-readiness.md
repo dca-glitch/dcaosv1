@@ -7,6 +7,7 @@
 - Client Portal browser proof.
 - Client-safe archive contract docs.
 - Client Portal monthly reports archive API/UI/browser proof.
+- Monthly Report document handoff API/UI/browser proof.
 - Export handoff foundation.
 
 ## Proof
@@ -15,6 +16,7 @@
 - `npm.cmd run smoke:client-portal:local` proves the read-only archive API, access gating, final-deliverable filtering, and safe download contract.
 - `node scripts/smoke-client-portal-browser-local.mjs` proves the archive UI, deferred sections, and forbidden-field non-exposure.
 - `npm.cmd run smoke:client-portal-monthly-report:browser` proves FINAL-only monthly report visibility, ClientUserAccess gating, and forbidden-field non-exposure.
+- `npm.cmd run smoke:monthly-report:local` proves monthly report document handoff, storageKey tightening, and safe admin download behavior.
 - `npm.cmd run smoke:ai-delivery-reviews` remains the admin AI Delivery review/archive smoke when needed for related admin contract checks.
 - `npm.cmd run smoke:mvp:local` proves the broader local auth/tenant/module readiness baseline.
 - `npm.cmd run smoke:browser` and `scripts/smoke-browser.ps1` remain the general local browser proof wrappers behind `npm.cmd run smoke:browser`.
@@ -28,7 +30,7 @@
 - Client review and approval actions.
 - Public links.
 - GA/GSC reporting integration.
-- Monthly Report foundation (client portal / persisted report). Admin Monthly Report UI and Client Portal monthly reports are now browser-proven; future report upload/signed download remains deferred.
+- Monthly Report foundation (client portal / persisted report). Admin Monthly Report UI, Client Portal monthly reports, and monthly report document handoff are now browser/local-smoke proven.
 - AI Market Intelligence full module.
 - Revenue Hub AI.
 - POD AI Toolkit.
