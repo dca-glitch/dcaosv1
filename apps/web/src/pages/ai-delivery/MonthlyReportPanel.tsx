@@ -1,4 +1,7 @@
-import React, { FormEvent, useCallback, useEffect, useState } from "react";
+import React, { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { EmptyState } from "../../components/EmptyState";
+import { ErrorState } from "../../components/ErrorState";
+import { LoadingState } from "../../components/LoadingState";
 import { Modal } from "../../components/Modal";
 import { MetricCard, SectionPanel, StatusBadge } from "../../components/ui";
 import type { AiDeliveryProjectSummary } from "./AiDeliveryPage";
@@ -570,6 +573,49 @@ export function MonthlyReportPanel({
   const canRestore = !reportSaving && !!report && report.isArchived;
   const canEdit = !reportSaving && !!report && !report.isArchived && normalizedStatus !== "FINAL" && normalizedStatus !== "ARCHIVED";
 
+  const reportShellCopy = useMemo(() => {
+    if (!report) return null;
+
+    const status = report.isArchived ? "Archived" : formatReportStatus(report.status);
+    const headline = report.title?.trim() || `${project.name} monthly report`;
+    const documentState = report.hasDocument ? "Document attached" : "No document attached";
+    const handoffState = report.exportUrl ? "Manual handoff URL set" : "No handoff URL";
+    const visibilityState = report.status === "FINAL" ? "Client-safe when portal delivery is enabled" : "Admin-only working copy";
+    const actionHint = report.isArchived
+      ? "Restore the report to resume edits or replace the document."
+      : report.status === "FINAL"
+        ? "Finalize is complete; archive when the handoff is settled."
+        : "Use review/finalize actions, then attach the report document.";
+
+    return {
+      status,
+      headline,
+      documentState,
+      handoffState,
+      visibilityState,
+      actionHint
+    };
+  }, [project.name, report]);
+
+  const metricsShellCopy = useMemo(() => {
+    if (!metrics) return null;
+
+    const dataStatus = metrics.computedTrendSummary.dataStatus;
+    const trendHint =
+      dataStatus === "READY"
+        ? "Trend summary is ready from approved snapshots."
+        : dataStatus === "PARTIAL"
+          ? "Trend summary is partial; approve more snapshots to complete it."
+          : "No approved snapshot data yet. Import or approve snapshots to populate the trend summary.";
+
+    return {
+      dataStatus,
+      trendHint,
+      snapshotCount: metrics.snapshots.length,
+      trendMonthCount: metrics.computedTrendSummary.last12Months.length
+    };
+  }, [metrics]);
+
   return (
     <Modal
       onClose={onClose}
@@ -688,18 +734,17 @@ export function MonthlyReportPanel({
       {/* Persisted Report Section */}
       <section className="field-panel">
         <h3>Persisted Monthly Report</h3>
-        <p className="muted-text">Admin-authored monthly report narrative. Status controls visibility boundaries. Client Portal monthly report is deferred.</p>
+        <p className="muted-text">Admin-authored monthly report narrative. This is the operator workflow shell; client portal delivery stays deferred.</p>
 
         {reportLoading ? (
-          <div className="state-panel">Loading monthly report...</div>
+          <LoadingState label="Loading monthly report..." />
         ) : reportError ? (
-          <div className="state-panel" role="alert" style={{ borderLeft: "4px solid var(--color-error)", paddingLeft: "1rem" }}>
-            <strong>Error:</strong> {reportError}
-          </div>
+          <ErrorState title="Monthly report unavailable" message={reportError} />
         ) : reportNotFound && !report ? (
-          <div className="state-panel">
-            <p>No monthly report exists for this project yet.</p>
-            <div style={{ marginTop: "0.75rem" }}>
+          <EmptyState
+            title="No persisted monthly report yet"
+            message="Create the admin report shell first. Snapshot metrics appear after a report exists, and client-facing delivery remains deferred."
+            action={(
               <button
                 className="primary-action"
                 disabled={reportSaving}
@@ -708,8 +753,8 @@ export function MonthlyReportPanel({
               >
                 {reportSaving ? "Creating..." : "Create Monthly Report"}
               </button>
-            </div>
-          </div>
+            )}
+          />
         ) : report ? (
           <>
             {reportMessage ? (
@@ -718,71 +763,88 @@ export function MonthlyReportPanel({
               </div>
             ) : null}
 
-            {/* Status and actions */}
-            <div className="field-panel" style={{ marginBottom: "1rem" }}>
-              <dl className="brief-grid">
+            <div className="entity-card" style={{ marginBottom: "1rem" }}>
+              <div className="entity-card-header">
                 <div>
-                  <dt>Status</dt>
-                  <dd><StatusBadge status={formatReportStatus(report.status)} /></dd>
+                  <StatusBadge status={reportShellCopy?.status ?? formatReportStatus(report.status)} />
+                  <h3>{reportShellCopy?.headline ?? `${project.name} monthly report`}</h3>
+                  <p className="muted-text">
+                    {project.targetMonth} • {project.client?.name ?? project.clientId}
+                    {report.finalizedAt ? ` • Finalized ${formatDate(report.finalizedAt)}` : " • Draft workflow"}
+                  </p>
                 </div>
-                {report.finalizedAt ? (
-                  <div>
-                    <dt>Finalized</dt>
-                    <dd>{formatDate(report.finalizedAt)}</dd>
-                  </div>
-                ) : null}
+                <div className="card-actions">
+                  {canMoveToAdminReview ? (
+                    <button
+                      className="secondary-action"
+                      disabled={reportSaving}
+                      onClick={() => void handleSetStatus("ADMIN_REVIEW")}
+                      type="button"
+                    >
+                      Move to Admin Review
+                    </button>
+                  ) : null}
+                  {canFinalize ? (
+                    <button
+                      className="secondary-action"
+                      disabled={reportSaving}
+                      onClick={() => void handleSetStatus("FINAL")}
+                      type="button"
+                    >
+                      Finalize
+                    </button>
+                  ) : null}
+                  {canArchive ? (
+                    <button
+                      className="secondary-action"
+                      disabled={reportSaving}
+                      onClick={() => void handleArchive()}
+                      type="button"
+                    >
+                      Archive
+                    </button>
+                  ) : null}
+                  {canRestore ? (
+                    <button
+                      className="secondary-action"
+                      disabled={reportSaving}
+                      onClick={() => void handleRestore()}
+                      type="button"
+                    >
+                      Restore
+                    </button>
+                  ) : null}
+                </div>
+              </div>
+
+              <dl className="brief-grid" style={{ marginTop: "0.75rem" }}>
                 <div>
-                  <dt>Created</dt>
-                  <dd>{formatDate(report.createdAt)}</dd>
+                  <dt>Document</dt>
+                  <dd>{reportShellCopy?.documentState ?? "Not set"}</dd>
                 </div>
                 <div>
-                  <dt>Updated</dt>
-                  <dd>{formatDate(report.updatedAt)}</dd>
+                  <dt>Handoff</dt>
+                  <dd>{reportShellCopy?.handoffState ?? "Not set"}</dd>
+                </div>
+                <div>
+                  <dt>Visibility</dt>
+                  <dd>{reportShellCopy?.visibilityState ?? "Not set"}</dd>
+                </div>
+                <div>
+                  <dt>Metrics</dt>
+                  <dd>
+                    {metricsLoading
+                      ? "Loading snapshot metrics"
+                      : metrics
+                        ? `${metricsShellCopy?.snapshotCount ?? 0} snapshot${(metricsShellCopy?.snapshotCount ?? 0) === 1 ? "" : "s"} loaded`
+                        : "Pending"}
+                  </dd>
                 </div>
               </dl>
 
-              <div className="card-actions" style={{ marginTop: "0.75rem" }}>
-                {canMoveToAdminReview ? (
-                  <button
-                    className="secondary-action"
-                    disabled={reportSaving}
-                    onClick={() => void handleSetStatus("ADMIN_REVIEW")}
-                    type="button"
-                  >
-                    Move to Admin Review
-                  </button>
-                ) : null}
-                {canFinalize ? (
-                  <button
-                    className="secondary-action"
-                    disabled={reportSaving}
-                    onClick={() => void handleSetStatus("FINAL")}
-                    type="button"
-                  >
-                    Finalize
-                  </button>
-                ) : null}
-                {canArchive ? (
-                  <button
-                    className="secondary-action"
-                    disabled={reportSaving}
-                    onClick={() => void handleArchive()}
-                    type="button"
-                  >
-                    Archive
-                  </button>
-                ) : null}
-                {canRestore ? (
-                  <button
-                    className="secondary-action"
-                    disabled={reportSaving}
-                    onClick={() => void handleRestore()}
-                    type="button"
-                  >
-                    Restore
-                  </button>
-                ) : null}
-              </div>
+              <p className="muted-text" style={{ marginTop: "0.5rem" }}>
+                {reportShellCopy?.actionHint ?? "Use the report actions above to manage the monthly workflow."}
+              </p>
 
               {normalizedStatus === "FINAL" ? (
                 <p className="muted-text" style={{ marginTop: "0.5rem" }}>
@@ -851,6 +913,7 @@ export function MonthlyReportPanel({
               {onUploadDocument || onDownloadDocument ? (
                 <div className="field-panel" style={{ marginTop: "1rem" }}>
                   <h4>Report document</h4>
+                  <p className="muted-text">This is the admin handoff surface: upload or download the stored report document, or keep a safe external export URL for manual sharing. PDF generation stays outside this block.</p>
                   {documentMessage ? (
                     <div className="state-panel" style={{ marginBottom: "0.75rem", borderLeft: "4px solid var(--color-success)", paddingLeft: "1rem" }}>
                       {documentMessage}
@@ -900,12 +963,11 @@ export function MonthlyReportPanel({
                 description="Snapshot metrics imported manually for this monthly report. This block does not sync live with Google."
                 className="metrics-section"
               >
+                <p className="muted-text" style={{ marginBottom: "0.75rem" }}>Snapshot metrics are admin-only and snapshot-first. Live Google sync remains deferred.</p>
                 {metricsLoading ? (
-                  <div className="state-panel">Loading snapshot metrics...</div>
+                  <LoadingState label="Loading snapshot metrics..." />
                 ) : metricsError ? (
-                  <div className="state-panel" role="alert" style={{ borderLeft: "4px solid var(--color-error)", paddingLeft: "1rem" }}>
-                    <strong>Metrics unavailable:</strong> {metricsError}
-                  </div>
+                  <ErrorState title="Metrics unavailable" message={metricsError} />
                 ) : metrics ? (
                   <>
                     {metricsMessage ? (
@@ -918,6 +980,31 @@ export function MonthlyReportPanel({
                         {metricsActionError}
                       </div>
                     ) : null}
+
+                    <div className="state-panel" style={{ marginBottom: "1rem" }}>
+                      <strong>Trend summary</strong>
+                      <p className="muted-text" style={{ marginTop: "0.25rem" }}>
+                        {metricsShellCopy?.trendHint ?? "Trend summary is waiting for approved snapshots."}
+                      </p>
+                      <dl className="brief-grid" style={{ marginTop: "0.75rem" }}>
+                        <div>
+                          <dt>Snapshot status</dt>
+                          <dd>{metricsShellCopy?.dataStatus ?? "Not set"}</dd>
+                        </div>
+                        <div>
+                          <dt>Imported snapshots</dt>
+                          <dd>{metricsShellCopy?.snapshotCount ?? 0}</dd>
+                        </div>
+                        <div>
+                          <dt>Trend months</dt>
+                          <dd>{metricsShellCopy?.trendMonthCount ?? 0}</dd>
+                        </div>
+                        <div>
+                          <dt>Latest approved month</dt>
+                          <dd>{metrics.computedTrendSummary.latestMonth ?? "Not set"}</dd>
+                        </div>
+                      </dl>
+                    </div>
 
                     <div className="summary-grid metric-grid" style={{ marginBottom: "1rem" }}>
                       <MetricCard
@@ -1206,7 +1293,10 @@ export function MonthlyReportPanel({
                     ) : null}
                   </>
                 ) : (
-                  <div className="state-panel">Snapshot metrics are available after the monthly report is loaded.</div>
+                  <EmptyState
+                    title="Snapshot metrics not loaded yet"
+                    message="Create or open the persisted monthly report first. Metrics remain admin-only, snapshot-first, and do not sync live with Google."
+                  />
                 )}
               </SectionPanel>
 
