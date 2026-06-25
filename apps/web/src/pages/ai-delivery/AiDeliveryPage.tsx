@@ -6,6 +6,12 @@ import { Modal } from "../../components/Modal";
 import { MetricCard, SectionPanel, StatusBadge } from "../../components/ui";
 import type { ClientSummary } from "../clients/ClientsPage";
 import type { ProjectSummary as ProjectLinkSummary } from "../projects/ProjectsPage";
+import { MonthlyReportPanel } from "./MonthlyReportPanel";
+import type {
+  AiDeliveryMonthlySummaryData,
+  AiDeliveryMonthlyReportData,
+  AiDeliveryMonthlyReportFormValues
+} from "./MonthlyReportPanel";
 
 export type AiDeliveryBriefSummary = {
   id: string;
@@ -413,6 +419,13 @@ export type AiDeliveryProjectsProps = {
   onApplyResearchSummaryToBrief?: (projectId: string, researchSummaryId: string) => Promise<{ researchSummary: AiDeliveryResearchSummarySummary | null; brief: { id: string; notes: string | null; updatedAt: string } | null } | null>;
   onFetchResearchSources?: (projectId: string, researchRequestId?: string | null) => Promise<AiDeliveryResearchSourceSummary[]>;
   onSaveResearchSource?: (projectId: string, researchSourceId: string | null, values: AiDeliveryResearchSourceFormValues) => Promise<AiDeliveryResearchSourceSummary | null>;
+  onFetchMonthlyComputedSummary?: (projectId: string) => Promise<AiDeliveryMonthlySummaryData | null>;
+  onFetchMonthlyReport?: (projectId: string) => Promise<AiDeliveryMonthlyReportData | null>;
+  onCreateMonthlyReport?: (projectId: string) => Promise<AiDeliveryMonthlyReportData | null>;
+  onUpdateMonthlyReport?: (reportId: string, values: AiDeliveryMonthlyReportFormValues) => Promise<AiDeliveryMonthlyReportData | null>;
+  onSetMonthlyReportStatus?: (reportId: string, status: string) => Promise<AiDeliveryMonthlyReportData | null>;
+  onArchiveMonthlyReport?: (reportId: string) => Promise<AiDeliveryMonthlyReportData | null>;
+  onRestoreMonthlyReport?: (reportId: string) => Promise<AiDeliveryMonthlyReportData | null>;
 };
 
 const workflowRunStatuses = ["DRAFT", "READY", "IN_PROGRESS", "REVIEW", "COMPLETED", "FAILED", "ARCHIVED"] as const;
@@ -798,13 +811,21 @@ export function AiDeliveryPage({
   onSaveResearchSummary,
   onApplyResearchSummaryToBrief,
   onFetchResearchSources,
-  onSaveResearchSource
+  onSaveResearchSource,
+  onFetchMonthlyComputedSummary,
+  onFetchMonthlyReport,
+  onCreateMonthlyReport,
+  onUpdateMonthlyReport,
+  onSetMonthlyReportStatus,
+  onArchiveMonthlyReport,
+  onRestoreMonthlyReport
 }: AiDeliveryProjectsProps) {
   const [filter, setFilter] = useState<"all" | "active" | "archived">("active");
   const [editorProjectId, setEditorProjectId] = useState<string | null>(null);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [draft, setDraft] = useState<AiDeliveryProjectFormValues>(emptyForm());
   const [saving, setSaving] = useState(false);
+  const [openMonthlyReportId, setOpenMonthlyReportId] = useState<string | null>(null);
   const [openBriefId, setOpenBriefId] = useState<string | null>(null);
   const [briefLoading, setBriefLoading] = useState(false);
   const [briefError, setBriefError] = useState<string | null>(null);
@@ -2467,6 +2488,10 @@ export function AiDeliveryPage({
     setResearchSourceForm(emptyResearchSource());
   }
 
+  function closeMonthlyReport() {
+    setOpenMonthlyReportId(null);
+  }
+
   if (loading) return <LoadingState label="Loading AI delivery projects" />;
   if (error) return <ErrorState title="AI delivery unavailable" message={error} />;
 
@@ -2642,6 +2667,19 @@ export function AiDeliveryPage({
                           </button>
                           <button className="secondary-action" onClick={() => void openDeliverables(p.id)} type="button">
                             Deliverables
+                          </button>
+                        </div>
+                      </div>
+                      <div>
+                        <span className="muted-text">Admin reports</span>
+                        <div className="brief-actions">
+                          <button
+                            className="secondary-action"
+                            disabled={typeof onFetchMonthlyComputedSummary !== "function"}
+                            onClick={() => setOpenMonthlyReportId(p.id)}
+                            type="button"
+                          >
+                            Monthly Report
                           </button>
                         </div>
                       </div>
@@ -5075,6 +5113,31 @@ export function AiDeliveryPage({
           ) : <div>Project not found.</div>}
         </Modal>
       ) : null}
+      {openMonthlyReportId ? (() => {
+        const monthlyProject = projects.find((p) => p.id === openMonthlyReportId) ?? null;
+        return monthlyProject
+          && typeof onFetchMonthlyComputedSummary === "function"
+          && typeof onFetchMonthlyReport === "function"
+          && typeof onCreateMonthlyReport === "function"
+          && typeof onUpdateMonthlyReport === "function"
+          && typeof onSetMonthlyReportStatus === "function"
+          && typeof onArchiveMonthlyReport === "function"
+          && typeof onRestoreMonthlyReport === "function"
+          ? (
+            <MonthlyReportPanel
+              key={openMonthlyReportId}
+              project={monthlyProject}
+              onClose={closeMonthlyReport}
+              onFetchComputedSummary={onFetchMonthlyComputedSummary}
+              onFetchReport={onFetchMonthlyReport}
+              onCreateReport={onCreateMonthlyReport}
+              onUpdateReport={onUpdateMonthlyReport}
+              onSetReportStatus={onSetMonthlyReportStatus}
+              onArchiveReport={onArchiveMonthlyReport}
+              onRestoreReport={onRestoreMonthlyReport}
+            />
+          ) : null;
+      })() : null}
     </section>
   );
 }

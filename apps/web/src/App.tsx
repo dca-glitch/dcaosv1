@@ -50,6 +50,11 @@ import {
   type AiDeliveryProjectSummary,
   type AiDeliveryProjectFormValues
 } from "./pages/ai-delivery/AiDeliveryPage";
+import type {
+  AiDeliveryMonthlySummaryData,
+  AiDeliveryMonthlyReportData,
+  AiDeliveryMonthlyReportFormValues
+} from "./pages/ai-delivery/MonthlyReportPanel";
 import { AiMarketIntelligencePage } from "./pages/ai-market-intelligence/AiMarketIntelligencePage";
 import { TasksPage, type TaskFormValues, type TaskSummary } from "./pages/tasks/TasksPage";
 
@@ -317,6 +322,24 @@ type AiDeliveryWorkflowRunsResponse = {
 
 type AiDeliveryWorkflowRunResponse = {
   workflowRun: AiDeliveryWorkflowRunSummary | null;
+};
+
+type AiDeliveryMonthlySummaryResponse = {
+  summary: {
+    project: AiDeliveryMonthlySummaryData["project"];
+    deliverables: AiDeliveryMonthlySummaryData["deliverables"];
+    totals: AiDeliveryMonthlySummaryData["totals"];
+    contentPlanItems?: AiDeliveryMonthlySummaryData["contentPlanItems"];
+    deferred: {
+      gaGscMetricsStatus: string;
+      trendMonthsStatus: string;
+      recommendationsStatus: string;
+    };
+  };
+};
+
+type AiDeliveryMonthlyReportResponse = {
+  report: AiDeliveryMonthlyReportData | null;
 };
 
 type ClientContentDraftReviewResponse = AiDeliveryContentDraftsResponse;
@@ -2932,6 +2955,140 @@ export function App() {
     }
   }
 
+  async function handleFetchAiDeliveryMonthlyComputedSummary(projectId: string): Promise<AiDeliveryMonthlySummaryData | null> {
+    setAppMessage(null);
+    try {
+      const response = await runAuthenticatedRequest<AiDeliveryMonthlySummaryResponse>(
+        `/ai-delivery/reports/monthly-summary?projectId=${encodeURIComponent(projectId)}`
+      );
+      if (!response) return null;
+      if (!response.ok) {
+        throwAiDeliveryResponseError(response);
+      }
+      const s = response.data.summary;
+      return {
+        project: s.project,
+        deliverables: s.deliverables,
+        totals: s.totals,
+        contentPlanItems: s.contentPlanItems,
+        gaGscMetricsStatus: s.deferred.gaGscMetricsStatus,
+        trendMonthsStatus: s.deferred.trendMonthsStatus,
+        recommendationsStatus: s.deferred.recommendationsStatus
+      };
+    } catch (error) {
+      return rethrowAiDeliveryRuntimeError(error);
+    }
+  }
+
+  async function handleFetchAiDeliveryMonthlyReport(projectId: string): Promise<AiDeliveryMonthlyReportData | null> {
+    setAppMessage(null);
+    try {
+      const response = await runAuthenticatedRequest<AiDeliveryMonthlyReportResponse>(
+        `/ai-delivery/reports/monthly/${encodeURIComponent(projectId)}`
+      );
+      if (!response) return null;
+      if (!response.ok) {
+        const code = response.error.code;
+        if (code === "AI_DELIVERY_MONTHLY_REPORT_NOT_FOUND" || code === "AI_DELIVERY_PROJECT_NOT_FOUND") {
+          return null;
+        }
+        throwAiDeliveryResponseError(response);
+      }
+      return response.data.report ?? null;
+    } catch (error) {
+      return rethrowAiDeliveryRuntimeError(error);
+    }
+  }
+
+  async function handleCreateAiDeliveryMonthlyReport(projectId: string): Promise<AiDeliveryMonthlyReportData | null> {
+    setAppMessage(null);
+    try {
+      const response = await runAuthenticatedRequest<AiDeliveryMonthlyReportResponse>(
+        `/ai-delivery/reports/monthly/${encodeURIComponent(projectId)}`,
+        { method: "POST" }
+      );
+      if (!response) return null;
+      if (!response.ok) {
+        throwAiDeliveryResponseError(response);
+      }
+      setAppMessage({ tone: "success", text: "Monthly report created." });
+      return response.data.report ?? null;
+    } catch (error) {
+      return rethrowAiDeliveryRuntimeError(error);
+    }
+  }
+
+  async function handleUpdateAiDeliveryMonthlyReport(reportId: string, values: AiDeliveryMonthlyReportFormValues): Promise<AiDeliveryMonthlyReportData | null> {
+    setAppMessage(null);
+    try {
+      const response = await runAuthenticatedRequest<AiDeliveryMonthlyReportResponse>(
+        `/ai-delivery/reports/monthly/${encodeURIComponent(reportId)}/update`,
+        { method: "PUT", body: values }
+      );
+      if (!response) return null;
+      if (!response.ok) {
+        throwAiDeliveryResponseError(response);
+      }
+      setAppMessage({ tone: "success", text: "Monthly report saved." });
+      return response.data.report ?? null;
+    } catch (error) {
+      return rethrowAiDeliveryRuntimeError(error);
+    }
+  }
+
+  async function handleSetAiDeliveryMonthlyReportStatus(reportId: string, status: string): Promise<AiDeliveryMonthlyReportData | null> {
+    setAppMessage(null);
+    try {
+      const response = await runAuthenticatedRequest<AiDeliveryMonthlyReportResponse>(
+        `/ai-delivery/reports/monthly/${encodeURIComponent(reportId)}/status`,
+        { method: "POST", body: { status } }
+      );
+      if (!response) return null;
+      if (!response.ok) {
+        throwAiDeliveryResponseError(response);
+      }
+      return response.data.report ?? null;
+    } catch (error) {
+      return rethrowAiDeliveryRuntimeError(error);
+    }
+  }
+
+  async function handleArchiveAiDeliveryMonthlyReport(reportId: string): Promise<AiDeliveryMonthlyReportData | null> {
+    setAppMessage(null);
+    try {
+      const response = await runAuthenticatedRequest<AiDeliveryMonthlyReportResponse>(
+        `/ai-delivery/reports/monthly/${encodeURIComponent(reportId)}/archive`,
+        { method: "POST" }
+      );
+      if (!response) return null;
+      if (!response.ok) {
+        throwAiDeliveryResponseError(response);
+      }
+      setAppMessage({ tone: "success", text: "Monthly report archived." });
+      return response.data.report ?? null;
+    } catch (error) {
+      return rethrowAiDeliveryRuntimeError(error);
+    }
+  }
+
+  async function handleRestoreAiDeliveryMonthlyReport(reportId: string): Promise<AiDeliveryMonthlyReportData | null> {
+    setAppMessage(null);
+    try {
+      const response = await runAuthenticatedRequest<AiDeliveryMonthlyReportResponse>(
+        `/ai-delivery/reports/monthly/${encodeURIComponent(reportId)}/restore`,
+        { method: "POST" }
+      );
+      if (!response) return null;
+      if (!response.ok) {
+        throwAiDeliveryResponseError(response);
+      }
+      setAppMessage({ tone: "success", text: "Monthly report restored." });
+      return response.data.report ?? null;
+    } catch (error) {
+      return rethrowAiDeliveryRuntimeError(error);
+    }
+  }
+
   async function handleFetchClientContentDraftReview(projectId: string): Promise<AiDeliveryContentDraftSummary[]> {
     setAppMessage(null);
     try {
@@ -3767,6 +3924,13 @@ export function App() {
           onApplyResearchSummaryToBrief={handleApplyAiDeliveryResearchSummaryToBrief}
           onFetchResearchSources={handleFetchAiDeliveryResearchSources}
           onSaveResearchSource={handleSaveAiDeliveryResearchSource}
+          onFetchMonthlyComputedSummary={handleFetchAiDeliveryMonthlyComputedSummary}
+          onFetchMonthlyReport={handleFetchAiDeliveryMonthlyReport}
+          onCreateMonthlyReport={handleCreateAiDeliveryMonthlyReport}
+          onUpdateMonthlyReport={handleUpdateAiDeliveryMonthlyReport}
+          onSetMonthlyReportStatus={handleSetAiDeliveryMonthlyReportStatus}
+          onArchiveMonthlyReport={handleArchiveAiDeliveryMonthlyReport}
+          onRestoreMonthlyReport={handleRestoreAiDeliveryMonthlyReport}
         />
       ) : null}
       {!loading && activeView === "ai-market-intelligence" ? (
