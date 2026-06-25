@@ -69,7 +69,7 @@ The local smoke command intentionally refuses non-local API hosts. Add a separat
 - Market Intelligence auth token reads now use sessionStorage consistently.
 - Market Intelligence admin MVP closure is documented in `docs/ai-market-intelligence/admin-foundation.md`.
 - Monthly Report Phase 1 schema-free monthly summary API is documented in `docs/ai-delivery-api-contract.md` and smoke-validated with `npm.cmd run smoke:monthly-report:local`.
-- Monthly Report Phase 2 persisted `AiDeliveryMonthlyReport` model and admin CRUD API are implemented, migration applied, and smoke-validated (58 PASS with document handoff coverage). Client portal monthly report and GA/GSC remain deferred.
+- Monthly Report Phase 2 persisted `AiDeliveryMonthlyReport` model and admin CRUD API are implemented, migration applied, and smoke-validated (58 PASS with document handoff coverage). Monthly metrics are now closed as an admin-only snapshot-first foundation plus admin UI; live Google OAuth/provider sync, CSV upload, and client portal metrics exposure remain deferred.
 - Monthly Report Admin UI is implemented and browser-proven with `npm.cmd run smoke:monthly-report:browser`.
 - Client Portal monthly reports are implemented and browser-proven with `npm.cmd run smoke:client-portal-monthly-report:browser`.
 - Monthly Report document handoff is implemented and local-smoke-proven with `npm.cmd run smoke:monthly-report:local`.

@@ -48,7 +48,8 @@ Still intentionally not active:
 - Crawling or research ingestion.
 - Export generation for Google Docs, PDF, JSON, Markdown/MDX, or equivalent.
 - Publishing connectors such as WordPress, Next.js/custom React, or headless CMS.
-- GA/GSC reporting.
+- Admin-operated normalized GA/GSC monthly metric snapshots are closed.
+- Live GA/GSC provider sync/OAuth and client-facing metrics reporting remain not active.
 - Monthly report generation.
 - Production deploy/hardening.
 
