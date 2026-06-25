@@ -66,6 +66,7 @@ type ClientPortalMonthlyReportSummary = {
   title: string | null;
   recommendationsText: string | null;
   exportUrl: string | null;
+  hasDocument: boolean;
   status: "FINAL";
   finalizedAt: string | null;
   createdAt: string;
@@ -171,6 +172,7 @@ export function ClientPortalPage() {
   const [monthlyReportsError, setMonthlyReportsError] = useState<string | null>(null);
   const [downloadNotice, setDownloadNotice] = useState<string | null>(null);
   const [downloadingDeliverableId, setDownloadingDeliverableId] = useState<string | null>(null);
+  const [downloadingMonthlyReportId, setDownloadingMonthlyReportId] = useState<string | null>(null);
   const [refreshTick, setRefreshTick] = useState(0);
 
   const projectsRequestSeq = useRef(0);
@@ -363,6 +365,44 @@ export function ClientPortalPage() {
       setDownloadNotice("Download opened URL could not be launched by the browser.");
     }
   }, [downloadingDeliverableId, selectedProjectId]);
+
+  const handleMonthlyReportDownload = useCallback(async (reportId: string) => {
+    if (!selectedProjectId || downloadingMonthlyReportId === reportId) {
+      return;
+    }
+
+    const token = getStoredToken();
+    if (!token) {
+      setDownloadNotice("Sign in again to download a report.");
+      return;
+    }
+
+    setDownloadNotice(null);
+    setDownloadingMonthlyReportId(reportId);
+
+    const response = await apiRequest<ClientPortalDownloadResponse>(
+      `/client-portal/projects/${selectedProjectId}/monthly-reports/${reportId}/download`,
+      { token }
+    );
+
+    setDownloadingMonthlyReportId(null);
+
+    if (!response.ok) {
+      setDownloadNotice(getErrorMessage(response));
+      return;
+    }
+
+    const downloadUrl = response.data.downloadReference?.downloadUrl ?? null;
+    if (!downloadUrl) {
+      setDownloadNotice("Report document not available.");
+      return;
+    }
+
+    const opened = window.open(downloadUrl, "_blank", "noopener,noreferrer");
+    if (!opened) {
+      setDownloadNotice("Download opened URL could not be launched by the browser.");
+    }
+  }, [downloadingMonthlyReportId, selectedProjectId]);
 
   const projectCount = projects.length;
   const finalDeliverableCount = deliverables.filter((deliverable) => isFinalDeliverable(deliverable.status)).length;
@@ -649,6 +689,22 @@ export function ClientPortalPage() {
                             )}
                           </strong>
                         </div>
+                        {report.hasDocument ? (
+                          <div>
+                            <span>Report document</span>
+                            <strong>
+                              <button
+                                className="secondary-action"
+                                disabled={downloadingMonthlyReportId === report.id}
+                                style={{ fontSize: "inherit" }}
+                                type="button"
+                                onClick={() => void handleMonthlyReportDownload(report.id)}
+                              >
+                                {downloadingMonthlyReportId === report.id ? "Loading..." : "Download report"}
+                              </button>
+                            </strong>
+                          </div>
+                        ) : null}
                         {report.recommendationsText ? (
                           <div className="entity-span-2">
                             <span>Recommendations</span>

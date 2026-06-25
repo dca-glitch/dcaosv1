@@ -7,6 +7,7 @@ export type PrivateStorageNamespace =
   | "credit-note-document"
   | "ai-delivery-deliverable"
   | "ai-delivery-asset"
+  | "ai-delivery-report"
   | "generic-document";
 
 export interface PrivateStorageStatus {
@@ -48,6 +49,10 @@ function getDocumentType(namespace: PrivateStorageNamespace): R2DocumentType {
     return "bills";
   }
 
+  if (namespace === "ai-delivery-asset" || namespace === "ai-delivery-report") {
+    return "documents";
+  }
+
   return "documents";
 }
 
@@ -57,6 +62,8 @@ function getFileNamePrefix(namespace: PrivateStorageNamespace): string {
       return "credit-note";
     case "ai-delivery-deliverable":
       return "deliverable";
+    case "ai-delivery-report":
+      return "report";
     case "ai-delivery-asset":
       return "asset";
     case "generic-document":

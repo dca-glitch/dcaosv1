@@ -973,6 +973,7 @@ export interface AiDeliveryMonthlyReportSummary {
   recommendationsText: string | null;
   exportUrl: string | null;
   storageKey: string | null;
+  hasDocument: boolean;
   isArchived: boolean;
   finalizedAt: string | null;
   createdAt: string;
@@ -993,7 +994,19 @@ export interface AiDeliveryMonthlyReportInputRequest {
   adminSummaryNotes?: string | null;
   recommendationsText?: string | null;
   exportUrl?: string | null;
-  storageKey?: string | null;
+}
+
+export interface AiDeliveryMonthlyReportUploadRequest {
+  fileName?: string;
+  mimeType?: string;
+  contentBase64?: string;
+}
+
+export interface AiDeliveryMonthlyReportDownloadReferenceResponse {
+  downloadReference: {
+    downloadUrl: string;
+    expiresSeconds: number;
+  } | null;
 }
 
 export interface AiDeliveryMonthlyReportStatusRequest {

@@ -498,21 +498,27 @@ Admin-only endpoints (`requireAuth + requireTenant + requireRole("owner", "admin
 - `POST /api/v1/ai-delivery/reports/monthly/:reportId/status` — status transition with body `{ status }`; sets `finalizedAt` on `FINAL`; rejects invalid transitions with `400`.
 - `POST /api/v1/ai-delivery/reports/monthly/:reportId/archive` — soft-archive; sets `isArchived = true` and `status = ARCHIVED`.
 - `POST /api/v1/ai-delivery/reports/monthly/:reportId/restore` — restore; sets `isArchived = false` and `status = DRAFT`.
+- `POST /api/v1/ai-delivery/reports/monthly/:reportId/document` — admin-only; upload PDF/document; writes `storageKey` internally; returns updated report summary with `hasDocument: true`.
+- `GET /api/v1/ai-delivery/reports/monthly/:reportId/download` — admin-only; returns `{ downloadReference: { downloadUrl, expiresSeconds } | null }`.
 
-Admin response includes `storageKey` (internal use only; never route to client). `adminSummaryNotes` and raw `tenantId` are admin-only fields that must not be included in any future client portal response.
+Admin response includes `hasDocument` flag (computed from `!!storageKey`). `storageKey` is never returned to clients. `adminSummaryNotes` and raw `tenantId` are admin-only.
 
-Client-safe fields when `FINAL`: `id`, `title`, `recommendationsText`, `exportUrl`, `finalizedAt`, `createdAt`, `updatedAt`.
+Client-safe fields when `FINAL`: `id`, `title`, `recommendationsText`, `exportUrl`, `hasDocument`, `finalizedAt`, `createdAt`, `updatedAt`.
 
-Deferred for a separate block:
-- Client portal monthly report route (`/client-portal/projects/:projectId/report`).
-- PDF/R2 upload for reports.
+Client portal signed download:
+- `GET /api/v1/client-portal/projects/:projectId/monthly-reports/:reportId/download` — requires `ClientUserAccess`; enforces `status = FINAL` and `isArchived = false`; returns `{ downloadReference: { downloadUrl, expiresSeconds } | null }`.
+
+Deferred:
 - GA/GSC metrics and 12-month trends.
 - Persisted recommendations beyond `recommendationsText`.
+- Client report approval/actions.
+- PDF generation library.
 
 Proof:
 
 - `npm.cmd run validate`
-- `npm.cmd run smoke:monthly-report:local` (52 PASS / 0 FAIL, covers Phase 1 + Phase 2)
+- `npm.cmd run smoke:monthly-report:local` (58 PASS / 0 FAIL — covers Phase 1 + Phase 2 + upload/download/tightening)
+- `npm.cmd run smoke:client-portal-monthly-report:browser` (35 OK)
 
 ## Export handoff foundation
 

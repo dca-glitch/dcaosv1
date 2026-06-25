@@ -5,6 +5,7 @@ import { failure, forbiddenFailure, success, unauthorizedFailure } from "../util
 import type { AuthSessionLocals } from "../auth/types";
 import {
   getClientPortalDeliverableDownloadReference,
+  getClientPortalMonthlyReportDownloadReference,
   getClientPortalProject,
   listClientPortalDeliverables,
   listClientPortalMonthlyReports,
@@ -87,6 +88,29 @@ export function createClientPortalRouter() {
       );
       if (!result) {
         res.status(404).json(failure("CLIENT_PORTAL_DELIVERABLE_NOT_FOUND", "Deliverable was not found."));
+        return;
+      }
+      res.status(200).json(success(result));
+    }
+  );
+
+  router.get(
+    "/projects/:projectId/monthly-reports/:reportId/download",
+    requireAuth,
+    requireTenant,
+    async (req, res) => {
+      const authSession = (res.locals as AuthSessionLocals).authSession;
+      if (!authSession) {
+        res.status(401).json(unauthorizedFailure());
+        return;
+      }
+      const result = await getClientPortalMonthlyReportDownloadReference(
+        authSession,
+        req.params.projectId,
+        req.params.reportId
+      );
+      if (!result) {
+        res.status(404).json(failure("CLIENT_PORTAL_MONTHLY_REPORT_NOT_FOUND", "Monthly report not found or document unavailable."));
         return;
       }
       res.status(200).json(success(result));

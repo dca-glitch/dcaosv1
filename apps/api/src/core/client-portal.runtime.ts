@@ -185,6 +185,7 @@ export async function listClientPortalDeliverables(
 }
 
 // Narrow select: storageKey, adminSummaryNotes, tenantId, clientId, workflowRunId, and internal fields are intentionally excluded.
+// storageKey is fetched only to compute hasDocument; it is not returned in the response.
 const clientPortalMonthlyReportSelect = {
   id: true,
   aiDeliveryProjectId: true,
@@ -192,6 +193,7 @@ const clientPortalMonthlyReportSelect = {
   recommendationsText: true,
   exportUrl: true,
   finalizedAt: true,
+  storageKey: true,
   createdAt: true,
   updatedAt: true
 } as const;
@@ -203,6 +205,7 @@ function toClientPortalMonthlyReportSummary(r: {
   recommendationsText: string | null;
   exportUrl: string | null;
   finalizedAt: Date | string | null;
+  storageKey: string | null;
   createdAt: Date;
   updatedAt: Date;
 }) {
@@ -213,6 +216,7 @@ function toClientPortalMonthlyReportSummary(r: {
     recommendationsText: r.recommendationsText ?? null,
     exportUrl: r.exportUrl ?? null,
     status: "FINAL" as const,
+    hasDocument: !!r.storageKey,
     finalizedAt: r.finalizedAt instanceof Date ? r.finalizedAt.toISOString() : (r.finalizedAt ?? null),
     createdAt: r.createdAt instanceof Date ? r.createdAt.toISOString() : r.createdAt,
     updatedAt: r.updatedAt instanceof Date ? r.updatedAt.toISOString() : r.updatedAt
@@ -291,6 +295,46 @@ export async function getClientPortalDeliverableDownloadReference(
   }
 
   const downloadRef = getPrivateStorageDownloadReference(deliverable.storageKey);
+  return {
+    downloadReference: downloadRef
+      ? { downloadUrl: downloadRef.downloadUrl, expiresSeconds: downloadRef.expiresSeconds }
+      : null
+  };
+}
+
+export async function getClientPortalMonthlyReportDownloadReference(
+  authSession: AuthResolvedSessionContext,
+  projectId: string,
+  reportId: string
+) {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) return null;
+
+  const userId = authSession.user.id;
+
+  // Fetch the report with clientId and storageKey; enforce FINAL + non-archived at DB level.
+  const report = await (prisma as any).aiDeliveryMonthlyReport.findFirst({
+    where: {
+      id: reportId,
+      aiDeliveryProjectId: projectId,
+      tenantId,
+      status: "FINAL",
+      isArchived: false
+    },
+    select: { id: true, clientId: true, storageKey: true }
+  }) as { id: string; clientId: string; storageKey: string | null } | null;
+
+  if (!report) return null;
+
+  // Verify client access via ClientUserAccess.
+  const access = await hasClientAccess(tenantId, report.clientId, userId);
+  if (!access) return null;
+
+  if (!report.storageKey) {
+    return { downloadReference: null };
+  }
+
+  const downloadRef = getPrivateStorageDownloadReference(report.storageKey);
   return {
     downloadReference: downloadRef
       ? { downloadUrl: downloadRef.downloadUrl, expiresSeconds: downloadRef.expiresSeconds }

@@ -48,6 +48,8 @@ export type AiDeliveryMonthlyReportData = {
   adminSummaryNotes: string | null;
   recommendationsText: string | null;
   exportUrl: string | null;
+  storageKey?: string | null;
+  hasDocument: boolean;
   isArchived: boolean;
   finalizedAt: string | null;
   createdAt: string;
@@ -71,6 +73,8 @@ type MonthlyReportPanelProps = {
   onSetReportStatus: (reportId: string, status: string) => Promise<AiDeliveryMonthlyReportData | null>;
   onArchiveReport: (reportId: string) => Promise<AiDeliveryMonthlyReportData | null>;
   onRestoreReport: (reportId: string) => Promise<AiDeliveryMonthlyReportData | null>;
+  onUploadDocument?: (reportId: string, file: File) => Promise<AiDeliveryMonthlyReportData | null>;
+  onDownloadDocument?: (reportId: string) => Promise<{ downloadUrl: string } | null>;
 };
 
 const MONTHLY_REPORT_STATUSES = ["DRAFT", "ADMIN_REVIEW", "FINAL", "ARCHIVED"] as const;
@@ -126,7 +130,9 @@ export function MonthlyReportPanel({
   onUpdateReport,
   onSetReportStatus,
   onArchiveReport,
-  onRestoreReport
+  onRestoreReport,
+  onUploadDocument,
+  onDownloadDocument
 }: MonthlyReportPanelProps) {
   const [summary, setSummary] = useState<AiDeliveryMonthlySummaryData | null>(null);
   const [summaryLoading, setSummaryLoading] = useState(false);
@@ -140,6 +146,11 @@ export function MonthlyReportPanel({
   const [reportNotFound, setReportNotFound] = useState(false);
 
   const [form, setForm] = useState<AiDeliveryMonthlyReportFormValues>(emptyForm());
+
+  const [documentUploading, setDocumentUploading] = useState(false);
+  const [documentDownloading, setDocumentDownloading] = useState(false);
+  const [documentMessage, setDocumentMessage] = useState<string | null>(null);
+  const [documentError, setDocumentError] = useState<string | null>(null);
 
   const loadSummary = useCallback(async () => {
     setSummaryLoading(true);
@@ -271,6 +282,45 @@ export function MonthlyReportPanel({
       setReportError(error instanceof Error ? error.message : "Unable to restore monthly report.");
     } finally {
       setReportSaving(false);
+    }
+  }
+
+  async function handleUploadDocument(event: React.ChangeEvent<HTMLInputElement>) {
+    if (!report || !onUploadDocument) return;
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setDocumentUploading(true);
+    setDocumentError(null);
+    setDocumentMessage(null);
+    try {
+      const updated = await onUploadDocument(report.id, file);
+      if (updated) {
+        setReport(updated);
+        setDocumentMessage("Report document uploaded.");
+      }
+    } catch (error) {
+      setDocumentError(error instanceof Error ? error.message : "Unable to upload report document.");
+    } finally {
+      setDocumentUploading(false);
+      event.target.value = "";
+    }
+  }
+
+  async function handleDownloadDocument() {
+    if (!report || !onDownloadDocument) return;
+    setDocumentDownloading(true);
+    setDocumentError(null);
+    try {
+      const ref = await onDownloadDocument(report.id);
+      if (ref?.downloadUrl) {
+        window.open(ref.downloadUrl, "_blank", "noopener,noreferrer");
+      } else {
+        setDocumentError("No download available.");
+      }
+    } catch (error) {
+      setDocumentError(error instanceof Error ? error.message : "Unable to retrieve download link.");
+    } finally {
+      setDocumentDownloading(false);
     }
   }
 
@@ -554,9 +604,57 @@ export function MonthlyReportPanel({
                     value={form.exportUrl}
                     onChange={(event) => setForm((current) => ({ ...current, exportUrl: event.target.value }))}
                   />
-                  <span className="muted-text">Manual safe handoff link (e.g. Google Doc, shared folder). No R2 upload in this block.</span>
+                  <span className="muted-text">Manual safe handoff link (e.g. Google Doc, shared folder).</span>
                 </label>
               </div>
+
+              {/* Document upload / download */}
+              {onUploadDocument || onDownloadDocument ? (
+                <div className="field-panel" style={{ marginTop: "1rem" }}>
+                  <h4>Report document</h4>
+                  {documentMessage ? (
+                    <div className="state-panel" style={{ marginBottom: "0.75rem", borderLeft: "4px solid var(--color-success)", paddingLeft: "1rem" }}>
+                      {documentMessage}
+                    </div>
+                  ) : null}
+                  {documentError ? (
+                    <div className="state-panel" role="alert" style={{ marginBottom: "0.75rem", borderLeft: "4px solid var(--color-error)", paddingLeft: "1rem" }}>
+                      {documentError}
+                    </div>
+                  ) : null}
+                  {report.hasDocument ? (
+                    <p className="muted-text" style={{ marginBottom: "0.5rem" }}>A report document has been uploaded.</p>
+                  ) : (
+                    <p className="muted-text" style={{ marginBottom: "0.5rem" }}>No report document uploaded yet.</p>
+                  )}
+                  <div className="card-actions">
+                    {onDownloadDocument && report.hasDocument ? (
+                      <button
+                        className="secondary-action"
+                        disabled={documentDownloading}
+                        onClick={() => void handleDownloadDocument()}
+                        type="button"
+                      >
+                        {documentDownloading ? "Loading..." : "Download report document"}
+                      </button>
+                    ) : null}
+                    {onUploadDocument ? (
+                      <label style={{ cursor: documentUploading ? "wait" : "pointer" }}>
+                        <span className="secondary-action" style={{ pointerEvents: documentUploading ? "none" : undefined }}>
+                          {documentUploading ? "Uploading..." : report.hasDocument ? "Replace document" : "Upload document"}
+                        </span>
+                        <input
+                          accept=".pdf,.doc,.docx"
+                          disabled={documentUploading}
+                          style={{ display: "none" }}
+                          type="file"
+                          onChange={(e) => void handleUploadDocument(e)}
+                        />
+                      </label>
+                    ) : null}
+                  </div>
+                </div>
+              ) : null}
 
               <div className="modal-footer">
                 <button className="secondary-action" disabled={reportSaving} onClick={onClose} type="button">

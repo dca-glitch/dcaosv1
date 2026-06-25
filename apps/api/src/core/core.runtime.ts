@@ -37,6 +37,8 @@ import type {
   AiDeliveryMonthlyReportSummary,
   AiDeliveryMonthlyReportResponse,
   AiDeliveryMonthlyReportInputRequest,
+  AiDeliveryMonthlyReportUploadRequest,
+  AiDeliveryMonthlyReportDownloadReferenceResponse,
   AiDeliveryMonthlyReportStatusRequest,
   BillDocumentUploadRequest,
   BillInputRequest,
@@ -7394,6 +7396,7 @@ function toAiDeliveryMonthlyReportSummary(r: {
     recommendationsText: r.recommendationsText ?? null,
     exportUrl: r.exportUrl ?? null,
     storageKey: r.storageKey ?? null,
+    hasDocument: !!r.storageKey,
     isArchived: r.isArchived,
     finalizedAt: r.finalizedAt ? r.finalizedAt.toISOString() : null,
     createdAt: r.createdAt.toISOString(),
@@ -7491,8 +7494,7 @@ export async function updateAiDeliveryMonthlyReport(
       title: input.title === undefined ? undefined : toNullableString(input.title),
       adminSummaryNotes: input.adminSummaryNotes === undefined ? undefined : toNullableString(input.adminSummaryNotes),
       recommendationsText: input.recommendationsText === undefined ? undefined : toNullableString(input.recommendationsText),
-      exportUrl: input.exportUrl === undefined ? undefined : toNullableString(input.exportUrl),
-      storageKey: input.storageKey === undefined ? undefined : toNullableString(input.storageKey)
+      exportUrl: input.exportUrl === undefined ? undefined : toNullableString(input.exportUrl)
     },
     select: aiDeliveryMonthlyReportSelect
   }) as any;
@@ -7580,6 +7582,81 @@ export async function restoreAiDeliveryMonthlyReport(
   }) as any;
 
   return { report: toAiDeliveryMonthlyReportSummary(updated) };
+}
+
+export async function uploadAiDeliveryMonthlyReportDocument(
+  authSession: AuthResolvedSessionContext,
+  reportId: string,
+  input: AiDeliveryMonthlyReportUploadRequest
+): Promise<AiDeliveryMonthlyReportResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId || !reportId || !input.fileName || !input.mimeType || !input.contentBase64) {
+    return null;
+  }
+  const { contentBase64, fileName, mimeType } = input;
+
+  const existing = await (prisma as any).aiDeliveryMonthlyReport.findFirst({
+    where: { id: reportId, tenantId },
+    select: { id: true, isArchived: true }
+  }) as any;
+  if (!existing) return null;
+  if (existing.isArchived) {
+    throwAiDeliveryBadRequest("AI_DELIVERY_MONTHLY_REPORT_ARCHIVED", "Cannot upload to an archived monthly report.");
+  }
+
+  const tenant = await prisma.tenant.findUnique({
+    where: { id: tenantId },
+    select: { id: true, slug: true }
+  });
+  if (!tenant) return null;
+
+  const upload = await putPrivateStorageObject({
+    body: Buffer.from(contentBase64, "base64"),
+    documentDate: new Date(),
+    mimeType,
+    namespace: "ai-delivery-report",
+    originalFileName: fileName,
+    projectSlugOrId: reportId,
+    tenantSlugOrId: tenant.slug || tenant.id
+  });
+
+  if (!upload) {
+    throw new Error("Private storage is not configured.");
+  }
+
+  const updated = await (prisma as any).aiDeliveryMonthlyReport.update({
+    where: { id: reportId },
+    data: { storageKey: upload.storageKey },
+    select: aiDeliveryMonthlyReportSelect
+  }) as any;
+
+  return { report: toAiDeliveryMonthlyReportSummary(updated) };
+}
+
+export async function getAiDeliveryMonthlyReportDownloadReference(
+  authSession: AuthResolvedSessionContext,
+  reportId: string
+): Promise<AiDeliveryMonthlyReportDownloadReferenceResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId || !reportId) return null;
+
+  const report = await (prisma as any).aiDeliveryMonthlyReport.findFirst({
+    where: { id: reportId, tenantId },
+    select: { id: true, storageKey: true }
+  }) as { id: string; storageKey: string | null } | null;
+
+  if (!report) return null;
+
+  if (!report.storageKey) {
+    return { downloadReference: null };
+  }
+
+  const downloadRef = getPrivateStorageDownloadReference(report.storageKey);
+  return {
+    downloadReference: downloadRef
+      ? { downloadUrl: downloadRef.downloadUrl, expiresSeconds: downloadRef.expiresSeconds }
+      : null
+  };
 }
 
 export async function createAiDeliveryDeliverable(

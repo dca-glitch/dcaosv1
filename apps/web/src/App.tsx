@@ -3089,6 +3089,47 @@ export function App() {
     }
   }
 
+  async function handleUploadAiDeliveryMonthlyReportDocument(reportId: string, file: File): Promise<AiDeliveryMonthlyReportData | null> {
+    setAppMessage(null);
+    try {
+      const response = await runAuthenticatedRequest<AiDeliveryMonthlyReportResponse>(
+        `/ai-delivery/reports/monthly/${encodeURIComponent(reportId)}/document`,
+        {
+          method: "POST",
+          body: {
+            contentBase64: await fileToBase64(file),
+            fileName: file.name,
+            mimeType: file.type
+          }
+        }
+      );
+      if (!response) return null;
+      if (!response.ok) {
+        throwAiDeliveryResponseError(response);
+      }
+      setAppMessage({ tone: "success", text: "Report document uploaded." });
+      return response.data.report ?? null;
+    } catch (error) {
+      return rethrowAiDeliveryRuntimeError(error);
+    }
+  }
+
+  async function handleGetAiDeliveryMonthlyReportDownloadReference(reportId: string): Promise<{ downloadUrl: string } | null> {
+    setAppMessage(null);
+    try {
+      const response = await runAuthenticatedRequest<{ downloadReference: { downloadUrl: string; expiresSeconds: number } | null }>(
+        `/ai-delivery/reports/monthly/${encodeURIComponent(reportId)}/download`
+      );
+      if (!response) return null;
+      if (!response.ok) {
+        throwAiDeliveryResponseError(response);
+      }
+      return response.data.downloadReference ?? null;
+    } catch (error) {
+      return rethrowAiDeliveryRuntimeError(error);
+    }
+  }
+
   async function handleFetchClientContentDraftReview(projectId: string): Promise<AiDeliveryContentDraftSummary[]> {
     setAppMessage(null);
     try {
@@ -3931,6 +3972,8 @@ export function App() {
           onSetMonthlyReportStatus={handleSetAiDeliveryMonthlyReportStatus}
           onArchiveMonthlyReport={handleArchiveAiDeliveryMonthlyReport}
           onRestoreMonthlyReport={handleRestoreAiDeliveryMonthlyReport}
+          onUploadMonthlyReportDocument={handleUploadAiDeliveryMonthlyReportDocument}
+          onDownloadMonthlyReportDocument={handleGetAiDeliveryMonthlyReportDownloadReference}
         />
       ) : null}
       {!loading && activeView === "ai-market-intelligence" ? (

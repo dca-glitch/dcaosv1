@@ -426,6 +426,8 @@ export type AiDeliveryProjectsProps = {
   onSetMonthlyReportStatus?: (reportId: string, status: string) => Promise<AiDeliveryMonthlyReportData | null>;
   onArchiveMonthlyReport?: (reportId: string) => Promise<AiDeliveryMonthlyReportData | null>;
   onRestoreMonthlyReport?: (reportId: string) => Promise<AiDeliveryMonthlyReportData | null>;
+  onUploadMonthlyReportDocument?: (reportId: string, file: File) => Promise<AiDeliveryMonthlyReportData | null>;
+  onDownloadMonthlyReportDocument?: (reportId: string) => Promise<{ downloadUrl: string } | null>;
 };
 
 const workflowRunStatuses = ["DRAFT", "READY", "IN_PROGRESS", "REVIEW", "COMPLETED", "FAILED", "ARCHIVED"] as const;
@@ -818,7 +820,9 @@ export function AiDeliveryPage({
   onUpdateMonthlyReport,
   onSetMonthlyReportStatus,
   onArchiveMonthlyReport,
-  onRestoreMonthlyReport
+  onRestoreMonthlyReport,
+  onUploadMonthlyReportDocument,
+  onDownloadMonthlyReportDocument
 }: AiDeliveryProjectsProps) {
   const [filter, setFilter] = useState<"all" | "active" | "archived">("active");
   const [editorProjectId, setEditorProjectId] = useState<string | null>(null);
@@ -5135,6 +5139,8 @@ export function AiDeliveryPage({
               onSetReportStatus={onSetMonthlyReportStatus}
               onArchiveReport={onArchiveMonthlyReport}
               onRestoreReport={onRestoreMonthlyReport}
+              onUploadDocument={onUploadMonthlyReportDocument}
+              onDownloadDocument={onDownloadMonthlyReportDocument}
             />
           ) : null;
       })() : null}

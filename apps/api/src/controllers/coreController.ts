@@ -180,7 +180,9 @@ import {
   updateAiDeliveryMonthlyReport,
   updateAiDeliveryMonthlyReportStatus,
   archiveAiDeliveryMonthlyReport,
-  restoreAiDeliveryMonthlyReport
+  restoreAiDeliveryMonthlyReport,
+  uploadAiDeliveryMonthlyReportDocument,
+  getAiDeliveryMonthlyReportDownloadReference
 } from "../core/core.runtime";
 import type {
   AiDeliveryArticleImageUploadRequest,
@@ -213,6 +215,7 @@ import type {
   MarketIntelligenceResearchRunInputRequest,
   MarketIntelligenceInsightInputRequest,
   AiDeliveryMonthlyReportInputRequest,
+  AiDeliveryMonthlyReportUploadRequest,
   AiDeliveryMonthlyReportStatusRequest
 } from "../core/core.types";
 
@@ -4492,6 +4495,49 @@ export const restoreAiDeliveryMonthlyReportHandler: RequestHandler = async (req,
   }
 };
 
+export const uploadAiDeliveryMonthlyReportDocumentHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  const reportId = typeof req.params.reportId === "string" ? req.params.reportId.trim() : "";
+  const input = getAiDeliveryMonthlyReportUploadInput(req.body);
+  if (!authSession) return void res.status(401).json(unauthorizedFailure());
+  if (!reportId || !input) return void res.status(400).json(failure("AI_DELIVERY_MONTHLY_REPORT_INVALID", "Report ID or upload input is invalid."));
+
+  try {
+    const response = await uploadAiDeliveryMonthlyReportDocument(authSession, reportId, input);
+    if (!response) return void res.status(404).json(failure("AI_DELIVERY_MONTHLY_REPORT_NOT_FOUND", "Monthly report not found."));
+    res.status(201).json(success(response, { phase: "runtime", scope: "ai-delivery-monthly-report" }));
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "";
+    if (message.includes("not configured")) {
+      res.status(503).json(failure("R2_STORAGE_NOT_CONFIGURED", "R2 storage is not configured."));
+      return;
+    }
+    if (message.includes("validation failed")) {
+      res.status(400).json(failure("AI_DELIVERY_MONTHLY_REPORT_INVALID", "Upload validation failed."));
+      return;
+    }
+    if (handleAiDeliveryGuardError(res, error)) return;
+    res.status(500).json(failure("AI_DELIVERY_MONTHLY_REPORT_ERROR", "Monthly report document upload could not be completed."));
+  }
+};
+
+export const getAiDeliveryMonthlyReportDownloadReferenceHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) return void res.status(401).json(unauthorizedFailure());
+
+  const reportId = typeof req.params.reportId === "string" ? req.params.reportId.trim() : "";
+  if (!reportId) return void res.status(400).json(failure("AI_DELIVERY_MONTHLY_REPORT_INVALID", "Report ID is invalid."));
+
+  try {
+    const response = await getAiDeliveryMonthlyReportDownloadReference(authSession, reportId);
+    if (!response) return void res.status(404).json(failure("AI_DELIVERY_MONTHLY_REPORT_NOT_FOUND", "Monthly report not found."));
+    res.json(success(response, { phase: "runtime", scope: "ai-delivery-monthly-report" }));
+  } catch (error) {
+    if (handleAiDeliveryGuardError(res, error)) return;
+    res.status(500).json(failure("AI_DELIVERY_MONTHLY_REPORT_ERROR", "Download reference could not be retrieved."));
+  }
+};
+
 // Market Intelligence input validators
 
 function getMarketIntelligenceProjectInput(value: unknown): MarketIntelligenceProjectInputRequest | null {
@@ -4561,9 +4607,21 @@ function getAiDeliveryMonthlyReportInput(value: unknown): AiDeliveryMonthlyRepor
     title: getOptionalString(obj.title),
     adminSummaryNotes: getOptionalString(obj.adminSummaryNotes),
     recommendationsText: getOptionalString(obj.recommendationsText),
-    exportUrl: getOptionalString(obj.exportUrl),
-    storageKey: getOptionalString(obj.storageKey)
+    exportUrl: getOptionalString(obj.exportUrl)
   };
+}
+
+function getAiDeliveryMonthlyReportUploadInput(body: unknown): AiDeliveryMonthlyReportUploadRequest | null {
+  const value = (body ?? {}) as Record<string, unknown>;
+  const fileName = getRequiredString(value.fileName, FILE_NAME_MAX_LENGTH);
+  const mimeType = getRequiredString(value.mimeType, SHORT_TEXT_FIELD_MAX_LENGTH);
+  const contentBase64 = getRequiredString(value.contentBase64, BASE64_UPLOAD_MAX_LENGTH);
+
+  if (!fileName || !mimeType || !contentBase64 || !/^[A-Za-z0-9+/]+={0,2}$/.test(contentBase64)) {
+    return null;
+  }
+
+  return { contentBase64, fileName, mimeType };
 }
 
 function getAiDeliveryMonthlyReportStatusInput(value: unknown): AiDeliveryMonthlyReportStatusRequest {

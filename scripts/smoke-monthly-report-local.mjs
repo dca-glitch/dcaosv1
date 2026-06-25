@@ -620,6 +620,115 @@ async function main() {
   }
   console.log();
 
+  // Step U1: Upload endpoint — expects 503 locally (R2 not configured)
+  console.log("Step U1: Upload report document (expects 503, R2 not configured locally)");
+  {
+    // Need a DRAFT report to upload against — create a fresh one on the existing project
+    // The reportId is FINAL-then-restored-to-DRAFT from earlier steps; use it
+    const smallPdf = Buffer.from("%PDF-1.4 test").toString("base64");
+    const { status, json } = await apiCall(
+      "POST",
+      `/ai-delivery/reports/monthly/${reportId}/document`,
+      { fileName: "report.pdf", mimeType: "application/pdf", contentBase64: smallPdf },
+      token
+    );
+    if (status === 503 && (json.error?.code === "R2_STORAGE_NOT_CONFIGURED" || json.error === "R2_STORAGE_NOT_CONFIGURED")) {
+      pass("Upload returns 503 R2_STORAGE_NOT_CONFIGURED (local expected — no R2 creds)");
+    } else if (status === 201) {
+      pass("Upload returned 201 (R2 configured in this environment)");
+    } else {
+      fail("Upload report document", `expected 503 or 201 got ${status} — ${JSON.stringify(json).slice(0, 120)}`);
+    }
+  }
+
+  // Step U2: Upload with missing fields → 400
+  console.log("Step U2: Upload with missing contentBase64 → 400");
+  {
+    const { status } = await apiCall(
+      "POST",
+      `/ai-delivery/reports/monthly/${reportId}/document`,
+      { fileName: "report.pdf", mimeType: "application/pdf" },
+      token
+    );
+    if (status === 400) {
+      pass("Upload missing contentBase64 returns 400");
+    } else {
+      fail("Upload missing contentBase64", `expected 400 got ${status}`);
+    }
+  }
+
+  // Step U3: Upload for non-existent report → 404
+  console.log("Step U3: Upload for fake reportId → 404");
+  {
+    const smallPdf = Buffer.from("%PDF-1.4 test").toString("base64");
+    const { status } = await apiCall(
+      "POST",
+      "/ai-delivery/reports/monthly/00000000-0000-0000-0000-000000000000/document",
+      { fileName: "report.pdf", mimeType: "application/pdf", contentBase64: smallPdf },
+      token
+    );
+    if (status === 404 || status === 503) {
+      pass(`Upload fake reportId returns ${status} (404 preferred, 503 acceptable when R2 checked first)`);
+    } else {
+      fail("Upload fake reportId", `expected 404 or 503 got ${status}`);
+    }
+  }
+
+  // Step U4: Admin download endpoint — expects null downloadReference locally (no storageKey)
+  console.log("Step U4: Admin download reference (no storageKey stored yet → null reference)");
+  {
+    const { status, json } = await apiCall(
+      "GET",
+      `/ai-delivery/reports/monthly/${reportId}/download`,
+      null,
+      token
+    );
+    if (status === 200) {
+      const ref = json.data?.downloadReference ?? null;
+      // locally: no storageKey → null; with R2+upload: object with downloadUrl
+      if (ref === null || typeof ref === "object") {
+        pass(`Admin download reference returns 200 (downloadReference=${ref === null ? "null" : "present"})`);
+      } else {
+        fail("Admin download reference shape", `unexpected downloadReference: ${JSON.stringify(ref)}`);
+      }
+    } else if (status === 404) {
+      pass("Admin download reference returns 404 (acceptable: no storageKey path)");
+    } else {
+      fail("Admin download reference", `expected 200 or 404 got ${status}`);
+    }
+    // storageKey must not appear in response
+    if (!containsForbiddenField(json, "storageKey")) {
+      pass("Admin download reference does not expose storageKey");
+    } else {
+      fail("Admin download reference exposes storageKey", "forbidden field present");
+    }
+  }
+
+  // Step U5: storageKey tightening — PUT update must not accept storageKey
+  console.log("Step U5: PUT update cannot write storageKey directly");
+  {
+    const before = await apiCall("GET", `/ai-delivery/reports/monthly?projectId=${projectId}`, null, token);
+    const storedKeyBefore = before.json.data?.report?.storageKey ?? null;
+
+    await apiCall(
+      "PUT",
+      `/ai-delivery/reports/monthly/${reportId}`,
+      { storageKey: "injected-key" },
+      token
+    );
+
+    const after = await apiCall("GET", `/ai-delivery/reports/monthly?projectId=${projectId}`, null, token);
+    const storedKeyAfter = after.json.data?.report?.storageKey ?? null;
+
+    if (storedKeyAfter !== "injected-key" && storedKeyBefore === storedKeyAfter) {
+      pass("PUT update ignores storageKey body field (tightened)");
+    } else {
+      fail("PUT update storageKey tightening", `storageKey changed to: ${storedKeyAfter}`);
+    }
+  }
+
+  console.log();
+
   // Summary
   console.log("─────────────────────────────────────────────");
   console.log(`Monthly Report smoke: ${passed} PASS / ${failed} FAIL`);
