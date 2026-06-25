@@ -184,6 +184,74 @@ export async function listClientPortalDeliverables(
   return { deliverables: (deliverables as any[]).map(toClientPortalDeliverableSummary) };
 }
 
+// Narrow select: storageKey, adminSummaryNotes, tenantId, clientId, workflowRunId, and internal fields are intentionally excluded.
+const clientPortalMonthlyReportSelect = {
+  id: true,
+  aiDeliveryProjectId: true,
+  title: true,
+  recommendationsText: true,
+  exportUrl: true,
+  finalizedAt: true,
+  createdAt: true,
+  updatedAt: true
+} as const;
+
+function toClientPortalMonthlyReportSummary(r: {
+  id: string;
+  aiDeliveryProjectId: string;
+  title: string | null;
+  recommendationsText: string | null;
+  exportUrl: string | null;
+  finalizedAt: Date | string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}) {
+  return {
+    id: r.id,
+    aiDeliveryProjectId: r.aiDeliveryProjectId,
+    title: r.title ?? null,
+    recommendationsText: r.recommendationsText ?? null,
+    exportUrl: r.exportUrl ?? null,
+    status: "FINAL" as const,
+    finalizedAt: r.finalizedAt instanceof Date ? r.finalizedAt.toISOString() : (r.finalizedAt ?? null),
+    createdAt: r.createdAt instanceof Date ? r.createdAt.toISOString() : r.createdAt,
+    updatedAt: r.updatedAt instanceof Date ? r.updatedAt.toISOString() : r.updatedAt
+  };
+}
+
+export async function listClientPortalMonthlyReports(
+  authSession: AuthResolvedSessionContext,
+  projectId: string
+) {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) return null;
+
+  const userId = authSession.user.id;
+
+  const project = await prisma.aiDeliveryProject.findFirst({
+    where: { id: projectId, tenantId, isArchived: false },
+    select: { id: true, clientId: true }
+  });
+
+  if (!project) return null;
+
+  const access = await hasClientAccess(tenantId, project.clientId, userId);
+  if (!access) return null;
+
+  const reports = await (prisma as any).aiDeliveryMonthlyReport.findMany({
+    where: {
+      tenantId,
+      aiDeliveryProjectId: projectId,
+      status: "FINAL",
+      isArchived: false
+    },
+    orderBy: [{ finalizedAt: "desc" }, { updatedAt: "desc" }],
+    select: clientPortalMonthlyReportSelect
+  });
+
+  return { monthlyReports: (reports as any[]).map(toClientPortalMonthlyReportSummary) };
+}
+
 export async function getClientPortalDeliverableDownloadReference(
   authSession: AuthResolvedSessionContext,
   projectId: string,

@@ -60,6 +60,22 @@ type ClientPortalDeliverablesResponse = {
   deliverables: ClientPortalDeliverableSummary[];
 };
 
+type ClientPortalMonthlyReportSummary = {
+  id: string;
+  aiDeliveryProjectId: string;
+  title: string | null;
+  recommendationsText: string | null;
+  exportUrl: string | null;
+  status: "FINAL";
+  finalizedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+type ClientPortalMonthlyReportsResponse = {
+  monthlyReports: ClientPortalMonthlyReportSummary[];
+};
+
 type ClientPortalDownloadReference = {
   downloadUrl: string;
   expiresSeconds: number;
@@ -150,6 +166,9 @@ export function ClientPortalPage() {
   const [deliverables, setDeliverables] = useState<ClientPortalDeliverableSummary[]>([]);
   const [deliverablesLoading, setDeliverablesLoading] = useState(false);
   const [deliverablesError, setDeliverablesError] = useState<string | null>(null);
+  const [monthlyReports, setMonthlyReports] = useState<ClientPortalMonthlyReportSummary[]>([]);
+  const [monthlyReportsLoading, setMonthlyReportsLoading] = useState(false);
+  const [monthlyReportsError, setMonthlyReportsError] = useState<string | null>(null);
   const [downloadNotice, setDownloadNotice] = useState<string | null>(null);
   const [downloadingDeliverableId, setDownloadingDeliverableId] = useState<string | null>(null);
   const [refreshTick, setRefreshTick] = useState(0);
@@ -216,25 +235,31 @@ export function ClientPortalPage() {
     setSelectedProjectError(null);
     setDeliverablesLoading(true);
     setDeliverablesError(null);
+    setMonthlyReportsLoading(true);
+    setMonthlyReportsError(null);
     setDownloadNotice(null);
     setDownloadingDeliverableId(null);
     setSelectedProject(null);
     setDeliverables([]);
+    setMonthlyReports([]);
 
     if (!token) {
       if (requestSeq === projectRequestSeq.current) {
         const message = "Sign in again to view the client archive.";
         setSelectedProjectError(message);
         setDeliverablesError(message);
+        setMonthlyReportsError(message);
         setSelectedProjectLoading(false);
         setDeliverablesLoading(false);
+        setMonthlyReportsLoading(false);
       }
       return;
     }
 
-    const [projectResponse, deliverablesResponse] = await Promise.all([
+    const [projectResponse, deliverablesResponse, monthlyReportsResponse] = await Promise.all([
       apiRequest<ClientPortalProjectResponse>(`/client-portal/projects/${projectId}`, { token }),
-      apiRequest<ClientPortalDeliverablesResponse>(`/client-portal/projects/${projectId}/deliverables`, { token })
+      apiRequest<ClientPortalDeliverablesResponse>(`/client-portal/projects/${projectId}/deliverables`, { token }),
+      apiRequest<ClientPortalMonthlyReportsResponse>(`/client-portal/projects/${projectId}/monthly-reports`, { token })
     ]);
 
     if (requestSeq !== projectRequestSeq.current) {
@@ -253,8 +278,15 @@ export function ClientPortalPage() {
       setDeliverablesError(getErrorMessage(deliverablesResponse));
     }
 
+    if (monthlyReportsResponse.ok) {
+      setMonthlyReports(monthlyReportsResponse.data.monthlyReports ?? []);
+    } else {
+      setMonthlyReportsError(getErrorMessage(monthlyReportsResponse));
+    }
+
     setSelectedProjectLoading(false);
     setDeliverablesLoading(false);
+    setMonthlyReportsLoading(false);
   }, []);
 
   useEffect(() => {
@@ -265,10 +297,13 @@ export function ClientPortalPage() {
     if (!selectedProjectId) {
       setSelectedProject(null);
       setDeliverables([]);
+      setMonthlyReports([]);
       setSelectedProjectError(null);
       setDeliverablesError(null);
+      setMonthlyReportsError(null);
       setSelectedProjectLoading(false);
       setDeliverablesLoading(false);
+      setMonthlyReportsLoading(false);
       return;
     }
 
@@ -284,8 +319,10 @@ export function ClientPortalPage() {
     setDownloadingDeliverableId(null);
     setSelectedProjectError(null);
     setDeliverablesError(null);
+    setMonthlyReportsError(null);
     setSelectedProject(null);
     setDeliverables([]);
+    setMonthlyReports([]);
     setSelectedProjectId(projectId);
   }, []);
 
@@ -553,6 +590,71 @@ export function ClientPortalPage() {
                           <span>Description</span>
                           <strong>{deliverable.description ?? "Not provided"}</strong>
                         </div>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              )}
+            </article>
+
+            <article className="entity-card">
+              <div className="entity-card-header">
+                <div>
+                  <StatusBadge status={monthlyReports.length ? "Active" : "Draft"} />
+                  <h2>Monthly reports</h2>
+                </div>
+              </div>
+
+              {monthlyReportsLoading ? (
+                <div className="state-panel">Loading monthly reports...</div>
+              ) : monthlyReportsError ? (
+                <EmptyState
+                  title="Monthly reports unavailable"
+                  message={monthlyReportsError}
+                  action={(
+                    <button className="secondary-action" onClick={handleRefresh} type="button">
+                      Reload reports
+                    </button>
+                  )}
+                />
+              ) : monthlyReports.length === 0 ? (
+                <EmptyState
+                  title="No finalized monthly reports yet"
+                  message="Only FINAL monthly reports are visible in the client archive."
+                />
+              ) : (
+                <div className="entity-grid">
+                  {monthlyReports.map((report) => (
+                    <article className="entity-card" key={report.id}>
+                      <div className="entity-card-header">
+                        <div>
+                          <StatusBadge status={report.status} />
+                          <h3>{report.title ?? "Monthly report"}</h3>
+                        </div>
+                      </div>
+                      <div className="entity-field-grid">
+                        <div>
+                          <span>Finalized</span>
+                          <strong>{report.finalizedAt ? report.finalizedAt.slice(0, 10) : "Not set"}</strong>
+                        </div>
+                        <div>
+                          <span>Export URL</span>
+                          <strong>
+                            {report.exportUrl ? (
+                              <a href={report.exportUrl} rel="noreferrer" target="_blank">
+                                Open report
+                              </a>
+                            ) : (
+                              "Not provided"
+                            )}
+                          </strong>
+                        </div>
+                        {report.recommendationsText ? (
+                          <div className="entity-span-2">
+                            <span>Recommendations</span>
+                            <strong>{report.recommendationsText}</strong>
+                          </div>
+                        ) : null}
                       </div>
                     </article>
                   ))}
