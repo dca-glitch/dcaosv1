@@ -102,7 +102,8 @@ import type {
   MarketIntelligenceInsightSummary,
   MarketIntelligenceInsightResponse,
   MarketIntelligenceInsightsResponse,
-  MarketIntelligenceInsightInputRequest
+  MarketIntelligenceInsightInputRequest,
+  AiDeliveryGoogleDocExportResponse
 } from "./core.types";
 import type { AuthResolvedSessionContext } from "../auth/types";
 import {
@@ -8528,6 +8529,102 @@ export async function publishAiDeliveryDeliverableToWordPress(
   return {
     publishResult
   };
+}
+
+export async function exportAiDeliveryDeliverableToGoogleDoc(
+  authSession: AuthResolvedSessionContext,
+  aiDeliveryProjectId: string,
+  deliverableId: string
+): Promise<AiDeliveryGoogleDocExportResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId || !aiDeliveryProjectId || !deliverableId) {
+    return null;
+  }
+
+  const project = await getAiDeliveryProjectDelegate(prisma).findFirst({
+    where: {
+      id: aiDeliveryProjectId,
+      tenantId,
+      isArchived: false
+    },
+    select: {
+      id: true,
+      name: true,
+      targetMonth: true,
+      client: {
+        select: { id: true, name: true }
+      }
+    }
+  }) as {
+    id: string;
+    name: string;
+    targetMonth: string | null;
+    client: { id: string; name: string } | null;
+  } | null;
+  if (!project) {
+    return null;
+  }
+
+  const deliverable = await getAiDeliveryDeliverableDelegate(prisma).findFirst({
+    where: {
+      id: deliverableId,
+      tenantId,
+      aiDeliveryProjectId,
+      isArchived: false
+    },
+    select: {
+      id: true,
+      title: true,
+      description: true,
+      notes: true,
+      contentDraft: {
+        select: {
+          id: true,
+          title: true,
+          draftBody: true,
+          status: true,
+          approvedAt: true,
+          isArchived: true
+        }
+      }
+    }
+  }) as {
+    id: string;
+    title: string;
+    description: string | null;
+    notes: string | null;
+    contentDraft: {
+      id: string;
+      title: string;
+      draftBody: string;
+      status: string;
+      approvedAt: Date | null;
+      isArchived: boolean;
+    } | null;
+  } | null;
+  if (!deliverable) {
+    return null;
+  }
+
+  const { exportDeliverableToGoogleDoc } = await import("../services/google-drive.service");
+
+  const draft = deliverable.contentDraft && !deliverable.contentDraft.isArchived
+    ? deliverable.contentDraft
+    : null;
+
+  const result = await exportDeliverableToGoogleDoc({
+    deliverableId: deliverable.id,
+    deliverableTitle: deliverable.title,
+    deliverableDescription: deliverable.description,
+    deliverableNotes: deliverable.notes,
+    contentDraftTitle: draft?.title ?? null,
+    contentDraftBody: draft?.draftBody ?? null,
+    clientName: project.client?.name ?? "Unknown Client",
+    projectName: project.name,
+    targetMonth: project.targetMonth ?? "unknown"
+  });
+
+  return result;
 }
 
 export async function uploadAiDeliveryDeliverableDocument(

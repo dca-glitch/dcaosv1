@@ -25,7 +25,8 @@
     "smoke:monthly-report:local": "node scripts/smoke-monthly-report-local.mjs",
     "smoke:monthly-report:browser": "node scripts/smoke-browser-monthly-report-admin-ui.mjs",
     "smoke:monthly-report:pdf": "node scripts/smoke-monthly-report-pdf-local.mjs",
-    "smoke:client-portal-monthly-report:browser": "node scripts/smoke-client-portal-monthly-report-browser-local.mjs"
+    "smoke:client-portal-monthly-report:browser": "node scripts/smoke-client-portal-monthly-report-browser-local.mjs",
+    "smoke:google-drive-export": "node scripts/smoke-google-drive-export-local.mjs"
   },
   "engines": {
     "node": ">=20"

@@ -58,6 +58,7 @@ import {
   getAiDeliveryDeliverableDownloadReferenceHandler,
   prepareAiDeliveryDeliverableWordPressDraftHandler,
   publishAiDeliveryDeliverableToWordPressHandler,
+  exportAiDeliveryDeliverableToGoogleDocHandler,
   getAiDeliveryWordPressConfigHandler,
   saveAiDeliveryWordPressConfigHandler,
   uploadAiDeliveryArticleImageFinalAssetHandler,
@@ -257,6 +258,7 @@ export function createCoreRouter() {
   router.get("/ai-delivery-projects/:id/deliverables/:deliverableId/download-reference", requireAuth, requireTenant, requireRole("owner", "admin"), getAiDeliveryDeliverableDownloadReferenceHandler);
   router.post("/ai-delivery-projects/:id/deliverables/:deliverableId/prepare-wordpress-draft", requireAuth, requireTenant, requireRole("owner", "admin"), prepareAiDeliveryDeliverableWordPressDraftHandler);
   router.post("/ai-delivery-projects/:id/deliverables/:deliverableId/publish-wordpress", requireAuth, requireTenant, requireRole("owner", "admin"), publishAiDeliveryDeliverableToWordPressHandler);
+  router.post("/ai-delivery-projects/:id/deliverables/:deliverableId/export-google-doc", requireAuth, requireTenant, requireRole("owner", "admin"), exportAiDeliveryDeliverableToGoogleDocHandler);
   router.get("/ai-delivery-projects/:id/deliverables/:deliverableId/reviews", requireAuth, requireTenant, requireRole("owner", "admin"), listAiDeliveryDeliverableReviewsHandler);
   router.post("/ai-delivery-projects/:id/deliverables/:deliverableId/reviews", requireAuth, requireTenant, requireRole("owner", "admin"), createAiDeliveryDeliverableReviewHandler);
   router.put("/ai-delivery-projects/:id/deliverables/:deliverableId/reviews/:reviewId", requireAuth, requireTenant, requireRole("owner", "admin"), updateAiDeliveryDeliverableReviewHandler);

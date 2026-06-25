@@ -674,6 +674,18 @@ export interface AiDeliveryWordPressDraftResponse {
   wordpressDraft: AiDeliveryWordPressDraftPrepared;
 }
 
+export interface AiDeliveryGoogleDocExportResponse {
+  deliverableId: string;
+  hasGoogleDocExport: boolean;
+  exportUrl: string | null;
+  docTitle: string | null;
+  folderPath: string | null;
+  providerStatus: "exported" | "provider_disabled" | "provider_not_configured" | "error";
+  providerDisabledReason?: string | null;
+  errorMessage: string | null;
+  generatedAt: string | null;
+}
+
 export interface RecurringInvoiceLineItemSummary {
   id: string;
   description: string;
