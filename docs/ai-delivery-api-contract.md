@@ -18,6 +18,8 @@ Monthly metrics snapshot foundation is now admin-only and snapshot-first. The co
 
 Private object storage is optional in local development. R2/private storage foundation closed for the current MVP admin scope. When the storage configuration is absent, admin-only private upload endpoints stay guarded and return `R2_STORAGE_NOT_CONFIGURED` instead of persisting a storage reference.
 
+Local proof for the current branch used `R2_BUCKET_NAME=dca` and confirmed admin-only article image final upload, deliverable document upload, and monthly report document upload could persist private storage references and return secure download references. This is local-only proof; the VPS/production R2 switch remains deferred until an explicitly approved deploy block.
+
 Exact environment variables currently used by the API storage helpers:
 
 - Required for private storage writes: `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME`
@@ -29,6 +31,7 @@ Current behavior:
 - Upload/download flows use authenticated admin API routes and return a temporary `downloadUrl` plus `expiresSeconds`.
 - Successful private uploads persist `storageKey` on the linked admin record.
 - No client self-service download route or public asset link is created by this block.
+- Secrets and storage credentials stay environment-only and must never be committed.
 
 ## Current admin workflow order
 
