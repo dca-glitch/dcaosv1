@@ -451,6 +451,21 @@ Current admin UI wiring includes private deliverable document upload/open action
 
 This foundation intentionally excludes export generation, publishing connectors, AI generation calls, signed client downloads, public links, or active client-facing delivery portal behavior. Future client-safe handoff should expose final/reviewable deliverables rather than raw workflow execution internals. Those deferred items are not blockers to the current admin foundation closure.
 
+## Client portal archive contract
+
+Client Portal archive is client-safe, read-only, and based on `ClientUserAccess` plus an active authenticated session. Owner/admin role alone does not grant archive visibility.
+
+- `GET /api/v1/client-portal/projects`
+  - Returns only archive-safe project rows visible through active `ClientUserAccess`.
+- `GET /api/v1/client-portal/projects/:projectId`
+  - Returns the selected project archive only for linked client access.
+- `GET /api/v1/client-portal/projects/:projectId/deliverables`
+  - Returns only final deliverables with status `DELIVERED` or `ACCEPTED`.
+- `GET /api/v1/client-portal/projects/:projectId/deliverables/:deliverableId/download`
+  - Uses the safe download reference endpoint; raw `storageKey` is never exposed.
+
+Client portal payloads and UI hide raw `workflowRunId`, `executionLog`, `executionError`, `tenantId`, `provider`, `prompt`, `reviewNotes`, `reviewerName`, and `draftBody` fields. Client reviews, client actions, and client approvals remain intentionally deferred. Production/VPS are frozen and not deployed in this block.
+
 ## Deliverable review foundation
 
 Admin/operator-side review records are stored separately from deliverable package records so future client review can be added without changing the current admin data model.

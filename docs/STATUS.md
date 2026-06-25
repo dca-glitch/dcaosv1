@@ -14,6 +14,7 @@ DCA OS Lite is in local-first admin/operator foundation work. Production is froz
 - AI Delivery deliverables foundation.
 - AI Delivery deliverable review data foundation, admin API, admin UI, and local smoke script.
 - AI Delivery deliverable export/download admin actions.
+- AI Delivery client portal archive proof hardening and contract note.
 - AI Delivery operator summary, AI SEO foundation UI, and AI Content Production foundation UI.
 - Email Notifications EN1 backend foundation only.
 - EN2 schema-free platform AuditLog writer foundation for logout, tenant switch, tenant settings update, and module enable/disable.
@@ -27,9 +28,9 @@ DCA OS Lite is in local-first admin/operator foundation work. Production is froz
 - Work is local-first on Windows PowerShell.
 - ChatGPT controls/reviews scope; Codex/Copilot/local tooling executes sealed tasks.
 - No commit, push, deploy, VPS, or production action unless explicitly approved after review.
-- Client Access / Client Portal is postponed until admin/operator modules are stable.
-- No AI calls, crawling, WordPress, GA/GSC, Resend sending, client portal, or production deployment is active.
-- EN2 real provider sending, queues/background jobs, and Client Portal delivery remain inactive.
+- Client Portal archive is read-only; client review/actions remain intentionally deferred.
+- No AI calls, crawling, WordPress, GA/GSC, Resend sending, or production deployment is active.
+- EN2 real provider sending and queues/background jobs remain inactive.
 - Production/VPS remains frozen unless explicitly approved.
 
 ## Current Repository Areas
