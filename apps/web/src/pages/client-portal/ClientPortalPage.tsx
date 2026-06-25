@@ -152,6 +152,15 @@ function formatMonthLabel(value: string | null | undefined): string {
   return value && value.trim() ? value : "Not set";
 }
 
+function formatReportDate(value: string | null | undefined): string {
+  if (!value) {
+    return "Not set";
+  }
+
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? value : parsed.toLocaleDateString();
+}
+
 function isFinalDeliverable(status: string) {
   return ["DELIVERED", "ACCEPTED"].includes(status);
 }
@@ -170,6 +179,7 @@ export function ClientPortalPage() {
   const [monthlyReports, setMonthlyReports] = useState<ClientPortalMonthlyReportSummary[]>([]);
   const [monthlyReportsLoading, setMonthlyReportsLoading] = useState(false);
   const [monthlyReportsError, setMonthlyReportsError] = useState<string | null>(null);
+  const [selectedMonthlyReportId, setSelectedMonthlyReportId] = useState<string | null>(null);
   const [downloadNotice, setDownloadNotice] = useState<string | null>(null);
   const [downloadingDeliverableId, setDownloadingDeliverableId] = useState<string | null>(null);
   const [downloadingMonthlyReportId, setDownloadingMonthlyReportId] = useState<string | null>(null);
@@ -241,6 +251,7 @@ export function ClientPortalPage() {
     setMonthlyReportsError(null);
     setDownloadNotice(null);
     setDownloadingDeliverableId(null);
+    setSelectedMonthlyReportId(null);
     setSelectedProject(null);
     setDeliverables([]);
     setMonthlyReports([]);
@@ -281,7 +292,15 @@ export function ClientPortalPage() {
     }
 
     if (monthlyReportsResponse.ok) {
-      setMonthlyReports(monthlyReportsResponse.data.monthlyReports ?? []);
+      const nextMonthlyReports = monthlyReportsResponse.data.monthlyReports ?? [];
+      setMonthlyReports(nextMonthlyReports);
+      setSelectedMonthlyReportId((current) => {
+        if (current && nextMonthlyReports.some((report) => report.id === current)) {
+          return current;
+        }
+
+        return nextMonthlyReports[0]?.id ?? null;
+      });
     } else {
       setMonthlyReportsError(getErrorMessage(monthlyReportsResponse));
     }
@@ -303,6 +322,7 @@ export function ClientPortalPage() {
       setSelectedProjectError(null);
       setDeliverablesError(null);
       setMonthlyReportsError(null);
+      setSelectedMonthlyReportId(null);
       setSelectedProjectLoading(false);
       setDeliverablesLoading(false);
       setMonthlyReportsLoading(false);
@@ -407,6 +427,10 @@ export function ClientPortalPage() {
   const projectCount = projects.length;
   const finalDeliverableCount = deliverables.filter((deliverable) => isFinalDeliverable(deliverable.status)).length;
   const selectedProjectArchiveState = selectedProject ? (selectedProject.isArchived ? "Archived" : "Active") : "No project selected";
+  const selectedMonthlyReport = monthlyReports.find((report) => report.id === selectedMonthlyReportId) ?? null;
+  const selectedMonthlyReportIndex = selectedMonthlyReport
+    ? monthlyReports.findIndex((report) => report.id === selectedMonthlyReport.id)
+    : -1;
 
   const clientName = selectedProject?.client?.name ?? projects[0]?.client?.name ?? "Client archive";
 
@@ -644,6 +668,10 @@ export function ClientPortalPage() {
                   <h2>Monthly reports</h2>
                 </div>
               </div>
+              <p className="muted-text">
+                This archive shows FINAL monthly report records only for {selectedProject?.name ?? "the selected project"}.
+                Internal metrics, workflows, and review data stay hidden.
+              </p>
 
               {monthlyReportsLoading ? (
                 <div className="state-panel">Loading monthly reports...</div>
@@ -660,60 +688,109 @@ export function ClientPortalPage() {
               ) : monthlyReports.length === 0 ? (
                 <EmptyState
                   title="No finalized monthly reports yet"
-                  message="Only FINAL monthly reports are visible in the client archive."
+                  message="Only FINAL monthly reports appear here once the report is finalized and available for client access."
                 />
               ) : (
                 <div className="entity-grid">
-                  {monthlyReports.map((report) => (
-                    <article className="entity-card" key={report.id}>
-                      <div className="entity-card-header">
-                        <div>
-                          <StatusBadge status={report.status} />
-                          <h3>{report.title ?? "Monthly report"}</h3>
-                        </div>
+                  <article className="entity-card">
+                    <div className="entity-card-header">
+                      <div>
+                        <StatusBadge status={selectedMonthlyReport?.status ?? "FINAL"} />
+                        <h3>{selectedMonthlyReport?.title ?? "Monthly report"}</h3>
+                        <p className="muted-text" style={{ marginTop: "0.25rem" }}>
+                          {selectedMonthlyReportIndex >= 0
+                            ? `Report ${selectedMonthlyReportIndex + 1} of ${monthlyReports.length}`
+                            : "Select a report below to open its details."}
+                        </p>
                       </div>
+                    </div>
+                    {selectedMonthlyReport ? (
                       <div className="entity-field-grid">
                         <div>
-                          <span>Finalized</span>
-                          <strong>{report.finalizedAt ? report.finalizedAt.slice(0, 10) : "Not set"}</strong>
+                          <span>Project month</span>
+                          <strong>{formatMonthLabel(selectedProject?.targetMonth)}</strong>
                         </div>
                         <div>
-                          <span>Export URL</span>
+                          <span>Finalized</span>
+                          <strong>{formatReportDate(selectedMonthlyReport.finalizedAt)}</strong>
+                        </div>
+                        <div>
+                          <span>Created</span>
+                          <strong>{formatReportDate(selectedMonthlyReport.createdAt)}</strong>
+                        </div>
+                        <div>
+                          <span>Updated</span>
+                          <strong>{formatReportDate(selectedMonthlyReport.updatedAt)}</strong>
+                        </div>
+                        <div>
+                          <span>Document</span>
+                          <strong>{selectedMonthlyReport.hasDocument ? "Available for download" : "Not attached yet"}</strong>
+                        </div>
+                        <div>
+                          <span>Export link</span>
                           <strong>
-                            {report.exportUrl ? (
-                              <a href={report.exportUrl} rel="noreferrer" target="_blank">
-                                Open report
+                            {selectedMonthlyReport.exportUrl ? (
+                              <a href={selectedMonthlyReport.exportUrl} rel="noreferrer" target="_blank">
+                                Open export handoff
                               </a>
                             ) : (
                               "Not provided"
                             )}
                           </strong>
                         </div>
-                        {report.hasDocument ? (
-                          <div>
-                            <span>Report document</span>
-                            <strong>
+                        <div className="entity-span-2">
+                          <span>Recommendations</span>
+                          <strong>{selectedMonthlyReport.recommendationsText ?? "Not provided"}</strong>
+                        </div>
+                        <div className="entity-span-2">
+                          <span>Download</span>
+                          <strong>
+                            {selectedMonthlyReport.hasDocument ? (
                               <button
-                                className="secondary-action"
-                                disabled={downloadingMonthlyReportId === report.id}
+                                className="primary-action"
+                                disabled={downloadingMonthlyReportId === selectedMonthlyReport.id}
                                 style={{ fontSize: "inherit" }}
                                 type="button"
-                                onClick={() => void handleMonthlyReportDownload(report.id)}
+                                onClick={() => void handleMonthlyReportDownload(selectedMonthlyReport.id)}
                               >
-                                {downloadingMonthlyReportId === report.id ? "Loading..." : "Download report"}
+                                {downloadingMonthlyReportId === selectedMonthlyReport.id ? "Opening..." : "Download report"}
                               </button>
-                            </strong>
-                          </div>
-                        ) : null}
-                        {report.recommendationsText ? (
-                          <div className="entity-span-2">
-                            <span>Recommendations</span>
-                            <strong>{report.recommendationsText}</strong>
-                          </div>
-                        ) : null}
+                            ) : (
+                              "No report document is attached yet."
+                            )}
+                          </strong>
+                        </div>
                       </div>
-                    </article>
-                  ))}
+                    ) : (
+                      <div className="state-panel">Select a finalized monthly report below to view its details.</div>
+                    )}
+                  </article>
+
+                  <article className="entity-card">
+                    <div className="entity-card-header">
+                      <div>
+                        <h3>Final monthly reports</h3>
+                      </div>
+                    </div>
+                    <div className="entity-grid">
+                      {monthlyReports.map((report) => (
+                        <button
+                          key={report.id}
+                          className={selectedMonthlyReportId === report.id ? "primary-action" : "secondary-action"}
+                          style={{ width: "100%", textAlign: "left", justifyContent: "space-between" }}
+                          type="button"
+                          onClick={() => setSelectedMonthlyReportId(report.id)}
+                        >
+                          <span>
+                            {report.title ?? "Monthly report"}
+                            <br />
+                            <span className="muted-text">{formatReportDate(report.finalizedAt)}</span>
+                          </span>
+                          <StatusBadge status={report.status} />
+                        </button>
+                      ))}
+                    </div>
+                  </article>
                 </div>
               )}
             </article>
