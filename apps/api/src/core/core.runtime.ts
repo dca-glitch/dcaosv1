@@ -33,6 +33,7 @@ import type {
   AiDeliveryDeliverableReviewInputRequest,
   AiDeliveryDeliverableReviewResponse,
   AiDeliveryDeliverableReviewsResponse,
+  AiDeliveryMonthlySummaryResponse,
   BillDocumentUploadRequest,
   BillInputRequest,
   BillResponse,
@@ -7219,6 +7220,110 @@ export async function listAiDeliveryDeliverables(
   });
 
   return { deliverables: deliverables.map(toAiDeliveryDeliverableSummary) };
+}
+
+const aiDeliveryMonthlySummaryDeliverableSelect = {
+  id: true,
+  title: true,
+  description: true,
+  deliveryType: true,
+  status: true,
+  exportUrl: true,
+  createdAt: true,
+  updatedAt: true
+} as const;
+
+const aiDeliveryMonthlySummaryContentPlanItemSelect = {
+  id: true,
+  title: true,
+  contentType: true,
+  targetKeyword: true,
+  approvalStatus: true
+} as const;
+
+export async function getAiDeliveryMonthlySummary(
+  authSession: AuthResolvedSessionContext,
+  projectId: string
+): Promise<AiDeliveryMonthlySummaryResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) return null;
+
+  const project = await prisma.aiDeliveryProject.findFirst({
+    where: { id: projectId, tenantId },
+    select: {
+      id: true,
+      name: true,
+      targetMonth: true,
+      clientId: true,
+      client: { select: { id: true, name: true } },
+      isArchived: true
+    }
+  });
+
+  if (!project) return null;
+
+  const deliverables = await prisma.aiDeliveryDeliverable.findMany({
+    where: {
+      tenantId,
+      aiDeliveryProjectId: projectId,
+      status: { in: ["DELIVERED", "ACCEPTED"] },
+      isArchived: false
+    },
+    select: aiDeliveryMonthlySummaryDeliverableSelect,
+    orderBy: [{ updatedAt: "desc" }]
+  });
+
+  const contentPlan = await prisma.aiDeliveryContentPlan.findFirst({
+    where: { tenantId, aiDeliveryProjectId: projectId },
+    select: {
+      items: {
+        select: aiDeliveryMonthlySummaryContentPlanItemSelect,
+        orderBy: { sortOrder: "asc" }
+      }
+    }
+  });
+
+  const deliveredCount = deliverables.filter((d) => d.status === "DELIVERED").length;
+  const acceptedCount = deliverables.filter((d) => d.status === "ACCEPTED").length;
+
+  return {
+    summary: {
+      project: {
+        id: project.id,
+        name: project.name,
+        targetMonth: formatAiDeliveryTargetMonth(project.targetMonth),
+        clientId: project.clientId,
+        clientName: project.client?.name ?? null
+      },
+      deliverables: deliverables.map((d) => ({
+        id: d.id,
+        title: d.title,
+        description: d.description ?? null,
+        deliveryType: d.deliveryType,
+        status: d.status,
+        exportUrl: d.exportUrl ?? null,
+        createdAt: d.createdAt.toISOString(),
+        updatedAt: d.updatedAt.toISOString()
+      })),
+      totals: {
+        deliverableCount: deliverables.length,
+        deliveredCount,
+        acceptedCount
+      },
+      contentPlanItems: (contentPlan?.items ?? []).map((item) => ({
+        id: item.id,
+        title: item.title,
+        contentType: item.contentType,
+        targetKeyword: item.targetKeyword ?? null,
+        approvalStatus: item.approvalStatus ?? null
+      })),
+      deferred: {
+        gaGscMetricsStatus: "DEFERRED",
+        trendMonthsStatus: "DEFERRED",
+        recommendationsStatus: "DEFERRED_REQUIRES_PERSISTED_REPORT"
+      }
+    }
+  };
 }
 
 export async function createAiDeliveryDeliverable(

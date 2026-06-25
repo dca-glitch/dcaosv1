@@ -4,6 +4,7 @@ import {
   approveAiDeliveryArticleImageHandler,
   acceptAiDeliveryDeliverableHandler,
   archiveAiDeliveryProjectHandler,
+  getAiDeliveryMonthlySummaryHandler,
   archiveAiDeliveryContentDraftHandler,
   archiveBillHandler,
   archiveVendorHandler,
@@ -302,6 +303,9 @@ export function createCoreRouter() {
   router.get("/bills/:id/document/download", requireAuth, requireTenant, downloadBillDocumentHandler);
   router.post("/bills/:id/archive", requireAuth, requireTenant, requireRole("owner", "admin"), archiveBillHandler);
   router.post("/bills/:id/restore", requireAuth, requireTenant, requireRole("owner", "admin"), restoreBillHandler);
+
+  // Monthly Report - admin-only computed summary (schema-free, read model)
+  router.get("/ai-delivery/reports/monthly-summary", requireAuth, requireTenant, requireRole("owner", "admin"), getAiDeliveryMonthlySummaryHandler);
 
   // Market Intelligence routes
   router.get("/market-intelligence-projects", requireAuth, requireTenant, requireRole("owner", "admin"), listMarketIntelligenceProjectsHandler);

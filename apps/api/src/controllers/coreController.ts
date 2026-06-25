@@ -173,7 +173,8 @@ import {
   listMarketIntelligenceInsights,
   createMarketIntelligenceInsight,
   updateMarketIntelligenceInsight,
-  archiveMarketIntelligenceInsight
+  archiveMarketIntelligenceInsight,
+  getAiDeliveryMonthlySummary
 } from "../core/core.runtime";
 import type {
   AiDeliveryArticleImageUploadRequest,
@@ -4314,6 +4315,22 @@ export const updateMarketIntelligenceInsightHandler: RequestHandler = async (req
     res.status(200).json(success(response, { phase: "runtime", scope: "market-intelligence" }));
   } catch {
     res.status(500).json(failure("MARKET_INTELLIGENCE_RUNTIME_ERROR", "Insight update could not be completed."));
+  }
+};
+
+export const getAiDeliveryMonthlySummaryHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) return void res.status(401).json(unauthorizedFailure());
+
+  const projectId = typeof req.query.projectId === "string" ? req.query.projectId.trim() : "";
+  if (!projectId) return void res.status(400).json(aiDeliveryProjectInvalidFailure());
+
+  try {
+    const response = await getAiDeliveryMonthlySummary(authSession, projectId);
+    if (!response) return void res.status(404).json(aiDeliveryProjectNotFoundFailure());
+    res.json(success(response, { phase: "runtime", scope: "ai-delivery-monthly-summary" }));
+  } catch {
+    res.status(500).json(failure("AI_DELIVERY_MONTHLY_SUMMARY_ERROR", "Monthly summary could not be computed."));
   }
 };
 

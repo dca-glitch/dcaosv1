@@ -919,6 +919,49 @@ export interface AiDeliveryDeliverableReviewInputRequest {
   workflowRunId?: string | null;
 }
 
+
+export interface AiDeliveryMonthlySummaryDeliverableItem {
+  id: string;
+  title: string;
+  description: string | null;
+  deliveryType: string;
+  status: string;
+  exportUrl: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AiDeliveryMonthlySummaryContentPlanItem {
+  id: string;
+  title: string;
+  contentType: string;
+  targetKeyword: string | null;
+  approvalStatus: string | null;
+}
+
+export interface AiDeliveryMonthlySummaryResponse {
+  summary: {
+    project: {
+      id: string;
+      name: string;
+      targetMonth: string;
+      clientId: string;
+      clientName: string | null;
+    };
+    deliverables: AiDeliveryMonthlySummaryDeliverableItem[];
+    totals: {
+      deliverableCount: number;
+      deliveredCount: number;
+      acceptedCount: number;
+    };
+    contentPlanItems: AiDeliveryMonthlySummaryContentPlanItem[];
+    deferred: {
+      gaGscMetricsStatus: "DEFERRED";
+      trendMonthsStatus: "DEFERRED";
+      recommendationsStatus: "DEFERRED_REQUIRES_PERSISTED_REPORT";
+    };
+  };
+}
 export interface MarketIntelligenceProjectSummary {
   id: string;
   title: string;

@@ -21,7 +21,8 @@
     "smoke:ai-market-intelligence": "node scripts/smoke-ai-market-intelligence-local.mjs",
     "smoke:mvp:local": "node scripts/smoke-mvp-local.mjs",
     "smoke:mvp:staging": "node scripts/smoke-mvp-local.mjs --staging",
-    "smoke:client-portal:local": "node scripts/smoke-client-portal-local.mjs"
+    "smoke:client-portal:local": "node scripts/smoke-client-portal-local.mjs",
+    "smoke:monthly-report:local": "node scripts/smoke-monthly-report-local.mjs"
   },
   "engines": {
     "node": ">=20"
