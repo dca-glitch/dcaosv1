@@ -178,6 +178,7 @@ import {
   getAiDeliveryMonthlyReport,
   getAiDeliveryMonthlyReportMetrics,
   createAiDeliveryMonthlyReport,
+  generateAiDeliveryMonthlyReportPdfForReport,
   importAiDeliveryMonthlyReportMetrics,
   approveAiDeliveryMonthlyReportMetrics,
   archiveAiDeliveryMonthlyReportMetrics,
@@ -4630,6 +4631,28 @@ export const getAiDeliveryMonthlyReportDownloadReferenceHandler: RequestHandler 
   } catch (error) {
     if (handleAiDeliveryGuardError(res, error)) return;
     res.status(500).json(failure("AI_DELIVERY_MONTHLY_REPORT_ERROR", "Download reference could not be retrieved."));
+  }
+};
+
+export const generateAiDeliveryMonthlyReportPdfHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) return void res.status(401).json(unauthorizedFailure());
+
+  const reportId = typeof req.params.reportId === "string" ? req.params.reportId.trim() : "";
+  if (!reportId) return void res.status(400).json(failure("AI_DELIVERY_MONTHLY_REPORT_INVALID", "Report ID is invalid."));
+
+  try {
+    const response = await generateAiDeliveryMonthlyReportPdfForReport(authSession, reportId);
+    if (!response) return void res.status(404).json(failure("AI_DELIVERY_MONTHLY_REPORT_NOT_FOUND", "Monthly report not found."));
+    res.status(201).json(success(response, { phase: "runtime", scope: "ai-delivery-monthly-report" }));
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "";
+    if (message.includes("not configured")) {
+      res.status(503).json(failure("R2_STORAGE_NOT_CONFIGURED", "R2 storage is not configured."));
+      return;
+    }
+    if (handleAiDeliveryGuardError(res, error)) return;
+    res.status(500).json(failure("AI_DELIVERY_MONTHLY_REPORT_ERROR", "Monthly report PDF could not be generated."));
   }
 };
 

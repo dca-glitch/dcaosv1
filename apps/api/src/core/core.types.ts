@@ -1009,6 +1009,18 @@ export interface AiDeliveryMonthlyReportDownloadReferenceResponse {
   } | null;
 }
 
+export interface AiDeliveryMonthlyReportGeneratePdfSummary {
+  reportId: string;
+  hasDocument: boolean;
+  updatedAt: string;
+  generatedAt: string;
+  fileName: string;
+}
+
+export interface AiDeliveryMonthlyReportGeneratePdfResponse {
+  report: AiDeliveryMonthlyReportGeneratePdfSummary | null;
+}
+
 export interface AiDeliveryMonthlyReportStatusRequest {
   status?: string | null;
 }

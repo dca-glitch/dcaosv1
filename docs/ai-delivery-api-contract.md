@@ -12,6 +12,8 @@ Client Portal monthly reports are now implemented and browser-proven as a read-o
 
 Monthly Report document handoff is also implemented and smoke-proven. Admin document upload uses `POST /api/v1/ai-delivery/reports/monthly/:reportId/document`, admin reference/download uses `GET /api/v1/ai-delivery/reports/monthly/:reportId/download`, and client download uses `GET /api/v1/client-portal/projects/:projectId/monthly-reports/:reportId/download`. `storageKey` stays internal, `hasDocument` is the safe signal, and generic monthly report PUT no longer accepts `storageKey`.
 
+Admin PDF generation is now supported through `POST /api/v1/ai-delivery/reports/monthly/:reportId/generate-pdf`. It is admin-triggered, tenant-scoped, server-generated, and stores the PDF through the same private monthly-report document handoff so `hasDocument` and the safe download reference continue to work without exposing `storageKey`. The generated PDF includes the persisted report narrative, computed monthly summary, and approved metrics trend summary when available.
+
 Monthly metrics snapshot foundation is now admin-only and snapshot-first. The contract is `GET /api/v1/ai-delivery/reports/monthly/:reportId/metrics`, `POST /api/v1/ai-delivery/reports/monthly/:reportId/metrics/import`, and `POST /api/v1/ai-delivery/reports/monthly/:reportId/metrics/:snapshotId/approve|archive`. Access requires authenticated owner/admin scope in the active tenant. The server returns normalized snapshots plus a computed 12-month summary from approved, non-archived snapshots in the same client/project context. Raw provider payloads, secrets, and client-portal metrics exposure remain deferred.
 
 ## Private object storage environment

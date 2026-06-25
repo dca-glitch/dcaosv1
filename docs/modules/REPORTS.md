@@ -15,6 +15,7 @@ The Reports module provides reusable reporting screens and report definitions.
 - AI Delivery monthly metrics snapshot foundation (admin-only, snapshot-first)
 - Computed 12-month trend summary from approved monthly metric snapshots
 - AI Delivery monthly report admin UI and browser smoke proof
+- AI Delivery monthly report PDF generation foundation (admin-triggered, private-storage-backed)
 - Client Portal monthly reports archive surface (FINAL-only, browser-proven)
 - Monthly Report document handoff (admin upload + admin download + client portal download)
 - `storageKey` hidden from all admin and client outputs; only written via upload endpoint
@@ -23,7 +24,6 @@ The Reports module provides reusable reporting screens and report definitions.
 
 ## Deferred
 
-- PDF generation library
 - live GA/GSC provider sync
 - Client report approval/actions
 - Production deploy

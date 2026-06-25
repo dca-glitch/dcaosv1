@@ -154,6 +154,7 @@ import {
   updateAiDeliveryMonthlyReportStatusHandler,
   archiveAiDeliveryMonthlyReportHandler,
   restoreAiDeliveryMonthlyReportHandler,
+  generateAiDeliveryMonthlyReportPdfHandler,
   uploadAiDeliveryMonthlyReportDocumentHandler,
   getAiDeliveryMonthlyReportDownloadReferenceHandler
 } from "../controllers/coreController";
@@ -331,6 +332,7 @@ export function createCoreRouter() {
   router.post("/ai-delivery/reports/monthly/:reportId/status", requireAuth, requireTenant, requireRole("owner", "admin"), updateAiDeliveryMonthlyReportStatusHandler);
   router.post("/ai-delivery/reports/monthly/:reportId/archive", requireAuth, requireTenant, requireRole("owner", "admin"), archiveAiDeliveryMonthlyReportHandler);
   router.post("/ai-delivery/reports/monthly/:reportId/restore", requireAuth, requireTenant, requireRole("owner", "admin"), restoreAiDeliveryMonthlyReportHandler);
+  router.post("/ai-delivery/reports/monthly/:reportId/generate-pdf", requireAuth, requireTenant, requireRole("owner", "admin"), generateAiDeliveryMonthlyReportPdfHandler);
   router.post("/ai-delivery/reports/monthly/:reportId/document", requireAuth, requireTenant, requireRole("owner", "admin"), uploadAiDeliveryMonthlyReportDocumentHandler);
   router.get("/ai-delivery/reports/monthly/:reportId/download", requireAuth, requireTenant, requireRole("owner", "admin"), getAiDeliveryMonthlyReportDownloadReferenceHandler);
 

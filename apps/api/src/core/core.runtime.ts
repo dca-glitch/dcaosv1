@@ -39,6 +39,7 @@ import type {
   AiDeliveryMonthlyReportInputRequest,
   AiDeliveryMonthlyReportUploadRequest,
   AiDeliveryMonthlyReportDownloadReferenceResponse,
+  AiDeliveryMonthlyReportGeneratePdfResponse,
   AiDeliveryMonthlyReportStatusRequest,
   AiDeliveryMonthlyMetricSnapshotSummary,
   AiDeliveryMonthlyMetricSnapshotInputRequest,
@@ -108,6 +109,7 @@ import {
   getPrivateStorageDownloadReference,
   putPrivateStorageObject
 } from "../storage/private-storage.service";
+import { generateAiDeliveryMonthlyReportPdf } from "./monthly-report-pdf.service";
 import { recordAiDeliverySystemEvent } from "../services/system-events.service";
 import { recordPlatformAuditEvent } from "../security/audit-log.service";
 import type { AiDeliveryWordPressPublishResult } from "../services/wordpress.service";
@@ -7665,6 +7667,75 @@ export async function getAiDeliveryMonthlyReportDownloadReference(
     downloadReference: downloadRef
       ? { downloadUrl: downloadRef.downloadUrl, expiresSeconds: downloadRef.expiresSeconds }
       : null
+  };
+}
+
+export async function generateAiDeliveryMonthlyReportPdfForReport(
+  authSession: AuthResolvedSessionContext,
+  reportId: string
+): Promise<AiDeliveryMonthlyReportGeneratePdfResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId || !reportId) return null;
+
+  const report = await (prisma as any).aiDeliveryMonthlyReport.findFirst({
+    where: { id: reportId, tenantId },
+    select: aiDeliveryMonthlyReportSelect
+  }) as any;
+  if (!report) return null;
+  if (report.isArchived) {
+    throwAiDeliveryBadRequest("AI_DELIVERY_MONTHLY_REPORT_ARCHIVED", "Cannot generate a PDF for an archived monthly report.");
+  }
+
+  const generatedAt = new Date();
+  const [monthlySummaryResponse, metricsResponse, tenant] = await Promise.all([
+    getAiDeliveryMonthlySummary(authSession, report.aiDeliveryProjectId),
+    getAiDeliveryMonthlyReportMetrics(authSession, reportId),
+    prisma.tenant.findUnique({
+      where: { id: tenantId },
+      select: { id: true, slug: true }
+    })
+  ]);
+
+  if (!tenant) {
+    return null;
+  }
+
+  const reportSummary = toAiDeliveryMonthlyReportSummary(report);
+  const pdf = await generateAiDeliveryMonthlyReportPdf({
+    generatedAt,
+    metrics: metricsResponse?.metrics ?? null,
+    monthlySummary: monthlySummaryResponse?.summary ?? null,
+    report: reportSummary
+  });
+
+  const upload = await putPrivateStorageObject({
+    body: pdf.pdfBuffer,
+    documentDate: generatedAt,
+    mimeType: "application/pdf",
+    namespace: "ai-delivery-report",
+    originalFileName: pdf.fileName,
+    projectSlugOrId: reportId,
+    tenantSlugOrId: tenant.slug || tenant.id
+  });
+
+  if (!upload) {
+    throw new Error("Private storage is not configured.");
+  }
+
+  const updated = await (prisma as any).aiDeliveryMonthlyReport.update({
+    where: { id: reportId },
+    data: { storageKey: upload.storageKey },
+    select: aiDeliveryMonthlyReportSelect
+  }) as any;
+
+  return {
+    report: {
+      reportId: updated.id,
+      hasDocument: !!updated.storageKey,
+      updatedAt: updated.updatedAt.toISOString(),
+      generatedAt: generatedAt.toISOString(),
+      fileName: pdf.fileName
+    }
   };
 }
 
