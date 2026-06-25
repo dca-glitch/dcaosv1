@@ -35,6 +35,7 @@ Locally proven admin/operator foundation:
 - `npm.cmd run validate` has passed on the current branch foundations.
 - `npm.cmd run smoke:local` has passed as the local gate for completed implementation slices.
 - The focused AI Delivery smoke has been hardened for repeated local regression work.
+- AI SEO admin workflow shell/status summary is in place and smoke-covered as part of the AI Delivery workflow shell.
 - Focused smoke fixture isolation now uses dedicated smoke-owned AI Delivery projects instead of mutating arbitrary local dev projects.
 - EN2 now has a schema-free platform AuditLog writer foundation for logout, tenant switch, tenant settings update, and module enable/disable actions.
 - Local proof confirmed a reversible module enable/disable action created a `module.enabled` `AuditLog` row with tenant, actor, entity, and metadata context and no `EmailLog` side effects.
@@ -48,6 +49,7 @@ Still intentionally not active:
 - Crawling or research ingestion.
 - Export generation for Google Docs, PDF, JSON, Markdown/MDX, or equivalent.
 - Publishing connectors such as WordPress, Next.js/custom React, or headless CMS.
+- Google OAuth / live GSC sync and client-facing metrics exposure.
 - Admin-operated normalized GA/GSC monthly metric snapshots are closed.
 - Live GA/GSC provider sync/OAuth and client-facing metrics reporting remain not active.
 - Monthly report generation.

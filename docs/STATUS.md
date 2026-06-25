@@ -23,7 +23,7 @@ DCA OS Lite is in local-first admin/operator foundation work. Production is froz
 - AI Delivery monthly metrics snapshot foundation (admin-only, snapshot-first, trend summary from approved snapshots).
 - Client Portal monthly reports archive route + browser proof closure.
 - Monthly Report PDF/upload/signed download admin and client portal endpoints implemented and local-smoke-proven.
-- AI Delivery operator summary, AI SEO foundation UI, and AI Content Production foundation UI.
+- AI Delivery operator summary, AI SEO foundation UI, AI SEO admin workflow shell/status summary, and AI Content Production foundation UI.
 - Market Intelligence admin MVP closure note documented.
 - Email Notifications EN1 backend foundation only.
 - EN2 schema-free platform AuditLog writer foundation for logout, tenant switch, tenant settings update, and module enable/disable.
@@ -41,6 +41,35 @@ DCA OS Lite is in local-first admin/operator foundation work. Production is froz
 - No AI calls, crawling, WordPress, GA/GSC, Resend sending, or production deployment is active.
 - EN2 real provider sending and queues/background jobs remain inactive.
 - Production/VPS remains frozen unless explicitly approved.
+
+## AI SEO / Content Plan closure
+
+Latest implementation commit: `031c215 Polish AI SEO admin workflow shell`
+
+AI SEO admin-operated MVP shell is in place.
+
+Completed admin-operated pieces:
+
+- research requests
+- manual/admin research sources
+- research summaries
+- apply summary to brief
+- content plan creation
+- content plan edit/status actions
+- workflow-generated content plan
+- draft generation handoff
+- admin AI SEO workflow shell/status summary
+- focused AI Delivery smoke coverage
+
+Still deferred:
+
+- live crawling
+- Google OAuth / live GSC sync
+- client-facing metrics exposure
+- automatic PDF generation / R2 stash
+- Google Docs export
+- production deploy
+- autonomous SEO agents
 
 ## Current Repository Areas
 
