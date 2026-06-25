@@ -26,7 +26,7 @@
 - Client review and approval actions.
 - Public links.
 - GA/GSC reporting integration.
-- Monthly report foundation.
+- Monthly Report foundation (client portal / persisted report).
 - AI Market Intelligence full module.
 - Revenue Hub AI.
 - POD AI Toolkit.

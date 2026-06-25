@@ -13,6 +13,8 @@ DCA OS Lite — AI Delivery Projects MVP.
 
 AI Delivery is currently admin/operator-side. AI Delivery admin foundation closed for the current MVP admin scope. This closed admin foundation covers projects, client/month brief foundation, workflow runs foundation, content plans, content drafts, article image planning, research requests/sources/summaries, deliverables, deliverable reviews, and activity/audit read model support where relevant. R2/private storage foundation is also closed for the same admin scope, covering deliverable private document upload/open, article image private final upload/open, admin UI wiring, env/docs coverage, guarded local `R2_STORAGE_NOT_CONFIGURED`, `storageKey` persistence, temporary authenticated download URL behavior, and no client/public asset exposure. This does not mean the full AI Delivery MVP is complete. No live AI calls, crawling, publishing connectors, client handoff portal delivery, or production deployment has been added.
 
+Monthly Report Phase 1 is also closed as a schema-free admin summary API. It returns final deliverables only, explicit deferred GA/GSC/trend metadata, and no persisted `MonthlyReport` record. Client portal monthly reports and persisted report storage remain future work.
+
 Current operator-facing admin surface order:
 
 1. Project + brief

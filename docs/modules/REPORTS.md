@@ -10,6 +10,7 @@ The Reports module provides reusable reporting screens and report definitions.
 - report metadata
 - placeholder report detail
 - prepare report parameters
+- AI Delivery monthly summary read model (admin-only, schema-free)
 
 ## Future Scope
 

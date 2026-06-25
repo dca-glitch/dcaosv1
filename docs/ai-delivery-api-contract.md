@@ -466,6 +466,28 @@ Client Portal archive is client-safe, read-only, and based on `ClientUserAccess`
 
 Client portal payloads and UI hide raw `workflowRunId`, `executionLog`, `executionError`, `tenantId`, `provider`, `prompt`, `reviewNotes`, `reviewerName`, and `draftBody` fields. `exportUrl` is intentionally included as a safe client-visible export link field; admin must store only client-appropriate URLs here. Client reviews, client actions, and client approvals remain intentionally deferred. Production/VPS are frozen and not deployed in this block.
 
+## Monthly report summary contract
+
+Monthly Report Phase 1 is a schema-free admin summary read model, not a persisted `MonthlyReport` record and not a client portal report.
+
+- `GET /api/v1/ai-delivery/reports/monthly-summary?projectId=<id>`
+  - Requires authenticated session, active tenant, and `owner` or `admin` role.
+  - Requires `projectId`; missing `projectId` returns `400`.
+  - Returns `404` when the project is missing or outside the active tenant.
+  - Returns the project header, client name when available, `targetMonth`, final deliverables only, totals, optional content plan items, and explicit deferred metadata for GA/GSC, trends, and recommendations.
+  - Final deliverables are limited to non-archived `DELIVERED` and `ACCEPTED` records.
+  - The response does not return `storageKey`, `tenantId`, `workflowRunId`, `executionLog`, `executionError`, `draftBody`, `prompt`, `styleNotes`, `reviewNotes`, `reviewerName`, `resultPlaceholder`, or `adminNotes`.
+
+Proof:
+
+- `npm.cmd run validate`
+- `npm.cmd run smoke:monthly-report:local`
+
+Future boundary:
+
+- Persisted monthly reports, PDF/export handoff, GA/GSC metrics, and 12-month trends remain separate future blocks.
+- Client portal monthly reports remain deferred until a separate approved client-safe report block is added.
+
 ## Export handoff foundation
 
 The current export handoff foundation is complete for manual admin-operated workflows. No schema migration is required.

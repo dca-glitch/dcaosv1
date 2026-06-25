@@ -17,6 +17,7 @@ DCA OS Lite is in local-first admin/operator foundation work. Production is froz
 - AI Delivery export handoff foundation: exportUrl client-visibility clarified, PDF upload path confirmed, Google Docs manual link path documented.
 - AI Delivery client portal archive proof hardening and contract note.
 - AI Delivery client delivery readiness closure checkpoint and smoke index.
+- AI Delivery monthly report phase 1 schema-free summary API closure.
 - AI Delivery operator summary, AI SEO foundation UI, and AI Content Production foundation UI.
 - Market Intelligence admin MVP closure note documented.
 - Email Notifications EN1 backend foundation only.
