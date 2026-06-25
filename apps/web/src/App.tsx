@@ -53,7 +53,12 @@ import {
 import type {
   AiDeliveryMonthlySummaryData,
   AiDeliveryMonthlyReportData,
-  AiDeliveryMonthlyReportFormValues
+  AiDeliveryMonthlyReportFormValues,
+  AiDeliveryMonthlyMetricsSummary,
+  AiDeliveryMonthlyMetricsResponse,
+  AiDeliveryMonthlyMetricSnapshotResponse,
+  AiDeliveryMonthlyMetricSnapshotSummary,
+  MonthlyMetricSnapshotFormValues
 } from "./pages/ai-delivery/MonthlyReportPanel";
 import { AiMarketIntelligencePage } from "./pages/ai-market-intelligence/AiMarketIntelligencePage";
 import { TasksPage, type TaskFormValues, type TaskSummary } from "./pages/tasks/TasksPage";
@@ -515,6 +520,13 @@ async function fileToBase64(file: File): Promise<string> {
   }
 
   return btoa(binary);
+}
+
+function parseOptionalNumber(value: string): number | undefined {
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+  const parsed = Number(trimmed);
+  return Number.isFinite(parsed) ? parsed : undefined;
 }
 
 async function apiRequest<T>(path: string, options: RequestOptions = {}): Promise<ApiResponse<T>> {
@@ -3130,6 +3142,105 @@ export function App() {
     }
   }
 
+  async function handleFetchAiDeliveryMonthlyMetrics(reportId: string): Promise<AiDeliveryMonthlyMetricsSummary | null> {
+    setAppMessage(null);
+    try {
+      const response = await runAuthenticatedRequest<AiDeliveryMonthlyMetricsResponse>(
+        `/ai-delivery/reports/monthly/${encodeURIComponent(reportId)}/metrics`
+      );
+      if (!response) return null;
+      if (!response.ok) {
+        if (response.error.code === "AI_DELIVERY_MONTHLY_REPORT_NOT_FOUND") {
+          return null;
+        }
+        throwAiDeliveryResponseError(response);
+      }
+      return response.data.metrics ?? null;
+    } catch (error) {
+      return rethrowAiDeliveryRuntimeError(error);
+    }
+  }
+
+  async function handleImportAiDeliveryMonthlyMetrics(
+    reportId: string,
+    values: MonthlyMetricSnapshotFormValues
+  ): Promise<AiDeliveryMonthlyMetricSnapshotSummary | null> {
+    setAppMessage(null);
+    try {
+      const trimmedTargetMonth = values.targetMonth.trim();
+      if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(trimmedTargetMonth)) {
+        throw new Error("Target month must use YYYY-MM format.");
+      }
+
+      const response = await runAuthenticatedRequest<AiDeliveryMonthlyMetricSnapshotResponse>(
+        `/ai-delivery/reports/monthly/${encodeURIComponent(reportId)}/metrics/import`,
+        {
+          method: "POST",
+          body: {
+            targetMonth: trimmedTargetMonth,
+            sourceType: values.sourceType,
+            status: values.status,
+            gscClicks: parseOptionalNumber(values.gscClicks),
+            gscImpressions: parseOptionalNumber(values.gscImpressions),
+            gscAverageCtr: parseOptionalNumber(values.gscAverageCtr),
+            gscAveragePosition: parseOptionalNumber(values.gscAveragePosition),
+            ga4Sessions: parseOptionalNumber(values.ga4Sessions),
+            ga4Users: parseOptionalNumber(values.ga4Users),
+            ga4PageViews: parseOptionalNumber(values.ga4PageViews),
+            notes: values.notes.trim() || undefined
+          }
+        }
+      );
+      if (!response) return null;
+      if (!response.ok) {
+        throwAiDeliveryResponseError(response);
+      }
+      return response.data.snapshot ?? null;
+    } catch (error) {
+      return rethrowAiDeliveryRuntimeError(error);
+    }
+  }
+
+  async function handleApproveAiDeliveryMonthlyMetrics(
+    reportId: string,
+    snapshotId: string
+  ): Promise<AiDeliveryMonthlyMetricSnapshotSummary | null> {
+    setAppMessage(null);
+    try {
+      const response = await runAuthenticatedRequest<AiDeliveryMonthlyMetricSnapshotResponse>(
+        `/ai-delivery/reports/monthly/${encodeURIComponent(reportId)}/metrics/${encodeURIComponent(snapshotId)}/approve`,
+        { method: "POST" }
+      );
+      if (!response) return null;
+      if (!response.ok) {
+        throwAiDeliveryResponseError(response);
+      }
+      return response.data.snapshot ?? null;
+    } catch (error) {
+      return rethrowAiDeliveryRuntimeError(error);
+    }
+  }
+
+  async function handleArchiveAiDeliveryMonthlyMetrics(
+    reportId: string,
+    snapshotId: string
+  ): Promise<AiDeliveryMonthlyMetricSnapshotSummary | null> {
+    setAppMessage(null);
+    try {
+      const response = await runAuthenticatedRequest<AiDeliveryMonthlyMetricSnapshotResponse>(
+        `/ai-delivery/reports/monthly/${encodeURIComponent(reportId)}/metrics/${encodeURIComponent(snapshotId)}/archive`,
+        { method: "POST" }
+      );
+      if (!response) return null;
+      if (!response.ok) {
+        throwAiDeliveryResponseError(response);
+      }
+      return response.data.snapshot ?? null;
+    } catch (error) {
+      return rethrowAiDeliveryRuntimeError(error);
+    }
+  }
+
   async function handleFetchClientContentDraftReview(projectId: string): Promise<AiDeliveryContentDraftSummary[]> {
     setAppMessage(null);
     try {
@@ -3967,6 +4078,7 @@ export function App() {
           onSaveResearchSource={handleSaveAiDeliveryResearchSource}
           onFetchMonthlyComputedSummary={handleFetchAiDeliveryMonthlyComputedSummary}
           onFetchMonthlyReport={handleFetchAiDeliveryMonthlyReport}
+          onFetchMonthlyMetrics={handleFetchAiDeliveryMonthlyMetrics}
           onCreateMonthlyReport={handleCreateAiDeliveryMonthlyReport}
           onUpdateMonthlyReport={handleUpdateAiDeliveryMonthlyReport}
           onSetMonthlyReportStatus={handleSetAiDeliveryMonthlyReportStatus}
@@ -3974,6 +4086,9 @@ export function App() {
           onRestoreMonthlyReport={handleRestoreAiDeliveryMonthlyReport}
           onUploadMonthlyReportDocument={handleUploadAiDeliveryMonthlyReportDocument}
           onDownloadMonthlyReportDocument={handleGetAiDeliveryMonthlyReportDownloadReference}
+          onImportMonthlyMetrics={handleImportAiDeliveryMonthlyMetrics}
+          onApproveMonthlyMetricSnapshot={handleApproveAiDeliveryMonthlyMetrics}
+          onArchiveMonthlyMetricSnapshot={handleArchiveAiDeliveryMonthlyMetrics}
         />
       ) : null}
       {!loading && activeView === "ai-market-intelligence" ? (

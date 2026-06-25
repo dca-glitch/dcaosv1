@@ -1,6 +1,6 @@
 import React, { FormEvent, useCallback, useEffect, useState } from "react";
 import { Modal } from "../../components/Modal";
-import { StatusBadge } from "../../components/ui";
+import { MetricCard, SectionPanel, StatusBadge } from "../../components/ui";
 import type { AiDeliveryProjectSummary } from "./AiDeliveryPage";
 
 export type AiDeliveryMonthlySummaryDeliverable = {
@@ -63,11 +63,87 @@ export type AiDeliveryMonthlyReportFormValues = {
   exportUrl: string;
 };
 
+export type MonthlyMetricSourceType = "MANUAL" | "CSV_IMPORT" | "GA4" | "GSC" | "HYBRID";
+export type MonthlyMetricSnapshotStatus = "DRAFT" | "IMPORTED" | "APPROVED" | "ARCHIVED";
+
+export type AiDeliveryMonthlyMetricSnapshotSummary = {
+  id: string;
+  aiDeliveryProjectId: string;
+  aiDeliveryMonthlyReportId: string;
+  targetMonth: string;
+  sourceType: MonthlyMetricSourceType;
+  status: MonthlyMetricSnapshotStatus;
+  gscClicks: number | null;
+  gscImpressions: number | null;
+  gscAverageCtr: number | null;
+  gscAveragePosition: number | null;
+  ga4Sessions: number | null;
+  ga4Users: number | null;
+  ga4PageViews: number | null;
+  notes: string | null;
+  importedByUserId: string | null;
+  importedAt: string;
+  approvedByUserId: string | null;
+  approvedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type AiDeliveryMonthlyMetricsTrendMonthSummary = {
+  targetMonth: string;
+  sourceType: MonthlyMetricSourceType;
+  gscClicks: number | null;
+  gscImpressions: number | null;
+  gscAverageCtr: number | null;
+  gscAveragePosition: number | null;
+  ga4Sessions: number | null;
+  ga4Users: number | null;
+  ga4PageViews: number | null;
+};
+
+export type AiDeliveryMonthlyMetricsTrendSummary = {
+  dataStatus: "NO_DATA" | "PARTIAL" | "READY";
+  latestMonth: string | null;
+  last12Months: AiDeliveryMonthlyMetricsTrendMonthSummary[];
+  totals: {
+    gscClicks: number;
+    gscImpressions: number;
+    ga4Sessions: number;
+    ga4Users: number;
+    ga4PageViews: number;
+  };
+  averages: {
+    gscAverageCtr: number | null;
+    gscAveragePosition: number | null;
+  };
+};
+
+export type AiDeliveryMonthlyMetricsSummary = {
+  report: {
+    id: string;
+    aiDeliveryProjectId: string;
+    targetMonth: string;
+    project: { id: string; name: string } | null;
+    client: { id: string; name: string } | null;
+  };
+  snapshots: AiDeliveryMonthlyMetricSnapshotSummary[];
+  computedTrendSummary: AiDeliveryMonthlyMetricsTrendSummary;
+};
+
+export type AiDeliveryMonthlyMetricsResponse = {
+  metrics: AiDeliveryMonthlyMetricsSummary | null;
+};
+
+export type AiDeliveryMonthlyMetricSnapshotResponse = {
+  snapshot: AiDeliveryMonthlyMetricSnapshotSummary | null;
+};
+
 type MonthlyReportPanelProps = {
   project: AiDeliveryProjectSummary;
   onClose: () => void;
   onFetchComputedSummary: (projectId: string) => Promise<AiDeliveryMonthlySummaryData | null>;
   onFetchReport: (projectId: string) => Promise<AiDeliveryMonthlyReportData | null>;
+  onFetchMetrics: (reportId: string) => Promise<AiDeliveryMonthlyMetricsSummary | null>;
   onCreateReport: (projectId: string) => Promise<AiDeliveryMonthlyReportData | null>;
   onUpdateReport: (reportId: string, values: AiDeliveryMonthlyReportFormValues) => Promise<AiDeliveryMonthlyReportData | null>;
   onSetReportStatus: (reportId: string, status: string) => Promise<AiDeliveryMonthlyReportData | null>;
@@ -75,6 +151,23 @@ type MonthlyReportPanelProps = {
   onRestoreReport: (reportId: string) => Promise<AiDeliveryMonthlyReportData | null>;
   onUploadDocument?: (reportId: string, file: File) => Promise<AiDeliveryMonthlyReportData | null>;
   onDownloadDocument?: (reportId: string) => Promise<{ downloadUrl: string } | null>;
+  onImportMetrics: (reportId: string, values: MonthlyMetricSnapshotFormValues) => Promise<AiDeliveryMonthlyMetricSnapshotSummary | null>;
+  onApproveMetricSnapshot: (reportId: string, snapshotId: string) => Promise<AiDeliveryMonthlyMetricSnapshotSummary | null>;
+  onArchiveMetricSnapshot: (reportId: string, snapshotId: string) => Promise<AiDeliveryMonthlyMetricSnapshotSummary | null>;
+};
+
+export type MonthlyMetricSnapshotFormValues = {
+  targetMonth: string;
+  sourceType: MonthlyMetricSourceType;
+  status: "DRAFT" | "IMPORTED";
+  gscClicks: string;
+  gscImpressions: string;
+  gscAverageCtr: string;
+  gscAveragePosition: string;
+  ga4Sessions: string;
+  ga4Users: string;
+  ga4PageViews: string;
+  notes: string;
 };
 
 const MONTHLY_REPORT_STATUSES = ["DRAFT", "ADMIN_REVIEW", "FINAL", "ARCHIVED"] as const;
@@ -121,6 +214,37 @@ function formFromReport(report: AiDeliveryMonthlyReportData): AiDeliveryMonthlyR
   };
 }
 
+function emptyMetricsForm(targetMonth: string): MonthlyMetricSnapshotFormValues {
+  return {
+    targetMonth,
+    sourceType: "HYBRID",
+    status: "IMPORTED",
+    gscClicks: "",
+    gscImpressions: "",
+    gscAverageCtr: "",
+    gscAveragePosition: "",
+    ga4Sessions: "",
+    ga4Users: "",
+    ga4PageViews: "",
+    notes: ""
+  };
+}
+
+function parseMetricInput(value: string): number | undefined {
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+  const parsed = Number(trimmed);
+  return Number.isFinite(parsed) ? parsed : undefined;
+}
+
+function formatMetricInteger(value: number | null | undefined): string {
+  return typeof value === "number" ? value.toLocaleString() : "—";
+}
+
+function formatMetricDecimal(value: number | null | undefined): string {
+  return typeof value === "number" ? value.toLocaleString(undefined, { maximumFractionDigits: 2 }) : "—";
+}
+
 export function MonthlyReportPanel({
   project,
   onClose,
@@ -132,7 +256,11 @@ export function MonthlyReportPanel({
   onArchiveReport,
   onRestoreReport,
   onUploadDocument,
-  onDownloadDocument
+  onDownloadDocument,
+  onFetchMetrics,
+  onImportMetrics,
+  onApproveMetricSnapshot,
+  onArchiveMetricSnapshot
 }: MonthlyReportPanelProps) {
   const [summary, setSummary] = useState<AiDeliveryMonthlySummaryData | null>(null);
   const [summaryLoading, setSummaryLoading] = useState(false);
@@ -151,6 +279,14 @@ export function MonthlyReportPanel({
   const [documentDownloading, setDocumentDownloading] = useState(false);
   const [documentMessage, setDocumentMessage] = useState<string | null>(null);
   const [documentError, setDocumentError] = useState<string | null>(null);
+
+  const [metrics, setMetrics] = useState<AiDeliveryMonthlyMetricsSummary | null>(null);
+  const [metricsLoading, setMetricsLoading] = useState(false);
+  const [metricsSaving, setMetricsSaving] = useState(false);
+  const [metricsError, setMetricsError] = useState<string | null>(null);
+  const [metricsMessage, setMetricsMessage] = useState<string | null>(null);
+  const [metricsActionError, setMetricsActionError] = useState<string | null>(null);
+  const [metricsForm, setMetricsForm] = useState<MonthlyMetricSnapshotFormValues>(emptyMetricsForm(project.targetMonth));
 
   const loadSummary = useCallback(async () => {
     setSummaryLoading(true);
@@ -184,10 +320,54 @@ export function MonthlyReportPanel({
     }
   }, [onFetchReport, project.id]);
 
+  const loadMetrics = useCallback(
+    async (reportId: string | null) => {
+      if (!reportId) {
+        setMetrics(null);
+        setMetricsLoading(false);
+        setMetricsError(null);
+        setMetricsMessage(null);
+        setMetricsActionError(null);
+        setMetricsForm(emptyMetricsForm(project.targetMonth));
+        return;
+      }
+      setMetricsLoading(true);
+      setMetricsError(null);
+      setMetricsActionError(null);
+      try {
+        const data = await onFetchMetrics(reportId);
+        setMetrics(data);
+        setMetricsForm((current) => {
+          if (current.targetMonth.trim()) {
+            return current;
+          }
+          return emptyMetricsForm(project.targetMonth);
+        });
+      } catch (error) {
+        setMetrics(null);
+        setMetricsError(error instanceof Error ? error.message : "Unable to load metrics.");
+      } finally {
+        setMetricsLoading(false);
+      }
+    },
+    [onFetchMetrics, project.targetMonth]
+  );
+
   useEffect(() => {
     void loadSummary();
     void loadReport();
   }, [loadSummary, loadReport]);
+
+  useEffect(() => {
+    if (!report) {
+      setMetricsMessage(null);
+      void loadMetrics(null);
+      return;
+    }
+
+    setMetricsMessage(null);
+    void loadMetrics(report.id);
+  }, [loadMetrics, report]);
 
   async function handleCreate() {
     setReportSaving(true);
@@ -303,6 +483,65 @@ export function MonthlyReportPanel({
     } finally {
       setDocumentUploading(false);
       event.target.value = "";
+    }
+  }
+
+  async function handleImportMetrics(event?: FormEvent<HTMLFormElement>) {
+    event?.preventDefault();
+    if (!report) return;
+    setMetricsSaving(true);
+    setMetricsError(null);
+    setMetricsActionError(null);
+    setMetricsMessage(null);
+    try {
+      const imported = await onImportMetrics(report.id, metricsForm);
+      if (imported) {
+        setMetricsMessage("Snapshot metrics imported.");
+        setMetricsForm(emptyMetricsForm(metricsForm.targetMonth || project.targetMonth));
+        await loadMetrics(report.id);
+      }
+    } catch (error) {
+      setMetricsActionError(error instanceof Error ? error.message : "Unable to import snapshot metrics.");
+    } finally {
+      setMetricsSaving(false);
+    }
+  }
+
+  async function handleApproveMetricSnapshot(snapshotId: string) {
+    if (!report) return;
+    setMetricsSaving(true);
+    setMetricsError(null);
+    setMetricsActionError(null);
+    setMetricsMessage(null);
+    try {
+      const approved = await onApproveMetricSnapshot(report.id, snapshotId);
+      if (approved) {
+        setMetricsMessage("Snapshot approved.");
+        await loadMetrics(report.id);
+      }
+    } catch (error) {
+      setMetricsActionError(error instanceof Error ? error.message : "Unable to approve snapshot.");
+    } finally {
+      setMetricsSaving(false);
+    }
+  }
+
+  async function handleArchiveMetricSnapshot(snapshotId: string) {
+    if (!report) return;
+    setMetricsSaving(true);
+    setMetricsError(null);
+    setMetricsActionError(null);
+    setMetricsMessage(null);
+    try {
+      const archived = await onArchiveMetricSnapshot(report.id, snapshotId);
+      if (archived) {
+        setMetricsMessage("Snapshot archived.");
+        await loadMetrics(report.id);
+      }
+    } catch (error) {
+      setMetricsActionError(error instanceof Error ? error.message : "Unable to archive snapshot.");
+    } finally {
+      setMetricsSaving(false);
     }
   }
 
@@ -655,6 +894,321 @@ export function MonthlyReportPanel({
                   </div>
                 </div>
               ) : null}
+
+              <SectionPanel
+                title="GA/GSC Metrics"
+                description="Snapshot metrics imported manually for this monthly report. This block does not sync live with Google."
+                className="metrics-section"
+              >
+                {metricsLoading ? (
+                  <div className="state-panel">Loading snapshot metrics...</div>
+                ) : metricsError ? (
+                  <div className="state-panel" role="alert" style={{ borderLeft: "4px solid var(--color-error)", paddingLeft: "1rem" }}>
+                    <strong>Metrics unavailable:</strong> {metricsError}
+                  </div>
+                ) : metrics ? (
+                  <>
+                    {metricsMessage ? (
+                      <div className="state-panel" style={{ marginBottom: "0.75rem", borderLeft: "4px solid var(--color-success)", paddingLeft: "1rem" }}>
+                        {metricsMessage}
+                      </div>
+                    ) : null}
+                    {metricsActionError ? (
+                      <div className="state-panel" role="alert" style={{ marginBottom: "0.75rem", borderLeft: "4px solid var(--color-error)", paddingLeft: "1rem" }}>
+                        {metricsActionError}
+                      </div>
+                    ) : null}
+
+                    <div className="summary-grid metric-grid" style={{ marginBottom: "1rem" }}>
+                      <MetricCard
+                        accent={metrics.computedTrendSummary.dataStatus === "READY" ? "success" : "warning"}
+                        helper={`${metrics.snapshots.length} snapshot${metrics.snapshots.length === 1 ? "" : "s"}`}
+                        label="Data status"
+                        value={metrics.computedTrendSummary.dataStatus}
+                      />
+                      <MetricCard
+                        accent="cyan"
+                        helper="Latest approved month in the trend summary"
+                        label="Latest month"
+                        value={metrics.computedTrendSummary.latestMonth ?? "Not set"}
+                      />
+                      <MetricCard
+                        helper="12-month approved totals"
+                        label="Clicks"
+                        value={formatMetricInteger(metrics.computedTrendSummary.totals.gscClicks)}
+                      />
+                      <MetricCard
+                        helper="12-month approved totals"
+                        label="Impressions"
+                        value={formatMetricInteger(metrics.computedTrendSummary.totals.gscImpressions)}
+                      />
+                    </div>
+
+                    <dl className="brief-grid" style={{ marginBottom: "1rem" }}>
+                      <div>
+                        <dt>GA4 sessions</dt>
+                        <dd>{formatMetricInteger(metrics.computedTrendSummary.totals.ga4Sessions)}</dd>
+                      </div>
+                      <div>
+                        <dt>GA4 users</dt>
+                        <dd>{formatMetricInteger(metrics.computedTrendSummary.totals.ga4Users)}</dd>
+                      </div>
+                      <div>
+                        <dt>GA4 page views</dt>
+                        <dd>{formatMetricInteger(metrics.computedTrendSummary.totals.ga4PageViews)}</dd>
+                      </div>
+                      <div>
+                        <dt>CTR average</dt>
+                        <dd>{formatMetricDecimal(metrics.computedTrendSummary.averages.gscAverageCtr)}</dd>
+                      </div>
+                      <div>
+                        <dt>Position average</dt>
+                        <dd>{formatMetricDecimal(metrics.computedTrendSummary.averages.gscAveragePosition)}</dd>
+                      </div>
+                    </dl>
+
+                    <div style={{ marginBottom: "1rem" }}>
+                      <div className="field-grid">
+                        <label>
+                          Target month
+                          <input
+                            disabled={metricsSaving}
+                            onChange={(event) => setMetricsForm((current) => ({ ...current, targetMonth: event.target.value }))}
+                            required
+                            type="month"
+                            value={metricsForm.targetMonth}
+                          />
+                        </label>
+                        <label>
+                          Source type
+                          <select
+                            disabled={metricsSaving}
+                            value={metricsForm.sourceType}
+                            onChange={(event) => setMetricsForm((current) => ({ ...current, sourceType: event.target.value as MonthlyMetricSourceType }))}
+                          >
+                            <option value="HYBRID">HYBRID</option>
+                            <option value="MANUAL">MANUAL</option>
+                            <option value="CSV_IMPORT">CSV_IMPORT</option>
+                            <option value="GA4">GA4</option>
+                            <option value="GSC">GSC</option>
+                          </select>
+                        </label>
+                        <label>
+                          Status
+                          <select
+                            disabled={metricsSaving}
+                            value={metricsForm.status}
+                            onChange={(event) => setMetricsForm((current) => ({ ...current, status: event.target.value as MonthlyMetricSnapshotFormValues["status"] }))}
+                          >
+                            <option value="IMPORTED">IMPORTED</option>
+                            <option value="DRAFT">DRAFT</option>
+                          </select>
+                        </label>
+                        <label>
+                          GSC clicks
+                          <input
+                            disabled={metricsSaving}
+                            min={0}
+                            inputMode="numeric"
+                            onChange={(event) => setMetricsForm((current) => ({ ...current, gscClicks: event.target.value }))}
+                            step="1"
+                            type="number"
+                            value={metricsForm.gscClicks}
+                          />
+                        </label>
+                        <label>
+                          GSC impressions
+                          <input
+                            disabled={metricsSaving}
+                            min={0}
+                            inputMode="numeric"
+                            onChange={(event) => setMetricsForm((current) => ({ ...current, gscImpressions: event.target.value }))}
+                            step="1"
+                            type="number"
+                            value={metricsForm.gscImpressions}
+                          />
+                        </label>
+                        <label>
+                          GSC average CTR
+                          <input
+                            disabled={metricsSaving}
+                            min={0}
+                            inputMode="decimal"
+                            onChange={(event) => setMetricsForm((current) => ({ ...current, gscAverageCtr: event.target.value }))}
+                            step="0.01"
+                            type="number"
+                            value={metricsForm.gscAverageCtr}
+                          />
+                        </label>
+                        <label>
+                          GSC average position
+                          <input
+                            disabled={metricsSaving}
+                            min={0}
+                            inputMode="decimal"
+                            onChange={(event) => setMetricsForm((current) => ({ ...current, gscAveragePosition: event.target.value }))}
+                            step="0.01"
+                            type="number"
+                            value={metricsForm.gscAveragePosition}
+                          />
+                        </label>
+                        <label>
+                          GA4 sessions
+                          <input
+                            disabled={metricsSaving}
+                            min={0}
+                            inputMode="numeric"
+                            onChange={(event) => setMetricsForm((current) => ({ ...current, ga4Sessions: event.target.value }))}
+                            step="1"
+                            type="number"
+                            value={metricsForm.ga4Sessions}
+                          />
+                        </label>
+                        <label>
+                          GA4 users
+                          <input
+                            disabled={metricsSaving}
+                            min={0}
+                            inputMode="numeric"
+                            onChange={(event) => setMetricsForm((current) => ({ ...current, ga4Users: event.target.value }))}
+                            step="1"
+                            type="number"
+                            value={metricsForm.ga4Users}
+                          />
+                        </label>
+                        <label>
+                          GA4 page views
+                          <input
+                            disabled={metricsSaving}
+                            min={0}
+                            inputMode="numeric"
+                            onChange={(event) => setMetricsForm((current) => ({ ...current, ga4PageViews: event.target.value }))}
+                            step="1"
+                            type="number"
+                            value={metricsForm.ga4PageViews}
+                          />
+                        </label>
+                        <label className="field-span-2">
+                          Notes
+                          <textarea
+                            disabled={metricsSaving}
+                            maxLength={4000}
+                            onChange={(event) => setMetricsForm((current) => ({ ...current, notes: event.target.value }))}
+                            rows={3}
+                            value={metricsForm.notes}
+                          />
+                        </label>
+                      </div>
+                      <div className="modal-footer" style={{ marginTop: "0.75rem" }}>
+                        <button className="primary-action" disabled={metricsSaving} onClick={() => void handleImportMetrics()} type="button">
+                          {metricsSaving ? "Importing..." : "Import snapshot metrics"}
+                        </button>
+                      </div>
+                    </div>
+
+                    {metrics.snapshots.length === 0 ? (
+                      <div className="state-panel">No snapshot metrics have been imported yet.</div>
+                    ) : (
+                      <div className="table-wrap" aria-label="Monthly metrics snapshots" style={{ marginBottom: "1rem" }}>
+                        <table>
+                          <thead>
+                            <tr>
+                              <th>Month</th>
+                              <th>Source</th>
+                              <th>Status</th>
+                              <th>Clicks</th>
+                              <th>Impressions</th>
+                              <th>CTR</th>
+                              <th>Position</th>
+                              <th>Sessions</th>
+                              <th>Users</th>
+                              <th>Page views</th>
+                              <th>Imported</th>
+                              <th>Approved</th>
+                              <th>Actions</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {metrics.snapshots.map((snapshot) => (
+                              <tr key={snapshot.id}>
+                                <td>{snapshot.targetMonth}</td>
+                                <td>{snapshot.sourceType}</td>
+                                <td><StatusBadge status={snapshot.status} /></td>
+                                <td>{formatMetricInteger(snapshot.gscClicks)}</td>
+                                <td>{formatMetricInteger(snapshot.gscImpressions)}</td>
+                                <td>{typeof snapshot.gscAverageCtr === "number" ? `${formatMetricDecimal(snapshot.gscAverageCtr)}%` : "—"}</td>
+                                <td>{formatMetricDecimal(snapshot.gscAveragePosition)}</td>
+                                <td>{formatMetricInteger(snapshot.ga4Sessions)}</td>
+                                <td>{formatMetricInteger(snapshot.ga4Users)}</td>
+                                <td>{formatMetricInteger(snapshot.ga4PageViews)}</td>
+                                <td>{formatDate(snapshot.importedAt)}</td>
+                                <td>{formatDate(snapshot.approvedAt)}</td>
+                                <td>
+                                  <div className="card-actions">
+                                    <button
+                                      className="secondary-action"
+                                      disabled={metricsSaving || snapshot.status === "APPROVED" || snapshot.status === "ARCHIVED"}
+                                      onClick={() => void handleApproveMetricSnapshot(snapshot.id)}
+                                      type="button"
+                                    >
+                                      Approve
+                                    </button>
+                                    <button
+                                      className="secondary-action"
+                                      disabled={metricsSaving || snapshot.status === "ARCHIVED"}
+                                      onClick={() => void handleArchiveMetricSnapshot(snapshot.id)}
+                                      type="button"
+                                    >
+                                      Archive
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+
+                    {metrics.computedTrendSummary.last12Months.length > 0 ? (
+                      <div className="table-wrap" aria-label="Monthly metrics trend summary">
+                        <table>
+                          <thead>
+                            <tr>
+                              <th>Month</th>
+                              <th>Source</th>
+                              <th>Clicks</th>
+                              <th>Impressions</th>
+                              <th>CTR</th>
+                              <th>Position</th>
+                              <th>Sessions</th>
+                              <th>Users</th>
+                              <th>Page views</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {metrics.computedTrendSummary.last12Months.map((month) => (
+                              <tr key={month.targetMonth}>
+                                <td>{month.targetMonth}</td>
+                                <td>{month.sourceType}</td>
+                                <td>{formatMetricInteger(month.gscClicks)}</td>
+                                <td>{formatMetricInteger(month.gscImpressions)}</td>
+                                <td>{typeof month.gscAverageCtr === "number" ? `${formatMetricDecimal(month.gscAverageCtr)}%` : "—"}</td>
+                                <td>{formatMetricDecimal(month.gscAveragePosition)}</td>
+                                <td>{formatMetricInteger(month.ga4Sessions)}</td>
+                                <td>{formatMetricInteger(month.ga4Users)}</td>
+                                <td>{formatMetricInteger(month.ga4PageViews)}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    ) : null}
+                  </>
+                ) : (
+                  <div className="state-panel">Snapshot metrics are available after the monthly report is loaded.</div>
+                )}
+              </SectionPanel>
 
               <div className="modal-footer">
                 <button className="secondary-action" disabled={reportSaving} onClick={onClose} type="button">

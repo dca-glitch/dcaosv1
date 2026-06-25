@@ -10,7 +10,10 @@ import { MonthlyReportPanel } from "./MonthlyReportPanel";
 import type {
   AiDeliveryMonthlySummaryData,
   AiDeliveryMonthlyReportData,
-  AiDeliveryMonthlyReportFormValues
+  AiDeliveryMonthlyReportFormValues,
+  AiDeliveryMonthlyMetricsSummary,
+  AiDeliveryMonthlyMetricSnapshotSummary,
+  MonthlyMetricSnapshotFormValues
 } from "./MonthlyReportPanel";
 
 export type AiDeliveryBriefSummary = {
@@ -421,6 +424,7 @@ export type AiDeliveryProjectsProps = {
   onSaveResearchSource?: (projectId: string, researchSourceId: string | null, values: AiDeliveryResearchSourceFormValues) => Promise<AiDeliveryResearchSourceSummary | null>;
   onFetchMonthlyComputedSummary?: (projectId: string) => Promise<AiDeliveryMonthlySummaryData | null>;
   onFetchMonthlyReport?: (projectId: string) => Promise<AiDeliveryMonthlyReportData | null>;
+  onFetchMonthlyMetrics?: (reportId: string) => Promise<AiDeliveryMonthlyMetricsSummary | null>;
   onCreateMonthlyReport?: (projectId: string) => Promise<AiDeliveryMonthlyReportData | null>;
   onUpdateMonthlyReport?: (reportId: string, values: AiDeliveryMonthlyReportFormValues) => Promise<AiDeliveryMonthlyReportData | null>;
   onSetMonthlyReportStatus?: (reportId: string, status: string) => Promise<AiDeliveryMonthlyReportData | null>;
@@ -428,6 +432,9 @@ export type AiDeliveryProjectsProps = {
   onRestoreMonthlyReport?: (reportId: string) => Promise<AiDeliveryMonthlyReportData | null>;
   onUploadMonthlyReportDocument?: (reportId: string, file: File) => Promise<AiDeliveryMonthlyReportData | null>;
   onDownloadMonthlyReportDocument?: (reportId: string) => Promise<{ downloadUrl: string } | null>;
+  onImportMonthlyMetrics?: (reportId: string, values: MonthlyMetricSnapshotFormValues) => Promise<AiDeliveryMonthlyMetricSnapshotSummary | null>;
+  onApproveMonthlyMetricSnapshot?: (reportId: string, snapshotId: string) => Promise<AiDeliveryMonthlyMetricSnapshotSummary | null>;
+  onArchiveMonthlyMetricSnapshot?: (reportId: string, snapshotId: string) => Promise<AiDeliveryMonthlyMetricSnapshotSummary | null>;
 };
 
 const workflowRunStatuses = ["DRAFT", "READY", "IN_PROGRESS", "REVIEW", "COMPLETED", "FAILED", "ARCHIVED"] as const;
@@ -816,13 +823,17 @@ export function AiDeliveryPage({
   onSaveResearchSource,
   onFetchMonthlyComputedSummary,
   onFetchMonthlyReport,
+  onFetchMonthlyMetrics,
   onCreateMonthlyReport,
   onUpdateMonthlyReport,
   onSetMonthlyReportStatus,
   onArchiveMonthlyReport,
   onRestoreMonthlyReport,
   onUploadMonthlyReportDocument,
-  onDownloadMonthlyReportDocument
+  onDownloadMonthlyReportDocument,
+  onImportMonthlyMetrics,
+  onApproveMonthlyMetricSnapshot,
+  onArchiveMonthlyMetricSnapshot
 }: AiDeliveryProjectsProps) {
   const [filter, setFilter] = useState<"all" | "active" | "archived">("active");
   const [editorProjectId, setEditorProjectId] = useState<string | null>(null);
@@ -5134,6 +5145,7 @@ export function AiDeliveryPage({
               onClose={closeMonthlyReport}
               onFetchComputedSummary={onFetchMonthlyComputedSummary}
               onFetchReport={onFetchMonthlyReport}
+              onFetchMetrics={onFetchMonthlyMetrics ?? (async () => null)}
               onCreateReport={onCreateMonthlyReport}
               onUpdateReport={onUpdateMonthlyReport}
               onSetReportStatus={onSetMonthlyReportStatus}
@@ -5141,6 +5153,9 @@ export function AiDeliveryPage({
               onRestoreReport={onRestoreMonthlyReport}
               onUploadDocument={onUploadMonthlyReportDocument}
               onDownloadDocument={onDownloadMonthlyReportDocument}
+              onImportMetrics={onImportMonthlyMetrics ?? (async () => null)}
+              onApproveMetricSnapshot={onApproveMonthlyMetricSnapshot ?? (async () => null)}
+              onArchiveMetricSnapshot={onArchiveMonthlyMetricSnapshot ?? (async () => null)}
             />
           ) : null;
       })() : null}
