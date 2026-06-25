@@ -1,30 +1,48 @@
 # Google Drive / Google Docs Integration Decision
 
-**Status:** DEFERRED — decision record only, no runtime implementation yet.
+**Status:** IMPLEMENTED FOUNDATION — decision record plus admin-only Google Doc export provider boundary for AI Delivery deliverables. Admin UI action is still deferred.
 
 **Branch:** `feature/ai-delivery-project-brief-foundation`
+
+**Latest implementation commit:** `32ed7f3 Add Google Drive deliverable export foundation`
 
 ---
 
 ## Decision Summary
 
-Google Drive / Google Docs should be treated as an optional admin-only export and handoff layer, not as the canonical document store.
+Google Drive / Google Docs is treated as an optional admin-only export and handoff layer, not as the canonical document store.
 
-**Recommended first integration target:** AI Delivery deliverables, using the existing `exportUrl` / manual handoff pattern first. Monthly Reports can follow later if the same export layer is still needed there.
+**First integration target:** AI Delivery deliverables, using the existing `exportUrl` / manual handoff pattern first. Monthly Reports can follow later if the same export layer is still needed there.
 
-Reason: deliverables already have a safe handoff field pattern, while Monthly Reports already have a private canonical PDF/document path. This lets the first Google Docs block stay small and schema-light.
+Reason: deliverables already have a safe handoff field pattern, while Monthly Reports already have a private canonical PDF/document path. This keeps the Google Docs layer schema-light and separate from canonical private storage.
+
+### Implemented Foundation Snapshot
+
+The first backend/provider foundation is now implemented for AI Delivery deliverables:
+
+- Provider boundary: `apps/api/src/services/google-drive.service.ts`
+- Admin-only endpoint: `POST /api/v1/ai-delivery-projects/:id/deliverables/:deliverableId/export-google-doc`
+- Route guard: authenticated owner/admin tenant scope
+- Config-disabled baseline: returns safe provider-disabled response when Google Drive config is absent
+- Folder behavior: deterministic lookup first, then create missing folders
+- Response safety: no secrets, storage keys, credential values, or raw provider config values
+- Focused smoke: `npm.cmd run smoke:google-drive-export`
+
+The admin UI button/action that calls this endpoint remains a separate follow-up block.
 
 ### Approved folder-routing contract
 
 - Root folder: `DCA OS Lite Exports`
 - Top-level folders: `DCA Internal`, `Clients`
-- Recommended structure:
+- Implemented deliverable export path:
+  - `DCA OS Lite Exports/Clients/<Client Name>/<YYYY-MM> - <Project Name>/Deliverables`
+- Recommended full structure:
   - `DCA OS Lite Exports/`
   - `DCA Internal/`
   - `Templates/`
   - `Drafts/`
   - `Admin Review/`
-  - `Clients/<Client Name or safe client slug>/<Project Month or Project Name>/`
+  - `Clients/<Client Name or safe client slug>/<YYYY-MM> - <Project Name>/`
   - `Deliverables/`
   - `Reports/`
   - `Research/`
@@ -45,9 +63,9 @@ Google Docs is an export/handoff surface, not the source of truth.
 
 ---
 
-## Recommended Auth Model for MVP
+## Auth Model for MVP
 
-**Recommended:** service account + shared drive / admin-owned workspace folder.
+**Approved:** service account + shared drive / admin-owned workspace folder.
 
 ### Why this is the best MVP fit
 
@@ -55,6 +73,17 @@ Google Docs is an export/handoff surface, not the source of truth.
 - No per-user refresh token lifecycle in the MVP.
 - Easier to keep tenant-scoped folders and predictable file ownership.
 - Matches the current local/admin-first model better than user-consent OAuth.
+
+### Required provider configuration
+
+The backend provider remains disabled unless all required configuration is present and export is explicitly enabled:
+
+- `GOOGLE_DRIVE_EXPORT_ENABLED=true`
+- `GOOGLE_DRIVE_ROOT_FOLDER_ID`
+- `GOOGLE_SERVICE_ACCOUNT_EMAIL`
+- `GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY`
+
+When config is missing, local/baseline smoke expects a safe provider-disabled response instead of live Google Drive execution.
 
 ### Other options
 
@@ -77,6 +106,7 @@ If Google Workspace/domain support is available, use a shared drive. If not, use
 - Link visibility must be explicit and admin controlled.
 - No automatic client sharing during export.
 - No bidirectional sync in the MVP.
+- Provider-disabled responses may include safe provider status/reason, but must not include credential values or raw secrets.
 
 Google Docs links should be treated as controlled handoff references, not public assets.
 
@@ -84,15 +114,13 @@ Google Docs links should be treated as controlled handoff references, not public
 
 ## File / Folder Model
 
-Recommended structure:
+Implemented deliverable route:
 
 - `DCA OS Lite Exports`
-- `DCA Internal`
 - `Clients`
-- `Templates`
-- `Drafts`
-- `Admin Review`
-- client/project/month subfolders
+- `<Client Name>`
+- `<YYYY-MM> - <Project Name>`
+- `Deliverables`
 
 Recommended naming:
 
@@ -105,10 +133,19 @@ Keep naming deterministic so admin lookup stays simple and tenant boundaries rem
 
 ## Data Contract
 
-- Prefer storing the Google Docs URL/reference in an existing handoff field first.
-- For AI Delivery deliverables, reuse `exportUrl` if the schema already supports it.
-- Avoid new schema unless implementation proves a hard need.
-- Keep the existing private document path as the canonical stored artifact when present.
+The implemented AI Delivery deliverable export response is a safe handoff contract:
+
+- `deliverableId`
+- `hasGoogleDocExport`
+- `exportUrl`
+- `docTitle`
+- `folderPath`
+- `providerStatus`
+- `providerDisabledReason`
+- `errorMessage`
+- `generatedAt`
+
+For AI Delivery deliverables, reuse `exportUrl` when schema already supports it and avoid schema changes unless implementation proves a hard need.
 
 The Google Docs reference is a secondary editable/export handoff, not the canonical record.
 
@@ -125,32 +162,49 @@ This keeps the current report/document stack stable while adding a separate edit
 
 ---
 
+## Current Validation / Smoke Proof
+
+The backend/provider foundation was validated before commit and covered by focused smoke:
+
+- `npm.cmd run validate`
+- `npm.cmd run smoke:google-drive-export`
+- Result reported for focused smoke: 12 passed / 0 failed
+
+This docs-only alignment was made through GitHub cloud, so no local validation was run as part of this documentation update.
+
+---
+
 ## Deferred Items
 
-- live OAuth/provider execution
+- Admin UI button/action for Google Doc export on AI Delivery deliverables
+- live production credential setup
 - automatic client sharing
-- production credentials
+- OAuth user-consent flow
 - background sync
 - bidirectional import
 - Google Drive folder picker
 - client-facing public links
+- Monthly Reports Google Docs export
+- Research Google Docs export
 - production deploy / VPS work
 
 ---
 
 ## Recommended Implementation Sequence
 
-1. Add admin-only Google Docs export contract for AI Delivery deliverables.
-2. Route exports automatically to `Clients/<Client>/<Project-Month>/Deliverables`.
-3. Reuse existing handoff/reference fields where possible.
-4. Keep the private canonical document path intact.
-5. Add Monthly Reports Google Docs support later, routing to `Clients/<Client>/<Project-Month>/Reports` when needed.
-6. Add Research export later, routing to `Clients/<Client>/<Project-Month>/Research` when needed.
-7. Add any schema change only after the contract is proven by implementation.
+1. Add admin-only Google Docs export contract for AI Delivery deliverables. **Done in foundation.**
+2. Route exports automatically to `Clients/<Client>/<YYYY-MM> - <Project>/Deliverables`. **Done in foundation.**
+3. Reuse existing handoff/reference fields where possible. **Foundation response contract added; UI handoff still deferred.**
+4. Keep the private canonical document path intact. **Done.**
+5. Add admin UI action for deliverable Google Doc export.
+6. Add Monthly Reports Google Docs support later, routing to `Clients/<Client>/<YYYY-MM> - <Project>/Reports` when needed.
+7. Add Research export later, routing to `Clients/<Client>/<YYYY-MM> - <Project>/Research` when needed.
+8. Add any schema change only after the contract is proven by implementation.
 
 ---
 
-## Open Questions For Implementation
+## Open Questions For Later Blocks
 
-- Whether Google Docs export should create a draft or a fully formatted editable document.
-- Whether export should be one-way only at first.
+- Whether Google Docs export should eventually create richer formatting beyond the current foundation payload.
+- Whether export should remain one-way only after client sharing is added.
+- Whether client sharing should create explicit audit events when implemented.
