@@ -1751,8 +1751,25 @@ async function runAiDeliveryBrowserRegression(token, mainProject) {
     await smokeProjectCard.getByRole("button", { name: "Content production" }).click();
     await page.getByRole("dialog", { name: "AI Content Production Foundation" }).waitFor({ state: "visible", timeout: 15000 });
     await page.getByRole("heading", { name: "Article production planning" }).waitFor({ state: "visible", timeout: 15000 });
+    await page.getByRole("heading", { name: "AI Content Production readiness summary" }).waitFor({ state: "visible", timeout: 15000 });
+    await page.getByRole("heading", { name: "Plan item to draft handoff" }).waitFor({ state: "visible", timeout: 15000 });
     await page.getByRole("heading", { name: "Approved / planned content plan items" }).waitFor({ state: "visible", timeout: 15000 });
     await page.getByRole("heading", { name: "Existing article production records" }).waitFor({ state: "visible", timeout: 15000 });
+    const contentProductionDialog = page.getByRole("dialog", { name: "AI Content Production Foundation" });
+    const contentDraftEditButtons = contentProductionDialog.getByRole("button", { name: "Edit" });
+    if (await contentDraftEditButtons.count() === 0) {
+      fail("AI Content Production dialog did not render any draft edit controls for the smoke-owned project.");
+    }
+    await contentDraftEditButtons.first().scrollIntoViewIfNeeded();
+    await contentDraftEditButtons.first().click();
+    await page.getByRole("heading", { name: "Completion and export handoff" }).waitFor({ state: "visible", timeout: 15000 });
+    const contentProductionText = ((await contentProductionDialog.textContent()) ?? "").toLowerCase();
+    if (!contentProductionText.includes("private document/export handoff") || !contentProductionText.includes("monthly report/pdf remains a separate reporting layer")) {
+      fail("AI Content Production dialog did not describe the private export handoff and separate monthly report layer.");
+    }
+    if (contentProductionText.includes("client self-service")) {
+      fail("AI Content Production dialog exposed client self-service wording.");
+    }
     pass("AI Content Production panel opened and rendered stable draft workflow structure.");
     await page.getByRole("button", { name: "Close" }).first().click();
 
@@ -1778,6 +1795,8 @@ async function runAiDeliveryBrowserRegression(token, mainProject) {
     await smokeProjectCard.getByRole("button", { name: "Deliverables" }).click();
     await page.getByRole("dialog", { name: "Deliverables" }).waitFor({ state: "visible", timeout: 15000 });
     await page.getByRole("heading", { name: "Deliverable editor" }).waitFor({ state: "visible", timeout: 15000 });
+    await page.getByRole("heading", { name: "Package completeness summary" }).waitFor({ state: "visible", timeout: 15000 });
+    await page.getByRole("heading", { name: "Internal final handoff view" }).waitFor({ state: "visible", timeout: 15000 });
     await page.getByRole("heading", { name: "Existing deliverables" }).waitFor({ state: "visible", timeout: 15000 });
     await page.getByRole("button", { name: "Mark ready" }).first().waitFor({ state: "visible", timeout: 15000 });
     pass("Deliverables panel opened and rendered stable packaging structure.");
@@ -1795,6 +1814,10 @@ async function runAiDeliveryBrowserRegression(token, mainProject) {
     await preparedDraftPanel.getByText("Source ID").waitFor({ state: "visible", timeout: 15000 });
     await preparedDraftPanel.getByText("Body preview").waitFor({ state: "visible", timeout: 15000 });
     await preparedDraftPanel.getByText("WordPress API execution is deferred/not configured.").waitFor({ state: "visible", timeout: 15000 });
+    const preparedDraftText = ((await preparedDraftPanel.textContent()) ?? "").toLowerCase();
+    if (!preparedDraftText.includes("wordPress prepared draft".toLowerCase()) || preparedDraftText.includes("client self-service")) {
+      fail("Deliverables panel prepared draft area did not stay admin-only.");
+    }
     const preparedDraftPanelText = ((await preparedDraftPanel.textContent()) ?? "").toLowerCase();
     if (preparedDraftPanelText.includes("published")) {
       fail("Prepared WordPress draft UI displayed published wording.");
@@ -1815,6 +1838,13 @@ async function runAiDeliveryBrowserRegression(token, mainProject) {
     }
     if (publishResultText.includes("external post") && !publishResultText.includes("none")) {
       fail("WordPress publish test result incorrectly showed external post creation.");
+    }
+    if (
+      !publishResultText.includes("future implementation block")
+      && !publishResultText.includes("local draft preparation is available")
+      && !publishResultText.includes("not yet configured")
+    ) {
+      fail("WordPress publish test result did not keep the deferred handoff wording.");
     }
     pass("Deliverables panel publish WordPress action rendered expected provider-disabled test result without external post creation.");
 

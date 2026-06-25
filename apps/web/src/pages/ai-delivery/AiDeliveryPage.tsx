@@ -4003,7 +4003,7 @@ export function AiDeliveryPage({
               {contentDraftsError ? <ErrorState title="Content draft action blocked" message={contentDraftsError} /> : null}
               <section className="field-panel">
                 <h3>Article production planning</h3>
-                <p className="muted-text">Current status is shown below. Next step: start from an approved or planned content plan item, generate or edit the draft, save changes, then move it into internal review when ready. Client draft review remains deferred, and final export, PDF, R2 storage, Google Docs, WordPress, and external services are outside this block.</p>
+                <p className="muted-text">Current status is shown below. Next step: start from an approved or planned content plan item, generate or edit the draft, link image planning, package deliverables, then move it into internal review when ready. Private document/export handoff and WordPress prepared draft handoff stay internal, and monthly report/PDF remains a separate reporting layer. Client draft review remains deferred, and final export, PDF, R2 storage, Google Docs, WordPress publishing, and external services are outside this block.</p>
                 <div className="state-panel" role="status">{contentDraftActionGuidance}</div>
                 {contentDraftHandoffMessage ? <div className="state-panel" role="status">{contentDraftHandoffMessage}</div> : null}
                 <div className="field-panel" style={{ marginBottom: "1rem" }}>
@@ -4030,7 +4030,7 @@ export function AiDeliveryPage({
                 </div>
                 <div className="field-panel" style={{ marginBottom: "1rem" }}>
                   <h4>Plan item to draft handoff</h4>
-                  <p className="muted-text">Use the approved or planned monthly content plan item below to create the linked draft the admin team will edit. This is the internal handoff from monthly planning into production; it does not publish, hand off to clients, or expose draft review flows.</p>
+                  <p className="muted-text">Use the approved or planned monthly content plan item below to create the linked draft the admin team will edit. This is the internal handoff from monthly planning into production; it does not publish, hand off to clients, or expose draft review flows. Once saved, the same draft can flow into image planning and deliverable packaging.</p>
                   <dl className="brief-grid">
                     <div>
                       <dt>Linked plan item</dt>
@@ -4156,8 +4156,8 @@ export function AiDeliveryPage({
                 ) : null}
                 {activeContentDraftRecord ? (
                   <div className="field-panel" style={{ marginBottom: "1rem" }}>
-                    <h4>Operator handoff path</h4>
-                    <p className="muted-text">Use existing same-project image planning and deliverable records only. This handoff stays internal to the admin workflow and does not publish, export, or expose client delivery.</p>
+                    <h4>Completion and export handoff</h4>
+                    <p className="muted-text">Use same-project image planning and deliverable records only. This handoff stays internal to the admin workflow and does not publish, export, or expose client delivery. If the draft needs a connector-ready handoff, use the deliverable record for the private document/export reference or the WordPress prepared draft path; monthly report/PDF stays in the reporting layer.</p>
                     <dl className="brief-grid">
                       <div>
                         <dt>Linked image records</dt>

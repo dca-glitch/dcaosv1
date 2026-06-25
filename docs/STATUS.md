@@ -26,6 +26,7 @@ DCA OS Lite is in local-first admin/operator foundation work. Production is froz
 - Client Portal monthly reports archive route + browser proof closure.
 - Monthly Report PDF/upload/signed download admin and client portal endpoints implemented and local-smoke-proven.
 - AI Delivery operator summary, AI SEO foundation UI, AI SEO admin workflow shell/status summary, and AI Content Production foundation UI.
+- AI Content Production completion shell with explicit draft → image planning → deliverable packaging → private export/WordPress handoff clarity.
 - Local R2 proof confirmed with `R2_BUCKET_NAME=dca` using admin-only private upload/download flows; the production/VPS R2 switch remains deferred until an explicit deploy block.
 - Market Intelligence admin MVP closure note documented.
 - Email Notifications EN1 backend foundation only.
