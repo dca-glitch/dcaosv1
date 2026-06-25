@@ -444,7 +444,7 @@ Readiness rules:
 - A deliverable moving to `READY`, `DELIVERED`, or `ACCEPTED` must have at least one linked approved asset.
 - Linked content drafts must be `APPROVED`.
 - Linked article images must be `APPROVED` or `FINAL_READY`.
-- `exportUrl` is an admin reference only in this block.
+- `exportUrl` is set by admin and is included in client portal deliverable responses. Use only safe, client-appropriate URLs (e.g., a shared Google Docs link or pre-approved PDF reference). Internal or admin-only URLs must not be stored here.
 - `storageKey` is an internal storage reference only in this block.
 
 Current admin UI wiring includes private deliverable document upload/open actions for deliverable records.
@@ -464,7 +464,38 @@ Client Portal archive is client-safe, read-only, and based on `ClientUserAccess`
 - `GET /api/v1/client-portal/projects/:projectId/deliverables/:deliverableId/download`
   - Uses the safe download reference endpoint; raw `storageKey` is never exposed.
 
-Client portal payloads and UI hide raw `workflowRunId`, `executionLog`, `executionError`, `tenantId`, `provider`, `prompt`, `reviewNotes`, `reviewerName`, and `draftBody` fields. Client reviews, client actions, and client approvals remain intentionally deferred. Production/VPS are frozen and not deployed in this block.
+Client portal payloads and UI hide raw `workflowRunId`, `executionLog`, `executionError`, `tenantId`, `provider`, `prompt`, `reviewNotes`, `reviewerName`, and `draftBody` fields. `exportUrl` is intentionally included as a safe client-visible export link field; admin must store only client-appropriate URLs here. Client reviews, client actions, and client approvals remain intentionally deferred. Production/VPS are frozen and not deployed in this block.
+
+## Export handoff foundation
+
+The current export handoff foundation is complete for manual admin-operated workflows. No schema migration is required.
+
+**Existing safe export paths:**
+
+- **Private document (PDF or image):** Admin uploads a file to private R2 storage. The `storageKey` is stored internally and never exposed in client portal list or detail responses. Client downloads via the safe `/download` endpoint which returns a signed URL with a short expiry; the storage key is never returned to the client.
+- **External export URL:** Admin sets `exportUrl` to a safe, client-appropriate URL (e.g., a shared Google Docs link, an approved PDF hosted externally). The client portal includes `exportUrl` in deliverable responses and renders it as an "Open export" link.
+
+**PDF export readiness:**
+
+- R2 private storage accepts `.pdf` file uploads.
+- No PDF generation library exists; PDF files must be prepared externally and uploaded by admin.
+- Admin upload → `storageKey` stored → client downloads via signed URL path.
+- No schema change required.
+
+**Google Docs export readiness:**
+
+- No Google OAuth, Google Drive SDK, or Google Docs SDK integration exists in this codebase.
+- The manual link path is safe: admin creates a Google Doc externally, sets the share URL as `exportUrl` on the deliverable, and the client sees "Open export" in their portal.
+- Live Google Docs API write integration requires separate credentials/OAuth approval and is intentionally deferred.
+- No schema change required for the link-based path.
+
+**Hidden fields (confirmed excluded from client portal responses):**
+
+- `storageKey` — excluded from client portal deliverable list and detail selects; only accessed internally for signed URL generation
+- `notes` — excluded
+- `contentDraftId` / `articleImageId` — excluded
+- `tenantId` — excluded
+- `workflowRunId`, `executionLog`, `executionError`, `provider`, `prompt`, `reviewNotes`, `reviewerName`, `draftBody` — not present in the deliverable model or are excluded by the narrow client portal select
 
 ## Deliverable review foundation
 

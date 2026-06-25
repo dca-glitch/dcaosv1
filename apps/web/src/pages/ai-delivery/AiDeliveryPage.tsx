@@ -675,7 +675,7 @@ function parseWorkflowRunResultPreview(value: string | null | undefined): Workfl
 }
 
 function getDeliverableExportState(item: AiDeliveryDeliverableSummary): string {
-  if ((item.exportUrl ?? "").trim()) return "Export reference recorded for admin use only.";
+  if ((item.exportUrl ?? "").trim()) return "Export URL reference set (visible to client in their portal).";
   if ((item.storageKey ?? "").trim()) return "Storage reference recorded for admin use only.";
   return "No export or storage reference recorded.";
 }
@@ -4361,8 +4361,8 @@ export function AiDeliveryPage({
                   </label>
                   <label>
                     Export reference - Optional
-                    <input maxLength={2048} type="url" placeholder="Existing admin-only export reference, if already created elsewhere" value={deliverableForm.exportUrl || ""} onChange={(e) => setDeliverableForm((current: AiDeliveryDeliverableFormValues) => ({ ...current, exportUrl: e.target.value }))} />
-                    <span className="muted-text">Admin reference only. No export generation or client delivery is performed here.</span>
+                    <input maxLength={2048} type="url" placeholder="Safe export URL for client handoff (e.g., shared Google Docs or approved PDF link)" value={deliverableForm.exportUrl || ""} onChange={(e) => setDeliverableForm((current: AiDeliveryDeliverableFormValues) => ({ ...current, exportUrl: e.target.value }))} />
+                    <span className="muted-text">This URL is visible to the client in their Client Portal as an export link. Use only safe, client-appropriate URLs here. No export generation is performed here.</span>
                   </label>
                   <label className="field-span-2">
                     Storage key reference - Optional
