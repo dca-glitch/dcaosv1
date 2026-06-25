@@ -10,6 +10,7 @@ import { MonthlyReportPanel } from "./MonthlyReportPanel";
 import type {
   AiDeliveryMonthlySummaryData,
   AiDeliveryMonthlyReportData,
+  AiDeliveryMonthlyReportGeneratePdfSummary,
   AiDeliveryMonthlyReportFormValues,
   AiDeliveryMonthlyMetricsSummary,
   AiDeliveryMonthlyMetricSnapshotSummary,
@@ -430,6 +431,7 @@ export type AiDeliveryProjectsProps = {
   onSetMonthlyReportStatus?: (reportId: string, status: string) => Promise<AiDeliveryMonthlyReportData | null>;
   onArchiveMonthlyReport?: (reportId: string) => Promise<AiDeliveryMonthlyReportData | null>;
   onRestoreMonthlyReport?: (reportId: string) => Promise<AiDeliveryMonthlyReportData | null>;
+  onGenerateMonthlyReportPdf?: (reportId: string) => Promise<AiDeliveryMonthlyReportGeneratePdfSummary | null>;
   onUploadMonthlyReportDocument?: (reportId: string, file: File) => Promise<AiDeliveryMonthlyReportData | null>;
   onDownloadMonthlyReportDocument?: (reportId: string) => Promise<{ downloadUrl: string } | null>;
   onImportMonthlyMetrics?: (reportId: string, values: MonthlyMetricSnapshotFormValues) => Promise<AiDeliveryMonthlyMetricSnapshotSummary | null>;
@@ -829,6 +831,7 @@ export function AiDeliveryPage({
   onSetMonthlyReportStatus,
   onArchiveMonthlyReport,
   onRestoreMonthlyReport,
+  onGenerateMonthlyReportPdf,
   onUploadMonthlyReportDocument,
   onDownloadMonthlyReportDocument,
   onImportMonthlyMetrics,
@@ -5288,6 +5291,7 @@ export function AiDeliveryPage({
               onSetReportStatus={onSetMonthlyReportStatus}
               onArchiveReport={onArchiveMonthlyReport}
               onRestoreReport={onRestoreMonthlyReport}
+              onGeneratePdf={onGenerateMonthlyReportPdf}
               onUploadDocument={onUploadMonthlyReportDocument}
               onDownloadDocument={onDownloadMonthlyReportDocument}
               onImportMetrics={onImportMonthlyMetrics ?? (async () => null)}

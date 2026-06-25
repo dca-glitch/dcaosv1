@@ -14,6 +14,8 @@ Monthly Report document handoff is also implemented and smoke-proven. Admin docu
 
 Admin PDF generation is now supported through `POST /api/v1/ai-delivery/reports/monthly/:reportId/generate-pdf`. It is admin-triggered, tenant-scoped, server-generated, and stores the PDF through the same private monthly-report document handoff so `hasDocument` and the safe download reference continue to work without exposing `storageKey`. The generated PDF includes the persisted report narrative, computed monthly summary, and approved metrics trend summary when available.
 
+The admin Monthly Report panel now exposes a Generate PDF action, and the focused PDF smoke exercises the same endpoint and safe response shape.
+
 Monthly metrics snapshot foundation is now admin-only and snapshot-first. The contract is `GET /api/v1/ai-delivery/reports/monthly/:reportId/metrics`, `POST /api/v1/ai-delivery/reports/monthly/:reportId/metrics/import`, and `POST /api/v1/ai-delivery/reports/monthly/:reportId/metrics/:snapshotId/approve|archive`. Access requires authenticated owner/admin scope in the active tenant. The server returns normalized snapshots plus a computed 12-month summary from approved, non-archived snapshots in the same client/project context. Raw provider payloads, secrets, and client-portal metrics exposure remain deferred.
 
 ## Private object storage environment

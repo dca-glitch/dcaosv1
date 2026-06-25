@@ -53,6 +53,7 @@ import {
 import type {
   AiDeliveryMonthlySummaryData,
   AiDeliveryMonthlyReportData,
+  AiDeliveryMonthlyReportGeneratePdfSummary,
   AiDeliveryMonthlyReportFormValues,
   AiDeliveryMonthlyMetricsSummary,
   AiDeliveryMonthlyMetricsResponse,
@@ -90,6 +91,10 @@ type ApiResponse<T> = ApiSuccess<T> | ApiFailure;
 type DocumentDownloadResponse = {
   downloadUrl: string;
   expiresSeconds: number;
+};
+
+type AiDeliveryMonthlyReportGeneratePdfResponse = {
+  report: AiDeliveryMonthlyReportGeneratePdfSummary | null;
 };
 
 type UserSummary = {
@@ -3102,6 +3107,24 @@ export function App() {
     }
   }
 
+  async function handleGenerateAiDeliveryMonthlyReportPdf(reportId: string): Promise<AiDeliveryMonthlyReportGeneratePdfSummary | null> {
+    setAppMessage(null);
+    try {
+      const response = await runAuthenticatedRequest<AiDeliveryMonthlyReportGeneratePdfResponse>(
+        `/ai-delivery/reports/monthly/${encodeURIComponent(reportId)}/generate-pdf`,
+        { method: "POST" }
+      );
+      if (!response) return null;
+      if (!response.ok) {
+        throwAiDeliveryResponseError(response);
+      }
+      setAppMessage({ tone: "success", text: "Monthly report PDF generated." });
+      return response.data.report ?? null;
+    } catch (error) {
+      return rethrowAiDeliveryRuntimeError(error);
+    }
+  }
+
   async function handleUploadAiDeliveryMonthlyReportDocument(reportId: string, file: File): Promise<AiDeliveryMonthlyReportData | null> {
     setAppMessage(null);
     try {
@@ -4085,6 +4108,7 @@ export function App() {
           onSetMonthlyReportStatus={handleSetAiDeliveryMonthlyReportStatus}
           onArchiveMonthlyReport={handleArchiveAiDeliveryMonthlyReport}
           onRestoreMonthlyReport={handleRestoreAiDeliveryMonthlyReport}
+          onGenerateMonthlyReportPdf={handleGenerateAiDeliveryMonthlyReportPdf}
           onUploadMonthlyReportDocument={handleUploadAiDeliveryMonthlyReportDocument}
           onDownloadMonthlyReportDocument={handleGetAiDeliveryMonthlyReportDownloadReference}
           onImportMonthlyMetrics={handleImportAiDeliveryMonthlyMetrics}

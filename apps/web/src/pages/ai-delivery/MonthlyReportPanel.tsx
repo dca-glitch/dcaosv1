@@ -59,6 +59,14 @@ export type AiDeliveryMonthlyReportData = {
   updatedAt: string;
 };
 
+export type AiDeliveryMonthlyReportGeneratePdfSummary = {
+  reportId: string;
+  hasDocument: boolean;
+  updatedAt: string;
+  generatedAt: string;
+  fileName: string;
+};
+
 export type AiDeliveryMonthlyReportFormValues = {
   title: string;
   adminSummaryNotes: string;
@@ -152,6 +160,7 @@ type MonthlyReportPanelProps = {
   onSetReportStatus: (reportId: string, status: string) => Promise<AiDeliveryMonthlyReportData | null>;
   onArchiveReport: (reportId: string) => Promise<AiDeliveryMonthlyReportData | null>;
   onRestoreReport: (reportId: string) => Promise<AiDeliveryMonthlyReportData | null>;
+  onGeneratePdf?: (reportId: string) => Promise<AiDeliveryMonthlyReportGeneratePdfSummary | null>;
   onUploadDocument?: (reportId: string, file: File) => Promise<AiDeliveryMonthlyReportData | null>;
   onDownloadDocument?: (reportId: string) => Promise<{ downloadUrl: string } | null>;
   onImportMetrics: (reportId: string, values: MonthlyMetricSnapshotFormValues) => Promise<AiDeliveryMonthlyMetricSnapshotSummary | null>;
@@ -258,6 +267,7 @@ export function MonthlyReportPanel({
   onSetReportStatus,
   onArchiveReport,
   onRestoreReport,
+  onGeneratePdf,
   onUploadDocument,
   onDownloadDocument,
   onFetchMetrics,
@@ -280,6 +290,9 @@ export function MonthlyReportPanel({
 
   const [documentUploading, setDocumentUploading] = useState(false);
   const [documentDownloading, setDocumentDownloading] = useState(false);
+  const [pdfGenerating, setPdfGenerating] = useState(false);
+  const [pdfMessage, setPdfMessage] = useState<string | null>(null);
+  const [pdfError, setPdfError] = useState<string | null>(null);
   const [documentMessage, setDocumentMessage] = useState<string | null>(null);
   const [documentError, setDocumentError] = useState<string | null>(null);
 
@@ -486,6 +499,31 @@ export function MonthlyReportPanel({
     } finally {
       setDocumentUploading(false);
       event.target.value = "";
+    }
+  }
+
+  async function handleGeneratePdf() {
+    if (!report || !onGeneratePdf) return;
+    setPdfGenerating(true);
+    setPdfError(null);
+    setPdfMessage(null);
+    try {
+      const generated = await onGeneratePdf(report.id);
+      if (!generated) {
+        throw new Error("Unable to generate monthly report PDF.");
+      }
+      const refreshed = await onFetchReport(project.id);
+      if (refreshed) {
+        setReport(refreshed);
+        setForm(formFromReport(refreshed));
+      } else {
+        setReport((current) => (current ? { ...current, hasDocument: generated.hasDocument, updatedAt: generated.updatedAt } : current));
+      }
+      setPdfMessage(`PDF generated: ${generated.fileName}.`);
+    } catch (error) {
+      setPdfError(error instanceof Error ? error.message : "Unable to generate monthly report PDF.");
+    } finally {
+      setPdfGenerating(false);
     }
   }
 
@@ -914,6 +952,32 @@ export function MonthlyReportPanel({
                 <div className="field-panel" style={{ marginTop: "1rem" }}>
                   <h4>Report document</h4>
                   <p className="muted-text">This is the admin handoff surface: upload or download the stored report document, or keep a safe external export URL for manual sharing. PDF generation stays outside this block.</p>
+                  {onGeneratePdf ? (
+                    <div className="field-panel" style={{ marginBottom: "0.75rem" }}>
+                      <h5>Generate PDF</h5>
+                      <p className="muted-text">Admin-triggered PDF generation writes into the private monthly report document slot. No client/public link is exposed here, and the VPS/production R2 switch remains deferred.</p>
+                      {pdfMessage ? (
+                        <div className="state-panel" style={{ marginBottom: "0.75rem", borderLeft: "4px solid var(--color-success)", paddingLeft: "1rem" }}>
+                          {pdfMessage}
+                        </div>
+                      ) : null}
+                      {pdfError ? (
+                        <div className="state-panel" role="alert" style={{ marginBottom: "0.75rem", borderLeft: "4px solid var(--color-error)", paddingLeft: "1rem" }}>
+                          {pdfError}
+                        </div>
+                      ) : null}
+                      <div className="card-actions">
+                        <button
+                          className="secondary-action"
+                          disabled={pdfGenerating || report.isArchived}
+                          onClick={() => void handleGeneratePdf()}
+                          type="button"
+                        >
+                          {pdfGenerating ? "Generating..." : "Generate PDF"}
+                        </button>
+                      </div>
+                    </div>
+                  ) : null}
                   {documentMessage ? (
                     <div className="state-panel" style={{ marginBottom: "0.75rem", borderLeft: "4px solid var(--color-success)", paddingLeft: "1rem" }}>
                       {documentMessage}

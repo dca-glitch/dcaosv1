@@ -71,6 +71,7 @@ async function main() {
   let reportId = "";
   let contentDraftId = "";
   let articleImageId = "";
+  let deliverableId = "";
   let snapshotId = "";
 
   console.log("Step 1: Admin login");
@@ -89,235 +90,257 @@ async function main() {
   }
   console.log();
 
-  console.log("Step 2: Create client");
-  {
-    const { ok, json } = await apiCall(
-      "POST",
-      "/clients",
-      {
-        name: "Smoke PDF Client",
-        email: "smoke-pdf-client@dca.local"
-      },
-      token
-    );
-    clientId = json?.data?.client?.id ?? "";
-    if (ok && clientId) {
-      pass(`Client created: ${clientId}`);
-    } else {
-      fail("Create client", JSON.stringify(json?.error ?? json));
-      throw new Error("Cannot continue without client");
+  const cleanup = async () => {
+    if (!token) {
+      return;
     }
-  }
-  console.log();
+    console.log("Cleanup: archive smoke-owned records");
+    const tasks = [
+      contentDraftId ? ["POST", `/ai-delivery-projects/${projectId}/content-drafts/${contentDraftId}/archive`] : null,
+      articleImageId ? ["POST", `/ai-delivery-projects/${projectId}/article-images/${articleImageId}/archive`] : null,
+      deliverableId ? ["POST", `/ai-delivery-projects/${projectId}/deliverables/${deliverableId}/archive`] : null,
+      snapshotId ? ["POST", `/ai-delivery/reports/monthly/${reportId}/metrics/${snapshotId}/archive`] : null,
+      reportId ? ["POST", `/ai-delivery/reports/monthly/${reportId}/archive`] : null,
+      projectId ? ["POST", `/ai-delivery-projects/${projectId}/archive`] : null,
+      clientId ? ["POST", `/clients/${clientId}/archive`] : null
+    ].filter(Boolean);
 
-  console.log("Step 3: Create AI Delivery project");
-  {
-    const { ok, json } = await apiCall(
-      "POST",
-      "/ai-delivery-projects",
-      {
-        clientId,
-        name: "Smoke PDF Project",
-        targetMonth: "2026-06"
-      },
-      token
-    );
-    projectId = json?.data?.aiDeliveryProject?.id ?? "";
-    if (ok && projectId) {
-      pass(`Project created: ${projectId}`);
-    } else {
-      fail("Create project", JSON.stringify(json?.error ?? json));
-      throw new Error("Cannot continue without project");
+    for (const [method, path] of tasks) {
+      await apiCall(method, path, undefined, token);
     }
-  }
-  console.log();
+  };
 
-  console.log("Step 4: Create persisted monthly report");
-  {
-    const { ok, json } = await apiCall(
-      "POST",
-      `/ai-delivery/reports/monthly/${projectId}`,
-      {
-        title: "Smoke PDF Monthly Report",
-        adminSummaryNotes: "PDF smoke summary notes.",
-        recommendationsText: "Keep shipping the monthly report PDF path."
-      },
-      token
-    );
-    reportId = json?.data?.report?.id ?? "";
-    if (ok && reportId) {
-      pass(`Monthly report created: ${reportId}`);
-    } else {
-      fail("Create monthly report", JSON.stringify(json?.error ?? json));
-      throw new Error("Cannot continue without monthly report");
+  try {
+    console.log("Step 2: Create client");
+    {
+      const { ok, json } = await apiCall(
+        "POST",
+        "/clients",
+        {
+          name: "Smoke PDF Client",
+          email: "smoke-pdf-client@dca.local"
+        },
+        token
+      );
+      clientId = json?.data?.client?.id ?? "";
+      if (ok && clientId) {
+        pass(`Client created: ${clientId}`);
+      } else {
+        fail("Create client", JSON.stringify(json?.error ?? json));
+        throw new Error("Cannot continue without client");
+      }
     }
-  }
-  console.log();
+    console.log();
 
-  console.log("Step 5a: Create DRAFT content draft");
-  {
-    const { ok, json } = await apiCall(
-      "POST",
-      `/ai-delivery-projects/${projectId}/content-drafts`,
-      {
-        title: "Smoke PDF Content Draft",
-        draftBody: "Smoke PDF content draft body.",
-        status: "DRAFT"
-      },
-      token
-    );
-    contentDraftId = json?.data?.contentDraft?.id ?? "";
-    if (ok && contentDraftId) {
-      pass(`Content draft created: ${contentDraftId}`);
-    } else {
-      fail("Create content draft", JSON.stringify(json?.error ?? json));
-      throw new Error("Cannot continue without content draft");
+    console.log("Step 3: Create AI Delivery project");
+    {
+      const { ok, json } = await apiCall(
+        "POST",
+        "/ai-delivery-projects",
+        {
+          clientId,
+          name: "Smoke PDF Project",
+          targetMonth: "2026-06"
+        },
+        token
+      );
+      projectId = json?.data?.aiDeliveryProject?.id ?? "";
+      if (ok && projectId) {
+        pass(`Project created: ${projectId}`);
+      } else {
+        fail("Create project", JSON.stringify(json?.error ?? json));
+        throw new Error("Cannot continue without project");
+      }
     }
-  }
-  console.log();
+    console.log();
 
-  console.log("Step 5b: Create APPROVED article image");
-  {
-    const { ok, json } = await apiCall(
-      "POST",
-      `/ai-delivery-projects/${projectId}/article-images`,
-      {
-        contentDraftId,
-        title: "Smoke PDF Article Image",
-        prompt: "Simple admin-safe image reference for PDF smoke.",
-        status: "APPROVED"
-      },
-      token
-    );
-    articleImageId = json?.data?.articleImage?.id ?? "";
-    if (ok && articleImageId) {
-      pass(`Article image created: ${articleImageId}`);
-    } else {
-      fail("Create article image", JSON.stringify(json?.error ?? json));
-      throw new Error("Cannot continue without article image");
+    console.log("Step 4: Create persisted monthly report");
+    {
+      const { ok, json } = await apiCall(
+        "POST",
+        `/ai-delivery/reports/monthly/${projectId}`,
+        {
+          title: "Smoke PDF Monthly Report",
+          adminSummaryNotes: "PDF smoke summary notes.",
+          recommendationsText: "Keep shipping the monthly report PDF path."
+        },
+        token
+      );
+      reportId = json?.data?.report?.id ?? "";
+      if (ok && reportId) {
+        pass(`Monthly report created: ${reportId}`);
+      } else {
+        fail("Create monthly report", JSON.stringify(json?.error ?? json));
+        throw new Error("Cannot continue without monthly report");
+      }
     }
-  }
-  console.log();
+    console.log();
 
-  console.log("Step 5c: Create DELIVERED deliverable");
-  {
-    const { ok, json } = await apiCall(
-      "POST",
-      `/ai-delivery-projects/${projectId}/deliverables`,
-      {
-        title: "Smoke PDF Deliverable",
-        deliveryType: "ARTICLE_IMAGE",
-        status: "DELIVERED",
-        articleImageId,
-        exportUrl: "https://docs.example.com/smoke-pdf-deliverable"
-      },
-      token
-    );
-    const deliverableId = json?.data?.deliverable?.id ?? "";
-    if (ok && deliverableId) {
-      pass(`Deliverable created: ${deliverableId}`);
-    } else {
-      fail("Create deliverable", JSON.stringify(json?.error ?? json));
-      throw new Error("Cannot continue without delivered deliverable");
+    console.log("Step 5a: Create DRAFT content draft");
+    {
+      const { ok, json } = await apiCall(
+        "POST",
+        `/ai-delivery-projects/${projectId}/content-drafts`,
+        {
+          title: "Smoke PDF Content Draft",
+          draftBody: "Smoke PDF content draft body.",
+          status: "DRAFT"
+        },
+        token
+      );
+      contentDraftId = json?.data?.contentDraft?.id ?? "";
+      if (ok && contentDraftId) {
+        pass(`Content draft created: ${contentDraftId}`);
+      } else {
+        fail("Create content draft", JSON.stringify(json?.error ?? json));
+        throw new Error("Cannot continue without content draft");
+      }
     }
-  }
-  console.log();
+    console.log();
 
-  console.log("Step 6: Import monthly metrics snapshot");
-  {
-    const { ok, json } = await apiCall(
-      "POST",
-      `/ai-delivery/reports/monthly/${reportId}/metrics/import`,
-      {
-        targetMonth: "2026-06",
-        sourceType: "HYBRID",
-        status: "IMPORTED",
-        gscClicks: 123,
-        gscImpressions: 4567,
-        gscAverageCtr: 2.5,
-        gscAveragePosition: 8.75,
-        ga4Sessions: 321,
-        ga4Users: 210,
-        ga4PageViews: 654,
-        notes: "PDF smoke metrics snapshot."
-      },
-      token
-    );
-    snapshotId = json?.data?.snapshot?.id ?? "";
-    if (ok && snapshotId) {
-      pass(`Metrics snapshot imported: ${snapshotId}`);
-    } else {
-      fail("Import metrics snapshot", JSON.stringify(json?.error ?? json));
-      throw new Error("Cannot continue without metrics snapshot");
+    console.log("Step 5b: Create APPROVED article image");
+    {
+      const { ok, json } = await apiCall(
+        "POST",
+        `/ai-delivery-projects/${projectId}/article-images`,
+        {
+          contentDraftId,
+          title: "Smoke PDF Article Image",
+          prompt: "Simple admin-safe image reference for PDF smoke.",
+          status: "APPROVED"
+        },
+        token
+      );
+      articleImageId = json?.data?.articleImage?.id ?? "";
+      if (ok && articleImageId) {
+        pass(`Article image created: ${articleImageId}`);
+      } else {
+        fail("Create article image", JSON.stringify(json?.error ?? json));
+        throw new Error("Cannot continue without article image");
+      }
     }
-  }
-  console.log();
+    console.log();
 
-  console.log("Step 7: Approve monthly metrics snapshot");
-  {
-    const { ok, json } = await apiCall(
-      "POST",
-      `/ai-delivery/reports/monthly/${reportId}/metrics/${snapshotId}/approve`,
-      undefined,
-      token
-    );
-    const status = json?.data?.snapshot?.status ?? "";
-    if (ok && status === "APPROVED") {
-      pass("Metrics snapshot approved");
-    } else {
-      fail("Approve metrics snapshot", JSON.stringify(json?.error ?? json));
-      throw new Error("Cannot continue without approved metrics snapshot");
+    console.log("Step 5c: Create DELIVERED deliverable");
+    {
+      const { ok, json } = await apiCall(
+        "POST",
+        `/ai-delivery-projects/${projectId}/deliverables`,
+        {
+          title: "Smoke PDF Deliverable",
+          deliveryType: "ARTICLE_IMAGE",
+          status: "DELIVERED",
+          articleImageId,
+          exportUrl: "https://docs.example.com/smoke-pdf-deliverable"
+        },
+        token
+      );
+      deliverableId = json?.data?.deliverable?.id ?? "";
+      if (ok && deliverableId) {
+        pass(`Deliverable created: ${deliverableId}`);
+      } else {
+        fail("Create deliverable", JSON.stringify(json?.error ?? json));
+        throw new Error("Cannot continue without delivered deliverable");
+      }
     }
-  }
-  console.log();
+    console.log();
 
-  console.log("Step 8: Generate PDF");
-  let generatedResponse = null;
-  {
-    const response = await apiCall("POST", `/ai-delivery/reports/monthly/${reportId}/generate-pdf`, undefined, token);
-    generatedResponse = response;
-    const report = response.json?.data?.report ?? null;
-    if (
-      response.ok &&
-      response.status === 201 &&
-      report?.reportId === reportId &&
-      report?.hasDocument === true &&
-      typeof report?.generatedAt === "string" &&
-      typeof report?.updatedAt === "string" &&
-      typeof report?.fileName === "string" &&
-      !containsForbiddenField(response.json, "storageKey")
-    ) {
-      pass("Generate PDF returned a safe admin response with hasDocument=true");
-    } else {
-      fail("Generate PDF", JSON.stringify(response.json?.error ?? response.json ?? response.text));
-      throw new Error("Cannot continue without successful PDF generation");
+    console.log("Step 6: Import monthly metrics snapshot");
+    {
+      const { ok, json } = await apiCall(
+        "POST",
+        `/ai-delivery/reports/monthly/${reportId}/metrics/import`,
+        {
+          targetMonth: "2026-06",
+          sourceType: "HYBRID",
+          status: "IMPORTED",
+          gscClicks: 123,
+          gscImpressions: 4567,
+          gscAverageCtr: 2.5,
+          gscAveragePosition: 8.75,
+          ga4Sessions: 321,
+          ga4Users: 210,
+          ga4PageViews: 654,
+          notes: "PDF smoke metrics snapshot."
+        },
+        token
+      );
+      snapshotId = json?.data?.snapshot?.id ?? "";
+      if (ok && snapshotId) {
+        pass(`Metrics snapshot imported: ${snapshotId}`);
+      } else {
+        fail("Import metrics snapshot", JSON.stringify(json?.error ?? json));
+        throw new Error("Cannot continue without metrics snapshot");
+      }
     }
-  }
-  console.log();
+    console.log();
 
-  console.log("Step 9: Download reference + PDF bytes");
-  {
-    const { ok, json } = await apiCall("GET", `/ai-delivery/reports/monthly/${reportId}/download`, undefined, token);
-    const downloadReference = json?.data?.downloadReference ?? null;
-    if (!ok || !downloadReference?.downloadUrl) {
-      fail("Admin download reference", JSON.stringify(json?.error ?? json));
-      throw new Error("Cannot continue without download reference");
+    console.log("Step 7: Approve monthly metrics snapshot");
+    {
+      const { ok, json } = await apiCall(
+        "POST",
+        `/ai-delivery/reports/monthly/${reportId}/metrics/${snapshotId}/approve`,
+        undefined,
+        token
+      );
+      const status = json?.data?.snapshot?.status ?? "";
+      if (ok && status === "APPROVED") {
+        pass("Metrics snapshot approved");
+      } else {
+        fail("Approve metrics snapshot", JSON.stringify(json?.error ?? json));
+        throw new Error("Cannot continue without approved metrics snapshot");
+      }
     }
-    pass("Admin download reference returned a safe signed URL");
+    console.log();
 
-    const downloadResponse = await fetch(downloadReference.downloadUrl);
-    const bytes = Buffer.from(await downloadResponse.arrayBuffer());
-    if (downloadResponse.ok && bytes.subarray(0, 4).toString("utf8") === "%PDF") {
-      pass("Downloaded object starts with %PDF");
-    } else {
-      fail("Downloaded PDF bytes", `status=${downloadResponse.status}, firstBytes=${bytes.subarray(0, 4).toString("utf8")}`);
+    console.log("Step 8: Generate PDF");
+    {
+      const response = await apiCall("POST", `/ai-delivery/reports/monthly/${reportId}/generate-pdf`, undefined, token);
+      const report = response.json?.data?.report ?? null;
+      if (
+        response.ok &&
+        response.status === 201 &&
+        report?.reportId === reportId &&
+        report?.hasDocument === true &&
+        typeof report?.generatedAt === "string" &&
+        typeof report?.updatedAt === "string" &&
+        typeof report?.fileName === "string" &&
+        !containsForbiddenField(response.json, "storageKey")
+      ) {
+        pass("Generate PDF returned a safe admin response with hasDocument=true");
+      } else {
+        fail("Generate PDF", JSON.stringify(response.json?.error ?? response.json ?? response.text));
+        throw new Error("Cannot continue without successful PDF generation");
+      }
     }
-  }
-  console.log();
+    console.log();
 
-  console.log(`Summary: ${passed} passed, ${failed} failed`);
-  if (failed > 0) {
-    process.exitCode = 1;
+    console.log("Step 9: Download reference + PDF bytes");
+    {
+      const { ok, json } = await apiCall("GET", `/ai-delivery/reports/monthly/${reportId}/download`, undefined, token);
+      const downloadReference = json?.data?.downloadReference ?? null;
+      if (!ok || !downloadReference?.downloadUrl) {
+        fail("Admin download reference", JSON.stringify(json?.error ?? json));
+        throw new Error("Cannot continue without download reference");
+      }
+      pass("Admin download reference returned a safe signed URL");
+
+      const downloadResponse = await fetch(downloadReference.downloadUrl);
+      const bytes = Buffer.from(await downloadResponse.arrayBuffer());
+      if (downloadResponse.ok && bytes.subarray(0, 4).toString("utf8") === "%PDF") {
+        pass("Downloaded object starts with %PDF");
+      } else {
+        fail("Downloaded PDF bytes", `status=${downloadResponse.status}, firstBytes=${bytes.subarray(0, 4).toString("utf8")}`);
+      }
+    }
+    console.log();
+
+    console.log(`Summary: ${passed} passed, ${failed} failed`);
+    if (failed > 0) {
+      process.exitCode = 1;
+    }
+  } finally {
+    await cleanup();
   }
 }
 
