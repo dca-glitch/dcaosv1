@@ -164,6 +164,7 @@ model Tenant {
   aiDeliveryResearchRequests AiDeliveryResearchRequest[]
   aiDeliveryResearchSources AiDeliveryResearchSource[]
   aiDeliveryResearchSummaries AiDeliveryResearchSummary[]
+  aiDeliveryMonthlyMetricSnapshots AiDeliveryMonthlyMetricSnapshot[]
   marketIntelligenceProjects MarketIntelligenceProject[]
   marketIntelligenceSources MarketIntelligenceSource[]
   marketIntelligenceResearchRuns MarketIntelligenceResearchRun[]
@@ -192,6 +193,8 @@ model User {
   auditLogs                AuditLog[]         @relation("UserAuditLogs")
   uploadedProjectDocuments ProjectDocument[]  @relation("ProjectDocumentUploadedBy")
   clientUserAccesses       ClientUserAccess[]
+  aiDeliveryMonthlyMetricSnapshotsImportedBy AiDeliveryMonthlyMetricSnapshot[] @relation("AiDeliveryMonthlyMetricSnapshotImportedByUser")
+  aiDeliveryMonthlyMetricSnapshotsApprovedBy  AiDeliveryMonthlyMetricSnapshot[] @relation("AiDeliveryMonthlyMetricSnapshotApprovedByUser")
 }
 
 model Session {
@@ -432,6 +435,7 @@ model AiDeliveryProject {
   researchSources AiDeliveryResearchSource[]
   researchSummaries AiDeliveryResearchSummary[]
   monthlyReports AiDeliveryMonthlyReport[]
+  aiDeliveryMonthlyMetricSnapshots AiDeliveryMonthlyMetricSnapshot[]
 
   @@index([tenantId])
   @@index([tenantId, isArchived])
@@ -815,6 +819,21 @@ enum AiDeliveryMonthlyReportStatus {
   ARCHIVED
 }
 
+enum MonthlyMetricSourceType {
+  MANUAL
+  CSV_IMPORT
+  GA4
+  GSC
+  HYBRID
+}
+
+enum MonthlyMetricSnapshotStatus {
+  DRAFT
+  IMPORTED
+  APPROVED
+  ARCHIVED
+}
+
 model AiDeliveryMonthlyReport {
   id                  String                        @id @default(uuid())
   tenantId            String
@@ -834,12 +853,50 @@ model AiDeliveryMonthlyReport {
   tenant            Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   aiDeliveryProject AiDeliveryProject @relation(fields: [aiDeliveryProjectId], references: [id], onDelete: Cascade)
   client            Client            @relation(fields: [clientId], references: [id], onDelete: Restrict)
+  aiDeliveryMonthlyMetricSnapshots AiDeliveryMonthlyMetricSnapshot[]
 
   @@unique([tenantId, aiDeliveryProjectId])
   @@index([tenantId])
   @@index([tenantId, status])
   @@index([tenantId, clientId])
   @@index([tenantId, isArchived])
+}
+
+model AiDeliveryMonthlyMetricSnapshot {
+  id                      String                      @id @default(uuid())
+  tenantId                String
+  aiDeliveryProjectId     String
+  aiDeliveryMonthlyReportId String
+  targetMonth             String
+  sourceType              MonthlyMetricSourceType     @default(MANUAL)
+  status                  MonthlyMetricSnapshotStatus @default(DRAFT)
+  gscClicks               Int?
+  gscImpressions          Int?
+  gscAverageCtr           Float?
+  gscAveragePosition      Float?
+  ga4Sessions             Int?
+  ga4Users                Int?
+  ga4PageViews            Int?
+  notes                   String?
+  importedByUserId        String?
+  importedAt              DateTime                    @default(now())
+  approvedByUserId        String?
+  approvedAt              DateTime?
+  createdAt               DateTime                    @default(now())
+  updatedAt               DateTime                    @updatedAt
+
+  tenant                  Tenant                      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  aiDeliveryProject       AiDeliveryProject           @relation(fields: [aiDeliveryProjectId], references: [id], onDelete: Cascade)
+  aiDeliveryMonthlyReport AiDeliveryMonthlyReport     @relation(fields: [aiDeliveryMonthlyReportId], references: [id], onDelete: Cascade)
+  importedByUser          User?                       @relation("AiDeliveryMonthlyMetricSnapshotImportedByUser", fields: [importedByUserId], references: [id], onDelete: SetNull)
+  approvedByUser          User?                       @relation("AiDeliveryMonthlyMetricSnapshotApprovedByUser", fields: [approvedByUserId], references: [id], onDelete: SetNull)
+
+  @@unique([tenantId, aiDeliveryMonthlyReportId])
+  @@index([tenantId])
+  @@index([tenantId, aiDeliveryProjectId])
+  @@index([tenantId, aiDeliveryMonthlyReportId])
+  @@index([tenantId, targetMonth])
+  @@index([tenantId, status])
 }
 
 model Task {

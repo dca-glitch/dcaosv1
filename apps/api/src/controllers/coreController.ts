@@ -176,7 +176,11 @@ import {
   archiveMarketIntelligenceInsight,
   getAiDeliveryMonthlySummary,
   getAiDeliveryMonthlyReport,
+  getAiDeliveryMonthlyReportMetrics,
   createAiDeliveryMonthlyReport,
+  importAiDeliveryMonthlyReportMetrics,
+  approveAiDeliveryMonthlyReportMetrics,
+  archiveAiDeliveryMonthlyReportMetrics,
   updateAiDeliveryMonthlyReport,
   updateAiDeliveryMonthlyReportStatus,
   archiveAiDeliveryMonthlyReport,
@@ -216,7 +220,8 @@ import type {
   MarketIntelligenceInsightInputRequest,
   AiDeliveryMonthlyReportInputRequest,
   AiDeliveryMonthlyReportUploadRequest,
-  AiDeliveryMonthlyReportStatusRequest
+  AiDeliveryMonthlyReportStatusRequest,
+  AiDeliveryMonthlyMetricSnapshotInputRequest
 } from "../core/core.types";
 
 const TEXT_FIELD_MAX_LENGTH = 4000;
@@ -4397,6 +4402,22 @@ export const getAiDeliveryMonthlyReportHandler: RequestHandler = async (req, res
   }
 };
 
+export const getAiDeliveryMonthlyReportMetricsHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) return void res.status(401).json(unauthorizedFailure());
+
+  const reportId = typeof req.params.reportId === "string" ? req.params.reportId.trim() : "";
+  if (!reportId) return void res.status(400).json(failure("AI_DELIVERY_MONTHLY_METRICS_INVALID", "Report ID is invalid."));
+
+  try {
+    const response = await getAiDeliveryMonthlyReportMetrics(authSession, reportId);
+    if (!response) return void res.status(404).json(failure("AI_DELIVERY_MONTHLY_REPORT_NOT_FOUND", "Monthly report not found."));
+    res.json(success(response, { phase: "runtime", scope: "ai-delivery-monthly-metrics" }));
+  } catch {
+    res.status(500).json(failure("AI_DELIVERY_MONTHLY_METRICS_ERROR", "Monthly metrics could not be retrieved."));
+  }
+};
+
 export const createAiDeliveryMonthlyReportHandler: RequestHandler = async (req, res) => {
   const authSession = getAuthSession(res.locals);
   if (!authSession) return void res.status(401).json(unauthorizedFailure());
@@ -4415,6 +4436,80 @@ export const createAiDeliveryMonthlyReportHandler: RequestHandler = async (req, 
       return void res.status(err.status).json(failure(err.code, err.message));
     }
     res.status(500).json(failure("AI_DELIVERY_MONTHLY_REPORT_ERROR", "Monthly report could not be created."));
+  }
+};
+
+export const importAiDeliveryMonthlyReportMetricsHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) return void res.status(401).json(unauthorizedFailure());
+
+  const reportId = typeof req.params.reportId === "string" ? req.params.reportId.trim() : "";
+  if (!reportId) return void res.status(400).json(failure("AI_DELIVERY_MONTHLY_METRICS_INVALID", "Report ID is invalid."));
+
+  const input = getAiDeliveryMonthlyMetricSnapshotInput(req.body);
+  if (!input || !input.targetMonth) {
+    return void res.status(400).json(failure("AI_DELIVERY_MONTHLY_METRICS_INVALID", "Metric snapshot input is invalid."));
+  }
+
+  try {
+    const response = await importAiDeliveryMonthlyReportMetrics(authSession, reportId, input);
+    if (!response) return void res.status(404).json(failure("AI_DELIVERY_MONTHLY_REPORT_NOT_FOUND", "Monthly report not found."));
+    res.status(201).json(success(response, { phase: "runtime", scope: "ai-delivery-monthly-metrics" }));
+  } catch (err) {
+    const error = err as { name?: string; code?: string; message?: string };
+    console.error("[AI_DELIVERY_MONTHLY_METRICS_IMPORT_ERROR]", {
+      name: error.name ?? "Error",
+      code: error.code ?? null,
+      message: error.message ?? "Unknown error"
+    });
+    if (isAiDeliveryGuardError(err)) {
+      return void res.status(err.status).json(failure(err.code, err.message));
+    }
+    res.status(500).json(failure("AI_DELIVERY_MONTHLY_METRICS_ERROR", "Monthly metrics could not be imported."));
+  }
+};
+
+export const approveAiDeliveryMonthlyReportMetricsHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) return void res.status(401).json(unauthorizedFailure());
+
+  const reportId = typeof req.params.reportId === "string" ? req.params.reportId.trim() : "";
+  if (!reportId) return void res.status(400).json(failure("AI_DELIVERY_MONTHLY_METRICS_INVALID", "Report ID is invalid."));
+
+  const snapshotId = typeof req.params.snapshotId === "string" ? req.params.snapshotId.trim() : "";
+  if (!snapshotId) return void res.status(400).json(failure("AI_DELIVERY_MONTHLY_METRICS_INVALID", "Snapshot ID is invalid."));
+
+  try {
+    const response = await approveAiDeliveryMonthlyReportMetrics(authSession, reportId, snapshotId);
+    if (!response) return void res.status(404).json(failure("AI_DELIVERY_MONTHLY_METRICS_NOT_FOUND", "Monthly metric snapshot not found."));
+    res.json(success(response, { phase: "runtime", scope: "ai-delivery-monthly-metrics" }));
+  } catch (err) {
+    if (isAiDeliveryGuardError(err)) {
+      return void res.status(err.status).json(failure(err.code, err.message));
+    }
+    res.status(500).json(failure("AI_DELIVERY_MONTHLY_METRICS_ERROR", "Monthly metrics snapshot could not be approved."));
+  }
+};
+
+export const archiveAiDeliveryMonthlyReportMetricsHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) return void res.status(401).json(unauthorizedFailure());
+
+  const reportId = typeof req.params.reportId === "string" ? req.params.reportId.trim() : "";
+  if (!reportId) return void res.status(400).json(failure("AI_DELIVERY_MONTHLY_METRICS_INVALID", "Report ID is invalid."));
+
+  const snapshotId = typeof req.params.snapshotId === "string" ? req.params.snapshotId.trim() : "";
+  if (!snapshotId) return void res.status(400).json(failure("AI_DELIVERY_MONTHLY_METRICS_INVALID", "Snapshot ID is invalid."));
+
+  try {
+    const response = await archiveAiDeliveryMonthlyReportMetrics(authSession, reportId, snapshotId);
+    if (!response) return void res.status(404).json(failure("AI_DELIVERY_MONTHLY_METRICS_NOT_FOUND", "Monthly metric snapshot not found."));
+    res.json(success(response, { phase: "runtime", scope: "ai-delivery-monthly-metrics" }));
+  } catch (err) {
+    if (isAiDeliveryGuardError(err)) {
+      return void res.status(err.status).json(failure(err.code, err.message));
+    }
+    res.status(500).json(failure("AI_DELIVERY_MONTHLY_METRICS_ERROR", "Monthly metrics snapshot could not be archived."));
   }
 };
 
@@ -4631,5 +4726,57 @@ function getAiDeliveryMonthlyReportStatusInput(value: unknown): AiDeliveryMonthl
   const obj = value as Record<string, unknown>;
   return {
     status: getOptionalString(obj.status)
+  };
+}
+
+function getAiDeliveryMonthlyMetricSnapshotInput(value: unknown): AiDeliveryMonthlyMetricSnapshotInputRequest | null {
+  if (typeof value !== "object" || value === null) {
+    return null;
+  }
+
+  const obj = value as Record<string, unknown>;
+  const sourceType = typeof obj.sourceType === "string" ? obj.sourceType.trim().toUpperCase() : "MANUAL";
+  const status = typeof obj.status === "string" ? obj.status.trim().toUpperCase() : "IMPORTED";
+
+  if (!["MANUAL", "CSV_IMPORT", "GA4", "GSC", "HYBRID"].includes(sourceType) || !["DRAFT", "IMPORTED"].includes(status)) {
+    return null;
+  }
+
+  const metricFields: Array<[keyof AiDeliveryMonthlyMetricSnapshotInputRequest, unknown]> = [
+    ["gscClicks", obj.gscClicks],
+    ["gscImpressions", obj.gscImpressions],
+    ["gscAverageCtr", obj.gscAverageCtr],
+    ["gscAveragePosition", obj.gscAveragePosition],
+    ["ga4Sessions", obj.ga4Sessions],
+    ["ga4Users", obj.ga4Users],
+    ["ga4PageViews", obj.ga4PageViews]
+  ];
+
+  for (const [field, rawValue] of metricFields) {
+    if (rawValue === undefined || rawValue === null) {
+      continue;
+    }
+
+    if (typeof rawValue !== "number" || !Number.isFinite(rawValue) || rawValue < 0) {
+      return null;
+    }
+
+    if ((field === "gscAverageCtr" || field === "gscAveragePosition") && rawValue > Number.MAX_SAFE_INTEGER) {
+      return null;
+    }
+  }
+
+  return {
+    targetMonth: getOptionalString(obj.targetMonth) ?? undefined,
+    sourceType: sourceType as AiDeliveryMonthlyMetricSnapshotInputRequest["sourceType"],
+    status: status as "DRAFT" | "IMPORTED",
+    gscClicks: typeof obj.gscClicks === "number" ? obj.gscClicks : undefined,
+    gscImpressions: typeof obj.gscImpressions === "number" ? obj.gscImpressions : undefined,
+    gscAverageCtr: typeof obj.gscAverageCtr === "number" ? obj.gscAverageCtr : undefined,
+    gscAveragePosition: typeof obj.gscAveragePosition === "number" ? obj.gscAveragePosition : undefined,
+    ga4Sessions: typeof obj.ga4Sessions === "number" ? obj.ga4Sessions : undefined,
+    ga4Users: typeof obj.ga4Users === "number" ? obj.ga4Users : undefined,
+    ga4PageViews: typeof obj.ga4PageViews === "number" ? obj.ga4PageViews : undefined,
+    notes: getOptionalString(obj.notes)
   };
 }

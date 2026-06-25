@@ -145,7 +145,11 @@ import {
   updateMarketIntelligenceInsightHandler,
   archiveMarketIntelligenceInsightHandler,
   getAiDeliveryMonthlyReportHandler,
+  getAiDeliveryMonthlyReportMetricsHandler,
   createAiDeliveryMonthlyReportHandler,
+  importAiDeliveryMonthlyReportMetricsHandler,
+  approveAiDeliveryMonthlyReportMetricsHandler,
+  archiveAiDeliveryMonthlyReportMetricsHandler,
   updateAiDeliveryMonthlyReportHandler,
   updateAiDeliveryMonthlyReportStatusHandler,
   archiveAiDeliveryMonthlyReportHandler,
@@ -261,6 +265,11 @@ export function createCoreRouter() {
   router.get("/ai-delivery-projects/:id/content-drafts/client-review", clientPortalDeferredHandler);
   router.post("/ai-delivery-projects/:id/content-drafts/:draftId/client-review/approve", clientPortalDeferredHandler);
   router.post("/ai-delivery-projects/:id/content-drafts/:draftId/client-review/request-revision", clientPortalDeferredHandler);
+
+  router.get("/ai-delivery/reports/monthly/:reportId/metrics", requireAuth, requireTenant, requireRole("owner", "admin"), getAiDeliveryMonthlyReportMetricsHandler);
+  router.post("/ai-delivery/reports/monthly/:reportId/metrics/import", requireAuth, requireTenant, requireRole("owner", "admin"), importAiDeliveryMonthlyReportMetricsHandler);
+  router.post("/ai-delivery/reports/monthly/:reportId/metrics/:snapshotId/approve", requireAuth, requireTenant, requireRole("owner", "admin"), approveAiDeliveryMonthlyReportMetricsHandler);
+  router.post("/ai-delivery/reports/monthly/:reportId/metrics/:snapshotId/archive", requireAuth, requireTenant, requireRole("owner", "admin"), archiveAiDeliveryMonthlyReportMetricsHandler);
 
   router.get("/tasks", requireAuth, requireTenant, listTasksHandler);
   router.post("/tasks", requireAuth, requireTenant, requireRole("owner", "admin"), createTaskHandler);

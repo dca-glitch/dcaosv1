@@ -1013,6 +1013,96 @@ export interface AiDeliveryMonthlyReportStatusRequest {
   status?: string | null;
 }
 
+export type MonthlyMetricSourceType = "MANUAL" | "CSV_IMPORT" | "GA4" | "GSC" | "HYBRID";
+
+export type MonthlyMetricSnapshotStatus = "DRAFT" | "IMPORTED" | "APPROVED" | "ARCHIVED";
+
+export interface AiDeliveryMonthlyMetricSnapshotSummary {
+  id: string;
+  aiDeliveryProjectId: string;
+  aiDeliveryMonthlyReportId: string;
+  targetMonth: string;
+  sourceType: MonthlyMetricSourceType;
+  status: MonthlyMetricSnapshotStatus;
+  gscClicks: number | null;
+  gscImpressions: number | null;
+  gscAverageCtr: number | null;
+  gscAveragePosition: number | null;
+  ga4Sessions: number | null;
+  ga4Users: number | null;
+  ga4PageViews: number | null;
+  notes: string | null;
+  importedByUserId: string | null;
+  importedAt: string;
+  approvedByUserId: string | null;
+  approvedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AiDeliveryMonthlyMetricSnapshotInputRequest {
+  targetMonth?: string;
+  sourceType?: MonthlyMetricSourceType;
+  status?: "DRAFT" | "IMPORTED";
+  gscClicks?: number | null;
+  gscImpressions?: number | null;
+  gscAverageCtr?: number | null;
+  gscAveragePosition?: number | null;
+  ga4Sessions?: number | null;
+  ga4Users?: number | null;
+  ga4PageViews?: number | null;
+  notes?: string | null;
+}
+
+export interface AiDeliveryMonthlyMetricsTrendMonthSummary {
+  targetMonth: string;
+  sourceType: MonthlyMetricSourceType;
+  gscClicks: number | null;
+  gscImpressions: number | null;
+  gscAverageCtr: number | null;
+  gscAveragePosition: number | null;
+  ga4Sessions: number | null;
+  ga4Users: number | null;
+  ga4PageViews: number | null;
+}
+
+export interface AiDeliveryMonthlyMetricsTrendSummary {
+  dataStatus: "NO_DATA" | "PARTIAL" | "READY";
+  latestMonth: string | null;
+  last12Months: AiDeliveryMonthlyMetricsTrendMonthSummary[];
+  totals: {
+    gscClicks: number;
+    gscImpressions: number;
+    ga4Sessions: number;
+    ga4Users: number;
+    ga4PageViews: number;
+  };
+  averages: {
+    gscAverageCtr: number | null;
+    gscAveragePosition: number | null;
+  };
+}
+
+export interface AiDeliveryMonthlyMetricsSummary {
+  report: {
+    id: string;
+    aiDeliveryProjectId: string;
+    targetMonth: string;
+    project: { id: string; name: string } | null;
+    client: { id: string; name: string } | null;
+  };
+  snapshots: AiDeliveryMonthlyMetricSnapshotSummary[];
+  computedTrendSummary: AiDeliveryMonthlyMetricsTrendSummary;
+}
+
+export interface AiDeliveryMonthlyMetricsResponse {
+  metrics: AiDeliveryMonthlyMetricsSummary | null;
+}
+
+export interface AiDeliveryMonthlyMetricSnapshotResponse {
+  snapshot: AiDeliveryMonthlyMetricSnapshotSummary | null;
+}
+
 export interface MarketIntelligenceProjectSummary {
   id: string;
   title: string;

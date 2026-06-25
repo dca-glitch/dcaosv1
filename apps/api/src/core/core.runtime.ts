@@ -40,6 +40,15 @@ import type {
   AiDeliveryMonthlyReportUploadRequest,
   AiDeliveryMonthlyReportDownloadReferenceResponse,
   AiDeliveryMonthlyReportStatusRequest,
+  AiDeliveryMonthlyMetricSnapshotSummary,
+  AiDeliveryMonthlyMetricSnapshotInputRequest,
+  AiDeliveryMonthlyMetricsTrendMonthSummary,
+  AiDeliveryMonthlyMetricsTrendSummary,
+  AiDeliveryMonthlyMetricsSummary,
+  AiDeliveryMonthlyMetricsResponse,
+  AiDeliveryMonthlyMetricSnapshotResponse,
+  MonthlyMetricSourceType,
+  MonthlyMetricSnapshotStatus,
   BillDocumentUploadRequest,
   BillInputRequest,
   BillResponse,
@@ -7657,6 +7666,378 @@ export async function getAiDeliveryMonthlyReportDownloadReference(
       ? { downloadUrl: downloadRef.downloadUrl, expiresSeconds: downloadRef.expiresSeconds }
       : null
   };
+}
+
+const MONTHLY_METRIC_SOURCE_TYPES: MonthlyMetricSourceType[] = ["MANUAL", "CSV_IMPORT", "GA4", "GSC", "HYBRID"];
+const MONTHLY_METRIC_MUTABLE_STATUSES: MonthlyMetricSnapshotStatus[] = ["DRAFT", "IMPORTED"];
+
+const aiDeliveryMonthlyMetricSnapshotSelect = {
+  id: true,
+  aiDeliveryProjectId: true,
+  aiDeliveryMonthlyReportId: true,
+  targetMonth: true,
+  sourceType: true,
+  status: true,
+  gscClicks: true,
+  gscImpressions: true,
+  gscAverageCtr: true,
+  gscAveragePosition: true,
+  ga4Sessions: true,
+  ga4Users: true,
+  ga4PageViews: true,
+  notes: true,
+  importedByUserId: true,
+  importedAt: true,
+  approvedByUserId: true,
+  approvedAt: true,
+  createdAt: true,
+  updatedAt: true
+} as const;
+
+const aiDeliveryMonthlyMetricsReportContextSelect = {
+  id: true,
+  aiDeliveryProjectId: true,
+  clientId: true,
+  status: true,
+  isArchived: true,
+  aiDeliveryProject: {
+    select: {
+      id: true,
+      name: true,
+      targetMonth: true,
+      projectId: true,
+      client: { select: { id: true, name: true } },
+      project: { select: { id: true, name: true } }
+    }
+  }
+} as const;
+
+function normalizeMonthlyMetricTargetMonth(value: string): string | null {
+  const match = /^(\d{4})-(0[1-9]|1[0-2])$/.exec(value);
+  if (!match) return null;
+  return `${match[1]}-${match[2]}`;
+}
+
+function normalizeMonthlyMetricSourceType(value: string | undefined): MonthlyMetricSourceType | null {
+  if (!value) return "MANUAL";
+  const normalized = value.trim().toUpperCase() as MonthlyMetricSourceType;
+  return MONTHLY_METRIC_SOURCE_TYPES.includes(normalized) ? normalized : null;
+}
+
+function normalizeMonthlyMetricSnapshotStatus(value: string | undefined): MonthlyMetricSnapshotStatus | null {
+  if (!value) return "IMPORTED";
+  const normalized = value.trim().toUpperCase() as MonthlyMetricSnapshotStatus;
+  return MONTHLY_METRIC_MUTABLE_STATUSES.includes(normalized) ? normalized : null;
+}
+
+function toAiDeliveryMonthlyMetricSnapshotSummary(snapshot: {
+  id: string;
+  aiDeliveryProjectId: string;
+  aiDeliveryMonthlyReportId: string;
+  targetMonth: string;
+  sourceType: string;
+  status: string;
+  gscClicks: number | null;
+  gscImpressions: number | null;
+  gscAverageCtr: number | null;
+  gscAveragePosition: number | null;
+  ga4Sessions: number | null;
+  ga4Users: number | null;
+  ga4PageViews: number | null;
+  notes: string | null;
+  importedByUserId: string | null;
+  importedAt: Date;
+  approvedByUserId: string | null;
+  approvedAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+}): AiDeliveryMonthlyMetricSnapshotSummary {
+  return {
+    id: snapshot.id,
+    aiDeliveryProjectId: snapshot.aiDeliveryProjectId,
+    aiDeliveryMonthlyReportId: snapshot.aiDeliveryMonthlyReportId,
+    targetMonth: snapshot.targetMonth,
+    sourceType: snapshot.sourceType as MonthlyMetricSourceType,
+    status: snapshot.status as MonthlyMetricSnapshotStatus,
+    gscClicks: snapshot.gscClicks,
+    gscImpressions: snapshot.gscImpressions,
+    gscAverageCtr: snapshot.gscAverageCtr,
+    gscAveragePosition: snapshot.gscAveragePosition,
+    ga4Sessions: snapshot.ga4Sessions,
+    ga4Users: snapshot.ga4Users,
+    ga4PageViews: snapshot.ga4PageViews,
+    notes: snapshot.notes,
+    importedByUserId: snapshot.importedByUserId,
+    importedAt: snapshot.importedAt.toISOString(),
+    approvedByUserId: snapshot.approvedByUserId,
+    approvedAt: snapshot.approvedAt ? snapshot.approvedAt.toISOString() : null,
+    createdAt: snapshot.createdAt.toISOString(),
+    updatedAt: snapshot.updatedAt.toISOString()
+  };
+}
+
+function toTrendMonthSummary(snapshot: AiDeliveryMonthlyMetricSnapshotSummary): AiDeliveryMonthlyMetricsTrendMonthSummary {
+  return {
+    targetMonth: snapshot.targetMonth,
+    sourceType: snapshot.sourceType,
+    gscClicks: snapshot.gscClicks,
+    gscImpressions: snapshot.gscImpressions,
+    gscAverageCtr: snapshot.gscAverageCtr,
+    gscAveragePosition: snapshot.gscAveragePosition,
+    ga4Sessions: snapshot.ga4Sessions,
+    ga4Users: snapshot.ga4Users,
+    ga4PageViews: snapshot.ga4PageViews
+  };
+}
+
+function buildAiDeliveryMonthlyMetricsTrendSummary(snapshots: AiDeliveryMonthlyMetricSnapshotSummary[]): AiDeliveryMonthlyMetricsTrendSummary {
+  const last12Months = snapshots.slice(-12).map(toTrendMonthSummary);
+  const totals = last12Months.reduce(
+    (acc, month) => ({
+      gscClicks: acc.gscClicks + (month.gscClicks ?? 0),
+      gscImpressions: acc.gscImpressions + (month.gscImpressions ?? 0),
+      ga4Sessions: acc.ga4Sessions + (month.ga4Sessions ?? 0),
+      ga4Users: acc.ga4Users + (month.ga4Users ?? 0),
+      ga4PageViews: acc.ga4PageViews + (month.ga4PageViews ?? 0)
+    }),
+    { gscClicks: 0, gscImpressions: 0, ga4Sessions: 0, ga4Users: 0, ga4PageViews: 0 }
+  );
+
+  const ctrValues = last12Months.map((month) => month.gscAverageCtr).filter((value): value is number => typeof value === "number" && Number.isFinite(value));
+  const positionValues = last12Months.map((month) => month.gscAveragePosition).filter((value): value is number => typeof value === "number" && Number.isFinite(value));
+
+  return {
+    dataStatus: last12Months.length === 0 ? "NO_DATA" : last12Months.length < 12 ? "PARTIAL" : "READY",
+    latestMonth: last12Months.length > 0 ? last12Months[last12Months.length - 1].targetMonth : null,
+    last12Months,
+    totals,
+    averages: {
+      gscAverageCtr: ctrValues.length > 0 ? ctrValues.reduce((sum, value) => sum + value, 0) / ctrValues.length : null,
+      gscAveragePosition: positionValues.length > 0 ? positionValues.reduce((sum, value) => sum + value, 0) / positionValues.length : null
+    }
+  };
+}
+
+async function getAiDeliveryMonthlyMetricsReportContext(authSession: AuthResolvedSessionContext, reportId: string) {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId || !reportId) return null;
+
+  return (prisma as any).aiDeliveryMonthlyReport.findFirst({
+    where: { id: reportId, tenantId },
+    select: aiDeliveryMonthlyMetricsReportContextSelect
+  }) as Promise<{
+    id: string;
+    aiDeliveryProjectId: string;
+    clientId: string;
+    status: string;
+    isArchived: boolean;
+    aiDeliveryProject: {
+      id: string;
+      name: string;
+      targetMonth: Date;
+      projectId: string | null;
+      client: { id: string; name: string } | null;
+      project: { id: string; name: string } | null;
+    };
+  } | null>;
+}
+
+export async function getAiDeliveryMonthlyReportMetrics(
+  authSession: AuthResolvedSessionContext,
+  reportId: string
+): Promise<AiDeliveryMonthlyMetricsResponse | null> {
+  const report = await getAiDeliveryMonthlyMetricsReportContext(authSession, reportId);
+  if (!report) return null;
+
+  const currentSnapshots = await (prisma as any).aiDeliveryMonthlyMetricSnapshot.findMany({
+    where: {
+      tenantId: getActiveTenantId(authSession),
+      aiDeliveryMonthlyReportId: report.id
+    },
+    orderBy: [{ createdAt: "desc" }],
+    select: aiDeliveryMonthlyMetricSnapshotSelect
+  }) as any[];
+
+  const current = currentSnapshots.map(toAiDeliveryMonthlyMetricSnapshotSummary);
+  const reportClient = report.aiDeliveryProject.client;
+  const trendSnapshots = reportClient
+    ? await (prisma as any).aiDeliveryMonthlyMetricSnapshot.findMany({
+        where: {
+          tenantId: getActiveTenantId(authSession),
+          status: "APPROVED",
+          aiDeliveryMonthlyReport: {
+            isArchived: false,
+            aiDeliveryProject: {
+              clientId: reportClient.id,
+              projectId: report.aiDeliveryProject.projectId
+            }
+          }
+        },
+        orderBy: [{ targetMonth: "desc" }, { createdAt: "desc" }],
+        take: 12,
+        select: aiDeliveryMonthlyMetricSnapshotSelect
+      }) as any[]
+    : [];
+  const approvedTrendSnapshots = trendSnapshots.map(toAiDeliveryMonthlyMetricSnapshotSummary).reverse();
+
+  return {
+    metrics: {
+      report: {
+        id: report.id,
+        aiDeliveryProjectId: report.aiDeliveryProjectId,
+        targetMonth: formatAiDeliveryTargetMonth(report.aiDeliveryProject.targetMonth),
+        project: report.aiDeliveryProject.project ? { id: report.aiDeliveryProject.project.id, name: report.aiDeliveryProject.project.name } : null,
+        client: reportClient ? { id: reportClient.id, name: reportClient.name } : null
+      },
+      snapshots: current,
+      computedTrendSummary: buildAiDeliveryMonthlyMetricsTrendSummary(approvedTrendSnapshots)
+    }
+  };
+}
+
+export async function importAiDeliveryMonthlyReportMetrics(
+  authSession: AuthResolvedSessionContext,
+  reportId: string,
+  input: AiDeliveryMonthlyMetricSnapshotInputRequest
+): Promise<AiDeliveryMonthlyMetricSnapshotResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) return null;
+
+  const report = await getAiDeliveryMonthlyMetricsReportContext(authSession, reportId);
+  if (!report) return null;
+  if (report.isArchived) {
+    throwAiDeliveryBadRequest("AI_DELIVERY_MONTHLY_METRIC_SNAPSHOT_REPORT_ARCHIVED", "Cannot import metrics for an archived monthly report.");
+  }
+
+  const targetMonth = normalizeMonthlyMetricTargetMonth(input.targetMonth ?? "");
+  if (!targetMonth) {
+    throwAiDeliveryBadRequest("AI_DELIVERY_MONTHLY_METRIC_SNAPSHOT_TARGET_MONTH_INVALID", "Target month must use YYYY-MM format.");
+  }
+
+  const reportTargetMonth = formatAiDeliveryTargetMonth(report.aiDeliveryProject.targetMonth);
+  if (targetMonth !== reportTargetMonth) {
+    throwAiDeliveryBadRequest("AI_DELIVERY_MONTHLY_METRIC_SNAPSHOT_TARGET_MONTH_MISMATCH", "Target month must match the monthly report target month.");
+  }
+
+  const sourceType = normalizeMonthlyMetricSourceType(input.sourceType);
+  if (!sourceType) {
+    throwAiDeliveryBadRequest("AI_DELIVERY_MONTHLY_METRIC_SNAPSHOT_SOURCE_TYPE_INVALID", "Source type is not valid.");
+  }
+
+  const status = normalizeMonthlyMetricSnapshotStatus(input.status);
+  if (!status) {
+    throwAiDeliveryBadRequest("AI_DELIVERY_MONTHLY_METRIC_SNAPSHOT_STATUS_INVALID", "Status is not valid.");
+  }
+
+  const numericFields: Array<[string, number | null | undefined]> = [
+    ["gscClicks", input.gscClicks],
+    ["gscImpressions", input.gscImpressions],
+    ["gscAverageCtr", input.gscAverageCtr],
+    ["gscAveragePosition", input.gscAveragePosition],
+    ["ga4Sessions", input.ga4Sessions],
+    ["ga4Users", input.ga4Users],
+    ["ga4PageViews", input.ga4PageViews]
+  ];
+
+  for (const [field, value] of numericFields) {
+    if (value !== undefined && value !== null && (!Number.isFinite(value) || value < 0)) {
+      throwAiDeliveryBadRequest("AI_DELIVERY_MONTHLY_METRIC_SNAPSHOT_VALUE_INVALID", `${field} must be a finite non-negative number.`);
+    }
+  }
+
+  const snapshotData = {
+    targetMonth,
+    sourceType,
+    status,
+    gscClicks: input.gscClicks ?? null,
+    gscImpressions: input.gscImpressions ?? null,
+    gscAverageCtr: input.gscAverageCtr ?? null,
+    gscAveragePosition: input.gscAveragePosition ?? null,
+    ga4Sessions: input.ga4Sessions ?? null,
+    ga4Users: input.ga4Users ?? null,
+    ga4PageViews: input.ga4PageViews ?? null,
+    notes: toNullableString(input.notes),
+    importedByUserId: authSession.user.id,
+    importedAt: new Date(),
+    approvedByUserId: null,
+    approvedAt: null
+  };
+
+  const snapshot = await (prisma as any).aiDeliveryMonthlyMetricSnapshot.upsert({
+    where: { tenantId_aiDeliveryMonthlyReportId: { tenantId, aiDeliveryMonthlyReportId: report.id } },
+    create: {
+      tenantId,
+      aiDeliveryProjectId: report.aiDeliveryProjectId,
+      aiDeliveryMonthlyReportId: report.id,
+      ...snapshotData
+    },
+    update: {
+      aiDeliveryProjectId: report.aiDeliveryProjectId,
+      ...snapshotData
+    },
+    select: aiDeliveryMonthlyMetricSnapshotSelect
+  }) as any;
+
+  return { snapshot: toAiDeliveryMonthlyMetricSnapshotSummary(snapshot) };
+}
+
+export async function approveAiDeliveryMonthlyReportMetrics(
+  authSession: AuthResolvedSessionContext,
+  reportId: string,
+  snapshotId: string
+): Promise<AiDeliveryMonthlyMetricSnapshotResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) return null;
+
+  const report = await getAiDeliveryMonthlyMetricsReportContext(authSession, reportId);
+  if (!report) return null;
+  if (report.isArchived) {
+    throwAiDeliveryBadRequest("AI_DELIVERY_MONTHLY_METRIC_SNAPSHOT_REPORT_ARCHIVED", "Cannot approve metrics for an archived monthly report.");
+  }
+
+  const existing = await (prisma as any).aiDeliveryMonthlyMetricSnapshot.findFirst({
+    where: { id: snapshotId, tenantId, aiDeliveryMonthlyReportId: report.id },
+    select: { id: true }
+  }) as { id: string } | null;
+  if (!existing) return null;
+
+  const snapshot = await (prisma as any).aiDeliveryMonthlyMetricSnapshot.update({
+    where: { id: snapshotId },
+    data: {
+      status: "APPROVED",
+      approvedByUserId: authSession.user.id,
+      approvedAt: new Date()
+    },
+    select: aiDeliveryMonthlyMetricSnapshotSelect
+  }) as any;
+
+  return { snapshot: toAiDeliveryMonthlyMetricSnapshotSummary(snapshot) };
+}
+
+export async function archiveAiDeliveryMonthlyReportMetrics(
+  authSession: AuthResolvedSessionContext,
+  reportId: string,
+  snapshotId: string
+): Promise<AiDeliveryMonthlyMetricSnapshotResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) return null;
+
+  const report = await getAiDeliveryMonthlyMetricsReportContext(authSession, reportId);
+  if (!report) return null;
+
+  const existing = await (prisma as any).aiDeliveryMonthlyMetricSnapshot.findFirst({
+    where: { id: snapshotId, tenantId, aiDeliveryMonthlyReportId: report.id },
+    select: { id: true }
+  }) as { id: string } | null;
+  if (!existing) return null;
+
+  const snapshot = await (prisma as any).aiDeliveryMonthlyMetricSnapshot.update({
+    where: { id: snapshotId },
+    data: { status: "ARCHIVED" },
+    select: aiDeliveryMonthlyMetricSnapshotSelect
+  }) as any;
+
+  return { snapshot: toAiDeliveryMonthlyMetricSnapshotSummary(snapshot) };
 }
 
 export async function createAiDeliveryDeliverable(

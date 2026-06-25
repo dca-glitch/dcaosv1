@@ -12,6 +12,8 @@ Client Portal monthly reports are now implemented and browser-proven as a read-o
 
 Monthly Report document handoff is also implemented and smoke-proven. Admin document upload uses `POST /api/v1/ai-delivery/reports/monthly/:reportId/document`, admin reference/download uses `GET /api/v1/ai-delivery/reports/monthly/:reportId/download`, and client download uses `GET /api/v1/client-portal/projects/:projectId/monthly-reports/:reportId/download`. `storageKey` stays internal, `hasDocument` is the safe signal, and generic monthly report PUT no longer accepts `storageKey`.
 
+Monthly metrics snapshot foundation is now admin-only and snapshot-first. The contract is `GET /api/v1/ai-delivery/reports/monthly/:reportId/metrics`, `POST /api/v1/ai-delivery/reports/monthly/:reportId/metrics/import`, and `POST /api/v1/ai-delivery/reports/monthly/:reportId/metrics/:snapshotId/approve|archive`. Access requires authenticated owner/admin scope in the active tenant. The server returns normalized snapshots plus a computed 12-month summary from approved, non-archived snapshots in the same client/project context. Raw provider payloads, secrets, and client-portal metrics exposure remain deferred.
+
 ## Private object storage environment
 
 Private object storage is optional in local development. R2/private storage foundation closed for the current MVP admin scope. When the storage configuration is absent, admin-only private upload endpoints stay guarded and return `R2_STORAGE_NOT_CONFIGURED` instead of persisting a storage reference.
