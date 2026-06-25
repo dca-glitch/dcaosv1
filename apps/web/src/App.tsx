@@ -1040,7 +1040,7 @@ function ModuleRegistryView({
                 {enabled ? "Disable" : "Enable"}
               </button>
               <a className="module-link" href={`#/modules/${moduleItem.key}`}>
-                Open placeholder
+                Open module
               </a>
             </article>
           );
@@ -1048,11 +1048,12 @@ function ModuleRegistryView({
       </div>
       {selectedModuleKey ? (
         <div className="module-placeholder-panel" aria-live="polite">
-          <p className="eyebrow">Module Placeholder</p>
+          <p className="eyebrow">Module Registry</p>
           <h2>{selectedModuleKey}</h2>
           <p>
-            This module has a reserved route placeholder only. Finance Lite, marketplace loading, billing,
-            and dynamic plugin mounting are intentionally out of scope for this MVP shell.
+            This module shell is ready for the next backend-backed pass. It stays inside the admin registry,
+            keeps navigation lightweight, and leaves Finance Lite, marketplace loading, billing, and dynamic
+            plugin mounting out of scope for this MVP shell.
           </p>
         </div>
       ) : null}
