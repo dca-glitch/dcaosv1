@@ -69,6 +69,7 @@ The local smoke command intentionally refuses non-local API hosts. Add a separat
 - Market Intelligence auth token reads now use sessionStorage consistently.
 - Backup/restore and staging migration runbooks are documented.
 - Finance smoke proves tenantId spoof handling locally and skips full cross-tenant proof without a real second tenant.
+- AI Delivery readiness closure and smoke index are documented in `docs/ai-delivery/client-delivery-readiness.md`.
 - A production start strategy is still required before VPS deployment.
 - Same-origin reverse proxy routing is preferred so the frontend can use `/api/v1`.
 - No CORS environment contract is implemented yet.
