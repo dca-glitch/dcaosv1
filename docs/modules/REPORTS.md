@@ -12,6 +12,7 @@ The Reports module provides reusable reporting screens and report definitions.
 - prepare report parameters
 - AI Delivery monthly summary read model (admin-only, schema-free)
 - AI Delivery monthly report persisted model (admin-only, `AiDeliveryMonthlyReport`, migration applied)
+- AI Delivery monthly report admin UI and browser smoke proof
 
 ## Future Scope
 

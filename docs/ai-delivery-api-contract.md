@@ -2,7 +2,7 @@
 
 Docs-only checklist and current-state contract for the feature branch.
 
-Current state: AI Delivery is local-first and admin/operator-side. AI Delivery admin foundation closed for the current MVP admin scope. This closed admin foundation covers projects, client/month brief foundation, workflow runs foundation, content plans, content drafts, article image planning, research requests/sources/summaries, deliverables, deliverable reviews, and activity/audit read model support where relevant. Client Access / Client Portal remains intentionally limited until admin/operator modules are stable.
+Current state: AI Delivery is local-first and admin/operator-side. AI Delivery admin foundation closed for the current MVP admin scope. This closed admin foundation covers projects, client/month brief foundation, workflow runs foundation, content plans, content drafts, article image planning, research requests/sources/summaries, deliverables, deliverable reviews, monthly report admin UI, and activity/audit read model support where relevant. Client Access / Client Portal remains intentionally limited until admin/operator modules are stable.
 
 Platform-neutral rule: AI Delivery records, content assets, article images, and deliverables are not modeled as WordPress-only objects. WordPress is only one optional future publishing connector alongside Next.js/custom React, headless CMS, Markdown/MDX, JSON packages, Google Docs, and PDF delivery targets.
 
@@ -42,6 +42,8 @@ Current behavior:
 - `npm.cmd run validate` passed for the current admin/operator foundations.
 - `npm.cmd run smoke:local` passed as the local API readiness gate for completed implementation slices.
 - `npm.cmd run smoke:ai-delivery-reviews` passed twice in focused local regression coverage after browser assertion hardening and fixture isolation.
+- `npm.cmd run smoke:monthly-report:local` passed (52 PASS / 0 FAIL) for the monthly report backend contract.
+- `npm.cmd run smoke:monthly-report:browser` passed for the admin Monthly Report UI open/create/edit/status/archive/restore/reopen flow.
 - Focused smoke now creates dedicated smoke-owned AI Delivery projects instead of selecting an arbitrary existing local AI Delivery project.
 - Focused smoke should not mutate real local dev AI Delivery projects when used as intended.
 

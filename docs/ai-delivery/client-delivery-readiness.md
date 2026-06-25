@@ -26,7 +26,7 @@
 - Client review and approval actions.
 - Public links.
 - GA/GSC reporting integration.
-- Monthly Report foundation (client portal / persisted report).
+- Monthly Report foundation (client portal / persisted report). Admin Monthly Report UI is now browser-proven, but the client portal monthly report remains deferred.
 - AI Market Intelligence full module.
 - Revenue Hub AI.
 - POD AI Toolkit.

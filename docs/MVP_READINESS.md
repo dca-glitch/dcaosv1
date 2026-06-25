@@ -70,6 +70,7 @@ The local smoke command intentionally refuses non-local API hosts. Add a separat
 - Market Intelligence admin MVP closure is documented in `docs/ai-market-intelligence/admin-foundation.md`.
 - Monthly Report Phase 1 schema-free monthly summary API is documented in `docs/ai-delivery-api-contract.md` and smoke-validated with `npm.cmd run smoke:monthly-report:local`.
 - Monthly Report Phase 2 persisted `AiDeliveryMonthlyReport` model and admin CRUD API are implemented, migration applied, and smoke-validated (52 PASS). Client portal monthly report and GA/GSC remain deferred.
+- Monthly Report Admin UI is implemented and browser-proven with `npm.cmd run smoke:monthly-report:browser`.
 - Backup/restore and staging migration runbooks are documented.
 - Finance smoke proves tenantId spoof handling locally and skips full cross-tenant proof without a real second tenant.
 - AI Delivery readiness closure and smoke index are documented in `docs/ai-delivery/client-delivery-readiness.md`.
