@@ -9,6 +9,7 @@
 - Client Portal monthly reports archive API/UI/browser proof.
 - Monthly Report document handoff API/UI/browser proof.
 - Client Access Admin UI/API foundation for tenant-scoped client-level grants.
+- First-client onboarding runbook for controlled local/admin MVP work.
 - Export handoff foundation.
 
 ## Proof

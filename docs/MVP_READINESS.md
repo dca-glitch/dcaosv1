@@ -76,6 +76,7 @@ The local smoke command intentionally refuses non-local API hosts. Add a separat
 - Monthly Report Admin UI is implemented and browser-proven with `npm.cmd run smoke:monthly-report:browser`.
 - Client Portal monthly reports are implemented and browser-proven with `npm.cmd run smoke:client-portal-monthly-report:browser`.
 - Client Access Admin UI foundation is closed for MVP at client-level scope and smoke-proven with `npm.cmd run smoke:client-access:local`. The Client Portal remains read-only and restricted to final client-safe data; client review/actions/comments/public links remain deferred.
+- The first-client onboarding runbook is available in `docs/ai-delivery/client-onboarding-runbook.md` for controlled local/admin MVP work.
 - Monthly Report document handoff is implemented and local-smoke-proven with `npm.cmd run smoke:monthly-report:local`.
 - Backup/restore and staging migration runbooks are documented.
 - Finance smoke proves tenantId spoof handling locally and skips full cross-tenant proof without a real second tenant.
