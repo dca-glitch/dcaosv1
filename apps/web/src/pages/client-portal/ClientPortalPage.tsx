@@ -1,5 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { EmptyState } from "../../components/EmptyState";
+import { ErrorState } from "../../components/ErrorState";
+import { LoadingState } from "../../components/LoadingState";
 import { MetricCard, PageHeader, SectionPanel, StatusBadge } from "../../components/ui";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "/api/v1";
@@ -100,6 +102,15 @@ function getStoredToken(): string | null {
   }
 }
 
+function isApiEnvelope<T>(value: unknown): value is ApiResponse<T> {
+  if (typeof value !== "object" || value === null || !("ok" in value)) {
+    return false;
+  }
+
+  const envelope = value as { ok: unknown };
+  return envelope.ok === true || envelope.ok === false;
+}
+
 async function apiRequest<T>(path: string, options: RequestOptions = {}): Promise<ApiResponse<T>> {
   const headers = new Headers();
   headers.set("Accept", "application/json");
@@ -112,13 +123,46 @@ async function apiRequest<T>(path: string, options: RequestOptions = {}): Promis
     headers.set("Authorization", `Bearer ${options.token}`);
   }
 
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    method: options.method ?? "GET",
-    headers,
-    body: options.body === undefined ? undefined : JSON.stringify(options.body)
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}${path}`, {
+      method: options.method ?? "GET",
+      headers,
+      body: options.body === undefined ? undefined : JSON.stringify(options.body)
+    });
+  } catch {
+    return {
+      ok: false,
+      error: {
+        code: "NETWORK_ERROR",
+        message: "Could not reach the client archive. Check your connection and try again."
+      }
+    };
+  }
 
-  const payload = (await response.json()) as ApiResponse<T>;
+  let payload: unknown;
+  try {
+    payload = await response.json();
+  } catch {
+    return {
+      ok: false,
+      error: {
+        code: "INVALID_RESPONSE",
+        message: "The server returned an unreadable response."
+      }
+    };
+  }
+
+  if (!isApiEnvelope<T>(payload)) {
+    return {
+      ok: false,
+      error: {
+        code: "INVALID_ENVELOPE",
+        message: "The server response was not in the expected format."
+      }
+    };
+  }
+
   if (!response.ok && payload.ok) {
     return {
       ok: false,
@@ -161,14 +205,30 @@ function formatReportDate(value: string | null | undefined): string {
   return Number.isNaN(parsed.getTime()) ? value : parsed.toLocaleDateString();
 }
 
+function formatDateLabel(value: string | null | undefined): string {
+  if (!value) {
+    return "Not set";
+  }
+
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? value.slice(0, 10) : parsed.toLocaleDateString();
+}
+
 function isFinalDeliverable(status: string) {
   return ["DELIVERED", "ACCEPTED"].includes(status);
+}
+
+function projectCardStyle(selected: boolean): CSSProperties | undefined {
+  return selected
+    ? { borderColor: "rgba(82, 224, 255, 0.32)", background: "rgba(82, 224, 255, 0.06)" }
+    : undefined;
 }
 
 export function ClientPortalPage() {
   const [projects, setProjects] = useState<ClientPortalProjectSummary[]>([]);
   const [projectsLoading, setProjectsLoading] = useState(true);
   const [projectsError, setProjectsError] = useState<string | null>(null);
+  const [projectFilter, setProjectFilter] = useState<"active" | "archived" | "all">("active");
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [selectedProject, setSelectedProject] = useState<ClientPortalProjectSummary | null>(null);
   const [selectedProjectLoading, setSelectedProjectLoading] = useState(false);
@@ -187,6 +247,22 @@ export function ClientPortalPage() {
 
   const projectsRequestSeq = useRef(0);
   const projectRequestSeq = useRef(0);
+
+  const filteredProjects = useMemo(
+    () =>
+      projects.filter((project) => {
+        if (projectFilter === "active") {
+          return !project.isArchived;
+        }
+
+        if (projectFilter === "archived") {
+          return project.isArchived;
+        }
+
+        return true;
+      }),
+    [projectFilter, projects]
+  );
 
   const loadProjects = useCallback(async () => {
     const requestSeq = ++projectsRequestSeq.current;
@@ -316,6 +392,17 @@ export function ClientPortalPage() {
 
   useEffect(() => {
     if (!selectedProjectId) {
+      return;
+    }
+
+    const stillVisible = filteredProjects.some((project) => project.id === selectedProjectId);
+    if (!stillVisible) {
+      setSelectedProjectId(filteredProjects[0]?.id ?? null);
+    }
+  }, [filteredProjects, selectedProjectId]);
+
+  useEffect(() => {
+    if (!selectedProjectId) {
       setSelectedProject(null);
       setDeliverables([]);
       setMonthlyReports([]);
@@ -382,7 +469,7 @@ export function ClientPortalPage() {
 
     const opened = window.open(downloadUrl, "_blank", "noopener,noreferrer");
     if (!opened) {
-      setDownloadNotice("Download opened URL could not be launched by the browser.");
+      setDownloadNotice("Your browser blocked the download window. Allow pop-ups and try again.");
     }
   }, [downloadingDeliverableId, selectedProjectId]);
 
@@ -420,13 +507,13 @@ export function ClientPortalPage() {
 
     const opened = window.open(downloadUrl, "_blank", "noopener,noreferrer");
     if (!opened) {
-      setDownloadNotice("Download opened URL could not be launched by the browser.");
+      setDownloadNotice("Your browser blocked the download window. Allow pop-ups and try again.");
     }
   }, [downloadingMonthlyReportId, selectedProjectId]);
 
   const projectCount = projects.length;
   const finalDeliverableCount = deliverables.filter((deliverable) => isFinalDeliverable(deliverable.status)).length;
-  const selectedProjectArchiveState = selectedProject ? (selectedProject.isArchived ? "Archived" : "Active") : "No project selected";
+  const selectedProjectArchiveState = selectedProject ? (selectedProject.isArchived ? "Archived" : "Active") : "None";
   const selectedMonthlyReport = monthlyReports.find((report) => report.id === selectedMonthlyReportId) ?? null;
   const selectedMonthlyReportIndex = selectedMonthlyReport
     ? monthlyReports.findIndex((report) => report.id === selectedMonthlyReport.id)
@@ -434,355 +521,284 @@ export function ClientPortalPage() {
 
   const clientName = selectedProject?.client?.name ?? projects[0]?.client?.name ?? "Client archive";
 
+  if (projectsLoading) {
+    return <LoadingState label="Loading client archive" />;
+  }
+
+  if (projectsError && projects.length === 0) {
+    return (
+      <section className="view-section" aria-labelledby="client-portal-title">
+        <PageHeader
+          description="Read-only archive of approved deliverables and finalized monthly reports."
+          eyebrow="Client workspace"
+          title="Client Portal"
+          titleId="client-portal-title"
+        />
+        <ErrorState message={projectsError} title="Archive unavailable" />
+        <div style={{ marginTop: "12px" }}>
+          <button className="secondary-action" onClick={handleRefresh} type="button">
+            Try again
+          </button>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="view-section" aria-labelledby="client-portal-title">
       <PageHeader
-        eyebrow="Client workspace"
-        title="Client Portal"
-        titleId="client-portal-title"
-        description="Clients only see approved or final archive items linked to their account. Internal workflow runs, prompts, and notes stay hidden."
         actions={
-          <button className="secondary-action" onClick={handleRefresh} type="button" disabled={projectsLoading}>
-            Refresh archive
-          </button>
-        }
-      />
-
-      <div className="summary-grid metric-grid">
-        <MetricCard accent="cyan" helper="Client-safe project archive" label="Projects" value={projectsLoading ? "Loading" : String(projectCount)} />
-        <MetricCard accent="violet" helper="Current selection" label="Selected project" value={selectedProject?.name ?? "None"} />
-        <MetricCard accent="purple" helper="DELIVERED / ACCEPTED only" label="Final deliverables" value={deliverablesLoading ? "Loading" : String(finalDeliverableCount)} />
-        <MetricCard accent="warning" helper="Archive-safe project state" label="Archive status" value={selectedProjectArchiveState} />
-      </div>
-
-      <SectionPanel
-        title="Projects"
-        description="Only archive-safe client projects linked through ClientUserAccess are shown here."
-        action={
-          <button className="secondary-action" onClick={handleRefresh} type="button" disabled={projectsLoading}>
+          <button className="secondary-action" disabled={projectsLoading} onClick={handleRefresh} type="button">
             Refresh
           </button>
         }
-      >
-        {projectsLoading ? (
-          <div className="state-panel">Loading client archive...</div>
-        ) : projectsError ? (
-          <EmptyState
-            title="Archive unavailable"
-            message={projectsError}
-            action={(
-              <button className="primary-action" onClick={handleRefresh} type="button">
-                Try again
+        description="Read-only archive of approved deliverables and finalized monthly reports. Internal workflow data stays hidden."
+        eyebrow="Client workspace"
+        title="Client Portal"
+        titleId="client-portal-title"
+      />
+
+      <div className="summary-grid metric-grid">
+        <MetricCard accent="cyan" helper="Linked delivery projects" label="Projects" value={String(projectCount)} />
+        <MetricCard accent="violet" helper="Current selection" label="Selected project" value={selectedProject?.name ?? "None"} />
+        <MetricCard accent="purple" helper="DELIVERED / ACCEPTED only" label="Final deliverables" value={deliverablesLoading ? "..." : String(finalDeliverableCount)} />
+        <MetricCard accent="warning" helper="Archive state" label="Status" value={selectedProjectArchiveState} />
+      </div>
+
+      {projectsError ? (
+        <div className="state-panel state-panel-error" role="alert">
+          <p>{projectsError}</p>
+        </div>
+      ) : null}
+
+      <div style={{ alignItems: "start", display: "grid", gap: "14px", gridTemplateColumns: "minmax(240px, 280px) minmax(0, 1fr)" }}>
+        <aside className="entity-card">
+          <div className="entity-card-header">
+            <div>
+              <p className="eyebrow">Archive</p>
+              <h2>Projects</h2>
+            </div>
+          </div>
+
+          <div className="filter-bar" role="group" aria-label="Project filter">
+            {(["active", "archived", "all"] as const).map((value) => (
+              <button
+                aria-pressed={projectFilter === value}
+                className={projectFilter === value ? "secondary-action filter-chip is-active" : "secondary-action filter-chip"}
+                key={value}
+                onClick={() => setProjectFilter(value)}
+                type="button"
+              >
+                {value[0].toUpperCase() + value.slice(1)}
               </button>
-            )}
-          />
-        ) : projects.length === 0 ? (
-          <EmptyState
-            title="No client archive yet"
-            message="This account is not linked to any AI Delivery project archive."
-            action={(
-              <button className="secondary-action" onClick={handleRefresh} type="button">
-                Reload
-              </button>
-            )}
-          />
-        ) : (
-          <div className="entity-grid">
-            {projects.map((project) => (
-              <article className="entity-card" key={project.id}>
-                <div className="entity-card-header">
-                  <div>
-                    <StatusBadge status={project.isArchived ? "Archived" : "Active"} />
-                    <h2>{project.name}</h2>
-                  </div>
-                  <div className="card-actions">
-                    <button className="secondary-action" onClick={() => handleSelectProject(project.id)} type="button">
-                      {selectedProjectId === project.id ? "Selected" : "Open project"}
-                    </button>
-                  </div>
-                </div>
-                <div className="entity-field-grid">
-                  <div>
-                    <span>Client</span>
-                    <strong>{project.client?.name ?? clientName}</strong>
-                  </div>
-                  <div>
-                    <span>Target month</span>
-                    <strong>{formatMonthLabel(project.targetMonth)}</strong>
-                  </div>
-                  <div>
-                    <span>Project</span>
-                    <strong>{project.project?.name ?? "Not linked"}</strong>
-                  </div>
-                  <div>
-                    <span>Archive state</span>
-                    <strong>{project.isArchived ? "Archived" : "Active"}</strong>
-                  </div>
-                </div>
-              </article>
             ))}
           </div>
-        )}
-      </SectionPanel>
 
-      <SectionPanel
-        title="Project archive"
-        description="Selected project details plus final deliverables only. Internal workflow data stays hidden."
-      >
-        {selectedProjectLoading ? (
-          <div className="state-panel">Loading project archive...</div>
-        ) : selectedProjectError ? (
-          <EmptyState
-            title="Project unavailable"
-            message={selectedProjectError}
-            action={(
-              <button className="secondary-action" onClick={handleRefresh} type="button">
-                Reload project
-              </button>
-            )}
-          />
-        ) : selectedProject ? (
-          <div className="entity-grid">
-            <article className="entity-card">
-              <div className="entity-card-header">
-                <div>
-                  <StatusBadge status={selectedProject.isArchived ? "Archived" : "Active"} />
-                  <h2>{selectedProject.name}</h2>
-                </div>
-              </div>
-              <div className="entity-field-grid">
-                <div>
-                  <span>Client</span>
-                  <strong>{selectedProject.client?.name ?? "Not set"}</strong>
-                </div>
-                <div>
-                  <span>Target month</span>
-                  <strong>{formatMonthLabel(selectedProject.targetMonth)}</strong>
-                </div>
-                <div>
-                  <span>Project record</span>
-                  <strong>{selectedProject.project?.name ?? "Not linked"}</strong>
-                </div>
-                <div>
-                  <span>Created</span>
-                  <strong>{selectedProject.createdAt.slice(0, 10)}</strong>
-                </div>
-                <div>
-                  <span>Updated</span>
-                  <strong>{selectedProject.updatedAt.slice(0, 10)}</strong>
-                </div>
-                <div className="entity-span-2">
-                  <span>Archive safety</span>
-                  <strong>Only approved/final archive items are exposed to client users.</strong>
-                </div>
-              </div>
-            </article>
-
-            <article className="entity-card">
-              <div className="entity-card-header">
-                <div>
-                  <StatusBadge status={deliverables.length ? "Active" : "Draft"} />
-                  <h2>Final deliverables</h2>
-                </div>
-              </div>
-
-              {downloadNotice ? <div className="state-panel">{downloadNotice}</div> : null}
-
-              {deliverablesLoading ? (
-                <div className="state-panel">Loading deliverables...</div>
-              ) : deliverablesError ? (
-                <EmptyState
-                  title="Deliverables unavailable"
-                  message={deliverablesError}
-                  action={(
-                    <button className="secondary-action" onClick={handleRefresh} type="button">
-                      Reload deliverables
-                    </button>
-                  )}
-                />
-              ) : deliverables.length === 0 ? (
-                <EmptyState
-                  title="No final deliverables yet"
-                  message="Only DELIVERED and ACCEPTED deliverables appear in the client archive."
-                />
-              ) : (
-                <div className="entity-grid">
-                  {deliverables.map((deliverable) => (
-                    <article className="entity-card" key={deliverable.id}>
-                      <div className="entity-card-header">
-                        <div>
-                          <StatusBadge status={deliverable.status} />
-                          <h3>{deliverable.title}</h3>
-                        </div>
-                        <div className="card-actions">
-                          <button
-                            className="primary-action"
-                            disabled={downloadingDeliverableId === deliverable.id}
-                            onClick={() => void handleDownload(deliverable.id)}
-                            type="button"
-                          >
-                            {downloadingDeliverableId === deliverable.id ? "Opening..." : "Download"}
-                          </button>
-                        </div>
+          {filteredProjects.length === 0 ? (
+            <EmptyState
+              message="No projects match this filter. Your account may not be linked to a client archive yet."
+              title="No projects"
+            />
+          ) : (
+            <div className="dense-list">
+              {filteredProjects.map((project) => (
+                <article
+                  className="entity-card dense-record"
+                  key={project.id}
+                  onClick={() => handleSelectProject(project.id)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      handleSelectProject(project.id);
+                    }
+                  }}
+                  role="button"
+                  style={projectCardStyle(selectedProjectId === project.id)}
+                  tabIndex={0}
+                >
+                  <div className="dense-record-main" style={{ gridTemplateColumns: "minmax(0, 1fr) auto" }}>
+                    <div className="dense-title">
+                      <div className="dense-kicker">
+                        <StatusBadge status={project.isArchived ? "ARCHIVED" : "ACTIVE"} />
                       </div>
-                      <div className="entity-field-grid">
-                        <div>
-                          <span>Type</span>
-                          <strong>{deliverable.deliveryType}</strong>
-                        </div>
-                        <div>
-                          <span>Status</span>
-                          <strong>{deliverable.status}</strong>
-                        </div>
-                        <div>
-                          <span>Export URL</span>
-                          <strong>
-                            {deliverable.exportUrl ? (
-                              <a href={deliverable.exportUrl} rel="noreferrer" target="_blank">
-                                Open export
-                              </a>
-                            ) : (
-                              "Not provided"
-                            )}
-                          </strong>
-                        </div>
-                        <div>
-                          <span>Updated</span>
-                          <strong>{deliverable.updatedAt.slice(0, 10)}</strong>
-                        </div>
-                        <div className="entity-span-2">
-                          <span>Description</span>
-                          <strong>{deliverable.description ?? "Not provided"}</strong>
-                        </div>
-                      </div>
-                    </article>
-                  ))}
-                </div>
-              )}
-            </article>
-
-            <article className="entity-card">
-              <div className="entity-card-header">
-                <div>
-                  <StatusBadge status={monthlyReports.length ? "Active" : "Draft"} />
-                  <h2>Monthly reports</h2>
-                </div>
-              </div>
-              <p className="muted-text">
-                This archive shows FINAL monthly report records only for {selectedProject?.name ?? "the selected project"}.
-                Internal metrics, workflows, and review data stay hidden.
-              </p>
-
-              {monthlyReportsLoading ? (
-                <div className="state-panel">Loading monthly reports...</div>
-              ) : monthlyReportsError ? (
-                <EmptyState
-                  title="Monthly reports unavailable"
-                  message={monthlyReportsError}
-                  action={(
-                    <button className="secondary-action" onClick={handleRefresh} type="button">
-                      Reload reports
-                    </button>
-                  )}
-                />
-              ) : monthlyReports.length === 0 ? (
-                <EmptyState
-                  title="No finalized monthly reports yet"
-                  message="Only FINAL monthly reports appear here once the report is finalized and available for client access."
-                />
-              ) : (
-                <div className="entity-grid">
-                  <article className="entity-card">
-                    <div className="entity-card-header">
-                      <div>
-                        <StatusBadge status={selectedMonthlyReport?.status ?? "FINAL"} />
-                        <h3>{selectedMonthlyReport?.title ?? "Monthly report"}</h3>
-                        <p className="muted-text" style={{ marginTop: "0.25rem" }}>
-                          {selectedMonthlyReportIndex >= 0
-                            ? `Report ${selectedMonthlyReportIndex + 1} of ${monthlyReports.length}`
-                            : "Select a report below to open its details."}
-                        </p>
+                      <h3>{project.name}</h3>
+                      <div className="dense-meta">
+                        <span>{project.client?.name ?? clientName}</span>
+                        <span>{formatMonthLabel(project.targetMonth)}</span>
                       </div>
                     </div>
-                    {selectedMonthlyReport ? (
-                      <div className="entity-field-grid">
-                        <div>
-                          <span>Project month</span>
-                          <strong>{formatMonthLabel(selectedProject?.targetMonth)}</strong>
-                        </div>
-                        <div>
-                          <span>Finalized</span>
-                          <strong>{formatReportDate(selectedMonthlyReport.finalizedAt)}</strong>
-                        </div>
-                        <div>
-                          <span>Created</span>
-                          <strong>{formatReportDate(selectedMonthlyReport.createdAt)}</strong>
-                        </div>
-                        <div>
-                          <span>Updated</span>
-                          <strong>{formatReportDate(selectedMonthlyReport.updatedAt)}</strong>
-                        </div>
-                        <div>
-                          <span>Document</span>
-                          <strong>{selectedMonthlyReport.hasDocument ? "Available for download" : "Not attached yet"}</strong>
-                        </div>
-                        <div>
-                          <span>Export link</span>
-                          <strong>
-                            {selectedMonthlyReport.exportUrl ? (
-                              <a href={selectedMonthlyReport.exportUrl} rel="noreferrer" target="_blank">
-                                Open export handoff
-                              </a>
-                            ) : (
-                              "Not provided"
-                            )}
-                          </strong>
-                        </div>
-                        <div className="entity-span-2">
-                          <span>Recommendations</span>
-                          <strong>{selectedMonthlyReport.recommendationsText ?? "Not provided"}</strong>
-                        </div>
-                        <div className="entity-span-2">
-                          <span>Download</span>
-                          <strong>
-                            {selectedMonthlyReport.hasDocument ? (
-                              <button
-                                className="primary-action"
-                                disabled={downloadingMonthlyReportId === selectedMonthlyReport.id}
-                                style={{ fontSize: "inherit" }}
-                                type="button"
-                                onClick={() => void handleMonthlyReportDownload(selectedMonthlyReport.id)}
-                              >
-                                {downloadingMonthlyReportId === selectedMonthlyReport.id ? "Opening..." : "Download report"}
-                              </button>
-                            ) : (
-                              "No report document is attached yet."
-                            )}
-                          </strong>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="state-panel">Select a finalized monthly report below to view its details.</div>
-                    )}
-                  </article>
+                    <div className="dense-actions">
+                      <button
+                        className={selectedProjectId === project.id ? "primary-action" : "secondary-action"}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          handleSelectProject(project.id);
+                        }}
+                        type="button"
+                      >
+                        {selectedProjectId === project.id ? "Open" : "View"}
+                      </button>
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
+        </aside>
 
-                  <article className="entity-card">
-                    <div className="entity-card-header">
-                      <div>
-                        <h3>Final monthly reports</h3>
+        <div style={{ display: "grid", gap: "14px" }}>
+          {!selectedProjectId ? (
+            <SectionPanel
+              description="Choose a project from the list to view deliverables and monthly reports."
+              title="Project details"
+              tone="compact"
+            >
+              <EmptyState message="Select a project on the left to open its archive." title="No project selected" />
+            </SectionPanel>
+          ) : selectedProjectLoading ? (
+            <LoadingState label="Loading project archive" />
+          ) : selectedProjectError ? (
+            <ErrorState message={selectedProjectError} title="Project unavailable" />
+          ) : selectedProject ? (
+            <>
+              <SectionPanel
+                description="Summary for the selected delivery project."
+                title="Project details"
+                tone="compact"
+              >
+                <article className="entity-card dense-record">
+                  <div className="dense-record-main">
+                    <div className="dense-title">
+                      <div className="dense-kicker">
+                        <StatusBadge status={selectedProject.isArchived ? "ARCHIVED" : "ACTIVE"} />
+                      </div>
+                      <h3>{selectedProject.name}</h3>
+                      <div className="dense-meta">
+                        <span>{selectedProject.client?.name ?? "Not set"}</span>
+                        <span>{formatMonthLabel(selectedProject.targetMonth)}</span>
+                        <span>{selectedProject.project?.name ?? "No linked project"}</span>
                       </div>
                     </div>
-                    <div className="entity-grid">
-                      {monthlyReports.map((report) => (
+                    <div className="dense-fields">
+                      <div className="dense-field">
+                        <span>Created</span>
+                        <strong>{formatDateLabel(selectedProject.createdAt)}</strong>
+                      </div>
+                      <div className="dense-field">
+                        <span>Updated</span>
+                        <strong>{formatDateLabel(selectedProject.updatedAt)}</strong>
+                      </div>
+                      <div className="dense-field">
+                        <span>Archive</span>
+                        <strong>{selectedProject.isArchived ? "Archived" : "Active"}</strong>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="dense-row-note">
+                    Only approved or final archive items are shown here. Internal workflow runs, prompts, and admin notes stay hidden.
+                  </div>
+                </article>
+              </SectionPanel>
+
+              <SectionPanel
+                description="DELIVERED and ACCEPTED deliverables only."
+                title="Final deliverables"
+                tone="compact"
+              >
+                {downloadNotice ? (
+                  <div className="state-panel" role="status">
+                    <p>{downloadNotice}</p>
+                  </div>
+                ) : null}
+
+                {deliverablesLoading ? (
+                  <LoadingState label="Loading deliverables" />
+                ) : deliverablesError ? (
+                  <ErrorState message={deliverablesError} title="Deliverables unavailable" />
+                ) : deliverables.length === 0 ? (
+                  <EmptyState
+                    message="Final deliverables appear here once they are marked DELIVERED or ACCEPTED."
+                    title="No final deliverables yet"
+                  />
+                ) : (
+                  <div className="dense-list">
+                    {deliverables.map((deliverable) => (
+                      <article className="entity-card dense-record" key={deliverable.id}>
+                        <div className="dense-record-main">
+                          <div className="dense-title">
+                            <div className="dense-kicker">
+                              <StatusBadge status={deliverable.status} />
+                              <span className="entity-pill">{deliverable.deliveryType}</span>
+                            </div>
+                            <h3>{deliverable.title}</h3>
+                            <div className="dense-meta">
+                              <span>Updated {formatDateLabel(deliverable.updatedAt)}</span>
+                              {deliverable.exportUrl ? (
+                                <span>
+                                  <a href={deliverable.exportUrl} rel="noreferrer" target="_blank">
+                                    Export link
+                                  </a>
+                                </span>
+                              ) : null}
+                            </div>
+                          </div>
+                          <div className="dense-fields">
+                            <div className="dense-field">
+                              <span>Type</span>
+                              <strong>{deliverable.deliveryType}</strong>
+                            </div>
+                            <div className="dense-field">
+                              <span>Status</span>
+                              <strong>{deliverable.status}</strong>
+                            </div>
+                          </div>
+                          <div className="dense-actions">
+                            <button
+                              className="primary-action"
+                              disabled={downloadingDeliverableId === deliverable.id}
+                              onClick={() => void handleDownload(deliverable.id)}
+                              type="button"
+                            >
+                              {downloadingDeliverableId === deliverable.id ? "Opening..." : "Download"}
+                            </button>
+                          </div>
+                        </div>
+                        {deliverable.description ? (
+                          <div className="dense-row-note">{deliverable.description}</div>
+                        ) : null}
+                      </article>
+                    ))}
+                  </div>
+                )}
+              </SectionPanel>
+
+              <SectionPanel
+                description="FINAL monthly reports only. Metrics and review data stay internal."
+                title="Monthly reports"
+                tone="compact"
+              >
+                {monthlyReportsLoading ? (
+                  <LoadingState label="Loading monthly reports" />
+                ) : monthlyReportsError ? (
+                  <ErrorState message={monthlyReportsError} title="Monthly reports unavailable" />
+                ) : monthlyReports.length === 0 ? (
+                  <EmptyState
+                    message="Finalized monthly reports appear here once the admin marks them FINAL."
+                    title="No finalized reports yet"
+                  />
+                ) : (
+                  <div style={{ display: "grid", gap: "12px", gridTemplateColumns: "minmax(200px, 240px) minmax(0, 1fr)" }}>
+                    <div className="dense-list">
+                      {monthlyReports.map((report, index) => (
                         <button
-                          key={report.id}
                           className={selectedMonthlyReportId === report.id ? "primary-action" : "secondary-action"}
-                          style={{ width: "100%", textAlign: "left", justifyContent: "space-between" }}
-                          type="button"
+                          key={report.id}
                           onClick={() => setSelectedMonthlyReportId(report.id)}
+                          style={{ justifyContent: "space-between", textAlign: "left", width: "100%" }}
+                          type="button"
                         >
                           <span>
-                            {report.title ?? "Monthly report"}
+                            {report.title ?? `Report ${index + 1}`}
                             <br />
                             <span className="muted-text">{formatReportDate(report.finalizedAt)}</span>
                           </span>
@@ -790,62 +806,92 @@ export function ClientPortalPage() {
                         </button>
                       ))}
                     </div>
-                  </article>
-                </div>
-              )}
-            </article>
-          </div>
-        ) : (
-          <div className="state-panel">Choose a project above to open its archive.</div>
-        )}
-      </SectionPanel>
 
-      <SectionPanel
-        title="Content Plan Reviews"
-        description="Deferred until the client review workflow is approved."
-      >
-        <p className="muted-text">
-          Client-facing monthly plan review is not active yet. The internal admin workflow stays separate and this route remains deferred.
-        </p>
-      </SectionPanel>
-
-      <SectionPanel
-        title="Content Draft Reviews"
-        description="Deferred until the client review workflow is approved."
-      >
-        <p className="muted-text">
-          Client-facing draft review is not active yet. No portal approval, revision, or messaging workflow is exposed from this shell.
-        </p>
-      </SectionPanel>
-
-      <div className="entity-grid">
-        <SectionPanel
-          title="Client comments"
-          description="Deferred."
-        >
-          <div className="state-panel">
-            Client comments and revision messaging remain deferred for a later block.
-          </div>
-        </SectionPanel>
-
-        <SectionPanel
-          title="Client actions"
-          description="Deferred."
-        >
-          <div className="state-panel">
-            Client actions remain deferred and are not available in this archive-only view.
-          </div>
-        </SectionPanel>
-
-        <SectionPanel
-          title="Approvals"
-          description="Deferred."
-        >
-          <div className="state-panel">
-            Approval history and client-side accept/reject actions remain deferred.
-          </div>
-        </SectionPanel>
+                    {selectedMonthlyReport ? (
+                      <article className="entity-card dense-record">
+                        <div className="dense-record-main" style={{ alignItems: "start", gridTemplateColumns: "minmax(0, 1fr)" }}>
+                          <div className="dense-title">
+                            <div className="dense-kicker">
+                              <StatusBadge status={selectedMonthlyReport.status} />
+                              {selectedMonthlyReportIndex >= 0 ? (
+                                <span className="muted-text">
+                                  Report {selectedMonthlyReportIndex + 1} of {monthlyReports.length}
+                                </span>
+                              ) : null}
+                            </div>
+                            <h3>{selectedMonthlyReport.title ?? "Monthly report"}</h3>
+                          </div>
+                          <div className="dense-fields">
+                            <div className="dense-field">
+                              <span>Project month</span>
+                              <strong>{formatMonthLabel(selectedProject.targetMonth)}</strong>
+                            </div>
+                            <div className="dense-field">
+                              <span>Finalized</span>
+                              <strong>{formatReportDate(selectedMonthlyReport.finalizedAt)}</strong>
+                            </div>
+                            <div className="dense-field">
+                              <span>Document</span>
+                              <strong>{selectedMonthlyReport.hasDocument ? "Available" : "Not attached"}</strong>
+                            </div>
+                            <div className="dense-field">
+                              <span>Export link</span>
+                              <strong>
+                                {selectedMonthlyReport.exportUrl ? (
+                                  <a href={selectedMonthlyReport.exportUrl} rel="noreferrer" target="_blank">
+                                    Open export
+                                  </a>
+                                ) : (
+                                  "Not provided"
+                                )}
+                              </strong>
+                            </div>
+                          </div>
+                          {selectedMonthlyReport.recommendationsText ? (
+                            <div className="dense-row-note">
+                              <strong>Recommendations: </strong>
+                              {selectedMonthlyReport.recommendationsText}
+                            </div>
+                          ) : null}
+                          <div className="dense-actions">
+                            {selectedMonthlyReport.hasDocument ? (
+                              <button
+                                className="primary-action"
+                                disabled={downloadingMonthlyReportId === selectedMonthlyReport.id}
+                                onClick={() => void handleMonthlyReportDownload(selectedMonthlyReport.id)}
+                                type="button"
+                              >
+                                {downloadingMonthlyReportId === selectedMonthlyReport.id ? "Opening..." : "Download PDF"}
+                              </button>
+                            ) : (
+                              <span className="muted-text">No report document is attached yet.</span>
+                            )}
+                          </div>
+                        </div>
+                      </article>
+                    ) : (
+                      <EmptyState message="Select a report from the list to view details." title="No report selected" />
+                    )}
+                  </div>
+                )}
+              </SectionPanel>
+            </>
+          ) : null}
+        </div>
       </div>
+
+      <SectionPanel
+        description="These client-facing workflows are intentionally deferred."
+        title="Coming later"
+        tone="compact"
+      >
+        <ul className="muted-text" style={{ margin: 0, paddingLeft: "1.25rem" }}>
+          <li>Content plan reviews</li>
+          <li>Content draft reviews</li>
+          <li>Client comments and revision messaging</li>
+          <li>Client approval actions</li>
+        </ul>
+      </SectionPanel>
     </section>
   );
 }
