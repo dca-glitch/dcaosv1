@@ -459,10 +459,18 @@ function getClientInput(body: unknown): ClientInputRequest | null {
   return {
     name,
     email: getOptionalString(value.email, SHORT_TEXT_FIELD_MAX_LENGTH),
+    website: getOptionalString(value.website, LOGO_URL_MAX_LENGTH),
     contactPerson: getOptionalString(value.contactPerson, SHORT_TEXT_FIELD_MAX_LENGTH),
     billingAddress: getOptionalString(value.billingAddress, TEXT_FIELD_MAX_LENGTH),
     taxId: getOptionalString(value.taxId, SHORT_TEXT_FIELD_MAX_LENGTH),
-    country
+    country,
+    clientKind: value.clientKind === "OWN_DOMAIN" ? "OWN_DOMAIN" : value.clientKind === "AGENCY_CLIENT" ? "AGENCY_CLIENT" : undefined,
+    legalEntityName: getOptionalString(value.legalEntityName, SHORT_TEXT_FIELD_MAX_LENGTH),
+    accountGroupName: getOptionalString(value.accountGroupName, SHORT_TEXT_FIELD_MAX_LENGTH),
+    migrationStatus:
+      value.migrationStatus === "PLANNED_LICENSEE_TENANT" || value.migrationStatus === "MIGRATED" || value.migrationStatus === "ACTIVE"
+        ? value.migrationStatus
+        : undefined
   };
 }
 
@@ -3384,7 +3392,16 @@ export const prepareAiDeliveryDeliverableWordPressDraftHandler: RequestHandler =
   if (!aiDeliveryProjectId || !deliverableId) return void res.status(400).json(aiDeliveryProjectInvalidFailure());
 
   try {
-    const response = await prepareAiDeliveryDeliverableWordPressDraft(authSession, aiDeliveryProjectId, deliverableId);
+    const publicationTargetId =
+      typeof (req.body as { publicationTargetId?: unknown })?.publicationTargetId === "string"
+        ? (req.body as { publicationTargetId: string }).publicationTargetId.trim()
+        : undefined;
+    const response = await prepareAiDeliveryDeliverableWordPressDraft(
+      authSession,
+      aiDeliveryProjectId,
+      deliverableId,
+      publicationTargetId
+    );
     if (!response) return void res.status(404).json(aiDeliveryProjectNotFoundFailure());
     res.json(success(response, { phase: "runtime", scope: "ai-delivery-deliverables" }));
   } catch (error) {
@@ -3401,7 +3418,16 @@ export const publishAiDeliveryDeliverableToWordPressHandler: RequestHandler = as
   if (!aiDeliveryProjectId || !deliverableId) return void res.status(400).json(aiDeliveryProjectInvalidFailure());
 
   try {
-    const response = await publishAiDeliveryDeliverableToWordPress(authSession, aiDeliveryProjectId, deliverableId);
+    const publicationTargetId =
+      typeof (req.body as { publicationTargetId?: unknown })?.publicationTargetId === "string"
+        ? (req.body as { publicationTargetId: string }).publicationTargetId.trim()
+        : undefined;
+    const response = await publishAiDeliveryDeliverableToWordPress(
+      authSession,
+      aiDeliveryProjectId,
+      deliverableId,
+      publicationTargetId
+    );
     if (!response) return void res.status(404).json(aiDeliveryProjectNotFoundFailure());
     res.json(success(response, { phase: "runtime", scope: "ai-delivery-deliverables" }));
   } catch (error) {

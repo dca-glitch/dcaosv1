@@ -10,10 +10,15 @@ export type ClientSummary = {
   id: string;
   name: string;
   email: string | null;
+  website: string | null;
   contactPerson: string | null;
   billingAddress: string | null;
   taxId: string | null;
   country: string | null;
+  clientKind: "AGENCY_CLIENT" | "OWN_DOMAIN";
+  legalEntityName: string | null;
+  accountGroupName: string | null;
+  migrationStatus: "ACTIVE" | "PLANNED_LICENSEE_TENANT" | "MIGRATED";
   isArchived: boolean;
   projectCount: number;
   createdAt: string;
@@ -23,10 +28,15 @@ export type ClientSummary = {
 export type ClientFormValues = {
   name: string;
   email: string;
+  website: string;
   contactPerson: string;
   billingAddress: string;
   taxId: string;
   country: string;
+  clientKind: "AGENCY_CLIENT" | "OWN_DOMAIN";
+  legalEntityName: string;
+  accountGroupName: string;
+  migrationStatus: "ACTIVE" | "PLANNED_LICENSEE_TENANT" | "MIGRATED";
 };
 
 export type ClientAccessUserSummary = {
@@ -62,6 +72,7 @@ type ClientsPageProps = {
   onLinkUserAccess: (clientId: string, userId: string) => Promise<boolean>;
   onRestore: (clientId: string) => Promise<boolean>;
   onSave: (clientId: string | null, values: ClientFormValues) => Promise<boolean>;
+  onOpenHub: (client: ClientSummary) => void;
   tenantUsers: ClientAccessTenantUser[];
 };
 
@@ -70,10 +81,15 @@ const COUNTRY_OPTIONS = ["Indonesia", "Poland", "United States", "United Kingdom
 const emptyForm = (): ClientFormValues => ({
   name: "",
   email: "",
+  website: "",
   contactPerson: "",
   billingAddress: "",
   taxId: "",
-  country: ""
+  country: "",
+  clientKind: "AGENCY_CLIENT",
+  legalEntityName: "",
+  accountGroupName: "",
+  migrationStatus: "ACTIVE"
 });
 
 export function ClientsPage({
@@ -88,9 +104,11 @@ export function ClientsPage({
   onLinkUserAccess,
   onRestore,
   onSave,
+  onOpenHub,
   tenantUsers
 }: ClientsPageProps) {
   const [filter, setFilter] = useState<"all" | "active" | "archived">("active");
+  const [kindFilter, setKindFilter] = useState<"all" | "AGENCY_CLIENT" | "OWN_DOMAIN">("all");
   const [editorClientId, setEditorClientId] = useState<string | null>(null);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [draft, setDraft] = useState<ClientFormValues>(emptyForm());
@@ -117,6 +135,10 @@ export function ClientsPage({
   const filteredClients = useMemo(
     () =>
       clients.filter((client) => {
+        if (kindFilter !== "all" && client.clientKind !== kindFilter) {
+          return false;
+        }
+
         if (filter === "active") {
           return !client.isArchived;
         }
@@ -127,7 +149,7 @@ export function ClientsPage({
 
         return true;
       }),
-    [clients, filter]
+    [clients, filter, kindFilter]
   );
 
   const submitLabel = editorClientId ? "Update client" : "Create client";
@@ -150,10 +172,15 @@ export function ClientsPage({
     setDraft({
       name: client.name,
       email: client.email ?? "",
+      website: client.website ?? "",
       contactPerson: client.contactPerson ?? "",
       billingAddress: client.billingAddress ?? "",
       taxId: client.taxId ?? "",
-      country: client.country ?? ""
+      country: client.country ?? "",
+      clientKind: client.clientKind,
+      legalEntityName: client.legalEntityName ?? "",
+      accountGroupName: client.accountGroupName ?? "",
+      migrationStatus: client.migrationStatus
     });
     setClientAccessUsers([]);
     setAccessUserId("");
@@ -222,6 +249,19 @@ export function ClientsPage({
           <h1 id="clients-title">Clients</h1>
         </div>
         <div className="toolbar">
+          <div className="filter-bar" role="group" aria-label="Clients kind filter">
+            {(["all", "AGENCY_CLIENT", "OWN_DOMAIN"] as const).map((value) => (
+              <button
+                aria-pressed={kindFilter === value}
+                className={kindFilter === value ? "secondary-action filter-chip is-active" : "secondary-action filter-chip"}
+                key={value}
+                onClick={() => setKindFilter(value)}
+                type="button"
+              >
+                {value === "all" ? "All kinds" : value === "AGENCY_CLIENT" ? "Agency" : "Own domain"}
+              </button>
+            ))}
+          </div>
           <div className="filter-bar" role="group" aria-label="Clients filter">
             {(["active", "archived", "all"] as const).map((value) => (
               <button
@@ -255,11 +295,15 @@ export function ClientsPage({
                     <span className={`entity-pill entity-pill-${client.isArchived ? "archived" : "active"}`}>
                       {client.isArchived ? "Archived" : "Active"}
                     </span>
+                    <span className={`entity-pill entity-pill-${client.clientKind === "OWN_DOMAIN" ? "warning" : "info"}`}>
+                      {client.clientKind === "OWN_DOMAIN" ? "Own domain" : "Agency client"}
+                    </span>
                   </div>
                   <h2>{client.name}</h2>
                   <div className="dense-meta">
                     <span><strong>{client.contactPerson || "No contact"}</strong></span>
                     <span>{client.email || "No email"}</span>
+                    <span>{client.website || "No website"}</span>
                     <span>{client.country || "No country"}</span>
                   </div>
                 </div>
@@ -278,12 +322,19 @@ export function ClientsPage({
                     <strong>{client.country || "Not set"}</strong>
                   </div>
                   <div className="dense-field">
+                    <span>Kind</span>
+                    <strong>{client.clientKind === "OWN_DOMAIN" ? "Own domain" : "Agency client"}</strong>
+                  </div>
+                  <div className="dense-field">
                     <span>Projects</span>
                     <strong>{client.projectCount}</strong>
                   </div>
                 </div>
 
                 <div className="dense-actions">
+                  <button className="secondary-action" onClick={() => onOpenHub(client)} type="button">
+                    Open hub
+                  </button>
                   {canEdit ? <button className="primary-action" onClick={() => void openEditModal(client)} type="button">Open</button> : null}
                   {canEdit ? (
                     <details className="row-action-menu">
@@ -315,6 +366,8 @@ export function ClientsPage({
               </div>
               <div className="dense-row-note">
                 Tax/VAT: {client.taxId || "Not set"}. Billing address: {client.billingAddress || "Not set"}.
+                {client.legalEntityName ? ` Legal entity: ${client.legalEntityName}.` : ""}
+                {client.accountGroupName ? ` Group: ${client.accountGroupName}.` : ""}
               </div>
             </article>
           ))}
@@ -361,6 +414,68 @@ export function ClientsPage({
                   value={draft.email}
                 />
                 <span className="muted-text">Shown only in admin records.</span>
+              </label>
+              <label>
+                Website - Optional
+                <input
+                  maxLength={500}
+                  onChange={(event) => setDraft((current) => ({ ...current, website: event.target.value }))}
+                  placeholder="https://example.com"
+                  type="url"
+                  value={draft.website}
+                />
+                <span className="muted-text">Canonical domain for this client record.</span>
+              </label>
+              <label>
+                Client kind - Required
+                <select
+                  onChange={(event) =>
+                    setDraft((current) => ({
+                      ...current,
+                      clientKind: event.target.value as ClientFormValues["clientKind"]
+                    }))
+                  }
+                  required
+                  value={draft.clientKind}
+                >
+                  <option value="AGENCY_CLIENT">Agency client</option>
+                  <option value="OWN_DOMAIN">Own domain</option>
+                </select>
+                <span className="muted-text">Own domain clients are separate legal entities, not billed in DCA LLC finance.</span>
+              </label>
+              <label>
+                Legal entity name - Optional
+                <input
+                  maxLength={255}
+                  onChange={(event) => setDraft((current) => ({ ...current, legalEntityName: event.target.value }))}
+                  placeholder="Registered company name"
+                  value={draft.legalEntityName}
+                />
+              </label>
+              <label>
+                Account group - Optional
+                <input
+                  maxLength={255}
+                  onChange={(event) => setDraft((current) => ({ ...current, accountGroupName: event.target.value }))}
+                  placeholder="Group label for related domains"
+                  value={draft.accountGroupName}
+                />
+              </label>
+              <label>
+                Migration status
+                <select
+                  onChange={(event) =>
+                    setDraft((current) => ({
+                      ...current,
+                      migrationStatus: event.target.value as ClientFormValues["migrationStatus"]
+                    }))
+                  }
+                  value={draft.migrationStatus}
+                >
+                  <option value="ACTIVE">Active</option>
+                  <option value="PLANNED_LICENSEE_TENANT">Planned licensee tenant</option>
+                  <option value="MIGRATED">Migrated</option>
+                </select>
               </label>
               <label>
                 Tax/VAT ID - Optional

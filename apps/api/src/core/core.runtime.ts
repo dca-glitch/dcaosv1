@@ -130,6 +130,12 @@ import {
   type AiDeliveryWorkflowExecutionResearchSummaryContext,
   type AiDeliveryWorkflowExecutionSourceContext
 } from "./ai-delivery-workflow-execution.adapter";
+import {
+  getDecryptedPublicationTargetPassword,
+  normalizeWebsiteUrl,
+  recordPublicationLog,
+  resolvePublicationTargetForClient
+} from "./client-publication.runtime";
 
 const prisma = createPrismaClient();
 
@@ -318,10 +324,15 @@ function toClientSummary(client: {
   id: string;
   name: string;
   email: string | null;
+  website: string | null;
   billingDetails: string | null;
   contactPerson: string | null;
   taxId: string | null;
   country: string | null;
+  clientKind: string;
+  legalEntityName: string | null;
+  accountGroupName: string | null;
+  migrationStatus: string;
   isArchived: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -333,10 +344,15 @@ function toClientSummary(client: {
     id: client.id,
     name: client.name,
     email: client.email,
+    website: client.website,
     contactPerson: client.contactPerson,
     billingAddress: client.billingDetails,
     taxId: client.taxId,
     country: client.country,
+    clientKind: client.clientKind as "AGENCY_CLIENT" | "OWN_DOMAIN",
+    legalEntityName: client.legalEntityName,
+    accountGroupName: client.accountGroupName,
+    migrationStatus: client.migrationStatus as "ACTIVE" | "PLANNED_LICENSEE_TENANT" | "MIGRATED",
     isArchived: client.isArchived,
     projectCount: client._count.projects,
     createdAt: client.createdAt.toISOString(),
@@ -703,10 +719,15 @@ export async function listClients(
       id: true,
       name: true,
       email: true,
+      website: true,
       billingDetails: true,
       contactPerson: true,
       taxId: true,
       country: true,
+      clientKind: true,
+      legalEntityName: true,
+      accountGroupName: true,
+      migrationStatus: true,
       isArchived: true,
       createdAt: true,
       updatedAt: true,
@@ -733,10 +754,15 @@ async function getClientRecord(tx: PrismaTx, tenantId: string, clientId: string)
       id: true,
       name: true,
       email: true,
+      website: true,
       billingDetails: true,
       contactPerson: true,
       taxId: true,
       country: true,
+      clientKind: true,
+      legalEntityName: true,
+      accountGroupName: true,
+      migrationStatus: true,
       isArchived: true,
       createdAt: true,
       updatedAt: true,
@@ -772,24 +798,43 @@ export async function createClient(
   }
 
   return prisma.$transaction(async (tx: PrismaTx) => {
+    const clientKind = input.clientKind === "OWN_DOMAIN" ? "OWN_DOMAIN" : "AGENCY_CLIENT";
+    const legalEntityName = toNullableString(input.legalEntityName);
+    if (clientKind === "OWN_DOMAIN" && !legalEntityName) {
+      return { client: null };
+    }
+
     const created = await tx.client.create({
       data: {
         tenantId,
         name: input.name ?? "",
         email: toNullableString(input.email),
+        website: normalizeWebsiteUrl(input.website),
         contactPerson: toNullableString(input.contactPerson),
         billingDetails: toNullableString(input.billingAddress),
         taxId: toNullableString(input.taxId),
-        country: toNullableString(input.country)
+        country: toNullableString(input.country),
+        clientKind,
+        legalEntityName,
+        accountGroupName: toNullableString(input.accountGroupName),
+        migrationStatus:
+          input.migrationStatus === "PLANNED_LICENSEE_TENANT" || input.migrationStatus === "MIGRATED"
+            ? input.migrationStatus
+            : "ACTIVE"
       },
       select: {
         id: true,
         name: true,
         email: true,
+        website: true,
         billingDetails: true,
         contactPerson: true,
         taxId: true,
         country: true,
+        clientKind: true,
+        legalEntityName: true,
+        accountGroupName: true,
+        migrationStatus: true,
         isArchived: true,
         createdAt: true,
         updatedAt: true,
@@ -829,20 +874,33 @@ export async function updateClient(
       },
       data: {
         name: input.name ?? existing.name,
-        email: toNullableString(input.email),
-        contactPerson: toNullableString(input.contactPerson),
-        billingDetails: toNullableString(input.billingAddress),
-        taxId: toNullableString(input.taxId),
-        country: toNullableString(input.country)
+        email: input.email !== undefined ? toNullableString(input.email) : undefined,
+        website: input.website !== undefined ? normalizeWebsiteUrl(input.website) : undefined,
+        contactPerson: input.contactPerson !== undefined ? toNullableString(input.contactPerson) : undefined,
+        billingDetails: input.billingAddress !== undefined ? toNullableString(input.billingAddress) : undefined,
+        taxId: input.taxId !== undefined ? toNullableString(input.taxId) : undefined,
+        country: input.country !== undefined ? toNullableString(input.country) : undefined,
+        clientKind: input.clientKind === "OWN_DOMAIN" || input.clientKind === "AGENCY_CLIENT" ? input.clientKind : undefined,
+        legalEntityName: input.legalEntityName !== undefined ? toNullableString(input.legalEntityName) : undefined,
+        accountGroupName: input.accountGroupName !== undefined ? toNullableString(input.accountGroupName) : undefined,
+        migrationStatus:
+          input.migrationStatus === "PLANNED_LICENSEE_TENANT" || input.migrationStatus === "MIGRATED" || input.migrationStatus === "ACTIVE"
+            ? input.migrationStatus
+            : undefined
       },
       select: {
         id: true,
         name: true,
         email: true,
+        website: true,
         billingDetails: true,
         contactPerson: true,
         taxId: true,
         country: true,
+        clientKind: true,
+        legalEntityName: true,
+        accountGroupName: true,
+        migrationStatus: true,
         isArchived: true,
         createdAt: true,
         updatedAt: true,
@@ -897,10 +955,15 @@ export async function archiveClient(
         id: true,
         name: true,
         email: true,
+        website: true,
         billingDetails: true,
         contactPerson: true,
         taxId: true,
         country: true,
+        clientKind: true,
+        legalEntityName: true,
+        accountGroupName: true,
+        migrationStatus: true,
         isArchived: true,
         createdAt: true,
         updatedAt: true,
@@ -944,10 +1007,15 @@ export async function restoreClient(
         id: true,
         name: true,
         email: true,
+        website: true,
         billingDetails: true,
         contactPerson: true,
         taxId: true,
         country: true,
+        clientKind: true,
+        legalEntityName: true,
+        accountGroupName: true,
+        migrationStatus: true,
         isArchived: true,
         createdAt: true,
         updatedAt: true,
@@ -5499,7 +5567,8 @@ async function getTenantClient(tx: PrismaTx, tenantId: string, clientId: string 
       tenantId
     },
     select: {
-      id: true
+      id: true,
+      clientKind: true
     }
   });
 }
@@ -5610,6 +5679,9 @@ export async function createInvoice(
     return await prisma.$transaction(async (tx: PrismaTx) => {
       const client = await getTenantClient(tx, tenantId, clientId);
       if (!client) {
+        return null;
+      }
+      if (client.clientKind === "OWN_DOMAIN") {
         return null;
       }
 
@@ -8346,7 +8418,8 @@ export async function getAiDeliveryDeliverableDownloadReference(
 export async function prepareAiDeliveryDeliverableWordPressDraft(
   authSession: AuthResolvedSessionContext,
   aiDeliveryProjectId: string,
-  deliverableId: string
+  deliverableId: string,
+  publicationTargetId?: string | null
 ): Promise<AiDeliveryWordPressDraftResponse | null> {
   const tenantId = getActiveTenantId(authSession);
   if (!tenantId || !aiDeliveryProjectId || !deliverableId) {
@@ -8360,11 +8433,20 @@ export async function prepareAiDeliveryDeliverableWordPressDraft(
       isArchived: false
     },
     select: {
-      id: true
+      id: true,
+      clientId: true
     }
   });
   if (!project) {
     return null;
+  }
+
+  const publicationTarget = await resolvePublicationTargetForClient(tenantId, project.clientId, publicationTargetId);
+  if (!publicationTarget) {
+    throwAiDeliveryConflict(
+      "AI_DELIVERY_WORDPRESS_TARGET_REQUIRED",
+      "A publication target must be configured for this client before preparing a WordPress draft."
+    );
   }
 
   const deliverable = await getAiDeliveryDeliverableDelegate(prisma).findFirst({
@@ -8431,6 +8513,26 @@ export async function prepareAiDeliveryDeliverableWordPressDraft(
   }
 
   const excerptCandidate = (deliverable.description ?? "").trim();
+  let siteUrlHost: string | null = null;
+  try {
+    siteUrlHost = new URL(publicationTarget!.siteUrl).hostname;
+  } catch {
+    siteUrlHost = null;
+  }
+
+  await recordPublicationLog({
+    tenantId,
+    clientId: project.clientId,
+    publicationTargetId: publicationTarget!.id,
+    aiDeliveryProjectId,
+    deliverableId,
+    action: "PREPARE_WORDPRESS_DRAFT",
+    status: "PREPARED",
+    siteUrlHost,
+    actorUserId: authSession.user.id,
+    note: `Prepared draft for ${publicationTarget!.label}`
+  });
+
   return {
     wordpressDraft: {
       status: "PREPARED",
@@ -8441,7 +8543,10 @@ export async function prepareAiDeliveryDeliverableWordPressDraft(
       sourceId,
       externalPostId: null,
       externalEditUrl: null,
-      note: "WordPress API execution is deferred/not configured."
+      publicationTargetId: publicationTarget!.id,
+      publicationTargetLabel: publicationTarget!.label,
+      publicationSiteUrl: publicationTarget!.siteUrl,
+      note: "WordPress API execution uses the client publication target. Live publish remains env-gated."
     }
   };
 }
@@ -8449,9 +8554,10 @@ export async function prepareAiDeliveryDeliverableWordPressDraft(
 export async function publishAiDeliveryDeliverableToWordPress(
   authSession: AuthResolvedSessionContext,
   aiDeliveryProjectId: string,
-  deliverableId: string
+  deliverableId: string,
+  publicationTargetId?: string | null
 ): Promise<{ publishResult: AiDeliveryWordPressPublishResult } | null> {
-  const { publishAiDeliveryDeliverableToWordPress } = await import("../services/wordpress.service");
+  const { publishAiDeliveryDeliverableToWordPress: publishToWordPressService } = await import("../services/wordpress.service");
   const tenantId = getActiveTenantId(authSession);
   if (!tenantId || !aiDeliveryProjectId || !deliverableId) {
     return null;
@@ -8464,11 +8570,20 @@ export async function publishAiDeliveryDeliverableToWordPress(
       isArchived: false
     },
     select: {
-      id: true
+      id: true,
+      clientId: true
     }
   });
   if (!project) {
     return null;
+  }
+
+  const publicationTarget = await resolvePublicationTargetForClient(tenantId, project.clientId, publicationTargetId);
+  if (!publicationTarget) {
+    throwAiDeliveryConflict(
+      "AI_DELIVERY_WORDPRESS_TARGET_REQUIRED",
+      "A publication target must be configured for this client before publishing to WordPress."
+    );
   }
 
   const deliverable = await getAiDeliveryDeliverableDelegate(prisma).findFirst({
@@ -8533,11 +8648,43 @@ export async function publishAiDeliveryDeliverableToWordPress(
   }
 
   const excerptCandidate = (deliverable.description ?? "").trim();
-  const publishResult = await publishAiDeliveryDeliverableToWordPress({
-    deliverableId: deliverable.id,
-    title,
-    body,
-    excerpt: excerptCandidate || null
+  const applicationPassword = await getDecryptedPublicationTargetPassword(tenantId, publicationTarget!.id);
+  const publishResult = await publishToWordPressService(
+    {
+      deliverableId: deliverable.id,
+      title,
+      body,
+      excerpt: excerptCandidate || null
+    },
+    {
+      siteConfig: {
+        siteUrl: publicationTarget!.siteUrl,
+        siteSlug: publicationTarget!.siteSlug ?? undefined,
+        wordPressComSite: publicationTarget!.wordPressComSite
+      },
+      applicationPassword
+    }
+  );
+
+  let siteUrlHost: string | null = null;
+  try {
+    siteUrlHost = new URL(publicationTarget!.siteUrl).hostname;
+  } catch {
+    siteUrlHost = null;
+  }
+
+  await recordPublicationLog({
+    tenantId,
+    clientId: project.clientId,
+    publicationTargetId: publicationTarget!.id,
+    aiDeliveryProjectId,
+    deliverableId,
+    action: "PUBLISH_WORDPRESS",
+    status: publishResult.status === "published" ? "PUBLISHED" : publishResult.status === "error" ? "FAILED" : "PROVIDER_DISABLED",
+    siteUrlHost,
+    externalPostId: publishResult.wordpressPostId,
+    actorUserId: authSession.user.id,
+    note: publishResult.providerDisabledReason ?? publishResult.errorMessage
   });
 
   return {
@@ -9147,6 +9294,66 @@ export async function saveAiDeliveryWordPressConfigForTenant(
 
 // Market Intelligence functions
 
+const marketIntelligenceProjectSelect = {
+  id: true,
+  clientId: true,
+  client: {
+    select: {
+      id: true,
+      name: true,
+      website: true
+    }
+  },
+  title: true,
+  description: true,
+  keywords: true,
+  competitors: true,
+  niche: true,
+  productServiceFocus: true,
+  targetClientName: true,
+  targetMonth: true,
+  status: true,
+  isArchived: true,
+  createdAt: true,
+  updatedAt: true
+} as const;
+
+function mapMarketIntelligenceProjectSummary(project: {
+  id: string;
+  clientId: string | null;
+  client: { id: string; name: string; website: string | null } | null;
+  title: string;
+  description: string | null;
+  keywords: string | null;
+  competitors: string | null;
+  niche: string | null;
+  productServiceFocus: string | null;
+  targetClientName: string | null;
+  targetMonth: string | null;
+  status: string;
+  isArchived: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}): MarketIntelligenceProjectSummary {
+  return {
+    id: project.id,
+    clientId: project.clientId,
+    client: project.client,
+    title: project.title,
+    description: project.description,
+    keywords: project.keywords,
+    competitors: project.competitors,
+    niche: project.niche,
+    productServiceFocus: project.productServiceFocus,
+    targetClientName: project.client?.name ?? project.targetClientName,
+    targetMonth: project.targetMonth,
+    status: project.status,
+    isArchived: project.isArchived,
+    createdAt: project.createdAt.toISOString(),
+    updatedAt: project.updatedAt.toISOString()
+  };
+}
+
 export async function listMarketIntelligenceProjects(
   authSession: AuthResolvedSessionContext
 ): Promise<MarketIntelligenceProjectsResponse | null> {
@@ -9161,30 +9368,12 @@ export async function listMarketIntelligenceProjects(
         tenantId,
         isArchived: false
       },
-      select: {
-        id: true,
-        title: true,
-        description: true,
-        keywords: true,
-        competitors: true,
-        niche: true,
-        productServiceFocus: true,
-        targetClientName: true,
-        targetMonth: true,
-        status: true,
-        isArchived: true,
-        createdAt: true,
-        updatedAt: true
-      },
+      select: marketIntelligenceProjectSelect,
       orderBy: { createdAt: "desc" }
     });
 
     return {
-      projects: projects.map((p) => ({
-        ...p,
-        createdAt: p.createdAt.toISOString(),
-        updatedAt: p.updatedAt.toISOString()
-      }))
+      projects: projects.map(mapMarketIntelligenceProjectSummary)
     };
   });
 }
@@ -9194,47 +9383,38 @@ export async function createMarketIntelligenceProject(
   input: MarketIntelligenceProjectInputRequest
 ): Promise<MarketIntelligenceProjectResponse | null> {
   const tenantId = getActiveTenantId(authSession);
-  if (!tenantId) {
+  if (!tenantId || !input.clientId) {
     return null;
   }
 
   return prisma.$transaction(async (tx: PrismaTx) => {
+    const client = await tx.client.findFirst({
+      where: { id: input.clientId!, tenantId, isArchived: false },
+      select: { id: true, name: true }
+    });
+    if (!client) {
+      return { project: null };
+    }
+
     const project = await tx.marketIntelligenceProject.create({
       data: {
         tenantId,
+        clientId: client.id,
         title: input.title ?? "New Project",
         description: toNullableString(input.description),
         keywords: toNullableString(input.keywords),
         competitors: toNullableString(input.competitors),
         niche: toNullableString(input.niche),
         productServiceFocus: toNullableString(input.productServiceFocus),
-        targetClientName: toNullableString(input.targetClientName),
+        targetClientName: client.name,
         targetMonth: toNullableString(input.targetMonth),
         status: input.status ?? "ACTIVE"
       },
-      select: {
-        id: true,
-        title: true,
-        description: true,
-        keywords: true,
-        competitors: true,
-        niche: true,
-        productServiceFocus: true,
-        targetClientName: true,
-        targetMonth: true,
-        status: true,
-        isArchived: true,
-        createdAt: true,
-        updatedAt: true
-      }
+      select: marketIntelligenceProjectSelect
     });
 
     return {
-      project: {
-        ...project,
-        createdAt: project.createdAt.toISOString(),
-        updatedAt: project.updatedAt.toISOString()
-      }
+      project: mapMarketIntelligenceProjectSummary(project)
     };
   });
 }
@@ -9277,8 +9457,16 @@ export async function updateMarketIntelligenceProject(
     if (input.productServiceFocus !== undefined) {
       updateData.productServiceFocus = input.productServiceFocus;
     }
-    if (input.targetClientName !== undefined) {
-      updateData.targetClientName = input.targetClientName;
+    if (input.clientId !== undefined && input.clientId !== null) {
+      const client = await tx.client.findFirst({
+        where: { id: input.clientId, tenantId, isArchived: false },
+        select: { id: true, name: true }
+      });
+      if (!client) {
+        return { project: null };
+      }
+      updateData.clientId = client.id;
+      updateData.targetClientName = client.name;
     }
     if (input.targetMonth !== undefined) {
       updateData.targetMonth = input.targetMonth;
@@ -9290,29 +9478,11 @@ export async function updateMarketIntelligenceProject(
     const project = await tx.marketIntelligenceProject.update({
       where: { id: projectId },
       data: updateData,
-      select: {
-        id: true,
-        title: true,
-        description: true,
-        keywords: true,
-        competitors: true,
-        niche: true,
-        productServiceFocus: true,
-        targetClientName: true,
-        targetMonth: true,
-        status: true,
-        isArchived: true,
-        createdAt: true,
-        updatedAt: true
-      }
+      select: marketIntelligenceProjectSelect
     });
 
     return {
-      project: {
-        ...project,
-        createdAt: project.createdAt.toISOString(),
-        updatedAt: project.updatedAt.toISOString()
-      }
+      project: mapMarketIntelligenceProjectSummary(project)
     };
   });
 }
@@ -9338,29 +9508,11 @@ export async function archiveMarketIntelligenceProject(
     const project = await tx.marketIntelligenceProject.update({
       where: { id: projectId },
       data: { isArchived: true },
-      select: {
-        id: true,
-        title: true,
-        description: true,
-        keywords: true,
-        competitors: true,
-        niche: true,
-        productServiceFocus: true,
-        targetClientName: true,
-        targetMonth: true,
-        status: true,
-        isArchived: true,
-        createdAt: true,
-        updatedAt: true
-      }
+      select: marketIntelligenceProjectSelect
     });
 
     return {
-      project: {
-        ...project,
-        createdAt: project.createdAt.toISOString(),
-        updatedAt: project.updatedAt.toISOString()
-      }
+      project: mapMarketIntelligenceProjectSummary(project)
     };
   });
 }
@@ -10131,9 +10283,14 @@ export async function prepareMarketIntelligenceHandoff(
     const project = await tx.marketIntelligenceProject.findFirst({
       where: { id: projectId, tenantId },
       select: {
-        title: true,
+        clientId: true,
         targetClientName: true,
-        targetMonth: true
+        targetMonth: true,
+        client: {
+          select: {
+            name: true
+          }
+        }
       }
     });
 
@@ -10158,7 +10315,8 @@ export async function prepareMarketIntelligenceHandoff(
         risks: Array.isArray(result.threats) ? result.threats as any : null,
         recommendedActions: Array.isArray(result.recommendedNextActions) ? result.recommendedNextActions as any : null,
         sourceNote: typeof result.sourceNotes === "string" ? result.sourceNotes : null,
-        targetClientName: project?.targetClientName ?? null,
+        clientId: project?.clientId ?? null,
+        targetClientName: project?.client?.name ?? project?.targetClientName ?? null,
         targetMonth: project?.targetMonth ?? null,
         handoffStatus: "DRAFT"
       },
@@ -10296,15 +10454,20 @@ export async function applyMiHandoffToAiDelivery(
   return prisma.$transaction(async (tx: PrismaTx) => {
     const project = await tx.aiDeliveryProject.findFirst({
       where: { id: aiDeliveryProjectId, tenantId },
-      select: { id: true }
+      select: { id: true, clientId: true }
     });
     if (!project) return null;
 
     const handoff = await tx.marketIntelligenceHandoff.findFirst({
       where: { id: handoffId, tenantId, isArchived: false },
-      select: { id: true, handoffStatus: true, aiDeliveryProjectId: true }
+      select: { id: true, handoffStatus: true, aiDeliveryProjectId: true, clientId: true, project: { select: { clientId: true } } }
     });
     if (!handoff) return null;
+
+    const handoffClientId = handoff.clientId ?? handoff.project.clientId;
+    if (handoffClientId && handoffClientId !== project.clientId) {
+      return null;
+    }
 
     // Only READY or APPLIED handoffs can be linked; DRAFT/ARCHIVED cannot.
     if (handoff.handoffStatus !== "READY" && handoff.handoffStatus !== "APPLIED") {

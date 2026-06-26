@@ -46,10 +46,15 @@ export interface ClientSummary {
   id: string;
   name: string;
   email: string | null;
+  website: string | null;
   contactPerson: string | null;
   billingAddress: string | null;
   taxId: string | null;
   country: string | null;
+  clientKind: "AGENCY_CLIENT" | "OWN_DOMAIN";
+  legalEntityName: string | null;
+  accountGroupName: string | null;
+  migrationStatus: "ACTIVE" | "PLANNED_LICENSEE_TENANT" | "MIGRATED";
   isArchived: boolean;
   projectCount: number;
   createdAt: string;
@@ -67,10 +72,95 @@ export interface ClientsResponse {
 export interface ClientInputRequest {
   name?: string;
   email?: string | null;
+  website?: string | null;
   contactPerson?: string | null;
   billingAddress?: string | null;
   taxId?: string | null;
   country?: string | null;
+  clientKind?: "AGENCY_CLIENT" | "OWN_DOMAIN";
+  legalEntityName?: string | null;
+  accountGroupName?: string | null;
+  migrationStatus?: "ACTIVE" | "PLANNED_LICENSEE_TENANT" | "MIGRATED";
+}
+
+export interface PublicationTargetSummary {
+  id: string;
+  clientId: string;
+  label: string;
+  connectorType: string;
+  siteUrl: string;
+  siteSlug: string | null;
+  wordPressComSite: boolean;
+  isDefault: boolean;
+  isArchived: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PublicationTargetsResponse {
+  publicationTargets: PublicationTargetSummary[];
+}
+
+export interface PublicationTargetResponse {
+  publicationTarget: PublicationTargetSummary | null;
+}
+
+export interface PublicationTargetInputRequest {
+  label?: string;
+  siteUrl?: string;
+  siteSlug?: string | null;
+  wordPressComSite?: boolean;
+  isDefault?: boolean;
+}
+
+export interface PublicationTargetCredentialUpsertRequest {
+  applicationPassword?: string;
+}
+
+export interface PublicationTargetCredentialStatusResponse {
+  configured: boolean;
+  encryptionAvailable: boolean;
+  updatedAt: string | null;
+}
+
+export interface ClientAnalyticsProfileSummary {
+  id: string;
+  clientId: string;
+  gscSiteUrl: string | null;
+  ga4PropertyId: string | null;
+  defaultSourceType: string;
+  connectionStatus: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ClientAnalyticsProfileResponse {
+  profile: ClientAnalyticsProfileSummary | null;
+}
+
+export interface ClientAnalyticsProfileInputRequest {
+  gscSiteUrl?: string | null;
+  ga4PropertyId?: string | null;
+  defaultSourceType?: "MANUAL" | "CSV_IMPORT" | "GA4" | "GSC" | "HYBRID";
+  connectionStatus?: "MANUAL" | "CONFIGURED" | "LIVE_DEFERRED";
+}
+
+export interface PublicationLogSummary {
+  id: string;
+  clientId: string;
+  publicationTargetId: string | null;
+  aiDeliveryProjectId: string | null;
+  deliverableId: string | null;
+  action: string;
+  status: string;
+  siteUrlHost: string | null;
+  externalPostId: string | null;
+  note: string | null;
+  createdAt: string;
+}
+
+export interface PublicationLogsResponse {
+  publicationLogs: PublicationLogSummary[];
 }
 
 export interface ProjectSummary {
@@ -667,6 +757,9 @@ export interface AiDeliveryWordPressDraftPrepared {
   sourceId: string;
   externalPostId: null;
   externalEditUrl: null;
+  publicationTargetId?: string;
+  publicationTargetLabel?: string;
+  publicationSiteUrl?: string;
   note: string;
 }
 
@@ -1156,6 +1249,8 @@ export interface AiDeliveryMonthlyMetricSnapshotResponse {
 
 export interface MarketIntelligenceProjectSummary {
   id: string;
+  clientId: string | null;
+  client: { id: string; name: string; website: string | null } | null;
   title: string;
   description: string | null;
   keywords: string | null;
@@ -1180,6 +1275,7 @@ export interface MarketIntelligenceProjectsResponse {
 
 export interface MarketIntelligenceProjectInputRequest {
   title?: string | null;
+  clientId?: string | null;
   description?: string | null;
   keywords?: string | null;
   competitors?: string | null;

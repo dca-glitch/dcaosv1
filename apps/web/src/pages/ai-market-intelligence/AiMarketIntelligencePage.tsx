@@ -26,8 +26,19 @@ type ProjectFormValues = {
   competitors: string;
   niche: string;
   productServiceFocus: string;
-  targetClientName: string;
+  clientId: string;
   targetMonth: string;
+};
+
+type ClientOption = {
+  id: string;
+  name: string;
+  website: string | null;
+  isArchived: boolean;
+};
+
+type AiMarketIntelligencePageProps = {
+  clients: ClientOption[];
 };
 
 type SourceFormValues = {
@@ -49,7 +60,7 @@ const EMPTY_PROJECT_FORM: ProjectFormValues = {
   competitors: "",
   niche: "",
   productServiceFocus: "",
-  targetClientName: "",
+  clientId: "",
   targetMonth: ""
 };
 
@@ -153,7 +164,7 @@ function projectCardStyle(selected: boolean): CSSProperties | undefined {
     : undefined;
 }
 
-export function AiMarketIntelligencePage() {
+export function AiMarketIntelligencePage({ clients }: AiMarketIntelligencePageProps) {
   const [projects, setProjects] = useState<MarketIntelligenceProjectSummary[]>([]);
   const [projectsLoading, setProjectsLoading] = useState(true);
   const [projectsError, setProjectsError] = useState<string | null>(null);
@@ -176,6 +187,11 @@ export function AiMarketIntelligencePage() {
   const [savingProject, setSavingProject] = useState(false);
   const [savingSource, setSavingSource] = useState(false);
   const [savingInsight, setSavingInsight] = useState(false);
+
+  const activeClients = useMemo(
+    () => clients.filter((client) => !client.isArchived),
+    [clients]
+  );
 
   const selectedProject = useMemo(
     () => projects.find((project) => project.id === selectedProjectId) ?? null,
@@ -276,6 +292,11 @@ export function AiMarketIntelligencePage() {
     event.preventDefault();
     if (!projectForm.title.trim()) {
       setActionError("Project name is required.");
+      return;
+    }
+
+    if (!projectForm.clientId) {
+      setActionError("Client is required.");
       return;
     }
 
@@ -516,7 +537,7 @@ export function AiMarketIntelligencePage() {
                       <div className="dense-meta">
                         <span>{formatDateLabel(project.createdAt)}</span>
                         {project.targetMonth ? <span>{project.targetMonth}</span> : null}
-                        {project.targetClientName ? <span>{project.targetClientName}</span> : null}
+                        {project.client?.name ? <span>{project.client.name}</span> : null}
                       </div>
                     </div>
                   </div>
@@ -543,7 +564,7 @@ export function AiMarketIntelligencePage() {
                 eyebrow="Selected project"
                 meta={
                   <div className="dense-meta">
-                    {selectedProject.targetClientName ? <span>Client: {selectedProject.targetClientName}</span> : null}
+                    {selectedProject.client?.name ? <span>Client: {selectedProject.client.name}</span> : null}
                     {selectedProject.targetMonth ? <span>Month: {selectedProject.targetMonth}</span> : null}
                     {selectedProject.niche ? <span>Niche: {selectedProject.niche}</span> : null}
                     {selectedProject.productServiceFocus ? <span>Focus: {selectedProject.productServiceFocus}</span> : null}
@@ -913,11 +934,20 @@ export function AiMarketIntelligencePage() {
                 />
               </label>
               <label>
-                Client name
-                <input
-                  onChange={(event) => setProjectForm((current) => ({ ...current, targetClientName: event.target.value }))}
-                  value={projectForm.targetClientName}
-                />
+                Client — required
+                <select
+                  onChange={(event) => setProjectForm((current) => ({ ...current, clientId: event.target.value }))}
+                  required
+                  value={projectForm.clientId}
+                >
+                  <option value="">Select client</option>
+                  {activeClients.map((client) => (
+                    <option key={client.id} value={client.id}>
+                      {client.name}
+                      {client.website ? ` (${client.website})` : ""}
+                    </option>
+                  ))}
+                </select>
               </label>
               <label>
                 Target month

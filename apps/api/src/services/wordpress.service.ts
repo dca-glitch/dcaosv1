@@ -178,9 +178,12 @@ export function validateAiDeliveryWordPressConfig(
  * @returns Promise<AiDeliveryWordPressPublishResult> - publication result or provider-disabled indicator
  */
 export async function publishAiDeliveryDeliverableToWordPress(
-  request: AiDeliveryWordPressPublishRequest
+  request: AiDeliveryWordPressPublishRequest,
+  options?: {
+    siteConfig?: AiDeliveryWordPressSiteConfig | null;
+    applicationPassword?: string | null;
+  }
 ): Promise<AiDeliveryWordPressPublishResult> {
-  // Validate request shape
   if (!request.deliverableId || !request.title || !request.body) {
     return {
       ok: false,
@@ -193,25 +196,80 @@ export async function publishAiDeliveryDeliverableToWordPress(
     };
   }
 
-  // MOCK IMPLEMENTATION: Provider disabled, no external calls made
-  // Future integration will:
-  // 1. Retrieve WordPress credentials from TenantSetting (encrypted/secure)
-  // 2. Call WordPress REST API to create/update post
-  // 3. Handle authentication, rate limiting, retries
-  // 4. Return real WordPress post ID and edit URL
-  // 5. Record publication history in AuditLog
+  const publishEnabled = (process.env.WORDPRESS_PUBLISH_ENABLED ?? "").trim().toLowerCase() === "true";
+  const siteConfig = options?.siteConfig ?? null;
+  const applicationPassword = options?.applicationPassword ?? null;
 
-  return {
-    ok: false,
-    wordpressPostId: null,
-    wordpressPostUrl: null,
-    wordpressEditUrl: null,
-    status: "provider_disabled",
-    errorMessage: null,
-    providerDisabledReason:
-      "WordPress publication is not yet configured. Real WordPress API integration is a future implementation block. " +
-      "Local draft preparation is available via /prepare-wordpress-draft endpoint."
-  };
+  if (!publishEnabled || !siteConfig?.siteUrl || !applicationPassword) {
+    return {
+      ok: false,
+      wordpressPostId: null,
+      wordpressPostUrl: null,
+      wordpressEditUrl: null,
+      status: "provider_disabled",
+      errorMessage: null,
+      providerDisabledReason:
+        "WordPress publish is disabled or publication target credentials are not configured. Enable WORDPRESS_PUBLISH_ENABLED only after credential encryption is configured."
+    };
+  }
+
+  const normalizedSiteUrl = normalizeWordPressSiteUrl(siteConfig.siteUrl);
+  const endpoint = `${normalizedSiteUrl}/wp-json/wp/v2/posts`;
+  const authHeader = `Basic ${Buffer.from(`:${applicationPassword}`).toString("base64")}`;
+
+  try {
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        Authorization: authHeader,
+        "Content-Type": "application/json",
+        Accept: "application/json"
+      },
+      body: JSON.stringify({
+        title: request.title,
+        content: request.body,
+        excerpt: request.excerpt ?? undefined,
+        slug: request.slug ?? undefined,
+        status: request.status ?? "draft"
+      })
+    });
+
+    if (!response.ok) {
+      return {
+        ok: false,
+        wordpressPostId: null,
+        wordpressPostUrl: null,
+        wordpressEditUrl: null,
+        status: "error",
+        errorMessage: `WordPress API responded with status ${response.status}.`,
+        providerDisabledReason: undefined
+      };
+    }
+
+    const payload = (await response.json()) as { id?: number; link?: string };
+    const postId = payload.id ? String(payload.id) : null;
+    const postUrl = payload.link ?? null;
+
+    return {
+      ok: true,
+      wordpressPostId: postId,
+      wordpressPostUrl: postUrl,
+      wordpressEditUrl: postId ? `${normalizedSiteUrl}/wp-admin/post.php?post=${postId}&action=edit` : null,
+      status: "published",
+      errorMessage: null,
+      providerDisabledReason: undefined
+    };
+  } catch {
+    return {
+      ok: false,
+      wordpressPostId: null,
+      wordpressPostUrl: null,
+      wordpressEditUrl: null,
+      status: "error",
+      errorMessage: "WordPress API request failed.",
+      providerDisabledReason: undefined
+    };
+  }
 }
 
 /**

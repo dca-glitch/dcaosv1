@@ -1,5 +1,7 @@
 export interface MarketIntelligenceProjectSummary {
   id: string;
+  clientId: string | null;
+  client: { id: string; name: string; website: string | null } | null;
   title: string;
   description: string | null;
   keywords: string | null;

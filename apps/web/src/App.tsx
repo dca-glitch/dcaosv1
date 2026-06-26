@@ -12,6 +12,7 @@ import {
 import { CompanyProfilePage, type CompanyProfileFormValues, type CompanyProfileSummary } from "./pages/company-profile/CompanyProfilePage";
 import { type WordPressConfig } from "./pages/company-profile/WordPressConfigPanel";
 import { ClientsPage, type ClientAccessUserSummary, type ClientFormValues, type ClientSummary } from "./pages/clients/ClientsPage";
+import { ClientHubPage } from "./pages/clients/ClientHubPage";
 import { ClientPortalPage } from "./pages/client-portal/ClientPortalPage";
 import { CreditNotesPage, type CreditNoteFormValues, type CreditNoteSummary } from "./pages/credit-notes/CreditNotesPage";
 import {
@@ -1516,6 +1517,7 @@ export function App() {
   const [companyProfile, setCompanyProfile] = useState<CompanyProfileResponse | null>(null);
   const [wordPressConfig, setWordPressConfig] = useState<{ config: WordPressConfig | null } | null>(null);
   const [clients, setClients] = useState<ClientsResponse | null>(null);
+  const [selectedClientHubId, setSelectedClientHubId] = useState<string | null>(null);
   const [projects, setProjects] = useState<ProjectsResponse | null>(null);
   const [aiDeliveryProjects, setAiDeliveryProjects] = useState<AiDeliveryProjectsResponse | null>(null);
   const [tasks, setTasks] = useState<TasksResponse | null>(null);
@@ -4138,20 +4140,48 @@ export function App() {
         <ClientPortalPage />
       ) : null}
       {!loading && activeView === "clients" ? (
-        <ClientsPage
-          canEdit={canManageCore}
-          clients={clients?.clients ?? []}
-          error={null}
-          loading={false}
-          onArchive={handleArchiveClient}
-          onArchiveUserAccess={handleArchiveClientUserAccess}
-          onLoadUserAccess={handleLoadClientUserAccess}
-          onLinkUserAccess={handleLinkClientUserAccess}
-          onRestore={handleRestoreClient}
-          onSave={handleSaveClient}
-          projects={projects?.projects ?? []}
-          tenantUsers={(teamMembers?.members ?? []).map((member) => member.user)}
-        />
+        selectedClientHubId ? (
+          <ClientHubPage
+            canEdit={canManageCore}
+            client={
+              clients?.clients.find((client) => client.id === selectedClientHubId) ?? {
+                id: selectedClientHubId,
+                name: "Client",
+                email: null,
+                website: null,
+                contactPerson: null,
+                billingAddress: null,
+                taxId: null,
+                country: null,
+                clientKind: "AGENCY_CLIENT",
+                legalEntityName: null,
+                accountGroupName: null,
+                migrationStatus: "ACTIVE",
+                isArchived: false,
+                projectCount: 0,
+                createdAt: "",
+                updatedAt: ""
+              }
+            }
+            onBack={() => setSelectedClientHubId(null)}
+          />
+        ) : (
+          <ClientsPage
+            canEdit={canManageCore}
+            clients={clients?.clients ?? []}
+            error={null}
+            loading={false}
+            onArchive={handleArchiveClient}
+            onArchiveUserAccess={handleArchiveClientUserAccess}
+            onLoadUserAccess={handleLoadClientUserAccess}
+            onLinkUserAccess={handleLinkClientUserAccess}
+            onOpenHub={(client) => setSelectedClientHubId(client.id)}
+            onRestore={handleRestoreClient}
+            onSave={handleSaveClient}
+            projects={projects?.projects ?? []}
+            tenantUsers={(teamMembers?.members ?? []).map((member) => member.user)}
+          />
+        )
       ) : null}
       {!loading && activeView === "projects" ? (
         <ProjectsPage
@@ -4246,7 +4276,7 @@ export function App() {
         />
       ) : null}
       {!loading && activeView === "ai-market-intelligence" ? (
-        <AiMarketIntelligencePage />
+        <AiMarketIntelligencePage clients={clients?.clients ?? []} />
       ) : null}
       {!loading && activeView === "content-plan-review" ? (
         <DeferredClientPortalView title="Monthly Content Plan Review" titleId="content-plan-review-title" />
