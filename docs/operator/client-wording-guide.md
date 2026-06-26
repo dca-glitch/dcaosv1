@@ -92,6 +92,8 @@ Client wording should be:
 
 Use short paragraphs and plain next steps.
 
+Lead with what was completed.
+
 ## Admin Reminder
 
 If wording is about internal process, technical checks, hidden working notes, or unfinished work, it probably belongs in admin documentation, not client-facing material.
