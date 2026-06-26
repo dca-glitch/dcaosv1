@@ -332,6 +332,13 @@ async function main() {
       } else {
         fail("Downloaded PDF bytes", `status=${downloadResponse.status}, firstBytes=${bytes.subarray(0, 4).toString("utf8")}`);
       }
+
+      const pdfText = bytes.toString("latin1");
+      if (!pdfText.includes("PDF smoke summary notes.")) {
+        pass("Downloaded PDF does not embed admin-only adminSummaryNotes");
+      } else {
+        fail("Downloaded PDF admin field leak", "adminSummaryNotes text found in PDF bytes");
+      }
     }
     console.log();
 

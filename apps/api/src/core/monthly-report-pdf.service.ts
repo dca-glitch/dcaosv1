@@ -239,14 +239,8 @@ export async function generateAiDeliveryMonthlyReportPdf(
   state = writeLines(pdf, state, regularFont, BODY_SIZE, `Document available: ${input.report.hasDocument ? "Yes" : "No"}`);
   state = writeBlankLine(pdf, state);
 
+  // Client portal serves this same PDF artifact; admin-only fields (e.g. adminSummaryNotes) must not be embedded.
   state = writeSectionTitle(pdf, state, boldFont, "Monthly report narrative");
-  state = writeLines(
-    pdf,
-    state,
-    regularFont,
-    BODY_SIZE,
-    `Admin summary notes: ${formatText(input.report.adminSummaryNotes)}`
-  );
   state = writeLines(
     pdf,
     state,
