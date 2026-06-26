@@ -1739,10 +1739,12 @@ async function runAiDeliveryBrowserRegression(token, mainProject) {
 
     const smokeProjectCard = page.locator("article.entity-card").filter({ hasText: mainProject.name }).first();
     await smokeProjectCard.waitFor({ state: "visible", timeout: 15000 });
-    await smokeProjectCard.getByText("Planning workflow").waitFor({ state: "visible", timeout: 15000 });
-    await smokeProjectCard.getByText("Review / packaging").waitFor({ state: "visible", timeout: 15000 });
-    await smokeProjectCard.getByText("Project actions").waitFor({ state: "visible", timeout: 15000 });
     await smokeProjectCard.getByText("Admin workflow order").waitFor({ state: "visible", timeout: 15000 });
+    await smokeProjectCard.getByRole("button", { name: "Open" }).waitFor({ state: "visible", timeout: 15000 });
+    await smokeProjectCard.locator("summary").filter({ hasText: "More" }).click();
+    await smokeProjectCard.locator(".row-action-menu-label").filter({ hasText: "Planning" }).waitFor({ state: "visible", timeout: 15000 });
+    await smokeProjectCard.locator(".row-action-menu-label").filter({ hasText: "Packaging" }).waitFor({ state: "visible", timeout: 15000 });
+    await smokeProjectCard.locator(".row-action-menu-label").filter({ hasText: "Project" }).waitFor({ state: "visible", timeout: 15000 });
     await smokeProjectCard.getByRole("button", { name: "Workflow runs" }).waitFor({ state: "visible", timeout: 15000 });
     await smokeProjectCard.getByRole("button", { name: "Research / Sources" }).waitFor({ state: "visible", timeout: 15000 });
     await smokeProjectCard.getByRole("button", { name: "AI SEO / Content Plan" }).waitFor({ state: "visible", timeout: 15000 });

@@ -3,6 +3,7 @@ import { EmptyState } from "../../components/EmptyState";
 import { ErrorState } from "../../components/ErrorState";
 import { LoadingState } from "../../components/LoadingState";
 import { Modal } from "../../components/Modal";
+import { StatusBadge } from "../../components/ui";
 import type { ClientSummary } from "../clients/ClientsPage";
 import type { InvoiceItemSummary } from "../invoice-items/InvoiceItemsPage";
 import type { ProjectSummary } from "../projects/ProjectsPage";
@@ -323,10 +324,6 @@ function normalizeInvoiceStatus(value: string): string {
 function normalizeRecurringInterval(value: string): string {
   const interval = value.trim().toUpperCase();
   return recurringIntervalOptions.includes(interval as (typeof recurringIntervalOptions)[number]) ? interval : "MONTHLY";
-}
-
-function formatInvoiceStatus(value: string): string {
-  return invoiceStatusOptions.find((option) => option.value === normalizeInvoiceStatus(value))?.label ?? value;
 }
 
 function formatPaymentMethod(value: string): string {
@@ -1159,42 +1156,67 @@ function InvoiceCards({ invoices, canEdit, onEditInvoice, onArchiveInvoice, onMa
   }
 
   return (
-    <div className="entity-grid">
+    <div className="dense-list">
       {invoices.map((invoice) => (
-        <article className="entity-card" key={invoice.id}>
-          <div className="entity-card-header">
-            <div>
-              <span className={`entity-pill entity-pill-${invoice.isArchived ? "archived" : "active"}`}>{formatInvoiceStatus(invoice.status)}</span>
+        <article className="entity-card dense-record" key={invoice.id}>
+          <div className="dense-record-main">
+            <div className="dense-title">
+              <div className="dense-kicker">
+                <StatusBadge status={invoice.isArchived ? "ARCHIVED" : invoice.status} />
+                {invoice.payment ? <StatusBadge status="Paid recorded" /> : null}
+              </div>
               <h2>{invoice.title}</h2>
+              <div className="dense-meta">
+                <span><strong>{invoice.client.name}</strong></span>
+                <span>{invoice.invoiceNumber || "No invoice number"}</span>
+                <span>{invoice.project?.name ?? "No project"}</span>
+              </div>
             </div>
-            <div className="card-actions">
-              {canEdit ? <button className="secondary-action" onClick={() => onEditInvoice(invoice)} type="button">Edit</button> : null}
-              {canEdit ? <button className="secondary-action" onClick={() => void onMarkInvoiceSent(invoice.id)} type="button">Mark sent</button> : null}
-              {canEdit && canRegisterPayment(invoice) ? <button className="secondary-action" onClick={() => onRegisterInvoicePayment(invoice)} type="button">Register payment</button> : null}
-              {canEdit ? <button className="secondary-action" onClick={() => void onCancelInvoice(invoice.id)} type="button">Cancel</button> : null}
-              {canEdit && canMarkUncollectible(invoice) ? <button className="secondary-action" onClick={() => void onMarkInvoiceUncollectible(invoice.id)} type="button">Mark uncollectible</button> : null}
-              {canEdit && !invoice.isArchived ? <button className="secondary-action" onClick={() => void onArchiveInvoice(invoice.id)} type="button">Archive</button> : null}
+
+            <div className="dense-fields">
+              <div className="dense-field">
+                <span>Client</span>
+                <strong>{invoice.client.name}</strong>
+              </div>
+              <div className="dense-field">
+                <span>Total</span>
+                <strong>{formatMoney(invoice.totalCents, invoice.currency)}</strong>
+              </div>
+              <div className="dense-field">
+                <span>Paid</span>
+                <strong>{formatMoney(invoice.amountPaidCents, invoice.currency)}</strong>
+              </div>
+              <div className="dense-field">
+                <span>Due</span>
+                <strong>{formatDateLabel(invoice.dueDate)}</strong>
+              </div>
+            </div>
+
+            <div className="dense-actions">
+              {canEdit ? <button className="primary-action" onClick={() => onEditInvoice(invoice)} type="button">Open</button> : null}
+              {canEdit ? (
+                <details className="row-action-menu">
+                  <summary>More</summary>
+                  <div className="row-action-menu-panel">
+                    <div className="row-action-menu-group">
+                      <span className="row-action-menu-label">Lifecycle</span>
+                      <button className="secondary-action" onClick={() => void onMarkInvoiceSent(invoice.id)} type="button">Mark sent</button>
+                      {canRegisterPayment(invoice) ? <button className="secondary-action" onClick={() => onRegisterInvoicePayment(invoice)} type="button">Register payment</button> : null}
+                    </div>
+                    <div className="row-action-menu-group">
+                      <span className="row-action-menu-label">Exceptions</span>
+                      <button className="secondary-action" onClick={() => void onCancelInvoice(invoice.id)} type="button">Cancel</button>
+                      {canMarkUncollectible(invoice) ? <button className="secondary-action" onClick={() => void onMarkInvoiceUncollectible(invoice.id)} type="button">Mark uncollectible</button> : null}
+                      {!invoice.isArchived ? <button className="secondary-action" onClick={() => void onArchiveInvoice(invoice.id)} type="button">Archive</button> : null}
+                    </div>
+                  </div>
+                </details>
+              ) : null}
             </div>
           </div>
-          <InvoiceFieldGrid
-            amountPaidCents={invoice.amountPaidCents}
-            clientName={invoice.client.name}
-            currency={invoice.currency}
-            discountCents={invoice.discountCents}
-            documentLabel="Document"
-            documentValue={invoice.documentUrl || invoice.documentStorageKey || "Not set"}
-            dueDate={invoice.dueDate}
-            firstDateLabel="Issue date"
-            firstDateValue={invoice.issueDate}
-            notes={invoice.notes}
-            paymentInstructions={invoice.paymentInstructions}
-            projectName={invoice.project?.name ?? "Not set"}
-            referenceLabel="Invoice number"
-            referenceValue={invoice.invoiceNumber}
-            subtotalCents={invoice.subtotalCents}
-            taxCents={invoice.taxCents}
-            totalCents={invoice.totalCents}
-          />
+          <div className="dense-row-note">
+            Issue: {formatDateLabel(invoice.issueDate)}. Subtotal: {formatMoney(invoice.subtotalCents, invoice.currency)}. Tax: {formatMoney(invoice.taxCents, invoice.currency)}. Discount: {formatMoney(invoice.discountCents, invoice.currency)}. Document: {invoice.documentUrl || invoice.documentStorageKey || "Not set"}.
+          </div>
           {invoice.payment ? <PaymentDetails currency={invoice.currency} payment={invoice.payment} /> : null}
         </article>
       ))}
@@ -1229,91 +1251,68 @@ function RecurringInvoiceCards({ recurringInvoices, canEdit, onEditRecurringInvo
   }
 
   return (
-    <div className="entity-grid">
+    <div className="dense-list">
       {recurringInvoices.map((recurringInvoice) => (
-        <article className="entity-card" key={recurringInvoice.id}>
-          <div className="entity-card-header">
-            <div>
-              <span className={`entity-pill entity-pill-${recurringInvoice.isArchived ? "archived" : "active"}`}>
-                {recurringInvoice.isActive ? "Active" : "Paused"}
-              </span>
+        <article className="entity-card dense-record" key={recurringInvoice.id}>
+          <div className="dense-record-main">
+            <div className="dense-title">
+              <div className="dense-kicker">
+                <StatusBadge status={recurringInvoice.isArchived ? "ARCHIVED" : recurringInvoice.isActive ? "ACTIVE" : "PAUSED"} />
+              </div>
               <h2>{recurringInvoice.title}</h2>
+              <div className="dense-meta">
+                <span><strong>{recurringInvoice.client.name}</strong></span>
+                <span>{recurringInvoice.interval}</span>
+                <span>{recurringInvoice.project?.name ?? "No project"}</span>
+              </div>
             </div>
-            <div className="card-actions">
-              {canEdit ? <button className="secondary-action" onClick={() => onEditRecurringInvoice(recurringInvoice)} type="button">Edit</button> : null}
+
+            <div className="dense-fields">
+              <div className="dense-field">
+                <span>Client</span>
+                <strong>{recurringInvoice.client.name}</strong>
+              </div>
+              <div className="dense-field">
+                <span>Total</span>
+                <strong>{formatMoney(recurringInvoice.totalCents, recurringInvoice.currency)}</strong>
+              </div>
+              <div className="dense-field">
+                <span>Interval</span>
+                <strong>{recurringInvoice.interval}</strong>
+              </div>
+              <div className="dense-field">
+                <span>Next run</span>
+                <strong>{formatDateLabel(recurringInvoice.nextRunDate)}</strong>
+              </div>
+            </div>
+
+            <div className="dense-actions">
+              {canEdit ? <button className="primary-action" onClick={() => onEditRecurringInvoice(recurringInvoice)} type="button">Open</button> : null}
               {canEdit ? (
-                <button
-                  className="secondary-action"
-                  onClick={() => void onGenerateDueRecurringInvoice(recurringInvoice.id, toLocalDateInputValue())}
-                  type="button"
-                >
-                  Generate due
-                </button>
+                <details className="row-action-menu">
+                  <summary>More</summary>
+                  <div className="row-action-menu-panel">
+                    <div className="row-action-menu-group">
+                      <span className="row-action-menu-label">Recurring</span>
+                      <button
+                        className="secondary-action"
+                        onClick={() => void onGenerateDueRecurringInvoice(recurringInvoice.id, toLocalDateInputValue())}
+                        type="button"
+                      >
+                        Generate due
+                      </button>
+                      {!recurringInvoice.isArchived ? <button className="secondary-action" onClick={() => void onArchiveRecurringInvoice(recurringInvoice.id)} type="button">Archive</button> : null}
+                    </div>
+                  </div>
+                </details>
               ) : null}
-              {canEdit && !recurringInvoice.isArchived ? <button className="secondary-action" onClick={() => void onArchiveRecurringInvoice(recurringInvoice.id)} type="button">Archive</button> : null}
             </div>
           </div>
-          <InvoiceFieldGrid
-            amountPaidCents={null}
-            clientName={recurringInvoice.client.name}
-            currency={recurringInvoice.currency}
-            discountCents={recurringInvoice.discountCents}
-            documentLabel="Folder hint"
-            documentValue={recurringInvoice.documentFolderHint || "Not set"}
-            dueDate={recurringInvoice.nextRunDate}
-            firstDateLabel="Start date"
-            firstDateValue={recurringInvoice.startDate}
-            notes={recurringInvoice.notes}
-            paymentInstructions={recurringInvoice.paymentInstructions}
-            projectName={recurringInvoice.project?.name ?? "Not set"}
-            referenceLabel="Interval"
-            referenceValue={recurringInvoice.interval}
-            subtotalCents={recurringInvoice.subtotalCents}
-            taxCents={recurringInvoice.taxCents}
-            totalCents={recurringInvoice.totalCents}
-          />
+          <div className="dense-row-note">
+            Start: {formatDateLabel(recurringInvoice.startDate)}. Subtotal: {formatMoney(recurringInvoice.subtotalCents, recurringInvoice.currency)}. Tax: {formatMoney(recurringInvoice.taxCents, recurringInvoice.currency)}. Discount: {formatMoney(recurringInvoice.discountCents, recurringInvoice.currency)}. Folder hint: {recurringInvoice.documentFolderHint || "Not set"}.
+          </div>
         </article>
       ))}
-    </div>
-  );
-}
-
-type InvoiceFieldGridProps = {
-  clientName: string;
-  projectName: string;
-  referenceLabel: string;
-  referenceValue: string;
-  firstDateLabel: string;
-  firstDateValue: string | null;
-  dueDate: string | null;
-  currency: string;
-  subtotalCents: number;
-  taxCents: number;
-  discountCents: number;
-  totalCents: number;
-  amountPaidCents: number | null;
-  notes: string | null;
-  paymentInstructions: string | null;
-  documentLabel: string;
-  documentValue: string;
-};
-
-function InvoiceFieldGrid(props: InvoiceFieldGridProps) {
-  return (
-    <div className="entity-field-grid">
-      <div><span>Client</span><strong>{props.clientName}</strong></div>
-      <div><span>Project</span><strong>{props.projectName}</strong></div>
-      <div><span>{props.referenceLabel}</span><strong>{props.referenceValue || "Not set"}</strong></div>
-      <div><span>{props.firstDateLabel}</span><strong>{formatDateLabel(props.firstDateValue)}</strong></div>
-      <div><span>Due / next run</span><strong>{formatDateLabel(props.dueDate)}</strong></div>
-      <div><span>Total</span><strong>{formatMoney(props.totalCents, props.currency)}</strong></div>
-      <div><span>Subtotal</span><strong>{formatMoney(props.subtotalCents, props.currency)}</strong></div>
-      <div><span>Tax</span><strong>{formatMoney(props.taxCents, props.currency)}</strong></div>
-      <div><span>Discount</span><strong>{formatMoney(props.discountCents, props.currency)}</strong></div>
-      {props.amountPaidCents === null ? null : <div><span>Amount paid</span><strong>{formatMoney(props.amountPaidCents, props.currency)}</strong></div>}
-      <div className="entity-span-2"><span>Payment instructions</span><strong>{props.paymentInstructions || "Not set"}</strong></div>
-      <div className="entity-span-2"><span>{props.documentLabel}</span><strong>{props.documentValue}</strong></div>
-      <div className="entity-span-2"><span>Notes</span><strong>{props.notes || "Not set"}</strong></div>
     </div>
   );
 }

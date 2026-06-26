@@ -246,65 +246,75 @@ export function ClientsPage({
       {filteredClients.length === 0 ? (
         <EmptyState message="No clients match the current filter." title="No clients" />
       ) : (
-        <div className="entity-grid">
+        <div className="dense-list">
           {filteredClients.map((client) => (
-            <article className="entity-card" key={client.id}>
-              <div className="entity-card-header">
-                <div>
-                  <span className={`entity-pill entity-pill-${client.isArchived ? "archived" : "active"}`}>
-                    {client.isArchived ? "Archived" : "Active"}
-                  </span>
+            <article className="entity-card dense-record" key={client.id}>
+              <div className="dense-record-main">
+                <div className="dense-title">
+                  <div className="dense-kicker">
+                    <span className={`entity-pill entity-pill-${client.isArchived ? "archived" : "active"}`}>
+                      {client.isArchived ? "Archived" : "Active"}
+                    </span>
+                  </div>
                   <h2>{client.name}</h2>
+                  <div className="dense-meta">
+                    <span><strong>{client.contactPerson || "No contact"}</strong></span>
+                    <span>{client.email || "No email"}</span>
+                    <span>{client.country || "No country"}</span>
+                  </div>
                 </div>
-                <div className="card-actions">
+
+                <div className="dense-fields">
+                  <div className="dense-field">
+                    <span>Contact</span>
+                    <strong>{client.contactPerson || "Not set"}</strong>
+                  </div>
+                  <div className="dense-field">
+                    <span>Email</span>
+                    <strong>{client.email || "Not set"}</strong>
+                  </div>
+                  <div className="dense-field">
+                    <span>Country</span>
+                    <strong>{client.country || "Not set"}</strong>
+                  </div>
+                  <div className="dense-field">
+                    <span>Projects</span>
+                    <strong>{client.projectCount}</strong>
+                  </div>
+                </div>
+
+                <div className="dense-actions">
+                  {canEdit ? <button className="primary-action" onClick={() => void openEditModal(client)} type="button">Open</button> : null}
                   {canEdit ? (
-                    <button className="secondary-action" onClick={() => void openEditModal(client)} type="button">
-                      Edit
-                    </button>
-                  ) : null}
-                  {canEdit && !client.isArchived ? (
-                    <button
-                      className="secondary-action"
-                      disabled={client.projectCount > 0}
-                      onClick={() => void onArchive(client.id)}
-                      title={client.projectCount > 0 ? "Archive blocked while active projects exist." : undefined}
-                      type="button"
-                    >
-                      Archive
-                    </button>
-                  ) : null}
-                  {canEdit && client.isArchived ? (
-                    <button className="secondary-action" onClick={() => void onRestore(client.id)} type="button">
-                      Restore
-                    </button>
+                    <details className="row-action-menu">
+                      <summary>More</summary>
+                      <div className="row-action-menu-panel">
+                        <div className="row-action-menu-group">
+                          <span className="row-action-menu-label">Client</span>
+                          {!client.isArchived ? (
+                            <button
+                              className="secondary-action"
+                              disabled={client.projectCount > 0}
+                              onClick={() => void onArchive(client.id)}
+                              title={client.projectCount > 0 ? "Archive blocked while active projects exist." : undefined}
+                              type="button"
+                            >
+                              Archive
+                            </button>
+                          ) : null}
+                          {client.isArchived ? (
+                            <button className="secondary-action" onClick={() => void onRestore(client.id)} type="button">
+                              Restore
+                            </button>
+                          ) : null}
+                        </div>
+                      </div>
+                    </details>
                   ) : null}
                 </div>
               </div>
-              <div className="entity-field-grid">
-                <div>
-                  <span>Contact person</span>
-                  <strong>{client.contactPerson || "Not set"}</strong>
-                </div>
-                <div>
-                  <span>Email</span>
-                  <strong>{client.email || "Not set"}</strong>
-                </div>
-                <div>
-                  <span>Country</span>
-                  <strong>{client.country || "Not set"}</strong>
-                </div>
-                <div>
-                  <span>Tax/VAT ID</span>
-                  <strong>{client.taxId || "Not set"}</strong>
-                </div>
-                <div>
-                  <span>Projects</span>
-                  <strong>{client.projectCount}</strong>
-                </div>
-                <div className="entity-span-2">
-                  <span>Billing address</span>
-                  <strong>{client.billingAddress || "Not set"}</strong>
-                </div>
+              <div className="dense-row-note">
+                Tax/VAT: {client.taxId || "Not set"}. Billing address: {client.billingAddress || "Not set"}.
               </div>
             </article>
           ))}
@@ -410,10 +420,13 @@ export function ClientsPage({
                 {accessLoading ? <p>Loading client access...</p> : null}
                 {!accessLoading && clientAccessUsers.length === 0 ? <p>No users linked to this client.</p> : null}
                 {clientAccessUsers.length > 0 ? (
-                  <div>
+                  <div className="dense-access-list">
                     {clientAccessUsers.map((access) => (
-                      <p key={access.id}>
-                        <strong>{access.user.name || access.user.email}</strong> {access.user.name ? access.user.email : ""}
+                      <div className="dense-access-row" key={access.id}>
+                        <p>
+                          <strong>{access.user.name || access.user.email}</strong>
+                          <small>{access.user.name ? access.user.email : access.user.status}</small>
+                        </p>
                         <button
                           className="secondary-action"
                           disabled={accessLoading}
@@ -422,7 +435,7 @@ export function ClientsPage({
                         >
                           Remove access
                         </button>
-                      </p>
+                      </div>
                     ))}
                   </div>
                 ) : null}

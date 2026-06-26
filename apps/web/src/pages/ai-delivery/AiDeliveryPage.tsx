@@ -2830,58 +2830,87 @@ export function AiDeliveryPage({
           title="No AI delivery projects"
         />
       ) : (
-        <div className="entity-grid">
+        <div className="dense-list">
           {filteredProjects.map((p) => (
-            <article className="entity-card" key={p.id}>
-              <div className="entity-card-header">
-                <div>
-                  <span className={`entity-pill entity-pill-${p.isArchived ? "archived" : "active"}`}>
-                    {p.isArchived ? "Archived" : "Active"}
-                  </span>
+            <article className="entity-card dense-record" key={p.id}>
+              <div className="dense-record-main">
+                <div className="dense-title">
+                  <div className="dense-kicker">
+                    <span className={`entity-pill entity-pill-${p.isArchived ? "archived" : "active"}`}>
+                      {p.isArchived ? "Archived" : "Active"}
+                    </span>
+                    <StatusBadge status={p.brief?.status ?? "Brief not started"} />
+                  </div>
                   <h2>{p.name}</h2>
+                  <div className="dense-meta">
+                    <span><strong>{p.client?.name ?? "No client"}</strong></span>
+                    <span>{p.project?.name ?? "No project reference"}</span>
+                    <span>{p.targetMonth}</span>
+                  </div>
                 </div>
-                <div className="card-actions" style={{ alignItems: "flex-end", flexDirection: "column", gap: "0.75rem" }}>
+
+                <div className="dense-fields">
+                  <div className="dense-field">
+                    <span>Client</span>
+                    <strong>{p.client?.name ?? "No client"}</strong>
+                  </div>
+                  <div className="dense-field">
+                    <span>Project</span>
+                    <strong>{p.project?.name ?? "(none)"}</strong>
+                  </div>
+                  <div className="dense-field">
+                    <span>Target</span>
+                    <strong>{p.targetMonth}</strong>
+                  </div>
+                  <div className="dense-field">
+                    <span>Checkpoint</span>
+                    <strong>{p.brief ? `Brief ${formatEnumLabel(p.brief.status)}` : "Brief not started"}</strong>
+                  </div>
+                </div>
+
+                <div className="dense-actions">
                   {canEdit ? (
                     <>
-                      <div>
-                        <span className="muted-text">Planning workflow</span>
-                        <div className="brief-actions">
-                          <button className="secondary-action" onClick={() => void openBrief(p.id)} type="button" disabled={!p.brief}>
-                            Brief
-                          </button>
-                          <button className="secondary-action" onClick={() => void openResearchSources(p.id)} type="button">
-                            Research / Sources
-                          </button>
-                          {typeof onFetchMiContext === "function" ? (
-                            <button className="secondary-action" onClick={() => void openMiContext(p.id)} type="button">
-                              MI Context
+                      <button className="primary-action" onClick={() => void openContentPlan(p.id)} type="button">
+                        Open
+                      </button>
+                      <details className="row-action-menu">
+                        <summary>More</summary>
+                        <div className="row-action-menu-panel">
+                          <div className="row-action-menu-group">
+                            <span className="row-action-menu-label">Planning</span>
+                            <button className="secondary-action" onClick={() => void openBrief(p.id)} type="button" disabled={!p.brief}>
+                              Brief
                             </button>
-                          ) : null}
-                          <button className="secondary-action" onClick={() => void openContentPlan(p.id)} type="button">
-                            AI SEO / Content Plan
-                          </button>
-                          <button className="secondary-action" onClick={() => void openWorkflowRuns(p.id)} type="button">
-                            Workflow runs
-                          </button>
-                          <button className="secondary-action" onClick={() => void openContentDrafts(p.id)} type="button">
-                            Content production
-                          </button>
-                        </div>
-                      </div>
-                      <div>
-                        <span className="muted-text">Review / packaging</span>
-                        <div className="brief-actions">
-                          <button className="secondary-action" onClick={() => void openArticleImages(p.id)} type="button">
-                            Article images
-                          </button>
-                          <button className="secondary-action" onClick={() => void openDeliverables(p.id)} type="button">
-                            Deliverables
-                          </button>
-                        </div>
-                      </div>
-                      <div>
-                        <span className="muted-text">Admin reports</span>
-                        <div className="brief-actions">
+                            <button className="secondary-action" onClick={() => void openResearchSources(p.id)} type="button">
+                              Research / Sources
+                            </button>
+                            {typeof onFetchMiContext === "function" ? (
+                              <button className="secondary-action" onClick={() => void openMiContext(p.id)} type="button">
+                                MI Context
+                              </button>
+                            ) : null}
+                            <button className="secondary-action" onClick={() => void openContentPlan(p.id)} type="button">
+                              AI SEO / Content Plan
+                            </button>
+                            <button className="secondary-action" onClick={() => void openWorkflowRuns(p.id)} type="button">
+                              Workflow runs
+                            </button>
+                            <button className="secondary-action" onClick={() => void openContentDrafts(p.id)} type="button">
+                              Content production
+                            </button>
+                          </div>
+                          <div className="row-action-menu-group">
+                            <span className="row-action-menu-label">Packaging</span>
+                            <button className="secondary-action" onClick={() => void openArticleImages(p.id)} type="button">
+                              Article images
+                            </button>
+                            <button className="secondary-action" onClick={() => void openDeliverables(p.id)} type="button">
+                              Deliverables
+                            </button>
+                          </div>
+                          <div className="row-action-menu-group">
+                            <span className="row-action-menu-label">Reports</span>
                           <button
                             className="secondary-action"
                             disabled={typeof onFetchMonthlyComputedSummary !== "function"}
@@ -2890,11 +2919,9 @@ export function AiDeliveryPage({
                           >
                             Monthly Report
                           </button>
-                        </div>
-                      </div>
-                      <div>
-                        <span className="muted-text">Project actions</span>
-                        <div className="brief-actions">
+                          </div>
+                          <div className="row-action-menu-group">
+                            <span className="row-action-menu-label">Project</span>
                           <button className="secondary-action" onClick={() => openEditModal(p)} type="button">
                             Edit
                           </button>
@@ -2903,55 +2930,30 @@ export function AiDeliveryPage({
                               Archive
                             </button>
                           ) : null}
+                          </div>
                         </div>
-                      </div>
+                      </details>
                     </>
                   ) : null}
                 </div>
               </div>
-              <div className="entity-field-grid">
-                <div>
-                  <span>Client</span>
-                  <strong>{p.client?.name ?? "No client"}</strong>
-                </div>
-                <div>
-                  <span>Project</span>
-                  <strong>{p.project?.name ?? "(none)"}</strong>
-                </div>
-                <div>
-                  <span>Target month</span>
-                  <strong>{p.targetMonth}</strong>
-                </div>
-                <div>
-                  <span>Brief status</span>
-                  <strong>{formatEnumLabel(p.brief?.status ?? null)}</strong>
-                </div>
-                <div className="entity-span-2">
-                  <span>Admin workflow order</span>
-                  <strong>Brief -&gt; Research -&gt; Content plan -&gt; Workflow runs -&gt; Content production -&gt; Article images -&gt; Deliverables</strong>
-                  <span className="muted-text">
-                    Current checkpoint: {p.brief ? `Brief ${formatEnumLabel(p.brief.status)}` : "Brief not started yet"}.
+              <div className="dense-row-note">
+                <strong>Admin workflow order:</strong> Brief -&gt; Research -&gt; Content plan -&gt; Workflow runs -&gt; Content production -&gt; Article images -&gt; Deliverables.
+                {" "}
+                <strong>Notes:</strong> {p.plannedContentScopeNotes ?? "Not set"}.
+                {canEdit ? (
+                  <span className="brief-actions" style={{ marginLeft: "0.5rem" }}>
+                    <button className="secondary-action" onClick={() => void onRequestClientInput(p.id)} type="button">
+                      Request input
+                    </button>
+                    <button className="secondary-action" onClick={() => void onRequestClientRevision(p.id)} type="button">
+                      Request revision
+                    </button>
+                    <button className="secondary-action" onClick={() => void onApproveFinal(p.id)} type="button">
+                      Approve final
+                    </button>
                   </span>
-                </div>
-                <div className="entity-span-2">
-                  <span>Notes</span>
-                  <strong>{p.plannedContentScopeNotes ?? "Not set"}</strong>
-                </div>
-                <div className="entity-span-2">
-                  {canEdit ? (
-                    <div className="brief-actions">
-                      <button className="secondary-action" onClick={() => void onRequestClientInput(p.id)} type="button">
-                        Request client input
-                      </button>
-                      <button className="secondary-action" onClick={() => void onRequestClientRevision(p.id)} type="button">
-                        Request client revision
-                      </button>
-                      <button className="primary-action" onClick={() => void onApproveFinal(p.id)} type="button">
-                        Approve final
-                      </button>
-                    </div>
-                  ) : null}
-                </div>
+                ) : null}
               </div>
             </article>
           ))}
