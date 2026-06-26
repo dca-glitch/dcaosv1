@@ -8,7 +8,7 @@ For the MVP contract, each research project should stay tenant-scoped and can op
 
 ## Closure Note
 
-The admin MVP is implemented and locally validated. Proof exists in `npm.cmd run smoke:ai-market-intelligence`, including tenant/project isolation and body projectId spoof checks. Client-visible Market Intelligence output, export handoff, and any future client portal archive remain deferred.
+The admin MVP foundation is implemented and locally validated, including research inputs, internal handoff bridge, and handoff isolation. All 14 smoke steps pass. Client-visible Market Intelligence output, export handoff, and any future client portal archive remain deferred.
 
 ## Purpose
 
@@ -167,7 +167,37 @@ Insights support a simple admin review workflow with four statuses:
 
 Admins can also add **Reviewer Notes** when updating an insight's status to document their assessment or questions.
 
-### Traceability Chain
+### Internal Handoff Bridge
+
+Once an insight is APPROVED, the admin can prepare an internal handoff record that surfaces the insight's key content for use in delivery planning or reporting. This is strictly admin-internal and is never exposed to the Client Portal.
+
+**Handoff content (derived deterministically from approved insight result):**
+- `marketSummary` — top-level summary
+- `competitorSummary` — condensed competitor list (up to 5)
+- `audienceSignals` — target niche and keyword-informed audience signals
+- `opportunities` — recommended opportunity signals
+- `risks` — threat/risk signals
+- `recommendedActions` — next actions from the insight
+- `sourceNote` — evidence note from the insight result
+- `targetClientName` / `targetMonth` — context from the project research inputs
+
+**Handoff status lifecycle:**
+- `DRAFT` → initial state after prepare
+- `READY` → admin marked ready for use in delivery planning
+- `APPLIED` → admin has applied the handoff to a delivery or report context
+- `ARCHIVED` → soft-removed via archive action
+
+**API endpoints:**
+```
+GET    /api/v1/market-intelligence-projects/:projectId/handoffs
+POST   /api/v1/market-intelligence-projects/:projectId/handoffs/prepare
+PUT    /api/v1/market-intelligence-projects/:projectId/handoffs/:handoffId/status
+POST   /api/v1/market-intelligence-projects/:projectId/handoffs/:handoffId/archive
+```
+
+All handoff endpoints require owner/admin role and are tenant-scoped. Cross-project and cross-tenant isolation is enforced. Preparing a handoff from a non-APPROVED insight returns 400.
+
+
 
 The system supports this traceability flow:
 
@@ -189,10 +219,11 @@ This allows admins to answer:
 
 ### Database Schema
 
-- `MarketIntelligenceProject` - project metadata and status
+- `MarketIntelligenceProject` - project metadata, status, and research inputs (keywords, competitors, niche, productServiceFocus, targetClientName, targetMonth)
 - `MarketIntelligenceSource` - source references with URLs and notes
 - `MarketIntelligenceResearchRun` - execution tracking with status and results
 - `MarketIntelligenceInsight` - insight records with reviewer notes and status
+- `MarketIntelligenceHandoff` - internal handoff bridge (admin-only, not client-facing); tenant/project/insight scoped with status lifecycle
 
 All tables are tenant-scoped and support archiving.
 

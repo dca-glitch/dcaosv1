@@ -145,6 +145,10 @@ import {
   createMarketIntelligenceInsightHandler,
   updateMarketIntelligenceInsightHandler,
   archiveMarketIntelligenceInsightHandler,
+  prepareMarketIntelligenceHandoffHandler,
+  listMarketIntelligenceHandoffsHandler,
+  updateMarketIntelligenceHandoffStatusHandler,
+  archiveMarketIntelligenceHandoffHandler,
   getAiDeliveryMonthlyReportHandler,
   getAiDeliveryMonthlyReportMetricsHandler,
   createAiDeliveryMonthlyReportHandler,
@@ -357,6 +361,12 @@ export function createCoreRouter() {
   router.post("/market-intelligence-projects/:projectId/insights", requireAuth, requireTenant, requireRole("owner", "admin"), createMarketIntelligenceInsightHandler);
   router.put("/market-intelligence-projects/:projectId/insights/:insightId", requireAuth, requireTenant, requireRole("owner", "admin"), updateMarketIntelligenceInsightHandler);
   router.post("/market-intelligence-projects/:projectId/insights/:insightId/archive", requireAuth, requireTenant, requireRole("owner", "admin"), archiveMarketIntelligenceInsightHandler);
+
+  // Handoff routes — admin-only internal bridge, not client-facing
+  router.get("/market-intelligence-projects/:projectId/handoffs", requireAuth, requireTenant, requireRole("owner", "admin"), listMarketIntelligenceHandoffsHandler);
+  router.post("/market-intelligence-projects/:projectId/handoffs/prepare", requireAuth, requireTenant, requireRole("owner", "admin"), prepareMarketIntelligenceHandoffHandler);
+  router.put("/market-intelligence-projects/:projectId/handoffs/:handoffId/status", requireAuth, requireTenant, requireRole("owner", "admin"), updateMarketIntelligenceHandoffStatusHandler);
+  router.post("/market-intelligence-projects/:projectId/handoffs/:handoffId/archive", requireAuth, requireTenant, requireRole("owner", "admin"), archiveMarketIntelligenceHandoffHandler);
 
   return router;
 }

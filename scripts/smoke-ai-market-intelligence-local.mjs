@@ -502,9 +502,143 @@ async function main() {
     }
     console.log(`✅ Insight spoof rejected — insight belongs to project A (${spoofInsightProjectId})\n`);
 
-    // Step 13: Browser test (optional, requires playwright)
+    // =========================================================================
+    // Step 13: Internal Handoff lifecycle proof
+    // =========================================================================
+    console.log("📋 Step 13: Internal handoff prepare from approved insight...");
+
+    // List handoffs (should be empty for this project initially)
+    const handoffsEmptyRes = await apiCall("GET", `/market-intelligence-projects/${projectId}/handoffs`, undefined, token);
+    console.log(`✅ Handoffs list endpoint accessible (${handoffsEmptyRes.data?.handoffs?.length ?? 0} handoffs before prepare)`);
+
+    // Prepare handoff from the APPROVED auto-generated insight
+    const prepareHandoffRes = await apiCall(
+      "POST",
+      `/market-intelligence-projects/${projectId}/handoffs/prepare`,
+      { insightId: autoInsight.id },
+      token
+    );
+    const handoff = prepareHandoffRes.data?.handoff;
+    if (!handoff?.id) {
+      throw new Error("Failed to prepare handoff from approved insight");
+    }
+    if (handoff.handoffStatus !== "DRAFT") {
+      throw new Error(`Expected handoffStatus DRAFT, got ${handoff.handoffStatus}`);
+    }
+    if (!handoff.marketSummary) {
+      throw new Error("handoff.marketSummary is missing");
+    }
+    if (!Array.isArray(handoff.audienceSignals) || handoff.audienceSignals.length === 0) {
+      throw new Error("handoff.audienceSignals is missing or empty");
+    }
+    if (!Array.isArray(handoff.opportunities) || handoff.opportunities.length === 0) {
+      throw new Error("handoff.opportunities is missing or empty");
+    }
+    if (!Array.isArray(handoff.risks) || handoff.risks.length === 0) {
+      throw new Error("handoff.risks is missing or empty");
+    }
+    if (!Array.isArray(handoff.recommendedActions) || handoff.recommendedActions.length === 0) {
+      throw new Error("handoff.recommendedActions is missing or empty");
+    }
+    if (!handoff.sourceNote) {
+      throw new Error("handoff.sourceNote is missing");
+    }
+    if (handoff.projectId !== projectId) {
+      throw new Error(`handoff.projectId mismatch: expected ${projectId}, got ${handoff.projectId}`);
+    }
+    if (handoff.insightId !== autoInsight.id) {
+      throw new Error(`handoff.insightId mismatch`);
+    }
+    console.log(`✅ Handoff prepared: ${handoff.id} (DRAFT, audienceSignals/opportunities/risks/actions/sourceNote all present)`);
+
+    // Verify targetClientName and targetMonth are populated from project
+    if (!handoff.targetClientName) {
+      throw new Error("handoff.targetClientName should be populated from project research inputs");
+    }
+    if (!handoff.targetMonth) {
+      throw new Error("handoff.targetMonth should be populated from project research inputs");
+    }
+    console.log(`✅ Handoff has client context: ${handoff.targetClientName} / ${handoff.targetMonth}`);
+
+    // Step 13b: Update handoff status to READY
+    console.log("📋 Step 13b: Update handoff status DRAFT → READY...");
+    const readyRes = await apiCall(
+      "PUT",
+      `/market-intelligence-projects/${projectId}/handoffs/${handoff.id}/status`,
+      { handoffStatus: "READY" },
+      token
+    );
+    if (readyRes.data?.handoff?.handoffStatus !== "READY") {
+      throw new Error("Handoff status did not update to READY");
+    }
+    console.log(`✅ Handoff status updated to READY`);
+
+    // Step 13c: Update handoff status to APPLIED
+    const appliedRes = await apiCall(
+      "PUT",
+      `/market-intelligence-projects/${projectId}/handoffs/${handoff.id}/status`,
+      { handoffStatus: "APPLIED" },
+      token
+    );
+    if (appliedRes.data?.handoff?.handoffStatus !== "APPLIED") {
+      throw new Error("Handoff status did not update to APPLIED");
+    }
+    console.log(`✅ Handoff status updated to APPLIED`);
+
+    // Step 13d: List handoffs — should now have 1
+    const handoffsListRes = await apiCall("GET", `/market-intelligence-projects/${projectId}/handoffs`, undefined, token);
+    const handoffsList = handoffsListRes.data?.handoffs ?? [];
+    if (handoffsList.length < 1) {
+      throw new Error("Expected at least 1 handoff in list after prepare");
+    }
+    const listedHandoff = handoffsList.find(h => h.id === handoff.id);
+    if (!listedHandoff) {
+      throw new Error("Prepared handoff not found in list");
+    }
+    if (listedHandoff.handoffStatus !== "APPLIED") {
+      throw new Error(`Expected APPLIED status in list, got ${listedHandoff.handoffStatus}`);
+    }
+    console.log(`✅ Handoffs list shows ${handoffsList.length} handoff(s), status=APPLIED`);
+
+    // Step 13e: Reject non-APPROVED insight handoff prepare
+    console.log("📋 Step 13e: Reject prepare from non-APPROVED insight...");
+    const draftInsightRes = await apiCall(
+      "POST",
+      `/market-intelligence-projects/${projectId}/insights`,
+      { title: "Draft Insight For Rejection Test", status: "DRAFT" },
+      token
+    );
+    const draftInsightId = draftInsightRes.data?.insight?.id;
+    if (!draftInsightId) {
+      throw new Error("Failed to create draft insight for rejection test");
+    }
+    const rejectedStatus = await apiCallExpectFailure(
+      "POST",
+      `/market-intelligence-projects/${projectId}/handoffs/prepare`,
+      { insightId: draftInsightId },
+      token
+    );
+    if (rejectedStatus < 400 || rejectedStatus >= 600) {
+      throw new Error(`Expected 4xx for non-approved insight handoff prepare, got ${rejectedStatus}`);
+    }
+    console.log(`✅ Non-approved insight handoff correctly rejected (${rejectedStatus})`);
+
+    // Step 13f: Cross-project handoff isolation
+    console.log("📋 Step 13f: Cross-project handoff isolation...");
+    const crossHandoffStatus = await apiCallExpectFailure(
+      "PUT",
+      `/market-intelligence-projects/${projectBId}/handoffs/${handoff.id}/status`,
+      { handoffStatus: "ARCHIVED" },
+      token
+    );
+    if (crossHandoffStatus < 400 || crossHandoffStatus >= 600) {
+      throw new Error(`Expected 4xx for cross-project handoff status update, got ${crossHandoffStatus}`);
+    }
+    console.log(`✅ Cross-project handoff status update correctly rejected (${crossHandoffStatus})\n`);
+
+    // Step 14: Browser test (optional, requires playwright)
     if (process.env.BROWSER_TEST === "true") {
-      console.log("📋 Step 13: Browser smoke test (optional)...");
+      console.log("📋 Step 14: Browser smoke test (optional)...");
       const browser = await chromium.launch();
       const page = await browser.newPage();
 

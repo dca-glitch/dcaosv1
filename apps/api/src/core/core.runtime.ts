@@ -103,6 +103,10 @@ import type {
   MarketIntelligenceInsightResponse,
   MarketIntelligenceInsightsResponse,
   MarketIntelligenceInsightInputRequest,
+  MarketIntelligenceHandoffSummary,
+  MarketIntelligenceHandoffResponse,
+  MarketIntelligenceHandoffsResponse,
+  MarketIntelligenceHandoffStatusRequest,
   AiDeliveryGoogleDocExportResponse
 } from "./core.types";
 import type { AuthResolvedSessionContext } from "../auth/types";
@@ -10012,5 +10016,231 @@ export async function archiveMarketIntelligenceInsight(
         updatedAt: insight.updatedAt.toISOString()
       }
     };
+  });
+}
+
+// ── Market Intelligence Handoff ───────────────────────────────────────────────
+// Internal admin-only bridge from approved MI insight → delivery planning.
+// Not exposed to Client Portal. No file export, no public links.
+
+function toHandoffSummary(h: {
+  id: string;
+  projectId: string;
+  insightId: string;
+  title: string;
+  marketSummary: string | null;
+  competitorSummary: string | null;
+  audienceSignals: unknown;
+  opportunities: unknown;
+  risks: unknown;
+  recommendedActions: unknown;
+  sourceNote: string | null;
+  targetClientName: string | null;
+  targetMonth: string | null;
+  handoffStatus: string;
+  isArchived: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}): MarketIntelligenceHandoffSummary {
+  return {
+    id: h.id,
+    projectId: h.projectId,
+    insightId: h.insightId,
+    title: h.title,
+    marketSummary: h.marketSummary,
+    competitorSummary: h.competitorSummary,
+    audienceSignals: Array.isArray(h.audienceSignals) ? (h.audienceSignals as string[]) : null,
+    opportunities: Array.isArray(h.opportunities) ? (h.opportunities as string[]) : null,
+    risks: Array.isArray(h.risks) ? (h.risks as string[]) : null,
+    recommendedActions: Array.isArray(h.recommendedActions) ? (h.recommendedActions as string[]) : null,
+    sourceNote: h.sourceNote,
+    targetClientName: h.targetClientName,
+    targetMonth: h.targetMonth,
+    handoffStatus: h.handoffStatus,
+    isArchived: h.isArchived,
+    createdAt: h.createdAt.toISOString(),
+    updatedAt: h.updatedAt.toISOString()
+  };
+}
+
+const HANDOFF_SELECT = {
+  id: true,
+  projectId: true,
+  insightId: true,
+  title: true,
+  marketSummary: true,
+  competitorSummary: true,
+  audienceSignals: true,
+  opportunities: true,
+  risks: true,
+  recommendedActions: true,
+  sourceNote: true,
+  targetClientName: true,
+  targetMonth: true,
+  handoffStatus: true,
+  isArchived: true,
+  createdAt: true,
+  updatedAt: true
+} as const;
+
+export async function prepareMarketIntelligenceHandoff(
+  authSession: AuthResolvedSessionContext,
+  projectId: string,
+  insightId: string
+): Promise<MarketIntelligenceHandoffResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) {
+    return null;
+  }
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    // Verify project belongs to tenant
+    if (!await verifyMiProjectAccess(tx, tenantId, projectId)) {
+      return null;
+    }
+
+    // Fetch insight — must be APPROVED and belong to this project/tenant
+    const insight = await tx.marketIntelligenceInsight.findFirst({
+      where: { id: insightId, tenantId, projectId, isArchived: false },
+      select: {
+        id: true,
+        title: true,
+        summary: true,
+        resultData: true,
+        status: true
+      }
+    });
+    if (!insight || insight.status !== "APPROVED") {
+      return { handoff: null };
+    }
+
+    // Fetch project for context fields
+    const project = await tx.marketIntelligenceProject.findFirst({
+      where: { id: projectId, tenantId },
+      select: {
+        title: true,
+        targetClientName: true,
+        targetMonth: true
+      }
+    });
+
+    // Extract structured fields from resultData (MARKET_INTELLIGENCE_RESULT_V1 shape)
+    const result = (insight.resultData ?? {}) as Record<string, unknown>;
+    const competitorList: string[] = Array.isArray(result.competitors) ? result.competitors as string[] : [];
+    const competitorSummary = competitorList.length > 0
+      ? competitorList.slice(0, 5).join("; ")
+      : null;
+
+    // Deterministically build handoff content — no external calls
+    const handoff = await tx.marketIntelligenceHandoff.create({
+      data: {
+        tenantId,
+        projectId,
+        insightId,
+        title: `Handoff: ${insight.title}`,
+        marketSummary: typeof result.summary === "string" ? result.summary : (insight.summary ?? null),
+        competitorSummary,
+        audienceSignals: Array.isArray(result.audienceSignals) ? result.audienceSignals as any : null,
+        opportunities: Array.isArray(result.opportunities) ? result.opportunities as any : null,
+        risks: Array.isArray(result.threats) ? result.threats as any : null,
+        recommendedActions: Array.isArray(result.recommendedNextActions) ? result.recommendedNextActions as any : null,
+        sourceNote: typeof result.sourceNotes === "string" ? result.sourceNotes : null,
+        targetClientName: project?.targetClientName ?? null,
+        targetMonth: project?.targetMonth ?? null,
+        handoffStatus: "DRAFT"
+      },
+      select: HANDOFF_SELECT
+    });
+
+    return { handoff: toHandoffSummary(handoff) };
+  });
+}
+
+export async function listMarketIntelligenceHandoffs(
+  authSession: AuthResolvedSessionContext,
+  projectId: string
+): Promise<MarketIntelligenceHandoffsResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) {
+    return null;
+  }
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    if (!await verifyMiProjectAccess(tx, tenantId, projectId)) {
+      return null;
+    }
+
+    const handoffs = await tx.marketIntelligenceHandoff.findMany({
+      where: { tenantId, projectId, isArchived: false },
+      select: HANDOFF_SELECT,
+      orderBy: { createdAt: "desc" }
+    });
+
+    return { handoffs: handoffs.map(toHandoffSummary) };
+  });
+}
+
+export async function updateMarketIntelligenceHandoffStatus(
+  authSession: AuthResolvedSessionContext,
+  projectId: string,
+  handoffId: string,
+  input: MarketIntelligenceHandoffStatusRequest
+): Promise<MarketIntelligenceHandoffResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) {
+    return null;
+  }
+
+  const VALID_STATUSES = ["DRAFT", "READY", "APPLIED", "ARCHIVED"];
+  const newStatus = input.handoffStatus?.trim() ?? "";
+  if (!VALID_STATUSES.includes(newStatus)) {
+    return { handoff: null };
+  }
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    const existing = await tx.marketIntelligenceHandoff.findFirst({
+      where: { id: handoffId, tenantId, projectId },
+      select: { id: true }
+    });
+    if (!existing) {
+      return { handoff: null };
+    }
+
+    const handoff = await tx.marketIntelligenceHandoff.update({
+      where: { id: handoffId },
+      data: { handoffStatus: newStatus },
+      select: HANDOFF_SELECT
+    });
+
+    return { handoff: toHandoffSummary(handoff) };
+  });
+}
+
+export async function archiveMarketIntelligenceHandoff(
+  authSession: AuthResolvedSessionContext,
+  projectId: string,
+  handoffId: string
+): Promise<MarketIntelligenceHandoffResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) {
+    return null;
+  }
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    const existing = await tx.marketIntelligenceHandoff.findFirst({
+      where: { id: handoffId, tenantId, projectId },
+      select: { id: true }
+    });
+    if (!existing) {
+      return { handoff: null };
+    }
+
+    const handoff = await tx.marketIntelligenceHandoff.update({
+      where: { id: handoffId },
+      data: { isArchived: true },
+      select: HANDOFF_SELECT
+    });
+
+    return { handoff: toHandoffSummary(handoff) };
   });
 }

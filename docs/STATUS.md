@@ -34,6 +34,7 @@ DCA OS Lite is in local-first admin/operator foundation work. Production is froz
 - API security headers/CSP baseline and in-memory MVP rate limiting.
 - Market Intelligence auth token storage aligned to sessionStorage.
 - Market Intelligence research input fields (keywords, competitors, niche, productServiceFocus, targetClientName, targetMonth) added to schema/API/UI; audienceSignals added to insight result contract; migration applied and smoke proven (all steps pass).
+- Market Intelligence internal handoff bridge implemented: admin can prepare an internal handoff from any APPROVED insight; handoff stores marketSummary, audienceSignals, opportunities, risks, recommendedActions, sourceNote, and client/month context; status lifecycle DRAFT → READY → APPLIED; admin-only, no client portal exposure; schema migration applied and all 14 smoke steps pass.
 - Backup/restore and staging migration runbooks added.
 - Finance smoke proves tenantId spoof handling locally and keeps full cross-tenant proof behind a real second-tenant fixture.
 

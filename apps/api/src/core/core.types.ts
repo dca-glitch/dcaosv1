@@ -1246,3 +1246,36 @@ export interface MarketIntelligenceInsightInputRequest {
   status?: string | null;
   reviewerNotes?: string | null;
 }
+
+// Internal handoff bridge — admin-only, not client-facing
+export interface MarketIntelligenceHandoffSummary {
+  id: string;
+  projectId: string;
+  insightId: string;
+  title: string;
+  marketSummary: string | null;
+  competitorSummary: string | null;
+  audienceSignals: string[] | null;
+  opportunities: string[] | null;
+  risks: string[] | null;
+  recommendedActions: string[] | null;
+  sourceNote: string | null;
+  targetClientName: string | null;
+  targetMonth: string | null;
+  handoffStatus: string;
+  isArchived: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MarketIntelligenceHandoffResponse {
+  handoff: MarketIntelligenceHandoffSummary | null;
+}
+
+export interface MarketIntelligenceHandoffsResponse {
+  handoffs: MarketIntelligenceHandoffSummary[];
+}
+
+export interface MarketIntelligenceHandoffStatusRequest {
+  handoffStatus?: string | null;
+}

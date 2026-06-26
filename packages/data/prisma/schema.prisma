@@ -169,6 +169,7 @@ model Tenant {
   marketIntelligenceSources MarketIntelligenceSource[]
   marketIntelligenceResearchRuns MarketIntelligenceResearchRun[]
   marketIntelligenceInsights MarketIntelligenceInsight[]
+  marketIntelligenceHandoffs MarketIntelligenceHandoff[]
   clientUserAccesses   ClientUserAccess[]
   emailLogs            EmailLog[]            @relation("TenantEmailLogs")
   aiDeliveryMonthlyReports AiDeliveryMonthlyReport[]
@@ -1316,6 +1317,7 @@ model MarketIntelligenceProject {
   sources       MarketIntelligenceSource[]
   researchRuns  MarketIntelligenceResearchRun[]
   insights      MarketIntelligenceInsight[]
+  handoffs      MarketIntelligenceHandoff[]
 
   @@index([tenantId])
   @@index([tenantId, status])
@@ -1377,8 +1379,42 @@ model MarketIntelligenceInsight {
   tenant        Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   project       MarketIntelligenceProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
+  handoffs      MarketIntelligenceHandoff[]
+
   @@index([tenantId])
   @@index([tenantId, projectId])
   @@index([tenantId, status])
+  @@index([tenantId, isArchived])
+}
+
+model MarketIntelligenceHandoff {
+  id                  String   @id @default(uuid())
+  tenantId            String
+  projectId           String
+  insightId           String
+  title               String
+  marketSummary       String?
+  competitorSummary   String?
+  audienceSignals     Json?
+  opportunities       Json?
+  risks               Json?
+  recommendedActions  Json?
+  sourceNote          String?
+  targetClientName    String?
+  targetMonth         String?
+  // DRAFT → READY → APPLIED; ARCHIVED for soft-removal
+  handoffStatus       String   @default("DRAFT")
+  isArchived          Boolean  @default(false)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  tenant   Tenant                    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  project  MarketIntelligenceProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  insight  MarketIntelligenceInsight @relation(fields: [insightId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([tenantId, projectId])
+  @@index([tenantId, insightId])
+  @@index([tenantId, handoffStatus])
   @@index([tenantId, isArchived])
 }

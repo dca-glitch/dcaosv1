@@ -3,7 +3,8 @@ import type {
    MarketIntelligenceProjectSummary,
    MarketIntelligenceSourceSummary,
    MarketIntelligenceResearchRunSummary,
-   MarketIntelligenceInsightSummary
+   MarketIntelligenceInsightSummary,
+   MarketIntelligenceHandoffSummary
 } from "@dca-os-v1/shared";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "/api/v1";
@@ -39,6 +40,8 @@ export function AiMarketIntelligencePage() {
    const [sources, setSources] = useState<MarketIntelligenceSourceSummary[]>([]);
    const [runs, setRuns] = useState<MarketIntelligenceResearchRunSummary[]>([]);
    const [insights, setInsights] = useState<MarketIntelligenceInsightSummary[]>([]);
+   const [handoffs, setHandoffs] = useState<MarketIntelligenceHandoffSummary[]>([]);
+   const [handoffPreparing, setHandoffPreparing] = useState<string | null>(null); // insightId being prepared
    const [isLoading, setIsLoading] = useState(false);
    const [showProjectModal, setShowProjectModal] = useState(false);
    const [showSourceModal, setShowSourceModal] = useState(false);
@@ -86,6 +89,14 @@ export function AiMarketIntelligencePage() {
        if (sourcesRes?.sources) setSources(sourcesRes.sources);
        if (runsRes?.researchRuns) setRuns(runsRes.researchRuns);
        if (insightsRes?.insights) setInsights(insightsRes.insights);
+
+       // Load handoffs
+       try {
+         const handoffsRes = await apiCall(`/market-intelligence-projects/${projectId}/handoffs`, "GET");
+         if (handoffsRes?.data?.handoffs) setHandoffs(handoffsRes.data.handoffs);
+       } catch {
+         setHandoffs([]);
+       }
      } catch (error) {
        console.error("Failed to load project data:", error);
      } finally {
@@ -192,6 +203,43 @@ export function AiMarketIntelligencePage() {
        console.error("Failed to execute run:", error);
        alert("Failed to execute run");
      }
+   }, [selectedProjectId]);
+
+   const handlePrepareHandoff = useCallback(async (insightId: string) => {
+    if (!selectedProjectId) return;
+    setHandoffPreparing(insightId);
+    try {
+      const result = await apiCall(
+        `/market-intelligence-projects/${selectedProjectId}/handoffs/prepare`,
+        "POST",
+        { insightId }
+      );
+      if (result?.data?.handoff) {
+        await loadProjectData(selectedProjectId);
+      } else {
+        alert("Handoff prepare failed. Ensure the insight is APPROVED.");
+      }
+    } catch (error) {
+      console.error("Failed to prepare handoff:", error);
+      alert("Failed to prepare handoff");
+    } finally {
+      setHandoffPreparing(null);
+    }
+   }, [selectedProjectId]);
+
+   const handleUpdateHandoffStatus = useCallback(async (handoffId: string, handoffStatus: string) => {
+    if (!selectedProjectId) return;
+    try {
+      await apiCall(
+        `/market-intelligence-projects/${selectedProjectId}/handoffs/${handoffId}/status`,
+        "PUT",
+        { handoffStatus }
+      );
+      await loadProjectData(selectedProjectId);
+    } catch (error) {
+      console.error("Failed to update handoff status:", error);
+      alert("Failed to update handoff status");
+    }
    }, [selectedProjectId]);
 
    return (
@@ -539,6 +587,144 @@ export function AiMarketIntelligencePage() {
                      </div>
                    ))}
                  </div>
+               </div>
+
+               {/* Internal Handoffs Section */}
+               <div style={{ marginBottom: "2rem" }}>
+                 <div style={{ marginBottom: "1rem" }}>
+                   <h3>Internal Handoffs</h3>
+                   <p style={{ fontSize: "0.875rem", color: "var(--color-text-muted)", margin: "0.25rem 0 0" }}>
+                     Admin-only delivery planning bridge. Prepare a handoff from an APPROVED insight to use in AI Delivery or reporting.
+                   </p>
+                 </div>
+
+                 {/* Approved insights available for handoff */}
+                 {insights.filter(i => i.status === "APPROVED" && !i.isArchived).length > 0 && (
+                   <div style={{ marginBottom: "1rem", padding: "0.75rem", border: "1px solid var(--color-border)", borderRadius: "6px", backgroundColor: "var(--color-bg-secondary)" }}>
+                     <p style={{ fontSize: "0.875rem", fontWeight: "600", marginBottom: "0.5rem" }}>Approved insights ready for handoff:</p>
+                     {insights.filter(i => i.status === "APPROVED" && !i.isArchived).map(insight => (
+                       <div key={insight.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
+                         <span style={{ fontSize: "0.875rem" }}>{insight.title}</span>
+                         <button
+                           onClick={() => handlePrepareHandoff(insight.id)}
+                           disabled={handoffPreparing === insight.id}
+                           style={{
+                             padding: "0.3rem 0.6rem",
+                             backgroundColor: handoffPreparing === insight.id ? "var(--color-bg-secondary)" : "var(--color-primary)",
+                             color: handoffPreparing === insight.id ? "var(--color-text-muted)" : "white",
+                             border: "none",
+                             borderRadius: "3px",
+                             cursor: handoffPreparing === insight.id ? "not-allowed" : "pointer",
+                             fontSize: "0.75rem",
+                             fontWeight: "500"
+                           }}
+                         >
+                           {handoffPreparing === insight.id ? "Preparing…" : "Prepare Internal Handoff"}
+                         </button>
+                       </div>
+                     ))}
+                   </div>
+                 )}
+
+                 {/* Handoff cards */}
+                 {handoffs.length === 0 ? (
+                   <p style={{ fontSize: "0.875rem", color: "var(--color-text-muted)" }}>
+                     No internal handoffs yet. Approve an insight above, then prepare a handoff.
+                   </p>
+                 ) : (
+                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: "1rem" }}>
+                     {handoffs.map(handoff => (
+                       <div
+                         key={handoff.id}
+                         style={{ padding: "1rem", border: "1px solid var(--color-border)", borderRadius: "6px", backgroundColor: "var(--color-bg)" }}
+                       >
+                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", marginBottom: "0.75rem" }}>
+                           <div>
+                             <h4 style={{ marginBottom: "0.25rem", fontSize: "0.9rem" }}>{handoff.title}</h4>
+                             {(handoff.targetClientName || handoff.targetMonth) && (
+                               <p style={{ fontSize: "0.75rem", color: "var(--color-text-muted)", margin: "0" }}>
+                                 {handoff.targetClientName ? `Client: ${handoff.targetClientName}` : ""}
+                                 {handoff.targetClientName && handoff.targetMonth ? " · " : ""}
+                                 {handoff.targetMonth ? `Month: ${handoff.targetMonth}` : ""}
+                               </p>
+                             )}
+                           </div>
+                           <select
+                             value={handoff.handoffStatus}
+                             onChange={async (e) => handleUpdateHandoffStatus(handoff.id, e.target.value)}
+                             style={{
+                               padding: "0.25rem 0.5rem",
+                               backgroundColor:
+                                 handoff.handoffStatus === "APPLIED" ? "#10b981" :
+                                 handoff.handoffStatus === "READY" ? "#3b82f6" :
+                                 "var(--color-bg-secondary)",
+                               color:
+                                 handoff.handoffStatus === "APPLIED" || handoff.handoffStatus === "READY" ? "white" : "inherit",
+                               border: "1px solid var(--color-border)",
+                               borderRadius: "3px",
+                               fontSize: "0.75rem",
+                               fontWeight: "500",
+                               cursor: "pointer"
+                             }}
+                           >
+                             <option value="DRAFT">DRAFT</option>
+                             <option value="READY">READY</option>
+                             <option value="APPLIED">APPLIED</option>
+                             <option value="ARCHIVED">ARCHIVED</option>
+                           </select>
+                         </div>
+
+                         {handoff.marketSummary && (
+                           <p style={{ fontSize: "0.875rem", color: "var(--color-text-muted)", marginBottom: "0.5rem" }}>
+                             {handoff.marketSummary}
+                           </p>
+                         )}
+
+                         {handoff.audienceSignals && handoff.audienceSignals.length > 0 && (
+                           <div style={{ marginBottom: "0.5rem" }}>
+                             <p style={{ fontSize: "0.75rem", fontWeight: "600", marginBottom: "0.25rem" }}>Audience signals:</p>
+                             <ul style={{ margin: "0", paddingLeft: "1.25rem", fontSize: "0.75rem", color: "var(--color-text-muted)" }}>
+                               {handoff.audienceSignals.map((s, i) => <li key={i}>{s}</li>)}
+                             </ul>
+                           </div>
+                         )}
+
+                         {handoff.opportunities && handoff.opportunities.length > 0 && (
+                           <div style={{ marginBottom: "0.5rem" }}>
+                             <p style={{ fontSize: "0.75rem", fontWeight: "600", marginBottom: "0.25rem" }}>Opportunities:</p>
+                             <ul style={{ margin: "0", paddingLeft: "1.25rem", fontSize: "0.75rem", color: "var(--color-text-muted)" }}>
+                               {handoff.opportunities.map((o, i) => <li key={i}>{o}</li>)}
+                             </ul>
+                           </div>
+                         )}
+
+                         {handoff.risks && handoff.risks.length > 0 && (
+                           <div style={{ marginBottom: "0.5rem" }}>
+                             <p style={{ fontSize: "0.75rem", fontWeight: "600", marginBottom: "0.25rem" }}>Risks:</p>
+                             <ul style={{ margin: "0", paddingLeft: "1.25rem", fontSize: "0.75rem", color: "var(--color-text-muted)" }}>
+                               {handoff.risks.map((r, i) => <li key={i}>{r}</li>)}
+                             </ul>
+                           </div>
+                         )}
+
+                         {handoff.recommendedActions && handoff.recommendedActions.length > 0 && (
+                           <div style={{ marginBottom: "0.5rem" }}>
+                             <p style={{ fontSize: "0.75rem", fontWeight: "600", marginBottom: "0.25rem" }}>Recommended actions:</p>
+                             <ul style={{ margin: "0", paddingLeft: "1.25rem", fontSize: "0.75rem", color: "var(--color-text-muted)" }}>
+                               {handoff.recommendedActions.map((a, i) => <li key={i}>{a}</li>)}
+                             </ul>
+                           </div>
+                         )}
+
+                         {handoff.sourceNote && (
+                           <p style={{ fontSize: "0.75rem", color: "var(--color-text-muted)", fontStyle: "italic", marginTop: "0.5rem", marginBottom: "0" }}>
+                             {handoff.sourceNote}
+                           </p>
+                         )}
+                       </div>
+                     ))}
+                   </div>
+                 )}
                </div>
              </div>
            ) : (

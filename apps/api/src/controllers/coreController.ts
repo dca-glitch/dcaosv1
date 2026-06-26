@@ -175,6 +175,10 @@ import {
   createMarketIntelligenceInsight,
   updateMarketIntelligenceInsight,
   archiveMarketIntelligenceInsight,
+  prepareMarketIntelligenceHandoff,
+  listMarketIntelligenceHandoffs,
+  updateMarketIntelligenceHandoffStatus,
+  archiveMarketIntelligenceHandoff,
   getAiDeliveryMonthlySummary,
   getAiDeliveryMonthlyReport,
   getAiDeliveryMonthlyReportMetrics,
@@ -4397,6 +4401,126 @@ export const archiveMarketIntelligenceInsightHandler: RequestHandler = async (re
     res.status(200).json(success(response, { phase: "runtime", scope: "market-intelligence" }));
   } catch {
     res.status(500).json(failure("MARKET_INTELLIGENCE_RUNTIME_ERROR", "Insight archive could not be completed."));
+  }
+};
+
+// ── Market Intelligence Handoff handlers ────────────────────────────────────
+
+export const prepareMarketIntelligenceHandoffHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) {
+    res.status(401).json(unauthorizedFailure());
+    return;
+  }
+
+  const projectId = typeof req.params.projectId === "string" ? req.params.projectId.trim() : "";
+  if (!projectId) {
+    res.status(400).json(failure("MARKET_INTELLIGENCE_PROJECT_INVALID", "Project ID is invalid."));
+    return;
+  }
+
+  const insightId = typeof req.body?.insightId === "string" ? req.body.insightId.trim() : "";
+  if (!insightId) {
+    res.status(400).json(failure("MARKET_INTELLIGENCE_HANDOFF_INVALID", "insightId is required and must be an APPROVED insight."));
+    return;
+  }
+
+  try {
+    const response = await prepareMarketIntelligenceHandoff(authSession, projectId, insightId);
+    if (!response) {
+      res.status(403).json(forbiddenFailure());
+      return;
+    }
+    if (!response.handoff) {
+      res.status(400).json(failure("MARKET_INTELLIGENCE_HANDOFF_INVALID", "Handoff could not be prepared. Ensure the insight is APPROVED."));
+      return;
+    }
+    res.status(201).json(success(response, { phase: "runtime", scope: "market-intelligence-handoff" }));
+  } catch {
+    res.status(500).json(failure("MARKET_INTELLIGENCE_RUNTIME_ERROR", "Handoff prepare could not be completed."));
+  }
+};
+
+export const listMarketIntelligenceHandoffsHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) {
+    res.status(401).json(unauthorizedFailure());
+    return;
+  }
+
+  const projectId = typeof req.params.projectId === "string" ? req.params.projectId.trim() : "";
+  if (!projectId) {
+    res.status(400).json(failure("MARKET_INTELLIGENCE_PROJECT_INVALID", "Project ID is invalid."));
+    return;
+  }
+
+  try {
+    const response = await listMarketIntelligenceHandoffs(authSession, projectId);
+    if (!response) {
+      res.status(403).json(forbiddenFailure());
+      return;
+    }
+    res.status(200).json(success(response, { phase: "runtime", scope: "market-intelligence-handoff" }));
+  } catch {
+    res.status(500).json(failure("MARKET_INTELLIGENCE_RUNTIME_ERROR", "Handoffs list could not be retrieved."));
+  }
+};
+
+export const updateMarketIntelligenceHandoffStatusHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) {
+    res.status(401).json(unauthorizedFailure());
+    return;
+  }
+
+  const projectId = typeof req.params.projectId === "string" ? req.params.projectId.trim() : "";
+  const handoffId = typeof req.params.handoffId === "string" ? req.params.handoffId.trim() : "";
+  if (!projectId || !handoffId) {
+    res.status(400).json(failure("MARKET_INTELLIGENCE_HANDOFF_INVALID", "Project ID and Handoff ID are required."));
+    return;
+  }
+
+  const handoffStatus = typeof req.body?.handoffStatus === "string" ? req.body.handoffStatus.trim() : "";
+  if (!handoffStatus) {
+    res.status(400).json(failure("MARKET_INTELLIGENCE_HANDOFF_INVALID", "handoffStatus is required (DRAFT, READY, APPLIED, ARCHIVED)."));
+    return;
+  }
+
+  try {
+    const response = await updateMarketIntelligenceHandoffStatus(authSession, projectId, handoffId, { handoffStatus });
+    if (!response?.handoff) {
+      res.status(400).json(failure("MARKET_INTELLIGENCE_HANDOFF_INVALID", "Handoff status update failed. Check handoffStatus value."));
+      return;
+    }
+    res.status(200).json(success(response, { phase: "runtime", scope: "market-intelligence-handoff" }));
+  } catch {
+    res.status(500).json(failure("MARKET_INTELLIGENCE_RUNTIME_ERROR", "Handoff status update could not be completed."));
+  }
+};
+
+export const archiveMarketIntelligenceHandoffHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) {
+    res.status(401).json(unauthorizedFailure());
+    return;
+  }
+
+  const projectId = typeof req.params.projectId === "string" ? req.params.projectId.trim() : "";
+  const handoffId = typeof req.params.handoffId === "string" ? req.params.handoffId.trim() : "";
+  if (!projectId || !handoffId) {
+    res.status(400).json(failure("MARKET_INTELLIGENCE_HANDOFF_INVALID", "Project ID and Handoff ID are required."));
+    return;
+  }
+
+  try {
+    const response = await archiveMarketIntelligenceHandoff(authSession, projectId, handoffId);
+    if (!response?.handoff) {
+      res.status(403).json(forbiddenFailure());
+      return;
+    }
+    res.status(200).json(success(response, { phase: "runtime", scope: "market-intelligence-handoff" }));
+  } catch {
+    res.status(500).json(failure("MARKET_INTELLIGENCE_RUNTIME_ERROR", "Handoff archive could not be completed."));
   }
 };
 

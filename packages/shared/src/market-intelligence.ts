@@ -66,3 +66,24 @@ export interface MarketIntelligenceInsightSummary {
   updatedAt: string;
   sourceCount?: number; // Number of sources in the project (evidence context)
 }
+
+// Internal handoff bridge — admin-only, not client-facing
+export interface MarketIntelligenceHandoffSummary {
+  id: string;
+  projectId: string;
+  insightId: string;
+  title: string;
+  marketSummary: string | null;
+  competitorSummary: string | null;
+  audienceSignals: string[] | null;
+  opportunities: string[] | null;
+  risks: string[] | null;
+  recommendedActions: string[] | null;
+  sourceNote: string | null;
+  targetClientName: string | null;
+  targetMonth: string | null;
+  handoffStatus: string; // DRAFT | READY | APPLIED | ARCHIVED
+  isArchived: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
