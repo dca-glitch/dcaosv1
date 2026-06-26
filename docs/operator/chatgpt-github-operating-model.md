@@ -33,6 +33,20 @@ This is especially useful for:
 - low-risk text updates;
 - small safe cleanup tasks.
 
+## Continuation Rule
+
+When the user approves GitHub-first work and says to continue, ChatGPT should continue in useful batches instead of stopping after each small commit.
+
+Stop only when:
+
+- GitHub connector blocks the write repeatedly;
+- the next change needs a product decision;
+- the next change needs local runtime proof;
+- the scope would touch source, schema, auth, storage, provider, finance logic, client visibility, or production;
+- there is no longer a useful low-risk documentation or planning update to make.
+
+For docs-only work, create focused commits and report the batch after useful progress is made.
+
 ## Mode A: GitHub-Only Work
 
 Use Mode A for work that does not need the app to run locally.
