@@ -179,6 +179,9 @@ import {
   listMarketIntelligenceHandoffs,
   updateMarketIntelligenceHandoffStatus,
   archiveMarketIntelligenceHandoff,
+  listAiDeliveryMiContext,
+  applyMiHandoffToAiDelivery,
+  removeMiHandoffFromAiDelivery,
   getAiDeliveryMonthlySummary,
   getAiDeliveryMonthlyReport,
   getAiDeliveryMonthlyReportMetrics,
@@ -4521,6 +4524,60 @@ export const archiveMarketIntelligenceHandoffHandler: RequestHandler = async (re
     res.status(200).json(success(response, { phase: "runtime", scope: "market-intelligence-handoff" }));
   } catch {
     res.status(500).json(failure("MARKET_INTELLIGENCE_RUNTIME_ERROR", "Handoff archive could not be completed."));
+  }
+};
+
+export const listAiDeliveryMiContextHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) return void res.status(401).json(unauthorizedFailure());
+
+  const projectId = typeof req.params.projectId === "string" ? req.params.projectId.trim() : "";
+  if (!projectId) return void res.status(400).json(aiDeliveryProjectInvalidFailure());
+
+  try {
+    const response = await listAiDeliveryMiContext(authSession, projectId);
+    if (!response) return void res.status(403).json(forbiddenFailure());
+    res.status(200).json(success(response, { phase: "runtime", scope: "ai-delivery-mi-context" }));
+  } catch {
+    res.status(500).json(failure("AI_DELIVERY_MI_CONTEXT_ERROR", "Could not load Market Intelligence context."));
+  }
+};
+
+export const applyMiHandoffToAiDeliveryHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) return void res.status(401).json(unauthorizedFailure());
+
+  const projectId = typeof req.params.projectId === "string" ? req.params.projectId.trim() : "";
+  const handoffId = typeof req.body?.handoffId === "string" ? req.body.handoffId.trim() : "";
+  if (!projectId || !handoffId) {
+    return void res.status(400).json(failure("AI_DELIVERY_MI_CONTEXT_INVALID", "Project ID and handoff ID are required."));
+  }
+
+  try {
+    const response = await applyMiHandoffToAiDelivery(authSession, projectId, handoffId);
+    if (!response) return void res.status(403).json(forbiddenFailure());
+    res.status(200).json(success(response, { phase: "runtime", scope: "ai-delivery-mi-context" }));
+  } catch {
+    res.status(500).json(failure("AI_DELIVERY_MI_CONTEXT_ERROR", "Could not apply Market Intelligence context."));
+  }
+};
+
+export const removeMiHandoffFromAiDeliveryHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) return void res.status(401).json(unauthorizedFailure());
+
+  const projectId = typeof req.params.projectId === "string" ? req.params.projectId.trim() : "";
+  const handoffId = typeof req.params.handoffId === "string" ? req.params.handoffId.trim() : "";
+  if (!projectId || !handoffId) {
+    return void res.status(400).json(failure("AI_DELIVERY_MI_CONTEXT_INVALID", "Project ID and handoff ID are required."));
+  }
+
+  try {
+    const response = await removeMiHandoffFromAiDelivery(authSession, projectId, handoffId);
+    if (!response) return void res.status(403).json(forbiddenFailure());
+    res.status(200).json(success(response, { phase: "runtime", scope: "ai-delivery-mi-context" }));
+  } catch {
+    res.status(500).json(failure("AI_DELIVERY_MI_CONTEXT_ERROR", "Could not remove Market Intelligence context."));
   }
 };
 

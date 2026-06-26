@@ -437,6 +437,7 @@ model AiDeliveryProject {
   researchSummaries AiDeliveryResearchSummary[]
   monthlyReports AiDeliveryMonthlyReport[]
   aiDeliveryMonthlyMetricSnapshots AiDeliveryMonthlyMetricSnapshot[]
+  marketIntelligenceHandoffs MarketIntelligenceHandoff[]
 
   @@index([tenantId])
   @@index([tenantId, isArchived])
@@ -1403,18 +1404,22 @@ model MarketIntelligenceHandoff {
   targetClientName    String?
   targetMonth         String?
   // DRAFT → READY → APPLIED; ARCHIVED for soft-removal
-  handoffStatus       String   @default("DRAFT")
-  isArchived          Boolean  @default(false)
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  handoffStatus         String   @default("DRAFT")
+  isArchived            Boolean  @default(false)
+  // Optional link to an AI Delivery project for internal context
+  aiDeliveryProjectId   String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
 
-  tenant   Tenant                    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  project  MarketIntelligenceProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  insight  MarketIntelligenceInsight @relation(fields: [insightId], references: [id], onDelete: Cascade)
+  tenant            Tenant                    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  project           MarketIntelligenceProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  insight           MarketIntelligenceInsight @relation(fields: [insightId], references: [id], onDelete: Cascade)
+  aiDeliveryProject AiDeliveryProject?        @relation(fields: [aiDeliveryProjectId], references: [id], onDelete: SetNull)
 
   @@index([tenantId])
   @@index([tenantId, projectId])
   @@index([tenantId, insightId])
   @@index([tenantId, handoffStatus])
   @@index([tenantId, isArchived])
+  @@index([tenantId, aiDeliveryProjectId])
 }

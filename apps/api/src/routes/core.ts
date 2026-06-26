@@ -149,6 +149,9 @@ import {
   listMarketIntelligenceHandoffsHandler,
   updateMarketIntelligenceHandoffStatusHandler,
   archiveMarketIntelligenceHandoffHandler,
+  listAiDeliveryMiContextHandler,
+  applyMiHandoffToAiDeliveryHandler,
+  removeMiHandoffFromAiDeliveryHandler,
   getAiDeliveryMonthlyReportHandler,
   getAiDeliveryMonthlyReportMetricsHandler,
   createAiDeliveryMonthlyReportHandler,
@@ -367,6 +370,11 @@ export function createCoreRouter() {
   router.post("/market-intelligence-projects/:projectId/handoffs/prepare", requireAuth, requireTenant, requireRole("owner", "admin"), prepareMarketIntelligenceHandoffHandler);
   router.put("/market-intelligence-projects/:projectId/handoffs/:handoffId/status", requireAuth, requireTenant, requireRole("owner", "admin"), updateMarketIntelligenceHandoffStatusHandler);
   router.post("/market-intelligence-projects/:projectId/handoffs/:handoffId/archive", requireAuth, requireTenant, requireRole("owner", "admin"), archiveMarketIntelligenceHandoffHandler);
+
+  // AI Delivery — Market Intelligence context linkage
+  router.get("/ai-delivery/projects/:projectId/market-intelligence-context", requireAuth, requireTenant, requireRole("owner", "admin"), listAiDeliveryMiContextHandler);
+  router.post("/ai-delivery/projects/:projectId/market-intelligence-context/apply", requireAuth, requireTenant, requireRole("owner", "admin"), applyMiHandoffToAiDeliveryHandler);
+  router.post("/ai-delivery/projects/:projectId/market-intelligence-context/:handoffId/remove", requireAuth, requireTenant, requireRole("owner", "admin"), removeMiHandoffFromAiDeliveryHandler);
 
   return router;
 }

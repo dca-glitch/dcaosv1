@@ -257,6 +257,31 @@ type AiDeliveryResearchSummariesResponse = {
   researchSummaries: AiDeliveryResearchSummarySummary[];
 };
 
+type AiDeliveryMiHandoffSummary = {
+  id: string;
+  projectId: string;
+  insightId: string;
+  title: string;
+  marketSummary: string | null;
+  competitorSummary: string | null;
+  audienceSignals: string[] | null;
+  opportunities: string[] | null;
+  risks: string[] | null;
+  recommendedActions: string[] | null;
+  sourceNote: string | null;
+  targetClientName: string | null;
+  targetMonth: string | null;
+  handoffStatus: string;
+  isArchived: boolean;
+  aiDeliveryProjectId: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+type AiDeliveryMiContextResponse = {
+  handoffs: AiDeliveryMiHandoffSummary[];
+};
+
 type AiDeliveryResearchSummaryResponse = {
   researchSummary: AiDeliveryResearchSummarySummary | null;
 };
@@ -2791,6 +2816,47 @@ export function App() {
     }
   }
 
+  async function handleFetchAiDeliveryMiContext(projectId: string): Promise<AiDeliveryMiHandoffSummary[]> {
+    try {
+      const response = await runAuthenticatedRequest<AiDeliveryMiContextResponse>(`/ai-delivery/projects/${projectId}/market-intelligence-context`);
+      if (!response) return [];
+      if (!response.ok) throwAiDeliveryResponseError(response);
+      return response.data.handoffs;
+    } catch {
+      return [];
+    }
+  }
+
+  async function handleApplyAiDeliveryMiHandoff(projectId: string, handoffId: string): Promise<AiDeliveryMiHandoffSummary[]> {
+    try {
+      const response = await runAuthenticatedRequest<AiDeliveryMiContextResponse>(
+        `/ai-delivery/projects/${projectId}/market-intelligence-context/apply`,
+        { method: "POST", body: { handoffId } }
+      );
+      if (!response) return [];
+      if (!response.ok) throwAiDeliveryResponseError(response);
+      setAppMessage({ tone: "success", text: "Market Intelligence handoff applied." });
+      return response.data.handoffs;
+    } catch (error) {
+      return rethrowAiDeliveryRuntimeError(error);
+    }
+  }
+
+  async function handleRemoveAiDeliveryMiHandoff(projectId: string, handoffId: string): Promise<AiDeliveryMiHandoffSummary[]> {
+    try {
+      const response = await runAuthenticatedRequest<AiDeliveryMiContextResponse>(
+        `/ai-delivery/projects/${projectId}/market-intelligence-context/${handoffId}/remove`,
+        { method: "POST" }
+      );
+      if (!response) return [];
+      if (!response.ok) throwAiDeliveryResponseError(response);
+      setAppMessage({ tone: "success", text: "Market Intelligence handoff removed." });
+      return response.data.handoffs;
+    } catch (error) {
+      return rethrowAiDeliveryRuntimeError(error);
+    }
+  }
+
   async function handleArchiveAiDeliveryDeliverable(projectId: string, deliverableId: string): Promise<boolean> {
     const deliverable = await runDeliverableAction(
       `/ai-delivery-projects/${projectId}/deliverables/${deliverableId}/archive`,
@@ -4114,6 +4180,9 @@ export function App() {
           onImportMonthlyMetrics={handleImportAiDeliveryMonthlyMetrics}
           onApproveMonthlyMetricSnapshot={handleApproveAiDeliveryMonthlyMetrics}
           onArchiveMonthlyMetricSnapshot={handleArchiveAiDeliveryMonthlyMetrics}
+          onFetchMiContext={handleFetchAiDeliveryMiContext}
+          onApplyMiHandoff={handleApplyAiDeliveryMiHandoff}
+          onRemoveMiHandoff={handleRemoveAiDeliveryMiHandoff}
         />
       ) : null}
       {!loading && activeView === "ai-market-intelligence" ? (

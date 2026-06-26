@@ -107,6 +107,7 @@ import type {
   MarketIntelligenceHandoffResponse,
   MarketIntelligenceHandoffsResponse,
   MarketIntelligenceHandoffStatusRequest,
+  AiDeliveryMiContextResponse,
   AiDeliveryGoogleDocExportResponse
 } from "./core.types";
 import type { AuthResolvedSessionContext } from "../auth/types";
@@ -10039,6 +10040,7 @@ function toHandoffSummary(h: {
   targetMonth: string | null;
   handoffStatus: string;
   isArchived: boolean;
+  aiDeliveryProjectId: string | null;
   createdAt: Date;
   updatedAt: Date;
 }): MarketIntelligenceHandoffSummary {
@@ -10058,6 +10060,7 @@ function toHandoffSummary(h: {
     targetMonth: h.targetMonth,
     handoffStatus: h.handoffStatus,
     isArchived: h.isArchived,
+    aiDeliveryProjectId: h.aiDeliveryProjectId,
     createdAt: h.createdAt.toISOString(),
     updatedAt: h.updatedAt.toISOString()
   };
@@ -10079,6 +10082,7 @@ const HANDOFF_SELECT = {
   targetMonth: true,
   handoffStatus: true,
   isArchived: true,
+  aiDeliveryProjectId: true,
   createdAt: true,
   updatedAt: true
 } as const;
@@ -10242,5 +10246,108 @@ export async function archiveMarketIntelligenceHandoff(
     });
 
     return { handoff: toHandoffSummary(handoff) };
+  });
+}
+
+// ─── AI Delivery — Market Intelligence Context ────────────────────────────────
+
+/** List handoffs currently linked to an AI Delivery project (admin-only, tenant-safe). */
+export async function listAiDeliveryMiContext(
+  authSession: AuthResolvedSessionContext,
+  aiDeliveryProjectId: string
+): Promise<AiDeliveryMiContextResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) return null;
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    const project = await tx.aiDeliveryProject.findFirst({
+      where: { id: aiDeliveryProjectId, tenantId },
+      select: { id: true }
+    });
+    if (!project) return null;
+
+    const handoffs = await tx.marketIntelligenceHandoff.findMany({
+      where: { tenantId, aiDeliveryProjectId, isArchived: false },
+      select: HANDOFF_SELECT,
+      orderBy: { updatedAt: "desc" }
+    });
+    return { handoffs: handoffs.map(toHandoffSummary) };
+  });
+}
+
+/** Apply a READY or APPLIED MI handoff to an AI Delivery project (admin-only, tenant-safe). */
+export async function applyMiHandoffToAiDelivery(
+  authSession: AuthResolvedSessionContext,
+  aiDeliveryProjectId: string,
+  handoffId: string
+): Promise<AiDeliveryMiContextResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) return null;
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    const project = await tx.aiDeliveryProject.findFirst({
+      where: { id: aiDeliveryProjectId, tenantId },
+      select: { id: true }
+    });
+    if (!project) return null;
+
+    const handoff = await tx.marketIntelligenceHandoff.findFirst({
+      where: { id: handoffId, tenantId, isArchived: false },
+      select: { id: true, handoffStatus: true, aiDeliveryProjectId: true }
+    });
+    if (!handoff) return null;
+
+    // Only READY or APPLIED handoffs can be linked; DRAFT/ARCHIVED cannot.
+    if (handoff.handoffStatus !== "READY" && handoff.handoffStatus !== "APPLIED") {
+      return null;
+    }
+
+    await tx.marketIntelligenceHandoff.update({
+      where: { id: handoffId },
+      data: { aiDeliveryProjectId, handoffStatus: "APPLIED" }
+    });
+
+    const handoffs = await tx.marketIntelligenceHandoff.findMany({
+      where: { tenantId, aiDeliveryProjectId, isArchived: false },
+      select: HANDOFF_SELECT,
+      orderBy: { updatedAt: "desc" }
+    });
+    return { handoffs: handoffs.map(toHandoffSummary) };
+  });
+}
+
+/** Remove a MI handoff linkage from an AI Delivery project (clears aiDeliveryProjectId, reverts to READY). */
+export async function removeMiHandoffFromAiDelivery(
+  authSession: AuthResolvedSessionContext,
+  aiDeliveryProjectId: string,
+  handoffId: string
+): Promise<AiDeliveryMiContextResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) return null;
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    const project = await tx.aiDeliveryProject.findFirst({
+      where: { id: aiDeliveryProjectId, tenantId },
+      select: { id: true }
+    });
+    if (!project) return null;
+
+    const handoff = await tx.marketIntelligenceHandoff.findFirst({
+      where: { id: handoffId, tenantId, aiDeliveryProjectId },
+      select: { id: true }
+    });
+    if (!handoff) return null;
+
+    await tx.marketIntelligenceHandoff.update({
+      where: { id: handoffId },
+      data: { aiDeliveryProjectId: null, handoffStatus: "READY" }
+    });
+
+    const handoffs = await tx.marketIntelligenceHandoff.findMany({
+      where: { tenantId, aiDeliveryProjectId, isArchived: false },
+      select: HANDOFF_SELECT,
+      orderBy: { updatedAt: "desc" }
+    });
+    return { handoffs: handoffs.map(toHandoffSummary) };
   });
 }

@@ -84,6 +84,7 @@ export interface MarketIntelligenceHandoffSummary {
   targetMonth: string | null;
   handoffStatus: string; // DRAFT | READY | APPLIED | ARCHIVED
   isArchived: boolean;
+  aiDeliveryProjectId: string | null;
   createdAt: string;
   updatedAt: string;
 }

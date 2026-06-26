@@ -1264,6 +1264,7 @@ export interface MarketIntelligenceHandoffSummary {
   targetMonth: string | null;
   handoffStatus: string;
   isArchived: boolean;
+  aiDeliveryProjectId: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -1278,4 +1279,12 @@ export interface MarketIntelligenceHandoffsResponse {
 
 export interface MarketIntelligenceHandoffStatusRequest {
   handoffStatus?: string | null;
+}
+
+export interface AiDeliveryMiContextApplyRequest {
+  handoffId?: string | null;
+}
+
+export interface AiDeliveryMiContextResponse {
+  handoffs: MarketIntelligenceHandoffSummary[];
 }

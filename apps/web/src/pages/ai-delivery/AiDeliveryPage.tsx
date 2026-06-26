@@ -16,6 +16,7 @@ import type {
   AiDeliveryMonthlyMetricSnapshotSummary,
   MonthlyMetricSnapshotFormValues
 } from "./MonthlyReportPanel";
+import type { MarketIntelligenceHandoffSummary } from "@dca-os-v1/shared";
 
 export type AiDeliveryBriefSummary = {
   id: string;
@@ -449,6 +450,9 @@ export type AiDeliveryProjectsProps = {
   onImportMonthlyMetrics?: (reportId: string, values: MonthlyMetricSnapshotFormValues) => Promise<AiDeliveryMonthlyMetricSnapshotSummary | null>;
   onApproveMonthlyMetricSnapshot?: (reportId: string, snapshotId: string) => Promise<AiDeliveryMonthlyMetricSnapshotSummary | null>;
   onArchiveMonthlyMetricSnapshot?: (reportId: string, snapshotId: string) => Promise<AiDeliveryMonthlyMetricSnapshotSummary | null>;
+  onFetchMiContext?: (projectId: string) => Promise<MarketIntelligenceHandoffSummary[]>;
+  onApplyMiHandoff?: (projectId: string, handoffId: string) => Promise<MarketIntelligenceHandoffSummary[]>;
+  onRemoveMiHandoff?: (projectId: string, handoffId: string) => Promise<MarketIntelligenceHandoffSummary[]>;
 };
 
 const workflowRunStatuses = ["DRAFT", "READY", "IN_PROGRESS", "REVIEW", "COMPLETED", "FAILED", "ARCHIVED"] as const;
@@ -848,7 +852,10 @@ export function AiDeliveryPage({
   onDownloadMonthlyReportDocument,
   onImportMonthlyMetrics,
   onApproveMonthlyMetricSnapshot,
-  onArchiveMonthlyMetricSnapshot
+  onArchiveMonthlyMetricSnapshot,
+  onFetchMiContext,
+  onApplyMiHandoff,
+  onRemoveMiHandoff
 }: AiDeliveryProjectsProps) {
   const [filter, setFilter] = useState<"all" | "active" | "archived">("active");
   const [editorProjectId, setEditorProjectId] = useState<string | null>(null);
@@ -936,6 +943,12 @@ export function AiDeliveryPage({
   const [researchRequests, setResearchRequests] = useState<AiDeliveryResearchRequestSummary[]>([]);
   const [researchSummaries, setResearchSummaries] = useState<AiDeliveryResearchSummarySummary[]>([]);
   const [researchSources, setResearchSources] = useState<AiDeliveryResearchSourceSummary[]>([]);
+  // Market Intelligence context
+  const [openMiContextId, setOpenMiContextId] = useState<string | null>(null);
+  const [miContextLoading, setMiContextLoading] = useState(false);
+  const [miContextError, setMiContextError] = useState<string | null>(null);
+  const [miContextItems, setMiContextItems] = useState<MarketIntelligenceHandoffSummary[]>([]);
+  const [miApplyHandoffId, setMiApplyHandoffId] = useState<string>("");
   const [researchWorkflowRuns, setResearchWorkflowRuns] = useState<AiDeliveryWorkflowRunSummary[]>([]);
   const [researchRequestEditorId, setResearchRequestEditorId] = useState<string | null>(null);
   const [researchRequestForm, setResearchRequestForm] = useState<AiDeliveryResearchRequestFormValues>(emptyResearchRequest());
@@ -1196,6 +1209,7 @@ export function AiDeliveryPage({
     [workflowRunBeingEdited?.resultPlaceholder]
   );
   const openResearchSourcesProject = useMemo(() => projects.find((p) => p.id === openResearchSourcesId) ?? null, [openResearchSourcesId, projects]);
+  const openMiContextProject = useMemo(() => projects.find((p) => p.id === openMiContextId) ?? null, [openMiContextId, projects]);
   const contentDraftActionGuidance = useMemo(() => {
     if (!activeContentDraftRecord) {
       return "Mark ready for review only after the draft has both a title and body.";
@@ -2615,6 +2629,58 @@ export function AiDeliveryPage({
     setOpenMonthlyReportId(null);
   }
 
+  async function openMiContext(projectId: string) {
+    setOpenMiContextId(projectId);
+    setMiContextLoading(true);
+    setMiContextError(null);
+    setMiContextItems([]);
+    setMiApplyHandoffId("");
+    try {
+      const items = typeof onFetchMiContext === "function" ? await onFetchMiContext(projectId) : [];
+      setMiContextItems(items);
+    } catch {
+      setMiContextError("Could not load Market Intelligence context.");
+    } finally {
+      setMiContextLoading(false);
+    }
+  }
+
+  function closeMiContext() {
+    setOpenMiContextId(null);
+    setMiContextError(null);
+    setMiContextItems([]);
+    setMiApplyHandoffId("");
+  }
+
+  async function applyMiHandoff(projectId: string) {
+    if (!miApplyHandoffId || typeof onApplyMiHandoff !== "function") return;
+    setMiContextLoading(true);
+    setMiContextError(null);
+    try {
+      const items = await onApplyMiHandoff(projectId, miApplyHandoffId);
+      setMiContextItems(items);
+      setMiApplyHandoffId("");
+    } catch {
+      setMiContextError("Could not apply Market Intelligence handoff.");
+    } finally {
+      setMiContextLoading(false);
+    }
+  }
+
+  async function removeMiHandoff(projectId: string, handoffId: string) {
+    if (typeof onRemoveMiHandoff !== "function") return;
+    setMiContextLoading(true);
+    setMiContextError(null);
+    try {
+      const items = await onRemoveMiHandoff(projectId, handoffId);
+      setMiContextItems(items);
+    } catch {
+      setMiContextError("Could not remove Market Intelligence handoff.");
+    } finally {
+      setMiContextLoading(false);
+    }
+  }
+
   if (loading) return <LoadingState label="Loading AI delivery projects" />;
   if (error) return <ErrorState title="AI delivery unavailable" message={error} />;
 
@@ -2711,6 +2777,12 @@ export function AiDeliveryPage({
           />
           <MetricCard
             accent="cyan"
+            label="MI context in focus"
+            value={openMiContextId ? miContextItems.length : "-"}
+            helper={openMiContextId ? `${miContextItems.length} Market Intelligence handoff(s) applied to this project.` : "Open MI Context to view applied Market Intelligence handoffs."}
+          />
+          <MetricCard
+            accent="cyan"
             label="Content plan in focus"
             value={openContentPlanId ? contentPlanItems.length : "-"}
             helper={seoTopicsHelper}
@@ -2771,6 +2843,11 @@ export function AiDeliveryPage({
                           <button className="secondary-action" onClick={() => void openResearchSources(p.id)} type="button">
                             Research / Sources
                           </button>
+                          {typeof onFetchMiContext === "function" ? (
+                            <button className="secondary-action" onClick={() => void openMiContext(p.id)} type="button">
+                              MI Context
+                            </button>
+                          ) : null}
                           <button className="secondary-action" onClick={() => void openContentPlan(p.id)} type="button">
                             AI SEO / Content Plan
                           </button>
@@ -3792,6 +3869,68 @@ export function AiDeliveryPage({
                 ))}
               </section>
               <div className="modal-footer"><button className="secondary-action" onClick={closeResearchSources} type="button">Close</button></div>
+            </div>
+          ) : <div>Project not found.</div>}
+        </Modal>
+      ) : null}
+      {openMiContextId ? (
+        <Modal onClose={closeMiContext} title="Market Intelligence Context">
+          {miContextLoading ? (
+            <LoadingState label="Loading Market Intelligence context" />
+          ) : openMiContextProject ? (
+            <div>
+              {miContextError ? <ErrorState title="Market Intelligence context blocked" message={miContextError} /> : null}
+              <section className="field-panel">
+                <h3>Applied handoffs</h3>
+                <p className="muted-text">Internal context only. These Market Intelligence handoffs are linked to this AI Delivery project for admin planning. Not visible to clients.</p>
+                {miContextItems.length === 0 ? (
+                  <EmptyState title="No handoffs applied" message="No Market Intelligence handoffs are currently applied to this project. Apply one below." />
+                ) : miContextItems.map((h) => (
+                  <article key={h.id} className="entity-card" style={{ marginBottom: "0.75rem" }}>
+                    <div className="entity-card-header">
+                      <div>
+                        <span className="entity-pill entity-pill-active">{h.handoffStatus}</span>
+                        <h4>{h.title}</h4>
+                      </div>
+                      <button className="secondary-action" disabled={miContextLoading} onClick={() => void removeMiHandoff(openMiContextId, h.id)} type="button">Remove</button>
+                    </div>
+                    <dl className="brief-grid">
+                      {h.marketSummary ? <div className="field-span-2"><dt>Market summary</dt><dd>{h.marketSummary}</dd></div> : null}
+                      {h.competitorSummary ? <div className="field-span-2"><dt>Competitor summary</dt><dd>{h.competitorSummary}</dd></div> : null}
+                      {h.audienceSignals?.length ? <div className="field-span-2"><dt>Audience signals</dt><dd>{h.audienceSignals.join(" · ")}</dd></div> : null}
+                      {h.opportunities?.length ? <div className="field-span-2"><dt>Opportunities</dt><dd>{h.opportunities.join(" · ")}</dd></div> : null}
+                      {h.risks?.length ? <div className="field-span-2"><dt>Risks</dt><dd>{h.risks.join(" · ")}</dd></div> : null}
+                      {h.recommendedActions?.length ? <div className="field-span-2"><dt>Recommended actions</dt><dd>{h.recommendedActions.join(" · ")}</dd></div> : null}
+                      {h.sourceNote ? <div className="field-span-2"><dt>Source note</dt><dd>{h.sourceNote}</dd></div> : null}
+                      {h.targetClientName ? <div><dt>Target client</dt><dd>{h.targetClientName}</dd></div> : null}
+                      {h.targetMonth ? <div><dt>Target month</dt><dd>{h.targetMonth}</dd></div> : null}
+                    </dl>
+                  </article>
+                ))}
+              </section>
+              {typeof onApplyMiHandoff === "function" ? (
+                <section className="field-panel">
+                  <h3>Apply a handoff</h3>
+                  <p className="muted-text">Enter the ID of an approved Market Intelligence handoff (READY status) to apply it to this project.</p>
+                  <div className="form-field">
+                    <label htmlFor="mi-apply-handoff-id">Handoff ID</label>
+                    <input
+                      id="mi-apply-handoff-id"
+                      type="text"
+                      value={miApplyHandoffId}
+                      onChange={(e) => setMiApplyHandoffId(e.target.value)}
+                      placeholder="Handoff UUID"
+                      disabled={miContextLoading}
+                    />
+                  </div>
+                  <div className="modal-footer">
+                    <button className="primary-action" disabled={miContextLoading || !miApplyHandoffId.trim()} onClick={() => void applyMiHandoff(openMiContextId)} type="button">Apply</button>
+                    <button className="secondary-action" onClick={closeMiContext} type="button">Close</button>
+                  </div>
+                </section>
+              ) : (
+                <div className="modal-footer"><button className="secondary-action" onClick={closeMiContext} type="button">Close</button></div>
+              )}
             </div>
           ) : <div>Project not found.</div>}
         </Modal>

@@ -636,6 +636,121 @@ async function main() {
     }
     console.log(`✅ Cross-project handoff status update correctly rejected (${crossHandoffStatus})\n`);
 
+    // Step 14: AI Delivery MI context integration
+    console.log("📋 Step 14: AI Delivery MI context integration...");
+
+    // 14a: List AI Delivery projects and find one to use
+    const aiDeliveryProjectsResp = await apiCall("GET", "/ai-delivery-projects", null, token);
+    if (!aiDeliveryProjectsResp.ok) throw new Error(`Could not list AI Delivery projects: ${aiDeliveryProjectsResp.status}`);
+    const aiDeliveryProjects = aiDeliveryProjectsResp.data?.aiDeliveryProjects ?? [];
+    const aiDeliveryProjectId = aiDeliveryProjects.find(p => !p.isArchived)?.id ?? null;
+
+    if (!aiDeliveryProjectId) {
+      console.log("⚠️  No active AI Delivery project found — Step 14 AI Delivery attach proof skipped (no fixture available)");
+      console.log("    To prove full integration, create an AI Delivery project in the admin UI and re-run.\n");
+    } else {
+    console.log(`✅ AI Delivery project available: ${aiDeliveryProjectId}`);
+
+    // 14b: Reset handoff to READY so we can test apply
+    const readyResp = await apiCall("PUT",
+      `/market-intelligence-projects/${projectId}/handoffs/${handoff.id}/status`,
+      { handoffStatus: "READY" }, token);
+    if (!readyResp.ok) throw new Error(`Could not reset handoff to READY: ${readyResp.status}`);
+
+    // Pre-clean: remove any existing handoffs from the AI Delivery project (from previous smoke runs)
+    const precleanResp = await apiCall("GET", `/ai-delivery/projects/${aiDeliveryProjectId}/market-intelligence-context`, null, token);
+    if (precleanResp.ok) {
+      for (const existingH of (precleanResp.data?.handoffs ?? [])) {
+        await apiCall("POST", `/ai-delivery/projects/${aiDeliveryProjectId}/market-intelligence-context/${existingH.id}/remove`, null, token);
+      }
+    }
+
+    // 14c: List MI context for the AI Delivery project (expect 0)
+    const ctxBeforeResp = await apiCall("GET", `/ai-delivery/projects/${aiDeliveryProjectId}/market-intelligence-context`, null, token);
+    if (!ctxBeforeResp.ok) throw new Error(`Could not list MI context: ${ctxBeforeResp.status}`);
+    if (ctxBeforeResp.data.handoffs.length !== 0) {
+      throw new Error(`Expected 0 handoffs before apply, got ${ctxBeforeResp.data.handoffs.length}`);
+    }
+    console.log("✅ MI context empty before apply");
+
+    // 14d: Apply handoff to AI Delivery project
+    const applyResp = await apiCall("POST",
+      `/ai-delivery/projects/${aiDeliveryProjectId}/market-intelligence-context/apply`,
+      { handoffId: handoff.id }, token);
+    if (!applyResp.ok) throw new Error(`Could not apply MI handoff: ${applyResp.status}`);
+    const appliedHandoffs = applyResp.data?.handoffs ?? [];
+    if (!appliedHandoffs.find(h => h.id === handoff.id)) {
+      throw new Error("Applied handoff not in response list");
+    }
+    const applied = appliedHandoffs.find(h => h.id === handoff.id);
+    if (applied.aiDeliveryProjectId !== aiDeliveryProjectId) {
+      throw new Error(`aiDeliveryProjectId mismatch: ${applied.aiDeliveryProjectId}`);
+    }
+    if (!applied.audienceSignals?.length) throw new Error("audienceSignals missing from applied context");
+    if (!applied.opportunities?.length) throw new Error("opportunities missing from applied context");
+    if (!applied.risks?.length) throw new Error("risks missing from applied context");
+    if (!applied.recommendedActions?.length) throw new Error("recommendedActions missing from applied context");
+    if (!applied.sourceNote) throw new Error("sourceNote missing from applied context");
+    console.log("✅ Handoff applied to AI Delivery project; all content fields present");
+
+    // 14e: List MI context after apply
+    const ctxAfterResp = await apiCall("GET", `/ai-delivery/projects/${aiDeliveryProjectId}/market-intelligence-context`, null, token);
+    if (!ctxAfterResp.ok) throw new Error(`Could not list MI context after apply: ${ctxAfterResp.status}`);
+    if (!ctxAfterResp.data.handoffs.find(h => h.id === handoff.id)) {
+      throw new Error("Handoff not in MI context list after apply");
+    }
+    console.log("✅ MI context list shows applied handoff");
+
+    // 14f: Reject DRAFT handoff apply
+    const handoff2Resp = await apiCall("GET", `/market-intelligence-projects/${projectId}/handoffs`, null, token);
+    if (!handoff2Resp.ok) throw new Error(`Could not list handoffs: ${handoff2Resp.status}`);
+    // Prepare a second handoff and leave it DRAFT
+    const approvedInsight2Resp = await apiCall("GET", `/market-intelligence-projects/${projectId}/insights`, null, token);
+    if (approvedInsight2Resp.ok && approvedInsight2Resp.data?.insights?.length > 0) {
+      const insightToUse = approvedInsight2Resp.data.insights.find(i => i.status === "APPROVED");
+      if (insightToUse) {
+        const draftHandoffResp = await apiCall("POST",
+          `/market-intelligence-projects/${projectId}/handoffs/prepare`,
+          { insightId: insightToUse.id }, token);
+        if (draftHandoffResp.ok && draftHandoffResp.data?.handoff?.id) {
+          const draftHandoffId = draftHandoffResp.data.handoff.id;
+          // DRAFT handoff should be rejected (applyMiHandoffToAiDelivery returns null for DRAFT → 403)
+          const rejectDraftStatus = await apiCallExpectFailure("POST",
+            `/ai-delivery/projects/${aiDeliveryProjectId}/market-intelligence-context/apply`,
+            { handoffId: draftHandoffId }, token);
+          if (rejectDraftStatus < 400 || rejectDraftStatus >= 600) {
+            throw new Error(`Expected 4xx for DRAFT handoff apply, got ${rejectDraftStatus}`);
+          }
+          console.log(`✅ DRAFT handoff correctly rejected (${rejectDraftStatus})`);
+        }
+      }
+    }
+
+    // 14g: Remove handoff linkage
+    const removeResp = await apiCall("POST",
+      `/ai-delivery/projects/${aiDeliveryProjectId}/market-intelligence-context/${handoff.id}/remove`,
+      null, token);
+    if (!removeResp.ok) throw new Error(`Could not remove MI handoff: ${removeResp.status}`);
+    const afterRemove = removeResp.data?.handoffs ?? [];
+    if (afterRemove.find(h => h.id === handoff.id)) {
+      throw new Error("Handoff still in list after remove");
+    }
+    console.log("✅ Handoff removed from AI Delivery project");
+
+    // 14h: Verify handoff reverted to READY
+    const verifyHandoffResp = await apiCall("GET", `/market-intelligence-projects/${projectId}/handoffs`, null, token);
+    if (!verifyHandoffResp.ok) throw new Error(`Could not list handoffs after remove: ${verifyHandoffResp.status}`);
+    const revertedHandoff = verifyHandoffResp.data.handoffs.find(h => h.id === handoff.id);
+    if (!revertedHandoff) throw new Error("Could not find handoff after remove");
+    if (revertedHandoff.handoffStatus !== "READY") {
+      throw new Error(`Expected READY after remove, got ${revertedHandoff.handoffStatus}`);
+    }
+    if (revertedHandoff.aiDeliveryProjectId !== null) {
+      throw new Error(`Expected aiDeliveryProjectId null after remove, got ${revertedHandoff.aiDeliveryProjectId}`);
+    }
+    console.log("✅ Handoff reverted to READY with aiDeliveryProjectId=null after remove\n");
+    } // end if (aiDeliveryProjectId)
+
     // Step 14: Browser test (optional, requires playwright)
     if (process.env.BROWSER_TEST === "true") {
       console.log("📋 Step 14: Browser smoke test (optional)...");

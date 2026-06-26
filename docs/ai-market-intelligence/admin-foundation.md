@@ -8,7 +8,7 @@ For the MVP contract, each research project should stay tenant-scoped and can op
 
 ## Closure Note
 
-The admin MVP foundation is implemented and locally validated, including research inputs, internal handoff bridge, and handoff isolation. All 14 smoke steps pass. Client-visible Market Intelligence output, export handoff, and any future client portal archive remain deferred.
+The admin MVP foundation is implemented and locally validated, including research inputs, internal handoff bridge, handoff isolation, and AI Delivery project context integration. All smoke steps pass. Client-visible Market Intelligence output, export handoff, and any future client portal archive remain deferred.
 
 ## Purpose
 
@@ -223,9 +223,26 @@ This allows admins to answer:
 - `MarketIntelligenceSource` - source references with URLs and notes
 - `MarketIntelligenceResearchRun` - execution tracking with status and results
 - `MarketIntelligenceInsight` - insight records with reviewer notes and status
-- `MarketIntelligenceHandoff` - internal handoff bridge (admin-only, not client-facing); tenant/project/insight scoped with status lifecycle
+- `MarketIntelligenceHandoff` - internal handoff bridge (admin-only, not client-facing); tenant/project/insight scoped with status lifecycle; optional `aiDeliveryProjectId` field links to an AI Delivery project as internal context
 
 All tables are tenant-scoped and support archiving.
+
+## AI Delivery Context Integration
+
+An approved MI handoff (READY status) can be attached to an AI Delivery project as internal research context.
+
+### Endpoints
+
+- `GET /api/v1/ai-delivery/projects/:projectId/market-intelligence-context` — list applied handoffs (admin-only)
+- `POST /api/v1/ai-delivery/projects/:projectId/market-intelligence-context/apply` — attach a READY handoff (body: `{ handoffId }`)
+- `POST /api/v1/ai-delivery/projects/:projectId/market-intelligence-context/:handoffId/remove` — detach a handoff (reverts to READY)
+
+### Rules
+
+- Only READY or already-APPLIED handoffs can be linked. DRAFT and ARCHIVED handoffs are rejected (403).
+- Removing a link reverts the handoff to READY and clears `aiDeliveryProjectId`.
+- No client portal exposure. No public links. Admin-only internal context.
+- Monthly reporting integration via the handoff content is deferred.
 
 ## Deferred Features
 
