@@ -88,6 +88,10 @@ Client wording should be:
 - outcome-focused;
 - free of technical implementation details.
 
+## Monthly Update Tone
+
+Use short paragraphs and plain next steps.
+
 ## Admin Reminder
 
 If wording is about internal process, technical checks, hidden working notes, or unfinished work, it probably belongs in admin documentation, not client-facing material.
