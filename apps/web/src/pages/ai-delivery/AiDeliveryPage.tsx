@@ -201,6 +201,18 @@ export type AiDeliveryWordPressPublishResult = {
   providerDisabledReason?: string;
 };
 
+export type AiDeliveryGoogleDocExportResult = {
+  deliverableId: string;
+  hasGoogleDocExport: boolean;
+  exportUrl: string | null;
+  docTitle: string | null;
+  folderPath: string | null;
+  providerStatus: "exported" | "provider_disabled" | "provider_not_configured" | "error";
+  providerDisabledReason?: string | null;
+  errorMessage: string | null;
+  generatedAt: string | null;
+};
+
 export type AiDeliveryDeliverableReviewSummary = {
   id: string;
   tenantId?: string;
@@ -940,6 +952,9 @@ export function AiDeliveryPage({
   const [deliverableWordPressPublishTargetId, setDeliverableWordPressPublishTargetId] = useState<string | null>(null);
   const [deliverableWordPressPublishError, setDeliverableWordPressPublishError] = useState<{ recordId: string; message: string } | null>(null);
   const [deliverableWordPressPublishResult, setDeliverableWordPressPublishResult] = useState<{ recordId: string; result: AiDeliveryWordPressPublishResult } | null>(null);
+  const [deliverableGoogleDocExportTargetId, setDeliverableGoogleDocExportTargetId] = useState<string | null>(null);
+  const [deliverableGoogleDocExportError, setDeliverableGoogleDocExportError] = useState<{ recordId: string; message: string } | null>(null);
+  const [deliverableGoogleDocExportResult, setDeliverableGoogleDocExportResult] = useState<{ recordId: string; result: AiDeliveryGoogleDocExportResult } | null>(null);
   const [articleImageDownloadRefLoading, setArticleImageDownloadRefLoading] = useState(false);
   const [articleImageDownloadRefError, setArticleImageDownloadRefError] = useState<{ recordId: string; message: string } | null>(null);
   const [articleImageDownloadRef, setArticleImageDownloadRef] = useState<{ recordId: string; storageKey: string; downloadUrl: string | null; expiresSeconds: number | null } | null>(null);
@@ -1602,6 +1617,32 @@ export function AiDeliveryPage({
     }
   }
 
+  async function exportDeliverableToGoogleDoc(projectId: string, deliverableId: string) {
+    if (!projectId || !deliverableId) return;
+    setDeliverableGoogleDocExportTargetId(deliverableId);
+    setDeliverableGoogleDocExportError(null);
+    setDeliverableGoogleDocExportResult(null);
+    try {
+      const response = await fetch(`/api/v1/ai-delivery-projects/${projectId}/deliverables/${deliverableId}/export-google-doc`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" }
+      });
+      const data = await response.json() as { data?: AiDeliveryGoogleDocExportResult; error?: { message?: string } };
+      const result = data?.data;
+      if (!result || !["exported", "provider_disabled", "provider_not_configured", "error"].includes(result.providerStatus)) {
+        throw new Error(data?.error?.message || "Unexpected response from Google Doc export.");
+      }
+      setDeliverableGoogleDocExportResult({ recordId: deliverableId, result });
+    } catch (error) {
+      setDeliverableGoogleDocExportError({
+        recordId: deliverableId,
+        message: getErrorMessage(error, "Unable to export this deliverable to Google Docs.")
+      });
+    } finally {
+      setDeliverableGoogleDocExportTargetId(null);
+    }
+  }
+
   async function handleSaveBrief(projectId: string) {
     if (!briefDetail) return;
     if (typeof onSaveBrief !== "function") return;
@@ -2249,6 +2290,9 @@ export function AiDeliveryPage({
     setDeliverableWordPressPublishTargetId(null);
     setDeliverableWordPressPublishError(null);
     setDeliverableWordPressPublishResult(null);
+    setDeliverableGoogleDocExportTargetId(null);
+    setDeliverableGoogleDocExportError(null);
+    setDeliverableGoogleDocExportResult(null);
   }
 
   async function openWorkflowRuns(projectId: string) {
@@ -4618,6 +4662,11 @@ export function AiDeliveryPage({
                             {deliverableWordPressPublishTargetId === d.id ? "Publishing..." : "Test WordPress publish"}
                           </button>
                         ) : null}
+                        {!d.isArchived ? (
+                          <button className="secondary-action" disabled={deliverablesSaving || deliverableGoogleDocExportTargetId === d.id} onClick={() => void exportDeliverableToGoogleDoc(openDeliverablesProject.id, d.id)} type="button">
+                            {deliverableGoogleDocExportTargetId === d.id ? "Exporting..." : "Export to Google Doc"}
+                          </button>
+                        ) : null}
                         <button className="secondary-action" disabled={deliverablesSaving || deliverableReviewsLoading} onClick={() => void openDeliverableReviews(openDeliverablesProject.id, d.id)} type="button">Reviews</button>
                         {!d.isArchived ? <button className="secondary-action" disabled={deliverablesSaving} onClick={() => void archiveDeliverable(openDeliverablesProject.id, d.id)} type="button">Archive</button> : null}
                         {d.isArchived ? <button className="secondary-action" disabled={deliverablesSaving} onClick={() => void restoreDeliverable(openDeliverablesProject.id, d.id)} type="button">Restore</button> : null}
@@ -4730,6 +4779,46 @@ export function AiDeliveryPage({
                            <dd>{deliverableWordPressPublishResult.result.providerDisabledReason || deliverableWordPressPublishResult.result.errorMessage || "No external WordPress call was made; real integration is future block."}</dd>
                          </div>
                        </dl>
+                      </div>
+                    ) : null}
+                    {deliverableGoogleDocExportError && deliverableGoogleDocExportError.recordId === d.id ? (
+                      <div className="state-panel" role="alert" style={{ marginTop: "0.75rem", color: "var(--color-error)" }}>
+                        {deliverableGoogleDocExportError.message}
+                      </div>
+                    ) : null}
+                    {deliverableGoogleDocExportResult && deliverableGoogleDocExportResult.recordId === d.id ? (
+                      <div className="state-panel" style={{ marginTop: "0.75rem" }}>
+                        <strong>Google Doc export result</strong>
+                        <dl className="brief-grid" style={{ marginTop: "0.5rem" }}>
+                          <div>
+                            <dt>Provider status</dt>
+                            <dd><StatusBadge status={deliverableGoogleDocExportResult.result.providerStatus} /></dd>
+                          </div>
+                          <div>
+                            <dt>Export available</dt>
+                            <dd>{deliverableGoogleDocExportResult.result.hasGoogleDocExport ? "Yes" : "No"}</dd>
+                          </div>
+                          {deliverableGoogleDocExportResult.result.docTitle ? (
+                            <div>
+                              <dt>Document title</dt>
+                              <dd>{deliverableGoogleDocExportResult.result.docTitle}</dd>
+                            </div>
+                          ) : null}
+                          {deliverableGoogleDocExportResult.result.folderPath ? (
+                            <div>
+                              <dt>Folder path</dt>
+                              <dd>{deliverableGoogleDocExportResult.result.folderPath}</dd>
+                            </div>
+                          ) : null}
+                          <div className="field-span-2">
+                            <dt>Export link</dt>
+                            <dd>
+                              {deliverableGoogleDocExportResult.result.exportUrl
+                                ? <a href={deliverableGoogleDocExportResult.result.exportUrl} rel="noreferrer" target="_blank">Open in Google Docs</a>
+                                : (deliverableGoogleDocExportResult.result.providerDisabledReason || "Google Drive provider is not configured. Enable GOOGLE_DRIVE_EXPORT_ENABLED and provide service account credentials to activate.")}
+                            </dd>
+                          </div>
+                        </dl>
                       </div>
                     ) : null}
                     {!d.isArchived ? (
