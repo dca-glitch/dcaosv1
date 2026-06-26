@@ -3,6 +3,7 @@ import { EmptyState } from "../../components/EmptyState";
 import { ErrorState } from "../../components/ErrorState";
 import { LoadingState } from "../../components/LoadingState";
 import { Modal } from "../../components/Modal";
+import { StatusBadge } from "../../components/ui";
 
 export type VendorSummary = {
   id: string;
@@ -328,25 +329,55 @@ export function BillsPage({
       ) : null}
 
       {vendors.length > 0 ? (
-        <div className="entity-grid">
+        <div className="dense-list">
           {vendors.map((vendor) => (
-            <article className="entity-card" key={vendor.id}>
-              <div className="entity-card-header">
-                <div>
-                  <span className={`entity-pill entity-pill-${vendor.isArchived ? "archived" : "active"}`}>
-                    {vendor.isArchived ? "Archived" : "Active"}
-                  </span>
+            <article className="entity-card dense-record" key={vendor.id}>
+              <div className="dense-record-main">
+                <div className="dense-title">
+                  <div className="dense-kicker">
+                    <StatusBadge status={vendor.isArchived ? "ARCHIVED" : "ACTIVE"} />
+                  </div>
                   <h2>{vendor.name}</h2>
+                  <div className="dense-meta">
+                    <span><strong>{vendor.billCount}</strong> bill(s)</span>
+                    <span>Updated {formatDateLabel(vendor.updatedAt)}</span>
+                  </div>
                 </div>
-                <div className="card-actions">
-                  {canEdit ? <button className="secondary-action" onClick={() => openEditVendorModal(vendor)} type="button">Edit</button> : null}
-                  {canEdit && !vendor.isArchived ? <button className="secondary-action" onClick={() => void onArchiveVendor(vendor.id)} type="button">Archive</button> : null}
-                  {canEdit && vendor.isArchived ? <button className="secondary-action" onClick={() => void onRestoreVendor(vendor.id)} type="button">Restore</button> : null}
+
+                <div className="dense-fields">
+                  <div className="dense-field">
+                    <span>Bills</span>
+                    <strong>{vendor.billCount}</strong>
+                  </div>
+                  <div className="dense-field">
+                    <span>Status</span>
+                    <strong>{vendor.isArchived ? "Archived" : "Active"}</strong>
+                  </div>
+                  <div className="dense-field">
+                    <span>Updated</span>
+                    <strong>{formatDateLabel(vendor.updatedAt)}</strong>
+                  </div>
+                  <div className="dense-field">
+                    <span>Created</span>
+                    <strong>{formatDateLabel(vendor.createdAt)}</strong>
+                  </div>
                 </div>
-              </div>
-              <div className="entity-field-grid">
-                <div><span>Bills</span><strong>{vendor.billCount}</strong></div>
-                <div><span>Last updated</span><strong>{formatDateLabel(vendor.updatedAt)}</strong></div>
+
+                <div className="dense-actions">
+                  {canEdit ? <button className="primary-action" onClick={() => openEditVendorModal(vendor)} type="button">Open</button> : null}
+                  {canEdit ? (
+                    <details className="row-action-menu">
+                      <summary>More</summary>
+                      <div className="row-action-menu-panel">
+                        <div className="row-action-menu-group">
+                          <span className="row-action-menu-label">Vendor</span>
+                          {!vendor.isArchived ? <button className="secondary-action" onClick={() => void onArchiveVendor(vendor.id)} type="button">Archive</button> : null}
+                          {vendor.isArchived ? <button className="secondary-action" onClick={() => void onRestoreVendor(vendor.id)} type="button">Restore</button> : null}
+                        </div>
+                      </div>
+                    </details>
+                  ) : null}
+                </div>
               </div>
             </article>
           ))}
@@ -356,32 +387,59 @@ export function BillsPage({
       {filteredBills.length === 0 ? (
         <EmptyState message="No bills match the current filter." title="No bills" />
       ) : (
-        <div className="entity-grid">
+        <div className="dense-list">
           {filteredBills.map((bill) => (
-            <article className="entity-card" key={bill.id}>
-              <div className="entity-card-header">
-                <div>
-                  <span className={`entity-pill entity-pill-${bill.isArchived ? "archived" : "active"}`}>
-                    {bill.isArchived ? "Archived" : "Active"}
-                  </span>
+            <article className="entity-card dense-record" key={bill.id}>
+              <div className="dense-record-main">
+                <div className="dense-title">
+                  <div className="dense-kicker">
+                    <StatusBadge status={bill.isArchived ? "ARCHIVED" : "ACTIVE"} />
+                  </div>
                   <h2>{bill.vendor.name}</h2>
+                  <div className="dense-meta">
+                    <span><strong>{formatMoney(bill.amountCents)}</strong></span>
+                    <span>{formatPaymentForm(bill.paymentForm)}</span>
+                    <span>{bill.category || "No category"}</span>
+                  </div>
                 </div>
-                <div className="card-actions">
-                  {canEdit ? <button className="secondary-action" onClick={() => openEditBillModal(bill)} type="button">Edit</button> : null}
-                  {canEdit && !bill.isArchived ? <button className="secondary-action" onClick={() => void onArchiveBill(bill.id)} type="button">Archive</button> : null}
-                  {canEdit && bill.isArchived ? <button className="secondary-action" onClick={() => void onRestoreBill(bill.id)} type="button">Restore</button> : null}
+
+                <div className="dense-fields">
+                  <div className="dense-field">
+                    <span>Amount</span>
+                    <strong>{formatMoney(bill.amountCents)}</strong>
+                  </div>
+                  <div className="dense-field">
+                    <span>Payment</span>
+                    <strong>{formatPaymentForm(bill.paymentForm)}</strong>
+                  </div>
+                  <div className="dense-field">
+                    <span>Paid</span>
+                    <strong>{formatDateLabel(bill.paymentDate)}</strong>
+                  </div>
+                  <div className="dense-field">
+                    <span>Due</span>
+                    <strong>{formatDateLabel(bill.dueDate)}</strong>
+                  </div>
+                </div>
+
+                <div className="dense-actions">
+                  {canEdit ? <button className="primary-action" onClick={() => openEditBillModal(bill)} type="button">Open</button> : null}
+                  {canEdit ? (
+                    <details className="row-action-menu">
+                      <summary>More</summary>
+                      <div className="row-action-menu-panel">
+                        <div className="row-action-menu-group">
+                          <span className="row-action-menu-label">Bill</span>
+                          {!bill.isArchived ? <button className="secondary-action" onClick={() => void onArchiveBill(bill.id)} type="button">Archive</button> : null}
+                          {bill.isArchived ? <button className="secondary-action" onClick={() => void onRestoreBill(bill.id)} type="button">Restore</button> : null}
+                        </div>
+                      </div>
+                    </details>
+                  ) : null}
                 </div>
               </div>
-              <div className="entity-field-grid">
-                <div><span>Amount</span><strong>{formatMoney(bill.amountCents)}</strong></div>
-                <div><span>Payment form</span><strong>{formatPaymentForm(bill.paymentForm)}</strong></div>
-                <div><span>Date of payment</span><strong>{formatDateLabel(bill.paymentDate)}</strong></div>
-                <div><span>Bill date</span><strong>{formatDateLabel(bill.billDate)}</strong></div>
-                <div><span>Due date</span><strong>{formatDateLabel(bill.dueDate)}</strong></div>
-                <div><span>Category</span><strong>{bill.category || "Not set"}</strong></div>
-                <div><span>Reference</span><strong>{bill.referenceNumber || "Not set"}</strong></div>
-                <div><span>Document</span><strong>{bill.documentUrl || bill.documentStorageKey || "Not set"}</strong></div>
-                <div className="entity-span-2"><span>Notes</span><strong>{bill.notes || "Not set"}</strong></div>
+              <div className="dense-row-note">
+                Bill date: {formatDateLabel(bill.billDate)}. Reference: {bill.referenceNumber || "Not set"}. Document: {bill.documentUrl || bill.documentStorageKey || "Not set"}. Notes: {bill.notes || "Not set"}.
               </div>
             </article>
           ))}

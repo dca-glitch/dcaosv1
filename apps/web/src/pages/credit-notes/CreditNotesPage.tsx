@@ -4,6 +4,7 @@ import { ErrorState } from "../../components/ErrorState";
 import { LoadingState } from "../../components/LoadingState";
 import { Modal } from "../../components/Modal";
 import { ModalActions } from "../../components/ui/ModalActions";
+import { StatusBadge } from "../../components/ui";
 import type { InvoiceItemSummary } from "../invoice-items/InvoiceItemsPage";
 import type { InvoiceSummary } from "../invoices/InvoicesPage";
 
@@ -572,34 +573,49 @@ function CreditNoteCards({ creditNotes, canEdit, onEditCreditNote, onIssueCredit
   }
 
   return (
-    <div className="entity-grid">
+    <div className="dense-list">
       {creditNotes.map((creditNote) => (
-        <article className="entity-card" key={creditNote.id}>
-          <div className="entity-card-header">
-            <div>
-              <span className={`entity-pill entity-pill-${creditNote.isArchived ? "archived" : "active"}`}>
-                {formatCreditNoteStatus(creditNote.status)}
-              </span>
+        <article className="entity-card dense-record" key={creditNote.id}>
+          <div className="dense-record-main">
+            <div className="dense-title">
+              <div className="dense-kicker">
+                <StatusBadge status={creditNote.isArchived ? "ARCHIVED" : creditNote.status} />
+              </div>
               <h2>{creditNote.creditNoteNumber}</h2>
+              <div className="dense-meta">
+                <span>{creditNote.invoice.client.name}</span>
+                <span>{creditNote.invoice.invoiceNumber}</span>
+                <span><strong>{formatMoney(creditNote.totalCents, creditNote.currency)}</strong></span>
+              </div>
             </div>
-            <div className="card-actions">
-              {canEdit && creditNote.status === "DRAFT" ? <button className="secondary-action" onClick={() => onEditCreditNote(creditNote)} type="button">Edit</button> : null}
-              {canEdit && creditNote.status === "DRAFT" ? <button className="secondary-action" onClick={() => void onIssueCreditNote(creditNote.id)} type="button">Issue</button> : null}
-              {canEdit && creditNote.status !== "VOIDED" ? <button className="secondary-action" onClick={() => void onVoidCreditNote(creditNote.id)} type="button">Void</button> : null}
+
+            <div className="dense-fields">
+              <div className="dense-field"><span>Status</span><strong>{formatCreditNoteStatus(creditNote.status)}</strong></div>
+              <div className="dense-field"><span>Issue date</span><strong>{formatDateLabel(creditNote.issueDate)}</strong></div>
+              <div className="dense-field"><span>Subtotal</span><strong>{formatMoney(creditNote.subtotalCents, creditNote.currency)}</strong></div>
+              <div className="dense-field"><span>Tax</span><strong>{formatMoney(creditNote.taxCents, creditNote.currency)}</strong></div>
+              <div className="dense-field"><span>Discount</span><strong>{formatMoney(creditNote.discountCents, creditNote.currency)}</strong></div>
+              <div className="dense-field"><span>Line items</span><strong>{creditNote.lineItems.length}</strong></div>
+            </div>
+
+            <div className="dense-actions">
+              {canEdit && creditNote.status === "DRAFT" ? <button className="primary-action" onClick={() => onEditCreditNote(creditNote)} type="button">Open</button> : null}
+              {canEdit ? (
+                <details className="row-action-menu">
+                  <summary>More</summary>
+                  <div className="row-action-menu-panel">
+                    <div className="row-action-menu-group">
+                      <span className="row-action-menu-label">Credit note</span>
+                      {creditNote.status === "DRAFT" ? <button className="secondary-action" onClick={() => void onIssueCreditNote(creditNote.id)} type="button">Issue</button> : null}
+                      {creditNote.status !== "VOIDED" ? <button className="secondary-action" onClick={() => void onVoidCreditNote(creditNote.id)} type="button">Void</button> : null}
+                    </div>
+                  </div>
+                </details>
+              ) : null}
             </div>
           </div>
-          <div className="entity-field-grid">
-            <div><span>Client</span><strong>{creditNote.invoice.client.name}</strong></div>
-            <div><span>Invoice</span><strong>{creditNote.invoice.invoiceNumber}</strong></div>
-            <div><span>Issue date</span><strong>{formatDateLabel(creditNote.issueDate)}</strong></div>
-            <div><span>Total</span><strong>{formatMoney(creditNote.totalCents, creditNote.currency)}</strong></div>
-            <div><span>Subtotal</span><strong>{formatMoney(creditNote.subtotalCents, creditNote.currency)}</strong></div>
-            <div><span>Tax</span><strong>{formatMoney(creditNote.taxCents, creditNote.currency)}</strong></div>
-            <div><span>Discount</span><strong>{formatMoney(creditNote.discountCents, creditNote.currency)}</strong></div>
-            <div><span>Line items</span><strong>{creditNote.lineItems.length}</strong></div>
-            <div className="entity-span-2"><span>Line item details</span><strong>{formatLineItemSummary(creditNote.lineItems, creditNote.currency)}</strong></div>
-            <div className="entity-span-2"><span>Reason / notes</span><strong>{creditNote.reason || "Not set"}</strong></div>
-            <div className="entity-span-2"><span>Document</span><strong>{creditNote.documentUrl || creditNote.documentStorageKey || "Not set"}</strong></div>
+          <div className="dense-row-note">
+            Line items: {formatLineItemSummary(creditNote.lineItems, creditNote.currency)}. Reason: {creditNote.reason || "Not set"}. Document: {creditNote.documentUrl || creditNote.documentStorageKey || "Not set"}.
           </div>
         </article>
       ))}

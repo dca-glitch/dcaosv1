@@ -160,24 +160,55 @@ export function InvoiceItemsPage({
             message={tab === "active" ? "Add your first reusable service to build the invoice item library." : "Archived services will appear here when available."}
           />
         ) : (
-          <div className="entity-grid">
+          <div className="dense-list">
             {visibleItems.map((item) => (
-              <article className="entity-card" key={item.id}>
-                <div className="entity-card-header">
-                  <div>
-                    <StatusBadge status={item.isArchived ? "Archived" : "Active"} />
+              <article className="entity-card dense-record" key={item.id}>
+                <div className="dense-record-main">
+                  <div className="dense-title">
+                    <div className="dense-kicker">
+                      <StatusBadge status={item.isArchived ? "Archived" : "Active"} />
+                    </div>
                     <h2>{item.name}</h2>
+                    <div className="dense-meta">
+                      <span><strong>{formatMoney(item.unitPriceCents)}</strong></span>
+                      <span>{item.description || "No description"}</span>
+                    </div>
                   </div>
-                  <div className="card-actions">
-                    {canEdit && !item.isArchived ? <button className="secondary-action" onClick={() => openEditModal(item)} type="button">Edit</button> : null}
-                    {canEdit && !item.isArchived ? <button className="secondary-action" onClick={() => void onArchiveInvoiceItem(item.id)} type="button">Archive</button> : null}
-                    {canEdit && item.isArchived ? <button className="secondary-action" onClick={() => void onRestoreInvoiceItem(item.id)} type="button">Restore</button> : null}
+
+                  <div className="dense-fields">
+                    <div className="dense-field">
+                      <span>Unit price</span>
+                      <strong>{formatMoney(item.unitPriceCents)}</strong>
+                    </div>
+                    <div className="dense-field">
+                      <span>Status</span>
+                      <strong>{item.isArchived ? "Archived" : "Active"}</strong>
+                    </div>
+                    <div className="dense-field">
+                      <span>Description</span>
+                      <strong>{item.description || "No description"}</strong>
+                    </div>
+                    <div className="dense-field">
+                      <span>Updated</span>
+                      <strong>{new Date(item.updatedAt).toLocaleDateString()}</strong>
+                    </div>
                   </div>
-                </div>
-                <div className="entity-field-grid">
-                  <div><span>Unit price</span><strong>{formatMoney(item.unitPriceCents)}</strong></div>
-                  <div><span>Status</span><strong>{item.isArchived ? "Archived" : "Active"}</strong></div>
-                  <div className="entity-span-2"><span>Description</span><strong>{item.description || "No description"}</strong></div>
+
+                  <div className="dense-actions">
+                    {canEdit && !item.isArchived ? <button className="primary-action" onClick={() => openEditModal(item)} type="button">Open</button> : null}
+                    {canEdit ? (
+                      <details className="row-action-menu">
+                        <summary>More</summary>
+                        <div className="row-action-menu-panel">
+                          <div className="row-action-menu-group">
+                            <span className="row-action-menu-label">Service</span>
+                            {!item.isArchived ? <button className="secondary-action" onClick={() => void onArchiveInvoiceItem(item.id)} type="button">Archive</button> : null}
+                            {item.isArchived ? <button className="secondary-action" onClick={() => void onRestoreInvoiceItem(item.id)} type="button">Restore</button> : null}
+                          </div>
+                        </div>
+                      </details>
+                    ) : null}
+                  </div>
                 </div>
               </article>
             ))}

@@ -3,6 +3,7 @@ import { EmptyState } from "../../components/EmptyState";
 import { ErrorState } from "../../components/ErrorState";
 import { LoadingState } from "../../components/LoadingState";
 import { Modal } from "../../components/Modal";
+import { StatusBadge } from "../../components/ui";
 import type { ProjectSummary } from "../projects/ProjectsPage";
 
 export type TaskSummary = {
@@ -212,59 +213,67 @@ export function TasksPage({ tasks, projects, canEdit, error, loading, onArchive,
       {filteredTasks.length === 0 ? (
         <EmptyState message="No tasks match the current filter." title="No tasks" />
       ) : (
-        <div className="entity-grid">
+        <div className="dense-list">
           {filteredTasks.map((task) => (
-            <article className="entity-card" key={task.id}>
-              <div className="entity-card-header">
-                <div>
-                  <span className={`entity-pill entity-pill-${task.isArchived ? "archived" : "active"}`}>
-                    {task.isArchived ? "Archived" : "Active"}
-                  </span>
+            <article className="entity-card dense-record" key={task.id}>
+              <div className="dense-record-main">
+                <div className="dense-title">
+                  <div className="dense-kicker">
+                    <StatusBadge status={formatStatusLabel(task.status, task.isArchived)} />
+                  </div>
                   <h2>{task.title}</h2>
+                  <div className="dense-meta">
+                    <span><strong>{task.project?.name ?? "No project"}</strong></span>
+                    <span>{task.project?.client?.name ?? "No client"}</span>
+                    <span>{formatRecurringLabel(task.recurringType)}</span>
+                  </div>
                 </div>
-                <div className="card-actions">
+
+                <div className="dense-fields">
+                  <div className="dense-field">
+                    <span>Project</span>
+                    <strong>{task.project?.name ?? "No project"}</strong>
+                  </div>
+                  <div className="dense-field">
+                    <span>Client</span>
+                    <strong>{task.project?.client?.name ?? "No client"}</strong>
+                  </div>
+                  <div className="dense-field">
+                    <span>Recurring</span>
+                    <strong>{formatRecurringLabel(task.recurringType)}</strong>
+                  </div>
+                  <div className="dense-field">
+                    <span>Due</span>
+                    <strong>{formatDateLabel(task.dueDate)}</strong>
+                  </div>
+                </div>
+
+                <div className="dense-actions">
+                  {canEdit ? <button className="primary-action" onClick={() => openEditModal(task)} type="button">Open</button> : null}
                   {canEdit ? (
-                    <button className="secondary-action" onClick={() => openEditModal(task)} type="button">
-                      Edit
-                    </button>
-                  ) : null}
-                  {canEdit && !task.isArchived ? (
-                    <button className="secondary-action" onClick={() => void onArchive(task.id)} type="button">
-                      Archive
-                    </button>
-                  ) : null}
-                  {canEdit && filter === "archived" && task.isArchived ? (
-                    <button className="secondary-action" onClick={() => void onRestore(task.id)} type="button">
-                      Restore
-                    </button>
+                    <details className="row-action-menu">
+                      <summary>More</summary>
+                      <div className="row-action-menu-panel">
+                        <div className="row-action-menu-group">
+                          <span className="row-action-menu-label">Task</span>
+                          {!task.isArchived ? (
+                            <button className="secondary-action" onClick={() => void onArchive(task.id)} type="button">
+                              Archive
+                            </button>
+                          ) : null}
+                          {filter === "archived" && task.isArchived ? (
+                            <button className="secondary-action" onClick={() => void onRestore(task.id)} type="button">
+                              Restore
+                            </button>
+                          ) : null}
+                        </div>
+                      </div>
+                    </details>
                   ) : null}
                 </div>
               </div>
-              <div className="entity-field-grid">
-                <div>
-                  <span>Project</span>
-                  <strong>{task.project?.name ?? "No project"}</strong>
-                </div>
-                <div>
-                  <span>Client</span>
-                  <strong>{task.project?.client?.name ?? "No client"}</strong>
-                </div>
-                <div>
-                  <span>Status</span>
-                  <strong>{formatStatusLabel(task.status, task.isArchived)}</strong>
-                </div>
-                <div>
-                  <span>Recurring</span>
-                  <strong>{formatRecurringLabel(task.recurringType)}</strong>
-                </div>
-                <div>
-                  <span>Due date</span>
-                  <strong>{formatDateLabel(task.dueDate)}</strong>
-                </div>
-                <div className="entity-span-2">
-                  <span>Description</span>
-                  <strong>{task.description || "Not set"}</strong>
-                </div>
+              <div className="dense-row-note">
+                Description: {task.description || "Not set"}.
               </div>
             </article>
           ))}

@@ -3,6 +3,7 @@ import { EmptyState } from "../../components/EmptyState";
 import { ErrorState } from "../../components/ErrorState";
 import { LoadingState } from "../../components/LoadingState";
 import { Modal } from "../../components/Modal";
+import { StatusBadge } from "../../components/ui";
 import type { ClientSummary } from "../clients/ClientsPage";
 import type { TaskSummary } from "../tasks/TasksPage";
 
@@ -190,63 +191,67 @@ export function ProjectsPage({
       {filteredProjects.length === 0 ? (
         <EmptyState message="No projects match the current filter." title="No projects" />
       ) : (
-        <div className="entity-grid">
+        <div className="dense-list">
           {filteredProjects.map((project) => (
-            <article className="entity-card" key={project.id}>
-              <div className="entity-card-header">
-                <div>
-                  <span className={`entity-pill entity-pill-${project.isArchived ? "archived" : "active"}`}>
-                    {project.isArchived ? "Archived" : "Active"}
-                  </span>
+            <article className="entity-card dense-record" key={project.id}>
+              <div className="dense-record-main">
+                <div className="dense-title">
+                  <div className="dense-kicker">
+                    <StatusBadge status={project.isArchived ? "ARCHIVED" : project.status} />
+                  </div>
                   <h2>{project.name}</h2>
+                  <div className="dense-meta">
+                    <span><strong>{project.client?.name ?? "No client"}</strong></span>
+                    <span>{project.taskCount} task(s)</span>
+                    <span>{project.openTaskCount} open</span>
+                  </div>
                 </div>
-                <div className="card-actions">
+
+                <div className="dense-fields">
+                  <div className="dense-field">
+                    <span>Client</span>
+                    <strong>{project.client?.name ?? "No client"}</strong>
+                  </div>
+                  <div className="dense-field">
+                    <span>Status</span>
+                    <strong>{project.status}</strong>
+                  </div>
+                  <div className="dense-field">
+                    <span>Open tasks</span>
+                    <strong>{project.openTaskCount} / {project.taskCount}</strong>
+                  </div>
+                  <div className="dense-field">
+                    <span>Due</span>
+                    <strong>{formatDateLabel(project.dueDate)}</strong>
+                  </div>
+                </div>
+
+                <div className="dense-actions">
+                  {canEdit ? <button className="primary-action" onClick={() => openEditModal(project)} type="button">Open</button> : null}
                   {canEdit ? (
-                    <button className="secondary-action" onClick={() => openEditModal(project)} type="button">
-                      Edit
-                    </button>
-                  ) : null}
-                  {canEdit && !project.isArchived ? (
-                    <button className="secondary-action" onClick={() => void onArchive(project.id)} type="button">
-                      Archive
-                    </button>
-                  ) : null}
-                  {canEdit && project.isArchived ? (
-                    <button className="secondary-action" onClick={() => void onRestore(project.id)} type="button">
-                      Restore
-                    </button>
+                    <details className="row-action-menu">
+                      <summary>More</summary>
+                      <div className="row-action-menu-panel">
+                        <div className="row-action-menu-group">
+                          <span className="row-action-menu-label">Project</span>
+                          {!project.isArchived ? (
+                            <button className="secondary-action" onClick={() => void onArchive(project.id)} type="button">
+                              Archive
+                            </button>
+                          ) : null}
+                          {project.isArchived ? (
+                            <button className="secondary-action" onClick={() => void onRestore(project.id)} type="button">
+                              Restore
+                            </button>
+                          ) : null}
+                        </div>
+                      </div>
+                    </details>
                   ) : null}
                 </div>
               </div>
-              <div className="entity-field-grid">
-                <div>
-                  <span>Client</span>
-                  <strong>{project.client?.name ?? "No client"}</strong>
-                </div>
-                <div>
-                  <span>Tasks</span>
-                  <strong>{project.taskCount}</strong>
-                </div>
-                <div>
-                  <span>Open tasks</span>
-                  <strong>{project.openTaskCount}</strong>
-                </div>
-                <div>
-                  <span>Status</span>
-                  <strong>{project.status}</strong>
-                </div>
-                <div>
-                  <span>Start date</span>
-                  <strong>{formatDateLabel(project.startDate)}</strong>
-                </div>
-                <div>
-                  <span>Due date</span>
-                  <strong>{formatDateLabel(project.dueDate)}</strong>
-                </div>
-                <div className="entity-span-2">
-                  <span>Description</span>
-                  <strong>{project.description || "Not set"}</strong>
-                </div>
+              <div className="dense-row-note">
+                Start: {formatDateLabel(project.startDate)}. Description: {project.description || "Not set"}.
               </div>
             </article>
           ))}
