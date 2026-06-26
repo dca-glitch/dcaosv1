@@ -1,3 +1,0 @@
-# Branch Marker
-
-Status: marker.
