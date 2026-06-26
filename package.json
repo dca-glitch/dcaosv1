@@ -17,6 +17,7 @@
     "restore:local-admin": "tsx scripts/restore-local-admin.mjs",
     "smoke:local": "powershell -ExecutionPolicy Bypass -File scripts/smoke-local.ps1",
     "smoke:browser": "powershell -ExecutionPolicy Bypass -File scripts/smoke-browser.ps1",
+    "smoke:client-domain:browser": "node scripts/smoke-client-domain-browser-local.mjs",
     "smoke:ai-delivery-reviews": "node scripts/smoke-ai-delivery-reviews-local.mjs",
     "smoke:ai-market-intelligence": "node scripts/smoke-ai-market-intelligence-local.mjs",
     "smoke:mvp:local": "node scripts/smoke-mvp-local.mjs",
