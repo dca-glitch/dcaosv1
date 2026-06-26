@@ -47,6 +47,7 @@ DCA OS Lite is in local-first admin/operator foundation work. Production is froz
 - No commit, push, deploy, VPS, or production action unless explicitly approved after review.
 - Client Portal archive is read-only; client review/actions remain intentionally deferred.
 - AI Delivery defaults to local deterministic execution. OpenRouter-capable text execution code exists but is opt-in by env config and is not production-approved by default. Crawling, WordPress publishing, GA/GSC, Resend sending, and production deployment remain inactive unless explicitly approved.
+- AI provider runtime/cost guardrail foundation is closed for the current admin MVP as a guarded, local-first foundation; persistent provider cost metadata, deeper provider observability, dedicated provider smoke, and production/live provider proof remain deferred.
 - EN2 real provider sending and queues/background jobs remain inactive.
 - Production/VPS remains frozen unless explicitly approved.
 

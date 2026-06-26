@@ -2,7 +2,7 @@
 
 Status: Approved direction for future implementation. Documentation only.
 
-Current state: AI Delivery defaults to local deterministic execution. An OpenRouter-capable text gateway path exists for AI Delivery workflow execution, but it is opt-in only when `AI_TEXT_GATEWAY=openrouter` plus required OpenRouter key/model config are present. Without that explicit config, execution remains local deterministic. Production should remain local/deterministic unless a live provider block is explicitly approved.
+Current state: AI Delivery defaults to local deterministic execution. An OpenRouter-capable text gateway path exists for AI Delivery workflow execution, but it is opt-in only when `AI_TEXT_GATEWAY=openrouter` plus required OpenRouter key/model config are present. Without that explicit config, execution remains local deterministic. The provider runtime/cost guardrail foundation is closed for the current admin MVP as a guarded, local-first boundary. Production should remain local/deterministic unless a live provider block is explicitly approved.
 
 ## 1. Text AI Gateway
 
@@ -38,9 +38,9 @@ AI models do not scrape directly. They summarize, classify, and extract from tex
 
 AI workflow execution is admin-triggered only. No autonomous or background runs are approved for MVP.
 
-A later implementation block should store the provider and model used per run.
+The current MVP boundary keeps provider execution guarded and preserves local deterministic fallback when live provider config is absent or disabled.
 
-Errors, logs, and cost metadata should be stored before production scaling.
+Future production-scaling work should persist provider/model/cost metadata per run and add deeper provider observability, dedicated provider smoke, and live-provider proof before any production-approved provider rollout.
 
 Clients see only client-safe transformed outputs.
 
