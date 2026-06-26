@@ -242,7 +242,7 @@ An approved MI handoff (READY status) can be attached to an AI Delivery project 
 - Only READY or already-APPLIED handoffs can be linked. DRAFT and ARCHIVED handoffs are rejected (403).
 - Removing a link reverts the handoff to READY and clears `aiDeliveryProjectId`.
 - No client portal exposure. No public links. Admin-only internal context.
-- Monthly reporting integration via the handoff content is deferred.
+- Monthly reports can now store an admin-only MI context reference (`miHandoffId`) and editable internal context draft (`miContextDraft`) from an applied handoff. This is not exposed through the Client Portal monthly report select. Focused smoke coverage is deferred; validation and read-only client visibility proof passed.
 
 ## Deferred Features
 
