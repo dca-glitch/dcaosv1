@@ -97,14 +97,20 @@ async function main() {
     const projectsResponse = await apiCall("GET", "/market-intelligence-projects", undefined, token);
     console.log(`✅ Found ${projectsResponse.data?.projects?.length || 0} projects\n`);
 
-    // Step 3: Create a research project
-    console.log("📋 Step 3: Creating research project...");
+    // Step 3: Create a research project with research input fields
+    console.log("📋 Step 3: Creating research project with research inputs...");
     const createProjectResponse = await apiCall(
       "POST",
       "/market-intelligence-projects",
       {
         title: "Q2 2026 Competitive Analysis",
         description: "Track competitor product launches and market positioning",
+        keywords: "AI tools, market research, competitive analysis",
+        competitors: "Acme Corp, Rival AI, DataInsights Ltd",
+        niche: "B2B SaaS market research tools",
+        productServiceFocus: "admin-operated market intelligence platform",
+        targetClientName: "Smoke Test Client",
+        targetMonth: "2026-07",
         status: "ACTIVE"
       },
       token
@@ -114,7 +120,27 @@ async function main() {
     if (!projectId) {
       throw new Error("Failed to create project");
     }
-    console.log(`✅ Created project A: ${projectId}\n`);
+    // Verify new research input fields are returned
+    const createdProject = createProjectResponse.data?.project;
+    if (!createdProject?.keywords?.includes("AI tools")) {
+      throw new Error("keywords field not persisted/returned");
+    }
+    if (!createdProject?.competitors?.includes("Acme Corp")) {
+      throw new Error("competitors field not persisted/returned");
+    }
+    if (!createdProject?.niche) {
+      throw new Error("niche field not persisted/returned");
+    }
+    if (!createdProject?.productServiceFocus) {
+      throw new Error("productServiceFocus field not persisted/returned");
+    }
+    if (!createdProject?.targetClientName) {
+      throw new Error("targetClientName field not persisted/returned");
+    }
+    if (!createdProject?.targetMonth) {
+      throw new Error("targetMonth field not persisted/returned");
+    }
+    console.log(`✅ Created project A with research inputs: ${projectId}\n`);
 
     // Step 4: Add multiple research sources for evidence context
     console.log("📋 Step 4: Adding multiple research sources...");
@@ -219,9 +245,14 @@ async function main() {
     if (!executeRunResponse.data?.researchRun?.resultSummary || !executeRunResponse.data?.researchRun?.executionLog) {
       throw new Error("Execution did not produce resultSummary or executionLog");
     }
-    console.log(`✅ Research run executed: ${runId}\n`);
+    // Verify execution log mentions research inputs
+    const execLog = executeRunResponse.data?.researchRun?.executionLog;
+    if (!execLog?.includes("Keywords:") || !execLog?.includes("Niche:")) {
+      throw new Error("Execution log does not reflect research input fields (keywords/niche)");
+    }
+    console.log(`✅ Research run executed with research-input-aware log: ${runId}\n`);
 
-    console.log("📋 Step 7.5: Verifying auto-generated insight with evidence context...");
+    console.log("📋 Step 7.5: Verifying auto-generated insight with evidence context and audienceSignals...");
     const autoInsightsResponse = await apiCall("GET", `/market-intelligence-projects/${projectId}/insights`, undefined, token);
     const autoInsight = autoInsightsResponse.data?.insights?.find(i => i.title.startsWith("Generated Insight"));
     if (!autoInsight || !autoInsight.resultData) {
@@ -230,7 +261,14 @@ async function main() {
     if (autoInsight.sourceCount !== 3) {
       throw new Error(`Expected insight to have sourceCount=3, found ${autoInsight.sourceCount}`);
     }
-    console.log(`✅ Auto-generated insight has sourceCount=${autoInsight.sourceCount} (evidence context)`);
+    // Verify audienceSignals is present in MARKET_INTELLIGENCE_RESULT_V1
+    if (!autoInsight.resultData.audienceSignals || !Array.isArray(autoInsight.resultData.audienceSignals)) {
+      throw new Error("auto-generated insight missing audienceSignals array in resultData");
+    }
+    if (!autoInsight.resultData.audienceSignals.some(s => s.includes("B2B SaaS"))) {
+      throw new Error("audienceSignals does not reflect niche from research inputs");
+    }
+    console.log(`✅ Auto-generated insight has sourceCount=${autoInsight.sourceCount}, audienceSignals present (evidence context)`);
 
     // Update to APPROVED status
     await apiCall("PUT", `/market-intelligence-projects/${projectId}/insights/${autoInsight.id}`, {

@@ -33,6 +33,7 @@ DCA OS Lite is in local-first admin/operator foundation work. Production is froz
 - EN2 schema-free platform AuditLog writer foundation for logout, tenant switch, tenant settings update, and module enable/disable.
 - API security headers/CSP baseline and in-memory MVP rate limiting.
 - Market Intelligence auth token storage aligned to sessionStorage.
+- Market Intelligence research input fields (keywords, competitors, niche, productServiceFocus, targetClientName, targetMonth) added to schema/API/UI; audienceSignals added to insight result contract; migration applied and smoke proven (all steps pass).
 - Backup/restore and staging migration runbooks added.
 - Finance smoke proves tenantId spoof handling locally and keeps full cross-tenant proof behind a real second-tenant fixture.
 

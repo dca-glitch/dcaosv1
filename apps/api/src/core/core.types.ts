@@ -1131,6 +1131,12 @@ export interface MarketIntelligenceProjectSummary {
   id: string;
   title: string;
   description: string | null;
+  keywords: string | null;
+  competitors: string | null;
+  niche: string | null;
+  productServiceFocus: string | null;
+  targetClientName: string | null;
+  targetMonth: string | null;
   status: string;
   isArchived: boolean;
   createdAt: string;
@@ -1148,6 +1154,12 @@ export interface MarketIntelligenceProjectsResponse {
 export interface MarketIntelligenceProjectInputRequest {
   title?: string | null;
   description?: string | null;
+  keywords?: string | null;
+  competitors?: string | null;
+  niche?: string | null;
+  productServiceFocus?: string | null;
+  targetClientName?: string | null;
+  targetMonth?: string | null;
   status?: string | null;
 }
 

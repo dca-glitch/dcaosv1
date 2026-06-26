@@ -43,7 +43,7 @@ export function AiMarketIntelligencePage() {
    const [showProjectModal, setShowProjectModal] = useState(false);
    const [showSourceModal, setShowSourceModal] = useState(false);
    const [showInsightModal, setShowInsightModal] = useState(false);
-   const [projectForm, setProjectForm] = useState({ title: "", description: "" });
+   const [projectForm, setProjectForm] = useState({ title: "", description: "", keywords: "", competitors: "", niche: "", productServiceFocus: "", targetClientName: "", targetMonth: "" });
    const [sourceForm, setSourceForm] = useState({ title: "", sourceUrl: "", sourceNotes: "" });
    const [insightForm, setInsightForm] = useState({ title: "", summary: "", status: "DRAFT" });
 
@@ -102,7 +102,7 @@ export function AiMarketIntelligencePage() {
      try {
        const result = await apiCall("/market-intelligence-projects", "POST", projectForm);
        if (result?.project) {
-         setProjectForm({ title: "", description: "" });
+         setProjectForm({ title: "", description: "", keywords: "", competitors: "", niche: "", productServiceFocus: "", targetClientName: "", targetMonth: "" });
          setShowProjectModal(false);
          await loadProjects();
        }
@@ -254,6 +254,30 @@ export function AiMarketIntelligencePage() {
                  <p style={{ color: "var(--color-text-muted)", marginTop: "0.5rem" }}>
                    {selectedProject.description || "No description"}
                  </p>
+                 {((selectedProject as any).targetClientName || (selectedProject as any).targetMonth) && (
+                   <p style={{ fontSize: "0.875rem", color: "var(--color-text-muted)", marginTop: "0.25rem" }}>
+                     {(selectedProject as any).targetClientName ? `Client: ${(selectedProject as any).targetClientName}` : ""}
+                     {(selectedProject as any).targetClientName && (selectedProject as any).targetMonth ? " · " : ""}
+                     {(selectedProject as any).targetMonth ? `Month: ${(selectedProject as any).targetMonth}` : ""}
+                   </p>
+                 )}
+                 {((selectedProject as any).niche || (selectedProject as any).productServiceFocus) && (
+                   <div style={{ marginTop: "0.5rem", fontSize: "0.875rem", color: "var(--color-text-muted)" }}>
+                     {(selectedProject as any).niche && <span>Niche: <strong>{(selectedProject as any).niche}</strong></span>}
+                     {(selectedProject as any).niche && (selectedProject as any).productServiceFocus ? " · " : ""}
+                     {(selectedProject as any).productServiceFocus && <span>Focus: <strong>{(selectedProject as any).productServiceFocus}</strong></span>}
+                   </div>
+                 )}
+                 {(selectedProject as any).keywords && (
+                   <p style={{ fontSize: "0.875rem", color: "var(--color-text-muted)", marginTop: "0.25rem" }}>
+                     Keywords: {(selectedProject as any).keywords}
+                   </p>
+                 )}
+                 {(selectedProject as any).competitors && (
+                   <p style={{ fontSize: "0.875rem", color: "var(--color-text-muted)", marginTop: "0.25rem" }}>
+                     Competitors: {(selectedProject as any).competitors}
+                   </p>
+                 )}
                </div>
 
                {/* Sources Section */}
@@ -547,8 +571,10 @@ export function AiMarketIntelligencePage() {
                backgroundColor: "white",
                borderRadius: "8px",
                padding: "2rem",
-               maxWidth: "400px",
-               width: "90%"
+               maxWidth: "480px",
+               width: "90%",
+               maxHeight: "90vh",
+               overflowY: "auto"
              }}
              onClick={(e) => e.stopPropagation()}
            >
@@ -585,6 +611,78 @@ export function AiMarketIntelligencePage() {
                    boxSizing: "border-box",
                    minHeight: "80px"
                  }}
+               />
+             </div>
+             <div style={{ marginBottom: "1rem" }}>
+               <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: "500" }}>
+                 Keywords (comma-separated)
+               </label>
+               <input
+                 type="text"
+                 value={projectForm.keywords}
+                 onChange={(e) => setProjectForm({ ...projectForm, keywords: e.target.value })}
+                 placeholder="e.g. AI tools, SaaS pricing, content marketing"
+                 style={{ width: "100%", padding: "0.5rem", border: "1px solid var(--color-border)", borderRadius: "4px", boxSizing: "border-box" }}
+               />
+             </div>
+             <div style={{ marginBottom: "1rem" }}>
+               <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: "500" }}>
+                 Competitors (comma-separated)
+               </label>
+               <input
+                 type="text"
+                 value={projectForm.competitors}
+                 onChange={(e) => setProjectForm({ ...projectForm, competitors: e.target.value })}
+                 placeholder="e.g. Acme Corp, Rival Co"
+                 style={{ width: "100%", padding: "0.5rem", border: "1px solid var(--color-border)", borderRadius: "4px", boxSizing: "border-box" }}
+               />
+             </div>
+             <div style={{ marginBottom: "1rem" }}>
+               <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: "500" }}>
+                 Market Niche
+               </label>
+               <input
+                 type="text"
+                 value={projectForm.niche}
+                 onChange={(e) => setProjectForm({ ...projectForm, niche: e.target.value })}
+                 placeholder="e.g. B2B SaaS, local SEO agencies"
+                 style={{ width: "100%", padding: "0.5rem", border: "1px solid var(--color-border)", borderRadius: "4px", boxSizing: "border-box" }}
+               />
+             </div>
+             <div style={{ marginBottom: "1rem" }}>
+               <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: "500" }}>
+                 Product / Service Focus
+               </label>
+               <input
+                 type="text"
+                 value={projectForm.productServiceFocus}
+                 onChange={(e) => setProjectForm({ ...projectForm, productServiceFocus: e.target.value })}
+                 placeholder="e.g. content delivery platform, monthly SEO reports"
+                 style={{ width: "100%", padding: "0.5rem", border: "1px solid var(--color-border)", borderRadius: "4px", boxSizing: "border-box" }}
+               />
+             </div>
+             <div style={{ marginBottom: "1rem" }}>
+               <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: "500" }}>
+                 Client Name (optional)
+               </label>
+               <input
+                 type="text"
+                 value={projectForm.targetClientName}
+                 onChange={(e) => setProjectForm({ ...projectForm, targetClientName: e.target.value })}
+                 placeholder="e.g. Acme Client"
+                 style={{ width: "100%", padding: "0.5rem", border: "1px solid var(--color-border)", borderRadius: "4px", boxSizing: "border-box" }}
+               />
+             </div>
+             <div style={{ marginBottom: "1.5rem" }}>
+               <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: "500" }}>
+                 Target Month (optional)
+               </label>
+               <input
+                 type="text"
+                 value={projectForm.targetMonth}
+                 onChange={(e) => setProjectForm({ ...projectForm, targetMonth: e.target.value })}
+                 placeholder="e.g. 2026-07"
+                 style={{ width: "100%", padding: "0.5rem", border: "1px solid var(--color-border)", borderRadius: "4px", boxSizing: "border-box" }}
                />
              </div>
              <div style={{ display: "flex", gap: "0.75rem", justifyContent: "flex-end" }}>

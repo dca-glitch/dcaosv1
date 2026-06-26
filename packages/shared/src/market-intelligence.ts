@@ -2,6 +2,12 @@ export interface MarketIntelligenceProjectSummary {
   id: string;
   title: string;
   description: string | null;
+  keywords: string | null;
+  competitors: string | null;
+  niche: string | null;
+  productServiceFocus: string | null;
+  targetClientName: string | null;
+  targetMonth: string | null;
   status: string;
   isArchived: boolean;
   createdAt: string;
@@ -36,6 +42,7 @@ export interface MarketIntelligenceResearchRunSummary {
 export interface MarketIntelligenceInsightResultV1 {
   summary: string | null;
   competitors: string[] | null;
+  audienceSignals: string[] | null;
   marketTrends: string[] | null;
   opportunities: string[] | null;
   threats: string[] | null;

@@ -9151,6 +9151,12 @@ export async function listMarketIntelligenceProjects(
         id: true,
         title: true,
         description: true,
+        keywords: true,
+        competitors: true,
+        niche: true,
+        productServiceFocus: true,
+        targetClientName: true,
+        targetMonth: true,
         status: true,
         isArchived: true,
         createdAt: true,
@@ -9184,12 +9190,24 @@ export async function createMarketIntelligenceProject(
         tenantId,
         title: input.title ?? "New Project",
         description: toNullableString(input.description),
+        keywords: toNullableString(input.keywords),
+        competitors: toNullableString(input.competitors),
+        niche: toNullableString(input.niche),
+        productServiceFocus: toNullableString(input.productServiceFocus),
+        targetClientName: toNullableString(input.targetClientName),
+        targetMonth: toNullableString(input.targetMonth),
         status: input.status ?? "ACTIVE"
       },
       select: {
         id: true,
         title: true,
         description: true,
+        keywords: true,
+        competitors: true,
+        niche: true,
+        productServiceFocus: true,
+        targetClientName: true,
+        targetMonth: true,
         status: true,
         isArchived: true,
         createdAt: true,
@@ -9233,6 +9251,24 @@ export async function updateMarketIntelligenceProject(
     if (input.description !== undefined) {
       updateData.description = input.description;
     }
+    if (input.keywords !== undefined) {
+      updateData.keywords = input.keywords;
+    }
+    if (input.competitors !== undefined) {
+      updateData.competitors = input.competitors;
+    }
+    if (input.niche !== undefined) {
+      updateData.niche = input.niche;
+    }
+    if (input.productServiceFocus !== undefined) {
+      updateData.productServiceFocus = input.productServiceFocus;
+    }
+    if (input.targetClientName !== undefined) {
+      updateData.targetClientName = input.targetClientName;
+    }
+    if (input.targetMonth !== undefined) {
+      updateData.targetMonth = input.targetMonth;
+    }
     if (input.status !== undefined && input.status !== null) {
       updateData.status = input.status;
     }
@@ -9244,6 +9280,12 @@ export async function updateMarketIntelligenceProject(
         id: true,
         title: true,
         description: true,
+        keywords: true,
+        competitors: true,
+        niche: true,
+        productServiceFocus: true,
+        targetClientName: true,
+        targetMonth: true,
         status: true,
         isArchived: true,
         createdAt: true,
@@ -9286,6 +9328,12 @@ export async function archiveMarketIntelligenceProject(
         id: true,
         title: true,
         description: true,
+        keywords: true,
+        competitors: true,
+        niche: true,
+        productServiceFocus: true,
+        targetClientName: true,
+        targetMonth: true,
         status: true,
         isArchived: true,
         createdAt: true,
@@ -9654,23 +9702,61 @@ export async function executeMarketIntelligenceResearchRun(
     where: { id: existingRun.projectId, tenantId }
   });
 
-  // Mock deterministic generation
+  // Deterministic placeholder generation — no live crawling, no external provider calls.
+  // Uses admin-provided research inputs (keywords, competitors, niche, productServiceFocus) to
+  // build a structured result. Live research execution is intentionally deferred.
+  const projectTitle = project?.title ?? "Project";
+  const keywordList = project?.keywords
+    ? project.keywords.split(",").map((k) => k.trim()).filter(Boolean)
+    : ["general market trends"];
+  const competitorList = project?.competitors
+    ? project.competitors.split(",").map((c) => c.trim()).filter(Boolean)
+    : sources.filter((s) => s.sourceType === "COMPETITOR" || s.sourceType === "BLOG").map((s) => s.title);
+  const nicheContext = project?.niche ?? "general market";
+  const productFocus = project?.productServiceFocus ?? "the product/service";
+  const clientContext = project?.targetClientName ? ` for ${project.targetClientName}` : "";
+
   const mockResultData = {
-    summary: `Market insight generated for ${project?.title || 'Project'}`,
-    competitors: sources.map((s, idx) => `Competitor ${idx + 1}: ${s.title}`),
-    marketTrends: ["Shift to AI-driven insights", "Automation of manual research"],
-    opportunities: ["Leverage bounded AI for efficiency", "Integrate CRM with intelligence"],
-    threats: ["Data privacy regulations", "Model hallucination risks"],
-    pricingSignals: ["Competitors moving to usage-based pricing"],
-    contentOrSeoAngles: ["How AI transforms market research"],
-    recommendedNextActions: ["Review generated insights", "Finalize report for stakeholders"],
-    sourceNotes: `Analyzed ${sources.length} active sources.`,
-    confidenceNotes: "High confidence (Deterministic Mock)"
+    summary: `Admin-reviewed market analysis${clientContext} for ${projectTitle}. Based on ${sources.length} curated source(s) covering ${nicheContext}.`,
+    competitors: competitorList.length > 0
+      ? competitorList.map((c, i) => `${c} (Competitor ${i + 1})`)
+      : [`No named competitors provided — add competitor sources for richer output`],
+    audienceSignals: [
+      `Target niche: ${nicheContext}`,
+      `Primary product/service focus: ${productFocus}`,
+      `Audience likely researching: ${keywordList.slice(0, 3).join(", ")}`,
+    ],
+    marketTrends: [
+      `Keyword signals: ${keywordList.join(", ")}`,
+      "Shift to AI-assisted admin workflows",
+      "Demand for bounded, deterministic research tooling"
+    ],
+    opportunities: [
+      `Differentiate ${productFocus} in ${nicheContext}`,
+      "Expand content coverage for priority keywords",
+      "Leverage admin-reviewed insights for strategic planning"
+    ],
+    threats: [
+      "Competitor positioning not fully mapped — add competitor sources",
+      "Data freshness risk — sources should be reviewed regularly"
+    ],
+    pricingSignals: ["Pricing data not available without live provider — manual review recommended"],
+    contentOrSeoAngles: keywordList.map((kw) => `Content angle: ${kw}`),
+    recommendedNextActions: [
+      "Review and approve this insight record",
+      "Add or update competitor sources for richer analysis",
+      "Link approved insights to AI Delivery or monthly report handoff"
+    ],
+    sourceNotes: `Analyzed ${sources.length} active source(s). Deterministic placeholder — live research deferred.`,
+    confidenceNotes: "Admin-reviewed deterministic mock. Confidence reflects curated source quality, not live data."
   };
 
   const executionLog = `[INFO] Started research run ${runId}
-[INFO] Found ${sources.length} sources to analyze.
-[INFO] Generating deterministic insight mock.
+[INFO] Project: ${projectTitle}${clientContext}
+[INFO] Found ${sources.length} active sources.
+[INFO] Keywords: ${keywordList.join(", ")}
+[INFO] Niche: ${nicheContext}
+[INFO] Generating deterministic insight placeholder (no live provider).
 [INFO] Finished generation successfully.`;
 
   return prisma.$transaction(async (tx: PrismaTx) => {

@@ -4685,6 +4685,12 @@ function getMarketIntelligenceProjectInput(value: unknown): MarketIntelligencePr
   return {
     title: getOptionalString(obj.title),
     description: getOptionalString(obj.description),
+    keywords: getOptionalString(obj.keywords),
+    competitors: getOptionalString(obj.competitors),
+    niche: getOptionalString(obj.niche),
+    productServiceFocus: getOptionalString(obj.productServiceFocus),
+    targetClientName: getOptionalString(obj.targetClientName),
+    targetMonth: getOptionalString(obj.targetMonth),
     status: getOptionalString(obj.status)
   };
 }
