@@ -6,19 +6,19 @@ type StatusBadgeProps = {
 export function getStatusTone(status: string): string {
   const normalized = status.trim().toLowerCase().replace(/[\s_]+/g, "-");
 
-  if (["active", "enabled", "paid", "done", "success"].includes(normalized)) {
+  if (["accepted", "active", "approved", "delivered", "enabled", "final", "paid", "ready", "done", "success"].includes(normalized)) {
     return "success";
   }
 
-  if (["draft", "pending", "to-do", "todo", "due", "in-progress", "issued", "sent"].includes(normalized)) {
+  if (["admin-review", "draft", "pending", "to-do", "todo", "due", "in-progress", "issued", "sent", "review"].includes(normalized)) {
     return "info";
   }
 
-  if (["overdue", "failed", "cancelled", "canceled"].includes(normalized)) {
+  if (["missing", "overdue", "failed", "cancelled", "canceled", "rejected", "revision-requested"].includes(normalized)) {
     return "danger";
   }
 
-  if (["archived", "disabled", "paused"].includes(normalized)) {
+  if (["archived", "deferred", "disabled", "paused"].includes(normalized)) {
     return "muted";
   }
 
