@@ -73,6 +73,7 @@ async function main() {
   }
 
   let token = "";
+  let smokeClientId = "";
   let projectId = "";
   let projectBId = "";
   let sourceId = "";
@@ -92,6 +93,23 @@ async function main() {
     }
     console.log("✅ Admin login successful\n");
 
+    console.log("📋 Step 1b: Creating smoke client for MI project linkage...");
+    const createClientResponse = await apiCall(
+      "POST",
+      "/clients",
+      {
+        name: `[SMOKE][MI] ${Date.now()}`,
+        country: "United States",
+        clientKind: "AGENCY_CLIENT"
+      },
+      token
+    );
+    smokeClientId = createClientResponse.data?.client?.id;
+    if (!smokeClientId) {
+      throw new Error("Failed to create smoke client for Market Intelligence");
+    }
+    console.log(`✅ Created smoke client: ${smokeClientId}\n`);
+
     // Step 2: List projects (should start empty or with existing projects)
     console.log("📋 Step 2: Listing market intelligence projects...");
     const projectsResponse = await apiCall("GET", "/market-intelligence-projects", undefined, token);
@@ -109,7 +127,7 @@ async function main() {
         competitors: "Acme Corp, Rival AI, DataInsights Ltd",
         niche: "B2B SaaS market research tools",
         productServiceFocus: "admin-operated market intelligence platform",
-        targetClientName: "Smoke Test Client",
+        clientId: smokeClientId,
         targetMonth: "2026-07",
         status: "ACTIVE"
       },
@@ -134,8 +152,11 @@ async function main() {
     if (!createdProject?.productServiceFocus) {
       throw new Error("productServiceFocus field not persisted/returned");
     }
-    if (!createdProject?.targetClientName) {
-      throw new Error("targetClientName field not persisted/returned");
+    if (!createdProject?.clientId) {
+      throw new Error("clientId field not persisted/returned");
+    }
+    if (!createdProject?.client?.name) {
+      throw new Error("client relation not persisted/returned");
     }
     if (!createdProject?.targetMonth) {
       throw new Error("targetMonth field not persisted/returned");
@@ -366,6 +387,7 @@ async function main() {
       {
         title: "Isolation Test Project B",
         description: "Used only for cross-project isolation proof",
+        clientId: smokeClientId,
         status: "ACTIVE"
       },
       token

@@ -4944,6 +4944,7 @@ function getMarketIntelligenceProjectInput(value: unknown): MarketIntelligencePr
 
   const obj = value as Record<string, unknown>;
   return {
+    clientId: getOptionalString(obj.clientId),
     title: getOptionalString(obj.title),
     description: getOptionalString(obj.description),
     keywords: getOptionalString(obj.keywords),
