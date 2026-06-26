@@ -135,6 +135,22 @@ Check for:
 
 A draft is not final until the admin accepts it.
 
+## Quality Review Before Final
+
+Before any work becomes final, the admin should check:
+
+- the correct client is attached;
+- the correct project or month is attached;
+- the work matches the brief;
+- the title is clear;
+- the content is useful for the intended audience;
+- the wording is ready for handoff;
+- there are no unfinished placeholders;
+- there are no internal working notes;
+- any included links or files are appropriate for final use.
+
+If any item is uncertain, keep the work in review instead of treating it as final.
+
 ## Deliverables
 
 A deliverable is the final package prepared for client work.
