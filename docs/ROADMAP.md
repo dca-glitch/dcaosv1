@@ -1,5 +1,26 @@
 # DCA OS v1 Roadmap
 
+## Approved Architecture Roadmap (2026-06-26)
+
+**Status:** Owner-approved. Documentation: [`docs/architecture/CLIENT_DOMAIN_OPERATING_MODEL.md`](./architecture/CLIENT_DOMAIN_OPERATING_MODEL.md).
+
+Implementation order (each block: inspect → implement → validate → owner approval → commit):
+
+| Block | Name | Layer order | Notes |
+|-------|------|-------------|-------|
+| **1** | Client foundation + `clientKind` | schema (approved) → backend → frontend | `AGENCY_CLIENT` / `OWN_DOMAIN`, `legalEntityName`, Client Hub shell |
+| **2** | PublicationTarget (public) | schema → backend → frontend | Multiple WordPress targets per Client; deprecate tenant WP config |
+| **3** | MI → `clientId` | schema → backend → frontend | Required FK; handoff validation |
+| **4** | Encrypted credentials | design → schema → backend | Per PublicationTarget; security review gate |
+| **5** | Real WordPress publish + PublicationLog | backend → frontend | After block 4 |
+| **6** | Module middleware | backend | `requireTenantModule`; dry-run → enforce |
+
+**Future block:** Licensee tenant migration (`OWN_DOMAIN` → independent company tenant + Finance).
+
+**Not in these blocks:** Revenue Hub, Commerce Core, production deploy, live GA/GSC sync.
+
+---
+
 ## Current Status
 
 DCA OS v1 has a clean reusable foundation, dependency lockfile, real validation, CI, dependency monitoring, and project context documentation.

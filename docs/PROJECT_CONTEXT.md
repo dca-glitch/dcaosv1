@@ -10,7 +10,9 @@
 
 DCA OS Lite is the reusable SaaS operating system foundation for Digital Cube Agency. It is the shared platform layer for DCA tools, dashboards, admin/operator workflows, finance modules, SEO/content operations, AI Delivery records, reports, and business operations.
 
-Current state note: AI Delivery is admin/operator-side for now. Client Access / Client Portal is intentionally postponed until admin/operator modules are stable. Future client review may build on review records later, but it is not active now.
+**Approved operating model (2026-06-26):** each internet domain is one `Client` record; publication and analytics hang off Client; Digital Cube Agency LLC operates agency clients; own domains belong to independent companies that will use licensed tenant instances for Finance. See [`docs/architecture/CLIENT_DOMAIN_OPERATING_MODEL.md`](./architecture/CLIENT_DOMAIN_OPERATING_MODEL.md).
+
+Current state note: AI Delivery is admin/operator-side for now. Client Access / Client Portal foundation exists; full client workflows remain controlled. Implementation follows approved blocks 1–6 in [`docs/ROADMAP.md`](./ROADMAP.md).
 
 ## Current Role Split
 

@@ -8,7 +8,9 @@ Market Intelligence -> AI Delivery brief/context -> AI SEO content plan/drafts -
 
 ## First-Client Setup Checklist
 
-1. Create or select the client record in the admin area.
+**Operating model:** Each domain = one `Client`. See [`docs/architecture/CLIENT_DOMAIN_OPERATING_MODEL.md`](../architecture/CLIENT_DOMAIN_OPERATING_MODEL.md).
+
+1. Create or select the **Client** record (domain / agency client) in the admin area.
 2. Create the monthly AI Delivery project for that client and target month.
 3. Collect the client brief and record only the approved client-facing needs.
 4. Run Market Intelligence/admin research and capture the internal findings.

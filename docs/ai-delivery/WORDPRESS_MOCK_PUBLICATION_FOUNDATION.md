@@ -2,6 +2,8 @@
 
 **Status:** WordPress disabled/mock publish endpoint, service scaffold, and UI action foundation is complete.
 
+> **Architecture update (2026-06-26):** Tenant-level WordPress config is **legacy**. Approved target model: **PublicationTarget per Client** (domain), multiple subdomains, encrypted credentials per target. See [`docs/architecture/CLIENT_DOMAIN_OPERATING_MODEL.md`](../architecture/CLIENT_DOMAIN_OPERATING_MODEL.md) and implementation blocks 2–5 in [`docs/ROADMAP.md`](../ROADMAP.md).
+
 **Branch:** `feature/ai-delivery-project-brief-foundation`
 
 **Implementation Commits:**

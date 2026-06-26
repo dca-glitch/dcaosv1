@@ -105,3 +105,18 @@ A request should eventually resolve:
 ## Design Principle
 
 Build reusable platform foundations first. Add business modules only after platform gates are stable.
+
+## Client / Domain Operating Model (approved 2026-06-26)
+
+Canonical architecture for how internet domains connect to the SaaS core:
+
+- **Each domain = one `Client` record** (no separate `DomainProperty` entity).
+- **Tenant** = workspace / licensee (e.g. Digital Cube Agency LLC today; independent companies as future licensee tenants).
+- **`clientKind`:** `AGENCY_CLIENT` (agency SEO/content clients) \| `OWN_DOMAIN` (own portfolio domains; each maps to an independent legal entity).
+- **Publication:** multiple `PublicationTarget` per Client (WordPress per subdomain); credentials encrypted per target — not per tenant.
+- **Finance:** agency client invoices in DCA LLC tenant only; own-domain finance in licensee tenants.
+- **Client Portal:** `client` role + `ClientUserAccess` per Client (not per project).
+
+Full specification: [`docs/architecture/CLIENT_DOMAIN_OPERATING_MODEL.md`](./architecture/CLIENT_DOMAIN_OPERATING_MODEL.md).
+
+Approved implementation blocks 1–6 are listed in [`docs/ROADMAP.md`](./ROADMAP.md).

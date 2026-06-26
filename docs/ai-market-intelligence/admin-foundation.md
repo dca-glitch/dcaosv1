@@ -219,7 +219,7 @@ This allows admins to answer:
 
 ### Database Schema
 
-- `MarketIntelligenceProject` - project metadata, status, and research inputs (keywords, competitors, niche, productServiceFocus, targetClientName, targetMonth)
+- `MarketIntelligenceProject` - project metadata, status, and research inputs (keywords, competitors, niche, productServiceFocus, **clientId required** — approved 2026-06-26; `targetClientName` legacy/deprecated)
 - `MarketIntelligenceSource` - source references with URLs and notes
 - `MarketIntelligenceResearchRun` - execution tracking with status and results
 - `MarketIntelligenceInsight` - insight records with reviewer notes and status

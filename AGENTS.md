@@ -11,6 +11,7 @@ Current approved product UI direction:
 Before frontend UI work, read:
 
 - `docs/ui/DARK_NEBULA_PRODUCT_UI_DIRECTION.md`
+- `docs/architecture/CLIENT_DOMAIN_OPERATING_MODEL.md` (approved domain/client model)
 
 ## Approved UI direction
 

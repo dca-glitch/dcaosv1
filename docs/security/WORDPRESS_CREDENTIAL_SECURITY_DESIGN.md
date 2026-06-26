@@ -1,12 +1,13 @@
 # WordPress Credential Security Design — DCA OS Lite
 
-**Status:** Dokument projektowy (tylko dokumentacja — bez implementacji)  
+**Status:** Dokument projektowy — zaktualizowany po decyzji architektonicznej 2026-06-26  
 **Data:** 2026-06-26  
-**Zakres:** Jak bezpiecznie przechowywać i używać credentiale WordPress, zanim włączymy realne publikowanie  
+**Zakres:** Jak bezpiecznie przechowywać i używać credentiale WordPress per **PublicationTarget** (Client / subdomena), zanim włączymy realne publikowanie  
 **Odbiorca:** Właściciel produktu, operatorzy, przyszli implementatorzy  
 
 **Powiązane dokumenty:**
 
+- [`docs/architecture/CLIENT_DOMAIN_OPERATING_MODEL.md`](../architecture/CLIENT_DOMAIN_OPERATING_MODEL.md) — **approved** model domeny = Client, wiele PublicationTarget
 - [`docs/ai-delivery/WORDPRESS_CREDENTIAL_POLICY_DECISION.md`](../ai-delivery/WORDPRESS_CREDENTIAL_POLICY_DECISION.md) — aktualna decyzja STOP
 - [`docs/ai-delivery/WORDPRESS_PREPARED_DRAFT_FOUNDATION.md`](../ai-delivery/WORDPRESS_PREPARED_DRAFT_FOUNDATION.md) — przygotowanie draftu lokalnie
 - [`docs/ai-delivery/WORDPRESS_MOCK_PUBLICATION_FOUNDATION.md`](../ai-delivery/WORDPRESS_MOCK_PUBLICATION_FOUNDATION.md) — mock publikacji i konfiguracja bez sekretów
@@ -28,18 +29,20 @@ Nie jest to implementacja. To plan bezpieczeństwa do zatwierdzenia przez właś
 
 | Obszar | Co robi | Czy używa sekretów WordPress? |
 |--------|---------|-------------------------------|
-| **Konfiguracja strony (Company Profile)** | Zapisuje URL strony, slug, flagę WordPress.com | **Nie** — tylko dane publiczne |
+| **Konfiguracja strony (Company Profile)** | Zapisuje URL strony, slug, flagę WordPress.com **na poziomie tenanta** | **Nie** — tylko dane publiczne; **do deprecacji** na rzecz PublicationTarget per Client |
 | **Przygotowanie draftu (AI Delivery)** | Buduje lokalny JSON gotowy do publikacji | **Nie** — zero połączeń z WordPressem |
 | **Test publikacji (mock)** | Zwraca status `provider_disabled` | **Nie** — zero zewnętrznych wywołań |
 | **Serwis WordPress (scaffold)** | Typy i funkcje-mocki | **Nie** — nie czyta env ani bazy |
 
 ### Szczegóły techniczne (w prostym języku)
 
-**Konfiguracja bez sekretów**
+**Konfiguracja bez sekretów (stan obecny — do migracji)**
 
-- Panel: Company Profile → WordPress Config
-- API: `GET/POST /api/v1/tenant/wordpress-config`
-- W bazie (`TenantSetting`, klucz `ai_delivery_wordpress_connection`) trafiają tylko: `siteUrl`, `siteSlug`, `wordPressComSite`
+- Panel dziś: Company Profile → WordPress Config (**legacy tenant-level**)
+- Docelowo: **Client Hub → PublicationTarget** per Client (domena); wiele targetów na subdomeny
+- API docelowe: `GET/POST /api/v1/clients/:clientId/publication-targets` (block 2)
+- Legacy API: `GET/POST /api/v1/tenant/wordpress-config` — deprecate after migration
+- W bazie publiczne pola: `siteUrl`, `siteSlug`, `wordPressComSite` per **PublicationTarget**, nie per tenant
 - Jeśli ktoś spróbuje wysłać hasło lub token — API odrzuca żądanie (błąd 400)
 - Komunikat w UI jest jasny: „tylko konfiguracja bez credentiali”, „publikacja wyłączona”
 
@@ -103,30 +106,41 @@ Poniższe reguły obowiązują **do momentu** zatwierdzenia i wdrożenia osobneg
 
 ### 3.1 Zasada nadrzędna
 
-> **Credentiale WordPress są sekretem per tenant. Nigdy nie są plaintext w bazie, w odpowiedzi API, w UI po zapisie ani w logach.**
+> **Credentiale WordPress są sekretem per PublicationTarget (Client / subdomena). Nigdy nie są plaintext w bazie, w odpowiedzi API, w UI po zapisie ani w logach. Nigdy per cały tenant przy wielu domenach.**
 
 Oddzielamy dwa światy:
 
 ```text
-[Nie-sekret]                    [Sekret — przyszły blok]
-siteUrl, siteSlug,              Application Password
-wordPressComSite                 (ew. przyszłe tokeny OAuth)
-     ↓                                  ↓
-TenantSetting                      TenantSetting (zaszyfrowane)
-klucz: wordpress_connection        klucz: wordpress_credentials
-(już istnieje)                     (nowy, osobny klucz)
+[Nie-sekret]                         [Sekret — blok 4]
+PublicationTarget (per Client)       Application Password
+siteUrl, siteSlug,                   per publicationTargetId
+wordPressComSite, label, isDefault
+     ↓                                      ↓
+Client-scoped public store             Encrypted credential record
+(block 2)                              (block 4; tenant-scoped encryption)
 ```
+
+**Rozwiązywanie przy publikacji:**
+
+```text
+AiDeliveryProject.clientId
+  → PublicationTarget (wybrany lub isDefault)
+  → decrypt credentials for that target only
+```
+
+**Deprecacja:** tenant-level `ai_delivery_wordpress_connection` i `ai_delivery_wordpress_credentials` — usunąć po migracji do modelu per Client.
 
 ### 3.2 Gdzie trzymać credentiale
 
-**Rekomendacja: zaszyfrowane pole w `TenantSetting` per tenant**
+**Rekomendacja: zaszyfrowany rekord per `PublicationTarget` (tenant-scoped storage)**
 
 | Element | Propozycja |
 |---------|------------|
-| **Magazyn** | PostgreSQL, tabela `TenantSetting` |
-| **Klucz ustawienia** | Osobny od konfiguracji publicznej, np. `ai_delivery_wordpress_credentials` |
-| **Zawartość** | JSON z zaszyfrowanym `applicationPassword` (+ metadane: `updatedAt`, `updatedByUserId`) |
-| **Nie w env** | Globalny `WORDPRESS_PASSWORD` w `.env` — **odrzucony** (jeden klucz ≠ wiele tenantów/klientów) |
+| **Magazyn** | PostgreSQL — dedykowana tabela `PublicationTargetCredential` lub `TenantSetting` z kluczem `(tenantId, clientId, publicationTargetId)` |
+| **Scope** | Jedno Application Password na **PublicationTarget** (np. blog vs sklep na subdomenach) |
+| **Zawartość** | JSON z zaszyfrowanym `applicationPassword` (+ `updatedAt`, `updatedByUserId`) |
+| **Nie per tenant** | Jeden credential na cały tenant — **odrzucony** (wiele domen/klientów) |
+| **Nie w env** | Globalny `WORDPRESS_PASSWORD` w `.env` — **odrzucony** |
 | **Nie w R2/plikach** | Na razie nie — credentiale to małe stringi, DB z szyfrowaniem wystarczy na MVP |
 
 **Dlaczego nie osobny vault (HashiCorp Vault, AWS Secrets Manager) na start?**
@@ -197,8 +211,8 @@ klucz: wordpress_connection        klucz: wordpress_credentials
 
 **WordPress Application Password — dobre praktyki:**
 
-- Jedno Application Password na tenant / stronę (nie współdzielone między ludźmi)
-- W WordPress: nazwa np. `DCA OS Lite — tenant XYZ`
+- Jedno Application Password na **PublicationTarget** (np. `DCA OS — client X — blog`)
+- W WordPress: nazwa identyfikująca Client + target label
 - Możliwość unieważnienia w panelu WordPress bez zmiany hasła głównego użytkownika WP
 
 ### 3.6 Audyt
@@ -207,7 +221,7 @@ klucz: wordpress_connection        klucz: wordpress_credentials
 
 | Akcja | Przykładowy event | Metadane (bezpieczne) |
 |-------|-------------------|------------------------|
-| Zapis credentiali | `WORDPRESS_CREDENTIALS_UPDATED` | `{ credentialsPresent: true, updatedAt, siteUrlHost }` |
+| Zapis credentiali | `WORDPRESS_CREDENTIALS_UPDATED` | `{ clientId, publicationTargetId, credentialsPresent: true, siteUrlHost }` |
 | Usunięcie credentiali | `WORDPRESS_CREDENTIALS_DELETED` | `{ deletedAt }` |
 | Test połączenia | `WORDPRESS_CONNECTION_TESTED` | `{ testedAt, verified: true/false }` — **bez** body odpowiedzi WP |
 | Publikacja posta | `WORDPRESS_PUBLISH_ATTEMPTED` | `{ deliverableId, status, externalPostId? }` — **bez** credentiali |
