@@ -8,7 +8,7 @@ For the MVP contract, each research project should stay tenant-scoped and can op
 
 ## Closure Note
 
-The admin MVP foundation is implemented and locally validated, including research inputs, internal handoff bridge, handoff isolation, and AI Delivery project context integration. All smoke steps pass. Client-visible Market Intelligence output, export handoff, and any future client portal archive remain deferred.
+The admin MVP foundation is implemented and locally validated, including research inputs, internal handoff bridge, handoff isolation, AI Delivery project context integration, and Monthly Report MI context integration. Focused smoke coverage now includes the Monthly Report MI context lifecycle and Client Portal non-exposure guard. Client-visible Market Intelligence output, export handoff, and any future client portal archive remain deferred.
 
 ## Purpose
 
@@ -242,7 +242,7 @@ An approved MI handoff (READY status) can be attached to an AI Delivery project 
 - Only READY or already-APPLIED handoffs can be linked. DRAFT and ARCHIVED handoffs are rejected (403).
 - Removing a link reverts the handoff to READY and clears `aiDeliveryProjectId`.
 - No client portal exposure. No public links. Admin-only internal context.
-- Monthly reports can now store an admin-only MI context reference (`miHandoffId`) and editable internal context draft (`miContextDraft`) from an applied handoff. This is not exposed through the Client Portal monthly report select. Focused smoke coverage is deferred; validation and read-only client visibility proof passed.
+- Monthly reports can now store an admin-only MI context reference (`miHandoffId`) and editable internal context draft (`miContextDraft`) from an applied handoff. This is not exposed through the Client Portal monthly report select, and focused smoke coverage in `scripts/smoke-monthly-report-mi-context-local.mjs` verifies apply/get/update/remove lifecycle plus Client Portal non-exposure of internal MI fields/content.
 
 ## Deferred Features
 
