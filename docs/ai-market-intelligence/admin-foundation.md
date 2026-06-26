@@ -4,6 +4,8 @@
 
 Market Intelligence is an admin-only MVP module for research project setup and scoped insights. It provides DCA OS Lite with a foundation for competitive analysis, market research, trend tracking, and admin-reviewed insights.
 
+For the MVP contract, each research project should stay tenant-scoped and can optionally be linked to a client, project, and month so the work can be grouped with AI Delivery and monthly reporting without becoming client-visible by default.
+
 ## Closure Note
 
 The admin MVP is implemented and locally validated. Proof exists in `npm.cmd run smoke:ai-market-intelligence`, including tenant/project isolation and body projectId spoof checks. Client-visible Market Intelligence output, export handoff, and any future client portal archive remain deferred.
@@ -17,6 +19,7 @@ Admins can use Market Intelligence to:
 - Create bounded Research Runs
 - Document and review Market Insights
 - Track competitive trends and opportunities
+- Package an internal research deliverable for AI Delivery or reporting handoff when needed
 
 ## MVP Scope
 
@@ -27,10 +30,43 @@ Admins can use Market Intelligence to:
 - **Research Run** - Bounded execution placeholder for research analysis
 - **Market Insight** - Summary of findings, opportunities, or trends with admin review status
 
+### MVP Workflow Contract
+
+**Admin can create/run**
+
+- create a research project
+- attach client/project/month context when relevant
+- add research inputs such as keywords, URLs, competitors, niche, and product/service focus
+- run a bounded research execution
+- review, revise, approve, and archive the resulting insight record
+
+**Outputs**
+
+- market summary
+- competitor summary
+- audience / audience-signal summary
+- opportunities
+- risks / threats
+- recommended next actions
+- source notes / evidence notes
+
+**Internal vs deliverable**
+
+- The curated summary set can become an internal deliverable for AI Delivery or monthly report handoff.
+- Raw source lists, run metadata, and reviewer notes stay internal.
+- Client portal exposure remains deferred.
+
+**Relationship to other modules**
+
+- **AI Delivery** can consume the summary as an internal research input or handoff artifact.
+- **AI SEO** can consume market findings as context for briefs, angles, and planning.
+- **Monthly Reports** can reference the summary as internal evidence or supporting narrative, but the report layer stays separate.
+
 ### Key Features
 
 - Admin-only CRUD for all objects
 - Tenant-scoped access control (owner/admin roles only)
+- Optional client/project/month linkage for organization and handoff
 - Basic archiving for projects, sources, and insights
 - Research run status tracking (PENDING, EXECUTED)
 - Insight status workflow (DRAFT, NEEDS_REVISION, REVIEWED, APPROVED)
@@ -100,6 +136,16 @@ Market Intelligence includes a bounded AI Insight workflow that allows an admin 
 4. **Persistence:** The structured result is safely stored in the Research Run's `executionLog` and `resultSummary`, and a linked Market Insight is automatically generated.
 5. **Review Flow:** Admins can view the structured Insight in the UI and update its status through a simple dropdown (DRAFT, NEEDS_REVISION, REVIEWED, APPROVED).
 
+### API / UI Sequence Proposal
+
+1. Admin creates a Market Intelligence project.
+2. Admin links optional client/project/month context.
+3. Admin adds sources, keywords, competitor URLs, niche, and product/service focus.
+4. Admin runs the research execution.
+5. UI shows the structured summary and evidence notes.
+6. Admin marks the result reviewed or approved.
+7. Optional internal handoff can be used by AI Delivery or monthly reporting.
+
 ### Source Evidence and Traceability
 
 Market Intelligence insights include source evidence context to support admin review and decision-making:
@@ -154,14 +200,15 @@ All tables are tenant-scoped and support archiving.
 
 **Do not implement unless explicitly approved:**
 
-- Client Portal - Public client access to projects or insights
-- External Market Data APIs - Real third-party market data integrations
-- Autonomous Background Agents - Scheduled or autonomous research execution
-- WordPress Integration - Publishing Market Intelligence to WordPress
-- Export/Reporting - PDF, Google Docs, or other export formats
-- Finance/Payment Logic - Subscription, pricing, or billing for insights
-- Real External Credentials - No real API keys, secrets, or provider integrations
-- Brand-Specific Models - Keep models generic for multi-tenant use
+- Live crawling and scraping
+- Autonomous or scheduled monitoring agents
+- Client Portal exposure
+- Paid data providers / external market data APIs
+- WordPress integration
+- Export/reporting beyond internal handoff
+- Real external credentials
+- Brand-specific models
+- Finance/payment logic
 
 ## Future Phases
 
