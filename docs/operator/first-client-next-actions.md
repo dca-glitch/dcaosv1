@@ -28,6 +28,10 @@ The run is done when the admin can explain:
 
 Use one client, one month, one draft, and one final item for the first run.
 
+## Stop Conditions
+
+Stop the practice run if the client, month, project, or final item becomes unclear.
+
 ## PR Note
 
 Keep this branch docs-only.
