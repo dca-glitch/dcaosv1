@@ -28,7 +28,7 @@ The first backend/provider foundation is now implemented for AI Delivery deliver
 - Response safety: no secrets, storage keys, credential values, or raw provider config values
 - Focused smoke: `npm.cmd run smoke:google-drive-export`
 
-The admin UI button/action that calls this endpoint remains a separate follow-up block.
+The admin UI button/action that calls this endpoint is also implemented for AI Delivery deliverables.
 
 ### Approved folder-routing contract
 
@@ -176,7 +176,6 @@ This docs-only alignment was made through GitHub cloud, so no local validation w
 
 ## Deferred Items
 
-- Admin UI button/action for Google Doc export on AI Delivery deliverables
 - live production credential setup
 - automatic client sharing
 - OAuth user-consent flow

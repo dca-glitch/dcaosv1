@@ -48,6 +48,7 @@ Still intentionally not active:
 - Live AI calls.
 - Crawling or research ingestion.
 - Export generation for Google Docs, PDF, JSON, Markdown/MDX, or equivalent.
+  - Clarification: this broad roadmap line is superseded for the current admin-only AI Delivery deliverable Google Docs export foundation and Monthly Report PDF generation foundation; production provider setup, client sharing, and broader export targets remain deferred.
 - Publishing connectors such as WordPress, Next.js/custom React, or headless CMS.
 - Google OAuth / live GSC sync and client-facing metrics exposure.
 - Admin-operated normalized GA/GSC monthly metric snapshots are closed.

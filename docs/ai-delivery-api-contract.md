@@ -545,7 +545,8 @@ The current export handoff foundation is complete for manual admin-operated work
 **PDF export readiness:**
 
 - R2 private storage accepts `.pdf` file uploads.
-- No PDF generation library exists; PDF files must be prepared externally and uploaded by admin.
+- Monthly Report PDF generation exists through the admin-triggered `generate-pdf` endpoint and stores the generated PDF in the same private monthly-report document slot.
+- AI Delivery deliverable generated PDF export is not part of the current deliverable foundation; deliverable PDFs are handled through manual admin upload or a safe external `exportUrl` handoff.
 - Admin upload → `storageKey` stored → client downloads via signed URL path.
 - No schema change required.
 
