@@ -31,7 +31,7 @@
 - Public links.
 - GA/GSC reporting integration.
 - Live GA/GSC provider sync for Monthly Reports. The persisted Monthly Report foundation, admin Monthly Report UI, Client Portal FINAL-only monthly reports, and monthly report document handoff are closed/proven for the current MVP.
-- AI Market Intelligence full module.
+- Full/client-facing/future Market Intelligence expansion; the current admin MVP lane is closed where documented.
 - Revenue Hub AI.
 - POD AI Toolkit.
 

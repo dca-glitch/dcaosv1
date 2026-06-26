@@ -43,17 +43,16 @@ Locally proven admin/operator foundation:
 
 Still intentionally not active:
 
-- Client Portal / client archive delivery.
+- Client review/actions and future client delivery expansion. The read-only Client Portal archive and FINAL-only monthly reports archive are implemented where documented.
 - real provider email sending from EN2/event wiring.
 - Live AI calls.
 - Crawling or research ingestion.
-- Export generation for Google Docs, PDF, JSON, Markdown/MDX, or equivalent.
-  - Clarification: this broad roadmap line is superseded for the current admin-only AI Delivery deliverable Google Docs export foundation and Monthly Report PDF generation foundation; production provider setup, client sharing, and broader export targets remain deferred.
+- Broader export automation, production rollout, and future export variants beyond the implemented AI Delivery Google Docs/export foundation and Monthly Report PDF/document handoff.
 - Publishing connectors such as WordPress, Next.js/custom React, or headless CMS.
 - Google OAuth / live GSC sync and client-facing metrics exposure.
 - Admin-operated normalized GA/GSC monthly metric snapshots are closed.
 - Live GA/GSC provider sync/OAuth and client-facing metrics reporting remain not active.
-- Monthly report generation.
+- Future automated or broader report generation beyond the implemented Monthly Report persisted/admin/client FINAL-only/PDF/document handoff foundation.
 - Production deploy/hardening.
 
 Production remains frozen unless explicitly approved.

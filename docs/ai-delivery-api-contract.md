@@ -497,7 +497,7 @@ Monthly Report Phase 1 is a schema-free admin summary read model, not a persiste
 
 ## Monthly report persisted contract
 
-Monthly Report Phase 2 adds the persisted `AiDeliveryMonthlyReport` model and admin CRUD API. This is still admin-only. No client portal route exists yet.
+Monthly Report persisted foundation is closed for the current MVP scope. It includes the persisted `AiDeliveryMonthlyReport` model, admin CRUD API/UI, Client Portal FINAL-only monthly report archive/download, admin PDF generation, and document handoff.
 
 Model: `AiDeliveryMonthlyReport` — tenant-scoped, one per `AiDeliveryProject` via `@@unique([tenantId, aiDeliveryProjectId])`.
 
@@ -522,10 +522,11 @@ Client portal signed download:
 - `GET /api/v1/client-portal/projects/:projectId/monthly-reports/:reportId/download` — requires `ClientUserAccess`; enforces `status = FINAL` and `isArchived = false`; returns `{ downloadReference: { downloadUrl, expiresSeconds } | null }`.
 
 Deferred:
-- GA/GSC metrics and 12-month trends.
+- Live GA/GSC provider sync.
 - Persisted recommendations beyond `recommendationsText`.
 - Client report approval/actions.
-- PDF generation library.
+- Broader report automation.
+- Production deploy.
 
 Proof:
 
