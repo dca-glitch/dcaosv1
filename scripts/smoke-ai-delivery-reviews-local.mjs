@@ -902,6 +902,12 @@ async function runAiDeliveryApiRegression(token, fixtureProjects) {
   ) {
     fail("AI Delivery workflow run execute success path did not persist the expected status/result/log fields.");
   }
+  if (
+    !executedSuccess.resultPlaceholder.includes("Gateway: local")
+    || !executedSuccess.resultPlaceholder.includes("Model: local-deterministic")
+  ) {
+    fail("AI Delivery workflow run execute success path did not report local deterministic provider metadata.");
+  }
   pass("AI Delivery workflow run execute success path persisted status, timestamps, and stub result fields.");
 
   const createdFailureRun = requireOkResponse(
@@ -978,6 +984,12 @@ async function runAiDeliveryApiRegression(token, fixtureProjects) {
   ) {
     fail("AI Delivery workflow run execute generated content plan path did not return the expected review/result fields.");
   }
+  if (
+    !executedGenerationRun.resultPlaceholder.includes('"gateway": "local"')
+    || !executedGenerationRun.resultPlaceholder.includes('"model": "local-deterministic"')
+  ) {
+    fail("AI Delivery workflow run generated content plan path did not report local deterministic provider metadata.");
+  }
 
   const generatedContentPlan = requireOkResponse(
     "AI Delivery generated content plan detail",
@@ -1033,6 +1045,12 @@ async function runAiDeliveryApiRegression(token, fixtureProjects) {
     executedDraftGenerationRun.executionError !== null
   ) {
     fail("AI Delivery workflow run execute generated content draft path did not return the expected review/result fields.");
+  }
+  if (
+    !executedDraftGenerationRun.resultPlaceholder.includes('"gateway": "local"')
+    || !executedDraftGenerationRun.resultPlaceholder.includes('"model": "local-deterministic"')
+  ) {
+    fail("AI Delivery workflow run generated content draft path did not report local deterministic provider metadata.");
   }
 
   const generatedDrafts = requireOkResponse(

@@ -46,7 +46,7 @@ DCA OS Lite is in local-first admin/operator foundation work. Production is froz
 - ChatGPT controls/reviews scope; Codex/Copilot/local tooling executes sealed tasks.
 - No commit, push, deploy, VPS, or production action unless explicitly approved after review.
 - Client Portal archive is read-only; client review/actions remain intentionally deferred.
-- No AI calls, crawling, WordPress, GA/GSC, Resend sending, or production deployment is active.
+- AI Delivery defaults to local deterministic execution. OpenRouter-capable text execution code exists but is opt-in by env config and is not production-approved by default. Crawling, WordPress publishing, GA/GSC, Resend sending, and production deployment remain inactive unless explicitly approved.
 - EN2 real provider sending and queues/background jobs remain inactive.
 - Production/VPS remains frozen unless explicitly approved.
 

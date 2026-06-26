@@ -23,7 +23,7 @@ External integrations (live provider execution, WordPress publish, client export
 
 1. input source (project, research, or market data)
 2. bounded context collection (project sources, research context)
-3. deterministic AI processing (mock/bounded generation, no external calls)
+3. default local deterministic AI processing (mock/bounded generation; no external calls unless an approved provider path is explicitly env-enabled)
 4. draft output (insights, deliverables, content)
 5. human admin review
 6. admin approval decision
@@ -32,7 +32,7 @@ External integrations (live provider execution, WordPress publish, client export
 
 ## Deferred External Integrations
 
-- **Live provider execution** (OpenRouter, OpenAI, etc.) - gated until cost guardrails and approval gates tested
+- **Live provider execution** - OpenRouter path exists for text execution but remains env opt-in and production-disabled unless explicitly approved; direct OpenAI/Gemini adapters remain future only.
 - **WordPress publishing integration** - gated until encryption/redaction for credentials tested; WordPress draft preparation foundation exists
 - **Client Portal** - gated until admin foundation stable
 - **Export/Reporting** - gated until audit and admin workflow proven

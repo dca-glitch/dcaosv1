@@ -6,7 +6,7 @@ Current state: AI Delivery is local-first and admin/operator-side. AI Delivery a
 
 Platform-neutral rule: AI Delivery records, content assets, article images, and deliverables are not modeled as WordPress-only objects. WordPress is only one optional future publishing connector alongside Next.js/custom React, headless CMS, Markdown/MDX, JSON packages, Google Docs, and PDF delivery targets.
 
-Explicitly not active: live AI calls, crawling, real publishing connectors, WordPress-only assumptions, GA/GSC, Resend sending, client portal delivery, public approval links, VPS, or production deployment.
+Default local execution does not make live AI calls. OpenRouter text execution code exists but is opt-in by `AI_TEXT_GATEWAY=openrouter` plus required key/model env config and is not production-approved by default. Crawling, real publishing connectors, WordPress-only assumptions, GA/GSC, Resend sending, client portal delivery, public approval links, VPS, and production deployment remain inactive unless explicitly approved.
 
 Client Portal monthly reports are now implemented and browser-proven as a read-only archive surface for linked client users. The contract is `GET /api/v1/client-portal/projects/:projectId/monthly-reports`; access requires an authenticated client portal session, an active tenant, `ClientUserAccess`, and a project that belongs to the accessible client. The endpoint returns FINAL, non-archived monthly reports only and excludes `storageKey`, `adminSummaryNotes`, `tenantId`, workflow internals, and other admin-only fields.
 
@@ -129,12 +129,12 @@ Deferred items below are explicitly not blockers for this closed admin foundatio
 - Client Portal
 - client-facing approvals/archive
 - real production configured-bucket proof
-- real AI execution
+- production-approved live provider execution
 - PDF/Google Docs export flows
 - crawling
 - WordPress publishing/export connectors
 - GA/GSC reporting
-- real AI provider execution
+- unapproved live provider execution
 - deployment
 
 Backend routes currently expected:
@@ -647,7 +647,7 @@ Admin/owner-only API endpoints:
 - `PUT /api/v1/ai-delivery/projects/:projectId/workflow-runs/:workflowRunId`
   - Updates the workflow run status, admin notes, and result placeholder subject to the one-step-forward status gate.
 - `POST /api/v1/ai-delivery/projects/:projectId/workflow-runs/:workflowRunId/execute`
-  - Runs the current local deterministic execution stub, recording timestamps, log output, success/failure state, and any controlled execution error.
+  - Runs the provider-aware workflow execution adapter, recording timestamps, log output, success/failure state, and any controlled execution error. Default/no-provider-env behavior is local deterministic and records gateway/model metadata in the result. OpenRouter text execution is opt-in only when fully configured.
 
 UI location:
 
@@ -655,7 +655,7 @@ UI location:
 
 Explicit exclusions:
 
-- No AI calls.
+- No live provider calls by default; OpenRouter text calls require explicit env opt-in and are not production-approved by default.
 - No crawling.
 - No publishing connector integration.
 - No GA/GSC integration.

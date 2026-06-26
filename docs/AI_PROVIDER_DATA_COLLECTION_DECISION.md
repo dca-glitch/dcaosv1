@@ -2,7 +2,7 @@
 
 Status: Approved direction for future implementation. Documentation only.
 
-Current state: AI Delivery has a provider-neutral local deterministic execution adapter only. No real AI provider SDK, environment variable, API key, network call, scraping runtime, or client-facing AI delivery path is active.
+Current state: AI Delivery defaults to local deterministic execution. An OpenRouter-capable text gateway path exists for AI Delivery workflow execution, but it is opt-in only when `AI_TEXT_GATEWAY=openrouter` plus required OpenRouter key/model config are present. Without that explicit config, execution remains local deterministic. Production should remain local/deterministic unless a live provider block is explicitly approved.
 
 ## 1. Text AI Gateway
 
@@ -48,10 +48,10 @@ Prompts, raw sources, provider details, and internal workflow logs remain admin-
 
 ## 5. Config Boundary
 
-The API may expose a safe planning configuration boundary for future AI provider settings. This boundary may name `local` and `openrouter` as supported text gateway values and may expose non-secret booleans such as whether an OpenRouter API key is configured.
+The API may expose a safe planning configuration boundary for AI provider settings. This boundary may name `local` and `openrouter` as supported text gateway values and may expose non-secret booleans such as whether an OpenRouter API key is configured.
 
-This boundary must not require provider secrets at startup, print provider secrets, call provider APIs, import provider SDKs, or change the local deterministic execution adapter behavior.
+This boundary must not require provider secrets at startup, print provider secrets, import provider SDKs, or change the default local deterministic execution behavior. OpenRouter runtime calls are allowed only through the guarded execution adapter when explicitly env-enabled with the required gateway, key, and model config.
 
 ## 6. Explicit Exclusions
 
-This decision record does not add code, SDK dependencies, environment variables, API keys, schema changes, migrations, runtime provider calls, Client Portal behavior, deployment, commits, or pushes.
+This closure does not add SDK dependencies, API keys, schema changes, migrations, Client Portal behavior, deployment, commits, or pushes. It does not enable live provider calls by default; OpenRouter remains opt-in by env config and should remain off for production unless explicitly approved.
