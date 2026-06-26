@@ -54,6 +54,10 @@ Expected report:
 - whether changes are docs-only;
 - whether source/API/schema/package files were untouched.
 
+## When A PR Diff Is Better
+
+Use a PR diff when several small docs changes belong together.
+
 ## When CI Is Needed
 
 CI or status checks are needed for:

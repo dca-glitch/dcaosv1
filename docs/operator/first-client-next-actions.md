@@ -27,3 +27,7 @@ The run is done when the admin can explain:
 ## Keep It Small
 
 Use one client, one month, one draft, and one final item for the first run.
+
+## PR Note
+
+Keep this branch docs-only.

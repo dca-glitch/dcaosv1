@@ -75,6 +75,10 @@ When unsure:
 2. Use Mode B for low-risk repository changes with diff or CI proof.
 3. Defer local runtime proof instead of forcing local work immediately.
 
+## PR Choice
+
+Use a draft PR when direct writes are unreliable or when review is useful.
+
 ## Report Format
 
 Every GitHub-first task should end with:
