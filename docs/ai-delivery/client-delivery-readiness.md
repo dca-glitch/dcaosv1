@@ -30,7 +30,7 @@
 - Client review and approval actions.
 - Public links.
 - GA/GSC reporting integration.
-- Monthly Report foundation (client portal / persisted report). Admin Monthly Report UI, Client Portal monthly reports, and monthly report document handoff are now browser/local-smoke proven.
+- Live GA/GSC provider sync for Monthly Reports. The persisted Monthly Report foundation, admin Monthly Report UI, Client Portal FINAL-only monthly reports, and monthly report document handoff are closed/proven for the current MVP.
 - AI Market Intelligence full module.
 - Revenue Hub AI.
 - POD AI Toolkit.

@@ -29,8 +29,8 @@ The Reports module provides reusable reporting screens and report definitions.
 - Production deploy
 
 - scheduled reports
-- exports
-- client-visible reports
+- broader/future exports beyond the implemented Monthly Report PDF/document handoff
+- non-final client-visible reports and client report self-service actions beyond the implemented Client Portal FINAL-only monthly report archive
 - dashboard integration
 - AI report summaries
 
