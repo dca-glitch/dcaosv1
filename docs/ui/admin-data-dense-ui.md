@@ -1,26 +1,64 @@
 # Admin Data-Dense UI
 
-Status: Phase 2 foundation
+Status: Phase 2 foundation closed for the current local/admin MVP.
 
-The admin workspace should prioritize scanning, comparison, and repeated operator actions over landing-page presentation.
+The admin workspace must prioritize scanning, comparison, and repeated operator actions over landing-page presentation. DCA OS Lite is an operator system, so overview pages should help the user answer quickly: what needs attention, what is blocked, what is ready, and which record should be opened next.
 
-## Pattern
+## Core Direction
+
+Use Option 1: data-first list/table UI.
+
+Admin overview pages should follow this pattern:
+
+1. Page title and one primary create action.
+2. Search, filters, and quick status views.
+3. Compact list/table-like rows for records.
+4. One main visible action per record, usually `Open`.
+5. Secondary actions in compact row menus or quieter secondary areas.
+6. Detail work inside an existing modal, drawer, or detail page.
+
+Do not use oversized landing cards or button walls for repeated operational records.
+
+## Design Rules
 
 - Use compact list or table-like rows for operational overviews.
-- Keep one visible primary action per record, usually `Open`.
-- Move routine secondary actions into compact secondary action areas or row menus.
+- Keep row text compact but readable; do not make text tiny.
+- Keep one visible primary action per record, usually `Open`, `Edit`, or the most common safe workflow action.
+- Move routine secondary actions into compact secondary action areas or row menus where this does not break behavior.
 - Keep statuses visible as small chips or badges.
 - Use muted dark/neutral buttons for routine actions.
-- Keep destructive actions quiet until needed.
+- Primary buttons may be visible, but they must remain calm and non-flashy.
+- Destructive actions should be visually quiet until needed and clearly separated from safe actions.
 - Preserve existing workflows; density must not remove capabilities.
+- Preserve API contracts, auth/RBAC, schemas, finance calculations, client visibility, and AI workflow behavior.
 
-## Phase 1 Screens
+## Button Rules
+
+Routine buttons must be dimmed, not flashy.
+
+Preferred behavior:
+
+- Primary: compact, calm, readable, used sparingly.
+- Secondary: muted dark/neutral style.
+- Danger/destructive: not giant, not glowing, and preferably inside a More menu or separated action group.
+- Repeated row actions: `Open` + `More` instead of many visible buttons.
+
+Avoid:
+
+- bright gradients for routine actions;
+- large glowing pill buttons;
+- repeated red action blocks;
+- showing every available action on every row.
+
+## Completed Phase 1 Screens
 
 - AI Delivery project overview.
 - Invoices overview.
 - Clients overview and Client Access section.
 
-## Phase 2 Screens
+Phase 1 established the shared visual direction: compact rows, dimmed routine buttons, small status chips, calmer primary actions, and More menus for secondary workflows.
+
+## Completed Phase 2 Screens
 
 - Projects overview.
 - Tasks overview.
@@ -28,10 +66,24 @@ The admin workspace should prioritize scanning, comparison, and repeated operato
 - Bills overview and Vendors list.
 - Credit Notes overview.
 
-Phase 2 continues the same presentation-only direction: compact rows, muted buttons, small status chips, and quieter secondary actions. Business logic, API contracts, auth, RBAC, schemas, finance calculations, and AI workflow behavior remain unchanged.
+Phase 2 continued the same presentation-only direction. Business logic, API contracts, auth, RBAC, schemas, finance calculations, package scripts, and AI workflow behavior remain unchanged.
+
+## Human Operator Checklist
+
+A page follows this design direction when an operator can answer these in a few seconds:
+
+- What records exist?
+- Which record needs attention?
+- What is the status?
+- What is the main next action?
+- Where are secondary actions?
+- Can I scan multiple records without scrolling through oversized cards?
+
+If the page cannot answer these quickly, it needs a data-dense pass.
 
 ## Later UI Work
 
 - Market Intelligence has a larger bespoke layout and should be compacted in a separate focused pass.
 - Monthly Reports and Client Portal shell can be reviewed separately, with client visibility rules unchanged.
 - Settings, Team, Company Profile, and modal internals may receive smaller density polish if operator feedback calls for it.
+- Deeper master-detail layouts can be considered later for AI Delivery project execution, but overview screens should stay data-first.
