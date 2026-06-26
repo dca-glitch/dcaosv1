@@ -551,9 +551,10 @@ The current export handoff foundation is complete for manual admin-operated work
 
 **Google Docs export readiness:**
 
-- No Google OAuth, Google Drive SDK, or Google Docs SDK integration exists in this codebase.
-- The manual link path is safe: admin creates a Google Doc externally, sets the share URL as `exportUrl` on the deliverable, and the client sees "Open export" in their portal.
-- Live Google Docs API write integration requires separate credentials/OAuth approval and is intentionally deferred.
+- AI Delivery deliverables now have an admin-only Google Docs export action backed by the provider foundation.
+- When Google Drive config is missing, the endpoint and UI return a safe provider-disabled state instead of crashing.
+- The safe link-based handoff path still applies: admins can store a client-appropriate Google Docs URL in `exportUrl`, and the client portal renders it as "Open export".
+- No Google OAuth, folder picker, automatic client sharing, Monthly Report Google Docs export, or Research export is enabled yet.
 - No schema change required for the link-based path.
 
 **Hidden fields (confirmed excluded from client portal responses):**

@@ -1,6 +1,6 @@
 # Google Drive / Google Docs Integration Decision
 
-**Status:** IMPLEMENTED FOUNDATION — decision record plus admin-only Google Doc export provider boundary for AI Delivery deliverables. Admin UI action is still deferred.
+**Status:** IMPLEMENTED for AI Delivery deliverable export foundation and admin UI action. Decision record remains for later Monthly Reports, Research rollout, client sharing, and production credential setup.
 
 **Branch:** `feature/ai-delivery-project-brief-foundation`
 
@@ -194,9 +194,9 @@ This docs-only alignment was made through GitHub cloud, so no local validation w
 
 1. Add admin-only Google Docs export contract for AI Delivery deliverables. **Done in foundation.**
 2. Route exports automatically to `Clients/<Client>/<YYYY-MM> - <Project>/Deliverables`. **Done in foundation.**
-3. Reuse existing handoff/reference fields where possible. **Foundation response contract added; UI handoff still deferred.**
+3. Reuse existing handoff/reference fields where possible. **Done for the current UI/provider handoff.**
 4. Keep the private canonical document path intact. **Done.**
-5. Add admin UI action for deliverable Google Doc export.
+5. Add admin UI action for deliverable Google Doc export. **Done.**
 6. Add Monthly Reports Google Docs support later, routing to `Clients/<Client>/<YYYY-MM> - <Project>/Reports` when needed.
 7. Add Research export later, routing to `Clients/<Client>/<YYYY-MM> - <Project>/Research` when needed.
 8. Add any schema change only after the contract is proven by implementation.

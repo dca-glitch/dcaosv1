@@ -14,7 +14,7 @@ DCA OS Lite is in local-first admin/operator foundation work. Production is froz
 - AI Delivery deliverables foundation.
 - AI Delivery deliverable review data foundation, admin API, admin UI, and local smoke script.
 - AI Delivery deliverable export/download admin actions.
-- AI Delivery export handoff foundation: exportUrl client-visibility clarified, PDF upload path confirmed, Google Docs manual link path documented.
+- AI Delivery export handoff foundation: exportUrl client-visibility clarified, PDF upload path confirmed, and Google Docs deliverable export admin UI action completed.
 - AI Delivery client portal archive proof hardening and contract note.
 - AI Delivery client delivery readiness closure checkpoint and smoke index.
 - AI Delivery monthly report phase 1 schema-free summary API closure.
@@ -71,7 +71,7 @@ Still deferred:
 - Google OAuth / live GSC sync
 - client-facing metrics exposure
 - automatic PDF generation / R2 stash
-- Google Docs export
+- Google Docs export for the AI SEO content-plan shell
 - production deploy
 - autonomous SEO agents
 
