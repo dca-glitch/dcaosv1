@@ -23,3 +23,7 @@ The run is done when the admin can explain:
 - where the final work is stored;
 - what the client would see;
 - what still needs improvement.
+
+## Keep It Small
+
+Use one client, one month, one draft, and one final item for the first run.
