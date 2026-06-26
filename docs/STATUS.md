@@ -10,6 +10,7 @@ DCA OS Lite is in local-first admin/operator foundation work. Production is froz
 - Local auth/session/tenant/module foundations.
 - Dark Nebula frontend UI direction and reusable UI foundation.
 - Data-dense admin UI foundation phase 1/2: AI Delivery, Clients, Invoices, Projects, Tasks, Services Library, Bills/Vendors, and Credit Notes now use compact operator rows, dimmed routine buttons, small status chips, and quieter secondary action menus while preserving business logic.
+- Plain-language operator documentation set added in `docs/operator`: admin operator manual, client delivery SOP, pre-production readiness checklist, deferred scope register, and module completion matrix.
 - AI Delivery project/brief foundation.
 - AI Delivery workflow run foundation.
 - AI Delivery deliverables foundation.
@@ -48,6 +49,7 @@ DCA OS Lite is in local-first admin/operator foundation work. Production is froz
 - ChatGPT controls/reviews scope; Codex/Copilot/local tooling executes sealed tasks.
 - No commit, push, deploy, VPS, or production action unless explicitly approved after review.
 - Admin UI direction is data-first/operator-dense: overview screens should prefer compact rows/tables, dimmed non-flashy routine buttons, small status chips, and one main visible action per record over oversized card/button walls.
+- Plain-language admin/client documentation should be kept aligned with behavior so non-technical users can understand what is active, what is final, and what remains deferred.
 - Client Portal archive is read-only; client review/actions remain intentionally deferred.
 - Client access is client-level in the current schema. Project-specific grants require a separately approved schema/API block.
 - AI Delivery defaults to local deterministic execution. OpenRouter-capable text execution code exists but is opt-in by env config and is not production-approved by default. Crawling, WordPress publishing, GA/GSC, Resend sending, and production deployment remain inactive unless explicitly approved.
