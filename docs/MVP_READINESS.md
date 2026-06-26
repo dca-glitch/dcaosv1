@@ -28,6 +28,9 @@
 | `GET /api/v1/modules/current` | Yes | Yes | No | Current tenant module enablement. |
 | `POST /api/v1/modules/current/:moduleKey/enable` | Yes | Yes | `modules:manage` | Owner/admin module enable action. |
 | `POST /api/v1/modules/current/:moduleKey/disable` | Yes | Yes | `modules:manage` | Owner/admin module disable action. |
+| `GET /api/v1/clients/:id/users` | Yes | Yes | `owner` or `admin` role | Lists active client-level access mappings for a tenant-scoped client. |
+| `POST /api/v1/clients/:id/users` | Yes | Yes | `owner` or `admin` role | Grants an active tenant user client-level Client Portal access. |
+| `POST /api/v1/clients/:id/users/:userId/archive` | Yes | Yes | `owner` or `admin` role | Revokes client-level Client Portal access by archiving the mapping. |
 
 ## Frontend Pages
 
@@ -72,6 +75,7 @@ The local smoke command intentionally refuses non-local API hosts. Add a separat
 - Monthly Report Phase 2 persisted `AiDeliveryMonthlyReport` model and admin CRUD API are implemented, migration applied, and smoke-validated (58 PASS with document handoff coverage). Monthly metrics are now closed as an admin-only snapshot-first foundation plus admin UI; live Google OAuth/provider sync, CSV upload, and client portal metrics exposure remain deferred.
 - Monthly Report Admin UI is implemented and browser-proven with `npm.cmd run smoke:monthly-report:browser`.
 - Client Portal monthly reports are implemented and browser-proven with `npm.cmd run smoke:client-portal-monthly-report:browser`.
+- Client Access Admin UI foundation is closed for MVP at client-level scope and smoke-proven with `npm.cmd run smoke:client-access:local`. The Client Portal remains read-only and restricted to final client-safe data; client review/actions/comments/public links remain deferred.
 - Monthly Report document handoff is implemented and local-smoke-proven with `npm.cmd run smoke:monthly-report:local`.
 - Backup/restore and staging migration runbooks are documented.
 - Finance smoke proves tenantId spoof handling locally and skips full cross-tenant proof without a real second tenant.
@@ -94,3 +98,5 @@ The local smoke command intentionally refuses non-local API hosts. Add a separat
 - Production database use.
 - Role editing UI.
 - Destructive user or tenant actions.
+- Project-specific client access grants; the current `ClientUserAccess` model is tenant/client/user scoped only.
+- Client approvals, comments, request-changes actions, and public approval links.

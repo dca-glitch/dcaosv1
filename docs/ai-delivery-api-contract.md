@@ -2,13 +2,15 @@
 
 Docs-only checklist and current-state contract for the feature branch.
 
-Current state: AI Delivery is local-first and admin/operator-side. AI Delivery admin foundation closed for the current MVP admin scope. This closed admin foundation covers projects, client/month brief foundation, workflow runs foundation, content plans, content drafts, article image planning, research requests/sources/summaries, deliverables, deliverable reviews, monthly report admin UI, and activity/audit read model support where relevant. Client Access / Client Portal remains intentionally limited until admin/operator modules are stable.
+Current state: AI Delivery is local-first and admin/operator-side. AI Delivery admin foundation closed for the current MVP admin scope. This closed admin foundation covers projects, client/month brief foundation, workflow runs foundation, content plans, content drafts, article image planning, research requests/sources/summaries, deliverables, deliverable reviews, monthly report admin UI, and activity/audit read model support where relevant. Client Access Admin UI/API foundation is closed for MVP at client-level scope, while Client Portal remains read-only and limited to final client-safe archive data.
 
 Platform-neutral rule: AI Delivery records, content assets, article images, and deliverables are not modeled as WordPress-only objects. WordPress is only one optional future publishing connector alongside Next.js/custom React, headless CMS, Markdown/MDX, JSON packages, Google Docs, and PDF delivery targets.
 
 Default local execution does not make live AI calls. OpenRouter text execution code exists but is opt-in by `AI_TEXT_GATEWAY=openrouter` plus required key/model env config and is not production-approved by default. Crawling, real publishing connectors, WordPress-only assumptions, GA/GSC, Resend sending, client portal delivery, public approval links, VPS, and production deployment remain inactive unless explicitly approved.
 
 Client Portal monthly reports are now implemented and browser-proven as a read-only archive surface for linked client users. The contract is `GET /api/v1/client-portal/projects/:projectId/monthly-reports`; access requires an authenticated client portal session, an active tenant, `ClientUserAccess`, and a project that belongs to the accessible client. The endpoint returns FINAL, non-archived monthly reports only and excludes `storageKey`, `adminSummaryNotes`, `tenantId`, workflow internals, and other admin-only fields.
+
+Client Access is admin-managed through existing tenant/client/user mappings. The current `ClientUserAccess` schema is tenant/client/user scoped; project-specific client access grants are deferred until a separately approved schema/API block. The MVP foundation does not add invitation sending, password UI, magic links, comments, approvals, request-changes actions, public links, or interactive client workflow.
 
 Monthly Report document handoff is also implemented and smoke-proven. Admin document upload uses `POST /api/v1/ai-delivery/reports/monthly/:reportId/document`, admin reference/download uses `GET /api/v1/ai-delivery/reports/monthly/:reportId/download`, and client download uses `GET /api/v1/client-portal/projects/:projectId/monthly-reports/:reportId/download`. `storageKey` stays internal, `hasDocument` is the safe signal, and generic monthly report PUT no longer accepts `storageKey`.
 
@@ -300,20 +302,24 @@ Notes:
 
 Client Access / Client Portal must not be treated as current active behavior. Before any AI Delivery client review endpoints or UI are exposed to clients, the system must have an explicitly approved tenant-scoped mapping from an authenticated system user to a client. This prevents relying on email, project ownership assumptions, or implicit tenant membership alone.
 
-Block 7D.0 adds the backend foundation only:
+Block 7D.0 added the client-level backend foundation. The current MVP closes the matching admin UI/API foundation for client-level grants:
 
 - Data model: `ClientUserAccess`
   - tenant-scoped join between `Tenant`, `Client`, and `User`
   - archives access with `isArchived` rather than deleting historical mapping rows
   - enforces one mapping per `(tenantId, clientId, userId)`
 - Admin/owner endpoints:
-  - `GET /api/v1/core/clients/:id/users` lists active users linked to a client
-  - `POST /api/v1/core/clients/:id/users` with `{ userId }` links an active tenant user to a client
-  - `POST /api/v1/core/clients/:id/users/:userId/archive` archives/removes client access
+  - `GET /api/v1/clients/:id/users` lists active users linked to a tenant-scoped client
+  - `POST /api/v1/clients/:id/users` with `{ userId }` links an active tenant user to a tenant-scoped client
+  - `POST /api/v1/clients/:id/users/:userId/archive` archives/removes client access
+- Admin UI:
+  - Client edit modal includes a Client access section for existing active tenant users.
+  - The UI lists linked users, grants access by tenant user, and revokes access.
+  - It does not send invitations, collect passwords, expose public links, or add approval/comment actions.
 - Internal helper:
   - `userCanAccessClient(authSession, clientId)` verifies active tenant context, client tenant ownership, non-archived user access, and owner/admin override.
 
-AI Delivery client-facing review remains intentionally paused until Client Access / Client Portal is explicitly resumed and approved.
+Active Client Portal archive routes require non-archived `ClientUserAccess`; owner/admin role alone does not grant archive visibility there. AI Delivery client-facing review remains intentionally paused until Client Access / Client Portal is explicitly resumed and approved for interactive workflows.
 
 ## Monthly content plan client review routes
 
@@ -472,6 +478,8 @@ This foundation intentionally excludes export generation, publishing connectors,
 
 Client Portal archive is client-safe, read-only, and based on `ClientUserAccess` plus an active authenticated session. Owner/admin role alone does not grant archive visibility.
 
+Admin-managed access uses `GET /api/v1/clients/:id/users`, `POST /api/v1/clients/:id/users`, and `POST /api/v1/clients/:id/users/:userId/archive`. These endpoints are owner/admin-only, tenant-scoped, and limited to active tenant users. They do not expose passwords, secrets, invitation links, or public access URLs.
+
 - `GET /api/v1/client-portal/projects`
   - Returns only archive-safe project rows visible through active `ClientUserAccess`.
 - `GET /api/v1/client-portal/projects/:projectId`
@@ -482,6 +490,12 @@ Client Portal archive is client-safe, read-only, and based on `ClientUserAccess`
   - Uses the safe download reference endpoint; raw `storageKey` is never exposed.
 
 Client portal payloads and UI hide raw `workflowRunId`, `executionLog`, `executionError`, `tenantId`, `provider`, `prompt`, `reviewNotes`, `reviewerName`, and `draftBody` fields. `exportUrl` is intentionally included as a safe client-visible export link field; admin must store only client-appropriate URLs here. Client reviews, client actions, and client approvals remain intentionally deferred. Production/VPS are frozen and not deployed in this block.
+
+Proof:
+
+- `npm.cmd run smoke:client-access:local` proves admin grant/list/revoke, client-level portal bounds, unrelated-client blocking, FINAL-only monthly report visibility, and revoke behavior.
+- `npm.cmd run smoke:client-portal:local` proves read-only deliverable archive access gating and final deliverable filtering.
+- `npm.cmd run smoke:client-portal-monthly-report:browser` proves FINAL-only monthly report visibility and forbidden-field non-exposure in the portal UI.
 
 ## Monthly report summary contract
 

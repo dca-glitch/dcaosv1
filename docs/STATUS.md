@@ -25,6 +25,7 @@ DCA OS Lite is in local-first admin/operator foundation work. Production is froz
 - AI Delivery monthly report PDF admin UI action and focused smoke wiring.
 - Client Portal monthly reports archive route + browser proof closure.
 - Monthly Report PDF/upload/signed download admin and client portal endpoints implemented and local-smoke-proven.
+- Client Access Admin UI foundation closed for MVP: owner/admin users can grant, list, and revoke tenant-scoped client-level `ClientUserAccess`; Client Portal remains read-only and restricted to final client-safe data.
 - AI Delivery operator summary, AI SEO foundation UI, AI SEO admin workflow shell/status summary, and AI Content Production foundation UI.
 - AI Content Production completion shell with explicit draft → image planning → deliverable packaging → private export/WordPress handoff clarity.
 - Local R2 proof confirmed with `R2_BUCKET_NAME=dca` using admin-only private upload/download flows; the production/VPS R2 switch remains deferred until an explicit deploy block.
@@ -46,6 +47,7 @@ DCA OS Lite is in local-first admin/operator foundation work. Production is froz
 - ChatGPT controls/reviews scope; Codex/Copilot/local tooling executes sealed tasks.
 - No commit, push, deploy, VPS, or production action unless explicitly approved after review.
 - Client Portal archive is read-only; client review/actions remain intentionally deferred.
+- Client access is client-level in the current schema. Project-specific grants require a separately approved schema/API block.
 - AI Delivery defaults to local deterministic execution. OpenRouter-capable text execution code exists but is opt-in by env config and is not production-approved by default. Crawling, WordPress publishing, GA/GSC, Resend sending, and production deployment remain inactive unless explicitly approved.
 - AI provider runtime/cost guardrail foundation is closed for the current admin MVP as a guarded, local-first foundation; persistent provider cost metadata, deeper provider observability, dedicated provider smoke, and production/live provider proof remain deferred.
 - EN2 real provider sending and queues/background jobs remain inactive.
