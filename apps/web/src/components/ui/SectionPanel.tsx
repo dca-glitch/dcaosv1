@@ -1,16 +1,25 @@
 import type { ReactNode } from "react";
 
+type SectionPanelTone = "default" | "compact" | "highlight";
+
 type SectionPanelProps = {
   title: string;
   description?: string;
   action?: ReactNode;
   children: ReactNode;
   className?: string;
+  tone?: SectionPanelTone;
 };
 
-export function SectionPanel({ title, description, action, children, className }: SectionPanelProps) {
+export function SectionPanel({ title, description, action, children, className, tone = "default" }: SectionPanelProps) {
+  const classes = [
+    "section-panel",
+    tone !== "default" ? `section-panel-${tone}` : null,
+    className
+  ].filter(Boolean).join(" ");
+
   return (
-    <section className={["section-panel", className].filter(Boolean).join(" ")}>
+    <section className={classes}>
       <header className="section-panel-header">
         <div>
           <h2>{title}</h2>
