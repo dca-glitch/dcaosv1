@@ -195,7 +195,11 @@ import {
   archiveAiDeliveryMonthlyReport,
   restoreAiDeliveryMonthlyReport,
   uploadAiDeliveryMonthlyReportDocument,
-  getAiDeliveryMonthlyReportDownloadReference
+  getAiDeliveryMonthlyReportDownloadReference,
+  getAiDeliveryMonthlyReportMiContext,
+  applyMiHandoffToMonthlyReport,
+  updateMonthlyReportMiContextDraft,
+  removeMiHandoffFromMonthlyReport
 } from "../core/core.runtime";
 import type {
   AiDeliveryArticleImageUploadRequest,
@@ -230,7 +234,9 @@ import type {
   AiDeliveryMonthlyReportInputRequest,
   AiDeliveryMonthlyReportUploadRequest,
   AiDeliveryMonthlyReportStatusRequest,
-  AiDeliveryMonthlyMetricSnapshotInputRequest
+  AiDeliveryMonthlyMetricSnapshotInputRequest,
+  AiDeliveryMonthlyReportMiApplyRequest,
+  AiDeliveryMonthlyReportMiDraftRequest
 } from "../core/core.types";
 
 const TEXT_FIELD_MAX_LENGTH = 4000;
@@ -4853,6 +4859,54 @@ export const generateAiDeliveryMonthlyReportPdfHandler: RequestHandler = async (
     if (handleAiDeliveryGuardError(res, error)) return;
     res.status(500).json(failure("AI_DELIVERY_MONTHLY_REPORT_ERROR", "Monthly report PDF could not be generated."));
   }
+};
+
+export const getAiDeliveryMonthlyReportMiContextHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) return void res.status(401).json(unauthorizedFailure());
+  const reportId = typeof req.params.reportId === "string" ? req.params.reportId.trim() : "";
+  if (!reportId) return void res.status(400).json(failure("AI_DELIVERY_MONTHLY_REPORT_INVALID", "Report ID is invalid."));
+  const response = await getAiDeliveryMonthlyReportMiContext(authSession, reportId);
+  if (!response) return void res.status(404).json(failure("AI_DELIVERY_MONTHLY_REPORT_NOT_FOUND", "Monthly report not found."));
+  res.status(200).json(success(response));
+};
+
+export const applyMiHandoffToMonthlyReportHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) return void res.status(401).json(unauthorizedFailure());
+  const reportId = typeof req.params.reportId === "string" ? req.params.reportId.trim() : "";
+  if (!reportId) return void res.status(400).json(failure("AI_DELIVERY_MONTHLY_REPORT_INVALID", "Report ID is invalid."));
+  const body = req.body as AiDeliveryMonthlyReportMiApplyRequest;
+  if (!body?.handoffId || typeof body.handoffId !== "string") {
+    return void res.status(400).json(failure("HANDOFF_INVALID", "handoffId is required."));
+  }
+  const response = await applyMiHandoffToMonthlyReport(authSession, reportId, body);
+  if (!response) return void res.status(404).json(failure("HANDOFF_NOT_FOUND", "Handoff not found or not in a valid status."));
+  res.status(200).json(success(response));
+};
+
+export const updateMonthlyReportMiContextDraftHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) return void res.status(401).json(unauthorizedFailure());
+  const reportId = typeof req.params.reportId === "string" ? req.params.reportId.trim() : "";
+  if (!reportId) return void res.status(400).json(failure("AI_DELIVERY_MONTHLY_REPORT_INVALID", "Report ID is invalid."));
+  const body = req.body as AiDeliveryMonthlyReportMiDraftRequest;
+  if (typeof body?.miContextDraft !== "string") {
+    return void res.status(400).json(failure("MI_DRAFT_INVALID", "miContextDraft must be a string."));
+  }
+  const response = await updateMonthlyReportMiContextDraft(authSession, reportId, body);
+  if (!response) return void res.status(404).json(failure("AI_DELIVERY_MONTHLY_REPORT_NOT_FOUND", "Monthly report not found."));
+  res.status(200).json(success(response));
+};
+
+export const removeMiHandoffFromMonthlyReportHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) return void res.status(401).json(unauthorizedFailure());
+  const reportId = typeof req.params.reportId === "string" ? req.params.reportId.trim() : "";
+  if (!reportId) return void res.status(400).json(failure("AI_DELIVERY_MONTHLY_REPORT_INVALID", "Report ID is invalid."));
+  const response = await removeMiHandoffFromMonthlyReport(authSession, reportId);
+  if (!response) return void res.status(404).json(failure("AI_DELIVERY_MONTHLY_REPORT_NOT_FOUND", "Monthly report not found."));
+  res.status(200).json(success(response));
 };
 
 // Market Intelligence input validators

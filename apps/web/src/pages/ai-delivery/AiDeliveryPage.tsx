@@ -14,7 +14,8 @@ import type {
   AiDeliveryMonthlyReportFormValues,
   AiDeliveryMonthlyMetricsSummary,
   AiDeliveryMonthlyMetricSnapshotSummary,
-  MonthlyMetricSnapshotFormValues
+  MonthlyMetricSnapshotFormValues,
+  AiDeliveryMonthlyReportMiContext
 } from "./MonthlyReportPanel";
 import type { MarketIntelligenceHandoffSummary } from "@dca-os-v1/shared";
 
@@ -453,6 +454,10 @@ export type AiDeliveryProjectsProps = {
   onFetchMiContext?: (projectId: string) => Promise<MarketIntelligenceHandoffSummary[]>;
   onApplyMiHandoff?: (projectId: string, handoffId: string) => Promise<MarketIntelligenceHandoffSummary[]>;
   onRemoveMiHandoff?: (projectId: string, handoffId: string) => Promise<MarketIntelligenceHandoffSummary[]>;
+  onFetchMonthlyReportMiContext?: (reportId: string) => Promise<AiDeliveryMonthlyReportMiContext | null>;
+  onApplyMiHandoffToMonthlyReport?: (reportId: string, handoffId: string) => Promise<AiDeliveryMonthlyReportMiContext | null>;
+  onUpdateMonthlyReportMiContextDraft?: (reportId: string, draft: string) => Promise<AiDeliveryMonthlyReportMiContext | null>;
+  onRemoveMiHandoffFromMonthlyReport?: (reportId: string) => Promise<AiDeliveryMonthlyReportMiContext | null>;
 };
 
 const workflowRunStatuses = ["DRAFT", "READY", "IN_PROGRESS", "REVIEW", "COMPLETED", "FAILED", "ARCHIVED"] as const;
@@ -855,7 +860,11 @@ export function AiDeliveryPage({
   onArchiveMonthlyMetricSnapshot,
   onFetchMiContext,
   onApplyMiHandoff,
-  onRemoveMiHandoff
+  onRemoveMiHandoff,
+  onFetchMonthlyReportMiContext,
+  onApplyMiHandoffToMonthlyReport,
+  onUpdateMonthlyReportMiContextDraft,
+  onRemoveMiHandoffFromMonthlyReport
 }: AiDeliveryProjectsProps) {
   const [filter, setFilter] = useState<"all" | "active" | "archived">("active");
   const [editorProjectId, setEditorProjectId] = useState<string | null>(null);
@@ -5525,6 +5534,10 @@ export function AiDeliveryPage({
               onImportMetrics={onImportMonthlyMetrics ?? (async () => null)}
               onApproveMetricSnapshot={onApproveMonthlyMetricSnapshot ?? (async () => null)}
               onArchiveMetricSnapshot={onArchiveMonthlyMetricSnapshot ?? (async () => null)}
+              onFetchMiContext={onFetchMonthlyReportMiContext}
+              onApplyMiHandoff={onApplyMiHandoffToMonthlyReport}
+              onUpdateMiContextDraft={onUpdateMonthlyReportMiContextDraft}
+              onRemoveMiHandoff={onRemoveMiHandoffFromMonthlyReport}
             />
           ) : null;
       })() : null}

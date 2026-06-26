@@ -59,7 +59,8 @@ import type {
   AiDeliveryMonthlyMetricsResponse,
   AiDeliveryMonthlyMetricSnapshotResponse,
   AiDeliveryMonthlyMetricSnapshotSummary,
-  MonthlyMetricSnapshotFormValues
+  MonthlyMetricSnapshotFormValues,
+  AiDeliveryMonthlyReportMiContext
 } from "./pages/ai-delivery/MonthlyReportPanel";
 import { AiMarketIntelligencePage } from "./pages/ai-market-intelligence/AiMarketIntelligencePage";
 import { TasksPage, type TaskFormValues, type TaskSummary } from "./pages/tasks/TasksPage";
@@ -3331,6 +3332,61 @@ export function App() {
     }
   }
 
+  async function handleFetchAiDeliveryMonthlyReportMiContext(reportId: string): Promise<AiDeliveryMonthlyReportMiContext | null> {
+    try {
+      const response = await runAuthenticatedRequest<AiDeliveryMonthlyReportMiContext>(
+        `/ai-delivery/reports/monthly/${encodeURIComponent(reportId)}/mi-context`
+      );
+      if (!response) return null;
+      if (!response.ok) return null;
+      return response.data;
+    } catch {
+      return null;
+    }
+  }
+
+  async function handleApplyMiHandoffToMonthlyReport(reportId: string, handoffId: string): Promise<AiDeliveryMonthlyReportMiContext | null> {
+    try {
+      const response = await runAuthenticatedRequest<AiDeliveryMonthlyReportMiContext>(
+        `/ai-delivery/reports/monthly/${encodeURIComponent(reportId)}/mi-context/apply`,
+        { method: "POST", body: { handoffId } }
+      );
+      if (!response) return null;
+      if (!response.ok) throw new Error("Unable to apply MI handoff.");
+      return response.data;
+    } catch (error) {
+      return rethrowAiDeliveryRuntimeError(error);
+    }
+  }
+
+  async function handleUpdateAiDeliveryMonthlyReportMiContextDraft(reportId: string, miContextDraft: string): Promise<AiDeliveryMonthlyReportMiContext | null> {
+    try {
+      const response = await runAuthenticatedRequest<AiDeliveryMonthlyReportMiContext>(
+        `/ai-delivery/reports/monthly/${encodeURIComponent(reportId)}/mi-context/draft`,
+        { method: "POST", body: { miContextDraft } }
+      );
+      if (!response) return null;
+      if (!response.ok) throw new Error("Unable to update MI context draft.");
+      return response.data;
+    } catch (error) {
+      return rethrowAiDeliveryRuntimeError(error);
+    }
+  }
+
+  async function handleRemoveMiHandoffFromMonthlyReport(reportId: string): Promise<AiDeliveryMonthlyReportMiContext | null> {
+    try {
+      const response = await runAuthenticatedRequest<AiDeliveryMonthlyReportMiContext>(
+        `/ai-delivery/reports/monthly/${encodeURIComponent(reportId)}/mi-context/remove`,
+        { method: "POST" }
+      );
+      if (!response) return null;
+      if (!response.ok) return null;
+      return response.data;
+    } catch {
+      return null;
+    }
+  }
+
   async function handleFetchClientContentDraftReview(projectId: string): Promise<AiDeliveryContentDraftSummary[]> {
     setAppMessage(null);
     try {
@@ -4183,6 +4239,10 @@ export function App() {
           onFetchMiContext={handleFetchAiDeliveryMiContext}
           onApplyMiHandoff={handleApplyAiDeliveryMiHandoff}
           onRemoveMiHandoff={handleRemoveAiDeliveryMiHandoff}
+          onFetchMonthlyReportMiContext={handleFetchAiDeliveryMonthlyReportMiContext}
+          onApplyMiHandoffToMonthlyReport={handleApplyMiHandoffToMonthlyReport}
+          onUpdateMonthlyReportMiContextDraft={handleUpdateAiDeliveryMonthlyReportMiContextDraft}
+          onRemoveMiHandoffFromMonthlyReport={handleRemoveMiHandoffFromMonthlyReport}
         />
       ) : null}
       {!loading && activeView === "ai-market-intelligence" ? (

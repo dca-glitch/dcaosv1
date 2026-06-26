@@ -55,6 +55,8 @@ export type AiDeliveryMonthlyReportData = {
   hasDocument: boolean;
   isArchived: boolean;
   finalizedAt: string | null;
+  miHandoffId?: string | null;
+  miContextDraft?: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -72,6 +74,22 @@ export type AiDeliveryMonthlyReportFormValues = {
   adminSummaryNotes: string;
   recommendationsText: string;
   exportUrl: string;
+};
+
+export type AiDeliveryMonthlyReportMiContext = {
+  miHandoffId: string | null;
+  miContextDraft: string | null;
+  handoff: {
+    id: string;
+    title: string;
+    handoffStatus: string;
+    marketSummary: string | null;
+    audienceSignals: unknown;
+    opportunities: unknown;
+    risks: unknown;
+    recommendedActions: unknown;
+    sourceNote: string | null;
+  } | null;
 };
 
 export type MonthlyMetricSourceType = "MANUAL" | "CSV_IMPORT" | "GA4" | "GSC" | "HYBRID";
@@ -166,6 +184,11 @@ type MonthlyReportPanelProps = {
   onImportMetrics: (reportId: string, values: MonthlyMetricSnapshotFormValues) => Promise<AiDeliveryMonthlyMetricSnapshotSummary | null>;
   onApproveMetricSnapshot: (reportId: string, snapshotId: string) => Promise<AiDeliveryMonthlyMetricSnapshotSummary | null>;
   onArchiveMetricSnapshot: (reportId: string, snapshotId: string) => Promise<AiDeliveryMonthlyMetricSnapshotSummary | null>;
+  // Market Intelligence internal context (admin-only)
+  onFetchMiContext?: (reportId: string) => Promise<AiDeliveryMonthlyReportMiContext | null>;
+  onApplyMiHandoff?: (reportId: string, handoffId: string) => Promise<AiDeliveryMonthlyReportMiContext | null>;
+  onUpdateMiContextDraft?: (reportId: string, draft: string) => Promise<AiDeliveryMonthlyReportMiContext | null>;
+  onRemoveMiHandoff?: (reportId: string) => Promise<AiDeliveryMonthlyReportMiContext | null>;
 };
 
 export type MonthlyMetricSnapshotFormValues = {
@@ -273,7 +296,11 @@ export function MonthlyReportPanel({
   onFetchMetrics,
   onImportMetrics,
   onApproveMetricSnapshot,
-  onArchiveMetricSnapshot
+  onArchiveMetricSnapshot,
+  onFetchMiContext,
+  onApplyMiHandoff,
+  onUpdateMiContextDraft,
+  onRemoveMiHandoff
 }: MonthlyReportPanelProps) {
   const [summary, setSummary] = useState<AiDeliveryMonthlySummaryData | null>(null);
   const [summaryLoading, setSummaryLoading] = useState(false);
@@ -303,6 +330,14 @@ export function MonthlyReportPanel({
   const [metricsMessage, setMetricsMessage] = useState<string | null>(null);
   const [metricsActionError, setMetricsActionError] = useState<string | null>(null);
   const [metricsForm, setMetricsForm] = useState<MonthlyMetricSnapshotFormValues>(emptyMetricsForm(project.targetMonth));
+
+  const [miContext, setMiContext] = useState<AiDeliveryMonthlyReportMiContext | null>(null);
+  const [miContextLoading, setMiContextLoading] = useState(false);
+  const [miContextError, setMiContextError] = useState<string | null>(null);
+  const [miContextMessage, setMiContextMessage] = useState<string | null>(null);
+  const [miApplyHandoffId, setMiApplyHandoffId] = useState("");
+  const [miDraftEditing, setMiDraftEditing] = useState(false);
+  const [miDraftValue, setMiDraftValue] = useState("");
 
   const loadSummary = useCallback(async () => {
     setSummaryLoading(true);
@@ -384,6 +419,21 @@ export function MonthlyReportPanel({
     setMetricsMessage(null);
     void loadMetrics(report.id);
   }, [loadMetrics, report]);
+
+  // Load MI context when report becomes available
+  useEffect(() => {
+    if (!report || !onFetchMiContext) return;
+    setMiContextLoading(true);
+    setMiContextError(null);
+    onFetchMiContext(report.id).then((data) => {
+      setMiContext(data);
+    }).catch((error) => {
+      setMiContextError(error instanceof Error ? error.message : "Unable to load MI context.");
+    }).finally(() => {
+      setMiContextLoading(false);
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [report?.id, onFetchMiContext]);
 
   async function handleCreate() {
     setReportSaving(true);
@@ -601,6 +651,61 @@ export function MonthlyReportPanel({
       setDocumentError(error instanceof Error ? error.message : "Unable to retrieve download link.");
     } finally {
       setDocumentDownloading(false);
+    }
+  }
+
+  async function handleMiApply() {
+    if (!report || !onApplyMiHandoff || !miApplyHandoffId.trim()) return;
+    setMiContextLoading(true);
+    setMiContextError(null);
+    setMiContextMessage(null);
+    try {
+      const result = await onApplyMiHandoff(report.id, miApplyHandoffId.trim());
+      if (result) {
+        setMiContext(result);
+        setMiApplyHandoffId("");
+        setMiContextMessage("Market Intelligence context applied.");
+      }
+    } catch (error) {
+      setMiContextError(error instanceof Error ? error.message : "Unable to apply MI context.");
+    } finally {
+      setMiContextLoading(false);
+    }
+  }
+
+  async function handleMiDraftSave() {
+    if (!report || !onUpdateMiContextDraft) return;
+    setMiContextLoading(true);
+    setMiContextError(null);
+    setMiContextMessage(null);
+    try {
+      const result = await onUpdateMiContextDraft(report.id, miDraftValue);
+      if (result) {
+        setMiContext(result);
+        setMiDraftEditing(false);
+        setMiContextMessage("Internal context draft updated.");
+      }
+    } catch (error) {
+      setMiContextError(error instanceof Error ? error.message : "Unable to update MI draft.");
+    } finally {
+      setMiContextLoading(false);
+    }
+  }
+
+  async function handleMiRemove() {
+    if (!report || !onRemoveMiHandoff) return;
+    setMiContextLoading(true);
+    setMiContextError(null);
+    setMiContextMessage(null);
+    try {
+      const result = await onRemoveMiHandoff(report.id);
+      setMiContext(result);
+      setMiDraftEditing(false);
+      setMiContextMessage("MI context reference removed.");
+    } catch (error) {
+      setMiContextError(error instanceof Error ? error.message : "Unable to remove MI context.");
+    } finally {
+      setMiContextLoading(false);
     }
   }
 
@@ -1020,6 +1125,106 @@ export function MonthlyReportPanel({
                     ) : null}
                   </div>
                 </div>
+              ) : null}
+
+              {/* Market Intelligence internal context (admin-only, not exposed to client portal) */}
+              {onFetchMiContext ? (
+                <SectionPanel
+                  title="Market Intelligence context"
+                  description="Internal admin context from an approved Market Intelligence handoff. Not exposed to client portal."
+                >
+                  {miContextLoading ? (
+                    <LoadingState label="Loading MI context..." />
+                  ) : (
+                    <>
+                      {miContextMessage ? (
+                        <div className="state-panel" style={{ marginBottom: "0.75rem", borderLeft: "4px solid var(--color-success)", paddingLeft: "1rem" }}>
+                          {miContextMessage}
+                        </div>
+                      ) : null}
+                      {miContextError ? (
+                        <div className="state-panel" role="alert" style={{ marginBottom: "0.75rem", borderLeft: "4px solid var(--color-error)", paddingLeft: "1rem" }}>
+                          {miContextError}
+                        </div>
+                      ) : null}
+                      {miContext?.handoff ? (
+                        <div style={{ marginBottom: "0.75rem" }}>
+                          <p className="muted-text">
+                            <strong>Linked handoff:</strong> {miContext.handoff.title}
+                            {" — "}
+                            <StatusBadge status={miContext.handoff.handoffStatus} />
+                          </p>
+                          {miDraftEditing ? (
+                            <div style={{ marginTop: "0.5rem" }}>
+                              <textarea
+                                rows={8}
+                                style={{ width: "100%", fontFamily: "monospace", fontSize: "0.8125rem" }}
+                                value={miDraftValue}
+                                onChange={(e) => setMiDraftValue(e.target.value)}
+                              />
+                              <div className="card-actions" style={{ marginTop: "0.5rem" }}>
+                                <button className="primary-action" disabled={miContextLoading} onClick={() => void handleMiDraftSave()} type="button">
+                                  Save draft
+                                </button>
+                                <button className="secondary-action" onClick={() => setMiDraftEditing(false)} type="button">
+                                  Cancel
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <>
+                              {miContext.miContextDraft ? (
+                                <pre style={{ whiteSpace: "pre-wrap", fontSize: "0.8125rem", background: "var(--color-surface)", padding: "0.75rem", borderRadius: "0.25rem", marginTop: "0.5rem", maxHeight: "14rem", overflow: "auto" }}>
+                                  {miContext.miContextDraft}
+                                </pre>
+                              ) : null}
+                              <div className="card-actions" style={{ marginTop: "0.5rem" }}>
+                                {onUpdateMiContextDraft ? (
+                                  <button
+                                    className="secondary-action"
+                                    disabled={miContextLoading}
+                                    onClick={() => { setMiDraftValue(miContext.miContextDraft ?? ""); setMiDraftEditing(true); }}
+                                    type="button"
+                                  >
+                                    Edit draft
+                                  </button>
+                                ) : null}
+                                {onRemoveMiHandoff ? (
+                                  <button className="secondary-action" disabled={miContextLoading} onClick={() => void handleMiRemove()} type="button">
+                                    Remove context
+                                  </button>
+                                ) : null}
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      ) : (
+                        <div style={{ marginBottom: "0.75rem" }}>
+                          <p className="muted-text">No Market Intelligence context linked yet. Apply a READY handoff by its ID.</p>
+                          {onApplyMiHandoff ? (
+                            <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.5rem", alignItems: "center" }}>
+                              <input
+                                placeholder="Handoff ID"
+                                style={{ flex: 1 }}
+                                type="text"
+                                value={miApplyHandoffId}
+                                onChange={(e) => setMiApplyHandoffId(e.target.value)}
+                              />
+                              <button
+                                className="secondary-action"
+                                disabled={miContextLoading || !miApplyHandoffId.trim()}
+                                onClick={() => void handleMiApply()}
+                                type="button"
+                              >
+                                Apply
+                              </button>
+                            </div>
+                          ) : null}
+                        </div>
+                      )}
+                    </>
+                  )}
+                </SectionPanel>
               ) : null}
 
               <SectionPanel

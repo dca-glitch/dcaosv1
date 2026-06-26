@@ -108,7 +108,10 @@ import type {
   MarketIntelligenceHandoffsResponse,
   MarketIntelligenceHandoffStatusRequest,
   AiDeliveryMiContextResponse,
-  AiDeliveryGoogleDocExportResponse
+  AiDeliveryGoogleDocExportResponse,
+  AiDeliveryMonthlyReportMiContextResponse,
+  AiDeliveryMonthlyReportMiApplyRequest,
+  AiDeliveryMonthlyReportMiDraftRequest
 } from "./core.types";
 import type { AuthResolvedSessionContext } from "../auth/types";
 import {
@@ -7372,6 +7375,8 @@ const aiDeliveryMonthlyReportSelect = {
   storageKey: true,
   isArchived: true,
   finalizedAt: true,
+  miHandoffId: true,
+  miContextDraft: true,
   createdAt: true,
   updatedAt: true,
   aiDeliveryProject: {
@@ -7395,6 +7400,8 @@ function toAiDeliveryMonthlyReportSummary(r: {
   storageKey: string | null;
   isArchived: boolean;
   finalizedAt: Date | null;
+  miHandoffId: string | null;
+  miContextDraft: string | null;
   createdAt: Date;
   updatedAt: Date;
   aiDeliveryProject: {
@@ -7416,6 +7423,8 @@ function toAiDeliveryMonthlyReportSummary(r: {
     hasDocument: !!r.storageKey,
     isArchived: r.isArchived,
     finalizedAt: r.finalizedAt ? r.finalizedAt.toISOString() : null,
+    miHandoffId: r.miHandoffId ?? null,
+    miContextDraft: r.miContextDraft ?? null,
     createdAt: r.createdAt.toISOString(),
     updatedAt: r.updatedAt.toISOString(),
     project: r.aiDeliveryProject
@@ -10348,6 +10357,218 @@ export async function removeMiHandoffFromAiDelivery(
       select: HANDOFF_SELECT,
       orderBy: { updatedAt: "desc" }
     });
+
     return { handoffs: handoffs.map(toHandoffSummary) };
+  });
+}
+
+// ─── Monthly Report — Market Intelligence Context ─────────────────────────────
+
+const MI_CONTEXT_HANDOFF_SELECT = {
+  id: true,
+  title: true,
+  handoffStatus: true,
+  isArchived: true,
+  aiDeliveryProjectId: true,
+  marketSummary: true,
+  audienceSignals: true,
+  opportunities: true,
+  risks: true,
+  recommendedActions: true,
+  sourceNote: true
+} as const;
+
+/** Build deterministic MI context draft from handoff fields (no external calls). */
+function buildMiContextDraft(handoff: {
+  title: string;
+  marketSummary: string | null;
+  audienceSignals: unknown;
+  opportunities: unknown;
+  risks: unknown;
+  recommendedActions: unknown;
+  sourceNote: string | null;
+}): string {
+  const lines: string[] = [`# Market Intelligence report context: ${handoff.title}`];
+  if (handoff.marketSummary) {
+    lines.push(`\n## Market Summary\n${handoff.marketSummary}`);
+  }
+  const fmtList = (label: string, value: unknown) => {
+    if (!value) return;
+    const items = Array.isArray(value) ? value : (typeof value === "object" ? Object.values(value as object) : []);
+    if (items.length > 0) {
+      lines.push(`\n## ${label}\n${items.map((i: unknown) => `- ${String(i)}`).join("\n")}`);
+    }
+  };
+  fmtList("Audience Signals", handoff.audienceSignals);
+  fmtList("Opportunities", handoff.opportunities);
+  fmtList("Risks", handoff.risks);
+  fmtList("Recommended Actions", handoff.recommendedActions);
+  if (handoff.sourceNote) {
+    lines.push(`\n## Source Note\n${handoff.sourceNote}`);
+  }
+  return lines.join("");
+}
+
+/** Get MI context currently attached to a monthly report (admin-only). */
+export async function getAiDeliveryMonthlyReportMiContext(
+  authSession: AuthResolvedSessionContext,
+  reportId: string
+): Promise<AiDeliveryMonthlyReportMiContextResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) return null;
+
+  const report = await (prisma as any).aiDeliveryMonthlyReport.findFirst({
+    where: { id: reportId, tenantId },
+    select: {
+      id: true,
+      miHandoffId: true,
+      miContextDraft: true,
+      miHandoff: { select: MI_CONTEXT_HANDOFF_SELECT }
+    }
+  });
+  if (!report) return null;
+
+  return {
+    miHandoffId: report.miHandoffId ?? null,
+    miContextDraft: report.miContextDraft ?? null,
+    handoff: report.miHandoff
+      ? {
+          id: report.miHandoff.id,
+          title: report.miHandoff.title,
+          handoffStatus: report.miHandoff.handoffStatus,
+          marketSummary: report.miHandoff.marketSummary ?? null,
+          audienceSignals: report.miHandoff.audienceSignals ?? null,
+          opportunities: report.miHandoff.opportunities ?? null,
+          risks: report.miHandoff.risks ?? null,
+          recommendedActions: report.miHandoff.recommendedActions ?? null,
+          sourceNote: report.miHandoff.sourceNote ?? null
+        }
+      : null
+  };
+}
+
+/** Apply a READY/APPLIED MI handoff to a monthly report as internal context (admin-only). */
+export async function applyMiHandoffToMonthlyReport(
+  authSession: AuthResolvedSessionContext,
+  reportId: string,
+  body: AiDeliveryMonthlyReportMiApplyRequest
+): Promise<AiDeliveryMonthlyReportMiContextResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) return null;
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    const report = await (tx as any).aiDeliveryMonthlyReport.findFirst({
+      where: { id: reportId, tenantId },
+      select: { id: true, aiDeliveryProjectId: true }
+    });
+    if (!report) return null;
+
+    const handoff = await tx.marketIntelligenceHandoff.findFirst({
+      where: { id: body.handoffId, tenantId, aiDeliveryProjectId: report.aiDeliveryProjectId, isArchived: false },
+      select: MI_CONTEXT_HANDOFF_SELECT
+    });
+    if (!handoff) return null;
+
+    // Only READY or APPLIED handoffs may be referenced
+    if (handoff.handoffStatus !== "READY" && handoff.handoffStatus !== "APPLIED") {
+      return null;
+    }
+
+    const draft = buildMiContextDraft(handoff);
+
+    await (tx as any).aiDeliveryMonthlyReport.update({
+      where: { id: reportId },
+      data: { miHandoffId: body.handoffId, miContextDraft: draft }
+    });
+
+    return {
+      miHandoffId: body.handoffId,
+      miContextDraft: draft,
+      handoff: {
+        id: handoff.id,
+        title: handoff.title,
+        handoffStatus: handoff.handoffStatus,
+        marketSummary: handoff.marketSummary ?? null,
+        audienceSignals: handoff.audienceSignals ?? null,
+        opportunities: handoff.opportunities ?? null,
+        risks: handoff.risks ?? null,
+        recommendedActions: handoff.recommendedActions ?? null,
+        sourceNote: handoff.sourceNote ?? null
+      }
+    };
+  });
+}
+
+/** Update (admin-edit) the MI context draft text on a monthly report (admin-only). */
+export async function updateMonthlyReportMiContextDraft(
+  authSession: AuthResolvedSessionContext,
+  reportId: string,
+  body: AiDeliveryMonthlyReportMiDraftRequest
+): Promise<AiDeliveryMonthlyReportMiContextResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) return null;
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    const report = await (tx as any).aiDeliveryMonthlyReport.findFirst({
+      where: { id: reportId, tenantId },
+      select: { id: true, miHandoffId: true }
+    });
+    if (!report) return null;
+
+    await (tx as any).aiDeliveryMonthlyReport.update({
+      where: { id: reportId },
+      data: { miContextDraft: body.miContextDraft }
+    });
+
+    let handoffData = null;
+    if (report.miHandoffId) {
+      const h = await tx.marketIntelligenceHandoff.findFirst({
+        where: { id: report.miHandoffId, tenantId },
+        select: MI_CONTEXT_HANDOFF_SELECT
+      });
+      if (h) {
+        handoffData = {
+          id: h.id,
+          title: h.title,
+          handoffStatus: h.handoffStatus,
+          marketSummary: h.marketSummary ?? null,
+          audienceSignals: h.audienceSignals ?? null,
+          opportunities: h.opportunities ?? null,
+          risks: h.risks ?? null,
+          recommendedActions: h.recommendedActions ?? null,
+          sourceNote: h.sourceNote ?? null
+        };
+      }
+    }
+
+    return {
+      miHandoffId: report.miHandoffId ?? null,
+      miContextDraft: body.miContextDraft,
+      handoff: handoffData
+    };
+  });
+}
+
+/** Remove MI handoff reference from a monthly report (clears both miHandoffId and miContextDraft). */
+export async function removeMiHandoffFromMonthlyReport(
+  authSession: AuthResolvedSessionContext,
+  reportId: string
+): Promise<AiDeliveryMonthlyReportMiContextResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) return null;
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    const report = await (tx as any).aiDeliveryMonthlyReport.findFirst({
+      where: { id: reportId, tenantId },
+      select: { id: true }
+    });
+    if (!report) return null;
+
+    await (tx as any).aiDeliveryMonthlyReport.update({
+      where: { id: reportId },
+      data: { miHandoffId: null, miContextDraft: null }
+    });
+
+    return { miHandoffId: null, miContextDraft: null, handoff: null };
   });
 }

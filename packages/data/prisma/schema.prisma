@@ -849,12 +849,16 @@ model AiDeliveryMonthlyReport {
   storageKey          String?
   isArchived          Boolean                       @default(false)
   finalizedAt         DateTime?
+  // Optional Market Intelligence handoff reference for internal admin context
+  miHandoffId         String?
+  miContextDraft      String?
   createdAt           DateTime                      @default(now())
   updatedAt           DateTime                      @updatedAt
 
   tenant            Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   aiDeliveryProject AiDeliveryProject @relation(fields: [aiDeliveryProjectId], references: [id], onDelete: Cascade)
   client            Client            @relation(fields: [clientId], references: [id], onDelete: Restrict)
+  miHandoff         MarketIntelligenceHandoff? @relation(fields: [miHandoffId], references: [id], onDelete: SetNull)
   aiDeliveryMonthlyMetricSnapshots AiDeliveryMonthlyMetricSnapshot[]
 
   @@unique([tenantId, aiDeliveryProjectId])
@@ -862,6 +866,7 @@ model AiDeliveryMonthlyReport {
   @@index([tenantId, status])
   @@index([tenantId, clientId])
   @@index([tenantId, isArchived])
+  @@index([tenantId, miHandoffId])
 }
 
 model AiDeliveryMonthlyMetricSnapshot {
@@ -1415,6 +1420,7 @@ model MarketIntelligenceHandoff {
   project           MarketIntelligenceProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
   insight           MarketIntelligenceInsight @relation(fields: [insightId], references: [id], onDelete: Cascade)
   aiDeliveryProject AiDeliveryProject?        @relation(fields: [aiDeliveryProjectId], references: [id], onDelete: SetNull)
+  monthlyReports    AiDeliveryMonthlyReport[]
 
   @@index([tenantId])
   @@index([tenantId, projectId])

@@ -164,7 +164,11 @@ import {
   restoreAiDeliveryMonthlyReportHandler,
   generateAiDeliveryMonthlyReportPdfHandler,
   uploadAiDeliveryMonthlyReportDocumentHandler,
-  getAiDeliveryMonthlyReportDownloadReferenceHandler
+  getAiDeliveryMonthlyReportDownloadReferenceHandler,
+  getAiDeliveryMonthlyReportMiContextHandler,
+  applyMiHandoffToMonthlyReportHandler,
+  updateMonthlyReportMiContextDraftHandler,
+  removeMiHandoffFromMonthlyReportHandler
 } from "../controllers/coreController";
 import { failure } from "../utils/responses";
 import { requireAuth } from "../middlewares/auth.middleware";
@@ -344,6 +348,12 @@ export function createCoreRouter() {
   router.post("/ai-delivery/reports/monthly/:reportId/generate-pdf", requireAuth, requireTenant, requireRole("owner", "admin"), generateAiDeliveryMonthlyReportPdfHandler);
   router.post("/ai-delivery/reports/monthly/:reportId/document", requireAuth, requireTenant, requireRole("owner", "admin"), uploadAiDeliveryMonthlyReportDocumentHandler);
   router.get("/ai-delivery/reports/monthly/:reportId/download", requireAuth, requireTenant, requireRole("owner", "admin"), getAiDeliveryMonthlyReportDownloadReferenceHandler);
+
+  // Monthly Report — Market Intelligence context (admin-only internal)
+  router.get("/ai-delivery/reports/monthly/:reportId/mi-context", requireAuth, requireTenant, requireRole("owner", "admin"), getAiDeliveryMonthlyReportMiContextHandler);
+  router.post("/ai-delivery/reports/monthly/:reportId/mi-context/apply", requireAuth, requireTenant, requireRole("owner", "admin"), applyMiHandoffToMonthlyReportHandler);
+  router.post("/ai-delivery/reports/monthly/:reportId/mi-context/draft", requireAuth, requireTenant, requireRole("owner", "admin"), updateMonthlyReportMiContextDraftHandler);
+  router.post("/ai-delivery/reports/monthly/:reportId/mi-context/remove", requireAuth, requireTenant, requireRole("owner", "admin"), removeMiHandoffFromMonthlyReportHandler);
 
   // Market Intelligence routes
   router.get("/market-intelligence-projects", requireAuth, requireTenant, requireRole("owner", "admin"), listMarketIntelligenceProjectsHandler);

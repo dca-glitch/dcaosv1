@@ -988,6 +988,9 @@ export interface AiDeliveryMonthlyReportSummary {
   hasDocument: boolean;
   isArchived: boolean;
   finalizedAt: string | null;
+  // Market Intelligence internal context (admin-only)
+  miHandoffId: string | null;
+  miContextDraft: string | null;
   createdAt: string;
   updatedAt: string;
   project: {
@@ -1035,6 +1038,30 @@ export interface AiDeliveryMonthlyReportGeneratePdfResponse {
 
 export interface AiDeliveryMonthlyReportStatusRequest {
   status?: string | null;
+}
+
+export interface AiDeliveryMonthlyReportMiContextResponse {
+  miHandoffId: string | null;
+  miContextDraft: string | null;
+  handoff: {
+    id: string;
+    title: string;
+    handoffStatus: string;
+    marketSummary: string | null;
+    audienceSignals: unknown;
+    opportunities: unknown;
+    risks: unknown;
+    recommendedActions: unknown;
+    sourceNote: string | null;
+  } | null;
+}
+
+export interface AiDeliveryMonthlyReportMiApplyRequest {
+  handoffId: string;
+}
+
+export interface AiDeliveryMonthlyReportMiDraftRequest {
+  miContextDraft: string;
 }
 
 export type MonthlyMetricSourceType = "MANUAL" | "CSV_IMPORT" | "GA4" | "GSC" | "HYBRID";
