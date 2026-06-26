@@ -1,3 +1,0 @@
-# Last Marker
-
-Status: marker.
