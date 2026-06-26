@@ -68,6 +68,10 @@ Next action:
 
 `Use Mode A or Mode B unless local proof is required later.`
 
+## PR Decision Notes
+
+Use a PR when the change should be reviewed before merging.
+
 ## Keep Decisions Simple
 
 A decision note should be short enough to read quickly.
