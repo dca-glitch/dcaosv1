@@ -726,7 +726,7 @@ export function InvoicesPage({
           }}
           title={invoiceEditorId ? "Edit Invoice" : "Add Invoice"}
         >
-          <form className="entity-form" onSubmit={handleInvoiceSubmit}>
+          <form className="entity-form invoice-form-compact" onSubmit={handleInvoiceSubmit}>
             <ModalActions
               actionLabel={invoiceEditorId ? "Update invoice" : "Create invoice"}
               disabled={saving || clients.length === 0}
@@ -1060,7 +1060,7 @@ export function InvoicesPage({
           }}
           title="Register Payment"
         >
-          <form className="entity-form" onSubmit={handlePaymentSubmit}>
+          <form className="entity-form invoice-form-compact" onSubmit={handlePaymentSubmit}>
             <div className="field-grid">
               <label>
                 Payment method
@@ -1226,13 +1226,13 @@ function InvoiceCards({ invoices, canEdit, onEditInvoice, onArchiveInvoice, onMa
 
 function PaymentDetails({ currency, payment }: { currency: string; payment: InvoicePaymentSummary }) {
   return (
-    <div className="entity-field-grid">
-      <div><span>Payment method</span><strong>{formatPaymentMethod(payment.paymentMethod)}</strong></div>
-      <div><span>Payment date</span><strong>{formatDateLabel(payment.paymentDate)}</strong></div>
-      <div><span>Amount issued</span><strong>{formatMoney(payment.amountIssuedCents, currency)}</strong></div>
-      <div><span>Amount received</span><strong>{formatMoney(payment.amountReceivedCents, currency)}</strong></div>
-      <div><span>Difference</span><strong>{formatMoney(payment.differenceCents, currency)}</strong></div>
-      <div className="entity-span-2"><span>Payment notes</span><strong>{payment.notes || "Not set"}</strong></div>
+    <div className="entity-field-grid field-grid-compact invoice-payment-detail">
+      <div><span className="compact-meta">Payment method</span><strong className="compact-value">{formatPaymentMethod(payment.paymentMethod)}</strong></div>
+      <div><span className="compact-meta">Payment date</span><strong className="compact-value">{formatDateLabel(payment.paymentDate)}</strong></div>
+      <div><span className="compact-meta">Amount issued</span><strong className="compact-value">{formatMoney(payment.amountIssuedCents, currency)}</strong></div>
+      <div><span className="compact-meta">Amount received</span><strong className="compact-value">{formatMoney(payment.amountReceivedCents, currency)}</strong></div>
+      <div><span className="compact-meta">Difference</span><strong className="compact-value">{formatMoney(payment.differenceCents, currency)}</strong></div>
+      <div className="entity-span-2"><span className="compact-meta">Payment notes</span><strong className="compact-value">{payment.notes || "Not set"}</strong></div>
     </div>
   );
 }

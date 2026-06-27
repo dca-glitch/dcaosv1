@@ -1938,3 +1938,119 @@ tr:hover td {
     flex-direction: column;
   }
 }
+
+/* P0-1 compact foundation — section panel, field grid, meta/value */
+.section-panel.section-panel-compact {
+  gap: 10px;
+  padding: 12px;
+}
+
+.section-panel-compact .section-panel-header {
+  gap: 8px;
+}
+
+.section-panel-compact .section-panel-header h2 {
+  font-size: 0.95rem;
+  letter-spacing: -0.01em;
+}
+
+.section-panel-compact .section-panel-body {
+  gap: 8px;
+}
+
+.compact-meta {
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  line-height: 1.3;
+  text-transform: uppercase;
+}
+
+.compact-value {
+  color: var(--text);
+  font-size: 0.88rem;
+  font-weight: 700;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.field-grid.field-grid-compact,
+.entity-field-grid.field-grid-compact {
+  gap: 8px 12px;
+}
+
+.field-grid.field-grid-compact label,
+.entity-field-grid.field-grid-compact div,
+.field-grid-compact .compact-field {
+  background: transparent;
+  border: 0;
+  gap: 4px;
+  padding: 0;
+}
+
+.field-grid-compact .compact-field {
+  display: grid;
+}
+
+.field-grid.field-grid-compact label {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 650;
+  letter-spacing: 0.01em;
+}
+
+.entity-field-grid.field-grid-compact span {
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.entity-field-grid.field-grid-compact strong {
+  color: var(--text);
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.invoice-form-compact.entity-form {
+  gap: 12px;
+}
+
+.invoice-form-compact .field-grid {
+  gap: 8px 12px;
+}
+
+.invoice-form-compact .field-grid label {
+  background: transparent;
+  border: 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 650;
+  gap: 4px;
+  letter-spacing: 0.01em;
+  padding: 0;
+}
+
+.invoice-form-compact .field-grid input,
+.invoice-form-compact .field-grid select,
+.invoice-form-compact .field-grid textarea {
+  min-height: 38px;
+  padding: 8px 12px;
+}
+
+.invoice-form-compact .field-grid textarea {
+  min-height: 72px;
+}
+
+.invoice-form-compact .field-grid .muted-text {
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
+.invoice-payment-detail.entity-field-grid.field-grid-compact {
+  border-top: 1px solid rgba(190, 211, 255, 0.1);
+  margin-top: 2px;
+  padding-top: 10px;
+}
