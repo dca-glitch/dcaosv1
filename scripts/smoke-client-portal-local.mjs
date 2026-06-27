@@ -39,6 +39,199 @@ function clientPortalResponseHasSensitiveFields(response) {
   return /passwordHash|sessionTokenHash|storageKey/i.test(response.text);
 }
 
+function deliverySummaryResponseHasForbiddenInternals(response) {
+  return /sourceNote|audienceSignals|"risks"|workflowRunId|executionLog|insightId|passwordHash|sessionTokenHash|storageKey/i.test(
+    response.text
+  );
+}
+
+async function seedPurivaDeliverySummaryFixture(adminToken, client, aiProject) {
+  const miProject = requireOkData(
+    "puriva delivery seed mi project",
+    await request("/market-intelligence-projects", {
+      method: "POST",
+      token: adminToken,
+      body: {
+        clientId: client.id,
+        title: `[SMOKE][CLIENT_PORTAL] ${makeSmokeId("mi")}`,
+        description: "Puriva delivery summary smoke fixture",
+        keywords: "skincare, clinic, puriva",
+        competitors: "Example Competitor",
+        niche: "Beauty clinic",
+        productServiceFocus: "Client-safe MI summary",
+        targetClientName: client.name,
+        targetMonth: aiProject.targetMonth ?? "2026-07",
+        status: "ACTIVE"
+      }
+    })
+  ).project;
+
+  for (const source of [
+    { title: "Smoke Competitor Site", sourceType: "WEBSITE", sourceUrl: "https://competitor.example.com", sourceNotes: "Positioning" },
+    { title: "Smoke Industry Note", sourceType: "OTHER", sourceUrl: "https://reports.example.com/trend", sourceNotes: "Trend" }
+  ]) {
+    requireOkData(
+      `puriva delivery seed mi source ${source.title}`,
+      await request(`/market-intelligence-projects/${miProject.id}/sources`, {
+        method: "POST",
+        token: adminToken,
+        body: source
+      })
+    );
+  }
+
+  const researchRun = requireOkData(
+    "puriva delivery seed mi research run",
+    await request(`/market-intelligence-projects/${miProject.id}/research-runs`, {
+      method: "POST",
+      token: adminToken,
+      body: { status: "PENDING" }
+    })
+  ).researchRun;
+
+  const executedRun = requireOkData(
+    "puriva delivery execute mi research run",
+    await request(`/market-intelligence-projects/${miProject.id}/research-runs/${researchRun.id}/execute`, {
+      method: "POST",
+      token: adminToken,
+      body: {}
+    }),
+    200
+  ).researchRun;
+  record("puriva delivery mi research run executed", executedRun.status === "EXECUTED", executedRun.status ?? "missing");
+
+  const insightsResponse = await request(`/market-intelligence-projects/${miProject.id}/insights`, { token: adminToken });
+  const generatedInsight = (insightsResponse.body?.data?.insights ?? []).find((insight) =>
+    typeof insight.title === "string" && insight.title.startsWith("Generated Insight")
+  );
+  if (!generatedInsight?.id) {
+    throw new Error("Puriva delivery seed could not find generated MI insight.");
+  }
+
+  requireOkData(
+    "puriva delivery approve mi insight",
+    await request(`/market-intelligence-projects/${miProject.id}/insights/${generatedInsight.id}`, {
+      method: "PUT",
+      token: adminToken,
+      body: { status: "APPROVED", reviewerNotes: "Approved for client portal delivery summary smoke." }
+    }),
+    200
+  );
+
+  const preparedHandoff = requireOkData(
+    "puriva delivery prepare mi handoff",
+    await request(`/market-intelligence-projects/${miProject.id}/handoffs/prepare`, {
+      method: "POST",
+      token: adminToken,
+      body: { insightId: generatedInsight.id }
+    })
+  ).handoff;
+
+  const readyHandoff = requireOkData(
+    "puriva delivery mark mi handoff ready",
+    await request(`/market-intelligence-projects/${miProject.id}/handoffs/${preparedHandoff.id}/status`, {
+      method: "PUT",
+      token: adminToken,
+      body: { handoffStatus: "READY" }
+    }),
+    200
+  ).handoff;
+
+  requireOkData(
+    "puriva delivery apply mi handoff to ai project",
+    await request(`/ai-delivery/projects/${aiProject.id}/market-intelligence-context/apply`, {
+      method: "POST",
+      token: adminToken,
+      body: { handoffId: readyHandoff.id }
+    }),
+    200
+  );
+
+  const contentDraft = requireOkData(
+    "puriva delivery seed content draft",
+    await request(`/ai-delivery-projects/${aiProject.id}/content-drafts`, {
+      method: "POST",
+      token: adminToken,
+      body: {
+        title: `[SMOKE][CLIENT_PORTAL] Draft ${makeSmokeId("draft")}`,
+        draftBody: "Client-safe delivery summary smoke fixture.",
+        status: "DRAFT"
+      }
+    })
+  ).contentDraft;
+
+  const articleImage = requireOkData(
+    "puriva delivery seed approved article image",
+    await request(`/ai-delivery-projects/${aiProject.id}/article-images`, {
+      method: "POST",
+      token: adminToken,
+      body: {
+        contentDraftId: contentDraft.id,
+        title: `[SMOKE][CLIENT_PORTAL] Image ${makeSmokeId("img")}`,
+        prompt: "Smoke fixture image prompt.",
+        status: "APPROVED"
+      }
+    })
+  ).articleImage;
+
+  requireOkData(
+    "puriva delivery create DELIVERED deliverable with export",
+    await request(`/ai-delivery-projects/${aiProject.id}/deliverables`, {
+      method: "POST",
+      token: adminToken,
+      body: {
+        title: `[SMOKE][CLIENT_PORTAL] Google Doc ${makeSmokeId("doc")}`,
+        deliveryType: "CONTENT_PACKAGE",
+        status: "DELIVERED",
+        articleImageId: articleImage.id,
+        exportUrl: "https://docs.google.com/document/d/smoke-client-portal-export"
+      }
+    })
+  );
+
+  const target = requireOkData(
+    "puriva delivery create publication target",
+    await request(`/clients/${client.id}/publication-targets`, {
+      method: "POST",
+      token: adminToken,
+      body: {
+        label: "Smoke publish target",
+        siteUrl: "https://smoke-puriva.example.com",
+        siteSlug: "smoke-puriva",
+        isPrimary: true
+      }
+    })
+  ).publicationTarget;
+
+  const deliverable = requireOkData(
+    "puriva delivery create publish deliverable",
+    await request(`/ai-delivery-projects/${aiProject.id}/deliverables`, {
+      method: "POST",
+      token: adminToken,
+      body: {
+        title: `[SMOKE][CLIENT_PORTAL] Publish package ${makeSmokeId("pub")}`,
+        deliveryType: "CONTENT_PACKAGE",
+        status: "DRAFT",
+        description: "Smoke WordPress publish body for Puriva delivery summary proof."
+      }
+    })
+  ).deliverable;
+
+  const publishResponse = await request(
+    `/ai-delivery-projects/${aiProject.id}/deliverables/${deliverable.id}/publish-wordpress`,
+    {
+      method: "POST",
+      token: adminToken,
+      body: { publicationTargetId: target.id }
+    }
+  );
+  record(
+    "puriva delivery publish-wordpress attempted",
+    publishResponse.status === 200 && publishResponse.body?.ok === true,
+    `${publishResponse.status}`
+  );
+}
+
 async function request(path, options = {}) {
   const headers = { Accept: "application/json" };
   if (options.body !== undefined) {
@@ -261,6 +454,43 @@ async function main() {
     "client portal delivery summary no storageKey",
     !clientPortalResponseHasSensitiveFields(deliverySummary),
     "storageKey absent"
+  );
+
+  // ── 8c. Puriva delivery path fixture (MI summary, Google Doc export, publishing status) ──
+  await seedPurivaDeliverySummaryFixture(adminToken, createdClient, createdAiProject);
+
+  const populatedDeliverySummary = await request(
+    `/client-portal/projects/${createdAiProject.id}/delivery-summary`,
+    { token: adminToken }
+  );
+  const summary = populatedDeliverySummary.body?.data?.deliverySummary ?? null;
+  record(
+    "puriva delivery summary includes market intelligence summary",
+    populatedDeliverySummary.status === 200 &&
+      typeof summary?.marketIntelligence?.marketSummary === "string" &&
+      summary.marketIntelligence.marketSummary.length > 0,
+    summary?.marketIntelligence?.marketSummary ? "present" : "missing"
+  );
+  record(
+    "puriva delivery summary includes recommended actions",
+    Array.isArray(summary?.marketIntelligence?.recommendedActions) &&
+      summary.marketIntelligence.recommendedActions.length > 0,
+    `${summary?.marketIntelligence?.recommendedActions?.length ?? 0}`
+  );
+  record(
+    "puriva delivery summary includes google docs export",
+    Array.isArray(summary?.googleDocsExports) && summary.googleDocsExports.length > 0,
+    `${summary?.googleDocsExports?.length ?? 0}`
+  );
+  record(
+    "puriva delivery summary includes website publishing status",
+    typeof summary?.websitePublishing?.status === "string" && summary.websitePublishing.status.length > 0,
+    summary?.websitePublishing?.status ?? "missing"
+  );
+  record(
+    "puriva delivery summary hides internal mi fields",
+    !deliverySummaryResponseHasForbiddenInternals(populatedDeliverySummary),
+    "forbidden internals absent"
   );
 
   const createdCatalogProduct = requireOkData(

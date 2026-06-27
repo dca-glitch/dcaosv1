@@ -44,6 +44,7 @@ try {
   Invoke-NpmStep "API health (smoke:local)" "smoke:local"
   Invoke-NpmStep "MVP local smoke" "smoke:mvp:local"
   Invoke-NpmStep "Client portal local smoke" "smoke:client-portal:local"
+  Invoke-NpmStep "Client access admin smoke" "smoke:client-access:local"
   Invoke-NpmStep "Client domain browser smoke" "smoke:client-domain:browser"
   Invoke-NpmStep "Client portal monthly report browser smoke" "smoke:client-portal-monthly-report:browser"
 

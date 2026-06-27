@@ -56,7 +56,7 @@ Related documents:
 | **AI Delivery** | **82%** | Done | Brief → deliverable → export → monthly report path |
 | **Market Intelligence** | **74%** | In progress | Admin MVP + handoff; no recurring/automation |
 | **Monthly Reports** | **78%** | Done | Admin + PDF + client archive FINAL-only |
-| **Client Portal MVP** (Puriva — visibility + review) | **78%** | In progress | Delivery summary, client review routes, catalog inquiry, FINAL monthly report view; Puriva smoke gate PASS locally |
+| **Client Portal MVP** (Puriva — visibility + review) | **85%** | In progress | Delivery summary Puriva path smoke (MI, Google Docs, publishing); browser/monthly report PASS |
 | **Client Portal advanced actions** (magic links, full comment threads) | **0%** | Phased after MVP visibility | See deferred scope register |
 | **Finance** | **80%** | Done | Invoices, bills, vendors, credit notes; `OWN_DOMAIN` invoice guard |
 | **AI SEO + Content Production** | **62%** | In progress | Admin shell; no live Google integrations |
@@ -151,6 +151,7 @@ Do not treat local smoke alone as production readiness.
 
 | Date | Change |
 |------|--------|
+| 2026-06-27 | MVP Block 7: Puriva delivery summary local gate in client portal smoke; client-access added to pre-staging gate |
 | 2026-06-27 | Local repo closeout: pre-staging gate script + doc; blocks 4–6 local gates marked done; VPS deploy paused |
 | 2026-06-27 | Puriva MVP smoke gate PASS; blocks 4–6 + legacy WordPress sunset reflected; Client Portal MVP raised to ~78% |
 | 2026-06-26 | Initial completion overview after client/domain operating model implementation and Playwright browser smoke |
