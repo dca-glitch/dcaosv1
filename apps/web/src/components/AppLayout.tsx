@@ -69,7 +69,7 @@ export function AppLayout({
         <div className="user-panel">
           <span>{user.name || user.email}</span>
           <small>{user.email}</small>
-          <button className="secondary-action" onClick={onLogout} type="button">
+          <button className="ghost-action shell-logout-action" onClick={onLogout} type="button">
             Logout
           </button>
         </div>
