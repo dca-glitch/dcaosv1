@@ -480,6 +480,9 @@ Client Portal archive is client-safe, read-only, and based on `ClientUserAccess`
 
 Admin-managed access uses `GET /api/v1/clients/:id/users`, `POST /api/v1/clients/:id/users`, and `POST /api/v1/clients/:id/users/:userId/archive`. These endpoints are owner/admin-only, tenant-scoped, and limited to active tenant users. They do not expose passwords, secrets, invitation links, or public access URLs.
 
+- `GET /api/v1/client-portal/projects/:projectId/delivery-summary`
+  - Returns client-safe delivery overview: MI summary, AI SEO plan status, website publishing handoff, Google Docs export links.
+  - Excludes raw MI internals, prompts, workflow runs, credentials, and admin-only notes.
 - `GET /api/v1/client-portal/projects`
   - Returns only archive-safe project rows visible through active `ClientUserAccess`.
 - `GET /api/v1/client-portal/projects/:projectId`

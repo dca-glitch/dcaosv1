@@ -4246,7 +4246,7 @@ export function AiDeliveryPage({
               {contentDraftsError ? <ErrorState title="Content draft action blocked" message={contentDraftsError} /> : null}
               <section className="field-panel">
                 <h3>Article production planning</h3>
-                <p className="muted-text">Current status is shown below. Next step: start from an approved or planned content plan item, generate or edit the draft, link image planning, package deliverables, then move it into internal review when ready. Private document/export handoff and WordPress prepared draft handoff stay internal, and monthly report/PDF remains a separate reporting layer. Client draft review remains deferred, and final export, PDF, R2 storage, Google Docs, WordPress publishing, and external services are outside this block.</p>
+                <p className="muted-text">Current status is shown below. Next step: start from an approved or planned content plan item, generate or edit the draft, link image planning, package deliverables, then move it into internal review when ready. Client Portal MVP for Puriva shows client-safe delivery visibility after admin release; human/client review before publication is required. Advanced interactive client review routes remain phased.</p>
                 <div className="state-panel" role="status">{contentDraftActionGuidance}</div>
                 {contentDraftHandoffMessage ? <div className="state-panel" role="status">{contentDraftHandoffMessage}</div> : null}
                 <div className="field-panel" style={{ marginBottom: "1rem" }}>
@@ -4300,7 +4300,7 @@ export function AiDeliveryPage({
                 </div>
                 <div className="field-panel" style={{ marginBottom: "1rem" }}>
                   <h4>Draft actions</h4>
-                  <p className="muted-text">Keep the saved draft editable here, then use the existing actions for generation, review, reset, and archive transitions. Client review remains deferred in this block.</p>
+                  <p className="muted-text">Keep the saved draft editable here, then use the existing actions for generation, review, reset, and archive transitions. Client Portal MVP visibility for Puriva is required; advanced in-portal draft review actions remain phased.</p>
                   <div className="modal-footer">
                     <button className="secondary-action" disabled={contentDraftsSaving} onClick={() => { setContentDraftHandoffMessage(null); setContentDraftEditorId(null); setContentDraftForm(emptyContentDraft()); }} type="button">New draft</button>
                     <button className="secondary-action" disabled={contentDraftsSaving} onClick={closeContentDrafts} type="button">Close</button>

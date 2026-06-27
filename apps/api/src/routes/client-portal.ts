@@ -5,6 +5,7 @@ import { failure, forbiddenFailure, success, unauthorizedFailure } from "../util
 import type { AuthSessionLocals } from "../auth/types";
 import {
   getClientPortalDeliverableDownloadReference,
+  getClientPortalDeliverySummary,
   getClientPortalMonthlyReportDownloadReference,
   getClientPortalProject,
   listClientPortalDeliverables,
@@ -36,6 +37,20 @@ export function createClientPortalRouter() {
       return;
     }
     const result = await getClientPortalProject(authSession, req.params.projectId);
+    if (!result) {
+      res.status(404).json(failure("CLIENT_PORTAL_PROJECT_NOT_FOUND", "Project was not found."));
+      return;
+    }
+    res.status(200).json(success(result));
+  });
+
+  router.get("/projects/:projectId/delivery-summary", requireAuth, requireTenant, async (req, res) => {
+    const authSession = (res.locals as AuthSessionLocals).authSession;
+    if (!authSession) {
+      res.status(401).json(unauthorizedFailure());
+      return;
+    }
+    const result = await getClientPortalDeliverySummary(authSession, req.params.projectId);
     if (!result) {
       res.status(404).json(failure("CLIENT_PORTAL_PROJECT_NOT_FOUND", "Project was not found."));
       return;

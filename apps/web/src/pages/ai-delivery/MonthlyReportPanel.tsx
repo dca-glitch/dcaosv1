@@ -877,7 +877,7 @@ export function MonthlyReportPanel({
       {/* Persisted Report Section */}
       <section className="field-panel">
         <h3>Persisted Monthly Report</h3>
-        <p className="muted-text">Admin-authored monthly report narrative. This is the operator workflow shell; client portal delivery stays deferred.</p>
+        <p className="muted-text">Admin-authored monthly report narrative. FINAL reports appear in Client Portal MVP for linked client users. Internal metrics and admin notes stay hidden.</p>
 
         {reportLoading ? (
           <LoadingState label="Loading monthly report..." />
@@ -886,7 +886,7 @@ export function MonthlyReportPanel({
         ) : reportNotFound && !report ? (
           <EmptyState
             title="No persisted monthly report yet"
-            message="Create the admin report shell first. Snapshot metrics appear after a report exists, and client-facing delivery remains deferred."
+            message="Create the admin report shell first. Snapshot metrics appear after a report exists. FINAL reports become client-visible in Client Portal MVP."
             action={(
               <button
                 className="primary-action"

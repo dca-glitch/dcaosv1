@@ -88,6 +88,43 @@ type ClientPortalDownloadResponse = {
   downloadReference: ClientPortalDownloadReference;
 };
 
+type ClientPortalDeliverySummary = {
+  marketIntelligence: {
+    title: string;
+    marketSummary: string | null;
+    opportunities: string[];
+    recommendedActions: string[];
+    status: string;
+    updatedAt: string;
+  } | null;
+  aiSeo: {
+    contentPlanStatus: string;
+    approvedItemCount: number;
+    totalItemCount: number;
+    approvedAt: string | null;
+    updatedAt: string;
+    finalDeliverableCount: number;
+  } | null;
+  websitePublishing: {
+    action: string;
+    status: string;
+    siteUrlHost: string | null;
+    updatedAt: string;
+  } | null;
+  googleDocsExports: Array<{
+    id: string;
+    title: string;
+    exportUrl: string | null;
+    deliveryType: string;
+    status: string;
+    updatedAt: string;
+  }>;
+};
+
+type ClientPortalDeliverySummaryResponse = {
+  deliverySummary: ClientPortalDeliverySummary;
+};
+
 type RequestOptions = {
   method?: string;
   token?: string;
@@ -239,6 +276,9 @@ export function ClientPortalPage() {
   const [monthlyReports, setMonthlyReports] = useState<ClientPortalMonthlyReportSummary[]>([]);
   const [monthlyReportsLoading, setMonthlyReportsLoading] = useState(false);
   const [monthlyReportsError, setMonthlyReportsError] = useState<string | null>(null);
+  const [deliverySummary, setDeliverySummary] = useState<ClientPortalDeliverySummary | null>(null);
+  const [deliverySummaryLoading, setDeliverySummaryLoading] = useState(false);
+  const [deliverySummaryError, setDeliverySummaryError] = useState<string | null>(null);
   const [selectedMonthlyReportId, setSelectedMonthlyReportId] = useState<string | null>(null);
   const [downloadNotice, setDownloadNotice] = useState<string | null>(null);
   const [downloadingDeliverableId, setDownloadingDeliverableId] = useState<string | null>(null);
@@ -325,12 +365,15 @@ export function ClientPortalPage() {
     setDeliverablesError(null);
     setMonthlyReportsLoading(true);
     setMonthlyReportsError(null);
+    setDeliverySummaryLoading(true);
+    setDeliverySummaryError(null);
     setDownloadNotice(null);
     setDownloadingDeliverableId(null);
     setSelectedMonthlyReportId(null);
     setSelectedProject(null);
     setDeliverables([]);
     setMonthlyReports([]);
+    setDeliverySummary(null);
 
     if (!token) {
       if (requestSeq === projectRequestSeq.current) {
@@ -338,17 +381,21 @@ export function ClientPortalPage() {
         setSelectedProjectError(message);
         setDeliverablesError(message);
         setMonthlyReportsError(message);
+        setDeliverySummaryError(message);
         setSelectedProjectLoading(false);
         setDeliverablesLoading(false);
         setMonthlyReportsLoading(false);
+        setDeliverySummaryLoading(false);
       }
       return;
     }
 
-    const [projectResponse, deliverablesResponse, monthlyReportsResponse] = await Promise.all([
+    const [projectResponse, deliverablesResponse, monthlyReportsResponse, deliverySummaryResponse] =
+      await Promise.all([
       apiRequest<ClientPortalProjectResponse>(`/client-portal/projects/${projectId}`, { token }),
       apiRequest<ClientPortalDeliverablesResponse>(`/client-portal/projects/${projectId}/deliverables`, { token }),
-      apiRequest<ClientPortalMonthlyReportsResponse>(`/client-portal/projects/${projectId}/monthly-reports`, { token })
+      apiRequest<ClientPortalMonthlyReportsResponse>(`/client-portal/projects/${projectId}/monthly-reports`, { token }),
+      apiRequest<ClientPortalDeliverySummaryResponse>(`/client-portal/projects/${projectId}/delivery-summary`, { token })
     ]);
 
     if (requestSeq !== projectRequestSeq.current) {
@@ -381,9 +428,16 @@ export function ClientPortalPage() {
       setMonthlyReportsError(getErrorMessage(monthlyReportsResponse));
     }
 
+    if (deliverySummaryResponse.ok) {
+      setDeliverySummary(deliverySummaryResponse.data.deliverySummary ?? null);
+    } else {
+      setDeliverySummaryError(getErrorMessage(deliverySummaryResponse));
+    }
+
     setSelectedProjectLoading(false);
     setDeliverablesLoading(false);
     setMonthlyReportsLoading(false);
+    setDeliverySummaryLoading(false);
   }, []);
 
   useEffect(() => {
@@ -406,13 +460,16 @@ export function ClientPortalPage() {
       setSelectedProject(null);
       setDeliverables([]);
       setMonthlyReports([]);
+      setDeliverySummary(null);
       setSelectedProjectError(null);
       setDeliverablesError(null);
       setMonthlyReportsError(null);
+      setDeliverySummaryError(null);
       setSelectedMonthlyReportId(null);
       setSelectedProjectLoading(false);
       setDeliverablesLoading(false);
       setMonthlyReportsLoading(false);
+      setDeliverySummaryLoading(false);
       return;
     }
 
@@ -429,9 +486,11 @@ export function ClientPortalPage() {
     setSelectedProjectError(null);
     setDeliverablesError(null);
     setMonthlyReportsError(null);
+    setDeliverySummaryError(null);
     setSelectedProject(null);
     setDeliverables([]);
     setMonthlyReports([]);
+    setDeliverySummary(null);
     setSelectedProjectId(projectId);
   }, []);
 
@@ -552,7 +611,7 @@ export function ClientPortalPage() {
             Refresh
           </button>
         }
-        description="Read-only archive of approved deliverables and finalized monthly reports. Internal workflow data stays hidden."
+        description="Client-safe delivery visibility for Puriva MVP: market summary, SEO status, Google Docs, publishing handoff, deliverables, and monthly reports. Internal AI workflow data stays hidden."
         eyebrow="Client workspace"
         title="Client Portal"
         titleId="client-portal-title"
@@ -698,6 +757,112 @@ export function ClientPortalPage() {
                     Only approved or final archive items are shown here. Internal workflow runs, prompts, and admin notes stay hidden.
                   </div>
                 </article>
+              </SectionPanel>
+
+              <SectionPanel
+                description="Client-safe delivery status for this project month. Raw research, prompts, and admin notes stay hidden."
+                title="Delivery overview"
+                tone="compact"
+              >
+                {deliverySummaryLoading ? (
+                  <LoadingState label="Loading delivery overview" />
+                ) : deliverySummaryError ? (
+                  <ErrorState message={deliverySummaryError} title="Delivery overview unavailable" />
+                ) : deliverySummary ? (
+                  <div style={{ display: "grid", gap: "12px" }}>
+                    <article className="entity-card dense-record">
+                      <div className="dense-record-main">
+                        <div className="dense-title">
+                          <div className="dense-kicker">
+                            <StatusBadge status={deliverySummary.aiSeo?.contentPlanStatus ?? "DRAFT"} />
+                          </div>
+                          <h3>AI SEO / content plan</h3>
+                          <div className="dense-meta">
+                            <span>
+                              {deliverySummary.aiSeo
+                                ? `${deliverySummary.aiSeo.approvedItemCount} of ${deliverySummary.aiSeo.totalItemCount} plan items approved`
+                                : "No content plan yet"}
+                            </span>
+                            <span>
+                              {deliverySummary.aiSeo?.finalDeliverableCount ?? 0} final deliverable
+                              {(deliverySummary.aiSeo?.finalDeliverableCount ?? 0) === 1 ? "" : "s"}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </article>
+
+                    <article className="entity-card dense-record">
+                      <div className="dense-record-main">
+                        <div className="dense-title">
+                          <div className="dense-kicker">
+                            <StatusBadge status={deliverySummary.marketIntelligence?.status ?? "NONE"} />
+                          </div>
+                          <h3>Market Intelligence summary</h3>
+                          {deliverySummary.marketIntelligence?.marketSummary ? (
+                            <div className="dense-row-note">{deliverySummary.marketIntelligence.marketSummary}</div>
+                          ) : (
+                            <div className="dense-row-note muted-text">No client-safe market summary is available yet.</div>
+                          )}
+                          {deliverySummary.marketIntelligence?.recommendedActions.length ? (
+                            <div className="dense-row-note">
+                              <strong>Recommended actions: </strong>
+                              {deliverySummary.marketIntelligence.recommendedActions.join(" · ")}
+                            </div>
+                          ) : null}
+                        </div>
+                      </div>
+                    </article>
+
+                    <article className="entity-card dense-record">
+                      <div className="dense-record-main">
+                        <div className="dense-title">
+                          <div className="dense-kicker">
+                            <StatusBadge status={deliverySummary.websitePublishing?.status ?? "NONE"} />
+                          </div>
+                          <h3>Website publishing handoff</h3>
+                          <div className="dense-meta">
+                            <span>{deliverySummary.websitePublishing?.action ?? "No publishing activity yet"}</span>
+                            {deliverySummary.websitePublishing?.siteUrlHost ? (
+                              <span>{deliverySummary.websitePublishing.siteUrlHost}</span>
+                            ) : null}
+                          </div>
+                          {!deliverySummary.websitePublishing ? (
+                            <div className="dense-row-note muted-text">
+                              Publishing status appears here after admin prepares or publishes content.
+                            </div>
+                          ) : null}
+                        </div>
+                      </div>
+                    </article>
+
+                    <article className="entity-card dense-record">
+                      <div className="dense-record-main">
+                        <div className="dense-title">
+                          <h3>Google Docs exports</h3>
+                          {deliverySummary.googleDocsExports.length === 0 ? (
+                            <div className="dense-row-note muted-text">No client-safe export links are available yet.</div>
+                          ) : (
+                            <div className="dense-list">
+                              {deliverySummary.googleDocsExports.map((item) => (
+                                <div className="dense-meta" key={item.id}>
+                                  <span>{item.title}</span>
+                                  {item.exportUrl ? (
+                                    <a href={item.exportUrl} rel="noreferrer" target="_blank">
+                                      Open Google Doc
+                                    </a>
+                                  ) : null}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </article>
+                  </div>
+                ) : (
+                  <EmptyState message="Delivery overview is not available for this project yet." title="No delivery overview" />
+                )}
               </SectionPanel>
 
               <SectionPanel
@@ -881,15 +1046,14 @@ export function ClientPortalPage() {
       </div>
 
       <SectionPanel
-        description="These client-facing workflows are intentionally deferred."
-        title="Coming later"
+        description="Advanced portal features remain phased after MVP visibility and review scope."
+        title="Advanced portal features (phased)"
         tone="compact"
       >
         <ul className="muted-text" style={{ margin: 0, paddingLeft: "1.25rem" }}>
-          <li>Content plan reviews</li>
-          <li>Content draft reviews</li>
-          <li>Client comments and revision messaging</li>
-          <li>Client approval actions</li>
+          <li>Public magic links</li>
+          <li>Full interactive comment threads</li>
+          <li>Advanced content plan and draft review routes</li>
         </ul>
       </SectionPanel>
     </section>

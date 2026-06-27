@@ -1629,7 +1629,7 @@ async function runAiDeliveryApiRegression(token, fixtureProjects) {
     token
   });
   if (![400, 409].includes(deferredReadyDeliverableResponse.status) || deferredReadyDeliverableResponse.body?.ok !== false) {
-    fail("AI Delivery deliverable mark-ready accepted a draft while Client Portal approval is deferred.");
+    fail("AI Delivery deliverable mark-ready accepted a draft while advanced Client Portal approval routes remain phased.");
   }
   pass("AI Delivery deliverable mark-ready remained blocked until client approval is enabled.");
 

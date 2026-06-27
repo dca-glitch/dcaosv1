@@ -241,6 +241,28 @@ async function main() {
     "storageKey absent"
   );
 
+  // ── 8b. Delivery summary accessible after linking ─────────────────────────
+  const deliverySummary = await request(
+    `/client-portal/projects/${createdAiProject.id}/delivery-summary`,
+    { token: adminToken }
+  );
+  record(
+    "client portal delivery summary 200 after ClientUserAccess",
+    deliverySummary.status === 200 && deliverySummary.body?.ok === true,
+    `${deliverySummary.status}`
+  );
+  record(
+    "client portal delivery summary has deliverySummary object",
+    typeof deliverySummary.body?.data?.deliverySummary === "object" &&
+      deliverySummary.body?.data?.deliverySummary !== null,
+    "deliverySummary present"
+  );
+  record(
+    "client portal delivery summary no storageKey",
+    !clientPortalResponseHasSensitiveFields(deliverySummary),
+    "storageKey absent"
+  );
+
   // ── 9. Deliverables list: DRAFT excluded — proves DELIVERED/ACCEPTED filter ──
   const afterLinkDeliverables = await request(
     `/client-portal/projects/${createdAiProject.id}/deliverables`,

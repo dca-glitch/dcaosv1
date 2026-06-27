@@ -302,6 +302,181 @@ export async function getClientPortalDeliverableDownloadReference(
   };
 }
 
+function toClientSafeStringList(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .filter((item): item is string => typeof item === "string" && item.trim().length > 0)
+    .slice(0, 12);
+}
+
+async function assertClientPortalProjectAccess(
+  authSession: AuthResolvedSessionContext,
+  projectId: string
+): Promise<{ tenantId: string; clientId: string } | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) return null;
+
+  const userId = authSession.user.id;
+
+  const project = await prisma.aiDeliveryProject.findFirst({
+    where: { id: projectId, tenantId, isArchived: false },
+    select: { id: true, clientId: true }
+  });
+
+  if (!project) return null;
+
+  const access = await hasClientAccess(tenantId, project.clientId, userId);
+  if (!access) return null;
+
+  return { tenantId, clientId: project.clientId };
+}
+
+export async function getClientPortalDeliverySummary(
+  authSession: AuthResolvedSessionContext,
+  projectId: string
+) {
+  const access = await assertClientPortalProjectAccess(authSession, projectId);
+  if (!access) return null;
+
+  const { tenantId, clientId } = access;
+
+  const [handoff, contentPlan, deliverables, publicationLog] = await Promise.all([
+    prisma.marketIntelligenceHandoff.findFirst({
+      where: {
+        tenantId,
+        aiDeliveryProjectId: projectId,
+        clientId,
+        isArchived: false,
+        handoffStatus: { in: ["READY", "APPLIED"] }
+      },
+      orderBy: [{ updatedAt: "desc" }],
+      select: {
+        title: true,
+        marketSummary: true,
+        opportunities: true,
+        recommendedActions: true,
+        handoffStatus: true,
+        updatedAt: true
+      }
+    }),
+    prisma.aiDeliveryContentPlan.findFirst({
+      where: { tenantId, aiDeliveryProjectId: projectId },
+      select: {
+        status: true,
+        approvedAt: true,
+        updatedAt: true,
+        items: {
+          select: { approvalStatus: true },
+          where: { tenantId }
+        }
+      }
+    }),
+    (prisma as any).aiDeliveryDeliverable.findMany({
+      where: {
+        tenantId,
+        aiDeliveryProjectId: projectId,
+        isArchived: false,
+        status: { in: CLIENT_PORTAL_VISIBLE_STATUSES }
+      },
+      select: {
+        id: true,
+        title: true,
+        exportUrl: true,
+        deliveryType: true,
+        status: true,
+        updatedAt: true
+      },
+      orderBy: [{ updatedAt: "desc" }]
+    }),
+    prisma.publicationLog.findFirst({
+      where: {
+        tenantId,
+        clientId,
+        aiDeliveryProjectId: projectId
+      },
+      orderBy: [{ createdAt: "desc" }],
+      select: {
+        action: true,
+        status: true,
+        siteUrlHost: true,
+        createdAt: true
+      }
+    })
+  ]);
+
+  const approvedPlanItems =
+    contentPlan?.items.filter((item) => item.approvalStatus === "CLIENT_APPROVED").length ?? 0;
+  const totalPlanItems = contentPlan?.items.length ?? 0;
+
+  const googleDocsExports = (deliverables as Array<{
+    id: string;
+    title: string;
+    exportUrl: string | null;
+    deliveryType: string;
+    status: string;
+    updatedAt: Date;
+  }>)
+    .filter((deliverable) => typeof deliverable.exportUrl === "string" && deliverable.exportUrl.trim().length > 0)
+    .map((deliverable) => ({
+      id: deliverable.id,
+      title: deliverable.title,
+      exportUrl: deliverable.exportUrl,
+      deliveryType: deliverable.deliveryType,
+      status: deliverable.status,
+      updatedAt:
+        deliverable.updatedAt instanceof Date
+          ? deliverable.updatedAt.toISOString()
+          : deliverable.updatedAt
+    }));
+
+  return {
+    deliverySummary: {
+      marketIntelligence: handoff
+        ? {
+            title: handoff.title,
+            marketSummary: handoff.marketSummary ?? null,
+            opportunities: toClientSafeStringList(handoff.opportunities),
+            recommendedActions: toClientSafeStringList(handoff.recommendedActions),
+            status: handoff.handoffStatus,
+            updatedAt:
+              handoff.updatedAt instanceof Date ? handoff.updatedAt.toISOString() : handoff.updatedAt
+          }
+        : null,
+      aiSeo: contentPlan
+        ? {
+            contentPlanStatus: contentPlan.status,
+            approvedItemCount: approvedPlanItems,
+            totalItemCount: totalPlanItems,
+            approvedAt:
+              contentPlan.approvedAt instanceof Date
+                ? contentPlan.approvedAt.toISOString()
+                : (contentPlan.approvedAt ?? null),
+            updatedAt:
+              contentPlan.updatedAt instanceof Date
+                ? contentPlan.updatedAt.toISOString()
+                : contentPlan.updatedAt,
+            finalDeliverableCount: (deliverables as unknown[]).length
+          }
+        : null,
+      websitePublishing: publicationLog
+        ? {
+            action: publicationLog.action,
+            status: publicationLog.status,
+            siteUrlHost: publicationLog.siteUrlHost ?? null,
+            updatedAt:
+              publicationLog.createdAt instanceof Date
+                ? publicationLog.createdAt.toISOString()
+                : publicationLog.createdAt
+          }
+        : null,
+      googleDocsExports
+    }
+  };
+}
+
 export async function getClientPortalMonthlyReportDownloadReference(
   authSession: AuthResolvedSessionContext,
   projectId: string,
