@@ -73,7 +73,13 @@ function normalizePublicationSiteUrl(value: string): string | null {
 }
 
 function hasForbiddenCredentialField(input: Record<string, unknown>): boolean {
-  return Object.keys(input).some((key) => FORBIDDEN_CREDENTIAL_KEYS.includes(key.toLowerCase()));
+  return Object.keys(input).some((key) => {
+    const normalized = key.toLowerCase();
+    if (normalized === "applicationpassword") {
+      return false;
+    }
+    return FORBIDDEN_CREDENTIAL_KEYS.includes(normalized);
+  });
 }
 
 async function getTenantClient(tx: PrismaTx, tenantId: string, clientId: string) {
