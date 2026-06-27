@@ -2,9 +2,8 @@ import { type FormEvent, useMemo, useState } from "react";
 import { EmptyState } from "../../components/EmptyState";
 import { ErrorState } from "../../components/ErrorState";
 import { LoadingState } from "../../components/LoadingState";
-import { SectionPanel } from "../../components/ui";
+import { PageHeader, StatusBadge } from "../../components/ui";
 import { Modal } from "../../components/Modal";
-import { StatusBadge } from "../../components/ui";
 import type { ClientSummary } from "../clients/ClientsPage";
 import type { TaskSummary } from "../tasks/TasksPage";
 
@@ -162,44 +161,40 @@ export function ProjectsPage({
 
   return (
     <section className="view-section" aria-labelledby="projects-title">
-      <div className="section-header">
-        <div>
-          <p className="eyebrow">Delivery</p>
-          <h1 id="projects-title">Projects</h1>
-        </div>
-        <div className="toolbar">
-          <div className="filter-bar" role="group" aria-label="Projects filter">
-            {(["active", "archived", "all"] as const).map((value) => (
-              <button
-                aria-pressed={filter === value}
-                className={filter === value ? "secondary-action filter-chip is-active" : "secondary-action filter-chip"}
-                key={value}
-                onClick={() => setFilter(value)}
-                type="button"
-              >
-                {value[0].toUpperCase() + value.slice(1)}
+      <PageHeader
+        eyebrow="Delivery"
+        title="Projects"
+        titleId="projects-title"
+        description="Organize delivery work by client. Related: Clients, AI Delivery, Tasks."
+        actions={
+          <>
+            <div className="filter-bar" role="group" aria-label="Projects filter">
+              {(["active", "archived", "all"] as const).map((value) => (
+                <button
+                  aria-pressed={filter === value}
+                  className={filter === value ? "secondary-action filter-chip is-active" : "secondary-action filter-chip"}
+                  key={value}
+                  onClick={() => setFilter(value)}
+                  type="button"
+                >
+                  {value[0].toUpperCase() + value.slice(1)}
+                </button>
+              ))}
+            </div>
+            {canEdit ? (
+              <button className="primary-action" onClick={openCreateModal} type="button">
+                Add Project
               </button>
-            ))}
-          </div>
-          {canEdit ? (
-            <button className="primary-action" onClick={openCreateModal} type="button">
-              Add Project
-            </button>
-          ) : null}
-        </div>
-      </div>
+            ) : null}
+          </>
+        }
+      />
 
-      <SectionPanel
-        tone="compact"
-        title="Delivery cross-links"
-        description="Monthly AI Delivery projects link from the same client record. Use Client Hub for publication targets and logs."
-      >
-        <div className="quick-link-list">
-          <a href="#/clients">Open Clients</a>
-          <a href="#/ai-delivery">Open AI Delivery</a>
-          <a href="#/tasks">Open Tasks</a>
-        </div>
-      </SectionPanel>
+      <div className="quick-link-list projects-quick-links">
+        <a className="subtle-action" href="#/clients">Clients</a>
+        <a className="subtle-action" href="#/ai-delivery">AI Delivery</a>
+        <a className="subtle-action" href="#/tasks">Tasks</a>
+      </div>
 
       {filteredProjects.length === 0 ? (
         <EmptyState message="No projects match the current filter." title="No projects" />
@@ -222,14 +217,6 @@ export function ProjectsPage({
 
                 <div className="dense-fields">
                   <div className="dense-field">
-                    <span>Client</span>
-                    <strong>{project.client?.name ?? "No client"}</strong>
-                  </div>
-                  <div className="dense-field">
-                    <span>Status</span>
-                    <strong>{project.status}</strong>
-                  </div>
-                  <div className="dense-field">
                     <span>Open tasks</span>
                     <strong>{project.openTaskCount} / {project.taskCount}</strong>
                   </div>
@@ -240,7 +227,7 @@ export function ProjectsPage({
                 </div>
 
                 <div className="dense-actions">
-                  {canEdit ? <button className="primary-action" onClick={() => openEditModal(project)} type="button">Open</button> : null}
+                  {canEdit ? <button className="secondary-action" onClick={() => openEditModal(project)} type="button">Open</button> : null}
                   {canEdit ? (
                     <details className="row-action-menu">
                       <summary>More</summary>

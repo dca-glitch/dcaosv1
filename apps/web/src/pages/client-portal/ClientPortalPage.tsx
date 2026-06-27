@@ -313,6 +313,57 @@ function isFinalDeliverable(status: string) {
   return ["DELIVERED", "ACCEPTED"].includes(status);
 }
 
+function toClientPortalStatusLabel(status: string | null | undefined): string | null {
+  if (!status || !status.trim()) {
+    return null;
+  }
+
+  const normalized = status.trim().toUpperCase();
+  if (["DRAFT", "NONE", "PENDING", "NOT_STARTED", "IN_PROGRESS"].includes(normalized)) {
+    return null;
+  }
+
+  if (normalized === "ADMIN_REVIEW") {
+    return "Under review";
+  }
+
+  if (normalized === "FINAL") {
+    return "Complete";
+  }
+
+  if (normalized === "DELIVERED") {
+    return "Delivered";
+  }
+
+  if (normalized === "ACCEPTED") {
+    return "Accepted";
+  }
+
+  if (normalized === "ACTIVE") {
+    return "Active";
+  }
+
+  if (normalized === "ARCHIVED") {
+    return "Archived";
+  }
+
+  if (normalized === "APPROVED") {
+    return "Approved";
+  }
+
+  return status
+    .toLowerCase()
+    .replace(/_/g, " ")
+    .replace(/(^|\s)\S/g, (segment) => segment.toUpperCase());
+}
+
+function toClientPortalDeliveryTypeLabel(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/_/g, " ")
+    .replace(/(^|\s)\S/g, (segment) => segment.toUpperCase());
+}
+
 function formatMetricValue(value: number | null | undefined): string {
   if (value === null || value === undefined || Number.isNaN(value)) {
     return "Not set";
@@ -331,8 +382,17 @@ function formatPercentValue(value: number | null | undefined): string {
 
 function projectCardStyle(selected: boolean): CSSProperties | undefined {
   return selected
-    ? { borderColor: "rgba(82, 224, 255, 0.32)", background: "rgba(82, 224, 255, 0.06)" }
+    ? { borderColor: "rgba(82, 224, 255, 0.28)", background: "rgba(82, 224, 255, 0.04)" }
     : undefined;
+}
+
+function ClientPortalStatusBadge({ status }: { status: string | null | undefined }) {
+  const label = toClientPortalStatusLabel(status);
+  if (!label) {
+    return null;
+  }
+
+  return <StatusBadge status={label} />;
 }
 
 export function ClientPortalPage() {
@@ -800,7 +860,6 @@ export function ClientPortalPage() {
 
   const projectCount = projects.length;
   const finalDeliverableCount = deliverables.filter((deliverable) => isFinalDeliverable(deliverable.status)).length;
-  const selectedProjectArchiveState = selectedProject ? (selectedProject.isArchived ? "Archived" : "Active") : "None";
   const selectedMonthlyReport = monthlyReports.find((report) => report.id === selectedMonthlyReportId) ?? null;
   const selectedMonthlyReportIndex = selectedMonthlyReport
     ? monthlyReports.findIndex((report) => report.id === selectedMonthlyReport.id)
@@ -839,17 +898,20 @@ export function ClientPortalPage() {
             Refresh
           </button>
         }
-        description="Read-only client archive: approved final deliverables, finalized monthly reports, and client-safe delivery summaries. Internal drafts, prompts, workflow runs, AI costs, credentials, and admin notes are never shown here."
+        description="Read-only archive of approved deliverables and finalized monthly reports."
         eyebrow="Client workspace"
         title="Client Portal"
         titleId="client-portal-title"
       />
 
-      <div className="summary-grid metric-grid">
+      <div className="summary-grid metric-grid portal-metric-grid">
         <MetricCard accent="cyan" helper="Linked delivery projects" label="Projects" value={String(projectCount)} />
-        <MetricCard accent="violet" helper="Current selection" label="Selected project" value={selectedProject?.name ?? "None"} />
-        <MetricCard accent="purple" helper="DELIVERED / ACCEPTED only" label="Final deliverables" value={deliverablesLoading ? "..." : String(finalDeliverableCount)} />
-        <MetricCard accent="warning" helper="Archive state" label="Status" value={selectedProjectArchiveState} />
+        <MetricCard
+          accent="purple"
+          helper="Delivered or accepted only"
+          label="Final deliverables"
+          value={deliverablesLoading ? "…" : String(finalDeliverableCount)}
+        />
       </div>
 
       {projectsError ? (
@@ -858,8 +920,8 @@ export function ClientPortalPage() {
         </div>
       ) : null}
 
-      <div style={{ alignItems: "start", display: "grid", gap: "14px", gridTemplateColumns: "minmax(240px, 280px) minmax(0, 1fr)" }}>
-        <aside className="entity-card">
+      <div className="portal-split-layout">
+        <aside className="entity-card portal-project-sidebar">
           <div className="entity-card-header">
             <div>
               <p className="eyebrow">Archive</p>
@@ -887,10 +949,10 @@ export function ClientPortalPage() {
               title="No projects"
             />
           ) : (
-            <div className="dense-list">
+            <div className="dense-list portal-project-list">
               {filteredProjects.map((project) => (
                 <article
-                  className="entity-card dense-record"
+                  className={`entity-card dense-record portal-record${selectedProjectId === project.id ? " portal-record-selected" : ""}`}
                   key={project.id}
                   onClick={() => handleSelectProject(project.id)}
                   onKeyDown={(event) => {
@@ -906,7 +968,7 @@ export function ClientPortalPage() {
                   <div className="dense-record-main" style={{ gridTemplateColumns: "minmax(0, 1fr) auto" }}>
                     <div className="dense-title">
                       <div className="dense-kicker">
-                        <StatusBadge status={project.isArchived ? "ARCHIVED" : "ACTIVE"} />
+                        <ClientPortalStatusBadge status={project.isArchived ? "ARCHIVED" : "ACTIVE"} />
                       </div>
                       <h3>{project.name}</h3>
                       <div className="dense-meta">
@@ -916,14 +978,14 @@ export function ClientPortalPage() {
                     </div>
                     <div className="dense-actions">
                       <button
-                        className={selectedProjectId === project.id ? "primary-action" : "secondary-action"}
+                        className={`secondary-action${selectedProjectId === project.id ? " filter-chip is-active" : ""}`}
                         onClick={(event) => {
                           event.stopPropagation();
                           handleSelectProject(project.id);
                         }}
                         type="button"
                       >
-                        {selectedProjectId === project.id ? "Open" : "View"}
+                        {selectedProjectId === project.id ? "Selected" : "View"}
                       </button>
                     </div>
                   </div>
@@ -933,7 +995,7 @@ export function ClientPortalPage() {
           )}
         </aside>
 
-        <div style={{ display: "grid", gap: "14px" }}>
+        <div className="portal-detail-column">
           {!selectedProjectId ? (
             <SectionPanel
               description="Choose a project from the list to view deliverables and monthly reports."
@@ -957,13 +1019,12 @@ export function ClientPortalPage() {
                   <div className="dense-record-main">
                     <div className="dense-title">
                       <div className="dense-kicker">
-                        <StatusBadge status={selectedProject.isArchived ? "ARCHIVED" : "ACTIVE"} />
+                        <ClientPortalStatusBadge status={selectedProject.isArchived ? "ARCHIVED" : "ACTIVE"} />
                       </div>
                       <h3>{selectedProject.name}</h3>
                       <div className="dense-meta">
-                        <span>{selectedProject.client?.name ?? "Not set"}</span>
+                        <span>{selectedProject.client?.name ?? "Your account"}</span>
                         <span>{formatMonthLabel(selectedProject.targetMonth)}</span>
-                        <span>{selectedProject.project?.name ?? "No linked project"}</span>
                       </div>
                     </div>
                     <div className="dense-fields">
@@ -982,13 +1043,13 @@ export function ClientPortalPage() {
                     </div>
                   </div>
                   <div className="dense-row-note">
-                    Only approved or final archive items are shown here. Internal workflow runs, prompts, and admin notes stay hidden.
+                    Only approved or final archive items appear here.
                   </div>
                 </article>
               </SectionPanel>
 
               <SectionPanel
-                description="Client-safe delivery status for this project month. Raw research, prompts, and admin notes stay hidden."
+                description="Client-safe delivery status for this project month."
                 title="Delivery overview"
                 tone="compact"
               >
@@ -1002,9 +1063,9 @@ export function ClientPortalPage() {
                       <div className="dense-record-main">
                         <div className="dense-title">
                           <div className="dense-kicker">
-                            <StatusBadge status={deliverySummary.aiSeo?.contentPlanStatus ?? "DRAFT"} />
+                            <ClientPortalStatusBadge status={deliverySummary.aiSeo?.contentPlanStatus} />
                           </div>
-                          <h3>AI SEO / content plan</h3>
+                          <h3>Content plan</h3>
                           <div className="dense-meta">
                             <span>
                               {deliverySummary.aiSeo
@@ -1024,9 +1085,9 @@ export function ClientPortalPage() {
                       <div className="dense-record-main">
                         <div className="dense-title">
                           <div className="dense-kicker">
-                            <StatusBadge status={deliverySummary.marketIntelligence?.status ?? "NONE"} />
+                            <ClientPortalStatusBadge status={deliverySummary.marketIntelligence?.status} />
                           </div>
-                          <h3>Market Intelligence summary</h3>
+                          <h3>Market summary</h3>
                           {deliverySummary.marketIntelligence?.marketSummary ? (
                             <div className="dense-row-note">{deliverySummary.marketIntelligence.marketSummary}</div>
                           ) : (
@@ -1046,9 +1107,9 @@ export function ClientPortalPage() {
                       <div className="dense-record-main">
                         <div className="dense-title">
                           <div className="dense-kicker">
-                            <StatusBadge status={deliverySummary.websitePublishing?.status ?? "NONE"} />
+                            <ClientPortalStatusBadge status={deliverySummary.websitePublishing?.status} />
                           </div>
-                          <h3>Website publishing status</h3>
+                          <h3>Website publishing</h3>
                           <div className="dense-meta">
                             <span>{deliverySummary.websitePublishing?.action ?? "No publishing activity yet"}</span>
                             {deliverySummary.websitePublishing?.siteUrlHost ? (
@@ -1057,13 +1118,9 @@ export function ClientPortalPage() {
                           </div>
                           {!deliverySummary.websitePublishing ? (
                             <div className="dense-row-note muted-text">
-                              Read-only handoff status appears here after your team prepares or publishes content. You cannot publish from this portal.
+                              Publishing status appears here after your team shares an update.
                             </div>
-                          ) : (
-                            <div className="dense-row-note muted-text">
-                              Status only — admin-managed publishing. No client-triggered publish actions.
-                            </div>
-                          )}
+                          ) : null}
                         </div>
                       </div>
                     </article>
@@ -1194,7 +1251,7 @@ export function ClientPortalPage() {
               </SectionPanel>
 
               <SectionPanel
-                description="DELIVERED and ACCEPTED deliverables only. Read-only archive — download or open published export links when your team shares them."
+                description="Delivered and accepted items only. Download when your team shares a link."
                 title="Final deliverables"
                 tone="compact"
               >
@@ -1210,7 +1267,7 @@ export function ClientPortalPage() {
                   <ErrorState message={deliverablesError} title="Deliverables unavailable" />
                 ) : deliverables.length === 0 ? (
                   <EmptyState
-                    message="Final deliverables appear here once your team marks them DELIVERED or ACCEPTED. Drafts and in-progress work stay admin-only."
+                    message="Final deliverables appear here once your team marks them complete and shares them to this archive."
                     title="No final deliverables yet"
                   />
                 ) : (
@@ -1220,8 +1277,8 @@ export function ClientPortalPage() {
                         <div className="dense-record-main">
                           <div className="dense-title">
                             <div className="dense-kicker">
-                              <StatusBadge status={deliverable.status} />
-                              <span className="entity-pill">{deliverable.deliveryType}</span>
+                              <ClientPortalStatusBadge status={deliverable.status} />
+                              <span className="entity-pill">{toClientPortalDeliveryTypeLabel(deliverable.deliveryType)}</span>
                             </div>
                             <h3>{deliverable.title}</h3>
                             <div className="dense-meta">
@@ -1229,20 +1286,10 @@ export function ClientPortalPage() {
                               {deliverable.exportUrl ? (
                                 <span>
                                   <a href={deliverable.exportUrl} rel="noreferrer" target="_blank">
-                                    Published export link
+                                    Open export
                                   </a>
                                 </span>
                               ) : null}
-                            </div>
-                          </div>
-                          <div className="dense-fields">
-                            <div className="dense-field">
-                              <span>Type</span>
-                              <strong>{deliverable.deliveryType}</strong>
-                            </div>
-                            <div className="dense-field">
-                              <span>Status</span>
-                              <strong>{deliverable.status}</strong>
                             </div>
                           </div>
                           <div className="dense-actions">
@@ -1266,8 +1313,8 @@ export function ClientPortalPage() {
               </SectionPanel>
 
               <SectionPanel
-                description="FINAL monthly reports only. Read-only view of completed work, admin-approved performance snapshots, and next-month recommendations."
-                title="Monthly report — final client view"
+                description="Finalized monthly reports with completed work and performance snapshots."
+                title="Monthly reports"
                 tone="compact"
               >
                 {monthlyReportsLoading ? (
@@ -1284,10 +1331,9 @@ export function ClientPortalPage() {
                     <div className="dense-list">
                       {monthlyReports.map((report, index) => (
                         <button
-                          className={selectedMonthlyReportId === report.id ? "primary-action" : "secondary-action"}
+                          className={`secondary-action portal-report-select${selectedMonthlyReportId === report.id ? " filter-chip is-active" : ""}`}
                           key={report.id}
                           onClick={() => setSelectedMonthlyReportId(report.id)}
-                          style={{ justifyContent: "space-between", textAlign: "left", width: "100%" }}
                           type="button"
                         >
                           <span>
@@ -1295,7 +1341,7 @@ export function ClientPortalPage() {
                             <br />
                             <span className="muted-text">{formatReportDate(report.finalizedAt)}</span>
                           </span>
-                          <StatusBadge status={report.status} />
+                          <ClientPortalStatusBadge status={report.status} />
                         </button>
                       ))}
                     </div>
@@ -1311,7 +1357,7 @@ export function ClientPortalPage() {
                             <div className="dense-record-main" style={{ alignItems: "start", gridTemplateColumns: "minmax(0, 1fr)" }}>
                               <div className="dense-title">
                                 <div className="dense-kicker">
-                                  <StatusBadge status={monthlyReportDetail.monthlyReport.status} />
+                                  <ClientPortalStatusBadge status={monthlyReportDetail.monthlyReport.status} />
                                   {selectedMonthlyReportIndex >= 0 ? (
                                     <span className="muted-text">
                                       Report {selectedMonthlyReportIndex + 1} of {monthlyReports.length}
@@ -1349,7 +1395,7 @@ export function ClientPortalPage() {
                             </div>
                           </article>
 
-                          <div className="metric-grid">
+                          <div className="summary-grid metric-grid portal-metric-grid">
                             <MetricCard
                               label="Final deliverables"
                               value={String(monthlyReportDetail.workSummary.finalDeliverableCount)}
@@ -1358,18 +1404,13 @@ export function ClientPortalPage() {
                             <MetricCard
                               label="Content plan items"
                               value={String(monthlyReportDetail.workSummary.contentPlanItemCount)}
-                              helper={`${monthlyReportDetail.workSummary.clientApprovedPlanItemCount} client-approved`}
-                            />
-                            <MetricCard
-                              label="Report document"
-                              value={monthlyReportDetail.monthlyReport.hasDocument ? "PDF ready" : "Not attached"}
-                              helper="Download when available"
+                              helper={`${monthlyReportDetail.workSummary.clientApprovedPlanItemCount} approved`}
                             />
                           </div>
 
                           {monthlyReportDetail.performanceSummary ? (
                             <SectionPanel
-                              description="Approved performance snapshot for this report month. Internal admin notes and raw provider data stay hidden."
+                              description="Approved performance snapshot for this report month."
                               title="Performance summary"
                               tone="compact"
                             >
@@ -1423,8 +1464,8 @@ export function ClientPortalPage() {
                                     <div className="dense-record-main">
                                       <div className="dense-title">
                                         <div className="dense-kicker">
-                                          <StatusBadge status={deliverable.status} />
-                                          <span className="entity-pill">{deliverable.deliveryType}</span>
+                                          <ClientPortalStatusBadge status={deliverable.status} />
+                                          <span className="entity-pill">{toClientPortalDeliveryTypeLabel(deliverable.deliveryType)}</span>
                                         </div>
                                         <h3>{deliverable.title}</h3>
                                       </div>
