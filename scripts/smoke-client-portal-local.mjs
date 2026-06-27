@@ -270,6 +270,24 @@ async function main() {
     !clientPortalResponseHasSensitiveFields(deliverySummary),
     "storageKey absent"
   );
+  const sparseSummary = deliverySummary.body?.data?.deliverySummary ?? null;
+  record(
+    "client portal sparse delivery summary has no market intelligence yet",
+    deliverySummary.status === 200 && sparseSummary?.marketIntelligence === null,
+    sparseSummary?.marketIntelligence ? "unexpected mi summary" : "mi null"
+  );
+  record(
+    "client portal sparse delivery summary has no google docs exports yet",
+    deliverySummary.status === 200 &&
+      Array.isArray(sparseSummary?.googleDocsExports) &&
+      sparseSummary.googleDocsExports.length === 0,
+    `${sparseSummary?.googleDocsExports?.length ?? "missing"}`
+  );
+  record(
+    "client portal sparse delivery summary has no website publishing yet",
+    deliverySummary.status === 200 && sparseSummary?.websitePublishing === null,
+    sparseSummary?.websitePublishing?.status ?? "null"
+  );
 
   // ── 8c. Puriva delivery path fixture (MI summary, Google Doc export, publishing status) ──
   await seedPurivaDeliverySummaryFixture({

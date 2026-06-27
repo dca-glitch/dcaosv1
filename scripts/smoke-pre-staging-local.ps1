@@ -57,12 +57,15 @@ try {
   Ensure-LocalWebForBrowserSmoke
   Invoke-NpmStep "Client portal browser smoke" "smoke:client-portal:browser"
   Invoke-NpmStep "Client portal edge cases browser smoke" "smoke:client-portal:edge-cases:browser"
+  Invoke-NpmStep "Client portal sparse delivery browser smoke" "smoke:client-portal:sparse-delivery:browser"
+  Invoke-NpmStep "Client portal access revoke browser smoke" "smoke:client-portal:access-revoke:browser"
   Invoke-NpmStep "Client domain browser smoke" "smoke:client-domain:browser"
   Invoke-NpmStep "Client portal monthly report browser smoke" "smoke:client-portal-monthly-report:browser"
   Invoke-NpmStep "AI Market Intelligence local smoke" "smoke:ai-market-intelligence"
 
-  Restart-LocalApiForSmoke "Restart local API to clear login rate limits before AI Delivery smoke"
+  Restart-LocalApiForSmoke "Restart local API to clear login rate limits before backend-heavy smokes"
 
+  Invoke-NpmStep "Google Drive export local smoke" "smoke:google-drive-export"
   Invoke-NpmStep "AI Delivery reviews smoke" "smoke:ai-delivery-reviews"
   Invoke-NpmStep "Credential encryption local smoke" "smoke:credential-encryption:local"
   Invoke-NpmStep "WordPress publish local smoke" "smoke:wordpress-publish:local"
