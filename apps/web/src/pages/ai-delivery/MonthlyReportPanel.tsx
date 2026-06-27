@@ -767,7 +767,7 @@ export function MonthlyReportPanel({
       {/* Computed Summary Section */}
       <SectionPanel
         className="monthly-report-summary-panel"
-        description="Read-only admin overview from project records. GA/GSC live sync and PDF generation remain deferred."
+        description="Read-only admin overview from project records. Only APPROVED metric snapshots become client-visible in FINAL reports. Live GA/GSC sync remains deferred."
         title="Computed Monthly Summary"
       >
         {summaryLoading ? (
@@ -991,7 +991,11 @@ export function MonthlyReportPanel({
 
               {normalizedStatus === "FINAL" ? (
                 <p className="muted-text" style={{ marginTop: "0.5rem" }}>
-                  This report is final. Recommendations, completed deliverables, approved performance metrics, and the PDF appear in the Client Portal final monthly report view for linked client users.
+                  This report is FINAL and client-safe. Linked client users see recommendations, completed deliverables, approved performance snapshots, and the PDF in Client Portal — not admin notes or raw provider data.
+                </p>
+              ) : normalizedStatus !== "ARCHIVED" ? (
+                <p className="muted-text" style={{ marginTop: "0.5rem" }}>
+                  Draft and review states are admin-only. Mark FINAL only after human review; clients never see working copies.
                 </p>
               ) : null}
               {normalizedStatus === "ARCHIVED" ? (

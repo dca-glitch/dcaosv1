@@ -1,7 +1,7 @@
 # DCA OS Lite — Project Completion Overview
 
 **Status:** Planning and operator reference  
-**Last updated:** 2026-06-27  
+**Last updated:** 2026-06-27 (G1 staging target closed — pre-VPS sprint docs alignment)
 **Reference branch:** `main` after PR #13 merge  
 **Reference commits:** PR #13 merge `584e041bd85e8179e795a0e4621a0d9d8908e0b6`; follow-up docs commit `07b1f1668d11cdef42b195cfad189c4df645acc6`  
 **Scope:** Approved local admin MVP + client/domain operating model (blocks 1–6) + **MVP 1 Puriva client delivery** + **Post-MVP local closeout (Blocks 31–57)** + **Phase F local completion (Blocks 58–77)**. Local `main` is synced and validated. VPS/production intentionally excluded until separate owner approval.
@@ -35,7 +35,7 @@ Related documents:
 | **PR #13 merge to main** | **100%** | Merged; local `main` synced to `origin/main` |
 | **Local main validation** | **100%** | Passed after Windows Prisma DLL lock cleanup |
 | **Local pre-staging proof** | **95%** | Accepted; isolated Finance admin browser smoke passed after local admin restore and API/Web restart |
-| **Confirmed staging target** | **0%** | Missing / not confirmed; `system.digitalcubeagency.net` is live production VPS target, not staging |
+| **Confirmed staging target** | **100%** | G1 closed — `staging.digitalcubeagency.net`; production remains `system.digitalcubeagency.net`; same VPS, separate staging stack; DNS not created yet; G4 not approved |
 | **Current main deployed to production** | **0%** | Not deployed; production frozen |
 | **Full PRD vision** (future modules + automation) | **~28%** | Large portion intentionally deferred |
 
@@ -82,12 +82,12 @@ Related documents:
 | **PR #13 merge → main** | **100%** | Done | Merged at `584e041bd85e8179e795a0e4621a0d9d8908e0b6`; follow-up docs commit `07b1f1668d11cdef42b195cfad189c4df645acc6` |
 | **Local main validation** | **100%** | Done | Passed after Windows Prisma DLL lock cleanup |
 | **Local pre-staging proof** | **95%** | Accepted | Full pre-staging reached Finance admin browser smoke; isolated Finance smoke passed after local admin restore and API/Web restart |
-| **Confirmed staging target** | **0%** | Missing | No separate staging host confirmed; `system.digitalcubeagency.net` is a live production VPS target, not staging |
+| **Confirmed staging target** | **100%** | Done (G1) | `staging.digitalcubeagency.net` approved; production `system.digitalcubeagency.net`; separate staging stack on same VPS; DNS deferred until G4 prep; G4 VPS execution not approved |
 | **Current main deployed to production** | **0%** | Deferred | Not deployed; no VPS migration, restart, or release performed |
 | **Production deployment of current main** | **0%** | Deferred | Frozen unless explicitly approved |
 | **Licensee tenant migration** (`OWN_DOMAIN` → separate tenant) | **0%** | Deferred | Future block |
-| **Revenue Hub AI** | **0%** | Deferred | Future module |
-| **POD AI Toolkit** | **0%** | Deferred | Future module |
+| **Revenue Hub AI** | **0%** | Deferred (RH0 docs) | Future module — see [`REVENUE_HUB_AI_RH0_OPERATING_MODEL.md`](./architecture/REVENUE_HUB_AI_RH0_OPERATING_MODEL.md) |
+| **POD AI Toolkit** | **0%** | Deferred (POD0 docs) | Future module — see [`POD_AI_TOOLKIT_POD0_OPERATING_MODEL.md`](./architecture/POD_AI_TOOLKIT_POD0_OPERATING_MODEL.md) |
 | **Scraping / broad data collection** | **0%** | Deferred | Future module |
 | **Live GA/GSC, Google OAuth** | **0%** | Deferred | Snapshot-first only today |
 | **Live WordPress auto-publish (prod)** | **0%** | Deferred | Draft handoff yes; auto-publish no |
@@ -133,8 +133,9 @@ Related documents:
 
 ### Waiting — owner / environment gates (not local repo work)
 
-- Confirm or create a real staging target; do not treat `system.digitalcubeagency.net` as staging
-- VPS/staging execution remains unavailable until a target is confirmed and explicitly approved
+- G1 staging target confirmed: `staging.digitalcubeagency.net` (production remains `system.digitalcubeagency.net`; same VPS, separate staging stack)
+- DNS for `staging` subdomain not created yet — required before G4 controlled VPS staging execution
+- Block G4 VPS/staging execution **not approved** — no deploy, Caddy, Docker, or env changes until separate owner approval
 - Staging env: Block 4 master key, Block 5 publish, Block 6 `TENANT_MODULE_ENFORCEMENT`
 - Staging smoke (`smoke:mvp:staging`) + browser QA on confirmed HTTPS staging host
 - Production deployment of current `main` remains **0%** and frozen until separate approval
@@ -172,6 +173,7 @@ Do not treat local smoke alone as production readiness.
 
 | Date | Change |
 |------|--------|
+| 2026-06-27 | G1 closed: staging host `staging.digitalcubeagency.net`; production `system.digitalcubeagency.net`; G4 not approved; DNS not created |
 | 2026-06-27 | Phase F Block 77: local closeout complete — Blocks 58–77 validated on `feature/local-closeout-blocks-58-77` |
 | 2026-06-27 | Phase F Block 58: docs consistency — aligned Portal/WP/MI/R2 labels and blocks 4–6 percentages |
 | 2026-06-27 | Puriva MVP local closeout complete (Blocks 7–30 index, populated delivery browser, login shell pre-staging) |

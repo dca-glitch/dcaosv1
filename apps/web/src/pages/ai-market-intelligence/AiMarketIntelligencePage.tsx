@@ -466,7 +466,7 @@ export function AiMarketIntelligencePage({ clients }: AiMarketIntelligencePagePr
             New research project
           </button>
         }
-        description="Admin-only competitive research. Follow the workflow below, then attach READY handoffs inside AI Delivery."
+        description="Admin-only competitive research. Sources are manually recorded and admin-reviewed — no live crawling. Approve insights, prepare READY handoffs, then attach them inside AI Delivery."
         eyebrow="Research"
         title="Market Intelligence"
         titleId="market-intelligence-title"
@@ -617,7 +617,7 @@ export function AiMarketIntelligencePage({ clients }: AiMarketIntelligencePagePr
                     Add source
                   </button>
                 }
-                description="URLs, competitor pages, and internal notes used as research evidence."
+                description="Manually recorded URLs, competitor pages, and internal notes. Approve or reject each source before it informs insights or handoffs. No automatic fetching or broad scraping."
                 title="Research sources"
                 tone="compact"
               >
@@ -761,7 +761,7 @@ export function AiMarketIntelligencePage({ clients }: AiMarketIntelligencePagePr
               </SectionPanel>
 
               <SectionPanel
-                description="Admin-only bridge to AI Delivery. Set handoff to READY, then attach it from the AI Delivery project screen."
+                description="Admin-only bridge to AI Delivery and monthly reports. Only admin-reviewed summaries become handoffs. Set READY, then attach from the AI Delivery project screen. Raw source archives are not client-visible."
                 title="Internal handoffs"
                 tone="compact"
               >

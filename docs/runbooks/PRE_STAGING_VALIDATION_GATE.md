@@ -4,7 +4,11 @@
 
 **Purpose:** Confirm the local repository baseline before any future staging approval. PR #13 is already merged into `main`; this gate remains local-only and does not authorize VPS execution.
 
-**Forbidden in this gate:** VPS login, Docker Compose apply, Caddy/DNS changes, staging migrations, production env, `smoke:mvp:staging` unless owner explicitly approves staging host access.
+**Phase G context (2026-06-27):** G1 closed — staging host `staging.digitalcubeagency.net`; production `system.digitalcubeagency.net`; G4 **not approved**; DNS **not created**. Run long validation/smoke from **external PowerShell**, not inside Cursor agent sessions.
+
+**Forbidden in this gate:** VPS login, Docker Compose apply, Caddy/DNS changes, staging migrations, production env, `smoke:mvp:staging` unless owner explicitly approves G4 and staging host access.
+
+**Run location:** Use a local PowerShell terminal outside Cursor for `npm run validate` and `npm run smoke:pre-staging:local` (long-running). Cursor agents should not start API/Web servers or run full smoke suites during doc-only or UI-copy tasks.
 
 Related:
 
@@ -136,14 +140,15 @@ See block operator docs under `docs/security/`.
 - Finance admin browser smoke initially hit local HTTP **429** admin login/rate-limit.
 - After `restore-local-admin` and API/Web restart, isolated Finance browser smoke passed.
 - No deploy, VPS migration, production restart, or release was performed.
-- `system.digitalcubeagency.net` is a live production VPS target, not a confirmed staging target.
+- G1 staging target: `staging.digitalcubeagency.net` (production: `system.digitalcubeagency.net`; DNS not created; G4 not approved).
 
 ## After local closeout (owner decision — not this gate)
 
-1. Confirm or create a real staging target; do not use `system.digitalcubeagency.net` as staging unless the owner explicitly reclassifies infrastructure.
-2. Approve VPS/staging execution pack for the confirmed staging target.
-3. Deploy exact commit to the confirmed staging host.
-4. Run `npm run smoke:mvp:staging` against HTTPS staging API.
-5. Block 4/5/6 prod env gates on staging.
+1. G1 staging target is confirmed: `staging.digitalcubeagency.net` (production remains `system.digitalcubeagency.net`).
+2. Create DNS `staging` A record during G4 prep only — **not created yet**.
+3. Approve Block G4 VPS/staging execution pack separately — **not approved today**.
+4. Deploy exact commit to staging stack on VPS after G4 approval.
+5. Run `npm run smoke:mvp:staging` against `https://staging.digitalcubeagency.net/api/v1`.
+6. Block 4/5/6 prod env gates on staging.
 
-Local repo work can be **complete** while staging remains **missing/not confirmed** and production remains **frozen**.
+Local repo work can be **complete** while G4 VPS execution remains **not approved** and production remains **frozen**.

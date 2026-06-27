@@ -8,7 +8,7 @@
 
 **Production system:** `system.digitalcubeagency.net` — final DCA OS login and application location.
 
-Post-merge deployment note: PR #13 is merged into `main` and local `main` is validated, but current `main` is **0% deployed** to production. `system.digitalcubeagency.net` is a live production VPS target, not a confirmed staging target.
+Post-merge deployment note: PR #13 is merged into `main` and local `main` is validated, but current `main` is **0% deployed** to production. **Production:** `system.digitalcubeagency.net`. **Staging (G1 approved):** `staging.digitalcubeagency.net` — same VPS, separate stack; DNS not created yet; G4 not approved.
 
 Implementation priority (delivery path first):
 
@@ -40,7 +40,7 @@ Continues local operator polish, guarded integration runbooks, and validation wi
 
 ## Phase G — Post-Deferred / Staging & Owner Gates
 
-**Status:** Block G1 active (staging target decision + VPS pack review — docs only, no deploy).
+**Status:** Block G1 closed (2026-06-27). Staging host: `staging.digitalcubeagency.net`. **G4 not approved.** Current: G2/G3.
 
 **Documentation:** [`docs/ROADMAP_POST_DEFERRED_PHASE_G.md`](./ROADMAP_POST_DEFERRED_PHASE_G.md)  
 **Index:** [`docs/runbooks/PHASE_G_POST_DEFERRED_CLOSEOUT_INDEX.md`](./runbooks/PHASE_G_POST_DEFERRED_CLOSEOUT_INDEX.md)  
@@ -91,7 +91,7 @@ DCA OS v1 has a clean reusable foundation, dependency lockfile, real validation,
 - **Finance tenant isolation smoke**: Local spoof handling is proven; full cross-tenant proof still needs a real second tenant fixture
 - **Client Portal MVP**: Required now for Puriva client delivery (active agreement); client-safe visibility only — see MVP 1 section above
 - **PR #13 / local proof**: PR #13 merged to `main`; local validation passed; local pre-staging proof accepted after isolated Finance browser smoke passed following local admin restore and API/Web restart
-- **Staging target**: Missing / not confirmed; do not treat `system.digitalcubeagency.net` as staging
+- **Staging target**: G1 closed — `staging.digitalcubeagency.net` (production remains `system.digitalcubeagency.net`; DNS not created; G4 not approved)
 - **Production deployment**: Current `main` is not deployed; production remains frozen unless explicitly approved by owner
 
 ## Completed

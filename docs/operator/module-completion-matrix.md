@@ -32,7 +32,7 @@ This matrix explains what is usable now, what is partial, and what is waiting fo
 | Revenue Hub AI | Future | Planned later after shared foundations are stable. |
 | POD AI Toolkit | Future | Planned later after shared foundations are stable. |
 | Data collection / scraping | Future / deferred | Broad scraping and autonomous crawling are not active. |
-| Confirmed staging target | Deferred / missing | No separate staging host is confirmed; `system.digitalcubeagency.net` is live production, not confirmed staging. |
+| Confirmed staging target | Closed (G1) | G1 approved: `staging.digitalcubeagency.net`; production `system.digitalcubeagency.net`; same VPS, separate stack; DNS not created; G4 not approved. |
 | Production deployment | Deferred | PR #13 is merged to `main`, but current `main` is 0% deployed to production. VPS/production remains frozen until separate approval. |
 
 ## Core Platform
@@ -168,4 +168,4 @@ For client delivery readiness, **MVP 1 Puriva client delivery** is locally merge
 2. admin operator path (AI Delivery, MI, publishing handoff);
 3. client delivery SOP;
 4. pre-production readiness checklist;
-5. confirm or create a real staging target before any staging smoke or production deployment — not parallel future domain modules.
+5. G2/G3 local closeout, then G4 VPS staging execution only after separate owner approval — staging host is `staging.digitalcubeagency.net` (DNS not created yet).

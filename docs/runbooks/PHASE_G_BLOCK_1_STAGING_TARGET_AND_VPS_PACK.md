@@ -2,7 +2,7 @@
 
 **GATE:** KEEP | scope: docs + owner decision only | deploy: forbidden | schema/API/auth: forbidden
 
-**Status:** Ready for owner completion.
+**Status:** Closed (2026-06-27). Staging host documented; G4 not approved.
 
 ---
 
