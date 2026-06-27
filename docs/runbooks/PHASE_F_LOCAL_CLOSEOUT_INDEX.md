@@ -28,7 +28,7 @@ See [`PRE_STAGING_VALIDATION_GATE.md`](./PRE_STAGING_VALIDATION_GATE.md).
 |-------|--------|---------|---------------|
 | 58 | Docs consistency | `PHASE_F_BLOCK_58_*` | (validate only) |
 | 59 | Module middleware enforce/dry_run | `PHASE_F_BLOCK_59_*` | `smoke:tenant-module:phase-f-local` |
-| 60 | Client Hub + PublicationTarget edge cases | `PHASE_F_BLOCK_60_*` | `smoke:client-domain:browser` |
+| 60 | Client Hub + PublicationTarget edge cases | `PHASE_F_BLOCK_60_*` | `smoke:client-hub:edge-cases:browser` |
 | 61 | Encrypted credentials local checklist | `PHASE_F_BLOCK_61_*` | `smoke:credential-master-key-probe:local` |
 | 62 | Settings/Team/Company Profile polish | `PHASE_F_BLOCK_62_*` | `smoke:settings-team:browser` |
 | 63 | Monthly Reports compact UX | `PHASE_F_BLOCK_63_*` | `smoke:monthly-report:browser` |

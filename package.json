@@ -36,6 +36,7 @@
     "smoke:client-portal:empty-archive:browser": "node scripts/smoke-client-portal-empty-archive-browser-local.mjs",
     "smoke:client-hub:catalog-inquiry:browser": "node scripts/smoke-client-hub-catalog-inquiry-browser-local.mjs",
     "smoke:client-hub:publication-log:browser": "node scripts/smoke-client-hub-publication-log-browser-local.mjs",
+    "smoke:client-hub:edge-cases:browser": "node scripts/smoke-client-hub-edge-cases-browser-local.mjs",
     "smoke:client-portal:project-filter:browser": "node scripts/smoke-client-portal-project-filter-browser-local.mjs",
     "smoke:client-access:local": "node scripts/smoke-client-access-local.mjs",
     "smoke:client-access:browser": "node scripts/smoke-client-access-browser-local.mjs",

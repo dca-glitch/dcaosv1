@@ -87,6 +87,7 @@ async function apiRequest<T>(method: string, path: string, body?: unknown): Prom
 }
 
 export function ClientHubPage({ client, canEdit, onBack }: ClientHubPageProps) {
+  const hubCanEdit = canEdit && !client.isArchived;
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [targets, setTargets] = useState<PublicationTarget[]>([]);
@@ -162,7 +163,7 @@ export function ClientHubPage({ client, canEdit, onBack }: ClientHubPageProps) {
 
   async function handleCreateTarget(event: FormEvent) {
     event.preventDefault();
-    if (!canEdit) return;
+    if (!hubCanEdit) return;
     await apiRequest("POST", `/clients/${client.id}/publication-targets`, {
       label: targetLabel,
       siteUrl: targetUrl,
@@ -175,7 +176,7 @@ export function ClientHubPage({ client, canEdit, onBack }: ClientHubPageProps) {
 
   async function handleSaveCredentials(event: FormEvent) {
     event.preventDefault();
-    if (!canEdit || !credentialTargetId || !applicationPassword) return;
+    if (!hubCanEdit || !credentialTargetId || !applicationPassword) return;
     if (encryptionAvailable === false) {
       setCredentialMessage(
         "Credential encryption is not configured on the server. Set CREDENTIAL_ENCRYPTION_MASTER_KEY and restart the API."
@@ -196,7 +197,7 @@ export function ClientHubPage({ client, canEdit, onBack }: ClientHubPageProps) {
   }
 
   async function handleDeleteCredentials() {
-    if (!canEdit || !credentialTargetId) return;
+    if (!hubCanEdit || !credentialTargetId) return;
     setCredentialMessage(null);
     try {
       await apiRequest("DELETE", `/clients/${client.id}/publication-targets/${credentialTargetId}/credentials`);
@@ -210,7 +211,7 @@ export function ClientHubPage({ client, canEdit, onBack }: ClientHubPageProps) {
 
   async function handleSaveAnalytics(event: FormEvent) {
     event.preventDefault();
-    if (!canEdit) return;
+    if (!hubCanEdit) return;
     await apiRequest("PUT", `/clients/${client.id}/analytics-profile`, {
       gscSiteUrl,
       ga4PropertyId,
@@ -221,7 +222,7 @@ export function ClientHubPage({ client, canEdit, onBack }: ClientHubPageProps) {
 
   async function handleCreateCatalogProduct(event: FormEvent) {
     event.preventDefault();
-    if (!canEdit || !productName.trim()) return;
+    if (!hubCanEdit || !productName.trim()) return;
     await apiRequest("POST", `/clients/${client.id}/catalog-products`, {
       name: productName,
       description: productDescription || null,
@@ -237,7 +238,7 @@ export function ClientHubPage({ client, canEdit, onBack }: ClientHubPageProps) {
   }
 
   async function handleAcknowledgeInquiry(inquiryId: string) {
-    if (!canEdit) return;
+    if (!hubCanEdit) return;
     await apiRequest("POST", `/clients/${client.id}/catalog-inquiries/${inquiryId}/status`, {
       status: "ACKNOWLEDGED"
     });
@@ -265,6 +266,13 @@ export function ClientHubPage({ client, canEdit, onBack }: ClientHubPageProps) {
         }
       />
 
+      {client.isArchived ? (
+        <div className="state-panel" role="status">
+          This client is <strong>archived</strong>. Publication targets, credentials, and catalog edits are read-only.
+          Restore the client from the Clients list to make changes.
+        </div>
+      ) : null}
+
       <SectionPanel title="Client profile">
         <div className="metric-grid">
           <div>
@@ -288,9 +296,12 @@ export function ClientHubPage({ client, canEdit, onBack }: ClientHubPageProps) {
         </div>
       </SectionPanel>
 
-      <SectionPanel title="Publication targets" description="WordPress targets per subdomain or site.">
+      <SectionPanel title="Publication targets" description="WordPress targets per subdomain or site. Tenant-level WordPress config is deprecated — manage targets here only.">
         {targets.length === 0 ? (
-          <EmptyState message="Add a WordPress target for this client/domain." title="No publication targets" />
+          <EmptyState
+            message="Add a WordPress target for this client/domain. Legacy tenant-level WordPress config (Company Profile) is read-only and cannot be used for publish."
+            title="No publication targets"
+          />
         ) : (
           <ul className="entity-list">
             {targets.map((target) => (
@@ -306,7 +317,7 @@ export function ClientHubPage({ client, canEdit, onBack }: ClientHubPageProps) {
             ))}
           </ul>
         )}
-        {canEdit ? (
+        {hubCanEdit ? (
           <form className="form-grid" onSubmit={(event) => void handleCreateTarget(event)}>
             <label>
               Label
@@ -325,6 +336,11 @@ export function ClientHubPage({ client, canEdit, onBack }: ClientHubPageProps) {
 
       {canEdit ? (
         <SectionPanel title="WordPress credentials" description="Encrypted per target. Never shown after save. Live publish requires WORDPRESS_PUBLISH_ENABLED and saved credentials.">
+          {client.isArchived ? (
+            <p className="muted-text">Archived client — credential status is read-only. Restore the client to update credentials.</p>
+          ) : targets.length === 0 ? (
+            <p className="muted-text">Add a publication target before saving WordPress credentials.</p>
+          ) : null}
           {encryptionAvailable === false ? (
             <div className="state-panel" role="status">
               Credential encryption is not ready on this server. Set{" "}
@@ -332,6 +348,8 @@ export function ClientHubPage({ client, canEdit, onBack }: ClientHubPageProps) {
               <code>docs/security/CREDENTIAL_ENCRYPTION_FOUNDATION.md</code>.
             </div>
           ) : null}
+          {hubCanEdit ? (
+          <>
           <form className="form-grid" onSubmit={(event) => void handleSaveCredentials(event)}>
             <label>
               Target
@@ -379,6 +397,8 @@ export function ClientHubPage({ client, canEdit, onBack }: ClientHubPageProps) {
             </p>
           ) : null}
           {credentialMessage ? <p className="muted-text">{credentialMessage}</p> : null}
+          </>
+          ) : null}
         </SectionPanel>
       ) : null}
 
@@ -386,13 +406,13 @@ export function ClientHubPage({ client, canEdit, onBack }: ClientHubPageProps) {
         <form className="form-grid" onSubmit={(event) => void handleSaveAnalytics(event)}>
           <label>
             GSC site URL
-            <input value={gscSiteUrl} onChange={(event) => setGscSiteUrl(event.target.value)} disabled={!canEdit} />
+            <input value={gscSiteUrl} onChange={(event) => setGscSiteUrl(event.target.value)} disabled={!hubCanEdit} />
           </label>
           <label>
             GA4 property ID
-            <input value={ga4PropertyId} onChange={(event) => setGa4PropertyId(event.target.value)} disabled={!canEdit} />
+            <input value={ga4PropertyId} onChange={(event) => setGa4PropertyId(event.target.value)} disabled={!hubCanEdit} />
           </label>
-          {canEdit ? (
+          {hubCanEdit ? (
             <button className="secondary-action" type="submit">
               Save analytics profile
             </button>
@@ -416,7 +436,7 @@ export function ClientHubPage({ client, canEdit, onBack }: ClientHubPageProps) {
             ))}
           </ul>
         )}
-        {canEdit ? (
+        {hubCanEdit ? (
           <form className="form-grid" onSubmit={(event) => void handleCreateCatalogProduct(event)}>
             <label>
               Product name
@@ -452,7 +472,7 @@ export function ClientHubPage({ client, canEdit, onBack }: ClientHubPageProps) {
                 {inquiry.productName ? ` — ${inquiry.productName}` : ""}
                 <div className="muted-text">{inquiry.message}</div>
                 <div className="muted-text">{new Date(inquiry.createdAt).toLocaleString()}</div>
-                {canEdit && inquiry.status === "NEW" ? (
+                {hubCanEdit && inquiry.status === "NEW" ? (
                   <button className="secondary-action" onClick={() => void handleAcknowledgeInquiry(inquiry.id)} type="button">
                     Mark acknowledged
                   </button>
