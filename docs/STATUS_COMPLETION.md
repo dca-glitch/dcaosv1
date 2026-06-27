@@ -62,7 +62,7 @@ Related documents:
 | **AI SEO + Content Production** | **64%** | In progress | Admin shell; Google Drive export smoke in pre-staging; no live Google integrations |
 | **Private storage (R2)** | **50%** | In progress | Local proof; production bucket deferred |
 | **Email / notifications** | **22%** | In progress | Backend foundation; no real sending |
-| **Audit / activity** | **55%** | In progress | Writer + dashboard feed; no full audit UI |
+| **Audit / activity** | **70%** | In progress | Dashboard read-only feed + browser gate (Post-MVP Block 31); full audit UI deferred |
 | **AI provider (OpenRouter)** | **40%** | In progress | Guarded path; default remains deterministic local |
 | **Operator docs & runbooks** | **95%** | Done | Puriva MVP Blocks 7–30 index + pre-staging local gate |
 | **Tests / smoke** | **100%** | Done (local) | Full Puriva MVP local closeout in pre-staging orchestrator |

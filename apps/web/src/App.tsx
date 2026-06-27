@@ -1,5 +1,6 @@
 import { type FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AppLayout } from "./components/AppLayout";
+import { EmptyState } from "./components/EmptyState";
 import { MetricCard, PageHeader, SectionPanel, StatusBadge } from "./components/ui";
 import {
   BillsPage,
@@ -634,6 +635,15 @@ function hasActiveRole(context: AuthContextResponse | null, roles: string[]): bo
   );
 }
 
+function formatAuditActionLabel(action: string): string {
+  return action
+    .replace(/[.:]/g, " ")
+    .replace(/_/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/(^|\s)\S/g, (segment) => segment.toUpperCase());
+}
+
 function formatAuditActorLabel(activity: ActivityAuditLogItem): string {
   if (activity.actorType === "USER" && activity.actorUserId) {
     return "User action";
@@ -644,6 +654,10 @@ function formatAuditActorLabel(activity: ActivityAuditLogItem): string {
   }
 
   return "System action";
+}
+
+function formatAuditActorBadgeStatus(activity: ActivityAuditLogItem): string {
+  return activity.actorType === "USER" ? "User" : "System";
 }
 
 function formatAuditTimestamp(value: string): string {
@@ -905,30 +919,41 @@ function DashboardView({
         <MetricCard label="Workspace state" value={activeTenant ? "Ready" : "Limited"} helper="Frontend-safe operational summary" accent={activeTenant ? "success" : "warning"} />
       </div>
       <div className="dashboard-grid">
-        <SectionPanel title="Recent Activity" description="Recent tenant-scoped audit events from the active workspace.">
+        <SectionPanel
+          title="Recent Activity"
+          description="Read-only tenant audit feed (last 5 events) from the active workspace."
+        >
           {activityAuditLogsLoading ? (
             <div className="state-panel">Loading recent activity.</div>
           ) : activityAuditLogsError ? (
             <div className="state-panel">{activityAuditLogsError}</div>
           ) : auditLogs.length === 0 ? (
-            <div className="state-panel">No recent activity is available for this tenant yet.</div>
+            <EmptyState
+              message="Audit events appear here after admin actions such as module changes, tenant updates, or auth events."
+              title="No recent activity"
+            />
           ) : (
-            <div className="timeline-list">
+            <div className="audit-feed timeline-list" role="list" aria-label="Recent audit activity">
               {auditLogs.map((activity) => {
                 const metadataSummary = formatAuditMetadataSummary(activity.metadataSummary);
                 return (
-                  <div className="timeline-item" key={activity.id}>
-                    <span />
-                    <div>
-                      <strong>{activity.action}</strong>
-                      <div>{formatAuditActorLabel(activity)} - {formatAuditTimestamp(activity.createdAt)}</div>
-                      <div>
-                        {activity.entityType}
-                        {activity.entityId ? ` - ${activity.entityId}` : ""}
+                  <article className="audit-feed-item timeline-item" key={activity.id} role="listitem">
+                    <span aria-hidden="true" />
+                    <div className="audit-feed-body">
+                      <div className="audit-feed-header">
+                        <strong>{formatAuditActionLabel(activity.action)}</strong>
+                        <StatusBadge status={formatAuditActorBadgeStatus(activity)} />
                       </div>
-                      {metadataSummary ? <div>{metadataSummary}</div> : null}
+                      <div className="audit-feed-meta muted-text">
+                        {formatAuditActorLabel(activity)} · {formatAuditTimestamp(activity.createdAt)}
+                      </div>
+                      <div className="audit-feed-entity muted-text">
+                        {activity.entityType}
+                        {activity.entityId ? ` · ${activity.entityId}` : ""}
+                      </div>
+                      {metadataSummary ? <div className="audit-feed-summary muted-text">{metadataSummary}</div> : null}
                     </div>
-                  </div>
+                  </article>
                 );
               })}
             </div>
