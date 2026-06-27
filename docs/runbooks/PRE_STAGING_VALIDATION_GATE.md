@@ -48,6 +48,7 @@ npm.cmd run smoke:mvp:local
 npm.cmd run smoke:client-portal:local
 npm.cmd run smoke:client-access:local
 npm.cmd run smoke:client-portal:browser
+npm.cmd run smoke:client-portal:signed-out:browser
 npm.cmd run smoke:client-portal:edge-cases:browser
 npm.cmd run smoke:client-portal:sparse-delivery:browser
 npm.cmd run smoke:client-portal:access-revoke:browser

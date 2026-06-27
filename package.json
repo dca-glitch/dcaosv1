@@ -28,6 +28,7 @@
     "smoke:mvp:staging": "node scripts/smoke-mvp-local.mjs --staging",
     "smoke:client-portal:local": "node scripts/smoke-client-portal-local.mjs",
     "smoke:client-portal:browser": "node scripts/smoke-client-portal-browser-local.mjs",
+    "smoke:client-portal:signed-out:browser": "node scripts/smoke-client-portal-signed-out-browser-local.mjs",
     "smoke:client-portal:edge-cases:browser": "node scripts/smoke-client-portal-edge-cases-browser-local.mjs",
     "smoke:client-portal:sparse-delivery:browser": "node scripts/smoke-client-portal-sparse-delivery-browser-local.mjs",
     "smoke:client-portal:access-revoke:browser": "node scripts/smoke-client-portal-access-revoke-browser-local.mjs",

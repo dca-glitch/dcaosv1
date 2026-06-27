@@ -56,6 +56,7 @@ try {
   Invoke-NpmStep "Client access admin smoke" "smoke:client-access:local"
   Ensure-LocalWebForBrowserSmoke
   Invoke-NpmStep "Client portal browser smoke" "smoke:client-portal:browser"
+  Invoke-NpmStep "Client portal signed-out browser smoke" "smoke:client-portal:signed-out:browser"
   Invoke-NpmStep "Client portal edge cases browser smoke" "smoke:client-portal:edge-cases:browser"
   Invoke-NpmStep "Client portal sparse delivery browser smoke" "smoke:client-portal:sparse-delivery:browser"
   Invoke-NpmStep "Client portal access revoke browser smoke" "smoke:client-portal:access-revoke:browser"
