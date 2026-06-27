@@ -19,6 +19,7 @@
     "smoke:browser": "powershell -ExecutionPolicy Bypass -File scripts/smoke-browser.ps1",
     "smoke:client-domain:browser": "node scripts/smoke-client-domain-browser-local.mjs",
     "smoke:credential-encryption:local": "node scripts/smoke-credential-encryption-local.mjs",
+    "smoke:wordpress-publish:local": "node scripts/smoke-wordpress-publish-local.mjs",
     "smoke:tenant-module:local": "node --import tsx scripts/smoke-tenant-module-local.mjs",
     "smoke:legacy-wordpress-sunset:local": "node scripts/smoke-legacy-wordpress-sunset-local.mjs",
     "smoke:ai-delivery-reviews": "node scripts/smoke-ai-delivery-reviews-local.mjs",
