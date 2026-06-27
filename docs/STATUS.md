@@ -14,6 +14,7 @@ Post-merge status source of truth: [`docs/operator/post-merge-completion-status-
 - Data-dense admin UI foundation phase 1/2: AI Delivery, Clients, Invoices, Projects, Tasks, Services Library, Bills/Vendors, and Credit Notes now use compact operator rows, dimmed routine buttons, small status chips, and quieter secondary action menus while preserving business logic.
 - Plain-language operator documentation set added in `docs/operator`: admin operator manual, client delivery SOP, pre-production readiness checklist, deferred scope register, and module completion matrix.
 - Project completion overview by area/module: [`docs/STATUS_COMPLETION.md`](./STATUS_COMPLETION.md).
+- Phase F local completion roadmap (Blocks 58–77): [`docs/ROADMAP_LOCAL_COMPLETION_PHASE_F.md`](./ROADMAP_LOCAL_COMPLETION_PHASE_F.md).
 - AI Delivery project/brief foundation.
 - AI Delivery workflow run foundation.
 - AI Delivery deliverables foundation.
