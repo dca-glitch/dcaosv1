@@ -3,7 +3,7 @@ import { EmptyState } from "../../components/EmptyState";
 import { ErrorState } from "../../components/ErrorState";
 import { LoadingState } from "../../components/LoadingState";
 import { Modal } from "../../components/Modal";
-import { StatusBadge } from "../../components/ui";
+import { PageHeader, SectionPanel, StatusBadge } from "../../components/ui";
 
 export type VendorSummary = {
   id: string;
@@ -269,26 +269,13 @@ export function BillsPage({
 
   return (
     <section className="view-section" aria-labelledby="bills-title">
-      <div className="section-header">
-        <div>
-          <p className="eyebrow">Expenses</p>
-          <h1 id="bills-title">Bills</h1>
-        </div>
-        <div className="toolbar">
-          <div className="filter-bar" role="group" aria-label="Bill view">
-            {(["active", "archived", "all"] as const).map((value) => (
-              <button
-                aria-pressed={filter === value}
-                className={filter === value ? "secondary-action filter-chip is-active" : "secondary-action filter-chip"}
-                key={value}
-                onClick={() => setFilter(value)}
-                type="button"
-              >
-                {value[0].toUpperCase() + value.slice(1)}
-              </button>
-            ))}
-          </div>
-          {canEdit ? (
+      <PageHeader
+        eyebrow="Expenses"
+        title="Bills"
+        titleId="bills-title"
+        description="Vendor bills, payment tracking, and document references."
+        actions={
+          canEdit ? (
             <>
               <button className="secondary-action" onClick={openCreateVendorModal} type="button">
                 Add Vendor
@@ -302,8 +289,22 @@ export function BillsPage({
                 Add Bill
               </button>
             </>
-          ) : null}
-        </div>
+          ) : null
+        }
+      />
+
+      <div className="filter-bar bills-filter-bar" role="group" aria-label="Bill view">
+        {(["active", "archived", "all"] as const).map((value) => (
+          <button
+            aria-pressed={filter === value}
+            className={filter === value ? "secondary-action filter-chip is-active" : "secondary-action filter-chip"}
+            key={value}
+            onClick={() => setFilter(value)}
+            type="button"
+          >
+            {value[0].toUpperCase() + value.slice(1)}
+          </button>
+        ))}
       </div>
 
       <div className="summary-grid">
@@ -329,7 +330,8 @@ export function BillsPage({
       ) : null}
 
       {vendors.length > 0 ? (
-        <div className="dense-list">
+        <SectionPanel tone="compact" title="Vendors" description="Active vendor records for bill entry.">
+          <div className="dense-list">
           {vendors.map((vendor) => (
             <article className="entity-card dense-record" key={vendor.id}>
               <div className="dense-record-main">
@@ -350,21 +352,13 @@ export function BillsPage({
                     <strong>{vendor.billCount}</strong>
                   </div>
                   <div className="dense-field">
-                    <span>Status</span>
-                    <strong>{vendor.isArchived ? "Archived" : "Active"}</strong>
-                  </div>
-                  <div className="dense-field">
                     <span>Updated</span>
                     <strong>{formatDateLabel(vendor.updatedAt)}</strong>
-                  </div>
-                  <div className="dense-field">
-                    <span>Created</span>
-                    <strong>{formatDateLabel(vendor.createdAt)}</strong>
                   </div>
                 </div>
 
                 <div className="dense-actions">
-                  {canEdit ? <button className="primary-action" onClick={() => openEditVendorModal(vendor)} type="button">Open</button> : null}
+                  {canEdit ? <button className="secondary-action" onClick={() => openEditVendorModal(vendor)} type="button">Open</button> : null}
                   {canEdit ? (
                     <details className="row-action-menu">
                       <summary>More</summary>
@@ -381,79 +375,74 @@ export function BillsPage({
               </div>
             </article>
           ))}
-        </div>
+          </div>
+        </SectionPanel>
       ) : null}
 
+      <SectionPanel tone="compact" title="Bills" description="Filtered bill records for the active workspace.">
       {filteredBills.length === 0 ? (
-        <EmptyState message="No bills match the current filter." title="No bills" />
+        <p className="inline-empty muted-text">No bills match the current filter.</p>
       ) : (
-        <div className="dense-list">
-          {filteredBills.map((bill) => (
-            <article className="entity-card dense-record" key={bill.id}>
-              <div className="dense-record-main">
-                <div className="dense-title">
-                  <div className="dense-kicker">
-                    <StatusBadge status={bill.isArchived ? "ARCHIVED" : "ACTIVE"} />
-                  </div>
-                  <h2>{bill.vendor.name}</h2>
-                  <div className="dense-meta">
-                    <span><strong>{formatMoney(bill.amountCents)}</strong></span>
-                    <span>{formatPaymentForm(bill.paymentForm)}</span>
-                    <span>{bill.category || "No category"}</span>
-                  </div>
-                </div>
-
-                <div className="dense-fields">
-                  <div className="dense-field">
-                    <span>Amount</span>
-                    <strong>{formatMoney(bill.amountCents)}</strong>
-                  </div>
-                  <div className="dense-field">
-                    <span>Payment</span>
-                    <strong>{formatPaymentForm(bill.paymentForm)}</strong>
-                  </div>
-                  <div className="dense-field">
-                    <span>Paid</span>
-                    <strong>{formatDateLabel(bill.paymentDate)}</strong>
-                  </div>
-                  <div className="dense-field">
-                    <span>Due</span>
-                    <strong>{formatDateLabel(bill.dueDate)}</strong>
-                  </div>
-                </div>
-
-                <div className="dense-actions">
-                  {canEdit ? <button className="primary-action" onClick={() => openEditBillModal(bill)} type="button">Open</button> : null}
-                  {canEdit ? (
-                    <details className="row-action-menu">
-                      <summary>More</summary>
-                      <div className="row-action-menu-panel">
-                        <div className="row-action-menu-group">
-                          <span className="row-action-menu-label">Bill</span>
-                          {!bill.isArchived ? <button className="secondary-action" onClick={() => void onArchiveBill(bill.id)} type="button">Archive</button> : null}
-                          {bill.isArchived ? <button className="secondary-action" onClick={() => void onRestoreBill(bill.id)} type="button">Restore</button> : null}
-                        </div>
-                      </div>
-                    </details>
-                  ) : null}
-                </div>
-              </div>
-              <div className="dense-row-note">
-                Bill date: {formatDateLabel(bill.billDate)}. Reference: {bill.referenceNumber || "Not set"}. Document: {bill.documentUrl || bill.documentStorageKey || "Not set"}. Notes: {bill.notes || "Not set"}.
-              </div>
-            </article>
-          ))}
+        <div className="table-wrap finance-table-wrap" aria-label="Bills">
+          <table className="finance-table">
+            <thead>
+              <tr>
+                <th>Vendor</th>
+                <th>Category</th>
+                <th>Status</th>
+                <th className="finance-amount-col">Amount</th>
+                <th>Payment</th>
+                <th>Due</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredBills.map((bill) => (
+                <tr key={bill.id}>
+                  <td>
+                    <strong>{bill.vendor.name}</strong>
+                    <div className="muted-text">{bill.referenceNumber || "No reference"}</div>
+                  </td>
+                  <td>{bill.category || "No category"}</td>
+                  <td><StatusBadge status={bill.isArchived ? "ARCHIVED" : "ACTIVE"} /></td>
+                  <td className="finance-amount-col">{formatMoney(bill.amountCents)}</td>
+                  <td>{formatPaymentForm(bill.paymentForm)}</td>
+                  <td>{formatDateLabel(bill.dueDate)}</td>
+                  <td>
+                    <div className="finance-row-actions">
+                      {canEdit ? <button className="secondary-action" onClick={() => openEditBillModal(bill)} type="button">Open</button> : null}
+                      {canEdit ? (
+                        <details className="row-action-menu">
+                          <summary>More</summary>
+                          <div className="row-action-menu-panel">
+                            <div className="row-action-menu-group">
+                              <span className="row-action-menu-label">Bill</span>
+                              {!bill.isArchived ? <button className="secondary-action" onClick={() => void onArchiveBill(bill.id)} type="button">Archive</button> : null}
+                              {bill.isArchived ? <button className="secondary-action" onClick={() => void onRestoreBill(bill.id)} type="button">Restore</button> : null}
+                            </div>
+                          </div>
+                        </details>
+                      ) : null}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
+      </SectionPanel>
 
       {isBillEditorOpen ? (
         <Modal
+          eyebrow={billEditorId ? "Edit" : "Create"}
           onClose={() => {
             setBillEditorId(null);
             setBillDraft(emptyBillForm(firstActiveVendorId(vendors)));
             setDocumentFile(null);
             setIsBillEditorOpen(false);
           }}
+          size="md"
           title={billEditorId ? "Edit Bill" : "Add Bill"}
         >
           <form className="entity-form" onSubmit={handleBillSubmit}>
@@ -601,7 +590,7 @@ export function BillsPage({
       ) : null}
 
       {isVendorEditorOpen ? (
-        <Modal onClose={() => setIsVendorEditorOpen(false)} title={vendorEditorId ? "Edit Vendor" : "Add Vendor"}>
+        <Modal eyebrow={vendorEditorId ? "Edit" : "Create"} onClose={() => setIsVendorEditorOpen(false)} size="sm" title={vendorEditorId ? "Edit Vendor" : "Add Vendor"}>
           <form className="entity-form" onSubmit={handleVendorSubmit}>
             <div className="field-grid">
               <label className="field-span-2">

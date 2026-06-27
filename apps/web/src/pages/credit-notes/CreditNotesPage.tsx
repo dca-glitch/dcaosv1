@@ -4,7 +4,7 @@ import { ErrorState } from "../../components/ErrorState";
 import { LoadingState } from "../../components/LoadingState";
 import { Modal } from "../../components/Modal";
 import { ModalActions } from "../../components/ui/ModalActions";
-import { StatusBadge } from "../../components/ui";
+import { PageHeader, StatusBadge } from "../../components/ui";
 import type { InvoiceItemSummary } from "../invoice-items/InvoiceItemsPage";
 import type { InvoiceSummary } from "../invoices/InvoicesPage";
 
@@ -149,21 +149,6 @@ function percentFromCents(amountCents: number, subtotalCents: number): string {
   }
 
   return String(Math.round((amountCents / subtotalCents) * 10000) / 100);
-}
-
-function formatCreditNoteStatus(value: string): string {
-  const status = value.trim().toUpperCase();
-  return creditNoteStatusOptions.find((option) => option.value === status)?.label ?? "Draft";
-}
-
-function formatLineItemSummary(lineItems: CreditNoteSummary["lineItems"], currency: string): string {
-  if (lineItems.length === 0) {
-    return "No line items";
-  }
-
-  return lineItems
-    .map((lineItem) => `${lineItem.description} × ${lineItem.quantity} (${formatMoney(lineItem.totalCents, currency)})`)
-    .join("; ");
 }
 
 function normalizeLineItems(lineItems: CreditNoteLineItemFormValues[], fallbackDescription: string): CreditNoteLineItemFormValues[] {
@@ -372,17 +357,19 @@ export function CreditNotesPage({
 
   return (
     <section className="view-section" aria-labelledby="credit-notes-title">
-      <div className="section-header">
-        <div>
-          <p className="eyebrow">Finance</p>
-          <h1 id="credit-notes-title">Credit Notes</h1>
-        </div>
-        {canEdit ? (
-          <button className="primary-action" disabled={invoices.length === 0} onClick={openCreateModal} type="button">
-            Add Credit Note
-          </button>
-        ) : null}
-      </div>
+      <PageHeader
+        eyebrow="Finance"
+        title="Credit Notes"
+        titleId="credit-notes-title"
+        description="Refunds and billing adjustments linked to invoices."
+        actions={
+          canEdit ? (
+            <button className="primary-action" disabled={invoices.length === 0} onClick={openCreateModal} type="button">
+              Add Credit Note
+            </button>
+          ) : null
+        }
+      />
 
       <div className="summary-grid">
         <article className="summary-panel"><small>Total notes</small><strong>{totals.totalCount}</strong></article>
@@ -404,7 +391,7 @@ export function CreditNotesPage({
       />
 
       {isEditorOpen ? (
-        <Modal onClose={resetEditor} title={editorId ? "Edit Credit Note" : "Add Credit Note"}>
+        <Modal eyebrow={editorId ? "Edit" : "Create"} onClose={resetEditor} size="lg" title={editorId ? "Edit Credit Note" : "Add Credit Note"}>
           <form className="entity-form" onSubmit={handleSubmit}>
             <p className="muted-text">Used to document a refund, correction, or billing adjustment. This does not register a payment by itself.</p>
             <ModalActions
@@ -569,56 +556,56 @@ type CreditNoteCardsProps = {
 
 function CreditNoteCards({ creditNotes, canEdit, onEditCreditNote, onIssueCreditNote, onVoidCreditNote }: CreditNoteCardsProps) {
   if (creditNotes.length === 0) {
-    return <EmptyState message="No credit notes have been created yet." title="No credit notes" />;
+    return <p className="inline-empty muted-text">No credit notes have been created yet.</p>;
   }
 
   return (
-    <div className="dense-list">
-      {creditNotes.map((creditNote) => (
-        <article className="entity-card dense-record" key={creditNote.id}>
-          <div className="dense-record-main">
-            <div className="dense-title">
-              <div className="dense-kicker">
-                <StatusBadge status={creditNote.isArchived ? "ARCHIVED" : creditNote.status} />
-              </div>
-              <h2>{creditNote.creditNoteNumber}</h2>
-              <div className="dense-meta">
-                <span>{creditNote.invoice.client.name}</span>
-                <span>{creditNote.invoice.invoiceNumber}</span>
-                <span><strong>{formatMoney(creditNote.totalCents, creditNote.currency)}</strong></span>
-              </div>
-            </div>
-
-            <div className="dense-fields">
-              <div className="dense-field"><span>Status</span><strong>{formatCreditNoteStatus(creditNote.status)}</strong></div>
-              <div className="dense-field"><span>Issue date</span><strong>{formatDateLabel(creditNote.issueDate)}</strong></div>
-              <div className="dense-field"><span>Subtotal</span><strong>{formatMoney(creditNote.subtotalCents, creditNote.currency)}</strong></div>
-              <div className="dense-field"><span>Tax</span><strong>{formatMoney(creditNote.taxCents, creditNote.currency)}</strong></div>
-              <div className="dense-field"><span>Discount</span><strong>{formatMoney(creditNote.discountCents, creditNote.currency)}</strong></div>
-              <div className="dense-field"><span>Line items</span><strong>{creditNote.lineItems.length}</strong></div>
-            </div>
-
-            <div className="dense-actions">
-              {canEdit && creditNote.status === "DRAFT" ? <button className="primary-action" onClick={() => onEditCreditNote(creditNote)} type="button">Open</button> : null}
-              {canEdit ? (
-                <details className="row-action-menu">
-                  <summary>More</summary>
-                  <div className="row-action-menu-panel">
-                    <div className="row-action-menu-group">
-                      <span className="row-action-menu-label">Credit note</span>
-                      {creditNote.status === "DRAFT" ? <button className="secondary-action" onClick={() => void onIssueCreditNote(creditNote.id)} type="button">Issue</button> : null}
-                      {creditNote.status !== "VOIDED" ? <button className="secondary-action" onClick={() => void onVoidCreditNote(creditNote.id)} type="button">Void</button> : null}
-                    </div>
-                  </div>
-                </details>
-              ) : null}
-            </div>
-          </div>
-          <div className="dense-row-note">
-            Line items: {formatLineItemSummary(creditNote.lineItems, creditNote.currency)}. Reason: {creditNote.reason || "Not set"}. Document: {creditNote.documentUrl || creditNote.documentStorageKey || "Not set"}.
-          </div>
-        </article>
-      ))}
+    <div className="table-wrap finance-table-wrap" aria-label="Credit notes">
+      <table className="finance-table">
+        <thead>
+          <tr>
+            <th>Credit note</th>
+            <th>Client</th>
+            <th>Invoice</th>
+            <th>Status</th>
+            <th className="finance-amount-col">Total</th>
+            <th>Issue date</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {creditNotes.map((creditNote) => (
+            <tr key={creditNote.id}>
+              <td>
+                <strong>{creditNote.creditNoteNumber}</strong>
+                <div className="muted-text">{creditNote.lineItems.length} line item(s)</div>
+              </td>
+              <td>{creditNote.invoice.client.name}</td>
+              <td>{creditNote.invoice.invoiceNumber}</td>
+              <td><StatusBadge status={creditNote.isArchived ? "ARCHIVED" : creditNote.status} /></td>
+              <td className="finance-amount-col">{formatMoney(creditNote.totalCents, creditNote.currency)}</td>
+              <td>{formatDateLabel(creditNote.issueDate)}</td>
+              <td>
+                <div className="finance-row-actions">
+                  {canEdit && creditNote.status === "DRAFT" ? <button className="secondary-action" onClick={() => onEditCreditNote(creditNote)} type="button">Open</button> : null}
+                  {canEdit ? (
+                    <details className="row-action-menu">
+                      <summary>More</summary>
+                      <div className="row-action-menu-panel">
+                        <div className="row-action-menu-group">
+                          <span className="row-action-menu-label">Credit note</span>
+                          {creditNote.status === "DRAFT" ? <button className="secondary-action" onClick={() => void onIssueCreditNote(creditNote.id)} type="button">Issue</button> : null}
+                          {creditNote.status !== "VOIDED" ? <button className="secondary-action" onClick={() => void onVoidCreditNote(creditNote.id)} type="button">Void</button> : null}
+                        </div>
+                      </div>
+                    </details>
+                  ) : null}
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }

@@ -2160,3 +2160,137 @@ tr:hover td {
     grid-template-columns: 1fr;
   }
 }
+
+/* P1 staging-readiness — modal, finance tables, toolbars */
+.modal-panel {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  overflow: hidden;
+}
+
+.modal-panel-sm {
+  max-width: min(480px, 100%);
+  width: min(480px, 100%);
+}
+
+.modal-panel-md {
+  max-width: min(720px, 100%);
+  width: min(720px, 100%);
+}
+
+.modal-panel-lg {
+  max-width: min(960px, 100%);
+  width: min(960px, 100%);
+}
+
+.modal-header h2 {
+  font-size: clamp(1.15rem, 2.2vw, 1.65rem);
+}
+
+.modal-body {
+  overflow: auto;
+}
+
+.modal-body .modal-footer,
+.modal-footer-slot {
+  background: linear-gradient(180deg, rgba(4, 10, 24, 0.72), rgba(4, 10, 24, 0.96));
+  border-top: 1px solid rgba(190, 211, 255, 0.1);
+  bottom: 0;
+  margin-top: 4px;
+  padding-top: 12px;
+  position: sticky;
+  z-index: 1;
+}
+
+.section-panel-description {
+  color: var(--muted);
+  font-size: 0.86rem;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.section-panel-compact .section-panel-description {
+  font-size: 0.82rem;
+}
+
+.inline-empty {
+  margin: 0;
+  padding: 10px 2px;
+}
+
+.finance-table-wrap {
+  margin-top: 4px;
+}
+
+.finance-table {
+  min-width: 680px;
+}
+
+.finance-table.tasks-table {
+  min-width: 820px;
+}
+
+.finance-table .finance-amount-col,
+.finance-table td.finance-amount-col,
+.finance-table th.finance-amount-col {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.finance-table td strong {
+  color: var(--text);
+  font-weight: 700;
+}
+
+.finance-row-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.finance-table-detail-row td {
+  background: rgba(255, 255, 255, 0.02);
+  border-top: 0;
+  font-size: 0.84rem;
+  padding-top: 0;
+}
+
+.clients-toolbar-filters {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+}
+
+.clients-toolbar-filters .filter-bar {
+  gap: 6px;
+}
+
+.clients-toolbar-filters .filter-chip {
+  font-size: 0.78rem;
+  min-height: 28px;
+  padding: 4px 10px;
+}
+
+.page-header .toolbar.clients-toolbar-actions {
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px 12px;
+}
+
+.tasks-quick-links {
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.bills-filter-bar {
+  margin-bottom: 8px;
+}
+
+@media (max-width: 900px) {
+  .clients-toolbar-filters {
+    width: 100%;
+  }
+}

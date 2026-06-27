@@ -1,10 +1,8 @@
 import { type FormEvent, useMemo, useState } from "react";
-import { EmptyState } from "../../components/EmptyState";
 import { ErrorState } from "../../components/ErrorState";
 import { LoadingState } from "../../components/LoadingState";
-import { SectionPanel } from "../../components/ui";
 import { Modal } from "../../components/Modal";
-import { StatusBadge } from "../../components/ui";
+import { PageHeader, StatusBadge } from "../../components/ui";
 import type { ProjectSummary } from "../projects/ProjectsPage";
 
 export type TaskSummary = {
@@ -184,118 +182,106 @@ export function TasksPage({ tasks, projects, canEdit, error, loading, onArchive,
 
   return (
     <section className="view-section" aria-labelledby="tasks-title">
-      <div className="section-header">
-        <div>
-          <p className="eyebrow">Delivery</p>
-          <h1 id="tasks-title">Tasks</h1>
-        </div>
-        <div className="toolbar">
-          <div className="filter-bar" role="group" aria-label="Tasks filter">
-            {(["active", "archived", "all"] as const).map((value) => (
-              <button
-                aria-pressed={filter === value}
-                className={filter === value ? "secondary-action filter-chip is-active" : "secondary-action filter-chip"}
-                key={value}
-                onClick={() => setFilter(value)}
-                type="button"
-              >
-                {value[0].toUpperCase() + value.slice(1)}
+      <PageHeader
+        eyebrow="Delivery"
+        title="Tasks"
+        titleId="tasks-title"
+        description="Delivery tasks linked to projects and clients."
+        actions={
+          <>
+            <div className="filter-bar" role="group" aria-label="Tasks filter">
+              {(["active", "archived", "all"] as const).map((value) => (
+                <button
+                  aria-pressed={filter === value}
+                  className={filter === value ? "secondary-action filter-chip is-active" : "secondary-action filter-chip"}
+                  key={value}
+                  onClick={() => setFilter(value)}
+                  type="button"
+                >
+                  {value[0].toUpperCase() + value.slice(1)}
+                </button>
+              ))}
+            </div>
+            {canEdit ? (
+              <button className="primary-action" onClick={openCreateModal} type="button">
+                Add Task
               </button>
-            ))}
-          </div>
-          {canEdit ? (
-            <button className="primary-action" onClick={openCreateModal} type="button">
-              Add Task
-            </button>
-          ) : null}
-        </div>
+            ) : null}
+          </>
+        }
+      />
+
+      <div className="quick-link-list tasks-quick-links">
+        <a className="subtle-action" href="#/projects">Projects</a>
+        <a className="subtle-action" href="#/clients">Clients</a>
+        <a className="subtle-action" href="#/ai-delivery">AI Delivery</a>
       </div>
 
-      <SectionPanel
-        tone="compact"
-        title="Delivery cross-links"
-        description="Tasks stay linked to projects and clients. Filter chips match Projects and Clients list behavior."
-      >
-        <div className="quick-link-list">
-          <a href="#/projects">Open Projects</a>
-          <a href="#/clients">Open Clients</a>
-          <a href="#/ai-delivery">Open AI Delivery</a>
-        </div>
-      </SectionPanel>
-
       {filteredTasks.length === 0 ? (
-        <EmptyState message="No tasks match the current filter." title="No tasks" />
+        <p className="inline-empty muted-text">No tasks match the current filter.</p>
       ) : (
-        <div className="dense-list">
-          {filteredTasks.map((task) => (
-            <article className="entity-card dense-record" key={task.id}>
-              <div className="dense-record-main">
-                <div className="dense-title">
-                  <div className="dense-kicker">
-                    <StatusBadge status={formatStatusLabel(task.status, task.isArchived)} />
-                  </div>
-                  <h2>{task.title}</h2>
-                  <div className="dense-meta">
-                    <span><strong>{task.project?.name ?? "No project"}</strong></span>
-                    <span>{task.project?.client?.name ?? "No client"}</span>
-                    <span>{formatRecurringLabel(task.recurringType)}</span>
-                  </div>
-                </div>
-
-                <div className="dense-fields">
-                  <div className="dense-field">
-                    <span>Project</span>
-                    <strong>{task.project?.name ?? "No project"}</strong>
-                  </div>
-                  <div className="dense-field">
-                    <span>Client</span>
-                    <strong>{task.project?.client?.name ?? "No client"}</strong>
-                  </div>
-                  <div className="dense-field">
-                    <span>Recurring</span>
-                    <strong>{formatRecurringLabel(task.recurringType)}</strong>
-                  </div>
-                  <div className="dense-field">
-                    <span>Due</span>
-                    <strong>{formatDateLabel(task.dueDate)}</strong>
-                  </div>
-                </div>
-
-                <div className="dense-actions">
-                  {canEdit ? <button className="primary-action" onClick={() => openEditModal(task)} type="button">Open</button> : null}
-                  {canEdit ? (
-                    <details className="row-action-menu">
-                      <summary>More</summary>
-                      <div className="row-action-menu-panel">
-                        <div className="row-action-menu-group">
-                          <span className="row-action-menu-label">Task</span>
-                          {!task.isArchived ? (
-                            <button className="secondary-action" onClick={() => void onArchive(task.id)} type="button">
-                              Archive
-                            </button>
-                          ) : null}
-                          {filter === "archived" && task.isArchived ? (
-                            <button className="secondary-action" onClick={() => void onRestore(task.id)} type="button">
-                              Restore
-                            </button>
-                          ) : null}
-                        </div>
-                      </div>
-                    </details>
-                  ) : null}
-                </div>
-              </div>
-              <div className="dense-row-note">
-                Description: {task.description || "Not set"}.
-              </div>
-            </article>
-          ))}
+        <div className="table-wrap finance-table-wrap" aria-label="Tasks">
+          <table className="finance-table tasks-table">
+            <thead>
+              <tr>
+                <th>Task</th>
+                <th>Project</th>
+                <th>Client</th>
+                <th>Status</th>
+                <th>Recurring</th>
+                <th>Due</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredTasks.map((task) => (
+                <tr key={task.id}>
+                  <td>
+                    <strong>{task.title}</strong>
+                    <div className="muted-text">{task.description || "No description"}</div>
+                  </td>
+                  <td>{task.project?.name ?? "No project"}</td>
+                  <td>{task.project?.client?.name ?? "No client"}</td>
+                  <td><StatusBadge status={formatStatusLabel(task.status, task.isArchived)} /></td>
+                  <td>{formatRecurringLabel(task.recurringType)}</td>
+                  <td>{formatDateLabel(task.dueDate)}</td>
+                  <td>
+                    <div className="finance-row-actions">
+                      {canEdit ? <button className="secondary-action" onClick={() => openEditModal(task)} type="button">Open</button> : null}
+                      {canEdit ? (
+                        <details className="row-action-menu">
+                          <summary>More</summary>
+                          <div className="row-action-menu-panel">
+                            <div className="row-action-menu-group">
+                              <span className="row-action-menu-label">Task</span>
+                              {!task.isArchived ? (
+                                <button className="secondary-action" onClick={() => void onArchive(task.id)} type="button">
+                                  Archive
+                                </button>
+                              ) : null}
+                              {filter === "archived" && task.isArchived ? (
+                                <button className="secondary-action" onClick={() => void onRestore(task.id)} type="button">
+                                  Restore
+                                </button>
+                              ) : null}
+                            </div>
+                          </div>
+                        </details>
+                      ) : null}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
 
       {isEditorOpen ? (
         <Modal
+          eyebrow={editorTaskId ? "Edit" : "Create"}
           onClose={closeEditor}
+          size="md"
           title={editorTaskId ? "Edit Task" : "Add Task"}
         >
           <form className="entity-form" onSubmit={handleSubmit}>

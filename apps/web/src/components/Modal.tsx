@@ -1,27 +1,32 @@
 import { useId, type ReactNode } from "react";
 
+export type ModalSize = "sm" | "md" | "lg";
+
 type ModalProps = {
   title: string;
   onClose: () => void;
   children: ReactNode;
   footer?: ReactNode;
+  size?: ModalSize;
+  eyebrow?: string;
 };
 
-export function Modal({ title, onClose, children, footer }: ModalProps) {
+export function Modal({ title, onClose, children, footer, size = "md", eyebrow = "Edit" }: ModalProps) {
   const titleId = useId();
+  const panelClass = ["modal-panel", `modal-panel-${size}`].join(" ");
 
   return (
     <div className="modal-backdrop" role="presentation" onClick={onClose}>
       <section
         aria-labelledby={titleId}
         aria-modal="true"
-        className="modal-panel"
+        className={panelClass}
         role="dialog"
         onClick={(event) => event.stopPropagation()}
       >
         <header className="modal-header">
           <div>
-            <p className="eyebrow">Edit</p>
+            {eyebrow ? <p className="eyebrow">{eyebrow}</p> : null}
             <h2 id={titleId}>{title}</h2>
           </div>
           <button className="secondary-action" onClick={onClose} type="button">
@@ -29,7 +34,7 @@ export function Modal({ title, onClose, children, footer }: ModalProps) {
           </button>
         </header>
         <div className="modal-body">{children}</div>
-        {footer ? <footer className="modal-footer">{footer}</footer> : null}
+        {footer ? <footer className="modal-footer modal-footer-slot">{footer}</footer> : null}
       </section>
     </div>
   );
