@@ -131,6 +131,14 @@ async function main() {
     await page.locator("li", { hasText: targetLabel }).waitFor({ state: "visible", timeout: 15000 });
     record("publication target added in hub", true, targetLabel);
 
+    await page.getByRole("heading", { name: "WordPress credentials" }).waitFor({ state: "visible", timeout: 15000 });
+    const hubCredentialText = await page.locator(".page-stack").innerText();
+    record(
+      "wordpress credentials section visible",
+      hubCredentialText.includes("WordPress credentials") && hubCredentialText.includes("Application password"),
+      "credentials panel"
+    );
+
     await page.goto(`${webBaseUrl}/#/ai-market-intelligence`, { waitUntil: "domcontentloaded" });
     await page.getByRole("heading", { name: "Market Intelligence" }).waitFor({ state: "visible", timeout: 15000 });
     record("market intelligence page loads", true, "#/ai-market-intelligence");
