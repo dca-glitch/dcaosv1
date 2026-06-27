@@ -901,6 +901,27 @@ function DashboardView({
   const roles = context?.tenantContext.roles ?? [];
   const permissionCount = context?.effectivePermissions.length ?? 0;
   const auditLogs = activityAuditLogs?.auditLogs ?? [];
+  const [auditTypeFilter, setAuditTypeFilter] = useState<"all" | "auth" | "module" | "tenant">("all");
+  const filteredAuditLogs = useMemo(() => {
+    if (auditTypeFilter === "all") {
+      return auditLogs;
+    }
+
+    return auditLogs.filter((activity) => {
+      const action = activity.action.toLowerCase();
+      const entity = (activity.entityType ?? "").toLowerCase();
+      if (auditTypeFilter === "auth") {
+        return action.includes("auth") || action.includes("login") || action.includes("session");
+      }
+      if (auditTypeFilter === "module") {
+        return action.includes("module") || entity.includes("module");
+      }
+      if (auditTypeFilter === "tenant") {
+        return action.includes("tenant") || entity.includes("tenant");
+      }
+      return true;
+    });
+  }, [auditLogs, auditTypeFilter]);
 
   return (
     <section className="view-section" aria-labelledby="dashboard-title">
@@ -945,6 +966,21 @@ function DashboardView({
         <SectionPanel
           title="Recent Activity"
           description="Read-only tenant audit feed (last 5 events) from the active workspace."
+          action={
+            <div className="filter-bar" role="group" aria-label="Audit activity type filter">
+              {(["all", "auth", "module", "tenant"] as const).map((value) => (
+                <button
+                  aria-pressed={auditTypeFilter === value}
+                  className={auditTypeFilter === value ? "secondary-action filter-chip is-active" : "secondary-action filter-chip"}
+                  key={value}
+                  onClick={() => setAuditTypeFilter(value)}
+                  type="button"
+                >
+                  {value === "all" ? "All" : value[0].toUpperCase() + value.slice(1)}
+                </button>
+              ))}
+            </div>
+          }
         >
           {activityAuditLogsLoading ? (
             <div className="state-panel">Loading recent activity.</div>
@@ -955,9 +991,14 @@ function DashboardView({
               message="Audit events appear here after admin actions such as module changes, tenant updates, or auth events."
               title="No recent activity"
             />
+          ) : filteredAuditLogs.length === 0 ? (
+            <EmptyState
+              message="No events in the last fetch match this filter. Try All or perform a new admin action."
+              title="No matching activity"
+            />
           ) : (
             <div className="audit-feed timeline-list" role="list" aria-label="Recent audit activity">
-              {auditLogs.map((activity) => {
+              {filteredAuditLogs.map((activity) => {
                 const metadataSummary = formatAuditMetadataSummary(activity.metadataSummary);
                 return (
                   <article className="audit-feed-item timeline-item" key={activity.id} role="listitem">
@@ -1343,7 +1384,7 @@ function ClientReviewDeferredView({
       >
         <StatusNotice
           tone="info"
-          message="Client approval, request-changes actions, and internal draft review are deferred. Use Client Portal for final client-safe deliverables and monthly reports."
+          message="Client approval, request-changes actions, and internal draft review are deferred. Use Client Portal for final client-safe deliverables and monthly reports. Active modules: AI Delivery (operator path), Client Portal (visibility)."
         />
         <EmptyState
           message="Open Client Portal from the sidebar to view final deliverables and approved monthly reports shared with your account."
