@@ -1,0 +1,284 @@
+{
+  "meta": {
+    "product": "DCA OS Lite",
+    "branch": "feature/uiux-evidence-pack",
+    "generatedFor": "UI/UX rule extraction",
+    "routingModel": "hash-spa",
+    "routingFile": "apps/web/src/App.tsx",
+    "stylesFile": "apps/web/src/styles.css",
+    "status": "evidence-only-not-approved"
+  },
+  "routes": [
+    { "hash": "#/login", "label": "Sign In", "component": "LoginScreen", "file": "apps/web/src/App.tsx", "access": "public", "navSection": null },
+    { "hash": "#/dashboard", "label": "Dashboard", "component": "DashboardView", "file": "apps/web/src/App.tsx", "access": "admin", "navSection": "protected" },
+    { "hash": "#/modules", "label": "Modules", "component": "ModuleRegistryView", "file": "apps/web/src/App.tsx", "access": "admin", "navSection": "protected" },
+    { "hash": "#/modules/{key}", "label": "Module detail", "component": "ModuleRegistryView", "file": "apps/web/src/App.tsx", "access": "admin", "navSection": "protected" },
+    { "hash": "#/tenants", "label": "Tenants", "component": "TenantView", "file": "apps/web/src/App.tsx", "access": "admin", "navSection": "protected" },
+    { "hash": "#/client-portal", "label": "Client Portal", "component": "ClientPortalPage", "file": "apps/web/src/pages/client-portal/ClientPortalPage.tsx", "access": "client-safe", "navSection": "client" },
+    { "hash": "#/clients", "label": "Clients", "component": "ClientsPage", "file": "apps/web/src/pages/clients/ClientsPage.tsx", "access": "admin", "navSection": "core" },
+    { "hash": "#/clients", "label": "Client Hub", "component": "ClientHubPage", "file": "apps/web/src/pages/clients/ClientHubPage.tsx", "access": "admin", "navSection": "core", "note": "in-page overlay, not separate hash" },
+    { "hash": "#/projects", "label": "Projects", "component": "ProjectsPage", "file": "apps/web/src/pages/projects/ProjectsPage.tsx", "access": "admin", "navSection": "core" },
+    { "hash": "#/ai-delivery", "label": "AI Delivery", "component": "AiDeliveryPage", "file": "apps/web/src/pages/ai-delivery/AiDeliveryPage.tsx", "access": "admin", "navSection": "core" },
+    { "hash": "#/ai-market-intelligence", "label": "Market Intelligence", "component": "AiMarketIntelligencePage", "file": "apps/web/src/pages/ai-market-intelligence/AiMarketIntelligencePage.tsx", "access": "admin", "navSection": "core" },
+    { "hash": "#/tasks", "label": "Tasks", "component": "TasksPage", "file": "apps/web/src/pages/tasks/TasksPage.tsx", "access": "admin", "navSection": "core" },
+    { "hash": "#/invoices", "label": "Invoices", "component": "InvoicesPage", "file": "apps/web/src/pages/invoices/InvoicesPage.tsx", "access": "admin", "navSection": "core" },
+    { "hash": "#/credit-notes", "label": "Credit Notes", "component": "CreditNotesPage", "file": "apps/web/src/pages/credit-notes/CreditNotesPage.tsx", "access": "admin", "navSection": "core" },
+    { "hash": "#/invoice-items", "label": "Services Library", "component": "InvoiceItemsPage", "file": "apps/web/src/pages/invoice-items/InvoiceItemsPage.tsx", "access": "admin", "navSection": "core" },
+    { "hash": "#/bills", "label": "Bills", "component": "BillsPage", "file": "apps/web/src/pages/bills/BillsPage.tsx", "access": "admin", "navSection": "core" },
+    { "hash": "#/company-profile", "label": "Company Profile", "component": "CompanyProfilePage", "file": "apps/web/src/pages/company-profile/CompanyProfilePage.tsx", "access": "admin", "navSection": "settings" },
+    { "hash": "#/settings", "label": "Settings", "component": "SettingsView", "file": "apps/web/src/App.tsx", "access": "admin", "navSection": "settings" },
+    { "hash": "#/team", "label": "Team", "component": "TeamView", "file": "apps/web/src/App.tsx", "access": "admin", "navSection": "settings" },
+    { "hash": "#/content-plan-review", "label": "Content Plan Review", "component": "ClientContentPlanReviewView", "file": "apps/web/src/App.tsx", "access": "deferred", "navSection": null },
+    { "hash": "#/content-draft-review", "label": "Content Draft Review", "component": "ClientContentDraftReviewView", "file": "apps/web/src/App.tsx", "access": "deferred", "navSection": null }
+  ],
+  "components": [
+    { "name": "AppLayout", "path": "apps/web/src/components/AppLayout.tsx", "type": "shell" },
+    { "name": "PageHeader", "path": "apps/web/src/components/ui/PageHeader.tsx", "type": "header" },
+    { "name": "SectionPanel", "path": "apps/web/src/components/ui/SectionPanel.tsx", "type": "section" },
+    { "name": "MetricCard", "path": "apps/web/src/components/ui/MetricCard.tsx", "type": "metric" },
+    { "name": "StatusBadge", "path": "apps/web/src/components/ui/StatusBadge.tsx", "type": "badge" },
+    { "name": "Modal", "path": "apps/web/src/components/Modal.tsx", "type": "modal" },
+    { "name": "ModalActions", "path": "apps/web/src/components/ui/ModalActions.tsx", "type": "modal-footer" },
+    { "name": "EmptyState", "path": "apps/web/src/components/EmptyState.tsx", "type": "state" },
+    { "name": "ErrorState", "path": "apps/web/src/components/ErrorState.tsx", "type": "state" },
+    { "name": "LoadingState", "path": "apps/web/src/components/LoadingState.tsx", "type": "state" },
+    { "name": "StatusNotice", "path": "apps/web/src/App.tsx", "type": "banner" },
+    { "name": "MonthlyReportPanel", "path": "apps/web/src/pages/ai-delivery/MonthlyReportPanel.tsx", "type": "workflow-panel" }
+  ],
+  "cssClasses": {
+    "tokens": [
+      "--bg", "--bg-deep", "--bg-purple", "--panel", "--panel-strong", "--panel-soft",
+      "--border", "--border-strong", "--text", "--text-soft", "--muted",
+      "--accent", "--accent-cyan", "--accent-purple", "--accent-strong", "--accent-glow",
+      "--success", "--warning", "--danger",
+      "--radius-sm", "--radius", "--radius-lg",
+      "--dense-surface", "--dense-surface-hover", "--dense-border", "--dense-border-strong",
+      "--field-surface", "--field-surface-hover", "--shadow", "--shadow-soft", "--focus-ring"
+    ],
+    "layout": ["app-shell", "sidebar", "main-shell", "view-section", "page-header", "section-header", "toolbar", "action-bar", "filter-bar"],
+    "surfaces": ["entity-card", "entity-card-wide", "module-card", "metric-card", "section-panel", "summary-panel", "state-panel", "dense-record", "table-wrap"],
+    "denseList": ["dense-list", "dense-record-main", "dense-title", "dense-kicker", "dense-meta", "dense-fields", "dense-field", "dense-actions", "dense-row-note", "dense-access-list", "dense-access-row"],
+    "buttons": ["primary-action", "secondary-action", "ghost-action", "danger-action", "subtle-action", "filter-chip"],
+    "badges": ["status-badge", "status-badge-success", "status-badge-info", "status-badge-danger", "status-badge-muted", "status-badge-neutral", "entity-pill"],
+    "modals": ["modal-backdrop", "modal-panel", "modal-header", "modal-body", "modal-footer"],
+    "states": ["empty-state-panel", "state-panel-error", "loading-state-panel", "status-notice", "status-info", "status-error", "status-success"],
+    "nav": ["nav-list", "nav-section", "nav-section-label", "nav-dot", "brand", "user-panel", "tenant-switch-placeholder"],
+    "menus": ["row-action-menu", "row-action-menu-panel", "row-action-menu-group", "row-action-menu-label"],
+    "forms": ["auth-form", "entity-form", "field-grid", "entity-field-grid", "field-span-2"],
+    "typography": ["eyebrow", "page-description", "page-meta", "muted-text"]
+  },
+  "elementPatterns": [
+    {
+      "id": "metric-grid-4up",
+      "classes": ["summary-grid", "metric-grid", "metric-card"],
+      "usedOn": ["dashboard", "client-portal", "settings", "team", "ai-delivery", "market-intelligence", "invoice-items", "company-profile"],
+      "flag": "SHRINK",
+      "metrics": { "minHeightPx": 148, "paddingPx": 20, "defaultColumns": 4 }
+    },
+    {
+      "id": "dense-list-row",
+      "classes": ["dense-list", "entity-card", "dense-record"],
+      "usedOn": ["clients", "projects", "tasks", "invoices", "credit-notes", "bills", "ai-delivery", "market-intelligence", "client-portal"],
+      "flag": "KEEP",
+      "metrics": { "paddingPx": "10-12", "gapPx": 8 }
+    },
+    {
+      "id": "data-table",
+      "classes": ["table-wrap", "table"],
+      "usedOn": ["team", "monthly-report-panel"],
+      "flag": "REPLACE-expand",
+      "metrics": { "minWidthPx": 680, "thFontRem": 0.84 }
+    },
+    {
+      "id": "page-header-dual",
+      "classes": ["page-header", "section-header"],
+      "components": ["PageHeader"],
+      "usedOn": ["dashboard", "modules", "team", "settings", "client-portal", "client-hub", "market-intelligence", "invoice-items", "company-profile"],
+      "flag": "REPLACE-standardize",
+      "metrics": { "h1ClampRem": "1.9-3.1" }
+    },
+    {
+      "id": "manual-section-header",
+      "classes": ["section-header", "toolbar"],
+      "usedOn": ["clients", "projects", "tasks", "invoices", "credit-notes", "bills", "ai-delivery", "tenants"],
+      "flag": "REPLACE",
+      "metrics": {}
+    },
+    {
+      "id": "row-action-menu",
+      "classes": ["row-action-menu"],
+      "usedOn": ["clients", "projects", "tasks", "invoices", "credit-notes", "bills", "ai-delivery", "market-intelligence"],
+      "flag": "KEEP",
+      "metrics": { "panelMinWidthPx": 240 }
+    },
+    {
+      "id": "filter-chips-as-buttons",
+      "classes": ["filter-bar", "filter-chip", "secondary-action"],
+      "usedOn": ["all-filtered-lists"],
+      "flag": "SHRINK",
+      "metrics": { "minHeightPx": 32 }
+    },
+    {
+      "id": "modal-workflow-stack",
+      "classes": ["modal-backdrop", "modal-panel"],
+      "components": ["Modal"],
+      "usedOn": ["ai-delivery", "invoices", "clients", "market-intelligence"],
+      "flag": "SHRINK",
+      "metrics": { "maxWidthPx": 980, "borderRadiusPx": 30 }
+    },
+    {
+      "id": "split-pane-queue-detail",
+      "classes": ["entity-card", "dense-list"],
+      "usedOn": ["market-intelligence", "client-portal"],
+      "flag": "KEEP",
+      "metrics": { "sidebarMinPx": 240, "sidebarMaxPx": 280 }
+    },
+    {
+      "id": "section-panel-compact-undefined",
+      "classes": ["section-panel"],
+      "components": ["SectionPanel"],
+      "prop": "tone=compact",
+      "usedOn": ["client-portal", "market-intelligence", "projects", "tasks"],
+      "flag": "SHRINK",
+      "note": "CSS class section-panel-compact not defined in styles.css"
+    }
+  ],
+  "screens": [
+    { "id": "login", "hash": "#/login", "density": "low", "layout": "form", "access": "public", "tableCandidate": false },
+    { "id": "dashboard", "hash": "#/dashboard", "density": "medium", "layout": "document", "access": "admin", "tableCandidate": false },
+    { "id": "modules", "hash": "#/modules", "density": "medium", "layout": "card-grid", "access": "admin", "tableCandidate": false },
+    { "id": "tenants", "hash": "#/tenants", "density": "low", "layout": "list", "access": "admin", "tableCandidate": false },
+    { "id": "clients", "hash": "#/clients", "density": "high", "layout": "dense-list", "access": "admin", "tableCandidate": true },
+    { "id": "client-hub", "hash": "in-page", "density": "high", "layout": "workflow", "access": "admin", "tableCandidate": false },
+    { "id": "projects", "hash": "#/projects", "density": "high", "layout": "dense-list", "access": "admin", "tableCandidate": true },
+    { "id": "tasks", "hash": "#/tasks", "density": "high", "layout": "dense-list", "access": "admin", "tableCandidate": true },
+    { "id": "invoices", "hash": "#/invoices", "density": "high", "layout": "card-list", "access": "admin", "tableCandidate": true },
+    { "id": "credit-notes", "hash": "#/credit-notes", "density": "high", "layout": "dense-list", "access": "admin", "tableCandidate": true },
+    { "id": "services", "hash": "#/invoice-items", "density": "medium", "layout": "mixed", "access": "admin", "tableCandidate": true },
+    { "id": "bills", "hash": "#/bills", "density": "high", "layout": "dense-list", "access": "admin", "tableCandidate": true },
+    { "id": "ai-delivery", "hash": "#/ai-delivery", "density": "high", "layout": "workflow", "access": "admin", "tableCandidate": false },
+    { "id": "market-intelligence", "hash": "#/ai-market-intelligence", "density": "high", "layout": "split-workflow", "access": "admin", "tableCandidate": "partial" },
+    { "id": "monthly-report", "hash": "in-page", "density": "high", "layout": "document-workflow", "access": "admin", "tableCandidate": false },
+    { "id": "client-portal", "hash": "#/client-portal", "density": "medium", "layout": "split-document", "access": "client-safe", "tableCandidate": false },
+    { "id": "company-profile", "hash": "#/company-profile", "density": "medium", "layout": "form", "access": "admin", "tableCandidate": false },
+    { "id": "settings", "hash": "#/settings", "density": "low", "layout": "placeholder", "access": "admin", "tableCandidate": false },
+    { "id": "team", "hash": "#/team", "density": "medium", "layout": "table", "access": "admin", "tableCandidate": false, "referencePattern": true },
+    { "id": "deferred-reviews", "hash": "#/content-plan-review", "density": "low", "layout": "placeholder", "access": "deferred", "tableCandidate": false }
+  ],
+  "risks": [
+    {
+      "id": "css-single-file",
+      "level": "high",
+      "description": "styles.css ~1940 lines with triple :root and overlapping button rules",
+      "files": ["apps/web/src/styles.css"]
+    },
+    {
+      "id": "portal-admin-nav",
+      "level": "medium",
+      "description": "Client Portal uses same AppLayout sidebar with full admin navigation",
+      "files": ["apps/web/src/components/AppLayout.tsx", "apps/web/src/App.tsx"]
+    },
+    {
+      "id": "portal-draft-badge",
+      "level": "medium",
+      "description": "Client Portal may show DRAFT content plan status badge to clients",
+      "files": ["apps/web/src/pages/client-portal/ClientPortalPage.tsx"]
+    },
+    {
+      "id": "ai-delivery-size",
+      "level": "high",
+      "description": "AiDeliveryPage.tsx ~5800 lines with 10+ modals — high refactor risk",
+      "files": ["apps/web/src/pages/ai-delivery/AiDeliveryPage.tsx"]
+    },
+    {
+      "id": "finance-card-lists",
+      "level": "medium",
+      "description": "Invoices and credit notes use dense card stacks instead of tables",
+      "files": ["apps/web/src/pages/invoices/InvoicesPage.tsx", "apps/web/src/pages/credit-notes/CreditNotesPage.tsx"]
+    },
+    {
+      "id": "section-panel-compact-missing",
+      "level": "low",
+      "description": "SectionPanel tone compact prop has no CSS differentiation",
+      "files": ["apps/web/src/components/ui/SectionPanel.tsx", "apps/web/src/styles.css"]
+    },
+    {
+      "id": "dark-nebula-vs-compact",
+      "level": "medium",
+      "description": "Approved Dark Nebula doc emphasizes spacious cards; evidence targets compact hybrid",
+      "files": ["docs/ui/DARK_NEBULA_PRODUCT_UI_DIRECTION.md"]
+    }
+  ],
+  "candidateGlobalRules": [
+    {
+      "id": "GR-01",
+      "rule": "Use PageHeader for all authenticated screens; retire manual section-header",
+      "flag": "REPLACE",
+      "priority": "P0",
+      "draft": true
+    },
+    {
+      "id": "GR-02",
+      "rule": "Max two metric cards above primary content; prefer inline header stats for single values",
+      "flag": "SHRINK",
+      "priority": "P0",
+      "draft": true
+    },
+    {
+      "id": "GR-03",
+      "rule": "One primary action per toolbar or modal footer",
+      "flag": "SHRINK",
+      "priority": "P0",
+      "draft": true
+    },
+    {
+      "id": "GR-04",
+      "rule": "Filter chips must not use primary-action or secondary-action classes",
+      "flag": "REPLACE",
+      "priority": "P0",
+      "draft": true
+    },
+    {
+      "id": "GR-05",
+      "rule": "High-density operational data (>10 rows) uses table-wrap pattern (Team reference)",
+      "flag": "REPLACE",
+      "priority": "P1",
+      "draft": true
+    },
+    {
+      "id": "GR-06",
+      "rule": "Admin shell and Client Portal shell must diverge (nav + density + accent)",
+      "flag": "SPLIT",
+      "priority": "P0",
+      "draft": true
+    },
+    {
+      "id": "GR-07",
+      "rule": "Consolidate styles.css to single :root token block",
+      "flag": "REPLACE",
+      "priority": "P1",
+      "draft": true
+    },
+    {
+      "id": "GR-08",
+      "rule": "Implement section-panel-compact CSS; reduce default section-panel padding",
+      "flag": "SHRINK",
+      "priority": "P1",
+      "draft": true
+    },
+    {
+      "id": "GR-09",
+      "rule": "Modal eyebrow must be prop-driven; default modal width tier sm/md/lg",
+      "flag": "SHRINK",
+      "priority": "P1",
+      "draft": true
+    },
+    {
+      "id": "GR-10",
+      "rule": "Portal status badges must map internal statuses to client-safe labels only",
+      "flag": "SPLIT",
+      "priority": "P0",
+      "draft": true
+    }
+  ]
+}
