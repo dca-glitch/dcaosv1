@@ -1033,6 +1033,21 @@ textarea:focus-visible {
   grid-template-columns: repeat(4, minmax(180px, 1fr));
 }
 
+.dashboard-command-metrics {
+  gap: 16px;
+}
+
+.dashboard-command-metrics .metric-card {
+  min-height: 152px;
+}
+
+.dashboard-command-metrics .metric-card-label {
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 .metric-card {
   display: grid;
   gap: 9px;
@@ -1040,6 +1055,7 @@ textarea:focus-visible {
   padding: 20px;
 }
 
+.metric-card-label,
 .metric-card span,
 .summary-panel span,
 .entity-field-grid span,

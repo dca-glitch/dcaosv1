@@ -5,14 +5,27 @@ type MetricCardProps = {
   value: ReactNode;
   helper?: ReactNode;
   accent?: "cyan" | "violet" | "purple" | "success" | "warning";
+  metricKey?: string;
 };
 
-export function MetricCard({ label, value, helper, accent = "violet" }: MetricCardProps) {
+function buildMetricAriaLabel(label: string, value: ReactNode): string {
+  if (typeof value === "string" || typeof value === "number") {
+    return `${label}: ${value}`;
+  }
+
+  return label;
+}
+
+export function MetricCard({ label, value, helper, accent = "violet", metricKey }: MetricCardProps) {
   return (
-    <article className={`metric-card metric-card-${accent}`}>
-      <span>{label}</span>
-      <strong>{value}</strong>
-      {helper ? <small>{helper}</small> : null}
+    <article
+      aria-label={buildMetricAriaLabel(label, value)}
+      className={`metric-card metric-card-${accent}`}
+      data-metric={metricKey}
+    >
+      <span className="metric-card-label">{label}</span>
+      <strong className="metric-card-value">{value}</strong>
+      {helper ? <small className="metric-card-helper">{helper}</small> : null}
     </article>
   );
 }

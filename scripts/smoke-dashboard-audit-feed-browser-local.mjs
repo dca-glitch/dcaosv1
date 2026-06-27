@@ -139,6 +139,25 @@ async function main() {
     await page.goto(`${webBaseUrl}/#/dashboard`, { waitUntil: "domcontentloaded" });
     await page.getByRole("heading", { name: "Dashboard", exact: true }).waitFor({ state: "visible", timeout: 20000 });
 
+    const metricGrid = page.locator(".dashboard-command-metrics").first();
+    await metricGrid.waitFor({ state: "visible", timeout: 15000 });
+
+    const expectedMetricKeys = ["signed-in", "active-tenant", "role-coverage", "workspace-state"];
+    for (const metricKey of expectedMetricKeys) {
+      const metricCard = metricGrid.locator(`[data-metric="${metricKey}"]`).first();
+      await metricCard.waitFor({ state: "visible", timeout: 10000 });
+      const cardText = await metricCard.innerText();
+      record(`dashboard metric card ${metricKey}`, cardText.trim().length > 0, metricKey);
+    }
+
+    const signedInCard = metricGrid.locator('[data-metric="signed-in"]').first();
+    const signedInText = await signedInCard.innerText();
+    record(
+      "dashboard signed-in metric shows admin email helper",
+      signedInText.includes(adminEmail),
+      adminEmail
+    );
+
     const activityPanel = page.locator(".section-panel", { has: page.getByRole("heading", { name: "Recent Activity", exact: true }) }).first();
     await activityPanel.waitFor({ state: "visible", timeout: 15000 });
     record("dashboard recent activity panel visible", true, "Recent Activity");

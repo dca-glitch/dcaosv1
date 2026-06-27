@@ -44,7 +44,7 @@ Related documents:
 | Area / module | % in scope | Status | Notes |
 |---------------|------------|--------|-------|
 | **Platform core** (auth, tenant, modules, CI, validate) | **90%** | Done | Login, tenant context, CI PASS |
-| **Dark Nebula UI + data-dense admin** | **85%** | Done | Phase 1/2 closed; polish remains in MI/Portal/settings |
+| **Dark Nebula UI + data-dense admin** | **88%** | Done | Phase 1/2 closed; Dashboard command metrics polish (Post-MVP Block 32) |
 | **Clients (CRM)** | **88%** | Done | CRUD, filters, `clientKind`, website |
 | **Client Hub + domain model (block 1)** | **97%** | Done | Hub UI + client-domain browser covers catalog, inquiries shell, publication log |
 | **PublicationTarget (block 2)** | **95%** | Done | CRUD per client; legacy tenant POST sunset (410); GET read-only |

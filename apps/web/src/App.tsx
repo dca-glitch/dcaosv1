@@ -912,11 +912,35 @@ function DashboardView({
         description="A focused command view for Clients, Projects, Tasks, Invoices, Bills, Modules, Revenue Hub, SEO Hub, and AI Workflow."
         meta={<StatusBadge status={user.status || "Active"} />}
       />
-      <div className="summary-grid metric-grid">
-        <MetricCard label="Signed in as" value={user.name || user.email} helper={user.email} accent="cyan" />
-        <MetricCard label="Active tenant" value={activeTenant?.name ?? "No tenant"} helper={activeTenant?.slug ?? "not selected"} />
-        <MetricCard label="Role coverage" value={roles.length ? roles.join(", ") : "None"} helper={`${permissionCount} effective permissions`} accent="purple" />
-        <MetricCard label="Workspace state" value={activeTenant ? "Ready" : "Limited"} helper="Frontend-safe operational summary" accent={activeTenant ? "success" : "warning"} />
+      <div className="summary-grid metric-grid dashboard-command-metrics" aria-label="Dashboard command metrics">
+        <MetricCard
+          accent="cyan"
+          helper={user.email}
+          label="Signed in as"
+          metricKey="signed-in"
+          value={user.name || user.email}
+        />
+        <MetricCard
+          accent="violet"
+          helper={activeTenant?.slug ?? "not selected"}
+          label="Active tenant"
+          metricKey="active-tenant"
+          value={activeTenant?.name ?? "No tenant"}
+        />
+        <MetricCard
+          accent="purple"
+          helper={`${permissionCount} effective permissions`}
+          label="Role coverage"
+          metricKey="role-coverage"
+          value={roles.length ? roles.join(", ") : "None"}
+        />
+        <MetricCard
+          accent={activeTenant ? "success" : "warning"}
+          helper="Frontend-safe operational summary"
+          label="Workspace state"
+          metricKey="workspace-state"
+          value={activeTenant ? "Ready" : "Limited"}
+        />
       </div>
       <div className="dashboard-grid">
         <SectionPanel
