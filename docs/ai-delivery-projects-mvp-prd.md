@@ -7,7 +7,7 @@ DCA OS Lite — AI Delivery Projects MVP.
 ## 2. Roles
 
 - **DCA Admin** operates monthly SEO/content delivery, manages setup, reviews client input, approves briefs, prepares plans, produces content, and controls publishing/release steps.
-- **Client** is a future reviewed role for authenticated review/approval flows. Client Access / Client Portal is not active now and is intentionally postponed until admin/operator modules are stable.
+- **Client** uses Client Portal MVP for client-safe delivery visibility (required for Puriva). Advanced authenticated review/approval flows (comments, magic links) remain phased after MVP visibility scope.
 
 ## Current state note
 
@@ -30,7 +30,7 @@ Readiness framing:
 
 - Admin/operator foundation: admin foundation closed for the current MVP admin scope.
 - July-ready internal MVP: partial.
-- Full client-facing module: not complete.
+- Full client-facing Client Portal MVP: required for Puriva (in progress); advanced client actions phased.
 - Full AI modules roadmap: early stage.
 
 Locally proven on the current branch:
@@ -44,7 +44,7 @@ Locally proven on the current branch:
 ## 3. Core user outcomes
 
 - DCA manages recurring monthly AI-supported SEO/content delivery inside DCA OS Lite.
-- Future clients may use authenticated review flows after Client Access / Client Portal is explicitly resumed and approved.
+- Clients use Client Portal MVP for client-safe visibility (Puriva agreement active); human/client review before publication is required.
 - Delivery work is structured by client, month, project, brief, content plan, article/image approvals, and later reporting.
 - The MVP stays admin-operated and cost-controlled instead of autonomous.
 
@@ -107,7 +107,7 @@ Each implementation layer is reviewed and validated before the next layer begins
 - One client brief revision rule.
 - Client archive read-only behavior.
 
-Current state clarification: Client Access / Client Portal is not active; client-facing behavior in this PRD is future intent unless separately marked completed.
+Current state clarification: Client Access Admin UI foundation is closed; Client Portal MVP is required for Puriva. Client-safe visibility scope is active product intent; advanced interactive client actions remain phased.
 
 ## 8. Out of scope for Build Block 1
 
@@ -330,7 +330,8 @@ R2/private storage foundation closed for the current MVP admin scope:
 
 Deferred items below are explicitly not blockers for the current admin foundation closure:
 
-- Client Portal delivery/private links.
+- Client Portal MVP expansion for Puriva (client-safe MI, SEO, deliverables, publishing status).
+- Advanced Client Portal actions / private magic links (phased).
 - Real production configured-bucket proof.
 - Real AI provider execution.
 - PDF/Google Docs export flows.

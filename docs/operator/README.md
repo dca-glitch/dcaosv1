@@ -37,9 +37,9 @@ The admin controls the process. AI helps prepare research, plans, drafts, images
 
 ## Client Rule
 
-Clients should see final approved work only.
+Clients should see client-safe final work only (Client Portal MVP required for Puriva).
 
-The current Client Portal is read-only and should not be treated as an approval/comment system.
+The Client Portal is not an approval/comment system in the MVP visibility scope; human/client review before publication is handled through the approved delivery workflow.
 
 ## Production Rule
 

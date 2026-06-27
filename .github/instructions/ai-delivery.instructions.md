@@ -5,7 +5,7 @@
 The AI Delivery module is **admin-operated MVP**.
 
 - Admin controls all workflow runs.
-- Client sees final deliverables only - in a later portal phase.
+- Client sees final deliverables and client-safe summaries in Client Portal MVP (required for Puriva).
 - No autonomous or background AI agents that incur cost unless explicitly scoped per block.
 
 ## Content flow
@@ -26,9 +26,9 @@ project/brief
 
 | Feature | Status |
 |---|---|
-| Client Portal | Deferred |
-| WordPress publishing | Deferred |
-| Google Docs / PDF export | Deferred |
+| Client Portal MVP | Required (Puriva MVP 1) — client-safe visibility |
+| WordPress publishing | Deferred until credential block 4–5 |
+| Google Docs / PDF export | Deliverable export foundation done; client-visible final links required for Puriva MVP |
 | Image provider / generation / upscaling | Deferred |
 | Google Analytics / Search Console integration | Deferred |
 | Public client approval links | Deferred |

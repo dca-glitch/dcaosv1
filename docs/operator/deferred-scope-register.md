@@ -10,7 +10,9 @@ Deferred means: do not build, enable, deploy, or promise it as active until ther
 
 ## Client Portal And Client Actions
 
-Deferred:
+**Client Portal MVP (required — Puriva):** client-safe delivery visibility for MI summary, SEO status, Google Docs deliverables, website publishing handoff/status, final deliverables, and monthly reports. See `docs/architecture/CLIENT_DOMAIN_OPERATING_MODEL.md`.
+
+Phased after MVP visibility scope (still deferred):
 
 - client comments inside the portal;
 - client approval buttons;
@@ -24,9 +26,9 @@ Deferred:
 
 Current behavior:
 
-- the Client Portal is read-only;
-- clients should see final client-safe material only;
-- admin remains responsible for review and approval.
+- the Client Portal shows client-safe final material only;
+- admin remains responsible for internal review; human/client review before publication is required for Puriva;
+- no raw prompts, workflow runs, MI internals, AI costs, credentials, or technical logs.
 
 ## Production And Deployment
 
@@ -36,7 +38,7 @@ Deferred:
 - production database activation;
 - production R2 switch;
 - production email sending;
-- live client portal access;
+- live production Client Portal rollout on `system.digitalcubeagency.net` (MVP build in progress locally);
 - public production rollout;
 - Caddy/container/VPS changes without approval.
 

@@ -1,19 +1,30 @@
-# PRD — DCA OS Lite / DCA360 SaaS Operating System
+# PRD — DCA OS Lite
 
-**Wersja:** 1.1
-**Data bazowa:** 2026-06-26
+**Wersja:** 1.2
+**Data bazowa:** 2026-06-27
 **Status dokumentu:** Źródło prawdy dla kolejnych sesji AI, tasków Copilot/Codex i decyzji produktowych
 **Architektura domen (approved):** `docs/architecture/CLIENT_DOMAIN_OPERATING_MODEL.md`
 **Repo:** `dca-glitch/dcaosv1`
 **Lokalna ścieżka robocza:** `C:\dcaosv1`
 **Aktywna gałąź robocza:** `feature/ai-delivery-project-brief-foundation`
-**Produkt:** DCA OS Lite — reusable SaaS operating system foundation dla Digital Cube Agency / DCA360
+**Produkt:** DCA OS — modularny SaaS operating system dla Digital Cube Agency (historycznie określany jako DCA360 w wczesnych dokumentach)
 
 ---
 
 ## 0. Definicja Produktu
 
-DCA OS Lite / DCA360 OS to modularny SaaS operating system, który ma być centralnym systemem operacyjnym dla biznesów, domen internetowych, projektów klientów, finansów, AI workflow, SEO/content delivery, raportowania oraz przyszłych workspace’ów domenowych.
+**Nazewnictwo:** Używaj **DCA OS** jako bieżącej nazwy produktu. Nie używaj **DCA360** jako bieżącej nazwy produktu — wyłącznie w kontekście historycznym.
+
+**Domeny systemowe:**
+
+| Domena | Rola |
+|--------|------|
+| `system.digitalcubeagency.net` | Finalna produkcja — login i aplikacja DCA OS (admin, Client Portal, moduły) |
+| `digitalcubeagency.net` | Publiczna strona produktu DCA OS |
+| `digitalcubeagency.com` | Publiczna strona agencyjna / lead generation |
+| `digitalcubic.com` | Usunięta z aktywnego portfolio domen |
+
+DCA OS Lite to modularny SaaS operating system, który ma być centralnym systemem operacyjnym dla biznesów, domen internetowych, projektów klientów, finansów, AI workflow, SEO/content delivery, raportowania oraz workspace’ów domenowych.
 
 Najważniejsza zasada produktu:
 
@@ -27,7 +38,7 @@ System ma służyć do zarządzania decyzjami, procesami, workflow, deliverables
 
 ## 1.1 Cel projektu
 
-Celem projektu jest zbudowanie własnego, reusable SaaS operating system, który pozwala Digital Cube Agency / DCA360:
+Celem projektu jest zbudowanie własnego, reusable SaaS operating system, który pozwala Digital Cube Agency:
 
 1. Prowadzić wewnętrzne operacje agencyjne.
 2. Obsługiwać klientów w modelu admin/operator-first.
@@ -44,7 +55,7 @@ Produkt nie jest zwykłym CRM, CMS ani ERP. To governance-first SaaS OS: system 
 
 ### Główna teza
 
-DCA360 / DCA OS Lite ma być centralną platformą SaaS, która obsługuje wiele domen, marek i modeli biznesowych.
+DCA OS ma być centralną platformą SaaS, która obsługuje wiele domen, marek i modeli biznesowych.
 
 Domeny internetowe pełnią różne role biznesowe:
 
@@ -107,17 +118,22 @@ MVP jest przede wszystkim dla:
 * osób odpowiedzialnych za SEO, research, delivery i raporty,
 * przyszłych współpracowników obsługujących klientów lub domeny.
 
-### Klienci zewnętrzni — później
+### Klienci zewnętrzni — MVP 1 (Puriva)
 
-Klient zewnętrzny w MVP ma ograniczoną rolę. System obecnie ma być admin/operator-first. Client Portal i pełne client-facing approval flows są celowo odroczone do momentu stabilizacji admin foundation.
+**MVP 1 = DCA OS Client Delivery dla Puriva** (`puriva.id`). DCA ma aktywną umowę z Puriva i musi rozpocząć delivery klienta.
 
-Docelowo klient ma widzieć tylko:
+Client Portal MVP jest **wymagany teraz** — nie odroczony. Portal pokazuje wyłącznie client-safe visibility:
 
-* finalne deliverables,
-* finalne raporty,
-* zatwierdzone plany / treści / assets,
-* archiwum projektów,
-* bez dostępu do promptów, surowych runów, kosztów AI, źródeł technicznych i wewnętrznych logów.
+* finalne deliverables i raporty (status FINAL),
+* client-safe podsumowanie Market Intelligence (bez surowych źródeł/wewnętrznych MI),
+* status AI SEO i zatwierdzone treści,
+* Google Docs final deliverables (bezpieczne linki eksportu),
+* website publishing handoff/status,
+* katalog produktów z inquiry only (bez koszyka/checkout).
+
+Klient **nie widzi:** promptów, surowych runów workflow, odpowiedzi providerów AI, kosztów AI, credentials, logów technicznych, surowych MI internals ani notatek admin-only.
+
+Human/client review przed publikacją jest wymagany dla Puriva.
 
 ### Typy klientów / biznesów obsługiwanych przez system
 
@@ -182,7 +198,7 @@ Aktualne główne strony/moduły UI:
 * AI Delivery,
 * AI Market Intelligence,
 * Monthly Report panels,
-* Client Portal shell / deferred foundation.
+* Client Portal MVP (required — Puriva delivery).
 
 ---
 
@@ -215,7 +231,7 @@ Główne backend domains:
 * AI Delivery,
 * Market Intelligence,
 * Monthly Reports,
-* Client Portal deferred routes,
+* Client Portal routes (MVP required for Puriva).
 * Activity/Audit logs.
 
 ---
@@ -470,7 +486,7 @@ Tenant (DCA LLC lub licensee)
 ### Przykład logiczny
 
 ```text
-DCA360 SaaS Core
+DCA OS Core
   -> Tenant: Digital Cube Agency LLC
     -> Client AGENCY_CLIENT: klient-seo.pl
       -> PublicationTarget: blog.klient-seo.pl (WordPress)
@@ -496,7 +512,7 @@ Szczegóły: `docs/architecture/CLIENT_DOMAIN_OPERATING_MODEL.md`
 | ------------------------ | ------------------------------------------------------ | --------------------------------------------- |
 | SEO/content site         | AI Delivery, AI SEO, Monthly Reports                   | MVP direction active                          |
 | Commerce/POD site        | Commerce Core, POD Toolkit, Revenue Hub, Finance       | Planned after current AI/Delivery foundations |
-| Client website           | AI Delivery, Reports, Client Portal later              | Admin-first active, client-facing deferred    |
+| Client website           | AI Delivery, Reports, Client Portal MVP              | MVP 1 active for Puriva (`puriva.id`)         |
 | Directory/media          | Market Intelligence, AI moderation, sponsored listings | Market Intelligence foundation active         |
 | Custom website / Next.js | Revenue Hub future connector                           | Requirement accepted, not yet built           |
 | WordPress site           | WordPress config, draft prep, future publishing        | Foundation exists, full integration gated     |
@@ -547,7 +563,7 @@ Reason:
 * no premature public links,
 * no uncontrolled external provider behavior.
 
-Client-facing views remain deferred until admin foundation is stable.
+Client-facing Client Portal MVP is required for Puriva. Admin/operator workflows remain primary for internal operations. Advanced portal actions (public magic links, full comment threads) remain phased after MVP visibility scope.
 
 ---
 
@@ -591,7 +607,7 @@ Poniższe oznacza: kod/foundation istnieje w repo i jest zgodny z dotychczasową
 | Owner/admin guarded API routes       | Done     |
 | Tenant context foundation            | Done     |
 | ClientUserAccess data foundation     | Done     |
-| Client Portal full workflow          | Deferred |
+| Client Portal MVP workflow           | Required (Puriva MVP 1) |
 
 ### Core Business
 
@@ -701,7 +717,7 @@ Poniższe oznacza: kod/foundation istnieje w repo i jest zgodny z dotychczasową
 
 | Obszar                            | Aktualny stan                                                    | Następny sensowny krok                                                       |
 | --------------------------------- | ---------------------------------------------------------------- | ---------------------------------------------------------------------------- |
-| Client Portal                     | Shell/foundation + deferred client routes                        | Admin-safe Client Access Admin UI foundation, potem read-only client archive |
+| Client Portal                     | MVP required for Puriva — client-safe visibility foundation in progress |
 | WordPress                         | Site config + draft preparation foundation; no credentials in UI | Secure credential/encryption/redaction design before real publishing         |
 | Google Drive                      | Deliverable export foundation done                               | Monthly Reports / Research export later if needed                            |
 | GA/GSC                            | Data model supports metrics source types                         | Manual/import first, live sync later                                         |
@@ -718,51 +734,46 @@ Poniższe oznacza: kod/foundation istnieje w repo i jest zgodny z dotychczasową
 
 ## 4.3 Co jest kolejnym krokiem
 
-Najbardziej logiczna kolejność po obecnym stanie:
+Najbardziej logiczna kolejność po obecnym stanie (MVP 1 Puriva):
 
-1. **Client Access Admin UI foundation**
+1. **Client Access Admin UI**
 
-   * admin manages which user has access to which client,
-   * still no full client portal actions,
-   * safe/read-only foundation.
+   * admin manages which user has access to which client.
 
-2. **Operate monthly delivery path end-to-end**
+2. **Client Portal MVP**
 
-   * Market Intelligence,
-   * AI Delivery brief/context,
-   * AI SEO plan,
-   * content drafts,
-   * article/image deliverables,
-   * WordPress draft preparation,
-   * final monthly report.
-
-3. **Polish Monthly Report final flow**
-
-   * final report status,
-   * PDF/document proof,
-   * client-safe fields only,
-   * report archive.
-
-4. **Client Portal read-only archive**
-
-   * only final deliverables,
-   * only final monthly reports,
+   * client-safe MI summary, SEO status, Google Docs deliverables, publishing handoff/status, final deliverables and reports;
    * no internal workflow/run/prompt/source visibility.
 
-5. **Real external integrations**
+3. **Market Intelligence client-safe summary**
 
-   * only after security/credential plan:
+   * portal-visible summary only.
 
-     * WordPress publishing,
-     * GA/GSC live sync,
-     * Google Docs client sharing,
-     * OpenRouter/live AI provider usage,
-     * R2 production credentials.
+4. **AI SEO delivery flow**
 
-6. **Revenue Hub / Commerce Core**
+   * human/client review before publication.
 
-   * once AI Delivery + reporting are operationally useful,
-   * must support WordPress/WooCommerce/Stripe and also Next.js/custom websites.
+5. **Google Docs deliverables**
+
+   * final client-visible export links.
+
+6. **Website publishing workflow**
+
+   * WordPress handoff/status (full publish after credential blocks 4–5).
+
+7. **Product catalog + inquiry for Puriva**
+
+   * inquiry only — no cart/checkout; `shop.puriva.id` deferred.
+
+8. **Monthly report final client view**
+
+9. **Architecture blocks 1–6**
+
+   * per `docs/architecture/CLIENT_DOMAIN_OPERATING_MODEL.md`.
+
+10. **Future domain modules**
+
+    * explicit scope only — no parallel build-out of all domains.
 
 ---
 
@@ -866,12 +877,15 @@ Najbardziej logiczna kolejność po obecnym stanie:
 
 | Funkcja                                 | Status                        |
 | --------------------------------------- | ----------------------------- |
-| Full client approval portal             | Deferred                      |
-| Client comments/actions                 | Deferred                      |
-| Public share links                      | Deferred                      |
-| Client-visible workflow status          | Deferred                      |
+| Client Portal MVP (Puriva)              | Required now                  |
+| Client-safe MI summary                  | Required MVP                  |
+| Client-safe deliverables/reports        | Required MVP                  |
+| Google Docs final export visibility     | Required MVP                  |
+| Website publishing handoff/status       | Required MVP                  |
+| Product catalog inquiry (Puriva)        | Required MVP — no cart        |
+| Public share links / magic links        | Deferred                      |
+| Full client comment/action threads      | Deferred                      |
 | Client-visible raw sources/prompts/runs | Not allowed                   |
-| Client archive read-only                | Later after admin flow stable |
 
 ### External Integrations
 
@@ -922,9 +936,9 @@ Najbardziej logiczna kolejność po obecnym stanie:
 
 Build shared platform foundations first. Add vertical business modules second. Add brand/domain-specific workflows last.
 
-## 6.2 Admin-first
+## 6.2 Admin-first (internal) + Client Portal MVP (Puriva)
 
-MVP should be operated by admin/operator. Client-facing features only after admin flow is stable.
+Internal MVP operations remain admin/operator-first. Client Portal MVP is required now for Puriva client delivery — client-safe visibility only, with human/client review before publication.
 
 ## 6.3 Human approval over AI autonomy
 
@@ -1020,7 +1034,7 @@ unless owner explicitly approves.
 | Market Intelligence | Market/competitor research            | Core AI MVP      |
 | Monthly Reports     | Report generation, metrics, PDF       | Delivery MVP     |
 | Client Access       | Link client users to clients          | Foundation       |
-| Client Portal       | Future read-only client surface       | Deferred         |
+| Client Portal       | Client-safe delivery visibility       | Required MVP (Puriva) |
 | Revenue Hub         | Revenue/commerce analytics            | Planned          |
 | POD Toolkit         | Product/POD operations                | Planned          |
 | Commerce Core       | Storefront/product/order layer        | Planned          |
@@ -1054,8 +1068,8 @@ Rules:
 
 1. Admin creates and controls the workflow.
 2. AI output is draft-only until reviewed.
-3. Client-facing flow is deferred.
-4. Only final deliverables and final reports may later become client-visible.
+3. Client Portal MVP shows approved client-safe output only (Puriva agreement active).
+4. Only final deliverables, client-safe MI summary, and final reports are client-visible.
 5. Raw prompts, internal research runs, execution logs and provider internals stay hidden.
 
 ---
@@ -1117,6 +1131,12 @@ Do not hard-code a domain-specific workflow until it is clear whether it should 
 6. a **licensee tenant** migration (for `OWN_DOMAIN` with separate Finance).
 
 Do not use tenant-global WordPress config for multi-domain operations.
+
+## 11.3 Approved domain portfolio
+
+Full standardized matrix (domain, business role, monetization, DCA OS role, status): `docs/architecture/CLIENT_DOMAIN_OPERATING_MODEL.md` section 13.
+
+**MVP 1 active client:** `puriva.id`. **Production system:** `system.digitalcubeagency.net`. **`digitalcubic.com`:** removed from active portfolio.
 
 ---
 
@@ -1180,14 +1200,43 @@ The following are explicitly not MVP goals:
 * full POD management,
 * per-user Google OAuth,
 * background bidirectional Google Drive sync,
-* client-visible internal logs/prompts/runs,
+* no parallel build-out of all domains,
+* no future domain code without active workflow and explicit scope,
+* no Spa Finance in Puriva MVP,
+* no `shop.puriva.id` ecommerce in Puriva MVP,
+* no GayService, BaliShop, GotoBeauty, or Bali24 implementation now,
+* no full Revenue Hub or Commerce Core in Puriva MVP,
+* no medical form storage for Bali Medika,
+* no AI-only medical/beauty publishing,
+* client-visible Client Portal MVP is required for Puriva — but no raw AI/internal workflow data exposure,
 * production deployment without approval.
 
 ---
 
 # 14. Immediate Product Priority
 
-**Approved implementation sequence (2026-06-26).** Full spec: `docs/architecture/CLIENT_DOMAIN_OPERATING_MODEL.md` and `docs/ROADMAP.md`.
+**Approved implementation sequence (2026-06-27).** Full spec: `docs/architecture/CLIENT_DOMAIN_OPERATING_MODEL.md` and `docs/ROADMAP.md`.
+
+### MVP 1 — Puriva client delivery
+
+**Active client:** `puriva.id`
+
+Required: Client Access Admin UI, Client Portal MVP, Market Intelligence client-safe summary, AI SEO delivery flow, Google Docs deliverables, website publishing workflow, product catalog inquiry (no ecommerce), monthly report final client view, human/client review before publication.
+
+Excluded: `shop.puriva.id` ecommerce, Spa Finance, full Revenue Hub, full Commerce Core.
+
+### Delivery priority order
+
+1. Client Access Admin UI
+2. Client Portal MVP
+3. Market Intelligence client-safe summary
+4. AI SEO delivery flow
+5. Google Docs deliverables
+6. Website publishing workflow
+7. Product catalog + inquiry for Puriva
+8. Monthly report final client view
+9. Architecture blocks 1–6 (below)
+10. Future domain modules — explicit scope only
 
 ### Block 1 — Client foundation + `clientKind`
 
@@ -1221,13 +1270,12 @@ The following are explicitly not MVP goals:
 * `requireTenantModule`; dry-run → full enforce
 * Supports licensee module packaging
 
-### Parallel / existing priorities (unchanged intent)
+### Parallel / existing priorities
 
-* Client Access Admin UI (can align with Block 1 Client Hub)
+* Puriva MVP 1 delivery path (sections above)
 * AI Delivery operational closure (monthly path end-to-end)
-* Monthly Report finalization
-* Client read-only archive (per-Client access, not per-project)
-* Revenue Hub / Commerce Core planning (after delivery path stable)
+* Monthly Report finalization for client view
+* Revenue Hub / Commerce Core planning (after Puriva MVP — not parallel)
 
 ---
 
@@ -1246,7 +1294,7 @@ A block is done only when:
 9. Commit happens only after review/approval.
 10. Push happens only after separate approval.
 11. No secrets are logged, stored or committed.
-12. Client-facing behavior is safe or explicitly deferred.
+12. Client-facing behavior is safe; Client Portal MVP required for Puriva.
 
 ---
 
@@ -1255,17 +1303,21 @@ A block is done only when:
 Use this as the compressed startup summary if the full PRD is too long:
 
 ```text
-DCA OS Lite / DCA360 OS is a modular, tenant-aware SaaS operating system for Digital Cube Agency. SaaS is the foundation; each internet domain is one Client record (not a separate app or DomainProperty entity). Digital Cube Agency LLC operates agency clients; own domains belong to independent companies that will use licensed licensee tenants for Finance.
+DCA OS is a modular, tenant-aware SaaS operating system for Digital Cube Agency. SaaS is the foundation; each internet domain is one Client record (not a separate app or DomainProperty entity). Digital Cube Agency LLC operates agency clients; own domains belong to independent companies that will use licensed licensee tenants for Finance.
+
+Production system: system.digitalcubeagency.net. Public product site: digitalcubeagency.net. Agency site: digitalcubeagency.com. digitalcubic.com removed from active portfolio.
+
+MVP 1: Puriva (puriva.id) — Client Portal MVP required now (active agreement). Client-safe visibility only.
 
 Architecture doc: docs/architecture/CLIENT_DOMAIN_OPERATING_MODEL.md. Approved blocks 1-6: Client/clientKind, PublicationTarget per Client, MI clientId, encrypted credentials per target, real WordPress publish, module middleware.
 
 Current repo: dca-glitch/dcaosv1, local path C:\dcaosv1. Stack: npm workspaces, TypeScript, React 18, Vite 5, Node 20+, Express 4, Prisma, PostgreSQL, Docker/Postgres 16, GitHub Actions, Playwright, pdf-lib, googleapis. External integrations/foundations: Google Drive/Docs export, WordPress draft prep/config (moving to per-Client PublicationTarget), Cloudflare Turnstile, Cloudflare R2, OpenRouter env-gated text provider, GA/GSC metric source types.
 
-Architecture: apps/api, apps/web, packages/shared, packages/data. Core layers: auth/session, tenant, roles (owner/admin/client), modules, settings, audit/activity, business modules, AI modules. Tenant safety and admin-first workflow are mandatory.
+Architecture: apps/api, apps/web, packages/shared, packages/data. Core layers: auth/session, tenant, roles (owner/admin/client), modules, settings, audit/activity, business modules, AI modules. Tenant safety and admin-first internal workflow are mandatory; Client Portal MVP required for Puriva.
 
-Implemented foundations: clients, projects, tasks, finance/invoices/bills/vendors/credit notes, auth/session/tenant/RBAC, module registry, audit/activity, AI Delivery project/brief/workflow/research/content plan/drafts/images/deliverables/reviews/monthly reports/PDF/Google Docs export/WordPress draft prep, Market Intelligence projects/sources/runs/insights/handoffs, MI context to AI Delivery/monthly report, Client Portal read-only foundation.
+Implemented foundations: clients, projects, tasks, finance/invoices/bills/vendors/credit notes, auth/session/tenant/RBAC, module registry, audit/activity, AI Delivery project/brief/workflow/research/content plan/drafts/images/deliverables/reviews/monthly reports/PDF/Google Docs export/WordPress draft prep, Market Intelligence projects/sources/runs/insights/handoffs, MI context to AI Delivery/monthly report, Client Access Admin UI foundation, Client Portal archive foundation.
 
-Deferred: tenant-global WordPress credentials, full WordPress publishing until block 4-5, live GA/GSC sync, module API enforcement until block 6, licensee tenant migration, Revenue Hub, Commerce Core, POD Toolkit.
+Deferred: shop.puriva.id ecommerce, Spa Finance, GayService, BaliShop, GotoBeauty/Bali24 directory engines, full Revenue Hub, Commerce Core, tenant-global WordPress credentials, full WordPress publishing until block 4-5, live GA/GSC sync, module API enforcement until block 6, licensee tenant migration.
 
-Current next priority: Block 1 Client foundation + clientKind, then blocks 2-6 per CLIENT_DOMAIN_OPERATING_MODEL.md.
+Current next priority: Puriva MVP 1 delivery path, then architecture blocks 1-6 per CLIENT_DOMAIN_OPERATING_MODEL.md.
 ```

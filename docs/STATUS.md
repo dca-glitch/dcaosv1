@@ -51,7 +51,7 @@ DCA OS Lite is in local-first admin/operator foundation work. Production is froz
 - No commit, push, deploy, VPS, or production action unless explicitly approved after review.
 - Admin UI direction is data-first/operator-dense: overview screens should prefer compact rows/tables, dimmed non-flashy routine buttons, small status chips, and one main visible action per record over oversized card/button walls.
 - Plain-language admin/client documentation should be kept aligned with behavior so non-technical users can understand what is active, what is final, and what remains deferred.
-- Client Portal archive is read-only; client review/actions remain intentionally deferred.
+- Client Portal MVP is required for Puriva client delivery; portal shows client-safe final data only. Advanced client actions (approve/comments/magic links) remain phased after MVP visibility scope.
 - Client access is client-level in the current schema. Project-specific grants require a separately approved schema/API block.
 - AI Delivery defaults to local deterministic execution. OpenRouter-capable text execution code exists but is opt-in by env config and is not production-approved by default. Crawling, WordPress publishing, GA/GSC, Resend sending, and production deployment remain inactive unless explicitly approved.
 - AI provider runtime/cost guardrail foundation is closed for the current admin MVP as a guarded, local-first foundation; persistent provider cost metadata, deeper provider observability, dedicated provider smoke, and production/live provider proof remain deferred.

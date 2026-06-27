@@ -1,4 +1,29 @@
-# DCA OS v1 Roadmap
+# DCA OS Roadmap
+
+## MVP 1 — Puriva Client Delivery (2026-06-27)
+
+**Status:** Owner-approved current priority. Full spec: [`docs/architecture/CLIENT_DOMAIN_OPERATING_MODEL.md`](./architecture/CLIENT_DOMAIN_OPERATING_MODEL.md).
+
+**Active client:** `puriva.id` (agency client under DCA LLC tenant).
+
+**Production system:** `system.digitalcubeagency.net` — final DCA OS login and application location.
+
+Implementation priority (delivery path first):
+
+1. Client Access Admin UI
+2. Client Portal MVP (required — not deferred; Puriva agreement active)
+3. Market Intelligence client-safe summary
+4. AI SEO delivery flow
+5. Google Docs deliverables
+6. Website publishing workflow
+7. Product catalog + inquiry for Puriva (inquiry only — no cart/checkout)
+8. Monthly report final client view
+9. Architecture blocks 1–6 (below)
+10. Future domain modules — explicit scope only
+
+**Puriva MVP excludes:** `shop.puriva.id` ecommerce, Spa Finance, full Revenue Hub, full Commerce Core.
+
+---
 
 ## Approved Architecture Roadmap (2026-06-26)
 
@@ -38,7 +63,7 @@ DCA OS v1 has a clean reusable foundation, dependency lockfile, real validation,
 - **Audit/Activity foundation**: Exists (schema, local smoke; admin logging incomplete)
 - **Backup/restore + staging migration runbooks**: Added
 - **Finance tenant isolation smoke**: Local spoof handling is proven; full cross-tenant proof still needs a real second tenant fixture
-- **Client Portal**: Remains deferred
+- **Client Portal MVP**: Required now for Puriva client delivery (active agreement); client-safe visibility only — see MVP 1 section above
 - **Production deployment**: Remains frozen unless explicitly approved by owner
 
 ## Completed

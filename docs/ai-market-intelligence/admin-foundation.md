@@ -8,7 +8,7 @@ For the MVP contract, each research project should stay tenant-scoped and can op
 
 ## Closure Note
 
-The admin MVP foundation is implemented and locally validated, including research inputs, internal handoff bridge, handoff isolation, AI Delivery project context integration, and Monthly Report MI context integration. Focused smoke coverage now includes the Monthly Report MI context lifecycle and Client Portal non-exposure guard. Client-visible Market Intelligence output, export handoff, and any future client portal archive remain deferred.
+The admin MVP foundation is implemented and locally validated, including research inputs, internal handoff bridge, handoff isolation, AI Delivery project context integration, and Monthly Report MI context integration. Focused smoke coverage now includes the Monthly Report MI context lifecycle and Client Portal non-exposure guard. Client-visible Market Intelligence **client-safe summary** in Client Portal MVP is required for Puriva; raw MI internals and export handoff to clients remain admin-only.
 
 ## Purpose
 
@@ -54,7 +54,7 @@ Admins can use Market Intelligence to:
 
 - The curated summary set can become an internal deliverable for AI Delivery or monthly report handoff.
 - Raw source lists, run metadata, and reviewer notes stay internal.
-- Client portal exposure remains deferred.
+- Client Portal MVP requires client-safe MI summary visibility (Puriva); raw MI internals remain admin-only.
 
 **Relationship to other modules**
 
@@ -289,5 +289,5 @@ After MVP validation:
 1. Gather admin feedback on workflow
 2. Consider AI-powered insight generation (with safe, bounded execution model)
 3. Evaluate external market data integrations
-4. Plan Client Portal read-only access (future module)
+4. Expand Client Portal MVP for Puriva (client-safe MI summary, SEO, deliverables, publishing status — required)
 5. Design export/reporting for insights

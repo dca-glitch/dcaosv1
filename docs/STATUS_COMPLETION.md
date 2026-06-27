@@ -71,7 +71,8 @@ Related documents:
 | **Revenue Hub AI** | **0%** | Deferred | Future module |
 | **POD AI Toolkit** | **0%** | Deferred | Future module |
 | **Scraping / broad data collection** | **0%** | Deferred | Future module |
-| **Client Portal actions** (approve, comments, magic links) | **0%** | Deferred | See deferred scope register |
+| **Client Portal MVP** (client-safe visibility for Puriva) | In progress | Required | See `docs/architecture/CLIENT_DOMAIN_OPERATING_MODEL.md` |
+| **Client Portal actions** (approve, comments, magic links) | **0%** | Phased after MVP visibility | See deferred scope register |
 | **Live GA/GSC, Google OAuth** | **0%** | Deferred | Snapshot-first only today |
 | **Live WordPress auto-publish (prod)** | **0%** | Deferred | Draft handoff yes; auto-publish no |
 | **Stripe / payments / accounting integrations** | **0%** | Deferred | Finance = admin records |

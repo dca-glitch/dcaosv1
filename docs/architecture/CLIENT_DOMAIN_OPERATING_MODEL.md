@@ -1,8 +1,8 @@
-# Client / Domain Operating Model — DCA OS Lite
+# Client / Domain Operating Model — DCA OS
 
 **Status:** Approved (owner decision)  
-**Date:** 2026-06-26  
-**Scope:** Canonical architecture for domains, clients, publication, finance separation, and implementation roadmap  
+**Date:** 2026-06-27 (portfolio + MVP priority update)  
+**Scope:** Canonical architecture for domains, clients, publication, finance separation, module portfolio, and implementation roadmap  
 **Audience:** Product owner, operators, implementers, AI agents  
 
 **Related documents:**
@@ -16,7 +16,18 @@
 
 ## 1. Executive summary
 
-DCA OS Lite treats **each internet domain as one `Client` record**. There is no separate `DomainProperty` table in the approved model.
+**Product naming:** Use **DCA OS** as the current product name. Do not use **DCA360** as current product naming except in historical context.
+
+**System domains:**
+
+| Domain | Role |
+|--------|------|
+| `system.digitalcubeagency.net` | Final production login and DCA OS application location — app, admin, Client Portal, workspaces, modules |
+| `digitalcubeagency.net` | Public product website for DCA OS — positioning, SaaS/service sales, onboarding later |
+| `digitalcubeagency.com` | Public agency website / lead generation — backoffice handled by DCA OS |
+| `digitalcubic.com` | **Removed** from active domain portfolio |
+
+DCA OS treats **each internet domain as one `Client` record**. There is no separate `DomainProperty` table in the approved model.
 
 Three organizational levels:
 
@@ -24,7 +35,11 @@ Three organizational levels:
 2. **Client** — operational unit = one domain (or agency service client scoped to a domain); distinguished by `clientKind`.
 3. **Operational links** — AI Delivery, Market Intelligence, publication targets, analytics, finance — all hang off `Client`.
 
-**Approved:** 2026-06-26 by product owner.
+**Client Portal:** Required now — not deferred. DCA has an active agreement with Puriva and must start client delivery. Client Portal MVP must support client-safe delivery visibility only.
+
+**MVP 1:** DCA OS Client Delivery for **Puriva** (`puriva.id`).
+
+**Approved:** 2026-06-26 (architecture); 2026-06-27 (domain portfolio + MVP priority).
 
 ---
 
@@ -36,7 +51,7 @@ Three organizational levels:
 - **Roles:** `owner`, `admin` (DCA staff)
 - **Clients:**
   - `AGENCY_CLIENT` — paying SEO/content clients (one Client per domain when isolation is needed)
-  - `OWN_DOMAIN` — own DCA360 portfolio domains; each maps to an **independent legal entity** (separate company)
+  - `OWN_DOMAIN` — own DCA OS portfolio domains; each maps to an **independent legal entity** (separate company)
 - **Finance in this tenant:** agency clients only. **No invoices for own-domain assets** in DCA LLC Finance.
 
 ### 2.2 Own domains and future licensees
@@ -184,7 +199,17 @@ Client
 
 **Client Portal rule:** access per **Client**, not per project. Isolation = separate Client records per domain.
 
-**Client-visible modules (default):** AI Delivery deliverables (DELIVERED/ACCEPTED), Monthly Reports (FINAL). No MI raw sources, prompts, workflow runs, or credentials.
+**Client Portal MVP (required now):** Client-safe delivery visibility for:
+
+- Market Intelligence (client-safe summary only — no raw MI internals)
+- AI SEO delivery status and approved content
+- Google Docs deliverables (final export links only)
+- Website publishing handoff / status
+- Final deliverables and monthly reports (FINAL status)
+
+**Clients must not see:** raw prompts, internal workflow runs, AI provider responses, AI costs, credentials, technical logs, raw MI internals, or admin-only notes.
+
+**Client Access Admin UI:** Required — admin manages `ClientUserAccess` per Client before portal users can sign in.
 
 ---
 
@@ -214,7 +239,155 @@ Frontend: `ClientHubPage` module; WordPress config moves from Company Profile to
 
 ---
 
-## 11. Approved implementation roadmap
+## 11. MVP 1 — Puriva client delivery
+
+**Active agency client:** `puriva.id` — beauty/clinic website, services, skincare catalog, product inquiry.
+
+**Puriva MVP requires:**
+
+| Capability | MVP scope |
+|------------|-----------|
+| Client Access Admin UI | Required |
+| Client Portal MVP | Required — client-safe visibility only |
+| Market Intelligence | Client-safe summary in portal |
+| AI SEO | Delivery flow with human/client review before publication |
+| Website publishing workflow | WordPress handoff/status |
+| Google Docs final deliverables | Required export path |
+| Product catalog on `puriva.id` | Inquiry only — no cart/checkout |
+| Human/client review | Required before publication |
+
+**Puriva MVP excludes (deferred):**
+
+- `shop.puriva.id` ecommerce merch
+- Ecommerce / cart / checkout / inventory
+- Spa Finance
+- Full Revenue Hub / Commerce Core
+
+---
+
+## 12. AI Delivery (agency clients first)
+
+AI Delivery serves **agency clients first**.
+
+Required delivery outputs:
+
+- Final deliverables
+- Google Docs export
+- Website publishing / WordPress workflow
+- Monthly report final client view
+
+Technical implementation variant may be selected by implementers only within safe existing architecture and documented constraints (no schema/API/auth changes without explicit approval).
+
+Human review is mandatory before client-visible or published output.
+
+---
+
+## 13. Domain portfolio matrix
+
+Each domain is onboarded as a **`Client` record** (or linked workspace). Use this matrix for scope decisions.
+
+| Domain | Business role | Monetization | DCA OS role | Current status |
+|--------|---------------|--------------|-------------|----------------|
+| `system.digitalcubeagency.net` | DCA OS login and application | SaaS / internal ops | System core — app, admin, Client Portal, workspaces, modules | **Active — production target** |
+| `digitalcubeagency.net` | Public product website for DCA OS | SaaS/service sales, onboarding later | Public product site | Active |
+| `digitalcubeagency.com` | Public agency website | Agency lead generation | Backoffice via DCA OS | Active |
+| `puriva.id` | Active agency client — beauty/clinic | Services, skincare catalog, product inquiry | MI, SEO, Client Portal, Google Docs, website publishing, product catalog inquiry | **MVP 1 — active client** |
+| `shop.puriva.id` | Future Puriva ecommerce merch | Product sales | Future commerce connector | **Deferred** |
+| `cocograndespa.com` | Second real workspace — spa/local services | Services | Future DCA OS Spa Finance module | Active workspace; Spa Finance **deferred** |
+| `balimedika.com` | Clinic website, education, contact/appointment | Services, appointments | Website publishing, content with human review | Active — no form storage in DCA OS; no EMR/patient records/diagnosis/online medical results |
+| `hiv24.net` | HIV/STI/PrEP/PEP education | Education, awareness | Content with human review | Active — no diagnosis; no AI-only medical advice |
+| `skinclinics.org` | Future skin clinic information portal | Content/listings | Future content/listing module | **Not current MVP** |
+| `gotobeautyclinic.com` | Owned business — beauty directory/listings | Leads, booking requests, ads | Future Beauty Directory Engine | Future owned business |
+| `bali24.net` | Bali guide, local directory, sponsored content | Directory, ads, own services | Future Bali Local Directory Engine | Future owned business |
+| `gayinfo.net` | LGBT/gay information (separate from GayService) | Content, ads | Future content property | Future owned business |
+| `gayservice.net` | LGBT services platform (not a marketplace) | Service fees, subscriptions | Future LGBT Service Platform module | Future high-complexity — **do not implement now** |
+| `balishop.org` | POD sales — local Bali artist artwork | POD product sales, revenue share | Future POD Artist + Revenue Share module | Future — Gelato/Printful expected; pilot collection first |
+| `artdynamic.net` | Future art/POD brand | Creative commerce | Future option | Future |
+| `nusalifestyle.com` | External company business-card site | Services | Website publishing/support only | Active — limited DCA OS scope |
+| `digitalcubic.com` | Former portfolio domain | — | **Removed** from active portfolio | Inactive / retired |
+
+### 13.1 Domain-specific constraints (approved)
+
+**`gayservice.net` (future only):**
+
+- Do not describe as a marketplace
+- Illegal services prohibited; sex/adult/escort profiles prohibited
+- Country-level safety rules required from start
+- Nickname profiles allowed
+- Verification via card payment, bank transfer, or document submission by email if payment unavailable
+- Stripe or 2Checkout expected; chat and reviews/ratings are MVP when built
+
+**`balishop.org` (future only):**
+
+- Not a marketplace — artist provides artwork; Balishop prints/sells POD products
+- Revenue share applies; Gelato and Printful expected POD providers
+- First version = small pilot collection
+
+**Medical/education domains (`balimedika.com`, `hiv24.net`, `skinclinics.org`):**
+
+- Human/client review required before publication
+- No AI-only medical/beauty publishing
+- No medical form storage in DCA OS for Bali Medika
+- No EMR, patient records, diagnosis, or online medical result delivery
+
+---
+
+## 14. Shared DCA OS modules
+
+Reusable modules across clients and domains:
+
+| Module | Purpose |
+|--------|---------|
+| Client Access Admin UI | Grant/revoke portal users per Client |
+| Client Portal | Client-safe delivery visibility |
+| Market Intelligence | Research and insights (admin + client-safe summary) |
+| AI Delivery | Monthly SEO/content delivery workflow |
+| AI SEO | Content plan, drafts, SEO delivery |
+| Website Publishing | WordPress draft prep, publish, handoff/status |
+| Google Docs Export | Final deliverable export to Google Docs |
+| Monthly Reports | Metrics, PDF, final client view |
+| Product Catalog Inquiry | Product listing with inquiry-only flow (no cart) |
+| Lead / Booking Request | Lead capture and booking request flows |
+| Directory / Listings | Directory and listing content (future domains) |
+| Reviews / Ratings | Review and rating surfaces (future domains) |
+| Sponsored Content / Placement | Sponsored placement management (future domains) |
+| Revenue Hub | Revenue/commerce analytics connector (future — not full MVP) |
+
+---
+
+## 15. Dedicated deferred modules
+
+Build only after explicit scope approval:
+
+| Module | Domain / context | Status |
+|--------|------------------|--------|
+| DCA OS Spa Finance | `cocograndespa.com` | Deferred |
+| POD Artist Artwork + Revenue Share | `balishop.org` | Future |
+| LGBT Service Platform | `gayservice.net` | Future / high complexity |
+| Beauty Directory Engine | `gotobeautyclinic.com` | Future |
+| Bali Local Directory Engine | `bali24.net` | Future |
+| Medical/Educational Review Workflow | `balimedika.com`, `hiv24.net`, `skinclinics.org` | Future / controlled |
+
+---
+
+## 16. Current implementation priority order
+
+Execute in this order (each step: inspect → implement → validate → owner approval → commit):
+
+1. Client Access Admin UI
+2. Client Portal MVP
+3. Market Intelligence client-safe summary (portal-visible)
+4. AI SEO delivery flow
+5. Google Docs deliverables (client-visible final exports)
+6. Website publishing workflow
+7. Product catalog + inquiry for Puriva
+8. Monthly report final client view
+9. Architecture blocks 1–6 (Client foundation, PublicationTarget, MI clientId, credentials, publish, module middleware) — per [`docs/ROADMAP.md`](../ROADMAP.md)
+10. Future domain modules — **only after explicit scope**
+
+---
+
+## 17. Approved architecture roadmap (blocks 1–6)
 
 | Block | Name | Scope summary |
 |-------|------|----------------|
@@ -231,7 +404,7 @@ Each block: inspect → implement → validate → owner approval → commit (se
 
 ---
 
-## 12. Domain decision checklist (per new Client / domain)
+## 18. Domain decision checklist (per new Client / domain)
 
 When onboarding a new domain as Client, record:
 
@@ -247,9 +420,13 @@ When onboarding a new domain as Client, record:
 | Approval risk? | Medical/legal/brand review |
 | MVP vs later? | Explicit |
 
+Cross-reference domain against the portfolio matrix (section 13) before scoping work.
+
 ---
 
-## 13. Non-goals (unchanged product safety)
+## 19. Non-goals (current)
+
+**Architecture safety (unchanged):**
 
 - No tenant-global WordPress credentials
 - No finance for own domains inside DCA LLC tenant
@@ -257,10 +434,29 @@ When onboarding a new domain as Client, record:
 - No module enforcement until block 6 approval
 - No licensee tenant migration until dedicated block approval
 
+**Current product non-goals:**
+
+- No parallel build-out of all domains
+- No future domain code without an active workflow and explicit scope
+- No Spa Finance in Puriva MVP
+- No `shop.puriva.id` ecommerce in Puriva MVP
+- No GayService implementation now
+- No BaliShop implementation now
+- No GotoBeauty directory engine now
+- No Bali24 directory engine now
+- No full Revenue Hub now
+- No full Commerce Core now
+- No medical form storage for Bali Medika
+- No AI-only medical/beauty publishing
+- No client access to raw AI/internal workflow data
+- No public approval links in MVP
+- No autonomous AI agents or uncontrolled provider execution
+
 ---
 
-## 14. Changelog
+## 20. Changelog
 
 | Date | Change |
 |------|--------|
 | 2026-06-26 | Initial approved architecture (owner audit + decisions 1B, independent company per own domain, multi-subdomain WordPress, finance licensee model, 6-block roadmap) |
+| 2026-06-27 | Product naming (DCA OS), system domains, domain portfolio matrix, Client Portal required (Puriva MVP 1), shared/deferred modules, implementation priority order, non-goals update; `digitalcubic.com` removed from active portfolio |

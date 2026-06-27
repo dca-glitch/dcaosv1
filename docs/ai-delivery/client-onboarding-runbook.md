@@ -24,10 +24,10 @@ Market Intelligence -> AI Delivery brief/context -> AI SEO content plan/drafts -
 
 ## Client Visibility Rules
 
-- Client Portal is read-only.
-- Client visibility is limited to final deliverables and final monthly reports.
+- Client Portal MVP is required for Puriva — client-safe visibility only.
+- Client visibility includes final deliverables, final monthly reports, client-safe MI summary, SEO status, Google Docs exports, and publishing handoff/status where implemented.
 - Monthly Reports must be `FINAL` before they are client-visible.
-- No internal prompts, workflow runs, provider metadata, review notes, draft bodies, storage keys, or admin-only notes are exposed to the client.
+- No internal prompts, workflow runs, provider metadata, review notes, draft bodies, storage keys, AI costs, credentials, or admin-only notes are exposed to the client.
 - Client access is granted through tenant-scoped client-level `ClientUserAccess`.
 - Client-facing archive views must not expose unrelated client or project data.
 

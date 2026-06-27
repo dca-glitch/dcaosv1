@@ -2,11 +2,11 @@
 
 Docs-only checklist and current-state contract for the feature branch.
 
-Current state: AI Delivery is local-first and admin/operator-side. AI Delivery admin foundation closed for the current MVP admin scope. This closed admin foundation covers projects, client/month brief foundation, workflow runs foundation, content plans, content drafts, article image planning, research requests/sources/summaries, deliverables, deliverable reviews, monthly report admin UI, and activity/audit read model support where relevant. Client Access Admin UI/API foundation is closed for MVP at client-level scope, while Client Portal remains read-only and limited to final client-safe archive data.
+Current state: AI Delivery is local-first and admin/operator-side. AI Delivery admin foundation closed for the current MVP admin scope. Client Access Admin UI/API foundation is closed for MVP at client-level scope. **Client Portal MVP is required for Puriva** — client-safe visibility for final deliverables, MI summary, SEO status, Google Docs exports, publishing handoff/status, and monthly reports (no raw AI/internal data).
 
 Platform-neutral rule: AI Delivery records, content assets, article images, and deliverables are not modeled as WordPress-only objects. WordPress is only one optional future publishing connector alongside Next.js/custom React, headless CMS, Markdown/MDX, JSON packages, Google Docs, and PDF delivery targets.
 
-Default local execution does not make live AI calls. OpenRouter text execution code exists but is opt-in by `AI_TEXT_GATEWAY=openrouter` plus required key/model env config and is not production-approved by default. Crawling, real publishing connectors, WordPress-only assumptions, GA/GSC, Resend sending, client portal delivery, public approval links, VPS, and production deployment remain inactive unless explicitly approved.
+Default local execution does not make live AI calls. OpenRouter text execution code exists but is opt-in by `AI_TEXT_GATEWAY=openrouter` plus required key/model env config and is not production-approved by default. Crawling, real publishing connectors, WordPress-only assumptions, GA/GSC, Resend sending, public approval links, VPS, and production deployment remain inactive unless explicitly approved. Client Portal MVP delivery for Puriva is in scope per architecture doc.
 
 Client Portal monthly reports are now implemented and browser-proven as a read-only archive surface for linked client users. The contract is `GET /api/v1/client-portal/projects/:projectId/monthly-reports`; access requires an authenticated client portal session, an active tenant, `ClientUserAccess`, and a project that belongs to the accessible client. The endpoint returns FINAL, non-archived monthly reports only and excludes `storageKey`, `adminSummaryNotes`, `tenantId`, workflow internals, and other admin-only fields.
 
@@ -300,7 +300,7 @@ Notes:
 
 ## Client access foundation for review routes
 
-Client Access / Client Portal must not be treated as current active behavior. Before any AI Delivery client review endpoints or UI are exposed to clients, the system must have an explicitly approved tenant-scoped mapping from an authenticated system user to a client. This prevents relying on email, project ownership assumptions, or implicit tenant membership alone.
+Client Portal MVP is required for Puriva delivery. `ClientUserAccess` admin foundation is closed; portal users must have an explicit tenant-scoped mapping from authenticated user to client before any client-visible routes are used.
 
 Block 7D.0 added the client-level backend foundation. The current MVP closes the matching admin UI/API foundation for client-level grants:
 
@@ -319,11 +319,11 @@ Block 7D.0 added the client-level backend foundation. The current MVP closes the
 - Internal helper:
   - `userCanAccessClient(authSession, clientId)` verifies active tenant context, client tenant ownership, non-archived user access, and owner/admin override.
 
-Active Client Portal archive routes require non-archived `ClientUserAccess`; owner/admin role alone does not grant archive visibility there. AI Delivery client-facing review remains intentionally paused until Client Access / Client Portal is explicitly resumed and approved for interactive workflows.
+Active Client Portal archive routes require non-archived `ClientUserAccess`; owner/admin role alone does not grant archive visibility there. Client Portal MVP expands client-safe visibility for Puriva; advanced interactive client review (approve/comments) remains phased after MVP visibility scope.
 
 ## Monthly content plan client review routes
 
-Current status: paused/future. These routes document a possible authenticated review contract, but Client Access / Client Portal is not active now.
+Current status: phased after MVP visibility. These routes document a possible authenticated review contract for advanced client actions; Client Portal MVP focuses on client-safe read visibility first.
 
 Authenticated tenant users may review monthly content plans only when `userCanAccessClient(authSession, clientId)` passes for the AI Delivery Project client.
 
@@ -489,7 +489,7 @@ Admin-managed access uses `GET /api/v1/clients/:id/users`, `POST /api/v1/clients
 - `GET /api/v1/client-portal/projects/:projectId/deliverables/:deliverableId/download`
   - Uses the safe download reference endpoint; raw `storageKey` is never exposed.
 
-Client portal payloads and UI hide raw `workflowRunId`, `executionLog`, `executionError`, `tenantId`, `provider`, `prompt`, `reviewNotes`, `reviewerName`, and `draftBody` fields. `exportUrl` is intentionally included as a safe client-visible export link field; admin must store only client-appropriate URLs here. Client reviews, client actions, and client approvals remain intentionally deferred. Production/VPS are frozen and not deployed in this block.
+Client portal payloads and UI hide raw `workflowRunId`, `executionLog`, `executionError`, `tenantId`, `provider`, `prompt`, `reviewNotes`, `reviewerName`, and `draftBody` fields. `exportUrl` is intentionally included as a safe client-visible export link field; admin must store only client-appropriate URLs here. Client Portal MVP is required for Puriva; advanced client reviews, client actions, and client approvals beyond MVP visibility scope remain phased. Production/VPS are frozen and not deployed in this block.
 
 Proof:
 

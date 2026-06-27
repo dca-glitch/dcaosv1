@@ -10,9 +10,9 @@
 
 DCA OS Lite is the reusable SaaS operating system foundation for Digital Cube Agency. It is the shared platform layer for DCA tools, dashboards, admin/operator workflows, finance modules, SEO/content operations, AI Delivery records, reports, and business operations.
 
-**Approved operating model (2026-06-26):** each internet domain is one `Client` record; publication and analytics hang off Client; Digital Cube Agency LLC operates agency clients; own domains belong to independent companies that will use licensed tenant instances for Finance. See [`docs/architecture/CLIENT_DOMAIN_OPERATING_MODEL.md`](./architecture/CLIENT_DOMAIN_OPERATING_MODEL.md).
+**Approved operating model (2026-06-27):** each internet domain is one `Client` record; publication and analytics hang off Client; Digital Cube Agency LLC operates agency clients; own domains belong to independent companies that will use licensed tenant instances for Finance. **MVP 1:** Puriva client delivery — Client Portal MVP required now. See [`docs/architecture/CLIENT_DOMAIN_OPERATING_MODEL.md`](./architecture/CLIENT_DOMAIN_OPERATING_MODEL.md).
 
-Current state note: AI Delivery is admin/operator-side for now. Client Access / Client Portal foundation exists; full client workflows remain controlled. Implementation follows approved blocks 1–6 in [`docs/ROADMAP.md`](./ROADMAP.md).
+Current state note: AI Delivery admin workflows are operator-primary. Client Access Admin UI foundation exists; Client Portal MVP is required for Puriva (client-safe visibility only). Implementation follows Puriva MVP delivery path and approved blocks 1–6 in [`docs/ROADMAP.md`](./ROADMAP.md).
 
 ## Current Role Split
 
@@ -121,10 +121,10 @@ ce8db8f Add CI validation workflow
 ## Current Known Risks
 
 - Production is frozen unless explicitly approved.
-- Client Access / Client Portal is postponed and should not be treated as active.
+- Client Portal MVP is required for Puriva delivery; advanced client actions (comments, magic links) remain phased.
 - Email Notifications EN1 has provider defaults and Resend domain verification, but no API key and no real sending.
 - EN2 event wiring remains paused until modules are stable.
-- No AI calls, crawling, WordPress, GA/GSC, Resend sending, client portal, or production deployment has been added in the AI Delivery/email blocks.
+- No AI calls, crawling, WordPress publish, GA/GSC, Resend sending, or production deployment has been added beyond approved foundations; Client Portal MVP delivery for Puriva is in scope per architecture doc.
 
 ## Current Completed AI Delivery / Email Foundation State
 

@@ -184,21 +184,28 @@ The client does not approve the monthly report in the current MVP. The admin rev
 
 ## Client Portal
 
-The Client Portal is read-only in the current MVP.
+Client Portal MVP is **required for Puriva** (active agreement). The portal shows client-safe delivery visibility only.
 
-Clients should see final, approved, client-safe information only.
+Clients should see final, approved, client-safe information including:
+
+- final deliverables and monthly reports (FINAL status);
+- client-safe Market Intelligence summary;
+- AI SEO delivery status and approved content;
+- Google Docs final export links;
+- website publishing handoff/status.
 
 Clients should not see:
 
 - internal AI prompts;
-- raw research;
-- workflow statuses;
+- raw research or MI internals;
+- workflow statuses and runs;
 - unfinished drafts;
 - admin comments;
 - technical logs;
+- AI costs or credentials;
 - hidden internal context.
 
-Client review actions, comments, request changes, public approval links, and live approval workflows are intentionally deferred.
+Public approval links, magic links, and full client comment/action threads remain phased after MVP visibility scope.
 
 ## Finance
 

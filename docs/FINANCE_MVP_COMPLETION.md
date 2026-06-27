@@ -112,7 +112,7 @@
 
 **Not Ready for:**
 - Production VPS deployment (requires separate deployment block)
-- Client Portal delivery (deferred to later phase)
+- Client Portal MVP delivery (required for Puriva — see `docs/architecture/CLIENT_DOMAIN_OPERATING_MODEL.md`)
 - WordPress or publishing integrations (deferred to later phase)
 
 ---
