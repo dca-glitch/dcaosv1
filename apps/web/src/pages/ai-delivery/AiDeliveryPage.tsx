@@ -3,7 +3,7 @@ import { EmptyState } from "../../components/EmptyState";
 import { ErrorState } from "../../components/ErrorState";
 import { LoadingState } from "../../components/LoadingState";
 import { Modal } from "../../components/Modal";
-import { MetricCard, SectionPanel, StatusBadge } from "../../components/ui";
+import { MetricCard, PageHeader, SectionPanel, StatusBadge } from "../../components/ui";
 import type { ClientSummary } from "../clients/ClientsPage";
 import type { ProjectSummary as ProjectLinkSummary } from "../projects/ProjectsPage";
 import { MonthlyReportPanel } from "./MonthlyReportPanel";
@@ -2907,121 +2907,74 @@ export function AiDeliveryPage({
     available: projects.filter((project) => project.brief).length,
     pending: projects.filter((project) => !project.brief).length
   };
-  const pendingDeliverableReviewCount = deliverableReviews.filter((review) => ["NOT_STARTED", "ADMIN_REVIEW"].includes(review.status)).length;
   const workflowRunsHelper = openWorkflowRunsId
     ? `Current status mix: ${formatStatusBreakdown(workflowRuns, "No workflow runs in focus yet")}`
-    : "Open Workflow runs to review current status and next-step context.";
-  const researchHelper = openResearchSourcesId
-    ? `Requests: ${formatStatusBreakdown(researchRequests, "No requests in focus yet")} - Summaries: ${formatStatusBreakdown(researchSummaries, "No summaries in focus yet")} - Sources: ${formatStatusBreakdown(researchSources, "No sources in focus yet")}`
-    : "Open Research / Sources to review manual research status and next steps.";
-  const seoTopicsHelper = openContentPlanId
-    ? `${contentPlanItems.length} topic record(s) in focus for the current content plan.`
-    : "Open AI SEO / Content Plan to review planning status and approval context.";
-  const contentProductionHelper = openContentDraftsId || openArticleImagesId
-    ? `Drafts in focus: ${openContentDraftsId ? contentDrafts.length : "-"} - Images in focus: ${openArticleImagesId ? articleImages.length : "-"}`
-    : "Open Content production or Article images to review current production status.";
+    : "Open Workflow runs to review current status.";
   const deliverablesHelper = openDeliverablesId
     ? `Current status mix: ${formatStatusBreakdown(deliverables, "No deliverables in focus yet")} - Active: ${activeDeliverableCount} - Archived: ${archivedDeliverableCount}`
-    : "Open Deliverables to review package status and packaging readiness.";
-  const reviewsHelper = selectedReviewDeliverableId
-    ? `Current review mix: ${formatStatusBreakdown(deliverableReviews, "No review placeholders in focus yet")} - Pending: ${pendingDeliverableReviewCount}`
-    : openDeliverablesId
-      ? "Select Reviews on a deliverable to review internal QA status."
-      : "Open Deliverables, then select Reviews to review internal QA status.";
+    : "Open Deliverables to review package status.";
 
   return (
     <section className="view-section" aria-labelledby="ai-delivery-title">
-      <div className="section-header">
-        <div>
-          <p className="eyebrow">AI Workflow</p>
-          <h1 id="ai-delivery-title">AI Delivery Projects</h1>
-        </div>
-        <div className="toolbar">
-          <div className="filter-bar" role="group" aria-label="AI delivery filter">
-            {(["active", "archived", "all"] as const).map((value) => (
-              <button
-                aria-pressed={filter === value}
-                className={filter === value ? "secondary-action filter-chip is-active" : "secondary-action filter-chip"}
-                key={value}
-                onClick={() => setFilter(value)}
-                type="button"
-              >
-                {value[0].toUpperCase() + value.slice(1)}
+      <PageHeader
+        eyebrow="AI Workflow"
+        title="AI Delivery Projects"
+        titleId="ai-delivery-title"
+        description="Admin workflow: brief → content plan → drafts → deliverables → monthly report."
+        actions={
+          <>
+            <div className="filter-bar" role="group" aria-label="AI delivery filter">
+              {(["active", "archived", "all"] as const).map((value) => (
+                <button
+                  aria-pressed={filter === value}
+                  className={filter === value ? "secondary-action filter-chip is-active" : "secondary-action filter-chip"}
+                  key={value}
+                  onClick={() => setFilter(value)}
+                  type="button"
+                >
+                  {value[0].toUpperCase() + value.slice(1)}
+                </button>
+              ))}
+            </div>
+            {canEdit && projects.length > 0 ? (
+              <button className="primary-action" onClick={openCreateModal} type="button">
+                Add AI Delivery
               </button>
-            ))}
-          </div>
-          {canEdit && projects.length > 0 ? (
-            <button className="primary-action" onClick={openCreateModal} type="button">
-              Add AI Delivery
-            </button>
-          ) : null}
-        </div>
-      </div>
+            ) : null}
+          </>
+        }
+      />
 
-      <p className="muted-text" style={{ marginTop: "0.25rem", maxWidth: "72ch" }}>
-        Admin-operated path: Market Intelligence handoff → brief → content plan → draft → deliverable package → monthly report (FINAL). Client Portal shows client-safe final material only. Live providers, autonomous runs, and client-side approvals remain deferred.
-      </p>
-
-      <SectionPanel
-        title="Operator summary"
-        description="Read-only operator overview. Project totals are tenant-level; workflow, research, planning, production, deliverable, and review context reflects the project area currently in focus."
-      >
-        <div className="summary-grid" aria-label="AI Delivery operator summary">
+      <SectionPanel tone="compact" title="Operator summary" description="Collapsed by default — expand for tenant-level workflow context.">
+        <details className="operator-summary-details">
+          <summary className="operator-summary-summary">Show operator metrics</summary>
+          <div className="summary-grid metric-grid operator-summary-metrics" aria-label="AI Delivery operator summary">
           <MetricCard
             accent="cyan"
             label="AI Delivery projects"
             value={projects.length}
-            helper={`Active: ${activeProjectCount} - Archived: ${archivedProjectCount} - Visible: ${filteredProjects.length}`}
+            helper={`Active ${activeProjectCount} · Archived ${archivedProjectCount}`}
           />
           <MetricCard
             accent="violet"
             label="Project briefs"
             value={projectBriefCounts.available}
-            helper={`Available: ${projectBriefCounts.available} - Pending/not loaded: ${projectBriefCounts.pending}`}
+            helper={`Available ${projectBriefCounts.available} · Pending ${projectBriefCounts.pending}`}
           />
           <MetricCard
             accent="purple"
-            label="Workflow runs in focus"
-            value={openWorkflowRunsId ? workflowRuns.length : "-"}
+            label="Workflow runs"
+            value={openWorkflowRunsId ? workflowRuns.length : "—"}
             helper={workflowRunsHelper}
           />
           <MetricCard
-            accent="warning"
-            label="Research in focus"
-            value={openResearchSourcesId ? `${researchRequests.length}/${researchSummaries.length}/${researchSources.length}` : "-"}
-            helper={researchHelper}
-          />
-          <MetricCard
-            accent="cyan"
-            label="MI context in focus"
-            value={openMiContextId ? miContextItems.length : "-"}
-            helper={openMiContextId ? `${miContextItems.length} Market Intelligence handoff(s) applied to this project.` : "Open MI Context to view applied Market Intelligence handoffs."}
-          />
-          <MetricCard
-            accent="cyan"
-            label="Content plan in focus"
-            value={openContentPlanId ? contentPlanItems.length : "-"}
-            helper={seoTopicsHelper}
-          />
-          <MetricCard
-            accent="violet"
-            label="Production in focus"
-            value={openContentDraftsId || openArticleImagesId ? `${openContentDraftsId ? contentDrafts.length : "-"}/${openArticleImagesId ? articleImages.length : "-"}` : "-"}
-            helper={contentProductionHelper}
-          />
-          <MetricCard
             accent="success"
-            label="Deliverables in focus"
-            value={openDeliverablesId ? deliverables.length : "-"}
+            label="Deliverables"
+            value={openDeliverablesId ? deliverables.length : "—"}
             helper={deliverablesHelper}
           />
-          <MetricCard
-            accent="warning"
-            label="Reviews in focus"
-            value={selectedReviewDeliverableId ? deliverableReviews.length : "-"}
-            helper={reviewsHelper}
-          />
         </div>
+        </details>
       </SectionPanel>
 
       {filteredProjects.length === 0 ? (
@@ -4142,8 +4095,8 @@ export function AiDeliveryPage({
                     />
                   </div>
                   <div className="modal-footer">
-                    <button className="primary-action" disabled={miContextLoading || !miApplyHandoffId.trim()} onClick={() => void applyMiHandoff(openMiContextId)} type="button">Apply</button>
                     <button className="secondary-action" onClick={closeMiContext} type="button">Close</button>
+                    <button className="primary-action" disabled={miContextLoading || !miApplyHandoffId.trim()} onClick={() => void applyMiHandoff(openMiContextId)} type="button">Apply</button>
                   </div>
                 </section>
               ) : (
@@ -4467,7 +4420,7 @@ export function AiDeliveryPage({
                     </button>
                     {activeContentDraftRecord && !activeContentDraftRecord.isArchived ? (
                       <button
-                        className="primary-action"
+                        className="secondary-action"
                         disabled={contentDraftsSaving || !canMarkReadyCurrentDraft}
                         onClick={() => void requestContentDraftReview(openContentDraftsProject.id, activeContentDraftRecord.id)}
                         type="button"
@@ -4644,7 +4597,7 @@ export function AiDeliveryPage({
                   </button>
                   {activeContentDraftRecord && !activeContentDraftRecord.isArchived ? (
                     <button
-                      className="primary-action"
+                      className="secondary-action"
                       disabled={contentDraftsSaving || !canMarkReadyCurrentDraft}
                       onClick={() => void requestContentDraftReview(openContentDraftsProject.id, activeContentDraftRecord.id)}
                       type="button"
@@ -4736,7 +4689,7 @@ export function AiDeliveryPage({
                   <button className="secondary-action" disabled={deliverablesSaving} onClick={closeDeliverables} type="button">Close</button>
                   <button className="primary-action" disabled={deliverablesSaving || !(deliverableForm.title || "").trim()} onClick={() => void saveDeliverable(openDeliverablesProject.id)} type="button">{deliverablesSaving ? "Saving" : deliverableEditorId ? "Save deliverable" : "Create deliverable"}</button>
                   {activeDeliverableRecord && !activeDeliverableRecord.isArchived ? (
-                    <button className="primary-action" disabled={deliverablesSaving || activeDeliverableRecord.status === "READY"} onClick={() => void markDeliverableReady(openDeliverablesProject.id, activeDeliverableRecord.id)} type="button">Mark ready</button>
+                    <button className="secondary-action" disabled={deliverablesSaving || activeDeliverableRecord.status === "READY"} onClick={() => void markDeliverableReady(openDeliverablesProject.id, activeDeliverableRecord.id)} type="button">Mark ready</button>
                   ) : null}
                   {activeDeliverableRecord && !activeDeliverableRecord.isArchived ? (
                     <button className="secondary-action" disabled={deliverablesSaving || !["READY", "ACCEPTED", "DELIVERED"].includes(activeDeliverableRecord.status)} onClick={() => void requestDeliverableRevision(openDeliverablesProject.id, activeDeliverableRecord.id)} type="button">Request revision</button>
@@ -4974,7 +4927,7 @@ export function AiDeliveryPage({
                   <button className="secondary-action" disabled={deliverablesSaving} onClick={closeDeliverables} type="button">Close</button>
                   <button className="primary-action" disabled={deliverablesSaving || !(deliverableForm.title || "").trim()} onClick={() => void saveDeliverable(openDeliverablesProject.id)} type="button">{deliverablesSaving ? "Saving" : deliverableEditorId ? "Save deliverable" : "Create deliverable"}</button>
                   {activeDeliverableRecord && !activeDeliverableRecord.isArchived ? (
-                    <button className="primary-action" disabled={deliverablesSaving || activeDeliverableRecord.status === "READY"} onClick={() => void markDeliverableReady(openDeliverablesProject.id, activeDeliverableRecord.id)} type="button">Mark ready</button>
+                    <button className="secondary-action" disabled={deliverablesSaving || activeDeliverableRecord.status === "READY"} onClick={() => void markDeliverableReady(openDeliverablesProject.id, activeDeliverableRecord.id)} type="button">Mark ready</button>
                   ) : null}
                   {activeDeliverableRecord && !activeDeliverableRecord.isArchived ? (
                     <button className="secondary-action" disabled={deliverablesSaving || !["READY", "ACCEPTED", "DELIVERED"].includes(activeDeliverableRecord.status)} onClick={() => void requestDeliverableRevision(openDeliverablesProject.id, activeDeliverableRecord.id)} type="button">Request revision</button>
@@ -5457,7 +5410,7 @@ export function AiDeliveryPage({
                   </button>
                   {activeArticleImageRecord && !activeArticleImageRecord.isArchived ? (
                     <button
-                      className="primary-action"
+                      className="secondary-action"
                       disabled={articleImagesSaving || !(activeArticleImageRecord.previewImageUrl ?? "").trim() || activeArticleImageRecord.status === "PREVIEW_READY"}
                       onClick={() => void markArticleImagePreviewReady(openArticleImagesProject.id, activeArticleImageRecord.id)}
                       type="button"
@@ -5654,7 +5607,7 @@ export function AiDeliveryPage({
                   </button>
                   {activeArticleImageRecord && !activeArticleImageRecord.isArchived ? (
                     <button
-                      className="primary-action"
+                      className="secondary-action"
                       disabled={articleImagesSaving || !(activeArticleImageRecord.previewImageUrl ?? "").trim() || activeArticleImageRecord.status === "PREVIEW_READY"}
                       onClick={() => void markArticleImagePreviewReady(openArticleImagesProject.id, activeArticleImageRecord.id)}
                       type="button"

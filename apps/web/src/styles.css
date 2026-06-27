@@ -2054,3 +2054,109 @@ tr:hover td {
   margin-top: 2px;
   padding-top: 10px;
 }
+
+/* P0 combined cleanup — scoped screen helpers */
+.dashboard-command-metrics--compact {
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(160px, 1fr));
+}
+
+.dashboard-command-metrics--compact .metric-card {
+  min-height: 96px;
+  padding: 12px 14px;
+}
+
+.module-preview-pill--muted {
+  background: rgba(185, 194, 255, 0.05);
+  border-style: dashed;
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 700;
+  min-height: 34px;
+  opacity: 0.85;
+}
+
+.projects-quick-links {
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.portal-metric-grid {
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(160px, 1fr));
+}
+
+.portal-split-layout {
+  align-items: start;
+  display: grid;
+  gap: 14px;
+  grid-template-columns: minmax(240px, 280px) minmax(0, 1fr);
+}
+
+.portal-detail-column {
+  display: grid;
+  gap: 14px;
+}
+
+.portal-project-sidebar {
+  padding: 14px;
+}
+
+.portal-project-list .dense-record {
+  box-shadow: none;
+  padding: 10px 12px;
+}
+
+.portal-project-list .dense-record:hover {
+  box-shadow: none;
+}
+
+.portal-record-selected {
+  border-color: rgba(82, 224, 255, 0.28);
+}
+
+.portal-report-select {
+  display: flex;
+  justify-content: space-between;
+  text-align: left;
+  width: 100%;
+}
+
+.operator-summary-details {
+  margin: 0;
+}
+
+.operator-summary-summary {
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 0.86rem;
+  font-weight: 700;
+  list-style: none;
+  user-select: none;
+}
+
+.operator-summary-summary::-webkit-details-marker {
+  display: none;
+}
+
+.operator-summary-metrics {
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(160px, 1fr));
+  margin-top: 10px;
+}
+
+.operator-summary-metrics .metric-card {
+  min-height: 96px;
+  padding: 12px 14px;
+}
+
+@media (max-width: 900px) {
+  .portal-split-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .portal-metric-grid,
+  .operator-summary-metrics {
+    grid-template-columns: 1fr;
+  }
+}

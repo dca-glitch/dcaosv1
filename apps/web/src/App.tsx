@@ -929,17 +929,16 @@ function DashboardView({
         eyebrow="Operations"
         title="Dashboard"
         titleId="dashboard-title"
-        description="A focused command view for Clients, Projects, Tasks, Invoices, Bills, Modules, Revenue Hub, SEO Hub, and AI Workflow."
-        meta={<StatusBadge status={user.status || "Active"} />}
+        description="Command view for the active workspace — recent audit activity and quick links to core modules."
+        meta={
+          <>
+            <StatusBadge status={user.status || "Active"} />
+            <span className="muted-text">{user.name || user.email}</span>
+            {roles.length ? <span className="muted-text">{roles.join(", ")}</span> : null}
+          </>
+        }
       />
-      <div className="summary-grid metric-grid dashboard-command-metrics" aria-label="Dashboard command metrics">
-        <MetricCard
-          accent="cyan"
-          helper={user.email}
-          label="Signed in as"
-          metricKey="signed-in"
-          value={user.name || user.email}
-        />
+      <div className="summary-grid metric-grid dashboard-command-metrics dashboard-command-metrics--compact" aria-label="Dashboard command metrics">
         <MetricCard
           accent="violet"
           helper={activeTenant?.slug ?? "not selected"}
@@ -948,24 +947,18 @@ function DashboardView({
           value={activeTenant?.name ?? "No tenant"}
         />
         <MetricCard
-          accent="purple"
-          helper={`${permissionCount} effective permissions`}
-          label="Role coverage"
-          metricKey="role-coverage"
-          value={roles.length ? roles.join(", ") : "None"}
-        />
-        <MetricCard
           accent={activeTenant ? "success" : "warning"}
-          helper="Frontend-safe operational summary"
-          label="Workspace state"
+          helper={`${permissionCount} permissions`}
+          label="Workspace"
           metricKey="workspace-state"
           value={activeTenant ? "Ready" : "Limited"}
         />
       </div>
       <div className="dashboard-grid">
         <SectionPanel
+          tone="compact"
           title="Recent Activity"
-          description="Read-only tenant audit feed (last 5 events) from the active workspace."
+          description="Tenant audit feed — last events from the active workspace."
           action={
             <div className="filter-bar" role="group" aria-label="Audit activity type filter">
               {(["all", "auth", "module", "tenant"] as const).map((value) => (
@@ -983,9 +976,9 @@ function DashboardView({
           }
         >
           {activityAuditLogsLoading ? (
-            <div className="state-panel">Loading recent activity.</div>
+            <p className="muted-text">Loading recent activity…</p>
           ) : activityAuditLogsError ? (
-            <div className="state-panel">{activityAuditLogsError}</div>
+            <p className="muted-text" role="alert">{activityAuditLogsError}</p>
           ) : auditLogs.length === 0 ? (
             <EmptyState
               message="Audit events appear here after admin actions such as module changes, tenant updates, or auth events."
@@ -1023,29 +1016,29 @@ function DashboardView({
             </div>
           )}
         </SectionPanel>
-        <SectionPanel title="Upcoming Tasks" description="Use the Tasks workspace for live task details and due dates.">
+        <SectionPanel tone="compact" title="Upcoming Tasks" description="Live task details and due dates.">
           <div className="quick-link-list">
-            <a href="#/tasks">Review active tasks</a>
-            <a href="#/projects">Check project delivery</a>
+            <a className="subtle-action" href="#/tasks">Review active tasks</a>
+            <a className="subtle-action" href="#/projects">Check project delivery</a>
           </div>
         </SectionPanel>
-        <SectionPanel title="Invoice / Finance Status" description="Finance summaries are available in Invoices and Bills.">
+        <SectionPanel tone="compact" title="Finance" description="Summaries in Invoices and Bills.">
           <div className="quick-link-list">
-            <a href="#/invoices">Open invoices</a>
-            <a href="#/bills">Open bills</a>
+            <a className="subtle-action" href="#/invoices">Open invoices</a>
+            <a className="subtle-action" href="#/bills">Open bills</a>
           </div>
         </SectionPanel>
-        <SectionPanel title="Quick Actions" description="Jump to active workspaces; Revenue Hub, SEO Hub, and AI Workflow are shown as future module labels only.">
+        <SectionPanel tone="compact" title="Quick links" description="Core workspaces. Future modules shown as preview labels only.">
           <div className="quick-action-grid">
-            <a className="secondary-action" href="#/clients">Add Client</a>
-            <a className="secondary-action" href="#/projects">Create Project</a>
-            <a className="secondary-action" href="#/tasks">Add Task</a>
-            <a className="secondary-action" href="#/invoices">Create Invoice</a>
-            <a className="secondary-action" href="#/bills">Add Bill</a>
-            <a className="primary-action" href="#/modules">Manage Modules</a>
-            <span className="module-preview-pill">Revenue Hub</span>
-            <span className="module-preview-pill">SEO Hub</span>
-            <span className="module-preview-pill">AI Workflow</span>
+            <a className="secondary-action" href="#/clients">Clients</a>
+            <a className="secondary-action" href="#/projects">Projects</a>
+            <a className="secondary-action" href="#/tasks">Tasks</a>
+            <a className="secondary-action" href="#/invoices">Invoices</a>
+            <a className="secondary-action" href="#/bills">Bills</a>
+            <a className="secondary-action" href="#/modules">Modules</a>
+            <span className="module-preview-pill module-preview-pill--muted">Revenue Hub</span>
+            <span className="module-preview-pill module-preview-pill--muted">SEO Hub</span>
+            <span className="module-preview-pill module-preview-pill--muted">AI Workflow</span>
           </div>
         </SectionPanel>
       </div>
