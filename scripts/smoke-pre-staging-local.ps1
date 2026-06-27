@@ -103,6 +103,7 @@ try {
   Invoke-NpmStep "OpenRouter guarded local smoke" "smoke:openrouter-guarded:local"
   Invoke-NpmStep "Google Drive export live planning smoke" "smoke:google-drive-export-live:local"
   Invoke-NpmStep "Credential master key probe" "smoke:credential-master-key-probe:local"
+  Invoke-NpmStep "Post-MVP read-only APIs closeout probe" "smoke:post-mvp-readonly-apis:local"
   Invoke-NpmStep "Legacy WordPress sunset local smoke" "smoke:legacy-wordpress-sunset:local"
 
   Write-Host ""

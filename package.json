@@ -59,6 +59,7 @@
     "smoke:audit-activity:browser": "node scripts/smoke-audit-activity-browser-local.mjs",
     "smoke:dashboard-data-backed:browser": "node scripts/smoke-dashboard-data-backed-browser-local.mjs",
     "smoke:auth-invite-boundary:browser": "node scripts/smoke-auth-invite-boundary-browser-local.mjs",
+    "smoke:post-mvp-readonly-apis:local": "node scripts/smoke-post-mvp-readonly-apis-local.mjs",
     "smoke:monthly-report:local": "node scripts/smoke-monthly-report-local.mjs",
     "smoke:monthly-report:browser": "node scripts/smoke-browser-monthly-report-admin-ui.mjs",
     "smoke:monthly-report:pdf": "node scripts/smoke-monthly-report-pdf-local.mjs",

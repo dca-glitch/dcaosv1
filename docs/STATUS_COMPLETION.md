@@ -3,7 +3,7 @@
 **Status:** Planning and operator reference  
 **Last updated:** 2026-06-27  
 **Reference branch:** `feature/ai-delivery-project-brief-foundation` (local closeout 2026-06-27)  
-**Scope:** Approved local admin MVP + client/domain operating model (blocks 1–6) + **MVP 1 Puriva client delivery**. **Local repo closeout complete.** VPS/production intentionally excluded until separate owner approval.
+**Scope:** Approved local admin MVP + client/domain operating model (blocks 1–6) + **MVP 1 Puriva client delivery** + **Post-MVP local closeout (Blocks 31–57)**. VPS/production intentionally excluded until separate owner approval.
 
 Percentages measure completion **within each area's approved scope**, not the full long-term PRD vision.
 
@@ -22,7 +22,7 @@ Related documents:
 
 | Perspective | % | Meaning |
 |-------------|---|---------|
-| **Local admin MVP** (DCA operator, local dev) | **~99%** | Done | Post-MVP Phases A–D Blocks 31–53 polish/smoke layers |
+| **Local admin MVP** (DCA operator, local dev) | **~100%** | Done | Post-MVP Phases A–E local closeout (Blocks 31–57) |
 | **Client/domain roadmap (blocks 1–6)** | **~92%** | Local gates done; prod env keys = separate owner gates |
 | **Production readiness** (real clients, VPS) | **~38%** | Runbooks exist; deploy/migration deferred by owner |
 | **Full PRD vision** (future modules + automation) | **~28%** | Large portion intentionally deferred |
@@ -64,7 +64,7 @@ Related documents:
 | **Email / notifications** | **35%** | In progress | Read-only outbox API + local smoke (Post-MVP Block 38); no real sending |
 | **Audit / activity** | **78%** | In progress | Dashboard feed + dedicated browser gate (Blocks 31, 51); full audit UI deferred |
 | **AI provider (OpenRouter)** | **55%** | In progress | Planning config API + guarded local smoke (Post-MVP Block 40); live provider remains opt-in |
-| **Operator docs & runbooks** | **95%** | Done | Puriva MVP Blocks 7–30 index + pre-staging local gate |
+| **Operator docs & runbooks** | **98%** | Done | Puriva Blocks 7–30 + Post-MVP Phases A–E indices and final closeout (Block 57) |
 | **Tests / smoke** | **100%** | Done (local) | Puriva MVP + Post-MVP Phases A–D browser layers in pre-staging |
 | **PR merge → main** | **0%** | In progress | PR #13 open; merge after owner approves staging |
 | **Staging / VPS deploy** | **5%** | Deferred | Documentation only; **paused by owner — no VPS deploy** |
@@ -164,6 +164,6 @@ Do not treat local smoke alone as production readiness.
 | 2026-06-27 | MVP Block 10: Client Portal catalog inquiry browser gate; Block 11: MI smoke in pre-staging gate |
 | 2026-06-27 | MVP Block 9: Client Portal browser gate for populated delivery overview; inquiry form prefill; shared Puriva fixture lib |
 | 2026-06-27 | MVP Block 7: Puriva delivery summary local gate in client portal smoke; client-access added to pre-staging gate |
-| 2026-06-27 | Local repo closeout: pre-staging gate script + doc; blocks 4–6 local gates marked done; VPS deploy paused |
+| 2026-06-27 | Post-MVP Phase E: master index, deferred owner gates, Block 57 final closeout + read-only API probe |
 | 2026-06-27 | Puriva MVP smoke gate PASS; blocks 4–6 + legacy WordPress sunset reflected; Client Portal MVP raised to ~78% |
 | 2026-06-26 | Initial completion overview after client/domain operating model implementation and Playwright browser smoke |
