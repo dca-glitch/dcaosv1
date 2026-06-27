@@ -4,7 +4,7 @@ import { ErrorState } from "../../components/ErrorState";
 import { LoadingState } from "../../components/LoadingState";
 import { Modal } from "../../components/Modal";
 import { ModalActions } from "../../components/ui/ModalActions";
-import { SectionPanel } from "../../components/ui";
+import { MetricCard, PageHeader, SectionPanel } from "../../components/ui";
 
 export type CompanyProfileSummary = {
   id: string;
@@ -149,18 +149,50 @@ export function CompanyProfilePage({ companyProfile, canEdit, error, loading, on
     return <ErrorState message={error} title="Company profile unavailable" />;
   }
 
+  const profileStatusLabel = companyProfile ? (companyProfile.isActive ? "Active" : "Inactive") : "Not set";
+  const financeDocsLabel = companyProfile?.invoicePrefix && companyProfile?.creditNotePrefix ? "Configured" : "Pending";
+
   return (
     <section className="view-section" aria-labelledby="company-profile-title">
-      <div className="section-header">
-        <div>
-          <p className="eyebrow">Settings</p>
-          <h1 id="company-profile-title">Company Profile</h1>
-        </div>
-        {canEdit ? (
-          <button className="primary-action" onClick={openEditor} type="button">
-            {companyProfile ? "Edit Profile" : "Create Profile"}
-          </button>
-        ) : null}
+      <PageHeader
+        actions={
+          canEdit ? (
+            <button className="primary-action" onClick={openEditor} type="button">
+              {companyProfile ? "Edit Profile" : "Create Profile"}
+            </button>
+          ) : undefined
+        }
+        description="Issuer details for finance documents. Invite and password reset remain deferred."
+        eyebrow="Settings"
+        title="Company Profile"
+        titleId="company-profile-title"
+      />
+      <div className="summary-grid metric-grid company-profile-shell-metrics" aria-label="Company profile shell metrics">
+        <MetricCard
+          accent={companyProfile?.isActive ? "success" : "warning"}
+          helper={companyProfile?.name ?? "Create profile to enable finance issuer details"}
+          label="Profile status"
+          metricKey="company-profile-status"
+          value={profileStatusLabel}
+        />
+        <MetricCard
+          accent="cyan"
+          helper={companyProfile?.currency ?? "USD default"}
+          label="Default currency"
+          metricKey="company-profile-currency"
+          value={companyProfile?.currency ?? "—"}
+        />
+        <MetricCard
+          accent="violet"
+          helper={
+            companyProfile
+              ? `${companyProfile.invoicePrefix ?? "DCA-INV"} / ${companyProfile.creditNotePrefix ?? "DCA-CN"}`
+              : "Invoice and credit note prefixes"
+          }
+          label="Finance docs"
+          metricKey="company-profile-finance-docs"
+          value={financeDocsLabel}
+        />
       </div>
       {!companyProfile ? (
         <EmptyState
@@ -168,6 +200,10 @@ export function CompanyProfilePage({ companyProfile, canEdit, error, loading, on
           title="Profile not set"
         />
       ) : (
+        <SectionPanel
+          description="Single active company profile used as issuer on invoices and credit notes."
+          title="Profile details"
+        >
         <article className="entity-card entity-card-wide">
           <div className="entity-card-header">
             <div>
@@ -241,6 +277,7 @@ export function CompanyProfilePage({ companyProfile, canEdit, error, loading, on
             </div>
           </div>
         </article>
+        </SectionPanel>
       )}
 
       <SectionPanel
