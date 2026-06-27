@@ -176,9 +176,17 @@ async function createFixture(token) {
   };
 }
 
+async function ensureMonthlyReportMenuOpen(projectCard) {
+  const monthlyReportButton = projectCard.getByRole("button", { name: "Monthly Report" });
+  if (!(await monthlyReportButton.isVisible())) {
+    await projectCard.locator("summary", { hasText: "More" }).click();
+  }
+}
+
 async function openMonthlyReportModal(page, projectName) {
   const projectCard = page.locator("article.entity-card", { hasText: projectName }).first();
   await projectCard.waitFor({ state: "visible", timeout: 15000 });
+  await ensureMonthlyReportMenuOpen(projectCard);
   await projectCard.getByRole("button", { name: "Monthly Report" }).click();
   await page.getByRole("heading", { name: new RegExp(`Monthly Report\\s+—\\s+${projectName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`) }).waitFor({
     state: "visible",
@@ -246,8 +254,18 @@ async function main() {
     await primaryProjectCard.waitFor({ state: "visible", timeout: 15000 });
 
     const cardText = await primaryProjectCard.innerText();
-    record("project card shows Admin reports group", cardText.includes("Admin reports"), fixture.primaryProject.name);
-    record("project card shows Monthly Report button", await primaryProjectCard.getByRole("button", { name: "Monthly Report" }).isVisible(), fixture.primaryProject.name);
+    record("project card shows More actions menu", cardText.includes("More"), fixture.primaryProject.name);
+    await ensureMonthlyReportMenuOpen(primaryProjectCard);
+    record(
+      "project card shows Reports group",
+      await primaryProjectCard.locator(".row-action-menu-label", { hasText: "Reports" }).isVisible(),
+      fixture.primaryProject.name
+    );
+    record(
+      "project card shows Monthly Report button",
+      await primaryProjectCard.getByRole("button", { name: "Monthly Report" }).isVisible(),
+      fixture.primaryProject.name
+    );
 
     await openMonthlyReportModal(page, fixture.primaryProject.name);
     record("monthly report modal opens", true, fixture.primaryProject.name);

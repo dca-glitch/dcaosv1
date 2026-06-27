@@ -55,7 +55,7 @@ Related documents:
 | **Projects & Tasks** | **88%** | Done | Admin MVP closed |
 | **AI Delivery** | **82%** | Done | Brief → deliverable → export → monthly report path |
 | **Market Intelligence** | **78%** | In progress | Admin MVP + handoff; included in pre-staging smoke; no recurring/automation |
-| **Monthly Reports** | **88%** | Done | Admin + PDF + metrics snapshot path; local + PDF + metrics smokes in pre-staging |
+| **Monthly Reports** | **90%** | Done | Admin browser + PDF + metrics path; local + browser + metrics smokes in pre-staging |
 | **Client Portal MVP** (Puriva — visibility + review) | **99%** | Done (local) | Blocks 7–23 browser/API gates incl. signed-out shell + project filters |
 | **Client Portal advanced actions** (magic links, full comment threads) | **0%** | Phased after MVP visibility | See deferred scope register |
 | **Finance** | **80%** | Done | Invoices, bills, vendors, credit notes; `OWN_DOMAIN` invoice guard |
@@ -65,7 +65,7 @@ Related documents:
 | **Audit / activity** | **55%** | In progress | Writer + dashboard feed; no full audit UI |
 | **AI provider (OpenRouter)** | **40%** | In progress | Guarded path; default remains deterministic local |
 | **Operator docs & runbooks** | **92%** | Done | SOP, matrix, deferred register, pre-staging local gate |
-| **Tests / smoke** | **99%** | Done (local) | Pre-staging includes empty archive, hub inquiry, MI context, metrics smokes |
+| **Tests / smoke** | **99%** | Done (local) | Pre-staging includes signed-out portal, metrics, monthly report admin browser smokes |
 | **PR merge → main** | **0%** | In progress | PR #13 open; merge after owner approves staging |
 | **Staging / VPS deploy** | **5%** | Deferred | Documentation only; **paused by owner — no VPS deploy** |
 | **Production deploy** | **0%** | Deferred | Frozen |
@@ -151,6 +151,7 @@ Do not treat local smoke alone as production readiness.
 
 | Date | Change |
 |------|--------|
+| 2026-06-27 | MVP Block 24: monthly report admin browser smoke in pre-staging |
 | 2026-06-27 | MVP Block 23: Client Portal signed-out browser gate (login shell blocks archive UI without session) |
 | 2026-06-27 | MVP Block 22: monthly report metrics snapshot smoke in pre-staging |
 | 2026-06-27 | MVP Blocks 19–21: portal project filter browser gate, Client Hub publication log browser gate, monthly report local/PDF in pre-staging |

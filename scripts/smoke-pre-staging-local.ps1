@@ -75,6 +75,7 @@ try {
   Invoke-NpmStep "Monthly report local smoke" "smoke:monthly-report:local"
   Invoke-NpmStep "Monthly report PDF local smoke" "smoke:monthly-report:pdf"
   Invoke-NpmStep "Monthly report metrics local smoke" "smoke:monthly-report:metrics"
+  Invoke-NpmStep "Monthly report admin browser smoke" "smoke:monthly-report:browser"
   Invoke-NpmStep "AI Delivery reviews smoke" "smoke:ai-delivery-reviews"
   Invoke-NpmStep "Credential encryption local smoke" "smoke:credential-encryption:local"
   Invoke-NpmStep "WordPress publish local smoke" "smoke:wordpress-publish:local"
