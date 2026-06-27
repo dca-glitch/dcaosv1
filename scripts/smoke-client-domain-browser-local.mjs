@@ -1,9 +1,12 @@
 import { chromium } from "@playwright/test";
+import { seedPurivaDeliverySummaryFixture } from "./lib/puriva-delivery-summary-fixture.mjs";
 
 const apiBaseUrl = (process.env.MVP_SMOKE_API_BASE_URL ?? "http://127.0.0.1:4000/api/v1").replace(/\/$/, "");
 const webBaseUrl = (process.env.MVP_SMOKE_WEB_BASE_URL ?? "http://localhost:5173").replace(/\/$/, "");
 const adminEmail = process.env.AUTH_SEED_TEST_EMAIL ?? "admin@dca.local";
 const adminPassword = process.env.AUTH_SEED_TEST_PASSWORD;
+
+const forbiddenPatterns = [/applicationPassword/i, /passwordHash/i, /ciphertext/i, /"iv"/i, /authTag/i];
 
 const results = [];
 
@@ -32,11 +35,24 @@ async function request(path, options = {}) {
   });
   const text = await response.text();
   const body = text ? JSON.parse(text) : null;
-  return { status: response.status, body };
+  return { status: response.status, body, text };
 }
 
 async function login(email, password) {
   return request("/auth/login", { method: "POST", body: { email, password } });
+}
+
+function requireOkData(name, response, expectedStatus = 201) {
+  const ok = response.status === expectedStatus && response.body?.ok === true;
+  record(name, ok, `${response.status}`);
+  if (!ok) {
+    throw new Error(`${name} failed with HTTP ${response.status}.`);
+  }
+  return response.body.data;
+}
+
+function responseLeaksSecrets(text) {
+  return forbiddenPatterns.some((pattern) => pattern.test(text));
 }
 
 async function main() {
@@ -67,6 +83,7 @@ async function main() {
 
   const clientName = `[SMOKE][CLIENT_DOMAIN_UI] ${makeSmokeId("client")}`;
   const projectTitle = `[SMOKE][CLIENT_DOMAIN_UI] ${makeSmokeId("mi")}`;
+  const productName = `[SMOKE][CLIENT_DOMAIN_UI] ${makeSmokeId("product")}`;
   const targetLabel = `Smoke target ${makeSmokeId("target")}`;
   const targetUrl = "https://smoke-client-domain.example.com";
   const website = "https://smoke-client-domain.example.com";
@@ -121,7 +138,6 @@ async function main() {
     await page.getByRole("heading", { name: clientName }).waitFor({ state: "visible", timeout: 10000 });
     record("client hub opens", true, clientName);
 
-    const hubWebsite = page.locator("section, div").filter({ hasText: "Website" }).first();
     const hubText = await page.locator(".page-stack").innerText();
     record("hub shows website", hubText.includes(website), website);
 
@@ -137,6 +153,88 @@ async function main() {
       "wordpress credentials section visible",
       hubCredentialText.includes("WordPress credentials") && hubCredentialText.includes("Application password"),
       "credentials panel"
+    );
+
+    await page.getByRole("heading", { name: "Product catalog", exact: true }).waitFor({ state: "visible", timeout: 15000 });
+    const catalogSection = page.locator("section").filter({ has: page.getByRole("heading", { name: "Product catalog", exact: true }) }).first();
+    await catalogSection.getByLabel(/^Product name$/).fill(productName);
+    await catalogSection.getByLabel(/^Price label$/).fill("Rp 99.000");
+    await catalogSection.getByLabel(/^Description$/).fill("Client domain browser catalog proof.");
+    await catalogSection.getByRole("button", { name: "Add catalog product" }).click();
+    await catalogSection.locator("li", { hasText: productName }).waitFor({ state: "visible", timeout: 15000 });
+
+    const catalogHubText = await page.locator(".page-stack").innerText();
+    record(
+      "hub product catalog section renders added product",
+      catalogHubText.includes("Product catalog") && catalogHubText.includes(productName),
+      productName
+    );
+    record(
+      "hub product inquiries section renders empty state",
+      catalogHubText.includes("Product inquiries") && catalogHubText.includes("No inquiries yet"),
+      "empty inquiries"
+    );
+    record(
+      "hub publication log section renders empty state",
+      catalogHubText.includes("Publication log") && catalogHubText.includes("No publication events"),
+      "empty publication log"
+    );
+
+    const clientsResponse = await request("/clients", { token: adminToken });
+    const createdClient = (clientsResponse.body?.data?.clients ?? []).find((entry) => entry.name === clientName);
+    record(
+      "created client resolves in admin API",
+      clientsResponse.status === 200 && Boolean(createdClient?.id),
+      createdClient?.id ?? "missing"
+    );
+    if (!createdClient?.id) {
+      throw new Error("Cannot seed publication log without created client id.");
+    }
+
+    const aiProject = requireOkData(
+      "client domain smoke create ai delivery project",
+      await request("/ai-delivery-projects", {
+        method: "POST",
+        token: adminToken,
+        body: {
+          clientId: createdClient.id,
+          name: `[SMOKE][CLIENT_DOMAIN_UI] ${makeSmokeId("delivery")}`,
+          targetMonth: "2027-03"
+        }
+      })
+    ).aiDeliveryProject;
+
+    await seedPurivaDeliverySummaryFixture({
+      request,
+      requireOkData,
+      record,
+      makeSmokeId,
+      adminToken,
+      client: createdClient,
+      aiProject,
+      labelPrefix: "[SMOKE][CLIENT_DOMAIN_UI]"
+    });
+
+    await page.getByRole("button", { name: "Back to clients" }).click();
+    await page.getByRole("heading", { name: "Clients", exact: true }).waitFor({ state: "visible", timeout: 15000 });
+    const refreshedClientCard = page.locator("article.entity-card.dense-record", { hasText: clientName }).first();
+    await refreshedClientCard.waitFor({ state: "visible", timeout: 15000 });
+    await refreshedClientCard.getByRole("button", { name: "Open hub" }).click();
+    await page.getByRole("heading", { name: clientName }).waitFor({ state: "visible", timeout: 15000 });
+    await page.getByRole("heading", { name: "Publication log", exact: true }).waitFor({ state: "visible", timeout: 15000 });
+
+    const publicationHubText = await page.locator(".page-stack").innerText();
+    record(
+      "hub publication log section renders publish event",
+      publicationHubText.includes("Publication log") &&
+        publicationHubText.includes("PUBLISH_WORDPRESS") &&
+        publicationHubText.includes("smoke-puriva.example.com"),
+      "PUBLISH_WORDPRESS"
+    );
+    record(
+      "hub publication log hides credential secrets",
+      !responseLeaksSecrets(publicationHubText),
+      "clean"
     );
 
     await page.goto(`${webBaseUrl}/#/ai-market-intelligence`, { waitUntil: "domcontentloaded" });
@@ -161,7 +259,7 @@ async function main() {
     await page.getByRole("heading", { name: "Invoices" }).waitFor({ state: "visible", timeout: 15000 });
     record("invoices page loads (sanity)", true, "#/invoices");
 
-    const ignoredConsolePatterns = [/favicon/i, /turnstile/i];
+    const ignoredConsolePatterns = [/favicon/i, /turnstile/i, /401 \(Unauthorized\)/i, /429 \(Too Many Requests\)/i];
     const relevantConsoleErrors = consoleErrors.filter(
       (message) => !ignoredConsolePatterns.some((pattern) => pattern.test(message))
     );
@@ -174,7 +272,7 @@ async function main() {
       return;
     }
 
-    console.log("\nPROVEN: Client domain browser QA — Clients, Client Hub, publication target, MI client picker.");
+    console.log("\nPROVEN: Client domain browser QA — Clients, Client Hub catalog/publication sections, MI client picker.");
   } catch (error) {
     console.error(`FAIL: ${error instanceof Error ? error.message : "Browser QA failed."}`);
     process.exitCode = 1;

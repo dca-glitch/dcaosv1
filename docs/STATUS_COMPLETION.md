@@ -46,7 +46,7 @@ Related documents:
 | **Platform core** (auth, tenant, modules, CI, validate) | **90%** | Done | Login, tenant context, CI PASS |
 | **Dark Nebula UI + data-dense admin** | **85%** | Done | Phase 1/2 closed; polish remains in MI/Portal/settings |
 | **Clients (CRM)** | **88%** | Done | CRUD, filters, `clientKind`, website |
-| **Client Hub + domain model (block 1)** | **96%** | Done | Hub UI, catalog inquiry + publication log operator browser gates |
+| **Client Hub + domain model (block 1)** | **97%** | Done | Hub UI + client-domain browser covers catalog, inquiries shell, publication log |
 | **PublicationTarget (block 2)** | **95%** | Done | CRUD per client; legacy tenant POST sunset (410); GET read-only |
 | **MI → clientId (block 3)** | **88%** | Done | FK, client picker UI, handoff; `clientId` parser fix applied |
 | **Encrypted credentials (block 4)** | **85%** | Done (local) | Local encrypt roundtrip smoke PASS; staging/prod master key = owner gate |
@@ -151,6 +151,7 @@ Do not treat local smoke alone as production readiness.
 
 | Date | Change |
 |------|--------|
+| 2026-06-27 | MVP Block 25: client-domain browser extended for Client Hub catalog + publication log sections |
 | 2026-06-27 | MVP Block 24: monthly report admin browser smoke in pre-staging |
 | 2026-06-27 | MVP Block 23: Client Portal signed-out browser gate (login shell blocks archive UI without session) |
 | 2026-06-27 | MVP Block 22: monthly report metrics snapshot smoke in pre-staging |
