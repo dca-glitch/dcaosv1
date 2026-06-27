@@ -2,8 +2,8 @@
 
 **Status:** Planning and operator reference  
 **Last updated:** 2026-06-27  
-**Reference branch:** `feature/ai-delivery-project-brief-foundation` @ `a5e511b`  
-**Scope:** Approved local admin MVP + client/domain operating model (blocks 1–6) + **MVP 1 Puriva client delivery**. VPS/production intentionally excluded until separate approval.
+**Reference branch:** `feature/ai-delivery-project-brief-foundation` (local closeout 2026-06-27)  
+**Scope:** Approved local admin MVP + client/domain operating model (blocks 1–6) + **MVP 1 Puriva client delivery**. **Local repo closeout complete.** VPS/production intentionally excluded until separate owner approval.
 
 Percentages measure completion **within each area's approved scope**, not the full long-term PRD vision.
 
@@ -11,6 +11,7 @@ Related documents:
 
 - [`docs/operator/module-completion-matrix.md`](./operator/module-completion-matrix.md)
 - [`docs/operator/deferred-scope-register.md`](./operator/deferred-scope-register.md)
+- [`docs/runbooks/PRE_STAGING_VALIDATION_GATE.md`](./runbooks/PRE_STAGING_VALIDATION_GATE.md)
 - [`docs/STATUS.md`](./STATUS.md)
 - [`docs/ROADMAP.md`](./ROADMAP.md)
 - [`docs/architecture/CLIENT_DOMAIN_OPERATING_MODEL.md`](./architecture/CLIENT_DOMAIN_OPERATING_MODEL.md)
@@ -21,9 +22,9 @@ Related documents:
 
 | Perspective | % | Meaning |
 |-------------|---|---------|
-| **Local admin MVP** (DCA operator, local dev) | **~82%** | Core modules work locally; validate + Puriva smoke gate PASS |
-| **Client/domain roadmap (blocks 1–6)** | **~88%** | Implemented locally; prod enforce/publish keys = separate gates |
-| **Production readiness** (real clients, VPS) | **~38%** | Runbooks exist; deploy/migration deferred |
+| **Local admin MVP** (DCA operator, local dev) | **~88%** | Core modules + blocks 1–6 local gates; `smoke:pre-staging:local` |
+| **Client/domain roadmap (blocks 1–6)** | **~90%** | Local implementation + local gates done; prod env keys = separate gates |
+| **Production readiness** (real clients, VPS) | **~38%** | Runbooks exist; deploy/migration deferred by owner |
 | **Full PRD vision** (future modules + automation) | **~28%** | Large portion intentionally deferred |
 
 ---
@@ -48,9 +49,9 @@ Related documents:
 | **Client Hub + domain model (block 1)** | **92%** | Done | Hub UI, profile, local migration, Playwright smoke PASS |
 | **PublicationTarget (block 2)** | **95%** | Done | CRUD per client; legacy tenant POST sunset (410); GET read-only |
 | **MI → clientId (block 3)** | **88%** | Done | FK, client picker UI, handoff; `clientId` parser fix applied |
-| **Encrypted credentials (block 4)** | **85%** | In progress | Local encrypt roundtrip smoke PASS; prod master key gate pending |
-| **WordPress publish + PublicationLog (block 5)** | **88%** | In progress | Local gate smoke PASS (off + open gate); live Puriva publish = separate gate |
-| **Module middleware (block 6)** | **92%** | In progress | Route map, seed, local `off`/`dry_run`/`enforce` gate doc + smoke |
+| **Encrypted credentials (block 4)** | **85%** | Done (local) | Local encrypt roundtrip smoke PASS; staging/prod master key = owner gate |
+| **WordPress publish + PublicationLog (block 5)** | **88%** | Done (local) | Local gate smoke PASS (off + open gate); live Puriva publish = owner gate |
+| **Module middleware (block 6)** | **92%** | Done (local) | Local `off`/`dry_run`/`enforce` gate doc + smoke PASS |
 | **Projects & Tasks** | **88%** | Done | Admin MVP closed |
 | **AI Delivery** | **82%** | Done | Brief → deliverable → export → monthly report path |
 | **Market Intelligence** | **74%** | In progress | Admin MVP + handoff; no recurring/automation |
@@ -63,10 +64,10 @@ Related documents:
 | **Email / notifications** | **22%** | In progress | Backend foundation; no real sending |
 | **Audit / activity** | **55%** | In progress | Writer + dashboard feed; no full audit UI |
 | **AI provider (OpenRouter)** | **40%** | In progress | Guarded path; default remains deterministic local |
-| **Operator docs & runbooks** | **88%** | Done | SOP, matrix, deferred register, staging procedure |
-| **Tests / smoke** | **88%** | In progress | Puriva MVP smoke gate PASS locally (`validate`, MVP, portal, client-domain browser, monthly report browser, AI Delivery reviews); staging smoke not run |
-| **PR merge → main** | **0%** | In progress | PR #13 open; waiting on staging gate |
-| **Staging / VPS deploy** | **5%** | Deferred | Documentation only; intentionally paused |
+| **Operator docs & runbooks** | **92%** | Done | SOP, matrix, deferred register, pre-staging local gate |
+| **Tests / smoke** | **92%** | Done (local) | `smoke:pre-staging:local` covers MVP + portal + blocks 4–6; staging smoke not run |
+| **PR merge → main** | **0%** | In progress | PR #13 open; merge after owner approves staging |
+| **Staging / VPS deploy** | **5%** | Deferred | Documentation only; **paused by owner — no VPS deploy** |
 | **Production deploy** | **0%** | Deferred | Frozen |
 | **Licensee tenant migration** (`OWN_DOMAIN` → separate tenant) | **0%** | Deferred | Future block |
 | **Revenue Hub AI** | **0%** | Deferred | Future module |
@@ -86,18 +87,18 @@ Related documents:
 | 1 | Client foundation + `clientKind` | **92%** | Done |
 | 2 | PublicationTarget | **95%** | Done |
 | 3 | MI → `clientId` | **88%** | Done |
-| 4 | Encrypted credentials | **78%** | In progress |
-| 5 | Real WP publish + PublicationLog | **72%** | In progress |
-| 6 | Module middleware | **88%** | In progress |
+| 4 | Encrypted credentials | **85%** | Done (local); staging/prod key pending |
+| 5 | Real WP publish + PublicationLog | **88%** | Done (local); live Puriva pending |
+| 6 | Module middleware | **92%** | Done (local); staging enforce pending |
 | *Future* | Licensee tenant migration | **0%** | Deferred |
 
-**Average of blocks 1–6 (local): ~88%**
+**Average of blocks 1–6 (local): ~90%**
 
 ---
 
 ## Ready today vs waiting
 
-### Ready for local operator work (~82% of operational product)
+### Ready for local operator work (~88% of operational product)
 
 - CRM (Clients, Projects, Tasks)
 - AI Delivery admin workflow
@@ -106,19 +107,21 @@ Related documents:
 - Monthly Reports (admin + client-safe archive path)
 - Client Portal MVP visibility path (Puriva smoke gate PASS locally)
 - Client Hub (profile, publication targets, credentials shell, analytics shell)
+- Architecture blocks 1–6 **local gates** (credential encrypt, WP publish smoke, tenant module enforce/dry_run, legacy WP sunset)
+- One-command local closeout: `npm run smoke:pre-staging:local`
 
-### In progress — finish before Puriva MVP 1 production
+### Waiting — owner / staging gates (not local repo work)
 
 - Client Portal polish (operator UX, edge-case QA)
-- Block 4 prod gate: `CREDENTIAL_ENCRYPTION_MASTER_KEY` on staging/production
-- Block 5 prod gate: live Puriva publication target + owner sign-off for publish
-- Block 6 staging deploy: `TENANT_MODULE_ENFORCEMENT` dry_run → enforce on staging VPS
-- Staging validation + merge PR #13
+- VPS staging deploy — **explicitly paused**
+- Staging env: Block 4 master key, Block 5 publish, Block 6 `TENANT_MODULE_ENFORCEMENT`
+- Staging smoke (`smoke:mvp:staging`) + browser QA on HTTPS host
+- Merge PR #13 after staging QA
 
 ### Intentionally deferred (not counted as missing bugs)
 
 - VPS and production deploy
-- Live external integrations (Google, WordPress auto-publish, email sending)
+- Live external integrations (Google, WordPress auto-publish prod, email sending)
 - Advanced Client Portal actions (magic links, full comment threads)
 - Future modules (Spa Finance, BaliShop, GayService, GotoBeauty, Bali24, Revenue Hub, Commerce Core, POD, scraping)
 - Licensee tenant migration
@@ -137,12 +140,7 @@ Suggested validation before updating percentages:
 
 ```powershell
 cd C:\dcaosv1
-npm run validate
-npm run smoke:mvp:local
-npm run smoke:client-portal:local
-npm run smoke:client-domain:browser
-npm run smoke:client-portal-monthly-report:browser
-npm run smoke:ai-delivery-reviews
+npm run smoke:pre-staging:local
 ```
 
 Do not treat local smoke alone as production readiness.
@@ -153,5 +151,6 @@ Do not treat local smoke alone as production readiness.
 
 | Date | Change |
 |------|--------|
+| 2026-06-27 | Local repo closeout: pre-staging gate script + doc; blocks 4–6 local gates marked done; VPS deploy paused |
 | 2026-06-27 | Puriva MVP smoke gate PASS; blocks 4–6 + legacy WordPress sunset reflected; Client Portal MVP raised to ~78% |
 | 2026-06-26 | Initial completion overview after client/domain operating model implementation and Playwright browser smoke |

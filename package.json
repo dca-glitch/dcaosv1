@@ -32,7 +32,8 @@
     "smoke:monthly-report:browser": "node scripts/smoke-browser-monthly-report-admin-ui.mjs",
     "smoke:monthly-report:pdf": "node scripts/smoke-monthly-report-pdf-local.mjs",
     "smoke:client-portal-monthly-report:browser": "node scripts/smoke-client-portal-monthly-report-browser-local.mjs",
-    "smoke:google-drive-export": "node scripts/smoke-google-drive-export-local.mjs"
+    "smoke:google-drive-export": "node scripts/smoke-google-drive-export-local.mjs",
+    "smoke:pre-staging:local": "powershell -ExecutionPolicy Bypass -File scripts/smoke-pre-staging-local.ps1"
   },
   "engines": {
     "node": ">=20"

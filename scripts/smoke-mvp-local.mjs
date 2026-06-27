@@ -1346,6 +1346,16 @@ async function main() {
     );
   }
 
+  const reenableFinanceLite = await request("/modules/current/finance-lite/enable", {
+    method: "POST",
+    token: adminToken
+  });
+  record(
+    "module re-enable finance-lite after disable probe",
+    reenableFinanceLite.status === 200,
+    `${reenableFinanceLite.status}`
+  );
+
   if (testerEmail && testerPassword) {
     testerLoginResponse = await login(testerEmail, testerPassword);
     const testerToken = testerLoginResponse.body?.data?.session?.token;
