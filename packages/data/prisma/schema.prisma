@@ -205,6 +205,8 @@ model Tenant {
   publicationTargetCredentials PublicationTargetCredential[]
   clientAnalyticsProfiles ClientAnalyticsProfile[]
   publicationLogs      PublicationLog[]
+  clientCatalogProducts ClientCatalogProduct[]
+  clientCatalogInquiries ClientCatalogInquiry[]
 }
 
 model User {
@@ -398,6 +400,8 @@ model Client {
   analyticsProfile  ClientAnalyticsProfile?
   marketIntelligenceProjects MarketIntelligenceProject[]
   publicationLogs   PublicationLog[]
+  catalogProducts   ClientCatalogProduct[]
+  catalogInquiries  ClientCatalogInquiry[]
 
   @@index([tenantId])
   @@index([tenantId, isArchived])
@@ -490,6 +494,61 @@ model PublicationLog {
   @@index([tenantId, clientId])
   @@index([tenantId, deliverableId])
   @@index([tenantId, createdAt])
+}
+
+enum ClientCatalogInquiryStatus {
+  NEW
+  ACKNOWLEDGED
+  CLOSED
+}
+
+model ClientCatalogProduct {
+  id                String   @id @default(uuid())
+  tenantId          String
+  clientId          String
+  name              String
+  description       String?
+  sku               String?
+  priceLabel        String?
+  imageUrl          String?
+  sortOrder         Int      @default(0)
+  isVisibleInPortal Boolean  @default(true)
+  isArchived        Boolean  @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  tenant    Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  client    Client                 @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  inquiries ClientCatalogInquiry[]
+
+  @@index([tenantId])
+  @@index([tenantId, clientId])
+  @@index([tenantId, clientId, isArchived])
+  @@index([tenantId, clientId, isVisibleInPortal])
+}
+
+model ClientCatalogInquiry {
+  id                String                     @id @default(uuid())
+  tenantId          String
+  clientId          String
+  productId         String?
+  contactName       String
+  contactEmail      String
+  contactPhone      String?
+  message           String
+  status            ClientCatalogInquiryStatus @default(NEW)
+  submittedByUserId String?
+  createdAt         DateTime                   @default(now())
+  updatedAt         DateTime                   @updatedAt
+
+  tenant  Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  client  Client               @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  product ClientCatalogProduct? @relation(fields: [productId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@index([tenantId, clientId])
+  @@index([tenantId, clientId, status])
+  @@index([tenantId, productId])
 }
 
 model ClientUserAccess {

@@ -12,6 +12,10 @@ import {
   listClientPortalMonthlyReports,
   listClientPortalProjects
 } from "../core/client-portal.runtime";
+import {
+  listClientPortalCatalogProducts,
+  submitClientPortalCatalogInquiry
+} from "../core/client-catalog.runtime";
 
 export function createClientPortalRouter() {
   const router = Router();
@@ -56,6 +60,41 @@ export function createClientPortalRouter() {
       return;
     }
     res.status(200).json(success(result));
+  });
+
+  router.get("/projects/:projectId/catalog-products", requireAuth, requireTenant, async (req, res) => {
+    const authSession = (res.locals as AuthSessionLocals).authSession;
+    if (!authSession) {
+      res.status(401).json(unauthorizedFailure());
+      return;
+    }
+    const result = await listClientPortalCatalogProducts(authSession, req.params.projectId);
+    if (!result) {
+      res.status(404).json(failure("CLIENT_PORTAL_PROJECT_NOT_FOUND", "Project was not found."));
+      return;
+    }
+    res.status(200).json(success(result));
+  });
+
+  router.post("/projects/:projectId/catalog-inquiries", requireAuth, requireTenant, async (req, res) => {
+    const authSession = (res.locals as AuthSessionLocals).authSession;
+    if (!authSession) {
+      res.status(401).json(unauthorizedFailure());
+      return;
+    }
+    const body = (req.body ?? {}) as Record<string, unknown>;
+    const result = await submitClientPortalCatalogInquiry(authSession, req.params.projectId, {
+      productId: typeof body.productId === "string" ? body.productId : null,
+      contactName: typeof body.contactName === "string" ? body.contactName : undefined,
+      contactEmail: typeof body.contactEmail === "string" ? body.contactEmail : undefined,
+      contactPhone: typeof body.contactPhone === "string" ? body.contactPhone : null,
+      message: typeof body.message === "string" ? body.message : undefined
+    });
+    if (!result?.catalogInquiry) {
+      res.status(400).json(failure("CLIENT_CATALOG_INQUIRY_INVALID", "Catalog inquiry could not be submitted."));
+      return;
+    }
+    res.status(201).json(success(result));
   });
 
   router.get("/projects/:projectId/deliverables", requireAuth, requireTenant, async (req, res) => {

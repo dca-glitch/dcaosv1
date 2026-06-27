@@ -319,11 +319,11 @@ Block 7D.0 added the client-level backend foundation. The current MVP closes the
 - Internal helper:
   - `userCanAccessClient(authSession, clientId)` verifies active tenant context, client tenant ownership, non-archived user access, and owner/admin override.
 
-Active Client Portal archive routes require non-archived `ClientUserAccess`; owner/admin role alone does not grant archive visibility there. Client Portal MVP expands client-safe visibility for Puriva; advanced interactive client review (approve/comments) remains phased after MVP visibility scope.
+Active Client Portal archive routes require non-archived `ClientUserAccess`; owner/admin role alone does not grant archive visibility there. Client Portal MVP expands client-safe visibility for Puriva; authenticated client review routes below are enabled for linked client users and owner/admin override via `userCanAccessClient`.
 
 ## Monthly content plan client review routes
 
-Current status: phased after MVP visibility. Interactive advanced client review routes (full comment threads, magic links) are phased, but **Client Portal MVP visibility and human/client review for Puriva are required**. These routes document a possible authenticated review contract for advanced client actions beyond the MVP visibility scope.
+Current status: **enabled** for authenticated client-linked users (and owner/admin override). Advanced features (magic links, public tokens, full comment threads) remain phased.
 
 Authenticated tenant users may review monthly content plans only when `userCanAccessClient(authSession, clientId)` passes for the AI Delivery Project client.
 
@@ -357,7 +357,7 @@ This block is admin-operated only. It does not add AI writing calls, publishing 
 
 ## Content draft client review routes
 
-Current status: phased after MVP visibility. Interactive advanced content-draft client review routes are phased; **Client Portal MVP visibility and human/client review for Puriva are required**. Future advanced client review may build on review records later without exposing raw workflow internals.
+Current status: **enabled** for authenticated client-linked users (and owner/admin override). Advanced features (magic links, public tokens) remain phased.
 
 Content draft review uses normal authenticated sessions only. No public token routes, public approval links, or magic links are exposed. Client access is tenant-scoped and requires `userCanAccessClient(authSession, clientId)` for the AI Delivery Project client. Archived AI Delivery projects and archived content drafts are not exposed to client review routes.
 
@@ -483,6 +483,17 @@ Admin-managed access uses `GET /api/v1/clients/:id/users`, `POST /api/v1/clients
 - `GET /api/v1/client-portal/projects/:projectId/delivery-summary`
   - Returns client-safe delivery overview: MI summary, AI SEO plan status, website publishing handoff, Google Docs export links.
   - Excludes raw MI internals, prompts, workflow runs, credentials, and admin-only notes.
+- `GET /api/v1/client-portal/projects/:projectId/catalog-products`
+  - Returns portal-visible catalog products for the project's client (`isVisibleInPortal`, non-archived).
+- `POST /api/v1/client-portal/projects/:projectId/catalog-inquiries`
+  - Body: `{ productId?, contactName, contactEmail, contactPhone?, message }`
+  - Inquiry-only flow; no cart, checkout, or payment.
+- `GET /api/v1/clients/:clientId/catalog-products` (owner/admin)
+  - Manage catalog products for a client.
+- `POST /api/v1/clients/:clientId/catalog-products` (owner/admin)
+- `GET /api/v1/clients/:clientId/catalog-inquiries` (owner/admin)
+- `POST /api/v1/clients/:clientId/catalog-inquiries/:inquiryId/status` (owner/admin)
+  - Body: `{ status: "NEW" | "ACKNOWLEDGED" | "CLOSED" }`
 - `GET /api/v1/client-portal/projects`
   - Returns only archive-safe project rows visible through active `ClientUserAccess`.
 - `GET /api/v1/client-portal/projects/:projectId`
@@ -492,7 +503,7 @@ Admin-managed access uses `GET /api/v1/clients/:id/users`, `POST /api/v1/clients
 - `GET /api/v1/client-portal/projects/:projectId/deliverables/:deliverableId/download`
   - Uses the safe download reference endpoint; raw `storageKey` is never exposed.
 
-Client portal payloads and UI hide raw `workflowRunId`, `executionLog`, `executionError`, `tenantId`, `provider`, `prompt`, `reviewNotes`, `reviewerName`, and `draftBody` fields. `exportUrl` is intentionally included as a safe client-visible export link field; admin must store only client-appropriate URLs here. Client Portal MVP is required for Puriva; advanced client reviews, client actions, and client approvals beyond MVP visibility scope remain phased. Production/VPS are frozen and not deployed in this block.
+Client portal payloads and UI hide raw `workflowRunId`, `executionLog`, `executionError`, `tenantId`, `provider`, `prompt`, `reviewNotes`, `reviewerName`, and admin-only internal fields in archive views. Client review routes return `draftBody` only for reviewable drafts linked to the client. `exportUrl` is intentionally included as a safe client-visible export link field; admin must store only client-appropriate URLs here. Authenticated client review and catalog inquiry are enabled for Puriva MVP; magic links and public tokens remain phased. Production/VPS are frozen and not deployed in this block.
 
 Proof:
 

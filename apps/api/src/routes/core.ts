@@ -1,4 +1,4 @@
-import { Router, type RequestHandler } from "express";
+import { Router } from "express";
 import {
   archiveAiDeliveryArticleImageHandler,
   approveAiDeliveryArticleImageHandler,
@@ -79,6 +79,7 @@ import {
   requestAiDeliveryArticleImageChangesHandler,
   returnAiDeliveryContentDraftToDraftHandler,
   listBillsHandler,
+  listClientAiDeliveryContentDraftReviewsHandler,
   listClientUserAccessHandler,
   listClientsHandler,
   listInvoiceItemsHandler,
@@ -90,7 +91,12 @@ import {
   linkClientUserAccessHandler,
   requestAiDeliveryBriefClientInputHandler,
   requestAiDeliveryBriefClientRevisionHandler,
+  requestClientAiDeliveryContentDraftRevisionHandler,
+  requestClientAiDeliveryContentPlanRevisionHandler,
+  approveClientAiDeliveryContentDraftReviewHandler,
+  approveClientAiDeliveryContentPlanReviewHandler,
   approveFinalAiDeliveryBriefHandler,
+  getClientAiDeliveryContentPlanReviewHandler,
   getAiDeliveryBriefHandler,
   saveAiDeliveryBriefHandler,
   // Monthly content plan handlers
@@ -170,7 +176,7 @@ import {
   updateMonthlyReportMiContextDraftHandler,
   removeMiHandoffFromMonthlyReportHandler
 } from "../controllers/coreController";
-import { failure } from "../utils/responses";
+
 import { requireAuth } from "../middlewares/auth.middleware";
 import { requireRole, requireTenant } from "../middlewares";
 import { tenantModuleGuard } from "../middlewares/tenant-module.middleware";
@@ -187,17 +193,18 @@ import {
   saveClientPublicationTargetCredentialsHandler,
   updateClientPublicationTargetHandler
 } from "../controllers/clientPublicationController";
+import {
+  archiveClientCatalogProductHandler,
+  clientCatalogRouteGuards,
+  createClientCatalogProductHandler,
+  listClientCatalogInquiriesHandler,
+  listClientCatalogProductsHandler,
+  updateClientCatalogInquiryStatusHandler,
+  updateClientCatalogProductHandler
+} from "../controllers/clientCatalogController";
 
 export function createCoreRouter() {
   const router = Router();
-  const clientPortalDeferredHandler: RequestHandler = (_req, res) => {
-    res.status(403).json(
-      failure(
-        "CLIENT_PORTAL_DEFERRED",
-        "Client review access is deferred until the Client Portal foundation is enabled."
-      )
-    );
-  };
 
   router.get("/company-profile", requireAuth, requireTenant, tenantModuleGuard, getCompanyProfileHandler);
   router.put("/company-profile", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), saveCompanyProfileHandler);
@@ -222,6 +229,12 @@ export function createCoreRouter() {
   router.get("/clients/:clientId/analytics-profile", ...clientPublicationRouteGuards, tenantModuleGuard, getClientAnalyticsProfileHandler);
   router.put("/clients/:clientId/analytics-profile", ...clientPublicationRouteGuards, tenantModuleGuard, saveClientAnalyticsProfileHandler);
   router.get("/clients/:clientId/publication-logs", ...clientPublicationRouteGuards, tenantModuleGuard, listClientPublicationLogsHandler);
+  router.get("/clients/:clientId/catalog-products", ...clientCatalogRouteGuards, tenantModuleGuard, listClientCatalogProductsHandler);
+  router.post("/clients/:clientId/catalog-products", ...clientCatalogRouteGuards, tenantModuleGuard, createClientCatalogProductHandler);
+  router.put("/clients/:clientId/catalog-products/:productId", ...clientCatalogRouteGuards, tenantModuleGuard, updateClientCatalogProductHandler);
+  router.post("/clients/:clientId/catalog-products/:productId/archive", ...clientCatalogRouteGuards, tenantModuleGuard, archiveClientCatalogProductHandler);
+  router.get("/clients/:clientId/catalog-inquiries", ...clientCatalogRouteGuards, tenantModuleGuard, listClientCatalogInquiriesHandler);
+  router.post("/clients/:clientId/catalog-inquiries/:inquiryId/status", ...clientCatalogRouteGuards, tenantModuleGuard, updateClientCatalogInquiryStatusHandler);
   router.post("/clients/:id/archive", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), archiveClientHandler);
   router.post("/clients/:id/restore", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), restoreClientHandler);
 
@@ -297,12 +310,12 @@ export function createCoreRouter() {
   router.get("/ai-delivery-projects/:id/deliverables/:deliverableId/reviews", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), listAiDeliveryDeliverableReviewsHandler);
   router.post("/ai-delivery-projects/:id/deliverables/:deliverableId/reviews", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), createAiDeliveryDeliverableReviewHandler);
   router.put("/ai-delivery-projects/:id/deliverables/:deliverableId/reviews/:reviewId", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), updateAiDeliveryDeliverableReviewHandler);
-  router.get("/ai-delivery-projects/:id/content-plan/client-review", clientPortalDeferredHandler);
-  router.post("/ai-delivery-projects/:id/content-plan/client-review/approve", clientPortalDeferredHandler);
-  router.post("/ai-delivery-projects/:id/content-plan/client-review/request-revision", clientPortalDeferredHandler);
-  router.get("/ai-delivery-projects/:id/content-drafts/client-review", clientPortalDeferredHandler);
-  router.post("/ai-delivery-projects/:id/content-drafts/:draftId/client-review/approve", clientPortalDeferredHandler);
-  router.post("/ai-delivery-projects/:id/content-drafts/:draftId/client-review/request-revision", clientPortalDeferredHandler);
+  router.get("/ai-delivery-projects/:id/content-plan/client-review", requireAuth, requireTenant, getClientAiDeliveryContentPlanReviewHandler);
+  router.post("/ai-delivery-projects/:id/content-plan/client-review/approve", requireAuth, requireTenant, approveClientAiDeliveryContentPlanReviewHandler);
+  router.post("/ai-delivery-projects/:id/content-plan/client-review/request-revision", requireAuth, requireTenant, requestClientAiDeliveryContentPlanRevisionHandler);
+  router.get("/ai-delivery-projects/:id/content-drafts/client-review", requireAuth, requireTenant, listClientAiDeliveryContentDraftReviewsHandler);
+  router.post("/ai-delivery-projects/:id/content-drafts/:draftId/client-review/approve", requireAuth, requireTenant, approveClientAiDeliveryContentDraftReviewHandler);
+  router.post("/ai-delivery-projects/:id/content-drafts/:draftId/client-review/request-revision", requireAuth, requireTenant, requestClientAiDeliveryContentDraftRevisionHandler);
 
   router.get("/ai-delivery/reports/monthly/:reportId/metrics", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), getAiDeliveryMonthlyReportMetricsHandler);
   router.post("/ai-delivery/reports/monthly/:reportId/metrics/import", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), importAiDeliveryMonthlyReportMetricsHandler);

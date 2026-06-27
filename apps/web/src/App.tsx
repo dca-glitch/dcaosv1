@@ -4246,10 +4246,18 @@ export function App() {
         <AiMarketIntelligencePage clients={clients?.clients ?? []} />
       ) : null}
       {!loading && activeView === "content-plan-review" ? (
-        <DeferredClientPortalView title="Monthly Content Plan Review" titleId="content-plan-review-title" />
+        <ClientContentPlanReviewView
+          onApprove={handleApproveClientContentPlanReview}
+          onLoad={handleFetchClientContentPlanReview}
+          onRequestRevision={handleRequestClientContentPlanRevision}
+        />
       ) : null}
       {!loading && activeView === "content-draft-review" ? (
-        <DeferredClientPortalView title="Content Draft Review" titleId="content-draft-review-title" />
+        <ClientContentDraftReviewView
+          onApprove={handleApproveClientContentDraftReview}
+          onLoad={handleFetchClientContentDraftReview}
+          onRequestRevision={handleRequestClientContentDraftRevision}
+        />
       ) : null}
       {!loading && activeView === "tasks" ? (
         <TasksPage

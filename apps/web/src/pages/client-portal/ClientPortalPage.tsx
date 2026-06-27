@@ -125,6 +125,19 @@ type ClientPortalDeliverySummaryResponse = {
   deliverySummary: ClientPortalDeliverySummary;
 };
 
+type ClientPortalCatalogProduct = {
+  id: string;
+  name: string;
+  description: string | null;
+  sku: string | null;
+  priceLabel: string | null;
+  imageUrl: string | null;
+};
+
+type ClientPortalCatalogProductsResponse = {
+  catalogProducts: ClientPortalCatalogProduct[];
+};
+
 type RequestOptions = {
   method?: string;
   token?: string;
@@ -279,6 +292,16 @@ export function ClientPortalPage() {
   const [deliverySummary, setDeliverySummary] = useState<ClientPortalDeliverySummary | null>(null);
   const [deliverySummaryLoading, setDeliverySummaryLoading] = useState(false);
   const [deliverySummaryError, setDeliverySummaryError] = useState<string | null>(null);
+  const [catalogProducts, setCatalogProducts] = useState<ClientPortalCatalogProduct[]>([]);
+  const [catalogLoading, setCatalogLoading] = useState(false);
+  const [catalogError, setCatalogError] = useState<string | null>(null);
+  const [inquiryProductId, setInquiryProductId] = useState("");
+  const [inquiryContactName, setInquiryContactName] = useState("");
+  const [inquiryContactEmail, setInquiryContactEmail] = useState("");
+  const [inquiryContactPhone, setInquiryContactPhone] = useState("");
+  const [inquiryMessage, setInquiryMessage] = useState("");
+  const [inquirySubmitting, setInquirySubmitting] = useState(false);
+  const [inquiryNotice, setInquiryNotice] = useState<string | null>(null);
   const [selectedMonthlyReportId, setSelectedMonthlyReportId] = useState<string | null>(null);
   const [downloadNotice, setDownloadNotice] = useState<string | null>(null);
   const [downloadingDeliverableId, setDownloadingDeliverableId] = useState<string | null>(null);
@@ -367,6 +390,9 @@ export function ClientPortalPage() {
     setMonthlyReportsError(null);
     setDeliverySummaryLoading(true);
     setDeliverySummaryError(null);
+    setCatalogLoading(true);
+    setCatalogError(null);
+    setInquiryNotice(null);
     setDownloadNotice(null);
     setDownloadingDeliverableId(null);
     setSelectedMonthlyReportId(null);
@@ -374,6 +400,7 @@ export function ClientPortalPage() {
     setDeliverables([]);
     setMonthlyReports([]);
     setDeliverySummary(null);
+    setCatalogProducts([]);
 
     if (!token) {
       if (requestSeq === projectRequestSeq.current) {
@@ -382,20 +409,23 @@ export function ClientPortalPage() {
         setDeliverablesError(message);
         setMonthlyReportsError(message);
         setDeliverySummaryError(message);
+        setCatalogError(message);
         setSelectedProjectLoading(false);
         setDeliverablesLoading(false);
         setMonthlyReportsLoading(false);
         setDeliverySummaryLoading(false);
+        setCatalogLoading(false);
       }
       return;
     }
 
-    const [projectResponse, deliverablesResponse, monthlyReportsResponse, deliverySummaryResponse] =
+    const [projectResponse, deliverablesResponse, monthlyReportsResponse, deliverySummaryResponse, catalogResponse] =
       await Promise.all([
       apiRequest<ClientPortalProjectResponse>(`/client-portal/projects/${projectId}`, { token }),
       apiRequest<ClientPortalDeliverablesResponse>(`/client-portal/projects/${projectId}/deliverables`, { token }),
       apiRequest<ClientPortalMonthlyReportsResponse>(`/client-portal/projects/${projectId}/monthly-reports`, { token }),
-      apiRequest<ClientPortalDeliverySummaryResponse>(`/client-portal/projects/${projectId}/delivery-summary`, { token })
+      apiRequest<ClientPortalDeliverySummaryResponse>(`/client-portal/projects/${projectId}/delivery-summary`, { token }),
+      apiRequest<ClientPortalCatalogProductsResponse>(`/client-portal/projects/${projectId}/catalog-products`, { token })
     ]);
 
     if (requestSeq !== projectRequestSeq.current) {
@@ -434,10 +464,17 @@ export function ClientPortalPage() {
       setDeliverySummaryError(getErrorMessage(deliverySummaryResponse));
     }
 
+    if (catalogResponse.ok) {
+      setCatalogProducts(catalogResponse.data.catalogProducts ?? []);
+    } else {
+      setCatalogError(getErrorMessage(catalogResponse));
+    }
+
     setSelectedProjectLoading(false);
     setDeliverablesLoading(false);
     setMonthlyReportsLoading(false);
     setDeliverySummaryLoading(false);
+    setCatalogLoading(false);
   }, []);
 
   useEffect(() => {
@@ -569,6 +606,62 @@ export function ClientPortalPage() {
       setDownloadNotice("Your browser blocked the download window. Allow pop-ups and try again.");
     }
   }, [downloadingMonthlyReportId, selectedProjectId]);
+
+  const handleSubmitCatalogInquiry = useCallback(async () => {
+    if (!selectedProjectId || inquirySubmitting) {
+      return;
+    }
+
+    const token = getStoredToken();
+    if (!token) {
+      setInquiryNotice("Sign in again to submit a product inquiry.");
+      return;
+    }
+
+    const contactName = inquiryContactName.trim();
+    const contactEmail = inquiryContactEmail.trim();
+    const message = inquiryMessage.trim();
+    if (!contactName || !contactEmail || !message) {
+      setInquiryNotice("Name, email, and message are required.");
+      return;
+    }
+
+    setInquirySubmitting(true);
+    setInquiryNotice(null);
+
+    const response = await apiRequest<{ catalogInquiry: { id: string } }>(
+      `/client-portal/projects/${selectedProjectId}/catalog-inquiries`,
+      {
+        token,
+        method: "POST",
+        body: {
+          productId: inquiryProductId || null,
+          contactName,
+          contactEmail,
+          contactPhone: inquiryContactPhone.trim() || null,
+          message
+        }
+      }
+    );
+
+    setInquirySubmitting(false);
+
+    if (!response.ok) {
+      setInquiryNotice(getErrorMessage(response));
+      return;
+    }
+
+    setInquiryMessage("");
+    setInquiryNotice("Inquiry submitted. Your team will follow up directly — no checkout or payment in this portal.");
+  }, [
+    inquiryContactEmail,
+    inquiryContactName,
+    inquiryContactPhone,
+    inquiryMessage,
+    inquiryProductId,
+    inquirySubmitting,
+    selectedProjectId
+  ]);
 
   const projectCount = projects.length;
   const finalDeliverableCount = deliverables.filter((deliverable) => isFinalDeliverable(deliverable.status)).length;
@@ -862,6 +955,102 @@ export function ClientPortalPage() {
                   </div>
                 ) : (
                   <EmptyState message="Delivery overview is not available for this project yet." title="No delivery overview" />
+                )}
+              </SectionPanel>
+
+              <SectionPanel
+                description="Inquiry-only product catalog for this client. No cart, checkout, or payment in the portal."
+                title="Product catalog inquiry"
+                tone="compact"
+              >
+                {catalogLoading ? (
+                  <LoadingState label="Loading product catalog" />
+                ) : catalogError ? (
+                  <ErrorState message={catalogError} title="Product catalog unavailable" />
+                ) : catalogProducts.length === 0 ? (
+                  <EmptyState
+                    message="Your team can add skincare or service products in the Client Hub. Visible products appear here for inquiry."
+                    title="No catalog products yet"
+                  />
+                ) : (
+                  <div style={{ display: "grid", gap: "12px" }}>
+                    <div className="dense-list">
+                      {catalogProducts.map((product) => (
+                        <article className="entity-card dense-record" key={product.id}>
+                          <div className="dense-record-main">
+                            <div className="dense-title">
+                              <h3>{product.name}</h3>
+                              <div className="dense-meta">
+                                {product.priceLabel ? <span>{product.priceLabel}</span> : null}
+                                {product.sku ? <span>SKU {product.sku}</span> : null}
+                              </div>
+                              {product.description ? (
+                                <div className="dense-row-note">{product.description}</div>
+                              ) : null}
+                            </div>
+                          </div>
+                        </article>
+                      ))}
+                    </div>
+
+                    <form
+                      className="entity-form"
+                      onSubmit={(event) => {
+                        event.preventDefault();
+                        void handleSubmitCatalogInquiry();
+                      }}
+                    >
+                      <div className="field-grid">
+                        <label>
+                          Product (optional)
+                          <select value={inquiryProductId} onChange={(event) => setInquiryProductId(event.target.value)}>
+                            <option value="">General inquiry</option>
+                            {catalogProducts.map((product) => (
+                              <option key={product.id} value={product.id}>
+                                {product.name}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                        <label>
+                          Your name
+                          <input
+                            required
+                            value={inquiryContactName}
+                            onChange={(event) => setInquiryContactName(event.target.value)}
+                          />
+                        </label>
+                        <label>
+                          Email
+                          <input
+                            required
+                            type="email"
+                            value={inquiryContactEmail}
+                            onChange={(event) => setInquiryContactEmail(event.target.value)}
+                          />
+                        </label>
+                        <label>
+                          Phone (optional)
+                          <input value={inquiryContactPhone} onChange={(event) => setInquiryContactPhone(event.target.value)} />
+                        </label>
+                        <label className="field-span-2">
+                          Message
+                          <textarea
+                            required
+                            rows={4}
+                            value={inquiryMessage}
+                            onChange={(event) => setInquiryMessage(event.target.value)}
+                          />
+                        </label>
+                      </div>
+                      {inquiryNotice ? <p className="muted-text">{inquiryNotice}</p> : null}
+                      <div className="modal-footer">
+                        <button className="primary-action" disabled={inquirySubmitting} type="submit">
+                          {inquirySubmitting ? "Submitting" : "Send product inquiry"}
+                        </button>
+                      </div>
+                    </form>
+                  </div>
                 )}
               </SectionPanel>
 

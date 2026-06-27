@@ -145,6 +145,75 @@ export interface ClientAnalyticsProfileInputRequest {
   connectionStatus?: "MANUAL" | "CONFIGURED" | "LIVE_DEFERRED";
 }
 
+export interface ClientCatalogProductSummary {
+  id: string;
+  clientId: string;
+  name: string;
+  description: string | null;
+  sku: string | null;
+  priceLabel: string | null;
+  imageUrl: string | null;
+  sortOrder: number;
+  isVisibleInPortal: boolean;
+  isArchived: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ClientCatalogProductsResponse {
+  catalogProducts: ClientCatalogProductSummary[];
+}
+
+export interface ClientCatalogProductResponse {
+  catalogProduct: ClientCatalogProductSummary | null;
+}
+
+export interface ClientCatalogProductInputRequest {
+  name?: string;
+  description?: string | null;
+  sku?: string | null;
+  priceLabel?: string | null;
+  imageUrl?: string | null;
+  sortOrder?: number | null;
+  isVisibleInPortal?: boolean;
+}
+
+export type ClientCatalogInquiryStatus = "NEW" | "ACKNOWLEDGED" | "CLOSED";
+
+export interface ClientCatalogInquirySummary {
+  id: string;
+  clientId: string;
+  productId: string | null;
+  productName: string | null;
+  contactName: string;
+  contactEmail: string;
+  contactPhone: string | null;
+  message: string;
+  status: ClientCatalogInquiryStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ClientCatalogInquiriesResponse {
+  catalogInquiries: ClientCatalogInquirySummary[];
+}
+
+export interface ClientCatalogInquiryResponse {
+  catalogInquiry: ClientCatalogInquirySummary | null;
+}
+
+export interface ClientCatalogInquiryInputRequest {
+  productId?: string | null;
+  contactName?: string;
+  contactEmail?: string;
+  contactPhone?: string | null;
+  message?: string;
+}
+
+export interface ClientCatalogInquiryStatusInputRequest {
+  status?: ClientCatalogInquiryStatus;
+}
+
 export interface PublicationLogSummary {
   id: string;
   clientId: string;

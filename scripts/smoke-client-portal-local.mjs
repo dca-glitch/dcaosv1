@@ -263,6 +263,54 @@ async function main() {
     "storageKey absent"
   );
 
+  const createdCatalogProduct = requireOkData(
+    await request(`/clients/${createdClient.id}/catalog-products`, {
+      token: adminToken,
+      method: "POST",
+      body: {
+        name: "Smoke Catalog Product",
+        description: "Inquiry-only smoke product",
+        priceLabel: "Rp 1",
+        isVisibleInPortal: true
+      }
+    }),
+    "create catalog product"
+  ).catalogProduct;
+
+  const portalCatalog = await request(
+    `/client-portal/projects/${createdAiProject.id}/catalog-products`,
+    { token: adminToken }
+  );
+  record(
+    "client portal catalog products 200 after ClientUserAccess",
+    portalCatalog.status === 200 && portalCatalog.body?.ok === true,
+    `${portalCatalog.status}`
+  );
+  record(
+    "client portal catalog includes smoke product",
+    (portalCatalog.body?.data?.catalogProducts ?? []).some((item) => item.id === createdCatalogProduct.id),
+    createdCatalogProduct.id
+  );
+
+  const catalogInquiry = requireOkData(
+    await request(`/client-portal/projects/${createdAiProject.id}/catalog-inquiries`, {
+      token: adminToken,
+      method: "POST",
+      body: {
+        productId: createdCatalogProduct.id,
+        contactName: "Smoke Client",
+        contactEmail: "client@example.com",
+        message: "Smoke inquiry only"
+      }
+    }),
+    "submit catalog inquiry"
+  ).catalogInquiry;
+  record(
+    "client portal catalog inquiry created",
+    typeof catalogInquiry?.id === "string",
+    catalogInquiry?.id ?? "null"
+  );
+
   // ── 9. Deliverables list: DRAFT excluded — proves DELIVERED/ACCEPTED filter ──
   const afterLinkDeliverables = await request(
     `/client-portal/projects/${createdAiProject.id}/deliverables`,

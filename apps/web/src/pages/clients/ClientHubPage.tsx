@@ -34,6 +34,25 @@ type PublicationLog = {
   note: string | null;
 };
 
+type CatalogProduct = {
+  id: string;
+  name: string;
+  description: string | null;
+  sku: string | null;
+  priceLabel: string | null;
+  isVisibleInPortal: boolean;
+};
+
+type CatalogInquiry = {
+  id: string;
+  productName: string | null;
+  contactName: string;
+  contactEmail: string;
+  message: string;
+  status: string;
+  createdAt: string;
+};
+
 type ClientHubPageProps = {
   client: ClientSummary;
   canEdit: boolean;
@@ -74,19 +93,29 @@ export function ClientHubPage({ client, canEdit, onBack }: ClientHubPageProps) {
   const [credentialMessage, setCredentialMessage] = useState<string | null>(null);
   const [gscSiteUrl, setGscSiteUrl] = useState("");
   const [ga4PropertyId, setGa4PropertyId] = useState("");
+  const [catalogProducts, setCatalogProducts] = useState<CatalogProduct[]>([]);
+  const [catalogInquiries, setCatalogInquiries] = useState<CatalogInquiry[]>([]);
+  const [productName, setProductName] = useState("");
+  const [productDescription, setProductDescription] = useState("");
+  const [productPriceLabel, setProductPriceLabel] = useState("");
+  const [productSku, setProductSku] = useState("");
 
   const loadHub = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const [targetResponse, logResponse, analyticsResponse] = await Promise.all([
+      const [targetResponse, logResponse, analyticsResponse, catalogResponse, inquiryResponse] = await Promise.all([
         apiRequest<{ publicationTargets: PublicationTarget[] }>("GET", `/clients/${client.id}/publication-targets`),
         apiRequest<{ publicationLogs: PublicationLog[] }>("GET", `/clients/${client.id}/publication-logs`),
-        apiRequest<{ profile: AnalyticsProfile | null }>("GET", `/clients/${client.id}/analytics-profile`)
+        apiRequest<{ profile: AnalyticsProfile | null }>("GET", `/clients/${client.id}/analytics-profile`),
+        apiRequest<{ catalogProducts: CatalogProduct[] }>("GET", `/clients/${client.id}/catalog-products`),
+        apiRequest<{ catalogInquiries: CatalogInquiry[] }>("GET", `/clients/${client.id}/catalog-inquiries`)
       ]);
       setTargets(targetResponse.publicationTargets);
       setLogs(logResponse.publicationLogs);
       setAnalytics(analyticsResponse.profile);
+      setCatalogProducts(catalogResponse.catalogProducts);
+      setCatalogInquiries(inquiryResponse.catalogInquiries);
       setGscSiteUrl(analyticsResponse.profile?.gscSiteUrl ?? "");
       setGa4PropertyId(analyticsResponse.profile?.ga4PropertyId ?? "");
     } catch (loadError) {
@@ -136,6 +165,31 @@ export function ClientHubPage({ client, canEdit, onBack }: ClientHubPageProps) {
       gscSiteUrl,
       ga4PropertyId,
       connectionStatus: "CONFIGURED"
+    });
+    await loadHub();
+  }
+
+  async function handleCreateCatalogProduct(event: FormEvent) {
+    event.preventDefault();
+    if (!canEdit || !productName.trim()) return;
+    await apiRequest("POST", `/clients/${client.id}/catalog-products`, {
+      name: productName,
+      description: productDescription || null,
+      priceLabel: productPriceLabel || null,
+      sku: productSku || null,
+      isVisibleInPortal: true
+    });
+    setProductName("");
+    setProductDescription("");
+    setProductPriceLabel("");
+    setProductSku("");
+    await loadHub();
+  }
+
+  async function handleAcknowledgeInquiry(inquiryId: string) {
+    if (!canEdit) return;
+    await apiRequest("POST", `/clients/${client.id}/catalog-inquiries/${inquiryId}/status`, {
+      status: "ACKNOWLEDGED"
     });
     await loadHub();
   }
@@ -262,6 +316,68 @@ export function ClientHubPage({ client, canEdit, onBack }: ClientHubPageProps) {
           ) : null}
         </form>
         {analytics ? <p className="muted-copy">Connection status: {analytics.connectionStatus}</p> : null}
+      </SectionPanel>
+
+      <SectionPanel title="Product catalog" description="Inquiry-only catalog for Client Portal (Puriva skincare/products). No cart or checkout.">
+        {catalogProducts.length === 0 ? (
+          <EmptyState message="Add products that clients can inquire about from the Client Portal." title="No catalog products" />
+        ) : (
+          <ul className="entity-list">
+            {catalogProducts.map((product) => (
+              <li key={product.id}>
+                <strong>{product.name}</strong>
+                {product.priceLabel ? ` — ${product.priceLabel}` : ""}
+                {product.isVisibleInPortal ? <StatusBadge status="VISIBLE" /> : <StatusBadge status="HIDDEN" />}
+                {product.description ? <div className="muted-text">{product.description}</div> : null}
+              </li>
+            ))}
+          </ul>
+        )}
+        {canEdit ? (
+          <form className="form-grid" onSubmit={(event) => void handleCreateCatalogProduct(event)}>
+            <label>
+              Product name
+              <input value={productName} onChange={(event) => setProductName(event.target.value)} required />
+            </label>
+            <label>
+              Price label
+              <input value={productPriceLabel} onChange={(event) => setProductPriceLabel(event.target.value)} placeholder="e.g. From Rp 150.000" />
+            </label>
+            <label>
+              SKU (optional)
+              <input value={productSku} onChange={(event) => setProductSku(event.target.value)} />
+            </label>
+            <label className="field-span-2">
+              Description
+              <textarea rows={3} value={productDescription} onChange={(event) => setProductDescription(event.target.value)} />
+            </label>
+            <button className="primary-action" type="submit">
+              Add catalog product
+            </button>
+          </form>
+        ) : null}
+      </SectionPanel>
+
+      <SectionPanel title="Product inquiries" description="Client-submitted catalog inquiries from the portal.">
+        {catalogInquiries.length === 0 ? (
+          <EmptyState message="Inquiries appear when clients submit the catalog form in Client Portal." title="No inquiries yet" />
+        ) : (
+          <ul className="entity-list">
+            {catalogInquiries.map((inquiry) => (
+              <li key={inquiry.id}>
+                <strong>{inquiry.contactName}</strong> ({inquiry.contactEmail}) — {inquiry.status}
+                {inquiry.productName ? ` — ${inquiry.productName}` : ""}
+                <div className="muted-text">{inquiry.message}</div>
+                <div className="muted-text">{new Date(inquiry.createdAt).toLocaleString()}</div>
+                {canEdit && inquiry.status === "NEW" ? (
+                  <button className="secondary-action" onClick={() => void handleAcknowledgeInquiry(inquiry.id)} type="button">
+                    Mark acknowledged
+                  </button>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        )}
       </SectionPanel>
 
       <SectionPanel title="Publication log" description="Recent prepare/publish actions for this client.">
