@@ -1187,58 +1187,92 @@ async function runLocalCreditNoteChecks(adminToken) {
   }
 }
 
-async function runLocalWordPressConfigChecks(adminToken) {
+async function runPublicationTargetWordPressChecks(adminToken) {
+  let createdClientId = null;
+
   try {
-    const siteUrl = "https://example-smoke-wordpress.com";
-    const saveResponse = await request("/tenant/wordpress-config", {
+    const clientName = `[SMOKE][WP-SUNSET] ${makeSmokeId("client")}`;
+    const createClientResponse = await request("/clients", {
       method: "POST",
       token: adminToken,
       body: {
-        siteUrl,
-        siteSlug: "example-smoke",
+        name: clientName,
+        website: "https://smoke-wp-sunset.example.local",
+        clientKind: "AGENCY_CLIENT",
+        legalEntityName: "Smoke WP Sunset Entity LLC"
+      }
+    });
+    const createdClient = requireOkData("publication target client create", createClientResponse, 201).client;
+    createdClientId = createdClient.id;
+
+    const targetLabel = `[SMOKE][WP-SUNSET] ${makeSmokeId("target")}`;
+    const targetUrl = "https://smoke-wp-sunset-target.example.local";
+    const createTargetResponse = await request(`/clients/${createdClientId}/publication-targets`, {
+      method: "POST",
+      token: adminToken,
+      body: {
+        label: targetLabel,
+        siteUrl: targetUrl,
+        isDefault: true
+      }
+    });
+    const createdTarget = requireOkData("publication target create", createTargetResponse, 201).publicationTarget;
+    record(
+      "publication target persisted",
+      createdTarget.siteUrl === targetUrl && createdTarget.isDefault === true,
+      `siteUrl=${createdTarget.siteUrl}`
+    );
+
+    const listTargetsResponse = await request(`/clients/${createdClientId}/publication-targets`, {
+      token: adminToken
+    });
+    const listTargets = requireOkData("publication target list", listTargetsResponse, 200).publicationTargets ?? [];
+    record(
+      "publication target listed for client",
+      Array.isArray(listTargets) && listTargets.some((target) => target.id === createdTarget.id),
+      `count=${listTargets.length}`
+    );
+
+    const legacyGetResponse = await request("/tenant/wordpress-config", { token: adminToken });
+    record(
+      "legacy wordpress config read-only get",
+      legacyGetResponse.status === 200 && legacyGetResponse.body?.meta?.deprecated === true,
+      `${legacyGetResponse.status}`
+    );
+    record(
+      "legacy wordpress config sunset meta",
+      legacyGetResponse.body?.meta?.sunset === true && legacyGetResponse.body?.meta?.readOnly === true,
+      legacyGetResponse.body?.meta?.replacement ? "replacement present" : "missing replacement"
+    );
+
+    const legacySaveResponse = await request("/tenant/wordpress-config", {
+      method: "POST",
+      token: adminToken,
+      body: {
+        siteUrl: targetUrl,
+        siteSlug: "legacy-should-not-save",
         wordPressComSite: true
       }
     });
-    const saveData = requireOkData("wordpress config save", saveResponse, 200);
     record(
-      "wordpress config save fields",
-      saveData.config.siteUrl === siteUrl && saveData.config.wordPressComSite === true,
-      `siteUrl=${saveData.config.siteUrl} wordPressComSite=${saveData.config.wordPressComSite}`
-    );
-    record(
-      "wordpress config deprecated meta",
-      saveResponse.body?.meta?.deprecated === true,
-      saveResponse.body?.meta?.replacement ? "meta present" : "missing meta"
-    );
-
-    const getResponse = await request("/tenant/wordpress-config", { token: adminToken });
-    const getData = requireOkData("wordpress config get", getResponse, 200);
-    record(
-      "wordpress config persisted",
-      getData.config.siteUrl === siteUrl,
-      `siteUrl=${getData.config.siteUrl}`
-    );
-
-    const forbiddenResponse = await request("/tenant/wordpress-config", {
-      method: "POST",
-      token: adminToken,
-      body: {
-        siteUrl,
-        apiKey: "secret-key-should-be-rejected"
-      }
-    });
-    record(
-      "wordpress config rejects forbidden secret field",
-      forbiddenResponse.status === 400 && getErrorCode(forbiddenResponse) === "WORDPRESS_CONFIG_INVALID",
-      `${forbiddenResponse.status} ${getErrorCode(forbiddenResponse)}`
+      "legacy wordpress config save blocked",
+      legacySaveResponse.status === 410 && getErrorCode(legacySaveResponse) === "WORDPRESS_CONFIG_DEPRECATED",
+      `${legacySaveResponse.status} ${getErrorCode(legacySaveResponse)}`
     );
   } catch (error) {
     record(
-      "wordpress config checks",
+      "publication target wordpress checks",
       false,
       error instanceof Error ? error.message : "unknown error"
     );
     throw error;
+  } finally {
+    if (createdClientId) {
+      await request(`/clients/${createdClientId}/archive`, {
+        method: "POST",
+        token: adminToken
+      }).catch(() => undefined);
+    }
   }
 }
 
@@ -1369,7 +1403,7 @@ async function main() {
     await runLocalVendorCrudChecks(adminToken);
     await runLocalBillsChecks(adminToken, financeIsolationFixture);
     await runLocalCreditNoteChecks(adminToken);
-    await runLocalWordPressConfigChecks(adminToken);
+    await runPublicationTargetWordPressChecks(adminToken);
   } else {
     record("finance integrity checks", true, "skipped outside local mode");
     record("services library checks", true, "skipped outside local mode");

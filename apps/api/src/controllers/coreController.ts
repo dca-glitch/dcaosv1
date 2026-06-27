@@ -70,7 +70,6 @@ import {
   publishAiDeliveryDeliverableToWordPress,
   exportAiDeliveryDeliverableToGoogleDoc,
   getAiDeliveryWordPressConfigForTenant,
-  saveAiDeliveryWordPressConfigForTenant,
   getInvoiceDocumentDownload,
   getInvoice,
   getProject,
@@ -3952,9 +3951,14 @@ export const generateDueRecurringInvoiceHandler: RequestHandler = async (req, re
   }
 };
 
+const LEGACY_WORDPRESS_CONFIG_REPLACEMENT =
+  "Use Client Hub publication targets: GET/POST /api/v1/clients/:clientId/publication-targets";
+
 const LEGACY_WORDPRESS_CONFIG_META = {
   deprecated: true,
-  replacement: "Use Client Hub publication targets at GET/POST /clients/:clientId/publication-targets"
+  readOnly: true,
+  sunset: true,
+  replacement: LEGACY_WORDPRESS_CONFIG_REPLACEMENT
 };
 
 export const getAiDeliveryWordPressConfigHandler: RequestHandler = async (_req, res) => {
@@ -3972,27 +3976,19 @@ export const getAiDeliveryWordPressConfigHandler: RequestHandler = async (_req, 
   }
 };
 
-export const saveAiDeliveryWordPressConfigHandler: RequestHandler = async (req, res) => {
+export const saveAiDeliveryWordPressConfigHandler: RequestHandler = async (_req, res) => {
   const authSession = getAuthSession(res.locals);
   if (!authSession) return void res.status(401).json(unauthorizedFailure());
 
-  const input = req.body as Record<string, unknown> | undefined;
-  if (!input || typeof input !== "object") {
-    return void res.status(400).json(failure("WORDPRESS_CONFIG_INVALID", "WordPress config request is invalid."));
-  }
-
-  try {
-    const response = await saveAiDeliveryWordPressConfigForTenant(authSession, input);
-    if (!response) return void res.status(403).json(forbiddenFailure());
-    if (!response.validation.ok) {
-      return void res.status(400).json(failure("WORDPRESS_CONFIG_INVALID", response.validation.issues?.[0] || "WordPress config is invalid."));
-    }
-    res.setHeader("Deprecation", "true");
-    res.setHeader("Link", '</api/v1/clients/{clientId}/publication-targets>; rel="successor-version"');
-    res.json(success(response, { phase: "runtime", scope: "ai-delivery-wordpress-config", ...LEGACY_WORDPRESS_CONFIG_META }));
-  } catch {
-    res.status(500).json(failure("WORDPRESS_CONFIG_RUNTIME_ERROR", "WordPress config save could not be completed."));
-  }
+  res.setHeader("Deprecation", "true");
+  res.setHeader("Link", '</api/v1/clients/{clientId}/publication-targets>; rel="successor-version"');
+  res.status(410).json(
+    failure(
+      "WORDPRESS_CONFIG_DEPRECATED",
+      "Tenant-level WordPress config is sunset. Configure publication targets per client in Client Hub.",
+      { replacement: LEGACY_WORDPRESS_CONFIG_REPLACEMENT }
+    )
+  );
 };
 
 // Market Intelligence handlers

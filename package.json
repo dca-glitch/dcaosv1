@@ -20,6 +20,7 @@
     "smoke:client-domain:browser": "node scripts/smoke-client-domain-browser-local.mjs",
     "smoke:credential-encryption:local": "node scripts/smoke-credential-encryption-local.mjs",
     "smoke:tenant-module:local": "node --import tsx scripts/smoke-tenant-module-local.mjs",
+    "smoke:legacy-wordpress-sunset:local": "node scripts/smoke-legacy-wordpress-sunset-local.mjs",
     "smoke:ai-delivery-reviews": "node scripts/smoke-ai-delivery-reviews-local.mjs",
     "smoke:ai-market-intelligence": "node scripts/smoke-ai-market-intelligence-local.mjs",
     "smoke:mvp:local": "node scripts/smoke-mvp-local.mjs",
