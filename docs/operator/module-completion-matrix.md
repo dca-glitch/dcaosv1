@@ -32,7 +32,8 @@ This matrix explains what is usable now, what is partial, and what is waiting fo
 | Revenue Hub AI | Future | Planned later after shared foundations are stable. |
 | POD AI Toolkit | Future | Planned later after shared foundations are stable. |
 | Data collection / scraping | Future / deferred | Broad scraping and autonomous crawling are not active. |
-| Production deployment | Deferred | VPS/production remains frozen until separate approval. |
+| Confirmed staging target | Deferred / missing | No separate staging host is confirmed; `system.digitalcubeagency.net` is live production, not confirmed staging. |
+| Production deployment | Deferred | PR #13 is merged to `main`, but current `main` is 0% deployed to production. VPS/production remains frozen until separate approval. |
 
 ## Core Platform
 
@@ -161,10 +162,10 @@ Still later:
 
 ## Recommended Next Focus
 
-For client delivery readiness, the next best focus is **MVP 1 Puriva client delivery** per [`docs/architecture/CLIENT_DOMAIN_OPERATING_MODEL.md`](../architecture/CLIENT_DOMAIN_OPERATING_MODEL.md):
+For client delivery readiness, **MVP 1 Puriva client delivery** is locally merged and validated per [`docs/architecture/CLIENT_DOMAIN_OPERATING_MODEL.md`](../architecture/CLIENT_DOMAIN_OPERATING_MODEL.md). Next focus should not imply production deployment:
 
 1. Client Portal MVP visibility and human/client review for Puriva;
 2. admin operator path (AI Delivery, MI, publishing handoff);
 3. client delivery SOP;
 4. pre-production readiness checklist;
-5. then staging/production deployment — not parallel future domain modules.
+5. confirm or create a real staging target before any staging smoke or production deployment — not parallel future domain modules.

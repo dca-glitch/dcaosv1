@@ -4,6 +4,8 @@
 
 Use this runbook to apply Prisma/database migrations safely in staging before any production promotion.
 
+Current environment note: no separate staging target is confirmed. `system.digitalcubeagency.net` is a live production VPS target, not staging. Do not run this procedure until a real staging environment is confirmed and explicitly approved.
+
 ## Scope
 
 - Staging-only migration execution
@@ -19,6 +21,7 @@ Use this runbook to apply Prisma/database migrations safely in staging before an
 ## Pre-migration checklist
 
 - Confirm the target environment is staging
+- Confirm the target is not the live production VPS at `system.digitalcubeagency.net` unless a separate explicit production approval exists
 - Confirm the branch and commit to be deployed
 - Confirm the migration list and expected schema impact
 - Confirm a fresh backup exists

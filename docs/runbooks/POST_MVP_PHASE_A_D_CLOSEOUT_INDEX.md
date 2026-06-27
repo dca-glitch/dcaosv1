@@ -1,6 +1,6 @@
 # Post-MVP Phases A–D — Closeout Index (Blocks 31–53)
 
-**Status:** Local Post-MVP operator gate index complete. VPS/staging deploy remains a separate owner gate.
+**Status:** Local Post-MVP operator gate index complete. PR #13 is merged to `main`; VPS/staging execution still requires a confirmed staging target and separate owner approval.
 
 **Purpose:** Single map of Post-MVP local smokes and runbooks after Puriva MVP Blocks 7–30.
 

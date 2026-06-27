@@ -41,12 +41,15 @@ Deferred:
 - production R2 switch;
 - production email sending;
 - live production Client Portal rollout on `system.digitalcubeagency.net` (MVP build in progress locally);
+- confirmed separate staging target;
 - public production rollout;
 - Caddy/container/VPS changes without approval.
 
 Current behavior:
 
 - work remains local-first;
+- PR #13 is merged to `main`, but current `main` is 0% deployed to production;
+- `system.digitalcubeagency.net` is a live production VPS target, not a confirmed staging target;
 - production is frozen unless explicitly approved.
 
 ## Live Analytics And External Accounts

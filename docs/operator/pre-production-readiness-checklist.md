@@ -6,6 +6,8 @@ This checklist is for deciding whether DCA OS Lite is ready to move from local/a
 
 Production must stay frozen until a separate approval block is completed.
 
+Current post-merge baseline: PR #13 is merged into `main`, local `main` validation passed, and local pre-staging proof was accepted. No deploy, VPS migration, production restart, or release was performed. `system.digitalcubeagency.net` is a live production VPS target, not a confirmed staging target.
+
 ## How To Use This Checklist
 
 Before production or live client access, every item below should be reviewed.
@@ -140,6 +142,7 @@ Before live analytics use:
 
 Before VPS or production deployment:
 
+- confirm or create a real staging target; do not assume `system.digitalcubeagency.net` is staging;
 - deployment plan reviewed;
 - backup/restore plan reviewed;
 - production database plan reviewed;
@@ -168,4 +171,4 @@ If any critical item is uncertain, the decision is No-Go.
 
 Current state is suitable for controlled local/admin MVP work.
 
-It is not automatically approved for production client access. A separate production readiness and deployment block is still required.
+It is not automatically approved for production client access. Merge to `main` does not mean production has been updated. A separate staging target confirmation, production readiness review, and deployment block are still required.

@@ -4,6 +4,8 @@
 
 DCA OS Lite is in local-first admin/operator foundation work. Production is frozen unless explicitly approved.
 
+Post-merge status source of truth: [`docs/operator/post-merge-completion-status-20260627.md`](./operator/post-merge-completion-status-20260627.md). PR #13 is merged into `main`, local `main` is validated, and the local pre-staging proof was accepted; current `main` is **not deployed** to production. `system.digitalcubeagency.net` is a live production VPS target, not a confirmed staging target.
+
 ## Completed Local Foundations
 
 - Repository/workspace, validation, CI, dependency monitoring, and documentation foundations.
@@ -43,6 +45,8 @@ DCA OS Lite is in local-first admin/operator foundation work. Production is froz
 - Monthly Report Market Intelligence context implemented: admin-only monthly reports can reference applied MI handoffs through internal context fields and admin UI; focused smoke coverage added in `scripts/smoke-monthly-report-mi-context-local.mjs` for apply/get/update/remove lifecycle and Client Portal non-exposure guard.
 - Backup/restore and staging migration runbooks added.
 - Finance smoke proves tenantId spoof handling locally and keeps full cross-tenant proof behind a real second-tenant fixture.
+- PR #13 merged to `main` at `584e041bd85e8179e795a0e4621a0d9d8908e0b6`; follow-up docs commit on `main`: `07b1f1668d11cdef42b195cfad189c4df645acc6`.
+- Local `main` validation passed after Windows Prisma DLL lock cleanup; local pre-staging proof was accepted after isolated Finance admin browser smoke passed following local admin restore and API/Web restart.
 
 ## Current Constraints
 
@@ -57,6 +61,7 @@ DCA OS Lite is in local-first admin/operator foundation work. Production is froz
 - AI provider runtime/cost guardrail foundation is closed for the current admin MVP as a guarded, local-first foundation; persistent provider cost metadata, deeper provider observability, dedicated provider smoke, and production/live provider proof remain deferred.
 - EN2 real provider sending and queues/background jobs remain inactive.
 - Production/VPS remains frozen unless explicitly approved.
+- Merge to `main` does not mean production deployment; current `main` deployed to production is 0%, confirmed staging target is 0%, and production deployment of current `main` is 0%.
 
 ## AI SEO / Content Plan closure
 

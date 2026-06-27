@@ -4,6 +4,8 @@ Status: Plain-language checklist for testing the first client workflow before pr
 
 This checklist is for a controlled admin dry run. It helps confirm that the full client delivery path makes sense before using it with a real live client portal.
 
+Current post-merge note: PR #13 is merged to `main`, local validation passed, and local pre-staging proof was accepted. Current `main` is not deployed to production, and no separate staging target is confirmed.
+
 ## Goal
 
 Prove that an admin can complete the full monthly delivery flow from client setup to final client-safe archive.
@@ -32,6 +34,7 @@ Confirm:
 - admin can access Clients, Projects, AI Delivery, Market Intelligence, Monthly Reports, and Finance if needed;
 - current branch is clean and synced;
 - production remains frozen.
+- `system.digitalcubeagency.net` is not treated as staging; it is a live production VPS target unless explicitly reclassified by the owner.
 
 ## Step 1: Create Or Select Test Client
 
@@ -227,6 +230,7 @@ Use this if:
 Use this if:
 
 - production deployment is still not reviewed;
+- a real staging target is missing or not confirmed;
 - storage/email/provider settings are not production-ready;
 - client access safety is not proven;
 - rollback plan does not exist.
@@ -253,4 +257,4 @@ Use this after the dry run:
 
 ## Current Recommendation
 
-Run this checklist locally before any production deployment or live client access. The goal is to prove the admin delivery flow first, then decide what UI or workflow issues must be fixed before a real client sees the system.
+Run this checklist locally before any staging/prod deployment or live client access. The goal is to prove the admin delivery flow first, then decide what UI or workflow issues must be fixed before a real client sees the system. Do not treat the PR #13 merge as production readiness or production deployment.

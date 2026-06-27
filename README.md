@@ -18,6 +18,8 @@ Production URL:
 system.digitalcubeagency.net
 ```
 
+Post-merge deployment note: PR #13 is merged into `main`, local `main` is validated, and local pre-staging proof was accepted. Current `main` is **not deployed** to production. `system.digitalcubeagency.net` is a live production VPS target, not a confirmed staging target.
+
 ## Purpose
 
 DCA OS is the shared platform foundation for Digital Cube Agency tools, dashboards, admin/operator workflows, finance modules, SEO/content operations, AI Delivery records, reporting modules, and Client Portal MVP delivery for agency clients.
@@ -30,6 +32,7 @@ The goal is to build reusable platform foundations once and then add future modu
 - **MVP 1:** Puriva client delivery (`puriva.id`) — see architecture doc.
 - Work is local-first on Windows PowerShell from `C:\dcaosv1`.
 - Production is frozen unless explicitly approved.
+- Merge to `main` does not mean production deployment; current `main` deployed to production is 0%, confirmed staging target is 0%, and production deployment of current `main` is 0%.
 - Do not deploy, touch VPS, push, or commit unless explicitly approved after review.
 - ChatGPT acts as scope controller/reviewer/task writer; Codex/Copilot/local tooling executes sealed tasks.
 - AI Delivery admin workflows remain operator-primary. **Client Portal MVP is required for Puriva** (client-safe visibility and human/client review before publication). Advanced portal features (magic links, full comment threads) remain phased.
@@ -105,10 +108,10 @@ The current foundation intentionally avoids:
 - WordPress publishing integration (draft preparation foundation exists; full integration gated)
 - GA/GSC integration
 - Resend sending or API key handling
-- full Client Portal MVP scope for Puriva (archive foundation exists; MI summary, SEO status, publishing handoff, catalog inquiry still in progress)
+- advanced Client Portal actions beyond the MVP visibility path (public magic links, full interactive comment threads, approval/request-change actions)
 - advanced Client Portal actions (public magic links, full interactive comment threads)
 
-Note: AI Delivery and Market Intelligence admin foundations are present locally. Client Access Admin UI is closed; Client Portal archive routes exist. Client Portal MVP expansion for Puriva, live external provider integrations, and production deployment remain guarded gates. Clients must not see raw prompts, workflow runs, AI costs, credentials, or admin-only notes.
+Note: AI Delivery and Market Intelligence admin foundations are present locally. Client Access Admin UI is closed; Client Portal MVP visibility path is merged and locally validated for Puriva. Live external provider integrations, advanced Client Portal actions, staging confirmation, and production deployment remain guarded gates. Clients must not see raw prompts, workflow runs, AI costs, credentials, or admin-only notes.
 
 These areas will be implemented in controlled future blocks.
 
@@ -159,7 +162,7 @@ Terminal-dependent work should be handled by Codex/Copilot/local PowerShell thro
 ## Next Planned Areas
 
 1. Keep foundational docs/rules aligned with Puriva MVP 1 and [`docs/architecture/CLIENT_DOMAIN_OPERATING_MODEL.md`](docs/architecture/CLIENT_DOMAIN_OPERATING_MODEL.md).
-2. Deliver Client Portal MVP visibility for Puriva (MI summary, SEO, Google Docs, publishing status, catalog inquiry) without exposing internal AI workflow data.
+2. Keep Client Portal MVP visibility for Puriva aligned with post-merge local validation proof without exposing internal AI workflow data.
 3. Keep Email Notifications at EN1 until EN2 event wiring is explicitly resumed.
 4. Continue using repeatable local validation and smoke scripts for stability/regression work.
 

@@ -1,6 +1,8 @@
 # First Client Next Actions
 
-Status: Short working list for the first client practice run.
+Status: Short working list for the first client practice run after PR #13 merge to `main`.
+
+Current baseline: local `main` is synced and validated, and local pre-staging proof was accepted. This is still local/admin work only: no deploy, no VPS migration, no production restart/release, and no confirmed staging target.
 
 ## Next Actions
 
@@ -32,6 +34,6 @@ Use one client, one month, one draft, and one final item for the first run.
 
 Stop the practice run if the client, month, project, or final item becomes unclear.
 
-## PR Note
+## Repo Note
 
-Keep this branch docs-only.
+Keep first-client practice local/admin-only unless a separate staging or production block is explicitly approved. Merge to `main` does not mean production was updated.

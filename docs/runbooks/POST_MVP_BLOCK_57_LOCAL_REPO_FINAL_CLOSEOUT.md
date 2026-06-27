@@ -1,8 +1,8 @@
 # Post-MVP Block 57 — Local Repo Final Closeout
 
-**Status:** Declares Post-MVP local repo work complete through Blocks 31–57.
+**Status:** Declares Post-MVP local repo work complete through Blocks 31–57. PR #13 is now merged to `main`; this document remains historical local closeout context.
 
-**Scope:** Documentation index + read-only API probe smoke. No VPS deploy, no deferred Phase E implementation.
+**Scope:** Documentation index + read-only API probe smoke. No VPS deploy, no deferred Phase E implementation, no production release.
 
 Related:
 
@@ -55,8 +55,9 @@ npm.cmd run smoke:pre-staging:local
 
 ---
 
-## Waiting on owner (not local repo)
+## Waiting on owner / environment (not local repo)
 
-- VPS staging deploy — paused
-- Merge PR #13 after staging QA
+- Confirm or create a real staging target; `system.digitalcubeagency.net` is live production, not confirmed staging
+- VPS/staging execution remains paused until the target is confirmed and explicitly approved
+- Production deployment of current `main` remains 0% and frozen
 - Any Phase E deferred item from owner gates register

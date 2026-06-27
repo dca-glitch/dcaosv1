@@ -64,6 +64,9 @@ The local smoke command intentionally refuses non-local API hosts. Add a separat
 
 ## Deployment Readiness Notes
 
+- PR #13 is merged into `main`, local `main` validation passed, and local pre-staging proof was accepted; this does not mean staging or production deployment happened.
+- Current `main` deployed to production: 0%. Confirmed staging target: 0%. Production deployment of current `main`: 0%.
+- `system.digitalcubeagency.net` is a live production VPS target, not a confirmed staging target.
 - `npm.cmd run validate` is the current full local/CI validation command.
 - `npm.cmd run -w @dca-os-v1/web build` creates the frontend build output.
 - `npm.cmd run -w @dca-os-v1/api build` currently type-checks the API; it does not emit production JavaScript.
@@ -85,7 +88,7 @@ The local smoke command intentionally refuses non-local API hosts. Add a separat
 - A production start strategy is still required before VPS deployment.
 - Same-origin reverse proxy routing is preferred so the frontend can use `/api/v1`.
 - No CORS environment contract is implemented yet.
-- See `docs/deployment/VPS_STAGING_DEPLOYMENT_PLAN.md` before any staging deployment.
+- See `docs/deployment/VPS_STAGING_DEPLOYMENT_PLAN.md` before any staging deployment, after a real staging target is confirmed.
 - See `docs/audit/README.md` for the external audit preparation pack before VPS staging or client access.
 
 ## Out Of Scope

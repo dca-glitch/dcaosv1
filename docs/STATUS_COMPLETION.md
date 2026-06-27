@@ -2,8 +2,11 @@
 
 **Status:** Planning and operator reference  
 **Last updated:** 2026-06-27  
-**Reference branch:** `feature/ai-delivery-project-brief-foundation` (local closeout 2026-06-27)  
-**Scope:** Approved local admin MVP + client/domain operating model (blocks 1–6) + **MVP 1 Puriva client delivery** + **Post-MVP local closeout (Blocks 31–57)**. VPS/production intentionally excluded until separate owner approval.
+**Reference branch:** `main` after PR #13 merge  
+**Reference commits:** PR #13 merge `584e041bd85e8179e795a0e4621a0d9d8908e0b6`; follow-up docs commit `07b1f1668d11cdef42b195cfad189c4df645acc6`  
+**Scope:** Approved local admin MVP + client/domain operating model (blocks 1–6) + **MVP 1 Puriva client delivery** + **Post-MVP local closeout (Blocks 31–57)**. Local `main` is synced and validated. VPS/production intentionally excluded until separate owner approval.
+
+Current post-merge source of truth: [`docs/operator/post-merge-completion-status-20260627.md`](./operator/post-merge-completion-status-20260627.md). Merge to `main` does **not** mean production deployment.
 
 Percentages measure completion **within each area's approved scope**, not the full long-term PRD vision.
 
@@ -25,6 +28,11 @@ Related documents:
 | **Local admin MVP** (DCA operator, local dev) | **~100%** | Done | Post-MVP Phases A–E local closeout (Blocks 31–57) |
 | **Client/domain roadmap (blocks 1–6)** | **~92%** | Local gates done; prod env keys = separate owner gates |
 | **Production readiness** (real clients, VPS) | **~38%** | Runbooks exist; deploy/migration deferred by owner |
+| **PR #13 merge to main** | **100%** | Merged; local `main` synced to `origin/main` |
+| **Local main validation** | **100%** | Passed after Windows Prisma DLL lock cleanup |
+| **Local pre-staging proof** | **95%** | Accepted; isolated Finance admin browser smoke passed after local admin restore and API/Web restart |
+| **Confirmed staging target** | **0%** | Missing / not confirmed; `system.digitalcubeagency.net` is live production VPS target, not staging |
+| **Current main deployed to production** | **0%** | Not deployed; production frozen |
 | **Full PRD vision** (future modules + automation) | **~28%** | Large portion intentionally deferred |
 
 ---
@@ -66,9 +74,12 @@ Related documents:
 | **AI provider (OpenRouter)** | **55%** | In progress | Planning config API + guarded local smoke (Post-MVP Block 40); live provider remains opt-in |
 | **Operator docs & runbooks** | **98%** | Done | Puriva Blocks 7–30 + Post-MVP Phases A–E indices and final closeout (Block 57) |
 | **Tests / smoke** | **100%** | Done (local) | Puriva MVP + Post-MVP Phases A–D browser layers in pre-staging |
-| **PR merge → main** | **0%** | In progress | PR #13 open; merge after owner approves staging |
-| **Staging / VPS deploy** | **5%** | Deferred | Documentation only; **paused by owner — no VPS deploy** |
-| **Production deploy** | **0%** | Deferred | Frozen |
+| **PR #13 merge → main** | **100%** | Done | Merged at `584e041bd85e8179e795a0e4621a0d9d8908e0b6`; follow-up docs commit `07b1f1668d11cdef42b195cfad189c4df645acc6` |
+| **Local main validation** | **100%** | Done | Passed after Windows Prisma DLL lock cleanup |
+| **Local pre-staging proof** | **95%** | Accepted | Full pre-staging reached Finance admin browser smoke; isolated Finance smoke passed after local admin restore and API/Web restart |
+| **Confirmed staging target** | **0%** | Missing | No separate staging host confirmed; `system.digitalcubeagency.net` is a live production VPS target, not staging |
+| **Current main deployed to production** | **0%** | Deferred | Not deployed; no VPS migration, restart, or release performed |
+| **Production deployment of current main** | **0%** | Deferred | Frozen unless explicitly approved |
 | **Licensee tenant migration** (`OWN_DOMAIN` → separate tenant) | **0%** | Deferred | Future block |
 | **Revenue Hub AI** | **0%** | Deferred | Future module |
 | **POD AI Toolkit** | **0%** | Deferred | Future module |
@@ -110,13 +121,14 @@ Related documents:
 - Architecture blocks 1–6 **local gates** (credential encrypt, WP publish smoke, tenant module enforce/dry_run, legacy WP sunset)
 - One-command local closeout: `npm run smoke:pre-staging:local`
 
-### Waiting — owner / staging gates (not local repo work)
+### Waiting — owner / environment gates (not local repo work)
 
 - Client Portal polish (operator UX, edge-case QA)
-- VPS staging deploy — **explicitly paused**
+- Confirm or create a real staging target; do not treat `system.digitalcubeagency.net` as staging
+- VPS/staging execution remains unavailable until a target is confirmed and explicitly approved
 - Staging env: Block 4 master key, Block 5 publish, Block 6 `TENANT_MODULE_ENFORCEMENT`
-- Staging smoke (`smoke:mvp:staging`) + browser QA on HTTPS host
-- Merge PR #13 after staging QA
+- Staging smoke (`smoke:mvp:staging`) + browser QA on confirmed HTTPS staging host
+- Production deployment of current `main` remains **0%** and frozen until separate approval
 
 ### Intentionally deferred (not counted as missing bugs)
 

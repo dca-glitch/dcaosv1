@@ -2,7 +2,7 @@
 
 **Status:** Local-only operator gate. Does **not** deploy to VPS or run staging smoke.
 
-**Purpose:** Confirm the feature branch is ready for owner review and future staging approval (PR #13). Run on `C:\dcaosv1` before asking for VPS execution.
+**Purpose:** Confirm the local repository baseline before any future staging approval. PR #13 is already merged into `main`; this gate remains local-only and does not authorize VPS execution.
 
 **Forbidden in this gate:** VPS login, Docker Compose apply, Caddy/DNS changes, staging migrations, production env, `smoke:mvp:staging` unless owner explicitly approves staging host access.
 
@@ -13,7 +13,8 @@ Related:
 - [`docs/runbooks/PURIVA_MVP_BLOCK_30_LOCAL_CLOSEOUT_INDEX.md`](./PURIVA_MVP_BLOCK_30_LOCAL_CLOSEOUT_INDEX.md) — Puriva MVP Blocks 7–30 map
 - [`docs/runbooks/POST_MVP_PHASE_A_D_CLOSEOUT_INDEX.md`](./POST_MVP_PHASE_A_D_CLOSEOUT_INDEX.md) — Post-MVP Blocks 31–53 map
 - [`docs/runbooks/POST_MVP_BLOCK_57_LOCAL_REPO_FINAL_CLOSEOUT.md`](./POST_MVP_BLOCK_57_LOCAL_REPO_FINAL_CLOSEOUT.md) — final local closeout
-- PR #13 — merge blocked until owner approves staging
+- [`docs/operator/post-merge-completion-status-20260627.md`](../operator/post-merge-completion-status-20260627.md) — current post-merge source of truth
+- PR #13 — merged into `main` at `584e041bd85e8179e795a0e4621a0d9d8908e0b6`; merge does not mean production deployment
 
 ---
 
@@ -22,7 +23,7 @@ Related:
 1. Local PostgreSQL running; API on `http://127.0.0.1:4000`.
 2. `AUTH_SEED_TEST_PASSWORD` set (shell or `.env`; never commit).
 3. Optional for Block 4 smoke: `CREDENTIAL_ENCRYPTION_MASTER_KEY` in `.env` + API restart.
-4. Branch: `feature/ai-delivery-project-brief-foundation`.
+4. Branch: `main` for the current post-merge baseline.
 
 ---
 
@@ -122,16 +123,27 @@ See block operator docs under `docs/security/`.
 - `validate` — PASS (check + build all workspaces)
 - All default local smokes — PASS
 - No secrets printed in logs
-- Git branch pushed; PR #13 reflects latest commit
+- Local `main` synced to `origin/main`
 
 ---
 
+## Current accepted local closeout
+
+- PR #13 merged to `main`: **100%**.
+- Local `main` validation: **100%**, passed after Windows Prisma DLL lock cleanup.
+- Local pre-staging proof: **95% accepted**.
+- Full pre-staging reached final Finance admin browser smoke.
+- Finance admin browser smoke initially hit local HTTP **429** admin login/rate-limit.
+- After `restore-local-admin` and API/Web restart, isolated Finance browser smoke passed.
+- No deploy, VPS migration, production restart, or release was performed.
+- `system.digitalcubeagency.net` is a live production VPS target, not a confirmed staging target.
+
 ## After local closeout (owner decision — not this gate)
 
-1. Approve VPS staging execution pack.
-2. Deploy exact commit to staging host.
-3. Run `npm run smoke:mvp:staging` against HTTPS staging API.
-4. Block 4/5/6 prod env gates on staging.
-5. Merge PR #13 after staging QA.
+1. Confirm or create a real staging target; do not use `system.digitalcubeagency.net` as staging unless the owner explicitly reclassifies infrastructure.
+2. Approve VPS/staging execution pack for the confirmed staging target.
+3. Deploy exact commit to the confirmed staging host.
+4. Run `npm run smoke:mvp:staging` against HTTPS staging API.
+5. Block 4/5/6 prod env gates on staging.
 
-Local repo work can be **complete** while VPS/staging remains **paused** by owner choice.
+Local repo work can be **complete** while staging remains **missing/not confirmed** and production remains **frozen**.

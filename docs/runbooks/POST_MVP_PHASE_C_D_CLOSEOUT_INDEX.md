@@ -1,6 +1,6 @@
 # Post-MVP Phase C & D — Closeout Index
 
-**Status:** Local operator gate index for Post-MVP Phase C (Blocks 43–46) and Phase D (Blocks 47–53). VPS/staging deploy remains a separate owner gate.
+**Status:** Local operator gate index for Post-MVP Phase C (Blocks 43–46) and Phase D (Blocks 47–53). PR #13 is merged to `main`; VPS/staging execution still requires a confirmed staging target and separate owner approval.
 
 **Purpose:** Single map of Phase C/D local smokes, runbooks, and pre-staging coverage for Post-MVP closeout review after Phase B (Blocks 40–42).
 
@@ -85,7 +85,7 @@ Restore `.env` defaults and restart API before running pre-staging baseline.
 
 ## Explicitly out of scope (owner gates)
 
-- VPS staging deploy and `smoke:mvp:staging`
+- VPS/staging execution and `smoke:mvp:staging` before a real staging target is confirmed and explicitly approved
 - Production Google service account, credential master key, WordPress live publish
 - Production tenant module `enforce` without seeded entitlements
 - Auth invite flows, password reset, Turnstile changes

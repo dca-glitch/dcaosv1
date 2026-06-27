@@ -16,7 +16,7 @@ Related:
 | Area | Why deferred | Future gate |
 |------|--------------|-------------|
 | **Client Portal Phase 2** (magic links, full comment threads, advanced approve flows) | Deferred scope register | Separate approved MVP block |
-| **VPS / staging deploy** | Owner paused | `VPS_STAGING_EXECUTION_APPROVAL_PACK` + `smoke:mvp:staging` |
+| **VPS / staging execution** | Owner paused; staging target missing / not confirmed | Confirm real staging target + `VPS_STAGING_EXECUTION_APPROVAL_PACK` + `smoke:mvp:staging` |
 | **Production env keys** (credential master, Google SA, OpenRouter live) | Owner-only secrets | Strict smokes with env + API restart |
 | **Live WordPress auto-publish (prod)** | Block 5 local gate only today | Owner gate after staging |
 | **Tenant module `enforce` on staging** | Requires seeded entitlements | Block 6 Gate 3 |

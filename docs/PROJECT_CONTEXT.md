@@ -6,6 +6,8 @@
 - Local reference path: `C:\dcaosv1`
 - Production URL: `system.digitalcubeagency.net`
 
+Post-merge status: PR #13 is merged into `main` at `584e041bd85e8179e795a0e4621a0d9d8908e0b6`; follow-up docs commit on `main` is `07b1f1668d11cdef42b195cfad189c4df645acc6`. Local `main` is synced and validated, and local pre-staging proof was accepted. No deploy, VPS migration, production restart, or release was performed. `system.digitalcubeagency.net` is a live production VPS target, not a confirmed staging target.
+
 ## Product Definition
 
 DCA OS Lite is the reusable SaaS operating system foundation for Digital Cube Agency. It is the shared platform layer for DCA tools, dashboards, admin/operator workflows, finance modules, SEO/content operations, AI Delivery records, reports, and business operations.
@@ -121,6 +123,7 @@ ce8db8f Add CI validation workflow
 ## Current Known Risks
 
 - Production is frozen unless explicitly approved.
+- Current `main` is 0% deployed to production; merge to `main` must not be described as production deployment.
 - Client Portal MVP is required for Puriva delivery; advanced client actions (comments, magic links) remain phased.
 - Email Notifications EN1 has provider defaults and Resend domain verification, but no API key and no real sending.
 - EN2 event wiring remains paused until modules are stable.

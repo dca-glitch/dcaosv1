@@ -8,6 +8,8 @@
 
 **Production system:** `system.digitalcubeagency.net` — final DCA OS login and application location.
 
+Post-merge deployment note: PR #13 is merged into `main` and local `main` is validated, but current `main` is **0% deployed** to production. `system.digitalcubeagency.net` is a live production VPS target, not a confirmed staging target.
+
 Implementation priority (delivery path first):
 
 1. Client Access Admin UI
@@ -64,7 +66,9 @@ DCA OS v1 has a clean reusable foundation, dependency lockfile, real validation,
 - **Backup/restore + staging migration runbooks**: Added
 - **Finance tenant isolation smoke**: Local spoof handling is proven; full cross-tenant proof still needs a real second tenant fixture
 - **Client Portal MVP**: Required now for Puriva client delivery (active agreement); client-safe visibility only — see MVP 1 section above
-- **Production deployment**: Remains frozen unless explicitly approved by owner
+- **PR #13 / local proof**: PR #13 merged to `main`; local validation passed; local pre-staging proof accepted after isolated Finance browser smoke passed following local admin restore and API/Web restart
+- **Staging target**: Missing / not confirmed; do not treat `system.digitalcubeagency.net` as staging
+- **Production deployment**: Current `main` is not deployed; production remains frozen unless explicitly approved by owner
 
 ## Completed
 

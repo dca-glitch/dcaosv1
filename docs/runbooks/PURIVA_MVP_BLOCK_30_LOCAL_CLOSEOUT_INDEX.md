@@ -1,6 +1,6 @@
 # Puriva MVP Block 30 — Local Closeout Index
 
-**Status:** Complete local Puriva MVP operator gate index (Blocks 7–30). VPS/staging deploy remains a separate owner gate.
+**Status:** Complete local Puriva MVP operator gate index (Blocks 7–30). PR #13 is merged to `main`; VPS/staging execution still requires a confirmed staging target and separate owner approval.
 
 **Purpose:** Single map of all Puriva MVP local smokes, runbooks, and pre-staging coverage for PR #13 repo closeout review.
 
@@ -52,7 +52,7 @@ Additional pre-staging smokes outside numbered Puriva blocks: `smoke:local`, `sm
 
 ## Explicitly out of scope (owner gates)
 
-- VPS staging deploy and `smoke:mvp:staging`
+- VPS/staging execution and `smoke:mvp:staging` before a real staging target is confirmed and explicitly approved
 - Production Puriva publish and live integrations
 - Schema/API contract changes without separate approval
 
