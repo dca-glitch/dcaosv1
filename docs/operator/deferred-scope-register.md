@@ -41,15 +41,17 @@ Deferred:
 - production R2 switch;
 - production email sending;
 - live production Client Portal rollout on `system.digitalcubeagency.net` (MVP build in progress locally);
-- confirmed separate staging target;
 - public production rollout;
-- Caddy/container/VPS changes without approval.
+- Caddy/container/VPS changes without approval;
+- Block G4 controlled VPS staging execution (G1 staging target is documented; G4 not approved);
+- DNS for `staging.digitalcubeagency.net` (not created yet — G4 prep only).
 
 Current behavior:
 
 - work remains local-first;
 - PR #13 is merged to `main`, but current `main` is 0% deployed to production;
-- `system.digitalcubeagency.net` is a live production VPS target, not a confirmed staging target;
+- **production URL:** `system.digitalcubeagency.net`;
+- **staging URL (G1 approved):** `staging.digitalcubeagency.net` — same VPS, separate staging stack; DNS not created yet;
 - production is frozen unless explicitly approved.
 
 ## Live Analytics And External Accounts
@@ -151,8 +153,8 @@ Current behavior:
 
 Deferred until separate module blocks:
 
-- POD AI Toolkit / POD management;
-- Revenue Hub AI;
+- POD AI Toolkit / POD management — see [`POD_AI_TOOLKIT_POD0_OPERATING_MODEL.md`](./architecture/POD_AI_TOOLKIT_POD0_OPERATING_MODEL.md);
+- Revenue Hub AI — see [`REVENUE_HUB_AI_RH0_OPERATING_MODEL.md`](./architecture/REVENUE_HUB_AI_RH0_OPERATING_MODEL.md);
 - full AI Market Intelligence expansion beyond current admin MVP;
 - advanced scraping/data collection module;
 - commerce connector workflows;

@@ -16,7 +16,7 @@ Related:
 | Area | Why deferred | Future gate |
 |------|--------------|-------------|
 | **Client Portal Phase 2** (magic links, full comment threads, advanced approve flows) | Deferred scope register | Separate approved MVP block |
-| **VPS / staging execution** | Owner paused; staging target missing / not confirmed | Confirm real staging target + `VPS_STAGING_EXECUTION_APPROVAL_PACK` + `smoke:mvp:staging` |
+| **VPS / staging execution** | G1 closed; G4 not approved; DNS not created | G4 approval + DNS + `VPS_STAGING_EXECUTION_APPROVAL_PACK` + `smoke:mvp:staging` on `staging.digitalcubeagency.net` |
 | **Production env keys** (credential master, Google SA, OpenRouter live) | Owner-only secrets | Strict smokes with env + API restart |
 | **Live WordPress auto-publish (prod)** | Block 5 local gate only today | Owner gate after staging |
 | **Tenant module `enforce` on staging** | Requires seeded entitlements | Block 6 Gate 3 |
@@ -39,7 +39,7 @@ Related:
 ## Owner next steps (after local closeout PASS)
 
 1. Review PR #13 / Phase F merge with `npm run smoke:pre-staging:local` evidence.
-2. **Block G1:** Complete [`staging-target-decision-template.md`](../operator/staging-target-decision-template.md) and review [`PHASE_G_BLOCK_1_STAGING_TARGET_AND_VPS_PACK.md`](./PHASE_G_BLOCK_1_STAGING_TARGET_AND_VPS_PACK.md).
-3. Approve VPS staging execution pack (Block G4 — separate decision).
+2. **Block G1:** Closed — see [`staging-target-decision-template.md`](../operator/staging-target-decision-template.md).
+3. Approve VPS staging execution pack (Block G4 — **separate decision; not approved**).
 4. Run strict Phase C env proofs on staging when keys are provisioned.
 5. Pick **one** deferred item above for the next approved implementation block — never batch schema + API + UI.

@@ -4,7 +4,16 @@
 
 This pack is the final repo-side approval artifact before any controlled VPS staging deployment. It does not approve deployment by itself. It defines what the owner may approve in a future execution step and what remains forbidden.
 
-**Staging host:** Must match the owner-signed [`staging-target-decision-template.md`](../operator/staging-target-decision-template.md) (Phase G Block G1). Until signed, do not treat any hostname as confirmed staging — including draft examples below.
+**Staging host:** Must match the owner-signed [`staging-target-decision-template.md`](../operator/staging-target-decision-template.md) (Phase G Block G1 — **closed**).
+
+**G1 approved staging:** `https://staging.digitalcubeagency.net`
+
+**Production URL (unchanged):** `https://system.digitalcubeagency.net`
+
+**VPS strategy:** Same VPS as production; **separate staging stack** (containers, env, database, Caddy route, secrets).
+
+**G4 VPS execution:** **Not approved.**
+**DNS:** Not created yet — create `staging` A record only during G4 prep, before controlled staging execution.
 
 Future execution must pin an exact approved repo baseline:
 
@@ -91,42 +100,49 @@ Separation rule:
 
 ## Reverse Proxy And Domain Strategy
 
-Expected staging route:
+**Production** (unchanged, frozen until Block G9):
 
 - Host: `system.digitalcubeagency.net`.
+- Not used for staging smoke or G4 execution.
+
+**Staging** (G1 approved — execute only after G4 owner approval and DNS):
+
+- Host: `staging.digitalcubeagency.net`.
 - Transport: HTTPS only.
-- Web: served through the reverse proxy.
+- Web: served through the reverse proxy on the **staging** stack.
 - API: served under `/api/v1` through the same origin.
-- API proxy target: `dcaosv1-api:4000`.
-- Web static mount into shared Caddy: `/opt/dca/apps/dcaosv1/app/apps/web/dist:/srv/dcaosv1/web/dist:ro`.
+- API proxy target: staging `dcaosv1-api` service on `dca_net` (separate from production stack).
+- Web static mount into shared Caddy (staging path): `/opt/dca/apps/dcaosv1/app/apps/web/dist:/srv/dcaosv1-staging/web/dist:ro` (exact mount defined at G4).
 - CORS: no API CORS runtime is currently implemented; same-origin proxying is the expected staging shape.
-- Smoke target: `https://system.digitalcubeagency.net/api/v1`.
-- Client access: blocked.
+- Smoke target: `https://staging.digitalcubeagency.net/api/v1`.
+- Client access: blocked through G4/G6.
 
-Do not change DNS, Caddy, reverse proxy config, or VPS firewall rules until explicitly approved.
+Do not change DNS, Caddy, reverse proxy config, or VPS firewall rules until **Block G4** is explicitly approved. DNS for `staging.digitalcubeagency.net` is **not created yet**.
 
-Draft shared Caddy route:
+Draft **staging** Caddy route (docs-only — apply at G4):
 
 ```caddyfile
-system.digitalcubeagency.net {
+staging.digitalcubeagency.net {
   encode gzip
 
   handle /api/v1/* {
-    reverse_proxy dcaosv1-api:4000
+    reverse_proxy dcaosv1-staging-api:4000
   }
 
   handle {
-    root * /srv/dcaosv1/web/dist
+    root * /srv/dcaosv1-staging/web/dist
     try_files {path} /index.html
     file_server
   }
 }
 ```
 
-Expected shared Caddy mount:
+Production route (`system.digitalcubeagency.net`) remains separate and must not share runtime with staging.
+
+Expected shared Caddy mount (staging web dist — confirm at G4):
 
 ```yaml
-/opt/dca/apps/dcaosv1/app/apps/web/dist:/srv/dcaosv1/web/dist:ro
+/opt/dca/apps/dcaosv1/app/apps/web/dist:/srv/dcaosv1-staging/web/dist:ro
 ```
 
 ## Migration Approval Gate
@@ -182,7 +198,7 @@ Staging smoke:
 - Command: `npm run smoke:mvp:staging`.
 - Requires explicit `MVP_SMOKE_API_BASE_URL`.
 - Requires HTTPS.
-- Allows only `system.digitalcubeagency.net`.
+- Allows only `staging.digitalcubeagency.net` (must match G1 approved staging host).
 - Requires `/api/v1`.
 - Requires staging-only credentials supplied through the shell.
 - Must not print passwords, tokens, cookies, auth headers, password hashes, session token hashes, or full database URLs.

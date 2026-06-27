@@ -2958,6 +2958,10 @@ export function AiDeliveryPage({
         </div>
       </div>
 
+      <p className="muted-text" style={{ marginTop: "0.25rem", maxWidth: "72ch" }}>
+        Admin-operated path: Market Intelligence handoff → brief → content plan → draft → deliverable package → monthly report (FINAL). Client Portal shows client-safe final material only. Live providers, autonomous runs, and client-side approvals remain deferred.
+      </p>
+
       <SectionPanel
         title="Operator summary"
         description="Read-only operator overview. Project totals are tenant-level; workflow, research, planning, production, deliverable, and review context reflects the project area currently in focus."

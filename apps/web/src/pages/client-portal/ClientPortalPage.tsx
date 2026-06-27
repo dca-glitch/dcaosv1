@@ -839,7 +839,7 @@ export function ClientPortalPage() {
             Refresh
           </button>
         }
-        description="Client-safe delivery visibility for Puriva MVP: market summary, SEO status, Google Docs, publishing handoff, deliverables, and monthly reports. Internal AI workflow data stays hidden."
+        description="Read-only client archive: approved final deliverables, finalized monthly reports, and client-safe delivery summaries. Internal drafts, prompts, workflow runs, AI costs, credentials, and admin notes are never shown here."
         eyebrow="Client workspace"
         title="Client Portal"
         titleId="client-portal-title"
@@ -1048,7 +1048,7 @@ export function ClientPortalPage() {
                           <div className="dense-kicker">
                             <StatusBadge status={deliverySummary.websitePublishing?.status ?? "NONE"} />
                           </div>
-                          <h3>Website publishing handoff</h3>
+                          <h3>Website publishing status</h3>
                           <div className="dense-meta">
                             <span>{deliverySummary.websitePublishing?.action ?? "No publishing activity yet"}</span>
                             {deliverySummary.websitePublishing?.siteUrlHost ? (
@@ -1057,9 +1057,13 @@ export function ClientPortalPage() {
                           </div>
                           {!deliverySummary.websitePublishing ? (
                             <div className="dense-row-note muted-text">
-                              Publishing status appears here after admin prepares or publishes content.
+                              Read-only handoff status appears here after your team prepares or publishes content. You cannot publish from this portal.
                             </div>
-                          ) : null}
+                          ) : (
+                            <div className="dense-row-note muted-text">
+                              Status only — admin-managed publishing. No client-triggered publish actions.
+                            </div>
+                          )}
                         </div>
                       </div>
                     </article>
@@ -1190,7 +1194,7 @@ export function ClientPortalPage() {
               </SectionPanel>
 
               <SectionPanel
-                description="DELIVERED and ACCEPTED deliverables only."
+                description="DELIVERED and ACCEPTED deliverables only. Read-only archive — download or open published export links when your team shares them."
                 title="Final deliverables"
                 tone="compact"
               >
@@ -1206,7 +1210,7 @@ export function ClientPortalPage() {
                   <ErrorState message={deliverablesError} title="Deliverables unavailable" />
                 ) : deliverables.length === 0 ? (
                   <EmptyState
-                    message="Final deliverables appear here once they are marked DELIVERED or ACCEPTED."
+                    message="Final deliverables appear here once your team marks them DELIVERED or ACCEPTED. Drafts and in-progress work stay admin-only."
                     title="No final deliverables yet"
                   />
                 ) : (
@@ -1225,7 +1229,7 @@ export function ClientPortalPage() {
                               {deliverable.exportUrl ? (
                                 <span>
                                   <a href={deliverable.exportUrl} rel="noreferrer" target="_blank">
-                                    Export link
+                                    Published export link
                                   </a>
                                 </span>
                               ) : null}
@@ -1262,7 +1266,7 @@ export function ClientPortalPage() {
               </SectionPanel>
 
               <SectionPanel
-                description="FINAL monthly reports only. Read-only summary of completed work, approved performance metrics, and next-step recommendations."
+                description="FINAL monthly reports only. Read-only view of completed work, admin-approved performance snapshots, and next-month recommendations."
                 title="Monthly report — final client view"
                 tone="compact"
               >
@@ -1272,7 +1276,7 @@ export function ClientPortalPage() {
                   <ErrorState message={monthlyReportsError} title="Monthly reports unavailable" />
                 ) : monthlyReports.length === 0 ? (
                   <EmptyState
-                    message="Finalized monthly reports appear here once the admin marks them FINAL."
+                    message="Finalized monthly reports appear here after your team marks them FINAL and shares them to this archive."
                     title="No finalized reports yet"
                   />
                 ) : (
@@ -1394,6 +1398,19 @@ export function ClientPortalPage() {
                             </SectionPanel>
                           ) : null}
 
+                          {!monthlyReportDetail.performanceSummary ? (
+                            <SectionPanel
+                              description="Performance metrics appear only after your team imports and approves a snapshot for this report month. Live Google Analytics or Search Console sync is not shown here."
+                              title="Performance summary"
+                              tone="compact"
+                            >
+                              <EmptyState
+                                message="No approved performance snapshot is attached to this final report yet."
+                                title="No performance data in this report"
+                              />
+                            </SectionPanel>
+                          ) : null}
+
                           {monthlyReportDetail.workSummary.deliverables.length > 0 ? (
                             <SectionPanel
                               description="Final deliverables included in this month's completed work."
@@ -1424,14 +1441,14 @@ export function ClientPortalPage() {
                           ) : null}
 
                           <SectionPanel
-                            description="Admin-written recommendations for the next month."
+                            description="Written by your team for the next reporting period. Not automated advice."
                             title="Recommendations for next month"
                             tone="compact"
                           >
                             {monthlyReportDetail.monthlyReport.recommendationsText ? (
                               <div className="dense-row-note">{monthlyReportDetail.monthlyReport.recommendationsText}</div>
                             ) : (
-                              <EmptyState message="No recommendations were added to this final report." title="No recommendations yet" />
+                              <EmptyState message="Your team has not added recommendations to this final report yet." title="No recommendations yet" />
                             )}
                           </SectionPanel>
                         </div>
@@ -1450,13 +1467,14 @@ export function ClientPortalPage() {
       </div>
 
       <SectionPanel
-        description="Advanced portal features remain phased after MVP visibility and review scope."
-        title="Advanced portal features (phased)"
+        description="These features are intentionally deferred. This portal remains read-only visibility for final material only."
+        title="Not available in Client Portal MVP"
         tone="compact"
       >
         <ul className="muted-text" style={{ margin: 0, paddingLeft: "1.25rem" }}>
-          <li>Public magic links</li>
-          <li>Full interactive comment threads</li>
+          <li>Public magic links or passwordless access</li>
+          <li>In-portal comments, approvals, or request-changes actions</li>
+          <li>Internal drafts, raw research, AI prompts, or workflow status</li>
         </ul>
       </SectionPanel>
     </section>
