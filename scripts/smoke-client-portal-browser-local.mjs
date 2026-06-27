@@ -220,6 +220,21 @@ async function createFixture(adminToken, adminUserId) {
     labelPrefix: "[SMOKE][CLIENT_PORTAL_BROWSER]"
   });
 
+  const catalogProductName = `[SMOKE][CLIENT_PORTAL_BROWSER] ${makeSmokeId("catalog")}`;
+  const catalogProduct = requireOkData(
+    "browser smoke create catalog product",
+    await request(`/clients/${client.id}/catalog-products`, {
+      method: "POST",
+      token: adminToken,
+      body: {
+        name: catalogProductName,
+        description: "Browser proof catalog product for inquiry-only flow.",
+        priceLabel: "Rp 1",
+        isVisibleInPortal: true
+      }
+    })
+  ).catalogProduct;
+
   return {
     client,
     project,
@@ -227,7 +242,9 @@ async function createFixture(adminToken, adminUserId) {
     articleImage,
     finalDeliverable: finalDeliverable.body.data.deliverable,
     draftDeliverable: draftDeliverable.body.data.deliverable,
-    deliveryHints
+    deliveryHints,
+    catalogProduct,
+    catalogProductName
   };
 }
 
@@ -342,6 +359,69 @@ async function main() {
       fixture.deliveryHints.publishingStatus ?? "status"
     );
 
+    await portalSection.getByRole("heading", { name: "Product catalog inquiry", exact: true }).waitFor({
+      state: "visible",
+      timeout: 15000
+    });
+    await portalSection.getByRole("heading", { name: fixture.catalogProductName, exact: true }).waitFor({
+      state: "visible",
+      timeout: 15000
+    });
+
+    const catalogPortalText = await portalSection.innerText();
+    record(
+      "product catalog inquiry section renders",
+      catalogPortalText.includes("Product catalog inquiry") && catalogPortalText.includes(fixture.catalogProductName),
+      fixture.catalogProductName
+    );
+    record(
+      "product catalog shows inquiry-only disclaimer",
+      catalogPortalText.includes("No cart, checkout, or payment"),
+      "inquiry-only copy visible"
+    );
+
+    const inquiryMessage = `Browser smoke catalog inquiry ${makeSmokeId("msg")}`;
+    await portalSection.getByLabel("Your name").fill("Browser Smoke Client");
+    await portalSection.getByLabel("Email").fill("browser-smoke-catalog@example.com");
+    await portalSection.getByLabel("Product (optional)").selectOption({ label: fixture.catalogProductName });
+    await portalSection.getByLabel("Message").fill(inquiryMessage);
+
+    const inquiryResponsePromise = page.waitForResponse(
+      (response) =>
+        response.url().includes(`/client-portal/projects/${fixture.project.id}/catalog-inquiries`) &&
+        response.request().method() === "POST"
+    );
+    await portalSection.getByRole("button", { name: "Send product inquiry" }).click();
+
+    const inquiryResponse = await inquiryResponsePromise;
+    const inquiryJson = await inquiryResponse.json();
+    record(
+      "catalog inquiry POST succeeds",
+      inquiryResponse.status() === 201 && inquiryJson?.ok === true,
+      `${inquiryResponse.status()}`
+    );
+    record(
+      "catalog inquiry response includes inquiry id",
+      typeof inquiryJson?.data?.catalogInquiry?.id === "string",
+      inquiryJson?.data?.catalogInquiry?.id ?? "missing"
+    );
+
+    await portalSection
+      .getByText("Inquiry submitted. Your team will follow up directly — no checkout or payment in this portal.")
+      .waitFor({ state: "visible", timeout: 10000 });
+    record("catalog inquiry success notice visible", true, "client-safe confirmation shown");
+
+    const adminInquiries = await request(`/clients/${fixture.client.id}/catalog-inquiries`, { token: adminToken });
+    const adminInquiryList = adminInquiries.body?.data?.catalogInquiries ?? [];
+    record(
+      "admin catalog inquiries include browser submission",
+      adminInquiries.status === 200 &&
+        adminInquiryList.some(
+          (entry) => entry.message === inquiryMessage && entry.productName === fixture.catalogProductName
+        ),
+      inquiryMessage
+    );
+
     const forbiddenHits = forbiddenTokens.filter((token) => containsForbiddenToken(renderedPortal, token));
     record(
       "forbidden internal fields absent from page body/html",
@@ -398,6 +478,7 @@ async function main() {
       console.log("PROVEN: authenticated client portal archive page loaded and selected project detail rendered without crashing.");
       console.log("PROVEN: final deliverables rendered with the DRAFT fixture hidden and only the final archive item visible.");
       console.log("PROVEN: delivery overview section rendered populated Puriva path (MI summary, Google Docs, publishing status).");
+      console.log("PROVEN: product catalog inquiry form submitted in browser and persisted for admin review.");
       console.log("PROVEN: page body/HTML omitted storageKey and the other forbidden internal fields.");
       console.log("PROVEN: download action called the safe client-portal download endpoint and did not expose storageKey.");
     } else {

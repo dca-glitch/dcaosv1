@@ -50,6 +50,7 @@ npm.cmd run smoke:client-access:local
 npm.cmd run smoke:client-portal:browser
 npm.cmd run smoke:client-domain:browser
 npm.cmd run smoke:client-portal-monthly-report:browser
+npm.cmd run smoke:ai-market-intelligence
 npm.cmd run smoke:ai-delivery-reviews
 npm.cmd run smoke:credential-encryption:local
 npm.cmd run smoke:wordpress-publish:local

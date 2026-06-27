@@ -9,6 +9,7 @@ Related:
 - `scripts/smoke-client-portal-browser-local.mjs`
 - `scripts/lib/puriva-delivery-summary-fixture.mjs`
 - `docs/runbooks/PURIVA_MVP_BLOCK_7_DELIVERY_SUMMARY_LOCAL_GATE.md`
+- `docs/runbooks/PURIVA_MVP_BLOCK_10_CLIENT_PORTAL_CATALOG_INQUIRY_BROWSER_GATE.md`
 
 ---
 
@@ -40,3 +41,4 @@ Included in `npm run smoke:pre-staging:local` (starts web if port 5173 is free).
 - `Open Google Doc` link visible
 - Website publishing handoff shows status/host
 - Forbidden internal tokens absent from page HTML
+- Product catalog inquiry form submits successfully (Block 10)

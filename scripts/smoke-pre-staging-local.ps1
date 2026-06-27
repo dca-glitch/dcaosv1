@@ -58,6 +58,7 @@ try {
   Invoke-NpmStep "Client portal browser smoke" "smoke:client-portal:browser"
   Invoke-NpmStep "Client domain browser smoke" "smoke:client-domain:browser"
   Invoke-NpmStep "Client portal monthly report browser smoke" "smoke:client-portal-monthly-report:browser"
+  Invoke-NpmStep "AI Market Intelligence local smoke" "smoke:ai-market-intelligence"
 
   Restart-LocalApiForSmoke "Restart local API to clear login rate limits before AI Delivery smoke"
 
