@@ -75,6 +75,8 @@ try {
   Invoke-NpmStep "Client domain browser smoke" "smoke:client-domain:browser"
   Invoke-NpmStep "Client portal monthly report browser smoke" "smoke:client-portal-monthly-report:browser"
   Invoke-NpmStep "AI Market Intelligence local smoke" "smoke:ai-market-intelligence"
+  Invoke-NpmStep "Market Intelligence operator browser smoke" "smoke:mi-operator:browser"
+  Invoke-NpmStep "AI Delivery workflow browser smoke" "smoke:ai-delivery-workflow:browser"
 
   Restart-LocalApiForSmoke "Restart local API to clear login rate limits before backend-heavy smokes"
 
@@ -91,6 +93,7 @@ try {
   Invoke-NpmStep "WordPress publish local smoke" "smoke:wordpress-publish:local"
   Invoke-NpmStep "Tenant module local smoke" "smoke:tenant-module:local"
   Invoke-NpmStep "Tenant module dry_run probe" "smoke:tenant-module:dry-run-probe"
+  Invoke-NpmStep "OpenRouter guarded local smoke" "smoke:openrouter-guarded:local"
   Invoke-NpmStep "Legacy WordPress sunset local smoke" "smoke:legacy-wordpress-sunset:local"
 
   Write-Host ""

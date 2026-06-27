@@ -22,7 +22,7 @@ Related documents:
 
 | Perspective | % | Meaning |
 |-------------|---|---------|
-| **Local admin MVP** (DCA operator, local dev) | **~97%** | Done | Post-MVP Phase A Blocks 31–36 polish/smoke layers |
+| **Local admin MVP** (DCA operator, local dev) | **~98%** | Done | Post-MVP Phase A Blocks 31–36 + Phase B Blocks 37–42 polish/smoke layers |
 | **Client/domain roadmap (blocks 1–6)** | **~92%** | Local gates done; prod env keys = separate owner gates |
 | **Production readiness** (real clients, VPS) | **~38%** | Runbooks exist; deploy/migration deferred by owner |
 | **Full PRD vision** (future modules + automation) | **~28%** | Large portion intentionally deferred |
@@ -53,8 +53,8 @@ Related documents:
 | **WordPress publish + PublicationLog (block 5)** | **90%** | Done (local) | Local gate smoke + Client Hub publication log browser proof |
 | **Module middleware (block 6)** | **94%** | Done (local) | dry_run local probe runbook (Post-MVP Block 39); staging enforce pending |
 | **Projects & Tasks** | **88%** | Done | Admin MVP closed |
-| **AI Delivery** | **84%** | Done | Content plan review browser gate (Post-MVP Block 34) |
-| **Market Intelligence** | **78%** | In progress | Admin MVP + handoff; included in pre-staging smoke; no recurring/automation |
+| **AI Delivery** | **88%** | Done | Workflow browser matrix gate (Post-MVP Block 42) + content plan review browser gate (Block 34) |
+| **Market Intelligence** | **86%** | Done | Admin MVP + operator browser gate (Post-MVP Block 41); no recurring/automation |
 | **Monthly Reports** | **90%** | Done | Admin browser + PDF + metrics path; local + browser + metrics smokes in pre-staging |
 | **Client Portal MVP** (Puriva — visibility + review) | **100%** | Done (local) | Blocks 7–30 incl. sparse + populated delivery overview browser gates |
 | **Client Portal advanced actions** (magic links, full comment threads) | **0%** | Phased after MVP visibility | See deferred scope register |
@@ -63,9 +63,9 @@ Related documents:
 | **Private storage (R2)** | **65%** | In progress | Block 37 byte roundtrip smoke (disabled guard + optional full roundtrip); prod bucket deferred |
 | **Email / notifications** | **35%** | In progress | Read-only outbox API + local smoke (Post-MVP Block 38); no real sending |
 | **Audit / activity** | **70%** | In progress | Dashboard read-only feed + browser gate (Post-MVP Block 31); full audit UI deferred |
-| **AI provider (OpenRouter)** | **40%** | In progress | Guarded path; default remains deterministic local |
+| **AI provider (OpenRouter)** | **55%** | In progress | Planning config API + guarded local smoke (Post-MVP Block 40); live provider remains opt-in |
 | **Operator docs & runbooks** | **95%** | Done | Puriva MVP Blocks 7–30 index + pre-staging local gate |
-| **Tests / smoke** | **100%** | Done (local) | Puriva MVP closeout + Post-MVP Phase A browser layers in pre-staging |
+| **Tests / smoke** | **100%** | Done (local) | Puriva MVP closeout + Post-MVP Phase A/B browser layers in pre-staging |
 | **PR merge → main** | **0%** | In progress | PR #13 open; merge after owner approves staging |
 | **Staging / VPS deploy** | **5%** | Deferred | Documentation only; **paused by owner — no VPS deploy** |
 | **Production deploy** | **0%** | Deferred | Frozen |
