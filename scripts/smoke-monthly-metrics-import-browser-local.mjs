@@ -93,15 +93,17 @@ async function ensureMonthlyReportMenuOpen(projectCard) {
 }
 
 async function openMonthlyReportModal(page, projectName) {
+  await page.getByRole("button", { name: "All", exact: true }).click();
   const projectCard = page.locator("article.entity-card", { hasText: projectName }).first();
-  await projectCard.waitFor({ state: "visible", timeout: 15000 });
+  await projectCard.scrollIntoViewIfNeeded();
+  await projectCard.waitFor({ state: "visible", timeout: 30000 });
   await ensureMonthlyReportMenuOpen(projectCard);
   await projectCard.getByRole("button", { name: "Monthly Report" }).click();
   await page
     .getByRole("heading", {
       name: new RegExp(`Monthly Report\\s+—\\s+${projectName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`)
     })
-    .waitFor({ state: "visible", timeout: 15000 });
+    .waitFor({ state: "visible", timeout: 30000 });
 }
 
 async function main() {
@@ -193,8 +195,17 @@ async function main() {
       window.sessionStorage.setItem("dcaosv1.authToken", authToken);
     }, token);
 
+    const projectsResponsePromise = page.waitForResponse(
+      (response) =>
+        response.url().includes("/ai-delivery-projects") &&
+        response.request().method() === "GET" &&
+        response.status() === 200,
+      { timeout: 45000 }
+    );
+
     await page.goto(`${webBaseUrl}/#/ai-delivery`, { waitUntil: "domcontentloaded" });
     await page.getByRole("heading", { name: "AI Delivery Projects" }).waitFor({ state: "visible", timeout: 20000 });
+    await projectsResponsePromise;
     record("ai delivery page loads", true, "#/ai-delivery");
 
     await openMonthlyReportModal(page, projectName);

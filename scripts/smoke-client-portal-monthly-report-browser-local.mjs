@@ -298,45 +298,49 @@ async function main() {
       fixture.finalReportTitle
     );
 
+    await page.getByRole("button", { name: fixture.finalReportTitle }).click();
+    await page.getByRole("heading", { name: "Recommendations for next month" }).waitFor({ state: "visible", timeout: 15000 });
+    const detailText = await portalSection.innerText();
+    record("monthly report final client view detail loads", true, "recommendations section visible");
     record(
       "FINAL monthly report recommendations visible in final client view",
-      renderedPortal.includes("Smoke proof recommendations."),
+      detailText.includes("Smoke proof recommendations."),
       "recommendations text"
     );
 
-    await page.getByRole("button", { name: fixture.finalReportTitle }).click();
-    await page.getByRole("heading", { name: "Recommendations for next month" }).waitFor({ state: "visible", timeout: 15000 });
-    record("monthly report final client view detail loads", true, "recommendations section visible");
+    const updatedPortalText = await portalSection.innerText();
+    const updatedPortalHtml = await portalSection.innerHTML();
+    const updatedRenderedPortal = `${updatedPortalText}\n${updatedPortalHtml}`;
 
     // Verify DRAFT report not visible (it's on project2, not the selected project1 — so it wouldn't be in project1 results anyway;
     // the FINAL filter ensures it also can't appear for project1 even if somehow a DRAFT crept in)
     record(
       "DRAFT monthly report not visible",
-      !renderedPortal.includes(fixture.draftReportTitle),
+      !updatedRenderedPortal.includes(fixture.draftReportTitle),
       fixture.draftReportTitle.slice(0, 30)
     );
 
     record(
       "ADMIN_REVIEW monthly report not visible",
-      !renderedPortal.includes(fixture.adminReviewReportTitle),
+      !updatedRenderedPortal.includes(fixture.adminReviewReportTitle),
       fixture.adminReviewReportTitle.slice(0, 30)
     );
 
     record(
       "ARCHIVED monthly report not visible",
-      !renderedPortal.includes(fixture.archivedReportTitle),
+      !updatedRenderedPortal.includes(fixture.archivedReportTitle),
       fixture.archivedReportTitle.slice(0, 30)
     );
 
     // Verify status badge shows Final (StatusBadge formats "FINAL" → "Final")
     record(
       "FINAL status badge visible in monthly reports section",
-      renderedPortal.includes("Final"),
+      updatedRenderedPortal.includes("Final"),
       "status badge"
     );
 
     // Verify forbidden fields absent
-    const forbiddenHits = forbiddenTokens.filter((token) => containsForbiddenToken(renderedPortal, token));
+    const forbiddenHits = forbiddenTokens.filter((token) => containsForbiddenToken(updatedRenderedPortal, token));
     record(
       "forbidden internal fields absent from portal",
       forbiddenHits.length === 0,

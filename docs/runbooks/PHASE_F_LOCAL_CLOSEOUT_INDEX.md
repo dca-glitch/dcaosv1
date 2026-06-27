@@ -1,6 +1,6 @@
 # Phase F — Local Closeout Index (Blocks 58–77)
 
-**Status:** Active local closeout index after Post-MVP Block 57.
+**Status:** Phase F local closeout complete (Blocks 58–77) on branch `feature/local-closeout-blocks-58-77`.
 
 **Purpose:** Single map of Phase F local smokes, runbooks, and validation gates.
 

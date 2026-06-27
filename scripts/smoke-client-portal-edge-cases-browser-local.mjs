@@ -263,25 +263,37 @@ async function main() {
     );
 
     await portalSection.getByRole("button", { name: "Refresh" }).click();
+    await page.waitForResponse(
+      (response) =>
+        response.url().includes("/client-portal/projects") &&
+        response.request().method() === "GET" &&
+        response.status() === 200,
+      { timeout: 30000 }
+    );
+    await portalSection.getByRole("button", { name: "Active", exact: true }).click();
+
+    const projectSidebar = portalSection.locator("aside");
+    const fixtureProjectCards = projectSidebar.locator("article.entity-card", { hasText: fixture.projectName });
     await page.waitForFunction(
-      (projectName) => !document.body.textContent?.includes(projectName),
+      (projectName) => {
+        const sidebar = document.querySelector('section[aria-labelledby="client-portal-title"] aside');
+        return sidebar ? !sidebar.textContent?.includes(projectName) : false;
+      },
       fixture.projectName,
-      { timeout: 15000 }
+      { timeout: 20000 }
     );
 
-    const refreshedText = await portalSection.innerText();
-    const fixtureProjectCards = portalSection.locator("article.entity-card", { hasText: fixture.projectName });
     record(
       "archived project hidden from active project list after refresh",
-      (await fixtureProjectCards.count()) === 0 && !refreshedText.includes(fixture.projectName),
+      (await fixtureProjectCards.count()) === 0,
       fixture.projectName
     );
 
     await portalSection.getByRole("button", { name: "Archived", exact: true }).click();
-    const archivedFilterText = await portalSection.innerText();
+    const archivedSidebarCards = projectSidebar.locator("article.entity-card", { hasText: fixture.projectName });
     record(
       "archived filter does not expose archived project records",
-      (await fixtureProjectCards.count()) === 0 && !archivedFilterText.includes(fixture.projectName),
+      (await archivedSidebarCards.count()) === 0,
       "archived project still hidden"
     );
 

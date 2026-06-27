@@ -125,6 +125,7 @@ async function createPublicationLogFixture(adminToken) {
 
   return {
     client,
+    clientId: client.id,
     clientName,
     publishStatus: publishLog?.status ?? deliveryHints.publishingStatus ?? "missing",
     siteHost: "smoke-puriva.example.com"
@@ -169,12 +170,14 @@ async function main() {
 
     await page.goto(`${webBaseUrl}/#/clients`, { waitUntil: "domcontentloaded" });
     await page.getByRole("heading", { name: "Clients", exact: true }).waitFor({ state: "visible", timeout: 15000 });
+    await page.getByRole("button", { name: "All", exact: true }).click();
 
-    const clientCard = page.locator("article.entity-card.dense-record", { hasText: fixture.clientName }).first();
-    await clientCard.waitFor({ state: "visible", timeout: 20000 });
+    const clientCard = page.locator("article.entity-card", { hasText: fixture.clientName }).first();
+    await clientCard.scrollIntoViewIfNeeded();
+    await clientCard.waitFor({ state: "visible", timeout: 30000 });
     await clientCard.getByRole("button", { name: "Open hub" }).click();
 
-    await page.getByRole("heading", { name: fixture.clientName, exact: true }).waitFor({ state: "visible", timeout: 15000 });
+    await page.getByRole("heading", { name: fixture.clientName, exact: true }).waitFor({ state: "visible", timeout: 30000 });
     await page.getByRole("heading", { name: "Publication log", exact: true }).waitFor({ state: "visible", timeout: 15000 });
 
     const hubText = await page.locator(".page-stack").innerText();

@@ -237,11 +237,21 @@ async function main() {
       "clean"
     );
 
+    const projectsResponsePromise = page.waitForResponse(
+      (response) =>
+        response.url().includes("/market-intelligence-projects") &&
+        response.request().method() === "GET" &&
+        response.status() === 200,
+      { timeout: 45000 }
+    );
     await page.goto(`${webBaseUrl}/#/ai-market-intelligence`, { waitUntil: "domcontentloaded" });
     await page.getByRole("heading", { name: "Market Intelligence" }).waitFor({ state: "visible", timeout: 15000 });
+    await projectsResponsePromise;
     record("market intelligence page loads", true, "#/ai-market-intelligence");
 
-    await page.getByRole("button", { name: "New research project" }).click();
+    const newProjectButton = page.getByRole("button", { name: /^(New research project|Create first project)$/ });
+    await newProjectButton.first().waitFor({ state: "visible", timeout: 30000 });
+    await newProjectButton.first().click();
     const miModal = page.locator(".modal-panel", { hasText: "Create research project" }).first();
     await miModal.waitFor({ state: "visible", timeout: 10000 });
 
