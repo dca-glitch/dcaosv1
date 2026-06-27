@@ -56,6 +56,7 @@ try {
   Invoke-NpmStep "Client access admin smoke" "smoke:client-access:local"
   Ensure-LocalWebForBrowserSmoke
   Invoke-NpmStep "Client portal browser smoke" "smoke:client-portal:browser"
+  Invoke-NpmStep "Client portal edge cases browser smoke" "smoke:client-portal:edge-cases:browser"
   Invoke-NpmStep "Client domain browser smoke" "smoke:client-domain:browser"
   Invoke-NpmStep "Client portal monthly report browser smoke" "smoke:client-portal-monthly-report:browser"
   Invoke-NpmStep "AI Market Intelligence local smoke" "smoke:ai-market-intelligence"

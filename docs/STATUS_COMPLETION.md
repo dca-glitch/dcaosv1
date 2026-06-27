@@ -56,7 +56,7 @@ Related documents:
 | **AI Delivery** | **82%** | Done | Brief → deliverable → export → monthly report path |
 | **Market Intelligence** | **78%** | In progress | Admin MVP + handoff; included in pre-staging smoke; no recurring/automation |
 | **Monthly Reports** | **78%** | Done | Admin + PDF + client archive FINAL-only |
-| **Client Portal MVP** (Puriva — visibility + review) | **94%** | Done (local) | Block 7 API + Block 9 delivery overview + Block 10 catalog inquiry browser; monthly report PASS |
+| **Client Portal MVP** (Puriva — visibility + review) | **96%** | Done (local) | Blocks 7–10 delivery/catalog browser gates + Block 12 empty catalog/archived project edge cases |
 | **Client Portal advanced actions** (magic links, full comment threads) | **0%** | Phased after MVP visibility | See deferred scope register |
 | **Finance** | **80%** | Done | Invoices, bills, vendors, credit notes; `OWN_DOMAIN` invoice guard |
 | **AI SEO + Content Production** | **62%** | In progress | Admin shell; no live Google integrations |
@@ -65,7 +65,7 @@ Related documents:
 | **Audit / activity** | **55%** | In progress | Writer + dashboard feed; no full audit UI |
 | **AI provider (OpenRouter)** | **40%** | In progress | Guarded path; default remains deterministic local |
 | **Operator docs & runbooks** | **92%** | Done | SOP, matrix, deferred register, pre-staging local gate |
-| **Tests / smoke** | **96%** | Done (local) | Pre-staging includes portal browser, catalog inquiry, MI smoke |
+| **Tests / smoke** | **97%** | Done (local) | Pre-staging includes portal browser, catalog inquiry, edge cases, MI smoke |
 | **PR merge → main** | **0%** | In progress | PR #13 open; merge after owner approves staging |
 | **Staging / VPS deploy** | **5%** | Deferred | Documentation only; **paused by owner — no VPS deploy** |
 | **Production deploy** | **0%** | Deferred | Frozen |
@@ -151,6 +151,7 @@ Do not treat local smoke alone as production readiness.
 
 | Date | Change |
 |------|--------|
+| 2026-06-27 | MVP Block 12: Client Portal empty catalog + archived project browser edge-case gate; API archive exclusion in portal local smoke |
 | 2026-06-27 | MVP Block 10: Client Portal catalog inquiry browser gate; Block 11: MI smoke in pre-staging gate |
 | 2026-06-27 | MVP Block 9: Client Portal browser gate for populated delivery overview; inquiry form prefill; shared Puriva fixture lib |
 | 2026-06-27 | MVP Block 7: Puriva delivery summary local gate in client portal smoke; client-access added to pre-staging gate |

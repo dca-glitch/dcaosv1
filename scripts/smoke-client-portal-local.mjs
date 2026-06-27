@@ -498,6 +498,52 @@ async function main() {
     `${crossProjectDeliverables.status}`
   );
 
+  // ── 11b. Archived AI delivery project hidden from client portal ───────────
+  requireOkData(
+    "client portal archive ai delivery project",
+    await request(`/ai-delivery-projects/${createdAiProject.id}/archive`, {
+      method: "POST",
+      token: adminToken
+    }),
+    200
+  );
+
+  const archivedProjectsList = await request("/client-portal/projects", { token: adminToken });
+  const archivedProjects = archivedProjectsList.body?.data?.aiDeliveryProjects ?? [];
+  record(
+    "client portal archived project excluded from projects list",
+    archivedProjectsList.status === 200 &&
+      !archivedProjects.some((project) => project.id === createdAiProject.id),
+    `${archivedProjects.length} projects`
+  );
+
+  const archivedProjectDetail = await request(`/client-portal/projects/${createdAiProject.id}`, { token: adminToken });
+  record(
+    "client portal archived project detail returns 404",
+    archivedProjectDetail.status === 404,
+    `${archivedProjectDetail.status}`
+  );
+
+  const archivedProjectDeliverables = await request(
+    `/client-portal/projects/${createdAiProject.id}/deliverables`,
+    { token: adminToken }
+  );
+  record(
+    "client portal archived project deliverables returns 404",
+    archivedProjectDeliverables.status === 404,
+    `${archivedProjectDeliverables.status}`
+  );
+
+  const archivedProjectCatalog = await request(
+    `/client-portal/projects/${createdAiProject.id}/catalog-products`,
+    { token: adminToken }
+  );
+  record(
+    "client portal archived project catalog products returns 404",
+    archivedProjectCatalog.status === 404,
+    `${archivedProjectCatalog.status}`
+  );
+
   // ── 12. Optional: cross-tenant proof using second-tenant tester fixture ────
   if (testerEmail && testerPassword) {
     const testerLogin = await login(testerEmail, testerPassword);

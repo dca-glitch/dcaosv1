@@ -48,6 +48,7 @@ npm.cmd run smoke:mvp:local
 npm.cmd run smoke:client-portal:local
 npm.cmd run smoke:client-access:local
 npm.cmd run smoke:client-portal:browser
+npm.cmd run smoke:client-portal:edge-cases:browser
 npm.cmd run smoke:client-domain:browser
 npm.cmd run smoke:client-portal-monthly-report:browser
 npm.cmd run smoke:ai-market-intelligence
