@@ -4,6 +4,7 @@ import { ErrorState } from "../../components/ErrorState";
 import { LoadingState } from "../../components/LoadingState";
 import { Modal } from "../../components/Modal";
 import { ModalActions } from "../../components/ui/ModalActions";
+import { PageHeader } from "../../components/ui";
 import type { ProjectSummary } from "../projects/ProjectsPage";
 
 export type ClientSummary = {
@@ -243,48 +244,52 @@ export function ClientsPage({
 
   return (
     <section className="view-section" aria-labelledby="clients-title">
-      <div className="section-header">
-        <div>
-          <p className="eyebrow">CRM</p>
-          <h1 id="clients-title">Clients</h1>
-        </div>
-        <div className="toolbar">
-          <div className="filter-bar" role="group" aria-label="Clients kind filter">
-            {(["all", "AGENCY_CLIENT", "OWN_DOMAIN"] as const).map((value) => (
-              <button
-                aria-pressed={kindFilter === value}
-                className={kindFilter === value ? "secondary-action filter-chip is-active" : "secondary-action filter-chip"}
-                key={value}
-                onClick={() => setKindFilter(value)}
-                type="button"
-              >
-                {value === "all" ? "All kinds" : value === "AGENCY_CLIENT" ? "Agency" : "Own domain"}
+      <PageHeader
+        eyebrow="CRM"
+        title="Clients"
+        titleId="clients-title"
+        description="Client records, contacts, and delivery links."
+        actions={
+          <>
+            <div className="clients-toolbar-filters">
+              <div className="filter-bar" role="group" aria-label="Clients kind filter">
+                {(["all", "AGENCY_CLIENT", "OWN_DOMAIN"] as const).map((value) => (
+                  <button
+                    aria-pressed={kindFilter === value}
+                    className={kindFilter === value ? "secondary-action filter-chip is-active" : "secondary-action filter-chip"}
+                    key={value}
+                    onClick={() => setKindFilter(value)}
+                    type="button"
+                  >
+                    {value === "all" ? "All kinds" : value === "AGENCY_CLIENT" ? "Agency" : "Own domain"}
+                  </button>
+                ))}
+              </div>
+              <div className="filter-bar" role="group" aria-label="Clients filter">
+                {(["active", "archived", "all"] as const).map((value) => (
+                  <button
+                    aria-pressed={filter === value}
+                    className={filter === value ? "secondary-action filter-chip is-active" : "secondary-action filter-chip"}
+                    key={value}
+                    onClick={() => setFilter(value)}
+                    type="button"
+                  >
+                    {value[0].toUpperCase() + value.slice(1)}
+                  </button>
+                ))}
+              </div>
+            </div>
+            {canEdit ? (
+              <button className="primary-action" onClick={openCreateModal} type="button">
+                Add Client
               </button>
-            ))}
-          </div>
-          <div className="filter-bar" role="group" aria-label="Clients filter">
-            {(["active", "archived", "all"] as const).map((value) => (
-              <button
-                aria-pressed={filter === value}
-                className={filter === value ? "secondary-action filter-chip is-active" : "secondary-action filter-chip"}
-                key={value}
-                onClick={() => setFilter(value)}
-                type="button"
-              >
-                {value[0].toUpperCase() + value.slice(1)}
-              </button>
-            ))}
-          </div>
-          {canEdit ? (
-            <button className="primary-action" onClick={openCreateModal} type="button">
-              Add Client
-            </button>
-          ) : null}
-        </div>
-      </div>
+            ) : null}
+          </>
+        }
+      />
 
       {filteredClients.length === 0 ? (
-        <EmptyState message="No clients match the current filter." title="No clients" />
+        <p className="inline-empty muted-text">No clients match the current filter.</p>
       ) : (
         <div className="dense-list">
           {filteredClients.map((client) => (
@@ -310,20 +315,12 @@ export function ClientsPage({
 
                 <div className="dense-fields">
                   <div className="dense-field">
-                    <span>Contact</span>
-                    <strong>{client.contactPerson || "Not set"}</strong>
-                  </div>
-                  <div className="dense-field">
                     <span>Email</span>
                     <strong>{client.email || "Not set"}</strong>
                   </div>
                   <div className="dense-field">
                     <span>Country</span>
                     <strong>{client.country || "Not set"}</strong>
-                  </div>
-                  <div className="dense-field">
-                    <span>Kind</span>
-                    <strong>{client.clientKind === "OWN_DOMAIN" ? "Own domain" : "Agency client"}</strong>
                   </div>
                   <div className="dense-field">
                     <span>Projects</span>
@@ -335,7 +332,7 @@ export function ClientsPage({
                   <button className="secondary-action" onClick={() => onOpenHub(client)} type="button">
                     Open hub
                   </button>
-                  {canEdit ? <button className="primary-action" onClick={() => void openEditModal(client)} type="button">Open</button> : null}
+                  {canEdit ? <button className="secondary-action" onClick={() => void openEditModal(client)} type="button">Open</button> : null}
                   {canEdit ? (
                     <details className="row-action-menu">
                       <summary>More</summary>
@@ -376,7 +373,9 @@ export function ClientsPage({
 
       {isEditorOpen ? (
         <Modal
+          eyebrow={editorClientId ? "Edit" : "Create"}
           onClose={closeEditor}
+          size="md"
           title={editorClientId ? "Edit Client" : "Add Client"}
         >
           <form className="entity-form" onSubmit={handleSubmit}>

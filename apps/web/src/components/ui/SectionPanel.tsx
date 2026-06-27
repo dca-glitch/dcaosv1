@@ -21,9 +21,9 @@ export function SectionPanel({ title, description, action, children, className, 
   return (
     <section className={classes}>
       <header className="section-panel-header">
-        <div>
+        <div className="section-panel-heading">
           <h2>{title}</h2>
-          {description ? <p>{description}</p> : null}
+          {description ? <p className="section-panel-description">{description}</p> : null}
         </div>
         {action ? <div className="section-panel-action">{action}</div> : null}
       </header>

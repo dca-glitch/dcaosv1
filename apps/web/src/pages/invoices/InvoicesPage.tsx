@@ -1,9 +1,9 @@
-import { type FormEvent, useMemo, useState } from "react";
+import { Fragment, type FormEvent, useMemo, useState } from "react";
 import { EmptyState } from "../../components/EmptyState";
 import { ErrorState } from "../../components/ErrorState";
 import { LoadingState } from "../../components/LoadingState";
 import { Modal } from "../../components/Modal";
-import { StatusBadge } from "../../components/ui";
+import { PageHeader, StatusBadge } from "../../components/ui";
 import type { ClientSummary } from "../clients/ClientsPage";
 import type { InvoiceItemSummary } from "../invoice-items/InvoiceItemsPage";
 import type { ProjectSummary } from "../projects/ProjectsPage";
@@ -652,42 +652,44 @@ export function InvoicesPage({
 
   return (
     <section className="view-section" aria-labelledby="invoices-title">
-      <div className="section-header">
-        <div>
-          <p className="eyebrow">Finance</p>
-          <h1 id="invoices-title">Invoices</h1>
-        </div>
-        <div className="toolbar">
-          <div className="filter-bar" role="group" aria-label="Invoice view">
-            <button
-              aria-pressed={tab === "invoices"}
-              className={tab === "invoices" ? "secondary-action filter-chip is-active" : "secondary-action filter-chip"}
-              onClick={() => setTab("invoices")}
-              type="button"
-            >
-              Invoices
-            </button>
-            <button
-              aria-pressed={tab === "recurring"}
-              className={tab === "recurring" ? "secondary-action filter-chip is-active" : "secondary-action filter-chip"}
-              onClick={() => setTab("recurring")}
-              type="button"
-            >
-              Recurring
-            </button>
-          </div>
-          {canEdit ? (
-            <button
-              className="primary-action"
-              disabled={clients.length === 0}
-              onClick={tab === "invoices" ? openCreateInvoiceModal : openCreateRecurringModal}
-              type="button"
-            >
-              {tab === "invoices" ? "Add Invoice" : "Add Recurring"}
-            </button>
-          ) : null}
-        </div>
-      </div>
+      <PageHeader
+        eyebrow="Finance"
+        title="Invoices"
+        titleId="invoices-title"
+        description="Invoice lifecycle, payments, and recurring schedules."
+        actions={
+          <>
+            <div className="filter-bar" role="group" aria-label="Invoice view">
+              <button
+                aria-pressed={tab === "invoices"}
+                className={tab === "invoices" ? "secondary-action filter-chip is-active" : "secondary-action filter-chip"}
+                onClick={() => setTab("invoices")}
+                type="button"
+              >
+                Invoices
+              </button>
+              <button
+                aria-pressed={tab === "recurring"}
+                className={tab === "recurring" ? "secondary-action filter-chip is-active" : "secondary-action filter-chip"}
+                onClick={() => setTab("recurring")}
+                type="button"
+              >
+                Recurring
+              </button>
+            </div>
+            {canEdit ? (
+              <button
+                className="primary-action"
+                disabled={clients.length === 0}
+                onClick={tab === "invoices" ? openCreateInvoiceModal : openCreateRecurringModal}
+                type="button"
+              >
+                {tab === "invoices" ? "Add Invoice" : "Add Recurring"}
+              </button>
+            ) : null}
+          </>
+        }
+      />
 
       {canEdit && clients.length === 0 ? (
         <EmptyState title="Add a client first" message="Invoices need a client to attach to before they can be created." />
@@ -716,6 +718,7 @@ export function InvoicesPage({
 
       {isInvoiceEditorOpen ? (
         <Modal
+          eyebrow={invoiceEditorId ? "Edit" : "Create"}
           onClose={() => {
             setInvoiceEditorId(null);
             setInvoiceDraft(emptyInvoiceForm(firstClientId(clients)));
@@ -724,6 +727,7 @@ export function InvoicesPage({
             setInvoiceDiscountPercentInput("0");
             setIsInvoiceEditorOpen(false);
           }}
+          size="lg"
           title={invoiceEditorId ? "Edit Invoice" : "Add Invoice"}
         >
           <form className="entity-form invoice-form-compact" onSubmit={handleInvoiceSubmit}>
@@ -879,6 +883,7 @@ export function InvoicesPage({
 
       {isRecurringEditorOpen ? (
         <Modal
+          eyebrow={recurringEditorId ? "Edit" : "Create"}
           onClose={() => {
             setRecurringEditorId(null);
             setRecurringDraft(emptyRecurringForm(firstClientId(clients)));
@@ -887,6 +892,7 @@ export function InvoicesPage({
             setRecurringDiscountPercentInput("0");
             setIsRecurringEditorOpen(false);
           }}
+          size="lg"
           title={recurringEditorId ? "Edit Recurring Invoice" : "Add Recurring Invoice"}
         >
           <form className="entity-form" onSubmit={handleRecurringSubmit}>
@@ -1051,6 +1057,7 @@ export function InvoicesPage({
 
       {isPaymentEditorOpen ? (
         <Modal
+          eyebrow="Payment"
           onClose={() => {
             setPaymentInvoice(null);
             setPaymentDraft(emptyPaymentForm());
@@ -1058,6 +1065,7 @@ export function InvoicesPage({
             setPaymentAmountReceivedInput(centsToMajorInput(0));
             setIsPaymentEditorOpen(false);
           }}
+          size="md"
           title="Register Payment"
         >
           <form className="entity-form invoice-form-compact" onSubmit={handlePaymentSubmit}>
@@ -1152,74 +1160,75 @@ function canMarkUncollectible(invoice: InvoiceSummary): boolean {
 
 function InvoiceCards({ invoices, canEdit, onEditInvoice, onArchiveInvoice, onMarkInvoiceSent, onCancelInvoice, onMarkInvoiceUncollectible, onRegisterInvoicePayment }: InvoiceCardsProps) {
   if (invoices.length === 0) {
-    return <EmptyState message="No invoices have been created yet." title="No invoices" />;
+    return <p className="inline-empty muted-text">No invoices have been created yet.</p>;
   }
 
   return (
-    <div className="dense-list">
-      {invoices.map((invoice) => (
-        <article className="entity-card dense-record" key={invoice.id}>
-          <div className="dense-record-main">
-            <div className="dense-title">
-              <div className="dense-kicker">
-                <StatusBadge status={invoice.isArchived ? "ARCHIVED" : invoice.status} />
-                {invoice.payment ? <StatusBadge status="Paid recorded" /> : null}
-              </div>
-              <h2>{invoice.title}</h2>
-              <div className="dense-meta">
-                <span><strong>{invoice.client.name}</strong></span>
-                <span>{invoice.invoiceNumber || "No invoice number"}</span>
-                <span>{invoice.project?.name ?? "No project"}</span>
-              </div>
-            </div>
-
-            <div className="dense-fields">
-              <div className="dense-field">
-                <span>Client</span>
-                <strong>{invoice.client.name}</strong>
-              </div>
-              <div className="dense-field">
-                <span>Total</span>
-                <strong>{formatMoney(invoice.totalCents, invoice.currency)}</strong>
-              </div>
-              <div className="dense-field">
-                <span>Paid</span>
-                <strong>{formatMoney(invoice.amountPaidCents, invoice.currency)}</strong>
-              </div>
-              <div className="dense-field">
-                <span>Due</span>
-                <strong>{formatDateLabel(invoice.dueDate)}</strong>
-              </div>
-            </div>
-
-            <div className="dense-actions">
-              {canEdit ? <button className="primary-action" onClick={() => onEditInvoice(invoice)} type="button">Open</button> : null}
-              {canEdit ? (
-                <details className="row-action-menu">
-                  <summary>More</summary>
-                  <div className="row-action-menu-panel">
-                    <div className="row-action-menu-group">
-                      <span className="row-action-menu-label">Lifecycle</span>
-                      <button className="secondary-action" onClick={() => void onMarkInvoiceSent(invoice.id)} type="button">Mark sent</button>
-                      {canRegisterPayment(invoice) ? <button className="secondary-action" onClick={() => onRegisterInvoicePayment(invoice)} type="button">Register payment</button> : null}
-                    </div>
-                    <div className="row-action-menu-group">
-                      <span className="row-action-menu-label">Exceptions</span>
-                      <button className="secondary-action" onClick={() => void onCancelInvoice(invoice.id)} type="button">Cancel</button>
-                      {canMarkUncollectible(invoice) ? <button className="secondary-action" onClick={() => void onMarkInvoiceUncollectible(invoice.id)} type="button">Mark uncollectible</button> : null}
-                      {!invoice.isArchived ? <button className="secondary-action" onClick={() => void onArchiveInvoice(invoice.id)} type="button">Archive</button> : null}
-                    </div>
+    <div className="table-wrap finance-table-wrap" aria-label="Invoices">
+      <table className="finance-table">
+        <thead>
+          <tr>
+            <th>Invoice</th>
+            <th>Client</th>
+            <th>Status</th>
+            <th className="finance-amount-col">Total</th>
+            <th className="finance-amount-col">Paid</th>
+            <th>Due</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {invoices.map((invoice) => (
+            <Fragment key={invoice.id}>
+              <tr>
+                <td>
+                  <strong>{invoice.title}</strong>
+                  <div className="muted-text">{invoice.invoiceNumber || "No invoice number"}</div>
+                  <div className="muted-text">{invoice.project?.name ?? "No project"}</div>
+                </td>
+                <td>{invoice.client.name}</td>
+                <td>
+                  <StatusBadge status={invoice.isArchived ? "ARCHIVED" : invoice.status} />
+                  {invoice.payment ? <StatusBadge status="Paid recorded" /> : null}
+                </td>
+                <td className="finance-amount-col">{formatMoney(invoice.totalCents, invoice.currency)}</td>
+                <td className="finance-amount-col">{formatMoney(invoice.amountPaidCents, invoice.currency)}</td>
+                <td>{formatDateLabel(invoice.dueDate)}</td>
+                <td>
+                  <div className="finance-row-actions">
+                    {canEdit ? <button className="secondary-action" onClick={() => onEditInvoice(invoice)} type="button">Open</button> : null}
+                    {canEdit ? (
+                      <details className="row-action-menu">
+                        <summary>More</summary>
+                        <div className="row-action-menu-panel">
+                          <div className="row-action-menu-group">
+                            <span className="row-action-menu-label">Lifecycle</span>
+                            <button className="secondary-action" onClick={() => void onMarkInvoiceSent(invoice.id)} type="button">Mark sent</button>
+                            {canRegisterPayment(invoice) ? <button className="secondary-action" onClick={() => onRegisterInvoicePayment(invoice)} type="button">Register payment</button> : null}
+                          </div>
+                          <div className="row-action-menu-group">
+                            <span className="row-action-menu-label">Exceptions</span>
+                            <button className="secondary-action" onClick={() => void onCancelInvoice(invoice.id)} type="button">Cancel</button>
+                            {canMarkUncollectible(invoice) ? <button className="secondary-action" onClick={() => void onMarkInvoiceUncollectible(invoice.id)} type="button">Mark uncollectible</button> : null}
+                            {!invoice.isArchived ? <button className="secondary-action" onClick={() => void onArchiveInvoice(invoice.id)} type="button">Archive</button> : null}
+                          </div>
+                        </div>
+                      </details>
+                    ) : null}
                   </div>
-                </details>
+                </td>
+              </tr>
+              {invoice.payment ? (
+                <tr className="finance-table-detail-row" key={`${invoice.id}-payment`}>
+                  <td colSpan={7}>
+                    <PaymentDetails currency={invoice.currency} payment={invoice.payment} />
+                  </td>
+                </tr>
               ) : null}
-            </div>
-          </div>
-          <div className="dense-row-note">
-            Issue: {formatDateLabel(invoice.issueDate)}. Subtotal: {formatMoney(invoice.subtotalCents, invoice.currency)}. Tax: {formatMoney(invoice.taxCents, invoice.currency)}. Discount: {formatMoney(invoice.discountCents, invoice.currency)}. Document: {invoice.documentUrl || invoice.documentStorageKey || "Not set"}.
-          </div>
-          {invoice.payment ? <PaymentDetails currency={invoice.currency} payment={invoice.payment} /> : null}
-        </article>
-      ))}
+            </Fragment>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
@@ -1247,72 +1256,64 @@ type RecurringInvoiceCardsProps = {
 
 function RecurringInvoiceCards({ recurringInvoices, canEdit, onEditRecurringInvoice, onArchiveRecurringInvoice, onGenerateDueRecurringInvoice }: RecurringInvoiceCardsProps) {
   if (recurringInvoices.length === 0) {
-    return <EmptyState message="No recurring invoices have been configured yet." title="No recurring invoices" />;
+    return <p className="inline-empty muted-text">No recurring invoices have been configured yet.</p>;
   }
 
   return (
-    <div className="dense-list">
-      {recurringInvoices.map((recurringInvoice) => (
-        <article className="entity-card dense-record" key={recurringInvoice.id}>
-          <div className="dense-record-main">
-            <div className="dense-title">
-              <div className="dense-kicker">
+    <div className="table-wrap finance-table-wrap" aria-label="Recurring invoices">
+      <table className="finance-table">
+        <thead>
+          <tr>
+            <th>Schedule</th>
+            <th>Client</th>
+            <th>Status</th>
+            <th className="finance-amount-col">Total</th>
+            <th>Interval</th>
+            <th>Next run</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {recurringInvoices.map((recurringInvoice) => (
+            <tr key={recurringInvoice.id}>
+              <td>
+                <strong>{recurringInvoice.title}</strong>
+                <div className="muted-text">{recurringInvoice.project?.name ?? "No project"}</div>
+              </td>
+              <td>{recurringInvoice.client.name}</td>
+              <td>
                 <StatusBadge status={recurringInvoice.isArchived ? "ARCHIVED" : recurringInvoice.isActive ? "ACTIVE" : "PAUSED"} />
-              </div>
-              <h2>{recurringInvoice.title}</h2>
-              <div className="dense-meta">
-                <span><strong>{recurringInvoice.client.name}</strong></span>
-                <span>{recurringInvoice.interval}</span>
-                <span>{recurringInvoice.project?.name ?? "No project"}</span>
-              </div>
-            </div>
-
-            <div className="dense-fields">
-              <div className="dense-field">
-                <span>Client</span>
-                <strong>{recurringInvoice.client.name}</strong>
-              </div>
-              <div className="dense-field">
-                <span>Total</span>
-                <strong>{formatMoney(recurringInvoice.totalCents, recurringInvoice.currency)}</strong>
-              </div>
-              <div className="dense-field">
-                <span>Interval</span>
-                <strong>{recurringInvoice.interval}</strong>
-              </div>
-              <div className="dense-field">
-                <span>Next run</span>
-                <strong>{formatDateLabel(recurringInvoice.nextRunDate)}</strong>
-              </div>
-            </div>
-
-            <div className="dense-actions">
-              {canEdit ? <button className="primary-action" onClick={() => onEditRecurringInvoice(recurringInvoice)} type="button">Open</button> : null}
-              {canEdit ? (
-                <details className="row-action-menu">
-                  <summary>More</summary>
-                  <div className="row-action-menu-panel">
-                    <div className="row-action-menu-group">
-                      <span className="row-action-menu-label">Recurring</span>
-                      <button
-                        className="secondary-action"
-                        onClick={() => void onGenerateDueRecurringInvoice(recurringInvoice.id, toLocalDateInputValue())}
-                        type="button"
-                      >
-                        Generate due
-                      </button>
-                      {!recurringInvoice.isArchived ? <button className="secondary-action" onClick={() => void onArchiveRecurringInvoice(recurringInvoice.id)} type="button">Archive</button> : null}
-                    </div>
-                  </div>
-                </details>
-              ) : null}
-            </div>
-          </div>
-          <div className="dense-row-note">
-            Start: {formatDateLabel(recurringInvoice.startDate)}. Subtotal: {formatMoney(recurringInvoice.subtotalCents, recurringInvoice.currency)}. Tax: {formatMoney(recurringInvoice.taxCents, recurringInvoice.currency)}. Discount: {formatMoney(recurringInvoice.discountCents, recurringInvoice.currency)}. Folder hint: {recurringInvoice.documentFolderHint || "Not set"}.
-          </div>
-        </article>
-      ))}
+              </td>
+              <td className="finance-amount-col">{formatMoney(recurringInvoice.totalCents, recurringInvoice.currency)}</td>
+              <td>{recurringInvoice.interval}</td>
+              <td>{formatDateLabel(recurringInvoice.nextRunDate)}</td>
+              <td>
+                <div className="finance-row-actions">
+                  {canEdit ? <button className="secondary-action" onClick={() => onEditRecurringInvoice(recurringInvoice)} type="button">Open</button> : null}
+                  {canEdit ? (
+                    <details className="row-action-menu">
+                      <summary>More</summary>
+                      <div className="row-action-menu-panel">
+                        <div className="row-action-menu-group">
+                          <span className="row-action-menu-label">Recurring</span>
+                          <button
+                            className="secondary-action"
+                            onClick={() => void onGenerateDueRecurringInvoice(recurringInvoice.id, toLocalDateInputValue())}
+                            type="button"
+                          >
+                            Generate due
+                          </button>
+                          {!recurringInvoice.isArchived ? <button className="secondary-action" onClick={() => void onArchiveRecurringInvoice(recurringInvoice.id)} type="button">Archive</button> : null}
+                        </div>
+                      </div>
+                    </details>
+                  ) : null}
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
