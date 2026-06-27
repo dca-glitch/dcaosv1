@@ -210,6 +210,28 @@ type AiDeliveryPublicationTargetOption = {
   isDefault: boolean;
 };
 
+type ClientPublicationLogSummary = {
+  id: string;
+  action: string;
+  status: string;
+  siteUrlHost: string | null;
+  aiDeliveryProjectId: string | null;
+  deliverableId: string | null;
+  createdAt: string;
+  note: string | null;
+};
+
+type PublicationTargetCredentialStatus = {
+  configured: boolean;
+  encryptionAvailable: boolean;
+};
+
+type WordPressPublishConfirmState = {
+  projectId: string;
+  deliverableId: string;
+  deliverableTitle: string;
+};
+
 export type AiDeliveryGoogleDocExportResult = {
   deliverableId: string;
   hasGoogleDocExport: boolean;
@@ -983,6 +1005,10 @@ export function AiDeliveryPage({
   const [deliverableWordPressPublishResult, setDeliverableWordPressPublishResult] = useState<{ recordId: string; result: AiDeliveryWordPressPublishResult } | null>(null);
   const [deliverablePublicationTargets, setDeliverablePublicationTargets] = useState<AiDeliveryPublicationTargetOption[]>([]);
   const [deliverablePublicationTargetId, setDeliverablePublicationTargetId] = useState("");
+  const [deliverablePublicationCredentialStatus, setDeliverablePublicationCredentialStatus] = useState<PublicationTargetCredentialStatus | null>(null);
+  const [deliverablePublicationLogs, setDeliverablePublicationLogs] = useState<ClientPublicationLogSummary[]>([]);
+  const [wordpressPublishConfirm, setWordpressPublishConfirm] = useState<WordPressPublishConfirmState | null>(null);
+  const [wordpressPublishConfirmAcknowledged, setWordpressPublishConfirmAcknowledged] = useState(false);
   const [deliverableGoogleDocExportTargetId, setDeliverableGoogleDocExportTargetId] = useState<string | null>(null);
   const [deliverableGoogleDocExportError, setDeliverableGoogleDocExportError] = useState<{ recordId: string; message: string } | null>(null);
   const [deliverableGoogleDocExportResult, setDeliverableGoogleDocExportResult] = useState<{ recordId: string; result: AiDeliveryGoogleDocExportResult } | null>(null);
@@ -1114,6 +1140,17 @@ export function AiDeliveryPage({
     [activeContentDraftRecord, deliverables]
   );
   const openDeliverablesProject = useMemo(() => projects.find((p) => p.id === openDeliverablesId) ?? null, [openDeliverablesId, projects]);
+  const selectedPublicationTarget = useMemo(
+    () => deliverablePublicationTargets.find((target) => target.id === deliverablePublicationTargetId) ?? null,
+    [deliverablePublicationTargetId, deliverablePublicationTargets]
+  );
+  const projectPublicationLogs = useMemo(
+    () =>
+      deliverablePublicationLogs.filter(
+        (log) => !openDeliverablesId || log.aiDeliveryProjectId === openDeliverablesId
+      ),
+    [deliverablePublicationLogs, openDeliverablesId]
+  );
   const activeDeliverableRecord = useMemo(() => deliverables.find((item) => item.id === deliverableEditorId) ?? null, [deliverableEditorId, deliverables]);
   useEffect(() => {
     setDeliverableDownloadRefError(null);
@@ -1579,6 +1616,112 @@ export function AiDeliveryPage({
     return (data?.data?.publicationTargets ?? []) as AiDeliveryPublicationTargetOption[];
   }
 
+  async function fetchClientPublicationCredentialStatus(
+    clientId: string,
+    publicationTargetId: string
+  ): Promise<PublicationTargetCredentialStatus> {
+    const token = window.sessionStorage.getItem("dcaosv1.authToken");
+    if (!token) {
+      throw new Error("Missing auth token.");
+    }
+    const response = await fetch(
+      `/api/v1/clients/${clientId}/publication-targets/${publicationTargetId}/credentials`,
+      {
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`
+        }
+      }
+    );
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
+    }
+    const data = await response.json();
+    return {
+      configured: Boolean(data?.data?.configured),
+      encryptionAvailable: Boolean(data?.data?.encryptionAvailable)
+    };
+  }
+
+  async function fetchClientPublicationLogs(clientId: string): Promise<ClientPublicationLogSummary[]> {
+    const token = window.sessionStorage.getItem("dcaosv1.authToken");
+    if (!token) {
+      throw new Error("Missing auth token.");
+    }
+    const response = await fetch(`/api/v1/clients/${clientId}/publication-logs`, {
+      headers: {
+        Accept: "application/json",
+        Authorization: `Bearer ${token}`
+      }
+    });
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
+    }
+    const data = await response.json();
+    return (data?.data?.publicationLogs ?? []) as ClientPublicationLogSummary[];
+  }
+
+  async function refreshDeliverablePublicationLogs(clientId: string) {
+    try {
+      setDeliverablePublicationLogs(await fetchClientPublicationLogs(clientId));
+    } catch {
+      setDeliverablePublicationLogs([]);
+    }
+  }
+
+  function requestWordPressPublish(projectId: string, deliverableId: string, deliverableTitle: string) {
+    if (deliverablePublicationTargets.length === 0) {
+      setDeliverableWordPressPublishError({
+        recordId: deliverableId,
+        message: "Add a publication target in Client Hub before publishing."
+      });
+      return;
+    }
+    setWordpressPublishConfirmAcknowledged(false);
+    setWordpressPublishConfirm({ projectId, deliverableId, deliverableTitle });
+  }
+
+  function cancelWordPressPublishConfirm() {
+    setWordpressPublishConfirm(null);
+    setWordpressPublishConfirmAcknowledged(false);
+  }
+
+  async function confirmWordPressPublish() {
+    if (!wordpressPublishConfirm || !wordpressPublishConfirmAcknowledged) {
+      return;
+    }
+    const pending = wordpressPublishConfirm;
+    cancelWordPressPublishConfirm();
+    await publishDeliverableToWordPress(pending.projectId, pending.deliverableId);
+    if (openDeliverablesProject?.clientId) {
+      await refreshDeliverablePublicationLogs(openDeliverablesProject.clientId);
+    }
+  }
+
+  useEffect(() => {
+    if (!openDeliverablesProject?.clientId || !deliverablePublicationTargetId) {
+      setDeliverablePublicationCredentialStatus(null);
+      return;
+    }
+
+    let cancelled = false;
+    void fetchClientPublicationCredentialStatus(openDeliverablesProject.clientId, deliverablePublicationTargetId)
+      .then((status) => {
+        if (!cancelled) {
+          setDeliverablePublicationCredentialStatus(status);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setDeliverablePublicationCredentialStatus(null);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [openDeliverablesProject?.clientId, deliverablePublicationTargetId]);
+
   async function prepareDeliverableWordPressDraft(projectId: string, deliverableId: string) {
     if (!openDeliverablesProject || !deliverableId) return;
     setDeliverableWordPressDraftTargetId(deliverableId);
@@ -1619,6 +1762,9 @@ export function AiDeliveryPage({
         recordId: deliverableId,
         wordpressDraft: preparedDraft
       });
+      if (openDeliverablesProject?.clientId) {
+        await refreshDeliverablePublicationLogs(openDeliverablesProject.clientId);
+      }
     } catch (error) {
       setDeliverableWordPressDraftError({
         recordId: deliverableId,
@@ -2144,18 +2290,22 @@ export function AiDeliveryPage({
     setDeliverablePublicationTargetId("");
     try {
       const deliverablesProject = projects.find((project) => project.id === projectId) ?? null;
-      const [items, drafts, images, publicationTargets] = await Promise.all([
+      const [items, drafts, images, publicationTargets, publicationLogs] = await Promise.all([
         typeof onFetchDeliverables === "function" ? onFetchDeliverables(projectId) : Promise.resolve([]),
         typeof onFetchContentDrafts === "function" ? onFetchContentDrafts(projectId) : Promise.resolve([]),
         typeof onFetchArticleImages === "function" ? onFetchArticleImages(projectId) : Promise.resolve([]),
         deliverablesProject?.clientId
           ? fetchClientPublicationTargets(deliverablesProject.clientId).catch(() => [] as AiDeliveryPublicationTargetOption[])
-          : Promise.resolve([] as AiDeliveryPublicationTargetOption[])
+          : Promise.resolve([] as AiDeliveryPublicationTargetOption[]),
+        deliverablesProject?.clientId
+          ? fetchClientPublicationLogs(deliverablesProject.clientId).catch(() => [] as ClientPublicationLogSummary[])
+          : Promise.resolve([] as ClientPublicationLogSummary[])
       ]);
       const defaultPublicationTarget =
         publicationTargets.find((target) => target.isDefault) ?? publicationTargets[0] ?? null;
       setDeliverablePublicationTargets(publicationTargets);
       setDeliverablePublicationTargetId(defaultPublicationTarget?.id ?? "");
+      setDeliverablePublicationLogs(publicationLogs);
       const activeDrafts = drafts.filter((d) => !d.isArchived);
       const preferredDraftId = options?.contentDraftId ?? activeDrafts[0]?.id ?? null;
       const preferredDeliverable = options?.deliverableId
@@ -2362,6 +2512,10 @@ export function AiDeliveryPage({
     setDeliverableWordPressPublishResult(null);
     setDeliverablePublicationTargets([]);
     setDeliverablePublicationTargetId("");
+    setDeliverablePublicationCredentialStatus(null);
+    setDeliverablePublicationLogs([]);
+    setWordpressPublishConfirm(null);
+    setWordpressPublishConfirmAcknowledged(false);
     setDeliverableGoogleDocExportTargetId(null);
     setDeliverableGoogleDocExportError(null);
     setDeliverableGoogleDocExportResult(null);
@@ -4831,29 +4985,62 @@ export function AiDeliveryPage({
               </section>
 
               <section className="field-panel">
-                <h3>WordPress publication target</h3>
+                <h3>Website publishing workflow</h3>
                 <p className="muted-text">
-                  Select which client publication target to use for prepare/publish tests. Manage targets and credentials in Clients → Open hub.
+                  Prepare drafts and publish to the client WordPress target. Credentials are encrypted per target in Client Hub. Live publish also requires server env <code>WORDPRESS_PUBLISH_ENABLED=true</code>.
                 </p>
                 {deliverablePublicationTargets.length === 0 ? (
-                  <div className="state-panel">No publication targets for this client yet. Add one in Client Hub before testing WordPress handoff.</div>
+                  <div className="state-panel">No publication targets for this client yet. Add one in Client Hub before website publishing.</div>
                 ) : (
-                  <label>
-                    Publication target
-                    <select
-                      onChange={(event) => setDeliverablePublicationTargetId(event.target.value)}
-                      value={deliverablePublicationTargetId}
-                    >
-                      {deliverablePublicationTargets.map((target) => (
-                        <option key={target.id} value={target.id}>
-                          {target.label} ({target.siteUrl}){target.isDefault ? " — default" : ""}
-                        </option>
-                      ))}
-                    </select>
-                    <span className="muted-text">
-                      Leave unset to use the client default target. Live publish also requires saved credentials and WORDPRESS_PUBLISH_ENABLED.
-                    </span>
-                  </label>
+                  <>
+                    <label>
+                      Publication target
+                      <select
+                        onChange={(event) => setDeliverablePublicationTargetId(event.target.value)}
+                        value={deliverablePublicationTargetId}
+                      >
+                        {deliverablePublicationTargets.map((target) => (
+                          <option key={target.id} value={target.id}>
+                            {target.label} ({target.siteUrl}){target.isDefault ? " — default" : ""}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <dl className="brief-grid" style={{ marginTop: "0.75rem" }}>
+                      <div>
+                        <dt>Selected site</dt>
+                        <dd>{selectedPublicationTarget?.siteUrl ?? "Not set"}</dd>
+                      </div>
+                      <div>
+                        <dt>Credentials</dt>
+                        <dd>
+                          {deliverablePublicationCredentialStatus?.configured ? (
+                            <StatusBadge status="CONFIGURED" />
+                          ) : (
+                            <StatusBadge status="NOT_CONFIGURED" />
+                          )}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>Encryption ready</dt>
+                        <dd>{deliverablePublicationCredentialStatus?.encryptionAvailable ? "Yes" : "No"}</dd>
+                      </div>
+                    </dl>
+                    {projectPublicationLogs.length > 0 ? (
+                      <div style={{ marginTop: "0.75rem" }}>
+                        <strong>Recent publication log</strong>
+                        <ul className="entity-list">
+                          {projectPublicationLogs.slice(0, 5).map((log) => (
+                            <li key={log.id}>
+                              <StatusBadge status={log.status} /> {log.action} — {log.siteUrlHost ?? "unknown host"} —{" "}
+                              {new Date(log.createdAt).toLocaleString()}
+                              {log.note ? ` — ${log.note}` : ""}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ) : null}
+                  </>
                 )}
               </section>
 
@@ -4865,7 +5052,9 @@ export function AiDeliveryPage({
                 {!deliverablesError && deliverables.length === 0 ? (
                   <div className="state-panel">No deliverables yet. Package approved assets when ready.</div>
                 ) : null}
-                {visibleDeliverables.map((d) => (
+                {visibleDeliverables.map((d) => {
+                  const latestPublicationLog = projectPublicationLogs.find((log) => log.deliverableId === d.id) ?? null;
+                  return (
                   <article className="entity-card" key={d.id} style={{ marginBottom: "1rem" }}>
                     <div className="entity-card-header">
                       <div>
@@ -4884,8 +5073,8 @@ export function AiDeliveryPage({
                           </button>
                         ) : null}
                         {!d.isArchived ? (
-                          <button className="secondary-action" disabled={deliverablesSaving || deliverableWordPressPublishTargetId === d.id} onClick={() => void publishDeliverableToWordPress(openDeliverablesProject.id, d.id)} type="button">
-                            {deliverableWordPressPublishTargetId === d.id ? "Publishing..." : "Test WordPress publish"}
+                          <button className="secondary-action" disabled={deliverablesSaving || deliverableWordPressPublishTargetId === d.id} onClick={() => requestWordPressPublish(openDeliverablesProject.id, d.id, d.title)} type="button">
+                            {deliverableWordPressPublishTargetId === d.id ? "Publishing..." : "Publish to WordPress"}
                           </button>
                         ) : null}
                         {!d.isArchived ? (
@@ -4930,6 +5119,14 @@ export function AiDeliveryPage({
                       <div>
                         <dt>Status</dt>
                         <dd><StatusBadge status={formatDeliverableStatus(d.isArchived ? "ARCHIVED" : d.status)} /></dd>
+                      </div>
+                      <div>
+                        <dt>Latest publication</dt>
+                        <dd>
+                          {latestPublicationLog
+                            ? `${latestPublicationLog.action} — ${latestPublicationLog.status}`
+                            : "No publication events yet"}
+                        </dd>
                       </div>
                       <div>
                         <dt>Latest internal review</dt>
@@ -4990,7 +5187,7 @@ export function AiDeliveryPage({
                     ) : null}
                     {deliverableWordPressPublishResult && deliverableWordPressPublishResult.recordId === d.id ? (
                       <div className="state-panel" style={{ marginTop: "0.75rem" }}>
-                       <strong>WordPress publish test result</strong>
+                       <strong>WordPress publish result</strong>
                        <dl className="brief-grid" style={{ marginTop: "0.5rem" }}>
                          <div>
                            <dt>Provider status</dt>
@@ -4998,11 +5195,27 @@ export function AiDeliveryPage({
                          </div>
                          <div>
                            <dt>External post ID</dt>
-                           <dd>{deliverableWordPressPublishResult.result.wordpressPostId || "None (provider disabled)"}</dd>
+                           <dd>{deliverableWordPressPublishResult.result.wordpressPostId || "Not returned"}</dd>
                          </div>
+                         {deliverableWordPressPublishResult.result.wordpressPostUrl ? (
+                           <div className="field-span-2">
+                             <dt>Published URL</dt>
+                             <dd>
+                               <a href={deliverableWordPressPublishResult.result.wordpressPostUrl} rel="noreferrer" target="_blank">
+                                 {deliverableWordPressPublishResult.result.wordpressPostUrl}
+                               </a>
+                             </dd>
+                           </div>
+                         ) : null}
                          <div className="field-span-2">
                            <dt>Message</dt>
-                           <dd>{deliverableWordPressPublishResult.result.providerDisabledReason || deliverableWordPressPublishResult.result.errorMessage || "No external WordPress call was made; real integration is future block."}</dd>
+                           <dd>
+                             {deliverableWordPressPublishResult.result.providerDisabledReason
+                               || deliverableWordPressPublishResult.result.errorMessage
+                               || (deliverableWordPressPublishResult.result.ok
+                                 ? "Publish completed."
+                                 : "Publish did not complete.")}
+                           </dd>
                          </div>
                        </dl>
                       </div>
@@ -5088,7 +5301,8 @@ export function AiDeliveryPage({
                       ) : null}
                     </div>
                   </article>
-                ))}
+                  );
+                })}
               </section>
               {!selectedReviewDeliverable && deliverables.length > 0 ? (
                 <div className="state-panel">Select Reviews on a deliverable to view or create admin/operator review placeholders.</div>
@@ -5619,6 +5833,45 @@ export function AiDeliveryPage({
             />
           ) : null;
       })() : null}
+
+      {wordpressPublishConfirm ? (
+        <Modal
+          title="Confirm WordPress publish"
+          onClose={cancelWordPressPublishConfirm}
+          footer={
+            <>
+              <button className="secondary-action" onClick={cancelWordPressPublishConfirm} type="button">
+                Cancel
+              </button>
+              <button
+                className="primary-action"
+                disabled={!wordpressPublishConfirmAcknowledged || deliverableWordPressPublishTargetId !== null}
+                onClick={() => void confirmWordPressPublish()}
+                type="button"
+              >
+                Publish to WordPress
+              </button>
+            </>
+          }
+        >
+          <p>
+            You are about to publish <strong>{wordpressPublishConfirm.deliverableTitle}</strong> to{" "}
+            <strong>{selectedPublicationTarget?.label ?? "the selected target"}</strong> (
+            {selectedPublicationTarget?.siteUrl ?? "site URL not set"}).
+          </p>
+          <p className="muted-text">
+            This writes a WordPress post when credentials and <code>WORDPRESS_PUBLISH_ENABLED</code> are configured. Otherwise the attempt is logged as provider-disabled.
+          </p>
+          <label style={{ display: "flex", gap: "0.5rem", marginTop: "1rem" }}>
+            <input
+              checked={wordpressPublishConfirmAcknowledged}
+              onChange={(event) => setWordpressPublishConfirmAcknowledged(event.target.checked)}
+              type="checkbox"
+            />
+            I confirm publish to this client WordPress target.
+          </label>
+        </Modal>
+      ) : null}
     </section>
   );
 }

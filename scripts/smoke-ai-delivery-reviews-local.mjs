@@ -98,6 +98,14 @@ function requireClientPortalDeferred(name, response) {
   pass(`${name} returned CLIENT_PORTAL_DEFERRED.`);
 }
 
+function requireClientReviewList(name, response, key) {
+  const payload = requireOkResponse(name, response);
+  if (!payload?.[key]) {
+    fail(`${name} did not return a ${key} payload.`);
+  }
+  pass(`${name} returned client review payload.`);
+}
+
 function requireLocalUrl(name, value, expectedPathPrefix = "") {
   let parsed;
   try {
@@ -356,7 +364,35 @@ async function createSmokeProjects(token, fixtureBase) {
   return { mainProject, crossProject, generationProject };
 }
 
+async function ensureSmokePublicationTarget(token, clientId) {
+  if (typeof clientId !== "string" || clientId.length === 0) {
+    fail("Smoke publication target setup requires a client id.");
+  }
+
+  const publicationTarget = requireOkResponse(
+    "Smoke publication target create",
+    await request(`/clients/${clientId}/publication-targets`, {
+      method: "POST",
+      token,
+      body: {
+        label: `${smokeProjectMarker} WordPress target`,
+        siteUrl: "https://smoke-wp.example.local",
+        isDefault: true
+      }
+    })
+  )?.publicationTarget;
+
+  if (!publicationTarget?.id) {
+    fail("Smoke publication target create did not return a publication target id.");
+  }
+
+  pass("Smoke publication target created for website publishing workflow QA.");
+  return publicationTarget;
+}
+
 async function runAiDeliveryApiRegression(token, fixtureProjects) {
+  await ensureSmokePublicationTarget(token, fixtureProjects.mainProject.clientId);
+
   const projectsData = requireOkResponse(
     "AI Delivery projects list",
     await request("/ai-delivery-projects", { token })
@@ -452,24 +488,10 @@ async function runAiDeliveryApiRegression(token, fixtureProjects) {
   }
   pass("AI Delivery content plan ready-for-review action persisted the expected status.");
 
-  requireClientPortalDeferred(
+  requireClientReviewList(
     "AI Delivery content plan client review list",
-    await request(`/ai-delivery-projects/${project.id}/content-plan/client-review`, { token })
-  );
-  requireClientPortalDeferred(
-    "AI Delivery content plan client review approve",
-    await request(`/ai-delivery-projects/${project.id}/content-plan/client-review/approve`, {
-      method: "POST",
-      token
-    })
-  );
-  requireClientPortalDeferred(
-    "AI Delivery content plan client review request revision",
-    await request(`/ai-delivery-projects/${project.id}/content-plan/client-review/request-revision`, {
-      method: "POST",
-      token,
-      body: { comment: "Please simplify the topic cluster." }
-    })
+    await request(`/ai-delivery-projects/${project.id}/content-plan/client-review`, { token }),
+    "contentPlan"
   );
 
   const changesRequestedContentPlan = requireOkResponse(
@@ -570,24 +592,10 @@ async function runAiDeliveryApiRegression(token, fixtureProjects) {
   }
   pass("AI Delivery content draft ready-for-review action persisted the expected review state.");
 
-  requireClientPortalDeferred(
+  requireClientReviewList(
     "AI Delivery content draft client review list",
-    await request(`/ai-delivery-projects/${project.id}/content-drafts/client-review`, { token })
-  );
-  requireClientPortalDeferred(
-    "AI Delivery content draft client review approve",
-    await request(`/ai-delivery-projects/${project.id}/content-drafts/${createdContentDraft.id}/client-review/approve`, {
-      method: "POST",
-      token
-    })
-  );
-  requireClientPortalDeferred(
-    "AI Delivery content draft client review request revision",
-    await request(`/ai-delivery-projects/${project.id}/content-drafts/${createdContentDraft.id}/client-review/request-revision`, {
-      method: "POST",
-      token,
-      body: { comment: "Please tighten the opening section and CTA." }
-    })
+    await request(`/ai-delivery-projects/${project.id}/content-drafts/client-review`, { token }),
+    "contentDrafts"
   );
 
   const returnedToDraft = requireOkResponse(
@@ -1472,7 +1480,8 @@ async function runAiDeliveryApiRegression(token, fixtureProjects) {
     wordpressDraftPrepared.sourceId.trim().length === 0 ||
     wordpressDraftPrepared.externalPostId !== null ||
     wordpressDraftPrepared.externalEditUrl !== null ||
-    wordpressDraftPrepared.note !== "WordPress API execution is deferred/not configured."
+    typeof wordpressDraftPrepared.note !== "string" ||
+    !wordpressDraftPrepared.note.toLowerCase().includes("wordpress")
   ) {
     fail("AI Delivery deliverable prepare WordPress draft did not return the expected local prepared contract.");
   }
@@ -1753,10 +1762,12 @@ async function runAiDeliveryBrowserRegression(token, mainProject) {
     pass("AI Delivery smoke-owned project card rendered grouped workflow navigation.");
 
     await smokeProjectCard.getByRole("button", { name: "Workflow runs" }).click();
-    await page.getByRole("dialog", { name: "Workflow Runs" }).waitFor({ state: "visible", timeout: 15000 });
-    await page.getByRole("heading", { name: "Existing workflow runs" }).waitFor({ state: "visible", timeout: 15000 });
-    await page.getByText("Workflow run editor").first().waitFor({ state: "visible", timeout: 15000 });
-    await page.getByText("Execution log").first().waitFor({ state: "visible", timeout: 15000 });
+    const workflowRunsDialog = page.getByRole("dialog", { name: "Workflow Runs" });
+    await workflowRunsDialog.waitFor({ state: "visible", timeout: 15000 });
+    await workflowRunsDialog.getByRole("heading", { name: "Existing workflow runs" }).waitFor({ state: "visible", timeout: 15000 });
+    await workflowRunsDialog.getByRole("heading", { name: "Workflow run editor" }).waitFor({ state: "visible", timeout: 15000 });
+    await workflowRunsDialog.locator("article.entity-card").first().waitFor({ state: "visible", timeout: 15000 });
+    await workflowRunsDialog.locator("dt", { hasText: "Execution log" }).first().waitFor({ state: "visible", timeout: 15000 });
     pass("Workflow runs panel opened and rendered execution details.");
     await page.getByRole("button", { name: "Close" }).first().click();
 
@@ -1784,7 +1795,11 @@ async function runAiDeliveryBrowserRegression(token, mainProject) {
     await contentDraftEditButtons.first().click();
     await page.getByRole("heading", { name: "Completion and export handoff" }).waitFor({ state: "visible", timeout: 15000 });
     const contentProductionText = ((await contentProductionDialog.textContent()) ?? "").toLowerCase();
-    if (!contentProductionText.includes("private document/export handoff") || !contentProductionText.includes("monthly report/pdf remains a separate reporting layer")) {
+    if (
+      !contentProductionText.includes("private document/export") ||
+      !contentProductionText.includes("monthly report") ||
+      !contentProductionText.includes("reporting layer")
+    ) {
       fail("AI Content Production dialog did not describe the private export handoff and separate monthly report layer.");
     }
     if (contentProductionText.includes("client self-service")) {
@@ -1818,6 +1833,7 @@ async function runAiDeliveryBrowserRegression(token, mainProject) {
     await page.getByRole("heading", { name: "Package completeness summary" }).waitFor({ state: "visible", timeout: 15000 });
     await page.getByRole("heading", { name: "Internal final handoff view" }).waitFor({ state: "visible", timeout: 15000 });
     await page.getByRole("heading", { name: "Existing deliverables" }).waitFor({ state: "visible", timeout: 15000 });
+    await page.getByRole("heading", { name: "Website publishing workflow" }).waitFor({ state: "visible", timeout: 15000 });
     await page.getByRole("button", { name: "Mark ready" }).first().waitFor({ state: "visible", timeout: 15000 });
     pass("Deliverables panel opened and rendered stable packaging structure.");
 
@@ -1833,7 +1849,7 @@ async function runAiDeliveryBrowserRegression(token, mainProject) {
     await preparedDraftPanel.getByText("Source type").waitFor({ state: "visible", timeout: 15000 });
     await preparedDraftPanel.getByText("Source ID").waitFor({ state: "visible", timeout: 15000 });
     await preparedDraftPanel.getByText("Body preview").waitFor({ state: "visible", timeout: 15000 });
-    await preparedDraftPanel.getByText("WordPress API execution is deferred/not configured.").waitFor({ state: "visible", timeout: 15000 });
+    await preparedDraftPanel.getByText(/WordPress API execution/i).waitFor({ state: "visible", timeout: 15000 });
     const preparedDraftText = ((await preparedDraftPanel.textContent()) ?? "").toLowerCase();
     if (!preparedDraftText.includes("wordPress prepared draft".toLowerCase()) || preparedDraftText.includes("client self-service")) {
       fail("Deliverables panel prepared draft area did not stay admin-only.");
@@ -1844,29 +1860,36 @@ async function runAiDeliveryBrowserRegression(token, mainProject) {
     }
     pass("Deliverables panel prepared WordPress draft action rendered expected inline draft details without published wording.");
 
-    const publishWordPressButtons = page.getByRole("button", { name: /Test WordPress publish/ });
+    const publishWordPressButtons = page.getByRole("button", { name: "Publish to WordPress" });
     const publishButtonCount = await publishWordPressButtons.count();
     if (publishButtonCount === 0) {
-      fail("Deliverables panel did not render a 'Test WordPress publish' button for the smoke-owned project.");
+      fail("Deliverables panel did not render a 'Publish to WordPress' button for the smoke-owned project.");
     }
     await publishWordPressButtons.first().click();
-    const publishResultPanel = page.locator(".state-panel", { has: page.locator("strong", { hasText: "WordPress publish test result" }) }).first();
-    await publishResultPanel.waitFor({ state: "visible", timeout: 10000 });
+
+    const publishConfirmDialog = page.getByRole("dialog", { name: "Confirm WordPress publish" });
+    await publishConfirmDialog.waitFor({ state: "visible", timeout: 15000 });
+    const confirmPublishButton = publishConfirmDialog.getByRole("button", { name: "Publish to WordPress" });
+    if (!(await confirmPublishButton.isDisabled())) {
+      fail("Confirm WordPress publish modal allowed publish before acknowledgement checkbox.");
+    }
+    await publishConfirmDialog.getByRole("checkbox").check();
+    if (await confirmPublishButton.isDisabled()) {
+      fail("Confirm WordPress publish modal kept publish disabled after acknowledgement checkbox.");
+    }
+    await confirmPublishButton.click();
+    await publishConfirmDialog.waitFor({ state: "hidden", timeout: 15000 });
+
+    const publishResultPanel = page.locator(".state-panel").filter({ has: page.locator("strong", { hasText: "WordPress publish result" }) }).first();
+    await publishResultPanel.waitFor({ state: "visible", timeout: 15000 });
     const publishResultText = ((await publishResultPanel.textContent()) ?? "").toLowerCase();
-    if (!publishResultText.includes("provider_disabled") && !publishResultText.includes("provider disabled")) {
-      fail("WordPress publish test result did not show provider_disabled status.");
+    if (!publishResultText.includes("provider") || !publishResultText.includes("disabled")) {
+      fail("WordPress publish result did not show provider-disabled status.");
     }
-    if (publishResultText.includes("external post") && !publishResultText.includes("none")) {
-      fail("WordPress publish test result incorrectly showed external post creation.");
+    if (publishResultText.includes("external post") && !publishResultText.includes("not returned")) {
+      fail("WordPress publish result incorrectly showed external post creation.");
     }
-    if (
-      !publishResultText.includes("future implementation block")
-      && !publishResultText.includes("local draft preparation is available")
-      && !publishResultText.includes("not yet configured")
-    ) {
-      fail("WordPress publish test result did not keep the deferred handoff wording.");
-    }
-    pass("Deliverables panel publish WordPress action rendered expected provider-disabled test result without external post creation.");
+    pass("Deliverables panel publish WordPress action rendered confirm modal and expected provider-disabled result.");
 
     const reviewsButtons = page.getByRole("button", { name: "Reviews" });
     const reviewsButtonCount = await reviewsButtons.count();

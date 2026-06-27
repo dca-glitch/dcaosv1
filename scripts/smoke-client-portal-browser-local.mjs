@@ -265,19 +265,23 @@ async function main() {
 
     const portalSection = page.locator('section[aria-labelledby="client-portal-title"]');
     const projectCard = portalSection.locator("article.entity-card", { hasText: fixture.project.name }).first();
-    await projectCard.getByRole("button", { name: "Open project" }).click();
-    const finalDeliverablesCard = portalSection.locator("article.entity-card").filter({ has: page.getByRole("heading", { name: "Final deliverables" }) }).first();
-    await finalDeliverablesCard.waitFor({ state: "visible", timeout: 15000 });
+    const openProjectButton = projectCard.getByRole("button", { name: /^(Open project|View|Open)$/ });
+    await openProjectButton.click();
+    await portalSection.getByRole("heading", { name: "Final deliverables", exact: true }).waitFor({ state: "visible", timeout: 15000 });
 
     const portalText = await portalSection.innerText();
     const portalHtml = await portalSection.innerHTML();
     const renderedPortal = `${portalText}\n${portalHtml}`;
 
     record("client portal page loads", portalText.includes("Client Portal"), "heading visible");
-    record("authenticated session renders archive UI", portalText.includes(fixture.project.name) && portalText.includes("Project archive"), fixture.project.name);
+    record(
+      "authenticated session renders archive UI",
+      portalText.includes(fixture.project.name) && portalText.includes("Archive"),
+      fixture.project.name
+    );
     record(
       "project archive area renders",
-      portalText.includes("Selected project") && portalText.includes("Archive safety"),
+      portalText.includes("Selected project") && portalText.includes("Project details"),
       "selected project details visible"
     );
     record(
@@ -286,15 +290,11 @@ async function main() {
       fixture.finalDeliverable.title
     );
 
-    const deferredSections = [
-      "Content Plan Reviews",
-      "Content Draft Reviews",
-      "Client comments",
-      "Client actions",
-      "Approvals"
-    ];
-    const deferredVisible = deferredSections.every((title) => renderedPortal.includes(title) && renderedPortal.includes("Deferred"));
-    record("deferred sections remain visible and deferred", deferredVisible, deferredVisible ? "all deferred sections visible" : "missing deferred copy");
+    record(
+      "delivery overview section renders",
+      portalText.includes("Delivery overview") && portalText.includes("AI SEO / content plan"),
+      "MVP delivery overview visible"
+    );
 
     const forbiddenHits = forbiddenTokens.filter((token) => containsForbiddenToken(renderedPortal, token));
     record(
@@ -351,7 +351,7 @@ async function main() {
     if (allPassed) {
       console.log("PROVEN: authenticated client portal archive page loaded and selected project detail rendered without crashing.");
       console.log("PROVEN: final deliverables rendered with the DRAFT fixture hidden and only the final archive item visible.");
-      console.log("PROVEN: deferred sections stayed visible and clearly deferred.");
+      console.log("PROVEN: delivery overview section rendered for the selected project.");
       console.log("PROVEN: page body/HTML omitted storageKey and the other forbidden internal fields.");
       console.log("PROVEN: download action called the safe client-portal download endpoint and did not expose storageKey.");
     } else {

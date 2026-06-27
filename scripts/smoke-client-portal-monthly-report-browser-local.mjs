@@ -280,7 +280,8 @@ async function main() {
     await page.getByText(fixture.project.name, { exact: true }).waitFor({ state: "visible", timeout: 15000 });
     const portalSection = page.locator('section[aria-labelledby="client-portal-title"]');
     const projectCard = portalSection.locator("article.entity-card", { hasText: fixture.project.name }).first();
-    await projectCard.getByRole("button", { name: "Open project" }).click();
+    const openProjectButton = projectCard.getByRole("button", { name: /^(Open project|View|Open)$/ });
+    await openProjectButton.click();
 
     // Wait for monthly report final client view section
     await page.getByRole("heading", { name: "Monthly report — final client view" }).waitFor({ state: "visible", timeout: 15000 });
