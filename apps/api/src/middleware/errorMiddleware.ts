@@ -12,11 +12,37 @@ export class ApiError extends Error {
   }
 }
 
+function buildErrorDetails(error: unknown): Record<string, unknown> | undefined {
+  if (process.env.NODE_ENV === "production") {
+    return undefined;
+  }
+
+  if (error instanceof Error) {
+    return {
+      name: error.name,
+      stack: error.stack
+    };
+  }
+
+  return {
+    value: typeof error === "string" ? error : "Non-error throw value"
+  };
+}
+
 export const errorMiddleware: ErrorRequestHandler = (error, _req, res, _next) => {
   if (error instanceof ApiError) {
-    res.status(error.statusCode).json(failure(error.code, error.message, error.details));
+    const details = {
+      ...(error.details ?? {}),
+      ...(buildErrorDetails(error) ?? {})
+    };
+
+    res.status(error.statusCode).json(
+      failure(error.code, error.message, Object.keys(details).length > 0 ? details : undefined)
+    );
     return;
   }
 
-  res.status(500).json(failure("INTERNAL_SERVER_ERROR", "Unexpected server error."));
+  res.status(500).json(
+    failure("INTERNAL_SERVER_ERROR", "Unexpected server error.", buildErrorDetails(error))
+  );
 };

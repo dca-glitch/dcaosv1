@@ -3,6 +3,8 @@ import { EmptyState } from "../../components/EmptyState";
 import { ErrorState } from "../../components/ErrorState";
 import { LoadingState } from "../../components/LoadingState";
 import { Modal } from "../../components/Modal";
+import { ModalActions } from "../../components/ui/ModalActions";
+import { SectionPanel } from "../../components/ui";
 
 export type CompanyProfileSummary = {
   id: string;
@@ -12,11 +14,16 @@ export type CompanyProfileSummary = {
   phone: string | null;
   website: string | null;
   taxId: string | null;
+  country: string | null;
   registrationNumber: string | null;
   billingAddress: string | null;
   paymentInstructions: string | null;
   logoUrl: string | null;
   isActive: boolean;
+  currency: string;
+  invoiceTemplateKey: string;
+  invoicePrefix: string | null;
+  creditNotePrefix: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -28,10 +35,15 @@ export type CompanyProfileFormValues = {
   phone: string;
   website: string;
   taxId: string;
+  country: string;
   registrationNumber: string;
   billingAddress: string;
   paymentInstructions: string;
   logoUrl: string;
+  currency: string;
+  invoiceTemplateKey: string;
+  invoicePrefix: string;
+  creditNotePrefix: string;
 };
 
 type CompanyProfilePageProps = {
@@ -49,10 +61,15 @@ const emptyForm = (): CompanyProfileFormValues => ({
   phone: "",
   website: "",
   taxId: "",
+  country: "",
   registrationNumber: "",
   billingAddress: "",
   paymentInstructions: "",
-  logoUrl: ""
+  logoUrl: "",
+  currency: "USD",
+  invoiceTemplateKey: "classic",
+  invoicePrefix: "DCA-INV",
+  creditNotePrefix: "DCA-CN"
 });
 
 export function CompanyProfilePage({ companyProfile, canEdit, error, loading, onSave }: CompanyProfilePageProps) {
@@ -67,13 +84,24 @@ export function CompanyProfilePage({ companyProfile, canEdit, error, loading, on
           phone: companyProfile.phone ?? "",
           website: companyProfile.website ?? "",
           taxId: companyProfile.taxId ?? "",
+          country: companyProfile.country ?? "",
           registrationNumber: companyProfile.registrationNumber ?? "",
           billingAddress: companyProfile.billingAddress ?? "",
           paymentInstructions: companyProfile.paymentInstructions ?? "",
-          logoUrl: companyProfile.logoUrl ?? ""
+          logoUrl: companyProfile.logoUrl ?? "",
+          currency: companyProfile.currency ?? "USD",
+          invoiceTemplateKey: companyProfile.invoiceTemplateKey ?? "classic",
+          invoicePrefix: companyProfile.invoicePrefix ?? "DCA-INV",
+          creditNotePrefix: companyProfile.creditNotePrefix ?? "DCA-CN"
         }
       : emptyForm()
   );
+
+  const submitLabel = companyProfile ? "Update company profile" : "Create company profile";
+
+  function closeEditor() {
+    setIsEditing(false);
+  }
 
   function openEditor() {
     setDraft(
@@ -85,10 +113,15 @@ export function CompanyProfilePage({ companyProfile, canEdit, error, loading, on
             phone: companyProfile.phone ?? "",
             website: companyProfile.website ?? "",
             taxId: companyProfile.taxId ?? "",
+            country: companyProfile.country ?? "",
             registrationNumber: companyProfile.registrationNumber ?? "",
             billingAddress: companyProfile.billingAddress ?? "",
             paymentInstructions: companyProfile.paymentInstructions ?? "",
-            logoUrl: companyProfile.logoUrl ?? ""
+            logoUrl: companyProfile.logoUrl ?? "",
+            currency: companyProfile.currency ?? "USD",
+            invoiceTemplateKey: companyProfile.invoiceTemplateKey ?? "classic",
+            invoicePrefix: companyProfile.invoicePrefix ?? "DCA-INV",
+            creditNotePrefix: companyProfile.creditNotePrefix ?? "DCA-CN"
           }
         : emptyForm()
     );
@@ -101,7 +134,7 @@ export function CompanyProfilePage({ companyProfile, canEdit, error, loading, on
     try {
       const ok = await onSave(draft);
       if (ok) {
-        setIsEditing(false);
+        closeEditor();
       }
     } finally {
       setSaving(false);
@@ -171,8 +204,28 @@ export function CompanyProfilePage({ companyProfile, canEdit, error, loading, on
               <strong>{companyProfile.taxId || "Not set"}</strong>
             </div>
             <div>
+              <span>Country</span>
+              <strong>{companyProfile.country || "Not set"}</strong>
+            </div>
+            <div>
               <span>Registration number</span>
               <strong>{companyProfile.registrationNumber || "Not set"}</strong>
+            </div>
+            <div>
+              <span>Currency</span>
+              <strong>{companyProfile.currency || "USD"}</strong>
+            </div>
+            <div>
+              <span>Invoice template</span>
+              <strong>{companyProfile.invoiceTemplateKey || "classic"}</strong>
+            </div>
+            <div>
+              <span>Invoice prefix</span>
+              <strong>{companyProfile.invoicePrefix || "DCA-INV"}</strong>
+            </div>
+            <div>
+              <span>Credit note prefix</span>
+              <strong>{companyProfile.creditNotePrefix || "DCA-CN"}</strong>
             </div>
             <div className="entity-span-2">
               <span>Billing address</span>
@@ -190,109 +243,197 @@ export function CompanyProfilePage({ companyProfile, canEdit, error, loading, on
         </article>
       )}
 
+      <SectionPanel
+        description="WordPress site URLs and application passwords are configured per client in Client Hub → Publication targets."
+        title="WordPress publication (moved)"
+      >
+        <p className="muted-text">
+          Tenant-level WordPress config is deprecated. Open a client record and use <strong>Open hub</strong> to manage
+          publication targets, encrypted credentials, analytics profile, and publication logs.
+        </p>
+        <a className="secondary-action" href="#/clients">
+          Go to Clients
+        </a>
+      </SectionPanel>
+
       {isEditing ? (
-        <Modal onClose={() => setIsEditing(false)} title="Edit Company Profile">
+        <Modal onClose={closeEditor} title={companyProfile ? "Edit Company Profile" : "Create Company Profile"}>
           <form className="entity-form" onSubmit={handleSubmit}>
+            <p className="muted-text">Used as issuer details on finance documents. Visible only to admin team unless used on generated documents.</p>
+            <ModalActions disabled={saving} label={submitLabel} onCancel={closeEditor} saving={saving} />
             <div className="field-grid">
               <label>
-                Name
+                Company name - Required
                 <input
                   maxLength={255}
                   onChange={(event) => setDraft((current) => ({ ...current, name: event.target.value }))}
+                  placeholder="Trading or public-facing company name"
                   required
                   value={draft.name}
                 />
+                <span className="muted-text">Used as the primary company identity inside the admin workspace.</span>
               </label>
               <label>
-                Legal name
+                Legal name - Optional
                 <input
                   maxLength={255}
                   onChange={(event) => setDraft((current) => ({ ...current, legalName: event.target.value }))}
+                  placeholder="Registered company name"
                   value={draft.legalName}
                 />
+                <span className="muted-text">Used as issuer details on finance documents.</span>
               </label>
               <label>
-                Email
+                Email - Optional
                 <input
                   maxLength={320}
                   onChange={(event) => setDraft((current) => ({ ...current, email: event.target.value }))}
+                  placeholder="Company inbox for billing or operations"
                   type="email"
                   value={draft.email}
                 />
+                <span className="muted-text">Visible only to admin team unless used on generated documents.</span>
               </label>
               <label>
-                Phone
+                Phone - Optional
                 <input
                   maxLength={60}
                   onChange={(event) => setDraft((current) => ({ ...current, phone: event.target.value }))}
+                  placeholder="Primary company phone number"
                   value={draft.phone}
                 />
+                <span className="muted-text">Visible only to admin team unless used on generated documents.</span>
               </label>
               <label>
-                Website
+                Website - Optional
                 <input
                   maxLength={2048}
                   onChange={(event) => setDraft((current) => ({ ...current, website: event.target.value }))}
+                  placeholder="Public company website"
                   type="url"
                   value={draft.website}
                 />
+                <span className="muted-text">Used for admin reference and company identity.</span>
               </label>
               <label>
-                Tax ID
+                Tax/VAT ID - Optional
                 <input
                   maxLength={100}
                   onChange={(event) => setDraft((current) => ({ ...current, taxId: event.target.value }))}
+                  placeholder="Company tax registration number"
                   value={draft.taxId}
                 />
+                <span className="muted-text">Used as issuer details on finance documents.</span>
               </label>
               <label>
-                Registration number
+                Registration number - Optional
                 <input
                   maxLength={100}
                   onChange={(event) =>
                     setDraft((current) => ({ ...current, registrationNumber: event.target.value }))
                   }
+                  placeholder="Official company registration number"
                   value={draft.registrationNumber}
                 />
+                <span className="muted-text">Visible only to admin team unless used on generated documents.</span>
+              </label>
+              <label>
+                Country - Optional
+                <select
+                  onChange={(event) => setDraft((current) => ({ ...current, country: event.target.value }))}
+                  value={draft.country}
+                >
+                  <option value="">Country used for registration or billing context</option>
+                  <option value="Indonesia">Indonesia</option>
+                  <option value="Poland">Poland</option>
+                  <option value="United States">United States</option>
+                  <option value="United Kingdom">United Kingdom</option>
+                  <option value="Singapore">Singapore</option>
+                  <option value="Australia">Australia</option>
+                </select>
+                <span className="muted-text">Visible only to admin team unless used on generated documents.</span>
               </label>
               <label className="field-span-2">
-                Billing address
+                Billing address - Optional
                 <textarea
                   maxLength={4000}
                   onChange={(event) => setDraft((current) => ({ ...current, billingAddress: event.target.value }))}
+                  placeholder="Official billing or registration address"
                   rows={4}
                   value={draft.billingAddress}
                 />
+                <span className="muted-text">Used as issuer details on finance documents.</span>
+              </label>
+              <label>
+                Default currency - Required
+                <input
+                  maxLength={3}
+                  onChange={(event) => setDraft((current) => ({ ...current, currency: event.target.value.toUpperCase() }))}
+                  placeholder="Three-letter currency code, for example USD"
+                  required
+                  value={draft.currency}
+                />
+                <span className="muted-text">Changing this may affect future generated documents only.</span>
+              </label>
+              <label>
+                Invoice template - Required
+                <input
+                  maxLength={120}
+                  onChange={(event) => setDraft((current) => ({ ...current, invoiceTemplateKey: event.target.value }))}
+                  placeholder="Template key used for generated invoice layout"
+                  required
+                  value={draft.invoiceTemplateKey}
+                />
+                <span className="muted-text">Changing this may affect future generated documents only.</span>
+              </label>
+              <label>
+                Invoice prefix - Required
+                <input
+                  maxLength={120}
+                  onChange={(event) => setDraft((current) => ({ ...current, invoicePrefix: event.target.value }))}
+                  placeholder="Prefix used before generated invoice numbers"
+                  required
+                  value={draft.invoicePrefix}
+                />
+                <span className="muted-text">Changing this may affect future generated documents only.</span>
+              </label>
+              <label>
+                Credit note prefix - Required
+                <input
+                  maxLength={120}
+                  onChange={(event) => setDraft((current) => ({ ...current, creditNotePrefix: event.target.value }))}
+                  placeholder="Prefix used before generated credit note numbers"
+                  required
+                  value={draft.creditNotePrefix}
+                />
+                <span className="muted-text">Changing this may affect future generated documents only.</span>
               </label>
               <label className="field-span-2">
-                Payment instructions
+                Payment instructions - Optional
                 <textarea
                   maxLength={4000}
                   onChange={(event) =>
                     setDraft((current) => ({ ...current, paymentInstructions: event.target.value }))
                   }
+                  placeholder="Bank details or payment note shown on future invoices"
                   rows={4}
                   value={draft.paymentInstructions}
                 />
+                <span className="muted-text">Used as issuer details on finance documents.</span>
               </label>
               <label className="field-span-2">
-                Logo URL
+                Logo URL - Optional
                 <input
                   maxLength={2048}
                   onChange={(event) => setDraft((current) => ({ ...current, logoUrl: event.target.value }))}
+                  placeholder="Public logo file URL used on generated documents"
                   type="url"
                   value={draft.logoUrl}
                 />
+                <span className="muted-text">Visible only to admin team unless used on generated documents.</span>
               </label>
             </div>
-            <div className="modal-footer">
-              <button className="secondary-action" disabled={saving} onClick={() => setIsEditing(false)} type="button">
-                Cancel
-              </button>
-              <button className="primary-action" disabled={saving} type="submit">
-                {saving ? "Saving" : "Save"}
-              </button>
-            </div>
+            <ModalActions disabled={saving} label={submitLabel} onCancel={closeEditor} saving={saving} />
           </form>
         </Modal>
       ) : null}

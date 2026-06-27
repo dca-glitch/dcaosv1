@@ -47,7 +47,7 @@ Current state:
 
 - external/OIDC-first remains the recommended v1 direction
 - first-party passwords remain deferred
-- client portal auth remains deferred
+- client portal auth for Client Portal MVP is in scope for Puriva delivery (see architecture doc); advanced portal auth flows remain phased
 - the final provider vendor still needs human approval before any real runtime integration
 
 What can start now:

@@ -1,8 +1,18 @@
-# DCA OS v1
+# DCA OS
 
-Reusable SaaS operating system foundation for Digital Cube Agency.
+Modular SaaS operating system for Digital Cube Agency (also referred to as DCA OS Lite in repo docs).
 
-Future production URL:
+**System domains (approved):**
+
+| Domain | Role |
+|--------|------|
+| `system.digitalcubeagency.net` | Final production login and DCA OS application location |
+| `digitalcubeagency.net` | Public product website for DCA OS |
+| `digitalcubeagency.com` | Public agency website / lead generation |
+
+Canonical operating model: [`docs/architecture/CLIENT_DOMAIN_OPERATING_MODEL.md`](docs/architecture/CLIENT_DOMAIN_OPERATING_MODEL.md).
+
+Production URL:
 
 ```text
 system.digitalcubeagency.net
@@ -10,9 +20,20 @@ system.digitalcubeagency.net
 
 ## Purpose
 
-DCA OS v1 is the shared platform foundation for future Digital Cube Agency tools, dashboards, client portals, automations, finance modules, SEO modules, AI modules, reporting modules, and operational workflows.
+DCA OS is the shared platform foundation for Digital Cube Agency tools, dashboards, admin/operator workflows, finance modules, SEO/content operations, AI Delivery records, reporting modules, and Client Portal MVP delivery for agency clients.
 
 The goal is to build reusable platform foundations once and then add future modules with less repeated work.
+
+## Current Operating State
+
+- Product name: **DCA OS** (DCA OS Lite in repo/package naming).
+- **MVP 1:** Puriva client delivery (`puriva.id`) — see architecture doc.
+- Work is local-first on Windows PowerShell from `C:\dcaosv1`.
+- Production is frozen unless explicitly approved.
+- Do not deploy, touch VPS, push, or commit unless explicitly approved after review.
+- ChatGPT acts as scope controller/reviewer/task writer; Codex/Copilot/local tooling executes sealed tasks.
+- AI Delivery admin workflows remain operator-primary. **Client Portal MVP is required for Puriva** (client-safe visibility and human/client review before publication). Advanced portal features (magic links, full comment threads) remain phased.
+- Repeatable scripts are required for stability, regression, smoke, or workflow validation work.
 
 ## Repository
 
@@ -45,18 +66,17 @@ docs/        Architecture and implementation documentation
 - Node.js
 - Express
 - Prisma
-- PostgreSQL planned
+- PostgreSQL
 - GitHub Actions CI
 
 ## Current Foundation
 
 The repository currently includes:
 
-- API application skeleton
-- Web application skeleton
+- API application and versioned `/api/v1` boundary
+- Web application with shared Dark Nebula UI direction
 - Shared contracts package
-- Data package with Prisma schema foundation
-- Versioned API boundary
+- Data package with Prisma schema and migrations
 - Health route foundation
 - Response helper foundation
 - Error middleware foundation
@@ -67,21 +87,28 @@ The repository currently includes:
 - CI workflow
 - Dependency monitoring
 - Project documentation
+- Local auth/session/tenant/module foundations
+- AI Delivery project/brief, workflow run, deliverables, deliverable review data/API/admin UI, and local review smoke foundations
+- Email notification backend foundation EN1 only
 
 ## Intentionally Not Implemented Yet
 
 The current foundation intentionally avoids:
 
-- database migrations
-- database push commands
-- seed execution
-- real authentication
-- production deployment
+- `db push` against shared/staging/production databases
+- unapproved migrations or seed execution
+- production deployment or production data changes
 - production secrets
-- tenant runtime enforcement
-- feature persistence
 - payment flows
-- AI runtime integration
+- real external provider execution (local deterministic/bounded AI only)
+- crawling
+- WordPress publishing integration (draft preparation foundation exists; full integration gated)
+- GA/GSC integration
+- Resend sending or API key handling
+- full Client Portal MVP scope for Puriva (archive foundation exists; MI summary, SEO status, publishing handoff, catalog inquiry still in progress)
+- advanced Client Portal actions (public magic links, full interactive comment threads)
+
+Note: AI Delivery and Market Intelligence admin foundations are present locally. Client Access Admin UI is closed; Client Portal archive routes exist. Client Portal MVP expansion for Puriva, live external provider integrations, and production deployment remain guarded gates. Clients must not see raw prompts, workflow runs, AI costs, credentials, or admin-only notes.
 
 These areas will be implemented in controlled future blocks.
 
@@ -91,10 +118,7 @@ From the repository root:
 
 ```powershell
 cd C:\dcaosv1
-npm.cmd run check
-npm.cmd run build
-npm.cmd run -w @dca-os-v1/data prisma:validate
-npm.cmd run -w @dca-os-v1/data check
+npm.cmd run validate
 ```
 
 PowerShell may block `npm` through execution policy. Use `npm.cmd` on Windows.
@@ -127,23 +151,17 @@ npm run -w @dca-os-v1/data check
 Use controlled implementation blocks:
 
 ```text
-inspect -> report -> implement -> validate -> commit -> push
+inspect -> report -> implement -> validate -> review -> explicit approval -> commit/push/deploy only if approved
 ```
 
-Terminal-dependent work should be handled by Codex/cloud or local PowerShell. Safe documentation and small repository configuration may be edited directly in GitHub.
+Terminal-dependent work should be handled by Codex/Copilot/local PowerShell through sealed tasks. Do not edit GitHub cloud directly, commit, push, deploy, or touch VPS/production unless explicitly approved.
 
 ## Next Planned Areas
 
-1. CI result review
-2. Dependency audit review
-3. Local PostgreSQL planning
-4. Prisma Client strategy
-5. Database access layer
-6. Auth planning
-7. Auth implementation
-8. Tenant context foundation
-9. Users module MVP
-10. Roles and permissions MVP
+1. Keep foundational docs/rules aligned with Puriva MVP 1 and [`docs/architecture/CLIENT_DOMAIN_OPERATING_MODEL.md`](docs/architecture/CLIENT_DOMAIN_OPERATING_MODEL.md).
+2. Deliver Client Portal MVP visibility for Puriva (MI summary, SEO, Google Docs, publishing status, catalog inquiry) without exposing internal AI workflow data.
+3. Keep Email Notifications at EN1 until EN2 event wiring is explicitly resumed.
+4. Continue using repeatable local validation and smoke scripts for stability/regression work.
 
 ## DCA OS Lite production operating target
 
@@ -158,4 +176,5 @@ Important:
 - Production DB container: dcaosv1-postgres
 - Do not use local Windows Docker context as production.
 - Read-only first.
-- No deletes, migrations, deploys, restarts, or Finance Lite actions without explicit approval.
+- No deletes, migrations, deploys, or restarts without explicit approval.
+- Production remains frozen unless explicitly approved.

@@ -7,13 +7,16 @@
   "scripts": {
     "check": "node ../../scripts/check-package.mjs api && npm run check:auth-skeleton && tsc --noEmit",
     "check:auth-skeleton": "node scripts/check-auth-skeleton.mjs",
+    "check:dist-esm": "node scripts/check-dist-esm.mjs",
     "build": "node scripts/build-api.mjs",
     "dev": "tsx src/server.ts",
     "start": "node dist/apps/api/src/server.js"
   },
   "dependencies": {
     "@dca-os-v1/shared": "0.1.0",
-    "express": "^4.19.2"
+    "express": "^4.19.2",
+    "googleapis": "^144.0.0",
+    "pdf-lib": "^1.17.1"
   },
   "devDependencies": {
     "@types/express": "^4.17.21",

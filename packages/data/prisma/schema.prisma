@@ -101,6 +101,59 @@ enum AuditActorType {
   API
 }
 
+enum EmailStatus {
+  QUEUED
+  SENT
+  FAILED
+  SKIPPED
+}
+
+enum EmailTemplateKey {
+  CLIENT_INVITE
+  PASSWORD_RESET
+  AI_DELIVERY_BRIEF_REQUEST
+  AI_DELIVERY_REVIEW_REQUEST
+  AI_DELIVERY_APPROVED
+  INVOICE_ISSUED
+}
+
+enum ClientKind {
+  AGENCY_CLIENT
+  OWN_DOMAIN
+}
+
+enum ClientMigrationStatus {
+  ACTIVE
+  PLANNED_LICENSEE_TENANT
+  MIGRATED
+}
+
+enum PublicationConnectorType {
+  WORDPRESS
+}
+
+enum PublicationLogStatus {
+  PREPARED
+  PROVIDER_DISABLED
+  PUBLISHED
+  FAILED
+}
+
+enum AnalyticsConnectionStatus {
+  MANUAL
+  CONFIGURED
+  LIVE_DEFERRED
+}
+
+enum AiDeliveryBriefStatus {
+  DRAFT
+  CLIENT_INPUT_REQUESTED
+  CLIENT_SUBMITTED
+  REVISION_REQUESTED
+  CLIENT_REVISED
+  ADMIN_APPROVED
+}
+
 model Tenant {
   id                   String                @id @default(uuid())
   name                 String
@@ -127,6 +180,33 @@ model Tenant {
   invoicePayments      InvoicePayment[]
   creditNotes          CreditNote[]
   projectDocuments     ProjectDocument[]
+  aiDeliveryProjects   AiDeliveryProject[]
+  aiDeliveryBriefs     AiDeliveryBrief[]
+  aiDeliveryContentPlans AiDeliveryContentPlan[]
+  aiDeliveryContentPlanItems AiDeliveryContentPlanItem[]
+  aiDeliveryContentDrafts AiDeliveryContentDraft[]
+  aiDeliveryArticleImages AiDeliveryArticleImage[]
+  aiDeliveryDeliverables AiDeliveryDeliverable[]
+  aiDeliveryDeliverableReviews AiDeliveryDeliverableReview[]
+  aiDeliveryWorkflowRuns AiDeliveryWorkflowRun[]
+  aiDeliveryResearchRequests AiDeliveryResearchRequest[]
+  aiDeliveryResearchSources AiDeliveryResearchSource[]
+  aiDeliveryResearchSummaries AiDeliveryResearchSummary[]
+  aiDeliveryMonthlyMetricSnapshots AiDeliveryMonthlyMetricSnapshot[]
+  marketIntelligenceProjects MarketIntelligenceProject[]
+  marketIntelligenceSources MarketIntelligenceSource[]
+  marketIntelligenceResearchRuns MarketIntelligenceResearchRun[]
+  marketIntelligenceInsights MarketIntelligenceInsight[]
+  marketIntelligenceHandoffs MarketIntelligenceHandoff[]
+  clientUserAccesses   ClientUserAccess[]
+  emailLogs            EmailLog[]            @relation("TenantEmailLogs")
+  aiDeliveryMonthlyReports AiDeliveryMonthlyReport[]
+  publicationTargets   PublicationTarget[]
+  publicationTargetCredentials PublicationTargetCredential[]
+  clientAnalyticsProfiles ClientAnalyticsProfile[]
+  publicationLogs      PublicationLog[]
+  clientCatalogProducts ClientCatalogProduct[]
+  clientCatalogInquiries ClientCatalogInquiry[]
 }
 
 model User {
@@ -147,6 +227,10 @@ model User {
   sessions                 Session[]
   auditLogs                AuditLog[]         @relation("UserAuditLogs")
   uploadedProjectDocuments ProjectDocument[]  @relation("ProjectDocumentUploadedBy")
+  clientUserAccesses       ClientUserAccess[]
+  aiDeliveryMonthlyMetricSnapshotsImportedBy AiDeliveryMonthlyMetricSnapshot[] @relation("AiDeliveryMonthlyMetricSnapshotImportedByUser")
+  aiDeliveryMonthlyMetricSnapshotsApprovedBy  AiDeliveryMonthlyMetricSnapshot[] @relation("AiDeliveryMonthlyMetricSnapshotApprovedByUser")
+  publicationTargetCredentialsUpdated PublicationTargetCredential[] @relation("PublicationTargetCredentialUpdatedByUser")
 }
 
 model Session {
@@ -268,6 +352,7 @@ model CompanyProfile {
   phone               String?
   website             String?
   taxId               String?
+  country             String?
   registrationNumber  String?
   billingAddress      String?
   paymentInstructions String?
@@ -294,7 +379,13 @@ model Client {
   website           String?
   billingDetails    String?
   contactPerson     String?
+  taxId             String?
+  country           String?
   notes             String?
+  clientKind        ClientKind         @default(AGENCY_CLIENT)
+  legalEntityName   String?
+  accountGroupName  String?
+  migrationStatus   ClientMigrationStatus @default(ACTIVE)
   isArchived        Boolean            @default(false)
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
@@ -302,8 +393,184 @@ model Client {
   projects          Project[]
   invoices          Invoice[]
   recurringInvoices RecurringInvoice[]
+  aiDeliveryProjects AiDeliveryProject[]
+  userAccesses       ClientUserAccess[]
+  aiDeliveryMonthlyReports AiDeliveryMonthlyReport[]
+  publicationTargets PublicationTarget[]
+  analyticsProfile  ClientAnalyticsProfile?
+  marketIntelligenceProjects MarketIntelligenceProject[]
+  publicationLogs   PublicationLog[]
+  catalogProducts   ClientCatalogProduct[]
+  catalogInquiries  ClientCatalogInquiry[]
 
   @@index([tenantId])
+  @@index([tenantId, isArchived])
+  @@index([tenantId, clientKind])
+  @@index([tenantId, migrationStatus])
+}
+
+model PublicationTarget {
+  id               String                   @id @default(uuid())
+  tenantId         String
+  clientId         String
+  label            String
+  connectorType    PublicationConnectorType @default(WORDPRESS)
+  siteUrl          String
+  siteSlug         String?
+  wordPressComSite Boolean                  @default(false)
+  isDefault        Boolean                  @default(false)
+  isArchived       Boolean                  @default(false)
+  createdAt        DateTime                 @default(now())
+  updatedAt        DateTime                 @updatedAt
+
+  tenant       Tenant                      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  client       Client                      @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  credentials  PublicationTargetCredential?
+  publicationLogs PublicationLog[]
+
+  @@index([tenantId])
+  @@index([tenantId, clientId])
+  @@index([tenantId, clientId, isArchived])
+  @@index([tenantId, clientId, isDefault])
+}
+
+model PublicationTargetCredential {
+  id                  String   @id @default(uuid())
+  tenantId            String
+  publicationTargetId String   @unique
+  ciphertext          String
+  iv                  String
+  authTag             String
+  updatedByUserId     String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  tenant            Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  publicationTarget PublicationTarget @relation(fields: [publicationTargetId], references: [id], onDelete: Cascade)
+  updatedByUser     User?             @relation("PublicationTargetCredentialUpdatedByUser", fields: [updatedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@index([tenantId, publicationTargetId])
+}
+
+model ClientAnalyticsProfile {
+  id                String                    @id @default(uuid())
+  tenantId          String
+  clientId          String                    @unique
+  gscSiteUrl        String?
+  ga4PropertyId     String?
+  defaultSourceType MonthlyMetricSourceType   @default(MANUAL)
+  connectionStatus  AnalyticsConnectionStatus @default(MANUAL)
+  createdAt         DateTime                  @default(now())
+  updatedAt         DateTime                  @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([tenantId, clientId])
+}
+
+model PublicationLog {
+  id                  String               @id @default(uuid())
+  tenantId            String
+  clientId            String
+  publicationTargetId String?
+  aiDeliveryProjectId String?
+  deliverableId       String?
+  action              String
+  status              PublicationLogStatus
+  siteUrlHost         String?
+  externalPostId      String?
+  actorUserId         String?
+  note                String?
+  createdAt           DateTime             @default(now())
+
+  tenant            Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  client            Client             @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  publicationTarget PublicationTarget? @relation(fields: [publicationTargetId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@index([tenantId, clientId])
+  @@index([tenantId, deliverableId])
+  @@index([tenantId, createdAt])
+}
+
+enum ClientCatalogInquiryStatus {
+  NEW
+  ACKNOWLEDGED
+  CLOSED
+}
+
+model ClientCatalogProduct {
+  id                String   @id @default(uuid())
+  tenantId          String
+  clientId          String
+  name              String
+  description       String?
+  sku               String?
+  priceLabel        String?
+  imageUrl          String?
+  sortOrder         Int      @default(0)
+  isVisibleInPortal Boolean  @default(true)
+  isArchived        Boolean  @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  tenant    Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  client    Client                 @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  inquiries ClientCatalogInquiry[]
+
+  @@index([tenantId])
+  @@index([tenantId, clientId])
+  @@index([tenantId, clientId, isArchived])
+  @@index([tenantId, clientId, isVisibleInPortal])
+}
+
+model ClientCatalogInquiry {
+  id                String                     @id @default(uuid())
+  tenantId          String
+  clientId          String
+  productId         String?
+  contactName       String
+  contactEmail      String
+  contactPhone      String?
+  message           String
+  status            ClientCatalogInquiryStatus @default(NEW)
+  submittedByUserId String?
+  createdAt         DateTime                   @default(now())
+  updatedAt         DateTime                   @updatedAt
+
+  tenant  Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  client  Client               @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  product ClientCatalogProduct? @relation(fields: [productId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@index([tenantId, clientId])
+  @@index([tenantId, clientId, status])
+  @@index([tenantId, productId])
+}
+
+model ClientUserAccess {
+  id         String   @id @default(uuid())
+  tenantId   String
+  clientId   String
+  userId     String
+  isArchived Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, clientId, userId])
+  @@index([tenantId])
+  @@index([clientId])
+  @@index([userId])
+  @@index([isArchived])
+  @@index([tenantId, clientId])
+  @@index([tenantId, userId])
   @@index([tenantId, isArchived])
 }
 
@@ -315,6 +582,7 @@ model Project {
   description       String?
   startDate         DateTime?
   dueDate           DateTime?
+  status            String             @default("Active")
   isArchived        Boolean            @default(false)
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
@@ -324,10 +592,507 @@ model Project {
   invoices          Invoice[]
   recurringInvoices RecurringInvoice[]
   documents         ProjectDocument[]
+  aiDeliveryProjects AiDeliveryProject[]
 
   @@index([tenantId])
   @@index([tenantId, isArchived])
   @@index([tenantId, clientId])
+}
+
+model AiDeliveryProject {
+  id                       String           @id @default(uuid())
+  tenantId                 String
+  clientId                 String
+  projectId                String?
+  name                     String
+  targetMonth              DateTime
+  plannedContentScopeNotes String?
+  isArchived               Boolean          @default(false)
+  createdAt                DateTime         @default(now())
+  updatedAt                DateTime         @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  client Client @relation(fields: [clientId], references: [id], onDelete: Restrict)
+  project Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  brief AiDeliveryBrief?
+  contentPlans AiDeliveryContentPlan[]
+  contentDrafts AiDeliveryContentDraft[]
+  articleImages AiDeliveryArticleImage[]
+  deliverables AiDeliveryDeliverable[]
+  deliverableReviews AiDeliveryDeliverableReview[]
+  workflowRuns AiDeliveryWorkflowRun[]
+  researchRequests AiDeliveryResearchRequest[]
+  researchSources AiDeliveryResearchSource[]
+  researchSummaries AiDeliveryResearchSummary[]
+  monthlyReports AiDeliveryMonthlyReport[]
+  aiDeliveryMonthlyMetricSnapshots AiDeliveryMonthlyMetricSnapshot[]
+  marketIntelligenceHandoffs MarketIntelligenceHandoff[]
+
+  @@index([tenantId])
+  @@index([tenantId, isArchived])
+  @@index([tenantId, clientId])
+  @@index([tenantId, projectId])
+  @@index([tenantId, targetMonth])
+}
+
+model AiDeliveryBrief {
+  id                    String                @id @default(uuid())
+  tenantId              String
+  aiDeliveryProjectId   String                @unique
+  status                AiDeliveryBriefStatus @default(DRAFT)
+  clientPriorities      String?
+  productsServicesFocus String?
+  targetAudience        String?
+  marketsCompetitors    String?
+  notes                 String?
+  revisionCount         Int                   @default(0)
+  submittedAt           DateTime?
+  revisionRequestedAt   DateTime?
+  revisedAt             DateTime?
+  approvedAt            DateTime?
+  createdAt             DateTime              @default(now())
+  updatedAt             DateTime              @updatedAt
+
+  tenant            Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  aiDeliveryProject AiDeliveryProject @relation(fields: [aiDeliveryProjectId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([tenantId, status])
+  @@index([tenantId, aiDeliveryProjectId])
+}
+
+// Monthly Content Plan models for AI Delivery
+enum AiDeliveryContentPlanStatus {
+  DRAFT
+  CLIENT_REVIEW_REQUESTED
+  CLIENT_CHANGES_REQUESTED
+  CLIENT_APPROVED
+}
+
+enum AiDeliveryContentPlanItemApprovalStatus {
+  DRAFT
+  CLIENT_CHANGES_REQUESTED
+  CLIENT_APPROVED
+}
+
+model AiDeliveryContentPlan {
+  id                   String                         @id @default(uuid())
+  tenantId             String
+  aiDeliveryProjectId  String
+  status               AiDeliveryContentPlanStatus   @default(DRAFT)
+  revisionCount        Int                            @default(0)
+  reviewRequestedAt    DateTime?
+  approvedAt           DateTime?
+  createdAt            DateTime                       @default(now())
+  updatedAt            DateTime                       @updatedAt
+
+  tenant              Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  aiDeliveryProject   AiDeliveryProject @relation(fields: [aiDeliveryProjectId], references: [id], onDelete: Cascade)
+  items               AiDeliveryContentPlanItem[]
+
+  @@index([tenantId])
+  @@index([tenantId, status])
+  @@unique([tenantId, aiDeliveryProjectId])
+}
+
+model AiDeliveryContentPlanItem {
+  id              String                                @id @default(uuid())
+  tenantId        String
+  contentPlanId   String
+  title           String
+  targetKeyword   String?
+  contentType     String                                @default("article")
+  notes           String?
+  sortOrder       Int                                   @default(0)
+  approvalStatus  AiDeliveryContentPlanItemApprovalStatus?
+  clientComment   String?
+  createdAt       DateTime                              @default(now())
+  updatedAt       DateTime                              @updatedAt
+
+  tenant        Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  contentPlan   AiDeliveryContentPlan @relation(fields: [contentPlanId], references: [id], onDelete: Cascade)
+  contentDrafts AiDeliveryContentDraft[]
+
+  @@index([tenantId])
+  @@index([tenantId, contentPlanId])
+  @@index([tenantId, sortOrder])
+}
+
+model AiDeliveryContentDraft {
+  id                  String   @id @default(uuid())
+  tenantId            String
+  aiDeliveryProjectId String
+  contentPlanItemId   String?
+  title               String
+  slug                String?
+  draftBody           String
+  status              String   @default("DRAFT")
+  notes               String?
+  reviewRequestedAt   DateTime?
+  approvedAt          DateTime?
+  revisionCount       Int      @default(0)
+  clientComment       String?
+  isArchived          Boolean  @default(false)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  tenant              Tenant                    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  aiDeliveryProject   AiDeliveryProject         @relation(fields: [aiDeliveryProjectId], references: [id], onDelete: Cascade)
+  contentPlanItem     AiDeliveryContentPlanItem? @relation(fields: [contentPlanItemId], references: [id], onDelete: SetNull)
+  articleImages       AiDeliveryArticleImage[]
+  deliverables         AiDeliveryDeliverable[]
+
+  @@index([tenantId])
+  @@index([tenantId, aiDeliveryProjectId])
+  @@index([tenantId, contentPlanItemId])
+  @@index([tenantId, status])
+  @@index([tenantId, isArchived])
+}
+
+model AiDeliveryArticleImage {
+  id                  String   @id @default(uuid())
+  tenantId            String
+  aiDeliveryProjectId String
+  contentDraftId      String
+  title               String
+  prompt              String
+  styleNotes          String?
+  status              String   @default("DRAFT")
+  previewImageUrl     String?
+  finalImageUrl       String?
+  storageKey          String?
+  notes               String?
+  isArchived          Boolean  @default(false)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  tenant              Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  aiDeliveryProject   AiDeliveryProject       @relation(fields: [aiDeliveryProjectId], references: [id], onDelete: Cascade)
+  contentDraft        AiDeliveryContentDraft  @relation(fields: [contentDraftId], references: [id], onDelete: Cascade)
+  deliverables         AiDeliveryDeliverable[]
+
+  @@index([tenantId])
+  @@index([tenantId, aiDeliveryProjectId])
+  @@index([tenantId, contentDraftId])
+  @@index([tenantId, status])
+  @@index([tenantId, isArchived])
+}
+
+// AI Delivery Deliverables
+enum AiDeliveryDeliverableDeliveryType {
+  CONTENT_PACKAGE
+  ARTICLE_DRAFT
+  ARTICLE_IMAGE
+  CLIENT_HANDOFF
+  OTHER
+}
+
+enum AiDeliveryDeliverableStatus {
+  DRAFT
+  READY
+  DELIVERED
+  REVISION_REQUESTED
+  ACCEPTED
+  ARCHIVED
+}
+
+model AiDeliveryDeliverable {
+  id                  String   @id @default(uuid())
+  tenantId            String
+  aiDeliveryProjectId String
+  contentDraftId      String?
+  articleImageId      String?
+  title               String
+  description         String?
+  deliveryType        AiDeliveryDeliverableDeliveryType @default(CONTENT_PACKAGE)
+  status              AiDeliveryDeliverableStatus @default(DRAFT)
+  exportUrl           String?
+  storageKey          String?
+  notes               String?
+  isArchived          Boolean  @default(false)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  tenant              Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  aiDeliveryProject   AiDeliveryProject       @relation(fields: [aiDeliveryProjectId], references: [id], onDelete: Cascade)
+  contentDraft        AiDeliveryContentDraft? @relation(fields: [contentDraftId], references: [id], onDelete: SetNull)
+  articleImage        AiDeliveryArticleImage? @relation(fields: [articleImageId], references: [id], onDelete: SetNull)
+  reviews             AiDeliveryDeliverableReview[]
+
+  @@index([tenantId])
+  @@index([tenantId, aiDeliveryProjectId])
+  @@index([tenantId, status])
+  @@index([tenantId, isArchived])
+  @@index([tenantId, contentDraftId])
+  @@index([tenantId, articleImageId])
+}
+
+enum AiDeliveryDeliverableReviewStatus {
+  NOT_STARTED
+  ADMIN_REVIEW
+  CHANGES_REQUESTED
+  APPROVED
+  ARCHIVED
+}
+
+model AiDeliveryDeliverableReview {
+  id                  String                              @id @default(uuid())
+  tenantId            String
+  aiDeliveryProjectId String
+  deliverableId       String
+  workflowRunId       String?
+  status              AiDeliveryDeliverableReviewStatus  @default(NOT_STARTED)
+  reviewerName        String?
+  reviewNotes         String?
+  createdAt           DateTime                            @default(now())
+  updatedAt           DateTime                            @updatedAt
+
+  tenant              Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  aiDeliveryProject   AiDeliveryProject       @relation(fields: [aiDeliveryProjectId], references: [id], onDelete: Cascade)
+  deliverable         AiDeliveryDeliverable   @relation(fields: [deliverableId], references: [id], onDelete: Cascade)
+  workflowRun         AiDeliveryWorkflowRun?  @relation(fields: [workflowRunId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@index([tenantId, aiDeliveryProjectId])
+  @@index([tenantId, deliverableId])
+  @@index([tenantId, workflowRunId])
+  @@index([tenantId, status])
+}
+
+enum AiDeliveryWorkflowRunStatus {
+  DRAFT
+  READY
+  IN_PROGRESS
+  REVIEW
+  COMPLETED
+  FAILED
+  ARCHIVED
+}
+
+model AiDeliveryWorkflowRun {
+  id                  String                      @id @default(uuid())
+  tenantId            String
+  aiDeliveryProjectId String
+  status              AiDeliveryWorkflowRunStatus @default(DRAFT)
+  adminNotes          String?
+  resultPlaceholder   String?
+  executionLog        String?
+  executionError      String?
+  startedAt           DateTime?
+  finishedAt          DateTime?
+  createdAt           DateTime                    @default(now())
+  updatedAt           DateTime                    @updatedAt
+
+  tenant              Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  aiDeliveryProject   AiDeliveryProject @relation(fields: [aiDeliveryProjectId], references: [id], onDelete: Cascade)
+  deliverableReviews  AiDeliveryDeliverableReview[]
+  researchRequests    AiDeliveryResearchRequest[]
+  researchSources     AiDeliveryResearchSource[]
+  researchSummaries   AiDeliveryResearchSummary[]
+
+  @@index([tenantId])
+  @@index([tenantId, aiDeliveryProjectId])
+  @@index([tenantId, status])
+  @@index([createdAt])
+}
+
+enum AiDeliveryResearchRequestStatus {
+  DRAFT
+  READY
+  IN_REVIEW
+  COMPLETED
+  ARCHIVED
+}
+
+enum AiDeliveryResearchSourceStatus {
+  PROPOSED
+  APPROVED
+  REJECTED
+  ARCHIVED
+}
+
+enum AiDeliveryResearchSourceType {
+  WEBSITE
+  DOCUMENT
+  OTHER
+}
+
+model AiDeliveryResearchRequest {
+  id                  String                         @id @default(uuid())
+  tenantId            String
+  aiDeliveryProjectId String
+  workflowRunId       String?
+  title               String
+  description         String?
+  requestType         String?
+  status              AiDeliveryResearchRequestStatus @default(DRAFT)
+  createdAt           DateTime                       @default(now())
+  updatedAt           DateTime                       @updatedAt
+
+  tenant              Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  aiDeliveryProject   AiDeliveryProject      @relation(fields: [aiDeliveryProjectId], references: [id], onDelete: Cascade)
+  workflowRun         AiDeliveryWorkflowRun? @relation(fields: [workflowRunId], references: [id], onDelete: SetNull)
+  sources             AiDeliveryResearchSource[]
+
+  @@index([tenantId])
+  @@index([tenantId, aiDeliveryProjectId])
+  @@index([tenantId, workflowRunId])
+  @@index([tenantId, status])
+}
+
+model AiDeliveryResearchSource {
+  id                  String                        @id @default(uuid())
+  tenantId            String
+  aiDeliveryProjectId String
+  researchRequestId   String?
+  workflowRunId       String?
+  sourceUrl           String
+  sourceTitle         String?
+  sourceType          AiDeliveryResearchSourceType  @default(WEBSITE)
+  status              AiDeliveryResearchSourceStatus @default(PROPOSED)
+  reviewNotes         String?
+  createdAt           DateTime                      @default(now())
+  updatedAt           DateTime                      @updatedAt
+
+  tenant              Tenant                    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  aiDeliveryProject   AiDeliveryProject         @relation(fields: [aiDeliveryProjectId], references: [id], onDelete: Cascade)
+  researchRequest     AiDeliveryResearchRequest? @relation(fields: [researchRequestId], references: [id], onDelete: SetNull)
+  workflowRun         AiDeliveryWorkflowRun?    @relation(fields: [workflowRunId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@index([tenantId, aiDeliveryProjectId])
+  @@index([tenantId, researchRequestId])
+  @@index([tenantId, workflowRunId])
+  @@index([tenantId, status])
+}
+
+enum AiDeliveryResearchSummaryStatus {
+  DRAFT
+  IN_REVIEW
+  FINALIZED
+  ARCHIVED
+}
+
+model AiDeliveryResearchSummary {
+  id                     String                         @id @default(uuid())
+  tenantId               String
+  aiDeliveryProjectId    String
+  workflowRunId          String?
+  title                  String
+  status                 AiDeliveryResearchSummaryStatus @default(DRAFT)
+  summaryText            String
+  keyFindings            String?
+  audienceInsights       String?
+  competitorInsights     String?
+  keywordOpportunities   String?
+  contentRecommendations String?
+  briefRevisionNotes     String?
+  sourceNotes            String?
+  finalizedAt            DateTime?
+  createdAt              DateTime                       @default(now())
+  updatedAt              DateTime                       @updatedAt
+
+  tenant              Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  aiDeliveryProject   AiDeliveryProject      @relation(fields: [aiDeliveryProjectId], references: [id], onDelete: Cascade)
+  workflowRun         AiDeliveryWorkflowRun? @relation(fields: [workflowRunId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@index([tenantId, aiDeliveryProjectId])
+  @@index([tenantId, workflowRunId])
+  @@index([tenantId, status])
+}
+
+// AI Delivery Monthly Report
+enum AiDeliveryMonthlyReportStatus {
+  DRAFT
+  ADMIN_REVIEW
+  FINAL
+  ARCHIVED
+}
+
+enum MonthlyMetricSourceType {
+  MANUAL
+  CSV_IMPORT
+  GA4
+  GSC
+  HYBRID
+}
+
+enum MonthlyMetricSnapshotStatus {
+  DRAFT
+  IMPORTED
+  APPROVED
+  ARCHIVED
+}
+
+model AiDeliveryMonthlyReport {
+  id                  String                        @id @default(uuid())
+  tenantId            String
+  aiDeliveryProjectId String
+  clientId            String
+  status              AiDeliveryMonthlyReportStatus @default(DRAFT)
+  title               String?
+  adminSummaryNotes   String?
+  recommendationsText String?
+  exportUrl           String?
+  storageKey          String?
+  isArchived          Boolean                       @default(false)
+  finalizedAt         DateTime?
+  // Optional Market Intelligence handoff reference for internal admin context
+  miHandoffId         String?
+  miContextDraft      String?
+  createdAt           DateTime                      @default(now())
+  updatedAt           DateTime                      @updatedAt
+
+  tenant            Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  aiDeliveryProject AiDeliveryProject @relation(fields: [aiDeliveryProjectId], references: [id], onDelete: Cascade)
+  client            Client            @relation(fields: [clientId], references: [id], onDelete: Restrict)
+  miHandoff         MarketIntelligenceHandoff? @relation(fields: [miHandoffId], references: [id], onDelete: SetNull)
+  aiDeliveryMonthlyMetricSnapshots AiDeliveryMonthlyMetricSnapshot[]
+
+  @@unique([tenantId, aiDeliveryProjectId])
+  @@index([tenantId])
+  @@index([tenantId, status])
+  @@index([tenantId, clientId])
+  @@index([tenantId, isArchived])
+  @@index([tenantId, miHandoffId])
+}
+
+model AiDeliveryMonthlyMetricSnapshot {
+  id                      String                      @id @default(uuid())
+  tenantId                String
+  aiDeliveryProjectId     String
+  aiDeliveryMonthlyReportId String
+  targetMonth             String
+  sourceType              MonthlyMetricSourceType     @default(MANUAL)
+  status                  MonthlyMetricSnapshotStatus @default(DRAFT)
+  gscClicks               Int?
+  gscImpressions          Int?
+  gscAverageCtr           Float?
+  gscAveragePosition      Float?
+  ga4Sessions             Int?
+  ga4Users                Int?
+  ga4PageViews            Int?
+  notes                   String?
+  importedByUserId        String?
+  importedAt              DateTime                    @default(now())
+  approvedByUserId        String?
+  approvedAt              DateTime?
+  createdAt               DateTime                    @default(now())
+  updatedAt               DateTime                    @updatedAt
+
+  tenant                  Tenant                      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  aiDeliveryProject       AiDeliveryProject           @relation(fields: [aiDeliveryProjectId], references: [id], onDelete: Cascade)
+  aiDeliveryMonthlyReport AiDeliveryMonthlyReport     @relation(fields: [aiDeliveryMonthlyReportId], references: [id], onDelete: Cascade)
+  importedByUser          User?                       @relation("AiDeliveryMonthlyMetricSnapshotImportedByUser", fields: [importedByUserId], references: [id], onDelete: SetNull)
+  approvedByUser          User?                       @relation("AiDeliveryMonthlyMetricSnapshotApprovedByUser", fields: [approvedByUserId], references: [id], onDelete: SetNull)
+
+  @@unique([tenantId, aiDeliveryMonthlyReportId])
+  @@index([tenantId])
+  @@index([tenantId, aiDeliveryProjectId])
+  @@index([tenantId, aiDeliveryMonthlyReportId])
+  @@index([tenantId, targetMonth])
+  @@index([tenantId, status])
 }
 
 model Task {
@@ -579,6 +1344,29 @@ model AuditLog {
   @@index([createdAt])
 }
 
+model EmailLog {
+  id                String           @id @default(uuid())
+  tenantId          String?
+  recipientEmail    String
+  subject           String
+  templateKey       EmailTemplateKey
+  status            EmailStatus
+  relatedModule     String?
+  relatedEntityId   String?
+  providerMessageId String?
+  errorMessage      String?
+  createdAt         DateTime         @default(now())
+  sentAt            DateTime?
+  tenant            Tenant?          @relation("TenantEmailLogs", fields: [tenantId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@index([recipientEmail])
+  @@index([templateKey])
+  @@index([status])
+  @@index([relatedModule, relatedEntityId])
+  @@index([createdAt])
+}
+
 enum PaymentMethod {
   CASH
   REVOLUT_BANK
@@ -640,22 +1428,42 @@ model CreditNote {
   status             CreditNoteStatus @default(DRAFT)
   issueDate          DateTime?
   reason             String
-  amountCents        Int
+  amountCents        Int              @default(0)
   currency           String           @default("USD")
+  subtotalCents      Int              @default(0)
+  taxCents           Int              @default(0)
+  discountCents      Int              @default(0)
+  totalCents         Int              @default(0)
   documentUrl        String?
   documentStorageKey String?
   isArchived         Boolean          @default(false)
   createdAt          DateTime         @default(now())
   updatedAt          DateTime         @updatedAt
 
-  tenant  Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Restrict)
+  tenant    Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  invoice   Invoice              @relation(fields: [invoiceId], references: [id], onDelete: Restrict)
+  lineItems CreditNoteLineItem[]
 
   @@unique([tenantId, creditNoteNumber])
   @@index([tenantId])
   @@index([tenantId, invoiceId])
   @@index([tenantId, status])
   @@index([tenantId, isArchived])
+}
+
+model CreditNoteLineItem {
+  id             String     @id @default(uuid())
+  creditNoteId   String
+  description    String
+  quantity       Int        @default(1)
+  unitPriceCents Int        @default(0)
+  totalCents     Int        @default(0)
+  sortOrder      Int        @default(0)
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+  creditNote     CreditNote @relation(fields: [creditNoteId], references: [id], onDelete: Cascade)
+
+  @@index([creditNoteId])
 }
 
 model ProjectDocument {
@@ -682,4 +1490,136 @@ model ProjectDocument {
   @@index([tenantId, projectId])
   @@index([tenantId, isArchived])
   @@index([tenantId, documentDate])
+}
+
+model MarketIntelligenceProject {
+  id                  String                         @id @default(uuid())
+  tenantId            String
+  clientId            String?
+  title               String
+  description         String?
+  keywords            String?
+  competitors         String?
+  niche               String?
+  productServiceFocus String?
+  targetClientName    String?
+  targetMonth         String?
+  status              String                         @default("ACTIVE")
+  isArchived          Boolean                        @default(false)
+  createdAt           DateTime                       @default(now())
+  updatedAt           DateTime                       @updatedAt
+
+  tenant        Tenant                         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  client        Client?                        @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  sources       MarketIntelligenceSource[]
+  researchRuns  MarketIntelligenceResearchRun[]
+  insights      MarketIntelligenceInsight[]
+  handoffs      MarketIntelligenceHandoff[]
+
+  @@index([tenantId])
+  @@index([tenantId, clientId])
+  @@index([tenantId, status])
+  @@index([tenantId, isArchived])
+}
+
+model MarketIntelligenceSource {
+  id            String                  @id @default(uuid())
+  tenantId      String
+  projectId     String
+  title         String
+  sourceType    String?
+  sourceUrl     String?
+  sourceNotes   String?
+  isArchived    Boolean                 @default(false)
+  createdAt     DateTime                @default(now())
+  updatedAt     DateTime                @updatedAt
+
+  tenant        Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  project       MarketIntelligenceProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([tenantId, projectId])
+  @@index([tenantId, isArchived])
+}
+
+model MarketIntelligenceResearchRun {
+  id            String                  @id @default(uuid())
+  tenantId      String
+  projectId     String
+  status        String                  @default("PENDING")
+  resultSummary String?
+  executionLog  String?
+  executedAt    DateTime?
+  createdAt     DateTime                @default(now())
+  updatedAt     DateTime                @updatedAt
+
+  tenant        Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  project       MarketIntelligenceProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([tenantId, projectId])
+  @@index([tenantId, status])
+}
+
+model MarketIntelligenceInsight {
+  id            String                  @id @default(uuid())
+  tenantId      String
+  projectId     String
+  title         String
+  summary       String?
+  resultData    Json?
+  status        String                  @default("DRAFT")
+  reviewerNotes String?
+  isArchived    Boolean                 @default(false)
+  createdAt     DateTime                @default(now())
+  updatedAt     DateTime                @updatedAt
+
+  tenant        Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  project       MarketIntelligenceProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  handoffs      MarketIntelligenceHandoff[]
+
+  @@index([tenantId])
+  @@index([tenantId, projectId])
+  @@index([tenantId, status])
+  @@index([tenantId, isArchived])
+}
+
+model MarketIntelligenceHandoff {
+  id                  String   @id @default(uuid())
+  tenantId            String
+  projectId           String
+  insightId           String
+  clientId            String?
+  title               String
+  marketSummary       String?
+  competitorSummary   String?
+  audienceSignals     Json?
+  opportunities       Json?
+  risks               Json?
+  recommendedActions  Json?
+  sourceNote          String?
+  targetClientName    String?
+  targetMonth         String?
+  // DRAFT → READY → APPLIED; ARCHIVED for soft-removal
+  handoffStatus         String   @default("DRAFT")
+  isArchived            Boolean  @default(false)
+  // Optional link to an AI Delivery project for internal context
+  aiDeliveryProjectId   String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  tenant            Tenant                    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  project           MarketIntelligenceProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  insight           MarketIntelligenceInsight @relation(fields: [insightId], references: [id], onDelete: Cascade)
+  aiDeliveryProject AiDeliveryProject?        @relation(fields: [aiDeliveryProjectId], references: [id], onDelete: SetNull)
+  monthlyReports    AiDeliveryMonthlyReport[]
+
+  @@index([tenantId])
+  @@index([tenantId, projectId])
+  @@index([tenantId, clientId])
+  @@index([tenantId, insightId])
+  @@index([tenantId, handoffStatus])
+  @@index([tenantId, isArchived])
+  @@index([tenantId, aiDeliveryProjectId])
 }

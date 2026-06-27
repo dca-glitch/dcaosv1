@@ -11,6 +11,7 @@ Current approved product UI direction:
 Before frontend UI work, read:
 
 - `docs/ui/DARK_NEBULA_PRODUCT_UI_DIRECTION.md`
+- `docs/architecture/CLIENT_DOMAIN_OPERATING_MODEL.md` (approved domain/client model)
 
 ## Approved UI direction
 
@@ -150,6 +151,8 @@ Documentation-only commits may be made separately when explicitly requested.
 
 Every agent must report:
 
+**GATE: KEEP/FIX/REVERT/STOP | agent: yes/no | budget: low/medium/high | mistakes: <count>**
+
 1. Branch name
 2. Files changed
 3. Commits created
@@ -158,6 +161,14 @@ Every agent must report:
 6. Known blockers
 7. Remaining polish items
 8. Confirmation that backend/API/auth/schema/VPS/deploy were not touched
+
+## Gate and approval flow
+
+- One scoped task only. No second block without explicit approval.
+- No commit unless user approves commit after validation/proof.
+- No push unless user separately approves push after commit.
+- Commit and push require separate, explicit approvals.
+- No deploy/merge/VPS/prod/Caddy/container work unless explicitly approved.
 
 ## Stop conditions
 
@@ -182,3 +193,130 @@ Follow both documents strictly.
 ```
 
 This keeps approved UI direction and production safety rules stored at repository level, not only in chat memory.
+
+## DCA OS Lite AI Delivery / Cost-Control Rules
+
+- New modules start with read-only inspection.
+- Codex must work one block/layer at a time.
+- Prompts must include GATE with mode, scope, max commands, max file reads, allowed files, forbidden files, validation rule, commit rule, deploy rule, and stop condition.
+- No broad schema + API + UI prompts.
+- No generated mass rewrite scripts.
+- No deployment or commits without explicit user approval.
+- For AI Delivery Build Block 1, implementation order is docs guardrails, schema/migration only, backend only, frontend only.
+- Use term “monthly content plan,” not “package.”
+- Client archive is read-only.
+- No public approval links in MVP.
+
+---
+
+## Copilot CLI / Cloud Agent Workflow
+
+### Repo
+
+- Path: `C:\dcaosv1`
+- Active branch convention: `feature/*`
+- OS: Windows - PowerShell only
+
+### Stack
+
+| Layer | Technology |
+|---|---|
+| `apps/web` | React + Vite + TypeScript |
+| `apps/api` | Node.js + Express |
+| `packages/data` | Prisma + PostgreSQL |
+| `packages/shared` | Shared TypeScript |
+
+### Local start commands
+
+```powershell
+# API
+cd C:\dcaosv1
+npm.cmd run dev:api   # http://localhost:4000
+
+# Web
+cd C:\dcaosv1
+npm.cmd run dev:web   # http://localhost:5173
+```
+
+### Validation commands
+
+```powershell
+cd C:\dcaosv1
+git diff --check
+npm.cmd run validate
+```
+
+### Smoke commands
+
+```powershell
+npm.cmd run smoke:ai-delivery-reviews
+npm.cmd run smoke:local
+npm.cmd run smoke:browser
+```
+
+### Role boundaries
+
+| Role | Responsibility |
+|---|---|
+| ChatGPT | Planner, scope controller, reviewer, decision gate |
+| Copilot CLI / cloud agent | Executor - implements approved block only |
+| Human | Approves commit and push |
+
+### Safety rules
+
+- No commit, push, or deploy without explicit human approval.
+- No app source changes unless explicitly scoped.
+- No schema / migration changes unless explicitly approved.
+- No package installs unless explicitly scoped.
+- No secrets or credentials in any output or file.
+- Stop on validation failure. Do not run smoke after a failed validate.
+
+### Local navigation and secret safety
+
+Full local navigation and service startup rules are in `.github/copilot-instructions.md` under "Local navigation and services".
+Validation and service startup rules are in `.github/instructions/validation.instructions.md` under "Service startup rules".
+
+Key points:
+- Work from `C:\dcaosv1` only. Do not wander outside the repo.
+- Use the repo map in `.github/copilot-instructions.md` before any search.
+- Do not start API or web unless smoke or browser proof requires it.
+- Secrets must never be searched, printed, persisted, or committed.
+- Stop and ask the human if a secret or credential is needed.
+
+### Safe Copilot CLI launch
+
+- Safe Copilot CLI launch modes are documented in `docs/ai-delivery/copilot-cli-permissions.md`.
+- Human still controls commit, push, and deploy under all launch modes.
+- Do not use --allow-all or --yolo as the default.
+
+### Local admin credentials
+
+- Local admin email is `admin@dca.local`.
+- Local admin password must come from `$env:AUTH_SEED_TEST_PASSWORD` only; never from repo files.
+- If the env var is missing, stop and ask the human to set it locally. Do not print its value.
+
+### Final report format
+
+Every block must end with:
+
+1. Files changed
+2. Exact behavior / scaffolding added
+3. Backend / schema / provider / runtime changes - yes/no; describe if yes
+4. Validation results
+5. Smoke results or skipped tests and why
+6. Risk notes
+7. Git status
+8. Confirm no commit / push / deploy
+
+### Agent instruction files
+
+| File | Purpose |
+|---|---|
+| `.github/copilot-instructions.md` | Repo-wide Copilot instructions |
+| `.github/instructions/dca-mode.instructions.md` | Working rules and decision model |
+| `.github/instructions/validation.instructions.md` | Validation order and commands |
+| `.github/instructions/ai-delivery.instructions.md` | AI Delivery module rules |
+| `.github/agents/dca-planner.agent.md` | Planning / discovery agent |
+| `.github/agents/dca-implementation.agent.md` | Implementation agent |
+| `.github/agents/dca-reviewer.agent.md` | Review agent |
+| `docs/ai-delivery/copilot-operating-model.md` | Operating model overview |

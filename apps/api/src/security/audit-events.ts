@@ -7,7 +7,10 @@ export const AUDIT_EVENTS = {
   authLogout: "auth.logout",
   authSessionChecked: "auth.session.checked",
   authTenantSelected: "auth.tenant.selected",
-  authPermissionDenied: "auth.permission.denied"
+  authPermissionDenied: "auth.permission.denied",
+  tenantSettingsUpdated: "tenant.settings.updated",
+  moduleEnabled: "module.enabled",
+  moduleDisabled: "module.disabled"
 } as const;
 
 export type AuditEventName = (typeof AUDIT_EVENTS)[keyof typeof AUDIT_EVENTS];

@@ -1,30 +1,36 @@
-# DCA OS v1 Project Context
+# DCA OS Lite Project Context
 
 ## Repository
 
 - GitHub: `https://github.com/dca-glitch/dcaosv1`
 - Local reference path: `C:\dcaosv1`
-- Future URL: `system.digitalcubeagency.net`
+- Production URL: `system.digitalcubeagency.net`
 
 ## Product Definition
 
-DCA OS v1 is the reusable SaaS operating system foundation for Digital Cube Agency. It is intended to become the shared platform layer for future DCA tools, dashboards, client portals, automations, AI workflows, finance modules, SEO modules, reports, and business operations.
+DCA OS Lite is the reusable SaaS operating system foundation for Digital Cube Agency. It is the shared platform layer for DCA tools, dashboards, admin/operator workflows, finance modules, SEO/content operations, AI Delivery records, reports, and business operations.
+
+**Approved operating model (2026-06-27):** each internet domain is one `Client` record; publication and analytics hang off Client; Digital Cube Agency LLC operates agency clients; own domains belong to independent companies that will use licensed tenant instances for Finance. **MVP 1:** Puriva client delivery — Client Portal MVP required now. See [`docs/architecture/CLIENT_DOMAIN_OPERATING_MODEL.md`](./architecture/CLIENT_DOMAIN_OPERATING_MODEL.md).
+
+Current state note: AI Delivery admin workflows are operator-primary. Client Access Admin UI foundation exists; Client Portal MVP is required for Puriva (client-safe visibility only). Implementation follows Puriva MVP delivery path and approved blocks 1–6 in [`docs/ROADMAP.md`](./ROADMAP.md).
 
 ## Current Role Split
 
-- ChatGPT: architect, reviewer, implementation gatekeeper, cloud-side safe repo writer.
-- Codex/cloud agent: execution layer for terminal-dependent tasks such as install, validation, builds, tests, migrations, and deployment.
-- Human owner: approval gate for risky actions and local/cloud task запуск.
+- ChatGPT: scope controller, reviewer, task writer, and implementation gatekeeper.
+- Codex/Copilot/local tooling: execution layer for sealed terminal-dependent tasks such as validation, builds, tests, and approved migrations.
+- Human owner: approval gate for risky actions and local/cloud task execution.
 
 ## Core Safety Rules
 
 Do not perform these actions unless explicitly approved for the current block:
 
-- no database migrations
+- no unapproved database migrations
 - no `db push`
 - no seed execution
 - no production secrets
 - no deployment
+- no VPS/production access
+- no commit or push
 - no destructive refactors
 - no broad package upgrades
 - no `npm audit fix --force`
@@ -40,7 +46,7 @@ Do not perform these actions unless explicitly approved for the current block:
 - npm workspaces
 - GitHub Actions CI
 - Tailwind/shadcn later only if approved
-- VPS deployment later
+- VPS/deployment only when explicitly approved; production is frozen by default
 
 ## Workspace Structure
 
@@ -55,6 +61,8 @@ packages/
 ```
 
 ## Implemented Blocks
+
+This section preserves early historical foundation blocks. The current local state has progressed beyond the initial skeleton and now includes local auth/session/tenant/module foundations, AI Delivery admin/operator foundations, and Email Notifications EN1.
 
 ### Blocks 1-10 — Foundation
 
@@ -112,29 +120,31 @@ ce8db8f Add CI validation workflow
 
 ## Current Known Risks
 
-- `npm audit` previously reported 2 vulnerabilities: 1 moderate, 1 high.
-- Do not run automatic force fixes.
-- Audit should be handled through a targeted review block.
-- GitHub Actions result should be checked after CI workflow commits.
+- Production is frozen unless explicitly approved.
+- Client Portal MVP is required for Puriva delivery; advanced client actions (comments, magic links) remain phased.
+- Email Notifications EN1 has provider defaults and Resend domain verification, but no API key and no real sending.
+- EN2 event wiring remains paused until modules are stable.
+- No AI calls, crawling, WordPress publish, GA/GSC, Resend sending, or production deployment has been added beyond approved foundations; Client Portal MVP delivery for Puriva is in scope per architecture doc.
 
-## Next Recommended Blocks
+## Current Completed AI Delivery / Email Foundation State
 
-1. CI result review and repair if needed.
-2. Targeted npm audit review.
-3. Local Docker/PostgreSQL planning.
-4. Prisma Client strategy.
-5. Database access layer.
-6. Auth planning.
-7. Auth implementation.
-8. Tenant context foundation.
-9. Users module MVP.
+- AI Delivery project/brief foundation.
+- Workflow run foundation.
+- Deliverables foundation.
+- Deliverable review data foundation.
+- Deliverable review admin API.
+- Deliverable review admin UI.
+- Local deliverable review smoke script.
+- Deliverable export/download admin actions.
+- Operator summary, AI SEO foundation UI, and AI Content Production foundation UI.
+- Email notification backend foundation EN1 only.
 
 ## Development Discipline
 
 Use controlled block workflow:
 
 ```text
-inspect -> report -> approve -> implement -> validate -> commit -> push
+inspect -> report -> approve -> implement -> validate -> review -> commit/push/deploy only if explicitly approved
 ```
 
-For safe documentation/config-only work, ChatGPT may commit directly through GitHub. For terminal-dependent tasks, use Codex/cloud or local PowerShell and paste validation output back for review.
+Use Windows PowerShell commands locally. Do not edit GitHub cloud directly, commit, push, deploy, or touch VPS/production unless explicitly approved after review.

@@ -230,7 +230,7 @@ export async function uploadR2Object(input: UploadObjectInput): Promise<UploadOb
 
   return {
     storageKey,
-    publicUrl: config.publicBaseUrl ? `${config.publicBaseUrl}/${storageKey}` : null
+    publicUrl: null
   };
 }
 

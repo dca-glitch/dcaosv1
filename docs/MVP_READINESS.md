@@ -28,6 +28,9 @@
 | `GET /api/v1/modules/current` | Yes | Yes | No | Current tenant module enablement. |
 | `POST /api/v1/modules/current/:moduleKey/enable` | Yes | Yes | `modules:manage` | Owner/admin module enable action. |
 | `POST /api/v1/modules/current/:moduleKey/disable` | Yes | Yes | `modules:manage` | Owner/admin module disable action. |
+| `GET /api/v1/clients/:id/users` | Yes | Yes | `owner` or `admin` role | Lists active client-level access mappings for a tenant-scoped client. |
+| `POST /api/v1/clients/:id/users` | Yes | Yes | `owner` or `admin` role | Grants an active tenant user client-level Client Portal access. |
+| `POST /api/v1/clients/:id/users/:userId/archive` | Yes | Yes | `owner` or `admin` role | Revokes client-level Client Portal access by archiving the mapping. |
 
 ## Frontend Pages
 
@@ -65,6 +68,20 @@ The local smoke command intentionally refuses non-local API hosts. Add a separat
 - `npm.cmd run -w @dca-os-v1/web build` creates the frontend build output.
 - `npm.cmd run -w @dca-os-v1/api build` currently type-checks the API; it does not emit production JavaScript.
 - `npm.cmd run -w @dca-os-v1/api dev` starts the API through `tsx` and is suitable for local validation only.
+- API security headers/CSP baseline and in-memory MVP rate limiting are now present.
+- Market Intelligence auth token reads now use sessionStorage consistently.
+- Market Intelligence admin MVP closure is documented in `docs/ai-market-intelligence/admin-foundation.md`.
+- Monthly Report Phase 1 schema-free monthly summary API is documented in `docs/ai-delivery-api-contract.md` and smoke-validated with `npm.cmd run smoke:monthly-report:local`.
+- Monthly Report Phase 2 persisted `AiDeliveryMonthlyReport` model and admin CRUD API are implemented, migration applied, and smoke-validated (58 PASS with document handoff coverage). Monthly metrics are now closed as an admin-only snapshot-first foundation plus admin UI; live Google OAuth/provider sync, CSV upload, and client portal metrics exposure remain deferred.
+- Monthly Report Admin UI is implemented and browser-proven with `npm.cmd run smoke:monthly-report:browser`.
+- Client Portal monthly reports are implemented and browser-proven with `npm.cmd run smoke:client-portal-monthly-report:browser`.
+- Client Access Admin UI foundation is closed for MVP at client-level scope and smoke-proven with `npm.cmd run smoke:client-access:local`. Client Portal MVP is required for Puriva (active agreement); portal remains restricted to client-safe final data. Public magic links and full client comment/action threads remain phased after MVP visibility scope.
+- The first-client onboarding runbook is available in `docs/ai-delivery/client-onboarding-runbook.md` for controlled local/admin MVP work.
+- Data-dense admin UI phase 1/2 is locally validated and documented in `docs/ui/admin-data-dense-ui.md`; completed coverage includes AI Delivery, Clients, Invoices, Projects, Tasks, Services Library, Bills/Vendors, and Credit Notes using compact rows, dimmed routine buttons, small status chips, and calmer row action menus.
+- Monthly Report document handoff is implemented and local-smoke-proven with `npm.cmd run smoke:monthly-report:local`.
+- Backup/restore and staging migration runbooks are documented.
+- Finance smoke proves tenantId spoof handling locally and skips full cross-tenant proof without a real second tenant.
+- AI Delivery readiness closure and smoke index are documented in `docs/ai-delivery/client-delivery-readiness.md`.
 - A production start strategy is still required before VPS deployment.
 - Same-origin reverse proxy routing is preferred so the frontend can use `/api/v1`.
 - No CORS environment contract is implemented yet.
@@ -78,8 +95,10 @@ The local smoke command intentionally refuses non-local API hosts. Add a separat
 - Password reset.
 - Billing.
 - Marketplace.
-- Finance Lite migration.
+- Legacy finance migration.
 - VPS deployment.
 - Production database use.
 - Role editing UI.
 - Destructive user or tenant actions.
+- Project-specific client access grants; the current `ClientUserAccess` model is tenant/client/user scoped only.
+- Client approvals, comments, request-changes actions, and public approval links.

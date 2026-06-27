@@ -1,0 +1,227 @@
+# DCA OS Lite - Copilot Operating Model
+
+## Overview
+
+This document describes how AI coding agents are used in DCA OS Lite. It covers the two primary loops, role boundaries, cost controls, and human gate points.
+
+---
+
+## Level 2 - Repository memory
+
+Repository memory is stored in:
+
+- `AGENTS.md` - project overview, stack, commands, role boundaries, safety rules
+- `.github/copilot-instructions.md` - repo-wide Copilot instructions (auto-loaded by Copilot CLI and GitHub Copilot)
+- `.github/instructions/*.instructions.md` - scoped instruction files for modes and modules
+- `.github/agents/*.agent.md` - custom agent instruction files
+
+These files are loaded automatically by Copilot CLI and GitHub Copilot cloud agents. They reduce repeated human instructions.
+
+---
+
+## Level 3 - Issue -> agent -> branch/PR factory
+
+The intended loop for structured delivery:
+
+```
+GitHub Issue (ai-block.yml form)
+  -> ChatGPT reviews and approves scope
+    -> Copilot CLI or cloud agent executes block
+      -> Agent produces branch + diff + final report
+        -> Human reviews diff and final report
+          -> Human commits and pushes
+            -> PR opened against target branch
+              -> ChatGPT or human reviews PR
+                -> KEEP / FIX / REVERT / STOP decision
+                  -> Human merges
+```
+
+---
+
+## Local Copilot CLI loop
+
+Use for: quick focused blocks, short diffs, single-module work.
+
+```
+1. ChatGPT produces scoped block prompt
+2. Human pastes prompt into Copilot CLI
+3. Agent executes on C:\dcaosv1 (Windows PowerShell)
+4. Agent runs: git diff --check -> npm.cmd run validate -> smoke (if required)
+5. Agent produces final report
+6. Human reviews diff and report
+7. Human runs: git add -> git commit -> git push (separately, with approval)
+```
+
+---
+
+## GitHub issue/PR loop (cloud agent)
+
+Use for: larger blocks, multi-file work, async execution.
+
+```
+1. Human opens GitHub Issue using ai-block.yml form
+2. ChatGPT reviews scope and approves
+3. Human assigns issue to Copilot cloud agent (or triggers manually)
+4. Cloud agent creates branch, implements block, opens PR
+5. PR template auto-fills: files changed, validation, smoke, risk notes
+6. ChatGPT or human reviews PR
+7. Human merges with explicit approval
+```
+
+---
+
+## When to use local CLI vs cloud agent
+
+| Scenario | Use |
+|---|---|
+| Short focused block, 1-5 files | Local Copilot CLI |
+| Scaffolding / docs only | Local Copilot CLI |
+| Complex multi-file implementation | Cloud agent |
+| Async / background execution needed | Cloud agent |
+| Requires full repo context at scale | Cloud agent |
+
+---
+
+## Cost control rules
+
+- No autonomous AI agents that incur LLM cost run without explicit per-block approval.
+- Admin controls all AI workflow runs in the AI Delivery module.
+- No background polling, scheduled agents, or auto-triggered generation pipelines unless explicitly scoped.
+- Cost guardrails and input guardrails in `AI_WORKFLOW_RESULT_V1` are preserved unless explicitly changed.
+
+---
+
+## Human gate points
+
+Every task must follow the DCA gate format in project reports:
+
+**GATE: KEEP/FIX/REVERT/STOP | agent: yes/no | budget: low/medium/high | mistakes: <count>**
+
+| Gate | Required |
+|---|---|
+| Block scope approval | ChatGPT reviews and approves before execution |
+| Validation pass | Agent must pass validate before smoke |
+| Diff review | Human reviews before commit |
+| Commit | Human runs `git commit` explicitly |
+| Push | Human runs `git push` explicitly - separate approval |
+| Merge | Human merges PR explicitly |
+| Deploy | Human deploys explicitly - never triggered by agent |
+
+### Critical validation discipline
+
+- Run `npm.cmd run validate` before any smoke.
+- **Stop immediately on validation failure.** Do not run smoke after failed validation.
+- If backend/API proof passes but UI fails, compare browser payload/form state against backend contract. Do not repeat login/session guessing.
+
+---
+
+## Copilot Max operating rules
+
+### Model and execution defaults
+
+- Local Copilot CLI is the default for small focused blocks (1-5 files, docs, UI polish).
+- Cloud agent is for async issue-to-PR work only, after scope is fully defined in an ai-block.yml issue.
+- **Default to cheapest suitable model (Claude Haiku 4.5)** for docs/simple fixes.
+- Escalate to a stronger model (Gemini Pro or Sonnet) only for:
+  - Schema/migration work
+  - Auth/RBAC/security changes
+  - Provider/external integrations
+  - Secrets/credentials design
+  - Complex API/runtime/UI blocks
+  - Failed validation/smoke repair
+  - Contradictory findings
+- If a stronger model is used, the final report must state the reason.
+- **Important:** Copilot may not auto-switch models from prompt text. The agent must clearly state recommended model before starting demanding tasks.
+
+### Loop control
+
+- If an edit/search repeats or the agent is not progressing, **stop and return status.**
+- **Do not keep listing directories or rerunning the same search.**
+- If a tool reports multiple matches, inspect a narrower range or ask for targeted context; **do not loop.**
+- If the same file is being edited repeatedly without progress, stop and report the issue.
+
+### Parallelism and autonomy limits
+
+- Do not run multiple agents on overlapping files.
+- Do not let a cloud agent start without a completed ai-block.yml issue scope.
+- Do not start a long autonomous session without explicit human approval.
+- Do not use parallel, fleet, or multi-agent execution unless it is explicitly listed in the block scope.
+
+### Human gate points (required for every block)
+
+1. Scope approval - ChatGPT or human approves before execution starts
+2. Validation proof - agent must show validate passed before smoke
+3. Diff review - human reviews all changed files before commit
+4. Commit approval - human runs git commit explicitly
+5. Push approval - human runs git push separately and explicitly
+6. Deploy approval - human deploys explicitly; agents never trigger deploy
+
+### Cost minimization practices
+
+- Write short prompts. Rely on repo memory files instead of repeating context in each prompt.
+- Scope allowed files exactly. Avoid open-ended "change what you need" instructions.
+- Keep diffs small. One block per session.
+- Run focused smokes only (smoke:ai-delivery-reviews before smoke:local or smoke:browser).
+- Avoid unnecessary browser/screenshot work unless UI changed.
+- Avoid broad repo search when exact file paths are already known.
+- Do not start exploratory sessions without a clear allowed-files list.
+
+---
+
+## Safe local permissions
+
+Copilot CLI should be launched with safe permission flags, not --allow-all or --yolo.
+
+The recommended launch modes are documented in:
+
+- `docs/ai-delivery/copilot-cli-permissions.md`
+
+Key points:
+- Default is local safe permissions (write + limited git + blocked commit/push/deploy).
+- Commit, push, and deploy remain human-only actions under all launch modes.
+- Do not create a permanent alias that always applies --allow-all.
+
+---
+
+## Local execution discipline
+
+- Work from `C:\dcaosv1` only. Do not navigate outside the repo.
+- Use the repo map in `.github/copilot-instructions.md` before searching.
+- Start API or web only when validation, smoke, or browser proof requires it.
+- Do not inspect `.env` files or search for secrets or credentials.
+- If a secret is needed, stop and ask the human to provide it as a temporary process environment variable.
+- Use temporary env vars only when the human explicitly provides them in the session.
+- No production, VPS, deploy, or remote server actions without explicit human scope and approval.
+- Local auth flows use `admin@dca.local` as the admin email and `$env:AUTH_SEED_TEST_PASSWORD` as the password source.
+- The password must remain local and must never be committed, printed, or written into any repo file or doc.
+
+### PowerShell and log discipline
+
+- Use Windows PowerShell only. No bash, no Unix paths.
+- Any command output intended for user review **must** write to `$env:TEMP` log and open Notepad automatically.
+- **Do not add `Read-Host` pauses** unless explicitly requested.
+- **Do not use `exit`** in PowerShell snippets.
+- **Do not close the user's PowerShell window.**
+
+### File editing discipline
+
+- Avoid UTF-8 BOM on all source files.
+- **Do not use `Set-Content -Encoding utf8`** on source/schema/config files.
+- Use no-BOM writes: `[System.IO.File]::WriteAllText($path, $text, [System.Text.UTF8Encoding]::new($false))`
+- For text replacements, use fail-hard Node script or exact targeted edit.
+- **Do not loop fragile PowerShell replacements.**
+
+---
+
+## Deferred - not yet enabled
+
+The following are planned but not yet implemented:
+
+- GitHub Actions CI pipeline
+- Pre-commit or pre-push hooks
+- Automated PR assignment to cloud agent
+- Third-party agent router
+- Automated deployment from CI
+- Slack or notification automation
+
+These will be added in future blocks when explicitly scoped and approved.

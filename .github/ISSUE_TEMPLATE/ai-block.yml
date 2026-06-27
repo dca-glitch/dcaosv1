@@ -1,0 +1,182 @@
+name: AI Coding Block
+description: Issue form for scoping an AI coding block (Copilot CLI or cloud agent execution).
+title: "[AI Block] "
+labels: ["ai-block"]
+body:
+  - type: input
+    id: block-name
+    attributes:
+      label: Block name
+      placeholder: "e.g. AI Delivery - Content Draft Backend"
+    validations:
+      required: true
+
+  - type: input
+    id: area-module
+    attributes:
+      label: Area / module
+      placeholder: "e.g. apps/api - AI Delivery"
+    validations:
+      required: true
+
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal
+      description: What must be implemented or changed by this block?
+    validations:
+      required: true
+
+  - type: textarea
+    id: why-now
+    attributes:
+      label: Why now
+      description: Why is this block needed at this point in the project?
+    validations:
+      required: true
+
+  - type: textarea
+    id: allowed-files
+    attributes:
+      label: Allowed files
+      description: Exact list of files or directories the executor is allowed to touch.
+    validations:
+      required: true
+
+  - type: textarea
+    id: forbidden-areas
+    attributes:
+      label: Forbidden files / areas
+      description: Files, directories, or systems the executor must not touch.
+    validations:
+      required: true
+
+  - type: textarea
+    id: non-goals
+    attributes:
+      label: Explicit non-goals
+      description: Features or changes that are out of scope for this block.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: validation-required
+    attributes:
+      label: Validation required
+      options:
+        - "Yes - npm.cmd run validate"
+        - "No - scaffolding/docs only (git diff --check + git status only)"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: smoke-required
+    attributes:
+      label: Smoke required
+      options:
+        - "Yes - smoke:ai-delivery-reviews"
+        - "Yes - smoke:local"
+        - "Yes - smoke:browser"
+        - "No - validate only"
+        - "No - scaffolding/docs only"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: risk-level
+    attributes:
+      label: Risk level
+      options:
+        - Low - docs / scaffolding only
+        - Medium - backend or schema changes
+        - High - auth, payments, AI cost, or multi-module
+    validations:
+      required: true
+
+  - type: dropdown
+    id: budget-class
+    attributes:
+      label: Budget class
+      options:
+        - "Low - docs / scaffolding / single-file"
+        - "Medium - backend, schema, or multi-file"
+        - "High - auth, payments, AI cost guardrails, cross-module"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: execution-mode
+    attributes:
+      label: Execution mode
+      options:
+        - Local Copilot CLI
+        - GitHub cloud agent
+        - Planner / discovery only
+        - Reviewer only
+    validations:
+      required: true
+
+  - type: dropdown
+    id: model-policy
+    attributes:
+      label: Model policy
+      options:
+        - "Auto / default"
+        - "Strong model approved - reason required in final report"
+        - "Cloud agent approved"
+    validations:
+      required: true
+
+  - type: input
+    id: max-files
+    attributes:
+      label: Max files allowed
+      placeholder: "e.g. 5"
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: safety-checklist
+    attributes:
+      label: Safety checklist
+      options:
+        - label: No commit without explicit human approval
+          required: true
+        - label: No push without separate explicit human approval
+          required: true
+        - label: No deploy / VPS changes
+          required: true
+        - label: No secrets or credentials in output
+          required: true
+        - label: Stop on validation failure - do not run smoke
+          required: true
+        - label: Avoid broad repo search unless exact files are unknown
+          required: true
+        - label: Stop before parallel / fleet / multi-agent execution unless scoped
+          required: true
+        - label: No long autonomous session without explicit human approval
+          required: true
+        - label: If stronger model is used, reason must appear in final report
+          required: true
+
+  - type: checkboxes
+    id: final-report-checklist
+    attributes:
+      label: Final report checklist (executor must complete)
+      options:
+        - label: Files changed listed
+          required: false
+        - label: Behavior / scaffolding added described
+          required: false
+        - label: Backend / schema / runtime changes declared (yes/no)
+          required: false
+        - label: Validation results included
+          required: false
+        - label: Smoke results or skip reason included
+          required: false
+        - label: Risk notes included
+          required: false
+        - label: Git status included
+          required: false
+        - label: No commit / push / deploy confirmed
+          required: false

@@ -1,18 +1,36 @@
 import { Router } from "express";
-import type { HealthResponse } from "@dca-os-v1/shared";
-import { success } from "../utils/responses";
+import { failure, success } from "../utils/responses";
+import { probeDbReadiness, type DbReadinessResult } from "../health/db-readiness";
+
+type ApiHealthResponse = {
+  service: "dca-os-v1-api";
+  status: "ok";
+  version: string;
+  database: DbReadinessResult;
+};
 
 export function createHealthRouter() {
   const router = Router();
 
-  router.get("/", (_req, res) => {
-    const health: HealthResponse = {
-      service: "dca-os-v1-api",
-      status: "ok",
-      version: "0.1.0"
-    };
+  router.get("/", async (_req, res, next) => {
+    try {
+      const database = await probeDbReadiness();
+      if (database.status !== "ready") {
+        res.status(503).json(failure("DATABASE_UNAVAILABLE", database.message, { database }));
+        return;
+      }
 
-    res.json(success(health));
+      const health: ApiHealthResponse = {
+        service: "dca-os-v1-api",
+        status: "ok",
+        version: "0.1.0",
+        database
+      };
+
+      res.json(success(health));
+    } catch (error) {
+      next(error);
+    }
   });
 
   return router;

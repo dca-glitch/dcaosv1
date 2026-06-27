@@ -1,8 +1,70 @@
-# DCA OS v1 Roadmap
+# DCA OS Roadmap
+
+## MVP 1 — Puriva Client Delivery (2026-06-27)
+
+**Status:** Owner-approved current priority. Full spec: [`docs/architecture/CLIENT_DOMAIN_OPERATING_MODEL.md`](./architecture/CLIENT_DOMAIN_OPERATING_MODEL.md).
+
+**Active client:** `puriva.id` (agency client under DCA LLC tenant).
+
+**Production system:** `system.digitalcubeagency.net` — final DCA OS login and application location.
+
+Implementation priority (delivery path first):
+
+1. Client Access Admin UI
+2. Client Portal MVP (required — not deferred; Puriva agreement active)
+3. Market Intelligence client-safe summary
+4. AI SEO delivery flow
+5. Google Docs deliverables
+6. Website publishing workflow
+7. Product catalog + inquiry for Puriva (inquiry only — no cart/checkout)
+8. Monthly report final client view
+9. Architecture blocks 1–6 (below)
+10. Future domain modules — explicit scope only
+
+**Puriva MVP excludes:** `shop.puriva.id` ecommerce, Spa Finance, full Revenue Hub, full Commerce Core.
+
+---
+
+## Approved Architecture Roadmap (2026-06-26)
+
+**Status:** Owner-approved. Documentation: [`docs/architecture/CLIENT_DOMAIN_OPERATING_MODEL.md`](./architecture/CLIENT_DOMAIN_OPERATING_MODEL.md).
+
+Implementation order (each block: inspect → implement → validate → owner approval → commit):
+
+| Block | Name | Layer order | Notes |
+|-------|------|-------------|-------|
+| **1** | Client foundation + `clientKind` | schema (approved) → backend → frontend | `AGENCY_CLIENT` / `OWN_DOMAIN`, `legalEntityName`, Client Hub shell |
+| **2** | PublicationTarget (public) | schema → backend → frontend | Multiple WordPress targets per Client; deprecate tenant WP config |
+| **3** | MI → `clientId` | schema → backend → frontend | Required FK; handoff validation |
+| **4** | Encrypted credentials | design → schema → backend | Per PublicationTarget; security review gate |
+| **5** | Real WordPress publish + PublicationLog | backend → frontend | After block 4 |
+| **6** | Module middleware | backend | `requireTenantModule`; dry-run → enforce |
+
+**Future block:** Licensee tenant migration (`OWN_DOMAIN` → independent company tenant + Finance).
+
+**Not in these blocks:** Revenue Hub, Commerce Core, production deploy, live GA/GSC sync.
+
+---
 
 ## Current Status
 
 DCA OS v1 has a clean reusable foundation, dependency lockfile, real validation, CI, dependency monitoring, and project context documentation.
+
+### Current Snapshot (after foundation hardening)
+
+- **Finance foundation**: Active (Invoices, Bills, CreditNotes, InvoiceItems implemented)
+- **AI Delivery admin foundation**: Active/local/admin-only (Project, Brief, Workflow, Deliverable, Review — bounded deterministic workflow, no live provider execution)
+- **Market Intelligence admin foundation**: Closed/validated local/admin-only (Research, Insight — bounded analysis, tenant/project-isolated, smoke validated)
+- **Feature branch CI validation**: Active (pushes to feature/* branches now validate; feature-branch feedback immediate)
+- **GitHub Actions runtime**: Updated to latest versions; Node 20 deprecation warnings removed
+- **API security headers + rate limiting**: Active (headers/CSP baseline and in-memory MVP rate limiting are in place)
+- **Frontend auth token storage**: Aligned to sessionStorage for Market Intelligence
+- **R2/private storage foundation**: Exists (docs/deployment planned; no implementation)
+- **Audit/Activity foundation**: Exists (schema, local smoke; admin logging incomplete)
+- **Backup/restore + staging migration runbooks**: Added
+- **Finance tenant isolation smoke**: Local spoof handling is proven; full cross-tenant proof still needs a real second tenant fixture
+- **Client Portal MVP**: Required now for Puriva client delivery (active agreement); client-safe visibility only — see MVP 1 section above
+- **Production deployment**: Remains frozen unless explicitly approved by owner
 
 ## Completed
 

@@ -1,6 +1,8 @@
 import type { Prisma } from "@prisma/client";
 import { createPrismaClient } from "../../../../packages/data/src/client";
 import type { AuthResolvedSessionContext, AuthTenantMembershipSummary } from "../auth/types";
+import { AUDIT_EVENTS } from "../security/audit-events";
+import { recordPlatformAuditEvent } from "../security/audit-log.service";
 import type {
   TenantCurrentResponse,
   TenantListResponse,
@@ -391,6 +393,21 @@ export async function updateCurrentTenantSettings(
       }
     });
 
+    await recordPlatformAuditEvent(
+      {
+        tenantId: updatedTenant.id,
+        actorUserId: authSession.user.id,
+        action: AUDIT_EVENTS.tenantSettingsUpdated,
+        entityType: "tenant",
+        entityId: updatedTenant.id,
+        metadata: {
+          previousName: currentTenant.tenant.name,
+          nextName: updatedTenant.name
+        }
+      },
+      tx
+    );
+
     return {
       tenant: {
         id: updatedTenant.id,
@@ -420,7 +437,8 @@ export async function switchCurrentTenantMembership(
         }
       },
       select: {
-        id: true
+        id: true,
+        tenantId: true
       }
     });
 
@@ -443,6 +461,27 @@ export async function switchCurrentTenantMembership(
     if (!currentTenant) {
       return null;
     }
+
+    const previousTenantId = authSession.tenantContext.activeMembership?.tenantId ?? null;
+    const selectedTenantId = membership.tenantId;
+
+    await recordPlatformAuditEvent(
+      {
+        tenantId: selectedTenantId,
+        actorUserId: authSession.user.id,
+        action: AUDIT_EVENTS.authTenantSelected,
+        entityType: "tenant_membership",
+        entityId: membership.id,
+        metadata: {
+          previousTenantId,
+          currentTenantId: currentTenant.tenant.id,
+          selectedTenantId,
+          sessionId: authSession.session.id,
+          tenantMembershipId: membership.id
+        }
+      },
+      tx
+    );
 
     return {
       user: {
