@@ -238,9 +238,9 @@ export function createCoreRouter() {
   router.post("/clients/:id/archive", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), archiveClientHandler);
   router.post("/clients/:id/restore", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), restoreClientHandler);
 
-  router.get("/projects", requireAuth, requireTenant, listProjectsHandler);
+  router.get("/projects", requireAuth, requireTenant, tenantModuleGuard, listProjectsHandler);
   router.post("/projects", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), createProjectHandler);
-  router.get("/projects/:id", requireAuth, requireTenant, getProjectHandler);
+  router.get("/projects/:id", requireAuth, requireTenant, tenantModuleGuard, getProjectHandler);
   router.put("/projects/:id", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), updateProjectHandler);
   router.post("/projects/:id/archive", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), archiveProjectHandler);
   router.post("/projects/:id/restore", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), restoreProjectHandler);

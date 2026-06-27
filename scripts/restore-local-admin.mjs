@@ -210,6 +210,63 @@ try {
     });
   }
 
+  const localModuleDefinitions = [
+    { key: "core", name: "Core", description: "Platform core module registry entry.", status: "ACTIVE" },
+    { key: "ai-delivery", name: "AI Delivery", description: "AI Delivery operational module.", status: "ACTIVE" },
+    {
+      key: "market-intelligence",
+      name: "Market Intelligence",
+      description: "Market Intelligence research module.",
+      status: "ACTIVE"
+    },
+    {
+      key: "finance-lite",
+      name: "Finance Lite",
+      description: "Placeholder finance module registry entry.",
+      status: "PLANNED"
+    },
+    {
+      key: "user-settings",
+      name: "User Settings",
+      description: "User settings module registry entry.",
+      status: "ACTIVE"
+    }
+  ];
+
+  for (const moduleDefinition of localModuleDefinitions) {
+    const persistedModule = await prisma.moduleDefinition.upsert({
+      where: { key: moduleDefinition.key },
+      update: {
+        name: moduleDefinition.name,
+        description: moduleDefinition.description,
+        status: moduleDefinition.status
+      },
+      create: {
+        key: moduleDefinition.key,
+        name: moduleDefinition.name,
+        description: moduleDefinition.description,
+        status: moduleDefinition.status
+      }
+    });
+
+    await prisma.tenantModule.upsert({
+      where: {
+        tenantId_moduleDefinitionId: {
+          tenantId: tenant.id,
+          moduleDefinitionId: persistedModule.id
+        }
+      },
+      update: {
+        status: "ACTIVE"
+      },
+      create: {
+        tenantId: tenant.id,
+        moduleDefinitionId: persistedModule.id,
+        status: "ACTIVE"
+      }
+    });
+  }
+
   const savedUser = await prisma.user.findUnique({ where: { id: user.id } });
   if (!savedUser?.passwordHash || !verifyPassword(password, savedUser.passwordHash)) {
     throw new Error("Local admin was written but password verification failed.");

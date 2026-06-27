@@ -3,7 +3,11 @@
  * Enforcement mode is controlled by TENANT_MODULE_ENFORCEMENT env (off | dry_run | enforce).
  */
 export const TENANT_MODULE_ROUTE_MAP: Array<{ prefix: string; moduleKey: string }> = [
+  { prefix: "/company-profile", moduleKey: "core" },
+  { prefix: "/activity", moduleKey: "core" },
   { prefix: "/clients", moduleKey: "core" },
+  { prefix: "/projects", moduleKey: "core" },
+  { prefix: "/tenant/wordpress-config", moduleKey: "ai-delivery" },
   { prefix: "/ai-delivery", moduleKey: "ai-delivery" },
   { prefix: "/ai-delivery-projects", moduleKey: "ai-delivery" },
   { prefix: "/market-intelligence-projects", moduleKey: "market-intelligence" },

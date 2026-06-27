@@ -78,11 +78,25 @@ const dcaModuleDefinitions = [
     tenantStatus: "ACTIVE"
   },
   {
+    key: "ai-delivery",
+    name: "AI Delivery",
+    description: "AI Delivery operational module.",
+    status: "ACTIVE",
+    tenantStatus: "ACTIVE"
+  },
+  {
+    key: "market-intelligence",
+    name: "Market Intelligence",
+    description: "Market Intelligence research module.",
+    status: "ACTIVE",
+    tenantStatus: "ACTIVE"
+  },
+  {
     key: "finance-lite",
     name: "Finance Lite",
     description: "Placeholder finance module registry entry.",
     status: "PLANNED",
-    tenantStatus: "PLANNED"
+    tenantStatus: "ACTIVE"
   },
   {
     key: "user-settings",
@@ -595,6 +609,26 @@ async function upsertDcaAdminMembership(prisma, tenantId, rolesByKey) {
   };
 }
 
+async function upsertTenantModuleEntitlements(prisma, tenantId) {
+  const modules = [];
+  const tenantModules = [];
+
+  for (const moduleDefinition of dcaModuleDefinitions) {
+    const module = await upsertDcaModuleDefinition(prisma, moduleDefinition);
+    modules.push(module);
+    tenantModules.push(
+      await upsertDcaTenantModule(
+        prisma,
+        tenantId,
+        module.module.id,
+        moduleDefinition.tenantStatus
+      )
+    );
+  }
+
+  return { modules, tenantModules };
+}
+
 async function upsertDcaFoundationBootstrap(prisma) {
   const tenant = await upsertDcaFoundationTenant(prisma);
   const roles = [];
@@ -619,18 +653,9 @@ async function upsertDcaFoundationBootstrap(prisma) {
     }
   }
 
-  for (const moduleDefinition of dcaModuleDefinitions) {
-    const module = await upsertDcaModuleDefinition(prisma, moduleDefinition);
-    modules.push(module);
-    tenantModules.push(
-      await upsertDcaTenantModule(
-        prisma,
-        tenant.tenant.id,
-        module.module.id,
-        moduleDefinition.tenantStatus
-      )
-    );
-  }
+  const entitlementSeed = await upsertTenantModuleEntitlements(prisma, tenant.tenant.id);
+  modules.push(...entitlementSeed.modules);
+  tenantModules.push(...entitlementSeed.tenantModules);
 
   const rolesByKey = new Map(roles.map((role) => [role.role.key, role.role]));
   const adminMembership = await upsertDcaAdminMembership(prisma, tenant.tenant.id, rolesByKey);
@@ -696,6 +721,7 @@ async function main() {
         membership.membership.id,
         role.role.id
       );
+      const localTenantModules = await upsertTenantModuleEntitlements(tx, tenant.tenant.id);
       const dcaFoundation = await upsertDcaFoundationBootstrap(tx);
 
       let testerFixture = null;
@@ -713,6 +739,7 @@ async function main() {
         membership,
         role,
         membershipRole,
+        localTenantModules,
         dcaFoundation,
         testerFixture
       };
@@ -748,6 +775,10 @@ async function main() {
           membershipRole: {
             status: result.membershipRole.status
           },
+          localTenantModules: result.localTenantModules.tenantModules.map((tenantModule, index) => ({
+            key: dcaModuleDefinitions[index]?.key ?? "unknown",
+            status: tenantModule.status
+          })),
           dcaFoundation: {
             tenant: {
               slug: dcaTenantSlug,
