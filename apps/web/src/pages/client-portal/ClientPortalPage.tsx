@@ -594,6 +594,29 @@ export function ClientPortalPage() {
   }, [loadProjects]);
 
   useEffect(() => {
+    const token = getStoredToken();
+    if (!token) {
+      return;
+    }
+
+    void (async () => {
+      const response = await apiRequest<{ user: { email: string; name?: string | null } }>("/auth/me", { token });
+      if (!response.ok) {
+        return;
+      }
+
+      const email = response.data.user.email?.trim() ?? "";
+      const name = response.data.user.name?.trim() ?? "";
+      if (email) {
+        setInquiryContactEmail((current) => current || email);
+      }
+      if (name) {
+        setInquiryContactName((current) => current || name);
+      }
+    })();
+  }, []);
+
+  useEffect(() => {
     if (!selectedProjectId) {
       return;
     }

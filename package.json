@@ -27,6 +27,7 @@
     "smoke:mvp:local": "node scripts/smoke-mvp-local.mjs",
     "smoke:mvp:staging": "node scripts/smoke-mvp-local.mjs --staging",
     "smoke:client-portal:local": "node scripts/smoke-client-portal-local.mjs",
+    "smoke:client-portal:browser": "node scripts/smoke-client-portal-browser-local.mjs",
     "smoke:client-access:local": "node scripts/smoke-client-access-local.mjs",
     "smoke:monthly-report:local": "node scripts/smoke-monthly-report-local.mjs",
     "smoke:monthly-report:browser": "node scripts/smoke-browser-monthly-report-admin-ui.mjs",

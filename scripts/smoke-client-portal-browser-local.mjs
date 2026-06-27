@@ -1,4 +1,5 @@
 import { chromium } from "@playwright/test";
+import { seedPurivaDeliverySummaryFixture } from "./lib/puriva-delivery-summary-fixture.mjs";
 
 const apiBaseUrl = (process.env.MVP_SMOKE_API_BASE_URL ?? "http://127.0.0.1:4000/api/v1").replace(/\/$/, "");
 const webBaseUrl = (process.env.MVP_SMOKE_WEB_BASE_URL ?? "http://localhost:5173").replace(/\/$/, "");
@@ -11,11 +12,12 @@ const forbiddenTokens = [
   "executionLog",
   "executionError",
   "tenantId",
-  "provider",
   "prompt",
   "reviewNotes",
   "reviewerName",
-  "draftBody"
+  "draftBody",
+  "sourceNote",
+  "audienceSignals"
 ];
 
 const results = [];
@@ -63,6 +65,15 @@ async function login(email, password) {
 
 function makeSmokeId(prefix) {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function requireOkData(name, response, expectedStatus = 201) {
+  const ok = response.status === expectedStatus && response.body?.ok === true;
+  record(name, ok, `${response.status}`);
+  if (!ok) {
+    throw new Error(`${name} failed with HTTP ${response.status}.`);
+  }
+  return response.body.data;
 }
 
 function containsForbiddenToken(text, token) {
@@ -198,13 +209,25 @@ async function createFixture(adminToken, adminUserId) {
     throw new Error("Draft deliverable creation failed.");
   }
 
+  const deliveryHints = await seedPurivaDeliverySummaryFixture({
+    request,
+    requireOkData,
+    record,
+    makeSmokeId,
+    adminToken,
+    client,
+    aiProject: project,
+    labelPrefix: "[SMOKE][CLIENT_PORTAL_BROWSER]"
+  });
+
   return {
     client,
     project,
     contentDraft,
     articleImage,
     finalDeliverable: finalDeliverable.body.data.deliverable,
-    draftDeliverable: draftDeliverable.body.data.deliverable
+    draftDeliverable: draftDeliverable.body.data.deliverable,
+    deliveryHints
   };
 }
 
@@ -295,6 +318,29 @@ async function main() {
       portalText.includes("Delivery overview") && portalText.includes("AI SEO / content plan"),
       "MVP delivery overview visible"
     );
+    record(
+      "delivery overview shows market intelligence summary",
+      typeof fixture.deliveryHints.marketSummary === "string" &&
+        fixture.deliveryHints.marketSummary.length > 0 &&
+        portalText.includes(fixture.deliveryHints.marketSummary.slice(0, 32)),
+      fixture.deliveryHints.marketSummary ? "client-safe summary visible" : "missing summary"
+    );
+    record(
+      "delivery overview shows recommended actions",
+      portalText.includes("Recommended actions"),
+      "recommended actions visible"
+    );
+    record(
+      "delivery overview shows google docs export link",
+      portalText.includes("Open Google Doc"),
+      fixture.deliveryHints.googleExportUrl ?? "link"
+    );
+    record(
+      "delivery overview shows website publishing handoff",
+      portalText.includes("Website publishing handoff") &&
+        (portalText.includes("PROVIDER_DISABLED") || portalText.includes("smoke-puriva.example.com")),
+      fixture.deliveryHints.publishingStatus ?? "status"
+    );
 
     const forbiddenHits = forbiddenTokens.filter((token) => containsForbiddenToken(renderedPortal, token));
     record(
@@ -351,7 +397,7 @@ async function main() {
     if (allPassed) {
       console.log("PROVEN: authenticated client portal archive page loaded and selected project detail rendered without crashing.");
       console.log("PROVEN: final deliverables rendered with the DRAFT fixture hidden and only the final archive item visible.");
-      console.log("PROVEN: delivery overview section rendered for the selected project.");
+      console.log("PROVEN: delivery overview section rendered populated Puriva path (MI summary, Google Docs, publishing status).");
       console.log("PROVEN: page body/HTML omitted storageKey and the other forbidden internal fields.");
       console.log("PROVEN: download action called the safe client-portal download endpoint and did not expose storageKey.");
     } else {

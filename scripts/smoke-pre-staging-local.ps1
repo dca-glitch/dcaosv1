@@ -34,6 +34,15 @@ function Restart-LocalApiForSmoke {
   Start-Sleep -Seconds 8
 }
 
+function Ensure-LocalWebForBrowserSmoke {
+  Write-Step "Ensure local web dev server on port 5173 for browser smokes"
+  $web = Get-NetTCPConnection -LocalPort 5173 -ErrorAction SilentlyContinue | Select-Object -First 1
+  if (-not $web) {
+    Start-Process -NoNewWindow -FilePath "npm.cmd" -ArgumentList "run", "dev:web" -WorkingDirectory (Get-Location).Path
+    Start-Sleep -Seconds 10
+  }
+}
+
 try {
   Write-Host "[SMOKE][PRE_STAGING] local repo closeout gate" -ForegroundColor Yellow
 
@@ -45,6 +54,8 @@ try {
   Invoke-NpmStep "MVP local smoke" "smoke:mvp:local"
   Invoke-NpmStep "Client portal local smoke" "smoke:client-portal:local"
   Invoke-NpmStep "Client access admin smoke" "smoke:client-access:local"
+  Ensure-LocalWebForBrowserSmoke
+  Invoke-NpmStep "Client portal browser smoke" "smoke:client-portal:browser"
   Invoke-NpmStep "Client domain browser smoke" "smoke:client-domain:browser"
   Invoke-NpmStep "Client portal monthly report browser smoke" "smoke:client-portal-monthly-report:browser"
 
