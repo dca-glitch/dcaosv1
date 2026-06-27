@@ -264,6 +264,7 @@ async function main() {
   );
 
   const createdCatalogProduct = requireOkData(
+    "create catalog product",
     await request(`/clients/${createdClient.id}/catalog-products`, {
       token: adminToken,
       method: "POST",
@@ -273,8 +274,7 @@ async function main() {
         priceLabel: "Rp 1",
         isVisibleInPortal: true
       }
-    }),
-    "create catalog product"
+    })
   ).catalogProduct;
 
   const portalCatalog = await request(
@@ -293,6 +293,7 @@ async function main() {
   );
 
   const catalogInquiry = requireOkData(
+    "submit catalog inquiry",
     await request(`/client-portal/projects/${createdAiProject.id}/catalog-inquiries`, {
       token: adminToken,
       method: "POST",
@@ -302,8 +303,7 @@ async function main() {
         contactEmail: "client@example.com",
         message: "Smoke inquiry only"
       }
-    }),
-    "submit catalog inquiry"
+    })
   ).catalogInquiry;
   record(
     "client portal catalog inquiry created",
@@ -312,6 +312,7 @@ async function main() {
   );
 
   const createdMonthlyReport = requireOkData(
+    "create monthly report",
     await request(`/ai-delivery/reports/monthly/${createdAiProject.id}`, {
       method: "POST",
       token: adminToken,
@@ -319,8 +320,7 @@ async function main() {
         title: `[SMOKE][CLIENT_PORTAL] ${makeSmokeId("final-report")}`,
         recommendationsText: "Smoke final client view recommendations."
       }
-    }),
-    "create monthly report"
+    })
   ).report;
 
   requireOkData(
@@ -329,7 +329,8 @@ async function main() {
       method: "POST",
       token: adminToken,
       body: { status: "FINAL" }
-    })
+    }),
+    200
   );
 
   const monthlyReportsList = await request(
