@@ -38,6 +38,19 @@ Continues local operator polish, guarded integration runbooks, and validation wi
 
 ---
 
+## Phase G — Post-Deferred / Staging & Owner Gates
+
+**Status:** Block G1 active (staging target decision + VPS pack review — docs only, no deploy).
+
+**Documentation:** [`docs/ROADMAP_POST_DEFERRED_PHASE_G.md`](./ROADMAP_POST_DEFERRED_PHASE_G.md)  
+**Index:** [`docs/runbooks/PHASE_G_POST_DEFERRED_CLOSEOUT_INDEX.md`](./runbooks/PHASE_G_POST_DEFERRED_CLOSEOUT_INDEX.md)  
+**Block G1:** [`docs/runbooks/PHASE_G_BLOCK_1_STAGING_TARGET_AND_VPS_PACK.md`](./runbooks/PHASE_G_BLOCK_1_STAGING_TARGET_AND_VPS_PACK.md)  
+**Owner template:** [`docs/operator/staging-target-decision-template.md`](./operator/staging-target-decision-template.md)
+
+Prerequisite: Phase F merged to `main`. No VPS/production actions until Block G4 with separate owner approval.
+
+---
+
 ## Approved Architecture Roadmap (2026-06-26)
 
 **Status:** Owner-approved. Documentation: [`docs/architecture/CLIENT_DOMAIN_OPERATING_MODEL.md`](./architecture/CLIENT_DOMAIN_OPERATING_MODEL.md).

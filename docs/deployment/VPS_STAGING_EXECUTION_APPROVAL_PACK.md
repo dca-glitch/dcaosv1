@@ -4,6 +4,8 @@
 
 This pack is the final repo-side approval artifact before any controlled VPS staging deployment. It does not approve deployment by itself. It defines what the owner may approve in a future execution step and what remains forbidden.
 
+**Staging host:** Must match the owner-signed [`staging-target-decision-template.md`](../operator/staging-target-decision-template.md) (Phase G Block G1). Until signed, do not treat any hostname as confirmed staging — including draft examples below.
+
 Future execution must pin an exact approved repo baseline:
 
 - Commit: exact owner-approved commit hash.

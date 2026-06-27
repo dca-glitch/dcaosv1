@@ -38,7 +38,8 @@ Related:
 
 ## Owner next steps (after local closeout PASS)
 
-1. Review PR #13 with `npm run smoke:pre-staging:local` evidence.
-2. Approve VPS staging execution pack (separate decision).
-3. Run strict Phase C env proofs on staging when keys are provisioned.
-4. Pick **one** deferred item above for the next approved implementation block — never batch schema + API + UI.
+1. Review PR #13 / Phase F merge with `npm run smoke:pre-staging:local` evidence.
+2. **Block G1:** Complete [`staging-target-decision-template.md`](../operator/staging-target-decision-template.md) and review [`PHASE_G_BLOCK_1_STAGING_TARGET_AND_VPS_PACK.md`](./PHASE_G_BLOCK_1_STAGING_TARGET_AND_VPS_PACK.md).
+3. Approve VPS staging execution pack (Block G4 — separate decision).
+4. Run strict Phase C env proofs on staging when keys are provisioned.
+5. Pick **one** deferred item above for the next approved implementation block — never batch schema + API + UI.
