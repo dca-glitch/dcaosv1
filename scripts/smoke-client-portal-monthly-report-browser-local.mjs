@@ -282,10 +282,9 @@ async function main() {
     const projectCard = portalSection.locator("article.entity-card", { hasText: fixture.project.name }).first();
     await projectCard.getByRole("button", { name: "Open project" }).click();
 
-    // Wait for monthly reports section to appear
-    const monthlyReportsCard = portalSection.locator("article.entity-card").filter({ has: page.getByRole("heading", { name: "Monthly reports" }) }).first();
-    await monthlyReportsCard.waitFor({ state: "visible", timeout: 15000 });
-    record("monthly reports section appears after project select", true, "section visible");
+    // Wait for monthly report final client view section
+    await page.getByRole("heading", { name: "Monthly report — final client view" }).waitFor({ state: "visible", timeout: 15000 });
+    record("monthly report final client view section appears after project select", true, "heading visible");
 
     const portalText = await portalSection.innerText();
     const portalHtml = await portalSection.innerHTML();
@@ -297,6 +296,16 @@ async function main() {
       renderedPortal.includes(fixture.finalReportTitle),
       fixture.finalReportTitle
     );
+
+    record(
+      "FINAL monthly report recommendations visible in final client view",
+      renderedPortal.includes("Smoke proof recommendations."),
+      "recommendations text"
+    );
+
+    await page.getByRole("button", { name: fixture.finalReportTitle }).click();
+    await page.getByRole("heading", { name: "Recommendations for next month" }).waitFor({ state: "visible", timeout: 15000 });
+    record("monthly report final client view detail loads", true, "recommendations section visible");
 
     // Verify DRAFT report not visible (it's on project2, not the selected project1 — so it wouldn't be in project1 results anyway;
     // the FINAL filter ensures it also can't appear for project1 even if somehow a DRAFT crept in)

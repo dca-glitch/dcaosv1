@@ -991,7 +991,7 @@ export function MonthlyReportPanel({
 
               {normalizedStatus === "FINAL" ? (
                 <p className="muted-text" style={{ marginTop: "0.5rem" }}>
-                  This report is final. Recommendations text will be visible to clients when a Client Portal monthly report is implemented in a future block.
+                  This report is final. Recommendations, completed deliverables, approved performance metrics, and the PDF appear in the Client Portal final monthly report view for linked client users.
                 </p>
               ) : null}
               {normalizedStatus === "ARCHIVED" ? (
@@ -1028,7 +1028,7 @@ export function MonthlyReportPanel({
                 </label>
 
                 <label className="field-span-2">
-                  Recommendations — Optional (client-visible when Final + Client Portal is implemented)
+                  Recommendations — Optional (client-visible when Final)
                   <textarea
                     disabled={!canEdit}
                     maxLength={4000}
@@ -1036,7 +1036,7 @@ export function MonthlyReportPanel({
                     value={form.recommendationsText}
                     onChange={(event) => setForm((current) => ({ ...current, recommendationsText: event.target.value }))}
                   />
-                  <span className="muted-text">Admin-written recommendations for next month. Will be visible to client in a future Client Portal monthly report block.</span>
+                  <span className="muted-text">Admin-written recommendations for next month. Visible in the Client Portal final monthly report view when status is FINAL.</span>
                 </label>
 
                 <label className="field-span-2">

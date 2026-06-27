@@ -8,7 +8,7 @@ Platform-neutral rule: AI Delivery records, content assets, article images, and 
 
 Default local execution does not make live AI calls. OpenRouter text execution code exists but is opt-in by `AI_TEXT_GATEWAY=openrouter` plus required key/model env config and is not production-approved by default. Crawling, real publishing connectors, WordPress-only assumptions, GA/GSC, Resend sending, public approval links, VPS, and production deployment remain inactive unless explicitly approved. Client Portal MVP delivery for Puriva is in scope per architecture doc.
 
-Client Portal monthly reports are now implemented and browser-proven as a read-only archive surface for linked client users. The contract is `GET /api/v1/client-portal/projects/:projectId/monthly-reports`; access requires an authenticated client portal session, an active tenant, `ClientUserAccess`, and a project that belongs to the accessible client. The endpoint returns FINAL, non-archived monthly reports only and excludes `storageKey`, `adminSummaryNotes`, `tenantId`, workflow internals, and other admin-only fields.
+Client Portal monthly reports are implemented as a read-only final client view for linked client users. List: `GET /api/v1/client-portal/projects/:projectId/monthly-reports`. Detail: `GET /api/v1/client-portal/projects/:projectId/monthly-reports/:reportId` returns the final client view with work summary and approved performance metrics when available. Access requires an authenticated client portal session, an active tenant, `ClientUserAccess`, and a project that belongs to the accessible client. Responses exclude `storageKey`, `adminSummaryNotes`, `tenantId`, workflow internals, snapshot notes, and other admin-only fields.
 
 Client Access is admin-managed through existing tenant/client/user mappings. The current `ClientUserAccess` schema is tenant/client/user scoped; project-specific client access grants are deferred until a separately approved schema/API block. The MVP foundation does not add invitation sending, password UI, magic links, comments, approvals, request-changes actions, public links, or interactive client workflow.
 
@@ -547,6 +547,7 @@ Admin response includes `hasDocument` flag (computed from `!!storageKey`). `stor
 Client-safe fields when `FINAL`: `id`, `title`, `recommendationsText`, `exportUrl`, `hasDocument`, `finalizedAt`, `createdAt`, `updatedAt`.
 
 Client portal signed download:
+- `GET /api/v1/client-portal/projects/:projectId/monthly-reports/:reportId` — requires `ClientUserAccess`; enforces `status = FINAL` and `isArchived = false`; returns `{ monthlyReport, workSummary, performanceSummary }` for the final client view.
 - `GET /api/v1/client-portal/projects/:projectId/monthly-reports/:reportId/download` — requires `ClientUserAccess`; enforces `status = FINAL` and `isArchived = false`; returns `{ downloadReference: { downloadUrl, expiresSeconds } | null }`.
 
 Deferred:

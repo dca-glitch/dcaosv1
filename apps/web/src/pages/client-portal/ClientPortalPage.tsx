@@ -79,6 +79,47 @@ type ClientPortalMonthlyReportsResponse = {
   monthlyReports: ClientPortalMonthlyReportSummary[];
 };
 
+type ClientPortalMonthlyReportWorkSummary = {
+  targetMonth: string;
+  finalDeliverableCount: number;
+  deliveredCount: number;
+  acceptedCount: number;
+  contentPlanItemCount: number;
+  clientApprovedPlanItemCount: number;
+  deliverables: Array<{
+    id: string;
+    title: string;
+    deliveryType: string;
+    status: string;
+    exportUrl: string | null;
+  }>;
+  contentPlanItems: Array<{
+    id: string;
+    title: string;
+    contentType: string | null;
+    targetKeyword: string | null;
+    approvalStatus: string | null;
+  }>;
+};
+
+type ClientPortalMonthlyReportPerformanceSummary = {
+  targetMonth: string;
+  sourceType: string;
+  gscClicks: number | null;
+  gscImpressions: number | null;
+  gscAverageCtr: number | null;
+  gscAveragePosition: number | null;
+  ga4Sessions: number | null;
+  ga4Users: number | null;
+  ga4PageViews: number | null;
+};
+
+type ClientPortalMonthlyReportDetailResponse = {
+  monthlyReport: ClientPortalMonthlyReportSummary;
+  workSummary: ClientPortalMonthlyReportWorkSummary;
+  performanceSummary: ClientPortalMonthlyReportPerformanceSummary | null;
+};
+
 type ClientPortalDownloadReference = {
   downloadUrl: string;
   expiresSeconds: number;
@@ -239,6 +280,10 @@ function getErrorMessage(response: ApiFailure): string {
     return "That archive item is not available to this account.";
   }
 
+  if (response.error.code === "CLIENT_PORTAL_MONTHLY_REPORT_NOT_FOUND") {
+    return "That monthly report is not available to this account.";
+  }
+
   return response.error.message || "Client archive could not be loaded.";
 }
 
@@ -268,6 +313,22 @@ function isFinalDeliverable(status: string) {
   return ["DELIVERED", "ACCEPTED"].includes(status);
 }
 
+function formatMetricValue(value: number | null | undefined): string {
+  if (value === null || value === undefined || Number.isNaN(value)) {
+    return "Not set";
+  }
+
+  return value.toLocaleString();
+}
+
+function formatPercentValue(value: number | null | undefined): string {
+  if (value === null || value === undefined || Number.isNaN(value)) {
+    return "Not set";
+  }
+
+  return `${value.toLocaleString(undefined, { maximumFractionDigits: 2 })}%`;
+}
+
 function projectCardStyle(selected: boolean): CSSProperties | undefined {
   return selected
     ? { borderColor: "rgba(82, 224, 255, 0.32)", background: "rgba(82, 224, 255, 0.06)" }
@@ -289,6 +350,9 @@ export function ClientPortalPage() {
   const [monthlyReports, setMonthlyReports] = useState<ClientPortalMonthlyReportSummary[]>([]);
   const [monthlyReportsLoading, setMonthlyReportsLoading] = useState(false);
   const [monthlyReportsError, setMonthlyReportsError] = useState<string | null>(null);
+  const [monthlyReportDetail, setMonthlyReportDetail] = useState<ClientPortalMonthlyReportDetailResponse | null>(null);
+  const [monthlyReportDetailLoading, setMonthlyReportDetailLoading] = useState(false);
+  const [monthlyReportDetailError, setMonthlyReportDetailError] = useState<string | null>(null);
   const [deliverySummary, setDeliverySummary] = useState<ClientPortalDeliverySummary | null>(null);
   const [deliverySummaryLoading, setDeliverySummaryLoading] = useState(false);
   const [deliverySummaryError, setDeliverySummaryError] = useState<string | null>(null);
@@ -310,6 +374,7 @@ export function ClientPortalPage() {
 
   const projectsRequestSeq = useRef(0);
   const projectRequestSeq = useRef(0);
+  const monthlyReportRequestSeq = useRef(0);
 
   const filteredProjects = useMemo(
     () =>
@@ -401,6 +466,8 @@ export function ClientPortalPage() {
     setMonthlyReports([]);
     setDeliverySummary(null);
     setCatalogProducts([]);
+    setMonthlyReportDetail(null);
+    setMonthlyReportDetailError(null);
 
     if (!token) {
       if (requestSeq === projectRequestSeq.current) {
@@ -476,6 +543,51 @@ export function ClientPortalPage() {
     setDeliverySummaryLoading(false);
     setCatalogLoading(false);
   }, []);
+
+  const loadMonthlyReportDetail = useCallback(async (projectId: string, reportId: string) => {
+    const requestSeq = ++monthlyReportRequestSeq.current;
+    const token = getStoredToken();
+
+    setMonthlyReportDetailLoading(true);
+    setMonthlyReportDetailError(null);
+    setMonthlyReportDetail(null);
+
+    if (!token) {
+      if (requestSeq === monthlyReportRequestSeq.current) {
+        setMonthlyReportDetailError("Sign in again to view the monthly report.");
+        setMonthlyReportDetailLoading(false);
+      }
+      return;
+    }
+
+    const response = await apiRequest<ClientPortalMonthlyReportDetailResponse>(
+      `/client-portal/projects/${projectId}/monthly-reports/${reportId}`,
+      { token }
+    );
+
+    if (requestSeq !== monthlyReportRequestSeq.current) {
+      return;
+    }
+
+    if (response.ok) {
+      setMonthlyReportDetail(response.data);
+      setMonthlyReportDetailError(null);
+    } else {
+      setMonthlyReportDetailError(getErrorMessage(response));
+    }
+
+    setMonthlyReportDetailLoading(false);
+  }, []);
+
+  useEffect(() => {
+    if (!selectedProjectId || !selectedMonthlyReportId) {
+      setMonthlyReportDetail(null);
+      setMonthlyReportDetailError(null);
+      return;
+    }
+
+    void loadMonthlyReportDetail(selectedProjectId, selectedMonthlyReportId);
+  }, [loadMonthlyReportDetail, selectedMonthlyReportId, selectedProjectId]);
 
   useEffect(() => {
     void loadProjects();
@@ -1127,8 +1239,8 @@ export function ClientPortalPage() {
               </SectionPanel>
 
               <SectionPanel
-                description="FINAL monthly reports only. Metrics and review data stay internal."
-                title="Monthly reports"
+                description="FINAL monthly reports only. Read-only summary of completed work, approved performance metrics, and next-step recommendations."
+                title="Monthly report — final client view"
                 tone="compact"
               >
                 {monthlyReportsLoading ? (
@@ -1162,67 +1274,147 @@ export function ClientPortalPage() {
                     </div>
 
                     {selectedMonthlyReport ? (
-                      <article className="entity-card dense-record">
-                        <div className="dense-record-main" style={{ alignItems: "start", gridTemplateColumns: "minmax(0, 1fr)" }}>
-                          <div className="dense-title">
-                            <div className="dense-kicker">
-                              <StatusBadge status={selectedMonthlyReport.status} />
-                              {selectedMonthlyReportIndex >= 0 ? (
-                                <span className="muted-text">
-                                  Report {selectedMonthlyReportIndex + 1} of {monthlyReports.length}
-                                </span>
-                              ) : null}
-                            </div>
-                            <h3>{selectedMonthlyReport.title ?? "Monthly report"}</h3>
-                          </div>
-                          <div className="dense-fields">
-                            <div className="dense-field">
-                              <span>Project month</span>
-                              <strong>{formatMonthLabel(selectedProject.targetMonth)}</strong>
-                            </div>
-                            <div className="dense-field">
-                              <span>Finalized</span>
-                              <strong>{formatReportDate(selectedMonthlyReport.finalizedAt)}</strong>
-                            </div>
-                            <div className="dense-field">
-                              <span>Document</span>
-                              <strong>{selectedMonthlyReport.hasDocument ? "Available" : "Not attached"}</strong>
-                            </div>
-                            <div className="dense-field">
-                              <span>Export link</span>
-                              <strong>
-                                {selectedMonthlyReport.exportUrl ? (
-                                  <a href={selectedMonthlyReport.exportUrl} rel="noreferrer" target="_blank">
+                      monthlyReportDetailLoading ? (
+                        <LoadingState label="Loading final monthly report" />
+                      ) : monthlyReportDetailError ? (
+                        <ErrorState message={monthlyReportDetailError} title="Monthly report unavailable" />
+                      ) : monthlyReportDetail ? (
+                        <div style={{ display: "grid", gap: "14px" }}>
+                          <article className="entity-card dense-record">
+                            <div className="dense-record-main" style={{ alignItems: "start", gridTemplateColumns: "minmax(0, 1fr)" }}>
+                              <div className="dense-title">
+                                <div className="dense-kicker">
+                                  <StatusBadge status={monthlyReportDetail.monthlyReport.status} />
+                                  {selectedMonthlyReportIndex >= 0 ? (
+                                    <span className="muted-text">
+                                      Report {selectedMonthlyReportIndex + 1} of {monthlyReports.length}
+                                    </span>
+                                  ) : null}
+                                </div>
+                                <h3>{monthlyReportDetail.monthlyReport.title ?? "Monthly report"}</h3>
+                                <div className="dense-meta">
+                                  <span>Month {formatMonthLabel(monthlyReportDetail.workSummary.targetMonth)}</span>
+                                  <span>Finalized {formatReportDate(monthlyReportDetail.monthlyReport.finalizedAt)}</span>
+                                </div>
+                              </div>
+                              <div className="dense-actions">
+                                {monthlyReportDetail.monthlyReport.hasDocument ? (
+                                  <button
+                                    className="primary-action"
+                                    disabled={downloadingMonthlyReportId === monthlyReportDetail.monthlyReport.id}
+                                    onClick={() => void handleMonthlyReportDownload(monthlyReportDetail.monthlyReport.id)}
+                                    type="button"
+                                  >
+                                    {downloadingMonthlyReportId === monthlyReportDetail.monthlyReport.id ? "Opening..." : "Download PDF"}
+                                  </button>
+                                ) : null}
+                                {monthlyReportDetail.monthlyReport.exportUrl ? (
+                                  <a
+                                    className="secondary-action"
+                                    href={monthlyReportDetail.monthlyReport.exportUrl}
+                                    rel="noreferrer"
+                                    target="_blank"
+                                  >
                                     Open export
                                   </a>
-                                ) : (
-                                  "Not provided"
-                                )}
-                              </strong>
+                                ) : null}
+                              </div>
                             </div>
+                          </article>
+
+                          <div className="metric-grid">
+                            <MetricCard
+                              label="Final deliverables"
+                              value={String(monthlyReportDetail.workSummary.finalDeliverableCount)}
+                              helper={`${monthlyReportDetail.workSummary.acceptedCount} accepted · ${monthlyReportDetail.workSummary.deliveredCount} delivered`}
+                            />
+                            <MetricCard
+                              label="Content plan items"
+                              value={String(monthlyReportDetail.workSummary.contentPlanItemCount)}
+                              helper={`${monthlyReportDetail.workSummary.clientApprovedPlanItemCount} client-approved`}
+                            />
+                            <MetricCard
+                              label="Report document"
+                              value={monthlyReportDetail.monthlyReport.hasDocument ? "PDF ready" : "Not attached"}
+                              helper="Download when available"
+                            />
                           </div>
-                          {selectedMonthlyReport.recommendationsText ? (
-                            <div className="dense-row-note">
-                              <strong>Recommendations: </strong>
-                              {selectedMonthlyReport.recommendationsText}
-                            </div>
+
+                          {monthlyReportDetail.performanceSummary ? (
+                            <SectionPanel
+                              description="Approved performance snapshot for this report month. Internal admin notes and raw provider data stay hidden."
+                              title="Performance summary"
+                              tone="compact"
+                            >
+                              <div className="metric-grid">
+                                <MetricCard
+                                  label="GSC clicks"
+                                  value={formatMetricValue(monthlyReportDetail.performanceSummary.gscClicks)}
+                                  helper={`Month ${monthlyReportDetail.performanceSummary.targetMonth}`}
+                                />
+                                <MetricCard
+                                  label="GSC impressions"
+                                  value={formatMetricValue(monthlyReportDetail.performanceSummary.gscImpressions)}
+                                  helper={monthlyReportDetail.performanceSummary.sourceType}
+                                />
+                                <MetricCard
+                                  label="GA4 sessions"
+                                  value={formatMetricValue(monthlyReportDetail.performanceSummary.ga4Sessions)}
+                                  helper={`Users ${formatMetricValue(monthlyReportDetail.performanceSummary.ga4Users)}`}
+                                />
+                                <MetricCard
+                                  label="GA4 page views"
+                                  value={formatMetricValue(monthlyReportDetail.performanceSummary.ga4PageViews)}
+                                  helper={`CTR ${formatPercentValue(monthlyReportDetail.performanceSummary.gscAverageCtr)}`}
+                                />
+                              </div>
+                            </SectionPanel>
                           ) : null}
-                          <div className="dense-actions">
-                            {selectedMonthlyReport.hasDocument ? (
-                              <button
-                                className="primary-action"
-                                disabled={downloadingMonthlyReportId === selectedMonthlyReport.id}
-                                onClick={() => void handleMonthlyReportDownload(selectedMonthlyReport.id)}
-                                type="button"
-                              >
-                                {downloadingMonthlyReportId === selectedMonthlyReport.id ? "Opening..." : "Download PDF"}
-                              </button>
+
+                          {monthlyReportDetail.workSummary.deliverables.length > 0 ? (
+                            <SectionPanel
+                              description="Final deliverables included in this month's completed work."
+                              title="Completed deliverables"
+                              tone="compact"
+                            >
+                              <div className="dense-list">
+                                {monthlyReportDetail.workSummary.deliverables.map((deliverable) => (
+                                  <article className="entity-card dense-record" key={deliverable.id}>
+                                    <div className="dense-record-main">
+                                      <div className="dense-title">
+                                        <div className="dense-kicker">
+                                          <StatusBadge status={deliverable.status} />
+                                          <span className="entity-pill">{deliverable.deliveryType}</span>
+                                        </div>
+                                        <h3>{deliverable.title}</h3>
+                                      </div>
+                                      {deliverable.exportUrl ? (
+                                        <a href={deliverable.exportUrl} rel="noreferrer" target="_blank">
+                                          Open export
+                                        </a>
+                                      ) : null}
+                                    </div>
+                                  </article>
+                                ))}
+                              </div>
+                            </SectionPanel>
+                          ) : null}
+
+                          <SectionPanel
+                            description="Admin-written recommendations for the next month."
+                            title="Recommendations for next month"
+                            tone="compact"
+                          >
+                            {monthlyReportDetail.monthlyReport.recommendationsText ? (
+                              <div className="dense-row-note">{monthlyReportDetail.monthlyReport.recommendationsText}</div>
                             ) : (
-                              <span className="muted-text">No report document is attached yet.</span>
+                              <EmptyState message="No recommendations were added to this final report." title="No recommendations yet" />
                             )}
-                          </div>
+                          </SectionPanel>
                         </div>
-                      </article>
+                      ) : (
+                        <EmptyState message="Select a report from the list to open the final client view." title="No report selected" />
+                      )
                     ) : (
                       <EmptyState message="Select a report from the list to view details." title="No report selected" />
                     )}
@@ -1242,7 +1434,6 @@ export function ClientPortalPage() {
         <ul className="muted-text" style={{ margin: 0, paddingLeft: "1.25rem" }}>
           <li>Public magic links</li>
           <li>Full interactive comment threads</li>
-          <li>Advanced content plan and draft review routes</li>
         </ul>
       </SectionPanel>
     </section>

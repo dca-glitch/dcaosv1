@@ -9,6 +9,7 @@ import {
   getClientPortalMonthlyReportDownloadReference,
   getClientPortalProject,
   listClientPortalDeliverables,
+  getClientPortalMonthlyReport,
   listClientPortalMonthlyReports,
   listClientPortalProjects
 } from "../core/client-portal.runtime";
@@ -120,6 +121,20 @@ export function createClientPortalRouter() {
     const result = await listClientPortalMonthlyReports(authSession, req.params.projectId);
     if (!result) {
       res.status(404).json(failure("CLIENT_PORTAL_PROJECT_NOT_FOUND", "Project was not found."));
+      return;
+    }
+    res.status(200).json(success(result));
+  });
+
+  router.get("/projects/:projectId/monthly-reports/:reportId", requireAuth, requireTenant, async (req, res) => {
+    const authSession = (res.locals as AuthSessionLocals).authSession;
+    if (!authSession) {
+      res.status(401).json(unauthorizedFailure());
+      return;
+    }
+    const result = await getClientPortalMonthlyReport(authSession, req.params.projectId, req.params.reportId);
+    if (!result) {
+      res.status(404).json(failure("CLIENT_PORTAL_MONTHLY_REPORT_NOT_FOUND", "Monthly report not found."));
       return;
     }
     res.status(200).json(success(result));

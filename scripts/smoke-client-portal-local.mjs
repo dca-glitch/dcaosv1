@@ -311,6 +311,73 @@ async function main() {
     catalogInquiry?.id ?? "null"
   );
 
+  const createdMonthlyReport = requireOkData(
+    await request(`/ai-delivery/reports/monthly/${createdAiProject.id}`, {
+      method: "POST",
+      token: adminToken,
+      body: {
+        title: `[SMOKE][CLIENT_PORTAL] ${makeSmokeId("final-report")}`,
+        recommendationsText: "Smoke final client view recommendations."
+      }
+    }),
+    "create monthly report"
+  ).report;
+
+  requireOkData(
+    "client portal smoke finalize monthly report",
+    await request(`/ai-delivery/reports/monthly/${createdMonthlyReport.id}/status`, {
+      method: "POST",
+      token: adminToken,
+      body: { status: "FINAL" }
+    })
+  );
+
+  const monthlyReportsList = await request(
+    `/client-portal/projects/${createdAiProject.id}/monthly-reports`,
+    { token: adminToken }
+  );
+  record(
+    "client portal monthly reports list 200",
+    monthlyReportsList.status === 200 && monthlyReportsList.body?.ok === true,
+    `${monthlyReportsList.status}`
+  );
+  record(
+    "client portal monthly reports list includes FINAL report",
+    (monthlyReportsList.body?.data?.monthlyReports ?? []).some((report) => report.id === createdMonthlyReport.id),
+    createdMonthlyReport.id
+  );
+
+  const monthlyReportDetail = await request(
+    `/client-portal/projects/${createdAiProject.id}/monthly-reports/${createdMonthlyReport.id}`,
+    { token: adminToken }
+  );
+  record(
+    "client portal monthly report detail 200",
+    monthlyReportDetail.status === 200 && monthlyReportDetail.body?.ok === true,
+    `${monthlyReportDetail.status}`
+  );
+  record(
+    "client portal monthly report detail includes workSummary",
+    typeof monthlyReportDetail.body?.data?.workSummary === "object" &&
+      monthlyReportDetail.body?.data?.workSummary !== null,
+    "workSummary present"
+  );
+  record(
+    "client portal monthly report detail includes recommendations",
+    monthlyReportDetail.body?.data?.monthlyReport?.recommendationsText === "Smoke final client view recommendations.",
+    "recommendations present"
+  );
+  record(
+    "client portal monthly report detail no adminSummaryNotes",
+    !JSON.stringify(monthlyReportDetail.body?.data ?? {}).includes("adminSummaryNotes"),
+    "adminSummaryNotes absent"
+  );
+  record(
+    "client portal monthly report detail no importedByUserId",
+    !JSON.stringify(monthlyReportDetail.body?.data ?? {}).includes("importedByUserId"),
+    "importedByUserId absent"
+  );
+
   // ── 9. Deliverables list: DRAFT excluded — proves DELIVERED/ACCEPTED filter ──
   const afterLinkDeliverables = await request(
     `/client-portal/projects/${createdAiProject.id}/deliverables`,

@@ -256,6 +256,178 @@ export async function listClientPortalMonthlyReports(
   return { monthlyReports: (reports as any[]).map(toClientPortalMonthlyReportSummary) };
 }
 
+const clientPortalWorkSummaryDeliverableSelect = {
+  id: true,
+  title: true,
+  deliveryType: true,
+  status: true,
+  exportUrl: true
+} as const;
+
+const clientPortalWorkSummaryContentPlanItemSelect = {
+  id: true,
+  title: true,
+  contentType: true,
+  targetKeyword: true,
+  approvalStatus: true
+} as const;
+
+const clientPortalApprovedMetricSelect = {
+  targetMonth: true,
+  sourceType: true,
+  gscClicks: true,
+  gscImpressions: true,
+  gscAverageCtr: true,
+  gscAveragePosition: true,
+  ga4Sessions: true,
+  ga4Users: true,
+  ga4PageViews: true
+} as const;
+
+async function buildClientPortalMonthlyReportWorkSummary(tenantId: string, projectId: string) {
+  const project = await prisma.aiDeliveryProject.findFirst({
+    where: { id: projectId, tenantId, isArchived: false },
+    select: { targetMonth: true }
+  });
+  if (!project) {
+    return null;
+  }
+
+  const [deliverables, contentPlan] = await Promise.all([
+    prisma.aiDeliveryDeliverable.findMany({
+      where: {
+        tenantId,
+        aiDeliveryProjectId: projectId,
+        status: { in: ["DELIVERED", "ACCEPTED"] },
+        isArchived: false
+      },
+      orderBy: [{ updatedAt: "desc" }],
+      select: clientPortalWorkSummaryDeliverableSelect
+    }),
+    prisma.aiDeliveryContentPlan.findFirst({
+      where: { tenantId, aiDeliveryProjectId: projectId },
+      select: {
+        items: {
+          select: clientPortalWorkSummaryContentPlanItemSelect,
+          orderBy: { sortOrder: "asc" }
+        }
+      }
+    })
+  ]);
+
+  const deliveredCount = deliverables.filter((item) => item.status === "DELIVERED").length;
+  const acceptedCount = deliverables.filter((item) => item.status === "ACCEPTED").length;
+  const contentPlanItems = contentPlan?.items ?? [];
+  const clientApprovedPlanItemCount = contentPlanItems.filter((item) => item.approvalStatus === "CLIENT_APPROVED").length;
+
+  return {
+    targetMonth: formatTargetMonth(project.targetMonth),
+    finalDeliverableCount: deliverables.length,
+    deliveredCount,
+    acceptedCount,
+    contentPlanItemCount: contentPlanItems.length,
+    clientApprovedPlanItemCount,
+    deliverables: deliverables.map((item) => ({
+      id: item.id,
+      title: item.title,
+      deliveryType: item.deliveryType,
+      status: item.status,
+      exportUrl: item.exportUrl ?? null
+    })),
+    contentPlanItems: contentPlanItems.map((item) => ({
+      id: item.id,
+      title: item.title,
+      contentType: item.contentType ?? null,
+      targetKeyword: item.targetKeyword ?? null,
+      approvalStatus: item.approvalStatus ?? null
+    }))
+  };
+}
+
+async function buildClientPortalMonthlyReportPerformanceSummary(tenantId: string, reportId: string) {
+  const approvedSnapshot = await (prisma as any).aiDeliveryMonthlyMetricSnapshot.findFirst({
+    where: {
+      tenantId,
+      aiDeliveryMonthlyReportId: reportId,
+      status: "APPROVED"
+    },
+    orderBy: [{ targetMonth: "desc" }, { updatedAt: "desc" }],
+    select: clientPortalApprovedMetricSelect
+  }) as {
+    targetMonth: string;
+    sourceType: string;
+    gscClicks: number | null;
+    gscImpressions: number | null;
+    gscAverageCtr: number | null;
+    gscAveragePosition: number | null;
+    ga4Sessions: number | null;
+    ga4Users: number | null;
+    ga4PageViews: number | null;
+  } | null;
+
+  if (!approvedSnapshot) {
+    return null;
+  }
+
+  return {
+    targetMonth: approvedSnapshot.targetMonth,
+    sourceType: approvedSnapshot.sourceType,
+    gscClicks: approvedSnapshot.gscClicks,
+    gscImpressions: approvedSnapshot.gscImpressions,
+    gscAverageCtr: approvedSnapshot.gscAverageCtr,
+    gscAveragePosition: approvedSnapshot.gscAveragePosition,
+    ga4Sessions: approvedSnapshot.ga4Sessions,
+    ga4Users: approvedSnapshot.ga4Users,
+    ga4PageViews: approvedSnapshot.ga4PageViews
+  };
+}
+
+export async function getClientPortalMonthlyReport(
+  authSession: AuthResolvedSessionContext,
+  projectId: string,
+  reportId: string
+) {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) return null;
+
+  const userId = authSession.user.id;
+
+  const report = await (prisma as any).aiDeliveryMonthlyReport.findFirst({
+    where: {
+      id: reportId,
+      aiDeliveryProjectId: projectId,
+      tenantId,
+      status: "FINAL",
+      isArchived: false
+    },
+    select: clientPortalMonthlyReportSelect
+  }) as Parameters<typeof toClientPortalMonthlyReportSummary>[0] | null;
+
+  if (!report) return null;
+
+  const project = await prisma.aiDeliveryProject.findFirst({
+    where: { id: projectId, tenantId, isArchived: false },
+    select: { clientId: true }
+  });
+  if (!project) return null;
+
+  const clientAccess = await hasClientAccess(tenantId, project.clientId, userId);
+  if (!clientAccess) return null;
+
+  const [workSummary, performanceSummary] = await Promise.all([
+    buildClientPortalMonthlyReportWorkSummary(tenantId, projectId),
+    buildClientPortalMonthlyReportPerformanceSummary(tenantId, reportId)
+  ]);
+
+  if (!workSummary) return null;
+
+  return {
+    monthlyReport: toClientPortalMonthlyReportSummary(report),
+    workSummary,
+    performanceSummary
+  };
+}
+
 export async function getClientPortalDeliverableDownloadReference(
   authSession: AuthResolvedSessionContext,
   projectId: string,
