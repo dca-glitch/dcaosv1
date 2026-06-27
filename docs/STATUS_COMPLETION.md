@@ -22,7 +22,7 @@ Related documents:
 
 | Perspective | % | Meaning |
 |-------------|---|---------|
-| **Local admin MVP** (DCA operator, local dev) | **~95%** | Core modules + Puriva portal path; full `smoke:pre-staging:local` |
+| **Local admin MVP** (DCA operator, local dev) | **~96%** | Done | Puriva MVP Blocks 7–30 local closeout; `smoke:pre-staging:local` |
 | **Client/domain roadmap (blocks 1–6)** | **~92%** | Local gates done; prod env keys = separate owner gates |
 | **Production readiness** (real clients, VPS) | **~38%** | Runbooks exist; deploy/migration deferred by owner |
 | **Full PRD vision** (future modules + automation) | **~28%** | Large portion intentionally deferred |
@@ -56,7 +56,7 @@ Related documents:
 | **AI Delivery** | **82%** | Done | Brief → deliverable → export → monthly report path |
 | **Market Intelligence** | **78%** | In progress | Admin MVP + handoff; included in pre-staging smoke; no recurring/automation |
 | **Monthly Reports** | **90%** | Done | Admin browser + PDF + metrics path; local + browser + metrics smokes in pre-staging |
-| **Client Portal MVP** (Puriva — visibility + review) | **99%** | Done (local) | Blocks 7–26 browser/API gates incl. access grant + revoke paths |
+| **Client Portal MVP** (Puriva — visibility + review) | **100%** | Done (local) | Blocks 7–30 incl. sparse + populated delivery overview browser gates |
 | **Client Portal advanced actions** (magic links, full comment threads) | **0%** | Phased after MVP visibility | See deferred scope register |
 | **Finance** | **80%** | Done | Invoices, bills, vendors, credit notes; `OWN_DOMAIN` invoice guard |
 | **AI SEO + Content Production** | **64%** | In progress | Admin shell; Google Drive export smoke in pre-staging; no live Google integrations |
@@ -64,8 +64,8 @@ Related documents:
 | **Email / notifications** | **22%** | In progress | Backend foundation; no real sending |
 | **Audit / activity** | **55%** | In progress | Writer + dashboard feed; no full audit UI |
 | **AI provider (OpenRouter)** | **40%** | In progress | Guarded path; default remains deterministic local |
-| **Operator docs & runbooks** | **92%** | Done | SOP, matrix, deferred register, pre-staging local gate |
-| **Tests / smoke** | **99%** | Done (local) | Pre-staging includes client access browser grant gate |
+| **Operator docs & runbooks** | **95%** | Done | Puriva MVP Blocks 7–30 index + pre-staging local gate |
+| **Tests / smoke** | **100%** | Done (local) | Full Puriva MVP local closeout in pre-staging orchestrator |
 | **PR merge → main** | **0%** | In progress | PR #13 open; merge after owner approves staging |
 | **Staging / VPS deploy** | **5%** | Deferred | Documentation only; **paused by owner — no VPS deploy** |
 | **Production deploy** | **0%** | Deferred | Frozen |
@@ -151,6 +151,7 @@ Do not treat local smoke alone as production readiness.
 
 | Date | Change |
 |------|--------|
+| 2026-06-27 | Puriva MVP local closeout complete (Blocks 7–30 index, populated delivery browser, login shell pre-staging) |
 | 2026-06-27 | MVP Block 26: Client Access admin browser gate (link user from Clients edit modal) |
 | 2026-06-27 | MVP Block 25: client-domain browser extended for Client Hub catalog + publication log sections |
 | 2026-06-27 | MVP Block 24: monthly report admin browser smoke in pre-staging |

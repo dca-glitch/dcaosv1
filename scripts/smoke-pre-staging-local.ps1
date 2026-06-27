@@ -55,11 +55,13 @@ try {
   Invoke-NpmStep "Client portal local smoke" "smoke:client-portal:local"
   Invoke-NpmStep "Client access admin smoke" "smoke:client-access:local"
   Ensure-LocalWebForBrowserSmoke
+  Invoke-NpmStep "Login shell browser smoke" "smoke:browser"
   Invoke-NpmStep "Client access admin browser smoke" "smoke:client-access:browser"
   Invoke-NpmStep "Client portal browser smoke" "smoke:client-portal:browser"
   Invoke-NpmStep "Client portal signed-out browser smoke" "smoke:client-portal:signed-out:browser"
   Invoke-NpmStep "Client portal edge cases browser smoke" "smoke:client-portal:edge-cases:browser"
   Invoke-NpmStep "Client portal sparse delivery browser smoke" "smoke:client-portal:sparse-delivery:browser"
+  Invoke-NpmStep "Client portal populated delivery browser smoke" "smoke:client-portal:populated-delivery:browser"
   Invoke-NpmStep "Client portal access revoke browser smoke" "smoke:client-portal:access-revoke:browser"
   Invoke-NpmStep "Client portal empty archive browser smoke" "smoke:client-portal:empty-archive:browser"
   Invoke-NpmStep "Client hub catalog inquiry browser smoke" "smoke:client-hub:catalog-inquiry:browser"

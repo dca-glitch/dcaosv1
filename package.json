@@ -31,6 +31,7 @@
     "smoke:client-portal:signed-out:browser": "node scripts/smoke-client-portal-signed-out-browser-local.mjs",
     "smoke:client-portal:edge-cases:browser": "node scripts/smoke-client-portal-edge-cases-browser-local.mjs",
     "smoke:client-portal:sparse-delivery:browser": "node scripts/smoke-client-portal-sparse-delivery-browser-local.mjs",
+    "smoke:client-portal:populated-delivery:browser": "node scripts/smoke-client-portal-populated-delivery-browser-local.mjs",
     "smoke:client-portal:access-revoke:browser": "node scripts/smoke-client-portal-access-revoke-browser-local.mjs",
     "smoke:client-portal:empty-archive:browser": "node scripts/smoke-client-portal-empty-archive-browser-local.mjs",
     "smoke:client-hub:catalog-inquiry:browser": "node scripts/smoke-client-hub-catalog-inquiry-browser-local.mjs",

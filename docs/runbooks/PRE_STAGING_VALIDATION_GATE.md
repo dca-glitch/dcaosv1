@@ -10,6 +10,7 @@ Related:
 
 - [`docs/deployment/VPS_STAGING_EXECUTION_APPROVAL_PACK.md`](../deployment/VPS_STAGING_EXECUTION_APPROVAL_PACK.md) — future VPS gate (separate approval)
 - [`docs/STATUS_COMPLETION.md`](../STATUS_COMPLETION.md) — completion overview
+- [`docs/runbooks/PURIVA_MVP_BLOCK_30_LOCAL_CLOSEOUT_INDEX.md`](./PURIVA_MVP_BLOCK_30_LOCAL_CLOSEOUT_INDEX.md) — Puriva MVP Blocks 7–30 map
 - PR #13 — merge blocked until owner approves staging
 
 ---
@@ -30,7 +31,7 @@ cd C:\dcaosv1
 npm.cmd run smoke:pre-staging:local
 ```
 
-Runs `validate` then the approved local smoke suite (MVP, portal, browser, blocks 4–6, legacy sunset).
+Runs `validate` then the approved local smoke suite (Puriva MVP Blocks 7–30, architecture blocks 4–6, legacy sunset).
 
 If `validate` fails with Prisma `EPERM` on Windows, stop the local API process and rerun.
 
@@ -47,11 +48,13 @@ npm.cmd run smoke:local
 npm.cmd run smoke:mvp:local
 npm.cmd run smoke:client-portal:local
 npm.cmd run smoke:client-access:local
+npm.cmd run smoke:browser
 npm.cmd run smoke:client-access:browser
 npm.cmd run smoke:client-portal:browser
 npm.cmd run smoke:client-portal:signed-out:browser
 npm.cmd run smoke:client-portal:edge-cases:browser
 npm.cmd run smoke:client-portal:sparse-delivery:browser
+npm.cmd run smoke:client-portal:populated-delivery:browser
 npm.cmd run smoke:client-portal:access-revoke:browser
 npm.cmd run smoke:client-portal:empty-archive:browser
 npm.cmd run smoke:client-hub:catalog-inquiry:browser
