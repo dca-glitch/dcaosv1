@@ -4,7 +4,7 @@ import { ErrorState } from "../../components/ErrorState";
 import { LoadingState } from "../../components/LoadingState";
 import { Modal } from "../../components/Modal";
 import { ModalActions } from "../../components/ui/ModalActions";
-import { WordPressConfigPanel, type WordPressConfig } from "./WordPressConfigPanel";
+import { SectionPanel } from "../../components/ui";
 
 export type CompanyProfileSummary = {
   id: string;
@@ -52,8 +52,6 @@ type CompanyProfilePageProps = {
   error: string | null;
   loading: boolean;
   onSave: (values: CompanyProfileFormValues) => Promise<boolean>;
-  wordPressConfig: WordPressConfig | null;
-  onSaveWordPressConfig: (values: WordPressConfig) => Promise<boolean>;
 };
 
 const emptyForm = (): CompanyProfileFormValues => ({
@@ -74,7 +72,7 @@ const emptyForm = (): CompanyProfileFormValues => ({
   creditNotePrefix: "DCA-CN"
 });
 
-export function CompanyProfilePage({ companyProfile, canEdit, error, loading, onSave, wordPressConfig, onSaveWordPressConfig }: CompanyProfilePageProps) {
+export function CompanyProfilePage({ companyProfile, canEdit, error, loading, onSave }: CompanyProfilePageProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [draft, setDraft] = useState<CompanyProfileFormValues>(
@@ -245,13 +243,18 @@ export function CompanyProfilePage({ companyProfile, canEdit, error, loading, on
         </article>
       )}
 
-      <WordPressConfigPanel
-        canEdit={canEdit}
-        config={wordPressConfig}
-        error={null}
-        loading={false}
-        onSave={onSaveWordPressConfig}
-      />
+      <SectionPanel
+        description="WordPress site URLs and application passwords are configured per client in Client Hub → Publication targets."
+        title="WordPress publication (moved)"
+      >
+        <p className="muted-text">
+          Tenant-level WordPress config is deprecated. Open a client record and use <strong>Open hub</strong> to manage
+          publication targets, encrypted credentials, analytics profile, and publication logs.
+        </p>
+        <a className="secondary-action" href="#/clients">
+          Go to Clients
+        </a>
+      </SectionPanel>
 
       {isEditing ? (
         <Modal onClose={closeEditor} title={companyProfile ? "Edit Company Profile" : "Create Company Profile"}>

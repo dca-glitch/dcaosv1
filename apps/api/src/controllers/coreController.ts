@@ -3952,6 +3952,11 @@ export const generateDueRecurringInvoiceHandler: RequestHandler = async (req, re
   }
 };
 
+const LEGACY_WORDPRESS_CONFIG_META = {
+  deprecated: true,
+  replacement: "Use Client Hub publication targets at GET/POST /clients/:clientId/publication-targets"
+};
+
 export const getAiDeliveryWordPressConfigHandler: RequestHandler = async (_req, res) => {
   const authSession = getAuthSession(res.locals);
   if (!authSession) return void res.status(401).json(unauthorizedFailure());
@@ -3959,7 +3964,9 @@ export const getAiDeliveryWordPressConfigHandler: RequestHandler = async (_req, 
   try {
     const response = await getAiDeliveryWordPressConfigForTenant(authSession);
     if (!response) return void res.status(403).json(forbiddenFailure());
-    res.json(success(response, { phase: "runtime", scope: "ai-delivery-wordpress-config" }));
+    res.setHeader("Deprecation", "true");
+    res.setHeader("Link", '</api/v1/clients/{clientId}/publication-targets>; rel="successor-version"');
+    res.json(success(response, { phase: "runtime", scope: "ai-delivery-wordpress-config", ...LEGACY_WORDPRESS_CONFIG_META }));
   } catch {
     res.status(500).json(failure("WORDPRESS_CONFIG_RUNTIME_ERROR", "WordPress config retrieval could not be completed."));
   }
@@ -3980,7 +3987,9 @@ export const saveAiDeliveryWordPressConfigHandler: RequestHandler = async (req, 
     if (!response.validation.ok) {
       return void res.status(400).json(failure("WORDPRESS_CONFIG_INVALID", response.validation.issues?.[0] || "WordPress config is invalid."));
     }
-    res.json(success(response, { phase: "runtime", scope: "ai-delivery-wordpress-config" }));
+    res.setHeader("Deprecation", "true");
+    res.setHeader("Link", '</api/v1/clients/{clientId}/publication-targets>; rel="successor-version"');
+    res.json(success(response, { phase: "runtime", scope: "ai-delivery-wordpress-config", ...LEGACY_WORDPRESS_CONFIG_META }));
   } catch {
     res.status(500).json(failure("WORDPRESS_CONFIG_RUNTIME_ERROR", "WordPress config save could not be completed."));
   }

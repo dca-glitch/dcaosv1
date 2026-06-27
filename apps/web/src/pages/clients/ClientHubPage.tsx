@@ -71,6 +71,7 @@ export function ClientHubPage({ client, canEdit, onBack }: ClientHubPageProps) {
   const [targetUrl, setTargetUrl] = useState("");
   const [credentialTargetId, setCredentialTargetId] = useState("");
   const [applicationPassword, setApplicationPassword] = useState("");
+  const [credentialMessage, setCredentialMessage] = useState<string | null>(null);
   const [gscSiteUrl, setGscSiteUrl] = useState("");
   const [ga4PropertyId, setGa4PropertyId] = useState("");
 
@@ -115,11 +116,17 @@ export function ClientHubPage({ client, canEdit, onBack }: ClientHubPageProps) {
   async function handleSaveCredentials(event: FormEvent) {
     event.preventDefault();
     if (!canEdit || !credentialTargetId || !applicationPassword) return;
-    await apiRequest("POST", `/clients/${client.id}/publication-targets/${credentialTargetId}/credentials`, {
-      applicationPassword
-    });
-    setApplicationPassword("");
-    await loadHub();
+    setCredentialMessage(null);
+    try {
+      await apiRequest("POST", `/clients/${client.id}/publication-targets/${credentialTargetId}/credentials`, {
+        applicationPassword
+      });
+      setApplicationPassword("");
+      setCredentialMessage("Credentials saved (encrypted). They cannot be read back from the API.");
+      await loadHub();
+    } catch (saveError) {
+      setCredentialMessage(saveError instanceof Error ? saveError.message : "Credentials could not be saved.");
+    }
   }
 
   async function handleSaveAnalytics(event: FormEvent) {
@@ -208,7 +215,7 @@ export function ClientHubPage({ client, canEdit, onBack }: ClientHubPageProps) {
       </SectionPanel>
 
       {canEdit ? (
-        <SectionPanel title="WordPress credentials" description="Encrypted per target. Never shown after save.">
+        <SectionPanel title="WordPress credentials" description="Encrypted per target. Never shown after save. Live publish requires WORDPRESS_PUBLISH_ENABLED and saved credentials.">
           <form className="form-grid" onSubmit={(event) => void handleSaveCredentials(event)}>
             <label>
               Target
@@ -234,6 +241,7 @@ export function ClientHubPage({ client, canEdit, onBack }: ClientHubPageProps) {
               Save credentials
             </button>
           </form>
+          {credentialMessage ? <p className="muted-text">{credentialMessage}</p> : null}
         </SectionPanel>
       ) : null}
 

@@ -1205,6 +1205,11 @@ async function runLocalWordPressConfigChecks(adminToken) {
       saveData.config.siteUrl === siteUrl && saveData.config.wordPressComSite === true,
       `siteUrl=${saveData.config.siteUrl} wordPressComSite=${saveData.config.wordPressComSite}`
     );
+    record(
+      "wordpress config deprecated meta",
+      saveResponse.body?.meta?.deprecated === true,
+      saveResponse.body?.meta?.replacement ? "meta present" : "missing meta"
+    );
 
     const getResponse = await request("/tenant/wordpress-config", { token: adminToken });
     const getData = requireOkData("wordpress config get", getResponse, 200);

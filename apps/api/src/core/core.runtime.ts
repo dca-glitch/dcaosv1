@@ -6326,6 +6326,9 @@ export async function createRecurringInvoice(
     if (!client) {
       return null;
     }
+    if (client.clientKind === "OWN_DOMAIN") {
+      return null;
+    }
 
     const project = await getTenantProject(tx, tenantId, client.id, input.projectId);
     if (input.projectId && !project) {
@@ -6389,6 +6392,9 @@ export async function updateRecurringInvoice(
 
     const client = await getTenantClient(tx, tenantId, input.clientId);
     if (!client) {
+      return null;
+    }
+    if (client.clientKind === "OWN_DOMAIN") {
       return null;
     }
 
@@ -6512,7 +6518,8 @@ export async function generateDueRecurringInvoice(
         },
         select: {
           id: true,
-          isArchived: true
+          isArchived: true,
+          clientKind: true
         }
       });
 
@@ -6520,6 +6527,13 @@ export async function generateDueRecurringInvoice(
         throwFinanceConflict(
           "RECURRING_INVOICE_CLIENT_MISSING",
           "Recurring invoice client is no longer available in the active tenant."
+        );
+      }
+
+      if (recurringClient.clientKind === "OWN_DOMAIN") {
+        throwFinanceConflict(
+          "RECURRING_INVOICE_OWN_DOMAIN_BLOCKED",
+          "Recurring invoices cannot be generated for own-domain clients in the DCA LLC tenant."
         );
       }
 

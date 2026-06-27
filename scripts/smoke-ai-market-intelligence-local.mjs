@@ -65,6 +65,10 @@ async function apiCallExpectFailure(method, path, body, token) {
   return response.status;
 }
 
+function makeSmokeId(prefix) {
+  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
 async function main() {
   console.log("🔍 Starting Market Intelligence smoke test...\n");
 
@@ -661,17 +665,21 @@ async function main() {
     // Step 14: AI Delivery MI context integration
     console.log("📋 Step 14: AI Delivery MI context integration...");
 
-    // 14a: List AI Delivery projects and find one to use
-    const aiDeliveryProjectsResp = await apiCall("GET", "/ai-delivery-projects", null, token);
-    if (!aiDeliveryProjectsResp.ok) throw new Error(`Could not list AI Delivery projects: ${aiDeliveryProjectsResp.status}`);
-    const aiDeliveryProjects = aiDeliveryProjectsResp.data?.aiDeliveryProjects ?? [];
-    const aiDeliveryProjectId = aiDeliveryProjects.find(p => !p.isArchived)?.id ?? null;
-
+    const createAdProjectResp = await apiCall(
+      "POST",
+      "/ai-delivery-projects",
+      {
+        clientId: smokeClientId,
+        name: `[SMOKE][MI] ${makeSmokeId("ai-delivery")}`,
+        targetMonth: "2026-07"
+      },
+      token
+    );
+    const aiDeliveryProjectId = createAdProjectResp.data?.aiDeliveryProject?.id ?? null;
     if (!aiDeliveryProjectId) {
-      console.log("⚠️  No active AI Delivery project found — Step 14 AI Delivery attach proof skipped (no fixture available)");
-      console.log("    To prove full integration, create an AI Delivery project in the admin UI and re-run.\n");
-    } else {
-    console.log(`✅ AI Delivery project available: ${aiDeliveryProjectId}`);
+      throw new Error("Failed to create AI Delivery project for MI integration proof");
+    }
+    console.log(`✅ AI Delivery project linked to smoke client: ${aiDeliveryProjectId}`);
 
     // 14b: Reset handoff to READY so we can test apply
     const readyResp = await apiCall("PUT",
@@ -771,7 +779,6 @@ async function main() {
       throw new Error(`Expected aiDeliveryProjectId null after remove, got ${revertedHandoff.aiDeliveryProjectId}`);
     }
     console.log("✅ Handoff reverted to READY with aiDeliveryProjectId=null after remove\n");
-    } // end if (aiDeliveryProjectId)
 
     // Step 14: Browser test (optional, requires playwright)
     if (process.env.BROWSER_TEST === "true") {

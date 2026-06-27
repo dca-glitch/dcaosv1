@@ -46,7 +46,7 @@ Related documents:
 | **Dark Nebula UI + data-dense admin** | **85%** | Done | Phase 1/2 closed; polish remains in MI/Portal/settings |
 | **Clients (CRM)** | **88%** | Done | CRUD, filters, `clientKind`, website |
 | **Client Hub + domain model (block 1)** | **92%** | Done | Hub UI, profile, local migration, Playwright smoke PASS |
-| **PublicationTarget (block 2)** | **85%** | In progress | CRUD per client; legacy `/tenant/wordpress-config` still exists |
+| **PublicationTarget (block 2)** | **92%** | Done | CRUD per client; legacy tenant API deprecated with headers |
 | **MI → clientId (block 3)** | **88%** | Done | FK, client picker UI, handoff; `clientId` parser fix applied |
 | **Encrypted credentials (block 4)** | **72%** | In progress | API + AES-GCM; prod key and security review gate pending |
 | **WordPress publish + PublicationLog (block 5)** | **58%** | In progress | Log + wiring; live publish requires env + credentials |
@@ -84,7 +84,7 @@ Related documents:
 | Block | Name | % | Status |
 |-------|------|---|--------|
 | 1 | Client foundation + `clientKind` | **92%** | Done |
-| 2 | PublicationTarget | **85%** | In progress |
+| 2 | PublicationTarget | **92%** | Done |
 | 3 | MI → `clientId` | **88%** | Done |
 | 4 | Encrypted credentials | **72%** | In progress |
 | 5 | Real WP publish + PublicationLog | **58%** | In progress |

@@ -203,6 +203,13 @@ export type AiDeliveryWordPressPublishResult = {
   providerDisabledReason?: string;
 };
 
+type AiDeliveryPublicationTargetOption = {
+  id: string;
+  label: string;
+  siteUrl: string;
+  isDefault: boolean;
+};
+
 export type AiDeliveryGoogleDocExportResult = {
   deliverableId: string;
   hasGoogleDocExport: boolean;
@@ -974,6 +981,8 @@ export function AiDeliveryPage({
   const [deliverableWordPressPublishTargetId, setDeliverableWordPressPublishTargetId] = useState<string | null>(null);
   const [deliverableWordPressPublishError, setDeliverableWordPressPublishError] = useState<{ recordId: string; message: string } | null>(null);
   const [deliverableWordPressPublishResult, setDeliverableWordPressPublishResult] = useState<{ recordId: string; result: AiDeliveryWordPressPublishResult } | null>(null);
+  const [deliverablePublicationTargets, setDeliverablePublicationTargets] = useState<AiDeliveryPublicationTargetOption[]>([]);
+  const [deliverablePublicationTargetId, setDeliverablePublicationTargetId] = useState("");
   const [deliverableGoogleDocExportTargetId, setDeliverableGoogleDocExportTargetId] = useState<string | null>(null);
   const [deliverableGoogleDocExportError, setDeliverableGoogleDocExportError] = useState<{ recordId: string; message: string } | null>(null);
   const [deliverableGoogleDocExportResult, setDeliverableGoogleDocExportResult] = useState<{ recordId: string; result: AiDeliveryGoogleDocExportResult } | null>(null);
@@ -1552,6 +1561,24 @@ export function AiDeliveryPage({
     }
   }
 
+  async function fetchClientPublicationTargets(clientId: string): Promise<AiDeliveryPublicationTargetOption[]> {
+    const token = window.sessionStorage.getItem("dcaosv1.authToken");
+    if (!token) {
+      throw new Error("Missing auth token.");
+    }
+    const response = await fetch(`/api/v1/clients/${clientId}/publication-targets`, {
+      headers: {
+        Accept: "application/json",
+        Authorization: `Bearer ${token}`
+      }
+    });
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
+    }
+    const data = await response.json();
+    return (data?.data?.publicationTargets ?? []) as AiDeliveryPublicationTargetOption[];
+  }
+
   async function prepareDeliverableWordPressDraft(projectId: string, deliverableId: string) {
     if (!openDeliverablesProject || !deliverableId) return;
     setDeliverableWordPressDraftTargetId(deliverableId);
@@ -1562,12 +1589,17 @@ export function AiDeliveryPage({
       if (!token) {
         throw new Error("Missing auth token.");
       }
+      const requestBody = deliverablePublicationTargetId
+        ? JSON.stringify({ publicationTargetId: deliverablePublicationTargetId })
+        : undefined;
       const response = await fetch(`/api/v1/ai-delivery-projects/${projectId}/deliverables/${deliverableId}/prepare-wordpress-draft`, {
         method: "POST",
         headers: {
           Accept: "application/json",
-          Authorization: `Bearer ${token}`
-        }
+          Authorization: `Bearer ${token}`,
+          ...(requestBody ? { "Content-Type": "application/json" } : {})
+        },
+        body: requestBody
       });
       if (!response.ok) {
         throw new Error(`API error: ${response.status}`);
@@ -1607,12 +1639,17 @@ export function AiDeliveryPage({
       if (!token) {
         throw new Error("Missing auth token.");
       }
+      const requestBody = deliverablePublicationTargetId
+        ? JSON.stringify({ publicationTargetId: deliverablePublicationTargetId })
+        : undefined;
       const response = await fetch(`/api/v1/ai-delivery-projects/${projectId}/deliverables/${deliverableId}/publish-wordpress`, {
         method: "POST",
         headers: {
           Accept: "application/json",
-          Authorization: `Bearer ${token}`
-        }
+          Authorization: `Bearer ${token}`,
+          ...(requestBody ? { "Content-Type": "application/json" } : {})
+        },
+        body: requestBody
       });
       if (!response.ok) {
         throw new Error(`API error: ${response.status}`);
@@ -2103,12 +2140,22 @@ export function AiDeliveryPage({
     setDeliverableReviews([]);
     setDeliverableReviewEditorId(null);
     setDeliverableReviewForm(emptyDeliverableReview());
+    setDeliverablePublicationTargets([]);
+    setDeliverablePublicationTargetId("");
     try {
-      const [items, drafts, images] = await Promise.all([
+      const deliverablesProject = projects.find((project) => project.id === projectId) ?? null;
+      const [items, drafts, images, publicationTargets] = await Promise.all([
         typeof onFetchDeliverables === "function" ? onFetchDeliverables(projectId) : Promise.resolve([]),
         typeof onFetchContentDrafts === "function" ? onFetchContentDrafts(projectId) : Promise.resolve([]),
-        typeof onFetchArticleImages === "function" ? onFetchArticleImages(projectId) : Promise.resolve([])
+        typeof onFetchArticleImages === "function" ? onFetchArticleImages(projectId) : Promise.resolve([]),
+        deliverablesProject?.clientId
+          ? fetchClientPublicationTargets(deliverablesProject.clientId).catch(() => [] as AiDeliveryPublicationTargetOption[])
+          : Promise.resolve([] as AiDeliveryPublicationTargetOption[])
       ]);
+      const defaultPublicationTarget =
+        publicationTargets.find((target) => target.isDefault) ?? publicationTargets[0] ?? null;
+      setDeliverablePublicationTargets(publicationTargets);
+      setDeliverablePublicationTargetId(defaultPublicationTarget?.id ?? "");
       const activeDrafts = drafts.filter((d) => !d.isArchived);
       const preferredDraftId = options?.contentDraftId ?? activeDrafts[0]?.id ?? null;
       const preferredDeliverable = options?.deliverableId
@@ -2313,6 +2360,8 @@ export function AiDeliveryPage({
     setDeliverableWordPressPublishTargetId(null);
     setDeliverableWordPressPublishError(null);
     setDeliverableWordPressPublishResult(null);
+    setDeliverablePublicationTargets([]);
+    setDeliverablePublicationTargetId("");
     setDeliverableGoogleDocExportTargetId(null);
     setDeliverableGoogleDocExportError(null);
     setDeliverableGoogleDocExportResult(null);
@@ -4779,6 +4828,33 @@ export function AiDeliveryPage({
                     <button className="secondary-action" disabled={deliverablesSaving} onClick={() => void restoreDeliverable(openDeliverablesProject.id, activeDeliverableRecord.id)} type="button">Restore deliverable</button>
                   ) : null}
                 </div>
+              </section>
+
+              <section className="field-panel">
+                <h3>WordPress publication target</h3>
+                <p className="muted-text">
+                  Select which client publication target to use for prepare/publish tests. Manage targets and credentials in Clients → Open hub.
+                </p>
+                {deliverablePublicationTargets.length === 0 ? (
+                  <div className="state-panel">No publication targets for this client yet. Add one in Client Hub before testing WordPress handoff.</div>
+                ) : (
+                  <label>
+                    Publication target
+                    <select
+                      onChange={(event) => setDeliverablePublicationTargetId(event.target.value)}
+                      value={deliverablePublicationTargetId}
+                    >
+                      {deliverablePublicationTargets.map((target) => (
+                        <option key={target.id} value={target.id}>
+                          {target.label} ({target.siteUrl}){target.isDefault ? " — default" : ""}
+                        </option>
+                      ))}
+                    </select>
+                    <span className="muted-text">
+                      Leave unset to use the client default target. Live publish also requires saved credentials and WORDPRESS_PUBLISH_ENABLED.
+                    </span>
+                  </label>
+                )}
               </section>
 
               <section className="field-panel">
