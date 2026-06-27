@@ -2,6 +2,7 @@ import { type FormEvent, useMemo, useState } from "react";
 import { EmptyState } from "../../components/EmptyState";
 import { ErrorState } from "../../components/ErrorState";
 import { LoadingState } from "../../components/LoadingState";
+import { SectionPanel } from "../../components/ui";
 import { Modal } from "../../components/Modal";
 import { StatusBadge } from "../../components/ui";
 import type { ClientSummary } from "../clients/ClientsPage";
@@ -187,6 +188,18 @@ export function ProjectsPage({
           ) : null}
         </div>
       </div>
+
+      <SectionPanel
+        tone="compact"
+        title="Delivery cross-links"
+        description="Monthly AI Delivery projects link from the same client record. Use Client Hub for publication targets and logs."
+      >
+        <div className="quick-link-list">
+          <a href="#/clients">Open Clients</a>
+          <a href="#/ai-delivery">Open AI Delivery</a>
+          <a href="#/tasks">Open Tasks</a>
+        </div>
+      </SectionPanel>
 
       {filteredProjects.length === 0 ? (
         <EmptyState message="No projects match the current filter." title="No projects" />
