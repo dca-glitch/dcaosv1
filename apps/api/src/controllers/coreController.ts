@@ -23,6 +23,11 @@ import {
 import type { AuthSessionLocals } from "../auth/types";
 import { listTenantAuditLogs } from "../security/audit-log.service";
 import {
+  listTenantEmailLogs,
+  type EmailNotificationStatus,
+  type EmailNotificationTemplateKey
+} from "../services/email-notifications.service";
+import {
   archiveAiDeliveryArticleImage,
   isAiDeliveryGuardError,
   isFinanceIntegrityError,
@@ -258,6 +263,17 @@ const AI_DELIVERY_DELIVERABLE_STATUSES = new Set(["DRAFT", "READY", "DELIVERED",
 const AI_DELIVERY_DELIVERABLE_REVIEW_STATUSES = new Set(["NOT_STARTED", "ADMIN_REVIEW", "CHANGES_REQUESTED", "APPROVED", "ARCHIVED"]);
 const ACTIVITY_AUDIT_LOG_LIMIT_DEFAULT = 50;
 const ACTIVITY_AUDIT_LOG_LIMIT_MAX = 100;
+const EMAIL_NOTIFICATION_LOG_LIMIT_DEFAULT = 50;
+const EMAIL_NOTIFICATION_LOG_LIMIT_MAX = 100;
+const EMAIL_NOTIFICATION_TEMPLATE_KEYS = new Set<EmailNotificationTemplateKey>([
+  "CLIENT_INVITE",
+  "PASSWORD_RESET",
+  "AI_DELIVERY_BRIEF_REQUEST",
+  "AI_DELIVERY_REVIEW_REQUEST",
+  "AI_DELIVERY_APPROVED",
+  "INVOICE_ISSUED"
+]);
+const EMAIL_NOTIFICATION_STATUSES = new Set<EmailNotificationStatus>(["QUEUED", "SENT", "FAILED", "SKIPPED"]);
 
 function getAuthSession(resLocals: unknown) {
   return (resLocals as AuthSessionLocals | undefined)?.authSession;
@@ -306,6 +322,58 @@ function parseActivityAuditLogLimit(value: unknown): number | null {
   }
 
   return Math.min(parsed, ACTIVITY_AUDIT_LOG_LIMIT_MAX);
+}
+
+function parseEmailNotificationLogLimit(value: unknown): number | null {
+  if (value === undefined) {
+    return EMAIL_NOTIFICATION_LOG_LIMIT_DEFAULT;
+  }
+
+  const trimmed = getOptionalQueryValue(value);
+  if (!trimmed) {
+    return EMAIL_NOTIFICATION_LOG_LIMIT_DEFAULT;
+  }
+
+  if (!/^\d+$/.test(trimmed)) {
+    return null;
+  }
+
+  const parsed = Number.parseInt(trimmed, 10);
+  if (!Number.isInteger(parsed) || parsed <= 0) {
+    return null;
+  }
+
+  return Math.min(parsed, EMAIL_NOTIFICATION_LOG_LIMIT_MAX);
+}
+
+function parseEmailNotificationTemplateKey(value: unknown): EmailNotificationTemplateKey | null | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  const trimmed = getOptionalQueryValue(value);
+  if (!trimmed) {
+    return undefined;
+  }
+
+  return EMAIL_NOTIFICATION_TEMPLATE_KEYS.has(trimmed as EmailNotificationTemplateKey)
+    ? (trimmed as EmailNotificationTemplateKey)
+    : null;
+}
+
+function parseEmailNotificationStatus(value: unknown): EmailNotificationStatus | null | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  const trimmed = getOptionalQueryValue(value);
+  if (!trimmed) {
+    return undefined;
+  }
+
+  return EMAIL_NOTIFICATION_STATUSES.has(trimmed as EmailNotificationStatus)
+    ? (trimmed as EmailNotificationStatus)
+    : null;
 }
 
 function handleAiDeliveryGuardError(res: Response, error: unknown): boolean {
@@ -1189,6 +1257,51 @@ export const listActivityAuditLogsHandler: RequestHandler = async (req, res) => 
     res.json(success(response, { phase: "runtime", scope: "activity-audit-logs" }));
   } catch {
     res.status(500).json(failure("ACTIVITY_AUDIT_LOG_RUNTIME_ERROR", "Activity audit logs could not be listed."));
+  }
+};
+
+export const listEmailNotificationLogsHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) {
+    res.status(401).json(unauthorizedFailure());
+    return;
+  }
+
+  const tenantId = authSession.tenantContext.activeMembership?.tenantId ?? null;
+  if (!tenantId) {
+    res.status(403).json(forbiddenFailure());
+    return;
+  }
+
+  const limit = parseEmailNotificationLogLimit(req.query.limit);
+  if (limit === null) {
+    res.status(400).json(failure("EMAIL_NOTIFICATION_LOG_INVALID", "Invalid limit value."));
+    return;
+  }
+
+  const templateKey = parseEmailNotificationTemplateKey(req.query.templateKey);
+  if (templateKey === null) {
+    res.status(400).json(failure("EMAIL_NOTIFICATION_LOG_INVALID", "Invalid templateKey value."));
+    return;
+  }
+
+  const status = parseEmailNotificationStatus(req.query.status);
+  if (status === null) {
+    res.status(400).json(failure("EMAIL_NOTIFICATION_LOG_INVALID", "Invalid status value."));
+    return;
+  }
+
+  try {
+    const response = await listTenantEmailLogs({
+      tenantId,
+      templateKey: templateKey ?? undefined,
+      status: status ?? undefined,
+      limit
+    });
+
+    res.json(success(response, { phase: "runtime", scope: "email-notification-outbox" }));
+  } catch {
+    res.status(500).json(failure("EMAIL_NOTIFICATION_LOG_RUNTIME_ERROR", "Email notification logs could not be listed."));
   }
 };
 

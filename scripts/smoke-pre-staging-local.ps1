@@ -85,6 +85,7 @@ try {
   Invoke-NpmStep "Monthly report metrics local smoke" "smoke:monthly-report:metrics"
   Invoke-NpmStep "Monthly report admin browser smoke" "smoke:monthly-report:browser"
   Invoke-NpmStep "AI Delivery reviews smoke" "smoke:ai-delivery-reviews"
+  Invoke-NpmStep "Email outbox read-only smoke" "smoke:email-outbox:local"
   Invoke-NpmStep "Credential encryption local smoke" "smoke:credential-encryption:local"
   Invoke-NpmStep "R2 byte roundtrip local smoke" "smoke:r2-byte-roundtrip:local"
   Invoke-NpmStep "WordPress publish local smoke" "smoke:wordpress-publish:local"

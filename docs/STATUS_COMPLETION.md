@@ -61,7 +61,7 @@ Related documents:
 | **Finance** | **82%** | Done | Finance admin browser sanity gate (Post-MVP Block 36) |
 | **AI SEO + Content Production** | **64%** | In progress | Admin shell; Google Drive export smoke in pre-staging; no live Google integrations |
 | **Private storage (R2)** | **65%** | In progress | Block 37 byte roundtrip smoke (disabled guard + optional full roundtrip); prod bucket deferred |
-| **Email / notifications** | **22%** | In progress | Backend foundation; no real sending |
+| **Email / notifications** | **35%** | In progress | Read-only outbox API + local smoke (Post-MVP Block 38); no real sending |
 | **Audit / activity** | **70%** | In progress | Dashboard read-only feed + browser gate (Post-MVP Block 31); full audit UI deferred |
 | **AI provider (OpenRouter)** | **40%** | In progress | Guarded path; default remains deterministic local |
 | **Operator docs & runbooks** | **95%** | Done | Puriva MVP Blocks 7–30 index + pre-staging local gate |

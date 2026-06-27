@@ -47,6 +47,7 @@ import {
   getRecurringInvoiceHandler,
   getTaskHandler,
   listActivityAuditLogsHandler,
+  listEmailNotificationLogsHandler,
   listAiDeliveryArticleImagesHandler,
   listAiDeliveryDeliverablesHandler,
   listAiDeliveryDeliverableReviewsHandler,
@@ -211,6 +212,7 @@ export function createCoreRouter() {
   router.get("/tenant/wordpress-config", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), getAiDeliveryWordPressConfigHandler);
   router.post("/tenant/wordpress-config", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), saveAiDeliveryWordPressConfigHandler);
   router.get("/activity/audit-logs", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), listActivityAuditLogsHandler);
+  router.get("/notifications/email-logs", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), listEmailNotificationLogsHandler);
 
   router.get("/clients", requireAuth, requireTenant, tenantModuleGuard, listClientsHandler);
   router.post("/clients", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), createClientHandler);
