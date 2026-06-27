@@ -1191,44 +1191,77 @@ function TeamView({
 }) {
   const canReadUsers = hasPermission(authContext, "users:read") || hasActiveRole(authContext, ["owner", "admin"]);
   const members = teamMembers?.members ?? [];
+  const activeMembers = members.filter((member) => member.status.toLowerCase() === "active");
+  const roleLabels = [...new Set(members.flatMap((member) => member.roles))];
 
   return (
     <section className="view-section" aria-labelledby="team-title">
-      <PageHeader eyebrow="Team" title="Members" titleId="team-title" description="User identity, access roles, and visibility status for the current company workspace." />
+      <PageHeader
+        eyebrow="Team"
+        title="Members"
+        titleId="team-title"
+        description="Read-only tenant member directory for the current company workspace."
+      />
+      <div className="summary-grid metric-grid team-shell-metrics" aria-label="Team shell metrics">
+        <MetricCard
+          accent="cyan"
+          helper={`${activeMembers.length} active of ${members.length} listed`}
+          label="Members"
+          metricKey="team-members"
+          value={String(members.length)}
+        />
+        <MetricCard
+          accent="purple"
+          helper={roleLabels.length ? roleLabels.join(", ") : "No roles assigned"}
+          label="Role coverage"
+          metricKey="team-roles"
+          value={roleLabels.length ? String(roleLabels.length) : "None"}
+        />
+        <MetricCard
+          accent={canReadUsers ? "success" : "warning"}
+          helper="users:read or admin role required"
+          label="Directory access"
+          metricKey="team-access"
+          value={canReadUsers ? "Readable" : "Limited"}
+        />
+      </div>
       {!canReadUsers ? (
         <StatusNotice tone="info" message="Member visibility requires tenant user read access." />
       ) : null}
       {canReadUsers ? (
-        <div className="state-panel">
-          This section is read-only in the current shell. Role controls what this user can access inside the company.
-        </div>
-      ) : null}
-      {canReadUsers && members.length === 0 ? (
-        <div className="state-panel">No active members were found for this tenant.</div>
-      ) : null}
-      {canReadUsers && members.length > 0 ? (
-        <div className="table-wrap" aria-label="Tenant members">
-          <table>
-            <thead>
-              <tr>
-                <th>User name</th>
-                <th>User email</th>
-                <th>Role / access level</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {members.map((member) => (
-                <tr key={member.tenantMembershipId}>
-                  <td>{member.user.name || "Unassigned"}</td>
-                  <td>{member.user.email}</td>
-                  <td>{member.roles.join(", ") || "None"}</td>
-                  <td><StatusBadge status={member.status} /></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <SectionPanel
+          title="Member directory"
+          description="Read-only shell. Role editing, invites, and password reset remain deferred."
+        >
+          {members.length === 0 ? (
+            <EmptyState message="Active tenant members appear here once membership records exist." title="No members listed" />
+          ) : (
+            <div className="table-wrap" aria-label="Tenant members">
+              <table>
+                <thead>
+                  <tr>
+                    <th>User name</th>
+                    <th>User email</th>
+                    <th>Role / access level</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {members.map((member) => (
+                    <tr key={member.tenantMembershipId}>
+                      <td>{member.user.name || "Unassigned"}</td>
+                      <td>{member.user.email}</td>
+                      <td>{member.roles.join(", ") || "None"}</td>
+                      <td>
+                        <StatusBadge status={member.status} />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </SectionPanel>
       ) : null}
     </section>
   );
@@ -1248,19 +1281,47 @@ function SettingsView({
 
   return (
     <section className="view-section" aria-labelledby="settings-title">
-      <PageHeader eyebrow="Settings" title="Settings" titleId="settings-title" description="Read-only tenant and profile context for this MVP shell." />
-      <div className="summary-grid">
-        <MetricCard label="Profile" value={currentUser.name || currentUser.email} helper={currentUser.email} accent="cyan" />
-        <MetricCard label="Tenant" value={tenantSettings?.tenant.name ?? "Unavailable"} helper={tenantSettings?.tenant.slug ?? "read-only context"} />
-        <MetricCard label="Access" value={canReadSettings ? "Readable" : "Limited"} helper={`${authContext?.effectivePermissions.length ?? 0} effective permissions`} accent={canReadSettings ? "success" : "warning"} />
+      <PageHeader
+        eyebrow="Settings"
+        title="Settings"
+        titleId="settings-title"
+        description="Read-only tenant and profile context for this MVP shell."
+      />
+      <div className="summary-grid metric-grid settings-shell-metrics" aria-label="Settings shell metrics">
+        <MetricCard
+          accent="cyan"
+          helper={currentUser.email}
+          label="Profile"
+          metricKey="settings-profile"
+          value={currentUser.name || currentUser.email}
+        />
+        <MetricCard
+          accent="violet"
+          helper={tenantSettings?.tenant.slug ?? "read-only context"}
+          label="Tenant"
+          metricKey="settings-tenant"
+          value={tenantSettings?.tenant.name ?? "Unavailable"}
+        />
+        <MetricCard
+          accent={canReadSettings ? "success" : "warning"}
+          helper={`${authContext?.effectivePermissions.length ?? 0} effective permissions`}
+          label="Access"
+          metricKey="settings-access"
+          value={canReadSettings ? "Readable" : "Limited"}
+        />
       </div>
       {!canReadSettings ? (
         <StatusNotice tone="info" message="Tenant settings visibility requires settings read access." />
       ) : null}
-      <div className="state-panel">
-        Settings are read-only in this MVP shell. Password reset, OAuth, billing, invite flow, and destructive
-        tenant changes remain out of scope.
-      </div>
+      <SectionPanel
+        title="MVP shell boundary"
+        description="Settings remain read-only until the Settings MVP backend block is approved."
+      >
+        <EmptyState
+          message="Password reset, OAuth, billing, invite flow, and destructive tenant changes remain out of scope for this shell."
+          title="Read-only settings shell"
+        />
+      </SectionPanel>
     </section>
   );
 }

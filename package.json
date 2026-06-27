@@ -40,6 +40,7 @@
     "smoke:client-access:local": "node scripts/smoke-client-access-local.mjs",
     "smoke:client-access:browser": "node scripts/smoke-client-access-browser-local.mjs",
     "smoke:dashboard:audit-feed:browser": "node scripts/smoke-dashboard-audit-feed-browser-local.mjs",
+    "smoke:settings-team:browser": "node scripts/smoke-settings-team-browser-local.mjs",
     "smoke:monthly-report:local": "node scripts/smoke-monthly-report-local.mjs",
     "smoke:monthly-report:browser": "node scripts/smoke-browser-monthly-report-admin-ui.mjs",
     "smoke:monthly-report:pdf": "node scripts/smoke-monthly-report-pdf-local.mjs",

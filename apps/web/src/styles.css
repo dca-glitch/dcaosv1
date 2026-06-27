@@ -1037,6 +1037,12 @@ textarea:focus-visible {
   gap: 16px;
 }
 
+.settings-shell-metrics,
+.team-shell-metrics {
+  gap: 16px;
+  grid-template-columns: repeat(3, minmax(180px, 1fr));
+}
+
 .dashboard-command-metrics .metric-card {
   min-height: 152px;
 }
