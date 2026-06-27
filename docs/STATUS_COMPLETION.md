@@ -22,7 +22,7 @@ Related documents:
 
 | Perspective | % | Meaning |
 |-------------|---|---------|
-| **Local admin MVP** (DCA operator, local dev) | **~96%** | Done | Puriva MVP Blocks 7–30 local closeout; `smoke:pre-staging:local` |
+| **Local admin MVP** (DCA operator, local dev) | **~97%** | Done | Post-MVP Phase A Blocks 31–36 polish/smoke layers |
 | **Client/domain roadmap (blocks 1–6)** | **~92%** | Local gates done; prod env keys = separate owner gates |
 | **Production readiness** (real clients, VPS) | **~38%** | Runbooks exist; deploy/migration deferred by owner |
 | **Full PRD vision** (future modules + automation) | **~28%** | Large portion intentionally deferred |
@@ -58,14 +58,14 @@ Related documents:
 | **Monthly Reports** | **90%** | Done | Admin browser + PDF + metrics path; local + browser + metrics smokes in pre-staging |
 | **Client Portal MVP** (Puriva — visibility + review) | **100%** | Done (local) | Blocks 7–30 incl. sparse + populated delivery overview browser gates |
 | **Client Portal advanced actions** (magic links, full comment threads) | **0%** | Phased after MVP visibility | See deferred scope register |
-| **Finance** | **80%** | Done | Invoices, bills, vendors, credit notes; `OWN_DOMAIN` invoice guard |
+| **Finance** | **82%** | Done | Finance admin browser sanity gate (Post-MVP Block 36) |
 | **AI SEO + Content Production** | **64%** | In progress | Admin shell; Google Drive export smoke in pre-staging; no live Google integrations |
 | **Private storage (R2)** | **50%** | In progress | Local proof; production bucket deferred |
 | **Email / notifications** | **22%** | In progress | Backend foundation; no real sending |
 | **Audit / activity** | **70%** | In progress | Dashboard read-only feed + browser gate (Post-MVP Block 31); full audit UI deferred |
 | **AI provider (OpenRouter)** | **40%** | In progress | Guarded path; default remains deterministic local |
 | **Operator docs & runbooks** | **95%** | Done | Puriva MVP Blocks 7–30 index + pre-staging local gate |
-| **Tests / smoke** | **100%** | Done (local) | Full Puriva MVP local closeout in pre-staging orchestrator |
+| **Tests / smoke** | **100%** | Done (local) | Puriva MVP closeout + Post-MVP Phase A browser layers in pre-staging |
 | **PR merge → main** | **0%** | In progress | PR #13 open; merge after owner approves staging |
 | **Staging / VPS deploy** | **5%** | Deferred | Documentation only; **paused by owner — no VPS deploy** |
 | **Production deploy** | **0%** | Deferred | Frozen |

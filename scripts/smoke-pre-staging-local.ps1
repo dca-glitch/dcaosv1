@@ -60,6 +60,7 @@ try {
   Invoke-NpmStep "Settings and Team shell browser smoke" "smoke:settings-team:browser"
   Invoke-NpmStep "Content plan review browser smoke" "smoke:content-plan-review:browser"
   Invoke-NpmStep "Content draft review browser smoke" "smoke:content-draft-review:browser"
+  Invoke-NpmStep "Finance admin browser smoke" "smoke:finance-admin:browser"
   Invoke-NpmStep "Client access admin browser smoke" "smoke:client-access:browser"
   Invoke-NpmStep "Client portal browser smoke" "smoke:client-portal:browser"
   Invoke-NpmStep "Client portal signed-out browser smoke" "smoke:client-portal:signed-out:browser"
