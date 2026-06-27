@@ -42,6 +42,7 @@
     "smoke:dashboard:audit-feed:browser": "node scripts/smoke-dashboard-audit-feed-browser-local.mjs",
     "smoke:settings-team:browser": "node scripts/smoke-settings-team-browser-local.mjs",
     "smoke:content-plan-review:browser": "node scripts/smoke-content-plan-review-browser-local.mjs",
+    "smoke:content-draft-review:browser": "node scripts/smoke-content-draft-review-browser-local.mjs",
     "smoke:monthly-report:local": "node scripts/smoke-monthly-report-local.mjs",
     "smoke:monthly-report:browser": "node scripts/smoke-browser-monthly-report-admin-ui.mjs",
     "smoke:monthly-report:pdf": "node scripts/smoke-monthly-report-pdf-local.mjs",
