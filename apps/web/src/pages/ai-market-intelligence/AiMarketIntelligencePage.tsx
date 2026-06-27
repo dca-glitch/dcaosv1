@@ -619,6 +619,7 @@ export function AiMarketIntelligencePage({ clients }: AiMarketIntelligencePagePr
                 }
                 description="URLs, competitor pages, and internal notes used as research evidence."
                 title="Research sources"
+                tone="compact"
               >
                 {sources.length === 0 ? (
                   <EmptyState message="Add at least one source before running research." title="No sources yet" />
@@ -654,6 +655,7 @@ export function AiMarketIntelligencePage({ clients }: AiMarketIntelligencePagePr
                 }
                 description="Deterministic placeholder execution — no live crawling in MVP."
                 title="Research runs"
+                tone="compact"
               >
                 {runs.length === 0 ? (
                   <EmptyState message="Create a run, then execute it to generate structured insight output." title="No runs yet" />
@@ -703,6 +705,7 @@ export function AiMarketIntelligencePage({ clients }: AiMarketIntelligencePagePr
                 }
                 description="Review and approve findings before preparing an internal handoff."
                 title="Market insights"
+                tone="compact"
               >
                 {insights.length === 0 ? (
                   <EmptyState message="Execute a research run or add an insight manually." title="No insights yet" />
@@ -760,6 +763,7 @@ export function AiMarketIntelligencePage({ clients }: AiMarketIntelligencePagePr
               <SectionPanel
                 description="Admin-only bridge to AI Delivery. Set handoff to READY, then attach it from the AI Delivery project screen."
                 title="Internal handoffs"
+                tone="compact"
               >
                 {approvedInsights.length > 0 ? (
                   <div className="dense-list" style={{ marginBottom: "14px" }}>
