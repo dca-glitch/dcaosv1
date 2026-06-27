@@ -615,7 +615,7 @@ async function runAiDeliveryApiRegression(token, fixtureProjects) {
     })
   );
   const approvedDraft = createdContentDraft;
-  note("Client Portal deferred: using the admin-created draft for DRAFT deliverable packaging only; positive ready-state approval remains gated.");
+  note("Client Portal MVP required for Puriva; advanced client actions remain phased. Using the admin-created draft for DRAFT deliverable packaging only; positive ready-state approval remains gated.");
 
   const initialArticleImages = requireOkResponse(
     "AI Delivery article images list",
