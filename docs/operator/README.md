@@ -12,6 +12,7 @@ These documents explain how to use and plan DCA OS Lite without technical detail
 
 ## For Planning And Readiness
 
+- [`../STATUS_COMPLETION.md`](../STATUS_COMPLETION.md) — percentage completion by area/module (local MVP vs production vs deferred).
 - `pre-production-readiness-checklist.md` — checklist before production or live client access.
 - `deferred-scope-register.md` — list of features intentionally not active yet.
 - `module-completion-matrix.md` — plain-language status of each system area/module.
