@@ -2,7 +2,7 @@
 
 **Status:** Planning and operator reference  
 **Last updated:** 2026-06-27  
-**Reference branch:** `feature/ai-delivery-project-brief-foundation` @ `604c714`  
+**Reference branch:** `feature/ai-delivery-project-brief-foundation` @ `a5e511b`  
 **Scope:** Approved local admin MVP + client/domain operating model (blocks 1–6) + **MVP 1 Puriva client delivery**. VPS/production intentionally excluded until separate approval.
 
 Percentages measure completion **within each area's approved scope**, not the full long-term PRD vision.
@@ -48,9 +48,9 @@ Related documents:
 | **Client Hub + domain model (block 1)** | **92%** | Done | Hub UI, profile, local migration, Playwright smoke PASS |
 | **PublicationTarget (block 2)** | **95%** | Done | CRUD per client; legacy tenant POST sunset (410); GET read-only |
 | **MI → clientId (block 3)** | **88%** | Done | FK, client picker UI, handoff; `clientId` parser fix applied |
-| **Encrypted credentials (block 4)** | **78%** | In progress | Local API + AES-GCM + smoke; prod master key gate pending |
-| **WordPress publish + PublicationLog (block 5)** | **72%** | In progress | UI double-confirm + logs + smoke; live publish needs env + credentials |
-| **Module middleware (block 6)** | **88%** | In progress | Route map, seed, smoke; **enforce = off** until staging gate |
+| **Encrypted credentials (block 4)** | **85%** | In progress | Local encrypt roundtrip smoke PASS; prod master key gate pending |
+| **WordPress publish + PublicationLog (block 5)** | **88%** | In progress | Local gate smoke PASS (off + open gate); live Puriva publish = separate gate |
+| **Module middleware (block 6)** | **92%** | In progress | Route map, seed, local `off`/`dry_run`/`enforce` gate doc + smoke |
 | **Projects & Tasks** | **88%** | Done | Admin MVP closed |
 | **AI Delivery** | **82%** | Done | Brief → deliverable → export → monthly report path |
 | **Market Intelligence** | **74%** | In progress | Admin MVP + handoff; no recurring/automation |
@@ -110,9 +110,9 @@ Related documents:
 ### In progress — finish before Puriva MVP 1 production
 
 - Client Portal polish (operator UX, edge-case QA)
-- Block 4 prod gate: `CREDENTIAL_ENCRYPTION_MASTER_KEY` + full encrypt roundtrip smoke
-- Block 5 prod gate: `WORDPRESS_PUBLISH_ENABLED` + live credentials on Puriva publication target
-- Block 6 staging gate: `TENANT_MODULE_ENFORCEMENT` dry_run → enforce
+- Block 4 prod gate: `CREDENTIAL_ENCRYPTION_MASTER_KEY` on staging/production
+- Block 5 prod gate: live Puriva publication target + owner sign-off for publish
+- Block 6 staging deploy: `TENANT_MODULE_ENFORCEMENT` dry_run → enforce on staging VPS
 - Staging validation + merge PR #13
 
 ### Intentionally deferred (not counted as missing bugs)

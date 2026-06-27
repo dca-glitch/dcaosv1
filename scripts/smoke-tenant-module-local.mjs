@@ -11,6 +11,10 @@ const apiBaseUrl = (process.env.MVP_SMOKE_API_BASE_URL ?? defaultLocalApiBaseUrl
 const adminEmail = process.env.AUTH_SEED_TEST_EMAIL ?? "admin@dca.local";
 const adminPassword = process.env.AUTH_SEED_TEST_PASSWORD;
 const smokeMarker = "[SMOKE][TENANT_MODULE]";
+const expectEnforce =
+  (process.env.SMOKE_EXPECT_TENANT_MODULE_ENFORCE ?? "").trim().toLowerCase() === "true";
+const expectDryRun =
+  (process.env.SMOKE_EXPECT_TENANT_MODULE_DRY_RUN ?? "").trim().toLowerCase() === "true";
 
 const routeResolutionCases = [
   ["/clients", "core"],
@@ -173,14 +177,26 @@ async function runApiChecks() {
   record("disable ai-delivery module", disableResponse.status === 200, `${disableResponse.status}`);
 
   const aiProjectsAfterDisable = await request("/ai-delivery-projects", { token });
-  const enforceBlocked =
+  const aiDeliveryBlocked =
     aiProjectsAfterDisable.status === 403 &&
     aiProjectsAfterDisable.body?.error?.code === "MODULE_NOT_ENABLED";
-  const offAllows = aiProjectsAfterDisable.status === 200;
+  const aiDeliveryAllowed = aiProjectsAfterDisable.status === 200;
 
-  if (enforceBlocked) {
+  if (expectEnforce) {
+    record(
+      "enforce mode blocks disabled ai-delivery route",
+      aiDeliveryBlocked,
+      aiDeliveryBlocked ? "403 MODULE_NOT_ENABLED" : `expected 403, got HTTP ${aiProjectsAfterDisable.status}`
+    );
+  } else if (expectDryRun) {
+    record(
+      "dry_run mode allows disabled ai-delivery route",
+      aiDeliveryAllowed,
+      aiDeliveryAllowed ? "200 while dry_run logs would-block" : `expected 200, got HTTP ${aiProjectsAfterDisable.status}`
+    );
+  } else if (aiDeliveryBlocked) {
     record("enforce mode blocks disabled ai-delivery route", true, "403 MODULE_NOT_ENABLED");
-  } else if (offAllows) {
+  } else if (aiDeliveryAllowed) {
     record("off mode allows disabled ai-delivery route", true, "200 while enforcement disabled");
   } else {
     record(
@@ -188,6 +204,30 @@ async function runApiChecks() {
       false,
       `unexpected HTTP ${aiProjectsAfterDisable.status}`
     );
+  }
+
+  if (expectEnforce) {
+    const disableMiResponse = await request("/modules/current/market-intelligence/disable", {
+      method: "POST",
+      token
+    });
+    record("disable market-intelligence module", disableMiResponse.status === 200, `${disableMiResponse.status}`);
+
+    const miProjectsAfterDisable = await request("/market-intelligence-projects", { token });
+    const miBlocked =
+      miProjectsAfterDisable.status === 403 &&
+      miProjectsAfterDisable.body?.error?.code === "MODULE_NOT_ENABLED";
+    record(
+      "enforce mode blocks disabled market-intelligence route",
+      miBlocked,
+      miBlocked ? "403 MODULE_NOT_ENABLED" : `expected 403, got HTTP ${miProjectsAfterDisable.status}`
+    );
+
+    const enableMiResponse = await request("/modules/current/market-intelligence/enable", {
+      method: "POST",
+      token
+    });
+    record("re-enable market-intelligence module", enableMiResponse.status === 200, `${enableMiResponse.status}`);
   }
 
   const enableResponse = await request("/modules/current/ai-delivery/enable", {

@@ -68,28 +68,28 @@ npm.cmd run seed:db1
 
 ## Local verification
 
-1. Ensure API is running: `npm.cmd run dev:api`
-2. Run smoke:
+See **`docs/security/TENANT_MODULE_ENFORCEMENT_LOCAL_GATE.md`** for the full `off` → `dry_run` → `enforce` gate sequence.
+
+Quick smoke (default `off`):
 
 ```powershell
 cd C:\dcaosv1
 npm.cmd run smoke:tenant-module:local
 ```
 
-3. Optional enforce proof (manual):
+Enforce gate (restart API with `TENANT_MODULE_ENFORCEMENT=enforce` first):
 
 ```powershell
-# In .env
-TENANT_MODULE_ENFORCEMENT=enforce
-```
-
-Restart API, then:
-
-```powershell
+$env:SMOKE_EXPECT_TENANT_MODULE_ENFORCE = "true"
 npm.cmd run smoke:tenant-module:local
 ```
 
-The smoke script detects `enforce` when the API returns `403 MODULE_NOT_ENABLED` after disabling `ai-delivery` for the active tenant, then re-enables the module before exit.
+Dry-run gate (restart API with `TENANT_MODULE_ENFORCEMENT=dry_run` first):
+
+```powershell
+$env:SMOKE_EXPECT_TENANT_MODULE_DRY_RUN = "true"
+npm.cmd run smoke:tenant-module:local
+```
 
 ---
 
