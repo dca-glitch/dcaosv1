@@ -765,10 +765,11 @@ export function MonthlyReportPanel({
       title={`Monthly Report — ${project.name}`}
     >
       {/* Computed Summary Section */}
-      <section className="field-panel" style={{ marginBottom: "1.5rem" }}>
-        <h3>Computed Monthly Summary</h3>
-        <p className="muted-text">Read-only admin overview computed from existing project records. No GA/GSC or PDF generation in this block.</p>
-
+      <SectionPanel
+        className="monthly-report-summary-panel"
+        description="Read-only admin overview from project records. GA/GSC live sync and PDF generation remain deferred."
+        title="Computed Monthly Summary"
+      >
         {summaryLoading ? (
           <div className="state-panel">Loading computed summary...</div>
         ) : summaryError ? (
@@ -777,31 +778,30 @@ export function MonthlyReportPanel({
           </div>
         ) : summary ? (
           <>
-            <dl className="brief-grid">
-              <div>
-                <dt>Project</dt>
-                <dd>{summary.project.name}</dd>
-              </div>
-              <div>
-                <dt>Target month</dt>
-                <dd>{summary.project.targetMonth}</dd>
-              </div>
-              <div>
-                <dt>Client</dt>
-                <dd>{summary.project.clientName ?? "Not set"}</dd>
-              </div>
-              <div>
-                <dt>Final deliverables</dt>
-                <dd>{summary.totals.deliverableCount}</dd>
-              </div>
-              <div>
-                <dt>Delivered</dt>
-                <dd>{summary.totals.deliveredCount}</dd>
-              </div>
-              <div>
-                <dt>Accepted</dt>
-                <dd>{summary.totals.acceptedCount}</dd>
-              </div>
+            <div className="summary-grid metric-grid monthly-report-summary-metrics" aria-label="Monthly report snapshot metrics">
+              <MetricCard
+                accent="cyan"
+                helper={summary.project.clientName ?? "Client not set"}
+                label="Project"
+                metricKey="monthly-report-project"
+                value={summary.project.name}
+              />
+              <MetricCard
+                accent="violet"
+                helper={summary.project.targetMonth}
+                label="Target month"
+                metricKey="monthly-report-month"
+                value={summary.project.targetMonth}
+              />
+              <MetricCard
+                accent="success"
+                helper={`${summary.totals.deliveredCount} delivered · ${summary.totals.acceptedCount} accepted`}
+                label="Final deliverables"
+                metricKey="monthly-report-deliverables"
+                value={String(summary.totals.deliverableCount)}
+              />
+            </div>
+            <dl className="brief-grid monthly-report-deferred-metrics">
               <div>
                 <dt>GA/GSC metrics</dt>
                 <dd><StatusBadge status="Deferred" /></dd>
@@ -813,7 +813,7 @@ export function MonthlyReportPanel({
             </dl>
 
             {summary.deliverables.length > 0 ? (
-              <div style={{ marginTop: "1rem" }}>
+              <div className="monthly-report-deliverable-list">
                 <h4>Final deliverables</h4>
                 {summary.deliverables.map((item) => (
                   <article className="entity-card" key={item.id} style={{ marginBottom: "0.5rem" }}>
@@ -872,7 +872,7 @@ export function MonthlyReportPanel({
         ) : (
           <div className="state-panel">Computed summary not available for this project.</div>
         )}
-      </section>
+      </SectionPanel>
 
       {/* Persisted Report Section */}
       <section className="field-panel">

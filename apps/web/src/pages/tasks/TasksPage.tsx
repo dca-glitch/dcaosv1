@@ -2,6 +2,7 @@ import { type FormEvent, useMemo, useState } from "react";
 import { EmptyState } from "../../components/EmptyState";
 import { ErrorState } from "../../components/ErrorState";
 import { LoadingState } from "../../components/LoadingState";
+import { SectionPanel } from "../../components/ui";
 import { Modal } from "../../components/Modal";
 import { StatusBadge } from "../../components/ui";
 import type { ProjectSummary } from "../projects/ProjectsPage";
@@ -209,6 +210,18 @@ export function TasksPage({ tasks, projects, canEdit, error, loading, onArchive,
           ) : null}
         </div>
       </div>
+
+      <SectionPanel
+        tone="compact"
+        title="Delivery cross-links"
+        description="Tasks stay linked to projects and clients. Filter chips match Projects and Clients list behavior."
+      >
+        <div className="quick-link-list">
+          <a href="#/projects">Open Projects</a>
+          <a href="#/clients">Open Clients</a>
+          <a href="#/ai-delivery">Open AI Delivery</a>
+        </div>
+      </SectionPanel>
 
       {filteredTasks.length === 0 ? (
         <EmptyState message="No tasks match the current filter." title="No tasks" />

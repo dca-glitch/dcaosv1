@@ -11,6 +11,7 @@ Status after PR #13 merge into `main`.
 - Local pre-staging proof was accepted after the isolated Finance browser smoke rerun passed.
 - No deploy, migration, restart, or production release was performed after the merge.
 - `system.digitalcubeagency.net` is a live VPS/production target, not a confirmed staging target.
+- Canonical percentages aligned with [`docs/STATUS_COMPLETION.md`](../STATUS_COMPLETION.md) as of Phase F Block 58.
 
 ## Percentage summary
 
@@ -34,19 +35,19 @@ Percentages are operational planning estimates for the approved current scope, n
 | Projects / Tasks | 88% | 0% | 12% | Admin work organization foundation exists. |
 | Client Hub + domain model | 97% | 0% | 3% | Local/admin foundation exists. |
 | Client Access Admin | 85% | 0% | 15% | Client-level access exists; project-level grants later. |
-| Client Portal MVP | 90% | 0% | 10% | Read-only client-safe visibility path exists locally. |
-| Client Portal advanced actions | 0% | 0% | 100% | Magic links, full comments, and approvals are deferred. |
+| Client Portal MVP | 100% | 0% | 0% UX polish | Feature scope complete locally (Blocks 7–30); UX polish in Phase F Block 68. |
+| Client Portal advanced actions | 0% | 0% | 100% | Magic links, full comments, and approvals are deferred (Phase 2). |
 | AI Delivery | 88% | 0% | 12% | Local/admin workflow foundation exists. |
-| AI SEO + Content Production | 75% | 0% | 25% | Live Google integrations remain deferred. |
-| Market Intelligence | 86% | 0% | 14% | Admin handoff to AI Delivery exists. |
-| Monthly Reports | 85% | 0% | 15% | Final-report archive path exists; live analytics later. |
-| Finance | 85% | 0% | 15% | Admin records foundation exists; live payment/accounting integrations later. |
-| Private storage | 65% | 0% | 35% | Local proof exists; production switch later. |
+| AI SEO + Content Production | 72% | 0% | 28% | Live Google integrations remain deferred. |
+| Market Intelligence | 86% | 0% | 14% | Admin handoff to AI Delivery exists; compact pass in Phase F Block 67. |
+| Monthly Reports | 92% | 0% | 8% | Final-report archive path exists; live analytics later. |
+| Finance | 82% | 0% | 18% | Admin records foundation exists; live payment/accounting integrations later. |
+| Private storage (R2) | 65% | 0% | 35% | Local proof exists; production switch later. |
 | Notifications | 35% | 0% | 65% | Real sending and queues remain inactive. |
 | AI provider execution | 55% | 0% | 45% | Guarded foundation exists; live usage needs separate approval. |
 | Google Drive / Docs export | 65% | 0% | 35% | Admin handoff foundation exists; live proof later. |
-| WordPress publishing path | 55% | 0% | 45% | Prepared draft / guarded handoff exists; live publish later. |
-| Tenant module enforcement | 60% | 0% | 40% | Guarded modes exist; production enforcement later. |
+| WordPress publishing path | 90% | 0% | 10% | Local guarded handoff + PublicationLog; live Puriva publish = owner gate. |
+| Tenant module enforcement | 96% | 0% | 4% | dry_run + enforce local probes; staging enforce = owner gate. |
 | Operator docs and runbooks | 98% | 0% production effect | 2% | Runbooks exist; production action still separate. |
 | Staging / deploy pipeline | 5% | 0% | 95% | No separate staging target confirmed. |
 | Production deployment of current `main` | 0% | 0% | 100% | Explicitly not done. |

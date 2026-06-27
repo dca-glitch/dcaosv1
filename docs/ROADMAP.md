@@ -27,6 +27,17 @@ Implementation priority (delivery path first):
 
 ---
 
+## Phase F — Local Completion (Blocks 58–77)
+
+**Status:** Active local closeout after Post-MVP Blocks 31–57.
+
+**Documentation:** [`docs/ROADMAP_LOCAL_COMPLETION_PHASE_F.md`](./ROADMAP_LOCAL_COMPLETION_PHASE_F.md)  
+**Index:** [`docs/runbooks/PHASE_F_LOCAL_CLOSEOUT_INDEX.md`](./runbooks/PHASE_F_LOCAL_CLOSEOUT_INDEX.md)
+
+Continues local operator polish, guarded integration runbooks, and validation without VPS/staging/production deploy.
+
+---
+
 ## Approved Architecture Roadmap (2026-06-26)
 
 **Status:** Owner-approved. Documentation: [`docs/architecture/CLIENT_DOMAIN_OPERATING_MODEL.md`](./architecture/CLIENT_DOMAIN_OPERATING_MODEL.md).

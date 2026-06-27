@@ -217,6 +217,7 @@ async function main() {
     const projectCard = sidebar.locator("article.entity-card", { hasText: fixture.projectName }).first();
     await projectCard.waitFor({ state: "visible", timeout: 20000 });
     record("populated smoke project visible in portal sidebar", true, fixture.projectName);
+    await projectCard.getByRole("button", { name: /^(Open project|View|Open)$/ }).click();
     await portalSection.getByRole("heading", { name: "Delivery overview", exact: true }).waitFor({ state: "visible", timeout: 30000 });
 
     const overviewText = await portalSection.innerText();

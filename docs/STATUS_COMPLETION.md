@@ -4,7 +4,7 @@
 **Last updated:** 2026-06-27  
 **Reference branch:** `main` after PR #13 merge  
 **Reference commits:** PR #13 merge `584e041bd85e8179e795a0e4621a0d9d8908e0b6`; follow-up docs commit `07b1f1668d11cdef42b195cfad189c4df645acc6`  
-**Scope:** Approved local admin MVP + client/domain operating model (blocks 1–6) + **MVP 1 Puriva client delivery** + **Post-MVP local closeout (Blocks 31–57)**. Local `main` is synced and validated. VPS/production intentionally excluded until separate owner approval.
+**Scope:** Approved local admin MVP + client/domain operating model (blocks 1–6) + **MVP 1 Puriva client delivery** + **Post-MVP local closeout (Blocks 31–57)** + **Phase F local completion (Blocks 58–77)**. Local `main` is synced and validated. VPS/production intentionally excluded until separate owner approval.
 
 Current post-merge source of truth: [`docs/operator/post-merge-completion-status-20260627.md`](./operator/post-merge-completion-status-20260627.md). Merge to `main` does **not** mean production deployment.
 
@@ -17,6 +17,8 @@ Related documents:
 - [`docs/runbooks/PRE_STAGING_VALIDATION_GATE.md`](./runbooks/PRE_STAGING_VALIDATION_GATE.md)
 - [`docs/STATUS.md`](./STATUS.md)
 - [`docs/ROADMAP.md`](./ROADMAP.md)
+- [`docs/ROADMAP_LOCAL_COMPLETION_PHASE_F.md`](./ROADMAP_LOCAL_COMPLETION_PHASE_F.md)
+- [`docs/runbooks/PHASE_F_LOCAL_CLOSEOUT_INDEX.md`](./runbooks/PHASE_F_LOCAL_CLOSEOUT_INDEX.md)
 - [`docs/architecture/CLIENT_DOMAIN_OPERATING_MODEL.md`](./architecture/CLIENT_DOMAIN_OPERATING_MODEL.md)
 
 ---
@@ -25,7 +27,7 @@ Related documents:
 
 | Perspective | % | Meaning |
 |-------------|---|---------|
-| **Local admin MVP** (DCA operator, local dev) | **~100%** | Done | Post-MVP Phases A–E local closeout (Blocks 31–57) |
+| **Local admin MVP** (DCA operator, local dev) | **~100%** | Done | Post-MVP Phases A–E (Blocks 31–57) + Phase F local closeout (Blocks 58–77) |
 | **Client/domain roadmap (blocks 1–6)** | **~92%** | Local gates done; prod env keys = separate owner gates |
 | **Production readiness** (real clients, VPS) | **~38%** | Runbooks exist; deploy/migration deferred by owner |
 | **PR #13 merge to main** | **100%** | Merged; local `main` synced to `origin/main` |
@@ -42,6 +44,7 @@ Related documents:
 | Label | Meaning |
 |-------|---------|
 | **Done** | Usable for current approved local/admin MVP scope |
+| **Done (local)** | Local smoke gates pass; live/staging env may still be deferred |
 | **In progress** | Foundation exists; important pieces remain |
 | **Deferred** | Intentionally not active; waiting for a separate approved block |
 
@@ -62,17 +65,17 @@ Related documents:
 | **Module middleware (block 6)** | **96%** | Done (local) | dry_run + enforce probe runbooks (Blocks 39, 46); staging enforce pending |
 | **Projects & Tasks** | **88%** | Done | Admin MVP closed |
 | **AI Delivery** | **88%** | Done | Workflow browser matrix gate (Post-MVP Block 42) + content plan review browser gate (Block 34) |
-| **Market Intelligence** | **86%** | Done | Admin MVP + operator browser gate (Post-MVP Block 41); no recurring/automation |
+| **Market Intelligence** | **86%** | Done (local) | Admin MVP + operator browser gate (Post-MVP Block 41); compact pass in Phase F Block 67 |
 | **Monthly Reports** | **92%** | In progress | Metrics import browser gate (Block 47); live GA/GSC deferred |
-| **Client Portal MVP** (Puriva — visibility + review) | **100%** | Done (local) | Blocks 7–30 incl. sparse + populated delivery overview browser gates |
-| **Client Portal advanced actions** (magic links, full comment threads) | **0%** | Phased after MVP visibility | See deferred scope register |
-| **Finance** | **82%** | Done | Finance admin browser sanity gate (Post-MVP Block 36) |
+| **Client Portal MVP** (Puriva — visibility + review) | **100%** | Done (local) — UX polish in Phase F Block 68 | Blocks 7–30 incl. sparse + populated delivery overview browser gates; feature scope complete locally |
+| **Client Portal advanced actions** (magic links, full comment threads) | **0%** | Deferred (Phase 2) | See deferred scope register |
+| **Finance** | **82%** | Done (local) | Finance admin browser sanity gate (Post-MVP Block 36) |
 | **AI SEO + Content Production** | **72%** | In progress | Google Drive live planning gate (Block 43); live Google integrations deferred |
 | **Private storage (R2)** | **65%** | In progress | Block 37 byte roundtrip smoke (disabled guard + optional full roundtrip); prod bucket deferred |
 | **Email / notifications** | **35%** | In progress | Read-only outbox API + local smoke (Post-MVP Block 38); no real sending |
 | **Audit / activity** | **78%** | In progress | Dashboard feed + dedicated browser gate (Blocks 31, 51); full audit UI deferred |
 | **AI provider (OpenRouter)** | **55%** | In progress | Planning config API + guarded local smoke (Post-MVP Block 40); live provider remains opt-in |
-| **Operator docs & runbooks** | **98%** | Done | Puriva Blocks 7–30 + Post-MVP Phases A–E indices and final closeout (Block 57) |
+| **Operator docs & runbooks** | **100%** | Done (local) | Puriva Blocks 7–30 + Post-MVP Phases A–E + Phase F Blocks 58–77 runbooks and closeout index |
 | **Tests / smoke** | **100%** | Done (local) | Puriva MVP + Post-MVP Phases A–D browser layers in pre-staging |
 | **PR #13 merge → main** | **100%** | Done | Merged at `584e041bd85e8179e795a0e4621a0d9d8908e0b6`; follow-up docs commit `07b1f1668d11cdef42b195cfad189c4df645acc6` |
 | **Local main validation** | **100%** | Done | Passed after Windows Prisma DLL lock cleanup |
@@ -98,12 +101,12 @@ Related documents:
 | 1 | Client foundation + `clientKind` | **92%** | Done |
 | 2 | PublicationTarget | **95%** | Done |
 | 3 | MI → `clientId` | **88%** | Done |
-| 4 | Encrypted credentials | **85%** | Done (local); staging/prod key pending |
-| 5 | Real WP publish + PublicationLog | **88%** | Done (local); live Puriva pending |
-| 6 | Module middleware | **92%** | Done (local); staging enforce pending |
+| 4 | Encrypted credentials | **88%** | Done (local); staging/prod key pending |
+| 5 | Real WP publish + PublicationLog | **90%** | Done (local); live Puriva pending |
+| 6 | Module middleware | **96%** | Done (local); staging enforce pending |
 | *Future* | Licensee tenant migration | **0%** | Deferred |
 
-**Average of blocks 1–6 (local): ~90%**
+**Average of blocks 1–6 (local): ~92%**
 
 ---
 
@@ -121,9 +124,13 @@ Related documents:
 - Architecture blocks 1–6 **local gates** (credential encrypt, WP publish smoke, tenant module enforce/dry_run, legacy WP sunset)
 - One-command local closeout: `npm run smoke:pre-staging:local`
 
+### Phase F local work (Blocks 58–77)
+
+- Client Portal UX polish (Block 68), compact MI/Reports passes, guarded integration runbooks
+- See [docs/ROADMAP_LOCAL_COMPLETION_PHASE_F.md](./ROADMAP_LOCAL_COMPLETION_PHASE_F.md)
+
 ### Waiting — owner / environment gates (not local repo work)
 
-- Client Portal polish (operator UX, edge-case QA)
 - Confirm or create a real staging target; do not treat `system.digitalcubeagency.net` as staging
 - VPS/staging execution remains unavailable until a target is confirmed and explicitly approved
 - Staging env: Block 4 master key, Block 5 publish, Block 6 `TENANT_MODULE_ENFORCEMENT`
@@ -163,6 +170,8 @@ Do not treat local smoke alone as production readiness.
 
 | Date | Change |
 |------|--------|
+| 2026-06-27 | Phase F Block 77: local closeout complete — Blocks 58–77 validated on `feature/local-closeout-blocks-58-77` |
+| 2026-06-27 | Phase F Block 58: docs consistency — aligned Portal/WP/MI/R2 labels and blocks 4–6 percentages |
 | 2026-06-27 | Puriva MVP local closeout complete (Blocks 7–30 index, populated delivery browser, login shell pre-staging) |
 | 2026-06-27 | MVP Block 26: Client Access admin browser gate (link user from Clients edit modal) |
 | 2026-06-27 | MVP Block 25: client-domain browser extended for Client Hub catalog + publication log sections |

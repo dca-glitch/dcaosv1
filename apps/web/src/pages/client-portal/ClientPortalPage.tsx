@@ -883,7 +883,7 @@ export function ClientPortalPage() {
 
           {filteredProjects.length === 0 ? (
             <EmptyState
-              message="No projects match this filter. Your account may not be linked to a client archive yet."
+              message="No projects match this filter. Sparse archives show metrics with zero deliverables; populated archives list final items when admin shares them."
               title="No projects"
             />
           ) : (

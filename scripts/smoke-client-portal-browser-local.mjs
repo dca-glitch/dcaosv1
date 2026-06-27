@@ -280,6 +280,22 @@ async function main() {
 
   const fixture = await createFixture(adminToken, adminUserId);
 
+  const portalProjectsResponse = await request("/client-portal/projects", { token: adminToken });
+  const portalProjectList = portalProjectsResponse.body?.data?.aiDeliveryProjects ?? [];
+  const portalProjectEntry = portalProjectList.find((entry) => entry.id === fixture.project.id);
+  record(
+    "portal API lists fixture project",
+    portalProjectsResponse.status === 200 &&
+      portalProjectsResponse.body?.ok === true &&
+      typeof portalProjectEntry?.id === "string",
+    portalProjectEntry?.id ?? `${portalProjectsResponse.status}`
+  );
+  if (!portalProjectEntry) {
+    console.error("STOP: Fixture project missing from /client-portal/projects before browser proof.");
+    process.exitCode = 1;
+    return;
+  }
+
   const browser = await chromium.launch({ headless: true });
   const page = await browser.newPage();
   const consoleErrors = [];
@@ -299,12 +315,23 @@ async function main() {
       window.sessionStorage.setItem("dcaosv1.authToken", token);
     }, adminToken);
 
+    const projectsResponsePromise = page.waitForResponse(
+      (response) =>
+        response.url().includes("/client-portal/projects") &&
+        response.request().method() === "GET" &&
+        response.status() === 200,
+      { timeout: 30000 }
+    );
+
     await page.goto(`${webBaseUrl}/#/client-portal`, { waitUntil: "domcontentloaded" });
     await page.getByRole("heading", { name: "Client Portal" }).waitFor({ state: "visible", timeout: 15000 });
-    await page.getByText(fixture.project.name, { exact: true }).waitFor({ state: "visible", timeout: 15000 });
+    await projectsResponsePromise;
 
     const portalSection = page.locator('section[aria-labelledby="client-portal-title"]');
-    const projectCard = portalSection.locator("article.entity-card", { hasText: fixture.project.name }).first();
+    const projectSidebar = portalSection.locator("aside");
+    const projectCard = projectSidebar.locator("article.entity-card", { hasText: fixture.project.name }).first();
+    await projectCard.scrollIntoViewIfNeeded();
+    await projectCard.waitFor({ state: "visible", timeout: 30000 });
     const openProjectButton = projectCard.getByRole("button", { name: /^(Open project|View|Open)$/ });
     await openProjectButton.click();
     await portalSection.getByRole("heading", { name: "Final deliverables", exact: true }).waitFor({ state: "visible", timeout: 15000 });

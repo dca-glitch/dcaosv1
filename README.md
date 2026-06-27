@@ -12,6 +12,8 @@ Modular SaaS operating system for Digital Cube Agency (also referred to as DCA O
 
 Canonical operating model: [`docs/architecture/CLIENT_DOMAIN_OPERATING_MODEL.md`](docs/architecture/CLIENT_DOMAIN_OPERATING_MODEL.md).
 
+Phase F local closeout (Blocks 58–77): [`docs/ROADMAP_LOCAL_COMPLETION_PHASE_F.md`](docs/ROADMAP_LOCAL_COMPLETION_PHASE_F.md).
+
 Production URL:
 
 ```text

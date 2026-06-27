@@ -17,16 +17,16 @@ This matrix explains what is usable now, what is partial, and what is waiting fo
 | --- | --- | --- |
 | Core login and tenant context | Closed for MVP | Admin can log in locally, work inside a tenant, and use owner/admin areas. |
 | Clients | Closed for MVP | Admin can manage client records and connect client-level access. |
-| Client Portal | Partial / required MVP | Archive foundation exists. **Client Portal MVP is required for Puriva** — client-safe visibility and human/client review before publication (MI summary, SEO, Google Docs, publishing handoff, catalog inquiry). Advanced portal features (magic links, full comment threads) remain phased. Clients must not see raw prompts, workflow runs, AI costs, credentials, or admin-only notes. |
+| Client Portal | Closed for MVP (local) — UX polish in Phase F Block 68 | **Client Portal MVP is required for Puriva** — client-safe visibility path is complete locally (Blocks 7–30). Advanced portal features (magic links, full comment threads) remain deferred Phase 2. Clients must not see raw prompts, workflow runs, AI costs, credentials, or admin-only notes. |
 | Projects | Closed for MVP | Admin can organize work by project, including monthly client projects. |
 | Tasks | Closed for MVP | Admin can track operational work and reminders. |
 | AI Delivery | Closed for local/admin MVP | Admin can run the main delivery workflow for briefs, plans, drafts, deliverables, exports, and reports. |
 | AI SEO | Closed for admin-operated MVP shell | Admin can use SEO planning and content workflow foundations. Live Google integrations are deferred. |
 | AI Content Production | Closed for admin-operated MVP shell | Admin can prepare and review content drafts and delivery handoff. |
-| Market Intelligence | Partial / admin MVP | Admin can prepare market context and handoff to AI Delivery; deeper automation remains later. |
+| Market Intelligence | Closed for local/admin MVP — compact pass in Phase F Block 67 | Admin can prepare market context and handoff to AI Delivery; deeper automation remains later. |
 | Monthly Reports | Closed for admin/client-safe archive path | Admin can prepare reports and expose final reports safely to the client archive. |
 | Finance | Closed for local/admin MVP | Invoices, bills, vendors, services, and credit notes have useful admin foundations. |
-| R2/private storage | Partial | Local/admin private upload/download proof exists; production switch needs separate approval. |
+| R2/private storage | Partial (65% in scope) | Local/admin private upload/download proof exists; production switch needs separate approval. |
 | Email notifications | Partial foundation | Backend foundation exists, but real sending and queues remain inactive. |
 | AI provider execution | Partial guarded foundation | Local deterministic execution is safest; live provider use needs explicit configuration and approval. |
 | Revenue Hub AI | Future | Planned later after shared foundations are stable. |

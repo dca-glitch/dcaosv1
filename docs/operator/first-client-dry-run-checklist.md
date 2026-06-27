@@ -6,6 +6,8 @@ This checklist is for a controlled admin dry run. It helps confirm that the full
 
 Current post-merge note: PR #13 is merged to `main`, local validation passed, and local pre-staging proof was accepted. Current `main` is not deployed to production, and no separate staging target is confirmed.
 
+Phase F operator runbook: [`docs/runbooks/PHASE_F_BLOCK_76_FIRST_CLIENT_PRACTICE_RUN.md`](../runbooks/PHASE_F_BLOCK_76_FIRST_CLIENT_PRACTICE_RUN.md).
+
 ## Goal
 
 Prove that an admin can complete the full monthly delivery flow from client setup to final client-safe archive.
