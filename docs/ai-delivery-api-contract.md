@@ -319,21 +319,19 @@ Block 7D.0 added the client-level backend foundation. The current MVP closes the
 - Internal helper:
   - `userCanAccessClient(authSession, clientId)` verifies active tenant context, client tenant ownership, non-archived user access, and owner/admin override.
 
-Active Client Portal archive routes require non-archived `ClientUserAccess`; owner/admin role alone does not grant archive visibility there. Client Portal MVP expands client-safe visibility for Puriva; authenticated client review routes below are enabled for linked client users and owner/admin override via `userCanAccessClient`.
+Active Client Portal archive routes require non-archived `ClientUserAccess`; owner/admin role alone does not grant archive visibility there. Client Portal MVP expands client-safe visibility for Puriva final deliverables and monthly reports only.
 
 ## Monthly content plan client review routes
 
-Current status: **enabled** for authenticated client-linked users (and owner/admin override). Advanced features (magic links, public tokens, full comment threads) remain phased.
+Current status: **DEFERRED** for this MVP. Routes remain registered for compatibility but return HTTP 403 with error code `CLIENT_REVIEW_DEFERRED` and message `Client review actions are deferred for this MVP.` They do not expose content plan internals or perform approve/request-revision mutations.
 
-Authenticated tenant users may review monthly content plans only when `userCanAccessClient(authSession, clientId)` passes for the AI Delivery Project client.
+Client-visible delivery for this MVP uses **Client Portal** final-only views (deliverables, monthly reports). Admin remains responsible for content plan review via admin-only endpoints below.
 
-- `GET /api/v1/ai-delivery-projects/:id/content-plan/client-review`
-  - Returns the monthly content plan for the project when the authenticated user can access the project client.
-- `POST /api/v1/ai-delivery-projects/:id/content-plan/client-review/approve`
-  - Moves the plan to `CLIENT_APPROVED` and sets `approvedAt`.
-- `POST /api/v1/ai-delivery-projects/:id/content-plan/client-review/request-revision`
-  - Body: `{ comment }`
-  - Moves the plan to `CLIENT_CHANGES_REQUESTED`, increments `revisionCount`, and stores the comment on the first plan item `clientComment` as the existing schema-supported revision note.
+Deferred compatibility routes (no data returned):
+
+- `GET /api/v1/ai-delivery-projects/:id/content-plan/client-review` — returns `CLIENT_REVIEW_DEFERRED`
+- `POST /api/v1/ai-delivery-projects/:id/content-plan/client-review/approve` — returns `CLIENT_REVIEW_DEFERRED`
+- `POST /api/v1/ai-delivery-projects/:id/content-plan/client-review/request-revision` — returns `CLIENT_REVIEW_DEFERRED`
 
 No public token routes or magic links are exposed.
 
@@ -350,6 +348,8 @@ Admin/owner-only content draft endpoints are scoped to an AI Delivery project an
   - Updates title, slug, body, status, notes, and optional content plan item link.
 - `POST /api/v1/ai-delivery-projects/:id/content-drafts/:draftId/archive`
   - Archives a draft and sets status to `ARCHIVED`.
+- `POST /api/v1/ai-delivery-projects/:id/content-drafts/:draftId/request-client-review`
+  - Admin-only: sets draft status to `READY_FOR_REVIEW`, sets `reviewRequestedAt`, and clears `approvedAt`.
 
 Allowed runtime statuses: `DRAFT`, `READY_FOR_REVIEW`, `APPROVED`, `CHANGES_REQUESTED`, `ARCHIVED`.
 
@@ -357,33 +357,17 @@ This block is admin-operated only. It does not add AI writing calls, publishing 
 
 ## Content draft client review routes
 
-Current status: **enabled** for authenticated client-linked users (and owner/admin override). Advanced features (magic links, public tokens) remain phased.
+Current status: **DEFERRED** for this MVP. Routes remain registered for compatibility but return HTTP 403 with error code `CLIENT_REVIEW_DEFERRED`. They do not expose internal draft content or perform client approve/request-revision mutations.
 
-Content draft review uses normal authenticated sessions only. No public token routes, public approval links, or magic links are exposed. Client access is tenant-scoped and requires `userCanAccessClient(authSession, clientId)` for the AI Delivery Project client. Archived AI Delivery projects and archived content drafts are not exposed to client review routes.
+Clients must not access internal drafts in this MVP. Client-visible delivery uses **Client Portal** final deliverables only. Admin content draft production remains admin-operated via admin-only endpoints above.
 
-Schema review metadata on `AiDeliveryContentDraft`:
+Deferred compatibility routes (no data returned):
 
-- `reviewRequestedAt DateTime?`
-- `approvedAt DateTime?`
-- `revisionCount Int @default(0)`
-- `clientComment String?`
+- `GET /api/v1/ai-delivery-projects/:id/content-drafts/client-review` — returns `CLIENT_REVIEW_DEFERRED`
+- `POST /api/v1/ai-delivery-projects/:id/content-drafts/:draftId/client-review/approve` — returns `CLIENT_REVIEW_DEFERRED`
+- `POST /api/v1/ai-delivery-projects/:id/content-drafts/:draftId/client-review/request-revision` — returns `CLIENT_REVIEW_DEFERRED`
 
-Admin/owner-only endpoint:
-
-- `POST /api/v1/ai-delivery-projects/:id/content-drafts/:draftId/request-client-review`
-  - Sets draft status to `READY_FOR_REVIEW`, sets `reviewRequestedAt`, and clears `approvedAt`.
-
-Authenticated client-safe endpoints:
-
-- `GET /api/v1/ai-delivery-projects/:id/content-drafts/client-review`
-  - Lists non-archived content drafts for the AI Delivery project with status `READY_FOR_REVIEW`, `APPROVED`, or `CHANGES_REQUESTED`.
-- `POST /api/v1/ai-delivery-projects/:id/content-drafts/:draftId/client-review/approve`
-  - Sets draft status to `APPROVED` and sets `approvedAt`.
-- `POST /api/v1/ai-delivery-projects/:id/content-drafts/:draftId/client-review/request-revision`
-  - Body: `{ comment }`
-  - Requires a non-empty comment, sets draft status to `CHANGES_REQUESTED`, increments `revisionCount`, and stores `clientComment`.
-
-If explicitly resumed later, a client UI route such as `#/content-draft-review` must require the user to be signed in before loading reviewable drafts.
+If explicitly resumed in a future approved block, client UI routes such as `#/content-draft-review` would require authenticated client access and formal scope approval first.
 
 ## Admin article image foundation
 

@@ -98,12 +98,13 @@ function requireClientPortalDeferred(name, response) {
   pass(`${name} returned CLIENT_PORTAL_DEFERRED.`);
 }
 
-function requireClientReviewList(name, response, key) {
-  const payload = requireOkResponse(name, response);
-  if (!payload?.[key]) {
-    fail(`${name} did not return a ${key} payload.`);
+function requireClientReviewDeferred(name, response) {
+  const errorCode = getErrorCode(response);
+  if (response.status !== 403 || response.body?.ok !== false || errorCode !== "CLIENT_REVIEW_DEFERRED") {
+    fail(`${name} did not return CLIENT_REVIEW_DEFERRED. HTTP ${response.status}${errorCode ? ` ${errorCode}` : ""}.`);
   }
-  pass(`${name} returned client review payload.`);
+
+  pass(`${name} returned CLIENT_REVIEW_DEFERRED.`);
 }
 
 function requireLocalUrl(name, value, expectedPathPrefix = "") {
@@ -488,10 +489,26 @@ async function runAiDeliveryApiRegression(token, fixtureProjects) {
   }
   pass("AI Delivery content plan ready-for-review action persisted the expected status.");
 
-  requireClientReviewList(
+  requireClientReviewDeferred(
     "AI Delivery content plan client review list",
-    await request(`/ai-delivery-projects/${project.id}/content-plan/client-review`, { token }),
-    "contentPlan"
+    await request(`/ai-delivery-projects/${project.id}/content-plan/client-review`, { token })
+  );
+
+  requireClientReviewDeferred(
+    "AI Delivery content plan client review approve",
+    await request(`/ai-delivery-projects/${project.id}/content-plan/client-review/approve`, {
+      method: "POST",
+      token
+    })
+  );
+
+  requireClientReviewDeferred(
+    "AI Delivery content plan client review request-revision",
+    await request(`/ai-delivery-projects/${project.id}/content-plan/client-review/request-revision`, {
+      method: "POST",
+      token,
+      body: { comment: "Deferred scope smoke check." }
+    })
   );
 
   const changesRequestedContentPlan = requireOkResponse(
@@ -592,10 +609,26 @@ async function runAiDeliveryApiRegression(token, fixtureProjects) {
   }
   pass("AI Delivery content draft ready-for-review action persisted the expected review state.");
 
-  requireClientReviewList(
+  requireClientReviewDeferred(
     "AI Delivery content draft client review list",
-    await request(`/ai-delivery-projects/${project.id}/content-drafts/client-review`, { token }),
-    "contentDrafts"
+    await request(`/ai-delivery-projects/${project.id}/content-drafts/client-review`, { token })
+  );
+
+  requireClientReviewDeferred(
+    "AI Delivery content draft client review approve",
+    await request(`/ai-delivery-projects/${project.id}/content-drafts/${createdContentDraft.id}/client-review/approve`, {
+      method: "POST",
+      token
+    })
+  );
+
+  requireClientReviewDeferred(
+    "AI Delivery content draft client review request-revision",
+    await request(`/ai-delivery-projects/${project.id}/content-drafts/${createdContentDraft.id}/client-review/request-revision`, {
+      method: "POST",
+      token,
+      body: { comment: "Deferred scope smoke check." }
+    })
   );
 
   const returnedToDraft = requireOkResponse(

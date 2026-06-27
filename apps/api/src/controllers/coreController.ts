@@ -7,6 +7,7 @@ import {
   clientInvalidFailure,
   clientNotFoundFailure,
   companyProfileInvalidFailure,
+  clientReviewDeferredFailure,
   failure,
   forbiddenFailure,
   invoiceInvalidFailure,
@@ -141,9 +142,6 @@ import {
   getAiDeliveryBriefDetail,
   saveAiDeliveryBrief,
   listAiDeliveryContentDrafts,
-  listClientAiDeliveryContentDraftReviews,
-  approveClientAiDeliveryContentDraftReview,
-  requestClientAiDeliveryContentDraftRevision,
   requestAiDeliveryContentDraftClientReview,
   returnAiDeliveryContentDraftToDraft,
   updateAiDeliveryContentDraft,
@@ -154,9 +152,6 @@ import {
   requestAiDeliveryContentPlanClientReview,
   approveAiDeliveryContentPlan,
   requestAiDeliveryContentPlanChanges,
-  getClientAiDeliveryContentPlanReview,
-  approveClientAiDeliveryContentPlanReview,
-  requestClientAiDeliveryContentPlanRevision,
   applyAiDeliveryResearchSummaryToBrief,
   listAiDeliveryDeliverables,
   createAiDeliveryDeliverable,
@@ -2536,47 +2531,16 @@ export const requestAiDeliveryContentPlanChangesHandler: RequestHandler = async 
   }
 };
 
-export const getClientAiDeliveryContentPlanReviewHandler: RequestHandler = async (req, res) => {
-  const authSession = getAuthSession(res.locals);
-  const aiDeliveryProjectId = typeof req.params.id === "string" ? req.params.id.trim() : "";
-  if (!authSession) return void res.status(401).json(unauthorizedFailure());
-  if (!aiDeliveryProjectId) return void res.status(400).json(aiDeliveryProjectInvalidFailure());
-  try {
-    const response = await getClientAiDeliveryContentPlanReview(authSession, aiDeliveryProjectId);
-    if (!response?.contentPlan) return void res.status(404).json(aiDeliveryProjectNotFoundFailure());
-    res.json(success(response, { phase: "runtime", scope: "ai-delivery-client-review" }));
-  } catch {
-    res.status(500).json(failure("AI_DELIVERY_CONTENT_PLAN_RUNTIME_ERROR", "Content plan review lookup could not be completed."));
-  }
+export const getClientAiDeliveryContentPlanReviewHandler: RequestHandler = (_req, res) => {
+  res.status(403).json(clientReviewDeferredFailure());
 };
 
-export const approveClientAiDeliveryContentPlanReviewHandler: RequestHandler = async (req, res) => {
-  const authSession = getAuthSession(res.locals);
-  const aiDeliveryProjectId = typeof req.params.id === "string" ? req.params.id.trim() : "";
-  if (!authSession) return void res.status(401).json(unauthorizedFailure());
-  if (!aiDeliveryProjectId) return void res.status(400).json(aiDeliveryProjectInvalidFailure());
-  try {
-    const response = await approveClientAiDeliveryContentPlanReview(authSession, aiDeliveryProjectId);
-    if (!response?.contentPlan) return void res.status(404).json(aiDeliveryProjectNotFoundFailure());
-    res.json(success(response, { phase: "runtime", scope: "ai-delivery-client-review" }));
-  } catch {
-    res.status(500).json(failure("AI_DELIVERY_CONTENT_PLAN_RUNTIME_ERROR", "Content plan approval could not be completed."));
-  }
+export const approveClientAiDeliveryContentPlanReviewHandler: RequestHandler = (_req, res) => {
+  res.status(403).json(clientReviewDeferredFailure());
 };
 
-export const requestClientAiDeliveryContentPlanRevisionHandler: RequestHandler = async (req, res) => {
-  const authSession = getAuthSession(res.locals);
-  const aiDeliveryProjectId = typeof req.params.id === "string" ? req.params.id.trim() : "";
-  const comment = getClientRevisionComment(req.body);
-  if (!authSession) return void res.status(401).json(unauthorizedFailure());
-  if (!aiDeliveryProjectId || !comment) return void res.status(400).json(aiDeliveryProjectInvalidFailure());
-  try {
-    const response = await requestClientAiDeliveryContentPlanRevision(authSession, aiDeliveryProjectId, comment);
-    if (!response?.contentPlan) return void res.status(404).json(aiDeliveryProjectNotFoundFailure());
-    res.json(success(response, { phase: "runtime", scope: "ai-delivery-client-review" }));
-  } catch {
-    res.status(500).json(failure("AI_DELIVERY_CONTENT_PLAN_RUNTIME_ERROR", "Content plan revision request could not be completed."));
-  }
+export const requestClientAiDeliveryContentPlanRevisionHandler: RequestHandler = (_req, res) => {
+  res.status(403).json(clientReviewDeferredFailure());
 };
 
 export const listAiDeliveryContentDraftsHandler: RequestHandler = async (req, res) => {
@@ -3052,52 +3016,16 @@ export const returnAiDeliveryContentDraftToDraftHandler: RequestHandler = async 
   }
 };
 
-export const listClientAiDeliveryContentDraftReviewsHandler: RequestHandler = async (req, res) => {
-  const authSession = getAuthSession(res.locals);
-  const aiDeliveryProjectId = typeof req.params.id === "string" ? req.params.id.trim() : "";
-  if (!authSession) return void res.status(401).json(unauthorizedFailure());
-  if (!aiDeliveryProjectId) return void res.status(400).json(aiDeliveryProjectInvalidFailure());
-
-  try {
-    const response = await listClientAiDeliveryContentDraftReviews(authSession, aiDeliveryProjectId);
-    if (!response) return void res.status(404).json(aiDeliveryProjectNotFoundFailure());
-    res.json(success(response, { phase: "runtime", scope: "ai-delivery-content-draft-client-review" }));
-  } catch {
-    res.status(500).json(failure("AI_DELIVERY_CONTENT_DRAFT_RUNTIME_ERROR", "Content draft reviews could not be loaded."));
-  }
+export const listClientAiDeliveryContentDraftReviewsHandler: RequestHandler = (_req, res) => {
+  res.status(403).json(clientReviewDeferredFailure());
 };
 
-export const approveClientAiDeliveryContentDraftReviewHandler: RequestHandler = async (req, res) => {
-  const authSession = getAuthSession(res.locals);
-  const aiDeliveryProjectId = typeof req.params.id === "string" ? req.params.id.trim() : "";
-  const contentDraftId = typeof req.params.draftId === "string" ? req.params.draftId.trim() : "";
-  if (!authSession) return void res.status(401).json(unauthorizedFailure());
-  if (!aiDeliveryProjectId || !contentDraftId) return void res.status(400).json(aiDeliveryProjectInvalidFailure());
-
-  try {
-    const response = await approveClientAiDeliveryContentDraftReview(authSession, aiDeliveryProjectId, contentDraftId);
-    if (!response?.contentDraft) return void res.status(404).json(aiDeliveryProjectNotFoundFailure());
-    res.json(success(response, { phase: "runtime", scope: "ai-delivery-content-draft-client-review" }));
-  } catch {
-    res.status(500).json(failure("AI_DELIVERY_CONTENT_DRAFT_RUNTIME_ERROR", "Content draft approval could not be completed."));
-  }
+export const approveClientAiDeliveryContentDraftReviewHandler: RequestHandler = (_req, res) => {
+  res.status(403).json(clientReviewDeferredFailure());
 };
 
-export const requestClientAiDeliveryContentDraftRevisionHandler: RequestHandler = async (req, res) => {
-  const authSession = getAuthSession(res.locals);
-  const aiDeliveryProjectId = typeof req.params.id === "string" ? req.params.id.trim() : "";
-  const contentDraftId = typeof req.params.draftId === "string" ? req.params.draftId.trim() : "";
-  const comment = getClientRevisionComment(req.body);
-  if (!authSession) return void res.status(401).json(unauthorizedFailure());
-  if (!aiDeliveryProjectId || !contentDraftId || !comment) return void res.status(400).json(aiDeliveryProjectInvalidFailure());
-
-  try {
-    const response = await requestClientAiDeliveryContentDraftRevision(authSession, aiDeliveryProjectId, contentDraftId, comment);
-    if (!response?.contentDraft) return void res.status(404).json(aiDeliveryProjectNotFoundFailure());
-    res.json(success(response, { phase: "runtime", scope: "ai-delivery-content-draft-client-review" }));
-  } catch {
-    res.status(500).json(failure("AI_DELIVERY_CONTENT_DRAFT_RUNTIME_ERROR", "Content draft revision request could not be completed."));
-  }
+export const requestClientAiDeliveryContentDraftRevisionHandler: RequestHandler = (_req, res) => {
+  res.status(403).json(clientReviewDeferredFailure());
 };
 
 export const listTasksHandler: RequestHandler = async (_req, res) => {

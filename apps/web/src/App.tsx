@@ -379,10 +379,6 @@ type AiDeliveryMonthlyReportResponse = {
   report: AiDeliveryMonthlyReportData | null;
 };
 
-type ClientContentDraftReviewResponse = AiDeliveryContentDraftsResponse;
-
-type ClientContentPlanReviewResponse = AiDeliveryContentPlanResponse;
-
 type TasksResponse = {
   tasks: TaskSummary[];
 };
@@ -489,8 +485,6 @@ const navigationItems: Array<{ view: ViewKey; label: string; section: string }> 
   { view: "projects", label: "Projects", section: "core" },
   { view: "ai-delivery", label: "AI Delivery", section: "core" },
   { view: "ai-market-intelligence", label: "Market Intelligence", section: "core" },
-  { view: "content-plan-review", label: "Content Plan Review", section: "client" },
-  { view: "content-draft-review", label: "Content Draft Review", section: "client" },
   { view: "tasks", label: "Tasks", section: "core" },
   { view: "invoices", label: "Invoices", section: "core" },
   { view: "credit-notes", label: "Credit Notes", section: "core" },
@@ -529,8 +523,13 @@ function replaceHash(hash: string): void {
   window.dispatchEvent(new HashChangeEvent("hashchange"));
 }
 
+const deferredClientReviewViews = new Set<ViewKey>(["content-plan-review", "content-draft-review"]);
+
 function normalizeHash(hash: string): ViewKey {
   const value = hash.replace(/^#\/?/, "");
+  if (deferredClientReviewViews.has(value as ViewKey)) {
+    return value as ViewKey;
+  }
   return navigationItems.some((item) => item.view === value) ? (value as ViewKey) : "dashboard";
 }
 
@@ -1326,289 +1325,52 @@ function SettingsView({
   );
 }
 
-function ClientContentPlanReviewView({
-  onApprove,
-  onLoad,
-  onRequestRevision
+function ClientReviewDeferredView({
+  title,
+  titleId,
+  description
 }: {
-  onApprove: (projectId: string) => Promise<AiDeliveryContentPlanSummary | null>;
-  onLoad: (projectId: string) => Promise<AiDeliveryContentPlanSummary | null>;
-  onRequestRevision: (projectId: string, comment: string) => Promise<AiDeliveryContentPlanSummary | null>;
+  title: string;
+  titleId: string;
+  description: string;
 }) {
-  const [projectId, setProjectId] = useState("");
-  const [comment, setComment] = useState("");
-  const [contentPlan, setContentPlan] = useState<AiDeliveryContentPlanSummary | null>(null);
-  const [loadingPlan, setLoadingPlan] = useState(false);
-  const [savingReview, setSavingReview] = useState(false);
-
-  async function handleLoad(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const id = projectId.trim();
-    if (!id) return;
-    setLoadingPlan(true);
-    try {
-      setContentPlan(await onLoad(id));
-    } finally {
-      setLoadingPlan(false);
-    }
-  }
-
-  async function handleApprove() {
-    const id = projectId.trim();
-    if (!id) return;
-    setSavingReview(true);
-    try {
-      setContentPlan(await onApprove(id));
-      setComment("");
-    } finally {
-      setSavingReview(false);
-    }
-  }
-
-  async function handleRequestRevision() {
-    const id = projectId.trim();
-    const revisionComment = comment.trim();
-    if (!id || !revisionComment) return;
-    setSavingReview(true);
-    try {
-      setContentPlan(await onRequestRevision(id, revisionComment));
-    } finally {
-      setSavingReview(false);
-    }
-  }
-
   return (
-    <section className="view-section" aria-labelledby="content-plan-review-title">
-      <PageHeader
-        eyebrow="Client review"
-        title="Monthly Content Plan Review"
-        titleId="content-plan-review-title"
-        description="Client-only view: review the monthly content plan for your AI Delivery project. Access requires a client-linked account."
-      />
-      <SectionPanel title="Open review" description="Enter the AI Delivery project ID shared by your team to load the client-safe review view.">
-        <form className="entity-form" onSubmit={handleLoad}>
-          <div className="field-grid">
-            <label className="field-span-2">
-              AI Delivery project ID
-              <input
-                maxLength={255}
-                placeholder="Project ID (provided by your team)"
-                onChange={(event) => setProjectId(event.target.value)}
-                required
-                value={projectId}
-              />
-            </label>
-          </div>
-          <div className="modal-footer">
-            <button className="primary-action" disabled={loadingPlan || !projectId.trim()} type="submit">
-              {loadingPlan ? "Loading" : "Load content plan"}
-            </button>
-          </div>
-        </form>
+    <section className="view-section" aria-labelledby={titleId}>
+      <PageHeader eyebrow="Client review" title={title} titleId={titleId} description={description} />
+      <SectionPanel
+        title="Deferred for MVP"
+        description="Client review actions are not active in this MVP. Admin remains responsible for review and publishing."
+      >
+        <StatusNotice
+          tone="info"
+          message="Client approval, request-changes actions, and internal draft review are deferred. Use Client Portal for final client-safe deliverables and monthly reports."
+        />
+        <EmptyState
+          message="Open Client Portal from the sidebar to view final deliverables and approved monthly reports shared with your account."
+          title="Client review deferred"
+        />
       </SectionPanel>
-
-      {contentPlan ? (
-        <SectionPanel title="Review status" description="Client-visible status and proposed content items.">
-          <dl className="brief-grid">
-            <div>
-              <dt>Status</dt>
-              <dd><StatusBadge status={contentPlan.status} /></dd>
-            </div>
-            <div>
-              <dt>Revisions</dt>
-              <dd>{contentPlan.revisionCount ?? 0}</dd>
-            </div>
-            <div>
-              <dt>Review requested</dt>
-              <dd>{contentPlan.reviewRequestedAt ? new Date(contentPlan.reviewRequestedAt).toLocaleString() : "Not requested"}</dd>
-            </div>
-            <div>
-              <dt>Approved</dt>
-              <dd>{contentPlan.approvedAt ? new Date(contentPlan.approvedAt).toLocaleString() : "Not approved"}</dd>
-            </div>
-          </dl>
-
-          {contentPlan.items.length === 0 ? (
-            <div className="state-panel">No content plan items are available for review yet.</div>
-          ) : (
-            <div className="table-wrap" aria-label="Monthly content plan items">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Title</th>
-                    <th>Keyword</th>
-                    <th>Type</th>
-                    <th>Notes</th>
-                    <th>Client status/comment</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {contentPlan.items.map((item) => (
-                    <tr key={item.id ?? `${item.sortOrder}-${item.title}`}>
-                      <td>{item.title}</td>
-                      <td>{item.targetKeyword ?? "Not set"}</td>
-                      <td>{item.contentType ?? "Not set"}</td>
-                      <td>{item.notes ?? "Not set"}</td>
-                      <td>
-                        <strong>{item.approvalStatus ?? "No item status"}</strong>
-                        <br />
-                        <span>{item.clientComment ?? "No client comment"}</span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-
-          <div className="field-panel">
-            <h3>Request changes</h3>
-            <textarea
-              maxLength={500}
-              onChange={(event) => setComment(event.target.value)}
-              placeholder="Describe the changes you'd like (required)."
-              rows={4}
-              value={comment}
-            />
-          </div>
-          <div className="modal-footer">
-            <button className="secondary-action" disabled={savingReview || !comment.trim()} onClick={() => void handleRequestRevision()} type="button">
-              {savingReview ? "Saving" : "Request changes"}
-            </button>
-            <button className="primary-action" disabled={savingReview} onClick={() => void handleApprove()} type="button">
-              {savingReview ? "Saving" : "Approve plan"}
-            </button>
-          </div>
-        </SectionPanel>
-      ) : null}
     </section>
   );
 }
 
-function ClientContentDraftReviewView({
-  onApprove,
-  onLoad,
-  onRequestRevision
-}: {
-  onApprove: (projectId: string, draftId: string) => Promise<AiDeliveryContentDraftSummary | null>;
-  onLoad: (projectId: string) => Promise<AiDeliveryContentDraftSummary[]>;
-  onRequestRevision: (projectId: string, draftId: string, comment: string) => Promise<AiDeliveryContentDraftSummary | null>;
-}) {
-  const [projectId, setProjectId] = useState("");
-  const [drafts, setDrafts] = useState<AiDeliveryContentDraftSummary[]>([]);
-  const [comments, setComments] = useState<Record<string, string>>({});
-  const [loadingDrafts, setLoadingDrafts] = useState(false);
-  const [savingDraftId, setSavingDraftId] = useState<string | null>(null);
-
-  async function reloadDrafts(id: string) {
-    setDrafts(await onLoad(id));
-  }
-
-  async function handleLoad(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const id = projectId.trim();
-    if (!id) return;
-    setLoadingDrafts(true);
-    try {
-      await reloadDrafts(id);
-    } finally {
-      setLoadingDrafts(false);
-    }
-  }
-
-  async function handleApprove(draftId: string) {
-    const id = projectId.trim();
-    if (!id) return;
-    setSavingDraftId(draftId);
-    try {
-      await onApprove(id, draftId);
-      await reloadDrafts(id);
-      setComments((current) => ({ ...current, [draftId]: "" }));
-    } finally {
-      setSavingDraftId(null);
-    }
-  }
-
-  async function handleRequestRevision(draftId: string) {
-    const id = projectId.trim();
-    const comment = (comments[draftId] ?? "").trim();
-    if (!id || !comment) return;
-    setSavingDraftId(draftId);
-    try {
-      await onRequestRevision(id, draftId, comment);
-      await reloadDrafts(id);
-    } finally {
-      setSavingDraftId(null);
-    }
-  }
-
+function ClientContentPlanReviewView() {
   return (
-    <section className="view-section" aria-labelledby="content-draft-review-title">
-      <PageHeader
-        eyebrow="Client review"
-        title="Content Draft Review"
-        titleId="content-draft-review-title"
-        description="Client-only view: review content drafts for your AI Delivery project. Requires a client-linked account."
-      />
-      <SectionPanel title="Open draft review" description="Enter the AI Delivery project ID shared by your team to load reviewable drafts.">
-        <form className="entity-form" onSubmit={handleLoad}>
-          <div className="field-grid">
-            <label className="field-span-2">
-              AI Delivery project ID
-              <input maxLength={255} placeholder="Project ID (provided by your team)" onChange={(event) => setProjectId(event.target.value)} required value={projectId} />
-            </label>
-          </div>
-          <div className="modal-footer">
-            <button className="primary-action" disabled={loadingDrafts || !projectId.trim()} type="submit">
-              {loadingDrafts ? "Loading" : "Load content drafts"}
-            </button>
-          </div>
-        </form>
-      </SectionPanel>
+    <ClientReviewDeferredView
+      title="Monthly Content Plan Review"
+      titleId="content-plan-review-title"
+      description="This client review route is deferred for the current MVP."
+    />
+  );
+}
 
-      <SectionPanel title="Reviewable drafts" description="Approve a draft or request changes with a required comment.">
-        {drafts.length === 0 ? <div className="state-panel">No reviewable content drafts loaded.</div> : null}
-        {drafts.map((draft) => (
-          <article className="entity-card" key={draft.id} style={{ marginBottom: "1rem" }}>
-            <div className="entity-card-header">
-              <div>
-                <StatusBadge status={draft.status} />
-                <h3>{draft.title}</h3>
-                <p>{draft.contentPlanItem ? `Linked to: ${draft.contentPlanItem.title}` : "Manual / unlinked draft"}</p>
-              </div>
-            </div>
-            <dl className="brief-grid">
-              <div><dt>Review requested</dt><dd>{draft.reviewRequestedAt ? new Date(draft.reviewRequestedAt).toLocaleString() : "Not set"}</dd></div>
-              <div><dt>Approved</dt><dd>{draft.approvedAt ? new Date(draft.approvedAt).toLocaleString() : "Not approved"}</dd></div>
-              <div><dt>Revisions</dt><dd>{draft.revisionCount ?? 0}</dd></div>
-              <div><dt>Admin notes</dt><dd>{draft.notes ?? "No admin notes"}</dd></div>
-            </dl>
-            <section className="field-panel">
-              <h4>Draft body</h4>
-              <pre style={{ whiteSpace: "pre-wrap" }}>{draft.draftBody}</pre>
-            </section>
-            <section className="field-panel">
-              <h4>Request changes</h4>
-              <textarea
-                maxLength={500}
-                onChange={(event) => setComments((current) => ({ ...current, [draft.id]: event.target.value }))}
-                placeholder="Describe the changes you'd like (required)."
-                rows={3}
-                value={comments[draft.id] ?? ""}
-              />
-            </section>
-            <div className="modal-footer">
-              <button className="secondary-action" disabled={savingDraftId === draft.id || !(comments[draft.id] ?? "").trim()} onClick={() => void handleRequestRevision(draft.id)} type="button">
-                {savingDraftId === draft.id ? "Saving" : "Request changes"}
-              </button>
-              <button className="primary-action" disabled={savingDraftId === draft.id} onClick={() => void handleApprove(draft.id)} type="button">
-                {savingDraftId === draft.id ? "Saving" : "Approve draft"}
-              </button>
-            </div>
-          </article>
-        ))}
-      </SectionPanel>
-    </section>
+function ClientContentDraftReviewView() {
+  return (
+    <ClientReviewDeferredView
+      title="Content Draft Review"
+      titleId="content-draft-review-title"
+      description="Internal draft review is deferred for the current MVP."
+    />
   );
 }
 
@@ -3468,38 +3230,6 @@ export function App() {
     }
   }
 
-  async function handleFetchClientContentDraftReview(projectId: string): Promise<AiDeliveryContentDraftSummary[]> {
-    setAppMessage(null);
-    try {
-      const response = await runAuthenticatedRequest<ClientContentDraftReviewResponse>(`/ai-delivery-projects/${projectId}/content-drafts/client-review`);
-      if (!response) return [];
-      if (!response.ok) {
-        setAppMessage({ tone: "error", text: getErrorMessage(response) });
-        return [];
-      }
-      setAppMessage({ tone: "success", text: "Content draft review loaded." });
-      return response.data.contentDrafts;
-    } catch (error) {
-      setAppMessage({ tone: "error", text: maskError(error) });
-      return [];
-    }
-  }
-
-  async function handleApproveClientContentDraftReview(projectId: string, draftId: string): Promise<AiDeliveryContentDraftSummary | null> {
-    return runContentDraftAction(
-      `/ai-delivery-projects/${projectId}/content-drafts/${draftId}/client-review/approve`,
-      "Content draft approved."
-    );
-  }
-
-  async function handleRequestClientContentDraftRevision(projectId: string, draftId: string, comment: string): Promise<AiDeliveryContentDraftSummary | null> {
-    return runContentDraftAction(
-      `/ai-delivery-projects/${projectId}/content-drafts/${draftId}/client-review/request-revision`,
-      "Content draft revision requested.",
-      { comment }
-    );
-  }
-
   async function runContentDraftAction(path: string, successMessage: string, body?: unknown): Promise<AiDeliveryContentDraftSummary | null> {
     setAppMessage(null);
     try {
@@ -3512,55 +3242,6 @@ export function App() {
       return response.data.contentDraft ?? null;
     } catch (error) {
       return rethrowAiDeliveryRuntimeError(error);
-    }
-  }
-
-  async function handleFetchClientContentPlanReview(projectId: string): Promise<AiDeliveryContentPlanSummary | null> {
-    return runClientContentPlanReviewAction(
-      `/ai-delivery-projects/${projectId}/content-plan/client-review`,
-      "Monthly content plan review loaded.",
-      "GET"
-    );
-  }
-
-  async function handleApproveClientContentPlanReview(projectId: string): Promise<AiDeliveryContentPlanSummary | null> {
-    return runClientContentPlanReviewAction(
-      `/ai-delivery-projects/${projectId}/content-plan/client-review/approve`,
-      "Monthly content plan approved."
-    );
-  }
-
-  async function handleRequestClientContentPlanRevision(
-    projectId: string,
-    comment: string
-  ): Promise<AiDeliveryContentPlanSummary | null> {
-    return runClientContentPlanReviewAction(
-      `/ai-delivery-projects/${projectId}/content-plan/client-review/request-revision`,
-      "Monthly content plan revision requested.",
-      "POST",
-      { comment }
-    );
-  }
-
-  async function runClientContentPlanReviewAction(
-    path: string,
-    successMessage: string,
-    method = "POST",
-    body?: unknown
-  ): Promise<AiDeliveryContentPlanSummary | null> {
-    setAppMessage(null);
-    try {
-      const response = await runAuthenticatedRequest<ClientContentPlanReviewResponse>(path, { method, body });
-      if (!response) return null;
-      if (!response.ok) {
-        setAppMessage({ tone: "error", text: getErrorMessage(response) });
-        return null;
-      }
-      setAppMessage({ tone: "success", text: successMessage });
-      return response.data.contentPlan ?? null;
-    } catch (error) {
-      setAppMessage({ tone: "error", text: maskError(error) });
-      return null;
     }
   }
 
@@ -4355,20 +4036,8 @@ export function App() {
       {!loading && activeView === "ai-market-intelligence" ? (
         <AiMarketIntelligencePage clients={clients?.clients ?? []} />
       ) : null}
-      {!loading && activeView === "content-plan-review" ? (
-        <ClientContentPlanReviewView
-          onApprove={handleApproveClientContentPlanReview}
-          onLoad={handleFetchClientContentPlanReview}
-          onRequestRevision={handleRequestClientContentPlanRevision}
-        />
-      ) : null}
-      {!loading && activeView === "content-draft-review" ? (
-        <ClientContentDraftReviewView
-          onApprove={handleApproveClientContentDraftReview}
-          onLoad={handleFetchClientContentDraftReview}
-          onRequestRevision={handleRequestClientContentDraftRevision}
-        />
-      ) : null}
+      {!loading && activeView === "content-plan-review" ? <ClientContentPlanReviewView /> : null}
+      {!loading && activeView === "content-draft-review" ? <ClientContentDraftReviewView /> : null}
       {!loading && activeView === "tasks" ? (
         <TasksPage
           canEdit={canManageCore}

@@ -28,7 +28,9 @@ Current behavior:
 
 - the Client Portal shows client-safe final material only;
 - admin remains responsible for internal review; human/client review before publication is required for Puriva;
-- no raw prompts, workflow runs, MI internals, AI costs, credentials, or technical logs.
+- no raw prompts, workflow runs, MI internals, AI costs, credentials, or technical logs;
+- legacy client-review API routes (`/content-plan/client-review`, `/content-drafts/client-review`) remain registered but return `CLIENT_REVIEW_DEFERRED` (HTTP 403) and do not expose plan/draft internals;
+- `#/content-plan-review` and `#/content-draft-review` frontend routes show a deferred message if accessed manually; they are hidden from sidebar navigation.
 
 ## Production And Deployment
 

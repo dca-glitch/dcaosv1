@@ -24,7 +24,8 @@ export const API_ERROR_CODES = {
   tenantSwitchInvalid: "TENANT_SWITCH_INVALID",
   tenantSettingsInvalid: "TENANT_SETTINGS_INVALID",
   tenantMemberInvalid: "TENANT_MEMBER_INVALID",
-  tenantMemberNotFound: "TENANT_MEMBER_NOT_FOUND"
+  tenantMemberNotFound: "TENANT_MEMBER_NOT_FOUND",
+  clientReviewDeferred: "CLIENT_REVIEW_DEFERRED"
 } as const;
 
 export const API_ERROR_MESSAGES = {
@@ -51,7 +52,8 @@ export const API_ERROR_MESSAGES = {
   tenantSwitchInvalid: "Invalid tenant switch request.",
   tenantSettingsInvalid: "Invalid tenant settings.",
   tenantMemberInvalid: "Invalid tenant member request.",
-  tenantMemberNotFound: "Member was not found."
+  tenantMemberNotFound: "Member was not found.",
+  clientReviewDeferred: "Client review actions are deferred for this MVP."
 } as const;
 
 export function success<T>(data: T, meta?: Record<string, unknown>): ApiSuccessResponse<T> {
@@ -171,4 +173,8 @@ export function tenantMemberInvalidFailure(): ApiErrorResponse {
 
 export function tenantMemberNotFoundFailure(): ApiErrorResponse {
   return failure(API_ERROR_CODES.tenantMemberNotFound, API_ERROR_MESSAGES.tenantMemberNotFound);
+}
+
+export function clientReviewDeferredFailure(): ApiErrorResponse {
+  return failure(API_ERROR_CODES.clientReviewDeferred, API_ERROR_MESSAGES.clientReviewDeferred);
 }
