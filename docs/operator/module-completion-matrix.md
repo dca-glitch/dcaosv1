@@ -17,7 +17,7 @@ This matrix explains what is usable now, what is partial, and what is waiting fo
 | --- | --- | --- |
 | Core login and tenant context | Closed for MVP | Admin can log in locally, work inside a tenant, and use owner/admin areas. |
 | Clients | Closed for MVP | Admin can manage client records and connect client-level access. |
-| Client Portal | Partial | Read-only final client archive is the safe path; client actions are not active. |
+| Client Portal | Partial / required MVP | Archive foundation exists. **Client Portal MVP is required for Puriva** — client-safe visibility and human/client review before publication (MI summary, SEO, Google Docs, publishing handoff, catalog inquiry). Advanced portal features (magic links, full comment threads) remain phased. Clients must not see raw prompts, workflow runs, AI costs, credentials, or admin-only notes. |
 | Projects | Closed for MVP | Admin can organize work by project, including monthly client projects. |
 | Tasks | Closed for MVP | Admin can track operational work and reminders. |
 | AI Delivery | Closed for local/admin MVP | Admin can run the main delivery workflow for briefs, plans, drafts, deliverables, exports, and reports. |
@@ -161,10 +161,10 @@ Still later:
 
 ## Recommended Next Focus
 
-For client delivery readiness, the next best focus is not a new module. It is to keep the first client workflow stable:
+For client delivery readiness, the next best focus is **MVP 1 Puriva client delivery** per [`docs/architecture/CLIENT_DOMAIN_OPERATING_MODEL.md`](../architecture/CLIENT_DOMAIN_OPERATING_MODEL.md):
 
-1. admin operator path;
-2. client delivery SOP;
-3. final deliverable/report archive;
+1. Client Portal MVP visibility and human/client review for Puriva;
+2. admin operator path (AI Delivery, MI, publishing handoff);
+3. client delivery SOP;
 4. pre-production readiness checklist;
-5. then only later production deployment or new module expansion.
+5. then staging/production deployment — not parallel future domain modules.

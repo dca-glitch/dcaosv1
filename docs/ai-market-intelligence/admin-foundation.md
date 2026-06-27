@@ -250,7 +250,7 @@ An approved MI handoff (READY status) can be attached to an AI Delivery project 
 
 - Live crawling and scraping
 - Autonomous or scheduled monitoring agents
-- Client Portal exposure
+- Raw MI internals, prompts, workflow runs, or full MI export to Client Portal (implement **client-safe MI summaries** for Client Portal MVP instead)
 - Paid data providers / external market data APIs
 - WordPress integration
 - Export/reporting beyond internal handoff
@@ -268,7 +268,7 @@ Potential enhancements for future consideration:
 - AI-powered insight summaries (with bounded, deterministic execution)
 - Multi-project comparison views
 - Audit logging for insight changes
-- Client Portal foundation (separate module)
+- Expand Client Portal MVP for Puriva (client-safe MI summary, SEO, deliverables, publishing status — **required**)
 - Export to WordPress / headless CMS
 
 ## Admin-Only MVP Principle

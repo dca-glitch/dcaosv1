@@ -1,6 +1,16 @@
-# DCA OS Lite
+# DCA OS
 
-Reusable SaaS operating system foundation for Digital Cube Agency.
+Modular SaaS operating system for Digital Cube Agency (also referred to as DCA OS Lite in repo docs).
+
+**System domains (approved):**
+
+| Domain | Role |
+|--------|------|
+| `system.digitalcubeagency.net` | Final production login and DCA OS application location |
+| `digitalcubeagency.net` | Public product website for DCA OS |
+| `digitalcubeagency.com` | Public agency website / lead generation |
+
+Canonical operating model: [`docs/architecture/CLIENT_DOMAIN_OPERATING_MODEL.md`](docs/architecture/CLIENT_DOMAIN_OPERATING_MODEL.md).
 
 Production URL:
 
@@ -10,18 +20,19 @@ system.digitalcubeagency.net
 
 ## Purpose
 
-DCA OS Lite is the shared platform foundation for Digital Cube Agency tools, dashboards, admin/operator workflows, finance modules, SEO/content operations, AI Delivery records, reporting modules, and future controlled client review flows.
+DCA OS is the shared platform foundation for Digital Cube Agency tools, dashboards, admin/operator workflows, finance modules, SEO/content operations, AI Delivery records, reporting modules, and Client Portal MVP delivery for agency clients.
 
 The goal is to build reusable platform foundations once and then add future modules with less repeated work.
 
 ## Current Operating State
 
-- Product name: DCA OS Lite.
+- Product name: **DCA OS** (DCA OS Lite in repo/package naming).
+- **MVP 1:** Puriva client delivery (`puriva.id`) — see architecture doc.
 - Work is local-first on Windows PowerShell from `C:\dcaosv1`.
 - Production is frozen unless explicitly approved.
 - Do not deploy, touch VPS, push, or commit unless explicitly approved after review.
 - ChatGPT acts as scope controller/reviewer/task writer; Codex/Copilot/local tooling executes sealed tasks.
-- AI Delivery is currently admin/operator-side. Client Access / Client Portal is intentionally postponed until admin/operator modules are stable.
+- AI Delivery admin workflows remain operator-primary. **Client Portal MVP is required for Puriva** (client-safe visibility and human/client review before publication). Advanced portal features (magic links, full comment threads) remain phased.
 - Repeatable scripts are required for stability, regression, smoke, or workflow validation work.
 
 ## Repository
@@ -94,9 +105,10 @@ The current foundation intentionally avoids:
 - WordPress publishing integration (draft preparation foundation exists; full integration gated)
 - GA/GSC integration
 - Resend sending or API key handling
-- active Client Portal / Client Access workflows
+- full Client Portal MVP scope for Puriva (archive foundation exists; MI summary, SEO status, publishing handoff, catalog inquiry still in progress)
+- advanced Client Portal actions (public magic links, full interactive comment threads)
 
-Note: AI Delivery project/brief/workflow/deliverable/review admin foundation is present but local/admin-only. Market Intelligence research/insight admin foundation is present but local/admin-only. Real external provider integrations, Client Portal, and production deployment remain guarded gates.
+Note: AI Delivery and Market Intelligence admin foundations are present locally. Client Access Admin UI is closed; Client Portal archive routes exist. Client Portal MVP expansion for Puriva, live external provider integrations, and production deployment remain guarded gates. Clients must not see raw prompts, workflow runs, AI costs, credentials, or admin-only notes.
 
 These areas will be implemented in controlled future blocks.
 
@@ -146,8 +158,8 @@ Terminal-dependent work should be handled by Codex/Copilot/local PowerShell thro
 
 ## Next Planned Areas
 
-1. Keep foundational docs/rules aligned with current local-first decisions.
-2. Stabilize admin/operator AI Delivery modules before client-facing review work.
+1. Keep foundational docs/rules aligned with Puriva MVP 1 and [`docs/architecture/CLIENT_DOMAIN_OPERATING_MODEL.md`](docs/architecture/CLIENT_DOMAIN_OPERATING_MODEL.md).
+2. Deliver Client Portal MVP visibility for Puriva (MI summary, SEO, Google Docs, publishing status, catalog inquiry) without exposing internal AI workflow data.
 3. Keep Email Notifications at EN1 until EN2 event wiring is explicitly resumed.
 4. Continue using repeatable local validation and smoke scripts for stability/regression work.
 

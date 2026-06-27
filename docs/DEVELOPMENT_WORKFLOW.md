@@ -35,7 +35,7 @@ Forbidden for this phase:
 
 Current AI Delivery / email constraints:
 
-* AI Delivery remains admin/operator-side.
-* Client Access / Client Portal is postponed until admin/operator modules are stable.
+* AI Delivery remains admin/operator-primary.
+* **MVP 1 = Puriva client delivery.** Client Access Admin UI foundation is closed. **Client Portal MVP is required for Puriva** — client-safe visibility and human/client review before publication; advanced portal features remain phased. See [`docs/architecture/CLIENT_DOMAIN_OPERATING_MODEL.md`](./architecture/CLIENT_DOMAIN_OPERATING_MODEL.md).
 * Email Notifications remains EN1 only: provider defaults exist, `notifications.digitalcubeagency.net` is verified for Resend, no API key is added, and no real sending is active.
 * EN2 event wiring remains paused.

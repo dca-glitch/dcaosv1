@@ -323,7 +323,7 @@ Active Client Portal archive routes require non-archived `ClientUserAccess`; own
 
 ## Monthly content plan client review routes
 
-Current status: phased after MVP visibility. These routes document a possible authenticated review contract for advanced client actions; Client Portal MVP focuses on client-safe read visibility first.
+Current status: phased after MVP visibility. Interactive advanced client review routes (full comment threads, magic links) are phased, but **Client Portal MVP visibility and human/client review for Puriva are required**. These routes document a possible authenticated review contract for advanced client actions beyond the MVP visibility scope.
 
 Authenticated tenant users may review monthly content plans only when `userCanAccessClient(authSession, clientId)` passes for the AI Delivery Project client.
 
@@ -357,7 +357,7 @@ This block is admin-operated only. It does not add AI writing calls, publishing 
 
 ## Content draft client review routes
 
-Current status: paused/future. Future client review may build on review records later, but client-facing review is not active now.
+Current status: phased after MVP visibility. Interactive advanced content-draft client review routes are phased; **Client Portal MVP visibility and human/client review for Puriva are required**. Future advanced client review may build on review records later without exposing raw workflow internals.
 
 Content draft review uses normal authenticated sessions only. No public token routes, public approval links, or magic links are exposed. Client access is tenant-scoped and requires `userCanAccessClient(authSession, clientId)` for the AI Delivery Project client. Archived AI Delivery projects and archived content drafts are not exposed to client review routes.
 
@@ -472,7 +472,7 @@ Readiness rules:
 
 Current admin UI wiring includes private deliverable document upload/open actions for deliverable records.
 
-This foundation intentionally excludes export generation, publishing connectors, AI generation calls, signed client downloads, public links, or active client-facing delivery portal behavior. Future client-safe handoff should expose final/reviewable deliverables rather than raw workflow execution internals. Those deferred items are not blockers to the current admin foundation closure.
+Admin foundation closure note: this block intentionally excludes autonomous AI generation calls, signed public links, and raw workflow internals in client responses. **Client Portal archive routes exist; Client Portal MVP expansion for Puriva is required** (MI summary, SEO status, Google Docs exports, publishing handoff/status, human/client review before publication). Advanced interactive client actions remain phased. Those gaps are not blockers to the current admin foundation closure, but they are active MVP 1 delivery scope per [`docs/architecture/CLIENT_DOMAIN_OPERATING_MODEL.md`](./architecture/CLIENT_DOMAIN_OPERATING_MODEL.md).
 
 ## Client portal archive contract
 

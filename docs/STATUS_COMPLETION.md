@@ -1,9 +1,9 @@
 # DCA OS Lite — Project Completion Overview
 
 **Status:** Planning and operator reference  
-**Last updated:** 2026-06-26  
-**Reference branch:** `feature/ai-delivery-project-brief-foundation` @ `7c2aeed`  
-**Scope:** Approved local admin MVP + client/domain operating model (blocks 1–6). VPS/production intentionally excluded until separate approval.
+**Last updated:** 2026-06-27  
+**Reference branch:** `feature/ai-delivery-project-brief-foundation` @ `50f2119`  
+**Scope:** Approved local admin MVP + client/domain operating model (blocks 1–6) + **MVP 1 Puriva client delivery**. VPS/production intentionally excluded until separate approval.
 
 Percentages measure completion **within each area's approved scope**, not the full long-term PRD vision.
 
@@ -55,7 +55,8 @@ Related documents:
 | **AI Delivery** | **82%** | Done | Brief → deliverable → export → monthly report path |
 | **Market Intelligence** | **74%** | In progress | Admin MVP + handoff; no recurring/automation |
 | **Monthly Reports** | **78%** | Done | Admin + PDF + client archive FINAL-only |
-| **Client Portal** | **45%** | In progress | Read-only archive only; no client actions |
+| **Client Portal MVP** (Puriva — visibility + review) | **45%** | Required / in progress | Archive foundation exists; expand MI summary, SEO, Google Docs, publishing status, catalog inquiry; no raw AI/internal data |
+| **Client Portal advanced actions** (magic links, full comment threads) | **0%** | Phased after MVP visibility | See deferred scope register |
 | **Finance** | **80%** | Done | Invoices, bills, vendors, credit notes; `OWN_DOMAIN` invoice guard |
 | **AI SEO + Content Production** | **62%** | In progress | Admin shell; no live Google integrations |
 | **Private storage (R2)** | **50%** | In progress | Local proof; production bucket deferred |
@@ -71,8 +72,6 @@ Related documents:
 | **Revenue Hub AI** | **0%** | Deferred | Future module |
 | **POD AI Toolkit** | **0%** | Deferred | Future module |
 | **Scraping / broad data collection** | **0%** | Deferred | Future module |
-| **Client Portal MVP** (client-safe visibility for Puriva) | In progress | Required | See `docs/architecture/CLIENT_DOMAIN_OPERATING_MODEL.md` |
-| **Client Portal actions** (approve, comments, magic links) | **0%** | Phased after MVP visibility | See deferred scope register |
 | **Live GA/GSC, Google OAuth** | **0%** | Deferred | Snapshot-first only today |
 | **Live WordPress auto-publish (prod)** | **0%** | Deferred | Draft handoff yes; auto-publish no |
 | **Stripe / payments / accounting integrations** | **0%** | Deferred | Finance = admin records |
@@ -105,11 +104,12 @@ Related documents:
 - Market Intelligence admin workflow
 - Finance admin records
 - Monthly Reports (admin + client-safe archive path)
-- Client Portal (read-only)
+- Client Portal archive foundation (MVP expansion for Puriva in progress)
 - Client Hub (profile, publication targets, analytics shell)
 
-### In progress — finish before production
+### In progress — finish before Puriva MVP 1 production
 
+- Client Portal MVP for Puriva (MI summary, SEO status, Google Docs, publishing handoff, catalog inquiry, human/client review)
 - Publication/credentials/publish (blocks 4–5)
 - Module enforcement (block 6, after tenant module seed on target)
 - Deprecate legacy tenant WordPress config
@@ -119,8 +119,8 @@ Related documents:
 
 - VPS and production deploy
 - Live external integrations (Google, WordPress auto-publish, email sending)
-- Client approval workflows in portal
-- Future modules (Revenue Hub, POD, scraping)
+- Advanced Client Portal actions (magic links, full comment threads)
+- Future modules (Spa Finance, BaliShop, GayService, GotoBeauty, Bali24, Revenue Hub, Commerce Core, POD, scraping)
 - Licensee tenant migration
 
 ---
