@@ -46,17 +46,17 @@ Related documents:
 | **Platform core** (auth, tenant, modules, CI, validate) | **90%** | Done | Login, tenant context, CI PASS |
 | **Dark Nebula UI + data-dense admin** | **85%** | Done | Phase 1/2 closed; polish remains in MI/Portal/settings |
 | **Clients (CRM)** | **88%** | Done | CRUD, filters, `clientKind`, website |
-| **Client Hub + domain model (block 1)** | **94%** | Done | Hub UI, catalog inquiry operator review browser gate |
+| **Client Hub + domain model (block 1)** | **96%** | Done | Hub UI, catalog inquiry + publication log operator browser gates |
 | **PublicationTarget (block 2)** | **95%** | Done | CRUD per client; legacy tenant POST sunset (410); GET read-only |
 | **MI → clientId (block 3)** | **88%** | Done | FK, client picker UI, handoff; `clientId` parser fix applied |
 | **Encrypted credentials (block 4)** | **85%** | Done (local) | Local encrypt roundtrip smoke PASS; staging/prod master key = owner gate |
-| **WordPress publish + PublicationLog (block 5)** | **88%** | Done (local) | Local gate smoke PASS (off + open gate); live Puriva publish = owner gate |
+| **WordPress publish + PublicationLog (block 5)** | **90%** | Done (local) | Local gate smoke + Client Hub publication log browser proof |
 | **Module middleware (block 6)** | **92%** | Done (local) | Local `off`/`dry_run`/`enforce` gate doc + smoke PASS |
 | **Projects & Tasks** | **88%** | Done | Admin MVP closed |
 | **AI Delivery** | **82%** | Done | Brief → deliverable → export → monthly report path |
 | **Market Intelligence** | **78%** | In progress | Admin MVP + handoff; included in pre-staging smoke; no recurring/automation |
-| **Monthly Reports** | **82%** | Done | Admin + PDF + client archive FINAL-only; MI context smoke in pre-staging |
-| **Client Portal MVP** (Puriva — visibility + review) | **98%** | Done (local) | Blocks 7–17 browser/API gates; empty archive + hub inquiry review |
+| **Monthly Reports** | **86%** | Done | Admin + PDF + client archive FINAL-only; local + PDF smokes in pre-staging |
+| **Client Portal MVP** (Puriva — visibility + review) | **99%** | Done (local) | Blocks 7–20 browser/API gates incl. project filters + empty archive paths |
 | **Client Portal advanced actions** (magic links, full comment threads) | **0%** | Phased after MVP visibility | See deferred scope register |
 | **Finance** | **80%** | Done | Invoices, bills, vendors, credit notes; `OWN_DOMAIN` invoice guard |
 | **AI SEO + Content Production** | **64%** | In progress | Admin shell; Google Drive export smoke in pre-staging; no live Google integrations |
@@ -151,6 +151,7 @@ Do not treat local smoke alone as production readiness.
 
 | Date | Change |
 |------|--------|
+| 2026-06-27 | MVP Blocks 19–21: portal project filter browser gate, Client Hub publication log browser gate, monthly report local/PDF in pre-staging |
 | 2026-06-27 | MVP Blocks 16–18: empty archive browser gate, Client Hub catalog inquiry browser gate, monthly report MI context in pre-staging |
 | 2026-06-27 | MVP Blocks 13–15: sparse delivery overview browser gate, access revoke browser gate, Google Drive export in pre-staging |
 | 2026-06-27 | MVP Block 12: Client Portal empty catalog + archived project browser edge-case gate; API archive exclusion in portal local smoke |

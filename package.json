@@ -33,6 +33,8 @@
     "smoke:client-portal:access-revoke:browser": "node scripts/smoke-client-portal-access-revoke-browser-local.mjs",
     "smoke:client-portal:empty-archive:browser": "node scripts/smoke-client-portal-empty-archive-browser-local.mjs",
     "smoke:client-hub:catalog-inquiry:browser": "node scripts/smoke-client-hub-catalog-inquiry-browser-local.mjs",
+    "smoke:client-hub:publication-log:browser": "node scripts/smoke-client-hub-publication-log-browser-local.mjs",
+    "smoke:client-portal:project-filter:browser": "node scripts/smoke-client-portal-project-filter-browser-local.mjs",
     "smoke:client-access:local": "node scripts/smoke-client-access-local.mjs",
     "smoke:monthly-report:local": "node scripts/smoke-monthly-report-local.mjs",
     "smoke:monthly-report:browser": "node scripts/smoke-browser-monthly-report-admin-ui.mjs",

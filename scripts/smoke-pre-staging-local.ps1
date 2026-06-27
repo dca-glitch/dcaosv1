@@ -61,6 +61,8 @@ try {
   Invoke-NpmStep "Client portal access revoke browser smoke" "smoke:client-portal:access-revoke:browser"
   Invoke-NpmStep "Client portal empty archive browser smoke" "smoke:client-portal:empty-archive:browser"
   Invoke-NpmStep "Client hub catalog inquiry browser smoke" "smoke:client-hub:catalog-inquiry:browser"
+  Invoke-NpmStep "Client hub publication log browser smoke" "smoke:client-hub:publication-log:browser"
+  Invoke-NpmStep "Client portal project filter browser smoke" "smoke:client-portal:project-filter:browser"
   Invoke-NpmStep "Client domain browser smoke" "smoke:client-domain:browser"
   Invoke-NpmStep "Client portal monthly report browser smoke" "smoke:client-portal-monthly-report:browser"
   Invoke-NpmStep "AI Market Intelligence local smoke" "smoke:ai-market-intelligence"
@@ -69,6 +71,8 @@ try {
 
   Invoke-NpmStep "Google Drive export local smoke" "smoke:google-drive-export"
   Invoke-NpmStep "Monthly report MI context local smoke" "smoke:monthly-report:mi-context"
+  Invoke-NpmStep "Monthly report local smoke" "smoke:monthly-report:local"
+  Invoke-NpmStep "Monthly report PDF local smoke" "smoke:monthly-report:pdf"
   Invoke-NpmStep "AI Delivery reviews smoke" "smoke:ai-delivery-reviews"
   Invoke-NpmStep "Credential encryption local smoke" "smoke:credential-encryption:local"
   Invoke-NpmStep "WordPress publish local smoke" "smoke:wordpress-publish:local"
