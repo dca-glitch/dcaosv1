@@ -51,7 +51,7 @@ Related documents:
 | **MI → clientId (block 3)** | **88%** | Done | FK, client picker UI, handoff; `clientId` parser fix applied |
 | **Encrypted credentials (block 4)** | **85%** | Done (local) | Local encrypt roundtrip smoke PASS; staging/prod master key = owner gate |
 | **WordPress publish + PublicationLog (block 5)** | **90%** | Done (local) | Local gate smoke + Client Hub publication log browser proof |
-| **Module middleware (block 6)** | **92%** | Done (local) | Local `off`/`dry_run`/`enforce` gate doc + smoke PASS |
+| **Module middleware (block 6)** | **94%** | Done (local) | dry_run local probe runbook (Post-MVP Block 39); staging enforce pending |
 | **Projects & Tasks** | **88%** | Done | Admin MVP closed |
 | **AI Delivery** | **84%** | Done | Content plan review browser gate (Post-MVP Block 34) |
 | **Market Intelligence** | **78%** | In progress | Admin MVP + handoff; included in pre-staging smoke; no recurring/automation |

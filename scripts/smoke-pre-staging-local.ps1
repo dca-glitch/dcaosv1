@@ -90,6 +90,7 @@ try {
   Invoke-NpmStep "R2 byte roundtrip local smoke" "smoke:r2-byte-roundtrip:local"
   Invoke-NpmStep "WordPress publish local smoke" "smoke:wordpress-publish:local"
   Invoke-NpmStep "Tenant module local smoke" "smoke:tenant-module:local"
+  Invoke-NpmStep "Tenant module dry_run probe" "smoke:tenant-module:dry-run-probe"
   Invoke-NpmStep "Legacy WordPress sunset local smoke" "smoke:legacy-wordpress-sunset:local"
 
   Write-Host ""
