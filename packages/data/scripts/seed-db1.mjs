@@ -671,6 +671,21 @@ async function upsertDcaFoundationBootstrap(prisma) {
   };
 }
 
+async function upsertSeedAdminSecondTenantMembership(prisma, dcaTenantId, seedUserId, dcaRoles) {
+  const adminRole = dcaRoles.find((entry) => entry.role.key === "admin")?.role;
+  if (!adminRole) {
+    return { status: "skipped_missing_admin_role", membership: null, membershipRole: null };
+  }
+
+  const membership = await upsertMembership(prisma, dcaTenantId, seedUserId);
+  const membershipRole = await upsertMembershipRole(prisma, membership.membership.id, adminRole.id);
+  return {
+    membership,
+    membershipRole,
+    status: membership.status
+  };
+}
+
 async function upsertTesterFixture(prisma, testerCredentials, dcaTenantId) {
   const testerUser = await upsertUser(prisma, testerCredentials.email, testerCredentials.passwordHash);
   const testerMembership = await upsertMembership(prisma, dcaTenantId, testerUser.user.id);
@@ -724,6 +739,13 @@ async function main() {
       const localTenantModules = await upsertTenantModuleEntitlements(tx, tenant.tenant.id);
       const dcaFoundation = await upsertDcaFoundationBootstrap(tx);
 
+      const financeIsolationMembership = await upsertSeedAdminSecondTenantMembership(
+        tx,
+        dcaFoundation.tenant.tenant.id,
+        user.user.id,
+        dcaFoundation.roles
+      );
+
       let testerFixture = null;
       if (testerCredentials) {
         testerFixture = await upsertTesterFixture(
@@ -741,6 +763,7 @@ async function main() {
         membershipRole,
         localTenantModules,
         dcaFoundation,
+        financeIsolationMembership,
         testerFixture
       };
     });
@@ -828,7 +851,17 @@ async function main() {
                   status: result.testerFixture.membershipRole.status
                 }
               }
-            : "skipped - AUTH_SEED_TESTER_EMAIL/AUTH_SEED_TESTER_PASSWORD not set"
+            : "skipped - AUTH_SEED_TESTER_EMAIL/AUTH_SEED_TESTER_PASSWORD not set",
+          financeIsolationMembership: {
+            tenant: {
+              slug: dcaTenantSlug,
+              name: dcaTenantName
+            },
+            seedAdminSecondTenant: {
+              status: result.financeIsolationMembership.status,
+              membershipStatus: result.financeIsolationMembership.membership?.status ?? "skipped"
+            }
+          }
         },
         null,
         2
