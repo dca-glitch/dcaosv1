@@ -53,7 +53,7 @@ Related documents:
 | **WordPress publish + PublicationLog (block 5)** | **90%** | Done (local) | Local gate smoke + Client Hub publication log browser proof |
 | **Module middleware (block 6)** | **92%** | Done (local) | Local `off`/`dry_run`/`enforce` gate doc + smoke PASS |
 | **Projects & Tasks** | **88%** | Done | Admin MVP closed |
-| **AI Delivery** | **82%** | Done | Brief → deliverable → export → monthly report path |
+| **AI Delivery** | **84%** | Done | Content plan review browser gate (Post-MVP Block 34) |
 | **Market Intelligence** | **78%** | In progress | Admin MVP + handoff; included in pre-staging smoke; no recurring/automation |
 | **Monthly Reports** | **90%** | Done | Admin browser + PDF + metrics path; local + browser + metrics smokes in pre-staging |
 | **Client Portal MVP** (Puriva — visibility + review) | **100%** | Done (local) | Blocks 7–30 incl. sparse + populated delivery overview browser gates |
