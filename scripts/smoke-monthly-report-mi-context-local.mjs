@@ -115,6 +115,17 @@ function assertClientPortalDoesNotExposeMiContext(portalJson, handoff, updatedDr
   }
 }
 
+async function ensureModuleEnabled(token, moduleKey) {
+  const current = await apiCall("GET", "/modules/current", undefined, token);
+  const entry = current.json?.data?.modules?.find((module) => module.key === moduleKey);
+  if (entry?.enabled === true) {
+    return true;
+  }
+
+  const enable = await apiCall("POST", `/modules/current/${moduleKey}/enable`, {}, token);
+  return enable.status === 200 && enable.json?.ok === true;
+}
+
 async function main() {
   console.log("🔍 Monthly Report Market Intelligence context smoke test\n");
 
@@ -131,6 +142,8 @@ async function main() {
   const adminUserId = login.json?.data?.user?.id ?? "";
   assert(login.ok && token.length > 0, "Admin auth works using existing smoke login pattern", `status=${login.status}`);
   assert(adminUserId.length > 0, "Admin user id available for Client Portal access fixture");
+  assert(await ensureModuleEnabled(token, "ai-delivery"), "ai-delivery module enabled for smoke tenant");
+  assert(await ensureModuleEnabled(token, "market-intelligence"), "market-intelligence module enabled for smoke tenant");
   console.log();
 
   console.log("Step 2: Create client and AI Delivery project");
@@ -162,7 +175,7 @@ async function main() {
     competitors: "Example Competitor A, Example Competitor B",
     niche: "B2B SaaS client reporting",
     productServiceFocus: "monthly report Market Intelligence context",
-    targetClientName: "Smoke Monthly MI Client",
+    clientId,
     targetMonth: TARGET_MONTH,
     status: "ACTIVE"
   }, token);

@@ -51,10 +51,13 @@ npm.cmd run smoke:client-portal:browser
 npm.cmd run smoke:client-portal:edge-cases:browser
 npm.cmd run smoke:client-portal:sparse-delivery:browser
 npm.cmd run smoke:client-portal:access-revoke:browser
+npm.cmd run smoke:client-portal:empty-archive:browser
+npm.cmd run smoke:client-hub:catalog-inquiry:browser
 npm.cmd run smoke:client-domain:browser
 npm.cmd run smoke:client-portal-monthly-report:browser
 npm.cmd run smoke:ai-market-intelligence
 npm.cmd run smoke:google-drive-export
+npm.cmd run smoke:monthly-report:mi-context
 npm.cmd run smoke:ai-delivery-reviews
 npm.cmd run smoke:credential-encryption:local
 npm.cmd run smoke:wordpress-publish:local

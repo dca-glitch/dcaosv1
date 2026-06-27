@@ -46,7 +46,7 @@ Related documents:
 | **Platform core** (auth, tenant, modules, CI, validate) | **90%** | Done | Login, tenant context, CI PASS |
 | **Dark Nebula UI + data-dense admin** | **85%** | Done | Phase 1/2 closed; polish remains in MI/Portal/settings |
 | **Clients (CRM)** | **88%** | Done | CRUD, filters, `clientKind`, website |
-| **Client Hub + domain model (block 1)** | **92%** | Done | Hub UI, profile, local migration, Playwright smoke PASS |
+| **Client Hub + domain model (block 1)** | **94%** | Done | Hub UI, catalog inquiry operator review browser gate |
 | **PublicationTarget (block 2)** | **95%** | Done | CRUD per client; legacy tenant POST sunset (410); GET read-only |
 | **MI → clientId (block 3)** | **88%** | Done | FK, client picker UI, handoff; `clientId` parser fix applied |
 | **Encrypted credentials (block 4)** | **85%** | Done (local) | Local encrypt roundtrip smoke PASS; staging/prod master key = owner gate |
@@ -55,8 +55,8 @@ Related documents:
 | **Projects & Tasks** | **88%** | Done | Admin MVP closed |
 | **AI Delivery** | **82%** | Done | Brief → deliverable → export → monthly report path |
 | **Market Intelligence** | **78%** | In progress | Admin MVP + handoff; included in pre-staging smoke; no recurring/automation |
-| **Monthly Reports** | **78%** | Done | Admin + PDF + client archive FINAL-only |
-| **Client Portal MVP** (Puriva — visibility + review) | **97%** | Done (local) | Blocks 7–14 browser/API gates; sparse overview + access revoke + edge cases |
+| **Monthly Reports** | **82%** | Done | Admin + PDF + client archive FINAL-only; MI context smoke in pre-staging |
+| **Client Portal MVP** (Puriva — visibility + review) | **98%** | Done (local) | Blocks 7–17 browser/API gates; empty archive + hub inquiry review |
 | **Client Portal advanced actions** (magic links, full comment threads) | **0%** | Phased after MVP visibility | See deferred scope register |
 | **Finance** | **80%** | Done | Invoices, bills, vendors, credit notes; `OWN_DOMAIN` invoice guard |
 | **AI SEO + Content Production** | **64%** | In progress | Admin shell; Google Drive export smoke in pre-staging; no live Google integrations |
@@ -65,7 +65,7 @@ Related documents:
 | **Audit / activity** | **55%** | In progress | Writer + dashboard feed; no full audit UI |
 | **AI provider (OpenRouter)** | **40%** | In progress | Guarded path; default remains deterministic local |
 | **Operator docs & runbooks** | **92%** | Done | SOP, matrix, deferred register, pre-staging local gate |
-| **Tests / smoke** | **98%** | Done (local) | Pre-staging includes portal edge/sparse/revoke browser gates + Google Drive export |
+| **Tests / smoke** | **99%** | Done (local) | Pre-staging includes empty archive, hub inquiry, MI context smokes |
 | **PR merge → main** | **0%** | In progress | PR #13 open; merge after owner approves staging |
 | **Staging / VPS deploy** | **5%** | Deferred | Documentation only; **paused by owner — no VPS deploy** |
 | **Production deploy** | **0%** | Deferred | Frozen |
@@ -151,6 +151,7 @@ Do not treat local smoke alone as production readiness.
 
 | Date | Change |
 |------|--------|
+| 2026-06-27 | MVP Blocks 16–18: empty archive browser gate, Client Hub catalog inquiry browser gate, monthly report MI context in pre-staging |
 | 2026-06-27 | MVP Blocks 13–15: sparse delivery overview browser gate, access revoke browser gate, Google Drive export in pre-staging |
 | 2026-06-27 | MVP Block 12: Client Portal empty catalog + archived project browser edge-case gate; API archive exclusion in portal local smoke |
 | 2026-06-27 | MVP Block 10: Client Portal catalog inquiry browser gate; Block 11: MI smoke in pre-staging gate |
