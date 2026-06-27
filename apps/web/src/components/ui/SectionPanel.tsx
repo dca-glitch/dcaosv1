@@ -20,7 +20,7 @@ export function SectionPanel({ title, description, action, children, className, 
 
   return (
     <section className={classes}>
-      <header className="section-panel-header">
+      <header className="section-panel-header section-panel-header-polished">
         <div className="section-panel-heading">
           <h2>{title}</h2>
           {description ? <p className="section-panel-description">{description}</p> : null}

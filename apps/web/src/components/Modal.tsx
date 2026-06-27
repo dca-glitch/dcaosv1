@@ -29,7 +29,7 @@ export function Modal({ title, onClose, children, footer, size = "md", eyebrow =
             {eyebrow ? <p className="eyebrow">{eyebrow}</p> : null}
             <h2 id={titleId}>{title}</h2>
           </div>
-          <button className="secondary-action" onClick={onClose} type="button">
+          <button aria-label="Close dialog" className="ghost-action modal-close-action" onClick={onClose} type="button">
             Close
           </button>
         </header>

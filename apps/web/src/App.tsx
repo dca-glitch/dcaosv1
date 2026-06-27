@@ -1,5 +1,6 @@
 import { type FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AppLayout } from "./components/AppLayout";
+import { StatusNotice } from "./components/StatusNotice";
 import { EmptyState } from "./components/EmptyState";
 import { MetricCard, PageHeader, SectionPanel, StatusBadge } from "./components/ui";
 import {
@@ -676,14 +677,6 @@ function formatAuditMetadataSummary(
     .join(" • ");
 
   return summary.length > 0 ? summary : null;
-}
-
-function StatusNotice({ tone, message }: { tone: "info" | "error" | "success"; message: string }) {
-  return (
-    <div className={`status-notice status-${tone}`} role={tone === "error" ? "alert" : "status"}>
-      {message}
-    </div>
-  );
 }
 
 function TurnstileWidget({
@@ -3890,7 +3883,13 @@ export function App() {
       onLogout={() => void handleLogout()}
       user={currentUser.user}
     >
-      {appMessage ? <StatusNotice message={appMessage.text} tone={appMessage.tone} /> : null}
+      {appMessage ? (
+        <StatusNotice
+          message={appMessage.text}
+          tone={appMessage.tone}
+          onDismiss={appMessage.tone !== "error" ? () => setAppMessage(null) : undefined}
+        />
+      ) : null}
       {loading ? <div className="state-panel">Loading</div> : null}
       {!loading && activeView === "dashboard" ? (
         <DashboardView

@@ -2294,3 +2294,137 @@ tr:hover td {
     width: 100%;
   }
 }
+
+/* P2 safe polish — compact status notice, shell chrome, modal, section panel */
+.status-notice.status-notice-compact {
+  align-items: center;
+  border-radius: 8px;
+  display: flex;
+  font-size: 0.82rem;
+  font-weight: 650;
+  gap: 8px;
+  justify-content: space-between;
+  line-height: 1.35;
+  min-height: 0;
+  padding: 5px 10px;
+}
+
+.status-notice-compact.status-info {
+  background: rgba(183, 156, 255, 0.07);
+  border: 1px solid rgba(183, 156, 255, 0.16);
+  color: rgba(210, 196, 255, 0.92);
+}
+
+.status-notice-compact.status-error {
+  background: rgba(255, 154, 168, 0.08);
+  border: 1px solid rgba(255, 154, 168, 0.2);
+  color: rgba(255, 176, 188, 0.96);
+}
+
+.status-notice-compact.status-success {
+  background: rgba(94, 231, 168, 0.07);
+  border: 1px solid rgba(94, 231, 168, 0.18);
+  color: rgba(168, 244, 208, 0.96);
+}
+
+.status-notice-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.status-notice-compact .status-notice-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.status-notice-dismiss {
+  flex-shrink: 0;
+  font-size: 1rem;
+  line-height: 1;
+  min-height: 24px;
+  min-width: 24px;
+  padding: 2px 6px;
+}
+
+.status-notice-dismiss:focus-visible {
+  outline: 2px solid rgba(82, 224, 255, 0.55);
+  outline-offset: 2px;
+}
+
+@media (max-width: 720px) {
+  .status-notice-compact .status-notice-text {
+    white-space: normal;
+  }
+}
+
+.sidebar {
+  gap: 18px;
+  padding: 18px 16px;
+}
+
+.tenant-switch-placeholder,
+.user-panel {
+  border-radius: var(--radius);
+  padding: 10px 12px;
+}
+
+.user-panel {
+  gap: 6px;
+}
+
+.shell-logout-action {
+  justify-self: start;
+  margin-top: 2px;
+}
+
+.main-shell {
+  padding: clamp(16px, 3vw, 32px);
+}
+
+.modal-panel {
+  gap: 12px;
+  padding: clamp(14px, 2.5vw, 22px);
+}
+
+.modal-header {
+  gap: 12px;
+  padding-bottom: 10px;
+}
+
+.modal-close-action {
+  flex-shrink: 0;
+  min-height: 30px;
+  padding: 4px 10px;
+}
+
+.modal-body {
+  gap: 12px;
+}
+
+.modal-footer-slot {
+  padding-top: 10px;
+}
+
+.section-panel:not(.section-panel-compact):not(.section-panel-highlight) {
+  gap: 14px;
+  padding: 16px;
+}
+
+.section-panel-header-polished {
+  gap: 10px;
+}
+
+.section-panel:not(.section-panel-compact) .section-panel-body {
+  gap: 10px;
+}
+
+.section-panel-heading {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.section-panel-description {
+  line-height: 1.4;
+}
