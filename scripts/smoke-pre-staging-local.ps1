@@ -77,6 +77,13 @@ try {
   Invoke-NpmStep "AI Market Intelligence local smoke" "smoke:ai-market-intelligence"
   Invoke-NpmStep "Market Intelligence operator browser smoke" "smoke:mi-operator:browser"
   Invoke-NpmStep "AI Delivery workflow browser smoke" "smoke:ai-delivery-workflow:browser"
+  Invoke-NpmStep "Monthly metrics import browser smoke" "smoke:monthly-metrics-import:browser"
+  Invoke-NpmStep "Roles and permissions browser smoke" "smoke:roles-permissions:browser"
+  Invoke-NpmStep "Module registry browser smoke" "smoke:module-registry:browser"
+  Invoke-NpmStep "Settings backend browser smoke" "smoke:settings-backend:browser"
+  Invoke-NpmStep "Audit activity browser smoke" "smoke:audit-activity:browser"
+  Invoke-NpmStep "Dashboard data-backed browser smoke" "smoke:dashboard-data-backed:browser"
+  Invoke-NpmStep "Auth invite boundary browser smoke" "smoke:auth-invite-boundary:browser"
 
   Restart-LocalApiForSmoke "Restart local API to clear login rate limits before backend-heavy smokes"
 
@@ -94,6 +101,8 @@ try {
   Invoke-NpmStep "Tenant module local smoke" "smoke:tenant-module:local"
   Invoke-NpmStep "Tenant module dry_run probe" "smoke:tenant-module:dry-run-probe"
   Invoke-NpmStep "OpenRouter guarded local smoke" "smoke:openrouter-guarded:local"
+  Invoke-NpmStep "Google Drive export live planning smoke" "smoke:google-drive-export-live:local"
+  Invoke-NpmStep "Credential master key probe" "smoke:credential-master-key-probe:local"
   Invoke-NpmStep "Legacy WordPress sunset local smoke" "smoke:legacy-wordpress-sunset:local"
 
   Write-Host ""

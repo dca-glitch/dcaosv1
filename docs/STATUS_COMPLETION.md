@@ -22,7 +22,7 @@ Related documents:
 
 | Perspective | % | Meaning |
 |-------------|---|---------|
-| **Local admin MVP** (DCA operator, local dev) | **~98%** | Done | Post-MVP Phase A Blocks 31–36 + Phase B Blocks 37–42 polish/smoke layers |
+| **Local admin MVP** (DCA operator, local dev) | **~99%** | Done | Post-MVP Phases A–D Blocks 31–53 polish/smoke layers |
 | **Client/domain roadmap (blocks 1–6)** | **~92%** | Local gates done; prod env keys = separate owner gates |
 | **Production readiness** (real clients, VPS) | **~38%** | Runbooks exist; deploy/migration deferred by owner |
 | **Full PRD vision** (future modules + automation) | **~28%** | Large portion intentionally deferred |
@@ -43,29 +43,29 @@ Related documents:
 
 | Area / module | % in scope | Status | Notes |
 |---------------|------------|--------|-------|
-| **Platform core** (auth, tenant, modules, CI, validate) | **90%** | Done | Login, tenant context, CI PASS |
-| **Dark Nebula UI + data-dense admin** | **88%** | Done | Phase 1/2 closed; Dashboard command metrics polish (Post-MVP Block 32) |
+| **Platform core** (auth, tenant, modules, CI, validate) | **92%** | Done | Roles/permissions summary + module registry browser gates (Blocks 48–49) |
+| **Dark Nebula UI + data-dense admin** | **90%** | Done | Dashboard data-backed browser gate (Block 52) |
 | **Clients (CRM)** | **88%** | Done | CRUD, filters, `clientKind`, website |
 | **Client Hub + domain model (block 1)** | **97%** | Done | Hub UI + client-domain browser covers catalog, inquiries shell, publication log |
 | **PublicationTarget (block 2)** | **95%** | Done | CRUD per client; legacy tenant POST sunset (410); GET read-only |
 | **MI → clientId (block 3)** | **88%** | Done | FK, client picker UI, handoff; `clientId` parser fix applied |
-| **Encrypted credentials (block 4)** | **85%** | Done (local) | Local encrypt roundtrip smoke PASS; staging/prod master key = owner gate |
+| **Encrypted credentials (block 4)** | **88%** | Done (local) | Master key local probe runbook (Post-MVP Block 44); staging/prod master key = owner gate |
 | **WordPress publish + PublicationLog (block 5)** | **90%** | Done (local) | Local gate smoke + Client Hub publication log browser proof |
-| **Module middleware (block 6)** | **94%** | Done (local) | dry_run local probe runbook (Post-MVP Block 39); staging enforce pending |
+| **Module middleware (block 6)** | **96%** | Done (local) | dry_run + enforce probe runbooks (Blocks 39, 46); staging enforce pending |
 | **Projects & Tasks** | **88%** | Done | Admin MVP closed |
 | **AI Delivery** | **88%** | Done | Workflow browser matrix gate (Post-MVP Block 42) + content plan review browser gate (Block 34) |
 | **Market Intelligence** | **86%** | Done | Admin MVP + operator browser gate (Post-MVP Block 41); no recurring/automation |
-| **Monthly Reports** | **90%** | Done | Admin browser + PDF + metrics path; local + browser + metrics smokes in pre-staging |
+| **Monthly Reports** | **92%** | In progress | Metrics import browser gate (Block 47); live GA/GSC deferred |
 | **Client Portal MVP** (Puriva — visibility + review) | **100%** | Done (local) | Blocks 7–30 incl. sparse + populated delivery overview browser gates |
 | **Client Portal advanced actions** (magic links, full comment threads) | **0%** | Phased after MVP visibility | See deferred scope register |
 | **Finance** | **82%** | Done | Finance admin browser sanity gate (Post-MVP Block 36) |
-| **AI SEO + Content Production** | **64%** | In progress | Admin shell; Google Drive export smoke in pre-staging; no live Google integrations |
+| **AI SEO + Content Production** | **72%** | In progress | Google Drive live planning gate (Block 43); live Google integrations deferred |
 | **Private storage (R2)** | **65%** | In progress | Block 37 byte roundtrip smoke (disabled guard + optional full roundtrip); prod bucket deferred |
 | **Email / notifications** | **35%** | In progress | Read-only outbox API + local smoke (Post-MVP Block 38); no real sending |
-| **Audit / activity** | **70%** | In progress | Dashboard read-only feed + browser gate (Post-MVP Block 31); full audit UI deferred |
+| **Audit / activity** | **78%** | In progress | Dashboard feed + dedicated browser gate (Blocks 31, 51); full audit UI deferred |
 | **AI provider (OpenRouter)** | **55%** | In progress | Planning config API + guarded local smoke (Post-MVP Block 40); live provider remains opt-in |
 | **Operator docs & runbooks** | **95%** | Done | Puriva MVP Blocks 7–30 index + pre-staging local gate |
-| **Tests / smoke** | **100%** | Done (local) | Puriva MVP closeout + Post-MVP Phase A/B browser layers in pre-staging |
+| **Tests / smoke** | **100%** | Done (local) | Puriva MVP + Post-MVP Phases A–D browser layers in pre-staging |
 | **PR merge → main** | **0%** | In progress | PR #13 open; merge after owner approves staging |
 | **Staging / VPS deploy** | **5%** | Deferred | Documentation only; **paused by owner — no VPS deploy** |
 | **Production deploy** | **0%** | Deferred | Frozen |

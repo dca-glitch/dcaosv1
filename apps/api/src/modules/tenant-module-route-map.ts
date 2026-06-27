@@ -7,6 +7,7 @@ export const TENANT_MODULE_ROUTE_MAP: Array<{ prefix: string; moduleKey: string 
   { prefix: "/activity", moduleKey: "core" },
   { prefix: "/notifications", moduleKey: "core" },
   { prefix: "/ai-provider", moduleKey: "core" },
+  { prefix: "/integrations", moduleKey: "core" },
   { prefix: "/clients", moduleKey: "core" },
   { prefix: "/projects", moduleKey: "core" },
   { prefix: "/tenant/wordpress-config", moduleKey: "ai-delivery" },

@@ -20,6 +20,7 @@ import {
   updateCurrentTenantSettings
 } from "../tenants/tenant.runtime";
 import type { TenantSettingsUpdateRequest, TenantSwitchRequest } from "../tenants/types";
+import { getTenantAuthorizationSummary } from "../services/tenant-authorization-summary.service";
 
 const TENANT_NAME_MAX_LENGTH = 120;
 
@@ -221,5 +222,27 @@ export const updateTenantSettings: RequestHandler = async (req, res) => {
     );
   } catch {
     res.status(500).json(skeletonFailure("Tenant settings update could not be completed."));
+  }
+};
+
+export const getCurrentTenantAuthorizationSummaryHandler: RequestHandler = async (_req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) {
+    res.status(401).json(unauthorizedFailure());
+    return;
+  }
+
+  if (!authSession.tenantContext.activeMembership?.tenantId) {
+    res.status(403).json(forbiddenFailure());
+    return;
+  }
+
+  try {
+    const authorization = getTenantAuthorizationSummary(authSession);
+    res.json(
+      success({ authorization }, { phase: "runtime", scope: "tenant-authorization-summary" })
+    );
+  } catch {
+    res.status(500).json(skeletonFailure("Tenant authorization summary could not be loaded."));
   }
 };

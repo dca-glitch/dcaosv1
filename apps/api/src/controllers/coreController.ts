@@ -28,6 +28,7 @@ import {
   type EmailNotificationTemplateKey
 } from "../services/email-notifications.service";
 import { getAiProviderPlanningSnapshot } from "../services/ai-provider-planning.service";
+import { getGoogleDriveExportPlanningSnapshot } from "../services/google-drive-export-planning.service";
 import {
   archiveAiDeliveryArticleImage,
   isAiDeliveryGuardError,
@@ -1324,6 +1325,27 @@ export const getAiProviderPlanningConfigHandler: RequestHandler = async (_req, r
     res.json(success({ planning }, { phase: "runtime", scope: "ai-provider-planning-config" }));
   } catch {
     res.status(500).json(failure("AI_PROVIDER_PLANNING_CONFIG_ERROR", "AI provider planning config could not be loaded."));
+  }
+};
+
+export const getGoogleDriveExportConfigHandler: RequestHandler = async (_req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) {
+    res.status(401).json(unauthorizedFailure());
+    return;
+  }
+
+  const tenantId = authSession.tenantContext.activeMembership?.tenantId ?? null;
+  if (!tenantId) {
+    res.status(403).json(forbiddenFailure());
+    return;
+  }
+
+  try {
+    const exportConfig = getGoogleDriveExportPlanningSnapshot();
+    res.json(success({ exportConfig }, { phase: "runtime", scope: "google-drive-export-config" }));
+  } catch {
+    res.status(500).json(failure("GOOGLE_DRIVE_EXPORT_CONFIG_ERROR", "Google Drive export config could not be loaded."));
   }
 };
 

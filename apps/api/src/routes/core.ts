@@ -49,6 +49,7 @@ import {
   listActivityAuditLogsHandler,
   listEmailNotificationLogsHandler,
   getAiProviderPlanningConfigHandler,
+  getGoogleDriveExportConfigHandler,
   listAiDeliveryArticleImagesHandler,
   listAiDeliveryDeliverablesHandler,
   listAiDeliveryDeliverableReviewsHandler,
@@ -215,6 +216,7 @@ export function createCoreRouter() {
   router.get("/activity/audit-logs", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), listActivityAuditLogsHandler);
   router.get("/notifications/email-logs", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), listEmailNotificationLogsHandler);
   router.get("/ai-provider/planning-config", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), getAiProviderPlanningConfigHandler);
+  router.get("/integrations/google-drive/export-config", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), getGoogleDriveExportConfigHandler);
 
   router.get("/clients", requireAuth, requireTenant, tenantModuleGuard, listClientsHandler);
   router.post("/clients", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), createClientHandler);

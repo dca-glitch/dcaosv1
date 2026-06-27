@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
   getCurrentTenant,
+  getCurrentTenantAuthorizationSummaryHandler,
   getTenantMember,
   getTenantSettings,
   listTenantMembers,
@@ -9,7 +10,7 @@ import {
   updateTenantSettings
 } from "../controllers/tenantController";
 import { requireAuth } from "../middlewares/auth.middleware";
-import { requirePermission, requireTenant } from "../middlewares";
+import { requirePermission, requireRole, requireTenant } from "../middlewares";
 import { PERMISSION_KEYS } from "../security/permission-keys";
 
 export function createTenantRouter() {
@@ -45,6 +46,13 @@ export function createTenantRouter() {
     requireTenant,
     requirePermission(PERMISSION_KEYS.settingsUpdate),
     updateTenantSettings
+  );
+  router.get(
+    "/current/authorization-summary",
+    requireAuth,
+    requireTenant,
+    requireRole("owner", "admin"),
+    getCurrentTenantAuthorizationSummaryHandler
   );
 
   return router;
