@@ -62,6 +62,7 @@ npm.cmd run smoke:google-drive-export
 npm.cmd run smoke:monthly-report:mi-context
 npm.cmd run smoke:monthly-report:local
 npm.cmd run smoke:monthly-report:pdf
+npm.cmd run smoke:monthly-report:metrics
 npm.cmd run smoke:ai-delivery-reviews
 npm.cmd run smoke:credential-encryption:local
 npm.cmd run smoke:wordpress-publish:local
