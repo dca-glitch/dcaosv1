@@ -23,6 +23,7 @@ const routeResolutionCases = [
   ["/company-profile", "core"],
   ["/activity/audit-logs", "core"],
   ["/notifications/email-logs", "core"],
+  ["/ai-provider/planning-config", "core"],
   ["/tenant/wordpress-config", "ai-delivery"],
   ["/ai-delivery/projects/demo/workflow-runs", "ai-delivery"],
   ["/ai-delivery-projects", "ai-delivery"],

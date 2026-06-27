@@ -27,6 +27,7 @@ import {
   type EmailNotificationStatus,
   type EmailNotificationTemplateKey
 } from "../services/email-notifications.service";
+import { getAiProviderPlanningSnapshot } from "../services/ai-provider-planning.service";
 import {
   archiveAiDeliveryArticleImage,
   isAiDeliveryGuardError,
@@ -1302,6 +1303,27 @@ export const listEmailNotificationLogsHandler: RequestHandler = async (req, res)
     res.json(success(response, { phase: "runtime", scope: "email-notification-outbox" }));
   } catch {
     res.status(500).json(failure("EMAIL_NOTIFICATION_LOG_RUNTIME_ERROR", "Email notification logs could not be listed."));
+  }
+};
+
+export const getAiProviderPlanningConfigHandler: RequestHandler = async (_req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) {
+    res.status(401).json(unauthorizedFailure());
+    return;
+  }
+
+  const tenantId = authSession.tenantContext.activeMembership?.tenantId ?? null;
+  if (!tenantId) {
+    res.status(403).json(forbiddenFailure());
+    return;
+  }
+
+  try {
+    const planning = getAiProviderPlanningSnapshot();
+    res.json(success({ planning }, { phase: "runtime", scope: "ai-provider-planning-config" }));
+  } catch {
+    res.status(500).json(failure("AI_PROVIDER_PLANNING_CONFIG_ERROR", "AI provider planning config could not be loaded."));
   }
 };
 
