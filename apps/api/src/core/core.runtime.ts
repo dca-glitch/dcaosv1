@@ -127,6 +127,7 @@ import {
   createAiDeliveryWorkflowExecutionAdapter,
   type AiDeliveryWorkflowExecutionContentPlanItemContext,
   type AiDeliveryGeneratedContentPlanItem,
+  type AiDeliveryWorkflowExecutionMiHandoffContext,
   type AiDeliveryWorkflowExecutionResearchSummaryContext,
   type AiDeliveryWorkflowExecutionSourceContext
 } from "./ai-delivery-workflow-execution.adapter";
@@ -3506,6 +3507,33 @@ function buildAiDeliveryWorkflowLogEntries(timestamp: string, lines: string[]): 
   return lines.map((line) => `[${timestamp}] ${line}`);
 }
 
+function toAiDeliveryWorkflowExecutionMiHandoffContext(handoff: {
+  title: string;
+  marketSummary: string | null;
+  competitorSummary: string | null;
+  audienceSignals: unknown;
+  opportunities: unknown;
+  risks: unknown;
+  recommendedActions: unknown;
+  sourceNote: string | null;
+}): AiDeliveryWorkflowExecutionMiHandoffContext {
+  const normalizeList = (value: unknown): string[] =>
+    Array.isArray(value)
+      ? value.map((entry) => (typeof entry === "string" ? entry.trim() : "")).filter(Boolean)
+      : [];
+
+  return {
+    title: handoff.title,
+    marketSummary: handoff.marketSummary,
+    competitorSummary: handoff.competitorSummary,
+    audienceSignals: normalizeList(handoff.audienceSignals),
+    opportunities: normalizeList(handoff.opportunities),
+    risks: normalizeList(handoff.risks),
+    recommendedActions: normalizeList(handoff.recommendedActions),
+    sourceNote: handoff.sourceNote
+  };
+}
+
 async function persistGeneratedAiDeliveryContentPlan(
   tx: PrismaTx,
   input: {
@@ -3931,6 +3959,27 @@ export async function executeAiDeliveryWorkflowRun(
       } | null;
     }>;
 
+    const marketIntelligenceHandoffs = await tx.marketIntelligenceHandoff.findMany({
+      where: {
+        tenantId,
+        aiDeliveryProjectId,
+        isArchived: false,
+        handoffStatus: "APPLIED"
+      },
+      orderBy: { updatedAt: "desc" },
+      take: 2,
+      select: {
+        title: true,
+        marketSummary: true,
+        competitorSummary: true,
+        audienceSignals: true,
+        opportunities: true,
+        risks: true,
+        recommendedActions: true,
+        sourceNote: true
+      }
+    });
+
     const executionAdapter = createAiDeliveryWorkflowExecutionAdapter(getAiProviderConfig());
     const startedAt = new Date();
     const startedLog = appendAiDeliveryWorkflowExecutionLog(existing.executionLog, executionAdapter.createStartedLogEntries({
@@ -3989,6 +4038,7 @@ export async function executeAiDeliveryWorkflowRun(
         reviewNotes: source.reviewNotes ?? null,
         researchRequestTitle: source.researchRequest?.title ?? null
       })),
+      marketIntelligenceHandoffs: marketIntelligenceHandoffs.map(toAiDeliveryWorkflowExecutionMiHandoffContext),
       selectedContentPlanItem: selectedContentPlanItem
         ? {
             id: selectedContentPlanItem.id,
@@ -4017,6 +4067,7 @@ export async function executeAiDeliveryWorkflowRun(
     existingResultPlaceholder: startedExecution.existingResultPlaceholder,
     researchSummaries: startedExecution.researchSummaries,
     approvedSourceMetadata: startedExecution.approvedSourceMetadata,
+    marketIntelligenceHandoffs: startedExecution.marketIntelligenceHandoffs,
     selectedContentPlanItem: startedExecution.selectedContentPlanItem,
     finishedAtIso: finishedAt.toISOString()
   });

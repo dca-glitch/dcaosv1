@@ -37,6 +37,17 @@ export interface AiDeliveryWorkflowExecutionContentPlanItemContext {
   approvalStatus: string | null;
 }
 
+export interface AiDeliveryWorkflowExecutionMiHandoffContext {
+  title: string;
+  marketSummary: string | null;
+  competitorSummary: string | null;
+  audienceSignals: string[];
+  opportunities: string[];
+  risks: string[];
+  recommendedActions: string[];
+  sourceNote: string | null;
+}
+
 export interface AiDeliveryWorkflowExecutionStartInput {
   projectName: string;
   targetMonth: string;
@@ -56,6 +67,7 @@ export interface AiDeliveryWorkflowExecutionAdapterInput {
   existingResultPlaceholder: string | null;
   researchSummaries: AiDeliveryWorkflowExecutionResearchSummaryContext[];
   approvedSourceMetadata: AiDeliveryWorkflowExecutionSourceContext[];
+  marketIntelligenceHandoffs: AiDeliveryWorkflowExecutionMiHandoffContext[];
   selectedContentPlanItem: AiDeliveryWorkflowExecutionContentPlanItemContext | null;
   finishedAtIso: string;
 }
@@ -98,12 +110,14 @@ type OpenRouterModelSelection = {
 
 const GENERATE_CONTENT_PLAN_MARKER = "[generate-content-plan]";
 const STUB_FAIL_MARKER = "[stub-fail]";
+const CONTENT_PLAN_SEARCH_INTENT_PREFIX = /^\[search-intent:([a-z_]+)\]\s*(?:\n|$)/i;
 const MAX_BRIEF_NOTES_LENGTH = 800;
 const MAX_SCOPE_NOTES_LENGTH = 400;
 const MAX_ADMIN_NOTES_LENGTH = 500;
 const MAX_RESEARCH_SUMMARY_LENGTH = 220;
 const MAX_RESEARCH_FIELD_LENGTH = 160;
 const MAX_SOURCE_NOTE_LENGTH = 120;
+const MAX_MI_HANDOFF_FIELD_LENGTH = 160;
 const MAX_RESULT_SUMMARY_LENGTH = 500;
 
 function getWorkflowOutputType(input: Pick<AiDeliveryWorkflowExecutionAdapterInput, "adminNotes" | "selectedContentPlanItem">): AiWorkflowOutputType {
@@ -146,6 +160,26 @@ function shouldSimulateAiDeliveryWorkflowFailure(adminNotes: string | null): boo
 
 function shouldGenerateContentPlan(adminNotes: string | null): boolean {
   return (adminNotes ?? "").toLowerCase().includes(GENERATE_CONTENT_PLAN_MARKER);
+}
+
+function buildMiHandoffExecutionLogLine(handoffs: AiDeliveryWorkflowExecutionMiHandoffContext[]): string | null {
+  if (handoffs.length === 0) {
+    return null;
+  }
+
+  const titles = handoffs.map((handoff) => handoff.title.trim()).filter(Boolean);
+  return titles.length > 0
+    ? `Applied market intelligence handoff context: ${titles.join(", ")}.`
+    : `Applied market intelligence handoff context: ${handoffs.length} record(s).`;
+}
+
+function parseSearchIntentFromPlanNotes(notes: string | null | undefined): string | null {
+  if (!notes) {
+    return null;
+  }
+
+  const match = notes.match(CONTENT_PLAN_SEARCH_INTENT_PREFIX);
+  return match?.[1]?.toLowerCase() ?? null;
 }
 
 function getOpenRouterFallbackReason(config: AiProviderConfig): string | null {
@@ -226,6 +260,24 @@ function buildCompactContextText(input: AiDeliveryWorkflowExecutionAdapterInput)
     }
   }
 
+  if (input.marketIntelligenceHandoffs.length > 0) {
+    sections.push("Market intelligence handoff context (admin-internal):");
+    for (const handoff of input.marketIntelligenceHandoffs.slice(0, 2)) {
+      const handoffParts = [
+        handoff.title.trim(),
+        truncateText(handoff.marketSummary, MAX_MI_HANDOFF_FIELD_LENGTH),
+        handoff.competitorSummary ? `Competitors: ${truncateText(handoff.competitorSummary, MAX_MI_HANDOFF_FIELD_LENGTH)}` : null,
+        handoff.audienceSignals.length > 0 ? `Audience: ${handoff.audienceSignals.slice(0, 3).join("; ")}` : null,
+        handoff.opportunities.length > 0 ? `Opportunities: ${handoff.opportunities.slice(0, 3).join("; ")}` : null,
+        handoff.risks.length > 0 ? `Risks: ${handoff.risks.slice(0, 2).join("; ")}` : null,
+        handoff.recommendedActions.length > 0 ? `Actions: ${handoff.recommendedActions.slice(0, 3).join("; ")}` : null,
+        truncateText(handoff.sourceNote, MAX_SOURCE_NOTE_LENGTH)
+      ].filter(Boolean) as string[];
+
+      sections.push(`- ${handoffParts.join(" | ")}`);
+    }
+  }
+
   return sections.join("\n");
 }
 
@@ -277,6 +329,13 @@ function buildDeterministicContentPlanItems(input: AiDeliveryWorkflowExecutionAd
       truncateText(summary.title, 80),
       truncateText(summary.keywordOpportunities, 80),
       truncateText(summary.contentRecommendations, 80)
+    ]),
+    ...input.marketIntelligenceHandoffs.flatMap((handoff) => [
+      truncateText(handoff.marketSummary, 80),
+      truncateText(handoff.competitorSummary, 80),
+      ...handoff.opportunities.map((entry) => truncateText(entry, 80)),
+      ...handoff.recommendedActions.map((entry) => truncateText(entry, 80)),
+      ...handoff.audienceSignals.map((entry) => truncateText(entry, 80))
     ]),
     ...input.approvedSourceMetadata.map((source) => truncateText(source.sourceTitle, 80)),
     truncateText(input.plannedContentScopeNotes, 80),
@@ -436,15 +495,29 @@ function buildDeterministicContentDraft(input: AiDeliveryWorkflowExecutionAdapte
 
   const title = selectedItem.title.trim();
   const primaryKeyword = truncateText(selectedItem.targetKeyword, 120) ?? buildSlugFromText(title)?.replace(/-/g, " ") ?? input.projectName;
-  const supportingNote = truncateText(selectedItem.notes, 220) ?? "Focus this article on a practical, admin-reviewable draft aligned to the selected content plan item.";
+  const searchIntent = parseSearchIntentFromPlanNotes(selectedItem.notes);
+  const supportingNote = truncateText(selectedItem.notes?.replace(CONTENT_PLAN_SEARCH_INTENT_PREFIX, "").trimStart(), 220)
+    ?? "Focus this article on a practical, admin-reviewable draft aligned to the selected content plan item.";
+  const primaryHandoff = input.marketIntelligenceHandoffs[0] ?? null;
+  const marketContextLines = primaryHandoff
+    ? [
+        "",
+        `## Market Context (admin-internal)`,
+        truncateText(primaryHandoff.marketSummary, 220) ?? "Applied market intelligence handoff informs this draft angle.",
+        primaryHandoff.competitorSummary ? `Competitor signals: ${truncateText(primaryHandoff.competitorSummary, 180)}` : null,
+        primaryHandoff.opportunities.length > 0 ? `Opportunities: ${primaryHandoff.opportunities.slice(0, 3).join("; ")}` : null,
+        primaryHandoff.recommendedActions.length > 0 ? `Recommended actions: ${primaryHandoff.recommendedActions.slice(0, 3).join("; ")}` : null
+      ].filter(Boolean) as string[]
+    : [];
   const draftBody = [
     `# ${title}`,
     "",
     `## Overview`,
-    `${input.projectName} is preparing a ${selectedItem.contentType} draft for ${input.targetMonth} focused on ${primaryKeyword}. This admin-only draft is intended for internal review before any client-facing workflow.`,
+    `${input.projectName} is preparing a ${selectedItem.contentType} draft for ${input.targetMonth} focused on ${primaryKeyword}${searchIntent ? ` with ${searchIntent} search intent` : ""}. This admin-only draft is intended for internal review before any client-facing workflow.`,
     "",
     `## Why This Topic Matters`,
     `The selected content plan item emphasizes ${primaryKeyword}. Use this section to frame the audience problem, the business relevance, and the angle that best matches the current brief status of ${input.briefStatus}.`,
+    ...marketContextLines,
     "",
     `## Draft Outline`,
     `- Introduce the core audience challenge tied to ${primaryKeyword}.`,
@@ -604,6 +677,9 @@ export function createLocalAiDeliveryWorkflowExecutionAdapter(): AiDeliveryWorkf
         return {
           finishedLogEntries: buildExecutionLogEntries(input.finishedAtIso, [
             "Stub content plan draft generated successfully.",
+            ...(buildMiHandoffExecutionLogLine(input.marketIntelligenceHandoffs)
+              ? [buildMiHandoffExecutionLogLine(input.marketIntelligenceHandoffs)!]
+              : []),
             `Gateway: ${workflowResult.gateway}.`,
             `Model: ${workflowResult.model}.`,
             `Output type: ${workflowResult.outputType}.`,
@@ -643,6 +719,9 @@ export function createLocalAiDeliveryWorkflowExecutionAdapter(): AiDeliveryWorkf
         return {
           finishedLogEntries: buildExecutionLogEntries(input.finishedAtIso, [
             "Stub content draft generated successfully.",
+            ...(buildMiHandoffExecutionLogLine(input.marketIntelligenceHandoffs)
+              ? [buildMiHandoffExecutionLogLine(input.marketIntelligenceHandoffs)!]
+              : []),
             `Gateway: ${workflowResult.gateway}.`,
             `Model: ${workflowResult.model}.`,
             `Output type: ${workflowResult.outputType}.`,

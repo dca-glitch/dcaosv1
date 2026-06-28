@@ -731,6 +731,35 @@ async function main() {
     }
     console.log("✅ MI context list shows applied handoff");
 
+    // 14i: Workflow execution consumes applied MI handoff context
+    console.log("📋 Step 14i: Workflow execution uses applied MI handoff context...");
+    const workflowRunResp = await apiCall("POST",
+      `/ai-delivery/projects/${aiDeliveryProjectId}/workflow-runs`,
+      {
+        status: "DRAFT",
+        adminNotes: "[generate-content-plan] Smoke MI handoff context consumption proof",
+        resultPlaceholder: ""
+      },
+      token);
+    const workflowRunId = workflowRunResp.data?.workflowRun?.id ?? null;
+    if (!workflowRunId) {
+      throw new Error("Failed to create workflow run for MI handoff context proof");
+    }
+
+    const executeRunResp = await apiCall("POST",
+      `/ai-delivery/projects/${aiDeliveryProjectId}/workflow-runs/${workflowRunId}/execute`,
+      null,
+      token);
+    const executedWorkflowRun = executeRunResp.data?.workflowRun ?? null;
+    if (!executedWorkflowRun?.id) {
+      throw new Error("Failed to execute workflow run for MI handoff context proof");
+    }
+    const executionLog = executedWorkflowRun.executionLog ?? "";
+    if (!executionLog.includes("Applied market intelligence handoff context")) {
+      throw new Error("Workflow execution log missing applied MI handoff context marker");
+    }
+    console.log("✅ Workflow execution log includes applied MI handoff context");
+
     // 14f: Reject DRAFT handoff apply
     const handoff2Resp = await apiCall("GET", `/market-intelligence-projects/${projectId}/handoffs`, null, token);
     if (!handoff2Resp.ok) throw new Error(`Could not list handoffs: ${handoff2Resp.status}`);

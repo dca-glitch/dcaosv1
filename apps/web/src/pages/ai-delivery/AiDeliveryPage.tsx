@@ -384,11 +384,62 @@ type ContentPlanItemDraft = {
   localId: string;
   title: string;
   targetKeyword: string;
+  searchIntent: string;
   contentType: string;
   notes: string;
   approvalStatus: string;
   clientComment: string;
 };
+
+const CONTENT_PLAN_SEARCH_INTENT_OPTIONS = [
+  { value: "", label: "Not set" },
+  { value: "informational", label: "Informational" },
+  { value: "commercial", label: "Commercial" },
+  { value: "transactional", label: "Transactional" },
+  { value: "local", label: "Local" }
+] as const;
+
+const CONTENT_PLAN_SEARCH_INTENT_PREFIX = /^\[search-intent:([a-z_]+)\]\s*(?:\n|$)/i;
+
+function parseSearchIntentFromNotes(notes: string): { searchIntent: string; notesBody: string } {
+  const match = notes.match(CONTENT_PLAN_SEARCH_INTENT_PREFIX);
+  if (!match?.[1]) {
+    return { searchIntent: "", notesBody: notes };
+  }
+
+  return {
+    searchIntent: match[1].toLowerCase(),
+    notesBody: notes.replace(CONTENT_PLAN_SEARCH_INTENT_PREFIX, "").trimStart()
+  };
+}
+
+function composeNotesWithSearchIntent(searchIntent: string, notesBody: string): string | null {
+  const normalizedIntent = searchIntent.trim().toLowerCase();
+  const normalizedNotes = notesBody.trim();
+  if (!normalizedIntent) {
+    return normalizedNotes || null;
+  }
+
+  const prefix = `[search-intent:${normalizedIntent}]`;
+  return normalizedNotes ? `${prefix}\n${normalizedNotes}` : prefix;
+}
+
+function formatContentPlanSearchIntent(value: string): string {
+  const option = CONTENT_PLAN_SEARCH_INTENT_OPTIONS.find((entry) => entry.value === value);
+  return option?.label ?? (value ? value.replace(/_/g, " ") : "Not set");
+}
+
+function moveContentPlanItem(items: ContentPlanItemDraft[], index: number, direction: -1 | 1): ContentPlanItemDraft[] {
+  const targetIndex = index + direction;
+  if (targetIndex < 0 || targetIndex >= items.length) {
+    return items;
+  }
+
+  const nextItems = [...items];
+  const [movedItem] = nextItems.splice(index, 1);
+  nextItems.splice(targetIndex, 0, movedItem);
+  return nextItems;
+}
 
 export type AiDeliveryProjectsProps = {
   projects: AiDeliveryProjectSummary[];
@@ -553,20 +604,25 @@ const emptyForm = (clientId = ""): AiDeliveryProjectFormValues => ({
   plannedContentScopeNotes: ""
 });
 
-const itemDraftFromPlanItem = (item: AiDeliveryContentPlanItemSummary, index: number): ContentPlanItemDraft => ({
-  localId: item.id ?? `item-${index}-${Date.now()}`,
-  title: item.title,
-  targetKeyword: item.targetKeyword ?? "",
-  contentType: item.contentType ?? "article",
-  notes: item.notes ?? "",
-  approvalStatus: item.approvalStatus ?? "DRAFT",
-  clientComment: item.clientComment ?? ""
-});
+const itemDraftFromPlanItem = (item: AiDeliveryContentPlanItemSummary, index: number): ContentPlanItemDraft => {
+  const parsedNotes = parseSearchIntentFromNotes(item.notes ?? "");
+  return {
+    localId: item.id ?? `item-${index}-${Date.now()}`,
+    title: item.title,
+    targetKeyword: item.targetKeyword ?? "",
+    searchIntent: parsedNotes.searchIntent,
+    contentType: item.contentType ?? "article",
+    notes: parsedNotes.notesBody,
+    approvalStatus: item.approvalStatus ?? "DRAFT",
+    clientComment: item.clientComment ?? ""
+  };
+};
 
 const emptyContentPlanItem = (): ContentPlanItemDraft => ({
   localId: `new-${Date.now()}-${Math.random().toString(36).slice(2)}`,
   title: "",
   targetKeyword: "",
+  searchIntent: "",
   contentType: "article",
   notes: "",
   approvalStatus: "DRAFT",
@@ -928,6 +984,7 @@ export function AiDeliveryPage({
   const [contentPlanGenerationMessage, setContentPlanGenerationMessage] = useState<string | null>(null);
   const [contentPlanDetail, setContentPlanDetail] = useState<AiDeliveryContentPlanSummary | null>(null);
   const [contentPlanItems, setContentPlanItems] = useState<ContentPlanItemDraft[]>([]);
+  const [contentPlanMiContextCount, setContentPlanMiContextCount] = useState(0);
   const [openContentDraftsId, setOpenContentDraftsId] = useState<string | null>(null);
   const [contentDraftsLoading, setContentDraftsLoading] = useState(false);
   const [contentDraftsSaving, setContentDraftsSaving] = useState(false);
@@ -1878,15 +1935,18 @@ export function AiDeliveryPage({
     setContentPlanGeneratingItemId(null);
     setContentPlanDetail(null);
     setContentPlanItems([]);
+    setContentPlanMiContextCount(0);
     try {
-      const [plan, drafts] = await Promise.all([
+      const [plan, drafts, miContext] = await Promise.all([
         typeof onFetchContentPlan === "function" ? onFetchContentPlan(projectId) : Promise.resolve(null),
-        typeof onFetchContentDrafts === "function" ? onFetchContentDrafts(projectId) : Promise.resolve(contentDrafts)
+        typeof onFetchContentDrafts === "function" ? onFetchContentDrafts(projectId) : Promise.resolve(contentDrafts),
+        typeof onFetchMiContext === "function" ? onFetchMiContext(projectId) : Promise.resolve(null)
       ]);
       if (typeof onFetchContentPlan === "function") {
         setContentPlanDetail(plan);
         setContentPlanItems(plan?.items.map(itemDraftFromPlanItem) ?? []);
       }
+      setContentPlanMiContextCount(miContext?.length ?? 0);
       setContentDrafts(drafts);
     } catch (error) {
       setContentPlanError(getErrorMessage(error, "Unable to load the current content plan."));
@@ -1924,7 +1984,7 @@ export function AiDeliveryPage({
           title: item.title.trim(),
           targetKeyword: item.targetKeyword.trim() || null,
           contentType: item.contentType.trim() || "article",
-          notes: item.notes.trim() || null,
+          notes: composeNotesWithSearchIntent(item.searchIntent, item.notes),
           sortOrder: index + 1,
           approvalStatus: item.approvalStatus || "DRAFT",
           clientComment: item.clientComment.trim() || null
@@ -3418,12 +3478,21 @@ export function AiDeliveryPage({
         </Modal>
       ) : null}
       {openContentPlanId ? (
-        <Modal onClose={closeContentPlan} title="AI SEO / Content Plan">
+        <Modal onClose={closeContentPlan} title="Monthly SEO / Content Plan">
           {contentPlanLoading ? (
             <LoadingState label="Loading content plan" />
           ) : openContentPlanProject ? (
             <div>
               {contentPlanError ? <ErrorState title="Content plan action blocked" message={contentPlanError} /> : null}
+              <div className="state-panel" role="status">
+                <strong>{openContentPlanProject.name}</strong>
+                <p className="muted-text" style={{ marginTop: "0.25rem" }}>
+                  Target month: {openContentPlanProject.targetMonth}
+                  {contentPlanMiContextCount > 0
+                    ? ` • ${contentPlanMiContextCount} applied Market Intelligence handoff${contentPlanMiContextCount === 1 ? "" : "s"} available for workflow context`
+                    : " • No applied Market Intelligence handoff yet"}
+                </p>
+              </div>
               <SectionPanel
                 title="AI SEO workflow shell"
                 description="Research, sources, summaries, content plan, and admin draft handoff move through one operator-owned workflow. Live crawling, provider execution, OAuth sync, and client metrics remain deferred."
@@ -3531,9 +3600,9 @@ export function AiDeliveryPage({
                   </section>
 
                   <section className="field-panel">
-                    <h3>SEO topics / research records</h3>
+                    <h3>Monthly plan items</h3>
                     {contentPlanItems.length === 0 ? (
-                      <div className="state-panel">No SEO topics yet. Add a topic to continue planning.</div>
+                      <div className="state-panel">No monthly plan items yet. Add a topic to continue planning.</div>
                     ) : null}
                     {contentPlanItems.map((item, index) => {
                       const persistedItem = contentPlanDetail.items.find((planItem) => planItem.id === item.localId) ?? null;
@@ -3555,7 +3624,7 @@ export function AiDeliveryPage({
                           <span className="muted-text">Used by admin to prepare monthly platform-neutral SEO/content work.</span>
                         </label>
                         <label>
-                          Target keyword / theme - Optional
+                          Target keyword - Optional
                           <input
                             maxLength={80}
                             placeholder="Primary keyword or search phrase"
@@ -3564,16 +3633,28 @@ export function AiDeliveryPage({
                           />
                           <span className="muted-text">Visible only to admin team.</span>
                         </label>
+                        <label>
+                          Search intent - Optional
+                          <select
+                            value={item.searchIntent}
+                            onChange={(event) => setContentPlanItems((current) => current.map((draftItem) => draftItem.localId === item.localId ? { ...draftItem, searchIntent: event.target.value } : draftItem))}
+                          >
+                            {CONTENT_PLAN_SEARCH_INTENT_OPTIONS.map((option) => (
+                              <option key={option.value || "unset"} value={option.value}>{option.label}</option>
+                            ))}
+                          </select>
+                          <span className="muted-text">Stored with the plan item for monthly SEO planning.</span>
+                        </label>
                         <label className="field-span-2">
-                          Research notes / search intent - Optional
+                          Planning notes - Optional
                           <textarea
                             maxLength={4000}
-                            placeholder="Informational, commercial, local, or transactional intent"
+                            placeholder="Audience angle, SERP notes, internal review context"
                             onChange={(event) => setContentPlanItems((current) => current.map((draftItem) => draftItem.localId === item.localId ? { ...draftItem, notes: event.target.value } : draftItem))}
                             rows={3}
                             value={item.notes}
                           />
-                          <span className="muted-text">Foundation record only; no AI generation runs here yet.</span>
+                          <span className="muted-text">Admin-only notes for this monthly plan item.</span>
                         </label>
                         <label>
                           Production type - Optional
@@ -3586,7 +3667,7 @@ export function AiDeliveryPage({
                           <span className="muted-text">Internal planning label for the monthly content plan.</span>
                         </label>
                         <label>
-                          Item approval status - Required
+                          Item status - Required
                           <select
                             value={item.approvalStatus}
                             onChange={(event) => setContentPlanItems((current) => current.map((draftItem) => draftItem.localId === item.localId ? { ...draftItem, approvalStatus: event.target.value } : draftItem))}
@@ -3595,12 +3676,30 @@ export function AiDeliveryPage({
                               <option key={status} value={status}>{formatContentPlanItemApprovalStatus(status)}</option>
                             ))}
                           </select>
-                          <span className="muted-text">Track whether this item is still planned, approved, or sent back for revision.</span>
+                          <span className="muted-text">Internal review state for this monthly plan item.</span>
                         </label>
                         <div>
-                          <span>Sort order</span>
+                          <span>Priority</span>
                           <strong>{index + 1}</strong>
-                          <span className="muted-text">Determined by the list order.</span>
+                          <span className="muted-text">{formatContentPlanSearchIntent(item.searchIntent)} intent • lower numbers publish first.</span>
+                          <div className="modal-footer modal-footer--flush">
+                            <button
+                              className="secondary-action"
+                              disabled={isContentPlanBusy || index === 0}
+                              onClick={() => setContentPlanItems((current) => moveContentPlanItem(current, index, -1))}
+                              type="button"
+                            >
+                              Move up
+                            </button>
+                            <button
+                              className="secondary-action"
+                              disabled={isContentPlanBusy || index === contentPlanItems.length - 1}
+                              onClick={() => setContentPlanItems((current) => moveContentPlanItem(current, index, 1))}
+                              type="button"
+                            >
+                              Move down
+                            </button>
+                          </div>
                         </div>
                         <div>
                           <span>Current item status</span>
@@ -3631,12 +3730,17 @@ export function AiDeliveryPage({
                               className="primary-action"
                               disabled={isContentPlanBusy || !persistedItem?.id || persistedItem.approvalStatus === "CLIENT_CHANGES_REQUESTED"}
                               onClick={() => persistedItem ? void generateContentDraftFromPlanItem(openContentPlanProject.id, persistedItem) : undefined}
+                              title={!persistedItem?.id ? "Save the monthly content plan before generating a draft from this item." : undefined}
                               type="button"
                             >
                               {contentPlanGeneratingItemId === persistedItem?.id ? "Generating draft" : linkedDraft ? "Regenerate admin draft" : "Generate admin draft"}
                             </button>
                           </div>
-                          <span className="muted-text">Runs admin-only draft generation from this saved content plan item. It does not publish, deliver to client, or open client review.</span>
+                          <span className="muted-text">
+                            {!persistedItem?.id
+                              ? "Save the monthly plan before generating a linked admin draft from this item."
+                              : "Runs admin-only draft generation from this saved content plan item. It does not publish, deliver to client, or open client review."}
+                          </span>
                         </div>
                         <div className="field-span-2">
                           <button
@@ -3657,7 +3761,7 @@ export function AiDeliveryPage({
                       onClick={() => setContentPlanItems((current) => [...current, emptyContentPlanItem()])}
                       type="button"
                     >
-                      Add SEO topic
+                      Add monthly plan item
                     </button>
                   </section>
 
@@ -4349,12 +4453,18 @@ export function AiDeliveryPage({
         </Modal>
       ) : null}
       {openContentDraftsId ? (
-        <Modal onClose={closeContentDrafts} title="AI Content Production Foundation">
+        <Modal onClose={closeContentDrafts} title="AI Content Production">
           {contentDraftsLoading ? (
             <LoadingState label="Loading content drafts" />
           ) : openContentDraftsProject ? (
             <div>
               {contentDraftsError ? <ErrorState title="Content draft action blocked" message={contentDraftsError} /> : null}
+              <div className="state-panel" role="status">
+                <strong>Production chain:</strong> monthly plan item → admin draft → article images → deliverable package → WordPress draft handoff / monthly report (final-safe only).
+                <p className="muted-text" style={{ marginTop: "0.25rem" }}>
+                  {openContentDraftsProject.targetMonth} • {eligibleContentDraftPlanItems.length} ready plan item(s) • {contentDrafts.filter((draft) => !draft.isArchived).length} active draft(s) • {articleImages.filter((image) => !image.isArchived).length} image record(s) • {deliverables.filter((deliverable) => !deliverable.isArchived).length} deliverable record(s)
+                </p>
+              </div>
               <section className="field-panel">
                 <h3>Article production planning</h3>
                 <p className="muted-text">Current status is shown below. Next step: start from an approved or planned content plan item, generate or edit the draft, link image planning, package deliverables, then move it into internal review when ready. Client Portal MVP for Puriva shows client-safe delivery visibility after admin release; human/client review before publication is required. Advanced interactive client review routes remain phased.</p>
