@@ -16,12 +16,12 @@ import { tmpdir } from "node:os";
 const npmCmd = process.platform === "win32" ? "npm.cmd" : "npm";
 const apiBase = (process.env.API_BASE ?? process.env.MVP_SMOKE_API_BASE_URL ?? "http://127.0.0.1:4000/api/v1").replace(/\/$/, "");
 const webBase = (process.env.WEB_BASE ?? process.env.MVP_SMOKE_WEB_BASE_URL ?? "http://localhost:5173").replace(/\/$/, "");
-const expectOpenRouterLive = (process.env.SMOKE_EXPECT_OPENROUTER_LIVE ?? "").trim().toLowerCase() === "true";
 const matrixLogPath = join(tmpdir(), `dca-ai-matrix-${Date.now()}.log`);
 const startedAt = new Date().toISOString();
 
 const steps = [
   { name: "AI provider config", script: "smoke:ai-provider-config:local", requiresApi: true },
+  { name: "OpenRouter guarded local", script: "smoke:openrouter-guarded:local", requiresApi: true },
   { name: "AI knowledge context", script: "smoke:ai-knowledge-context", requiresApi: true },
   { name: "Market Intelligence", script: "smoke:ai-market-intelligence", requiresApi: true, requiresWeb: true },
   { name: "Monthly report local", script: "smoke:monthly-report:local", requiresApi: true },
@@ -29,14 +29,7 @@ const steps = [
   { name: "AI delivery reviews", script: "smoke:ai-delivery-reviews", requiresApi: true },
   { name: "AI operations local", script: "smoke:ai-operations:local", requiresApi: true },
   { name: "AI operations browser", script: "smoke:ai-operations:browser", requiresApi: true, requiresWeb: true },
-  { name: "Google Drive export contract", script: "smoke:google-drive-export", requiresApi: true },
-  {
-    name: "OpenRouter guarded local",
-    script: "smoke:openrouter-guarded:local",
-    requiresApi: false,
-    skip: expectOpenRouterLive,
-    skipReason: "SMOKE_EXPECT_OPENROUTER_LIVE=true skips guarded offline proof in favor of live probe elsewhere"
-  }
+  { name: "Google Drive export contract", script: "smoke:google-drive-export", requiresApi: true }
 ];
 
 const logLines = [`[AI_MATRIX] started ${startedAt}`, `[AI_MATRIX] api=${apiBase}`, `[AI_MATRIX] web=${webBase}`];
@@ -51,7 +44,7 @@ async function sleep(ms) {
 }
 
 async function cooldownBetweenSteps() {
-  await sleep(1500);
+  await sleep(2500);
 }
 
 async function waitForApiReady(label, timeoutMs = 45000) {
