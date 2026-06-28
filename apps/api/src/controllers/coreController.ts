@@ -212,6 +212,7 @@ import {
   updateAiKnowledgeItem
 } from "../core/ai-knowledge.runtime";
 import { getAiOperationsRun, listAiOperationsRuns } from "../core/ai-operations.runtime";
+import type { ListAiOperationsRunsFilters } from "@dca-os-v1/shared";
 import type {
   AiContextPreviewInputRequest,
   AiKnowledgeItemInputRequest,
@@ -1972,15 +1973,24 @@ export const executeAiDeliveryWorkflowRunHandler: RequestHandler = async (req, r
   }
 };
 
-function parseAiOperationsListFilters(query: Record<string, unknown>) {
+function parseAiOperationsListFilters(query: Record<string, unknown>): ListAiOperationsRunsFilters {
   const limitValue = typeof query.limit === "string" ? Number(query.limit) : undefined;
+  const workflowKindRaw = typeof query.workflowKind === "string" ? query.workflowKind.trim() : undefined;
+  const workflowKind: ListAiOperationsRunsFilters["workflowKind"] =
+    workflowKindRaw === "ai_delivery_workflow_run" ||
+    workflowKindRaw === "market_intelligence_research_run" ||
+    workflowKindRaw === "all"
+      ? workflowKindRaw
+      : undefined;
   return {
     status: typeof query.status === "string" ? query.status : undefined,
     outputType: typeof query.outputType === "string" ? query.outputType : undefined,
     gateway: typeof query.gateway === "string" ? query.gateway : undefined,
+    workflowKind,
     clientId: typeof query.clientId === "string" ? query.clientId : undefined,
     aiDeliveryProjectId:
       typeof query.aiDeliveryProjectId === "string" ? query.aiDeliveryProjectId : undefined,
+    miProjectId: typeof query.miProjectId === "string" ? query.miProjectId : undefined,
     limit: Number.isFinite(limitValue) ? limitValue : undefined
   };
 }
