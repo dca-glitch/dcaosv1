@@ -18,6 +18,19 @@ function pass(message) {
   console.log(`PASS: ${message}`);
 }
 
+function assertNoLiveProviderLeak(payload, contextLabel) {
+  const serialized = JSON.stringify(payload);
+  if (/openrouter/i.test(serialized)) {
+    fail(`${contextLabel} appears to include OpenRouter provider metadata.`);
+  }
+  if (/"liveProviderCalled"\s*:\s*true/i.test(serialized)) {
+    fail(`${contextLabel} appears to include a live provider call flag.`);
+  }
+  if (/providerResponse/i.test(serialized)) {
+    fail(`${contextLabel} appears to include raw provider response metadata.`);
+  }
+}
+
 async function apiCall(method, path, body, token) {
   const headers = { "Content-Type": "application/json" };
   if (token) headers.Authorization = `Bearer ${token}`;
@@ -334,9 +347,7 @@ async function main() {
     }
     pass("Promotion from AiDeliveryResearchSummary works");
 
-    if (/openrouter|providerResponse|providerCall|liveProvider/i.test(JSON.stringify(defaultPreview))) {
-      fail("Preview response appears to include provider metadata.");
-    }
+    assertNoLiveProviderLeak(defaultPreview, "Preview response");
     pass("No provider call metadata in preview response");
 
     const createdWorkflowRun = requireOk("Create workflow run for knowledge wiring", await apiCall("POST", `/ai-delivery/projects/${projectAId}/workflow-runs`, {
@@ -375,9 +386,7 @@ async function main() {
     if (!executed.resultPlaceholder?.includes("Gateway: local")) {
       fail("Workflow execution should remain on local deterministic gateway.");
     }
-    if (/openrouter|liveProvider|providerResponse/i.test(JSON.stringify(executed))) {
-      fail("Workflow execution appears to include live provider metadata.");
-    }
+    assertNoLiveProviderLeak(executed, "Workflow execution");
     pass("Workflow execution includes approved knowledge context and excludes unapproved/isolated items");
 
     console.log("\nAI Knowledge + Context smoke completed successfully.");

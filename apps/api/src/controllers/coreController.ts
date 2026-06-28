@@ -144,6 +144,7 @@ import {
   listAiDeliveryContentDrafts,
   requestAiDeliveryContentDraftClientReview,
   returnAiDeliveryContentDraftToDraft,
+  adminApproveAiDeliveryContentDraft,
   updateAiDeliveryContentDraft,
   // Content plan runtime functions
   getAiDeliveryContentPlanDetail,
@@ -188,6 +189,7 @@ import {
   getAiDeliveryMonthlyReportMetrics,
   createAiDeliveryMonthlyReport,
   generateAiDeliveryMonthlyReportPdfForReport,
+  generateAiDeliveryMonthlyReportRecommendations,
   importAiDeliveryMonthlyReportMetrics,
   approveAiDeliveryMonthlyReportMetrics,
   archiveAiDeliveryMonthlyReportMetrics,
@@ -3034,6 +3036,23 @@ export const returnAiDeliveryContentDraftToDraftHandler: RequestHandler = async 
   }
 };
 
+export const adminApproveAiDeliveryContentDraftHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  const aiDeliveryProjectId = typeof req.params.id === "string" ? req.params.id.trim() : "";
+  const contentDraftId = typeof req.params.draftId === "string" ? req.params.draftId.trim() : "";
+  if (!authSession) return void res.status(401).json(unauthorizedFailure());
+  if (!aiDeliveryProjectId || !contentDraftId) return void res.status(400).json(aiDeliveryProjectInvalidFailure());
+
+  try {
+    const response = await adminApproveAiDeliveryContentDraft(authSession, aiDeliveryProjectId, contentDraftId);
+    if (!response?.contentDraft) return void res.status(404).json(aiDeliveryProjectNotFoundFailure());
+    res.json(success(response, { phase: "runtime", scope: "ai-delivery-content-drafts" }));
+  } catch (error) {
+    if (handleAiDeliveryGuardError(res, error)) return;
+    res.status(500).json(failure("AI_DELIVERY_CONTENT_DRAFT_RUNTIME_ERROR", "Content draft could not be admin-approved."));
+  }
+};
+
 export const listClientAiDeliveryContentDraftReviewsHandler: RequestHandler = (_req, res) => {
   res.status(403).json(clientReviewDeferredFailure());
 };
@@ -4636,7 +4655,11 @@ export const updateMarketIntelligenceHandoffStatusHandler: RequestHandler = asyn
       return;
     }
     res.status(200).json(success(response, { phase: "runtime", scope: "market-intelligence-handoff" }));
-  } catch {
+  } catch (error) {
+    if ((error as { message?: string }).message === "MARKET_INTELLIGENCE_HANDOFF_STATUS_GATE_BLOCKED") {
+      res.status(400).json(failure("MARKET_INTELLIGENCE_HANDOFF_STATUS_GATE_BLOCKED", "Handoff status transition is not allowed from the current state."));
+      return;
+    }
     res.status(500).json(failure("MARKET_INTELLIGENCE_RUNTIME_ERROR", "Handoff status update could not be completed."));
   }
 };
@@ -4992,6 +5015,23 @@ export const generateAiDeliveryMonthlyReportPdfHandler: RequestHandler = async (
     }
     if (handleAiDeliveryGuardError(res, error)) return;
     res.status(500).json(failure("AI_DELIVERY_MONTHLY_REPORT_ERROR", "Monthly report PDF could not be generated."));
+  }
+};
+
+export const generateAiDeliveryMonthlyReportRecommendationsHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) return void res.status(401).json(unauthorizedFailure());
+
+  const reportId = typeof req.params.reportId === "string" ? req.params.reportId.trim() : "";
+  if (!reportId) return void res.status(400).json(failure("AI_DELIVERY_MONTHLY_REPORT_INVALID", "Report ID is invalid."));
+
+  try {
+    const response = await generateAiDeliveryMonthlyReportRecommendations(authSession, reportId);
+    if (!response?.report) return void res.status(404).json(failure("AI_DELIVERY_MONTHLY_REPORT_NOT_FOUND", "Monthly report not found."));
+    res.json(success(response, { phase: "runtime", scope: "ai-delivery-monthly-report" }));
+  } catch (error) {
+    if (handleAiDeliveryGuardError(res, error)) return;
+    res.status(500).json(failure("AI_DELIVERY_MONTHLY_REPORT_ERROR", "Monthly report recommendations could not be generated."));
   }
 };
 

@@ -26,6 +26,7 @@
     "smoke:ai-delivery-reviews": "node scripts/smoke-ai-delivery-reviews-local.mjs",
     "smoke:ai-market-intelligence": "node scripts/smoke-ai-market-intelligence-local.mjs",
     "smoke:ai-knowledge-context": "node scripts/smoke-ai-knowledge-context-local.mjs",
+    "smoke:ai-matrix": "node scripts/smoke-ai-matrix-local.mjs",
     "smoke:mvp:local": "node scripts/smoke-mvp-local.mjs",
     "smoke:mvp:staging": "node scripts/smoke-mvp-local.mjs --staging",
     "smoke:staging-security-baseline": "node scripts/smoke-staging-security-baseline.mjs",

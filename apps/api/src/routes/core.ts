@@ -81,6 +81,7 @@ import {
   requestAiDeliveryContentDraftClientReviewHandler,
   requestAiDeliveryArticleImageChangesHandler,
   returnAiDeliveryContentDraftToDraftHandler,
+  adminApproveAiDeliveryContentDraftHandler,
   listBillsHandler,
   listClientAiDeliveryContentDraftReviewsHandler,
   listClientUserAccessHandler,
@@ -172,6 +173,7 @@ import {
   archiveAiDeliveryMonthlyReportHandler,
   restoreAiDeliveryMonthlyReportHandler,
   generateAiDeliveryMonthlyReportPdfHandler,
+  generateAiDeliveryMonthlyReportRecommendationsHandler,
   uploadAiDeliveryMonthlyReportDocumentHandler,
   getAiDeliveryMonthlyReportDownloadReferenceHandler,
   getAiDeliveryMonthlyReportMiContextHandler,
@@ -300,6 +302,7 @@ export function createCoreRouter() {
   router.post("/ai-delivery-projects/:id/content-drafts/:draftId/archive", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), archiveAiDeliveryContentDraftHandler);
   router.post("/ai-delivery-projects/:id/content-drafts/:draftId/request-client-review", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), requestAiDeliveryContentDraftClientReviewHandler);
   router.post("/ai-delivery-projects/:id/content-drafts/:draftId/return-to-draft", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), returnAiDeliveryContentDraftToDraftHandler);
+  router.post("/ai-delivery-projects/:id/content-drafts/:draftId/admin-approve", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), adminApproveAiDeliveryContentDraftHandler);
   router.get("/ai-delivery-projects/:id/article-images", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), listAiDeliveryArticleImagesHandler);
   router.post("/ai-delivery-projects/:id/article-images", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), createAiDeliveryArticleImageHandler);
   router.put("/ai-delivery-projects/:id/article-images/:imageId", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), updateAiDeliveryArticleImageHandler);
@@ -401,6 +404,7 @@ export function createCoreRouter() {
   router.post("/ai-delivery/reports/monthly/:reportId/archive", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), archiveAiDeliveryMonthlyReportHandler);
   router.post("/ai-delivery/reports/monthly/:reportId/restore", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), restoreAiDeliveryMonthlyReportHandler);
   router.post("/ai-delivery/reports/monthly/:reportId/generate-pdf", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), generateAiDeliveryMonthlyReportPdfHandler);
+  router.post("/ai-delivery/reports/monthly/:reportId/generate-recommendations", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), generateAiDeliveryMonthlyReportRecommendationsHandler);
   router.post("/ai-delivery/reports/monthly/:reportId/document", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), uploadAiDeliveryMonthlyReportDocumentHandler);
   router.get("/ai-delivery/reports/monthly/:reportId/download", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), getAiDeliveryMonthlyReportDownloadReferenceHandler);
 

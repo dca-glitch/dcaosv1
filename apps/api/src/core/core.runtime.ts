@@ -132,6 +132,7 @@ import {
   type AiDeliveryWorkflowExecutionResearchSummaryContext,
   type AiDeliveryWorkflowExecutionSourceContext
 } from "./ai-delivery-workflow-execution.adapter";
+import type { AiWorkflowResultV1 } from "./ai-delivery-workflow-result.contract";
 import { buildAiWorkflowKnowledgeContext } from "./ai-context-builder.service";
 import {
   getDecryptedPublicationTargetPassword,
@@ -1981,6 +1982,24 @@ function normalizeAiDeliveryContentPlanStatus(value: string | null | undefined):
   return value && AI_DELIVERY_CONTENT_PLAN_STATUSES.has(value) ? value as AiDeliveryContentPlanStatus : "DRAFT";
 }
 
+function canTransitionAiDeliveryContentPlanStatus(
+  currentStatus: AiDeliveryContentPlanStatus,
+  nextStatus: AiDeliveryContentPlanStatus
+): boolean {
+  if (currentStatus === nextStatus) {
+    return true;
+  }
+
+  if (nextStatus === "CLIENT_CHANGES_REQUESTED") {
+    return currentStatus === "CLIENT_REVIEW_REQUESTED" || currentStatus === "CLIENT_APPROVED";
+  }
+
+  const order: AiDeliveryContentPlanStatus[] = ["DRAFT", "CLIENT_REVIEW_REQUESTED", "CLIENT_CHANGES_REQUESTED", "CLIENT_APPROVED"];
+  const currentIndex = order.indexOf(currentStatus);
+  const nextIndex = order.indexOf(nextStatus);
+  return currentIndex >= 0 && nextIndex === currentIndex + 1;
+}
+
 function normalizeAiDeliveryContentPlanItemApprovalStatus(
   value: string | null | undefined
 ): AiDeliveryContentPlanItemApprovalStatus | null {
@@ -2297,6 +2316,47 @@ export async function returnAiDeliveryContentDraftToDraft(
   });
 }
 
+export async function adminApproveAiDeliveryContentDraft(
+  authSession: AuthResolvedSessionContext,
+  aiDeliveryProjectId: string,
+  contentDraftId: string
+): Promise<AiDeliveryContentDraftResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) return null;
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    const existing = await getAiDeliveryContentDraftDelegate(tx).findFirst({
+      where: { id: contentDraftId, tenantId, aiDeliveryProjectId },
+      select: aiDeliveryContentDraftSelect
+    }) as any;
+    if (!existing) return null;
+    if (existing.isArchived) {
+      throwAiDeliveryConflict("AI_DELIVERY_CONTENT_DRAFT_ARCHIVED_ACTION_BLOCKED", "Archived content drafts cannot be admin-approved.");
+    }
+    if (!existing.title.trim() || !existing.draftBody.trim()) {
+      throwAiDeliveryConflict("AI_DELIVERY_CONTENT_DRAFT_REVIEW_BLOCKED", "Only drafts with both a title and body can be admin-approved.");
+    }
+
+    const updated = await getAiDeliveryContentDraftDelegate(tx).update({
+      where: { id: contentDraftId },
+      data: { status: "APPROVED", approvedAt: new Date() },
+      select: aiDeliveryContentDraftSelect
+    }) as any;
+
+    await recordAiDeliverySystemEvent(
+      {
+        tenantId,
+        aiDeliveryProjectId,
+        eventName: "AI_DELIVERY_CONTENT_DRAFT_UPDATED",
+        relatedEntityId: updated.id
+      },
+      tx
+    );
+
+    return { contentDraft: toAiDeliveryContentDraftSummary(updated) };
+  });
+}
+
 async function getClientAccessibleContentDrafts(
   authSession: AuthResolvedSessionContext,
   aiDeliveryProjectId: string
@@ -2553,6 +2613,12 @@ export async function updateAiDeliveryArticleImage(
       throwAiDeliveryBadRequest("AI_DELIVERY_ARTICLE_IMAGE_CONTENT_DRAFT_LINK_INVALID", "Content draft must belong to the same AI Delivery project.");
     }
     const status = normalizeAiDeliveryArticleImageStatus(input.status);
+    if (status !== existing.status) {
+      throwAiDeliveryConflict(
+        "AI_DELIVERY_ARTICLE_IMAGE_STATUS_PUT_BLOCKED",
+        "Article image status must be changed through dedicated transition actions."
+      );
+    }
     const updated = await getAiDeliveryArticleImageDelegate(tx).update({
       where: { id: articleImageId },
       data: {
@@ -3024,9 +3090,17 @@ export async function updateAiDeliveryContentPlan(
     const existing = await tx.aiDeliveryContentPlan.findFirst({ where: { tenantId, aiDeliveryProjectId } });
     if (!existing) return null;
 
+    const existingStatus = normalizeAiDeliveryContentPlanStatus(existing.status);
     const nextStatus = input.status === undefined || input.status === null
-      ? existing.status
+      ? existingStatus
       : normalizeAiDeliveryContentPlanStatus(input.status);
+    if (!canTransitionAiDeliveryContentPlanStatus(existingStatus, nextStatus)) {
+      throwAiDeliveryConflict(
+        "AI_DELIVERY_CONTENT_PLAN_STATUS_GATE_BLOCKED",
+        `Content plan status transition from ${existingStatus} to ${nextStatus} is not allowed.`
+      );
+    }
+
     const updated = await tx.aiDeliveryContentPlan.update({
       where: { id: existing.id },
       data: {
@@ -3893,6 +3967,34 @@ function toAiDeliveryWorkflowExecutionKnowledgeContext(
   };
 }
 
+function buildAiWorkflowObservabilityLogLine(result: AiWorkflowResultV1): string {
+  const payload = {
+    version: "AI_WORKFLOW_OBSERVABILITY_V1",
+    gateway: result.gateway,
+    model: result.model,
+    outputType: result.outputType,
+    liveProviderCalled: result.gateway === "openrouter",
+    budgetPolicy: result.budget.budgetPolicy,
+    approximateInputTokens: result.budget.approximateInputTokens,
+    maxOutputTokens: result.budget.maxOutputTokens,
+    safeError: result.safeError
+  };
+  return `[OBSERVABILITY] ${JSON.stringify(payload)}`;
+}
+
+function buildAiWorkflowObservabilityMetadata(result: AiWorkflowResultV1): Prisma.InputJsonValue {
+  return {
+    gateway: result.gateway,
+    model: result.model,
+    outputType: result.outputType,
+    liveProviderCalled: result.gateway === "openrouter",
+    budgetPolicy: result.budget.budgetPolicy,
+    approximateInputTokens: result.budget.approximateInputTokens,
+    maxOutputTokens: result.budget.maxOutputTokens,
+    safeError: result.safeError ?? null
+  };
+}
+
 export async function executeAiDeliveryWorkflowRun(
   authSession: AuthResolvedSessionContext,
   aiDeliveryProjectId: string,
@@ -4175,7 +4277,12 @@ export async function executeAiDeliveryWorkflowRun(
 
     const completedLog = appendAiDeliveryWorkflowExecutionLog(
       startedExecution.startedLog,
-      [...executionPlan.finishedLogEntries, ...contentPlanPersistenceLogEntries, ...contentDraftPersistenceLogEntries]
+      [
+        ...executionPlan.finishedLogEntries,
+        buildAiWorkflowObservabilityLogLine(executionPlan.workflowResult),
+        ...contentPlanPersistenceLogEntries,
+        ...contentDraftPersistenceLogEntries
+      ]
     );
 
     const reviewed = await getAiDeliveryWorkflowRunDelegate(tx).update({
@@ -4199,6 +4306,14 @@ export async function executeAiDeliveryWorkflowRun(
       },
       tx
     );
+
+    await recordPlatformAuditEvent({
+      tenantId,
+      action: "AI_WORKFLOW_RUN_COMPLETED",
+      entityType: "AI_DELIVERY_WORKFLOW_RUN",
+      entityId: workflowRunId,
+      metadata: buildAiWorkflowObservabilityMetadata(executionPlan.workflowResult)
+    });
 
     return { workflowRun: toAiDeliveryWorkflowRunSummary(reviewed) };
   });
@@ -7756,6 +7871,66 @@ export async function updateAiDeliveryMonthlyReportStatus(
   return { report: toAiDeliveryMonthlyReportSummary(updated) };
 }
 
+export async function generateAiDeliveryMonthlyReportRecommendations(
+  authSession: AuthResolvedSessionContext,
+  reportId: string
+): Promise<AiDeliveryMonthlyReportResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) return null;
+
+  const report = await (prisma as any).aiDeliveryMonthlyReport.findFirst({
+    where: { id: reportId, tenantId, isArchived: false },
+    select: {
+      id: true,
+      aiDeliveryProjectId: true,
+      title: true,
+      adminSummaryNotes: true,
+      miContextDraft: true,
+      status: true
+    }
+  }) as any;
+  if (!report) return null;
+
+  const project = await prisma.aiDeliveryProject.findFirst({
+    where: { id: report.aiDeliveryProjectId, tenantId },
+    select: { name: true, targetMonth: true }
+  });
+  if (!project) return null;
+
+  const deliverableCount = await prisma.aiDeliveryDeliverable.count({
+    where: { tenantId, aiDeliveryProjectId: report.aiDeliveryProjectId, isArchived: false, status: { in: ["READY", "DELIVERED", "ACCEPTED"] } }
+  });
+
+  const metricsCount = await (prisma as any).aiDeliveryMonthlyMetricSnapshot.count({
+    where: { tenantId, aiDeliveryMonthlyReportId: reportId }
+  }).catch(() => 0);
+
+  const lines = [
+    `# Admin recommendation summary (${project.name})`,
+    "",
+    "Local deterministic recommendation draft for admin review only. No live provider calls were made.",
+    "",
+    `- Project month focus: ${String(project.targetMonth)}`,
+    `- Final/ready deliverables in scope: ${deliverableCount}`,
+    `- Approved metric snapshots available: ${metricsCount}`,
+    report.adminSummaryNotes ? `- Admin summary notes considered: ${report.adminSummaryNotes.trim()}` : "- Admin summary notes: not provided",
+    report.miContextDraft ? "- Internal MI context draft was included in this recommendation draft." : "- Internal MI context draft: not attached",
+    "",
+    "Recommended next actions:",
+    "1. Review final deliverables and confirm client-safe wording before external sharing.",
+    "2. Align next-month content priorities with approved plan items and applied MI context.",
+    "3. Update this report to FINAL only after admin review of recommendations and metrics."
+  ];
+
+  const updated = await (prisma as any).aiDeliveryMonthlyReport.update({
+    where: { id: reportId },
+    data: { recommendationsText: lines.join("\n") },
+    select: aiDeliveryMonthlyReportSelect
+  }) as any;
+
+  return { report: toAiDeliveryMonthlyReportSummary(updated) };
+}
+
 export async function archiveAiDeliveryMonthlyReport(
   authSession: AuthResolvedSessionContext,
   reportId: string
@@ -10489,10 +10664,49 @@ export async function updateMarketIntelligenceHandoffStatus(
   return prisma.$transaction(async (tx: PrismaTx) => {
     const existing = await tx.marketIntelligenceHandoff.findFirst({
       where: { id: handoffId, tenantId, projectId },
-      select: { id: true }
+      select: { id: true, handoffStatus: true }
     });
     if (!existing) {
       return { handoff: null };
+    }
+
+    const currentStatus = existing.handoffStatus;
+    if (currentStatus === newStatus) {
+      const handoff = await tx.marketIntelligenceHandoff.findFirst({
+        where: { id: handoffId },
+        select: HANDOFF_SELECT
+      });
+      return handoff ? { handoff: toHandoffSummary(handoff) } : { handoff: null };
+    }
+
+    if (currentStatus === "ARCHIVED") {
+      throw new Error("MARKET_INTELLIGENCE_HANDOFF_STATUS_GATE_BLOCKED");
+    }
+
+    if (newStatus === "ARCHIVED") {
+      const handoff = await tx.marketIntelligenceHandoff.update({
+        where: { id: handoffId },
+        data: { handoffStatus: "ARCHIVED" },
+        select: HANDOFF_SELECT
+      });
+      return { handoff: toHandoffSummary(handoff) };
+    }
+
+    if (currentStatus === "APPLIED" && newStatus === "READY") {
+      const handoff = await tx.marketIntelligenceHandoff.update({
+        where: { id: handoffId },
+        data: { handoffStatus: "READY", aiDeliveryProjectId: null },
+        select: HANDOFF_SELECT
+      });
+      return { handoff: toHandoffSummary(handoff) };
+    }
+
+    const allowedForward: Record<string, string> = {
+      DRAFT: "READY",
+      READY: "APPLIED"
+    };
+    if (allowedForward[currentStatus] !== newStatus) {
+      throw new Error("MARKET_INTELLIGENCE_HANDOFF_STATUS_GATE_BLOCKED");
     }
 
     const handoff = await tx.marketIntelligenceHandoff.update({
