@@ -100,6 +100,17 @@ async function main() {
     const noMatchVisible = await page.locator(".empty-state-panel").first().isVisible();
     record("client-side search safe", noMatchVisible, noMatchVisible ? "empty state" : "table");
 
+    const sourceFilter = page.locator('select').filter({ has: page.locator('option[value="market_intelligence_research_run"]') }).first();
+    if (await sourceFilter.isVisible()) {
+      await sourceFilter.selectOption("market_intelligence_research_run");
+      record("source filter control visible", true, "MI filter applied");
+    } else {
+      record("source filter control visible", false, "missing");
+    }
+
+    const exportButton = page.locator('button:has-text("Export CSV")').first();
+    record("CSV export button visible", await exportButton.isVisible(), await exportButton.isVisible() ? "present" : "missing");
+
     await page.fill('input[placeholder*="Run id"]', "");
     const reviewButton = page.locator('button:has-text("Review")').first();
     if (await reviewButton.isVisible()) {

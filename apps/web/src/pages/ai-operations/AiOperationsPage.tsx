@@ -22,7 +22,57 @@ type ApiResponse<T> = ApiSuccess<T> | ApiFailure;
 
 type StatusFilter = "ALL" | string;
 type GatewayFilter = "ALL" | "disabled" | "local" | "openrouter";
-type OutputTypeFilter = "ALL" | "summary" | "content_plan_draft" | "article_draft";
+type OutputTypeFilter = "ALL" | "summary" | "content_plan_draft" | "article_draft" | "mi_research";
+type SourceFilter = "ALL" | "ai_delivery_workflow_run" | "market_intelligence_research_run";
+
+const CSV_COLUMNS: Array<{ header: string; value: (run: AiOperationsRunListItem) => string }> = [
+  { header: "run_id", value: (run) => run.id },
+  { header: "short_id", value: (run) => run.shortId },
+  { header: "source", value: (run) => run.workflowKind },
+  { header: "source_label", value: (run) => formatAiOperationsWorkflowKindLabel(run.workflowKind) },
+  { header: "project", value: (run) => run.projectName },
+  { header: "client", value: (run) => run.clientName ?? "" },
+  { header: "target_month", value: (run) => run.targetMonth ?? "" },
+  { header: "workflow_type", value: (run) => run.workflowType ?? "" },
+  { header: "status", value: (run) => run.status },
+  { header: "gateway", value: (run) => run.gateway ?? "" },
+  { header: "provider_mode", value: (run) => run.providerMode ?? "" },
+  { header: "model", value: (run) => run.model ?? "" },
+  { header: "output_type", value: (run) => run.outputType ?? "" },
+  { header: "context_status", value: (run) => run.contextStatus },
+  { header: "input_tokens_est", value: (run) => (run.approximateInputTokens ?? "").toString() },
+  { header: "max_output_tokens", value: (run) => (run.maxOutputTokens ?? "").toString() },
+  { header: "budget_policy", value: (run) => run.budgetPolicy ?? "" },
+  { header: "deterministic", value: (run) => (run.isDeterministic === null ? "" : run.isDeterministic ? "yes" : "no") },
+  { header: "live_provider_called", value: (run) => (run.liveProviderCalled === null ? "" : run.liveProviderCalled ? "yes" : "no") },
+  { header: "executed_at", value: (run) => run.executedAt ?? "" },
+  { header: "insight_status", value: (run) => run.linkedInsightStatus ?? "" },
+  { header: "handoff_status", value: (run) => run.linkedHandoffStatus ?? "" },
+  { header: "title_preview", value: (run) => run.titlePreview ?? "" }
+];
+
+function escapeCsvCell(value: string): string {
+  if (/[",\n\r]/.test(value)) {
+    return `"${value.replace(/"/g, '""')}"`;
+  }
+  return value;
+}
+
+function buildRunsCsv(rows: AiOperationsRunListItem[]): string {
+  const header = CSV_COLUMNS.map((column) => column.header).join(",");
+  const body = rows.map((run) => CSV_COLUMNS.map((column) => escapeCsvCell(column.value(run))).join(",")).join("\n");
+  return `${header}\n${body}\n`;
+}
+
+function downloadCsv(filename: string, csv: string): void {
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = filename;
+  anchor.click();
+  URL.revokeObjectURL(url);
+}
 
 async function apiRequest<T>(path: string): Promise<ApiResponse<T>> {
   const headers: Record<string, string> = { Accept: "application/json" };
@@ -197,6 +247,7 @@ export function AiOperationsPage() {
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL");
+  const [sourceFilter, setSourceFilter] = useState<SourceFilter>("ALL");
   const [gatewayFilter, setGatewayFilter] = useState<GatewayFilter>("ALL");
   const [outputTypeFilter, setOutputTypeFilter] = useState<OutputTypeFilter>("ALL");
   const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
@@ -238,6 +289,9 @@ export function AiOperationsPage() {
       if (statusFilter !== "ALL" && run.status !== statusFilter) {
         return false;
       }
+      if (sourceFilter !== "ALL" && run.workflowKind !== sourceFilter) {
+        return false;
+      }
       if (gatewayFilter !== "ALL" && (run.gateway ?? "").toLowerCase() !== gatewayFilter) {
         return false;
       }
@@ -258,15 +312,25 @@ export function AiOperationsPage() {
         run.status,
         run.gateway,
         run.model,
+        run.workflowKind,
         run.workflowType,
-        run.titlePreview
+        run.titlePreview,
+        run.outputType
       ]
         .filter(Boolean)
         .join(" ")
         .toLowerCase();
       return haystack.includes(needle);
     });
-  }, [gatewayFilter, outputTypeFilter, runs, search, statusFilter]);
+  }, [gatewayFilter, outputTypeFilter, runs, search, sourceFilter, statusFilter]);
+
+  const exportVisibleRunsCsv = useCallback(() => {
+    if (filteredRuns.length === 0) {
+      return;
+    }
+    const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
+    downloadCsv(`ai-operations-runs-${stamp}.csv`, buildRunsCsv(filteredRuns));
+  }, [filteredRuns]);
 
   const openRunDetail = useCallback(async (runId: string) => {
     setSelectedRunId(runId);
@@ -304,9 +368,14 @@ export function AiOperationsPage() {
         title="AI Operations Console"
         description="Review AI Delivery workflow runs and Market Intelligence research runs — gateway mode, context usage, and safe metadata."
         actions={(
-          <button className="secondary-action" onClick={() => void loadRuns()} type="button">
-            Refresh
-          </button>
+          <>
+            <button className="secondary-action" onClick={exportVisibleRunsCsv} type="button" disabled={filteredRuns.length === 0}>
+              Export CSV
+            </button>
+            <button className="secondary-action" onClick={() => void loadRuns()} type="button">
+              Refresh
+            </button>
+          </>
         )}
       />
 
@@ -326,6 +395,14 @@ export function AiOperationsPage() {
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder="Run id, project, client, model…"
               />
+            </label>
+            <label className="form-field inline">
+              <span>Source</span>
+              <select value={sourceFilter} onChange={(event) => setSourceFilter(event.target.value as SourceFilter)}>
+                <option value="ALL">All sources</option>
+                <option value="ai_delivery_workflow_run">AI Delivery</option>
+                <option value="market_intelligence_research_run">Market Intelligence</option>
+              </select>
             </label>
             <label className="form-field inline">
               <span>Status</span>
@@ -351,8 +428,12 @@ export function AiOperationsPage() {
                 <option value="summary">summary</option>
                 <option value="content_plan_draft">content plan draft</option>
                 <option value="article_draft">article draft</option>
+                <option value="mi_research">MI research</option>
               </select>
             </label>
+            <p className="muted-copy compact">
+              {filteredRuns.length} visible run(s). CSV export includes safe admin fields only — no raw JSON, secrets, or provider payloads.
+            </p>
           </div>
 
           {filteredRuns.length === 0 ? (
