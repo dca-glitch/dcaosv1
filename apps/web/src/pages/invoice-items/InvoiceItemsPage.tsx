@@ -1,5 +1,4 @@
 import { type FormEvent, useMemo, useState } from "react";
-import { EmptyState } from "../../components/EmptyState";
 import { ErrorState } from "../../components/ErrorState";
 import { LoadingState } from "../../components/LoadingState";
 import { Modal } from "../../components/Modal";
@@ -124,13 +123,14 @@ export function InvoiceItemsPage({
         }
       />
 
-      <div className="summary-grid metric-grid">
+      <div className="summary-grid metric-grid dashboard-command-metrics--compact">
         <MetricCard label="Active services" value={String(activeItems.length)} helper="Available for invoice drafting" accent="cyan" />
         <MetricCard label="Archived services" value={String(archivedItems.length)} helper="Hidden from active library" accent={archivedItems.length ? "warning" : "success"} />
         <MetricCard label="Catalog value" value={formatMoney(totalActiveValue)} helper="Sum of active unit prices" accent="purple" />
       </div>
 
       <SectionPanel
+        tone="compact"
         title="Invoice Items / Services"
         description="Create, update, archive, and restore reusable service entries. Payments, credit notes, downloads, and project documents are intentionally out of scope here."
         action={
@@ -155,10 +155,11 @@ export function InvoiceItemsPage({
         }
       >
         {visibleItems.length === 0 ? (
-          <EmptyState
-            title={tab === "active" ? "No active services" : "No archived services"}
-            message={tab === "active" ? "Add your first reusable service to build the invoice item library." : "Archived services will appear here when available."}
-          />
+          <p className="inline-empty muted-text">
+            {tab === "active"
+              ? "Add your first reusable service to build the invoice item library."
+              : "Archived services will appear here when available."}
+          </p>
         ) : (
           <div className="dense-list">
             {visibleItems.map((item) => (

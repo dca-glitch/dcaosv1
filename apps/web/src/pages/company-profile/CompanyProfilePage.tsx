@@ -201,6 +201,7 @@ export function CompanyProfilePage({ companyProfile, canEdit, error, loading, on
         />
       ) : (
         <SectionPanel
+          tone="compact"
           description="Single active company profile used as issuer on invoices and credit notes."
           title="Profile details"
         >
@@ -281,6 +282,7 @@ export function CompanyProfilePage({ companyProfile, canEdit, error, loading, on
       )}
 
       <SectionPanel
+        tone="compact"
         description="WordPress site URLs and application passwords are configured per client in Client Hub → Publication targets."
         title="WordPress publication (moved)"
       >

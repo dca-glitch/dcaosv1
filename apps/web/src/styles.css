@@ -2514,3 +2514,230 @@ tr:hover td {
     grid-template-columns: 1fr;
   }
 }
+
+/* Full UI/UX completion pass — compact operator-first polish */
+.page-header h1,
+.section-header h1 {
+  font-size: clamp(1.35rem, 2.2vw, 2.05rem);
+  letter-spacing: -0.03em;
+  line-height: 1.12;
+}
+
+.page-description {
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.section-panel-header h2,
+.entity-card-header h2,
+.portal-project-sidebar .entity-card-header h2 {
+  font-size: 1rem;
+  letter-spacing: -0.02em;
+}
+
+.modal-header h2 {
+  font-size: clamp(1.05rem, 2vw, 1.45rem);
+}
+
+.main-shell {
+  gap: 14px;
+  padding: clamp(14px, 2.5vw, 28px);
+}
+
+.view-section,
+.page-stack {
+  display: grid;
+  gap: 12px;
+}
+
+.page-header {
+  gap: 12px;
+  padding: 4px 0 6px;
+}
+
+.summary-grid.metric-grid .metric-card,
+.metric-grid .metric-card {
+  min-height: 96px;
+  padding: 12px 14px;
+}
+
+.metric-card strong {
+  font-size: clamp(1.08rem, 1.5vw, 1.4rem);
+}
+
+.dashboard-command-metrics--compact .metric-card,
+.team-shell-metrics .metric-card,
+.settings-shell-metrics .metric-card,
+.company-profile-shell-metrics .metric-card,
+.operator-summary-metrics .metric-card {
+  min-height: 96px;
+  padding: 12px 14px;
+}
+
+.portal-metric-grid .metric-card {
+  min-height: 84px;
+  padding: 10px 12px;
+}
+
+.section-panel:hover,
+.table-wrap:hover,
+.summary-panel:hover,
+.metric-card:hover {
+  border-color: var(--border);
+  box-shadow: var(--shadow-soft), inset 0 1px 0 var(--panel-outline);
+}
+
+.dense-list .entity-card.dense-record {
+  gap: 8px;
+  padding: 10px 12px;
+}
+
+.dense-list .entity-card.dense-record::before {
+  display: none;
+}
+
+.dense-list .entity-card.dense-record:hover {
+  border-color: var(--dense-border-strong);
+  box-shadow: none;
+}
+
+.modal-body .state-panel,
+.section-panel-body .state-panel,
+.page-stack .state-panel:not(.empty-state-panel):not(.loading-state-panel):not(.state-panel-error) {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+  font-size: 0.84rem;
+  gap: 4px;
+  line-height: 1.4;
+  min-height: 0;
+  padding: 8px 10px;
+}
+
+.modal-body .state-panel[role="alert"],
+.section-panel-body .state-panel[role="alert"],
+.page-stack .state-panel[role="alert"]:not(.state-panel-error) {
+  background: rgba(255, 124, 154, 0.06);
+  border-color: rgba(255, 124, 154, 0.16);
+}
+
+.modal-body .state-panel[role="status"],
+.section-panel-body .state-panel[role="status"] {
+  background: rgba(82, 224, 255, 0.05);
+  border-color: rgba(82, 224, 255, 0.12);
+}
+
+.section-panel-body .empty-state-panel {
+  gap: 6px;
+  min-height: 0;
+  padding: 12px 14px;
+}
+
+.section-panel-body .empty-state-panel .state-orb {
+  height: 14px;
+  width: 14px;
+}
+
+.section-panel-body .empty-state-panel h3 {
+  font-size: 0.95rem;
+}
+
+.filter-chip,
+.filter-chip:hover,
+.filter-chip:active {
+  transform: none;
+}
+
+.secondary-action.filter-chip {
+  font-weight: 700;
+}
+
+input,
+select,
+textarea {
+  min-height: 40px;
+  padding: 8px 12px;
+}
+
+th,
+td {
+  padding: 9px 11px;
+}
+
+th {
+  font-size: 0.78rem;
+}
+
+.modal-panel {
+  border-radius: 16px;
+}
+
+.tenant-row {
+  padding: 12px 14px;
+}
+
+.module-card {
+  gap: 14px;
+  min-height: 220px;
+  padding: 16px;
+}
+
+.mi-split-layout {
+  align-items: start;
+  display: grid;
+  gap: 14px;
+  grid-template-columns: minmax(240px, 280px) minmax(0, 1fr);
+}
+
+.mi-queue-sidebar {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+}
+
+.hub-profile-grid {
+  display: grid;
+  gap: 10px 16px;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+}
+
+.hub-profile-grid > div {
+  display: grid;
+  gap: 4px;
+}
+
+.hub-profile-grid strong {
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.hub-profile-grid > div > div {
+  color: var(--text);
+  font-size: 0.88rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.portal-record-main {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.portal-project-sidebar .entity-card-header {
+  margin-bottom: 2px;
+}
+
+.view-section > .status-notice {
+  margin: 0;
+}
+
+.portal-action-row {
+  margin-top: 12px;
+}
+
+@media (max-width: 900px) {
+  .mi-split-layout {
+    grid-template-columns: 1fr;
+  }
+}
