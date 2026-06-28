@@ -44,6 +44,9 @@ const TYPE_PRIORITY: Record<string, number> = {
   INDUSTRY_NOTE: 17
 };
 
+/** Admin-only preview workflow; never triggers blocking missing-context severity. */
+export const AI_CONTEXT_DRY_RUN_WORKFLOW_TYPE = "dry_run";
+
 const BLOCKING_WORKFLOW_TYPES = new Set([
   "article_draft",
   "content_plan_draft",
@@ -84,6 +87,39 @@ interface ContextKnowledgeRow {
 function isExpiredRow(row: ContextKnowledgeRow, now: Date): boolean {
   if (row.status === "EXPIRED") return true;
   return Boolean(row.expiresAt && row.expiresAt < now);
+}
+
+function isDefaultPromptEligible(row: ContextKnowledgeRow, now: Date): boolean {
+  return (
+    row.status === "APPROVED" &&
+    row.allowedForPrompt &&
+    !isExpiredRow(row, now)
+  );
+}
+
+function applyScopeIsolation(
+  rows: ContextKnowledgeRow[],
+  clientId: string | null,
+  aiDeliveryProjectId: string | null
+): ContextKnowledgeRow[] {
+  return rows.filter((row) => {
+    if (row.scope === "INDUSTRY") {
+      return false;
+    }
+    if (row.scope === "PROJECT") {
+      if (!aiDeliveryProjectId) {
+        return false;
+      }
+      return row.aiDeliveryProjectId === aiDeliveryProjectId;
+    }
+    if (row.scope === "CLIENT") {
+      if (!clientId) {
+        return false;
+      }
+      return row.clientId === clientId;
+    }
+    return true;
+  });
 }
 
 function buildScopeFilter(
@@ -282,7 +318,8 @@ export async function buildAiContextPreview(input: BuildAiContextPreviewInput): 
 
   const baseWhere: Prisma.AiKnowledgeItemWhereInput = {
     ...buildScopeFilter(input.tenantId, input.clientId, input.aiDeliveryProjectId),
-    status: { notIn: ["ARCHIVED", "REPLACED"] }
+    status: { notIn: ["ARCHIVED", "REPLACED", "EXPIRED"] },
+    scope: { not: "INDUSTRY" }
   };
 
   if (input.requestedKnowledgeTypes?.length) {
@@ -307,18 +344,21 @@ export async function buildAiContextPreview(input: BuildAiContextPreviewInput): 
     }
   });
 
-  const defaultEligible = allRows.filter(
-    (row) =>
-      row.status === "APPROVED" &&
-      row.allowedForPrompt &&
-      !isExpiredRow(row, now)
+  const defaultEligible = applyScopeIsolation(
+    allRows.filter((row) => isDefaultPromptEligible(row, now)),
+    input.clientId,
+    input.aiDeliveryProjectId
   );
 
   let selectedRows: ContextKnowledgeRow[] = sortByPriority(defaultEligible);
 
   if (input.includeExpired) {
-    const expiredApproved = allRows.filter(
-      (row) => row.status === "APPROVED" && row.allowedForPrompt && isExpiredRow(row, now)
+    const expiredApproved = applyScopeIsolation(
+      allRows.filter(
+        (row) => row.status === "APPROVED" && row.allowedForPrompt && isExpiredRow(row, now)
+      ),
+      input.clientId,
+      input.aiDeliveryProjectId
     );
     if (expiredApproved.length > 0) {
       warnings.push("Expired approved knowledge included by explicit request.");
@@ -327,26 +367,18 @@ export async function buildAiContextPreview(input: BuildAiContextPreviewInput): 
   }
 
   if (input.includeRaw) {
-    const rawRows = allRows.filter((row) => row.status === "RAW" || row.status === "REVIEWED");
+    const rawRows = applyScopeIsolation(
+      allRows.filter((row) => row.status === "RAW" || row.status === "REVIEWED"),
+      input.clientId,
+      input.aiDeliveryProjectId
+    );
     if (rawRows.length > 0) {
       warnings.push("Raw or reviewed unapproved knowledge included by explicit request.");
       selectedRows = sortByPriority([...selectedRows, ...rawRows]);
     }
   }
 
-  // Project isolation: drop PROJECT-scoped rows from other projects
-  selectedRows = selectedRows.filter((row) => {
-    if (row.scope === "PROJECT" && input.aiDeliveryProjectId) {
-      return row.aiDeliveryProjectId === input.aiDeliveryProjectId;
-    }
-    if (row.scope === "PROJECT" && !input.aiDeliveryProjectId) {
-      return false;
-    }
-    if (row.scope === "CLIENT" && input.clientId) {
-      return row.clientId === input.clientId;
-    }
-    return true;
-  });
+  selectedRows = applyScopeIsolation(selectedRows, input.clientId, input.aiDeliveryProjectId);
 
   let built = buildContextSections(selectedRows, input.oneOffInstruction ?? null);
   warnings.push(...built.warnings);

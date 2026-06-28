@@ -25,7 +25,8 @@ export function sanitizeUntrustedContextText(value: string): PromptInjectionSani
   let sanitizedText = value;
 
   for (const { pattern, label } of PROMPT_INJECTION_PATTERNS) {
-    if (pattern.test(sanitizedText)) {
+    // Use match (not test) so global regex lastIndex does not skip later patterns.
+    if (sanitizedText.match(pattern)) {
       flags.push(label);
       sanitizedText = sanitizedText.replace(pattern, "[REDACTED-UNTRUSTED]");
     }
