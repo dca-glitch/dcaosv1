@@ -1,3 +1,4 @@
+import { ClientAccessPanel } from "../../components/clients/ClientAccessPanel";
 import { type FormEvent, useMemo, useState } from "react";
 import { EmptyState } from "../../components/EmptyState";
 import { ErrorState } from "../../components/ErrorState";
@@ -69,7 +70,7 @@ type ClientsPageProps = {
   loading: boolean;
   onArchive: (clientId: string) => Promise<boolean>;
   onArchiveUserAccess: (clientId: string, userId: string) => Promise<boolean>;
-  onLoadUserAccess: (clientId: string) => Promise<ClientAccessUserSummary[]>;
+  onLoadUserAccess: (clientId: string, options?: { includeArchived?: boolean }) => Promise<ClientAccessUserSummary[]>;
   onLinkUserAccess: (clientId: string, userId: string) => Promise<boolean>;
   onRestore: (clientId: string) => Promise<boolean>;
   onSave: (clientId: string | null, values: ClientFormValues) => Promise<boolean>;
@@ -114,9 +115,6 @@ export function ClientsPage({
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [draft, setDraft] = useState<ClientFormValues>(emptyForm());
   const [saving, setSaving] = useState(false);
-  const [clientAccessUsers, setClientAccessUsers] = useState<ClientAccessUserSummary[]>([]);
-  const [accessUserId, setAccessUserId] = useState("");
-  const [accessLoading, setAccessLoading] = useState(false);
   const selectedClient = useMemo(
     () => clients.find((client) => client.id === editorClientId) ?? null,
     [clients, editorClientId]
@@ -124,13 +122,6 @@ export function ClientsPage({
   const selectedClientProjects = useMemo(
     () => projects.filter((project) => project.clientId === selectedClient?.id),
     [projects, selectedClient]
-  );
-  const linkableTenantUsers = useMemo(
-    () => {
-      const linkedUserIds = new Set(clientAccessUsers.map((access) => access.user.id));
-      return tenantUsers.filter((user) => user.status === "ACTIVE" && !linkedUserIds.has(user.id));
-    },
-    [clientAccessUsers, tenantUsers]
   );
 
   const filteredClients = useMemo(
@@ -158,8 +149,6 @@ export function ClientsPage({
   function closeEditor() {
     setEditorClientId(null);
     setDraft(emptyForm());
-    setClientAccessUsers([]);
-    setAccessUserId("");
     setIsEditorOpen(false);
   }
 
@@ -183,42 +172,7 @@ export function ClientsPage({
       accountGroupName: client.accountGroupName ?? "",
       migrationStatus: client.migrationStatus
     });
-    setClientAccessUsers([]);
-    setAccessUserId("");
     setIsEditorOpen(true);
-    setAccessLoading(true);
-    try {
-      setClientAccessUsers(await onLoadUserAccess(client.id));
-    } finally {
-      setAccessLoading(false);
-    }
-  }
-
-  async function handleLinkAccess() {
-    if (!selectedClient || !accessUserId) return;
-    setAccessLoading(true);
-    try {
-      const ok = await onLinkUserAccess(selectedClient.id, accessUserId);
-      if (ok) {
-        setAccessUserId("");
-        setClientAccessUsers(await onLoadUserAccess(selectedClient.id));
-      }
-    } finally {
-      setAccessLoading(false);
-    }
-  }
-
-  async function handleArchiveAccess(userId: string) {
-    if (!selectedClient) return;
-    setAccessLoading(true);
-    try {
-      const ok = await onArchiveUserAccess(selectedClient.id, userId);
-      if (ok) {
-        setClientAccessUsers(await onLoadUserAccess(selectedClient.id));
-      }
-    } finally {
-      setAccessLoading(false);
-    }
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -529,48 +483,16 @@ export function ClientsPage({
               </section>
             ) : null}
             {selectedClient && canEdit ? (
-              <section className="entity-span-2" aria-labelledby="client-access-title">
-                <h3 id="client-access-title">Client access</h3>
-                {accessLoading ? <p>Loading client access...</p> : null}
-                {!accessLoading && clientAccessUsers.length === 0 ? <p>No users linked to this client.</p> : null}
-                {clientAccessUsers.length > 0 ? (
-                  <div className="dense-access-list">
-                    {clientAccessUsers.map((access) => (
-                      <div className="dense-access-row" key={access.id}>
-                        <p>
-                          <strong>{access.user.name || access.user.email}</strong>
-                          <small>{access.user.name ? access.user.email : access.user.status}</small>
-                        </p>
-                        <button
-                          className="secondary-action"
-                          disabled={accessLoading}
-                          onClick={() => void handleArchiveAccess(access.user.id)}
-                          type="button"
-                        >
-                          Remove access
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                ) : null}
-                <div className="field-grid">
-                  <label>
-                    Link tenant user
-                    <select disabled={accessLoading || linkableTenantUsers.length === 0} onChange={(event) => setAccessUserId(event.target.value)} value={accessUserId}>
-                      <option value="">Select active user</option>
-                      {linkableTenantUsers.map((user) => (
-                        <option key={user.id} value={user.id}>{user.name ? `${user.name} (${user.email})` : user.email}</option>
-                      ))}
-                    </select>
-                  </label>
-                  <div>
-                    <span>&nbsp;</span>
-                    <button className="secondary-action" disabled={accessLoading || !accessUserId} onClick={() => void handleLinkAccess()} type="button">
-                      Link user
-                    </button>
-                  </div>
-                </div>
-              </section>
+              <ClientAccessPanel
+                canEdit={canEdit}
+                clientId={selectedClient.id}
+                clientName={selectedClient.name}
+                onArchiveUserAccess={onArchiveUserAccess}
+                onLinkUserAccess={onLinkUserAccess}
+                onLoadUserAccess={onLoadUserAccess}
+                tenantUsers={tenantUsers}
+                tone="compact"
+              />
             ) : null}
             <ModalActions disabled={saving} label={submitLabel} onCancel={closeEditor} saving={saving} />
           </form>

@@ -1913,6 +1913,57 @@ tr:hover td {
   color: var(--muted);
 }
 
+.client-access-panel .section-panel-body {
+  display: grid;
+  gap: 10px;
+}
+
+.client-access-deferred-note {
+  margin: 0;
+}
+
+.client-access-filter {
+  margin: 0;
+}
+
+.client-access-records {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.client-access-record {
+  align-items: flex-start;
+}
+
+.client-access-record-main {
+  display: grid;
+  flex: 1;
+  gap: 6px;
+  min-width: 0;
+}
+
+.client-access-record-meta {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.client-access-record-actions {
+  flex-shrink: 0;
+}
+
+.client-access-grant {
+  margin-top: 4px;
+}
+
+.client-access-grant-action {
+  align-self: end;
+  display: grid;
+  gap: 4px;
+}
+
 @media (max-width: 1120px) {
   .dense-record-main {
     grid-template-columns: 1fr;

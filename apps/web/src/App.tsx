@@ -1872,9 +1872,13 @@ export function App() {
     }
   }
 
-  async function handleLoadClientUserAccess(clientId: string): Promise<ClientAccessUserSummary[]> {
+  async function handleLoadClientUserAccess(
+    clientId: string,
+    options?: { includeArchived?: boolean }
+  ): Promise<ClientAccessUserSummary[]> {
     try {
-      const response = await runAuthenticatedRequest<ClientAccessResponse>(`/clients/${clientId}/users`);
+      const query = options?.includeArchived ? "?includeArchived=true" : "";
+      const response = await runAuthenticatedRequest<ClientAccessResponse>(`/clients/${clientId}/users${query}`);
       if (!response) return [];
       if (!response.ok) {
         setAppMessage({ tone: "error", text: getErrorMessage(response) });
@@ -1899,7 +1903,7 @@ export function App() {
         setAppMessage({ tone: "error", text: getErrorMessage(response) });
         return false;
       }
-      setAppMessage({ tone: "success", text: "Client access linked." });
+      setAppMessage({ tone: "success", text: "Portal access granted." });
       return true;
     } catch (error) {
       setAppMessage({ tone: "error", text: maskError(error) });
@@ -1918,7 +1922,7 @@ export function App() {
         setAppMessage({ tone: "error", text: getErrorMessage(response) });
         return false;
       }
-      setAppMessage({ tone: "success", text: "Client access removed." });
+      setAppMessage({ tone: "success", text: "Portal access archived." });
       return true;
     } catch (error) {
       setAppMessage({ tone: "error", text: maskError(error) });
@@ -3952,7 +3956,11 @@ export function App() {
                 updatedAt: ""
               }
             }
+            onArchiveUserAccess={handleArchiveClientUserAccess}
             onBack={() => setSelectedClientHubId(null)}
+            onLinkUserAccess={handleLinkClientUserAccess}
+            onLoadUserAccess={handleLoadClientUserAccess}
+            tenantUsers={(teamMembers?.members ?? []).map((member) => member.user)}
           />
         ) : (
           <ClientsPage

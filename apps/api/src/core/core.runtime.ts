@@ -1035,7 +1035,8 @@ export async function restoreClient(
 
 export async function listClientUserAccess(
   authSession: AuthResolvedSessionContext,
-  clientId: string
+  clientId: string,
+  options?: { includeArchived?: boolean }
 ): Promise<{ users: ClientUserAccessSummary[] } | null> {
   const tenantId = getActiveTenantId(authSession);
   if (!tenantId) {
@@ -1051,9 +1052,15 @@ export async function listClientUserAccess(
     return null;
   }
 
+  const includeArchived = options?.includeArchived === true;
+
   const users = await prisma.clientUserAccess.findMany({
-    where: { tenantId, clientId, isArchived: false },
-    orderBy: { createdAt: "asc" },
+    where: {
+      tenantId,
+      clientId,
+      ...(includeArchived ? {} : { isArchived: false })
+    },
+    orderBy: [{ isArchived: "asc" }, { createdAt: "asc" }],
     select: {
       id: true,
       clientId: true,

@@ -259,6 +259,14 @@ async function main() {
     `${accessAfterRevoke.status}`
   );
 
+  const archivedList = await request(`/clients/${primary.client.id}/users?includeArchived=true`, { token: adminToken });
+  const archivedEntry = (archivedList.body?.data?.users ?? []).find((entry) => entry.user?.id === adminUserId);
+  record(
+    "archived access visible with includeArchived query",
+    archivedList.status === 200 && archivedEntry?.isArchived === true,
+    `${archivedList.status}`
+  );
+
   const projectListAfterRevoke = await request("/client-portal/projects", { token: adminToken });
   record(
     "linked client projects hidden after revoke",

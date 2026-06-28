@@ -3,8 +3,9 @@ import { EmptyState } from "../../components/EmptyState";
 import { ErrorState } from "../../components/ErrorState";
 import { LoadingState } from "../../components/LoadingState";
 import { PageHeader, SectionPanel, StatusBadge } from "../../components/ui";
+import { ClientAccessPanel } from "../../components/clients/ClientAccessPanel";
 import { StatusNotice } from "../../components/StatusNotice";
-import type { ClientSummary } from "./ClientsPage";
+import type { ClientAccessTenantUser, ClientAccessUserSummary, ClientSummary } from "./ClientsPage";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "/api/v1";
 const SESSION_STORAGE_KEY = "dcaosv1.authToken";
@@ -64,6 +65,10 @@ type ClientHubPageProps = {
   client: ClientSummary;
   canEdit: boolean;
   onBack: () => void;
+  tenantUsers: ClientAccessTenantUser[];
+  onLoadUserAccess: (clientId: string, options?: { includeArchived?: boolean }) => Promise<ClientAccessUserSummary[]>;
+  onLinkUserAccess: (clientId: string, userId: string) => Promise<boolean>;
+  onArchiveUserAccess: (clientId: string, userId: string) => Promise<boolean>;
 };
 
 async function apiRequest<T>(method: string, path: string, body?: unknown): Promise<T> {
@@ -87,7 +92,15 @@ async function apiRequest<T>(method: string, path: string, body?: unknown): Prom
   return payload.data as T;
 }
 
-export function ClientHubPage({ client, canEdit, onBack }: ClientHubPageProps) {
+export function ClientHubPage({
+  client,
+  canEdit,
+  onBack,
+  tenantUsers,
+  onLoadUserAccess,
+  onLinkUserAccess,
+  onArchiveUserAccess
+}: ClientHubPageProps) {
   const hubCanEdit = canEdit && !client.isArchived;
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -296,6 +309,17 @@ export function ClientHubPage({ client, canEdit, onBack }: ClientHubPageProps) {
           </div>
         </div>
       </SectionPanel>
+
+      <ClientAccessPanel
+        canEdit={canEdit}
+        clientId={client.id}
+        clientName={client.name}
+        onArchiveUserAccess={onArchiveUserAccess}
+        onLinkUserAccess={onLinkUserAccess}
+        onLoadUserAccess={onLoadUserAccess}
+        tenantUsers={tenantUsers}
+        tone="compact"
+      />
 
       <SectionPanel tone="compact" title="Publication targets" description="WordPress targets per subdomain or site. Tenant-level WordPress config is deprecated — manage targets here only.">
         {targets.length === 0 ? (

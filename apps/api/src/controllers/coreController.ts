@@ -1492,8 +1492,13 @@ export const listClientUserAccessHandler: RequestHandler = async (req, res) => {
     return;
   }
 
+  const includeArchived =
+    req.query.includeArchived === "true" ||
+    req.query.includeArchived === "1" ||
+    req.query.includeArchived === "yes";
+
   try {
-    const response = await listClientUserAccess(authSession, clientId);
+    const response = await listClientUserAccess(authSession, clientId, { includeArchived });
     if (!response) {
       res.status(404).json(clientNotFoundFailure());
       return;
