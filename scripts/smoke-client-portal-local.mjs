@@ -215,6 +215,55 @@ async function main() {
     })
   );
 
+  // ── 6b. Cross-client isolation: linked user cannot see another client's archive ──
+  const otherClient = requireOkData(
+    "client portal smoke create other client",
+    await request("/clients", {
+      method: "POST",
+      token: adminToken,
+      body: { name: `[SMOKE][CLIENT_PORTAL] ${makeSmokeId("other-client")}`, country: "United States" }
+    })
+  ).client;
+
+  const otherProject = requireOkData(
+    "client portal smoke create other client ai delivery project",
+    await request("/ai-delivery-projects", {
+      method: "POST",
+      token: adminToken,
+      body: {
+        clientId: otherClient.id,
+        name: `[SMOKE][CLIENT_PORTAL] ${makeSmokeId("other-project")}`,
+        targetMonth: "2026-08"
+      }
+    })
+  ).aiDeliveryProject;
+
+  const crossClientProjects = await request("/client-portal/projects", { token: adminToken });
+  const crossClientProjectList = crossClientProjects.body?.data?.aiDeliveryProjects ?? [];
+  const otherProjectVisible = crossClientProjectList.some((project) => project.id === otherProject.id);
+  record(
+    "client portal other-client project not visible without ClientUserAccess",
+    !otherProjectVisible,
+    otherProjectVisible ? "other client project visible (unexpected)" : "correctly hidden"
+  );
+
+  const otherProjectDetail = await request(`/client-portal/projects/${otherProject.id}`, { token: adminToken });
+  record(
+    "client portal other-client project detail blocked 404",
+    otherProjectDetail.status === 404,
+    `${otherProjectDetail.status}`
+  );
+
+  const otherProjectDeliverables = await request(
+    `/client-portal/projects/${otherProject.id}/deliverables`,
+    { token: adminToken }
+  );
+  record(
+    "client portal other-client deliverables blocked 404",
+    otherProjectDeliverables.status === 404,
+    `${otherProjectDeliverables.status}`
+  );
+
   // ── 7. After linking: admin sees the project ───────────────────────────────
   const afterLinkProjects = await request("/client-portal/projects", { token: adminToken });
   const afterLinkProjectList = afterLinkProjects.body?.data?.aiDeliveryProjects ?? [];

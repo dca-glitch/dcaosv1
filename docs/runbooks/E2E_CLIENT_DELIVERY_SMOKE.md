@@ -124,6 +124,17 @@ npm.cmd run smoke:monthly-report:browser
 npm.cmd run smoke:monthly-report:mi-context
 ```
 
+### Step 4 — Client portal readiness proof (pre-staging gate)
+
+```powershell
+cd C:\dcaosv1
+npm.cmd run smoke:client-portal:local
+npm.cmd run smoke:client-portal:populated-delivery:browser
+npm.cmd run smoke:client-portal-monthly-report:browser
+```
+
+See [`docs/runbooks/PRE_STAGING_CLIENT_DELIVERY_READINESS.md`](./PRE_STAGING_CLIENT_DELIVERY_READINESS.md) for the combined pre-staging proof order and staging decision template.
+
 ---
 
 ## Pass criteria

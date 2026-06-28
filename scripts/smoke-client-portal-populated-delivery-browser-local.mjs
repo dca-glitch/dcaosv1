@@ -1,4 +1,10 @@
 import { chromium } from "@playwright/test";
+import {
+  CLIENT_PORTAL_DELIVERY_SUMMARY_HEADING,
+  gotoClientPortal,
+  seedClientPortalAuth,
+  selectPortalProject
+} from "./lib/client-portal-browser-smoke-helpers.mjs";
 import { seedPurivaDeliverySummaryFixture } from "./lib/puriva-delivery-summary-fixture.mjs";
 
 const apiBaseUrl = (process.env.MVP_SMOKE_API_BASE_URL ?? "http://127.0.0.1:4000/api/v1").replace(/\/$/, "");
@@ -204,30 +210,21 @@ async function main() {
   const page = await browser.newPage();
 
   try {
-    await page.addInitScript((token) => {
-      window.sessionStorage.setItem("dcaosv1.authToken", token);
-    }, adminToken);
+    await seedClientPortalAuth(page, adminToken);
+    await gotoClientPortal(page, webBaseUrl);
 
-    await page.goto(`${webBaseUrl}/#/client-portal`, { waitUntil: "domcontentloaded" });
-    await page.getByRole("button", { name: "Logout" }).waitFor({ state: "visible", timeout: 30000 });
-    await page.getByRole("heading", { name: "Client Portal" }).waitFor({ state: "visible", timeout: 15000 });
-
-    const portalSection = page.locator('section[aria-labelledby="client-portal-title"]');
-    const sidebar = portalSection.locator("aside");
-    const projectCard = sidebar.locator("article.entity-card", { hasText: fixture.projectName }).first();
-    await projectCard.waitFor({ state: "visible", timeout: 20000 });
+    const portalSection = await selectPortalProject(page, fixture.projectName);
     record("populated smoke project visible in portal sidebar", true, fixture.projectName);
-    await projectCard.getByRole("button", { name: /^(Open project|View|Open)$/ }).click();
-    await portalSection.getByRole("heading", { name: "Delivery overview", exact: true }).waitFor({ state: "visible", timeout: 30000 });
+    await portalSection.getByRole("heading", { name: CLIENT_PORTAL_DELIVERY_SUMMARY_HEADING, exact: true }).waitFor({ state: "visible", timeout: 30000 });
 
     const overviewText = await portalSection.innerText();
     const overviewHtml = await portalSection.innerHTML();
     const renderedOverview = `${overviewText}\n${overviewHtml}`;
 
     record(
-      "populated delivery overview section renders",
-      overviewText.includes("Delivery overview") && overviewText.includes("AI SEO / content plan"),
-      "overview visible"
+      "populated delivery summary section renders",
+      overviewText.includes(CLIENT_PORTAL_DELIVERY_SUMMARY_HEADING) && overviewText.includes("Planned content"),
+      "summary visible"
     );
     record(
       "populated delivery overview shows market intelligence summary",
@@ -242,13 +239,13 @@ async function main() {
       "recommended actions visible"
     );
     record(
-      "populated delivery overview shows google docs export link",
-      overviewText.includes("Open Google Doc"),
+      "populated delivery summary shows google docs export link",
+      overviewText.includes("Open document"),
       fixture.deliveryHints.googleExportUrl ?? "link"
     );
     record(
-      "populated delivery overview shows website publishing handoff",
-      overviewText.includes("Website publishing handoff") &&
+      "populated delivery summary shows website publishing status",
+      overviewText.includes("Website updates") &&
         (overviewText.includes("PROVIDER_DISABLED") || overviewText.includes("smoke-puriva.example.com")),
       fixture.deliveryHints.publishingStatus ?? "status"
     );
