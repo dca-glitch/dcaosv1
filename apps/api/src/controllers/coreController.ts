@@ -202,6 +202,19 @@ import {
   updateMonthlyReportMiContextDraft,
   removeMiHandoffFromMonthlyReport
 } from "../core/core.runtime";
+import {
+  createAiKnowledgeItem,
+  listAiKnowledgeItems,
+  previewAiContext,
+  promoteAiDeliverySourceToKnowledgeItem,
+  updateAiKnowledgeItem
+} from "../core/ai-knowledge.runtime";
+import type {
+  AiContextPreviewInputRequest,
+  AiKnowledgeItemInputRequest,
+  AiKnowledgePromoteInputRequest,
+  AiKnowledgeType
+} from "@dca-os-v1/shared";
 import type {
   AiDeliveryArticleImageUploadRequest,
   AiDeliveryArticleImageInputRequest,
@@ -5184,3 +5197,201 @@ function getAiDeliveryMonthlyMetricSnapshotInput(value: unknown): AiDeliveryMont
     notes: getOptionalString(obj.notes)
   };
 }
+
+function getAiKnowledgeItemInput(body: unknown): AiKnowledgeItemInputRequest | null {
+  if (!body || typeof body !== "object") return null;
+  const obj = body as Record<string, unknown>;
+  const scope = typeof obj.scope === "string" ? obj.scope.trim() : "";
+  const type = typeof obj.type === "string" ? obj.type.trim() : "";
+  const title = typeof obj.title === "string" ? obj.title.trim() : "";
+  if (!scope || !type || !title) return null;
+
+  return {
+    clientId: obj.clientId === null ? null : getOptionalString(obj.clientId),
+    aiDeliveryProjectId: obj.aiDeliveryProjectId === null ? null : getOptionalString(obj.aiDeliveryProjectId),
+    scope: scope as AiKnowledgeItemInputRequest["scope"],
+    type: type as AiKnowledgeItemInputRequest["type"],
+    status: typeof obj.status === "string" ? (obj.status.trim().toUpperCase() as AiKnowledgeItemInputRequest["status"]) : undefined,
+    title,
+    summary: obj.summary === null ? null : getOptionalString(obj.summary),
+    body: obj.body === null ? null : getOptionalString(obj.body),
+    sourceType: obj.sourceType === null ? null : getOptionalString(obj.sourceType),
+    sourceUrl: obj.sourceUrl === null ? null : getOptionalString(obj.sourceUrl),
+    sourceDate: obj.sourceDate === null ? null : getOptionalString(obj.sourceDate),
+    confidence: obj.confidence === null ? null : getOptionalString(obj.confidence),
+    expiresAt: obj.expiresAt === null ? null : getOptionalString(obj.expiresAt),
+    evergreen: typeof obj.evergreen === "boolean" ? obj.evergreen : undefined,
+    allowedForPrompt: typeof obj.allowedForPrompt === "boolean" ? obj.allowedForPrompt : undefined,
+    clientVisible: typeof obj.clientVisible === "boolean" ? obj.clientVisible : undefined,
+    changeReason: obj.changeReason === null ? null : getOptionalString(obj.changeReason)
+  };
+}
+
+function getAiKnowledgePromoteInput(body: unknown): AiKnowledgePromoteInputRequest | null {
+  if (!body || typeof body !== "object") return null;
+  const obj = body as Record<string, unknown>;
+  const sourceType = typeof obj.sourceType === "string" ? obj.sourceType.trim() : "";
+  const sourceId = typeof obj.sourceId === "string" ? obj.sourceId.trim() : "";
+  const aiDeliveryProjectId = typeof obj.aiDeliveryProjectId === "string" ? obj.aiDeliveryProjectId.trim() : "";
+  if (!sourceType || !sourceId || !aiDeliveryProjectId) return null;
+
+  return {
+    sourceType: sourceType as AiKnowledgePromoteInputRequest["sourceType"],
+    sourceId,
+    aiDeliveryProjectId,
+    scope: typeof obj.scope === "string" ? (obj.scope.trim().toUpperCase() as AiKnowledgePromoteInputRequest["scope"]) : undefined,
+    type: typeof obj.type === "string" ? (obj.type.trim().toUpperCase() as AiKnowledgePromoteInputRequest["type"]) : undefined,
+    status: typeof obj.status === "string" ? (obj.status.trim().toUpperCase() as AiKnowledgePromoteInputRequest["status"]) : undefined,
+    allowedForPrompt: typeof obj.allowedForPrompt === "boolean" ? obj.allowedForPrompt : undefined,
+    clientVisible: typeof obj.clientVisible === "boolean" ? obj.clientVisible : undefined,
+    changeReason: obj.changeReason === null ? null : getOptionalString(obj.changeReason)
+  };
+}
+
+function getAiContextPreviewInput(body: unknown): AiContextPreviewInputRequest | null {
+  if (!body || typeof body !== "object") return null;
+  const obj = body as Record<string, unknown>;
+  const workflowType = typeof obj.workflowType === "string" ? obj.workflowType.trim() : "";
+  if (!workflowType) return null;
+
+  const requestedKnowledgeTypes = Array.isArray(obj.requestedKnowledgeTypes)
+    ? obj.requestedKnowledgeTypes.filter((value): value is AiKnowledgeType => typeof value === "string")
+    : undefined;
+
+  return {
+    clientId: obj.clientId === null ? null : getOptionalString(obj.clientId),
+    aiDeliveryProjectId: obj.aiDeliveryProjectId === null ? null : getOptionalString(obj.aiDeliveryProjectId),
+    workflowType,
+    requestedKnowledgeTypes,
+    includeRaw: typeof obj.includeRaw === "boolean" ? obj.includeRaw : undefined,
+    includeExpired: typeof obj.includeExpired === "boolean" ? obj.includeExpired : undefined,
+    maxTokens: typeof obj.maxTokens === "number" && Number.isFinite(obj.maxTokens) ? obj.maxTokens : undefined,
+    oneOffInstruction: obj.oneOffInstruction === null ? null : getOptionalString(obj.oneOffInstruction),
+    saveSnapshot: typeof obj.saveSnapshot === "boolean" ? obj.saveSnapshot : undefined
+  };
+}
+
+export const listAiKnowledgeItemsHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) {
+    res.status(401).json(unauthorizedFailure());
+    return;
+  }
+
+  try {
+    const response = await listAiKnowledgeItems(authSession, req.query as Record<string, string>);
+    if (!response) {
+      res.status(403).json(forbiddenFailure());
+      return;
+    }
+    res.json(success(response, { phase: "runtime", scope: "ai-operating-layer-knowledge" }));
+  } catch (error) {
+    if (handleAiDeliveryGuardError(res, error)) return;
+    res.status(500).json(failure("AI_KNOWLEDGE_RUNTIME_ERROR", "AI knowledge list could not be completed."));
+  }
+};
+
+export const createAiKnowledgeItemHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) {
+    res.status(401).json(unauthorizedFailure());
+    return;
+  }
+
+  const input = getAiKnowledgeItemInput(req.body);
+  if (!input) {
+    res.status(400).json(failure("AI_KNOWLEDGE_INPUT_INVALID", "title, scope, and type are required."));
+    return;
+  }
+
+  try {
+    const response = await createAiKnowledgeItem(authSession, input);
+    if (!response?.knowledgeItem) {
+      res.status(403).json(forbiddenFailure());
+      return;
+    }
+    res.status(201).json(success(response, { phase: "runtime", scope: "ai-operating-layer-knowledge" }));
+  } catch (error) {
+    if (handleAiDeliveryGuardError(res, error)) return;
+    res.status(500).json(failure("AI_KNOWLEDGE_RUNTIME_ERROR", "AI knowledge create could not be completed."));
+  }
+};
+
+export const updateAiKnowledgeItemHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) {
+    res.status(401).json(unauthorizedFailure());
+    return;
+  }
+
+  const knowledgeItemId = typeof req.params.id === "string" ? req.params.id.trim() : "";
+  const input = getAiKnowledgeItemInput(req.body);
+  if (!knowledgeItemId || !input) {
+    res.status(400).json(failure("AI_KNOWLEDGE_INPUT_INVALID", "Knowledge item id and valid input are required."));
+    return;
+  }
+
+  try {
+    const response = await updateAiKnowledgeItem(authSession, knowledgeItemId, input);
+    if (!response?.knowledgeItem) {
+      res.status(404).json(failure("AI_KNOWLEDGE_NOT_FOUND", "Knowledge item was not found."));
+      return;
+    }
+    res.json(success(response, { phase: "runtime", scope: "ai-operating-layer-knowledge" }));
+  } catch (error) {
+    if (handleAiDeliveryGuardError(res, error)) return;
+    res.status(500).json(failure("AI_KNOWLEDGE_RUNTIME_ERROR", "AI knowledge update could not be completed."));
+  }
+};
+
+export const promoteAiKnowledgeItemHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) {
+    res.status(401).json(unauthorizedFailure());
+    return;
+  }
+
+  const input = getAiKnowledgePromoteInput(req.body);
+  if (!input) {
+    res.status(400).json(failure("AI_KNOWLEDGE_PROMOTE_INPUT_INVALID", "sourceType, sourceId, and aiDeliveryProjectId are required."));
+    return;
+  }
+
+  try {
+    const response = await promoteAiDeliverySourceToKnowledgeItem(authSession, input);
+    if (!response?.knowledgeItem) {
+      res.status(404).json(failure("AI_KNOWLEDGE_PROMOTE_SOURCE_NOT_FOUND", "Promotion source was not found."));
+      return;
+    }
+    res.status(201).json(success(response, { phase: "runtime", scope: "ai-operating-layer-knowledge" }));
+  } catch (error) {
+    if (handleAiDeliveryGuardError(res, error)) return;
+    res.status(500).json(failure("AI_KNOWLEDGE_RUNTIME_ERROR", "AI knowledge promotion could not be completed."));
+  }
+};
+
+export const previewAiContextHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) {
+    res.status(401).json(unauthorizedFailure());
+    return;
+  }
+
+  const input = getAiContextPreviewInput(req.body);
+  if (!input) {
+    res.status(400).json(failure("AI_CONTEXT_PREVIEW_INPUT_INVALID", "workflowType is required."));
+    return;
+  }
+
+  try {
+    const response = await previewAiContext(authSession, input);
+    if (!response) {
+      res.status(403).json(forbiddenFailure());
+      return;
+    }
+    res.json(success(response, { phase: "runtime", scope: "ai-operating-layer-context-preview" }));
+  } catch (error) {
+    if (handleAiDeliveryGuardError(res, error)) return;
+    res.status(500).json(failure("AI_CONTEXT_PREVIEW_RUNTIME_ERROR", "AI context preview could not be completed."));
+  }
+};

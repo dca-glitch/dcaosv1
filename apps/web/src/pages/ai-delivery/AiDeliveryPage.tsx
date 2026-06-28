@@ -7,6 +7,7 @@ import { MetricCard, PageHeader, SectionPanel, StatusBadge } from "../../compone
 import type { ClientSummary } from "../clients/ClientsPage";
 import type { ProjectSummary as ProjectLinkSummary } from "../projects/ProjectsPage";
 import { MonthlyReportPanel } from "./MonthlyReportPanel";
+import { AiKnowledgeContextPanel } from "./AiKnowledgeContextPanel";
 import type {
   AiDeliveryMonthlySummaryData,
   AiDeliveryMonthlyReportData,
@@ -538,6 +539,10 @@ export type AiDeliveryProjectsProps = {
   onApplyMiHandoffToMonthlyReport?: (reportId: string, handoffId: string) => Promise<AiDeliveryMonthlyReportMiContext | null>;
   onUpdateMonthlyReportMiContextDraft?: (reportId: string, draft: string) => Promise<AiDeliveryMonthlyReportMiContext | null>;
   onRemoveMiHandoffFromMonthlyReport?: (reportId: string) => Promise<AiDeliveryMonthlyReportMiContext | null>;
+  onFetchKnowledgeItems?: (projectId: string) => Promise<import("@dca-os-v1/shared").AiKnowledgeItemSummary[]>;
+  onCreateKnowledgeItem?: (input: import("@dca-os-v1/shared").AiKnowledgeItemInputRequest) => Promise<import("@dca-os-v1/shared").AiKnowledgeItemSummary | null>;
+  onUpdateKnowledgeItem?: (id: string, input: import("@dca-os-v1/shared").AiKnowledgeItemInputRequest) => Promise<import("@dca-os-v1/shared").AiKnowledgeItemSummary | null>;
+  onPreviewAiContext?: (input: import("@dca-os-v1/shared").AiContextPreviewInputRequest) => Promise<import("@dca-os-v1/shared").AiContextPreviewResponse | null>;
 };
 
 const workflowRunStatuses = ["DRAFT", "READY", "IN_PROGRESS", "REVIEW", "COMPLETED", "FAILED", "ARCHIVED"] as const;
@@ -949,7 +954,11 @@ export function AiDeliveryPage({
   onFetchMonthlyReportMiContext,
   onApplyMiHandoffToMonthlyReport,
   onUpdateMonthlyReportMiContextDraft,
-  onRemoveMiHandoffFromMonthlyReport
+  onRemoveMiHandoffFromMonthlyReport,
+  onFetchKnowledgeItems,
+  onCreateKnowledgeItem,
+  onUpdateKnowledgeItem,
+  onPreviewAiContext
 }: AiDeliveryProjectsProps) {
   const [filter, setFilter] = useState<"all" | "active" | "archived">("active");
   const [editorProjectId, setEditorProjectId] = useState<string | null>(null);
@@ -1024,6 +1033,7 @@ export function AiDeliveryPage({
   const [deliverableReviewEditorId, setDeliverableReviewEditorId] = useState<string | null>(null);
   const [deliverableReviewForm, setDeliverableReviewForm] = useState<AiDeliveryDeliverableReviewFormValues>(emptyDeliverableReview());
   const [openWorkflowRunsId, setOpenWorkflowRunsId] = useState<string | null>(null);
+  const [openKnowledgePanelId, setOpenKnowledgePanelId] = useState<string | null>(null);
   const [workflowRunsLoading, setWorkflowRunsLoading] = useState(false);
   const [workflowRunsSaving, setWorkflowRunsSaving] = useState(false);
   const [workflowRunExecutingId, setWorkflowRunExecutingId] = useState<string | null>(null);
@@ -1306,6 +1316,7 @@ export function AiDeliveryPage({
     return selectedImage && !eligible.some((image) => image.id === selectedImage.id) ? [selectedImage, ...eligible] : eligible;
   }, [articleImages, deliverableForm.articleImageId]);
   const openWorkflowRunsProject = useMemo(() => projects.find((p) => p.id === openWorkflowRunsId) ?? null, [openWorkflowRunsId, projects]);
+  const openKnowledgePanelProject = useMemo(() => projects.find((p) => p.id === openKnowledgePanelId) ?? null, [openKnowledgePanelId, projects]);
   const workflowRunBeingEdited = useMemo(() => workflowRuns.find((run) => run.id === workflowRunEditorId) ?? null, [workflowRunEditorId, workflowRuns]);
   const workflowRunStatusOptions = useMemo(() => getWorkflowRunStatusOptions(workflowRunBeingEdited?.status ?? null), [workflowRunBeingEdited?.status]);
   const workflowRunStatusHelper = useMemo(() => getWorkflowRunStatusHelper(workflowRunBeingEdited?.status ?? null), [workflowRunBeingEdited?.status]);
@@ -3116,6 +3127,11 @@ export function AiDeliveryPage({
                             <button className="secondary-action" onClick={() => void openWorkflowRuns(p.id)} type="button">
                               Workflow runs
                             </button>
+                            {typeof onFetchKnowledgeItems === "function" && typeof onPreviewAiContext === "function" ? (
+                              <button className="secondary-action" onClick={() => setOpenKnowledgePanelId(p.id)} type="button">
+                                AI Knowledge
+                              </button>
+                            ) : null}
                             <button className="secondary-action" onClick={() => void openContentDrafts(p.id)} type="button">
                               Content production
                             </button>
@@ -5938,6 +5954,16 @@ export function AiDeliveryPage({
             I confirm publish to this client WordPress target.
           </label>
         </Modal>
+      ) : null}
+      {openKnowledgePanelId && openKnowledgePanelProject && typeof onFetchKnowledgeItems === "function" && typeof onCreateKnowledgeItem === "function" && typeof onUpdateKnowledgeItem === "function" && typeof onPreviewAiContext === "function" ? (
+        <AiKnowledgeContextPanel
+          project={openKnowledgePanelProject}
+          onClose={() => setOpenKnowledgePanelId(null)}
+          onCreateKnowledgeItem={onCreateKnowledgeItem}
+          onFetchKnowledgeItems={onFetchKnowledgeItems}
+          onPreviewContext={onPreviewAiContext}
+          onUpdateKnowledgeItem={onUpdateKnowledgeItem}
+        />
       ) : null}
     </section>
   );

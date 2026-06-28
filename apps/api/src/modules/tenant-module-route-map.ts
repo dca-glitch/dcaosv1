@@ -13,6 +13,7 @@ export const TENANT_MODULE_ROUTE_MAP: Array<{ prefix: string; moduleKey: string 
   { prefix: "/tenant/wordpress-config", moduleKey: "ai-delivery" },
   { prefix: "/ai-delivery", moduleKey: "ai-delivery" },
   { prefix: "/ai-delivery-projects", moduleKey: "ai-delivery" },
+  { prefix: "/ai-operating-layer", moduleKey: "ai-delivery" },
   { prefix: "/market-intelligence-projects", moduleKey: "market-intelligence" },
   { prefix: "/market-intelligence", moduleKey: "market-intelligence" },
   { prefix: "/invoices", moduleKey: "finance-lite" },

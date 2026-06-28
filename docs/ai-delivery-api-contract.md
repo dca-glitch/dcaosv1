@@ -151,6 +151,22 @@ Backend routes currently expected:
 - POST /api/v1/ai-delivery-projects/:id/brief/request-client-revision
 - POST /api/v1/ai-delivery-projects/:id/brief/approve-final
 
+AI Operating Layer — Knowledge + Context Preview (admin/owner only, ai-delivery module):
+
+- GET /api/v1/ai-operating-layer/knowledge-items
+- POST /api/v1/ai-operating-layer/knowledge-items
+- PUT /api/v1/ai-operating-layer/knowledge-items/:id
+- POST /api/v1/ai-operating-layer/knowledge-items/promote
+- POST /api/v1/ai-operating-layer/context-preview
+
+Rules:
+
+- Default context selection uses APPROVED + allowedForPrompt + non-expired/non-archived/replaced items only.
+- RAW/REVIEWED items are included only when `includeRaw=true` and emit warnings.
+- Context preview is dry-run only; no OpenRouter/live provider call.
+- Snapshots store redacted preview metadata only (no secrets, no provider responses).
+- Promotion from AiDeliveryResearchSummary (and optional deliverable/report sources) does not mutate source records.
+
 Project response summary fields:
 
 - id

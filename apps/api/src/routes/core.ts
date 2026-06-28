@@ -177,7 +177,12 @@ import {
   getAiDeliveryMonthlyReportMiContextHandler,
   applyMiHandoffToMonthlyReportHandler,
   updateMonthlyReportMiContextDraftHandler,
-  removeMiHandoffFromMonthlyReportHandler
+  removeMiHandoffFromMonthlyReportHandler,
+  listAiKnowledgeItemsHandler,
+  createAiKnowledgeItemHandler,
+  updateAiKnowledgeItemHandler,
+  promoteAiKnowledgeItemHandler,
+  previewAiContextHandler
 } from "../controllers/coreController";
 
 import { requireAuth } from "../middlewares/auth.middleware";
@@ -269,6 +274,13 @@ export function createCoreRouter() {
   router.get("/ai-delivery/projects/:projectId/research-sources", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), listAiDeliveryResearchSourcesHandler);
   router.post("/ai-delivery/projects/:projectId/research-sources", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), createAiDeliveryResearchSourceHandler);
   router.put("/ai-delivery/projects/:projectId/research-sources/:researchSourceId", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), updateAiDeliveryResearchSourceHandler);
+
+  router.get("/ai-operating-layer/knowledge-items", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), listAiKnowledgeItemsHandler);
+  router.post("/ai-operating-layer/knowledge-items", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), createAiKnowledgeItemHandler);
+  router.put("/ai-operating-layer/knowledge-items/:id", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), updateAiKnowledgeItemHandler);
+  router.post("/ai-operating-layer/knowledge-items/promote", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), promoteAiKnowledgeItemHandler);
+  router.post("/ai-operating-layer/context-preview", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), previewAiContextHandler);
+
   router.post("/ai-delivery-projects/:id/brief/request-client-input", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), requestAiDeliveryBriefClientInputHandler);
   router.post("/ai-delivery-projects/:id/brief/request-client-revision", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), requestAiDeliveryBriefClientRevisionHandler);
   router.post("/ai-delivery-projects/:id/brief/approve-final", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), approveFinalAiDeliveryBriefHandler);
