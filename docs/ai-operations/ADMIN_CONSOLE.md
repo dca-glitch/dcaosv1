@@ -65,6 +65,9 @@ Optional query filters: `status`, `outputType`, `gateway`, `workflowKind`, `clie
 
 ```powershell
 cd C:\dcaosv1
+npm.cmd run smoke:ai-post-merge:sanity
 npm.cmd run smoke:ai-operations:local
 npm.cmd run smoke:ai-operations:browser
 ```
+
+Operator runbook: [`docs/operator/ai-daily-workflow-runbook.md`](../operator/ai-daily-workflow-runbook.md)
