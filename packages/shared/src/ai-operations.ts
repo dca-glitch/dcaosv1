@@ -1,10 +1,13 @@
 import type { AiWorkflowContextUsageSummary, AiWorkflowObservabilitySummary, AiWorkflowResultSummary } from "./ai-workflow-result";
 
+export type AiOperationsWorkflowKind = "ai_delivery_workflow_run" | "market_intelligence_research_run";
+
 export interface AiOperationsRunListItem {
   id: string;
   shortId: string;
-  workflowKind: "ai_delivery_workflow_run";
-  aiDeliveryProjectId: string;
+  workflowKind: AiOperationsWorkflowKind;
+  aiDeliveryProjectId: string | null;
+  miProjectId: string | null;
   projectName: string;
   clientId: string | null;
   clientName: string | null;
@@ -33,6 +36,9 @@ export interface AiOperationsRunListItem {
   resultVersion: string | null;
   resultType: string | null;
   titlePreview: string | null;
+  linkedInsightId: string | null;
+  linkedInsightStatus: string | null;
+  linkedHandoffStatus: string | null;
 }
 
 export interface AiOperationsRunDetail extends AiOperationsRunListItem {
@@ -42,6 +48,7 @@ export interface AiOperationsRunDetail extends AiOperationsRunListItem {
   contextUsage: AiWorkflowContextUsageSummary;
   executionLogPreview: string | null;
   rawResultJsonPreview: string | null;
+  miResultSummaryPreview: string | null;
 }
 
 export interface AiOperationsRunsResponse {
@@ -56,7 +63,16 @@ export interface ListAiOperationsRunsFilters {
   status?: string;
   outputType?: string;
   gateway?: string;
+  workflowKind?: AiOperationsWorkflowKind | "all";
   clientId?: string;
   aiDeliveryProjectId?: string;
+  miProjectId?: string;
   limit?: number;
+}
+
+export function formatAiOperationsWorkflowKindLabel(kind: AiOperationsWorkflowKind): string {
+  if (kind === "market_intelligence_research_run") {
+    return "Market Intelligence";
+  }
+  return "AI Delivery";
 }

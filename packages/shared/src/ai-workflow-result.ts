@@ -316,3 +316,31 @@ export function shortAiWorkflowRunId(runId: string): string {
   }
   return trimmed.slice(0, 8);
 }
+
+export function formatAiWorkflowTokenEstimate(
+  approximateInputTokens: number | null | undefined,
+  maxOutputTokens: number | null | undefined
+): string {
+  const input = typeof approximateInputTokens === "number" && Number.isFinite(approximateInputTokens)
+    ? approximateInputTokens
+    : null;
+  const output = typeof maxOutputTokens === "number" && Number.isFinite(maxOutputTokens)
+    ? maxOutputTokens
+    : null;
+
+  if (input === null && output === null) {
+    return "Not recorded";
+  }
+  if (input !== null && output !== null) {
+    return `${input} est. in / ${output} max out`;
+  }
+  if (input !== null) {
+    return `${input} est. in`;
+  }
+  return `${output} max out`;
+}
+
+export function formatAiWorkflowBudgetPolicyDisplay(budgetPolicy: string | null | undefined): string {
+  const policy = typeof budgetPolicy === "string" ? budgetPolicy.trim() : "";
+  return policy.length > 0 ? policy : "Not recorded";
+}

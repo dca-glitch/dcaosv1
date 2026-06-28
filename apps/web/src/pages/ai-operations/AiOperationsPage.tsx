@@ -6,6 +6,7 @@ import type {
   AiOperationsRunsResponse,
   AiWorkflowContextUsageSummary
 } from "@dca-os-v1/shared";
+import { formatAiOperationsWorkflowKindLabel, formatAiWorkflowTokenEstimate } from "@dca-os-v1/shared";
 import { EmptyState } from "../../components/EmptyState";
 import { ErrorState } from "../../components/ErrorState";
 import { LoadingState } from "../../components/LoadingState";
@@ -21,7 +22,57 @@ type ApiResponse<T> = ApiSuccess<T> | ApiFailure;
 
 type StatusFilter = "ALL" | string;
 type GatewayFilter = "ALL" | "disabled" | "local" | "openrouter";
-type OutputTypeFilter = "ALL" | "summary" | "content_plan_draft" | "article_draft";
+type OutputTypeFilter = "ALL" | "summary" | "content_plan_draft" | "article_draft" | "mi_research";
+type SourceFilter = "ALL" | "ai_delivery_workflow_run" | "market_intelligence_research_run";
+
+const CSV_COLUMNS: Array<{ header: string; value: (run: AiOperationsRunListItem) => string }> = [
+  { header: "run_id", value: (run) => run.id },
+  { header: "short_id", value: (run) => run.shortId },
+  { header: "source", value: (run) => run.workflowKind },
+  { header: "source_label", value: (run) => formatAiOperationsWorkflowKindLabel(run.workflowKind) },
+  { header: "project", value: (run) => run.projectName },
+  { header: "client", value: (run) => run.clientName ?? "" },
+  { header: "target_month", value: (run) => run.targetMonth ?? "" },
+  { header: "workflow_type", value: (run) => run.workflowType ?? "" },
+  { header: "status", value: (run) => run.status },
+  { header: "gateway", value: (run) => run.gateway ?? "" },
+  { header: "provider_mode", value: (run) => run.providerMode ?? "" },
+  { header: "model", value: (run) => run.model ?? "" },
+  { header: "output_type", value: (run) => run.outputType ?? "" },
+  { header: "context_status", value: (run) => run.contextStatus },
+  { header: "input_tokens_est", value: (run) => (run.approximateInputTokens ?? "").toString() },
+  { header: "max_output_tokens", value: (run) => (run.maxOutputTokens ?? "").toString() },
+  { header: "budget_policy", value: (run) => run.budgetPolicy ?? "" },
+  { header: "deterministic", value: (run) => (run.isDeterministic === null ? "" : run.isDeterministic ? "yes" : "no") },
+  { header: "live_provider_called", value: (run) => (run.liveProviderCalled === null ? "" : run.liveProviderCalled ? "yes" : "no") },
+  { header: "executed_at", value: (run) => run.executedAt ?? "" },
+  { header: "insight_status", value: (run) => run.linkedInsightStatus ?? "" },
+  { header: "handoff_status", value: (run) => run.linkedHandoffStatus ?? "" },
+  { header: "title_preview", value: (run) => run.titlePreview ?? "" }
+];
+
+function escapeCsvCell(value: string): string {
+  if (/[",\n\r]/.test(value)) {
+    return `"${value.replace(/"/g, '""')}"`;
+  }
+  return value;
+}
+
+function buildRunsCsv(rows: AiOperationsRunListItem[]): string {
+  const header = CSV_COLUMNS.map((column) => column.header).join(",");
+  const body = rows.map((run) => CSV_COLUMNS.map((column) => escapeCsvCell(column.value(run))).join(",")).join("\n");
+  return `${header}\n${body}\n`;
+}
+
+function downloadCsv(filename: string, csv: string): void {
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = filename;
+  anchor.click();
+  URL.revokeObjectURL(url);
+}
 
 async function apiRequest<T>(path: string): Promise<ApiResponse<T>> {
   const headers: Record<string, string> = { Accept: "application/json" };
@@ -98,6 +149,7 @@ function RunDetailModal({
         <div className="stack gap-md">
           <SectionPanel title="Execution summary" description="Gateway, model, and result metadata for operator review.">
             <dl className="detail-grid compact">
+              <div><dt>Source</dt><dd>{formatAiOperationsWorkflowKindLabel(run.workflowKind)}</dd></div>
               <div><dt>Status</dt><dd><StatusBadge status={run.status} /></dd></div>
               <div><dt>Project</dt><dd>{run.projectName}</dd></div>
               <div><dt>Client</dt><dd>{run.clientName ?? "Not linked"}</dd></div>
@@ -108,16 +160,29 @@ function RunDetailModal({
               <div><dt>Model</dt><dd>{run.model ?? "Not recorded"}</dd></div>
               <div><dt>Deterministic</dt><dd>{run.isDeterministic === null ? "Unknown" : run.isDeterministic ? "Yes" : "No"}</dd></div>
               <div><dt>Live provider</dt><dd>{run.liveProviderCalled === null ? "Unknown" : run.liveProviderCalled ? "Called" : "Not called"}</dd></div>
-              <div><dt>Context</dt><dd>{contextStatusBadge(run.contextUsage.status)}</dd></div>
+              {run.workflowKind === "ai_delivery_workflow_run" ? (
+                <div><dt>Context</dt><dd>{contextStatusBadge(run.contextUsage.status)}</dd></div>
+              ) : null}
               <div><dt>Executed</dt><dd>{formatTimestamp(run.executedAt)}</dd></div>
-              <div><dt>Result version</dt><dd>{run.resultVersion ?? "Not recorded"}</dd></div>
-              <div><dt>Input tokens (est.)</dt><dd>{run.approximateInputTokens ?? "Not recorded"}</dd></div>
-              <div><dt>Max output tokens</dt><dd>{run.maxOutputTokens ?? "Not recorded"}</dd></div>
-              <div><dt>Budget policy</dt><dd>{run.budgetPolicy ?? "Not recorded"}</dd></div>
+              {run.workflowKind === "ai_delivery_workflow_run" ? (
+                <>
+                  <div><dt>Result version</dt><dd>{run.resultVersion ?? "Not recorded"}</dd></div>
+                  <div><dt>Input tokens (est.)</dt><dd>{formatAiWorkflowTokenEstimate(run.approximateInputTokens, run.maxOutputTokens)}</dd></div>
+                  <div><dt>Budget policy</dt><dd>{run.budgetPolicy ?? "Not recorded"}</dd></div>
+                  <div><dt>Cost note</dt><dd className="muted-copy">Estimates from execution metadata — not billing records.</dd></div>
+                </>
+              ) : null}
+              {run.workflowKind === "market_intelligence_research_run" ? (
+                <>
+                  <div><dt>Linked insight</dt><dd>{run.linkedInsightId ? run.linkedInsightId.slice(0, 8) : "Not linked"}</dd></div>
+                  <div><dt>Insight status</dt><dd>{formatLabel(run.linkedInsightStatus, "Not linked")}</dd></div>
+                  <div><dt>Handoff status</dt><dd>{formatLabel(run.linkedHandoffStatus, "Not linked")}</dd></div>
+                </>
+              ) : null}
             </dl>
           </SectionPanel>
 
-          {run.resultSummary ? (
+          {run.workflowKind === "ai_delivery_workflow_run" && run.resultSummary ? (
             <SectionPanel title="AI_WORKFLOW_RESULT_V1 summary" description="Parsed result contract summary.">
               <dl className="detail-grid compact">
                 <div><dt>Title</dt><dd>{run.resultSummary.title ?? "Not recorded"}</dd></div>
@@ -126,13 +191,21 @@ function RunDetailModal({
                 <div><dt>Generated at</dt><dd>{formatTimestamp(run.resultSummary.generatedAt)}</dd></div>
               </dl>
             </SectionPanel>
-          ) : (
+          ) : null}
+
+          {run.workflowKind === "ai_delivery_workflow_run" && !run.resultSummary ? (
             <SectionPanel title="AI_WORKFLOW_RESULT_V1 summary">
               <EmptyState title="No parsed result" message="This run has no recorded AI_WORKFLOW_RESULT_V1 placeholder yet." />
             </SectionPanel>
-          )}
+          ) : null}
 
-          {run.contextUsage.detail ? (
+          {run.workflowKind === "market_intelligence_research_run" && run.miResultSummaryPreview ? (
+            <SectionPanel title="Research result preview" description="Safe summary preview only — no raw prompts or provider payloads.">
+              <p className="muted-copy">{run.miResultSummaryPreview}</p>
+            </SectionPanel>
+          ) : null}
+
+          {run.workflowKind === "ai_delivery_workflow_run" && run.contextUsage.detail ? (
             <SectionPanel title="Context usage">
               <p className="muted-copy">{run.contextUsage.detail}</p>
             </SectionPanel>
@@ -174,6 +247,7 @@ export function AiOperationsPage() {
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL");
+  const [sourceFilter, setSourceFilter] = useState<SourceFilter>("ALL");
   const [gatewayFilter, setGatewayFilter] = useState<GatewayFilter>("ALL");
   const [outputTypeFilter, setOutputTypeFilter] = useState<OutputTypeFilter>("ALL");
   const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
@@ -215,6 +289,9 @@ export function AiOperationsPage() {
       if (statusFilter !== "ALL" && run.status !== statusFilter) {
         return false;
       }
+      if (sourceFilter !== "ALL" && run.workflowKind !== sourceFilter) {
+        return false;
+      }
       if (gatewayFilter !== "ALL" && (run.gateway ?? "").toLowerCase() !== gatewayFilter) {
         return false;
       }
@@ -235,15 +312,25 @@ export function AiOperationsPage() {
         run.status,
         run.gateway,
         run.model,
+        run.workflowKind,
         run.workflowType,
-        run.titlePreview
+        run.titlePreview,
+        run.outputType
       ]
         .filter(Boolean)
         .join(" ")
         .toLowerCase();
       return haystack.includes(needle);
     });
-  }, [gatewayFilter, outputTypeFilter, runs, search, statusFilter]);
+  }, [gatewayFilter, outputTypeFilter, runs, search, sourceFilter, statusFilter]);
+
+  const exportVisibleRunsCsv = useCallback(() => {
+    if (filteredRuns.length === 0) {
+      return;
+    }
+    const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
+    downloadCsv(`ai-operations-runs-${stamp}.csv`, buildRunsCsv(filteredRuns));
+  }, [filteredRuns]);
 
   const openRunDetail = useCallback(async (runId: string) => {
     setSelectedRunId(runId);
@@ -279,21 +366,26 @@ export function AiOperationsPage() {
       <PageHeader
         eyebrow="AI Operations"
         title="AI Operations Console"
-        description="Review recent AI Delivery workflow runs, gateway mode, context usage, and safe result metadata."
+        description="Review AI Delivery workflow runs and Market Intelligence research runs — gateway mode, context usage, and safe metadata."
         actions={(
-          <button className="secondary-action" onClick={() => void loadRuns()} type="button">
-            Refresh
-          </button>
+          <>
+            <button className="secondary-action" onClick={exportVisibleRunsCsv} type="button" disabled={filteredRuns.length === 0}>
+              Export CSV
+            </button>
+            <button className="secondary-action" onClick={() => void loadRuns()} type="button">
+              Refresh
+            </button>
+          </>
         )}
       />
 
       {error ? <ErrorState title="AI Operations blocked" message={error} /> : null}
-      {loading ? <LoadingState label="Loading AI workflow runs…" /> : null}
+      {loading ? <LoadingState label="Loading AI operations runs…" /> : null}
 
       {!loading ? (
         <SectionPanel
-          title="Recent workflow runs"
-          description="Compact operator view across AI Delivery workflow executions."
+          title="Recent runs"
+          description="Compact operator view across AI Delivery and Market Intelligence executions."
         >
           <div className="toolbar filter-bar stack gap-sm">
             <label className="form-field inline">
@@ -303,6 +395,14 @@ export function AiOperationsPage() {
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder="Run id, project, client, model…"
               />
+            </label>
+            <label className="form-field inline">
+              <span>Source</span>
+              <select value={sourceFilter} onChange={(event) => setSourceFilter(event.target.value as SourceFilter)}>
+                <option value="ALL">All sources</option>
+                <option value="ai_delivery_workflow_run">AI Delivery</option>
+                <option value="market_intelligence_research_run">Market Intelligence</option>
+              </select>
             </label>
             <label className="form-field inline">
               <span>Status</span>
@@ -328,14 +428,18 @@ export function AiOperationsPage() {
                 <option value="summary">summary</option>
                 <option value="content_plan_draft">content plan draft</option>
                 <option value="article_draft">article draft</option>
+                <option value="mi_research">MI research</option>
               </select>
             </label>
+            <p className="muted-copy compact">
+              {filteredRuns.length} visible run(s). CSV export includes safe admin fields only — no raw JSON, secrets, or provider payloads.
+            </p>
           </div>
 
           {filteredRuns.length === 0 ? (
             <EmptyState
-              title="No AI workflow runs"
-              message={runs.length === 0 ? "Execute an AI Delivery workflow run to populate this console." : "No runs match the current filters."}
+              title="No AI operations runs"
+              message={runs.length === 0 ? "Execute an AI Delivery workflow or Market Intelligence research run to populate this console." : "No runs match the current filters."}
             />
           ) : (
             <div className="table-scroll">
@@ -343,6 +447,7 @@ export function AiOperationsPage() {
                 <thead>
                   <tr>
                     <th>Run</th>
+                    <th>Source</th>
                     <th>Project</th>
                     <th>Client</th>
                     <th>Month</th>
@@ -351,7 +456,7 @@ export function AiOperationsPage() {
                     <th>Gateway</th>
                     <th>Model</th>
                     <th>Context</th>
-                    <th>Tokens</th>
+                    <th>Tokens (est.)</th>
                     <th>Executed</th>
                     <th />
                   </tr>
@@ -362,6 +467,7 @@ export function AiOperationsPage() {
                       <td>
                         <span className="mono-copy" title={run.id}>{run.shortId}</span>
                       </td>
+                      <td>{formatAiOperationsWorkflowKindLabel(run.workflowKind)}</td>
                       <td>{run.projectName}</td>
                       <td>{run.clientName ?? "—"}</td>
                       <td>{run.targetMonth ?? "—"}</td>
@@ -370,10 +476,7 @@ export function AiOperationsPage() {
                       <td>{formatLabel(run.gateway)}</td>
                       <td>{run.model ?? "—"}</td>
                       <td>{contextStatusBadge(run.contextStatus)}</td>
-                      <td>
-                        {run.approximateInputTokens ?? "—"}
-                        {run.maxOutputTokens ? ` / ${run.maxOutputTokens}` : ""}
-                      </td>
+                      <td>{formatAiWorkflowTokenEstimate(run.approximateInputTokens, run.maxOutputTokens)}</td>
                       <td>{formatTimestamp(run.executedAt)}</td>
                       <td>
                         <button className="secondary-action" onClick={() => void openRunDetail(run.id)} type="button">

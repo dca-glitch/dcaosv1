@@ -159,6 +159,44 @@ async function main() {
   }
   pass("Gateway filter works");
 
+  const miProject = requireOk("Create MI project", await apiCall("POST", "/market-intelligence-projects", {
+    title: `${SMOKE_MARKER} MI Project ${Date.now()}`,
+    clientId,
+    targetMonth: "2026-09",
+    keywords: "smoke,test",
+    niche: "operator QA"
+  }, token));
+  const miProjectId = miProject.project?.id;
+  if (!miProjectId) fail("Missing MI project id.");
+
+  const miRunCreated = requireOk("Create MI research run", await apiCall("POST", `/market-intelligence-projects/${miProjectId}/research-runs`, {
+    status: "PENDING"
+  }, token));
+  const miRunId = miRunCreated.researchRun?.id;
+  if (!miRunId) fail("Missing MI research run id.");
+
+  requireOk("Execute MI research run", await apiCall("POST", `/market-intelligence-projects/${miProjectId}/research-runs/${miRunId}/execute`, {}, token));
+  pass("MI research run executed on deterministic path");
+
+  const miListed = requireOk("List AI operations MI runs", await apiCall("GET", "/ai-operations/runs?workflowKind=market_intelligence_research_run&limit=20", null, token));
+  const miListedRun = miListed.runs.find((entry) => entry.id === miRunId);
+  if (!miListedRun) {
+    fail("Executed MI research run missing from AI operations list.");
+  }
+  if (miListedRun.workflowKind !== "market_intelligence_research_run") {
+    fail("MI run missing expected workflowKind.");
+  }
+  if (miListedRun.gateway !== "local" || miListedRun.isDeterministic !== true) {
+    fail("MI run missing expected local/deterministic metadata.");
+  }
+  pass("AI operations list includes MI research run");
+
+  const miDetail = requireOk("AI operations MI run detail", await apiCall("GET", `/ai-operations/runs/${miRunId}`, null, token));
+  if (!miDetail.run || miDetail.run.workflowKind !== "market_intelligence_research_run") {
+    fail("AI operations MI run detail missing expected payload.");
+  }
+  pass("AI operations MI run detail returns safely");
+
   console.log(`\n${SMOKE_MARKER} all checks passed`);
 }
 

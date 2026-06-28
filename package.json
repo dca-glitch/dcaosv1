@@ -29,6 +29,8 @@
     "smoke:ai-operations:local": "node scripts/smoke-ai-operations-local.mjs",
     "smoke:ai-operations:browser": "node scripts/smoke-ai-operations-browser-local.mjs",
     "smoke:ai-matrix": "node scripts/smoke-ai-matrix-local.mjs",
+    "smoke:client-safe-ai-visibility:local": "node scripts/smoke-client-safe-ai-visibility-local.mjs",
+    "smoke:ai-post-merge:sanity": "powershell -ExecutionPolicy Bypass -File scripts/smoke-ai-post-merge-sanity.ps1",
     "smoke:mvp:local": "node scripts/smoke-mvp-local.mjs",
     "smoke:mvp:staging": "node scripts/smoke-mvp-local.mjs --staging",
     "smoke:staging-security-baseline": "node scripts/smoke-staging-security-baseline.mjs",
