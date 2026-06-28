@@ -1,7 +1,6 @@
 import { type FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AppLayout } from "./components/AppLayout";
 import { StatusNotice } from "./components/StatusNotice";
-import { EmptyState } from "./components/EmptyState";
 import { MetricCard, PageHeader, SectionPanel, StatusBadge } from "./components/ui";
 import {
   BillsPage,
@@ -973,15 +972,9 @@ function DashboardView({
           ) : activityAuditLogsError ? (
             <p className="muted-text" role="alert">{activityAuditLogsError}</p>
           ) : auditLogs.length === 0 ? (
-            <EmptyState
-              message="Audit events appear here after admin actions such as module changes, tenant updates, or auth events."
-              title="No recent activity"
-            />
+            <p className="inline-empty muted-text">Audit events appear here after module changes, tenant updates, or auth events.</p>
           ) : filteredAuditLogs.length === 0 ? (
-            <EmptyState
-              message="No events in the last fetch match this filter. Try All or perform a new admin action."
-              title="No matching activity"
-            />
+            <p className="inline-empty muted-text">No events match this filter. Try All or perform a new admin action.</p>
           ) : (
             <div className="audit-feed timeline-list" role="list" aria-label="Recent audit activity">
               {filteredAuditLogs.map((activity) => {
@@ -1053,14 +1046,14 @@ function TenantView({
 
   return (
     <section className="view-section" aria-labelledby="tenant-title">
-      <div className="section-header">
-        <div>
-          <p className="eyebrow">Tenant Context</p>
-          <h1 id="tenant-title">Tenants</h1>
-        </div>
-      </div>
+      <PageHeader
+        eyebrow="Tenant Context"
+        title="Tenants"
+        titleId="tenant-title"
+        description="Switch the active workspace tenant for this session."
+      />
       {availableTenants.length === 0 ? (
-        <div className="state-panel">No active tenant memberships were found.</div>
+        <p className="inline-empty muted-text">No active tenant memberships were found.</p>
       ) : (
         <div className="tenant-list">
           {availableTenants.map((membership) => {
@@ -1171,15 +1164,14 @@ function ModuleRegistryView({
 }
 
 function PlaceholderView({ title, eyebrow }: { title: string; eyebrow: string }) {
+  const titleId = `${title.toLowerCase().replace(/\s+/g, "-")}-title`;
+
   return (
-    <section className="view-section" aria-labelledby={`${title.toLowerCase()}-title`}>
-      <div className="section-header">
-        <div>
-          <p className="eyebrow">{eyebrow}</p>
-          <h1 id={`${title.toLowerCase()}-title`}>{title}</h1>
-        </div>
-      </div>
-      <div className="state-panel">This area is reserved for the next backend-backed pass.</div>
+    <section className="view-section" aria-labelledby={titleId}>
+      <PageHeader eyebrow={eyebrow} title={title} titleId={titleId} description="Reserved shell — backend-backed features arrive in a later block." />
+      <SectionPanel tone="compact" title="Not available yet" description="This route stays intentionally paused until its backend block is approved.">
+        <p className="inline-empty muted-text">This area is reserved for the next backend-backed pass.</p>
+      </SectionPanel>
     </section>
   );
 }
@@ -1199,10 +1191,10 @@ function DeferredClientPortalView({
         titleId={titleId}
         description="Client review access is deferred until the Client Portal foundation is enabled."
       />
-      <SectionPanel title="Not available" description="This route is intentionally paused in the current branch.">
-        <div className="state-panel">
+      <SectionPanel tone="compact" title="Not available" description="This route is intentionally paused in the current branch.">
+        <p className="inline-empty muted-text">
           Client review loading is disabled for now. The admin workflow stays intact, but client-facing review pages remain deferred until the Client Portal block is approved.
-        </div>
+        </p>
       </SectionPanel>
     </section>
   );
@@ -1256,11 +1248,12 @@ function TeamView({
       ) : null}
       {canReadUsers ? (
         <SectionPanel
+          tone="compact"
           title="Member directory"
           description="Read-only shell. Role editing, invites, and password reset remain deferred."
         >
           {members.length === 0 ? (
-            <EmptyState message="Active tenant members appear here once membership records exist." title="No members listed" />
+            <p className="inline-empty muted-text">Active tenant members appear here once membership records exist.</p>
           ) : (
             <div className="table-wrap" aria-label="Tenant members">
               <table>
@@ -1340,13 +1333,13 @@ function SettingsView({
         <StatusNotice tone="info" message="Tenant settings visibility requires settings read access." />
       ) : null}
       <SectionPanel
+        tone="compact"
         title="MVP shell boundary"
         description="Settings remain read-only until the Settings MVP backend block is approved."
       >
-        <EmptyState
-          message="Password reset, OAuth, billing, invite flow, and destructive tenant changes remain out of scope for this shell."
-          title="Read-only settings shell"
-        />
+        <p className="inline-empty muted-text">
+          Password reset, OAuth, billing, invite flow, and destructive tenant changes remain out of scope for this shell.
+        </p>
       </SectionPanel>
     </section>
   );
@@ -1365,6 +1358,7 @@ function ClientReviewDeferredView({
     <section className="view-section" aria-labelledby={titleId}>
       <PageHeader eyebrow="Client review" title={title} titleId={titleId} description={description} />
       <SectionPanel
+        tone="compact"
         title="Deferred for MVP"
         description="Client review actions are not active in this MVP. Admin remains responsible for review and publishing."
       >
@@ -1372,10 +1366,9 @@ function ClientReviewDeferredView({
           tone="info"
           message="Client approval, request-changes actions, and internal draft review are deferred. Use Client Portal for final client-safe deliverables and monthly reports. Active modules: AI Delivery (operator path), Client Portal (visibility)."
         />
-        <EmptyState
-          message="Open Client Portal from the sidebar to view final deliverables and approved monthly reports shared with your account."
-          title="Client review deferred"
-        />
+        <p className="inline-empty muted-text">
+          Open Client Portal from the sidebar to view final deliverables and approved monthly reports shared with your account.
+        </p>
       </SectionPanel>
     </section>
   );

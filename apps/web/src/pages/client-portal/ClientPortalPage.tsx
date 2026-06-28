@@ -875,7 +875,7 @@ export function ClientPortalPage() {
           titleId="client-portal-title"
         />
         <ErrorState message={projectsError} title="Archive unavailable" />
-        <div style={{ marginTop: "12px" }}>
+        <div className="portal-action-row">
           <button className="secondary-action" onClick={handleRefresh} type="button">
             Try again
           </button>
@@ -918,7 +918,7 @@ export function ClientPortalPage() {
           <div className="entity-card-header">
             <div>
               <p className="eyebrow">Archive</p>
-              <h2>Projects</h2>
+              <h2>Shared documents</h2>
             </div>
           </div>
 
@@ -937,10 +937,7 @@ export function ClientPortalPage() {
           </div>
 
           {filteredProjects.length === 0 ? (
-            <EmptyState
-              message="No projects match this filter. When your team shares material, it will appear here."
-              title="No projects"
-            />
+            <p className="inline-empty muted-text">No projects match this filter. When your team shares material, it will appear here.</p>
           ) : (
             <div className="dense-list portal-project-list">
               {filteredProjects.map((project) => (
@@ -957,7 +954,7 @@ export function ClientPortalPage() {
                   role="button"
                   tabIndex={0}
                 >
-                  <div className="dense-record-main" style={{ gridTemplateColumns: "minmax(0, 1fr) auto" }}>
+                  <div className="dense-record-main portal-record-main">
                     <div className="dense-title">
                       <div className="dense-kicker">
                         <ClientPortalStatusBadge status={project.isArchived ? "ARCHIVED" : "ACTIVE"} />

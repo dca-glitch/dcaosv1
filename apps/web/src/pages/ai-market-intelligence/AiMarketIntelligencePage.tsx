@@ -9,6 +9,7 @@ import type {
 import { EmptyState } from "../../components/EmptyState";
 import { ErrorState } from "../../components/ErrorState";
 import { LoadingState } from "../../components/LoadingState";
+import { StatusNotice } from "../../components/StatusNotice";
 import { Modal } from "../../components/Modal";
 import { MetricCard, PageHeader, SectionPanel, StatusBadge } from "../../components/ui";
 
@@ -472,14 +473,10 @@ export function AiMarketIntelligencePage({ clients }: AiMarketIntelligencePagePr
         titleId="market-intelligence-title"
       />
 
-      {actionError ? (
-        <div className="state-panel" role="alert">
-          <p>{actionError}</p>
-        </div>
-      ) : null}
+      {actionError ? <StatusNotice tone="error" message={actionError} /> : null}
 
-      <div style={{ display: "grid", gap: "14px", gridTemplateColumns: "minmax(240px, 280px) minmax(0, 1fr)", alignItems: "start" }}>
-        <aside className="entity-card">
+      <div className="mi-split-layout">
+        <aside className="entity-card mi-queue-sidebar">
           <div className="entity-card-header">
             <div>
               <p className="eyebrow">Projects</p>
@@ -502,15 +499,7 @@ export function AiMarketIntelligencePage({ clients }: AiMarketIntelligencePagePr
           </div>
 
           {filteredProjects.length === 0 ? (
-            <EmptyState
-              action={
-                <button className="primary-action" onClick={() => setShowProjectModal(true)} type="button">
-                  Create first project
-                </button>
-              }
-              message="Create a research project to start the operator workflow."
-              title="No projects"
-            />
+            <p className="inline-empty muted-text">Create a research project to start the operator workflow.</p>
           ) : (
             <div className="dense-list">
               {filteredProjects.map((project) => (
@@ -549,10 +538,7 @@ export function AiMarketIntelligencePage({ clients }: AiMarketIntelligencePagePr
 
         <div>
           {!selectedProject ? (
-            <EmptyState
-              message="Choose a research project from the left queue to run the monthly operator workflow."
-              title="Select a project"
-            />
+            <p className="inline-empty muted-text">Choose a research project from the left queue to run the monthly operator workflow.</p>
           ) : detailLoading ? (
             <LoadingState label="Loading project research data" />
           ) : (
@@ -573,7 +559,7 @@ export function AiMarketIntelligencePage({ clients }: AiMarketIntelligencePagePr
                 title={selectedProject.title}
               />
 
-              <div className="summary-grid metric-grid">
+              <div className="summary-grid metric-grid operator-summary-metrics">
                 <MetricCard accent="cyan" helper="Curated references" label="Sources" value={sources.filter((s) => !s.isArchived).length} />
                 <MetricCard accent="violet" helper="Bounded executions" label="Runs" value={runs.filter((r) => r.status === "EXECUTED").length} />
                 <MetricCard accent="purple" helper="Approved for handoff" label="Insights" value={approvedInsights.length} />

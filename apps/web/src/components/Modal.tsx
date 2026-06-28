@@ -11,7 +11,7 @@ type ModalProps = {
   eyebrow?: string;
 };
 
-export function Modal({ title, onClose, children, footer, size = "md", eyebrow = "Edit" }: ModalProps) {
+export function Modal({ title, onClose, children, footer, size = "md", eyebrow }: ModalProps) {
   const titleId = useId();
   const panelClass = ["modal-panel", `modal-panel-${size}`].join(" ");
 

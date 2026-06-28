@@ -3,6 +3,7 @@ import { EmptyState } from "../../components/EmptyState";
 import { ErrorState } from "../../components/ErrorState";
 import { LoadingState } from "../../components/LoadingState";
 import { PageHeader, SectionPanel, StatusBadge } from "../../components/ui";
+import { StatusNotice } from "../../components/StatusNotice";
 import type { ClientSummary } from "./ClientsPage";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "/api/v1";
@@ -267,14 +268,14 @@ export function ClientHubPage({ client, canEdit, onBack }: ClientHubPageProps) {
       />
 
       {client.isArchived ? (
-        <div className="state-panel" role="status">
-          This client is <strong>archived</strong>. Publication targets, credentials, and catalog edits are read-only.
-          Restore the client from the Clients list to make changes.
-        </div>
+        <StatusNotice
+          tone="info"
+          message="This client is archived. Publication targets, credentials, and catalog edits are read-only. Restore the client from the Clients list to make changes."
+        />
       ) : null}
 
-      <SectionPanel title="Client profile">
-        <div className="metric-grid">
+      <SectionPanel tone="compact" title="Client profile">
+        <div className="hub-profile-grid">
           <div>
             <strong>Kind</strong>
             <div>
@@ -296,7 +297,7 @@ export function ClientHubPage({ client, canEdit, onBack }: ClientHubPageProps) {
         </div>
       </SectionPanel>
 
-      <SectionPanel title="Publication targets" description="WordPress targets per subdomain or site. Tenant-level WordPress config is deprecated — manage targets here only.">
+      <SectionPanel tone="compact" title="Publication targets" description="WordPress targets per subdomain or site. Tenant-level WordPress config is deprecated — manage targets here only.">
         {targets.length === 0 ? (
           <EmptyState
             message="Add a WordPress target for this client/domain. Legacy tenant-level WordPress config (Company Profile) is read-only and cannot be used for publish."
@@ -335,7 +336,7 @@ export function ClientHubPage({ client, canEdit, onBack }: ClientHubPageProps) {
       </SectionPanel>
 
       {canEdit ? (
-        <SectionPanel title="WordPress credentials" description="Encrypted per target. Never shown after save. Live publish requires WORDPRESS_PUBLISH_ENABLED and saved credentials.">
+        <SectionPanel tone="compact" title="WordPress credentials" description="Encrypted per target. Never shown after save. Live publish requires WORDPRESS_PUBLISH_ENABLED and saved credentials.">
           {client.isArchived ? (
             <p className="muted-text">Archived client — credential status is read-only. Restore the client to update credentials.</p>
           ) : targets.length === 0 ? (
@@ -402,7 +403,7 @@ export function ClientHubPage({ client, canEdit, onBack }: ClientHubPageProps) {
         </SectionPanel>
       ) : null}
 
-      <SectionPanel title="Analytics profile">
+      <SectionPanel tone="compact" title="Analytics profile">
         <form className="form-grid" onSubmit={(event) => void handleSaveAnalytics(event)}>
           <label>
             GSC site URL
@@ -421,7 +422,7 @@ export function ClientHubPage({ client, canEdit, onBack }: ClientHubPageProps) {
         {analytics ? <p className="muted-copy">Connection status: {analytics.connectionStatus}</p> : null}
       </SectionPanel>
 
-      <SectionPanel title="Product catalog" description="Inquiry-only catalog for Client Portal (Puriva skincare/products). No cart or checkout.">
+      <SectionPanel tone="compact" title="Product catalog" description="Inquiry-only catalog for Client Portal (Puriva skincare/products). No cart or checkout.">
         {catalogProducts.length === 0 ? (
           <EmptyState message="Add products that clients can inquire about from the Client Portal." title="No catalog products" />
         ) : (
@@ -461,7 +462,7 @@ export function ClientHubPage({ client, canEdit, onBack }: ClientHubPageProps) {
         ) : null}
       </SectionPanel>
 
-      <SectionPanel title="Product inquiries" description="Client-submitted catalog inquiries from the portal.">
+      <SectionPanel tone="compact" title="Product inquiries" description="Client-submitted catalog inquiries from the portal.">
         {catalogInquiries.length === 0 ? (
           <EmptyState message="Inquiries appear when clients submit the catalog form in Client Portal." title="No inquiries yet" />
         ) : (
@@ -483,7 +484,7 @@ export function ClientHubPage({ client, canEdit, onBack }: ClientHubPageProps) {
         )}
       </SectionPanel>
 
-      <SectionPanel title="Publication log" description="Recent prepare/publish actions for this client.">
+      <SectionPanel tone="compact" title="Publication log" description="Recent prepare/publish actions for this client.">
         {logs.length === 0 ? (
           <EmptyState message="Prepare or publish a deliverable to populate this log." title="No publication events" />
         ) : (
