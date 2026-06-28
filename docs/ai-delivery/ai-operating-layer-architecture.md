@@ -707,7 +707,7 @@ Existing AI Delivery entities should be integrated, not replaced immediately:
 This architecture describes the full target system. Implementation should still proceed in safe dependent layers:
 
 1. **Architecture/docs alignment.** Map current docs, schema, API, and UI to this architecture.
-2. **Knowledge Base + Context Builder foundation.** Add unified memory, approval states, context snapshots, and isolation tests.
+2. **Knowledge Base + Context Builder foundation.** Implemented locally: `AiKnowledgeItem`, `AiKnowledgeItemVersion`, `AiContextSnapshot`, admin-only knowledge CRUD/promotion endpoints, dry-run `POST /api/v1/ai-operating-layer/context-preview` (no provider call), approved-only default selection, prompt-injection sanitization, and focused smoke `npm.cmd run smoke:ai-knowledge-context`.
 3. **Workflow Engine + Review Queue.** Standardize lifecycle, review gates, and output contracts.
 4. **Provider abstraction + cost governance.** Add provider interfaces, budgets, estimates, and usage records.
 5. **AI Workbench UI.** Build the admin-triggered surface with context preview and cost warnings.

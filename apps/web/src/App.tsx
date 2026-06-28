@@ -2525,6 +2525,75 @@ export function App() {
     }
   }
 
+  async function handleFetchAiKnowledgeItems(projectId: string) {
+    setAppMessage(null);
+    try {
+      const response = await runAuthenticatedRequest<{ knowledgeItems: import("@dca-os-v1/shared").AiKnowledgeItemSummary[] }>(
+        `/ai-operating-layer/knowledge-items?aiDeliveryProjectId=${encodeURIComponent(projectId)}`
+      );
+      if (!response) return [];
+      if (!response.ok) {
+        throwAiDeliveryResponseError(response);
+      }
+      return response.data.knowledgeItems;
+    } catch (error) {
+      return rethrowAiDeliveryRuntimeError(error);
+    }
+  }
+
+  async function handleCreateAiKnowledgeItem(input: import("@dca-os-v1/shared").AiKnowledgeItemInputRequest) {
+    setAppMessage(null);
+    try {
+      const response = await runAuthenticatedRequest<{ knowledgeItem: import("@dca-os-v1/shared").AiKnowledgeItemSummary }>(
+        "/ai-operating-layer/knowledge-items",
+        { method: "POST", body: input }
+      );
+      if (!response) return null;
+      if (!response.ok) {
+        throwAiDeliveryResponseError(response);
+      }
+      setAppMessage({ tone: "success", text: "Knowledge item created." });
+      return response.data.knowledgeItem;
+    } catch (error) {
+      return rethrowAiDeliveryRuntimeError(error);
+    }
+  }
+
+  async function handleUpdateAiKnowledgeItem(id: string, input: import("@dca-os-v1/shared").AiKnowledgeItemInputRequest) {
+    setAppMessage(null);
+    try {
+      const response = await runAuthenticatedRequest<{ knowledgeItem: import("@dca-os-v1/shared").AiKnowledgeItemSummary }>(
+        `/ai-operating-layer/knowledge-items/${id}`,
+        { method: "PUT", body: input }
+      );
+      if (!response) return null;
+      if (!response.ok) {
+        throwAiDeliveryResponseError(response);
+      }
+      setAppMessage({ tone: "success", text: "Knowledge item updated." });
+      return response.data.knowledgeItem;
+    } catch (error) {
+      return rethrowAiDeliveryRuntimeError(error);
+    }
+  }
+
+  async function handlePreviewAiContext(input: import("@dca-os-v1/shared").AiContextPreviewInputRequest) {
+    setAppMessage(null);
+    try {
+      const response = await runAuthenticatedRequest<import("@dca-os-v1/shared").AiContextPreviewResponse>(
+        "/ai-operating-layer/context-preview",
+        { method: "POST", body: input }
+      );
+      if (!response) return null;
+      if (!response.ok) {
+        throwAiDeliveryResponseError(response);
+      }
+      return response.data;
+    } catch (error) {
+      return rethrowAiDeliveryRuntimeError(error);
+    }
+  }
+
   async function handleFetchAiDeliveryResearchRequests(projectId: string): Promise<AiDeliveryResearchRequestSummary[]> {
     setAppMessage(null);
     try {
@@ -4056,6 +4125,10 @@ export function App() {
           onApplyMiHandoffToMonthlyReport={handleApplyMiHandoffToMonthlyReport}
           onUpdateMonthlyReportMiContextDraft={handleUpdateAiDeliveryMonthlyReportMiContextDraft}
           onRemoveMiHandoffFromMonthlyReport={handleRemoveMiHandoffFromMonthlyReport}
+          onFetchKnowledgeItems={handleFetchAiKnowledgeItems}
+          onCreateKnowledgeItem={handleCreateAiKnowledgeItem}
+          onUpdateKnowledgeItem={handleUpdateAiKnowledgeItem}
+          onPreviewAiContext={handlePreviewAiContext}
         />
       ) : null}
       {!loading && activeView === "ai-market-intelligence" ? (

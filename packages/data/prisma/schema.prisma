@@ -201,6 +201,8 @@ model Tenant {
   clientUserAccesses   ClientUserAccess[]
   emailLogs            EmailLog[]            @relation("TenantEmailLogs")
   aiDeliveryMonthlyReports AiDeliveryMonthlyReport[]
+  aiKnowledgeItems     AiKnowledgeItem[]
+  aiContextSnapshots   AiContextSnapshot[]
   publicationTargets   PublicationTarget[]
   publicationTargetCredentials PublicationTargetCredential[]
   clientAnalyticsProfiles ClientAnalyticsProfile[]
@@ -231,6 +233,11 @@ model User {
   aiDeliveryMonthlyMetricSnapshotsImportedBy AiDeliveryMonthlyMetricSnapshot[] @relation("AiDeliveryMonthlyMetricSnapshotImportedByUser")
   aiDeliveryMonthlyMetricSnapshotsApprovedBy  AiDeliveryMonthlyMetricSnapshot[] @relation("AiDeliveryMonthlyMetricSnapshotApprovedByUser")
   publicationTargetCredentialsUpdated PublicationTargetCredential[] @relation("PublicationTargetCredentialUpdatedByUser")
+  aiKnowledgeItemsCreated   AiKnowledgeItem[] @relation("AiKnowledgeItemCreatedByUser")
+  aiKnowledgeItemsReviewed  AiKnowledgeItem[] @relation("AiKnowledgeItemReviewedByUser")
+  aiKnowledgeItemsApproved  AiKnowledgeItem[] @relation("AiKnowledgeItemApprovedByUser")
+  aiKnowledgeItemVersionsCreated AiKnowledgeItemVersion[] @relation("AiKnowledgeItemVersionCreatedByUser")
+  aiContextSnapshotsCreated AiContextSnapshot[] @relation("AiContextSnapshotCreatedByUser")
 }
 
 model Session {
@@ -402,6 +409,7 @@ model Client {
   publicationLogs   PublicationLog[]
   catalogProducts   ClientCatalogProduct[]
   catalogInquiries  ClientCatalogInquiry[]
+  aiKnowledgeItems  AiKnowledgeItem[]
 
   @@index([tenantId])
   @@index([tenantId, isArchived])
@@ -627,6 +635,8 @@ model AiDeliveryProject {
   monthlyReports AiDeliveryMonthlyReport[]
   aiDeliveryMonthlyMetricSnapshots AiDeliveryMonthlyMetricSnapshot[]
   marketIntelligenceHandoffs MarketIntelligenceHandoff[]
+  aiKnowledgeItems         AiKnowledgeItem[]
+  aiContextSnapshots       AiContextSnapshot[]
 
   @@index([tenantId])
   @@index([tenantId, isArchived])
@@ -889,6 +899,7 @@ model AiDeliveryWorkflowRun {
   researchRequests    AiDeliveryResearchRequest[]
   researchSources     AiDeliveryResearchSource[]
   researchSummaries   AiDeliveryResearchSummary[]
+  aiContextSnapshots  AiContextSnapshot[]
 
   @@index([tenantId])
   @@index([tenantId, aiDeliveryProjectId])
@@ -1622,4 +1633,146 @@ model MarketIntelligenceHandoff {
   @@index([tenantId, handoffStatus])
   @@index([tenantId, isArchived])
   @@index([tenantId, aiDeliveryProjectId])
+}
+
+enum AiKnowledgeScope {
+  SYSTEM
+  CLIENT
+  PROJECT
+  INDUSTRY
+}
+
+enum AiKnowledgeType {
+  CLIENT_FACT
+  BRAND_VOICE
+  TARGET_AUDIENCE
+  PRODUCT_SERVICE
+  OFFER
+  COMPETITOR
+  RESEARCH_NOTE
+  MARKET_INSIGHT
+  SEO_KEYWORD_GROUP
+  CONTENT_EXAMPLE
+  IMAGE_STYLE
+  REPORT_INSIGHT
+  PERFORMANCE_LEARNING
+  FORBIDDEN_CLAIM
+  APPROVED_LINK
+  PROJECT_CONTEXT
+  INDUSTRY_NOTE
+}
+
+enum AiKnowledgeStatus {
+  RAW
+  REVIEWED
+  APPROVED
+  EXPIRED
+  ARCHIVED
+  REPLACED
+}
+
+enum AiContextSnapshotStatus {
+  PREVIEW
+  USED
+  ARCHIVED
+}
+
+model AiKnowledgeItem {
+  id                  String            @id @default(uuid())
+  tenantId            String
+  clientId            String?
+  aiDeliveryProjectId String?
+  scope               AiKnowledgeScope
+  type                AiKnowledgeType
+  status              AiKnowledgeStatus @default(RAW)
+  title               String
+  summary             String?
+  body                String?
+  sourceType          String?
+  sourceUrl           String?
+  sourceDate          DateTime?
+  confidence          String?
+  expiresAt           DateTime?
+  evergreen           Boolean           @default(false)
+  allowedForPrompt    Boolean           @default(false)
+  clientVisible       Boolean           @default(false)
+  version             Int               @default(1)
+  replacedById        String?
+  createdByUserId     String?
+  reviewedByUserId    String?
+  approvedByUserId    String?
+  approvedAt          DateTime?
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+
+  tenant              Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  client              Client?           @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  aiDeliveryProject   AiDeliveryProject? @relation(fields: [aiDeliveryProjectId], references: [id], onDelete: SetNull)
+  replacedBy          AiKnowledgeItem?  @relation("AiKnowledgeItemReplacement", fields: [replacedById], references: [id], onDelete: SetNull)
+  replaces            AiKnowledgeItem[] @relation("AiKnowledgeItemReplacement")
+  createdByUser       User?             @relation("AiKnowledgeItemCreatedByUser", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  reviewedByUser      User?             @relation("AiKnowledgeItemReviewedByUser", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
+  approvedByUser      User?             @relation("AiKnowledgeItemApprovedByUser", fields: [approvedByUserId], references: [id], onDelete: SetNull)
+  versions            AiKnowledgeItemVersion[]
+
+  @@index([tenantId])
+  @@index([tenantId, clientId])
+  @@index([tenantId, aiDeliveryProjectId])
+  @@index([tenantId, scope, status])
+  @@index([tenantId, type, status])
+  @@index([tenantId, allowedForPrompt])
+  @@index([tenantId, status])
+}
+
+model AiKnowledgeItemVersion {
+  id               String            @id @default(uuid())
+  knowledgeItemId  String
+  version          Int
+  title            String
+  summary          String?
+  body             String?
+  status           AiKnowledgeStatus
+  allowedForPrompt Boolean
+  clientVisible    Boolean
+  expiresAt        DateTime?
+  changeReason     String?
+  createdByUserId  String?
+  createdAt        DateTime          @default(now())
+
+  knowledgeItem    AiKnowledgeItem   @relation(fields: [knowledgeItemId], references: [id], onDelete: Cascade)
+  createdByUser    User?             @relation("AiKnowledgeItemVersionCreatedByUser", fields: [createdByUserId], references: [id], onDelete: SetNull)
+
+  @@index([knowledgeItemId])
+  @@index([knowledgeItemId, version])
+}
+
+model AiContextSnapshot {
+  id                  String                  @id @default(uuid())
+  tenantId            String
+  clientId            String?
+  aiDeliveryProjectId String?
+  workflowRunId       String?
+  purpose             String
+  status              AiContextSnapshotStatus @default(PREVIEW)
+  contextHash         String
+  contextPreview      String
+  selectedSourcesJson Json
+  warningsJson        Json
+  missingContextJson  Json
+  tokenEstimate       Int
+  budgetJson          Json?
+  createdByUserId     String?
+  createdAt           DateTime                @default(now())
+
+  tenant              Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  aiDeliveryProject   AiDeliveryProject?      @relation(fields: [aiDeliveryProjectId], references: [id], onDelete: SetNull)
+  workflowRun         AiDeliveryWorkflowRun?  @relation(fields: [workflowRunId], references: [id], onDelete: SetNull)
+  createdByUser       User?                   @relation("AiContextSnapshotCreatedByUser", fields: [createdByUserId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@index([tenantId, clientId])
+  @@index([tenantId, aiDeliveryProjectId])
+  @@index([tenantId, workflowRunId])
+  @@index([tenantId, status])
+  @@index([tenantId, createdAt])
 }
