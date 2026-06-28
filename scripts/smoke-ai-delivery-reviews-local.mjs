@@ -8,7 +8,7 @@ const defaultLocalApiBaseUrl = "http://127.0.0.1:4000/api/v1";
 const defaultLocalWebUrl = "http://localhost:5173/#/ai-delivery";
 const apiBaseUrl = process.env.AI_DELIVERY_REVIEW_SMOKE_API_BASE_URL ?? defaultLocalApiBaseUrl;
 const webUrl = process.env.AI_DELIVERY_REVIEW_SMOKE_WEB_URL ?? defaultLocalWebUrl;
-const adminEmail = process.env.AUTH_SEED_TEST_EMAIL;
+const adminEmail = process.env.AUTH_SEED_TEST_EMAIL ?? "admin@dca.local";
 const adminPassword = process.env.AUTH_SEED_TEST_PASSWORD;
 const allowedLocalHosts = new Set(["127.0.0.1", "localhost"]);
 const smokeProjectMarker = "[SMOKE][AI_DELIVERY_REVIEWS]";
@@ -1949,7 +1949,6 @@ async function runAiDeliveryBrowserRegression(token, mainProject) {
 async function main() {
   requireLocalUrl("AI_DELIVERY_REVIEW_SMOKE_API_BASE_URL", apiBaseUrl, "/api/v1");
   requireLocalUrl("AI_DELIVERY_REVIEW_SMOKE_WEB_URL", webUrl);
-  requireEnv("AUTH_SEED_TEST_EMAIL", adminEmail);
   requireEnv("AUTH_SEED_TEST_PASSWORD", adminPassword);
   requireExactSmokeProjectMarker();
 

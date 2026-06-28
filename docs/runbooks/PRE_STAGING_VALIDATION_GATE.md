@@ -40,9 +40,11 @@ npm.cmd run smoke:pre-staging:local
 
 Runs `validate` then the approved local smoke suite (Puriva MVP Blocks 7–30, Post-MVP Blocks 31–53, architecture blocks 4–6, legacy sunset).
 
-If `validate` fails with Prisma `EPERM` on Windows, stop the local API process and rerun.
+If `validate` fails with Prisma `EPERM` on Windows, run validate **before** starting dev API/Web, or stop the local API/`node.exe` process and rerun. See [`.github/instructions/validation.instructions.md`](../../.github/instructions/validation.instructions.md).
 
-If smoke fails with HTTP **429** on login, restart the API and rerun (or use `smoke:pre-staging:local`, which restarts API before heavy smokes).
+If smoke fails with HTTP **429**, restart the API and rerun (or use `smoke:pre-staging:local`, which restarts API before heavy smokes). Long smoke chains share a 300 req / 15 min in-memory limit per IP.
+
+Focused E2E client delivery proof order: [`docs/runbooks/E2E_CLIENT_DELIVERY_SMOKE.md`](./E2E_CLIENT_DELIVERY_SMOKE.md).
 
 ---
 

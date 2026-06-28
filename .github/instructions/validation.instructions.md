@@ -11,6 +11,8 @@ Fix any trailing-whitespace or mixed-EOL issues before proceeding.
 
 ## Step 2 - Full validate
 
+Run validate **before** starting dev API/Web, or **after** stopping local `node.exe` processes that hold the Prisma query engine DLL.
+
 ```powershell
 cd C:\dcaosv1
 npm.cmd run validate
@@ -21,13 +23,15 @@ npm.cmd run validate
 
 ### Known Windows / Prisma EPERM exception
 
-If `prisma generate` fails with an EPERM file-lock error:
+If `prisma generate` fails with an EPERM file-lock error (common when `dev:api` or other Node processes are running):
 
 1. List relevant `node.exe` process IDs: `Get-Process -Name node | Select-Object Id, StartTime`
 2. Stop only explicit process IDs: `Stop-Process -Id <PID1>, <PID2> -Force`
 3. **Do not use `Stop-Process -Name node`** - this can kill unrelated processes
 4. Retry validation: `npm.cmd run validate`
 5. Retry once only. If validate still fails after one retry, stop and report.
+
+Prefer running validate before starting `npm.cmd run dev:api` / `dev:web` to avoid this lock.
 
 ## Step 3 - Focused smoke (only after validate passes)
 
@@ -73,10 +77,15 @@ Use PowerShell commands only. Do not use bash, Unix pipes, or Unix redirects.
 
 ## Local admin auth for smoke
 
-- Local smoke and auth commands may use `$env:AUTH_SEED_TEST_PASSWORD` for the local admin account (`admin@dca.local`).
+- **Required:** `$env:AUTH_SEED_TEST_PASSWORD` for the local admin account.
+- **Optional:** `$env:AUTH_SEED_TEST_EMAIL` — smoke scripts default to `admin@dca.local` when unset (including `scripts/smoke-ai-delivery-reviews-local.mjs`).
 - Do not ask the human for the local admin password if `$env:AUTH_SEED_TEST_PASSWORD` already exists in the session.
 - Do not print the value of `$env:AUTH_SEED_TEST_PASSWORD`.
-- If the variable is missing, stop and ask the human to set it as a temporary local environment variable.
+- If the password variable is missing, stop and ask the human to set it as a temporary local environment variable.
+
+## Long smoke chains and HTTP 429
+
+Running many local smokes back-to-back can hit the in-memory API rate limit (HTTP **429**). Restart the local API or space runs if 429 appears. See [`docs/runbooks/E2E_CLIENT_DELIVERY_SMOKE.md`](../../docs/runbooks/E2E_CLIENT_DELIVERY_SMOKE.md) for the focused E2E proof order.
 
 ## Rules summary
 
