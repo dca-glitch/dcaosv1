@@ -6,7 +6,7 @@ import type {
   AiOperationsRunsResponse,
   AiWorkflowContextUsageSummary
 } from "@dca-os-v1/shared";
-import { formatAiOperationsWorkflowKindLabel } from "@dca-os-v1/shared";
+import { formatAiOperationsWorkflowKindLabel, formatAiWorkflowTokenEstimate } from "@dca-os-v1/shared";
 import { EmptyState } from "../../components/EmptyState";
 import { ErrorState } from "../../components/ErrorState";
 import { LoadingState } from "../../components/LoadingState";
@@ -167,9 +167,9 @@ function RunDetailModal({
               {run.workflowKind === "ai_delivery_workflow_run" ? (
                 <>
                   <div><dt>Result version</dt><dd>{run.resultVersion ?? "Not recorded"}</dd></div>
-                  <div><dt>Input tokens (est.)</dt><dd>{run.approximateInputTokens ?? "Not recorded"}</dd></div>
-                  <div><dt>Max output tokens</dt><dd>{run.maxOutputTokens ?? "Not recorded"}</dd></div>
+                  <div><dt>Input tokens (est.)</dt><dd>{formatAiWorkflowTokenEstimate(run.approximateInputTokens, run.maxOutputTokens)}</dd></div>
                   <div><dt>Budget policy</dt><dd>{run.budgetPolicy ?? "Not recorded"}</dd></div>
+                  <div><dt>Cost note</dt><dd className="muted-copy">Estimates from execution metadata — not billing records.</dd></div>
                 </>
               ) : null}
               {run.workflowKind === "market_intelligence_research_run" ? (
@@ -456,7 +456,7 @@ export function AiOperationsPage() {
                     <th>Gateway</th>
                     <th>Model</th>
                     <th>Context</th>
-                    <th>Tokens</th>
+                    <th>Tokens (est.)</th>
                     <th>Executed</th>
                     <th />
                   </tr>
@@ -476,10 +476,7 @@ export function AiOperationsPage() {
                       <td>{formatLabel(run.gateway)}</td>
                       <td>{run.model ?? "—"}</td>
                       <td>{contextStatusBadge(run.contextStatus)}</td>
-                      <td>
-                        {run.approximateInputTokens ?? "—"}
-                        {run.maxOutputTokens ? ` / ${run.maxOutputTokens}` : ""}
-                      </td>
+                      <td>{formatAiWorkflowTokenEstimate(run.approximateInputTokens, run.maxOutputTokens)}</td>
                       <td>{formatTimestamp(run.executedAt)}</td>
                       <td>
                         <button className="secondary-action" onClick={() => void openRunDetail(run.id)} type="button">
