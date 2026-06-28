@@ -15,6 +15,7 @@
     "dev:web": "npm run -w @dca-os-v1/web dev",
     "dev:api": "npm run -w @dca-os-v1/api dev",
     "restore:local-admin": "tsx scripts/restore-local-admin.mjs",
+    "bootstrap:staging-admin": "node scripts/bootstrap-staging-admin.mjs",
     "smoke:local": "powershell -ExecutionPolicy Bypass -File scripts/smoke-local.ps1",
     "smoke:browser": "powershell -ExecutionPolicy Bypass -File scripts/smoke-browser.ps1",
     "smoke:client-domain:browser": "node scripts/smoke-client-domain-browser-local.mjs",

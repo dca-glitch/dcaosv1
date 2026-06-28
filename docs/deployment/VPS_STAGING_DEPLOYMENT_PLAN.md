@@ -113,6 +113,7 @@ Expected deployment-side values to document outside Git:
 
 Smoke credentials are local/staging-only and must never be committed:
 
+- `DCA_BOOTSTRAP_DATABASE_TARGET`
 - `AUTH_SEED_TEST_EMAIL`
 - `AUTH_SEED_TEST_PASSWORD`
 - `AUTH_SEED_TESTER_EMAIL`
@@ -171,6 +172,35 @@ docker compose up -d dcaosv1-postgres dcaosv1-api
 ```
 
 The API container starts compiled JavaScript through `npm run -w @dca-os-v1/api start`. Do not use `npm run -w @dca-os-v1/api dev` for staging runtime; it is TypeScript/`tsx` based and suitable for local development only.
+
+### Explicit staging admin bootstrap
+
+After the staging database exists and approved Prisma migrations have been applied, restore the staging admin/bootstrap rows with the production-image-safe plain Node command below. This command is operator-triggered only; it is not run automatically on container start.
+
+```bash
+export DCA_BOOTSTRAP_DATABASE_TARGET="staging"
+export AUTH_SEED_TEST_EMAIL="<staging-admin-email>"
+export AUTH_SEED_TEST_PASSWORD="<staging-admin-password>"
+npm run bootstrap:staging-admin
+```
+
+For a non-mutating readiness check after the same staging target guard is set:
+
+```bash
+export DCA_BOOTSTRAP_DATABASE_TARGET="staging"
+npm run bootstrap:staging-admin -- --check
+```
+
+The bootstrap command:
+
+- uses only production/runtime-safe dependencies (`node:crypto` and `@prisma/client`);
+- refuses to run unless `DCA_BOOTSTRAP_DATABASE_TARGET=staging`;
+- validates `DATABASE_URL` before check/write mode without printing it; the DB host must match the approved local/staging compose allowlist and the database name must be `dcaosv1_staging`;
+- refuses production-like DB targets, including DB hosts containing `system.digitalcubeagency.net` or `staging.digitalcubeagency.net`, and database names containing `production`, `prod`, or `live`;
+- requires `AUTH_SEED_TEST_PASSWORD` for write mode;
+- uses `AUTH_SEED_TEST_EMAIL` or defaults to `admin@dca.local`;
+- idempotently upserts the `local-dca` tenant, active admin user, active membership, active owner role, membership role, module definitions, and tenant modules for `core`, `ai-delivery`, `market-intelligence`, `finance-lite`, and `user-settings`;
+- prints summary status/counts only and never prints passwords, password hashes, tokens, cookies, auth headers, or the full `DATABASE_URL`.
 
 ## Dry-Run Command Plan
 

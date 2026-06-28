@@ -41,6 +41,7 @@ COPY --from=build /app/node_modules/@prisma/client node_modules/@prisma/client
 COPY --from=build /app/apps/api/dist apps/api/dist
 COPY --from=build /app/apps/web/dist apps/web/dist
 COPY --from=build /app/packages/data/prisma packages/data/prisma
+COPY --from=build /app/scripts/bootstrap-staging-admin.mjs scripts/bootstrap-staging-admin.mjs
 
 EXPOSE 4000
 
