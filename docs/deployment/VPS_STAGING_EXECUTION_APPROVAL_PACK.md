@@ -261,11 +261,12 @@ The owner may use this exact shape for the future execution gate:
 
 ```text
 I approve controlled VPS staging execution for DCA OS v1 commit <commit>.
-Approved host: system.digitalcubeagency.net.
-Approved runtime: Docker Compose using dcaosv1-api and dcaosv1-postgres on dca_net.
+Approved staging host: staging.digitalcubeagency.net.
+Production host system.digitalcubeagency.net must remain unchanged by this execution.
+Approved runtime: Docker Compose using staging dcaosv1-api and dcaosv1-postgres on dca_net (separate from production stack).
 Approved database target: staging-only PostgreSQL, no production/client data.
 Approved migration scope: Prisma migrations only, no db push.
-Approved smoke target: https://system.digitalcubeagency.net/api/v1.
+Approved smoke target: https://staging.digitalcubeagency.net/api/v1.
 Client access remains blocked.
 Secrets must not be printed.
 Stop if any command targets production, requests destructive reset, or smoke fails.

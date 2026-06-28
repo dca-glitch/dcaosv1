@@ -8,6 +8,8 @@ Related:
 
 - [`docs/runbooks/E2E_CLIENT_DELIVERY_SMOKE.md`](./E2E_CLIENT_DELIVERY_SMOKE.md) — admin-operated delivery chain
 - [`docs/runbooks/PRE_STAGING_VALIDATION_GATE.md`](./PRE_STAGING_VALIDATION_GATE.md) — broader local closeout
+- [`docs/runbooks/STAGING_LOCAL_EXECUTION_PACK.md`](./STAGING_LOCAL_EXECUTION_PACK.md) — pre-G4 checklists
+- [`docs/runbooks/LOCAL_SMOKE_MATRIX.md`](./LOCAL_SMOKE_MATRIX.md) — smoke matrix
 - [`.github/instructions/validation.instructions.md`](../../.github/instructions/validation.instructions.md) — validate order and Windows caveats
 
 ---

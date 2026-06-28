@@ -55,6 +55,6 @@
 
 ## Next safe handoff
 
-Next module: **AI Market Intelligence discovery-only**.
+Local client delivery readiness is closed for MVP scope. Staging execution remains a separate G4 owner gate — see [`docs/runbooks/STAGING_LOCAL_EXECUTION_PACK.md`](../runbooks/STAGING_LOCAL_EXECUTION_PACK.md).
 
-Reuse the same client-safe archive/export pattern if that module later exposes client-visible outputs. Keep final or approved-only output boundaries, hide internal workflow data, and document any new proof commands before implementation.
+For new client-visible outputs in future modules, reuse the same final/approved-only archive pattern, hide internal workflow data, and document proof commands before implementation.
