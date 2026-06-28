@@ -1,5 +1,6 @@
 import type { DashboardCardContract } from "@dca-os-v1/shared";
 import { DashboardCard } from "../components/DashboardCard";
+import { PageHeader } from "../components/ui";
 
 type DashboardPageProps = {
   cards: DashboardCardContract[];
@@ -7,14 +8,14 @@ type DashboardPageProps = {
 
 export function DashboardPage({ cards }: DashboardPageProps) {
   return (
-    <section className="page-section" id="dashboard">
-      <header className="section-header">
-        <div>
-          <p>Workspace</p>
-          <h1>DCA OS Foundation</h1>
-        </div>
-        <span>Initial skeleton</span>
-      </header>
+    <section className="view-section" id="dashboard">
+      <PageHeader
+        description="Legacy module shell cards. The live dashboard uses the operations command view in App."
+        eyebrow="Workspace"
+        meta={<span className="muted-text">Module contract preview</span>}
+        title="DCA OS Foundation"
+        titleId="dashboard-foundation-title"
+      />
       <div className="dashboard-grid">
         {cards.map((card) => (
           <DashboardCard key={card.id} card={card} />

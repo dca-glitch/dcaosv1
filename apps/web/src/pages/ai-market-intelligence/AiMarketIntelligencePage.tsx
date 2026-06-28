@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type CSSProperties, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import type {
   MarketIntelligenceHandoffSummary,
   MarketIntelligenceInsightSummary,
@@ -147,7 +147,7 @@ function renderResultData(resultData: MarketIntelligenceInsightSummary["resultDa
       <div className="dense-field" key={key}>
         <span>{formatResultFieldLabel(key)}</span>
         {Array.isArray(value) ? (
-          <ul className="muted-text" style={{ margin: "0.25rem 0 0", paddingLeft: "1.25rem" }}>
+          <ul className="muted-text compact-nested-list">
             {value.map((entry, index) => (
               <li key={`${key}-${index}`}>{String(entry)}</li>
             ))}
@@ -157,12 +157,6 @@ function renderResultData(resultData: MarketIntelligenceInsightSummary["resultDa
         )}
       </div>
     ));
-}
-
-function projectCardStyle(selected: boolean): CSSProperties | undefined {
-  return selected
-    ? { borderColor: "rgba(82, 224, 255, 0.32)", background: "rgba(82, 224, 255, 0.06)" }
-    : undefined;
 }
 
 export function AiMarketIntelligencePage({ clients }: AiMarketIntelligencePageProps) {
@@ -504,7 +498,7 @@ export function AiMarketIntelligencePage({ clients }: AiMarketIntelligencePagePr
             <div className="dense-list">
               {filteredProjects.map((project) => (
                 <article
-                  className="entity-card dense-record"
+                  className={`entity-card dense-record${selectedProjectId === project.id ? " portal-record-selected" : ""}`}
                   key={project.id}
                   onClick={() => setSelectedProjectId(project.id)}
                   onKeyDown={(event) => {
@@ -514,7 +508,6 @@ export function AiMarketIntelligencePage({ clients }: AiMarketIntelligencePagePr
                     }
                   }}
                   role="button"
-                  style={projectCardStyle(selectedProjectId === project.id)}
                   tabIndex={0}
                 >
                   <div className="dense-record-main">
@@ -590,7 +583,7 @@ export function AiMarketIntelligencePage({ clients }: AiMarketIntelligencePagePr
                   })}
                 </div>
                 {(selectedProject.keywords || selectedProject.competitors) && (
-                  <div className="dense-row-note" style={{ marginTop: "12px" }}>
+                  <div className="dense-row-note mi-row-note-spaced">
                     {selectedProject.keywords ? <>Keywords: {selectedProject.keywords}. </> : null}
                     {selectedProject.competitors ? <>Competitors: {selectedProject.competitors}.</> : null}
                   </div>
@@ -608,7 +601,7 @@ export function AiMarketIntelligencePage({ clients }: AiMarketIntelligencePagePr
                 tone="compact"
               >
                 {sources.length === 0 ? (
-                  <EmptyState message="Add at least one source before running research." title="No sources yet" />
+                  <EmptyState message="Add at least one source before running research." title="No sources yet" variant="inline" />
                 ) : (
                   <div className="dense-list">
                     {sources.map((source) => (
@@ -644,7 +637,7 @@ export function AiMarketIntelligencePage({ clients }: AiMarketIntelligencePagePr
                 tone="compact"
               >
                 {runs.length === 0 ? (
-                  <EmptyState message="Create a run, then execute it to generate structured insight output." title="No runs yet" />
+                  <EmptyState message="Create a run, then execute it to generate structured insight output." title="No runs yet" variant="inline" />
                 ) : (
                   <div className="dense-list">
                     {runs.map((run) => (
@@ -694,7 +687,7 @@ export function AiMarketIntelligencePage({ clients }: AiMarketIntelligencePagePr
                 tone="compact"
               >
                 {insights.length === 0 ? (
-                  <EmptyState message="Execute a research run or add an insight manually." title="No insights yet" />
+                  <EmptyState message="Execute a research run or add an insight manually." title="No insights yet" variant="inline" />
                 ) : (
                   <div className="dense-list">
                     {insights.map((insight) => (
@@ -752,7 +745,7 @@ export function AiMarketIntelligencePage({ clients }: AiMarketIntelligencePagePr
                 tone="compact"
               >
                 {approvedInsights.length > 0 ? (
-                  <div className="dense-list" style={{ marginBottom: "14px" }}>
+                  <div className="dense-list mi-handoff-list-spaced">
                     {approvedInsights.map((insight) => (
                       <article className="entity-card dense-record" key={insight.id}>
                         <div className="dense-record-main">
@@ -777,11 +770,11 @@ export function AiMarketIntelligencePage({ clients }: AiMarketIntelligencePagePr
                     ))}
                   </div>
                 ) : (
-                  <EmptyState message="Approve an insight above before preparing a handoff." title="No approved insights" />
+                  <EmptyState message="Approve an insight above before preparing a handoff." title="No approved insights" variant="inline" />
                 )}
 
                 {handoffs.length === 0 ? (
-                  <EmptyState message="Prepared handoffs appear here with DRAFT → READY → APPLIED lifecycle." title="No handoffs yet" />
+                  <EmptyState message="Prepared handoffs appear here with DRAFT → READY → APPLIED lifecycle." title="No handoffs yet" variant="inline" />
                 ) : (
                   <div className="dense-list">
                     {handoffs.map((handoff) => (
@@ -805,7 +798,7 @@ export function AiMarketIntelligencePage({ clients }: AiMarketIntelligencePagePr
                             {handoff.audienceSignals?.length ? (
                               <div className="dense-field">
                                 <span>Audience signals</span>
-                                <ul className="muted-text" style={{ margin: "0.25rem 0 0", paddingLeft: "1.25rem" }}>
+                                <ul className="muted-text compact-nested-list">
                                   {handoff.audienceSignals.map((signal, index) => (
                                     <li key={`${handoff.id}-audience-${index}`}>{signal}</li>
                                   ))}
@@ -815,7 +808,7 @@ export function AiMarketIntelligencePage({ clients }: AiMarketIntelligencePagePr
                             {handoff.opportunities?.length ? (
                               <div className="dense-field">
                                 <span>Opportunities</span>
-                                <ul className="muted-text" style={{ margin: "0.25rem 0 0", paddingLeft: "1.25rem" }}>
+                                <ul className="muted-text compact-nested-list">
                                   {handoff.opportunities.map((entry, index) => (
                                     <li key={`${handoff.id}-opportunity-${index}`}>{entry}</li>
                                   ))}
@@ -825,7 +818,7 @@ export function AiMarketIntelligencePage({ clients }: AiMarketIntelligencePagePr
                             {handoff.risks?.length ? (
                               <div className="dense-field">
                                 <span>Risks</span>
-                                <ul className="muted-text" style={{ margin: "0.25rem 0 0", paddingLeft: "1.25rem" }}>
+                                <ul className="muted-text compact-nested-list">
                                   {handoff.risks.map((entry, index) => (
                                     <li key={`${handoff.id}-risk-${index}`}>{entry}</li>
                                   ))}
@@ -835,7 +828,7 @@ export function AiMarketIntelligencePage({ clients }: AiMarketIntelligencePagePr
                             {handoff.recommendedActions?.length ? (
                               <div className="dense-field">
                                 <span>Recommended actions</span>
-                                <ul className="muted-text" style={{ margin: "0.25rem 0 0", paddingLeft: "1.25rem" }}>
+                                <ul className="muted-text compact-nested-list">
                                   {handoff.recommendedActions.map((entry, index) => (
                                     <li key={`${handoff.id}-action-${index}`}>{entry}</li>
                                   ))}

@@ -1235,13 +1235,6 @@ function TeamView({
           metricKey="team-roles"
           value={roleLabels.length ? String(roleLabels.length) : "None"}
         />
-        <MetricCard
-          accent={canReadUsers ? "success" : "warning"}
-          helper="users:read or admin role required"
-          label="Directory access"
-          metricKey="team-access"
-          value={canReadUsers ? "Readable" : "Limited"}
-        />
       </div>
       {!canReadUsers ? (
         <StatusNotice tone="info" message="Member visibility requires tenant user read access." />
@@ -1320,13 +1313,6 @@ function SettingsView({
           label="Tenant"
           metricKey="settings-tenant"
           value={tenantSettings?.tenant.name ?? "Unavailable"}
-        />
-        <MetricCard
-          accent={canReadSettings ? "success" : "warning"}
-          helper={`${authContext?.effectivePermissions.length ?? 0} effective permissions`}
-          label="Access"
-          metricKey="settings-access"
-          value={canReadSettings ? "Readable" : "Limited"}
         />
       </div>
       {!canReadSettings ? (

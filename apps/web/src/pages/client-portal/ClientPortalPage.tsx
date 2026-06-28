@@ -991,7 +991,7 @@ export function ClientPortalPage() {
               title="Project overview"
               tone="compact"
             >
-              <EmptyState message="Select a project on the left to open its archive." title="No project selected" />
+              <EmptyState message="Select a project on the left to open its archive." title="No project selected" variant="inline" />
             </SectionPanel>
           ) : selectedProjectLoading ? (
             <LoadingState label="Loading project archive" />
@@ -1047,7 +1047,7 @@ export function ClientPortalPage() {
                 ) : deliverySummaryError ? (
                   <ErrorState message={deliverySummaryError} title="Delivery summary unavailable" />
                 ) : deliverySummary ? (
-                  <div style={{ display: "grid", gap: "12px" }}>
+                  <div className="portal-detail-stack">
                     <article className="entity-card dense-record">
                       <div className="dense-record-main">
                         <div className="dense-title">
@@ -1139,7 +1139,7 @@ export function ClientPortalPage() {
                     </article>
                   </div>
                 ) : (
-                  <EmptyState message="Delivery summary is not available for this project yet." title="No delivery summary" />
+                  <EmptyState message="Delivery summary is not available for this project yet." title="No delivery summary" variant="inline" />
                 )}
               </SectionPanel>
 
@@ -1156,9 +1156,10 @@ export function ClientPortalPage() {
                   <EmptyState
                     message="When products are added to your account, they will appear here for inquiry."
                     title="No products yet"
+                    variant="inline"
                   />
                 ) : (
-                  <div style={{ display: "grid", gap: "12px" }}>
+                  <div className="portal-detail-stack">
                     <div className="dense-list">
                       {catalogProducts.map((product) => (
                         <article className="entity-card dense-record" key={product.id}>
@@ -1258,6 +1259,7 @@ export function ClientPortalPage() {
                   <EmptyState
                     message="Completed deliverables appear here once your team shares them to this archive."
                     title="No deliverables yet"
+                    variant="inline"
                   />
                 ) : (
                   <div className="dense-list">
@@ -1314,9 +1316,10 @@ export function ClientPortalPage() {
                   <EmptyState
                     message="Monthly reports appear here after your team finalizes and shares them."
                     title="No reports yet"
+                    variant="inline"
                   />
                 ) : (
-                  <div style={{ display: "grid", gap: "12px", gridTemplateColumns: "minmax(200px, 240px) minmax(0, 1fr)" }}>
+                  <div className="portal-report-split">
                     <div className="dense-list">
                       {monthlyReports.map((report, index) => (
                         <button
@@ -1341,9 +1344,9 @@ export function ClientPortalPage() {
                       ) : monthlyReportDetailError ? (
                         <ErrorState message={monthlyReportDetailError} title="Monthly report unavailable" />
                       ) : monthlyReportDetail ? (
-                        <div style={{ display: "grid", gap: "14px" }}>
+                        <div className="stack-gap-sm">
                           <article className="entity-card dense-record">
-                            <div className="dense-record-main" style={{ alignItems: "start", gridTemplateColumns: "minmax(0, 1fr)" }}>
+                            <div className="dense-record-main dense-record-main--stack">
                               <div className="dense-title">
                                 <div className="dense-kicker">
                                   <ClientPortalStatusBadge status={monthlyReportDetail.monthlyReport.status} />
@@ -1437,6 +1440,7 @@ export function ClientPortalPage() {
                               <EmptyState
                                 message="No performance snapshot is attached to this report yet."
                                 title="No performance data"
+                                variant="inline"
                               />
                             </SectionPanel>
                           ) : null}
@@ -1478,15 +1482,15 @@ export function ClientPortalPage() {
                             {monthlyReportDetail.monthlyReport.recommendationsText ? (
                               <div className="dense-row-note">{monthlyReportDetail.monthlyReport.recommendationsText}</div>
                             ) : (
-                              <EmptyState message="Your team has not added recommendations to this report yet." title="No recommendations yet" />
+                              <EmptyState message="Your team has not added recommendations to this report yet." title="No recommendations yet" variant="inline" />
                             )}
                           </SectionPanel>
                         </div>
                       ) : (
-                        <EmptyState message="Select a report from the list to open the final client view." title="No report selected" />
+                        <EmptyState message="Select a report from the list to open the final client view." title="No report selected" variant="inline" />
                       )
                     ) : (
-                      <EmptyState message="Select a report from the list to view details." title="No report selected" />
+                      <EmptyState message="Select a report from the list to view details." title="No report selected" variant="inline" />
                     )}
                   </div>
                 )}

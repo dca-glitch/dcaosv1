@@ -769,11 +769,12 @@ export function MonthlyReportPanel({
         className="monthly-report-summary-panel"
         description="Read-only admin overview from project records. Only APPROVED metric snapshots become client-visible in FINAL reports. Live GA/GSC sync remains deferred."
         title="Computed Monthly Summary"
+        tone="compact"
       >
         {summaryLoading ? (
           <div className="state-panel">Loading computed summary...</div>
         ) : summaryError ? (
-          <div className="state-panel" role="alert" style={{ borderLeft: "4px solid var(--color-error)", paddingLeft: "1rem" }}>
+          <div className="state-panel state-panel-accent-error" role="alert">
             <strong>Summary unavailable:</strong> {summaryError}
           </div>
         ) : summary ? (
@@ -816,7 +817,7 @@ export function MonthlyReportPanel({
               <div className="monthly-report-deliverable-list">
                 <h4>Final deliverables</h4>
                 {summary.deliverables.map((item) => (
-                  <article className="entity-card" key={item.id} style={{ marginBottom: "0.5rem" }}>
+                  <article className="entity-card" key={item.id}>
                     <div className="entity-card-header">
                       <div>
                         <StatusBadge status={item.status} />
@@ -840,28 +841,28 @@ export function MonthlyReportPanel({
                 ))}
               </div>
             ) : (
-              <div className="state-panel" style={{ marginTop: "0.75rem" }}>No final deliverables yet for this project.</div>
+              <p className="inline-empty muted-text">No final deliverables yet for this project.</p>
             )}
 
             {(summary.contentPlanItems ?? []).length > 0 ? (
-              <div style={{ marginTop: "1rem" }}>
-                <h4>Content plan items</h4>
-                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.875rem" }}>
+              <div className="table-wrap finance-table-wrap">
+                <h4 className="monthly-report-plan-heading">Content plan items</h4>
+                <table className="finance-table">
                   <thead>
                     <tr>
-                      <th style={{ textAlign: "left", paddingBottom: "0.5rem" }}>Title</th>
-                      <th style={{ textAlign: "left", paddingBottom: "0.5rem" }}>Type</th>
-                      <th style={{ textAlign: "left", paddingBottom: "0.5rem" }}>Keyword</th>
-                      <th style={{ textAlign: "left", paddingBottom: "0.5rem" }}>Status</th>
+                      <th>Title</th>
+                      <th>Type</th>
+                      <th>Keyword</th>
+                      <th>Status</th>
                     </tr>
                   </thead>
                   <tbody>
                     {(summary.contentPlanItems ?? []).map((item) => (
                       <tr key={item.id}>
-                        <td style={{ paddingBottom: "0.25rem" }}>{item.title}</td>
-                        <td style={{ paddingBottom: "0.25rem" }}>{item.contentType ?? "—"}</td>
-                        <td style={{ paddingBottom: "0.25rem" }}>{item.targetKeyword ?? "—"}</td>
-                        <td style={{ paddingBottom: "0.25rem" }}>{item.approvalStatus ?? "—"}</td>
+                        <td>{item.title}</td>
+                        <td>{item.contentType ?? "—"}</td>
+                        <td>{item.targetKeyword ?? "—"}</td>
+                        <td>{item.approvalStatus ?? "—"}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -901,12 +902,12 @@ export function MonthlyReportPanel({
         ) : report ? (
           <>
             {reportMessage ? (
-              <div className="state-panel" style={{ marginBottom: "1rem", borderLeft: "4px solid var(--color-success)", paddingLeft: "1rem" }}>
+              <div className="state-panel state-panel-accent-success field-panel-spaced">
                 {reportMessage}
               </div>
             ) : null}
 
-            <div className="entity-card" style={{ marginBottom: "1rem" }}>
+            <div className="entity-card">
               <div className="entity-card-header">
                 <div>
                   <StatusBadge status={reportShellCopy?.status ?? formatReportStatus(report.status)} />
@@ -1066,12 +1067,12 @@ export function MonthlyReportPanel({
                       <h5>Generate PDF</h5>
                       <p className="muted-text">Admin-triggered PDF generation writes into the private monthly report document slot. No client/public link is exposed here, and the VPS/production R2 switch remains deferred.</p>
                       {pdfMessage ? (
-                        <div className="state-panel" style={{ marginBottom: "0.75rem", borderLeft: "4px solid var(--color-success)", paddingLeft: "1rem" }}>
+                        <div className="state-panel state-panel-accent-success field-panel-spaced">
                           {pdfMessage}
                         </div>
                       ) : null}
                       {pdfError ? (
-                        <div className="state-panel" role="alert" style={{ marginBottom: "0.75rem", borderLeft: "4px solid var(--color-error)", paddingLeft: "1rem" }}>
+                        <div className="state-panel state-panel-accent-error field-panel-spaced" role="alert">
                           {pdfError}
                         </div>
                       ) : null}
@@ -1088,12 +1089,12 @@ export function MonthlyReportPanel({
                     </div>
                   ) : null}
                   {documentMessage ? (
-                    <div className="state-panel" style={{ marginBottom: "0.75rem", borderLeft: "4px solid var(--color-success)", paddingLeft: "1rem" }}>
+                    <div className="state-panel state-panel-accent-success field-panel-spaced">
                       {documentMessage}
                     </div>
                   ) : null}
                   {documentError ? (
-                    <div className="state-panel" role="alert" style={{ marginBottom: "0.75rem", borderLeft: "4px solid var(--color-error)", paddingLeft: "1rem" }}>
+                    <div className="state-panel state-panel-accent-error field-panel-spaced" role="alert">
                       {documentError}
                     </div>
                   ) : null}
@@ -1142,12 +1143,12 @@ export function MonthlyReportPanel({
                   ) : (
                     <>
                       {miContextMessage ? (
-                        <div className="state-panel" style={{ marginBottom: "0.75rem", borderLeft: "4px solid var(--color-success)", paddingLeft: "1rem" }}>
+                        <div className="state-panel state-panel-accent-success field-panel-spaced">
                           {miContextMessage}
                         </div>
                       ) : null}
                       {miContextError ? (
-                        <div className="state-panel" role="alert" style={{ marginBottom: "0.75rem", borderLeft: "4px solid var(--color-error)", paddingLeft: "1rem" }}>
+                        <div className="state-panel state-panel-accent-error field-panel-spaced" role="alert">
                           {miContextError}
                         </div>
                       ) : null}
@@ -1244,12 +1245,12 @@ export function MonthlyReportPanel({
                 ) : metrics ? (
                   <>
                     {metricsMessage ? (
-                      <div className="state-panel" style={{ marginBottom: "0.75rem", borderLeft: "4px solid var(--color-success)", paddingLeft: "1rem" }}>
+                      <div className="state-panel state-panel-accent-success field-panel-spaced">
                         {metricsMessage}
                       </div>
                     ) : null}
                     {metricsActionError ? (
-                      <div className="state-panel" role="alert" style={{ marginBottom: "0.75rem", borderLeft: "4px solid var(--color-error)", paddingLeft: "1rem" }}>
+                      <div className="state-panel state-panel-accent-error field-panel-spaced" role="alert">
                         {metricsActionError}
                       </div>
                     ) : null}
@@ -1279,7 +1280,7 @@ export function MonthlyReportPanel({
                       </dl>
                     </div>
 
-                    <div className="summary-grid metric-grid" style={{ marginBottom: "1rem" }}>
+                    <div className="summary-grid metric-grid finance-table-wrap-spaced">
                       <MetricCard
                         accent={metrics.computedTrendSummary.dataStatus === "READY" ? "success" : "warning"}
                         helper={`${metrics.snapshots.length} snapshot${metrics.snapshots.length === 1 ? "" : "s"}`}
@@ -1459,7 +1460,7 @@ export function MonthlyReportPanel({
                           />
                         </label>
                       </div>
-                      <div className="modal-footer" style={{ marginTop: "0.75rem" }}>
+                      <div className="modal-footer modal-footer-spaced">
                         <button className="primary-action" disabled={metricsSaving} onClick={() => void handleImportMetrics()} type="button">
                           {metricsSaving ? "Importing..." : "Import snapshot metrics"}
                         </button>
@@ -1469,7 +1470,7 @@ export function MonthlyReportPanel({
                     {metrics.snapshots.length === 0 ? (
                       <div className="state-panel">No snapshot metrics have been imported yet.</div>
                     ) : (
-                      <div className="table-wrap" aria-label="Monthly metrics snapshots" style={{ marginBottom: "1rem" }}>
+                      <div className="table-wrap finance-table-wrap finance-table-wrap-spaced" aria-label="Monthly metrics snapshots">
                         <table>
                           <thead>
                             <tr>
@@ -1591,7 +1592,7 @@ export function MonthlyReportPanel({
 
         {/* Footer when no report / error / loading */}
         {(reportNotFound && !report) || reportError || reportLoading ? (
-          <div className="modal-footer" style={{ marginTop: "1rem" }}>
+          <div className="modal-footer modal-footer-spaced">
             <button className="secondary-action" onClick={onClose} type="button">
               Close
             </button>
