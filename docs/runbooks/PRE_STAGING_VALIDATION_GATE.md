@@ -46,6 +46,8 @@ If smoke fails with HTTP **429**, restart the API and rerun (or use `smoke:pre-s
 
 Focused E2E client delivery proof order: [`docs/runbooks/E2E_CLIENT_DELIVERY_SMOKE.md`](./E2E_CLIENT_DELIVERY_SMOKE.md).
 
+Combined pre-staging client delivery readiness gate: [`docs/runbooks/PRE_STAGING_CLIENT_DELIVERY_READINESS.md`](./PRE_STAGING_CLIENT_DELIVERY_READINESS.md).
+
 ---
 
 ## Manual sequence (same coverage as orchestrator)

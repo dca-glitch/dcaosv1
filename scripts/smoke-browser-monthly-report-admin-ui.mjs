@@ -43,6 +43,10 @@ function containsForbiddenToken(text, token) {
   return pattern.test(text);
 }
 
+async function waitForReportStatusBadge(modalPanel, label) {
+  await modalPanel.locator(".status-badge", { hasText: label }).first().waitFor({ state: "visible", timeout: 15000 });
+}
+
 async function request(path, options = {}) {
   const headers = { Accept: "application/json" };
 
@@ -296,7 +300,7 @@ async function main() {
       record("create monthly report via UI", true, "existing report loaded");
     }
 
-    await modalPanel.getByText("Draft").first().waitFor({ state: "visible", timeout: 15000 });
+    await waitForReportStatusBadge(modalPanel, "Draft");
     record("DRAFT status visible", true, "Draft badge");
 
     await modalPanel.getByLabel(/^Report title/i).fill(smokeTitle);
@@ -321,20 +325,20 @@ async function main() {
     record("exportUrl persisted in form", (await modalPanel.getByLabel(/^Export \/ handoff URL/i).inputValue()) === smokeExportUrl, smokeExportUrl);
 
     await modalPanel.getByRole("button", { name: "Move to Admin Review" }).click();
-    await modalPanel.getByText("Admin review").first().waitFor({ state: "visible", timeout: 15000 });
+    await waitForReportStatusBadge(modalPanel, "Admin review");
     record("status DRAFT -> ADMIN_REVIEW", true, "Admin review");
 
     await modalPanel.getByRole("button", { name: "Finalize" }).click();
-    await modalPanel.getByText("Final").first().waitFor({ state: "visible", timeout: 15000 });
+    await waitForReportStatusBadge(modalPanel, "Final");
     await modalPanel.getByText("Finalized").first().waitFor({ state: "visible", timeout: 15000 });
     record("status ADMIN_REVIEW -> FINAL", true, "Final + finalizedAt visible");
 
     await modalPanel.getByRole("button", { name: "Archive" }).click();
-    await modalPanel.getByText("Archived").first().waitFor({ state: "visible", timeout: 15000 });
+    await waitForReportStatusBadge(modalPanel, "Archived");
     record("status FINAL -> ARCHIVED", true, "Archived");
 
     await modalPanel.getByRole("button", { name: "Restore" }).click();
-    await modalPanel.getByText("Draft").first().waitFor({ state: "visible", timeout: 15000 });
+    await waitForReportStatusBadge(modalPanel, "Draft");
     record("restore archived report", true, "Restored to Draft");
 
     await modalPanel.getByRole("button", { name: "Close" }).first().click();

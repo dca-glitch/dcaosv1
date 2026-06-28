@@ -1,4 +1,11 @@
 import { chromium } from "@playwright/test";
+import {
+  CLIENT_PORTAL_MONTHLY_REPORTS_HEADING,
+  CLIENT_PORTAL_RECOMMENDATIONS_HEADING,
+  gotoClientPortal,
+  seedClientPortalAuth,
+  selectPortalProject
+} from "./lib/client-portal-browser-smoke-helpers.mjs";
 
 const apiBaseUrl = (process.env.MVP_SMOKE_API_BASE_URL ?? "http://127.0.0.1:4000/api/v1").replace(/\/$/, "");
 const webBaseUrl = (process.env.MVP_SMOKE_WEB_BASE_URL ?? "http://localhost:5173").replace(/\/$/, "");
@@ -268,24 +275,14 @@ async function main() {
   });
 
   try {
-    await page.addInitScript((token) => {
-      window.sessionStorage.setItem("dcaosv1.authToken", token);
-    }, adminToken);
+    await seedClientPortalAuth(page, adminToken);
+    await gotoClientPortal(page, webBaseUrl);
+    record("client portal page loads", true, "archive heading visible");
 
-    await page.goto(`${webBaseUrl}/#/client-portal`, { waitUntil: "domcontentloaded" });
-    await page.getByRole("heading", { name: "Client Portal" }).waitFor({ state: "visible", timeout: 15000 });
-    record("client portal page loads", true, "heading visible");
+    const portalSection = await selectPortalProject(page, fixture.project.name);
 
-    // Select the project with the FINAL report
-    await page.getByText(fixture.project.name, { exact: true }).waitFor({ state: "visible", timeout: 15000 });
-    const portalSection = page.locator('section[aria-labelledby="client-portal-title"]');
-    const projectCard = portalSection.locator("article.entity-card", { hasText: fixture.project.name }).first();
-    const openProjectButton = projectCard.getByRole("button", { name: /^(Open project|View|Open)$/ });
-    await openProjectButton.click();
-
-    // Wait for monthly report final client view section
-    await page.getByRole("heading", { name: "Monthly report — final client view" }).waitFor({ state: "visible", timeout: 15000 });
-    record("monthly report final client view section appears after project select", true, "heading visible");
+    await portalSection.getByRole("heading", { name: CLIENT_PORTAL_MONTHLY_REPORTS_HEADING, exact: true }).waitFor({ state: "visible", timeout: 15000 });
+    record("monthly reports section appears after project select", true, "heading visible");
 
     const portalText = await portalSection.innerText();
     const portalHtml = await portalSection.innerHTML();
@@ -299,9 +296,9 @@ async function main() {
     );
 
     await page.getByRole("button", { name: fixture.finalReportTitle }).click();
-    await page.getByRole("heading", { name: "Recommendations for next month" }).waitFor({ state: "visible", timeout: 15000 });
+    await portalSection.getByRole("heading", { name: CLIENT_PORTAL_RECOMMENDATIONS_HEADING, exact: true }).waitFor({ state: "visible", timeout: 15000 });
     const detailText = await portalSection.innerText();
-    record("monthly report final client view detail loads", true, "recommendations section visible");
+    record("monthly report detail loads", true, "recommendations section visible");
     record(
       "FINAL monthly report recommendations visible in final client view",
       detailText.includes("Smoke proof recommendations."),
