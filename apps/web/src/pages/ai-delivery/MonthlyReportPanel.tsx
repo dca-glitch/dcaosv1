@@ -1041,7 +1041,7 @@ export function MonthlyReportPanel({
                     value={form.recommendationsText}
                     onChange={(event) => setForm((current) => ({ ...current, recommendationsText: event.target.value }))}
                   />
-                  <span className="muted-text">Admin-written recommendations for next month. Visible in the Client Portal final monthly report view when status is FINAL.</span>
+                  <span className="muted-text">Admin-written recommendations for next month. Visible in the Client Portal final monthly report view when status is FINAL. Local deterministic drafts may include metrics/MI context summaries for admin review only.</span>
                 </label>
 
                 <label className="field-span-2">
