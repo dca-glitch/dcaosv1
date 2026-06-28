@@ -37,6 +37,7 @@ import {
   downloadCreditNoteDocumentHandler,
   downloadInvoiceDocumentHandler,
   executeAiDeliveryWorkflowRunHandler,
+  getAiOperationsRunHandler,
   markAiDeliveryArticleImageFinalReadyHandler,
   markAiDeliveryArticleImagePreviewReadyHandler,
   applyAiDeliveryResearchSummaryToBriefHandler,
@@ -77,6 +78,7 @@ import {
   listAiDeliveryResearchSummariesHandler,
   listAiDeliveryResearchSourcesHandler,
   listAiDeliveryWorkflowRunsHandler,
+  listAiOperationsRunsHandler,
   listAiDeliveryContentDraftsHandler,
   requestAiDeliveryContentDraftClientReviewHandler,
   requestAiDeliveryArticleImageChangesHandler,
@@ -266,6 +268,8 @@ export function createCoreRouter() {
   router.post("/ai-delivery/projects/:projectId/workflow-runs", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), createAiDeliveryWorkflowRunHandler);
   router.put("/ai-delivery/projects/:projectId/workflow-runs/:workflowRunId", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), updateAiDeliveryWorkflowRunHandler);
   router.post("/ai-delivery/projects/:projectId/workflow-runs/:workflowRunId/execute", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), executeAiDeliveryWorkflowRunHandler);
+  router.get("/ai-operations/runs", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), listAiOperationsRunsHandler);
+  router.get("/ai-operations/runs/:runId", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), getAiOperationsRunHandler);
   router.get("/ai-delivery/projects/:projectId/research-requests", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), listAiDeliveryResearchRequestsHandler);
   router.post("/ai-delivery/projects/:projectId/research-requests", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), createAiDeliveryResearchRequestHandler);
   router.put("/ai-delivery/projects/:projectId/research-requests/:researchRequestId", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), updateAiDeliveryResearchRequestHandler);

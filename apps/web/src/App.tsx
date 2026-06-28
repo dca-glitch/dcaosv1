@@ -64,6 +64,7 @@ import type {
   AiDeliveryMonthlyReportMiContext
 } from "./pages/ai-delivery/MonthlyReportPanel";
 import { AiMarketIntelligencePage } from "./pages/ai-market-intelligence/AiMarketIntelligencePage";
+import { AiOperationsPage } from "./pages/ai-operations/AiOperationsPage";
 import { TasksPage, type TaskFormValues, type TaskSummary } from "./pages/tasks/TasksPage";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "/api/v1";
@@ -429,6 +430,7 @@ type ViewKey =
   | "clients"
   | "projects"
   | "ai-delivery"
+  | "ai-operations"
   | "ai-market-intelligence"
   | "content-plan-review"
   | "content-draft-review"
@@ -484,6 +486,7 @@ const navigationItems: Array<{ view: ViewKey; label: string; section: string }> 
   { view: "clients", label: "Clients", section: "core" },
   { view: "projects", label: "Projects", section: "core" },
   { view: "ai-delivery", label: "AI Delivery", section: "core" },
+  { view: "ai-operations", label: "AI Operations", section: "core" },
   { view: "ai-market-intelligence", label: "Market Intelligence", section: "core" },
   { view: "tasks", label: "Tasks", section: "core" },
   { view: "invoices", label: "Invoices", section: "core" },
@@ -4133,6 +4136,9 @@ export function App() {
       ) : null}
       {!loading && activeView === "ai-market-intelligence" ? (
         <AiMarketIntelligencePage clients={clients?.clients ?? []} />
+      ) : null}
+      {!loading && activeView === "ai-operations" ? (
+        <AiOperationsPage />
       ) : null}
       {!loading && activeView === "content-plan-review" ? <ClientContentPlanReviewView /> : null}
       {!loading && activeView === "content-draft-review" ? <ClientContentDraftReviewView /> : null}

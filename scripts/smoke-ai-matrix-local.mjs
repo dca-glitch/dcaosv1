@@ -18,6 +18,7 @@ const steps = [
   { name: "Monthly report local", script: "smoke:monthly-report:local" },
   { name: "Monthly report MI context", script: "smoke:monthly-report:mi-context" },
   { name: "AI delivery reviews", script: "smoke:ai-delivery-reviews" },
+  { name: "AI operations local", script: "smoke:ai-operations:local" },
   { name: "Google Drive export contract", script: "smoke:google-drive-export" },
   { name: "OpenRouter guarded local", script: "smoke:openrouter-guarded:local", skip: expectOpenRouterLive ? false : false }
 ];
