@@ -8,7 +8,7 @@
  * (guarded local smoke still runs by default and must not call live providers).
  */
 
-import { spawnSync } from "node:child_process";
+import { execSync, spawn, spawnSync } from "node:child_process";
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
@@ -26,8 +26,8 @@ const steps = [
   { name: "Market Intelligence", script: "smoke:ai-market-intelligence", requiresApi: true, requiresWeb: true },
   { name: "Monthly report local", script: "smoke:monthly-report:local", requiresApi: true },
   { name: "Monthly report MI context", script: "smoke:monthly-report:mi-context", requiresApi: true },
-  { name: "AI delivery reviews", script: "smoke:ai-delivery-reviews", requiresApi: true },
-  { name: "AI operations local", script: "smoke:ai-operations:local", requiresApi: true },
+  { name: "AI delivery reviews", script: "smoke:ai-delivery-reviews", requiresApi: true, restartApiBefore: true },
+  { name: "AI operations local", script: "smoke:ai-operations:local", requiresApi: true, restartApiBefore: true },
   { name: "AI operations browser", script: "smoke:ai-operations:browser", requiresApi: true, requiresWeb: true },
   { name: "Google Drive export contract", script: "smoke:google-drive-export", requiresApi: true }
 ];
@@ -45,6 +45,79 @@ async function sleep(ms) {
 
 async function cooldownBetweenSteps() {
   await sleep(2500);
+}
+
+function getApiPort() {
+  try {
+    const url = new URL(apiBase);
+    if (url.port) {
+      return Number(url.port);
+    }
+    return url.protocol === "https:" ? 443 : 80;
+  } catch {
+    return 4000;
+  }
+}
+
+function killProcessOnPort(port) {
+  if (process.platform === "win32") {
+    try {
+      const output = execSync(`netstat -ano | findstr ":${port}"`, { encoding: "utf8", shell: true });
+      const pids = new Set();
+      for (const line of output.split(/\r?\n/)) {
+        if (!line.includes("LISTENING")) {
+          continue;
+        }
+        const parts = line.trim().split(/\s+/);
+        const pid = Number(parts[parts.length - 1]);
+        if (pid > 0) {
+          pids.add(pid);
+        }
+      }
+      for (const pid of pids) {
+        try {
+          execSync(`taskkill /F /PID ${pid}`, { stdio: "ignore", shell: true });
+        } catch {
+          // process may already be gone
+        }
+      }
+    } catch {
+      // no listeners on port
+    }
+    return;
+  }
+
+  try {
+    execSync(`lsof -ti :${port} | xargs kill -9`, { shell: true, stdio: "ignore" });
+  } catch {
+    // no listeners on port
+  }
+}
+
+function startLocalApi() {
+  const child = spawn(npmCmd, ["run", "dev:api"], {
+    cwd: process.cwd(),
+    env: {
+      ...process.env,
+      TENANT_MODULE_ENFORCEMENT: process.env.TENANT_MODULE_ENFORCEMENT ?? "off"
+    },
+    detached: true,
+    stdio: "ignore",
+    shell: true
+  });
+  child.unref();
+}
+
+async function restartLocalApi(reason) {
+  appendLog("[AI_MATRIX] Restarting API to reset local in-memory rate limit.");
+  if (reason) {
+    appendLog(`[AI_MATRIX] ${reason}`);
+  }
+  const port = getApiPort();
+  killProcessOnPort(port);
+  await sleep(3000);
+  startLocalApi();
+  await waitForApiReady("post-restart");
 }
 
 async function waitForApiReady(label, timeoutMs = 45000) {
@@ -139,6 +212,9 @@ async function main() {
       appendLog(`\n[AI_MATRIX] SKIP Step ${index + 1}/${steps.length}: ${step.name}${step.skipReason ? ` — ${step.skipReason}` : ""}`);
       index += 1;
       continue;
+    }
+    if (step.restartApiBefore) {
+      await restartLocalApi(`before Step ${index + 1}/${steps.length}: ${step.name}`);
     }
     await runStep(step, index);
     index += 1;
