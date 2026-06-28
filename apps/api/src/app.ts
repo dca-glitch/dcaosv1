@@ -7,6 +7,8 @@ import { failure } from "./utils/responses";
 export function createApp() {
   const app = express();
 
+  app.disable("x-powered-by");
+
   app.use(securityHeaders);
   app.use(rateLimit);
   app.use(express.json({ limit: "8mb" }));

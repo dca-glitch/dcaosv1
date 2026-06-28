@@ -28,6 +28,7 @@
     "smoke:ai-knowledge-context": "node scripts/smoke-ai-knowledge-context-local.mjs",
     "smoke:mvp:local": "node scripts/smoke-mvp-local.mjs",
     "smoke:mvp:staging": "node scripts/smoke-mvp-local.mjs --staging",
+    "smoke:staging-security-baseline": "node scripts/smoke-staging-security-baseline.mjs",
     "smoke:client-portal:local": "node scripts/smoke-client-portal-local.mjs",
     "smoke:client-portal:browser": "node scripts/smoke-client-portal-browser-local.mjs",
     "smoke:client-portal:signed-out:browser": "node scripts/smoke-client-portal-signed-out-browser-local.mjs",
