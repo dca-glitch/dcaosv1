@@ -785,28 +785,68 @@ function formatEnumLabel(value?: string | null): string {
 
 function parseWorkflowRunResultPreview(value: string | null | undefined): WorkflowRunResultPreview | null {
   const text = (value ?? "").trim();
-  if (!text.startsWith("{")) return null;
+  if (!text) return null;
 
-  try {
-    const parsed: unknown = JSON.parse(text);
-    if (!parsed || typeof parsed !== "object") {
+  if (text.startsWith("{")) {
+    try {
+      const parsed: unknown = JSON.parse(text);
+      if (!parsed || typeof parsed !== "object") {
+        return null;
+      }
+
+      const record = parsed as Record<string, unknown>;
+      return {
+        version: typeof record.version === "string" ? record.version : null,
+        gateway: typeof record.gateway === "string" ? record.gateway : null,
+        model: typeof record.model === "string" ? record.model : null,
+        outputType: typeof record.outputType === "string" ? record.outputType : null,
+        title: typeof record.title === "string" ? record.title : null,
+        summary: typeof record.summary === "string" ? record.summary : null,
+        generatedAt: typeof record.generatedAt === "string" ? record.generatedAt : null,
+        safeError: typeof record.safeError === "string" ? record.safeError : null
+      };
+    } catch {
       return null;
     }
+  }
 
-    const record = parsed as Record<string, unknown>;
-    return {
-      version: typeof record.version === "string" ? record.version : null,
-      gateway: typeof record.gateway === "string" ? record.gateway : null,
-      model: typeof record.model === "string" ? record.model : null,
-      outputType: typeof record.outputType === "string" ? record.outputType : null,
-      title: typeof record.title === "string" ? record.title : null,
-      summary: typeof record.summary === "string" ? record.summary : null,
-      generatedAt: typeof record.generatedAt === "string" ? record.generatedAt : null,
-      safeError: typeof record.safeError === "string" ? record.safeError : null
-    };
-  } catch {
+  const gatewayMatch = text.match(/^Gateway:\s*(.+)$/m);
+  const modelMatch = text.match(/^Model:\s*(.+)$/m);
+  const generatedAtMatch = text.match(/^Generated at:\s*(.+)$/m);
+  const safeErrorMatch = text.match(/^Safe error:\s*(.+)$/m);
+
+  if (!gatewayMatch && !modelMatch) {
     return null;
   }
+
+  const lines = text.split("\n").map((line) => line.trim()).filter(Boolean);
+  const metadataLineIndexes = new Set<number>();
+  for (let index = 0; index < lines.length; index += 1) {
+    const line = lines[index];
+    if (
+      line.startsWith("Gateway:") ||
+      line.startsWith("Model:") ||
+      line.startsWith("Generated at:") ||
+      line.startsWith("Budget policy:") ||
+      line.startsWith("Approximate input tokens:") ||
+      line.startsWith("Max output tokens:") ||
+      line.startsWith("Safe error:")
+    ) {
+      metadataLineIndexes.add(index);
+    }
+  }
+
+  const contentLines = lines.filter((_, index) => !metadataLineIndexes.has(index));
+  return {
+    version: "AI_WORKFLOW_RESULT_V1",
+    gateway: gatewayMatch?.[1]?.trim() ?? null,
+    model: modelMatch?.[1]?.trim() ?? null,
+    outputType: "summary",
+    title: contentLines[0] ?? null,
+    summary: contentLines[1] ?? contentLines[0] ?? null,
+    generatedAt: generatedAtMatch?.[1]?.trim() ?? null,
+    safeError: safeErrorMatch?.[1]?.trim() ?? null
+  };
 }
 
 function getDeliverableExportState(item: AiDeliveryDeliverableSummary): string {

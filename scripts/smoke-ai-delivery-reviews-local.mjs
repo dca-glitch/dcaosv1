@@ -951,6 +951,45 @@ async function runAiDeliveryApiRegression(token, fixtureProjects) {
   }
   pass("AI Delivery workflow run execute success path persisted status, timestamps, and stub result fields.");
 
+  if (!executedSuccess.executionLog.includes("Gateway:") &&
+    !executedSuccess.executionLog.includes("Gateway version:")
+  ) {
+    fail("AI Delivery workflow run execution log did not include gateway metadata.");
+  }
+  if (!executedSuccess.executionLog.includes("[OBSERVABILITY]")) {
+    fail("AI Delivery workflow run execution log did not include observability metadata.");
+  }
+  pass("AI Delivery workflow run execution log includes gateway and observability metadata.");
+
+  const gateRun = requireOkResponse(
+    "AI Delivery workflow run create status gate candidate",
+    await request(`/ai-delivery/projects/${project.id}/workflow-runs`, {
+      method: "POST",
+      token,
+      body: {
+        status: "DRAFT",
+        adminNotes: `${smokeProjectMarker} status gate proof`,
+        resultPlaceholder: ""
+      }
+    })
+  )?.workflowRun;
+  if (!gateRun?.id) {
+    fail("AI Delivery workflow run create did not return a workflowRun id for status gate proof.");
+  }
+
+  const invalidTransition = await request(`/ai-delivery/projects/${project.id}/workflow-runs/${gateRun.id}`, {
+    method: "PUT",
+    token,
+    body: { status: "COMPLETED" }
+  });
+  if (invalidTransition.status !== 400 || invalidTransition.body?.ok !== false) {
+    fail(`Invalid workflow status transition should return 400, got ${invalidTransition.status}.`);
+  }
+  if (invalidTransition.body?.error?.code !== "AI_DELIVERY_WORKFLOW_RUN_STATUS_GATE_BLOCKED") {
+    fail("Invalid workflow status transition did not return expected gate error code.");
+  }
+  pass("Invalid workflow status transition is rejected with gate error.");
+
   const createdFailureRun = requireOkResponse(
     "AI Delivery workflow run create failure candidate",
     await request(`/ai-delivery/projects/${project.id}/workflow-runs`, {
@@ -1861,16 +1900,20 @@ async function runAiDeliveryBrowserRegression(token, mainProject) {
     await page.getByRole("button", { name: "Close" }).first().click();
 
     await smokeProjectCard.getByRole("button", { name: "Deliverables" }).click();
-    await page.getByRole("dialog", { name: "Deliverables" }).waitFor({ state: "visible", timeout: 15000 });
-    await page.getByRole("heading", { name: "Deliverable editor" }).waitFor({ state: "visible", timeout: 15000 });
-    await page.getByRole("heading", { name: "Package completeness summary" }).waitFor({ state: "visible", timeout: 15000 });
-    await page.getByRole("heading", { name: "Internal final handoff view" }).waitFor({ state: "visible", timeout: 15000 });
-    await page.getByRole("heading", { name: "Existing deliverables" }).waitFor({ state: "visible", timeout: 15000 });
-    await page.getByRole("heading", { name: "Website publishing workflow" }).waitFor({ state: "visible", timeout: 15000 });
-    await page.getByRole("button", { name: "Mark ready" }).first().waitFor({ state: "visible", timeout: 15000 });
+    const deliverablesDialog = page.getByRole("dialog", { name: "Deliverables" });
+    await deliverablesDialog.waitFor({ state: "visible", timeout: 15000 });
+    await deliverablesDialog.getByRole("heading", { name: "Deliverable editor" }).waitFor({ state: "visible", timeout: 15000 });
+    await deliverablesDialog.getByRole("heading", { name: "Package completeness summary" }).waitFor({ state: "visible", timeout: 15000 });
+    await deliverablesDialog.getByRole("heading", { name: "Internal final handoff view" }).waitFor({ state: "visible", timeout: 15000 });
+    await deliverablesDialog.getByRole("heading", { name: "Existing deliverables" }).waitFor({ state: "visible", timeout: 15000 });
+    await deliverablesDialog.getByRole("heading", { name: "Website publishing workflow" }).waitFor({ state: "visible", timeout: 15000 });
+    await deliverablesDialog.locator("article.entity-card").first().waitFor({ state: "visible", timeout: 15000 });
+    const markReadyButton = deliverablesDialog.getByRole("button", { name: "Mark ready" }).first();
+    await markReadyButton.scrollIntoViewIfNeeded();
+    await markReadyButton.waitFor({ state: "visible", timeout: 15000 });
     pass("Deliverables panel opened and rendered stable packaging structure.");
 
-    const prepareWordPressDraftButtons = page.getByRole("button", { name: "Prepare WordPress draft" });
+    const prepareWordPressDraftButtons = deliverablesDialog.getByRole("button", { name: "Prepare WordPress draft" });
     const prepareWordPressDraftButtonCount = await prepareWordPressDraftButtons.count();
     if (prepareWordPressDraftButtonCount === 0) {
       fail("Deliverables dialog did not render a Prepare WordPress draft button for the smoke-owned project.");
