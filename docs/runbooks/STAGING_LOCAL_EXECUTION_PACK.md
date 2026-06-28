@@ -23,7 +23,7 @@ Complete before requesting G4 approval.
 
 | # | Item | Evidence | Owner gate |
 |---|------|----------|------------|
-| 1 | `main` synced; PR #29+ merged | `git log -1` on `main` | — |
+| 1 | `main` synced; PR #30 merged at `3089c32` | `git log -1` on `main` | — |
 | 2 | `npm.cmd run check` PASS | Command output | — |
 | 3 | `npm.cmd run validate` PASS (no EPERM) | Command output | Stop dev node if EPERM |
 | 4 | `npm.cmd run smoke:pre-staging:local` PASS | Orchestrator green | External PowerShell |
@@ -32,6 +32,18 @@ Complete before requesting G4 approval.
 | 7 | No secrets in diff or logs | Review | — |
 | 8 | Env inventory reviewed | [`ENV_READINESS_INVENTORY.md`](../operator/ENV_READINESS_INVENTORY.md) | Staging values prepared server-side |
 | 9 | Deferred scope acknowledged | [`deferred-scope-register.md`](../operator/deferred-scope-register.md) | — |
+| 10 | Staging smoke production-host guard | Negative test below | PASS-by-blocking (nonzero exit) |
+
+**Pre-G4 production-host guard rehearsal (local only, no VPS):**
+
+```powershell
+cd C:\dcaosv1
+$env:MVP_SMOKE_API_BASE_URL = "https://system.digitalcubeagency.net/api/v1"
+node scripts/smoke-mvp-local.mjs --staging
+Remove-Item Env:MVP_SMOKE_API_BASE_URL
+```
+
+Expected: `FAIL staging API target` with exit code `1`. Production URL must not be accepted in `--staging` mode. A nonzero exit here is **PASS-by-blocking**, not a smoke failure.
 
 ---
 

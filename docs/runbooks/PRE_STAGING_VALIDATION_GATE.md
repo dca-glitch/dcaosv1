@@ -4,7 +4,7 @@
 
 **Purpose:** Confirm the local repository baseline before any future staging approval. PR #13 is already merged into `main`; this gate remains local-only and does not authorize VPS execution.
 
-**Phase G context (2026-06-28):** G1 closed — staging host `staging.digitalcubeagency.net`; production `system.digitalcubeagency.net`; G4 **not approved**; DNS **not created**. PR #29 merged (client delivery readiness). Run long validation/smoke from **external PowerShell**, not inside Cursor agent sessions.
+**Phase G context (2026-06-28):** G1 closed — staging host `staging.digitalcubeagency.net`; production `system.digitalcubeagency.net`; G4 **not approved**; DNS **not created**. PR #30 merged on `main` at `3089c32`. Run long validation/smoke from **external PowerShell**, not inside Cursor agent sessions.
 
 **Forbidden in this gate:** VPS login, Docker Compose apply, Caddy/DNS changes, staging migrations, production env, `smoke:mvp:staging` unless owner explicitly approves G4 and staging host access.
 
@@ -21,7 +21,7 @@ Related:
 - [`docs/runbooks/PURIVA_MVP_BLOCK_30_LOCAL_CLOSEOUT_INDEX.md`](./PURIVA_MVP_BLOCK_30_LOCAL_CLOSEOUT_INDEX.md) — Puriva MVP Blocks 7–30 map
 - [`docs/runbooks/POST_MVP_PHASE_A_D_CLOSEOUT_INDEX.md`](./POST_MVP_PHASE_A_D_CLOSEOUT_INDEX.md) — Post-MVP Blocks 31–53 map
 - [`docs/runbooks/POST_MVP_BLOCK_57_LOCAL_REPO_FINAL_CLOSEOUT.md`](./POST_MVP_BLOCK_57_LOCAL_REPO_FINAL_CLOSEOUT.md) — final local closeout
-- [`docs/operator/post-merge-completion-status-20260627.md`](../operator/post-merge-completion-status-20260627.md) — current post-merge source of truth
+- [`docs/operator/post-merge-completion-status-20260628.md`](../operator/post-merge-completion-status-20260628.md) — current post-merge source of truth
 - PR #13 — merged into `main` at `584e041bd85e8179e795a0e4621a0d9d8908e0b6`; merge does not mean production deployment
 
 ---
