@@ -1881,12 +1881,16 @@ async function runAiDeliveryBrowserRegression(token, mainProject) {
     await page.getByRole("button", { name: "Close" }).first().click();
 
     await smokeProjectCard.getByRole("button", { name: "Article images" }).click();
-    await page.getByRole("dialog", { name: "Image Production Planning" }).waitFor({ state: "visible", timeout: 15000 });
-    await page.getByRole("heading", { name: "Image production planning" }).waitFor({ state: "visible", timeout: 15000 });
-    await page.getByRole("heading", { name: "Existing image production records" }).waitFor({ state: "visible", timeout: 15000 });
-    await page.getByRole("button", { name: "Mark preview ready" }).first().waitFor({ state: "visible", timeout: 15000 });
+    const articleImagesDialog = page.getByRole("dialog", { name: "Image Production Planning" });
+    await articleImagesDialog.waitFor({ state: "visible", timeout: 15000 });
+    await articleImagesDialog.getByRole("heading", { name: "Image planning workflow" }).waitFor({ state: "visible", timeout: 15000 });
+    await articleImagesDialog.getByRole("heading", { name: "Existing image production records" }).waitFor({ state: "visible", timeout: 15000 });
+    await articleImagesDialog.locator("article.entity-card").first().waitFor({ state: "visible", timeout: 15000 });
+    const imageWorkflowButton = articleImagesDialog.getByRole("button", { name: /^(Mark preview ready|Approve image|Mark final ready|Edit)$/ }).first();
+    await imageWorkflowButton.scrollIntoViewIfNeeded();
+    await imageWorkflowButton.waitFor({ state: "visible", timeout: 15000 });
     pass("Image Production Planning panel opened and rendered stable image workflow structure.");
-    await page.getByRole("button", { name: "Close" }).first().click();
+    await articleImagesDialog.getByRole("button", { name: "Close dialog" }).click();
 
     await smokeProjectCard.getByRole("button", { name: "Research / Sources" }).click();
     await page.getByRole("dialog", { name: "Research / Sources" }).waitFor({ state: "visible", timeout: 15000 });

@@ -8,7 +8,9 @@ type Bucket = {
 
 const WINDOW_MS = 15 * 60 * 1000;
 const LOGIN_LIMIT = 10;
-const GLOBAL_LIMIT = 300;
+const GLOBAL_LIMIT =
+  Number.parseInt(process.env.API_GLOBAL_RATE_LIMIT ?? "", 10) ||
+  (process.env.NODE_ENV === "production" ? 300 : 1500);
 
 const buckets = new Map<string, Bucket>();
 

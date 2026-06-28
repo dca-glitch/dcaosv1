@@ -211,6 +211,7 @@ import {
   promoteAiDeliverySourceToKnowledgeItem,
   updateAiKnowledgeItem
 } from "../core/ai-knowledge.runtime";
+import { getAiOperationsRun, listAiOperationsRuns } from "../core/ai-operations.runtime";
 import type {
   AiContextPreviewInputRequest,
   AiKnowledgeItemInputRequest,
@@ -1968,6 +1969,69 @@ export const executeAiDeliveryWorkflowRunHandler: RequestHandler = async (req, r
     }
 
     res.status(500).json(failure("AI_DELIVERY_WORKFLOW_RUN_EXECUTION_RUNTIME_ERROR", "AI Delivery workflow run execution could not be completed."));
+  }
+};
+
+function parseAiOperationsListFilters(query: Record<string, unknown>) {
+  const limitValue = typeof query.limit === "string" ? Number(query.limit) : undefined;
+  return {
+    status: typeof query.status === "string" ? query.status : undefined,
+    outputType: typeof query.outputType === "string" ? query.outputType : undefined,
+    gateway: typeof query.gateway === "string" ? query.gateway : undefined,
+    clientId: typeof query.clientId === "string" ? query.clientId : undefined,
+    aiDeliveryProjectId:
+      typeof query.aiDeliveryProjectId === "string" ? query.aiDeliveryProjectId : undefined,
+    limit: Number.isFinite(limitValue) ? limitValue : undefined
+  };
+}
+
+export const listAiOperationsRunsHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) {
+    res.status(401).json(unauthorizedFailure());
+    return;
+  }
+
+  try {
+    const response = await listAiOperationsRuns(authSession, parseAiOperationsListFilters(req.query));
+    if (!response) {
+      res.status(403).json(forbiddenFailure());
+      return;
+    }
+
+    res.json(success(response, { phase: "runtime", scope: "ai-operations-runs" }));
+  } catch {
+    res.status(500).json(failure("AI_OPERATIONS_RUNS_RUNTIME_ERROR", "AI operations runs could not be listed."));
+  }
+};
+
+export const getAiOperationsRunHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) {
+    res.status(401).json(unauthorizedFailure());
+    return;
+  }
+
+  const workflowRunId = typeof req.params.runId === "string" ? req.params.runId.trim() : "";
+  if (!workflowRunId) {
+    res.status(400).json(failure("AI_OPERATIONS_RUN_INVALID", "Workflow run id is required."));
+    return;
+  }
+
+  try {
+    const response = await getAiOperationsRun(authSession, workflowRunId);
+    if (!response) {
+      res.status(403).json(forbiddenFailure());
+      return;
+    }
+    if (!response.run) {
+      res.status(404).json(failure("AI_OPERATIONS_RUN_NOT_FOUND", "AI operations run was not found."));
+      return;
+    }
+
+    res.json(success(response, { phase: "runtime", scope: "ai-operations-runs" }));
+  } catch {
+    res.status(500).json(failure("AI_OPERATIONS_RUN_RUNTIME_ERROR", "AI operations run detail could not be loaded."));
   }
 };
 
