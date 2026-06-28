@@ -586,6 +586,17 @@ async function main() {
     }
     console.log(`✅ Handoff has client context: ${handoff.targetClientName} / ${handoff.targetMonth}`);
 
+    const draftToAppliedBlocked = await apiCallExpectFailure(
+      "PUT",
+      `/market-intelligence-projects/${projectId}/handoffs/${handoff.id}/status`,
+      { handoffStatus: "APPLIED" },
+      token
+    );
+    if (draftToAppliedBlocked < 400 || draftToAppliedBlocked >= 600) {
+      throw new Error(`Expected 4xx for DRAFT → APPLIED direct handoff transition, got ${draftToAppliedBlocked}`);
+    }
+    console.log(`✅ Direct DRAFT → APPLIED handoff transition correctly rejected (${draftToAppliedBlocked})`);
+
     // Step 13b: Update handoff status to READY
     console.log("📋 Step 13b: Update handoff status DRAFT → READY...");
     const readyRes = await apiCall(

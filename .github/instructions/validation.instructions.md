@@ -1,5 +1,11 @@
 # Validation Rules
 
+## PowerShell execution rule
+
+- Use **one command per line** in PowerShell.
+- Do **not** chain commands with `&&` in terminal sessions or agent prompts.
+- Root `package.json` scripts use `scripts/run-sequential.mjs` instead of `&&` for multi-step checks.
+
 ## Step 1 - Whitespace check
 
 ```powershell

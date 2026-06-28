@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "check": "node ../../scripts/check-package.mjs web && tsc --noEmit",
+    "check": "node ../../scripts/run-sequential.mjs \"node ../../scripts/check-package.mjs web\" \"tsc --noEmit\"",
     "build": "vite build",
     "dev": "vite"
   },

@@ -1,4 +1,9 @@
-import { getAiProviderConfig, validateAiProviderConfigForPlanning, type AiProviderConfig } from "../config";
+import {
+  getAiProviderConfig,
+  isOpenRouterLiveExecutionReady,
+  validateAiProviderConfigForRuntime,
+  type AiProviderConfig
+} from "../config";
 
 export interface AiProviderPlanningSnapshot {
   textGateway: AiProviderConfig["textGateway"];
@@ -13,20 +18,16 @@ export interface AiProviderPlanningSnapshot {
   };
   openRouterLiveExecutionEnabled: boolean;
   openRouterFallbackActive: boolean;
-  validation: ReturnType<typeof validateAiProviderConfigForPlanning>;
+  validation: ReturnType<typeof validateAiProviderConfigForRuntime>;
 }
 
 export function isOpenRouterLiveExecutionEnabled(config: AiProviderConfig): boolean {
-  return (
-    config.textGateway === "openrouter" &&
-    config.hasOpenRouterApiKey &&
-    Boolean(config.openRouterTextPrimaryModel)
-  );
+  return isOpenRouterLiveExecutionReady(config);
 }
 
 export function getAiProviderPlanningSnapshot(): AiProviderPlanningSnapshot {
   const config = getAiProviderConfig();
-  const validation = validateAiProviderConfigForPlanning(config);
+  const validation = validateAiProviderConfigForRuntime(config);
   const openRouterLiveExecutionEnabled = isOpenRouterLiveExecutionEnabled(config);
 
   return {

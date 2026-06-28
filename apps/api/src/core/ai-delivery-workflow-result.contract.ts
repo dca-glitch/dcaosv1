@@ -2,7 +2,7 @@ import type { AiTextBudget, AiWorkflowOutputType } from "./ai-text-budget.policy
 
 export interface AiWorkflowResultV1 {
   version: "AI_WORKFLOW_RESULT_V1";
-  gateway: "local" | "openrouter";
+  gateway: "disabled" | "local" | "openrouter";
   model: string;
   outputType: AiWorkflowOutputType;
   generatedAt: string;

@@ -104,13 +104,20 @@ Smoke: `smoke:wordpress-publish:local` — baseline expects publish disabled. Op
 |----------|-------|--------------|-------|
 | `AI_TEXT_GATEWAY` | Optional (default local) | Owner gate | `openrouter` is opt-in only |
 | `OPENROUTER_API_KEY` | Never commit | Staging server only | |
-| `OPENROUTER_BASE_URL` | Optional | Optional | |
-| `OPENROUTER_TEXT_PRIMARY_MODEL` | Optional | Optional | |
+| `OPENROUTER_BASE_URL` | Optional | Optional | Defaults to `https://openrouter.ai/api/v1` |
+| `OPENROUTER_TEXT_PRIMARY_MODEL` | Optional | Optional | Required for live OpenRouter execution |
 | `OPENROUTER_TEXT_SECONDARY_MODEL` | Optional | Optional | |
 | `OPENROUTER_TEXT_REVIEWER_MODEL` | Optional | Optional | |
 | `OPENROUTER_TEXT_LONG_CONTEXT_MODEL` | Optional | Optional | |
 
-Guardrails: admin-triggered only, bounded cost, deterministic local fallback, no client exposure of prompts/raw output. Smoke: `smoke:openrouter-guarded:local`.
+Guardrails: admin-triggered only, bounded cost (`AI_TEXT_BUDGET_POLICY_V1`), deterministic local fallback, OpenRouter HTTP timeout `20000ms` (code constants), no client exposure of prompts/raw output.
+
+Local config guide: `docs/operator/AI_PROVIDER_LOCAL_CONFIG.md`
+
+Smokes:
+
+- `smoke:ai-provider-config:local` — config-only; no API/key required
+- `smoke:openrouter-guarded:local` — API workflow proof; baseline local deterministic
 
 ---
 
@@ -131,7 +138,7 @@ Pre-staging orchestrator sets `off` when restarting API. Restore `off` before fu
 | `SMOKE_EXPECT_R2_ROUNDTRIP` | `smoke:r2-byte-roundtrip:local` | Strict byte roundtrip when R2 configured |
 | `SMOKE_EXPECT_WORDPRESS_PUBLISH_ENABLED` | `smoke:wordpress-publish:local` | Open-gate publish probe |
 | `SMOKE_EXPECT_TENANT_MODULE_ENFORCE` | `smoke:tenant-module:local` | Enforce-mode probe |
-| `SMOKE_EXPECT_OPENROUTER_LIVE` | `smoke:openrouter-guarded:local` | Live OpenRouter probe (owner/manual) |
+| `SMOKE_EXPECT_OPENROUTER_LIVE` | `smoke:openrouter-guarded:local`, `smoke:ai-provider-config:local` | Live OpenRouter probe (owner/manual) |
 | `SMOKE_EXPECT_GOOGLE_DRIVE_LIVE` | `smoke:google-drive-export-live:local` | Live Google export planning probe |
 | `SMOKE_EXPECT_CREDENTIAL_MASTER_KEY` | `smoke:credential-master-key-probe:local` | Master key configured probe |
 

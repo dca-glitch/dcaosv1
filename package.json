@@ -9,9 +9,9 @@
     "packages/*"
   ],
   "scripts": {
-    "check": "node scripts/check-workspace.mjs && npm run --workspaces --if-present check",
+    "check": "node scripts/run-sequential.mjs \"node scripts/check-workspace.mjs\" \"npm run --workspaces --if-present check\"",
     "build": "npm run --workspaces --if-present build",
-    "validate": "npm run -w @dca-os-v1/data prisma:generate && npm run check && npm run build",
+    "validate": "node scripts/run-sequential.mjs \"npm run -w @dca-os-v1/data prisma:generate\" \"npm run check\" \"npm run build\"",
     "dev:web": "npm run -w @dca-os-v1/web dev",
     "dev:api": "npm run -w @dca-os-v1/api dev",
     "restore:local-admin": "tsx scripts/restore-local-admin.mjs",
@@ -26,6 +26,7 @@
     "smoke:ai-delivery-reviews": "node scripts/smoke-ai-delivery-reviews-local.mjs",
     "smoke:ai-market-intelligence": "node scripts/smoke-ai-market-intelligence-local.mjs",
     "smoke:ai-knowledge-context": "node scripts/smoke-ai-knowledge-context-local.mjs",
+    "smoke:ai-matrix": "node scripts/smoke-ai-matrix-local.mjs",
     "smoke:mvp:local": "node scripts/smoke-mvp-local.mjs",
     "smoke:mvp:staging": "node scripts/smoke-mvp-local.mjs --staging",
     "smoke:staging-security-baseline": "node scripts/smoke-staging-security-baseline.mjs",
@@ -53,6 +54,7 @@
     "smoke:tenant-module:dry-run-probe": "node scripts/smoke-tenant-module-dry-run-probe-local.mjs",
     "smoke:tenant-module:phase-f-local": "node scripts/smoke-tenant-module-phase-f-local.mjs",
     "smoke:openrouter-guarded:local": "node scripts/smoke-openrouter-guarded-local.mjs",
+    "smoke:ai-provider-config:local": "node scripts/smoke-ai-provider-config-local.mjs",
     "smoke:mi-operator:browser": "node scripts/smoke-mi-operator-browser-local.mjs",
     "smoke:ai-delivery-workflow:browser": "node scripts/smoke-ai-delivery-workflow-browser-local.mjs",
     "smoke:google-drive-export-live:local": "node scripts/smoke-google-drive-export-live-local.mjs",

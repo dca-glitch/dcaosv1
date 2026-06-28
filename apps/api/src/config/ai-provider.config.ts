@@ -1,4 +1,4 @@
-export type AiTextGateway = "local" | "openrouter";
+export type AiTextGateway = "disabled" | "local" | "openrouter";
 
 export interface AiProviderConfig {
   textGateway: AiTextGateway;
@@ -17,7 +17,17 @@ export interface AiProviderConfigValidationResult {
   warnings: string[];
 }
 
-const DEFAULT_TEXT_GATEWAY: AiTextGateway = "local";
+export const AI_PROVIDER_ENV_KEYS = {
+  textGateway: "AI_TEXT_GATEWAY",
+  openRouterApiKey: "OPENROUTER_API_KEY",
+  openRouterBaseUrl: "OPENROUTER_BASE_URL",
+  openRouterTextPrimaryModel: "OPENROUTER_TEXT_PRIMARY_MODEL",
+  openRouterTextSecondaryModel: "OPENROUTER_TEXT_SECONDARY_MODEL",
+  openRouterTextReviewerModel: "OPENROUTER_TEXT_REVIEWER_MODEL",
+  openRouterTextLongContextModel: "OPENROUTER_TEXT_LONG_CONTEXT_MODEL"
+} as const;
+
+export const DEFAULT_AI_TEXT_GATEWAY: AiTextGateway = "local";
 const PREFERRED_TEXT_GATEWAY = "openrouter" as const;
 const DEFAULT_OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
 
@@ -27,25 +37,37 @@ function readEnvString(key: string): string | null {
 }
 
 function readAiTextGateway(): AiTextGateway {
-  const gateway = readEnvString("AI_TEXT_GATEWAY")?.toLowerCase();
+  const gateway = readEnvString(AI_PROVIDER_ENV_KEYS.textGateway)?.toLowerCase();
+
+  if (gateway === "disabled") {
+    return "disabled";
+  }
 
   if (gateway === "openrouter") {
     return "openrouter";
   }
 
-  return DEFAULT_TEXT_GATEWAY;
+  return DEFAULT_AI_TEXT_GATEWAY;
+}
+
+export function isOpenRouterLiveExecutionReady(config: AiProviderConfig): boolean {
+  return (
+    config.textGateway === "openrouter" &&
+    config.hasOpenRouterApiKey &&
+    Boolean(config.openRouterTextPrimaryModel)
+  );
 }
 
 export function getAiProviderConfig(): AiProviderConfig {
   return {
     textGateway: readAiTextGateway(),
     preferredTextGateway: PREFERRED_TEXT_GATEWAY,
-    hasOpenRouterApiKey: Boolean(readEnvString("OPENROUTER_API_KEY")),
-    openRouterBaseUrl: readEnvString("OPENROUTER_BASE_URL") ?? DEFAULT_OPENROUTER_BASE_URL,
-    openRouterTextPrimaryModel: readEnvString("OPENROUTER_TEXT_PRIMARY_MODEL"),
-    openRouterTextSecondaryModel: readEnvString("OPENROUTER_TEXT_SECONDARY_MODEL"),
-    openRouterTextReviewerModel: readEnvString("OPENROUTER_TEXT_REVIEWER_MODEL"),
-    openRouterTextLongContextModel: readEnvString("OPENROUTER_TEXT_LONG_CONTEXT_MODEL")
+    hasOpenRouterApiKey: Boolean(readEnvString(AI_PROVIDER_ENV_KEYS.openRouterApiKey)),
+    openRouterBaseUrl: readEnvString(AI_PROVIDER_ENV_KEYS.openRouterBaseUrl) ?? DEFAULT_OPENROUTER_BASE_URL,
+    openRouterTextPrimaryModel: readEnvString(AI_PROVIDER_ENV_KEYS.openRouterTextPrimaryModel),
+    openRouterTextSecondaryModel: readEnvString(AI_PROVIDER_ENV_KEYS.openRouterTextSecondaryModel),
+    openRouterTextReviewerModel: readEnvString(AI_PROVIDER_ENV_KEYS.openRouterTextReviewerModel),
+    openRouterTextLongContextModel: readEnvString(AI_PROVIDER_ENV_KEYS.openRouterTextLongContextModel)
   };
 }
 
@@ -53,8 +75,8 @@ export function validateAiProviderConfigForPlanning(config: AiProviderConfig): A
   const issues: string[] = [];
   const warnings: string[] = [];
 
-  if (config.textGateway !== "local" && config.textGateway !== "openrouter") {
-    issues.push("AI text gateway must be local or openrouter.");
+  if (config.textGateway !== "disabled" && config.textGateway !== "local" && config.textGateway !== "openrouter") {
+    issues.push("AI text gateway must be disabled, local, or openrouter.");
   }
 
   if (!config.openRouterBaseUrl) {
@@ -63,6 +85,38 @@ export function validateAiProviderConfigForPlanning(config: AiProviderConfig): A
 
   if (config.textGateway === "openrouter" && !config.hasOpenRouterApiKey) {
     warnings.push("OpenRouter API key is not configured; real provider execution must remain disabled.");
+  }
+
+  if (config.textGateway === "openrouter" && !config.openRouterTextPrimaryModel) {
+    warnings.push("OpenRouter primary text model is not configured; live provider execution must remain disabled.");
+  }
+
+  return {
+    ok: issues.length === 0,
+    issues,
+    warnings
+  };
+}
+
+export function validateAiProviderConfigForRuntime(config: AiProviderConfig): AiProviderConfigValidationResult {
+  const planning = validateAiProviderConfigForPlanning(config);
+  const warnings = [...planning.warnings];
+  const issues = [...planning.issues];
+
+  const rawGateway = readEnvString(AI_PROVIDER_ENV_KEYS.textGateway);
+  if (rawGateway) {
+    const normalized = rawGateway.toLowerCase();
+    if (normalized !== "disabled" && normalized !== "local" && normalized !== "openrouter") {
+      warnings.push(
+        `Unrecognized ${AI_PROVIDER_ENV_KEYS.textGateway} value "${rawGateway}"; runtime uses local deterministic gateway.`
+      );
+    }
+  }
+
+  if (config.textGateway === "openrouter" && !isOpenRouterLiveExecutionReady(config)) {
+    warnings.push(
+      "OpenRouter gateway requested but live execution remains disabled; deterministic local fallback is active."
+    );
   }
 
   return {

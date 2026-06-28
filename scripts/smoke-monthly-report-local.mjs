@@ -500,6 +500,41 @@ async function main() {
   }
   console.log();
 
+  console.log("Step P5b: Generate deterministic recommendation summary");
+  {
+    const { status, ok, json } = await apiCall(
+      "POST",
+      `/ai-delivery/reports/monthly/${reportId}/generate-recommendations`,
+      null,
+      token
+    );
+    const recommendationsText = json.data?.report?.recommendationsText ?? "";
+    if (ok && status === 200 && recommendationsText.includes("Local deterministic recommendation draft")) {
+      pass("generate-recommendations returns deterministic admin summary");
+    } else {
+      fail("generate-recommendations", `status=${status} text=${recommendationsText.slice(0, 80)}`);
+    }
+    const responseForProviderScan = json?.data?.report
+      ? {
+          ...json,
+          data: {
+            ...json.data,
+            report: {
+              ...json.data.report,
+              recommendationsText: undefined,
+              adminSummaryNotes: undefined
+            }
+          }
+        }
+      : json;
+    if (/openrouter|provider key/i.test(JSON.stringify(responseForProviderScan))) {
+      fail("generate-recommendations", "response appears to include live provider metadata");
+    } else {
+      pass("generate-recommendations remains local deterministic");
+    }
+  }
+  console.log();
+
   // Step P6: Status transition DRAFT → ADMIN_REVIEW
   console.log("Step P6: Status DRAFT → ADMIN_REVIEW");
   {

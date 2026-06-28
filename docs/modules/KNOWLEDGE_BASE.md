@@ -1,42 +1,67 @@
-# Knowledge Base Module
+# AI Operating Layer — Knowledge Base & Context Builder
 
 ## Purpose
 
-Knowledge Base covers future internal and client-facing documentation areas.
+The AI Operating Layer knowledge base stores typed, scoped, reviewed memory for admin-operated AI workflows. The context builder assembles a safe, tenant-bound preview from approved prompt-eligible items only (unless an admin explicitly opts into raw/expired inclusion).
 
-## MVP Scope
+See also: [AI Operating Layer Architecture](../ai-delivery/ai-operating-layer-architecture.md).
 
-- article list
-- article detail
-- category field
+## MVP scope (implemented)
 
-## Future Scope
+- CRUD for `AiKnowledgeItem` under `/api/v1/ai-operating-layer/knowledge-items`
+- Promotion from AI Delivery research summaries, deliverables, and monthly reports
+- Context preview under `/api/v1/ai-operating-layer/context-preview`
+- Optional `saveSnapshot` → `AiContextSnapshot` for audit/replay
+- Admin UI panel: `AiKnowledgeContextPanel` on AI Delivery project views
 
-- client-visible articles
-- AI-assisted drafts
-- approval workflow
-- search
-- related records
+## Default context selection rules
 
-## Backend Areas
+Default preview (no flags) includes only rows where:
 
-- knowledge routes later
-- knowledge service later
+- `status = APPROVED`
+- `allowedForPrompt = true`
+- not expired (`status != EXPIRED` and `expiresAt` not in the past)
+- scope is `SYSTEM`, matching `CLIENT`, or matching `PROJECT`
+- `INDUSTRY` scope is never auto-included
 
-## Frontend Areas
+Explicit admin-only overrides:
 
-- article list page
-- article detail page
-- category view later
+- `includeRaw: true` — adds `RAW` / `REVIEWED` items with warnings
+- `includeExpired: true` — adds expired approved items with warnings
 
-## Shared Contracts
+## Admin dry-run preview
 
-- article summary
-- article detail
-- article status
+`workflowType: "dry_run"` is the non-blocking admin preview mode. Missing optional context is reported as warnings/info, not blocking errors.
 
-## Dependencies
+## Injection sanitization
 
-- tenant context
-- permissions
-- AI workflow later
+All knowledge bodies, summaries, titles, and one-off admin instructions pass through `sanitizeUntrustedContextText` before appearing in `contextPreview`. Known injection phrases are replaced with `[REDACTED-UNTRUSTED]` and surfaced in `warnings`.
+
+## Boundary guards
+
+Context preview rejects mismatched `clientId` / `aiDeliveryProjectId` pairs and unknown/archived clients or projects for the active tenant. Blocked previews return `canRun: false` with `blockingReasons`.
+
+## Smoke
+
+```powershell
+npm run smoke:ai-knowledge-context
+```
+
+Requires local API, applied Prisma migrations (including `20260628120000_ai_operating_layer_knowledge_context`), and `$env:AUTH_SEED_TEST_PASSWORD`.
+
+## Workflow execution attachment
+
+Approved prompt-eligible knowledge is automatically composed into AI Delivery workflow execution context via `buildAiWorkflowKnowledgeContext` when a workflow run executes. Existing compact project/brief/research/MI context is preserved and composed alongside knowledge context.
+
+Rules match default preview selection (approved-only, scoped, sanitized, token-trimmed). Execution logs record whether knowledge context was included or skipped.
+
+Offline adapter wiring proof:
+
+```powershell
+npm run -w @dca-os-v1/api check:ai-workflow-knowledge-context
+```
+
+## Deferred
+
+- Client-visible knowledge articles (separate future module)
+- INDUSTRY-scope auto-inclusion across clients

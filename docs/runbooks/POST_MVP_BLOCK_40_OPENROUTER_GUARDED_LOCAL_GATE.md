@@ -8,11 +8,22 @@ Related:
 
 - `apps/api/src/config/ai-provider.config.ts`
 - `apps/api/src/services/ai-provider-planning.service.ts`
+- `apps/api/scripts/check-ai-provider-config.runner.ts`
+- `scripts/smoke-ai-provider-config-local.mjs`
 - `scripts/smoke-openrouter-guarded-local.mjs`
 
 ---
 
 ## Run (baseline — default local gateway)
+
+Config-only proof (no API required):
+
+```powershell
+cd C:\dcaosv1
+npm.cmd run smoke:ai-provider-config:local
+```
+
+API-integrated proof:
 
 ```powershell
 cd C:\dcaosv1
