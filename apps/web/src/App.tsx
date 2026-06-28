@@ -3870,6 +3870,10 @@ export function App() {
   const canManageModules = hasModuleAdminAccess(authContext);
   const canManageCore = hasActiveRole(authContext, ["owner", "admin"]);
   const currentTenant = tenantContext?.currentTenant?.tenant ?? null;
+  const isClientPortalView = activeView === "client-portal";
+  const layoutNavigationItems = isClientPortalView
+    ? navigationItems.filter((item) => item.view === "client-portal")
+    : navigationItems;
 
   if (!token || !currentUser) {
     return <LoginScreen error={loginError} loading={loginLoading || loading} onLogin={handleLogin} />;
@@ -3879,8 +3883,9 @@ export function App() {
     <AppLayout
       activeView={activeView}
       currentTenant={currentTenant}
-      navigationItems={navigationItems}
+      navigationItems={layoutNavigationItems}
       onLogout={() => void handleLogout()}
+      shellVariant={isClientPortalView ? "portal" : "admin"}
       user={currentUser.user}
     >
       {appMessage ? (
