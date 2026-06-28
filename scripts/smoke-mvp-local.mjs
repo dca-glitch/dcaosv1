@@ -3,6 +3,7 @@ const defaultLocalApiBaseUrl = "http://127.0.0.1:4000/api/v1";
 const apiBaseUrl = process.env.MVP_SMOKE_API_BASE_URL ?? defaultLocalApiBaseUrl;
 const adminEmail = process.env.AUTH_SEED_TEST_EMAIL ?? "admin@dca.local";
 const adminPassword = process.env.AUTH_SEED_TEST_PASSWORD;
+const negativeLoginEmail = "dca-smoke-negative-login@invalid.local";
 const testerEmail = process.env.AUTH_SEED_TESTER_EMAIL;
 const testerPassword = process.env.AUTH_SEED_TESTER_PASSWORD;
 
@@ -1292,7 +1293,8 @@ async function main() {
   const health = await request("/health");
   record("health", health.status === 200 && health.body?.ok === true, `${health.status}`);
 
-  const failedLogin = await login(adminEmail, "not-the-local-password");
+  // Never target the real admin fixture for negative login; staging may track failures/lockouts.
+  const failedLogin = await login(negativeLoginEmail, "not-the-local-password");
   record(
     "failed login safe error",
     failedLogin.status === 401 && getErrorCode(failedLogin) === "AUTH_LOGIN_FAILED",
