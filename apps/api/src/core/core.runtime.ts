@@ -7905,16 +7905,40 @@ export async function generateAiDeliveryMonthlyReportRecommendations(
     where: { tenantId, aiDeliveryMonthlyReportId: reportId }
   }).catch(() => 0);
 
+  const latestApprovedSnapshot = await (prisma as any).aiDeliveryMonthlyMetricSnapshot.findFirst({
+    where: { tenantId, aiDeliveryMonthlyReportId: reportId, status: "APPROVED" },
+    orderBy: [{ importedAt: "desc" }, { updatedAt: "desc" }],
+    select: {
+      targetMonth: true,
+      gscClicks: true,
+      gscImpressions: true,
+      ga4Sessions: true,
+      ga4Users: true,
+      notes: true
+    }
+  }).catch(() => null);
+
+  const miContextLine = report.miContextDraft
+    ? "- Internal MI context draft was included in this recommendation draft (admin-only source; not copied verbatim to client view)."
+    : "- Internal MI context draft: not attached";
+
+  const metricsLine = latestApprovedSnapshot
+    ? `- Latest approved metrics snapshot (${latestApprovedSnapshot.targetMonth}): GSC clicks ${latestApprovedSnapshot.gscClicks ?? "n/a"}, impressions ${latestApprovedSnapshot.gscImpressions ?? "n/a"}, GA4 sessions ${latestApprovedSnapshot.ga4Sessions ?? "n/a"}.`
+    : metricsCount > 0
+      ? `- Metric snapshots on file: ${metricsCount} (none approved yet for recommendation emphasis).`
+      : "- Metric snapshots: none on file (manual/import path only; live GA/GSC deferred).";
+
   const lines = [
     `# Admin recommendation summary (${project.name})`,
     "",
     "Local deterministic recommendation draft for admin review only. No live provider calls were made.",
+    "Token/cost figures elsewhere in the system are estimates from execution metadata — not billing records.",
     "",
     `- Project month focus: ${String(project.targetMonth)}`,
     `- Final/ready deliverables in scope: ${deliverableCount}`,
-    `- Approved metric snapshots available: ${metricsCount}`,
+    metricsLine,
     report.adminSummaryNotes ? `- Admin summary notes considered: ${report.adminSummaryNotes.trim()}` : "- Admin summary notes: not provided",
-    report.miContextDraft ? "- Internal MI context draft was included in this recommendation draft." : "- Internal MI context draft: not attached",
+    miContextLine,
     "",
     "Recommended next actions:",
     "1. Review final deliverables and confirm client-safe wording before external sharing.",
