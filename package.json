@@ -53,6 +53,7 @@
     "smoke:tenant-module:dry-run-probe": "node scripts/smoke-tenant-module-dry-run-probe-local.mjs",
     "smoke:tenant-module:phase-f-local": "node scripts/smoke-tenant-module-phase-f-local.mjs",
     "smoke:openrouter-guarded:local": "node scripts/smoke-openrouter-guarded-local.mjs",
+    "smoke:ai-provider-config:local": "node scripts/smoke-ai-provider-config-local.mjs",
     "smoke:mi-operator:browser": "node scripts/smoke-mi-operator-browser-local.mjs",
     "smoke:ai-delivery-workflow:browser": "node scripts/smoke-ai-delivery-workflow-browser-local.mjs",
     "smoke:google-drive-export-live:local": "node scripts/smoke-google-drive-export-live-local.mjs",
