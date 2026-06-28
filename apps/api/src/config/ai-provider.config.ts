@@ -1,4 +1,4 @@
-export type AiTextGateway = "local" | "openrouter";
+export type AiTextGateway = "disabled" | "local" | "openrouter";
 
 export interface AiProviderConfig {
   textGateway: AiTextGateway;
@@ -39,6 +39,10 @@ function readEnvString(key: string): string | null {
 function readAiTextGateway(): AiTextGateway {
   const gateway = readEnvString(AI_PROVIDER_ENV_KEYS.textGateway)?.toLowerCase();
 
+  if (gateway === "disabled") {
+    return "disabled";
+  }
+
   if (gateway === "openrouter") {
     return "openrouter";
   }
@@ -71,8 +75,8 @@ export function validateAiProviderConfigForPlanning(config: AiProviderConfig): A
   const issues: string[] = [];
   const warnings: string[] = [];
 
-  if (config.textGateway !== "local" && config.textGateway !== "openrouter") {
-    issues.push("AI text gateway must be local or openrouter.");
+  if (config.textGateway !== "disabled" && config.textGateway !== "local" && config.textGateway !== "openrouter") {
+    issues.push("AI text gateway must be disabled, local, or openrouter.");
   }
 
   if (!config.openRouterBaseUrl) {
@@ -102,7 +106,7 @@ export function validateAiProviderConfigForRuntime(config: AiProviderConfig): Ai
   const rawGateway = readEnvString(AI_PROVIDER_ENV_KEYS.textGateway);
   if (rawGateway) {
     const normalized = rawGateway.toLowerCase();
-    if (normalized !== "local" && normalized !== "openrouter") {
+    if (normalized !== "disabled" && normalized !== "local" && normalized !== "openrouter") {
       warnings.push(
         `Unrecognized ${AI_PROVIDER_ENV_KEYS.textGateway} value "${rawGateway}"; runtime uses local deterministic gateway.`
       );

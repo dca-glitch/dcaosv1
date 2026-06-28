@@ -1,8 +1,13 @@
 import type { AiProviderConfig } from "../config";
-import { executeOpenRouterTextRequest } from "../services/openrouter-text.service";
+import {
+  executeAiGatewayV1ProviderText,
+  prepareAiGatewayV1Context,
+  resolveAiGatewayExecutionMode,
+  type AiGatewayOpenRouterModelSlot,
+  type AiGatewayV1PreparedContext
+} from "./ai-gateway-v1.service";
 import {
   AI_TEXT_BUDGET_POLICY_NAME,
-  estimateApproximateInputTokens,
   getAiTextBudgetDecision,
   toAiTextBudget,
   type AiWorkflowOutputType
@@ -103,10 +108,40 @@ export interface AiDeliveryWorkflowExecutionAdapter {
   execute(input: AiDeliveryWorkflowExecutionAdapterInput): Promise<AiDeliveryWorkflowExecutionAdapterOutput>;
 }
 
-type OpenRouterModelSelection = {
-  model: string;
-  slot: "primary" | "long_context";
-};
+function buildGatewayAuditLogLines(preparedContext: AiGatewayV1PreparedContext): string[] {
+  const lines: string[] = [];
+
+  if (preparedContext.sanitizeFlags.length > 0) {
+    lines.push(`Untrusted context sanitized (${preparedContext.sanitizeFlags.length} flag(s)).`);
+  }
+
+  return lines;
+}
+
+function buildGatewayProviderAuditLogLines(
+  audit: Awaited<ReturnType<typeof executeAiGatewayV1ProviderText>>["audit"],
+  modelSlot: AiGatewayOpenRouterModelSlot
+): string[] {
+  const lines = [
+    `Gateway version: ${audit.gatewayVersion}.`,
+    `Execution mode: ${audit.executionMode}.`,
+    `Live provider called: ${audit.liveProviderCalled ? "yes" : "no"}.`
+  ];
+
+  if (audit.providerSkippedReason) {
+    lines.push(`Provider skipped: ${audit.providerSkippedReason}.`);
+  }
+
+  if (audit.sanitizeFlags.length > 0) {
+    lines.push(`Prompt/context sanitize flags: ${audit.sanitizeFlags.length}.`);
+  }
+
+  if (audit.liveProviderCalled) {
+    lines.push(`Model slot: ${modelSlot}.`);
+  }
+
+  return lines;
+}
 
 const GENERATE_CONTENT_PLAN_MARKER = "[generate-content-plan]";
 const STUB_FAIL_MARKER = "[stub-fail]";
@@ -281,22 +316,8 @@ function buildCompactContextText(input: AiDeliveryWorkflowExecutionAdapterInput)
   return sections.join("\n");
 }
 
-function selectOpenRouterModel(config: AiProviderConfig, approximateInputTokens: number): OpenRouterModelSelection {
-  if (approximateInputTokens > 1800 && config.openRouterTextLongContextModel) {
-    return {
-      model: config.openRouterTextLongContextModel,
-      slot: "long_context"
-    };
-  }
-
-  return {
-    model: config.openRouterTextPrimaryModel ?? "unknown-model",
-    slot: "primary"
-  };
-}
-
 function createWorkflowResult(
-  gateway: "local" | "openrouter",
+  gateway: "disabled" | "local" | "openrouter",
   model: string,
   outputType: AiWorkflowOutputType,
   generatedAt: string,
@@ -607,6 +628,53 @@ function buildSummaryPrompt(contextText: string): { systemPrompt: string; userPr
   };
 }
 
+function createDisabledAiDeliveryWorkflowExecutionAdapter(): AiDeliveryWorkflowExecutionAdapter {
+  return {
+    createStartedLogEntries(input) {
+      const outputType = getWorkflowOutputType(input);
+      return buildExecutionLogEntries(input.startedAtIso, [
+        "AI text execution is disabled by configuration.",
+        `Project "${input.projectName}" for ${input.targetMonth}; brief status ${input.briefStatus}.`,
+        `Output type: ${outputType}.`,
+        "No provider or local deterministic generation was attempted."
+      ]);
+    },
+    async execute(input) {
+      const outputType = getWorkflowOutputType(input);
+      const preparedContext = prepareAiGatewayV1Context(buildCompactContextText(input), outputType);
+      const safeError = "AI text execution is disabled by configuration.";
+      const workflowResult = createWorkflowResult(
+        "disabled",
+        "ai-disabled",
+        outputType,
+        input.finishedAtIso,
+        `${input.projectName} AI execution disabled`,
+        safeError,
+        null,
+        safeError,
+        preparedContext.budgetDecision.maxOutputTokens,
+        preparedContext.budgetDecision.approximateInputTokens
+      );
+
+      return {
+        finishedLogEntries: buildExecutionLogEntries(input.finishedAtIso, [
+          safeError,
+          `Gateway: ${workflowResult.gateway}.`,
+          `Model: ${workflowResult.model}.`,
+          `Output type: ${workflowResult.outputType}.`,
+          ...buildGatewayAuditLogLines(preparedContext)
+        ]),
+        executionError: safeError,
+        resultPlaceholder: null,
+        finalStatus: "FAILED",
+        workflowResult,
+        generatedContentPlanItems: null,
+        generatedContentDraft: null
+      };
+    }
+  };
+}
+
 export function createLocalAiDeliveryWorkflowExecutionAdapter(): AiDeliveryWorkflowExecutionAdapter {
   return {
     createStartedLogEntries(input) {
@@ -651,9 +719,8 @@ export function createLocalAiDeliveryWorkflowExecutionAdapter(): AiDeliveryWorkf
       }
 
       const outputType = getWorkflowOutputType(input);
-      const contextText = buildCompactContextText(input);
-      const approximateInputTokens = estimateApproximateInputTokens(contextText);
-      const effectiveBudgetDecision = getAiTextBudgetDecision(outputType, approximateInputTokens);
+      const preparedContext = prepareAiGatewayV1Context(buildCompactContextText(input), outputType);
+      const effectiveBudgetDecision = preparedContext.budgetDecision;
 
       if (outputType === "content_plan_draft") {
         const generatedContentPlanItems = buildDeterministicContentPlanItems(input);
@@ -785,26 +852,31 @@ export function createLocalAiDeliveryWorkflowExecutionAdapter(): AiDeliveryWorkf
 
 export function createAiDeliveryWorkflowExecutionAdapter(config: AiProviderConfig): AiDeliveryWorkflowExecutionAdapter {
   const localAdapter = createLocalAiDeliveryWorkflowExecutionAdapter();
+  const executionMode = resolveAiGatewayExecutionMode(config);
 
-  if (config.textGateway !== "openrouter") {
-    return localAdapter;
+  if (executionMode === "disabled") {
+    return createDisabledAiDeliveryWorkflowExecutionAdapter();
   }
 
-  const fallbackReason = getOpenRouterFallbackReason(config);
-  if (fallbackReason) {
-    return {
-      createStartedLogEntries(input) {
-        return [
-          ...localAdapter.createStartedLogEntries(input),
-          ...buildExecutionLogEntries(input.startedAtIso, [
-            `OpenRouter gateway requested but not fully configured (${fallbackReason}); falling back to local deterministic adapter.`
-          ])
-        ];
-      },
-      execute(input) {
-        return localAdapter.execute(input);
-      }
-    };
+  if (executionMode !== "openrouter") {
+    const fallbackReason = getOpenRouterFallbackReason(config);
+    if (fallbackReason) {
+      return {
+        createStartedLogEntries(input) {
+          return [
+            ...localAdapter.createStartedLogEntries(input),
+            ...buildExecutionLogEntries(input.startedAtIso, [
+              `OpenRouter gateway requested but not fully configured (${fallbackReason}); falling back to local deterministic adapter.`
+            ])
+          ];
+        },
+        execute(input) {
+          return localAdapter.execute(input);
+        }
+      };
+    }
+
+    return localAdapter;
   }
 
   return {
@@ -819,18 +891,35 @@ export function createAiDeliveryWorkflowExecutionAdapter(config: AiProviderConfi
     },
     async execute(input) {
       const outputType = getWorkflowOutputType(input);
-      const contextText = buildCompactContextText(input);
-      const approximateInputTokens = estimateApproximateInputTokens(contextText);
-      const budgetDecision = getAiTextBudgetDecision(outputType, approximateInputTokens);
+      const preparedContext = prepareAiGatewayV1Context(buildCompactContextText(input), outputType);
+      const contextText = preparedContext.contextText;
+      const budgetDecision = preparedContext.budgetDecision;
 
-      if (budgetDecision.inputTooLarge) {
-        const safeError = "Workflow context is too large for the current text budget policy. Reduce admin notes or compact supporting context before retrying.";
+      const prompts = outputType === "content_plan_draft"
+        ? buildContentPlanPrompt(contextText)
+        : outputType === "article_draft"
+          ? buildContentDraftPrompt(contextText)
+          : buildSummaryPrompt(contextText);
+
+      const gatewayResult = await executeAiGatewayV1ProviderText({
+        config,
+        outputType,
+        systemPrompt: prompts.systemPrompt,
+        userPrompt: prompts.userPrompt,
+        preparedContext,
+        temperature: outputType === "content_plan_draft" ? 0.3 : 0.2
+      });
+
+      if (!gatewayResult.ok) {
+        const safeError = gatewayResult.safeError ?? "OpenRouter text execution failed.";
         const workflowResult = createWorkflowResult(
           "openrouter",
-          config.openRouterTextPrimaryModel ?? "openrouter-unconfigured",
+          gatewayResult.model,
           outputType,
           input.finishedAtIso,
-          `${input.projectName} execution blocked by budget policy`,
+          gatewayResult.audit.inputTooLarge
+            ? `${input.projectName} execution blocked by budget policy`
+            : `${input.projectName} OpenRouter execution failed`,
           safeError,
           null,
           safeError,
@@ -839,9 +928,15 @@ export function createAiDeliveryWorkflowExecutionAdapter(config: AiProviderConfi
         );
         return {
           finishedLogEntries: buildExecutionLogEntries(input.finishedAtIso, [
-            `OpenRouter execution blocked by budget policy ${AI_TEXT_BUDGET_POLICY_NAME}.`,
+            gatewayResult.audit.inputTooLarge
+              ? `OpenRouter execution blocked by budget policy ${AI_TEXT_BUDGET_POLICY_NAME}.`
+              : `OpenRouter text execution failed: ${safeError}`,
+            ...buildGatewayProviderAuditLogLines(gatewayResult.audit, gatewayResult.modelSlot),
+            `Model: ${gatewayResult.model}.`,
+            `Output type: ${outputType}.`,
             `Approximate input tokens: ${budgetDecision.approximateInputTokens}.`,
             `Max output tokens: ${budgetDecision.maxOutputTokens}.`,
+            `Budget policy: ${budgetDecision.budgetPolicy}.`,
             `Safe error: ${safeError}`
           ]),
           executionError: safeError,
@@ -853,64 +948,15 @@ export function createAiDeliveryWorkflowExecutionAdapter(config: AiProviderConfi
         };
       }
 
-      const selectedModel = selectOpenRouterModel(config, budgetDecision.approximateInputTokens);
-      const prompts = outputType === "content_plan_draft"
-        ? buildContentPlanPrompt(contextText)
-        : outputType === "article_draft"
-          ? buildContentDraftPrompt(contextText)
-          : buildSummaryPrompt(contextText);
-
-      const providerResult = await executeOpenRouterTextRequest({
-        config,
-        model: selectedModel.model,
-        systemPrompt: prompts.systemPrompt,
-        userPrompt: prompts.userPrompt,
-        maxOutputTokens: budgetDecision.maxOutputTokens,
-        temperature: outputType === "content_plan_draft" ? 0.3 : 0.2
-      });
-
-      if (!providerResult.ok) {
-        const safeError = providerResult.errorMessage ?? "OpenRouter text execution failed.";
-        const workflowResult = createWorkflowResult(
-          "openrouter",
-          providerResult.model,
-          outputType,
-          input.finishedAtIso,
-          `${input.projectName} OpenRouter execution failed`,
-          safeError,
-          null,
-          safeError,
-          budgetDecision.maxOutputTokens,
-          budgetDecision.approximateInputTokens
-        );
-        return {
-          finishedLogEntries: buildExecutionLogEntries(input.finishedAtIso, [
-            `OpenRouter text execution failed: ${safeError}`,
-            `Model slot: ${selectedModel.slot}.`,
-            `Model: ${providerResult.model}.`,
-            `Output type: ${outputType}.`,
-            `Approximate input tokens: ${budgetDecision.approximateInputTokens}.`,
-            `Max output tokens: ${budgetDecision.maxOutputTokens}.`,
-            `Budget policy: ${budgetDecision.budgetPolicy}.`
-          ]),
-          executionError: safeError,
-          resultPlaceholder: null,
-          finalStatus: "FAILED",
-          workflowResult,
-          generatedContentPlanItems: null,
-          generatedContentDraft: null
-        };
-      }
-
       if (outputType === "content_plan_draft") {
-        const providerContent = providerResult.content ?? "";
+        const providerContent = gatewayResult.content ?? "";
         const parsed = parseContentPlanItemsFromProviderText(providerContent);
         if (!parsed) {
           const safeSummary = "OpenRouter returned a response, but it was not safely parseable as the expected content plan JSON. No content plan items were persisted.";
           const safeError = "Provider output was not safely parseable as structured content plan JSON.";
           const workflowResult = createWorkflowResult(
             "openrouter",
-            providerResult.model,
+            gatewayResult.model,
             outputType,
             input.finishedAtIso,
             `${input.projectName} content plan draft needs admin review`,
@@ -923,8 +969,8 @@ export function createAiDeliveryWorkflowExecutionAdapter(config: AiProviderConfi
           return {
             finishedLogEntries: buildExecutionLogEntries(input.finishedAtIso, [
               "OpenRouter content plan response was not safely parseable as JSON.",
-              `Model slot: ${selectedModel.slot}.`,
-              `Model: ${providerResult.model}.`,
+              ...buildGatewayProviderAuditLogLines(gatewayResult.audit, gatewayResult.modelSlot),
+              `Model: ${gatewayResult.model}.`,
               `Output type: ${outputType}.`,
               `Approximate input tokens: ${budgetDecision.approximateInputTokens}.`,
               `Max output tokens: ${budgetDecision.maxOutputTokens}.`,
@@ -941,7 +987,7 @@ export function createAiDeliveryWorkflowExecutionAdapter(config: AiProviderConfi
 
         const workflowResult = createWorkflowResult(
           "openrouter",
-          providerResult.model,
+          gatewayResult.model,
           outputType,
           input.finishedAtIso,
           parsed.title,
@@ -958,8 +1004,8 @@ export function createAiDeliveryWorkflowExecutionAdapter(config: AiProviderConfi
         return {
           finishedLogEntries: buildExecutionLogEntries(input.finishedAtIso, [
             "OpenRouter text execution completed successfully.",
-            `Model slot: ${selectedModel.slot}.`,
-            `Model: ${providerResult.model}.`,
+            ...buildGatewayProviderAuditLogLines(gatewayResult.audit, gatewayResult.modelSlot),
+            `Model: ${gatewayResult.model}.`,
             `Output type: ${outputType}.`,
             `Approximate input tokens: ${budgetDecision.approximateInputTokens}.`,
             `Max output tokens: ${budgetDecision.maxOutputTokens}.`,
@@ -975,14 +1021,14 @@ export function createAiDeliveryWorkflowExecutionAdapter(config: AiProviderConfi
       }
 
       if (outputType === "article_draft") {
-        const providerContent = providerResult.content ?? "";
+        const providerContent = gatewayResult.content ?? "";
         const parsed = parseContentDraftFromProviderText(providerContent);
         if (!parsed) {
           const safeSummary = "OpenRouter returned a response, but it was not safely parseable as the expected article draft JSON. No content draft was persisted.";
           const safeError = "Provider output was not safely parseable as structured article draft JSON.";
           const workflowResult = createWorkflowResult(
             "openrouter",
-            providerResult.model,
+            gatewayResult.model,
             outputType,
             input.finishedAtIso,
             `${input.projectName} content draft needs admin review`,
@@ -995,8 +1041,8 @@ export function createAiDeliveryWorkflowExecutionAdapter(config: AiProviderConfi
           return {
             finishedLogEntries: buildExecutionLogEntries(input.finishedAtIso, [
               "OpenRouter content draft response was not safely parseable as JSON.",
-              `Model slot: ${selectedModel.slot}.`,
-              `Model: ${providerResult.model}.`,
+              ...buildGatewayProviderAuditLogLines(gatewayResult.audit, gatewayResult.modelSlot),
+              `Model: ${gatewayResult.model}.`,
               `Output type: ${outputType}.`,
               `Approximate input tokens: ${budgetDecision.approximateInputTokens}.`,
               `Max output tokens: ${budgetDecision.maxOutputTokens}.`,
@@ -1013,7 +1059,7 @@ export function createAiDeliveryWorkflowExecutionAdapter(config: AiProviderConfi
 
         const workflowResult = createWorkflowResult(
           "openrouter",
-          providerResult.model,
+          gatewayResult.model,
           outputType,
           input.finishedAtIso,
           parsed.title,
@@ -1032,8 +1078,8 @@ export function createAiDeliveryWorkflowExecutionAdapter(config: AiProviderConfi
         return {
           finishedLogEntries: buildExecutionLogEntries(input.finishedAtIso, [
             "OpenRouter text execution completed successfully.",
-            `Model slot: ${selectedModel.slot}.`,
-            `Model: ${providerResult.model}.`,
+            ...buildGatewayProviderAuditLogLines(gatewayResult.audit, gatewayResult.modelSlot),
+            `Model: ${gatewayResult.model}.`,
             `Output type: ${outputType}.`,
             `Approximate input tokens: ${budgetDecision.approximateInputTokens}.`,
             `Max output tokens: ${budgetDecision.maxOutputTokens}.`,
@@ -1058,11 +1104,11 @@ export function createAiDeliveryWorkflowExecutionAdapter(config: AiProviderConfi
 
       const workflowResult = createWorkflowResult(
         "openrouter",
-        providerResult.model,
+        gatewayResult.model,
         outputType,
         input.finishedAtIso,
         `${input.projectName} workflow execution summary`,
-        truncateText(providerResult.content, MAX_RESULT_SUMMARY_LENGTH) ?? "OpenRouter returned an empty summary.",
+        truncateText(gatewayResult.content, MAX_RESULT_SUMMARY_LENGTH) ?? "OpenRouter returned an empty summary.",
         null,
         null,
         budgetDecision.maxOutputTokens,
@@ -1072,8 +1118,8 @@ export function createAiDeliveryWorkflowExecutionAdapter(config: AiProviderConfi
       return {
         finishedLogEntries: buildExecutionLogEntries(input.finishedAtIso, [
           "OpenRouter text execution completed successfully.",
-          `Model slot: ${selectedModel.slot}.`,
-          `Model: ${providerResult.model}.`,
+          ...buildGatewayProviderAuditLogLines(gatewayResult.audit, gatewayResult.modelSlot),
+          `Model: ${gatewayResult.model}.`,
           `Output type: ${outputType}.`,
           `Approximate input tokens: ${budgetDecision.approximateInputTokens}.`,
           `Max output tokens: ${budgetDecision.maxOutputTokens}.`,

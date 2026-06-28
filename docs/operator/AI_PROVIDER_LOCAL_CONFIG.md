@@ -13,7 +13,7 @@ Local-only guide for AI text provider env configuration before any VPS or stagin
 
 | Variable | Required locally | Default / safe local value | Purpose |
 |----------|------------------|----------------------------|---------|
-| `AI_TEXT_GATEWAY` | No | `local` when unset | Selects `local` or `openrouter` text execution |
+| `AI_TEXT_GATEWAY` | No | `local` when unset | Selects `disabled`, `local`, or `openrouter` text execution |
 | `OPENROUTER_API_KEY` | No | unset | Provider credential; never commit |
 | `OPENROUTER_BASE_URL` | No | `https://openrouter.ai/api/v1` | OpenRouter API base URL |
 | `OPENROUTER_TEXT_PRIMARY_MODEL` | No | unset | Primary text model id |
@@ -55,6 +55,7 @@ Remove-Item Env:SMOKE_EXPECT_OPENROUTER_LIVE -ErrorAction SilentlyContinue
 | Condition | Runtime behavior |
 |-----------|------------------|
 | Provider env missing | Local deterministic execution |
+| `AI_TEXT_GATEWAY=disabled` | AI text execution blocked with safe failure |
 | `AI_TEXT_GATEWAY=openrouter` without key/model | Live execution disabled; deterministic local fallback |
 | Unrecognized `AI_TEXT_GATEWAY` value | Treated as `local`; runtime warning emitted |
 | Fully configured OpenRouter | Live provider path available; still admin-triggered only |

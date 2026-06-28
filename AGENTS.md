@@ -240,6 +240,8 @@ npm.cmd run dev:web   # http://localhost:5173
 
 ### Validation commands
 
+PowerShell rule: **one command per line**. Do not chain with `&&` in terminal commands or agent prompts.
+
 ```powershell
 cd C:\dcaosv1
 git diff --check
