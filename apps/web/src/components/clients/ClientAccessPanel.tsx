@@ -173,7 +173,7 @@ export function ClientAccessPanel({
       {accessLoading && accessRecords.length === 0 ? <p className="muted-text">Loading access records...</p> : null}
 
       {!accessLoading && filteredRecords.length === 0 ? (
-        <EmptyState message="No users linked to this client." title="No access records" />
+        <EmptyState message="No users linked to this client." title="No access records" variant="inline" />
       ) : null}
 
       {filteredRecords.length > 0 ? (

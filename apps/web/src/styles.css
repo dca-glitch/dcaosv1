@@ -2792,3 +2792,207 @@ th {
     grid-template-columns: 1fr;
   }
 }
+
+/* Final full-system UI/UX completion — shared utilities */
+.stack-gap-sm {
+  display: grid;
+  gap: 10px;
+}
+
+.stack-gap-md {
+  display: grid;
+  gap: 12px;
+}
+
+.portal-detail-stack {
+  display: grid;
+  gap: 12px;
+}
+
+.portal-report-split {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(200px, 240px) minmax(0, 1fr);
+}
+
+.compact-nested-list {
+  margin: 0.25rem 0 0;
+  padding-left: 1.25rem;
+}
+
+.state-panel-accent-error {
+  border-left: 3px solid rgba(255, 124, 154, 0.55);
+  padding-left: 10px;
+}
+
+.state-panel-accent-success {
+  border-left: 3px solid rgba(99, 230, 190, 0.55);
+  padding-left: 10px;
+}
+
+.panel-divider-top {
+  border-top: 1px solid var(--border);
+  margin-top: 12px;
+  padding-top: 12px;
+}
+
+.pre-wrap-block {
+  font-family: inherit;
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.modal-body .entity-card,
+.modal-body .field-panel,
+.monthly-report-deliverable-list .entity-card {
+  margin-bottom: 12px;
+}
+
+.modal-body .entity-card:last-child,
+.modal-body .field-panel:last-child,
+.monthly-report-deliverable-list .entity-card:last-child {
+  margin-bottom: 0;
+}
+
+.monthly-report-summary-panel {
+  margin-bottom: 4px;
+}
+
+.monthly-report-summary-metrics {
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(160px, 1fr));
+}
+
+.monthly-report-deliverable-list {
+  display: grid;
+  gap: 8px;
+}
+
+.monthly-report-deliverable-list h4,
+.monthly-report-plan-heading {
+  font-size: 0.9rem;
+  margin: 8px 0 0;
+}
+
+.team-shell-metrics,
+.settings-shell-metrics,
+.company-profile-shell-metrics {
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(160px, 1fr));
+}
+
+.modal-footer--align-start {
+  grid-column: 1 / -1;
+  justify-content: flex-start;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.modal-footer--flush {
+  justify-content: flex-start;
+  padding: 0;
+}
+
+.brief-actions-inline {
+  margin-left: 0.5rem;
+}
+
+.field-panel-spaced {
+  margin-bottom: 12px;
+}
+
+.card-actions-spaced {
+  margin-top: 0.75rem;
+}
+
+.dense-record-main--stack {
+  align-items: start;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.inline-empty-title {
+  color: var(--text);
+  font-weight: 700;
+}
+
+.brief-grid-spaced-sm {
+  margin-top: 0.5rem;
+}
+
+.stack-gap-top-sm {
+  margin-top: 0.75rem;
+}
+
+.field-panel-top {
+  margin-top: 1rem;
+}
+
+.mi-row-note-spaced {
+  margin-top: 12px;
+}
+
+.mi-handoff-list-spaced {
+  margin-bottom: 14px;
+}
+
+.admin-pre-block {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+  font-size: 0.8125rem;
+  margin-top: 0.5rem;
+  max-height: 14rem;
+  overflow: auto;
+  padding: 0.75rem;
+  white-space: pre-wrap;
+}
+
+.file-input-hidden {
+  display: none;
+}
+
+.upload-trigger-label {
+  cursor: pointer;
+}
+
+.upload-trigger-label.is-busy {
+  cursor: wait;
+}
+
+.mono-input-full {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.8125rem;
+  width: 100%;
+}
+
+.inline-action-row {
+  align-items: center;
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.flex-1-input {
+  flex: 1;
+}
+
+.brief-grid-spaced-top {
+  margin-top: 0.75rem;
+}
+
+.card-actions-spaced-sm {
+  margin-top: 0.5rem;
+}
+
+.modal-footer-spaced {
+  margin-top: 0.75rem;
+}
+
+.finance-table-wrap-spaced {
+  margin-bottom: 1rem;
+}
+
+@media (max-width: 760px) {
+  .portal-report-split {
+    grid-template-columns: 1fr;
+  }
+}

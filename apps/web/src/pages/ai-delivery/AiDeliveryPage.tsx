@@ -3102,7 +3102,7 @@ export function AiDeliveryPage({
                 {" "}
                 <strong>Notes:</strong> {p.plannedContentScopeNotes ?? "Not set"}.
                 {canEdit ? (
-                  <span className="brief-actions" style={{ marginLeft: "0.5rem" }}>
+                  <span className="brief-actions brief-actions-inline">
                     <button className="secondary-action" onClick={() => void onRequestClientInput(p.id)} type="button">
                       Request input
                     </button>
@@ -3301,7 +3301,7 @@ export function AiDeliveryPage({
                       <span className="muted-text">Client-provided direction used to guide this monthly AI Delivery work.</span>
                     </>
                   ) : (
-                    <pre style={{ whiteSpace: "pre-wrap" }}>{briefDetail.clientPriorities ?? "Not set"}</pre>
+                    <pre className="pre-wrap-block">{briefDetail.clientPriorities ?? "Not set"}</pre>
                   )}
                 </section>
 
@@ -3318,7 +3318,7 @@ export function AiDeliveryPage({
                       <span className="muted-text">Helps admins keep content aligned with current client priorities.</span>
                     </>
                   ) : (
-                    <pre style={{ whiteSpace: "pre-wrap" }}>{briefDetail.productsServicesFocus ?? "Not set"}</pre>
+                    <pre className="pre-wrap-block">{briefDetail.productsServicesFocus ?? "Not set"}</pre>
                   )}
                 </section>
 
@@ -3335,7 +3335,7 @@ export function AiDeliveryPage({
                       <span className="muted-text">Used by the admin team when planning briefs, topics, and drafts.</span>
                     </>
                   ) : (
-                    <pre style={{ whiteSpace: "pre-wrap" }}>{briefDetail.targetAudience ?? "Not set"}</pre>
+                    <pre className="pre-wrap-block">{briefDetail.targetAudience ?? "Not set"}</pre>
                   )}
                 </section>
 
@@ -3352,7 +3352,7 @@ export function AiDeliveryPage({
                       <span className="muted-text">Visible only to admin team.</span>
                     </>
                   ) : (
-                    <pre style={{ whiteSpace: "pre-wrap" }}>{briefDetail.marketsCompetitors ?? "Not set"}</pre>
+                    <pre className="pre-wrap-block">{briefDetail.marketsCompetitors ?? "Not set"}</pre>
                   )}
                 </section>
 
@@ -3369,7 +3369,7 @@ export function AiDeliveryPage({
                       <span className="muted-text">Not shown to client.</span>
                     </>
                   ) : (
-                    <pre style={{ whiteSpace: "pre-wrap" }}>{briefDetail.notes ?? "Not set"}</pre>
+                    <pre className="pre-wrap-block">{briefDetail.notes ?? "Not set"}</pre>
                   )}
                 </section>
 
@@ -3403,7 +3403,7 @@ export function AiDeliveryPage({
                 </dl>
                 <section className="field-panel">
                   <h3>Planned content scope notes</h3>
-                  <pre style={{ whiteSpace: 'pre-wrap' }}>{openProject.plannedContentScopeNotes ?? 'Not set'}</pre>
+                  <pre className="pre-wrap-block">{openProject.plannedContentScopeNotes ?? 'Not set'}</pre>
                 </section>
                 <div className="modal-footer">
                   <button className="secondary-action" onClick={() => { setOpenBriefId(null); setBriefError(null); setBriefDetail(null); }} type="button">Close</button>
@@ -3542,7 +3542,7 @@ export function AiDeliveryPage({
                         : null;
 
                       return (
-                      <div className="field-grid" key={item.localId} style={{ marginBottom: "1rem" }}>
+                      <div className="field-grid" key={item.localId}>
                         <label className="field-span-2">
                           Topic / working title - Required
                           <input
@@ -3626,7 +3626,7 @@ export function AiDeliveryPage({
                           <span className="muted-text">Latest persisted approval or revision note for this item.</span>
                         </div>
                         <div className="field-span-2">
-                          <div className="modal-footer" style={{ justifyContent: "flex-start", padding: 0 }}>
+                          <div className="modal-footer modal-footer--flush">
                             <button
                               className="primary-action"
                               disabled={isContentPlanBusy || !persistedItem?.id || persistedItem.approvalStatus === "CLIENT_CHANGES_REQUESTED"}
@@ -3756,7 +3756,7 @@ export function AiDeliveryPage({
                 <h3>Existing research requests</h3>
                 {researchRequests.length === 0 ? <div className="state-panel">No research requests yet. Add a request to continue.</div> : null}
                 {researchRequests.map((request) => (
-                  <article className="entity-card" key={request.id} style={{ marginBottom: "1rem" }}>
+                  <article className="entity-card" key={request.id}>
                     <div className="entity-card-header">
                       <div>
                         <StatusBadge status={request.status} />
@@ -3878,7 +3878,7 @@ export function AiDeliveryPage({
                 <h3>Existing research summaries</h3>
                 {researchSummaries.length === 0 ? <div className="state-panel">No research summaries yet. Add a summary after reviewing sources.</div> : null}
                 {researchSummaries.map((summary) => (
-                  <article className="entity-card" key={summary.id} style={{ marginBottom: "1rem" }}>
+                  <article className="entity-card" key={summary.id}>
                     <div className="entity-card-header">
                       <div>
                         <StatusBadge status={summary.status} />
@@ -3996,7 +3996,7 @@ export function AiDeliveryPage({
                 <h3>Existing research sources</h3>
                 {researchSources.length === 0 ? <div className="state-panel">No research sources yet. Add a source to continue.</div> : null}
                 {researchSources.map((source) => (
-                  <article className="entity-card" key={source.id} style={{ marginBottom: "1rem" }}>
+                  <article className="entity-card" key={source.id}>
                     <div className="entity-card-header">
                       <div>
                         <StatusBadge status={source.status} />
@@ -4057,7 +4057,7 @@ export function AiDeliveryPage({
                 {miContextItems.length === 0 ? (
                   <EmptyState title="No handoffs applied" message="No Market Intelligence handoffs are currently applied to this project. Apply one below." />
                 ) : miContextItems.map((h) => (
-                  <article key={h.id} className="entity-card" style={{ marginBottom: "0.75rem" }}>
+                  <article key={h.id} className="entity-card">
                     <div className="entity-card-header">
                       <div>
                         <span className="entity-pill entity-pill-active">{h.handoffStatus}</span>
@@ -4117,7 +4117,7 @@ export function AiDeliveryPage({
                 <h3>Workflow run editor</h3>
                 <p className="muted-text">Current status is set in the workflow run record. Next step: save the run, then execute the existing guarded workflow path when ready. This screen is admin-only execution history and operator context. It does not create client delivery, publishing, automation, or public review.</p>
                 <div className="state-panel" role="status">{workflowRunActionGuidance}</div>
-                <div className="field-panel" style={{ marginBottom: "1rem" }}>
+                <div className="field-panel">
                   <h4>Execution visibility summary</h4>
                   <dl className="brief-grid">
                     <div>
@@ -4145,7 +4145,7 @@ export function AiDeliveryPage({
                   </dl>
                 </div>
                 {workflowRunBeingEdited ? (
-                  <div className="field-panel" style={{ marginBottom: "1rem" }}>
+                  <div className="field-panel">
                     <h4>Current execution record</h4>
                     <dl className="brief-grid">
                       <div>
@@ -4261,7 +4261,7 @@ export function AiDeliveryPage({
                 {workflowRuns.map((run) => {
                   const resultPreview = parseWorkflowRunResultPreview(run.resultPlaceholder);
                   return (
-                    <article className="entity-card" key={run.id} style={{ marginBottom: "1rem" }}>
+                    <article className="entity-card" key={run.id}>
                       <div className="entity-card-header">
                         <div>
                           <StatusBadge status={run.status} />
@@ -4360,7 +4360,7 @@ export function AiDeliveryPage({
                 <p className="muted-text">Current status is shown below. Next step: start from an approved or planned content plan item, generate or edit the draft, link image planning, package deliverables, then move it into internal review when ready. Client Portal MVP for Puriva shows client-safe delivery visibility after admin release; human/client review before publication is required. Advanced interactive client review routes remain phased.</p>
                 <div className="state-panel" role="status">{contentDraftActionGuidance}</div>
                 {contentDraftHandoffMessage ? <div className="state-panel" role="status">{contentDraftHandoffMessage}</div> : null}
-                <div className="field-panel" style={{ marginBottom: "1rem" }}>
+                <div className="field-panel">
                   <h4>AI Content Production readiness summary</h4>
                   <dl className="brief-grid">
                     <div>
@@ -4382,7 +4382,7 @@ export function AiDeliveryPage({
                   </dl>
                   <p className="muted-text">{contentDraftReviewReadiness.message}</p>
                 </div>
-                <div className="field-panel" style={{ marginBottom: "1rem" }}>
+                <div className="field-panel">
                   <h4>Plan item to draft handoff</h4>
                   <p className="muted-text">Use the approved or planned monthly content plan item below to create the linked draft the admin team will edit. This is the internal handoff from monthly planning into production; it does not publish, hand off to clients, or expose draft review flows. Once saved, the same draft can flow into image planning and deliverable packaging.</p>
                   <dl className="brief-grid">
@@ -4409,7 +4409,7 @@ export function AiDeliveryPage({
                       : "Choose a ready plan item below to generate a new draft, or create a manual draft and link it back to the approved monthly plan item it fulfills."}
                   </div>
                 </div>
-                <div className="field-panel" style={{ marginBottom: "1rem" }}>
+                <div className="field-panel">
                   <h4>Draft actions</h4>
                   <p className="muted-text">Keep the saved draft editable here, then use the existing actions for generation, review, reset, and archive transitions. Client Portal MVP visibility for Puriva is required; advanced in-portal draft review actions remain phased.</p>
                   <div className="modal-footer">
@@ -4435,14 +4435,14 @@ export function AiDeliveryPage({
                     ) : null}
                   </div>
                 </div>
-                <div className="field-panel" style={{ marginBottom: "1rem" }}>
+                <div className="field-panel">
                   <h4>Approved / planned content plan items</h4>
                   <p className="muted-text">Use approved or still-planned monthly content plan items to start a linked content draft. Items already marked as changes requested stay out of this picker until the plan is corrected.</p>
                   {eligibleContentDraftPlanItems.length === 0 ? <div className="state-panel">No ready plan items yet. Approve or add content plan items to continue draft production.</div> : null}
                   {eligibleContentDraftPlanItems.map((item) => {
                     const linkedDraft = contentDrafts.find((draftItem) => draftItem.contentPlanItemId === item.id && !draftItem.isArchived) ?? null;
                     return (
-                      <article className="entity-card" key={item.id ?? `${item.sortOrder}-${item.title}`} style={{ marginBottom: "1rem" }}>
+                      <article className="entity-card" key={item.id ?? `${item.sortOrder}-${item.title}`}>
                         <div className="entity-card-header">
                           <div>
                             <StatusBadge status={formatContentPlanItemApprovalStatus(item.approvalStatus)} />
@@ -4478,7 +4478,7 @@ export function AiDeliveryPage({
                   })}
                 </div>
                 {activeContentDraftRecord ? (
-                  <div className="field-panel" style={{ marginBottom: "1rem" }}>
+                  <div className="field-panel">
                     <h4>Current draft status</h4>
                     <dl className="brief-grid">
                       <div>
@@ -4509,7 +4509,7 @@ export function AiDeliveryPage({
                   </div>
                 ) : null}
                 {activeContentDraftRecord ? (
-                  <div className="field-panel" style={{ marginBottom: "1rem" }}>
+                  <div className="field-panel">
                     <h4>Completion and export handoff</h4>
                     <p className="muted-text">Use same-project image planning and deliverable records only. This handoff stays internal to the admin workflow and does not publish, export, or expose client delivery. If the draft needs a connector-ready handoff, use the deliverable record for the private document/export reference or the WordPress prepared draft path; monthly report/PDF stays in the reporting layer.</p>
                     <dl className="brief-grid">
@@ -4530,7 +4530,7 @@ export function AiDeliveryPage({
                         <dd>{formatStatusBreakdown(activeContentDraftLinkedDeliverables, "No linked deliverables yet")}</dd>
                       </div>
                     </dl>
-                    <div className="card-actions" style={{ marginTop: "0.75rem" }}>
+                    <div className="card-actions card-actions-spaced">
                       <button
                         className="secondary-action"
                         disabled={contentDraftsSaving}
@@ -4617,7 +4617,7 @@ export function AiDeliveryPage({
                 <h3>Existing article production records</h3>
                 {contentDrafts.length === 0 ? <div className="state-panel">No content drafts yet. Approve or select a plan item above, then generate the first linked draft for admin editing.</div> : null}
                 {contentDrafts.map((draftItem) => (
-                  <article className="entity-card" key={draftItem.id} style={{ marginBottom: "1rem" }}>
+                  <article className="entity-card" key={draftItem.id}>
                     <div className="entity-card-header">
                       <div>
                         <StatusBadge status={formatContentDraftStatus(draftItem.isArchived ? "ARCHIVED" : draftItem.status)} />
@@ -4702,7 +4702,7 @@ export function AiDeliveryPage({
                   ) : null}
                 </div>
                 {activeDeliverableRecord ? (
-                  <div className="field-panel" style={{ marginBottom: "1rem" }}>
+                  <div className="field-panel">
                     <h4>Current deliverable status</h4>
                     <dl className="brief-grid">
                       <div>
@@ -4731,7 +4731,7 @@ export function AiDeliveryPage({
                       </div>
                     </dl>
                     {activeDeliverableRecord.storageKey ? (
-                      <div style={{ marginTop: "1rem", paddingTop: "1rem", borderTop: "1px solid var(--color-border)" }}>
+                      <div className="panel-divider-top">
                         <button
                           className="secondary-action"
                           disabled={deliverableDownloadRefLoading}
@@ -4741,7 +4741,7 @@ export function AiDeliveryPage({
                           {deliverableDownloadRefLoading ? "Preparing download..." : "Download private document"}
                         </button>
                         {deliverableDownloadRefError && deliverableDownloadRefError.recordId === activeDeliverableRecord.id ? (
-                          <div className="state-panel" role="alert" style={{ marginTop: "0.5rem", paddingLeft: "1rem", borderLeft: "4px solid var(--color-error)" }}>
+                          <div className="state-panel state-panel-accent-error" role="alert">
                             <strong>Download unavailable:</strong> {deliverableDownloadRefError.message.includes("503") || deliverableDownloadRefError.message.includes("unconfigured") ? "Private document storage is not configured. Contact your administrator." : deliverableDownloadRefError.message}
                           </div>
                         ) : null}
@@ -4763,7 +4763,7 @@ export function AiDeliveryPage({
                     ) : null}
                   </div>
                 ) : null}
-                <div className="field-panel" style={{ marginBottom: "1rem" }}>
+                <div className="field-panel">
                   <h4>Package completeness summary</h4>
                   <p className="muted-text">This is an internal admin readiness check built only from the linked draft, image, and deliverable data already loaded here. It does not generate exports, publish content, upload assets, or create client delivery access.</p>
                   <dl className="brief-grid">
@@ -4807,7 +4807,7 @@ export function AiDeliveryPage({
                       )}
                   </div>
                 </div>
-                <div className="field-panel" style={{ marginBottom: "1rem" }}>
+                <div className="field-panel">
                   <h4>Internal final handoff view</h4>
                   <p className="muted-text">Internal admin handoff only. This view summarizes the article draft, image planning, package record, and internal notes already loaded in this screen. It does not create client delivery, public links, publication, WordPress transfer, or export output.</p>
                   <dl className="brief-grid">
@@ -4963,7 +4963,7 @@ export function AiDeliveryPage({
                         ))}
                       </select>
                     </label>
-                    <dl className="brief-grid" style={{ marginTop: "0.75rem" }}>
+                    <dl className="brief-grid brief-grid-spaced-top">
                       <div>
                         <dt>Selected site</dt>
                         <dd>{selectedPublicationTarget?.siteUrl ?? "Not set"}</dd>
@@ -5012,7 +5012,7 @@ export function AiDeliveryPage({
                 {visibleDeliverables.map((d) => {
                   const latestPublicationLog = projectPublicationLogs.find((log) => log.deliverableId === d.id) ?? null;
                   return (
-                  <article className="entity-card" key={d.id} style={{ marginBottom: "1rem" }}>
+                  <article className="entity-card" key={d.id}>
                     <div className="entity-card-header">
                       <div>
                         <StatusBadge status={formatDeliverableStatus(d.isArchived ? "ARCHIVED" : d.status)} />
@@ -5106,7 +5106,7 @@ export function AiDeliveryPage({
                       </div>
                     </dl>
                     {deliverableWordPressDraftError && deliverableWordPressDraftError.recordId === d.id ? (
-                      <div className="state-panel" role="alert" style={{ marginTop: "0.75rem", color: "var(--color-error)" }}>
+                      <div className="state-panel state-panel-accent-error" role="alert">
                         {deliverableWordPressDraftError.message}
                       </div>
                     ) : null}
@@ -5138,7 +5138,7 @@ export function AiDeliveryPage({
                       </div>
                     ) : null}
                     {deliverableWordPressPublishError && deliverableWordPressPublishError.recordId === d.id ? (
-                      <div className="state-panel" role="alert" style={{ marginTop: "0.75rem", color: "var(--color-error)" }}>
+                      <div className="state-panel state-panel-accent-error" role="alert">
                        {deliverableWordPressPublishError.message}
                       </div>
                     ) : null}
@@ -5178,7 +5178,7 @@ export function AiDeliveryPage({
                       </div>
                     ) : null}
                     {deliverableGoogleDocExportError && deliverableGoogleDocExportError.recordId === d.id ? (
-                      <div className="state-panel" role="alert" style={{ marginTop: "0.75rem", color: "var(--color-error)" }}>
+                      <div className="state-panel state-panel-accent-error" role="alert">
                         {deliverableGoogleDocExportError.message}
                       </div>
                     ) : null}
@@ -5218,7 +5218,7 @@ export function AiDeliveryPage({
                       </div>
                     ) : null}
                     {!d.isArchived ? (
-                      <div className="field-grid" style={{ marginTop: "0.75rem" }}>
+                      <div className="field-grid brief-grid-spaced-top">
                         <label className="field-span-2">
                           Private document upload - Optional
                           <input
@@ -5235,7 +5235,7 @@ export function AiDeliveryPage({
                         </label>
                       </div>
                     ) : null}
-                    <div className="card-actions" style={{ marginTop: "0.75rem" }}>
+                    <div className="card-actions card-actions-spaced">
                       {!d.isArchived ? (
                         <button
                           className="secondary-action"
@@ -5350,7 +5350,7 @@ export function AiDeliveryPage({
                         <div className="state-panel">No review placeholders yet. Add one to continue internal QA.</div>
                       ) : null}
                       {[...deliverableReviews].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()).map((review) => (
-                        <article className="entity-card" key={review.id} style={{ marginBottom: "1rem" }}>
+                        <article className="entity-card" key={review.id}>
                           <div className="entity-card-header">
                             <div>
                               <StatusBadge status={review.status} />
@@ -5450,7 +5450,7 @@ export function AiDeliveryPage({
                   ) : null}
                 </div>
                 {activeArticleImageRecord ? (
-                  <div className="field-panel" style={{ marginBottom: "1rem" }}>
+                  <div className="field-panel">
                     <h4>Current image status</h4>
                     <dl className="brief-grid">
                       <div>
@@ -5479,7 +5479,7 @@ export function AiDeliveryPage({
                       </div>
                     </dl>
                     {activeArticleImageRecord.storageKey ? (
-                      <div style={{ marginTop: "1rem", paddingTop: "1rem", borderTop: "1px solid var(--color-border)" }}>
+                      <div className="panel-divider-top">
                         <button
                           className="secondary-action"
                           disabled={articleImageDownloadRefLoading}
@@ -5489,7 +5489,7 @@ export function AiDeliveryPage({
                           {articleImageDownloadRefLoading ? "Preparing download..." : "Download private image"}
                         </button>
                         {articleImageDownloadRefError && articleImageDownloadRefError.recordId === activeArticleImageRecord.id ? (
-                          <div className="state-panel" role="alert" style={{ marginTop: "0.5rem", paddingLeft: "1rem", borderLeft: "4px solid var(--color-error)" }}>
+                          <div className="state-panel state-panel-accent-error" role="alert">
                             <strong>Download unavailable:</strong> {articleImageDownloadRefError.message.includes("503") || articleImageDownloadRefError.message.includes("unconfigured") ? "Private image storage is not configured. Contact your administrator." : articleImageDownloadRefError.message}
                           </div>
                         ) : null}
@@ -5512,7 +5512,7 @@ export function AiDeliveryPage({
                   </div>
                 ) : null}
                 {activeArticleImageRecord ? (
-                  <div className="field-panel" style={{ marginBottom: "1rem" }}>
+                  <div className="field-panel">
                     <h4>Packaging handoff</h4>
                     <p className="muted-text">This image record can hand off into the existing admin deliverable workflow when the linked draft and final references are ready. No image generation, export automation, upload automation, or client delivery happens from this section.</p>
                     <dl className="brief-grid">
@@ -5533,7 +5533,7 @@ export function AiDeliveryPage({
                         <dd>{activeArticleImageRecord.finalImageUrl || activeArticleImageRecord.storageKey || "Not set"}</dd>
                       </div>
                     </dl>
-                    <div className="card-actions" style={{ marginTop: "0.75rem" }}>
+                    <div className="card-actions card-actions-spaced">
                       <button
                         className="secondary-action"
                         disabled={articleImagesSaving}
@@ -5652,7 +5652,7 @@ export function AiDeliveryPage({
                 <h3>Existing image production records</h3>
                 {articleImages.length === 0 ? <div className="state-panel">No article image records yet. Add an image request after a content draft is ready.</div> : null}
                 {articleImages.map((image) => (
-                  <article className="entity-card" key={image.id} style={{ marginBottom: "1rem" }}>
+                  <article className="entity-card" key={image.id}>
                     <div className="entity-card-header">
                       <div>
                         <StatusBadge status={formatArticleImageStatus(image.isArchived ? "ARCHIVED" : image.status)} />
@@ -5707,7 +5707,7 @@ export function AiDeliveryPage({
                       </div>
                     </dl>
                     {!image.isArchived ? (
-                      <div className="field-grid" style={{ marginTop: "0.75rem" }}>
+                      <div className="field-grid brief-grid-spaced-top">
                         <label className="field-span-2">
                           Private final image upload - Optional
                           <input
@@ -5724,7 +5724,7 @@ export function AiDeliveryPage({
                         </label>
                       </div>
                     ) : null}
-                    <div className="card-actions" style={{ marginTop: "0.75rem" }}>
+                    <div className="card-actions card-actions-spaced">
                       {!image.isArchived ? (
                         <button
                           className="secondary-action"

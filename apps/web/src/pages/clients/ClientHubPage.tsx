@@ -326,6 +326,7 @@ export function ClientHubPage({
           <EmptyState
             message="Add a WordPress target for this client/domain. Legacy tenant-level WordPress config (Company Profile) is read-only and cannot be used for publish."
             title="No publication targets"
+            variant="inline"
           />
         ) : (
           <ul className="entity-list">
@@ -398,7 +399,7 @@ export function ClientHubPage({
                 disabled={encryptionAvailable === false}
               />
             </label>
-            <div className="modal-footer" style={{ gridColumn: "1 / -1", paddingLeft: 0, paddingRight: 0 }}>
+            <div className="modal-footer modal-footer--align-start">
               <button
                 className="secondary-action"
                 disabled={encryptionAvailable === false || !credentialTargetId || !applicationPassword.trim()}
@@ -448,7 +449,7 @@ export function ClientHubPage({
 
       <SectionPanel tone="compact" title="Product catalog" description="Inquiry-only catalog for Client Portal (Puriva skincare/products). No cart or checkout.">
         {catalogProducts.length === 0 ? (
-          <EmptyState message="Add products that clients can inquire about from the Client Portal." title="No catalog products" />
+          <EmptyState message="Add products that clients can inquire about from the Client Portal." title="No catalog products" variant="inline" />
         ) : (
           <ul className="entity-list">
             {catalogProducts.map((product) => (
@@ -488,7 +489,7 @@ export function ClientHubPage({
 
       <SectionPanel tone="compact" title="Product inquiries" description="Client-submitted catalog inquiries from the portal.">
         {catalogInquiries.length === 0 ? (
-          <EmptyState message="Inquiries appear when clients submit the catalog form in Client Portal." title="No inquiries yet" />
+          <EmptyState message="Inquiries appear when clients submit the catalog form in Client Portal." title="No inquiries yet" variant="inline" />
         ) : (
           <ul className="entity-list">
             {catalogInquiries.map((inquiry) => (
@@ -510,7 +511,7 @@ export function ClientHubPage({
 
       <SectionPanel tone="compact" title="Publication log" description="Recent prepare/publish actions for this client.">
         {logs.length === 0 ? (
-          <EmptyState message="Prepare or publish a deliverable to populate this log." title="No publication events" />
+          <EmptyState message="Prepare or publish a deliverable to populate this log." title="No publication events" variant="inline" />
         ) : (
           <ul className="entity-list">
             {logs.map((log) => (

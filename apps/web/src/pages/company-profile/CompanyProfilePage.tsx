@@ -150,7 +150,6 @@ export function CompanyProfilePage({ companyProfile, canEdit, error, loading, on
   }
 
   const profileStatusLabel = companyProfile ? (companyProfile.isActive ? "Active" : "Inactive") : "Not set";
-  const financeDocsLabel = companyProfile?.invoicePrefix && companyProfile?.creditNotePrefix ? "Configured" : "Pending";
 
   return (
     <section className="view-section" aria-labelledby="company-profile-title">
@@ -181,17 +180,6 @@ export function CompanyProfilePage({ companyProfile, canEdit, error, loading, on
           label="Default currency"
           metricKey="company-profile-currency"
           value={companyProfile?.currency ?? "—"}
-        />
-        <MetricCard
-          accent="violet"
-          helper={
-            companyProfile
-              ? `${companyProfile.invoicePrefix ?? "DCA-INV"} / ${companyProfile.creditNotePrefix ?? "DCA-CN"}`
-              : "Invoice and credit note prefixes"
-          }
-          label="Finance docs"
-          metricKey="company-profile-finance-docs"
-          value={financeDocsLabel}
         />
       </div>
       {!companyProfile ? (
