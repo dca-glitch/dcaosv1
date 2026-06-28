@@ -4,7 +4,7 @@
 
 **Branch:** `feature/max-local-completion-before-staging`
 
-**Baseline:** `main` after PR #29 (pre-staging client delivery readiness merged).
+**Baseline:** `main` after PR #30 at `3089c32` (local completion before staging closed).
 
 Related runbooks:
 

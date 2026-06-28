@@ -23,8 +23,9 @@ Final execution approval boundaries are summarized in [VPS Staging Execution App
 
 ## Current Assumptions To Verify
 
-- DCA OS will be served from `system.digitalcubeagency.net`.
-- Controlled staging validation uses the final OS subdomain with no client access.
+- **Production** DCA OS Lite is served from `system.digitalcubeagency.net` (unchanged, frozen until separate production approval).
+- **Staging (G1 approved, G4 not approved):** `staging.digitalcubeagency.net` — same VPS, separate stack; DNS not created yet; staging smoke must not target production.
+- Controlled staging validation uses the G1-approved staging host with no client access.
 - The API is Express under `/api/v1`.
 - The web app is React/Vite and defaults to same-origin `/api/v1`.
 - The preferred staging shape is same-origin HTTPS through a reverse proxy.
@@ -236,7 +237,7 @@ The staging smoke command refuses unknown hosts, non-HTTPS URLs, missing explici
 
 ## Shared Caddy Docker Route Snippet
 
-Do not edit the VPS Caddyfile until explicitly approved. The expected route shape for the shared `dca-caddy` container is:
+Do not edit the VPS Caddyfile until **Block G4** is explicitly approved. Staging route draft lives in [`VPS_STAGING_EXECUTION_APPROVAL_PACK.md`](VPS_STAGING_EXECUTION_APPROVAL_PACK.md) (`staging.digitalcubeagency.net`). The snippet below is the **production** route only (`system.digitalcubeagency.net` — not a staging smoke or deploy target):
 
 ```caddyfile
 system.digitalcubeagency.net {
