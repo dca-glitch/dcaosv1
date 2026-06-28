@@ -2100,6 +2100,7 @@ tr:hover td {
 
 .portal-project-sidebar {
   padding: 14px;
+  background: rgba(255, 255, 255, 0.015);
 }
 
 .portal-project-list .dense-record {
@@ -2427,4 +2428,89 @@ tr:hover td {
 
 .section-panel-description {
   line-height: 1.4;
+}
+
+/* P2 block 2 — portal shell reduction, document/archive feel */
+.app-shell.portal-shell {
+  grid-template-columns: 240px minmax(0, 1fr);
+}
+
+.portal-shell .sidebar {
+  background:
+    linear-gradient(180deg, rgba(10, 14, 30, 0.88), rgba(6, 9, 20, 0.9)),
+    rgba(8, 10, 22, 0.86);
+  box-shadow: 8px 0 40px rgba(0, 0, 0, 0.18);
+  gap: 14px;
+}
+
+.portal-shell .brand-mark {
+  box-shadow: 0 8px 20px rgba(125, 92, 255, 0.14);
+  height: 32px;
+  width: 40px;
+}
+
+.portal-shell .nav-section-label {
+  color: rgba(186, 178, 210, 0.62);
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+}
+
+.portal-shell .nav-list a {
+  font-size: 0.88rem;
+  padding: 8px 10px;
+}
+
+.portal-shell .user-panel {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(190, 211, 255, 0.08);
+}
+
+.portal-main-shell {
+  padding: clamp(14px, 2.5vw, 28px);
+}
+
+.portal-metric-grid .metric-card {
+  min-height: 84px;
+  padding: 10px 12px;
+}
+
+.portal-metric-grid .metric-card::before {
+  opacity: 0.35;
+}
+
+.portal-inline-notice {
+  background: rgba(183, 156, 255, 0.05);
+  border: 1px solid rgba(183, 156, 255, 0.12);
+  border-radius: 8px;
+  font-size: 0.82rem;
+  line-height: 1.35;
+  padding: 6px 10px;
+}
+
+.portal-inline-notice p {
+  margin: 0;
+}
+
+.portal-inline-notice-error {
+  background: rgba(255, 154, 168, 0.06);
+  border-color: rgba(255, 154, 168, 0.16);
+  color: rgba(255, 176, 188, 0.96);
+}
+
+.portal-inline-notice-text {
+  font-size: 0.82rem;
+  margin: 0;
+}
+
+.portal-footer-note {
+  font-size: 0.78rem;
+  line-height: 1.45;
+  margin: 8px 0 0;
+  max-width: 52rem;
+}
+
+@media (max-width: 900px) {
+  .app-shell.portal-shell {
+    grid-template-columns: 1fr;
+  }
 }

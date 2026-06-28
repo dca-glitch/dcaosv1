@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { EmptyState } from "../../components/EmptyState";
 import { ErrorState } from "../../components/ErrorState";
 import { LoadingState } from "../../components/LoadingState";
@@ -378,12 +378,6 @@ function formatPercentValue(value: number | null | undefined): string {
   }
 
   return `${value.toLocaleString(undefined, { maximumFractionDigits: 2 })}%`;
-}
-
-function projectCardStyle(selected: boolean): CSSProperties | undefined {
-  return selected
-    ? { borderColor: "rgba(82, 224, 255, 0.28)", background: "rgba(82, 224, 255, 0.04)" }
-    : undefined;
 }
 
 function ClientPortalStatusBadge({ status }: { status: string | null | undefined }) {
@@ -875,9 +869,9 @@ export function ClientPortalPage() {
     return (
       <section className="view-section" aria-labelledby="client-portal-title">
         <PageHeader
-          description="Read-only archive of approved deliverables and finalized monthly reports."
+          description="Final deliverables and monthly reports shared with your account."
           eyebrow="Client workspace"
-          title="Client Portal"
+          title="Your archive"
           titleId="client-portal-title"
         />
         <ErrorState message={projectsError} title="Archive unavailable" />
@@ -894,28 +888,27 @@ export function ClientPortalPage() {
     <section className="view-section" aria-labelledby="client-portal-title">
       <PageHeader
         actions={
-          <button className="secondary-action" disabled={projectsLoading} onClick={handleRefresh} type="button">
+          <button className="ghost-action" disabled={projectsLoading} onClick={handleRefresh} type="button">
             Refresh
           </button>
         }
-        description="Read-only archive of approved deliverables and finalized monthly reports."
+        description="Final deliverables and monthly reports shared with your account."
         eyebrow="Client workspace"
-        title="Client Portal"
+        title="Your archive"
         titleId="client-portal-title"
       />
 
       <div className="summary-grid metric-grid portal-metric-grid">
-        <MetricCard accent="cyan" helper="Linked delivery projects" label="Projects" value={String(projectCount)} />
+        <MetricCard helper="Active delivery projects" label="Projects" value={String(projectCount)} />
         <MetricCard
-          accent="purple"
-          helper="Delivered or accepted only"
-          label="Final deliverables"
+          helper="Completed items only"
+          label="Deliverables"
           value={deliverablesLoading ? "…" : String(finalDeliverableCount)}
         />
       </div>
 
       {projectsError ? (
-        <div className="state-panel state-panel-error" role="alert">
+        <div className="portal-inline-notice portal-inline-notice-error" role="alert">
           <p>{projectsError}</p>
         </div>
       ) : null}
@@ -945,7 +938,7 @@ export function ClientPortalPage() {
 
           {filteredProjects.length === 0 ? (
             <EmptyState
-              message="No projects match this filter. Sparse archives show metrics with zero deliverables; populated archives list final items when admin shares them."
+              message="No projects match this filter. When your team shares material, it will appear here."
               title="No projects"
             />
           ) : (
@@ -962,7 +955,6 @@ export function ClientPortalPage() {
                     }
                   }}
                   role="button"
-                  style={projectCardStyle(selectedProjectId === project.id)}
                   tabIndex={0}
                 >
                   <div className="dense-record-main" style={{ gridTemplateColumns: "minmax(0, 1fr) auto" }}>
@@ -998,8 +990,8 @@ export function ClientPortalPage() {
         <div className="portal-detail-column">
           {!selectedProjectId ? (
             <SectionPanel
-              description="Choose a project from the list to view deliverables and monthly reports."
-              title="Project details"
+              description="Choose a project to view deliverables and monthly reports."
+              title="Project overview"
               tone="compact"
             >
               <EmptyState message="Select a project on the left to open its archive." title="No project selected" />
@@ -1011,8 +1003,8 @@ export function ClientPortalPage() {
           ) : selectedProject ? (
             <>
               <SectionPanel
-                description="Summary for the selected delivery project."
-                title="Project details"
+                description="Overview for the selected project."
+                title="Project overview"
                 tone="compact"
               >
                 <article className="entity-card dense-record">
@@ -1043,20 +1035,20 @@ export function ClientPortalPage() {
                     </div>
                   </div>
                   <div className="dense-row-note">
-                    Only approved or final archive items appear here.
+                    Only finalized items shared with your account appear here.
                   </div>
                 </article>
               </SectionPanel>
 
               <SectionPanel
-                description="Client-safe delivery status for this project month."
-                title="Delivery overview"
+                description="Summary of completed work for this project."
+                title="Delivery summary"
                 tone="compact"
               >
                 {deliverySummaryLoading ? (
-                  <LoadingState label="Loading delivery overview" />
+                  <LoadingState label="Loading delivery summary" />
                 ) : deliverySummaryError ? (
-                  <ErrorState message={deliverySummaryError} title="Delivery overview unavailable" />
+                  <ErrorState message={deliverySummaryError} title="Delivery summary unavailable" />
                 ) : deliverySummary ? (
                   <div style={{ display: "grid", gap: "12px" }}>
                     <article className="entity-card dense-record">
@@ -1065,15 +1057,15 @@ export function ClientPortalPage() {
                           <div className="dense-kicker">
                             <ClientPortalStatusBadge status={deliverySummary.aiSeo?.contentPlanStatus} />
                           </div>
-                          <h3>Content plan</h3>
+                          <h3>Planned content</h3>
                           <div className="dense-meta">
                             <span>
                               {deliverySummary.aiSeo
-                                ? `${deliverySummary.aiSeo.approvedItemCount} of ${deliverySummary.aiSeo.totalItemCount} plan items approved`
-                                : "No content plan yet"}
+                                ? `${deliverySummary.aiSeo.approvedItemCount} of ${deliverySummary.aiSeo.totalItemCount} items complete`
+                                : "No planned content yet"}
                             </span>
                             <span>
-                              {deliverySummary.aiSeo?.finalDeliverableCount ?? 0} final deliverable
+                              {deliverySummary.aiSeo?.finalDeliverableCount ?? 0} deliverable
                               {(deliverySummary.aiSeo?.finalDeliverableCount ?? 0) === 1 ? "" : "s"}
                             </span>
                           </div>
@@ -1091,7 +1083,7 @@ export function ClientPortalPage() {
                           {deliverySummary.marketIntelligence?.marketSummary ? (
                             <div className="dense-row-note">{deliverySummary.marketIntelligence.marketSummary}</div>
                           ) : (
-                            <div className="dense-row-note muted-text">No client-safe market summary is available yet.</div>
+                            <div className="dense-row-note muted-text">No market summary is available yet.</div>
                           )}
                           {deliverySummary.marketIntelligence?.recommendedActions.length ? (
                             <div className="dense-row-note">
@@ -1109,7 +1101,7 @@ export function ClientPortalPage() {
                           <div className="dense-kicker">
                             <ClientPortalStatusBadge status={deliverySummary.websitePublishing?.status} />
                           </div>
-                          <h3>Website publishing</h3>
+                          <h3>Website updates</h3>
                           <div className="dense-meta">
                             <span>{deliverySummary.websitePublishing?.action ?? "No publishing activity yet"}</span>
                             {deliverySummary.websitePublishing?.siteUrlHost ? (
@@ -1118,7 +1110,7 @@ export function ClientPortalPage() {
                           </div>
                           {!deliverySummary.websitePublishing ? (
                             <div className="dense-row-note muted-text">
-                              Publishing status appears here after your team shares an update.
+                              Website status appears here when your team shares an update.
                             </div>
                           ) : null}
                         </div>
@@ -1128,9 +1120,9 @@ export function ClientPortalPage() {
                     <article className="entity-card dense-record">
                       <div className="dense-record-main">
                         <div className="dense-title">
-                          <h3>Google Docs exports</h3>
+                          <h3>Shared documents</h3>
                           {deliverySummary.googleDocsExports.length === 0 ? (
-                            <div className="dense-row-note muted-text">No client-safe export links are available yet.</div>
+                            <div className="dense-row-note muted-text">No shared document links are available yet.</div>
                           ) : (
                             <div className="dense-list">
                               {deliverySummary.googleDocsExports.map((item) => (
@@ -1138,7 +1130,7 @@ export function ClientPortalPage() {
                                   <span>{item.title}</span>
                                   {item.exportUrl ? (
                                     <a href={item.exportUrl} rel="noreferrer" target="_blank">
-                                      Open Google Doc
+                                      Open document
                                     </a>
                                   ) : null}
                                 </div>
@@ -1150,13 +1142,13 @@ export function ClientPortalPage() {
                     </article>
                   </div>
                 ) : (
-                  <EmptyState message="Delivery overview is not available for this project yet." title="No delivery overview" />
+                  <EmptyState message="Delivery summary is not available for this project yet." title="No delivery summary" />
                 )}
               </SectionPanel>
 
               <SectionPanel
-                description="Inquiry-only product catalog for this client. No cart, checkout, or payment in the portal."
-                title="Product catalog inquiry"
+                description="Browse products and send an inquiry. No checkout or payment in this workspace."
+                title="Product inquiries"
                 tone="compact"
               >
                 {catalogLoading ? (
@@ -1165,8 +1157,8 @@ export function ClientPortalPage() {
                   <ErrorState message={catalogError} title="Product catalog unavailable" />
                 ) : catalogProducts.length === 0 ? (
                   <EmptyState
-                    message="Your team can add skincare or service products in the Client Hub. Visible products appear here for inquiry."
-                    title="No catalog products yet"
+                    message="When products are added to your account, they will appear here for inquiry."
+                    title="No products yet"
                   />
                 ) : (
                   <div style={{ display: "grid", gap: "12px" }}>
@@ -1239,10 +1231,10 @@ export function ClientPortalPage() {
                           />
                         </label>
                       </div>
-                      {inquiryNotice ? <p className="muted-text">{inquiryNotice}</p> : null}
+                      {inquiryNotice ? <p className="portal-inline-notice-text muted-text">{inquiryNotice}</p> : null}
                       <div className="modal-footer">
-                        <button className="primary-action" disabled={inquirySubmitting} type="submit">
-                          {inquirySubmitting ? "Submitting" : "Send product inquiry"}
+                        <button className="secondary-action" disabled={inquirySubmitting} type="submit">
+                          {inquirySubmitting ? "Submitting" : "Send inquiry"}
                         </button>
                       </div>
                     </form>
@@ -1251,12 +1243,12 @@ export function ClientPortalPage() {
               </SectionPanel>
 
               <SectionPanel
-                description="Delivered and accepted items only. Download when your team shares a link."
-                title="Final deliverables"
+                description="Completed items only. Download when a link is available."
+                title="Deliverables"
                 tone="compact"
               >
                 {downloadNotice ? (
-                  <div className="state-panel" role="status">
+                  <div className="portal-inline-notice" role="status">
                     <p>{downloadNotice}</p>
                   </div>
                 ) : null}
@@ -1267,8 +1259,8 @@ export function ClientPortalPage() {
                   <ErrorState message={deliverablesError} title="Deliverables unavailable" />
                 ) : deliverables.length === 0 ? (
                   <EmptyState
-                    message="Final deliverables appear here once your team marks them complete and shares them to this archive."
-                    title="No final deliverables yet"
+                    message="Completed deliverables appear here once your team shares them to this archive."
+                    title="No deliverables yet"
                   />
                 ) : (
                   <div className="dense-list">
@@ -1294,7 +1286,7 @@ export function ClientPortalPage() {
                           </div>
                           <div className="dense-actions">
                             <button
-                              className="primary-action"
+                              className="secondary-action"
                               disabled={downloadingDeliverableId === deliverable.id}
                               onClick={() => void handleDownload(deliverable.id)}
                               type="button"
@@ -1313,7 +1305,7 @@ export function ClientPortalPage() {
               </SectionPanel>
 
               <SectionPanel
-                description="Finalized monthly reports with completed work and performance snapshots."
+                description="Monthly reports with completed work and performance snapshots."
                 title="Monthly reports"
                 tone="compact"
               >
@@ -1323,8 +1315,8 @@ export function ClientPortalPage() {
                   <ErrorState message={monthlyReportsError} title="Monthly reports unavailable" />
                 ) : monthlyReports.length === 0 ? (
                   <EmptyState
-                    message="Finalized monthly reports appear here after your team marks them FINAL and shares them to this archive."
-                    title="No finalized reports yet"
+                    message="Monthly reports appear here after your team finalizes and shares them."
+                    title="No reports yet"
                   />
                 ) : (
                   <div style={{ display: "grid", gap: "12px", gridTemplateColumns: "minmax(200px, 240px) minmax(0, 1fr)" }}>
@@ -1373,7 +1365,7 @@ export function ClientPortalPage() {
                               <div className="dense-actions">
                                 {monthlyReportDetail.monthlyReport.hasDocument ? (
                                   <button
-                                    className="primary-action"
+                                    className="secondary-action"
                                     disabled={downloadingMonthlyReportId === monthlyReportDetail.monthlyReport.id}
                                     onClick={() => void handleMonthlyReportDownload(monthlyReportDetail.monthlyReport.id)}
                                     type="button"
@@ -1397,21 +1389,21 @@ export function ClientPortalPage() {
 
                           <div className="summary-grid metric-grid portal-metric-grid">
                             <MetricCard
-                              label="Final deliverables"
+                              label="Deliverables"
                               value={String(monthlyReportDetail.workSummary.finalDeliverableCount)}
                               helper={`${monthlyReportDetail.workSummary.acceptedCount} accepted · ${monthlyReportDetail.workSummary.deliveredCount} delivered`}
                             />
                             <MetricCard
-                              label="Content plan items"
+                              label="Planned content"
                               value={String(monthlyReportDetail.workSummary.contentPlanItemCount)}
-                              helper={`${monthlyReportDetail.workSummary.clientApprovedPlanItemCount} approved`}
+                              helper={`${monthlyReportDetail.workSummary.clientApprovedPlanItemCount} complete`}
                             />
                           </div>
 
                           {monthlyReportDetail.performanceSummary ? (
                             <SectionPanel
-                              description="Approved performance snapshot for this report month."
-                              title="Performance summary"
+                              description="Performance snapshot for this report month."
+                              title="Performance"
                               tone="compact"
                             >
                               <div className="metric-grid">
@@ -1441,21 +1433,21 @@ export function ClientPortalPage() {
 
                           {!monthlyReportDetail.performanceSummary ? (
                             <SectionPanel
-                              description="Performance metrics appear only after your team imports and approves a snapshot for this report month. Live Google Analytics or Search Console sync is not shown here."
-                              title="Performance summary"
+                              description="Performance metrics appear when your team attaches a snapshot to this report."
+                              title="Performance"
                               tone="compact"
                             >
                               <EmptyState
-                                message="No approved performance snapshot is attached to this final report yet."
-                                title="No performance data in this report"
+                                message="No performance snapshot is attached to this report yet."
+                                title="No performance data"
                               />
                             </SectionPanel>
                           ) : null}
 
                           {monthlyReportDetail.workSummary.deliverables.length > 0 ? (
                             <SectionPanel
-                              description="Final deliverables included in this month's completed work."
-                              title="Completed deliverables"
+                              description="Deliverables included in this month's completed work."
+                              title="Completed work"
                               tone="compact"
                             >
                               <div className="dense-list">
@@ -1482,14 +1474,14 @@ export function ClientPortalPage() {
                           ) : null}
 
                           <SectionPanel
-                            description="Written by your team for the next reporting period. Not automated advice."
-                            title="Recommendations for next month"
+                            description="Written by your team for the next reporting period."
+                            title="Recommendations"
                             tone="compact"
                           >
                             {monthlyReportDetail.monthlyReport.recommendationsText ? (
                               <div className="dense-row-note">{monthlyReportDetail.monthlyReport.recommendationsText}</div>
                             ) : (
-                              <EmptyState message="Your team has not added recommendations to this final report yet." title="No recommendations yet" />
+                              <EmptyState message="Your team has not added recommendations to this report yet." title="No recommendations yet" />
                             )}
                           </SectionPanel>
                         </div>
@@ -1507,17 +1499,9 @@ export function ClientPortalPage() {
         </div>
       </div>
 
-      <SectionPanel
-        description="These features are intentionally deferred. This portal remains read-only visibility for final material only."
-        title="Not available in Client Portal MVP"
-        tone="compact"
-      >
-        <ul className="muted-text" style={{ margin: 0, paddingLeft: "1.25rem" }}>
-          <li>Public magic links or passwordless access</li>
-          <li>In-portal comments, approvals, or request-changes actions</li>
-          <li>Internal drafts, raw research, AI prompts, or workflow status</li>
-        </ul>
-      </SectionPanel>
+      <p className="portal-footer-note muted-text">
+        Read-only workspace — approvals, comments, and live integrations are not available here.
+      </p>
     </section>
   );
 }
