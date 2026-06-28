@@ -2,7 +2,9 @@
 
 ## Purpose
 
-The AI Operations Console is an **admin-only** operator surface for reviewing AI Delivery workflow executions across the tenant.
+The AI Operations Console is an **admin-only** operator surface for reviewing AI workflow executions across the tenant.
+
+**Current scope (v1):** AI Delivery workflow runs. Market Intelligence research runs are included in closeout v1.1 (read-only, no provider calls).
 
 It answers:
 
@@ -58,7 +60,7 @@ Optional query filters: `status`, `outputType`, `gateway`, `clientId`, `aiDelive
 - Per-tenant spend caps
 - Deeper provider observability (latency, retries, billing)
 - Autonomous agents
-- Cross-module MI research-run listing in the same console (future v1.1)
+- Cross-module MI research-run listing — **in progress in baseline closeout** (read-only; no schema change)
 
 ## Local validation
 

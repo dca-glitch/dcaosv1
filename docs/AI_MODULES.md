@@ -2,6 +2,18 @@
 
 ## Current Status
 
+**Merged AI operating baseline on `main` (2026-06):**
+
+- **AI Gateway v1** (PR #33) — guarded provider config, local deterministic default, workflow observability metadata (`AI_WORKFLOW_RESULT_V1`, execution log `[OBSERVABILITY]` blocks).
+- **AI workflow smoke matrix** (PR #33) — `npm run smoke:ai-matrix` sequential local proof across provider config, knowledge context, MI, monthly report, AI Delivery, AI Operations, and guarded OpenRouter skip path.
+- **AI Operations Console v1** (PR #34) — admin-only operator surface for reviewing AI Delivery workflow runs (gateway, mode, context, status, safe errors). Not exposed in Client Portal.
+
+Default execution is **local/deterministic**. OpenRouter/live provider paths exist but remain **opt-in, env-guarded, and not production-proven**.
+
+**Deferred:** MI runs in AI Operations Console (v1.1 closeout), persistent cost analytics tables, per-tenant spend caps, full multi-provider router, live provider production proof, VPS/stage deploy.
+
+---
+
 DCA OS includes two admin-operated AI Delivery foundations:
 
 - **AI Delivery**: Project/Brief/Workflow/Deliverable/Review — admin-operated research coordination with AI SEO workflow shell/status summary, content plan generation, WordPress draft preparation support, Google Docs export foundation, and monthly report handoff (full WordPress publishing integration gated until credential block).

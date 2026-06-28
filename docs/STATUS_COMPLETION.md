@@ -1,9 +1,9 @@
 # DCA OS Lite — Project Completion Overview
 
-**Status:** Planning and operator reference  
-**Last updated:** 2026-06-27 (G1 staging target closed — pre-VPS sprint docs alignment)
-**Reference branch:** `main` after PR #13 merge  
-**Reference commits:** PR #13 merge `584e041bd85e8179e795a0e4621a0d9d8908e0b6`; follow-up docs commit `07b1f1668d11cdef42b195cfad189c4df645acc6`  
+**Status:** Planning and operator reference
+**Last updated:** 2026-06-28 (AI operating baseline closeout — PR #33/#34 on main)
+**Reference branch:** `main` after PR #34 merge (`f7cb7a0`)
+**Reference commits:** PR #33 merge `a0bd879`; PR #34 merge `f7cb7a0`; prior PR #13 merge `584e041bd85e8179e795a0e4621a0d9d8908e0b6`
 **Scope:** Approved local admin MVP + client/domain operating model (blocks 1–6) + **MVP 1 Puriva client delivery** + **Post-MVP local closeout (Blocks 31–57)** + **Phase F local completion (Blocks 58–77)**. Local `main` is synced and validated. VPS/production intentionally excluded until separate owner approval.
 
 Current post-merge source of truth: [`docs/operator/post-merge-completion-status-20260627.md`](./operator/post-merge-completion-status-20260627.md). Merge to `main` does **not** mean production deployment.
@@ -66,8 +66,8 @@ Related documents:
 | **WordPress publish + PublicationLog (block 5)** | **90%** | Done (local) | Local gate smoke + Client Hub publication log browser proof |
 | **Module middleware (block 6)** | **96%** | Done (local) | dry_run + enforce probe runbooks (Blocks 39, 46); staging enforce pending |
 | **Projects & Tasks** | **88%** | Done | Admin MVP closed |
-| **AI Delivery** | **88%** | Done | Workflow browser matrix gate (Post-MVP Block 42) + content plan review browser gate (Block 34) |
-| **Market Intelligence** | **86%** | Done (local) | Admin MVP + operator browser gate (Post-MVP Block 41); compact pass in Phase F Block 67 |
+| **AI Delivery** | **90%** | Done | Workflow browser matrix + AI Gateway v1 + AI Operations Console v1 (PR #33/#34) |
+| **Market Intelligence** | **86%** | Done (local) | Admin MVP + operator browser gate; MI runs in AI Ops console deferred to closeout |
 | **Monthly Reports** | **92%** | In progress | Metrics import browser gate (Block 47); live GA/GSC deferred |
 | **Client Portal MVP** (Puriva — visibility + review) | **100%** | Done (local) — UX polish in Phase F Block 68 | Blocks 7–30 incl. sparse + populated delivery overview browser gates; feature scope complete locally |
 | **Client Portal advanced actions** (magic links, full comment threads) | **0%** | Deferred (Phase 2) | See deferred scope register |
@@ -76,7 +76,8 @@ Related documents:
 | **Private storage (R2)** | **65%** | In progress | Block 37 byte roundtrip smoke (disabled guard + optional full roundtrip); prod bucket deferred |
 | **Email / notifications** | **35%** | In progress | Read-only outbox API + local smoke (Post-MVP Block 38); no real sending |
 | **Audit / activity** | **78%** | In progress | Dashboard feed + dedicated browser gate (Blocks 31, 51); full audit UI deferred |
-| **AI provider (OpenRouter)** | **55%** | In progress | Planning config API + guarded local smoke (Post-MVP Block 40); live provider remains opt-in |
+| **AI provider (OpenRouter)** | **62%** | In progress | AI Gateway v1 on main; local deterministic default; live provider opt-in only |
+| **AI Operations Console** | **75%** | In progress | v1 on main (AI Delivery runs); MI listing + filters/export in baseline closeout |
 | **Operator docs & runbooks** | **100%** | Done (local) | Puriva Blocks 7–30 + Post-MVP Phases A–E + Phase F Blocks 58–77 runbooks and closeout index |
 | **Tests / smoke** | **100%** | Done (local) | Puriva MVP + Post-MVP Phases A–D browser layers in pre-staging |
 | **PR #13 merge → main** | **100%** | Done | Merged at `584e041bd85e8179e795a0e4621a0d9d8908e0b6`; follow-up docs commit `07b1f1668d11cdef42b195cfad189c4df645acc6` |
@@ -173,6 +174,7 @@ Do not treat local smoke alone as production readiness.
 
 | Date | Change |
 |------|--------|
+| 2026-06-28 | AI baseline on main: PR #33 AI Gateway v1 + smoke matrix; PR #34 AI Operations Console v1 |
 | 2026-06-27 | G1 closed: staging host `staging.digitalcubeagency.net`; production `system.digitalcubeagency.net`; G4 not approved; DNS not created |
 | 2026-06-27 | Phase F Block 77: local closeout complete — Blocks 58–77 validated on `feature/local-closeout-blocks-58-77` |
 | 2026-06-27 | Phase F Block 58: docs consistency — aligned Portal/WP/MI/R2 labels and blocks 4–6 percentages |
