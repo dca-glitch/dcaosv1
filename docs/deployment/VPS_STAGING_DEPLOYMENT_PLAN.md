@@ -118,11 +118,11 @@ Smoke credentials are local/staging-only and must never be committed:
 - `AUTH_SEED_TESTER_PASSWORD`
 - `MVP_SMOKE_API_BASE_URL`
 
-Staging smoke must use:
+Staging smoke must use the G1 approved host only:
 
-- `MVP_SMOKE_API_BASE_URL=https://system.digitalcubeagency.net/api/v1`
+- `MVP_SMOKE_API_BASE_URL=https://staging.digitalcubeagency.net/api/v1`
 
-Do not use any other host for controlled staging smoke unless the owner explicitly approves it.
+Production (`system.digitalcubeagency.net`) is not a staging smoke target.
 
 ## Docker Compose Build Commands
 
@@ -186,7 +186,7 @@ docker compose up -d dcaosv1-postgres dcaosv1-api
 After the API and web are served through the approved staging reverse proxy:
 
 ```bash
-export MVP_SMOKE_API_BASE_URL="https://system.digitalcubeagency.net/api/v1"
+export MVP_SMOKE_API_BASE_URL="https://staging.digitalcubeagency.net/api/v1"
 npm run smoke:mvp:staging
 ```
 
@@ -224,7 +224,7 @@ The local smoke script intentionally refuses non-local API hosts.
 Staging API smoke, after staging-only credentials and the staging host are approved:
 
 ```bash
-export MVP_SMOKE_API_BASE_URL="https://system.digitalcubeagency.net/api/v1"
+export MVP_SMOKE_API_BASE_URL="https://staging.digitalcubeagency.net/api/v1"
 export AUTH_SEED_TEST_EMAIL="<staging-test-email>"
 export AUTH_SEED_TEST_PASSWORD="<staging-test-password>"
 export AUTH_SEED_TESTER_EMAIL="<staging-tester-email>"

@@ -4,7 +4,7 @@
 
 Use this runbook to apply Prisma/database migrations safely in staging before any production promotion.
 
-Current environment note: no separate staging target is confirmed. `system.digitalcubeagency.net` is a live production VPS target, not staging. Do not run this procedure until a real staging environment is confirmed and explicitly approved.
+**G1 context (2026-06-27):** Approved staging host is `staging.digitalcubeagency.net` (separate stack on same VPS). Production remains `system.digitalcubeagency.net`. DNS for staging is **not created yet**; G4 VPS execution is **not approved**. Do not run this procedure until G4 owner approval and staging infrastructure exist.
 
 ## Scope
 

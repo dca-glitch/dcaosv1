@@ -8,7 +8,8 @@ const testerPassword = process.env.AUTH_SEED_TESTER_PASSWORD;
 
 const results = [];
 const allowedLocalHosts = new Set(["127.0.0.1", "localhost"]);
-const allowedStagingHosts = new Set(["system.digitalcubeagency.net"]);
+// G1 approved staging host only. Production (system.digitalcubeagency.net) is not a smoke target.
+const allowedStagingHosts = new Set(["staging.digitalcubeagency.net"]);
 
 function record(name, ok, detail = "") {
   results.push({ name, ok, detail });

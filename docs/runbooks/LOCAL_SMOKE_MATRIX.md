@@ -1,0 +1,149 @@
+# Local / Pre-Staging Smoke Matrix
+
+**Status:** Operator reference. Consolidates smoke script requirements without duplicating full runbooks.
+
+Related:
+
+- [`PRE_STAGING_VALIDATION_GATE.md`](./PRE_STAGING_VALIDATION_GATE.md) — one-command gate
+- [`PRE_STAGING_CLIENT_DELIVERY_READINESS.md`](./PRE_STAGING_CLIENT_DELIVERY_READINESS.md) — focused client delivery proof
+- [`E2E_CLIENT_DELIVERY_SMOKE.md`](./E2E_CLIENT_DELIVERY_SMOKE.md) — admin E2E chain
+- [`../operator/ENV_READINESS_INVENTORY.md`](../operator/ENV_READINESS_INVENTORY.md) — env vars
+
+---
+
+## Local validation order (recommended)
+
+Run from `C:\dcaosv1` in external PowerShell. Stop on first failure.
+
+| Step | Command | API | Web | `AUTH_SEED_TEST_PASSWORD` |
+|------|---------|-----|-----|---------------------------|
+| 0 | `npm.cmd run check` or `npm.cmd run validate` | No | No | No |
+| 1 | Start `dev:api` + `dev:web` when smokes need live services | Yes | Browser smokes | — |
+| 2 | `npm.cmd run smoke:pre-staging:local` | Yes (orchestrator restarts) | Yes (auto-start 5173) | **Yes** |
+
+Focused subsets:
+
+| Goal | Commands |
+|------|----------|
+| Client delivery only | See [`PRE_STAGING_CLIENT_DELIVERY_READINESS.md`](./PRE_STAGING_CLIENT_DELIVERY_READINESS.md) |
+| Admin E2E chain | See [`E2E_CLIENT_DELIVERY_SMOKE.md`](./E2E_CLIENT_DELIVERY_SMOKE.md) |
+| Staging post-deploy (G4 only) | `npm.cmd run smoke:mvp:staging` with HTTPS staging URL — **not local** |
+
+---
+
+## Operational caveats
+
+### Prisma EPERM (Windows)
+
+Run `validate` **before** starting dev API/Web, or stop the dev `node.exe` locking `query_engine-windows.dll.node`. See [`.github/instructions/validation.instructions.md`](../../.github/instructions/validation.instructions.md).
+
+### HTTP 429 (local API rate limit)
+
+In-memory limit: 300 requests / 15 minutes per IP. Long smoke chains may hit 429.
+
+**Recovery:** Restart local API (`npm.cmd run dev:api`), or use `smoke:pre-staging:local` (restarts API before heavy sections), or space runs across sessions.
+
+---
+
+## Smoke categories
+
+### API-only (no Web dev server)
+
+| Script | Primary proof |
+|--------|---------------|
+| `smoke:local` | API health, auth basics |
+| `smoke:mvp:local` | Auth, tenant, modules, finance baseline |
+| `smoke:client-portal:local` | Client archive API, access guards, forbidden fields |
+| `smoke:client-access:local` | Admin grant/revoke, client bounds |
+| `smoke:ai-market-intelligence` | MI project, sources, run, insight, handoff, AI Delivery apply |
+| `smoke:ai-delivery-reviews` | Content plan, drafts, images, deliverables, WP draft prep |
+| `smoke:monthly-report:local` | Admin report lifecycle, document handoff |
+| `smoke:monthly-report:pdf` | PDF generation path |
+| `smoke:monthly-report:mi-context` | MI context admin + client non-exposure |
+| `smoke:monthly-report:metrics` | Metrics snapshot API |
+| `smoke:google-drive-export` | Export handoff contract (guarded) |
+| `smoke:email-outbox:local` | Read-only outbox |
+| `smoke:credential-encryption:local` | Encryption roundtrip |
+| `smoke:r2-byte-roundtrip:local` | R2 disabled guard (+ optional roundtrip) |
+| `smoke:wordpress-publish:local` | Publish disabled / PublicationLog |
+| `smoke:tenant-module:local` | Module route map |
+| `smoke:tenant-module:dry-run-probe` | dry_run probe |
+| `smoke:tenant-module:phase-f-local` | Phase F enforce checklist |
+| `smoke:openrouter-guarded:local` | Local deterministic gateway |
+| `smoke:google-drive-export-live:local` | Live export planning (guarded) |
+| `smoke:credential-master-key-probe:local` | Master key probe |
+| `smoke:post-mvp-readonly-apis:local` | Read-only API closeout |
+| `smoke:legacy-wordpress-sunset:local` | Legacy WP config sunset |
+
+### Browser (requires Web on `:5173`)
+
+| Script | Primary proof |
+|--------|---------------|
+| `smoke:browser` | Login shell |
+| `smoke:client-portal:browser` | Portal archive UI |
+| `smoke:client-portal:signed-out:browser` | Signed-out shell |
+| `smoke:client-portal:edge-cases:browser` | Edge cases |
+| `smoke:client-portal:sparse-delivery:browser` | Sparse delivery |
+| `smoke:client-portal:populated-delivery:browser` | Populated delivery + forbidden HTML |
+| `smoke:client-portal:access-revoke:browser` | Revoke UX |
+| `smoke:client-portal:empty-archive:browser` | Empty archive |
+| `smoke:client-portal:project-filter:browser` | Project filter |
+| `smoke:client-portal-monthly-report:browser` | FINAL-only reports in UI |
+| `smoke:client-access:browser` | Client Access admin UI |
+| `smoke:client-hub:*:browser` | Hub catalog, publication log, edge cases |
+| `smoke:client-domain:browser` | Client domain regression |
+| `smoke:mi-operator:browser` | MI operator shell |
+| `smoke:ai-delivery-workflow:browser` | AI Delivery workflow UI |
+| `smoke:content-plan-review:browser` | Deferred client review message |
+| `smoke:content-draft-review:browser` | Deferred client review message |
+| `smoke:finance-admin:browser` | Finance admin sanity |
+| `smoke:monthly-report:browser` | Admin monthly report modal |
+| `smoke:monthly-metrics-import:browser` | Metrics import UI |
+| `smoke:roles-permissions:browser` | Roles summary |
+| `smoke:module-registry:browser` | Module registry |
+| `smoke:settings-team:browser` | Settings/Team shell |
+| `smoke:settings-backend:browser` | Settings backend binding |
+| `smoke:audit-activity:browser` | Audit activity |
+| `smoke:dashboard-audit-feed:browser` | Dashboard audit feed |
+| `smoke:dashboard-data-backed:browser` | Dashboard metrics |
+| `smoke:auth-invite-boundary:browser` | Invite boundary copy |
+
+### Staging-only (G4 — not local)
+
+| Script | Requirement |
+|--------|-------------|
+| `smoke:mvp:staging` | Explicit `MVP_SMOKE_API_BASE_URL=https://staging.digitalcubeagency.net/api/v1`, HTTPS, staging credentials |
+
+---
+
+## Environment requirements summary
+
+| Requirement | Smokes affected |
+|-------------|-----------------|
+| **`AUTH_SEED_TEST_PASSWORD`** | Nearly all authenticated smokes |
+| **`AUTH_SEED_TEST_EMAIL`** | Optional; default `admin@dca.local` |
+| **`AUTH_SEED_TESTER_*`** | Optional cross-tenant proof in `smoke:client-portal:local`, `smoke:mvp:local` |
+| **Local API `:4000`** | All smokes except `check`/`validate` |
+| **Local Web `:5173`** | All `*:browser` smokes |
+| **Optional R2 env** | Strict roundtrip in `smoke:r2-byte-roundtrip:local` only |
+| **Optional provider env** | Manual open-gate probes only (see ENV inventory) |
+
+---
+
+## Orchestrator
+
+`npm.cmd run smoke:pre-staging:local` runs the full matrix in [`scripts/smoke-pre-staging-local.ps1`](../../scripts/smoke-pre-staging-local.ps1):
+
+- Runs `validate` first
+- Restarts API with `TENANT_MODULE_ENFORCEMENT=off`
+- Restarts API before rate-limit-heavy browser sections
+- Ensures Web dev server for browser smokes
+- Does **not** deploy or touch VPS
+
+Manual sequence equivalent: [`PRE_STAGING_VALIDATION_GATE.md`](./PRE_STAGING_VALIDATION_GATE.md) § Manual sequence.
+
+---
+
+## Package script existence
+
+All scripts referenced in this matrix are defined in root [`package.json`](../../package.json) under `smoke:*`. If a doc references a missing script, fix the doc or add the script minimally — do not rename existing scripts without cause.

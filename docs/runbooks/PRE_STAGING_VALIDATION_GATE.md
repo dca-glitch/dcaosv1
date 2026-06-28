@@ -4,7 +4,7 @@
 
 **Purpose:** Confirm the local repository baseline before any future staging approval. PR #13 is already merged into `main`; this gate remains local-only and does not authorize VPS execution.
 
-**Phase G context (2026-06-27):** G1 closed — staging host `staging.digitalcubeagency.net`; production `system.digitalcubeagency.net`; G4 **not approved**; DNS **not created**. Run long validation/smoke from **external PowerShell**, not inside Cursor agent sessions.
+**Phase G context (2026-06-28):** G1 closed — staging host `staging.digitalcubeagency.net`; production `system.digitalcubeagency.net`; G4 **not approved**; DNS **not created**. PR #29 merged (client delivery readiness). Run long validation/smoke from **external PowerShell**, not inside Cursor agent sessions.
 
 **Forbidden in this gate:** VPS login, Docker Compose apply, Caddy/DNS changes, staging migrations, production env, `smoke:mvp:staging` unless owner explicitly approves G4 and staging host access.
 
@@ -13,6 +13,10 @@
 Related:
 
 - [`docs/deployment/VPS_STAGING_EXECUTION_APPROVAL_PACK.md`](../deployment/VPS_STAGING_EXECUTION_APPROVAL_PACK.md) — future VPS gate (separate approval)
+- [`docs/runbooks/STAGING_LOCAL_EXECUTION_PACK.md`](./STAGING_LOCAL_EXECUTION_PACK.md) — local-side pre-G4 checklists and go/no-go
+- [`docs/runbooks/LOCAL_SMOKE_MATRIX.md`](./LOCAL_SMOKE_MATRIX.md) — smoke requirements matrix
+- [`docs/runbooks/MAX_LOCAL_COMPLETION_BEFORE_STAGING.md`](./MAX_LOCAL_COMPLETION_BEFORE_STAGING.md) — area completion and deferred boundaries
+- [`docs/operator/ENV_READINESS_INVENTORY.md`](../operator/ENV_READINESS_INVENTORY.md) — env var names (no secrets)
 - [`docs/STATUS_COMPLETION.md`](../STATUS_COMPLETION.md) — completion overview
 - [`docs/runbooks/PURIVA_MVP_BLOCK_30_LOCAL_CLOSEOUT_INDEX.md`](./PURIVA_MVP_BLOCK_30_LOCAL_CLOSEOUT_INDEX.md) — Puriva MVP Blocks 7–30 map
 - [`docs/runbooks/POST_MVP_PHASE_A_D_CLOSEOUT_INDEX.md`](./POST_MVP_PHASE_A_D_CLOSEOUT_INDEX.md) — Post-MVP Blocks 31–53 map
