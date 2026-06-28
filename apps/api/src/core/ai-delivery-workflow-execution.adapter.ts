@@ -53,6 +53,16 @@ export interface AiDeliveryWorkflowExecutionMiHandoffContext {
   sourceNote: string | null;
 }
 
+export interface AiDeliveryWorkflowExecutionKnowledgeContext {
+  used: boolean;
+  contextSection: string | null;
+  selectedCount: number;
+  selectedItemTitles: string[];
+  skippedReason: string | null;
+  sanitizeFlagCount: number;
+  trimmed: boolean;
+}
+
 export interface AiDeliveryWorkflowExecutionStartInput {
   projectName: string;
   targetMonth: string;
@@ -73,6 +83,7 @@ export interface AiDeliveryWorkflowExecutionAdapterInput {
   researchSummaries: AiDeliveryWorkflowExecutionResearchSummaryContext[];
   approvedSourceMetadata: AiDeliveryWorkflowExecutionSourceContext[];
   marketIntelligenceHandoffs: AiDeliveryWorkflowExecutionMiHandoffContext[];
+  knowledgeContext: AiDeliveryWorkflowExecutionKnowledgeContext | null;
   selectedContentPlanItem: AiDeliveryWorkflowExecutionContentPlanItemContext | null;
   finishedAtIso: string;
 }
@@ -208,6 +219,35 @@ function buildMiHandoffExecutionLogLine(handoffs: AiDeliveryWorkflowExecutionMiH
     : `Applied market intelligence handoff context: ${handoffs.length} record(s).`;
 }
 
+function buildKnowledgeContextExecutionLogLines(
+  knowledgeContext: AiDeliveryWorkflowExecutionKnowledgeContext | null
+): string[] {
+  if (!knowledgeContext) {
+    return ["Approved knowledge context: not loaded."];
+  }
+
+  if (!knowledgeContext.used) {
+    return [
+      `Approved knowledge context skipped: ${knowledgeContext.skippedReason ?? "none eligible"}.`
+    ];
+  }
+
+  const titles = knowledgeContext.selectedItemTitles.slice(0, 3).join(", ");
+  const lines = [
+    `Approved knowledge context included: ${knowledgeContext.selectedCount} item(s)${titles ? ` (${titles})` : ""}.`
+  ];
+
+  if (knowledgeContext.trimmed) {
+    lines.push("Knowledge context trimmed to satisfy workflow token budget.");
+  }
+
+  if (knowledgeContext.sanitizeFlagCount > 0) {
+    lines.push(`Knowledge context sanitized (${knowledgeContext.sanitizeFlagCount} item(s) with flags).`);
+  }
+
+  return lines;
+}
+
 function parseSearchIntentFromPlanNotes(notes: string | null | undefined): string | null {
   if (!notes) {
     return null;
@@ -311,6 +351,10 @@ function buildCompactContextText(input: AiDeliveryWorkflowExecutionAdapterInput)
 
       sections.push(`- ${handoffParts.join(" | ")}`);
     }
+  }
+
+  if (input.knowledgeContext?.used && input.knowledgeContext.contextSection) {
+    sections.push(input.knowledgeContext.contextSection);
   }
 
   return sections.join("\n");
@@ -662,7 +706,8 @@ function createDisabledAiDeliveryWorkflowExecutionAdapter(): AiDeliveryWorkflowE
           `Gateway: ${workflowResult.gateway}.`,
           `Model: ${workflowResult.model}.`,
           `Output type: ${workflowResult.outputType}.`,
-          ...buildGatewayAuditLogLines(preparedContext)
+          ...buildGatewayAuditLogLines(preparedContext),
+          ...buildKnowledgeContextExecutionLogLines(input.knowledgeContext)
         ]),
         executionError: safeError,
         resultPlaceholder: null,
@@ -747,6 +792,7 @@ export function createLocalAiDeliveryWorkflowExecutionAdapter(): AiDeliveryWorkf
             ...(buildMiHandoffExecutionLogLine(input.marketIntelligenceHandoffs)
               ? [buildMiHandoffExecutionLogLine(input.marketIntelligenceHandoffs)!]
               : []),
+            ...buildKnowledgeContextExecutionLogLines(input.knowledgeContext),
             `Gateway: ${workflowResult.gateway}.`,
             `Model: ${workflowResult.model}.`,
             `Output type: ${workflowResult.outputType}.`,
@@ -789,6 +835,7 @@ export function createLocalAiDeliveryWorkflowExecutionAdapter(): AiDeliveryWorkf
             ...(buildMiHandoffExecutionLogLine(input.marketIntelligenceHandoffs)
               ? [buildMiHandoffExecutionLogLine(input.marketIntelligenceHandoffs)!]
               : []),
+            ...buildKnowledgeContextExecutionLogLines(input.knowledgeContext),
             `Gateway: ${workflowResult.gateway}.`,
             `Model: ${workflowResult.model}.`,
             `Output type: ${workflowResult.outputType}.`,
@@ -832,6 +879,7 @@ export function createLocalAiDeliveryWorkflowExecutionAdapter(): AiDeliveryWorkf
       return {
         finishedLogEntries: buildExecutionLogEntries(input.finishedAtIso, [
           "Stub execution completed successfully.",
+          ...buildKnowledgeContextExecutionLogLines(input.knowledgeContext),
           `Gateway: ${workflowResult.gateway}.`,
           `Model: ${workflowResult.model}.`,
           `Output type: ${workflowResult.outputType}.`,
@@ -932,6 +980,7 @@ export function createAiDeliveryWorkflowExecutionAdapter(config: AiProviderConfi
               ? `OpenRouter execution blocked by budget policy ${AI_TEXT_BUDGET_POLICY_NAME}.`
               : `OpenRouter text execution failed: ${safeError}`,
             ...buildGatewayProviderAuditLogLines(gatewayResult.audit, gatewayResult.modelSlot),
+            ...buildKnowledgeContextExecutionLogLines(input.knowledgeContext),
             `Model: ${gatewayResult.model}.`,
             `Output type: ${outputType}.`,
             `Approximate input tokens: ${budgetDecision.approximateInputTokens}.`,
@@ -1005,6 +1054,7 @@ export function createAiDeliveryWorkflowExecutionAdapter(config: AiProviderConfi
           finishedLogEntries: buildExecutionLogEntries(input.finishedAtIso, [
             "OpenRouter text execution completed successfully.",
             ...buildGatewayProviderAuditLogLines(gatewayResult.audit, gatewayResult.modelSlot),
+            ...buildKnowledgeContextExecutionLogLines(input.knowledgeContext),
             `Model: ${gatewayResult.model}.`,
             `Output type: ${outputType}.`,
             `Approximate input tokens: ${budgetDecision.approximateInputTokens}.`,
@@ -1079,6 +1129,7 @@ export function createAiDeliveryWorkflowExecutionAdapter(config: AiProviderConfi
           finishedLogEntries: buildExecutionLogEntries(input.finishedAtIso, [
             "OpenRouter text execution completed successfully.",
             ...buildGatewayProviderAuditLogLines(gatewayResult.audit, gatewayResult.modelSlot),
+            ...buildKnowledgeContextExecutionLogLines(input.knowledgeContext),
             `Model: ${gatewayResult.model}.`,
             `Output type: ${outputType}.`,
             `Approximate input tokens: ${budgetDecision.approximateInputTokens}.`,
@@ -1119,6 +1170,7 @@ export function createAiDeliveryWorkflowExecutionAdapter(config: AiProviderConfi
         finishedLogEntries: buildExecutionLogEntries(input.finishedAtIso, [
           "OpenRouter text execution completed successfully.",
           ...buildGatewayProviderAuditLogLines(gatewayResult.audit, gatewayResult.modelSlot),
+          ...buildKnowledgeContextExecutionLogLines(input.knowledgeContext),
           `Model: ${gatewayResult.model}.`,
           `Output type: ${outputType}.`,
           `Approximate input tokens: ${budgetDecision.approximateInputTokens}.`,

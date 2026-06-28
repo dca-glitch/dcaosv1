@@ -126,11 +126,13 @@ import { getAiProviderConfig } from "../config";
 import {
   createAiDeliveryWorkflowExecutionAdapter,
   type AiDeliveryWorkflowExecutionContentPlanItemContext,
+  type AiDeliveryWorkflowExecutionKnowledgeContext,
   type AiDeliveryGeneratedContentPlanItem,
   type AiDeliveryWorkflowExecutionMiHandoffContext,
   type AiDeliveryWorkflowExecutionResearchSummaryContext,
   type AiDeliveryWorkflowExecutionSourceContext
 } from "./ai-delivery-workflow-execution.adapter";
+import { buildAiWorkflowKnowledgeContext } from "./ai-context-builder.service";
 import {
   getDecryptedPublicationTargetPassword,
   normalizeWebsiteUrl,
@@ -3862,6 +3864,35 @@ export async function updateAiDeliveryWorkflowRun(
   });
 }
 
+const AI_DELIVERY_GENERATE_CONTENT_PLAN_MARKER = "[generate-content-plan]";
+
+function resolveAiDeliveryWorkflowKnowledgeType(
+  adminNotes: string | null,
+  hasSelectedContentPlanItem: boolean
+): string {
+  if (hasSelectedContentPlanItem) {
+    return "article_draft";
+  }
+
+  return (adminNotes ?? "").toLowerCase().includes(AI_DELIVERY_GENERATE_CONTENT_PLAN_MARKER)
+    ? "content_plan_draft"
+    : "summary";
+}
+
+function toAiDeliveryWorkflowExecutionKnowledgeContext(
+  result: Awaited<ReturnType<typeof buildAiWorkflowKnowledgeContext>>
+): AiDeliveryWorkflowExecutionKnowledgeContext {
+  return {
+    used: result.used,
+    contextSection: result.contextSection,
+    selectedCount: result.selectedCount,
+    selectedItemTitles: result.selectedItemTitles,
+    skippedReason: result.skippedReason,
+    sanitizeFlagCount: result.sanitizeFlagCount,
+    trimmed: result.trimmed
+  };
+}
+
 export async function executeAiDeliveryWorkflowRun(
   authSession: AuthResolvedSessionContext,
   aiDeliveryProjectId: string,
@@ -3876,6 +3907,7 @@ export async function executeAiDeliveryWorkflowRun(
       where: { id: aiDeliveryProjectId, tenantId, isArchived: false },
       select: {
         id: true,
+        clientId: true,
         name: true,
         targetMonth: true,
         plannedContentScopeNotes: true,
@@ -4024,6 +4056,7 @@ export async function executeAiDeliveryWorkflowRun(
 
     return {
       executionAdapter,
+      clientId: project.clientId,
       projectName: project.name,
       targetMonth: String(project.targetMonth),
       briefStatus: project.brief.status,
@@ -4056,6 +4089,18 @@ export async function executeAiDeliveryWorkflowRun(
 
   if (!startedExecution) return null;
 
+  const workflowKnowledgeType = resolveAiDeliveryWorkflowKnowledgeType(
+    startedExecution.adminNotes,
+    Boolean(startedExecution.selectedContentPlanItem)
+  );
+  const workflowKnowledgeResult = await buildAiWorkflowKnowledgeContext({
+    tenantId,
+    clientId: startedExecution.clientId,
+    aiDeliveryProjectId,
+    workflowType: workflowKnowledgeType
+  });
+  const knowledgeContext = toAiDeliveryWorkflowExecutionKnowledgeContext(workflowKnowledgeResult);
+
   const finishedAt = new Date();
   const executionPlan = await startedExecution.executionAdapter.execute({
     projectName: startedExecution.projectName,
@@ -4068,6 +4113,7 @@ export async function executeAiDeliveryWorkflowRun(
     researchSummaries: startedExecution.researchSummaries,
     approvedSourceMetadata: startedExecution.approvedSourceMetadata,
     marketIntelligenceHandoffs: startedExecution.marketIntelligenceHandoffs,
+    knowledgeContext,
     selectedContentPlanItem: startedExecution.selectedContentPlanItem,
     finishedAtIso: finishedAt.toISOString()
   });

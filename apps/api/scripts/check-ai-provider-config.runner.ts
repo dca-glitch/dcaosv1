@@ -88,6 +88,7 @@ async function runDeterministicAdapterProof(config = getAiProviderConfig()) {
     researchSummaries: [],
     approvedSourceMetadata: [],
     marketIntelligenceHandoffs: [],
+    knowledgeContext: null,
     selectedContentPlanItem: null,
     finishedAtIso
   });

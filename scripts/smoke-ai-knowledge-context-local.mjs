@@ -339,6 +339,47 @@ async function main() {
     }
     pass("No provider call metadata in preview response");
 
+    const createdWorkflowRun = requireOk("Create workflow run for knowledge wiring", await apiCall("POST", `/ai-delivery/projects/${projectAId}/workflow-runs`, {
+      status: "DRAFT",
+      adminNotes: `${SMOKE_MARKER} workflow knowledge proof`,
+      resultPlaceholder: ""
+    }, token));
+    const workflowRunId = createdWorkflowRun.workflowRun?.id;
+    if (!workflowRunId) {
+      fail("Workflow run create did not return workflowRun id.");
+    }
+
+    const executedWorkflowRun = requireOk("Execute workflow run with knowledge context", await apiCall("POST", `/ai-delivery/projects/${projectAId}/workflow-runs/${workflowRunId}/execute`, null, token));
+    const executed = executedWorkflowRun.workflowRun;
+    if (!executed?.executionLog || typeof executed.executionLog !== "string") {
+      fail("Workflow execution did not return executionLog.");
+    }
+    if (!executed.executionLog.includes("Approved knowledge context included")) {
+      fail("Workflow execution log did not report included approved knowledge context.");
+    }
+    if (!executed.executionLog.includes(approvedFact.title)) {
+      fail("Workflow execution log did not reference approved knowledge item title.");
+    }
+    if (executed.executionLog.includes("Project B isolated")) {
+      fail("Project B knowledge leaked into workflow execution log.");
+    }
+    if (/RAW item|REVIEWED item|ARCHIVED item|EXPIRED item|not prompt eligible/i.test(executed.executionLog)) {
+      fail("Unapproved or ineligible knowledge leaked into workflow execution log.");
+    }
+    if (!executed.executionLog.includes("Knowledge context sanitized")) {
+      fail("Workflow execution log did not report knowledge injection sanitization.");
+    }
+    if (/ignore previous instructions/i.test(executed.executionLog)) {
+      fail("Raw injection phrase leaked into workflow execution log.");
+    }
+    if (!executed.resultPlaceholder?.includes("Gateway: local")) {
+      fail("Workflow execution should remain on local deterministic gateway.");
+    }
+    if (/openrouter|liveProvider|providerResponse/i.test(JSON.stringify(executed))) {
+      fail("Workflow execution appears to include live provider metadata.");
+    }
+    pass("Workflow execution includes approved knowledge context and excludes unapproved/isolated items");
+
     console.log("\nAI Knowledge + Context smoke completed successfully.");
   } finally {
     for (const id of createdKnowledgeIds.reverse()) {

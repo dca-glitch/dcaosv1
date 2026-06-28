@@ -475,3 +475,223 @@ function emptyBlockedPreview(message: string, workflowType: string): AiContextPr
     }
   };
 }
+
+/** Default token budget for approved knowledge attached to workflow execution context. */
+export const AI_WORKFLOW_KNOWLEDGE_DEFAULT_MAX_TOKENS = 1000;
+
+export interface BuildAiWorkflowKnowledgeContextInput {
+  tenantId: string;
+  clientId: string | null;
+  aiDeliveryProjectId: string | null;
+  workflowType: string;
+  maxKnowledgeTokens?: number;
+}
+
+export interface AiWorkflowKnowledgeContextResult {
+  used: boolean;
+  contextSection: string | null;
+  selectedCount: number;
+  selectedItemTitles: string[];
+  skippedReason: string | null;
+  warnings: string[];
+  sanitizeFlagCount: number;
+  trimmed: boolean;
+}
+
+function buildWorkflowKnowledgeContextSection(rows: ContextKnowledgeRow[]): {
+  section: string;
+  sanitizeFlagCount: number;
+  warnings: string[];
+} {
+  const warnings: string[] = [];
+  let sanitizeFlagCount = 0;
+  const lines: string[] = ["Approved knowledge context (admin-internal):"];
+
+  for (const row of rows) {
+    const rawContent = [row.title, row.summary, row.body].filter(Boolean).join("\n");
+    const sanitized = sanitizeUntrustedContextText(rawContent);
+    if (sanitized.wasSanitized) {
+      sanitizeFlagCount += 1;
+      warnings.push(`Sanitized untrusted patterns in knowledge item "${row.title}".`);
+    }
+
+    lines.push(
+      `- [${row.type} — ${row.scope} — v${row.version}] ${sanitized.sanitizedText.replace(/\s+/g, " ").trim()}`
+    );
+  }
+
+  return {
+    section: lines.join("\n"),
+    sanitizeFlagCount,
+    warnings
+  };
+}
+
+function trimWorkflowKnowledgeRows(
+  rows: ContextKnowledgeRow[],
+  maxTokens: number
+): { rows: ContextKnowledgeRow[]; trimmed: boolean; warnings: string[] } {
+  const warnings: string[] = [];
+  let workingRows = [...rows];
+  let built = buildWorkflowKnowledgeContextSection(workingRows);
+  let tokens = estimateApproximateInputTokens(built.section);
+
+  if (tokens <= maxTokens) {
+    return { rows: workingRows, trimmed: false, warnings: built.warnings };
+  }
+
+  while (workingRows.length > 0 && tokens > maxTokens) {
+    workingRows = workingRows.slice(0, -1);
+    built = buildWorkflowKnowledgeContextSection(workingRows);
+    tokens = estimateApproximateInputTokens(built.section);
+  }
+
+  if (workingRows.length < rows.length) {
+    warnings.push("Low-priority knowledge items were trimmed to satisfy workflow knowledge token budget.");
+  }
+
+  return {
+    rows: workingRows,
+    trimmed: workingRows.length < rows.length,
+    warnings: [...warnings, ...built.warnings]
+  };
+}
+
+export async function buildAiWorkflowKnowledgeContext(
+  input: BuildAiWorkflowKnowledgeContextInput
+): Promise<AiWorkflowKnowledgeContextResult> {
+  const maxTokens = input.maxKnowledgeTokens ?? AI_WORKFLOW_KNOWLEDGE_DEFAULT_MAX_TOKENS;
+  const now = new Date();
+  const warnings: string[] = [];
+
+  let clientId = input.clientId;
+
+  if (clientId) {
+    const client = await prisma.client.findFirst({
+      where: { id: clientId, tenantId: input.tenantId, isArchived: false },
+      select: { id: true }
+    });
+    if (!client) {
+      return {
+        used: false,
+        contextSection: null,
+        selectedCount: 0,
+        selectedItemTitles: [],
+        skippedReason: "Client not found in active tenant.",
+        warnings: ["Client not found in active tenant."],
+        sanitizeFlagCount: 0,
+        trimmed: false
+      };
+    }
+  }
+
+  if (input.aiDeliveryProjectId) {
+    const project = await prisma.aiDeliveryProject.findFirst({
+      where: { id: input.aiDeliveryProjectId, tenantId: input.tenantId, isArchived: false },
+      select: { id: true, clientId: true }
+    });
+    if (!project) {
+      return {
+        used: false,
+        contextSection: null,
+        selectedCount: 0,
+        selectedItemTitles: [],
+        skippedReason: "AI Delivery project not found in active tenant.",
+        warnings: ["AI Delivery project not found in active tenant."],
+        sanitizeFlagCount: 0,
+        trimmed: false
+      };
+    }
+    if (clientId && clientId !== project.clientId) {
+      return {
+        used: false,
+        contextSection: null,
+        selectedCount: 0,
+        selectedItemTitles: [],
+        skippedReason: "clientId does not match AI Delivery project client.",
+        warnings: ["clientId does not match AI Delivery project client."],
+        sanitizeFlagCount: 0,
+        trimmed: false
+      };
+    }
+    if (!clientId) {
+      clientId = project.clientId;
+    }
+  }
+
+  const baseWhere: Prisma.AiKnowledgeItemWhereInput = {
+    ...buildScopeFilter(input.tenantId, clientId, input.aiDeliveryProjectId),
+    status: { notIn: ["ARCHIVED", "REPLACED", "EXPIRED"] },
+    scope: { not: "INDUSTRY" }
+  };
+
+  const allRows = await prisma.aiKnowledgeItem.findMany({
+    where: baseWhere,
+    select: {
+      id: true,
+      version: true,
+      scope: true,
+      type: true,
+      status: true,
+      title: true,
+      summary: true,
+      body: true,
+      clientId: true,
+      aiDeliveryProjectId: true,
+      expiresAt: true,
+      allowedForPrompt: true
+    }
+  });
+
+  const defaultEligible = applyScopeIsolation(
+    allRows.filter((row) => isDefaultPromptEligible(row, now)),
+    clientId,
+    input.aiDeliveryProjectId
+  );
+
+  let selectedRows = sortByPriority(defaultEligible);
+
+  if (selectedRows.length === 0) {
+    return {
+      used: false,
+      contextSection: null,
+      selectedCount: 0,
+      selectedItemTitles: [],
+      skippedReason: "No approved prompt-eligible knowledge items for scope.",
+      warnings: [`Workflow type "${input.workflowType}": no approved knowledge selected.`],
+      sanitizeFlagCount: 0,
+      trimmed: false
+    };
+  }
+
+  const trimmed = trimWorkflowKnowledgeRows(selectedRows, maxTokens);
+  selectedRows = trimmed.rows;
+  warnings.push(...trimmed.warnings);
+
+  if (selectedRows.length === 0) {
+    return {
+      used: false,
+      contextSection: null,
+      selectedCount: 0,
+      selectedItemTitles: [],
+      skippedReason: "Knowledge context exceeded token budget after trimming.",
+      warnings,
+      sanitizeFlagCount: 0,
+      trimmed: true
+    };
+  }
+
+  const built = buildWorkflowKnowledgeContextSection(selectedRows);
+  warnings.push(...built.warnings);
+
+  return {
+    used: true,
+    contextSection: built.section,
+    selectedCount: selectedRows.length,
+    selectedItemTitles: selectedRows.map((row) => row.title.trim()).filter(Boolean),
+    skippedReason: null,
+    warnings: [...new Set(warnings)],
+    sanitizeFlagCount: built.sanitizeFlagCount,
+    trimmed: trimmed.trimmed
+  };
+}

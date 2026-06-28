@@ -49,8 +49,19 @@ npm run smoke:ai-knowledge-context
 
 Requires local API, applied Prisma migrations (including `20260628120000_ai_operating_layer_knowledge_context`), and `$env:AUTH_SEED_TEST_PASSWORD`.
 
+## Workflow execution attachment
+
+Approved prompt-eligible knowledge is automatically composed into AI Delivery workflow execution context via `buildAiWorkflowKnowledgeContext` when a workflow run executes. Existing compact project/brief/research/MI context is preserved and composed alongside knowledge context.
+
+Rules match default preview selection (approved-only, scoped, sanitized, token-trimmed). Execution logs record whether knowledge context was included or skipped.
+
+Offline adapter wiring proof:
+
+```powershell
+npm run -w @dca-os-v1/api check:ai-workflow-knowledge-context
+```
+
 ## Deferred
 
 - Client-visible knowledge articles (separate future module)
 - INDUSTRY-scope auto-inclusion across clients
-- Workflow-run automatic context attachment (workflow block)
