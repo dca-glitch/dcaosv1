@@ -40,24 +40,85 @@ function Restart-LocalApiForSmoke {
   Start-Sleep -Seconds 3
   $env:TENANT_MODULE_ENFORCEMENT = "off"
   $env:AUTH_SEED_TEST_PASSWORD = $script:AuthSeedTestPassword
-  Start-Process -NoNewWindow -FilePath "npm.cmd" -ArgumentList "run", "dev:api" -WorkingDirectory (Get-Location).Path
+  $apiOut = Join-Path $env:TEMP ("dca-ai-post-merge-sanity-api-" + (Get-Date -Format "yyyyMMdd-HHmmssfff") + ".stdout.log")
+  $apiErr = Join-Path $env:TEMP ("dca-ai-post-merge-sanity-api-" + (Get-Date -Format "yyyyMMdd-HHmmssfff") + ".stderr.log")
+  Start-Process -FilePath "npm.cmd" -ArgumentList "run", "dev:api" -WorkingDirectory (Get-Location).Path -RedirectStandardOutput $apiOut -RedirectStandardError $apiErr
+  Wait-ForLocalApiReady
+}
+
+function Test-LocalApiReady {
+  try {
+    $health = Invoke-RestMethod -Uri "http://127.0.0.1:4000/api/v1/health" -TimeoutSec 5
+    return ($health.ok -eq $true -and $health.data.database.status -eq "ready")
+  } catch {
+    return $false
+  }
+}
+
+function Wait-ForLocalApiReady {
   $deadline = (Get-Date).AddSeconds(45)
   do {
     Start-Sleep -Seconds 2
-    try {
-      $health = Invoke-RestMethod -Uri "http://127.0.0.1:4000/api/v1/health" -TimeoutSec 5
-      if ($health.ok -eq $true -and $health.data.database.status -eq "ready") {
-        Add-LogLine "API/database ready after restart"
-        return
-      }
-    } catch {
-      # API still starting
+    if (Test-LocalApiReady) {
+      Add-LogLine "API/database ready at http://127.0.0.1:4000/api/v1/health"
+      return
     }
   } while ((Get-Date) -lt $deadline)
   Add-LogLine "FAIL Local API did not become ready on port 4000 within 45 seconds"
   $lines | Set-Content -Path $logPath -Encoding UTF8
   notepad $logPath
   exit 1
+}
+
+function Ensure-LocalBrowserSmokeServices {
+  Add-LogLine "Ensure local API and web services for browser smoke"
+
+  if (-not (Test-LocalApiReady)) {
+    $apiListening = Get-NetTCPConnection -LocalPort 4000 -ErrorAction SilentlyContinue | Select-Object -First 1
+    if ($apiListening) {
+      Restart-LocalApiForSmoke
+    } else {
+      Add-LogLine "Starting local API on port 4000"
+      $env:TENANT_MODULE_ENFORCEMENT = "off"
+      $env:AUTH_SEED_TEST_PASSWORD = $script:AuthSeedTestPassword
+      $apiOut = Join-Path $env:TEMP ("dca-ai-post-merge-sanity-api-" + (Get-Date -Format "yyyyMMdd-HHmmssfff") + ".stdout.log")
+      $apiErr = Join-Path $env:TEMP ("dca-ai-post-merge-sanity-api-" + (Get-Date -Format "yyyyMMdd-HHmmssfff") + ".stderr.log")
+      Start-Process -FilePath "npm.cmd" -ArgumentList "run", "dev:api" -WorkingDirectory (Get-Location).Path -RedirectStandardOutput $apiOut -RedirectStandardError $apiErr
+      Wait-ForLocalApiReady
+    }
+  } else {
+    Add-LogLine "API/database ready at http://127.0.0.1:4000/api/v1/health"
+  }
+
+  $webListening = Get-NetTCPConnection -LocalPort 5173 -ErrorAction SilentlyContinue | Select-Object -First 1
+  if (-not $webListening) {
+    Add-LogLine "Starting local web dev server on port 5173"
+    $webOut = Join-Path $env:TEMP ("dca-ai-post-merge-sanity-web-" + (Get-Date -Format "yyyyMMdd-HHmmssfff") + ".stdout.log")
+    $webErr = Join-Path $env:TEMP ("dca-ai-post-merge-sanity-web-" + (Get-Date -Format "yyyyMMdd-HHmmssfff") + ".stderr.log")
+    Start-Process -FilePath "npm.cmd" -ArgumentList "run", "dev:web" -WorkingDirectory (Get-Location).Path -RedirectStandardOutput $webOut -RedirectStandardError $webErr
+  }
+
+  $webDeadline = (Get-Date).AddSeconds(30)
+  $webUrls = @("http://127.0.0.1:5173", "http://localhost:5173")
+  do {
+    foreach ($webUrl in $webUrls) {
+      try {
+        $webResponse = Invoke-WebRequest -Uri $webUrl -Method GET -TimeoutSec 5 -UseBasicParsing
+        if ($webResponse.StatusCode -ge 200 -and $webResponse.StatusCode -lt 500) {
+          Add-LogLine "Web reachable at $webUrl"
+          return
+        }
+      } catch {
+        # try next URL or retry
+      }
+    }
+    Start-Sleep -Seconds 1
+  } while ((Get-Date) -lt $webDeadline)
+
+  Add-LogLine "FAIL Web not reachable at http://127.0.0.1:5173 or http://localhost:5173 within 30 seconds"
+  [System.IO.File]::WriteAllLines($logPath, [string[]]$lines)
+  notepad $logPath
+  throw "Local web not reachable for browser smoke"
 }
 
 Add-LogLine "Starting AI post-merge sanity pack"
@@ -77,6 +138,7 @@ Invoke-SanityCommand "validate build" @("run", "build")
 Restart-LocalApiForSmoke
 Invoke-SanityCommand "smoke:ai-provider-config:local" @("run", "smoke:ai-provider-config:local")
 Invoke-SanityCommand "smoke:ai-operations:local" @("run", "smoke:ai-operations:local")
+Ensure-LocalBrowserSmokeServices
 Invoke-SanityCommand "smoke:ai-operations:browser" @("run", "smoke:ai-operations:browser")
 Invoke-SanityCommand "smoke:client-safe-ai-visibility:local" @("run", "smoke:client-safe-ai-visibility:local")
 Restart-LocalApiForSmoke
