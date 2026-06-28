@@ -184,7 +184,7 @@ async function main() {
     await page.getByRole("button", { name: "Close" }).first().click();
 
     await projectCard.getByRole("button", { name: "Open" }).click();
-    const contentPlanDialog = page.getByRole("dialog", { name: "AI SEO / Content Plan" });
+    const contentPlanDialog = page.getByRole("dialog", { name: "Monthly SEO / Content Plan" });
     await contentPlanDialog.waitFor({ state: "visible", timeout: 15000 });
     await contentPlanDialog.getByRole("heading", { name: "AI SEO workflow shell", exact: true }).waitFor({ state: "visible", timeout: 15000 });
     await contentPlanDialog.locator("h3", { hasText: "Flow summary" }).waitFor({ state: "visible", timeout: 15000 });

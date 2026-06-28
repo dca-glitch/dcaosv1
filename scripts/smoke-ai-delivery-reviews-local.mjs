@@ -1771,12 +1771,9 @@ async function runAiDeliveryBrowserRegression(token, mainProject) {
     await page.goto(webUrl, { waitUntil: "domcontentloaded" });
     await page.getByRole("heading", { name: "AI Delivery Projects" }).waitFor({ state: "visible", timeout: 15000 });
     await page.getByText("Operator summary").first().waitFor({ state: "visible", timeout: 15000 });
-    await page.getByText("Workflow runs in focus").first().waitFor({ state: "visible", timeout: 15000 });
-    await page.getByText("Research in focus").first().waitFor({ state: "visible", timeout: 15000 });
-    await page.getByText("Content plan in focus").first().waitFor({ state: "visible", timeout: 15000 });
-    await page.getByText("Production in focus").first().waitFor({ state: "visible", timeout: 15000 });
-    await page.getByText("Deliverables in focus").first().waitFor({ state: "visible", timeout: 15000 });
-    await page.getByText("Reviews in focus").first().waitFor({ state: "visible", timeout: 15000 });
+    await page.getByText("Show operator metrics").click();
+    await page.getByText("Workflow runs").first().waitFor({ state: "visible", timeout: 15000 });
+    await page.getByText("Deliverables").first().waitFor({ state: "visible", timeout: 15000 });
     pass("AI Delivery admin UI loaded without crashing.");
 
     const smokeProjectCard = page.locator("article.entity-card").filter({ hasText: mainProject.name }).first();
@@ -1805,21 +1802,24 @@ async function runAiDeliveryBrowserRegression(token, mainProject) {
     await page.getByRole("button", { name: "Close" }).first().click();
 
     await smokeProjectCard.getByRole("button", { name: "AI SEO / Content Plan" }).click();
-    await page.getByRole("dialog", { name: "AI SEO / Content Plan" }).waitFor({ state: "visible", timeout: 15000 });
-    await page.getByRole("heading", { name: "Current content plan status" }).waitFor({ state: "visible", timeout: 15000 });
-    await page.getByRole("heading", { name: "SEO topics / research records" }).waitFor({ state: "visible", timeout: 15000 });
-    await page.getByRole("button", { name: "Mark ready for review" }).first().waitFor({ state: "visible", timeout: 15000 });
-    pass("AI SEO / Content Plan panel opened and rendered stable approval workflow structure.");
-    await page.getByRole("button", { name: "Close" }).first().click();
+    const contentPlanDialog = page.getByRole("dialog", { name: "Monthly SEO / Content Plan" });
+    await contentPlanDialog.waitFor({ state: "visible", timeout: 15000 });
+    await contentPlanDialog.getByRole("heading", { name: "AI SEO workflow shell", exact: true }).waitFor({ state: "visible", timeout: 15000 });
+    await contentPlanDialog.locator("h3", { hasText: "Flow summary" }).waitFor({ state: "visible", timeout: 15000 });
+    await contentPlanDialog.getByRole("heading", { name: "Current content plan status" }).waitFor({ state: "visible", timeout: 15000 });
+    await contentPlanDialog.getByRole("heading", { name: "Monthly plan items" }).waitFor({ state: "visible", timeout: 15000 });
+    await contentPlanDialog.getByRole("button", { name: "Mark ready for review" }).first().waitFor({ state: "visible", timeout: 15000 });
+    pass("Monthly SEO / Content Plan panel opened and rendered stable approval workflow structure.");
+    await contentPlanDialog.getByRole("button", { name: "Close" }).first().click();
 
     await smokeProjectCard.getByRole("button", { name: "Content production" }).click();
-    await page.getByRole("dialog", { name: "AI Content Production Foundation" }).waitFor({ state: "visible", timeout: 15000 });
+    await page.getByRole("dialog", { name: "AI Content Production" }).waitFor({ state: "visible", timeout: 15000 });
     await page.getByRole("heading", { name: "Article production planning" }).waitFor({ state: "visible", timeout: 15000 });
     await page.getByRole("heading", { name: "AI Content Production readiness summary" }).waitFor({ state: "visible", timeout: 15000 });
     await page.getByRole("heading", { name: "Plan item to draft handoff" }).waitFor({ state: "visible", timeout: 15000 });
     await page.getByRole("heading", { name: "Approved / planned content plan items" }).waitFor({ state: "visible", timeout: 15000 });
     await page.getByRole("heading", { name: "Existing article production records" }).waitFor({ state: "visible", timeout: 15000 });
-    const contentProductionDialog = page.getByRole("dialog", { name: "AI Content Production Foundation" });
+    const contentProductionDialog = page.getByRole("dialog", { name: "AI Content Production" });
     const contentDraftEditButtons = contentProductionDialog.getByRole("button", { name: "Edit" });
     if (await contentDraftEditButtons.count() === 0) {
       fail("AI Content Production dialog did not render any draft edit controls for the smoke-owned project.");
