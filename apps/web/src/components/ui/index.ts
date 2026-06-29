@@ -1,4 +1,10 @@
+export { Badge, type BadgeProps, type BadgeVariant } from "./Badge";
+export { Button, type ButtonProps, type ButtonSize, type ButtonVariant } from "./Button";
 export { MetricCard } from "./MetricCard";
+export { Modal, type ModalProps } from "./Modal";
+export { ModalActions } from "./ModalActions";
 export { PageHeader } from "./PageHeader";
 export { SectionPanel } from "./SectionPanel";
+export { SideSheet, type SideSheetProps } from "./SideSheet";
 export { StatusBadge, getStatusTone } from "./StatusBadge";
+export { Table, type TableHeader, type TableProps, type TableRow } from "./Table";

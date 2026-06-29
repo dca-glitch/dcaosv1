@@ -5,11 +5,15 @@ import {
   approveClientPortalDeliverableImage,
   getClientPortalDeliverableForApproval,
   listClientPortalPendingApprovals,
-  patchClientPortalDeliverableBody,
   rejectClientPortalDeliverable,
   rejectClientPortalDeliverableImage,
   undoClientPortalDeliverableImageReview
 } from "../core/client-portal-approval.runtime";
+import {
+  getClientPortalDeliverableEditHistory,
+  updateArticleBody,
+  updateArticleMetadata
+} from "../core/client-portal-edit.runtime";
 import { failure, forbiddenFailure, success, unauthorizedFailure } from "../utils/responses";
 
 function getAuthSession(locals: AuthSessionLocals) {
@@ -72,7 +76,66 @@ export const patchClientPortalDeliverableBodyHandler: RequestHandler = async (re
     return;
   }
 
-  const result = await patchClientPortalDeliverableBody(authSession, deliverableId, bodyContent);
+  const result = await updateArticleBody(authSession, deliverableId, bodyContent);
+  if (!result) {
+    res.status(403).json(forbiddenFailure());
+    return;
+  }
+  res.status(200).json(success(result));
+};
+
+export const patchClientPortalDeliverableMetadataHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals as AuthSessionLocals);
+  if (!authSession) {
+    res.status(401).json(unauthorizedFailure());
+    return;
+  }
+
+  const deliverableId = typeof req.params.deliverableId === "string" ? req.params.deliverableId.trim() : "";
+  if (!deliverableId) {
+    res.status(400).json(failure("CLIENT_APPROVAL_INVALID", "Deliverable id is required."));
+    return;
+  }
+
+  const body = (req.body ?? {}) as Record<string, unknown>;
+  const fields: {
+    title?: string;
+    description?: string | null;
+    tags?: string[];
+    category?: string | null;
+    scheduledPublishAt?: string | null;
+  } = {};
+
+  if (typeof body.title === "string") fields.title = body.title;
+  if (body.description === null || typeof body.description === "string") fields.description = body.description;
+  if (Array.isArray(body.tags)) fields.tags = body.tags.filter((tag): tag is string => typeof tag === "string");
+  if (body.category === null || typeof body.category === "string") fields.category = body.category;
+  if (body.scheduledPublishAt === null || typeof body.scheduledPublishAt === "string") {
+    fields.scheduledPublishAt = body.scheduledPublishAt;
+  }
+
+  const result = await updateArticleMetadata(authSession, deliverableId, fields);
+  if (!result) {
+    res.status(403).json(forbiddenFailure());
+    return;
+  }
+  res.status(200).json(success(result));
+};
+
+export const getClientPortalDeliverableEditHistoryHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals as AuthSessionLocals);
+  if (!authSession) {
+    res.status(401).json(unauthorizedFailure());
+    return;
+  }
+
+  const deliverableId = typeof req.params.deliverableId === "string" ? req.params.deliverableId.trim() : "";
+  if (!deliverableId) {
+    res.status(400).json(failure("CLIENT_APPROVAL_INVALID", "Deliverable id is required."));
+    return;
+  }
+
+  const result = await getClientPortalDeliverableEditHistory(authSession, deliverableId);
   if (!result) {
     res.status(403).json(forbiddenFailure());
     return;

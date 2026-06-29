@@ -254,6 +254,7 @@ model User {
   aiKnowledgeItemsApproved  AiKnowledgeItem[] @relation("AiKnowledgeItemApprovedByUser")
   aiKnowledgeItemVersionsCreated AiKnowledgeItemVersion[] @relation("AiKnowledgeItemVersionCreatedByUser")
   aiContextSnapshotsCreated AiContextSnapshot[] @relation("AiContextSnapshotCreatedByUser")
+  deliverableClientEdits    ClientEdit[]        @relation("DeliverableClientEdits")
 }
 
 model Session {
@@ -866,6 +867,9 @@ model AiDeliveryDeliverable {
   title                 String
   description           String?
   bodyContent           String?
+  tags                  String[] @default([])
+  category              String?
+  scheduledPublishAt    DateTime?
   clientRejectionReason String?
   deliveryType          AiDeliveryDeliverableDeliveryType @default(CONTENT_PACKAGE)
   status                AiDeliveryDeliverableStatus @default(DRAFT)
@@ -882,6 +886,7 @@ model AiDeliveryDeliverable {
   articleImage        AiDeliveryArticleImage? @relation(fields: [articleImageId], references: [id], onDelete: SetNull)
   reviews             AiDeliveryDeliverableReview[]
   imageApprovals      AiDeliveryDeliverableImageApproval[]
+  clientEditHistory   ClientEdit[] @relation("DeliverableClientEdits")
 
   @@index([tenantId])
   @@index([tenantId, aiDeliveryProjectId])
@@ -889,6 +894,25 @@ model AiDeliveryDeliverable {
   @@index([tenantId, isArchived])
   @@index([tenantId, contentDraftId])
   @@index([tenantId, articleImageId])
+}
+
+model ClientEdit {
+  id            String   @id @default(uuid())
+  tenantId      String
+  deliverableId String
+  userId        String
+  fieldName     String
+  oldValue      String?
+  newValue      String?
+  createdAt     DateTime @default(now())
+
+  deliverable AiDeliveryDeliverable @relation("DeliverableClientEdits", fields: [deliverableId], references: [id], onDelete: Cascade)
+  user        User                  @relation("DeliverableClientEdits", fields: [userId], references: [id])
+
+  @@index([tenantId])
+  @@index([deliverableId])
+  @@index([userId])
+  @@index([createdAt])
 }
 
 enum AiDeliveryDeliverableReviewStatus {

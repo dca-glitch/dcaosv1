@@ -21,8 +21,10 @@ import {
   approveClientPortalDeliverableHandler,
   approveClientPortalDeliverableImageHandler,
   getClientPortalDeliverableForApprovalHandler,
+  getClientPortalDeliverableEditHistoryHandler,
   listClientPortalPendingApprovalsHandler,
   patchClientPortalDeliverableBodyHandler,
+  patchClientPortalDeliverableMetadataHandler,
   rejectClientPortalDeliverableHandler,
   rejectClientPortalDeliverableImageHandler,
   undoClientPortalDeliverableImageReviewHandler
@@ -200,6 +202,8 @@ export function createClientPortalRouter() {
   router.get("/pending-approvals", requireAuth, requireTenant, listClientPortalPendingApprovalsHandler);
   router.get("/deliverables/:deliverableId/for-approval", requireAuth, requireTenant, getClientPortalDeliverableForApprovalHandler);
   router.patch("/deliverables/:deliverableId/body", requireAuth, requireTenant, patchClientPortalDeliverableBodyHandler);
+  router.patch("/deliverables/:deliverableId/metadata", requireAuth, requireTenant, patchClientPortalDeliverableMetadataHandler);
+  router.get("/deliverables/:deliverableId/edit-history", requireAuth, requireTenant, getClientPortalDeliverableEditHistoryHandler);
   router.patch("/deliverables/:deliverableId/images/:imageId/approve", requireAuth, requireTenant, approveClientPortalDeliverableImageHandler);
   router.patch("/deliverables/:deliverableId/images/:imageId/reject", requireAuth, requireTenant, rejectClientPortalDeliverableImageHandler);
   router.patch("/deliverables/:deliverableId/images/:imageId/undo", requireAuth, requireTenant, undoClientPortalDeliverableImageReviewHandler);

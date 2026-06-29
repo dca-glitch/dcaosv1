@@ -1,7 +1,7 @@
 import { type FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AppLayout } from "./components/AppLayout";
 import { StatusNotice } from "./components/StatusNotice";
-import { MetricCard, PageHeader, SectionPanel, StatusBadge } from "./components/ui";
+import { MetricCard, PageHeader, SectionPanel, StatusBadge, Button, Table } from "./components/ui";
 import {
   BillsPage,
   type BillDocumentUploadValues,
@@ -14,6 +14,7 @@ import { CompanyProfilePage, type CompanyProfileFormValues, type CompanyProfileS
 import { ClientsPage, type ClientAccessUserSummary, type ClientFormValues, type ClientSummary } from "./pages/clients/ClientsPage";
 import { ClientHubPage } from "./pages/clients/ClientHubPage";
 import { ClientPortalRouter } from "./pages/client-portal/ClientPortalRouter";
+import { filterNavigationByRole } from "./lib/navigation-filter";
 import { CreditNotesPage, type CreditNoteFormValues, type CreditNoteSummary } from "./pages/credit-notes/CreditNotesPage";
 import {
   InvoicesPage,
@@ -497,24 +498,6 @@ const navigationItems: Array<{ view: ViewKey; label: string; section: string }> 
   { view: "settings", label: "Settings", section: "settings" },
   { view: "team", label: "Team", section: "settings" }
 ];
-
-function filterNavigationByRole(
-  items: Array<{ view: ViewKey; label: string; section: string }>,
-  authContext: AuthContextResponse | null
-): Array<{ view: ViewKey; label: string; section: string }> {
-  if (!authContext) return items;
-
-  const isClientOnly =
-    authContext.tenantContext.roles.includes("client") &&
-    !authContext.tenantContext.roles.includes("owner") &&
-    !authContext.tenantContext.roles.includes("admin");
-
-  if (isClientOnly) {
-    return items.filter((item) => ["dashboard", "client-portal"].includes(item.view));
-  }
-
-  return items;
-}
 
 function getInitialToken(): string | null {
   try {
@@ -1061,15 +1044,15 @@ function DashboardView({
           action={
             <div className="filter-bar" role="group" aria-label="Audit activity type filter">
               {(["all", "auth", "module", "tenant"] as const).map((value) => (
-                <button
+                <Button
                   aria-pressed={auditTypeFilter === value}
-                  className={auditTypeFilter === value ? "secondary-action filter-chip is-active" : "secondary-action filter-chip"}
                   key={value}
                   onClick={() => setAuditTypeFilter(value)}
-                  type="button"
+                  size="sm"
+                  variant={auditTypeFilter === value ? "primary" : "secondary"}
                 >
                   {value === "all" ? "All" : value[0].toUpperCase() + value.slice(1)}
-                </button>
+                </Button>
               ))}
             </div>
           }
@@ -1406,9 +1389,7 @@ function TeamView({
           description="Add a new user to this tenant. A temporary password will be generated."
           action={
             !showCreateForm ? (
-              <button className="primary-action" onClick={() => setShowCreateForm(true)} type="button">
-                Create user
-              </button>
+              <Button onClick={() => setShowCreateForm(true)}>Create user</Button>
             ) : null
           }
         >
@@ -1480,17 +1461,12 @@ function TeamView({
                 </label>
               ) : null}
               <div className="form-actions">
-                <button className="primary-action" disabled={createLoading} type="submit">
+                <Button disabled={createLoading} type="submit">
                   {createLoading ? "Creating" : "Create user"}
-                </button>
-                <button
-                  className="secondary-action"
-                  disabled={createLoading}
-                  onClick={() => setShowCreateForm(false)}
-                  type="button"
-                >
+                </Button>
+                <Button disabled={createLoading} onClick={() => setShowCreateForm(false)} variant="secondary">
                   Cancel
-                </button>
+                </Button>
               </div>
             </form>
           ) : !createResult ? (
@@ -1508,61 +1484,59 @@ function TeamView({
             <p className="inline-empty muted-text">Active tenant members appear here once membership records exist.</p>
           ) : (
             <div className="table-wrap" aria-label="Tenant members">
-              <table>
-                <thead>
-                  <tr>
-                    <th>User name</th>
-                    <th>User email</th>
-                    <th>Role / access level</th>
-                    <th>Status</th>
-                    {canManageUsers ? <th>Actions</th> : null}
-                  </tr>
-                </thead>
-                <tbody>
-                  {members.map((member) => {
-                    const resetResult = resetResults[member.user.id];
-                    return (
-                      <tr key={member.tenantMembershipId}>
-                        <td>{member.user.name || "Unassigned"}</td>
-                        <td>{member.user.email}</td>
-                        <td>{member.roles.join(", ") || "None"}</td>
-                        <td>
-                          <StatusBadge status={member.status} />
-                        </td>
-                        {canManageUsers ? (
-                          <td>
-                            {resetResult ? (
-                              <span className="muted-text">
+              <Table
+                headers={[
+                  { label: "User name", align: "left" },
+                  { label: "User email", align: "left" },
+                  { label: "Role / access level", align: "left" },
+                  { label: "Status", align: "left" },
+                  ...(canManageUsers ? [{ label: "Actions", align: "right" as const }] : [])
+                ]}
+                rows={members.map((member) => {
+                  const resetResult = resetResults[member.user.id];
+                  return {
+                    key: member.tenantMembershipId,
+                    cells: [
+                      member.user.name || "Unassigned",
+                      member.user.email,
+                      member.roles.join(", ") || "None",
+                      <StatusBadge key={`${member.tenantMembershipId}-status`} status={member.status} />,
+                      ...(canManageUsers
+                        ? [
+                            resetResult ? (
+                              <span className="muted-text" key={`${member.tenantMembershipId}-reset`}>
                                 Temp: <code>{resetResult.tempPassword}</code>
-                                <button
-                                  className="subtle-action"
-                                  onClick={() => setResetResults((prev) => {
-                                    const next = { ...prev };
-                                    delete next[member.user.id];
-                                    return next;
-                                  })}
-                                  type="button"
+                                <Button
+                                  onClick={() =>
+                                    setResetResults((prev) => {
+                                      const next = { ...prev };
+                                      delete next[member.user.id];
+                                      return next;
+                                    })
+                                  }
+                                  size="sm"
+                                  variant="tertiary"
                                 >
                                   Clear
-                                </button>
+                                </Button>
                               </span>
                             ) : (
-                              <button
-                                className="secondary-action"
+                              <Button
                                 disabled={resetLoadingId === member.user.id}
+                                key={`${member.tenantMembershipId}-action`}
                                 onClick={() => void handleResetPassword(member.user.id)}
-                                type="button"
+                                size="sm"
+                                variant="secondary"
                               >
                                 {resetLoadingId === member.user.id ? "Resetting" : "Reset password"}
-                              </button>
-                            )}
-                          </td>
-                        ) : null}
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+                              </Button>
+                            )
+                          ]
+                        : [])
+                    ]
+                  };
+                })}
+              />
             </div>
           )}
         </SectionPanel>

@@ -27,7 +27,7 @@ async function getClientUserClientIds(tenantId: string, userId: string): Promise
   return accessEntries.map((entry) => entry.clientId);
 }
 
-async function assertClientPortalApprovalAccess(
+export async function assertClientPortalApprovalAccess(
   authSession: AuthResolvedSessionContext,
   clientId: string
 ): Promise<boolean> {
@@ -211,6 +211,10 @@ export async function getClientPortalDeliverableForApproval(
     deliverable: {
       id: deliverable.id,
       title: deliverable.title,
+      description: deliverable.description ?? null,
+      tags: deliverable.tags ?? [],
+      category: deliverable.category ?? null,
+      scheduledPublishAt: deliverable.scheduledPublishAt?.toISOString() ?? null,
       status: deliverable.status,
       bodyContent,
       projectId: deliverable.aiDeliveryProject.id,
@@ -228,26 +232,8 @@ export async function patchClientPortalDeliverableBody(
   deliverableId: string,
   bodyContent: string
 ) {
-  const tenantId = getActiveTenantId(authSession);
-  if (!tenantId || !isClientPortalApprovalUser(authSession)) return null;
-
-  const deliverable = await getDeliverableForClientApproval(tenantId, deliverableId);
-  if (!deliverable || deliverable.status !== "PENDING_CLIENT_REVIEW") return null;
-  if (!(await assertClientPortalApprovalAccess(authSession, deliverable.aiDeliveryProject.clientId))) return null;
-
-  const updated = await prisma.aiDeliveryDeliverable.update({
-    where: { id: deliverableId },
-    data: { bodyContent },
-    select: { id: true, bodyContent: true, updatedAt: true }
-  });
-
-  return {
-    deliverable: {
-      id: updated.id,
-      bodyContent: updated.bodyContent ?? "",
-      updatedAt: updated.updatedAt.toISOString()
-    }
-  };
+  const { updateArticleBody } = await import("./client-portal-edit.runtime");
+  return updateArticleBody(authSession, deliverableId, bodyContent);
 }
 
 async function getImageApprovalRow(tenantId: string, deliverableId: string, imageId: string) {
@@ -581,6 +567,7 @@ export async function sendAiDeliveryDeliverableForClientReview(
       aiDeliveryProject: { select: { clientId: true, name: true, client: { select: { name: true } } } },
       contentDraft: {
         select: {
+          title: true,
           draftBody: true,
           articleImages: {
             where: { isArchived: false },
@@ -594,12 +581,14 @@ export async function sendAiDeliveryDeliverableForClientReview(
   if (!deliverable || !deliverable.contentDraftId) return null;
 
   const bodyContent = deliverable.bodyContent ?? deliverable.contentDraft?.draftBody ?? "";
+  const snapshotTitle = deliverable.title || deliverable.contentDraft?.title || "Untitled";
 
   await prisma.$transaction(async (tx) => {
     await tx.aiDeliveryDeliverable.update({
       where: { id: deliverableId },
       data: {
         status: "PENDING_CLIENT_REVIEW",
+        title: snapshotTitle,
         bodyContent,
         clientRejectionReason: null
       }
