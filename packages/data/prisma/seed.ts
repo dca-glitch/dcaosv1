@@ -103,6 +103,23 @@ async function main() {
     }
   });
 
+  const clientRole = await prisma.role.upsert({
+    where: {
+      tenantId_key: {
+        tenantId: tenant.id,
+        key: "client"
+      }
+    },
+    update: {},
+    create: {
+      tenantId: tenant.id,
+      key: "client",
+      name: "Client",
+      description: "Portal access only.",
+      status: "ACTIVE"
+    }
+  });
+
   await prisma.membershipRole.upsert({
     where: {
       tenantMembershipId_roleId: {

@@ -21,7 +21,7 @@ export function createAuthRouter() {
   router.post("/login", login);
   router.post("/logout", requireAuth, logout);
   router.get("/me", requireAuth, getCurrentUser);
-  router.get("/context", requireAuth, requireTenant, requireRole("owner"), getAuthContext);
+  router.get("/context", requireAuth, requireTenant, getAuthContext);
   router.get("/context/local-tester", requireAuth, requireTenant, requireRole("local_tester"), getAuthContext);
   router.post("/change-password", requireAuth, changePasswordHandler);
   router.post("/create-user", requireAuth, requireTenant, requireAnyRole("owner", "admin"), createUser);

@@ -498,6 +498,24 @@ const navigationItems: Array<{ view: ViewKey; label: string; section: string }> 
   { view: "team", label: "Team", section: "settings" }
 ];
 
+function filterNavigationByRole(
+  items: Array<{ view: ViewKey; label: string; section: string }>,
+  authContext: AuthContextResponse | null
+): Array<{ view: ViewKey; label: string; section: string }> {
+  if (!authContext) return items;
+
+  const isClientOnly =
+    authContext.tenantContext.roles.includes("client") &&
+    !authContext.tenantContext.roles.includes("owner") &&
+    !authContext.tenantContext.roles.includes("admin");
+
+  if (isClientOnly) {
+    return items.filter((item) => ["dashboard", "client-portal"].includes(item.view));
+  }
+
+  return items;
+}
+
 function getInitialToken(): string | null {
   try {
     return window.sessionStorage.getItem(SESSION_STORAGE_KEY);
@@ -1712,6 +1730,19 @@ export function App() {
     window.addEventListener("hashchange", handleHashChange);
     return () => window.removeEventListener("hashchange", handleHashChange);
   }, []);
+
+  useEffect(() => {
+    if (!authContext) return;
+
+    const isClientOnly =
+      authContext.tenantContext.roles.includes("client") &&
+      !authContext.tenantContext.roles.includes("owner") &&
+      !authContext.tenantContext.roles.includes("admin");
+
+    if (isClientOnly && activeView !== "client-portal" && activeView !== "dashboard") {
+      replaceHash("#/client-portal");
+    }
+  }, [authContext, activeView]);
 
   const redirectToLogin = useCallback(() => {
     setSelectedModuleKey(null);
@@ -4308,9 +4339,7 @@ export function App() {
   const canManageCore = hasActiveRole(authContext, ["owner", "admin"]);
   const currentTenant = tenantContext?.currentTenant?.tenant ?? null;
   const isClientPortalView = activeView === "client-portal";
-  const layoutNavigationItems = isClientPortalView
-    ? navigationItems.filter((item) => item.view === "client-portal")
-    : navigationItems;
+  const layoutNavigationItems = filterNavigationByRole(navigationItems, authContext);
 
   if (!token || !currentUser) {
     if (token && forcePasswordChangeContext) {
