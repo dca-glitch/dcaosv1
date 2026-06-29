@@ -12,8 +12,12 @@
     "prisma:migrate:dev": "prisma migrate dev",
     "seed:db1:local": "node scripts/seed-db1.mjs"
   },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
   "devDependencies": {
-    "prisma": "^5.15.0"
+    "prisma": "^5.15.0",
+    "tsx": "^4.15.0"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0"

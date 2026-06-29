@@ -105,7 +105,34 @@ export async function listClientPortalPendingApprovals(
   clientId?: string
 ) {
   const tenantId = getActiveTenantId(authSession);
-  if (!tenantId || !isClientPortalApprovalUser(authSession)) return null;
+  if (!tenantId) return null;
+
+  if (userHasActiveTenantRole(authSession, ["owner"])) {
+    const deliverables = await prisma.aiDeliveryDeliverable.findMany({
+      where: {
+        tenantId,
+        isArchived: false,
+        status: "PENDING_CLIENT_REVIEW",
+        ...(clientId ? { aiDeliveryProject: { clientId } } : {})
+      },
+      include: {
+        aiDeliveryProject: {
+          select: {
+            id: true,
+            name: true,
+            clientId: true,
+            client: { select: { id: true, name: true } }
+          }
+        }
+      },
+      orderBy: { createdAt: "desc" }
+    });
+
+    const pendingApprovals = deliverables.map(toPendingApprovalSummary);
+    return { pendingApprovals, count: pendingApprovals.length };
+  }
+
+  if (!isClientPortalApprovalUser(authSession)) return null;
 
   const allowedClientIds = await getClientUserClientIds(tenantId, authSession.user.id);
   if (allowedClientIds.length === 0) {
