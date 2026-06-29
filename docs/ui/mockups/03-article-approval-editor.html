@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mockup 03 — Article Approval Editor</title>
+  <link rel="stylesheet" href="shared.css" />
+  <style>
+    .approval-layout {
+      display: grid;
+      gap: var(--xl);
+      grid-template-columns: 260px 1fr;
+    }
+    @media (max-width: 900px) {
+      .approval-layout { grid-template-columns: 1fr; }
+    }
+    .meta-dl { margin: 0; }
+    .meta-dl div { margin-bottom: var(--md); }
+    .meta-dl dt {
+      color: var(--text-muted);
+      font-size: 12px;
+      margin-bottom: 2px;
+    }
+    .meta-dl dd { margin: 0; font-size: 14px; }
+    .textarea-tall { min-height: 200px; resize: vertical; }
+  </style>
+</head>
+<body>
+  <div class="mockup-banner">Mockup 03 — Article Approval Editor · <a href="index.html">Back to index</a></div>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <strong>Puriva</strong>
+        <span>Client workspace</span>
+      </div>
+      <nav class="sidebar-nav" style="padding-top: var(--md);">
+        <a href="04-client-portal-archive.html">Your archive</a>
+        <a href="02-client-pending-approvals.html" class="is-active">Pending Approvals</a>
+      </nav>
+      <div class="sidebar-footer">client@puriva.id</div>
+    </aside>
+
+    <main class="main">
+      <header class="page-header">
+        <div class="page-header-row">
+          <div>
+            <p class="page-eyebrow">Article review</p>
+            <h1 class="text-display">5 Herbal Teas for Better Sleep</h1>
+            <p class="page-description">Edit metadata and body, approve images, then submit your decision.</p>
+          </div>
+          <a class="btn btn-md btn-ghost" href="02-client-pending-approvals.html">← Back to list</a>
+        </div>
+      </header>
+
+      <div class="approval-layout">
+        <aside class="section-panel" style="margin-bottom:0;height:fit-content;">
+          <div class="section-panel-header">
+            <h2 class="text-heading">Review context</h2>
+          </div>
+          <div class="section-panel-body padded">
+            <dl class="meta-dl">
+              <div>
+                <dt>Project</dt>
+                <dd>Puriva SEO — Q2</dd>
+              </div>
+              <div>
+                <dt>Created</dt>
+                <dd>28 Jun 2026</dd>
+              </div>
+              <div>
+                <dt>Status</dt>
+                <dd><span class="badge badge-warning">Awaiting approval</span></dd>
+              </div>
+            </dl>
+          </div>
+        </aside>
+
+        <div>
+          <section class="section-panel">
+            <div class="section-panel-header">
+              <h2 class="text-heading">Article metadata</h2>
+              <p>Title, description, tags, category, and optional publish date. Changes save automatically.</p>
+            </div>
+            <div class="section-panel-body padded">
+              <div class="field">
+                <label for="title">Title</label>
+                <input id="title" type="text" value="5 Herbal Teas for Better Sleep" />
+              </div>
+              <div class="field">
+                <label for="category">Category</label>
+                <input id="category" type="text" value="Wellness" placeholder="e.g. Wellness" />
+              </div>
+              <div class="field">
+                <label for="description">Description</label>
+                <textarea id="description" rows="3">Discover calming herbal blends that support restful sleep naturally.</textarea>
+              </div>
+              <div class="field-grid">
+                <div class="field">
+                  <label for="tags">Tags</label>
+                  <input id="tags" type="text" value="herbal tea, sleep, wellness" />
+                </div>
+                <div class="field">
+                  <label for="publish">Scheduled publish date</label>
+                  <input id="publish" type="datetime-local" value="2026-07-05T09:00" />
+                </div>
+              </div>
+              <p class="text-small text-muted">Saving metadata…</p>
+            </div>
+          </section>
+
+          <section class="section-panel">
+            <div class="section-panel-header">
+              <h2 class="text-heading">Article body</h2>
+              <p>Plain text article body. Changes save automatically.</p>
+            </div>
+            <div class="section-panel-body padded">
+              <div class="field">
+                <label for="body">Body content (editable)</label>
+                <textarea id="body" class="textarea-tall">A good night's rest starts with simple rituals. Chamomile, valerian root, and passionflower have long been used to ease the mind before bed…</textarea>
+              </div>
+            </div>
+          </section>
+
+          <section class="section-panel">
+            <div class="section-panel-header">
+              <h2 class="text-heading">Images</h2>
+              <p>Approve or reject each image before submitting the article.</p>
+            </div>
+            <div class="image-grid">
+              <article class="image-card">
+                <div class="image-thumb">Hero image</div>
+                <div class="image-card-body">
+                  <span class="badge badge-warning">Pending</span>
+                  <p class="text-small text-muted" style="margin-top:8px;">Cup of chamomile tea on wooden table</p>
+                  <div class="image-card-actions">
+                    <button class="btn btn-sm btn-primary" type="button">Approve</button>
+                    <button class="btn btn-sm btn-secondary" type="button">Reject</button>
+                  </div>
+                </div>
+              </article>
+              <article class="image-card">
+                <div class="image-thumb">Supporting image</div>
+                <div class="image-card-body">
+                  <span class="badge badge-success">Approved</span>
+                  <p class="text-small text-muted" style="margin-top:8px;">Dried herbs in glass jars</p>
+                  <button class="btn btn-sm btn-ghost" type="button" style="margin-top:8px;">Undo approval</button>
+                </div>
+              </article>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <footer class="sticky-footer">
+        <button class="btn btn-md btn-secondary" type="button">Save &amp; continue</button>
+        <button class="btn btn-md btn-destructive" type="button">Reject article</button>
+        <button class="btn btn-md btn-primary" type="button">Submit approval</button>
+      </footer>
+    </main>
+  </div>
+</body>
+</html>

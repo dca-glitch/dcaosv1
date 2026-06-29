@@ -85,6 +85,13 @@ export function PendingApprovalsPage() {
           Pending Approvals
           {items.length > 0 ? <span className="nav-count-badge">{items.length}</span> : null}
         </button>
+        <button
+          className="portal-subnav-link"
+          onClick={() => navigateToClientPortalHash("client-portal/briefs")}
+          type="button"
+        >
+          Briefs
+        </button>
       </nav>
 
       {loading ? <LoadingState label="Loading pending approvals" /> : null}

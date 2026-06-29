@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mockup 01 — Admin Clients List</title>
+  <link rel="stylesheet" href="shared.css" />
+</head>
+<body>
+  <div class="mockup-banner">Mockup 01 — Admin Clients list · <a href="index.html">Back to index</a></div>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <strong>DCA OS Lite</strong>
+        <span>Digital Cube Agency</span>
+      </div>
+      <div class="sidebar-section">Product</div>
+      <nav class="sidebar-nav">
+        <a href="#">Dashboard</a>
+        <a href="#">Modules</a>
+        <a href="#">Tenants</a>
+      </nav>
+      <div class="sidebar-section">Core</div>
+      <nav class="sidebar-nav">
+        <a href="#" class="is-active">Clients</a>
+        <a href="#">Projects</a>
+        <a href="#">AI Delivery</a>
+        <a href="#">Tasks</a>
+        <a href="#">Invoices</a>
+      </nav>
+      <div class="sidebar-section">Settings</div>
+      <nav class="sidebar-nav">
+        <a href="#">Team</a>
+        <a href="#">Settings</a>
+      </nav>
+      <div class="sidebar-footer">
+        admin@dca.local<br />
+        <a href="#">Sign out</a>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="page-header">
+        <div class="page-header-row">
+          <div>
+            <p class="page-eyebrow">Core operations</p>
+            <h1 class="text-display">Clients</h1>
+            <p class="page-description">Agency and own-domain client records. One client per domain.</p>
+          </div>
+          <a class="btn btn-md btn-primary" href="#">Add client</a>
+        </div>
+      </header>
+
+      <section class="section-panel">
+        <div class="section-panel-header">
+          <h2 class="text-heading">All clients</h2>
+          <p>Search, filter, and open client hubs for delivery and finance context.</p>
+        </div>
+        <div class="toolbar">
+          <input type="search" placeholder="Search by name or domain…" aria-label="Search clients" />
+          <select aria-label="Filter by kind" style="height:36px;padding:8px 12px;background:var(--background-alt);border:1px solid #444;border-radius:6px;color:var(--text);">
+            <option>All kinds</option>
+            <option>Agency client</option>
+            <option>Own domain</option>
+          </select>
+          <select aria-label="Filter by status" style="height:36px;padding:8px 12px;background:var(--background-alt);border:1px solid #444;border-radius:6px;color:var(--text);">
+            <option>Active</option>
+            <option>Archived</option>
+          </select>
+        </div>
+        <div class="section-panel-body">
+          <div class="data-row data-row-cols-4" role="row">
+            <div>
+              <div class="row-title">Puriva</div>
+              <div class="row-meta">puriva.id · <span class="text-mono">cl_puriva_01</span></div>
+            </div>
+            <div><span class="badge badge-neutral">Agency client</span></div>
+            <div><span class="badge badge-success">Active</span></div>
+            <div class="row-align-right text-small text-muted">2 projects</div>
+            <div class="row-actions">
+              <a class="btn btn-sm btn-primary" href="#">Open</a>
+              <button class="btn-icon" type="button" aria-label="More actions">⋮</button>
+            </div>
+          </div>
+          <div class="data-row data-row-cols-4" role="row">
+            <div>
+              <div class="row-title">Digital Cube Agency</div>
+              <div class="row-meta">digitalcubeagency.com</div>
+            </div>
+            <div><span class="badge badge-neutral">Own domain</span></div>
+            <div><span class="badge badge-success">Active</span></div>
+            <div class="row-align-right text-small text-muted">0 projects</div>
+            <div class="row-actions">
+              <a class="btn btn-sm btn-primary" href="#">Open</a>
+              <button class="btn-icon" type="button" aria-label="More actions">⋮</button>
+            </div>
+          </div>
+          <div class="data-row data-row-cols-4" role="row">
+            <div>
+              <div class="row-title">Example Wellness Co</div>
+              <div class="row-meta">examplewellness.com</div>
+            </div>
+            <div><span class="badge badge-neutral">Agency client</span></div>
+            <div><span class="badge badge-warning">Onboarding</span></div>
+            <div class="row-align-right text-small text-muted">1 project</div>
+            <div class="row-actions">
+              <a class="btn btn-sm btn-primary" href="#">Open</a>
+              <button class="btn-icon" type="button" aria-label="More actions">⋮</button>
+            </div>
+          </div>
+          <div class="data-row data-row-cols-4" role="row">
+            <div>
+              <div class="row-title">Legacy Brand (archived)</div>
+              <div class="row-meta">legacybrand.net</div>
+            </div>
+            <div><span class="badge badge-neutral">Agency client</span></div>
+            <div><span class="badge badge-neutral">Archived</span></div>
+            <div class="row-align-right text-small text-muted">—</div>
+            <div class="row-actions">
+              <a class="btn btn-sm btn-secondary" href="#">Open</a>
+              <button class="btn-icon" type="button" aria-label="More actions">⋮</button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+</body>
+</html>

@@ -167,6 +167,17 @@ enum AiDeliveryBriefStatus {
   ADMIN_APPROVED
 }
 
+enum BriefType {
+  MONTHLY
+  ADDITIONAL
+}
+
+enum BriefStatus {
+  DRAFT
+  AWAITING_CLIENT
+  SUBMITTED
+}
+
 model Tenant {
   id                   String                @id @default(uuid())
   name                 String
@@ -690,6 +701,32 @@ model AiDeliveryBrief {
   @@index([tenantId])
   @@index([tenantId, status])
   @@index([tenantId, aiDeliveryProjectId])
+}
+
+model Brief {
+  id              String      @id @default(cuid())
+  companyId       String
+  clientId        String
+  briefNumber     Int         @default(0)
+  targetGroup     String?
+  hubCount        Int         @default(0)
+  geoSeoCount     Int         @default(0)
+  lifestyleCount  Int         @default(0)
+  otherCount      Int         @default(0)
+  type            BriefType
+  month           Int?
+  year            Int?
+  title           String
+  content         String      @db.Text
+  status          BriefStatus @default(DRAFT)
+  submittedById   String?
+  submittedAt     DateTime?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@unique([clientId, type, month, year], name: "unique_monthly_brief")
+  @@index([companyId])
+  @@index([clientId])
 }
 
 // Monthly Content Plan models for AI Delivery

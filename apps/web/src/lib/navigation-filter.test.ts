@@ -4,7 +4,8 @@ import { filterNavigationByRole, isClientOnlyRole } from "./navigation-filter";
 
 const sampleItems: NavigationItem[] = [
   { view: "dashboard", label: "Dashboard", section: "protected" },
-  { view: "client-portal", label: "Client Portal", section: "client" },
+  { view: "briefs", label: "Briefs", section: "client" },
+  { view: "pending-approvals", label: "Pending Approvals", section: "client" },
   { view: "clients", label: "Clients", section: "core" },
   { view: "team", label: "Team", section: "settings" }
 ];
@@ -33,12 +34,16 @@ describe("filterNavigationByRole", () => {
     expect(filterNavigationByRole(sampleItems, null)).toEqual(sampleItems);
   });
 
-  it("restricts client-only users to dashboard and client portal", () => {
+  it("restricts client-only users to client workspace views", () => {
     const filtered = filterNavigationByRole(sampleItems, {
       tenantContext: { roles: ["client"] }
     });
 
-    expect(filtered.map((item) => item.view)).toEqual(["dashboard", "client-portal"]);
+    expect(filtered.map((item) => item.view)).toEqual([
+      "dashboard",
+      "briefs",
+      "pending-approvals"
+    ]);
   });
 
   it("keeps full navigation for owner", () => {

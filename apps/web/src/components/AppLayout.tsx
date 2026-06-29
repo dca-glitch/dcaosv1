@@ -2,6 +2,7 @@ type AppLayoutNavigationItem = {
   view: string;
   label: string;
   section: string;
+  icon?: React.ReactNode;
 };
 
 type AppLayoutTenant = {
@@ -19,6 +20,7 @@ type AppLayoutShellVariant = "admin" | "portal";
 type AppLayoutProps = {
   activeView: string;
   currentTenant: AppLayoutTenant;
+  isClientRole?: boolean;
   navigationItems: AppLayoutNavigationItem[];
   onLogout: () => void;
   shellVariant?: AppLayoutShellVariant;
@@ -41,6 +43,7 @@ function adminSectionLabel(section: string): string {
 export function AppLayout({
   activeView,
   currentTenant,
+  isClientRole = false,
   navigationItems,
   onLogout,
   shellVariant = "admin",
@@ -73,14 +76,14 @@ export function AppLayout({
                     href={`#/${item.view}`}
                     key={item.view}
                   >
-                    <span className="nav-dot" aria-hidden="true" />
+                    {item.icon ? <span className="nav-icon">{item.icon}</span> : <span className="nav-dot" aria-hidden="true" />}
                     {isPortalShell && item.view === "client-portal" ? "Your archive" : item.label}
                   </a>
                 ))}
             </div>
           ))}
         </nav>
-        {!isPortalShell ? (
+        {!isPortalShell && !isClientRole ? (
           <div className="tenant-switch-placeholder">
             <span>Current tenant</span>
             <strong>{currentTenant?.name ?? "No tenant selected"}</strong>

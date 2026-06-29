@@ -3,6 +3,11 @@ export type NavigationViewKey =
   | "modules"
   | "tenants"
   | "client-portal"
+  | "briefs"
+  | "briefs-panel"
+  | "pending-approvals"
+  | "monthly-reports"
+  | "archive"
   | "clients"
   | "projects"
   | "ai-delivery"
@@ -17,6 +22,16 @@ export type NavigationViewKey =
   | "settings"
   | "team";
 
+export const CLIENT_ONLY_NAV_VIEWS = new Set<string>([
+  "dashboard",
+  "briefs",
+  "pending-approvals",
+  "monthly-reports",
+  "archive"
+]);
+
+export const CLIENT_ALLOWED_ROUTE_VIEWS = CLIENT_ONLY_NAV_VIEWS;
+
 export type NavigationItem<T extends string = NavigationViewKey> = {
   view: T;
   label: string;
@@ -28,8 +43,6 @@ export type NavigationAuthContext = {
     roles: string[];
   };
 } | null;
-
-const CLIENT_ONLY_NAV_VIEWS = new Set<string>(["dashboard", "client-portal"]);
 
 export function isClientOnlyRole(roles: string[]): boolean {
   return (

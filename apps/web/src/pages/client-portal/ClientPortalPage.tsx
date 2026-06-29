@@ -921,6 +921,13 @@ export function ClientPortalPage() {
           Pending Approvals
           {pendingApprovalCount > 0 ? <span className="nav-count-badge">{pendingApprovalCount}</span> : null}
         </button>
+        <button
+          className="portal-subnav-link"
+          onClick={() => navigateToClientPortalHash("client-portal/briefs")}
+          type="button"
+        >
+          Briefs
+        </button>
       </nav>
 
       <div className="summary-grid metric-grid portal-metric-grid">

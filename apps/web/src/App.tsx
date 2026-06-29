@@ -1,4 +1,5 @@
-import { type FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { type FormEvent, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Archive, BarChart2, ClipboardList, Clock } from "lucide-react";
 import { AppLayout } from "./components/AppLayout";
 import { StatusNotice } from "./components/StatusNotice";
 import { MetricCard, PageHeader, SectionPanel, StatusBadge, Button, Table } from "./components/ui";
@@ -14,7 +15,15 @@ import { CompanyProfilePage, type CompanyProfileFormValues, type CompanyProfileS
 import { ClientsPage, type ClientAccessUserSummary, type ClientFormValues, type ClientSummary } from "./pages/clients/ClientsPage";
 import { ClientHubPage } from "./pages/clients/ClientHubPage";
 import { ClientPortalRouter } from "./pages/client-portal/ClientPortalRouter";
-import { filterNavigationByRole } from "./lib/navigation-filter";
+import { ArchiveHubPage } from "./pages/ArchiveHubPage";
+import { BriefPage } from "./pages/BriefPage";
+import { PendingApprovalsPage } from "./pages/client-portal/PendingApprovalsPage";
+import MonthlyReportsPage from "./pages/MonthlyReportsPage";
+import {
+  CLIENT_ALLOWED_ROUTE_VIEWS,
+  filterNavigationByRole,
+  isClientOnlyRole
+} from "./lib/navigation-filter";
 import { CreditNotesPage, type CreditNoteFormValues, type CreditNoteSummary } from "./pages/credit-notes/CreditNotesPage";
 import {
   InvoicesPage,
@@ -67,6 +76,8 @@ import type {
 import { AiMarketIntelligencePage } from "./pages/ai-market-intelligence/AiMarketIntelligencePage";
 import { AiOperationsPage } from "./pages/ai-operations/AiOperationsPage";
 import { TasksPage, type TaskFormValues, type TaskSummary } from "./pages/tasks/TasksPage";
+import { BriefPanelPage } from "./pages/BriefPanelPage";
+import { ClientDashboardPage } from "./pages/ClientDashboardPage";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "/api/v1";
 const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY ?? "";
@@ -428,6 +439,11 @@ type ViewKey =
   | "modules"
   | "tenants"
   | "client-portal"
+  | "briefs"
+  | "briefs-panel"
+  | "pending-approvals"
+  | "monthly-reports"
+  | "archive"
   | "clients"
   | "projects"
   | "ai-delivery"
@@ -484,6 +500,7 @@ const navigationItems: Array<{ view: ViewKey; label: string; section: string }> 
   { view: "modules", label: "Modules", section: "protected" },
   { view: "tenants", label: "Tenants", section: "protected" },
   { view: "client-portal", label: "Client Portal", section: "client" },
+  { view: "briefs-panel", label: "Briefs", section: "client" },
   { view: "clients", label: "Clients", section: "core" },
   { view: "projects", label: "Projects", section: "core" },
   { view: "ai-delivery", label: "AI Delivery", section: "core" },
@@ -498,6 +515,38 @@ const navigationItems: Array<{ view: ViewKey; label: string; section: string }> 
   { view: "settings", label: "Settings", section: "settings" },
   { view: "team", label: "Team", section: "settings" }
 ];
+
+type AppNavigationItem = {
+  view: ViewKey;
+  label: string;
+  section: string;
+  icon?: ReactNode;
+};
+
+const clientNavigationItems: AppNavigationItem[] = [
+  { view: "dashboard", label: "Dashboard", section: "protected" },
+  { view: "briefs", label: "Briefs", section: "client", icon: <ClipboardList size={16} strokeWidth={2} /> },
+  {
+    view: "pending-approvals",
+    label: "Pending Approvals",
+    section: "client",
+    icon: <Clock size={16} strokeWidth={2} />
+  },
+  {
+    view: "monthly-reports",
+    label: "Monthly Reports",
+    section: "client",
+    icon: <BarChart2 size={16} strokeWidth={2} />
+  },
+  { view: "archive", label: "Archive", section: "client", icon: <Archive size={16} strokeWidth={2} /> }
+];
+
+const CLIENT_PORTAL_SHELL_VIEWS = new Set<ViewKey>([
+  "briefs",
+  "pending-approvals",
+  "monthly-reports",
+  "archive"
+]);
 
 function getInitialToken(): string | null {
   try {
@@ -537,7 +586,11 @@ function normalizeHash(hash: string): ViewKey {
   if (deferredClientReviewViews.has(value as ViewKey)) {
     return value as ViewKey;
   }
-  return navigationItems.some((item) => item.view === value) ? (value as ViewKey) : "dashboard";
+  const knownViews = new Set<ViewKey>([
+    ...navigationItems.map((item) => item.view),
+    ...clientNavigationItems.map((item) => item.view)
+  ]);
+  return knownViews.has(value as ViewKey) ? (value as ViewKey) : "dashboard";
 }
 
 function maskError(error: unknown): string {
@@ -979,8 +1032,12 @@ function DashboardView({
   activityAuditLogsError: string | null;
   activityAuditLogsLoading: boolean;
 }) {
-  const activeTenant = tenants?.currentTenant?.tenant;
   const roles = context?.tenantContext.roles ?? [];
+  if (isClientOnlyRole(roles)) {
+    return <ClientDashboardPage user={user} />;
+  }
+
+  const activeTenant = tenants?.currentTenant?.tenant;
   const permissionCount = context?.effectivePermissions.length ?? 0;
   const auditLogs = activityAuditLogs?.auditLogs ?? [];
   const [auditTypeFilter, setAuditTypeFilter] = useState<"all" | "auth" | "module" | "tenant">("all");
@@ -1708,13 +1765,10 @@ export function App() {
   useEffect(() => {
     if (!authContext) return;
 
-    const isClientOnly =
-      authContext.tenantContext.roles.includes("client") &&
-      !authContext.tenantContext.roles.includes("owner") &&
-      !authContext.tenantContext.roles.includes("admin");
+    const isClientOnly = isClientOnlyRole(authContext.tenantContext.roles);
 
-    if (isClientOnly && activeView !== "client-portal" && activeView !== "dashboard") {
-      replaceHash("#/client-portal");
+    if (isClientOnly && !CLIENT_ALLOWED_ROUTE_VIEWS.has(activeView)) {
+      replaceHash(DASHBOARD_HASH);
     }
   }, [authContext, activeView]);
 
@@ -4312,8 +4366,12 @@ export function App() {
   const canManageModules = hasModuleAdminAccess(authContext);
   const canManageCore = hasActiveRole(authContext, ["owner", "admin"]);
   const currentTenant = tenantContext?.currentTenant?.tenant ?? null;
-  const isClientPortalView = activeView === "client-portal";
-  const layoutNavigationItems = filterNavigationByRole(navigationItems, authContext);
+  const isClientOnlyViewer = isClientOnlyRole(authContext?.tenantContext.roles ?? []);
+  const layoutNavigationItems = isClientOnlyViewer
+    ? clientNavigationItems
+    : filterNavigationByRole(navigationItems, authContext);
+  const isClientPortalView =
+    activeView === "client-portal" || (isClientOnlyViewer && CLIENT_PORTAL_SHELL_VIEWS.has(activeView));
 
   if (!token || !currentUser) {
     if (token && forcePasswordChangeContext) {
@@ -4332,6 +4390,7 @@ export function App() {
     <AppLayout
       activeView={activeView}
       currentTenant={currentTenant}
+      isClientRole={isClientOnlyViewer}
       navigationItems={layoutNavigationItems}
       onLogout={() => void handleLogout()}
       shellVariant={isClientPortalView ? "portal" : "admin"}
@@ -4384,6 +4443,11 @@ export function App() {
       {!loading && activeView === "client-portal" ? (
         <ClientPortalRouter />
       ) : null}
+      {!loading && activeView === "briefs" ? <BriefPage /> : null}
+      {!loading && activeView === "pending-approvals" ? <PendingApprovalsPage /> : null}
+      {!loading && activeView === "monthly-reports" ? <MonthlyReportsPage /> : null}
+      {!loading && activeView === "archive" ? <ArchiveHubPage /> : null}
+      {!loading && activeView === "briefs-panel" ? <BriefPanelPage /> : null}
       {!loading && activeView === "clients" ? (
         selectedClientHubId ? (
           <ClientHubPage
