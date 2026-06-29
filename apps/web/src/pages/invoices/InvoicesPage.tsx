@@ -1165,7 +1165,7 @@ function InvoiceCards({ invoices, canEdit, onEditInvoice, onArchiveInvoice, onMa
 
   return (
     <div className="table-wrap finance-table-wrap" aria-label="Invoices">
-      <table className="finance-table">
+      <table className="finance-table dense-table">
         <thead>
           <tr>
             <th>Invoice</th>
@@ -1261,7 +1261,7 @@ function RecurringInvoiceCards({ recurringInvoices, canEdit, onEditRecurringInvo
 
   return (
     <div className="table-wrap finance-table-wrap" aria-label="Recurring invoices">
-      <table className="finance-table">
+      <table className="finance-table dense-table">
         <thead>
           <tr>
             <th>Schedule</th>

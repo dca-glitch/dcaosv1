@@ -3,14 +3,15 @@ import { Modal } from "../../components/Modal";
 import { EmptyState } from "../../components/EmptyState";
 import { ErrorState } from "../../components/ErrorState";
 import { LoadingState } from "../../components/LoadingState";
-import { PageHeader, SectionPanel, StatusBadge } from "../../components/ui";
+import { Button, PageHeader, SectionPanel, StatusBadge } from "../../components/ui";
 import {
   clientPortalApiRequest,
   formatApprovalDate,
   navigateToClientPortalHash,
   type DeliverableForApproval,
   type DeliverableForApprovalResponse,
-  type DeliverableImageApproval
+  type DeliverableImageApproval,
+  type DeliverableMetadataPatchResponse
 } from "./client-portal-api";
 
 type ArticleApprovalEditorProps = {
@@ -24,6 +25,70 @@ type ToastState = {
   tone: ToastTone;
 } | null;
 
+type MetadataFormState = {
+  title: string;
+  description: string;
+  category: string;
+  tagsInput: string;
+  scheduledPublishAt: string;
+};
+
+function tagsToInput(tags: string[]): string {
+  return tags.join(", ");
+}
+
+function inputToTags(value: string): string[] {
+  return value
+    .split(",")
+    .map((tag) => tag.trim())
+    .filter(Boolean);
+}
+
+function toDatetimeLocalValue(iso: string | null): string {
+  if (!iso) return "";
+  const parsed = new Date(iso);
+  if (Number.isNaN(parsed.getTime())) return "";
+  const pad = (part: number) => String(part).padStart(2, "0");
+  return `${parsed.getFullYear()}-${pad(parsed.getMonth() + 1)}-${pad(parsed.getDate())}T${pad(parsed.getHours())}:${pad(parsed.getMinutes())}`;
+}
+
+function fromDatetimeLocalValue(value: string): string | null {
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  const parsed = new Date(trimmed);
+  return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
+}
+
+function metadataFromDeliverable(deliverable: DeliverableForApproval): MetadataFormState {
+  return {
+    title: deliverable.title,
+    description: deliverable.description ?? "",
+    category: deliverable.category ?? "",
+    tagsInput: tagsToInput(deliverable.tags),
+    scheduledPublishAt: toDatetimeLocalValue(deliverable.scheduledPublishAt)
+  };
+}
+
+function metadataPayload(state: MetadataFormState) {
+  return {
+    title: state.title,
+    description: state.description.trim() ? state.description : null,
+    category: state.category.trim() ? state.category : null,
+    tags: inputToTags(state.tagsInput),
+    scheduledPublishAt: fromDatetimeLocalValue(state.scheduledPublishAt)
+  };
+}
+
+function metadataStatesEqual(a: MetadataFormState, b: MetadataFormState): boolean {
+  return (
+    a.title === b.title &&
+    a.description === b.description &&
+    a.category === b.category &&
+    a.tagsInput === b.tagsInput &&
+    a.scheduledPublishAt === b.scheduledPublishAt
+  );
+}
+
 function imageStatusLabel(status: DeliverableImageApproval["approvalStatus"]): string {
   if (status === "APPROVED") return "Approved";
   if (status === "REJECTED") return "Rejected";
@@ -33,10 +98,18 @@ function imageStatusLabel(status: DeliverableImageApproval["approvalStatus"]): s
 export function ArticleApprovalEditor({ deliverableId }: ArticleApprovalEditorProps) {
   const [deliverable, setDeliverable] = useState<DeliverableForApproval | null>(null);
   const [bodyContent, setBodyContent] = useState("");
+  const [metadata, setMetadata] = useState<MetadataFormState>({
+    title: "",
+    description: "",
+    category: "",
+    tagsInput: "",
+    scheduledPublishAt: ""
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<ToastState>(null);
   const [savingBody, setSavingBody] = useState(false);
+  const [savingMetadata, setSavingMetadata] = useState(false);
   const [imageBusyId, setImageBusyId] = useState<string | null>(null);
   const [rejectImageId, setRejectImageId] = useState<string | null>(null);
   const [rejectImageReason, setRejectImageReason] = useState("");
@@ -45,7 +118,15 @@ export function ArticleApprovalEditor({ deliverableId }: ArticleApprovalEditorPr
   const [articleRejectReason, setArticleRejectReason] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const saveTimerRef = useRef<number | null>(null);
+  const metadataSaveTimerRef = useRef<number | null>(null);
   const lastSavedBodyRef = useRef("");
+  const lastSavedMetadataRef = useRef<MetadataFormState>({
+    title: "",
+    description: "",
+    category: "",
+    tagsInput: "",
+    scheduledPublishAt: ""
+  });
 
   const showToast = useCallback((message: string, tone: ToastTone = "success") => {
     setToast({ message, tone });
@@ -64,7 +145,10 @@ export function ArticleApprovalEditor({ deliverableId }: ArticleApprovalEditorPr
     }
     setDeliverable(response.data.deliverable);
     setBodyContent(response.data.deliverable.bodyContent);
+    const nextMetadata = metadataFromDeliverable(response.data.deliverable);
+    setMetadata(nextMetadata);
     lastSavedBodyRef.current = response.data.deliverable.bodyContent;
+    lastSavedMetadataRef.current = nextMetadata;
     setLoading(false);
   }, [deliverableId]);
 
@@ -88,6 +172,53 @@ export function ArticleApprovalEditor({ deliverableId }: ArticleApprovalEditorPr
     showToast("Saved");
   }, [deliverableId, showToast]);
 
+  const saveMetadata = useCallback(async (nextMetadata: MetadataFormState) => {
+    if (metadataStatesEqual(nextMetadata, lastSavedMetadataRef.current)) return;
+    setSavingMetadata(true);
+    const response = await clientPortalApiRequest<DeliverableMetadataPatchResponse>(`/deliverables/${deliverableId}/metadata`, {
+      method: "PATCH",
+      body: metadataPayload(nextMetadata)
+    });
+    setSavingMetadata(false);
+    if (!response.ok) {
+      showToast(response.error.message, "error");
+      return;
+    }
+    const savedMetadata = metadataFromDeliverable({
+      ...(deliverable ?? {
+        id: deliverableId,
+        status: "PENDING_CLIENT_REVIEW",
+        bodyContent: "",
+        projectId: "",
+        projectName: "",
+        clientId: "",
+        clientName: null,
+        createdAt: new Date().toISOString(),
+        images: []
+      }),
+      title: response.data.deliverable.title,
+      description: response.data.deliverable.description,
+      tags: response.data.deliverable.tags,
+      category: response.data.deliverable.category,
+      scheduledPublishAt: response.data.deliverable.scheduledPublishAt
+    });
+    lastSavedMetadataRef.current = savedMetadata;
+    setMetadata(savedMetadata);
+    setDeliverable((current) =>
+      current
+        ? {
+            ...current,
+            title: response.data.deliverable.title,
+            description: response.data.deliverable.description,
+            tags: response.data.deliverable.tags,
+            category: response.data.deliverable.category,
+            scheduledPublishAt: response.data.deliverable.scheduledPublishAt
+          }
+        : current
+    );
+    showToast("Metadata saved");
+  }, [deliverable, deliverableId, showToast]);
+
   useEffect(() => {
     if (loading || !deliverable) return;
     if (bodyContent === lastSavedBodyRef.current) return;
@@ -105,6 +236,24 @@ export function ArticleApprovalEditor({ deliverableId }: ArticleApprovalEditorPr
       }
     };
   }, [bodyContent, deliverable, loading, saveBody]);
+
+  useEffect(() => {
+    if (loading || !deliverable) return;
+    if (metadataStatesEqual(metadata, lastSavedMetadataRef.current)) return;
+
+    if (metadataSaveTimerRef.current) {
+      window.clearTimeout(metadataSaveTimerRef.current);
+    }
+    metadataSaveTimerRef.current = window.setTimeout(() => {
+      void saveMetadata(metadata);
+    }, 700);
+
+    return () => {
+      if (metadataSaveTimerRef.current) {
+        window.clearTimeout(metadataSaveTimerRef.current);
+      }
+    };
+  }, [metadata, deliverable, loading, saveMetadata]);
 
   const allImagesReviewed = useMemo(() => {
     if (!deliverable || deliverable.images.length === 0) return true;
@@ -224,9 +373,9 @@ export function ArticleApprovalEditor({ deliverableId }: ArticleApprovalEditorPr
       <section className="view-section">
         <ErrorState message={error ?? "Article not available."} title="Approval unavailable" />
         <div className="portal-action-row">
-          <button className="secondary-action" onClick={() => navigateToClientPortalHash("client-portal/pending-approvals")} type="button">
+          <Button onClick={() => navigateToClientPortalHash("client-portal/pending-approvals")} variant="secondary">
             Back to pending approvals
-          </button>
+          </Button>
         </div>
       </section>
     );
@@ -243,13 +392,13 @@ export function ArticleApprovalEditor({ deliverableId }: ArticleApprovalEditorPr
       <PageHeader
         description={`${deliverable.projectName} · Created ${formatApprovalDate(deliverable.createdAt)}`}
         eyebrow="Article approval"
-        title={deliverable.title}
+        title={metadata.title || deliverable.title}
         titleId="article-approval-title"
       />
 
       <div className="portal-approval-layout">
         <aside className="portal-approval-meta">
-          <SectionPanel title="Article metadata" tone="compact">
+          <SectionPanel title="Review context" tone="compact">
             <dl className="field-grid">
               <div>
                 <dt>Project</dt>
@@ -270,6 +419,67 @@ export function ArticleApprovalEditor({ deliverableId }: ArticleApprovalEditorPr
         </aside>
 
         <div className="portal-approval-main">
+          <SectionPanel description="Title, description, tags, category, and optional publish date. Changes save automatically." title="Article metadata">
+            <label className="field-label" htmlFor="article-title">
+              Title
+            </label>
+            <input
+              className="entity-form"
+              id="article-title"
+              onChange={(event) => setMetadata((current) => ({ ...current, title: event.target.value }))}
+              type="text"
+              value={metadata.title}
+            />
+
+            <label className="field-label" htmlFor="article-category">
+              Category
+            </label>
+            <input
+              className="entity-form"
+              id="article-category"
+              onChange={(event) => setMetadata((current) => ({ ...current, category: event.target.value }))}
+              placeholder="e.g. Wellness"
+              type="text"
+              value={metadata.category}
+            />
+
+            <label className="field-label" htmlFor="article-description">
+              Description
+            </label>
+            <textarea
+              className="entity-form"
+              id="article-description"
+              onChange={(event) => setMetadata((current) => ({ ...current, description: event.target.value }))}
+              placeholder="Short summary or excerpt"
+              rows={3}
+              value={metadata.description}
+            />
+
+            <label className="field-label" htmlFor="article-tags">
+              Tags
+            </label>
+            <input
+              className="entity-form"
+              id="article-tags"
+              onChange={(event) => setMetadata((current) => ({ ...current, tagsInput: event.target.value }))}
+              placeholder="Comma-separated tags"
+              type="text"
+              value={metadata.tagsInput}
+            />
+
+            <label className="field-label" htmlFor="article-scheduled-publish">
+              Scheduled publish date
+            </label>
+            <input
+              className="entity-form"
+              id="article-scheduled-publish"
+              onChange={(event) => setMetadata((current) => ({ ...current, scheduledPublishAt: event.target.value }))}
+              type="datetime-local"
+              value={metadata.scheduledPublishAt}
+            />
+            {savingMetadata ? <p className="muted-text">Saving metadata…</p> : null}
+          </SectionPanel>
+
           <SectionPanel description="Plain text article body. Changes save automatically." title="Article Body">
             <label className="field-label" htmlFor="article-body-content">
               Body Content (editable)
@@ -308,34 +518,29 @@ export function ArticleApprovalEditor({ deliverableId }: ArticleApprovalEditorPr
 
                       {image.approvalStatus === "PENDING" ? (
                         <div className="portal-action-row">
-                          <button
-                            className="primary-action"
-                            disabled={imageBusyId === image.id}
-                            onClick={() => void handleApproveImage(image.id)}
-                            type="button"
-                          >
+                          <Button disabled={imageBusyId === image.id} onClick={() => void handleApproveImage(image.id)} size="sm">
                             Approve
-                          </button>
-                          <button
-                            className="secondary-action"
+                          </Button>
+                          <Button
                             disabled={imageBusyId === image.id}
                             onClick={() => {
                               setRejectImageId(image.id);
                               setRejectImageReason("");
                             }}
-                            type="button"
+                            size="sm"
+                            variant="secondary"
                           >
                             Reject
-                          </button>
+                          </Button>
                         </div>
                       ) : null}
 
                       {image.approvalStatus === "APPROVED" ? (
                         <div className="portal-image-reviewed">
                           <p className="portal-reviewed-label portal-reviewed-label-success">✓ Approved</p>
-                          <button className="ghost-action" disabled={imageBusyId === image.id} onClick={() => void handleUndoImage(image.id)} type="button">
+                          <Button disabled={imageBusyId === image.id} onClick={() => void handleUndoImage(image.id)} size="sm" variant="tertiary">
                             Undo approval
-                          </button>
+                          </Button>
                         </div>
                       ) : null}
 
@@ -343,9 +548,9 @@ export function ArticleApprovalEditor({ deliverableId }: ArticleApprovalEditorPr
                         <div className="portal-image-reviewed">
                           <p className="portal-reviewed-label portal-reviewed-label-danger">✕ Rejected</p>
                           {image.rejectionReason ? <p className="dense-row-note">{image.rejectionReason}</p> : null}
-                          <button className="ghost-action" disabled={imageBusyId === image.id} onClick={() => void handleUndoImage(image.id)} type="button">
+                          <Button disabled={imageBusyId === image.id} onClick={() => void handleUndoImage(image.id)} size="sm" variant="tertiary">
                             Undo rejection
-                          </button>
+                          </Button>
                         </div>
                       ) : null}
 
@@ -359,12 +564,12 @@ export function ArticleApprovalEditor({ deliverableId }: ArticleApprovalEditorPr
                             value={rejectImageReason}
                           />
                           <div className="portal-action-row">
-                            <button className="primary-action" disabled={!rejectImageReason.trim()} onClick={() => void handleRejectImage(image.id)} type="button">
+                            <Button disabled={!rejectImageReason.trim()} onClick={() => void handleRejectImage(image.id)} size="sm">
                               Submit rejection
-                            </button>
-                            <button className="ghost-action" onClick={() => setRejectImageId(null)} type="button">
+                            </Button>
+                            <Button onClick={() => setRejectImageId(null)} size="sm" variant="tertiary">
                               Cancel
-                            </button>
+                            </Button>
                           </div>
                         </div>
                       ) : null}
@@ -378,15 +583,21 @@ export function ArticleApprovalEditor({ deliverableId }: ArticleApprovalEditorPr
       </div>
 
       <footer className="portal-approval-actions">
-        <button className="secondary-action" onClick={() => void saveBody(bodyContent)} type="button">
+        <Button
+          onClick={() => {
+            void saveMetadata(metadata);
+            void saveBody(bodyContent);
+          }}
+          variant="secondary"
+        >
           Save &amp; Continue
-        </button>
-        <button className="primary-action" disabled={!allImagesReviewed || submitting} onClick={() => setShowApproveModal(true)} type="button">
+        </Button>
+        <Button disabled={!allImagesReviewed || submitting} onClick={() => setShowApproveModal(true)}>
           Approve Article
-        </button>
-        <button className="secondary-action" disabled={submitting} onClick={() => setShowRejectModal(true)} type="button">
+        </Button>
+        <Button disabled={submitting} onClick={() => setShowRejectModal(true)} variant="secondary">
           Reject Article
-        </button>
+        </Button>
       </footer>
 
       {showApproveModal ? (
@@ -397,12 +608,12 @@ export function ArticleApprovalEditor({ deliverableId }: ArticleApprovalEditorPr
           title="Approve this article?"
           footer={
             <div className="modal-footer">
-              <button className="secondary-action" disabled={submitting} onClick={() => setShowApproveModal(false)} type="button">
+              <Button disabled={submitting} onClick={() => setShowApproveModal(false)} variant="secondary">
                 Cancel
-              </button>
-              <button className="primary-action" disabled={submitting} onClick={() => void handleApproveArticle()} type="button">
+              </Button>
+              <Button disabled={submitting} onClick={() => void handleApproveArticle()}>
                 {submitting ? "Approving…" : "Approve"}
-              </button>
+              </Button>
             </div>
           }
         >
@@ -418,12 +629,12 @@ export function ArticleApprovalEditor({ deliverableId }: ArticleApprovalEditorPr
           title="Reject this article?"
           footer={
             <div className="modal-footer">
-              <button className="secondary-action" disabled={submitting} onClick={() => setShowRejectModal(false)} type="button">
+              <Button disabled={submitting} onClick={() => setShowRejectModal(false)} variant="secondary">
                 Cancel
-              </button>
-              <button className="primary-action" disabled={submitting || !articleRejectReason.trim()} onClick={() => void handleRejectArticle()} type="button">
+              </Button>
+              <Button disabled={submitting || !articleRejectReason.trim()} onClick={() => void handleRejectArticle()}>
                 {submitting ? "Submitting…" : "Reject article"}
-              </button>
+              </Button>
             </div>
           }
         >

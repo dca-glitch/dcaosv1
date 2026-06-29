@@ -3,7 +3,7 @@ import { EmptyState } from "../../components/EmptyState";
 import { ErrorState } from "../../components/ErrorState";
 import { LoadingState } from "../../components/LoadingState";
 import { Modal } from "../../components/Modal";
-import { MetricCard, PageHeader, SectionPanel, StatusBadge } from "../../components/ui";
+import { Button, MetricCard, PageHeader, SectionPanel, StatusBadge } from "../../components/ui";
 import type { ClientSummary } from "../clients/ClientsPage";
 import type { ProjectSummary as ProjectLinkSummary } from "../projects/ProjectsPage";
 import { MonthlyReportPanel } from "./MonthlyReportPanel";
@@ -3092,9 +3092,7 @@ export function AiDeliveryPage({
         <EmptyState
           action={
             canEdit && projects.length === 0 ? (
-              <button className="primary-action" onClick={openCreateModal} type="button">
-                Add AI Delivery
-              </button>
+              <Button onClick={openCreateModal}>Add AI Delivery</Button>
             ) : null
           }
           message={projects.length === 0 ? "No AI Delivery projects yet. Add one to begin the admin workflow." : "No AI Delivery projects match this filter. Switch filters to continue."}
@@ -3142,9 +3140,9 @@ export function AiDeliveryPage({
                 <div className="dense-actions">
                   {canEdit ? (
                     <>
-                      <button className="primary-action" onClick={() => void openContentPlan(p.id)} type="button">
+                      <Button onClick={() => void openContentPlan(p.id)} size="sm">
                         Open
-                      </button>
+                      </Button>
                       <details className="row-action-menu">
                         <summary>More</summary>
                         <div className="row-action-menu-panel">

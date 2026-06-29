@@ -2,7 +2,7 @@ import { type FormEvent, useMemo, useState } from "react";
 import { EmptyState } from "../../components/EmptyState";
 import { ErrorState } from "../../components/ErrorState";
 import { LoadingState } from "../../components/LoadingState";
-import { PageHeader, StatusBadge } from "../../components/ui";
+import { PageHeader, Button, StatusBadge, Table } from "../../components/ui";
 import { Modal } from "../../components/Modal";
 import type { ClientSummary } from "../clients/ClientsPage";
 import type { TaskSummary } from "../tasks/TasksPage";
@@ -182,9 +182,7 @@ export function ProjectsPage({
               ))}
             </div>
             {canEdit ? (
-              <button className="primary-action" onClick={openCreateModal} type="button">
-                Add Project
-              </button>
+              <Button onClick={openCreateModal}>Add Project</Button>
             ) : null}
           </>
         }
@@ -199,35 +197,33 @@ export function ProjectsPage({
       {filteredProjects.length === 0 ? (
         <EmptyState message="No projects match the current filter." title="No projects" />
       ) : (
-        <div className="dense-list">
-          {filteredProjects.map((project) => (
-            <article className="entity-card dense-record" key={project.id}>
-              <div className="dense-record-main">
-                <div className="dense-title">
-                  <div className="dense-kicker">
-                    <StatusBadge status={project.isArchived ? "ARCHIVED" : project.status} />
-                  </div>
-                  <h2>{project.name}</h2>
-                  <div className="dense-meta">
-                    <span><strong>{project.client?.name ?? "No client"}</strong></span>
-                    <span>{project.taskCount} task(s)</span>
-                    <span>{project.openTaskCount} open</span>
-                  </div>
-                </div>
-
-                <div className="dense-fields">
-                  <div className="dense-field">
-                    <span>Open tasks</span>
-                    <strong>{project.openTaskCount} / {project.taskCount}</strong>
-                  </div>
-                  <div className="dense-field">
-                    <span>Due</span>
-                    <strong>{formatDateLabel(project.dueDate)}</strong>
-                  </div>
-                </div>
-
-                <div className="dense-actions">
-                  {canEdit ? <button className="secondary-action" onClick={() => openEditModal(project)} type="button">Open</button> : null}
+        <div className="table-wrap">
+          <Table
+            headers={[
+              { label: "Project", align: "left" },
+              { label: "Client", align: "left" },
+              { label: "Status", align: "left" },
+              { label: "Tasks", align: "right" },
+              { label: "Due", align: "right" },
+              { label: "Action", align: "right" }
+            ]}
+            rows={filteredProjects.map((project) => ({
+              key: project.id,
+              cells: [
+                <div key={`${project.id}-name`}>
+                  <strong>{project.name}</strong>
+                  <div className="muted-text">Start: {formatDateLabel(project.startDate)}</div>
+                </div>,
+                project.client?.name ?? "No client",
+                <StatusBadge key={`${project.id}-status`} status={project.isArchived ? "ARCHIVED" : project.status} />,
+                <span key={`${project.id}-tasks`}>{project.openTaskCount} / {project.taskCount}</span>,
+                formatDateLabel(project.dueDate),
+                <div className="dense-actions" key={`${project.id}-actions`}>
+                  {canEdit ? (
+                    <Button onClick={() => openEditModal(project)} size="sm" variant="secondary">
+                      Open
+                    </Button>
+                  ) : null}
                   {canEdit ? (
                     <details className="row-action-menu">
                       <summary>More</summary>
@@ -235,26 +231,23 @@ export function ProjectsPage({
                         <div className="row-action-menu-group">
                           <span className="row-action-menu-label">Project</span>
                           {!project.isArchived ? (
-                            <button className="secondary-action" onClick={() => void onArchive(project.id)} type="button">
+                            <Button onClick={() => void onArchive(project.id)} size="sm" variant="secondary">
                               Archive
-                            </button>
+                            </Button>
                           ) : null}
                           {project.isArchived ? (
-                            <button className="secondary-action" onClick={() => void onRestore(project.id)} type="button">
+                            <Button onClick={() => void onRestore(project.id)} size="sm" variant="secondary">
                               Restore
-                            </button>
+                            </Button>
                           ) : null}
                         </div>
                       </div>
                     </details>
                   ) : null}
                 </div>
-              </div>
-              <div className="dense-row-note">
-                Start: {formatDateLabel(project.startDate)}. Description: {project.description || "Not set"}.
-              </div>
-            </article>
-          ))}
+              ]
+            }))}
+          />
         </div>
       )}
 
@@ -370,8 +363,12 @@ type ProjectModalActionsProps = {
 function ProjectModalActions({ disabled, label, onCancel, saving }: ProjectModalActionsProps) {
   return (
     <div className="modal-footer">
-      <button className="secondary-action" disabled={saving} onClick={onCancel} type="button">Cancel</button>
-      <button className="primary-action" disabled={disabled} type="submit">{saving ? "Saving" : label}</button>
+      <Button disabled={saving} onClick={onCancel} variant="secondary">
+        Cancel
+      </Button>
+      <Button disabled={disabled} type="submit" variant="primary">
+        {saving ? "Saving" : label}
+      </Button>
     </div>
   );
 }

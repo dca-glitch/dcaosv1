@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { EmptyState } from "../../components/EmptyState";
 import { ErrorState } from "../../components/ErrorState";
 import { LoadingState } from "../../components/LoadingState";
-import { PageHeader, SectionPanel, StatusBadge } from "../../components/ui";
+import { Button, PageHeader, SectionPanel, StatusBadge, Table } from "../../components/ui";
 import {
   clientPortalApiRequest,
   formatApprovalDate,
@@ -34,13 +34,42 @@ export function PendingApprovalsPage() {
     void loadPendingApprovals();
   }, [loadPendingApprovals]);
 
+  const tableRows = useMemo(
+    () =>
+      items.map((item) => ({
+        key: item.id,
+        cells: [
+          <div key={`${item.id}-title`}>
+            <div style={{ marginBottom: 4 }}>
+              <StatusBadge status="Awaiting your approval" />
+            </div>
+            <strong>{item.title}</strong>
+          </div>,
+          <span className="entity-pill" key={`${item.id}-project`}>
+            {item.projectName}
+          </span>,
+          <span className="muted-text" key={`${item.id}-date`}>
+            {formatApprovalDate(item.createdAt)}
+          </span>,
+          <Button
+            key={`${item.id}-action`}
+            onClick={() => navigateToClientPortalHash(`client-portal/deliverables/${item.id}/approve`)}
+            size="sm"
+          >
+            Review
+          </Button>
+        ]
+      })),
+    [items]
+  );
+
   return (
     <section className="view-section" aria-labelledby="pending-approvals-title">
       <PageHeader
-        actions={
-          <button className="ghost-action" disabled={loading} onClick={() => void loadPendingApprovals()} type="button">
+        action={
+          <Button disabled={loading} onClick={() => void loadPendingApprovals()} variant="tertiary">
             Refresh
-          </button>
+          </Button>
         }
         description="Articles awaiting your review"
         eyebrow="Client workspace"
@@ -67,28 +96,16 @@ export function PendingApprovalsPage() {
           {items.length === 0 ? (
             <EmptyState message="No articles pending your approval" title="All caught up" variant="inline" />
           ) : (
-            <div className="dense-list">
-              {items.map((item) => (
-                <article className="entity-card dense-record" key={item.id}>
-                  <div className="dense-record-main">
-                    <div className="dense-title">
-                      <div className="dense-kicker">
-                        <StatusBadge status="Awaiting your approval" />
-                        <span className="entity-pill">{item.projectName}</span>
-                      </div>
-                      <h3>{item.title}</h3>
-                      <p className="muted-text">Created {formatApprovalDate(item.createdAt)}</p>
-                    </div>
-                    <button
-                      className="primary-action"
-                      onClick={() => navigateToClientPortalHash(`client-portal/deliverables/${item.id}/approve`)}
-                      type="button"
-                    >
-                      Review
-                    </button>
-                  </div>
-                </article>
-              ))}
+            <div className="table-wrap">
+              <Table
+                headers={[
+                  { label: "Article", align: "left" },
+                  { label: "Project", align: "left" },
+                  { label: "Created", align: "right" },
+                  { label: "Action", align: "right" }
+                ]}
+                rows={tableRows}
+              />
             </div>
           )}
         </SectionPanel>
