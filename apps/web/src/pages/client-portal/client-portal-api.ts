@@ -128,6 +128,10 @@ export type DeliverableImageApproval = {
 export type DeliverableForApproval = {
   id: string;
   title: string;
+  description: string | null;
+  tags: string[];
+  category: string | null;
+  scheduledPublishAt: string | null;
   status: string;
   bodyContent: string;
   projectId: string;
@@ -136,6 +140,18 @@ export type DeliverableForApproval = {
   clientName: string | null;
   createdAt: string;
   images: DeliverableImageApproval[];
+};
+
+export type DeliverableMetadataPatchResponse = {
+  deliverable: {
+    id: string;
+    title: string;
+    description: string | null;
+    tags: string[];
+    category: string | null;
+    scheduledPublishAt: string | null;
+    updatedAt: string;
+  };
 };
 
 export type DeliverableForApprovalResponse = {
