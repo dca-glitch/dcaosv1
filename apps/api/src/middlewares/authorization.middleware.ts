@@ -1,6 +1,6 @@
 import type { RequestHandler } from "express";
 import { API_ERROR_CODES, API_ERROR_MESSAGES, failure, forbiddenFailure } from "../utils/responses";
-import type { AuthSessionLocals } from "../auth/types";
+import type { AuthResolvedSessionContext, AuthSessionLocals } from "../auth/types";
 import type { PermissionKey } from "../security/permission-keys";
 import { CORE_PERMISSION_KEYS } from "../security/permission-keys";
 import { hasPermission } from "../security/rbac";
@@ -122,6 +122,26 @@ export function createPermissionMiddleware(...requiredPermissions: PermissionKey
 
 export const requireRole = createRoleMiddleware;
 export const requirePermission = createPermissionMiddleware;
+
+export function requireAnyRole(...allowedRoles: string[]): RequestHandler {
+  return (_req, res, next) => {
+    const authSession = res.locals.authSession as AuthResolvedSessionContext | undefined;
+    if (!authSession?.tenantContext?.activeMembership) {
+      res.status(403).json(failure("FORBIDDEN", "No active membership"));
+      return;
+    }
+
+    const userRoles = authSession.tenantContext.activeMembership.roles || [];
+    const hasRole = allowedRoles.some((role) => userRoles.includes(role));
+
+    if (!hasRole) {
+      res.status(403).json(failure("FORBIDDEN", `Requires role: ${allowedRoles.join(" or ")}`));
+      return;
+    }
+
+    next();
+  };
+}
 
 export function resolveActiveRoles(authSession: NonNullable<AuthSessionLocals["authSession"]>): string[] {
   return getActiveRoles(authSession);

@@ -21,7 +21,8 @@ export const TENANT_MODULE_ROUTE_MAP: Array<{ prefix: string; moduleKey: string 
   { prefix: "/vendors", moduleKey: "finance-lite" },
   { prefix: "/credit-notes", moduleKey: "finance-lite" },
   { prefix: "/invoice-items", moduleKey: "finance-lite" },
-  { prefix: "/recurring-invoices", moduleKey: "finance-lite" }
+  { prefix: "/recurring-invoices", moduleKey: "finance-lite" },
+  { prefix: "/finance", moduleKey: "finance-lite" }
 ];
 
 export function resolveModuleKeyForPath(path: string): string | null {

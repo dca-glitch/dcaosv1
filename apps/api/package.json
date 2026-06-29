@@ -11,6 +11,7 @@
     "check:ai-workflow-knowledge-context": "tsx scripts/check-ai-workflow-knowledge-context.runner.ts",
     "check:ai-workflow-engine": "tsx scripts/check-ai-workflow-engine.runner.ts",
     "check:dist-esm": "node scripts/check-dist-esm.mjs",
+    "test:finance": "tsx --test src/finance/*.test.ts",
     "build": "node scripts/build-api.mjs",
     "dev": "tsx src/server.ts",
     "start": "node dist/apps/api/src/server.js"

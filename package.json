@@ -53,6 +53,7 @@
     "smoke:content-plan-review:browser": "node scripts/smoke-content-plan-review-browser-local.mjs",
     "smoke:content-draft-review:browser": "node scripts/smoke-content-draft-review-browser-local.mjs",
     "smoke:finance-admin:browser": "node scripts/smoke-finance-admin-browser-local.mjs",
+    "smoke:finance-ledger:local": "node scripts/smoke-finance-ledger-local.mjs",
     "smoke:r2-byte-roundtrip:local": "node scripts/smoke-r2-byte-roundtrip-local.mjs",
     "smoke:email-outbox:local": "node scripts/smoke-email-outbox-local.mjs",
     "smoke:tenant-module:dry-run-probe": "node scripts/smoke-tenant-module-dry-run-probe-local.mjs",

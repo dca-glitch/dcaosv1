@@ -86,6 +86,19 @@ enum BillPaymentForm {
   OTHER
 }
 
+enum FinanceEventType {
+  REVENUE
+  COST
+}
+
+enum FinanceEventSource {
+  INVOICE
+  BILL
+  DELIVERY
+  MANUAL
+  SYSTEM
+}
+
 enum SettingValueType {
   STRING
   NUMBER
@@ -203,6 +216,9 @@ model Tenant {
   aiDeliveryMonthlyReports AiDeliveryMonthlyReport[]
   aiKnowledgeItems     AiKnowledgeItem[]
   aiContextSnapshots   AiContextSnapshot[]
+  financeEvents        FinanceEvent[]
+  financeMonthlySnapshots FinanceMonthlySnapshot[]
+  revenueAttributions  RevenueAttribution[]
   publicationTargets   PublicationTarget[]
   publicationTargetCredentials PublicationTargetCredential[]
   clientAnalyticsProfiles ClientAnalyticsProfile[]
@@ -410,6 +426,8 @@ model Client {
   catalogProducts   ClientCatalogProduct[]
   catalogInquiries  ClientCatalogInquiry[]
   aiKnowledgeItems  AiKnowledgeItem[]
+  financeEvents     FinanceEvent[]
+  revenueAttributions RevenueAttribution[]
 
   @@index([tenantId])
   @@index([tenantId, isArchived])
@@ -601,6 +619,8 @@ model Project {
   recurringInvoices RecurringInvoice[]
   documents         ProjectDocument[]
   aiDeliveryProjects AiDeliveryProject[]
+  financeEvents     FinanceEvent[]
+  revenueAttributions RevenueAttribution[]
 
   @@index([tenantId])
   @@index([tenantId, isArchived])
@@ -1299,6 +1319,69 @@ model Bill {
   @@index([tenantId, isArchived])
   @@index([tenantId, paymentDate])
   @@index([tenantId, category])
+}
+
+model FinanceEvent {
+  id             String             @id @default(uuid())
+  tenantId       String
+  type           FinanceEventType
+  source         FinanceEventSource
+  sourceEntityId String?
+  amountCents    Int
+  currency       String             @default("USD")
+  clientId       String?
+  projectId      String?
+  timestamp      DateTime
+  metadata       Json               @default("{}")
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  tenant         Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  client         Client?            @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  project        Project?           @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  revenueAttribution RevenueAttribution?
+
+  @@unique([tenantId, source, sourceEntityId])
+  @@index([tenantId, type, timestamp])
+  @@index([tenantId, clientId])
+  @@index([tenantId, projectId])
+  @@index([tenantId, timestamp])
+}
+
+model FinanceMonthlySnapshot {
+  id                String   @id @default(uuid())
+  tenantId          String
+  month             String
+  totalRevenueCents Int      @default(0)
+  totalCostCents    Int      @default(0)
+  profitCents       Int      @default(0)
+  marginPercent     Float    @default(0)
+  reportStorageKey  String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  tenant            Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, month])
+  @@index([tenantId, month])
+}
+
+model RevenueAttribution {
+  id             String       @id @default(uuid())
+  tenantId       String
+  financeEventId String       @unique
+  deliveryId     String?
+  clientId       String?
+  projectId      String?
+  metadata       Json         @default("{}")
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  financeEvent   FinanceEvent @relation(fields: [financeEventId], references: [id], onDelete: Cascade)
+  tenant         Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  client         Client?      @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  project        Project?     @relation(fields: [projectId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, deliveryId])
+  @@index([tenantId, clientId])
+  @@index([tenantId, projectId])
 }
 
 model TenantModule {

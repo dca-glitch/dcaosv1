@@ -140,6 +140,8 @@ import {
   recordPublicationLog,
   resolvePublicationTargetForClient
 } from "./client-publication.runtime";
+import { linkDeliveryRevenueAttribution } from "../finance/finance-attribution.service";
+import { syncBillToFinanceEvent, syncInvoiceToFinanceEvent } from "../finance/finance-sync.service";
 
 const prisma = createPrismaClient();
 
@@ -5944,6 +5946,7 @@ export async function createInvoice(
       });
 
       const hydrated = await getInvoiceRecord(tx, tenantId, created.id);
+      await syncInvoiceToFinanceEvent(tx, tenantId, created.id);
       return {
         invoice: hydrated ? toInvoiceSummary(hydrated) : null
       };
@@ -6030,6 +6033,7 @@ export async function updateInvoice(
         select: invoiceSelect
       });
 
+      await syncInvoiceToFinanceEvent(tx, tenantId, invoiceId);
       return {
         invoice: toInvoiceSummary(updated)
       };
@@ -6127,6 +6131,7 @@ async function updateInvoiceStatus(
     });
 
     const hydrated = await getInvoiceRecord(tx, tenantId, updated.id);
+    await syncInvoiceToFinanceEvent(tx, tenantId, invoiceId);
     return {
       invoice: hydrated ? toInvoiceSummary(hydrated) : null
     };
@@ -6240,6 +6245,7 @@ export async function registerInvoicePayment(authSession: AuthResolvedSessionCon
       }
     });
     const updated = await tx.invoice.update({ where: { id: invoiceId }, data: { status: "PAID", paidAt: new Date(paymentDate), amountPaidCents: amountReceivedCents }, select: invoiceSelect });
+    await syncInvoiceToFinanceEvent(tx, tenantId, invoiceId);
     return { invoice: toInvoiceSummary(updated) };
   });
 }
@@ -7172,6 +7178,7 @@ export async function createBill(
       select: billSelect
     });
 
+    await syncBillToFinanceEvent(tx, tenantId, created.id);
     return {
       bill: toBillSummary(created)
     };
@@ -7219,6 +7226,7 @@ export async function updateBill(
       select: billSelect
     });
 
+    await syncBillToFinanceEvent(tx, tenantId, billId);
     return {
       bill: toBillSummary(updated)
     };
@@ -7321,6 +7329,7 @@ async function updateBillArchiveState(
       select: billSelect
     });
 
+    await syncBillToFinanceEvent(tx, tenantId, billId);
     return {
       bill: toBillSummary(updated)
     };
@@ -8888,7 +8897,8 @@ export async function publishAiDeliveryDeliverableToWordPress(
     },
     select: {
       id: true,
-      clientId: true
+      clientId: true,
+      projectId: true
     }
   });
   if (!project) {
@@ -9003,6 +9013,24 @@ export async function publishAiDeliveryDeliverableToWordPress(
     actorUserId: authSession.user.id,
     note: publishResult.providerDisabledReason ?? publishResult.errorMessage
   });
+
+  if (publishResult.status === "published") {
+    await prisma.$transaction(async (tx) => {
+      await linkDeliveryRevenueAttribution(tx, {
+        tenantId,
+        deliverableId,
+        aiDeliveryProjectId,
+        clientId: project.clientId,
+        projectId: project.projectId,
+        publishedAt: new Date(),
+        metadata: {
+          publicationTargetId: publicationTarget!.id,
+          wordpressPostId: publishResult.wordpressPostId ?? null,
+          action: "PUBLISH_WORDPRESS"
+        }
+      });
+    });
+  }
 
   return {
     publishResult

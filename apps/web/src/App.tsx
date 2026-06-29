@@ -877,6 +877,88 @@ function LoginScreen({
   );
 }
 
+type AdminUserResult = {
+  userId: string;
+  email: string;
+  tempPassword: string;
+  loginUrl: string;
+};
+
+function ForcePasswordChangeModal({
+  onSubmit,
+  loading,
+  error
+}: {
+  onSubmit: (newPassword: string) => Promise<void>;
+  loading: boolean;
+  error: string | null;
+}) {
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [localError, setLocalError] = useState<string | null>(null);
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setLocalError(null);
+    if (newPassword.length < 8) {
+      setLocalError("Password must be at least 8 characters long.");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setLocalError("Passwords do not match.");
+      return;
+    }
+    await onSubmit(newPassword);
+  }
+
+  const displayError = localError ?? error;
+
+  return (
+    <main className="login-page">
+      <div className="login-hero" aria-hidden="true">
+        <span className="brand-mark login-brand-mark">DCA</span>
+        <p className="eyebrow">DCA OS v1 / Lite</p>
+        <h2>Security update required.</h2>
+        <p>Your account requires a new password before you can continue.</p>
+      </div>
+      <section className="login-panel" aria-labelledby="change-password-title">
+        <div>
+          <p className="eyebrow">DCA OS v1 / Lite</p>
+          <h1 id="change-password-title">Set New Password</h1>
+          <p className="login-helper">Your temporary password must be changed before accessing the workspace.</p>
+        </div>
+        {displayError ? <StatusNotice tone="error" message={displayError} /> : null}
+        <form className="auth-form" onSubmit={(e) => void handleSubmit(e)}>
+          <label>
+            New Password
+            <input
+              autoComplete="new-password"
+              minLength={8}
+              name="newPassword"
+              onChange={(event) => setNewPassword(event.target.value)}
+              type="password"
+              value={newPassword}
+            />
+          </label>
+          <label>
+            Confirm New Password
+            <input
+              autoComplete="new-password"
+              name="confirmPassword"
+              onChange={(event) => setConfirmPassword(event.target.value)}
+              type="password"
+              value={confirmPassword}
+            />
+          </label>
+          <button className="primary-action" disabled={loading} type="submit">
+            {loading ? "Updating password" : "Set new password"}
+          </button>
+        </form>
+      </section>
+    </main>
+  );
+}
+
 function DashboardView({
   user,
   context,
@@ -1205,15 +1287,59 @@ function DeferredClientPortalView({
 
 function TeamView({
   authContext,
-  teamMembers
+  teamMembers,
+  onCreateUser,
+  onResetPassword
 }: {
   authContext: AuthContextResponse | null;
   teamMembers: TenantMembersResponse | null;
+  onCreateUser: (email: string, name: string, roleKey: string) => Promise<AdminUserResult | null>;
+  onResetPassword: (userId: string) => Promise<AdminUserResult | null>;
 }) {
   const canReadUsers = hasPermission(authContext, "users:read") || hasActiveRole(authContext, ["owner", "admin"]);
+  const canManageUsers = hasActiveRole(authContext, ["owner", "admin"]);
   const members = teamMembers?.members ?? [];
   const activeMembers = members.filter((member) => member.status.toLowerCase() === "active");
   const roleLabels = [...new Set(members.flatMap((member) => member.roles))];
+
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [createEmail, setCreateEmail] = useState("");
+  const [createName, setCreateName] = useState("");
+  const [createRoleKey, setCreateRoleKey] = useState("admin");
+  const [createLoading, setCreateLoading] = useState(false);
+  const [createResult, setCreateResult] = useState<AdminUserResult | null>(null);
+  const [resetResults, setResetResults] = useState<Record<string, AdminUserResult>>({});
+  const [resetLoadingId, setResetLoadingId] = useState<string | null>(null);
+
+  async function handleCreateSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setCreateLoading(true);
+    setCreateResult(null);
+    try {
+      const result = await onCreateUser(createEmail, createName, createRoleKey);
+      if (result) {
+        setCreateResult(result);
+        setCreateEmail("");
+        setCreateName("");
+        setCreateRoleKey("admin");
+        setShowCreateForm(false);
+      }
+    } finally {
+      setCreateLoading(false);
+    }
+  }
+
+  async function handleResetPassword(userId: string) {
+    setResetLoadingId(userId);
+    try {
+      const result = await onResetPassword(userId);
+      if (result) {
+        setResetResults((prev) => ({ ...prev, [userId]: result }));
+      }
+    } finally {
+      setResetLoadingId(null);
+    }
+  }
 
   return (
     <section className="view-section" aria-labelledby="team-title">
@@ -1221,7 +1347,7 @@ function TeamView({
         eyebrow="Team"
         title="Members"
         titleId="team-title"
-        description="Read-only tenant member directory for the current company workspace."
+        description="Tenant member directory. Admins can create users and reset passwords."
       />
       <div className="summary-grid metric-grid team-shell-metrics" aria-label="Team shell metrics">
         <MetricCard
@@ -1242,11 +1368,85 @@ function TeamView({
       {!canReadUsers ? (
         <StatusNotice tone="info" message="Member visibility requires tenant user read access." />
       ) : null}
+      {canManageUsers ? (
+        <SectionPanel
+          tone="compact"
+          title="Create user"
+          description="Add a new user to this tenant. A temporary password will be generated."
+          action={
+            !showCreateForm ? (
+              <button className="primary-action" onClick={() => setShowCreateForm(true)} type="button">
+                Create user
+              </button>
+            ) : null
+          }
+        >
+          {createResult ? (
+            <div className="status-notice status-notice--success">
+              <p>User created. Share these credentials securely.</p>
+              <dl>
+                <div><dt>Email</dt><dd>{createResult.email}</dd></div>
+                <div><dt>Temp password</dt><dd><code>{createResult.tempPassword}</code></dd></div>
+                <div><dt>Login URL</dt><dd><code>{createResult.loginUrl}</code></dd></div>
+              </dl>
+              <button className="secondary-action" onClick={() => setCreateResult(null)} type="button">Dismiss</button>
+            </div>
+          ) : null}
+          {showCreateForm ? (
+            <form className="inline-form" onSubmit={(e) => void handleCreateSubmit(e)}>
+              <label>
+                Email
+                <input
+                  name="email"
+                  onChange={(e) => setCreateEmail(e.target.value)}
+                  required
+                  type="email"
+                  value={createEmail}
+                />
+              </label>
+              <label>
+                Name (optional)
+                <input
+                  name="name"
+                  onChange={(e) => setCreateName(e.target.value)}
+                  type="text"
+                  value={createName}
+                />
+              </label>
+              <label>
+                Role key
+                <input
+                  name="roleKey"
+                  onChange={(e) => setCreateRoleKey(e.target.value)}
+                  placeholder="admin"
+                  type="text"
+                  value={createRoleKey}
+                />
+              </label>
+              <div className="form-actions">
+                <button className="primary-action" disabled={createLoading} type="submit">
+                  {createLoading ? "Creating" : "Create user"}
+                </button>
+                <button
+                  className="secondary-action"
+                  disabled={createLoading}
+                  onClick={() => setShowCreateForm(false)}
+                  type="button"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          ) : !createResult ? (
+            <p className="inline-empty muted-text">Use the button above to add a new team member.</p>
+          ) : null}
+        </SectionPanel>
+      ) : null}
       {canReadUsers ? (
         <SectionPanel
           tone="compact"
           title="Member directory"
-          description="Read-only shell. Role editing, invites, and password reset remain deferred."
+          description={canManageUsers ? "Admin actions: reset password per member." : "Read-only view."}
         >
           {members.length === 0 ? (
             <p className="inline-empty muted-text">Active tenant members appear here once membership records exist.</p>
@@ -1259,19 +1459,52 @@ function TeamView({
                     <th>User email</th>
                     <th>Role / access level</th>
                     <th>Status</th>
+                    {canManageUsers ? <th>Actions</th> : null}
                   </tr>
                 </thead>
                 <tbody>
-                  {members.map((member) => (
-                    <tr key={member.tenantMembershipId}>
-                      <td>{member.user.name || "Unassigned"}</td>
-                      <td>{member.user.email}</td>
-                      <td>{member.roles.join(", ") || "None"}</td>
-                      <td>
-                        <StatusBadge status={member.status} />
-                      </td>
-                    </tr>
-                  ))}
+                  {members.map((member) => {
+                    const resetResult = resetResults[member.user.id];
+                    return (
+                      <tr key={member.tenantMembershipId}>
+                        <td>{member.user.name || "Unassigned"}</td>
+                        <td>{member.user.email}</td>
+                        <td>{member.roles.join(", ") || "None"}</td>
+                        <td>
+                          <StatusBadge status={member.status} />
+                        </td>
+                        {canManageUsers ? (
+                          <td>
+                            {resetResult ? (
+                              <span className="muted-text">
+                                Temp: <code>{resetResult.tempPassword}</code>
+                                <button
+                                  className="subtle-action"
+                                  onClick={() => setResetResults((prev) => {
+                                    const next = { ...prev };
+                                    delete next[member.user.id];
+                                    return next;
+                                  })}
+                                  type="button"
+                                >
+                                  Clear
+                                </button>
+                              </span>
+                            ) : (
+                              <button
+                                className="secondary-action"
+                                disabled={resetLoadingId === member.user.id}
+                                onClick={() => void handleResetPassword(member.user.id)}
+                                type="button"
+                              >
+                                {resetLoadingId === member.user.id ? "Resetting" : "Reset password"}
+                              </button>
+                            )}
+                          </td>
+                        ) : null}
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -1418,6 +1651,12 @@ export function App() {
   );
   const [moduleActionKey, setModuleActionKey] = useState<string | null>(null);
   const [switchingTenantMembershipId, setSwitchingTenantMembershipId] = useState<string | null>(null);
+  const [forcePasswordChangeContext, setForcePasswordChangeContext] = useState<{
+    token: string;
+    originalPassword: string;
+  } | null>(null);
+  const [forcePasswordChangeError, setForcePasswordChangeError] = useState<string | null>(null);
+  const [forcePasswordChangeLoading, setForcePasswordChangeLoading] = useState(false);
   const tokenRef = useRef<string | null>(token);
 
   useEffect(() => {
@@ -1615,8 +1854,11 @@ export function App() {
   );
 
   useEffect(() => {
+    if (forcePasswordChangeContext) {
+      return;
+    }
     void loadProtectedState(token);
-  }, [loadProtectedState, token]);
+  }, [forcePasswordChangeContext, loadProtectedState, token]);
 
   async function handleLogin(email: string, password: string, turnstileToken?: string) {
     setLoginLoading(true);
@@ -1635,6 +1877,15 @@ export function App() {
 
       const nextToken = response.data.session.token;
       tokenRef.current = nextToken;
+
+      if (response.data.user.forcePasswordChange) {
+        setForcePasswordChangeContext({ token: nextToken, originalPassword: password });
+        setForcePasswordChangeError(null);
+        setToken(nextToken);
+        storeToken(nextToken);
+        return;
+      }
+
       setToken(nextToken);
       storeToken(nextToken);
       setCurrentUser({
@@ -1653,6 +1904,39 @@ export function App() {
       setLoginError(maskError(error));
     } finally {
       setLoginLoading(false);
+    }
+  }
+
+  async function handleForcePasswordChange(newPassword: string) {
+    if (!forcePasswordChangeContext) {
+      return;
+    }
+
+    setForcePasswordChangeLoading(true);
+    setForcePasswordChangeError(null);
+
+    try {
+      const response = await apiRequest<{ ok: boolean; message: string }>("/auth/change-password", {
+        method: "POST",
+        token: forcePasswordChangeContext.token,
+        body: {
+          oldPassword: forcePasswordChangeContext.originalPassword,
+          newPassword
+        }
+      });
+
+      if (!response.ok) {
+        setForcePasswordChangeError(getErrorMessage(response));
+        return;
+      }
+
+      setForcePasswordChangeContext(null);
+      await loadProtectedState(forcePasswordChangeContext.token);
+      replaceHash(DASHBOARD_HASH);
+    } catch (error) {
+      setForcePasswordChangeError(maskError(error));
+    } finally {
+      setForcePasswordChangeLoading(false);
     }
   }
 
@@ -3922,6 +4206,60 @@ export function App() {
     }
   }
 
+  async function handleCreateAdminUser(
+    email: string,
+    name: string,
+    roleKey: string
+  ): Promise<AdminUserResult | null> {
+    setAppMessage(null);
+    try {
+      const response = await runAuthenticatedRequest<AdminUserResult>("/auth/create-user", {
+        method: "POST",
+        body: { email, name: name || undefined, roleKey }
+      });
+
+      if (!response) {
+        return null;
+      }
+
+      if (!response.ok) {
+        setAppMessage({ tone: "error", text: getErrorMessage(response) });
+        return null;
+      }
+
+      await loadProtectedState(tokenRef.current);
+      setAppMessage({ tone: "success", text: "User created successfully." });
+      return response.data;
+    } catch (error) {
+      setAppMessage({ tone: "error", text: maskError(error) });
+      return null;
+    }
+  }
+
+  async function handleResetUserPassword(userId: string): Promise<AdminUserResult | null> {
+    setAppMessage(null);
+    try {
+      const response = await runAuthenticatedRequest<AdminUserResult>(`/auth/reset-password/${userId}`, {
+        method: "POST"
+      });
+
+      if (!response) {
+        return null;
+      }
+
+      if (!response.ok) {
+        setAppMessage({ tone: "error", text: getErrorMessage(response) });
+        return null;
+      }
+
+      setAppMessage({ tone: "success", text: "Password reset. Share the temporary password securely." });
+      return response.data;
+    } catch (error) {
+      setAppMessage({ tone: "error", text: maskError(error) });
+      return null;
+    }
+  }
+
   const canManageModules = hasModuleAdminAccess(authContext);
   const canManageCore = hasActiveRole(authContext, ["owner", "admin"]);
   const currentTenant = tenantContext?.currentTenant?.tenant ?? null;
@@ -3931,6 +4269,15 @@ export function App() {
     : navigationItems;
 
   if (!token || !currentUser) {
+    if (token && forcePasswordChangeContext) {
+      return (
+        <ForcePasswordChangeModal
+          error={forcePasswordChangeError}
+          loading={forcePasswordChangeLoading}
+          onSubmit={handleForcePasswordChange}
+        />
+      );
+    }
     return <LoginScreen error={loginError} loading={loginLoading || loading} onLogin={handleLogin} />;
   }
 
@@ -4224,7 +4571,12 @@ export function App() {
         />
       ) : null}
       {!loading && activeView === "team" ? (
-        <TeamView authContext={authContext} teamMembers={teamMembers} />
+        <TeamView
+          authContext={authContext}
+          onCreateUser={handleCreateAdminUser}
+          onResetPassword={handleResetUserPassword}
+          teamMembers={teamMembers}
+        />
       ) : null}
     </AppLayout>
   );

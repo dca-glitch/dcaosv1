@@ -214,6 +214,14 @@ import {
   updateClientCatalogInquiryStatusHandler,
   updateClientCatalogProductHandler
 } from "../controllers/clientCatalogController";
+import {
+  generateFinanceMonthlyReportPdfHandler,
+  getFinanceClientSummaryHandler,
+  getFinanceIntegrityHandler,
+  getFinanceProjectSummaryHandler,
+  getFinanceSummaryHandler,
+  listFinanceEventsHandler
+} from "../controllers/financeController";
 
 export function createCoreRouter() {
   const router = Router();
@@ -396,6 +404,13 @@ export function createCoreRouter() {
   router.get("/bills/:id/document/download", requireAuth, requireTenant, tenantModuleGuard, downloadBillDocumentHandler);
   router.post("/bills/:id/archive", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), archiveBillHandler);
   router.post("/bills/:id/restore", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), restoreBillHandler);
+
+  router.get("/finance/summary", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), getFinanceSummaryHandler);
+  router.get("/finance/client/:id/summary", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), getFinanceClientSummaryHandler);
+  router.get("/finance/project/:id/summary", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), getFinanceProjectSummaryHandler);
+  router.get("/finance/events", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), listFinanceEventsHandler);
+  router.get("/finance/integrity", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), getFinanceIntegrityHandler);
+  router.post("/finance/reports/monthly/pdf", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), generateFinanceMonthlyReportPdfHandler);
 
   // Monthly Report - admin-only computed summary (schema-free, read model)
   router.get("/ai-delivery/reports/monthly-summary", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), getAiDeliveryMonthlySummaryHandler);

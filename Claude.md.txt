@@ -1,0 +1,12 @@
+## Model configuration
+Default model: haiku
+
+Use sonnet for:
+- implementacja nowych modułów
+- refaktoring wielu plików naraz
+- debugowanie złożonych błędów
+
+Use opus for:
+- decyzje architektoniczne
+- security review
+- planowanie nowych bloków systemu
