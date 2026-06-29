@@ -17,10 +17,11 @@ export const createUser: RequestHandler = async (req, res) => {
     return;
   }
 
-  const body = (req.body ?? {}) as { email?: unknown; name?: unknown; roleKey?: unknown };
+  const body = (req.body ?? {}) as { email?: unknown; name?: unknown; roleKey?: unknown; clientId?: unknown };
   const email = typeof body.email === "string" ? body.email.trim() : "";
   const name = typeof body.name === "string" && body.name.trim() ? body.name.trim() : null;
   const roleKey = typeof body.roleKey === "string" && body.roleKey.trim() ? body.roleKey.trim() : "admin";
+  const clientId = typeof body.clientId === "string" && body.clientId.trim() ? body.clientId.trim() : null;
 
   if (!email) {
     res.status(400).json(failure("AUTH_USER_INVALID", "Email is required."));
@@ -45,6 +46,15 @@ export const createUser: RequestHandler = async (req, res) => {
       where: { tenantId, key: roleKey, status: "ACTIVE" },
       select: { id: true }
     });
+
+    let validClientId = null;
+    if (clientId) {
+      const clientRecord = await prisma.client.findFirst({
+        where: { id: clientId, tenantId, isArchived: false },
+        select: { id: true }
+      });
+      validClientId = clientRecord?.id ?? null;
+    }
 
     const tempPassword = generateTemporaryPassword();
     const passwordHash = hashPassword(tempPassword);
@@ -71,6 +81,12 @@ export const createUser: RequestHandler = async (req, res) => {
         });
       }
 
+      if (validClientId) {
+        await tx.clientUserAccess.create({
+          data: { tenantId, clientId: validClientId, userId: user.id, isArchived: false }
+        });
+      }
+
       return user;
     });
 
@@ -80,7 +96,11 @@ export const createUser: RequestHandler = async (req, res) => {
       action: AUTH_RUNTIME_AUDIT_EVENTS.adminUserCreated,
       entityType: "user",
       entityId: result.id,
-      metadata: { email: normalizedEmail, roleKey },
+      metadata: {
+        email: normalizedEmail,
+        roleKey,
+        ...(validClientId ? { clientId: validClientId } : {})
+      },
       ipAddress: req.ip,
       userAgent: req.get("user-agent") ?? null
     });
@@ -89,7 +109,13 @@ export const createUser: RequestHandler = async (req, res) => {
 
     res.status(201).json(
       success(
-        { userId: result.id, email: normalizedEmail, tempPassword, loginUrl },
+        {
+          userId: result.id,
+          email: normalizedEmail,
+          tempPassword,
+          loginUrl,
+          ...(validClientId ? { clientId: validClientId } : {})
+        },
         { phase: "runtime", auth: "controlled-mvp" }
       )
     );

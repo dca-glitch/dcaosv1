@@ -885,6 +885,7 @@ type AdminUserResult = {
   email: string;
   tempPassword: string;
   loginUrl: string;
+  clientId?: string;
 };
 
 function ForcePasswordChangeModal({
@@ -1291,12 +1292,14 @@ function DeferredClientPortalView({
 function TeamView({
   authContext,
   teamMembers,
+  clients,
   onCreateUser,
   onResetPassword
 }: {
   authContext: AuthContextResponse | null;
   teamMembers: TenantMembersResponse | null;
-  onCreateUser: (email: string, name: string, roleKey: string) => Promise<AdminUserResult | null>;
+  clients: ClientSummary[];
+  onCreateUser: (email: string, name: string, roleKey: string, clientId?: string) => Promise<AdminUserResult | null>;
   onResetPassword: (userId: string) => Promise<AdminUserResult | null>;
 }) {
   const canReadUsers = hasPermission(authContext, "users:read") || hasActiveRole(authContext, ["owner", "admin"]);
@@ -1308,7 +1311,8 @@ function TeamView({
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [createEmail, setCreateEmail] = useState("");
   const [createName, setCreateName] = useState("");
-  const [createRoleKey, setCreateRoleKey] = useState("admin");
+  const [createRoleKey, setCreateRoleKey] = useState("client");
+  const [createClientId, setCreateClientId] = useState("");
   const [createLoading, setCreateLoading] = useState(false);
   const [createResult, setCreateResult] = useState<AdminUserResult | null>(null);
   const [resetResults, setResetResults] = useState<Record<string, AdminUserResult>>({});
@@ -1319,12 +1323,18 @@ function TeamView({
     setCreateLoading(true);
     setCreateResult(null);
     try {
-      const result = await onCreateUser(createEmail, createName, createRoleKey);
+      const result = await onCreateUser(
+        createEmail,
+        createName,
+        createRoleKey,
+        createClientId.trim() || undefined
+      );
       if (result) {
         setCreateResult(result);
         setCreateEmail("");
         setCreateName("");
-        setCreateRoleKey("admin");
+        setCreateRoleKey("client");
+        setCreateClientId("");
         setShowCreateForm(false);
       }
     } finally {
@@ -1391,6 +1401,14 @@ function TeamView({
                 <div><dt>Email</dt><dd>{createResult.email}</dd></div>
                 <div><dt>Temp password</dt><dd><code>{createResult.tempPassword}</code></dd></div>
                 <div><dt>Login URL</dt><dd><code>{createResult.loginUrl}</code></dd></div>
+                {createResult.clientId ? (
+                  <div>
+                    <dt>Client access</dt>
+                    <dd>
+                      {clients.find((client) => client.id === createResult.clientId)?.name ?? createResult.clientId}
+                    </dd>
+                  </div>
+                ) : null}
               </dl>
               <button className="secondary-action" onClick={() => setCreateResult(null)} type="button">Dismiss</button>
             </div>
@@ -1421,11 +1439,28 @@ function TeamView({
                 <input
                   name="roleKey"
                   onChange={(e) => setCreateRoleKey(e.target.value)}
-                  placeholder="admin"
+                  placeholder="client"
                   type="text"
                   value={createRoleKey}
                 />
               </label>
+              {createRoleKey !== "owner" ? (
+                <label>
+                  Client (portal access, optional)
+                  <select
+                    name="clientId"
+                    onChange={(e) => setCreateClientId(e.target.value)}
+                    value={createClientId}
+                  >
+                    <option value="">no client assigned</option>
+                    {clients.map((client) => (
+                      <option key={client.id} value={client.id}>
+                        {client.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ) : null}
               <div className="form-actions">
                 <button className="primary-action" disabled={createLoading} type="submit">
                   {createLoading ? "Creating" : "Create user"}
@@ -4212,13 +4247,19 @@ export function App() {
   async function handleCreateAdminUser(
     email: string,
     name: string,
-    roleKey: string
+    roleKey: string,
+    clientId?: string
   ): Promise<AdminUserResult | null> {
     setAppMessage(null);
     try {
       const response = await runAuthenticatedRequest<AdminUserResult>("/auth/create-user", {
         method: "POST",
-        body: { email, name: name || undefined, roleKey }
+        body: {
+          email,
+          name: name || undefined,
+          roleKey,
+          ...(clientId ? { clientId } : {})
+        }
       });
 
       if (!response) {
@@ -4576,6 +4617,7 @@ export function App() {
       {!loading && activeView === "team" ? (
         <TeamView
           authContext={authContext}
+          clients={clients?.clients ?? []}
           onCreateUser={handleCreateAdminUser}
           onResetPassword={handleResetUserPassword}
           teamMembers={teamMembers}
