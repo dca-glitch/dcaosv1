@@ -7363,6 +7363,8 @@ const aiDeliveryDeliverableSelect = {
   articleImageId: true,
   title: true,
   description: true,
+  bodyContent: true,
+  clientRejectionReason: true,
   deliveryType: true,
   status: true,
   exportUrl: true,
@@ -7389,7 +7391,7 @@ function normalizeAiDeliveryDeliverableDeliveryType(value: string | null | undef
 
 function normalizeAiDeliveryDeliverableStatus(value: string | null | undefined): AiDeliveryDeliverableStatus {
   const v = value ? value.trim().toUpperCase() : null;
-  return v && ["DRAFT", "READY", "DELIVERED", "REVISION_REQUESTED", "ACCEPTED", "ARCHIVED"].includes(v) ? (v as AiDeliveryDeliverableStatus) : "DRAFT";
+  return v && ["DRAFT", "READY", "DELIVERED", "REVISION_REQUESTED", "ACCEPTED", "ARCHIVED", "PENDING_CLIENT_REVIEW", "APPROVED_BY_CLIENT"].includes(v) ? (v as AiDeliveryDeliverableStatus) : "DRAFT";
 }
 
 function toAiDeliveryDeliverableSummary(d: any) {
@@ -7401,6 +7403,8 @@ function toAiDeliveryDeliverableSummary(d: any) {
     articleImageId: d.articleImageId ?? null,
     title: d.title,
     description: d.description ?? null,
+    bodyContent: d.bodyContent ?? null,
+    clientRejectionReason: d.clientRejectionReason ?? null,
     deliveryType: d.deliveryType,
     status: d.status,
     exportUrl: d.exportUrl ?? null,

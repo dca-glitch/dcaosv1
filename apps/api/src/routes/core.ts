@@ -68,6 +68,7 @@ import {
   uploadAiDeliveryArticleImageFinalAssetHandler,
   uploadAiDeliveryDeliverableDocumentHandler,
   markAiDeliveryDeliverableReadyHandler,
+  sendAiDeliveryDeliverableForClientReviewHandler,
   updateAiDeliveryDeliverableHandler,
   updateAiDeliveryDeliverableReviewHandler,
   archiveAiDeliveryDeliverableHandler,
@@ -331,6 +332,7 @@ export function createCoreRouter() {
   router.put("/ai-delivery-projects/:id/deliverables/:deliverableId", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), updateAiDeliveryDeliverableHandler);
   router.post("/ai-delivery-projects/:id/deliverables/:deliverableId/document", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), uploadAiDeliveryDeliverableDocumentHandler);
   router.post("/ai-delivery-projects/:id/deliverables/:deliverableId/mark-ready", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), markAiDeliveryDeliverableReadyHandler);
+  router.post("/ai-delivery-projects/:id/deliverables/:deliverableId/send-for-client-review", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), sendAiDeliveryDeliverableForClientReviewHandler);
   router.post("/ai-delivery-projects/:id/deliverables/:deliverableId/request-revision", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), requestAiDeliveryDeliverableRevisionHandler);
   router.post("/ai-delivery-projects/:id/deliverables/:deliverableId/accept", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), acceptAiDeliveryDeliverableHandler);
   router.post("/ai-delivery-projects/:id/deliverables/:deliverableId/archive", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), archiveAiDeliveryDeliverableHandler);

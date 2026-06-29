@@ -13,7 +13,7 @@ import {
 import { CompanyProfilePage, type CompanyProfileFormValues, type CompanyProfileSummary } from "./pages/company-profile/CompanyProfilePage";
 import { ClientsPage, type ClientAccessUserSummary, type ClientFormValues, type ClientSummary } from "./pages/clients/ClientsPage";
 import { ClientHubPage } from "./pages/clients/ClientHubPage";
-import { ClientPortalPage } from "./pages/client-portal/ClientPortalPage";
+import { ClientPortalRouter } from "./pages/client-portal/ClientPortalRouter";
 import { CreditNotesPage, type CreditNoteFormValues, type CreditNoteSummary } from "./pages/credit-notes/CreditNotesPage";
 import {
   InvoicesPage,
@@ -530,6 +530,9 @@ const deferredClientReviewViews = new Set<ViewKey>(["content-plan-review", "cont
 
 function normalizeHash(hash: string): ViewKey {
   const value = hash.replace(/^#\/?/, "");
+  if (value === "client-portal" || value.startsWith("client-portal/")) {
+    return "client-portal";
+  }
   if (deferredClientReviewViews.has(value as ViewKey)) {
     return value as ViewKey;
   }
@@ -4335,7 +4338,7 @@ export function App() {
         />
       ) : null}
       {!loading && activeView === "client-portal" ? (
-        <ClientPortalPage />
+        <ClientPortalRouter />
       ) : null}
       {!loading && activeView === "clients" ? (
         selectedClientHubId ? (

@@ -2787,6 +2787,149 @@ th {
   margin-top: 12px;
 }
 
+.portal-subnav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 0 0 18px;
+}
+
+.portal-subnav-link {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  color: inherit;
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  gap: 8px;
+  padding: 8px 14px;
+}
+
+.portal-subnav-link.is-active {
+  background: rgba(126, 92, 255, 0.18);
+  border-color: rgba(126, 92, 255, 0.45);
+}
+
+.nav-count-badge {
+  background: rgba(126, 92, 255, 0.9);
+  border-radius: 999px;
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1;
+  min-width: 1.25rem;
+  padding: 4px 7px;
+  text-align: center;
+}
+
+.portal-approval-layout {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
+}
+
+.portal-approval-meta .field-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.portal-approval-textarea {
+  min-height: 300px;
+  resize: vertical;
+  width: 100%;
+}
+
+.portal-image-approval-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.portal-image-approval-card {
+  display: grid;
+  gap: 12px;
+}
+
+.portal-image-thumb-wrap {
+  aspect-ratio: 4 / 3;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.portal-image-thumb {
+  display: block;
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.portal-image-thumb-placeholder {
+  align-items: center;
+  color: rgba(255, 255, 255, 0.55);
+  display: flex;
+  height: 100%;
+  justify-content: center;
+}
+
+.portal-image-approval-body {
+  display: grid;
+  gap: 10px;
+}
+
+.portal-image-reviewed {
+  display: grid;
+  gap: 8px;
+}
+
+.portal-reviewed-label-success {
+  color: #7ddea2;
+}
+
+.portal-reviewed-label-danger {
+  color: #ff8f8f;
+}
+
+.portal-inline-reject {
+  display: grid;
+  gap: 10px;
+}
+
+.portal-approval-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 20px;
+  position: sticky;
+  bottom: 12px;
+}
+
+.portal-toast {
+  background: rgba(20, 24, 38, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+  margin-bottom: 16px;
+  padding: 12px 16px;
+}
+
+.portal-toast-success {
+  border-color: rgba(125, 222, 162, 0.45);
+}
+
+.portal-toast-error {
+  border-color: rgba(255, 143, 143, 0.45);
+}
+
+@media (max-width: 900px) {
+  .portal-approval-layout,
+  .portal-image-approval-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 900px) {
   .mi-split-layout {
     grid-template-columns: 1fr;

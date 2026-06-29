@@ -28,6 +28,7 @@ import {
   type EmailNotificationStatus,
   type EmailNotificationTemplateKey
 } from "../services/email-notifications.service";
+import { sendAiDeliveryDeliverableForClientReview } from "../core/client-portal-approval.runtime";
 import { getAiProviderPlanningSnapshot } from "../services/ai-provider-planning.service";
 import { getGoogleDriveExportPlanningSnapshot } from "../services/google-drive-export-planning.service";
 import {
@@ -2986,6 +2987,23 @@ export const markAiDeliveryDeliverableReadyHandler: RequestHandler = async (req,
   } catch (error) {
     if (handleAiDeliveryGuardError(res, error)) return;
     res.status(500).json(failure("AI_DELIVERY_DELIVERABLE_RUNTIME_ERROR", "Deliverable ready action could not be completed."));
+  }
+};
+
+export const sendAiDeliveryDeliverableForClientReviewHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  const aiDeliveryProjectId = typeof req.params.id === "string" ? req.params.id.trim() : "";
+  const deliverableId = typeof req.params.deliverableId === "string" ? req.params.deliverableId.trim() : "";
+  if (!authSession) return void res.status(401).json(unauthorizedFailure());
+  if (!aiDeliveryProjectId || !deliverableId) return void res.status(400).json(aiDeliveryProjectInvalidFailure());
+
+  try {
+    const response = await sendAiDeliveryDeliverableForClientReview(authSession, aiDeliveryProjectId, deliverableId);
+    if (!response?.deliverable) return void res.status(404).json(aiDeliveryProjectNotFoundFailure());
+    res.json(success(response, { phase: "runtime", scope: "ai-delivery-deliverables" }));
+  } catch (error) {
+    if (handleAiDeliveryGuardError(res, error)) return;
+    res.status(500).json(failure("AI_DELIVERY_DELIVERABLE_RUNTIME_ERROR", "Deliverable could not be sent for client review."));
   }
 };
 

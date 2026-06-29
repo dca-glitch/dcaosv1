@@ -12,6 +12,8 @@ export interface SendEmailNotificationInput {
   templateKey: EmailNotificationTemplateKey;
   relatedModule?: string | null;
   relatedEntityId?: string | null;
+  textBody?: string | null;
+  htmlBody?: string | null;
 }
 
 export interface SendEmailNotificationResult {
@@ -34,7 +36,76 @@ function normalizeRecipientEmail(value: string): string {
   return value.trim().toLowerCase();
 }
 
-function resolveSendStatus(config: EmailProviderConfig): Pick<SendEmailNotificationResult, "status" | "providerMessageId" | "errorMessage"> {
+function buildDefaultTextBody(input: SendEmailNotificationInput): string {
+  return input.textBody?.trim() || input.subject.trim();
+}
+
+function buildDefaultHtmlBody(input: SendEmailNotificationInput): string {
+  if (input.htmlBody?.trim()) {
+    return input.htmlBody.trim();
+  }
+  const text = buildDefaultTextBody(input);
+  return `<p>${text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, "<br />")}</p>`;
+}
+
+async function sendViaResend(
+  config: EmailProviderConfig,
+  input: SendEmailNotificationInput
+): Promise<Pick<SendEmailNotificationResult, "status" | "providerMessageId" | "errorMessage">> {
+  const apiKey = process.env.RESEND_API_KEY?.trim();
+  if (!apiKey) {
+    return {
+      status: "FAILED",
+      providerMessageId: null,
+      errorMessage: "Resend provider selected but RESEND_API_KEY is not configured."
+    };
+  }
+
+  try {
+    const response = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        from: config.fromAddress,
+        to: [normalizeRecipientEmail(input.recipientEmail)],
+        reply_to: config.replyTo,
+        subject: input.subject.trim(),
+        text: buildDefaultTextBody(input),
+        html: buildDefaultHtmlBody(input)
+      })
+    });
+
+    const payload = (await response.json()) as { id?: string; message?: string };
+
+    if (!response.ok) {
+      return {
+        status: "FAILED",
+        providerMessageId: null,
+        errorMessage: payload.message ?? `Resend request failed with status ${response.status}.`
+      };
+    }
+
+    return {
+      status: "SENT",
+      providerMessageId: payload.id ?? null,
+      errorMessage: null
+    };
+  } catch (error) {
+    return {
+      status: "FAILED",
+      providerMessageId: null,
+      errorMessage: error instanceof Error ? error.message : "Resend request failed."
+    };
+  }
+}
+
+async function resolveSendStatus(
+  config: EmailProviderConfig,
+  input: SendEmailNotificationInput
+): Promise<Pick<SendEmailNotificationResult, "status" | "providerMessageId" | "errorMessage">> {
   if (config.provider === "local") {
     return {
       status: "SKIPPED",
@@ -51,11 +122,7 @@ function resolveSendStatus(config: EmailProviderConfig): Pick<SendEmailNotificat
     };
   }
 
-  return {
-    status: "SKIPPED",
-    providerMessageId: null,
-    errorMessage: "Resend adapter is not enabled in EN1; no email was sent."
-  };
+  return sendViaResend(config, input);
 }
 
 export async function sendEmailNotification(
@@ -63,7 +130,7 @@ export async function sendEmailNotification(
   client: PrismaClientLike = prisma
 ): Promise<SendEmailNotificationResult> {
   const config = getEmailProviderConfig();
-  const delivery = resolveSendStatus(config);
+  const delivery = await resolveSendStatus(config, input);
   const now = new Date();
 
   const emailLog = await client.emailLog.create({
@@ -110,7 +177,7 @@ export interface EmailNotificationOutboxStatus {
   fromAddress: string;
   replyTo: string;
   hasResendApiKey: boolean;
-  sendingEnabled: false;
+  sendingEnabled: boolean;
 }
 
 export interface TenantEmailLogListResponse {
@@ -133,7 +200,7 @@ export function getEmailNotificationOutboxStatus(): EmailNotificationOutboxStatu
     fromAddress: config.fromAddress,
     replyTo: config.replyTo,
     hasResendApiKey: config.hasResendApiKey,
-    sendingEnabled: false
+    sendingEnabled: config.provider === "resend" && config.hasResendApiKey
   };
 }
 

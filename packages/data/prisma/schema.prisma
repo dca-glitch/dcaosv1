@@ -800,12 +800,35 @@ model AiDeliveryArticleImage {
   aiDeliveryProject   AiDeliveryProject       @relation(fields: [aiDeliveryProjectId], references: [id], onDelete: Cascade)
   contentDraft        AiDeliveryContentDraft  @relation(fields: [contentDraftId], references: [id], onDelete: Cascade)
   deliverables         AiDeliveryDeliverable[]
+  deliverableImageApprovals AiDeliveryDeliverableImageApproval[]
 
   @@index([tenantId])
   @@index([tenantId, aiDeliveryProjectId])
   @@index([tenantId, contentDraftId])
   @@index([tenantId, status])
   @@index([tenantId, isArchived])
+}
+
+model AiDeliveryDeliverableImageApproval {
+  id               String                      @id @default(uuid())
+  tenantId         String
+  deliverableId    String
+  articleImageId   String
+  status           ArticleImageApprovalStatus  @default(PENDING)
+  rejectionReason  String?
+  reviewedByUserId String?
+  reviewedAt       DateTime?
+  createdAt        DateTime                    @default(now())
+  updatedAt        DateTime                    @updatedAt
+
+  deliverable  AiDeliveryDeliverable  @relation(fields: [deliverableId], references: [id], onDelete: Cascade)
+  articleImage AiDeliveryArticleImage @relation(fields: [articleImageId], references: [id], onDelete: Cascade)
+
+  @@unique([deliverableId, articleImageId])
+  @@index([tenantId])
+  @@index([tenantId, deliverableId])
+  @@index([tenantId, articleImageId])
+  @@index([tenantId, status])
 }
 
 // AI Delivery Deliverables
@@ -824,30 +847,41 @@ enum AiDeliveryDeliverableStatus {
   REVISION_REQUESTED
   ACCEPTED
   ARCHIVED
+  PENDING_CLIENT_REVIEW
+  APPROVED_BY_CLIENT
+}
+
+enum ArticleImageApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }
 
 model AiDeliveryDeliverable {
-  id                  String   @id @default(uuid())
-  tenantId            String
-  aiDeliveryProjectId String
-  contentDraftId      String?
-  articleImageId      String?
-  title               String
-  description         String?
-  deliveryType        AiDeliveryDeliverableDeliveryType @default(CONTENT_PACKAGE)
-  status              AiDeliveryDeliverableStatus @default(DRAFT)
-  exportUrl           String?
-  storageKey          String?
-  notes               String?
-  isArchived          Boolean  @default(false)
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  id                    String   @id @default(uuid())
+  tenantId              String
+  aiDeliveryProjectId   String
+  contentDraftId        String?
+  articleImageId        String?
+  title                 String
+  description           String?
+  bodyContent           String?
+  clientRejectionReason String?
+  deliveryType          AiDeliveryDeliverableDeliveryType @default(CONTENT_PACKAGE)
+  status                AiDeliveryDeliverableStatus @default(DRAFT)
+  exportUrl             String?
+  storageKey            String?
+  notes                 String?
+  isArchived            Boolean  @default(false)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
 
   tenant              Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   aiDeliveryProject   AiDeliveryProject       @relation(fields: [aiDeliveryProjectId], references: [id], onDelete: Cascade)
   contentDraft        AiDeliveryContentDraft? @relation(fields: [contentDraftId], references: [id], onDelete: SetNull)
   articleImage        AiDeliveryArticleImage? @relation(fields: [articleImageId], references: [id], onDelete: SetNull)
   reviews             AiDeliveryDeliverableReview[]
+  imageApprovals      AiDeliveryDeliverableImageApproval[]
 
   @@index([tenantId])
   @@index([tenantId, aiDeliveryProjectId])

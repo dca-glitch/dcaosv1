@@ -17,6 +17,16 @@ import {
   listClientPortalCatalogProducts,
   submitClientPortalCatalogInquiry
 } from "../core/client-catalog.runtime";
+import {
+  approveClientPortalDeliverableHandler,
+  approveClientPortalDeliverableImageHandler,
+  getClientPortalDeliverableForApprovalHandler,
+  listClientPortalPendingApprovalsHandler,
+  patchClientPortalDeliverableBodyHandler,
+  rejectClientPortalDeliverableHandler,
+  rejectClientPortalDeliverableImageHandler,
+  undoClientPortalDeliverableImageReviewHandler
+} from "../controllers/client-portal-approval.controller";
 
 export function createClientPortalRouter() {
   const router = Router();
@@ -185,6 +195,16 @@ export function createClientPortalRouter() {
       res.status(200).json(success(result));
     }
   );
+
+  router.get("/clients/:clientId/pending-approvals", requireAuth, requireTenant, listClientPortalPendingApprovalsHandler);
+  router.get("/pending-approvals", requireAuth, requireTenant, listClientPortalPendingApprovalsHandler);
+  router.get("/deliverables/:deliverableId/for-approval", requireAuth, requireTenant, getClientPortalDeliverableForApprovalHandler);
+  router.patch("/deliverables/:deliverableId/body", requireAuth, requireTenant, patchClientPortalDeliverableBodyHandler);
+  router.patch("/deliverables/:deliverableId/images/:imageId/approve", requireAuth, requireTenant, approveClientPortalDeliverableImageHandler);
+  router.patch("/deliverables/:deliverableId/images/:imageId/reject", requireAuth, requireTenant, rejectClientPortalDeliverableImageHandler);
+  router.patch("/deliverables/:deliverableId/images/:imageId/undo", requireAuth, requireTenant, undoClientPortalDeliverableImageReviewHandler);
+  router.patch("/deliverables/:deliverableId/approve", requireAuth, requireTenant, approveClientPortalDeliverableHandler);
+  router.patch("/deliverables/:deliverableId/reject", requireAuth, requireTenant, rejectClientPortalDeliverableHandler);
 
   return router;
 }

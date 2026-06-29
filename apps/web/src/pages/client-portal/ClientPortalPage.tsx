@@ -3,6 +3,7 @@ import { EmptyState } from "../../components/EmptyState";
 import { ErrorState } from "../../components/ErrorState";
 import { LoadingState } from "../../components/LoadingState";
 import { MetricCard, PageHeader, SectionPanel, StatusBadge } from "../../components/ui";
+import { clientPortalApiRequest, navigateToClientPortalHash, type PendingApprovalsResponse } from "./client-portal-api";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "/api/v1";
 const SESSION_STORAGE_KEY = "dcaosv1.authToken";
@@ -419,6 +420,7 @@ export function ClientPortalPage() {
   const [inquiryContactPhone, setInquiryContactPhone] = useState("");
   const [inquiryMessage, setInquiryMessage] = useState("");
   const [inquirySubmitting, setInquirySubmitting] = useState(false);
+  const [pendingApprovalCount, setPendingApprovalCount] = useState(0);
   const [inquiryNotice, setInquiryNotice] = useState<string | null>(null);
   const [selectedMonthlyReportId, setSelectedMonthlyReportId] = useState<string | null>(null);
   const [downloadNotice, setDownloadNotice] = useState<string | null>(null);
@@ -445,6 +447,13 @@ export function ClientPortalPage() {
       }),
     [projectFilter, projects]
   );
+
+  const loadPendingApprovalCount = useCallback(async () => {
+    const response = await clientPortalApiRequest<PendingApprovalsResponse>("/pending-approvals");
+    if (response.ok) {
+      setPendingApprovalCount(response.data.count);
+    }
+  }, []);
 
   const loadProjects = useCallback(async () => {
     const requestSeq = ++projectsRequestSeq.current;
@@ -495,7 +504,8 @@ export function ClientPortalPage() {
     });
 
     setRefreshTick((value) => value + 1);
-  }, []);
+    void loadPendingApprovalCount();
+  }, [loadPendingApprovalCount]);
 
   const loadSelectedProject = useCallback(async (projectId: string) => {
     const requestSeq = ++projectRequestSeq.current;
@@ -704,7 +714,8 @@ export function ClientPortalPage() {
 
   const handleRefresh = useCallback(() => {
     void loadProjects();
-  }, [loadProjects]);
+    void loadPendingApprovalCount();
+  }, [loadProjects, loadPendingApprovalCount]);
 
   const handleSelectProject = useCallback((projectId: string) => {
     setDownloadNotice(null);
@@ -897,6 +908,20 @@ export function ClientPortalPage() {
         title="Your archive"
         titleId="client-portal-title"
       />
+
+      <nav aria-label="Client portal sections" className="portal-subnav">
+        <button className="portal-subnav-link is-active" type="button">
+          Archive
+        </button>
+        <button
+          className="portal-subnav-link"
+          onClick={() => navigateToClientPortalHash("client-portal/pending-approvals")}
+          type="button"
+        >
+          Pending Approvals
+          {pendingApprovalCount > 0 ? <span className="nav-count-badge">{pendingApprovalCount}</span> : null}
+        </button>
+      </nav>
 
       <div className="summary-grid metric-grid portal-metric-grid">
         <MetricCard helper="Active delivery projects" label="Projects" value={String(projectCount)} />
@@ -1501,7 +1526,7 @@ export function ClientPortalPage() {
       </div>
 
       <p className="portal-footer-note muted-text">
-        Read-only workspace — approvals, comments, and live integrations are not available here.
+        Final deliverables and monthly reports are read-only. Use Pending Approvals to review articles before publication.
       </p>
     </section>
   );
