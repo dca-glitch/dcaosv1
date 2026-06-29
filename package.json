@@ -12,6 +12,11 @@
     "check": "node scripts/run-sequential.mjs \"node scripts/check-workspace.mjs\" \"npm run --workspaces --if-present check\"",
     "build": "npm run --workspaces --if-present build",
     "validate": "node scripts/run-sequential.mjs \"npm run -w @dca-os-v1/data prisma:generate\" \"npm run check\" \"npm run build\"",
+    "test": "node scripts/run-sequential.mjs \"npm run test:unit\" \"npm run test:integration\"",
+    "test:unit": "node scripts/run-sequential.mjs \"npm run -w @dca-os-v1/api test:unit\" \"npm run -w @dca-os-v1/web test:unit\"",
+    "test:integration": "npm run -w @dca-os-v1/api test:integration",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
     "dev:web": "npm run -w @dca-os-v1/web dev",
     "dev:api": "npm run -w @dca-os-v1/api dev",
     "restore:local-admin": "tsx scripts/restore-local-admin.mjs",
@@ -86,7 +91,15 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.61.0",
-    "@types/node": "^25.9.3"
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@types/node": "^25.9.3",
+    "@types/supertest": "^7.2.0",
+    "@vitest/ui": "^4.1.9",
+    "jsdom": "^29.1.1",
+    "supertest": "^7.2.2",
+    "vitest": "^4.1.9"
   },
   "dependencies": {
     "zod": "^4.4.3"
