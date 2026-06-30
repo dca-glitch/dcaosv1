@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { EmptyState } from "../components/EmptyState";
-import { ErrorState } from "../components/ErrorState";
-import { LoadingState } from "../components/LoadingState";
 import { Badge, Button, PageHeader, SectionPanel } from "../components/ui";
+import { Alert, Spinner } from "../design-system";
 import {
   clientPortalApiRequest,
   getClientPortalAuthToken,
@@ -209,19 +208,24 @@ export function ClientDashboardPage({ user }: ClientDashboardPageProps) {
   );
 
   if (loading) {
-    return <LoadingState label="Loading dashboard" />;
+    return (
+      <div className="state-panel loading-state-panel" role="status">
+        <Spinner size="sm" />
+        Loading dashboard
+      </div>
+    );
   }
 
   if (error) {
     return (
-      <section className="view-section" aria-labelledby="client-dashboard-title">
+      <section className="view-section" aria-labelledby="client-dashboard-title" data-density="comfortable">
         <PageHeader
           description="Your client workspace overview."
           eyebrow="Client workspace"
           title="Dashboard"
           titleId="client-dashboard-title"
         />
-        <ErrorState message={error} title="Dashboard unavailable" />
+        <Alert message={error} title="Dashboard unavailable" variant="danger" />
         <div className="portal-action-row">
           <Button onClick={() => void loadDashboard()} variant="secondary">
             Try again
@@ -232,7 +236,7 @@ export function ClientDashboardPage({ user }: ClientDashboardPageProps) {
   }
 
   return (
-    <section className="view-section" aria-labelledby="client-dashboard-title">
+    <section className="view-section" aria-labelledby="client-dashboard-title" data-density="comfortable">
       <PageHeader
         description={
           clientName
@@ -271,7 +275,7 @@ export function ClientDashboardPage({ user }: ClientDashboardPageProps) {
               const badge = getBriefStatusBadge(brief.status);
               const articleSummary = formatArticleSummary(brief);
               return (
-                <button
+                <Button
                   className="entity-card dense-record client-dashboard-brief-card"
                   key={brief.id}
                   onClick={() => navigateToView("briefs")}
@@ -282,6 +286,7 @@ export function ClientDashboardPage({ user }: ClientDashboardPageProps) {
                     textAlign: "left"
                   }}
                   type="button"
+                  variant="tertiary"
                 >
                   <div className="dense-record-main dense-record-main--stack">
                     <strong>{brief.title}</strong>
@@ -289,7 +294,7 @@ export function ClientDashboardPage({ user }: ClientDashboardPageProps) {
                     {articleSummary ? <span className="muted-text text-small">{articleSummary}</span> : null}
                     <span className="muted-text text-small">{formatBriefDate(brief.createdAt)}</span>
                   </div>
-                </button>
+                </Button>
               );
             })}
           </div>
@@ -308,24 +313,26 @@ export function ClientDashboardPage({ user }: ClientDashboardPageProps) {
           ) : (
             <div className="quick-link-list">
               {awaitingBriefCount > 0 ? (
-                <button
+                <Button
                   className="subtle-action"
                   onClick={() => navigateToView("briefs")}
                   style={{ background: "none", border: "none", cursor: "pointer", padding: 0, textAlign: "left" }}
                   type="button"
+                  variant="tertiary"
                 >
                   📋 {awaitingBriefCount} brief{awaitingBriefCount === 1 ? "" : "s"} awaiting your input
-                </button>
+                </Button>
               ) : null}
               {pendingApprovalCount > 0 ? (
-                <button
+                <Button
                   className="subtle-action"
                   onClick={() => navigateToView("pending-approvals")}
                   style={{ background: "none", border: "none", cursor: "pointer", padding: 0, textAlign: "left" }}
                   type="button"
+                  variant="tertiary"
                 >
                   📄 {pendingApprovalCount} article{pendingApprovalCount === 1 ? "" : "s"} pending your approval
-                </button>
+                </Button>
               ) : null}
             </div>
           )}
