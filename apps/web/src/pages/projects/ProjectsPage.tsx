@@ -1,9 +1,8 @@
 import { type FormEvent, useMemo, useState } from "react";
 import { EmptyState } from "../../components/EmptyState";
-import { ErrorState } from "../../components/ErrorState";
-import { LoadingState } from "../../components/LoadingState";
-import { PageHeader, Button, StatusBadge, Table } from "../../components/ui";
 import { Modal } from "../../components/Modal";
+import { Button, ModalActions, PageHeader, StatusBadge, Table } from "../../components/ui";
+import { Alert, Input, Select, Spinner, Textarea } from "../../design-system";
 import type { ClientSummary } from "../clients/ClientsPage";
 import type { TaskSummary } from "../tasks/TasksPage";
 
@@ -152,15 +151,20 @@ export function ProjectsPage({
   }
 
   if (loading) {
-    return <LoadingState label="Loading projects" />;
+    return (
+      <div className="state-panel loading-state-panel" role="status">
+        <Spinner size="sm" />
+        Loading projects
+      </div>
+    );
   }
 
   if (error) {
-    return <ErrorState message={error} title="Projects unavailable" />;
+    return <Alert message={error} title="Projects unavailable" variant="danger" />;
   }
 
   return (
-    <section className="view-section" aria-labelledby="projects-title">
+    <section className="view-section" aria-labelledby="projects-title" data-density="compact">
       <PageHeader
         eyebrow="Delivery"
         title="Projects"
@@ -170,15 +174,16 @@ export function ProjectsPage({
           <>
             <div className="filter-bar" role="group" aria-label="Projects filter">
               {(["active", "archived", "all"] as const).map((value) => (
-                <button
+                <Button
                   aria-pressed={filter === value}
                   className={filter === value ? "secondary-action filter-chip is-active" : "secondary-action filter-chip"}
                   key={value}
                   onClick={() => setFilter(value)}
                   type="button"
+                  variant="secondary"
                 >
                   {value[0].toUpperCase() + value.slice(1)}
-                </button>
+                </Button>
               ))}
             </div>
             {canEdit ? (
@@ -258,77 +263,64 @@ export function ProjectsPage({
         >
           <form className="entity-form" onSubmit={handleSubmit}>
             <p className="muted-text">Used by admin team to organize work and billing. Archived items are hidden from active work but can be restored.</p>
-            <ProjectModalActions disabled={saving} label={submitLabel} onCancel={closeEditor} saving={saving} />
+            <ModalActions disabled={saving} label={submitLabel} onCancel={closeEditor} saving={saving} />
             <div className="field-grid">
-              <label>
-                Project name - Required
-                <input
-                  maxLength={255}
-                  onChange={(event) => setDraft((current) => ({ ...current, name: event.target.value }))}
-                  placeholder="Website build, SEO retainer, monthly content, support"
-                  required
-                  value={draft.name}
-                />
-                <span className="muted-text">Used by admin team to organize work and billing.</span>
-              </label>
-              <label>
-                Client - Optional
-                <select
-                  onChange={(event) => setDraft((current) => ({ ...current, clientId: event.target.value }))}
-                  value={draft.clientId}
-                >
-                  <option value="">Client can be added later if this is internal work</option>
-                  {clients.map((client) => (
-                    <option key={client.id} value={client.id}>
-                      {client.name}
-                    </option>
-                  ))}
-                </select>
-                <span className="muted-text">Client can be added later if this is internal work.</span>
-              </label>
-              <label>
-                Project status - Required
-                <select
-                  onChange={(event) => setDraft((current) => ({ ...current, status: event.target.value }))}
-                  value={draft.status}
-                >
-                  {PROJECT_STATUS_OPTIONS.map((status) => (
-                    <option key={status} value={status}>
-                      {status}
-                    </option>
-                  ))}
-                </select>
-                <span className="muted-text">Used to show whether delivery is active, paused, completed, or archived.</span>
-              </label>
-              <label className="field-span-2">
-                Description - Optional
-                <textarea
-                  maxLength={4000}
-                  onChange={(event) => setDraft((current) => ({ ...current, description: event.target.value }))}
-                  placeholder="What this project covers, key scope, or delivery notes"
-                  rows={4}
-                  value={draft.description}
-                />
-                <span className="muted-text">Shown only in admin records.</span>
-              </label>
-              <label>
-                Start date - Optional
-                <input
-                  onChange={(event) => setDraft((current) => ({ ...current, startDate: event.target.value }))}
-                  type="date"
-                  value={draft.startDate}
-                />
-                <span className="muted-text">Use when the project has a defined start date.</span>
-              </label>
-              <label>
-                Due date - Optional
-                <input
-                  onChange={(event) => setDraft((current) => ({ ...current, dueDate: event.target.value }))}
-                  type="date"
-                  value={draft.dueDate}
-                />
-                <span className="muted-text">Use when delivery has a target completion date.</span>
-              </label>
+              <Input
+                fullWidth
+                helperText="Used by admin team to organize work and billing."
+                label="Project name - Required"
+                maxLength={255}
+                onChange={(event) => setDraft((current) => ({ ...current, name: event.target.value }))}
+                placeholder="Website build, SEO retainer, monthly content, support"
+                required
+                value={draft.name}
+              />
+              <Select
+                fullWidth
+                helperText="Client can be added later if this is internal work."
+                label="Client - Optional"
+                onChange={(event) => setDraft((current) => ({ ...current, clientId: event.target.value }))}
+                options={[
+                  { value: "", label: "Client can be added later if this is internal work" },
+                  ...clients.map((client) => ({ value: client.id, label: client.name }))
+                ]}
+                value={draft.clientId}
+              />
+              <Select
+                fullWidth
+                helperText="Used to show whether delivery is active, paused, completed, or archived."
+                label="Project status - Required"
+                onChange={(event) => setDraft((current) => ({ ...current, status: event.target.value }))}
+                options={PROJECT_STATUS_OPTIONS.map((status) => ({ value: status, label: status }))}
+                value={draft.status}
+              />
+              <Textarea
+                className="field-span-2"
+                fullWidth
+                helperText="Shown only in admin records."
+                label="Description - Optional"
+                maxLength={4000}
+                onChange={(event) => setDraft((current) => ({ ...current, description: event.target.value }))}
+                placeholder="What this project covers, key scope, or delivery notes"
+                rows={4}
+                value={draft.description}
+              />
+              <Input
+                fullWidth
+                helperText="Use when the project has a defined start date."
+                label="Start date - Optional"
+                onChange={(event) => setDraft((current) => ({ ...current, startDate: event.target.value }))}
+                type="date"
+                value={draft.startDate}
+              />
+              <Input
+                fullWidth
+                helperText="Use when delivery has a target completion date."
+                label="Due date - Optional"
+                onChange={(event) => setDraft((current) => ({ ...current, dueDate: event.target.value }))}
+                type="date"
+                value={draft.dueDate}
+              />
             </div>
             {selectedProject ? (
               <section className="field-span-2" aria-labelledby="project-tasks-title">
@@ -345,7 +337,7 @@ export function ProjectsPage({
                 )}
               </section>
             ) : null}
-            <ProjectModalActions disabled={saving} label={submitLabel} onCancel={closeEditor} saving={saving} />
+            <ModalActions disabled={saving} label={submitLabel} onCancel={closeEditor} saving={saving} />
           </form>
         </Modal>
       ) : null}
@@ -353,22 +345,3 @@ export function ProjectsPage({
   );
 }
 
-type ProjectModalActionsProps = {
-  disabled: boolean;
-  label: string;
-  onCancel: () => void;
-  saving: boolean;
-};
-
-function ProjectModalActions({ disabled, label, onCancel, saving }: ProjectModalActionsProps) {
-  return (
-    <div className="modal-footer">
-      <Button disabled={saving} onClick={onCancel} variant="secondary">
-        Cancel
-      </Button>
-      <Button disabled={disabled} type="submit" variant="primary">
-        {saving ? "Saving" : label}
-      </Button>
-    </div>
-  );
-}
