@@ -1,8 +1,17 @@
+import { PageHeader, SectionPanel } from "../components/ui";
+
 export default function MonthlyReportsPage() {
   return (
-    <div className="page-container">
-      <h1>Monthly Reports</h1>
-      <p>SEO and Market Intelligence reports will appear here.</p>
-    </div>
+    <section className="view-section" data-density="comfortable">
+      <PageHeader
+        description="SEO and Market Intelligence reports will appear here."
+        eyebrow="Client workspace"
+        title="Monthly Reports"
+        titleId="monthly-reports-title"
+      />
+      <SectionPanel title="Reports">
+        <p className="muted-text">SEO and Market Intelligence reports will appear here.</p>
+      </SectionPanel>
+    </section>
   );
 }
