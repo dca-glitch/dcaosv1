@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { EmptyState } from "../components/EmptyState";
-import { ErrorState } from "../components/ErrorState";
-import { LoadingState } from "../components/LoadingState";
 import { Badge, Button, PageHeader, SectionPanel } from "../components/ui";
+import { Alert, Input, Select, Spinner, Textarea } from "../design-system";
 import {
   clientPortalApiRequest,
   getClientPortalAuthToken,
@@ -469,22 +468,16 @@ function BriefPlanningSection<T extends BriefPlanningFields>({
 }: BriefPlanningSectionProps<T>) {
   return (
     <>
-      <label className="field-label" htmlFor={`${idPrefix}-target-group`}>
-        Target Group
-        <select
-          className="entity-form"
-          disabled={readOnly}
-          id={`${idPrefix}-target-group`}
-          onChange={(event) => onChange({ ...fields, targetGroup: event.target.value })}
-          value={fields.targetGroup}
-        >
-          {TARGET_GROUP_OPTIONS.map((option) => (
-            <option key={option.value || "empty"} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-      </label>
+      <Select
+        className="entity-form"
+        disabled={readOnly}
+        fullWidth
+        id={`${idPrefix}-target-group`}
+        label="Target Group"
+        onChange={(event) => onChange({ ...fields, targetGroup: event.target.value })}
+        options={TARGET_GROUP_OPTIONS.map((option) => ({ value: option.value, label: option.label }))}
+        value={fields.targetGroup}
+      />
 
       <fieldset className="brief-article-counters" style={{ border: "none", margin: "0 0 1rem", padding: 0 }}>
         <legend className="field-label" style={{ marginBottom: "0.5rem" }}>
@@ -495,21 +488,21 @@ function BriefPlanningSection<T extends BriefPlanningFields>({
           style={{ display: "grid", gap: "0.75rem", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))" }}
         >
           {ARTICLE_COUNTER_FIELDS.map((counter) => (
-            <label className="field-label" htmlFor={`${idPrefix}-${counter.key}`} key={counter.key}>
-              {counter.label}
-              <input
-                className="entity-form"
-                disabled={readOnly}
-                id={`${idPrefix}-${counter.key}`}
-                min={0}
-                onChange={(event) =>
-                  onChange({ ...fields, [counter.key]: parseCounterInput(event.target.value) } as T)
-                }
-                step={1}
-                type="number"
-                value={fields[counter.key]}
-              />
-            </label>
+            <Input
+              className="entity-form"
+              disabled={readOnly}
+              fullWidth
+              id={`${idPrefix}-${counter.key}`}
+              key={counter.key}
+              label={counter.label}
+              min={0}
+              onChange={(event) =>
+                onChange({ ...fields, [counter.key]: parseCounterInput(event.target.value) } as T)
+              }
+              step={1}
+              type="number"
+              value={fields[counter.key]}
+            />
           ))}
         </div>
       </fieldset>
@@ -602,35 +595,28 @@ function MonthlyBriefEditor({
       <div className="brief-section brief-section--initial">
         <BriefSectionHeading>Initial Brief</BriefSectionHeading>
 
-        <label className="field-label" htmlFor="monthly-target-group">
-          Target Group
-          <select
-            className="entity-form"
-            disabled={readOnly}
-            id="monthly-target-group"
-            onChange={(event) => onChange({ ...fields, targetGroup: event.target.value })}
-            value={fields.targetGroup}
-          >
-            {TARGET_GROUP_OPTIONS.map((option) => (
-              <option key={option.value || "empty"} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </label>
+        <Select
+          className="entity-form"
+          disabled={readOnly}
+          fullWidth
+          id="monthly-target-group"
+          label="Target Group"
+          onChange={(event) => onChange({ ...fields, targetGroup: event.target.value })}
+          options={TARGET_GROUP_OPTIONS.map((option) => ({ value: option.value, label: option.label }))}
+          value={fields.targetGroup}
+        />
 
-        <label className="field-label" htmlFor={`monthly-${MONTHLY_PRODUCTS_FIELD.key}`}>
-          {MONTHLY_PRODUCTS_FIELD.label}
-          <textarea
-            className="entity-form"
-            disabled={readOnly}
-            id={`monthly-${MONTHLY_PRODUCTS_FIELD.key}`}
-            onChange={(event) => onChange({ ...fields, productsToPromote: event.target.value })}
-            placeholder={MONTHLY_PRODUCTS_FIELD.placeholder}
-            rows={4}
-            value={fields.productsToPromote}
-          />
-        </label>
+        <Textarea
+          className="entity-form"
+          disabled={readOnly}
+          fullWidth
+          id={`monthly-${MONTHLY_PRODUCTS_FIELD.key}`}
+          label={MONTHLY_PRODUCTS_FIELD.label}
+          onChange={(event) => onChange({ ...fields, productsToPromote: event.target.value })}
+          placeholder={MONTHLY_PRODUCTS_FIELD.placeholder}
+          rows={4}
+          value={fields.productsToPromote}
+        />
 
         <fieldset className="brief-article-counters" style={{ border: "none", margin: "0 0 1rem", padding: 0 }}>
           <legend className="field-label" style={{ marginBottom: "0.5rem" }}>
@@ -641,37 +627,36 @@ function MonthlyBriefEditor({
             style={{ display: "grid", gap: "0.75rem", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))" }}
           >
             {ARTICLE_COUNTER_FIELDS.map((counter) => (
-              <label className="field-label" htmlFor={`monthly-${counter.key}`} key={counter.key}>
-                {counter.label}
-                <input
-                  className="entity-form"
-                  disabled={readOnly}
-                  id={`monthly-${counter.key}`}
-                  min={0}
-                  onChange={(event) =>
-                    onChange({ ...fields, [counter.key]: parseCounterInput(event.target.value) })
-                  }
-                  step={1}
-                  type="number"
-                  value={fields[counter.key]}
-                />
-              </label>
+              <Input
+                className="entity-form"
+                disabled={readOnly}
+                fullWidth
+                id={`monthly-${counter.key}`}
+                key={counter.key}
+                label={counter.label}
+                min={0}
+                onChange={(event) =>
+                  onChange({ ...fields, [counter.key]: parseCounterInput(event.target.value) })
+                }
+                step={1}
+                type="number"
+                value={fields[counter.key]}
+              />
             ))}
           </div>
         </fieldset>
 
-        <label className="field-label" htmlFor={`monthly-${MONTHLY_NOTES_FIELD.key}`}>
-          {MONTHLY_NOTES_FIELD.label}
-          <textarea
-            className="entity-form"
-            disabled={readOnly}
-            id={`monthly-${MONTHLY_NOTES_FIELD.key}`}
-            onChange={(event) => onChange({ ...fields, additionalNotes: event.target.value })}
-            placeholder={MONTHLY_NOTES_FIELD.placeholder}
-            rows={4}
-            value={fields.additionalNotes}
-          />
-        </label>
+        <Textarea
+          className="entity-form"
+          disabled={readOnly}
+          fullWidth
+          id={`monthly-${MONTHLY_NOTES_FIELD.key}`}
+          label={MONTHLY_NOTES_FIELD.label}
+          onChange={(event) => onChange({ ...fields, additionalNotes: event.target.value })}
+          placeholder={MONTHLY_NOTES_FIELD.placeholder}
+          rows={4}
+          value={fields.additionalNotes}
+        />
       </div>
 
       <BriefAiResearchPlaceholder />
@@ -734,61 +719,52 @@ function AdditionalBriefEditor({
       <BriefAutoTitleDisplay isNew={isNew} title={autoTitle} />
       <BriefPlanningSection fields={fields} idPrefix="additional" onChange={onChange} readOnly={readOnly} />
 
-      <label className="field-label" htmlFor="additional-brief-topic">
-        Topic
-        <input
-          className="entity-form"
-          disabled={readOnly}
-          id="additional-brief-topic"
-          onChange={(event) => onChange({ ...fields, topic: event.target.value })}
-          placeholder="e.g. Summer campaign, new treatment…"
-          type="text"
-          value={fields.topic}
-        />
-      </label>
+      <Input
+        className="entity-form"
+        disabled={readOnly}
+        fullWidth
+        id="additional-brief-topic"
+        label="Topic"
+        onChange={(event) => onChange({ ...fields, topic: event.target.value })}
+        placeholder="e.g. Summer campaign, new treatment…"
+        type="text"
+        value={fields.topic}
+      />
 
-      <label className="field-label" htmlFor="additional-brief-urgency">
-        Urgency
-        <select
-          className="entity-form"
-          disabled={readOnly}
-          id="additional-brief-urgency"
-          onChange={(event) => onChange({ ...fields, urgency: event.target.value })}
-          value={fields.urgency}
-        >
-          {URGENCY_OPTIONS.map((option) => (
-            <option key={option.value || "empty"} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-      </label>
+      <Select
+        className="entity-form"
+        disabled={readOnly}
+        fullWidth
+        id="additional-brief-urgency"
+        label="Urgency"
+        onChange={(event) => onChange({ ...fields, urgency: event.target.value })}
+        options={URGENCY_OPTIONS.map((option) => ({ value: option.value, label: option.label }))}
+        value={fields.urgency}
+      />
 
-      <label className="field-label" htmlFor="additional-brief-description">
-        Description / Guidelines
-        <textarea
-          className="entity-form"
-          disabled={readOnly}
-          id="additional-brief-description"
-          onChange={(event) => onChange({ ...fields, description: event.target.value })}
-          placeholder="Describe the topic, goal and guidelines for DCA..."
-          rows={8}
-          value={fields.description}
-        />
-      </label>
+      <Textarea
+        className="entity-form"
+        disabled={readOnly}
+        fullWidth
+        id="additional-brief-description"
+        label="Description / Guidelines"
+        onChange={(event) => onChange({ ...fields, description: event.target.value })}
+        placeholder="Describe the topic, goal and guidelines for DCA..."
+        rows={8}
+        value={fields.description}
+      />
 
-      <label className="field-label" htmlFor="additional-brief-notes">
-        Notes
-        <textarea
-          className="entity-form"
-          disabled={readOnly}
-          id="additional-brief-notes"
-          onChange={(event) => onChange({ ...fields, notes: event.target.value })}
-          placeholder="Extra context, restrictions, or references..."
-          rows={4}
-          value={fields.notes}
-        />
-      </label>
+      <Textarea
+        className="entity-form"
+        disabled={readOnly}
+        fullWidth
+        id="additional-brief-notes"
+        label="Notes"
+        onChange={(event) => onChange({ ...fields, notes: event.target.value })}
+        placeholder="Extra context, restrictions, or references..."
+        rows={4}
+        value={fields.notes}
+      />
 
       <div className="form-actions">
         <Button onClick={onClose} variant="tertiary">
@@ -1351,19 +1327,24 @@ export function BriefPage() {
   };
 
   if (loadingClients && !hasSelectedClient) {
-    return <LoadingState label="Loading briefs" />;
+    return (
+      <div className="state-panel loading-state-panel" role="status">
+        <Spinner size="sm" />
+        Loading briefs
+      </div>
+    );
   }
 
   if (error && !hasSelectedClient) {
     return (
-      <section className="view-section" aria-labelledby="client-briefs-title">
+      <section className="view-section" aria-labelledby="client-briefs-title" data-density="comfortable">
         <PageHeader
           description="Client briefs for your workspace."
           eyebrow="Client workspace"
           title="Briefs"
           titleId="client-briefs-title"
         />
-        <ErrorState message={error} title="Briefs unavailable" />
+        <Alert message={error} title="Briefs unavailable" variant="danger" />
         <div className="portal-action-row">
           <Button onClick={() => void loadClients()} variant="secondary">
             Try again
@@ -1374,7 +1355,7 @@ export function BriefPage() {
   }
 
   return (
-    <section className="view-section" aria-labelledby="client-briefs-title">
+    <section className="view-section" aria-labelledby="client-briefs-title" data-density="comfortable">
       <PageHeader
         action={
           <Button
@@ -1398,19 +1379,20 @@ export function BriefPage() {
       />
 
       <nav aria-label="Client portal sections" className="portal-subnav">
-        <button className="portal-subnav-link" onClick={() => navigateToClientPortalHash("client-portal")} type="button">
+        <Button className="portal-subnav-link" onClick={() => navigateToClientPortalHash("client-portal")} type="button" variant="tertiary">
           Archive
-        </button>
-        <button
+        </Button>
+        <Button
           className="portal-subnav-link"
           onClick={() => navigateToClientPortalHash("client-portal/pending-approvals")}
           type="button"
+          variant="tertiary"
         >
           Pending Approvals
-        </button>
-        <button className="portal-subnav-link is-active" type="button">
+        </Button>
+        <Button className="portal-subnav-link is-active" type="button" variant="tertiary">
           Briefs
-        </button>
+        </Button>
       </nav>
 
       {!hasSelectedClient ? (
@@ -1428,7 +1410,7 @@ export function BriefPage() {
             {isAdminViewer ? (
               <div className="filter-bar" role="tablist" aria-label="Client selection">
                 {activeClients.map((client) => (
-                  <button
+                  <Button
                     aria-selected={client.id === selectedClientId}
                     className={
                       client.id === selectedClientId
@@ -1445,9 +1427,10 @@ export function BriefPage() {
                     }}
                     role="tab"
                     type="button"
+                    variant="secondary"
                   >
                     {client.name}
-                  </button>
+                  </Button>
                 ))}
               </div>
             ) : clientName || selectedClient ? (
@@ -1457,23 +1440,20 @@ export function BriefPage() {
             ) : null}
           </SectionPanel>
 
-          {loadingBriefs ? <LoadingState label="Loading briefs" /> : null}
+          {loadingBriefs ? (
+            <div className="state-panel loading-state-panel" role="status">
+              <Spinner size="sm" />
+              Loading briefs
+            </div>
+          ) : null}
 
-          {error ? <ErrorState message={error} title="Could not load briefs" /> : null}
+          {error ? <Alert message={error} title="Could not load briefs" variant="danger" /> : null}
 
           {hasSelectedClient ? (
             <>
-              {actionError ? (
-                <div className="portal-inline-notice portal-inline-notice-error" role="alert">
-                  <p>{actionError}</p>
-                </div>
-              ) : null}
+              {actionError ? <Alert message={actionError} variant="danger" /> : null}
 
-              {actionSuccess ? (
-                <div className="portal-inline-notice" role="status">
-                  <p>{actionSuccess}</p>
-                </div>
-              ) : null}
+              {actionSuccess ? <Alert message={actionSuccess} variant="success" /> : null}
 
               <SectionPanel
                 title={`Brief — ${currentMonthLabel} ${currentYear}`}
@@ -1576,7 +1556,7 @@ export function BriefPage() {
                 ) : (
                   <div className="dense-list">
                     {additionalBriefs.map((brief) => (
-                      <button
+                      <Button
                         className="dense-record portal-brief-list-item"
                         key={brief.id}
                         onClick={() => {
@@ -1589,6 +1569,7 @@ export function BriefPage() {
                           });
                         }}
                         type="button"
+                        variant="tertiary"
                       >
                         <div className="dense-record-main">
                           <strong>{brief.title}</strong>
@@ -1598,7 +1579,7 @@ export function BriefPage() {
                           </span>
                         </div>
                         <BriefStatusBadge role={viewerRole} status={brief.status} />
-                      </button>
+                      </Button>
                     ))}
                   </div>
                 )}
