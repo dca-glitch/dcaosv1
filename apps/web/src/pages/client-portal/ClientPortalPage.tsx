@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { EmptyState } from "../../components/EmptyState";
-import { ErrorState } from "../../components/ErrorState";
-import { LoadingState } from "../../components/LoadingState";
 import { Button, MetricCard, PageHeader, SectionPanel, StatusBadge } from "../../components/ui";
+import { Alert, Input, Select, Spinner, Textarea } from "../../design-system";
 import { clientPortalApiRequest, navigateToClientPortalHash, type PendingApprovalsResponse } from "./client-portal-api";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "/api/v1";
@@ -873,19 +872,24 @@ export function ClientPortalPage() {
   const clientName = selectedProject?.client?.name ?? projects[0]?.client?.name ?? "Client archive";
 
   if (projectsLoading) {
-    return <LoadingState label="Loading client archive" />;
+    return (
+      <div className="state-panel loading-state-panel" role="status">
+        <Spinner size="sm" />
+        Loading client archive
+      </div>
+    );
   }
 
   if (projectsError && projects.length === 0) {
     return (
-      <section className="view-section" aria-labelledby="client-portal-title">
+      <section className="view-section" aria-labelledby="client-portal-title" data-density="comfortable">
         <PageHeader
           description="Final deliverables and monthly reports shared with your account."
           eyebrow="Client workspace"
           title="Your archive"
           titleId="client-portal-title"
         />
-        <ErrorState message={projectsError} title="Archive unavailable" />
+        <Alert message={projectsError} title="Archive unavailable" variant="danger" />
         <div className="portal-action-row">
           <Button variant="secondary" onClick={handleRefresh} type="button">
             Try again
@@ -896,7 +900,7 @@ export function ClientPortalPage() {
   }
 
   return (
-    <section className="view-section" aria-labelledby="client-portal-title">
+    <section className="view-section" aria-labelledby="client-portal-title" data-density="comfortable">
       <PageHeader
         actions={
           <Button variant="tertiary" disabled={projectsLoading} onClick={handleRefresh} type="button">
@@ -910,24 +914,26 @@ export function ClientPortalPage() {
       />
 
       <nav aria-label="Client portal sections" className="portal-subnav">
-        <button className="portal-subnav-link is-active" type="button">
+        <Button className="portal-subnav-link is-active" type="button" variant="tertiary">
           Archive
-        </button>
-        <button
+        </Button>
+        <Button
           className="portal-subnav-link"
           onClick={() => navigateToClientPortalHash("client-portal/pending-approvals")}
           type="button"
+          variant="tertiary"
         >
           Pending Approvals
           {pendingApprovalCount > 0 ? <span className="nav-count-badge">{pendingApprovalCount}</span> : null}
-        </button>
-        <button
+        </Button>
+        <Button
           className="portal-subnav-link"
           onClick={() => navigateToClientPortalHash("client-portal/briefs")}
           type="button"
+          variant="tertiary"
         >
           Briefs
-        </button>
+        </Button>
       </nav>
 
       <div className="summary-grid metric-grid portal-metric-grid">
@@ -939,11 +945,7 @@ export function ClientPortalPage() {
         />
       </div>
 
-      {projectsError ? (
-        <div className="portal-inline-notice portal-inline-notice-error" role="alert">
-          <p>{projectsError}</p>
-        </div>
-      ) : null}
+      {projectsError ? <Alert message={projectsError} variant="danger" /> : null}
 
       <div className="portal-split-layout">
         <aside className="entity-card portal-project-sidebar">
@@ -956,15 +958,16 @@ export function ClientPortalPage() {
 
           <div className="filter-bar" role="group" aria-label="Project filter">
             {(["active", "archived", "all"] as const).map((value) => (
-              <button
+              <Button
                 aria-pressed={projectFilter === value}
                 className={projectFilter === value ? "secondary-action filter-chip is-active" : "secondary-action filter-chip"}
                 key={value}
                 onClick={() => setProjectFilter(value)}
                 type="button"
+                variant="secondary"
               >
                 {value[0].toUpperCase() + value.slice(1)}
-              </button>
+              </Button>
             ))}
           </div>
 
@@ -998,16 +1001,18 @@ export function ClientPortalPage() {
                       </div>
                     </div>
                     <div className="dense-actions">
-                      <button
+                      <Button
                         className={`secondary-action${selectedProjectId === project.id ? " filter-chip is-active" : ""}`}
                         onClick={(event) => {
                           event.stopPropagation();
                           handleSelectProject(project.id);
                         }}
+                        size="sm"
                         type="button"
+                        variant="secondary"
                       >
                         {selectedProjectId === project.id ? "Selected" : "View"}
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 </article>
@@ -1026,9 +1031,12 @@ export function ClientPortalPage() {
               <EmptyState message="Select a project on the left to open its archive." title="No project selected" variant="inline" />
             </SectionPanel>
           ) : selectedProjectLoading ? (
-            <LoadingState label="Loading project archive" />
+            <div className="state-panel loading-state-panel" role="status">
+              <Spinner size="sm" />
+              Loading project archive
+            </div>
           ) : selectedProjectError ? (
-            <ErrorState message={selectedProjectError} title="Project unavailable" />
+            <Alert message={selectedProjectError} title="Project unavailable" variant="danger" />
           ) : selectedProject ? (
             <>
               <SectionPanel
@@ -1075,9 +1083,12 @@ export function ClientPortalPage() {
                 tone="compact"
               >
                 {deliverySummaryLoading ? (
-                  <LoadingState label="Loading delivery summary" />
+                  <div className="state-panel loading-state-panel" role="status">
+                    <Spinner size="sm" />
+                    Loading delivery summary
+                  </div>
                 ) : deliverySummaryError ? (
-                  <ErrorState message={deliverySummaryError} title="Delivery summary unavailable" />
+                  <Alert message={deliverySummaryError} title="Delivery summary unavailable" variant="danger" />
                 ) : deliverySummary ? (
                   <div className="portal-detail-stack">
                     <article className="entity-card dense-record">
@@ -1181,9 +1192,12 @@ export function ClientPortalPage() {
                 tone="compact"
               >
                 {catalogLoading ? (
-                  <LoadingState label="Loading product catalog" />
+                  <div className="state-panel loading-state-panel" role="status">
+                    <Spinner size="sm" />
+                    Loading product catalog
+                  </div>
                 ) : catalogError ? (
-                  <ErrorState message={catalogError} title="Product catalog unavailable" />
+                  <Alert message={catalogError} title="Product catalog unavailable" variant="danger" />
                 ) : catalogProducts.length === 0 ? (
                   <EmptyState
                     message="When products are added to your account, they will appear here for inquiry."
@@ -1219,47 +1233,46 @@ export function ClientPortalPage() {
                       }}
                     >
                       <div className="field-grid">
-                        <label>
-                          Product (optional)
-                          <select value={inquiryProductId} onChange={(event) => setInquiryProductId(event.target.value)}>
-                            <option value="">General inquiry</option>
-                            {catalogProducts.map((product) => (
-                              <option key={product.id} value={product.id}>
-                                {product.name}
-                              </option>
-                            ))}
-                          </select>
-                        </label>
-                        <label>
-                          Your name
-                          <input
-                            required
-                            value={inquiryContactName}
-                            onChange={(event) => setInquiryContactName(event.target.value)}
-                          />
-                        </label>
-                        <label>
-                          Email
-                          <input
-                            required
-                            type="email"
-                            value={inquiryContactEmail}
-                            onChange={(event) => setInquiryContactEmail(event.target.value)}
-                          />
-                        </label>
-                        <label>
-                          Phone (optional)
-                          <input value={inquiryContactPhone} onChange={(event) => setInquiryContactPhone(event.target.value)} />
-                        </label>
-                        <label className="field-span-2">
-                          Message
-                          <textarea
-                            required
-                            rows={4}
-                            value={inquiryMessage}
-                            onChange={(event) => setInquiryMessage(event.target.value)}
-                          />
-                        </label>
+                        <Select
+                          fullWidth
+                          label="Product (optional)"
+                          onChange={(event) => setInquiryProductId(event.target.value)}
+                          options={[
+                            { value: "", label: "General inquiry" },
+                            ...catalogProducts.map((product) => ({ value: product.id, label: product.name }))
+                          ]}
+                          value={inquiryProductId}
+                        />
+                        <Input
+                          fullWidth
+                          label="Your name"
+                          onChange={(event) => setInquiryContactName(event.target.value)}
+                          required
+                          value={inquiryContactName}
+                        />
+                        <Input
+                          fullWidth
+                          label="Email"
+                          onChange={(event) => setInquiryContactEmail(event.target.value)}
+                          required
+                          type="email"
+                          value={inquiryContactEmail}
+                        />
+                        <Input
+                          fullWidth
+                          label="Phone (optional)"
+                          onChange={(event) => setInquiryContactPhone(event.target.value)}
+                          value={inquiryContactPhone}
+                        />
+                        <Textarea
+                          className="field-span-2"
+                          fullWidth
+                          label="Message"
+                          onChange={(event) => setInquiryMessage(event.target.value)}
+                          required
+                          rows={4}
+                          value={inquiryMessage}
+                        />
                       </div>
                       {inquiryNotice ? <p className="portal-inline-notice-text muted-text">{inquiryNotice}</p> : null}
                       <div className="modal-footer">
@@ -1277,16 +1290,15 @@ export function ClientPortalPage() {
                 title="Deliverables"
                 tone="compact"
               >
-                {downloadNotice ? (
-                  <div className="portal-inline-notice" role="status">
-                    <p>{downloadNotice}</p>
-                  </div>
-                ) : null}
+                {downloadNotice ? <Alert message={downloadNotice} variant="info" /> : null}
 
                 {deliverablesLoading ? (
-                  <LoadingState label="Loading deliverables" />
+                  <div className="state-panel loading-state-panel" role="status">
+                    <Spinner size="sm" />
+                    Loading deliverables
+                  </div>
                 ) : deliverablesError ? (
-                  <ErrorState message={deliverablesError} title="Deliverables unavailable" />
+                  <Alert message={deliverablesError} title="Deliverables unavailable" variant="danger" />
                 ) : deliverables.length === 0 ? (
                   <EmptyState
                     message="Completed deliverables appear here once your team shares them to this archive."
@@ -1342,9 +1354,12 @@ export function ClientPortalPage() {
                 tone="compact"
               >
                 {monthlyReportsLoading ? (
-                  <LoadingState label="Loading monthly reports" />
+                  <div className="state-panel loading-state-panel" role="status">
+                    <Spinner size="sm" />
+                    Loading monthly reports
+                  </div>
                 ) : monthlyReportsError ? (
-                  <ErrorState message={monthlyReportsError} title="Monthly reports unavailable" />
+                  <Alert message={monthlyReportsError} title="Monthly reports unavailable" variant="danger" />
                 ) : monthlyReports.length === 0 ? (
                   <EmptyState
                     message="Monthly reports appear here after your team finalizes and shares them."
@@ -1355,11 +1370,12 @@ export function ClientPortalPage() {
                   <div className="portal-report-split">
                     <div className="dense-list">
                       {monthlyReports.map((report, index) => (
-                        <button
+                        <Button
                           className={`secondary-action portal-report-select${selectedMonthlyReportId === report.id ? " filter-chip is-active" : ""}`}
                           key={report.id}
                           onClick={() => setSelectedMonthlyReportId(report.id)}
                           type="button"
+                          variant="secondary"
                         >
                           <span>
                             {report.title ?? `Report ${index + 1}`}
@@ -1367,15 +1383,18 @@ export function ClientPortalPage() {
                             <span className="muted-text">{formatReportDate(report.finalizedAt)}</span>
                           </span>
                           <ClientPortalStatusBadge status={report.status} />
-                        </button>
+                        </Button>
                       ))}
                     </div>
 
                     {selectedMonthlyReport ? (
                       monthlyReportDetailLoading ? (
-                        <LoadingState label="Loading final monthly report" />
+                        <div className="state-panel loading-state-panel" role="status">
+                          <Spinner size="sm" />
+                          Loading final monthly report
+                        </div>
                       ) : monthlyReportDetailError ? (
-                        <ErrorState message={monthlyReportDetailError} title="Monthly report unavailable" />
+                        <Alert message={monthlyReportDetailError} title="Monthly report unavailable" variant="danger" />
                       ) : monthlyReportDetail ? (
                         <div className="stack-gap-sm">
                           <article className="entity-card dense-record">
