@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { EmptyState } from "../components/EmptyState";
-import { ErrorState } from "../components/ErrorState";
-import { LoadingState } from "../components/LoadingState";
 import { Badge, Button, PageHeader, SectionPanel, StatusBadge } from "../components/ui";
+import { Alert, Spinner } from "../design-system";
 import {
   clientPortalApiRequest,
   getClientPortalAuthToken,
@@ -426,19 +425,24 @@ export function ArchiveHubPage() {
   const monthGroups = useMemo(() => buildMonthGroups(briefs, articles), [articles, briefs]);
 
   if (loading) {
-    return <LoadingState label="Loading archive" />;
+    return (
+      <div className="state-panel loading-state-panel" role="status">
+        <Spinner size="sm" />
+        Loading archive
+      </div>
+    );
   }
 
   if (error && monthGroups.length === 0) {
     return (
-      <section className="view-section" aria-labelledby="archive-hub-title">
+      <section className="view-section" aria-labelledby="archive-hub-title" data-density="comfortable">
         <PageHeader
           description="Briefs, articles, and monthly reports older than 90 days."
           eyebrow="Client workspace"
           title="Archive"
           titleId="archive-hub-title"
         />
-        <ErrorState message={error} title="Archive unavailable" />
+        <Alert message={error} title="Archive unavailable" variant="danger" />
         <div className="portal-action-row">
           <Button onClick={() => void loadArchive()} variant="secondary">
             Try again
@@ -449,7 +453,7 @@ export function ArchiveHubPage() {
   }
 
   return (
-    <section className="view-section" aria-labelledby="archive-hub-title">
+    <section className="view-section" aria-labelledby="archive-hub-title" data-density="comfortable">
       <PageHeader
         action={
           <Button onClick={() => void loadArchive()} variant="tertiary">
@@ -463,30 +467,28 @@ export function ArchiveHubPage() {
       />
 
       <nav aria-label="Client portal sections" className="portal-subnav">
-        <button className="portal-subnav-link is-active" type="button">
+        <Button className="portal-subnav-link is-active" type="button" variant="tertiary">
           Archive
-        </button>
-        <button
+        </Button>
+        <Button
           className="portal-subnav-link"
           onClick={() => navigateToClientPortalHash("client-portal/pending-approvals")}
           type="button"
+          variant="tertiary"
         >
           Pending Approvals
-        </button>
-        <button
+        </Button>
+        <Button
           className="portal-subnav-link"
           onClick={() => navigateToClientPortalHash("client-portal/briefs")}
           type="button"
+          variant="tertiary"
         >
           Briefs
-        </button>
+        </Button>
       </nav>
 
-      {error ? (
-        <div className="portal-inline-notice portal-inline-notice-error" role="alert">
-          <p>{error}</p>
-        </div>
-      ) : null}
+      {error ? <Alert message={error} variant="danger" /> : null}
 
       <SectionPanel
         description="Items are grouped by month. Only content older than 90 days is shown."
