@@ -1,3 +1,5 @@
+import { Button } from "./ui/Button";
+
 type AppLayoutNavigationItem = {
   view: string;
   label: string;
@@ -93,12 +95,17 @@ export function AppLayout({
         <div className="user-panel">
           <span>{user.name || user.email}</span>
           <small>{user.email}</small>
-          <button className="ghost-action shell-logout-action" onClick={onLogout} type="button">
+          <Button className="ghost-action shell-logout-action" onClick={onLogout} type="button" variant="tertiary">
             Logout
-          </button>
+          </Button>
         </div>
       </aside>
-      <main className={isPortalShell ? "main-shell portal-main-shell" : "main-shell"}>{children}</main>
+      <main
+        className={isPortalShell ? "main-shell portal-main-shell" : "main-shell"}
+        data-density={isPortalShell ? "comfortable" : "compact"}
+      >
+        {children}
+      </main>
     </div>
   );
 }
