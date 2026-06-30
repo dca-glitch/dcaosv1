@@ -2,7 +2,6 @@
 
 @tailwind base;
 @tailwind components;
-@tailwind utilities;
 
 :root {
   color: var(--color-text);
@@ -3137,3 +3136,5 @@ div[role="dialog"][aria-modal="true"] {
   position: fixed;
   z-index: var(--z-modal);
 }
+
+@tailwind utilities;
