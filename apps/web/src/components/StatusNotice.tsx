@@ -1,3 +1,6 @@
+import { Alert } from "../design-system";
+import type { AlertVariant } from "../design-system";
+
 type StatusNoticeTone = "info" | "error" | "success";
 
 type StatusNoticeProps = {
@@ -6,22 +9,21 @@ type StatusNoticeProps = {
   onDismiss?: () => void;
 };
 
+const toneToVariant: Record<StatusNoticeTone, AlertVariant> = {
+  info: "info",
+  error: "danger",
+  success: "success"
+};
+
 export function StatusNotice({ tone, message, onDismiss }: StatusNoticeProps) {
   const dismissible = tone !== "error" && onDismiss;
 
   return (
-    <div className={`status-notice status-notice-compact status-${tone}`} role={tone === "error" ? "alert" : "status"}>
-      <span className="status-notice-text">{message}</span>
-      {dismissible ? (
-        <button
-          aria-label="Dismiss notice"
-          className="status-notice-dismiss ghost-action"
-          onClick={onDismiss}
-          type="button"
-        >
-          ×
-        </button>
-      ) : null}
-    </div>
+    <Alert
+      className={`status-notice status-notice-compact status-${tone}`}
+      message={message}
+      onClose={dismissible ? onDismiss : undefined}
+      variant={toneToVariant[tone]}
+    />
   );
 }
