@@ -233,8 +233,8 @@ const config: Config = {
           background: 'var(--border-subtle)',
         },
 
-        /* ── Status badges ── */
-        '.badge': {
+        /* ── Status badges (ds-badge-* avoids legacy globals.css .badge-* collision) ── */
+        '.ds-badge': {
           display:       'inline-flex',
           alignItems:    'center',
           gap:           '4px',
@@ -245,32 +245,32 @@ const config: Config = {
           border:        '1px solid',
           whiteSpace:    'nowrap',
         },
-        '.badge-primary': {
+        '.ds-badge-primary': {
           background:  'var(--badge-primary-bg)',
           borderColor: 'rgba(124,143,202,0.26)',
           color:       'var(--text-primary-role)',
         },
-        '.badge-success': {
+        '.ds-badge-success': {
           background:  'var(--badge-success-bg)',
           borderColor: 'rgba(111,169,137,0.26)',
           color:       'var(--text-success)',
         },
-        '.badge-warning': {
+        '.ds-badge-warning': {
           background:  'var(--badge-warning-bg)',
           borderColor: 'rgba(190,143,104,0.30)',
           color:       'var(--text-warning)',
         },
-        '.badge-danger': {
+        '.ds-badge-danger': {
           background:  'var(--badge-danger-bg)',
           borderColor: 'rgba(185,111,111,0.30)',
           color:       'var(--text-danger)',
         },
-        '.badge-muted': {
+        '.ds-badge-muted': {
           background:  'rgba(71,85,105,0.14)',
           borderColor: 'rgba(71,85,105,0.28)',
           color:       'var(--text-muted)',
         },
-        '.badge-dot': {
+        '.ds-badge-dot': {
           width:        '4px',
           height:       '4px',
           borderRadius: '50%',

@@ -11,11 +11,11 @@ interface BadgeProps {
 }
 
 const variantClass: Record<BadgeVariant, string> = {
-  primary: 'badge-primary',
-  success: 'badge-success',
-  warning: 'badge-warning',
-  danger:  'badge-danger',
-  muted:   'badge-muted',
+  primary: 'ds-badge-primary',
+  success: 'ds-badge-success',
+  warning: 'ds-badge-warning',
+  danger:  'ds-badge-danger',
+  muted:   'ds-badge-muted',
 };
 
 const Badge: React.FC<BadgeProps> = ({
@@ -25,11 +25,11 @@ const Badge: React.FC<BadgeProps> = ({
   children,
   className = '',
 }) => (
-  <span className={`badge ${variantClass[variant]} ${className}`}>
+  <span className={`ds-badge ${variantClass[variant]} ${className}`}>
     {icon && !dot && (
       <span className="flex-shrink-0 flex items-center" aria-hidden="true">{icon}</span>
     )}
-    {dot && !icon && <span className="badge-dot" aria-hidden="true" />}
+    {dot && !icon && <span className="ds-badge-dot" aria-hidden="true" />}
     {children}
   </span>
 );
