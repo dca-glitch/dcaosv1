@@ -3,7 +3,7 @@ import { EmptyState } from "../../components/EmptyState";
 import { ErrorState } from "../../components/ErrorState";
 import { LoadingState } from "../../components/LoadingState";
 import { Modal } from "../../components/Modal";
-import { Button, PageHeader, StatusBadge } from "../../components/ui";
+import { Button, ModalActions, PageHeader, StatusBadge } from "../../components/ui";
 import { Table as DSTable, TableHead, TableBody, TableRow as DSTableRow, Th, Td, TdDouble } from "../../design-system";
 import type { ClientSummary } from "../clients/ClientsPage";
 import type { InvoiceItemSummary } from "../invoice-items/InvoiceItemsPage";
@@ -733,7 +733,7 @@ export function InvoicesPage({
         >
           <form className="entity-form invoice-form-compact" onSubmit={handleInvoiceSubmit}>
             <ModalActions
-              actionLabel={invoiceEditorId ? "Update invoice" : "Create invoice"}
+              label={invoiceEditorId ? "Update invoice" : "Create invoice"}
               disabled={saving || clients.length === 0}
               onCancel={() => setIsInvoiceEditorOpen(false)}
               saving={saving}
@@ -873,7 +873,7 @@ export function InvoicesPage({
               />
             </div>
             <ModalActions
-              actionLabel={invoiceEditorId ? "Update invoice" : "Create invoice"}
+              label={invoiceEditorId ? "Update invoice" : "Create invoice"}
               disabled={saving || clients.length === 0}
               onCancel={() => setIsInvoiceEditorOpen(false)}
               saving={saving}
@@ -898,7 +898,7 @@ export function InvoicesPage({
         >
           <form className="entity-form" onSubmit={handleRecurringSubmit}>
             <ModalActions
-              actionLabel={recurringEditorId ? "Update recurring invoice" : "Create recurring invoice"}
+              label={recurringEditorId ? "Update recurring invoice" : "Create recurring invoice"}
               disabled={saving || clients.length === 0}
               onCancel={() => setIsRecurringEditorOpen(false)}
               saving={saving}
@@ -1047,7 +1047,7 @@ export function InvoicesPage({
               />
             </div>
             <ModalActions
-              actionLabel={recurringEditorId ? "Update recurring invoice" : "Create recurring invoice"}
+              label={recurringEditorId ? "Update recurring invoice" : "Create recurring invoice"}
               disabled={saving || clients.length === 0}
               onCancel={() => setIsRecurringEditorOpen(false)}
               saving={saving}
@@ -1544,22 +1544,6 @@ function LineItemsEditor({ currency, invoiceItems, lineItems, onChange, unitPric
         </div>
       ))}
       <Button size="sm" variant="secondary" onClick={() => { onChange([...lineItems, emptyLineItem(lineItems.length)]); onUnitPriceInputsChange?.([...(unitPriceInputs ?? lineItems.map((item) => centsToMajorInput(item.unitPriceCents))), centsToMajorInput(0)]); }} type="button">Add line item</Button>
-    </div>
-  );
-}
-
-type ModalActionsProps = {
-  disabled: boolean;
-  saving: boolean;
-  onCancel: () => void;
-  actionLabel?: string;
-};
-
-function ModalActions({ disabled, saving, onCancel, actionLabel = "Save" }: ModalActionsProps) {
-  return (
-    <div className="modal-footer">
-      <Button variant="secondary" disabled={saving} onClick={onCancel} type="button">Cancel</Button>
-      <Button variant="primary" disabled={disabled} type="submit">{saving ? "Saving" : actionLabel}</Button>
     </div>
   );
 }
