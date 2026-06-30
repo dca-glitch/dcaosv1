@@ -52,7 +52,19 @@ const Modal: React.FC<ModalProps> = ({
     /* Backdrop — normal flow div, not fixed */
     <div
       className="fixed inset-0 z-modal flex items-center justify-center p-4"
-      style={{ background: 'rgba(2,3,6,0.80)' }}
+      style={{
+        alignItems: 'center',
+        background: 'rgba(2,3,6,0.80)',
+        bottom: 0,
+        display: 'flex',
+        justifyContent: 'center',
+        left: 0,
+        padding: '16px',
+        position: 'fixed',
+        right: 0,
+        top: 0,
+        zIndex: 'var(--z-modal)',
+      }}
       onClick={closeOnBackdrop ? onClose : undefined}
       role="dialog"
       aria-modal="true"
