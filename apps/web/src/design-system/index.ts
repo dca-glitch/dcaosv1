@@ -74,3 +74,12 @@ export {
   SkeletonRow,
   SkeletonCard,
 } from './components/Spinner';
+
+/* ── Tabs & filter pills ── */
+export { Tabs, FilterPills } from './components/Tabs';
+export type {
+  TabOption,
+  TabsProps,
+  FilterPillOption,
+  FilterPillsProps,
+} from './components/Tabs';

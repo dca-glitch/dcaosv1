@@ -9,6 +9,7 @@ import {
   Modal, ConfirmDialog,
   Alert, Toast,
   Spinner, Skeleton, SkeletonCard,
+  Tabs, FilterPills,
 } from '../index';
 
 /* ─── helpers ─── */
@@ -25,10 +26,13 @@ const Row: React.FC<{ children: React.ReactNode; wrap?: boolean; className?: str
 
 /* ─── SHOWCASE PAGE ─── */
 const DesignShowcase: React.FC = () => {
-  const [modalOpen,   setModalOpen]   = useState(false);
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const [radioVal,    setRadioVal]    = useState('draft');
-  const [checked,     setChecked]     = useState(false);
+  const [modalOpen,    setModalOpen]    = useState(false);
+  const [confirmOpen,  setConfirmOpen]  = useState(false);
+  const [radioVal,     setRadioVal]     = useState('draft');
+  const [checked,      setChecked]      = useState(false);
+  const [activeTab,    setActiveTab]    = useState('archive');
+  const [statusFilter, setStatusFilter] = useState('active');
+  const [clientFilter, setClientFilter] = useState('all_kinds');
 
   return (
     <div className="min-h-screen p-8 max-w-4xl mx-auto" data-density="compact">
@@ -58,6 +62,47 @@ const DesignShowcase: React.FC = () => {
           <Button variant="secondary" disabled>Disabled</Button>
           <Button variant="primary" fullWidth className="max-w-xs">Full width</Button>
         </Row>
+      </Section>
+
+      {/* ── TABS & FILTER PILLS ── */}
+      <Section title="Tabs & filter pills">
+        <p className="text-body-xs text-text-muted mb-3">Section navigation (Tabs)</p>
+        <Tabs
+          options={[
+            { value: 'archive',            label: 'Archive'            },
+            { value: 'pending_approvals',  label: 'Pending Approvals'  },
+            { value: 'briefs',             label: 'Briefs'             },
+          ]}
+          value={activeTab}
+          onChange={setActiveTab}
+        />
+
+        <p className="text-body-xs text-text-muted mt-6 mb-3">Status filter (FilterPills, single-select)</p>
+        <FilterPills
+          ariaLabel="Status filter"
+          options={[
+            { value: 'active',   label: 'Active',   count: 4 },
+            { value: 'archived', label: 'Archived', count: 2 },
+            { value: 'all',      label: 'All',      count: 6 },
+          ]}
+          value={statusFilter}
+          onChange={setStatusFilter}
+        />
+
+        <p className="text-body-xs text-text-muted mt-6 mb-3">Client kind filter (FilterPills, six options)</p>
+        <FilterPills
+          ariaLabel="Client kind filter"
+          options={[
+            { value: 'all_kinds',  label: 'All kinds'   },
+            { value: 'agency',     label: 'Agency'      },
+            { value: 'own_domain', label: 'Own domain'  },
+            { value: 'active',     label: 'Active'      },
+            { value: 'archived',   label: 'Archived'    },
+            { value: 'all',        label: 'All'         },
+          ]}
+          value={clientFilter}
+          onChange={setClientFilter}
+        />
       </Section>
 
       {/* ── BADGES ── */}
