@@ -1,8 +1,7 @@
 import { type FormEvent, useMemo, useState } from "react";
-import { ErrorState } from "../../components/ErrorState";
-import { LoadingState } from "../../components/LoadingState";
 import { Modal } from "../../components/Modal";
-import { PageHeader, StatusBadge } from "../../components/ui";
+import { Button, ModalActions, PageHeader, StatusBadge, Table } from "../../components/ui";
+import { Alert, Input, Select, Spinner, Textarea } from "../../design-system";
 import type { ProjectSummary } from "../projects/ProjectsPage";
 
 export type TaskSummary = {
@@ -129,8 +128,6 @@ export function TasksPage({ tasks, projects, canEdit, error, loading, onArchive,
     [filter, tasks]
   );
 
-  const projectById = useMemo(() => new Map(projects.map((project) => [project.id, project])), [projects]);
-
   const submitLabel = editorTaskId ? "Update task" : "Create task";
 
   function closeEditor() {
@@ -173,15 +170,20 @@ export function TasksPage({ tasks, projects, canEdit, error, loading, onArchive,
   }
 
   if (loading) {
-    return <LoadingState label="Loading tasks" />;
+    return (
+      <div className="state-panel loading-state-panel" role="status">
+        <Spinner size="sm" />
+        Loading tasks
+      </div>
+    );
   }
 
   if (error) {
-    return <ErrorState message={error} title="Tasks unavailable" />;
+    return <Alert message={error} title="Tasks unavailable" variant="danger" />;
   }
 
   return (
-    <section className="view-section" aria-labelledby="tasks-title">
+    <section className="view-section" aria-labelledby="tasks-title" data-density="compact">
       <PageHeader
         eyebrow="Delivery"
         title="Tasks"
@@ -191,21 +193,22 @@ export function TasksPage({ tasks, projects, canEdit, error, loading, onArchive,
           <>
             <div className="filter-bar" role="group" aria-label="Tasks filter">
               {(["active", "archived", "all"] as const).map((value) => (
-                <button
+                <Button
                   aria-pressed={filter === value}
                   className={filter === value ? "secondary-action filter-chip is-active" : "secondary-action filter-chip"}
                   key={value}
                   onClick={() => setFilter(value)}
                   type="button"
+                  variant="secondary"
                 >
                   {value[0].toUpperCase() + value.slice(1)}
-                </button>
+                </Button>
               ))}
             </div>
             {canEdit ? (
-              <button className="primary-action" onClick={openCreateModal} type="button">
+              <Button onClick={openCreateModal} type="button">
                 Add Task
-              </button>
+              </Button>
             ) : null}
           </>
         }
@@ -221,59 +224,59 @@ export function TasksPage({ tasks, projects, canEdit, error, loading, onArchive,
         <p className="inline-empty muted-text">No tasks match the current filter.</p>
       ) : (
         <div className="table-wrap finance-table-wrap" aria-label="Tasks">
-          <table className="finance-table tasks-table">
-            <thead>
-              <tr>
-                <th>Task</th>
-                <th>Project</th>
-                <th>Client</th>
-                <th>Status</th>
-                <th>Recurring</th>
-                <th>Due</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredTasks.map((task) => (
-                <tr key={task.id}>
-                  <td>
-                    <strong>{task.title}</strong>
-                    <div className="muted-text">{task.description || "No description"}</div>
-                  </td>
-                  <td>{task.project?.name ?? "No project"}</td>
-                  <td>{task.project?.client?.name ?? "No client"}</td>
-                  <td><StatusBadge status={formatStatusLabel(task.status, task.isArchived)} /></td>
-                  <td>{formatRecurringLabel(task.recurringType)}</td>
-                  <td>{formatDateLabel(task.dueDate)}</td>
-                  <td>
-                    <div className="finance-row-actions">
-                      {canEdit ? <button className="secondary-action" onClick={() => openEditModal(task)} type="button">Open</button> : null}
-                      {canEdit ? (
-                        <details className="row-action-menu">
-                          <summary>More</summary>
-                          <div className="row-action-menu-panel">
-                            <div className="row-action-menu-group">
-                              <span className="row-action-menu-label">Task</span>
-                              {!task.isArchived ? (
-                                <button className="secondary-action" onClick={() => void onArchive(task.id)} type="button">
-                                  Archive
-                                </button>
-                              ) : null}
-                              {filter === "archived" && task.isArchived ? (
-                                <button className="secondary-action" onClick={() => void onRestore(task.id)} type="button">
-                                  Restore
-                                </button>
-                              ) : null}
-                            </div>
-                          </div>
-                        </details>
-                      ) : null}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <Table
+            className="finance-table tasks-table"
+            headers={[
+              { label: "Task", align: "left" },
+              { label: "Project", align: "left" },
+              { label: "Client", align: "left" },
+              { label: "Status", align: "left" },
+              { label: "Recurring", align: "left" },
+              { label: "Due", align: "left" },
+              { label: "Actions", align: "right" }
+            ]}
+            rows={filteredTasks.map((task) => ({
+              key: task.id,
+              cells: [
+                <div key={`${task.id}-title`}>
+                  <strong>{task.title}</strong>
+                  <div className="muted-text">{task.description || "No description"}</div>
+                </div>,
+                task.project?.name ?? "No project",
+                task.project?.client?.name ?? "No client",
+                <StatusBadge key={`${task.id}-status`} status={formatStatusLabel(task.status, task.isArchived)} />,
+                formatRecurringLabel(task.recurringType),
+                formatDateLabel(task.dueDate),
+                <div className="finance-row-actions" key={`${task.id}-actions`}>
+                  {canEdit ? (
+                    <Button onClick={() => openEditModal(task)} size="sm" variant="secondary">
+                      Open
+                    </Button>
+                  ) : null}
+                  {canEdit ? (
+                    <details className="row-action-menu">
+                      <summary>More</summary>
+                      <div className="row-action-menu-panel">
+                        <div className="row-action-menu-group">
+                          <span className="row-action-menu-label">Task</span>
+                          {!task.isArchived ? (
+                            <Button onClick={() => void onArchive(task.id)} size="sm" variant="secondary">
+                              Archive
+                            </Button>
+                          ) : null}
+                          {filter === "archived" && task.isArchived ? (
+                            <Button onClick={() => void onRestore(task.id)} size="sm" variant="secondary">
+                              Restore
+                            </Button>
+                          ) : null}
+                        </div>
+                      </div>
+                    </details>
+                  ) : null}
+                </div>
+              ]
+            }))}
+          />
         </div>
       )}
 
@@ -286,104 +289,79 @@ export function TasksPage({ tasks, projects, canEdit, error, loading, onArchive,
         >
           <form className="entity-form" onSubmit={handleSubmit}>
             <p className="muted-text">Used by admin team to organize work and delivery. Archived items are hidden from active work but can be restored.</p>
-            <TaskModalActions disabled={saving} label={submitLabel} onCancel={closeEditor} saving={saving} />
+            <ModalActions disabled={saving} label={submitLabel} onCancel={closeEditor} saving={saving} />
             <div className="field-grid">
-              <label>
-                Task name - Required
-                <input
-                  maxLength={255}
-                  onChange={(event) => setDraft((current) => ({ ...current, title: event.target.value }))}
-                  placeholder="Short action the team needs to complete"
-                  required
-                  value={draft.title}
-                />
-                <span className="muted-text">Used by admin team to track the work that needs to be completed.</span>
-              </label>
-              <label>
-                Project - Optional
-                <select
-                  onChange={(event) => setDraft((current) => ({ ...current, projectId: event.target.value }))}
-                  value={draft.projectId}
-                >
-                  <option value="">Tasks can exist without a project</option>
-                  {projects.map((project) => (
-                    <option key={project.id} value={project.id}>
-                      {project.name} ({project.client?.name ?? "No client"})
-                    </option>
-                  ))}
-                </select>
-                <span className="muted-text">Tasks can exist without a project.</span>
-              </label>
-              <label>
-                Due date - Required
-                <input
-                  onChange={(event) => setDraft((current) => ({ ...current, dueDate: event.target.value }))}
-                  required
-                  type="date"
-                  value={draft.dueDate}
-                />
-                <span className="muted-text">When this task should be completed.</span>
-              </label>
-              <label>
-                Recurring - Optional
-                <select
-                  onChange={(event) => setDraft((current) => ({ ...current, recurringType: event.target.value }))}
-                  value={draft.recurringType}
-                >
-                  {recurringOptions.map((recurringType) => (
-                    <option key={recurringType} value={recurringType}>
-                      {formatRecurringLabel(recurringType)}
-                    </option>
-                  ))}
-                </select>
-                <span className="muted-text">Use only for work that repeats on a schedule.</span>
-              </label>
-              <label>
-                Status - Required
-                <select
-                  onChange={(event) => setDraft((current) => ({ ...current, status: event.target.value }))}
-                  value={draft.status}
-                >
-                  {statusOptions.map((status) => (
-                    <option key={status} value={status}>
-                      {formatStatusLabel(status, false)}
-                    </option>
-                  ))}
-                </select>
-                <span className="muted-text">Tracks delivery progress without changing archive rules.</span>
-              </label>
-              <label className="field-span-2">
-                Description - Optional
-                <textarea
-                  maxLength={4000}
-                  onChange={(event) => setDraft((current) => ({ ...current, description: event.target.value }))}
-                  placeholder="Context, handoff details, or completion notes"
-                  rows={4}
-                  value={draft.description}
-                />
-                <span className="muted-text">Shown only in admin records.</span>
-              </label>
+              <Input
+                fullWidth
+                helperText="Used by admin team to track the work that needs to be completed."
+                label="Task name - Required"
+                maxLength={255}
+                onChange={(event) => setDraft((current) => ({ ...current, title: event.target.value }))}
+                placeholder="Short action the team needs to complete"
+                required
+                value={draft.title}
+              />
+              <Select
+                fullWidth
+                helperText="Tasks can exist without a project."
+                label="Project - Optional"
+                onChange={(event) => setDraft((current) => ({ ...current, projectId: event.target.value }))}
+                options={[
+                  { value: "", label: "Tasks can exist without a project" },
+                  ...projects.map((project) => ({
+                    value: project.id,
+                    label: `${project.name} (${project.client?.name ?? "No client"})`
+                  }))
+                ]}
+                value={draft.projectId}
+              />
+              <Input
+                fullWidth
+                helperText="When this task should be completed."
+                label="Due date - Required"
+                onChange={(event) => setDraft((current) => ({ ...current, dueDate: event.target.value }))}
+                required
+                type="date"
+                value={draft.dueDate}
+              />
+              <Select
+                fullWidth
+                helperText="Use only for work that repeats on a schedule."
+                label="Recurring - Optional"
+                onChange={(event) => setDraft((current) => ({ ...current, recurringType: event.target.value }))}
+                options={recurringOptions.map((recurringType) => ({
+                  value: recurringType,
+                  label: formatRecurringLabel(recurringType)
+                }))}
+                value={draft.recurringType}
+              />
+              <Select
+                fullWidth
+                helperText="Tracks delivery progress without changing archive rules."
+                label="Status - Required"
+                onChange={(event) => setDraft((current) => ({ ...current, status: event.target.value }))}
+                options={statusOptions.map((status) => ({
+                  value: status,
+                  label: formatStatusLabel(status, false)
+                }))}
+                value={draft.status}
+              />
+              <Textarea
+                className="field-span-2"
+                fullWidth
+                helperText="Shown only in admin records."
+                label="Description - Optional"
+                maxLength={4000}
+                onChange={(event) => setDraft((current) => ({ ...current, description: event.target.value }))}
+                placeholder="Context, handoff details, or completion notes"
+                rows={4}
+                value={draft.description}
+              />
             </div>
-            <TaskModalActions disabled={saving} label={submitLabel} onCancel={closeEditor} saving={saving} />
+            <ModalActions disabled={saving} label={submitLabel} onCancel={closeEditor} saving={saving} />
           </form>
         </Modal>
       ) : null}
     </section>
-  );
-}
-
-type TaskModalActionsProps = {
-  disabled: boolean;
-  label: string;
-  onCancel: () => void;
-  saving: boolean;
-};
-
-function TaskModalActions({ disabled, label, onCancel, saving }: TaskModalActionsProps) {
-  return (
-    <div className="modal-footer">
-      <button className="secondary-action" disabled={saving} onClick={onCancel} type="button">Cancel</button>
-      <button className="primary-action" disabled={disabled} type="submit">{saving ? "Saving" : label}</button>
-    </div>
   );
 }
