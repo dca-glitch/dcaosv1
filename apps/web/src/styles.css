@@ -1,5 +1,9 @@
 @import './design-system/tokens.css';
 
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 :root {
   color: var(--color-text);
   background: var(--color-background);
