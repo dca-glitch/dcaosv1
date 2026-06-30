@@ -1,3 +1,4 @@
+import { Table as DSTable, TableHead, TableBody, TableRow as DSTableRow, Th, Td } from "../../design-system";
 import type { ReactNode, TableHTMLAttributes } from "react";
 
 export type TableHeader = {
@@ -15,31 +16,25 @@ export type TableProps = TableHTMLAttributes<HTMLTableElement> & {
   rows: TableRow[];
 };
 
-export function Table({ headers, rows, className, ...props }: TableProps) {
-  const tableClass = ["dense-table", className].filter(Boolean).join(" ");
-
+export function Table({ headers, rows, className }: TableProps) {
   return (
-    <table className={tableClass} {...props}>
-      <thead>
-        <tr>
-          {headers.map((header, index) => (
-            <th key={`${header.label}-${index}`} style={{ textAlign: header.align ?? "left" }}>
-              {header.label}
-            </th>
+    <DSTable className={className}>
+      <TableHead>
+        <DSTableRow>
+          {headers.map((header, i) => (
+            <Th key={i} align={header.align ?? "left"}>{header.label}</Th>
           ))}
-        </tr>
-      </thead>
-      <tbody>
+        </DSTableRow>
+      </TableHead>
+      <TableBody>
         {rows.map((row, rowIndex) => (
-          <tr key={row.key ?? rowIndex}>
+          <DSTableRow key={row.key ?? rowIndex}>
             {row.cells.map((cell, cellIndex) => (
-              <td key={`${row.key ?? rowIndex}-${cellIndex}`} style={{ textAlign: headers[cellIndex]?.align ?? "left" }}>
-                {cell}
-              </td>
+              <Td key={cellIndex} align={headers[cellIndex]?.align ?? "left"}>{cell}</Td>
             ))}
-          </tr>
+          </DSTableRow>
         ))}
-      </tbody>
-    </table>
+      </TableBody>
+    </DSTable>
   );
 }

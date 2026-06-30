@@ -78,6 +78,7 @@ import { AiOperationsPage } from "./pages/ai-operations/AiOperationsPage";
 import { TasksPage, type TaskFormValues, type TaskSummary } from "./pages/tasks/TasksPage";
 import { BriefPanelPage } from "./pages/BriefPanelPage";
 import { ClientDashboardPage } from "./pages/ClientDashboardPage";
+import DesignShowcase from './design-system/showcase/DesignShowcase';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "/api/v1";
 const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY ?? "";
@@ -458,7 +459,8 @@ type ViewKey =
   | "bills"
   | "company-profile"
   | "settings"
-  | "team";
+  | "team"
+  | "design-system";
 
 type RequestOptions = {
   method?: string;
@@ -582,6 +584,9 @@ function normalizeHash(hash: string): ViewKey {
   const value = hash.replace(/^#\/?/, "");
   if (value === "client-portal" || value.startsWith("client-portal/")) {
     return "client-portal";
+  }
+  if (value === "admin/design-system") {
+    return "design-system";
   }
   if (deferredClientReviewViews.has(value as ViewKey)) {
     return value as ViewKey;
@@ -4690,6 +4695,7 @@ export function App() {
           teamMembers={teamMembers}
         />
       ) : null}
+      {!loading && activeView === "design-system" ? <DesignShowcase /> : null}
     </AppLayout>
   );
 }

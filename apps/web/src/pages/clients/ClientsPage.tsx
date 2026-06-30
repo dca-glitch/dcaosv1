@@ -4,8 +4,7 @@ import { EmptyState } from "../../components/EmptyState";
 import { ErrorState } from "../../components/ErrorState";
 import { LoadingState } from "../../components/LoadingState";
 import { Modal } from "../../components/Modal";
-import { ModalActions } from "../../components/ui/ModalActions";
-import { PageHeader } from "../../components/ui";
+import { Button, ModalActions, PageHeader } from "../../components/ui";
 import type { ProjectSummary } from "../projects/ProjectsPage";
 
 export type ClientSummary = {
@@ -234,9 +233,9 @@ export function ClientsPage({
               </div>
             </div>
             {canEdit ? (
-              <button className="primary-action" onClick={openCreateModal} type="button">
+              <Button onClick={openCreateModal} type="button" variant="primary">
                 Add Client
-              </button>
+              </Button>
             ) : null}
           </>
         }
@@ -283,10 +282,10 @@ export function ClientsPage({
                 </div>
 
                 <div className="dense-actions">
-                  <button className="secondary-action" onClick={() => onOpenHub(client)} type="button">
+                  <Button size="sm" variant="secondary" onClick={() => onOpenHub(client)} type="button">
                     Open hub
-                  </button>
-                  {canEdit ? <button className="secondary-action" onClick={() => void openEditModal(client)} type="button">Open</button> : null}
+                  </Button>
+                  {canEdit ? <Button size="sm" variant="secondary" onClick={() => void openEditModal(client)} type="button">Open</Button> : null}
                   {canEdit ? (
                     <details className="row-action-menu">
                       <summary>More</summary>
@@ -294,20 +293,21 @@ export function ClientsPage({
                         <div className="row-action-menu-group">
                           <span className="row-action-menu-label">Client</span>
                           {!client.isArchived ? (
-                            <button
-                              className="secondary-action"
+                            <Button
+                              size="sm"
+                              variant="secondary"
                               disabled={client.projectCount > 0}
                               onClick={() => void onArchive(client.id)}
                               title={client.projectCount > 0 ? "Archive blocked while active projects exist." : undefined}
                               type="button"
                             >
                               Archive
-                            </button>
+                            </Button>
                           ) : null}
                           {client.isArchived ? (
-                            <button className="secondary-action" onClick={() => void onRestore(client.id)} type="button">
+                            <Button size="sm" variant="secondary" onClick={() => void onRestore(client.id)} type="button">
                               Restore
-                            </button>
+                            </Button>
                           ) : null}
                         </div>
                       </div>

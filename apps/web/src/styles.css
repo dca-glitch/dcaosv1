@@ -1,3 +1,5 @@
+@import './design-system/tokens.css';
+
 :root {
   color: var(--color-text);
   background: var(--color-background);

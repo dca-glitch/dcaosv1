@@ -1,3 +1,5 @@
+import { Button } from "./Button";
+
 type ModalActionsProps = {
   disabled: boolean;
   label?: string;
@@ -13,12 +15,12 @@ export function ModalActions({
 }: ModalActionsProps) {
   return (
     <div className="modal-footer">
-      <button className="secondary-action" disabled={saving} onClick={onCancel} type="button">
+      <Button variant="secondary" disabled={saving} onClick={onCancel} type="button">
         Cancel
-      </button>
-      <button className="primary-action" disabled={disabled} type="submit">
+      </Button>
+      <Button variant="primary" disabled={disabled} type="submit">
         {saving ? "Saving" : label}
-      </button>
+      </Button>
     </div>
   );
 }

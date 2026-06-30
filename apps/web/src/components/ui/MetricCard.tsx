@@ -12,20 +12,23 @@ function buildMetricAriaLabel(label: string, value: ReactNode): string {
   if (typeof value === "string" || typeof value === "number") {
     return `${label}: ${value}`;
   }
-
   return label;
 }
 
-export function MetricCard({ label, value, helper, accent = "violet", metricKey }: MetricCardProps) {
+export function MetricCard({ label, value, helper, metricKey }: MetricCardProps) {
   return (
-    <article
+    <div
       aria-label={buildMetricAriaLabel(label, value)}
-      className={`metric-card metric-card-${accent}`}
+      className="card-elevated"
       data-metric={metricKey}
     >
-      <span className="metric-card-label">{label}</span>
-      <strong className="metric-card-value">{value}</strong>
-      {helper ? <small className="metric-card-helper">{helper}</small> : null}
-    </article>
+      <p className="text-caption font-semibold uppercase tracking-widest text-text-muted">{label}</p>
+      <div className="flex items-baseline gap-1 mt-2">
+        <span className="text-title-lg font-semibold leading-none text-text-primary">{value}</span>
+      </div>
+      {helper ? (
+        <p className="text-caption mt-1.5 text-text-muted">{helper}</p>
+      ) : null}
+    </div>
   );
 }

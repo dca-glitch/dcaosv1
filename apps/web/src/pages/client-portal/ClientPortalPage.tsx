@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { EmptyState } from "../../components/EmptyState";
 import { ErrorState } from "../../components/ErrorState";
 import { LoadingState } from "../../components/LoadingState";
-import { MetricCard, PageHeader, SectionPanel, StatusBadge } from "../../components/ui";
+import { Button, MetricCard, PageHeader, SectionPanel, StatusBadge } from "../../components/ui";
 import { clientPortalApiRequest, navigateToClientPortalHash, type PendingApprovalsResponse } from "./client-portal-api";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "/api/v1";
@@ -887,9 +887,9 @@ export function ClientPortalPage() {
         />
         <ErrorState message={projectsError} title="Archive unavailable" />
         <div className="portal-action-row">
-          <button className="secondary-action" onClick={handleRefresh} type="button">
+          <Button variant="secondary" onClick={handleRefresh} type="button">
             Try again
-          </button>
+          </Button>
         </div>
       </section>
     );
@@ -899,9 +899,9 @@ export function ClientPortalPage() {
     <section className="view-section" aria-labelledby="client-portal-title">
       <PageHeader
         actions={
-          <button className="ghost-action" disabled={projectsLoading} onClick={handleRefresh} type="button">
+          <Button variant="tertiary" disabled={projectsLoading} onClick={handleRefresh} type="button">
             Refresh
-          </button>
+          </Button>
         }
         description="Final deliverables and monthly reports shared with your account."
         eyebrow="Client workspace"
@@ -1263,9 +1263,9 @@ export function ClientPortalPage() {
                       </div>
                       {inquiryNotice ? <p className="portal-inline-notice-text muted-text">{inquiryNotice}</p> : null}
                       <div className="modal-footer">
-                        <button className="secondary-action" disabled={inquirySubmitting} type="submit">
+                        <Button variant="primary" disabled={inquirySubmitting} type="submit">
                           {inquirySubmitting ? "Submitting" : "Send inquiry"}
-                        </button>
+                        </Button>
                       </div>
                     </form>
                   </div>
@@ -1316,14 +1316,15 @@ export function ClientPortalPage() {
                             </div>
                           </div>
                           <div className="dense-actions">
-                            <button
-                              className="secondary-action"
+                            <Button
+                              size="sm"
+                              variant="secondary"
                               disabled={downloadingDeliverableId === deliverable.id}
                               onClick={() => void handleDownload(deliverable.id)}
                               type="button"
                             >
                               {downloadingDeliverableId === deliverable.id ? "Opening..." : "Download"}
-                            </button>
+                            </Button>
                           </div>
                         </div>
                         {deliverable.description ? (
@@ -1396,14 +1397,15 @@ export function ClientPortalPage() {
                               </div>
                               <div className="dense-actions">
                                 {monthlyReportDetail.monthlyReport.hasDocument ? (
-                                  <button
-                                    className="secondary-action"
+                                  <Button
+                                    size="sm"
+                                    variant="secondary"
                                     disabled={downloadingMonthlyReportId === monthlyReportDetail.monthlyReport.id}
                                     onClick={() => void handleMonthlyReportDownload(monthlyReportDetail.monthlyReport.id)}
                                     type="button"
                                   >
                                     {downloadingMonthlyReportId === monthlyReportDetail.monthlyReport.id ? "Opening..." : "Download PDF"}
-                                  </button>
+                                  </Button>
                                 ) : null}
                                 {monthlyReportDetail.monthlyReport.exportUrl ? (
                                   <a

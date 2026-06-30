@@ -3,7 +3,8 @@ import { EmptyState } from "../../components/EmptyState";
 import { ErrorState } from "../../components/ErrorState";
 import { LoadingState } from "../../components/LoadingState";
 import { Modal } from "../../components/Modal";
-import { PageHeader, StatusBadge } from "../../components/ui";
+import { Button, PageHeader, StatusBadge } from "../../components/ui";
+import { Table as DSTable, TableHead, TableBody, TableRow as DSTableRow, Th, Td, TdDouble } from "../../design-system";
 import type { ClientSummary } from "../clients/ClientsPage";
 import type { InvoiceItemSummary } from "../invoice-items/InvoiceItemsPage";
 import type { ProjectSummary } from "../projects/ProjectsPage";
@@ -678,14 +679,14 @@ export function InvoicesPage({
               </button>
             </div>
             {canEdit ? (
-              <button
-                className="primary-action"
+              <Button
                 disabled={clients.length === 0}
                 onClick={tab === "invoices" ? openCreateInvoiceModal : openCreateRecurringModal}
                 type="button"
+                variant="primary"
               >
                 {tab === "invoices" ? "Add Invoice" : "Add Recurring"}
-              </button>
+              </Button>
             ) : null}
           </>
         }
@@ -1164,72 +1165,69 @@ function InvoiceCards({ invoices, canEdit, onEditInvoice, onArchiveInvoice, onMa
   }
 
   return (
-    <div className="table-wrap finance-table-wrap" aria-label="Invoices">
-      <table className="finance-table dense-table">
-        <thead>
-          <tr>
-            <th>Invoice</th>
-            <th>Client</th>
-            <th>Status</th>
-            <th className="finance-amount-col">Total</th>
-            <th className="finance-amount-col">Paid</th>
-            <th>Due</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {invoices.map((invoice) => (
-            <Fragment key={invoice.id}>
-              <tr>
-                <td>
-                  <strong>{invoice.title}</strong>
-                  <div className="muted-text">{invoice.invoiceNumber || "No invoice number"}</div>
-                  <div className="muted-text">{invoice.project?.name ?? "No project"}</div>
-                </td>
-                <td>{invoice.client.name}</td>
-                <td>
-                  <StatusBadge status={invoice.isArchived ? "ARCHIVED" : invoice.status} />
-                  {invoice.payment ? <StatusBadge status="Paid recorded" /> : null}
-                </td>
-                <td className="finance-amount-col">{formatMoney(invoice.totalCents, invoice.currency)}</td>
-                <td className="finance-amount-col">{formatMoney(invoice.amountPaidCents, invoice.currency)}</td>
-                <td>{formatDateLabel(invoice.dueDate)}</td>
-                <td>
-                  <div className="finance-row-actions">
-                    {canEdit ? <button className="secondary-action" onClick={() => onEditInvoice(invoice)} type="button">Open</button> : null}
-                    {canEdit ? (
-                      <details className="row-action-menu">
-                        <summary>More</summary>
-                        <div className="row-action-menu-panel">
-                          <div className="row-action-menu-group">
-                            <span className="row-action-menu-label">Lifecycle</span>
-                            <button className="secondary-action" onClick={() => void onMarkInvoiceSent(invoice.id)} type="button">Mark sent</button>
-                            {canRegisterPayment(invoice) ? <button className="secondary-action" onClick={() => onRegisterInvoicePayment(invoice)} type="button">Register payment</button> : null}
-                          </div>
-                          <div className="row-action-menu-group">
-                            <span className="row-action-menu-label">Exceptions</span>
-                            <button className="secondary-action" onClick={() => void onCancelInvoice(invoice.id)} type="button">Cancel</button>
-                            {canMarkUncollectible(invoice) ? <button className="secondary-action" onClick={() => void onMarkInvoiceUncollectible(invoice.id)} type="button">Mark uncollectible</button> : null}
-                            {!invoice.isArchived ? <button className="secondary-action" onClick={() => void onArchiveInvoice(invoice.id)} type="button">Archive</button> : null}
-                          </div>
+    <DSTable aria-label="Invoices">
+      <TableHead>
+        <DSTableRow>
+          <Th>Invoice</Th>
+          <Th>Client</Th>
+          <Th>Status</Th>
+          <Th align="right">Total</Th>
+          <Th align="right">Paid</Th>
+          <Th>Due</Th>
+          <Th>Actions</Th>
+        </DSTableRow>
+      </TableHead>
+      <TableBody>
+        {invoices.map((invoice) => (
+          <Fragment key={invoice.id}>
+            <DSTableRow>
+              <TdDouble
+                primary={invoice.title}
+                secondary={[invoice.invoiceNumber || "No invoice number", invoice.project?.name ?? "No project"].filter(Boolean).join(" · ")}
+              />
+              <Td secondary>{invoice.client.name}</Td>
+              <Td>
+                <StatusBadge status={invoice.isArchived ? "ARCHIVED" : invoice.status} />
+                {invoice.payment ? <> <StatusBadge status="Paid recorded" /></> : null}
+              </Td>
+              <Td mono align="right">{formatMoney(invoice.totalCents, invoice.currency)}</Td>
+              <Td mono align="right">{formatMoney(invoice.amountPaidCents, invoice.currency)}</Td>
+              <Td mono>{formatDateLabel(invoice.dueDate)}</Td>
+              <Td>
+                <div className="finance-row-actions">
+                  {canEdit ? <Button size="sm" variant="secondary" onClick={() => onEditInvoice(invoice)} type="button">Open</Button> : null}
+                  {canEdit ? (
+                    <details className="row-action-menu">
+                      <summary>More</summary>
+                      <div className="row-action-menu-panel">
+                        <div className="row-action-menu-group">
+                          <span className="row-action-menu-label">Lifecycle</span>
+                          <Button size="sm" variant="secondary" onClick={() => void onMarkInvoiceSent(invoice.id)} type="button">Mark sent</Button>
+                          {canRegisterPayment(invoice) ? <Button size="sm" variant="secondary" onClick={() => onRegisterInvoicePayment(invoice)} type="button">Register payment</Button> : null}
                         </div>
-                      </details>
-                    ) : null}
-                  </div>
-                </td>
-              </tr>
-              {invoice.payment ? (
-                <tr className="finance-table-detail-row" key={`${invoice.id}-payment`}>
-                  <td colSpan={7}>
-                    <PaymentDetails currency={invoice.currency} payment={invoice.payment} />
-                  </td>
-                </tr>
-              ) : null}
-            </Fragment>
-          ))}
-        </tbody>
-      </table>
-    </div>
+                        <div className="row-action-menu-group">
+                          <span className="row-action-menu-label">Exceptions</span>
+                          <Button size="sm" variant="secondary" onClick={() => void onCancelInvoice(invoice.id)} type="button">Cancel</Button>
+                          {canMarkUncollectible(invoice) ? <Button size="sm" variant="secondary" onClick={() => void onMarkInvoiceUncollectible(invoice.id)} type="button">Mark uncollectible</Button> : null}
+                          {!invoice.isArchived ? <Button size="sm" variant="secondary" onClick={() => void onArchiveInvoice(invoice.id)} type="button">Archive</Button> : null}
+                        </div>
+                      </div>
+                    </details>
+                  ) : null}
+                </div>
+              </Td>
+            </DSTableRow>
+            {invoice.payment ? (
+              <DSTableRow key={`${invoice.id}-payment`}>
+                <Td colSpan={7}>
+                  <PaymentDetails currency={invoice.currency} payment={invoice.payment} />
+                </Td>
+              </DSTableRow>
+            ) : null}
+          </Fragment>
+        ))}
+      </TableBody>
+    </DSTable>
   );
 }
 
@@ -1260,61 +1258,60 @@ function RecurringInvoiceCards({ recurringInvoices, canEdit, onEditRecurringInvo
   }
 
   return (
-    <div className="table-wrap finance-table-wrap" aria-label="Recurring invoices">
-      <table className="finance-table dense-table">
-        <thead>
-          <tr>
-            <th>Schedule</th>
-            <th>Client</th>
-            <th>Status</th>
-            <th className="finance-amount-col">Total</th>
-            <th>Interval</th>
-            <th>Next run</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {recurringInvoices.map((recurringInvoice) => (
-            <tr key={recurringInvoice.id}>
-              <td>
-                <strong>{recurringInvoice.title}</strong>
-                <div className="muted-text">{recurringInvoice.project?.name ?? "No project"}</div>
-              </td>
-              <td>{recurringInvoice.client.name}</td>
-              <td>
-                <StatusBadge status={recurringInvoice.isArchived ? "ARCHIVED" : recurringInvoice.isActive ? "ACTIVE" : "PAUSED"} />
-              </td>
-              <td className="finance-amount-col">{formatMoney(recurringInvoice.totalCents, recurringInvoice.currency)}</td>
-              <td>{recurringInvoice.interval}</td>
-              <td>{formatDateLabel(recurringInvoice.nextRunDate)}</td>
-              <td>
-                <div className="finance-row-actions">
-                  {canEdit ? <button className="secondary-action" onClick={() => onEditRecurringInvoice(recurringInvoice)} type="button">Open</button> : null}
-                  {canEdit ? (
-                    <details className="row-action-menu">
-                      <summary>More</summary>
-                      <div className="row-action-menu-panel">
-                        <div className="row-action-menu-group">
-                          <span className="row-action-menu-label">Recurring</span>
-                          <button
-                            className="secondary-action"
-                            onClick={() => void onGenerateDueRecurringInvoice(recurringInvoice.id, toLocalDateInputValue())}
-                            type="button"
-                          >
-                            Generate due
-                          </button>
-                          {!recurringInvoice.isArchived ? <button className="secondary-action" onClick={() => void onArchiveRecurringInvoice(recurringInvoice.id)} type="button">Archive</button> : null}
-                        </div>
+    <DSTable aria-label="Recurring invoices">
+      <TableHead>
+        <DSTableRow>
+          <Th>Schedule</Th>
+          <Th>Client</Th>
+          <Th>Status</Th>
+          <Th align="right">Total</Th>
+          <Th>Interval</Th>
+          <Th>Next run</Th>
+          <Th>Actions</Th>
+        </DSTableRow>
+      </TableHead>
+      <TableBody>
+        {recurringInvoices.map((recurringInvoice) => (
+          <DSTableRow key={recurringInvoice.id}>
+            <TdDouble
+              primary={recurringInvoice.title}
+              secondary={recurringInvoice.project?.name ?? "No project"}
+            />
+            <Td secondary>{recurringInvoice.client.name}</Td>
+            <Td>
+              <StatusBadge status={recurringInvoice.isArchived ? "ARCHIVED" : recurringInvoice.isActive ? "ACTIVE" : "PAUSED"} />
+            </Td>
+            <Td mono align="right">{formatMoney(recurringInvoice.totalCents, recurringInvoice.currency)}</Td>
+            <Td>{recurringInvoice.interval}</Td>
+            <Td mono>{formatDateLabel(recurringInvoice.nextRunDate)}</Td>
+            <Td>
+              <div className="finance-row-actions">
+                {canEdit ? <Button size="sm" variant="secondary" onClick={() => onEditRecurringInvoice(recurringInvoice)} type="button">Open</Button> : null}
+                {canEdit ? (
+                  <details className="row-action-menu">
+                    <summary>More</summary>
+                    <div className="row-action-menu-panel">
+                      <div className="row-action-menu-group">
+                        <span className="row-action-menu-label">Recurring</span>
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => void onGenerateDueRecurringInvoice(recurringInvoice.id, toLocalDateInputValue())}
+                          type="button"
+                        >
+                          Generate due
+                        </Button>
+                        {!recurringInvoice.isArchived ? <Button size="sm" variant="secondary" onClick={() => void onArchiveRecurringInvoice(recurringInvoice.id)} type="button">Archive</Button> : null}
                       </div>
-                    </details>
-                  ) : null}
-                </div>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+                    </div>
+                  </details>
+                ) : null}
+              </div>
+            </Td>
+          </DSTableRow>
+        ))}
+      </TableBody>
+    </DSTable>
   );
 }
 
@@ -1542,11 +1539,11 @@ function LineItemsEditor({ currency, invoiceItems, lineItems, onChange, unitPric
             <span className="muted-text">Calculated from quantity and unit price.</span>
           </label>
           <div className="card-actions">
-            <button className="secondary-action" disabled={lineItems.length === 1} onClick={() => { onChange(lineItems.filter((_, itemIndex) => itemIndex !== index)); onUnitPriceInputsChange?.((unitPriceInputs ?? []).filter((_, itemIndex) => itemIndex !== index)); }} type="button">Remove line</button>
+            <Button size="sm" variant="secondary" disabled={lineItems.length === 1} onClick={() => { onChange(lineItems.filter((_, itemIndex) => itemIndex !== index)); onUnitPriceInputsChange?.((unitPriceInputs ?? []).filter((_, itemIndex) => itemIndex !== index)); }} type="button">Remove line</Button>
           </div>
         </div>
       ))}
-      <button className="secondary-action" onClick={() => { onChange([...lineItems, emptyLineItem(lineItems.length)]); onUnitPriceInputsChange?.([...(unitPriceInputs ?? lineItems.map((item) => centsToMajorInput(item.unitPriceCents))), centsToMajorInput(0)]); }} type="button">Add line item</button>
+      <Button size="sm" variant="secondary" onClick={() => { onChange([...lineItems, emptyLineItem(lineItems.length)]); onUnitPriceInputsChange?.([...(unitPriceInputs ?? lineItems.map((item) => centsToMajorInput(item.unitPriceCents))), centsToMajorInput(0)]); }} type="button">Add line item</Button>
     </div>
   );
 }
@@ -1561,8 +1558,8 @@ type ModalActionsProps = {
 function ModalActions({ disabled, saving, onCancel, actionLabel = "Save" }: ModalActionsProps) {
   return (
     <div className="modal-footer">
-      <button className="secondary-action" disabled={saving} onClick={onCancel} type="button">Cancel</button>
-      <button className="primary-action" disabled={disabled} type="submit">{saving ? "Saving" : actionLabel}</button>
+      <Button variant="secondary" disabled={saving} onClick={onCancel} type="button">Cancel</Button>
+      <Button variant="primary" disabled={disabled} type="submit">{saving ? "Saving" : actionLabel}</Button>
     </div>
   );
 }
