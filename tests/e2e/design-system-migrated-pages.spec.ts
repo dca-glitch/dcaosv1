@@ -64,6 +64,37 @@ test.describe("Design system — migrated pages (visual smoke)", () => {
     });
   }
 
+  test("Add Invoice modal — Select chevron sizing and className integrity", async ({ page }) => {
+    await page.goto(hashUrl("invoices"), { waitUntil: "domcontentloaded" });
+    await expect(page.getByRole("button", { name: "Logout" })).toBeVisible({ timeout: 30000 });
+    await expect(page.getByRole("heading", { name: /invoices/i }).first()).toBeVisible({ timeout: 30000 });
+
+    const addInvoiceButton = page.getByRole("button", { name: "Add Invoice" });
+    await expect(addInvoiceButton).toBeVisible({ timeout: 30000 });
+    await addInvoiceButton.click();
+
+    const modal = page.getByRole("dialog");
+    await expect(modal.getByRole("heading", { name: "Add Invoice" })).toBeVisible({ timeout: 30000 });
+    await page.screenshot({
+      path: `${SCREENSHOT_DIR}/invoices-add-invoice-modal.png`,
+      fullPage: true
+    });
+
+    const clientSelect = modal.getByRole("combobox", { name: /Client - Required/i });
+    await expect(clientSelect).toBeVisible({ timeout: 10000 });
+
+    const chevron = modal.locator('svg path[d="M19 9l-7 7-7-7"]').locator("xpath=..").first();
+    await expect(chevron).toBeVisible({ timeout: 10000 });
+
+    const className = await chevron.getAttribute("class");
+    expect(className).toBeTruthy();
+    expect(className).not.toContain("\\/");
+    expect(className).not.toContain("\\.");
+
+    const rect = await chevron.evaluate((el) => el.getBoundingClientRect());
+    expect(rect.height).toBeLessThan(30);
+  });
+
   test("screenshot article-approval editor (read-only, if deliverable exists)", async ({ page, request }) => {
     await page.goto(getWebBaseUrl(), { waitUntil: "domcontentloaded" });
     const token = await page.evaluate(() => sessionStorage.getItem("dcaosv1.authToken"));
