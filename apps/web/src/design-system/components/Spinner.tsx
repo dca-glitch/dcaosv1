@@ -7,9 +7,12 @@ interface SpinnerProps {
 }
 
 const sizeClass = { sm: 'w-4 h-4', md: 'w-6 h-6', lg: 'w-8 h-8' };
+const sizePx    = { sm: 16, md: 24, lg: 32 };
 
 export const Spinner: React.FC<SpinnerProps> = ({ size = 'md', className = '' }) => (
   <svg
+    width={sizePx[size]}
+    height={sizePx[size]}
     className={`animate-spin text-primary-text ${sizeClass[size]} ${className}`}
     fill="none"
     viewBox="0 0 24 24"
