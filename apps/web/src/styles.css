@@ -3126,3 +3126,14 @@ th {
     grid-template-columns: 1fr;
   }
 }
+
+/* Design-system modal overlay — defensive positioning after legacy rules (ds-modal-* avoids .modal-* collision) */
+div[role="dialog"][aria-modal="true"] {
+  align-items: center;
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  padding: 16px;
+  position: fixed;
+  z-index: var(--z-modal);
+}

@@ -128,6 +128,10 @@ const config: Config = {
       width:   { sidebar: '240px', 'sidebar-sm': '64px' },
       maxWidth: { client: '960px' },
 
+      zIndex: {
+        modal: '300',
+      },
+
       /* Custom background gradients referenced via CSS vars */
       backgroundImage: {
         'page':    'var(--bg-page-gradient)',

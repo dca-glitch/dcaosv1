@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { createPortal } from "react-dom";
 import DSModal from "../design-system/components/Modal";
 import type { ModalSize as DSModalSize } from "../design-system/components/Modal";
 
@@ -20,7 +21,7 @@ const sizeMap: Record<ModalSize, DSModalSize> = {
 };
 
 export function Modal({ title, onClose, children, footer, size = "md", eyebrow }: ModalProps) {
-  return (
+  return createPortal(
     <DSModal
       isOpen={true}
       onClose={onClose}
@@ -30,6 +31,7 @@ export function Modal({ title, onClose, children, footer, size = "md", eyebrow }
       size={sizeMap[size]}
     >
       {children}
-    </DSModal>
+    </DSModal>,
+    document.body
   );
 }
