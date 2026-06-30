@@ -18,3 +18,10 @@ alwaysApply: true
 - Never git push, open a PR, or run destructive git commands (reset --hard, force push, branch deletion) without explicit confirmation from the user first
 - Commit after every single file using `git add <specific file path>` — never `git add .` or `git add -A` during this task
 - If a build/typecheck error can't be fixed in 2 attempts, stop and report the exact error instead of guessing further
+
+## Long status reports
+- Whenever a status report, diagnosis, or summary would exceed roughly 30 lines, write the full report to a file instead of printing it entirely in chat.
+- File location: repo root, named _status_report.md (leading underscore signals scratch file, never part of source).
+- In chat, print only: confirmation the file was written, its path, and a 2-3 sentence summary of the headline finding.
+- Never include this scratch file in any git add or commit — if asked to commit, explicitly exclude it.
+- This applies to any future block, not just this one.
