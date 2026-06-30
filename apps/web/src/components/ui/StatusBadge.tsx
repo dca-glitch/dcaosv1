@@ -1,4 +1,4 @@
-import { Badge as DSBadge } from "../../design-system/components/Badge";
+import DSBadge from "../../design-system/components/Badge";
 import type { BadgeVariant as DSBadgeVariant } from "../../design-system/components/Badge";
 
 type StatusBadgeProps = {
