@@ -1,9 +1,8 @@
 import { type FormEvent, useMemo, useState } from "react";
 import { EmptyState } from "../../components/EmptyState";
-import { ErrorState } from "../../components/ErrorState";
-import { LoadingState } from "../../components/LoadingState";
 import { Modal } from "../../components/Modal";
-import { PageHeader, SectionPanel, StatusBadge } from "../../components/ui";
+import { Button, ModalActions, PageHeader, SectionPanel, StatusBadge, Table } from "../../components/ui";
+import { Alert, Input, Select, Spinner, Textarea } from "../../design-system";
 
 export type VendorSummary = {
   id: string;
@@ -260,15 +259,23 @@ export function BillsPage({
   }
 
   if (isLoading) {
-    return <LoadingState label="Loading bills" />;
+    return (
+      <div className="state-panel loading-state-panel" role="status">
+        <Spinner size="sm" />
+        Loading bills
+      </div>
+    );
   }
 
   if (errorMessage) {
-    return <ErrorState message={errorMessage} title="Bills unavailable" />;
+    return <Alert message={errorMessage} title="Bills unavailable" variant="danger" />;
   }
 
+  const billSubmitLabel = billEditorId ? "Update bill" : "Create bill";
+  const vendorSubmitLabel = vendorEditorId ? "Update Vendor" : "Save Vendor";
+
   return (
-    <section className="view-section" aria-labelledby="bills-title">
+    <section className="view-section" aria-labelledby="bills-title" data-density="compact">
       <PageHeader
         eyebrow="Expenses"
         title="Bills"
@@ -277,17 +284,16 @@ export function BillsPage({
         actions={
           canEdit ? (
             <>
-              <button className="secondary-action" onClick={openCreateVendorModal} type="button">
+              <Button onClick={openCreateVendorModal} type="button" variant="secondary">
                 Add Vendor
-              </button>
-              <button
-                className="primary-action"
+              </Button>
+              <Button
                 disabled={!hasActiveVendors}
                 onClick={openCreateBillModal}
                 type="button"
               >
                 Add Bill
-              </button>
+              </Button>
             </>
           ) : null
         }
@@ -295,15 +301,16 @@ export function BillsPage({
 
       <div className="filter-bar bills-filter-bar" role="group" aria-label="Bill view">
         {(["active", "archived", "all"] as const).map((value) => (
-          <button
+          <Button
             aria-pressed={filter === value}
             className={filter === value ? "secondary-action filter-chip is-active" : "secondary-action filter-chip"}
             key={value}
             onClick={() => setFilter(value)}
             type="button"
+            variant="secondary"
           >
             {value[0].toUpperCase() + value.slice(1)}
-          </button>
+          </Button>
         ))}
       </div>
 
@@ -358,15 +365,15 @@ export function BillsPage({
                 </div>
 
                 <div className="dense-actions">
-                  {canEdit ? <button className="secondary-action" onClick={() => openEditVendorModal(vendor)} type="button">Open</button> : null}
+                  {canEdit ? <Button onClick={() => openEditVendorModal(vendor)} size="sm" variant="secondary" type="button">Open</Button> : null}
                   {canEdit ? (
                     <details className="row-action-menu">
                       <summary>More</summary>
                       <div className="row-action-menu-panel">
                         <div className="row-action-menu-group">
                           <span className="row-action-menu-label">Vendor</span>
-                          {!vendor.isArchived ? <button className="secondary-action" onClick={() => void onArchiveVendor(vendor.id)} type="button">Archive</button> : null}
-                          {vendor.isArchived ? <button className="secondary-action" onClick={() => void onRestoreVendor(vendor.id)} type="button">Restore</button> : null}
+                          {!vendor.isArchived ? <Button onClick={() => void onArchiveVendor(vendor.id)} size="sm" variant="secondary" type="button">Archive</Button> : null}
+                          {vendor.isArchived ? <Button onClick={() => void onRestoreVendor(vendor.id)} size="sm" variant="secondary" type="button">Restore</Button> : null}
                         </div>
                       </div>
                     </details>
@@ -384,51 +391,47 @@ export function BillsPage({
         <p className="inline-empty muted-text">No bills match the current filter.</p>
       ) : (
         <div className="table-wrap finance-table-wrap" aria-label="Bills">
-          <table className="finance-table">
-            <thead>
-              <tr>
-                <th>Vendor</th>
-                <th>Category</th>
-                <th>Status</th>
-                <th className="finance-amount-col">Amount</th>
-                <th>Payment</th>
-                <th>Due</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredBills.map((bill) => (
-                <tr key={bill.id}>
-                  <td>
-                    <strong>{bill.vendor.name}</strong>
-                    <div className="muted-text">{bill.referenceNumber || "No reference"}</div>
-                  </td>
-                  <td>{bill.category || "No category"}</td>
-                  <td><StatusBadge status={bill.isArchived ? "ARCHIVED" : "ACTIVE"} /></td>
-                  <td className="finance-amount-col">{formatMoney(bill.amountCents)}</td>
-                  <td>{formatPaymentForm(bill.paymentForm)}</td>
-                  <td>{formatDateLabel(bill.dueDate)}</td>
-                  <td>
-                    <div className="finance-row-actions">
-                      {canEdit ? <button className="secondary-action" onClick={() => openEditBillModal(bill)} type="button">Open</button> : null}
-                      {canEdit ? (
-                        <details className="row-action-menu">
-                          <summary>More</summary>
-                          <div className="row-action-menu-panel">
-                            <div className="row-action-menu-group">
-                              <span className="row-action-menu-label">Bill</span>
-                              {!bill.isArchived ? <button className="secondary-action" onClick={() => void onArchiveBill(bill.id)} type="button">Archive</button> : null}
-                              {bill.isArchived ? <button className="secondary-action" onClick={() => void onRestoreBill(bill.id)} type="button">Restore</button> : null}
-                            </div>
-                          </div>
-                        </details>
-                      ) : null}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <Table
+            className="finance-table"
+            headers={[
+              { label: "Vendor", align: "left" },
+              { label: "Category", align: "left" },
+              { label: "Status", align: "left" },
+              { label: "Amount", align: "right" },
+              { label: "Payment", align: "left" },
+              { label: "Due", align: "left" },
+              { label: "Actions", align: "right" }
+            ]}
+            rows={filteredBills.map((bill) => ({
+              key: bill.id,
+              cells: [
+                <div key={`${bill.id}-vendor`}>
+                  <strong>{bill.vendor.name}</strong>
+                  <div className="muted-text">{bill.referenceNumber || "No reference"}</div>
+                </div>,
+                bill.category || "No category",
+                <StatusBadge key={`${bill.id}-status`} status={bill.isArchived ? "ARCHIVED" : "ACTIVE"} />,
+                formatMoney(bill.amountCents),
+                formatPaymentForm(bill.paymentForm),
+                formatDateLabel(bill.dueDate),
+                <div className="finance-row-actions" key={`${bill.id}-actions`}>
+                  {canEdit ? <Button onClick={() => openEditBillModal(bill)} size="sm" variant="secondary" type="button">Open</Button> : null}
+                  {canEdit ? (
+                    <details className="row-action-menu">
+                      <summary>More</summary>
+                      <div className="row-action-menu-panel">
+                        <div className="row-action-menu-group">
+                          <span className="row-action-menu-label">Bill</span>
+                          {!bill.isArchived ? <Button onClick={() => void onArchiveBill(bill.id)} size="sm" variant="secondary" type="button">Archive</Button> : null}
+                          {bill.isArchived ? <Button onClick={() => void onRestoreBill(bill.id)} size="sm" variant="secondary" type="button">Restore</Button> : null}
+                        </div>
+                      </div>
+                    </details>
+                  ) : null}
+                </div>
+              ]
+            }))}
+          />
         </div>
       )}
       </SectionPanel>
@@ -446,145 +449,140 @@ export function BillsPage({
           title={billEditorId ? "Edit Bill" : "Add Bill"}
         >
           <form className="entity-form" onSubmit={handleBillSubmit}>
-            <div className="modal-footer">
-              <button className="secondary-action" disabled={saving} onClick={() => setIsBillEditorOpen(false)} type="button">Cancel</button>
-              <button className="primary-action" disabled={saving || !hasActiveVendors} type="submit">{saving ? "Saving" : billEditorId ? "Update bill" : "Create bill"}</button>
-            </div>
+            <ModalActions
+              disabled={saving || !hasActiveVendors}
+              label={billSubmitLabel}
+              onCancel={() => setIsBillEditorOpen(false)}
+              saving={saving}
+            />
             <div className="field-grid">
-              <label>
-                Vendor - Required
-                <select
-                  disabled={vendors.length === 0}
-                  onChange={(event) => setBillDraft((current) => ({ ...current, vendorId: event.target.value }))}
-                  required
-                  value={billDraft.vendorId}
-                >
-                  <option value="">Select vendor</option>
-                  {vendors.filter((vendor) => !vendor.isArchived || vendor.id === billDraft.vendorId).map((vendor) => (
-                    <option key={vendor.id} value={vendor.id}>{vendor.name}</option>
-                  ))}
-                </select>
-                <small>Used for expense tracking.</small>
-              </label>
-              <label>
-                Bill reference - Optional
-                <input
-                  maxLength={500}
-                  onChange={(event) => setBillDraft((current) => ({ ...current, referenceNumber: event.target.value }))}
-                  placeholder="Vendor invoice number, receipt ID, or reference"
-                  value={billDraft.referenceNumber}
-                />
-                <small>Shown only in admin records.</small>
-              </label>
-              <label>
-                Bill date - Required
-                <input
-                  onChange={(event) => setBillDraft((current) => ({ ...current, billDate: event.target.value }))}
-                  required
-                  type="date"
-                  value={billDraft.billDate}
-                />
-                <small>Used for expense tracking.</small>
-              </label>
-              <label>
-                Due date - Required
-                <input
-                  onChange={(event) => setBillDraft((current) => ({ ...current, dueDate: event.target.value }))}
-                  required
-                  type="date"
-                  value={billDraft.dueDate}
-                />
-                <small>Used to track when this bill should be paid.</small>
-              </label>
-              <label>
-                Amount - Required
-                <input
-                  min={1}
-                  onChange={(event) => setBillDraft((current) => ({ ...current, amountCents: event.target.valueAsNumber || 0 }))}
-                  placeholder="Total bill amount before payment tracking"
-                  required
-                  type="number"
-                  value={billDraft.amountCents}
-                />
-                <small>Recorded in cents for the bill total.</small>
-              </label>
-              <label>
-                Payment status / method - Required
-                <select
-                  onChange={(event) => setBillDraft((current) => ({ ...current, paymentForm: event.target.value }))}
-                  required
-                  value={billDraft.paymentForm}
-                >
-                  {paymentFormOptions.map((option) => (
-                    <option key={option.value} value={option.value}>{option.label}</option>
-                  ))}
-                </select>
-                <small>Does not create a bank transaction.</small>
-              </label>
-              <label>
-                Payment date - Optional
-                <input
-                  onChange={(event) => setBillDraft((current) => ({ ...current, paymentDate: event.target.value }))}
-                  type="date"
-                  value={billDraft.paymentDate}
-                />
-                <small>Used only when a payment date is known.</small>
-              </label>
-              <label>
-                Category - Optional
-                <input
-                  maxLength={500}
-                  onChange={(event) => setBillDraft((current) => ({ ...current, category: event.target.value }))}
-                  placeholder="Supplies, software, subcontractor, or service"
-                  value={billDraft.category}
-                />
-                <small>Used for admin reporting and filtering.</small>
-              </label>
-              <label className="field-span-2">
-                Document URL / reference - Optional
-                <input
-                  maxLength={2048}
-                  onChange={(event) => setBillDraft((current) => ({ ...current, documentUrl: event.target.value }))}
-                  placeholder="Receipt, invoice file, or folder reference"
-                  value={billDraft.documentUrl}
-                />
-                <small>Shown only in admin records.</small>
-              </label>
-              <label className="field-span-2">
-                Document storage key - Optional
-                <input
-                  maxLength={2048}
-                  onChange={(event) => setBillDraft((current) => ({ ...current, documentStorageKey: event.target.value }))}
-                  placeholder="Storage key or internal document path"
-                  value={billDraft.documentStorageKey}
-                />
-                <small>Visible only to admin team.</small>
-              </label>
-              <label className="field-span-2">
-                Internal notes - Optional
-                <textarea
-                  maxLength={4000}
-                  onChange={(event) => setBillDraft((current) => ({ ...current, notes: event.target.value }))}
-                  placeholder="Notes for admin team only"
-                  rows={3}
-                  value={billDraft.notes}
-                />
-                <small>Visible only to admin team.</small>
-              </label>
-              <label className="field-span-2">
-                Upload document
-                <input
-                  accept=".pdf,.png,.jpg,.jpeg,.webp,application/pdf,image/png,image/jpeg,image/webp"
-                  onChange={(event) => setDocumentFile(event.target.files?.[0] ?? null)}
-                  type="file"
-                />
-                <small>Optional. Allowed: PDF, PNG, JPG, WebP up to 5 MB. Uploading does not create a payment.</small>
-              </label>
+              <Select
+                disabled={vendors.length === 0}
+                fullWidth
+                helperText="Used for expense tracking."
+                label="Vendor - Required"
+                onChange={(event) => setBillDraft((current) => ({ ...current, vendorId: event.target.value }))}
+                options={[
+                  { value: "", label: "Select vendor" },
+                  ...vendors.filter((vendor) => !vendor.isArchived || vendor.id === billDraft.vendorId).map((vendor) => ({
+                    value: vendor.id,
+                    label: vendor.name
+                  }))
+                ]}
+                required
+                value={billDraft.vendorId}
+              />
+              <Input
+                fullWidth
+                helperText="Shown only in admin records."
+                label="Bill reference - Optional"
+                maxLength={500}
+                onChange={(event) => setBillDraft((current) => ({ ...current, referenceNumber: event.target.value }))}
+                placeholder="Vendor invoice number, receipt ID, or reference"
+                value={billDraft.referenceNumber}
+              />
+              <Input
+                fullWidth
+                helperText="Used for expense tracking."
+                label="Bill date - Required"
+                onChange={(event) => setBillDraft((current) => ({ ...current, billDate: event.target.value }))}
+                required
+                type="date"
+                value={billDraft.billDate}
+              />
+              <Input
+                fullWidth
+                helperText="Used to track when this bill should be paid."
+                label="Due date - Required"
+                onChange={(event) => setBillDraft((current) => ({ ...current, dueDate: event.target.value }))}
+                required
+                type="date"
+                value={billDraft.dueDate}
+              />
+              <Input
+                fullWidth
+                helperText="Recorded in cents for the bill total."
+                label="Amount - Required"
+                min={1}
+                onChange={(event) => setBillDraft((current) => ({ ...current, amountCents: event.target.valueAsNumber || 0 }))}
+                placeholder="Total bill amount before payment tracking"
+                required
+                type="number"
+                value={billDraft.amountCents}
+              />
+              <Select
+                fullWidth
+                helperText="Does not create a bank transaction."
+                label="Payment status / method - Required"
+                onChange={(event) => setBillDraft((current) => ({ ...current, paymentForm: event.target.value }))}
+                options={paymentFormOptions.map((option) => ({ value: option.value, label: option.label }))}
+                required
+                value={billDraft.paymentForm}
+              />
+              <Input
+                fullWidth
+                helperText="Used only when a payment date is known."
+                label="Payment date - Optional"
+                onChange={(event) => setBillDraft((current) => ({ ...current, paymentDate: event.target.value }))}
+                type="date"
+                value={billDraft.paymentDate}
+              />
+              <Input
+                fullWidth
+                helperText="Used for admin reporting and filtering."
+                label="Category - Optional"
+                maxLength={500}
+                onChange={(event) => setBillDraft((current) => ({ ...current, category: event.target.value }))}
+                placeholder="Supplies, software, subcontractor, or service"
+                value={billDraft.category}
+              />
+              <Input
+                className="field-span-2"
+                fullWidth
+                helperText="Shown only in admin records."
+                label="Document URL / reference - Optional"
+                maxLength={2048}
+                onChange={(event) => setBillDraft((current) => ({ ...current, documentUrl: event.target.value }))}
+                placeholder="Receipt, invoice file, or folder reference"
+                value={billDraft.documentUrl}
+              />
+              <Input
+                className="field-span-2"
+                fullWidth
+                helperText="Visible only to admin team."
+                label="Document storage key - Optional"
+                maxLength={2048}
+                onChange={(event) => setBillDraft((current) => ({ ...current, documentStorageKey: event.target.value }))}
+                placeholder="Storage key or internal document path"
+                value={billDraft.documentStorageKey}
+              />
+              <Textarea
+                className="field-span-2"
+                fullWidth
+                helperText="Visible only to admin team."
+                label="Internal notes - Optional"
+                maxLength={4000}
+                onChange={(event) => setBillDraft((current) => ({ ...current, notes: event.target.value }))}
+                placeholder="Notes for admin team only"
+                rows={3}
+                value={billDraft.notes}
+              />
+              <Input
+                accept=".pdf,.png,.jpg,.jpeg,.webp,application/pdf,image/png,image/jpeg,image/webp"
+                className="field-span-2"
+                fullWidth
+                helperText="Optional. Allowed: PDF, PNG, JPG, WebP up to 5 MB. Uploading does not create a payment."
+                label="Upload document"
+                onChange={(event) => setDocumentFile(event.target.files?.[0] ?? null)}
+                type="file"
+              />
             </div>
-            <div className="modal-footer">
-              <button className="secondary-action" disabled={saving} onClick={() => setIsBillEditorOpen(false)} type="button">Cancel</button>
-              <button className="primary-action" disabled={saving || !hasActiveVendors} type="submit">{saving ? "Saving" : billEditorId ? "Update bill" : "Create bill"}</button>
-            </div>
+            <ModalActions
+              disabled={saving || !hasActiveVendors}
+              label={billSubmitLabel}
+              onCancel={() => setIsBillEditorOpen(false)}
+              saving={saving}
+            />
           </form>
         </Modal>
       ) : null}
@@ -593,20 +591,22 @@ export function BillsPage({
         <Modal eyebrow={vendorEditorId ? "Edit" : "Create"} onClose={() => setIsVendorEditorOpen(false)} size="sm" title={vendorEditorId ? "Edit Vendor" : "Add Vendor"}>
           <form className="entity-form" onSubmit={handleVendorSubmit}>
             <div className="field-grid">
-              <label className="field-span-2">
-                Vendor name
-                <input
-                  maxLength={255}
-                  onChange={(event) => setVendorDraft({ name: event.target.value })}
-                  required
-                  value={vendorDraft.name}
-                />
-              </label>
+              <Input
+                className="field-span-2"
+                fullWidth
+                label="Vendor name"
+                maxLength={255}
+                onChange={(event) => setVendorDraft({ name: event.target.value })}
+                required
+                value={vendorDraft.name}
+              />
             </div>
-            <div className="modal-footer">
-              <button className="secondary-action" disabled={saving} onClick={() => setIsVendorEditorOpen(false)} type="button">Cancel</button>
-              <button className="primary-action" disabled={saving} type="submit">{saving ? "Saving" : vendorEditorId ? "Update Vendor" : "Save Vendor"}</button>
-            </div>
+            <ModalActions
+              disabled={saving}
+              label={vendorSubmitLabel}
+              onCancel={() => setIsVendorEditorOpen(false)}
+              saving={saving}
+            />
           </form>
         </Modal>
       ) : null}
