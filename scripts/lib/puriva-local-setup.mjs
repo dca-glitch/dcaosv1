@@ -4,12 +4,19 @@
  */
 
 import {
-  buildPurivaWorkflowBriefFoundationInput,
+  buildPurivaSeoPlanContext,
+  buildPurivaWorkflowBriefPlanningInput,
+  ensurePurivaSeoPlanApiSeed,
+  PURIVA_SEO_PLAN_VERSION,
+  purivaSeoPlanScopeNotes,
+  validatePurivaSeoPlanContext,
+  workflowBriefPlanningMatches
+} from "./puriva-seo-plan.mjs";
+import {
   ensurePurivaMarketIntelligenceApiSeed,
   purivaMarketIntelligenceProjectTitle,
   PURIVA_MARKET_INTELLIGENCE_VERSION,
-  validatePurivaMarketIntelligenceContext,
-  workflowBriefFoundationMatches
+  validatePurivaMarketIntelligenceContext
 } from "./puriva-market-intelligence.mjs";
 import {
   PURIVA_SERVICE_TAXONOMY_VERSION,
@@ -104,9 +111,11 @@ export async function ensurePurivaLocalSetup({
       aiDeliveryProject: false,
       workflowBrief: false,
       clientAccess: false,
-      foundationAttached: false,
       marketIntelligenceProject: false,
-      marketIntelligenceHandoffApplied: false
+      marketIntelligenceHandoffApplied: false,
+      seoPlanAttached: false,
+      seoScopeNotesAttached: false,
+      seoContentPlan: false
     },
     skipped: [],
     actions
@@ -302,15 +311,42 @@ export async function ensurePurivaLocalSetup({
   result.created.marketIntelligenceProject = miSeed.created.miProject;
   result.created.marketIntelligenceHandoffApplied = miSeed.created.handoffApplied;
 
-  const expectedStructuredInput = buildPurivaWorkflowBriefFoundationInput();
+  const seoValidation = validatePurivaSeoPlanContext(buildPurivaSeoPlanContext(targetMonth));
+  if (!seoValidation.ok) {
+    throw new Error(`Puriva SEO plan invalid: ${seoValidation.errors.join("; ")}`);
+  }
+
+  const seoSeed = await ensurePurivaSeoPlanApiSeed({
+    request,
+    token,
+    client,
+    aiDeliveryProject,
+    targetMonth,
+    log: note
+  });
+  result.seoPlan = {
+    version: PURIVA_SEO_PLAN_VERSION,
+    targetMonth,
+    itemCount: seoSeed.context.items.length,
+    medicalReviewItemCount: seoSeed.context.items.filter((item) => item.medicalReviewRequired).length,
+    verificationItemCount: seoSeed.context.items.filter((item) => item.verificationRequired).length,
+    scopeNotes: purivaSeoPlanScopeNotes(targetMonth)
+  };
+  result.created.seoScopeNotesAttached = seoSeed.created.scopeNotesAttached;
+  result.created.seoContentPlan = seoSeed.created.contentPlan;
+
+  const expectedStructuredInput = buildPurivaWorkflowBriefPlanningInput(targetMonth);
   let briefDetailResponse = await request(`/workflow-briefs/${workflowBrief.id}`, { token });
   if (briefDetailResponse.status !== 200 || briefDetailResponse.body?.ok !== true) {
     throw new Error(`Workflow brief detail failed with HTTP ${briefDetailResponse.status}.`);
   }
 
   let briefDetail = briefDetailResponse.body.data ?? workflowBrief;
-  if (workflowBriefFoundationMatches(briefDetail.structuredInputJson)) {
-    note("reused workflow brief foundation", `${PURIVA_SERVICE_TAXONOMY_VERSION} + ${PURIVA_MARKET_INTELLIGENCE_VERSION}`);
+  if (workflowBriefPlanningMatches(briefDetail.structuredInputJson, targetMonth)) {
+    note(
+      "reused workflow brief planning input",
+      `${PURIVA_SERVICE_TAXONOMY_VERSION} + ${PURIVA_MARKET_INTELLIGENCE_VERSION} + ${PURIVA_SEO_PLAN_VERSION}`
+    );
   } else {
     const patchResponse = await request(`/workflow-briefs/${workflowBrief.id}`, {
       method: "PATCH",
@@ -320,21 +356,26 @@ export async function ensurePurivaLocalSetup({
       }
     });
     if (patchResponse.status !== 200 || patchResponse.body?.ok !== true) {
-      throw new Error(`Puriva workflow brief foundation attach failed with HTTP ${patchResponse.status}.`);
+      throw new Error(`Puriva workflow brief planning attach failed with HTTP ${patchResponse.status}.`);
     }
-    if (!workflowBriefFoundationMatches(patchResponse.body?.data?.structuredInputJson)) {
-      throw new Error("Puriva workflow brief foundation attach did not persist structured input.");
+    if (!workflowBriefPlanningMatches(patchResponse.body?.data?.structuredInputJson, targetMonth)) {
+      throw new Error("Puriva workflow brief planning attach did not persist structured input.");
     }
     briefDetail = patchResponse.body.data ?? briefDetail;
-    result.created.foundationAttached = true;
-    note("attached workflow brief foundation", `${PURIVA_SERVICE_TAXONOMY_VERSION} + ${PURIVA_MARKET_INTELLIGENCE_VERSION}`);
+    result.created.seoPlanAttached = true;
+    note(
+      "attached workflow brief planning input",
+      `${PURIVA_SERVICE_TAXONOMY_VERSION} + ${PURIVA_MARKET_INTELLIGENCE_VERSION} + ${PURIVA_SEO_PLAN_VERSION}`
+    );
   }
 
   result.foundation = {
     taxonomyVersion: PURIVA_SERVICE_TAXONOMY_VERSION,
     marketIntelligenceVersion: PURIVA_MARKET_INTELLIGENCE_VERSION,
+    seoPlanVersion: PURIVA_SEO_PLAN_VERSION,
     attached: true,
-    serviceCategoryCount: expectedStructuredInput.serviceCategories.length
+    serviceCategoryCount: expectedStructuredInput.serviceCategories.length,
+    seoPlanItemCount: expectedStructuredInput.seoPlan?.items?.length ?? 0
   };
   result.workflowBrief = briefDetail;
 

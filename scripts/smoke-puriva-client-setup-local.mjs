@@ -12,18 +12,27 @@ import {
   responseHasSecrets
 } from "./lib/puriva-local-setup.mjs";
 import {
+  buildPurivaSeoPlanContext,
+  findUnsafeApprovedPhrasesInSeoPlan,
+  isPurivaSeoPlanBriefAttachment,
+  PURIVA_SEO_PLAN_MARKER,
+  PURIVA_SEO_PLAN_VERSION,
+  purivaSeoPlanScopeNotes,
+  validatePurivaSeoPlanContext,
+  workflowBriefPlanningMatches
+} from "./lib/puriva-seo-plan.mjs";
+import {
   buildPurivaMarketIntelligenceContext,
   findUnsafeApprovedPhrasesInMarketIntelligence,
   isPurivaMarketIntelligenceBriefAttachment,
   PURIVA_MARKET_INTELLIGENCE_VERSION,
-  PURIVA_REQUIRED_SERVICE_CATEGORY_IDS,
   purivaMarketIntelligenceProjectTitle,
-  validatePurivaMarketIntelligenceContext,
-  workflowBriefFoundationMatches
+  validatePurivaMarketIntelligenceContext
 } from "./lib/puriva-market-intelligence.mjs";
 import {
   getPurivaServiceTaxonomy,
   PURIVA_HIGH_RISK_CATEGORY_IDS,
+  PURIVA_REQUIRED_SERVICE_CATEGORY_IDS,
   PURIVA_SERVICE_TAXONOMY_VERSION,
   validatePurivaServiceTaxonomy,
   findForbiddenPromotionalPhrases
@@ -213,11 +222,50 @@ async function main() {
     findUnsafeApprovedPhrasesInMarketIntelligence(miContext).join(", ") || "clean"
   );
 
+  const seoValidation = validatePurivaSeoPlanContext(buildPurivaSeoPlanContext(targetMonth));
+  record("puriva seo plan validates", seoValidation.ok, seoValidation.errors.join("; ") || "ok");
+
+  const seoContext = buildPurivaSeoPlanContext(targetMonth);
+  record(
+    "puriva seo plan includes all service categories",
+    PURIVA_REQUIRED_SERVICE_CATEGORY_IDS.every((id) => seoContext.items.some((item) => item.serviceCategoryId === id)),
+    `${seoContext.items.length} items`
+  );
+  record(
+    "puriva seo plan includes both audience segments",
+    new Set(seoContext.items.flatMap((item) => item.audienceSegments)).has("local_clients") &&
+      new Set(seoContext.items.flatMap((item) => item.audienceSegments)).has("international_medical_tourists"),
+    `${seoContext.audienceSegments.length} taxonomy segments`
+  );
+  record(
+    "puriva seo plan items have intent type and priority",
+    seoContext.items.every((item) => item.searchIntent && item.contentType && item.priority),
+    "all items complete"
+  );
+  for (const highRiskId of PURIVA_HIGH_RISK_CATEGORY_IDS) {
+    const highRiskItems = seoContext.items.filter((item) => item.serviceCategoryId === highRiskId);
+    record(
+      `seo high-risk category ${highRiskId} requires medical review`,
+      highRiskItems.length > 0 && highRiskItems.every((item) => item.medicalReviewRequired),
+      `${highRiskItems.length} items`
+    );
+  }
+  record(
+    "puriva seo verification topics flagged",
+    seoContext.items.some((item) => item.verificationRequired),
+    `${seoContext.items.filter((item) => item.verificationRequired).length} items`
+  );
+  record(
+    "puriva seo avoids unsafe approved phrases",
+    findUnsafeApprovedPhrasesInSeoPlan(seoContext).length === 0,
+    findUnsafeApprovedPhrasesInSeoPlan(seoContext).join(", ") || "clean"
+  );
+
   const briefDetail = await request(`/workflow-briefs/${firstRun.workflowBrief.id}`, { token });
   const structuredInput = briefDetail.body?.data?.structuredInputJson ?? null;
   record(
-    "workflow brief exposes Puriva foundation structured input",
-    workflowBriefFoundationMatches(structuredInput),
+    "workflow brief exposes Puriva planning structured input",
+    workflowBriefPlanningMatches(structuredInput, targetMonth),
     structuredInput?.version ?? "missing"
   );
   record(
@@ -240,6 +288,47 @@ async function main() {
     "workflow brief mi service summary count",
     structuredInput?.marketIntelligence?.serviceCategorySummaries?.length === PURIVA_REQUIRED_SERVICE_CATEGORY_IDS.length,
     `${structuredInput?.marketIntelligence?.serviceCategorySummaries?.length ?? 0}`
+  );
+  record(
+    "workflow brief seo plan attachment",
+    isPurivaSeoPlanBriefAttachment(structuredInput?.seoPlan),
+    structuredInput?.seoPlan?.version ?? "missing"
+  );
+  record(
+    "workflow brief seo plan version",
+    structuredInput?.seoPlan?.version === PURIVA_SEO_PLAN_VERSION,
+    structuredInput?.seoPlan?.version ?? "missing"
+  );
+  record(
+    "workflow brief seo plan item count",
+    structuredInput?.seoPlan?.items?.length === seoContext.items.length,
+    `${structuredInput?.seoPlan?.items?.length ?? 0}`
+  );
+
+  record(
+    "puriva seo scope notes attached to ai delivery project",
+    typeof firstRun.seoPlan?.scopeNotes === "string" && firstRun.seoPlan.scopeNotes.includes(PURIVA_SEO_PLAN_MARKER),
+    firstRun.seoPlan?.version ?? "missing"
+  );
+
+  const projectsResponse = await request("/ai-delivery-projects", { token });
+  const refreshedProject = (projectsResponse.body?.data?.aiDeliveryProjects ?? []).find(
+    (entry) => entry.id === firstRun.aiDeliveryProject.id
+  );
+  record(
+    "ai delivery project planned scope notes include seo marker",
+    refreshedProject?.plannedContentScopeNotes?.includes(PURIVA_SEO_PLAN_MARKER) === true,
+    purivaSeoPlanScopeNotes(targetMonth).slice(0, 48)
+  );
+
+  const contentPlanResponse = await request(`/ai-delivery-projects/${firstRun.aiDeliveryProject.id}/content-plan`, {
+    token
+  });
+  const contentPlanItems = contentPlanResponse.body?.data?.contentPlan?.items ?? [];
+  record(
+    "ai delivery content plan seeded from seo plan",
+    contentPlanItems.filter((item) => item.notes?.includes(PURIVA_SEO_PLAN_MARKER)).length >= seoContext.items.length,
+    `${contentPlanItems.length} items`
   );
 
   record(
@@ -355,7 +444,7 @@ async function main() {
 
   if (failed.length === 0) {
     console.log(
-      "PROVEN: Puriva local client setup is idempotent with taxonomy + MI foundation, without credentials or live publish."
+      "PROVEN: Puriva local client setup is idempotent with taxonomy + MI + SEO planning, without credentials or live publish."
     );
   } else {
     console.log("NOT PROVEN: one or more Puriva client setup checks failed.");
