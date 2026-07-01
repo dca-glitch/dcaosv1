@@ -1,0 +1,59 @@
+{
+  "version": "PURIVA_MONTHLY_REPORT_V1",
+  "seedLabel": "Local operator-reviewed monthly report scaffold — not final client copy or live analytics",
+  "clientDomain": "puriva.id",
+  "market": "Bali licensed aesthetic clinic market",
+  "verificationRequiredNotes": [
+    "Hospital, accreditation, partner, and license claims require verification before publication.",
+    "Monthly report recommendations are planning guidance only — without outcome promises.",
+    "Placeholder metrics are manual snapshots for local proof; live GA/GSC OAuth is deferred."
+  ],
+  "releaseStateNotes": [
+    "Final release package is not finalized for foundation scaffold projects.",
+    "Publication handoff and live publish remain blocked until package completeness and approvals.",
+    "Client portal monthly reports remain hidden until admin promotes report status to FINAL."
+  ],
+  "metricsFixtureNote": "Manual placeholder metrics snapshot for local monthly report proof only — not live GA/GSC data.",
+  "recommendationTemplates": [
+    {
+      "id": "complete_medical_review_queue",
+      "priority": "high",
+      "theme": "Medical review pipeline",
+      "recommendation": "Prioritize medical review for high-risk service planning items before expanding draft production or client-facing release steps.",
+      "rationale": "Several planned SEO and draft scaffolds require prescriber or compliance review under Puriva taxonomy rules.",
+      "verificationRequired": false
+    },
+    {
+      "id": "resolve_verification_blockers",
+      "priority": "high",
+      "theme": "Verification-required claims",
+      "recommendation": "Resolve verification-required trust, license, and facility claims with operator-approved evidence before publishing stem cell or hospital-partner oriented content.",
+      "rationale": "Market intelligence and SEO planning flagged verification-required topics that must not be stated as approved facts.",
+      "verificationRequired": true
+    },
+    {
+      "id": "expand_seo_foundation",
+      "priority": "medium",
+      "theme": "SEO foundation expansion",
+      "recommendation": "Continue foundation-stage SEO planning for remaining service categories using educational, consultation-first positioning without outcome promises.",
+      "rationale": "Taxonomy coverage and MI gap categories support next-month planning for informational and commercial investigation intents.",
+      "verificationRequired": false
+    },
+    {
+      "id": "image_scaffold_review",
+      "priority": "medium",
+      "theme": "Visual planning discipline",
+      "recommendation": "Keep image prompt scaffolds internal until medical review and verification gates clear; use alt-text drafts for compliance review only.",
+      "rationale": "Image packages remain internal admin scaffolds linked to content production items.",
+      "verificationRequired": false
+    },
+    {
+      "id": "metrics_placeholder_discipline",
+      "priority": "low",
+      "theme": "Performance reporting",
+      "recommendation": "Maintain approved manual metric snapshots for monthly reporting until live GA/GSC integration is explicitly enabled; do not present placeholder metrics as audited performance results.",
+      "rationale": "Local monthly report proof uses imported placeholder metrics only.",
+      "verificationRequired": false
+    }
+  ]
+}

@@ -29,6 +29,10 @@ import {
 } from "./lib/puriva-local-setup.mjs";
 import { PURIVA_CONTENT_PRODUCTION_MARKER } from "./lib/puriva-content-production.mjs";
 import { PURIVA_IMAGE_PACKAGE_MARKER } from "./lib/puriva-image-package.mjs";
+import {
+  PURIVA_MONTHLY_REPORT_MARKER,
+  PURIVA_MONTHLY_REPORT_VERSION
+} from "./lib/puriva-monthly-report.mjs";
 
 const smokeMarker = "[SMOKE][PURIVA_CLIENT_PORTAL_BOUNDARY]";
 const apiBaseUrl = getApiBaseUrl();
@@ -198,6 +202,26 @@ async function main() {
     "client portal release package clean empty state",
     releasePackage.status === 200 && releasePackage.body?.data?.releasePackage == null,
     releasePackage.body?.data?.releasePackage ? "unexpected package" : "absent"
+  );
+
+  const portalMonthlyReports = await request(`/client-portal/projects/${portalProject.id}/monthly-reports`, {
+    token: portalToken
+  });
+  record(
+    "client portal monthly reports hide draft scaffold report",
+    portalMonthlyReports.status === 200 &&
+      (portalMonthlyReports.body?.data?.monthlyReports ?? []).length === 0,
+    `${portalMonthlyReports.body?.data?.monthlyReports?.length ?? 0} visible`
+  );
+  record(
+    "client portal monthly reports omit puriva scaffold marker",
+    !(portalMonthlyReports.text ?? "").includes(PURIVA_MONTHLY_REPORT_MARKER),
+    (portalMonthlyReports.text ?? "").includes(PURIVA_MONTHLY_REPORT_MARKER) ? "marker leaked" : "clean"
+  );
+  record(
+    "puriva monthly report version tracked in setup",
+    firstRun.monthlyReport?.version === PURIVA_MONTHLY_REPORT_VERSION,
+    firstRun.monthlyReport?.version ?? "missing"
   );
 
   const forbiddenAdminPaths = [

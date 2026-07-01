@@ -35,6 +35,12 @@ import {
   validatePurivaServiceTaxonomy
 } from "./puriva-service-taxonomy.mjs";
 import { ensurePurivaClientPortalAuth } from "./puriva-client-portal-boundary-helpers.mjs";
+import {
+  buildPurivaMonthlyReportContext,
+  ensurePurivaMonthlyReportApiSeed,
+  PURIVA_MONTHLY_REPORT_VERSION,
+  validatePurivaMonthlyReportContext
+} from "./puriva-monthly-report.mjs";
 
 export const PURIVA_SETUP_MARKER = "[PURIVA_LOCAL_SETUP]";
 
@@ -132,6 +138,10 @@ export async function ensurePurivaLocalSetup({
       contentDraftScaffolds: false,
       imagePackageAttached: false,
       imagePackageConcepts: false,
+      monthlyReport: false,
+      monthlyReportMetrics: false,
+      monthlyReportMetricsApproved: false,
+      monthlyReportMiContext: false,
       portalUser: false,
       portalPasswordSynced: false
     },
@@ -402,6 +412,38 @@ export async function ensurePurivaLocalSetup({
   };
   result.created.imagePackageConcepts = imagePackageSeed.created.articleImages > 0;
 
+  const monthlyReportValidation = validatePurivaMonthlyReportContext(
+    buildPurivaMonthlyReportContext(targetMonth)
+  );
+  if (!monthlyReportValidation.ok) {
+    throw new Error(`Puriva monthly report invalid: ${monthlyReportValidation.errors.join("; ")}`);
+  }
+
+  const monthlyReportSeed = await ensurePurivaMonthlyReportApiSeed({
+    request,
+    token,
+    aiDeliveryProject,
+    targetMonth,
+    marketIntelligenceHandoffId: miSeed.handoff.id,
+    log: note
+  });
+  result.monthlyReport = {
+    version: PURIVA_MONTHLY_REPORT_VERSION,
+    reportId: monthlyReportSeed.report.id,
+    status: monthlyReportSeed.report.status,
+    plannedSeoItemCount: monthlyReportSeed.context.deliveryStatus.plannedSeoItemCount,
+    draftScaffoldCount: monthlyReportSeed.context.deliveryStatus.draftScaffoldCount,
+    imagePackageCount: monthlyReportSeed.context.deliveryStatus.imagePackageCount,
+    medicalReviewBlockerCount: monthlyReportSeed.context.deliveryStatus.medicalReviewBlockerCount,
+    verificationBlockerCount: monthlyReportSeed.context.deliveryStatus.verificationBlockerCount,
+    finalReleaseState: monthlyReportSeed.context.deliveryStatus.finalReleaseState,
+    recommendationCount: monthlyReportSeed.context.nextMonthRecommendations.length
+  };
+  result.created.monthlyReport = monthlyReportSeed.created.report;
+  result.created.monthlyReportMetrics = monthlyReportSeed.created.metrics;
+  result.created.monthlyReportMetricsApproved = monthlyReportSeed.created.metricsApproved;
+  result.created.monthlyReportMiContext = monthlyReportSeed.created.miContextApplied;
+
   const expectedStructuredInput = buildPurivaWorkflowBriefImagePackageInput(targetMonth);
   let briefDetailResponse = await request(`/workflow-briefs/${workflowBrief.id}`, { token });
   if (briefDetailResponse.status !== 200 || briefDetailResponse.body?.ok !== true) {
@@ -442,6 +484,7 @@ export async function ensurePurivaLocalSetup({
     seoPlanVersion: PURIVA_SEO_PLAN_VERSION,
     contentProductionVersion: PURIVA_CONTENT_PRODUCTION_VERSION,
     imagePackageVersion: PURIVA_IMAGE_PACKAGE_VERSION,
+    monthlyReportVersion: PURIVA_MONTHLY_REPORT_VERSION,
     attached: true,
     serviceCategoryCount: expectedStructuredInput.serviceCategories.length,
     seoPlanItemCount: expectedStructuredInput.seoPlan?.items?.length ?? 0,

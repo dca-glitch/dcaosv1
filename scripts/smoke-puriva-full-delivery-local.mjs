@@ -33,6 +33,14 @@ import {
   workflowBriefImagePackageMatches
 } from "./lib/puriva-image-package.mjs";
 import {
+  buildPurivaMonthlyReportContext,
+  findUnsafeApprovedPhrasesInMonthlyReport,
+  monthlyReportHasPurivaMarker,
+  PURIVA_MONTHLY_REPORT_MARKER,
+  PURIVA_MONTHLY_REPORT_VERSION,
+  validatePurivaMonthlyReportContext
+} from "./lib/puriva-monthly-report.mjs";
+import {
   buildPurivaContentProductionContext,
   isPurivaContentProductionBriefAttachment,
   PURIVA_CONTENT_PRODUCTION_MARKER,
@@ -322,6 +330,52 @@ async function main() {
     "ai delivery image scaffolds have no generated assets",
     imagePackageImages.every((image) => !image.storageKey && !image.finalImageUrl),
     "no storage/final urls"
+  );
+
+  const monthlyReportContext = buildPurivaMonthlyReportContext(targetMonth);
+  const monthlyReportValidation = validatePurivaMonthlyReportContext(monthlyReportContext);
+  record(
+    "puriva monthly report validates",
+    monthlyReportValidation.ok,
+    monthlyReportValidation.errors.join("; ") || "ok"
+  );
+  record(
+    "puriva monthly report aggregates delivery status",
+    monthlyReportContext.deliveryStatus.plannedSeoItemCount > 0 &&
+      monthlyReportContext.deliveryStatus.medicalReviewBlockerCount > 0 &&
+      monthlyReportContext.deliveryStatus.verificationBlockerCount > 0,
+    monthlyReportContext.deliveryStatus.finalReleaseState
+  );
+  record(
+    "puriva monthly report recommendations compliance-safe",
+    findUnsafeApprovedPhrasesInMonthlyReport(monthlyReportContext).length === 0,
+    "clean"
+  );
+  record(
+    "puriva monthly report seeded in local setup",
+    Boolean(firstRun.monthlyReport?.reportId),
+    firstRun.monthlyReport?.reportId ?? "missing"
+  );
+  record(
+    "puriva monthly report remains draft until admin finalizes",
+    firstRun.monthlyReport?.status === "DRAFT",
+    firstRun.monthlyReport?.status ?? "missing"
+  );
+
+  const adminMonthlyReport = await request(`/ai-delivery/reports/monthly/${firstRun.aiDeliveryProject.id}`, {
+    token: adminToken
+  });
+  record("admin monthly report endpoint", adminMonthlyReport.status === 200, `${adminMonthlyReport.status}`);
+  const adminReport = adminMonthlyReport.body?.data?.report ?? null;
+  record(
+    "admin monthly report has puriva marker",
+    monthlyReportHasPurivaMarker(adminReport ?? {}),
+    PURIVA_MONTHLY_REPORT_MARKER
+  );
+  record(
+    "admin monthly report response hides secrets",
+    !responseHasSecrets(adminMonthlyReport.text ?? ""),
+    "safe fields"
   );
 
   const releasePackageStatus = await request(`/workflow-briefs/${firstRun.workflowBrief.id}/release-package`, {

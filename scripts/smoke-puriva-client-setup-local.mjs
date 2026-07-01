@@ -22,6 +22,14 @@ import {
   workflowBriefImagePackageMatches
 } from "./lib/puriva-image-package.mjs";
 import {
+  buildPurivaMonthlyReportContext,
+  findUnsafeApprovedPhrasesInMonthlyReport,
+  monthlyReportHasPurivaMarker,
+  PURIVA_MONTHLY_REPORT_MARKER,
+  PURIVA_MONTHLY_REPORT_VERSION,
+  validatePurivaMonthlyReportContext
+} from "./lib/puriva-monthly-report.mjs";
+import {
   buildPurivaContentProductionContext,
   findUnsafeApprovedPhrasesInContentProduction,
   isPurivaContentProductionBriefAttachment,
@@ -488,6 +496,61 @@ async function main() {
     "no storage/final urls"
   );
 
+  const monthlyReportContext = buildPurivaMonthlyReportContext(targetMonth);
+  const monthlyReportValidation = validatePurivaMonthlyReportContext(monthlyReportContext);
+  record(
+    "puriva monthly report validates",
+    monthlyReportValidation.ok,
+    monthlyReportValidation.errors.join("; ") || "ok"
+  );
+  record(
+    "puriva monthly report includes planned outputs",
+    monthlyReportContext.deliveryStatus.plannedSeoItemCount > 0 &&
+      monthlyReportContext.deliveryStatus.draftScaffoldCount > 0 &&
+      monthlyReportContext.deliveryStatus.imagePackageCount > 0,
+    `seo=${monthlyReportContext.deliveryStatus.plannedSeoItemCount}`
+  );
+  record(
+    "puriva monthly report includes medical review blockers",
+    monthlyReportContext.deliveryStatus.medicalReviewBlockerCount > 0,
+    `${monthlyReportContext.deliveryStatus.medicalReviewBlockerCount}`
+  );
+  record(
+    "puriva monthly report includes verification blockers",
+    monthlyReportContext.deliveryStatus.verificationBlockerCount > 0,
+    `${monthlyReportContext.deliveryStatus.verificationBlockerCount}`
+  );
+  record(
+    "puriva monthly report recommendations are compliance-safe",
+    findUnsafeApprovedPhrasesInMonthlyReport(monthlyReportContext).length === 0,
+    "clean"
+  );
+  record(
+    "puriva monthly report seeded via local setup",
+    Boolean(firstRun.monthlyReport?.reportId) && firstRun.monthlyReport.version === PURIVA_MONTHLY_REPORT_VERSION,
+    firstRun.monthlyReport?.reportId ?? "missing"
+  );
+  record(
+    "puriva monthly report remains draft for client boundary",
+    firstRun.monthlyReport?.status === "DRAFT",
+    firstRun.monthlyReport?.status ?? "missing"
+  );
+
+  const adminMonthlyReport = await request(`/ai-delivery/reports/monthly/${firstRun.aiDeliveryProject.id}`, {
+    token
+  });
+  const adminReport = adminMonthlyReport.body?.data?.report ?? null;
+  record(
+    "admin monthly report exposes scaffold marker",
+    monthlyReportHasPurivaMarker(adminReport ?? {}),
+    PURIVA_MONTHLY_REPORT_MARKER
+  );
+  record(
+    "admin monthly report hides credential fields",
+    !responseHasSecrets(adminMonthlyReport.text ?? ""),
+    "safe fields"
+  );
+
   record(
     "puriva seo scope notes attached to ai delivery project",
     typeof firstRun.seoPlan?.scopeNotes === "string" && firstRun.seoPlan.scopeNotes.includes(PURIVA_SEO_PLAN_MARKER),
@@ -627,7 +690,7 @@ async function main() {
 
   if (failed.length === 0) {
     console.log(
-      "PROVEN: Puriva local client setup is idempotent with taxonomy + MI + SEO + content production + image package scaffolds, without credentials or live publish."
+      "PROVEN: Puriva local client setup is idempotent with taxonomy + MI + SEO + content production + image package + monthly report scaffolds, without credentials or live publish."
     );
   } else {
     console.log("NOT PROVEN: one or more Puriva client setup checks failed.");
