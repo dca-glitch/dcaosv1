@@ -122,6 +122,37 @@ type ContentDraftStatus = {
   }>;
 };
 
+type DeliverablePackagingStatus = {
+  briefId: string;
+  eligibleDraftCount: number;
+  packagedCount: number;
+  unpackagedCount: number;
+  pendingReviewCount: number;
+  approvedByClientCount: number;
+  rejectedCount: number;
+  canPackageAll: boolean;
+  canManagePackaging: boolean;
+  blockReason: string | null;
+  packagingStage: string;
+  lastPackagedAt: string | null;
+  items: Array<{
+    contentPlanItemId: string;
+    planItemTitle: string;
+    draftId: string | null;
+    deliverableId: string | null;
+    deliverableStatus: string | null;
+    packagingState: string;
+    canRepackage: boolean;
+    isClientReviewable: boolean;
+  }>;
+  deliverables: Array<{
+    id: string;
+    title: string;
+    status: string;
+    clientRejectionReason: string | null;
+  }>;
+};
+
 async function workflowBriefsApiRequest<T>(path: string, options?: { method?: string; body?: unknown }): Promise<ApiResponse<T>> {
   const token = sessionStorage.getItem(SESSION_STORAGE_KEY);
   const response = await fetch(`${API_BASE_URL}/workflow-briefs${path}`, {
@@ -237,6 +268,8 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
   const [seedLoading, setSeedLoading] = useState(false);
   const [draftStatus, setDraftStatus] = useState<ContentDraftStatus | null>(null);
   const [draftLoading, setDraftLoading] = useState(false);
+  const [packagingStatus, setPackagingStatus] = useState<DeliverablePackagingStatus | null>(null);
+  const [packagingLoading, setPackagingLoading] = useState(false);
 
   const loadBriefs = useCallback(async () => {
     setLoading(true);
@@ -289,6 +322,17 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
     setDraftLoading(false);
   }, []);
 
+  const loadPackagingStatus = useCallback(async (briefId: string) => {
+    setPackagingLoading(true);
+    const response = await workflowBriefsApiRequest<DeliverablePackagingStatus>(`/${briefId}/deliverable-packaging`);
+    if (response.ok) {
+      setPackagingStatus(response.data);
+    } else {
+      setPackagingStatus(null);
+    }
+    setPackagingLoading(false);
+  }, []);
+
   useEffect(() => {
     void loadBriefs();
   }, [loadBriefs]);
@@ -303,12 +347,14 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
         setSeedStatus(null);
         setDraftStatus(null);
       }
+      void loadPackagingStatus(selectedId);
     } else {
       setDetail(null);
       setSeedStatus(null);
       setDraftStatus(null);
+      setPackagingStatus(null);
     }
-  }, [selectedId, loadDetail, loadSeedStatus, loadDraftStatus, canManageAi]);
+  }, [selectedId, loadDetail, loadSeedStatus, loadDraftStatus, loadPackagingStatus, canManageAi]);
 
   useEffect(() => {
     const plan = detail?.productionPlans?.[0];
@@ -428,6 +474,7 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
     setDraftStatus(response.data.status);
     await loadDetail(selectedId);
     await loadDraftStatus(selectedId);
+    await loadPackagingStatus(selectedId);
     setActionLoading(false);
   }
 
@@ -446,7 +493,112 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
     }
     setDraftStatus(response.data.status);
     await loadDraftStatus(selectedId);
+    await loadPackagingStatus(selectedId);
     setActionLoading(false);
+  }
+
+  async function handlePackageAllDeliverables() {
+    if (!selectedId) return;
+    setActionLoading(true);
+    setError(null);
+    const response = await workflowBriefsApiRequest<{
+      outcomes: { created: number; reused: number; updated: number };
+      status: DeliverablePackagingStatus;
+    }>(`/${selectedId}/package-deliverables`, { method: "POST" });
+    if (!response.ok) {
+      setError(response.error.message);
+      setActionLoading(false);
+      return;
+    }
+    setPackagingStatus(response.data.status);
+    await loadPackagingStatus(selectedId);
+    setActionLoading(false);
+  }
+
+  async function handleRepackageDeliverable(contentPlanItemId: string, contentDraftId: string | null) {
+    if (!selectedId) return;
+    setActionLoading(true);
+    setError(null);
+    const response = await workflowBriefsApiRequest<{ status: DeliverablePackagingStatus }>(
+      `/${selectedId}/repackage-deliverable`,
+      {
+        method: "POST",
+        body: {
+          contentPlanItemId,
+          ...(contentDraftId ? { contentDraftId } : {})
+        }
+      }
+    );
+    if (!response.ok) {
+      setError(response.error.message);
+      setActionLoading(false);
+      return;
+    }
+    setPackagingStatus(response.data.status);
+    await loadPackagingStatus(selectedId);
+    setActionLoading(false);
+  }
+
+  async function handleSendDeliverableForReview(deliverableId: string) {
+    if (!selectedId) return;
+    setActionLoading(true);
+    setError(null);
+    const response = await workflowBriefsApiRequest<unknown>(
+      `/${selectedId}/deliverables/${deliverableId}/send-for-client-review`,
+      { method: "POST" }
+    );
+    if (!response.ok) {
+      setError(response.error.message);
+      setActionLoading(false);
+      return;
+    }
+    await loadPackagingStatus(selectedId);
+    setActionLoading(false);
+  }
+
+  function formatPackagingStage(value: string): string {
+    switch (value) {
+      case "none":
+        return "No packaging yet";
+      case "drafts_only":
+        return "Drafts only";
+      case "partially_packaged":
+        return "Partially packaged";
+      case "fully_packaged":
+        return "Fully packaged";
+      case "in_client_review":
+        return "In client review";
+      case "review_complete":
+        return "Review complete";
+      default:
+        return value.replace(/_/g, " ");
+    }
+  }
+
+  function formatPackagingState(value: string): string {
+    switch (value) {
+      case "unpackaged":
+        return "Not packaged";
+      case "packaged":
+        return "Packaged";
+      case "pending_review":
+        return "Pending client review";
+      case "approved":
+        return "Approved by client";
+      case "rejected":
+        return "Changes requested";
+      case "locked":
+        return "Locked";
+      case "not_eligible":
+        return "Not eligible";
+      default:
+        return value.replace(/_/g, " ");
+    }
+  }
+
+  function openClientPortalApprovals() {
+    window.history.replaceState(null, "", "/#/client-portal");
+    window.dispatchEvent(new HashChangeEvent("hashchange"));
   }
 
   function formatPackageReadiness(value: string): string {
@@ -1029,6 +1181,150 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
               {canManageAi && !seedStatus?.isSeeded ? (
                 <SectionPanel title="Content Drafts">
                   <p className="muted-text">Content drafts become available after seeding the content plan.</p>
+                </SectionPanel>
+              ) : null}
+
+              {(canManageAi || (packagingStatus?.deliverables.length ?? 0) > 0) &&
+              (draftStatus?.draftCount ?? packagingStatus?.eligibleDraftCount ?? 0) > 0 ? (
+                <SectionPanel title="Deliverable Packaging">
+                  {packagingLoading ? <LoadingState label="Loading packaging status…" /> : null}
+
+                  {!packagingLoading && packagingStatus ? (
+                    <div>
+                      <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", marginBottom: "0.5rem", flexWrap: "wrap" }}>
+                        <StatusBadge
+                          status={
+                            packagingStatus.packagingStage === "in_client_review"
+                              ? "READY_FOR_REVIEW"
+                              : packagingStatus.packagingStage === "review_complete"
+                                ? "APPROVED"
+                                : packagingStatus.packagedCount > 0
+                                  ? "READY"
+                                  : "DRAFT"
+                          }
+                        />
+                        <span className="muted-text" style={{ fontSize: "0.85rem" }}>
+                          {packagingStatus.packagedCount}/{packagingStatus.eligibleDraftCount} packaged ·{" "}
+                          {formatPackagingStage(packagingStatus.packagingStage)}
+                        </span>
+                      </div>
+
+                      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: "0.5rem", marginBottom: "0.75rem" }}>
+                        <div>
+                          <div className="muted-text" style={{ fontSize: "0.75rem" }}>Unpackaged</div>
+                          <div style={{ fontWeight: 600 }}>{packagingStatus.unpackagedCount}</div>
+                        </div>
+                        <div>
+                          <div className="muted-text" style={{ fontSize: "0.75rem" }}>Pending review</div>
+                          <div style={{ fontWeight: 600 }}>{packagingStatus.pendingReviewCount}</div>
+                        </div>
+                        <div>
+                          <div className="muted-text" style={{ fontSize: "0.75rem" }}>Approved</div>
+                          <div style={{ fontWeight: 600 }}>{packagingStatus.approvedByClientCount}</div>
+                        </div>
+                        <div>
+                          <div className="muted-text" style={{ fontSize: "0.75rem" }}>Rejected</div>
+                          <div style={{ fontWeight: 600 }}>{packagingStatus.rejectedCount}</div>
+                        </div>
+                      </div>
+
+                      {packagingStatus.lastPackagedAt ? (
+                        <BriefField label="Last packaged" value={formatRunTimestamp(packagingStatus.lastPackagedAt)} />
+                      ) : null}
+
+                      {canManageAi && packagingStatus.canPackageAll ? (
+                        <Button
+                          variant="primary"
+                          disabled={actionLoading}
+                          onClick={() => void handlePackageAllDeliverables()}
+                          style={{ marginTop: "0.5rem", marginRight: "0.5rem" }}
+                        >
+                          Package all eligible drafts
+                        </Button>
+                      ) : null}
+
+                      {!canManageAi && packagingStatus.pendingReviewCount > 0 ? (
+                        <Button variant="primary" disabled={actionLoading} onClick={openClientPortalApprovals} style={{ marginTop: "0.5rem" }}>
+                          Review in client portal
+                        </Button>
+                      ) : null}
+
+                      {packagingStatus.items.length > 0 ? (
+                        <div style={{ marginTop: "0.75rem" }}>
+                          <div className="muted-text" style={{ fontSize: "0.8rem", marginBottom: "0.35rem", fontWeight: 600 }}>
+                            Packaging by item
+                          </div>
+                          <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
+                            {packagingStatus.items.slice(0, 10).map((item) => (
+                              <li
+                                key={item.contentPlanItemId}
+                                style={{
+                                  display: "flex",
+                                  justifyContent: "space-between",
+                                  alignItems: "center",
+                                  gap: "0.5rem",
+                                  marginBottom: "0.5rem",
+                                  flexWrap: "wrap"
+                                }}
+                              >
+                                <div>
+                                  <div style={{ fontWeight: 600 }}>{item.planItemTitle}</div>
+                                  <div className="muted-text" style={{ fontSize: "0.8rem" }}>
+                                    {formatPackagingState(item.packagingState)}
+                                    {item.deliverableStatus ? ` · ${item.deliverableStatus}` : ""}
+                                  </div>
+                                </div>
+                                {canManageAi && item.canRepackage ? (
+                                  <Button
+                                    variant="secondary"
+                                    disabled={actionLoading}
+                                    onClick={() => void handleRepackageDeliverable(item.contentPlanItemId, item.draftId)}
+                                  >
+                                    Repackage
+                                  </Button>
+                                ) : null}
+                                {canManageAi && item.deliverableId && item.deliverableStatus === "DRAFT" ? (
+                                  <Button
+                                    variant="secondary"
+                                    disabled={actionLoading}
+                                    onClick={() => void handleSendDeliverableForReview(item.deliverableId!)}
+                                  >
+                                    Send for review
+                                  </Button>
+                                ) : null}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      ) : null}
+
+                      {packagingStatus.deliverables.length > 0 ? (
+                        <div style={{ marginTop: "0.75rem" }}>
+                          <div className="muted-text" style={{ fontSize: "0.8rem", marginBottom: "0.35rem", fontWeight: 600 }}>
+                            Packaged deliverables
+                          </div>
+                          <ul style={{ margin: 0, paddingLeft: "1.1rem" }}>
+                            {packagingStatus.deliverables.slice(0, 8).map((deliverable) => (
+                              <li key={deliverable.id} style={{ marginBottom: "0.35rem" }}>
+                                <span style={{ fontWeight: 600 }}>{deliverable.title}</span>
+                                <span className="muted-text" style={{ fontSize: "0.8rem" }}>
+                                  {" "}
+                                  — {deliverable.status}
+                                  {deliverable.clientRejectionReason ? " (changes requested)" : ""}
+                                </span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      ) : null}
+
+                      {packagingStatus.blockReason && canManageAi && packagingStatus.eligibleDraftCount === 0 ? (
+                        <p className="muted-text" style={{ fontSize: "0.85rem" }}>{packagingStatus.blockReason}</p>
+                      ) : null}
+                    </div>
+                  ) : (
+                    <p className="muted-text">Generate content drafts to begin deliverable packaging.</p>
+                  )}
                 </SectionPanel>
               ) : null}
             </>

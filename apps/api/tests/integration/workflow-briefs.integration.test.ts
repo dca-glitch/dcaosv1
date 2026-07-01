@@ -233,6 +233,68 @@ describe("API integration — workflow briefs lifecycle (optional)", () => {
     assert.equal(regenerateResponse.body.data?.outcome, "updated");
     assert.equal(regenerateResponse.body.data?.isDeterministic, true);
 
+    const packagingStatusResponse = await request(app)
+      .get(`/api/v1/workflow-briefs/${briefId}/deliverable-packaging`)
+      .set("Authorization", `Bearer ${token}`)
+      .expect(200);
+
+    assert.equal(packagingStatusResponse.body.ok, true);
+    assert.ok(packagingStatusResponse.body.data?.eligibleDraftCount > 0);
+    assert.equal(packagingStatusResponse.body.data?.packagedCount, 0);
+
+    const packageResponse = await request(app)
+      .post(`/api/v1/workflow-briefs/${briefId}/package-deliverables`)
+      .set("Authorization", `Bearer ${token}`)
+      .expect(200);
+
+    assert.equal(packageResponse.body.ok, true);
+    assert.ok(packageResponse.body.data?.outcomes?.created > 0);
+    assert.ok(packageResponse.body.data?.status?.packagedCount > 0);
+    assert.equal(packageResponse.body.data?.status?.unpackagedCount, 0);
+
+    const duplicatePackageResponse = await request(app)
+      .post(`/api/v1/workflow-briefs/${briefId}/package-deliverables`)
+      .set("Authorization", `Bearer ${token}`)
+      .expect(200);
+
+    assert.equal(duplicatePackageResponse.body.ok, true);
+    assert.equal(duplicatePackageResponse.body.data?.outcomes?.created, 0);
+    assert.ok(duplicatePackageResponse.body.data?.outcomes?.reused > 0);
+    assert.equal(
+      duplicatePackageResponse.body.data?.status?.packagedCount,
+      packageResponse.body.data?.status?.packagedCount
+    );
+
+    const repackageResponse = await request(app)
+      .post(`/api/v1/workflow-briefs/${briefId}/repackage-deliverable`)
+      .set("Authorization", `Bearer ${token}`)
+      .send({ contentPlanItemId: firstSeedItemId })
+      .expect(200);
+
+    assert.equal(repackageResponse.body.ok, true);
+    assert.equal(repackageResponse.body.data?.outcome, "updated");
+    assert.ok(repackageResponse.body.data?.deliverableId);
+
+    const firstDeliverableId = packageResponse.body.data?.status?.items?.[0]?.deliverableId as string;
+    assert.ok(firstDeliverableId);
+
+    const sendReviewResponse = await request(app)
+      .post(`/api/v1/workflow-briefs/${briefId}/deliverables/${firstDeliverableId}/send-for-client-review`)
+      .set("Authorization", `Bearer ${token}`)
+      .expect(200);
+
+    assert.equal(sendReviewResponse.body.ok, true);
+    assert.equal(sendReviewResponse.body.data?.deliverable?.status, "PENDING_CLIENT_REVIEW");
+    assert.ok((sendReviewResponse.body.data?.deliverable?.bodyContent ?? "").length > 0);
+
+    const lockedRepackageResponse = await request(app)
+      .post(`/api/v1/workflow-briefs/${briefId}/repackage-deliverable`)
+      .set("Authorization", `Bearer ${token}`)
+      .send({ contentPlanItemId: firstSeedItemId })
+      .expect(409);
+
+    assert.equal(lockedRepackageResponse.body.error?.code, "DELIVERABLE_REPACKAGE_LOCKED");
+
     const getPlanResponse = await request(app)
       .get(`/api/v1/workflow-briefs/${briefId}/production-plan`)
       .set("Authorization", `Bearer ${token}`)

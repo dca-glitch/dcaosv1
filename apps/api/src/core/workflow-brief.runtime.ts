@@ -29,6 +29,22 @@ import {
   WORKFLOW_BRIEF_DRAFT_VERSION
 } from "./workflow-brief-draft.execution";
 import {
+  buildWorkflowBriefDeliverablePayload,
+  canPackageWorkflowBriefContentDraft,
+  canRepackageWorkflowBriefDeliverable,
+  classifyItemPackagingStateWithRejection,
+  computePackagingStage,
+  isClientReviewableDeliverableStatus,
+  isDeliverableLockedForRepackage,
+  isWorkflowBriefPackagedDeliverable,
+  summarizeBatchPackagingResult,
+  WORKFLOW_BRIEF_DELIVERABLE_PACKAGING_VERSION,
+  type WorkflowBriefDeliverablePackagingStage,
+  type WorkflowBriefItemPackagingState,
+  type WorkflowBriefPackagingOutcome
+} from "./workflow-brief-deliverable-packaging.execution";
+import { sendAiDeliveryDeliverableForClientReview } from "./client-portal-approval.runtime";
+import {
   buildProductionPlanBodyFromContent,
   buildProductionPlanTitle,
   buildWorkflowBriefClientVisiblePlanJson,
@@ -1921,6 +1937,7 @@ const contentDraftSummarySelect = {
   contentPlanItemId: true,
   title: true,
   slug: true,
+  draftBody: true,
   status: true,
   notes: true,
   revisionCount: true,
@@ -1936,6 +1953,7 @@ type ContentDraftSummaryRecord = {
   contentPlanItemId: string | null;
   title: string;
   slug: string | null;
+  draftBody: string;
   status: string;
   notes: string | null;
   revisionCount: number;
@@ -2661,5 +2679,694 @@ export async function regenerateWorkflowBriefContentDraft(
     draftId: persistResult.draftId,
     isDeterministic: execution.meta.isDeterministic,
     status
+  };
+}
+
+const deliverablePackagingSelect = {
+  id: true,
+  contentDraftId: true,
+  title: true,
+  status: true,
+  bodyContent: true,
+  clientRejectionReason: true,
+  deliveryType: true,
+  notes: true,
+  isArchived: true,
+  createdAt: true,
+  updatedAt: true
+} as const;
+
+type DeliverablePackagingRecord = {
+  id: string;
+  contentDraftId: string | null;
+  title: string;
+  status: string;
+  bodyContent: string | null;
+  clientRejectionReason: string | null;
+  deliveryType: string;
+  notes: string | null;
+  isArchived: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+const contentDraftPackagingSelect = {
+  id: true,
+  contentPlanItemId: true,
+  title: true,
+  slug: true,
+  draftBody: true,
+  status: true,
+  notes: true,
+  isArchived: true
+} as const;
+
+type ContentDraftPackagingRecord = {
+  id: string;
+  contentPlanItemId: string | null;
+  title: string;
+  slug: string | null;
+  draftBody: string;
+  status: string;
+  notes: string | null;
+  isArchived: boolean;
+};
+
+function readDeliverablePackagingFromPlanJson(planJson: unknown): {
+  version?: string;
+  briefId?: string;
+  lastPackagedAt?: string;
+  lastRepackagedAt?: string;
+  packagedCount?: number;
+  eligibleDraftCount?: number;
+} | null {
+  if (!planJson || typeof planJson !== "object" || Array.isArray(planJson)) {
+    return null;
+  }
+  const record = planJson as Record<string, unknown>;
+  const packaging = record.deliverablePackaging;
+  if (!packaging || typeof packaging !== "object" || Array.isArray(packaging)) {
+    return null;
+  }
+  return packaging as {
+    version?: string;
+    briefId?: string;
+    lastPackagedAt?: string;
+    lastRepackagedAt?: string;
+    packagedCount?: number;
+    eligibleDraftCount?: number;
+  };
+}
+
+async function loadWorkflowBriefDeliverablePackagingData(tenantId: string, briefId: string) {
+  const context = await loadWorkflowBriefDraftContext(tenantId, briefId);
+  if (!context) {
+    return null;
+  }
+
+  let deliverables: DeliverablePackagingRecord[] = [];
+  if (context.project) {
+    deliverables = (await prisma.aiDeliveryDeliverable.findMany({
+      where: {
+        tenantId,
+        aiDeliveryProjectId: context.project.id,
+        briefId,
+        isArchived: false
+      },
+      select: deliverablePackagingSelect,
+      orderBy: [{ updatedAt: "desc" }, { id: "desc" }]
+    })) as DeliverablePackagingRecord[];
+  }
+
+  const deliverableByDraftId = new Map<string, DeliverablePackagingRecord>();
+  for (const deliverable of deliverables) {
+    if (!deliverable.contentDraftId || deliverableByDraftId.has(deliverable.contentDraftId)) {
+      continue;
+    }
+    deliverableByDraftId.set(deliverable.contentDraftId, deliverable);
+  }
+
+  return {
+    ...context,
+    deliverables,
+    deliverableByDraftId,
+    packagingMeta: readDeliverablePackagingFromPlanJson(context.productionPlan?.planJson)
+  };
+}
+
+async function loadFullDraftForPackaging(
+  tenantId: string,
+  projectId: string,
+  draftId: string
+): Promise<ContentDraftPackagingRecord | null> {
+  return prisma.aiDeliveryContentDraft.findFirst({
+    where: { id: draftId, tenantId, aiDeliveryProjectId: projectId, isArchived: false },
+    select: contentDraftPackagingSelect
+  }) as Promise<ContentDraftPackagingRecord | null>;
+}
+
+export type WorkflowBriefDeliverablePackagingStatus = {
+  briefId: string;
+  hasLinkedProject: boolean;
+  project: { id: string; name: string; targetMonth: Date } | null;
+  productionPlanId: string | null;
+  eligibleDraftCount: number;
+  packagedCount: number;
+  unpackagedCount: number;
+  pendingReviewCount: number;
+  approvedByClientCount: number;
+  rejectedCount: number;
+  canPackageAll: boolean;
+  canManagePackaging: boolean;
+  blockReason: string | null;
+  packagingStage: WorkflowBriefDeliverablePackagingStage;
+  lastPackagedAt: string | null;
+  lastRepackagedAt: string | null;
+  items: Array<{
+    contentPlanItemId: string;
+    planItemTitle: string;
+    draftId: string | null;
+    draftTitle: string | null;
+    draftStatus: string | null;
+    isEligible: boolean;
+    deliverableId: string | null;
+    deliverableStatus: string | null;
+    deliverableTitle: string | null;
+    packagingState: WorkflowBriefItemPackagingState;
+    canRepackage: boolean;
+    isClientReviewable: boolean;
+  }>;
+  deliverables: Array<{
+    id: string;
+    contentDraftId: string | null;
+    title: string;
+    status: string;
+    deliveryType: string;
+    bodyPreview: string | null;
+    clientRejectionReason: string | null;
+    isWorkflowBriefDeliverable: boolean;
+    updatedAt: string;
+  }>;
+  lineage: {
+    briefId: string;
+    productionPlanId: string | null;
+    aiDeliveryProjectId: string | null;
+    version: string;
+  };
+};
+
+function buildWorkflowBriefDeliverablePackagingStatus(
+  briefId: string,
+  context: NonNullable<Awaited<ReturnType<typeof loadWorkflowBriefDeliverablePackagingData>>>,
+  isAdmin: boolean
+): WorkflowBriefDeliverablePackagingStatus {
+  const { project, productionPlan, seedItems, draftByItemId, deliverableByDraftId, deliverables, packagingMeta } =
+    context;
+
+  const items = seedItems.map((planItem) => {
+    const draft = draftByItemId.get(planItem.id) ?? null;
+    const isEligible = draft
+      ? canPackageWorkflowBriefContentDraft(
+          {
+            notes: draft.notes,
+            draftBody: draft.draftBody,
+            isArchived: draft.isArchived,
+            contentPlanItemId: draft.contentPlanItemId
+          },
+          briefId
+        )
+      : false;
+
+    const deliverable = draft ? deliverableByDraftId.get(draft.id) ?? null : null;
+    const packagingState = classifyItemPackagingStateWithRejection({
+      isEligible,
+      hasDeliverable: Boolean(deliverable),
+      deliverableStatus: deliverable?.status ?? null,
+      clientRejectionReason: deliverable?.clientRejectionReason ?? null
+    });
+
+    return {
+      contentPlanItemId: planItem.id,
+      planItemTitle: planItem.title,
+      draftId: draft?.id ?? null,
+      draftTitle: draft?.title ?? null,
+      draftStatus: draft?.status ?? null,
+      isEligible,
+      deliverableId: deliverable?.id ?? null,
+      deliverableStatus: deliverable?.status ?? null,
+      deliverableTitle: deliverable?.title ?? null,
+      packagingState,
+      canRepackage: isAdmin && Boolean(deliverable && canRepackageWorkflowBriefDeliverable(deliverable)),
+      isClientReviewable: isClientReviewableDeliverableStatus(deliverable?.status)
+    };
+  });
+
+  const eligibleDraftCount = items.filter((item) => item.isEligible).length;
+  const packagedCount = items.filter(
+    (item) => item.deliverableId && item.packagingState !== "not_eligible"
+  ).length;
+  const unpackagedCount = items.filter((item) => item.isEligible && !item.deliverableId).length;
+  const pendingReviewCount = items.filter((item) => item.packagingState === "pending_review").length;
+  const approvedByClientCount = items.filter((item) => item.packagingState === "approved").length;
+  const rejectedCount = items.filter((item) => item.packagingState === "rejected").length;
+
+  let canPackageAll = false;
+  let blockReason: string | null = null;
+  if (!isAdmin) {
+    blockReason = "Admin access required to package deliverables.";
+  } else if (!project) {
+    blockReason = "Link an AI Delivery project before packaging deliverables.";
+  } else if (eligibleDraftCount === 0) {
+    blockReason = "Generate workflow content drafts before packaging deliverables.";
+  } else {
+    canPackageAll = true;
+  }
+
+  const packagingStage = computePackagingStage({
+    eligibleDraftCount,
+    packagedCount,
+    pendingReviewCount,
+    approvedByClientCount
+  });
+
+  return {
+    briefId,
+    hasLinkedProject: Boolean(project),
+    project: project ? { id: project.id, name: project.name, targetMonth: project.targetMonth } : null,
+    productionPlanId: productionPlan?.id ?? null,
+    eligibleDraftCount,
+    packagedCount,
+    unpackagedCount,
+    pendingReviewCount,
+    approvedByClientCount,
+    rejectedCount,
+    canPackageAll,
+    canManagePackaging: isAdmin,
+    blockReason,
+    packagingStage,
+    lastPackagedAt: packagingMeta?.lastPackagedAt ?? null,
+    lastRepackagedAt: packagingMeta?.lastRepackagedAt ?? null,
+    items,
+    deliverables: deliverables.map((deliverable) => ({
+      id: deliverable.id,
+      contentDraftId: deliverable.contentDraftId,
+      title: deliverable.title,
+      status: deliverable.status,
+      deliveryType: deliverable.deliveryType,
+      bodyPreview: deliverable.bodyContent ? deliverable.bodyContent.slice(0, 160) : null,
+      clientRejectionReason: deliverable.clientRejectionReason,
+      isWorkflowBriefDeliverable: isWorkflowBriefPackagedDeliverable(deliverable.notes, briefId),
+      updatedAt: deliverable.updatedAt.toISOString()
+    })),
+    lineage: {
+      briefId,
+      productionPlanId: productionPlan?.id ?? null,
+      aiDeliveryProjectId: project?.id ?? null,
+      version: WORKFLOW_BRIEF_DELIVERABLE_PACKAGING_VERSION
+    }
+  };
+}
+
+export async function getWorkflowBriefDeliverablePackagingStatus(
+  authSession: AuthResolvedSessionContext,
+  briefId: string
+): Promise<WorkflowBriefDeliverablePackagingStatus | "not_found" | "forbidden"> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) {
+    return "forbidden";
+  }
+
+  const brief = await getBriefForAccess(briefId, tenantId);
+  if (!brief) {
+    return "not_found";
+  }
+
+  if (!(await canAccessClient(authSession, tenantId, brief.clientId))) {
+    return "forbidden";
+  }
+
+  const data = await loadWorkflowBriefDeliverablePackagingData(tenantId, briefId);
+  if (!data) {
+    return "not_found";
+  }
+
+  const isAdmin = isOwnerRole(getActiveRoles(authSession));
+  return buildWorkflowBriefDeliverablePackagingStatus(briefId, data, isAdmin);
+}
+
+async function writeDeliverablePackagingMetadata(
+  tx: Prisma.TransactionClient,
+  input: {
+    productionPlanId: string;
+    planJson: unknown;
+    briefId: string;
+    eligibleDraftCount: number;
+    packagedCount: number;
+    lastPackagedAt?: string;
+    lastRepackagedAt?: string;
+  }
+): Promise<void> {
+  const existingPlanJson =
+    input.planJson && typeof input.planJson === "object" && !Array.isArray(input.planJson)
+      ? (input.planJson as Record<string, unknown>)
+      : {};
+  const existingMeta = readDeliverablePackagingFromPlanJson(input.planJson) ?? {};
+
+  await tx.productionPlan.update({
+    where: { id: input.productionPlanId },
+    data: {
+      planJson: {
+        ...existingPlanJson,
+        deliverablePackaging: {
+          version: WORKFLOW_BRIEF_DELIVERABLE_PACKAGING_VERSION,
+          briefId: input.briefId,
+          eligibleDraftCount: input.eligibleDraftCount,
+          packagedCount: input.packagedCount,
+          lastPackagedAt: input.lastPackagedAt ?? existingMeta.lastPackagedAt ?? null,
+          lastRepackagedAt: input.lastRepackagedAt ?? existingMeta.lastRepackagedAt ?? null
+        }
+      } as Prisma.InputJsonValue
+    }
+  });
+}
+
+async function packageWorkflowBriefDraftIntoDeliverable(
+  tx: Prisma.TransactionClient,
+  input: {
+    tenantId: string;
+    briefId: string;
+    productionPlanId: string | null;
+    aiDeliveryProjectId: string;
+    draft: ContentDraftPackagingRecord;
+    existingDeliverable: DeliverablePackagingRecord | null;
+    forceRepackage: boolean;
+  }
+): Promise<{ outcome: WorkflowBriefPackagingOutcome; deliverableId: string | null }> {
+  if (!canPackageWorkflowBriefContentDraft(input.draft, input.briefId)) {
+    return { outcome: "skipped_ineligible", deliverableId: null };
+  }
+  if (!input.draft.contentPlanItemId) {
+    return { outcome: "skipped_ineligible", deliverableId: null };
+  }
+
+  const payload = buildWorkflowBriefDeliverablePayload({
+    briefId: input.briefId,
+    productionPlanId: input.productionPlanId,
+    contentPlanItemId: input.draft.contentPlanItemId,
+    contentDraftId: input.draft.id,
+    title: input.draft.title,
+    draftBody: input.draft.draftBody,
+    slug: input.draft.slug
+  });
+
+  if (input.existingDeliverable) {
+    if (!input.forceRepackage) {
+      return { outcome: "reused", deliverableId: input.existingDeliverable.id };
+    }
+    if (isDeliverableLockedForRepackage(input.existingDeliverable.status)) {
+      return { outcome: "skipped_locked", deliverableId: input.existingDeliverable.id };
+    }
+
+    const updated = await tx.aiDeliveryDeliverable.update({
+      where: { id: input.existingDeliverable.id },
+      data: {
+        title: payload.title,
+        bodyContent: payload.bodyContent,
+        description: payload.description,
+        deliveryType: payload.deliveryType,
+        notes: payload.notes,
+        briefId: payload.briefId,
+        productionPlanId: payload.productionPlanId,
+        contentDraftId: payload.contentDraftId,
+        clientRejectionReason: null
+      },
+      select: { id: true }
+    });
+    return { outcome: "updated", deliverableId: updated.id };
+  }
+
+  const created = await tx.aiDeliveryDeliverable.create({
+    data: {
+      tenantId: input.tenantId,
+      aiDeliveryProjectId: input.aiDeliveryProjectId,
+      briefId: payload.briefId,
+      productionPlanId: payload.productionPlanId,
+      contentDraftId: payload.contentDraftId,
+      title: payload.title,
+      bodyContent: payload.bodyContent,
+      description: payload.description,
+      deliveryType: payload.deliveryType,
+      status: payload.status,
+      notes: payload.notes,
+      isArchived: false
+    },
+    select: { id: true }
+  });
+  return { outcome: "created", deliverableId: created.id };
+}
+
+export async function packageAllWorkflowBriefDeliverables(
+  authSession: AuthResolvedSessionContext,
+  briefId: string
+): Promise<
+  | {
+      packaged: boolean;
+      outcomes: ReturnType<typeof summarizeBatchPackagingResult>;
+      status: WorkflowBriefDeliverablePackagingStatus;
+    }
+  | "not_found"
+  | "forbidden"
+  | "missing_project"
+  | "no_eligible_drafts"
+> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId || !isOwnerRole(getActiveRoles(authSession))) {
+    return "forbidden";
+  }
+
+  const data = await loadWorkflowBriefDeliverablePackagingData(tenantId, briefId);
+  if (!data) {
+    return "not_found";
+  }
+  if (!data.project) {
+    return "missing_project";
+  }
+
+  const preStatus = buildWorkflowBriefDeliverablePackagingStatus(briefId, data, true);
+  if (preStatus.eligibleDraftCount === 0) {
+    return "no_eligible_drafts";
+  }
+
+  const outcomeList: WorkflowBriefPackagingOutcome[] = [];
+  const finishedAtIso = new Date().toISOString();
+
+  await prisma.$transaction(async (tx) => {
+    for (const planItem of data.seedItems) {
+      const draftSummary = data.draftByItemId.get(planItem.id);
+      if (!draftSummary) {
+        outcomeList.push("skipped_missing_draft");
+        continue;
+      }
+
+      const draft = (await tx.aiDeliveryContentDraft.findFirst({
+        where: {
+          id: draftSummary.id,
+          tenantId,
+          aiDeliveryProjectId: data.project!.id,
+          isArchived: false
+        },
+        select: contentDraftPackagingSelect
+      })) as ContentDraftPackagingRecord | null;
+
+      if (!draft) {
+        outcomeList.push("skipped_missing_draft");
+        continue;
+      }
+
+      const existing = data.deliverableByDraftId.get(draft.id) ?? null;
+      const result = await packageWorkflowBriefDraftIntoDeliverable(tx, {
+        tenantId,
+        briefId,
+        productionPlanId: data.productionPlan?.id ?? null,
+        aiDeliveryProjectId: data.project!.id,
+        draft,
+        existingDeliverable: existing,
+        forceRepackage: false
+      });
+      outcomeList.push(result.outcome);
+    }
+
+    if (data.productionPlan?.id) {
+      const refreshed = await loadWorkflowBriefDeliverablePackagingData(tenantId, briefId);
+      const status = refreshed
+        ? buildWorkflowBriefDeliverablePackagingStatus(briefId, refreshed, true)
+        : null;
+      await writeDeliverablePackagingMetadata(tx, {
+        productionPlanId: data.productionPlan.id,
+        planJson: data.productionPlan.planJson,
+        briefId,
+        eligibleDraftCount: status?.eligibleDraftCount ?? 0,
+        packagedCount: status?.packagedCount ?? 0,
+        lastPackagedAt: finishedAtIso
+      });
+    }
+  });
+
+  const outcomes = summarizeBatchPackagingResult(outcomeList);
+  if (outcomes.created === 0 && outcomes.reused === 0 && outcomes.updated === 0) {
+    return "no_eligible_drafts";
+  }
+
+  const status = await getWorkflowBriefDeliverablePackagingStatus(authSession, briefId);
+  if (status === "not_found" || status === "forbidden") {
+    return status;
+  }
+
+  return {
+    packaged: true,
+    outcomes,
+    status
+  };
+}
+
+export async function repackageWorkflowBriefDeliverable(
+  authSession: AuthResolvedSessionContext,
+  briefId: string,
+  input: { contentDraftId?: string | null; contentPlanItemId?: string | null }
+): Promise<
+  | {
+      repackaged: boolean;
+      outcome: WorkflowBriefPackagingOutcome;
+      deliverableId: string | null;
+      status: WorkflowBriefDeliverablePackagingStatus;
+    }
+  | "not_found"
+  | "forbidden"
+  | "missing_project"
+  | "invalid_item"
+  | "missing_draft"
+  | "skipped_locked"
+> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId || !isOwnerRole(getActiveRoles(authSession))) {
+    return "forbidden";
+  }
+
+  const contentDraftId = input.contentDraftId?.trim() || null;
+  const contentPlanItemId = input.contentPlanItemId?.trim() || null;
+  if (!contentDraftId && !contentPlanItemId) {
+    return "invalid_item";
+  }
+
+  const data = await loadWorkflowBriefDeliverablePackagingData(tenantId, briefId);
+  if (!data) {
+    return "not_found";
+  }
+  if (!data.project) {
+    return "missing_project";
+  }
+
+  let draftId = contentDraftId;
+  if (!draftId && contentPlanItemId) {
+    const seededItem = data.seedItems.find((item) => item.id === contentPlanItemId);
+    if (!seededItem) {
+      return "invalid_item";
+    }
+    draftId = data.draftByItemId.get(contentPlanItemId)?.id ?? null;
+  }
+
+  if (!draftId) {
+    return "missing_draft";
+  }
+
+  const draft = await loadFullDraftForPackaging(tenantId, data.project.id, draftId);
+  if (!draft) {
+    return "missing_draft";
+  }
+
+  const existing = data.deliverableByDraftId.get(draft.id) ?? null;
+  const finishedAtIso = new Date().toISOString();
+  let deliverableId: string | null = null;
+
+  const txResult = await prisma.$transaction(async (tx) => {
+    const result = await packageWorkflowBriefDraftIntoDeliverable(tx, {
+      tenantId,
+      briefId,
+      productionPlanId: data.productionPlan?.id ?? null,
+      aiDeliveryProjectId: data.project!.id,
+      draft,
+      existingDeliverable: existing,
+      forceRepackage: true
+    });
+
+    if (data.productionPlan?.id && result.outcome === "updated") {
+      const refreshed = await loadWorkflowBriefDeliverablePackagingData(tenantId, briefId);
+      const status = refreshed
+        ? buildWorkflowBriefDeliverablePackagingStatus(briefId, refreshed, true)
+        : null;
+      await writeDeliverablePackagingMetadata(tx, {
+        productionPlanId: data.productionPlan.id,
+        planJson: data.productionPlan.planJson,
+        briefId,
+        eligibleDraftCount: status?.eligibleDraftCount ?? 0,
+        packagedCount: status?.packagedCount ?? 0,
+        lastRepackagedAt: finishedAtIso
+      });
+    }
+
+    return result;
+  });
+
+  const outcome = txResult.outcome;
+  deliverableId = txResult.deliverableId;
+
+  if (outcome === "skipped_locked") {
+    return "skipped_locked";
+  }
+  if (outcome === "skipped_ineligible" || outcome === "skipped_missing_draft") {
+    return "missing_draft";
+  }
+
+  const status = await getWorkflowBriefDeliverablePackagingStatus(authSession, briefId);
+  if (status === "not_found" || status === "forbidden") {
+    return status;
+  }
+
+  return {
+    repackaged: outcome === "created" || outcome === "updated",
+    outcome,
+    deliverableId,
+    status
+  };
+}
+
+export async function sendWorkflowBriefDeliverableForClientReview(
+  authSession: AuthResolvedSessionContext,
+  briefId: string,
+  deliverableId: string
+): Promise<
+  | {
+      deliverable: {
+        id: string;
+        title: string;
+        status: string;
+        bodyContent: string;
+      };
+    }
+  | "not_found"
+  | "forbidden"
+  | "invalid_deliverable"
+> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId || !isOwnerRole(getActiveRoles(authSession))) {
+    return "forbidden";
+  }
+
+  const brief = await getBriefForAccess(briefId, tenantId);
+  if (!brief) {
+    return "not_found";
+  }
+
+  const data = await loadWorkflowBriefDeliverablePackagingData(tenantId, briefId);
+  if (!data?.project) {
+    return "not_found";
+  }
+
+  const deliverable = data.deliverables.find((row) => row.id === deliverableId);
+  if (!deliverable || !isWorkflowBriefPackagedDeliverable(deliverable.notes, briefId)) {
+    return "invalid_deliverable";
+  }
+
+  const result = await sendAiDeliveryDeliverableForClientReview(
+    authSession,
+    data.project.id,
+    deliverableId
+  );
+  if (!result) {
+    return "invalid_deliverable";
+  }
+
+  return {
+    deliverable: result.deliverable
   };
 }

@@ -13,11 +13,15 @@ import {
   getWorkflowBriefById,
   getWorkflowBriefContentDraftStatus,
   getWorkflowBriefContentProductionSeedStatus,
+  getWorkflowBriefDeliverablePackagingStatus,
   getWorkflowBriefMiReport,
   getWorkflowBriefProductionPlan,
   getWorkflowBriefSeoReport,
   listWorkflowBriefs,
+  packageAllWorkflowBriefDeliverables,
   regenerateWorkflowBriefContentDraft,
+  repackageWorkflowBriefDeliverable,
+  sendWorkflowBriefDeliverableForClientReview,
   sendWorkflowBriefProductionPlanToClient,
   seedWorkflowBriefContentProduction,
   submitWorkflowBrief,
@@ -689,6 +693,146 @@ export function createWorkflowBriefsRouter() {
       }
       if (result === "invalid_status") {
         res.status(400).json(failure("CONTENT_DRAFTS_INVALID_STATUS", "Brief is not ready for content draft regeneration."));
+        return;
+      }
+
+      res.status(200).json(success(result));
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.get("/:id/deliverable-packaging", requireAuth, requireTenant, async (req, res, next) => {
+    try {
+      const authSession = getAuthSession(res);
+      if (!authSession) {
+        res.status(401).json(unauthorizedFailure());
+        return;
+      }
+
+      const result = await getWorkflowBriefDeliverablePackagingStatus(authSession, req.params.id);
+      if (result === "not_found") {
+        res.status(404).json(failure("WORKFLOW_BRIEF_NOT_FOUND", "Workflow brief was not found."));
+        return;
+      }
+      if (result === "forbidden") {
+        res.status(403).json(forbiddenFailure());
+        return;
+      }
+
+      res.status(200).json(success(result));
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.post("/:id/package-deliverables", requireAuth, requireTenant, async (req, res, next) => {
+    try {
+      const authSession = getAuthSession(res);
+      if (!authSession) {
+        res.status(401).json(unauthorizedFailure());
+        return;
+      }
+
+      const result = await packageAllWorkflowBriefDeliverables(authSession, req.params.id);
+      if (result === "not_found") {
+        res.status(404).json(failure("WORKFLOW_BRIEF_NOT_FOUND", "Workflow brief was not found."));
+        return;
+      }
+      if (result === "forbidden") {
+        res.status(403).json(forbiddenFailure());
+        return;
+      }
+      if (result === "missing_project") {
+        res.status(400).json(failure("DELIVERABLE_PACKAGING_MISSING_PROJECT", "Link an AI Delivery project before packaging deliverables."));
+        return;
+      }
+      if (result === "no_eligible_drafts") {
+        res.status(400).json(
+          failure("DELIVERABLE_PACKAGING_NO_ELIGIBLE_DRAFTS", "No eligible workflow content drafts are available for packaging.")
+        );
+        return;
+      }
+
+      res.status(200).json(success(result));
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.post("/:id/repackage-deliverable", requireAuth, requireTenant, async (req, res, next) => {
+    try {
+      const authSession = getAuthSession(res);
+      if (!authSession) {
+        res.status(401).json(unauthorizedFailure());
+        return;
+      }
+
+      const body = (req.body ?? {}) as Record<string, unknown>;
+      const result = await repackageWorkflowBriefDeliverable(authSession, req.params.id, {
+        contentDraftId: typeof body.contentDraftId === "string" ? body.contentDraftId : null,
+        contentPlanItemId: typeof body.contentPlanItemId === "string" ? body.contentPlanItemId : null
+      });
+
+      if (result === "not_found") {
+        res.status(404).json(failure("WORKFLOW_BRIEF_NOT_FOUND", "Workflow brief was not found."));
+        return;
+      }
+      if (result === "forbidden") {
+        res.status(403).json(forbiddenFailure());
+        return;
+      }
+      if (result === "missing_project") {
+        res.status(400).json(failure("DELIVERABLE_PACKAGING_MISSING_PROJECT", "Link an AI Delivery project before repackaging deliverables."));
+        return;
+      }
+      if (result === "invalid_item") {
+        res.status(400).json(failure("DELIVERABLE_REPACKAGE_INVALID_ITEM", "contentDraftId or contentPlanItemId is required."));
+        return;
+      }
+      if (result === "missing_draft") {
+        res.status(400).json(failure("DELIVERABLE_REPACKAGE_MISSING_DRAFT", "Workflow content draft was not found for repackaging."));
+        return;
+      }
+      if (result === "skipped_locked") {
+        res.status(409).json(
+          failure("DELIVERABLE_REPACKAGE_LOCKED", "Deliverable is locked for repackaging while client review or approval is active.")
+        );
+        return;
+      }
+
+      res.status(200).json(success(result));
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.post("/:id/deliverables/:deliverableId/send-for-client-review", requireAuth, requireTenant, async (req, res, next) => {
+    try {
+      const authSession = getAuthSession(res);
+      if (!authSession) {
+        res.status(401).json(unauthorizedFailure());
+        return;
+      }
+
+      const result = await sendWorkflowBriefDeliverableForClientReview(
+        authSession,
+        req.params.id,
+        req.params.deliverableId
+      );
+
+      if (result === "not_found") {
+        res.status(404).json(failure("WORKFLOW_BRIEF_NOT_FOUND", "Workflow brief was not found."));
+        return;
+      }
+      if (result === "forbidden") {
+        res.status(403).json(forbiddenFailure());
+        return;
+      }
+      if (result === "invalid_deliverable") {
+        res.status(400).json(
+          failure("DELIVERABLE_REVIEW_INVALID", "Deliverable was not found or is not a workflow-brief packaged text deliverable.")
+        );
         return;
       }
 
