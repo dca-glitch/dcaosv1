@@ -67,7 +67,7 @@ try {
   Invoke-NpmStep "Post-smoke validate" "validate"
 
   Write-Host ""
-  Write-Host "[SMOKE][PURIVA_READINESS] finished — all Puriva readiness gates passed." -ForegroundColor Green
+  Write-Host "[SMOKE][PURIVA_READINESS] finished - all Puriva readiness gates passed." -ForegroundColor Green
   Write-Host "See docs/runbooks/PURIVA_STAGING_PRODUCTION_READINESS_GATE.md for staging/prod operator checklists."
 } catch {
   Write-Host ""
