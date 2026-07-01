@@ -12,7 +12,9 @@ export const PURIVA_PORTAL_FORBIDDEN_UI =
   /Publication handoff|Prepare WordPress drafts|structuredInputJson|INTERNAL ADMIN IMAGE PROMPT|INTERNAL DRAFT SCAFFOLD|storageKey|workflowRunId|executionLog|openrouter|providerMetadata|Execute release|Publish now/i;
 
 export const PURIVA_PORTAL_FORBIDDEN_MONTHLY_REPORT_TITLE =
-  /\[PURIVA_LOCAL_SETUP\]|PURIVA_MONTHLY_REPORT_V1|PURIVA_MANUAL_METRICS_V1|puriva_monthly_report_seed|puriva_manual_metrics_seed/i;
+  /\[PURIVA_LOCAL_SETUP\]|PURIVA_[A-Z0-9_]+_V1|puriva_[a-z0-9_]+_seed/i;
+
+export const PURIVA_PORTAL_FORBIDDEN_CLIENT_SETUP_MARKERS = PURIVA_PORTAL_FORBIDDEN_MONTHLY_REPORT_TITLE;
 
 export const PURIVA_DRAFT_INTERNAL_LABEL = "INTERNAL DRAFT SCAFFOLD — NOT APPROVED CLIENT COPY";
 export const PURIVA_IMAGE_INTERNAL_PROMPT_LABEL =
@@ -46,27 +48,40 @@ function collectClientPortalMonthlyReportTitleCandidates(response) {
   return reports.flatMap((report) => [report?.displayTitle, report?.title]).filter(Boolean);
 }
 
+export function assertPurivaClientPortalSetupMarkersAbsent(record, label, response) {
+  const text = response.text ?? "";
+  record(
+    `${label} omits [PURIVA_LOCAL_SETUP]`,
+    !text.includes("[PURIVA_LOCAL_SETUP]"),
+    text.includes("[PURIVA_LOCAL_SETUP]") ? "setup marker leaked" : "clean"
+  );
+  record(
+    `${label} omits PURIVA version markers`,
+    !/PURIVA_[A-Z0-9_]+_V1/.test(text),
+    /PURIVA_[A-Z0-9_]+_V1/.test(text) ? "version marker leaked" : "clean"
+  );
+}
+
 export function assertClientPortalMonthlyReportTitlesSanitized(record, label, response) {
   const titles = collectClientPortalMonthlyReportTitleCandidates(response);
-  const leakedTitle = titles.find((title) => PURIVA_PORTAL_FORBIDDEN_MONTHLY_REPORT_TITLE.test(title));
+  const leakedTitle = titles.find((title) => PURIVA_PORTAL_FORBIDDEN_CLIENT_SETUP_MARKERS.test(title));
   record(
     `${label} sanitizes monthly report titles`,
     !leakedTitle,
     leakedTitle ? `marker in title: ${leakedTitle}` : titles.length > 0 ? "clean" : "no titles"
   );
+  assertPurivaClientPortalSetupMarkersAbsent(record, `${label} monthly report payload`, response);
+}
+
+export function assertClientPortalDeliverySummarySanitized(record, label, response) {
+  const marketIntelligence = response.body?.data?.deliverySummary?.marketIntelligence ?? null;
+  const title = marketIntelligence?.displayTitle ?? marketIntelligence?.title ?? "";
   record(
-    `${label} omits internal monthly report marker strings`,
-    !(response.text ?? "").includes("[PURIVA_LOCAL_SETUP]") &&
-      !(response.text ?? "").includes("PURIVA_MONTHLY_REPORT_V1") &&
-      !(response.text ?? "").includes("PURIVA_MANUAL_METRICS_V1"),
-    (response.text ?? "").includes("[PURIVA_LOCAL_SETUP]")
-      ? "PURIVA_LOCAL_SETUP leaked"
-      : (response.text ?? "").includes("PURIVA_MONTHLY_REPORT_V1")
-        ? "PURIVA_MONTHLY_REPORT_V1 leaked"
-        : (response.text ?? "").includes("PURIVA_MANUAL_METRICS_V1")
-          ? "PURIVA_MANUAL_METRICS_V1 leaked"
-          : "clean"
+    `${label} sanitizes MI handoff title`,
+    typeof title === "string" && title.length > 0 && !PURIVA_PORTAL_FORBIDDEN_CLIENT_SETUP_MARKERS.test(title),
+    title || "missing"
   );
+  assertPurivaClientPortalSetupMarkersAbsent(record, label, response);
 }
 
 async function login(request, email, password) {

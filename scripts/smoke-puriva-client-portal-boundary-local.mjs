@@ -15,8 +15,10 @@ import {
 } from "./lib/local-browser-smoke-service-helpers.mjs";
 import {
   assertClientForbiddenAdminPath,
+  assertClientPortalDeliverySummarySanitized,
   assertClientPortalMonthlyReportTitlesSanitized,
   assertPurivaClientPortalResponseSafe,
+  assertPurivaClientPortalSetupMarkersAbsent,
   ensurePurivaClientPortalAuth,
   PURIVA_DRAFT_INTERNAL_LABEL,
   PURIVA_IMAGE_INTERNAL_PROMPT_LABEL,
@@ -176,6 +178,13 @@ async function main() {
     const response = await request(path, { token: portalToken });
     record(`client portal ${label}`, response.status === 200, `${response.status}`);
     assertPurivaClientPortalResponseSafe(record, `client portal ${label}`, response);
+    assertPurivaClientPortalSetupMarkersAbsent(record, `client portal ${label}`, response);
+    if (label === "delivery summary") {
+      assertClientPortalDeliverySummarySanitized(record, `client portal ${label}`, response);
+    }
+    if (label === "monthly reports") {
+      assertClientPortalMonthlyReportTitlesSanitized(record, `client portal ${label}`, response);
+    }
   }
 
   const deliverables = await request(`/client-portal/projects/${portalProject.id}/deliverables`, {
@@ -371,6 +380,19 @@ async function main() {
       (refreshedAdminMonthlyReport.body?.data?.report?.title ?? "").includes(PURIVA_MONTHLY_REPORT_MARKER),
       refreshedAdminMonthlyReport.body?.data?.report?.title ?? "missing"
     );
+
+    const adminMiProjects = firstRun.marketIntelligence?.projectId
+      ? await request("/market-intelligence-projects", { token: adminToken })
+      : null;
+    const adminMiProject =
+      (adminMiProjects?.body?.data?.projects ?? []).find(
+        (entry) => entry.id === firstRun.marketIntelligence?.projectId
+      ) ?? null;
+    record(
+      "admin MI project retains internal setup title marker",
+      (adminMiProject?.title ?? "").includes("[PURIVA_LOCAL_SETUP]"),
+      adminMiProject?.title ?? "missing"
+    );
     }
   }
 
@@ -442,6 +464,16 @@ async function main() {
       "client portal browser avoids internal server error copy",
       !/internal server error|500 error|stack trace/i.test(bodyText),
       "clean"
+    );
+    record(
+      "client portal browser omits [PURIVA_LOCAL_SETUP]",
+      !bodyText.includes("[PURIVA_LOCAL_SETUP]"),
+      bodyText.includes("[PURIVA_LOCAL_SETUP]") ? "setup marker found" : "clean"
+    );
+    record(
+      "client portal browser omits PURIVA version markers",
+      !/PURIVA_[A-Z0-9_]+_V1/.test(bodyText),
+      /PURIVA_[A-Z0-9_]+_V1/.test(bodyText) ? "version marker found" : "clean"
     );
   } catch (error) {
     record("client portal browser boundary", false, error instanceof Error ? error.message : String(error));

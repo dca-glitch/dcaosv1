@@ -47,6 +47,113 @@ const clientPortalProjectSelect = {
   updatedAt: true
 } as const;
 
+const CLIENT_PORTAL_INTERNAL_MARKER_PATTERNS = [
+  /\[PURIVA_LOCAL_SETUP\]/gi,
+  /\[PURIVA_[A-Z0-9_]+\]/gi,
+  /PURIVA_[A-Z0-9_]+_V1/gi,
+  /puriva_[a-z0-9_]+_seed/gi
+] as const;
+
+type SanitizeClientPortalDisplayTextOptions = {
+  stripScaffoldWord?: boolean;
+  fallback?: string | null;
+};
+
+function normalizeSanitizedClientPortalText(
+  value: string,
+  options?: Pick<SanitizeClientPortalDisplayTextOptions, "stripScaffoldWord">
+): string {
+  let cleaned = value;
+
+  for (const pattern of CLIENT_PORTAL_INTERNAL_MARKER_PATTERNS) {
+    cleaned = cleaned.replace(pattern, "");
+  }
+
+  if (options?.stripScaffoldWord) {
+    cleaned = cleaned.replace(/\bscaffold\b/gi, "");
+  }
+
+  return cleaned
+    .replace(/\s{2,}/g, " ")
+    .replace(/\s+—\s+—/g, " — ")
+    .replace(/^\s*—\s*/, "")
+    .replace(/\s*—\s*$/, "")
+    .trim();
+}
+
+export function sanitizeClientPortalDisplayText(
+  raw: string | null | undefined,
+  options: SanitizeClientPortalDisplayTextOptions = {}
+): string | null {
+  if (typeof raw !== "string") {
+    return options.fallback ?? null;
+  }
+
+  const cleaned = normalizeSanitizedClientPortalText(raw.trim(), options);
+  if (!cleaned) {
+    return options.fallback ?? null;
+  }
+
+  return cleaned;
+}
+
+function sanitizeClientPortalStringList(
+  value: unknown,
+  options: SanitizeClientPortalDisplayTextOptions = {}
+): string[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .filter((item): item is string => typeof item === "string" && item.trim().length > 0)
+    .map((item) => sanitizeClientPortalDisplayText(item, options) ?? "")
+    .filter((item) => item.length > 0)
+    .slice(0, 12);
+}
+
+function sanitizeClientPortalReleasePackage(
+  releasePackage: ClientSafeReleasePackage
+): ClientSafeReleasePackage {
+  return {
+    releasePackageId: releasePackage.releasePackageId,
+    briefTitle:
+      sanitizeClientPortalDisplayText(releasePackage.briefTitle, {
+        stripScaffoldWord: true,
+        fallback: "Release package"
+      }) ?? "Release package",
+    projectName:
+      sanitizeClientPortalDisplayText(releasePackage.projectName, {
+        stripScaffoldWord: true,
+        fallback: releasePackage.projectName
+      }) ?? releasePackage.projectName,
+    finalizedAt: releasePackage.finalizedAt,
+    releaseStatus: releasePackage.releaseStatus,
+    summary: sanitizeClientPortalDisplayText(releasePackage.summary) ?? releasePackage.summary,
+    deliverables: (releasePackage.deliverables ?? []).map((item) => ({
+      title:
+        sanitizeClientPortalDisplayText(item.title, {
+          stripScaffoldWord: true,
+          fallback: item.title
+        }) ?? item.title,
+      type: item.type,
+      exportUrl: item.exportUrl ?? null,
+      status: item.status
+    })),
+    images: (releasePackage.images ?? []).map((item) => ({
+      title:
+        sanitizeClientPortalDisplayText(item.title, {
+          stripScaffoldWord: true,
+          fallback: item.title
+        }) ?? item.title,
+      altText: sanitizeClientPortalDisplayText(item.altText),
+      imageUrl: item.imageUrl ?? null,
+      status: item.status
+    })),
+    notes: sanitizeClientPortalDisplayText(releasePackage.notes)
+  };
+}
+
 function toClientPortalProjectSummary(p: {
   id: string;
   clientId: string;
@@ -65,7 +172,7 @@ function toClientPortalProjectSummary(p: {
     client: p.client ? { id: p.client.id, name: p.client.name } : null,
     projectId: p.projectId ?? null,
     project: p.project ? { id: p.project.id, name: p.project.name } : null,
-    name: p.name,
+    name: sanitizeClientPortalDisplayText(p.name, { stripScaffoldWord: true, fallback: p.name }) ?? p.name,
     targetMonth: formatTargetMonth(p.targetMonth),
     isArchived: p.isArchived,
     createdAt: p.createdAt instanceof Date ? p.createdAt.toISOString() : p.createdAt,
@@ -99,11 +206,17 @@ function toClientPortalDeliverableSummary(d: {
   createdAt: Date;
   updatedAt: Date;
 }) {
+  const displayTitle = sanitizeClientPortalDisplayText(d.title, {
+    stripScaffoldWord: true,
+    fallback: d.title
+  });
+
   return {
     id: d.id,
     projectId: d.aiDeliveryProjectId,
-    title: d.title,
-    description: d.description ?? null,
+    title: displayTitle ?? d.title,
+    displayTitle,
+    description: sanitizeClientPortalDisplayText(d.description),
     deliveryType: d.deliveryType,
     status: d.status,
     exportUrl: d.exportUrl ?? null,
@@ -207,44 +320,13 @@ const clientPortalMonthlyReportSelect = {
   updatedAt: true
 } as const;
 
-const CLIENT_PORTAL_MONTHLY_REPORT_TITLE_MARKER_PATTERNS = [
-  /\[PURIVA_LOCAL_SETUP\]/gi,
-  /PURIVA_MONTHLY_REPORT_V1/gi,
-  /PURIVA_MANUAL_METRICS_V1/gi,
-  /PURIVA_[A-Z0-9_]+_V1/gi
-] as const;
-
-function normalizeClientPortalMonthlyReportDisplayTitle(value: string): string {
-  let cleaned = value;
-
-  for (const pattern of CLIENT_PORTAL_MONTHLY_REPORT_TITLE_MARKER_PATTERNS) {
-    cleaned = cleaned.replace(pattern, "");
-  }
-
-  cleaned = cleaned
-    .replace(/\bscaffold\b/gi, "")
-    .replace(/\s{2,}/g, " ")
-    .replace(/\s+—\s+—/g, " — ")
-    .replace(/^\s*—\s*/, "")
-    .replace(/\s*—\s*$/, "")
-    .trim();
-
-  return cleaned;
-}
-
 export function sanitizeClientPortalMonthlyReportDisplayTitle(
   rawTitle: string | null | undefined
 ): string | null {
-  if (typeof rawTitle !== "string") {
-    return null;
-  }
-
-  const cleaned = normalizeClientPortalMonthlyReportDisplayTitle(rawTitle.trim());
-  if (!cleaned) {
-    return "Monthly report";
-  }
-
-  return cleaned;
+  return sanitizeClientPortalDisplayText(rawTitle, {
+    stripScaffoldWord: true,
+    fallback: "Monthly report"
+  });
 }
 
 function toClientPortalMonthlyReportSummary(r: {
@@ -265,7 +347,7 @@ function toClientPortalMonthlyReportSummary(r: {
     aiDeliveryProjectId: r.aiDeliveryProjectId,
     title: displayTitle,
     displayTitle,
-    recommendationsText: r.recommendationsText ?? null,
+    recommendationsText: sanitizeClientPortalDisplayText(r.recommendationsText),
     exportUrl: r.exportUrl ?? null,
     status: "FINAL" as const,
     hasDocument: !!r.storageKey,
@@ -467,14 +549,22 @@ async function buildClientPortalMonthlyReportWorkSummary(tenantId: string, proje
     clientApprovedPlanItemCount,
     deliverables: deliverables.map((item) => ({
       id: item.id,
-      title: item.title,
+      title:
+        sanitizeClientPortalDisplayText(item.title, {
+          stripScaffoldWord: true,
+          fallback: item.title
+        }) ?? item.title,
       deliveryType: item.deliveryType,
       status: item.status,
       exportUrl: item.exportUrl ?? null
     })),
     contentPlanItems: contentPlanItems.map((item) => ({
       id: item.id,
-      title: item.title,
+      title:
+        sanitizeClientPortalDisplayText(item.title, {
+          stripScaffoldWord: true,
+          fallback: item.title
+        }) ?? item.title,
       contentType: item.contentType ?? null,
       targetKeyword: item.targetKeyword ?? null,
       approvalStatus: item.approvalStatus ?? null
@@ -593,13 +683,7 @@ export async function getClientPortalDeliverableDownloadReference(
 }
 
 function toClientSafeStringList(value: unknown): string[] {
-  if (!Array.isArray(value)) {
-    return [];
-  }
-
-  return value
-    .filter((item): item is string => typeof item === "string" && item.trim().length > 0)
-    .slice(0, 12);
+  return sanitizeClientPortalStringList(value);
 }
 
 async function assertClientPortalProjectAccess(
@@ -710,24 +794,41 @@ export async function getClientPortalDeliverySummary(
     updatedAt: Date;
   }>)
     .filter((deliverable) => typeof deliverable.exportUrl === "string" && deliverable.exportUrl.trim().length > 0)
-    .map((deliverable) => ({
-      id: deliverable.id,
-      title: deliverable.title,
-      exportUrl: deliverable.exportUrl,
-      deliveryType: deliverable.deliveryType,
-      status: deliverable.status,
-      updatedAt:
-        deliverable.updatedAt instanceof Date
-          ? deliverable.updatedAt.toISOString()
-          : deliverable.updatedAt
-    }));
+    .map((deliverable) => {
+      const displayTitle =
+        sanitizeClientPortalDisplayText(deliverable.title, {
+          stripScaffoldWord: true,
+          fallback: deliverable.title
+        }) ?? deliverable.title;
+
+      return {
+        id: deliverable.id,
+        title: displayTitle,
+        displayTitle,
+        exportUrl: deliverable.exportUrl,
+        deliveryType: deliverable.deliveryType,
+        status: deliverable.status,
+        updatedAt:
+          deliverable.updatedAt instanceof Date
+            ? deliverable.updatedAt.toISOString()
+            : deliverable.updatedAt
+      };
+    });
+
+  const marketIntelligenceTitle = handoff
+    ? sanitizeClientPortalDisplayText(handoff.title, {
+        stripScaffoldWord: true,
+        fallback: "Market intelligence summary"
+      })
+    : null;
 
   return {
     deliverySummary: {
       marketIntelligence: handoff
         ? {
-            title: handoff.title,
-            marketSummary: handoff.marketSummary ?? null,
+            title: marketIntelligenceTitle,
+            displayTitle: marketIntelligenceTitle,
+            marketSummary: sanitizeClientPortalDisplayText(handoff.marketSummary),
             opportunities: toClientSafeStringList(handoff.opportunities),
             recommendedActions: toClientSafeStringList(handoff.recommendedActions),
             status: handoff.handoffStatus,
@@ -869,8 +970,12 @@ export async function getClientPortalReleasePackage(
     return { releasePackage: null };
   }
 
-  const releasePackage = toClientSafeReleasePackageFromRecord(
+  const parsedReleasePackage = toClientSafeReleasePackageFromRecord(
     stored as Parameters<typeof toClientSafeReleasePackageFromRecord>[0]
   );
-  return { releasePackage };
+  if (!parsedReleasePackage) {
+    return { releasePackage: null };
+  }
+
+  return { releasePackage: sanitizeClientPortalReleasePackage(parsedReleasePackage) };
 }
