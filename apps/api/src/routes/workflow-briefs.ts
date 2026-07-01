@@ -21,6 +21,7 @@ import {
   getWorkflowBriefReleasePrepSummary,
   getWorkflowBriefReleasePackageStatus,
   finalizeWorkflowBriefReleasePackage,
+  getWorkflowBriefPublicationHandoffStatus,
   getWorkflowBriefSeoReport,
   listWorkflowBriefs,
   packageAllWorkflowBriefDeliverables,
@@ -1034,6 +1035,30 @@ export function createWorkflowBriefsRouter() {
         res.status(400).json(
           failure("RELEASE_PREP_PUBLICATION_TARGET_MISSING", "Configure a publication target for this client before release preparation.")
         );
+        return;
+      }
+
+      res.status(200).json(success(result));
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.get("/:id/publication-handoff", requireAuth, requireTenant, async (req, res, next) => {
+    try {
+      const authSession = getAuthSession(res);
+      if (!authSession) {
+        res.status(401).json(unauthorizedFailure());
+        return;
+      }
+
+      const result = await getWorkflowBriefPublicationHandoffStatus(authSession, req.params.id);
+      if (result === "not_found") {
+        res.status(404).json(failure("WORKFLOW_BRIEF_NOT_FOUND", "Workflow brief was not found."));
+        return;
+      }
+      if (result === "forbidden") {
+        res.status(403).json(forbiddenFailure());
         return;
       }
 

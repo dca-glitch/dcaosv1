@@ -81,6 +81,17 @@ import {
   type WorkflowBriefFinalReleasePackageStage
 } from "./workflow-brief-final-release.execution";
 import {
+  buildPublicationHandoffPackageMappingItem,
+  canExecutePublicationHandoff,
+  computePublicationHandoffPackageFingerprint,
+  computePublicationHandoffStage,
+  resolvePublicationHandoffFeaturedImageRef,
+  WORKFLOW_BRIEF_PUBLICATION_HANDOFF_MODE,
+  WORKFLOW_BRIEF_PUBLICATION_HANDOFF_VERSION,
+  type WorkflowBriefPublicationHandoffRecord,
+  type WorkflowBriefPublicationHandoffStage
+} from "./workflow-brief-publication-handoff.execution";
+import {
   buildProductionPlanBodyFromContent,
   buildProductionPlanTitle,
   buildWorkflowBriefClientVisiblePlanJson,
@@ -3503,6 +3514,31 @@ function readFinalReleasePackageFromPlanJson(planJson: unknown): WorkflowBriefFi
   return parsed;
 }
 
+const LEGACY_PUBLICATION_HANDOFF_PLAN_JSON_KIND = "release_execution_result";
+
+function readPublicationHandoffFromPlanJson(
+  planJson: unknown
+): WorkflowBriefPublicationHandoffRecord | null {
+  if (!planJson || typeof planJson !== "object" || Array.isArray(planJson)) {
+    return null;
+  }
+  const record = planJson as Record<string, unknown>;
+  const candidates = [record.publicationHandoff, record.releaseExecution];
+  for (const candidate of candidates) {
+    if (!candidate || typeof candidate !== "object" || Array.isArray(candidate)) {
+      continue;
+    }
+    const parsed = candidate as WorkflowBriefPublicationHandoffRecord & { kind?: string; version?: string };
+    const versionMatches = parsed.version === WORKFLOW_BRIEF_PUBLICATION_HANDOFF_VERSION;
+    const kindMatches =
+      parsed.kind === "publication_handoff_result" || parsed.kind === LEGACY_PUBLICATION_HANDOFF_PLAN_JSON_KIND;
+    if (versionMatches && kindMatches) {
+      return parsed;
+    }
+  }
+  return null;
+}
+
 async function loadWorkflowBriefPackageExecutionData(tenantId: string, briefId: string) {
   const packagingData = await loadWorkflowBriefDeliverablePackagingData(tenantId, briefId);
   if (!packagingData) {
@@ -3562,6 +3598,7 @@ async function loadWorkflowBriefPackageExecutionData(tenantId: string, briefId: 
     imageSetMeta: readImageSetFromPlanJson(packagingData.productionPlan?.planJson),
     releasePrepMeta: readReleasePrepFromPlanJson(packagingData.productionPlan?.planJson),
     finalReleasePackageMeta: readFinalReleasePackageFromPlanJson(packagingData.productionPlan?.planJson),
+    publicationHandoffMeta: readPublicationHandoffFromPlanJson(packagingData.productionPlan?.planJson),
     publicationTarget
   };
 }
@@ -4562,6 +4599,178 @@ export async function getWorkflowBriefReleasePackageStatus(
   }
 
   return buildWorkflowBriefReleasePackageStatus(briefId, data, isOwnerRole(getActiveRoles(authSession)));
+}
+
+export type AdminSafePublicationHandoffSummary = {
+  version: string;
+  kind: "publication_handoff_result" | "release_execution_result";
+  executedAt: string;
+  publicationTargetLabel: string;
+  preparedCount: number;
+  reusedCount: number;
+  itemCount: number;
+  note: string;
+};
+
+export type WorkflowBriefPublicationHandoffStatus = {
+  briefId: string;
+  handoffStage: WorkflowBriefPublicationHandoffStage;
+  executionMode: typeof WORKFLOW_BRIEF_PUBLICATION_HANDOFF_MODE;
+  packageComplete: boolean;
+  releasePrepared: boolean;
+  lastReleasePreparedAt: string | null;
+  publicationTargetAvailable: boolean;
+  publicationTargetId: string | null;
+  publicationTargetLabel: string | null;
+  releasePackageFinalized: boolean;
+  lastReleasePackageFinalizedAt: string | null;
+  handoffExecuted: boolean;
+  lastHandoffExecutedAt: string | null;
+  packageChangedSinceHandoff: boolean;
+  canExecuteHandoff: boolean;
+  handoffBlockReason: string | null;
+  packageFingerprint: string;
+  mappedItemCount: number;
+  publicationHandoff: AdminSafePublicationHandoffSummary | null;
+};
+
+function buildPublicationHandoffPackageMappingItems(
+  data: NonNullable<Awaited<ReturnType<typeof loadWorkflowBriefPackageExecutionData>>>
+) {
+  return data.seedItems
+    .map((planItem) => {
+      const draft = data.draftByItemId.get(planItem.id);
+      const deliverable = draft ? data.deliverableByDraftId.get(draft.id) : null;
+      const image = draft ? data.imageByDraftId.get(draft.id) : null;
+      if (!draft || !deliverable || !image) {
+        return null;
+      }
+
+      return buildPublicationHandoffPackageMappingItem({
+        contentPlanItemId: planItem.id,
+        planItemTitle: planItem.title,
+        contentDraftId: draft.id,
+        textDeliverableId: deliverable.id,
+        articleImageId: image.id,
+        textTitle: deliverable.title,
+        bodyContent: deliverable.bodyContent ?? draft.draftBody,
+        excerpt: deliverable.bodyContent ? deliverable.bodyContent.slice(0, 160) : draft.draftBody.slice(0, 160),
+        imageTitle: image.title,
+        featuredImageRef: resolvePublicationHandoffFeaturedImageRef({
+          finalImageUrl: image.finalImageUrl,
+          previewImageUrl: image.previewImageUrl
+        }),
+        textDeliverableStatus: deliverable.status,
+        imageStatus: image.status,
+        textDeliverableUpdatedAt: deliverable.updatedAt,
+        contentDraftUpdatedAt: draft.updatedAt,
+        articleImageUpdatedAt: image.updatedAt
+      });
+    })
+    .filter((row): row is NonNullable<ReturnType<typeof buildPublicationHandoffPackageMappingItem>> => Boolean(row));
+}
+
+function toAdminSafePublicationHandoffSummary(
+  record: WorkflowBriefPublicationHandoffRecord | null | undefined
+): AdminSafePublicationHandoffSummary | null {
+  if (!record || record.version !== WORKFLOW_BRIEF_PUBLICATION_HANDOFF_VERSION) {
+    return null;
+  }
+  const kind =
+    record.kind === "publication_handoff_result"
+      ? "publication_handoff_result"
+      : record.kind === LEGACY_PUBLICATION_HANDOFF_PLAN_JSON_KIND
+        ? "release_execution_result"
+        : null;
+  if (!kind) {
+    return null;
+  }
+
+  return {
+    version: record.version,
+    kind,
+    executedAt: record.executedAt,
+    publicationTargetLabel: record.publicationTargetLabel,
+    preparedCount: record.preparedCount,
+    reusedCount: record.reusedCount,
+    itemCount: record.items.length,
+    note: record.note
+  };
+}
+
+function buildWorkflowBriefPublicationHandoffStatus(
+  briefId: string,
+  data: NonNullable<Awaited<ReturnType<typeof loadWorkflowBriefPackageExecutionData>>>
+): WorkflowBriefPublicationHandoffStatus {
+  const completeness = buildWorkflowBriefPackageCompletenessStatus(briefId, data);
+  const mappingItems = buildPublicationHandoffPackageMappingItems(data);
+  const packageFingerprint = computePublicationHandoffPackageFingerprint(mappingItems);
+  const packageComplete = completeness.completeItemCount === data.seedItems.length && data.seedItems.length > 0;
+  const releasePrepared = completeness.releasePrepared;
+  const publicationTargetAvailable = completeness.publicationTargetAvailable;
+  const handoffExecuted = Boolean(data.publicationHandoffMeta?.executedAt);
+  const storedFingerprint = data.publicationHandoffMeta?.packageFingerprint ?? null;
+  const packageChangedSinceHandoff = Boolean(
+    handoffExecuted && storedFingerprint && storedFingerprint !== packageFingerprint
+  );
+  const releasePackageFinalized = Boolean(data.finalReleasePackageMeta?.finalizedAt);
+  const handoffGate = canExecutePublicationHandoff({
+    packageComplete,
+    releasePrepared,
+    publicationTargetAvailable,
+    isAdmin: true
+  });
+
+  return {
+    briefId,
+    handoffStage: computePublicationHandoffStage({
+      packageComplete,
+      releasePrepared,
+      publicationTargetAvailable,
+      handoffExecuted,
+      packageFingerprint,
+      storedFingerprint
+    }),
+    executionMode: WORKFLOW_BRIEF_PUBLICATION_HANDOFF_MODE,
+    packageComplete,
+    releasePrepared,
+    lastReleasePreparedAt: data.releasePrepMeta?.preparedAt ?? null,
+    publicationTargetAvailable,
+    publicationTargetId: data.publicationTarget?.id ?? null,
+    publicationTargetLabel: data.publicationTarget?.label ?? null,
+    releasePackageFinalized,
+    lastReleasePackageFinalizedAt: data.finalReleasePackageMeta?.finalizedAt ?? null,
+    handoffExecuted,
+    lastHandoffExecutedAt: data.publicationHandoffMeta?.executedAt ?? null,
+    packageChangedSinceHandoff,
+    canExecuteHandoff: handoffGate.allowed,
+    handoffBlockReason: handoffGate.blockReason,
+    packageFingerprint,
+    mappedItemCount: mappingItems.length,
+    publicationHandoff: toAdminSafePublicationHandoffSummary(data.publicationHandoffMeta)
+  };
+}
+
+export async function getWorkflowBriefPublicationHandoffStatus(
+  authSession: AuthResolvedSessionContext,
+  briefId: string
+): Promise<WorkflowBriefPublicationHandoffStatus | "not_found" | "forbidden"> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId || !isOwnerRole(getActiveRoles(authSession))) {
+    return "forbidden";
+  }
+
+  const brief = await getBriefForAccess(briefId, tenantId);
+  if (!brief) {
+    return "not_found";
+  }
+
+  const data = await loadWorkflowBriefPackageExecutionData(tenantId, briefId);
+  if (!data) {
+    return "not_found";
+  }
+
+  return buildWorkflowBriefPublicationHandoffStatus(briefId, data);
 }
 
 export async function finalizeWorkflowBriefReleasePackage(
