@@ -1,5 +1,4 @@
 import { Router } from "express";
-import { createPrismaClient } from "../../../../packages/data/src/client";
 import { requireAuth } from "../middlewares/auth.middleware";
 import { requireTenant } from "../middlewares/tenant.middleware";
 import { failure, forbiddenFailure, success, unauthorizedFailure } from "../utils/responses";
@@ -7,6 +6,7 @@ import type { AuthSessionLocals } from "../auth/types";
 import {
   getClientPortalDeliverableDownloadReference,
   getClientPortalDeliverySummary,
+  getClientPortalMyClient,
   getClientPortalReleasePackage,
   getClientPortalMonthlyReportDownloadReference,
   getClientPortalProject,
@@ -32,34 +32,23 @@ import {
   undoClientPortalDeliverableImageReviewHandler
 } from "../controllers/client-portal-approval.controller";
 
-const prisma = createPrismaClient();
-
 export function createClientPortalRouter() {
   const router = Router();
 
-  router.get("/my-client", requireAuth, async (_req, res) => {
+  router.get("/my-client", requireAuth, requireTenant, async (_req, res) => {
     const authSession = (res.locals as AuthSessionLocals).authSession;
     if (!authSession) {
       res.status(401).json(unauthorizedFailure());
       return;
     }
 
-    const access = await prisma.clientUserAccess.findFirst({
-      where: { userId: authSession.user.id },
-      include: { client: { select: { id: true, name: true } } }
-    });
-
-    if (!access) {
+    const result = await getClientPortalMyClient(authSession);
+    if (!result) {
       res.status(404).json(failure("CLIENT_PORTAL_ACCESS_NOT_FOUND", "No client access found"));
       return;
     }
 
-    res.status(200).json(
-      success({
-        clientId: access.clientId,
-        clientName: access.client.name
-      })
-    );
+    res.status(200).json(success(result));
   });
 
   router.get("/projects", requireAuth, requireTenant, async (_req, res) => {

@@ -226,6 +226,45 @@ function toClientPortalDeliverableSummary(d: {
   };
 }
 
+export type ClientPortalMyClientSummary = {
+  clientId: string;
+  clientName: string;
+};
+
+export async function getClientPortalMyClient(
+  authSession: AuthResolvedSessionContext
+): Promise<ClientPortalMyClientSummary | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) {
+    return null;
+  }
+
+  const access = await prisma.clientUserAccess.findFirst({
+    where: {
+      tenantId,
+      userId: authSession.user.id,
+      isArchived: false,
+      client: { isArchived: false, tenantId }
+    },
+    orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+    select: {
+      clientId: true,
+      client: {
+        select: { name: true, tenantId: true }
+      }
+    }
+  });
+
+  if (!access || access.client.tenantId !== tenantId) {
+    return null;
+  }
+
+  return {
+    clientId: access.clientId,
+    clientName: access.client.name
+  };
+}
+
 export async function listClientPortalProjects(authSession: AuthResolvedSessionContext) {
   const tenantId = getActiveTenantId(authSession);
   if (!tenantId) return null;
