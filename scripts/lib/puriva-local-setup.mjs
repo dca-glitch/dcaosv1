@@ -5,12 +5,18 @@
 
 import {
   buildPurivaContentProductionContext,
-  buildPurivaWorkflowBriefProductionInput,
   ensurePurivaContentProductionApiSeed,
   PURIVA_CONTENT_PRODUCTION_VERSION,
-  validatePurivaContentProductionContext,
-  workflowBriefProductionMatches
+  validatePurivaContentProductionContext
 } from "./puriva-content-production.mjs";
+import {
+  buildPurivaImagePackageContext,
+  buildPurivaWorkflowBriefImagePackageInput,
+  ensurePurivaImagePackageApiSeed,
+  PURIVA_IMAGE_PACKAGE_VERSION,
+  validatePurivaImagePackageContext,
+  workflowBriefImagePackageMatches
+} from "./puriva-image-package.mjs";
 import {
   buildPurivaSeoPlanContext,
   ensurePurivaSeoPlanApiSeed,
@@ -122,7 +128,9 @@ export async function ensurePurivaLocalSetup({
       seoScopeNotesAttached: false,
       seoContentPlan: false,
       contentProductionAttached: false,
-      contentDraftScaffolds: false
+      contentDraftScaffolds: false,
+      imagePackageAttached: false,
+      imagePackageConcepts: false
     },
     skipped: [],
     actions
@@ -367,17 +375,41 @@ export async function ensurePurivaLocalSetup({
   };
   result.created.contentDraftScaffolds = productionSeed.created.contentDrafts > 0;
 
-  const expectedStructuredInput = buildPurivaWorkflowBriefProductionInput(targetMonth);
+  const imagePackageValidation = validatePurivaImagePackageContext(
+    buildPurivaImagePackageContext(targetMonth, productionSeed.context)
+  );
+  if (!imagePackageValidation.ok) {
+    throw new Error(`Puriva image package invalid: ${imagePackageValidation.errors.join("; ")}`);
+  }
+
+  const imagePackageSeed = await ensurePurivaImagePackageApiSeed({
+    request,
+    token,
+    aiDeliveryProject,
+    targetMonth,
+    log: note
+  });
+  result.imagePackage = {
+    version: PURIVA_IMAGE_PACKAGE_VERSION,
+    targetMonth,
+    packageCount: imagePackageSeed.context.imagePackages.length,
+    conceptCount: imagePackageSeed.context.imagePackages.reduce((sum, pkg) => sum + pkg.concepts.length, 0),
+    medicalReviewPackageCount: imagePackageSeed.context.imagePackages.filter((entry) => entry.medicalReviewRequired)
+      .length
+  };
+  result.created.imagePackageConcepts = imagePackageSeed.created.articleImages > 0;
+
+  const expectedStructuredInput = buildPurivaWorkflowBriefImagePackageInput(targetMonth);
   let briefDetailResponse = await request(`/workflow-briefs/${workflowBrief.id}`, { token });
   if (briefDetailResponse.status !== 200 || briefDetailResponse.body?.ok !== true) {
     throw new Error(`Workflow brief detail failed with HTTP ${briefDetailResponse.status}.`);
   }
 
   let briefDetail = briefDetailResponse.body.data ?? workflowBrief;
-  if (workflowBriefProductionMatches(briefDetail.structuredInputJson, targetMonth)) {
+  if (workflowBriefImagePackageMatches(briefDetail.structuredInputJson, targetMonth)) {
     note(
-      "reused workflow brief production input",
-      `${PURIVA_SERVICE_TAXONOMY_VERSION} + ${PURIVA_MARKET_INTELLIGENCE_VERSION} + ${PURIVA_SEO_PLAN_VERSION} + ${PURIVA_CONTENT_PRODUCTION_VERSION}`
+      "reused workflow brief image package input",
+      `${PURIVA_SERVICE_TAXONOMY_VERSION} + ${PURIVA_MARKET_INTELLIGENCE_VERSION} + ${PURIVA_SEO_PLAN_VERSION} + ${PURIVA_CONTENT_PRODUCTION_VERSION} + ${PURIVA_IMAGE_PACKAGE_VERSION}`
     );
   } else {
     const patchResponse = await request(`/workflow-briefs/${workflowBrief.id}`, {
@@ -390,14 +422,14 @@ export async function ensurePurivaLocalSetup({
     if (patchResponse.status !== 200 || patchResponse.body?.ok !== true) {
       throw new Error(`Puriva workflow brief production attach failed with HTTP ${patchResponse.status}.`);
     }
-    if (!workflowBriefProductionMatches(patchResponse.body?.data?.structuredInputJson, targetMonth)) {
-      throw new Error("Puriva workflow brief production attach did not persist structured input.");
+    if (!workflowBriefImagePackageMatches(patchResponse.body?.data?.structuredInputJson, targetMonth)) {
+      throw new Error("Puriva workflow brief image package attach did not persist structured input.");
     }
     briefDetail = patchResponse.body.data ?? briefDetail;
-    result.created.contentProductionAttached = true;
+    result.created.imagePackageAttached = true;
     note(
-      "attached workflow brief production input",
-      `${PURIVA_SERVICE_TAXONOMY_VERSION} + ${PURIVA_MARKET_INTELLIGENCE_VERSION} + ${PURIVA_SEO_PLAN_VERSION} + ${PURIVA_CONTENT_PRODUCTION_VERSION}`
+      "attached workflow brief image package input",
+      `${PURIVA_SERVICE_TAXONOMY_VERSION} + ${PURIVA_MARKET_INTELLIGENCE_VERSION} + ${PURIVA_SEO_PLAN_VERSION} + ${PURIVA_CONTENT_PRODUCTION_VERSION} + ${PURIVA_IMAGE_PACKAGE_VERSION}`
     );
   }
 
@@ -406,10 +438,16 @@ export async function ensurePurivaLocalSetup({
     marketIntelligenceVersion: PURIVA_MARKET_INTELLIGENCE_VERSION,
     seoPlanVersion: PURIVA_SEO_PLAN_VERSION,
     contentProductionVersion: PURIVA_CONTENT_PRODUCTION_VERSION,
+    imagePackageVersion: PURIVA_IMAGE_PACKAGE_VERSION,
     attached: true,
     serviceCategoryCount: expectedStructuredInput.serviceCategories.length,
     seoPlanItemCount: expectedStructuredInput.seoPlan?.items?.length ?? 0,
-    contentProductionScaffoldCount: expectedStructuredInput.contentProduction?.draftScaffolds?.length ?? 0
+    contentProductionScaffoldCount: expectedStructuredInput.contentProduction?.draftScaffolds?.length ?? 0,
+    imagePackageCount: expectedStructuredInput.imagePackage?.imagePackages?.length ?? 0,
+    imagePackageConceptCount: (expectedStructuredInput.imagePackage?.imagePackages ?? []).reduce(
+      (sum, pkg) => sum + (pkg.concepts?.length ?? 0),
+      0
+    )
   };
   result.workflowBrief = briefDetail;
 

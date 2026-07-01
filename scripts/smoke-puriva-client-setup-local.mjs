@@ -12,14 +12,23 @@ import {
   responseHasSecrets
 } from "./lib/puriva-local-setup.mjs";
 import {
+  buildPurivaImagePackageContext,
+  findUnsafeVisualPhrasesInImagePackage,
+  isPurivaImagePackageBriefAttachment,
+  PURIVA_IMAGE_INTERNAL_PROMPT_LABEL,
+  PURIVA_IMAGE_PACKAGE_MARKER,
+  PURIVA_IMAGE_PACKAGE_VERSION,
+  validatePurivaImagePackageContext,
+  workflowBriefImagePackageMatches
+} from "./lib/puriva-image-package.mjs";
+import {
   buildPurivaContentProductionContext,
   findUnsafeApprovedPhrasesInContentProduction,
   isPurivaContentProductionBriefAttachment,
   PURIVA_CONTENT_PRODUCTION_MARKER,
   PURIVA_CONTENT_PRODUCTION_VERSION,
   PURIVA_DRAFT_INTERNAL_LABEL,
-  validatePurivaContentProductionContext,
-  workflowBriefProductionMatches
+  validatePurivaContentProductionContext
 } from "./lib/puriva-content-production.mjs";
 import {
   buildPurivaSeoPlanContext,
@@ -309,11 +318,57 @@ async function main() {
     findUnsafeApprovedPhrasesInContentProduction(productionContext).join(", ") || "clean"
   );
 
+  const imagePackageValidation = validatePurivaImagePackageContext(
+    buildPurivaImagePackageContext(targetMonth, productionContext)
+  );
+  record("puriva image package validates", imagePackageValidation.ok, imagePackageValidation.errors.join("; ") || "ok");
+
+  const imagePackageContext = buildPurivaImagePackageContext(targetMonth, productionContext);
+  record(
+    "puriva image package covers content items",
+    imagePackageContext.imagePackages.length === productionContext.draftScaffolds.length,
+    `${imagePackageContext.imagePackages.length} packages`
+  );
+  record(
+    "puriva image concepts per package",
+    imagePackageContext.imagePackages.every((pkg) => pkg.concepts.length === 3),
+    `${imagePackageContext.imagePackages.reduce((sum, pkg) => sum + pkg.concepts.length, 0)} concepts`
+  );
+  for (const highRiskId of PURIVA_HIGH_RISK_CATEGORY_IDS) {
+    const highRiskPackages = imagePackageContext.imagePackages.filter(
+      (pkg) => pkg.serviceCategoryId === highRiskId
+    );
+    record(
+      `image package high-risk ${highRiskId} requires medical review`,
+      highRiskPackages.length > 0 && highRiskPackages.every((pkg) => pkg.medicalReviewRequired),
+      `${highRiskPackages.length} packages`
+    );
+  }
+  record(
+    "puriva image prompts marked internal admin only",
+    imagePackageContext.imagePackages.every((pkg) =>
+      pkg.concepts.every((concept) => concept.promptScaffold.includes(PURIVA_IMAGE_INTERNAL_PROMPT_LABEL))
+    ),
+    PURIVA_IMAGE_INTERNAL_PROMPT_LABEL
+  );
+  record(
+    "puriva image package blocks final-ready gating",
+    imagePackageContext.imagePackages.every(
+      (pkg) => pkg.finalReadyGating.allowed === false && pkg.finalReadyGating.reasons.length > 0
+    ),
+    "scaffold only"
+  );
+  record(
+    "puriva image package avoids unsafe visual phrases",
+    findUnsafeVisualPhrasesInImagePackage(imagePackageContext).length === 0,
+    findUnsafeVisualPhrasesInImagePackage(imagePackageContext).join(", ") || "clean"
+  );
+
   const briefDetail = await request(`/workflow-briefs/${firstRun.workflowBrief.id}`, { token });
   const structuredInput = briefDetail.body?.data?.structuredInputJson ?? null;
   record(
-    "workflow brief exposes Puriva production structured input",
-    workflowBriefProductionMatches(structuredInput, targetMonth),
+    "workflow brief exposes Puriva image package structured input",
+    workflowBriefImagePackageMatches(structuredInput, targetMonth),
     structuredInput?.version ?? "missing"
   );
   record(
@@ -362,6 +417,21 @@ async function main() {
     structuredInput?.contentProduction?.draftScaffolds?.length === productionContext.draftScaffolds.length,
     `${structuredInput?.contentProduction?.draftScaffolds?.length ?? 0}`
   );
+  record(
+    "workflow brief image package attachment",
+    isPurivaImagePackageBriefAttachment(structuredInput?.imagePackage),
+    structuredInput?.imagePackage?.version ?? "missing"
+  );
+  record(
+    "workflow brief image package version",
+    structuredInput?.imagePackage?.version === PURIVA_IMAGE_PACKAGE_VERSION,
+    structuredInput?.imagePackage?.version ?? "missing"
+  );
+  record(
+    "workflow brief image package count",
+    structuredInput?.imagePackage?.imagePackages?.length === imagePackageContext.imagePackages.length,
+    `${structuredInput?.imagePackage?.imagePackages?.length ?? 0}`
+  );
 
   const contentDraftsResponse = await request(`/ai-delivery-projects/${firstRun.aiDeliveryProject.id}/content-drafts`, {
     token
@@ -386,6 +456,36 @@ async function main() {
       .filter((draft) => draft.notes?.includes(PURIVA_CONTENT_PRODUCTION_MARKER))
       .every((draft) => typeof draft.draftBody === "string" && draft.draftBody.includes(PURIVA_DRAFT_INTERNAL_LABEL)),
     PURIVA_DRAFT_INTERNAL_LABEL
+  );
+
+  const articleImagesResponse = await request(
+    `/ai-delivery-projects/${firstRun.aiDeliveryProject.id}/article-images`,
+    { token }
+  );
+  const articleImages = articleImagesResponse.body?.data?.articleImages ?? [];
+  const imagePackageImages = articleImages.filter((image) => image.notes?.includes(PURIVA_IMAGE_PACKAGE_MARKER));
+  const expectedConceptCount = imagePackageContext.imagePackages.reduce((sum, pkg) => sum + pkg.concepts.length, 0);
+  record(
+    "ai delivery image package concepts seeded",
+    imagePackageImages.length >= expectedConceptCount,
+    `${imagePackageImages.length}/${expectedConceptCount}`
+  );
+  record(
+    "ai delivery image package records remain draft scaffold",
+    imagePackageImages.every((image) => image.status === "DRAFT"),
+    "DRAFT only"
+  );
+  record(
+    "ai delivery image prompts marked internal admin only",
+    imagePackageImages.every(
+      (image) => typeof image.prompt === "string" && image.prompt.includes(PURIVA_IMAGE_INTERNAL_PROMPT_LABEL)
+    ),
+    PURIVA_IMAGE_INTERNAL_PROMPT_LABEL
+  );
+  record(
+    "ai delivery image records have no generated assets",
+    imagePackageImages.every((image) => !image.storageKey && !image.finalImageUrl),
+    "no storage/final urls"
   );
 
   record(
@@ -527,7 +627,7 @@ async function main() {
 
   if (failed.length === 0) {
     console.log(
-      "PROVEN: Puriva local client setup is idempotent with taxonomy + MI + SEO + content production scaffolds, without credentials or live publish."
+      "PROVEN: Puriva local client setup is idempotent with taxonomy + MI + SEO + content production + image package scaffolds, without credentials or live publish."
     );
   } else {
     console.log("NOT PROVEN: one or more Puriva client setup checks failed.");
