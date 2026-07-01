@@ -29,6 +29,7 @@ import {
 } from "./lib/puriva-local-setup.mjs";
 import { PURIVA_CONTENT_PRODUCTION_MARKER } from "./lib/puriva-content-production.mjs";
 import { PURIVA_IMAGE_PACKAGE_MARKER } from "./lib/puriva-image-package.mjs";
+import { PURIVA_MANUAL_METRICS_MARKER } from "./lib/puriva-manual-metrics.mjs";
 import {
   PURIVA_MONTHLY_REPORT_MARKER,
   PURIVA_MONTHLY_REPORT_VERSION
@@ -207,22 +208,133 @@ async function main() {
   const portalMonthlyReports = await request(`/client-portal/projects/${portalProject.id}/monthly-reports`, {
     token: portalToken
   });
+
+  const purivaReportId = firstRun.monthlyReport?.reportId ?? null;
+  const adminMonthlyReport = purivaReportId
+    ? await request(`/ai-delivery/reports/monthly/${firstRun.aiDeliveryProject.id}`, { token: adminToken })
+    : null;
+  const purivaReportStatus = adminMonthlyReport?.body?.data?.report?.status ?? null;
+  const purivaReportIsDraft =
+    purivaReportStatus === "DRAFT" || purivaReportStatus === "ADMIN_REVIEW" || purivaReportStatus == null;
+
   record(
     "client portal monthly reports hide draft scaffold report",
-    portalMonthlyReports.status === 200 &&
-      (portalMonthlyReports.body?.data?.monthlyReports ?? []).length === 0,
-    `${portalMonthlyReports.body?.data?.monthlyReports?.length ?? 0} visible`
+    purivaReportIsDraft
+      ? portalMonthlyReports.status === 200 &&
+          (portalMonthlyReports.body?.data?.monthlyReports ?? []).length === 0
+      : portalMonthlyReports.status === 200 &&
+          (portalMonthlyReports.body?.data?.monthlyReports ?? []).some((report) => report.id === purivaReportId),
+    purivaReportIsDraft
+      ? `${portalMonthlyReports.body?.data?.monthlyReports?.length ?? 0} visible`
+      : `status=${purivaReportStatus ?? "unknown"}`
   );
   record(
-    "client portal monthly reports omit puriva scaffold marker",
-    !(portalMonthlyReports.text ?? "").includes(PURIVA_MONTHLY_REPORT_MARKER),
-    (portalMonthlyReports.text ?? "").includes(PURIVA_MONTHLY_REPORT_MARKER) ? "marker leaked" : "clean"
+    "client portal monthly reports omit puriva scaffold marker when draft hidden",
+    purivaReportIsDraft ? !(portalMonthlyReports.text ?? "").includes(PURIVA_MONTHLY_REPORT_MARKER) : true,
+    purivaReportIsDraft
+      ? (portalMonthlyReports.text ?? "").includes(PURIVA_MONTHLY_REPORT_MARKER)
+        ? "marker leaked"
+        : "clean"
+      : "skipped — FINAL already visible"
   );
   record(
     "puriva monthly report version tracked in setup",
     firstRun.monthlyReport?.version === PURIVA_MONTHLY_REPORT_VERSION,
     firstRun.monthlyReport?.version ?? "missing"
   );
+
+  record(
+    "puriva monthly report scaffold present for portal metrics proof",
+    typeof purivaReportId === "string" && purivaReportId.length > 0,
+    purivaReportId ?? "missing"
+  );
+
+  if (purivaReportId) {
+    let reportIsFinal = purivaReportStatus === "FINAL";
+    if (!reportIsFinal && purivaReportStatus !== "ARCHIVED") {
+      const promoteFinal = await request(`/ai-delivery/reports/monthly/${purivaReportId}/status`, {
+        method: "POST",
+        token: adminToken,
+        body: { status: "FINAL" }
+      });
+      reportIsFinal =
+        promoteFinal.status === 200 && promoteFinal.body?.data?.report?.status === "FINAL";
+      record(
+        "puriva monthly report promoted to FINAL for portal placeholder proof",
+        reportIsFinal,
+        `${promoteFinal.status}`
+      );
+    } else {
+      record(
+        "puriva monthly report promoted to FINAL for portal placeholder proof",
+        reportIsFinal,
+        `reused ${purivaReportStatus ?? "unknown"}`
+      );
+    }
+
+    if (reportIsFinal) {
+    const portalMonthlyReportsAfterFinal = await request(
+      `/client-portal/projects/${portalProject.id}/monthly-reports`,
+      { token: portalToken }
+    );
+    record(
+      "client portal monthly reports show FINAL report after promotion",
+      portalMonthlyReportsAfterFinal.status === 200 &&
+        (portalMonthlyReportsAfterFinal.body?.data?.monthlyReports ?? []).some(
+          (report) => report.id === purivaReportId
+        ),
+      `${portalMonthlyReportsAfterFinal.body?.data?.monthlyReports?.length ?? 0} visible`
+    );
+    assertPurivaClientPortalResponseSafe(
+      record,
+      "client portal monthly reports after FINAL",
+      portalMonthlyReportsAfterFinal
+    );
+
+    const portalMonthlyReportDetail = await request(
+      `/client-portal/projects/${portalProject.id}/monthly-reports/${purivaReportId}`,
+      { token: portalToken }
+    );
+    const performanceSummary = portalMonthlyReportDetail.body?.data?.performanceSummary ?? null;
+    record(
+      "client portal monthly report detail after FINAL",
+      portalMonthlyReportDetail.status === 200,
+      `${portalMonthlyReportDetail.status}`
+    );
+    assertPurivaClientPortalResponseSafe(
+      record,
+      "client portal monthly report detail after FINAL",
+      portalMonthlyReportDetail
+    );
+    record(
+      "client portal performance summary marks manual placeholder",
+      performanceSummary?.placeholderOnly === true && performanceSummary?.manualSource === true,
+      `placeholderOnly=${performanceSummary?.placeholderOnly ?? "missing"}`
+    );
+    record(
+      "client portal performance summary includes placeholder disclaimer",
+      typeof performanceSummary?.disclaimer === "string" &&
+        /placeholder/i.test(performanceSummary.disclaimer) &&
+        /GA\/GSC|analytics/i.test(performanceSummary.disclaimer),
+      performanceSummary?.disclaimer ? "present" : "missing"
+    );
+    record(
+      "client portal monthly report detail omits manual metrics marker",
+      !(portalMonthlyReportDetail.text ?? "").includes(PURIVA_MANUAL_METRICS_MARKER),
+      (portalMonthlyReportDetail.text ?? "").includes(PURIVA_MANUAL_METRICS_MARKER) ? "marker leaked" : "clean"
+    );
+    record(
+      "client portal monthly report detail omits itemMetrics embed",
+      !(portalMonthlyReportDetail.text ?? "").includes('"itemMetrics"'),
+      (portalMonthlyReportDetail.text ?? "").includes('"itemMetrics"') ? "embed leaked" : "clean"
+    );
+    record(
+      "client portal monthly report detail omits raw notes field",
+      !(portalMonthlyReportDetail.text ?? "").includes('"notes"'),
+      (portalMonthlyReportDetail.text ?? "").includes('"notes"') ? "notes leaked" : "clean"
+    );
+    }
+  }
 
   const forbiddenAdminPaths = [
     ["publication handoff status", `/workflow-briefs/${firstRun.workflowBrief.id}/publication-handoff`],

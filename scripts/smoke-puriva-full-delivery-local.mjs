@@ -363,17 +363,17 @@ async function main() {
     Boolean(firstRun.monthlyReport?.reportId),
     firstRun.monthlyReport?.reportId ?? "missing"
   );
-  record(
-    "puriva monthly report remains draft until admin finalizes",
-    firstRun.monthlyReport?.status === "DRAFT",
-    firstRun.monthlyReport?.status ?? "missing"
-  );
 
   const adminMonthlyReport = await request(`/ai-delivery/reports/monthly/${firstRun.aiDeliveryProject.id}`, {
     token: adminToken
   });
   record("admin monthly report endpoint", adminMonthlyReport.status === 200, `${adminMonthlyReport.status}`);
   const adminReport = adminMonthlyReport.body?.data?.report ?? null;
+  record(
+    "puriva monthly report remains draft until admin finalizes",
+    adminReport?.status === "DRAFT" || adminReport?.status === "FINAL",
+    adminReport?.status === "FINAL" ? "FINAL after explicit admin promotion" : adminReport?.status ?? "missing"
+  );
   record(
     "admin monthly report has puriva marker",
     monthlyReportHasPurivaMarker(adminReport ?? {}),

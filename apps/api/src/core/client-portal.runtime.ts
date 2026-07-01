@@ -2,6 +2,10 @@ import { createPrismaClient } from "../../../../packages/data/src/client";
 import type { AuthResolvedSessionContext } from "../auth/types";
 import { getPrivateStorageDownloadReference } from "../storage/private-storage.service";
 import {
+  buildPurivaClientSafeManualMetricsDisclaimer,
+  consumePurivaApprovedManualMetricsSnapshot
+} from "./puriva-manual-metrics";
+import {
   toClientSafeReleasePackageFromRecord,
   WORKFLOW_BRIEF_FINAL_RELEASE_PACKAGE_VERSION,
   type ClientSafeReleasePackage
@@ -278,8 +282,11 @@ const clientPortalWorkSummaryContentPlanItemSelect = {
 } as const;
 
 const clientPortalApprovedMetricSelect = {
+  id: true,
   targetMonth: true,
   sourceType: true,
+  status: true,
+  notes: true,
   gscClicks: true,
   gscImpressions: true,
   gscAverageCtr: true,
@@ -288,6 +295,89 @@ const clientPortalApprovedMetricSelect = {
   ga4Users: true,
   ga4PageViews: true
 } as const;
+
+type ClientPortalApprovedMetricSnapshot = {
+  id: string;
+  targetMonth: string;
+  sourceType: string;
+  status: string;
+  notes: string | null;
+  gscClicks: number | null;
+  gscImpressions: number | null;
+  gscAverageCtr: number | null;
+  gscAveragePosition: number | null;
+  ga4Sessions: number | null;
+  ga4Users: number | null;
+  ga4PageViews: number | null;
+};
+
+export type ClientPortalMonthlyReportPerformanceSummary = {
+  targetMonth: string;
+  sourceType: string;
+  placeholderOnly: boolean;
+  manualSource: boolean;
+  disclaimer: string | null;
+  itemCount: number | null;
+  gscClicks: number | null;
+  gscImpressions: number | null;
+  gscAverageCtr: number | null;
+  gscAveragePosition: number | null;
+  ga4Sessions: number | null;
+  ga4Users: number | null;
+  ga4PageViews: number | null;
+};
+
+export function toClientPortalMonthlyReportPerformanceSummary(
+  approvedSnapshot: ClientPortalApprovedMetricSnapshot
+): ClientPortalMonthlyReportPerformanceSummary {
+  const consumed = consumePurivaApprovedManualMetricsSnapshot({
+    id: approvedSnapshot.id,
+    targetMonth: approvedSnapshot.targetMonth,
+    sourceType: approvedSnapshot.sourceType,
+    status: approvedSnapshot.status,
+    notes: approvedSnapshot.notes
+  });
+
+  const base = {
+    targetMonth: approvedSnapshot.targetMonth,
+    sourceType: approvedSnapshot.sourceType,
+    gscClicks: approvedSnapshot.gscClicks,
+    gscImpressions: approvedSnapshot.gscImpressions,
+    gscAverageCtr: approvedSnapshot.gscAverageCtr,
+    gscAveragePosition: approvedSnapshot.gscAveragePosition,
+    ga4Sessions: approvedSnapshot.ga4Sessions,
+    ga4Users: approvedSnapshot.ga4Users,
+    ga4PageViews: approvedSnapshot.ga4PageViews
+  };
+
+  if (consumed?.clientSafeSummary) {
+    return {
+      ...base,
+      placeholderOnly: true,
+      manualSource: true,
+      disclaimer: consumed.clientSafeSummary.disclaimer,
+      itemCount: consumed.clientSafeSummary.itemCount
+    };
+  }
+
+  if (approvedSnapshot.sourceType === "MANUAL") {
+    return {
+      ...base,
+      placeholderOnly: true,
+      manualSource: true,
+      disclaimer: buildPurivaClientSafeManualMetricsDisclaimer(),
+      itemCount: null
+    };
+  }
+
+  return {
+    ...base,
+    placeholderOnly: false,
+    manualSource: false,
+    disclaimer: null,
+    itemCount: null
+  };
+}
 
 async function buildClientPortalMonthlyReportWorkSummary(tenantId: string, projectId: string) {
   const project = await prisma.aiDeliveryProject.findFirst({
@@ -358,33 +448,13 @@ async function buildClientPortalMonthlyReportPerformanceSummary(tenantId: string
     },
     orderBy: [{ targetMonth: "desc" }, { updatedAt: "desc" }],
     select: clientPortalApprovedMetricSelect
-  }) as {
-    targetMonth: string;
-    sourceType: string;
-    gscClicks: number | null;
-    gscImpressions: number | null;
-    gscAverageCtr: number | null;
-    gscAveragePosition: number | null;
-    ga4Sessions: number | null;
-    ga4Users: number | null;
-    ga4PageViews: number | null;
-  } | null;
+  }) as ClientPortalApprovedMetricSnapshot | null;
 
   if (!approvedSnapshot) {
     return null;
   }
 
-  return {
-    targetMonth: approvedSnapshot.targetMonth,
-    sourceType: approvedSnapshot.sourceType,
-    gscClicks: approvedSnapshot.gscClicks,
-    gscImpressions: approvedSnapshot.gscImpressions,
-    gscAverageCtr: approvedSnapshot.gscAverageCtr,
-    gscAveragePosition: approvedSnapshot.gscAveragePosition,
-    ga4Sessions: approvedSnapshot.ga4Sessions,
-    ga4Users: approvedSnapshot.ga4Users,
-    ga4PageViews: approvedSnapshot.ga4PageViews
-  };
+  return toClientPortalMonthlyReportPerformanceSummary(approvedSnapshot);
 }
 
 export async function getClientPortalMonthlyReport(

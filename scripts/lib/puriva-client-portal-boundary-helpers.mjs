@@ -6,7 +6,7 @@
 import { PURIVA_CLIENT_PORTAL_USER_EMAIL } from "./puriva-local-setup.mjs";
 
 export const PURIVA_PORTAL_FORBIDDEN_RESPONSE =
-  /passwordHash|sessionTokenHash|storageKey|structuredInputJson|promptScaffold|INTERNAL ADMIN IMAGE PROMPT|INTERNAL DRAFT SCAFFOLD|openrouter|providerMetadata|workflowRunId|executionLog|tempPassword|private\/|\/api\/v1\/workflow-briefs|publication-handoff|execute-publication-handoff|prepare-release|finalize-release-package/i;
+  /passwordHash|sessionTokenHash|storageKey|structuredInputJson|promptScaffold|INTERNAL ADMIN IMAGE PROMPT SCAFFOLD — NOT FOR CLIENT OR GENERATION USE|INTERNAL DRAFT SCAFFOLD — NOT APPROVED CLIENT COPY|openrouter|providerMetadata|workflowRunId|executionLog|tempPassword|private\/|\/api\/v1\/workflow-briefs|publication-handoff|execute-publication-handoff|prepare-release|finalize-release-package|PURIVA_MANUAL_METRICS_V1|"itemMetrics"|"placeholderDisclaimer"|"adminSummaryNotes"|"verificationRequiredNotes"|"awaitingAnalyticsNote"|puriva_manual_metrics_seed/i;
 
 export const PURIVA_PORTAL_FORBIDDEN_UI =
   /Publication handoff|Prepare WordPress drafts|structuredInputJson|INTERNAL ADMIN IMAGE PROMPT|INTERNAL DRAFT SCAFFOLD|storageKey|workflowRunId|executionLog|openrouter|providerMetadata|Execute release|Publish now/i;

@@ -105,6 +105,10 @@ type ClientPortalMonthlyReportWorkSummary = {
 type ClientPortalMonthlyReportPerformanceSummary = {
   targetMonth: string;
   sourceType: string;
+  placeholderOnly: boolean;
+  manualSource: boolean;
+  disclaimer: string | null;
+  itemCount: number | null;
   gscClicks: number | null;
   gscImpressions: number | null;
   gscAverageCtr: number | null;
@@ -404,6 +408,17 @@ function formatPercentValue(value: number | null | undefined): string {
   }
 
   return `${value.toLocaleString(undefined, { maximumFractionDigits: 2 })}%`;
+}
+
+function formatPlaceholderMetricValue(
+  value: number | null | undefined,
+  placeholderOnly: boolean
+): string {
+  if (placeholderOnly) {
+    return "Not measured";
+  }
+
+  return formatMetricValue(value);
 }
 
 function ClientPortalStatusBadge({ status }: { status: string | null | undefined }) {
@@ -1558,30 +1573,70 @@ export function ClientPortalPage() {
 
                           {monthlyReportDetail.performanceSummary ? (
                             <SectionPanel
-                              description="Performance snapshot for this report month."
+                              description={
+                                monthlyReportDetail.performanceSummary.placeholderOnly
+                                  ? "Manual placeholder metrics for reporting structure only — not measured traffic or live analytics."
+                                  : "Performance snapshot for this report month."
+                              }
                               title="Performance"
                               tone="compact"
                             >
+                              {monthlyReportDetail.performanceSummary.placeholderOnly &&
+                              monthlyReportDetail.performanceSummary.disclaimer ? (
+                                <Alert
+                                  message={monthlyReportDetail.performanceSummary.disclaimer}
+                                  title="Placeholder metrics — not live analytics"
+                                  variant="info"
+                                />
+                              ) : null}
                               <div className="metric-grid">
                                 <MetricCard
                                   label="GSC clicks"
-                                  value={formatMetricValue(monthlyReportDetail.performanceSummary.gscClicks)}
-                                  helper={`Month ${monthlyReportDetail.performanceSummary.targetMonth}`}
+                                  value={formatPlaceholderMetricValue(
+                                    monthlyReportDetail.performanceSummary.gscClicks,
+                                    monthlyReportDetail.performanceSummary.placeholderOnly
+                                  )}
+                                  helper={
+                                    monthlyReportDetail.performanceSummary.placeholderOnly
+                                      ? `Manual placeholder · Month ${monthlyReportDetail.performanceSummary.targetMonth}`
+                                      : `Month ${monthlyReportDetail.performanceSummary.targetMonth}`
+                                  }
                                 />
                                 <MetricCard
                                   label="GSC impressions"
-                                  value={formatMetricValue(monthlyReportDetail.performanceSummary.gscImpressions)}
-                                  helper={monthlyReportDetail.performanceSummary.sourceType}
+                                  value={formatPlaceholderMetricValue(
+                                    monthlyReportDetail.performanceSummary.gscImpressions,
+                                    monthlyReportDetail.performanceSummary.placeholderOnly
+                                  )}
+                                  helper={
+                                    monthlyReportDetail.performanceSummary.placeholderOnly
+                                      ? "GA/GSC not connected"
+                                      : monthlyReportDetail.performanceSummary.sourceType
+                                  }
                                 />
                                 <MetricCard
                                   label="GA4 sessions"
-                                  value={formatMetricValue(monthlyReportDetail.performanceSummary.ga4Sessions)}
-                                  helper={`Users ${formatMetricValue(monthlyReportDetail.performanceSummary.ga4Users)}`}
+                                  value={formatPlaceholderMetricValue(
+                                    monthlyReportDetail.performanceSummary.ga4Sessions,
+                                    monthlyReportDetail.performanceSummary.placeholderOnly
+                                  )}
+                                  helper={
+                                    monthlyReportDetail.performanceSummary.placeholderOnly
+                                      ? "Not measured traffic"
+                                      : `Users ${formatMetricValue(monthlyReportDetail.performanceSummary.ga4Users)}`
+                                  }
                                 />
                                 <MetricCard
                                   label="GA4 page views"
-                                  value={formatMetricValue(monthlyReportDetail.performanceSummary.ga4PageViews)}
-                                  helper={`CTR ${formatPercentValue(monthlyReportDetail.performanceSummary.gscAverageCtr)}`}
+                                  value={formatPlaceholderMetricValue(
+                                    monthlyReportDetail.performanceSummary.ga4PageViews,
+                                    monthlyReportDetail.performanceSummary.placeholderOnly
+                                  )}
+                                  helper={
+                                    monthlyReportDetail.performanceSummary.placeholderOnly
+                                      ? "Placeholder values only"
+                                      : `CTR ${formatPercentValue(monthlyReportDetail.performanceSummary.gscAverageCtr)}`
+                                  }
                                 />
                               </div>
                             </SectionPanel>
