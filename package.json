@@ -67,6 +67,7 @@
     "smoke:ai-provider-config:local": "node scripts/smoke-ai-provider-config-local.mjs",
     "smoke:mi-operator:browser": "node scripts/smoke-mi-operator-browser-local.mjs",
     "smoke:ai-delivery-workflow:browser": "node scripts/smoke-ai-delivery-workflow-browser-local.mjs",
+    "smoke:workflow-brief-publication-handoff:browser": "node scripts/smoke-workflow-brief-publication-handoff-browser-local.mjs",
     "smoke:google-drive-export-live:local": "node scripts/smoke-google-drive-export-live-local.mjs",
     "smoke:credential-master-key-probe:local": "node scripts/smoke-credential-master-key-probe-local.mjs",
     "smoke:monthly-metrics-import:browser": "node scripts/smoke-monthly-metrics-import-browser-local.mjs",
