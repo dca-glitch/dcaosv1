@@ -72,6 +72,7 @@
     "smoke:puriva-client-setup:local": "node scripts/smoke-puriva-client-setup-local.mjs",
     "smoke:puriva-full-delivery:local": "node scripts/smoke-puriva-full-delivery-local.mjs",
     "smoke:puriva-client-portal-boundary:local": "node scripts/smoke-puriva-client-portal-boundary-local.mjs",
+    "smoke:puriva-readiness:local": "powershell -ExecutionPolicy Bypass -File scripts/smoke-puriva-readiness-local.ps1",
     "smoke:google-drive-export-live:local": "node scripts/smoke-google-drive-export-live-local.mjs",
     "smoke:credential-master-key-probe:local": "node scripts/smoke-credential-master-key-probe-local.mjs",
     "smoke:monthly-metrics-import:browser": "node scripts/smoke-monthly-metrics-import-browser-local.mjs",
