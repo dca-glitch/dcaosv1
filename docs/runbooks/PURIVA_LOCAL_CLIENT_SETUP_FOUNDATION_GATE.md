@@ -61,6 +61,8 @@ Attached to workflow brief `structuredInputJson` as `kind: puriva_service_taxono
 
 Unit tests: `apps/api/src/core/puriva-service-taxonomy.test.ts`
 
+Medical compliance guardrails: `docs/runbooks/PURIVA_MEDICAL_COMPLIANCE_V1_GATE.md`
+
 ---
 
 ## Operator notes

@@ -1,0 +1,209 @@
+{
+  "version": "PURIVA_MEDICAL_COMPLIANCE_V1",
+  "clientDomain": "puriva.id",
+  "rules": [
+    {
+      "id": "guaranteed_outcome",
+      "flags": ["guaranteed_outcome_claim", "medical_claim_risk"],
+      "patterns": [
+        "guaranteed results",
+        "guaranteed outcome",
+        "guarantee you will",
+        "guarantee weight loss",
+        "100% success",
+        "results guaranteed"
+      ],
+      "severity": "high",
+      "action": "revise",
+      "reviewerNote": "Remove guaranteed outcome language; outcomes vary by patient.",
+      "guidance": "Replace with consultative wording such as: outcomes depend on individual assessment and clinical monitoring."
+    },
+    {
+      "id": "cure_claim",
+      "flags": ["cure_claim", "medical_claim_risk", "medical_review_required"],
+      "patterns": [
+        "cure ",
+        "cures ",
+        "can cure",
+        "will cure",
+        "cure your",
+        "cure arthritis",
+        "cure diabetes"
+      ],
+      "severity": "critical",
+      "action": "block",
+      "reviewerNote": "Medical cure claims are not permitted in Puriva content.",
+      "guidance": "Use educational language about consultation, candidacy screening, and licensed provider oversight without disease-cure promises."
+    },
+    {
+      "id": "stem_cell_regeneration_promise",
+      "flags": ["cure_claim", "medical_claim_risk", "medical_review_required"],
+      "patterns": [
+        "stem cell",
+        "stem cells",
+        "regenerate tissue",
+        "reverse aging",
+        "reverse disease",
+        "reverses disease",
+        "regenerates"
+      ],
+      "patternRequireAny": [
+        "cure",
+        "reverse",
+        "regenerat",
+        "permanent",
+        "guaranteed"
+      ],
+      "severity": "critical",
+      "action": "block",
+      "categoryIds": ["stem_cell_therapy"],
+      "reviewerNote": "Stem cell regeneration or reversal promises require removal or medical review.",
+      "guidance": "Describe consultative stem cell therapy information only; defer outcomes to individualized medical evaluation."
+    },
+    {
+      "id": "permanent_result",
+      "flags": ["permanent_result_claim", "before_after_result_claim_risk"],
+      "patterns": [
+        "permanent result",
+        "permanent results",
+        "permanently",
+        "lasting forever",
+        "never come back"
+      ],
+      "severity": "high",
+      "action": "revise",
+      "reviewerNote": "Permanent or forever-result claims need realistic-expectation framing.",
+      "guidance": "Use language about individualized results, follow-up care, and realistic expectations with licensed practitioner context."
+    },
+    {
+      "id": "universal_suitability_wegovy",
+      "flags": ["universal_suitability_claim", "prescription_medication_risk", "medical_review_required"],
+      "patterns": [
+        "suitable for everyone",
+        "works for everyone",
+        "anyone can use",
+        "for all patients",
+        "universally suitable",
+        "no screening required"
+      ],
+      "severity": "high",
+      "action": "require_medical_review",
+      "categoryIds": ["wegovy_semaglutide_weight_management"],
+      "reviewerNote": "GLP-1 therapy requires prescriber assessment; universal suitability is not allowed.",
+      "guidance": "State that eligibility requires consultation with a licensed prescriber and individual medical screening."
+    },
+    {
+      "id": "wegovy_without_prescriber",
+      "flags": ["prescription_medication_risk", "licensed_provider_required", "medical_review_required"],
+      "patterns": ["wegovy", "semaglutide"],
+      "patternRequireAny": ["without prescription", "no prescription", "buy online", "self-administer"],
+      "severity": "critical",
+      "action": "block",
+      "categoryIds": ["wegovy_semaglutide_weight_management"],
+      "reviewerNote": "Prescription medication must be framed with licensed prescriber oversight.",
+      "guidance": "Reference licensed prescriber consultation and in-clinic medical assessment only."
+    },
+    {
+      "id": "unsafe_rapid_weight_loss",
+      "flags": ["unsafe_weight_loss_claim", "medical_claim_risk", "medical_review_required"],
+      "patterns": [
+        "lose \\d+\\s*(kg|kilos|pounds|lbs)",
+        "\\d+\\s*(kg|kilos|pounds|lbs) in \\d+\\s*(day|days|week|weeks)",
+        "rapid weight loss",
+        "fastest weight loss",
+        "drop \\d+",
+        "melt fat overnight"
+      ],
+      "severity": "high",
+      "action": "require_medical_review",
+      "categoryIds": ["wegovy_semaglutide_weight_management"],
+      "reviewerNote": "Specific rapid weight-loss promises require medical review and likely revision.",
+      "guidance": "Avoid numeric weight-loss timelines; emphasize supervised medical weight-management planning."
+    },
+    {
+      "id": "before_after_transformation",
+      "flags": ["before_after_result_claim_risk", "medical_review_required"],
+      "patterns": [
+        "before and after",
+        "before/after",
+        "transformation results",
+        "dramatic transformation",
+        "see the difference",
+        "life-changing results"
+      ],
+      "severity": "medium",
+      "action": "require_medical_review",
+      "reviewerNote": "Before/after or transformation claims need consent, disclaimers, and realistic expectations.",
+      "guidance": "If imagery is used, pair with consent notes and avoid implying typical or permanent outcomes."
+    },
+    {
+      "id": "hospital_partner_license_claim",
+      "flags": ["hospital_partner_claim_requires_verification", "licensed_provider_required"],
+      "patterns": [
+        "partner hospital",
+        "hospital partner",
+        "accredited hospital",
+        "international hospital",
+        "licensed by",
+        "government approved",
+        "fda approved",
+        "bpom approved",
+        "official partner"
+      ],
+      "severity": "medium",
+      "action": "require_medical_review",
+      "reviewerNote": "Hospital, accreditation, or partner claims must be verified against approved clinic credentials before publication.",
+      "guidance": "Use only verified credential wording supplied by compliance; otherwise describe consultation steps without unverified accreditation claims."
+    },
+    {
+      "id": "medical_outcome_superlative",
+      "flags": ["medical_claim_risk"],
+      "patterns": [
+        "best treatment",
+        "most effective treatment",
+        "only clinic",
+        "number one clinic",
+        "#1 clinic",
+        "clinically proven to"
+      ],
+      "severity": "medium",
+      "action": "revise",
+      "reviewerNote": "Unqualified superlative medical outcome claims should be softened.",
+      "guidance": "Use neutral educational positioning and cite only approved, verifiable statements."
+    }
+  ],
+  "safeEducationalPatterns": [
+    "consultation with a licensed",
+    "individual assessment",
+    "eligibility requires",
+    "outcomes vary",
+    "licensed prescriber",
+    "educational information only",
+    "requires medical screening"
+  ],
+  "severityRank": {
+    "low": 1,
+    "medium": 2,
+    "high": 3,
+    "critical": 4
+  },
+  "actionRank": {
+    "allow": 1,
+    "revise": 2,
+    "require_medical_review": 3,
+    "block": 4
+  },
+  "guidanceSnippets": {
+    "guaranteed_outcome_claim": "Do not promise guaranteed outcomes; describe individualized assessment and supervised care.",
+    "cure_claim": "Do not claim to cure, reverse, or permanently fix medical conditions.",
+    "universal_suitability_claim": "State that treatment suitability requires prescriber-led screening.",
+    "permanent_result_claim": "Avoid permanent-result language; include realistic expectations and follow-up care context.",
+    "unsafe_weight_loss_claim": "Avoid rapid or numeric weight-loss promises; emphasize medically supervised planning.",
+    "before_after_result_claim_risk": "Before/after content needs consent, disclaimers, and no implied typical results.",
+    "hospital_partner_claim_requires_verification": "Verify hospital, accreditation, and partner claims before publishing.",
+    "prescription_medication_risk": "Prescription therapies must reference licensed prescriber oversight.",
+    "licensed_provider_required": "Attribute care delivery to licensed practitioners and approved clinic protocols.",
+    "medical_claim_risk": "Keep medical statements educational and non-promissory.",
+    "medical_review_required": "Route this content for medical/compliance review before client delivery."
+  }
+}
