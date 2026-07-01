@@ -4,13 +4,19 @@
  */
 
 import {
+  buildPurivaContentProductionContext,
+  buildPurivaWorkflowBriefProductionInput,
+  ensurePurivaContentProductionApiSeed,
+  PURIVA_CONTENT_PRODUCTION_VERSION,
+  validatePurivaContentProductionContext,
+  workflowBriefProductionMatches
+} from "./puriva-content-production.mjs";
+import {
   buildPurivaSeoPlanContext,
-  buildPurivaWorkflowBriefPlanningInput,
   ensurePurivaSeoPlanApiSeed,
   PURIVA_SEO_PLAN_VERSION,
   purivaSeoPlanScopeNotes,
-  validatePurivaSeoPlanContext,
-  workflowBriefPlanningMatches
+  validatePurivaSeoPlanContext
 } from "./puriva-seo-plan.mjs";
 import {
   ensurePurivaMarketIntelligenceApiSeed,
@@ -113,9 +119,10 @@ export async function ensurePurivaLocalSetup({
       clientAccess: false,
       marketIntelligenceProject: false,
       marketIntelligenceHandoffApplied: false,
-      seoPlanAttached: false,
       seoScopeNotesAttached: false,
-      seoContentPlan: false
+      seoContentPlan: false,
+      contentProductionAttached: false,
+      contentDraftScaffolds: false
     },
     skipped: [],
     actions
@@ -335,17 +342,42 @@ export async function ensurePurivaLocalSetup({
   result.created.seoScopeNotesAttached = seoSeed.created.scopeNotesAttached;
   result.created.seoContentPlan = seoSeed.created.contentPlan;
 
-  const expectedStructuredInput = buildPurivaWorkflowBriefPlanningInput(targetMonth);
+  const productionValidation = validatePurivaContentProductionContext(
+    buildPurivaContentProductionContext(targetMonth, seoSeed.context)
+  );
+  if (!productionValidation.ok) {
+    throw new Error(`Puriva content production invalid: ${productionValidation.errors.join("; ")}`);
+  }
+
+  const productionSeed = await ensurePurivaContentProductionApiSeed({
+    request,
+    token,
+    aiDeliveryProject,
+    targetMonth,
+    log: note
+  });
+  result.contentProduction = {
+    version: PURIVA_CONTENT_PRODUCTION_VERSION,
+    targetMonth,
+    scaffoldCount: productionSeed.context.draftScaffolds.length,
+    medicalReviewScaffoldCount: productionSeed.context.draftScaffolds.filter((entry) => entry.medicalReviewRequired)
+      .length,
+    verificationScaffoldCount: productionSeed.context.draftScaffolds.filter((entry) => entry.verificationRequired)
+      .length
+  };
+  result.created.contentDraftScaffolds = productionSeed.created.contentDrafts > 0;
+
+  const expectedStructuredInput = buildPurivaWorkflowBriefProductionInput(targetMonth);
   let briefDetailResponse = await request(`/workflow-briefs/${workflowBrief.id}`, { token });
   if (briefDetailResponse.status !== 200 || briefDetailResponse.body?.ok !== true) {
     throw new Error(`Workflow brief detail failed with HTTP ${briefDetailResponse.status}.`);
   }
 
   let briefDetail = briefDetailResponse.body.data ?? workflowBrief;
-  if (workflowBriefPlanningMatches(briefDetail.structuredInputJson, targetMonth)) {
+  if (workflowBriefProductionMatches(briefDetail.structuredInputJson, targetMonth)) {
     note(
-      "reused workflow brief planning input",
-      `${PURIVA_SERVICE_TAXONOMY_VERSION} + ${PURIVA_MARKET_INTELLIGENCE_VERSION} + ${PURIVA_SEO_PLAN_VERSION}`
+      "reused workflow brief production input",
+      `${PURIVA_SERVICE_TAXONOMY_VERSION} + ${PURIVA_MARKET_INTELLIGENCE_VERSION} + ${PURIVA_SEO_PLAN_VERSION} + ${PURIVA_CONTENT_PRODUCTION_VERSION}`
     );
   } else {
     const patchResponse = await request(`/workflow-briefs/${workflowBrief.id}`, {
@@ -356,16 +388,16 @@ export async function ensurePurivaLocalSetup({
       }
     });
     if (patchResponse.status !== 200 || patchResponse.body?.ok !== true) {
-      throw new Error(`Puriva workflow brief planning attach failed with HTTP ${patchResponse.status}.`);
+      throw new Error(`Puriva workflow brief production attach failed with HTTP ${patchResponse.status}.`);
     }
-    if (!workflowBriefPlanningMatches(patchResponse.body?.data?.structuredInputJson, targetMonth)) {
-      throw new Error("Puriva workflow brief planning attach did not persist structured input.");
+    if (!workflowBriefProductionMatches(patchResponse.body?.data?.structuredInputJson, targetMonth)) {
+      throw new Error("Puriva workflow brief production attach did not persist structured input.");
     }
     briefDetail = patchResponse.body.data ?? briefDetail;
-    result.created.seoPlanAttached = true;
+    result.created.contentProductionAttached = true;
     note(
-      "attached workflow brief planning input",
-      `${PURIVA_SERVICE_TAXONOMY_VERSION} + ${PURIVA_MARKET_INTELLIGENCE_VERSION} + ${PURIVA_SEO_PLAN_VERSION}`
+      "attached workflow brief production input",
+      `${PURIVA_SERVICE_TAXONOMY_VERSION} + ${PURIVA_MARKET_INTELLIGENCE_VERSION} + ${PURIVA_SEO_PLAN_VERSION} + ${PURIVA_CONTENT_PRODUCTION_VERSION}`
     );
   }
 
@@ -373,9 +405,11 @@ export async function ensurePurivaLocalSetup({
     taxonomyVersion: PURIVA_SERVICE_TAXONOMY_VERSION,
     marketIntelligenceVersion: PURIVA_MARKET_INTELLIGENCE_VERSION,
     seoPlanVersion: PURIVA_SEO_PLAN_VERSION,
+    contentProductionVersion: PURIVA_CONTENT_PRODUCTION_VERSION,
     attached: true,
     serviceCategoryCount: expectedStructuredInput.serviceCategories.length,
-    seoPlanItemCount: expectedStructuredInput.seoPlan?.items?.length ?? 0
+    seoPlanItemCount: expectedStructuredInput.seoPlan?.items?.length ?? 0,
+    contentProductionScaffoldCount: expectedStructuredInput.contentProduction?.draftScaffolds?.length ?? 0
   };
   result.workflowBrief = briefDetail;
 

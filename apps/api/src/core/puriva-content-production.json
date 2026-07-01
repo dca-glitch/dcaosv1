@@ -1,0 +1,112 @@
+{
+  "version": "PURIVA_CONTENT_PRODUCTION_V1",
+  "seedLabel": "Local operator-reviewed draft scaffold — internal planning only, not approved client copy",
+  "internalDraftLabel": "INTERNAL DRAFT SCAFFOLD — NOT APPROVED CLIENT COPY",
+  "verificationRequiredNotes": [
+    "Hospital, accreditation, partner, and license statements in draft scaffolds require verification before client-facing use.",
+    "Draft scaffolds are outline-only and must pass medical compliance review before publication.",
+    "Do not treat draft scaffold headings as approved credential or outcome claims."
+  ],
+  "outlineTemplates": {
+    "service_page": [
+      {
+        "id": "audience_context",
+        "heading": "Audience and consultation context",
+        "purpose": "Frame who the page serves and why prescriber-led consultation comes first."
+      },
+      {
+        "id": "eligibility_screening",
+        "heading": "Eligibility and screening overview",
+        "purpose": "Outline educational screening themes without universal suitability claims."
+      },
+      {
+        "id": "licensed_oversight",
+        "heading": "Licensed provider oversight",
+        "purpose": "Explain licensed practitioner involvement and follow-up planning."
+      },
+      {
+        "id": "next_steps",
+        "heading": "Next steps and booking support",
+        "purpose": "Plan consult/booking CTA language without outcome promises."
+      }
+    ],
+    "faq": [
+      {
+        "id": "common_questions",
+        "heading": "Common patient questions",
+        "purpose": "List FAQ themes mapped to search intent without medical outcome claims."
+      },
+      {
+        "id": "eligibility_safety",
+        "heading": "Eligibility and safety framing",
+        "purpose": "Plan educational answers on suitability and licensed assessment."
+      },
+      {
+        "id": "process_expectations",
+        "heading": "Process and expectation setting",
+        "purpose": "Outline visit, monitoring, or journey steps with realistic-expectation language."
+      },
+      {
+        "id": "trust_verification",
+        "heading": "Trust and verification support",
+        "purpose": "Plan verification guidance where facility or credential claims may appear."
+      }
+    ],
+    "blog_article": [
+      {
+        "id": "topic_context",
+        "heading": "Topic context and audience hook",
+        "purpose": "Introduce the educational topic for the mapped audience segment."
+      },
+      {
+        "id": "educational_sections",
+        "heading": "Educational body sections",
+        "purpose": "Plan section themes from SEO clusters without efficacy promises."
+      },
+      {
+        "id": "realistic_expectations",
+        "heading": "Realistic expectations and limitations",
+        "purpose": "Include consultative framing and individualized assessment notes."
+      },
+      {
+        "id": "consultation_cta",
+        "heading": "Consultation CTA planning",
+        "purpose": "Plan internal CTA outline for booking or screening contact."
+      }
+    ],
+    "comparison_education": [
+      {
+        "id": "educational_framing",
+        "heading": "Educational comparison framing",
+        "purpose": "Compare consultation themes without ranking clinics or promising outcomes."
+      },
+      {
+        "id": "consultation_requirements",
+        "heading": "Consultation and candidacy requirements",
+        "purpose": "Outline prescriber-led assessment and licensed provider context."
+      },
+      {
+        "id": "verification_support",
+        "heading": "Verification and trust support",
+        "purpose": "Plan credential verification steps where hospital or license topics appear."
+      },
+      {
+        "id": "safety_notes",
+        "heading": "Safety and compliance notes",
+        "purpose": "Capture compliance reminders for reviewers before draft expansion."
+      }
+    ],
+    "booking_contact_support": [
+      {
+        "id": "booking_context",
+        "heading": "Booking and contact context",
+        "purpose": "Plan support content for consultation booking without medical claims."
+      },
+      {
+        "id": "journey_support",
+        "heading": "Patient journey support",
+        "purpose": "Outline travel, follow-up, or coordination themes for medical tourists."
+      }
+    ]
+  }
+}

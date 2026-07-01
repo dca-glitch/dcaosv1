@@ -12,14 +12,23 @@ import {
   responseHasSecrets
 } from "./lib/puriva-local-setup.mjs";
 import {
+  buildPurivaContentProductionContext,
+  findUnsafeApprovedPhrasesInContentProduction,
+  isPurivaContentProductionBriefAttachment,
+  PURIVA_CONTENT_PRODUCTION_MARKER,
+  PURIVA_CONTENT_PRODUCTION_VERSION,
+  PURIVA_DRAFT_INTERNAL_LABEL,
+  validatePurivaContentProductionContext,
+  workflowBriefProductionMatches
+} from "./lib/puriva-content-production.mjs";
+import {
   buildPurivaSeoPlanContext,
   findUnsafeApprovedPhrasesInSeoPlan,
   isPurivaSeoPlanBriefAttachment,
   PURIVA_SEO_PLAN_MARKER,
   PURIVA_SEO_PLAN_VERSION,
   purivaSeoPlanScopeNotes,
-  validatePurivaSeoPlanContext,
-  workflowBriefPlanningMatches
+  validatePurivaSeoPlanContext
 } from "./lib/puriva-seo-plan.mjs";
 import {
   buildPurivaMarketIntelligenceContext,
@@ -261,11 +270,50 @@ async function main() {
     findUnsafeApprovedPhrasesInSeoPlan(seoContext).join(", ") || "clean"
   );
 
+  const productionValidation = validatePurivaContentProductionContext(
+    buildPurivaContentProductionContext(targetMonth, seoContext)
+  );
+  record("puriva content production validates", productionValidation.ok, productionValidation.errors.join("; ") || "ok");
+
+  const productionContext = buildPurivaContentProductionContext(targetMonth, seoContext);
+  record(
+    "puriva content production covers seo plan items",
+    productionContext.draftScaffolds.length === seoContext.items.length,
+    `${productionContext.draftScaffolds.length} scaffolds`
+  );
+  record(
+    "puriva draft scaffolds include outline sections",
+    productionContext.draftScaffolds.every(
+      (scaffold) => scaffold.outlineSections.length > 0 && scaffold.searchIntent && scaffold.contentType
+    ),
+    "all scaffolds complete"
+  );
+  for (const highRiskId of PURIVA_HIGH_RISK_CATEGORY_IDS) {
+    const highRiskScaffolds = productionContext.draftScaffolds.filter(
+      (scaffold) => scaffold.serviceCategoryId === highRiskId
+    );
+    record(
+      `content production high-risk ${highRiskId} requires medical review`,
+      highRiskScaffolds.length > 0 && highRiskScaffolds.every((scaffold) => scaffold.medicalReviewRequired),
+      `${highRiskScaffolds.length} scaffolds`
+    );
+  }
+  record(
+    "puriva draft scaffolds marked internal only",
+    productionContext.draftScaffolds.every((scaffold) => scaffold.draftBrief.includes(PURIVA_DRAFT_INTERNAL_LABEL)),
+    PURIVA_DRAFT_INTERNAL_LABEL
+  );
+  record(
+    "puriva content production avoids unsafe approved phrases",
+    findUnsafeApprovedPhrasesInContentProduction(productionContext).length === 0,
+    findUnsafeApprovedPhrasesInContentProduction(productionContext).join(", ") || "clean"
+  );
+
   const briefDetail = await request(`/workflow-briefs/${firstRun.workflowBrief.id}`, { token });
   const structuredInput = briefDetail.body?.data?.structuredInputJson ?? null;
   record(
-    "workflow brief exposes Puriva planning structured input",
-    workflowBriefPlanningMatches(structuredInput, targetMonth),
+    "workflow brief exposes Puriva production structured input",
+    workflowBriefProductionMatches(structuredInput, targetMonth),
     structuredInput?.version ?? "missing"
   );
   record(
@@ -303,6 +351,41 @@ async function main() {
     "workflow brief seo plan item count",
     structuredInput?.seoPlan?.items?.length === seoContext.items.length,
     `${structuredInput?.seoPlan?.items?.length ?? 0}`
+  );
+  record(
+    "workflow brief content production attachment",
+    isPurivaContentProductionBriefAttachment(structuredInput?.contentProduction),
+    structuredInput?.contentProduction?.version ?? "missing"
+  );
+  record(
+    "workflow brief content production scaffold count",
+    structuredInput?.contentProduction?.draftScaffolds?.length === productionContext.draftScaffolds.length,
+    `${structuredInput?.contentProduction?.draftScaffolds?.length ?? 0}`
+  );
+
+  const contentDraftsResponse = await request(`/ai-delivery-projects/${firstRun.aiDeliveryProject.id}/content-drafts`, {
+    token
+  });
+  const contentDrafts = contentDraftsResponse.body?.data?.contentDrafts ?? [];
+  record(
+    "ai delivery content draft scaffolds seeded",
+    contentDrafts.filter((draft) => draft.notes?.includes(PURIVA_CONTENT_PRODUCTION_MARKER)).length >=
+      productionContext.draftScaffolds.length,
+    `${contentDrafts.length} drafts`
+  );
+  record(
+    "ai delivery content drafts remain internal draft status",
+    contentDrafts
+      .filter((draft) => draft.notes?.includes(PURIVA_CONTENT_PRODUCTION_MARKER))
+      .every((draft) => draft.status === "DRAFT"),
+    "DRAFT only"
+  );
+  record(
+    "ai delivery content draft bodies marked internal scaffold",
+    contentDrafts
+      .filter((draft) => draft.notes?.includes(PURIVA_CONTENT_PRODUCTION_MARKER))
+      .every((draft) => typeof draft.draftBody === "string" && draft.draftBody.includes(PURIVA_DRAFT_INTERNAL_LABEL)),
+    PURIVA_DRAFT_INTERNAL_LABEL
   );
 
   record(
@@ -444,7 +527,7 @@ async function main() {
 
   if (failed.length === 0) {
     console.log(
-      "PROVEN: Puriva local client setup is idempotent with taxonomy + MI + SEO planning, without credentials or live publish."
+      "PROVEN: Puriva local client setup is idempotent with taxonomy + MI + SEO + content production scaffolds, without credentials or live publish."
     );
   } else {
     console.log("NOT PROVEN: one or more Puriva client setup checks failed.");
