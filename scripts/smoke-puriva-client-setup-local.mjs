@@ -12,10 +12,18 @@ import {
   responseHasSecrets
 } from "./lib/puriva-local-setup.mjs";
 import {
-  getPurivaServiceTaxonomy,
-  isPurivaWorkflowBriefStructuredInput,
-  PURIVA_HIGH_RISK_CATEGORY_IDS,
+  buildPurivaMarketIntelligenceContext,
+  findUnsafeApprovedPhrasesInMarketIntelligence,
+  isPurivaMarketIntelligenceBriefAttachment,
+  PURIVA_MARKET_INTELLIGENCE_VERSION,
   PURIVA_REQUIRED_SERVICE_CATEGORY_IDS,
+  purivaMarketIntelligenceProjectTitle,
+  validatePurivaMarketIntelligenceContext,
+  workflowBriefFoundationMatches
+} from "./lib/puriva-market-intelligence.mjs";
+import {
+  getPurivaServiceTaxonomy,
+  PURIVA_HIGH_RISK_CATEGORY_IDS,
   PURIVA_SERVICE_TAXONOMY_VERSION,
   validatePurivaServiceTaxonomy,
   findForbiddenPromotionalPhrases
@@ -69,7 +77,8 @@ function idsMatch(first, second) {
     first.client?.id === second.client?.id &&
     first.publicationTarget?.id === second.publicationTarget?.id &&
     first.aiDeliveryProject?.id === second.aiDeliveryProject?.id &&
-    first.workflowBrief?.id === second.workflowBrief?.id
+    first.workflowBrief?.id === second.workflowBrief?.id &&
+    first.marketIntelligence?.projectId === second.marketIntelligence?.projectId
   );
 }
 
@@ -171,11 +180,44 @@ async function main() {
     findForbiddenPromotionalPhrases().join(", ") || "clean"
   );
 
+  const miValidation = validatePurivaMarketIntelligenceContext();
+  record("puriva market intelligence validates", miValidation.ok, miValidation.errors.join("; ") || "ok");
+
+  const miContext = buildPurivaMarketIntelligenceContext();
+  record(
+    "puriva mi includes all service categories",
+    PURIVA_REQUIRED_SERVICE_CATEGORY_IDS.every((id) =>
+      miContext.serviceCategorySummaries.some((summary) => summary.categoryId === id)
+    ),
+    `${miContext.serviceCategorySummaries.length} summaries`
+  );
+  record(
+    "puriva mi includes both audience segments",
+    miContext.audienceSegments.some((segment) => segment.id === "local_clients") &&
+      miContext.audienceSegments.some((segment) => segment.id === "international_medical_tourists"),
+    `${miContext.audienceSegments.length} segments`
+  );
+  record(
+    "puriva mi attaches compliance flags",
+    miContext.serviceCategorySummaries.every((summary) => summary.complianceFlags.length > 0),
+    "all summaries flagged"
+  );
+  record(
+    "puriva mi verification-required notes present",
+    miContext.verificationRequiredNotes.some((note) => /requir(e|es) verification/i.test(note)),
+    `${miContext.verificationRequiredNotes.length} notes`
+  );
+  record(
+    "puriva mi avoids unsafe approved phrases",
+    findUnsafeApprovedPhrasesInMarketIntelligence(miContext).length === 0,
+    findUnsafeApprovedPhrasesInMarketIntelligence(miContext).join(", ") || "clean"
+  );
+
   const briefDetail = await request(`/workflow-briefs/${firstRun.workflowBrief.id}`, { token });
   const structuredInput = briefDetail.body?.data?.structuredInputJson ?? null;
   record(
-    "workflow brief exposes Puriva taxonomy structured input",
-    isPurivaWorkflowBriefStructuredInput(structuredInput),
+    "workflow brief exposes Puriva foundation structured input",
+    workflowBriefFoundationMatches(structuredInput),
     structuredInput?.version ?? "missing"
   );
   record(
@@ -184,10 +226,42 @@ async function main() {
     structuredInput?.version ?? "missing"
   );
   record(
+    "workflow brief market intelligence attachment",
+    isPurivaMarketIntelligenceBriefAttachment(structuredInput?.marketIntelligence),
+    structuredInput?.marketIntelligence?.version ?? "missing"
+  );
+  record(
     "workflow brief taxonomy category count",
     Array.isArray(structuredInput?.serviceCategories) &&
       structuredInput.serviceCategories.length === PURIVA_REQUIRED_SERVICE_CATEGORY_IDS.length,
     `${structuredInput?.serviceCategories?.length ?? 0}`
+  );
+  record(
+    "workflow brief mi service summary count",
+    structuredInput?.marketIntelligence?.serviceCategorySummaries?.length === PURIVA_REQUIRED_SERVICE_CATEGORY_IDS.length,
+    `${structuredInput?.marketIntelligence?.serviceCategorySummaries?.length ?? 0}`
+  );
+
+  record(
+    "puriva mi project seeded",
+    firstRun.marketIntelligence?.projectTitle === purivaMarketIntelligenceProjectTitle(targetMonth),
+    firstRun.marketIntelligence?.projectId ?? "missing"
+  );
+  record(
+    "puriva mi handoff linked to ai delivery project",
+    typeof firstRun.marketIntelligence?.handoffId === "string",
+    firstRun.marketIntelligence?.handoffStatus ?? "missing"
+  );
+
+  const miContextResponse = await request(
+    `/ai-delivery/projects/${firstRun.aiDeliveryProject.id}/market-intelligence-context`,
+    { token }
+  );
+  const linkedHandoffs = miContextResponse.body?.data?.handoffs ?? [];
+  record(
+    "ai delivery project has applied mi handoff",
+    linkedHandoffs.some((entry) => entry.id === firstRun.marketIntelligence?.handoffId),
+    `${linkedHandoffs.length} linked`
   );
 
   record("Puriva client profile name", firstRun.client?.name === PURIVA_PROFILE.name, firstRun.client?.name ?? "missing");
@@ -280,7 +354,9 @@ async function main() {
   console.log(`${PURIVA_SETUP_MARKER} smoke finished - ${results.length - failed.length}/${results.length} passed`);
 
   if (failed.length === 0) {
-    console.log("PROVEN: Puriva local client setup is idempotent and workflow-brief ready without credentials or live publish.");
+    console.log(
+      "PROVEN: Puriva local client setup is idempotent with taxonomy + MI foundation, without credentials or live publish."
+    );
   } else {
     console.log("NOT PROVEN: one or more Puriva client setup checks failed.");
   }

@@ -4,10 +4,15 @@
  */
 
 import {
-  buildPurivaWorkflowBriefStructuredInput,
-  isPurivaWorkflowBriefStructuredInput,
+  buildPurivaWorkflowBriefFoundationInput,
+  ensurePurivaMarketIntelligenceApiSeed,
+  purivaMarketIntelligenceProjectTitle,
+  PURIVA_MARKET_INTELLIGENCE_VERSION,
+  validatePurivaMarketIntelligenceContext,
+  workflowBriefFoundationMatches
+} from "./puriva-market-intelligence.mjs";
+import {
   PURIVA_SERVICE_TAXONOMY_VERSION,
-  taxonomyStructuredInputMatches,
   validatePurivaServiceTaxonomy
 } from "./puriva-service-taxonomy.mjs";
 
@@ -99,7 +104,9 @@ export async function ensurePurivaLocalSetup({
       aiDeliveryProject: false,
       workflowBrief: false,
       clientAccess: false,
-      taxonomyAttached: false
+      foundationAttached: false,
+      marketIntelligenceProject: false,
+      marketIntelligenceHandoffApplied: false
     },
     skipped: [],
     actions
@@ -270,15 +277,40 @@ export async function ensurePurivaLocalSetup({
     throw new Error(`Puriva service taxonomy invalid: ${taxonomyValidation.errors.join("; ")}`);
   }
 
-  const expectedStructuredInput = buildPurivaWorkflowBriefStructuredInput();
+  const miValidation = validatePurivaMarketIntelligenceContext();
+  if (!miValidation.ok) {
+    throw new Error(`Puriva market intelligence invalid: ${miValidation.errors.join("; ")}`);
+  }
+
+  const miSeed = await ensurePurivaMarketIntelligenceApiSeed({
+    request,
+    token,
+    client,
+    aiDeliveryProject,
+    targetMonth,
+    log: note
+  });
+  result.marketIntelligence = {
+    version: PURIVA_MARKET_INTELLIGENCE_VERSION,
+    projectId: miSeed.miProject.id,
+    projectTitle: purivaMarketIntelligenceProjectTitle(targetMonth),
+    handoffId: miSeed.handoff.id,
+    handoffStatus: miSeed.handoff.handoffStatus,
+    serviceCategorySummaryCount: miSeed.context.serviceCategorySummaries.length,
+    audienceSegmentCount: miSeed.context.audienceSegments.length
+  };
+  result.created.marketIntelligenceProject = miSeed.created.miProject;
+  result.created.marketIntelligenceHandoffApplied = miSeed.created.handoffApplied;
+
+  const expectedStructuredInput = buildPurivaWorkflowBriefFoundationInput();
   let briefDetailResponse = await request(`/workflow-briefs/${workflowBrief.id}`, { token });
   if (briefDetailResponse.status !== 200 || briefDetailResponse.body?.ok !== true) {
     throw new Error(`Workflow brief detail failed with HTTP ${briefDetailResponse.status}.`);
   }
 
   let briefDetail = briefDetailResponse.body.data ?? workflowBrief;
-  if (taxonomyStructuredInputMatches(briefDetail.structuredInputJson, expectedStructuredInput)) {
-    note("reused workflow brief taxonomy", PURIVA_SERVICE_TAXONOMY_VERSION);
+  if (workflowBriefFoundationMatches(briefDetail.structuredInputJson)) {
+    note("reused workflow brief foundation", `${PURIVA_SERVICE_TAXONOMY_VERSION} + ${PURIVA_MARKET_INTELLIGENCE_VERSION}`);
   } else {
     const patchResponse = await request(`/workflow-briefs/${workflowBrief.id}`, {
       method: "PATCH",
@@ -288,18 +320,19 @@ export async function ensurePurivaLocalSetup({
       }
     });
     if (patchResponse.status !== 200 || patchResponse.body?.ok !== true) {
-      throw new Error(`Puriva workflow brief taxonomy attach failed with HTTP ${patchResponse.status}.`);
+      throw new Error(`Puriva workflow brief foundation attach failed with HTTP ${patchResponse.status}.`);
     }
-    if (!isPurivaWorkflowBriefStructuredInput(patchResponse.body?.data?.structuredInputJson)) {
-      throw new Error("Puriva workflow brief taxonomy attach did not persist structured input.");
+    if (!workflowBriefFoundationMatches(patchResponse.body?.data?.structuredInputJson)) {
+      throw new Error("Puriva workflow brief foundation attach did not persist structured input.");
     }
     briefDetail = patchResponse.body.data ?? briefDetail;
-    result.created.taxonomyAttached = true;
-    note("attached workflow brief taxonomy", PURIVA_SERVICE_TAXONOMY_VERSION);
+    result.created.foundationAttached = true;
+    note("attached workflow brief foundation", `${PURIVA_SERVICE_TAXONOMY_VERSION} + ${PURIVA_MARKET_INTELLIGENCE_VERSION}`);
   }
 
-  result.taxonomy = {
-    version: PURIVA_SERVICE_TAXONOMY_VERSION,
+  result.foundation = {
+    taxonomyVersion: PURIVA_SERVICE_TAXONOMY_VERSION,
+    marketIntelligenceVersion: PURIVA_MARKET_INTELLIGENCE_VERSION,
     attached: true,
     serviceCategoryCount: expectedStructuredInput.serviceCategories.length
   };
