@@ -437,7 +437,9 @@ export async function ensurePurivaLocalSetup({
     medicalReviewBlockerCount: monthlyReportSeed.context.deliveryStatus.medicalReviewBlockerCount,
     verificationBlockerCount: monthlyReportSeed.context.deliveryStatus.verificationBlockerCount,
     finalReleaseState: monthlyReportSeed.context.deliveryStatus.finalReleaseState,
-    recommendationCount: monthlyReportSeed.context.nextMonthRecommendations.length
+    recommendationCount: monthlyReportSeed.context.nextMonthRecommendations.length,
+    manualMetricsItemCount: monthlyReportSeed.manualMetrics.itemMetrics.length,
+    manualMetricsPlaceholderOnly: monthlyReportSeed.manualMetrics.totals.placeholderOnly
   };
   result.created.monthlyReport = monthlyReportSeed.created.report;
   result.created.monthlyReportMetrics = monthlyReportSeed.created.metrics;

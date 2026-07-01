@@ -30,6 +30,16 @@ import {
   validatePurivaMonthlyReportContext
 } from "./lib/puriva-monthly-report.mjs";
 import {
+  buildPurivaManualMetricsContext,
+  consumePurivaApprovedManualMetricsSnapshot,
+  findUnsafePerformanceClaimsInManualMetrics,
+  manualMetricsSnapshotHasPurivaMarker,
+  parsePurivaManualMetricsEmbed,
+  PURIVA_MANUAL_METRICS_MARKER,
+  PURIVA_MANUAL_METRICS_VERSION,
+  validatePurivaManualMetricsContext
+} from "./lib/puriva-manual-metrics.mjs";
+import {
   buildPurivaContentProductionContext,
   findUnsafeApprovedPhrasesInContentProduction,
   isPurivaContentProductionBriefAttachment,
@@ -549,6 +559,62 @@ async function main() {
     "admin monthly report hides credential fields",
     !responseHasSecrets(adminMonthlyReport.text ?? ""),
     "safe fields"
+  );
+
+  const manualMetricsContext = buildPurivaManualMetricsContext(targetMonth);
+  const manualMetricsValidation = validatePurivaManualMetricsContext(manualMetricsContext);
+  record(
+    "puriva manual metrics validates",
+    manualMetricsValidation.ok,
+    manualMetricsValidation.errors.join("; ") || "ok"
+  );
+  record(
+    "puriva manual metrics per-page placeholders match seo items",
+    manualMetricsContext.itemMetrics.length === firstRun.monthlyReport?.plannedSeoItemCount,
+    `${manualMetricsContext.itemMetrics.length} items`
+  );
+  record(
+    "puriva manual metrics totals remain zero placeholder",
+    manualMetricsContext.totals.placeholderOnly === true && manualMetricsContext.totals.gscClicks === 0,
+    "zero totals"
+  );
+  record(
+    "puriva manual metrics avoid real-performance claims",
+    findUnsafePerformanceClaimsInManualMetrics(manualMetricsContext).length === 0,
+    "clean"
+  );
+
+  const adminMetrics = await request(`/ai-delivery/reports/monthly/${firstRun.monthlyReport.reportId}/metrics`, {
+    token
+  });
+  const approvedSnapshot =
+    (adminMetrics.body?.data?.metrics?.snapshots ?? []).find((snapshot) => snapshot.status === "APPROVED") ?? null;
+  record(
+    "puriva manual metrics snapshot imported and approved",
+    Boolean(approvedSnapshot?.id) && approvedSnapshot.sourceType === "MANUAL",
+    approvedSnapshot?.status ?? "missing"
+  );
+  record(
+    "puriva manual metrics snapshot notes marked placeholder",
+    manualMetricsSnapshotHasPurivaMarker(approvedSnapshot?.notes),
+    PURIVA_MANUAL_METRICS_MARKER
+  );
+  const parsedManualMetrics = parsePurivaManualMetricsEmbed(approvedSnapshot?.notes ?? "");
+  record(
+    "puriva manual metrics embed parses per-item placeholders",
+    parsedManualMetrics?.itemMetrics.length === manualMetricsContext.itemMetrics.length,
+    `${parsedManualMetrics?.itemMetrics.length ?? 0} parsed`
+  );
+  const consumedMetrics = consumePurivaApprovedManualMetricsSnapshot(approvedSnapshot);
+  record(
+    "puriva monthly report consumes approved manual metrics only",
+    consumedMetrics?.clientSafeSummary?.placeholderOnly === true,
+    consumedMetrics?.clientSafeSummary?.disclaimer?.slice(0, 48) ?? "missing"
+  );
+  record(
+    "puriva setup tracks manual metrics version",
+    firstRun.monthlyReport?.manualMetricsPlaceholderOnly === true,
+    PURIVA_MANUAL_METRICS_VERSION
   );
 
   record(

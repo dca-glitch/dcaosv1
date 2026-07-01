@@ -95,8 +95,15 @@ describe("puriva-monthly-report", () => {
 
     assert.equal(fixture.sourceType, "MANUAL");
     assert.equal(fixture.gscClicks, 0);
-    assert.ok(monthlyReportMetricsHasPurivaMarker(fixture.notes));
+    assert.ok(fixture.notes.includes("PURIVA_MANUAL_METRICS_V1"));
     assert.ok(/placeholder|manual/i.test(fixture.notes));
+  });
+
+  it("includes manual metrics context aligned to SEO plan items", () => {
+    const context = buildPurivaMonthlyReportContext(targetMonth);
+
+    assert.equal(context.manualMetrics.itemMetrics.length, context.deliveryStatus.plannedSeoItemCount);
+    assert.equal(context.manualMetrics.totals.placeholderOnly, true);
   });
 
   it("detects Puriva monthly report marker for idempotent setup", () => {

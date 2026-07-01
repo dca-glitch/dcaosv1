@@ -41,6 +41,13 @@ import {
   validatePurivaMonthlyReportContext
 } from "./lib/puriva-monthly-report.mjs";
 import {
+  consumePurivaApprovedManualMetricsSnapshot,
+  manualMetricsSnapshotHasPurivaMarker,
+  PURIVA_MANUAL_METRICS_MARKER,
+  validatePurivaManualMetricsContext,
+  buildPurivaManualMetricsContext
+} from "./lib/puriva-manual-metrics.mjs";
+import {
   buildPurivaContentProductionContext,
   isPurivaContentProductionBriefAttachment,
   PURIVA_CONTENT_PRODUCTION_MARKER,
@@ -376,6 +383,27 @@ async function main() {
     "admin monthly report response hides secrets",
     !responseHasSecrets(adminMonthlyReport.text ?? ""),
     "safe fields"
+  );
+
+  const manualMetricsValidation = validatePurivaManualMetricsContext(
+    buildPurivaManualMetricsContext(targetMonth)
+  );
+  record("puriva manual metrics validates", manualMetricsValidation.ok, manualMetricsValidation.errors.join("; ") || "ok");
+
+  const adminMetrics = await request(`/ai-delivery/reports/monthly/${firstRun.monthlyReport.reportId}/metrics`, {
+    token: adminToken
+  });
+  const approvedSnapshot =
+    (adminMetrics.body?.data?.metrics?.snapshots ?? []).find((snapshot) => snapshot.status === "APPROVED") ?? null;
+  record(
+    "puriva manual metrics approved snapshot present",
+    approvedSnapshot?.sourceType === "MANUAL" && manualMetricsSnapshotHasPurivaMarker(approvedSnapshot?.notes),
+    PURIVA_MANUAL_METRICS_MARKER
+  );
+  record(
+    "puriva manual metrics consumed as placeholder-only",
+    consumePurivaApprovedManualMetricsSnapshot(approvedSnapshot)?.clientSafeSummary?.placeholderOnly === true,
+    "placeholder only"
   );
 
   const releasePackageStatus = await request(`/workflow-briefs/${firstRun.workflowBrief.id}/release-package`, {

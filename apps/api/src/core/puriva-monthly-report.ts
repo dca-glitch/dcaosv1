@@ -19,12 +19,19 @@ import {
   PURIVA_MARKET_INTELLIGENCE_VERSION,
   type PurivaMarketIntelligenceContext
 } from "./puriva-market-intelligence";
-import { assessPurivaMedicalCompliance } from "./puriva-medical-compliance";
+import {
+  buildPurivaClientSafeManualMetricsDisclaimer,
+  buildPurivaManualMetricsContext,
+  buildPurivaManualMetricsImportRequest,
+  consumePurivaApprovedManualMetricsSnapshot,
+  type PurivaManualMetricsContext
+} from "./puriva-manual-metrics";
 import {
   buildPurivaSeoPlanContext,
   PURIVA_SEO_PLAN_VERSION,
   type PurivaSeoPlanContext
 } from "./puriva-seo-plan";
+import { assessPurivaMedicalCompliance } from "./puriva-medical-compliance";
 
 export const PURIVA_MONTHLY_REPORT_VERSION = "PURIVA_MONTHLY_REPORT_V1";
 
@@ -82,6 +89,7 @@ export type PurivaMonthlyReportContext = {
   nextMonthRecommendations: PurivaMonthlyReportRecommendation[];
   verificationRequiredNotes: string[];
   metricsFixtureNote: string;
+  manualMetrics: PurivaManualMetricsContext;
 };
 
 export type PurivaMonthlyReportClientSafeSummary = {
@@ -92,19 +100,7 @@ export type PurivaMonthlyReportClientSafeSummary = {
   performanceNote: string;
 };
 
-export type PurivaMonthlyReportMetricsFixture = {
-  targetMonth: string;
-  sourceType: "MANUAL";
-  status: "IMPORTED";
-  gscClicks: number;
-  gscImpressions: number;
-  gscAverageCtr: number;
-  gscAveragePosition: number;
-  ga4Sessions: number;
-  ga4Users: number;
-  ga4PageViews: number;
-  notes: string;
-};
+export type PurivaMonthlyReportMetricsFixture = ReturnType<typeof buildPurivaManualMetricsImportRequest>;
 
 type RecommendationTemplate = PurivaMonthlyReportRecommendation;
 
@@ -274,6 +270,8 @@ export function buildPurivaMonthlyReportContext(
     rationale: `${template.rationale} MI version ${marketIntelligence.version}; SEO items ${seoPlan.items.length}.`
   }));
 
+  const manualMetrics = buildPurivaManualMetricsContext(targetMonth, seoPlan);
+
   return {
     version: PURIVA_MONTHLY_REPORT_VERSION,
     kind: PURIVA_MONTHLY_REPORT_KIND,
@@ -288,7 +286,8 @@ export function buildPurivaMonthlyReportContext(
     deliveryStatus,
     nextMonthRecommendations,
     verificationRequiredNotes: [...seed.verificationRequiredNotes],
-    metricsFixtureNote: seed.metricsFixtureNote
+    metricsFixtureNote: seed.metricsFixtureNote,
+    manualMetrics
   };
 }
 
@@ -386,6 +385,7 @@ export function buildPurivaMonthlyReportAdminSummaryNotes(
     `Final release state: ${status.finalReleaseState}`,
     `Medical review blockers: ${status.medicalReviewBlockerCount}`,
     `Verification blockers: ${status.verificationBlockerCount}`,
+    `Manual metrics placeholders: ${context.manualMetrics.itemMetrics.length} pages, totals placeholderOnly=${context.manualMetrics.totals.placeholderOnly}`,
     ...status.releaseStateNotes.map((note) => `Release note: ${note}`),
     "Internal blocker sample:",
     ...blockerLines,
@@ -404,8 +404,7 @@ export function buildPurivaMonthlyReportClientSafeSummary(
     title: `Puriva monthly delivery summary — ${context.targetMonth}`,
     recommendationsText,
     deliveryHeadline: `Planning progress for ${context.targetMonth}: ${status.plannedSeoItemCount} SEO items in foundation planning; final client release not yet available.`,
-    performanceNote:
-      "Performance metrics in this report use operator-approved manual snapshots when present; live analytics integration is deferred."
+    performanceNote: buildPurivaClientSafeManualMetricsDisclaimer(context.manualMetrics)
   };
 }
 
@@ -433,22 +432,20 @@ export function buildPurivaMonthlyReportClientRecommendationsText(
 }
 
 export function buildPurivaMonthlyReportMetricsFixture(
-  targetMonth: string
+  targetMonth: string,
+  seoPlan?: PurivaSeoPlanContext
 ): PurivaMonthlyReportMetricsFixture {
-  const seed = getPurivaMonthlyReportSeed();
-  return {
-    targetMonth,
-    sourceType: "MANUAL",
-    status: "IMPORTED",
-    gscClicks: 0,
-    gscImpressions: 0,
-    gscAverageCtr: 0,
-    gscAveragePosition: 0,
-    ga4Sessions: 0,
-    ga4Users: 0,
-    ga4PageViews: 0,
-    notes: `${PURIVA_MONTHLY_REPORT_MARKER} ${seed.metricsFixtureNote}`
-  };
+  return buildPurivaManualMetricsImportRequest(targetMonth, seoPlan);
+}
+
+export function consumePurivaMonthlyReportApprovedMetrics(snapshot: {
+  id: string;
+  targetMonth: string;
+  sourceType: string;
+  status: string;
+  notes?: string | null;
+} | null | undefined) {
+  return consumePurivaApprovedManualMetricsSnapshot(snapshot);
 }
 
 export function monthlyReportHasPurivaMarker(value: {

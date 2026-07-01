@@ -1,0 +1,11 @@
+{
+  "version": "PURIVA_MANUAL_METRICS_V1",
+  "seedLabel": "Manual placeholder metrics scaffold — not live GA/GSC data",
+  "placeholderDisclaimer": "Manual placeholder metrics only. Values are not measured traffic and must not be interpreted as audited analytics until operator-approved GA/GSC analytics are connected.",
+  "awaitingAnalyticsNote": "Awaiting real GA/GSC analytics approval. Placeholder zeros are for local reporting structure proof only.",
+  "perItemNote": "Placeholder not measured — page not published or analytics not connected.",
+  "verificationRequiredNotes": [
+    "Do not present manual placeholder metrics as audited or live performance.",
+    "Per-page metrics remain zero until pages are published and real analytics are approved."
+  ]
+}

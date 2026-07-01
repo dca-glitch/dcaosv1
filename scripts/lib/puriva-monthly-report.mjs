@@ -3,6 +3,14 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { assessPurivaMedicalCompliance } from "./puriva-medical-compliance.mjs";
 import {
+  buildPurivaClientSafeManualMetricsDisclaimer,
+  buildPurivaManualMetricsContext,
+  buildPurivaManualMetricsImportRequest,
+  consumePurivaApprovedManualMetricsSnapshot,
+  manualMetricsSnapshotHasPurivaMarker,
+  parsePurivaManualMetricsEmbed
+} from "./puriva-manual-metrics.mjs";
+import {
   buildPurivaContentProductionContext,
   PURIVA_CONTENT_PRODUCTION_VERSION
 } from "./puriva-content-production.mjs";
@@ -168,6 +176,8 @@ export function buildPurivaMonthlyReportContext(targetMonth, deps = {}) {
     rationale: `${template.rationale} MI version ${marketIntelligence.version}; SEO items ${seoPlan.items.length}.`
   }));
 
+  const manualMetrics = buildPurivaManualMetricsContext(targetMonth, seoPlan);
+
   return {
     version: PURIVA_MONTHLY_REPORT_VERSION,
     kind: PURIVA_MONTHLY_REPORT_KIND,
@@ -182,7 +192,8 @@ export function buildPurivaMonthlyReportContext(targetMonth, deps = {}) {
     deliveryStatus,
     nextMonthRecommendations,
     verificationRequiredNotes: [...seed.verificationRequiredNotes],
-    metricsFixtureNote: seed.metricsFixtureNote
+    metricsFixtureNote: seed.metricsFixtureNote,
+    manualMetrics
   };
 }
 
@@ -276,6 +287,7 @@ export function buildPurivaMonthlyReportAdminSummaryNotes(context) {
     `Final release state: ${status.finalReleaseState}`,
     `Medical review blockers: ${status.medicalReviewBlockerCount}`,
     `Verification blockers: ${status.verificationBlockerCount}`,
+    `Manual metrics placeholders: ${context.manualMetrics.itemMetrics.length} pages, totals placeholderOnly=${context.manualMetrics.totals.placeholderOnly}`,
     ...status.releaseStateNotes.map((note) => `Release note: ${note}`),
     "Internal blocker sample:",
     ...blockerLines,
@@ -313,26 +325,16 @@ export function buildPurivaMonthlyReportClientSafeSummary(context) {
     title: `Puriva monthly delivery summary — ${context.targetMonth}`,
     recommendationsText,
     deliveryHeadline: `Planning progress for ${context.targetMonth}: ${status.plannedSeoItemCount} SEO items in foundation planning; final client release not yet available.`,
-    performanceNote:
-      "Performance metrics in this report use operator-approved manual snapshots when present; live analytics integration is deferred."
+    performanceNote: buildPurivaClientSafeManualMetricsDisclaimer(context.manualMetrics)
   };
 }
 
-export function buildPurivaMonthlyReportMetricsFixture(targetMonth) {
-  const seed = getPurivaMonthlyReportSeed();
-  return {
-    targetMonth,
-    sourceType: "MANUAL",
-    status: "IMPORTED",
-    gscClicks: 0,
-    gscImpressions: 0,
-    gscAverageCtr: 0,
-    gscAveragePosition: 0,
-    ga4Sessions: 0,
-    ga4Users: 0,
-    ga4PageViews: 0,
-    notes: `${PURIVA_MONTHLY_REPORT_MARKER} ${seed.metricsFixtureNote}`
-  };
+export function buildPurivaMonthlyReportMetricsFixture(targetMonth, seoPlan) {
+  return buildPurivaManualMetricsImportRequest(targetMonth, seoPlan);
+}
+
+export function consumePurivaMonthlyReportApprovedMetrics(snapshot) {
+  return consumePurivaApprovedManualMetricsSnapshot(snapshot);
 }
 
 export function monthlyReportHasPurivaMarker(value) {
@@ -342,11 +344,18 @@ export function monthlyReportHasPurivaMarker(value) {
 }
 
 export function monthlyReportMetricsHasPurivaMarker(notes) {
-  return typeof notes === "string" && notes.includes(PURIVA_MONTHLY_REPORT_MARKER);
+  return manualMetricsSnapshotHasPurivaMarker(notes) || (typeof notes === "string" && notes.includes(PURIVA_MONTHLY_REPORT_MARKER));
 }
 
 function metricsSnapshotHasPurivaMarker(snapshots) {
-  return snapshots.some((snapshot) => monthlyReportMetricsHasPurivaMarker(snapshot.notes));
+  return snapshots.some((snapshot) => manualMetricsSnapshotHasPurivaMarker(snapshot.notes));
+}
+
+function metricsSnapshotNeedsUpgrade(snapshots) {
+  return snapshots.some(
+    (snapshot) =>
+      monthlyReportMetricsHasPurivaMarker(snapshot.notes) && !manualMetricsSnapshotHasPurivaMarker(snapshot.notes)
+  );
 }
 
 export async function ensurePurivaMonthlyReportApiSeed({
@@ -425,12 +434,12 @@ export async function ensurePurivaMonthlyReportApiSeed({
   const metricsResponse = await request(`/ai-delivery/reports/monthly/${report.id}/metrics`, { token });
   const snapshots = metricsResponse.body?.data?.metrics?.snapshots ?? [];
 
-  if (!metricsSnapshotHasPurivaMarker(snapshots)) {
-    const fixture = buildPurivaMonthlyReportMetricsFixture(targetMonth);
+  if (!metricsSnapshotHasPurivaMarker(snapshots) || metricsSnapshotNeedsUpgrade(snapshots)) {
+    const importRequest = buildPurivaManualMetricsImportRequest(targetMonth);
     const importResponse = await request(`/ai-delivery/reports/monthly/${report.id}/metrics/import`, {
       method: "POST",
       token,
-      body: fixture
+      body: importRequest
     });
     const snapshotId = importResponse.body?.data?.snapshot?.id ?? null;
     if (importResponse.status !== 201 || !snapshotId) {
@@ -455,6 +464,7 @@ export async function ensurePurivaMonthlyReportApiSeed({
   return {
     context,
     report,
-    created
+    created,
+    manualMetrics: context.manualMetrics
   };
 }
