@@ -44,6 +44,26 @@ import {
   type WorkflowBriefPackagingOutcome
 } from "./workflow-brief-deliverable-packaging.execution";
 import { sendAiDeliveryDeliverableForClientReview } from "./client-portal-approval.runtime";
+import { resolvePublicationTargetForClient } from "./client-publication.runtime";
+import {
+  buildPublishablePackageSummary,
+  buildWorkflowBriefImageCandidate,
+  canPrepareWorkflowBriefImageSetFromDraft,
+  classifyImageSetItemState,
+  computeImageSetStage,
+  computeOverallPackageCompletenessStage,
+  computePackageItemCompleteness,
+  computeReleasePrepStage,
+  isArticleImageLockedForRefresh,
+  isWorkflowBriefArticleImage,
+  summarizeImageSetBatchResult,
+  WORKFLOW_BRIEF_IMAGE_SET_VERSION,
+  WORKFLOW_BRIEF_RELEASE_PREP_VERSION,
+  type WorkflowBriefImageSetOutcome,
+  type WorkflowBriefImageSetStage,
+  type WorkflowBriefPackageCompletenessStage,
+  type WorkflowBriefReleasePrepStage
+} from "./workflow-brief-image-set.execution";
 import {
   buildProductionPlanBodyFromContent,
   buildProductionPlanTitle,
@@ -3368,5 +3388,954 @@ export async function sendWorkflowBriefDeliverableForClientReview(
 
   return {
     deliverable: result.deliverable
+  };
+}
+
+const articleImageSetSelect = {
+  id: true,
+  contentDraftId: true,
+  title: true,
+  prompt: true,
+  styleNotes: true,
+  status: true,
+  previewImageUrl: true,
+  finalImageUrl: true,
+  notes: true,
+  isArchived: true,
+  createdAt: true,
+  updatedAt: true
+} as const;
+
+type ArticleImageSetRecord = {
+  id: string;
+  contentDraftId: string;
+  title: string;
+  prompt: string;
+  styleNotes: string | null;
+  status: string;
+  previewImageUrl: string | null;
+  finalImageUrl: string | null;
+  notes: string | null;
+  isArchived: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+function readImageSetFromPlanJson(planJson: unknown): {
+  version?: string;
+  briefId?: string;
+  lastPreparedAt?: string;
+  lastRefreshedAt?: string;
+  preparedCount?: number;
+} | null {
+  if (!planJson || typeof planJson !== "object" || Array.isArray(planJson)) {
+    return null;
+  }
+  const record = planJson as Record<string, unknown>;
+  const imageSets = record.imageSets;
+  if (!imageSets || typeof imageSets !== "object" || Array.isArray(imageSets)) {
+    return null;
+  }
+  return imageSets as {
+    version?: string;
+    briefId?: string;
+    lastPreparedAt?: string;
+    lastRefreshedAt?: string;
+    preparedCount?: number;
+  };
+}
+
+function readReleasePrepFromPlanJson(planJson: unknown): {
+  version?: string;
+  briefId?: string;
+  preparedAt?: string;
+  publicationTargetId?: string | null;
+  publicationTargetLabel?: string | null;
+  packageCount?: number;
+} | null {
+  if (!planJson || typeof planJson !== "object" || Array.isArray(planJson)) {
+    return null;
+  }
+  const record = planJson as Record<string, unknown>;
+  const releasePrep = record.releasePrep;
+  if (!releasePrep || typeof releasePrep !== "object" || Array.isArray(releasePrep)) {
+    return null;
+  }
+  return releasePrep as {
+    version?: string;
+    briefId?: string;
+    preparedAt?: string;
+    publicationTargetId?: string | null;
+    publicationTargetLabel?: string | null;
+    packageCount?: number;
+  };
+}
+
+async function loadWorkflowBriefPackageExecutionData(tenantId: string, briefId: string) {
+  const packagingData = await loadWorkflowBriefDeliverablePackagingData(tenantId, briefId);
+  if (!packagingData) {
+    return null;
+  }
+
+  let articleImages: ArticleImageSetRecord[] = [];
+  const imageApprovalsByDeliverableId = new Map<
+    string,
+    Array<{ articleImageId: string; status: string }>
+  >();
+
+  if (packagingData.project) {
+    articleImages = (await prisma.aiDeliveryArticleImage.findMany({
+      where: {
+        tenantId,
+        aiDeliveryProjectId: packagingData.project.id,
+        isArchived: false
+      },
+      select: articleImageSetSelect,
+      orderBy: [{ updatedAt: "desc" }, { id: "desc" }]
+    })) as ArticleImageSetRecord[];
+
+    const deliverableIds = packagingData.deliverables.map((row) => row.id);
+    if (deliverableIds.length > 0) {
+      const approvals = await prisma.aiDeliveryDeliverableImageApproval.findMany({
+        where: { tenantId, deliverableId: { in: deliverableIds } },
+        select: { deliverableId: true, articleImageId: true, status: true }
+      });
+      for (const approval of approvals) {
+        const existing = imageApprovalsByDeliverableId.get(approval.deliverableId) ?? [];
+        existing.push({ articleImageId: approval.articleImageId, status: approval.status });
+        imageApprovalsByDeliverableId.set(approval.deliverableId, existing);
+      }
+    }
+  }
+
+  const imageByDraftId = new Map<string, ArticleImageSetRecord>();
+  for (const image of articleImages) {
+    if (!isWorkflowBriefArticleImage(image.notes, briefId)) {
+      continue;
+    }
+    if (!imageByDraftId.has(image.contentDraftId)) {
+      imageByDraftId.set(image.contentDraftId, image);
+    }
+  }
+
+  const publicationTarget = packagingData.brief
+    ? await resolvePublicationTargetForClient(tenantId, packagingData.brief.clientId, null)
+    : null;
+
+  return {
+    ...packagingData,
+    articleImages,
+    imageByDraftId,
+    imageApprovalsByDeliverableId,
+    imageSetMeta: readImageSetFromPlanJson(packagingData.productionPlan?.planJson),
+    releasePrepMeta: readReleasePrepFromPlanJson(packagingData.productionPlan?.planJson),
+    publicationTarget
+  };
+}
+
+async function writeImageSetMetadata(
+  tx: Prisma.TransactionClient,
+  input: {
+    productionPlanId: string;
+    planJson: unknown;
+    briefId: string;
+    preparedCount: number;
+    lastPreparedAt?: string;
+    lastRefreshedAt?: string;
+  }
+): Promise<void> {
+  const existingPlanJson =
+    input.planJson && typeof input.planJson === "object" && !Array.isArray(input.planJson)
+      ? (input.planJson as Record<string, unknown>)
+      : {};
+  const existingMeta = readImageSetFromPlanJson(input.planJson) ?? {};
+
+  await tx.productionPlan.update({
+    where: { id: input.productionPlanId },
+    data: {
+      planJson: {
+        ...existingPlanJson,
+        imageSets: {
+          version: WORKFLOW_BRIEF_IMAGE_SET_VERSION,
+          briefId: input.briefId,
+          preparedCount: input.preparedCount,
+          lastPreparedAt: input.lastPreparedAt ?? existingMeta.lastPreparedAt ?? null,
+          lastRefreshedAt: input.lastRefreshedAt ?? existingMeta.lastRefreshedAt ?? null
+        }
+      } as Prisma.InputJsonValue
+    }
+  });
+}
+
+async function writeReleasePrepMetadata(
+  tx: Prisma.TransactionClient,
+  input: {
+    productionPlanId: string;
+    planJson: unknown;
+    summary: Record<string, unknown>;
+  }
+): Promise<void> {
+  const existingPlanJson =
+    input.planJson && typeof input.planJson === "object" && !Array.isArray(input.planJson)
+      ? (input.planJson as Record<string, unknown>)
+      : {};
+
+  await tx.productionPlan.update({
+    where: { id: input.productionPlanId },
+    data: {
+      planJson: {
+        ...existingPlanJson,
+        releasePrep: input.summary
+      } as Prisma.InputJsonValue
+    }
+  });
+}
+
+async function persistWorkflowBriefImageCandidate(
+  tx: Prisma.TransactionClient,
+  input: {
+    tenantId: string;
+    briefId: string;
+    aiDeliveryProjectId: string;
+    draft: ContentDraftPackagingRecord;
+    planItem: { id: string; title: string; targetKeyword: string | null };
+    briefTitle: string;
+    goal: string | null;
+    existingImage: ArticleImageSetRecord | null;
+    deliverable: DeliverablePackagingRecord | null;
+    forceRefresh: boolean;
+  }
+): Promise<{ outcome: WorkflowBriefImageSetOutcome; articleImageId: string | null }> {
+  if (!canPrepareWorkflowBriefImageSetFromDraft(input.draft, input.briefId) || !input.draft.contentPlanItemId) {
+    return { outcome: "skipped_ineligible", articleImageId: null };
+  }
+
+  const candidate = buildWorkflowBriefImageCandidate({
+    briefId: input.briefId,
+    contentPlanItemId: input.planItem.id,
+    contentDraftId: input.draft.id,
+    draftTitle: input.draft.title,
+    targetKeyword: input.planItem.targetKeyword,
+    briefTitle: input.briefTitle,
+    goal: input.goal
+  });
+
+  if (input.existingImage) {
+    if (!input.forceRefresh) {
+      return { outcome: "reused", articleImageId: input.existingImage.id };
+    }
+    if (isArticleImageLockedForRefresh(input.existingImage.status)) {
+      return { outcome: "skipped_locked", articleImageId: input.existingImage.id };
+    }
+
+    const updated = await tx.aiDeliveryArticleImage.update({
+      where: { id: input.existingImage.id },
+      data: {
+        title: candidate.title,
+        prompt: candidate.prompt,
+        styleNotes: candidate.styleNotes,
+        status: candidate.status,
+        notes: candidate.notes
+      },
+      select: { id: true }
+    });
+
+    if (input.deliverable) {
+      await tx.aiDeliveryDeliverable.update({
+        where: { id: input.deliverable.id },
+        data: { articleImageId: updated.id }
+      });
+    }
+
+    return { outcome: "updated", articleImageId: updated.id };
+  }
+
+  const created = await tx.aiDeliveryArticleImage.create({
+    data: {
+      tenantId: input.tenantId,
+      aiDeliveryProjectId: input.aiDeliveryProjectId,
+      contentDraftId: input.draft.id,
+      title: candidate.title,
+      prompt: candidate.prompt,
+      styleNotes: candidate.styleNotes,
+      status: candidate.status,
+      notes: candidate.notes,
+      isArchived: false
+    },
+    select: { id: true }
+  });
+
+  if (input.deliverable) {
+    await tx.aiDeliveryDeliverable.update({
+      where: { id: input.deliverable.id },
+      data: { articleImageId: created.id }
+    });
+  }
+
+  return { outcome: "created", articleImageId: created.id };
+}
+
+export type WorkflowBriefImageSetStatus = {
+  briefId: string;
+  hasLinkedProject: boolean;
+  project: { id: string; name: string; targetMonth: Date } | null;
+  eligibleCount: number;
+  preparedCount: number;
+  missingCount: number;
+  lockedCount: number;
+  canPrepareAll: boolean;
+  canManageImageSets: boolean;
+  blockReason: string | null;
+  imageSetStage: WorkflowBriefImageSetStage;
+  lastPreparedAt: string | null;
+  lastRefreshedAt: string | null;
+  items: Array<{
+    contentPlanItemId: string;
+    planItemTitle: string;
+    draftId: string | null;
+    deliverableId: string | null;
+    articleImageId: string | null;
+    imageStatus: string | null;
+    imageSetState: ReturnType<typeof classifyImageSetItemState>;
+    canRefresh: boolean;
+  }>;
+  lineage: {
+    briefId: string;
+    productionPlanId: string | null;
+    aiDeliveryProjectId: string | null;
+    version: string;
+  };
+};
+
+function buildWorkflowBriefImageSetStatus(
+  briefId: string,
+  data: NonNullable<Awaited<ReturnType<typeof loadWorkflowBriefPackageExecutionData>>>,
+  isAdmin: boolean
+): WorkflowBriefImageSetStatus {
+  const items = data.seedItems.map((planItem) => {
+    const draft = data.draftByItemId.get(planItem.id) ?? null;
+    const isEligible = draft
+      ? canPrepareWorkflowBriefImageSetFromDraft(
+          {
+            notes: draft.notes,
+            draftBody: draft.draftBody,
+            isArchived: draft.isArchived,
+            contentPlanItemId: draft.contentPlanItemId
+          },
+          briefId
+        )
+      : false;
+    const image = draft ? data.imageByDraftId.get(draft.id) ?? null : null;
+    const deliverable = draft ? data.deliverableByDraftId.get(draft.id) ?? null : null;
+    const imageSetState = classifyImageSetItemState({
+      isEligible,
+      hasImage: Boolean(image),
+      imageStatus: image?.status ?? null
+    });
+
+    return {
+      contentPlanItemId: planItem.id,
+      planItemTitle: planItem.title,
+      draftId: draft?.id ?? null,
+      deliverableId: deliverable?.id ?? null,
+      articleImageId: image?.id ?? null,
+      imageStatus: image?.status ?? null,
+      imageSetState,
+      canRefresh: isAdmin && Boolean(image && !isArticleImageLockedForRefresh(image.status))
+    };
+  });
+
+  const eligibleCount = items.filter((item) => item.imageSetState !== "not_eligible").length;
+  const preparedCount = items.filter(
+    (item) => item.imageSetState !== "not_eligible" && item.imageSetState !== "missing"
+  ).length;
+  const missingCount = items.filter((item) => item.imageSetState === "missing").length;
+  const lockedCount = items.filter((item) => item.imageSetState === "locked" || item.imageSetState === "approved").length;
+
+  let canPrepareAll = false;
+  let blockReason: string | null = null;
+  if (!isAdmin) {
+    blockReason = "Admin access required to prepare image sets.";
+  } else if (!data.project) {
+    blockReason = "Link an AI Delivery project before preparing image sets.";
+  } else if (eligibleCount === 0) {
+    blockReason = "Generate workflow content drafts before preparing image sets.";
+  } else {
+    canPrepareAll = true;
+  }
+
+  const packagingStatus = buildWorkflowBriefDeliverablePackagingStatus(briefId, data, isAdmin);
+  const imageSetStage = computeImageSetStage({
+    eligibleCount,
+    preparedCount,
+    pendingReviewCount: packagingStatus.pendingReviewCount,
+    reviewCompleteCount: packagingStatus.approvedByClientCount
+  });
+
+  return {
+    briefId,
+    hasLinkedProject: Boolean(data.project),
+    project: data.project ? { id: data.project.id, name: data.project.name, targetMonth: data.project.targetMonth } : null,
+    eligibleCount,
+    preparedCount,
+    missingCount,
+    lockedCount,
+    canPrepareAll,
+    canManageImageSets: isAdmin,
+    blockReason,
+    imageSetStage,
+    lastPreparedAt: data.imageSetMeta?.lastPreparedAt ?? null,
+    lastRefreshedAt: data.imageSetMeta?.lastRefreshedAt ?? null,
+    items,
+    lineage: {
+      briefId,
+      productionPlanId: data.productionPlan?.id ?? null,
+      aiDeliveryProjectId: data.project?.id ?? null,
+      version: WORKFLOW_BRIEF_IMAGE_SET_VERSION
+    }
+  };
+}
+
+export type WorkflowBriefPackageCompletenessStatus = {
+  briefId: string;
+  eligibleItemCount: number;
+  completeItemCount: number;
+  readyForClientReviewCount: number;
+  clientReviewInProgressCount: number;
+  overallStage: WorkflowBriefPackageCompletenessStage;
+  publicationTargetAvailable: boolean;
+  publicationTargetLabel: string | null;
+  releasePrepStage: WorkflowBriefReleasePrepStage;
+  releasePrepared: boolean;
+  lastReleasePreparedAt: string | null;
+  missingRequirements: string[];
+  items: Array<{
+    contentPlanItemId: string;
+    planItemTitle: string;
+    textDeliverableId: string | null;
+    textDeliverableStatus: string | null;
+    articleImageId: string | null;
+    imageStatus: string | null;
+    imageApprovalStatus: string | null;
+    hasTextDeliverable: boolean;
+    hasImageCandidate: boolean;
+    textClientReviewed: boolean;
+    imageClientReviewed: boolean;
+    readyForClientReview: boolean;
+    packageComplete: boolean;
+    completenessStage: WorkflowBriefPackageCompletenessStage;
+  }>;
+};
+
+function buildWorkflowBriefPackageCompletenessStatus(
+  briefId: string,
+  data: NonNullable<Awaited<ReturnType<typeof loadWorkflowBriefPackageExecutionData>>>
+): WorkflowBriefPackageCompletenessStatus {
+  const missingRequirements: string[] = [];
+  const releasePrepared = Boolean(data.releasePrepMeta?.preparedAt);
+  const publicationTargetAvailable = Boolean(data.publicationTarget);
+  const publicationTargetLabel = data.publicationTarget?.label ?? null;
+
+  const items = data.seedItems.map((planItem) => {
+    const draft = data.draftByItemId.get(planItem.id) ?? null;
+    const deliverable = draft ? data.deliverableByDraftId.get(draft.id) ?? null : null;
+    const image = draft ? data.imageByDraftId.get(draft.id) ?? null : null;
+    const approvals = deliverable ? data.imageApprovalsByDeliverableId.get(deliverable.id) ?? [] : [];
+    const imageApproval = image ? approvals.find((row) => row.articleImageId === image.id) ?? null : null;
+
+    const completeness = computePackageItemCompleteness({
+      hasTextDeliverable: Boolean(deliverable),
+      textDeliverableStatus: deliverable?.status ?? null,
+      hasImageCandidate: Boolean(image),
+      imageStatus: image?.status ?? null,
+      imageApprovalStatus: imageApproval?.status ?? null,
+      deliverableStatus: deliverable?.status ?? null
+    });
+
+    return {
+      contentPlanItemId: planItem.id,
+      planItemTitle: planItem.title,
+      textDeliverableId: deliverable?.id ?? null,
+      textDeliverableStatus: deliverable?.status ?? null,
+      articleImageId: image?.id ?? null,
+      imageStatus: image?.status ?? null,
+      imageApprovalStatus: imageApproval?.status ?? null,
+      ...completeness
+    };
+  });
+
+  const eligibleItemCount = items.filter((item) => item.hasTextDeliverable || item.hasImageCandidate).length;
+  const completeItemCount = items.filter((item) => item.packageComplete).length;
+  const readyForClientReviewCount = items.filter((item) => item.readyForClientReview).length;
+  const clientReviewInProgressCount = items.filter(
+    (item) => item.completenessStage === "client_review_in_progress"
+  ).length;
+
+  if (!publicationTargetAvailable) {
+    missingRequirements.push("Publication target is not configured for this client.");
+  }
+  if (items.some((item) => !item.hasTextDeliverable)) {
+    missingRequirements.push("Some items are missing packaged text deliverables.");
+  }
+  if (items.some((item) => !item.hasImageCandidate)) {
+    missingRequirements.push("Some items are missing image set candidates.");
+  }
+  if (completeItemCount < items.length) {
+    missingRequirements.push("Not all text + image packages are client-reviewed and complete.");
+  }
+
+  const itemStages = items.map((item) => item.completenessStage);
+  const overallStage = computeOverallPackageCompletenessStage({
+    itemStages,
+    eligibleItemCount: data.seedItems.length,
+    completeItemCount,
+    publicationTargetAvailable,
+    releasePrepared
+  });
+
+  const releasePrepStage = computeReleasePrepStage({
+    packageComplete: completeItemCount === data.seedItems.length && data.seedItems.length > 0,
+    publicationTargetAvailable,
+    releasePrepared
+  });
+
+  return {
+    briefId,
+    eligibleItemCount,
+    completeItemCount,
+    readyForClientReviewCount,
+    clientReviewInProgressCount,
+    overallStage,
+    publicationTargetAvailable,
+    publicationTargetLabel,
+    releasePrepStage,
+    releasePrepared,
+    lastReleasePreparedAt: data.releasePrepMeta?.preparedAt ?? null,
+    missingRequirements,
+    items
+  };
+}
+
+export async function getWorkflowBriefImageSetStatus(
+  authSession: AuthResolvedSessionContext,
+  briefId: string
+): Promise<WorkflowBriefImageSetStatus | "not_found" | "forbidden"> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) {
+    return "forbidden";
+  }
+
+  const brief = await getBriefForAccess(briefId, tenantId);
+  if (!brief) {
+    return "not_found";
+  }
+  if (!(await canAccessClient(authSession, tenantId, brief.clientId))) {
+    return "forbidden";
+  }
+
+  const data = await loadWorkflowBriefPackageExecutionData(tenantId, briefId);
+  if (!data) {
+    return "not_found";
+  }
+
+  return buildWorkflowBriefImageSetStatus(briefId, data, isOwnerRole(getActiveRoles(authSession)));
+}
+
+export async function getWorkflowBriefPackageCompleteness(
+  authSession: AuthResolvedSessionContext,
+  briefId: string
+): Promise<WorkflowBriefPackageCompletenessStatus | "not_found" | "forbidden"> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) {
+    return "forbidden";
+  }
+
+  const brief = await getBriefForAccess(briefId, tenantId);
+  if (!brief) {
+    return "not_found";
+  }
+  if (!(await canAccessClient(authSession, tenantId, brief.clientId))) {
+    return "forbidden";
+  }
+
+  const data = await loadWorkflowBriefPackageExecutionData(tenantId, briefId);
+  if (!data) {
+    return "not_found";
+  }
+
+  return buildWorkflowBriefPackageCompletenessStatus(briefId, data);
+}
+
+export async function prepareAllWorkflowBriefImageSets(
+  authSession: AuthResolvedSessionContext,
+  briefId: string
+): Promise<
+  | {
+      prepared: boolean;
+      outcomes: ReturnType<typeof summarizeImageSetBatchResult>;
+      status: WorkflowBriefImageSetStatus;
+      completeness: WorkflowBriefPackageCompletenessStatus;
+    }
+  | "not_found"
+  | "forbidden"
+  | "missing_project"
+  | "no_eligible_drafts"
+> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId || !isOwnerRole(getActiveRoles(authSession))) {
+    return "forbidden";
+  }
+
+  const data = await loadWorkflowBriefPackageExecutionData(tenantId, briefId);
+  if (!data) {
+    return "not_found";
+  }
+  if (!data.project) {
+    return "missing_project";
+  }
+
+  const preStatus = buildWorkflowBriefImageSetStatus(briefId, data, true);
+  if (preStatus.eligibleCount === 0) {
+    return "no_eligible_drafts";
+  }
+
+  const outcomeList: WorkflowBriefImageSetOutcome[] = [];
+  const finishedAtIso = new Date().toISOString();
+
+  await prisma.$transaction(async (tx) => {
+    for (const planItem of data.seedItems) {
+      const draftSummary = data.draftByItemId.get(planItem.id);
+      if (!draftSummary) {
+        outcomeList.push("skipped_missing_draft");
+        continue;
+      }
+
+      const draft = (await tx.aiDeliveryContentDraft.findFirst({
+        where: {
+          id: draftSummary.id,
+          tenantId,
+          aiDeliveryProjectId: data.project!.id,
+          isArchived: false
+        },
+        select: contentDraftPackagingSelect
+      })) as ContentDraftPackagingRecord | null;
+
+      if (!draft) {
+        outcomeList.push("skipped_missing_draft");
+        continue;
+      }
+
+      const existing = data.imageByDraftId.get(draft.id) ?? null;
+      const deliverable = data.deliverableByDraftId.get(draft.id) ?? null;
+      const result = await persistWorkflowBriefImageCandidate(tx, {
+        tenantId,
+        briefId,
+        aiDeliveryProjectId: data.project!.id,
+        draft,
+        planItem,
+        briefTitle: data.brief.title,
+        goal: data.brief.goal,
+        existingImage: existing,
+        deliverable,
+        forceRefresh: false
+      });
+      outcomeList.push(result.outcome);
+    }
+
+    if (data.productionPlan?.id) {
+      const refreshed = await loadWorkflowBriefPackageExecutionData(tenantId, briefId);
+      const status = refreshed ? buildWorkflowBriefImageSetStatus(briefId, refreshed, true) : null;
+      await writeImageSetMetadata(tx, {
+        productionPlanId: data.productionPlan.id,
+        planJson: data.productionPlan.planJson,
+        briefId,
+        preparedCount: status?.preparedCount ?? 0,
+        lastPreparedAt: finishedAtIso
+      });
+    }
+  });
+
+  const outcomes = summarizeImageSetBatchResult(outcomeList);
+  if (outcomes.created === 0 && outcomes.reused === 0 && outcomes.updated === 0) {
+    return "no_eligible_drafts";
+  }
+
+  const status = await getWorkflowBriefImageSetStatus(authSession, briefId);
+  const completeness = await getWorkflowBriefPackageCompleteness(authSession, briefId);
+  if (status === "not_found") {
+    return "not_found";
+  }
+  if (status === "forbidden") {
+    return "forbidden";
+  }
+  if (completeness === "not_found") {
+    return "not_found";
+  }
+  if (completeness === "forbidden") {
+    return "forbidden";
+  }
+
+  return { prepared: true, outcomes, status, completeness };
+}
+
+export async function refreshWorkflowBriefImageSet(
+  authSession: AuthResolvedSessionContext,
+  briefId: string,
+  input: { contentDraftId?: string | null; contentPlanItemId?: string | null }
+): Promise<
+  | {
+      refreshed: boolean;
+      outcome: WorkflowBriefImageSetOutcome;
+      articleImageId: string | null;
+      status: WorkflowBriefImageSetStatus;
+      completeness: WorkflowBriefPackageCompletenessStatus;
+    }
+  | "not_found"
+  | "forbidden"
+  | "missing_project"
+  | "invalid_item"
+  | "missing_draft"
+  | "skipped_locked"
+> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId || !isOwnerRole(getActiveRoles(authSession))) {
+    return "forbidden";
+  }
+
+  const contentDraftId = input.contentDraftId?.trim() || null;
+  const contentPlanItemId = input.contentPlanItemId?.trim() || null;
+  if (!contentDraftId && !contentPlanItemId) {
+    return "invalid_item";
+  }
+
+  const data = await loadWorkflowBriefPackageExecutionData(tenantId, briefId);
+  if (!data) {
+    return "not_found";
+  }
+  if (!data.project) {
+    return "missing_project";
+  }
+
+  let draftId = contentDraftId;
+  let planItem = contentPlanItemId
+    ? data.seedItems.find((item) => item.id === contentPlanItemId) ?? null
+    : null;
+
+  if (!draftId && contentPlanItemId) {
+    if (!planItem) {
+      return "invalid_item";
+    }
+    draftId = data.draftByItemId.get(contentPlanItemId)?.id ?? null;
+  }
+
+  if (!draftId) {
+    return "missing_draft";
+  }
+
+  if (!planItem) {
+    const draftSummary = [...data.draftByItemId.values()].find((row) => row.id === draftId);
+    planItem = draftSummary?.contentPlanItemId
+      ? data.seedItems.find((item) => item.id === draftSummary.contentPlanItemId) ?? null
+      : null;
+  }
+
+  if (!planItem) {
+    return "invalid_item";
+  }
+
+  const draft = await loadFullDraftForPackaging(tenantId, data.project.id, draftId);
+  if (!draft) {
+    return "missing_draft";
+  }
+
+  const existing = data.imageByDraftId.get(draft.id) ?? null;
+  const deliverable = data.deliverableByDraftId.get(draft.id) ?? null;
+  const finishedAtIso = new Date().toISOString();
+
+  const txResult = await prisma.$transaction(async (tx) => {
+    const result = await persistWorkflowBriefImageCandidate(tx, {
+      tenantId,
+      briefId,
+      aiDeliveryProjectId: data.project!.id,
+      draft,
+      planItem: planItem!,
+      briefTitle: data.brief.title,
+      goal: data.brief.goal,
+      existingImage: existing,
+      deliverable,
+      forceRefresh: true
+    });
+
+    if (data.productionPlan?.id && result.outcome === "updated") {
+      const refreshed = await loadWorkflowBriefPackageExecutionData(tenantId, briefId);
+      const status = refreshed ? buildWorkflowBriefImageSetStatus(briefId, refreshed, true) : null;
+      await writeImageSetMetadata(tx, {
+        productionPlanId: data.productionPlan.id,
+        planJson: data.productionPlan.planJson,
+        briefId,
+        preparedCount: status?.preparedCount ?? 0,
+        lastRefreshedAt: finishedAtIso
+      });
+    }
+
+    return result;
+  });
+
+  if (txResult.outcome === "skipped_locked") {
+    return "skipped_locked";
+  }
+  if (txResult.outcome === "skipped_ineligible" || txResult.outcome === "skipped_missing_draft") {
+    return "missing_draft";
+  }
+
+  const status = await getWorkflowBriefImageSetStatus(authSession, briefId);
+  const completeness = await getWorkflowBriefPackageCompleteness(authSession, briefId);
+  if (status === "not_found") {
+    return "not_found";
+  }
+  if (status === "forbidden") {
+    return "forbidden";
+  }
+  if (completeness === "not_found") {
+    return "not_found";
+  }
+  if (completeness === "forbidden") {
+    return "forbidden";
+  }
+
+  return {
+    refreshed: txResult.outcome === "created" || txResult.outcome === "updated",
+    outcome: txResult.outcome,
+    articleImageId: txResult.articleImageId,
+    status,
+    completeness
+  };
+}
+
+export async function getWorkflowBriefReleasePrepSummary(
+  authSession: AuthResolvedSessionContext,
+  briefId: string
+): Promise<
+  | (WorkflowBriefPackageCompletenessStatus & {
+      publishablePackageSummary: Record<string, unknown> | null;
+    })
+  | "not_found"
+  | "forbidden"
+> {
+  const completeness = await getWorkflowBriefPackageCompleteness(authSession, briefId);
+  if (completeness === "not_found" || completeness === "forbidden") {
+    return completeness;
+  }
+
+  const tenantId = getActiveTenantId(authSession);
+  const data = tenantId ? await loadWorkflowBriefPackageExecutionData(tenantId, briefId) : null;
+  const planJson = data?.productionPlan?.planJson;
+  const publishablePackageSummary =
+    planJson && typeof planJson === "object" && !Array.isArray(planJson)
+      ? ((planJson as Record<string, unknown>).releasePrep as Record<string, unknown> | undefined) ?? null
+      : null;
+
+  return {
+    ...completeness,
+    publishablePackageSummary
+  };
+}
+
+export async function prepareWorkflowBriefRelease(
+  authSession: AuthResolvedSessionContext,
+  briefId: string
+): Promise<
+  | {
+      prepared: boolean;
+      releasePrepStage: WorkflowBriefReleasePrepStage;
+      publishablePackageSummary: Record<string, unknown>;
+      completeness: WorkflowBriefPackageCompletenessStatus;
+    }
+  | "not_found"
+  | "forbidden"
+  | "missing_project"
+  | "not_ready"
+  | "publication_target_missing"
+> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId || !isOwnerRole(getActiveRoles(authSession))) {
+    return "forbidden";
+  }
+
+  const data = await loadWorkflowBriefPackageExecutionData(tenantId, briefId);
+  if (!data) {
+    return "not_found";
+  }
+  if (!data.project) {
+    return "missing_project";
+  }
+
+  const completeness = buildWorkflowBriefPackageCompletenessStatus(briefId, data);
+  if (completeness.completeItemCount < data.seedItems.length || data.seedItems.length === 0) {
+    return "not_ready";
+  }
+
+  if (!data.publicationTarget) {
+    return "publication_target_missing";
+  }
+
+  const packages = data.seedItems
+    .map((planItem) => {
+      const draft = data.draftByItemId.get(planItem.id);
+      const deliverable = draft ? data.deliverableByDraftId.get(draft.id) : null;
+      const image = draft ? data.imageByDraftId.get(draft.id) : null;
+      if (!draft || !deliverable || !image) {
+        return null;
+      }
+      return {
+        contentPlanItemId: planItem.id,
+        planItemTitle: planItem.title,
+        contentDraftId: draft.id,
+        textDeliverableId: deliverable.id,
+        articleImageId: image.id,
+        textTitle: deliverable.title,
+        bodyPreview: deliverable.bodyContent ?? draft.draftBody,
+        imageTitle: image.title,
+        imagePromptPreview: image.prompt
+      };
+    })
+    .filter((row): row is NonNullable<typeof row> => Boolean(row));
+
+  const summary = buildPublishablePackageSummary({
+    briefId,
+    projectId: data.project.id,
+    productionPlanId: data.productionPlan?.id ?? null,
+    publicationTargetId: data.publicationTarget.id,
+    publicationTargetLabel: data.publicationTarget.label,
+    packages
+  });
+
+  if (data.productionPlan?.id) {
+    await prisma.$transaction(async (tx) => {
+      await writeReleasePrepMetadata(tx, {
+        productionPlanId: data.productionPlan!.id,
+        planJson: data.productionPlan!.planJson,
+        summary
+      });
+    });
+  }
+
+  const refreshed = buildWorkflowBriefPackageCompletenessStatus(briefId, {
+    ...data,
+    releasePrepMeta: {
+      version: WORKFLOW_BRIEF_RELEASE_PREP_VERSION,
+      briefId,
+      preparedAt: new Date().toISOString(),
+      publicationTargetId: data.publicationTarget!.id,
+      publicationTargetLabel: data.publicationTarget!.label,
+      packageCount: packages.length
+    }
+  });
+
+  return {
+    prepared: true,
+    releasePrepStage: refreshed.releasePrepStage,
+    publishablePackageSummary: summary,
+    completeness: refreshed
   };
 }

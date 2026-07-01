@@ -153,6 +153,46 @@ type DeliverablePackagingStatus = {
   }>;
 };
 
+type ImageSetStatus = {
+  eligibleCount: number;
+  preparedCount: number;
+  missingCount: number;
+  canPrepareAll: boolean;
+  imageSetStage: string;
+  lastPreparedAt: string | null;
+  items: Array<{
+    contentPlanItemId: string;
+    planItemTitle: string;
+    articleImageId: string | null;
+    imageStatus: string | null;
+    imageSetState: string;
+    canRefresh: boolean;
+  }>;
+};
+
+type PackageCompletenessStatus = {
+  completeItemCount: number;
+  eligibleItemCount: number;
+  readyForClientReviewCount: number;
+  clientReviewInProgressCount: number;
+  overallStage: string;
+  publicationTargetAvailable: boolean;
+  publicationTargetLabel: string | null;
+  releasePrepStage: string;
+  releasePrepared: boolean;
+  lastReleasePreparedAt: string | null;
+  missingRequirements: string[];
+  items: Array<{
+    planItemTitle: string;
+    hasTextDeliverable: boolean;
+    hasImageCandidate: boolean;
+    textClientReviewed: boolean;
+    imageClientReviewed: boolean;
+    packageComplete: boolean;
+    completenessStage: string;
+  }>;
+};
+
 async function workflowBriefsApiRequest<T>(path: string, options?: { method?: string; body?: unknown }): Promise<ApiResponse<T>> {
   const token = sessionStorage.getItem(SESSION_STORAGE_KEY);
   const response = await fetch(`${API_BASE_URL}/workflow-briefs${path}`, {
@@ -270,6 +310,10 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
   const [draftLoading, setDraftLoading] = useState(false);
   const [packagingStatus, setPackagingStatus] = useState<DeliverablePackagingStatus | null>(null);
   const [packagingLoading, setPackagingLoading] = useState(false);
+  const [imageSetStatus, setImageSetStatus] = useState<ImageSetStatus | null>(null);
+  const [imageSetLoading, setImageSetLoading] = useState(false);
+  const [completenessStatus, setCompletenessStatus] = useState<PackageCompletenessStatus | null>(null);
+  const [completenessLoading, setCompletenessLoading] = useState(false);
 
   const loadBriefs = useCallback(async () => {
     setLoading(true);
@@ -333,6 +377,35 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
     setPackagingLoading(false);
   }, []);
 
+  const loadImageSetStatus = useCallback(async (briefId: string) => {
+    setImageSetLoading(true);
+    const response = await workflowBriefsApiRequest<ImageSetStatus>(`/${briefId}/image-sets`);
+    if (response.ok) {
+      setImageSetStatus(response.data);
+    } else {
+      setImageSetStatus(null);
+    }
+    setImageSetLoading(false);
+  }, []);
+
+  const loadCompletenessStatus = useCallback(async (briefId: string) => {
+    setCompletenessLoading(true);
+    const response = await workflowBriefsApiRequest<PackageCompletenessStatus>(`/${briefId}/package-completeness`);
+    if (response.ok) {
+      setCompletenessStatus(response.data);
+    } else {
+      setCompletenessStatus(null);
+    }
+    setCompletenessLoading(false);
+  }, []);
+
+  const loadPackageExecutionStatus = useCallback(
+    async (briefId: string) => {
+      await Promise.all([loadPackagingStatus(briefId), loadImageSetStatus(briefId), loadCompletenessStatus(briefId)]);
+    },
+    [loadPackagingStatus, loadImageSetStatus, loadCompletenessStatus]
+  );
+
   useEffect(() => {
     void loadBriefs();
   }, [loadBriefs]);
@@ -348,13 +421,17 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
         setDraftStatus(null);
       }
       void loadPackagingStatus(selectedId);
+      void loadImageSetStatus(selectedId);
+      void loadCompletenessStatus(selectedId);
     } else {
       setDetail(null);
       setSeedStatus(null);
       setDraftStatus(null);
       setPackagingStatus(null);
+      setImageSetStatus(null);
+      setCompletenessStatus(null);
     }
-  }, [selectedId, loadDetail, loadSeedStatus, loadDraftStatus, loadPackagingStatus, canManageAi]);
+  }, [selectedId, loadDetail, loadSeedStatus, loadDraftStatus, loadPackagingStatus, loadImageSetStatus, loadCompletenessStatus, canManageAi]);
 
   useEffect(() => {
     const plan = detail?.productionPlans?.[0];
@@ -511,7 +588,7 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
       return;
     }
     setPackagingStatus(response.data.status);
-    await loadPackagingStatus(selectedId);
+    await loadPackageExecutionStatus(selectedId);
     setActionLoading(false);
   }
 
@@ -535,8 +612,122 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
       return;
     }
     setPackagingStatus(response.data.status);
-    await loadPackagingStatus(selectedId);
+    await loadPackageExecutionStatus(selectedId);
     setActionLoading(false);
+  }
+
+  async function handlePrepareAllImageSets() {
+    if (!selectedId) return;
+    setActionLoading(true);
+    setError(null);
+    const response = await workflowBriefsApiRequest<{
+      status: ImageSetStatus;
+      completeness: PackageCompletenessStatus;
+    }>(`/${selectedId}/prepare-image-sets`, { method: "POST" });
+    if (!response.ok) {
+      setError(response.error.message);
+      setActionLoading(false);
+      return;
+    }
+    setImageSetStatus(response.data.status);
+    setCompletenessStatus(response.data.completeness);
+    await loadPackageExecutionStatus(selectedId);
+    setActionLoading(false);
+  }
+
+  async function handleRefreshImageSet(contentPlanItemId: string) {
+    if (!selectedId) return;
+    setActionLoading(true);
+    setError(null);
+    const response = await workflowBriefsApiRequest<{
+      status: ImageSetStatus;
+      completeness: PackageCompletenessStatus;
+    }>(`/${selectedId}/refresh-image-set`, {
+      method: "POST",
+      body: { contentPlanItemId }
+    });
+    if (!response.ok) {
+      setError(response.error.message);
+      setActionLoading(false);
+      return;
+    }
+    setImageSetStatus(response.data.status);
+    setCompletenessStatus(response.data.completeness);
+    await loadPackageExecutionStatus(selectedId);
+    setActionLoading(false);
+  }
+
+  async function handlePrepareRelease() {
+    if (!selectedId) return;
+    setActionLoading(true);
+    setError(null);
+    const response = await workflowBriefsApiRequest<{
+      completeness: PackageCompletenessStatus;
+      publishablePackageSummary: Record<string, unknown>;
+    }>(`/${selectedId}/prepare-release`, { method: "POST" });
+    if (!response.ok) {
+      setError(response.error.message);
+      setActionLoading(false);
+      return;
+    }
+    setCompletenessStatus(response.data.completeness);
+    await loadCompletenessStatus(selectedId);
+    setActionLoading(false);
+  }
+
+  function formatImageSetStage(value: string): string {
+    switch (value) {
+      case "none":
+        return "No image sets";
+      case "text_only":
+        return "Text only";
+      case "partially_prepared":
+        return "Partially prepared";
+      case "fully_prepared":
+        return "Fully prepared";
+      case "in_client_review":
+        return "In client review";
+      case "review_complete":
+        return "Review complete";
+      default:
+        return value.replace(/_/g, " ");
+    }
+  }
+
+  function formatCompletenessStage(value: string): string {
+    switch (value) {
+      case "incomplete":
+        return "Incomplete";
+      case "text_ready":
+        return "Text ready";
+      case "images_prepared":
+        return "Images prepared";
+      case "ready_for_client_review":
+        return "Ready for client review";
+      case "client_review_in_progress":
+        return "Client review in progress";
+      case "package_complete":
+        return "Package complete";
+      case "ready_for_release_prep":
+        return "Ready for release prep";
+      default:
+        return value.replace(/_/g, " ");
+    }
+  }
+
+  function formatReleasePrepStage(value: string): string {
+    switch (value) {
+      case "not_ready":
+        return "Not ready";
+      case "ready_for_release":
+        return "Ready for release";
+      case "release_prepared":
+        return "Release prepared";
+      case "publication_target_missing":
+        return "Publication target missing";
+      default:
+        return value.replace(/_/g, " ");
+    }
   }
 
   async function handleSendDeliverableForReview(deliverableId: string) {
@@ -553,6 +744,7 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
       return;
     }
     await loadPackagingStatus(selectedId);
+    await loadPackageExecutionStatus(selectedId);
     setActionLoading(false);
   }
 
@@ -1324,6 +1516,156 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
                     </div>
                   ) : (
                     <p className="muted-text">Generate content drafts to begin deliverable packaging.</p>
+                  )}
+                </SectionPanel>
+              ) : null}
+
+              {(canManageAi || (completenessStatus?.items.length ?? 0) > 0) &&
+              (packagingStatus?.packagedCount ?? 0) > 0 ? (
+                <SectionPanel title="Image Sets & Package Completeness">
+                  {imageSetLoading || completenessLoading ? (
+                    <LoadingState label="Loading package execution status…" />
+                  ) : null}
+
+                  {!imageSetLoading && !completenessLoading && (imageSetStatus || completenessStatus) ? (
+                    <div>
+                      {imageSetStatus ? (
+                        <div style={{ marginBottom: "1rem" }}>
+                          <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", marginBottom: "0.5rem", flexWrap: "wrap" }}>
+                            <StatusBadge status={imageSetStatus.preparedCount > 0 ? "READY" : "DRAFT"} />
+                            <span className="muted-text" style={{ fontSize: "0.85rem" }}>
+                              {imageSetStatus.preparedCount}/{imageSetStatus.eligibleCount} image sets ·{" "}
+                              {formatImageSetStage(imageSetStatus.imageSetStage)}
+                            </span>
+                          </div>
+
+                          {canManageAi && imageSetStatus.canPrepareAll ? (
+                            <Button
+                              variant="primary"
+                              disabled={actionLoading}
+                              onClick={() => void handlePrepareAllImageSets()}
+                              style={{ marginTop: "0.5rem", marginRight: "0.5rem" }}
+                            >
+                              Prepare all image sets
+                            </Button>
+                          ) : null}
+
+                          {imageSetStatus.items.length > 0 ? (
+                            <ul style={{ listStyle: "none", margin: "0.75rem 0 0", padding: 0 }}>
+                              {imageSetStatus.items.slice(0, 8).map((item) => (
+                                <li
+                                  key={item.contentPlanItemId}
+                                  style={{
+                                    display: "flex",
+                                    justifyContent: "space-between",
+                                    gap: "0.5rem",
+                                    marginBottom: "0.5rem",
+                                    flexWrap: "wrap"
+                                  }}
+                                >
+                                  <div>
+                                    <div style={{ fontWeight: 600 }}>{item.planItemTitle}</div>
+                                    <div className="muted-text" style={{ fontSize: "0.8rem" }}>
+                                      {item.imageSetState.replace(/_/g, " ")}
+                                      {item.imageStatus ? ` · ${item.imageStatus}` : ""}
+                                    </div>
+                                  </div>
+                                  {canManageAi && item.canRefresh ? (
+                                    <Button
+                                      variant="secondary"
+                                      disabled={actionLoading}
+                                      onClick={() => void handleRefreshImageSet(item.contentPlanItemId)}
+                                    >
+                                      Refresh image set
+                                    </Button>
+                                  ) : null}
+                                </li>
+                              ))}
+                            </ul>
+                          ) : null}
+                        </div>
+                      ) : null}
+
+                      {completenessStatus ? (
+                        <div>
+                          <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", marginBottom: "0.5rem", flexWrap: "wrap" }}>
+                            <StatusBadge
+                              status={
+                                completenessStatus.overallStage === "package_complete" ||
+                                completenessStatus.overallStage === "ready_for_release_prep"
+                                  ? "APPROVED"
+                                  : completenessStatus.overallStage === "client_review_in_progress"
+                                    ? "READY_FOR_REVIEW"
+                                    : "DRAFT"
+                              }
+                            />
+                            <span className="muted-text" style={{ fontSize: "0.85rem" }}>
+                              {completenessStatus.completeItemCount}/{completenessStatus.eligibleItemCount} complete ·{" "}
+                              {formatCompletenessStage(completenessStatus.overallStage)}
+                            </span>
+                          </div>
+
+                          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "0.5rem", marginBottom: "0.75rem" }}>
+                            <div>
+                              <div className="muted-text" style={{ fontSize: "0.75rem" }}>Ready for review</div>
+                              <div style={{ fontWeight: 600 }}>{completenessStatus.readyForClientReviewCount}</div>
+                            </div>
+                            <div>
+                              <div className="muted-text" style={{ fontSize: "0.75rem" }}>In client review</div>
+                              <div style={{ fontWeight: 600 }}>{completenessStatus.clientReviewInProgressCount}</div>
+                            </div>
+                            <div>
+                              <div className="muted-text" style={{ fontSize: "0.75rem" }}>Release prep</div>
+                              <div style={{ fontWeight: 600 }}>{formatReleasePrepStage(completenessStatus.releasePrepStage)}</div>
+                            </div>
+                            <div>
+                              <div className="muted-text" style={{ fontSize: "0.75rem" }}>Publication target</div>
+                              <div style={{ fontWeight: 600 }}>
+                                {completenessStatus.publicationTargetAvailable
+                                  ? completenessStatus.publicationTargetLabel ?? "Available"
+                                  : "Missing"}
+                              </div>
+                            </div>
+                          </div>
+
+                          {canManageAi &&
+                          completenessStatus.releasePrepStage === "ready_for_release" &&
+                          !completenessStatus.releasePrepared ? (
+                            <Button
+                              variant="primary"
+                              disabled={actionLoading}
+                              onClick={() => void handlePrepareRelease()}
+                              style={{ marginTop: "0.5rem", marginRight: "0.5rem" }}
+                            >
+                              Prepare for release
+                            </Button>
+                          ) : null}
+
+                          {!canManageAi && completenessStatus.clientReviewInProgressCount > 0 ? (
+                            <Button variant="primary" disabled={actionLoading} onClick={openClientPortalApprovals} style={{ marginTop: "0.5rem" }}>
+                              Review package in client portal
+                            </Button>
+                          ) : null}
+
+                          {completenessStatus.missingRequirements.length > 0 ? (
+                            <div style={{ marginTop: "0.75rem" }}>
+                              <div className="muted-text" style={{ fontSize: "0.8rem", marginBottom: "0.35rem", fontWeight: 600 }}>
+                                Missing requirements
+                              </div>
+                              <ul style={{ margin: 0, paddingLeft: "1.1rem" }}>
+                                {completenessStatus.missingRequirements.slice(0, 5).map((item) => (
+                                  <li key={item} style={{ marginBottom: "0.25rem" }}>
+                                    {item}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          ) : null}
+                        </div>
+                      ) : null}
+                    </div>
+                  ) : (
+                    <p className="muted-text">Package text deliverables first to prepare image sets and completeness tracking.</p>
                   )}
                 </SectionPanel>
               ) : null}

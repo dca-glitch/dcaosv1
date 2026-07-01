@@ -275,6 +275,68 @@ describe("API integration — workflow briefs lifecycle (optional)", () => {
     assert.equal(repackageResponse.body.data?.outcome, "updated");
     assert.ok(repackageResponse.body.data?.deliverableId);
 
+    const imageSetStatusResponse = await request(app)
+      .get(`/api/v1/workflow-briefs/${briefId}/image-sets`)
+      .set("Authorization", `Bearer ${token}`)
+      .expect(200);
+
+    assert.equal(imageSetStatusResponse.body.ok, true);
+    assert.ok(imageSetStatusResponse.body.data?.eligibleCount > 0);
+    assert.equal(imageSetStatusResponse.body.data?.preparedCount, 0);
+
+    const prepareImagesResponse = await request(app)
+      .post(`/api/v1/workflow-briefs/${briefId}/prepare-image-sets`)
+      .set("Authorization", `Bearer ${token}`)
+      .expect(200);
+
+    assert.equal(prepareImagesResponse.body.ok, true);
+    assert.ok(prepareImagesResponse.body.data?.outcomes?.created > 0);
+    assert.ok(prepareImagesResponse.body.data?.status?.preparedCount > 0);
+    assert.ok(prepareImagesResponse.body.data?.completeness?.items?.[0]?.hasImageCandidate);
+
+    const duplicateImagesResponse = await request(app)
+      .post(`/api/v1/workflow-briefs/${briefId}/prepare-image-sets`)
+      .set("Authorization", `Bearer ${token}`)
+      .expect(200);
+
+    assert.equal(duplicateImagesResponse.body.data?.outcomes?.created, 0);
+    assert.ok(duplicateImagesResponse.body.data?.outcomes?.reused > 0);
+
+    const refreshImageResponse = await request(app)
+      .post(`/api/v1/workflow-briefs/${briefId}/refresh-image-set`)
+      .set("Authorization", `Bearer ${token}`)
+      .send({ contentPlanItemId: firstSeedItemId })
+      .expect(200);
+
+    assert.equal(refreshImageResponse.body.ok, true);
+    assert.equal(refreshImageResponse.body.data?.outcome, "updated");
+    assert.ok(refreshImageResponse.body.data?.articleImageId);
+
+    const completenessResponse = await request(app)
+      .get(`/api/v1/workflow-briefs/${briefId}/package-completeness`)
+      .set("Authorization", `Bearer ${token}`)
+      .expect(200);
+
+    assert.equal(completenessResponse.body.ok, true);
+    assert.ok(completenessResponse.body.data?.items?.length > 0);
+    assert.ok(completenessResponse.body.data?.items?.[0]?.hasTextDeliverable);
+    assert.ok(completenessResponse.body.data?.items?.[0]?.hasImageCandidate);
+
+    const releasePrepResponse = await request(app)
+      .get(`/api/v1/workflow-briefs/${briefId}/release-prep`)
+      .set("Authorization", `Bearer ${token}`)
+      .expect(200);
+
+    assert.equal(releasePrepResponse.body.ok, true);
+    assert.equal(releasePrepResponse.body.data?.releasePrepStage, "not_ready");
+
+    const prepareReleaseBlocked = await request(app)
+      .post(`/api/v1/workflow-briefs/${briefId}/prepare-release`)
+      .set("Authorization", `Bearer ${token}`)
+      .expect(400);
+
+    assert.equal(prepareReleaseBlocked.body.error?.code, "RELEASE_PREP_NOT_READY");
+
     const firstDeliverableId = packageResponse.body.data?.status?.items?.[0]?.deliverableId as string;
     assert.ok(firstDeliverableId);
 
@@ -286,6 +348,14 @@ describe("API integration — workflow briefs lifecycle (optional)", () => {
     assert.equal(sendReviewResponse.body.ok, true);
     assert.equal(sendReviewResponse.body.data?.deliverable?.status, "PENDING_CLIENT_REVIEW");
     assert.ok((sendReviewResponse.body.data?.deliverable?.bodyContent ?? "").length > 0);
+
+    const completenessAfterReview = await request(app)
+      .get(`/api/v1/workflow-briefs/${briefId}/package-completeness`)
+      .set("Authorization", `Bearer ${token}`)
+      .expect(200);
+
+    assert.equal(completenessAfterReview.body.data?.clientReviewInProgressCount > 0, true);
+    assert.ok(completenessAfterReview.body.data?.items?.[0]?.articleImageId);
 
     const lockedRepackageResponse = await request(app)
       .post(`/api/v1/workflow-briefs/${briefId}/repackage-deliverable`)

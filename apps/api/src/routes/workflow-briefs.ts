@@ -14,12 +14,18 @@ import {
   getWorkflowBriefContentDraftStatus,
   getWorkflowBriefContentProductionSeedStatus,
   getWorkflowBriefDeliverablePackagingStatus,
+  getWorkflowBriefImageSetStatus,
   getWorkflowBriefMiReport,
+  getWorkflowBriefPackageCompleteness,
   getWorkflowBriefProductionPlan,
+  getWorkflowBriefReleasePrepSummary,
   getWorkflowBriefSeoReport,
   listWorkflowBriefs,
   packageAllWorkflowBriefDeliverables,
+  prepareAllWorkflowBriefImageSets,
+  prepareWorkflowBriefRelease,
   regenerateWorkflowBriefContentDraft,
+  refreshWorkflowBriefImageSet,
   repackageWorkflowBriefDeliverable,
   sendWorkflowBriefDeliverableForClientReview,
   sendWorkflowBriefProductionPlanToClient,
@@ -832,6 +838,199 @@ export function createWorkflowBriefsRouter() {
       if (result === "invalid_deliverable") {
         res.status(400).json(
           failure("DELIVERABLE_REVIEW_INVALID", "Deliverable was not found or is not a workflow-brief packaged text deliverable.")
+        );
+        return;
+      }
+
+      res.status(200).json(success(result));
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.get("/:id/image-sets", requireAuth, requireTenant, async (req, res, next) => {
+    try {
+      const authSession = getAuthSession(res);
+      if (!authSession) {
+        res.status(401).json(unauthorizedFailure());
+        return;
+      }
+
+      const result = await getWorkflowBriefImageSetStatus(authSession, req.params.id);
+      if (result === "not_found") {
+        res.status(404).json(failure("WORKFLOW_BRIEF_NOT_FOUND", "Workflow brief was not found."));
+        return;
+      }
+      if (result === "forbidden") {
+        res.status(403).json(forbiddenFailure());
+        return;
+      }
+
+      res.status(200).json(success(result));
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.post("/:id/prepare-image-sets", requireAuth, requireTenant, async (req, res, next) => {
+    try {
+      const authSession = getAuthSession(res);
+      if (!authSession) {
+        res.status(401).json(unauthorizedFailure());
+        return;
+      }
+
+      const result = await prepareAllWorkflowBriefImageSets(authSession, req.params.id);
+      if (result === "not_found") {
+        res.status(404).json(failure("WORKFLOW_BRIEF_NOT_FOUND", "Workflow brief was not found."));
+        return;
+      }
+      if (result === "forbidden") {
+        res.status(403).json(forbiddenFailure());
+        return;
+      }
+      if (result === "missing_project") {
+        res.status(400).json(failure("IMAGE_SET_MISSING_PROJECT", "Link an AI Delivery project before preparing image sets."));
+        return;
+      }
+      if (result === "no_eligible_drafts") {
+        res.status(400).json(
+          failure("IMAGE_SET_NO_ELIGIBLE_DRAFTS", "No eligible workflow content drafts are available for image preparation.")
+        );
+        return;
+      }
+
+      res.status(200).json(success(result));
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.post("/:id/refresh-image-set", requireAuth, requireTenant, async (req, res, next) => {
+    try {
+      const authSession = getAuthSession(res);
+      if (!authSession) {
+        res.status(401).json(unauthorizedFailure());
+        return;
+      }
+
+      const body = (req.body ?? {}) as Record<string, unknown>;
+      const result = await refreshWorkflowBriefImageSet(authSession, req.params.id, {
+        contentDraftId: typeof body.contentDraftId === "string" ? body.contentDraftId : null,
+        contentPlanItemId: typeof body.contentPlanItemId === "string" ? body.contentPlanItemId : null
+      });
+
+      if (result === "not_found") {
+        res.status(404).json(failure("WORKFLOW_BRIEF_NOT_FOUND", "Workflow brief was not found."));
+        return;
+      }
+      if (result === "forbidden") {
+        res.status(403).json(forbiddenFailure());
+        return;
+      }
+      if (result === "missing_project") {
+        res.status(400).json(failure("IMAGE_SET_MISSING_PROJECT", "Link an AI Delivery project before refreshing image sets."));
+        return;
+      }
+      if (result === "invalid_item") {
+        res.status(400).json(failure("IMAGE_SET_INVALID_ITEM", "contentDraftId or contentPlanItemId is required."));
+        return;
+      }
+      if (result === "missing_draft") {
+        res.status(400).json(failure("IMAGE_SET_MISSING_DRAFT", "Workflow content draft was not found for image refresh."));
+        return;
+      }
+      if (result === "skipped_locked") {
+        res.status(409).json(
+          failure("IMAGE_SET_REFRESH_LOCKED", "Image set is locked for refresh while approved or final-ready.")
+        );
+        return;
+      }
+
+      res.status(200).json(success(result));
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.get("/:id/package-completeness", requireAuth, requireTenant, async (req, res, next) => {
+    try {
+      const authSession = getAuthSession(res);
+      if (!authSession) {
+        res.status(401).json(unauthorizedFailure());
+        return;
+      }
+
+      const result = await getWorkflowBriefPackageCompleteness(authSession, req.params.id);
+      if (result === "not_found") {
+        res.status(404).json(failure("WORKFLOW_BRIEF_NOT_FOUND", "Workflow brief was not found."));
+        return;
+      }
+      if (result === "forbidden") {
+        res.status(403).json(forbiddenFailure());
+        return;
+      }
+
+      res.status(200).json(success(result));
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.get("/:id/release-prep", requireAuth, requireTenant, async (req, res, next) => {
+    try {
+      const authSession = getAuthSession(res);
+      if (!authSession) {
+        res.status(401).json(unauthorizedFailure());
+        return;
+      }
+
+      const result = await getWorkflowBriefReleasePrepSummary(authSession, req.params.id);
+      if (result === "not_found") {
+        res.status(404).json(failure("WORKFLOW_BRIEF_NOT_FOUND", "Workflow brief was not found."));
+        return;
+      }
+      if (result === "forbidden") {
+        res.status(403).json(forbiddenFailure());
+        return;
+      }
+
+      res.status(200).json(success(result));
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.post("/:id/prepare-release", requireAuth, requireTenant, async (req, res, next) => {
+    try {
+      const authSession = getAuthSession(res);
+      if (!authSession) {
+        res.status(401).json(unauthorizedFailure());
+        return;
+      }
+
+      const result = await prepareWorkflowBriefRelease(authSession, req.params.id);
+      if (result === "not_found") {
+        res.status(404).json(failure("WORKFLOW_BRIEF_NOT_FOUND", "Workflow brief was not found."));
+        return;
+      }
+      if (result === "forbidden") {
+        res.status(403).json(forbiddenFailure());
+        return;
+      }
+      if (result === "missing_project") {
+        res.status(400).json(failure("RELEASE_PREP_MISSING_PROJECT", "Link an AI Delivery project before preparing release."));
+        return;
+      }
+      if (result === "not_ready") {
+        res.status(400).json(
+          failure("RELEASE_PREP_NOT_READY", "Packages are not complete enough for release preparation.")
+        );
+        return;
+      }
+      if (result === "publication_target_missing") {
+        res.status(400).json(
+          failure("RELEASE_PREP_PUBLICATION_TARGET_MISSING", "Configure a publication target for this client before release preparation.")
         );
         return;
       }
