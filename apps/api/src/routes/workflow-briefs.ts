@@ -22,6 +22,7 @@ import {
   getWorkflowBriefReleasePackageStatus,
   finalizeWorkflowBriefReleasePackage,
   getWorkflowBriefPublicationHandoffStatus,
+  executeWorkflowBriefPublicationHandoff,
   getWorkflowBriefSeoReport,
   listWorkflowBriefs,
   packageAllWorkflowBriefDeliverables,
@@ -1059,6 +1060,72 @@ export function createWorkflowBriefsRouter() {
       }
       if (result === "forbidden") {
         res.status(403).json(forbiddenFailure());
+        return;
+      }
+
+      res.status(200).json(success(result));
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.post("/:id/execute-publication-handoff", requireAuth, requireTenant, async (req, res, next) => {
+    try {
+      const authSession = getAuthSession(res);
+      if (!authSession) {
+        res.status(401).json(unauthorizedFailure());
+        return;
+      }
+
+      const result = await executeWorkflowBriefPublicationHandoff(authSession, req.params.id);
+      if (result === "not_found") {
+        res.status(404).json(failure("WORKFLOW_BRIEF_NOT_FOUND", "Workflow brief was not found."));
+        return;
+      }
+      if (result === "forbidden") {
+        res.status(403).json(forbiddenFailure());
+        return;
+      }
+      if (result === "missing_project") {
+        res.status(400).json(
+          failure(
+            "PUBLICATION_HANDOFF_MISSING_PROJECT",
+            "Link an AI Delivery project before executing publication handoff."
+          )
+        );
+        return;
+      }
+      if (result === "publication_target_missing") {
+        res.status(400).json(
+          failure(
+            "PUBLICATION_HANDOFF_PUBLICATION_TARGET_MISSING",
+            "Configure a publication target for this client before publication handoff."
+          )
+        );
+        return;
+      }
+      if (result === "not_ready") {
+        res.status(400).json(
+          failure("PUBLICATION_HANDOFF_NOT_READY", "Packages are not complete enough for publication handoff.")
+        );
+        return;
+      }
+      if (result === "release_prep_missing") {
+        res.status(400).json(
+          failure(
+            "PUBLICATION_HANDOFF_PREP_MISSING",
+            "Run release preparation before executing publication handoff."
+          )
+        );
+        return;
+      }
+      if (result === "release_package_not_finalized") {
+        res.status(400).json(
+          failure(
+            "PUBLICATION_HANDOFF_RELEASE_PACKAGE_NOT_FINALIZED",
+            "Finalize the release package before executing publication handoff."
+          )
+        );
         return;
       }
 

@@ -82,10 +82,13 @@ import {
 } from "./workflow-brief-final-release.execution";
 import {
   buildPublicationHandoffPackageMappingItem,
+  buildPublicationHandoffItemFromDraft,
+  buildPublicationHandoffRecord,
   canExecutePublicationHandoff,
   computePublicationHandoffPackageFingerprint,
   computePublicationHandoffStage,
   resolvePublicationHandoffFeaturedImageRef,
+  shouldReusePublicationHandoff,
   WORKFLOW_BRIEF_PUBLICATION_HANDOFF_MODE,
   WORKFLOW_BRIEF_PUBLICATION_HANDOFF_VERSION,
   type WorkflowBriefPublicationHandoffRecord,
@@ -4698,6 +4701,31 @@ function toAdminSafePublicationHandoffSummary(
   };
 }
 
+function resolvePublicationHandoffExecutionGate(input: {
+  packageComplete: boolean;
+  releasePrepared: boolean;
+  publicationTargetAvailable: boolean;
+  releasePackageFinalized: boolean;
+  isAdmin: boolean;
+}): { allowed: boolean; blockReason: string | null } {
+  const baseGate = canExecutePublicationHandoff({
+    packageComplete: input.packageComplete,
+    releasePrepared: input.releasePrepared,
+    publicationTargetAvailable: input.publicationTargetAvailable,
+    isAdmin: input.isAdmin
+  });
+  if (!baseGate.allowed) {
+    return baseGate;
+  }
+  if (!input.releasePackageFinalized) {
+    return {
+      allowed: false,
+      blockReason: "Finalize the release package before publication handoff."
+    };
+  }
+  return { allowed: true, blockReason: null };
+}
+
 function buildWorkflowBriefPublicationHandoffStatus(
   briefId: string,
   data: NonNullable<Awaited<ReturnType<typeof loadWorkflowBriefPackageExecutionData>>>
@@ -4714,10 +4742,11 @@ function buildWorkflowBriefPublicationHandoffStatus(
     handoffExecuted && storedFingerprint && storedFingerprint !== packageFingerprint
   );
   const releasePackageFinalized = Boolean(data.finalReleasePackageMeta?.finalizedAt);
-  const handoffGate = canExecutePublicationHandoff({
+  const handoffGate = resolvePublicationHandoffExecutionGate({
     packageComplete,
     releasePrepared,
     publicationTargetAvailable,
+    releasePackageFinalized,
     isAdmin: true
   });
 
@@ -4771,6 +4800,186 @@ export async function getWorkflowBriefPublicationHandoffStatus(
   }
 
   return buildWorkflowBriefPublicationHandoffStatus(briefId, data);
+}
+
+async function writePublicationHandoffMetadata(
+  tx: Prisma.TransactionClient,
+  input: {
+    productionPlanId: string;
+    planJson: unknown;
+    record: WorkflowBriefPublicationHandoffRecord;
+  }
+): Promise<void> {
+  const existingPlanJson =
+    input.planJson && typeof input.planJson === "object" && !Array.isArray(input.planJson)
+      ? (input.planJson as Record<string, unknown>)
+      : {};
+
+  await tx.productionPlan.update({
+    where: { id: input.productionPlanId },
+    data: {
+      planJson: {
+        ...existingPlanJson,
+        publicationHandoff: input.record
+      } as Prisma.InputJsonValue
+    }
+  });
+}
+
+export type WorkflowBriefPublicationHandoffExecuteResult = {
+  executed: boolean;
+  reused: boolean;
+  handoffStage: WorkflowBriefPublicationHandoffStage;
+  publicationHandoff: AdminSafePublicationHandoffSummary;
+  status: WorkflowBriefPublicationHandoffStatus;
+};
+
+export async function executeWorkflowBriefPublicationHandoff(
+  authSession: AuthResolvedSessionContext,
+  briefId: string
+): Promise<
+  | WorkflowBriefPublicationHandoffExecuteResult
+  | "not_found"
+  | "forbidden"
+  | "missing_project"
+  | "not_ready"
+  | "release_prep_missing"
+  | "publication_target_missing"
+  | "release_package_not_finalized"
+> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId || !isOwnerRole(getActiveRoles(authSession))) {
+    return "forbidden";
+  }
+
+  const data = await loadWorkflowBriefPackageExecutionData(tenantId, briefId);
+  if (!data) {
+    return "not_found";
+  }
+  if (!data.project) {
+    return "missing_project";
+  }
+  if (!data.publicationTarget) {
+    return "publication_target_missing";
+  }
+
+  const completeness = buildWorkflowBriefPackageCompletenessStatus(briefId, data);
+  const mappingItems = buildPublicationHandoffPackageMappingItems(data);
+  const packageFingerprint = computePublicationHandoffPackageFingerprint(mappingItems);
+  const packageComplete = completeness.completeItemCount === data.seedItems.length && data.seedItems.length > 0;
+
+  if (!packageComplete || mappingItems.length === 0) {
+    return "not_ready";
+  }
+  if (!completeness.releasePrepared) {
+    return "release_prep_missing";
+  }
+
+  const releasePackageFinalized = Boolean(data.finalReleasePackageMeta?.finalizedAt);
+  if (!releasePackageFinalized) {
+    return "release_package_not_finalized";
+  }
+
+  const handoffExecuted = Boolean(data.publicationHandoffMeta?.executedAt);
+  const storedFingerprint = data.publicationHandoffMeta?.packageFingerprint ?? null;
+
+  if (
+    shouldReusePublicationHandoff({
+      storedFingerprint,
+      currentFingerprint: packageFingerprint,
+      handoffExecuted
+    }) &&
+    data.publicationHandoffMeta
+  ) {
+    const status = buildWorkflowBriefPublicationHandoffStatus(briefId, data);
+    const publicationHandoff = toAdminSafePublicationHandoffSummary(data.publicationHandoffMeta);
+    if (!publicationHandoff) {
+      return "not_ready";
+    }
+    return {
+      executed: true,
+      reused: true,
+      handoffStage: status.handoffStage,
+      publicationHandoff,
+      status
+    };
+  }
+
+  const { prepareAiDeliveryDeliverableWordPressDraft } = await import("./core.runtime");
+  const executedAt = new Date().toISOString();
+  const itemResults: WorkflowBriefPublicationHandoffRecord["items"] = [];
+
+  for (const mapping of mappingItems) {
+    const draftResponse = await prepareAiDeliveryDeliverableWordPressDraft(
+      authSession,
+      data.project.id,
+      mapping.textDeliverableId,
+      data.publicationTarget.id
+    );
+    if (!draftResponse?.wordpressDraft) {
+      return "not_ready";
+    }
+
+    const latestLog = await prisma.publicationLog.findFirst({
+      where: {
+        tenantId,
+        deliverableId: mapping.textDeliverableId,
+        action: "PREPARE_WORDPRESS_DRAFT"
+      },
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      select: { id: true }
+    });
+
+    itemResults.push(
+      buildPublicationHandoffItemFromDraft({
+        mapping,
+        wordpressDraft: draftResponse.wordpressDraft,
+        publicationLogId: latestLog?.id ?? null,
+        outcome: "created",
+        preparedAt: executedAt
+      })
+    );
+  }
+
+  const publicationHandoffRecord = buildPublicationHandoffRecord({
+    briefId,
+    executedAt,
+    publicationTargetId: data.publicationTarget.id,
+    publicationTargetLabel: data.publicationTarget.label,
+    packageFingerprint,
+    aiDeliveryProjectId: data.project.id,
+    productionPlanId: data.productionPlan?.id ?? null,
+    items: itemResults
+  });
+
+  if (data.productionPlan?.id) {
+    await prisma.$transaction(async (tx) => {
+      await writePublicationHandoffMetadata(tx, {
+        productionPlanId: data.productionPlan!.id,
+        planJson: data.productionPlan!.planJson,
+        record: publicationHandoffRecord
+      });
+    });
+  }
+
+  const refreshedData = await loadWorkflowBriefPackageExecutionData(tenantId, briefId);
+  if (!refreshedData) {
+    return "not_ready";
+  }
+
+  const status = buildWorkflowBriefPublicationHandoffStatus(briefId, refreshedData);
+  const publicationHandoff = toAdminSafePublicationHandoffSummary(publicationHandoffRecord);
+  if (!publicationHandoff) {
+    return "not_ready";
+  }
+
+  return {
+    executed: true,
+    reused: false,
+    handoffStage: status.handoffStage,
+    publicationHandoff,
+    status
+  };
 }
 
 export async function finalizeWorkflowBriefReleasePackage(
