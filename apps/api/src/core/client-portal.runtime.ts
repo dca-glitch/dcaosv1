@@ -207,6 +207,46 @@ const clientPortalMonthlyReportSelect = {
   updatedAt: true
 } as const;
 
+const CLIENT_PORTAL_MONTHLY_REPORT_TITLE_MARKER_PATTERNS = [
+  /\[PURIVA_LOCAL_SETUP\]/gi,
+  /PURIVA_MONTHLY_REPORT_V1/gi,
+  /PURIVA_MANUAL_METRICS_V1/gi,
+  /PURIVA_[A-Z0-9_]+_V1/gi
+] as const;
+
+function normalizeClientPortalMonthlyReportDisplayTitle(value: string): string {
+  let cleaned = value;
+
+  for (const pattern of CLIENT_PORTAL_MONTHLY_REPORT_TITLE_MARKER_PATTERNS) {
+    cleaned = cleaned.replace(pattern, "");
+  }
+
+  cleaned = cleaned
+    .replace(/\bscaffold\b/gi, "")
+    .replace(/\s{2,}/g, " ")
+    .replace(/\s+—\s+—/g, " — ")
+    .replace(/^\s*—\s*/, "")
+    .replace(/\s*—\s*$/, "")
+    .trim();
+
+  return cleaned;
+}
+
+export function sanitizeClientPortalMonthlyReportDisplayTitle(
+  rawTitle: string | null | undefined
+): string | null {
+  if (typeof rawTitle !== "string") {
+    return null;
+  }
+
+  const cleaned = normalizeClientPortalMonthlyReportDisplayTitle(rawTitle.trim());
+  if (!cleaned) {
+    return "Monthly report";
+  }
+
+  return cleaned;
+}
+
 function toClientPortalMonthlyReportSummary(r: {
   id: string;
   aiDeliveryProjectId: string;
@@ -218,10 +258,13 @@ function toClientPortalMonthlyReportSummary(r: {
   createdAt: Date;
   updatedAt: Date;
 }) {
+  const displayTitle = sanitizeClientPortalMonthlyReportDisplayTitle(r.title);
+
   return {
     id: r.id,
     aiDeliveryProjectId: r.aiDeliveryProjectId,
-    title: r.title ?? null,
+    title: displayTitle,
+    displayTitle,
     recommendationsText: r.recommendationsText ?? null,
     exportUrl: r.exportUrl ?? null,
     status: "FINAL" as const,

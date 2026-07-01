@@ -15,6 +15,7 @@ import {
 } from "./lib/local-browser-smoke-service-helpers.mjs";
 import {
   assertClientForbiddenAdminPath,
+  assertClientPortalMonthlyReportTitlesSanitized,
   assertPurivaClientPortalResponseSafe,
   ensurePurivaClientPortalAuth,
   PURIVA_DRAFT_INTERNAL_LABEL,
@@ -229,13 +230,24 @@ async function main() {
       : `status=${purivaReportStatus ?? "unknown"}`
   );
   record(
-    "client portal monthly reports omit puriva scaffold marker when draft hidden",
-    purivaReportIsDraft ? !(portalMonthlyReports.text ?? "").includes(PURIVA_MONTHLY_REPORT_MARKER) : true,
-    purivaReportIsDraft
-      ? (portalMonthlyReports.text ?? "").includes(PURIVA_MONTHLY_REPORT_MARKER)
-        ? "marker leaked"
-        : "clean"
-      : "skipped — FINAL already visible"
+    "client portal monthly reports omit internal title markers",
+    !(portalMonthlyReports.text ?? "").includes(PURIVA_MONTHLY_REPORT_MARKER) &&
+      !(portalMonthlyReports.text ?? "").includes("[PURIVA_LOCAL_SETUP]") &&
+      !(portalMonthlyReports.text ?? "").includes("PURIVA_MANUAL_METRICS_V1"),
+    (portalMonthlyReports.text ?? "").includes(PURIVA_MONTHLY_REPORT_MARKER)
+      ? "monthly report marker leaked"
+      : (portalMonthlyReports.text ?? "").includes("[PURIVA_LOCAL_SETUP]")
+        ? "setup marker leaked"
+        : (portalMonthlyReports.text ?? "").includes("PURIVA_MANUAL_METRICS_V1")
+          ? "manual metrics marker leaked"
+          : purivaReportIsDraft
+            ? "draft hidden"
+            : "final titles sanitized"
+  );
+  assertClientPortalMonthlyReportTitlesSanitized(
+    record,
+    "client portal monthly reports",
+    portalMonthlyReports
   );
   record(
     "puriva monthly report version tracked in setup",
@@ -290,6 +302,11 @@ async function main() {
       "client portal monthly reports after FINAL",
       portalMonthlyReportsAfterFinal
     );
+    assertClientPortalMonthlyReportTitlesSanitized(
+      record,
+      "client portal monthly reports after FINAL",
+      portalMonthlyReportsAfterFinal
+    );
 
     const portalMonthlyReportDetail = await request(
       `/client-portal/projects/${portalProject.id}/monthly-reports/${purivaReportId}`,
@@ -305,6 +322,17 @@ async function main() {
       record,
       "client portal monthly report detail after FINAL",
       portalMonthlyReportDetail
+    );
+    assertClientPortalMonthlyReportTitlesSanitized(
+      record,
+      "client portal monthly report detail after FINAL",
+      portalMonthlyReportDetail
+    );
+    record(
+      "client portal monthly report detail exposes displayTitle",
+      typeof portalMonthlyReportDetail.body?.data?.monthlyReport?.displayTitle === "string" &&
+        portalMonthlyReportDetail.body.data.monthlyReport.displayTitle.length > 0,
+      portalMonthlyReportDetail.body?.data?.monthlyReport?.displayTitle ?? "missing"
     );
     record(
       "client portal performance summary marks manual placeholder",
@@ -332,6 +360,16 @@ async function main() {
       "client portal monthly report detail omits raw notes field",
       !(portalMonthlyReportDetail.text ?? "").includes('"notes"'),
       (portalMonthlyReportDetail.text ?? "").includes('"notes"') ? "notes leaked" : "clean"
+    );
+
+    const refreshedAdminMonthlyReport = await request(
+      `/ai-delivery/reports/monthly/${firstRun.aiDeliveryProject.id}`,
+      { token: adminToken }
+    );
+    record(
+      "admin monthly report retains internal scaffold title marker",
+      (refreshedAdminMonthlyReport.body?.data?.report?.title ?? "").includes(PURIVA_MONTHLY_REPORT_MARKER),
+      refreshedAdminMonthlyReport.body?.data?.report?.title ?? "missing"
     );
     }
   }

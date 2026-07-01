@@ -66,6 +66,7 @@ type ClientPortalMonthlyReportSummary = {
   id: string;
   aiDeliveryProjectId: string;
   title: string | null;
+  displayTitle: string | null;
   recommendationsText: string | null;
   exportUrl: string | null;
   hasDocument: boolean;
@@ -419,6 +420,13 @@ function formatPlaceholderMetricValue(
   }
 
   return formatMetricValue(value);
+}
+
+function toClientPortalMonthlyReportDisplayTitle(
+  report: Pick<ClientPortalMonthlyReportSummary, "displayTitle" | "title">,
+  fallback: string
+): string {
+  return report.displayTitle ?? report.title ?? fallback;
 }
 
 function ClientPortalStatusBadge({ status }: { status: string | null | undefined }) {
@@ -1496,7 +1504,7 @@ export function ClientPortalPage() {
                           variant="secondary"
                         >
                           <span>
-                            {report.title ?? `Report ${index + 1}`}
+                            {toClientPortalMonthlyReportDisplayTitle(report, `Report ${index + 1}`)}
                             <br />
                             <span className="muted-text">{formatReportDate(report.finalizedAt)}</span>
                           </span>
@@ -1526,7 +1534,12 @@ export function ClientPortalPage() {
                                     </span>
                                   ) : null}
                                 </div>
-                                <h3>{monthlyReportDetail.monthlyReport.title ?? "Monthly report"}</h3>
+                                <h3>
+                                  {toClientPortalMonthlyReportDisplayTitle(
+                                    monthlyReportDetail.monthlyReport,
+                                    "Monthly report"
+                                  )}
+                                </h3>
                                 <div className="dense-meta">
                                   <span>Month {formatMonthLabel(monthlyReportDetail.workSummary.targetMonth)}</span>
                                   <span>Finalized {formatReportDate(monthlyReportDetail.monthlyReport.finalizedAt)}</span>

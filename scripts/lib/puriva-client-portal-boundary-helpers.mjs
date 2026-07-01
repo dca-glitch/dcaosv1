@@ -11,6 +11,9 @@ export const PURIVA_PORTAL_FORBIDDEN_RESPONSE =
 export const PURIVA_PORTAL_FORBIDDEN_UI =
   /Publication handoff|Prepare WordPress drafts|structuredInputJson|INTERNAL ADMIN IMAGE PROMPT|INTERNAL DRAFT SCAFFOLD|storageKey|workflowRunId|executionLog|openrouter|providerMetadata|Execute release|Publish now/i;
 
+export const PURIVA_PORTAL_FORBIDDEN_MONTHLY_REPORT_TITLE =
+  /\[PURIVA_LOCAL_SETUP\]|PURIVA_MONTHLY_REPORT_V1|PURIVA_MANUAL_METRICS_V1|puriva_monthly_report_seed|puriva_manual_metrics_seed/i;
+
 export const PURIVA_DRAFT_INTERNAL_LABEL = "INTERNAL DRAFT SCAFFOLD — NOT APPROVED CLIENT COPY";
 export const PURIVA_IMAGE_INTERNAL_PROMPT_LABEL =
   "INTERNAL ADMIN IMAGE PROMPT SCAFFOLD — NOT FOR CLIENT OR GENERATION USE";
@@ -29,6 +32,40 @@ export function assertPurivaClientPortalResponseSafe(record, label, response) {
     `${label} hides credential fields`,
     !responseHasCredentialFields(response.text ?? ""),
     responseHasCredentialFields(response.text ?? "") ? "credential field leaked" : "safe fields"
+  );
+}
+
+function collectClientPortalMonthlyReportTitleCandidates(response) {
+  const data = response.body?.data ?? {};
+  const reports = Array.isArray(data.monthlyReports)
+    ? data.monthlyReports
+    : data.monthlyReport
+      ? [data.monthlyReport]
+      : [];
+
+  return reports.flatMap((report) => [report?.displayTitle, report?.title]).filter(Boolean);
+}
+
+export function assertClientPortalMonthlyReportTitlesSanitized(record, label, response) {
+  const titles = collectClientPortalMonthlyReportTitleCandidates(response);
+  const leakedTitle = titles.find((title) => PURIVA_PORTAL_FORBIDDEN_MONTHLY_REPORT_TITLE.test(title));
+  record(
+    `${label} sanitizes monthly report titles`,
+    !leakedTitle,
+    leakedTitle ? `marker in title: ${leakedTitle}` : titles.length > 0 ? "clean" : "no titles"
+  );
+  record(
+    `${label} omits internal monthly report marker strings`,
+    !(response.text ?? "").includes("[PURIVA_LOCAL_SETUP]") &&
+      !(response.text ?? "").includes("PURIVA_MONTHLY_REPORT_V1") &&
+      !(response.text ?? "").includes("PURIVA_MANUAL_METRICS_V1"),
+    (response.text ?? "").includes("[PURIVA_LOCAL_SETUP]")
+      ? "PURIVA_LOCAL_SETUP leaked"
+      : (response.text ?? "").includes("PURIVA_MONTHLY_REPORT_V1")
+        ? "PURIVA_MONTHLY_REPORT_V1 leaked"
+        : (response.text ?? "").includes("PURIVA_MANUAL_METRICS_V1")
+          ? "PURIVA_MANUAL_METRICS_V1 leaked"
+          : "clean"
   );
 }
 

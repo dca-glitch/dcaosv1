@@ -17,7 +17,7 @@ Related:
 2. **Aggregate totals** — deterministic zero totals with `placeholderOnly: true`
 3. **Source metadata** — `sourceType: MANUAL`, import `IMPORTED`, approve `APPROVED`, notes marked placeholder
 4. **Monthly report consumption** — report context embeds manual metrics; only approved MANUAL snapshots parse into client-safe placeholder summary
-5. **Client boundary** — DRAFT report remains hidden from client portal until promoted to FINAL; FINAL reports with manual placeholders expose `performanceSummary.placeholderOnly`, `manualSource`, and client-safe `disclaimer` (never raw notes, itemMetrics embed, or internal markers)
+5. **Client boundary** — DRAFT report remains hidden from client portal until promoted to FINAL; FINAL reports expose sanitized `displayTitle`/`title` (no `[PURIVA_LOCAL_SETUP]`, `PURIVA_MONTHLY_REPORT_V1`, or manual-metrics markers), plus `performanceSummary.placeholderOnly`, `manualSource`, and client-safe `disclaimer` (never raw notes, itemMetrics embed, or internal markers)
 6. **Idempotent setup** — second run reuses approved snapshot when manual metrics marker present
 
 ---
