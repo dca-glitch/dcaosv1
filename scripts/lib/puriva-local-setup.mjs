@@ -41,6 +41,12 @@ import {
   PURIVA_MONTHLY_REPORT_VERSION,
   validatePurivaMonthlyReportContext
 } from "./puriva-monthly-report.mjs";
+import {
+  buildPurivaFinanceAttributionContext,
+  ensurePurivaFinanceAttributionApiSeed,
+  PURIVA_FINANCE_ATTRIBUTION_VERSION,
+  validatePurivaFinanceAttributionContext
+} from "./puriva-finance-attribution.mjs";
 
 export const PURIVA_SETUP_MARKER = "[PURIVA_LOCAL_SETUP]";
 
@@ -142,6 +148,9 @@ export async function ensurePurivaLocalSetup({
       monthlyReportMetrics: false,
       monthlyReportMetricsApproved: false,
       monthlyReportMiContext: false,
+      financeServiceItem: false,
+      financeRecurringInvoice: false,
+      financeInvoicePlaceholder: false,
       portalUser: false,
       portalPasswordSynced: false
     },
@@ -446,6 +455,42 @@ export async function ensurePurivaLocalSetup({
   result.created.monthlyReportMetricsApproved = monthlyReportSeed.created.metricsApproved;
   result.created.monthlyReportMiContext = monthlyReportSeed.created.miContextApplied;
 
+  const financeAttributionValidation = validatePurivaFinanceAttributionContext(
+    buildPurivaFinanceAttributionContext(targetMonth, {
+      clientId: client.id,
+      aiDeliveryProjectId: aiDeliveryProject.id,
+      monthlyReportId: monthlyReportSeed.report.id
+    })
+  );
+  if (!financeAttributionValidation.ok) {
+    throw new Error(`Puriva finance attribution invalid: ${financeAttributionValidation.errors.join("; ")}`);
+  }
+
+  const financeAttributionSeed = await ensurePurivaFinanceAttributionApiSeed({
+    request,
+    token,
+    clientId: client.id,
+    aiDeliveryProjectId: aiDeliveryProject.id,
+    monthlyReportId: monthlyReportSeed.report.id,
+    targetMonth,
+    log: note
+  });
+  result.financeAttribution = {
+    version: PURIVA_FINANCE_ATTRIBUTION_VERSION,
+    targetMonth,
+    revenueRecognitionMode: financeAttributionSeed.context.revenueRecognitionMode,
+    attributedAmountCents: financeAttributionSeed.adminSummary.attributedAmountCents,
+    currency: financeAttributionSeed.adminSummary.currency,
+    serviceItemId: financeAttributionSeed.serviceItem?.id ?? null,
+    recurringInvoiceId: financeAttributionSeed.recurringInvoice?.id ?? null,
+    invoicePlaceholderId: financeAttributionSeed.invoicePlaceholder?.id ?? null,
+    invoicePlaceholderStatus: financeAttributionSeed.invoicePlaceholder?.status ?? null,
+    financeEventSynced: financeAttributionSeed.adminSummary.financeEventSynced
+  };
+  result.created.financeServiceItem = financeAttributionSeed.created.serviceItem;
+  result.created.financeRecurringInvoice = financeAttributionSeed.created.recurringInvoice;
+  result.created.financeInvoicePlaceholder = financeAttributionSeed.created.invoicePlaceholder;
+
   const expectedStructuredInput = buildPurivaWorkflowBriefImagePackageInput(targetMonth);
   let briefDetailResponse = await request(`/workflow-briefs/${workflowBrief.id}`, { token });
   if (briefDetailResponse.status !== 200 || briefDetailResponse.body?.ok !== true) {
@@ -487,6 +532,7 @@ export async function ensurePurivaLocalSetup({
     contentProductionVersion: PURIVA_CONTENT_PRODUCTION_VERSION,
     imagePackageVersion: PURIVA_IMAGE_PACKAGE_VERSION,
     monthlyReportVersion: PURIVA_MONTHLY_REPORT_VERSION,
+    financeAttributionVersion: PURIVA_FINANCE_ATTRIBUTION_VERSION,
     attached: true,
     serviceCategoryCount: expectedStructuredInput.serviceCategories.length,
     seoPlanItemCount: expectedStructuredInput.seoPlan?.items?.length ?? 0,

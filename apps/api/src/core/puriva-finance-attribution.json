@@ -1,0 +1,12 @@
+{
+  "seedLabel": "puriva_monthly_service_package",
+  "servicePackageName": "Puriva Monthly SEO & Content Delivery",
+  "servicePackageSku": "PURIVA-MONTHLY-V1",
+  "unitPriceCents": 150000,
+  "currency": "USD",
+  "recurringInterval": "MONTHLY",
+  "revenueRecognitionMode": "invoice_ready_placeholder",
+  "localTestDisclaimer": "Local/test finance attribution placeholder only. Not a payable invoice, payment request, or accounting export.",
+  "adminSummaryLabel": "Puriva monthly service revenue attribution (admin local test)",
+  "invoicePlaceholderTitle": "Puriva monthly service delivery — invoice-ready placeholder"
+}

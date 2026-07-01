@@ -70,6 +70,12 @@ import {
   PURIVA_SERVICE_TAXONOMY_VERSION,
   validatePurivaServiceTaxonomy
 } from "./lib/puriva-service-taxonomy.mjs";
+import {
+  financeAttributionHasPurivaMarker,
+  PURIVA_FINANCE_ATTRIBUTION_VERSION,
+  validatePurivaFinanceAttributionContext,
+  buildPurivaFinanceAttributionContext
+} from "./lib/puriva-finance-attribution.mjs";
 
 const smokeMarker = "[SMOKE][PURIVA_FULL_DELIVERY]";
 const apiBaseUrl = getApiBaseUrl();
@@ -362,6 +368,27 @@ async function main() {
     "puriva monthly report seeded in local setup",
     Boolean(firstRun.monthlyReport?.reportId),
     firstRun.monthlyReport?.reportId ?? "missing"
+  );
+
+  const financeContext = buildPurivaFinanceAttributionContext(targetMonth, {
+    clientId: firstRun.client.id,
+    aiDeliveryProjectId: firstRun.aiDeliveryProject.id,
+    monthlyReportId: firstRun.monthlyReport.reportId,
+    serviceItemId: firstRun.financeAttribution?.serviceItemId ?? null,
+    recurringInvoiceId: firstRun.financeAttribution?.recurringInvoiceId ?? null,
+    invoicePlaceholderId: firstRun.financeAttribution?.invoicePlaceholderId ?? null
+  });
+  const financeValidation = validatePurivaFinanceAttributionContext(financeContext);
+  record(
+    "puriva finance attribution validates in full delivery chain",
+    financeValidation.ok && firstRun.financeAttribution?.version === PURIVA_FINANCE_ATTRIBUTION_VERSION,
+    firstRun.financeAttribution?.invoicePlaceholderId ?? "missing"
+  );
+  record(
+    "puriva finance attribution DRAFT placeholder only",
+    firstRun.financeAttribution?.invoicePlaceholderStatus === "DRAFT" &&
+      firstRun.financeAttribution?.financeEventSynced === false,
+    firstRun.financeAttribution?.revenueRecognitionMode ?? "missing"
   );
 
   const adminMonthlyReport = await request(`/ai-delivery/reports/monthly/${firstRun.aiDeliveryProject.id}`, {

@@ -24,6 +24,7 @@ import {
   PURIVA_IMAGE_INTERNAL_PROMPT_LABEL,
   PURIVA_PORTAL_FORBIDDEN_UI
 } from "./lib/puriva-client-portal-boundary-helpers.mjs";
+import { assertPurivaClientPortalFinanceAttributionAbsent } from "./lib/puriva-finance-attribution.mjs";
 import {
   currentTargetMonth,
   ensurePurivaLocalSetup,
@@ -179,6 +180,7 @@ async function main() {
     record(`client portal ${label}`, response.status === 200, `${response.status}`);
     assertPurivaClientPortalResponseSafe(record, `client portal ${label}`, response);
     assertPurivaClientPortalSetupMarkersAbsent(record, `client portal ${label}`, response);
+    assertPurivaClientPortalFinanceAttributionAbsent(record, `client portal ${label}`, response);
     if (label === "delivery summary") {
       assertClientPortalDeliverySummarySanitized(record, `client portal ${label}`, response);
     }

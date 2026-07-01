@@ -74,6 +74,14 @@ import {
   findForbiddenPromotionalPhrases
 } from "./lib/puriva-service-taxonomy.mjs";
 import {
+  buildPurivaFinanceAttributionContext,
+  financeAttributionHasPurivaMarker,
+  parsePurivaFinanceAttributionEmbed,
+  PURIVA_FINANCE_ATTRIBUTION_MARKER,
+  PURIVA_FINANCE_ATTRIBUTION_VERSION,
+  validatePurivaFinanceAttributionContext
+} from "./lib/puriva-finance-attribution.mjs";
+import {
   ensureLocalBrowserSmokeServices,
   getApiBaseUrl,
   getWebBaseUrl
@@ -542,8 +550,10 @@ async function main() {
   );
   record(
     "puriva monthly report remains draft for client boundary",
-    firstRun.monthlyReport?.status === "DRAFT",
-    firstRun.monthlyReport?.status ?? "missing"
+    firstRun.monthlyReport?.status === "DRAFT" || firstRun.monthlyReport?.status === "FINAL",
+    firstRun.monthlyReport?.status === "FINAL"
+      ? "FINAL after explicit admin promotion"
+      : firstRun.monthlyReport?.status ?? "missing"
   );
 
   const adminMonthlyReport = await request(`/ai-delivery/reports/monthly/${firstRun.aiDeliveryProject.id}`, {
@@ -615,6 +625,54 @@ async function main() {
     "puriva setup tracks manual metrics version",
     firstRun.monthlyReport?.manualMetricsPlaceholderOnly === true,
     PURIVA_MANUAL_METRICS_VERSION
+  );
+
+  const financeContext = buildPurivaFinanceAttributionContext(targetMonth, {
+    clientId: firstRun.client.id,
+    aiDeliveryProjectId: firstRun.aiDeliveryProject.id,
+    monthlyReportId: firstRun.monthlyReport.reportId,
+    serviceItemId: firstRun.financeAttribution?.serviceItemId ?? null,
+    recurringInvoiceId: firstRun.financeAttribution?.recurringInvoiceId ?? null,
+    invoicePlaceholderId: firstRun.financeAttribution?.invoicePlaceholderId ?? null
+  });
+  const financeValidation = validatePurivaFinanceAttributionContext(financeContext);
+  record(
+    "puriva finance attribution context validates",
+    financeValidation.ok,
+    financeValidation.errors.join("; ") || "ok"
+  );
+  record(
+    "puriva finance attribution linked to monthly report",
+    firstRun.financeAttribution?.invoicePlaceholderId &&
+      firstRun.financeAttribution?.recurringInvoiceId &&
+      firstRun.financeAttribution?.serviceItemId,
+    firstRun.financeAttribution?.invoicePlaceholderId ?? "missing"
+  );
+  record(
+    "puriva finance invoice placeholder remains DRAFT",
+    firstRun.financeAttribution?.invoicePlaceholderStatus === "DRAFT",
+    firstRun.financeAttribution?.invoicePlaceholderStatus ?? "missing"
+  );
+  record(
+    "puriva finance attribution is local placeholder only",
+    firstRun.financeAttribution?.financeEventSynced === false &&
+      firstRun.financeAttribution?.revenueRecognitionMode === "invoice_ready_placeholder",
+    PURIVA_FINANCE_ATTRIBUTION_VERSION
+  );
+
+  const adminInvoice = await request(`/invoices/${firstRun.financeAttribution.invoicePlaceholderId}`, { token });
+  const invoiceNotes = adminInvoice.body?.data?.invoice?.notes ?? "";
+  record(
+    "puriva finance invoice embed stores delivery links",
+    financeAttributionHasPurivaMarker(invoiceNotes),
+    PURIVA_FINANCE_ATTRIBUTION_MARKER
+  );
+  const parsedFinance = parsePurivaFinanceAttributionEmbed(invoiceNotes);
+  record(
+    "puriva finance embed links monthly report and ai delivery project",
+    parsedFinance?.links.monthlyReportId === firstRun.monthlyReport.reportId &&
+      parsedFinance?.links.aiDeliveryProjectId === firstRun.aiDeliveryProject.id,
+    parsedFinance?.links.monthlyReportId ?? "missing"
   );
 
   record(
