@@ -34,6 +34,7 @@ import {
   PURIVA_SERVICE_TAXONOMY_VERSION,
   validatePurivaServiceTaxonomy
 } from "./puriva-service-taxonomy.mjs";
+import { ensurePurivaClientPortalAuth } from "./puriva-client-portal-boundary-helpers.mjs";
 
 export const PURIVA_SETUP_MARKER = "[PURIVA_LOCAL_SETUP]";
 
@@ -130,7 +131,9 @@ export async function ensurePurivaLocalSetup({
       contentProductionAttached: false,
       contentDraftScaffolds: false,
       imagePackageAttached: false,
-      imagePackageConcepts: false
+      imagePackageConcepts: false,
+      portalUser: false,
+      portalPasswordSynced: false
     },
     skipped: [],
     actions
@@ -451,37 +454,50 @@ export async function ensurePurivaLocalSetup({
   };
   result.workflowBrief = briefDetail;
 
-  const membersResponse = await request("/tenants/current/members", { token });
-  const members = membersResponse.body?.data?.members ?? [];
-  const portalMember = members.find(
-    (entry) =>
-      typeof entry.user?.email === "string" &&
-      entry.user.email.trim().toLowerCase() === PURIVA_CLIENT_PORTAL_USER_EMAIL
-  );
-
-  if (!portalMember?.user?.id) {
-    result.skipped.push("client access mapping — portal user not found in tenant");
-    note("skipped client access", `${PURIVA_CLIENT_PORTAL_USER_EMAIL} not in tenant`);
+  const portalPassword = process.env.AUTH_SEED_TEST_PASSWORD;
+  if (typeof portalPassword !== "string" || portalPassword.length < 8) {
+    result.skipped.push("client portal auth — AUTH_SEED_TEST_PASSWORD missing or too short");
+    note("skipped client portal auth", "AUTH_SEED_TEST_PASSWORD required for local portal proof");
   } else {
-    const accessListResponse = await request(`/clients/${client.id}/users`, { token });
-    const accessUsers = accessListResponse.body?.data?.users ?? [];
-    const existingAccess = accessUsers.find((entry) => entry.user?.id === portalMember.user.id);
+    const portalAuth = await ensurePurivaClientPortalAuth({
+      request,
+      adminToken: token,
+      portalPassword,
+      clientId: client.id,
+      log: note
+    });
 
-    if (existingAccess) {
-      result.clientAccess = existingAccess;
-      note("reused client access", portalMember.user.id);
+    if (!portalAuth?.token) {
+      result.skipped.push("client portal auth — portal user unavailable in tenant");
+      note("skipped client portal auth", `${PURIVA_CLIENT_PORTAL_USER_EMAIL} unavailable`);
     } else {
-      const grantResponse = await request(`/clients/${client.id}/users`, {
-        method: "POST",
-        token,
-        body: { userId: portalMember.user.id }
-      });
-      if (grantResponse.status !== 201 || grantResponse.body?.ok !== true) {
-        throw new Error(`Puriva client access grant failed with HTTP ${grantResponse.status}.`);
+      result.clientPortalAuth = {
+        email: portalAuth.email,
+        userId: portalAuth.userId
+      };
+      result.created.portalUser = portalAuth.created.user;
+      result.created.portalPasswordSynced = portalAuth.created.passwordSynced;
+
+      const accessListResponse = await request(`/clients/${client.id}/users`, { token });
+      const accessUsers = accessListResponse.body?.data?.users ?? [];
+      const existingAccess = accessUsers.find((entry) => entry.user?.id === portalAuth.userId);
+
+      if (existingAccess) {
+        result.clientAccess = existingAccess;
+        note("reused client access", portalAuth.userId);
+      } else {
+        const grantResponse = await request(`/clients/${client.id}/users`, {
+          method: "POST",
+          token,
+          body: { userId: portalAuth.userId }
+        });
+        if (grantResponse.status !== 201 || grantResponse.body?.ok !== true) {
+          throw new Error(`Puriva client access grant failed with HTTP ${grantResponse.status}.`);
+        }
+        result.clientAccess = grantResponse.body.data?.access ?? null;
+        result.created.clientAccess = true;
+        note("granted client access", portalAuth.userId);
       }
-      result.clientAccess = grantResponse.body.data?.access ?? null;
-      result.created.clientAccess = true;
-      note("granted client access", portalMember.user.id);
     }
   }
 

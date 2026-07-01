@@ -14,16 +14,19 @@ import {
   currentTargetMonth,
   ensurePurivaLocalSetup,
   purivaMonthlyProjectName,
-  PURIVA_CLIENT_PORTAL_USER_EMAIL,
-  PURIVA_SETUP_MARKER,
   PURIVA_WORKFLOW_BRIEF_TITLE,
   responseHasSecrets
 } from "./lib/puriva-local-setup.mjs";
 import {
+  assertPurivaClientPortalResponseSafe,
+  ensurePurivaClientPortalAuth,
+  PURIVA_DRAFT_INTERNAL_LABEL,
+  PURIVA_IMAGE_INTERNAL_PROMPT_LABEL
+} from "./lib/puriva-client-portal-boundary-helpers.mjs";
+import {
   buildPurivaImagePackageContext,
   findUnsafeVisualPhrasesInImagePackage,
   isPurivaImagePackageBriefAttachment,
-  PURIVA_IMAGE_INTERNAL_PROMPT_LABEL,
   PURIVA_IMAGE_PACKAGE_MARKER,
   PURIVA_IMAGE_PACKAGE_VERSION,
   validatePurivaImagePackageContext,
@@ -34,7 +37,6 @@ import {
   isPurivaContentProductionBriefAttachment,
   PURIVA_CONTENT_PRODUCTION_MARKER,
   PURIVA_CONTENT_PRODUCTION_VERSION,
-  PURIVA_DRAFT_INTERNAL_LABEL,
   validatePurivaContentProductionContext
 } from "./lib/puriva-content-production.mjs";
 import {
@@ -59,14 +61,9 @@ const apiBaseUrl = getApiBaseUrl();
 const webBaseUrl = getWebBaseUrl();
 const adminEmail = process.env.AUTH_SEED_TEST_EMAIL ?? "admin@dca.local";
 const adminPassword = process.env.AUTH_SEED_TEST_PASSWORD;
-const testerEmail = process.env.AUTH_SEED_TESTER_EMAIL;
-const testerPassword = process.env.AUTH_SEED_TESTER_PASSWORD ?? adminPassword;
 
 const forbiddenLivePublishPhrases = ["Execute release", "Release execution", "Publish now"];
 const forbiddenLivePublishButtonPatterns = [/^live publish$/i, /^publish now$/i];
-
-const clientPortalForbiddenResponse =
-  /passwordHash|sessionTokenHash|storageKey|structuredInputJson|promptScaffold|INTERNAL ADMIN IMAGE PROMPT|openrouter|providerMetadata|workflowRunId|executionLog|private\/|\/api\/v1\/workflow-briefs/i;
 
 const results = [];
 
@@ -109,15 +106,6 @@ function setupIdsMatch(first, second) {
   );
 }
 
-function assertClientPortalResponseSafe(response, label) {
-  record(
-    `${label} hides client portal forbidden internals`,
-    !clientPortalForbiddenResponse.test(response.text ?? ""),
-    clientPortalForbiddenResponse.test(response.text ?? "") ? "forbidden pattern found" : "clean"
-  );
-  record(`${label} hides credential fields`, !responseHasSecrets(response.text ?? ""), "safe fields");
-}
-
 async function assertForbiddenWordingAbsent(text, scopeLabel, page = null) {
   for (const phrase of forbiddenLivePublishPhrases) {
     record(
@@ -146,25 +134,11 @@ async function assertForbiddenWordingAbsent(text, scopeLabel, page = null) {
   }
 }
 
-async function resolvePortalToken() {
-  const portalLogin = await login(PURIVA_CLIENT_PORTAL_USER_EMAIL, adminPassword);
-  if (portalLogin.status === 200 && portalLogin.body?.data?.session?.token) {
-    return { token: portalLogin.body.data.session.token, source: PURIVA_CLIENT_PORTAL_USER_EMAIL };
-  }
-  if (testerEmail) {
-    const testerLogin = await login(testerEmail, testerPassword);
-    if (testerLogin.status === 200 && testerLogin.body?.data?.session?.token) {
-      return { token: testerLogin.body.data.session.token, source: testerEmail };
-    }
-  }
-  return { token: null, source: null };
-}
-
 async function main() {
   console.log(`${smokeMarker} starting`);
 
-  if (typeof adminPassword !== "string" || adminPassword.length === 0) {
-    record("env AUTH_SEED_TEST_PASSWORD", false, "missing");
+  if (typeof adminPassword !== "string" || adminPassword.length < 8) {
+    record("env AUTH_SEED_TEST_PASSWORD", false, "missing or too short");
     process.exitCode = 1;
     return;
   }
@@ -456,13 +430,18 @@ async function main() {
     getErrorCode(executeHandoff) || "missing code"
   );
 
-  const portalAuth = await resolvePortalToken();
-  if (portalAuth.token) {
-    record("client portal auth available", true, portalAuth.source ?? "unknown");
+  const portalAuth = await ensurePurivaClientPortalAuth({
+    request,
+    adminToken,
+    portalPassword: adminPassword,
+    clientId: firstRun.client.id
+  });
+  if (portalAuth?.token) {
+    record("client portal auth available", true, portalAuth.email);
 
     const portalProjects = await request("/client-portal/projects", { token: portalAuth.token });
     record("client portal projects endpoint", portalProjects.status === 200, `${portalProjects.status}`);
-    assertClientPortalResponseSafe(portalProjects, "client portal projects");
+    assertPurivaClientPortalResponseSafe(record, "client portal projects", portalProjects);
 
     const purivaProjectName = purivaMonthlyProjectName(targetMonth);
     const portalProject =
@@ -476,13 +455,13 @@ async function main() {
         token: portalAuth.token
       });
       record("client portal project detail", portalProjectDetail.status === 200, `${portalProjectDetail.status}`);
-      assertClientPortalResponseSafe(portalProjectDetail, "client portal project detail");
+      assertPurivaClientPortalResponseSafe(record, "client portal project detail", portalProjectDetail);
 
       const portalDeliverables = await request(`/client-portal/projects/${portalProject.id}/deliverables`, {
         token: portalAuth.token
       });
       record("client portal deliverables endpoint", portalDeliverables.status === 200, `${portalDeliverables.status}`);
-      assertClientPortalResponseSafe(portalDeliverables, "client portal deliverables");
+      assertPurivaClientPortalResponseSafe(record, "client portal deliverables", portalDeliverables);
       record(
         "client portal deliverables omit internal draft scaffolds",
         !(portalDeliverables.text ?? "").includes(PURIVA_DRAFT_INTERNAL_LABEL),
@@ -503,7 +482,7 @@ async function main() {
         `${portalReleasePackage.status}`
       );
       if (portalReleasePackage.status === 200) {
-        assertClientPortalResponseSafe(portalReleasePackage, "client portal release package");
+        assertPurivaClientPortalResponseSafe(record, "client portal release package", portalReleasePackage);
         record(
           "client portal release package not finalized for scaffold project",
           portalReleasePackage.body?.data?.releasePackage == null,
@@ -518,7 +497,7 @@ async function main() {
       );
     }
   } else {
-    record("client portal auth available", true, "skipped - portal user login unavailable");
+    record("client portal auth available", true, "skipped - portal user setup unavailable");
   }
 
   const browser = await chromium.launch({ headless: true });
