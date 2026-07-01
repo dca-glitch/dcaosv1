@@ -166,6 +166,32 @@ type ClientPortalDeliverySummaryResponse = {
   deliverySummary: ClientPortalDeliverySummary;
 };
 
+type ClientPortalReleasePackage = {
+  releasePackageId: string;
+  briefTitle: string;
+  projectName: string;
+  finalizedAt: string;
+  releaseStatus: string;
+  summary: string;
+  deliverables: Array<{
+    title: string;
+    type: string;
+    exportUrl: string | null;
+    status: string;
+  }>;
+  images: Array<{
+    title: string;
+    altText: string | null;
+    imageUrl: string | null;
+    status: string;
+  }>;
+  notes: string | null;
+};
+
+type ClientPortalReleasePackageResponse = {
+  releasePackage: ClientPortalReleasePackage | null;
+};
+
 type ClientPortalCatalogProduct = {
   id: string;
   name: string;
@@ -410,6 +436,9 @@ export function ClientPortalPage() {
   const [deliverySummary, setDeliverySummary] = useState<ClientPortalDeliverySummary | null>(null);
   const [deliverySummaryLoading, setDeliverySummaryLoading] = useState(false);
   const [deliverySummaryError, setDeliverySummaryError] = useState<string | null>(null);
+  const [releasePackage, setReleasePackage] = useState<ClientPortalReleasePackage | null>(null);
+  const [releasePackageLoading, setReleasePackageLoading] = useState(false);
+  const [releasePackageError, setReleasePackageError] = useState<string | null>(null);
   const [catalogProducts, setCatalogProducts] = useState<ClientPortalCatalogProduct[]>([]);
   const [catalogLoading, setCatalogLoading] = useState(false);
   const [catalogError, setCatalogError] = useState<string | null>(null);
@@ -518,6 +547,8 @@ export function ClientPortalPage() {
     setMonthlyReportsError(null);
     setDeliverySummaryLoading(true);
     setDeliverySummaryError(null);
+    setReleasePackageLoading(true);
+    setReleasePackageError(null);
     setCatalogLoading(true);
     setCatalogError(null);
     setInquiryNotice(null);
@@ -528,6 +559,7 @@ export function ClientPortalPage() {
     setDeliverables([]);
     setMonthlyReports([]);
     setDeliverySummary(null);
+    setReleasePackage(null);
     setCatalogProducts([]);
     setMonthlyReportDetail(null);
     setMonthlyReportDetailError(null);
@@ -544,17 +576,19 @@ export function ClientPortalPage() {
         setDeliverablesLoading(false);
         setMonthlyReportsLoading(false);
         setDeliverySummaryLoading(false);
+        setReleasePackageLoading(false);
         setCatalogLoading(false);
       }
       return;
     }
 
-    const [projectResponse, deliverablesResponse, monthlyReportsResponse, deliverySummaryResponse, catalogResponse] =
+    const [projectResponse, deliverablesResponse, monthlyReportsResponse, deliverySummaryResponse, releasePackageResponse, catalogResponse] =
       await Promise.all([
       apiRequest<ClientPortalProjectResponse>(`/client-portal/projects/${projectId}`, { token }),
       apiRequest<ClientPortalDeliverablesResponse>(`/client-portal/projects/${projectId}/deliverables`, { token }),
       apiRequest<ClientPortalMonthlyReportsResponse>(`/client-portal/projects/${projectId}/monthly-reports`, { token }),
       apiRequest<ClientPortalDeliverySummaryResponse>(`/client-portal/projects/${projectId}/delivery-summary`, { token }),
+      apiRequest<ClientPortalReleasePackageResponse>(`/client-portal/projects/${projectId}/release-package`, { token }),
       apiRequest<ClientPortalCatalogProductsResponse>(`/client-portal/projects/${projectId}/catalog-products`, { token })
     ]);
 
@@ -594,6 +628,12 @@ export function ClientPortalPage() {
       setDeliverySummaryError(getErrorMessage(deliverySummaryResponse));
     }
 
+    if (releasePackageResponse.ok) {
+      setReleasePackage(releasePackageResponse.data.releasePackage ?? null);
+    } else {
+      setReleasePackageError(getErrorMessage(releasePackageResponse));
+    }
+
     if (catalogResponse.ok) {
       setCatalogProducts(catalogResponse.data.catalogProducts ?? []);
     } else {
@@ -604,6 +644,7 @@ export function ClientPortalPage() {
     setDeliverablesLoading(false);
     setMonthlyReportsLoading(false);
     setDeliverySummaryLoading(false);
+    setReleasePackageLoading(false);
     setCatalogLoading(false);
   }, []);
 
@@ -696,15 +737,18 @@ export function ClientPortalPage() {
       setDeliverables([]);
       setMonthlyReports([]);
       setDeliverySummary(null);
+      setReleasePackage(null);
       setSelectedProjectError(null);
       setDeliverablesError(null);
       setMonthlyReportsError(null);
       setDeliverySummaryError(null);
+      setReleasePackageError(null);
       setSelectedMonthlyReportId(null);
       setSelectedProjectLoading(false);
       setDeliverablesLoading(false);
       setMonthlyReportsLoading(false);
       setDeliverySummaryLoading(false);
+      setReleasePackageLoading(false);
       return;
     }
 
@@ -1183,6 +1227,65 @@ export function ClientPortalPage() {
                   </div>
                 ) : (
                   <EmptyState message="Delivery summary is not available for this project yet." title="No delivery summary" variant="inline" />
+                )}
+              </SectionPanel>
+
+              <SectionPanel
+                description="Final released materials from your workflow delivery."
+                title="Release package"
+                tone="compact"
+              >
+                {releasePackageLoading ? (
+                  <div className="state-panel loading-state-panel" role="status">
+                    <Spinner size="sm" />
+                    Loading release package
+                  </div>
+                ) : releasePackageError ? (
+                  <Alert message={releasePackageError} title="Release package unavailable" variant="danger" />
+                ) : releasePackage ? (
+                  <article className="entity-card dense-record">
+                    <div className="dense-record-main">
+                      <div className="dense-title">
+                        <h3>{releasePackage.briefTitle}</h3>
+                        <div className="dense-meta">
+                          <ClientPortalStatusBadge status={releasePackage.releaseStatus} />
+                          <span>
+                            Finalized {formatDateLabel(releasePackage.finalizedAt)}
+                          </span>
+                          <span>
+                            {releasePackage.deliverables.length} deliverable
+                            {releasePackage.deliverables.length === 1 ? "" : "s"}
+                          </span>
+                        </div>
+                        {releasePackage.summary ? (
+                          <div className="dense-row-note">{releasePackage.summary}</div>
+                        ) : null}
+                      </div>
+                      {releasePackage.deliverables.length > 0 ? (
+                        <div className="dense-list" style={{ marginTop: "0.75rem" }}>
+                          {releasePackage.deliverables.map((item) => (
+                            <div className="dense-row" key={`${item.title}-${item.type}`}>
+                              <div className="dense-row-title">{item.title}</div>
+                              <div className="dense-row-meta">
+                                <ClientPortalStatusBadge status={item.status} />
+                                {item.exportUrl ? (
+                                  <a href={item.exportUrl} rel="noreferrer" target="_blank">
+                                    Open export
+                                  </a>
+                                ) : null}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : null}
+                    </div>
+                  </article>
+                ) : (
+                  <EmptyState
+                    message="When your delivery package is finalized, released materials will appear here."
+                    title="No release package yet"
+                    variant="inline"
+                  />
                 )}
               </SectionPanel>
 

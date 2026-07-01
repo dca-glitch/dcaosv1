@@ -65,6 +65,22 @@ import {
   type WorkflowBriefReleasePrepStage
 } from "./workflow-brief-image-set.execution";
 import {
+  buildFinalReleasePackageRecord,
+  canFinalizeWorkflowBriefReleasePackage,
+  computeFinalReleasePackageFingerprint,
+  computeFinalReleasePackageStage,
+  isReleasableTextDeliverableStatus,
+  resolveFeaturedImageRef,
+  shouldReuseFinalReleasePackage,
+  toClientSafeReleasePackageFromRecord,
+  WORKFLOW_BRIEF_FINAL_RELEASE_PACKAGE_VERSION,
+  type ClientSafeReleasePackage,
+  type FinalReleasePackageFingerprintItem,
+  type WorkflowBriefFinalReleasePackageRecord,
+  type WorkflowBriefFinalReleasePackageItemSource,
+  type WorkflowBriefFinalReleasePackageStage
+} from "./workflow-brief-final-release.execution";
+import {
   buildProductionPlanBodyFromContent,
   buildProductionPlanTitle,
   buildWorkflowBriefClientVisiblePlanJson,
@@ -3471,6 +3487,22 @@ function readReleasePrepFromPlanJson(planJson: unknown): {
   };
 }
 
+function readFinalReleasePackageFromPlanJson(planJson: unknown): WorkflowBriefFinalReleasePackageRecord | null {
+  if (!planJson || typeof planJson !== "object" || Array.isArray(planJson)) {
+    return null;
+  }
+  const record = planJson as Record<string, unknown>;
+  const releasePackage = record.releasePackage;
+  if (!releasePackage || typeof releasePackage !== "object" || Array.isArray(releasePackage)) {
+    return null;
+  }
+  const parsed = releasePackage as WorkflowBriefFinalReleasePackageRecord;
+  if (parsed.version !== WORKFLOW_BRIEF_FINAL_RELEASE_PACKAGE_VERSION || parsed.kind !== "final_release_package") {
+    return null;
+  }
+  return parsed;
+}
+
 async function loadWorkflowBriefPackageExecutionData(tenantId: string, briefId: string) {
   const packagingData = await loadWorkflowBriefDeliverablePackagingData(tenantId, briefId);
   if (!packagingData) {
@@ -3529,6 +3561,7 @@ async function loadWorkflowBriefPackageExecutionData(tenantId: string, briefId: 
     imageApprovalsByDeliverableId,
     imageSetMeta: readImageSetFromPlanJson(packagingData.productionPlan?.planJson),
     releasePrepMeta: readReleasePrepFromPlanJson(packagingData.productionPlan?.planJson),
+    finalReleasePackageMeta: readFinalReleasePackageFromPlanJson(packagingData.productionPlan?.planJson),
     publicationTarget
   };
 }
@@ -3808,6 +3841,12 @@ export type WorkflowBriefPackageCompletenessStatus = {
   releasePrepStage: WorkflowBriefReleasePrepStage;
   releasePrepared: boolean;
   lastReleasePreparedAt: string | null;
+  releasePackageStage: WorkflowBriefFinalReleasePackageStage;
+  releasePackageFinalized: boolean;
+  lastReleasePackageFinalizedAt: string | null;
+  packageChangedSinceFinalize: boolean;
+  canFinalizeReleasePackage: boolean;
+  releasePackageBlockReason: string | null;
   missingRequirements: string[];
   items: Array<{
     contentPlanItemId: string;
@@ -3899,6 +3938,29 @@ function buildWorkflowBriefPackageCompletenessStatus(
     releasePrepared
   });
 
+  const packageFingerprint = computeFinalReleasePackageFingerprint(
+    buildFinalReleasePackageFingerprintItems(data)
+  );
+  const packageComplete = completeItemCount === data.seedItems.length && data.seedItems.length > 0;
+  const releasePackageFinalized = Boolean(data.finalReleasePackageMeta?.finalizedAt);
+  const storedFinalizeFingerprint = data.finalReleasePackageMeta?.packageFingerprint ?? null;
+  const packageChangedSinceFinalize = Boolean(
+    releasePackageFinalized && storedFinalizeFingerprint && storedFinalizeFingerprint !== packageFingerprint
+  );
+  const finalizeGate = canFinalizeWorkflowBriefReleasePackage({
+    releasePrepared,
+    packageComplete,
+    isAdmin: true,
+    alreadyFinalized: releasePackageFinalized,
+    packageChangedSinceFinalize
+  });
+  const releasePackageStage = computeFinalReleasePackageStage({
+    releasePrepared,
+    releasePackageFinalized,
+    canFinalize: finalizeGate.allowed,
+    packageChangedSinceFinalize
+  });
+
   return {
     briefId,
     eligibleItemCount,
@@ -3911,6 +3973,12 @@ function buildWorkflowBriefPackageCompletenessStatus(
     releasePrepStage,
     releasePrepared,
     lastReleasePreparedAt: data.releasePrepMeta?.preparedAt ?? null,
+    releasePackageStage,
+    releasePackageFinalized,
+    lastReleasePackageFinalizedAt: data.finalReleasePackageMeta?.finalizedAt ?? null,
+    packageChangedSinceFinalize,
+    canFinalizeReleasePackage: finalizeGate.allowed,
+    releasePackageBlockReason: finalizeGate.blockReason,
     missingRequirements,
     items
   };
@@ -4337,5 +4405,316 @@ export async function prepareWorkflowBriefRelease(
     releasePrepStage: refreshed.releasePrepStage,
     publishablePackageSummary: summary,
     completeness: refreshed
+  };
+}
+
+function buildFinalReleasePackageFingerprintItems(
+  data: NonNullable<Awaited<ReturnType<typeof loadWorkflowBriefPackageExecutionData>>>
+): FinalReleasePackageFingerprintItem[] {
+  return data.seedItems
+    .map((planItem) => {
+      const draft = data.draftByItemId.get(planItem.id);
+      const deliverable = draft ? data.deliverableByDraftId.get(draft.id) : null;
+      const image = draft ? data.imageByDraftId.get(draft.id) : null;
+      if (!draft || !deliverable || !image) {
+        return null;
+      }
+
+      return {
+        contentPlanItemId: planItem.id,
+        textDeliverableId: deliverable.id,
+        contentDraftId: draft.id,
+        articleImageId: image.id,
+        textDeliverableUpdatedAt: deliverable.updatedAt,
+        contentDraftUpdatedAt: draft.updatedAt,
+        articleImageUpdatedAt: image.updatedAt,
+        textDeliverableStatus: deliverable.status,
+        imageStatus: image.status
+      };
+    })
+    .filter((row): row is FinalReleasePackageFingerprintItem => Boolean(row));
+}
+
+async function writeFinalReleasePackageMetadata(
+  tx: Prisma.TransactionClient,
+  input: {
+    productionPlanId: string;
+    planJson: unknown;
+    record: WorkflowBriefFinalReleasePackageRecord;
+  }
+): Promise<void> {
+  const existingPlanJson =
+    input.planJson && typeof input.planJson === "object" && !Array.isArray(input.planJson)
+      ? (input.planJson as Record<string, unknown>)
+      : {};
+
+  await tx.productionPlan.update({
+    where: { id: input.productionPlanId },
+    data: {
+      planJson: {
+        ...existingPlanJson,
+        releasePackage: input.record
+      } as Prisma.InputJsonValue
+    }
+  });
+}
+
+function buildFinalReleasePackageItemSources(
+  briefId: string,
+  data: NonNullable<Awaited<ReturnType<typeof loadWorkflowBriefPackageExecutionData>>>
+): WorkflowBriefFinalReleasePackageItemSource[] {
+  return data.seedItems
+    .map((planItem) => {
+      const draft = data.draftByItemId.get(planItem.id);
+      const deliverable = draft ? data.deliverableByDraftId.get(draft.id) : null;
+      const image = draft ? data.imageByDraftId.get(draft.id) : null;
+      if (!draft || !deliverable || !image) {
+        return null;
+      }
+      if (!isReleasableTextDeliverableStatus(deliverable.status)) {
+        return null;
+      }
+
+      return {
+        contentPlanItemId: planItem.id,
+        planItemTitle: planItem.title,
+        textDeliverableId: deliverable.id,
+        articleImageId: image.id,
+        textTitle: deliverable.title,
+        deliveryType: deliverable.deliveryType,
+        exportUrl: null as string | null,
+        textDeliverableStatus: deliverable.status,
+        imageTitle: image.title,
+        imageUrl: resolveFeaturedImageRef({
+          finalImageUrl: image.finalImageUrl,
+          previewImageUrl: image.previewImageUrl
+        }),
+        imageStatus: image.status
+      };
+    })
+    .filter((row): row is WorkflowBriefFinalReleasePackageItemSource => Boolean(row));
+}
+
+export type WorkflowBriefReleasePackageStatus = WorkflowBriefPackageCompletenessStatus & {
+  releasePackage: WorkflowBriefFinalReleasePackageRecord | null;
+  clientReleasePackage: ClientSafeReleasePackage | null;
+};
+
+function buildWorkflowBriefReleasePackageStatus(
+  briefId: string,
+  data: NonNullable<Awaited<ReturnType<typeof loadWorkflowBriefPackageExecutionData>>>,
+  isAdmin: boolean
+): WorkflowBriefReleasePackageStatus {
+  const completeness = buildWorkflowBriefPackageCompletenessStatus(briefId, data);
+  const packageFingerprint = computeFinalReleasePackageFingerprint(buildFinalReleasePackageFingerprintItems(data));
+  const packageComplete = completeness.completeItemCount === data.seedItems.length && data.seedItems.length > 0;
+  const releasePackageFinalized = Boolean(data.finalReleasePackageMeta?.finalizedAt);
+  const storedFinalizeFingerprint = data.finalReleasePackageMeta?.packageFingerprint ?? null;
+  const packageChangedSinceFinalize = Boolean(
+    releasePackageFinalized && storedFinalizeFingerprint && storedFinalizeFingerprint !== packageFingerprint
+  );
+  const finalizeGate = canFinalizeWorkflowBriefReleasePackage({
+    releasePrepared: completeness.releasePrepared,
+    packageComplete,
+    isAdmin,
+    alreadyFinalized: releasePackageFinalized,
+    packageChangedSinceFinalize
+  });
+
+  return {
+    ...completeness,
+    releasePackageStage: computeFinalReleasePackageStage({
+      releasePrepared: completeness.releasePrepared,
+      releasePackageFinalized,
+      canFinalize: finalizeGate.allowed,
+      packageChangedSinceFinalize
+    }),
+    canFinalizeReleasePackage: finalizeGate.allowed,
+    releasePackageBlockReason: finalizeGate.blockReason,
+    releasePackageFinalized,
+    lastReleasePackageFinalizedAt: data.finalReleasePackageMeta?.finalizedAt ?? null,
+    packageChangedSinceFinalize,
+    releasePackage: data.finalReleasePackageMeta,
+    clientReleasePackage: toClientSafeReleasePackageFromRecord(data.finalReleasePackageMeta)
+  };
+}
+
+export async function getWorkflowBriefReleasePackageStatus(
+  authSession: AuthResolvedSessionContext,
+  briefId: string
+): Promise<WorkflowBriefReleasePackageStatus | "not_found" | "forbidden"> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) {
+    return "forbidden";
+  }
+
+  const brief = await getBriefForAccess(briefId, tenantId);
+  if (!brief) {
+    return "not_found";
+  }
+  if (!(await canAccessClient(authSession, tenantId, brief.clientId))) {
+    return "forbidden";
+  }
+
+  const data = await loadWorkflowBriefPackageExecutionData(tenantId, briefId);
+  if (!data) {
+    return "not_found";
+  }
+
+  return buildWorkflowBriefReleasePackageStatus(briefId, data, isOwnerRole(getActiveRoles(authSession)));
+}
+
+export async function finalizeWorkflowBriefReleasePackage(
+  authSession: AuthResolvedSessionContext,
+  briefId: string
+): Promise<
+  | {
+      finalized: boolean;
+      reused: boolean;
+      releasePackageStage: WorkflowBriefFinalReleasePackageStage;
+      releasePackage: WorkflowBriefFinalReleasePackageRecord;
+      clientReleasePackage: ClientSafeReleasePackage;
+      completeness: WorkflowBriefPackageCompletenessStatus;
+    }
+  | "not_found"
+  | "forbidden"
+  | "missing_project"
+  | "release_prep_missing"
+  | "not_ready"
+  | "already_finalized"
+> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId || !isOwnerRole(getActiveRoles(authSession))) {
+    return "forbidden";
+  }
+
+  const data = await loadWorkflowBriefPackageExecutionData(tenantId, briefId);
+  if (!data) {
+    return "not_found";
+  }
+  if (!data.project) {
+    return "missing_project";
+  }
+
+  const completeness = buildWorkflowBriefPackageCompletenessStatus(briefId, data);
+  if (!completeness.releasePrepared) {
+    return "release_prep_missing";
+  }
+
+  const fingerprintItems = buildFinalReleasePackageFingerprintItems(data);
+  const packageFingerprint = computeFinalReleasePackageFingerprint(fingerprintItems);
+  const packageComplete = completeness.completeItemCount === data.seedItems.length && data.seedItems.length > 0;
+  if (!packageComplete || fingerprintItems.length === 0) {
+    return "not_ready";
+  }
+
+  const releasePackageFinalized = Boolean(data.finalReleasePackageMeta?.finalizedAt);
+  const storedFinalizeFingerprint = data.finalReleasePackageMeta?.packageFingerprint ?? null;
+  const packageChangedSinceFinalize = Boolean(
+    releasePackageFinalized && storedFinalizeFingerprint && storedFinalizeFingerprint !== packageFingerprint
+  );
+
+  if (
+    shouldReuseFinalReleasePackage({
+      storedFingerprint: storedFinalizeFingerprint,
+      currentFingerprint: packageFingerprint,
+      releasePackageFinalized
+    }) &&
+    data.finalReleasePackageMeta
+  ) {
+    const clientReleasePackage = toClientSafeReleasePackageFromRecord(data.finalReleasePackageMeta);
+    if (!clientReleasePackage) {
+      return "not_ready";
+    }
+    return {
+      finalized: true,
+      reused: true,
+      releasePackageStage: "finalized",
+      releasePackage: data.finalReleasePackageMeta,
+      clientReleasePackage,
+      completeness
+    };
+  }
+
+  if (releasePackageFinalized && !packageChangedSinceFinalize) {
+    return "already_finalized";
+  }
+
+  const itemSources = buildFinalReleasePackageItemSources(briefId, data);
+  if (itemSources.length !== data.seedItems.length) {
+    return "not_ready";
+  }
+
+  const deliverableIds = itemSources.map((item) => item.textDeliverableId);
+  const exportRows = (await prisma.aiDeliveryDeliverable.findMany({
+    where: { tenantId, id: { in: deliverableIds } },
+    select: { id: true, exportUrl: true }
+  })) as Array<{ id: string; exportUrl: string | null }>;
+  const exportByDeliverableId = new Map(exportRows.map((row) => [row.id, row.exportUrl]));
+  for (const item of itemSources) {
+    item.exportUrl = exportByDeliverableId.get(item.textDeliverableId) ?? null;
+  }
+
+  const summary =
+    `Final release package for ${data.brief?.title ?? "workflow brief"} with ${itemSources.length} deliverable` +
+    `${itemSources.length === 1 ? "" : "s"}.`;
+
+  const releasePackage = buildFinalReleasePackageRecord({
+    briefId,
+    briefTitle: data.brief?.title ?? "Workflow brief",
+    aiDeliveryProjectId: data.project.id,
+    projectName: data.project.name,
+    productionPlanId: data.productionPlan?.id ?? null,
+    packageFingerprint,
+    summary,
+    items: itemSources
+  });
+
+  await prisma.$transaction(async (tx) => {
+    for (const item of itemSources) {
+      if (item.textDeliverableStatus === "APPROVED_BY_CLIENT") {
+        await tx.aiDeliveryDeliverable.update({
+          where: { id: item.textDeliverableId },
+          data: { status: "DELIVERED" }
+        });
+      }
+    }
+
+    if (data.productionPlan?.id) {
+      await writeFinalReleasePackageMetadata(tx, {
+        productionPlanId: data.productionPlan.id,
+        planJson: data.productionPlan.planJson,
+        record: releasePackage
+      });
+    }
+
+    await tx.briefApproval.create({
+      data: {
+        tenantId,
+        briefId,
+        actorUserId: authSession.user.id,
+        actorRole: "ADMIN",
+        decisionType: "APPROVE",
+        targetType: "PRODUCTION_PLAN"
+      }
+    });
+  });
+
+  const refreshedData = await loadWorkflowBriefPackageExecutionData(tenantId, briefId);
+  const refreshedCompleteness = refreshedData
+    ? buildWorkflowBriefPackageCompletenessStatus(briefId, refreshedData)
+    : completeness;
+  const clientReleasePackage = toClientSafeReleasePackageFromRecord(releasePackage);
+  if (!clientReleasePackage) {
+    return "not_ready";
+  }
+
+  return {
+    finalized: true,
+    reused: false,
+    releasePackageStage: "finalized",
+    releasePackage,
+    clientReleasePackage,
+    completeness: refreshedCompleteness
   };
 }

@@ -19,6 +19,8 @@ import {
   getWorkflowBriefPackageCompleteness,
   getWorkflowBriefProductionPlan,
   getWorkflowBriefReleasePrepSummary,
+  getWorkflowBriefReleasePackageStatus,
+  finalizeWorkflowBriefReleasePackage,
   getWorkflowBriefSeoReport,
   listWorkflowBriefs,
   packageAllWorkflowBriefDeliverables,
@@ -1031,6 +1033,81 @@ export function createWorkflowBriefsRouter() {
       if (result === "publication_target_missing") {
         res.status(400).json(
           failure("RELEASE_PREP_PUBLICATION_TARGET_MISSING", "Configure a publication target for this client before release preparation.")
+        );
+        return;
+      }
+
+      res.status(200).json(success(result));
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.get("/:id/release-package", requireAuth, requireTenant, async (req, res, next) => {
+    try {
+      const authSession = getAuthSession(res);
+      if (!authSession) {
+        res.status(401).json(unauthorizedFailure());
+        return;
+      }
+
+      const result = await getWorkflowBriefReleasePackageStatus(authSession, req.params.id);
+      if (result === "not_found") {
+        res.status(404).json(failure("WORKFLOW_BRIEF_NOT_FOUND", "Workflow brief was not found."));
+        return;
+      }
+      if (result === "forbidden") {
+        res.status(403).json(forbiddenFailure());
+        return;
+      }
+
+      res.status(200).json(success(result));
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.post("/:id/finalize-release-package", requireAuth, requireTenant, async (req, res, next) => {
+    try {
+      const authSession = getAuthSession(res);
+      if (!authSession) {
+        res.status(401).json(unauthorizedFailure());
+        return;
+      }
+
+      const result = await finalizeWorkflowBriefReleasePackage(authSession, req.params.id);
+      if (result === "not_found") {
+        res.status(404).json(failure("WORKFLOW_BRIEF_NOT_FOUND", "Workflow brief was not found."));
+        return;
+      }
+      if (result === "forbidden") {
+        res.status(403).json(forbiddenFailure());
+        return;
+      }
+      if (result === "missing_project") {
+        res.status(400).json(
+          failure("RELEASE_PACKAGE_MISSING_PROJECT", "Link an AI Delivery project before finalizing the release package.")
+        );
+        return;
+      }
+      if (result === "release_prep_missing") {
+        res.status(400).json(
+          failure(
+            "RELEASE_PACKAGE_PREP_MISSING",
+            "Run release preparation before finalizing the release package."
+          )
+        );
+        return;
+      }
+      if (result === "not_ready") {
+        res.status(400).json(
+          failure("RELEASE_PACKAGE_NOT_READY", "Packages are not complete enough for final release.")
+        );
+        return;
+      }
+      if (result === "already_finalized") {
+        res.status(409).json(
+          failure("RELEASE_PACKAGE_ALREADY_FINALIZED", "Release package is already finalized for this workflow brief.")
         );
         return;
       }

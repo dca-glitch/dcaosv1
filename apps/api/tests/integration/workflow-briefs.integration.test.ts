@@ -340,6 +340,24 @@ describe("API integration — workflow briefs lifecycle (optional)", () => {
     const firstDeliverableId = packageResponse.body.data?.status?.items?.[0]?.deliverableId as string;
     assert.ok(firstDeliverableId);
 
+    const projectId = createProjectResponse.body.data?.project?.id as string;
+    assert.ok(projectId);
+
+    const releasePackageBeforeFinalize = await request(app)
+      .get(`/api/v1/workflow-briefs/${briefId}/release-package`)
+      .set("Authorization", `Bearer ${token}`)
+      .expect(200);
+
+    assert.equal(releasePackageBeforeFinalize.body.ok, true);
+    assert.equal(releasePackageBeforeFinalize.body.data?.releasePackageFinalized, false);
+
+    const finalizeBlocked = await request(app)
+      .post(`/api/v1/workflow-briefs/${briefId}/finalize-release-package`)
+      .set("Authorization", `Bearer ${token}`)
+      .expect(400);
+
+    assert.equal(finalizeBlocked.body.error?.code, "RELEASE_PACKAGE_PREP_MISSING");
+
     const sendReviewResponse = await request(app)
       .post(`/api/v1/workflow-briefs/${briefId}/deliverables/${firstDeliverableId}/send-for-client-review`)
       .set("Authorization", `Bearer ${token}`)

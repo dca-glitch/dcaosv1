@@ -1,6 +1,11 @@
 import { createPrismaClient } from "../../../../packages/data/src/client";
 import type { AuthResolvedSessionContext } from "../auth/types";
 import { getPrivateStorageDownloadReference } from "../storage/private-storage.service";
+import {
+  toClientSafeReleasePackageFromRecord,
+  WORKFLOW_BRIEF_FINAL_RELEASE_PACKAGE_VERSION,
+  type ClientSafeReleasePackage
+} from "./workflow-brief-final-release.execution";
 
 const prisma = createPrismaClient();
 
@@ -687,4 +692,72 @@ export async function getClientPortalMonthlyReportDownloadReference(
       ? { downloadUrl: downloadRef.downloadUrl, expiresSeconds: downloadRef.expiresSeconds }
       : null
   };
+}
+
+function readFinalReleasePackageFromPlanJson(planJson: unknown): {
+  version: string;
+  kind: string;
+  finalizedAt?: string;
+  clientSnapshot?: ClientSafeReleasePackage;
+} | null {
+  if (!planJson || typeof planJson !== "object" || Array.isArray(planJson)) {
+    return null;
+  }
+  const record = planJson as Record<string, unknown>;
+  const releasePackage = record.releasePackage;
+  if (!releasePackage || typeof releasePackage !== "object" || Array.isArray(releasePackage)) {
+    return null;
+  }
+  const parsed = releasePackage as {
+    version?: string;
+    kind?: string;
+    finalizedAt?: string;
+    clientSnapshot?: ClientSafeReleasePackage;
+  };
+  if (parsed.version !== WORKFLOW_BRIEF_FINAL_RELEASE_PACKAGE_VERSION || parsed.kind !== "final_release_package") {
+    return null;
+  }
+  return parsed as {
+    version: string;
+    kind: string;
+    finalizedAt?: string;
+    clientSnapshot?: ClientSafeReleasePackage;
+  };
+}
+
+export async function getClientPortalReleasePackage(
+  authSession: AuthResolvedSessionContext,
+  projectId: string
+): Promise<{ releasePackage: ClientSafeReleasePackage | null } | null> {
+  const access = await assertClientPortalProjectAccess(authSession, projectId);
+  if (!access) return null;
+
+  const { tenantId } = access;
+
+  const project = await prisma.aiDeliveryProject.findFirst({
+    where: { id: projectId, tenantId, isArchived: false },
+    select: { id: true, sourceBriefId: true, name: true }
+  });
+  if (!project?.sourceBriefId) {
+    return { releasePackage: null };
+  }
+
+  const productionPlan = await prisma.productionPlan.findFirst({
+    where: { tenantId, briefId: project.sourceBriefId },
+    orderBy: { createdAt: "desc" },
+    select: { planJson: true }
+  });
+  if (!productionPlan) {
+    return { releasePackage: null };
+  }
+
+  const stored = readFinalReleasePackageFromPlanJson(productionPlan.planJson);
+  if (!stored?.finalizedAt) {
+    return { releasePackage: null };
+  }
+
+  const releasePackage = toClientSafeReleasePackageFromRecord(
+    stored as Parameters<typeof toClientSafeReleasePackageFromRecord>[0]
+  );
+  return { releasePackage };
 }

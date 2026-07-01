@@ -181,6 +181,12 @@ type PackageCompletenessStatus = {
   releasePrepStage: string;
   releasePrepared: boolean;
   lastReleasePreparedAt: string | null;
+  releasePackageStage?: string;
+  releasePackageFinalized?: boolean;
+  lastReleasePackageFinalizedAt?: string | null;
+  packageChangedSinceFinalize?: boolean;
+  canFinalizeReleasePackage?: boolean;
+  releasePackageBlockReason?: string | null;
   missingRequirements: string[];
   items: Array<{
     planItemTitle: string;
@@ -191,6 +197,28 @@ type PackageCompletenessStatus = {
     packageComplete: boolean;
     completenessStage: string;
   }>;
+};
+
+type ReleasePackageStatus = PackageCompletenessStatus & {
+  releasePackage: {
+    releasePackageId: string;
+    finalizedAt: string;
+    releaseStatus: string;
+    summary: string;
+    deliverableCount: number;
+    imageCount: number;
+  } | null;
+  clientReleasePackage: {
+    releasePackageId: string;
+    briefTitle: string;
+    projectName: string;
+    finalizedAt: string;
+    releaseStatus: string;
+    summary: string;
+    deliverables: Array<{ title: string; type: string; exportUrl: string | null; status: string }>;
+    images: Array<{ title: string; altText: string | null; imageUrl: string | null; status: string }>;
+    notes: string | null;
+  } | null;
 };
 
 async function workflowBriefsApiRequest<T>(path: string, options?: { method?: string; body?: unknown }): Promise<ApiResponse<T>> {
@@ -314,6 +342,8 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
   const [imageSetLoading, setImageSetLoading] = useState(false);
   const [completenessStatus, setCompletenessStatus] = useState<PackageCompletenessStatus | null>(null);
   const [completenessLoading, setCompletenessLoading] = useState(false);
+  const [releasePackageStatus, setReleasePackageStatus] = useState<ReleasePackageStatus | null>(null);
+  const [releasePackageLoading, setReleasePackageLoading] = useState(false);
 
   const loadBriefs = useCallback(async () => {
     setLoading(true);
@@ -399,11 +429,28 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
     setCompletenessLoading(false);
   }, []);
 
+  const loadReleasePackageStatus = useCallback(async (briefId: string) => {
+    setReleasePackageLoading(true);
+    const response = await workflowBriefsApiRequest<ReleasePackageStatus>(`/${briefId}/release-package`);
+    if (response.ok) {
+      setReleasePackageStatus(response.data);
+      setCompletenessStatus(response.data);
+    } else {
+      setReleasePackageStatus(null);
+    }
+    setReleasePackageLoading(false);
+  }, []);
+
   const loadPackageExecutionStatus = useCallback(
     async (briefId: string) => {
-      await Promise.all([loadPackagingStatus(briefId), loadImageSetStatus(briefId), loadCompletenessStatus(briefId)]);
+      await Promise.all([
+        loadPackagingStatus(briefId),
+        loadImageSetStatus(briefId),
+        loadCompletenessStatus(briefId),
+        loadReleasePackageStatus(briefId)
+      ]);
     },
-    [loadPackagingStatus, loadImageSetStatus, loadCompletenessStatus]
+    [loadPackagingStatus, loadImageSetStatus, loadCompletenessStatus, loadReleasePackageStatus]
   );
 
   useEffect(() => {
@@ -423,6 +470,7 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
       void loadPackagingStatus(selectedId);
       void loadImageSetStatus(selectedId);
       void loadCompletenessStatus(selectedId);
+      void loadReleasePackageStatus(selectedId);
     } else {
       setDetail(null);
       setSeedStatus(null);
@@ -430,8 +478,9 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
       setPackagingStatus(null);
       setImageSetStatus(null);
       setCompletenessStatus(null);
+      setReleasePackageStatus(null);
     }
-  }, [selectedId, loadDetail, loadSeedStatus, loadDraftStatus, loadPackagingStatus, loadImageSetStatus, loadCompletenessStatus, canManageAi]);
+  }, [selectedId, loadDetail, loadSeedStatus, loadDraftStatus, loadPackagingStatus, loadImageSetStatus, loadCompletenessStatus, loadReleasePackageStatus, canManageAi]);
 
   useEffect(() => {
     const plan = detail?.productionPlans?.[0];
@@ -675,6 +724,27 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
     setActionLoading(false);
   }
 
+  async function handleFinalizeReleasePackage() {
+    if (!selectedId) return;
+    setActionLoading(true);
+    setError(null);
+    const response = await workflowBriefsApiRequest<{
+      finalized: boolean;
+      reused: boolean;
+      releasePackageStage: string;
+      clientReleasePackage: ReleasePackageStatus["clientReleasePackage"];
+      completeness: PackageCompletenessStatus;
+    }>(`/${selectedId}/finalize-release-package`, { method: "POST" });
+    if (!response.ok) {
+      setError(response.error.message);
+      setActionLoading(false);
+      return;
+    }
+    setCompletenessStatus(response.data.completeness);
+    await loadReleasePackageStatus(selectedId);
+    setActionLoading(false);
+  }
+
   function formatImageSetStage(value: string): string {
     switch (value) {
       case "none":
@@ -725,6 +795,23 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
         return "Release prepared";
       case "publication_target_missing":
         return "Publication target missing";
+      default:
+        return value.replace(/_/g, " ");
+    }
+  }
+
+  function formatReleasePackageStage(value: string): string {
+    switch (value) {
+      case "not_ready":
+        return "Not ready";
+      case "release_prep_missing":
+        return "Release prep required";
+      case "ready_to_finalize":
+        return "Ready to finalize";
+      case "finalized":
+        return "Finalized";
+      case "package_changed_since_finalize":
+        return "Package changed since finalize";
       default:
         return value.replace(/_/g, " ");
     }
@@ -1626,6 +1713,12 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
                                   : "Missing"}
                               </div>
                             </div>
+                            <div>
+                              <div className="muted-text" style={{ fontSize: "0.75rem" }}>Release package</div>
+                              <div style={{ fontWeight: 600 }}>
+                                {formatReleasePackageStage(completenessStatus.releasePackageStage ?? "not_ready")}
+                              </div>
+                            </div>
                           </div>
 
                           {canManageAi &&
@@ -1639,6 +1732,61 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
                             >
                               Prepare for release
                             </Button>
+                          ) : null}
+
+                          {canManageAi &&
+                          completenessStatus.releasePrepared &&
+                          !completenessStatus.releasePackageFinalized &&
+                          completenessStatus.canFinalizeReleasePackage ? (
+                            <Button
+                              variant="primary"
+                              disabled={actionLoading}
+                              onClick={() => void handleFinalizeReleasePackage()}
+                              style={{ marginTop: "0.5rem", marginRight: "0.5rem" }}
+                            >
+                              Finalize release package
+                            </Button>
+                          ) : null}
+
+                          {releasePackageLoading ? (
+                            <p className="muted-text" style={{ marginTop: "0.5rem", fontSize: "0.85rem" }}>
+                              Loading release package status…
+                            </p>
+                          ) : null}
+
+                          {releasePackageStatus?.releasePackageFinalized &&
+                          releasePackageStatus.clientReleasePackage ? (
+                            <div style={{ marginTop: "0.75rem" }}>
+                              <div className="muted-text" style={{ fontSize: "0.8rem", marginBottom: "0.35rem", fontWeight: 600 }}>
+                                Final release package
+                              </div>
+                              <div style={{ fontSize: "0.85rem", marginBottom: "0.35rem" }}>
+                                Finalized {formatRunTimestamp(releasePackageStatus.clientReleasePackage.finalizedAt)} ·{" "}
+                                {releasePackageStatus.clientReleasePackage.deliverables.length} deliverable
+                                {releasePackageStatus.clientReleasePackage.deliverables.length === 1 ? "" : "s"}
+                              </div>
+                              {releasePackageStatus.clientReleasePackage.summary ? (
+                                <p className="muted-text" style={{ fontSize: "0.85rem", marginBottom: "0.35rem" }}>
+                                  {releasePackageStatus.clientReleasePackage.summary}
+                                </p>
+                              ) : null}
+                              {releasePackageStatus.clientReleasePackage.deliverables.length > 0 ? (
+                                <ul style={{ margin: 0, paddingLeft: "1.1rem", fontSize: "0.85rem" }}>
+                                  {releasePackageStatus.clientReleasePackage.deliverables.map((item) => (
+                                    <li key={`${item.title}-${item.type}`} style={{ marginBottom: "0.25rem" }}>
+                                      {item.title} ({item.status})
+                                    </li>
+                                  ))}
+                                </ul>
+                              ) : null}
+                            </div>
+                          ) : null}
+
+                          {canManageAi && completenessStatus.releasePackageBlockReason &&
+                          !completenessStatus.releasePackageFinalized ? (
+                            <p className="muted-text" style={{ marginTop: "0.5rem", fontSize: "0.85rem" }}>
+                              {completenessStatus.releasePackageBlockReason}
+                            </p>
                           ) : null}
 
                           {!canManageAi && completenessStatus.clientReviewInProgressCount > 0 ? (
