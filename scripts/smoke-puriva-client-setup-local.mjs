@@ -12,6 +12,15 @@ import {
   responseHasSecrets
 } from "./lib/puriva-local-setup.mjs";
 import {
+  getPurivaServiceTaxonomy,
+  isPurivaWorkflowBriefStructuredInput,
+  PURIVA_HIGH_RISK_CATEGORY_IDS,
+  PURIVA_REQUIRED_SERVICE_CATEGORY_IDS,
+  PURIVA_SERVICE_TAXONOMY_VERSION,
+  validatePurivaServiceTaxonomy,
+  findForbiddenPromotionalPhrases
+} from "./lib/puriva-service-taxonomy.mjs";
+import {
   ensureLocalBrowserSmokeServices,
   getApiBaseUrl,
   getWebBaseUrl
@@ -121,6 +130,64 @@ async function main() {
     "second run creates nothing new",
     Object.values(secondRun.created).every((value) => value === false),
     JSON.stringify(secondRun.created)
+  );
+
+  const taxonomyValidation = validatePurivaServiceTaxonomy();
+  record("puriva service taxonomy validates", taxonomyValidation.ok, taxonomyValidation.errors.join("; ") || "ok");
+
+  const taxonomy = getPurivaServiceTaxonomy();
+  record(
+    "puriva taxonomy includes all service categories",
+    PURIVA_REQUIRED_SERVICE_CATEGORY_IDS.every((id) => taxonomy.serviceCategories.some((category) => category.id === id)),
+    `${taxonomy.serviceCategories.length} categories`
+  );
+
+  for (const category of taxonomy.serviceCategories) {
+    record(
+      `taxonomy category ${category.id} has planning fields`,
+      category.audienceSegments.length > 0 &&
+        category.searchIntentGroups.length > 0 &&
+        category.recommendedContentTypes.length > 0 &&
+        category.contentClusters.length > 0,
+      category.id
+    );
+  }
+
+  for (const highRiskId of PURIVA_HIGH_RISK_CATEGORY_IDS) {
+    const category = taxonomy.serviceCategories.find((entry) => entry.id === highRiskId);
+    record(
+      `high-risk category ${highRiskId} has compliance flags`,
+      Boolean(
+        category?.complianceFlags.includes("medical_claim_risk") &&
+          category?.complianceFlags.includes("licensed_provider_required")
+      ),
+      category?.complianceFlags.join(", ") ?? "missing"
+    );
+  }
+
+  record(
+    "taxonomy avoids forbidden promotional phrases",
+    findForbiddenPromotionalPhrases().length === 0,
+    findForbiddenPromotionalPhrases().join(", ") || "clean"
+  );
+
+  const briefDetail = await request(`/workflow-briefs/${firstRun.workflowBrief.id}`, { token });
+  const structuredInput = briefDetail.body?.data?.structuredInputJson ?? null;
+  record(
+    "workflow brief exposes Puriva taxonomy structured input",
+    isPurivaWorkflowBriefStructuredInput(structuredInput),
+    structuredInput?.version ?? "missing"
+  );
+  record(
+    "workflow brief taxonomy version",
+    structuredInput?.version === PURIVA_SERVICE_TAXONOMY_VERSION,
+    structuredInput?.version ?? "missing"
+  );
+  record(
+    "workflow brief taxonomy category count",
+    Array.isArray(structuredInput?.serviceCategories) &&
+      structuredInput.serviceCategories.length === PURIVA_REQUIRED_SERVICE_CATEGORY_IDS.length,
+    `${structuredInput?.serviceCategories?.length ?? 0}`
   );
 
   record("Puriva client profile name", firstRun.client?.name === PURIVA_PROFILE.name, firstRun.client?.name ?? "missing");

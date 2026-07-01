@@ -35,8 +35,31 @@ npm.cmd run smoke:puriva-client-setup:local
 - Publication target placeholder points to `https://puriva.id` with **no stored credentials**
 - Monthly AI Delivery project exists for the current target month
 - Workflow brief foundation exists and is selectable in Workflow Briefs admin UI
+- **Puriva service taxonomy (`PURIVA_SERVICE_TAXONOMY_V1`) is attached to the workflow brief `structuredInputJson`**
+- Taxonomy includes four service categories with audience, search-intent, content-type, and compliance fields
 - Second setup pass reuses the same records (no duplicate Puriva client)
 - No secrets printed; no live WordPress or external provider calls
+
+---
+
+## Puriva service taxonomy
+
+Source of truth:
+
+- `apps/api/src/core/puriva-service-taxonomy.json`
+- `apps/api/src/core/puriva-service-taxonomy.ts`
+- `scripts/lib/puriva-service-taxonomy.mjs`
+
+Categories:
+
+1. Wegovy / semaglutide weight management
+2. Stem cell therapy
+3. General aesthetic services
+4. Bali medical tourism / international client journey
+
+Attached to workflow brief `structuredInputJson` as `kind: puriva_service_taxonomy` for MI/SEO planning context. Compliance notes are safety guidance only — not generated marketing copy.
+
+Unit tests: `apps/api/src/core/puriva-service-taxonomy.test.ts`
 
 ---
 

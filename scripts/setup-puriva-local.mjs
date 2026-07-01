@@ -71,6 +71,8 @@ async function main() {
   console.log(`publicationTargetId=${setup.publicationTarget.id}`);
   console.log(`aiDeliveryProjectId=${setup.aiDeliveryProject.id}`);
   console.log(`workflowBriefId=${setup.workflowBrief.id}`);
+  console.log(`taxonomyVersion=${setup.taxonomy?.version ?? "missing"}`);
+  console.log(`taxonomyCategories=${setup.taxonomy?.serviceCategoryCount ?? 0}`);
   console.log(`targetMonth=${targetMonth}`);
   console.log(
     `created=${JSON.stringify(setup.created)} skipped=${setup.skipped.length ? setup.skipped.join("; ") : "none"}`

@@ -3,6 +3,14 @@
  * No credentials, no live publish, no external provider calls.
  */
 
+import {
+  buildPurivaWorkflowBriefStructuredInput,
+  isPurivaWorkflowBriefStructuredInput,
+  PURIVA_SERVICE_TAXONOMY_VERSION,
+  taxonomyStructuredInputMatches,
+  validatePurivaServiceTaxonomy
+} from "./puriva-service-taxonomy.mjs";
+
 export const PURIVA_SETUP_MARKER = "[PURIVA_LOCAL_SETUP]";
 
 export const PURIVA_PROFILE = {
@@ -90,7 +98,8 @@ export async function ensurePurivaLocalSetup({
       publicationTarget: false,
       aiDeliveryProject: false,
       workflowBrief: false,
-      clientAccess: false
+      clientAccess: false,
+      taxonomyAttached: false
     },
     skipped: [],
     actions
@@ -255,6 +264,46 @@ export async function ensurePurivaLocalSetup({
     throw new Error("Puriva workflow brief id missing after ensure.");
   }
   result.workflowBrief = workflowBrief;
+
+  const taxonomyValidation = validatePurivaServiceTaxonomy();
+  if (!taxonomyValidation.ok) {
+    throw new Error(`Puriva service taxonomy invalid: ${taxonomyValidation.errors.join("; ")}`);
+  }
+
+  const expectedStructuredInput = buildPurivaWorkflowBriefStructuredInput();
+  let briefDetailResponse = await request(`/workflow-briefs/${workflowBrief.id}`, { token });
+  if (briefDetailResponse.status !== 200 || briefDetailResponse.body?.ok !== true) {
+    throw new Error(`Workflow brief detail failed with HTTP ${briefDetailResponse.status}.`);
+  }
+
+  let briefDetail = briefDetailResponse.body.data ?? workflowBrief;
+  if (taxonomyStructuredInputMatches(briefDetail.structuredInputJson, expectedStructuredInput)) {
+    note("reused workflow brief taxonomy", PURIVA_SERVICE_TAXONOMY_VERSION);
+  } else {
+    const patchResponse = await request(`/workflow-briefs/${workflowBrief.id}`, {
+      method: "PATCH",
+      token,
+      body: {
+        structuredInputJson: expectedStructuredInput
+      }
+    });
+    if (patchResponse.status !== 200 || patchResponse.body?.ok !== true) {
+      throw new Error(`Puriva workflow brief taxonomy attach failed with HTTP ${patchResponse.status}.`);
+    }
+    if (!isPurivaWorkflowBriefStructuredInput(patchResponse.body?.data?.structuredInputJson)) {
+      throw new Error("Puriva workflow brief taxonomy attach did not persist structured input.");
+    }
+    briefDetail = patchResponse.body.data ?? briefDetail;
+    result.created.taxonomyAttached = true;
+    note("attached workflow brief taxonomy", PURIVA_SERVICE_TAXONOMY_VERSION);
+  }
+
+  result.taxonomy = {
+    version: PURIVA_SERVICE_TAXONOMY_VERSION,
+    attached: true,
+    serviceCategoryCount: expectedStructuredInput.serviceCategories.length
+  };
+  result.workflowBrief = briefDetail;
 
   const membersResponse = await request("/tenants/current/members", { token });
   const members = membersResponse.body?.data?.members ?? [];

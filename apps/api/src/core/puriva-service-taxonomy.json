@@ -1,0 +1,184 @@
+{
+  "version": "PURIVA_SERVICE_TAXONOMY_V1",
+  "clientDomain": "puriva.id",
+  "clientName": "Puriva",
+  "market": "Bali, Indonesia",
+  "audienceSegments": [
+    {
+      "id": "local_clients",
+      "label": "Local Balinese / Indonesian clients",
+      "description": "Residents seeking licensed aesthetic and weight-management care in Bali with Bahasa/English support."
+    },
+    {
+      "id": "international_medical_tourists",
+      "label": "International medical tourists",
+      "description": "Travelers comparing licensed clinics, consultation steps, and safe treatment planning before visiting Bali."
+    }
+  ],
+  "searchIntentGroups": [
+    "informational",
+    "commercial_investigation",
+    "transactional_booking",
+    "comparison",
+    "trust_compliance"
+  ],
+  "contentTypes": [
+    "service_page",
+    "faq",
+    "blog_article",
+    "comparison_education",
+    "booking_contact_support"
+  ],
+  "complianceFlags": [
+    "medical_claim_risk",
+    "prescription_medication_risk",
+    "before_after_result_claim_risk",
+    "licensed_provider_required"
+  ],
+  "serviceCategories": [
+    {
+      "id": "wegovy_semaglutide_weight_management",
+      "label": "Wegovy / semaglutide weight management",
+      "slug": "wegovy-semaglutide-weight-management",
+      "description": "Licensed clinic-led weight-management program context. Educational positioning only; individual suitability requires medical assessment.",
+      "contentClusters": [
+        "GLP-1 weight-management consultation",
+        "prescription eligibility and screening",
+        "treatment monitoring and lifestyle support",
+        "pricing and program structure (no outcome promises)"
+      ],
+      "searchIntentGroups": [
+        "informational",
+        "commercial_investigation",
+        "comparison",
+        "trust_compliance",
+        "transactional_booking"
+      ],
+      "audienceSegments": ["local_clients", "international_medical_tourists"],
+      "complianceFlags": [
+        "medical_claim_risk",
+        "prescription_medication_risk",
+        "licensed_provider_required"
+      ],
+      "recommendedContentTypes": [
+        "service_page",
+        "faq",
+        "blog_article",
+        "comparison_education",
+        "booking_contact_support"
+      ],
+      "complianceNotes": [
+        "Do not imply Wegovy or semaglutide is suitable for everyone; emphasize prescriber assessment.",
+        "Avoid guaranteed weight-loss percentages or timelines.",
+        "No off-label promotion; reference licensed prescriber oversight only."
+      ]
+    },
+    {
+      "id": "stem_cell_therapy",
+      "label": "Stem cell therapy",
+      "slug": "stem-cell-therapy",
+      "description": "Consultative stem cell therapy information for a licensed aesthetic clinic. Educational scope only; outcomes vary by patient and protocol.",
+      "contentClusters": [
+        "stem cell therapy consultation process",
+        "licensed clinic protocols and candidacy screening",
+        "recovery expectations and follow-up care",
+        "medical tourism planning for stem cell consults"
+      ],
+      "searchIntentGroups": [
+        "informational",
+        "commercial_investigation",
+        "comparison",
+        "trust_compliance",
+        "transactional_booking"
+      ],
+      "audienceSegments": ["local_clients", "international_medical_tourists"],
+      "complianceFlags": [
+        "medical_claim_risk",
+        "licensed_provider_required",
+        "before_after_result_claim_risk"
+      ],
+      "recommendedContentTypes": [
+        "service_page",
+        "faq",
+        "blog_article",
+        "comparison_education",
+        "booking_contact_support"
+      ],
+      "complianceNotes": [
+        "Never state or imply stem cell therapy cures, reverses, or permanently fixes any condition.",
+        "Use consultative language; defer outcomes to individualized medical evaluation.",
+        "Require licensed provider and facility credentials in high-intent pages."
+      ]
+    },
+    {
+      "id": "general_aesthetic_services",
+      "label": "General aesthetic services",
+      "slug": "general-aesthetic-services",
+      "description": "Non-surgical and aesthetic treatment categories positioned with realistic expectations and licensed practitioner delivery.",
+      "contentClusters": [
+        "skin rejuvenation and facial aesthetics",
+        "body contouring education",
+        "injectable and laser treatment FAQs",
+        "preparation and aftercare guidance"
+      ],
+      "searchIntentGroups": [
+        "informational",
+        "commercial_investigation",
+        "comparison",
+        "transactional_booking"
+      ],
+      "audienceSegments": ["local_clients", "international_medical_tourists"],
+      "complianceFlags": [
+        "medical_claim_risk",
+        "before_after_result_claim_risk",
+        "licensed_provider_required"
+      ],
+      "recommendedContentTypes": [
+        "service_page",
+        "faq",
+        "blog_article",
+        "booking_contact_support"
+      ],
+      "complianceNotes": [
+        "Before/after content must include consent and realistic-expectation disclaimers.",
+        "Avoid permanent-result or guaranteed-beauty outcome language.",
+        "Attribute treatments to licensed practitioners and approved devices/products."
+      ]
+    },
+    {
+      "id": "bali_medical_tourism_journey",
+      "label": "Bali medical tourism / international client journey",
+      "slug": "bali-medical-tourism-journey",
+      "description": "International client journey content covering consultation, travel planning, clinic coordination, and follow-up—without overstating medical outcomes.",
+      "contentClusters": [
+        "international patient consultation flow",
+        "travel and stay planning for Bali treatments",
+        "clinic coordination and language support",
+        "post-visit follow-up and continuity of care"
+      ],
+      "searchIntentGroups": [
+        "informational",
+        "commercial_investigation",
+        "trust_compliance",
+        "transactional_booking"
+      ],
+      "audienceSegments": ["international_medical_tourists"],
+      "complianceFlags": [
+        "medical_claim_risk",
+        "licensed_provider_required"
+      ],
+      "recommendedContentTypes": [
+        "service_page",
+        "faq",
+        "blog_article",
+        "comparison_education",
+        "booking_contact_support"
+      ],
+      "complianceNotes": [
+        "Position Puriva as a licensed Bali clinic partner—not a generic tourism promise.",
+        "Do not bundle travel marketing with unverified medical outcome claims.",
+        "Highlight consultation-first steps and documentation requirements for international clients."
+      ]
+    }
+  ]
+}
