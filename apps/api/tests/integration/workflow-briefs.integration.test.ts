@@ -79,6 +79,21 @@ describe("API integration — workflow briefs lifecycle (optional)", () => {
     assert.ok(runResponse.body.data?.seoReport?.id);
     assert.equal(runResponse.body.data?.brief?.status, "AI_RESULTS_READY");
 
+    const miReportJson = runResponse.body.data?.miReport?.reportJson as Record<string, unknown> | undefined;
+    assert.ok(miReportJson, "expected MI reportJson");
+    assert.equal(miReportJson.kind, "mi");
+    assert.ok(typeof miReportJson.summary === "string" && miReportJson.summary.length > 0);
+    assert.ok(Array.isArray(miReportJson.opportunities) && miReportJson.opportunities.length > 0);
+    assert.ok(Array.isArray(miReportJson.recommendedActions) && miReportJson.recommendedActions.length > 0);
+    assert.equal(miReportJson.isDeterministic, true, "local proof should use deterministic path");
+
+    const seoReportJson = runResponse.body.data?.seoReport?.reportJson as Record<string, unknown> | undefined;
+    assert.ok(seoReportJson, "expected SEO reportJson");
+    assert.equal(seoReportJson.kind, "seo");
+    assert.ok(Array.isArray(seoReportJson.keywordClusters) && seoReportJson.keywordClusters.length > 0);
+    assert.ok(Array.isArray(seoReportJson.topicIdeas) && seoReportJson.topicIdeas.length > 0);
+    assert.equal(seoReportJson.isDeterministic, true, "local proof should use deterministic path");
+
     const miResponse = await request(app)
       .get(`/api/v1/workflow-briefs/${briefId}/mi-report`)
       .set("Authorization", `Bearer ${token}`)

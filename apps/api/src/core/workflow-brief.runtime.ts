@@ -14,6 +14,11 @@ import type {
 } from "@prisma/client";
 import { createPrismaClient } from "../../../../packages/data/src/client";
 import type { AuthResolvedSessionContext } from "../auth/types";
+import {
+  buildWorkflowBriefMiReportJson,
+  buildWorkflowBriefSeoReportJson,
+  executeWorkflowBriefAiRun
+} from "./workflow-brief-ai.execution";
 
 const prisma = createPrismaClient();
 
@@ -443,36 +448,6 @@ export async function archiveWorkflowBrief(
   return { brief };
 }
 
-function buildPlaceholderMiReport(brief: {
-  title: string;
-  goal: string | null;
-  targetAudience: string | null;
-  businessContext: string | null;
-}) {
-  return {
-    headline: `Market intelligence summary for: ${brief.title}`,
-    audience: brief.targetAudience ?? "Not specified",
-    goal: brief.goal ?? "Not specified",
-    context: brief.businessContext ?? "Not specified",
-    generatedAt: new Date().toISOString(),
-    placeholder: true
-  };
-}
-
-function buildPlaceholderSeoReport(brief: {
-  title: string;
-  offerContext: string | null;
-  locationContext: string | null;
-}) {
-  return {
-    headline: `SEO opportunity summary for: ${brief.title}`,
-    offer: brief.offerContext ?? "Not specified",
-    location: brief.locationContext ?? "Not specified",
-    generatedAt: new Date().toISOString(),
-    placeholder: true
-  };
-}
-
 export async function triggerWorkflowBriefAiRun(
   authSession: AuthResolvedSessionContext,
   briefId: string
@@ -530,7 +505,7 @@ export async function triggerWorkflowBriefAiRun(
 
   const startedAt = new Date();
 
-  const result = await prisma.$transaction(async (tx) => {
+  const runRecord = await prisma.$transaction(async (tx) => {
     await tx.brief.update({
       where: { id: briefId },
       data: {
@@ -539,7 +514,7 @@ export async function triggerWorkflowBriefAiRun(
       }
     });
 
-    const run = await tx.aiBriefRun.create({
+    return tx.aiBriefRun.create({
       data: {
         tenantId,
         briefId,
@@ -549,18 +524,89 @@ export async function triggerWorkflowBriefAiRun(
         inputSnapshotJson: inputSnapshot
       }
     });
+  });
 
-    const miPayload = buildPlaceholderMiReport(brief);
-    const seoPayload = buildPlaceholderSeoReport(brief);
+  const finishedAtIso = new Date().toISOString();
+  const executionResult = await executeWorkflowBriefAiRun({
+    briefId: brief.id,
+    title: brief.title,
+    goal: brief.goal,
+    businessContext: brief.businessContext,
+    targetAudience: brief.targetAudience,
+    offerContext: brief.offerContext,
+    locationContext: brief.locationContext,
+    notes: brief.notes,
+    structuredInputJson: brief.structuredInputJson,
+    finishedAtIso
+  });
+
+  const resultSnapshot = {
+    gateway: executionResult.meta.gateway,
+    model: executionResult.meta.model,
+    generatedAt: executionResult.meta.generatedAt,
+    liveProviderCalled: executionResult.meta.liveProviderCalled,
+    isDeterministic: executionResult.meta.isDeterministic,
+    safeError: executionResult.meta.safeError
+  };
+
+  if (!executionResult.ok) {
+    const failed = await prisma.$transaction(async (tx) => {
+      const completedRun = await tx.aiBriefRun.update({
+        where: { id: runRecord.id },
+        data: {
+          status: "FAILED",
+          completedAt: new Date(),
+          errorMessage: executionResult.errorMessage,
+          inputSnapshotJson: {
+            ...inputSnapshot,
+            resultSnapshot,
+            executionLogPreview: executionResult.executionLog.slice(-6)
+          }
+        }
+      });
+
+      const updatedBrief = await tx.brief.update({
+        where: { id: briefId },
+        data: { status: "READY_FOR_AI" },
+        include: briefDetailInclude
+      });
+
+      return { run: completedRun, brief: updatedBrief };
+    });
+
+    return {
+      run: failed.run,
+      miReport: null,
+      seoReport: null,
+      brief: failed.brief
+    };
+  }
+
+  const miReportJson = buildWorkflowBriefMiReportJson(executionResult.mi, executionResult.meta);
+  const seoReportJson = buildWorkflowBriefSeoReportJson(executionResult.seo, executionResult.meta);
+
+  const result = await prisma.$transaction(async (tx) => {
+    const completedRun = await tx.aiBriefRun.update({
+      where: { id: runRecord.id },
+      data: {
+        status: "COMPLETED",
+        completedAt: new Date(),
+        inputSnapshotJson: {
+          ...inputSnapshot,
+          resultSnapshot,
+          executionLogPreview: executionResult.executionLog.slice(-8)
+        }
+      }
+    });
 
     const miReport = await tx.aiMiReport.create({
       data: {
         tenantId,
         briefId,
-        aiBriefRunId: run.id,
+        aiBriefRunId: runRecord.id,
         status: "READY",
-        summaryText: miPayload.headline,
-        reportJson: miPayload
+        summaryText: executionResult.mi.summary,
+        reportJson: miReportJson as Prisma.InputJsonValue
       }
     });
 
@@ -568,18 +614,12 @@ export async function triggerWorkflowBriefAiRun(
       data: {
         tenantId,
         briefId,
-        aiBriefRunId: run.id,
+        aiBriefRunId: runRecord.id,
         status: "READY",
-        summaryText: seoPayload.headline,
-        reportJson: seoPayload
-      }
-    });
-
-    const completedRun = await tx.aiBriefRun.update({
-      where: { id: run.id },
-      data: {
-        status: "COMPLETED",
-        completedAt: new Date()
+        summaryText: executionResult.seo.topicIdeas[0]
+          ? `SEO topics: ${executionResult.seo.topicIdeas.slice(0, 2).join("; ")}`
+          : `SEO analysis for: ${brief.title}`,
+        reportJson: seoReportJson as Prisma.InputJsonValue
       }
     });
 

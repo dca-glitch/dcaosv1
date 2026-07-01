@@ -81,6 +81,80 @@ function BriefField({ label, value }: { label: string; value: string | null | un
   );
 }
 
+type ReportListSection = {
+  label: string;
+  items: string[];
+};
+
+function readReportStringList(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value.filter((entry): entry is string => typeof entry === "string" && entry.trim().length > 0);
+}
+
+function buildMiReportSections(reportJson: unknown): ReportListSection[] {
+  if (!reportJson || typeof reportJson !== "object" || Array.isArray(reportJson)) {
+    return [];
+  }
+  const record = reportJson as Record<string, unknown>;
+  return [
+    { label: "Audience insights", items: readReportStringList(record.audienceInsights) },
+    { label: "Competitor insights", items: readReportStringList(record.competitorInsights) },
+    { label: "Market signals", items: readReportStringList(record.marketSignals) },
+    { label: "Opportunities", items: readReportStringList(record.opportunities) },
+    { label: "Risks", items: readReportStringList(record.risks) },
+    { label: "Recommended actions", items: readReportStringList(record.recommendedActions) }
+  ].filter((section) => section.items.length > 0);
+}
+
+function buildSeoReportSections(reportJson: unknown): ReportListSection[] {
+  if (!reportJson || typeof reportJson !== "object" || Array.isArray(reportJson)) {
+    return [];
+  }
+  const record = reportJson as Record<string, unknown>;
+  return [
+    { label: "Keyword clusters", items: readReportStringList(record.keywordClusters) },
+    { label: "Topic ideas", items: readReportStringList(record.topicIdeas) },
+    { label: "Content angles", items: readReportStringList(record.contentAngles) },
+    { label: "Internal link ideas", items: readReportStringList(record.internalLinkIdeas) },
+    { label: "SEO notes", items: readReportStringList(record.seoNotes) }
+  ].filter((section) => section.items.length > 0);
+}
+
+function ReportSectionList({ sections }: { sections: ReportListSection[] }) {
+  if (sections.length === 0) {
+    return null;
+  }
+
+  return (
+    <div style={{ display: "grid", gap: "0.75rem", marginTop: "0.75rem" }}>
+      {sections.map((section) => (
+        <div key={section.label}>
+          <div className="muted-text" style={{ fontSize: "0.8rem", marginBottom: "0.35rem", fontWeight: 600 }}>
+            {section.label}
+          </div>
+          <ul style={{ margin: 0, paddingLeft: "1.1rem" }}>
+            {section.items.map((item) => (
+              <li key={`${section.label}-${item}`} style={{ marginBottom: "0.25rem" }}>
+                {item}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function formatRunTimestamp(value: string | null | undefined): string {
+  if (!value) {
+    return "—";
+  }
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? value : date.toLocaleString();
+}
+
 export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: boolean }) {
   const [briefs, setBriefs] = useState<WorkflowBriefSummary[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -167,6 +241,13 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
   const latestMi = detail?.miReports?.[0];
   const latestSeo = detail?.seoReports?.[0];
   const latestPlan = detail?.productionPlans?.[0];
+  const latestRun = detail?.aiBriefRuns?.[0];
+  const miSections = latestMi ? buildMiReportSections(latestMi.reportJson) : [];
+  const seoSections = latestSeo ? buildSeoReportSections(latestSeo.reportJson) : [];
+  const miOpportunities = miSections.find((section) => section.label === "Opportunities")?.items ?? [];
+  const miRisks = miSections.find((section) => section.label === "Risks")?.items ?? [];
+  const seoKeywords = seoSections.find((section) => section.label === "Keyword clusters")?.items ?? [];
+  const seoTopics = seoSections.find((section) => section.label === "Topic ideas")?.items ?? [];
   const canRunAi =
     canManageAi &&
     detail &&
@@ -251,27 +332,86 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
                 <BriefField label="Notes" value={detail.notes} />
               </SectionPanel>
 
+              <SectionPanel title="AI Run Status">
+                {latestRun ? (
+                  <>
+                    <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", marginBottom: "0.75rem" }}>
+                      <StatusBadge status={latestRun.status} />
+                      {latestRun.errorMessage ? (
+                        <span className="muted-text" style={{ fontSize: "0.85rem" }}>
+                          {latestRun.errorMessage}
+                        </span>
+                      ) : null}
+                    </div>
+                    <BriefField label="Started" value={formatRunTimestamp(latestRun.startedAt)} />
+                    <BriefField label="Completed" value={formatRunTimestamp(latestRun.completedAt)} />
+                  </>
+                ) : (
+                  <p className="muted-text">No AI runs yet. Run AI from an eligible brief status.</p>
+                )}
+              </SectionPanel>
+
+              {(miOpportunities.length > 0 || miRisks.length > 0 || seoKeywords.length > 0 || seoTopics.length > 0) ? (
+                <SectionPanel title="Key Highlights">
+                  {miOpportunities.length > 0 ? (
+                    <div style={{ marginBottom: "0.75rem" }}>
+                      <div className="muted-text" style={{ fontSize: "0.8rem", marginBottom: "0.35rem", fontWeight: 600 }}>
+                        Top opportunities
+                      </div>
+                      <ul style={{ margin: 0, paddingLeft: "1.1rem" }}>
+                        {miOpportunities.slice(0, 3).map((item) => (
+                          <li key={`opp-${item}`}>{item}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : null}
+                  {miRisks.length > 0 ? (
+                    <div style={{ marginBottom: "0.75rem" }}>
+                      <div className="muted-text" style={{ fontSize: "0.8rem", marginBottom: "0.35rem", fontWeight: 600 }}>
+                        Key risks
+                      </div>
+                      <ul style={{ margin: 0, paddingLeft: "1.1rem" }}>
+                        {miRisks.slice(0, 3).map((item) => (
+                          <li key={`risk-${item}`}>{item}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : null}
+                  {seoKeywords.length > 0 ? (
+                    <div style={{ marginBottom: "0.75rem" }}>
+                      <div className="muted-text" style={{ fontSize: "0.8rem", marginBottom: "0.35rem", fontWeight: 600 }}>
+                        Keyword clusters
+                      </div>
+                      <ul style={{ margin: 0, paddingLeft: "1.1rem" }}>
+                        {seoKeywords.slice(0, 5).map((item) => (
+                          <li key={`kw-${item}`}>{item}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : null}
+                  {seoTopics.length > 0 ? (
+                    <div>
+                      <div className="muted-text" style={{ fontSize: "0.8rem", marginBottom: "0.35rem", fontWeight: 600 }}>
+                        Topic ideas
+                      </div>
+                      <ul style={{ margin: 0, paddingLeft: "1.1rem" }}>
+                        {seoTopics.slice(0, 4).map((item) => (
+                          <li key={`topic-${item}`}>{item}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : null}
+                </SectionPanel>
+              ) : null}
+
               <SectionPanel title="MI Report">
                 {latestMi ? (
                   <>
                     <div style={{ marginBottom: "0.5rem" }}>
                       <StatusBadge status={latestMi.status} />
                     </div>
-                    <p>{latestMi.summaryText ?? "No summary available."}</p>
-                    {latestMi.reportJson ? (
-                      <pre
-                        style={{
-                          fontSize: "0.75rem",
-                          overflow: "auto",
-                          maxHeight: "200px",
-                          background: "rgba(0,0,0,0.2)",
-                          padding: "0.75rem",
-                          borderRadius: "6px"
-                        }}
-                      >
-                        {JSON.stringify(latestMi.reportJson, null, 2)}
-                      </pre>
-                    ) : null}
+                    <p style={{ marginTop: 0 }}>{latestMi.summaryText ?? "No summary available."}</p>
+                    <ReportSectionList sections={miSections} />
                   </>
                 ) : (
                   <p className="muted-text">No MI report yet. Run AI from an eligible brief status.</p>
@@ -284,21 +424,8 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
                     <div style={{ marginBottom: "0.5rem" }}>
                       <StatusBadge status={latestSeo.status} />
                     </div>
-                    <p>{latestSeo.summaryText ?? "No summary available."}</p>
-                    {latestSeo.reportJson ? (
-                      <pre
-                        style={{
-                          fontSize: "0.75rem",
-                          overflow: "auto",
-                          maxHeight: "200px",
-                          background: "rgba(0,0,0,0.2)",
-                          padding: "0.75rem",
-                          borderRadius: "6px"
-                        }}
-                      >
-                        {JSON.stringify(latestSeo.reportJson, null, 2)}
-                      </pre>
-                    ) : null}
+                    <p style={{ marginTop: 0 }}>{latestSeo.summaryText ?? "No summary available."}</p>
+                    <ReportSectionList sections={seoSections} />
                   </>
                 ) : (
                   <p className="muted-text">No SEO report yet. Run AI from an eligible brief status.</p>
