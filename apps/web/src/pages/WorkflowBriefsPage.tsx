@@ -221,6 +221,33 @@ type ReleasePackageStatus = PackageCompletenessStatus & {
   } | null;
 };
 
+type PublicationHandoffStatus = {
+  briefId: string;
+  handoffStage: string;
+  executionMode: string;
+  packageComplete: boolean;
+  releasePrepared: boolean;
+  publicationTargetAvailable: boolean;
+  publicationTargetLabel: string | null;
+  releasePackageFinalized: boolean;
+  handoffExecuted: boolean;
+  lastHandoffExecutedAt: string | null;
+  packageChangedSinceHandoff: boolean;
+  canExecuteHandoff: boolean;
+  handoffBlockReason: string | null;
+  mappedItemCount: number;
+  publicationHandoff: {
+    version: string;
+    kind: string;
+    executedAt: string;
+    publicationTargetLabel: string;
+    preparedCount: number;
+    reusedCount: number;
+    itemCount: number;
+    note: string;
+  } | null;
+};
+
 async function workflowBriefsApiRequest<T>(path: string, options?: { method?: string; body?: unknown }): Promise<ApiResponse<T>> {
   const token = sessionStorage.getItem(SESSION_STORAGE_KEY);
   const response = await fetch(`${API_BASE_URL}/workflow-briefs${path}`, {
@@ -344,6 +371,12 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
   const [completenessLoading, setCompletenessLoading] = useState(false);
   const [releasePackageStatus, setReleasePackageStatus] = useState<ReleasePackageStatus | null>(null);
   const [releasePackageLoading, setReleasePackageLoading] = useState(false);
+  const [publicationHandoffStatus, setPublicationHandoffStatus] = useState<PublicationHandoffStatus | null>(null);
+  const [publicationHandoffLoading, setPublicationHandoffLoading] = useState(false);
+  const [publicationHandoffNotice, setPublicationHandoffNotice] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
 
   const loadBriefs = useCallback(async () => {
     setLoading(true);
@@ -441,16 +474,34 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
     setReleasePackageLoading(false);
   }, []);
 
+  const loadPublicationHandoffStatus = useCallback(async (briefId: string) => {
+    setPublicationHandoffLoading(true);
+    const response = await workflowBriefsApiRequest<PublicationHandoffStatus>(`/${briefId}/publication-handoff`);
+    if (response.ok) {
+      setPublicationHandoffStatus(response.data);
+    } else {
+      setPublicationHandoffStatus(null);
+    }
+    setPublicationHandoffLoading(false);
+  }, []);
+
   const loadPackageExecutionStatus = useCallback(
     async (briefId: string) => {
       await Promise.all([
         loadPackagingStatus(briefId),
         loadImageSetStatus(briefId),
         loadCompletenessStatus(briefId),
-        loadReleasePackageStatus(briefId)
+        loadReleasePackageStatus(briefId),
+        loadPublicationHandoffStatus(briefId)
       ]);
     },
-    [loadPackagingStatus, loadImageSetStatus, loadCompletenessStatus, loadReleasePackageStatus]
+    [
+      loadPackagingStatus,
+      loadImageSetStatus,
+      loadCompletenessStatus,
+      loadReleasePackageStatus,
+      loadPublicationHandoffStatus
+    ]
   );
 
   useEffect(() => {
@@ -471,6 +522,12 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
       void loadImageSetStatus(selectedId);
       void loadCompletenessStatus(selectedId);
       void loadReleasePackageStatus(selectedId);
+      if (canManageAi) {
+        void loadPublicationHandoffStatus(selectedId);
+      } else {
+        setPublicationHandoffStatus(null);
+      }
+      setPublicationHandoffNotice(null);
     } else {
       setDetail(null);
       setSeedStatus(null);
@@ -479,8 +536,10 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
       setImageSetStatus(null);
       setCompletenessStatus(null);
       setReleasePackageStatus(null);
+      setPublicationHandoffStatus(null);
+      setPublicationHandoffNotice(null);
     }
-  }, [selectedId, loadDetail, loadSeedStatus, loadDraftStatus, loadPackagingStatus, loadImageSetStatus, loadCompletenessStatus, loadReleasePackageStatus, canManageAi]);
+  }, [selectedId, loadDetail, loadSeedStatus, loadDraftStatus, loadPackagingStatus, loadImageSetStatus, loadCompletenessStatus, loadReleasePackageStatus, loadPublicationHandoffStatus, canManageAi]);
 
   useEffect(() => {
     const plan = detail?.productionPlans?.[0];
@@ -745,6 +804,34 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
     setActionLoading(false);
   }
 
+  async function handleExecutePublicationHandoff() {
+    if (!selectedId) return;
+    setActionLoading(true);
+    setPublicationHandoffNotice(null);
+    const response = await workflowBriefsApiRequest<{
+      executed: boolean;
+      reused: boolean;
+      handoffStage: string;
+      publicationHandoff: PublicationHandoffStatus["publicationHandoff"];
+      status: PublicationHandoffStatus;
+    }>(`/${selectedId}/execute-publication-handoff`, { method: "POST" });
+    if (!response.ok) {
+      setPublicationHandoffNotice({ type: "error", message: response.error.message });
+      setActionLoading(false);
+      return;
+    }
+    setPublicationHandoffStatus(response.data.status);
+    const preparedCount = response.data.publicationHandoff?.preparedCount ?? 0;
+    setPublicationHandoffNotice({
+      type: "success",
+      message: response.data.reused
+        ? "WordPress draft prep reused — package unchanged since last handoff."
+        : `WordPress drafts prepared for ${preparedCount} item${preparedCount === 1 ? "" : "s"}.`
+    });
+    await loadPublicationHandoffStatus(selectedId);
+    setActionLoading(false);
+  }
+
   function formatImageSetStage(value: string): string {
     switch (value) {
       case "none":
@@ -812,6 +899,25 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
         return "Finalized";
       case "package_changed_since_finalize":
         return "Package changed since finalize";
+      default:
+        return value.replace(/_/g, " ");
+    }
+  }
+
+  function formatHandoffStage(value: string): string {
+    switch (value) {
+      case "not_ready":
+        return "Not ready";
+      case "publication_target_missing":
+        return "Publication target missing";
+      case "release_prep_missing":
+        return "Release prep required";
+      case "ready_to_execute":
+        return "Ready for draft prep";
+      case "draft_prepared":
+        return "Drafts prepared";
+      case "package_changed_since_handoff":
+        return "Package changed since handoff";
       default:
         return value.replace(/_/g, " ");
     }
@@ -1719,6 +1825,16 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
                                 {formatReleasePackageStage(completenessStatus.releasePackageStage ?? "not_ready")}
                               </div>
                             </div>
+                            {canManageAi ? (
+                              <div>
+                                <div className="muted-text" style={{ fontSize: "0.75rem" }}>Publication handoff</div>
+                                <div style={{ fontWeight: 600 }}>
+                                  {publicationHandoffLoading
+                                    ? "Loading…"
+                                    : formatHandoffStage(publicationHandoffStatus?.handoffStage ?? "not_ready")}
+                                </div>
+                              </div>
+                            ) : null}
                           </div>
 
                           {canManageAi &&
@@ -1787,6 +1903,79 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
                             <p className="muted-text" style={{ marginTop: "0.5rem", fontSize: "0.85rem" }}>
                               {completenessStatus.releasePackageBlockReason}
                             </p>
+                          ) : null}
+
+                          {canManageAi && publicationHandoffStatus ? (
+                            <div
+                              style={{
+                                marginTop: "0.75rem",
+                                paddingTop: "0.75rem",
+                                borderTop: "1px solid rgba(255,255,255,0.08)"
+                              }}
+                            >
+                              <div
+                                className="muted-text"
+                                style={{ fontSize: "0.8rem", marginBottom: "0.35rem", fontWeight: 600 }}
+                              >
+                                Publication handoff
+                              </div>
+                              <p className="muted-text" style={{ fontSize: "0.75rem", marginBottom: "0.5rem" }}>
+                                Draft prep only — no live publish
+                              </p>
+                              <div style={{ fontSize: "0.85rem", marginBottom: "0.35rem" }}>
+                                {publicationHandoffStatus.mappedItemCount} mapped item
+                                {publicationHandoffStatus.mappedItemCount === 1 ? "" : "s"}
+                                {publicationHandoffStatus.publicationTargetLabel
+                                  ? ` · ${publicationHandoffStatus.publicationTargetLabel}`
+                                  : ""}
+                                {publicationHandoffStatus.handoffExecuted &&
+                                publicationHandoffStatus.lastHandoffExecutedAt
+                                  ? ` · Last handoff ${formatRunTimestamp(publicationHandoffStatus.lastHandoffExecutedAt)}`
+                                  : ""}
+                              </div>
+                              {publicationHandoffStatus.publicationHandoff ? (
+                                <div className="muted-text" style={{ fontSize: "0.8rem", marginBottom: "0.35rem" }}>
+                                  {publicationHandoffStatus.publicationHandoff.preparedCount} prepared
+                                  {publicationHandoffStatus.publicationHandoff.reusedCount > 0
+                                    ? ` · ${publicationHandoffStatus.publicationHandoff.reusedCount} reused`
+                                    : ""}
+                                  {` · ${publicationHandoffStatus.publicationHandoff.itemCount} item${
+                                    publicationHandoffStatus.publicationHandoff.itemCount === 1 ? "" : "s"
+                                  }`}
+                                </div>
+                              ) : null}
+                              <Button
+                                variant="secondary"
+                                disabled={actionLoading || !publicationHandoffStatus.canExecuteHandoff}
+                                onClick={() => void handleExecutePublicationHandoff()}
+                                style={{ marginTop: "0.35rem", marginRight: "0.5rem" }}
+                              >
+                                {publicationHandoffStatus.packageChangedSinceHandoff
+                                  ? "Re-prepare WordPress drafts"
+                                  : "Prepare WordPress drafts"}
+                              </Button>
+                              {publicationHandoffNotice ? (
+                                <p
+                                  className="muted-text"
+                                  style={{
+                                    marginTop: "0.5rem",
+                                    fontSize: "0.85rem",
+                                    color:
+                                      publicationHandoffNotice.type === "error"
+                                        ? "var(--color-danger, #f87171)"
+                                        : undefined
+                                  }}
+                                >
+                                  {publicationHandoffNotice.message}
+                                </p>
+                              ) : null}
+                              {publicationHandoffStatus.handoffBlockReason &&
+                              !publicationHandoffStatus.canExecuteHandoff ? (
+                                <p className="muted-text" style={{ marginTop: "0.5rem", fontSize: "0.85rem" }}>
+                                  {publicationHandoffStatus.handoffBlockReason}
+                                </p>
+                              ) : null}
+                            </div>
                           ) : null}
 
                           {!canManageAi && completenessStatus.clientReviewInProgressCount > 0 ? (
