@@ -4,12 +4,19 @@ import { Router } from "express";
 import type { AuthSessionLocals } from "../auth/types";
 import {
   archiveWorkflowBrief,
+  clientApproveWorkflowBriefProductionPlan,
+  clientRejectWorkflowBriefProductionPlan,
   createWorkflowBrief,
+  createWorkflowBriefLinkedProject,
+  generateWorkflowBriefProductionPlan,
   getWorkflowBriefById,
+  getWorkflowBriefContentProductionSeedStatus,
   getWorkflowBriefMiReport,
   getWorkflowBriefProductionPlan,
   getWorkflowBriefSeoReport,
   listWorkflowBriefs,
+  sendWorkflowBriefProductionPlanToClient,
+  seedWorkflowBriefContentProduction,
   submitWorkflowBrief,
   triggerWorkflowBriefAiRun,
   updateWorkflowBrief,
@@ -349,8 +356,233 @@ export function createWorkflowBriefsRouter() {
         res.status(403).json(forbiddenFailure());
         return;
       }
+      if (result === "locked") {
+        res.status(400).json(failure("PRODUCTION_PLAN_LOCKED", "Production plan cannot be edited in its current status."));
+        return;
+      }
 
       res.status(200).json(success(result.plan));
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.post("/:id/production-plan/generate", requireAuth, requireTenant, async (req, res, next) => {
+    try {
+      const authSession = getAuthSession(res);
+      if (!authSession) {
+        res.status(401).json(unauthorizedFailure());
+        return;
+      }
+
+      const result = await generateWorkflowBriefProductionPlan(authSession, req.params.id);
+      if (result === "not_found") {
+        res.status(404).json(failure("WORKFLOW_BRIEF_NOT_FOUND", "Workflow brief was not found."));
+        return;
+      }
+      if (result === "forbidden") {
+        res.status(403).json(forbiddenFailure());
+        return;
+      }
+      if (result === "missing_reports") {
+        res.status(400).json(failure("PRODUCTION_PLAN_MISSING_REPORTS", "MI and SEO reports are required before generating a production plan."));
+        return;
+      }
+      if (result === "locked") {
+        res.status(400).json(failure("PRODUCTION_PLAN_LOCKED", "Production plan cannot be regenerated in its current status."));
+        return;
+      }
+
+      res.status(200).json(success(result.plan));
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.post("/:id/production-plan/send", requireAuth, requireTenant, async (req, res, next) => {
+    try {
+      const authSession = getAuthSession(res);
+      if (!authSession) {
+        res.status(401).json(unauthorizedFailure());
+        return;
+      }
+
+      const result = await sendWorkflowBriefProductionPlanToClient(authSession, req.params.id);
+      if (result === "not_found") {
+        res.status(404).json(failure("PRODUCTION_PLAN_NOT_FOUND", "Production plan was not found for this brief."));
+        return;
+      }
+      if (result === "forbidden") {
+        res.status(403).json(forbiddenFailure());
+        return;
+      }
+      if (result === "invalid_status") {
+        res.status(400).json(failure("PRODUCTION_PLAN_INVALID_STATUS", "Production plan cannot be sent to client in its current status."));
+        return;
+      }
+
+      res.status(200).json(success(result.plan));
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.post("/:id/production-plan/approve", requireAuth, requireTenant, async (req, res, next) => {
+    try {
+      const authSession = getAuthSession(res);
+      if (!authSession) {
+        res.status(401).json(unauthorizedFailure());
+        return;
+      }
+
+      const result = await clientApproveWorkflowBriefProductionPlan(authSession, req.params.id);
+      if (result === "not_found") {
+        res.status(404).json(failure("PRODUCTION_PLAN_NOT_FOUND", "Production plan was not found for this brief."));
+        return;
+      }
+      if (result === "forbidden") {
+        res.status(403).json(forbiddenFailure());
+        return;
+      }
+      if (result === "invalid_status") {
+        res.status(400).json(failure("PRODUCTION_PLAN_INVALID_STATUS", "Production plan cannot be approved in its current status."));
+        return;
+      }
+
+      res.status(200).json(success(result));
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.post("/:id/production-plan/reject", requireAuth, requireTenant, async (req, res, next) => {
+    try {
+      const authSession = getAuthSession(res);
+      if (!authSession) {
+        res.status(401).json(unauthorizedFailure());
+        return;
+      }
+
+      const body = (req.body ?? {}) as Record<string, unknown>;
+      const comment = typeof body.comment === "string" ? body.comment : null;
+
+      const result = await clientRejectWorkflowBriefProductionPlan(authSession, req.params.id, comment);
+      if (result === "not_found") {
+        res.status(404).json(failure("PRODUCTION_PLAN_NOT_FOUND", "Production plan was not found for this brief."));
+        return;
+      }
+      if (result === "forbidden") {
+        res.status(403).json(forbiddenFailure());
+        return;
+      }
+      if (result === "invalid_status") {
+        res.status(400).json(failure("PRODUCTION_PLAN_INVALID_STATUS", "Production plan cannot be rejected in its current status."));
+        return;
+      }
+
+      res.status(200).json(success(result.plan));
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.post("/:id/create-project", requireAuth, requireTenant, async (req, res, next) => {
+    try {
+      const authSession = getAuthSession(res);
+      if (!authSession) {
+        res.status(401).json(unauthorizedFailure());
+        return;
+      }
+
+      const body = (req.body ?? {}) as Record<string, unknown>;
+      const result = await createWorkflowBriefLinkedProject(authSession, req.params.id, {
+        targetMonth: typeof body.targetMonth === "string" ? body.targetMonth : null,
+        name: typeof body.name === "string" ? body.name : null
+      });
+
+      if (result === "not_found") {
+        res.status(404).json(failure("WORKFLOW_BRIEF_NOT_FOUND", "Workflow brief was not found."));
+        return;
+      }
+      if (result === "forbidden") {
+        res.status(403).json(forbiddenFailure());
+        return;
+      }
+      if (result === "invalid_input") {
+        res.status(400).json(failure("AI_DELIVERY_PROJECT_INVALID", "Invalid target month format. Use YYYY-MM."));
+        return;
+      }
+
+      res.status(result.created ? 201 : 200).json(success(result));
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.get("/:id/content-production-seed", requireAuth, requireTenant, async (req, res, next) => {
+    try {
+      const authSession = getAuthSession(res);
+      if (!authSession) {
+        res.status(401).json(unauthorizedFailure());
+        return;
+      }
+
+      const result = await getWorkflowBriefContentProductionSeedStatus(authSession, req.params.id);
+      if (result === "not_found") {
+        res.status(404).json(failure("WORKFLOW_BRIEF_NOT_FOUND", "Workflow brief was not found."));
+        return;
+      }
+      if (result === "forbidden") {
+        res.status(403).json(forbiddenFailure());
+        return;
+      }
+
+      res.status(200).json(success(result));
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.post("/:id/seed-content-production", requireAuth, requireTenant, async (req, res, next) => {
+    try {
+      const authSession = getAuthSession(res);
+      if (!authSession) {
+        res.status(401).json(unauthorizedFailure());
+        return;
+      }
+
+      const result = await seedWorkflowBriefContentProduction(authSession, req.params.id);
+      if (result === "not_found") {
+        res.status(404).json(failure("WORKFLOW_BRIEF_NOT_FOUND", "Workflow brief was not found."));
+        return;
+      }
+      if (result === "forbidden") {
+        res.status(403).json(forbiddenFailure());
+        return;
+      }
+      if (result === "missing_project") {
+        res.status(400).json(failure("CONTENT_SEED_MISSING_PROJECT", "Link an AI Delivery project before seeding content production."));
+        return;
+      }
+      if (result === "missing_plan") {
+        res.status(400).json(failure("CONTENT_SEED_MISSING_PLAN", "Production plan and SEO report are required before seeding."));
+        return;
+      }
+      if (result === "invalid_status") {
+        res.status(400).json(failure("CONTENT_SEED_INVALID_STATUS", "Brief is not ready for content production seeding."));
+        return;
+      }
+      if (result === "manual_plan_exists") {
+        res.status(409).json(
+          failure(
+            "CONTENT_SEED_MANUAL_PLAN_EXISTS",
+            "Linked project already has content plan items from another source. Seed skipped to avoid duplication."
+          )
+        );
+        return;
+      }
+
+      res.status(result.created ? 201 : 200).json(success(result));
     } catch (error) {
       next(error);
     }

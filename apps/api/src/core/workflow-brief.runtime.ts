@@ -8,6 +8,7 @@
  */
 import type {
   Prisma,
+  ProductionPlanStatus,
   WorkflowBriefCreatedByRole,
   WorkflowBriefSource,
   WorkflowBriefStatus
@@ -15,9 +16,26 @@ import type {
 import { createPrismaClient } from "../../../../packages/data/src/client";
 import type { AuthResolvedSessionContext } from "../auth/types";
 import {
+  buildWorkflowBriefSeedContentPlanItems,
+  isWorkflowBriefSeedItemForBrief,
+  WORKFLOW_BRIEF_CONTENT_SEED_VERSION,
+  WORKFLOW_BRIEF_SEED_MARKER
+} from "./workflow-brief-content-seed.execution";
+import {
+  buildProductionPlanBodyFromContent,
+  buildProductionPlanTitle,
+  buildWorkflowBriefClientVisiblePlanJson,
+  buildWorkflowBriefPlanJson,
+  executeWorkflowBriefPlanGeneration
+} from "./workflow-brief-plan.execution";
+import {
   buildWorkflowBriefMiReportJson,
   buildWorkflowBriefSeoReportJson,
   executeWorkflowBriefAiRun
+} from "./workflow-brief-ai.execution";
+import type {
+  WorkflowBriefMiReportContent,
+  WorkflowBriefSeoReportContent
 } from "./workflow-brief-ai.execution";
 
 const prisma = createPrismaClient();
@@ -74,6 +92,182 @@ async function getBriefForAccess(
     where: { id: briefId, tenantId },
     select: { id: true, clientId: true, status: true }
   });
+}
+
+const productionPlanSelect = {
+  id: true,
+  briefId: true,
+  aiDeliveryProjectId: true,
+  title: true,
+  body: true,
+  planJson: true,
+  clientVisibleSnapshotJson: true,
+  status: true,
+  sentToClientAt: true,
+  approvedByClientAt: true,
+  createdAt: true,
+  updatedAt: true
+} as const;
+
+function sanitizeBriefDetailForRole(brief: Record<string, unknown>, isAdmin: boolean): Record<string, unknown> {
+  if (isAdmin) {
+    return brief;
+  }
+
+  const productionPlans = Array.isArray(brief.productionPlans) ? brief.productionPlans : [];
+  const visiblePlans = productionPlans
+    .filter((plan) => {
+      if (!plan || typeof plan !== "object") {
+        return false;
+      }
+      const status = (plan as { status?: string }).status;
+      return status && status !== "DRAFT" && status !== "ARCHIVED";
+    })
+    .map((plan) => {
+      const record = plan as Record<string, unknown>;
+      return {
+        id: record.id,
+        title: record.title,
+        body: record.body,
+        clientVisibleSnapshotJson: record.clientVisibleSnapshotJson,
+        status: record.status,
+        sentToClientAt: record.sentToClientAt,
+        approvedByClientAt: record.approvedByClientAt,
+        createdAt: record.createdAt,
+        updatedAt: record.updatedAt
+      };
+    });
+
+  return {
+    ...brief,
+    productionPlans: visiblePlans,
+    sourceProjects: []
+  };
+}
+
+function parseReportJsonContent(reportJson: unknown, fields: string[]): Record<string, unknown> {
+  if (!reportJson || typeof reportJson !== "object" || Array.isArray(reportJson)) {
+    return {};
+  }
+  const record = reportJson as Record<string, unknown>;
+  const output: Record<string, unknown> = {};
+  for (const field of fields) {
+    output[field] = record[field];
+  }
+  return output;
+}
+
+function readMiReportContent(reportJson: unknown): WorkflowBriefMiReportContent {
+  const parsed = parseReportJsonContent(reportJson, [
+    "summary",
+    "audienceInsights",
+    "competitorInsights",
+    "marketSignals",
+    "opportunities",
+    "risks",
+    "recommendedActions"
+  ]);
+
+  return {
+    summary: typeof parsed.summary === "string" ? parsed.summary : "No MI summary available",
+    audienceInsights: Array.isArray(parsed.audienceInsights)
+      ? parsed.audienceInsights.filter((entry): entry is string => typeof entry === "string")
+      : [],
+    competitorInsights: Array.isArray(parsed.competitorInsights)
+      ? parsed.competitorInsights.filter((entry): entry is string => typeof entry === "string")
+      : [],
+    marketSignals: Array.isArray(parsed.marketSignals)
+      ? parsed.marketSignals.filter((entry): entry is string => typeof entry === "string")
+      : [],
+    opportunities: Array.isArray(parsed.opportunities)
+      ? parsed.opportunities.filter((entry): entry is string => typeof entry === "string")
+      : [],
+    risks: Array.isArray(parsed.risks)
+      ? parsed.risks.filter((entry): entry is string => typeof entry === "string")
+      : [],
+    recommendedActions: Array.isArray(parsed.recommendedActions)
+      ? parsed.recommendedActions.filter((entry): entry is string => typeof entry === "string")
+      : []
+  };
+}
+
+function readSeoReportContent(reportJson: unknown): WorkflowBriefSeoReportContent {
+  const parsed = parseReportJsonContent(reportJson, [
+    "keywordClusters",
+    "topicIdeas",
+    "contentAngles",
+    "internalLinkIdeas",
+    "seoNotes"
+  ]);
+
+  return {
+    keywordClusters: Array.isArray(parsed.keywordClusters)
+      ? parsed.keywordClusters.filter((entry): entry is string => typeof entry === "string")
+      : [],
+    topicIdeas: Array.isArray(parsed.topicIdeas)
+      ? parsed.topicIdeas.filter((entry): entry is string => typeof entry === "string")
+      : [],
+    contentAngles: Array.isArray(parsed.contentAngles)
+      ? parsed.contentAngles.filter((entry): entry is string => typeof entry === "string")
+      : [],
+    internalLinkIdeas: Array.isArray(parsed.internalLinkIdeas)
+      ? parsed.internalLinkIdeas.filter((entry): entry is string => typeof entry === "string")
+      : [],
+    seoNotes: Array.isArray(parsed.seoNotes)
+      ? parsed.seoNotes.filter((entry): entry is string => typeof entry === "string")
+      : []
+  };
+}
+
+function defaultTargetMonthIso(): string {
+  const now = new Date();
+  const year = now.getUTCFullYear();
+  const month = now.getUTCMonth() + 1;
+  const monthStr = month < 10 ? `0${month}` : String(month);
+  return `${year}-${monthStr}`;
+}
+
+function parseTargetMonth(value: string): Date | null {
+  const match = /^(\d{4})-(0[1-9]|1[0-2])$/.exec(value);
+  if (!match) {
+    return null;
+  }
+  const year = Number(match[1]);
+  const monthIndex = Number(match[2]) - 1;
+  const date = new Date(Date.UTC(year, monthIndex, 1));
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function canAdminEditProductionPlanStatus(status: ProductionPlanStatus): boolean {
+  return status === "DRAFT" || status === "CHANGES_REQUESTED";
+}
+
+function sanitizeProductionPlanForClient(plan: {
+  id: string;
+  briefId: string;
+  aiDeliveryProjectId: string | null;
+  title: string;
+  body: string | null;
+  planJson: unknown;
+  clientVisibleSnapshotJson: unknown;
+  status: ProductionPlanStatus;
+  sentToClientAt: Date | null;
+  approvedByClientAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+}) {
+  return {
+    id: plan.id,
+    briefId: plan.briefId,
+    title: plan.title,
+    body: plan.body,
+    clientVisibleSnapshotJson: plan.clientVisibleSnapshotJson,
+    status: plan.status,
+    sentToClientAt: plan.sentToClientAt,
+    approvedByClientAt: plan.approvedByClientAt,
+    createdAt: plan.createdAt,
+    updatedAt: plan.updatedAt
+  };
 }
 
 const briefListSelect = {
@@ -147,8 +341,21 @@ const briefDetailInclude = {
       status: true,
       sentToClientAt: true,
       approvedByClientAt: true,
+      aiDeliveryProjectId: true,
       createdAt: true,
       updatedAt: true
+    }
+  },
+  sourceProjects: {
+    where: { isArchived: false },
+    orderBy: { createdAt: "desc" as const },
+    take: 1,
+    select: {
+      id: true,
+      name: true,
+      targetMonth: true,
+      isArchived: true,
+      createdAt: true
     }
   }
 } as const;
@@ -221,7 +428,10 @@ export async function getWorkflowBriefById(
     return null;
   }
 
-  return { brief };
+  const roles = getActiveRoles(authSession);
+  const isAdmin = isOwnerRole(roles);
+
+  return { brief: sanitizeBriefDetailForRole(brief as Record<string, unknown>, isAdmin) };
 }
 
 export async function createWorkflowBrief(
@@ -723,7 +933,7 @@ export async function upsertWorkflowBriefProductionPlan(
   authSession: AuthResolvedSessionContext,
   briefId: string,
   input: ProductionPlanInput
-): Promise<{ plan: unknown } | "not_found" | "forbidden"> {
+): Promise<{ plan: unknown } | "not_found" | "forbidden" | "locked"> {
   const tenantId = getActiveTenantId(authSession);
   if (!tenantId) {
     return "forbidden";
@@ -741,35 +951,27 @@ export async function upsertWorkflowBriefProductionPlan(
   const existing = await prisma.productionPlan.findFirst({
     where: { tenantId, briefId },
     orderBy: { createdAt: "desc" },
-    select: { id: true }
+    select: { id: true, status: true }
   });
+
+  if (existing && !canAdminEditProductionPlanStatus(existing.status)) {
+    return "locked";
+  }
 
   const data = {
     title: input.title.trim(),
     body: input.body?.trim() || null,
     planJson: input.planJson ?? undefined,
     clientVisibleSnapshotJson: input.clientVisibleSnapshotJson ?? undefined,
-    aiDeliveryProjectId: input.aiDeliveryProjectId ?? undefined
+    aiDeliveryProjectId: input.aiDeliveryProjectId ?? undefined,
+    ...(existing?.status === "CHANGES_REQUESTED" ? { status: "DRAFT" as ProductionPlanStatus } : {})
   };
 
   const plan = existing
     ? await prisma.productionPlan.update({
         where: { id: existing.id },
         data,
-        select: {
-          id: true,
-          briefId: true,
-          aiDeliveryProjectId: true,
-          title: true,
-          body: true,
-          planJson: true,
-          clientVisibleSnapshotJson: true,
-          status: true,
-          sentToClientAt: true,
-          approvedByClientAt: true,
-          createdAt: true,
-          updatedAt: true
-        }
+        select: productionPlanSelect
       })
     : await prisma.productionPlan.create({
         data: {
@@ -778,20 +980,7 @@ export async function upsertWorkflowBriefProductionPlan(
           ...data,
           status: "DRAFT"
         },
-        select: {
-          id: true,
-          briefId: true,
-          aiDeliveryProjectId: true,
-          title: true,
-          body: true,
-          planJson: true,
-          clientVisibleSnapshotJson: true,
-          status: true,
-          sentToClientAt: true,
-          approvedByClientAt: true,
-          createdAt: true,
-          updatedAt: true
-        }
+        select: productionPlanSelect
       });
 
   return { plan };
@@ -821,20 +1010,7 @@ export async function getWorkflowBriefProductionPlan(
   const plan = await prisma.productionPlan.findFirst({
     where: { tenantId, briefId },
     orderBy: { createdAt: "desc" },
-    select: {
-      id: true,
-      briefId: true,
-      aiDeliveryProjectId: true,
-      title: true,
-      body: true,
-      planJson: true,
-      clientVisibleSnapshotJson: true,
-      status: true,
-      sentToClientAt: true,
-      approvedByClientAt: true,
-      createdAt: true,
-      updatedAt: true
-    }
+    select: productionPlanSelect
   });
 
   if (!plan) {
@@ -846,21 +1022,889 @@ export async function getWorkflowBriefProductionPlan(
   }
 
   if (!isAdmin) {
-    return {
-      plan: {
-        id: plan.id,
-        briefId: plan.briefId,
-        title: plan.title,
-        body: plan.body,
-        clientVisibleSnapshotJson: plan.clientVisibleSnapshotJson,
-        status: plan.status,
-        sentToClientAt: plan.sentToClientAt,
-        approvedByClientAt: plan.approvedByClientAt,
-        createdAt: plan.createdAt,
-        updatedAt: plan.updatedAt
-      }
-    };
+    return { plan: sanitizeProductionPlanForClient(plan) };
   }
 
   return { plan };
+}
+
+export async function generateWorkflowBriefProductionPlan(
+  authSession: AuthResolvedSessionContext,
+  briefId: string
+): Promise<{ plan: unknown } | "not_found" | "forbidden" | "missing_reports" | "locked"> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) {
+    return "forbidden";
+  }
+
+  if (!isOwnerRole(getActiveRoles(authSession))) {
+    return "forbidden";
+  }
+
+  const brief = await prisma.brief.findFirst({
+    where: { id: briefId, tenantId },
+    select: {
+      id: true,
+      clientId: true,
+      status: true,
+      title: true,
+      goal: true,
+      businessContext: true,
+      targetAudience: true,
+      offerContext: true,
+      locationContext: true,
+      notes: true
+    }
+  });
+  if (!brief) {
+    return "not_found";
+  }
+
+  const miReport = await prisma.aiMiReport.findFirst({
+    where: { tenantId, briefId },
+    orderBy: { createdAt: "desc" },
+    select: { reportJson: true }
+  });
+  const seoReport = await prisma.aiSeoReport.findFirst({
+    where: { tenantId, briefId },
+    orderBy: { createdAt: "desc" },
+    select: { reportJson: true }
+  });
+
+  if (!miReport || !seoReport) {
+    return "missing_reports";
+  }
+
+  const existingPlan = await prisma.productionPlan.findFirst({
+    where: { tenantId, briefId },
+    orderBy: { createdAt: "desc" },
+    select: { id: true, status: true }
+  });
+
+  if (existingPlan && !canAdminEditProductionPlanStatus(existingPlan.status)) {
+    return "locked";
+  }
+
+  const finishedAtIso = new Date().toISOString();
+  const executionResult = await executeWorkflowBriefPlanGeneration({
+    briefId: brief.id,
+    title: brief.title,
+    goal: brief.goal,
+    businessContext: brief.businessContext,
+    targetAudience: brief.targetAudience,
+    offerContext: brief.offerContext,
+    locationContext: brief.locationContext,
+    notes: brief.notes,
+    mi: readMiReportContent(miReport.reportJson),
+    seo: readSeoReportContent(seoReport.reportJson),
+    finishedAtIso
+  });
+
+  if (!executionResult.ok) {
+    return "forbidden";
+  }
+
+  const planJson = buildWorkflowBriefPlanJson(executionResult.plan, executionResult.meta);
+  const clientVisibleSnapshotJson = buildWorkflowBriefClientVisiblePlanJson(
+    executionResult.clientSnapshot,
+    executionResult.meta
+  );
+  const title = buildProductionPlanTitle(brief.title);
+  const body = buildProductionPlanBodyFromContent(executionResult.plan);
+
+  const plan = existingPlan
+    ? await prisma.productionPlan.update({
+        where: { id: existingPlan.id },
+        data: {
+          title,
+          body,
+          planJson: planJson as Prisma.InputJsonValue,
+          clientVisibleSnapshotJson: clientVisibleSnapshotJson as Prisma.InputJsonValue,
+          status: "DRAFT"
+        },
+        select: productionPlanSelect
+      })
+    : await prisma.productionPlan.create({
+        data: {
+          tenantId,
+          briefId,
+          title,
+          body,
+          planJson: planJson as Prisma.InputJsonValue,
+          clientVisibleSnapshotJson: clientVisibleSnapshotJson as Prisma.InputJsonValue,
+          status: "DRAFT"
+        },
+        select: productionPlanSelect
+      });
+
+  return { plan };
+}
+
+export async function sendWorkflowBriefProductionPlanToClient(
+  authSession: AuthResolvedSessionContext,
+  briefId: string
+): Promise<{ plan: unknown } | "not_found" | "forbidden" | "invalid_status"> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) {
+    return "forbidden";
+  }
+
+  if (!isOwnerRole(getActiveRoles(authSession))) {
+    return "forbidden";
+  }
+
+  const brief = await getBriefForAccess(briefId, tenantId);
+  if (!brief) {
+    return "not_found";
+  }
+
+  const existing = await prisma.productionPlan.findFirst({
+    where: { tenantId, briefId },
+    orderBy: { createdAt: "desc" },
+    select: { id: true, status: true }
+  });
+  if (!existing) {
+    return "not_found";
+  }
+
+  if (!["DRAFT", "CHANGES_REQUESTED"].includes(existing.status)) {
+    return "invalid_status";
+  }
+
+  const sentAt = new Date();
+  const plan = await prisma.productionPlan.update({
+    where: { id: existing.id },
+    data: {
+      status: "SENT_TO_CLIENT",
+      sentToClientAt: sentAt
+    },
+    select: productionPlanSelect
+  });
+
+  return { plan };
+}
+
+export async function clientApproveWorkflowBriefProductionPlan(
+  authSession: AuthResolvedSessionContext,
+  briefId: string
+): Promise<{ plan: unknown; brief: unknown } | "not_found" | "forbidden" | "invalid_status"> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) {
+    return "forbidden";
+  }
+
+  const roles = getActiveRoles(authSession);
+  if (!isClientRole(roles) && !isOwnerRole(roles)) {
+    return "forbidden";
+  }
+
+  const briefRecord = await prisma.brief.findFirst({
+    where: { id: briefId, tenantId },
+    select: { id: true, clientId: true }
+  });
+  if (!briefRecord) {
+    return "not_found";
+  }
+
+  if (!(await canAccessClient(authSession, tenantId, briefRecord.clientId))) {
+    return "forbidden";
+  }
+
+  if (isClientRole(roles) && !isOwnerRole(roles)) {
+    // Client-only path enforced below; admins can also approve for testing/support.
+  }
+
+  const existing = await prisma.productionPlan.findFirst({
+    where: { tenantId, briefId },
+    orderBy: { createdAt: "desc" },
+    select: { id: true, status: true }
+  });
+  if (!existing) {
+    return "not_found";
+  }
+
+  if (existing.status !== "SENT_TO_CLIENT") {
+    return "invalid_status";
+  }
+
+  const approvedAt = new Date();
+
+  const result = await prisma.$transaction(async (tx) => {
+    const plan = await tx.productionPlan.update({
+      where: { id: existing.id },
+      data: {
+        status: "APPROVED",
+        approvedByClientAt: approvedAt
+      },
+      select: productionPlanSelect
+    });
+
+    const brief = await tx.brief.update({
+      where: { id: briefId },
+      data: {
+        status: "APPROVED_FOR_PRODUCTION",
+        approvedForProductionAt: approvedAt
+      },
+      include: briefDetailInclude
+    });
+
+    await tx.briefApproval.create({
+      data: {
+        tenantId,
+        briefId,
+        actorUserId: authSession.user.id,
+        actorRole: isOwnerRole(roles) ? "ADMIN" : "CLIENT",
+        decisionType: "APPROVE",
+        targetType: "PRODUCTION_PLAN"
+      }
+    });
+
+    return { plan, brief };
+  });
+
+  const isAdmin = isOwnerRole(roles);
+  return {
+    plan: isAdmin ? result.plan : sanitizeProductionPlanForClient(result.plan),
+    brief: sanitizeBriefDetailForRole(result.brief as Record<string, unknown>, isAdmin)
+  };
+}
+
+export async function clientRejectWorkflowBriefProductionPlan(
+  authSession: AuthResolvedSessionContext,
+  briefId: string,
+  comment?: string | null
+): Promise<{ plan: unknown } | "not_found" | "forbidden" | "invalid_status"> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) {
+    return "forbidden";
+  }
+
+  const roles = getActiveRoles(authSession);
+  if (!isClientRole(roles) && !isOwnerRole(roles)) {
+    return "forbidden";
+  }
+
+  const briefRecord = await prisma.brief.findFirst({
+    where: { id: briefId, tenantId },
+    select: { id: true, clientId: true }
+  });
+  if (!briefRecord) {
+    return "not_found";
+  }
+
+  if (!(await canAccessClient(authSession, tenantId, briefRecord.clientId))) {
+    return "forbidden";
+  }
+
+  const existing = await prisma.productionPlan.findFirst({
+    where: { tenantId, briefId },
+    orderBy: { createdAt: "desc" },
+    select: { id: true, status: true }
+  });
+  if (!existing) {
+    return "not_found";
+  }
+
+  if (existing.status !== "SENT_TO_CLIENT") {
+    return "invalid_status";
+  }
+
+  const plan = await prisma.productionPlan.update({
+    where: { id: existing.id },
+    data: {
+      status: "CHANGES_REQUESTED",
+      approvedByClientAt: null
+    },
+    select: productionPlanSelect
+  });
+
+  await prisma.briefApproval.create({
+    data: {
+      tenantId,
+      briefId,
+      actorUserId: authSession.user.id,
+      actorRole: isOwnerRole(roles) ? "ADMIN" : "CLIENT",
+      decisionType: "REQUEST_CHANGES",
+      targetType: "PRODUCTION_PLAN",
+      comment: comment?.trim() || null
+    }
+  });
+
+  const isAdmin = isOwnerRole(roles);
+  return { plan: isAdmin ? plan : sanitizeProductionPlanForClient(plan) };
+}
+
+export async function createWorkflowBriefLinkedProject(
+  authSession: AuthResolvedSessionContext,
+  briefId: string,
+  input?: { targetMonth?: string | null; name?: string | null }
+): Promise<
+  | { project: unknown; plan: unknown | null; created: boolean }
+  | "not_found"
+  | "forbidden"
+  | "invalid_input"
+> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) {
+    return "forbidden";
+  }
+
+  if (!isOwnerRole(getActiveRoles(authSession))) {
+    return "forbidden";
+  }
+
+  const brief = await prisma.brief.findFirst({
+    where: { id: briefId, tenantId },
+    select: {
+      id: true,
+      clientId: true,
+      title: true,
+      goal: true
+    }
+  });
+  if (!brief) {
+    return "not_found";
+  }
+
+  const existingProject = await prisma.aiDeliveryProject.findFirst({
+    where: { tenantId, sourceBriefId: briefId, isArchived: false },
+    orderBy: { createdAt: "desc" },
+    select: {
+      id: true,
+      name: true,
+      clientId: true,
+      targetMonth: true,
+      sourceBriefId: true,
+      isArchived: true,
+      createdAt: true,
+      updatedAt: true
+    }
+  });
+
+  if (existingProject) {
+    const plan = await linkProductionPlanToProject(tenantId, briefId, existingProject.id);
+    return {
+      project: existingProject,
+      plan,
+      created: false
+    };
+  }
+
+  const targetMonthValue = input?.targetMonth?.trim() || defaultTargetMonthIso();
+  const targetMonth = parseTargetMonth(targetMonthValue);
+  if (!targetMonth) {
+    return "invalid_input";
+  }
+
+  const planRecord = await prisma.productionPlan.findFirst({
+    where: { tenantId, briefId },
+    orderBy: { createdAt: "desc" },
+    select: { title: true }
+  });
+
+  const projectName =
+    input?.name?.trim() ||
+    planRecord?.title?.trim() ||
+    `Content Production — ${brief.title}`;
+
+  const scopeNotes = brief.goal ? `From workflow brief: ${brief.goal}` : null;
+
+  const created = await prisma.$transaction(async (tx) => {
+    const project = await tx.aiDeliveryProject.create({
+      data: {
+        tenantId,
+        clientId: brief.clientId,
+        sourceBriefId: briefId,
+        name: projectName,
+        targetMonth,
+        plannedContentScopeNotes: scopeNotes,
+        brief: {
+          create: {
+            tenantId,
+            status: "DRAFT"
+          }
+        }
+      },
+      select: {
+        id: true,
+        name: true,
+        clientId: true,
+        targetMonth: true,
+        sourceBriefId: true,
+        isArchived: true,
+        createdAt: true,
+        updatedAt: true
+      }
+    });
+
+    const plan = await tx.productionPlan.findFirst({
+      where: { tenantId, briefId },
+      orderBy: { createdAt: "desc" },
+      select: { id: true }
+    });
+
+    let linkedPlan = null;
+    if (plan) {
+      linkedPlan = await tx.productionPlan.update({
+        where: { id: plan.id },
+        data: { aiDeliveryProjectId: project.id },
+        select: productionPlanSelect
+      });
+    }
+
+    return { project, linkedPlan };
+  });
+
+  return {
+    project: created.project,
+    plan: created.linkedPlan,
+    created: true
+  };
+}
+
+async function linkProductionPlanToProject(
+  tenantId: string,
+  briefId: string,
+  projectId: string
+): Promise<unknown | null> {
+  const plan = await prisma.productionPlan.findFirst({
+    where: { tenantId, briefId },
+    orderBy: { createdAt: "desc" },
+    select: { id: true, aiDeliveryProjectId: true }
+  });
+
+  if (!plan) {
+    return null;
+  }
+
+  if (plan.aiDeliveryProjectId === projectId) {
+    return prisma.productionPlan.findFirst({
+      where: { id: plan.id },
+      select: productionPlanSelect
+    });
+  }
+
+  return prisma.productionPlan.update({
+    where: { id: plan.id },
+    data: { aiDeliveryProjectId: projectId },
+    select: productionPlanSelect
+  });
+}
+
+const contentPlanSeedSelect = {
+  id: true,
+  aiDeliveryProjectId: true,
+  status: true,
+  createdAt: true,
+  updatedAt: true,
+  items: {
+    orderBy: { sortOrder: "asc" as const },
+    select: {
+      id: true,
+      title: true,
+      targetKeyword: true,
+      contentType: true,
+      notes: true,
+      sortOrder: true,
+      createdAt: true,
+      updatedAt: true
+    }
+  }
+} as const;
+
+type ContentPlanSeedRecord = {
+  id: string;
+  aiDeliveryProjectId: string;
+  status: string;
+  createdAt: Date;
+  updatedAt: Date;
+  items: Array<{
+    id: string;
+    title: string;
+    targetKeyword: string | null;
+    contentType: string;
+    notes: string | null;
+    sortOrder: number;
+    createdAt: Date;
+    updatedAt: Date;
+  }>;
+};
+
+function toContentPlanSeedSummary(contentPlan: ContentPlanSeedRecord) {
+  return {
+    id: contentPlan.id,
+    aiDeliveryProjectId: contentPlan.aiDeliveryProjectId,
+    status: contentPlan.status,
+    itemCount: contentPlan.items.length,
+    items: contentPlan.items.map((item) => ({
+      id: item.id,
+      title: item.title,
+      targetKeyword: item.targetKeyword,
+      contentType: item.contentType,
+      notes: item.notes,
+      sortOrder: item.sortOrder,
+      isWorkflowBriefSeed: (item.notes ?? "").includes(WORKFLOW_BRIEF_SEED_MARKER)
+    })),
+    createdAt: contentPlan.createdAt,
+    updatedAt: contentPlan.updatedAt
+  };
+}
+
+function readContentSeedFromPlanJson(planJson: unknown): {
+  seededAt?: string;
+  contentPlanId?: string;
+  itemCount?: number;
+  briefId?: string;
+  version?: string;
+} | null {
+  if (!planJson || typeof planJson !== "object" || Array.isArray(planJson)) {
+    return null;
+  }
+  const record = planJson as Record<string, unknown>;
+  const seed = record.contentSeed;
+  if (!seed || typeof seed !== "object" || Array.isArray(seed)) {
+    return null;
+  }
+  return seed as {
+    seededAt?: string;
+    contentPlanId?: string;
+    itemCount?: number;
+    briefId?: string;
+    version?: string;
+  };
+}
+
+async function resolveLinkedProjectForBrief(tenantId: string, briefId: string) {
+  const fromSource = await prisma.aiDeliveryProject.findFirst({
+    where: { tenantId, sourceBriefId: briefId, isArchived: false },
+    orderBy: { createdAt: "desc" },
+    select: { id: true, name: true, clientId: true, targetMonth: true, sourceBriefId: true }
+  });
+  if (fromSource) {
+    return fromSource;
+  }
+
+  const productionPlan = await prisma.productionPlan.findFirst({
+    where: { tenantId, briefId, aiDeliveryProjectId: { not: null } },
+    orderBy: { createdAt: "desc" },
+    select: { aiDeliveryProjectId: true }
+  });
+  if (!productionPlan?.aiDeliveryProjectId) {
+    return null;
+  }
+
+  return prisma.aiDeliveryProject.findFirst({
+    where: { id: productionPlan.aiDeliveryProjectId, tenantId, isArchived: false },
+    select: { id: true, name: true, clientId: true, targetMonth: true, sourceBriefId: true }
+  });
+}
+
+export type WorkflowBriefContentProductionSeedStatus = {
+  briefId: string;
+  hasLinkedProject: boolean;
+  project: { id: string; name: string; targetMonth: Date } | null;
+  hasProductionPlan: boolean;
+  productionPlanId: string | null;
+  productionPlanStatus: string | null;
+  isSeeded: boolean;
+  contentPlanId: string | null;
+  itemCount: number;
+  seededAt: string | null;
+  canSeed: boolean;
+  blockReason: string | null;
+  contentPlan: ReturnType<typeof toContentPlanSeedSummary> | null;
+};
+
+export async function getWorkflowBriefContentProductionSeedStatus(
+  authSession: AuthResolvedSessionContext,
+  briefId: string
+): Promise<WorkflowBriefContentProductionSeedStatus | "not_found" | "forbidden"> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) {
+    return "forbidden";
+  }
+
+  const brief = await getBriefForAccess(briefId, tenantId);
+  if (!brief) {
+    return "not_found";
+  }
+
+  if (!(await canAccessClient(authSession, tenantId, brief.clientId))) {
+    return "forbidden";
+  }
+
+  const isAdmin = isOwnerRole(getActiveRoles(authSession));
+  const project = await resolveLinkedProjectForBrief(tenantId, briefId);
+
+  const productionPlan = await prisma.productionPlan.findFirst({
+    where: { tenantId, briefId },
+    orderBy: { createdAt: "desc" },
+    select: { id: true, status: true, planJson: true, aiDeliveryProjectId: true }
+  });
+
+  let contentPlan: ContentPlanSeedRecord | null = null;
+  if (project) {
+    contentPlan = (await prisma.aiDeliveryContentPlan.findFirst({
+      where: { tenantId, aiDeliveryProjectId: project.id },
+      select: contentPlanSeedSelect
+    })) as ContentPlanSeedRecord | null;
+  }
+
+  const seedMeta = readContentSeedFromPlanJson(productionPlan?.planJson);
+  const seedItems =
+    contentPlan?.items.filter((item) => isWorkflowBriefSeedItemForBrief(item.notes, briefId)) ?? [];
+  const isSeeded = Boolean(
+    (seedMeta?.briefId === briefId && seedMeta.contentPlanId) ||
+      seedItems.length > 0 ||
+      (contentPlan && contentPlan.items.length > 0 && seedMeta?.contentPlanId === contentPlan.id)
+  );
+
+  const seedableBriefStatuses: WorkflowBriefStatus[] = ["AI_RESULTS_READY", "APPROVED_FOR_PRODUCTION"];
+  let canSeed = false;
+  let blockReason: string | null = null;
+
+  if (!isAdmin) {
+    blockReason = "Admin access required to seed content production.";
+  } else if (!project) {
+    blockReason = "Link an AI Delivery project before seeding content production.";
+  } else if (!productionPlan) {
+    blockReason = "Generate a production plan before seeding content production.";
+  } else if (!seedableBriefStatuses.includes(brief.status)) {
+    blockReason = "Brief must reach AI results or approved-for-production before seeding.";
+  } else if (isSeeded) {
+    blockReason = null;
+  } else if (contentPlan && contentPlan.items.length > 0) {
+    blockReason = "Linked project already has content plan items (manual or other source). Seed skipped to avoid duplication.";
+  } else {
+    canSeed = true;
+  }
+
+  return {
+    briefId,
+    hasLinkedProject: Boolean(project),
+    project: project
+      ? { id: project.id, name: project.name, targetMonth: project.targetMonth }
+      : null,
+    hasProductionPlan: Boolean(productionPlan),
+    productionPlanId: productionPlan?.id ?? null,
+    productionPlanStatus: productionPlan?.status ?? null,
+    isSeeded,
+    contentPlanId: contentPlan?.id ?? seedMeta?.contentPlanId ?? null,
+    itemCount: contentPlan?.items.length ?? seedMeta?.itemCount ?? 0,
+    seededAt: seedMeta?.seededAt ?? null,
+    canSeed: canSeed && !isSeeded,
+    blockReason: isSeeded ? null : blockReason,
+    contentPlan: contentPlan ? toContentPlanSeedSummary(contentPlan) : null
+  };
+}
+
+export async function seedWorkflowBriefContentProduction(
+  authSession: AuthResolvedSessionContext,
+  briefId: string
+): Promise<
+  | {
+      seeded: boolean;
+      created: boolean;
+      itemsCreated: number;
+      contentPlan: ReturnType<typeof toContentPlanSeedSummary>;
+      project: { id: string; name: string };
+      lineage: { briefId: string; productionPlanId: string; contentPlanId: string; version: string };
+    }
+  | "not_found"
+  | "forbidden"
+  | "missing_project"
+  | "missing_plan"
+  | "invalid_status"
+  | "manual_plan_exists"
+> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) {
+    return "forbidden";
+  }
+
+  if (!isOwnerRole(getActiveRoles(authSession))) {
+    return "forbidden";
+  }
+
+  const brief = await prisma.brief.findFirst({
+    where: { id: briefId, tenantId },
+    select: { id: true, clientId: true, status: true }
+  });
+  if (!brief) {
+    return "not_found";
+  }
+
+  const seedableBriefStatuses: WorkflowBriefStatus[] = ["AI_RESULTS_READY", "APPROVED_FOR_PRODUCTION"];
+  if (!seedableBriefStatuses.includes(brief.status)) {
+    return "invalid_status";
+  }
+
+  const project = await resolveLinkedProjectForBrief(tenantId, briefId);
+  if (!project) {
+    return "missing_project";
+  }
+
+  const productionPlan = await prisma.productionPlan.findFirst({
+    where: { tenantId, briefId },
+    orderBy: { createdAt: "desc" },
+    select: {
+      id: true,
+      planJson: true,
+      clientVisibleSnapshotJson: true,
+      aiDeliveryProjectId: true
+    }
+  });
+  if (!productionPlan) {
+    return "missing_plan";
+  }
+
+  const seoReport = await prisma.aiSeoReport.findFirst({
+    where: { tenantId, briefId },
+    orderBy: { createdAt: "desc" },
+    select: { reportJson: true }
+  });
+  if (!seoReport) {
+    return "missing_plan";
+  }
+
+  const existingContentPlan = (await prisma.aiDeliveryContentPlan.findFirst({
+    where: { tenantId, aiDeliveryProjectId: project.id },
+    select: contentPlanSeedSelect
+  })) as ContentPlanSeedRecord | null;
+
+  const seedMeta = readContentSeedFromPlanJson(productionPlan.planJson);
+  if (
+    seedMeta?.briefId === briefId &&
+    seedMeta.contentPlanId &&
+    (existingContentPlan?.id === seedMeta.contentPlanId || !existingContentPlan)
+  ) {
+    if (existingContentPlan) {
+      return {
+        seeded: true,
+        created: false,
+        itemsCreated: 0,
+        contentPlan: toContentPlanSeedSummary(existingContentPlan),
+        project: { id: project.id, name: project.name },
+        lineage: {
+          briefId,
+          productionPlanId: productionPlan.id,
+          contentPlanId: existingContentPlan.id,
+          version: WORKFLOW_BRIEF_CONTENT_SEED_VERSION
+        }
+      };
+    }
+  }
+
+  if (existingContentPlan) {
+    const hasSeedItems = existingContentPlan.items.some((item) =>
+      isWorkflowBriefSeedItemForBrief(item.notes, briefId)
+    );
+    if (hasSeedItems || seedMeta?.briefId === briefId) {
+      return {
+        seeded: true,
+        created: false,
+        itemsCreated: 0,
+        contentPlan: toContentPlanSeedSummary(existingContentPlan),
+        project: { id: project.id, name: project.name },
+        lineage: {
+          briefId,
+          productionPlanId: productionPlan.id,
+          contentPlanId: existingContentPlan.id,
+          version: WORKFLOW_BRIEF_CONTENT_SEED_VERSION
+        }
+      };
+    }
+
+    if (existingContentPlan.items.length > 0) {
+      return "manual_plan_exists";
+    }
+  }
+
+  const itemDrafts = buildWorkflowBriefSeedContentPlanItems({
+    briefId,
+    productionPlanId: productionPlan.id,
+    planJson: productionPlan.planJson,
+    clientVisibleSnapshotJson: productionPlan.clientVisibleSnapshotJson,
+    seoReportJson: seoReport.reportJson
+  });
+
+  const seededAt = new Date().toISOString();
+
+  const result = await prisma.$transaction(async (tx) => {
+    let contentPlan: ContentPlanSeedRecord | null = existingContentPlan;
+    let created = false;
+
+    if (!contentPlan) {
+      contentPlan = (await tx.aiDeliveryContentPlan.create({
+        data: {
+          tenantId,
+          aiDeliveryProjectId: project.id,
+          status: "DRAFT",
+          revisionCount: 0
+        },
+        select: contentPlanSeedSelect
+      })) as ContentPlanSeedRecord;
+      created = true;
+    }
+
+    for (const item of itemDrafts) {
+      await tx.aiDeliveryContentPlanItem.create({
+        data: {
+          tenantId,
+          contentPlanId: contentPlan.id,
+          title: item.title,
+          targetKeyword: item.targetKeyword,
+          contentType: item.contentType,
+          notes: item.notes,
+          sortOrder: item.sortOrder,
+          approvalStatus: "DRAFT"
+        }
+      });
+    }
+
+    const refreshedPlan = (await tx.aiDeliveryContentPlan.findFirst({
+      where: { id: contentPlan.id },
+      select: contentPlanSeedSelect
+    })) as ContentPlanSeedRecord | null;
+
+    const existingPlanJson =
+      productionPlan.planJson && typeof productionPlan.planJson === "object" && !Array.isArray(productionPlan.planJson)
+        ? (productionPlan.planJson as Record<string, unknown>)
+        : {};
+
+    await tx.productionPlan.update({
+      where: { id: productionPlan.id },
+      data: {
+        aiDeliveryProjectId: productionPlan.aiDeliveryProjectId ?? project.id,
+        planJson: {
+          ...existingPlanJson,
+          contentSeed: {
+            version: WORKFLOW_BRIEF_CONTENT_SEED_VERSION,
+            briefId,
+            productionPlanId: productionPlan.id,
+            contentPlanId: contentPlan.id,
+            aiDeliveryProjectId: project.id,
+            itemCount: refreshedPlan?.items.length ?? itemDrafts.length,
+            seededAt
+          }
+        } as Prisma.InputJsonValue
+      }
+    });
+
+    return { contentPlan: refreshedPlan ?? contentPlan, created };
+  });
+
+  return {
+    seeded: true,
+    created: result.created,
+    itemsCreated: itemDrafts.length,
+    contentPlan: toContentPlanSeedSummary(result.contentPlan),
+    project: { id: project.id, name: project.name },
+    lineage: {
+      briefId,
+      productionPlanId: productionPlan.id,
+      contentPlanId: result.contentPlan.id,
+      version: WORKFLOW_BRIEF_CONTENT_SEED_VERSION
+    }
+  };
 }

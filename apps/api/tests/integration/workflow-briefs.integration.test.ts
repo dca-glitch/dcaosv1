@@ -108,23 +108,90 @@ describe("API integration — workflow briefs lifecycle (optional)", () => {
     assert.equal(seoResponse.body.ok, true);
     assert.ok(seoResponse.body.data?.summaryText);
 
-    const planResponse = await request(app)
-      .put(`/api/v1/workflow-briefs/${briefId}/production-plan`)
+    const generatePlanResponse = await request(app)
+      .post(`/api/v1/workflow-briefs/${briefId}/production-plan/generate`)
       .set("Authorization", `Bearer ${token}`)
-      .send({
-        title: "Smoke production plan",
-        body: "Foundation plan body"
-      })
       .expect(200);
 
-    assert.equal(planResponse.body.ok, true);
-    assert.equal(planResponse.body.data?.title, "Smoke production plan");
+    assert.equal(generatePlanResponse.body.ok, true);
+    assert.match(generatePlanResponse.body.data?.title ?? "", /Production Plan —/);
+    assert.ok(generatePlanResponse.body.data?.body);
+    const planJson = generatePlanResponse.body.data?.planJson as Record<string, unknown> | undefined;
+    assert.ok(planJson, "expected planJson");
+    assert.equal(planJson.kind, "production_plan");
+    assert.ok(Array.isArray(planJson.priorityTopics) && planJson.priorityTopics.length > 0);
+    assert.ok(generatePlanResponse.body.data?.clientVisibleSnapshotJson);
+
+    const sendPlanResponse = await request(app)
+      .post(`/api/v1/workflow-briefs/${briefId}/production-plan/send`)
+      .set("Authorization", `Bearer ${token}`)
+      .expect(200);
+    assert.equal(sendPlanResponse.body.data?.status, "SENT_TO_CLIENT");
+    assert.ok(sendPlanResponse.body.data?.sentToClientAt);
+
+    const approvePlanResponse = await request(app)
+      .post(`/api/v1/workflow-briefs/${briefId}/production-plan/approve`)
+      .set("Authorization", `Bearer ${token}`)
+      .expect(200);
+    assert.equal(approvePlanResponse.body.data?.plan?.status, "APPROVED");
+    assert.equal(approvePlanResponse.body.data?.brief?.status, "APPROVED_FOR_PRODUCTION");
+
+    const createProjectResponse = await request(app)
+      .post(`/api/v1/workflow-briefs/${briefId}/create-project`)
+      .set("Authorization", `Bearer ${token}`)
+      .send({})
+      .expect(201);
+
+    assert.equal(createProjectResponse.body.ok, true);
+    assert.ok(createProjectResponse.body.data?.project?.id);
+    assert.equal(createProjectResponse.body.data?.created, true);
+    assert.equal(createProjectResponse.body.data?.project?.sourceBriefId, briefId);
+
+    const duplicateProjectResponse = await request(app)
+      .post(`/api/v1/workflow-briefs/${briefId}/create-project`)
+      .set("Authorization", `Bearer ${token}`)
+      .send({})
+      .expect(200);
+    assert.equal(duplicateProjectResponse.body.data?.created, false);
+    assert.equal(duplicateProjectResponse.body.data?.project?.id, createProjectResponse.body.data?.project?.id);
+
+    const seedResponse = await request(app)
+      .post(`/api/v1/workflow-briefs/${briefId}/seed-content-production`)
+      .set("Authorization", `Bearer ${token}`)
+      .expect(201);
+
+    assert.equal(seedResponse.body.ok, true);
+    assert.equal(seedResponse.body.data?.seeded, true);
+    assert.ok(seedResponse.body.data?.itemsCreated > 0);
+    assert.ok(seedResponse.body.data?.contentPlan?.itemCount > 0);
+    assert.equal(seedResponse.body.data?.lineage?.briefId, briefId);
+
+    const duplicateSeedResponse = await request(app)
+      .post(`/api/v1/workflow-briefs/${briefId}/seed-content-production`)
+      .set("Authorization", `Bearer ${token}`)
+      .expect(200);
+
+    assert.equal(duplicateSeedResponse.body.data?.itemsCreated, 0);
+    assert.equal(
+      duplicateSeedResponse.body.data?.contentPlan?.id,
+      seedResponse.body.data?.contentPlan?.id
+    );
+
+    const seedStatusResponse = await request(app)
+      .get(`/api/v1/workflow-briefs/${briefId}/content-production-seed`)
+      .set("Authorization", `Bearer ${token}`)
+      .expect(200);
+
+    assert.equal(seedStatusResponse.body.data?.isSeeded, true);
+    assert.ok(seedStatusResponse.body.data?.itemCount > 0);
+    assert.equal(seedStatusResponse.body.data?.canSeed, false);
 
     const getPlanResponse = await request(app)
       .get(`/api/v1/workflow-briefs/${briefId}/production-plan`)
       .set("Authorization", `Bearer ${token}`)
       .expect(200);
-    assert.equal(getPlanResponse.body.data?.body, "Foundation plan body");
+    assert.equal(getPlanResponse.body.data?.status, "APPROVED");
+    assert.ok(getPlanResponse.body.data?.body);
 
     const listResponse = await request(app)
       .get("/api/v1/workflow-briefs")

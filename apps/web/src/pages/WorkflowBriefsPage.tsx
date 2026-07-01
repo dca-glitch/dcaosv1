@@ -45,7 +45,18 @@ type WorkflowBriefDetail = WorkflowBriefSummary & {
     title: string;
     body: string | null;
     status: string;
-    planJson: unknown;
+    planJson?: unknown;
+    clientVisibleSnapshotJson?: unknown;
+    sentToClientAt?: string | null;
+    approvedByClientAt?: string | null;
+    aiDeliveryProjectId?: string | null;
+    updatedAt?: string;
+  }>;
+  sourceProjects?: Array<{
+    id: string;
+    name: string;
+    targetMonth: string;
+    isArchived: boolean;
   }>;
   aiBriefRuns?: Array<{
     id: string;
@@ -54,6 +65,33 @@ type WorkflowBriefDetail = WorkflowBriefSummary & {
     completedAt: string | null;
     errorMessage: string | null;
   }>;
+};
+
+type ContentProductionSeedStatus = {
+  briefId: string;
+  hasLinkedProject: boolean;
+  project: { id: string; name: string; targetMonth: string } | null;
+  hasProductionPlan: boolean;
+  productionPlanId: string | null;
+  productionPlanStatus: string | null;
+  isSeeded: boolean;
+  contentPlanId: string | null;
+  itemCount: number;
+  seededAt: string | null;
+  canSeed: boolean;
+  blockReason: string | null;
+  contentPlan: {
+    id: string;
+    status: string;
+    itemCount: number;
+    items: Array<{
+      id: string;
+      title: string;
+      targetKeyword: string | null;
+      contentType: string;
+      sortOrder: number;
+    }>;
+  } | null;
 };
 
 async function workflowBriefsApiRequest<T>(path: string, options?: { method?: string; body?: unknown }): Promise<ApiResponse<T>> {
@@ -163,6 +201,12 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
   const [detailLoading, setDetailLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [planEditTitle, setPlanEditTitle] = useState("");
+  const [planEditBody, setPlanEditBody] = useState("");
+  const [rejectComment, setRejectComment] = useState("");
+  const [showPlanEdit, setShowPlanEdit] = useState(false);
+  const [seedStatus, setSeedStatus] = useState<ContentProductionSeedStatus | null>(null);
+  const [seedLoading, setSeedLoading] = useState(false);
 
   const loadBriefs = useCallback(async () => {
     setLoading(true);
@@ -185,11 +229,23 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
     if (!response.ok) {
       setError(response.error.message);
       setDetail(null);
+      setSeedStatus(null);
       setDetailLoading(false);
       return;
     }
     setDetail(response.data);
     setDetailLoading(false);
+  }, []);
+
+  const loadSeedStatus = useCallback(async (briefId: string) => {
+    setSeedLoading(true);
+    const response = await workflowBriefsApiRequest<ContentProductionSeedStatus>(`/${briefId}/content-production-seed`);
+    if (response.ok) {
+      setSeedStatus(response.data);
+    } else {
+      setSeedStatus(null);
+    }
+    setSeedLoading(false);
   }, []);
 
   useEffect(() => {
@@ -199,48 +255,126 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
   useEffect(() => {
     if (selectedId) {
       void loadDetail(selectedId);
+      if (canManageAi) {
+        void loadSeedStatus(selectedId);
+      } else {
+        setSeedStatus(null);
+      }
     } else {
       setDetail(null);
+      setSeedStatus(null);
     }
-  }, [selectedId, loadDetail]);
+  }, [selectedId, loadDetail, loadSeedStatus, canManageAi]);
 
-  async function handleRunAi() {
-    if (!selectedId) return;
+  useEffect(() => {
+    const plan = detail?.productionPlans?.[0];
+    if (plan) {
+      setPlanEditTitle(plan.title);
+      setPlanEditBody(plan.body ?? "");
+    } else {
+      setPlanEditTitle("");
+      setPlanEditBody("");
+    }
+    setShowPlanEdit(false);
+    setRejectComment("");
+  }, [detail?.id, detail?.productionPlans?.[0]?.id, detail?.productionPlans?.[0]?.updatedAt]);
+
+  async function runAction(path: string, options?: { method?: string; body?: unknown }) {
+    if (!selectedId) return false;
     setActionLoading(true);
     setError(null);
-    const response = await workflowBriefsApiRequest<{ brief: WorkflowBriefDetail }>(`/${selectedId}/run-ai`, {
-      method: "POST"
-    });
+    const response = await workflowBriefsApiRequest<unknown>(`/${selectedId}${path}`, options);
     if (!response.ok) {
       setError(response.error.message);
       setActionLoading(false);
-      return;
+      return false;
     }
     await loadDetail(selectedId);
     await loadBriefs();
     setActionLoading(false);
+    return true;
+  }
+
+  async function handleRunAi() {
+    await runAction("/run-ai", { method: "POST" });
   }
 
   async function handleSubmit() {
-    if (!selectedId) return;
+    await runAction("/submit", { method: "POST" });
+  }
+
+  async function handleGeneratePlan() {
+    await runAction("/production-plan/generate", { method: "POST" });
+  }
+
+  async function handleSendPlan() {
+    await runAction("/production-plan/send", { method: "POST" });
+  }
+
+  async function handleSavePlanEdit() {
+    if (!selectedId || !planEditTitle.trim()) return;
     setActionLoading(true);
     setError(null);
-    const response = await workflowBriefsApiRequest<WorkflowBriefDetail>(`/${selectedId}/submit`, {
-      method: "POST"
+    const response = await workflowBriefsApiRequest<unknown>(`/${selectedId}/production-plan`, {
+      method: "PUT",
+      body: { title: planEditTitle.trim(), body: planEditBody.trim() || null }
     });
     if (!response.ok) {
       setError(response.error.message);
       setActionLoading(false);
       return;
     }
+    setShowPlanEdit(false);
     await loadDetail(selectedId);
-    await loadBriefs();
     setActionLoading(false);
+  }
+
+  async function handleApprovePlan() {
+    await runAction("/production-plan/approve", { method: "POST" });
+  }
+
+  async function handleRejectPlan() {
+    await runAction("/production-plan/reject", {
+      method: "POST",
+      body: { comment: rejectComment.trim() || null }
+    });
+  }
+
+  async function handleCreateProject() {
+    const ok = await runAction("/create-project", { method: "POST" });
+    if (ok && selectedId) {
+      await loadSeedStatus(selectedId);
+    }
+  }
+
+  async function handleSeedContentProduction() {
+    if (!selectedId) return;
+    setActionLoading(true);
+    setError(null);
+    const response = await workflowBriefsApiRequest<{
+      seeded: boolean;
+      itemsCreated: number;
+      contentPlan: ContentProductionSeedStatus["contentPlan"];
+    }>(`/${selectedId}/seed-content-production`, { method: "POST" });
+    if (!response.ok) {
+      setError(response.error.message);
+      setActionLoading(false);
+      return;
+    }
+    await loadDetail(selectedId);
+    await loadSeedStatus(selectedId);
+    setActionLoading(false);
+  }
+
+  function openAiDeliveryModule() {
+    window.history.replaceState(null, "", "/#/ai-delivery");
+    window.dispatchEvent(new HashChangeEvent("hashchange"));
   }
 
   const latestMi = detail?.miReports?.[0];
   const latestSeo = detail?.seoReports?.[0];
   const latestPlan = detail?.productionPlans?.[0];
+  const linkedProject = detail?.sourceProjects?.[0];
   const latestRun = detail?.aiBriefRuns?.[0];
   const miSections = latestMi ? buildMiReportSections(latestMi.reportJson) : [];
   const seoSections = latestSeo ? buildSeoReportSections(latestSeo.reportJson) : [];
@@ -252,6 +386,22 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
     canManageAi &&
     detail &&
     ["SUBMITTED", "IN_REVIEW", "READY_FOR_AI", "AI_RESULTS_READY"].includes(detail.status);
+  const hasReports = Boolean(latestMi && latestSeo);
+  const canGeneratePlan = canManageAi && hasReports && detail?.status === "AI_RESULTS_READY";
+  const canEditPlan =
+    canManageAi && latestPlan && ["DRAFT", "CHANGES_REQUESTED"].includes(latestPlan.status);
+  const canSendPlan =
+    canManageAi && latestPlan && ["DRAFT", "CHANGES_REQUESTED"].includes(latestPlan.status);
+  const canClientReviewPlan = latestPlan?.status === "SENT_TO_CLIENT";
+  const canCreateProject = canManageAi && detail && ["AI_RESULTS_READY", "APPROVED_FOR_PRODUCTION"].includes(detail.status);
+  const planSnapshot =
+    latestPlan?.clientVisibleSnapshotJson && typeof latestPlan.clientVisibleSnapshotJson === "object"
+      ? (latestPlan.clientVisibleSnapshotJson as Record<string, unknown>)
+      : null;
+  const planPriorityTopics = readReportStringList(planSnapshot?.priorityTopics);
+  const planClusters = Array.isArray(planSnapshot?.suggestedContentClusters)
+    ? (planSnapshot.suggestedContentClusters as Array<{ name?: string; topics?: unknown }>)
+    : [];
 
   return (
     <div className="page-stack">
@@ -435,16 +585,231 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
               <SectionPanel title="Production Plan">
                 {latestPlan ? (
                   <>
-                    <div style={{ marginBottom: "0.5rem" }}>
+                    <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", marginBottom: "0.75rem", flexWrap: "wrap" }}>
                       <StatusBadge status={latestPlan.status} />
+                      {latestPlan.sentToClientAt ? (
+                        <span className="muted-text" style={{ fontSize: "0.8rem" }}>
+                          Sent {formatRunTimestamp(latestPlan.sentToClientAt)}
+                        </span>
+                      ) : null}
+                      {latestPlan.approvedByClientAt ? (
+                        <span className="muted-text" style={{ fontSize: "0.8rem" }}>
+                          Approved {formatRunTimestamp(latestPlan.approvedByClientAt)}
+                        </span>
+                      ) : null}
                     </div>
-                    <h4 style={{ margin: "0 0 0.5rem" }}>{latestPlan.title}</h4>
-                    <p>{latestPlan.body ?? "No plan body yet."}</p>
+
+                    {canManageAi ? (
+                      <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", marginBottom: "0.75rem" }}>
+                        {canGeneratePlan ? (
+                          <Button variant="secondary" disabled={actionLoading} onClick={() => void handleGeneratePlan()}>
+                            {latestPlan ? "Refresh plan" : "Generate plan"}
+                          </Button>
+                        ) : null}
+                        {canEditPlan ? (
+                          <Button variant="secondary" disabled={actionLoading} onClick={() => setShowPlanEdit((value) => !value)}>
+                            {showPlanEdit ? "Cancel edit" : "Edit plan"}
+                          </Button>
+                        ) : null}
+                        {canSendPlan ? (
+                          <Button variant="primary" disabled={actionLoading} onClick={() => void handleSendPlan()}>
+                            Send to client
+                          </Button>
+                        ) : null}
+                      </div>
+                    ) : null}
+
+                    {showPlanEdit && canEditPlan ? (
+                      <div style={{ marginBottom: "0.75rem" }}>
+                        <label className="muted-text" style={{ fontSize: "0.8rem", display: "block", marginBottom: "0.25rem" }}>
+                          Title
+                        </label>
+                        <input
+                          className="form-input"
+                          value={planEditTitle}
+                          onChange={(event) => setPlanEditTitle(event.target.value)}
+                          style={{ width: "100%", marginBottom: "0.5rem" }}
+                        />
+                        <label className="muted-text" style={{ fontSize: "0.8rem", display: "block", marginBottom: "0.25rem" }}>
+                          Body
+                        </label>
+                        <textarea
+                          className="form-input"
+                          value={planEditBody}
+                          onChange={(event) => setPlanEditBody(event.target.value)}
+                          rows={8}
+                          style={{ width: "100%", marginBottom: "0.5rem" }}
+                        />
+                        <Button variant="primary" disabled={actionLoading} onClick={() => void handleSavePlanEdit()}>
+                          Save plan
+                        </Button>
+                      </div>
+                    ) : (
+                      <>
+                        <h4 style={{ margin: "0 0 0.5rem" }}>{latestPlan.title}</h4>
+                        <p style={{ whiteSpace: "pre-wrap" }}>{latestPlan.body ?? "No plan body yet."}</p>
+                      </>
+                    )}
+
+                    {planPriorityTopics.length > 0 ? (
+                      <div style={{ marginTop: "0.75rem" }}>
+                        <div className="muted-text" style={{ fontSize: "0.8rem", marginBottom: "0.35rem", fontWeight: 600 }}>
+                          Priority topics
+                        </div>
+                        <ul style={{ margin: 0, paddingLeft: "1.1rem" }}>
+                          {planPriorityTopics.slice(0, 6).map((item) => (
+                            <li key={`plan-topic-${item}`}>{item}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    ) : null}
+
+                    {planClusters.length > 0 ? (
+                      <div style={{ marginTop: "0.75rem" }}>
+                        <div className="muted-text" style={{ fontSize: "0.8rem", marginBottom: "0.35rem", fontWeight: 600 }}>
+                          Content clusters
+                        </div>
+                        {planClusters.slice(0, 3).map((cluster) => (
+                          <div key={cluster.name ?? "cluster"} style={{ marginBottom: "0.5rem" }}>
+                            <div style={{ fontWeight: 600 }}>{cluster.name ?? "Cluster"}</div>
+                            <ul style={{ margin: "0.25rem 0 0", paddingLeft: "1.1rem" }}>
+                              {readReportStringList(cluster.topics)
+                                .slice(0, 4)
+                                .map((topic) => (
+                                  <li key={`${cluster.name}-${topic}`}>{topic}</li>
+                                ))}
+                            </ul>
+                          </div>
+                        ))}
+                      </div>
+                    ) : null}
+
+                    {canClientReviewPlan ? (
+                      <div style={{ marginTop: "1rem", paddingTop: "0.75rem", borderTop: "1px solid var(--border-subtle, #333)" }}>
+                        <div className="muted-text" style={{ fontSize: "0.85rem", marginBottom: "0.5rem" }}>
+                          Review this production plan
+                        </div>
+                        <textarea
+                          className="form-input"
+                          value={rejectComment}
+                          onChange={(event) => setRejectComment(event.target.value)}
+                          placeholder="Optional comment if requesting changes"
+                          rows={2}
+                          style={{ width: "100%", marginBottom: "0.5rem" }}
+                        />
+                        <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+                          <Button variant="primary" disabled={actionLoading} onClick={() => void handleApprovePlan()}>
+                            Approve plan
+                          </Button>
+                          <Button variant="secondary" disabled={actionLoading} onClick={() => void handleRejectPlan()}>
+                            Request changes
+                          </Button>
+                        </div>
+                      </div>
+                    ) : null}
                   </>
                 ) : (
-                  <p className="muted-text">No production plan yet. Admin can create one via API.</p>
+                  <>
+                    <p className="muted-text">No production plan yet.</p>
+                    {canGeneratePlan ? (
+                      <Button variant="primary" disabled={actionLoading} onClick={() => void handleGeneratePlan()} style={{ marginTop: "0.5rem" }}>
+                        Generate plan
+                      </Button>
+                    ) : (
+                      <p className="muted-text" style={{ fontSize: "0.85rem", marginTop: "0.5rem" }}>
+                        Run AI first to generate MI and SEO reports, then generate a production plan.
+                      </p>
+                    )}
+                  </>
                 )}
               </SectionPanel>
+
+              {canManageAi ? (
+                <SectionPanel title="Content Production">
+                  {linkedProject || seedStatus?.project ? (
+                    <>
+                      <BriefField
+                        label="Linked project"
+                        value={linkedProject?.name ?? seedStatus?.project?.name ?? null}
+                      />
+                      <BriefField
+                        label="Target month"
+                        value={
+                          linkedProject?.targetMonth?.slice(0, 7) ??
+                          seedStatus?.project?.targetMonth?.slice(0, 7) ??
+                          null
+                        }
+                      />
+                    </>
+                  ) : (
+                    <>
+                      <p className="muted-text">No linked AI Delivery project yet.</p>
+                      {canCreateProject ? (
+                        <Button variant="secondary" disabled={actionLoading} onClick={() => void handleCreateProject()} style={{ marginTop: "0.5rem" }}>
+                          Create / link project
+                        </Button>
+                      ) : null}
+                    </>
+                  )}
+
+                  {seedLoading ? <LoadingState label="Loading seed status…" /> : null}
+
+                  {!seedLoading && seedStatus ? (
+                    <div style={{ marginTop: "0.75rem" }}>
+                      <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", marginBottom: "0.5rem", flexWrap: "wrap" }}>
+                        <StatusBadge status={seedStatus.isSeeded ? "APPROVED" : "DRAFT"} />
+                        <span className="muted-text" style={{ fontSize: "0.85rem" }}>
+                          {seedStatus.isSeeded
+                            ? `Seeded (${seedStatus.itemCount} items)`
+                            : seedStatus.canSeed
+                              ? "Ready to seed"
+                              : "Not seeded"}
+                        </span>
+                      </div>
+
+                      {seedStatus.seededAt ? (
+                        <BriefField label="Seeded at" value={formatRunTimestamp(seedStatus.seededAt)} />
+                      ) : null}
+
+                      {seedStatus.blockReason && !seedStatus.isSeeded ? (
+                        <p className="muted-text" style={{ fontSize: "0.85rem" }}>{seedStatus.blockReason}</p>
+                      ) : null}
+
+                      {seedStatus.canSeed ? (
+                        <Button variant="primary" disabled={actionLoading} onClick={() => void handleSeedContentProduction()} style={{ marginTop: "0.5rem" }}>
+                          Seed content production
+                        </Button>
+                      ) : null}
+
+                      {seedStatus.contentPlan && seedStatus.contentPlan.items.length > 0 ? (
+                        <div style={{ marginTop: "0.75rem" }}>
+                          <div className="muted-text" style={{ fontSize: "0.8rem", marginBottom: "0.35rem", fontWeight: 600 }}>
+                            Seeded content plan items
+                          </div>
+                          <ul style={{ margin: 0, paddingLeft: "1.1rem" }}>
+                            {seedStatus.contentPlan.items.slice(0, 8).map((item) => (
+                              <li key={item.id} style={{ marginBottom: "0.35rem" }}>
+                                <span style={{ fontWeight: 600 }}>{item.title}</span>
+                                {item.targetKeyword ? (
+                                  <span className="muted-text" style={{ fontSize: "0.8rem" }}>
+                                    {" "}
+                                    — {item.targetKeyword}
+                                  </span>
+                                ) : null}
+                              </li>
+                            ))}
+                          </ul>
+                          {linkedProject || seedStatus.project ? (
+                            <Button variant="secondary" disabled={actionLoading} onClick={openAiDeliveryModule} style={{ marginTop: "0.5rem" }}>
+                              Open AI Delivery module
+                            </Button>
+                          ) : null}
+                        </div>
+                      ) : null}
+                    </div>
+                  ) : null}
+                </SectionPanel>
+              ) : null}
             </>
           ) : null}
         </div>
