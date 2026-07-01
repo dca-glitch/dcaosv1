@@ -186,6 +186,53 @@ describe("API integration — workflow briefs lifecycle (optional)", () => {
     assert.ok(seedStatusResponse.body.data?.itemCount > 0);
     assert.equal(seedStatusResponse.body.data?.canSeed, false);
 
+    const generateDraftsResponse = await request(app)
+      .post(`/api/v1/workflow-briefs/${briefId}/generate-content-drafts`)
+      .set("Authorization", `Bearer ${token}`)
+      .expect(200);
+
+    assert.equal(generateDraftsResponse.body.ok, true);
+    assert.ok(generateDraftsResponse.body.data?.created > 0);
+    assert.equal(generateDraftsResponse.body.data?.isDeterministic, true);
+    assert.ok(generateDraftsResponse.body.data?.status?.draftCount > 0);
+    assert.equal(generateDraftsResponse.body.data?.status?.pendingCount, 0);
+
+    const duplicateDraftsResponse = await request(app)
+      .post(`/api/v1/workflow-briefs/${briefId}/generate-content-drafts`)
+      .set("Authorization", `Bearer ${token}`)
+      .expect(200);
+
+    assert.equal(duplicateDraftsResponse.body.data?.created, 0);
+    assert.ok(duplicateDraftsResponse.body.data?.reused > 0);
+    assert.equal(
+      duplicateDraftsResponse.body.data?.status?.draftCount,
+      generateDraftsResponse.body.data?.status?.draftCount
+    );
+
+    const draftStatusResponse = await request(app)
+      .get(`/api/v1/workflow-briefs/${briefId}/content-drafts`)
+      .set("Authorization", `Bearer ${token}`)
+      .expect(200);
+
+    assert.equal(draftStatusResponse.body.data?.isSeeded, true);
+    assert.ok(draftStatusResponse.body.data?.draftCount > 0);
+    assert.ok(draftStatusResponse.body.data?.packageReadiness !== "none");
+    assert.ok(Array.isArray(draftStatusResponse.body.data?.items));
+
+    const firstSeedItemId = draftStatusResponse.body.data?.items?.[0]?.contentPlanItemId as string;
+    assert.ok(firstSeedItemId);
+
+    const regenerateResponse = await request(app)
+      .post(`/api/v1/workflow-briefs/${briefId}/regenerate-content-draft`)
+      .set("Authorization", `Bearer ${token}`)
+      .send({ contentPlanItemId: firstSeedItemId })
+      .expect(200);
+
+    assert.equal(regenerateResponse.body.ok, true);
+    assert.equal(regenerateResponse.body.data?.regenerated, true);
+    assert.equal(regenerateResponse.body.data?.outcome, "updated");
+    assert.equal(regenerateResponse.body.data?.isDeterministic, true);
+
     const getPlanResponse = await request(app)
       .get(`/api/v1/workflow-briefs/${briefId}/production-plan`)
       .set("Authorization", `Bearer ${token}`)

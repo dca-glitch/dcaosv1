@@ -94,6 +94,34 @@ type ContentProductionSeedStatus = {
   } | null;
 };
 
+type ContentDraftStatus = {
+  briefId: string;
+  isSeeded: boolean;
+  seedItemCount: number;
+  draftCount: number;
+  pendingCount: number;
+  generatedCount: number;
+  readyForReviewCount: number;
+  needsWorkCount: number;
+  approvedCount: number;
+  packageReadiness: string;
+  canGenerateDrafts: boolean;
+  blockReason: string | null;
+  lastGeneratedAt: string | null;
+  lastRegeneratedAt: string | null;
+  project: { id: string; name: string; targetMonth: string } | null;
+  items: Array<{
+    contentPlanItemId: string;
+    planItemTitle: string;
+    targetKeyword: string | null;
+    hasDraft: boolean;
+    draftId: string | null;
+    draftStatus: string | null;
+    readiness: string;
+    revisionCount: number;
+  }>;
+};
+
 async function workflowBriefsApiRequest<T>(path: string, options?: { method?: string; body?: unknown }): Promise<ApiResponse<T>> {
   const token = sessionStorage.getItem(SESSION_STORAGE_KEY);
   const response = await fetch(`${API_BASE_URL}/workflow-briefs${path}`, {
@@ -207,6 +235,8 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
   const [showPlanEdit, setShowPlanEdit] = useState(false);
   const [seedStatus, setSeedStatus] = useState<ContentProductionSeedStatus | null>(null);
   const [seedLoading, setSeedLoading] = useState(false);
+  const [draftStatus, setDraftStatus] = useState<ContentDraftStatus | null>(null);
+  const [draftLoading, setDraftLoading] = useState(false);
 
   const loadBriefs = useCallback(async () => {
     setLoading(true);
@@ -248,6 +278,17 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
     setSeedLoading(false);
   }, []);
 
+  const loadDraftStatus = useCallback(async (briefId: string) => {
+    setDraftLoading(true);
+    const response = await workflowBriefsApiRequest<ContentDraftStatus>(`/${briefId}/content-drafts`);
+    if (response.ok) {
+      setDraftStatus(response.data);
+    } else {
+      setDraftStatus(null);
+    }
+    setDraftLoading(false);
+  }, []);
+
   useEffect(() => {
     void loadBriefs();
   }, [loadBriefs]);
@@ -257,14 +298,17 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
       void loadDetail(selectedId);
       if (canManageAi) {
         void loadSeedStatus(selectedId);
+        void loadDraftStatus(selectedId);
       } else {
         setSeedStatus(null);
+        setDraftStatus(null);
       }
     } else {
       setDetail(null);
       setSeedStatus(null);
+      setDraftStatus(null);
     }
-  }, [selectedId, loadDetail, loadSeedStatus, canManageAi]);
+  }, [selectedId, loadDetail, loadSeedStatus, loadDraftStatus, canManageAi]);
 
   useEffect(() => {
     const plan = detail?.productionPlans?.[0];
@@ -363,7 +407,80 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
     }
     await loadDetail(selectedId);
     await loadSeedStatus(selectedId);
+    await loadDraftStatus(selectedId);
     setActionLoading(false);
+  }
+
+  async function handleGenerateContentDrafts() {
+    if (!selectedId) return;
+    setActionLoading(true);
+    setError(null);
+    const response = await workflowBriefsApiRequest<{
+      created: number;
+      reused: number;
+      status: ContentDraftStatus;
+    }>(`/${selectedId}/generate-content-drafts`, { method: "POST" });
+    if (!response.ok) {
+      setError(response.error.message);
+      setActionLoading(false);
+      return;
+    }
+    setDraftStatus(response.data.status);
+    await loadDetail(selectedId);
+    await loadDraftStatus(selectedId);
+    setActionLoading(false);
+  }
+
+  async function handleRegenerateContentDraft(contentPlanItemId: string) {
+    if (!selectedId) return;
+    setActionLoading(true);
+    setError(null);
+    const response = await workflowBriefsApiRequest<{ status: ContentDraftStatus }>(
+      `/${selectedId}/regenerate-content-draft`,
+      { method: "POST", body: { contentPlanItemId } }
+    );
+    if (!response.ok) {
+      setError(response.error.message);
+      setActionLoading(false);
+      return;
+    }
+    setDraftStatus(response.data.status);
+    await loadDraftStatus(selectedId);
+    setActionLoading(false);
+  }
+
+  function formatPackageReadiness(value: string): string {
+    switch (value) {
+      case "none":
+        return "No drafts yet";
+      case "partial":
+        return "Partial drafts";
+      case "drafts_generated":
+        return "Drafts generated";
+      case "ready_for_admin_review":
+        return "Ready for admin review";
+      case "ready_for_packaging":
+        return "Ready for packaging";
+      default:
+        return value.replace(/_/g, " ");
+    }
+  }
+
+  function formatDraftReadiness(value: string): string {
+    switch (value) {
+      case "pending":
+        return "No draft";
+      case "generated":
+        return "Draft generated";
+      case "ready_for_review":
+        return "Ready for review";
+      case "needs_work":
+        return "Needs work";
+      case "approved":
+        return "Approved";
+      default:
+        return value;
+    }
   }
 
   function openAiDeliveryModule() {
@@ -799,15 +916,119 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
                               </li>
                             ))}
                           </ul>
-                          {linkedProject || seedStatus.project ? (
-                            <Button variant="secondary" disabled={actionLoading} onClick={openAiDeliveryModule} style={{ marginTop: "0.5rem" }}>
-                              Open AI Delivery module
-                            </Button>
-                          ) : null}
                         </div>
                       ) : null}
                     </div>
                   ) : null}
+                </SectionPanel>
+              ) : null}
+
+              {canManageAi && seedStatus?.isSeeded ? (
+                <SectionPanel title="Content Drafts">
+                  {draftLoading ? <LoadingState label="Loading draft status…" /> : null}
+
+                  {!draftLoading && draftStatus ? (
+                    <div>
+                      <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", marginBottom: "0.5rem", flexWrap: "wrap" }}>
+                        <StatusBadge status={draftStatus.draftCount > 0 ? "READY_FOR_REVIEW" : "DRAFT"} />
+                        <span className="muted-text" style={{ fontSize: "0.85rem" }}>
+                          {draftStatus.draftCount}/{draftStatus.seedItemCount} drafts · {formatPackageReadiness(draftStatus.packageReadiness)}
+                        </span>
+                      </div>
+
+                      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: "0.5rem", marginBottom: "0.75rem" }}>
+                        <div>
+                          <div className="muted-text" style={{ fontSize: "0.75rem" }}>Pending</div>
+                          <div style={{ fontWeight: 600 }}>{draftStatus.pendingCount}</div>
+                        </div>
+                        <div>
+                          <div className="muted-text" style={{ fontSize: "0.75rem" }}>Generated</div>
+                          <div style={{ fontWeight: 600 }}>{draftStatus.generatedCount}</div>
+                        </div>
+                        <div>
+                          <div className="muted-text" style={{ fontSize: "0.75rem" }}>Ready for review</div>
+                          <div style={{ fontWeight: 600 }}>{draftStatus.readyForReviewCount}</div>
+                        </div>
+                        <div>
+                          <div className="muted-text" style={{ fontSize: "0.75rem" }}>Needs work</div>
+                          <div style={{ fontWeight: 600 }}>{draftStatus.needsWorkCount}</div>
+                        </div>
+                      </div>
+
+                      {draftStatus.lastGeneratedAt ? (
+                        <BriefField label="Last generated" value={formatRunTimestamp(draftStatus.lastGeneratedAt)} />
+                      ) : null}
+
+                      {draftStatus.blockReason && draftStatus.pendingCount > 0 ? (
+                        <p className="muted-text" style={{ fontSize: "0.85rem" }}>{draftStatus.blockReason}</p>
+                      ) : null}
+
+                      {draftStatus.canGenerateDrafts || draftStatus.pendingCount > 0 ? (
+                        <Button
+                          variant="primary"
+                          disabled={actionLoading || !draftStatus.canGenerateDrafts}
+                          onClick={() => void handleGenerateContentDrafts()}
+                          style={{ marginTop: "0.5rem", marginRight: "0.5rem" }}
+                        >
+                          Generate all drafts
+                        </Button>
+                      ) : null}
+
+                      {(linkedProject || draftStatus.project) ? (
+                        <Button variant="secondary" disabled={actionLoading} onClick={openAiDeliveryModule} style={{ marginTop: "0.5rem" }}>
+                          Open AI Delivery module
+                        </Button>
+                      ) : null}
+
+                      {draftStatus.items.length > 0 ? (
+                        <div style={{ marginTop: "0.75rem" }}>
+                          <div className="muted-text" style={{ fontSize: "0.8rem", marginBottom: "0.35rem", fontWeight: 600 }}>
+                            Draft readiness by item
+                          </div>
+                          <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
+                            {draftStatus.items.slice(0, 10).map((item) => (
+                              <li
+                                key={item.contentPlanItemId}
+                                style={{
+                                  display: "flex",
+                                  justifyContent: "space-between",
+                                  alignItems: "center",
+                                  gap: "0.5rem",
+                                  marginBottom: "0.5rem",
+                                  flexWrap: "wrap"
+                                }}
+                              >
+                                <div>
+                                  <div style={{ fontWeight: 600 }}>{item.planItemTitle}</div>
+                                  <div className="muted-text" style={{ fontSize: "0.8rem" }}>
+                                    {formatDraftReadiness(item.readiness)}
+                                    {item.revisionCount > 0 ? ` · rev ${item.revisionCount}` : ""}
+                                  </div>
+                                </div>
+                                {item.hasDraft ? (
+                                  <Button
+                                    variant="secondary"
+                                    disabled={actionLoading}
+                                    onClick={() => void handleRegenerateContentDraft(item.contentPlanItemId)}
+                                  >
+                                    Regenerate
+                                  </Button>
+                                ) : null}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      ) : null}
+                    </div>
+                  ) : (
+                    <p className="muted-text">Seed content production first to generate working drafts.</p>
+                  )}
+                </SectionPanel>
+              ) : null}
+
+              {canManageAi && !seedStatus?.isSeeded ? (
+                <SectionPanel title="Content Drafts">
+                  <p className="muted-text">Content drafts become available after seeding the content plan.</p>
                 </SectionPanel>
               ) : null}
             </>

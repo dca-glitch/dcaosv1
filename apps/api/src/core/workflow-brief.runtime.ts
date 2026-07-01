@@ -22,6 +22,13 @@ import {
   WORKFLOW_BRIEF_SEED_MARKER
 } from "./workflow-brief-content-seed.execution";
 import {
+  buildWorkflowBriefDraftLineageNote,
+  executeWorkflowBriefDraftGeneration,
+  filterWorkflowBriefSeedPlanItems,
+  isWorkflowBriefDraftForBrief,
+  WORKFLOW_BRIEF_DRAFT_VERSION
+} from "./workflow-brief-draft.execution";
+import {
   buildProductionPlanBodyFromContent,
   buildProductionPlanTitle,
   buildWorkflowBriefClientVisiblePlanJson,
@@ -1906,5 +1913,753 @@ export async function seedWorkflowBriefContentProduction(
       contentPlanId: result.contentPlan.id,
       version: WORKFLOW_BRIEF_CONTENT_SEED_VERSION
     }
+  };
+}
+
+const contentDraftSummarySelect = {
+  id: true,
+  contentPlanItemId: true,
+  title: true,
+  slug: true,
+  status: true,
+  notes: true,
+  revisionCount: true,
+  reviewRequestedAt: true,
+  approvedAt: true,
+  isArchived: true,
+  createdAt: true,
+  updatedAt: true
+} as const;
+
+type ContentDraftSummaryRecord = {
+  id: string;
+  contentPlanItemId: string | null;
+  title: string;
+  slug: string | null;
+  status: string;
+  notes: string | null;
+  revisionCount: number;
+  reviewRequestedAt: Date | null;
+  approvedAt: Date | null;
+  isArchived: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+function readContentDraftsFromPlanJson(planJson: unknown): {
+  version?: string;
+  briefId?: string;
+  lastGeneratedAt?: string;
+  lastRegeneratedAt?: string;
+  draftCount?: number;
+  itemCount?: number;
+  packageReadiness?: string;
+} | null {
+  if (!planJson || typeof planJson !== "object" || Array.isArray(planJson)) {
+    return null;
+  }
+  const record = planJson as Record<string, unknown>;
+  const drafts = record.contentDrafts;
+  if (!drafts || typeof drafts !== "object" || Array.isArray(drafts)) {
+    return null;
+  }
+  return drafts as {
+    version?: string;
+    briefId?: string;
+    lastGeneratedAt?: string;
+    lastRegeneratedAt?: string;
+    draftCount?: number;
+    itemCount?: number;
+    packageReadiness?: string;
+  };
+}
+
+function classifyDraftReadiness(status: string | null): "pending" | "generated" | "ready_for_review" | "needs_work" | "approved" {
+  switch (status) {
+    case "READY_FOR_REVIEW":
+      return "ready_for_review";
+    case "CHANGES_REQUESTED":
+      return "needs_work";
+    case "APPROVED":
+      return "approved";
+    case "DRAFT":
+      return "generated";
+    default:
+      return "pending";
+  }
+}
+
+function computePackageReadiness(input: {
+  seedItemCount: number;
+  draftCount: number;
+  readyForReviewCount: number;
+  needsWorkCount: number;
+  approvedCount: number;
+}): "none" | "partial" | "drafts_generated" | "ready_for_admin_review" | "ready_for_packaging" {
+  if (input.seedItemCount === 0 || input.draftCount === 0) {
+    return "none";
+  }
+  if (input.draftCount < input.seedItemCount) {
+    return "partial";
+  }
+  if (input.approvedCount === input.seedItemCount) {
+    return "ready_for_packaging";
+  }
+  if (input.readyForReviewCount + input.approvedCount === input.seedItemCount) {
+    return "ready_for_admin_review";
+  }
+  return "drafts_generated";
+}
+
+function toContentDraftItemSummary(input: {
+  briefId: string;
+  planItem: ContentPlanSeedRecord["items"][number];
+  draft: ContentDraftSummaryRecord | null;
+}) {
+  const readiness = input.draft ? classifyDraftReadiness(input.draft.status) : "pending";
+  return {
+    contentPlanItemId: input.planItem.id,
+    planItemTitle: input.planItem.title,
+    targetKeyword: input.planItem.targetKeyword,
+    contentType: input.planItem.contentType,
+    sortOrder: input.planItem.sortOrder,
+    hasDraft: Boolean(input.draft),
+    draftId: input.draft?.id ?? null,
+    draftTitle: input.draft?.title ?? null,
+    draftStatus: input.draft?.status ?? null,
+    readiness,
+    revisionCount: input.draft?.revisionCount ?? 0,
+    isWorkflowBriefDraft: input.draft ? isWorkflowBriefDraftForBrief(input.draft.notes, input.briefId) : false,
+    updatedAt: input.draft?.updatedAt?.toISOString() ?? null
+  };
+}
+
+export type WorkflowBriefContentDraftStatus = {
+  briefId: string;
+  hasLinkedProject: boolean;
+  project: { id: string; name: string; targetMonth: Date } | null;
+  isSeeded: boolean;
+  contentPlanId: string | null;
+  seedItemCount: number;
+  draftCount: number;
+  pendingCount: number;
+  generatedCount: number;
+  readyForReviewCount: number;
+  needsWorkCount: number;
+  approvedCount: number;
+  packageReadiness: ReturnType<typeof computePackageReadiness>;
+  canGenerateDrafts: boolean;
+  blockReason: string | null;
+  lastGeneratedAt: string | null;
+  lastRegeneratedAt: string | null;
+  items: Array<ReturnType<typeof toContentDraftItemSummary>>;
+  drafts: Array<{
+    id: string;
+    contentPlanItemId: string | null;
+    title: string;
+    slug: string | null;
+    status: string;
+    readiness: ReturnType<typeof classifyDraftReadiness>;
+    revisionCount: number;
+    notesPreview: string | null;
+    updatedAt: string;
+  }>;
+  lineage: {
+    briefId: string;
+    productionPlanId: string | null;
+    contentPlanId: string | null;
+    aiDeliveryProjectId: string | null;
+    version: string;
+  };
+};
+
+async function loadWorkflowBriefDraftContext(tenantId: string, briefId: string) {
+  const brief = await prisma.brief.findFirst({
+    where: { id: briefId, tenantId },
+    select: {
+      id: true,
+      clientId: true,
+      title: true,
+      goal: true,
+      businessContext: true,
+      targetAudience: true,
+      status: true
+    }
+  });
+  if (!brief) {
+    return null;
+  }
+
+  const project = await resolveLinkedProjectForBrief(tenantId, briefId);
+  const productionPlan = await prisma.productionPlan.findFirst({
+    where: { tenantId, briefId },
+    orderBy: { createdAt: "desc" },
+    select: { id: true, planJson: true, clientVisibleSnapshotJson: true }
+  });
+
+  let contentPlan: ContentPlanSeedRecord | null = null;
+  if (project) {
+    contentPlan = (await prisma.aiDeliveryContentPlan.findFirst({
+      where: { tenantId, aiDeliveryProjectId: project.id },
+      select: contentPlanSeedSelect
+    })) as ContentPlanSeedRecord | null;
+  }
+
+  const miReport = await prisma.aiMiReport.findFirst({
+    where: { tenantId, briefId },
+    orderBy: { createdAt: "desc" },
+    select: { reportJson: true }
+  });
+  const seoReport = await prisma.aiSeoReport.findFirst({
+    where: { tenantId, briefId },
+    orderBy: { createdAt: "desc" },
+    select: { reportJson: true }
+  });
+
+  const seedItems = contentPlan ? filterWorkflowBriefSeedPlanItems(contentPlan.items, briefId) : [];
+  const seedMeta = readContentSeedFromPlanJson(productionPlan?.planJson);
+  const isSeeded = Boolean(seedItems.length > 0 || seedMeta?.briefId === briefId);
+
+  let drafts: ContentDraftSummaryRecord[] = [];
+  if (project) {
+    drafts = (await prisma.aiDeliveryContentDraft.findMany({
+      where: {
+        tenantId,
+        aiDeliveryProjectId: project.id,
+        isArchived: false,
+        contentPlanItemId: seedItems.length > 0 ? { in: seedItems.map((item) => item.id) } : undefined
+      },
+      select: contentDraftSummarySelect,
+      orderBy: [{ updatedAt: "desc" }, { id: "desc" }]
+    })) as ContentDraftSummaryRecord[];
+  }
+
+  const draftByItemId = new Map<string, ContentDraftSummaryRecord>();
+  for (const draft of drafts) {
+    if (!draft.contentPlanItemId || draftByItemId.has(draft.contentPlanItemId)) {
+      continue;
+    }
+    draftByItemId.set(draft.contentPlanItemId, draft);
+  }
+
+  const planRecord =
+    productionPlan?.planJson && typeof productionPlan.planJson === "object" && !Array.isArray(productionPlan.planJson)
+      ? (productionPlan.planJson as Record<string, unknown>)
+      : {};
+  const recommendedContentDirection =
+    typeof planRecord.recommendedContentDirection === "string" ? planRecord.recommendedContentDirection : null;
+
+  return {
+    brief,
+    project,
+    productionPlan,
+    contentPlan,
+    seedItems,
+    isSeeded,
+    seedMeta,
+    mi: readMiReportContent(miReport?.reportJson),
+    seo: readSeoReportContent(seoReport?.reportJson),
+    recommendedContentDirection,
+    draftByItemId,
+    draftsMeta: readContentDraftsFromPlanJson(productionPlan?.planJson)
+  };
+}
+
+function buildWorkflowBriefContentDraftStatusFromContext(
+  briefId: string,
+  context: NonNullable<Awaited<ReturnType<typeof loadWorkflowBriefDraftContext>>>,
+  isAdmin: boolean
+): WorkflowBriefContentDraftStatus {
+  const { brief, project, productionPlan, contentPlan, seedItems, isSeeded, seedMeta, draftByItemId, draftsMeta } =
+    context;
+
+  const itemSummaries = seedItems.map((planItem) =>
+    toContentDraftItemSummary({ briefId, planItem, draft: draftByItemId.get(planItem.id) ?? null })
+  );
+
+  const draftCount = itemSummaries.filter((item) => item.hasDraft).length;
+  const pendingCount = itemSummaries.filter((item) => item.readiness === "pending").length;
+  const generatedCount = itemSummaries.filter((item) => item.readiness === "generated").length;
+  const readyForReviewCount = itemSummaries.filter((item) => item.readiness === "ready_for_review").length;
+  const needsWorkCount = itemSummaries.filter((item) => item.readiness === "needs_work").length;
+  const approvedCount = itemSummaries.filter((item) => item.readiness === "approved").length;
+
+  const packageReadiness = computePackageReadiness({
+    seedItemCount: seedItems.length,
+    draftCount,
+    readyForReviewCount,
+    needsWorkCount,
+    approvedCount
+  });
+
+  const draftableBriefStatuses: WorkflowBriefStatus[] = ["AI_RESULTS_READY", "APPROVED_FOR_PRODUCTION"];
+  let canGenerateDrafts = false;
+  let blockReason: string | null = null;
+
+  if (!isAdmin) {
+    blockReason = "Admin access required to generate content drafts.";
+  } else if (!project) {
+    blockReason = "Link an AI Delivery project before generating content drafts.";
+  } else if (!isSeeded || seedItems.length === 0) {
+    blockReason = "Seed content production before generating drafts.";
+  } else if (!draftableBriefStatuses.includes(brief.status)) {
+    blockReason = "Brief must reach AI results or approved-for-production before draft generation.";
+  } else {
+    canGenerateDrafts = true;
+  }
+
+  const drafts = itemSummaries
+    .filter((item) => item.draftId)
+    .map((item) => {
+      const draft = draftByItemId.get(item.contentPlanItemId)!;
+      return {
+        id: draft.id,
+        contentPlanItemId: draft.contentPlanItemId,
+        title: draft.title,
+        slug: draft.slug,
+        status: draft.status,
+        readiness: item.readiness,
+        revisionCount: draft.revisionCount,
+        notesPreview: draft.notes ? draft.notes.slice(0, 120) : null,
+        updatedAt: draft.updatedAt.toISOString()
+      };
+    });
+
+  return {
+    briefId,
+    hasLinkedProject: Boolean(project),
+    project: project ? { id: project.id, name: project.name, targetMonth: project.targetMonth } : null,
+    isSeeded,
+    contentPlanId: contentPlan?.id ?? seedMeta?.contentPlanId ?? null,
+    seedItemCount: seedItems.length,
+    draftCount,
+    pendingCount,
+    generatedCount,
+    readyForReviewCount,
+    needsWorkCount,
+    approvedCount,
+    packageReadiness,
+    canGenerateDrafts,
+    blockReason,
+    lastGeneratedAt: draftsMeta?.lastGeneratedAt ?? null,
+    lastRegeneratedAt: draftsMeta?.lastRegeneratedAt ?? null,
+    items: itemSummaries,
+    drafts,
+    lineage: {
+      briefId,
+      productionPlanId: productionPlan?.id ?? null,
+      contentPlanId: contentPlan?.id ?? seedMeta?.contentPlanId ?? null,
+      aiDeliveryProjectId: project?.id ?? null,
+      version: WORKFLOW_BRIEF_DRAFT_VERSION
+    }
+  };
+}
+
+export async function getWorkflowBriefContentDraftStatus(
+  authSession: AuthResolvedSessionContext,
+  briefId: string
+): Promise<WorkflowBriefContentDraftStatus | "not_found" | "forbidden"> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) {
+    return "forbidden";
+  }
+
+  const brief = await getBriefForAccess(briefId, tenantId);
+  if (!brief) {
+    return "not_found";
+  }
+
+  if (!(await canAccessClient(authSession, tenantId, brief.clientId))) {
+    return "forbidden";
+  }
+
+  const context = await loadWorkflowBriefDraftContext(tenantId, briefId);
+  if (!context) {
+    return "not_found";
+  }
+
+  const isAdmin = isOwnerRole(getActiveRoles(authSession));
+  return buildWorkflowBriefContentDraftStatusFromContext(briefId, context, isAdmin);
+}
+
+type PersistDraftOutcome = "created" | "updated" | "reused" | "skipped_locked";
+
+async function persistWorkflowBriefGeneratedDraft(
+  tx: Prisma.TransactionClient,
+  input: {
+    tenantId: string;
+    aiDeliveryProjectId: string;
+    briefId: string;
+    contentPlanItemId: string;
+    generated: { title: string; slug: string | null; draftBody: string; notes: string | null };
+    forceRegenerate: boolean;
+  }
+): Promise<{ outcome: PersistDraftOutcome; draftId: string | null }> {
+  const existingDraft = await tx.aiDeliveryContentDraft.findFirst({
+    where: {
+      tenantId: input.tenantId,
+      aiDeliveryProjectId: input.aiDeliveryProjectId,
+      contentPlanItemId: input.contentPlanItemId,
+      isArchived: false
+    },
+    orderBy: [{ updatedAt: "desc" }, { id: "desc" }],
+    select: { id: true, status: true, revisionCount: true }
+  });
+
+  const lineageNote = buildWorkflowBriefDraftLineageNote(
+    input.briefId,
+    input.contentPlanItemId,
+    input.forceRegenerate ? "Regenerated draft" : "Generated draft"
+  );
+  const mergedNotes = input.generated.notes?.includes("workflow-brief-draft:v1")
+    ? input.generated.notes
+    : truncateWorkflowBriefDraftNotes(`${lineageNote}${input.generated.notes ? ` ${input.generated.notes}` : ""}`);
+
+  if (existingDraft && !input.forceRegenerate) {
+    return { outcome: "reused", draftId: existingDraft.id };
+  }
+
+  if (existingDraft?.status === "APPROVED") {
+    return { outcome: "skipped_locked", draftId: existingDraft.id };
+  }
+
+  if (existingDraft) {
+    const updated = await tx.aiDeliveryContentDraft.update({
+      where: { id: existingDraft.id },
+      data: {
+        title: input.generated.title,
+        slug: input.generated.slug,
+        draftBody: input.generated.draftBody,
+        status: "DRAFT",
+        notes: mergedNotes,
+        reviewRequestedAt: null,
+        approvedAt: null,
+        revisionCount: existingDraft.revisionCount + 1
+      },
+      select: { id: true }
+    });
+    return { outcome: "updated", draftId: updated.id };
+  }
+
+  const created = await tx.aiDeliveryContentDraft.create({
+    data: {
+      tenantId: input.tenantId,
+      aiDeliveryProjectId: input.aiDeliveryProjectId,
+      contentPlanItemId: input.contentPlanItemId,
+      title: input.generated.title,
+      slug: input.generated.slug,
+      draftBody: input.generated.draftBody,
+      status: "DRAFT",
+      notes: mergedNotes,
+      reviewRequestedAt: null,
+      approvedAt: null,
+      revisionCount: 0,
+      isArchived: false
+    },
+    select: { id: true }
+  });
+  return { outcome: "created", draftId: created.id };
+}
+
+function truncateWorkflowBriefDraftNotes(value: string): string {
+  return value.length > 500 ? `${value.slice(0, 497).trim()}...` : value;
+}
+
+async function writeContentDraftsMetadata(
+  tx: Prisma.TransactionClient,
+  input: {
+    productionPlanId: string;
+    planJson: unknown;
+    briefId: string;
+    seedItemCount: number;
+    draftCount: number;
+    readyForReviewCount: number;
+    needsWorkCount: number;
+    approvedCount: number;
+    lastGeneratedAt?: string;
+    lastRegeneratedAt?: string;
+  }
+): Promise<void> {
+  const existingPlanJson =
+    input.planJson && typeof input.planJson === "object" && !Array.isArray(input.planJson)
+      ? (input.planJson as Record<string, unknown>)
+      : {};
+
+  const existingDraftsMeta = readContentDraftsFromPlanJson(input.planJson) ?? {};
+
+  await tx.productionPlan.update({
+    where: { id: input.productionPlanId },
+    data: {
+      planJson: {
+        ...existingPlanJson,
+        contentDrafts: {
+          version: WORKFLOW_BRIEF_DRAFT_VERSION,
+          briefId: input.briefId,
+          itemCount: input.seedItemCount,
+          draftCount: input.draftCount,
+          packageReadiness: computePackageReadiness({
+            seedItemCount: input.seedItemCount,
+            draftCount: input.draftCount,
+            readyForReviewCount: input.readyForReviewCount,
+            needsWorkCount: input.needsWorkCount,
+            approvedCount: input.approvedCount
+          }),
+          lastGeneratedAt: input.lastGeneratedAt ?? existingDraftsMeta.lastGeneratedAt ?? null,
+          lastRegeneratedAt: input.lastRegeneratedAt ?? existingDraftsMeta.lastRegeneratedAt ?? null
+        }
+      } as Prisma.InputJsonValue
+    }
+  });
+}
+
+export async function generateWorkflowBriefContentDrafts(
+  authSession: AuthResolvedSessionContext,
+  briefId: string
+): Promise<
+  | {
+      generated: boolean;
+      created: number;
+      updated: number;
+      reused: number;
+      skippedLocked: number;
+      isDeterministic: boolean;
+      status: WorkflowBriefContentDraftStatus;
+    }
+  | "not_found"
+  | "forbidden"
+  | "missing_project"
+  | "not_seeded"
+  | "invalid_status"
+> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) {
+    return "forbidden";
+  }
+
+  if (!isOwnerRole(getActiveRoles(authSession))) {
+    return "forbidden";
+  }
+
+  const context = await loadWorkflowBriefDraftContext(tenantId, briefId);
+  if (!context) {
+    return "not_found";
+  }
+
+  const draftableBriefStatuses: WorkflowBriefStatus[] = ["AI_RESULTS_READY", "APPROVED_FOR_PRODUCTION"];
+  if (!draftableBriefStatuses.includes(context.brief.status)) {
+    return "invalid_status";
+  }
+
+  if (!context.project) {
+    return "missing_project";
+  }
+
+  if (!context.isSeeded || context.seedItems.length === 0) {
+    return "not_seeded";
+  }
+
+  const finishedAtIso = new Date().toISOString();
+  let created = 0;
+  let updated = 0;
+  let reused = 0;
+  let skippedLocked = 0;
+  let isDeterministic = true;
+
+  await prisma.$transaction(async (tx) => {
+    for (const planItem of context.seedItems) {
+      const existing = context.draftByItemId.get(planItem.id);
+      if (existing && existing.status !== "APPROVED") {
+        reused += 1;
+        continue;
+      }
+      if (existing?.status === "APPROVED") {
+        skippedLocked += 1;
+        continue;
+      }
+
+      const execution = await executeWorkflowBriefDraftGeneration({
+        briefId,
+        briefTitle: context.brief.title,
+        goal: context.brief.goal,
+        targetAudience: context.brief.targetAudience,
+        businessContext: context.brief.businessContext,
+        projectName: context.project!.name,
+        targetMonth: context.project!.targetMonth.toISOString().slice(0, 7),
+        planItem,
+        mi: context.mi,
+        seo: context.seo,
+        recommendedContentDirection: context.recommendedContentDirection,
+        finishedAtIso
+      });
+
+      if (!execution.meta.isDeterministic) {
+        isDeterministic = false;
+      }
+
+      const persistResult = await persistWorkflowBriefGeneratedDraft(tx, {
+        tenantId,
+        aiDeliveryProjectId: context.project!.id,
+        briefId,
+        contentPlanItemId: planItem.id,
+        generated: execution.draft,
+        forceRegenerate: false
+      });
+
+      if (persistResult.outcome === "created") created += 1;
+      else if (persistResult.outcome === "updated") updated += 1;
+      else if (persistResult.outcome === "reused") reused += 1;
+      else if (persistResult.outcome === "skipped_locked") skippedLocked += 1;
+    }
+  });
+
+  if (context.productionPlan) {
+    const refreshedContext = await loadWorkflowBriefDraftContext(tenantId, briefId);
+    if (refreshedContext) {
+      const draftStatus = buildWorkflowBriefContentDraftStatusFromContext(briefId, refreshedContext, true);
+      await prisma.$transaction(async (tx) => {
+        await writeContentDraftsMetadata(tx, {
+          productionPlanId: context.productionPlan!.id,
+          planJson: context.productionPlan!.planJson,
+          briefId,
+          seedItemCount: draftStatus.seedItemCount,
+          draftCount: draftStatus.draftCount,
+          readyForReviewCount: draftStatus.readyForReviewCount,
+          needsWorkCount: draftStatus.needsWorkCount,
+          approvedCount: draftStatus.approvedCount,
+          lastGeneratedAt: finishedAtIso
+        });
+      });
+    }
+  }
+
+  const status = await getWorkflowBriefContentDraftStatus(authSession, briefId);
+  if (status === "not_found" || status === "forbidden") {
+    return status;
+  }
+
+  return {
+    generated: true,
+    created,
+    updated,
+    reused,
+    skippedLocked,
+    isDeterministic,
+    status
+  };
+}
+
+export async function regenerateWorkflowBriefContentDraft(
+  authSession: AuthResolvedSessionContext,
+  briefId: string,
+  contentPlanItemId: string
+): Promise<
+  | {
+      regenerated: boolean;
+      outcome: PersistDraftOutcome;
+      draftId: string | null;
+      isDeterministic: boolean;
+      status: WorkflowBriefContentDraftStatus;
+    }
+  | "not_found"
+  | "forbidden"
+  | "missing_project"
+  | "not_seeded"
+  | "invalid_item"
+  | "invalid_status"
+> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) {
+    return "forbidden";
+  }
+
+  if (!isOwnerRole(getActiveRoles(authSession))) {
+    return "forbidden";
+  }
+
+  if (!contentPlanItemId.trim()) {
+    return "invalid_item";
+  }
+
+  const context = await loadWorkflowBriefDraftContext(tenantId, briefId);
+  if (!context) {
+    return "not_found";
+  }
+
+  const draftableBriefStatuses: WorkflowBriefStatus[] = ["AI_RESULTS_READY", "APPROVED_FOR_PRODUCTION"];
+  if (!draftableBriefStatuses.includes(context.brief.status)) {
+    return "invalid_status";
+  }
+
+  if (!context.project) {
+    return "missing_project";
+  }
+
+  if (!context.isSeeded || context.seedItems.length === 0) {
+    return "not_seeded";
+  }
+
+  const planItem = context.seedItems.find((item) => item.id === contentPlanItemId);
+  if (!planItem) {
+    return "invalid_item";
+  }
+
+  const finishedAtIso = new Date().toISOString();
+  const execution = await executeWorkflowBriefDraftGeneration({
+    briefId,
+    briefTitle: context.brief.title,
+    goal: context.brief.goal,
+    targetAudience: context.brief.targetAudience,
+    businessContext: context.brief.businessContext,
+    projectName: context.project.name,
+    targetMonth: context.project.targetMonth.toISOString().slice(0, 7),
+    planItem,
+    mi: context.mi,
+    seo: context.seo,
+    recommendedContentDirection: context.recommendedContentDirection,
+    finishedAtIso
+  });
+
+  const persistResult = await prisma.$transaction(async (tx) => {
+    return persistWorkflowBriefGeneratedDraft(tx, {
+      tenantId,
+      aiDeliveryProjectId: context.project!.id,
+      briefId,
+      contentPlanItemId: planItem.id,
+      generated: execution.draft,
+      forceRegenerate: true
+    });
+  });
+
+  if (context.productionPlan) {
+    const refreshedContext = await loadWorkflowBriefDraftContext(tenantId, briefId);
+    if (refreshedContext) {
+      const draftStatus = buildWorkflowBriefContentDraftStatusFromContext(briefId, refreshedContext, true);
+      await prisma.$transaction(async (tx) => {
+        await writeContentDraftsMetadata(tx, {
+          productionPlanId: context.productionPlan!.id,
+          planJson: context.productionPlan!.planJson,
+          briefId,
+          seedItemCount: draftStatus.seedItemCount,
+          draftCount: draftStatus.draftCount,
+          readyForReviewCount: draftStatus.readyForReviewCount,
+          needsWorkCount: draftStatus.needsWorkCount,
+          approvedCount: draftStatus.approvedCount,
+          lastRegeneratedAt: finishedAtIso
+        });
+      });
+    }
+  }
+
+  const status = await getWorkflowBriefContentDraftStatus(authSession, briefId);
+  if (status === "not_found" || status === "forbidden") {
+    return status;
+  }
+
+  return {
+    regenerated: persistResult.outcome === "created" || persistResult.outcome === "updated",
+    outcome: persistResult.outcome,
+    draftId: persistResult.draftId,
+    isDeterministic: execution.meta.isDeterministic,
+    status
   };
 }

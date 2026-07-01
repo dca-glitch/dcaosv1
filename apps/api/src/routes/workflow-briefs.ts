@@ -9,12 +9,15 @@ import {
   createWorkflowBrief,
   createWorkflowBriefLinkedProject,
   generateWorkflowBriefProductionPlan,
+  generateWorkflowBriefContentDrafts,
   getWorkflowBriefById,
+  getWorkflowBriefContentDraftStatus,
   getWorkflowBriefContentProductionSeedStatus,
   getWorkflowBriefMiReport,
   getWorkflowBriefProductionPlan,
   getWorkflowBriefSeoReport,
   listWorkflowBriefs,
+  regenerateWorkflowBriefContentDraft,
   sendWorkflowBriefProductionPlanToClient,
   seedWorkflowBriefContentProduction,
   submitWorkflowBrief,
@@ -583,6 +586,113 @@ export function createWorkflowBriefsRouter() {
       }
 
       res.status(result.created ? 201 : 200).json(success(result));
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.get("/:id/content-drafts", requireAuth, requireTenant, async (req, res, next) => {
+    try {
+      const authSession = getAuthSession(res);
+      if (!authSession) {
+        res.status(401).json(unauthorizedFailure());
+        return;
+      }
+
+      const result = await getWorkflowBriefContentDraftStatus(authSession, req.params.id);
+      if (result === "not_found") {
+        res.status(404).json(failure("WORKFLOW_BRIEF_NOT_FOUND", "Workflow brief was not found."));
+        return;
+      }
+      if (result === "forbidden") {
+        res.status(403).json(forbiddenFailure());
+        return;
+      }
+
+      res.status(200).json(success(result));
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.post("/:id/generate-content-drafts", requireAuth, requireTenant, async (req, res, next) => {
+    try {
+      const authSession = getAuthSession(res);
+      if (!authSession) {
+        res.status(401).json(unauthorizedFailure());
+        return;
+      }
+
+      const result = await generateWorkflowBriefContentDrafts(authSession, req.params.id);
+      if (result === "not_found") {
+        res.status(404).json(failure("WORKFLOW_BRIEF_NOT_FOUND", "Workflow brief was not found."));
+        return;
+      }
+      if (result === "forbidden") {
+        res.status(403).json(forbiddenFailure());
+        return;
+      }
+      if (result === "missing_project") {
+        res.status(400).json(failure("CONTENT_DRAFTS_MISSING_PROJECT", "Link an AI Delivery project before generating content drafts."));
+        return;
+      }
+      if (result === "not_seeded") {
+        res.status(400).json(failure("CONTENT_DRAFTS_NOT_SEEDED", "Seed content production before generating drafts."));
+        return;
+      }
+      if (result === "invalid_status") {
+        res.status(400).json(failure("CONTENT_DRAFTS_INVALID_STATUS", "Brief is not ready for content draft generation."));
+        return;
+      }
+
+      res.status(200).json(success(result));
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.post("/:id/regenerate-content-draft", requireAuth, requireTenant, async (req, res, next) => {
+    try {
+      const authSession = getAuthSession(res);
+      if (!authSession) {
+        res.status(401).json(unauthorizedFailure());
+        return;
+      }
+
+      const body = (req.body ?? {}) as Record<string, unknown>;
+      const contentPlanItemId = typeof body.contentPlanItemId === "string" ? body.contentPlanItemId.trim() : "";
+      if (!contentPlanItemId) {
+        res.status(400).json(failure("CONTENT_DRAFT_INVALID_ITEM", "contentPlanItemId is required."));
+        return;
+      }
+
+      const result = await regenerateWorkflowBriefContentDraft(authSession, req.params.id, contentPlanItemId);
+      if (result === "not_found") {
+        res.status(404).json(failure("WORKFLOW_BRIEF_NOT_FOUND", "Workflow brief was not found."));
+        return;
+      }
+      if (result === "forbidden") {
+        res.status(403).json(forbiddenFailure());
+        return;
+      }
+      if (result === "missing_project") {
+        res.status(400).json(failure("CONTENT_DRAFTS_MISSING_PROJECT", "Link an AI Delivery project before regenerating content drafts."));
+        return;
+      }
+      if (result === "not_seeded") {
+        res.status(400).json(failure("CONTENT_DRAFTS_NOT_SEEDED", "Seed content production before regenerating drafts."));
+        return;
+      }
+      if (result === "invalid_item") {
+        res.status(400).json(failure("CONTENT_DRAFT_INVALID_ITEM", "Content plan item was not found for this workflow brief seed."));
+        return;
+      }
+      if (result === "invalid_status") {
+        res.status(400).json(failure("CONTENT_DRAFTS_INVALID_STATUS", "Brief is not ready for content draft regeneration."));
+        return;
+      }
+
+      res.status(200).json(success(result));
     } catch (error) {
       next(error);
     }
