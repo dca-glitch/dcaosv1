@@ -77,6 +77,7 @@ import { AiMarketIntelligencePage } from "./pages/ai-market-intelligence/AiMarke
 import { AiOperationsPage } from "./pages/ai-operations/AiOperationsPage";
 import { TasksPage, type TaskFormValues, type TaskSummary } from "./pages/tasks/TasksPage";
 import { BriefPanelPage } from "./pages/BriefPanelPage";
+import { WorkflowBriefsPage } from "./pages/WorkflowBriefsPage";
 import { ClientDashboardPage } from "./pages/ClientDashboardPage";
 import DesignShowcase from './design-system/showcase/DesignShowcase';
 
@@ -442,6 +443,7 @@ type ViewKey =
   | "client-portal"
   | "briefs"
   | "briefs-panel"
+  | "workflow-briefs"
   | "pending-approvals"
   | "monthly-reports"
   | "archive"
@@ -503,6 +505,7 @@ const navigationItems: Array<{ view: ViewKey; label: string; section: string }> 
   { view: "tenants", label: "Tenants", section: "protected" },
   { view: "client-portal", label: "Client Portal", section: "client" },
   { view: "briefs-panel", label: "Briefs", section: "client" },
+  { view: "workflow-briefs", label: "Workflow Briefs", section: "core" },
   { view: "clients", label: "Clients", section: "core" },
   { view: "projects", label: "Projects", section: "core" },
   { view: "ai-delivery", label: "AI Delivery", section: "core" },
@@ -528,6 +531,7 @@ type AppNavigationItem = {
 const clientNavigationItems: AppNavigationItem[] = [
   { view: "dashboard", label: "Dashboard", section: "protected" },
   { view: "briefs", label: "Briefs", section: "client", icon: <ClipboardList size={16} strokeWidth={2} /> },
+  { view: "workflow-briefs", label: "Content Briefs", section: "client", icon: <ClipboardList size={16} strokeWidth={2} /> },
   {
     view: "pending-approvals",
     label: "Pending Approvals",
@@ -545,6 +549,7 @@ const clientNavigationItems: AppNavigationItem[] = [
 
 const CLIENT_PORTAL_SHELL_VIEWS = new Set<ViewKey>([
   "briefs",
+  "workflow-briefs",
   "pending-approvals",
   "monthly-reports",
   "archive"
@@ -4453,6 +4458,7 @@ export function App() {
       {!loading && activeView === "monthly-reports" ? <MonthlyReportsPage /> : null}
       {!loading && activeView === "archive" ? <ArchiveHubPage /> : null}
       {!loading && activeView === "briefs-panel" ? <BriefPanelPage /> : null}
+      {!loading && activeView === "workflow-briefs" ? <WorkflowBriefsPage canManageAi={canManageCore} /> : null}
       {!loading && activeView === "clients" ? (
         selectedClientHubId ? (
           <ClientHubPage

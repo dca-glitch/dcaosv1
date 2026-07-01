@@ -3,6 +3,7 @@ import type { BriefStatus, BriefType } from "@prisma/client";
 import { createPrismaClient } from "../../../../packages/data/src/client";
 import type { AuthResolvedSessionContext, AuthSessionLocals } from "../auth/types";
 import { requireAuth } from "../middlewares/auth.middleware";
+import { sendEmailNotification } from "../services/email-notifications.service";
 import { failure, forbiddenFailure, success, unauthorizedFailure } from "../utils/responses";
 
 const prisma = createPrismaClient();
@@ -101,7 +102,7 @@ function parseNonNegativeInt(value: unknown, defaultValue = 0): number {
 }
 
 async function getNextBriefNumber(clientId: string): Promise<number> {
-  const lastBrief = await prisma.brief.findFirst({
+  const lastBrief = await prisma.clientMonthlyBrief.findFirst({
     where: { clientId },
     orderBy: { briefNumber: "desc" },
     select: { briefNumber: true }
@@ -143,7 +144,7 @@ export function createBriefsRouter() {
           return;
         }
 
-        const briefs = await prisma.brief.findMany({
+        const briefs = await prisma.clientMonthlyBrief.findMany({
           where: { clientId, companyId },
           orderBy: { createdAt: "desc" }
         });
@@ -152,7 +153,7 @@ export function createBriefsRouter() {
       }
 
       if (isOwnerRole(roles)) {
-        const briefs = await prisma.brief.findMany({
+        const briefs = await prisma.clientMonthlyBrief.findMany({
           where: { clientId },
           orderBy: { createdAt: "desc" }
         });
@@ -198,7 +199,7 @@ export function createBriefsRouter() {
         return;
       }
 
-      const briefs = await prisma.brief.findMany({
+      const briefs = await prisma.clientMonthlyBrief.findMany({
         where: { clientId: { in: clientIds } },
         orderBy: [{ briefNumber: "desc" }, { createdAt: "desc" }]
       });
@@ -222,7 +223,7 @@ export function createBriefsRouter() {
         return;
       }
 
-      const brief = await prisma.brief.findUnique({ where: { id: req.params.id } });
+      const brief = await prisma.clientMonthlyBrief.findUnique({ where: { id: req.params.id } });
       if (!brief) {
         res.status(404).json(failure("BRIEF_NOT_FOUND", "Brief was not found."));
         return;
@@ -296,7 +297,7 @@ export function createBriefsRouter() {
           return;
         }
 
-        const existing = await prisma.brief.findFirst({
+        const existing = await prisma.clientMonthlyBrief.findFirst({
           where: {
             clientId,
             type: "MONTHLY",
@@ -313,7 +314,7 @@ export function createBriefsRouter() {
       const briefNumber = await getNextBriefNumber(clientId);
       const title = buildAutoBriefTitle(briefNumber);
 
-      const brief = await prisma.brief.create({
+      const brief = await prisma.clientMonthlyBrief.create({
         data: {
           companyId,
           clientId,
@@ -346,7 +347,7 @@ export function createBriefsRouter() {
         return;
       }
 
-      const brief = await prisma.brief.findUnique({ where: { id: req.params.id } });
+      const brief = await prisma.clientMonthlyBrief.findUnique({ where: { id: req.params.id } });
       if (!brief) {
         res.status(404).json(failure("BRIEF_NOT_FOUND", "Brief was not found."));
         return;
@@ -415,7 +416,7 @@ export function createBriefsRouter() {
         updateData.otherCount = parseNonNegativeInt(body.otherCount);
       }
 
-      const updated = await prisma.brief.update({
+      const updated = await prisma.clientMonthlyBrief.update({
         where: { id: brief.id },
         data: updateData
       });
@@ -434,7 +435,7 @@ export function createBriefsRouter() {
         return;
       }
 
-      const brief = await prisma.brief.findUnique({ where: { id: req.params.id } });
+      const brief = await prisma.clientMonthlyBrief.findUnique({ where: { id: req.params.id } });
       if (!brief) {
         res.status(404).json(failure("BRIEF_NOT_FOUND", "Brief was not found."));
         return;
@@ -458,7 +459,7 @@ export function createBriefsRouter() {
           return;
         }
 
-        const updated = await prisma.brief.update({
+        const updated = await prisma.clientMonthlyBrief.update({
           where: { id: brief.id },
           data: {
             status: "AWAITING_CLIENT",
@@ -476,13 +477,23 @@ export function createBriefsRouter() {
         return;
       }
 
-      const updated = await prisma.brief.update({
+      const updated = await prisma.clientMonthlyBrief.update({
         where: { id: brief.id },
         data: {
           status: "SUBMITTED",
           submittedAt: new Date(),
           submittedById: authSession.user.id
         }
+      });
+
+      const tenantId = authSession.tenantContext.activeMembership?.tenantId ?? null;
+      await sendEmailNotification({
+        tenantId,
+        recipientEmail: "admin@dca.local",
+        subject: `Brief submitted: ${brief.title}`,
+        templateKey: "AI_DELIVERY_BRIEF_REQUEST",
+        relatedModule: "briefs",
+        relatedEntityId: brief.id
       });
 
       res.status(200).json(success(updated));

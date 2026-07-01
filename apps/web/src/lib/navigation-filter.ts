@@ -5,6 +5,7 @@ export type NavigationViewKey =
   | "client-portal"
   | "briefs"
   | "briefs-panel"
+  | "workflow-briefs"
   | "pending-approvals"
   | "monthly-reports"
   | "archive"
@@ -25,6 +26,7 @@ export type NavigationViewKey =
 export const CLIENT_ONLY_NAV_VIEWS = new Set<string>([
   "dashboard",
   "briefs",
+  "workflow-briefs",
   "pending-approvals",
   "monthly-reports",
   "archive"
