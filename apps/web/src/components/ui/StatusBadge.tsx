@@ -1,4 +1,5 @@
-import { Badge, type BadgeVariant } from "./Badge";
+import DSBadge from "../../design-system/components/Badge";
+import type { BadgeVariant as DSBadgeVariant } from "../../design-system/components/Badge";
 
 type StatusBadgeProps = {
   status: string;
@@ -27,12 +28,12 @@ export function getStatusTone(status: string): string {
   return "neutral";
 }
 
-function toneToVariant(tone: string): BadgeVariant {
-  if (tone === "danger") return "error";
-  if (tone === "info") return "info";
+function toneToVariant(tone: string): DSBadgeVariant {
+  if (tone === "danger") return "danger";
+  if (tone === "info")   return "primary";
   if (tone === "success") return "success";
-  if (tone === "muted") return "neutral";
-  return "neutral";
+  if (tone === "muted")  return "muted";
+  return "muted";
 }
 
 function formatEnumLabel(value?: string | null): string {
@@ -49,8 +50,8 @@ export function StatusBadge({ status, className }: StatusBadgeProps) {
   const variant = toneToVariant(tone);
 
   return (
-    <Badge className={["status-badge", `status-badge-${tone}`, className].filter(Boolean).join(" ")} variant={variant}>
+    <DSBadge variant={variant} className={className}>
       {label}
-    </Badge>
+    </DSBadge>
   );
 }

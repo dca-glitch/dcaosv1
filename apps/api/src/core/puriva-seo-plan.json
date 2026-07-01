@@ -1,0 +1,98 @@
+{
+  "version": "PURIVA_SEO_PLAN_V1",
+  "seedLabel": "Local operator-reviewed SEO planning scaffold — not final copy or live research",
+  "clientDomain": "puriva.id",
+  "market": "Bali licensed aesthetic clinic market",
+  "monthlyFocus": "Educational SEO planning for licensed aesthetic and medical tourism services without outcome promises.",
+  "verificationRequiredNotes": [
+    "Hospital, accreditation, partner, and license claims require verification before publication.",
+    "SEO plan items are planning objectives only; draft copy requires compliance review.",
+    "Do not treat planning titles as approved credential statements."
+  ],
+  "itemTemplates": [
+    {
+      "id": "wegovy_eligibility_education_page",
+      "title": "Wegovy / semaglutide eligibility education service page",
+      "planningObjective": "Plan a prescriber-led eligibility and screening service page for GLP-1 weight-management consultation in Bali.",
+      "serviceCategoryId": "wegovy_semaglutide_weight_management",
+      "audienceSegments": ["local_clients", "international_medical_tourists"],
+      "searchIntent": "informational",
+      "contentType": "service_page",
+      "priority": "high",
+      "stage": "foundation",
+      "targetKeyword": "wegovy consultation bali",
+      "medicalReviewRequired": true,
+      "verificationRequired": false
+    },
+    {
+      "id": "wegovy_screening_faq_article",
+      "title": "Wegovy screening and monitoring FAQ article",
+      "planningObjective": "Plan FAQ-style education on consultation steps, monitoring, and lifestyle support without universal suitability claims.",
+      "serviceCategoryId": "wegovy_semaglutide_weight_management",
+      "audienceSegments": ["local_clients", "international_medical_tourists"],
+      "searchIntent": "commercial_investigation",
+      "contentType": "faq",
+      "priority": "high",
+      "stage": "foundation",
+      "targetKeyword": "semaglutide screening bali clinic",
+      "medicalReviewRequired": true,
+      "verificationRequired": false
+    },
+    {
+      "id": "stem_cell_trust_verification_content",
+      "title": "Stem cell therapy educational trust and verification content",
+      "planningObjective": "Plan consultative stem cell education with licensed-provider framing and verification support for facility claims.",
+      "serviceCategoryId": "stem_cell_therapy",
+      "audienceSegments": ["local_clients", "international_medical_tourists"],
+      "searchIntent": "trust_compliance",
+      "contentType": "comparison_education",
+      "priority": "high",
+      "stage": "foundation",
+      "targetKeyword": "stem cell therapy bali licensed clinic",
+      "medicalReviewRequired": true,
+      "verificationRequired": true
+    },
+    {
+      "id": "aesthetic_services_overview_faq",
+      "title": "General aesthetic services overview and FAQ",
+      "planningObjective": "Plan an aesthetic services overview and FAQ hub covering consultation-first positioning for common treatments.",
+      "serviceCategoryId": "general_aesthetic_services",
+      "audienceSegments": ["local_clients", "international_medical_tourists"],
+      "searchIntent": "informational",
+      "contentType": "faq",
+      "priority": "medium",
+      "stage": "expansion",
+      "targetKeyword": "aesthetic clinic services bali",
+      "medicalReviewRequired": false,
+      "verificationRequired": false
+    },
+    {
+      "id": "bali_medical_tourism_journey_guide",
+      "title": "Bali medical tourism international patient journey guide",
+      "planningObjective": "Plan medical tourism journey content for consultation, travel planning, and follow-up without overstating medical efficacy.",
+      "serviceCategoryId": "bali_medical_tourism_journey",
+      "audienceSegments": ["international_medical_tourists"],
+      "searchIntent": "commercial_investigation",
+      "contentType": "blog_article",
+      "priority": "high",
+      "stage": "foundation",
+      "targetKeyword": "bali medical tourism aesthetic clinic",
+      "medicalReviewRequired": false,
+      "verificationRequired": false
+    },
+    {
+      "id": "clinic_trust_license_verification_support",
+      "title": "Clinic trust, about, and license verification support content",
+      "planningObjective": "Plan trust and about content explaining verification steps for licensed provider and facility claims; credential statements require verification.",
+      "serviceCategoryId": "general_aesthetic_services",
+      "audienceSegments": ["local_clients", "international_medical_tourists"],
+      "searchIntent": "trust_compliance",
+      "contentType": "service_page",
+      "priority": "high",
+      "stage": "support",
+      "targetKeyword": "licensed aesthetic clinic bali trust",
+      "medicalReviewRequired": false,
+      "verificationRequired": true
+    }
+  ]
+}

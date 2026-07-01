@@ -8,7 +8,7 @@ type DashboardPageProps = {
 
 export function DashboardPage({ cards }: DashboardPageProps) {
   return (
-    <section className="view-section" id="dashboard">
+    <section className="view-section" data-density="compact" id="dashboard">
       <PageHeader
         description="Legacy module shell cards. The live dashboard uses the operations command view in App."
         eyebrow="Workspace"

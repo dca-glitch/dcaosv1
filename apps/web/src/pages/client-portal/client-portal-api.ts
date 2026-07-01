@@ -164,10 +164,15 @@ export function navigateToClientPortalHash(path: string) {
   window.dispatchEvent(new HashChangeEvent("hashchange"));
 }
 
-export function parseClientPortalHash(hash: string): { view: "archive" | "pending-approvals" | "approve"; deliverableId?: string } {
+export type ClientPortalRouteView = "archive" | "pending-approvals" | "briefs" | "approve";
+
+export function parseClientPortalHash(hash: string): { view: ClientPortalRouteView; deliverableId?: string } {
   const value = hash.replace(/^#\/?/, "");
   if (value === "client-portal/pending-approvals") {
     return { view: "pending-approvals" };
+  }
+  if (value === "client-portal/briefs") {
+    return { view: "briefs" };
   }
   const approveMatch = value.match(/^client-portal\/deliverables\/([^/]+)\/approve$/);
   if (approveMatch) {

@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mockup 02 — Client Pending Approvals</title>
+  <link rel="stylesheet" href="shared.css" />
+  <style>
+    .client-sidebar .sidebar-nav a.is-active { border-left-color: var(--accent-bright); }
+    .dense-card {
+      border-bottom: 1px solid var(--border);
+      padding: var(--md) var(--xl);
+    }
+    .dense-card:hover { background: color-mix(in srgb, var(--surface) 98%, white 2%); }
+    .dense-card-inner {
+      align-items: center;
+      display: flex;
+      gap: var(--lg);
+      justify-content: space-between;
+      min-height: 44px;
+    }
+    .dense-kicker { display: flex; flex-wrap: wrap; gap: var(--sm); margin-bottom: var(--xs); }
+  </style>
+</head>
+<body>
+  <div class="mockup-banner">Mockup 02 — Client Pending Approvals · <a href="index.html">Back to index</a></div>
+  <div class="app-shell">
+    <aside class="sidebar client-sidebar">
+      <div class="sidebar-brand">
+        <strong>Puriva</strong>
+        <span>Client workspace</span>
+      </div>
+      <div class="sidebar-section">Client</div>
+      <nav class="sidebar-nav">
+        <a href="04-client-portal-archive.html">Your archive</a>
+        <a href="#" class="is-active">Pending Approvals <span class="nav-count">3</span></a>
+      </nav>
+      <div class="sidebar-footer">
+        client@puriva.id<br />
+        <a href="#">Sign out</a>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="page-header">
+        <div class="page-header-row">
+          <div>
+            <p class="page-eyebrow">Client workspace</p>
+            <h1 class="text-display">Pending Approvals</h1>
+            <p class="page-description">Articles awaiting your review before publication.</p>
+          </div>
+          <button class="btn btn-md btn-ghost" type="button">Refresh</button>
+        </div>
+      </header>
+
+      <nav class="subnav" aria-label="Client portal sections">
+        <a href="04-client-portal-archive.html">Archive</a>
+        <a href="#" class="is-active">Pending Approvals <span class="nav-count">3</span></a>
+      </nav>
+
+      <section class="section-panel">
+        <div class="section-panel-header">
+          <h2 class="text-heading">Awaiting your approval</h2>
+          <p>Review article drafts and images before publication.</p>
+        </div>
+        <div class="section-panel-body">
+          <article class="dense-card">
+            <div class="dense-card-inner">
+              <div>
+                <div class="dense-kicker">
+                  <span class="badge badge-warning">Awaiting approval</span>
+                  <span class="pill">Puriva SEO — Q2</span>
+                </div>
+                <h3 class="text-subheading">5 Herbal Teas for Better Sleep</h3>
+                <p class="text-small text-muted">Created 28 Jun 2026</p>
+              </div>
+              <a class="btn btn-md btn-primary" href="03-article-approval-editor.html">Review</a>
+            </div>
+          </article>
+          <article class="dense-card">
+            <div class="dense-card-inner">
+              <div>
+                <div class="dense-kicker">
+                  <span class="badge badge-warning">Awaiting approval</span>
+                  <span class="pill">Puriva SEO — Q2</span>
+                </div>
+                <h3 class="text-subheading">Understanding Ashwagandha Benefits</h3>
+                <p class="text-small text-muted">Created 26 Jun 2026</p>
+              </div>
+              <a class="btn btn-md btn-primary" href="03-article-approval-editor.html">Review</a>
+            </div>
+          </article>
+          <article class="dense-card">
+            <div class="dense-card-inner">
+              <div>
+                <div class="dense-kicker">
+                  <span class="badge badge-warning">Awaiting approval</span>
+                  <span class="pill">Puriva SEO — Q2</span>
+                </div>
+                <h3 class="text-subheading">Morning Rituals for Calm Energy</h3>
+                <p class="text-small text-muted">Created 24 Jun 2026</p>
+              </div>
+              <a class="btn btn-md btn-primary" href="03-article-approval-editor.html">Review</a>
+            </div>
+          </article>
+        </div>
+      </section>
+    </main>
+  </div>
+</body>
+</html>

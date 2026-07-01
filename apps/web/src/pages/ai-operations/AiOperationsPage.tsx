@@ -8,10 +8,9 @@ import type {
 } from "@dca-os-v1/shared";
 import { formatAiOperationsWorkflowKindLabel, formatAiWorkflowTokenEstimate } from "@dca-os-v1/shared";
 import { EmptyState } from "../../components/EmptyState";
-import { ErrorState } from "../../components/ErrorState";
-import { LoadingState } from "../../components/LoadingState";
 import { Modal } from "../../components/Modal";
-import { PageHeader, SectionPanel, StatusBadge } from "../../components/ui";
+import { Button, PageHeader, SectionPanel, StatusBadge, Table } from "../../components/ui";
+import { Alert, Input, Select } from "../../design-system";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "/api/v1";
 const SESSION_STORAGE_KEY = "dcaosv1.authToken";
@@ -117,17 +116,8 @@ function contextStatusLabel(status: AiWorkflowContextUsageSummary["status"]): st
   return "Context unknown";
 }
 
-function contextStatusTone(status: AiWorkflowContextUsageSummary["status"]): "success" | "warning" | "neutral" | "danger" {
-  if (status === "used") return "success";
-  if (status === "skipped") return "warning";
-  if (status === "not_loaded") return "neutral";
-  return "neutral";
-}
-
 function contextStatusBadge(status: AiWorkflowContextUsageSummary["status"]) {
-  const label = contextStatusLabel(status);
-  const tone = contextStatusTone(status);
-  return <span className={`status-badge status-badge-${tone}`}>{label}</span>;
+  return <StatusBadge status={contextStatusLabel(status)} />;
 }
 
 function RunDetailModal({
@@ -143,8 +133,12 @@ function RunDetailModal({
 }) {
   return (
     <Modal onClose={onClose} title={run ? `Run ${run.shortId}` : "AI run detail"}>
-      {loading ? <LoadingState label="Loading run detail…" /> : null}
-      {error ? <ErrorState title="Run detail blocked" message={error} /> : null}
+      {loading ? (
+        <div className="state-panel loading-state-panel" role="status">
+          Loading run detail…
+        </div>
+      ) : null}
+      {error ? <Alert message={error} title="Run detail blocked" variant="danger" /> : null}
       {!loading && !error && run ? (
         <div className="stack gap-md">
           <SectionPanel title="Execution summary" description="Gateway, model, and result metadata for operator review.">
@@ -213,8 +207,8 @@ function RunDetailModal({
 
           {run.executionError || run.safeError ? (
             <SectionPanel title="Safe error details">
-              {run.executionError ? <p className="error-copy">{run.executionError}</p> : null}
-              {run.safeError ? <p className="warning-copy">{run.safeError}</p> : null}
+              {run.executionError ? <Alert message={run.executionError} variant="danger" /> : null}
+              {run.safeError ? <Alert message={run.safeError} variant="warning" /> : null}
             </SectionPanel>
           ) : null}
 
@@ -362,25 +356,29 @@ export function AiOperationsPage() {
   }, []);
 
   return (
-    <div className="page-stack">
+    <div className="page-stack" data-density="compact">
       <PageHeader
         eyebrow="AI Operations"
         title="AI Operations Console"
         description="Review AI Delivery workflow runs and Market Intelligence research runs — gateway mode, context usage, and safe metadata."
         actions={(
           <>
-            <button className="secondary-action" onClick={exportVisibleRunsCsv} type="button" disabled={filteredRuns.length === 0}>
+            <Button disabled={filteredRuns.length === 0} onClick={exportVisibleRunsCsv} type="button" variant="secondary">
               Export CSV
-            </button>
-            <button className="secondary-action" onClick={() => void loadRuns()} type="button">
+            </Button>
+            <Button onClick={() => void loadRuns()} type="button" variant="secondary">
               Refresh
-            </button>
+            </Button>
           </>
         )}
       />
 
-      {error ? <ErrorState title="AI Operations blocked" message={error} /> : null}
-      {loading ? <LoadingState label="Loading AI operations runs…" /> : null}
+      {error ? <Alert message={error} title="AI Operations blocked" variant="danger" /> : null}
+      {loading ? (
+        <div className="state-panel loading-state-panel" role="status">
+          Loading AI operations runs…
+        </div>
+      ) : null}
 
       {!loading ? (
         <SectionPanel
@@ -388,49 +386,54 @@ export function AiOperationsPage() {
           description="Compact operator view across AI Delivery and Market Intelligence executions."
         >
           <div className="toolbar filter-bar stack gap-sm">
-            <label className="form-field inline">
-              <span>Search</span>
-              <input
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder="Run id, project, client, model…"
-              />
-            </label>
-            <label className="form-field inline">
-              <span>Source</span>
-              <select value={sourceFilter} onChange={(event) => setSourceFilter(event.target.value as SourceFilter)}>
-                <option value="ALL">All sources</option>
-                <option value="ai_delivery_workflow_run">AI Delivery</option>
-                <option value="market_intelligence_research_run">Market Intelligence</option>
-              </select>
-            </label>
-            <label className="form-field inline">
-              <span>Status</span>
-              <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
-                {statusOptions.map((option) => (
-                  <option key={option} value={option}>{option === "ALL" ? "All statuses" : option}</option>
-                ))}
-              </select>
-            </label>
-            <label className="form-field inline">
-              <span>Gateway</span>
-              <select value={gatewayFilter} onChange={(event) => setGatewayFilter(event.target.value as GatewayFilter)}>
-                <option value="ALL">All gateways</option>
-                <option value="disabled">disabled</option>
-                <option value="local">local</option>
-                <option value="openrouter">openrouter</option>
-              </select>
-            </label>
-            <label className="form-field inline">
-              <span>Output type</span>
-              <select value={outputTypeFilter} onChange={(event) => setOutputTypeFilter(event.target.value as OutputTypeFilter)}>
-                <option value="ALL">All output types</option>
-                <option value="summary">summary</option>
-                <option value="content_plan_draft">content plan draft</option>
-                <option value="article_draft">article draft</option>
-                <option value="mi_research">MI research</option>
-              </select>
-            </label>
+            <Input
+              label="Search"
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Run id, project, client, model…"
+              value={search}
+            />
+            <Select
+              label="Source"
+              onChange={(event) => setSourceFilter(event.target.value as SourceFilter)}
+              options={[
+                { value: "ALL", label: "All sources" },
+                { value: "ai_delivery_workflow_run", label: "AI Delivery" },
+                { value: "market_intelligence_research_run", label: "Market Intelligence" }
+              ]}
+              value={sourceFilter}
+            />
+            <Select
+              label="Status"
+              onChange={(event) => setStatusFilter(event.target.value)}
+              options={statusOptions.map((option) => ({
+                value: option,
+                label: option === "ALL" ? "All statuses" : option
+              }))}
+              value={statusFilter}
+            />
+            <Select
+              label="Gateway"
+              onChange={(event) => setGatewayFilter(event.target.value as GatewayFilter)}
+              options={[
+                { value: "ALL", label: "All gateways" },
+                { value: "disabled", label: "disabled" },
+                { value: "local", label: "local" },
+                { value: "openrouter", label: "openrouter" }
+              ]}
+              value={gatewayFilter}
+            />
+            <Select
+              label="Output type"
+              onChange={(event) => setOutputTypeFilter(event.target.value as OutputTypeFilter)}
+              options={[
+                { value: "ALL", label: "All output types" },
+                { value: "summary", label: "summary" },
+                { value: "content_plan_draft", label: "content plan draft" },
+                { value: "article_draft", label: "article draft" },
+                { value: "mi_research", label: "MI research" }
+              ]}
+              value={outputTypeFilter}
+            />
             <p className="muted-copy compact">
               {filteredRuns.length} visible run(s). CSV export includes safe admin fields only — no raw JSON, secrets, or provider payloads.
             </p>
@@ -443,50 +446,44 @@ export function AiOperationsPage() {
             />
           ) : (
             <div className="table-scroll">
-              <table className="data-table compact">
-                <thead>
-                  <tr>
-                    <th>Run</th>
-                    <th>Source</th>
-                    <th>Project</th>
-                    <th>Client</th>
-                    <th>Month</th>
-                    <th>Type</th>
-                    <th>Status</th>
-                    <th>Gateway</th>
-                    <th>Model</th>
-                    <th>Context</th>
-                    <th>Tokens (est.)</th>
-                    <th>Executed</th>
-                    <th />
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredRuns.map((run) => (
-                    <tr key={run.id}>
-                      <td>
-                        <span className="mono-copy" title={run.id}>{run.shortId}</span>
-                      </td>
-                      <td>{formatAiOperationsWorkflowKindLabel(run.workflowKind)}</td>
-                      <td>{run.projectName}</td>
-                      <td>{run.clientName ?? "—"}</td>
-                      <td>{run.targetMonth ?? "—"}</td>
-                      <td>{formatLabel(run.workflowType)}</td>
-                      <td><StatusBadge status={run.status} /></td>
-                      <td>{formatLabel(run.gateway)}</td>
-                      <td>{run.model ?? "—"}</td>
-                      <td>{contextStatusBadge(run.contextStatus)}</td>
-                      <td>{formatAiWorkflowTokenEstimate(run.approximateInputTokens, run.maxOutputTokens)}</td>
-                      <td>{formatTimestamp(run.executedAt)}</td>
-                      <td>
-                        <button className="secondary-action" onClick={() => void openRunDetail(run.id)} type="button">
-                          Review
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <Table
+                className="data-table compact"
+                headers={[
+                  { label: "Run", align: "left" },
+                  { label: "Source", align: "left" },
+                  { label: "Project", align: "left" },
+                  { label: "Client", align: "left" },
+                  { label: "Month", align: "left" },
+                  { label: "Type", align: "left" },
+                  { label: "Status", align: "left" },
+                  { label: "Gateway", align: "left" },
+                  { label: "Model", align: "left" },
+                  { label: "Context", align: "left" },
+                  { label: "Tokens (est.)", align: "left" },
+                  { label: "Executed", align: "left" },
+                  { label: "", align: "right" }
+                ]}
+                rows={filteredRuns.map((run) => ({
+                  key: run.id,
+                  cells: [
+                    <span className="mono-copy" key={`${run.id}-short`} title={run.id}>{run.shortId}</span>,
+                    formatAiOperationsWorkflowKindLabel(run.workflowKind),
+                    run.projectName,
+                    run.clientName ?? "—",
+                    run.targetMonth ?? "—",
+                    formatLabel(run.workflowType),
+                    <StatusBadge key={`${run.id}-status`} status={run.status} />,
+                    formatLabel(run.gateway),
+                    run.model ?? "—",
+                    contextStatusBadge(run.contextStatus),
+                    formatAiWorkflowTokenEstimate(run.approximateInputTokens, run.maxOutputTokens),
+                    formatTimestamp(run.executedAt),
+                    <Button key={`${run.id}-review`} onClick={() => void openRunDetail(run.id)} size="sm" variant="secondary">
+                      Review
+                    </Button>
+                  ]
+                }))}
+              />
             </div>
           )}
         </SectionPanel>

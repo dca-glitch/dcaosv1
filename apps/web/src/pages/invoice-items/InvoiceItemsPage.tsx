@@ -1,9 +1,9 @@
 import { type FormEvent, useMemo, useState } from "react";
-import { ErrorState } from "../../components/ErrorState";
-import { LoadingState } from "../../components/LoadingState";
 import { Modal } from "../../components/Modal";
 import { MetricCard, PageHeader, SectionPanel, StatusBadge } from "../../components/ui";
+import { Button } from "../../components/ui/Button";
 import { ModalActions } from "../../components/ui/ModalActions";
+import { Alert, Input, Spinner, Textarea } from "../../design-system";
 
 export type InvoiceItemSummary = {
   id: string;
@@ -100,15 +100,20 @@ export function InvoiceItemsPage({
   }
 
   if (isLoading) {
-    return <LoadingState label="Loading services library" />;
+    return (
+      <div className="state-panel loading-state-panel" role="status">
+        <Spinner size="sm" />
+        Loading services library
+      </div>
+    );
   }
 
   if (errorMessage) {
-    return <ErrorState message={errorMessage} title="Services library unavailable" />;
+    return <Alert message={errorMessage} title="Services library unavailable" variant="danger" />;
   }
 
   return (
-    <section className="view-section" aria-labelledby="invoice-items-title">
+    <section className="view-section" aria-labelledby="invoice-items-title" data-density="compact">
       <PageHeader
         eyebrow="Finance"
         title="Services Library"
@@ -116,9 +121,9 @@ export function InvoiceItemsPage({
         description="Reusable invoice items and service prices scoped to the active tenant. Use this library to standardize future invoice line items."
         actions={
           canEdit ? (
-            <button className="primary-action" onClick={openCreateModal} type="button">
+            <Button onClick={openCreateModal} type="button">
               Add Service
-            </button>
+            </Button>
           ) : null
         }
       />
@@ -135,22 +140,24 @@ export function InvoiceItemsPage({
         description="Create, update, archive, and restore reusable service entries. Payments, credit notes, downloads, and project documents are intentionally out of scope here."
         action={
           <div className="filter-bar" role="group" aria-label="Service library view">
-            <button
+            <Button
               aria-pressed={tab === "active"}
               className={tab === "active" ? "secondary-action filter-chip is-active" : "secondary-action filter-chip"}
               onClick={() => setTab("active")}
               type="button"
+              variant="secondary"
             >
               Active
-            </button>
-            <button
+            </Button>
+            <Button
               aria-pressed={tab === "archived"}
               className={tab === "archived" ? "secondary-action filter-chip is-active" : "secondary-action filter-chip"}
               onClick={() => setTab("archived")}
               type="button"
+              variant="secondary"
             >
               Archived
-            </button>
+            </Button>
           </div>
         }
       >
@@ -196,15 +203,27 @@ export function InvoiceItemsPage({
                   </div>
 
                   <div className="dense-actions">
-                    {canEdit && !item.isArchived ? <button className="primary-action" onClick={() => openEditModal(item)} type="button">Open</button> : null}
+                    {canEdit && !item.isArchived ? (
+                      <Button onClick={() => openEditModal(item)} type="button">
+                        Open
+                      </Button>
+                    ) : null}
                     {canEdit ? (
                       <details className="row-action-menu">
                         <summary>More</summary>
                         <div className="row-action-menu-panel">
                           <div className="row-action-menu-group">
                             <span className="row-action-menu-label">Service</span>
-                            {!item.isArchived ? <button className="secondary-action" onClick={() => void onArchiveInvoiceItem(item.id)} type="button">Archive</button> : null}
-                            {item.isArchived ? <button className="secondary-action" onClick={() => void onRestoreInvoiceItem(item.id)} type="button">Restore</button> : null}
+                            {!item.isArchived ? (
+                              <Button onClick={() => void onArchiveInvoiceItem(item.id)} size="sm" type="button" variant="secondary">
+                                Archive
+                              </Button>
+                            ) : null}
+                            {item.isArchived ? (
+                              <Button onClick={() => void onRestoreInvoiceItem(item.id)} size="sm" type="button" variant="secondary">
+                                Restore
+                              </Button>
+                            ) : null}
                           </div>
                         </div>
                       </details>
@@ -226,40 +245,38 @@ export function InvoiceItemsPage({
             <p className="muted-text">Used as reusable invoice line items. Changing this does not update existing invoices.</p>
             <ModalActions disabled={saving || !draft.name.trim()} label={submitLabel} onCancel={closeEditor} saving={saving} />
             <div className="field-grid">
-              <label>
-                Service name - Required
-                <input
-                  maxLength={255}
-                  onChange={(event) => setDraft((current) => ({ ...current, name: event.target.value }))}
-                  placeholder="SEO article, monthly retainer, website maintenance"
-                  required
-                  value={draft.name}
-                />
-                <span className="muted-text">Used as reusable invoice line items.</span>
-              </label>
-              <label className="field-span-2">
-                Description - Optional
-                <textarea
-                  maxLength={4000}
-                  onChange={(event) => setDraft((current) => ({ ...current, description: event.target.value }))}
-                  placeholder="Default line item description used on invoices"
-                  rows={4}
-                  value={draft.description}
-                />
-                <span className="muted-text">Changing this does not update existing invoices.</span>
-              </label>
-              <label>
-                Unit price - Required
-                <input
-                  min={0}
-                  onChange={(event) => setDraft((current) => ({ ...current, unitPriceCents: event.target.valueAsNumber || 0 }))}
-                  placeholder="Default price before tax or discount"
-                  required
-                  type="number"
-                  value={draft.unitPriceCents}
-                />
-                <span className="muted-text">Stored as the reusable default price for future invoice drafting.</span>
-              </label>
+              <Input
+                fullWidth
+                helperText="Used as reusable invoice line items."
+                label="Service name - Required"
+                maxLength={255}
+                onChange={(event) => setDraft((current) => ({ ...current, name: event.target.value }))}
+                placeholder="SEO article, monthly retainer, website maintenance"
+                required
+                value={draft.name}
+              />
+              <Textarea
+                className="field-span-2"
+                fullWidth
+                helperText="Changing this does not update existing invoices."
+                label="Description - Optional"
+                maxLength={4000}
+                onChange={(event) => setDraft((current) => ({ ...current, description: event.target.value }))}
+                placeholder="Default line item description used on invoices"
+                rows={4}
+                value={draft.description}
+              />
+              <Input
+                fullWidth
+                helperText="Stored as the reusable default price for future invoice drafting."
+                label="Unit price - Required"
+                min={0}
+                onChange={(event) => setDraft((current) => ({ ...current, unitPriceCents: event.target.valueAsNumber || 0 }))}
+                placeholder="Default price before tax or discount"
+                required
+                type="number"
+                value={draft.unitPriceCents}
+              />
             </div>
             <ModalActions disabled={saving || !draft.name.trim()} label={submitLabel} onCancel={closeEditor} saving={saving} />
           </form>

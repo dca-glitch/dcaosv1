@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { EmptyState } from "../../components/EmptyState";
-import { ErrorState } from "../../components/ErrorState";
-import { LoadingState } from "../../components/LoadingState";
 import { Button, PageHeader, SectionPanel, StatusBadge, Table } from "../../components/ui";
+import { Alert, Spinner } from "../../design-system";
 import {
   clientPortalApiRequest,
   formatApprovalDate,
@@ -64,7 +63,7 @@ export function PendingApprovalsPage() {
   );
 
   return (
-    <section className="view-section" aria-labelledby="pending-approvals-title">
+    <section className="view-section" aria-labelledby="pending-approvals-title" data-density="comfortable">
       <PageHeader
         action={
           <Button disabled={loading} onClick={() => void loadPendingApprovals()} variant="tertiary">
@@ -78,18 +77,31 @@ export function PendingApprovalsPage() {
       />
 
       <nav aria-label="Client portal sections" className="portal-subnav">
-        <button className="portal-subnav-link" onClick={() => navigateToClientPortalHash("client-portal")} type="button">
+        <Button className="portal-subnav-link" onClick={() => navigateToClientPortalHash("client-portal")} type="button" variant="tertiary">
           Archive
-        </button>
-        <button className="portal-subnav-link is-active" type="button">
+        </Button>
+        <Button className="portal-subnav-link is-active" type="button" variant="tertiary">
           Pending Approvals
           {items.length > 0 ? <span className="nav-count-badge">{items.length}</span> : null}
-        </button>
+        </Button>
+        <Button
+          className="portal-subnav-link"
+          onClick={() => navigateToClientPortalHash("client-portal/briefs")}
+          type="button"
+          variant="tertiary"
+        >
+          Briefs
+        </Button>
       </nav>
 
-      {loading ? <LoadingState label="Loading pending approvals" /> : null}
+      {loading ? (
+        <div className="state-panel loading-state-panel" role="status">
+          <Spinner size="sm" />
+          Loading pending approvals
+        </div>
+      ) : null}
 
-      {!loading && error ? <ErrorState message={error} title="Approvals unavailable" /> : null}
+      {!loading && error ? <Alert message={error} title="Approvals unavailable" variant="danger" /> : null}
 
       {!loading && !error ? (
         <SectionPanel description="Review article drafts and images before publication." title="Awaiting your approval">

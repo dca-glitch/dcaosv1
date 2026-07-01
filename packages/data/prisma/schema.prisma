@@ -167,6 +167,81 @@ enum AiDeliveryBriefStatus {
   ADMIN_APPROVED
 }
 
+enum BriefType {
+  MONTHLY
+  ADDITIONAL
+}
+
+enum BriefStatus {
+  DRAFT
+  AWAITING_CLIENT
+  SUBMITTED
+}
+
+enum WorkflowBriefSource {
+  CLIENT_PORTAL
+  ADMIN_PANEL
+}
+
+enum WorkflowBriefCreatedByRole {
+  CLIENT
+  ADMIN
+}
+
+enum WorkflowBriefStatus {
+  DRAFT
+  SUBMITTED
+  IN_REVIEW
+  READY_FOR_AI
+  AI_RUNNING
+  AI_RESULTS_READY
+  APPROVED_FOR_PRODUCTION
+  ARCHIVED
+}
+
+enum AiBriefRunStatus {
+  QUEUED
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+enum AiReportStatus {
+  DRAFT
+  READY
+  APPROVED
+  REJECTED
+  ARCHIVED
+}
+
+enum ProductionPlanStatus {
+  DRAFT
+  SENT_TO_CLIENT
+  APPROVED
+  CHANGES_REQUESTED
+  ARCHIVED
+}
+
+enum BriefApprovalDecisionType {
+  APPROVE
+  REJECT
+  REQUEST_CHANGES
+  SUBMIT
+  ARCHIVE
+}
+
+enum BriefApprovalTargetType {
+  BRIEF
+  MI_REPORT
+  SEO_REPORT
+  PRODUCTION_PLAN
+}
+
+enum BriefApprovalActorRole {
+  CLIENT
+  ADMIN
+}
+
 model Tenant {
   id                   String                @id @default(uuid())
   name                 String
@@ -225,6 +300,12 @@ model Tenant {
   publicationLogs      PublicationLog[]
   clientCatalogProducts ClientCatalogProduct[]
   clientCatalogInquiries ClientCatalogInquiry[]
+  workflowBriefs       Brief[]
+  aiBriefRuns          AiBriefRun[]
+  aiMiReports          AiMiReport[]
+  aiSeoReports         AiSeoReport[]
+  briefApprovals       BriefApproval[]
+  productionPlans      ProductionPlan[]
 }
 
 model User {
@@ -255,6 +336,10 @@ model User {
   aiKnowledgeItemVersionsCreated AiKnowledgeItemVersion[] @relation("AiKnowledgeItemVersionCreatedByUser")
   aiContextSnapshotsCreated AiContextSnapshot[] @relation("AiContextSnapshotCreatedByUser")
   deliverableClientEdits    ClientEdit[]        @relation("DeliverableClientEdits")
+  workflowBriefsCreated     Brief[]             @relation("WorkflowBriefCreatedBy")
+  workflowBriefsReviewed    Brief[]             @relation("WorkflowBriefAdminReviewedBy")
+  aiBriefRunsTriggered      AiBriefRun[]        @relation("AiBriefRunTriggeredBy")
+  briefApprovals            BriefApproval[]     @relation("BriefApprovalActor")
 }
 
 model Session {
@@ -429,6 +514,7 @@ model Client {
   aiKnowledgeItems  AiKnowledgeItem[]
   financeEvents     FinanceEvent[]
   revenueAttributions RevenueAttribution[]
+  workflowBriefs      Brief[]
 
   @@index([tenantId])
   @@index([tenantId, isArchived])
@@ -633,6 +719,7 @@ model AiDeliveryProject {
   tenantId                 String
   clientId                 String
   projectId                String?
+  sourceBriefId            String?
   name                     String
   targetMonth              DateTime
   plannedContentScopeNotes String?
@@ -643,6 +730,7 @@ model AiDeliveryProject {
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   client Client @relation(fields: [clientId], references: [id], onDelete: Restrict)
   project Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  sourceBrief Brief? @relation("SourceBriefProjects", fields: [sourceBriefId], references: [id], onDelete: SetNull)
   brief AiDeliveryBrief?
   contentPlans AiDeliveryContentPlan[]
   contentDrafts AiDeliveryContentDraft[]
@@ -658,12 +746,14 @@ model AiDeliveryProject {
   marketIntelligenceHandoffs MarketIntelligenceHandoff[]
   aiKnowledgeItems         AiKnowledgeItem[]
   aiContextSnapshots       AiContextSnapshot[]
+  productionPlans          ProductionPlan[]
 
   @@index([tenantId])
   @@index([tenantId, isArchived])
   @@index([tenantId, clientId])
   @@index([tenantId, projectId])
   @@index([tenantId, targetMonth])
+  @@index([tenantId, sourceBriefId])
 }
 
 model AiDeliveryBrief {
@@ -689,6 +779,191 @@ model AiDeliveryBrief {
 
   @@index([tenantId])
   @@index([tenantId, status])
+  @@index([tenantId, aiDeliveryProjectId])
+}
+
+// Legacy client monthly/additional brief submissions (table "Brief").
+// Distinct from workflow Brief (table "WorkflowBrief") and AiDeliveryBrief (project-scoped).
+model ClientMonthlyBrief {
+  id              String      @id @default(cuid())
+  companyId       String
+  clientId        String
+  briefNumber     Int         @default(0)
+  targetGroup     String?
+  hubCount        Int         @default(0)
+  geoSeoCount     Int         @default(0)
+  lifestyleCount  Int         @default(0)
+  otherCount      Int         @default(0)
+  type            BriefType
+  month           Int?
+  year            Int?
+  title           String
+  content         String      @db.Text
+  status          BriefStatus @default(DRAFT)
+  submittedById   String?
+  submittedAt     DateTime?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@unique([clientId, type, month, year], name: "unique_monthly_brief")
+  @@index([companyId])
+  @@index([clientId])
+  @@map("Brief")
+}
+
+// Workflow initiation brief: content/SEO/MI entry point before production.
+// Maps to table "WorkflowBrief". Not the legacy monthly Brief table or AiDeliveryBrief.
+model Brief {
+  id                      String                   @id @default(uuid())
+  tenantId                String
+  clientId                String
+  source                  WorkflowBriefSource
+  createdByUserId         String
+  createdByRole           WorkflowBriefCreatedByRole
+  title                   String
+  goal                    String?
+  businessContext         String?                  @db.Text
+  targetAudience          String?
+  offerContext            String?
+  locationContext         String?
+  notes                   String?                  @db.Text
+  structuredInputJson     Json?
+  status                  WorkflowBriefStatus      @default(DRAFT)
+  adminReviewedAt         DateTime?
+  adminReviewedByUserId   String?
+  aiRequestedAt           DateTime?
+  approvedForProductionAt DateTime?
+  archivedAt              DateTime?
+  createdAt               DateTime                 @default(now())
+  updatedAt               DateTime                 @updatedAt
+
+  tenant              Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  client              Client              @relation(fields: [clientId], references: [id], onDelete: Restrict)
+  createdByUser       User                @relation("WorkflowBriefCreatedBy", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  adminReviewedByUser User?               @relation("WorkflowBriefAdminReviewedBy", fields: [adminReviewedByUserId], references: [id], onDelete: SetNull)
+  aiBriefRuns         AiBriefRun[]
+  miReports           AiMiReport[]
+  seoReports          AiSeoReport[]
+  approvals           BriefApproval[]
+  productionPlans     ProductionPlan[]
+  sourceProjects      AiDeliveryProject[] @relation("SourceBriefProjects")
+  deliverables        AiDeliveryDeliverable[]
+
+  @@index([tenantId])
+  @@index([tenantId, clientId])
+  @@index([tenantId, status])
+  @@index([tenantId, createdByUserId])
+  @@map("WorkflowBrief")
+}
+
+model AiBriefRun {
+  id                String           @id @default(uuid())
+  tenantId          String
+  briefId           String
+  triggeredByUserId String
+  status            AiBriefRunStatus @default(QUEUED)
+  startedAt         DateTime?
+  completedAt       DateTime?
+  errorMessage      String?
+  inputSnapshotJson Json?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  tenant          Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  brief           Brief        @relation(fields: [briefId], references: [id], onDelete: Cascade)
+  triggeredByUser User         @relation("AiBriefRunTriggeredBy", fields: [triggeredByUserId], references: [id], onDelete: Restrict)
+  miReports       AiMiReport[]
+  seoReports      AiSeoReport[]
+
+  @@index([tenantId])
+  @@index([tenantId, briefId])
+  @@index([tenantId, status])
+}
+
+model AiMiReport {
+  id           String         @id @default(uuid())
+  tenantId     String
+  briefId      String
+  aiBriefRunId String
+  status       AiReportStatus @default(DRAFT)
+  summaryText  String?        @db.Text
+  reportJson   Json?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  tenant     Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  brief      Brief      @relation(fields: [briefId], references: [id], onDelete: Cascade)
+  aiBriefRun AiBriefRun @relation(fields: [aiBriefRunId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([tenantId, briefId])
+  @@index([tenantId, aiBriefRunId])
+}
+
+model AiSeoReport {
+  id           String         @id @default(uuid())
+  tenantId     String
+  briefId      String
+  aiBriefRunId String
+  status       AiReportStatus @default(DRAFT)
+  summaryText  String?        @db.Text
+  reportJson   Json?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  tenant     Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  brief      Brief      @relation(fields: [briefId], references: [id], onDelete: Cascade)
+  aiBriefRun AiBriefRun @relation(fields: [aiBriefRunId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([tenantId, briefId])
+  @@index([tenantId, aiBriefRunId])
+}
+
+model BriefApproval {
+  id           String                    @id @default(uuid())
+  tenantId     String
+  briefId      String
+  actorUserId  String
+  actorRole    BriefApprovalActorRole
+  decisionType BriefApprovalDecisionType
+  targetType   BriefApprovalTargetType
+  comment      String?
+  createdAt    DateTime                  @default(now())
+
+  tenant      Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  brief       Brief  @relation(fields: [briefId], references: [id], onDelete: Cascade)
+  actorUser   User   @relation("BriefApprovalActor", fields: [actorUserId], references: [id], onDelete: Restrict)
+
+  @@index([tenantId])
+  @@index([tenantId, briefId])
+  @@index([tenantId, actorUserId])
+}
+
+// Internal/admin production plan derived from workflow Brief + AI outputs.
+// Foundation only — does not replace AiDeliveryBrief (legacy project brief workflow).
+model ProductionPlan {
+  id                       String               @id @default(uuid())
+  tenantId                 String
+  briefId                  String
+  aiDeliveryProjectId      String?
+  title                    String
+  body                     String?              @db.Text
+  planJson                 Json?
+  clientVisibleSnapshotJson Json?
+  status                   ProductionPlanStatus @default(DRAFT)
+  sentToClientAt           DateTime?
+  approvedByClientAt       DateTime?
+  createdAt                DateTime             @default(now())
+  updatedAt                DateTime             @updatedAt
+
+  tenant            Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  brief             Brief                   @relation(fields: [briefId], references: [id], onDelete: Cascade)
+  aiDeliveryProject AiDeliveryProject?      @relation(fields: [aiDeliveryProjectId], references: [id], onDelete: SetNull)
+  deliverables      AiDeliveryDeliverable[]
+
+  @@index([tenantId])
+  @@index([tenantId, briefId])
   @@index([tenantId, aiDeliveryProjectId])
 }
 
@@ -862,6 +1137,8 @@ model AiDeliveryDeliverable {
   id                    String   @id @default(uuid())
   tenantId              String
   aiDeliveryProjectId   String
+  briefId               String?
+  productionPlanId      String?
   contentDraftId        String?
   articleImageId        String?
   title                 String
@@ -882,6 +1159,8 @@ model AiDeliveryDeliverable {
 
   tenant              Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   aiDeliveryProject   AiDeliveryProject       @relation(fields: [aiDeliveryProjectId], references: [id], onDelete: Cascade)
+  brief               Brief?                  @relation(fields: [briefId], references: [id], onDelete: SetNull)
+  productionPlan      ProductionPlan?         @relation(fields: [productionPlanId], references: [id], onDelete: SetNull)
   contentDraft        AiDeliveryContentDraft? @relation(fields: [contentDraftId], references: [id], onDelete: SetNull)
   articleImage        AiDeliveryArticleImage? @relation(fields: [articleImageId], references: [id], onDelete: SetNull)
   reviews             AiDeliveryDeliverableReview[]
@@ -894,6 +1173,8 @@ model AiDeliveryDeliverable {
   @@index([tenantId, isArchived])
   @@index([tenantId, contentDraftId])
   @@index([tenantId, articleImageId])
+  @@index([tenantId, briefId])
+  @@index([tenantId, productionPlanId])
 }
 
 model ClientEdit {

@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mockup 04 — Client Portal Archive</title>
+  <link rel="stylesheet" href="shared.css" />
+  <style>
+    .archive-split {
+      display: grid;
+      gap: var(--xl);
+      grid-template-columns: 280px 1fr;
+    }
+    @media (max-width: 900px) {
+      .archive-split { grid-template-columns: 1fr; }
+    }
+    .project-list-item {
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      padding: var(--md) var(--lg);
+    }
+    .project-list-item:hover,
+    .project-list-item.is-selected {
+      background: color-mix(in srgb, var(--surface) 96%, var(--accent) 4%);
+    }
+    .project-list-item.is-selected {
+      border-left: 3px solid var(--accent);
+      padding-left: calc(var(--lg) - 3px);
+    }
+    .deliverable-row {
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+      display: grid;
+      gap: var(--md);
+      grid-template-columns: 1fr 100px 80px;
+      min-height: 44px;
+      padding: var(--md) var(--lg);
+    }
+    .deliverable-row:hover {
+      background: color-mix(in srgb, var(--surface) 98%, white 2%);
+    }
+  </style>
+</head>
+<body>
+  <div class="mockup-banner">Mockup 04 — Client Portal Archive · <a href="index.html">Back to index</a></div>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <strong>Puriva</strong>
+        <span>Client workspace</span>
+      </div>
+      <div class="sidebar-section">Client</div>
+      <nav class="sidebar-nav">
+        <a href="#" class="is-active">Your archive</a>
+        <a href="02-client-pending-approvals.html">Pending Approvals <span class="nav-count">3</span></a>
+      </nav>
+      <div class="sidebar-footer">client@puriva.id</div>
+    </aside>
+
+    <main class="main">
+      <header class="page-header">
+        <div class="page-header-row">
+          <div>
+            <p class="page-eyebrow">Client workspace</p>
+            <h1 class="text-display">Your archive</h1>
+            <p class="page-description">Final deliverables and monthly reports shared with your account.</p>
+          </div>
+          <button class="btn btn-md btn-ghost" type="button">Refresh</button>
+        </div>
+      </header>
+
+      <nav class="subnav" aria-label="Client portal sections">
+        <a href="#" class="is-active">Archive</a>
+        <a href="02-client-pending-approvals.html">Pending Approvals <span class="nav-count">3</span></a>
+      </nav>
+
+      <div class="metric-grid">
+        <div class="metric-card">
+          <div class="label">Projects</div>
+          <div class="value">1</div>
+          <div class="helper">Active delivery projects</div>
+        </div>
+        <div class="metric-card">
+          <div class="label">Deliverables</div>
+          <div class="value">12</div>
+          <div class="helper">Completed items only</div>
+        </div>
+      </div>
+
+      <div class="archive-split">
+        <section class="section-panel" style="margin-bottom:0;">
+          <div class="section-panel-header">
+            <h2 class="text-heading">Projects</h2>
+          </div>
+          <div class="section-panel-body">
+            <div class="project-list-item is-selected">
+              <div class="text-subheading">Puriva SEO — Q2</div>
+              <div class="text-small text-muted">Active · 12 deliverables</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="section-panel" style="margin-bottom:0;">
+          <div class="section-panel-header">
+            <h2 class="text-heading">Final deliverables</h2>
+            <p>Completed articles and assets ready for your records.</p>
+          </div>
+          <div class="section-panel-body">
+            <div class="deliverable-row">
+              <div>
+                <div class="row-title">Ashwagandha Guide for Beginners</div>
+                <div class="row-meta">Article · Final</div>
+              </div>
+              <div class="row-align-right"><span class="badge badge-success">Final</span></div>
+              <div class="row-align-right text-small text-muted">15 Jun</div>
+            </div>
+            <div class="deliverable-row">
+              <div>
+                <div class="row-title">June 2026 Monthly Report</div>
+                <div class="row-meta">Report · PDF</div>
+              </div>
+              <div class="row-align-right"><span class="badge badge-success">Final</span></div>
+              <div class="row-align-right text-small text-muted">30 Jun</div>
+            </div>
+            <div class="deliverable-row">
+              <div>
+                <div class="row-title">Turmeric Latte Recipe</div>
+                <div class="row-meta">Article · Final</div>
+              </div>
+              <div class="row-align-right"><span class="badge badge-success">Final</span></div>
+              <div class="row-align-right text-small text-muted">08 Jun</div>
+            </div>
+            <div class="deliverable-row">
+              <div>
+                <div class="row-title">Delivery summary — May 2026</div>
+                <div class="row-meta">Summary</div>
+              </div>
+              <div class="row-align-right"><span class="badge badge-info">Summary</span></div>
+              <div class="row-align-right text-small text-muted">02 Jun</div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

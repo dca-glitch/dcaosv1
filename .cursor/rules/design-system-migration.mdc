@@ -1,0 +1,27 @@
+---
+description: Constraints for the DCA OS Lite design system migration
+globs: apps/web/src/**/*.tsx
+alwaysApply: true
+---
+
+# Design system migration rules
+
+- Never modify anything inside apps/web/src/design-system/
+- Never change backend code, API calls, Prisma schema, or auth logic
+- Never change the existing PageHeader component (props: eyebrow, titleId, description — different API from design-system's PageHeader)
+- Never change App.tsx routing logic (hash-based routing)
+- Never replace the existing AppLayout/sidebar/navigation shell with design-system's AppShell/Sidebar/Topbar — only swap leaf-level UI primitives (Button, Table, Input, Badge, Card, Modal, Alert, Spinner) inside existing pages
+- Never install new npm packages or modify package.json
+- Never read, print, or modify .env, .env.local, or any credential file
+- Never rewrite copy, labels, or text content while swapping components — preserve exact existing strings unless the new component's own status mapping replaces redundant inline text (e.g. StatusBadge's built-in label)
+- Never reformat untouched code, reorder unrelated imports, or run a project-wide formatter/linter --fix during this task — keep diffs scoped to the actual component swap
+- Never git push, open a PR, or run destructive git commands (reset --hard, force push, branch deletion) without explicit confirmation from the user first
+- Commit after every single file using `git add <specific file path>` — never `git add .` or `git add -A` during this task
+- If a build/typecheck error can't be fixed in 2 attempts, stop and report the exact error instead of guessing further
+
+## Long status reports
+- Whenever a status report, diagnosis, or summary would exceed roughly 30 lines, write the full report to a file instead of printing it entirely in chat.
+- File location: repo root, named _status_report.md (leading underscore signals scratch file, never part of source).
+- In chat, print only: confirmation the file was written, its path, and a 2-3 sentence summary of the headline finding.
+- Never include this scratch file in any git add or commit — if asked to commit, explicitly exclude it.
+- This applies to any future block, not just this one.

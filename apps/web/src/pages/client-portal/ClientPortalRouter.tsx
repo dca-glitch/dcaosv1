@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
+import { ArchiveHubPage } from "../ArchiveHubPage";
+import { BriefPage } from "../BriefPage";
 import { ArticleApprovalEditor } from "./ArticleApprovalEditor";
-import { ClientPortalPage } from "./ClientPortalPage";
 import { PendingApprovalsPage } from "./PendingApprovalsPage";
 import { parseClientPortalHash } from "./client-portal-api";
 
@@ -19,9 +20,13 @@ export function ClientPortalRouter() {
     return <PendingApprovalsPage />;
   }
 
+  if (route.view === "briefs") {
+    return <BriefPage />;
+  }
+
   if (route.view === "approve" && route.deliverableId) {
     return <ArticleApprovalEditor deliverableId={route.deliverableId} />;
   }
 
-  return <ClientPortalPage />;
+  return <ArchiveHubPage />;
 }

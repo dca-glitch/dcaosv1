@@ -1,5 +1,6 @@
 /** Shared selectors for Client Portal browser smokes (Dark Nebula archive shell). */
 
+export const CLIENT_ARCHIVE_PAGE_HEADING = "Archive";
 export const CLIENT_PORTAL_PAGE_HEADING = "Your archive";
 export const CLIENT_PORTAL_DELIVERY_SUMMARY_HEADING = "Delivery summary";
 export const CLIENT_PORTAL_MONTHLY_REPORTS_HEADING = "Monthly reports";
@@ -11,9 +12,13 @@ export async function seedClientPortalAuth(page, token) {
   }, token);
 }
 
-export async function gotoClientPortal(page, webBaseUrl) {
-  await page.goto(`${webBaseUrl.replace(/\/$/, "")}/#/client-portal`, { waitUntil: "domcontentloaded" });
-  await page.getByRole("heading", { name: CLIENT_PORTAL_PAGE_HEADING }).waitFor({ state: "visible", timeout: 30000 });
+export async function gotoClientPortal(page, webBaseUrl, options = {}) {
+  const hash = options.hash ?? "#/archive";
+  const heading = options.heading ?? CLIENT_ARCHIVE_PAGE_HEADING;
+  await page.goto(`${webBaseUrl.replace(/\/$/, "")}/${hash.replace(/^#?\/?/, "#/")}`, {
+    waitUntil: "domcontentloaded"
+  });
+  await page.getByRole("heading", { name: heading, exact: true }).waitFor({ state: "visible", timeout: 30000 });
   await page.getByRole("button", { name: "Logout" }).waitFor({ state: "visible", timeout: 30000 });
 }
 

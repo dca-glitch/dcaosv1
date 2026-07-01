@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Modal } from "../../components/Modal";
 import { EmptyState } from "../../components/EmptyState";
-import { ErrorState } from "../../components/ErrorState";
-import { LoadingState } from "../../components/LoadingState";
 import { Button, PageHeader, SectionPanel, StatusBadge } from "../../components/ui";
+import { Alert, Card, Input, Spinner, Textarea, Toast } from "../../design-system";
 import {
   clientPortalApiRequest,
   formatApprovalDate,
@@ -365,13 +364,18 @@ export function ArticleApprovalEditor({ deliverableId }: ArticleApprovalEditorPr
   }
 
   if (loading) {
-    return <LoadingState label="Loading article for approval" />;
+    return (
+      <div className="state-panel loading-state-panel" role="status">
+        <Spinner size="sm" />
+        Loading article for approval
+      </div>
+    );
   }
 
   if (error || !deliverable) {
     return (
-      <section className="view-section">
-        <ErrorState message={error ?? "Article not available."} title="Approval unavailable" />
+      <section className="view-section" data-density="comfortable">
+        <Alert message={error ?? "Article not available."} title="Approval unavailable" variant="danger" />
         <div className="portal-action-row">
           <Button onClick={() => navigateToClientPortalHash("client-portal/pending-approvals")} variant="secondary">
             Back to pending approvals
@@ -382,11 +386,9 @@ export function ArticleApprovalEditor({ deliverableId }: ArticleApprovalEditorPr
   }
 
   return (
-    <section className="view-section" aria-labelledby="article-approval-title">
+    <section className="view-section" aria-labelledby="article-approval-title" data-density="comfortable">
       {toast ? (
-        <div className={`portal-toast portal-toast-${toast.tone}`} role="status">
-          {toast.message}
-        </div>
+        <Toast message={toast.message} variant={toast.tone === "error" ? "danger" : "success"} />
       ) : null}
 
       <PageHeader
@@ -420,59 +422,49 @@ export function ArticleApprovalEditor({ deliverableId }: ArticleApprovalEditorPr
 
         <div className="portal-approval-main">
           <SectionPanel description="Title, description, tags, category, and optional publish date. Changes save automatically." title="Article metadata">
-            <label className="field-label" htmlFor="article-title">
-              Title
-            </label>
-            <input
+            <Input
               className="entity-form"
               id="article-title"
+              label="Title"
               onChange={(event) => setMetadata((current) => ({ ...current, title: event.target.value }))}
               type="text"
               value={metadata.title}
             />
 
-            <label className="field-label" htmlFor="article-category">
-              Category
-            </label>
-            <input
+            <Input
               className="entity-form"
               id="article-category"
+              label="Category"
               onChange={(event) => setMetadata((current) => ({ ...current, category: event.target.value }))}
               placeholder="e.g. Wellness"
               type="text"
               value={metadata.category}
             />
 
-            <label className="field-label" htmlFor="article-description">
-              Description
-            </label>
-            <textarea
+            <Textarea
               className="entity-form"
               id="article-description"
+              label="Description"
               onChange={(event) => setMetadata((current) => ({ ...current, description: event.target.value }))}
               placeholder="Short summary or excerpt"
               rows={3}
               value={metadata.description}
             />
 
-            <label className="field-label" htmlFor="article-tags">
-              Tags
-            </label>
-            <input
+            <Input
               className="entity-form"
               id="article-tags"
+              label="Tags"
               onChange={(event) => setMetadata((current) => ({ ...current, tagsInput: event.target.value }))}
               placeholder="Comma-separated tags"
               type="text"
               value={metadata.tagsInput}
             />
 
-            <label className="field-label" htmlFor="article-scheduled-publish">
-              Scheduled publish date
-            </label>
-            <input
+            <Input
               className="entity-form"
               id="article-scheduled-publish"
+              label="Scheduled publish date"
               onChange={(event) => setMetadata((current) => ({ ...current, scheduledPublishAt: event.target.value }))}
               type="datetime-local"
               value={metadata.scheduledPublishAt}
@@ -481,12 +473,10 @@ export function ArticleApprovalEditor({ deliverableId }: ArticleApprovalEditorPr
           </SectionPanel>
 
           <SectionPanel description="Plain text article body. Changes save automatically." title="Article Body">
-            <label className="field-label" htmlFor="article-body-content">
-              Body Content (editable)
-            </label>
-            <textarea
+            <Textarea
               className="entity-form portal-approval-textarea"
               id="article-body-content"
+              label="Body Content (editable)"
               minLength={0}
               onChange={(event) => setBodyContent(event.target.value)}
               placeholder="Article body..."
@@ -502,7 +492,7 @@ export function ArticleApprovalEditor({ deliverableId }: ArticleApprovalEditorPr
             ) : (
               <div className="portal-image-approval-grid">
                 {deliverable.images.map((image) => (
-                  <article className="entity-card portal-image-approval-card" key={image.id}>
+                  <Card className="portal-image-approval-card" key={image.id} variant="client">
                     <div className="portal-image-thumb-wrap">
                       {image.imageUrl ? (
                         <img alt={image.altText} className="portal-image-thumb" src={image.imageUrl} />
@@ -556,7 +546,7 @@ export function ArticleApprovalEditor({ deliverableId }: ArticleApprovalEditorPr
 
                       {rejectImageId === image.id ? (
                         <div className="portal-inline-reject">
-                          <input
+                          <Input
                             className="entity-form"
                             onChange={(event) => setRejectImageReason(event.target.value)}
                             placeholder="Rejection reason"
@@ -574,7 +564,7 @@ export function ArticleApprovalEditor({ deliverableId }: ArticleApprovalEditorPr
                         </div>
                       ) : null}
                     </div>
-                  </article>
+                  </Card>
                 ))}
               </div>
             )}
@@ -638,12 +628,10 @@ export function ArticleApprovalEditor({ deliverableId }: ArticleApprovalEditorPr
             </div>
           }
         >
-          <label className="field-label" htmlFor="article-reject-reason">
-            Rejection reason
-          </label>
-          <textarea
+          <Textarea
             className="entity-form"
             id="article-reject-reason"
+            label="Rejection reason"
             onChange={(event) => setArticleRejectReason(event.target.value)}
             placeholder="Tell DCA what needs to change…"
             rows={5}

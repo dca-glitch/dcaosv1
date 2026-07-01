@@ -1,0 +1,64 @@
+{
+  "version": "PURIVA_MARKET_INTELLIGENCE_V1",
+  "seedLabel": "Local operator-reviewed placeholder — deterministic seed, not live research",
+  "clientDomain": "puriva.id",
+  "market": "Bali licensed aesthetic clinic market",
+  "competitorPlaceholders": [
+    {
+      "id": "placeholder_clinic_a",
+      "name": "Placeholder Clinic A (Bali aesthetic)",
+      "sourceType": "WEBSITE",
+      "sourceUrl": "https://placeholder-competitor-a.example.com",
+      "notes": "Operator-reviewed competitor positioning placeholder. No live crawl."
+    },
+    {
+      "id": "placeholder_clinic_b",
+      "name": "Placeholder Clinic B (medical tourism)",
+      "sourceType": "WEBSITE",
+      "sourceUrl": "https://placeholder-competitor-b.example.com",
+      "notes": "International patient journey comparison placeholder only."
+    },
+    {
+      "id": "placeholder_industry_note",
+      "name": "Placeholder industry briefing",
+      "sourceType": "OTHER",
+      "sourceUrl": "https://placeholder-industry-brief.example.com/bali-aesthetic",
+      "notes": "Local seed context for search-demand themes — not factual market statistics."
+    }
+  ],
+  "contentGapCategories": [
+    {
+      "id": "consultation_eligibility_education",
+      "label": "Consultation and eligibility education",
+      "description": "Educational gaps around prescriber-led screening and treatment suitability without universal suitability claims.",
+      "relatedServiceCategoryIds": ["wegovy_semaglutide_weight_management", "stem_cell_therapy"]
+    },
+    {
+      "id": "trust_and_credential_verification",
+      "label": "Trust and credential verification",
+      "description": "Content should explain verification steps for licensed provider and facility claims; hospital/partner statements require verification.",
+      "relatedServiceCategoryIds": ["bali_medical_tourism_journey", "general_aesthetic_services"]
+    },
+    {
+      "id": "service_comparison_without_outcome_promises",
+      "label": "Service comparison without outcome promises",
+      "description": "Comparison and FAQ opportunities that avoid treatment-outcome promises and permanent-result language.",
+      "relatedServiceCategoryIds": [
+        "wegovy_semaglutide_weight_management",
+        "stem_cell_therapy",
+        "general_aesthetic_services"
+      ]
+    },
+    {
+      "id": "international_patient_journey_support",
+      "label": "International patient journey support",
+      "description": "Medical tourism journey content for consultation, travel planning, and follow-up without overstating medical efficacy.",
+      "relatedServiceCategoryIds": ["bali_medical_tourism_journey"]
+    }
+  ],
+  "verificationRequiredNotes": [
+    "Hospital, accreditation, and partner claims require verification before publication.",
+    "Do not present placeholder competitor notes as verified market facts.",
+    "Puriva credential statements must be confirmed by compliance before client-facing use."
+  ]
+}

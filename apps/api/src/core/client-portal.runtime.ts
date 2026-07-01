@@ -1,6 +1,15 @@
 import { createPrismaClient } from "../../../../packages/data/src/client";
 import type { AuthResolvedSessionContext } from "../auth/types";
 import { getPrivateStorageDownloadReference } from "../storage/private-storage.service";
+import {
+  buildPurivaClientSafeManualMetricsDisclaimer,
+  consumePurivaApprovedManualMetricsSnapshot
+} from "./puriva-manual-metrics";
+import {
+  toClientSafeReleasePackageFromRecord,
+  WORKFLOW_BRIEF_FINAL_RELEASE_PACKAGE_VERSION,
+  type ClientSafeReleasePackage
+} from "./workflow-brief-final-release.execution";
 
 const prisma = createPrismaClient();
 
@@ -38,6 +47,113 @@ const clientPortalProjectSelect = {
   updatedAt: true
 } as const;
 
+const CLIENT_PORTAL_INTERNAL_MARKER_PATTERNS = [
+  /\[PURIVA_LOCAL_SETUP\]/gi,
+  /\[PURIVA_[A-Z0-9_]+\]/gi,
+  /PURIVA_[A-Z0-9_]+_V1/gi,
+  /puriva_[a-z0-9_]+_seed/gi
+] as const;
+
+type SanitizeClientPortalDisplayTextOptions = {
+  stripScaffoldWord?: boolean;
+  fallback?: string | null;
+};
+
+function normalizeSanitizedClientPortalText(
+  value: string,
+  options?: Pick<SanitizeClientPortalDisplayTextOptions, "stripScaffoldWord">
+): string {
+  let cleaned = value;
+
+  for (const pattern of CLIENT_PORTAL_INTERNAL_MARKER_PATTERNS) {
+    cleaned = cleaned.replace(pattern, "");
+  }
+
+  if (options?.stripScaffoldWord) {
+    cleaned = cleaned.replace(/\bscaffold\b/gi, "");
+  }
+
+  return cleaned
+    .replace(/\s{2,}/g, " ")
+    .replace(/\s+—\s+—/g, " — ")
+    .replace(/^\s*—\s*/, "")
+    .replace(/\s*—\s*$/, "")
+    .trim();
+}
+
+export function sanitizeClientPortalDisplayText(
+  raw: string | null | undefined,
+  options: SanitizeClientPortalDisplayTextOptions = {}
+): string | null {
+  if (typeof raw !== "string") {
+    return options.fallback ?? null;
+  }
+
+  const cleaned = normalizeSanitizedClientPortalText(raw.trim(), options);
+  if (!cleaned) {
+    return options.fallback ?? null;
+  }
+
+  return cleaned;
+}
+
+function sanitizeClientPortalStringList(
+  value: unknown,
+  options: SanitizeClientPortalDisplayTextOptions = {}
+): string[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .filter((item): item is string => typeof item === "string" && item.trim().length > 0)
+    .map((item) => sanitizeClientPortalDisplayText(item, options) ?? "")
+    .filter((item) => item.length > 0)
+    .slice(0, 12);
+}
+
+function sanitizeClientPortalReleasePackage(
+  releasePackage: ClientSafeReleasePackage
+): ClientSafeReleasePackage {
+  return {
+    releasePackageId: releasePackage.releasePackageId,
+    briefTitle:
+      sanitizeClientPortalDisplayText(releasePackage.briefTitle, {
+        stripScaffoldWord: true,
+        fallback: "Release package"
+      }) ?? "Release package",
+    projectName:
+      sanitizeClientPortalDisplayText(releasePackage.projectName, {
+        stripScaffoldWord: true,
+        fallback: releasePackage.projectName
+      }) ?? releasePackage.projectName,
+    finalizedAt: releasePackage.finalizedAt,
+    releaseStatus: releasePackage.releaseStatus,
+    summary: sanitizeClientPortalDisplayText(releasePackage.summary) ?? releasePackage.summary,
+    deliverables: (releasePackage.deliverables ?? []).map((item) => ({
+      title:
+        sanitizeClientPortalDisplayText(item.title, {
+          stripScaffoldWord: true,
+          fallback: item.title
+        }) ?? item.title,
+      type: item.type,
+      exportUrl: item.exportUrl ?? null,
+      status: item.status
+    })),
+    images: (releasePackage.images ?? []).map((item) => ({
+      title:
+        sanitizeClientPortalDisplayText(item.title, {
+          stripScaffoldWord: true,
+          fallback: item.title
+        }) ?? item.title,
+      altText: sanitizeClientPortalDisplayText(item.altText),
+      imageUrl: item.imageUrl ?? null,
+      status: item.status
+    })),
+    notes: sanitizeClientPortalDisplayText(releasePackage.notes)
+  };
+}
+
 function toClientPortalProjectSummary(p: {
   id: string;
   clientId: string;
@@ -56,7 +172,7 @@ function toClientPortalProjectSummary(p: {
     client: p.client ? { id: p.client.id, name: p.client.name } : null,
     projectId: p.projectId ?? null,
     project: p.project ? { id: p.project.id, name: p.project.name } : null,
-    name: p.name,
+    name: sanitizeClientPortalDisplayText(p.name, { stripScaffoldWord: true, fallback: p.name }) ?? p.name,
     targetMonth: formatTargetMonth(p.targetMonth),
     isArchived: p.isArchived,
     createdAt: p.createdAt instanceof Date ? p.createdAt.toISOString() : p.createdAt,
@@ -90,17 +206,62 @@ function toClientPortalDeliverableSummary(d: {
   createdAt: Date;
   updatedAt: Date;
 }) {
+  const displayTitle = sanitizeClientPortalDisplayText(d.title, {
+    stripScaffoldWord: true,
+    fallback: d.title
+  });
+
   return {
     id: d.id,
     projectId: d.aiDeliveryProjectId,
-    title: d.title,
-    description: d.description ?? null,
+    title: displayTitle ?? d.title,
+    displayTitle,
+    description: sanitizeClientPortalDisplayText(d.description),
     deliveryType: d.deliveryType,
     status: d.status,
     exportUrl: d.exportUrl ?? null,
     isArchived: d.isArchived,
     createdAt: d.createdAt instanceof Date ? d.createdAt.toISOString() : d.createdAt,
     updatedAt: d.updatedAt instanceof Date ? d.updatedAt.toISOString() : d.updatedAt
+  };
+}
+
+export type ClientPortalMyClientSummary = {
+  clientId: string;
+  clientName: string;
+};
+
+export async function getClientPortalMyClient(
+  authSession: AuthResolvedSessionContext
+): Promise<ClientPortalMyClientSummary | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) {
+    return null;
+  }
+
+  const access = await prisma.clientUserAccess.findFirst({
+    where: {
+      tenantId,
+      userId: authSession.user.id,
+      isArchived: false,
+      client: { isArchived: false, tenantId }
+    },
+    orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+    select: {
+      clientId: true,
+      client: {
+        select: { name: true, tenantId: true }
+      }
+    }
+  });
+
+  if (!access || access.client.tenantId !== tenantId) {
+    return null;
+  }
+
+  return {
+    clientId: access.clientId,
+    clientName: access.client.name
   };
 }
 
@@ -198,6 +359,15 @@ const clientPortalMonthlyReportSelect = {
   updatedAt: true
 } as const;
 
+export function sanitizeClientPortalMonthlyReportDisplayTitle(
+  rawTitle: string | null | undefined
+): string | null {
+  return sanitizeClientPortalDisplayText(rawTitle, {
+    stripScaffoldWord: true,
+    fallback: "Monthly report"
+  });
+}
+
 function toClientPortalMonthlyReportSummary(r: {
   id: string;
   aiDeliveryProjectId: string;
@@ -209,11 +379,14 @@ function toClientPortalMonthlyReportSummary(r: {
   createdAt: Date;
   updatedAt: Date;
 }) {
+  const displayTitle = sanitizeClientPortalMonthlyReportDisplayTitle(r.title);
+
   return {
     id: r.id,
     aiDeliveryProjectId: r.aiDeliveryProjectId,
-    title: r.title ?? null,
-    recommendationsText: r.recommendationsText ?? null,
+    title: displayTitle,
+    displayTitle,
+    recommendationsText: sanitizeClientPortalDisplayText(r.recommendationsText),
     exportUrl: r.exportUrl ?? null,
     status: "FINAL" as const,
     hasDocument: !!r.storageKey,
@@ -273,8 +446,11 @@ const clientPortalWorkSummaryContentPlanItemSelect = {
 } as const;
 
 const clientPortalApprovedMetricSelect = {
+  id: true,
   targetMonth: true,
   sourceType: true,
+  status: true,
+  notes: true,
   gscClicks: true,
   gscImpressions: true,
   gscAverageCtr: true,
@@ -283,6 +459,89 @@ const clientPortalApprovedMetricSelect = {
   ga4Users: true,
   ga4PageViews: true
 } as const;
+
+type ClientPortalApprovedMetricSnapshot = {
+  id: string;
+  targetMonth: string;
+  sourceType: string;
+  status: string;
+  notes: string | null;
+  gscClicks: number | null;
+  gscImpressions: number | null;
+  gscAverageCtr: number | null;
+  gscAveragePosition: number | null;
+  ga4Sessions: number | null;
+  ga4Users: number | null;
+  ga4PageViews: number | null;
+};
+
+export type ClientPortalMonthlyReportPerformanceSummary = {
+  targetMonth: string;
+  sourceType: string;
+  placeholderOnly: boolean;
+  manualSource: boolean;
+  disclaimer: string | null;
+  itemCount: number | null;
+  gscClicks: number | null;
+  gscImpressions: number | null;
+  gscAverageCtr: number | null;
+  gscAveragePosition: number | null;
+  ga4Sessions: number | null;
+  ga4Users: number | null;
+  ga4PageViews: number | null;
+};
+
+export function toClientPortalMonthlyReportPerformanceSummary(
+  approvedSnapshot: ClientPortalApprovedMetricSnapshot
+): ClientPortalMonthlyReportPerformanceSummary {
+  const consumed = consumePurivaApprovedManualMetricsSnapshot({
+    id: approvedSnapshot.id,
+    targetMonth: approvedSnapshot.targetMonth,
+    sourceType: approvedSnapshot.sourceType,
+    status: approvedSnapshot.status,
+    notes: approvedSnapshot.notes
+  });
+
+  const base = {
+    targetMonth: approvedSnapshot.targetMonth,
+    sourceType: approvedSnapshot.sourceType,
+    gscClicks: approvedSnapshot.gscClicks,
+    gscImpressions: approvedSnapshot.gscImpressions,
+    gscAverageCtr: approvedSnapshot.gscAverageCtr,
+    gscAveragePosition: approvedSnapshot.gscAveragePosition,
+    ga4Sessions: approvedSnapshot.ga4Sessions,
+    ga4Users: approvedSnapshot.ga4Users,
+    ga4PageViews: approvedSnapshot.ga4PageViews
+  };
+
+  if (consumed?.clientSafeSummary) {
+    return {
+      ...base,
+      placeholderOnly: true,
+      manualSource: true,
+      disclaimer: consumed.clientSafeSummary.disclaimer,
+      itemCount: consumed.clientSafeSummary.itemCount
+    };
+  }
+
+  if (approvedSnapshot.sourceType === "MANUAL") {
+    return {
+      ...base,
+      placeholderOnly: true,
+      manualSource: true,
+      disclaimer: buildPurivaClientSafeManualMetricsDisclaimer(),
+      itemCount: null
+    };
+  }
+
+  return {
+    ...base,
+    placeholderOnly: false,
+    manualSource: false,
+    disclaimer: null,
+    itemCount: null
+  };
+}
 
 async function buildClientPortalMonthlyReportWorkSummary(tenantId: string, projectId: string) {
   const project = await prisma.aiDeliveryProject.findFirst({
@@ -329,14 +588,22 @@ async function buildClientPortalMonthlyReportWorkSummary(tenantId: string, proje
     clientApprovedPlanItemCount,
     deliverables: deliverables.map((item) => ({
       id: item.id,
-      title: item.title,
+      title:
+        sanitizeClientPortalDisplayText(item.title, {
+          stripScaffoldWord: true,
+          fallback: item.title
+        }) ?? item.title,
       deliveryType: item.deliveryType,
       status: item.status,
       exportUrl: item.exportUrl ?? null
     })),
     contentPlanItems: contentPlanItems.map((item) => ({
       id: item.id,
-      title: item.title,
+      title:
+        sanitizeClientPortalDisplayText(item.title, {
+          stripScaffoldWord: true,
+          fallback: item.title
+        }) ?? item.title,
       contentType: item.contentType ?? null,
       targetKeyword: item.targetKeyword ?? null,
       approvalStatus: item.approvalStatus ?? null
@@ -353,33 +620,13 @@ async function buildClientPortalMonthlyReportPerformanceSummary(tenantId: string
     },
     orderBy: [{ targetMonth: "desc" }, { updatedAt: "desc" }],
     select: clientPortalApprovedMetricSelect
-  }) as {
-    targetMonth: string;
-    sourceType: string;
-    gscClicks: number | null;
-    gscImpressions: number | null;
-    gscAverageCtr: number | null;
-    gscAveragePosition: number | null;
-    ga4Sessions: number | null;
-    ga4Users: number | null;
-    ga4PageViews: number | null;
-  } | null;
+  }) as ClientPortalApprovedMetricSnapshot | null;
 
   if (!approvedSnapshot) {
     return null;
   }
 
-  return {
-    targetMonth: approvedSnapshot.targetMonth,
-    sourceType: approvedSnapshot.sourceType,
-    gscClicks: approvedSnapshot.gscClicks,
-    gscImpressions: approvedSnapshot.gscImpressions,
-    gscAverageCtr: approvedSnapshot.gscAverageCtr,
-    gscAveragePosition: approvedSnapshot.gscAveragePosition,
-    ga4Sessions: approvedSnapshot.ga4Sessions,
-    ga4Users: approvedSnapshot.ga4Users,
-    ga4PageViews: approvedSnapshot.ga4PageViews
-  };
+  return toClientPortalMonthlyReportPerformanceSummary(approvedSnapshot);
 }
 
 export async function getClientPortalMonthlyReport(
@@ -475,13 +722,7 @@ export async function getClientPortalDeliverableDownloadReference(
 }
 
 function toClientSafeStringList(value: unknown): string[] {
-  if (!Array.isArray(value)) {
-    return [];
-  }
-
-  return value
-    .filter((item): item is string => typeof item === "string" && item.trim().length > 0)
-    .slice(0, 12);
+  return sanitizeClientPortalStringList(value);
 }
 
 async function assertClientPortalProjectAccess(
@@ -592,24 +833,41 @@ export async function getClientPortalDeliverySummary(
     updatedAt: Date;
   }>)
     .filter((deliverable) => typeof deliverable.exportUrl === "string" && deliverable.exportUrl.trim().length > 0)
-    .map((deliverable) => ({
-      id: deliverable.id,
-      title: deliverable.title,
-      exportUrl: deliverable.exportUrl,
-      deliveryType: deliverable.deliveryType,
-      status: deliverable.status,
-      updatedAt:
-        deliverable.updatedAt instanceof Date
-          ? deliverable.updatedAt.toISOString()
-          : deliverable.updatedAt
-    }));
+    .map((deliverable) => {
+      const displayTitle =
+        sanitizeClientPortalDisplayText(deliverable.title, {
+          stripScaffoldWord: true,
+          fallback: deliverable.title
+        }) ?? deliverable.title;
+
+      return {
+        id: deliverable.id,
+        title: displayTitle,
+        displayTitle,
+        exportUrl: deliverable.exportUrl,
+        deliveryType: deliverable.deliveryType,
+        status: deliverable.status,
+        updatedAt:
+          deliverable.updatedAt instanceof Date
+            ? deliverable.updatedAt.toISOString()
+            : deliverable.updatedAt
+      };
+    });
+
+  const marketIntelligenceTitle = handoff
+    ? sanitizeClientPortalDisplayText(handoff.title, {
+        stripScaffoldWord: true,
+        fallback: "Market intelligence summary"
+      })
+    : null;
 
   return {
     deliverySummary: {
       marketIntelligence: handoff
         ? {
-            title: handoff.title,
-            marketSummary: handoff.marketSummary ?? null,
+            title: marketIntelligenceTitle,
+            displayTitle: marketIntelligenceTitle,
+            marketSummary: sanitizeClientPortalDisplayText(handoff.marketSummary),
             opportunities: toClientSafeStringList(handoff.opportunities),
             recommendedActions: toClientSafeStringList(handoff.recommendedActions),
             status: handoff.handoffStatus,
@@ -687,4 +945,76 @@ export async function getClientPortalMonthlyReportDownloadReference(
       ? { downloadUrl: downloadRef.downloadUrl, expiresSeconds: downloadRef.expiresSeconds }
       : null
   };
+}
+
+function readFinalReleasePackageFromPlanJson(planJson: unknown): {
+  version: string;
+  kind: string;
+  finalizedAt?: string;
+  clientSnapshot?: ClientSafeReleasePackage;
+} | null {
+  if (!planJson || typeof planJson !== "object" || Array.isArray(planJson)) {
+    return null;
+  }
+  const record = planJson as Record<string, unknown>;
+  const releasePackage = record.releasePackage;
+  if (!releasePackage || typeof releasePackage !== "object" || Array.isArray(releasePackage)) {
+    return null;
+  }
+  const parsed = releasePackage as {
+    version?: string;
+    kind?: string;
+    finalizedAt?: string;
+    clientSnapshot?: ClientSafeReleasePackage;
+  };
+  if (parsed.version !== WORKFLOW_BRIEF_FINAL_RELEASE_PACKAGE_VERSION || parsed.kind !== "final_release_package") {
+    return null;
+  }
+  return parsed as {
+    version: string;
+    kind: string;
+    finalizedAt?: string;
+    clientSnapshot?: ClientSafeReleasePackage;
+  };
+}
+
+export async function getClientPortalReleasePackage(
+  authSession: AuthResolvedSessionContext,
+  projectId: string
+): Promise<{ releasePackage: ClientSafeReleasePackage | null } | null> {
+  const access = await assertClientPortalProjectAccess(authSession, projectId);
+  if (!access) return null;
+
+  const { tenantId } = access;
+
+  const project = await prisma.aiDeliveryProject.findFirst({
+    where: { id: projectId, tenantId, isArchived: false },
+    select: { id: true, sourceBriefId: true, name: true }
+  });
+  if (!project?.sourceBriefId) {
+    return { releasePackage: null };
+  }
+
+  const productionPlan = await prisma.productionPlan.findFirst({
+    where: { tenantId, briefId: project.sourceBriefId },
+    orderBy: { createdAt: "desc" },
+    select: { planJson: true }
+  });
+  if (!productionPlan) {
+    return { releasePackage: null };
+  }
+
+  const stored = readFinalReleasePackageFromPlanJson(productionPlan.planJson);
+  if (!stored?.finalizedAt) {
+    return { releasePackage: null };
+  }
+
+  const parsedReleasePackage = toClientSafeReleasePackageFromRecord(
+    stored as Parameters<typeof toClientSafeReleasePackageFromRecord>[0]
+  );
+  if (!parsedReleasePackage) {
+    return { releasePackage: null };
+  }
+
+  return { releasePackage: sanitizeClientPortalReleasePackage(parsedReleasePackage) };
 }

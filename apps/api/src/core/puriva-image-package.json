@@ -1,0 +1,92 @@
+{
+  "version": "PURIVA_IMAGE_PACKAGE_V1",
+  "seedLabel": "Local operator-reviewed image prompt scaffold — internal admin planning only, not client-facing or generation-ready",
+  "internalPromptLabel": "INTERNAL ADMIN IMAGE PROMPT SCAFFOLD — NOT FOR CLIENT OR GENERATION USE",
+  "conceptCountByContentType": {
+    "service_page": 3,
+    "faq": 3,
+    "blog_article": 3,
+    "comparison_education": 3,
+    "booking_contact_support": 2
+  },
+  "conceptRoles": [
+    {
+      "id": "hero_header",
+      "label": "Hero header concept",
+      "purpose": "Primary header visual framing the content topic without outcome imagery."
+    },
+    {
+      "id": "supporting_education",
+      "label": "Supporting education concept",
+      "purpose": "Educational or consultative visual supporting body content sections."
+    },
+    {
+      "id": "lifestyle_context",
+      "label": "Lifestyle context concept",
+      "purpose": "Neutral Bali clinic or wellness context without medical result claims."
+    }
+  ],
+  "promptFragments": {
+    "hero_header": {
+      "service_page": "Editorial clinic interior photograph concept: serene licensed aesthetic clinic consultation lounge in Bali. Neutral welcoming seating, soft natural light, no patients, no before/after imagery, no treatment outcome visuals.",
+      "faq": "Clean educational header visual concept: calm clinic reception or consultation area with informational signage style, no patients, no medical outcome imagery, no transformation promises.",
+      "blog_article": "Editorial blog header concept: tranquil Bali wellness setting adjacent to a professional clinic environment. Lifestyle-safe, educational tone, no before/after or guaranteed-result visuals.",
+      "comparison_education": "Educational comparison header concept: neutral clinic consultation desk with educational materials layout, no side-by-side result imagery, no efficacy comparison visuals.",
+      "booking_contact_support": "Supportive booking header concept: welcoming clinic front desk or consultation booking area, professional and calm, no patient outcome imagery."
+    },
+    "supporting_education": {
+      "service_page": "Supporting education visual concept: licensed practitioner consultation setting shown from a respectful distance, educational posture, no injection close-ups, no patient identity, no outcome demonstration.",
+      "faq": "FAQ support visual concept: abstract educational icons or clinic brochure planning layout on a neutral desk, consultative and informational only.",
+      "blog_article": "Blog support visual concept: educational lifestyle scene — healthy meal planning or mindful walk near clinic district, no weight-loss result imagery, no transformation narrative.",
+      "comparison_education": "Comparison education support visual concept: balanced educational infographic planning layout on tablet in clinic setting, no superiority claims, no before/after panels.",
+      "booking_contact_support": "Booking support visual concept: map or travel-planning desk with clinic contact card mockup, logistical support tone only."
+    },
+    "lifestyle_context": {
+      "service_page": "Lifestyle context visual concept: peaceful Bali coastal or garden view evoking wellness travel context without medical claims, no patient silhouettes showing results.",
+      "faq": "Lifestyle context visual concept: calm tropical resort-town streetscape near clinic district, neutral tourism context without treatment promises.",
+      "blog_article": "Lifestyle context visual concept: international traveler planning consultation in bright clinic waiting area, diverse and respectful, no outcome or before/after framing.",
+      "comparison_education": "Lifestyle context visual concept: serene Bali wellness environment — spa-neutral tones without treatment result implications.",
+      "booking_contact_support": "Lifestyle context visual concept: airport-to-clinic journey planning scene, logistical and welcoming, no medical efficacy visuals."
+    }
+  },
+  "altTextPatterns": {
+    "hero_header": "Licensed Bali aesthetic clinic {topic} — calm consultation environment, educational planning visual",
+    "supporting_education": "Educational {topic} consultation setting at a licensed Bali clinic, neutral and informational",
+    "lifestyle_context": "Neutral Bali wellness and clinic journey context for {topic}, no outcome imagery"
+  },
+  "visualSafetyNotes": [
+    "Image concepts are prompt scaffolds only — do not generate or publish without medical and compliance review.",
+    "Avoid before/after, transformation, patient outcome, or guaranteed-result visuals.",
+    "Avoid real patient photography, identifiable faces, or injection close-ups implying results.",
+    "Use neutral clinic, education, and lifestyle-safe concepts only.",
+    "High-risk service topics require medical review before any image moves toward client review."
+  ],
+  "finalReadyGatingReasons": [
+    "Image package remains internal prompt scaffold — not final-ready.",
+    "No generated image assets attached to these scaffolds.",
+    "Medical and compliance review required for high-risk topics before client exposure.",
+    "Prompt scaffolds are admin-only and must not appear in client portal until final-approved path exists."
+  ],
+  "verificationRequiredNotes": [
+    "Facility, license, or accreditation visuals require verification before client-facing use.",
+    "Do not depict credential claims in generated imagery without verified source material.",
+    "Image prompt scaffolds must pass compliance scan before expansion into generation workflows."
+  ],
+  "unsafeVisualPhrases": [
+    "before and after",
+    "before/after",
+    "before-after",
+    "transformation",
+    "dramatic results",
+    "guaranteed results",
+    "weight loss results",
+    "patient outcome",
+    "real patient",
+    "injection close-up",
+    "cure",
+    "permanent result",
+    "permanent results",
+    "miracle",
+    "instant results"
+  ]
+}

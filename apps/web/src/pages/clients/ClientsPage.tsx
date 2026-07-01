@@ -1,11 +1,9 @@
 import { ClientAccessPanel } from "../../components/clients/ClientAccessPanel";
 import { type FormEvent, useMemo, useState } from "react";
 import { EmptyState } from "../../components/EmptyState";
-import { ErrorState } from "../../components/ErrorState";
-import { LoadingState } from "../../components/LoadingState";
 import { Modal } from "../../components/Modal";
-import { ModalActions } from "../../components/ui/ModalActions";
-import { PageHeader } from "../../components/ui";
+import { Button, ModalActions, PageHeader } from "../../components/ui";
+import { Alert, Input, Select, Spinner, Textarea } from "../../design-system";
 import type { ProjectSummary } from "../projects/ProjectsPage";
 
 export type ClientSummary = {
@@ -189,15 +187,20 @@ export function ClientsPage({
   }
 
   if (loading) {
-    return <LoadingState label="Loading clients" />;
+    return (
+      <div className="state-panel loading-state-panel" role="status">
+        <Spinner size="sm" />
+        Loading clients
+      </div>
+    );
   }
 
   if (error) {
-    return <ErrorState message={error} title="Clients unavailable" />;
+    return <Alert message={error} title="Clients unavailable" variant="danger" />;
   }
 
   return (
-    <section className="view-section" aria-labelledby="clients-title">
+    <section className="view-section" aria-labelledby="clients-title" data-density="compact">
       <PageHeader
         eyebrow="CRM"
         title="Clients"
@@ -208,35 +211,37 @@ export function ClientsPage({
             <div className="clients-toolbar-filters">
               <div className="filter-bar" role="group" aria-label="Clients kind filter">
                 {(["all", "AGENCY_CLIENT", "OWN_DOMAIN"] as const).map((value) => (
-                  <button
+                  <Button
                     aria-pressed={kindFilter === value}
                     className={kindFilter === value ? "secondary-action filter-chip is-active" : "secondary-action filter-chip"}
                     key={value}
                     onClick={() => setKindFilter(value)}
                     type="button"
+                    variant="secondary"
                   >
                     {value === "all" ? "All kinds" : value === "AGENCY_CLIENT" ? "Agency" : "Own domain"}
-                  </button>
+                  </Button>
                 ))}
               </div>
               <div className="filter-bar" role="group" aria-label="Clients filter">
                 {(["active", "archived", "all"] as const).map((value) => (
-                  <button
+                  <Button
                     aria-pressed={filter === value}
                     className={filter === value ? "secondary-action filter-chip is-active" : "secondary-action filter-chip"}
                     key={value}
                     onClick={() => setFilter(value)}
                     type="button"
+                    variant="secondary"
                   >
                     {value[0].toUpperCase() + value.slice(1)}
-                  </button>
+                  </Button>
                 ))}
               </div>
             </div>
             {canEdit ? (
-              <button className="primary-action" onClick={openCreateModal} type="button">
+              <Button onClick={openCreateModal} type="button" variant="primary">
                 Add Client
-              </button>
+              </Button>
             ) : null}
           </>
         }
@@ -283,10 +288,10 @@ export function ClientsPage({
                 </div>
 
                 <div className="dense-actions">
-                  <button className="secondary-action" onClick={() => onOpenHub(client)} type="button">
+                  <Button size="sm" variant="secondary" onClick={() => onOpenHub(client)} type="button">
                     Open hub
-                  </button>
-                  {canEdit ? <button className="secondary-action" onClick={() => void openEditModal(client)} type="button">Open</button> : null}
+                  </Button>
+                  {canEdit ? <Button size="sm" variant="secondary" onClick={() => void openEditModal(client)} type="button">Open</Button> : null}
                   {canEdit ? (
                     <details className="row-action-menu">
                       <summary>More</summary>
@@ -294,20 +299,21 @@ export function ClientsPage({
                         <div className="row-action-menu-group">
                           <span className="row-action-menu-label">Client</span>
                           {!client.isArchived ? (
-                            <button
-                              className="secondary-action"
+                            <Button
+                              size="sm"
+                              variant="secondary"
                               disabled={client.projectCount > 0}
                               onClick={() => void onArchive(client.id)}
                               title={client.projectCount > 0 ? "Archive blocked while active projects exist." : undefined}
                               type="button"
                             >
                               Archive
-                            </button>
+                            </Button>
                           ) : null}
                           {client.isArchived ? (
-                            <button className="secondary-action" onClick={() => void onRestore(client.id)} type="button">
+                            <Button size="sm" variant="secondary" onClick={() => void onRestore(client.id)} type="button">
                               Restore
-                            </button>
+                            </Button>
                           ) : null}
                         </div>
                       </div>
@@ -336,136 +342,125 @@ export function ClientsPage({
             <p className="muted-text">Used by admin team to organize work and billing. Archived clients are hidden from active work but can be restored.</p>
             <ModalActions disabled={saving} label={submitLabel} onCancel={closeEditor} saving={saving} />
             <div className="field-grid">
-              <label>
-                Client name - Required
-                <input
-                  maxLength={255}
-                  onChange={(event) => setDraft((current) => ({ ...current, name: event.target.value }))}
-                  placeholder="Business or person this work is for"
-                  required
-                  value={draft.name}
-                />
-                <span className="muted-text">Used by admin team to organize work and billing.</span>
-              </label>
-              <label>
-                Contact person - Optional
-                <input
-                  maxLength={255}
-                  onChange={(event) => setDraft((current) => ({ ...current, contactPerson: event.target.value }))}
-                  placeholder="Main person for approvals or communication"
-                  value={draft.contactPerson}
-                />
-                <span className="muted-text">Used for day-to-day approvals and communication.</span>
-              </label>
-              <label>
-                Email - Optional
-                <input
-                  maxLength={320}
-                  onChange={(event) => setDraft((current) => ({ ...current, email: event.target.value }))}
-                  placeholder="Client billing or primary contact email"
-                  type="email"
-                  value={draft.email}
-                />
-                <span className="muted-text">Shown only in admin records.</span>
-              </label>
-              <label>
-                Website - Optional
-                <input
-                  maxLength={500}
-                  onChange={(event) => setDraft((current) => ({ ...current, website: event.target.value }))}
-                  placeholder="https://example.com"
-                  type="url"
-                  value={draft.website}
-                />
-                <span className="muted-text">Canonical domain for this client record.</span>
-              </label>
-              <label>
-                Client kind - Required
-                <select
-                  onChange={(event) =>
-                    setDraft((current) => ({
-                      ...current,
-                      clientKind: event.target.value as ClientFormValues["clientKind"]
-                    }))
-                  }
-                  required
-                  value={draft.clientKind}
-                >
-                  <option value="AGENCY_CLIENT">Agency client</option>
-                  <option value="OWN_DOMAIN">Own domain</option>
-                </select>
-                <span className="muted-text">Own domain clients are separate legal entities, not billed in DCA LLC finance.</span>
-              </label>
-              <label>
-                Legal entity name - Optional
-                <input
-                  maxLength={255}
-                  onChange={(event) => setDraft((current) => ({ ...current, legalEntityName: event.target.value }))}
-                  placeholder="Registered company name"
-                  value={draft.legalEntityName}
-                />
-              </label>
-              <label>
-                Account group - Optional
-                <input
-                  maxLength={255}
-                  onChange={(event) => setDraft((current) => ({ ...current, accountGroupName: event.target.value }))}
-                  placeholder="Group label for related domains"
-                  value={draft.accountGroupName}
-                />
-              </label>
-              <label>
-                Migration status
-                <select
-                  onChange={(event) =>
-                    setDraft((current) => ({
-                      ...current,
-                      migrationStatus: event.target.value as ClientFormValues["migrationStatus"]
-                    }))
-                  }
-                  value={draft.migrationStatus}
-                >
-                  <option value="ACTIVE">Active</option>
-                  <option value="PLANNED_LICENSEE_TENANT">Planned licensee tenant</option>
-                  <option value="MIGRATED">Migrated</option>
-                </select>
-              </label>
-              <label>
-                Tax/VAT ID - Optional
-                <input
-                  maxLength={100}
-                  onChange={(event) => setDraft((current) => ({ ...current, taxId: event.target.value }))}
-                  placeholder="Client tax number if used for billing"
-                  value={draft.taxId}
-                />
-                <span className="muted-text">Shown only in admin records.</span>
-              </label>
-              <label className="field-span-2">
-                Billing address - Optional
-                <textarea
-                  maxLength={4000}
-                  onChange={(event) => setDraft((current) => ({ ...current, billingAddress: event.target.value }))}
-                  placeholder="Billing address used on invoices or contracts"
-                  rows={4}
-                  value={draft.billingAddress}
-                />
-                <span className="muted-text">Used by admin team for billing records.</span>
-              </label>
-              <label>
-                Country - Optional
-                <select
-                  onChange={(event) => setDraft((current) => ({ ...current, country: event.target.value }))}
-                  value={draft.country}
-                >
-                  <option value="">Country for billing or tax context</option>
-                  {COUNTRY_OPTIONS.map((country) => (
-                    <option key={country} value={country}>
-                      {country}
-                    </option>
-                  ))}
-                </select>
-                <span className="muted-text">Used by admin team to organize work and billing.</span>
-              </label>
+              <Input
+                fullWidth
+                helperText="Used by admin team to organize work and billing."
+                label="Client name - Required"
+                maxLength={255}
+                onChange={(event) => setDraft((current) => ({ ...current, name: event.target.value }))}
+                placeholder="Business or person this work is for"
+                required
+                value={draft.name}
+              />
+              <Input
+                fullWidth
+                helperText="Used for day-to-day approvals and communication."
+                label="Contact person - Optional"
+                maxLength={255}
+                onChange={(event) => setDraft((current) => ({ ...current, contactPerson: event.target.value }))}
+                placeholder="Main person for approvals or communication"
+                value={draft.contactPerson}
+              />
+              <Input
+                fullWidth
+                helperText="Shown only in admin records."
+                label="Email - Optional"
+                maxLength={320}
+                onChange={(event) => setDraft((current) => ({ ...current, email: event.target.value }))}
+                placeholder="Client billing or primary contact email"
+                type="email"
+                value={draft.email}
+              />
+              <Input
+                fullWidth
+                helperText="Canonical domain for this client record."
+                label="Website - Optional"
+                maxLength={500}
+                onChange={(event) => setDraft((current) => ({ ...current, website: event.target.value }))}
+                placeholder="https://example.com"
+                type="url"
+                value={draft.website}
+              />
+              <Select
+                fullWidth
+                helperText="Own domain clients are separate legal entities, not billed in DCA LLC finance."
+                label="Client kind - Required"
+                onChange={(event) =>
+                  setDraft((current) => ({
+                    ...current,
+                    clientKind: event.target.value as ClientFormValues["clientKind"]
+                  }))
+                }
+                options={[
+                  { value: "AGENCY_CLIENT", label: "Agency client" },
+                  { value: "OWN_DOMAIN", label: "Own domain" }
+                ]}
+                required
+                value={draft.clientKind}
+              />
+              <Input
+                fullWidth
+                label="Legal entity name - Optional"
+                maxLength={255}
+                onChange={(event) => setDraft((current) => ({ ...current, legalEntityName: event.target.value }))}
+                placeholder="Registered company name"
+                value={draft.legalEntityName}
+              />
+              <Input
+                fullWidth
+                label="Account group - Optional"
+                maxLength={255}
+                onChange={(event) => setDraft((current) => ({ ...current, accountGroupName: event.target.value }))}
+                placeholder="Group label for related domains"
+                value={draft.accountGroupName}
+              />
+              <Select
+                fullWidth
+                label="Migration status"
+                onChange={(event) =>
+                  setDraft((current) => ({
+                    ...current,
+                    migrationStatus: event.target.value as ClientFormValues["migrationStatus"]
+                  }))
+                }
+                options={[
+                  { value: "ACTIVE", label: "Active" },
+                  { value: "PLANNED_LICENSEE_TENANT", label: "Planned licensee tenant" },
+                  { value: "MIGRATED", label: "Migrated" }
+                ]}
+                value={draft.migrationStatus}
+              />
+              <Input
+                fullWidth
+                helperText="Shown only in admin records."
+                label="Tax/VAT ID - Optional"
+                maxLength={100}
+                onChange={(event) => setDraft((current) => ({ ...current, taxId: event.target.value }))}
+                placeholder="Client tax number if used for billing"
+                value={draft.taxId}
+              />
+              <Textarea
+                className="field-span-2"
+                fullWidth
+                helperText="Used by admin team for billing records."
+                label="Billing address - Optional"
+                maxLength={4000}
+                onChange={(event) => setDraft((current) => ({ ...current, billingAddress: event.target.value }))}
+                placeholder="Billing address used on invoices or contracts"
+                rows={4}
+                value={draft.billingAddress}
+              />
+              <Select
+                fullWidth
+                helperText="Used by admin team to organize work and billing."
+                label="Country - Optional"
+                onChange={(event) => setDraft((current) => ({ ...current, country: event.target.value }))}
+                options={[
+                  { value: "", label: "Country for billing or tax context" },
+                  ...COUNTRY_OPTIONS.map((country) => ({ value: country, label: country }))
+                ]}
+                value={draft.country}
+              />
             </div>
             {selectedClient ? (
               <section className="entity-span-2" aria-labelledby="client-projects-title">
