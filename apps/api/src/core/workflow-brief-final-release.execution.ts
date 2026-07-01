@@ -1,5 +1,10 @@
 /**
  * Workflow brief final release package — client-safe snapshot and finalize gates.
+ *
+ * Naming guard (do not confuse with other release stages):
+ * - Release prep: `workflow-brief-image-set.execution` — admin summary before handoff/finalize.
+ * - Publication handoff: `workflow-brief-publication-handoff.execution` — WordPress draft mapping only.
+ * - Final release package (this file): `planJson.releasePackage` client-safe finalize snapshot.
  */
 import { createHash, randomUUID } from "node:crypto";
 

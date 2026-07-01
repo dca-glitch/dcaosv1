@@ -1,5 +1,10 @@
 /**
  * Workflow brief image set + package completeness + release prep — pure local logic.
+ *
+ * Naming guard:
+ * - Release prep (this file): metadata/summary only; not publication handoff or final release package.
+ * - Publication handoff: `workflow-brief-publication-handoff.execution`.
+ * - Final release package: `workflow-brief-final-release.execution`.
  */
 import { isWorkflowBriefDraftForBrief } from "./workflow-brief-draft.execution";
 import { isWorkflowBriefPackagedDeliverable } from "./workflow-brief-deliverable-packaging.execution";
