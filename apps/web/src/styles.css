@@ -3637,6 +3637,7 @@ textarea:focus,
   display: grid;
   gap: 8px;
   grid-template-columns: repeat(auto-fit, minmax(72px, 1fr));
+  margin-bottom: 10px;
 }
 
 .brief-stat-cell {
@@ -3665,15 +3666,197 @@ textarea:focus,
   text-transform: uppercase;
 }
 
-.brief-action-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
 .brief-detail-stack {
   display: grid;
   gap: 10px;
+}
+
+.brief-detail-shell {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.brief-detail-header {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  margin-bottom: 4px;
+}
+
+.brief-detail-meta {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 10px;
+  margin-bottom: 10px;
+}
+
+.brief-detail-caption {
+  font-size: 0.82rem;
+}
+
+.brief-detail-section {
+  margin-top: 10px;
+}
+
+.brief-detail-section:first-child {
+  margin-top: 0;
+}
+
+.brief-detail-section--spaced {
+  margin-top: 12px;
+}
+
+.brief-detail-divider {
+  border-top: 1px solid var(--border);
+  margin-top: 12px;
+  padding-top: 12px;
+}
+
+.brief-report-sections {
+  display: grid;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.brief-report-summary {
+  line-height: 1.5;
+  margin: 0 0 4px;
+}
+
+.brief-bullet-list {
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
+.brief-bullet-list li {
+  margin-bottom: 0.25rem;
+}
+
+.brief-bullet-list--flat {
+  list-style: none;
+  padding: 0;
+}
+
+.brief-bullet-list-item {
+  margin-bottom: 0.35rem;
+}
+
+.brief-stat-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 9px;
+}
+
+.brief-stat-card strong {
+  display: block;
+  font-size: 1rem;
+  line-height: 1.2;
+}
+
+.brief-stat-grid--wide {
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+}
+
+.brief-stat-grid--metrics {
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+}
+
+.brief-action-row {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.brief-action-row--start {
+  justify-content: flex-start;
+  margin-bottom: 10px;
+}
+
+.brief-action-row--spaced {
+  margin-top: 8px;
+}
+
+.brief-form-block {
+  margin-bottom: 12px;
+}
+
+.brief-form-field {
+  display: block;
+  margin-bottom: 8px;
+}
+
+.brief-form-field > span {
+  display: block;
+  font-size: 0.8rem;
+  margin-bottom: 4px;
+}
+
+.brief-form-input-full {
+  margin-bottom: 8px;
+  width: 100%;
+}
+
+.brief-plan-title {
+  font-size: 0.95rem;
+  margin: 0 0 8px;
+}
+
+.brief-plan-body {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.brief-item-row {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.brief-item-row-main {
+  min-width: 0;
+}
+
+.brief-item-title {
+  font-weight: 600;
+}
+
+.brief-item-meta {
+  font-size: 0.8rem;
+}
+
+.brief-item-row-action {
+  flex-shrink: 0;
+}
+
+.brief-muted-note {
+  font-size: 0.85rem;
+  margin-top: 8px;
+}
+
+.brief-notice--error {
+  color: var(--color-danger, #f87171);
+}
+
+.brief-cluster-block {
+  margin-bottom: 8px;
+}
+
+.brief-cluster-block .brief-bullet-list {
+  margin-top: 4px;
+}
+
+.brief-detail-stack .section-panel-compact .section-panel-body,
+.brief-detail-shell .section-panel-body {
+  gap: 8px;
 }
 
 .section-panel-highlight {

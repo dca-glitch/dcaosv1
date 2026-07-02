@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { EmptyState } from "../components/EmptyState";
 import { ErrorState } from "../components/ErrorState";
 import { LoadingState } from "../components/LoadingState";
@@ -271,6 +271,85 @@ function BriefField({ label, value }: { label: string; value: string | null | un
   );
 }
 
+function BriefDetailSection({
+  title,
+  children,
+  className
+}: {
+  title: string;
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={["brief-detail-section", className].filter(Boolean).join(" ")}>
+      <div className="brief-section-kicker muted-text">{title}</div>
+      {children}
+    </div>
+  );
+}
+
+function BriefBulletList({
+  items,
+  flat = false
+}: {
+  items: string[];
+  flat?: boolean;
+}) {
+  return (
+    <ul className={flat ? "brief-bullet-list brief-bullet-list--flat" : "brief-bullet-list"}>
+      {items.map((item) => (
+        <li key={item}>{item}</li>
+      ))}
+    </ul>
+  );
+}
+
+function BriefStatGrid({
+  children,
+  wide = false,
+  metrics = false
+}: {
+  children: ReactNode;
+  wide?: boolean;
+  metrics?: boolean;
+}) {
+  const classes = [
+    "brief-stat-grid",
+    wide ? "brief-stat-grid--wide" : null,
+    metrics ? "brief-stat-grid--metrics" : null
+  ].filter(Boolean).join(" ");
+  return <div className={classes}>{children}</div>;
+}
+
+function BriefStatCard({ label, value }: { label: string; value: ReactNode }) {
+  return (
+    <div className="brief-stat-card">
+      <div className="brief-stat-label muted-text">{label}</div>
+      <strong>{value}</strong>
+    </div>
+  );
+}
+
+function BriefItemRow({
+  title,
+  meta,
+  action
+}: {
+  title: string;
+  meta?: ReactNode;
+  action?: ReactNode;
+}) {
+  return (
+    <li className="brief-item-row">
+      <div className="brief-item-row-main">
+        <div className="brief-item-title">{title}</div>
+        {meta ? <div className="brief-item-meta muted-text">{meta}</div> : null}
+      </div>
+      {action ? <div className="brief-item-row-action">{action}</div> : null}
+    </li>
+  );
+}
+
 type ReportListSection = {
   label: string;
   items: string[];
@@ -318,20 +397,11 @@ function ReportSectionList({ sections }: { sections: ReportListSection[] }) {
   }
 
   return (
-    <div style={{ display: "grid", gap: "0.75rem", marginTop: "0.75rem" }}>
+    <div className="brief-report-sections">
       {sections.map((section) => (
-        <div key={section.label}>
-          <div className="muted-text" style={{ fontSize: "0.8rem", marginBottom: "0.35rem", fontWeight: 600 }}>
-            {section.label}
-          </div>
-          <ul style={{ margin: 0, paddingLeft: "1.1rem" }}>
-            {section.items.map((item) => (
-              <li key={`${section.label}-${item}`} style={{ marginBottom: "0.25rem" }}>
-                {item}
-              </li>
-            ))}
-          </ul>
-        </div>
+        <BriefDetailSection key={section.label} title={section.label}>
+          <BriefBulletList items={section.items} />
+        </BriefDetailSection>
       ))}
     </div>
   );
@@ -1095,7 +1165,7 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
           )}
         </SectionPanel>
 
-        <div className="brief-detail-stack">
+        <div className="brief-detail-shell brief-detail-stack">
           {!selectedId ? (
             <SectionPanel title="Brief detail">
               <EmptyState title="Select a brief" message="Choose a brief from the list to view details and AI outputs." />
@@ -1105,7 +1175,9 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
           ) : detail ? (
             <>
               <SectionPanel
+                className="brief-detail-section"
                 title={detail.title}
+                tone="highlight"
                 action={
                   <div className="brief-action-row">
                     {detail.status === "DRAFT" ? (
@@ -1121,7 +1193,7 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
                   </div>
                 }
               >
-                <div style={{ marginBottom: "0.75rem" }}>
+                <div className="brief-detail-header">
                   <StatusBadge status={detail.status} />
                 </div>
                 <BriefField label="Goal" value={detail.goal} />
@@ -1132,15 +1204,13 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
                 <BriefField label="Notes" value={detail.notes} />
               </SectionPanel>
 
-              <SectionPanel title="AI Run Status">
+              <SectionPanel className="brief-detail-section" title="AI Run Status">
                 {latestRun ? (
                   <>
-                    <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", marginBottom: "0.75rem" }}>
+                    <div className="brief-detail-meta">
                       <StatusBadge status={latestRun.status} />
                       {latestRun.errorMessage ? (
-                        <span className="muted-text" style={{ fontSize: "0.85rem" }}>
-                          {latestRun.errorMessage}
-                        </span>
+                        <span className="brief-detail-caption muted-text">{latestRun.errorMessage}</span>
                       ) : null}
                     </div>
                     <BriefField label="Started" value={formatRunTimestamp(latestRun.startedAt)} />
@@ -1152,65 +1222,37 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
               </SectionPanel>
 
               {(miOpportunities.length > 0 || miRisks.length > 0 || seoKeywords.length > 0 || seoTopics.length > 0) ? (
-                <SectionPanel title="Key Highlights">
+                <SectionPanel className="brief-detail-section" title="Key Highlights">
                   {miOpportunities.length > 0 ? (
-                    <div style={{ marginBottom: "0.75rem" }}>
-                      <div className="muted-text" style={{ fontSize: "0.8rem", marginBottom: "0.35rem", fontWeight: 600 }}>
-                        Top opportunities
-                      </div>
-                      <ul style={{ margin: 0, paddingLeft: "1.1rem" }}>
-                        {miOpportunities.slice(0, 3).map((item) => (
-                          <li key={`opp-${item}`}>{item}</li>
-                        ))}
-                      </ul>
-                    </div>
+                    <BriefDetailSection title="Top opportunities">
+                      <BriefBulletList items={miOpportunities.slice(0, 3)} />
+                    </BriefDetailSection>
                   ) : null}
                   {miRisks.length > 0 ? (
-                    <div style={{ marginBottom: "0.75rem" }}>
-                      <div className="muted-text" style={{ fontSize: "0.8rem", marginBottom: "0.35rem", fontWeight: 600 }}>
-                        Key risks
-                      </div>
-                      <ul style={{ margin: 0, paddingLeft: "1.1rem" }}>
-                        {miRisks.slice(0, 3).map((item) => (
-                          <li key={`risk-${item}`}>{item}</li>
-                        ))}
-                      </ul>
-                    </div>
+                    <BriefDetailSection title="Key risks">
+                      <BriefBulletList items={miRisks.slice(0, 3)} />
+                    </BriefDetailSection>
                   ) : null}
                   {seoKeywords.length > 0 ? (
-                    <div style={{ marginBottom: "0.75rem" }}>
-                      <div className="muted-text" style={{ fontSize: "0.8rem", marginBottom: "0.35rem", fontWeight: 600 }}>
-                        Keyword clusters
-                      </div>
-                      <ul style={{ margin: 0, paddingLeft: "1.1rem" }}>
-                        {seoKeywords.slice(0, 5).map((item) => (
-                          <li key={`kw-${item}`}>{item}</li>
-                        ))}
-                      </ul>
-                    </div>
+                    <BriefDetailSection title="Keyword clusters">
+                      <BriefBulletList items={seoKeywords.slice(0, 5)} />
+                    </BriefDetailSection>
                   ) : null}
                   {seoTopics.length > 0 ? (
-                    <div>
-                      <div className="muted-text" style={{ fontSize: "0.8rem", marginBottom: "0.35rem", fontWeight: 600 }}>
-                        Topic ideas
-                      </div>
-                      <ul style={{ margin: 0, paddingLeft: "1.1rem" }}>
-                        {seoTopics.slice(0, 4).map((item) => (
-                          <li key={`topic-${item}`}>{item}</li>
-                        ))}
-                      </ul>
-                    </div>
+                    <BriefDetailSection title="Topic ideas">
+                      <BriefBulletList items={seoTopics.slice(0, 4)} />
+                    </BriefDetailSection>
                   ) : null}
                 </SectionPanel>
               ) : null}
 
-              <SectionPanel title="MI Report">
+              <SectionPanel className="brief-detail-section" title="MI Report">
                 {latestMi ? (
                   <>
-                    <div style={{ marginBottom: "0.5rem" }}>
+                    <div className="brief-detail-meta">
                       <StatusBadge status={latestMi.status} />
                     </div>
-                    <p style={{ marginTop: 0 }}>{latestMi.summaryText ?? "No summary available."}</p>
+                    <p className="brief-report-summary">{latestMi.summaryText ?? "No summary available."}</p>
                     <ReportSectionList sections={miSections} />
                   </>
                 ) : (
@@ -1218,13 +1260,13 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
                 )}
               </SectionPanel>
 
-              <SectionPanel title="SEO Report">
+              <SectionPanel className="brief-detail-section" title="SEO Report">
                 {latestSeo ? (
                   <>
-                    <div style={{ marginBottom: "0.5rem" }}>
+                    <div className="brief-detail-meta">
                       <StatusBadge status={latestSeo.status} />
                     </div>
-                    <p style={{ marginTop: 0 }}>{latestSeo.summaryText ?? "No summary available."}</p>
+                    <p className="brief-report-summary">{latestSeo.summaryText ?? "No summary available."}</p>
                     <ReportSectionList sections={seoSections} />
                   </>
                 ) : (
@@ -1232,25 +1274,25 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
                 )}
               </SectionPanel>
 
-              <SectionPanel title="Production Plan">
+              <SectionPanel className="brief-detail-section" title="Production Plan">
                 {latestPlan ? (
                   <>
-                    <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", marginBottom: "0.75rem", flexWrap: "wrap" }}>
+                    <div className="brief-detail-meta">
                       <StatusBadge status={latestPlan.status} />
                       {latestPlan.sentToClientAt ? (
-                        <span className="muted-text" style={{ fontSize: "0.8rem" }}>
+                        <span className="brief-detail-caption muted-text">
                           Sent {formatRunTimestamp(latestPlan.sentToClientAt)}
                         </span>
                       ) : null}
                       {latestPlan.approvedByClientAt ? (
-                        <span className="muted-text" style={{ fontSize: "0.8rem" }}>
+                        <span className="brief-detail-caption muted-text">
                           Approved {formatRunTimestamp(latestPlan.approvedByClientAt)}
                         </span>
                       ) : null}
                     </div>
 
                     {canManageAi ? (
-                      <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", marginBottom: "0.75rem" }}>
+                      <div className="brief-action-row brief-action-row--start">
                         {canGeneratePlan ? (
                           <Button variant="secondary" disabled={actionLoading} onClick={() => void handleGeneratePlan()}>
                             {latestPlan ? "Refresh plan" : "Generate plan"}
@@ -1270,84 +1312,65 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
                     ) : null}
 
                     {showPlanEdit && canEditPlan ? (
-                      <div style={{ marginBottom: "0.75rem" }}>
-                        <label className="muted-text" style={{ fontSize: "0.8rem", display: "block", marginBottom: "0.25rem" }}>
-                          Title
+                      <div className="brief-form-block">
+                        <label className="brief-form-field muted-text">
+                          <span>Title</span>
+                          <input
+                            className="form-input brief-form-input-full"
+                            value={planEditTitle}
+                            onChange={(event) => setPlanEditTitle(event.target.value)}
+                          />
                         </label>
-                        <input
-                          className="form-input"
-                          value={planEditTitle}
-                          onChange={(event) => setPlanEditTitle(event.target.value)}
-                          style={{ width: "100%", marginBottom: "0.5rem" }}
-                        />
-                        <label className="muted-text" style={{ fontSize: "0.8rem", display: "block", marginBottom: "0.25rem" }}>
-                          Body
+                        <label className="brief-form-field muted-text">
+                          <span>Body</span>
+                          <textarea
+                            className="form-input brief-form-input-full"
+                            value={planEditBody}
+                            onChange={(event) => setPlanEditBody(event.target.value)}
+                            rows={8}
+                          />
                         </label>
-                        <textarea
-                          className="form-input"
-                          value={planEditBody}
-                          onChange={(event) => setPlanEditBody(event.target.value)}
-                          rows={8}
-                          style={{ width: "100%", marginBottom: "0.5rem" }}
-                        />
                         <Button variant="primary" disabled={actionLoading} onClick={() => void handleSavePlanEdit()}>
                           Save plan
                         </Button>
                       </div>
                     ) : (
                       <>
-                        <h4 style={{ margin: "0 0 0.5rem" }}>{latestPlan.title}</h4>
-                        <p style={{ whiteSpace: "pre-wrap" }}>{latestPlan.body ?? "No plan body yet."}</p>
+                        <h4 className="brief-plan-title">{latestPlan.title}</h4>
+                        <p className="brief-plan-body">{latestPlan.body ?? "No plan body yet."}</p>
                       </>
                     )}
 
                     {planPriorityTopics.length > 0 ? (
-                      <div style={{ marginTop: "0.75rem" }}>
-                        <div className="muted-text" style={{ fontSize: "0.8rem", marginBottom: "0.35rem", fontWeight: 600 }}>
-                          Priority topics
-                        </div>
-                        <ul style={{ margin: 0, paddingLeft: "1.1rem" }}>
-                          {planPriorityTopics.slice(0, 6).map((item) => (
-                            <li key={`plan-topic-${item}`}>{item}</li>
-                          ))}
-                        </ul>
-                      </div>
+                      <BriefDetailSection className="brief-detail-section--spaced" title="Priority topics">
+                        <BriefBulletList items={planPriorityTopics.slice(0, 6)} />
+                      </BriefDetailSection>
                     ) : null}
 
                     {planClusters.length > 0 ? (
-                      <div style={{ marginTop: "0.75rem" }}>
-                        <div className="muted-text" style={{ fontSize: "0.8rem", marginBottom: "0.35rem", fontWeight: 600 }}>
-                          Content clusters
-                        </div>
+                      <BriefDetailSection className="brief-detail-section--spaced" title="Content clusters">
                         {planClusters.slice(0, 3).map((cluster) => (
-                          <div key={cluster.name ?? "cluster"} style={{ marginBottom: "0.5rem" }}>
-                            <div style={{ fontWeight: 600 }}>{cluster.name ?? "Cluster"}</div>
-                            <ul style={{ margin: "0.25rem 0 0", paddingLeft: "1.1rem" }}>
-                              {readReportStringList(cluster.topics)
-                                .slice(0, 4)
-                                .map((topic) => (
-                                  <li key={`${cluster.name}-${topic}`}>{topic}</li>
-                                ))}
-                            </ul>
+                          <div className="brief-cluster-block" key={cluster.name ?? "cluster"}>
+                            <div className="brief-item-title">{cluster.name ?? "Cluster"}</div>
+                            <BriefBulletList
+                              items={readReportStringList(cluster.topics).slice(0, 4)}
+                            />
                           </div>
                         ))}
-                      </div>
+                      </BriefDetailSection>
                     ) : null}
 
                     {canClientReviewPlan ? (
-                      <div style={{ marginTop: "1rem", paddingTop: "0.75rem", borderTop: "1px solid var(--border-subtle, #333)" }}>
-                        <div className="muted-text" style={{ fontSize: "0.85rem", marginBottom: "0.5rem" }}>
-                          Review this production plan
-                        </div>
+                      <div className="brief-detail-divider">
+                        <div className="brief-muted-note muted-text">Review this production plan</div>
                         <textarea
-                          className="form-input"
+                          className="form-input brief-form-input-full"
                           value={rejectComment}
                           onChange={(event) => setRejectComment(event.target.value)}
                           placeholder="Optional comment if requesting changes"
                           rows={2}
-                          style={{ width: "100%", marginBottom: "0.5rem" }}
                         />
-                        <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+                        <div className="brief-action-row brief-action-row--start">
                           <Button variant="primary" disabled={actionLoading} onClick={() => void handleApprovePlan()}>
                             Approve plan
                           </Button>
@@ -1362,11 +1385,13 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
                   <>
                     <p className="muted-text">No production plan yet.</p>
                     {canGeneratePlan ? (
-                      <Button variant="primary" disabled={actionLoading} onClick={() => void handleGeneratePlan()} style={{ marginTop: "0.5rem" }}>
-                        Generate plan
-                      </Button>
+                      <div className="brief-action-row brief-action-row--start brief-action-row--spaced">
+                        <Button variant="primary" disabled={actionLoading} onClick={() => void handleGeneratePlan()}>
+                          Generate plan
+                        </Button>
+                      </div>
                     ) : (
-                      <p className="muted-text" style={{ fontSize: "0.85rem", marginTop: "0.5rem" }}>
+                      <p className="brief-muted-note muted-text">
                         Run AI first to generate MI and SEO reports, then generate a production plan.
                       </p>
                     )}
@@ -1375,7 +1400,7 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
               </SectionPanel>
 
               {canManageAi ? (
-                <SectionPanel title="Content Production">
+                <SectionPanel className="brief-detail-section" title="Content Production">
                   {linkedProject || seedStatus?.project ? (
                     <>
                       <BriefField
@@ -1395,9 +1420,11 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
                     <>
                       <p className="muted-text">No linked AI Delivery project yet.</p>
                       {canCreateProject ? (
-                        <Button variant="secondary" disabled={actionLoading} onClick={() => void handleCreateProject()} style={{ marginTop: "0.5rem" }}>
-                          Create / link project
-                        </Button>
+                        <div className="brief-action-row brief-action-row--start brief-action-row--spaced">
+                          <Button variant="secondary" disabled={actionLoading} onClick={() => void handleCreateProject()}>
+                            Create / link project
+                          </Button>
+                        </div>
                       ) : null}
                     </>
                   )}
@@ -1405,10 +1432,10 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
                   {seedLoading ? <LoadingState label="Loading seed status…" /> : null}
 
                   {!seedLoading && seedStatus ? (
-                    <div style={{ marginTop: "0.75rem" }}>
-                      <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", marginBottom: "0.5rem", flexWrap: "wrap" }}>
+                    <div className="brief-detail-section--spaced">
+                      <div className="brief-detail-meta">
                         <StatusBadge status={seedStatus.isSeeded ? "APPROVED" : "DRAFT"} />
-                        <span className="muted-text" style={{ fontSize: "0.85rem" }}>
+                        <span className="brief-detail-caption muted-text">
                           {seedStatus.isSeeded
                             ? `Seeded (${seedStatus.itemCount} items)`
                             : seedStatus.canSeed
@@ -1422,34 +1449,30 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
                       ) : null}
 
                       {seedStatus.blockReason && !seedStatus.isSeeded ? (
-                        <p className="muted-text" style={{ fontSize: "0.85rem" }}>{seedStatus.blockReason}</p>
+                        <p className="brief-muted-note muted-text">{seedStatus.blockReason}</p>
                       ) : null}
 
                       {seedStatus.canSeed ? (
-                        <Button variant="primary" disabled={actionLoading} onClick={() => void handleSeedContentProduction()} style={{ marginTop: "0.5rem" }}>
-                          Seed content production
-                        </Button>
+                        <div className="brief-action-row brief-action-row--start brief-action-row--spaced">
+                          <Button variant="primary" disabled={actionLoading} onClick={() => void handleSeedContentProduction()}>
+                            Seed content production
+                          </Button>
+                        </div>
                       ) : null}
 
                       {seedStatus.contentPlan && seedStatus.contentPlan.items.length > 0 ? (
-                        <div style={{ marginTop: "0.75rem" }}>
-                          <div className="muted-text" style={{ fontSize: "0.8rem", marginBottom: "0.35rem", fontWeight: 600 }}>
-                            Seeded content plan items
-                          </div>
-                          <ul style={{ margin: 0, paddingLeft: "1.1rem" }}>
+                        <BriefDetailSection className="brief-detail-section--spaced" title="Seeded content plan items">
+                          <ul className="brief-bullet-list">
                             {seedStatus.contentPlan.items.slice(0, 8).map((item) => (
-                              <li key={item.id} style={{ marginBottom: "0.35rem" }}>
-                                <span style={{ fontWeight: 600 }}>{item.title}</span>
+                              <li className="brief-bullet-list-item" key={item.id}>
+                                <span className="brief-item-title">{item.title}</span>
                                 {item.targetKeyword ? (
-                                  <span className="muted-text" style={{ fontSize: "0.8rem" }}>
-                                    {" "}
-                                    — {item.targetKeyword}
-                                  </span>
+                                  <span className="brief-item-meta muted-text"> — {item.targetKeyword}</span>
                                 ) : null}
                               </li>
                             ))}
                           </ul>
-                        </div>
+                        </BriefDetailSection>
                       ) : null}
                     </div>
                   ) : null}
@@ -1457,100 +1480,79 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
               ) : null}
 
               {canManageAi && seedStatus?.isSeeded ? (
-                <SectionPanel title="Content Drafts">
+                <SectionPanel className="brief-detail-section" title="Content Drafts">
                   {draftLoading ? <LoadingState label="Loading draft status…" /> : null}
 
                   {!draftLoading && draftStatus ? (
                     <div>
-                      <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", marginBottom: "0.5rem", flexWrap: "wrap" }}>
+                      <div className="brief-detail-meta">
                         <StatusBadge status={draftStatus.draftCount > 0 ? "READY_FOR_REVIEW" : "DRAFT"} />
-                        <span className="muted-text" style={{ fontSize: "0.85rem" }}>
+                        <span className="brief-detail-caption muted-text">
                           {draftStatus.draftCount}/{draftStatus.seedItemCount} drafts · {formatPackageReadiness(draftStatus.packageReadiness)}
                         </span>
                       </div>
 
-                      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: "0.5rem", marginBottom: "0.75rem" }}>
-                        <div>
-                          <div className="muted-text" style={{ fontSize: "0.75rem" }}>Pending</div>
-                          <div style={{ fontWeight: 600 }}>{draftStatus.pendingCount}</div>
-                        </div>
-                        <div>
-                          <div className="muted-text" style={{ fontSize: "0.75rem" }}>Generated</div>
-                          <div style={{ fontWeight: 600 }}>{draftStatus.generatedCount}</div>
-                        </div>
-                        <div>
-                          <div className="muted-text" style={{ fontSize: "0.75rem" }}>Ready for review</div>
-                          <div style={{ fontWeight: 600 }}>{draftStatus.readyForReviewCount}</div>
-                        </div>
-                        <div>
-                          <div className="muted-text" style={{ fontSize: "0.75rem" }}>Needs work</div>
-                          <div style={{ fontWeight: 600 }}>{draftStatus.needsWorkCount}</div>
-                        </div>
-                      </div>
+                      <BriefStatGrid wide>
+                        <BriefStatCard label="Pending" value={draftStatus.pendingCount} />
+                        <BriefStatCard label="Generated" value={draftStatus.generatedCount} />
+                        <BriefStatCard label="Ready for review" value={draftStatus.readyForReviewCount} />
+                        <BriefStatCard label="Needs work" value={draftStatus.needsWorkCount} />
+                      </BriefStatGrid>
 
                       {draftStatus.lastGeneratedAt ? (
                         <BriefField label="Last generated" value={formatRunTimestamp(draftStatus.lastGeneratedAt)} />
                       ) : null}
 
                       {draftStatus.blockReason && draftStatus.pendingCount > 0 ? (
-                        <p className="muted-text" style={{ fontSize: "0.85rem" }}>{draftStatus.blockReason}</p>
+                        <p className="brief-muted-note muted-text">{draftStatus.blockReason}</p>
                       ) : null}
 
-                      {draftStatus.canGenerateDrafts || draftStatus.pendingCount > 0 ? (
-                        <Button
-                          variant="primary"
-                          disabled={actionLoading || !draftStatus.canGenerateDrafts}
-                          onClick={() => void handleGenerateContentDrafts()}
-                          style={{ marginTop: "0.5rem", marginRight: "0.5rem" }}
-                        >
-                          Generate all drafts
-                        </Button>
-                      ) : null}
+                      <div className="brief-action-row brief-action-row--start brief-action-row--spaced">
+                        {draftStatus.canGenerateDrafts || draftStatus.pendingCount > 0 ? (
+                          <Button
+                            variant="primary"
+                            disabled={actionLoading || !draftStatus.canGenerateDrafts}
+                            onClick={() => void handleGenerateContentDrafts()}
+                          >
+                            Generate all drafts
+                          </Button>
+                        ) : null}
 
-                      {(linkedProject || draftStatus.project) ? (
-                        <Button variant="secondary" disabled={actionLoading} onClick={openAiDeliveryModule} style={{ marginTop: "0.5rem" }}>
-                          Open AI Delivery module
-                        </Button>
-                      ) : null}
+                        {(linkedProject || draftStatus.project) ? (
+                          <Button variant="secondary" disabled={actionLoading} onClick={openAiDeliveryModule}>
+                            Open AI Delivery module
+                          </Button>
+                        ) : null}
+                      </div>
 
                       {draftStatus.items.length > 0 ? (
-                        <div style={{ marginTop: "0.75rem" }}>
-                          <div className="muted-text" style={{ fontSize: "0.8rem", marginBottom: "0.35rem", fontWeight: 600 }}>
-                            Draft readiness by item
-                          </div>
-                          <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
+                        <BriefDetailSection className="brief-detail-section--spaced" title="Draft readiness by item">
+                          <ul className="brief-bullet-list brief-bullet-list--flat">
                             {draftStatus.items.slice(0, 10).map((item) => (
-                              <li
+                              <BriefItemRow
                                 key={item.contentPlanItemId}
-                                style={{
-                                  display: "flex",
-                                  justifyContent: "space-between",
-                                  alignItems: "center",
-                                  gap: "0.5rem",
-                                  marginBottom: "0.5rem",
-                                  flexWrap: "wrap"
-                                }}
-                              >
-                                <div>
-                                  <div style={{ fontWeight: 600 }}>{item.planItemTitle}</div>
-                                  <div className="muted-text" style={{ fontSize: "0.8rem" }}>
+                                title={item.planItemTitle}
+                                meta={
+                                  <>
                                     {formatDraftReadiness(item.readiness)}
                                     {item.revisionCount > 0 ? ` · rev ${item.revisionCount}` : ""}
-                                  </div>
-                                </div>
-                                {item.hasDraft ? (
-                                  <Button
-                                    variant="secondary"
-                                    disabled={actionLoading}
-                                    onClick={() => void handleRegenerateContentDraft(item.contentPlanItemId)}
-                                  >
-                                    Regenerate
-                                  </Button>
-                                ) : null}
-                              </li>
+                                  </>
+                                }
+                                action={
+                                  item.hasDraft ? (
+                                    <Button
+                                      variant="secondary"
+                                      disabled={actionLoading}
+                                      onClick={() => void handleRegenerateContentDraft(item.contentPlanItemId)}
+                                    >
+                                      Regenerate
+                                    </Button>
+                                  ) : null
+                                }
+                              />
                             ))}
                           </ul>
-                        </div>
+                        </BriefDetailSection>
                       ) : null}
                     </div>
                   ) : (
@@ -1560,19 +1562,19 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
               ) : null}
 
               {canManageAi && !seedStatus?.isSeeded ? (
-                <SectionPanel title="Content Drafts">
+                <SectionPanel className="brief-detail-section" title="Content Drafts">
                   <p className="muted-text">Content drafts become available after seeding the content plan.</p>
                 </SectionPanel>
               ) : null}
 
               {(canManageAi || (packagingStatus?.deliverables.length ?? 0) > 0) &&
               (draftStatus?.draftCount ?? packagingStatus?.eligibleDraftCount ?? 0) > 0 ? (
-                <SectionPanel title="Deliverable Packaging">
+                <SectionPanel className="brief-detail-section" title="Deliverable Packaging">
                   {packagingLoading ? <LoadingState label="Loading packaging status…" /> : null}
 
                   {!packagingLoading && packagingStatus ? (
                     <div>
-                      <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", marginBottom: "0.5rem", flexWrap: "wrap" }}>
+                      <div className="brief-detail-meta">
                         <StatusBadge
                           status={
                             packagingStatus.packagingStage === "in_client_review"
@@ -1584,111 +1586,89 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
                                   : "DRAFT"
                           }
                         />
-                        <span className="muted-text" style={{ fontSize: "0.85rem" }}>
+                        <span className="brief-detail-caption muted-text">
                           {packagingStatus.packagedCount}/{packagingStatus.eligibleDraftCount} packaged ·{" "}
                           {formatPackagingStage(packagingStatus.packagingStage)}
                         </span>
                       </div>
 
-                      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: "0.5rem", marginBottom: "0.75rem" }}>
-                        <div>
-                          <div className="muted-text" style={{ fontSize: "0.75rem" }}>Unpackaged</div>
-                          <div style={{ fontWeight: 600 }}>{packagingStatus.unpackagedCount}</div>
-                        </div>
-                        <div>
-                          <div className="muted-text" style={{ fontSize: "0.75rem" }}>Pending review</div>
-                          <div style={{ fontWeight: 600 }}>{packagingStatus.pendingReviewCount}</div>
-                        </div>
-                        <div>
-                          <div className="muted-text" style={{ fontSize: "0.75rem" }}>Approved</div>
-                          <div style={{ fontWeight: 600 }}>{packagingStatus.approvedByClientCount}</div>
-                        </div>
-                        <div>
-                          <div className="muted-text" style={{ fontSize: "0.75rem" }}>Rejected</div>
-                          <div style={{ fontWeight: 600 }}>{packagingStatus.rejectedCount}</div>
-                        </div>
-                      </div>
+                      <BriefStatGrid wide>
+                        <BriefStatCard label="Unpackaged" value={packagingStatus.unpackagedCount} />
+                        <BriefStatCard label="Pending review" value={packagingStatus.pendingReviewCount} />
+                        <BriefStatCard label="Approved" value={packagingStatus.approvedByClientCount} />
+                        <BriefStatCard label="Rejected" value={packagingStatus.rejectedCount} />
+                      </BriefStatGrid>
 
                       {packagingStatus.lastPackagedAt ? (
                         <BriefField label="Last packaged" value={formatRunTimestamp(packagingStatus.lastPackagedAt)} />
                       ) : null}
 
-                      {canManageAi && packagingStatus.canPackageAll ? (
-                        <Button
-                          variant="primary"
-                          disabled={actionLoading}
-                          onClick={() => void handlePackageAllDeliverables()}
-                          style={{ marginTop: "0.5rem", marginRight: "0.5rem" }}
-                        >
-                          Package all eligible drafts
-                        </Button>
-                      ) : null}
+                      <div className="brief-action-row brief-action-row--start brief-action-row--spaced">
+                        {canManageAi && packagingStatus.canPackageAll ? (
+                          <Button
+                            variant="primary"
+                            disabled={actionLoading}
+                            onClick={() => void handlePackageAllDeliverables()}
+                          >
+                            Package all eligible drafts
+                          </Button>
+                        ) : null}
 
-                      {!canManageAi && packagingStatus.pendingReviewCount > 0 ? (
-                        <Button variant="primary" disabled={actionLoading} onClick={openClientPortalApprovals} style={{ marginTop: "0.5rem" }}>
-                          Review in client portal
-                        </Button>
-                      ) : null}
+                        {!canManageAi && packagingStatus.pendingReviewCount > 0 ? (
+                          <Button variant="primary" disabled={actionLoading} onClick={openClientPortalApprovals}>
+                            Review in client portal
+                          </Button>
+                        ) : null}
+                      </div>
 
                       {packagingStatus.items.length > 0 ? (
-                        <div style={{ marginTop: "0.75rem" }}>
-                          <div className="muted-text" style={{ fontSize: "0.8rem", marginBottom: "0.35rem", fontWeight: 600 }}>
-                            Packaging by item
-                          </div>
-                          <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
+                        <BriefDetailSection className="brief-detail-section--spaced" title="Packaging by item">
+                          <ul className="brief-bullet-list brief-bullet-list--flat">
                             {packagingStatus.items.slice(0, 10).map((item) => (
-                              <li
+                              <BriefItemRow
                                 key={item.contentPlanItemId}
-                                style={{
-                                  display: "flex",
-                                  justifyContent: "space-between",
-                                  alignItems: "center",
-                                  gap: "0.5rem",
-                                  marginBottom: "0.5rem",
-                                  flexWrap: "wrap"
-                                }}
-                              >
-                                <div>
-                                  <div style={{ fontWeight: 600 }}>{item.planItemTitle}</div>
-                                  <div className="muted-text" style={{ fontSize: "0.8rem" }}>
+                                title={item.planItemTitle}
+                                meta={
+                                  <>
                                     {formatPackagingState(item.packagingState)}
                                     {item.deliverableStatus ? ` · ${item.deliverableStatus}` : ""}
-                                  </div>
-                                </div>
-                                {canManageAi && item.canRepackage ? (
-                                  <Button
-                                    variant="secondary"
-                                    disabled={actionLoading}
-                                    onClick={() => void handleRepackageDeliverable(item.contentPlanItemId, item.draftId)}
-                                  >
-                                    Repackage
-                                  </Button>
-                                ) : null}
-                                {canManageAi && item.deliverableId && item.deliverableStatus === "DRAFT" ? (
-                                  <Button
-                                    variant="secondary"
-                                    disabled={actionLoading}
-                                    onClick={() => void handleSendDeliverableForReview(item.deliverableId!)}
-                                  >
-                                    Send for review
-                                  </Button>
-                                ) : null}
-                              </li>
+                                  </>
+                                }
+                                action={
+                                  <>
+                                    {canManageAi && item.canRepackage ? (
+                                      <Button
+                                        variant="secondary"
+                                        disabled={actionLoading}
+                                        onClick={() => void handleRepackageDeliverable(item.contentPlanItemId, item.draftId)}
+                                      >
+                                        Repackage
+                                      </Button>
+                                    ) : null}
+                                    {canManageAi && item.deliverableId && item.deliverableStatus === "DRAFT" ? (
+                                      <Button
+                                        variant="secondary"
+                                        disabled={actionLoading}
+                                        onClick={() => void handleSendDeliverableForReview(item.deliverableId!)}
+                                      >
+                                        Send for review
+                                      </Button>
+                                    ) : null}
+                                  </>
+                                }
+                              />
                             ))}
                           </ul>
-                        </div>
+                        </BriefDetailSection>
                       ) : null}
 
                       {packagingStatus.deliverables.length > 0 ? (
-                        <div style={{ marginTop: "0.75rem" }}>
-                          <div className="muted-text" style={{ fontSize: "0.8rem", marginBottom: "0.35rem", fontWeight: 600 }}>
-                            Packaged deliverables
-                          </div>
-                          <ul style={{ margin: 0, paddingLeft: "1.1rem" }}>
+                        <BriefDetailSection className="brief-detail-section--spaced" title="Packaged deliverables">
+                          <ul className="brief-bullet-list">
                             {packagingStatus.deliverables.slice(0, 8).map((deliverable) => (
-                              <li key={deliverable.id} style={{ marginBottom: "0.35rem" }}>
-                                <span style={{ fontWeight: 600 }}>{deliverable.title}</span>
-                                <span className="muted-text" style={{ fontSize: "0.8rem" }}>
+                              <li className="brief-bullet-list-item" key={deliverable.id}>
+                                <span className="brief-item-title">{deliverable.title}</span>
+                                <span className="brief-item-meta muted-text">
                                   {" "}
                                   — {deliverable.status}
                                   {deliverable.clientRejectionReason ? " (changes requested)" : ""}
@@ -1696,11 +1676,11 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
                               </li>
                             ))}
                           </ul>
-                        </div>
+                        </BriefDetailSection>
                       ) : null}
 
                       {packagingStatus.blockReason && canManageAi && packagingStatus.eligibleDraftCount === 0 ? (
-                        <p className="muted-text" style={{ fontSize: "0.85rem" }}>{packagingStatus.blockReason}</p>
+                        <p className="brief-muted-note muted-text">{packagingStatus.blockReason}</p>
                       ) : null}
                     </div>
                   ) : (
@@ -1711,7 +1691,7 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
 
               {(canManageAi || (completenessStatus?.items.length ?? 0) > 0) &&
               (packagingStatus?.packagedCount ?? 0) > 0 ? (
-                <SectionPanel title="Image Sets & Package Completeness">
+                <SectionPanel className="brief-detail-section" title="Image Sets & Package Completeness">
                   {imageSetLoading || completenessLoading ? (
                     <LoadingState label="Loading package execution status…" />
                   ) : null}
@@ -1719,56 +1699,51 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
                   {!imageSetLoading && !completenessLoading && (imageSetStatus || completenessStatus) ? (
                     <div>
                       {imageSetStatus ? (
-                        <div style={{ marginBottom: "1rem" }}>
-                          <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", marginBottom: "0.5rem", flexWrap: "wrap" }}>
+                        <div className="brief-detail-section">
+                          <div className="brief-detail-meta">
                             <StatusBadge status={imageSetStatus.preparedCount > 0 ? "READY" : "DRAFT"} />
-                            <span className="muted-text" style={{ fontSize: "0.85rem" }}>
+                            <span className="brief-detail-caption muted-text">
                               {imageSetStatus.preparedCount}/{imageSetStatus.eligibleCount} image sets ·{" "}
                               {formatImageSetStage(imageSetStatus.imageSetStage)}
                             </span>
                           </div>
 
                           {canManageAi && imageSetStatus.canPrepareAll ? (
-                            <Button
-                              variant="primary"
-                              disabled={actionLoading}
-                              onClick={() => void handlePrepareAllImageSets()}
-                              style={{ marginTop: "0.5rem", marginRight: "0.5rem" }}
-                            >
-                              Prepare all image sets
-                            </Button>
+                            <div className="brief-action-row brief-action-row--start brief-action-row--spaced">
+                              <Button
+                                variant="primary"
+                                disabled={actionLoading}
+                                onClick={() => void handlePrepareAllImageSets()}
+                              >
+                                Prepare all image sets
+                              </Button>
+                            </div>
                           ) : null}
 
                           {imageSetStatus.items.length > 0 ? (
-                            <ul style={{ listStyle: "none", margin: "0.75rem 0 0", padding: 0 }}>
+                            <ul className="brief-bullet-list brief-bullet-list--flat brief-detail-section--spaced">
                               {imageSetStatus.items.slice(0, 8).map((item) => (
-                                <li
+                                <BriefItemRow
                                   key={item.contentPlanItemId}
-                                  style={{
-                                    display: "flex",
-                                    justifyContent: "space-between",
-                                    gap: "0.5rem",
-                                    marginBottom: "0.5rem",
-                                    flexWrap: "wrap"
-                                  }}
-                                >
-                                  <div>
-                                    <div style={{ fontWeight: 600 }}>{item.planItemTitle}</div>
-                                    <div className="muted-text" style={{ fontSize: "0.8rem" }}>
+                                  title={item.planItemTitle}
+                                  meta={
+                                    <>
                                       {item.imageSetState.replace(/_/g, " ")}
                                       {item.imageStatus ? ` · ${item.imageStatus}` : ""}
-                                    </div>
-                                  </div>
-                                  {canManageAi && item.canRefresh ? (
-                                    <Button
-                                      variant="secondary"
-                                      disabled={actionLoading}
-                                      onClick={() => void handleRefreshImageSet(item.contentPlanItemId)}
-                                    >
-                                      Refresh image set
-                                    </Button>
-                                  ) : null}
-                                </li>
+                                    </>
+                                  }
+                                  action={
+                                    canManageAi && item.canRefresh ? (
+                                      <Button
+                                        variant="secondary"
+                                        disabled={actionLoading}
+                                        onClick={() => void handleRefreshImageSet(item.contentPlanItemId)}
+                                      >
+                                        Refresh image set
+                                      </Button>
+                                    ) : null
+                                  }
+                                />
                               ))}
                             </ul>
                           ) : null}
@@ -1777,7 +1752,7 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
 
                       {completenessStatus ? (
                         <div>
-                          <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", marginBottom: "0.5rem", flexWrap: "wrap" }}>
+                          <div className="brief-detail-meta">
                             <StatusBadge
                               status={
                                 completenessStatus.overallStage === "package_complete" ||
@@ -1788,211 +1763,165 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
                                     : "DRAFT"
                               }
                             />
-                            <span className="muted-text" style={{ fontSize: "0.85rem" }}>
+                            <span className="brief-detail-caption muted-text">
                               {completenessStatus.completeItemCount}/{completenessStatus.eligibleItemCount} complete ·{" "}
                               {formatCompletenessStage(completenessStatus.overallStage)}
                             </span>
                           </div>
 
-                          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "0.5rem", marginBottom: "0.75rem" }}>
-                            <div>
-                              <div className="muted-text" style={{ fontSize: "0.75rem" }}>Ready for review</div>
-                              <div style={{ fontWeight: 600 }}>{completenessStatus.readyForClientReviewCount}</div>
-                            </div>
-                            <div>
-                              <div className="muted-text" style={{ fontSize: "0.75rem" }}>In client review</div>
-                              <div style={{ fontWeight: 600 }}>{completenessStatus.clientReviewInProgressCount}</div>
-                            </div>
-                            <div>
-                              <div className="muted-text" style={{ fontSize: "0.75rem" }}>Release prep</div>
-                              <div style={{ fontWeight: 600 }}>{formatReleasePrepStage(completenessStatus.releasePrepStage)}</div>
-                            </div>
-                            <div>
-                              <div className="muted-text" style={{ fontSize: "0.75rem" }}>Publication target</div>
-                              <div style={{ fontWeight: 600 }}>
-                                {completenessStatus.publicationTargetAvailable
+                          <BriefStatGrid metrics>
+                            <BriefStatCard label="Ready for review" value={completenessStatus.readyForClientReviewCount} />
+                            <BriefStatCard label="In client review" value={completenessStatus.clientReviewInProgressCount} />
+                            <BriefStatCard label="Release prep" value={formatReleasePrepStage(completenessStatus.releasePrepStage)} />
+                            <BriefStatCard
+                              label="Publication target"
+                              value={
+                                completenessStatus.publicationTargetAvailable
                                   ? completenessStatus.publicationTargetLabel ?? "Available"
-                                  : "Missing"}
-                              </div>
-                            </div>
-                            <div>
-                              <div className="muted-text" style={{ fontSize: "0.75rem" }}>Release package</div>
-                              <div style={{ fontWeight: 600 }}>
-                                {formatReleasePackageStage(completenessStatus.releasePackageStage ?? "not_ready")}
-                              </div>
-                            </div>
+                                  : "Missing"
+                              }
+                            />
+                            <BriefStatCard
+                              label="Release package"
+                              value={formatReleasePackageStage(completenessStatus.releasePackageStage ?? "not_ready")}
+                            />
                             {canManageAi ? (
-                              <div>
-                                <div className="muted-text" style={{ fontSize: "0.75rem" }}>Publication handoff</div>
-                                <div style={{ fontWeight: 600 }}>
-                                  {publicationHandoffLoading
+                              <BriefStatCard
+                                label="Publication handoff"
+                                value={
+                                  publicationHandoffLoading
                                     ? "Loading…"
-                                    : formatHandoffStage(publicationHandoffStatus?.handoffStage ?? "not_ready")}
-                                </div>
-                              </div>
+                                    : formatHandoffStage(publicationHandoffStatus?.handoffStage ?? "not_ready")
+                                }
+                              />
+                            ) : null}
+                          </BriefStatGrid>
+
+                          <div className="brief-action-row brief-action-row--start brief-action-row--spaced">
+                            {canManageAi &&
+                            completenessStatus.releasePrepStage === "ready_for_release" &&
+                            !completenessStatus.releasePrepared ? (
+                              <Button
+                                variant="primary"
+                                disabled={actionLoading}
+                                onClick={() => void handlePrepareRelease()}
+                              >
+                                Prepare for release
+                              </Button>
+                            ) : null}
+
+                            {canManageAi &&
+                            completenessStatus.releasePrepared &&
+                            !completenessStatus.releasePackageFinalized &&
+                            completenessStatus.canFinalizeReleasePackage ? (
+                              <Button
+                                variant="primary"
+                                disabled={actionLoading}
+                                onClick={() => void handleFinalizeReleasePackage()}
+                              >
+                                Finalize release package
+                              </Button>
+                            ) : null}
+
+                            {!canManageAi && completenessStatus.clientReviewInProgressCount > 0 ? (
+                              <Button variant="primary" disabled={actionLoading} onClick={openClientPortalApprovals}>
+                                Review package in client portal
+                              </Button>
                             ) : null}
                           </div>
 
-                          {canManageAi &&
-                          completenessStatus.releasePrepStage === "ready_for_release" &&
-                          !completenessStatus.releasePrepared ? (
-                            <Button
-                              variant="primary"
-                              disabled={actionLoading}
-                              onClick={() => void handlePrepareRelease()}
-                              style={{ marginTop: "0.5rem", marginRight: "0.5rem" }}
-                            >
-                              Prepare for release
-                            </Button>
-                          ) : null}
-
-                          {canManageAi &&
-                          completenessStatus.releasePrepared &&
-                          !completenessStatus.releasePackageFinalized &&
-                          completenessStatus.canFinalizeReleasePackage ? (
-                            <Button
-                              variant="primary"
-                              disabled={actionLoading}
-                              onClick={() => void handleFinalizeReleasePackage()}
-                              style={{ marginTop: "0.5rem", marginRight: "0.5rem" }}
-                            >
-                              Finalize release package
-                            </Button>
-                          ) : null}
-
                           {releasePackageLoading ? (
-                            <p className="muted-text" style={{ marginTop: "0.5rem", fontSize: "0.85rem" }}>
-                              Loading release package status…
-                            </p>
+                            <p className="brief-muted-note muted-text">Loading release package status…</p>
                           ) : null}
 
                           {releasePackageStatus?.releasePackageFinalized &&
                           releasePackageStatus.clientReleasePackage ? (
-                            <div style={{ marginTop: "0.75rem" }}>
-                              <div className="muted-text" style={{ fontSize: "0.8rem", marginBottom: "0.35rem", fontWeight: 600 }}>
-                                Final release package
-                              </div>
-                              <div style={{ fontSize: "0.85rem", marginBottom: "0.35rem" }}>
+                            <BriefDetailSection className="brief-detail-section--spaced" title="Final release package">
+                              <div className="brief-muted-note">
                                 Finalized {formatRunTimestamp(releasePackageStatus.clientReleasePackage.finalizedAt)} ·{" "}
                                 {releasePackageStatus.clientReleasePackage.deliverables.length} deliverable
                                 {releasePackageStatus.clientReleasePackage.deliverables.length === 1 ? "" : "s"}
                               </div>
                               {releasePackageStatus.clientReleasePackage.summary ? (
-                                <p className="muted-text" style={{ fontSize: "0.85rem", marginBottom: "0.35rem" }}>
+                                <p className="brief-muted-note muted-text">
                                   {releasePackageStatus.clientReleasePackage.summary}
                                 </p>
                               ) : null}
                               {releasePackageStatus.clientReleasePackage.deliverables.length > 0 ? (
-                                <ul style={{ margin: 0, paddingLeft: "1.1rem", fontSize: "0.85rem" }}>
+                                <ul className="brief-bullet-list">
                                   {releasePackageStatus.clientReleasePackage.deliverables.map((item) => (
-                                    <li key={`${item.title}-${item.type}`} style={{ marginBottom: "0.25rem" }}>
+                                    <li key={`${item.title}-${item.type}`}>
                                       {item.title} ({item.status})
                                     </li>
                                   ))}
                                 </ul>
                               ) : null}
-                            </div>
+                            </BriefDetailSection>
                           ) : null}
 
                           {canManageAi && completenessStatus.releasePackageBlockReason &&
                           !completenessStatus.releasePackageFinalized ? (
-                            <p className="muted-text" style={{ marginTop: "0.5rem", fontSize: "0.85rem" }}>
-                              {completenessStatus.releasePackageBlockReason}
-                            </p>
+                            <p className="brief-muted-note muted-text">{completenessStatus.releasePackageBlockReason}</p>
                           ) : null}
 
                           {canManageAi && publicationHandoffStatus ? (
-                            <div
-                              style={{
-                                marginTop: "0.75rem",
-                                paddingTop: "0.75rem",
-                                borderTop: "1px solid rgba(255,255,255,0.08)"
-                              }}
-                            >
-                              <div
-                                className="muted-text"
-                                style={{ fontSize: "0.8rem", marginBottom: "0.35rem", fontWeight: 600 }}
-                              >
-                                Publication handoff
-                              </div>
-                              <p className="muted-text" style={{ fontSize: "0.75rem", marginBottom: "0.5rem" }}>
-                                Draft prep only — no live publish
-                              </p>
-                              <div style={{ fontSize: "0.85rem", marginBottom: "0.35rem" }}>
-                                {publicationHandoffStatus.mappedItemCount} mapped item
-                                {publicationHandoffStatus.mappedItemCount === 1 ? "" : "s"}
-                                {publicationHandoffStatus.publicationTargetLabel
-                                  ? ` · ${publicationHandoffStatus.publicationTargetLabel}`
-                                  : ""}
-                                {publicationHandoffStatus.handoffExecuted &&
-                                publicationHandoffStatus.lastHandoffExecutedAt
-                                  ? ` · Last handoff ${formatRunTimestamp(publicationHandoffStatus.lastHandoffExecutedAt)}`
-                                  : ""}
-                              </div>
-                              {publicationHandoffStatus.publicationHandoff ? (
-                                <div className="muted-text" style={{ fontSize: "0.8rem", marginBottom: "0.35rem" }}>
-                                  {publicationHandoffStatus.publicationHandoff.preparedCount} prepared
-                                  {publicationHandoffStatus.publicationHandoff.reusedCount > 0
-                                    ? ` · ${publicationHandoffStatus.publicationHandoff.reusedCount} reused`
+                            <div className="brief-detail-divider">
+                              <BriefDetailSection title="Publication handoff">
+                                <p className="brief-stat-label muted-text">Draft prep only — no live publish</p>
+                                <div className="brief-muted-note">
+                                  {publicationHandoffStatus.mappedItemCount} mapped item
+                                  {publicationHandoffStatus.mappedItemCount === 1 ? "" : "s"}
+                                  {publicationHandoffStatus.publicationTargetLabel
+                                    ? ` · ${publicationHandoffStatus.publicationTargetLabel}`
                                     : ""}
-                                  {` · ${publicationHandoffStatus.publicationHandoff.itemCount} item${
-                                    publicationHandoffStatus.publicationHandoff.itemCount === 1 ? "" : "s"
-                                  }`}
+                                  {publicationHandoffStatus.handoffExecuted &&
+                                  publicationHandoffStatus.lastHandoffExecutedAt
+                                    ? ` · Last handoff ${formatRunTimestamp(publicationHandoffStatus.lastHandoffExecutedAt)}`
+                                    : ""}
                                 </div>
-                              ) : null}
-                              <Button
-                                variant="secondary"
-                                disabled={actionLoading || !publicationHandoffStatus.canExecuteHandoff}
-                                onClick={() => void handleExecutePublicationHandoff()}
-                                style={{ marginTop: "0.35rem", marginRight: "0.5rem" }}
-                              >
-                                {publicationHandoffStatus.packageChangedSinceHandoff
-                                  ? "Re-prepare WordPress drafts"
-                                  : "Prepare WordPress drafts"}
-                              </Button>
-                              {publicationHandoffNotice ? (
-                                <p
-                                  className="muted-text"
-                                  style={{
-                                    marginTop: "0.5rem",
-                                    fontSize: "0.85rem",
-                                    color:
-                                      publicationHandoffNotice.type === "error"
-                                        ? "var(--color-danger, #f87171)"
-                                        : undefined
-                                  }}
-                                >
-                                  {publicationHandoffNotice.message}
-                                </p>
-                              ) : null}
-                              {publicationHandoffStatus.handoffBlockReason &&
-                              !publicationHandoffStatus.canExecuteHandoff ? (
-                                <p className="muted-text" style={{ marginTop: "0.5rem", fontSize: "0.85rem" }}>
-                                  {publicationHandoffStatus.handoffBlockReason}
-                                </p>
-                              ) : null}
+                                {publicationHandoffStatus.publicationHandoff ? (
+                                  <div className="brief-item-meta muted-text">
+                                    {publicationHandoffStatus.publicationHandoff.preparedCount} prepared
+                                    {publicationHandoffStatus.publicationHandoff.reusedCount > 0
+                                      ? ` · ${publicationHandoffStatus.publicationHandoff.reusedCount} reused`
+                                      : ""}
+                                    {` · ${publicationHandoffStatus.publicationHandoff.itemCount} item${
+                                      publicationHandoffStatus.publicationHandoff.itemCount === 1 ? "" : "s"
+                                    }`}
+                                  </div>
+                                ) : null}
+                                <div className="brief-action-row brief-action-row--start brief-action-row--spaced">
+                                  <Button
+                                    variant="secondary"
+                                    disabled={actionLoading || !publicationHandoffStatus.canExecuteHandoff}
+                                    onClick={() => void handleExecutePublicationHandoff()}
+                                  >
+                                    {publicationHandoffStatus.packageChangedSinceHandoff
+                                      ? "Re-prepare WordPress drafts"
+                                      : "Prepare WordPress drafts"}
+                                  </Button>
+                                </div>
+                                {publicationHandoffNotice ? (
+                                  <p
+                                    className={`brief-muted-note muted-text${
+                                      publicationHandoffNotice.type === "error" ? " brief-notice--error" : ""
+                                    }`}
+                                  >
+                                    {publicationHandoffNotice.message}
+                                  </p>
+                                ) : null}
+                                {publicationHandoffStatus.handoffBlockReason &&
+                                !publicationHandoffStatus.canExecuteHandoff ? (
+                                  <p className="brief-muted-note muted-text">{publicationHandoffStatus.handoffBlockReason}</p>
+                                ) : null}
+                              </BriefDetailSection>
                             </div>
-                          ) : null}
-
-                          {!canManageAi && completenessStatus.clientReviewInProgressCount > 0 ? (
-                            <Button variant="primary" disabled={actionLoading} onClick={openClientPortalApprovals} style={{ marginTop: "0.5rem" }}>
-                              Review package in client portal
-                            </Button>
                           ) : null}
 
                           {completenessStatus.missingRequirements.length > 0 ? (
-                            <div style={{ marginTop: "0.75rem" }}>
-                              <div className="muted-text" style={{ fontSize: "0.8rem", marginBottom: "0.35rem", fontWeight: 600 }}>
-                                Missing requirements
-                              </div>
-                              <ul style={{ margin: 0, paddingLeft: "1.1rem" }}>
-                                {completenessStatus.missingRequirements.slice(0, 5).map((item) => (
-                                  <li key={item} style={{ marginBottom: "0.25rem" }}>
-                                    {item}
-                                  </li>
-                                ))}
-                              </ul>
-                            </div>
+                            <BriefDetailSection className="brief-detail-section--spaced" title="Missing requirements">
+                              <BriefBulletList items={completenessStatus.missingRequirements.slice(0, 5)} />
+                            </BriefDetailSection>
                           ) : null}
                         </div>
                       ) : null}
