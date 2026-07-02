@@ -1,9 +1,14 @@
 import { describe, expect, it } from "vitest";
 import type { NavigationItem } from "./navigation-filter";
-import { filterNavigationByRole, isClientOnlyRole } from "./navigation-filter";
+import {
+  CLIENT_ALLOWED_ROUTE_VIEWS,
+  filterNavigationByRole,
+  isClientOnlyRole
+} from "./navigation-filter";
 
 const sampleItems: NavigationItem[] = [
   { view: "dashboard", label: "Dashboard", section: "protected" },
+  { view: "client-portal", label: "Your archive", section: "client" },
   { view: "briefs", label: "Briefs", section: "client" },
   { view: "pending-approvals", label: "Pending Approvals", section: "client" },
   { view: "clients", label: "Clients", section: "core" },
@@ -29,6 +34,18 @@ describe("isClientOnlyRole", () => {
   });
 });
 
+describe("CLIENT_ALLOWED_ROUTE_VIEWS", () => {
+  it("allows client-portal for client-only route guard", () => {
+    expect(CLIENT_ALLOWED_ROUTE_VIEWS.has("client-portal")).toBe(true);
+  });
+
+  it("blocks admin-only routes for client-only users", () => {
+    expect(CLIENT_ALLOWED_ROUTE_VIEWS.has("clients")).toBe(false);
+    expect(CLIENT_ALLOWED_ROUTE_VIEWS.has("team")).toBe(false);
+    expect(CLIENT_ALLOWED_ROUTE_VIEWS.has("ai-delivery")).toBe(false);
+  });
+});
+
 describe("filterNavigationByRole", () => {
   it("returns all items when auth context is null", () => {
     expect(filterNavigationByRole(sampleItems, null)).toEqual(sampleItems);
@@ -41,6 +58,7 @@ describe("filterNavigationByRole", () => {
 
     expect(filtered.map((item) => item.view)).toEqual([
       "dashboard",
+      "client-portal",
       "briefs",
       "pending-approvals"
     ]);

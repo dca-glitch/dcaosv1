@@ -530,6 +530,12 @@ type AppNavigationItem = {
 
 const clientNavigationItems: AppNavigationItem[] = [
   { view: "dashboard", label: "Dashboard", section: "protected" },
+  {
+    view: "client-portal",
+    label: "Your archive",
+    section: "client",
+    icon: <Archive size={16} strokeWidth={2} />
+  },
   { view: "briefs", label: "Briefs", section: "client", icon: <ClipboardList size={16} strokeWidth={2} /> },
   { view: "workflow-briefs", label: "Content Briefs", section: "client", icon: <ClipboardList size={16} strokeWidth={2} /> },
   {
@@ -548,6 +554,7 @@ const clientNavigationItems: AppNavigationItem[] = [
 ];
 
 const CLIENT_PORTAL_SHELL_VIEWS = new Set<ViewKey>([
+  "client-portal",
   "briefs",
   "workflow-briefs",
   "pending-approvals",
