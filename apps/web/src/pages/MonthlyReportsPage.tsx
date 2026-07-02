@@ -1,3 +1,4 @@
+import { EmptyState } from "../components/EmptyState";
 import { PageHeader, SectionPanel } from "../components/ui";
 
 export default function MonthlyReportsPage() {
@@ -10,7 +11,11 @@ export default function MonthlyReportsPage() {
         titleId="monthly-reports-title"
       />
       <SectionPanel title="Reports">
-        <p className="muted-text">SEO and Market Intelligence reports will appear here.</p>
+        <EmptyState
+          message="SEO and Market Intelligence reports will appear here when your agency publishes them."
+          title="No reports yet"
+          variant="inline"
+        />
       </SectionPanel>
     </section>
   );

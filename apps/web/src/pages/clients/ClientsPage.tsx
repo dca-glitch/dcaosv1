@@ -2,7 +2,7 @@ import { ClientAccessPanel } from "../../components/clients/ClientAccessPanel";
 import { type FormEvent, useMemo, useState } from "react";
 import { EmptyState } from "../../components/EmptyState";
 import { Modal } from "../../components/Modal";
-import { Button, ModalActions, PageHeader } from "../../components/ui";
+import { Button, ModalActions, PageHeader, SectionPanel, StatusBadge } from "../../components/ui";
 import { Alert, Input, Select, Spinner, Textarea } from "../../design-system";
 import type { ProjectSummary } from "../projects/ProjectsPage";
 
@@ -248,20 +248,17 @@ export function ClientsPage({
       />
 
       {filteredClients.length === 0 ? (
-        <p className="inline-empty muted-text">No clients match the current filter.</p>
+        <EmptyState message="No clients match the current filter." title="No clients" variant="inline" />
       ) : (
-        <div className="dense-list">
+        <SectionPanel title="Client records" tone="compact">
+          <div className="dense-list">
           {filteredClients.map((client) => (
             <article className="entity-card dense-record" key={client.id}>
               <div className="dense-record-main">
                 <div className="dense-title">
                   <div className="dense-kicker">
-                    <span className={`entity-pill entity-pill-${client.isArchived ? "archived" : "active"}`}>
-                      {client.isArchived ? "Archived" : "Active"}
-                    </span>
-                    <span className={`entity-pill entity-pill-${client.clientKind === "OWN_DOMAIN" ? "warning" : "info"}`}>
-                      {client.clientKind === "OWN_DOMAIN" ? "Own domain" : "Agency client"}
-                    </span>
+                    <StatusBadge status={client.isArchived ? "archived" : "active"} />
+                    <StatusBadge status={client.clientKind === "OWN_DOMAIN" ? "own-domain" : "agency-client"} />
                   </div>
                   <h2>{client.name}</h2>
                   <div className="dense-meta">
@@ -328,7 +325,8 @@ export function ClientsPage({
               </div>
             </article>
           ))}
-        </div>
+          </div>
+        </SectionPanel>
       )}
 
       {isEditorOpen ? (
