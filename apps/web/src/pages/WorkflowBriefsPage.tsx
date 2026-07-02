@@ -264,11 +264,9 @@ async function workflowBriefsApiRequest<T>(path: string, options?: { method?: st
 
 function BriefField({ label, value }: { label: string; value: string | null | undefined }) {
   return (
-    <div style={{ marginBottom: "0.75rem" }}>
-      <div className="muted-text" style={{ fontSize: "0.8rem", marginBottom: "0.25rem" }}>
-        {label}
-      </div>
-      <div>{value?.trim() ? value : "—"}</div>
+    <div className="brief-field">
+      <div className="brief-field-label muted-text">{label}</div>
+      <div className="brief-field-value">{value?.trim() ? value : "—"}</div>
     </div>
   );
 }
@@ -1058,38 +1056,36 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
     : [];
 
   return (
-    <div className="page-stack">
+    <section className="view-section" data-density="compact">
       <PageHeader
         eyebrow="AI Delivery"
         title="Workflow Briefs"
+        titleId="workflow-briefs-title"
         description="Brief-centered workflow foundation: brief input, AI reports, and production plan."
       />
 
       {error ? <ErrorState title="Workflow brief error" message={error} /> : null}
 
-      <div style={{ display: "grid", gridTemplateColumns: "minmax(240px, 1fr) minmax(0, 2fr)", gap: "1rem" }}>
-        <SectionPanel title="Briefs">
+      <div className="brief-workspace-layout">
+        <SectionPanel title="Briefs" tone="compact">
           {loading ? (
             <LoadingState label="Loading briefs…" />
           ) : briefs.length === 0 ? (
             <EmptyState title="No workflow briefs" message="Create a brief via API or seed data to get started." />
           ) : (
-            <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
+            <ul className="brief-select-list">
               {briefs.map((brief) => (
-                <li key={brief.id} style={{ marginBottom: "0.5rem" }}>
+                <li key={brief.id}>
                   <button
                     type="button"
-                    className={selectedId === brief.id ? "btn btn-primary" : "btn btn-secondary"}
-                    style={{ width: "100%", textAlign: "left" }}
+                    className={`brief-select-item${selectedId === brief.id ? " is-selected" : ""}`}
                     onClick={() => setSelectedId(brief.id)}
                   >
-                    <div style={{ fontWeight: 600 }}>{brief.title}</div>
-                    <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", marginTop: "0.25rem" }}>
+                    <div className="brief-select-title">{brief.title}</div>
+                    <div className="brief-select-meta">
                       <StatusBadge status={brief.status} />
                       {brief.client?.name ? (
-                        <span className="muted-text" style={{ fontSize: "0.8rem" }}>
-                          {brief.client.name}
-                        </span>
+                        <span className="muted-text">{brief.client.name}</span>
                       ) : null}
                     </div>
                   </button>
@@ -1099,7 +1095,7 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
           )}
         </SectionPanel>
 
-        <div className="page-stack">
+        <div className="brief-detail-stack">
           {!selectedId ? (
             <SectionPanel title="Brief detail">
               <EmptyState title="Select a brief" message="Choose a brief from the list to view details and AI outputs." />
@@ -1111,7 +1107,7 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
               <SectionPanel
                 title={detail.title}
                 action={
-                  <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+                  <div className="brief-action-row">
                     {detail.status === "DRAFT" ? (
                       <Button variant="secondary" disabled={actionLoading} onClick={() => void handleSubmit()}>
                         Submit
@@ -2010,6 +2006,6 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
           ) : null}
         </div>
       </div>
-    </div>
+    </section>
   );
 }

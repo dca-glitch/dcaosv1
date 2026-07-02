@@ -1,7 +1,7 @@
 import { type FormEvent, useMemo, useState } from "react";
 import { EmptyState } from "../../components/EmptyState";
 import { Modal } from "../../components/Modal";
-import { Button, ModalActions, PageHeader, StatusBadge, Table } from "../../components/ui";
+import { Button, ModalActions, PageHeader, SectionPanel, StatusBadge, Table } from "../../components/ui";
 import { Alert, Input, Select, Spinner, Textarea } from "../../design-system";
 import type { ClientSummary } from "../clients/ClientsPage";
 import type { TaskSummary } from "../tasks/TasksPage";
@@ -202,7 +202,8 @@ export function ProjectsPage({
       {filteredProjects.length === 0 ? (
         <EmptyState message="No projects match the current filter." title="No projects" />
       ) : (
-        <div className="table-wrap">
+        <SectionPanel title="Project delivery" tone="compact">
+          <div className="table-wrap table-scroll">
           <Table
             headers={[
               { label: "Project", align: "left" },
@@ -253,7 +254,8 @@ export function ProjectsPage({
               ]
             }))}
           />
-        </div>
+          </div>
+        </SectionPanel>
       )}
 
       {isEditorOpen ? (
