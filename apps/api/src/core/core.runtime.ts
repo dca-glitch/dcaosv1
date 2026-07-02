@@ -119,6 +119,7 @@ import {
   putPrivateStorageObject
 } from "../storage/private-storage.service";
 import { generateAiDeliveryMonthlyReportPdf } from "./monthly-report-pdf.service";
+import { generateAiDeliveryContentPlanPdf } from "./content-plan-pdf.service";
 import { recordAiDeliverySystemEvent } from "../services/system-events.service";
 import { recordPlatformAuditEvent } from "../security/audit-log.service";
 import type { AiDeliveryWordPressPublishResult } from "../services/wordpress.service";
@@ -2950,6 +2951,113 @@ export async function getAiDeliveryContentPlanDetail(
   if (!plan) return null;
 
   return { contentPlan: toAiDeliveryContentPlanSummary(plan) };
+}
+
+export async function generateAiDeliveryContentPlanPdfForProject(
+  authSession: AuthResolvedSessionContext,
+  aiDeliveryProjectId: string
+): Promise<{ contentPlanId: string; hasDocument: boolean; generatedAt: string; fileName: string } | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId || !aiDeliveryProjectId) return null;
+
+  const project = await prisma.aiDeliveryProject.findFirst({
+    where: { id: aiDeliveryProjectId, tenantId },
+    select: {
+      id: true,
+      name: true,
+      targetMonth: true,
+      client: { select: { name: true } }
+    }
+  });
+  if (!project) return null;
+
+  const plan = await getAiDeliveryContentPlanDelegate(prisma).findFirst({
+    where: { aiDeliveryProjectId, tenantId },
+    select: {
+      id: true,
+      status: true,
+      items: {
+        select: aiDeliveryContentPlanItemSelect,
+        orderBy: { sortOrder: "asc" }
+      }
+    }
+  }) as { id: string; status: string; items: any[] } | null;
+  if (!plan) return null;
+
+  const tenant = await prisma.tenant.findUnique({
+    where: { id: tenantId },
+    select: { id: true, slug: true }
+  });
+  if (!tenant) return null;
+
+  const generatedAt = new Date();
+  const pdf = await generateAiDeliveryContentPlanPdf({
+    generatedAt,
+    projectName: project.name,
+    clientName: project.client?.name ?? null,
+    targetMonth: formatAiDeliveryTargetMonth(project.targetMonth),
+    status: plan.status,
+    items: plan.items.map((item: any) => ({
+      title: item.title,
+      targetKeyword: item.targetKeyword ?? null,
+      contentType: item.contentType ?? null,
+      notes: item.notes ?? null,
+      sortOrder: item.sortOrder,
+      approvalStatus: item.approvalStatus ?? null
+    }))
+  });
+
+  const upload = await putPrivateStorageObject({
+    body: pdf.pdfBuffer,
+    documentDate: generatedAt,
+    mimeType: "application/pdf",
+    namespace: "ai-delivery-report",
+    originalFileName: pdf.fileName,
+    projectSlugOrId: plan.id,
+    tenantSlugOrId: tenant.slug || tenant.id
+  });
+
+  if (!upload) {
+    throw new Error("Private storage is not configured.");
+  }
+
+  await getAiDeliveryContentPlanDelegate(prisma).update({
+    where: { id: plan.id },
+    data: { storageKey: upload.storageKey }
+  });
+
+  return {
+    contentPlanId: plan.id,
+    hasDocument: true,
+    generatedAt: generatedAt.toISOString(),
+    fileName: pdf.fileName
+  };
+}
+
+export async function getAiDeliveryContentPlanDownloadReference(
+  authSession: AuthResolvedSessionContext,
+  aiDeliveryProjectId: string
+): Promise<{ downloadReference: { downloadUrl: string; expiresSeconds: number } | null } | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId || !aiDeliveryProjectId) return null;
+
+  const plan = await getAiDeliveryContentPlanDelegate(prisma).findFirst({
+    where: { aiDeliveryProjectId, tenantId },
+    select: { id: true, storageKey: true }
+  }) as { id: string; storageKey: string | null } | null;
+
+  if (!plan) return null;
+
+  if (!plan.storageKey) {
+    return { downloadReference: null };
+  }
+
+  const downloadRef = getPrivateStorageDownloadReference(plan.storageKey);
+  return {
+    downloadReference: downloadRef
+      ? { downloadUrl: downloadRef.downloadUrl, expiresSeconds: downloadRef.expiresSeconds }
+      : null
+  };
 }
 
 async function getClientAccessibleContentPlan(

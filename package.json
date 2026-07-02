@@ -29,6 +29,7 @@
     "smoke:tenant-module:local": "node --import tsx scripts/smoke-tenant-module-local.mjs",
     "smoke:legacy-wordpress-sunset:local": "node scripts/smoke-legacy-wordpress-sunset-local.mjs",
     "smoke:ai-delivery-reviews": "node scripts/smoke-ai-delivery-reviews-local.mjs",
+    "smoke:ai-seo-content-plan-pdf": "node scripts/smoke-ai-seo-content-plan-pdf-local.mjs",
     "smoke:ai-market-intelligence": "node scripts/smoke-ai-market-intelligence-local.mjs",
     "smoke:ai-knowledge-context": "node scripts/smoke-ai-knowledge-context-local.mjs",
     "smoke:ai-operations:local": "node scripts/smoke-ai-operations-local.mjs",

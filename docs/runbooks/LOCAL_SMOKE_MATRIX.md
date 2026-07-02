@@ -57,6 +57,7 @@ In-memory limit: 300 requests / 15 minutes per IP. Long smoke chains may hit 429
 | `smoke:client-access:local` | Admin grant/revoke, client bounds |
 | `smoke:ai-market-intelligence` | MI project, sources, run, insight, handoff, AI Delivery apply |
 | `smoke:ai-delivery-reviews` | Content plan, drafts, images, deliverables, WP draft prep |
+| `smoke:ai-seo-content-plan-pdf` | Content plan PDF export + private storage (admin-only; accepts 503 locally) |
 | `smoke:monthly-report:local` | Admin report lifecycle, document handoff |
 | `smoke:monthly-report:pdf` | PDF generation path |
 | `smoke:monthly-report:mi-context` | MI context admin + client non-exposure |

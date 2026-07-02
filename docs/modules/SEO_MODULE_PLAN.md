@@ -19,6 +19,7 @@ The SEO module supports admin-operated planning, tracking, and reporting for con
 - approval status
 - research requests and summaries
 - content plan generation and review
+- admin-only content plan PDF export + private R2 storage (Block 3B)
 
 ## Deferred
 

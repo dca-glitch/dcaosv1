@@ -989,6 +989,7 @@ model AiDeliveryContentPlan {
   revisionCount        Int                            @default(0)
   reviewRequestedAt    DateTime?
   approvedAt           DateTime?
+  storageKey           String?
   createdAt            DateTime                       @default(now())
   updatedAt            DateTime                       @updatedAt
 

@@ -483,6 +483,8 @@ export type AiDeliveryProjectsProps = {
   onRequestContentPlanReview?: (projectId: string) => Promise<AiDeliveryContentPlanSummary | null>;
   onApproveContentPlan?: (projectId: string) => Promise<AiDeliveryContentPlanSummary | null>;
   onRequestContentPlanChanges?: (projectId: string) => Promise<AiDeliveryContentPlanSummary | null>;
+  onGenerateContentPlanPdf?: (projectId: string) => Promise<{ contentPlanId: string; hasDocument: boolean; generatedAt: string; fileName: string } | null>;
+  onDownloadContentPlanDocument?: (projectId: string) => Promise<{ downloadUrl: string } | null>;
   onFetchContentDrafts?: (projectId: string) => Promise<AiDeliveryContentDraftSummary[]>;
   onSaveContentDraft?: (projectId: string, draftId: string | null, values: AiDeliveryContentDraftFormValues) => Promise<AiDeliveryContentDraftSummary | null>;
   onArchiveContentDraft?: (projectId: string, draftId: string) => Promise<AiDeliveryContentDraftSummary | null>;
@@ -939,6 +941,8 @@ export function AiDeliveryPage({
   onRequestContentPlanReview,
   onApproveContentPlan,
   onRequestContentPlanChanges,
+  onGenerateContentPlanPdf,
+  onDownloadContentPlanDocument,
   onFetchContentDrafts,
   onSaveContentDraft,
   onArchiveContentDraft,
@@ -1035,6 +1039,8 @@ export function AiDeliveryPage({
   const [contentPlanDetail, setContentPlanDetail] = useState<AiDeliveryContentPlanSummary | null>(null);
   const [contentPlanItems, setContentPlanItems] = useState<ContentPlanItemDraft[]>([]);
   const [contentPlanMiContextCount, setContentPlanMiContextCount] = useState(0);
+  const [contentPlanPdfGenerating, setContentPlanPdfGenerating] = useState(false);
+  const [contentPlanPdfMessage, setContentPlanPdfMessage] = useState<string | null>(null);
   const [openContentDraftsId, setOpenContentDraftsId] = useState<string | null>(null);
   const [contentDraftsLoading, setContentDraftsLoading] = useState(false);
   const [contentDraftsSaving, setContentDraftsSaving] = useState(false);
@@ -2113,6 +2119,40 @@ export function AiDeliveryPage({
     setContentPlanGeneratingItemId(null);
     setContentPlanDetail(null);
     setContentPlanItems([]);
+    setContentPlanPdfMessage(null);
+  }
+
+  async function handleGenerateContentPlanPdf(projectId: string) {
+    if (!onGenerateContentPlanPdf) return;
+    setContentPlanPdfGenerating(true);
+    setContentPlanPdfMessage(null);
+    try {
+      const result = await onGenerateContentPlanPdf(projectId);
+      if (result?.hasDocument) {
+        setContentPlanPdfMessage(`PDF generated: ${result.fileName}`);
+      } else {
+        setContentPlanPdfMessage("PDF generation failed — no document returned.");
+      }
+    } catch {
+      setContentPlanPdfMessage("PDF generation failed.");
+    } finally {
+      setContentPlanPdfGenerating(false);
+    }
+  }
+
+  async function handleDownloadContentPlanDocument(projectId: string) {
+    if (!onDownloadContentPlanDocument) return;
+    setContentPlanPdfMessage(null);
+    try {
+      const result = await onDownloadContentPlanDocument(projectId);
+      if (result?.downloadUrl) {
+        window.open(result.downloadUrl, "_blank", "noopener,noreferrer");
+      } else {
+        setContentPlanPdfMessage("No PDF available yet. Generate a PDF first.");
+      }
+    } catch {
+      setContentPlanPdfMessage("Download reference could not be retrieved.");
+    }
   }
 
   async function openContentDrafts(projectId: string) {
@@ -3724,12 +3764,15 @@ export function AiDeliveryPage({
                     <p className="muted-text">Current status is shown below. Next step: add or refine topics, save the plan, then move it into review when ready. Saved plan items can run admin-only draft generation; this screen does not publish, deliver to clients, crawl, or run external services directly.</p>
                     <div className="state-panel" role="status">Review actions follow the current content plan state shown below. If a transition is blocked, the reason stays in this modal.</div>
                     {contentPlanGenerationMessage ? <div className="state-panel" role="status">{contentPlanGenerationMessage}</div> : null}
+                    {contentPlanPdfMessage ? <div className="state-panel" role="status">{contentPlanPdfMessage}</div> : null}
                   </section>
                   <div className="modal-footer">
                     <button className="secondary-action" disabled={isContentPlanBusy} onClick={closeContentPlan} type="button">Close</button>
                     <button className="secondary-action" disabled={isContentPlanBusy} onClick={() => void handleContentPlanAction(openContentPlanProject.id, onRequestContentPlanReview)} type="button">Mark ready for review</button>
                     <button className="secondary-action" disabled={isContentPlanBusy} onClick={() => void handleContentPlanAction(openContentPlanProject.id, onRequestContentPlanChanges)} type="button">Request changes</button>
                     <button className="secondary-action" disabled={isContentPlanBusy} onClick={() => void handleContentPlanAction(openContentPlanProject.id, onApproveContentPlan)} type="button">Approve plan</button>
+                    <button className="secondary-action" disabled={isContentPlanBusy || contentPlanPdfGenerating} onClick={() => void handleGenerateContentPlanPdf(openContentPlanProject.id)} type="button">{contentPlanPdfGenerating ? "Generating PDF…" : "Export PDF"}</button>
+                    <button className="secondary-action" disabled={isContentPlanBusy || contentPlanPdfGenerating} onClick={() => void handleDownloadContentPlanDocument(openContentPlanProject.id)} type="button">Download PDF</button>
                     <button className="primary-action" disabled={isContentPlanBusy || contentPlanItems.some((item) => !item.title.trim())} onClick={() => void handleSaveContentPlan(openContentPlanProject.id)} type="button">
                       {contentPlanSaving ? "Saving" : "Save draft"}
                     </button>
@@ -3947,6 +3990,8 @@ export function AiDeliveryPage({
                     <button className="secondary-action" disabled={isContentPlanBusy} onClick={() => void handleContentPlanAction(openContentPlanProject.id, onRequestContentPlanReview)} type="button">Mark ready for review</button>
                     <button className="secondary-action" disabled={isContentPlanBusy} onClick={() => void handleContentPlanAction(openContentPlanProject.id, onRequestContentPlanChanges)} type="button">Request changes</button>
                     <button className="secondary-action" disabled={isContentPlanBusy} onClick={() => void handleContentPlanAction(openContentPlanProject.id, onApproveContentPlan)} type="button">Approve plan</button>
+                    <button className="secondary-action" disabled={isContentPlanBusy || contentPlanPdfGenerating} onClick={() => void handleGenerateContentPlanPdf(openContentPlanProject.id)} type="button">{contentPlanPdfGenerating ? "Generating PDF…" : "Export PDF"}</button>
+                    <button className="secondary-action" disabled={isContentPlanBusy || contentPlanPdfGenerating} onClick={() => void handleDownloadContentPlanDocument(openContentPlanProject.id)} type="button">Download PDF</button>
                     <button className="primary-action" disabled={isContentPlanBusy || contentPlanItems.some((item) => !item.title.trim())} onClick={() => void handleSaveContentPlan(openContentPlanProject.id)} type="button">
                       {contentPlanSaving ? "Saving" : "Save draft"}
                     </button>

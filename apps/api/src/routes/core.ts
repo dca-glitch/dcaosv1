@@ -187,7 +187,9 @@ import {
   createAiKnowledgeItemHandler,
   updateAiKnowledgeItemHandler,
   promoteAiKnowledgeItemHandler,
-  previewAiContextHandler
+  previewAiContextHandler,
+  generateAiDeliveryContentPlanPdfHandler,
+  getAiDeliveryContentPlanDownloadReferenceHandler
 } from "../controllers/coreController";
 
 import { requireAuth } from "../middlewares/auth.middleware";
@@ -309,6 +311,8 @@ export function createCoreRouter() {
   router.post("/ai-delivery-projects/:id/content-plan/request-client-review", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), requestAiDeliveryContentPlanClientReviewHandler);
   router.post("/ai-delivery-projects/:id/content-plan/approve", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), approveAiDeliveryContentPlanHandler);
   router.post("/ai-delivery-projects/:id/content-plan/request-changes", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), requestAiDeliveryContentPlanChangesHandler);
+  router.post("/ai-delivery-projects/:id/content-plan/generate-pdf", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), generateAiDeliveryContentPlanPdfHandler);
+  router.get("/ai-delivery-projects/:id/content-plan/download", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), getAiDeliveryContentPlanDownloadReferenceHandler);
   router.get("/ai-delivery-projects/:id/content-drafts", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), listAiDeliveryContentDraftsHandler);
   router.post("/ai-delivery-projects/:id/content-drafts", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), createAiDeliveryContentDraftHandler);
   router.put("/ai-delivery-projects/:id/content-drafts/:draftId", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), updateAiDeliveryContentDraftHandler);

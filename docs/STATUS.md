@@ -100,13 +100,13 @@ Completed admin-operated pieces:
 - draft generation handoff
 - admin AI SEO workflow shell/status summary
 - focused AI Delivery smoke coverage
+- **admin-only content plan PDF export + private storage (Block 3B)**
 
 Still deferred:
 
 - live crawling
 - Google OAuth / live GSC sync
 - client-facing metrics exposure
-- automatic PDF generation / R2 stash
 - Google Docs export for the AI SEO content-plan shell
 - production deploy
 - autonomous SEO agents

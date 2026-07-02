@@ -203,7 +203,9 @@ import {
   getAiDeliveryMonthlyReportMiContext,
   applyMiHandoffToMonthlyReport,
   updateMonthlyReportMiContextDraft,
-  removeMiHandoffFromMonthlyReport
+  removeMiHandoffFromMonthlyReport,
+  generateAiDeliveryContentPlanPdfForProject,
+  getAiDeliveryContentPlanDownloadReference
 } from "../core/core.runtime";
 import {
   createAiKnowledgeItem,
@@ -5525,5 +5527,44 @@ export const previewAiContextHandler: RequestHandler = async (req, res) => {
   } catch (error) {
     if (handleAiDeliveryGuardError(res, error)) return;
     res.status(500).json(failure("AI_CONTEXT_PREVIEW_RUNTIME_ERROR", "AI context preview could not be completed."));
+  }
+};
+
+export const generateAiDeliveryContentPlanPdfHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) return void res.status(401).json(unauthorizedFailure());
+
+  const projectId = typeof req.params.id === "string" ? req.params.id.trim() : "";
+  if (!projectId) return void res.status(400).json(failure("AI_DELIVERY_CONTENT_PLAN_INVALID", "Project ID is invalid."));
+
+  try {
+    const response = await generateAiDeliveryContentPlanPdfForProject(authSession, projectId);
+    if (!response) return void res.status(404).json(failure("AI_DELIVERY_CONTENT_PLAN_NOT_FOUND", "Content plan not found."));
+    res.status(201).json(success(response, { phase: "runtime", scope: "ai-delivery-content-plan" }));
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "";
+    if (message.includes("not configured")) {
+      res.status(503).json(failure("R2_STORAGE_NOT_CONFIGURED", "R2 storage is not configured."));
+      return;
+    }
+    if (handleAiDeliveryGuardError(res, error)) return;
+    res.status(500).json(failure("AI_DELIVERY_CONTENT_PLAN_ERROR", "Content plan PDF could not be generated."));
+  }
+};
+
+export const getAiDeliveryContentPlanDownloadReferenceHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) return void res.status(401).json(unauthorizedFailure());
+
+  const projectId = typeof req.params.id === "string" ? req.params.id.trim() : "";
+  if (!projectId) return void res.status(400).json(failure("AI_DELIVERY_CONTENT_PLAN_INVALID", "Project ID is invalid."));
+
+  try {
+    const response = await getAiDeliveryContentPlanDownloadReference(authSession, projectId);
+    if (!response) return void res.status(404).json(failure("AI_DELIVERY_CONTENT_PLAN_NOT_FOUND", "Content plan not found."));
+    res.json(success(response, { phase: "runtime", scope: "ai-delivery-content-plan" }));
+  } catch (error) {
+    if (handleAiDeliveryGuardError(res, error)) return;
+    res.status(500).json(failure("AI_DELIVERY_CONTENT_PLAN_ERROR", "Download reference could not be retrieved."));
   }
 };
