@@ -1,47 +1,44 @@
-# Client Portal Module
+# Client Portal Plan
 
 ## Purpose
 
-The Client Portal module is a future external-facing area for selected client users.
+The Client Portal is an active client-safe surface for final deliverables and read-only archive/report visibility.
 
-## MVP Scope
+## Current state
 
-- client dashboard
-- project visibility
-- shared report visibility
-- basic read-only portal experience
+- `#/client-portal` routes to the portal shell and defaults to **Your archive**
+- `#/archive` is the separate archive hub
+- `#/client-portal/pending-approvals` shows pending approvals
+- `#/client-portal/briefs` shows brief review
+- `#/client-portal/deliverables/:id/approve` opens the deliverable approval editor
+- client-only users can access portal routes and remain blocked from admin-only views
 
-## Future Scope
+## Client-safe boundary
 
-- approvals
-- file sharing
-- invoice visibility
-- messages
-- support requests
+Do not expose internal workflow, provider, storage, or admin metadata in portal surfaces.
 
-## Backend Areas
+Forbidden visible fields include:
 
-- portal routes later
-- portal access service later
+- `storageKey`
+- `releasePackageId`
+- `ADMIN_REVIEW`
+- `sourceType`
+- `workflowRunId`
+- `executionLog`
+- provider/run metadata
 
-## Frontend Areas
+## Current scope
 
-- portal layout
-- portal dashboard
-- portal project view
-- portal reports view
+- archive / final delivery history
+- pending approvals
+- brief review
+- deliverable approval
+- FINAL-only monthly reports
 
-## Shared Contracts
+## Deferred
 
-- portal user context
-- portal project summary
-- portal report summary
-
-## Dependencies
-
-- auth
-- tenant context
-- clients module
-- projects module
-- reports module
-- permissions
+- autonomous or background agents
+- live provider defaults
+- broad refactors
+- public approval links
+- non-final client self-service flows

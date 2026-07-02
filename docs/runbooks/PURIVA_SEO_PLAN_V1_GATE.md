@@ -46,6 +46,7 @@ Minimum planning coverage:
 3. General aesthetic services overview/FAQ
 4. Bali medical tourism journey content
 5. Clinic trust/about/license verification support
+6. Block 3 planning input for AI SEO / AI Delivery planning
 
 ---
 
@@ -95,3 +96,4 @@ npm.cmd run -w @dca-os-v1/api test:unit -- --test-name-pattern puriva-seo-plan
 - High-risk categories (Wegovy, stem cell) require medical review before client-facing use.
 - Hospital/partner/license statements remain verification-required.
 - No OpenRouter, crawl, or WordPress calls in this block.
+- This is planning-only; live automation stays deferred until a separately approved block.

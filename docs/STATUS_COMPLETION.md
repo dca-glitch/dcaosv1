@@ -1,12 +1,12 @@
 # DCA OS Lite — Project Completion Overview
 
 **Status:** Planning and operator reference
-**Last updated:** 2026-06-28 (AI operating baseline closeout — PR #33/#34 on main)
-**Reference branch:** `main` after PR #34 merge (`f7cb7a0`)
-**Reference commits:** PR #33 merge `a0bd879`; PR #34 merge `f7cb7a0`; prior PR #13 merge `584e041bd85e8179e795a0e4621a0d9d8908e0b6`
+**Last updated:** 2026-07-02 (docs source-of-truth refresh after PR #38–#43)
+**Reference branch:** `main` after PR #43 merge (`f8606f2`)
+**Reference commits:** PR #38 merge `a152cbd`; PR #39 merge `971ac41`; PR #40 merge `9a6eddc`; PR #41 merge `6a03cc1`; PR #42 merge `b341b5d`; PR #43 merge `f8606f2`
 **Scope:** Approved local admin MVP + client/domain operating model (blocks 1–6) + **MVP 1 Puriva client delivery** + **Post-MVP local closeout (Blocks 31–57)** + **Phase F local completion (Blocks 58–77)**. Local `main` is synced and validated. VPS/production intentionally excluded until separate owner approval.
 
-Current post-merge source of truth: [`docs/operator/post-merge-completion-status-20260627.md`](./operator/post-merge-completion-status-20260627.md). Merge to `main` does **not** mean production deployment.
+Current source of truth for the post-PR #38–#43 state: [`docs/STATUS.md`](./STATUS.md). [`docs/operator/post-merge-completion-status-20260627.md`](./operator/post-merge-completion-status-20260627.md) remains the historical record. Merge to `main` does **not** mean production deployment.
 
 Percentages measure completion **within each area's approved scope**, not the full long-term PRD vision.
 
@@ -32,8 +32,9 @@ Related documents:
 | **Local admin MVP** (DCA operator, local dev) | **~100%** | Done | Post-MVP Phases A–E (Blocks 31–57) + Phase F local closeout (Blocks 58–77) |
 | **Client/domain roadmap (blocks 1–6)** | **~92%** | Local gates done; prod env keys = separate owner gates |
 | **Production readiness** (real clients, VPS) | **~38%** | Runbooks exist; deploy/migration deferred by owner |
+| **UI / route stabilization** | **100%** | Dark Nebula pass, AI Delivery sectioning, Workflow Briefs cleanup, client-only portal access |
 | **PR #13 merge to main** | **100%** | Merged; local `main` synced to `origin/main` |
-| **Local main validation** | **100%** | Passed after Windows Prisma DLL lock cleanup |
+| **Local main validation** | **100%** | Prior accepted baseline after Windows Prisma DLL lock cleanup |
 | **Local pre-staging proof** | **95%** | Accepted; isolated Finance admin browser smoke passed after local admin restore and API/Web restart |
 | **Confirmed staging target** | **100%** | G1 closed — `staging.digitalcubeagency.net`; production remains `system.digitalcubeagency.net`; same VPS, separate staging stack; DNS not created yet; G4 not approved |
 | **Current main deployed to production** | **0%** | Not deployed; production frozen |
@@ -57,7 +58,7 @@ Related documents:
 | Area / module | % in scope | Status | Notes |
 |---------------|------------|--------|-------|
 | **Platform core** (auth, tenant, modules, CI, validate) | **92%** | Done | Roles/permissions summary + module registry browser gates (Blocks 48–49) |
-| **Dark Nebula UI + data-dense admin** | **90%** | Done | Dashboard data-backed browser gate (Block 52) |
+| **Dark Nebula UI + data-dense admin** | **100%** | Done | Full-system Dark Nebula UI pass and client-facing polish complete |
 | **Clients (CRM)** | **88%** | Done | CRUD, filters, `clientKind`, website |
 | **Client Hub + domain model (block 1)** | **97%** | Done | Hub UI + client-domain browser covers catalog, inquiries shell, publication log |
 | **PublicationTarget (block 2)** | **95%** | Done | CRUD per client; legacy tenant POST sunset (410); GET read-only |
@@ -66,10 +67,10 @@ Related documents:
 | **WordPress publish + PublicationLog (block 5)** | **90%** | Done (local) | Local gate smoke + Client Hub publication log browser proof |
 | **Module middleware (block 6)** | **96%** | Done (local) | dry_run + enforce probe runbooks (Blocks 39, 46); staging enforce pending |
 | **Projects & Tasks** | **88%** | Done | Admin MVP closed |
-| **AI Delivery** | **90%** | Done | Workflow browser matrix + AI Gateway v1 + AI Operations Console v1 (PR #33/#34) |
+| **AI Delivery** | **95%** | Done | Workspace sectioning complete; admin workflow matrix, gateway, operations console, and client-safe archive path in place |
 | **Market Intelligence** | **86%** | Done (local) | Admin MVP + operator browser gate; MI runs in AI Ops console deferred to closeout |
-| **Monthly Reports** | **92%** | In progress | Metrics import browser gate (Block 47); live GA/GSC deferred |
-| **Client Portal MVP** (Puriva — visibility + review) | **100%** | Done (local) — UX polish in Phase F Block 68 | Blocks 7–30 incl. sparse + populated delivery overview browser gates; feature scope complete locally |
+| **Monthly Reports** | **93%** | In progress | Metrics snapshot foundation and client portal FINAL-only archive path in place; live GA/GSC deferred |
+| **Client Portal MVP** (Puriva — visibility + review) | **100%** | Done (local) — UX polish and route access fixed | Blocks 7–30 incl. sparse + populated delivery overview browser gates; `#/client-portal` now defaults to the archive shell |
 | **Client Portal advanced actions** (magic links, full comment threads) | **0%** | Deferred (Phase 2) | See deferred scope register |
 | **Finance** | **82%** | Done (local) | Finance admin browser sanity gate (Post-MVP Block 36) |
 | **AI SEO + Content Production** | **72%** | In progress | Google Drive live planning gate (Block 43); live Google integrations deferred |
@@ -175,6 +176,7 @@ Do not treat local smoke alone as production readiness.
 | Date | Change |
 |------|--------|
 | 2026-06-28 | AI baseline on main: PR #33 AI Gateway v1 + smoke matrix; PR #34 AI Operations Console v1 |
+| 2026-07-02 | Docs source-of-truth refresh after PRs #38–#43; UI/route stabilization complete; next block is AI SEO / AI Delivery planning |
 | 2026-06-27 | G1 closed: staging host `staging.digitalcubeagency.net`; production `system.digitalcubeagency.net`; G4 not approved; DNS not created |
 | 2026-06-27 | Phase F Block 77: local closeout complete — Blocks 58–77 validated on `feature/local-closeout-blocks-58-77` |
 | 2026-06-27 | Phase F Block 58: docs consistency — aligned Portal/WP/MI/R2 labels and blocks 4–6 percentages |

@@ -4,7 +4,7 @@
 
 **Purpose:** Confirm the local repository baseline before any future staging approval. PR #13 is already merged into `main`; this gate remains local-only and does not authorize VPS execution.
 
-**Phase G context (2026-06-28):** G1 closed — staging host `staging.digitalcubeagency.net`; production `system.digitalcubeagency.net`; G4 **not approved**; DNS **not created**. PR #30 merged on `main` at `3089c32`. Run long validation/smoke from **external PowerShell**, not inside Cursor agent sessions.
+**Phase G context (2026-07-02):** G1 closed — staging host `staging.digitalcubeagency.net`; production `system.digitalcubeagency.net`; G4 **not approved**; DNS **not created**. PR #43 is the current `main` baseline (`f8606f2`). Run long validation/smoke from **external PowerShell**, not inside Cursor agent sessions.
 
 **Forbidden in this gate:** VPS login, Docker Compose apply, Caddy/DNS changes, staging migrations, production env, `smoke:mvp:staging` unless owner explicitly approves G4 and staging host access.
 
@@ -44,7 +44,7 @@ npm.cmd run smoke:pre-staging:local
 
 Runs `validate` then the approved local smoke suite (Puriva MVP Blocks 7–30, Post-MVP Blocks 31–53, architecture blocks 4–6, legacy sunset).
 
-If `validate` fails with Prisma `EPERM` on Windows, run validate **before** starting dev API/Web, or stop the local API/`node.exe` process and rerun. See [`.github/instructions/validation.instructions.md`](../../.github/instructions/validation.instructions.md).
+If `validate` fails with Prisma `EPERM` on Windows, run validate **before** starting dev API/Web, or stop only the locking `node.exe` process and rerun once. See [`.github/instructions/validation.instructions.md`](../../.github/instructions/validation.instructions.md).
 
 If smoke fails with HTTP **429**, restart the API and rerun (or use `smoke:pre-staging:local`, which restarts API before heavy smokes). Long smoke chains share a 300 req / 15 min in-memory limit per IP.
 

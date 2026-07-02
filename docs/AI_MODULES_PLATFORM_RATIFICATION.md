@@ -10,6 +10,8 @@ The system must not be built as separate isolated workflows for each business us
 
 DCA OS Lite is currently in local-first admin/operator foundation work.
 
+Current UI / route stabilization is complete after PRs #38–#43: Dark Nebula full-system UI pass, AI Delivery workspace sectioning, Workflow Briefs cleanup, client-facing polish, dashboard audit feed smoke alignment, and client-only `#/client-portal` access.
+
 Current AI Delivery admin workflow foundation order:
 
 1. Project + brief.
@@ -90,6 +92,8 @@ Vertical modules should be built after these shared layers are stable.
 11. Directory / Listings engine.
 12. Product / POD pipeline.
 13. Market Intelligence layer.
+
+The next planning block is AI SEO / AI Delivery Planning; keep the work incremental and avoid broad refactors.
 
 ## Next Safe Implementation Guidance
 

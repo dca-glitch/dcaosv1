@@ -6,7 +6,7 @@
 - Local reference path: `C:\dcaosv1`
 - Production URL: `system.digitalcubeagency.net`
 
-Post-merge status: PR #13 is merged into `main` at `584e041bd85e8179e795a0e4621a0d9d8908e0b6`; follow-up docs commit on `main` is `07b1f1668d11cdef42b195cfad189c4df645acc6`. Local `main` is synced and validated, and local pre-staging proof was accepted. No deploy, VPS migration, production restart, or release was performed. `system.digitalcubeagency.net` is a live production VPS target, not a confirmed staging target.
+Post-merge status: PR #43 is merged into `main` at `f8606f2`; local `main` is synced to `origin/main`. No deploy, VPS migration, production restart, or release was performed. `system.digitalcubeagency.net` is a live production VPS target, not a confirmed staging target.
 
 ## Product Definition
 
@@ -14,7 +14,7 @@ DCA OS Lite is the reusable SaaS operating system foundation for Digital Cube Ag
 
 **Approved operating model (2026-06-27):** each internet domain is one `Client` record; publication and analytics hang off Client; Digital Cube Agency LLC operates agency clients; own domains belong to independent companies that will use licensed tenant instances for Finance. **MVP 1:** Puriva client delivery — Client Portal MVP required now. See [`docs/architecture/CLIENT_DOMAIN_OPERATING_MODEL.md`](./architecture/CLIENT_DOMAIN_OPERATING_MODEL.md).
 
-Current state note: AI Delivery admin workflows are operator-primary. Client Access Admin UI foundation exists; Client Portal MVP is required for Puriva (client-safe visibility only). Implementation follows Puriva MVP delivery path and approved blocks 1–6 in [`docs/ROADMAP.md`](./ROADMAP.md).
+Current state note: AI Delivery admin workflows are operator-primary. Client Portal MVP is required for Puriva (client-safe visibility only). `#/client-portal` now opens the archive-oriented portal shell, while `#/archive` stays separate. Implementation follows Puriva MVP delivery path and the current source-of-truth status in [`docs/STATUS.md`](./STATUS.md).
 
 ## Current Role Split
 

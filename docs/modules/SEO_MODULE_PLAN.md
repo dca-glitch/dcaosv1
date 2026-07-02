@@ -2,46 +2,35 @@
 
 ## Purpose
 
-The SEO module supports planning, tracking, and reporting SEO work.
+The SEO module supports admin-operated planning, tracking, and reporting for content delivery.
 
-## MVP Scope
+## Current state
+
+- deterministic local planning and research scaffolds exist
+- AI SEO admin shell and content-plan workflow are in place
+- manual review and approval remain the operating model
+- live crawling, live Google sync, and autonomous SEO agents are deferred
+
+## Current scope
 
 - SEO topic list
-- keyword target field
+- keyword targets
 - content status
 - approval status
+- research requests and summaries
+- content plan generation and review
 
-## Future Scope
+## Deferred
 
-- search performance tracking
-- competitor gap tracking
-- AI brief generation
-- monthly recommendations
+- live search performance tracking
+- live competitor gap tracking
+- live crawling
+- Google OAuth / GSC sync
 - report automation
+- autonomous agents
 
-## Backend Areas
+## Source of truth
 
-- SEO routes later
-- SEO planning service later
-- reporting integration later
-
-## Frontend Areas
-
-- SEO dashboard
-- topic list
-- topic detail
-- approval queue later
-
-## Shared Contracts
-
-- SEO topic
-- keyword target
-- approval status
-- performance summary later
-
-## Dependencies
-
-- tenant context
-- permissions
-- reports module
-- AI workflows module
+- `docs/STATUS.md`
+- `docs/AI_MODULES.md`
+- `docs/ai-delivery-projects-mvp-prd.md`
