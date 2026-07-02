@@ -206,6 +206,8 @@ This keeps approved UI direction and production safety rules stored at repositor
 - Use term “monthly content plan,” not “package.”
 - Client archive is read-only.
 - No public approval links in MVP.
+- Current route baseline: `#/client-portal` is the archive-oriented portal shell; `#/archive` remains separate; client-only users stay blocked from admin-only routes.
+- Next recommended planning block is AI SEO / AI Delivery Planning; do not start a broad refactor block.
 
 ---
 

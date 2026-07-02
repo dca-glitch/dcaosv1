@@ -28,7 +28,9 @@ Related:
 
 - `Publication handoff` / `Prepare WordPress drafts`
 - `structuredInputJson`, `promptScaffold`, internal scaffold labels
-- `storageKey`, `workflowRunId`, `executionLog`, `providerMetadata`
+- `storageKey`, `releasePackageId`, `ADMIN_REVIEW`, `sourceType`
+- `workflowRunId`, `executionLog`, `providerMetadata`
+- provider/run metadata
 - Admin workflow brief / handoff API paths
 
 ---
@@ -52,3 +54,4 @@ Requires `AUTH_SEED_TEST_PASSWORD` (minimum 8 characters). No hardcoded password
 - Portal user creation uses existing `/auth/create-user` + `/auth/change-password` admin flow; temporary passwords are never logged.
 - Second setup/smoke run should login directly without recreating the user.
 - Medical review and client approval gates are not bypassed — client sees empty/final-only states until real final delivery exists.
+- Client-only users may access `#/client-portal`, but still must not see internal workflow/provider/storage metadata.

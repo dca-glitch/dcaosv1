@@ -20,7 +20,7 @@ Production URL:
 system.digitalcubeagency.net
 ```
 
-Post-merge deployment note: PR #13 is merged into `main`, local `main` is validated, and local pre-staging proof was accepted. Current `main` is **not deployed** to production. `system.digitalcubeagency.net` is a live production VPS target, not a confirmed staging target.
+Post-merge deployment note: PR #43 is merged into `main`, and local `main` is synced to `origin/main`. Current `main` is **not deployed** to production. `system.digitalcubeagency.net` remains a live production VPS target, not a confirmed staging target.
 
 ## Purpose
 
@@ -38,6 +38,7 @@ The goal is to build reusable platform foundations once and then add future modu
 - Do not deploy, touch VPS, push, or commit unless explicitly approved after review.
 - ChatGPT acts as scope controller/reviewer/task writer; Codex/Copilot/local tooling executes sealed tasks.
 - AI Delivery admin workflows remain operator-primary. **Client Portal MVP is required for Puriva** (client-safe visibility and human/client review before publication). Advanced portal features (magic links, full comment threads) remain phased.
+- Current UI state is the compact Dark Nebula pass: full-system UI polish, AI Delivery workspace sectioning, Workflow Briefs detail cleanup, client-facing polish, dashboard audit feed smoke alignment, and client-only access to `#/client-portal`.
 - Repeatable scripts are required for stability, regression, smoke, or workflow validation work.
 
 ## Repository

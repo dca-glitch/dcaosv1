@@ -53,7 +53,7 @@ In-memory limit: 300 requests / 15 minutes per IP. Long smoke chains may hit 429
 |--------|---------------|
 | `smoke:local` | API health, auth basics |
 | `smoke:mvp:local` | Auth, tenant, modules, finance baseline |
-| `smoke:client-portal:local` | Client archive API, access guards, forbidden fields |
+| `smoke:client-portal:local` | Client archive API, access guards, forbidden fields, `#/client-portal` archive behavior |
 | `smoke:client-access:local` | Admin grant/revoke, client bounds |
 | `smoke:ai-market-intelligence` | MI project, sources, run, insight, handoff, AI Delivery apply |
 | `smoke:ai-delivery-reviews` | Content plan, drafts, images, deliverables, WP draft prep |
@@ -104,7 +104,7 @@ In-memory limit: 300 requests / 15 minutes per IP. Long smoke chains may hit 429
 | `smoke:settings-team:browser` | Settings/Team shell |
 | `smoke:settings-backend:browser` | Settings backend binding |
 | `smoke:audit-activity:browser` | Audit activity |
-| `smoke:dashboard:audit-feed:browser` | Dashboard audit feed |
+| `smoke:dashboard:audit-feed:browser` | Dashboard audit feed (aligned to compact Dark Nebula UI) |
 | `smoke:dashboard-data-backed:browser` | Dashboard metrics |
 | `smoke:auth-invite-boundary:browser` | Invite boundary copy |
 

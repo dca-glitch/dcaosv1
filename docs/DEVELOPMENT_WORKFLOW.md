@@ -14,6 +14,7 @@ npm.cmd run smoke:ai-delivery-reviews
 ```
 
 Use smoke commands only when they are in scope for the task. Stability, regression, smoke, and module workflow work must include repeatable PowerShell/scripted validation as part of the deliverable.
+Current repo baseline after PRs #38–#43 is the compact Dark Nebula UI / client-portal routing state. `#/client-portal` is the archive-oriented portal shell, `#/archive` stays separate, and client-only users remain blocked from admin-only routes.
 
 Recommended sequence:
 
@@ -39,3 +40,4 @@ Current AI Delivery / email constraints:
 * **MVP 1 = Puriva client delivery.** Client Access Admin UI foundation is closed. **Client Portal MVP is required for Puriva** — client-safe visibility and human/client review before publication; advanced portal features remain phased. See [`docs/architecture/CLIENT_DOMAIN_OPERATING_MODEL.md`](./architecture/CLIENT_DOMAIN_OPERATING_MODEL.md).
 * Email Notifications remains EN1 only: provider defaults exist, `notifications.digitalcubeagency.net` is verified for Resend, no API key is added, and no real sending is active.
 * EN2 event wiring remains paused.
+* Block 3 next is AI SEO / AI Delivery planning, not broad refactor.

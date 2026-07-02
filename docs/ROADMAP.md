@@ -8,7 +8,7 @@
 
 **Production system:** `system.digitalcubeagency.net` — final DCA OS login and application location.
 
-Post-merge deployment note: PR #13 is merged into `main` and local `main` is validated, but current `main` is **0% deployed** to production. **Production:** `system.digitalcubeagency.net`. **Staging (G1 approved):** `staging.digitalcubeagency.net` — same VPS, separate stack; DNS not created yet; G4 not approved.
+Post-merge deployment note: PR #43 is merged into `main` and local `main` is synced to `origin/main`, but current `main` is **0% deployed** to production. **Production:** `system.digitalcubeagency.net`. **Staging (G1 approved):** `staging.digitalcubeagency.net` — same VPS, separate stack; DNS not created yet; G4 not approved.
 
 Implementation priority (delivery path first):
 
@@ -22,6 +22,17 @@ Implementation priority (delivery path first):
 8. Monthly report final client view
 9. Architecture blocks 1–6 (below)
 10. Future domain modules — explicit scope only
+
+Current UI / route stabilization is complete:
+
+- Dark Nebula full-system UI pass
+- AI Delivery workspace sectioning
+- Workflow Briefs detail UI cleanup
+- client-facing Dark Nebula polish
+- dashboard audit feed smoke alignment
+- client-only access to `#/client-portal`
+
+The next recommended block after this docs refresh is **AI SEO / AI Delivery Planning**.
 
 **Puriva MVP excludes:** `shop.puriva.id` ecommerce, Spa Finance, full Revenue Hub, full Commerce Core.
 

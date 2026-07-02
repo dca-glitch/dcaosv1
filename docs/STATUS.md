@@ -4,7 +4,9 @@
 
 DCA OS Lite is in local-first admin/operator foundation work. Production is frozen unless explicitly approved.
 
-Post-merge status source of truth: [`docs/operator/post-merge-completion-status-20260627.md`](./operator/post-merge-completion-status-20260627.md). PR #13 is merged into `main`, local `main` is validated, and the local pre-staging proof was accepted; current `main` is **not deployed** to production. `system.digitalcubeagency.net` is a live production VPS target, not a confirmed staging target.
+**Block 2C refresh baseline:** PRs #38–#43 are merged on `main` and the current baseline is `f8606f2`. The Dark Nebula UI pass, AI Delivery workspace sectioning, Workflow Briefs cleanup, client-facing polish, dashboard audit feed smoke alignment, and client-only `#/client-portal` access fix are all part of the current source of truth. No deploy was performed.
+
+Historical post-merge record: [`docs/operator/post-merge-completion-status-20260627.md`](./operator/post-merge-completion-status-20260627.md). Current source of truth for post-PR #38–#43 state is this document. PR #13 is merged into `main`, local `main` is validated, and the local pre-staging proof was accepted; current `main` is **not deployed** to production. `system.digitalcubeagency.net` is a live production VPS target, not a confirmed staging target.
 
 **AI operating baseline (merged on `main`):** PR #33 (AI Gateway v1 + AI workflow smoke matrix) at `a0bd879`; PR #34 (AI Operations Console v1) at `f7cb7a0`. Default AI execution is **local/deterministic**; OpenRouter/live provider remains **opt-in and not production-proven**. AI Operations Console is **admin-only** and covers AI Delivery workflow runs (MI runs listing deferred to closeout v1.1).
 
@@ -33,6 +35,13 @@ Post-merge status source of truth: [`docs/operator/post-merge-completion-status-
 - AI Delivery monthly report PDF admin UI action and focused smoke wiring.
 - Client Portal monthly reports archive route + browser proof closure.
 - Monthly Report PDF/upload/signed download admin and client portal endpoints implemented and local-smoke-proven.
+- Current route map:
+  - `#/client-portal` → ClientPortalPage / **Your archive**
+  - `#/archive` → ArchiveHubPage / **Archive**
+  - `#/monthly-reports` → MonthlyReportsPage
+  - `#/client-portal/pending-approvals` → PendingApprovalsPage
+  - `#/client-portal/briefs` → BriefPage
+  - `#/client-portal/deliverables/:id/approve` → ArticleApprovalEditor
 - Client Access Admin UI foundation closed for MVP: owner/admin users can grant, list, and revoke tenant-scoped client-level `ClientUserAccess`; Client Portal remains read-only and restricted to final client-safe data.
 - AI Gateway v1 merged on `main` (PR #33): guarded provider config, local deterministic default, AI knowledge context, workflow execution observability metadata.
 - AI workflow smoke matrix merged on `main` (PR #33): `npm run smoke:ai-matrix` sequential local AI proof pack.
@@ -64,6 +73,7 @@ Post-merge status source of truth: [`docs/operator/post-merge-completion-status-
 - Client Portal MVP is required for Puriva client delivery; portal shows client-safe final data only. Advanced client actions (approve/comments/magic links) remain phased after MVP visibility scope.
 - Client access is client-level in the current schema. Project-specific grants require a separately approved schema/API block.
 - AI Delivery defaults to local deterministic execution. OpenRouter-capable text execution code exists but is opt-in by env config and is not production-approved by default. Crawling, WordPress publishing, GA/GSC, Resend sending, and production deployment remain inactive unless explicitly approved.
+- Client-only users can access `#/client-portal` and remain blocked from admin-only routes.
 - AI Gateway v1 and AI Operations Console v1 are on `main` for local/admin operator use only; no VPS deploy or live provider production proof is implied.
 - AI provider runtime/cost guardrail foundation is closed for the current admin MVP as a guarded, local-first foundation; token/cost fields in workflow results are **estimates from execution metadata**, not billing records. Persistent provider cost analytics, per-tenant spend caps, full multi-provider router, and production/live provider proof remain deferred.
 - EN2 real provider sending and queues/background jobs remain inactive.
@@ -75,6 +85,8 @@ Post-merge status source of truth: [`docs/operator/post-merge-completion-status-
 Latest implementation commit: `031c215 Polish AI SEO admin workflow shell`
 
 AI SEO admin-operated MVP shell is in place.
+
+Block 3 planning should happen before any broader AI SEO implementation. The current repo state is deterministic/local-first, with live crawling, Google OAuth / live GSC sync, autonomous SEO agents, and production deploy all still deferred.
 
 Completed admin-operated pieces:
 
@@ -116,3 +128,4 @@ Still deferred:
 - Stabilize AI Delivery admin/operator workflows with repeatable validation/smoke scripts.
 - Resume broader EN2 notification delivery only after explicit approval.
 - Treat future client review as a later design/build block, not current behavior.
+- Use this document as the source of truth for the next AI SEO / AI Delivery planning block.
