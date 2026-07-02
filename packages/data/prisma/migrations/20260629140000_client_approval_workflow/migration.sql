@@ -23,7 +23,7 @@ CREATE TABLE "AiDeliveryDeliverableImageApproval" (
     CONSTRAINT "AiDeliveryDeliverableImageApproval_pkey" PRIMARY KEY ("id")
 );
 
-CREATE UNIQUE INDEX "AiDeliveryDeliverableImageApproval_deliverableId_articleImageId_key" ON "AiDeliveryDeliverableImageApproval"("deliverableId", "articleImageId");
+CREATE UNIQUE INDEX "AiDeliveryDeliverableImageApproval_deliverableId_articleIma_key" ON "AiDeliveryDeliverableImageApproval"("deliverableId", "articleImageId");
 CREATE INDEX "AiDeliveryDeliverableImageApproval_tenantId_idx" ON "AiDeliveryDeliverableImageApproval"("tenantId");
 CREATE INDEX "AiDeliveryDeliverableImageApproval_tenantId_deliverableId_idx" ON "AiDeliveryDeliverableImageApproval"("tenantId", "deliverableId");
 CREATE INDEX "AiDeliveryDeliverableImageApproval_tenantId_articleImageId_idx" ON "AiDeliveryDeliverableImageApproval"("tenantId", "articleImageId");
