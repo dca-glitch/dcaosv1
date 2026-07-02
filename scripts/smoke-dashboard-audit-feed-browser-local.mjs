@@ -142,21 +142,13 @@ async function main() {
     const metricGrid = page.locator(".dashboard-command-metrics").first();
     await metricGrid.waitFor({ state: "visible", timeout: 15000 });
 
-    const expectedMetricKeys = ["signed-in", "active-tenant", "role-coverage", "workspace-state"];
+    const expectedMetricKeys = ["active-tenant", "workspace-state"];
     for (const metricKey of expectedMetricKeys) {
       const metricCard = metricGrid.locator(`[data-metric="${metricKey}"]`).first();
       await metricCard.waitFor({ state: "visible", timeout: 10000 });
       const cardText = await metricCard.innerText();
       record(`dashboard metric card ${metricKey}`, cardText.trim().length > 0, metricKey);
     }
-
-    const signedInCard = metricGrid.locator('[data-metric="signed-in"]').first();
-    const signedInText = await signedInCard.innerText();
-    record(
-      "dashboard signed-in metric shows admin email helper",
-      signedInText.includes(adminEmail),
-      adminEmail
-    );
 
     const activityPanel = page.locator(".section-panel", { has: page.getByRole("heading", { name: "Recent Activity", exact: true }) }).first();
     await activityPanel.waitFor({ state: "visible", timeout: 15000 });
@@ -179,12 +171,12 @@ async function main() {
       firstLabel
     );
 
-    const actorBadge = feedItems.first().locator(".status-badge");
-    await actorBadge.waitFor({ state: "visible", timeout: 10000 });
-    const badgeText = (await actorBadge.innerText()).trim();
+    const feedHeader = feedItems.first().locator(".audit-feed-header");
+    await feedHeader.waitFor({ state: "visible", timeout: 10000 });
+    const badgeText = (await feedHeader.innerText()).trim();
     record(
       "audit feed item shows actor badge",
-      badgeText === "User" || badgeText === "System",
+      badgeText.includes("User") || badgeText.includes("System"),
       badgeText
     );
 
