@@ -1001,6 +1001,7 @@ export function AiDeliveryPage({
   onPreviewAiContext
 }: AiDeliveryProjectsProps) {
   const [filter, setFilter] = useState<"all" | "active" | "archived">("active");
+  const [focusedProjectId, setFocusedProjectId] = useState<string | null>(null);
   const [editorProjectId, setEditorProjectId] = useState<string | null>(null);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [draft, setDraft] = useState<AiDeliveryProjectFormValues>(emptyForm());
@@ -1124,6 +1125,38 @@ export function AiDeliveryPage({
   const [articleImageDownloadRef, setArticleImageDownloadRef] = useState<{ recordId: string; storageKey: string; downloadUrl: string | null; expiresSeconds: number | null } | null>(null);
 
   const selectedProject = useMemo(() => projects.find((p) => p.id === editorProjectId) ?? null, [editorProjectId, projects]);
+  const workspaceProjectId = useMemo(
+    () =>
+      focusedProjectId
+      ?? openContentPlanId
+      ?? openBriefId
+      ?? openContentDraftsId
+      ?? openArticleImagesId
+      ?? openDeliverablesId
+      ?? openKnowledgePanelId
+      ?? openMonthlyReportId
+      ?? openWorkflowRunsId
+      ?? openResearchSourcesId
+      ?? openMiContextId
+      ?? null,
+    [
+      focusedProjectId,
+      openContentPlanId,
+      openBriefId,
+      openContentDraftsId,
+      openArticleImagesId,
+      openDeliverablesId,
+      openKnowledgePanelId,
+      openMonthlyReportId,
+      openWorkflowRunsId,
+      openResearchSourcesId,
+      openMiContextId
+    ]
+  );
+  const workspaceProject = useMemo(
+    () => (workspaceProjectId ? projects.find((p) => p.id === workspaceProjectId) ?? null : null),
+    [workspaceProjectId, projects]
+  );
   const openProject = useMemo(() => projects.find((p) => p.id === openBriefId) ?? null, [openBriefId, projects]);
   const openContentPlanProject = useMemo(() => projects.find((p) => p.id === openContentPlanId) ?? null, [openContentPlanId, projects]);
   const openContentDraftsProject = useMemo(() => projects.find((p) => p.id === openContentDraftsId) ?? null, [openContentDraftsId, projects]);
@@ -3099,138 +3132,228 @@ export function AiDeliveryPage({
           title="No AI delivery projects"
         />
       ) : (
-        <div className="dense-list">
-          {filteredProjects.map((p) => (
-            <article className="entity-card dense-record" key={p.id}>
-              <div className="dense-record-main">
-                <div className="dense-title">
-                  <div className="dense-kicker">
-                    <span className={`entity-pill entity-pill-${p.isArchived ? "archived" : "active"}`}>
-                      {p.isArchived ? "Archived" : "Active"}
+        <div className="ai-delivery-workspace">
+          <SectionPanel
+            className="ai-delivery-section"
+            description="Choose a project to open workflow sections."
+            title="Project selection"
+            tone="compact"
+          >
+            <ul className="brief-select-list" aria-label="AI delivery projects">
+              {filteredProjects.map((p) => (
+                <li key={p.id}>
+                  <button
+                    className={`brief-select-item${workspaceProjectId === p.id ? " is-selected" : ""}`}
+                    onClick={() => setFocusedProjectId(p.id)}
+                    type="button"
+                  >
+                    <div className="brief-select-title">{p.name}</div>
+                    <div className="brief-select-meta">
+                      <span className={`entity-pill entity-pill-${p.isArchived ? "archived" : "active"}`}>
+                        {p.isArchived ? "Archived" : "Active"}
+                      </span>
+                      <StatusBadge status={p.brief?.status ?? "Brief not started"} />
+                      <span className="muted-text">{p.client?.name ?? "No client"}</span>
+                      <span className="muted-text">{p.targetMonth}</span>
+                    </div>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </SectionPanel>
+
+          <div className="ai-delivery-workspace-stack">
+            {!workspaceProject ? (
+              <SectionPanel
+                className="ai-delivery-section"
+                description="Pick a project from the list to review status and open workflow tools."
+                title="Project workspace"
+                tone="compact"
+              >
+                <EmptyState message="Select a project to continue the admin workflow." title="No project selected" />
+              </SectionPanel>
+            ) : (
+              <>
+                <SectionPanel
+                  action={
+                    canEdit ? (
+                      <div className="ai-delivery-action-row">
+                        <button className="secondary-action" onClick={() => openEditModal(workspaceProject)} type="button">
+                          Edit
+                        </button>
+                        {!workspaceProject.isArchived ? (
+                          <button className="secondary-action" onClick={() => void onArchive(workspaceProject.id)} type="button">
+                            Archive
+                          </button>
+                        ) : null}
+                        <button className="primary-action" onClick={() => void openContentPlan(workspaceProject.id)} type="button">
+                          Open content plan
+                        </button>
+                      </div>
+                    ) : null
+                  }
+                  className="ai-delivery-section ai-delivery-project-context"
+                  description={`${workspaceProject.client?.name ?? "No client"} · ${workspaceProject.project?.name ?? "No project reference"} · ${workspaceProject.targetMonth}`}
+                  title={workspaceProject.name}
+                  tone="highlight"
+                >
+                  <div className="ai-delivery-context-meta">
+                    <StatusBadge status={workspaceProject.brief?.status ?? "Brief not started"} />
+                    <span className="muted-text">
+                      Checkpoint: {workspaceProject.brief ? `Brief ${formatEnumLabel(workspaceProject.brief.status)}` : "Brief not started"}
                     </span>
-                    <StatusBadge status={p.brief?.status ?? "Brief not started"} />
                   </div>
-                  <h2>{p.name}</h2>
-                  <div className="dense-meta">
-                    <span><strong>{p.client?.name ?? "No client"}</strong></span>
-                    <span>{p.project?.name ?? "No project reference"}</span>
-                    <span>{p.targetMonth}</span>
-                  </div>
-                </div>
-
-                <div className="dense-fields">
-                  <div className="dense-field">
-                    <span>Client</span>
-                    <strong>{p.client?.name ?? "No client"}</strong>
-                  </div>
-                  <div className="dense-field">
-                    <span>Project</span>
-                    <strong>{p.project?.name ?? "(none)"}</strong>
-                  </div>
-                  <div className="dense-field">
-                    <span>Target</span>
-                    <strong>{p.targetMonth}</strong>
-                  </div>
-                  <div className="dense-field">
-                    <span>Checkpoint</span>
-                    <strong>{p.brief ? `Brief ${formatEnumLabel(p.brief.status)}` : "Brief not started"}</strong>
-                  </div>
-                </div>
-
-                <div className="dense-actions">
-                  {canEdit ? (
-                    <>
-                      <Button onClick={() => void openContentPlan(p.id)} size="sm">
-                        Open
-                      </Button>
-                      <details className="row-action-menu">
-                        <summary>More</summary>
-                        <div className="row-action-menu-panel">
-                          <div className="row-action-menu-group">
-                            <span className="row-action-menu-label">Planning</span>
-                            <button className="secondary-action" onClick={() => void openBrief(p.id)} type="button" disabled={!p.brief}>
-                              Brief
-                            </button>
-                            <button className="secondary-action" onClick={() => void openResearchSources(p.id)} type="button">
-                              Research / Sources
-                            </button>
-                            {typeof onFetchMiContext === "function" ? (
-                              <button className="secondary-action" onClick={() => void openMiContext(p.id)} type="button">
-                                MI Context
-                              </button>
-                            ) : null}
-                            <button className="secondary-action" onClick={() => void openContentPlan(p.id)} type="button">
-                              AI SEO / Content Plan
-                            </button>
-                            <button className="secondary-action" onClick={() => void openWorkflowRuns(p.id)} type="button">
-                              Workflow runs
-                            </button>
-                            {typeof onFetchKnowledgeItems === "function" && typeof onPreviewAiContext === "function" ? (
-                              <button className="secondary-action" onClick={() => setOpenKnowledgePanelId(p.id)} type="button">
-                                AI Knowledge
-                              </button>
-                            ) : null}
-                            <button className="secondary-action" onClick={() => void openContentDrafts(p.id)} type="button">
-                              Content production
-                            </button>
-                          </div>
-                          <div className="row-action-menu-group">
-                            <span className="row-action-menu-label">Packaging</span>
-                            <button className="secondary-action" onClick={() => void openArticleImages(p.id)} type="button">
-                              Article images
-                            </button>
-                            <button className="secondary-action" onClick={() => void openDeliverables(p.id)} type="button">
-                              Deliverables
-                            </button>
-                          </div>
-                          <div className="row-action-menu-group">
-                            <span className="row-action-menu-label">Reports</span>
-                          <button
-                            className="secondary-action"
-                            disabled={typeof onFetchMonthlyComputedSummary !== "function"}
-                            onClick={() => setOpenMonthlyReportId(p.id)}
-                            type="button"
-                          >
-                            Monthly Report
-                          </button>
-                          </div>
-                          <div className="row-action-menu-group">
-                            <span className="row-action-menu-label">Project</span>
-                          <button className="secondary-action" onClick={() => openEditModal(p)} type="button">
-                            Edit
-                          </button>
-                          {!p.isArchived ? (
-                            <button className="secondary-action" onClick={() => void onArchive(p.id)} type="button">
-                              Archive
-                            </button>
-                          ) : null}
-                          </div>
-                        </div>
-                      </details>
-                    </>
+                  {workspaceProject.plannedContentScopeNotes ? (
+                    <p className="ai-delivery-context-notes muted-text">{workspaceProject.plannedContentScopeNotes}</p>
                   ) : null}
-                </div>
-              </div>
-              <div className="dense-row-note">
-                <strong>Admin workflow order:</strong> Brief -&gt; Research -&gt; Content plan -&gt; Workflow runs -&gt; Content production -&gt; Article images -&gt; Deliverables.
-                {" "}
-                <strong>Notes:</strong> {p.plannedContentScopeNotes ?? "Not set"}.
-                {canEdit ? (
-                  <span className="brief-actions brief-actions-inline">
-                    <button className="secondary-action" onClick={() => void onRequestClientInput(p.id)} type="button">
-                      Request input
-                    </button>
-                    <button className="secondary-action" onClick={() => void onRequestClientRevision(p.id)} type="button">
-                      Request revision
-                    </button>
-                    <button className="secondary-action" onClick={() => void onApproveFinal(p.id)} type="button">
-                      Approve final
-                    </button>
-                  </span>
-                ) : null}
-              </div>
-            </article>
-          ))}
+                </SectionPanel>
+
+                <SectionPanel
+                  action={
+                    canEdit ? (
+                      <div className="ai-delivery-action-row">
+                        <button className="secondary-action" disabled={!workspaceProject.brief} onClick={() => void openBrief(workspaceProject.id)} type="button">
+                          Brief
+                        </button>
+                        <button className="secondary-action" onClick={() => void openResearchSources(workspaceProject.id)} type="button">
+                          Research / sources
+                        </button>
+                        {typeof onFetchMiContext === "function" ? (
+                          <button className="secondary-action" onClick={() => void openMiContext(workspaceProject.id)} type="button">
+                            MI context
+                          </button>
+                        ) : null}
+                        {typeof onFetchKnowledgeItems === "function" && typeof onPreviewAiContext === "function" ? (
+                          <button className="secondary-action" onClick={() => setOpenKnowledgePanelId(workspaceProject.id)} type="button">
+                            AI knowledge
+                          </button>
+                        ) : null}
+                      </div>
+                    ) : null
+                  }
+                  className="ai-delivery-section"
+                  description="Client brief, research inputs, and approved knowledge for AI context."
+                  title="Brief & knowledge context"
+                  tone="compact"
+                >
+                  {null}
+                </SectionPanel>
+
+                <SectionPanel
+                  action={
+                    canEdit ? (
+                      <div className="ai-delivery-action-row">
+                        <button className="primary-action" onClick={() => void openContentPlan(workspaceProject.id)} type="button">
+                          SEO / content plan
+                        </button>
+                        <button className="secondary-action" onClick={() => void openWorkflowRuns(workspaceProject.id)} type="button">
+                          Workflow runs
+                        </button>
+                      </div>
+                    ) : null
+                  }
+                  className="ai-delivery-section"
+                  description="Monthly SEO topics, workflow runs, and production planning."
+                  title="SEO plan & production"
+                  tone="compact"
+                >
+                  {null}
+                </SectionPanel>
+
+                <SectionPanel
+                  action={
+                    canEdit ? (
+                      <button className="primary-action" onClick={() => void openContentDrafts(workspaceProject.id)} type="button">
+                        Content production
+                      </button>
+                    ) : null
+                  }
+                  className="ai-delivery-section"
+                  description="Draft articles linked to approved plan items."
+                  title="Content drafts"
+                  tone="compact"
+                >
+                  {null}
+                </SectionPanel>
+
+                <SectionPanel
+                  action={
+                    canEdit ? (
+                      <div className="ai-delivery-action-row">
+                        <button className="secondary-action" onClick={() => void onRequestClientInput(workspaceProject.id)} type="button">
+                          Request input
+                        </button>
+                        <button className="secondary-action" onClick={() => void onRequestClientRevision(workspaceProject.id)} type="button">
+                          Request revision
+                        </button>
+                        <button className="secondary-action" onClick={() => void onApproveFinal(workspaceProject.id)} type="button">
+                          Approve final
+                        </button>
+                      </div>
+                    ) : null
+                  }
+                  className="ai-delivery-section"
+                  description="Brief review checkpoints and content-plan approvals inside their workflow modals."
+                  title="Reviews & approvals"
+                  tone="compact"
+                >
+                  {null}
+                </SectionPanel>
+
+                <SectionPanel
+                  action={
+                    canEdit ? (
+                      <button className="primary-action" onClick={() => void openArticleImages(workspaceProject.id)} type="button">
+                        Article images
+                      </button>
+                    ) : null
+                  }
+                  className="ai-delivery-section"
+                  description="Image requests linked to content drafts."
+                  title="Images"
+                  tone="compact"
+                >
+                  {null}
+                </SectionPanel>
+
+                <SectionPanel
+                  action={
+                    canEdit ? (
+                      <button className="primary-action" onClick={() => void openDeliverables(workspaceProject.id)} type="button">
+                        Deliverables
+                      </button>
+                    ) : null
+                  }
+                  className="ai-delivery-section"
+                  description="Package assets, WordPress draft prep, and publication targets."
+                  title="WordPress & publication"
+                  tone="compact"
+                >
+                  {null}
+                </SectionPanel>
+
+                <SectionPanel
+                  action={
+                    canEdit && typeof onFetchMonthlyComputedSummary === "function" ? (
+                      <button
+                        className="primary-action"
+                        onClick={() => setOpenMonthlyReportId(workspaceProject.id)}
+                        type="button"
+                      >
+                        Monthly report
+                      </button>
+                    ) : null
+                  }
+                  className="ai-delivery-section"
+                  description="End-of-month summary, metrics, and client-facing report packaging."
+                  title="Monthly report"
+                  tone="compact"
+                >
+                  {null}
+                </SectionPanel>
+              </>
+            )}
+          </div>
         </div>
       )}
 
