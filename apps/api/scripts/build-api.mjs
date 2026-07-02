@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { existsSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -8,6 +8,8 @@ const repoRoot = path.resolve(apiRoot, "..", "..");
 const distRoot = path.join(apiRoot, "dist");
 const sharedEntry = path.join(distRoot, "packages", "shared", "src", "index.js");
 const distGuardScript = path.join(apiRoot, "scripts", "check-dist-esm.mjs");
+const distApiSrcRoot = path.join(distRoot, "apps", "api", "src");
+const jsonImportSpecifierRegex = /(?:from|import)\s+["'](\.\/[^"']+\.json)["']/g;
 
 function runTsc() {
   rmSync(distRoot, { recursive: true, force: true });
@@ -83,22 +85,58 @@ function rewriteSpecifier(fromFile, specifier) {
   return specifier;
 }
 
+function rewriteJsonImportAttributes(source) {
+  return source
+    .replaceAll(
+      /(from\s+["']\.\/[^"']+\.json["'])(?!\s+with\s*\{)(?!\s+assert\s*\{)/g,
+      `$1 with { type: "json" }`
+    )
+    .replaceAll(
+      /(import\s+["']\.\/[^"']+\.json["'])(?!\s+with\s*\{)(?!\s+assert\s*\{)/g,
+      `$1 with { type: "json" }`
+    );
+}
+
+function copyJsonAssets(file) {
+  const source = readFileSync(file, "utf8");
+  const relativeDir = path.relative(distApiSrcRoot, path.dirname(file));
+
+  jsonImportSpecifierRegex.lastIndex = 0;
+  for (let match = jsonImportSpecifierRegex.exec(source); match; match = jsonImportSpecifierRegex.exec(source)) {
+    const jsonFileName = path.basename(match[1]);
+    const srcJsonPath = path.join(apiRoot, "src", relativeDir, jsonFileName);
+    const distJsonPath = path.join(path.dirname(file), jsonFileName);
+
+    if (!existsSync(srcJsonPath)) {
+      console.error(`API build failed: missing source JSON ${path.relative(repoRoot, srcJsonPath)}`);
+      process.exit(1);
+    }
+
+    mkdirSync(path.dirname(distJsonPath), { recursive: true });
+    copyFileSync(srcJsonPath, distJsonPath);
+  }
+}
+
 function rewriteImports(file) {
   const source = readFileSync(file, "utf8");
-  const rewritten = source
-    .replaceAll(/(from\s+["'])([^"']+)(["'])/g, (_match, prefix, specifier, suffix) =>
-      `${prefix}${rewriteSpecifier(file, specifier)}${suffix}`
-    )
-    .replaceAll(/(import\s+["'])([^"']+)(["'])/g, (_match, prefix, specifier, suffix) =>
-      `${prefix}${rewriteSpecifier(file, specifier)}${suffix}`
-    )
-    .replaceAll(/(import\s*\(\s*["'])([^"']+)(["']\s*\))/g, (_match, prefix, specifier, suffix) =>
-      `${prefix}${rewriteSpecifier(file, specifier)}${suffix}`
-    );
+  const rewritten = rewriteJsonImportAttributes(
+    source
+      .replaceAll(/(from\s+["'])([^"']+)(["'])/g, (_match, prefix, specifier, suffix) =>
+        `${prefix}${rewriteSpecifier(file, specifier)}${suffix}`
+      )
+      .replaceAll(/(import\s+["'])([^"']+)(["'])/g, (_match, prefix, specifier, suffix) =>
+        `${prefix}${rewriteSpecifier(file, specifier)}${suffix}`
+      )
+      .replaceAll(/(import\s*\(\s*["'])([^"']+)(["']\s*\))/g, (_match, prefix, specifier, suffix) =>
+        `${prefix}${rewriteSpecifier(file, specifier)}${suffix}`
+      )
+  );
 
   if (rewritten !== source) {
     writeFileSync(file, rewritten);
   }
+
+  copyJsonAssets(file);
 }
 
 runTsc();
