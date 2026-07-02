@@ -277,19 +277,38 @@ function buildMonthGroups(briefs: BriefRecord[], articles: ArticleRecord[]): Mon
     });
 }
 
+function toClientArchiveStatusLabel(status: string | null | undefined): string | null {
+  if (!status || !status.trim()) {
+    return null;
+  }
+
+  const normalized = status.trim().toUpperCase();
+  if (["DRAFT", "NONE", "PENDING", "NOT_STARTED", "IN_PROGRESS", "ADMIN_REVIEW"].includes(normalized)) {
+    return null;
+  }
+
+  if (normalized === "DELIVERED" || normalized === "ACCEPTED" || normalized === "FINAL") {
+    return "Published";
+  }
+
+  if (normalized === "APPROVED") {
+    return "Approved";
+  }
+
+  return null;
+}
+
 function BriefArchiveRow({ brief }: { brief: BriefRecord }) {
   const badge = getBriefStatusBadge(brief.status, "client");
 
   return (
-    <article className="dense-record portal-archive-item">
-      <div className="dense-record-main">
-        <strong>
-          Brief #{formatBriefNumber(brief.briefNumber)} — {formatArchiveDate(brief.createdAt)}
-        </strong>
-        <div className="muted-text text-small" style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: 4 }}>
-          <Badge variant={briefBadgeVariant(badge.color)}>{badge.label}</Badge>
-          <span>{formatArticleSummary(brief)}</span>
-        </div>
+    <article className="cf-archive-item">
+      <span className="cf-archive-item-title">
+        Brief #{formatBriefNumber(brief.briefNumber)} — {formatArchiveDate(brief.createdAt)}
+      </span>
+      <div className="cf-archive-item-meta">
+        <Badge variant={briefBadgeVariant(badge.color)}>{badge.label}</Badge>
+        <span>{formatArticleSummary(brief)}</span>
       </div>
     </article>
   );
@@ -297,19 +316,14 @@ function BriefArchiveRow({ brief }: { brief: BriefRecord }) {
 
 function ArticleArchiveRow({ article }: { article: ArticleRecord }) {
   const publishedAt = article.updatedAt || article.createdAt;
+  const statusLabel = toClientArchiveStatusLabel(article.status);
 
   return (
-    <article className="dense-record portal-archive-item">
-      <div className="dense-record-main">
-        <strong>{article.title}</strong>
-        <div className="muted-text text-small" style={{ marginTop: 4 }}>
-          Published {formatArchiveDate(publishedAt)}
-        </div>
-        {article.status ? (
-          <div style={{ marginTop: 4 }}>
-            <StatusBadge status={article.status} />
-          </div>
-        ) : null}
+    <article className="cf-archive-item">
+      <span className="cf-archive-item-title">{article.title}</span>
+      <div className="cf-archive-item-meta">
+        <span>Published {formatArchiveDate(publishedAt)}</span>
+        {statusLabel ? <StatusBadge status={statusLabel} /> : null}
       </div>
     </article>
   );
@@ -317,24 +331,20 @@ function ArticleArchiveRow({ article }: { article: ArticleRecord }) {
 
 function ReportPlaceholderRow({ month, year }: { month: number; year: number }) {
   return (
-    <article className="dense-record portal-archive-item">
-      <div className="dense-record-main">
-        <strong>Monthly report — {monthLabel(month, year)}</strong>
-        <p className="muted-text text-small" style={{ margin: "0.25rem 0 0" }}>
-          Report placeholder — available when your team finalizes the monthly report.
-        </p>
-      </div>
+    <article className="cf-archive-item">
+      <span className="cf-archive-item-title">Monthly report — {monthLabel(month, year)}</span>
+      <p className="cf-record-note">
+        Report placeholder — available when your team finalizes the monthly report.
+      </p>
     </article>
   );
 }
 
 function MonthArchiveGroup({ group }: { group: MonthGroup }) {
   return (
-    <details className="archive-month-group section-panel" open>
-      <summary className="archive-month-summary text-heading" style={{ cursor: "pointer", listStyle: "none" }}>
-        {group.label}
-      </summary>
-      <div className="dense-list" style={{ marginTop: "1rem" }}>
+    <details className="cf-archive-month" open>
+      <summary className="cf-archive-month-summary">{group.label}</summary>
+      <div className="cf-archive-month-body">
         {group.items.map((item) => {
           if (item.kind === "brief") {
             return <BriefArchiveRow brief={item.data} key={`brief-${item.data.id}`} />;
@@ -435,7 +445,7 @@ export function ArchiveHubPage() {
 
   if (error && monthGroups.length === 0) {
     return (
-      <section className="view-section" aria-labelledby="archive-hub-title" data-density="comfortable">
+      <section className="view-section cf-page" aria-labelledby="archive-hub-title" data-density="comfortable">
         <PageHeader
           description="Briefs, articles, and monthly reports older than 90 days."
           eyebrow="Client workspace"
@@ -453,7 +463,7 @@ export function ArchiveHubPage() {
   }
 
   return (
-    <section className="view-section" aria-labelledby="archive-hub-title" data-density="comfortable">
+    <section className="view-section cf-page" aria-labelledby="archive-hub-title" data-density="comfortable">
       <PageHeader
         action={
           <Button onClick={() => void loadArchive()} variant="tertiary">
@@ -493,6 +503,7 @@ export function ArchiveHubPage() {
       <SectionPanel
         description="Items are grouped by month. Only content older than 90 days is shown."
         title="Archive hub"
+        tone="compact"
       >
         {monthGroups.length === 0 ? (
           <EmptyState
@@ -501,13 +512,17 @@ export function ArchiveHubPage() {
             variant="inline"
           />
         ) : (
-          <div style={{ display: "grid", gap: "1rem" }}>
+          <div className="cf-archive-list">
             {monthGroups.map((group) => (
               <MonthArchiveGroup group={group} key={group.key} />
             ))}
           </div>
         )}
       </SectionPanel>
+
+      <p className="portal-footer-note muted-text">
+        Archive items are read-only. Recent work is available in your main archive view.
+      </p>
     </section>
   );
 }

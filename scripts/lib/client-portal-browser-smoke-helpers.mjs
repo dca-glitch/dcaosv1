@@ -13,8 +13,8 @@ export async function seedClientPortalAuth(page, token) {
 }
 
 export async function gotoClientPortal(page, webBaseUrl, options = {}) {
-  const hash = options.hash ?? "#/archive";
-  const heading = options.heading ?? CLIENT_ARCHIVE_PAGE_HEADING;
+  const hash = options.hash ?? "#/client-portal";
+  const heading = options.heading ?? CLIENT_PORTAL_PAGE_HEADING;
   await page.goto(`${webBaseUrl.replace(/\/$/, "")}/${hash.replace(/^#?\/?/, "#/")}`, {
     waitUntil: "domcontentloaded"
   });
@@ -28,8 +28,17 @@ export function clientPortalSection(page) {
 
 export async function selectPortalProject(page, projectName) {
   const portalSection = clientPortalSection(page);
-  const projectCard = portalSection.locator(".portal-project-list article", { hasText: projectName }).first();
+  const projectCard = portalSection
+    .locator(".cf-project-list .cf-project-item, .cf-project-list article, .portal-project-list article", {
+      hasText: projectName
+    })
+    .first();
   await projectCard.waitFor({ state: "visible", timeout: 20000 });
-  await projectCard.getByRole("button", { name: /^View$/ }).click();
+  const viewButton = projectCard.getByRole("button", { name: /^View$/ });
+  if ((await viewButton.count()) > 0) {
+    await viewButton.click();
+  } else {
+    await projectCard.click();
+  }
   return portalSection;
 }

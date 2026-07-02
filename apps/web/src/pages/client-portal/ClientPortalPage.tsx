@@ -949,7 +949,7 @@ export function ClientPortalPage() {
 
   if (projectsError && projects.length === 0) {
     return (
-      <section className="view-section" aria-labelledby="client-portal-title" data-density="comfortable">
+      <section className="view-section cf-page" aria-labelledby="client-portal-title" data-density="comfortable">
         <PageHeader
           description="Final deliverables and monthly reports shared with your account."
           eyebrow="Client workspace"
@@ -967,7 +967,7 @@ export function ClientPortalPage() {
   }
 
   return (
-    <section className="view-section" aria-labelledby="client-portal-title" data-density="comfortable">
+    <section className="view-section cf-page" aria-labelledby="client-portal-title" data-density="comfortable">
       <PageHeader
         actions={
           <Button variant="tertiary" disabled={projectsLoading} onClick={handleRefresh} type="button">
@@ -976,6 +976,7 @@ export function ClientPortalPage() {
         }
         description="Final deliverables and monthly reports shared with your account."
         eyebrow="Client workspace"
+        meta={<span className="muted-text">{clientName}</span>}
         title="Your archive"
         titleId="client-portal-title"
       />
@@ -1003,7 +1004,7 @@ export function ClientPortalPage() {
         </Button>
       </nav>
 
-      <div className="summary-grid metric-grid portal-metric-grid">
+      <div className="summary-grid metric-grid portal-metric-grid cf-metric-strip">
         <MetricCard helper="Active delivery projects" label="Projects" value={String(projectCount)} />
         <MetricCard
           helper="Completed items only"
@@ -1015,12 +1016,10 @@ export function ClientPortalPage() {
       {projectsError ? <Alert message={projectsError} variant="danger" /> : null}
 
       <div className="portal-split-layout">
-        <aside className="entity-card portal-project-sidebar">
-          <div className="entity-card-header">
-            <div>
-              <p className="eyebrow">Archive</p>
-              <h2>Shared documents</h2>
-            </div>
+        <aside className="cf-project-sidebar">
+          <div className="cf-project-sidebar-header">
+            <p className="eyebrow">Archive</p>
+            <h2>Shared documents</h2>
           </div>
 
           <div className="filter-bar" role="group" aria-label="Project filter">
@@ -1041,10 +1040,10 @@ export function ClientPortalPage() {
           {filteredProjects.length === 0 ? (
             <p className="inline-empty muted-text">No projects match this filter. When your team shares material, it will appear here.</p>
           ) : (
-            <div className="dense-list portal-project-list">
+            <div className="cf-project-list">
               {filteredProjects.map((project) => (
                 <article
-                  className={`entity-card dense-record portal-record${selectedProjectId === project.id ? " portal-record-selected" : ""}`}
+                  className={`cf-project-item${selectedProjectId === project.id ? " is-selected" : ""}`}
                   key={project.id}
                   onClick={() => handleSelectProject(project.id)}
                   onKeyDown={(event) => {
@@ -1056,31 +1055,13 @@ export function ClientPortalPage() {
                   role="button"
                   tabIndex={0}
                 >
-                  <div className="dense-record-main portal-record-main">
-                    <div className="dense-title">
-                      <div className="dense-kicker">
-                        <ClientPortalStatusBadge status={project.isArchived ? "ARCHIVED" : "ACTIVE"} />
-                      </div>
-                      <h3>{project.name}</h3>
-                      <div className="dense-meta">
-                        <span>{project.client?.name ?? clientName}</span>
-                        <span>{formatMonthLabel(project.targetMonth)}</span>
-                      </div>
-                    </div>
-                    <div className="dense-actions">
-                      <Button
-                        className={`secondary-action${selectedProjectId === project.id ? " filter-chip is-active" : ""}`}
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          handleSelectProject(project.id);
-                        }}
-                        size="sm"
-                        type="button"
-                        variant="secondary"
-                      >
-                        {selectedProjectId === project.id ? "Selected" : "View"}
-                      </Button>
-                    </div>
+                  <div className="cf-record-kicker">
+                    <ClientPortalStatusBadge status={project.isArchived ? "ARCHIVED" : "ACTIVE"} />
+                  </div>
+                  <h3>{project.name}</h3>
+                  <div className="cf-project-item-meta">
+                    <span>{project.client?.name ?? clientName}</span>
+                    <span>{formatMonthLabel(project.targetMonth)}</span>
                   </div>
                 </article>
               ))}
@@ -1111,36 +1092,23 @@ export function ClientPortalPage() {
                 title="Project overview"
                 tone="compact"
               >
-                <article className="entity-card dense-record">
-                  <div className="dense-record-main">
-                    <div className="dense-title">
-                      <div className="dense-kicker">
+                <article className="cf-record">
+                  <div className="cf-record-main cf-record-main--stack">
+                    <div className="cf-record-title">
+                      <div className="cf-record-kicker">
                         <ClientPortalStatusBadge status={selectedProject.isArchived ? "ARCHIVED" : "ACTIVE"} />
                       </div>
                       <h3>{selectedProject.name}</h3>
-                      <div className="dense-meta">
+                      <div className="cf-record-meta">
                         <span>{selectedProject.client?.name ?? "Your account"}</span>
                         <span>{formatMonthLabel(selectedProject.targetMonth)}</span>
-                      </div>
-                    </div>
-                    <div className="dense-fields">
-                      <div className="dense-field">
-                        <span>Created</span>
-                        <strong>{formatDateLabel(selectedProject.createdAt)}</strong>
-                      </div>
-                      <div className="dense-field">
-                        <span>Updated</span>
-                        <strong>{formatDateLabel(selectedProject.updatedAt)}</strong>
-                      </div>
-                      <div className="dense-field">
-                        <span>Archive</span>
-                        <strong>{selectedProject.isArchived ? "Archived" : "Active"}</strong>
+                        <span>Updated {formatDateLabel(selectedProject.updatedAt)}</span>
                       </div>
                     </div>
                   </div>
-                  <div className="dense-row-note">
+                  <p className="cf-record-note">
                     Only finalized items shared with your account appear here.
-                  </div>
+                  </p>
                 </article>
               </SectionPanel>
 
@@ -1157,15 +1125,15 @@ export function ClientPortalPage() {
                 ) : deliverySummaryError ? (
                   <Alert message={deliverySummaryError} title="Delivery summary unavailable" variant="danger" />
                 ) : deliverySummary ? (
-                  <div className="portal-detail-stack">
-                    <article className="entity-card dense-record">
-                      <div className="dense-record-main">
-                        <div className="dense-title">
-                          <div className="dense-kicker">
+                  <div className="cf-detail-stack">
+                    <article className="cf-record">
+                      <div className="cf-record-main cf-record-main--stack">
+                        <div className="cf-record-title">
+                          <div className="cf-record-kicker">
                             <ClientPortalStatusBadge status={deliverySummary.aiSeo?.contentPlanStatus} />
                           </div>
                           <h3>Planned content</h3>
-                          <div className="dense-meta">
+                          <div className="cf-record-meta">
                             <span>
                               {deliverySummary.aiSeo
                                 ? `${deliverySummary.aiSeo.approvedItemCount} of ${deliverySummary.aiSeo.totalItemCount} items complete`
@@ -1180,67 +1148,70 @@ export function ClientPortalPage() {
                       </div>
                     </article>
 
-                    <article className="entity-card dense-record">
-                      <div className="dense-record-main">
-                        <div className="dense-title">
-                          <div className="dense-kicker">
+                    <article className="cf-record">
+                      <div className="cf-record-main cf-record-main--stack">
+                        <div className="cf-record-title">
+                          <div className="cf-record-kicker">
                             <ClientPortalStatusBadge status={deliverySummary.marketIntelligence?.status} />
                           </div>
                           <h3>Market summary</h3>
                           {deliverySummary.marketIntelligence?.marketSummary ? (
-                            <div className="dense-row-note">{deliverySummary.marketIntelligence.marketSummary}</div>
+                            <p className="cf-record-note">{deliverySummary.marketIntelligence.marketSummary}</p>
                           ) : (
-                            <div className="dense-row-note muted-text">No market summary is available yet.</div>
+                            <p className="cf-record-note muted-text">No market summary is available yet.</p>
                           )}
                           {deliverySummary.marketIntelligence?.recommendedActions.length ? (
-                            <div className="dense-row-note">
+                            <p className="cf-record-note">
                               <strong>Recommended actions: </strong>
                               {deliverySummary.marketIntelligence.recommendedActions.join(" · ")}
-                            </div>
+                            </p>
                           ) : null}
                         </div>
                       </div>
                     </article>
 
-                    <article className="entity-card dense-record">
-                      <div className="dense-record-main">
-                        <div className="dense-title">
-                          <div className="dense-kicker">
+                    <article className="cf-record">
+                      <div className="cf-record-main cf-record-main--stack">
+                        <div className="cf-record-title">
+                          <div className="cf-record-kicker">
                             <ClientPortalStatusBadge status={deliverySummary.websitePublishing?.status} />
                           </div>
                           <h3>Website updates</h3>
-                          <div className="dense-meta">
+                          <div className="cf-record-meta">
                             <span>{deliverySummary.websitePublishing?.action ?? "No publishing activity yet"}</span>
                             {deliverySummary.websitePublishing?.siteUrlHost ? (
                               <span>{deliverySummary.websitePublishing.siteUrlHost}</span>
                             ) : null}
                           </div>
                           {!deliverySummary.websitePublishing ? (
-                            <div className="dense-row-note muted-text">
+                            <p className="cf-record-note muted-text">
                               Website status appears here when your team shares an update.
-                            </div>
+                            </p>
                           ) : null}
                         </div>
                       </div>
                     </article>
 
-                    <article className="entity-card dense-record">
-                      <div className="dense-record-main">
-                        <div className="dense-title">
+                    <article className="cf-record">
+                      <div className="cf-record-main cf-record-main--stack">
+                        <div className="cf-record-title">
                           <h3>Shared documents</h3>
                           {deliverySummary.googleDocsExports.length === 0 ? (
-                            <div className="dense-row-note muted-text">No shared document links are available yet.</div>
+                            <p className="cf-record-note muted-text">No shared document links are available yet.</p>
                           ) : (
-                            <div className="dense-list">
+                            <div className="cf-record-meta">
                               {deliverySummary.googleDocsExports.map((item) => (
-                                <div className="dense-meta" key={item.id}>
-                                  <span>{item.title}</span>
+                                <span key={item.id}>
+                                  {item.title}
                                   {item.exportUrl ? (
-                                    <a href={item.exportUrl} rel="noreferrer" target="_blank">
-                                      Open document
-                                    </a>
+                                    <>
+                                      {" · "}
+                                      <a href={item.exportUrl} rel="noreferrer" target="_blank">
+                                        Open document
+                                      </a>
+                                    </>
                                   ) : null}
-                                </div>
+                                </span>
                               ))}
                             </div>
                           )}
@@ -1266,37 +1237,33 @@ export function ClientPortalPage() {
                 ) : releasePackageError ? (
                   <Alert message={releasePackageError} title="Release package unavailable" variant="danger" />
                 ) : releasePackage ? (
-                  <article className="entity-card dense-record">
-                    <div className="dense-record-main">
-                      <div className="dense-title">
+                  <article className="cf-record">
+                    <div className="cf-record-main cf-record-main--stack">
+                      <div className="cf-record-title">
                         <h3>{releasePackage.briefTitle}</h3>
-                        <div className="dense-meta">
+                        <div className="cf-record-meta">
                           <ClientPortalStatusBadge status={releasePackage.releaseStatus} />
-                          <span>
-                            Finalized {formatDateLabel(releasePackage.finalizedAt)}
-                          </span>
+                          <span>Finalized {formatDateLabel(releasePackage.finalizedAt)}</span>
                           <span>
                             {releasePackage.deliverables.length} deliverable
                             {releasePackage.deliverables.length === 1 ? "" : "s"}
                           </span>
                         </div>
                         {releasePackage.summary ? (
-                          <div className="dense-row-note">{releasePackage.summary}</div>
+                          <p className="cf-record-note">{releasePackage.summary}</p>
                         ) : null}
                       </div>
                       {releasePackage.deliverables.length > 0 ? (
-                        <div className="dense-list" style={{ marginTop: "0.75rem" }}>
+                        <div className="cf-record-list">
                           {releasePackage.deliverables.map((item) => (
-                            <div className="dense-row" key={`${item.title}-${item.type}`}>
-                              <div className="dense-row-title">{item.title}</div>
-                              <div className="dense-row-meta">
-                                <ClientPortalStatusBadge status={item.status} />
-                                {item.exportUrl ? (
-                                  <a href={item.exportUrl} rel="noreferrer" target="_blank">
-                                    Open export
-                                  </a>
-                                ) : null}
-                              </div>
+                            <div className="cf-record-meta" key={`${item.title}-${item.type}`}>
+                              <strong>{item.title}</strong>
+                              <ClientPortalStatusBadge status={item.status} />
+                              {item.exportUrl ? (
+                                <a href={item.exportUrl} rel="noreferrer" target="_blank">
+                                  Open export
+                                </a>
+                              ) : null}
                             </div>
                           ))}
                         </div>
@@ -1331,21 +1298,19 @@ export function ClientPortalPage() {
                     variant="inline"
                   />
                 ) : (
-                  <div className="portal-detail-stack">
-                    <div className="dense-list">
+                  <div className="cf-detail-stack">
+                    <div className="cf-record-list">
                       {catalogProducts.map((product) => (
-                        <article className="entity-card dense-record" key={product.id}>
-                          <div className="dense-record-main">
-                            <div className="dense-title">
-                              <h3>{product.name}</h3>
-                              <div className="dense-meta">
-                                {product.priceLabel ? <span>{product.priceLabel}</span> : null}
-                                {product.sku ? <span>SKU {product.sku}</span> : null}
-                              </div>
-                              {product.description ? (
-                                <div className="dense-row-note">{product.description}</div>
-                              ) : null}
+                        <article className="cf-record" key={product.id}>
+                          <div className="cf-record-title">
+                            <h3>{product.name}</h3>
+                            <div className="cf-record-meta">
+                              {product.priceLabel ? <span>{product.priceLabel}</span> : null}
+                              {product.sku ? <span>SKU {product.sku}</span> : null}
                             </div>
+                            {product.description ? (
+                              <p className="cf-record-note">{product.description}</p>
+                            ) : null}
                           </div>
                         </article>
                       ))}
@@ -1432,17 +1397,17 @@ export function ClientPortalPage() {
                     variant="inline"
                   />
                 ) : (
-                  <div className="dense-list">
+                  <div className="cf-record-list">
                     {deliverables.map((deliverable) => (
-                      <article className="entity-card dense-record" key={deliverable.id}>
-                        <div className="dense-record-main">
-                          <div className="dense-title">
-                            <div className="dense-kicker">
+                      <article className="cf-record" key={deliverable.id}>
+                        <div className="cf-record-main">
+                          <div className="cf-record-title">
+                            <div className="cf-record-kicker">
                               <ClientPortalStatusBadge status={deliverable.status} />
-                              <span className="entity-pill">{toClientPortalDeliveryTypeLabel(deliverable.deliveryType)}</span>
+                              <span className="cf-type-pill">{toClientPortalDeliveryTypeLabel(deliverable.deliveryType)}</span>
                             </div>
                             <h3>{deliverable.title}</h3>
-                            <div className="dense-meta">
+                            <div className="cf-record-meta">
                               <span>Updated {formatDateLabel(deliverable.updatedAt)}</span>
                               {deliverable.exportUrl ? (
                                 <span>
@@ -1466,7 +1431,7 @@ export function ClientPortalPage() {
                           </div>
                         </div>
                         {deliverable.description ? (
-                          <div className="dense-row-note">{deliverable.description}</div>
+                          <p className="cf-record-note">{deliverable.description}</p>
                         ) : null}
                       </article>
                     ))}
@@ -1493,19 +1458,18 @@ export function ClientPortalPage() {
                     variant="inline"
                   />
                 ) : (
-                  <div className="portal-report-split">
-                    <div className="dense-list">
+                  <div className="portal-report-split cf-report-split">
+                    <div className="cf-report-nav">
                       {monthlyReports.map((report, index) => (
                         <Button
-                          className={`secondary-action portal-report-select${selectedMonthlyReportId === report.id ? " filter-chip is-active" : ""}`}
+                          className={`secondary-action cf-report-nav-item${selectedMonthlyReportId === report.id ? " is-active" : ""}`}
                           key={report.id}
                           onClick={() => setSelectedMonthlyReportId(report.id)}
                           type="button"
                           variant="secondary"
                         >
-                          <span>
+                          <span className="cf-report-nav-item-title">
                             {toClientPortalMonthlyReportDisplayTitle(report, `Report ${index + 1}`)}
-                            <br />
                             <span className="muted-text">{formatReportDate(report.finalizedAt)}</span>
                           </span>
                           <ClientPortalStatusBadge status={report.status} />
@@ -1523,10 +1487,10 @@ export function ClientPortalPage() {
                         <Alert message={monthlyReportDetailError} title="Monthly report unavailable" variant="danger" />
                       ) : monthlyReportDetail ? (
                         <div className="stack-gap-sm">
-                          <article className="entity-card dense-record">
-                            <div className="dense-record-main dense-record-main--stack">
-                              <div className="dense-title">
-                                <div className="dense-kicker">
+                          <article className="cf-record">
+                            <div className="cf-record-main">
+                              <div className="cf-record-title">
+                                <div className="cf-record-kicker">
                                   <ClientPortalStatusBadge status={monthlyReportDetail.monthlyReport.status} />
                                   {selectedMonthlyReportIndex >= 0 ? (
                                     <span className="muted-text">
@@ -1540,7 +1504,7 @@ export function ClientPortalPage() {
                                     "Monthly report"
                                   )}
                                 </h3>
-                                <div className="dense-meta">
+                                <div className="cf-record-meta">
                                   <span>Month {formatMonthLabel(monthlyReportDetail.workSummary.targetMonth)}</span>
                                   <span>Finalized {formatReportDate(monthlyReportDetail.monthlyReport.finalizedAt)}</span>
                                 </div>
@@ -1571,7 +1535,7 @@ export function ClientPortalPage() {
                             </div>
                           </article>
 
-                          <div className="summary-grid metric-grid portal-metric-grid">
+                          <div className="summary-grid metric-grid portal-metric-grid cf-metric-strip">
                             <MetricCard
                               label="Deliverables"
                               value={String(monthlyReportDetail.workSummary.finalDeliverableCount)}
@@ -1624,7 +1588,7 @@ export function ClientPortalPage() {
                                   helper={
                                     monthlyReportDetail.performanceSummary.placeholderOnly
                                       ? "GA/GSC not connected"
-                                      : monthlyReportDetail.performanceSummary.sourceType
+                                      : `Month ${monthlyReportDetail.performanceSummary.targetMonth}`
                                   }
                                 />
                                 <MetricCard
@@ -1675,14 +1639,14 @@ export function ClientPortalPage() {
                               title="Completed work"
                               tone="compact"
                             >
-                              <div className="dense-list">
+                              <div className="cf-record-list">
                                 {monthlyReportDetail.workSummary.deliverables.map((deliverable) => (
-                                  <article className="entity-card dense-record" key={deliverable.id}>
-                                    <div className="dense-record-main">
-                                      <div className="dense-title">
-                                        <div className="dense-kicker">
+                                  <article className="cf-record" key={deliverable.id}>
+                                    <div className="cf-record-main">
+                                      <div className="cf-record-title">
+                                        <div className="cf-record-kicker">
                                           <ClientPortalStatusBadge status={deliverable.status} />
-                                          <span className="entity-pill">{toClientPortalDeliveryTypeLabel(deliverable.deliveryType)}</span>
+                                          <span className="cf-type-pill">{toClientPortalDeliveryTypeLabel(deliverable.deliveryType)}</span>
                                         </div>
                                         <h3>{deliverable.title}</h3>
                                       </div>
@@ -1704,7 +1668,7 @@ export function ClientPortalPage() {
                             tone="compact"
                           >
                             {monthlyReportDetail.monthlyReport.recommendationsText ? (
-                              <div className="dense-row-note">{monthlyReportDetail.monthlyReport.recommendationsText}</div>
+                              <p className="cf-record-note">{monthlyReportDetail.monthlyReport.recommendationsText}</p>
                             ) : (
                               <EmptyState message="Your team has not added recommendations to this report yet." title="No recommendations yet" variant="inline" />
                             )}
