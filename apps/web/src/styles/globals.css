@@ -1,26 +1,26 @@
 /* DCA OS Lite — BLOK 7-UI design tokens */
 
 :root {
-  /* COLORS */
-  --color-primary: #1a2942;
-  --color-primary-light: #2d3e52;
-  --color-primary-dark: #0f1b2e;
+  /* COLORS — Dark Nebula token bridge */
+  --color-primary: #161b34;
+  --color-primary-light: #1e2544;
+  --color-primary-dark: #0c0e1c;
 
-  --color-accent: #4a8a99;
-  --color-accent-light: #5a9db5;
-  --color-accent-dark: #3a7a89;
+  --color-accent: #5b6b9e;
+  --color-accent-light: #7c8fca;
+  --color-accent-dark: #4e5d8e;
 
-  --color-background: #0a1118;
-  --color-surface: #1a2847;
-  --color-surface-hover: #222f47;
-  --color-surface-active: #2a3f57;
+  --color-background: #05060b;
+  --color-surface: #111320;
+  --color-surface-hover: #161b2e;
+  --color-surface-active: #1c2240;
 
-  --color-text: #c9d1d9;
-  --color-text-secondary: #8b949e;
-  --color-text-muted: #6e7681;
+  --color-text: #f1f5f9;
+  --color-text-secondary: rgba(148, 163, 184, 0.88);
+  --color-text-muted: rgba(100, 116, 139, 0.8);
 
-  --color-border: #30363d;
-  --color-border-subtle: #21262d;
+  --color-border: rgba(51, 65, 85, 0.5);
+  --color-border-subtle: rgba(41, 52, 71, 0.45);
 
   --color-success: #2ea043;
   --color-success-light: #3fb950;
@@ -97,7 +97,7 @@
   --muted: var(--color-text-muted);
   --accent: var(--color-accent);
   --accent-strong: var(--color-accent-light);
-  --accent-glow: rgba(74, 138, 153, 0.28);
+  --accent-glow: rgba(124, 143, 202, 0.28);
   --success: var(--color-success-light);
   --warning: var(--color-warning-light);
   --danger: var(--color-error-light);

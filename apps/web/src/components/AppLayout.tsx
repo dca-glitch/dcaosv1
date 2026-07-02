@@ -58,14 +58,17 @@ export function AppLayout({
   return (
     <div className={isPortalShell ? "app-shell portal-shell" : "app-shell"}>
       <aside className="sidebar" aria-label={isPortalShell ? "Client archive navigation" : "Primary navigation"}>
-        <div className="brand">
+        <div className="sidebar-brand brand">
           <span className="brand-mark">DCA</span>
           <span className="brand-copy">
             <strong>{isPortalShell ? "Client Archive" : "DCA OS Lite"}</strong>
             <small>{isPortalShell ? "Read-only deliverables" : "Operations Command"}</small>
           </span>
         </div>
-        <nav className="nav-list" aria-label={isPortalShell ? "Archive sections" : "Workspace modules"}>
+        <nav
+          className="sidebar-nav nav-list"
+          aria-label={isPortalShell ? "Archive sections" : "Workspace modules"}
+        >
           {Array.from(new Set(navigationItems.map((item) => item.section))).map((section) => (
             <div className="nav-section" key={section}>
               <span className="nav-section-label">{sectionLabel(section)}</span>
@@ -85,14 +88,7 @@ export function AppLayout({
             </div>
           ))}
         </nav>
-        {!isPortalShell && !isClientRole ? (
-          <div className="tenant-switch-placeholder">
-            <span>Current tenant</span>
-            <strong>{currentTenant?.name ?? "No tenant selected"}</strong>
-            <small>{currentTenant?.slug ?? "missing context"}</small>
-          </div>
-        ) : null}
-        <div className="user-panel">
+        <div className="user-panel sidebar-footer">
           <span>{user.name || user.email}</span>
           <small>{user.email}</small>
           <Button className="ghost-action shell-logout-action" onClick={onLogout} type="button" variant="tertiary">
