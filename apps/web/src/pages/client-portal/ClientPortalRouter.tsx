@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { ArchiveHubPage } from "../ArchiveHubPage";
 import { BriefPage } from "../BriefPage";
 import { ArticleApprovalEditor } from "./ArticleApprovalEditor";
+import { ClientPortalPage } from "./ClientPortalPage";
 import { PendingApprovalsPage } from "./PendingApprovalsPage";
 import { parseClientPortalHash } from "./client-portal-api";
 
@@ -28,5 +28,5 @@ export function ClientPortalRouter() {
     return <ArticleApprovalEditor deliverableId={route.deliverableId} />;
   }
 
-  return <ArchiveHubPage />;
+  return <ClientPortalPage />;
 }
