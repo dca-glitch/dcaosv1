@@ -11,7 +11,7 @@ DCA OS Lite — AI Delivery Projects MVP.
 
 ## Current state note
 
-AI Delivery is currently admin/operator-primary. The compact Dark Nebula AI Delivery workspace sectioning is complete. The admin foundation covers projects, client/month brief foundation, workflow runs foundation, content plans, content drafts, article image planning, research requests/sources/summaries, deliverables, deliverable reviews, and activity/audit read model support where relevant. R2/private storage foundation is also closed for the same admin scope, covering deliverable private document upload/open, article image private final upload/open, monthly report document handoff, admin UI wiring, env/docs coverage, guarded local `R2_STORAGE_NOT_CONFIGURED`, `storageKey` persistence, temporary authenticated download URL behavior, and no client/public asset exposure. This does not mean the full Puriva MVP delivery path is complete. No live AI calls, crawling, or production deployment has been added. **Client Portal now defaults to the archive-oriented shell at `#/client-portal`; `#/archive` remains separate.** Interactive advanced client review routes remain phased.
+AI Delivery is currently admin/operator-primary. The compact Dark Nebula AI Delivery workspace sectioning is complete. The admin foundation covers projects, composable brief / assembled-operating-context foundation, workflow runs foundation, content plans, content drafts, article image planning, research requests/sources/summaries, deliverables, deliverable reviews, and activity/audit read model support where relevant. R2/private storage foundation is also closed for the same admin scope, covering deliverable private document upload/open, article image private final upload/open, monthly report document handoff, admin UI wiring, env/docs coverage, guarded local `R2_STORAGE_NOT_CONFIGURED`, `storageKey` persistence, temporary authenticated download URL behavior, and no client/public asset exposure. This does not mean the full Puriva MVP delivery path is complete. No live AI calls, crawling, or production deployment has been added. **Client Portal now defaults to the archive-oriented shell at `#/client-portal`; `#/archive` remains separate.** Interactive advanced client review routes remain phased.
 
 Monthly Report Phase 1 is also closed as a schema-free admin summary API. It returns final deliverables only, explicit deferred GA/GSC/trend metadata, and no persisted `MonthlyReport` record. Monthly Report Phase 2 persisted admin CRUD and the admin Monthly Report UI are browser-proven. Client Portal monthly reports are now browser-proven as a FINAL-only archive surface for linked client users.
 
@@ -45,8 +45,10 @@ Locally proven on the current branch:
 
 - DCA manages recurring monthly AI-supported SEO/content delivery inside DCA OS Lite.
 - Clients use Client Portal MVP for client-safe visibility (Puriva agreement active); human/client review before publication is required.
-- Delivery work is structured by client, month, project, brief, content plan, article/image approvals, and later reporting.
+- Delivery work is organized by client and project; monthly AI Delivery projects and monthly reports remain the primary delivery/reporting cadence. The brief itself is a composable, assembled operating-context resource — not a fixed monthly artifact and not necessarily 1:1 with a single month or project — that feeds content plan, article/image approvals, and later reporting.
 - The MVP stays admin-operated and cost-controlled instead of autonomous.
+
+**Brief model clarification:** A brief/context packet may be assembled from client knowledge, project context, research summaries, market/SEO inputs, imported docs, historical deliverables, previous reports, admin notes, and approved strategy/context. AI Delivery remains the operational production workspace; Workflow Briefs may serve as an intake/planning/context-composition layer feeding it. The client-safe boundary is unchanged: clients never see internal metadata, provider/run logs, storage keys, execution details, or draft internals unless explicitly exposed as review/final output.
 
 ## 4. Ratified monthly AI Delivery workflow
 
@@ -305,7 +307,7 @@ Explicit exclusions confirmed at closure:
 The current approved AI Delivery foundation is local-first, admin/operator-side, and platform-neutral. Admin foundation closed for the current MVP admin scope:
 
 - Projects.
-- Client/month brief foundation.
+- Composable brief / assembled-operating-context foundation (project-attached; not fixed 1:1 to a calendar month).
 - Workflow runs foundation.
 - Research requests/sources/summaries.
 - Content plans.
