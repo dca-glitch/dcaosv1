@@ -23,16 +23,23 @@ The SEO module supports admin-operated planning, tracking, and reporting for con
 - admin UI shows PDF handoff readiness state on open (Block 3E) — Download PDF is enabled only once a document exists
 - editing plan items or changing plan status automatically invalidates a previously generated PDF (Block 3F) — prevents handing off a stale document
 
-## Reusable knowledge / context relationship (Blocks 5A / 6A / 6B)
+## Reusable knowledge / context relationship (Blocks 5A / 6A / 6B / XXL 3)
 
-Content plan creation/editing in this module is direct, deterministic admin CRUD (see
-`AiDeliveryContentPlan` in [`docs/modules/WORKFLOW_BRIEFS_MODULE_PLAN.md`](./WORKFLOW_BRIEFS_MODULE_PLAN.md))
-and is not itself an AI workflow run. The separate reusable AI Knowledge Base /
-Context Builder layer ([`docs/modules/KNOWLEDGE_BASE.md`](./KNOWLEDGE_BASE.md)) composes
-approved knowledge (including `SEO_KEYWORD_GROUP`/`MARKET_INSIGHT`/`REPORT_INSIGHT` types)
-into **AiDelivery workflow-run execution context** and **WorkflowBriefs MI/SEO/plan/draft**
-context (Blocks 6A/6B), but is not specifically wired into this module's content-plan or
-PDF export path.
+AI SEO content-plan work in this module uses `AiDeliveryContentPlan` (see
+[`docs/modules/WORKFLOW_BRIEFS_MODULE_PLAN.md`](./WORKFLOW_BRIEFS_MODULE_PLAN.md)).
+Knowledge integration depends on **how** the plan rows were created:
+
+| Origin | Knowledge integration |
+| --- | --- |
+| **Manual admin CRUD** (`POST`/`PUT` content plan) | **Not needed** — admin-authored rows, not an AI workflow run. |
+| **PDF export** (`generate-pdf` / download) | **Not needed** — render-only export of existing plan rows; no generation. |
+| **AiDelivery workflow run** with `[generate-content-plan]` in admin notes | **Already wired** — `executeAiDeliveryWorkflowRun` composes approved knowledge via `buildAiWorkflowKnowledgeContext` with `workflowType: content_plan_draft`. |
+| **AiDelivery workflow run** per plan item (article draft) | **Already wired** — same execute path with `workflowType: article_draft`. |
+| **WorkflowBriefs seed** / **Puriva seed** | **No direct Knowledge call** — deterministic mapping or upstream WorkflowBriefs MI/SEO/plan/draft context (Blocks 6A/6B). |
+
+Manual CRUD and PDF export are **intentionally not** Knowledge execution paths. Workflow-generated
+content plans already use the AiDelivery workflow Knowledge path. See
+[`docs/modules/KNOWLEDGE_BASE.md`](./KNOWLEDGE_BASE.md).
 
 ## Deferred
 

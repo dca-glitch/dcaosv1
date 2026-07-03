@@ -53,10 +53,14 @@ Requires local API, applied Prisma migrations (including `20260628120000_ai_oper
 
 Approved prompt-eligible knowledge is automatically composed into:
 
-1. **AI Delivery workflow execution context** via `buildAiWorkflowKnowledgeContext` when a workflow run executes (`core.runtime.ts` → `executeAiDeliveryWorkflowRun`).
+1. **AI Delivery workflow execution context** via `buildAiWorkflowKnowledgeContext` when a workflow run executes (`core.runtime.ts` → `executeAiDeliveryWorkflowRun`). This includes:
+   - **`content_plan_draft`** when admin notes contain `[generate-content-plan]` (workflow-generated monthly content plan items).
+   - **`article_draft`** when a workflow run targets a specific content-plan item.
 2. **WorkflowBriefs MI/SEO AI run context** via the same helper when `triggerWorkflowBriefAiRun` executes (`workflow-brief.runtime.ts` → `executeWorkflowBriefAiRun`). Only safe `knowledgeContext` metadata is stored on `AiBriefRun`; raw `contextSection` is admin-internal prompt input only.
 3. **WorkflowBriefs production plan generation** via `generateWorkflowBriefProductionPlan` (`workflowType: content_plan_draft`). Safe `knowledgeContext` metadata is stored on admin-only `ProductionPlan.planJson`.
 4. **WorkflowBriefs content draft generation** via `generateWorkflowBriefContentDrafts` / `regenerateWorkflowBriefContentDraft` (`workflowType: article_draft`). Safe `knowledgeContext` metadata is stored on admin-only `ProductionPlan.planJson.contentDrafts`.
+
+**Not Knowledge execution paths (XXL 3):** AI SEO manual `AiDeliveryContentPlan` CRUD and content-plan PDF export are admin-authored or render-only and do not call the context builder. WorkflowBriefs/Puriva deterministic seed paths do not call it directly.
 
 Existing compact project/brief/research/MI context is preserved and composed alongside knowledge context in both paths.
 
@@ -84,3 +88,4 @@ internals. Not client-visible.
 - INDUSTRY-scope auto-inclusion across clients
 - Knowledge picker / override on Workflow Briefs screens (Block 6C-v2)
 - Dedicated `AiContextSnapshot` audit rows per brief run (Block 6D; `briefId` FK does not exist today)
+- Optional AiDelivery admin read-only knowledge-usage visibility for workflow-generated content plans (deferred; not required for AI SEO PDF/CRUD paths)
