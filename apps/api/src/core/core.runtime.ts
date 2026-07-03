@@ -3103,7 +3103,7 @@ export async function approveClientAiDeliveryContentPlanReview(
 
   const updated = await prisma.aiDeliveryContentPlan.update({
     where: { id: (plan as any).id },
-    data: { status: "CLIENT_APPROVED", approvedAt: new Date() },
+    data: { status: "CLIENT_APPROVED", approvedAt: new Date(), storageKey: null },
     select: aiDeliveryContentPlanSelect
   });
   return { contentPlan: toAiDeliveryContentPlanSummary(updated) };
@@ -3120,7 +3120,7 @@ export async function requestClientAiDeliveryContentPlanRevision(
   const updated = await prisma.$transaction(async (tx: PrismaTx) => {
     const contentPlan = await tx.aiDeliveryContentPlan.update({
       where: { id: (plan as any).id },
-      data: { status: "CLIENT_CHANGES_REQUESTED", revisionCount: { increment: 1 } },
+      data: { status: "CLIENT_CHANGES_REQUESTED", revisionCount: { increment: 1 }, storageKey: null },
       select: { id: true }
     });
 
@@ -3219,7 +3219,9 @@ export async function updateAiDeliveryContentPlan(
       where: { id: existing.id },
       data: {
         status: nextStatus,
-        revisionCount: typeof input.revisionCount === "number" ? input.revisionCount : existing.revisionCount
+        revisionCount: typeof input.revisionCount === "number" ? input.revisionCount : existing.revisionCount,
+        // Any status or item change invalidates a previously generated PDF snapshot.
+        storageKey: null
       },
       select: { id: true }
     });
@@ -3274,7 +3276,7 @@ export async function requestAiDeliveryContentPlanClientReview(
 
     const updated = await tx.aiDeliveryContentPlan.update({
       where: { id: existing.id },
-      data: { status: "CLIENT_REVIEW_REQUESTED", reviewRequestedAt: new Date() },
+      data: { status: "CLIENT_REVIEW_REQUESTED", reviewRequestedAt: new Date(), storageKey: null },
       select: aiDeliveryContentPlanSelect
     });
 
@@ -3305,7 +3307,7 @@ export async function approveAiDeliveryContentPlan(
 
     const updated = await tx.aiDeliveryContentPlan.update({
       where: { id: existing.id },
-      data: { status: "CLIENT_APPROVED", approvedAt: new Date() },
+      data: { status: "CLIENT_APPROVED", approvedAt: new Date(), storageKey: null },
       select: aiDeliveryContentPlanSelect
     });
 
@@ -3339,7 +3341,8 @@ export async function requestAiDeliveryContentPlanChanges(
       data: {
         status: "CLIENT_CHANGES_REQUESTED",
         revisionCount: { increment: 1 },
-        approvedAt: null
+        approvedAt: null,
+        storageKey: null
       },
       select: aiDeliveryContentPlanSelect
     });

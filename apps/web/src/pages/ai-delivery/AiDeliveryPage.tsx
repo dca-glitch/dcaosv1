@@ -2091,6 +2091,12 @@ export function AiDeliveryPage({
       if (plan) {
         setContentPlanDetail(plan);
         setContentPlanItems(plan.items.map(itemDraftFromPlanItem));
+        setContentPlanPdfReady((previous) => {
+          if (previous === true) {
+            setContentPlanPdfMessage("Plan changed — the previous PDF is now stale. Generate a new PDF before downloading.");
+          }
+          return false;
+        });
       }
     } catch (error) {
       setContentPlanError(getErrorMessage(error, "Unable to save this content plan."));
@@ -2112,6 +2118,12 @@ export function AiDeliveryPage({
       if (plan) {
         setContentPlanDetail(plan);
         setContentPlanItems(plan.items.map(itemDraftFromPlanItem));
+        setContentPlanPdfReady((previous) => {
+          if (previous === true) {
+            setContentPlanPdfMessage("Plan status changed — the previous PDF is now stale. Generate a new PDF before downloading.");
+          }
+          return false;
+        });
       }
     } catch (error) {
       setContentPlanError(getErrorMessage(error, "Unable to update the current content plan status."));

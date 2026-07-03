@@ -151,12 +151,14 @@ async function main() {
     console.log();
 
     console.log("Step 3: POST generate-pdf (expect 503 if R2 absent, 201 if R2 configured)");
+    let r2Configured = false;
     {
       const genRes = await apiCall("POST", `/ai-delivery-projects/${projectId}/content-plan/generate-pdf`, undefined, token);
       if (genRes.status === 503 && (genRes.json?.error?.code === "R2_STORAGE_NOT_CONFIGURED" || genRes.json?.error === "R2_STORAGE_NOT_CONFIGURED")) {
         pass("generate-pdf returns 503 R2_STORAGE_NOT_CONFIGURED (local expected — no R2 creds)");
       } else if (genRes.status === 201 && genRes.json?.ok === true) {
         pass("generate-pdf returned 201 (R2 configured in this environment)");
+        r2Configured = true;
         const data = genRes.json?.data;
         if (data?.contentPlanId && data?.hasDocument && data?.fileName) {
           pass("generate-pdf response shape: contentPlanId, hasDocument, fileName present");
@@ -194,6 +196,31 @@ async function main() {
       } else {
         fail("download reference exposes storageKey", "forbidden field present");
       }
+    }
+    console.log();
+
+    console.log("Step 4b: editing the plan after PDF generation invalidates the stale PDF");
+    if (r2Configured) {
+      const updateRes = await apiCall("PUT", `/ai-delivery-projects/${projectId}/content-plan`, {
+        items: [
+          { title: "Local SEO for Aesthetic Clinics (revised)", targetKeyword: "aesthetic clinic SEO", contentType: "article", notes: "Smoke fixture item — revised", sortOrder: 0 },
+          { title: "Skincare Blog Authority Guide", targetKeyword: "skincare authority content", contentType: "article", notes: null, sortOrder: 1 }
+        ]
+      }, token);
+      if (updateRes.status === 200) {
+        pass("content plan item update succeeded");
+      } else {
+        fail("content plan item update", `expected 200, got ${updateRes.status}`);
+      }
+      const dlAfterEdit = await apiCall("GET", `/ai-delivery-projects/${projectId}/content-plan/download`, undefined, token);
+      const refAfterEdit = dlAfterEdit.json?.data?.downloadReference ?? null;
+      if (dlAfterEdit.status === 200 && refAfterEdit === null) {
+        pass("download reference is null after plan edit — stale PDF correctly invalidated");
+      } else {
+        fail("stale PDF invalidation", `expected downloadReference=null after edit, got ${JSON.stringify(refAfterEdit)}`);
+      }
+    } else {
+      console.log("  SKIPPED: R2 not configured locally — cannot generate a real PDF to prove invalidation.");
     }
     console.log();
 

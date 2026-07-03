@@ -21,6 +21,7 @@ The SEO module supports admin-operated planning, tracking, and reporting for con
 - content plan generation and review
 - admin-only content plan PDF export + private R2 storage (Block 3B)
 - admin UI shows PDF handoff readiness state on open (Block 3E) — Download PDF is enabled only once a document exists
+- editing plan items or changing plan status automatically invalidates a previously generated PDF (Block 3F) — prevents handing off a stale document
 
 ## Deferred
 

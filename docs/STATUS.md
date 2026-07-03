@@ -103,6 +103,7 @@ Completed admin-operated pieces:
 - **admin-only content plan PDF export + private storage (Block 3B)**
 - **content plan PDF export hardening + App.tsx wiring (Block 3D)**
 - **content plan PDF handoff readiness state in admin UI (Block 3E)** — reuses the existing download-reference endpoint to show ready/not-ready state and gates the Download PDF button; no schema or endpoint changes
+- **stale PDF invalidation on plan edit (Block 3F)** — item edits and status changes (review/approve/changes-requested, admin and client-facing) now clear the stored PDF reference so admins are never shown a stale document as ready
 
 Still deferred:
 
