@@ -101,6 +101,8 @@ Completed admin-operated pieces:
 - admin AI SEO workflow shell/status summary
 - focused AI Delivery smoke coverage
 - **admin-only content plan PDF export + private storage (Block 3B)**
+- **content plan PDF export hardening + App.tsx wiring (Block 3D)**
+- **content plan PDF handoff readiness state in admin UI (Block 3E)** — reuses the existing download-reference endpoint to show ready/not-ready state and gates the Download PDF button; no schema or endpoint changes
 
 Still deferred:
 
