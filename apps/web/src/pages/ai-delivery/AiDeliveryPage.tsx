@@ -11,6 +11,7 @@ import { AiKnowledgeContextPanel } from "./AiKnowledgeContextPanel";
 import { AiDeliveryOperatorSummary } from "./AiDeliveryOperatorSummary";
 import { AiDeliveryProjectPicker } from "./AiDeliveryProjectPicker";
 import { AiDeliveryProjectWorkspaceSections } from "./AiDeliveryProjectWorkspaceSections";
+import { AiDeliveryWordPressPublishConfirmModal } from "./AiDeliveryWordPressPublishConfirmModal";
 import type {
   AiDeliveryMonthlySummaryData,
   AiDeliveryMonthlyReportData,
@@ -5961,42 +5962,16 @@ export function AiDeliveryPage({
       })() : null}
 
       {wordpressPublishConfirm ? (
-        <Modal
-          title="Confirm WordPress publish"
-          onClose={cancelWordPressPublishConfirm}
-          footer={
-            <>
-              <button className="secondary-action" onClick={cancelWordPressPublishConfirm} type="button">
-                Cancel
-              </button>
-              <button
-                className="primary-action"
-                disabled={!wordpressPublishConfirmAcknowledged || deliverableWordPressPublishTargetId !== null}
-                onClick={() => void confirmWordPressPublish()}
-                type="button"
-              >
-                Publish to WordPress
-              </button>
-            </>
-          }
-        >
-          <p>
-            You are about to publish <strong>{wordpressPublishConfirm.deliverableTitle}</strong> to{" "}
-            <strong>{selectedPublicationTarget?.label ?? "the selected target"}</strong> (
-            {selectedPublicationTarget?.siteUrl ?? "site URL not set"}).
-          </p>
-          <p className="muted-text">
-            This writes a WordPress post when credentials and <code>WORDPRESS_PUBLISH_ENABLED</code> are configured. Otherwise the attempt is logged as provider-disabled.
-          </p>
-          <label style={{ display: "flex", gap: "0.5rem", marginTop: "1rem" }}>
-            <input
-              checked={wordpressPublishConfirmAcknowledged}
-              onChange={(event) => setWordpressPublishConfirmAcknowledged(event.target.checked)}
-              type="checkbox"
-            />
-            I confirm publish to this client WordPress target.
-          </label>
-        </Modal>
+        <AiDeliveryWordPressPublishConfirmModal
+          acknowledged={wordpressPublishConfirmAcknowledged}
+          deliverableTitle={wordpressPublishConfirm.deliverableTitle}
+          onAcknowledgedChange={setWordpressPublishConfirmAcknowledged}
+          onCancel={cancelWordPressPublishConfirm}
+          onConfirm={confirmWordPressPublish}
+          publicationTargetLabel={selectedPublicationTarget?.label}
+          publicationTargetSiteUrl={selectedPublicationTarget?.siteUrl}
+          publishInProgress={deliverableWordPressPublishTargetId !== null}
+        />
       ) : null}
       {openKnowledgePanelId && openKnowledgePanelProject && typeof onFetchKnowledgeItems === "function" && typeof onCreateKnowledgeItem === "function" && typeof onUpdateKnowledgeItem === "function" && typeof onPreviewAiContext === "function" ? (
         <AiKnowledgeContextPanel

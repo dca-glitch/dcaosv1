@@ -147,6 +147,7 @@ Still deferred:
 - Keep foundational docs/rules aligned with current assumptions.
 - Keep security/client-readiness docs aligned with completed baseline work and remaining deferred items.
 - Stabilize AI Delivery admin/operator workflows with repeatable validation/smoke scripts.
+- XXL 5 AiDelivery UI stabilization closeout (local): presentational shell components + WordPress publish confirm modal extracted; further large modal splits deferred.
 - Resume broader EN2 notification delivery only after explicit approval.
 - Treat future client review as a later design/build block, not current behavior.
 - Use this document as the source of truth for the next AI SEO / AI Delivery planning block.
