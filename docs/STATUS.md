@@ -142,6 +142,11 @@ Still deferred:
 - scripts
 - tests
 
+## Pre-Staging Block B (2026-07-03)
+
+- **Wrapper:** `npm.cmd run smoke:staging-readiness:local` → [`scripts/staging-readiness-local.ps1`](../scripts/staging-readiness-local.ps1) — Block A smoke subset, `$env:TEMP` logging, `-List` dry mode, Prisma EPERM retry (Program Files `node.exe` only).
+- **Docs-only in Block B** aside from wrapper + `package.json` script; no API/runtime changes.
+
 ## Pre-Staging Block A (2026-07-03)
 
 - **Pack:** [`docs/runbooks/STAGING_READINESS.md`](./runbooks/STAGING_READINESS.md) — consolidated GO / NO-GO readiness, env/migration/smoke/manual QA checklists, and deferred non-blockers.

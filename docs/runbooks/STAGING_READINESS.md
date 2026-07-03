@@ -130,6 +130,22 @@ Run from `C:\dcaosv1` in external PowerShell. Requires `AUTH_SEED_TEST_PASSWORD`
 
 ### Block A minimum (before staging GO discussion)
 
+One-command orchestrator (Block B):
+
+```powershell
+cd C:\dcaosv1
+$env:AUTH_SEED_TEST_PASSWORD = "<shell-only>"
+npm.cmd run smoke:staging-readiness:local
+```
+
+List planned steps without running smokes:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/staging-readiness-local.ps1 -List
+```
+
+Optional flags on the wrapper: `-IncludeOptional` (metrics + PDF), `-IncludeFullGates` (`smoke:puriva-readiness:local`, `smoke:pre-staging:local`). Logs to `$env:TEMP` and opens Notepad. Stops on first failure. Prisma EPERM: stops only `C:\Program Files\nodejs\node.exe` PIDs, retries `validate` once.
+
 | Order | Command | Primary proof |
 |-------|---------|---------------|
 | 0 | `npm.cmd run validate` | Typecheck + build all workspaces |

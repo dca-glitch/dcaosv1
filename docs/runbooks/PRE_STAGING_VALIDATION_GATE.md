@@ -37,6 +37,15 @@ Related:
 
 ## One-command local gate
 
+**Focused Block B pack (Block A smoke subset):**
+
+```powershell
+cd C:\dcaosv1
+npm.cmd run smoke:staging-readiness:local
+```
+
+**Full local repo closeout:**
+
 ```powershell
 cd C:\dcaosv1
 npm.cmd run smoke:pre-staging:local

@@ -28,6 +28,7 @@ Complete before requesting G4 approval.
 | 2 | `npm.cmd run check` PASS | Command output | — |
 | 3 | `npm.cmd run validate` PASS (no EPERM) | Command output | Stop dev node if EPERM |
 | 4 | `npm.cmd run smoke:pre-staging:local` PASS | Orchestrator green | External PowerShell |
+| 4b | `npm.cmd run smoke:staging-readiness:local` PASS | Block B focused pack | Lighter Block A subset |
 | 5 | Client delivery subset PASS | [`PRE_STAGING_CLIENT_DELIVERY_READINESS.md`](./PRE_STAGING_CLIENT_DELIVERY_READINESS.md) | Optional focused rerun |
 | 6 | E2E admin chain PASS | [`E2E_CLIENT_DELIVERY_SMOKE.md`](./E2E_CLIENT_DELIVERY_SMOKE.md) | Optional focused rerun |
 | 7 | No secrets in diff or logs | Review | — |

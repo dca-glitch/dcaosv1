@@ -30,6 +30,19 @@ Optional broader gates: `smoke:pre-staging:local` (full orchestrator), `smoke:pu
 
 ---
 
+## Orchestrator (Block B)
+
+`npm.cmd run smoke:staging-readiness:local` runs the Block A minimum subset via [`scripts/staging-readiness-local.ps1`](../../scripts/staging-readiness-local.ps1):
+
+- `validate` (with Prisma EPERM retry — Program Files `node.exe` only)
+- Block A smokes § above in order
+- Logs to `$env:TEMP`; opens Notepad; stop on first failure
+- `-List` dry mode; `-IncludeOptional` / `-IncludeFullGates` for extended packs
+
+Full catalog below. `smoke:pre-staging:local` remains the full local repo closeout gate.
+
+---
+
 ## Local validation order (recommended)
 
 Run from `C:\dcaosv1` in external PowerShell. Stop on first failure.
