@@ -334,15 +334,14 @@ Deferred items below are explicitly not blockers for the current admin foundatio
 - Advanced Client Portal actions / private magic links (phased).
 - Real production configured-bucket proof.
 - Real AI provider execution.
-- PDF/Google Docs export flows.
+- Live Google Docs export / OAuth integration (admin-only Content Plan and Monthly Report PDF export are implemented; see `docs/STATUS.md`).
 - WordPress draft publishing.
-- GA/GSC/monthly reporting.
+- GA/GSC analytics integration for reporting.
 - Client-facing approvals/archive.
 - AI calls.
 - Crawling or research ingestion.
 - Connector-specific publishing or export execution.
 - Public approval links.
-- Monthly report generation.
 - Production deployment or VPS behavior.
 
 EN2 email event wiring remains paused until modules are stable.
