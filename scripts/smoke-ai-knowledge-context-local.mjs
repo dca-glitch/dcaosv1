@@ -474,6 +474,25 @@ async function main() {
     assertNoLiveProviderLeak(workflowRun, "Workflow brief AI run");
     pass("Workflow brief AI run includes approved knowledge context metadata without raw context leak");
 
+    const adminBriefDetail = requireOk(
+      "Load workflow brief detail for admin knowledge projection",
+      await apiCall("GET", `/workflow-briefs/${workflowBriefId}`, null, token)
+    );
+    const adminBrief = adminBriefDetail.brief ?? adminBriefDetail;
+    const latestAdminRun = adminBrief?.aiBriefRuns?.[0];
+    assertSafeKnowledgeMetadata(latestAdminRun?.knowledgeContext, "Workflow brief GET detail aiBriefRun");
+    if (!latestAdminRun?.knowledgeContext?.used) {
+      fail("Workflow brief GET detail should project knowledgeContext on latest aiBriefRun for admin.");
+    }
+    if (latestAdminRun?.inputSnapshotJson) {
+      fail("Workflow brief GET detail leaked inputSnapshotJson on aiBriefRun.");
+    }
+    const adminBriefSerialized = JSON.stringify(adminBrief);
+    if (/executionLogPreview|resultSnapshot|inputSnapshotJson/i.test(adminBriefSerialized)) {
+      fail("Workflow brief GET detail leaked execution snapshot internals.");
+    }
+    pass("Workflow brief GET detail projects safe aiBriefRun knowledgeContext without snapshot leak");
+
     const generatedPlan = requireOk(
       "Generate workflow brief production plan with knowledge context",
       await apiCall("POST", `/workflow-briefs/${workflowBriefId}/production-plan/generate`, null, token)

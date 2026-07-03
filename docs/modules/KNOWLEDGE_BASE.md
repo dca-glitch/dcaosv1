@@ -68,13 +68,15 @@ Offline adapter wiring proof:
 npm run -w @dca-os-v1/api check:ai-workflow-knowledge-context
 ```
 
-## Admin visibility (Block 6C-v1 — planned)
+## Admin visibility (Block 6C-v1 — implemented)
 
 Safe `knowledgeContext` metadata from WorkflowBriefs MI/SEO runs and plan/draft generation
-(Blocks 6A/6B) will be surfaced read-only on Workflow Briefs admin screens only. Allowed
-display fields: `used`, `selectedCount`, `selectedItemTitles`, `skippedReason`,
+(Blocks 6A/6B) is surfaced read-only on Workflow Briefs admin screens only. Allowed display
+fields: `used`, `selectedCount`, `selectedItemTitles`, `skippedReason`,
 `sanitizeFlagCount`, `trimmed`. Must not display raw `contextPreview`, `contextSection`,
-`selectedSourcesJson`, knowledge bodies, or prompt internals. Not client-visible.
+`selectedSourcesJson`, knowledge bodies, or prompt internals. Admin `GET /workflow-briefs/:id`
+projects safe run metadata from `AiBriefRun.inputSnapshotJson` without returning snapshot
+internals. Not client-visible.
 
 ## Deferred
 

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { EmptyState } from "../components/EmptyState";
 import { ErrorState } from "../components/ErrorState";
 import { LoadingState } from "../components/LoadingState";
-import { Button, PageHeader, SectionPanel, StatusBadge } from "../components/ui";
+import { Button, PageHeader, SectionPanel, StatusBadge, WorkflowBriefKnowledgeUsageSummary, readContentDraftsKnowledgeContext, readPlanJsonKnowledgeContext, parseWorkflowBriefKnowledgeContextMeta } from "../components/ui";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "/api/v1";
 const SESSION_STORAGE_KEY = "dcaosv1.authToken";
@@ -64,6 +64,7 @@ type WorkflowBriefDetail = WorkflowBriefSummary & {
     startedAt: string | null;
     completedAt: string | null;
     errorMessage: string | null;
+    knowledgeContext?: unknown;
   }>;
 };
 
@@ -1098,6 +1099,12 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
   const latestPlan = detail?.productionPlans?.[0];
   const linkedProject = detail?.sourceProjects?.[0];
   const latestRun = detail?.aiBriefRuns?.[0];
+  const runKnowledgeContext =
+    canManageAi && latestRun ? parseWorkflowBriefKnowledgeContextMeta(latestRun.knowledgeContext) : null;
+  const planKnowledgeContext =
+    canManageAi && latestPlan?.planJson ? readPlanJsonKnowledgeContext(latestPlan.planJson) : null;
+  const draftKnowledgeContext =
+    canManageAi && latestPlan?.planJson ? readContentDraftsKnowledgeContext(latestPlan.planJson) : null;
   const miSections = latestMi ? buildMiReportSections(latestMi.reportJson) : [];
   const seoSections = latestSeo ? buildSeoReportSections(latestSeo.reportJson) : [];
   const miOpportunities = miSections.find((section) => section.label === "Opportunities")?.items ?? [];
@@ -1219,6 +1226,13 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
                     </div>
                     <BriefField label="Started" value={formatRunTimestamp(latestRun.startedAt)} />
                     <BriefField label="Completed" value={formatRunTimestamp(latestRun.completedAt)} />
+                    {canManageAi && runKnowledgeContext ? (
+                      <WorkflowBriefKnowledgeUsageSummary
+                        className="brief-detail-section--spaced"
+                        metadata={runKnowledgeContext}
+                        workflowType="summary (MI/SEO run)"
+                      />
+                    ) : null}
                   </>
                 ) : (
                   <p className="muted-text">No AI runs yet. Run AI from an eligible brief status.</p>
@@ -1364,6 +1378,14 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
                       </BriefDetailSection>
                     ) : null}
 
+                    {canManageAi && planKnowledgeContext ? (
+                      <WorkflowBriefKnowledgeUsageSummary
+                        className="brief-detail-section--spaced"
+                        metadata={planKnowledgeContext}
+                        workflowType="content_plan_draft"
+                      />
+                    ) : null}
+
                     {canClientReviewPlan ? (
                       <div className="brief-detail-divider">
                         <div className="brief-muted-note muted-text">Review this production plan</div>
@@ -1505,6 +1527,14 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
 
                       {draftStatus.lastGeneratedAt ? (
                         <BriefField label="Last generated" value={formatRunTimestamp(draftStatus.lastGeneratedAt)} />
+                      ) : null}
+
+                      {draftKnowledgeContext ? (
+                        <WorkflowBriefKnowledgeUsageSummary
+                          className="brief-detail-section--spaced"
+                          metadata={draftKnowledgeContext}
+                          workflowType="article_draft"
+                        />
                       ) : null}
 
                       {draftStatus.blockReason && draftStatus.pendingCount > 0 ? (

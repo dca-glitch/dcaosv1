@@ -493,6 +493,47 @@ async function main() {
   );
   }
 
+  const forbiddenKnowledgeLeakPattern =
+    /knowledgeContext|contextSection|contextPreview|selectedSourcesJson|executionLogPreview|resultSnapshot/i;
+
+  const clientWorkflowBriefDetail = await request(`/workflow-briefs/${firstRun.workflowBrief.id}`, {
+    token: portalToken
+  });
+  record(
+    "client workflow brief detail request succeeds",
+    clientWorkflowBriefDetail.status === 200,
+    `${clientWorkflowBriefDetail.status}`
+  );
+  record(
+    "client workflow brief detail omits knowledge internals",
+    !forbiddenKnowledgeLeakPattern.test(clientWorkflowBriefDetail.text ?? ""),
+    forbiddenKnowledgeLeakPattern.test(clientWorkflowBriefDetail.text ?? "") ? "leaked" : "clean"
+  );
+
+  const clientWorkflowBriefPlan = await request(
+    `/workflow-briefs/${firstRun.workflowBrief.id}/production-plan`,
+    { token: portalToken }
+  );
+  if (clientWorkflowBriefPlan.status === 404) {
+    record("client workflow brief production plan knowledge boundary", true, "SKIPPED: no production plan for client");
+  } else {
+    record(
+      "client workflow brief production plan request succeeds",
+      clientWorkflowBriefPlan.status === 200,
+      `${clientWorkflowBriefPlan.status}`
+    );
+    record(
+      "client workflow brief production plan omits knowledge internals",
+      !forbiddenKnowledgeLeakPattern.test(clientWorkflowBriefPlan.text ?? ""),
+      forbiddenKnowledgeLeakPattern.test(clientWorkflowBriefPlan.text ?? "") ? "leaked" : "clean"
+    );
+    record(
+      "client workflow brief production plan omits raw planJson",
+      !/"planJson"/.test(clientWorkflowBriefPlan.text ?? ""),
+      /"planJson"/.test(clientWorkflowBriefPlan.text ?? "") ? "leaked" : "clean"
+    );
+  }
+
   const adminArticleImages = await request(`/ai-delivery-projects/${firstRun.aiDeliveryProject.id}/article-images`, {
     token: adminToken
   });

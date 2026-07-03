@@ -220,6 +220,86 @@ function sanitizeSeoReportsForClient(seoReports: unknown): unknown[] {
   });
 }
 
+function readSafeKnowledgeContextMeta(raw: unknown): WorkflowBriefAiKnowledgeContextMeta | null {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+    return null;
+  }
+
+  const record = raw as Record<string, unknown>;
+  if (typeof record.used !== "boolean") {
+    return null;
+  }
+
+  return {
+    used: record.used,
+    selectedCount: typeof record.selectedCount === "number" ? record.selectedCount : 0,
+    selectedItemTitles: Array.isArray(record.selectedItemTitles)
+      ? record.selectedItemTitles.filter((entry): entry is string => typeof entry === "string")
+      : [],
+    skippedReason:
+      typeof record.skippedReason === "string"
+        ? record.skippedReason
+        : record.skippedReason === null
+          ? null
+          : null,
+    sanitizeFlagCount: typeof record.sanitizeFlagCount === "number" ? record.sanitizeFlagCount : 0,
+    trimmed: typeof record.trimmed === "boolean" ? record.trimmed : false
+  };
+}
+
+function readSafeKnowledgeContextFromInputSnapshot(
+  inputSnapshotJson: unknown
+): WorkflowBriefAiKnowledgeContextMeta | null {
+  if (!inputSnapshotJson || typeof inputSnapshotJson !== "object" || Array.isArray(inputSnapshotJson)) {
+    return null;
+  }
+
+  return readSafeKnowledgeContextMeta((inputSnapshotJson as Record<string, unknown>).knowledgeContext);
+}
+
+async function attachAdminKnowledgeContextToAiBriefRuns(
+  tenantId: string,
+  aiBriefRuns: unknown
+): Promise<unknown[]> {
+  if (!Array.isArray(aiBriefRuns) || aiBriefRuns.length === 0) {
+    return Array.isArray(aiBriefRuns) ? aiBriefRuns : [];
+  }
+
+  const runIds = aiBriefRuns
+    .map((run) => (run && typeof run === "object" ? (run as { id?: string }).id : null))
+    .filter((id): id is string => typeof id === "string");
+
+  if (runIds.length === 0) {
+    return aiBriefRuns;
+  }
+
+  const snapshots = await prisma.aiBriefRun.findMany({
+    where: { tenantId, id: { in: runIds } },
+    select: { id: true, inputSnapshotJson: true }
+  });
+  const snapshotByRunId = new Map(snapshots.map((run) => [run.id, run.inputSnapshotJson]));
+
+  return aiBriefRuns.map((run) => {
+    if (!run || typeof run !== "object") {
+      return run;
+    }
+
+    const record = run as Record<string, unknown>;
+    const runId = typeof record.id === "string" ? record.id : null;
+    return {
+      id: record.id,
+      status: record.status,
+      startedAt: record.startedAt,
+      completedAt: record.completedAt,
+      errorMessage: record.errorMessage,
+      createdAt: record.createdAt,
+      knowledgeContext: runId
+        ? readSafeKnowledgeContextFromInputSnapshot(snapshotByRunId.get(runId))
+        : null
+    };
+  });
+}
+
 function sanitizeBriefDetailForRole(brief: Record<string, unknown>, isAdmin: boolean): Record<string, unknown> {
   if (isAdmin) {
     return brief;
@@ -546,7 +626,20 @@ export async function getWorkflowBriefById(
   const roles = getActiveRoles(authSession);
   const isAdmin = isOwnerRole(roles);
 
-  return { brief: sanitizeBriefDetailForRole(brief as Record<string, unknown>, isAdmin) };
+  const rawBrief = brief as Record<string, unknown>;
+  const aiBriefRuns = isAdmin
+    ? await attachAdminKnowledgeContextToAiBriefRuns(tenantId, rawBrief.aiBriefRuns)
+    : rawBrief.aiBriefRuns;
+
+  return {
+    brief: sanitizeBriefDetailForRole(
+      {
+        ...rawBrief,
+        aiBriefRuns
+      },
+      isAdmin
+    )
+  };
 }
 
 export async function createWorkflowBrief(

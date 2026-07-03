@@ -116,6 +116,16 @@ export interface AiContextPreviewInputRequest {
   saveSnapshot?: boolean;
 }
 
+/** Safe admin-only knowledge usage metadata persisted on WorkflowBriefs runs/plans. */
+export interface WorkflowBriefKnowledgeContextMeta {
+  used: boolean;
+  selectedCount: number;
+  selectedItemTitles: string[];
+  skippedReason: string | null;
+  sanitizeFlagCount: number;
+  trimmed: boolean;
+}
+
 export interface AiContextPreviewResponse {
   canRun: boolean;
   blockingReasons: string[];

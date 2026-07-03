@@ -8,3 +8,9 @@ export { SectionPanel } from "./SectionPanel";
 export { SideSheet, type SideSheetProps } from "./SideSheet";
 export { StatusBadge, getStatusTone } from "./StatusBadge";
 export { Table, type TableHeader, type TableProps, type TableRow } from "./Table";
+export {
+  WorkflowBriefKnowledgeUsageSummary,
+  parseWorkflowBriefKnowledgeContextMeta,
+  readContentDraftsKnowledgeContext,
+  readPlanJsonKnowledgeContext
+} from "./WorkflowBriefKnowledgeUsageSummary";
