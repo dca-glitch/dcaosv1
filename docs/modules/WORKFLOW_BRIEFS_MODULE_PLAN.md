@@ -25,6 +25,28 @@ established by the Block 4B strategic architecture review.
   shared production tables (see below), plus release-package finalization and batched
   publication handoff.
 
+## Reusable knowledge layer — confirmed disconnected from WorkflowBriefs (Block 5A)
+
+DCA OS Lite has a separate, admin-only reusable memory layer (`AiKnowledgeItem`,
+`AiContextSnapshot`, `ai-knowledge.runtime.ts`, `ai-context-builder.service.ts` — see
+[`docs/modules/KNOWLEDGE_BASE.md`](./KNOWLEDGE_BASE.md)) that composes approved,
+prompt-eligible knowledge into **AiDelivery workflow-run execution context**
+(`buildAiWorkflowKnowledgeContext`, called from `core.runtime.ts`'s
+`executeAiDeliveryWorkflowRun`).
+
+**Confirmed by code (Block 5A):** WorkflowBriefs' own AI-run pipeline
+(`triggerWorkflowBriefAiRun`, `workflow-brief-ai.execution.ts`) does not reference
+`ai-knowledge.runtime.ts` or `ai-context-builder.service.ts` at all — no `AiKnowledgeItem`
+query, no `buildAiWorkflowKnowledgeContext` call. This means reusable approved client
+knowledge currently enriches only the AiDelivery workflow-run path, not the
+WorkflowBriefs brief-to-production-plan AI generation path. The two composable-context
+mechanisms are parallel and disconnected today. This is not a safety bug (WorkflowBriefs'
+own `structuredInputJson`/MI/SEO context remains sound on its own), but a real gap
+between the business goal (client knowledge should inform all production paths) and the
+current implementation. Not fixed in Block 5A — wiring these together would require new
+integration work across two runtime modules, exceeding a minimal-change block. Recommend a
+dedicated, explicitly-scoped follow-up block if this connection is desired.
+
 ## What AiDelivery owns
 
 - `AiDeliveryProject` — the canonical project record.

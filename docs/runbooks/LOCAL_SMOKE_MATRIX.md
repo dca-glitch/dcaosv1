@@ -56,6 +56,7 @@ In-memory limit: 300 requests / 15 minutes per IP. Long smoke chains may hit 429
 | `smoke:client-portal:local` | Client archive API, access guards, forbidden fields, `#/client-portal` archive behavior |
 | `smoke:client-access:local` | Admin grant/revoke, client bounds |
 | `smoke:ai-market-intelligence` | MI project, sources, run, insight, handoff, AI Delivery apply |
+| `smoke:ai-knowledge-context` | Knowledge base approved/allowedForPrompt selection, injection sanitization, tenant/client/project isolation, workflow-run context attachment, admin-only route gating (Block 5A) |
 | `smoke:ai-delivery-reviews` | Content plan, drafts, images, deliverables, WP draft prep |
 | `smoke:ai-seo-content-plan-pdf` | Content plan PDF export + private storage (admin-only; accepts 503 locally) |
 | `smoke:monthly-report:local` | Admin report lifecycle, document handoff |

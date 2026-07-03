@@ -36,6 +36,15 @@ unused), but was present in the response body. Removed entirely from
 `client-portal.runtime.ts`'s `sanitizeClientPortalReleasePackage`. See
 [`docs/modules/WORKFLOW_BRIEFS_MODULE_PLAN.md`](./WORKFLOW_BRIEFS_MODULE_PLAN.md) for detail.
 
+**Reusable AI knowledge/context confirmed never client-visible (Block 5A):** the admin-only
+knowledge base and context builder layer (`AiKnowledgeItem`, `AiContextSnapshot`, see
+[`docs/modules/KNOWLEDGE_BASE.md`](./KNOWLEDGE_BASE.md)) is hard-gated at the route level
+(`requireRole("owner","admin")`) on every endpoint, and no client-portal or client-reachable
+function queries these tables anywhere in the codebase — confirmed by full-codebase search.
+Clients only ever see the safe final outputs this layer helps admins produce (approved
+content plans, final deliverables, final reports), never raw context, prompt assembly, or
+knowledge item content itself.
+
 ## Current scope
 
 - archive / final delivery history
