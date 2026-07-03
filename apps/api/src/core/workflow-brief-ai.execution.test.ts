@@ -1,7 +1,9 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
+  composeWorkflowBriefAiContextText,
   executeWorkflowBriefAiRun,
+  buildWorkflowBriefKnowledgeContextLogLines,
   WORKFLOW_BRIEF_AI_RUN_VERSION
 } from "./workflow-brief-ai.execution";
 import type { AiProviderConfig } from "../config";
@@ -72,5 +74,51 @@ describe("workflow-brief-ai.execution", () => {
 
     assert.equal(result.ok, false);
     assert.ok(result.errorMessage?.includes("[stub-fail]"));
+  });
+
+  it("composes approved knowledge section before brief context", () => {
+    const composed = composeWorkflowBriefAiContextText(
+      buildInput({
+        approvedKnowledgeSection: "Approved knowledge context (admin-internal):\n- [CLIENT_FACT — CLIENT — v1] Known brand voice"
+      })
+    );
+
+    assert.ok(composed.startsWith("Approved knowledge context (admin-internal):"));
+    assert.ok(composed.includes("Brief title: Test Workflow Brief"));
+  });
+
+  it("records knowledge context inclusion in execution log", async () => {
+    const result = await executeWorkflowBriefAiRun(
+      buildInput({
+        knowledgeContext: {
+          used: true,
+          selectedCount: 1,
+          selectedItemTitles: ["Brand voice guide"],
+          skippedReason: null,
+          sanitizeFlagCount: 0,
+          trimmed: false
+        }
+      }),
+      localConfig
+    );
+
+    assert.equal(result.ok, true);
+    assert.ok(
+      result.executionLog.some((line) => line.includes("Approved knowledge context included: 1 item(s)"))
+    );
+    assert.ok(result.executionLog.some((line) => line.includes("Brand voice guide")));
+  });
+
+  it("records skipped knowledge context in execution log", () => {
+    const lines = buildWorkflowBriefKnowledgeContextLogLines({
+      used: false,
+      selectedCount: 0,
+      selectedItemTitles: [],
+      skippedReason: "No approved knowledge items matched scope.",
+      sanitizeFlagCount: 0,
+      trimmed: false
+    });
+
+    assert.ok(lines.some((line) => line.includes("Approved knowledge context skipped")));
   });
 });

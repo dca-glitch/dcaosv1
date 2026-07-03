@@ -25,27 +25,28 @@ established by the Block 4B strategic architecture review.
   shared production tables (see below), plus release-package finalization and batched
   publication handoff.
 
-## Reusable knowledge layer — confirmed disconnected from WorkflowBriefs (Block 5A)
+## Reusable knowledge layer — WorkflowBriefs MI/SEO integration foundation (Block 6A)
 
 DCA OS Lite has a separate, admin-only reusable memory layer (`AiKnowledgeItem`,
 `AiContextSnapshot`, `ai-knowledge.runtime.ts`, `ai-context-builder.service.ts` — see
 [`docs/modules/KNOWLEDGE_BASE.md`](./KNOWLEDGE_BASE.md)) that composes approved,
-prompt-eligible knowledge into **AiDelivery workflow-run execution context**
-(`buildAiWorkflowKnowledgeContext`, called from `core.runtime.ts`'s
-`executeAiDeliveryWorkflowRun`).
+prompt-eligible knowledge into workflow execution context via
+`buildAiWorkflowKnowledgeContext`.
 
-**Confirmed by code (Block 5A):** WorkflowBriefs' own AI-run pipeline
-(`triggerWorkflowBriefAiRun`, `workflow-brief-ai.execution.ts`) does not reference
-`ai-knowledge.runtime.ts` or `ai-context-builder.service.ts` at all — no `AiKnowledgeItem`
-query, no `buildAiWorkflowKnowledgeContext` call. This means reusable approved client
-knowledge currently enriches only the AiDelivery workflow-run path, not the
-WorkflowBriefs brief-to-production-plan AI generation path. The two composable-context
-mechanisms are parallel and disconnected today. This is not a safety bug (WorkflowBriefs'
-own `structuredInputJson`/MI/SEO context remains sound on its own), but a real gap
-between the business goal (client knowledge should inform all production paths) and the
-current implementation. Not fixed in Block 5A — wiring these together would require new
-integration work across two runtime modules, exceeding a minimal-change block. Recommend a
-dedicated, explicitly-scoped follow-up block if this connection is desired.
+**Block 5A finding:** WorkflowBriefs' own AI-run pipeline was disconnected from this layer.
+
+**Block 6A foundation (implemented):** `triggerWorkflowBriefAiRun` now calls
+`buildAiWorkflowKnowledgeContext` before `executeWorkflowBriefAiRun`, passing the sanitized
+`contextSection` into prompt assembly and persisting **safe metadata only**
+(`knowledgeContext`: used/selectedCount/selectedItemTitles/skippedReason/sanitizeFlagCount/trimmed)
+in `AiBriefRun.inputSnapshotJson`. Raw knowledge bodies and `contextSection` are **not**
+persisted in the run snapshot or exposed on client-safe surfaces. Execution logs record
+include/skip lines matching the AiDelivery workflow-run pattern.
+
+**Still deferred:** wiring approved knowledge into WorkflowBriefs **production-plan** and
+**draft** generation paths (`workflow-brief-plan.execution.ts`,
+`workflow-brief-draft.execution.ts`); UI knowledge picker on brief screens; dedicated
+`AiContextSnapshot` audit rows per brief run (`briefId` FK does not exist today).
 
 ## What AiDelivery owns
 
