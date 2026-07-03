@@ -216,6 +216,15 @@ async function main() {
     releasePackage.status === 200 && releasePackage.body?.data?.releasePackage == null,
     releasePackage.body?.data?.releasePackage ? "unexpected package" : "absent"
   );
+  record(
+    // Block 4G-FIX: releasePackageId was explicitly forbidden client-visible content but was
+    // present in ClientSafeReleasePackage/sanitizeClientPortalReleasePackage's output. Fixed
+    // by removing it from the client-safe type entirely. This check is data-independent —
+    // the JSON key must never appear in this response regardless of finalization state.
+    "client portal release package response omits releasePackageId",
+    !(releasePackage.text ?? "").includes("releasePackageId"),
+    (releasePackage.text ?? "").includes("releasePackageId") ? "leaked" : "clean"
+  );
 
   const portalMonthlyReports = await request(`/client-portal/projects/${portalProject.id}/monthly-reports`, {
     token: portalToken
@@ -414,6 +423,28 @@ async function main() {
     });
     assertClientForbiddenAdminPath(record, label, response, method ?? "GET");
     assertPurivaClientPortalResponseSafe(record, `client ${label} denial`, response);
+
+    if (label === "release package admin") {
+      // Block 4G fix: buildWorkflowBriefReleasePackageStatus previously returned the raw
+      // finalReleasePackageMeta unconditionally via `releasePackage`, even for non-admin
+      // callers, alongside the already-sanitized `clientReleasePackage`. This is meaningful
+      // regardless of whether this brief's release package happens to be finalized yet:
+      // "packageFingerprint" only ever appears in the raw internal shape, never in the
+      // client-safe snapshot, so its absence is a real regression guard either way.
+      record(
+        "client release package response omits internal packageFingerprint marker",
+        !(response.text ?? "").includes("packageFingerprint"),
+        (response.text ?? "").includes("packageFingerprint") ? "leaked" : "clean"
+      );
+      record(
+        // Block 4G-FIX: clientReleasePackage (nested in this response) must never include
+        // releasePackageId either, for the same reason as the client-portal release-package
+        // endpoint above.
+        "client release package response omits releasePackageId",
+        !(response.text ?? "").includes("releasePackageId"),
+        (response.text ?? "").includes("releasePackageId") ? "leaked" : "clean"
+      );
+    }
   }
 
   const clientMiReport = await request(`/workflow-briefs/${firstRun.workflowBrief.id}/mi-report`, {

@@ -27,6 +27,15 @@ Forbidden visible fields include:
 - `executionLog`
 - provider/run metadata
 
+**Known gap confirmed in Block 4G, fixed in Block 4G-FIX:** `releasePackageId` was present
+in the release-package JSON payload returned by `getClientPortalReleasePackage` (sourced
+from `ClientSafeReleasePackage`, built in `workflow-brief-final-release.execution.ts`). It
+was not rendered as visible UI text in `ClientPortalPage.tsx` (declared in the type but
+unused), but was present in the response body. Removed entirely from
+`ClientSafeReleasePackage` and its builder/sanitizer functions, plus
+`client-portal.runtime.ts`'s `sanitizeClientPortalReleasePackage`. See
+[`docs/modules/WORKFLOW_BRIEFS_MODULE_PLAN.md`](./WORKFLOW_BRIEFS_MODULE_PLAN.md) for detail.
+
 ## Current scope
 
 - archive / final delivery history

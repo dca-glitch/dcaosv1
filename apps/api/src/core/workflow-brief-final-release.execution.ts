@@ -66,7 +66,6 @@ export type ClientSafeReleasePackageImage = {
 };
 
 export type ClientSafeReleasePackage = {
-  releasePackageId: string;
   briefTitle: string;
   projectName: string;
   finalizedAt: string;
@@ -174,7 +173,6 @@ export function canFinalizeWorkflowBriefReleasePackage(input: {
 }
 
 export function buildClientSafeReleasePackage(input: {
-  releasePackageId: string;
   briefTitle: string;
   projectName: string;
   finalizedAt: string;
@@ -183,7 +181,6 @@ export function buildClientSafeReleasePackage(input: {
   notes?: string | null;
 }): ClientSafeReleasePackage {
   return {
-    releasePackageId: input.releasePackageId,
     briefTitle: input.briefTitle.trim(),
     projectName: input.projectName.trim(),
     finalizedAt: input.finalizedAt,
@@ -220,7 +217,6 @@ export function buildFinalReleasePackageRecord(input: {
   const finalizedAt = input.finalizedAt ?? new Date().toISOString();
   const releasePackageId = input.releasePackageId ?? randomUUID();
   const clientSnapshot = buildClientSafeReleasePackage({
-    releasePackageId,
     briefTitle: input.briefTitle,
     projectName: input.projectName,
     finalizedAt,
@@ -268,11 +264,10 @@ export function toClientSafeReleasePackageFromRecord(
   if (!record || record.version !== WORKFLOW_BRIEF_FINAL_RELEASE_PACKAGE_VERSION) {
     return null;
   }
-  if (record.clientSnapshot && record.clientSnapshot.releasePackageId) {
+  if (record.clientSnapshot && record.clientSnapshot.finalizedAt) {
     return sanitizeClientSafeReleasePackage(record.clientSnapshot);
   }
   return buildClientSafeReleasePackage({
-    releasePackageId: record.releasePackageId,
     briefTitle: record.briefTitle,
     projectName: record.projectName,
     finalizedAt: record.finalizedAt,
@@ -284,7 +279,6 @@ export function toClientSafeReleasePackageFromRecord(
 
 export function sanitizeClientSafeReleasePackage(value: ClientSafeReleasePackage): ClientSafeReleasePackage {
   return {
-    releasePackageId: value.releasePackageId,
     briefTitle: value.briefTitle,
     projectName: value.projectName,
     finalizedAt: value.finalizedAt,

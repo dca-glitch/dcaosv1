@@ -111,11 +111,13 @@ describe("workflow-brief-final-release.execution", () => {
     assert.equal("storageKey" in record.clientSnapshot, false);
     assert.equal("prompt" in record.clientSnapshot, false);
     assert.equal("textDeliverableId" in record.clientSnapshot, false);
+    assert.equal("releasePackageId" in record.clientSnapshot, false);
 
     const clientView = toClientSafeReleasePackageFromRecord(record);
     assert.ok(clientView);
     assert.equal(clientView?.deliverables.length, 1);
     assert.equal(clientView?.images[0]?.imageUrl, "https://cdn.example.com/hero.jpg");
+    assert.equal(clientView && "releasePackageId" in clientView, false);
   });
 
   it("reuses finalized package when fingerprint is unchanged", () => {
@@ -141,7 +143,6 @@ describe("workflow-brief-final-release.execution", () => {
     assert.equal(isReleasableTextDeliverableStatus("APPROVED_BY_CLIENT"), true);
     assert.equal(isReleasableTextDeliverableStatus("DRAFT"), false);
     const snapshot = buildClientSafeReleasePackage({
-      releasePackageId: "pkg-1",
       briefTitle: "Brief",
       projectName: "Project",
       finalizedAt: new Date().toISOString(),

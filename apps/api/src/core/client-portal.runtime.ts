@@ -116,7 +116,6 @@ function sanitizeClientPortalReleasePackage(
   releasePackage: ClientSafeReleasePackage
 ): ClientSafeReleasePackage {
   return {
-    releasePackageId: releasePackage.releasePackageId,
     briefTitle:
       sanitizeClientPortalDisplayText(releasePackage.briefTitle, {
         stripScaffoldWord: true,

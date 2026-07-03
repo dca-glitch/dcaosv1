@@ -4624,7 +4624,10 @@ function buildWorkflowBriefReleasePackageStatus(
     releasePackageFinalized,
     lastReleasePackageFinalizedAt: data.finalReleasePackageMeta?.finalizedAt ?? null,
     packageChangedSinceFinalize,
-    releasePackage: data.finalReleasePackageMeta,
+    // Raw finalReleasePackageMeta carries internal packaging/automation metadata
+    // (release execution records, provenance) — only admins/owners receive it. Clients
+    // only ever receive the pre-sanitized clientReleasePackage snapshot below.
+    releasePackage: isAdmin ? data.finalReleasePackageMeta : null,
     clientReleasePackage: toClientSafeReleasePackageFromRecord(data.finalReleasePackageMeta)
   };
 }

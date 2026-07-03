@@ -84,6 +84,71 @@ callers, `sanitizeBriefDetailForRole`, `getWorkflowBriefMiReport`, and
 via the existing `readMiReportContent`/`readSeoReportContent` helpers. Admin/owner
 callers continue to receive the full raw record.
 
+## Production Plan Review — client-safe contract (Block 4G closure)
+
+**Client entry point:** nav label "Production Plan Review" → `WorkflowBriefsPage`
+(`canManageAi=false`) → page title/description also read "Production Plan Review" for
+clients (Block 4F). Admin nav label "Workflow Briefs" and admin page title are unchanged.
+
+**Client-reachable read endpoints and their sanitization:**
+
+| Endpoint | Client-safe handling |
+|---|---|
+| `GET /workflow-briefs/:id` | `sanitizeBriefDetailForRole` strips `productionPlans` to safe fields, sanitizes `miReports`/`seoReports` `reportJson`, empties `sourceProjects` |
+| `GET /workflow-briefs/:id/mi-report` | `reportJson` reduced via `readMiReportContent` for non-admin |
+| `GET /workflow-briefs/:id/seo-report` | `reportJson` reduced via `readSeoReportContent` for non-admin |
+| `GET /workflow-briefs/:id/production-plan` | `sanitizeProductionPlanForClient` strips `planJson`/`aiDeliveryProjectId`; `DRAFT`-status plans return `forbidden` for non-admin |
+| `POST /workflow-briefs/:id/production-plan/approve` \| `/reject` | requires `SENT_TO_CLIENT` status; response sanitized via `sanitizeProductionPlanForClient` + `sanitizeBriefDetailForRole` |
+| `GET /workflow-briefs/:id/release-package` | **fixed in Block 4G** — see below |
+
+**Bug found and fixed (Block 4G):** `buildWorkflowBriefReleasePackageStatus` returned the
+raw `releasePackage: data.finalReleasePackageMeta` (internal packaging/automation
+metadata) **unconditionally**, alongside the already-sanitized `clientReleasePackage`,
+because `getWorkflowBriefReleasePackageStatus` only requires `canAccessClient` (not
+`isOwnerRole`) and is therefore reachable by clients. Fixed to `releasePackage: isAdmin ?
+data.finalReleasePackageMeta : null`. The frontend never read the raw field (only
+`clientReleasePackage`), so admin behavior is unaffected. The existing boundary smoke
+assertion passed before the fix only because this brief's release package happened to be
+unfinalized (`null`) at test time — strengthened in Block 4G to also assert the absence of
+the internal-only marker `packageFingerprint`, which is meaningful regardless of test data
+state.
+
+**Admin-only automation controls confirmed hidden from clients** (verified via code
+reading of every JSX gate and every underlying mutation function): AI run trigger, seed
+content production, generate/regenerate content drafts, package/repackage deliverables,
+prepare/refresh image sets, prepare release, finalize release package, execute publication
+handoff. Each is either explicitly gated by `canManageAi &&` in the JSX, or the
+server-computed status flag (`canSeed`, `canGenerateDrafts`, `canPackageAll`, etc.) is
+hard-coded `false` for non-admin — and every underlying mutation function independently
+enforces `isOwnerRole` server-side regardless of what the frontend renders.
+
+**Client actions allowed:** view own workflow brief detail (sanitized), view MI/SEO
+report content (sanitized), view/approve/reject a `ProductionPlan` once it is
+`SENT_TO_CLIENT` (not while `DRAFT`).
+
+**Deferred / requires escalation (not fixed in Block 4G):** ~~`ClientSafeReleasePackage`
+(built in `workflow-brief-final-release.execution.ts`, consumed by
+`client-portal.runtime.ts`'s `getClientPortalReleasePackage`) includes a
+`releasePackageId` field in its client-facing shape.~~ **Fixed in Block 4G-FIX.**
+
+**Bug found and fixed (Block 4G-FIX):** `ClientSafeReleasePackage` (the type shared by
+both the `/workflow-briefs/:id/release-package` and
+`/client-portal/projects/:id/release-package` endpoints) included a `releasePackageId`
+field — explicitly forbidden client-visible content per this project's client-safe
+boundary policy, present in the JSON payload (though never rendered as visible UI text).
+Removed `releasePackageId` entirely from `ClientSafeReleasePackage`,
+`buildClientSafeReleasePackage`, `sanitizeClientSafeReleasePackage` (all in
+`workflow-brief-final-release.execution.ts`), and `sanitizeClientPortalReleasePackage`
+(in `client-portal.runtime.ts` — required scope expansion, approved by the human operator,
+since removing the field from the shared type would otherwise break that file's
+compilation). The internal/admin-only `WorkflowBriefFinalReleasePackageRecord.releasePackageId`
+(top-level, not part of the client-safe subset) is unchanged and still used for admin
+release-package tracking. `toClientSafeReleasePackageFromRecord`'s validity check was
+switched from `clientSnapshot.releasePackageId` to `clientSnapshot.finalizedAt` (both are
+reliable non-empty markers once a package is genuinely finalized). Boundary smoke
+strengthened with data-independent assertions on both endpoints proving `releasePackageId`
+never appears in the response text.
+
 ## Related docs
 
 - [`docs/ai-delivery-projects-mvp-prd.md`](../ai-delivery-projects-mvp-prd.md)
