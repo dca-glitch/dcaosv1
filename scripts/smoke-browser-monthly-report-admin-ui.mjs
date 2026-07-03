@@ -44,7 +44,7 @@ function containsForbiddenToken(text, token) {
 }
 
 async function waitForReportStatusBadge(modalPanel, label) {
-  await modalPanel.locator(".status-badge", { hasText: label }).first().waitFor({ state: "visible", timeout: 15000 });
+  await modalPanel.locator(".ds-badge", { hasText: label }).first().waitFor({ state: "visible", timeout: 15000 });
 }
 
 async function request(path, options = {}) {
@@ -180,22 +180,25 @@ async function createFixture(token) {
   };
 }
 
-async function ensureMonthlyReportMenuOpen(projectCard) {
-  const monthlyReportButton = projectCard.getByRole("button", { name: "Monthly Report" });
-  if (!(await monthlyReportButton.isVisible())) {
-    await projectCard.locator("summary", { hasText: "More" }).click();
-  }
+function getMonthlyReportDialog(page, projectName) {
+  const escapedProjectName = projectName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return page.getByRole("dialog", { name: new RegExp(`Monthly Report\\s+—\\s+${escapedProjectName}`) });
+}
+
+async function selectProjectInPicker(page, projectName) {
+  const projectListItem = page.locator("button.brief-select-item").filter({ hasText: projectName }).first();
+  await projectListItem.waitFor({ state: "visible", timeout: 15000 });
+  await projectListItem.click();
+  return projectListItem;
 }
 
 async function openMonthlyReportModal(page, projectName) {
-  const projectCard = page.locator("article.entity-card", { hasText: projectName }).first();
-  await projectCard.waitFor({ state: "visible", timeout: 15000 });
-  await ensureMonthlyReportMenuOpen(projectCard);
-  await projectCard.getByRole("button", { name: "Monthly Report" }).click();
-  await page.getByRole("heading", { name: new RegExp(`Monthly Report\\s+—\\s+${projectName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`) }).waitFor({
-    state: "visible",
-    timeout: 15000
-  });
+  await selectProjectInPicker(page, projectName);
+  const workspaceSection = page.locator(".ai-delivery-workspace-stack");
+  const monthlyReportButton = workspaceSection.getByRole("button", { name: "Monthly report" });
+  await monthlyReportButton.waitFor({ state: "visible", timeout: 15000 });
+  await monthlyReportButton.click();
+  await getMonthlyReportDialog(page, projectName).waitFor({ state: "visible", timeout: 15000 });
 }
 
 async function main() {
@@ -254,31 +257,33 @@ async function main() {
     await page.getByRole("heading", { name: "AI Delivery Projects" }).waitFor({ state: "visible", timeout: 15000 });
 
     record("ai delivery page loads", true, "heading visible");
-    const primaryProjectCard = page.locator("article.entity-card", { hasText: fixture.primaryProject.name }).first();
-    await primaryProjectCard.waitFor({ state: "visible", timeout: 15000 });
+    const primaryProjectListItem = await selectProjectInPicker(page, fixture.primaryProject.name);
 
-    const cardText = await primaryProjectCard.innerText();
-    record("project card shows More actions menu", cardText.includes("More"), fixture.primaryProject.name);
-    await ensureMonthlyReportMenuOpen(primaryProjectCard);
+    const listItemText = await primaryProjectListItem.innerText();
+    record("project picker item shows project name", listItemText.includes(fixture.primaryProject.name), fixture.primaryProject.name);
+    const workspaceSection = page.locator(".ai-delivery-workspace-stack");
+    await workspaceSection.waitFor({ state: "visible", timeout: 15000 });
     record(
-      "project card shows Reports group",
-      await primaryProjectCard.locator(".row-action-menu-label", { hasText: "Reports" }).isVisible(),
+      "workspace shows Monthly report section",
+      await workspaceSection.getByRole("heading", { name: "Monthly report" }).isVisible(),
       fixture.primaryProject.name
     );
     record(
-      "project card shows Monthly Report button",
-      await primaryProjectCard.getByRole("button", { name: "Monthly Report" }).isVisible(),
+      "workspace shows Monthly report button",
+      await workspaceSection.getByRole("button", { name: "Monthly report" }).isVisible(),
       fixture.primaryProject.name
     );
 
     await openMonthlyReportModal(page, fixture.primaryProject.name);
     record("monthly report modal opens", true, fixture.primaryProject.name);
 
-    const modalPanel = page.locator(".modal-panel", { hasText: `Monthly Report — ${fixture.primaryProject.name}` }).first();
-    await modalPanel.getByRole("heading", { name: "Computed Monthly Summary" }).waitFor({ state: "visible", timeout: 15000 });
+    const modalPanel = getMonthlyReportDialog(page, fixture.primaryProject.name);
+    const summaryPanel = modalPanel.locator(".monthly-report-summary-panel");
+    await summaryPanel.getByRole("heading", { name: "Computed Monthly Summary" }).waitFor({ state: "visible", timeout: 15000 });
     record("computed summary section visible", true, "Computed Monthly Summary");
+    await summaryPanel.locator('[aria-label="Monthly report snapshot metrics"]').waitFor({ state: "visible", timeout: 15000 });
 
-    const modalText = await modalPanel.innerText();
+    const modalText = await summaryPanel.innerText();
     record("summary shows project/client/month", modalText.includes(fixture.primaryProject.name) && modalText.includes(fixture.clientName), "header values");
     record(
       "summary shows totals or empty state",
@@ -346,14 +351,14 @@ async function main() {
     record("modal closes cleanly", true, fixture.primaryProject.name);
 
     await openMonthlyReportModal(page, fixture.primaryProject.name);
-    const reopenedPanel = page.locator(".modal-panel", { hasText: `Monthly Report — ${fixture.primaryProject.name}` }).first();
+    const reopenedPanel = getMonthlyReportDialog(page, fixture.primaryProject.name);
     await reopenedPanel.getByLabel(/^Report title/i).waitFor({ state: "visible", timeout: 15000 });
     const reopenedTitle = await reopenedPanel.getByLabel(/^Report title/i).inputValue();
     record("same-project reopen reloads saved state", reopenedTitle === smokeTitle, reopenedTitle);
 
     await reopenedPanel.getByRole("button", { name: "Close" }).first().click();
     await openMonthlyReportModal(page, fixture.secondaryProject.name);
-    const secondPanel = page.locator(".modal-panel", { hasText: `Monthly Report — ${fixture.secondaryProject.name}` }).first();
+    const secondPanel = getMonthlyReportDialog(page, fixture.secondaryProject.name);
     const secondPanelText = await secondPanel.innerText();
     const staleLeak = secondPanelText.includes(smokeTitle) || secondPanelText.includes(smokeAdminNotes) || secondPanelText.includes(smokeRecommendations);
     record("no stale report state leak across projects", !staleLeak, fixture.secondaryProject.name);
