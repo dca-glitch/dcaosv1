@@ -548,7 +548,7 @@ const clientNavigationItems: AppNavigationItem[] = [
     icon: <Archive size={16} strokeWidth={2} />
   },
   { view: "briefs", label: "Briefs", section: "client", icon: <ClipboardList size={16} strokeWidth={2} /> },
-  { view: "workflow-briefs", label: "Content Briefs", section: "client", icon: <ClipboardList size={16} strokeWidth={2} /> },
+  { view: "workflow-briefs", label: "Production Plan Review", section: "client", icon: <ClipboardList size={16} strokeWidth={2} /> },
   {
     view: "pending-approvals",
     label: "Pending Approvals",

@@ -1129,9 +1129,13 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
     <section className="view-section" data-density="compact">
       <PageHeader
         eyebrow="AI Delivery"
-        title="Workflow Briefs"
+        title={canManageAi ? "Workflow Briefs" : "Production Plan Review"}
         titleId="workflow-briefs-title"
-        description="Brief-centered workflow foundation: brief input, AI reports, and production plan."
+        description={
+          canManageAi
+            ? "Brief-centered workflow foundation: brief input, AI reports, and production plan."
+            : "Review the production plan prepared for your project and approve or request changes before production begins."
+        }
       />
 
       {error ? <ErrorState title="Workflow brief error" message={error} /> : null}

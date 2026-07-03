@@ -49,21 +49,24 @@ established by the Block 4B strategic architecture review.
   `Brief` (WorkflowBrief) is the richer, composable intake/context layer. Both currently
   exist; neither has been removed or scheduled for removal.
 
-## Known product/UX risk — confirmed as stage distinction, not duplication (Block 4D)
+## Known product/UX risk — resolved via label clarification (Block 4F)
 
-Two client-facing "Brief"-labeled nav items are shown to the same client-only user
-simultaneously, but they gate different pipeline stages, not the same decision:
+**Correction to the Block 4D finding:** `#/client-portal/briefs` renders `BriefPage`, the
+**legacy `ClientMonthlyBrief`** content-brief intake/status page — not the finalized
+release package as previously documented here. The read-only, already-finalized release
+package view is part of the default `#/client-portal` ("Your archive") experience, not a
+separately-labeled "Briefs" surface.
 
-- `#/client-portal/briefs` — **read-only**, already-finalized release package view
-  (`getClientPortalReleasePackage`), populated only after release-package finalization.
-- WorkflowBriefsPage "Content Briefs" client nav — the **earlier-stage** `ProductionPlan`
-  approve/reject action, before production/drafting begins.
+The two client nav items that actually shared the word "Brief" were:
 
-The remaining risk is UX clarity (two similarly-named nav entries), not a functional
-duplicate. Not scoped for consolidation in this docs block.
+- **"Briefs"** → `BriefPage` → legacy `ClientMonthlyBrief` content-brief intake.
+- **"Content Briefs"** → `WorkflowBriefsPage` → `ProductionPlan` approve/reject, an
+  earlier pipeline stage before production/drafting begins.
 
-This dual surface is a known risk flagged for future product/UX review. It is **not**
-being refactored or consolidated as part of this documentation update.
+**Fix applied (Block 4F):** renamed the WorkflowBriefsPage client-facing nav label and
+in-page heading (client view only — admin nav label "Workflow Briefs" and admin in-page
+title are unchanged) to **"Production Plan Review"**. No routing, approval semantics, or
+data model changed.
 
 ## Client-safe boundary (unchanged)
 

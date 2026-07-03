@@ -9,7 +9,7 @@ The Client Portal is an active client-safe surface for final deliverables and re
 - `#/client-portal` routes to the portal shell and defaults to **Your archive**
 - `#/archive` is the separate archive hub
 - `#/client-portal/pending-approvals` shows pending approvals
-- `#/client-portal/briefs` shows brief review
+- `#/client-portal/briefs` shows the legacy `ClientMonthlyBrief` content-brief intake/status page (`BriefPage`)
 - `#/client-portal/deliverables/:id/approve` opens the deliverable approval editor
 - client-only users can access portal routes and remain blocked from admin-only views
 
@@ -35,21 +35,28 @@ Forbidden visible fields include:
 - deliverable approval
 - FINAL-only monthly reports
 
-## Briefs vs Content Briefs (stage distinction, confirmed by Block 4D review)
+## Briefs vs Production Plan Review (stage distinction, corrected in Block 4F)
 
-`#/client-portal/briefs` and the separate `WorkflowBriefsPage` client nav item ("Content
-Briefs") are **different pipeline stages, not duplicate surfaces**:
+**Correction to the Block 4D/4C finding:** `#/client-portal/briefs` renders `BriefPage`,
+which is the **legacy `ClientMonthlyBrief`** submission/status page (hub/geo/lifestyle
+content-count brief intake) — not the finalized release package as previously documented.
+The read-only, already-finalized release package view is part of the default `#/client-portal`
+("Your archive") experience (`getClientPortalReleasePackage`, sourced from
+`ProductionPlan.planJson.releasePackage.clientSnapshot`), not a separately-labeled "Briefs"
+surface.
 
-- `#/client-portal/briefs` renders a **read-only, already-finalized** release package
-  (`getClientPortalReleasePackage`, sourced from `ProductionPlan.planJson.releasePackage.clientSnapshot`),
-  only populated after release-package finalization.
-- `WorkflowBriefsPage` "Content Briefs" is the **earlier-stage** production-plan
-  approve/reject action, before production/drafting begins.
+The two client-visible surfaces that actually competed for the word "Brief" were:
 
-Both nav items are shown to the same client-only user today, which remains a known
-product/UX clarity risk (two "Brief"-labeled nav entries), but they do not gate the same
-decision. See [`docs/modules/WORKFLOW_BRIEFS_MODULE_PLAN.md`](./WORKFLOW_BRIEFS_MODULE_PLAN.md).
-No UX behavior change is made here.
+- **"Briefs"** nav item → `BriefPage` → legacy `ClientMonthlyBrief` content-brief intake.
+- **"Content Briefs"** nav item → `WorkflowBriefsPage` → `ProductionPlan` approve/reject,
+  an earlier pipeline stage before production/drafting begins.
+
+**Block 4F fix:** the WorkflowBriefsPage client nav label and its in-page heading (client
+view only; admin view unchanged) were renamed from "Content Briefs"/"Workflow Briefs" to
+**"Production Plan Review"**, so the nav label and the page title now match and no longer
+share the word "Brief" with the legacy `BriefPage` nav item. No routing, approval semantics,
+or admin-facing wording changed. See
+[`docs/modules/WORKFLOW_BRIEFS_MODULE_PLAN.md`](./WORKFLOW_BRIEFS_MODULE_PLAN.md).
 
 ## Deferred
 

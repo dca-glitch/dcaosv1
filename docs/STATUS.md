@@ -105,6 +105,8 @@ Completed admin-operated pieces:
 - **content plan PDF handoff readiness state in admin UI (Block 3E)** — reuses the existing download-reference endpoint to show ready/not-ready state and gates the Download PDF button; no schema or endpoint changes
 - **stale PDF invalidation on plan edit (Block 3F)** — item edits and status changes (review/approve/changes-requested, admin and client-facing) now clear the stored PDF reference so admins are never shown a stale document as ready
 - **WorkflowBriefs vs AiDelivery architecture clarification (Block 4B/4C)** — WorkflowBriefs is a confirmed active intake/context-composition + production-automation layer, not legacy and not a duplicate production workspace; it writes into AiDelivery's shared production tables. See [`docs/modules/WORKFLOW_BRIEFS_MODULE_PLAN.md`](./modules/WORKFLOW_BRIEFS_MODULE_PLAN.md).
+- **WorkflowBriefs reportJson client-safe sanitization (Block 4E)** — MI/SEO report provider/run metadata (gateway, model, version) is now stripped for non-admin/client callers; admin responses unchanged.
+- **Client brief-surface label clarification (Block 4F)** — corrected an earlier documentation error (`#/client-portal/briefs` is the legacy `ClientMonthlyBrief` page, not the release package view) and renamed the WorkflowBriefsPage client-facing nav label/heading from "Content Briefs"/"Workflow Briefs" to "Production Plan Review" to reduce naming collision; no routing or behavior changed.
 
 Still deferred:
 
