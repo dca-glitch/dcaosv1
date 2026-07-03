@@ -52,8 +52,16 @@ safe `knowledgeContext` metadata is persisted on admin-only `ProductionPlan.plan
 generation). Raw knowledge bodies and `contextSection` are never stored on
 `clientVisibleSnapshotJson` or other client-reachable surfaces.
 
-**Still deferred:** UI knowledge picker on brief screens; dedicated `AiContextSnapshot` audit
-rows per brief run (`briefId` FK does not exist today).
+**Block 6C-v1 (planned):** admin read-only visibility of safe `knowledgeContext` metadata on
+Workflow Briefs admin UI (MI/SEO run, production plan generation, content draft
+generation/regeneration). Displays `used` / `selectedCount` / `selectedItemTitles` /
+`skippedReason` / `sanitizeFlagCount` / `trimmed` only — no raw `contextPreview`,
+`contextSection`, `selectedSourcesJson`, or knowledge bodies. Not client-visible.
+
+**Block 6C-v2 (deferred):** UI knowledge picker / override on brief screens.
+
+**Block 6D (deferred):** dedicated `AiContextSnapshot` audit rows per brief run (`briefId` FK
+does not exist today).
 
 ## What AiDelivery owns
 
