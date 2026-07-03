@@ -88,6 +88,14 @@ does not exist today).
   `Brief` (WorkflowBrief) is the richer, composable intake/context layer. Both currently
   exist; neither has been removed or scheduled for removal.
 
+**Legacy `ClientMonthlyBrief` (XXL 4A — separate intake, not WorkflowBriefs):** `/api/v1/briefs`
+and client routes `#/briefs` / `#/client-portal/briefs` (`BriefPage`) remain **active
+legacy/compatibility intake** for monthly/additional content-count briefs (`ClientMonthlyBrief`
+→ DB table `Brief`). This is **not** the WorkflowBrief `Brief` model and is **not** connected
+to WorkflowBriefs production automation or AiDelivery shared production tables. Do not remove
+or migrate without a separate approved product deprecation block. Optional future naming/nav
+polish only.
+
 ## Known product/UX risk — resolved via label clarification (Block 4F)
 
 **Correction to the Block 4D finding:** `#/client-portal/briefs` renders `BriefPage`, the
@@ -111,8 +119,11 @@ data model changed.
 
 Regardless of which pipeline originates a record, clients must never see internal
 metadata, provider/run logs, workflow execution logs, `storageKey`, `releasePackageId`,
-`sourceType`, `workflowRunId`, `executionLog`, or draft internals unless explicitly
-exposed as review/final output.
+`workflowRunId`, `executionLog`, or draft internals unless explicitly exposed as review/final
+output. **`sourceType` on workflow/deliverable internals remains forbidden.** On FINAL
+monthly report detail, `performanceSummary.sourceType` (and related provenance fields such as
+`manualSource` / `disclaimer`) may be exposed intentionally as client-safe metric provenance
+per [`docs/modules/CLIENT_PORTAL_PLAN.md`](./CLIENT_PORTAL_PLAN.md).
 
 **reportJson sanitization rule (Block 4E):** `AiMiReport.reportJson` and
 `AiSeoReport.reportJson` embed provider/run metadata (`gateway`, `model`, `version`,

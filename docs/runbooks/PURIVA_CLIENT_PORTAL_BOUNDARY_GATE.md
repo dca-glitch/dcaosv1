@@ -28,10 +28,20 @@ Related:
 
 - `Publication handoff` / `Prepare WordPress drafts`
 - `structuredInputJson`, `promptScaffold`, internal scaffold labels
-- `storageKey`, `releasePackageId`, `ADMIN_REVIEW`, `sourceType`
+- `storageKey`, `releasePackageId`, `ADMIN_REVIEW`
 - `workflowRunId`, `executionLog`, `providerMetadata`
 - provider/run metadata
 - Admin workflow brief / handoff API paths
+- Raw metric snapshot/import/admin internals: snapshot `notes`, `itemMetrics`,
+  `placeholderDisclaimer`, `verificationRequiredNotes`, `awaitingAnalyticsNote`,
+  `miHandoffId`, `miContextDraft`, `adminSummaryNotes`, import/approve user metadata,
+  raw snapshot list objects, and Puriva seed markers in report titles
+
+**Allowed on client monthly report detail (provenance only):** `performanceSummary` may
+include client-safe fields such as `sourceType`, `manualSource`, `placeholderOnly`,
+`disclaimer`, `itemCount`, and normalized GSC/GA4 totals when sourced from an approved
+snapshot. This is intentional metric provenance, not a raw provider payload. See
+[`docs/modules/CLIENT_PORTAL_PLAN.md`](../modules/CLIENT_PORTAL_PLAN.md).
 
 ---
 

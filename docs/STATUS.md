@@ -36,11 +36,11 @@ Historical post-merge record: [`docs/operator/post-merge-completion-status-20260
 - Client Portal monthly reports archive route + browser proof closure.
 - Monthly Report PDF/upload/signed download admin and client portal endpoints implemented and local-smoke-proven.
 - Current route map:
-  - `#/client-portal` → ClientPortalPage / **Your archive**
+  - `#/client-portal` → ClientPortalPage / **Your archive** (canonical live client monthly reports: list, detail, download)
   - `#/archive` → ArchiveHubPage / **Archive**
-  - `#/monthly-reports` → MonthlyReportsPage
+  - `#/monthly-reports` → MonthlyReportsPage — **stub/static empty-state only**; does not load report API data. Canonical reports live under `#/client-portal`. Wiring/redirect is a future frontend block.
   - `#/client-portal/pending-approvals` → PendingApprovalsPage
-  - `#/client-portal/briefs` → BriefPage
+  - `#/client-portal/briefs` → BriefPage (legacy `ClientMonthlyBrief` intake — active, not WorkflowBriefs)
   - `#/client-portal/deliverables/:id/approve` → ArticleApprovalEditor
 - Client Access Admin UI foundation closed for MVP: owner/admin users can grant, list, and revoke tenant-scoped client-level `ClientUserAccess`; Client Portal remains read-only and restricted to final client-safe data.
 - AI Gateway v1 merged on `main` (PR #33): guarded provider config, local deterministic default, AI knowledge context, workflow execution observability metadata.

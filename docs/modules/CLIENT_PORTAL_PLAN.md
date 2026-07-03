@@ -11,6 +11,8 @@ The Client Portal is an active client-safe surface for final deliverables and re
 - `#/client-portal/pending-approvals` shows pending approvals
 - `#/client-portal/briefs` shows the legacy `ClientMonthlyBrief` content-brief intake/status page (`BriefPage`)
 - `#/client-portal/deliverables/:id/approve` opens the deliverable approval editor
+- `#/monthly-reports` exists as a **stub/static page** (`MonthlyReportsPage`) with an empty-state shell only — it does **not** load live report data
+- **Canonical live client monthly reports** are inside `#/client-portal` (`ClientPortalPage`): list, detail, performance summary, and PDF download. Wiring or redirecting `#/monthly-reports` to that experience is a future frontend block (not completed in XXL 4A).
 - client-only users can access portal routes and remain blocked from admin-only views
 
 ## Client-safe boundary
@@ -22,10 +24,18 @@ Forbidden visible fields include:
 - `storageKey`
 - `releasePackageId`
 - `ADMIN_REVIEW`
-- `sourceType`
 - `workflowRunId`
 - `executionLog`
 - provider/run metadata
+- raw metric snapshot objects, import notes, and other admin-only metrics internals (see monthly report provenance below)
+
+**Monthly report metrics provenance (intentional client-safe exception):** on FINAL report
+detail, `performanceSummary` may expose client-safe provenance fields derived from an
+**approved** metrics snapshot — for example `sourceType`, `manualSource`, `placeholderOnly`,
+`disclaimer`, `itemCount`, and normalized GSC/GA4 totals. These tell the client whether
+metrics are manual/placeholder vs reviewed totals; they are **not** raw provider payloads.
+Admin-only metric snapshot fields (`notes`, import/approve metadata, raw snapshot records,
+`itemMetrics`, seed markers) must not appear on client portal responses.
 
 **Known gap confirmed in Block 4G, fixed in Block 4G-FIX:** `releasePackageId` was present
 in the release-package JSON payload returned by `getClientPortalReleasePackage` (sourced
@@ -75,6 +85,13 @@ view only; admin view unchanged) were renamed from "Content Briefs"/"Workflow Br
 share the word "Brief" with the legacy `BriefPage` nav item. No routing, approval semantics,
 or admin-facing wording changed. See
 [`docs/modules/WORKFLOW_BRIEFS_MODULE_PLAN.md`](./WORKFLOW_BRIEFS_MODULE_PLAN.md).
+
+**Legacy `ClientMonthlyBrief` status (XXL 4A):** `/api/v1/briefs` and `#/briefs` /
+`#/client-portal/briefs` remain **active legacy/compatibility intake** for monthly and
+additional content-count briefs. This surface is **distinct** from WorkflowBriefs /
+Production Plan Review and is **not** wired into the WorkflowBriefs or AiDelivery production
+pipeline. Do not remove, migrate, or deprecate it without a separate approved product block.
+Optional future naming or nav polish only.
 
 ## Deferred
 
