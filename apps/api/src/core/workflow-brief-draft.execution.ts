@@ -11,9 +11,11 @@ import {
 } from "./ai-gateway-v1.service";
 import { toAiTextBudget, type AiTextBudget } from "./ai-text-budget.policy";
 import type {
+  WorkflowBriefAiKnowledgeContextMeta,
   WorkflowBriefMiReportContent,
   WorkflowBriefSeoReportContent
 } from "./workflow-brief-ai.execution";
+import { buildWorkflowBriefKnowledgeContextLogLines } from "./workflow-brief-ai.execution";
 import { isWorkflowBriefSeedItemForBrief } from "./workflow-brief-content-seed.execution";
 
 export const WORKFLOW_BRIEF_DRAFT_VERSION = "WORKFLOW_BRIEF_DRAFT_V1";
@@ -44,6 +46,10 @@ export interface WorkflowBriefDraftGenerationInput {
   seo: WorkflowBriefSeoReportContent;
   recommendedContentDirection: string | null;
   finishedAtIso: string;
+  /** Sanitized approved-knowledge section from Context Builder — admin-internal prompt input only. */
+  approvedKnowledgeSection?: string | null;
+  /** Safe metadata for run audit logs — never includes raw knowledge body text. */
+  knowledgeContext?: WorkflowBriefAiKnowledgeContextMeta | null;
 }
 
 export interface WorkflowBriefGeneratedDraftContent {
@@ -268,6 +274,24 @@ function buildCompactDraftContext(input: WorkflowBriefDraftGenerationInput): str
   return lines.join("\n");
 }
 
+export function composeWorkflowBriefDraftContextText(input: WorkflowBriefDraftGenerationInput): string {
+  const draftContext = buildCompactDraftContext(input);
+  const knowledgeSection = input.approvedKnowledgeSection?.trim();
+  return knowledgeSection ? `${knowledgeSection}\n\n${draftContext}` : draftContext;
+}
+
+function buildKnowledgePrefixedDraftExecutionLog(
+  input: WorkflowBriefDraftGenerationInput,
+  bodyLines: string[],
+  observabilityLine?: string
+): string[] {
+  return [
+    ...buildExecutionLogEntries(input.finishedAtIso, buildWorkflowBriefKnowledgeContextLogLines(input.knowledgeContext)),
+    ...buildExecutionLogEntries(input.finishedAtIso, bodyLines),
+    ...(observabilityLine ? [observabilityLine] : [])
+  ];
+}
+
 function extractJsonObject(text: string): string | null {
   const start = text.indexOf("{");
   const end = text.lastIndexOf("}");
@@ -342,11 +366,11 @@ function buildLocalSuccessResult(
     ok: true,
     draft,
     meta,
-    executionLog: buildExecutionLogEntries(input.finishedAtIso, [
-      "Local deterministic content draft generated.",
-      `Plan item: ${input.planItem.title}`,
+    executionLog: buildKnowledgePrefixedDraftExecutionLog(
+      input,
+      ["Local deterministic content draft generated.", `Plan item: ${input.planItem.title}`],
       buildObservabilityBlock(meta)
-    ]),
+    ),
     errorMessage: null
   };
 }
@@ -355,7 +379,7 @@ export async function executeWorkflowBriefDraftGeneration(
   input: WorkflowBriefDraftGenerationInput,
   config: AiProviderConfig = getAiProviderConfig()
 ): Promise<WorkflowBriefDraftExecutionResult> {
-  const compactContext = buildCompactDraftContext(input);
+  const compactContext = composeWorkflowBriefDraftContextText(input);
   const preparedContext = prepareAiGatewayV1Context(compactContext, "article_draft");
   const gateway = resolveAiGatewayExecutionMode(config);
   const budget = toAiTextBudget(preparedContext.budgetDecision);
@@ -422,11 +446,11 @@ export async function executeWorkflowBriefDraftGeneration(
       )
     },
     meta,
-    executionLog: buildExecutionLogEntries(input.finishedAtIso, [
-      "Provider-backed content draft generated.",
-      `Plan item: ${input.planItem.title}`,
+    executionLog: buildKnowledgePrefixedDraftExecutionLog(
+      input,
+      ["Provider-backed content draft generated.", `Plan item: ${input.planItem.title}`],
       buildObservabilityBlock(meta)
-    ]),
+    ),
     errorMessage: null
   };
 }

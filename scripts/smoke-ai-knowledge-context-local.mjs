@@ -31,6 +31,43 @@ function assertNoLiveProviderLeak(payload, contextLabel) {
   }
 }
 
+function assertSafeKnowledgeMetadata(knowledgeContext, contextLabel) {
+  if (!knowledgeContext || typeof knowledgeContext !== "object") {
+    fail(`${contextLabel} did not persist safe knowledgeContext metadata.`);
+  }
+  if (typeof knowledgeContext.used !== "boolean") {
+    fail(`${contextLabel} knowledgeContext.used must be boolean.`);
+  }
+  if (typeof knowledgeContext.selectedCount !== "number") {
+    fail(`${contextLabel} knowledgeContext.selectedCount must be number.`);
+  }
+  if (!Array.isArray(knowledgeContext.selectedItemTitles)) {
+    fail(`${contextLabel} knowledgeContext.selectedItemTitles must be an array.`);
+  }
+  if (!("skippedReason" in knowledgeContext)) {
+    fail(`${contextLabel} knowledgeContext.skippedReason missing.`);
+  }
+  if (typeof knowledgeContext.sanitizeFlagCount !== "number") {
+    fail(`${contextLabel} knowledgeContext.sanitizeFlagCount must be number.`);
+  }
+  if (typeof knowledgeContext.trimmed !== "boolean") {
+    fail(`${contextLabel} knowledgeContext.trimmed must be boolean.`);
+  }
+}
+
+function assertNoRawKnowledgeLeak(payload, contextLabel) {
+  const serialized = JSON.stringify(payload);
+  if (payload?.contextSection || payload?.approvedKnowledgeSection) {
+    fail(`${contextLabel} persisted raw knowledge context section.`);
+  }
+  if (/contextSection|approvedKnowledgeSection|selectedSourcesJson|contextPreview/i.test(serialized)) {
+    fail(`${contextLabel} appears to include raw knowledge context internals.`);
+  }
+  if (/ignore previous instructions/i.test(serialized)) {
+    fail(`${contextLabel} appears to include raw injection phrase text.`);
+  }
+}
+
 async function apiCall(method, path, body, token) {
   const headers = { "Content-Type": "application/json" };
   if (token) headers.Authorization = `Bearer ${token}`;
@@ -436,6 +473,48 @@ async function main() {
     }
     assertNoLiveProviderLeak(workflowRun, "Workflow brief AI run");
     pass("Workflow brief AI run includes approved knowledge context metadata without raw context leak");
+
+    const generatedPlan = requireOk(
+      "Generate workflow brief production plan with knowledge context",
+      await apiCall("POST", `/workflow-briefs/${workflowBriefId}/production-plan/generate`, null, token)
+    );
+    const planRecord = generatedPlan.plan ?? generatedPlan;
+    const planJson = planRecord?.planJson;
+    assertSafeKnowledgeMetadata(planJson?.knowledgeContext, "Workflow brief production plan");
+    if (!planJson?.knowledgeContext?.used) {
+      fail("Workflow brief production plan knowledgeContext.used should be true when client-scoped approved knowledge exists.");
+    }
+    assertNoRawKnowledgeLeak(planJson, "Workflow brief production plan planJson");
+    assertNoRawKnowledgeLeak(planRecord?.clientVisibleSnapshotJson, "Workflow brief production plan client snapshot");
+    assertNoLiveProviderLeak(planRecord?.clientVisibleSnapshotJson, "Workflow brief production plan client snapshot");
+    pass("Workflow brief production plan persists safe knowledgeContext metadata without raw context leak");
+
+    requireOk(
+      "Create linked AI Delivery project for workflow brief drafts",
+      await apiCall("POST", `/workflow-briefs/${workflowBriefId}/create-project`, {}, token)
+    );
+    requireOk(
+      "Seed workflow brief content production",
+      await apiCall("POST", `/workflow-briefs/${workflowBriefId}/seed-content-production`, null, token)
+    );
+    requireOk(
+      "Generate workflow brief content drafts with knowledge context",
+      await apiCall("POST", `/workflow-briefs/${workflowBriefId}/generate-content-drafts`, null, token)
+    );
+
+    const planAfterDrafts = requireOk(
+      "Load workflow brief production plan after draft generation",
+      await apiCall("GET", `/workflow-briefs/${workflowBriefId}/production-plan`, null, token)
+    );
+    const planAfterDraftsRecord = planAfterDrafts.plan ?? planAfterDrafts;
+    const draftsKnowledgeContext = planAfterDraftsRecord?.planJson?.contentDrafts?.knowledgeContext;
+    assertSafeKnowledgeMetadata(draftsKnowledgeContext, "Workflow brief content drafts");
+    if (!draftsKnowledgeContext?.used) {
+      fail("Workflow brief content drafts knowledgeContext.used should be true when client-scoped approved knowledge exists.");
+    }
+    assertNoRawKnowledgeLeak(planAfterDraftsRecord?.planJson, "Workflow brief content drafts planJson");
+    assertNoRawKnowledgeLeak(planAfterDraftsRecord?.clientVisibleSnapshotJson, "Workflow brief content drafts client snapshot");
+    pass("Workflow brief content drafts persist safe knowledgeContext metadata without raw context leak");
 
     console.log("\nAI Knowledge + Context smoke completed successfully.");
   } finally {

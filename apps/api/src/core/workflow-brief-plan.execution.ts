@@ -11,9 +11,11 @@ import {
 } from "./ai-gateway-v1.service";
 import { toAiTextBudget, type AiTextBudget } from "./ai-text-budget.policy";
 import type {
+  WorkflowBriefAiKnowledgeContextMeta,
   WorkflowBriefMiReportContent,
   WorkflowBriefSeoReportContent
 } from "./workflow-brief-ai.execution";
+import { buildWorkflowBriefKnowledgeContextLogLines } from "./workflow-brief-ai.execution";
 
 export const WORKFLOW_BRIEF_PLAN_VERSION = "WORKFLOW_BRIEF_PLAN_V1";
 
@@ -32,6 +34,10 @@ export interface WorkflowBriefPlanGenerationInput {
   mi: WorkflowBriefMiReportContent;
   seo: WorkflowBriefSeoReportContent;
   finishedAtIso: string;
+  /** Sanitized approved-knowledge section from Context Builder — admin-internal prompt input only. */
+  approvedKnowledgeSection?: string | null;
+  /** Safe metadata for run audit logs — never includes raw knowledge body text. */
+  knowledgeContext?: WorkflowBriefAiKnowledgeContextMeta | null;
 }
 
 export interface WorkflowBriefContentCluster {
@@ -273,6 +279,24 @@ function buildCompactPlanContext(input: WorkflowBriefPlanGenerationInput): strin
   return sections.join("\n");
 }
 
+export function composeWorkflowBriefPlanContextText(input: WorkflowBriefPlanGenerationInput): string {
+  const planContext = buildCompactPlanContext(input);
+  const knowledgeSection = input.approvedKnowledgeSection?.trim();
+  return knowledgeSection ? `${knowledgeSection}\n\n${planContext}` : planContext;
+}
+
+function buildKnowledgePrefixedPlanExecutionLog(
+  input: WorkflowBriefPlanGenerationInput,
+  bodyLines: string[],
+  observabilityLine?: string
+): string[] {
+  return [
+    ...buildExecutionLogEntries(input.finishedAtIso, buildWorkflowBriefKnowledgeContextLogLines(input.knowledgeContext)),
+    ...buildExecutionLogEntries(input.finishedAtIso, bodyLines),
+    ...(observabilityLine ? [observabilityLine] : [])
+  ];
+}
+
 function buildPlanPrompt(contextText: string): { systemPrompt: string; userPrompt: string } {
   return {
     systemPrompt:
@@ -447,15 +471,16 @@ function buildLocalSuccessResult(
   const budget = toAiTextBudget(preparedContext.budgetDecision);
   const meta = buildMeta("local", "local-deterministic", input.finishedAtIso, false, budget, null);
 
-  const executionLog = [
-    ...buildExecutionLogEntries(input.finishedAtIso, [
+  const executionLog = buildKnowledgePrefixedPlanExecutionLog(
+    input,
+    [
       `${logPrefix} Local deterministic production plan generation completed.`,
       "No external AI services were called.",
       `Gateway: ${meta.gateway}.`,
       `Model: ${meta.model}.`
-    ]),
+    ],
     buildObservabilityBlock(meta)
-  ];
+  );
 
   return {
     ok: true,
@@ -471,8 +496,8 @@ export async function executeWorkflowBriefPlanGeneration(
   input: WorkflowBriefPlanGenerationInput,
   config: AiProviderConfig = getAiProviderConfig()
 ): Promise<WorkflowBriefPlanExecutionResult> {
-  const contextText = buildCompactPlanContext(input);
-  const preparedContext = prepareAiGatewayV1Context(contextText, "summary");
+  const contextText = composeWorkflowBriefPlanContextText(input);
+  const preparedContext = prepareAiGatewayV1Context(contextText, "content_plan_draft");
   const budget = toAiTextBudget(preparedContext.budgetDecision);
   const executionMode = resolveAiGatewayExecutionMode(config);
 
@@ -495,7 +520,7 @@ export async function executeWorkflowBriefPlanGeneration(
   const prompts = buildPlanPrompt(preparedContext.contextText);
   const gatewayResult = await executeAiGatewayV1ProviderText({
     config,
-    outputType: "summary",
+    outputType: "content_plan_draft",
     systemPrompt: prompts.systemPrompt,
     userPrompt: prompts.userPrompt,
     preparedContext,
@@ -542,14 +567,15 @@ export async function executeWorkflowBriefPlanGeneration(
   const clientSnapshot = buildClientSnapshotFromPlan(parsed);
   const meta = buildMeta("openrouter", gatewayResult.model, input.finishedAtIso, true, budget, null);
 
-  const executionLog = [
-    ...buildExecutionLogEntries(input.finishedAtIso, [
+  const executionLog = buildKnowledgePrefixedPlanExecutionLog(
+    input,
+    [
       "OpenRouter production plan generation completed successfully.",
       `Gateway: ${meta.gateway}.`,
       `Model: ${meta.model}.`
-    ]),
+    ],
     buildObservabilityBlock(meta)
-  ];
+  );
 
   return {
     ok: true,

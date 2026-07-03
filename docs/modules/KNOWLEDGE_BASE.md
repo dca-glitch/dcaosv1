@@ -55,6 +55,8 @@ Approved prompt-eligible knowledge is automatically composed into:
 
 1. **AI Delivery workflow execution context** via `buildAiWorkflowKnowledgeContext` when a workflow run executes (`core.runtime.ts` → `executeAiDeliveryWorkflowRun`).
 2. **WorkflowBriefs MI/SEO AI run context** via the same helper when `triggerWorkflowBriefAiRun` executes (`workflow-brief.runtime.ts` → `executeWorkflowBriefAiRun`). Only safe `knowledgeContext` metadata is stored on `AiBriefRun`; raw `contextSection` is admin-internal prompt input only.
+3. **WorkflowBriefs production plan generation** via `generateWorkflowBriefProductionPlan` (`workflowType: content_plan_draft`). Safe `knowledgeContext` metadata is stored on admin-only `ProductionPlan.planJson`.
+4. **WorkflowBriefs content draft generation** via `generateWorkflowBriefContentDrafts` / `regenerateWorkflowBriefContentDraft` (`workflowType: article_draft`). Safe `knowledgeContext` metadata is stored on admin-only `ProductionPlan.planJson.contentDrafts`.
 
 Existing compact project/brief/research/MI context is preserved and composed alongside knowledge context in both paths.
 

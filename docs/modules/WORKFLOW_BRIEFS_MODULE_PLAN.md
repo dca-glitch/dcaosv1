@@ -43,10 +43,17 @@ in `AiBriefRun.inputSnapshotJson`. Raw knowledge bodies and `contextSection` are
 persisted in the run snapshot or exposed on client-safe surfaces. Execution logs record
 include/skip lines matching the AiDelivery workflow-run pattern.
 
-**Still deferred:** wiring approved knowledge into WorkflowBriefs **production-plan** and
-**draft** generation paths (`workflow-brief-plan.execution.ts`,
-`workflow-brief-draft.execution.ts`); UI knowledge picker on brief screens; dedicated
-`AiContextSnapshot` audit rows per brief run (`briefId` FK does not exist today).
+**Block 6B (implemented):** `generateWorkflowBriefProductionPlan`,
+`generateWorkflowBriefContentDrafts`, and `regenerateWorkflowBriefContentDraft` now reuse
+the same `buildAiWorkflowKnowledgeContext` helper (`content_plan_draft` and `article_draft`
+workflow types). Sanitized `approvedKnowledgeSection` is prepended to prompt assembly only;
+safe `knowledgeContext` metadata is persisted on admin-only `ProductionPlan.planJson`
+(`knowledgeContext` for plan generation; `contentDrafts.knowledgeContext` for draft
+generation). Raw knowledge bodies and `contextSection` are never stored on
+`clientVisibleSnapshotJson` or other client-reachable surfaces.
+
+**Still deferred:** UI knowledge picker on brief screens; dedicated `AiContextSnapshot` audit
+rows per brief run (`briefId` FK does not exist today).
 
 ## What AiDelivery owns
 

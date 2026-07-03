@@ -80,10 +80,6 @@ Deferred:
 - persistent provider cost dashboards;
 - deep provider observability;
 - automatic AI execution without admin control;
-- wiring WorkflowBriefs **production-plan** and **draft** generation paths into the reusable
-  AI Knowledge/Context layer — Block 6A wired MI/SEO `triggerWorkflowBriefAiRun` only;
-  `workflow-brief-plan.execution.ts` and `workflow-brief-draft.execution.ts` remain unwired.
-  See [`docs/modules/WORKFLOW_BRIEFS_MODULE_PLAN.md`](../modules/WORKFLOW_BRIEFS_MODULE_PLAN.md).
 
 Current behavior:
 

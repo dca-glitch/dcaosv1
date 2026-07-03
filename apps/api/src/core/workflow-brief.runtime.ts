@@ -792,6 +792,28 @@ function toWorkflowBriefKnowledgeContextJson(
   return knowledgeContext as unknown as Prisma.InputJsonValue;
 }
 
+async function resolveWorkflowBriefKnowledgeForExecution(
+  tenantId: string,
+  briefId: string,
+  clientId: string,
+  workflowType: string
+): Promise<{
+  knowledgeContext: WorkflowBriefAiKnowledgeContextMeta;
+  approvedKnowledgeSection: string | null;
+}> {
+  const linkedProject = await resolveLinkedProjectForBrief(tenantId, briefId);
+  const workflowKnowledgeResult = await buildAiWorkflowKnowledgeContext({
+    tenantId,
+    clientId,
+    aiDeliveryProjectId: linkedProject?.id ?? null,
+    workflowType
+  });
+  return {
+    knowledgeContext: toWorkflowBriefKnowledgeContextMetadata(workflowKnowledgeResult),
+    approvedKnowledgeSection: workflowKnowledgeResult.contextSection
+  };
+}
+
 export async function triggerWorkflowBriefAiRun(
   authSession: AuthResolvedSessionContext,
   briefId: string
@@ -1246,6 +1268,12 @@ export async function generateWorkflowBriefProductionPlan(
   }
 
   const finishedAtIso = new Date().toISOString();
+  const { knowledgeContext, approvedKnowledgeSection } = await resolveWorkflowBriefKnowledgeForExecution(
+    tenantId,
+    briefId,
+    brief.clientId,
+    "content_plan_draft"
+  );
   const executionResult = await executeWorkflowBriefPlanGeneration({
     briefId: brief.id,
     title: brief.title,
@@ -1257,14 +1285,19 @@ export async function generateWorkflowBriefProductionPlan(
     notes: brief.notes,
     mi: readMiReportContent(miReport.reportJson),
     seo: readSeoReportContent(seoReport.reportJson),
-    finishedAtIso
+    finishedAtIso,
+    approvedKnowledgeSection,
+    knowledgeContext
   });
 
   if (!executionResult.ok) {
     return "forbidden";
   }
 
-  const planJson = buildWorkflowBriefPlanJson(executionResult.plan, executionResult.meta);
+  const planJson = {
+    ...buildWorkflowBriefPlanJson(executionResult.plan, executionResult.meta),
+    knowledgeContext: toWorkflowBriefKnowledgeContextJson(knowledgeContext)
+  };
   const clientVisibleSnapshotJson = buildWorkflowBriefClientVisiblePlanJson(
     executionResult.clientSnapshot,
     executionResult.meta
@@ -2533,6 +2566,7 @@ async function writeContentDraftsMetadata(
     approvedCount: number;
     lastGeneratedAt?: string;
     lastRegeneratedAt?: string;
+    knowledgeContext?: WorkflowBriefAiKnowledgeContextMeta;
   }
 ): Promise<void> {
   const existingPlanJson =
@@ -2560,7 +2594,10 @@ async function writeContentDraftsMetadata(
             approvedCount: input.approvedCount
           }),
           lastGeneratedAt: input.lastGeneratedAt ?? existingDraftsMeta.lastGeneratedAt ?? null,
-          lastRegeneratedAt: input.lastRegeneratedAt ?? existingDraftsMeta.lastRegeneratedAt ?? null
+          lastRegeneratedAt: input.lastRegeneratedAt ?? existingDraftsMeta.lastRegeneratedAt ?? null,
+          ...(input.knowledgeContext
+            ? { knowledgeContext: toWorkflowBriefKnowledgeContextJson(input.knowledgeContext) }
+            : {})
         }
       } as Prisma.InputJsonValue
     }
@@ -2614,6 +2651,12 @@ export async function generateWorkflowBriefContentDrafts(
   }
 
   const finishedAtIso = new Date().toISOString();
+  const { knowledgeContext, approvedKnowledgeSection } = await resolveWorkflowBriefKnowledgeForExecution(
+    tenantId,
+    briefId,
+    context.brief.clientId,
+    "article_draft"
+  );
   let created = 0;
   let updated = 0;
   let reused = 0;
@@ -2644,7 +2687,9 @@ export async function generateWorkflowBriefContentDrafts(
         mi: context.mi,
         seo: context.seo,
         recommendedContentDirection: context.recommendedContentDirection,
-        finishedAtIso
+        finishedAtIso,
+        approvedKnowledgeSection,
+        knowledgeContext
       });
 
       if (!execution.meta.isDeterministic) {
@@ -2681,7 +2726,8 @@ export async function generateWorkflowBriefContentDrafts(
           readyForReviewCount: draftStatus.readyForReviewCount,
           needsWorkCount: draftStatus.needsWorkCount,
           approvedCount: draftStatus.approvedCount,
-          lastGeneratedAt: finishedAtIso
+          lastGeneratedAt: finishedAtIso,
+          knowledgeContext
         });
       });
     }
@@ -2759,6 +2805,12 @@ export async function regenerateWorkflowBriefContentDraft(
   }
 
   const finishedAtIso = new Date().toISOString();
+  const { knowledgeContext, approvedKnowledgeSection } = await resolveWorkflowBriefKnowledgeForExecution(
+    tenantId,
+    briefId,
+    context.brief.clientId,
+    "article_draft"
+  );
   const execution = await executeWorkflowBriefDraftGeneration({
     briefId,
     briefTitle: context.brief.title,
@@ -2771,7 +2823,9 @@ export async function regenerateWorkflowBriefContentDraft(
     mi: context.mi,
     seo: context.seo,
     recommendedContentDirection: context.recommendedContentDirection,
-    finishedAtIso
+    finishedAtIso,
+    approvedKnowledgeSection,
+    knowledgeContext
   });
 
   const persistResult = await prisma.$transaction(async (tx) => {
@@ -2799,7 +2853,8 @@ export async function regenerateWorkflowBriefContentDraft(
           readyForReviewCount: draftStatus.readyForReviewCount,
           needsWorkCount: draftStatus.needsWorkCount,
           approvedCount: draftStatus.approvedCount,
-          lastRegeneratedAt: finishedAtIso
+          lastRegeneratedAt: finishedAtIso,
+          knowledgeContext
         });
       });
     }

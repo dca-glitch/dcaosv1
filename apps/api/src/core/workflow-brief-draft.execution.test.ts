@@ -3,6 +3,7 @@ import { describe, it } from "node:test";
 import {
   buildDeterministicWorkflowBriefContentDraft,
   buildWorkflowBriefDraftLineageNote,
+  composeWorkflowBriefDraftContextText,
   executeWorkflowBriefDraftGeneration,
   isWorkflowBriefDraftForBrief,
   WORKFLOW_BRIEF_DRAFT_MARKER
@@ -78,5 +79,57 @@ describe("workflow-brief-draft.execution", () => {
     assert.equal(result.meta.isDeterministic, true);
     assert.ok(result.draft.draftBody.length > 200);
     assert.equal(result.errorMessage, null);
+  });
+
+  it("composes approved knowledge section before draft context", () => {
+    const composed = composeWorkflowBriefDraftContextText({
+      ...baseInput,
+      approvedKnowledgeSection:
+        "Approved knowledge context (admin-internal):\n- [BRAND_VOICE — CLIENT — v1] Tone guidance"
+    });
+
+    assert.ok(composed.startsWith("Approved knowledge context (admin-internal):"));
+    assert.ok(composed.includes("Brief: Q2 Content Workflow"));
+  });
+
+  it("records knowledge context inclusion in execution log without raw body text", async () => {
+    const result = await executeWorkflowBriefDraftGeneration(
+      {
+        ...baseInput,
+        approvedKnowledgeSection:
+          "Approved knowledge context (admin-internal):\n- [CLIENT_FACT — CLIENT — v1] Confidential fact body",
+        knowledgeContext: {
+          used: true,
+          selectedCount: 1,
+          selectedItemTitles: ["Client positioning fact"],
+          skippedReason: null,
+          sanitizeFlagCount: 0,
+          trimmed: false
+        }
+      },
+      {
+        textGateway: "local",
+        preferredTextGateway: "openrouter",
+        hasOpenRouterApiKey: false,
+        openRouterBaseUrl: "https://openrouter.ai/api/v1",
+        openRouterTextPrimaryModel: null,
+        openRouterTextSecondaryModel: null,
+        openRouterTextReviewerModel: null,
+        openRouterTextLongContextModel: null
+      }
+    );
+
+    assert.equal(result.ok, true);
+    assert.ok(
+      result.executionLog.some((line) => line.includes("Approved knowledge context included: 1 item(s)"))
+    );
+    assert.ok(result.executionLog.some((line) => line.includes("Client positioning fact")));
+    assert.equal(
+      result.executionLog.some((line) => line.includes("Confidential fact body")),
+      false
+    );
+    const serialized = JSON.stringify(result);
+    assert.equal(serialized.includes("contextSection"), false);
+    assert.equal(serialized.includes("selectedSourcesJson"), false);
   });
 });

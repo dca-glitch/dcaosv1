@@ -4,6 +4,7 @@ import type { AiProviderConfig } from "../config";
 import {
   buildProductionPlanBodyFromContent,
   buildProductionPlanTitle,
+  composeWorkflowBriefPlanContextText,
   executeWorkflowBriefPlanGeneration,
   WORKFLOW_BRIEF_PLAN_VERSION
 } from "./workflow-brief-plan.execution";
@@ -83,5 +84,47 @@ describe("workflow-brief-plan.execution", () => {
     assert.match(body, /Strategic summary/);
     assert.match(body, /Priority topics/);
     assert.match(body, /Cluster 1/);
+  });
+
+  it("composes approved knowledge section before plan context", () => {
+    const composed = composeWorkflowBriefPlanContextText({
+      ...buildInput(),
+      approvedKnowledgeSection:
+        "Approved knowledge context (admin-internal):\n- [CLIENT_FACT — CLIENT — v1] Known brand fact"
+    });
+
+    assert.ok(composed.startsWith("Approved knowledge context (admin-internal):"));
+    assert.ok(composed.includes("Brief title: Test Workflow Brief"));
+  });
+
+  it("records knowledge context inclusion in execution log without raw body text", async () => {
+    const result = await executeWorkflowBriefPlanGeneration(
+      {
+        ...buildInput(),
+        approvedKnowledgeSection: "Approved knowledge context (admin-internal):\n- [CLIENT_FACT — CLIENT — v1] Secret body text",
+        knowledgeContext: {
+          used: true,
+          selectedCount: 1,
+          selectedItemTitles: ["Brand voice guide"],
+          skippedReason: null,
+          sanitizeFlagCount: 0,
+          trimmed: false
+        }
+      },
+      localConfig
+    );
+
+    assert.equal(result.ok, true);
+    assert.ok(
+      result.executionLog.some((line) => line.includes("Approved knowledge context included: 1 item(s)"))
+    );
+    assert.ok(result.executionLog.some((line) => line.includes("Brand voice guide")));
+    assert.equal(
+      result.executionLog.some((line) => line.includes("Secret body text")),
+      false
+    );
+    const serialized = JSON.stringify(result);
+    assert.equal(serialized.includes("contextSection"), false);
+    assert.equal(serialized.includes("selectedSourcesJson"), false);
   });
 });
