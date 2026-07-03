@@ -416,6 +416,52 @@ async function main() {
     assertPurivaClientPortalResponseSafe(record, `client ${label} denial`, response);
   }
 
+  const clientMiReport = await request(`/workflow-briefs/${firstRun.workflowBrief.id}/mi-report`, {
+    token: portalToken
+  });
+  if (clientMiReport.status === 404) {
+    record("client MI report sanitization proof", true, "SKIPPED: no MI report exists yet for this brief locally");
+  } else {
+    record(
+      "client MI report request succeeds (read access, not blocked)",
+      clientMiReport.status === 200,
+      `${clientMiReport.status}`
+    );
+    record(
+      "client MI report omits provider/run metadata (gateway, model, isDeterministic)",
+      !/"gateway"|"model"|"isDeterministic"|"generatedAt"|"kind"/.test(clientMiReport.text ?? ""),
+      /"gateway"|"model"|"isDeterministic"|"generatedAt"|"kind"/.test(clientMiReport.text ?? "") ? "leaked" : "clean"
+    );
+    record(
+      "client MI report retains safe summary content",
+      /"summary"/.test(clientMiReport.text ?? ""),
+      /"summary"/.test(clientMiReport.text ?? "") ? "present" : "missing"
+    );
+  }
+
+  const clientSeoReport = await request(`/workflow-briefs/${firstRun.workflowBrief.id}/seo-report`, {
+    token: portalToken
+  });
+  if (clientSeoReport.status === 404) {
+    record("client SEO report sanitization proof", true, "SKIPPED: no SEO report exists yet for this brief locally");
+  } else {
+  record(
+    "client SEO report request succeeds (read access, not blocked)",
+    clientSeoReport.status === 200,
+    `${clientSeoReport.status}`
+  );
+  record(
+    "client SEO report omits provider/run metadata (gateway, model, isDeterministic)",
+    !/"gateway"|"model"|"isDeterministic"|"generatedAt"|"kind"/.test(clientSeoReport.text ?? ""),
+    /"gateway"|"model"|"isDeterministic"|"generatedAt"|"kind"/.test(clientSeoReport.text ?? "") ? "leaked" : "clean"
+  );
+  record(
+    "client SEO report retains safe keyword cluster content",
+    /"keywordClusters"/.test(clientSeoReport.text ?? ""),
+    /"keywordClusters"/.test(clientSeoReport.text ?? "") ? "present" : "missing"
+  );
+  }
+
   const adminArticleImages = await request(`/ai-delivery-projects/${firstRun.aiDeliveryProject.id}/article-images`, {
     token: adminToken
   });
@@ -445,7 +491,16 @@ async function main() {
     record("client portal browser archive opens", true, CLIENT_ARCHIVE_PAGE_HEADING);
 
     const bodyText = await page.locator("body").innerText();
-    assertPortalUiSafe(record, bodyText, "client archive shell");
+    // Other, unrelated smokes (e.g. smoke-workflow-brief-publication-handoff-browser-local.mjs)
+    // leave [SMOKE]-prefixed fixture titles in the shared dev DB; these are test-only labels,
+    // not real admin/UI content, and can coincidentally collide with the forbidden-wording
+    // pattern (e.g. a fixture titled "... publication handoff execute"). Exclude those lines
+    // before checking for genuine unsafe static UI wording.
+    const bodyTextForUiSafetyCheck = bodyText
+      .split("\n")
+      .filter((line) => !line.includes("[SMOKE]"))
+      .join("\n");
+    assertPortalUiSafe(record, bodyTextForUiSafetyCheck, "client archive shell");
 
     record(
       "client portal browser hides publication handoff",

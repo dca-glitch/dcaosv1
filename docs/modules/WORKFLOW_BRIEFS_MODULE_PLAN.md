@@ -49,14 +49,18 @@ established by the Block 4B strategic architecture review.
   `Brief` (WorkflowBrief) is the richer, composable intake/context layer. Both currently
   exist; neither has been removed or scheduled for removal.
 
-## Known product/UX risk — not scoped for this docs block
+## Known product/UX risk — confirmed as stage distinction, not duplication (Block 4D)
 
-Two separate client-facing "approve the plan" surfaces currently exist:
+Two client-facing "Brief"-labeled nav items are shown to the same client-only user
+simultaneously, but they gate different pipeline stages, not the same decision:
 
-- The Client Portal shell path (`#/client-portal/briefs`, deliverable approval editor),
-  built around AiDelivery entities.
-- A separate client-role nav item ("Content Briefs") that renders `WorkflowBriefsPage`
-  directly inside the main app for `ProductionPlan` approve/reject.
+- `#/client-portal/briefs` — **read-only**, already-finalized release package view
+  (`getClientPortalReleasePackage`), populated only after release-package finalization.
+- WorkflowBriefsPage "Content Briefs" client nav — the **earlier-stage** `ProductionPlan`
+  approve/reject action, before production/drafting begins.
+
+The remaining risk is UX clarity (two similarly-named nav entries), not a functional
+duplicate. Not scoped for consolidation in this docs block.
 
 This dual surface is a known risk flagged for future product/UX review. It is **not**
 being refactored or consolidated as part of this documentation update.
@@ -67,6 +71,15 @@ Regardless of which pipeline originates a record, clients must never see interna
 metadata, provider/run logs, workflow execution logs, `storageKey`, `releasePackageId`,
 `sourceType`, `workflowRunId`, `executionLog`, or draft internals unless explicitly
 exposed as review/final output.
+
+**reportJson sanitization rule (Block 4E):** `AiMiReport.reportJson` and
+`AiSeoReport.reportJson` embed provider/run metadata (`gateway`, `model`, `version`,
+`isDeterministic`, `generatedAt`) alongside safe content fields. For non-admin/client
+callers, `sanitizeBriefDetailForRole`, `getWorkflowBriefMiReport`, and
+`getWorkflowBriefSeoReport` all reduce `reportJson` to safe content fields only
+(`summary`/`audienceInsights`/etc. for MI, `keywordClusters`/`topicIdeas`/etc. for SEO)
+via the existing `readMiReportContent`/`readSeoReportContent` helpers. Admin/owner
+callers continue to receive the full raw record.
 
 ## Related docs
 

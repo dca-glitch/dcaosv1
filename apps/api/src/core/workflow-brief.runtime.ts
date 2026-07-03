@@ -182,6 +182,42 @@ const productionPlanSelect = {
   updatedAt: true
 } as const;
 
+function sanitizeMiReportsForClient(miReports: unknown): unknown[] {
+  const reports = Array.isArray(miReports) ? miReports : [];
+  return reports.map((report) => {
+    if (!report || typeof report !== "object") {
+      return report;
+    }
+    const record = report as Record<string, unknown>;
+    return {
+      id: record.id,
+      status: record.status,
+      summaryText: record.summaryText,
+      reportJson: readMiReportContent(record.reportJson),
+      createdAt: record.createdAt,
+      updatedAt: record.updatedAt
+    };
+  });
+}
+
+function sanitizeSeoReportsForClient(seoReports: unknown): unknown[] {
+  const reports = Array.isArray(seoReports) ? seoReports : [];
+  return reports.map((report) => {
+    if (!report || typeof report !== "object") {
+      return report;
+    }
+    const record = report as Record<string, unknown>;
+    return {
+      id: record.id,
+      status: record.status,
+      summaryText: record.summaryText,
+      reportJson: readSeoReportContent(record.reportJson),
+      createdAt: record.createdAt,
+      updatedAt: record.updatedAt
+    };
+  });
+}
+
 function sanitizeBriefDetailForRole(brief: Record<string, unknown>, isAdmin: boolean): Record<string, unknown> {
   if (isAdmin) {
     return brief;
@@ -214,6 +250,10 @@ function sanitizeBriefDetailForRole(brief: Record<string, unknown>, isAdmin: boo
   return {
     ...brief,
     productionPlans: visiblePlans,
+    // Raw reportJson carries provider/run metadata (gateway, model, version) — reduce to
+    // safe content fields only for non-admin/client viewers, same as productionPlans above.
+    miReports: sanitizeMiReportsForClient(brief.miReports),
+    seoReports: sanitizeSeoReportsForClient(brief.seoReports),
     sourceProjects: []
   };
 }
@@ -953,7 +993,12 @@ export async function getWorkflowBriefMiReport(
     return "not_found";
   }
 
-  return { report };
+  // Raw reportJson carries provider/run metadata (gateway, model, version) — reduce to
+  // safe content fields only for non-admin/client viewers.
+  const isAdmin = isOwnerRole(getActiveRoles(authSession));
+  return {
+    report: isAdmin ? report : { ...report, reportJson: readMiReportContent(report.reportJson) }
+  };
 }
 
 export async function getWorkflowBriefSeoReport(
@@ -991,7 +1036,12 @@ export async function getWorkflowBriefSeoReport(
     return "not_found";
   }
 
-  return { report };
+  // Raw reportJson carries provider/run metadata (gateway, model, version) — reduce to
+  // safe content fields only for non-admin/client viewers.
+  const isAdmin = isOwnerRole(getActiveRoles(authSession));
+  return {
+    report: isAdmin ? report : { ...report, reportJson: readSeoReportContent(report.reportJson) }
+  };
 }
 
 export type ProductionPlanInput = {

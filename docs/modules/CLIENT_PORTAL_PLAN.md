@@ -35,15 +35,21 @@ Forbidden visible fields include:
 - deliverable approval
 - FINAL-only monthly reports
 
-## Known dual client-approval surface (risk note, not scoped for refactor)
+## Briefs vs Content Briefs (stage distinction, confirmed by Block 4D review)
 
-A second, separate client-facing approval surface exists outside this portal shell:
-`WorkflowBriefsPage` renders a client-role nav item ("Content Briefs") in the main app
-for `ProductionPlan` approve/reject, independent of `#/client-portal/briefs`. Both
-surfaces gate a similar "approve the plan" business function through different code
-paths. This is a known product/UX risk flagged for future review — see
-[`docs/modules/WORKFLOW_BRIEFS_MODULE_PLAN.md`](./WORKFLOW_BRIEFS_MODULE_PLAN.md). It is
-not being consolidated here.
+`#/client-portal/briefs` and the separate `WorkflowBriefsPage` client nav item ("Content
+Briefs") are **different pipeline stages, not duplicate surfaces**:
+
+- `#/client-portal/briefs` renders a **read-only, already-finalized** release package
+  (`getClientPortalReleasePackage`, sourced from `ProductionPlan.planJson.releasePackage.clientSnapshot`),
+  only populated after release-package finalization.
+- `WorkflowBriefsPage` "Content Briefs" is the **earlier-stage** production-plan
+  approve/reject action, before production/drafting begins.
+
+Both nav items are shown to the same client-only user today, which remains a known
+product/UX clarity risk (two "Brief"-labeled nav entries), but they do not gate the same
+decision. See [`docs/modules/WORKFLOW_BRIEFS_MODULE_PLAN.md`](./WORKFLOW_BRIEFS_MODULE_PLAN.md).
+No UX behavior change is made here.
 
 ## Deferred
 
