@@ -23,15 +23,16 @@ The SEO module supports admin-operated planning, tracking, and reporting for con
 - admin UI shows PDF handoff readiness state on open (Block 3E) — Download PDF is enabled only once a document exists
 - editing plan items or changing plan status automatically invalidates a previously generated PDF (Block 3F) — prevents handing off a stale document
 
-## Reusable knowledge / context relationship (Blocks 5A / 6A)
+## Reusable knowledge / context relationship (Blocks 5A / 6A / 6B)
 
 Content plan creation/editing in this module is direct, deterministic admin CRUD (see
 `AiDeliveryContentPlan` in [`docs/modules/WORKFLOW_BRIEFS_MODULE_PLAN.md`](./WORKFLOW_BRIEFS_MODULE_PLAN.md))
 and is not itself an AI workflow run. The separate reusable AI Knowledge Base /
 Context Builder layer ([`docs/modules/KNOWLEDGE_BASE.md`](./KNOWLEDGE_BASE.md)) composes
 approved knowledge (including `SEO_KEYWORD_GROUP`/`MARKET_INSIGHT`/`REPORT_INSIGHT` types)
-into **AiDelivery workflow-run execution context** and **WorkflowBriefs MI/SEO AI-run context**
-(Block 6A), but is not specifically wired into this module's content-plan or PDF export path.
+into **AiDelivery workflow-run execution context** and **WorkflowBriefs MI/SEO/plan/draft**
+context (Blocks 6A/6B), but is not specifically wired into this module's content-plan or
+PDF export path.
 
 ## Deferred
 
