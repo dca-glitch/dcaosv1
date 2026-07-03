@@ -172,7 +172,6 @@ type ClientPortalDeliverySummaryResponse = {
 };
 
 type ClientPortalReleasePackage = {
-  releasePackageId: string;
   briefTitle: string;
   projectName: string;
   finalizedAt: string;

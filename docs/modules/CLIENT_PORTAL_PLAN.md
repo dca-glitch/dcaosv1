@@ -11,8 +11,8 @@ The Client Portal is an active client-safe surface for final deliverables and re
 - `#/client-portal/pending-approvals` shows pending approvals
 - `#/client-portal/briefs` shows the legacy `ClientMonthlyBrief` content-brief intake/status page (`BriefPage`)
 - `#/client-portal/deliverables/:id/approve` opens the deliverable approval editor
-- `#/monthly-reports` exists as a **stub/static page** (`MonthlyReportsPage`) with an empty-state shell only — it does **not** load live report data
-- **Canonical live client monthly reports** are inside `#/client-portal` (`ClientPortalPage`): list, detail, performance summary, and PDF download. Wiring or redirecting `#/monthly-reports` to that experience is a future frontend block (not completed in XXL 4A).
+- `#/monthly-reports` routes to the client portal archive shell (`MonthlyReportsPage` → `ClientPortalRouter` → `ClientPortalPage`) — same live monthly report list/detail/download as `#/client-portal`; no separate stub UI
+- **Canonical client monthly reports** live in `ClientPortalPage` inside the archive shell: list, detail, performance summary, and PDF download
 - client-only users can access portal routes and remain blocked from admin-only views
 
 ## Client-safe boundary
