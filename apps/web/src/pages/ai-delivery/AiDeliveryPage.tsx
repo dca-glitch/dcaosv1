@@ -2133,8 +2133,13 @@ export function AiDeliveryPage({
       } else {
         setContentPlanPdfMessage("PDF generation failed — no document returned.");
       }
-    } catch {
-      setContentPlanPdfMessage("PDF generation failed.");
+    } catch (error) {
+      const message = getErrorMessage(error, "PDF generation failed.");
+      setContentPlanPdfMessage(
+        message.includes("503") || message.includes("not configured") || message.includes("unconfigured")
+          ? "Private document storage is not configured. Contact your administrator."
+          : "PDF generation failed."
+      );
     } finally {
       setContentPlanPdfGenerating(false);
     }
@@ -2150,8 +2155,13 @@ export function AiDeliveryPage({
       } else {
         setContentPlanPdfMessage("No PDF available yet. Generate a PDF first.");
       }
-    } catch {
-      setContentPlanPdfMessage("Download reference could not be retrieved.");
+    } catch (error) {
+      const message = getErrorMessage(error, "Download reference could not be retrieved.");
+      setContentPlanPdfMessage(
+        message.includes("503") || message.includes("not configured") || message.includes("unconfigured")
+          ? "Private document storage is not configured. Contact your administrator."
+          : "Download reference could not be retrieved."
+      );
     }
   }
 

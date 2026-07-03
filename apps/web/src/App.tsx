@@ -316,6 +316,17 @@ type AiDeliveryContentPlanResponse = {
   contentPlan: AiDeliveryContentPlanSummary | null;
 };
 
+type AiDeliveryContentPlanGeneratePdfResponse = {
+  contentPlanId: string;
+  hasDocument: boolean;
+  generatedAt: string;
+  fileName: string;
+};
+
+type AiDeliveryContentPlanDownloadResponse = {
+  downloadReference: { downloadUrl: string; expiresSeconds: number } | null;
+};
+
 type AiDeliveryContentDraftsResponse = {
   contentDrafts: AiDeliveryContentDraftSummary[];
 };
@@ -2633,6 +2644,40 @@ export function App() {
     );
   }
 
+  async function handleGenerateAiDeliveryContentPlanPdf(projectId: string): Promise<AiDeliveryContentPlanGeneratePdfResponse | null> {
+    setAppMessage(null);
+    try {
+      const response = await runAuthenticatedRequest<AiDeliveryContentPlanGeneratePdfResponse>(
+        `/ai-delivery-projects/${projectId}/content-plan/generate-pdf`,
+        { method: "POST" }
+      );
+      if (!response) return null;
+      if (!response.ok) {
+        throwAiDeliveryResponseError(response);
+      }
+      setAppMessage({ tone: "success", text: "Content plan PDF generated." });
+      return response.data ?? null;
+    } catch (error) {
+      return rethrowAiDeliveryRuntimeError(error);
+    }
+  }
+
+  async function handleGetAiDeliveryContentPlanDownloadReference(projectId: string): Promise<{ downloadUrl: string } | null> {
+    setAppMessage(null);
+    try {
+      const response = await runAuthenticatedRequest<AiDeliveryContentPlanDownloadResponse>(
+        `/ai-delivery-projects/${projectId}/content-plan/download`
+      );
+      if (!response) return null;
+      if (!response.ok) {
+        throwAiDeliveryResponseError(response);
+      }
+      return response.data.downloadReference ?? null;
+    } catch (error) {
+      return rethrowAiDeliveryRuntimeError(error);
+    }
+  }
+
   async function runAiDeliveryContentPlanAction(
     path: string,
     successMessage: string
@@ -4548,6 +4593,8 @@ export function App() {
           onRequestContentPlanReview={handleRequestAiDeliveryContentPlanReview}
           onApproveContentPlan={handleApproveAiDeliveryContentPlan}
           onRequestContentPlanChanges={handleRequestAiDeliveryContentPlanChanges}
+          onGenerateContentPlanPdf={handleGenerateAiDeliveryContentPlanPdf}
+          onDownloadContentPlanDocument={handleGetAiDeliveryContentPlanDownloadReference}
           onFetchContentDrafts={handleFetchAiDeliveryContentDrafts}
           onSaveContentDraft={handleSaveAiDeliveryContentDraft}
           onArchiveContentDraft={handleArchiveAiDeliveryContentDraft}

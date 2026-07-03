@@ -2966,10 +2966,14 @@ export async function generateAiDeliveryContentPlanPdfForProject(
       id: true,
       name: true,
       targetMonth: true,
+      isArchived: true,
       client: { select: { name: true } }
     }
   });
   if (!project) return null;
+  if (project.isArchived) {
+    throwAiDeliveryBadRequest("AI_DELIVERY_CONTENT_PLAN_ARCHIVED", "Cannot generate a PDF for an archived AI Delivery project.");
+  }
 
   const plan = await getAiDeliveryContentPlanDelegate(prisma).findFirst({
     where: { aiDeliveryProjectId, tenantId },
