@@ -77,12 +77,14 @@ npm.cmd run smoke:client-portal:sparse-delivery:browser
 npm.cmd run smoke:client-portal:populated-delivery:browser
 npm.cmd run smoke:client-portal:access-revoke:browser
 npm.cmd run smoke:client-portal:empty-archive:browser
+npm.cmd run smoke:puriva-client-portal-boundary:local
 npm.cmd run smoke:client-hub:catalog-inquiry:browser
 npm.cmd run smoke:client-hub:publication-log:browser
 npm.cmd run smoke:client-portal:project-filter:browser
 npm.cmd run smoke:client-domain:browser
 npm.cmd run smoke:client-portal-monthly-report:browser
 npm.cmd run smoke:ai-market-intelligence
+npm.cmd run smoke:ai-knowledge-context
 npm.cmd run smoke:mi-operator:browser
 npm.cmd run smoke:ai-delivery-workflow:browser
 npm.cmd run smoke:monthly-metrics-import:browser
@@ -99,6 +101,7 @@ npm.cmd run smoke:monthly-report:pdf
 npm.cmd run smoke:monthly-report:metrics
 npm.cmd run smoke:monthly-report:browser
 npm.cmd run smoke:ai-delivery-reviews
+npm.cmd run smoke:ai-seo-content-plan-pdf
 npm.cmd run smoke:email-outbox:local
 npm.cmd run smoke:credential-encryption:local
 npm.cmd run smoke:r2-byte-roundtrip:local

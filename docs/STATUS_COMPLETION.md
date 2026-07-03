@@ -22,6 +22,31 @@ Related documents:
 - [`docs/ROADMAP_POST_DEFERRED_PHASE_G.md`](./ROADMAP_POST_DEFERRED_PHASE_G.md)
 - [`docs/runbooks/PHASE_G_POST_DEFERRED_CLOSEOUT_INDEX.md`](./runbooks/PHASE_G_POST_DEFERRED_CLOSEOUT_INDEX.md)
 - [`docs/architecture/CLIENT_DOMAIN_OPERATING_MODEL.md`](./architecture/CLIENT_DOMAIN_OPERATING_MODEL.md)
+- [`docs/modules/WORKFLOW_BRIEFS_MODULE_PLAN.md`](./modules/WORKFLOW_BRIEFS_MODULE_PLAN.md)
+
+## Post-PR-#43 addendum (Blocks 3B–5A)
+
+The percentages/notes below are still baselined on the PR #38–#43 merge. Since that baseline, the
+following additive, already-validated-and-committed blocks closed on `main` (no schema/deploy
+changes, no percentage re-audit performed as part of this addendum):
+
+- **Blocks 3B–3G** — AI SEO Content Plan PDF export/private storage, handoff readiness state, and
+  stale-PDF invalidation on plan edit.
+- **Blocks 4A–4C** — confirmed WorkflowBriefs is an active intake/context-composition/production-
+  automation layer (not legacy, not a duplicate of AiDelivery); documented in
+  [`docs/modules/WORKFLOW_BRIEFS_MODULE_PLAN.md`](./modules/WORKFLOW_BRIEFS_MODULE_PLAN.md).
+- **Blocks 4D–4G (+4G-FIX)** — WorkflowBriefs client-safe boundary hardening: MI/SEO `reportJson`
+  provider-metadata sanitization, client nav label correction ("Production Plan Review"), a fixed
+  raw `releasePackage` leak, and removal of `releasePackageId` from the client-safe release-package
+  payload.
+- **Block 5A** — reusable AI Knowledge/Context layer (`AiKnowledgeItem`/`AiContextSnapshot`)
+  confirmed safe end-to-end (admin-only, route-hard-gated, no client-reachable path); documented gap
+  that WorkflowBriefs' own AI-run pipeline does not yet query this layer (see
+  [`docs/operator/deferred-scope-register.md`](./operator/deferred-scope-register.md)).
+
+See [`docs/STATUS.md`](./STATUS.md) "AI SEO / Content Plan closure" section for full detail on each
+block. WorkflowBriefs is a confirmed third module alongside AI Delivery and Market Intelligence; see
+[`docs/AI_MODULES.md`](./AI_MODULES.md) "Current module split".
 
 ---
 

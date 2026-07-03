@@ -21,8 +21,10 @@ This matrix explains what is usable now, what is partial, and what is waiting fo
 | Projects | Closed for MVP | Admin can organize work by project, including monthly client projects. |
 | Tasks | Closed for MVP | Admin can track operational work and reminders. |
 | AI Delivery | Closed for local/admin MVP | Admin can run the main delivery workflow for briefs, plans, drafts, deliverables, exports, and reports. |
-| AI SEO | Closed for admin-operated MVP shell | Admin can use SEO planning and content workflow foundations. Live Google integrations are deferred. |
+| WorkflowBriefs | Closed for local/admin MVP — client-safe boundary hardened (Blocks 4D–4G, 4G-FIX) | Composable brief intake / context-composition / production-automation layer that writes into AiDelivery's shared production tables; confirmed active, not legacy. Client-facing surface labeled "Production Plan Review". See [`docs/modules/WORKFLOW_BRIEFS_MODULE_PLAN.md`](../modules/WORKFLOW_BRIEFS_MODULE_PLAN.md). |
+| AI SEO | Closed for admin-operated MVP shell | Admin can use SEO planning and content workflow foundations, including content-plan PDF export/private storage with stale-PDF invalidation (Blocks 3B–3G). Live Google integrations are deferred. |
 | AI Content Production | Closed for admin-operated MVP shell | Admin can prepare and review content drafts and delivery handoff. |
+| AI Knowledge / Context layer | Closed for admin-only MVP (Block 5A reviewed, no code change needed) | Admin-only, route-hard-gated reusable memory (`AiKnowledgeItem`/`AiContextSnapshot`) feeding AiDelivery workflow-run context; confirmed no client-reachable exposure. Not yet integrated into WorkflowBriefs' own AI-run pipeline — see deferred scope register. |
 | Market Intelligence | Closed for local/admin MVP — compact pass in Phase F Block 67 | Admin can prepare market context and handoff to AI Delivery; deeper automation remains later. |
 | Monthly Reports | Closed for admin/client-safe archive path | Admin can prepare reports and expose final reports safely to the client archive. |
 | Finance | Closed for local/admin MVP | Invoices, bills, vendors, services, and credit notes have useful admin foundations. |

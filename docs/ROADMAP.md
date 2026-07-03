@@ -32,7 +32,7 @@ Current UI / route stabilization is complete:
 - dashboard audit feed smoke alignment
 - client-only access to `#/client-portal`
 
-The next recommended block after this docs refresh is **AI SEO / AI Delivery Planning**.
+**AI SEO / AI Delivery Planning is complete** (Blocks 3B–3G AI SEO Content Plan PDF hardening; Blocks 4A–4G WorkflowBriefs/AiDelivery architecture review and client-safe boundary closure; Block 5A reusable client context/knowledge layer review). See [`docs/STATUS.md`](./STATUS.md) "AI SEO / Content Plan closure" section for the full block-by-block record. The next block is assigned via the normal DCA MODE gate process.
 
 **Puriva MVP excludes:** `shop.puriva.id` ecommerce, Spa Finance, full Revenue Hub, full Commerce Core.
 

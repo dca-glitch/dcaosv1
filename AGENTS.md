@@ -207,7 +207,7 @@ This keeps approved UI direction and production safety rules stored at repositor
 - Client archive is read-only.
 - No public approval links in MVP.
 - Current route baseline: `#/client-portal` is the archive-oriented portal shell; `#/archive` remains separate; client-only users stay blocked from admin-only routes.
-- Next recommended planning block is AI SEO / AI Delivery Planning; do not start a broad refactor block.
+- AI SEO / AI Delivery Planning is complete (Blocks 3B–3G, 4A–4G, 5A — see `docs/STATUS.md`); the next block is assigned via the normal DCA MODE gate process. Do not start a broad refactor block.
 
 ---
 

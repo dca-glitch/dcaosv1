@@ -79,7 +79,14 @@ Deferred:
 - production live provider proof;
 - persistent provider cost dashboards;
 - deep provider observability;
-- automatic AI execution without admin control.
+- automatic AI execution without admin control;
+- wiring WorkflowBriefs' own AI-run pipeline (`triggerWorkflowBriefAiRun`) into the reusable
+  AI Knowledge/Context layer (`AiKnowledgeItem`/`ai-context-builder.service.ts`) — confirmed by
+  code (Block 5A) that this integration does not exist today; only AiDelivery's workflow-run
+  path currently receives reusable approved knowledge context. Not a safety issue (both paths
+  remain internally sound), but a real architecture gap versus the business goal that client
+  knowledge should inform all production paths. See
+  [`docs/modules/WORKFLOW_BRIEFS_MODULE_PLAN.md`](../modules/WORKFLOW_BRIEFS_MODULE_PLAN.md).
 
 Current behavior:
 
