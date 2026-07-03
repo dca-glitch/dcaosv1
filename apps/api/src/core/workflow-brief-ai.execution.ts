@@ -17,6 +17,15 @@ const STUB_FAIL_MARKER = "[stub-fail]";
 const MAX_FIELD_LENGTH = 600;
 const MAX_LIST_ITEM_LENGTH = 200;
 
+export interface WorkflowBriefAiKnowledgeContextMeta {
+  used: boolean;
+  selectedCount: number;
+  selectedItemTitles: string[];
+  skippedReason: string | null;
+  sanitizeFlagCount: number;
+  trimmed: boolean;
+}
+
 export interface WorkflowBriefAiExecutionInput {
   briefId: string;
   title: string;
@@ -28,6 +37,10 @@ export interface WorkflowBriefAiExecutionInput {
   notes: string | null;
   structuredInputJson: unknown;
   finishedAtIso: string;
+  /** Sanitized approved-knowledge section from Context Builder — admin-internal prompt input only. */
+  approvedKnowledgeSection?: string | null;
+  /** Safe metadata for run audit logs — never includes raw knowledge body text. */
+  knowledgeContext?: WorkflowBriefAiKnowledgeContextMeta | null;
 }
 
 export interface WorkflowBriefMiReportContent {
@@ -121,6 +134,41 @@ function readStructuredHints(structuredInputJson: unknown): {
   const notes = normalizeStringList(record.notes ?? record.hints);
 
   return { keywords, competitors, notes };
+}
+
+export function buildWorkflowBriefKnowledgeContextLogLines(
+  knowledgeContext: WorkflowBriefAiKnowledgeContextMeta | null | undefined
+): string[] {
+  if (!knowledgeContext) {
+    return ["Approved knowledge context: not loaded."];
+  }
+
+  if (!knowledgeContext.used) {
+    return [
+      `Approved knowledge context skipped: ${knowledgeContext.skippedReason ?? "none eligible"}.`
+    ];
+  }
+
+  const titles = knowledgeContext.selectedItemTitles.slice(0, 3).join(", ");
+  const lines = [
+    `Approved knowledge context included: ${knowledgeContext.selectedCount} item(s)${titles ? ` (${titles})` : ""}.`
+  ];
+
+  if (knowledgeContext.trimmed) {
+    lines.push("Knowledge context trimmed to satisfy workflow token budget.");
+  }
+
+  if (knowledgeContext.sanitizeFlagCount > 0) {
+    lines.push(`Knowledge context sanitized (${knowledgeContext.sanitizeFlagCount} item(s) with flags).`);
+  }
+
+  return lines;
+}
+
+export function composeWorkflowBriefAiContextText(input: WorkflowBriefAiExecutionInput): string {
+  const briefContext = buildCompactBriefContext(input);
+  const knowledgeSection = input.approvedKnowledgeSection?.trim();
+  return knowledgeSection ? `${knowledgeSection}\n\n${briefContext}` : briefContext;
 }
 
 function buildCompactBriefContext(input: WorkflowBriefAiExecutionInput): string {
@@ -478,6 +526,18 @@ export function buildWorkflowBriefSeoReportJson(
   return buildReportJsonPayload(content, meta, "seo");
 }
 
+function buildKnowledgePrefixedExecutionLog(
+  input: WorkflowBriefAiExecutionInput,
+  bodyLines: string[],
+  observabilityLine?: string
+): string[] {
+  return [
+    ...buildExecutionLogEntries(input.finishedAtIso, buildWorkflowBriefKnowledgeContextLogLines(input.knowledgeContext)),
+    ...buildExecutionLogEntries(input.finishedAtIso, bodyLines),
+    ...(observabilityLine ? [observabilityLine] : [])
+  ];
+}
+
 function buildLocalSuccessResult(
   input: WorkflowBriefAiExecutionInput,
   preparedContext: ReturnType<typeof prepareAiGatewayV1Context>,
@@ -488,17 +548,18 @@ function buildLocalSuccessResult(
   const budget = toAiTextBudget(preparedContext.budgetDecision);
   const meta = buildMeta("local", "local-deterministic", input.finishedAtIso, false, budget, null);
 
-  const executionLog = [
-    ...buildExecutionLogEntries(input.finishedAtIso, [
+  const executionLog = buildKnowledgePrefixedExecutionLog(
+    input,
+    [
       `${logPrefix} Local deterministic MI + SEO generation completed.`,
       "No external AI services were called.",
       `Gateway: ${meta.gateway}.`,
       `Model: ${meta.model}.`,
       `Approximate input tokens: ${budget.approximateInputTokens}.`,
       `Max output tokens: ${budget.maxOutputTokens}.`
-    ]),
+    ],
     buildObservabilityBlock(meta)
-  ];
+  );
 
   return {
     ok: true,
@@ -514,14 +575,14 @@ export async function executeWorkflowBriefAiRun(
   input: WorkflowBriefAiExecutionInput,
   config: AiProviderConfig = getAiProviderConfig()
 ): Promise<WorkflowBriefAiExecutionResult> {
-  const contextText = buildCompactBriefContext(input);
+  const contextText = composeWorkflowBriefAiContextText(input);
   const preparedContext = prepareAiGatewayV1Context(contextText, "summary");
   const budget = toAiTextBudget(preparedContext.budgetDecision);
 
   if (shouldSimulateFailure(input.notes)) {
     const safeError = "Workflow brief AI run failed because brief notes include [stub-fail].";
     const meta = buildMeta("local", "local-deterministic", input.finishedAtIso, false, budget, safeError);
-    const executionLog = buildExecutionLogEntries(input.finishedAtIso, [
+    const executionLog = buildKnowledgePrefixedExecutionLog(input, [
       safeError,
       `Gateway: ${meta.gateway}.`,
       `Model: ${meta.model}.`
@@ -582,15 +643,16 @@ export async function executeWorkflowBriefAiRun(
       budget,
       gatewayResult.safeError
     );
-    fallback.executionLog = [
-      ...buildExecutionLogEntries(input.finishedAtIso, [
+    fallback.executionLog = buildKnowledgePrefixedExecutionLog(
+      input,
+      [
         "OpenRouter path attempted; falling back to local deterministic MI + SEO generation.",
         gatewayResult.safeError ? `Provider note: ${gatewayResult.safeError}` : "Provider returned no usable content.",
         `Gateway: ${fallback.meta.gateway}.`,
         `Model: ${fallback.meta.model}.`
-      ]),
+      ],
       buildObservabilityBlock(fallback.meta)
-    ];
+    );
     return fallback;
   }
 
@@ -609,13 +671,14 @@ export async function executeWorkflowBriefAiRun(
       budget,
       "Provider output was not safely parseable as structured MI + SEO JSON."
     );
-    fallback.executionLog = [
-      ...buildExecutionLogEntries(input.finishedAtIso, [
+    fallback.executionLog = buildKnowledgePrefixedExecutionLog(
+      input,
+      [
         "OpenRouter response received but not safely parseable; local deterministic fallback used.",
         `Model: ${gatewayResult.model}.`
-      ]),
+      ],
       buildObservabilityBlock(fallback.meta)
-    ];
+    );
     return fallback;
   }
 
@@ -628,17 +691,18 @@ export async function executeWorkflowBriefAiRun(
     null
   );
 
-  const executionLog = [
-    ...buildExecutionLogEntries(input.finishedAtIso, [
+  const executionLog = buildKnowledgePrefixedExecutionLog(
+    input,
+    [
       "OpenRouter MI + SEO generation completed successfully.",
       `Gateway: ${meta.gateway}.`,
       `Model: ${meta.model}.`,
       `Live provider called: yes.`,
       `Approximate input tokens: ${budget.approximateInputTokens}.`,
       `Max output tokens: ${budget.maxOutputTokens}.`
-    ]),
+    ],
     buildObservabilityBlock(meta)
-  ];
+  );
 
   return {
     ok: true,

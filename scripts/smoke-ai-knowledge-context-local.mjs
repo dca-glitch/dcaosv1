@@ -389,6 +389,54 @@ async function main() {
     assertNoLiveProviderLeak(executed, "Workflow execution");
     pass("Workflow execution includes approved knowledge context and excludes unapproved/isolated items");
 
+    const workflowBriefClientFact = await createKnowledge({
+      clientId: clientAId,
+      scope: "CLIENT",
+      type: "CLIENT_FACT",
+      status: "APPROVED",
+      title: `${SMOKE_MARKER} WorkflowBrief client fact`,
+      body: "approved client-scoped knowledge for workflow brief AI run",
+      allowedForPrompt: true
+    });
+
+    const createdWorkflowBrief = requireOk("Create workflow brief for knowledge wiring", await apiCall("POST", "/workflow-briefs", {
+      clientId: clientAId,
+      title: `${SMOKE_MARKER} Knowledge integration brief`,
+      goal: "Prove approved knowledge context is considered",
+      businessContext: "Smoke context",
+      targetAudience: "Smoke audience"
+    }, token));
+    const workflowBriefId = createdWorkflowBrief.brief?.id || createdWorkflowBrief.id;
+    if (!workflowBriefId) {
+      fail("Workflow brief create did not return brief id.");
+    }
+
+    requireOk("Submit workflow brief", await apiCall("POST", `/workflow-briefs/${workflowBriefId}/submit`, null, token));
+
+    const workflowBriefRun = requireOk("Run workflow brief AI with knowledge context", await apiCall("POST", `/workflow-briefs/${workflowBriefId}/run-ai`, null, token));
+    const workflowRun = workflowBriefRun.run;
+    if (!workflowRun?.inputSnapshotJson?.knowledgeContext) {
+      fail("Workflow brief AI run did not persist safe knowledgeContext metadata.");
+    }
+    if (!workflowRun.inputSnapshotJson.knowledgeContext.used) {
+      fail("Workflow brief AI run knowledgeContext.used should be true when client-scoped approved knowledge exists.");
+    }
+    if (workflowRun.inputSnapshotJson.contextSection || workflowRun.inputSnapshotJson.approvedKnowledgeSection) {
+      fail("Workflow brief AI run persisted raw knowledge context section.");
+    }
+    const workflowLogPreview = workflowRun.inputSnapshotJson.executionLogPreview;
+    if (!Array.isArray(workflowLogPreview) || !workflowLogPreview.some((line) => String(line).includes("Approved knowledge context included"))) {
+      fail("Workflow brief execution log preview did not report included approved knowledge context.");
+    }
+    if (!workflowLogPreview.some((line) => String(line).includes(workflowBriefClientFact.title))) {
+      fail("Workflow brief execution log did not reference approved knowledge item title.");
+    }
+    if (/ignore previous instructions/i.test(JSON.stringify(workflowRun.inputSnapshotJson))) {
+      fail("Raw injection phrase leaked into workflow brief AI run snapshot.");
+    }
+    assertNoLiveProviderLeak(workflowRun, "Workflow brief AI run");
+    pass("Workflow brief AI run includes approved knowledge context metadata without raw context leak");
+
     console.log("\nAI Knowledge + Context smoke completed successfully.");
   } finally {
     for (const id of createdKnowledgeIds.reverse()) {

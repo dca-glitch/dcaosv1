@@ -104,12 +104,14 @@ import {
 import {
   buildWorkflowBriefMiReportJson,
   buildWorkflowBriefSeoReportJson,
-  executeWorkflowBriefAiRun
+  executeWorkflowBriefAiRun,
+  type WorkflowBriefAiKnowledgeContextMeta
 } from "./workflow-brief-ai.execution";
 import type {
   WorkflowBriefMiReportContent,
   WorkflowBriefSeoReportContent
 } from "./workflow-brief-ai.execution";
+import { buildAiWorkflowKnowledgeContext } from "./ai-context-builder.service";
 
 const prisma = createPrismaClient();
 
@@ -771,6 +773,25 @@ export async function archiveWorkflowBrief(
   return { brief };
 }
 
+function toWorkflowBriefKnowledgeContextMetadata(
+  result: Awaited<ReturnType<typeof buildAiWorkflowKnowledgeContext>>
+): WorkflowBriefAiKnowledgeContextMeta {
+  return {
+    used: result.used,
+    selectedCount: result.selectedCount,
+    selectedItemTitles: result.selectedItemTitles,
+    skippedReason: result.skippedReason,
+    sanitizeFlagCount: result.sanitizeFlagCount,
+    trimmed: result.trimmed
+  };
+}
+
+function toWorkflowBriefKnowledgeContextJson(
+  knowledgeContext: WorkflowBriefAiKnowledgeContextMeta
+): Prisma.InputJsonValue {
+  return knowledgeContext as unknown as Prisma.InputJsonValue;
+}
+
 export async function triggerWorkflowBriefAiRun(
   authSession: AuthResolvedSessionContext,
   briefId: string
@@ -826,6 +847,15 @@ export async function triggerWorkflowBriefAiRun(
     structuredInputJson: brief.structuredInputJson
   };
 
+  const linkedProject = await resolveLinkedProjectForBrief(tenantId, briefId);
+  const workflowKnowledgeResult = await buildAiWorkflowKnowledgeContext({
+    tenantId,
+    clientId: brief.clientId,
+    aiDeliveryProjectId: linkedProject?.id ?? null,
+    workflowType: "summary"
+  });
+  const knowledgeContext = toWorkflowBriefKnowledgeContextMetadata(workflowKnowledgeResult);
+
   const startedAt = new Date();
 
   const runRecord = await prisma.$transaction(async (tx) => {
@@ -844,7 +874,10 @@ export async function triggerWorkflowBriefAiRun(
         triggeredByUserId: authSession.user.id,
         status: "RUNNING",
         startedAt,
-        inputSnapshotJson: inputSnapshot
+        inputSnapshotJson: {
+          ...inputSnapshot,
+          knowledgeContext: toWorkflowBriefKnowledgeContextJson(knowledgeContext)
+        }
       }
     });
   });
@@ -860,7 +893,9 @@ export async function triggerWorkflowBriefAiRun(
     locationContext: brief.locationContext,
     notes: brief.notes,
     structuredInputJson: brief.structuredInputJson,
-    finishedAtIso
+    finishedAtIso,
+    approvedKnowledgeSection: workflowKnowledgeResult.contextSection,
+    knowledgeContext
   });
 
   const resultSnapshot = {
@@ -882,6 +917,7 @@ export async function triggerWorkflowBriefAiRun(
           errorMessage: executionResult.errorMessage,
           inputSnapshotJson: {
             ...inputSnapshot,
+            knowledgeContext: toWorkflowBriefKnowledgeContextJson(knowledgeContext),
             resultSnapshot,
             executionLogPreview: executionResult.executionLog.slice(-6)
           }
@@ -916,6 +952,7 @@ export async function triggerWorkflowBriefAiRun(
         completedAt: new Date(),
         inputSnapshotJson: {
           ...inputSnapshot,
+          knowledgeContext: toWorkflowBriefKnowledgeContextJson(knowledgeContext),
           resultSnapshot,
           executionLogPreview: executionResult.executionLog.slice(-8)
         }

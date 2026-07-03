@@ -51,7 +51,12 @@ Requires local API, applied Prisma migrations (including `20260628120000_ai_oper
 
 ## Workflow execution attachment
 
-Approved prompt-eligible knowledge is automatically composed into AI Delivery workflow execution context via `buildAiWorkflowKnowledgeContext` when a workflow run executes. Existing compact project/brief/research/MI context is preserved and composed alongside knowledge context.
+Approved prompt-eligible knowledge is automatically composed into:
+
+1. **AI Delivery workflow execution context** via `buildAiWorkflowKnowledgeContext` when a workflow run executes (`core.runtime.ts` → `executeAiDeliveryWorkflowRun`).
+2. **WorkflowBriefs MI/SEO AI run context** via the same helper when `triggerWorkflowBriefAiRun` executes (`workflow-brief.runtime.ts` → `executeWorkflowBriefAiRun`). Only safe `knowledgeContext` metadata is stored on `AiBriefRun`; raw `contextSection` is admin-internal prompt input only.
+
+Existing compact project/brief/research/MI context is preserved and composed alongside knowledge context in both paths.
 
 Rules match default preview selection (approved-only, scoped, sanitized, token-trimmed). Execution logs record whether knowledge context was included or skipped.
 
