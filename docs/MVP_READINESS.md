@@ -64,6 +64,7 @@ The local smoke command intentionally refuses non-local API hosts. Add a separat
 
 ## Deployment Readiness Notes
 
+- **Pre-staging Block A pack:** [`docs/runbooks/STAGING_READINESS.md`](./runbooks/STAGING_READINESS.md) — GO / NO-GO checklist, env/migration/smoke/manual QA, and deferred non-blockers before any staging touch.
 - PR #13 is merged into `main`, local `main` validation passed, and local pre-staging proof was accepted; this does not mean staging or production deployment happened.
 - Current `main` deployed to production: 0%. Confirmed staging target: 0%. Production deployment of current `main`: 0%.
 - `system.digitalcubeagency.net` is a live production VPS target, not a confirmed staging target.

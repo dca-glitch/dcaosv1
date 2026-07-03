@@ -34,7 +34,7 @@ This matrix explains what is usable now, what is partial, and what is waiting fo
 | Revenue Hub AI | Future | Planned later after shared foundations are stable. |
 | POD AI Toolkit | Future | Planned later after shared foundations are stable. |
 | Data collection / scraping | Future / deferred | Broad scraping and autonomous crawling are not active. |
-| Confirmed staging target | Closed (G1) | G1 approved: `staging.digitalcubeagency.net`; production `system.digitalcubeagency.net`; same VPS, separate stack; DNS not created; G4 not approved. |
+| Confirmed staging target | Closed (G1) | G1 approved: `staging.digitalcubeagency.net`; production `system.digitalcubeagency.net`; same VPS, separate stack; DNS not created; G4 not approved. Pre-staging GO/NO-GO pack: [`docs/runbooks/STAGING_READINESS.md`](../runbooks/STAGING_READINESS.md). |
 | Production deployment | Deferred | PR #13 is merged to `main`, but current `main` is 0% deployed to production. VPS/production remains frozen until separate approval. |
 
 ## Core Platform

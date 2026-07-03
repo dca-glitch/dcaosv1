@@ -177,6 +177,22 @@ Current behavior:
 - owner/admin controlled access remains the safe path;
 - client access is client-level only.
 
+## Pre-Staging Non-Blockers (Block A)
+
+These items are deferred but **must not block** local staging readiness planning or G4 request prep. Full Block A pack: [`docs/runbooks/STAGING_READINESS.md`](../runbooks/STAGING_READINESS.md).
+
+| Item | Status | Notes |
+|------|--------|-------|
+| GA / GSC live sync | Deferred | Snapshot-first metrics; manual/Puriva placeholder proven |
+| Live provider proof | Deferred | Local deterministic default; OpenRouter opt-in |
+| WorkflowBriefs knowledge picker/override (6C-v2) | Deferred | 6C-v1 admin read-only visibility shipped |
+| `AiContextSnapshot` per-brief audit (6D) | Deferred | No `briefId` FK; safety via `smoke:ai-knowledge-context` |
+| `ClientMonthlyBrief` deprecation | Deferred | Legacy intake at `#/client-portal/briefs`; separate removal block |
+| Large AiDelivery modal refactor | Deferred | WP confirm modal extracted; further splits cosmetic |
+| Production deploy | Deferred | G4 staging is separate gate; prod frozen |
+
+---
+
 ## How To Move Something Out Of Deferred
 
 To activate a deferred item:

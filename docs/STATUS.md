@@ -142,6 +142,12 @@ Still deferred:
 - scripts
 - tests
 
+## Pre-Staging Block A (2026-07-03)
+
+- **Pack:** [`docs/runbooks/STAGING_READINESS.md`](./runbooks/STAGING_READINESS.md) — consolidated GO / NO-GO readiness, env/migration/smoke/manual QA checklists, and deferred non-blockers.
+- **Baseline:** `3dc1de6` (`feat(web): extract AiDelivery WordPress publish confirm modal`); CI green; docs-only; no deploy/staging touch.
+- **UI:** No admin staging checklist panel — docs-only (no safe route without `App.tsx` change).
+
 ## Next Work
 
 - Keep foundational docs/rules aligned with current assumptions.

@@ -6,6 +6,7 @@
 
 Related:
 
+- [`STAGING_READINESS.md`](./STAGING_READINESS.md) — Block A GO / NO-GO pack (env, smoke subset, manual QA, deferred non-blockers)
 - [`docs/deployment/VPS_STAGING_EXECUTION_APPROVAL_PACK.md`](../deployment/VPS_STAGING_EXECUTION_APPROVAL_PACK.md) — G4 VPS approval artifact (separate gate)
 - [`PRE_STAGING_VALIDATION_GATE.md`](./PRE_STAGING_VALIDATION_GATE.md) — local repo closeout
 - [`PRE_STAGING_CLIENT_DELIVERY_READINESS.md`](./PRE_STAGING_CLIENT_DELIVERY_READINESS.md) — client delivery proof

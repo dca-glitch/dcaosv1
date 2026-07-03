@@ -11,6 +11,25 @@ Related:
 
 ---
 
+## Block A — focused pre-staging subset
+
+Minimum smoke set before staging GO / NO-GO discussion (see [`STAGING_READINESS.md`](./STAGING_READINESS.md)):
+
+| Order | Command |
+|-------|---------|
+| 0 | `npm.cmd run validate` |
+| 1 | `npm.cmd run smoke:puriva-client-portal-boundary:local` |
+| 2 | `npm.cmd run smoke:ai-delivery-reviews` |
+| 3 | `npm.cmd run smoke:ai-seo-content-plan-pdf` |
+| 4 | `npm.cmd run smoke:ai-knowledge-context` |
+| 5 | `npm.cmd run smoke:client-portal-monthly-report:browser` |
+| 6 | `npm.cmd run smoke:monthly-report:browser` |
+| 7 | `npm.cmd run smoke:monthly-report:mi-context` |
+
+Optional broader gates: `smoke:pre-staging:local` (full orchestrator), `smoke:puriva-readiness:local` (Puriva chain).
+
+---
+
 ## Local validation order (recommended)
 
 Run from `C:\dcaosv1` in external PowerShell. Stop on first failure.
