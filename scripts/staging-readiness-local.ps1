@@ -81,6 +81,52 @@ function Write-LogAndExit([int]$ExitCode) {
   exit $ExitCode
 }
 
+function Invoke-NpmRun {
+  param(
+    [string]$Label,
+    [string]$ScriptName,
+    [string]$OutputLogPath = ""
+  )
+
+  $safeLabel = ($Label -replace "[:\\/]", "-")
+  $stamp = Get-Date -Format "yyyyMMdd-HHmmssfff"
+  $stdoutPath = Join-Path $env:TEMP ("dca-staging-readiness-{0}-{1}.stdout.log" -f $safeLabel, $stamp)
+  $stderrPath = Join-Path $env:TEMP ("dca-staging-readiness-{0}-{1}.stderr.log" -f $safeLabel, $stamp)
+
+  if ($script:AuthSeedTestPassword) {
+    $env:AUTH_SEED_TEST_PASSWORD = $script:AuthSeedTestPassword
+  }
+
+  $proc = Start-Process -FilePath "npm.cmd" `
+    -ArgumentList "run", $ScriptName `
+    -WorkingDirectory (Get-Location).Path `
+    -RedirectStandardOutput $stdoutPath `
+    -RedirectStandardError $stderrPath `
+    -NoNewWindow `
+    -PassThru `
+    -Wait
+
+  $stdout = Get-Content -Path $stdoutPath -Raw -ErrorAction SilentlyContinue
+  $stderr = Get-Content -Path $stderrPath -Raw -ErrorAction SilentlyContinue
+  $combinedParts = @()
+  if ($stdout) { $combinedParts += $stdout }
+  if ($stderr) { $combinedParts += $stderr }
+  $combinedText = ($combinedParts -join "`n").TrimEnd()
+
+  if ($combinedText) {
+    Write-Host $combinedText
+  }
+
+  if ($OutputLogPath) {
+    $combinedText | Set-Content -Path $OutputLogPath -Encoding UTF8
+  }
+
+  return @{
+    ExitCode = $proc.ExitCode
+    CombinedOutput = $combinedText
+  }
+}
+
 function Test-ValidateEpermOutput([string]$OutputText) {
   return ($OutputText -match "EPERM") -and ($OutputText -match "query_engine-windows\.dll\.node")
 }
@@ -106,24 +152,24 @@ function Stop-ProgramFilesNodeProcessesForPrismaEperm {
 function Invoke-ValidateWithEpermRetry {
   Add-LogLine "RUN validate"
   $validateLog = Join-Path $env:TEMP ("dca-staging-readiness-validate-{0}.log" -f (Get-Date -Format "yyyyMMdd-HHmmss"))
-  npm.cmd run validate 2>&1 | Tee-Object -FilePath $validateLog
-  if ($LASTEXITCODE -eq 0) {
+  $result = Invoke-NpmRun -Label "validate" -ScriptName "validate" -OutputLogPath $validateLog
+  if ($result.ExitCode -eq 0) {
     Add-LogLine "PASS validate"
     return
   }
 
-  $validateOutput = Get-Content -Path $validateLog -Raw -ErrorAction SilentlyContinue
-  if (-not (Test-ValidateEpermOutput $validateOutput)) {
-    Add-LogLine "FAIL validate exit=$LASTEXITCODE (not EPERM)"
-    Write-LogAndExit $LASTEXITCODE
+  if (-not (Test-ValidateEpermOutput $result.CombinedOutput)) {
+    Add-LogLine "FAIL validate exit=$($result.ExitCode) (not EPERM)"
+    Write-LogAndExit $result.ExitCode
   }
 
   Add-LogLine "validate failed with Prisma EPERM  -  one retry after stopping Program Files node.exe only"
   Stop-ProgramFilesNodeProcessesForPrismaEperm
-  npm.cmd run validate 2>&1 | Tee-Object -FilePath $validateLog -Append
-  if ($LASTEXITCODE -ne 0) {
-    Add-LogLine "FAIL validate after EPERM retry exit=$LASTEXITCODE"
-    Write-LogAndExit $LASTEXITCODE
+  $retryLog = Join-Path $env:TEMP ("dca-staging-readiness-validate-retry-{0}.log" -f (Get-Date -Format "yyyyMMdd-HHmmss"))
+  $retryResult = Invoke-NpmRun -Label "validate-retry" -ScriptName "validate" -OutputLogPath $retryLog
+  if ($retryResult.ExitCode -ne 0) {
+    Add-LogLine "FAIL validate after EPERM retry exit=$($retryResult.ExitCode)"
+    Write-LogAndExit $retryResult.ExitCode
   }
   Add-LogLine "PASS validate (after EPERM retry)"
 }
@@ -194,13 +240,10 @@ function Invoke-SmokeStep([hashtable]$Step) {
   }
 
   Add-LogLine ("RUN {0}" -f $Step.Label)
-  if ($script:AuthSeedTestPassword) {
-    $env:AUTH_SEED_TEST_PASSWORD = $script:AuthSeedTestPassword
-  }
-  npm.cmd run $Step.Script
-  if ($LASTEXITCODE -ne 0) {
-    Add-LogLine ("FAIL {0} exit={1}" -f $Step.Label, $LASTEXITCODE)
-    Write-LogAndExit $LASTEXITCODE
+  $result = Invoke-NpmRun -Label $Step.Label -ScriptName $Step.Script
+  if ($result.ExitCode -ne 0) {
+    Add-LogLine ("FAIL {0} exit={1}" -f $Step.Label, $result.ExitCode)
+    Write-LogAndExit $result.ExitCode
   }
   Add-LogLine ("PASS {0}" -f $Step.Label)
 }
