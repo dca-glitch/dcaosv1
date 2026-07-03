@@ -12,10 +12,11 @@ Default execution is **local/deterministic**. OpenRouter/live provider paths exi
 
 ## Current module split
 
-- **AI Delivery**: admin-operated Project / Brief / Workflow / Deliverable / Review / monthly report / client portal archive flow.
+- **AI Delivery**: the operational production workspace and canonical production data surface — Project / simple project-attached Brief (`AiDeliveryBrief`) / content plan / content drafts / article images / Deliverable / Review / exports / WordPress draft-prep boundary / monthly report / client portal archive flow.
+- **Workflow Briefs**: the composable intake / context-composition / production-automation layer — rich structured brief intake, AI run tracking, MI/SEO reports, `ProductionPlan` with client sign-off, and batch generation/packaging that writes into AiDelivery's shared production tables (content drafts, article images, deliverables). Not legacy and not a duplicate production workspace. See [`docs/modules/WORKFLOW_BRIEFS_MODULE_PLAN.md`](./modules/WORKFLOW_BRIEFS_MODULE_PLAN.md).
 - **Market Intelligence**: admin-operated Research / Insight flow with bounded deterministic analysis.
 
-Both modules are admin-operated, bounded, and review-gated. Human review is required before any publish or client-visible output.
+All three modules are admin-operated, bounded, and review-gated. Human review is required before any publish or client-visible output.
 
 ## Design rule
 

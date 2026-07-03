@@ -104,6 +104,7 @@ Completed admin-operated pieces:
 - **content plan PDF export hardening + App.tsx wiring (Block 3D)**
 - **content plan PDF handoff readiness state in admin UI (Block 3E)** — reuses the existing download-reference endpoint to show ready/not-ready state and gates the Download PDF button; no schema or endpoint changes
 - **stale PDF invalidation on plan edit (Block 3F)** — item edits and status changes (review/approve/changes-requested, admin and client-facing) now clear the stored PDF reference so admins are never shown a stale document as ready
+- **WorkflowBriefs vs AiDelivery architecture clarification (Block 4B/4C)** — WorkflowBriefs is a confirmed active intake/context-composition + production-automation layer, not legacy and not a duplicate production workspace; it writes into AiDelivery's shared production tables. See [`docs/modules/WORKFLOW_BRIEFS_MODULE_PLAN.md`](./modules/WORKFLOW_BRIEFS_MODULE_PLAN.md).
 
 Still deferred:
 

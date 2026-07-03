@@ -151,6 +151,12 @@ Current state clarification: Client Access Admin UI foundation is closed; Client
   - `ADMIN_APPROVED`
 - Uses `revisionCount` to support backend enforcement of the one client brief revision rule.
 
+`AiDeliveryBrief` is the simpler, project-attached brief concept described above. It is
+distinct from the richer, composable intake/context layer owned by WorkflowBriefs
+(`Brief`/`ProductionPlan`). Neither is legacy or scheduled for removal; see
+[`docs/modules/WORKFLOW_BRIEFS_MODULE_PLAN.md`](./modules/WORKFLOW_BRIEFS_MODULE_PLAN.md)
+for the full relationship.
+
 ### Relationship and behavior requirements
 
 - Client relation is required for ownership and portal access.
