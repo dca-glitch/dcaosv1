@@ -109,7 +109,7 @@ In-memory limit: 300 requests / 15 minutes per IP. Long smoke chains may hit 429
 | `smoke:dashboard:audit-feed:browser` | Dashboard audit feed (aligned to compact Dark Nebula UI) |
 | `smoke:dashboard-data-backed:browser` | Dashboard metrics |
 | `smoke:auth-invite-boundary:browser` | Invite boundary copy |
-| `smoke:puriva-client-portal-boundary:local` | Puriva client-safe boundary: archive/monthly-report/release-package/deliverable/article-image field safety, admin-only WorkflowBriefs path denial, WorkflowBriefs MI/SEO reportJson sanitization, Production Plan Review UI label/copy safety (Block 4G) |
+| `smoke:puriva-client-portal-boundary:local` | Puriva client-safe boundary: archive/monthly-report list+detail+download/release-package/deliverable field safety, `performanceSummary` provenance (`sourceType` allowed), legacy `/briefs` compatibility scan, admin-only WorkflowBriefs path denial, MI/SEO reportJson sanitization, Production Plan Review boundary (Blocks 4G/4B) |
 
 ### Staging-only (G4 — not local)
 

@@ -16,11 +16,13 @@ Related:
 ## What it proves
 
 1. **Portal user ensure** — `puriva@puriva.id` can authenticate using `AUTH_SEED_TEST_PASSWORD` from env (created via admin API when missing; password synced without logging credentials)
-2. **Client API boundary** — projects, deliverables, delivery summary, release package, monthly reports, catalog responses omit forbidden internals
-3. **Admin path denial** — client token blocked from workflow brief handoff/release admin endpoints (401/403)
-4. **Scaffold isolation** — internal draft/image scaffolds remain admin-only; client deliverables list is final-only or empty
-5. **Browser boundary** — client portal UI lacks publication handoff, internal prompts, and live publish wording
-6. **Empty states** — release package returns null / “No release package yet” when not finalized
+2. **Client API boundary** — projects, deliverables, delivery summary, release package, monthly reports (list + FINAL detail + download when document exists), catalog responses omit forbidden internals
+3. **Monthly report detail boundary (XXL 4B)** — explicit client `GET .../monthly-reports/:reportId` checks; `performanceSummary.sourceType` / `manualSource` / `disclaimer` allowed as client-safe provenance; raw snapshot/admin fields forbidden
+4. **Legacy `/briefs` compatibility scan (XXL 4B)** — light boundary on `GET /briefs?clientId=...` as client; forbids workflow/storage/knowledge internals; does not assert deprecation or removal (`companyId` / `submittedById` remain allowed)
+5. **Admin path denial** — client token blocked from workflow brief handoff/release admin endpoints (401/403)
+6. **Scaffold isolation** — internal draft/image scaffolds remain admin-only; client deliverables list is final-only or empty
+7. **Browser boundary** — client portal UI lacks publication handoff, internal prompts, and live publish wording
+8. **Empty states** — release package returns null / “No release package yet” when not finalized
 
 ---
 

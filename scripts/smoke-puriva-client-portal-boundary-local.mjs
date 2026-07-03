@@ -16,7 +16,10 @@ import {
 import {
   assertClientForbiddenAdminPath,
   assertClientPortalDeliverySummarySanitized,
+  assertClientPortalMonthlyReportBoundaryForbidden,
+  assertClientPortalMonthlyReportProvenanceAllowed,
   assertClientPortalMonthlyReportTitlesSanitized,
+  assertLegacyClientBriefsResponseSafe,
   assertPurivaClientPortalResponseSafe,
   assertPurivaClientPortalSetupMarkersAbsent,
   ensurePurivaClientPortalAuth,
@@ -186,6 +189,7 @@ async function main() {
     }
     if (label === "monthly reports") {
       assertClientPortalMonthlyReportTitlesSanitized(record, `client portal ${label}`, response);
+      assertClientPortalMonthlyReportBoundaryForbidden(record, `client portal ${label}`, response);
     }
   }
 
@@ -327,12 +331,18 @@ async function main() {
       "client portal monthly reports after FINAL",
       portalMonthlyReportsAfterFinal
     );
+    assertClientPortalMonthlyReportBoundaryForbidden(
+      record,
+      "client portal monthly reports after FINAL",
+      portalMonthlyReportsAfterFinal
+    );
 
     const portalMonthlyReportDetail = await request(
       `/client-portal/projects/${portalProject.id}/monthly-reports/${purivaReportId}`,
       { token: portalToken }
     );
     const performanceSummary = portalMonthlyReportDetail.body?.data?.performanceSummary ?? null;
+    const monthlyReportPayload = portalMonthlyReportDetail.body?.data?.monthlyReport ?? null;
     record(
       "client portal monthly report detail after FINAL",
       portalMonthlyReportDetail.status === 200,
@@ -348,11 +358,25 @@ async function main() {
       "client portal monthly report detail after FINAL",
       portalMonthlyReportDetail
     );
+    assertClientPortalMonthlyReportBoundaryForbidden(
+      record,
+      "client portal monthly report detail after FINAL",
+      portalMonthlyReportDetail
+    );
+    assertClientPortalMonthlyReportProvenanceAllowed(
+      record,
+      "client portal monthly report detail after FINAL",
+      portalMonthlyReportDetail
+    );
     record(
       "client portal monthly report detail exposes displayTitle",
-      typeof portalMonthlyReportDetail.body?.data?.monthlyReport?.displayTitle === "string" &&
-        portalMonthlyReportDetail.body.data.monthlyReport.displayTitle.length > 0,
-      portalMonthlyReportDetail.body?.data?.monthlyReport?.displayTitle ?? "missing"
+      typeof monthlyReportPayload?.displayTitle === "string" && monthlyReportPayload.displayTitle.length > 0,
+      monthlyReportPayload?.displayTitle ?? "missing"
+    );
+    record(
+      "client portal monthly report detail includes workSummary",
+      typeof portalMonthlyReportDetail.body?.data?.workSummary?.targetMonth === "string",
+      portalMonthlyReportDetail.body?.data?.workSummary?.targetMonth ?? "missing"
     );
     record(
       "client portal performance summary marks manual placeholder",
@@ -371,16 +395,30 @@ async function main() {
       !(portalMonthlyReportDetail.text ?? "").includes(PURIVA_MANUAL_METRICS_MARKER),
       (portalMonthlyReportDetail.text ?? "").includes(PURIVA_MANUAL_METRICS_MARKER) ? "marker leaked" : "clean"
     );
-    record(
-      "client portal monthly report detail omits itemMetrics embed",
-      !(portalMonthlyReportDetail.text ?? "").includes('"itemMetrics"'),
-      (portalMonthlyReportDetail.text ?? "").includes('"itemMetrics"') ? "embed leaked" : "clean"
-    );
-    record(
-      "client portal monthly report detail omits raw notes field",
-      !(portalMonthlyReportDetail.text ?? "").includes('"notes"'),
-      (portalMonthlyReportDetail.text ?? "").includes('"notes"') ? "notes leaked" : "clean"
-    );
+
+    if (monthlyReportPayload?.hasDocument === true) {
+      const portalMonthlyReportDownload = await request(
+        `/client-portal/projects/${portalProject.id}/monthly-reports/${purivaReportId}/download`,
+        { token: portalToken }
+      );
+      record(
+        "client portal monthly report download when document exists",
+        portalMonthlyReportDownload.status === 200 &&
+          typeof portalMonthlyReportDownload.body?.data?.downloadReference?.downloadUrl === "string",
+        `${portalMonthlyReportDownload.status}`
+      );
+      assertClientPortalMonthlyReportBoundaryForbidden(
+        record,
+        "client portal monthly report download",
+        portalMonthlyReportDownload
+      );
+    } else {
+      record(
+        "client portal monthly report download when document exists",
+        true,
+        "SKIPPED: no document on FINAL report (hasDocument=false)"
+      );
+    }
 
     const refreshedAdminMonthlyReport = await request(
       `/ai-delivery/reports/monthly/${firstRun.aiDeliveryProject.id}`,
@@ -405,7 +443,19 @@ async function main() {
       adminMiProject?.title ?? "missing"
     );
     }
+  } else {
+    record(
+      "client portal monthly report detail boundary",
+      true,
+      "SKIPPED: puriva monthly report scaffold missing locally"
+    );
   }
+
+  const legacyBriefsResponse = await request(
+    `/briefs?clientId=${encodeURIComponent(firstRun.client.id)}`,
+    { token: portalToken }
+  );
+  assertLegacyClientBriefsResponseSafe(record, "legacy client /briefs", legacyBriefsResponse);
 
   const forbiddenAdminPaths = [
     ["publication handoff status", `/workflow-briefs/${firstRun.workflowBrief.id}/publication-handoff`],

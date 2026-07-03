@@ -84,6 +84,96 @@ export function assertClientPortalDeliverySummarySanitized(record, label, respon
   assertPurivaClientPortalSetupMarkersAbsent(record, label, response);
 }
 
+/** Raw/admin monthly report fields that must never appear on client list/detail/download. */
+export const PURIVA_MONTHLY_REPORT_FORBIDDEN_RESPONSE =
+  /storageKey|adminSummaryNotes|miHandoffId|miContextDraft|"reportJson"|workflowRunId|executionLog|publicationHandoff|contextPreview|selectedSourcesJson|resultSnapshot|executionLogPreview|"itemMetrics"|"placeholderDisclaimer"|"verificationRequiredNotes"|"awaitingAnalyticsNote"|importedByUserId|approvedByUserId|aiDeliveryMonthlyMetricSnapshots|puriva_manual_metrics_seed|PURIVA_MANUAL_METRICS_V1/i;
+
+/** Legacy ClientMonthlyBrief (/briefs) — compatibility boundary, not deprecation proof. */
+export const PURIVA_LEGACY_BRIEFS_FORBIDDEN_RESPONSE =
+  /storageKey|workflowRunId|executionLog|"planJson"|"reportJson"|publicationHandoff|contextPreview|selectedSourcesJson|resultSnapshot|executionLogPreview|knowledgeContext|contextSection|approvedKnowledgeSection/i;
+
+export function assertClientPortalMonthlyReportBoundaryForbidden(record, label, response) {
+  const text = response.text ?? "";
+  record(
+    `${label} omits forbidden monthly report internals`,
+    !PURIVA_MONTHLY_REPORT_FORBIDDEN_RESPONSE.test(text),
+    PURIVA_MONTHLY_REPORT_FORBIDDEN_RESPONSE.test(text) ? "forbidden pattern found" : "clean"
+  );
+  record(
+    `${label} omits snapshot notes field`,
+    !/"notes"\s*:/.test(text),
+    /"notes"\s*:/.test(text) ? "snapshot notes leaked" : "clean"
+  );
+  record(
+    `${label} hides credential fields`,
+    !responseHasCredentialFields(text),
+    responseHasCredentialFields(text) ? "credential field leaked" : "safe fields"
+  );
+}
+
+export function assertClientPortalMonthlyReportProvenanceAllowed(record, label, response) {
+  const performanceSummary = response.body?.data?.performanceSummary ?? null;
+  if (!performanceSummary || typeof performanceSummary !== "object") {
+    record(`${label} allows client-safe provenance fields`, true, "SKIPPED: no performanceSummary");
+    return;
+  }
+
+  if ("sourceType" in performanceSummary) {
+    record(
+      `${label} allows client-safe sourceType provenance`,
+      typeof performanceSummary.sourceType === "string" && performanceSummary.sourceType.length > 0,
+      performanceSummary.sourceType ?? "missing"
+    );
+  } else {
+    record(`${label} allows client-safe sourceType provenance`, true, "SKIPPED: sourceType absent");
+  }
+
+  const hasManualProvenance =
+    performanceSummary.manualSource === true ||
+    (typeof performanceSummary.disclaimer === "string" && performanceSummary.disclaimer.length > 0) ||
+    performanceSummary.placeholderOnly === true;
+
+  record(
+    `${label} allows manual/placeholder provenance when present`,
+    hasManualProvenance || !("manualSource" in performanceSummary),
+    hasManualProvenance
+      ? `manualSource=${performanceSummary.manualSource ?? "absent"}`
+      : "no manual provenance fields"
+  );
+}
+
+export function assertLegacyClientBriefsResponseSafe(record, label, response) {
+  if (response.status === 403) {
+    record(`${label} compatibility boundary`, true, "SKIPPED: client forbidden from /briefs");
+    return;
+  }
+  if (response.status !== 200) {
+    record(`${label} compatibility boundary`, false, `unexpected HTTP ${response.status}`);
+    return;
+  }
+
+  const text = response.text ?? "";
+  const briefs = Array.isArray(response.body?.data) ? response.body.data : [];
+  record(
+    `${label} reachable`,
+    response.body?.ok === true,
+    `${briefs.length} brief(s)`
+  );
+  record(
+    `${label} omits forbidden workflow/storage internals`,
+    !PURIVA_LEGACY_BRIEFS_FORBIDDEN_RESPONSE.test(text),
+    PURIVA_LEGACY_BRIEFS_FORBIDDEN_RESPONSE.test(text) ? "forbidden pattern found" : "clean"
+  );
+  record(
+    `${label} hides credential fields`,
+    !responseHasCredentialFields(text),
+    responseHasCredentialFields(text) ? "credential field leaked" : "safe fields"
+  );
+  if (briefs.length === 0) {
+    record(`${label} legacy data present`, true, "SKIPPED: no legacy brief rows (boundary still checked)");
+  }
+}
+
 async function login(request, email, password) {
   return request("/auth/login", { method: "POST", body: { email, password } });
 }
