@@ -4,6 +4,7 @@ import { ErrorState } from "../../components/ErrorState";
 import { LoadingState } from "../../components/LoadingState";
 import { Modal } from "../../components/Modal";
 import { Button, MetricCard, PageHeader, SectionPanel, StatusBadge } from "../../components/ui";
+import { Spinner } from "../../design-system";
 import type { ClientSummary } from "../clients/ClientsPage";
 import type { ProjectSummary as ProjectLinkSummary } from "../projects/ProjectsPage";
 import { MonthlyReportPanel } from "./MonthlyReportPanel";
@@ -923,6 +924,32 @@ function formatStatusBreakdown(items: Array<{ status: string }>, fallback = "No 
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([status, count]) => `${formatEnumLabel(status)}: ${count}`)
     .join(" - ");
+}
+
+function AiDeliveryInlineLoading({ label }: { label: string }) {
+  return (
+    <p className="ai-delivery-inline-loading" role="status">
+      <Spinner size="sm" />
+      {label}
+    </p>
+  );
+}
+
+function AiDeliveryInlineAlert({ message, title }: { message: string; title?: string }) {
+  return (
+    <div className="ai-delivery-inline-alert" role="alert">
+      {title ? <strong>{title}: </strong> : null}
+      {message}
+    </div>
+  );
+}
+
+function AiDeliveryInlineNotice({ children }: { children: React.ReactNode }) {
+  return <div className="ai-delivery-inline-notice" role="status">{children}</div>;
+}
+
+function AiDeliveryInlineEmpty({ children }: { children: React.ReactNode }) {
+  return <p className="ai-delivery-inline-empty muted-text">{children}</p>;
 }
 
 export function AiDeliveryPage({
@@ -3116,8 +3143,32 @@ export function AiDeliveryPage({
     }
   }
 
-  if (loading) return <LoadingState label="Loading AI delivery projects" />;
-  if (error) return <ErrorState title="AI delivery unavailable" message={error} />;
+  if (loading) {
+    return (
+      <section className="view-section ai-delivery-page" aria-labelledby="ai-delivery-title">
+        <PageHeader
+          eyebrow="AI Workflow"
+          title="AI Delivery Projects"
+          titleId="ai-delivery-title"
+          description="Brief through content plan, drafts, deliverables, and monthly report."
+        />
+        <AiDeliveryInlineLoading label="Loading AI delivery projects" />
+      </section>
+    );
+  }
+  if (error) {
+    return (
+      <section className="view-section ai-delivery-page" aria-labelledby="ai-delivery-title">
+        <PageHeader
+          eyebrow="AI Workflow"
+          title="AI Delivery Projects"
+          titleId="ai-delivery-title"
+          description="Brief through content plan, drafts, deliverables, and monthly report."
+        />
+        <AiDeliveryInlineAlert message={error} title="AI delivery unavailable" />
+      </section>
+    );
+  }
 
   const filteredProjects = projects.filter((project) => {
     if (filter === "active") return !project.isArchived;
@@ -3138,7 +3189,7 @@ export function AiDeliveryPage({
     : "Open Deliverables to review package status.";
 
   return (
-    <section className="view-section" aria-labelledby="ai-delivery-title">
+    <section className="view-section ai-delivery-page" aria-labelledby="ai-delivery-title">
       <PageHeader
         eyebrow="AI Workflow"
         title="AI Delivery Projects"
@@ -3237,7 +3288,7 @@ export function AiDeliveryPage({
           onClose={closeProjectEditor}
           title={editorProjectId ? "Edit AI Delivery" : "Add AI Delivery"}
         >
-          <form className="entity-form" onSubmit={handleSubmit}>
+          <form className="entity-form ai-delivery-modal-panel" onSubmit={handleSubmit}>
             <div className="field-grid">
               <label>
                 Client - Required
@@ -3259,7 +3310,6 @@ export function AiDeliveryPage({
                     </option>
                   ))}
                 </select>
-                <span className="muted-text">Client this AI Delivery work belongs to.</span>
               </label>
 
               <label>
@@ -3271,7 +3321,6 @@ export function AiDeliveryPage({
                   required
                   value={draft.targetMonth}
                 />
-                <span className="muted-text" id="ai-delivery-target-month-help">Month this AI Delivery work is planned for.</span>
               </label>
 
               <label>
@@ -3283,19 +3332,16 @@ export function AiDeliveryPage({
                   required
                   value={draft.name}
                 />
-                <span className="muted-text">Used to group monthly AI Delivery work.</span>
               </label>
 
               <div>
                 <span>Project status</span>
                 <strong>{selectedProject?.isArchived ? "Archived" : "Active / new"}</strong>
-                <span className="muted-text">Current internal status for this AI Delivery project.</span>
               </div>
 
               <div>
                 <span>Brief status</span>
                 <strong>{formatEnumLabel(selectedProject?.brief?.status ?? null)}</strong>
-                <span className="muted-text">Revision/final approval status for the linked brief.</span>
               </div>
 
               <label className="field-span-2">
@@ -3307,7 +3353,7 @@ export function AiDeliveryPage({
                   rows={4}
                   value={draft.plannedContentScopeNotes}
                 />
-                <span className="muted-text">Visible only to admin team. Use this for scope, summary, or planning notes.</span>
+                <span className="muted-text">Admin-only scope or planning notes.</span>
               </label>
 
               <label>
@@ -3323,12 +3369,11 @@ export function AiDeliveryPage({
                     </option>
                   ))}
                 </select>
-                <span className="muted-text">Optional internal reference. Not shown to client.</span>
               </label>
             </div>
-            <div className="modal-footer">
+            <div className="modal-footer ai-delivery-modal-footer">
               <button
-                className="secondary-action"
+                className="ghost-action"
                 disabled={saving}
                 onClick={closeProjectEditor}
                 type="button"
@@ -3352,11 +3397,11 @@ export function AiDeliveryPage({
           title="AI Delivery Brief"
         >
           {briefLoading ? (
-            <LoadingState label="Loading brief" />
+            <AiDeliveryInlineLoading label="Loading brief" />
           ) : openProject ? (
             briefDetail ? (
-              <div>
-                {briefError ? <ErrorState title="Brief action blocked" message={briefError} /> : null}
+              <div className="ai-delivery-modal-panel stack gap-md">
+                {briefError ? <AiDeliveryInlineAlert message={briefError} title="Brief action blocked" /> : null}
                 <dl className="brief-grid">
                   <div>
                     <dt>Client</dt>
@@ -3384,75 +3429,63 @@ export function AiDeliveryPage({
                   </div>
                 </dl>
 
-                <section className="field-panel">
+                <section className="field-panel ai-delivery-section-compact">
                   <h3>Client input / priorities - Optional</h3>
                   {canEdit && typeof onSaveBrief === "function" ? (
-                    <>
-                      <textarea
-                        placeholder="Client priorities, requested topics, or campaign focus"
-                        rows={3}
-                        value={briefDetail.clientPriorities ?? ""}
-                        onChange={(e) => setBriefDetail({ ...briefDetail, clientPriorities: e.target.value })}
-                      />
-                      <span className="muted-text">Client-provided direction used to guide this monthly AI Delivery work.</span>
-                    </>
+                    <textarea
+                      placeholder="Client priorities, requested topics, or campaign focus"
+                      rows={3}
+                      value={briefDetail.clientPriorities ?? ""}
+                      onChange={(e) => setBriefDetail({ ...briefDetail, clientPriorities: e.target.value })}
+                    />
                   ) : (
                     <pre className="pre-wrap-block">{briefDetail.clientPriorities ?? "Not set"}</pre>
                   )}
                 </section>
 
-                <section className="field-panel">
+                <section className="field-panel ai-delivery-section-compact">
                   <h3>Products / services focus - Optional</h3>
                   {canEdit && typeof onSaveBrief === "function" ? (
-                    <>
-                      <textarea
-                        placeholder="Products, services, or offers to emphasize"
-                        rows={3}
-                        value={briefDetail.productsServicesFocus ?? ""}
-                        onChange={(e) => setBriefDetail({ ...briefDetail, productsServicesFocus: e.target.value })}
-                      />
-                      <span className="muted-text">Helps admins keep content aligned with current client priorities.</span>
-                    </>
+                    <textarea
+                      placeholder="Products, services, or offers to emphasize"
+                      rows={3}
+                      value={briefDetail.productsServicesFocus ?? ""}
+                      onChange={(e) => setBriefDetail({ ...briefDetail, productsServicesFocus: e.target.value })}
+                    />
                   ) : (
                     <pre className="pre-wrap-block">{briefDetail.productsServicesFocus ?? "Not set"}</pre>
                   )}
                 </section>
 
-                <section className="field-panel">
+                <section className="field-panel ai-delivery-section-compact">
                   <h3>Target audience - Optional</h3>
                   {canEdit && typeof onSaveBrief === "function" ? (
-                    <>
-                      <textarea
-                        placeholder="Audience segments, buyer roles, or reader context"
-                        rows={3}
-                        value={briefDetail.targetAudience ?? ""}
-                        onChange={(e) => setBriefDetail({ ...briefDetail, targetAudience: e.target.value })}
-                      />
-                      <span className="muted-text">Used by the admin team when planning briefs, topics, and drafts.</span>
-                    </>
+                    <textarea
+                      placeholder="Audience segments, buyer roles, or reader context"
+                      rows={3}
+                      value={briefDetail.targetAudience ?? ""}
+                      onChange={(e) => setBriefDetail({ ...briefDetail, targetAudience: e.target.value })}
+                    />
                   ) : (
                     <pre className="pre-wrap-block">{briefDetail.targetAudience ?? "Not set"}</pre>
                   )}
                 </section>
 
-                <section className="field-panel">
+                <section className="field-panel ai-delivery-section-compact">
                   <h3>Research / admin feedback - Optional</h3>
                   {canEdit && typeof onSaveBrief === "function" ? (
-                    <>
-                      <textarea
-                        placeholder="Markets, competitors, research findings, or admin feedback"
-                        rows={3}
-                        value={briefDetail.marketsCompetitors ?? ""}
-                        onChange={(e) => setBriefDetail({ ...briefDetail, marketsCompetitors: e.target.value })}
-                      />
-                      <span className="muted-text">Visible only to admin team.</span>
-                    </>
+                    <textarea
+                      placeholder="Markets, competitors, research findings, or admin feedback"
+                      rows={3}
+                      value={briefDetail.marketsCompetitors ?? ""}
+                      onChange={(e) => setBriefDetail({ ...briefDetail, marketsCompetitors: e.target.value })}
+                    />
                   ) : (
                     <pre className="pre-wrap-block">{briefDetail.marketsCompetitors ?? "Not set"}</pre>
                   )}
                 </section>
 
-                <section className="field-panel">
+                <section className="field-panel ai-delivery-section-compact">
                   <h3>Optional internal notes</h3>
                   {canEdit && typeof onSaveBrief === "function" ? (
                     <>
@@ -3462,23 +3495,23 @@ export function AiDeliveryPage({
                         value={briefDetail.notes ?? ""}
                         onChange={(e) => setBriefDetail({ ...briefDetail, notes: e.target.value })}
                       />
-                      <span className="muted-text">Not shown to client.</span>
+                      <span className="muted-text">Admin-only.</span>
                     </>
                   ) : (
                     <pre className="pre-wrap-block">{briefDetail.notes ?? "Not set"}</pre>
                   )}
                 </section>
 
-                <div className="modal-footer">
-                  <button className="secondary-action" onClick={() => { setOpenBriefId(null); setBriefError(null); setBriefDetail(null); }} type="button">Close</button>
+                <div className="modal-footer ai-delivery-modal-footer">
+                  <button className="ghost-action" onClick={() => { setOpenBriefId(null); setBriefError(null); setBriefDetail(null); }} type="button">Close</button>
                   {canEdit && typeof onSaveBrief === "function" ? (
                     <button className="primary-action" onClick={() => void handleSaveBrief(openProject.id)} type="button">Save brief</button>
                   ) : null}
                 </div>
               </div>
             ) : openProject.brief ? (
-              <div>
-                {briefError ? <ErrorState title="Brief action blocked" message={briefError} /> : null}
+              <div className="ai-delivery-modal-panel stack gap-md">
+                {briefError ? <AiDeliveryInlineAlert message={briefError} title="Brief action blocked" /> : null}
                 <dl className="brief-grid">
                   <div>
                     <dt>Status</dt>
@@ -3501,12 +3534,12 @@ export function AiDeliveryPage({
                   <h3>Planned content scope notes</h3>
                   <pre className="pre-wrap-block">{openProject.plannedContentScopeNotes ?? 'Not set'}</pre>
                 </section>
-                <div className="modal-footer">
-                  <button className="secondary-action" onClick={() => { setOpenBriefId(null); setBriefError(null); setBriefDetail(null); }} type="button">Close</button>
+                <div className="modal-footer ai-delivery-modal-footer">
+                  <button className="ghost-action" onClick={() => { setOpenBriefId(null); setBriefError(null); setBriefDetail(null); }} type="button">Close</button>
                 </div>
               </div>
             ) : (
-              <div className="state-panel">No brief is available for this project yet. Create or open the project record to continue briefing.</div>
+              <AiDeliveryInlineEmpty>No brief is available for this project yet. Create or open the project record to continue briefing.</AiDeliveryInlineEmpty>
             )
           ) : (
             <div>Project not found.</div>
@@ -3516,10 +3549,10 @@ export function AiDeliveryPage({
       {openContentPlanId ? (
         <Modal onClose={closeContentPlan} title="Monthly SEO / Content Plan">
           {contentPlanLoading ? (
-            <LoadingState label="Loading content plan" />
+            <AiDeliveryInlineLoading label="Loading content plan" />
           ) : openContentPlanProject ? (
-            <div>
-              {contentPlanError ? <ErrorState title="Content plan action blocked" message={contentPlanError} /> : null}
+            <div className="ai-delivery-modal-panel stack gap-md">
+              {contentPlanError ? <AiDeliveryInlineAlert message={contentPlanError} title="Content plan action blocked" /> : null}
               <p className="muted-text">
                 <strong>{openContentPlanProject.name}</strong>
                 {" · "}
@@ -3530,7 +3563,7 @@ export function AiDeliveryPage({
               </p>
               <SectionPanel
                 title="Workflow readiness"
-                description="Research, plan, and draft handoff status for this project."
+                description="Research, plan, and draft handoff status."
                 className="metrics-section"
                 tone="compact"
               >
@@ -3577,10 +3610,10 @@ export function AiDeliveryPage({
               </SectionPanel>
               {contentPlanDetail ? (
                 <>
-                  <section className="field-panel">
+                  <section className="field-panel ai-delivery-section-compact">
                     <h3>SEO topic/research planning</h3>
-                    {contentPlanGenerationMessage ? <div className="state-panel" role="status">{contentPlanGenerationMessage}</div> : null}
-                    {contentPlanPdfMessage ? <div className="state-panel" role="status">{contentPlanPdfMessage}</div> : null}
+                    {contentPlanGenerationMessage ? <AiDeliveryInlineNotice>{contentPlanGenerationMessage}</AiDeliveryInlineNotice> : null}
+                    {contentPlanPdfMessage ? <AiDeliveryInlineNotice>{contentPlanPdfMessage}</AiDeliveryInlineNotice> : null}
                   </section>
                   <dl className="brief-grid">
                     <div>
@@ -3601,10 +3634,10 @@ export function AiDeliveryPage({
                     </div>
                   </dl>
 
-                  <section className="field-panel">
+                  <section className="field-panel ai-delivery-section-compact">
                     <h3>Monthly plan items</h3>
                     {contentPlanItems.length === 0 ? (
-                      <div className="state-panel">No monthly plan items yet. Add a topic to continue planning.</div>
+                      <AiDeliveryInlineEmpty>No monthly plan items yet. Add a topic to continue planning.</AiDeliveryInlineEmpty>
                     ) : null}
                     {contentPlanItems.map((item, index) => {
                       const persistedItem = contentPlanDetail.items.find((planItem) => planItem.id === item.localId) ?? null;
@@ -3684,9 +3717,9 @@ export function AiDeliveryPage({
                           <span>Priority</span>
                           <strong>{index + 1}</strong>
                           <span className="muted-text">{formatContentPlanSearchIntent(item.searchIntent)} intent • lower numbers publish first.</span>
-                          <div className="modal-footer modal-footer--flush">
+                          <div className="modal-footer modal-footer--flush ai-delivery-modal-footer">
                             <button
-                              className="secondary-action"
+                              className="ghost-action"
                               disabled={isContentPlanBusy || index === 0}
                               onClick={() => setContentPlanItems((current) => moveContentPlanItem(current, index, -1))}
                               type="button"
@@ -3694,7 +3727,7 @@ export function AiDeliveryPage({
                               Move up
                             </button>
                             <button
-                              className="secondary-action"
+                              className="ghost-action"
                               disabled={isContentPlanBusy || index === contentPlanItems.length - 1}
                               onClick={() => setContentPlanItems((current) => moveContentPlanItem(current, index, 1))}
                               type="button"
@@ -3727,9 +3760,9 @@ export function AiDeliveryPage({
                           <span className="muted-text">Latest persisted approval or revision note for this item.</span>
                         </div>
                         <div className="field-span-2">
-                          <div className="modal-footer modal-footer--flush">
+                          <div className="modal-footer modal-footer--flush ai-delivery-modal-footer">
                             <button
-                              className="secondary-action"
+                              className="ghost-action"
                               disabled={isContentPlanBusy || !persistedItem?.id || persistedItem.approvalStatus === "CLIENT_CHANGES_REQUESTED"}
                               onClick={() => persistedItem ? void generateContentDraftFromPlanItem(openContentPlanProject.id, persistedItem) : undefined}
                               title={!persistedItem?.id ? "Save the monthly content plan before generating a draft from this item." : undefined}
@@ -3740,13 +3773,13 @@ export function AiDeliveryPage({
                           </div>
                           <span className="muted-text">
                             {!persistedItem?.id
-                              ? "Save the monthly plan before generating a linked admin draft from this item."
-                              : "Runs admin-only draft generation from this saved content plan item. It does not publish, deliver to client, or open client review."}
+                              ? "Save the plan before generating a linked admin draft."
+                              : "Admin-only draft generation from this plan item."}
                           </span>
                         </div>
                         <div className="field-span-2">
                           <button
-                            className="secondary-action"
+                            className="ghost-action"
                             disabled={isContentPlanBusy}
                             onClick={() => setContentPlanItems((current) => current.filter((draftItem) => draftItem.localId !== item.localId))}
                             type="button"
@@ -3758,7 +3791,7 @@ export function AiDeliveryPage({
                       );
                     })}
                     <button
-                      className="secondary-action"
+                      className="ghost-action"
                       disabled={isContentPlanBusy}
                       onClick={() => setContentPlanItems((current) => [...current, emptyContentPlanItem()])}
                       type="button"
@@ -3767,11 +3800,11 @@ export function AiDeliveryPage({
                     </button>
                   </section>
 
-                  <div className="modal-footer">
-                    <button className="secondary-action" disabled={isContentPlanBusy} onClick={closeContentPlan} type="button">Close</button>
-                    <button className="secondary-action" disabled={isContentPlanBusy} onClick={() => void handleContentPlanAction(openContentPlanProject.id, onRequestContentPlanReview)} type="button">Mark ready for review</button>
-                    <button className="secondary-action" disabled={isContentPlanBusy} onClick={() => void handleContentPlanAction(openContentPlanProject.id, onRequestContentPlanChanges)} type="button">Request changes</button>
-                    <button className="secondary-action" disabled={isContentPlanBusy} onClick={() => void handleContentPlanAction(openContentPlanProject.id, onApproveContentPlan)} type="button">Approve plan</button>
+                  <div className="modal-footer ai-delivery-modal-footer">
+                    <button className="ghost-action" disabled={isContentPlanBusy} onClick={closeContentPlan} type="button">Close</button>
+                    <button className="ghost-action" disabled={isContentPlanBusy} onClick={() => void handleContentPlanAction(openContentPlanProject.id, onRequestContentPlanReview)} type="button">Mark ready for review</button>
+                    <button className="ghost-action" disabled={isContentPlanBusy} onClick={() => void handleContentPlanAction(openContentPlanProject.id, onRequestContentPlanChanges)} type="button">Request changes</button>
+                    <button className="ghost-action" disabled={isContentPlanBusy} onClick={() => void handleContentPlanAction(openContentPlanProject.id, onApproveContentPlan)} type="button">Approve plan</button>
                     <button className="ghost-action" disabled={isContentPlanBusy || contentPlanPdfGenerating} onClick={() => void handleGenerateContentPlanPdf(openContentPlanProject.id)} type="button">{contentPlanPdfGenerating ? "Generating PDF…" : "Export PDF"}</button>
                     <button className="ghost-action" disabled={isContentPlanBusy || contentPlanPdfGenerating || contentPlanPdfReady !== true} onClick={() => void handleDownloadContentPlanDocument(openContentPlanProject.id)} type="button">Download PDF</button>
                     <span className="muted-text" role="status">{contentPlanPdfReady === true ? "PDF ready" : contentPlanPdfReady === false ? "No PDF generated yet" : ""}</span>
@@ -3803,11 +3836,11 @@ export function AiDeliveryPage({
       {openResearchSourcesId ? (
         <Modal onClose={closeResearchSources} title="Research / Sources">
           {researchLoading ? (
-            <LoadingState label="Loading research requests and sources" />
+            <AiDeliveryInlineLoading label="Loading research requests and sources" />
           ) : openResearchSourcesProject ? (
-            <div>
-              {researchError ? <ErrorState title="Research action blocked" message={researchError} /> : null}
-              <section className="field-panel">
+            <div className="ai-delivery-modal-panel ai-delivery-research-editor stack gap-md">
+              {researchError ? <AiDeliveryInlineAlert message={researchError} title="Research action blocked" /> : null}
+              <section className="field-panel ai-delivery-section-compact">
                 <h3>Research request editor</h3>
                 <div className="field-grid">
                   <label>
@@ -3815,7 +3848,6 @@ export function AiDeliveryPage({
                     <select value={researchRequestForm.status} onChange={(event) => setResearchRequestForm((current) => ({ ...current, status: event.target.value }))}>
                       {researchRequestStatuses.map((status) => <option key={status} value={status}>{formatEnumLabel(status)}</option>)}
                     </select>
-                    <span className="muted-text">Admin-only lifecycle state for this manual research request.</span>
                   </label>
                   <label>
                     Linked workflow run - Optional
@@ -3823,36 +3855,33 @@ export function AiDeliveryPage({
                       <option value="">Manual / unlinked request</option>
                       {researchWorkflowRuns.map((run) => <option key={run.id} value={run.id}>Workflow run - {formatEnumLabel(run.status)}</option>)}
                     </select>
-                    <span className="muted-text">Only link a request to a workflow run from the same AI Delivery project.</span>
                   </label>
                   <label className="field-span-2">
                     Title - Required
                     <input maxLength={255} placeholder="Competitor review, source gathering, keyword gap, audience research" value={researchRequestForm.title} onChange={(event) => setResearchRequestForm((current) => ({ ...current, title: event.target.value }))} />
-                    <span className="muted-text">Working title for the research work the admin team wants to track manually.</span>
                   </label>
                   <label>
                     Request type / topic - Optional
                     <input maxLength={255} placeholder="Competitors, sources, SERP notes, local intent" value={researchRequestForm.requestType} onChange={(event) => setResearchRequestForm((current) => ({ ...current, requestType: event.target.value }))} />
-                    <span className="muted-text">Short category used to group similar research work.</span>
                   </label>
                   <label className="field-span-2">
                     Description / notes - Optional
                     <textarea maxLength={4000} placeholder="What should be reviewed, what to collect manually, and what the source list should prove" rows={4} value={researchRequestForm.description} onChange={(event) => setResearchRequestForm((current) => ({ ...current, description: event.target.value }))} />
-                    <span className="muted-text">Visible only to admin team. No external fetching is triggered from this screen.</span>
+                    <span className="muted-text">Admin-only. No external fetching runs here.</span>
                   </label>
                 </div>
-                <div className="modal-footer">
-                  <button className="secondary-action" disabled={researchSaving} onClick={closeResearchSources} type="button">Close</button>
-                  <button className="secondary-action" disabled={researchSaving} onClick={() => { setResearchRequestEditorId(null); setResearchRequestForm(emptyResearchRequest()); }} type="button">New request</button>
+                <div className="modal-footer ai-delivery-modal-footer">
+                  <button className="ghost-action" disabled={researchSaving} onClick={closeResearchSources} type="button">Close</button>
+                  <button className="ghost-action" disabled={researchSaving} onClick={() => { setResearchRequestEditorId(null); setResearchRequestForm(emptyResearchRequest()); }} type="button">New request</button>
                   <button className="primary-action" disabled={researchSaving || !researchRequestForm.title.trim()} onClick={() => void saveResearchRequest(openResearchSourcesProject.id)} type="button">
                     {researchSaving ? "Saving" : researchRequestEditorId ? "Save request" : "Create request"}
                   </button>
                 </div>
               </section>
 
-              <section className="field-panel">
+              <section className="field-panel ai-delivery-section-compact">
                 <h3>Existing research requests</h3>
-                {researchRequests.length === 0 ? <div className="state-panel">No research requests yet. Add a request to continue.</div> : null}
+                {researchRequests.length === 0 ? <AiDeliveryInlineEmpty>No research requests yet. Add a request to continue.</AiDeliveryInlineEmpty> : null}
                 {researchRequests.map((request) => (
                   <article className="entity-card" key={request.id}>
                     <div className="entity-card-header">
@@ -3862,7 +3891,7 @@ export function AiDeliveryPage({
                         <p>Updated {formatOptionalDate(request.updatedAt)}</p>
                       </div>
                       <div className="card-actions">
-                        <button className="secondary-action" disabled={researchSaving} onClick={() => editResearchRequest(request)} type="button">Edit</button>
+                        <button className="ghost-action" disabled={researchSaving} onClick={() => editResearchRequest(request)} type="button">Edit</button>
                       </div>
                     </div>
                     <dl className="brief-grid">
@@ -3891,22 +3920,14 @@ export function AiDeliveryPage({
                 ))}
               </section>
 
-              <section className="field-panel">
+              <section className="field-panel ai-delivery-section-compact">
                 <h3>Research summary editor</h3>
-                <div className="modal-footer">
-                  <button className="secondary-action" disabled={researchSaving} onClick={closeResearchSources} type="button">Close</button>
-                  <button className="secondary-action" disabled={researchSaving} onClick={() => { setResearchSummaryEditorId(null); setResearchSummaryForm(emptyResearchSummary()); }} type="button">New summary</button>
-                  <button className="primary-action" disabled={researchSaving || !researchSummaryForm.title.trim() || !researchSummaryForm.summaryText.trim()} onClick={() => void saveResearchSummary(openResearchSourcesProject.id)} type="button">
-                    {researchSaving ? "Saving" : researchSummaryEditorId ? "Save summary" : "Create summary"}
-                  </button>
-                </div>
                 <div className="field-grid">
                   <label>
                     Status - Required
                     <select value={researchSummaryForm.status} onChange={(event) => setResearchSummaryForm((current) => ({ ...current, status: event.target.value }))}>
                       {researchSummaryStatuses.map((status) => <option key={status} value={status}>{formatEnumLabel(status)}</option>)}
                     </select>
-                    <span className="muted-text">Admin-controlled lifecycle for the internal research summary.</span>
                   </label>
                   <label>
                     Linked workflow run - Optional
@@ -3914,66 +3935,56 @@ export function AiDeliveryPage({
                       <option value="">Manual / unlinked summary</option>
                       {researchWorkflowRuns.map((run) => <option key={run.id} value={run.id}>Workflow run - {formatEnumLabel(run.status)}</option>)}
                     </select>
-                    <span className="muted-text">Use only when the linked workflow run belongs to this same AI Delivery project.</span>
                   </label>
                   <label className="field-span-2">
                     Title - Required
                     <input maxLength={255} placeholder="SEO findings summary for brief revision and content planning" value={researchSummaryForm.title} onChange={(event) => setResearchSummaryForm((current) => ({ ...current, title: event.target.value }))} />
-                    <span className="muted-text">Internal title for the admin-authored summary of approved research findings.</span>
                   </label>
                   <label className="field-span-2">
                     Summary - Required
                     <textarea maxLength={4000} placeholder="Summarize the research findings, business context, and what should influence planning next" rows={5} value={researchSummaryForm.summaryText} onChange={(event) => setResearchSummaryForm((current) => ({ ...current, summaryText: event.target.value }))} />
-                    <span className="muted-text">Core internal summary for the project team. No AI generation or external fetch runs here.</span>
                   </label>
                   <label className="field-span-2">
                     Key findings - Optional
                     <textarea maxLength={4000} placeholder="Top findings the admin team wants to preserve from the manual research review" rows={3} value={researchSummaryForm.keyFindings} onChange={(event) => setResearchSummaryForm((current) => ({ ...current, keyFindings: event.target.value }))} />
-                    <span className="muted-text">Use for the most important takeaways that should guide brief refinement.</span>
                   </label>
                   <label className="field-span-2">
                     Audience insights - Optional
                     <textarea maxLength={4000} placeholder="Audience problems, intent signals, and messaging cues discovered during research" rows={3} value={researchSummaryForm.audienceInsights} onChange={(event) => setResearchSummaryForm((current) => ({ ...current, audienceInsights: event.target.value }))} />
-                    <span className="muted-text">Visible only to admin team.</span>
                   </label>
                   <label className="field-span-2">
                     Competitor insights - Optional
                     <textarea maxLength={4000} placeholder="Competitor positioning, gaps, and useful benchmark observations" rows={3} value={researchSummaryForm.competitorInsights} onChange={(event) => setResearchSummaryForm((current) => ({ ...current, competitorInsights: event.target.value }))} />
-                    <span className="muted-text">Use for internal competitive context only.</span>
                   </label>
                   <label className="field-span-2">
                     Keyword opportunities - Optional
                     <textarea maxLength={4000} placeholder="Search themes, target keyword opportunities, and promising topic clusters" rows={3} value={researchSummaryForm.keywordOpportunities} onChange={(event) => setResearchSummaryForm((current) => ({ ...current, keywordOpportunities: event.target.value }))} />
-                    <span className="muted-text">Supports future platform-neutral planning for content and SEO deliverables.</span>
                   </label>
                   <label className="field-span-2">
                     Content recommendations - Optional
                     <textarea maxLength={4000} placeholder="Recommended content directions, angles, and deliverable ideas for later planning" rows={3} value={researchSummaryForm.contentRecommendations} onChange={(event) => setResearchSummaryForm((current) => ({ ...current, contentRecommendations: event.target.value }))} />
-                    <span className="muted-text">Keep recommendations platform-neutral rather than tied to any one publishing connector.</span>
                   </label>
                   <label className="field-span-2">
                     Brief revision notes - Optional
                     <textarea maxLength={4000} placeholder="What should be revised or clarified in the project brief before planning continues" rows={3} value={researchSummaryForm.briefRevisionNotes} onChange={(event) => setResearchSummaryForm((current) => ({ ...current, briefRevisionNotes: event.target.value }))} />
-                    <span className="muted-text">Use this to guide safe admin-controlled updates into brief notes.</span>
                   </label>
                   <label className="field-span-2">
                     Source notes - Optional
                     <textarea maxLength={4000} placeholder="Manual notes about approved sources used for this summary and any limitations to keep in mind" rows={3} value={researchSummaryForm.sourceNotes} onChange={(event) => setResearchSummaryForm((current) => ({ ...current, sourceNotes: event.target.value }))} />
-                    <span className="muted-text">Use when source linkage stays manual in this foundation.</span>
                   </label>
                 </div>
-                <div className="modal-footer">
-                  <button className="secondary-action" disabled={researchSaving} onClick={closeResearchSources} type="button">Close</button>
-                  <button className="secondary-action" disabled={researchSaving} onClick={() => { setResearchSummaryEditorId(null); setResearchSummaryForm(emptyResearchSummary()); }} type="button">New summary</button>
+                <div className="modal-footer ai-delivery-modal-footer">
+                  <button className="ghost-action" disabled={researchSaving} onClick={closeResearchSources} type="button">Close</button>
+                  <button className="ghost-action" disabled={researchSaving} onClick={() => { setResearchSummaryEditorId(null); setResearchSummaryForm(emptyResearchSummary()); }} type="button">New summary</button>
                   <button className="primary-action" disabled={researchSaving || !researchSummaryForm.title.trim() || !researchSummaryForm.summaryText.trim()} onClick={() => void saveResearchSummary(openResearchSourcesProject.id)} type="button">
                     {researchSaving ? "Saving" : researchSummaryEditorId ? "Save summary" : "Create summary"}
                   </button>
                 </div>
               </section>
 
-              <section className="field-panel">
+              <section className="field-panel ai-delivery-section-compact">
                 <h3>Existing research summaries</h3>
-                {researchSummaries.length === 0 ? <div className="state-panel">No research summaries yet. Add a summary after reviewing sources.</div> : null}
+                {researchSummaries.length === 0 ? <AiDeliveryInlineEmpty>No research summaries yet. Add a summary after reviewing sources.</AiDeliveryInlineEmpty> : null}
                 {researchSummaries.map((summary) => (
                   <article className="entity-card" key={summary.id}>
                     <div className="entity-card-header">
@@ -3983,10 +3994,10 @@ export function AiDeliveryPage({
                         <p>Updated {formatOptionalDate(summary.updatedAt)}</p>
                       </div>
                       <div className="card-actions">
-                        <button className="secondary-action" disabled={researchSaving} onClick={() => editResearchSummary(summary)} type="button">Edit</button>
-                        {summary.status !== "FINALIZED" ? <button className="secondary-action" disabled={researchSaving} onClick={() => void setResearchSummaryStatus(openResearchSourcesProject.id, summary, "FINALIZED")} type="button">Finalize</button> : null}
-                        {summary.status !== "ARCHIVED" ? <button className="secondary-action" disabled={researchSaving} onClick={() => void setResearchSummaryStatus(openResearchSourcesProject.id, summary, "ARCHIVED")} type="button">Archive</button> : null}
-                        <button className="secondary-action" disabled={researchSaving} onClick={() => void applyResearchSummaryToBrief(openResearchSourcesProject.id, summary.id)} type="button">Apply to brief notes</button>
+                        <button className="ghost-action" disabled={researchSaving} onClick={() => editResearchSummary(summary)} type="button">Edit</button>
+                        {summary.status !== "FINALIZED" ? <button className="ghost-action" disabled={researchSaving} onClick={() => void setResearchSummaryStatus(openResearchSourcesProject.id, summary, "FINALIZED")} type="button">Finalize</button> : null}
+                        {summary.status !== "ARCHIVED" ? <button className="ghost-action" disabled={researchSaving} onClick={() => void setResearchSummaryStatus(openResearchSourcesProject.id, summary, "ARCHIVED")} type="button">Archive</button> : null}
+                        <button className="ghost-action" disabled={researchSaving} onClick={() => void applyResearchSummaryToBrief(openResearchSourcesProject.id, summary.id)} type="button">Apply to brief notes</button>
                       </div>
                     </div>
                     <dl className="brief-grid">
@@ -4023,29 +4034,20 @@ export function AiDeliveryPage({
                 ))}
               </section>
 
-              <section className="field-panel">
+              <section className="field-panel ai-delivery-section-compact">
                 <h3>Research source editor</h3>
-                <div className="modal-footer">
-                  <button className="secondary-action" disabled={researchSaving} onClick={closeResearchSources} type="button">Close</button>
-                  <button className="secondary-action" disabled={researchSaving} onClick={() => { setResearchSourceEditorId(null); setResearchSourceForm(emptyResearchSource()); }} type="button">New source</button>
-                  <button className="primary-action" disabled={researchSaving || !researchSourceForm.sourceUrl.trim()} onClick={() => void saveResearchSource(openResearchSourcesProject.id)} type="button">
-                    {researchSaving ? "Saving" : researchSourceEditorId ? "Save source" : "Create source"}
-                  </button>
-                </div>
                 <div className="field-grid">
                   <label>
                     Status - Required
                     <select value={researchSourceForm.status} onChange={(event) => setResearchSourceForm((current) => ({ ...current, status: event.target.value }))}>
                       {researchSourceStatuses.map((status) => <option key={status} value={status}>{formatEnumLabel(status)}</option>)}
                     </select>
-                    <span className="muted-text">Approve, reject, or archive the manual source record here.</span>
                   </label>
                   <label>
                     Source type - Required
                     <select value={researchSourceForm.sourceType} onChange={(event) => setResearchSourceForm((current) => ({ ...current, sourceType: event.target.value }))}>
                       {researchSourceTypes.map((sourceType) => <option key={sourceType} value={sourceType}>{formatEnumLabel(sourceType)}</option>)}
                     </select>
-                    <span className="muted-text">Manual classification only. No document parsing or scraping runs here.</span>
                   </label>
                   <label>
                     Linked research request - Optional
@@ -4053,7 +4055,6 @@ export function AiDeliveryPage({
                       <option value="">Manual / unlinked source</option>
                       {researchRequests.map((request) => <option key={request.id} value={request.id}>{request.title}</option>)}
                     </select>
-                    <span className="muted-text">Use when the source supports a specific tracked research request.</span>
                   </label>
                   <label>
                     Linked workflow run - Optional
@@ -4061,36 +4062,33 @@ export function AiDeliveryPage({
                       <option value="">Manual / unlinked source</option>
                       {researchWorkflowRuns.map((run) => <option key={run.id} value={run.id}>Workflow run - {formatEnumLabel(run.status)}</option>)}
                     </select>
-                    <span className="muted-text">Optional internal link back to a workflow run in the same project.</span>
                   </label>
                   <label className="field-span-2">
                     Source URL - Required
                     <input maxLength={2048} placeholder="https://example.com/source-page" value={researchSourceForm.sourceUrl} onChange={(event) => setResearchSourceForm((current) => ({ ...current, sourceUrl: event.target.value }))} />
-                    <span className="muted-text">Manual http/https URL only. The system records the link but does not fetch or crawl it in this foundation.</span>
+                    <span className="muted-text">Manual URL only. No fetch or crawl runs here.</span>
                   </label>
                   <label className="field-span-2">
                     Source title - Optional
                     <input maxLength={255} placeholder="Human-friendly source label for the admin team" value={researchSourceForm.sourceTitle} onChange={(event) => setResearchSourceForm((current) => ({ ...current, sourceTitle: event.target.value }))} />
-                    <span className="muted-text">Useful when the page title is not obvious from the URL alone.</span>
                   </label>
                   <label className="field-span-2">
                     Review notes - Optional
                     <textarea maxLength={4000} placeholder="Why this source was approved, rejected, or archived for manual research use" rows={4} value={researchSourceForm.reviewNotes} onChange={(event) => setResearchSourceForm((current) => ({ ...current, reviewNotes: event.target.value }))} />
-                    <span className="muted-text">Visible only to admin team.</span>
                   </label>
                 </div>
-                <div className="modal-footer">
-                  <button className="secondary-action" disabled={researchSaving} onClick={closeResearchSources} type="button">Close</button>
-                  <button className="secondary-action" disabled={researchSaving} onClick={() => { setResearchSourceEditorId(null); setResearchSourceForm(emptyResearchSource()); }} type="button">New source</button>
+                <div className="modal-footer ai-delivery-modal-footer">
+                  <button className="ghost-action" disabled={researchSaving} onClick={closeResearchSources} type="button">Close</button>
+                  <button className="ghost-action" disabled={researchSaving} onClick={() => { setResearchSourceEditorId(null); setResearchSourceForm(emptyResearchSource()); }} type="button">New source</button>
                   <button className="primary-action" disabled={researchSaving || !researchSourceForm.sourceUrl.trim()} onClick={() => void saveResearchSource(openResearchSourcesProject.id)} type="button">
                     {researchSaving ? "Saving" : researchSourceEditorId ? "Save source" : "Create source"}
                   </button>
                 </div>
               </section>
 
-              <section className="field-panel">
+              <section className="field-panel ai-delivery-section-compact">
                 <h3>Existing research sources</h3>
-                {researchSources.length === 0 ? <div className="state-panel">No research sources yet. Add a source to continue.</div> : null}
+                {researchSources.length === 0 ? <AiDeliveryInlineEmpty>No research sources yet. Add a source to continue.</AiDeliveryInlineEmpty> : null}
                 {researchSources.map((source) => (
                   <article className="entity-card" key={source.id}>
                     <div className="entity-card-header">
@@ -4100,10 +4098,10 @@ export function AiDeliveryPage({
                         <p>Updated {formatOptionalDate(source.updatedAt)}</p>
                       </div>
                       <div className="card-actions">
-                        <button className="secondary-action" disabled={researchSaving} onClick={() => editResearchSource(source)} type="button">Edit</button>
-                        {source.status !== "APPROVED" ? <button className="secondary-action" disabled={researchSaving} onClick={() => void setResearchSourceStatus(openResearchSourcesProject.id, source, "APPROVED")} type="button">Approve</button> : null}
-                        {source.status !== "REJECTED" ? <button className="secondary-action" disabled={researchSaving} onClick={() => void setResearchSourceStatus(openResearchSourcesProject.id, source, "REJECTED")} type="button">Reject</button> : null}
-                        {source.status !== "ARCHIVED" ? <button className="secondary-action" disabled={researchSaving} onClick={() => void setResearchSourceStatus(openResearchSourcesProject.id, source, "ARCHIVED")} type="button">Archive</button> : null}
+                        <button className="ghost-action" disabled={researchSaving} onClick={() => editResearchSource(source)} type="button">Edit</button>
+                        {source.status !== "APPROVED" ? <button className="ghost-action" disabled={researchSaving} onClick={() => void setResearchSourceStatus(openResearchSourcesProject.id, source, "APPROVED")} type="button">Approve</button> : null}
+                        {source.status !== "REJECTED" ? <button className="ghost-action" disabled={researchSaving} onClick={() => void setResearchSourceStatus(openResearchSourcesProject.id, source, "REJECTED")} type="button">Reject</button> : null}
+                        {source.status !== "ARCHIVED" ? <button className="ghost-action" disabled={researchSaving} onClick={() => void setResearchSourceStatus(openResearchSourcesProject.id, source, "ARCHIVED")} type="button">Archive</button> : null}
                       </div>
                     </div>
                     <dl className="brief-grid">
@@ -4135,7 +4133,7 @@ export function AiDeliveryPage({
                   </article>
                 ))}
               </section>
-              <div className="modal-footer"><button className="secondary-action" onClick={closeResearchSources} type="button">Close</button></div>
+              <div className="modal-footer ai-delivery-modal-footer"><button className="ghost-action" onClick={closeResearchSources} type="button">Close</button></div>
             </div>
           ) : <div>Project not found.</div>}
         </Modal>
@@ -4143,13 +4141,13 @@ export function AiDeliveryPage({
       {openMiContextId ? (
         <Modal onClose={closeMiContext} title="Market Intelligence Context">
           {miContextLoading ? (
-            <LoadingState label="Loading Market Intelligence context" />
+            <AiDeliveryInlineLoading label="Loading Market Intelligence context" />
           ) : openMiContextProject ? (
-            <div>
-              {miContextError ? <ErrorState title="Market Intelligence context blocked" message={miContextError} /> : null}
-              <section className="field-panel">
+            <div className="ai-delivery-modal-panel stack gap-md">
+              {miContextError ? <AiDeliveryInlineAlert message={miContextError} title="Market Intelligence context blocked" /> : null}
+              <section className="field-panel ai-delivery-section-compact">
                 <h3>Applied handoffs</h3>
-                <p className="muted-text">Internal context only. These Market Intelligence handoffs are linked to this AI Delivery project for admin planning. Not visible to clients.</p>
+                <p className="muted-text">Internal admin context only. Not visible to clients.</p>
                 {miContextItems.length === 0 ? (
                   <EmptyState title="No handoffs applied" message="No Market Intelligence handoffs are currently applied to this project. Apply one below." />
                 ) : miContextItems.map((h) => (
@@ -4159,7 +4157,7 @@ export function AiDeliveryPage({
                         <span className="entity-pill entity-pill-active">{h.handoffStatus}</span>
                         <h4>{h.title}</h4>
                       </div>
-                      <button className="secondary-action" disabled={miContextLoading} onClick={() => void removeMiHandoff(openMiContextId, h.id)} type="button">Remove</button>
+                      <button className="ghost-action" disabled={miContextLoading} onClick={() => void removeMiHandoff(openMiContextId, h.id)} type="button">Remove</button>
                     </div>
                     <dl className="brief-grid">
                       {h.marketSummary ? <div className="field-span-2"><dt>Market summary</dt><dd>{h.marketSummary}</dd></div> : null}
@@ -4176,9 +4174,9 @@ export function AiDeliveryPage({
                 ))}
               </section>
               {typeof onApplyMiHandoff === "function" ? (
-                <section className="field-panel">
+                <section className="field-panel ai-delivery-section-compact">
                   <h3>Apply a handoff</h3>
-                  <p className="muted-text">Enter the ID of an approved Market Intelligence handoff (READY status) to apply it to this project.</p>
+                  <p className="muted-text">Enter the ID of an approved Market Intelligence handoff (READY status).</p>
                   <div className="form-field">
                     <label htmlFor="mi-apply-handoff-id">Handoff ID</label>
                     <input
@@ -4190,13 +4188,13 @@ export function AiDeliveryPage({
                       disabled={miContextLoading}
                     />
                   </div>
-                  <div className="modal-footer">
-                    <button className="secondary-action" onClick={closeMiContext} type="button">Close</button>
+                  <div className="modal-footer ai-delivery-modal-footer">
+                    <button className="ghost-action" onClick={closeMiContext} type="button">Close</button>
                     <button className="primary-action" disabled={miContextLoading || !miApplyHandoffId.trim()} onClick={() => void applyMiHandoff(openMiContextId)} type="button">Apply</button>
                   </div>
                 </section>
               ) : (
-                <div className="modal-footer"><button className="secondary-action" onClick={closeMiContext} type="button">Close</button></div>
+                <div className="modal-footer ai-delivery-modal-footer"><button className="ghost-action" onClick={closeMiContext} type="button">Close</button></div>
               )}
             </div>
           ) : <div>Project not found.</div>}
@@ -4205,13 +4203,13 @@ export function AiDeliveryPage({
       {openWorkflowRunsId ? (
         <Modal onClose={closeWorkflowRuns} title="Workflow Runs">
           {workflowRunsLoading ? (
-            <LoadingState label="Loading workflow runs" />
+            <AiDeliveryInlineLoading label="Loading workflow runs" />
           ) : openWorkflowRunsProject ? (
-            <div>
-              {workflowRunsError ? <ErrorState title="Workflow run action blocked" message={workflowRunsError} /> : null}
-              <section className="field-panel">
+            <div className="ai-delivery-modal-panel stack gap-md">
+              {workflowRunsError ? <AiDeliveryInlineAlert message={workflowRunsError} title="Workflow run action blocked" /> : null}
+              <section className="field-panel ai-delivery-section-compact">
                 <h3>Workflow run editor</h3>
-                <div className="state-panel" role="status">{workflowRunActionGuidance}</div>
+                <AiDeliveryInlineNotice>{workflowRunActionGuidance}</AiDeliveryInlineNotice>
                 <div className="field-panel">
                   <h4>Execution visibility summary</h4>
                   <dl className="brief-grid">
@@ -4298,13 +4296,6 @@ export function AiDeliveryPage({
                     </dl>
                   </div>
                 ) : null}
-                <div className="modal-footer">
-                  <button className="secondary-action" disabled={workflowRunsSaving || Boolean(workflowRunExecutingId)} onClick={closeWorkflowRuns} type="button">Close</button>
-                  <button className="secondary-action" disabled={workflowRunsSaving || Boolean(workflowRunExecutingId)} onClick={() => { setWorkflowRunEditorId(null); setWorkflowRunForm(emptyWorkflowRun()); }} type="button">New workflow run</button>
-                  <button className="primary-action" disabled={workflowRunsSaving || Boolean(workflowRunExecutingId) || !isWorkflowRunStatusAllowed} onClick={() => void saveWorkflowRun(openWorkflowRunsProject.id)} type="button">
-                    {workflowRunsSaving ? "Saving" : workflowRunEditorId ? "Save workflow run" : "Create workflow run"}
-                  </button>
-                </div>
                 <div className="field-grid">
                   <div>
                     <span>Run type / name</span>
@@ -4316,7 +4307,7 @@ export function AiDeliveryPage({
                     <select value={workflowRunForm.status} onChange={(event) => setWorkflowRunForm((current) => ({ ...current, status: event.target.value }))}>
                       {workflowRunStatusOptions.map((status) => <option key={status} value={status}>{workflowRunStatusLabels[status]}</option>)}
                     </select>
-                    <span className="muted-text">Current internal status of this workflow run. {workflowRunStatusHelper}</span>
+                    <span className="muted-text">Current internal status. {workflowRunStatusHelper}</span>
                   </label>
                   <label className="field-span-2">
                     Input / context and review notes - Optional
@@ -4327,7 +4318,7 @@ export function AiDeliveryPage({
                       value={workflowRunForm.adminNotes}
                       onChange={(event) => setWorkflowRunForm((current) => ({ ...current, adminNotes: event.target.value }))}
                     />
-                    <span className="muted-text">Visible only to admin team. Not shown to client. Include [stub-fail] to simulate a controlled local failure.</span>
+                    <span className="muted-text">Admin-only. Include [stub-fail] to simulate a controlled local failure.</span>
                   </label>
                   <label className="field-span-2">
                     Output / result summary - Optional
@@ -4338,21 +4329,20 @@ export function AiDeliveryPage({
                       value={workflowRunForm.resultPlaceholder}
                       onChange={(event) => setWorkflowRunForm((current) => ({ ...current, resultPlaceholder: event.target.value }))}
                     />
-                    <span className="muted-text">Internal result summary only. Local stub execution can populate this automatically when it is empty.</span>
                   </label>
                 </div>
-                <div className="modal-footer">
-                  <button className="secondary-action" disabled={workflowRunsSaving || Boolean(workflowRunExecutingId)} onClick={closeWorkflowRuns} type="button">Close</button>
-                  <button className="secondary-action" disabled={workflowRunsSaving || Boolean(workflowRunExecutingId)} onClick={() => { setWorkflowRunEditorId(null); setWorkflowRunForm(emptyWorkflowRun()); }} type="button">New workflow run</button>
+                <div className="modal-footer ai-delivery-modal-footer">
+                  <button className="ghost-action" disabled={workflowRunsSaving || Boolean(workflowRunExecutingId)} onClick={closeWorkflowRuns} type="button">Close</button>
+                  <button className="ghost-action" disabled={workflowRunsSaving || Boolean(workflowRunExecutingId)} onClick={() => { setWorkflowRunEditorId(null); setWorkflowRunForm(emptyWorkflowRun()); }} type="button">New workflow run</button>
                   <button className="primary-action" disabled={workflowRunsSaving || Boolean(workflowRunExecutingId) || !isWorkflowRunStatusAllowed} onClick={() => void saveWorkflowRun(openWorkflowRunsProject.id)} type="button">
                     {workflowRunsSaving ? "Saving" : workflowRunEditorId ? "Save workflow run" : "Create workflow run"}
                   </button>
                 </div>
               </section>
 
-              <section className="field-panel">
+              <section className="field-panel ai-delivery-section-compact">
                 <h3>Existing workflow runs</h3>
-                {workflowRuns.length === 0 ? <div className="state-panel">No workflow runs yet. Create one to track the next admin step.</div> : null}
+                {workflowRuns.length === 0 ? <AiDeliveryInlineEmpty>No workflow runs yet. Create one to track the next admin step.</AiDeliveryInlineEmpty> : null}
                 {workflowRuns.map((run) => {
                   const resultPreview = parseWorkflowRunResultPreview(run.resultPlaceholder);
                   return (
@@ -4367,7 +4357,7 @@ export function AiDeliveryPage({
                           </p>
                         </div>
                         <div className="card-actions">
-                          <button className="secondary-action" disabled={workflowRunsSaving || Boolean(workflowRunExecutingId)} onClick={() => editWorkflowRun(run)} type="button">Edit</button>
+                          <button className="ghost-action" disabled={workflowRunsSaving || Boolean(workflowRunExecutingId)} onClick={() => editWorkflowRun(run)} type="button">Edit</button>
                           {canExecuteWorkflowRun(run.status) ? (
                             <button
                               className="primary-action"
@@ -4438,7 +4428,7 @@ export function AiDeliveryPage({
                   );
                 })}
               </section>
-              <div className="modal-footer"><button className="secondary-action" onClick={closeWorkflowRuns} type="button">Close</button></div>
+              <div className="modal-footer ai-delivery-modal-footer"><button className="ghost-action" onClick={closeWorkflowRuns} type="button">Close</button></div>
             </div>
           ) : <div>Project not found.</div>}
         </Modal>
