@@ -43,7 +43,17 @@ Related:
 cd C:\dcaosv1
 npm.cmd run smoke:external-integrations-readiness:local
 npm.cmd run smoke:admin-operations:local
+npm.cmd run smoke:client-role-api-boundary:local
 ```
+
+**Block 5A (client-role API boundary hotfix — required before staging):**
+
+```powershell
+cd C:\dcaosv1
+npm.cmd run smoke:client-role-api-boundary:local
+```
+
+Proves client-role users receive 401/403 on generic admin/internal tenant GET routes in `core.ts`; `/client-portal/*` remains client-safe. Requires `AUTH_SEED_TEST_PASSWORD`; uses `AUTH_SEED_TESTER_EMAIL` or falls back to `puriva@puriva.id`. **Staging remains blocked until Block 5A is committed, pushed, and CI green.**
 
 **Production Readiness closeout (Mega Block 1 — deterministic delivery + MI + handoff):**
 

@@ -210,6 +210,7 @@ The following remain true; detail preserved in linked docs and git history.
 - Market Intelligence Mega Blocks 1–3; AI Delivery Revenue Engine Layer 1; Delivery Handoff Layer 2.
 - Production Readiness closeout pack; Client Approval happy-path hardening.
 - Blocks 1–3 (external integrations readiness, admin operations, UI density) on `main`.
+- **Block 5A (client-role API boundary hotfix):** pending — adds `requireRole("owner","admin")` to unguarded generic GET routes in `core.ts`; smoke: `npm run smoke:client-role-api-boundary:local`. **Staging blocked until Block 5A committed, pushed, CI green.**
 - Client Access Admin UI; EN2 audit writer foundation; security headers + rate limiting.
 - AI SEO Blocks 3B–3G, 4A–4G, 5A, 6A–6C-v1; Knowledge integration proven via `smoke:ai-knowledge-context`.
 - Phase F roadmap: [`docs/ROADMAP_LOCAL_COMPLETION_PHASE_F.md`](./ROADMAP_LOCAL_COMPLETION_PHASE_F.md).

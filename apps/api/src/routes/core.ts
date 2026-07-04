@@ -249,7 +249,7 @@ import {
 export function createCoreRouter() {
   const router = Router();
 
-  router.get("/company-profile", requireAuth, requireTenant, tenantModuleGuard, getCompanyProfileHandler);
+  router.get("/company-profile", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), getCompanyProfileHandler);
   router.put("/company-profile", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), saveCompanyProfileHandler);
   router.get("/tenant/wordpress-config", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), getAiDeliveryWordPressConfigHandler);
   router.post("/tenant/wordpress-config", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), saveAiDeliveryWordPressConfigHandler);
@@ -260,12 +260,12 @@ export function createCoreRouter() {
   router.get("/integrations/readiness", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), getExternalIntegrationsReadinessHandler);
   router.get("/admin/operations/summary", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), getAdminOperationsSummaryHandler);
 
-  router.get("/clients", requireAuth, requireTenant, tenantModuleGuard, listClientsHandler);
+  router.get("/clients", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), listClientsHandler);
   router.post("/clients", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), createClientHandler);
   router.get("/clients/:id/users", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), listClientUserAccessHandler);
   router.post("/clients/:id/users", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), linkClientUserAccessHandler);
   router.post("/clients/:id/users/:userId/archive", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), archiveClientUserAccessHandler);
-  router.get("/clients/:id", requireAuth, requireTenant, tenantModuleGuard, getClientHandler);
+  router.get("/clients/:id", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), getClientHandler);
   router.put("/clients/:id", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), updateClientHandler);
   router.get("/clients/:clientId/publication-targets", ...clientPublicationRouteGuards, tenantModuleGuard, listClientPublicationTargetsHandler);
   router.post("/clients/:clientId/publication-targets", ...clientPublicationRouteGuards, tenantModuleGuard, createClientPublicationTargetHandler);
@@ -286,9 +286,9 @@ export function createCoreRouter() {
   router.post("/clients/:id/archive", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), archiveClientHandler);
   router.post("/clients/:id/restore", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), restoreClientHandler);
 
-  router.get("/projects", requireAuth, requireTenant, tenantModuleGuard, listProjectsHandler);
+  router.get("/projects", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), listProjectsHandler);
   router.post("/projects", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), createProjectHandler);
-  router.get("/projects/:id", requireAuth, requireTenant, tenantModuleGuard, getProjectHandler);
+  router.get("/projects/:id", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), getProjectHandler);
   router.put("/projects/:id", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), updateProjectHandler);
   router.post("/projects/:id/archive", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), archiveProjectHandler);
   router.post("/projects/:id/restore", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), restoreProjectHandler);
@@ -383,23 +383,23 @@ export function createCoreRouter() {
   router.post("/ai-delivery/reports/monthly/:reportId/metrics/:snapshotId/approve", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), approveAiDeliveryMonthlyReportMetricsHandler);
   router.post("/ai-delivery/reports/monthly/:reportId/metrics/:snapshotId/archive", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), archiveAiDeliveryMonthlyReportMetricsHandler);
 
-  router.get("/tasks", requireAuth, requireTenant, listTasksHandler);
+  router.get("/tasks", requireAuth, requireTenant, requireRole("owner", "admin"), listTasksHandler);
   router.post("/tasks", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), createTaskHandler);
-  router.get("/tasks/:id", requireAuth, requireTenant, getTaskHandler);
+  router.get("/tasks/:id", requireAuth, requireTenant, requireRole("owner", "admin"), getTaskHandler);
   router.put("/tasks/:id", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), updateTaskHandler);
   router.post("/tasks/:id/archive", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), archiveTaskHandler);
   router.post("/tasks/:id/restore", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), restoreTaskHandler);
 
-  router.get("/invoices", requireAuth, requireTenant, tenantModuleGuard, listInvoicesHandler);
+  router.get("/invoices", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), listInvoicesHandler);
   router.post("/invoices", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), createInvoiceHandler);
-  router.get("/invoice-items", requireAuth, requireTenant, tenantModuleGuard, listInvoiceItemsHandler);
+  router.get("/invoice-items", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), listInvoiceItemsHandler);
   router.post("/invoice-items", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), createInvoiceItemHandler);
   router.put("/invoice-items/:id", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), updateInvoiceItemHandler);
   router.post("/invoice-items/:id/archive", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), archiveInvoiceItemHandler);
   router.post("/invoice-items/:id/restore", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), restoreInvoiceItemHandler);
-  router.get("/invoices/:id", requireAuth, requireTenant, tenantModuleGuard, getInvoiceHandler);
+  router.get("/invoices/:id", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), getInvoiceHandler);
   router.put("/invoices/:id", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), updateInvoiceHandler);
-  router.get("/invoices/:id/document/download", requireAuth, requireTenant, tenantModuleGuard, downloadInvoiceDocumentHandler);
+  router.get("/invoices/:id/document/download", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), downloadInvoiceDocumentHandler);
   router.post("/invoices/:id/archive", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), archiveInvoiceHandler);
   router.post("/invoices/:id/mark-sent", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), markInvoiceSentHandler);
   router.post("/invoices/:id/mark-paid", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), markInvoicePaidHandler);
@@ -410,26 +410,26 @@ export function createCoreRouter() {
   router.put("/credit-notes/:id", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), updateCreditNoteHandler);
   router.post("/credit-notes/:id/issue", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), issueCreditNoteHandler);
   router.post("/credit-notes/:id/void", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), voidCreditNoteHandler);
-  router.get("/credit-notes/:id/document/download", requireAuth, requireTenant, tenantModuleGuard, downloadCreditNoteDocumentHandler);
+  router.get("/credit-notes/:id/document/download", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), downloadCreditNoteDocumentHandler);
 
-  router.get("/recurring-invoices", requireAuth, requireTenant, tenantModuleGuard, listRecurringInvoicesHandler);
+  router.get("/recurring-invoices", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), listRecurringInvoicesHandler);
   router.post("/recurring-invoices", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), createRecurringInvoiceHandler);
-  router.get("/recurring-invoices/:id", requireAuth, requireTenant, tenantModuleGuard, getRecurringInvoiceHandler);
+  router.get("/recurring-invoices/:id", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), getRecurringInvoiceHandler);
   router.put("/recurring-invoices/:id", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), updateRecurringInvoiceHandler);
   router.post("/recurring-invoices/:id/archive", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), archiveRecurringInvoiceHandler);
   router.post("/recurring-invoices/:id/generate-due", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), generateDueRecurringInvoiceHandler);
 
-  router.get("/vendors", requireAuth, requireTenant, tenantModuleGuard, listVendorsHandler);
+  router.get("/vendors", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), listVendorsHandler);
   router.post("/vendors", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), createVendorHandler);
   router.put("/vendors/:id", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), updateVendorHandler);
   router.post("/vendors/:id/archive", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), archiveVendorHandler);
   router.post("/vendors/:id/restore", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), restoreVendorHandler);
 
-  router.get("/bills", requireAuth, requireTenant, tenantModuleGuard, listBillsHandler);
+  router.get("/bills", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), listBillsHandler);
   router.post("/bills", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), createBillHandler);
   router.put("/bills/:id", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), updateBillHandler);
   router.post("/bills/:id/document", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), uploadBillDocumentHandler);
-  router.get("/bills/:id/document/download", requireAuth, requireTenant, tenantModuleGuard, downloadBillDocumentHandler);
+  router.get("/bills/:id/document/download", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), downloadBillDocumentHandler);
   router.post("/bills/:id/archive", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), archiveBillHandler);
   router.post("/bills/:id/restore", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), restoreBillHandler);
 
