@@ -1924,7 +1924,7 @@ async function runAiDeliveryBrowserRegression(token, mainProject) {
     await preparedDraftPanel.getByText("Source type").waitFor({ state: "visible", timeout: 15000 });
     await preparedDraftPanel.getByText("Source ID").waitFor({ state: "visible", timeout: 15000 });
     await preparedDraftPanel.getByText("Body preview").waitFor({ state: "visible", timeout: 15000 });
-    await preparedDraftPanel.getByText(/WordPress API execution/i).waitFor({ state: "visible", timeout: 15000 });
+    await preparedDraftPanel.getByText(/Live publish|disabled by default|confirm-gated/i).waitFor({ state: "visible", timeout: 15000 });
     const preparedDraftText = ((await preparedDraftPanel.textContent()) ?? "").toLowerCase();
     if (!preparedDraftText.includes("wordPress prepared draft".toLowerCase()) || preparedDraftText.includes("client self-service")) {
       fail("Deliverables panel prepared draft area did not stay admin-only.");

@@ -170,10 +170,21 @@ import type { AiWorkflowResultV1 } from "./ai-delivery-workflow-result.contract"
 import { buildAiWorkflowKnowledgeContext } from "./ai-context-builder.service";
 import {
   getDecryptedPublicationTargetPassword,
+  getPublicationTargetCredentialStatus,
   normalizeWebsiteUrl,
   recordPublicationLog,
   resolvePublicationTargetForClient
 } from "./client-publication.runtime";
+import {
+  buildClientPortalVisibilityCheck,
+  buildPrivateAssetReadinessChecks,
+  buildSlugFromPublicationTitle,
+  buildWordPressHandoffReadinessCheck,
+  resolveWordPressPublishGateStatus,
+  type DeliverableAssetRow,
+  type ImageAssetRow
+} from "./delivery-handoff-readiness.service";
+import { getPrivateStorageStatus } from "../storage/private-storage.service";
 import { linkDeliveryRevenueAttribution } from "../finance/finance-attribution.service";
 import { syncBillToFinanceEvent, syncInvoiceToFinanceEvent } from "../finance/finance-sync.service";
 
@@ -9038,6 +9049,24 @@ export async function prepareAiDeliveryDeliverableWordPressDraft(
     );
   }
 
+  if (!normalizeWebsiteUrl(publicationTarget.siteUrl)) {
+    throwAiDeliveryConflict(
+      "AI_DELIVERY_WORDPRESS_TARGET_SITE_INVALID",
+      "The publication target site URL is invalid. Update the client publication target before preparing a WordPress draft."
+    );
+  }
+
+  const credentialStatus = await getPublicationTargetCredentialStatus(
+    authSession,
+    project.clientId,
+    publicationTarget.id
+  );
+  const publishEnvEnabled = process.env.WORDPRESS_PUBLISH_ENABLED === "true";
+  const publishGateStatus = resolveWordPressPublishGateStatus(
+    credentialStatus?.configured === true,
+    publishEnvEnabled
+  );
+
   const deliverable = await getAiDeliveryDeliverableDelegate(prisma).findFirst({
     where: {
       id: deliverableId,
@@ -9101,6 +9130,11 @@ export async function prepareAiDeliveryDeliverableWordPressDraft(
     throwAiDeliveryConflict("AI_DELIVERY_WORDPRESS_DRAFT_BODY_REQUIRED", "Content is required to prepare a WordPress draft.");
   }
 
+  const slug = buildSlugFromPublicationTitle(title);
+  if (!slug) {
+    throwAiDeliveryConflict("AI_DELIVERY_WORDPRESS_DRAFT_SLUG_INVALID", "A valid slug could not be derived from the draft title.");
+  }
+
   const excerptCandidate = (deliverable.description ?? "").trim();
   let siteUrlHost: string | null = null;
   try {
@@ -9130,12 +9164,20 @@ export async function prepareAiDeliveryDeliverableWordPressDraft(
       excerpt: excerptCandidate || null,
       sourceType,
       sourceId,
+      slug,
+      postStatus: "draft",
       externalPostId: null,
       externalEditUrl: null,
       publicationTargetId: publicationTarget!.id,
       publicationTargetLabel: publicationTarget!.label,
       publicationSiteUrl: publicationTarget!.siteUrl,
-      note: "WordPress API execution uses the client publication target. Live publish remains env-gated."
+      publishGateStatus,
+      credentialConfigured: credentialStatus?.configured === true,
+      note: publishGateStatus === "disabled"
+        ? "Local WordPress draft payload only. Live publish is disabled by default (WORDPRESS_PUBLISH_ENABLED is not true)."
+        : publishGateStatus === "credentials_missing"
+          ? "Local WordPress draft payload prepared. Save publication target credentials before guarded publish."
+          : "Local WordPress draft payload prepared. Live publish remains confirm-gated and env-controlled."
     }
   };
 }
@@ -12185,6 +12227,7 @@ export async function getAiDeliveryRevenueChainReadiness(
         id: true,
         name: true,
         targetMonth: true,
+        clientId: true,
         brief: { select: { id: true, status: true } },
         contentPlans: {
           select: {
@@ -12200,6 +12243,19 @@ export async function getAiDeliveryRevenueChainReadiness(
     if (!project) return null;
 
     const contentPlan = project.contentPlans[0] ?? null;
+    const privateStorage = getPrivateStorageStatus();
+    const publicationTarget = await resolvePublicationTargetForClient(tenantId, project.clientId, null);
+    const credentialStatus = publicationTarget
+      ? await getPublicationTargetCredentialStatus(authSession, project.clientId, publicationTarget.id)
+      : null;
+    const preparedDraftLogCount = await tx.publicationLog.count({
+      where: {
+        tenantId,
+        aiDeliveryProjectId,
+        action: "PREPARE_WORDPRESS_DRAFT",
+        status: "PREPARED"
+      }
+    });
 
     const [miSummaries, miHandoffs, drafts, images, deliverables, monthlyReport] = await Promise.all([
       tx.marketIntelligenceSummary.findMany({
@@ -12216,12 +12272,28 @@ export async function getAiDeliveryRevenueChainReadiness(
       }) as Promise<Array<{ id: string; title: string; status: string; contentPlanItemId: string | null }>>,
       getAiDeliveryArticleImageDelegate(tx).findMany({
         where: { tenantId, aiDeliveryProjectId, isArchived: false },
-        select: { id: true, title: true, status: true, contentDraftId: true }
-      }) as Promise<Array<{ id: string; title: string; status: string; contentDraftId: string | null }>>,
+        select: {
+          id: true,
+          title: true,
+          status: true,
+          contentDraftId: true,
+          storageKey: true,
+          previewImageUrl: true,
+          finalImageUrl: true
+        }
+      }) as Promise<ImageAssetRow[]>,
       getAiDeliveryDeliverableDelegate(tx).findMany({
         where: { tenantId, aiDeliveryProjectId, isArchived: false },
-        select: { id: true, title: true, status: true, contentDraftId: true, articleImageId: true }
-      }) as Promise<Array<{ id: string; title: string; status: string; contentDraftId: string | null; articleImageId: string | null }>>,
+        select: {
+          id: true,
+          title: true,
+          status: true,
+          contentDraftId: true,
+          articleImageId: true,
+          storageKey: true,
+          exportUrl: true
+        }
+      }) as Promise<DeliverableAssetRow[]>,
       (tx as any).aiDeliveryMonthlyReport.findFirst({
         where: { tenantId, aiDeliveryProjectId, isArchived: false },
         orderBy: [{ updatedAt: "desc" }],
@@ -12349,6 +12421,23 @@ export async function getAiDeliveryRevenueChainReadiness(
         detail: "No monthly report created for this project yet."
       });
     }
+
+    const privateAssetResult = buildPrivateAssetReadinessChecks(deliverables, images, privateStorage);
+    checks.push(...privateAssetResult.checks);
+    warnings.push(...privateAssetResult.warnings);
+
+    const wordpressResult = buildWordPressHandoffReadinessCheck({
+      hasPublicationTarget: Boolean(publicationTarget),
+      publicationTargetLabel: publicationTarget?.label ?? null,
+      credentialConfigured: credentialStatus?.configured === true,
+      publishEnvEnabled: process.env.WORDPRESS_PUBLISH_ENABLED === "true",
+      preparedDraftLogCount,
+      privateStorage
+    });
+    checks.push(wordpressResult.check);
+    warnings.push(...wordpressResult.warnings);
+
+    checks.push(buildClientPortalVisibilityCheck(deliverables));
 
     const blockingMissing = checks.filter((check) => check.status === "missing").length;
     const warningCount = checks.filter((check) => check.status === "warning").length;

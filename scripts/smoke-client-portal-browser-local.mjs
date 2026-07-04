@@ -1,4 +1,5 @@
 import { chromium } from "@playwright/test";
+import { CLIENT_PORTAL_PAGE_HEADING, clientPortalSection, selectPortalProject } from "./lib/client-portal-browser-smoke-helpers.mjs";
 import { seedPurivaDeliverySummaryFixture } from "./lib/puriva-delivery-summary-fixture.mjs";
 
 const apiBaseUrl = (process.env.MVP_SMOKE_API_BASE_URL ?? "http://127.0.0.1:4000/api/v1").replace(/\/$/, "");
@@ -324,23 +325,18 @@ async function main() {
     );
 
     await page.goto(`${webBaseUrl}/#/client-portal`, { waitUntil: "domcontentloaded" });
-    await page.getByRole("heading", { name: "Client Portal" }).waitFor({ state: "visible", timeout: 15000 });
+    await page.getByRole("heading", { name: CLIENT_PORTAL_PAGE_HEADING, exact: true }).waitFor({ state: "visible", timeout: 15000 });
     await projectsResponsePromise;
 
-    const portalSection = page.locator('section[aria-labelledby="client-portal-title"]');
-    const projectSidebar = portalSection.locator("aside");
-    const projectCard = projectSidebar.locator("article.entity-card", { hasText: fixture.project.name }).first();
-    await projectCard.scrollIntoViewIfNeeded();
-    await projectCard.waitFor({ state: "visible", timeout: 30000 });
-    const openProjectButton = projectCard.getByRole("button", { name: /^(Open project|View|Open)$/ });
-    await openProjectButton.click();
-    await portalSection.getByRole("heading", { name: "Final deliverables", exact: true }).waitFor({ state: "visible", timeout: 15000 });
+    const portalSection = clientPortalSection(page);
+    await selectPortalProject(page, fixture.project.name);
+    await portalSection.getByRole("heading", { name: "Deliverables", exact: true }).waitFor({ state: "visible", timeout: 15000 });
 
     const portalText = await portalSection.innerText();
     const portalHtml = await portalSection.innerHTML();
     const renderedPortal = `${portalText}\n${portalHtml}`;
 
-    record("client portal page loads", portalText.includes("Client Portal"), "heading visible");
+    record("client portal page loads", portalText.includes(CLIENT_PORTAL_PAGE_HEADING), "heading visible");
     record(
       "authenticated session renders archive UI",
       portalText.includes(fixture.project.name) && portalText.includes("Archive"),
@@ -348,19 +344,19 @@ async function main() {
     );
     record(
       "project archive area renders",
-      portalText.includes("Selected project") && portalText.includes("Project details"),
+      portalText.includes("Project overview") && portalText.includes(fixture.project.name),
       "selected project details visible"
     );
     record(
       "deliverables section renders final state",
-      portalText.includes("Final deliverables") && portalText.includes(fixture.finalDeliverable.title) && !portalText.includes(fixture.draftDeliverable.title),
+      portalText.includes("Deliverables") && portalText.includes(fixture.finalDeliverable.title) && !portalText.includes(fixture.draftDeliverable.title),
       fixture.finalDeliverable.title
     );
 
     record(
-      "delivery overview section renders",
-      portalText.includes("Delivery overview") && portalText.includes("AI SEO / content plan"),
-      "MVP delivery overview visible"
+      "delivery summary section renders",
+      portalText.includes("Delivery summary") && portalText.includes("Planned content"),
+      "delivery summary visible"
     );
     record(
       "delivery overview shows market intelligence summary",
@@ -375,18 +371,18 @@ async function main() {
       "recommended actions visible"
     );
     record(
-      "delivery overview shows google docs export link",
-      portalText.includes("Open Google Doc"),
+      "delivery summary shows google docs export link",
+      portalText.includes("Open document"),
       fixture.deliveryHints.googleExportUrl ?? "link"
     );
     record(
-      "delivery overview shows website publishing handoff",
-      portalText.includes("Website publishing handoff") &&
+      "delivery summary shows website publishing handoff",
+      portalText.includes("Website updates") &&
         (portalText.includes("PROVIDER_DISABLED") || portalText.includes("smoke-puriva.example.com")),
       fixture.deliveryHints.publishingStatus ?? "status"
     );
 
-    await portalSection.getByRole("heading", { name: "Product catalog inquiry", exact: true }).waitFor({
+    await portalSection.getByRole("heading", { name: "Product inquiries", exact: true }).waitFor({
       state: "visible",
       timeout: 15000
     });
@@ -398,12 +394,12 @@ async function main() {
     const catalogPortalText = await portalSection.innerText();
     record(
       "product catalog inquiry section renders",
-      catalogPortalText.includes("Product catalog inquiry") && catalogPortalText.includes(fixture.catalogProductName),
+      catalogPortalText.includes("Product inquiries") && catalogPortalText.includes(fixture.catalogProductName),
       fixture.catalogProductName
     );
     record(
       "product catalog shows inquiry-only disclaimer",
-      catalogPortalText.includes("No cart, checkout, or payment"),
+      catalogPortalText.includes("No checkout or payment"),
       "inquiry-only copy visible"
     );
 
@@ -418,7 +414,7 @@ async function main() {
         response.url().includes(`/client-portal/projects/${fixture.project.id}/catalog-inquiries`) &&
         response.request().method() === "POST"
     );
-    await portalSection.getByRole("button", { name: "Send product inquiry" }).click();
+    await portalSection.getByRole("button", { name: "Send inquiry" }).click();
 
     const inquiryResponse = await inquiryResponsePromise;
     const inquiryJson = await inquiryResponse.json();
@@ -464,7 +460,7 @@ async function main() {
         response.request().method() === "GET"
     );
 
-    const finalDeliverableCard = page.locator("article.entity-card", { hasText: fixture.finalDeliverable.title }).first();
+    const finalDeliverableCard = portalSection.locator("article.cf-record", { hasText: fixture.finalDeliverable.title }).first();
     await finalDeliverableCard.getByRole("button", { name: "Download" }).click();
 
     const downloadResponse = await downloadResponsePromise;

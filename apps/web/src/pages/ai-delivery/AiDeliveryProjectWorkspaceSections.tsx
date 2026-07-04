@@ -104,7 +104,7 @@ export function AiDeliveryProjectWorkspaceSections({
 
       <SectionPanel
         className="ai-delivery-section ai-delivery-revenue-chain-readiness"
-        description="Deterministic admin-operated chain: brief → MI → plan → drafts → images → deliverables → monthly report."
+        description="Deterministic admin-operated chain: brief → MI → plan → drafts → images → deliverables → private assets → WordPress handoff → monthly report."
         title="Delivery chain readiness"
         tone="compact"
       >

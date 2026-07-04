@@ -192,8 +192,15 @@ export type AiDeliveryWordPressPreparedDraft = {
   excerpt: string | null;
   sourceType: "DELIVERABLE" | "CONTENT_DRAFT";
   sourceId: string;
+  slug?: string | null;
+  postStatus?: "draft";
   externalPostId: null;
   externalEditUrl: null;
+  publicationTargetId?: string;
+  publicationTargetLabel?: string;
+  publicationSiteUrl?: string;
+  publishGateStatus?: "disabled" | "credentials_missing" | "target_configured";
+  credentialConfigured?: boolean;
   note: string;
 };
 
@@ -5323,6 +5330,23 @@ export function AiDeliveryPage({
                             <dt>Source type</dt>
                             <dd>{deliverableWordPressDraft.wordpressDraft.sourceType}</dd>
                           </div>
+                          {deliverableWordPressDraft.wordpressDraft.slug ? (
+                            <div>
+                              <dt>Slug</dt>
+                              <dd>{deliverableWordPressDraft.wordpressDraft.slug}</dd>
+                            </div>
+                          ) : null}
+                          {deliverableWordPressDraft.wordpressDraft.publishGateStatus ? (
+                            <div>
+                              <dt>Publish gate</dt>
+                              <dd>
+                                <StatusBadge status={deliverableWordPressDraft.wordpressDraft.publishGateStatus} />
+                                {deliverableWordPressDraft.wordpressDraft.credentialConfigured === false
+                                  ? " · credentials not configured"
+                                  : ""}
+                              </dd>
+                            </div>
+                          ) : null}
                           <div>
                             <dt>Source ID</dt>
                             <dd>{deliverableWordPressDraft.wordpressDraft.sourceId}</dd>

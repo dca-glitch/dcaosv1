@@ -168,6 +168,9 @@ Optional flags on the wrapper: `-IncludeOptional` (metrics + PDF), `-IncludeFull
 | `npm.cmd run smoke:monthly-report:local` | Admin report lifecycle API |
 | `npm.cmd run smoke:monthly-report:pdf` | PDF generation path |
 | `npm.cmd run smoke:monthly-report:metrics` | Metrics snapshot API |
+| `node scripts/smoke-delivery-handoff-readiness-local.mjs` | Delivery handoff readiness + WP draft prep disabled-safe (Mega Layer 2) |
+| `node scripts/smoke-client-final-visibility-local.mjs` | Client portal final deliverables/reports boundary |
+| `node scripts/smoke-ai-delivery-revenue-engine-local.mjs` | Deterministic revenue chain (Mega Layer 1) |
 
 Full catalog: [`LOCAL_SMOKE_MATRIX.md`](./LOCAL_SMOKE_MATRIX.md).
 

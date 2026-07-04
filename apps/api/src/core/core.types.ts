@@ -824,11 +824,15 @@ export interface AiDeliveryWordPressDraftPrepared {
   excerpt: string | null;
   sourceType: "DELIVERABLE" | "CONTENT_DRAFT";
   sourceId: string;
+  slug: string | null;
+  postStatus: "draft";
   externalPostId: null;
   externalEditUrl: null;
   publicationTargetId?: string;
   publicationTargetLabel?: string;
   publicationSiteUrl?: string;
+  publishGateStatus: "disabled" | "credentials_missing" | "target_configured";
+  credentialConfigured: boolean;
   note: string;
 }
 
