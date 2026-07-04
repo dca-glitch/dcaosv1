@@ -197,6 +197,7 @@ import {
   applyMiHandoffToAiDelivery,
   removeMiHandoffFromAiDelivery,
   listAiDeliveryMiSummaryContext,
+  getAiDeliveryRevenueChainReadiness,
   applyFinalizedMiSummaryToAiDelivery,
   removeMiSummaryFromAiDelivery,
   applyFinalizedMiSummaryToAiDeliveryBrief,
@@ -5169,6 +5170,22 @@ export const listAiDeliveryMiSummaryContextHandler: RequestHandler = async (req,
     res.status(200).json(success(response, { phase: "runtime", scope: "ai-delivery-mi-summary-context" }));
   } catch {
     res.status(500).json(failure("AI_DELIVERY_MI_SUMMARY_CONTEXT_ERROR", "Could not load MI summary context."));
+  }
+};
+
+export const getAiDeliveryRevenueChainReadinessHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) return void res.status(401).json(unauthorizedFailure());
+
+  const projectId = typeof req.params.projectId === "string" ? req.params.projectId.trim() : "";
+  if (!projectId) return void res.status(400).json(aiDeliveryProjectInvalidFailure());
+
+  try {
+    const response = await getAiDeliveryRevenueChainReadiness(authSession, projectId);
+    if (!response) return void res.status(403).json(forbiddenFailure());
+    res.status(200).json(success(response, { phase: "runtime", scope: "ai-delivery-revenue-chain-readiness" }));
+  } catch {
+    res.status(500).json(failure("AI_DELIVERY_REVENUE_CHAIN_READINESS_ERROR", "Could not load delivery chain readiness."));
   }
 };
 

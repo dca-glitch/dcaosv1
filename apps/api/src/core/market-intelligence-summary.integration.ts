@@ -98,3 +98,38 @@ export function buildMiSummaryRecommendationsAppend(
     summary.summaryText
   ].join("\n\n");
 }
+
+const MI_SUMMARY_PLANNING_NOTE_PREFIX = "[mi-summary-ref:";
+const MAX_MI_SUMMARY_SEED_LENGTH = 80;
+const MAX_MI_SUMMARY_PLANNING_NOTE_LENGTH = 220;
+
+export function extractMiSummaryPlanningSeeds(
+  summary: Pick<MiSummaryApplyRecord, "title" | "summaryText" | "sourceNotes">
+): string[] {
+  const chunks = [
+    summary.title,
+    summary.summaryText,
+    summary.sourceNotes ?? ""
+  ]
+    .join("\n")
+    .split(/[\n.;|]+/)
+    .map((entry) => entry.trim())
+    .filter((entry) => entry.length >= 8);
+
+  return Array.from(new Set(chunks.map((entry) => entry.slice(0, MAX_MI_SUMMARY_SEED_LENGTH))));
+}
+
+export function buildMiSummaryContentPlanItemNotes(
+  summary: Pick<MiSummaryApplyRecord, "id" | "title" | "summaryText">,
+  topic: string
+): string {
+  const strategyLine = `MI strategy (${summary.title}): align "${topic}" with ${summary.summaryText.trim().slice(0, 140)}`;
+  const normalized = strategyLine.length > MAX_MI_SUMMARY_PLANNING_NOTE_LENGTH
+    ? `${strategyLine.slice(0, MAX_MI_SUMMARY_PLANNING_NOTE_LENGTH - 3).trim()}...`
+    : strategyLine;
+  return `${MI_SUMMARY_PLANNING_NOTE_PREFIX}${summary.id}]\n${normalized}`;
+}
+
+export function hasMiSummaryPlanningNote(notes: string | null | undefined): boolean {
+  return Boolean(notes?.includes(MI_SUMMARY_PLANNING_NOTE_PREFIX));
+}

@@ -53,6 +53,14 @@ export interface AiDeliveryWorkflowExecutionMiHandoffContext {
   sourceNote: string | null;
 }
 
+export interface AiDeliveryWorkflowExecutionMiSummaryContext {
+  id: string;
+  title: string;
+  summaryText: string;
+  sourceNotes: string | null;
+  integrationVersion: string;
+}
+
 export interface AiDeliveryWorkflowExecutionKnowledgeContext {
   used: boolean;
   contextSection: string | null;
@@ -83,6 +91,7 @@ export interface AiDeliveryWorkflowExecutionAdapterInput {
   researchSummaries: AiDeliveryWorkflowExecutionResearchSummaryContext[];
   approvedSourceMetadata: AiDeliveryWorkflowExecutionSourceContext[];
   marketIntelligenceHandoffs: AiDeliveryWorkflowExecutionMiHandoffContext[];
+  marketIntelligenceSummaries?: AiDeliveryWorkflowExecutionMiSummaryContext[];
   knowledgeContext: AiDeliveryWorkflowExecutionKnowledgeContext | null;
   selectedContentPlanItem: AiDeliveryWorkflowExecutionContentPlanItemContext | null;
   finishedAtIso: string;
@@ -219,6 +228,31 @@ function buildMiHandoffExecutionLogLine(handoffs: AiDeliveryWorkflowExecutionMiH
     : `Applied market intelligence handoff context: ${handoffs.length} record(s).`;
 }
 
+function buildMiSummaryExecutionLogLine(summaries: AiDeliveryWorkflowExecutionMiSummaryContext[]): string | null {
+  if (summaries.length === 0) {
+    return null;
+  }
+
+  const titles = summaries.map((summary) => summary.title.trim()).filter(Boolean);
+  return titles.length > 0
+    ? `Applied finalized MI_SUMMARY_V1 context: ${titles.join(", ")}. No live provider calls.`
+    : `Applied finalized MI_SUMMARY_V1 context: ${summaries.length} record(s). No live provider calls.`;
+}
+
+function buildMiContextExecutionLogLines(
+  input: Pick<AiDeliveryWorkflowExecutionAdapterInput, "marketIntelligenceHandoffs" | "marketIntelligenceSummaries">
+): string[] {
+  const lines: string[] = [];
+  const handoffLine = buildMiHandoffExecutionLogLine(input.marketIntelligenceHandoffs ?? []);
+  const summaryLine = buildMiSummaryExecutionLogLine(input.marketIntelligenceSummaries ?? []);
+  if (handoffLine) lines.push(handoffLine);
+  if (summaryLine) lines.push(summaryLine);
+  if (lines.length === 0) {
+    lines.push("Market intelligence context: no linked handoff or finalized MI summary.");
+  }
+  return lines;
+}
+
 function buildKnowledgeContextExecutionLogLines(
   knowledgeContext: AiDeliveryWorkflowExecutionKnowledgeContext | null
 ): string[] {
@@ -274,6 +308,7 @@ function getOpenRouterFallbackReason(config: AiProviderConfig): string | null {
 }
 
 function buildCompactContextText(input: AiDeliveryWorkflowExecutionAdapterInput): string {
+  const miSummaries = input.marketIntelligenceSummaries ?? [];
   const sections: string[] = [
     `Project: ${input.projectName}`,
     `Target month: ${input.targetMonth}`,
@@ -353,6 +388,20 @@ function buildCompactContextText(input: AiDeliveryWorkflowExecutionAdapterInput)
     }
   }
 
+  if (miSummaries.length > 0) {
+    sections.push("Finalized MI_SUMMARY_V1 context (admin-internal):");
+    for (const summary of miSummaries.slice(0, 2)) {
+      const summaryParts = [
+        summary.title.trim(),
+        `Version: ${summary.integrationVersion}`,
+        truncateText(summary.summaryText, MAX_MI_HANDOFF_FIELD_LENGTH),
+        summary.sourceNotes ? `Source notes: ${truncateText(summary.sourceNotes, MAX_SOURCE_NOTE_LENGTH)}` : null
+      ].filter(Boolean) as string[];
+
+      sections.push(`- ${summaryParts.join(" | ")}`);
+    }
+  }
+
   if (input.knowledgeContext?.used && input.knowledgeContext.contextSection) {
     sections.push(input.knowledgeContext.contextSection);
   }
@@ -389,6 +438,8 @@ function createWorkflowResult(
 }
 
 function buildDeterministicContentPlanItems(input: AiDeliveryWorkflowExecutionAdapterInput): AiDeliveryGeneratedContentPlanItem[] {
+  const miSummaries = input.marketIntelligenceSummaries ?? [];
+  const primaryMiSummary = miSummaries[0] ?? null;
   const seeds = [
     ...input.researchSummaries.flatMap((summary) => [
       truncateText(summary.title, 80),
@@ -402,6 +453,7 @@ function buildDeterministicContentPlanItems(input: AiDeliveryWorkflowExecutionAd
       ...handoff.recommendedActions.map((entry) => truncateText(entry, 80)),
       ...handoff.audienceSignals.map((entry) => truncateText(entry, 80))
     ]),
+    ...(primaryMiSummary ? extractMiSummaryPlanningSeedsForAdapter(primaryMiSummary) : []),
     ...input.approvedSourceMetadata.map((source) => truncateText(source.sourceTitle, 80)),
     truncateText(input.plannedContentScopeNotes, 80),
     truncateText(input.briefNotes, 80),
@@ -419,16 +471,43 @@ function buildDeterministicContentPlanItems(input: AiDeliveryWorkflowExecutionAd
 
   return topics.map((topic, index) => {
     const normalizedKeyword = topic.toLowerCase().replace(/[^\w\s-]/g, "").replace(/\s+/g, " ").trim();
+    const miNotes = primaryMiSummary
+      ? buildMiSummaryContentPlanItemNotesForAdapter(primaryMiSummary, topic)
+      : null;
+    const baseNotes = truncateText(`AI SEO draft rationale for ${input.targetMonth}: ${topic}`, 220);
+    const notes = miNotes && baseNotes ? `${miNotes}\n${baseNotes}` : miNotes ?? baseNotes;
     return {
       title: `${input.projectName}: ${topic}`,
       targetKeyword: truncateText(normalizedKeyword, 120),
       contentType: "article",
-      notes: truncateText(`AI SEO draft rationale for ${input.targetMonth}: ${topic}`, 220),
+      notes,
       sortOrder: index,
       approvalStatus: "DRAFT",
       clientComment: null
     };
   });
+}
+
+function extractMiSummaryPlanningSeedsForAdapter(
+  summary: AiDeliveryWorkflowExecutionMiSummaryContext
+): string[] {
+  return [
+    summary.title,
+    ...summary.summaryText.split(/[\n.;|]+/).map((entry) => entry.trim()).filter((entry) => entry.length >= 8)
+  ]
+    .map((entry) => truncateText(entry, 80))
+    .filter(Boolean) as string[];
+}
+
+function buildMiSummaryContentPlanItemNotesForAdapter(
+  summary: AiDeliveryWorkflowExecutionMiSummaryContext,
+  topic: string
+): string {
+  const strategyLine = `MI strategy (${summary.title}): align "${topic}" with ${summary.summaryText.trim().slice(0, 140)}`;
+  const normalized = strategyLine.length > 220
+    ? `${strategyLine.slice(0, 217).trim()}...`
+    : strategyLine;
+  return `[mi-summary-ref:${summary.id}]\n${normalized}`;
 }
 
 function extractJsonObject(text: string): string | null {
@@ -564,6 +643,7 @@ function buildDeterministicContentDraft(input: AiDeliveryWorkflowExecutionAdapte
   const supportingNote = truncateText(selectedItem.notes?.replace(CONTENT_PLAN_SEARCH_INTENT_PREFIX, "").trimStart(), 220)
     ?? "Focus this article on a practical, admin-reviewable draft aligned to the selected content plan item.";
   const primaryHandoff = input.marketIntelligenceHandoffs[0] ?? null;
+  const primaryMiSummary = (input.marketIntelligenceSummaries ?? [])[0] ?? null;
   const marketContextLines = primaryHandoff
     ? [
         "",
@@ -573,7 +653,15 @@ function buildDeterministicContentDraft(input: AiDeliveryWorkflowExecutionAdapte
         primaryHandoff.opportunities.length > 0 ? `Opportunities: ${primaryHandoff.opportunities.slice(0, 3).join("; ")}` : null,
         primaryHandoff.recommendedActions.length > 0 ? `Recommended actions: ${primaryHandoff.recommendedActions.slice(0, 3).join("; ")}` : null
       ].filter(Boolean) as string[]
-    : [];
+    : primaryMiSummary
+      ? [
+          "",
+          `## Market Intelligence Summary (admin-internal)`,
+          `Source: ${primaryMiSummary.title} (MI_SUMMARY_V1)`,
+          truncateText(primaryMiSummary.summaryText, 220) ?? "Linked finalized MI summary informs this draft angle.",
+          primaryMiSummary.sourceNotes ? `Source notes: ${truncateText(primaryMiSummary.sourceNotes, 180)}` : null
+        ].filter(Boolean) as string[]
+      : [];
   const draftBody = [
     `# ${title}`,
     "",
@@ -597,7 +685,13 @@ function buildDeterministicContentDraft(input: AiDeliveryWorkflowExecutionAdapte
     title,
     slug: buildSlugFromText(selectedItem.targetKeyword ?? title),
     draftBody,
-    notes: truncateText(`Generated from content plan item "${title}" for ${input.targetMonth}.`, 220),
+    notes: truncateText(
+      [
+        `Generated from content plan item "${title}" for ${input.targetMonth}.`,
+        primaryMiSummary ? `MI context ref: ${primaryMiSummary.title} (${primaryMiSummary.id}).` : null
+      ].filter(Boolean).join(" "),
+      220
+    ),
     summary: `Local deterministic content draft prepared for admin review from selected content plan item "${title}".`
   };
 }
@@ -789,9 +883,7 @@ export function createLocalAiDeliveryWorkflowExecutionAdapter(): AiDeliveryWorkf
         return {
           finishedLogEntries: buildExecutionLogEntries(input.finishedAtIso, [
             "Stub content plan draft generated successfully.",
-            ...(buildMiHandoffExecutionLogLine(input.marketIntelligenceHandoffs)
-              ? [buildMiHandoffExecutionLogLine(input.marketIntelligenceHandoffs)!]
-              : []),
+            ...buildMiContextExecutionLogLines(input),
             ...buildKnowledgeContextExecutionLogLines(input.knowledgeContext),
             `Gateway: ${workflowResult.gateway}.`,
             `Model: ${workflowResult.model}.`,
@@ -832,9 +924,7 @@ export function createLocalAiDeliveryWorkflowExecutionAdapter(): AiDeliveryWorkf
         return {
           finishedLogEntries: buildExecutionLogEntries(input.finishedAtIso, [
             "Stub content draft generated successfully.",
-            ...(buildMiHandoffExecutionLogLine(input.marketIntelligenceHandoffs)
-              ? [buildMiHandoffExecutionLogLine(input.marketIntelligenceHandoffs)!]
-              : []),
+            ...buildMiContextExecutionLogLines(input),
             ...buildKnowledgeContextExecutionLogLines(input.knowledgeContext),
             `Gateway: ${workflowResult.gateway}.`,
             `Model: ${workflowResult.model}.`,

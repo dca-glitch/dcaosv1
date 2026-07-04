@@ -126,6 +126,8 @@ import type {
   AiDeliveryMiSummaryApplyRequest,
   AiDeliveryMiSummaryBriefApplyResponse,
   AiDeliveryMiSummaryContextSummary,
+  AiDeliveryRevenueChainReadinessCheck,
+  AiDeliveryRevenueChainReadinessResponse,
   AiDeliveryGoogleDocExportResponse,
   AiDeliveryMonthlyReportMiContextResponse,
   AiDeliveryMonthlyReportMiApplyRequest,
@@ -141,7 +143,10 @@ import { generateAiDeliveryContentPlanPdf } from "./content-plan-pdf.service";
 import { recordAiDeliverySystemEvent } from "../services/system-events.service";
 import { recordPlatformAuditEvent } from "../security/audit-log.service";
 import type { AiDeliveryWordPressPublishResult } from "../services/wordpress.service";
-import { buildDeterministicMarketIntelligenceSummary } from "./market-intelligence-summary.execution";
+import {
+  buildDeterministicMarketIntelligenceSummary,
+  MI_SUMMARY_INTEGRATION_VERSION
+} from "./market-intelligence-summary.execution";
 import {
   buildAiDeliveryBriefNotesFromMiSummary,
   buildMiSummaryContextDraft,
@@ -157,6 +162,7 @@ import {
   type AiDeliveryWorkflowExecutionKnowledgeContext,
   type AiDeliveryGeneratedContentPlanItem,
   type AiDeliveryWorkflowExecutionMiHandoffContext,
+  type AiDeliveryWorkflowExecutionMiSummaryContext,
   type AiDeliveryWorkflowExecutionResearchSummaryContext,
   type AiDeliveryWorkflowExecutionSourceContext
 } from "./ai-delivery-workflow-execution.adapter";
@@ -3754,6 +3760,27 @@ function toAiDeliveryWorkflowExecutionMiHandoffContext(handoff: {
   };
 }
 
+function toAiDeliveryWorkflowExecutionMiSummaryContext(summary: {
+  id: string;
+  title: string;
+  summaryText: string;
+  sourceNotes: string | null;
+  integrationContext: unknown;
+}): AiDeliveryWorkflowExecutionMiSummaryContext | null {
+  const record = toMiSummaryApplyRecord(summary as Parameters<typeof toMiSummaryApplyRecord>[0]);
+  if (!isFinalizedMiSummaryV1(record)) {
+    return null;
+  }
+
+  return {
+    id: summary.id,
+    title: summary.title,
+    summaryText: summary.summaryText,
+    sourceNotes: summary.sourceNotes,
+    integrationVersion: MI_SUMMARY_INTEGRATION_VERSION
+  };
+}
+
 async function persistGeneratedAiDeliveryContentPlan(
   tx: PrismaTx,
   input: {
@@ -4258,6 +4285,30 @@ export async function executeAiDeliveryWorkflowRun(
       }
     });
 
+    const linkedMiSummaries = await tx.marketIntelligenceSummary.findMany({
+      where: {
+        tenantId,
+        aiDeliveryProjectId,
+        isArchived: false,
+        status: "FINALIZED"
+      },
+      orderBy: [{ appliedAt: "desc" }, { updatedAt: "desc" }],
+      take: 2,
+      select: {
+        id: true,
+        title: true,
+        summaryText: true,
+        sourceNotes: true,
+        integrationContext: true,
+        status: true,
+        isArchived: true
+      }
+    });
+
+    const marketIntelligenceSummaries = linkedMiSummaries
+      .map(toAiDeliveryWorkflowExecutionMiSummaryContext)
+      .filter((entry): entry is AiDeliveryWorkflowExecutionMiSummaryContext => entry !== null);
+
     const executionAdapter = createAiDeliveryWorkflowExecutionAdapter(getAiProviderConfig());
     const startedAt = new Date();
     const startedLog = appendAiDeliveryWorkflowExecutionLog(existing.executionLog, executionAdapter.createStartedLogEntries({
@@ -4318,6 +4369,7 @@ export async function executeAiDeliveryWorkflowRun(
         researchRequestTitle: source.researchRequest?.title ?? null
       })),
       marketIntelligenceHandoffs: marketIntelligenceHandoffs.map(toAiDeliveryWorkflowExecutionMiHandoffContext),
+      marketIntelligenceSummaries,
       selectedContentPlanItem: selectedContentPlanItem
         ? {
             id: selectedContentPlanItem.id,
@@ -4359,6 +4411,7 @@ export async function executeAiDeliveryWorkflowRun(
     researchSummaries: startedExecution.researchSummaries,
     approvedSourceMetadata: startedExecution.approvedSourceMetadata,
     marketIntelligenceHandoffs: startedExecution.marketIntelligenceHandoffs,
+    marketIntelligenceSummaries: startedExecution.marketIntelligenceSummaries,
     knowledgeContext,
     selectedContentPlanItem: startedExecution.selectedContentPlanItem,
     finishedAtIso: finishedAt.toISOString()
@@ -8044,6 +8097,7 @@ export async function generateAiDeliveryMonthlyReportRecommendations(
       title: true,
       adminSummaryNotes: true,
       miContextDraft: true,
+      miSummaryId: true,
       status: true
     }
   }) as any;
@@ -8055,9 +8109,45 @@ export async function generateAiDeliveryMonthlyReportRecommendations(
   });
   if (!project) return null;
 
-  const deliverableCount = await prisma.aiDeliveryDeliverable.count({
-    where: { tenantId, aiDeliveryProjectId: report.aiDeliveryProjectId, isArchived: false, status: { in: ["READY", "DELIVERED", "ACCEPTED"] } }
-  });
+  const [deliverableRows, linkedMiSummaries, contentPlan, draftCount, approvedDraftCount] = await Promise.all([
+    prisma.aiDeliveryDeliverable.findMany({
+      where: {
+        tenantId,
+        aiDeliveryProjectId: report.aiDeliveryProjectId,
+        isArchived: false,
+        status: { in: ["READY", "DELIVERED", "ACCEPTED"] }
+      },
+      select: { title: true, status: true },
+      orderBy: { updatedAt: "desc" },
+      take: 5
+    }),
+    prisma.marketIntelligenceSummary.findMany({
+      where: {
+        tenantId,
+        aiDeliveryProjectId: report.aiDeliveryProjectId,
+        isArchived: false,
+        status: "FINALIZED"
+      },
+      select: { id: true, title: true, summaryText: true, integrationContext: true, status: true, isArchived: true },
+      orderBy: { appliedAt: "desc" },
+      take: 2
+    }),
+    prisma.aiDeliveryContentPlan.findFirst({
+      where: { tenantId, aiDeliveryProjectId: report.aiDeliveryProjectId },
+      select: { status: true, items: { select: { title: true, approvalStatus: true } } }
+    }),
+    prisma.aiDeliveryContentDraft.count({
+      where: { tenantId, aiDeliveryProjectId: report.aiDeliveryProjectId, isArchived: false }
+    }),
+    prisma.aiDeliveryContentDraft.count({
+      where: { tenantId, aiDeliveryProjectId: report.aiDeliveryProjectId, isArchived: false, status: "APPROVED" }
+    })
+  ]);
+
+  const deliverableCount = deliverableRows.length;
+  const finalizedMiSummaries = linkedMiSummaries.filter((summary) =>
+    isFinalizedMiSummaryV1(toMiSummaryApplyRecord(summary as MiSummaryApplyRecord))
+  );
 
   const metricsCount = await (prisma as any).aiDeliveryMonthlyMetricSnapshot.count({
     where: { tenantId, aiDeliveryMonthlyReportId: reportId }
@@ -8078,7 +8168,19 @@ export async function generateAiDeliveryMonthlyReportRecommendations(
 
   const miContextLine = report.miContextDraft
     ? "- Internal MI context draft was included in this recommendation draft (admin-only source; not copied verbatim to client view)."
-    : "- Internal MI context draft: not attached";
+    : finalizedMiSummaries.length > 0
+      ? `- Linked finalized MI summary context: ${finalizedMiSummaries.map((summary) => summary.title).join(", ")}.`
+      : "- Internal MI context draft: not attached";
+
+  const deliverableLines = deliverableRows.length > 0
+    ? deliverableRows.map((deliverable) => `  - ${deliverable.title} (${deliverable.status})`)
+    : ["  - None in READY/DELIVERED/ACCEPTED state yet."];
+
+  const contentPlanLine = contentPlan
+    ? `- Content plan status: ${contentPlan.status}; ${contentPlan.items.length} item(s); ${contentPlan.items.filter((item) => item.approvalStatus === "CLIENT_APPROVED").length} client-approved.`
+    : "- Content plan: not created yet.";
+
+  const draftLine = `- Content drafts on file: ${draftCount} total; ${approvedDraftCount} approved for packaging emphasis.`;
 
   const metricsLine = latestApprovedSnapshot
     ? `- Latest approved metrics snapshot (${latestApprovedSnapshot.targetMonth}): GSC clicks ${latestApprovedSnapshot.gscClicks ?? "n/a"}, impressions ${latestApprovedSnapshot.gscImpressions ?? "n/a"}, GA4 sessions ${latestApprovedSnapshot.ga4Sessions ?? "n/a"}.`
@@ -8094,9 +8196,21 @@ export async function generateAiDeliveryMonthlyReportRecommendations(
     "",
     `- Project month focus: ${String(project.targetMonth)}`,
     `- Final/ready deliverables in scope: ${deliverableCount}`,
+    contentPlanLine,
+    draftLine,
     metricsLine,
     report.adminSummaryNotes ? `- Admin summary notes considered: ${report.adminSummaryNotes.trim()}` : "- Admin summary notes: not provided",
     miContextLine,
+    "",
+    "Accepted deliverables considered:",
+    ...deliverableLines,
+    ...(finalizedMiSummaries.length > 0
+      ? [
+          "",
+          "MI-derived admin notes (review before client-facing wording):",
+          ...finalizedMiSummaries.map((summary) => `  - ${summary.title}: ${summary.summaryText.trim().slice(0, 180)}${summary.summaryText.length > 180 ? "..." : ""}`)
+        ]
+      : []),
     "",
     "Recommended next actions:",
     "1. Review final deliverables and confirm client-safe wording before external sharing.",
@@ -12056,6 +12170,201 @@ export async function removeMiHandoffFromMonthlyReport(
 }
 
 // ─── MI Summary → Delivery integration (Mega Block 2) ─────────────────────────
+
+export async function getAiDeliveryRevenueChainReadiness(
+  authSession: AuthResolvedSessionContext,
+  aiDeliveryProjectId: string
+): Promise<AiDeliveryRevenueChainReadinessResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) return null;
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    const project = await tx.aiDeliveryProject.findFirst({
+      where: { id: aiDeliveryProjectId, tenantId, isArchived: false },
+      select: {
+        id: true,
+        name: true,
+        targetMonth: true,
+        brief: { select: { id: true, status: true } },
+        contentPlans: {
+          select: {
+            status: true,
+            items: {
+              select: { id: true, approvalStatus: true, notes: true }
+            }
+          },
+          take: 1
+        }
+      }
+    });
+    if (!project) return null;
+
+    const contentPlan = project.contentPlans[0] ?? null;
+
+    const [miSummaries, miHandoffs, drafts, images, deliverables, monthlyReport] = await Promise.all([
+      tx.marketIntelligenceSummary.findMany({
+        where: { tenantId, aiDeliveryProjectId, isArchived: false, status: "FINALIZED" },
+        select: { id: true, title: true, integrationContext: true, status: true, isArchived: true }
+      }),
+      tx.marketIntelligenceHandoff.findMany({
+        where: { tenantId, aiDeliveryProjectId, isArchived: false, handoffStatus: "APPLIED" },
+        select: { id: true, title: true }
+      }),
+      getAiDeliveryContentDraftDelegate(tx).findMany({
+        where: { tenantId, aiDeliveryProjectId, isArchived: false },
+        select: { id: true, title: true, status: true, contentPlanItemId: true }
+      }) as Promise<Array<{ id: string; title: string; status: string; contentPlanItemId: string | null }>>,
+      getAiDeliveryArticleImageDelegate(tx).findMany({
+        where: { tenantId, aiDeliveryProjectId, isArchived: false },
+        select: { id: true, title: true, status: true, contentDraftId: true }
+      }) as Promise<Array<{ id: string; title: string; status: string; contentDraftId: string | null }>>,
+      getAiDeliveryDeliverableDelegate(tx).findMany({
+        where: { tenantId, aiDeliveryProjectId, isArchived: false },
+        select: { id: true, title: true, status: true, contentDraftId: true, articleImageId: true }
+      }) as Promise<Array<{ id: string; title: string; status: string; contentDraftId: string | null; articleImageId: string | null }>>,
+      (tx as any).aiDeliveryMonthlyReport.findFirst({
+        where: { tenantId, aiDeliveryProjectId, isArchived: false },
+        orderBy: [{ updatedAt: "desc" }],
+        select: { id: true, status: true, recommendationsText: true, miSummaryId: true, miContextDraft: true }
+      }) as Promise<{
+        id: string;
+        status: string;
+        recommendationsText: string | null;
+        miSummaryId: string | null;
+        miContextDraft: string | null;
+      } | null>
+    ]);
+
+    const finalizedMiSummaries = miSummaries.filter((summary) =>
+      isFinalizedMiSummaryV1(toMiSummaryApplyRecord(summary as MiSummaryApplyRecord))
+    );
+    const approvedDrafts = drafts.filter((draft) => draft.status === "APPROVED");
+    const readyImages = images.filter((image) => image.status === "APPROVED" || image.status === "FINAL_READY");
+    const readyDeliverables = deliverables.filter((deliverable) =>
+      ["READY", "DELIVERED", "ACCEPTED"].includes(deliverable.status)
+    );
+    const planItems = contentPlan?.items ?? [];
+    const approvedPlanItems = planItems.filter((item) => item.approvalStatus === "CLIENT_APPROVED");
+    const miLinkedPlanItems = planItems.filter((item) => (item.notes ?? "").includes("[mi-summary-ref:"));
+
+    const checks: AiDeliveryRevenueChainReadinessCheck[] = [];
+    const warnings: string[] = [];
+
+    if (project.brief) {
+      checks.push({
+        key: "brief",
+        label: "Brief",
+        status: project.brief.status === "ADMIN_APPROVED" ? "ready" : "warning",
+        detail: `Brief status: ${project.brief.status}`
+      });
+    } else {
+      checks.push({ key: "brief", label: "Brief", status: "missing", detail: "No brief record yet." });
+      warnings.push("Create or open the project brief before packaging.");
+    }
+
+    if (finalizedMiSummaries.length > 0 || miHandoffs.length > 0) {
+      const labels = [
+        ...finalizedMiSummaries.map((summary) => summary.title),
+        ...miHandoffs.map((handoff) => handoff.title)
+      ];
+      checks.push({
+        key: "mi_context",
+        label: "MI context",
+        status: "ready",
+        detail: `${finalizedMiSummaries.length} finalized MI summary(ies), ${miHandoffs.length} handoff(s): ${labels.slice(0, 3).join(", ")}`
+      });
+    } else {
+      checks.push({
+        key: "mi_context",
+        label: "MI context",
+        status: "optional",
+        detail: "No finalized MI summary or applied handoff linked (explicitly absent)."
+      });
+      warnings.push("MI context is optional but recommended for deterministic SEO planning.");
+    }
+
+    if (contentPlan) {
+      checks.push({
+        key: "content_plan",
+        label: "Content plan",
+        status: contentPlan.status === "CLIENT_APPROVED" ? "ready" : "warning",
+        detail: `Plan status ${contentPlan.status}; ${planItems.length} item(s); ${approvedPlanItems.length} approved; ${miLinkedPlanItems.length} with MI notes`
+      });
+    } else {
+      checks.push({ key: "content_plan", label: "Content plan", status: "missing", detail: "No content plan created yet." });
+      warnings.push("Create the monthly SEO/content plan before draft generation.");
+    }
+
+    if (drafts.length > 0) {
+      checks.push({
+        key: "drafts",
+        label: "Content drafts",
+        status: approvedDrafts.length > 0 ? "ready" : "warning",
+        detail: `${drafts.length} draft(s); ${approvedDrafts.length} approved`
+      });
+    } else {
+      checks.push({ key: "drafts", label: "Content drafts", status: "missing", detail: "No content drafts yet." });
+    }
+
+    if (images.length > 0) {
+      const linkedToDraft = images.filter((image) => Boolean(image.contentDraftId)).length;
+      checks.push({
+        key: "images",
+        label: "Image planning",
+        status: readyImages.length > 0 ? "ready" : "warning",
+        detail: `${images.length} image record(s); ${linkedToDraft} linked to draft(s); ${readyImages.length} approved/final-ready`
+      });
+    } else {
+      checks.push({
+        key: "images",
+        label: "Image planning",
+        status: "optional",
+        detail: "No image planning records yet."
+      });
+    }
+
+    if (deliverables.length > 0) {
+      checks.push({
+        key: "deliverables",
+        label: "Deliverables",
+        status: readyDeliverables.length > 0 ? "ready" : "warning",
+        detail: `${deliverables.length} deliverable(s); ${readyDeliverables.length} ready/delivered/accepted`
+      });
+    } else {
+      checks.push({ key: "deliverables", label: "Deliverables", status: "missing", detail: "No deliverable packages yet." });
+    }
+
+    if (monthlyReport) {
+      checks.push({
+        key: "monthly_report",
+        label: "Monthly report",
+        status: monthlyReport.status === "FINAL" ? "ready" : "warning",
+        detail: `Report status ${monthlyReport.status}; MI ref ${monthlyReport.miSummaryId ? "linked" : "not linked"}; recommendations ${monthlyReport.recommendationsText ? "present" : "not generated"}`
+      });
+    } else {
+      checks.push({
+        key: "monthly_report",
+        label: "Monthly report",
+        status: "optional",
+        detail: "No monthly report created for this project yet."
+      });
+    }
+
+    const blockingMissing = checks.filter((check) => check.status === "missing").length;
+    const warningCount = checks.filter((check) => check.status === "warning").length;
+    const overallStatus: AiDeliveryRevenueChainReadinessResponse["overallStatus"] =
+      blockingMissing > 0 ? "blocked" : warningCount > 0 ? "partial" : "ready";
+
+    return {
+      projectId: project.id,
+      projectName: project.name,
+      targetMonth: String(project.targetMonth),
+      overallStatus,
+      checks,
+      warnings
+    };
+  });
+}
 
 export async function listAiDeliveryMiSummaryContext(
   authSession: AuthResolvedSessionContext,

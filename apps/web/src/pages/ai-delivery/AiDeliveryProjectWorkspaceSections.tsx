@@ -1,6 +1,7 @@
 import React from "react";
 import { EmptyState } from "../../components/EmptyState";
 import { SectionPanel, StatusBadge } from "../../components/ui";
+import type { AiDeliveryRevenueChainReadinessResponse } from "@dca-os-v1/shared";
 import type { AiDeliveryProjectSummary } from "./AiDeliveryPage";
 
 export type AiDeliveryProjectWorkspaceSectionsProps = {
@@ -10,6 +11,8 @@ export type AiDeliveryProjectWorkspaceSectionsProps = {
   showMiContextButton: boolean;
   showKnowledgeButton: boolean;
   showMonthlyReportButton: boolean;
+  revenueChainReadiness: AiDeliveryRevenueChainReadinessResponse | null;
+  revenueChainReadinessLoading: boolean;
   onEdit: () => void;
   onArchive: () => void;
   onOpenContentPlan: () => void;
@@ -48,7 +51,9 @@ export function AiDeliveryProjectWorkspaceSections({
   onApproveFinal,
   onOpenArticleImages,
   onOpenDeliverables,
-  onOpenMonthlyReport
+  onOpenMonthlyReport,
+  revenueChainReadiness,
+  revenueChainReadinessLoading
 }: AiDeliveryProjectWorkspaceSectionsProps) {
   if (!workspaceProject) {
     return (
@@ -95,6 +100,40 @@ export function AiDeliveryProjectWorkspaceSections({
         {workspaceProject.plannedContentScopeNotes ? (
           <p className="ai-delivery-context-notes muted-text">{workspaceProject.plannedContentScopeNotes}</p>
         ) : null}
+      </SectionPanel>
+
+      <SectionPanel
+        className="ai-delivery-section ai-delivery-revenue-chain-readiness"
+        description="Deterministic admin-operated chain: brief → MI → plan → drafts → images → deliverables → monthly report."
+        title="Delivery chain readiness"
+        tone="compact"
+      >
+        {revenueChainReadinessLoading ? (
+          <p className="muted-text">Loading readiness checklist...</p>
+        ) : revenueChainReadiness ? (
+          <div className="stack gap-sm">
+            <div className="ai-delivery-context-meta">
+              <StatusBadge status={revenueChainReadiness.overallStatus} />
+              <span className="muted-text">Admin checklist only — warnings do not block manual workflow.</span>
+            </div>
+            <dl className="brief-grid">
+              {revenueChainReadiness.checks.map((check) => (
+                <div key={check.key}>
+                  <dt>{check.label}</dt>
+                  <dd>
+                    <StatusBadge status={check.status} />
+                    <span className="muted-text"> {check.detail}</span>
+                  </dd>
+                </div>
+              ))}
+            </dl>
+            {revenueChainReadiness.warnings.length > 0 ? (
+              <p className="muted-text">{revenueChainReadiness.warnings.join(" · ")}</p>
+            ) : null}
+          </div>
+        ) : (
+          <p className="muted-text">Select a project to view delivery chain readiness.</p>
+        )}
       </SectionPanel>
 
       <SectionPanel

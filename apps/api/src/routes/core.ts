@@ -178,6 +178,7 @@ import {
   applyMiHandoffToAiDeliveryHandler,
   removeMiHandoffFromAiDeliveryHandler,
   listAiDeliveryMiSummaryContextHandler,
+  getAiDeliveryRevenueChainReadinessHandler,
   applyFinalizedMiSummaryToAiDeliveryHandler,
   removeMiSummaryFromAiDeliveryHandler,
   applyFinalizedMiSummaryToAiDeliveryBriefHandler,
@@ -501,6 +502,7 @@ export function createCoreRouter() {
   router.post("/ai-delivery/projects/:projectId/market-intelligence-context/apply", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), applyMiHandoffToAiDeliveryHandler);
   router.post("/ai-delivery/projects/:projectId/market-intelligence-context/:handoffId/remove", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), removeMiHandoffFromAiDeliveryHandler);
   router.get("/ai-delivery/projects/:projectId/mi-summary-context", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), listAiDeliveryMiSummaryContextHandler);
+  router.get("/ai-delivery/projects/:projectId/revenue-chain-readiness", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), getAiDeliveryRevenueChainReadinessHandler);
   router.post("/ai-delivery/projects/:projectId/mi-summary-context/apply", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), applyFinalizedMiSummaryToAiDeliveryHandler);
   router.post("/ai-delivery/projects/:projectId/mi-summary-context/:summaryId/remove", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), removeMiSummaryFromAiDeliveryHandler);
   router.post("/ai-delivery/projects/:projectId/mi-summaries/:summaryId/apply-to-brief", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), applyFinalizedMiSummaryToAiDeliveryBriefHandler);

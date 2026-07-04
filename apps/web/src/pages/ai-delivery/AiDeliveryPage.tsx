@@ -21,7 +21,7 @@ import type {
   MonthlyMetricSnapshotFormValues,
   AiDeliveryMonthlyReportMiContext
 } from "./MonthlyReportPanel";
-import type { MarketIntelligenceHandoffSummary, AiDeliveryMiSummaryContextSummary } from "@dca-os-v1/shared";
+import type { MarketIntelligenceHandoffSummary, AiDeliveryMiSummaryContextSummary, AiDeliveryRevenueChainReadinessResponse } from "@dca-os-v1/shared";
 
 export type AiDeliveryBriefSummary = {
   id: string;
@@ -1134,6 +1134,8 @@ export function AiDeliveryPage({
   const [miApplySummaryId, setMiApplySummaryId] = useState("");
   const [finalizedSummaryOptions, setFinalizedSummaryOptions] = useState<Array<{ id: string; title: string }>>([]);
   const [miApplyHandoffId, setMiApplyHandoffId] = useState<string>("");
+  const [revenueChainReadiness, setRevenueChainReadiness] = useState<AiDeliveryRevenueChainReadinessResponse | null>(null);
+  const [revenueChainReadinessLoading, setRevenueChainReadinessLoading] = useState(false);
   const [researchWorkflowRuns, setResearchWorkflowRuns] = useState<AiDeliveryWorkflowRunSummary[]>([]);
   const [researchRequestEditorId, setResearchRequestEditorId] = useState<string | null>(null);
   const [researchRequestForm, setResearchRequestForm] = useState<AiDeliveryResearchRequestFormValues>(emptyResearchRequest());
@@ -1196,6 +1198,46 @@ export function AiDeliveryPage({
     () => (workspaceProjectId ? projects.find((p) => p.id === workspaceProjectId) ?? null : null),
     [workspaceProjectId, projects]
   );
+
+  useEffect(() => {
+    if (!workspaceProjectId) {
+      setRevenueChainReadiness(null);
+      return;
+    }
+
+    let cancelled = false;
+    async function loadRevenueChainReadiness() {
+      const token = window.sessionStorage.getItem("dcaosv1.authToken");
+      if (!token) {
+        if (!cancelled) setRevenueChainReadiness(null);
+        return;
+      }
+
+      setRevenueChainReadinessLoading(true);
+      try {
+        const response = await fetch(`/api/v1/ai-delivery/projects/${workspaceProjectId}/revenue-chain-readiness`, {
+          headers: { Accept: "application/json", Authorization: `Bearer ${token}` }
+        });
+        if (!response.ok) {
+          if (!cancelled) setRevenueChainReadiness(null);
+          return;
+        }
+        const data = await response.json();
+        if (!cancelled) {
+          setRevenueChainReadiness((data?.data ?? null) as AiDeliveryRevenueChainReadinessResponse | null);
+        }
+      } catch {
+        if (!cancelled) setRevenueChainReadiness(null);
+      } finally {
+        if (!cancelled) setRevenueChainReadinessLoading(false);
+      }
+    }
+
+    void loadRevenueChainReadiness();
+    return () => {
+      cancelled = true;
+    };
+  }, [workspaceProjectId]);
   const openProject = useMemo(() => projects.find((p) => p.id === openBriefId) ?? null, [openBriefId, projects]);
   const openContentPlanProject = useMemo(() => projects.find((p) => p.id === openContentPlanId) ?? null, [openContentPlanId, projects]);
   const openContentDraftsProject = useMemo(() => projects.find((p) => p.id === openContentDraftsId) ?? null, [openContentDraftsId, projects]);
@@ -3365,6 +3407,8 @@ export function AiDeliveryPage({
               }
               showMiContextButton={typeof onFetchMiContext === "function"}
               showMonthlyReportButton={typeof onFetchMonthlyComputedSummary === "function"}
+              revenueChainReadiness={revenueChainReadiness}
+              revenueChainReadinessLoading={revenueChainReadinessLoading}
               workspaceProject={workspaceProject}
             />
           </div>
