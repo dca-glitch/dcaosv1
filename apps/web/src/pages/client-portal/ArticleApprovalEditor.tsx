@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Modal } from "../../components/Modal";
 import { EmptyState } from "../../components/EmptyState";
 import { Button, PageHeader, SectionPanel, StatusBadge } from "../../components/ui";
-import { Alert, Card, Input, Spinner, Textarea, Toast } from "../../design-system";
+import { Alert, Input, Spinner, Textarea, Toast } from "../../design-system";
 import {
   clientPortalApiRequest,
   formatApprovalDate,
@@ -92,6 +92,29 @@ function imageStatusLabel(status: DeliverableImageApproval["approvalStatus"]): s
   if (status === "APPROVED") return "Approved";
   if (status === "REJECTED") return "Rejected";
   return "Pending";
+}
+
+function PortalInlineLoading({ label }: { label: string }) {
+  return (
+    <p className="cf-inline-loading" role="status">
+      <Spinner size="sm" />
+      {label}
+    </p>
+  );
+}
+
+function ApprovalBackLink() {
+  return (
+    <div className="portal-action-row cf-approval-back-row">
+      <Button
+        onClick={() => navigateToClientPortalHash("client-portal/pending-approvals")}
+        type="button"
+        variant="tertiary"
+      >
+        Back to pending approvals
+      </Button>
+    </div>
+  );
 }
 
 export function ArticleApprovalEditor({ deliverableId }: ArticleApprovalEditorProps) {
@@ -363,41 +386,41 @@ export function ArticleApprovalEditor({ deliverableId }: ArticleApprovalEditorPr
     window.setTimeout(() => navigateToClientPortalHash("client-portal/pending-approvals"), 600);
   }
 
-  if (loading) {
-    return (
-      <div className="state-panel loading-state-panel" role="status">
-        <Spinner size="sm" />
-        Loading article for approval
-      </div>
-    );
-  }
-
-  if (error || !deliverable) {
-    return (
-      <section className="view-section" data-density="comfortable">
-        <Alert message={error ?? "Article not available."} title="Approval unavailable" variant="danger" />
-        <div className="portal-action-row">
-          <Button onClick={() => navigateToClientPortalHash("client-portal/pending-approvals")} variant="secondary">
-            Back to pending approvals
-          </Button>
-        </div>
-      </section>
-    );
-  }
+  const pageTitle = deliverable ? metadata.title || deliverable.title : "Article approval";
+  const pageDescription = deliverable
+    ? `${deliverable.projectName} · Created ${formatApprovalDate(deliverable.createdAt)}`
+    : "Review article drafts and images before publication.";
 
   return (
-    <section className="view-section" aria-labelledby="article-approval-title" data-density="comfortable">
+    <section className="view-section cf-page" aria-labelledby="article-approval-title" data-density="comfortable">
       {toast ? (
         <Toast message={toast.message} variant={toast.tone === "error" ? "danger" : "success"} />
       ) : null}
 
       <PageHeader
-        description={`${deliverable.projectName} · Created ${formatApprovalDate(deliverable.createdAt)}`}
+        description={pageDescription}
         eyebrow="Article approval"
-        title={metadata.title || deliverable.title}
+        title={pageTitle}
         titleId="article-approval-title"
       />
 
+      <ApprovalBackLink />
+
+      {loading ? <PortalInlineLoading label="Loading article for approval" /> : null}
+
+      {!loading && (error || !deliverable) ? (
+        <>
+          <Alert message={error ?? "Article not available."} title="Approval unavailable" variant="danger" />
+          <div className="portal-action-row">
+            <Button onClick={() => void loadDeliverable()} variant="secondary">
+              Try again
+            </Button>
+          </div>
+        </>
+      ) : null}
+
+      {!loading && deliverable ? (
+        <>
       <div className="portal-approval-layout">
         <aside className="portal-approval-meta">
           <SectionPanel title="Review context" tone="compact">
@@ -421,7 +444,11 @@ export function ArticleApprovalEditor({ deliverableId }: ArticleApprovalEditorPr
         </aside>
 
         <div className="portal-approval-main">
-          <SectionPanel description="Title, description, tags, category, and optional publish date. Changes save automatically." title="Article metadata">
+          <SectionPanel
+            description="Title, description, tags, category, and optional publish date. Changes save automatically."
+            title="Article metadata"
+            tone="compact"
+          >
             <Input
               className="entity-form"
               id="article-title"
@@ -469,10 +496,14 @@ export function ArticleApprovalEditor({ deliverableId }: ArticleApprovalEditorPr
               type="datetime-local"
               value={metadata.scheduledPublishAt}
             />
-            {savingMetadata ? <p className="muted-text">Saving metadata…</p> : null}
+            {savingMetadata ? <PortalInlineLoading label="Saving metadata" /> : null}
           </SectionPanel>
 
-          <SectionPanel description="Plain text article body. Changes save automatically." title="Article Body">
+          <SectionPanel
+            description="Plain text article body. Changes save automatically."
+            title="Article Body"
+            tone="compact"
+          >
             <Textarea
               className="entity-form portal-approval-textarea"
               id="article-body-content"
@@ -483,16 +514,20 @@ export function ArticleApprovalEditor({ deliverableId }: ArticleApprovalEditorPr
               rows={12}
               value={bodyContent}
             />
-            {savingBody ? <p className="muted-text">Saving…</p> : null}
+            {savingBody ? <PortalInlineLoading label="Saving" /> : null}
           </SectionPanel>
 
-          <SectionPanel description="Approve or reject each image before submitting the article." title="Images">
+          <SectionPanel
+            description="Approve or reject each image before submitting the article."
+            title="Images"
+            tone="compact"
+          >
             {deliverable.images.length === 0 ? (
               <EmptyState message="This article has no images attached." title="No images" variant="inline" />
             ) : (
-              <div className="portal-image-approval-grid">
+              <div className="cf-record-list portal-image-approval-grid">
                 {deliverable.images.map((image) => (
-                  <Card className="portal-image-approval-card" key={image.id} variant="client">
+                  <article className="cf-record portal-image-approval-card" key={image.id}>
                     <div className="portal-image-thumb-wrap">
                       {image.imageUrl ? (
                         <img alt={image.altText} className="portal-image-thumb" src={image.imageUrl} />
@@ -501,10 +536,10 @@ export function ArticleApprovalEditor({ deliverableId }: ArticleApprovalEditorPr
                       )}
                     </div>
                     <div className="portal-image-approval-body">
-                      <p className="dense-kicker">
+                      <div className="cf-record-kicker">
                         <StatusBadge status={imageStatusLabel(image.approvalStatus)} />
-                      </p>
-                      <p className="muted-text">{image.altText}</p>
+                      </div>
+                      <p className="cf-record-note">{image.altText}</p>
 
                       {image.approvalStatus === "PENDING" ? (
                         <div className="portal-action-row">
@@ -537,7 +572,7 @@ export function ArticleApprovalEditor({ deliverableId }: ArticleApprovalEditorPr
                       {image.approvalStatus === "REJECTED" ? (
                         <div className="portal-image-reviewed">
                           <p className="portal-reviewed-label portal-reviewed-label-danger">✕ Rejected</p>
-                          {image.rejectionReason ? <p className="dense-row-note">{image.rejectionReason}</p> : null}
+                          {image.rejectionReason ? <p className="cf-record-note">{image.rejectionReason}</p> : null}
                           <Button disabled={imageBusyId === image.id} onClick={() => void handleUndoImage(image.id)} size="sm" variant="tertiary">
                             Undo rejection
                           </Button>
@@ -564,7 +599,7 @@ export function ArticleApprovalEditor({ deliverableId }: ArticleApprovalEditorPr
                         </div>
                       ) : null}
                     </div>
-                  </Card>
+                  </article>
                 ))}
               </div>
             )}
@@ -573,22 +608,24 @@ export function ArticleApprovalEditor({ deliverableId }: ArticleApprovalEditorPr
       </div>
 
       <footer className="portal-approval-actions">
+        <Button disabled={!allImagesReviewed || submitting} onClick={() => setShowApproveModal(true)}>
+          Approve Article
+        </Button>
         <Button
           onClick={() => {
             void saveMetadata(metadata);
             void saveBody(bodyContent);
           }}
-          variant="secondary"
+          variant="tertiary"
         >
           Save &amp; Continue
         </Button>
-        <Button disabled={!allImagesReviewed || submitting} onClick={() => setShowApproveModal(true)}>
-          Approve Article
-        </Button>
-        <Button disabled={submitting} onClick={() => setShowRejectModal(true)} variant="secondary">
+        <Button disabled={submitting} onClick={() => setShowRejectModal(true)} variant="tertiary">
           Reject Article
         </Button>
       </footer>
+        </>
+      ) : null}
 
       {showApproveModal ? (
         <Modal

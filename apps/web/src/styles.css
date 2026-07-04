@@ -2836,6 +2836,18 @@ th {
   grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
 }
 
+.cf-page .portal-approval-layout {
+  gap: 10px;
+}
+
+.cf-approval-back-row {
+  margin: 0;
+}
+
+.cf-page .portal-approval-meta .field-grid {
+  gap: 8px;
+}
+
 .portal-approval-meta .field-grid {
   display: grid;
   gap: 12px;
@@ -2847,10 +2859,19 @@ th {
   width: 100%;
 }
 
+.cf-page .portal-approval-textarea {
+  min-height: 220px;
+}
+
 .portal-image-approval-grid {
   display: grid;
   gap: 16px;
   grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.cf-page .portal-image-approval-grid {
+  gap: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .portal-image-approval-card {
@@ -2858,11 +2879,20 @@ th {
   gap: 12px;
 }
 
+.cf-page .portal-image-approval-card {
+  gap: 8px;
+  padding: 9px 11px;
+}
+
 .portal-image-thumb-wrap {
   aspect-ratio: 4 / 3;
   background: rgba(255, 255, 255, 0.04);
   border-radius: 12px;
   overflow: hidden;
+}
+
+.cf-page .portal-image-thumb-wrap {
+  border-radius: 8px;
 }
 
 .portal-image-thumb {
@@ -2910,6 +2940,20 @@ th {
   margin-top: 20px;
   position: sticky;
   bottom: 12px;
+}
+
+.cf-page .portal-approval-actions {
+  background: rgba(12, 16, 28, 0.88);
+  border: 1px solid rgba(190, 211, 255, 0.08);
+  border-radius: 10px;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 10px 12px;
+}
+
+.cf-page .portal-approval-actions .button-primary,
+.cf-page .portal-approval-actions button:not([class*="tertiary"]):first-child {
+  margin-right: auto;
 }
 
 .portal-toast {
