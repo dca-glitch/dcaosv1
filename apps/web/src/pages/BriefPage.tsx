@@ -537,6 +537,15 @@ function BriefStatusBadge({ status, role }: { status: string; role: string }) {
   return <Badge variant={briefBadgeVariant(badge.color)}>{badge.label}</Badge>;
 }
 
+function PortalInlineLoading({ label }: { label: string }) {
+  return (
+    <p className="cf-inline-loading" role="status">
+      <Spinner size="sm" />
+      {label}
+    </p>
+  );
+}
+
 function BriefAwaitingClientInfoBanner() {
   return (
     <div
@@ -1326,36 +1335,8 @@ export function BriefPage() {
     setAdditionalFields(EMPTY_ADDITIONAL_FIELDS);
   };
 
-  if (loadingClients && !hasSelectedClient) {
-    return (
-      <div className="state-panel loading-state-panel" role="status">
-        <Spinner size="sm" />
-        Loading briefs
-      </div>
-    );
-  }
-
-  if (error && !hasSelectedClient) {
-    return (
-      <section className="view-section" aria-labelledby="client-briefs-title" data-density="comfortable">
-        <PageHeader
-          description="Client briefs for your workspace."
-          eyebrow="Client workspace"
-          title="Briefs"
-          titleId="client-briefs-title"
-        />
-        <Alert message={error} title="Briefs unavailable" variant="danger" />
-        <div className="portal-action-row">
-          <Button onClick={() => void loadClients()} variant="secondary">
-            Try again
-          </Button>
-        </div>
-      </section>
-    );
-  }
-
   return (
-    <section className="view-section" aria-labelledby="client-briefs-title" data-density="comfortable">
+    <section className="view-section cf-page" aria-labelledby="client-briefs-title" data-density="comfortable">
       <PageHeader
         action={
           <Button
@@ -1395,9 +1376,22 @@ export function BriefPage() {
         </Button>
       </nav>
 
-      {!hasSelectedClient ? (
+      {loadingClients && !hasSelectedClient ? <PortalInlineLoading label="Loading briefs" /> : null}
+
+      {error && !hasSelectedClient ? (
+        <>
+          <Alert message={error} title="Briefs unavailable" variant="danger" />
+          <div className="portal-action-row">
+            <Button onClick={() => void loadClients()} variant="secondary">
+              Try again
+            </Button>
+          </div>
+        </>
+      ) : null}
+
+      {!hasSelectedClient && !loadingClients && !error ? (
         <EmptyState message="When your team shares a client workspace, briefs will appear here." title="No clients" />
-      ) : (
+      ) : hasSelectedClient ? (
         <>
           <SectionPanel
             description={
@@ -1406,6 +1400,7 @@ export function BriefPage() {
                 : "Briefs for your client workspace."
             }
             title="Client"
+            tone="compact"
           >
             {isAdminViewer ? (
               <div className="filter-bar" role="tablist" aria-label="Client selection">
@@ -1413,9 +1408,7 @@ export function BriefPage() {
                   <Button
                     aria-selected={client.id === selectedClientId}
                     className={
-                      client.id === selectedClientId
-                        ? "secondary-action filter-chip is-active"
-                        : "secondary-action filter-chip"
+                      client.id === selectedClientId ? "filter-chip is-active" : "filter-chip"
                     }
                     key={client.id}
                     onClick={() => {
@@ -1440,12 +1433,7 @@ export function BriefPage() {
             ) : null}
           </SectionPanel>
 
-          {loadingBriefs ? (
-            <div className="state-panel loading-state-panel" role="status">
-              <Spinner size="sm" />
-              Loading briefs
-            </div>
-          ) : null}
+          {loadingBriefs ? <PortalInlineLoading label="Loading briefs" /> : null}
 
           {error ? <Alert message={error} title="Could not load briefs" variant="danger" /> : null}
 
@@ -1462,6 +1450,7 @@ export function BriefPage() {
                     ? `Current month for ${selectedClient.name}.`
                     : "Current month."
                 }
+                tone="compact"
               >
                 {monthlyBrief ? (
                   <div style={{ marginBottom: "1rem" }}>
@@ -1550,37 +1539,68 @@ export function BriefPage() {
                 }
                 description="Briefs outside the current month."
                 title="Other briefs"
+                tone="compact"
               >
                 {additionalBriefs.length === 0 ? (
                   <p className="inline-empty muted-text">No other briefs.</p>
                 ) : (
-                  <div className="dense-list">
-                    {additionalBriefs.map((brief) => (
-                      <Button
-                        className="dense-record portal-brief-list-item"
-                        key={brief.id}
-                        onClick={() => {
-                          setShowNewAdditionalEditor(false);
-                          setEditorState({
-                            open: true,
-                            mode: "edit",
-                            type: "ADDITIONAL",
-                            briefId: brief.id
-                          });
-                        }}
-                        type="button"
-                        variant="tertiary"
-                      >
-                        <div className="dense-record-main">
-                          <strong>{brief.title}</strong>
-                          <span className="muted-text">
-                            {formatBriefDate(brief.createdAt)}
-                            {brief.targetGroup ? ` · ${targetGroupLabel(brief.targetGroup)}` : ""}
-                          </span>
-                        </div>
-                        <BriefStatusBadge role={viewerRole} status={brief.status} />
-                      </Button>
-                    ))}
+                  <div className="cf-record-list">
+                    {additionalBriefs.map((brief) => {
+                      const isSelected =
+                        editorState.open &&
+                        editorState.type === "ADDITIONAL" &&
+                        editorState.briefId === brief.id;
+
+                      return (
+                        <article
+                          className={`cf-record cf-record--selectable${isSelected ? " is-selected" : ""}`}
+                          key={brief.id}
+                          onClick={() => {
+                            setShowNewAdditionalEditor(false);
+                            setEditorState({
+                              open: true,
+                              mode: "edit",
+                              type: "ADDITIONAL",
+                              briefId: brief.id
+                            });
+                          }}
+                          onKeyDown={(event) => {
+                            if (event.key === "Enter" || event.key === " ") {
+                              event.preventDefault();
+                              setShowNewAdditionalEditor(false);
+                              setEditorState({
+                                open: true,
+                                mode: "edit",
+                                type: "ADDITIONAL",
+                                briefId: brief.id
+                              });
+                            }
+                          }}
+                          role="button"
+                          tabIndex={0}
+                        >
+                          <div className="cf-record-main">
+                            <div className="cf-record-title">
+                              <div className="cf-record-kicker">
+                                <BriefStatusBadge role={viewerRole} status={brief.status} />
+                              </div>
+                              <h3>{brief.title}</h3>
+                              <div className="cf-record-meta">
+                                <span>{formatBriefDate(brief.createdAt)}</span>
+                                {brief.submittedAt ? (
+                                  <span>Submitted {formatBriefDate(brief.submittedAt)}</span>
+                                ) : (
+                                  <span>Updated {formatBriefDate(brief.updatedAt)}</span>
+                                )}
+                                {brief.targetGroup ? (
+                                  <span>{targetGroupLabel(brief.targetGroup)}</span>
+                                ) : null}
+                              </div>
+                            </div>
+                          </div>
+                        </article>
+                      );
+                    })}
                   </div>
                 )}
 
@@ -1646,7 +1666,7 @@ export function BriefPage() {
             </>
           ) : null}
         </>
-      )}
+      ) : null}
     </section>
   );
 }

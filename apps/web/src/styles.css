@@ -4236,6 +4236,21 @@ div[role="dialog"][aria-modal="true"] {
   margin: 0;
 }
 
+.cf-record.cf-record--selectable {
+  cursor: pointer;
+  transition: border-color 120ms ease, background 120ms ease;
+}
+
+.cf-record.cf-record--selectable:hover {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(190, 211, 255, 0.12);
+}
+
+.cf-record.cf-record--selectable.is-selected {
+  background: rgba(124, 143, 202, 0.06);
+  border-color: rgba(124, 143, 202, 0.22);
+}
+
 .cf-type-pill {
   background: rgba(185, 194, 255, 0.06);
   border: 1px solid rgba(185, 194, 255, 0.12);
