@@ -4,7 +4,8 @@
  * Mega Block 2 — client approval happy-path + boundary smoke.
  * Proves pending approvals, ArticleApprovalEditor session, approve/reject/save, and client-safe responses.
  * Uses AUTH_SEED_TEST_PASSWORD; prefers AUTH_SEED_TESTER_EMAIL, falls back to puriva@puriva.id portal user.
- * SKIP (exit 0) when client portal session cannot be established — never hardcodes secrets.
+ * Fail-closed by default: missing prerequisites or portal session → exit non-zero.
+ * Set SMOKE_ALLOW_SKIP=true for discovery/demo mode only (SKIP exit 0).
  */
 
 import { chromium } from "@playwright/test";
@@ -25,6 +26,7 @@ const adminEmail = process.env.AUTH_SEED_TEST_EMAIL ?? "admin@dca.local";
 const adminPassword = process.env.AUTH_SEED_TEST_PASSWORD ?? "";
 const portalPassword = process.env.AUTH_SEED_TEST_PASSWORD ?? "";
 const clientEmailPreference = process.env.AUTH_SEED_TESTER_EMAIL ?? PURIVA_CLIENT_PORTAL_USER_EMAIL;
+const allowSkip = process.env.SMOKE_ALLOW_SKIP === "true";
 const smokeMarker = "[SMOKE][CLIENT_APPROVAL_HAPPY_PATH]";
 const targetMonth = "2026-12";
 
@@ -331,8 +333,14 @@ async function main() {
   const approveFixture = await createApprovalFixture(adminToken, "approve");
   const clientSession = await resolveClientSession(adminToken, approveFixture.clientId);
   if (clientSession.skip) {
-    record("client approval happy path", true, `SKIP — ${clientSession.reason}`);
-    console.log(`\n${smokeMarker} SKIP — ${clientSession.reason}`);
+    if (allowSkip) {
+      record("client approval happy path", true, `SKIP — ${clientSession.reason}`);
+      console.log(`\n${smokeMarker} SKIP — ${clientSession.reason}`);
+      return;
+    }
+    record("client approval happy path", false, clientSession.reason);
+    console.error(`\n${smokeMarker} FAIL — ${clientSession.reason}`);
+    process.exitCode = 1;
     return;
   }
 

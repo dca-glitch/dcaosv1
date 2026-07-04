@@ -3,12 +3,16 @@
 /**
  * Block 2 — admin operations summary smoke.
  * Proves admin can read operational summary; client cannot access admin diagnostics.
+ * Fail-closed: client boundary proof is required (no SKIP-as-PASS).
  */
+
+import { ensurePurivaClientPortalAuth } from "./lib/puriva-client-portal-boundary-helpers.mjs";
+import { PURIVA_CLIENT_PORTAL_USER_EMAIL } from "./lib/puriva-local-setup.mjs";
 
 const API_BASE = (process.env.API_BASE ?? process.env.MVP_SMOKE_API_BASE_URL ?? "http://127.0.0.1:4000/api/v1").replace(/\/$/, "");
 const ADMIN_EMAIL = process.env.AUTH_SEED_TEST_EMAIL ?? "admin@dca.local";
 const ADMIN_PASSWORD = process.env.AUTH_SEED_TEST_PASSWORD ?? "";
-const CLIENT_EMAIL = process.env.AUTH_SEED_TESTER_EMAIL ?? process.env.AUTH_SEED_CLIENT_EMAIL;
+const CLIENT_EMAIL = process.env.AUTH_SEED_TESTER_EMAIL ?? process.env.AUTH_SEED_CLIENT_EMAIL ?? PURIVA_CLIENT_PORTAL_USER_EMAIL;
 const CLIENT_PASSWORD = process.env.AUTH_SEED_TESTER_PASSWORD ?? process.env.AUTH_SEED_TEST_PASSWORD ?? "";
 const SMOKE_MARKER = "[SMOKE][ADMIN_OPERATIONS]";
 
@@ -90,26 +94,55 @@ async function main() {
   const integrations = await apiCall("GET", "/integrations/readiness", undefined, adminToken);
   assert(integrations.ok, "integrations readiness still admin-reachable");
 
-  if (CLIENT_EMAIL && CLIENT_PASSWORD) {
-    const clientLogin = await login(CLIENT_EMAIL, CLIENT_PASSWORD);
-    const clientToken = clientLogin.token;
-    if (clientToken) {
-      const clientSummary = await apiCall("GET", "/admin/operations/summary", undefined, clientToken);
-      assert(clientSummary.status === 403 || clientSummary.status === 401, "client blocked from admin operations summary");
-
-      const clientIntegrations = await apiCall("GET", "/integrations/readiness", undefined, clientToken);
-      assert(
-        clientIntegrations.status === 403 || clientIntegrations.status === 401,
-        "client blocked from integrations readiness"
-      );
-
-      pass("client diagnostics boundary");
-    } else {
-      pass("client boundary skipped (client login unavailable)");
-    }
-  } else {
-    pass("client boundary skipped (no AUTH_SEED_TESTER_EMAIL)");
+  if (!CLIENT_PASSWORD) {
+    fail("AUTH_SEED_TEST_PASSWORD (or AUTH_SEED_TESTER_PASSWORD) is required for client boundary proof");
   }
+
+  let clientToken = null;
+  const directClientLogin = await login(CLIENT_EMAIL, CLIENT_PASSWORD);
+  if (directClientLogin.token) {
+    clientToken = directClientLogin.token;
+    pass("client login", CLIENT_EMAIL);
+  } else {
+    const ensured = await ensurePurivaClientPortalAuth({
+      request: (path, options = {}) => apiCall(options.method ?? "GET", path, options.body, options.token),
+      adminToken,
+      portalPassword: CLIENT_PASSWORD,
+      clientId: null,
+      log: (line) => console.log(`  INFO: ${line}`)
+    });
+    if (!ensured?.token) {
+      fail("client portal auth unavailable", `could not authenticate ${CLIENT_EMAIL}`);
+    }
+    clientToken = ensured.token;
+    pass("client login via ensurePurivaClientPortalAuth", CLIENT_EMAIL);
+  }
+
+  const clientSummary = await apiCall("GET", "/admin/operations/summary", undefined, clientToken);
+  assert(
+    clientSummary.status === 401 || clientSummary.status === 403,
+    "client blocked from admin operations summary",
+    `status=${clientSummary.status}`
+  );
+  assert(
+    !clientSummary.ok,
+    "client must not receive 2xx on admin operations summary",
+    `status=${clientSummary.status}`
+  );
+
+  const clientIntegrations = await apiCall("GET", "/integrations/readiness", undefined, clientToken);
+  assert(
+    clientIntegrations.status === 401 || clientIntegrations.status === 403,
+    "client blocked from integrations readiness",
+    `status=${clientIntegrations.status}`
+  );
+  assert(
+    !clientIntegrations.ok,
+    "client must not receive 2xx on integrations readiness",
+    `status=${clientIntegrations.status}`
+  );
+
+  pass("client diagnostics boundary");
 
   console.log(`\n${SMOKE_MARKER} ${passed} PASS / 0 FAIL`);
 }
