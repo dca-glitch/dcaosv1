@@ -437,6 +437,15 @@ function ClientPortalStatusBadge({ status }: { status: string | null | undefined
   return <StatusBadge status={label} />;
 }
 
+function PortalInlineLoading({ label }: { label: string }) {
+  return (
+    <p className="cf-inline-loading" role="status">
+      <Spinner size="sm" />
+      {label}
+    </p>
+  );
+}
+
 export function ClientPortalPage() {
   const [projects, setProjects] = useState<ClientPortalProjectSummary[]>([]);
   const [projectsLoading, setProjectsLoading] = useState(true);
@@ -939,10 +948,15 @@ export function ClientPortalPage() {
 
   if (projectsLoading) {
     return (
-      <div className="state-panel loading-state-panel" role="status">
-        <Spinner size="sm" />
-        Loading client archive
-      </div>
+      <section className="view-section cf-page" aria-labelledby="client-portal-title" data-density="comfortable">
+        <PageHeader
+          description="Final deliverables and monthly reports shared with your account."
+          eyebrow="Client workspace"
+          title="Your archive"
+          titleId="client-portal-title"
+        />
+        <PortalInlineLoading label="Loading client archive" />
+      </section>
     );
   }
 
@@ -1004,7 +1018,7 @@ export function ClientPortalPage() {
       </nav>
 
       <div className="summary-grid metric-grid portal-metric-grid cf-metric-strip">
-        <MetricCard helper="Active delivery projects" label="Projects" value={String(projectCount)} />
+        <MetricCard helper="Projects shared with your account" label="Projects" value={String(projectCount)} />
         <MetricCard
           helper="Completed items only"
           label="Deliverables"
@@ -1025,7 +1039,7 @@ export function ClientPortalPage() {
             {(["active", "archived", "all"] as const).map((value) => (
               <Button
                 aria-pressed={projectFilter === value}
-                className={projectFilter === value ? "secondary-action filter-chip is-active" : "secondary-action filter-chip"}
+                className={projectFilter === value ? "filter-chip is-active" : "filter-chip"}
                 key={value}
                 onClick={() => setProjectFilter(value)}
                 type="button"
@@ -1078,10 +1092,7 @@ export function ClientPortalPage() {
               <EmptyState message="Select a project on the left to open its archive." title="No project selected" variant="inline" />
             </SectionPanel>
           ) : selectedProjectLoading ? (
-            <div className="state-panel loading-state-panel" role="status">
-              <Spinner size="sm" />
-              Loading project archive
-            </div>
+            <PortalInlineLoading label="Loading project archive" />
           ) : selectedProjectError ? (
             <Alert message={selectedProjectError} title="Project unavailable" variant="danger" />
           ) : selectedProject ? (
@@ -1117,10 +1128,7 @@ export function ClientPortalPage() {
                 tone="compact"
               >
                 {deliverySummaryLoading ? (
-                  <div className="state-panel loading-state-panel" role="status">
-                    <Spinner size="sm" />
-                    Loading delivery summary
-                  </div>
+                  <PortalInlineLoading label="Loading delivery summary" />
                 ) : deliverySummaryError ? (
                   <Alert message={deliverySummaryError} title="Delivery summary unavailable" variant="danger" />
                 ) : deliverySummary ? (
@@ -1224,15 +1232,12 @@ export function ClientPortalPage() {
               </SectionPanel>
 
               <SectionPanel
-                description="Final released materials from your workflow delivery."
+                description="Final released materials shared with your account."
                 title="Release package"
                 tone="compact"
               >
                 {releasePackageLoading ? (
-                  <div className="state-panel loading-state-panel" role="status">
-                    <Spinner size="sm" />
-                    Loading release package
-                  </div>
+                  <PortalInlineLoading label="Loading release package" />
                 ) : releasePackageError ? (
                   <Alert message={releasePackageError} title="Release package unavailable" variant="danger" />
                 ) : releasePackage ? (
@@ -1284,10 +1289,7 @@ export function ClientPortalPage() {
                 tone="compact"
               >
                 {catalogLoading ? (
-                  <div className="state-panel loading-state-panel" role="status">
-                    <Spinner size="sm" />
-                    Loading product catalog
-                  </div>
+                  <PortalInlineLoading label="Loading product catalog" />
                 ) : catalogError ? (
                   <Alert message={catalogError} title="Product catalog unavailable" variant="danger" />
                 ) : catalogProducts.length === 0 ? (
@@ -1383,10 +1385,7 @@ export function ClientPortalPage() {
                 {downloadNotice ? <Alert message={downloadNotice} variant="info" /> : null}
 
                 {deliverablesLoading ? (
-                  <div className="state-panel loading-state-panel" role="status">
-                    <Spinner size="sm" />
-                    Loading deliverables
-                  </div>
+                  <PortalInlineLoading label="Loading deliverables" />
                 ) : deliverablesError ? (
                   <Alert message={deliverablesError} title="Deliverables unavailable" variant="danger" />
                 ) : deliverables.length === 0 ? (
@@ -1444,10 +1443,7 @@ export function ClientPortalPage() {
                 tone="compact"
               >
                 {monthlyReportsLoading ? (
-                  <div className="state-panel loading-state-panel" role="status">
-                    <Spinner size="sm" />
-                    Loading monthly reports
-                  </div>
+                  <PortalInlineLoading label="Loading monthly reports" />
                 ) : monthlyReportsError ? (
                   <Alert message={monthlyReportsError} title="Monthly reports unavailable" variant="danger" />
                 ) : monthlyReports.length === 0 ? (
@@ -1461,7 +1457,7 @@ export function ClientPortalPage() {
                     <div className="cf-report-nav">
                       {monthlyReports.map((report, index) => (
                         <Button
-                          className={`secondary-action cf-report-nav-item${selectedMonthlyReportId === report.id ? " is-active" : ""}`}
+                          className={`cf-report-nav-item${selectedMonthlyReportId === report.id ? " is-active" : ""}`}
                           key={report.id}
                           onClick={() => setSelectedMonthlyReportId(report.id)}
                           type="button"
@@ -1478,10 +1474,7 @@ export function ClientPortalPage() {
 
                     {selectedMonthlyReport ? (
                       monthlyReportDetailLoading ? (
-                        <div className="state-panel loading-state-panel" role="status">
-                          <Spinner size="sm" />
-                          Loading final monthly report
-                        </div>
+                        <PortalInlineLoading label="Loading monthly report" />
                       ) : monthlyReportDetailError ? (
                         <Alert message={monthlyReportDetailError} title="Monthly report unavailable" variant="danger" />
                       ) : monthlyReportDetail ? (
@@ -1522,7 +1515,7 @@ export function ClientPortalPage() {
                                 ) : null}
                                 {monthlyReportDetail.monthlyReport.exportUrl ? (
                                   <a
-                                    className="secondary-action"
+                                    className="cf-text-link"
                                     href={monthlyReportDetail.monthlyReport.exportUrl}
                                     rel="noreferrer"
                                     target="_blank"
