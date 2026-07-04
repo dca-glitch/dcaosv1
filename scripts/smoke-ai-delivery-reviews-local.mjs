@@ -1810,7 +1810,7 @@ async function runAiDeliveryBrowserRegression(token, mainProject) {
     await page.goto(webUrl, { waitUntil: "domcontentloaded" });
     await page.getByRole("heading", { name: "AI Delivery Projects" }).waitFor({ state: "visible", timeout: 15000 });
     await page.getByText("Operator summary").first().waitFor({ state: "visible", timeout: 15000 });
-    await page.getByText("Show operator metrics").click();
+    await page.getByText("Show metrics").click();
     await page.getByText("Workflow runs").first().waitFor({ state: "visible", timeout: 15000 });
     await page.getByText("Deliverables").first().waitFor({ state: "visible", timeout: 15000 });
     pass("AI Delivery admin UI loaded without crashing.");
@@ -1842,9 +1842,7 @@ async function runAiDeliveryBrowserRegression(token, mainProject) {
     await workspaceSection.getByRole("button", { name: "SEO / content plan" }).click();
     const contentPlanDialog = page.getByRole("dialog", { name: "Monthly SEO / Content Plan" });
     await contentPlanDialog.waitFor({ state: "visible", timeout: 15000 });
-    await contentPlanDialog.getByRole("heading", { name: "AI SEO workflow shell", exact: true }).waitFor({ state: "visible", timeout: 15000 });
-    await contentPlanDialog.locator("h3", { hasText: "Flow summary" }).waitFor({ state: "visible", timeout: 15000 });
-    await contentPlanDialog.getByRole("heading", { name: "Current content plan status" }).waitFor({ state: "visible", timeout: 15000 });
+    await contentPlanDialog.getByRole("heading", { name: "Workflow readiness" }).waitFor({ state: "visible", timeout: 15000 });
     await contentPlanDialog.getByRole("heading", { name: "Monthly plan items" }).waitFor({ state: "visible", timeout: 15000 });
     await contentPlanDialog.getByRole("button", { name: "Mark ready for review" }).first().waitFor({ state: "visible", timeout: 15000 });
     pass("Monthly SEO / Content Plan panel opened and rendered stable approval workflow structure.");
@@ -1853,8 +1851,7 @@ async function runAiDeliveryBrowserRegression(token, mainProject) {
     await workspaceSection.getByRole("button", { name: "Content production" }).click();
     await page.getByRole("dialog", { name: "AI Content Production" }).waitFor({ state: "visible", timeout: 15000 });
     await page.getByRole("heading", { name: "Article production planning" }).waitFor({ state: "visible", timeout: 15000 });
-    await page.getByRole("heading", { name: "AI Content Production readiness summary" }).waitFor({ state: "visible", timeout: 15000 });
-    await page.getByRole("heading", { name: "Plan item to draft handoff" }).waitFor({ state: "visible", timeout: 15000 });
+    await page.getByRole("heading", { name: "Editor summary" }).waitFor({ state: "visible", timeout: 15000 });
     await page.getByRole("heading", { name: "Approved / planned content plan items" }).waitFor({ state: "visible", timeout: 15000 });
     await page.getByRole("heading", { name: "Existing article production records" }).waitFor({ state: "visible", timeout: 15000 });
     const contentProductionDialog = page.getByRole("dialog", { name: "AI Content Production" });
@@ -1867,11 +1864,10 @@ async function runAiDeliveryBrowserRegression(token, mainProject) {
     await page.getByRole("heading", { name: "Completion and export handoff" }).waitFor({ state: "visible", timeout: 15000 });
     const contentProductionText = ((await contentProductionDialog.textContent()) ?? "").toLowerCase();
     if (
-      !contentProductionText.includes("private document/export") ||
-      !contentProductionText.includes("monthly report") ||
-      !contentProductionText.includes("reporting layer")
+      !contentProductionText.includes("internal admin handoff") ||
+      !contentProductionText.includes("does not publish")
     ) {
-      fail("AI Content Production dialog did not describe the private export handoff and separate monthly report layer.");
+      fail("AI Content Production dialog did not describe the compact internal admin handoff notice.");
     }
     if (contentProductionText.includes("client self-service")) {
       fail("AI Content Production dialog exposed client self-service wording.");
@@ -1922,7 +1918,7 @@ async function runAiDeliveryBrowserRegression(token, mainProject) {
       fail("Deliverables dialog did not render a Prepare WordPress draft button for the smoke-owned project.");
     }
     await prepareWordPressDraftButtons.first().click();
-    const preparedDraftPanel = page.locator(".state-panel").filter({ hasText: "WordPress prepared draft" }).first();
+    const preparedDraftPanel = deliverablesDialog.locator(".field-panel").filter({ hasText: "WordPress prepared draft" }).first();
     await preparedDraftPanel.waitFor({ state: "visible", timeout: 15000 });
     await preparedDraftPanel.getByText("Title").waitFor({ state: "visible", timeout: 15000 });
     await preparedDraftPanel.getByText("Source type").waitFor({ state: "visible", timeout: 15000 });
@@ -1970,7 +1966,7 @@ async function runAiDeliveryBrowserRegression(token, mainProject) {
       await confirmPublishButton.click();
       await publishConfirmDialog.waitFor({ state: "hidden", timeout: 15000 });
 
-      const publishResultPanel = page.locator(".state-panel").filter({ has: page.locator("strong", { hasText: "WordPress publish result" }) }).first();
+      const publishResultPanel = deliverablesDialog.locator(".field-panel").filter({ hasText: "WordPress publish result" }).first();
       await publishResultPanel.waitFor({ state: "visible", timeout: 15000 });
       const publishResultText = ((await publishResultPanel.textContent()) ?? "").toLowerCase();
       if (!publishResultText.includes("provider") || !publishResultText.includes("disabled")) {

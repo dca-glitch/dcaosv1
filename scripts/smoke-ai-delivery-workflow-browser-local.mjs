@@ -147,17 +147,19 @@ async function main() {
     await page.getByText("Operator summary").first().waitFor({ state: "visible", timeout: 15000 });
     record("ai delivery page shell renders", true, "#/ai-delivery");
 
-    const projectCard = page.locator("article.entity-card").filter({ hasText: projectName }).first();
-    await projectCard.waitFor({ state: "visible", timeout: 15000 });
-    await projectCard.getByText("Admin workflow order").waitFor({ state: "visible", timeout: 10000 });
-    record("ai delivery seeded project card renders", true, projectName);
+    const projectListItem = page.locator("button.brief-select-item").filter({ hasText: projectName }).first();
+    await projectListItem.waitFor({ state: "visible", timeout: 15000 });
+    await projectListItem.click();
+    record("ai delivery seeded project selected", true, projectName);
 
-    await projectCard.locator("summary").filter({ hasText: "More" }).click();
-    await projectCard.locator(".row-action-menu-label").filter({ hasText: "Planning" }).waitFor({ state: "visible", timeout: 10000 });
-    await projectCard.locator(".row-action-menu-label").filter({ hasText: "Packaging" }).waitFor({ state: "visible", timeout: 10000 });
-    record("ai delivery grouped workflow navigation renders", true, "More menu");
+    const workspaceSection = page.locator(".ai-delivery-workspace-stack");
+    await workspaceSection.getByRole("button", { name: "Workflow runs" }).waitFor({ state: "visible", timeout: 15000 });
+    await workspaceSection.getByRole("button", { name: "SEO / content plan" }).waitFor({ state: "visible", timeout: 15000 });
+    await workspaceSection.getByRole("button", { name: "Content production" }).waitFor({ state: "visible", timeout: 15000 });
+    await workspaceSection.getByRole("button", { name: "Deliverables" }).waitFor({ state: "visible", timeout: 15000 });
+    record("ai delivery workspace workflow navigation renders", true, "workspace buttons");
 
-    await projectCard.getByRole("button", { name: "Workflow runs" }).click();
+    await workspaceSection.getByRole("button", { name: "Workflow runs" }).click();
     const workflowRunsDialog = page.getByRole("dialog", { name: "Workflow Runs" });
     await workflowRunsDialog.waitFor({ state: "visible", timeout: 15000 });
     await workflowRunsDialog.getByRole("heading", { name: "Existing workflow runs" }).waitFor({ state: "visible", timeout: 15000 });
@@ -183,12 +185,13 @@ async function main() {
 
     await page.getByRole("button", { name: "Close" }).first().click();
 
-    await projectCard.getByRole("button", { name: "Open" }).click();
+    await workspaceSection.getByRole("button", { name: "SEO / content plan" }).click();
     const contentPlanDialog = page.getByRole("dialog", { name: "Monthly SEO / Content Plan" });
     await contentPlanDialog.waitFor({ state: "visible", timeout: 15000 });
-    await contentPlanDialog.getByRole("heading", { name: "AI SEO workflow shell", exact: true }).waitFor({ state: "visible", timeout: 15000 });
-    await contentPlanDialog.locator("h3", { hasText: "Flow summary" }).waitFor({ state: "visible", timeout: 15000 });
-    record("content plan modal renders approval shell", true, "AI SEO workflow shell");
+    await contentPlanDialog.getByRole("heading", { name: "Workflow readiness" }).waitFor({ state: "visible", timeout: 15000 });
+    await contentPlanDialog.getByText(/AI SEO readiness:/i).waitFor({ state: "visible", timeout: 15000 });
+    await contentPlanDialog.getByText(/No AI SEO content plan yet/i).waitFor({ state: "visible", timeout: 15000 });
+    record("content plan modal renders approval shell", true, "Workflow readiness");
 
     await contentPlanDialog.getByRole("button", { name: "Close" }).first().click();
     await contentPlanDialog.waitFor({ state: "hidden", timeout: 10000 });
