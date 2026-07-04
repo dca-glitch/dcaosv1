@@ -25,9 +25,7 @@ describe("API integration — workflow briefs lifecycle (optional)", () => {
   const email = process.env.AUTH_SEED_TEST_EMAIL ?? "admin@dca.local";
 
   if (!password) {
-    it("skips workflow brief lifecycle when AUTH_SEED_TEST_PASSWORD is unset", () => {
-      assert.ok(true);
-    });
+    it("protected workflow brief lifecycle checks", { skip: "AUTH_SEED_TEST_PASSWORD unset" }, () => {});
     return;
   }
 

@@ -31,9 +31,7 @@ describe("API integration — authenticated RBAC (optional)", () => {
   const email = process.env.AUTH_SEED_TEST_EMAIL ?? "admin@dca.local";
 
   if (!password) {
-    it("skips authenticated RBAC checks when AUTH_SEED_TEST_PASSWORD is unset", () => {
-      assert.ok(true);
-    });
+    it("protected authenticated RBAC checks", { skip: "AUTH_SEED_TEST_PASSWORD unset" }, () => {});
     return;
   }
 

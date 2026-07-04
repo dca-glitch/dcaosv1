@@ -33,9 +33,7 @@ describe("API integration — workflow brief final release package lifecycle (op
   const clientPassword = process.env.AUTH_SEED_TESTER_PASSWORD ?? password;
 
   if (!password) {
-    it("skips final release package lifecycle when AUTH_SEED_TEST_PASSWORD is unset", () => {
-      assert.ok(true);
-    });
+    it("protected final release package lifecycle checks", { skip: "AUTH_SEED_TEST_PASSWORD unset" }, () => {});
     return;
   }
 

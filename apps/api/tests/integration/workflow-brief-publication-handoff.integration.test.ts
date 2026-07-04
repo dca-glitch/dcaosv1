@@ -33,9 +33,7 @@ describe("API integration — workflow brief publication handoff status lifecycl
   const clientPassword = process.env.AUTH_SEED_TESTER_PASSWORD ?? password;
 
   if (!password) {
-    it("skips publication handoff status lifecycle when AUTH_SEED_TEST_PASSWORD is unset", () => {
-      assert.ok(true);
-    });
+    it("protected publication handoff status lifecycle checks", { skip: "AUTH_SEED_TEST_PASSWORD unset" }, () => {});
     return;
   }
 
@@ -120,9 +118,7 @@ describe("API integration — workflow brief publication handoff execute lifecyc
   const clientPassword = process.env.AUTH_SEED_TESTER_PASSWORD ?? password;
 
   if (!password) {
-    it("skips publication handoff execute lifecycle when AUTH_SEED_TEST_PASSWORD is unset", () => {
-      assert.ok(true);
-    });
+    it("protected publication handoff execute lifecycle checks", { skip: "AUTH_SEED_TEST_PASSWORD unset" }, () => {});
     return;
   }
 

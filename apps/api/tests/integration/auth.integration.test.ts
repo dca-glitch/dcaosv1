@@ -33,9 +33,7 @@ describe("API integration — login", () => {
   const email = process.env.AUTH_SEED_TEST_EMAIL ?? "admin@dca.local";
 
   if (!password) {
-    it("skips login integration when AUTH_SEED_TEST_PASSWORD is unset", () => {
-      assert.ok(true, "skipped — set AUTH_SEED_TEST_PASSWORD for live login tests");
-    });
+    it("protected login integration checks", { skip: "AUTH_SEED_TEST_PASSWORD unset" }, () => {});
   } else {
     it("rejects invalid credentials", async () => {
       const response = await request(app)

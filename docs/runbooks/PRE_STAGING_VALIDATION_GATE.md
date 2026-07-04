@@ -33,6 +33,8 @@ Related:
 3. Optional for Block 4 smoke: `CREDENTIAL_ENCRYPTION_MASTER_KEY` in `.env` + API restart.
 4. Branch: `main` for the current post-merge baseline.
 
+**CI vs local test proof:** GitHub Actions runs `npm run validate`, `prisma:validate`, and `npm run test:unit` (API + Web unit suites). Full `npm run test` (DB-backed integration) and security/client-boundary smokes remain **local pre-staging only**. CI green does not imply staging readiness.
+
 ---
 
 ## One-command local gate

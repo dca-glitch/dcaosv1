@@ -39,3 +39,6 @@ jobs:
 
       - name: Validate Prisma schema
         run: npm run -w @dca-os-v1/data prisma:validate
+
+      - name: Run unit tests
+        run: npm run test:unit
