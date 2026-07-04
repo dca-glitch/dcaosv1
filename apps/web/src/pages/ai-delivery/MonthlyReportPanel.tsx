@@ -1,9 +1,8 @@
 import React, { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { EmptyState } from "../../components/EmptyState";
-import { ErrorState } from "../../components/ErrorState";
-import { LoadingState } from "../../components/LoadingState";
 import { Modal } from "../../components/Modal";
 import { MetricCard, SectionPanel, StatusBadge } from "../../components/ui";
+import { Spinner } from "../../design-system";
 import type { AiDeliveryProjectSummary } from "./AiDeliveryPage";
 
 export type AiDeliveryMonthlySummaryDeliverable = {
@@ -278,6 +277,36 @@ function formatMetricInteger(value: number | null | undefined): string {
 
 function formatMetricDecimal(value: number | null | undefined): string {
   return typeof value === "number" ? value.toLocaleString(undefined, { maximumFractionDigits: 2 }) : "—";
+}
+
+function MonthlyReportInlineLoading({ label }: { label: string }) {
+  return (
+    <p className="monthly-report-inline-loading" role="status">
+      <Spinner size="sm" />
+      {label}
+    </p>
+  );
+}
+
+function MonthlyReportInlineAlert({ message, title }: { message: string; title?: string }) {
+  return (
+    <div className="monthly-report-inline-alert" role="alert">
+      {title ? <strong>{title}: </strong> : null}
+      {message}
+    </div>
+  );
+}
+
+function MonthlyReportInlineSuccess({ message }: { message: string }) {
+  return (
+    <div className="monthly-report-inline-success" role="status">
+      {message}
+    </div>
+  );
+}
+
+function MonthlyReportInlineNotice({ children }: { children: React.ReactNode }) {
+  return <div className="monthly-report-inline-notice">{children}</div>;
 }
 
 export function MonthlyReportPanel({
@@ -723,12 +752,12 @@ export function MonthlyReportPanel({
     const headline = report.title?.trim() || `${project.name} monthly report`;
     const documentState = report.hasDocument ? "Document attached" : "No document attached";
     const handoffState = report.exportUrl ? "Manual handoff URL set" : "No handoff URL";
-    const visibilityState = report.status === "FINAL" ? "Client-safe when portal delivery is enabled" : "Admin-only working copy";
+    const visibilityState = report.status === "FINAL" ? "Client-visible when FINAL" : "Admin-only working copy";
     const actionHint = report.isArchived
-      ? "Restore the report to resume edits or replace the document."
+      ? "Restore to resume edits."
       : report.status === "FINAL"
-        ? "Finalize is complete; archive when the handoff is settled."
-        : "Use review/finalize actions, then attach the report document.";
+        ? "FINAL — client-safe summary and approved snapshots only."
+        : "Review, finalize, then attach the report document.";
 
     return {
       status,
@@ -764,19 +793,18 @@ export function MonthlyReportPanel({
       onClose={onClose}
       title={`Monthly Report — ${project.name}`}
     >
+      <div className="monthly-report-panel stack gap-md">
       {/* Computed Summary Section */}
       <SectionPanel
         className="monthly-report-summary-panel"
-        description="Read-only admin overview from project records. Only APPROVED metric snapshots become client-visible in FINAL reports. Live GA/GSC sync remains deferred."
+        description="Read-only overview. Approved snapshots are client-visible in FINAL reports. Live GA/GSC sync deferred."
         title="Computed Monthly Summary"
         tone="compact"
       >
         {summaryLoading ? (
-          <div className="state-panel">Loading computed summary...</div>
+          <MonthlyReportInlineLoading label="Loading computed summary" />
         ) : summaryError ? (
-          <div className="state-panel state-panel-accent-error" role="alert">
-            <strong>Summary unavailable:</strong> {summaryError}
-          </div>
+          <MonthlyReportInlineAlert message={summaryError} title="Summary unavailable" />
         ) : summary ? (
           <>
             <div className="summary-grid metric-grid monthly-report-summary-metrics" aria-label="Monthly report snapshot metrics">
@@ -827,7 +855,7 @@ export function MonthlyReportPanel({
                       {item.exportUrl && isSafeExternalUrl(item.exportUrl) ? (
                         <div className="card-actions">
                           <a
-                            className="secondary-action"
+                            className="ghost-action"
                             href={item.exportUrl}
                             rel="noopener noreferrer"
                             target="_blank"
@@ -871,23 +899,25 @@ export function MonthlyReportPanel({
             ) : null}
           </>
         ) : (
-          <div className="state-panel">Computed summary not available for this project.</div>
+          <p className="inline-empty muted-text">Computed summary not available for this project.</p>
         )}
       </SectionPanel>
 
-      {/* Persisted Report Section */}
-      <section className="field-panel">
-        <h3>Persisted Monthly Report</h3>
-        <p className="muted-text">Admin-authored monthly report narrative. FINAL reports appear in Client Portal MVP for linked client users. Internal metrics and admin notes stay hidden.</p>
+      <SectionPanel
+        className="monthly-report-admin-panel"
+        description="Admin report shell. FINAL reports are client-visible; admin notes stay hidden."
+        title="Persisted Monthly Report"
+        tone="compact"
+      >
 
         {reportLoading ? (
-          <LoadingState label="Loading monthly report..." />
+          <MonthlyReportInlineLoading label="Loading monthly report" />
         ) : reportError ? (
-          <ErrorState title="Monthly report unavailable" message={reportError} />
+          <MonthlyReportInlineAlert message={reportError} title="Monthly report unavailable" />
         ) : reportNotFound && !report ? (
           <EmptyState
             title="No persisted monthly report yet"
-            message="Create the admin report shell first. Snapshot metrics appear after a report exists. FINAL reports become client-visible in Client Portal MVP."
+            message="Create the report shell first. Metrics import follows after the report exists."
             action={(
               <button
                 className="primary-action"
@@ -901,13 +931,9 @@ export function MonthlyReportPanel({
           />
         ) : report ? (
           <>
-            {reportMessage ? (
-              <div className="state-panel state-panel-accent-success field-panel-spaced">
-                {reportMessage}
-              </div>
-            ) : null}
+            {reportMessage ? <MonthlyReportInlineSuccess message={reportMessage} /> : null}
 
-            <div className="entity-card">
+            <div className="entity-card monthly-report-status-card">
               <div className="entity-card-header">
                 <div>
                   <StatusBadge status={reportShellCopy?.status ?? formatReportStatus(report.status)} />
@@ -917,10 +943,10 @@ export function MonthlyReportPanel({
                     {report.finalizedAt ? ` • Finalized ${formatDate(report.finalizedAt)}` : " • Draft workflow"}
                   </p>
                 </div>
-                <div className="card-actions">
+                <div className="card-actions monthly-report-status-actions">
                   {canMoveToAdminReview ? (
                     <button
-                      className="secondary-action"
+                      className="ghost-action"
                       disabled={reportSaving}
                       onClick={() => void handleSetStatus("ADMIN_REVIEW")}
                       type="button"
@@ -940,7 +966,7 @@ export function MonthlyReportPanel({
                   ) : null}
                   {canArchive ? (
                     <button
-                      className="secondary-action"
+                      className="ghost-action"
                       disabled={reportSaving}
                       onClick={() => void handleArchive()}
                       type="button"
@@ -950,7 +976,7 @@ export function MonthlyReportPanel({
                   ) : null}
                   {canRestore ? (
                     <button
-                      className="secondary-action"
+                      className="ghost-action"
                       disabled={reportSaving}
                       onClick={() => void handleRestore()}
                       type="button"
@@ -961,7 +987,7 @@ export function MonthlyReportPanel({
                 </div>
               </div>
 
-              <dl className="brief-grid" style={{ marginTop: "0.75rem" }}>
+              <dl className="brief-grid monthly-report-status-grid">
                 <div>
                   <dt>Document</dt>
                   <dd>{reportShellCopy?.documentState ?? "Not set"}</dd>
@@ -986,24 +1012,9 @@ export function MonthlyReportPanel({
                 </div>
               </dl>
 
-              <p className="muted-text" style={{ marginTop: "0.5rem" }}>
+              <p className="monthly-report-status-hint muted-text">
                 {reportShellCopy?.actionHint ?? "Use the report actions above to manage the monthly workflow."}
               </p>
-
-              {normalizedStatus === "FINAL" ? (
-                <p className="muted-text" style={{ marginTop: "0.5rem" }}>
-                  This report is FINAL and client-safe. Linked client users see recommendations, completed deliverables, approved performance snapshots, and the PDF in Client Portal — not admin notes or raw provider data.
-                </p>
-              ) : normalizedStatus !== "ARCHIVED" ? (
-                <p className="muted-text" style={{ marginTop: "0.5rem" }}>
-                  Draft and review states are admin-only. Mark FINAL only after human review; clients never see working copies.
-                </p>
-              ) : null}
-              {normalizedStatus === "ARCHIVED" ? (
-                <p className="muted-text" style={{ marginTop: "0.5rem" }}>
-                  This report is archived. Restore it to make edits or create a new workflow.
-                </p>
-              ) : null}
             </div>
 
             {/* Edit form */}
@@ -1017,7 +1028,7 @@ export function MonthlyReportPanel({
                     value={form.title}
                     onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))}
                   />
-                  <span className="muted-text">Working title for this monthly report.</span>
+                  <span className="muted-text">Optional working title.</span>
                 </label>
 
                 <label className="field-span-2">
@@ -1029,7 +1040,7 @@ export function MonthlyReportPanel({
                     value={form.adminSummaryNotes}
                     onChange={(event) => setForm((current) => ({ ...current, adminSummaryNotes: event.target.value }))}
                   />
-                  <span className="muted-text">Internal admin context only. Never exposed to clients.</span>
+                  <span className="muted-text">Admin-only.</span>
                 </label>
 
                 <label className="field-span-2">
@@ -1041,7 +1052,7 @@ export function MonthlyReportPanel({
                     value={form.recommendationsText}
                     onChange={(event) => setForm((current) => ({ ...current, recommendationsText: event.target.value }))}
                   />
-                  <span className="muted-text">Admin-written recommendations for next month. Visible in the Client Portal final monthly report view when status is FINAL. Local deterministic drafts may include metrics/MI context summaries for admin review only.</span>
+                  <span className="muted-text">Client-visible when FINAL.</span>
                 </label>
 
                 <label className="field-span-2">
@@ -1053,32 +1064,23 @@ export function MonthlyReportPanel({
                     value={form.exportUrl}
                     onChange={(event) => setForm((current) => ({ ...current, exportUrl: event.target.value }))}
                   />
-                  <span className="muted-text">Manual safe handoff link (e.g. Google Doc, shared folder).</span>
+                  <span className="muted-text">Safe external handoff link.</span>
                 </label>
               </div>
 
-              {/* Document upload / download */}
               {onUploadDocument || onDownloadDocument ? (
-                <div className="field-panel" style={{ marginTop: "1rem" }}>
+                <div className="field-panel monthly-report-document-panel">
                   <h4>Report document</h4>
-                  <p className="muted-text">This is the admin handoff surface: upload or download the stored report document, or keep a safe external export URL for manual sharing. PDF generation stays outside this block.</p>
+                  <p className="muted-text">Upload/download private document or keep a handoff URL.</p>
                   {onGeneratePdf ? (
-                    <div className="field-panel" style={{ marginBottom: "0.75rem" }}>
+                    <div className="field-panel monthly-report-pdf-panel">
                       <h5>Generate PDF</h5>
-                      <p className="muted-text">Admin-triggered PDF generation writes into the private monthly report document slot. No client/public link is exposed here, and the VPS/production R2 switch remains deferred.</p>
-                      {pdfMessage ? (
-                        <div className="state-panel state-panel-accent-success field-panel-spaced">
-                          {pdfMessage}
-                        </div>
-                      ) : null}
-                      {pdfError ? (
-                        <div className="state-panel state-panel-accent-error field-panel-spaced" role="alert">
-                          {pdfError}
-                        </div>
-                      ) : null}
+                      <p className="muted-text">Writes into the private monthly report document slot.</p>
+                      {pdfMessage ? <MonthlyReportInlineSuccess message={pdfMessage} /> : null}
+                      {pdfError ? <MonthlyReportInlineAlert message={pdfError} /> : null}
                       <div className="card-actions">
                         <button
-                          className="secondary-action"
+                          className="ghost-action"
                           disabled={pdfGenerating || report.isArchived}
                           onClick={() => void handleGeneratePdf()}
                           type="button"
@@ -1088,25 +1090,17 @@ export function MonthlyReportPanel({
                       </div>
                     </div>
                   ) : null}
-                  {documentMessage ? (
-                    <div className="state-panel state-panel-accent-success field-panel-spaced">
-                      {documentMessage}
-                    </div>
-                  ) : null}
-                  {documentError ? (
-                    <div className="state-panel state-panel-accent-error field-panel-spaced" role="alert">
-                      {documentError}
-                    </div>
-                  ) : null}
+                  {documentMessage ? <MonthlyReportInlineSuccess message={documentMessage} /> : null}
+                  {documentError ? <MonthlyReportInlineAlert message={documentError} /> : null}
                   {report.hasDocument ? (
-                    <p className="muted-text" style={{ marginBottom: "0.5rem" }}>A report document has been uploaded.</p>
+                    <p className="muted-text monthly-report-document-state">Document attached.</p>
                   ) : (
-                    <p className="muted-text" style={{ marginBottom: "0.5rem" }}>No report document uploaded yet.</p>
+                    <p className="muted-text monthly-report-document-state">No document uploaded yet.</p>
                   )}
                   <div className="card-actions">
                     {onDownloadDocument && report.hasDocument ? (
                       <button
-                        className="secondary-action"
+                        className="ghost-action"
                         disabled={documentDownloading}
                         onClick={() => void handleDownloadDocument()}
                         type="button"
@@ -1116,7 +1110,7 @@ export function MonthlyReportPanel({
                     ) : null}
                     {onUploadDocument ? (
                       <label style={{ cursor: documentUploading ? "wait" : "pointer" }}>
-                        <span className="secondary-action" style={{ pointerEvents: documentUploading ? "none" : undefined }}>
+                        <span className="ghost-action" style={{ pointerEvents: documentUploading ? "none" : undefined }}>
                           {documentUploading ? "Uploading..." : report.hasDocument ? "Replace document" : "Upload document"}
                         </span>
                         <input
@@ -1132,26 +1126,18 @@ export function MonthlyReportPanel({
                 </div>
               ) : null}
 
-              {/* Market Intelligence internal context (admin-only, not exposed to client portal) */}
               {onFetchMiContext ? (
                 <SectionPanel
+                  description="Admin-only MI handoff context."
                   title="Market Intelligence context"
-                  description="Internal admin context from an approved Market Intelligence handoff. Not exposed to client portal."
+                  tone="compact"
                 >
                   {miContextLoading ? (
-                    <LoadingState label="Loading MI context..." />
+                    <MonthlyReportInlineLoading label="Loading MI context" />
                   ) : (
                     <>
-                      {miContextMessage ? (
-                        <div className="state-panel state-panel-accent-success field-panel-spaced">
-                          {miContextMessage}
-                        </div>
-                      ) : null}
-                      {miContextError ? (
-                        <div className="state-panel state-panel-accent-error field-panel-spaced" role="alert">
-                          {miContextError}
-                        </div>
-                      ) : null}
+                      {miContextMessage ? <MonthlyReportInlineSuccess message={miContextMessage} /> : null}
+                      {miContextError ? <MonthlyReportInlineAlert message={miContextError} /> : null}
                       {miContext?.handoff ? (
                         <div style={{ marginBottom: "0.75rem" }}>
                           <p className="muted-text">
@@ -1171,7 +1157,7 @@ export function MonthlyReportPanel({
                                 <button className="primary-action" disabled={miContextLoading} onClick={() => void handleMiDraftSave()} type="button">
                                   Save draft
                                 </button>
-                                <button className="secondary-action" onClick={() => setMiDraftEditing(false)} type="button">
+                                <button className="ghost-action" onClick={() => setMiDraftEditing(false)} type="button">
                                   Cancel
                                 </button>
                               </div>
@@ -1179,14 +1165,12 @@ export function MonthlyReportPanel({
                           ) : (
                             <>
                               {miContext.miContextDraft ? (
-                                <pre style={{ whiteSpace: "pre-wrap", fontSize: "0.8125rem", background: "var(--color-surface)", padding: "0.75rem", borderRadius: "0.25rem", marginTop: "0.5rem", maxHeight: "14rem", overflow: "auto" }}>
-                                  {miContext.miContextDraft}
-                                </pre>
+                                <pre className="monthly-report-mi-draft">{miContext.miContextDraft}</pre>
                               ) : null}
                               <div className="card-actions" style={{ marginTop: "0.5rem" }}>
                                 {onUpdateMiContextDraft ? (
                                   <button
-                                    className="secondary-action"
+                                    className="ghost-action"
                                     disabled={miContextLoading}
                                     onClick={() => { setMiDraftValue(miContext.miContextDraft ?? ""); setMiDraftEditing(true); }}
                                     type="button"
@@ -1195,7 +1179,7 @@ export function MonthlyReportPanel({
                                   </button>
                                 ) : null}
                                 {onRemoveMiHandoff ? (
-                                  <button className="secondary-action" disabled={miContextLoading} onClick={() => void handleMiRemove()} type="button">
+                                  <button className="ghost-action" disabled={miContextLoading} onClick={() => void handleMiRemove()} type="button">
                                     Remove context
                                   </button>
                                 ) : null}
@@ -1205,18 +1189,17 @@ export function MonthlyReportPanel({
                         </div>
                       ) : (
                         <div style={{ marginBottom: "0.75rem" }}>
-                          <p className="muted-text">No Market Intelligence context linked yet. Apply a READY handoff by its ID.</p>
+                          <p className="muted-text">No MI context linked. Apply a READY handoff by ID.</p>
                           {onApplyMiHandoff ? (
-                            <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.5rem", alignItems: "center" }}>
+                            <div className="monthly-report-mi-apply-row">
                               <input
                                 placeholder="Handoff ID"
-                                style={{ flex: 1 }}
                                 type="text"
                                 value={miApplyHandoffId}
                                 onChange={(e) => setMiApplyHandoffId(e.target.value)}
                               />
                               <button
-                                className="secondary-action"
+                                className="ghost-action"
                                 disabled={miContextLoading || !miApplyHandoffId.trim()}
                                 onClick={() => void handleMiApply()}
                                 type="button"
@@ -1233,34 +1216,26 @@ export function MonthlyReportPanel({
               ) : null}
 
               <SectionPanel
-                title="GA/GSC Metrics"
-                description="Snapshot metrics imported manually for this monthly report. This block does not sync live with Google."
                 className="metrics-section"
+                description="Manual snapshot import. Live Google sync deferred."
+                title="GA/GSC Metrics"
+                tone="compact"
               >
-                <p className="muted-text" style={{ marginBottom: "0.75rem" }}>Snapshot metrics are admin-only and snapshot-first. Live Google sync remains deferred.</p>
                 {metricsLoading ? (
-                  <LoadingState label="Loading snapshot metrics..." />
+                  <MonthlyReportInlineLoading label="Loading snapshot metrics" />
                 ) : metricsError ? (
-                  <ErrorState title="Metrics unavailable" message={metricsError} />
+                  <MonthlyReportInlineAlert message={metricsError} title="Metrics unavailable" />
                 ) : metrics ? (
                   <>
-                    {metricsMessage ? (
-                      <div className="state-panel state-panel-accent-success field-panel-spaced">
-                        {metricsMessage}
-                      </div>
-                    ) : null}
-                    {metricsActionError ? (
-                      <div className="state-panel state-panel-accent-error field-panel-spaced" role="alert">
-                        {metricsActionError}
-                      </div>
-                    ) : null}
+                    {metricsMessage ? <MonthlyReportInlineSuccess message={metricsMessage} /> : null}
+                    {metricsActionError ? <MonthlyReportInlineAlert message={metricsActionError} /> : null}
 
-                    <div className="state-panel" style={{ marginBottom: "1rem" }}>
+                    <MonthlyReportInlineNotice>
                       <strong>Trend summary</strong>
-                      <p className="muted-text" style={{ marginTop: "0.25rem" }}>
+                      <p className="muted-text">
                         {metricsShellCopy?.trendHint ?? "Trend summary is waiting for approved snapshots."}
                       </p>
-                      <dl className="brief-grid" style={{ marginTop: "0.75rem" }}>
+                      <dl className="brief-grid monthly-report-trend-grid">
                         <div>
                           <dt>Snapshot status</dt>
                           <dd>{metricsShellCopy?.dataStatus ?? "Not set"}</dd>
@@ -1278,9 +1253,9 @@ export function MonthlyReportPanel({
                           <dd>{metrics.computedTrendSummary.latestMonth ?? "Not set"}</dd>
                         </div>
                       </dl>
-                    </div>
+                    </MonthlyReportInlineNotice>
 
-                    <div className="summary-grid metric-grid finance-table-wrap-spaced">
+                    <div className="summary-grid metric-grid finance-table-wrap-spaced monthly-report-metrics-cards">
                       <MetricCard
                         accent={metrics.computedTrendSummary.dataStatus === "READY" ? "success" : "warning"}
                         helper={`${metrics.snapshots.length} snapshot${metrics.snapshots.length === 1 ? "" : "s"}`}
@@ -1468,9 +1443,9 @@ export function MonthlyReportPanel({
                     </div>
 
                     {metrics.snapshots.length === 0 ? (
-                      <div className="state-panel">No snapshot metrics have been imported yet.</div>
+                      <p className="inline-empty muted-text">No snapshot metrics imported yet.</p>
                     ) : (
-                      <div className="table-wrap finance-table-wrap finance-table-wrap-spaced" aria-label="Monthly metrics snapshots">
+                      <div className="table-wrap finance-table-wrap finance-table-wrap-spaced monthly-report-metrics-table" aria-label="Monthly metrics snapshots">
                         <table>
                           <thead>
                             <tr>
@@ -1507,7 +1482,7 @@ export function MonthlyReportPanel({
                                 <td>
                                   <div className="card-actions">
                                     <button
-                                      className="secondary-action"
+                                      className="ghost-action"
                                       disabled={metricsSaving || snapshot.status === "APPROVED" || snapshot.status === "ARCHIVED"}
                                       onClick={() => void handleApproveMetricSnapshot(snapshot.id)}
                                       type="button"
@@ -1515,7 +1490,7 @@ export function MonthlyReportPanel({
                                       Approve
                                     </button>
                                     <button
-                                      className="secondary-action"
+                                      className="ghost-action"
                                       disabled={metricsSaving || snapshot.status === "ARCHIVED"}
                                       onClick={() => void handleArchiveMetricSnapshot(snapshot.id)}
                                       type="button"
@@ -1569,13 +1544,13 @@ export function MonthlyReportPanel({
                 ) : (
                   <EmptyState
                     title="Snapshot metrics not loaded yet"
-                    message="Create or open the persisted monthly report first. Metrics remain admin-only, snapshot-first, and do not sync live with Google."
+                    message="Create or open the persisted monthly report first."
                   />
                 )}
               </SectionPanel>
 
-              <div className="modal-footer">
-                <button className="secondary-action" disabled={reportSaving} onClick={onClose} type="button">
+              <div className="modal-footer monthly-report-footer">
+                <button className="ghost-action" disabled={reportSaving} onClick={onClose} type="button">
                   Close
                 </button>
                 <button
@@ -1592,13 +1567,14 @@ export function MonthlyReportPanel({
 
         {/* Footer when no report / error / loading */}
         {(reportNotFound && !report) || reportError || reportLoading ? (
-          <div className="modal-footer modal-footer-spaced">
-            <button className="secondary-action" onClick={onClose} type="button">
+          <div className="modal-footer modal-footer-spaced monthly-report-footer">
+            <button className="ghost-action" onClick={onClose} type="button">
               Close
             </button>
           </div>
         ) : null}
-      </section>
+      </SectionPanel>
+      </div>
     </Modal>
   );
 }

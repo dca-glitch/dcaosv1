@@ -4070,6 +4070,133 @@ textarea:focus,
 }
 
 /* I — monthly report admin surfaces */
+.monthly-report-panel.stack.gap-md {
+  gap: 10px;
+}
+
+.monthly-report-inline-loading {
+  align-items: center;
+  color: var(--muted);
+  display: inline-flex;
+  font-size: 0.82rem;
+  gap: 8px;
+  line-height: 1.4;
+  margin: 0;
+  min-height: 0;
+  padding: 4px 0;
+}
+
+.monthly-report-inline-alert {
+  background: rgba(255, 143, 143, 0.08);
+  border: 1px solid rgba(255, 143, 143, 0.22);
+  border-radius: 8px;
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.45;
+  padding: 8px 10px;
+}
+
+.monthly-report-inline-success {
+  background: rgba(125, 222, 162, 0.08);
+  border: 1px solid rgba(125, 222, 162, 0.22);
+  border-radius: 8px;
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.45;
+  padding: 8px 10px;
+}
+
+.monthly-report-inline-notice {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(190, 211, 255, 0.08);
+  border-radius: 8px;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  margin-bottom: 8px;
+  padding: 8px 10px;
+}
+
+.monthly-report-status-card {
+  padding: 10px 12px;
+}
+
+.monthly-report-status-actions {
+  gap: 6px;
+}
+
+.monthly-report-status-actions .ghost-action,
+.monthly-report-status-actions .secondary-action {
+  font-size: 0.82rem;
+  min-height: 28px;
+  padding: 4px 8px;
+}
+
+.monthly-report-status-grid,
+.monthly-report-trend-grid {
+  margin-top: 8px;
+}
+
+.monthly-report-status-hint {
+  font-size: 0.82rem;
+  margin: 8px 0 0;
+}
+
+.monthly-report-document-panel,
+.monthly-report-pdf-panel {
+  margin-top: 10px;
+}
+
+.monthly-report-document-state {
+  margin: 0 0 8px;
+}
+
+.monthly-report-mi-draft {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(190, 211, 255, 0.1);
+  border-radius: 8px;
+  font-size: 0.8125rem;
+  margin-top: 0.5rem;
+  max-height: 14rem;
+  overflow: auto;
+  padding: 0.75rem;
+  white-space: pre-wrap;
+}
+
+.monthly-report-mi-apply-row {
+  align-items: center;
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.monthly-report-mi-apply-row input {
+  flex: 1;
+}
+
+.monthly-report-summary-metrics .metric-card {
+  min-height: 72px;
+  padding: 10px 12px;
+}
+
+.monthly-report-deliverable-list .entity-card {
+  gap: 8px;
+  padding: 9px 10px;
+}
+
+.monthly-report-metrics-table table {
+  font-size: 0.82rem;
+}
+
+.monthly-report-metrics-table th,
+.monthly-report-metrics-table td {
+  padding: 6px 8px;
+}
+
+.monthly-report-footer .ghost-action {
+  font-size: 0.82rem;
+  min-height: 28px;
+}
+
 .monthly-report-admin-panel .section-panel-body {
   gap: 10px;
 }
