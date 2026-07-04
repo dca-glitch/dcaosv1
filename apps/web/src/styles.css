@@ -3739,6 +3739,106 @@ textarea:focus,
   min-height: 30px;
 }
 
+/* I — AI Knowledge context panel (admin modal) */
+.ai-knowledge-context-panel.stack.gap-md {
+  gap: 10px;
+}
+
+.ai-knowledge-inline-loading {
+  align-items: center;
+  color: var(--muted);
+  display: inline-flex;
+  font-size: 0.82rem;
+  gap: 8px;
+  line-height: 1.4;
+  margin: 0;
+  min-height: 0;
+  padding: 4px 0;
+}
+
+.ai-knowledge-inline-alert {
+  background: rgba(255, 143, 143, 0.08);
+  border: 1px solid rgba(255, 143, 143, 0.22);
+  border-radius: 8px;
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.45;
+  padding: 8px 10px;
+}
+
+.ai-knowledge-table-wrap .data-table.compact th,
+.ai-knowledge-table-wrap .data-table.compact td {
+  font-size: 0.82rem;
+  padding: 6px 8px;
+}
+
+.ai-knowledge-table-wrap .data-table.compact td:last-child {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.ai-knowledge-create-form .form-field span,
+.ai-knowledge-preview-controls .form-field span {
+  font-size: 0.78rem;
+}
+
+.ai-knowledge-preview-controls .ghost-action {
+  align-self: flex-start;
+  font-size: 0.82rem;
+  min-height: 28px;
+  padding: 4px 10px;
+}
+
+.ai-knowledge-preview-meta {
+  display: grid;
+  gap: 6px 12px;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  margin: 8px 0 0;
+}
+
+.ai-knowledge-preview-meta div {
+  display: grid;
+  gap: 2px;
+}
+
+.ai-knowledge-preview-meta dt {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 650;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.ai-knowledge-preview-meta dd {
+  font-size: 0.84rem;
+  margin: 0;
+}
+
+.ai-knowledge-preview-list {
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.45;
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
+.ai-knowledge-preview-list--warn {
+  color: rgba(255, 196, 120, 0.92);
+}
+
+.ai-knowledge-code-preview {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(190, 211, 255, 0.1);
+  border-radius: 8px;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  margin: 0;
+  max-height: 14rem;
+  overflow: auto;
+  padding: 8px 10px;
+  white-space: pre-wrap;
+}
+
 .brief-stat-grid {
   display: grid;
   gap: 8px;
