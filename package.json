@@ -92,6 +92,7 @@
     "smoke:client-portal-monthly-report:browser": "node scripts/smoke-client-portal-monthly-report-browser-local.mjs",
     "smoke:google-drive-export": "node scripts/smoke-google-drive-export-local.mjs",
     "smoke:staging-readiness:local": "powershell -ExecutionPolicy Bypass -File scripts/staging-readiness-local.ps1",
+    "smoke:production-readiness:local": "powershell -ExecutionPolicy Bypass -File scripts/smoke-production-readiness-local.ps1",
     "smoke:pre-staging:local": "powershell -ExecutionPolicy Bypass -File scripts/smoke-pre-staging-local.ps1"
   },
   "engines": {

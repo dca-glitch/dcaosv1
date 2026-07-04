@@ -37,6 +37,24 @@ Related:
 
 ## One-command local gate
 
+**Production Readiness closeout (Mega Block 1 — deterministic delivery + MI + handoff):**
+
+```powershell
+cd C:\dcaosv1
+$env:AUTH_SEED_TEST_PASSWORD = "<shell-only>"
+npm.cmd run smoke:production-readiness:local
+```
+
+List planned steps without running:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/smoke-production-readiness-local.ps1 -List
+```
+
+**What PASS means:** `validate` + `git diff --check` + focused smokes for AI Delivery revenue chain, MI operator path, delivery handoff gates, client portal boundary, and monthly report admin/client surfaces — all local, no deploy. Expected skips: `AUTH_SEED_TESTER_EMAIL` absent (client approval path), WordPress live publish disabled (`provider_disabled`), R2 disabled guard when `R2_*` unset.
+
+Log: `$env:TEMP\dca-production-readiness-closeout-*.log` (opens in Notepad). Restarts API between browser batches to avoid login rate-limit (10 / 15 min).
+
 **Focused Block B pack (Block A smoke subset):**
 
 ```powershell

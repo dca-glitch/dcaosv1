@@ -128,6 +128,24 @@ Local repo readiness does **not** require running staging migrations.
 
 Run from `C:\dcaosv1` in external PowerShell. Requires `AUTH_SEED_TEST_PASSWORD`. Stop on first failure.
 
+### Production Readiness closeout (Mega Block 1 — recommended before staging discussion)
+
+One-command orchestrator:
+
+```powershell
+cd C:\dcaosv1
+$env:AUTH_SEED_TEST_PASSWORD = "<shell-only>"
+npm.cmd run smoke:production-readiness:local
+```
+
+List planned steps without running smokes:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/smoke-production-readiness-local.ps1 -List
+```
+
+Covers: `validate`, `git diff --check`, AI Delivery revenue engine + reviews + workflow browser, MI core/integration/hardening/market-intelligence/operator browser/summary-delivery browser, delivery handoff readiness + client final visibility (skip if no `AUTH_SEED_TESTER_EMAIL`), WordPress publish disabled-safe, R2 disabled-safe, Puriva client portal boundary, client portal local/browser, monthly report MI context + client/admin browser. Logs to `$env:TEMP` and opens Notepad. Stops on first hard failure. API restart between browser batches; one retry on HTTP 429.
+
 ### Block A minimum (before staging GO discussion)
 
 One-command orchestrator (Block B):
