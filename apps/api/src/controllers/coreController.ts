@@ -32,6 +32,7 @@ import { sendAiDeliveryDeliverableForClientReview } from "../core/client-portal-
 import { getAiProviderPlanningSnapshot } from "../services/ai-provider-planning.service";
 import { getGoogleDriveExportPlanningSnapshot } from "../services/google-drive-export-planning.service";
 import { getExternalIntegrationsReadinessSnapshot } from "../core/external-integrations-readiness.service";
+import { buildAdminOperationsSummary } from "../core/admin-operations-summary.service";
 import {
   archiveAiDeliveryArticleImage,
   isAiDeliveryGuardError,
@@ -1407,6 +1408,27 @@ export const getExternalIntegrationsReadinessHandler: RequestHandler = async (_r
     res.status(500).json(
       failure("EXTERNAL_INTEGRATIONS_READINESS_ERROR", "External integrations readiness could not be loaded.")
     );
+  }
+};
+
+export const getAdminOperationsSummaryHandler: RequestHandler = async (_req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) {
+    res.status(401).json(unauthorizedFailure());
+    return;
+  }
+
+  const tenantId = authSession.tenantContext.activeMembership?.tenantId ?? null;
+  if (!tenantId) {
+    res.status(403).json(forbiddenFailure());
+    return;
+  }
+
+  try {
+    const summary = await buildAdminOperationsSummary(tenantId);
+    res.json(success({ summary }, { phase: "runtime", scope: "admin-operations-summary" }));
+  } catch {
+    res.status(500).json(failure("ADMIN_OPERATIONS_SUMMARY_ERROR", "Admin operations summary could not be loaded."));
   }
 };
 

@@ -1130,6 +1130,44 @@ textarea:focus-visible {
   align-items: flex-start;
 }
 
+.admin-operations-stack {
+  display: grid;
+  gap: 18px;
+  margin-bottom: 18px;
+}
+
+.admin-operations-grid,
+.admin-operations-hints {
+  display: grid;
+  gap: 10px;
+}
+
+.admin-operations-row {
+  align-items: center;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(120px, 0.9fr) auto minmax(0, 1.4fr);
+}
+
+.admin-operations-footnote,
+.admin-operations-command-list {
+  margin: 0;
+}
+
+.admin-operations-hint-toggle {
+  background: none;
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+  padding: 0;
+  text-align: left;
+}
+
+.admin-operations-hint-steps {
+  margin: 8px 0 0;
+  padding-left: 18px;
+}
+
 .audit-feed-body {
   display: grid;
   gap: 4px;

@@ -52,6 +52,7 @@ import {
   getAiProviderPlanningConfigHandler,
   getGoogleDriveExportConfigHandler,
   getExternalIntegrationsReadinessHandler,
+  getAdminOperationsSummaryHandler,
   listAiDeliveryArticleImagesHandler,
   listAiDeliveryDeliverablesHandler,
   listAiDeliveryDeliverableReviewsHandler,
@@ -257,6 +258,7 @@ export function createCoreRouter() {
   router.get("/ai-provider/planning-config", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), getAiProviderPlanningConfigHandler);
   router.get("/integrations/google-drive/export-config", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), getGoogleDriveExportConfigHandler);
   router.get("/integrations/readiness", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), getExternalIntegrationsReadinessHandler);
+  router.get("/admin/operations/summary", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), getAdminOperationsSummaryHandler);
 
   router.get("/clients", requireAuth, requireTenant, tenantModuleGuard, listClientsHandler);
   router.post("/clients", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), createClientHandler);

@@ -1,6 +1,7 @@
 import { type FormEvent, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Archive, BarChart2, ClipboardList, Clock } from "lucide-react";
 import { AppLayout } from "./components/AppLayout";
+import { AdminOperationsPanel } from "./components/admin/AdminOperationsPanel";
 import { StatusNotice } from "./components/StatusNotice";
 import { MetricCard, PageHeader, SectionPanel, StatusBadge, Button, Table } from "./components/ui";
 import {
@@ -1068,7 +1069,7 @@ function DashboardView({
   const activeTenant = tenants?.currentTenant?.tenant;
   const permissionCount = context?.effectivePermissions.length ?? 0;
   const auditLogs = activityAuditLogs?.auditLogs ?? [];
-  const [auditTypeFilter, setAuditTypeFilter] = useState<"all" | "auth" | "module" | "tenant">("all");
+  const [auditTypeFilter, setAuditTypeFilter] = useState<"all" | "auth" | "module" | "tenant" | "delivery">("all");
   const filteredAuditLogs = useMemo(() => {
     if (auditTypeFilter === "all") {
       return auditLogs;
@@ -1085,6 +1086,14 @@ function DashboardView({
       }
       if (auditTypeFilter === "tenant") {
         return action.includes("tenant") || entity.includes("tenant");
+      }
+      if (auditTypeFilter === "delivery") {
+        return (
+          action.includes("wordpress") ||
+          action.includes("publication") ||
+          action.includes("workflow") ||
+          action.includes("market_intelligence")
+        );
       }
       return true;
     });
@@ -1121,6 +1130,7 @@ function DashboardView({
           value={activeTenant ? "Ready" : "Limited"}
         />
       </div>
+      <AdminOperationsPanel />
       <div className="dashboard-grid">
         <SectionPanel
           tone="compact"
@@ -1128,7 +1138,7 @@ function DashboardView({
           description="Tenant audit feed — last events from the active workspace."
           action={
             <div className="filter-bar" role="group" aria-label="Audit activity type filter">
-              {(["all", "auth", "module", "tenant"] as const).map((value) => (
+              {(["all", "auth", "module", "tenant", "delivery"] as const).map((value) => (
                 <Button
                   aria-pressed={auditTypeFilter === value}
                   key={value}
