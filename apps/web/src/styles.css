@@ -2198,14 +2198,14 @@ tr:hover td {
 }
 
 .operator-summary-metrics {
-  gap: 12px;
-  grid-template-columns: repeat(2, minmax(160px, 1fr));
-  margin-top: 10px;
+  gap: 8px;
+  grid-template-columns: repeat(2, minmax(140px, 1fr));
+  margin-top: 8px;
 }
 
 .operator-summary-metrics .metric-card {
-  min-height: 96px;
-  padding: 12px 14px;
+  min-height: 72px;
+  padding: 10px 12px;
 }
 
 @media (max-width: 900px) {
@@ -2627,8 +2627,8 @@ tr:hover td {
 .settings-shell-metrics .metric-card,
 .company-profile-shell-metrics .metric-card,
 .operator-summary-metrics .metric-card {
-  min-height: 96px;
-  padding: 12px 14px;
+  min-height: 72px;
+  padding: 10px 12px;
 }
 
 .portal-metric-grid .metric-card {
@@ -3604,6 +3604,10 @@ textarea:focus,
   padding: 0;
 }
 
+.ai-delivery-section .brief-select-list {
+  gap: 5px;
+}
+
 .brief-select-item {
   background: rgba(255, 255, 255, 0.02);
   border: 1px solid var(--border);
@@ -3617,6 +3621,11 @@ textarea:focus,
   text-align: left;
   transition: background 140ms ease, border-color 140ms ease;
   width: 100%;
+}
+
+.ai-delivery-section .brief-select-item {
+  gap: 3px;
+  padding: 8px 9px;
 }
 
 .brief-select-item:hover {
@@ -3683,7 +3692,11 @@ textarea:focus,
 }
 
 .ai-delivery-project-context .section-panel-heading h2 {
-  font-size: 1.05rem;
+  font-size: 0.98rem;
+}
+
+.ai-delivery-project-context.section-panel-compact .section-panel-heading {
+  gap: 6px;
 }
 
 .ai-delivery-context-meta {
@@ -3710,6 +3723,20 @@ textarea:focus,
 
 .ai-delivery-section .section-panel-action .ai-delivery-action-row {
   justify-content: flex-end;
+}
+
+.ai-delivery-section .ai-delivery-action-row .ghost-action {
+  font-size: 0.82rem;
+  min-height: 28px;
+  padding: 4px 8px;
+}
+
+.ai-delivery-section .ai-delivery-action-row .primary-action {
+  min-height: 30px;
+}
+
+.ai-delivery-section .ai-delivery-action-row .secondary-action {
+  min-height: 30px;
 }
 
 .brief-stat-grid {

@@ -54,11 +54,11 @@ export function AiDeliveryProjectWorkspaceSections({
     return (
       <SectionPanel
         className="ai-delivery-section"
-        description="Pick a project from the list to review status and open workflow tools."
+        description="Select a project from the list."
         title="Project workspace"
         tone="compact"
       >
-        <EmptyState message="Select a project to continue the admin workflow." title="No project selected" />
+        <EmptyState message="Select a project to continue." title="No project selected" />
       </SectionPanel>
     );
   }
@@ -69,11 +69,11 @@ export function AiDeliveryProjectWorkspaceSections({
         action={
           canEdit ? (
             <div className="ai-delivery-action-row">
-              <button className="secondary-action" onClick={onEdit} type="button">
+              <button className="ghost-action" onClick={onEdit} type="button">
                 Edit
               </button>
               {!workspaceProject.isArchived ? (
-                <button className="secondary-action" onClick={() => void onArchive()} type="button">
+                <button className="ghost-action" onClick={() => void onArchive()} type="button">
                   Archive
                 </button>
               ) : null}
@@ -86,7 +86,7 @@ export function AiDeliveryProjectWorkspaceSections({
         className="ai-delivery-section ai-delivery-project-context"
         description={`${workspaceProject.client?.name ?? "No client"} · ${workspaceProject.project?.name ?? "No project reference"} · ${workspaceProject.targetMonth}`}
         title={workspaceProject.name}
-        tone="highlight"
+        tone="compact"
       >
         <div className="ai-delivery-context-meta">
           <StatusBadge status={workspaceProject.brief?.status ?? "Brief not started"} />
@@ -101,19 +101,24 @@ export function AiDeliveryProjectWorkspaceSections({
         action={
           canEdit ? (
             <div className="ai-delivery-action-row">
-              <button className="secondary-action" disabled={!workspaceProject.brief} onClick={() => void onOpenBrief()} type="button">
+              <button
+                className="primary-action"
+                disabled={!workspaceProject.brief}
+                onClick={() => void onOpenBrief()}
+                type="button"
+              >
                 Brief
               </button>
-              <button className="secondary-action" onClick={() => void onOpenResearchSources()} type="button">
+              <button className="ghost-action" onClick={() => void onOpenResearchSources()} type="button">
                 Research / sources
               </button>
               {showMiContextButton ? (
-                <button className="secondary-action" onClick={() => void onOpenMiContext()} type="button">
+                <button className="ghost-action" onClick={() => void onOpenMiContext()} type="button">
                   MI context
                 </button>
               ) : null}
               {showKnowledgeButton ? (
-                <button className="secondary-action" onClick={onOpenKnowledgePanel} type="button">
+                <button className="ghost-action" onClick={onOpenKnowledgePanel} type="button">
                   AI knowledge
                 </button>
               ) : null}
@@ -121,7 +126,7 @@ export function AiDeliveryProjectWorkspaceSections({
           ) : null
         }
         className="ai-delivery-section"
-        description="Client brief, research inputs, and approved knowledge for AI context."
+        description="Brief, research, and knowledge inputs."
         title="Brief & knowledge context"
         tone="compact"
       >
@@ -135,14 +140,14 @@ export function AiDeliveryProjectWorkspaceSections({
               <button className="primary-action" onClick={() => void onOpenContentPlan()} type="button">
                 SEO / content plan
               </button>
-              <button className="secondary-action" onClick={() => void onOpenWorkflowRuns()} type="button">
+              <button className="ghost-action" onClick={() => void onOpenWorkflowRuns()} type="button">
                 Workflow runs
               </button>
             </div>
           ) : null
         }
         className="ai-delivery-section"
-        description="Monthly SEO topics, workflow runs, and production planning."
+        description="Monthly SEO plan and workflow runs."
         title="SEO plan & production"
         tone="compact"
       >
@@ -158,7 +163,7 @@ export function AiDeliveryProjectWorkspaceSections({
           ) : null
         }
         className="ai-delivery-section"
-        description="Draft articles linked to approved plan items."
+        description="Draft articles for approved plan items."
         title="Content drafts"
         tone="compact"
       >
@@ -169,10 +174,10 @@ export function AiDeliveryProjectWorkspaceSections({
         action={
           canEdit ? (
             <div className="ai-delivery-action-row">
-              <button className="secondary-action" onClick={() => void onRequestClientInput()} type="button">
+              <button className="ghost-action" onClick={() => void onRequestClientInput()} type="button">
                 Request input
               </button>
-              <button className="secondary-action" onClick={() => void onRequestClientRevision()} type="button">
+              <button className="ghost-action" onClick={() => void onRequestClientRevision()} type="button">
                 Request revision
               </button>
               <button className="secondary-action" onClick={() => void onApproveFinal()} type="button">
@@ -182,7 +187,7 @@ export function AiDeliveryProjectWorkspaceSections({
           ) : null
         }
         className="ai-delivery-section"
-        description="Brief review checkpoints and content-plan approvals inside their workflow modals."
+        description="Client and content-plan review checkpoints."
         title="Reviews & approvals"
         tone="compact"
       >
@@ -198,7 +203,7 @@ export function AiDeliveryProjectWorkspaceSections({
           ) : null
         }
         className="ai-delivery-section"
-        description="Image requests linked to content drafts."
+        description="Image requests for content drafts."
         title="Images"
         tone="compact"
       >
@@ -214,7 +219,7 @@ export function AiDeliveryProjectWorkspaceSections({
           ) : null
         }
         className="ai-delivery-section"
-        description="Package assets, WordPress draft prep, and publication targets."
+        description="Publication packages and WordPress prep."
         title="WordPress & publication"
         tone="compact"
       >
@@ -230,7 +235,7 @@ export function AiDeliveryProjectWorkspaceSections({
           ) : null
         }
         className="ai-delivery-section"
-        description="End-of-month summary, metrics, and client-facing report packaging."
+        description="Monthly summary and client report."
         title="Monthly report"
         tone="compact"
       >

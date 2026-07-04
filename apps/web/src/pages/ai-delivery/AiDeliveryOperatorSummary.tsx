@@ -25,9 +25,9 @@ export function AiDeliveryOperatorSummary({
   deliverablesHelper
 }: AiDeliveryOperatorSummaryProps) {
   return (
-    <SectionPanel tone="compact" title="Operator summary" description="Collapsed by default — expand for tenant-level workflow context.">
+    <SectionPanel tone="compact" title="Operator summary" description="Tenant-level metrics.">
       <details className="operator-summary-details">
-        <summary className="operator-summary-summary">Show operator metrics</summary>
+        <summary className="operator-summary-summary">Show metrics</summary>
         <div className="summary-grid metric-grid operator-summary-metrics" aria-label="AI Delivery operator summary">
           <MetricCard
             accent="cyan"

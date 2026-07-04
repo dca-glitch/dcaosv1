@@ -16,7 +16,7 @@ export function AiDeliveryProjectPicker({
   return (
     <SectionPanel
       className="ai-delivery-section"
-      description="Choose a project to open workflow sections."
+      description="Select a project."
       title="Project selection"
       tone="compact"
     >
