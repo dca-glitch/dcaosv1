@@ -1,4 +1,4 @@
-# Production Readiness Local Closeout Pack (Mega Block 1)
+# Production Readiness Local Closeout Pack (Mega Block 1 + Block 2 client approval)
 # Focused deterministic delivery + MI + handoff + client boundary proof.
 # Local only. No VPS/staging/production. No secrets printed.
 
@@ -41,7 +41,7 @@ function Write-SummaryAndExit([int]$ExitCode) {
   }
   Add-LogLine ""
   Add-LogLine "Rate-limit note: login limit is 10 per 15 min per IP. Orchestrator restarts API between browser batches."
-  Add-LogLine "Expected skips: AUTH_SEED_TESTER_EMAIL absent (client approval path); R2 strict roundtrip without R2 env; WordPress live publish disabled by design."
+  Add-LogLine "Expected skips: AUTH_SEED_TEST_PASSWORD absent blocks entire pack; client approval happy-path self-skips when portal user unavailable; smoke-client-final-visibility when AUTH_SEED_TESTER_EMAIL absent; R2 strict roundtrip without R2 env; WordPress live publish disabled by design."
   Add-LogLine "Log file: $logPath"
   $lines | Set-Content -Path $logPath -Encoding UTF8
   notepad $logPath
@@ -405,6 +405,7 @@ $CloseoutSteps = @(
   @{ Label = "smoke-mi-operator-hardening-local"; Kind = "node"; Script = "scripts/smoke-mi-operator-hardening-local.mjs"; NeedsApi = $true; NeedsWeb = $false; Group = "Market Intelligence"; RestartApiBefore = $true }
   @{ Label = "smoke:ai-market-intelligence"; Kind = "npm"; Script = "smoke:ai-market-intelligence"; NeedsApi = $true; NeedsWeb = $false; Group = "Market Intelligence" }
   @{ Label = "smoke-delivery-handoff-readiness-local"; Kind = "node"; Script = "scripts/smoke-delivery-handoff-readiness-local.mjs"; NeedsApi = $true; NeedsWeb = $false; Group = "Delivery handoff"; RestartApiBefore = $true }
+  @{ Label = "smoke-client-approval-happy-path-local"; Kind = "node"; Script = "scripts/smoke-client-approval-happy-path-local.mjs"; NeedsApi = $true; NeedsWeb = $true; Group = "Delivery handoff"; Note = "PASS when AUTH_SEED_TEST_PASSWORD + client portal user available; self-SKIP when portal user cannot be ensured" }
   @{ Label = "smoke-client-final-visibility-local"; Kind = "node"; Script = "scripts/smoke-client-final-visibility-local.mjs"; NeedsApi = $true; NeedsWeb = $false; Group = "Delivery handoff"; SkipIf = "no-client-tester" }
   @{ Label = "smoke:wordpress-publish:local"; Kind = "npm"; Script = "smoke:wordpress-publish:local"; NeedsApi = $true; NeedsWeb = $false; Group = "Delivery handoff"; Note = "Expected: provider_disabled when WORDPRESS_PUBLISH_ENABLED is off" }
   @{ Label = "smoke:r2-byte-roundtrip:local"; Kind = "npm"; Script = "smoke:r2-byte-roundtrip:local"; NeedsApi = $true; NeedsWeb = $false; Group = "Delivery handoff"; Note = "Expected: disabled guard when R2 env absent; strict roundtrip requires R2 env + SMOKE_EXPECT_R2_ROUNDTRIP=true" }
@@ -436,7 +437,7 @@ function Show-PlannedPack {
   }
   Add-LogLine ""
   Add-LogLine "Requires: AUTH_SEED_TEST_PASSWORD in shell (min 8 chars, never printed)"
-  Add-LogLine "Optional: AUTH_SEED_TESTER_EMAIL, R2_* + SMOKE_EXPECT_R2_ROUNDTRIP=true"
+  Add-LogLine "Optional: AUTH_SEED_TESTER_EMAIL (falls back to puriva@puriva.id), R2_* + SMOKE_EXPECT_R2_ROUNDTRIP=true"
   $lines | Set-Content -Path $logPath -Encoding UTF8
   notepad $logPath
   exit 0
@@ -446,7 +447,7 @@ if ($List) {
   Show-PlannedPack
 }
 
-Add-LogLine "[PRODUCTION_READINESS] Mega Block 1 local closeout pack starting"
+Add-LogLine "[PRODUCTION_READINESS] Mega Block 1 + Block 2 client approval closeout pack starting"
 Add-LogLine "See docs/runbooks/PRE_STAGING_VALIDATION_GATE.md"
 
 if (-not $env:AUTH_SEED_TEST_PASSWORD -or $env:AUTH_SEED_TEST_PASSWORD.Length -lt 8) {

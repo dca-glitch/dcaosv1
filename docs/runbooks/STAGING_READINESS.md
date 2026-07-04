@@ -86,7 +86,8 @@ Values belong in shell or server-side env only. See [`ENV_READINESS_INVENTORY.md
 
 | Variable | Enables |
 |----------|---------|
-| `AUTH_SEED_TESTER_*` | Cross-tenant client portal proof |
+| `AUTH_SEED_TESTER_EMAIL` | Client portal approval happy-path + final visibility smokes |
+| `AUTH_SEED_TESTER_PASSWORD` | Optional when tester password differs from `AUTH_SEED_TEST_PASSWORD` |
 | `R2_*` | Strict R2 roundtrip (`smoke:r2-byte-roundtrip:local`) |
 | `CREDENTIAL_ENCRYPTION_MASTER_KEY` | Credential encryption smoke |
 | `WORDPRESS_PUBLISH_ENABLED` | Open-gate WP probe only (not default) |
@@ -128,7 +129,7 @@ Local repo readiness does **not** require running staging migrations.
 
 Run from `C:\dcaosv1` in external PowerShell. Requires `AUTH_SEED_TEST_PASSWORD`. Stop on first failure.
 
-### Production Readiness closeout (Mega Block 1 — recommended before staging discussion)
+### Production Readiness closeout (Mega Block 1 + Block 2 client approval — recommended before staging discussion)
 
 One-command orchestrator:
 
@@ -144,7 +145,9 @@ List planned steps without running smokes:
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/smoke-production-readiness-local.ps1 -List
 ```
 
-Covers: `validate`, `git diff --check`, AI Delivery revenue engine + reviews + workflow browser, MI core/integration/hardening/market-intelligence/operator browser/summary-delivery browser, delivery handoff readiness + client final visibility (skip if no `AUTH_SEED_TESTER_EMAIL`), WordPress publish disabled-safe, R2 disabled-safe, Puriva client portal boundary, client portal local/browser, monthly report MI context + client/admin browser. Logs to `$env:TEMP` and opens Notepad. Stops on first hard failure. API restart between browser batches; one retry on HTTP 429.
+Covers: `validate`, `git diff --check`, AI Delivery revenue engine + reviews + workflow browser, MI core/integration/hardening/market-intelligence/operator browser/summary-delivery browser, delivery handoff readiness, **client approval happy-path** (`smoke-client-approval-happy-path-local.mjs` — self-SKIP when portal user unavailable; uses `puriva@puriva.id` fallback), client final visibility (skip if no `AUTH_SEED_TESTER_EMAIL`), WordPress publish disabled-safe, R2 disabled-safe, Puriva client portal boundary, client portal local/browser, monthly report MI context + client/admin browser. Logs to `$env:TEMP` and opens Notepad. Stops on first hard failure. API restart between browser batches; one retry on HTTP 429.
+
+**Client approval happy-path** (`node scripts/smoke-client-approval-happy-path-local.mjs`): requires `AUTH_SEED_TEST_PASSWORD`; proves pending approvals, Review → `ArticleApprovalEditor`, Save & Continue / Approve / Reject, admin `for-approval` 403, no internal leakage, `CLIENT_REVIEW_DEFERRED` on phased plan/draft review. SKIP when portal user cannot be ensured.
 
 ### Block A minimum (before staging GO discussion)
 

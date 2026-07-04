@@ -51,7 +51,17 @@ List planned steps without running:
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/smoke-production-readiness-local.ps1 -List
 ```
 
-**What PASS means:** `validate` + `git diff --check` + focused smokes for AI Delivery revenue chain, MI operator path, delivery handoff gates, client portal boundary, and monthly report admin/client surfaces — all local, no deploy. Expected skips: `AUTH_SEED_TESTER_EMAIL` absent (client approval path), WordPress live publish disabled (`provider_disabled`), R2 disabled guard when `R2_*` unset.
+**What PASS means:** `validate` + `git diff --check` + focused smokes for AI Delivery revenue chain, MI operator path, delivery handoff gates, **client approval happy-path** (`smoke-client-approval-happy-path-local.mjs`), client portal boundary, and monthly report admin/client surfaces — all local, no deploy. Expected skips: client approval happy-path self-skips when portal user unavailable; `smoke-client-final-visibility-local` when `AUTH_SEED_TESTER_EMAIL` absent; WordPress live publish disabled (`provider_disabled`); R2 disabled guard when `R2_*` unset.
+
+**Client approval happy-path smoke** (`node scripts/smoke-client-approval-happy-path-local.mjs`):
+
+| Env | Role |
+|-----|------|
+| `AUTH_SEED_TEST_PASSWORD` | Required — admin login and client portal password sync |
+| `AUTH_SEED_TESTER_EMAIL` | Optional — preferred client portal user (`roleKey: client`); falls back to `puriva@puriva.id` |
+| `AUTH_SEED_TESTER_PASSWORD` | Optional — only when tester password differs from seed password |
+
+Proves: admin fixture + `send-for-client-review`, client pending list, `for-approval` editor session, body patch, reject path, browser Save & Continue / Approve, admin 403 boundary, `CLIENT_REVIEW_DEFERRED` on content plan/draft review. SKIP (exit 0) when `AUTH_SEED_TEST_PASSWORD` missing or portal user cannot be ensured.
 
 Log: `$env:TEMP\dca-production-readiness-closeout-*.log` (opens in Notepad). Restarts API between browser batches to avoid login rate-limit (10 / 15 min).
 
