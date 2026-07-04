@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { EmptyState } from "../../components/EmptyState";
-import { Button, PageHeader, SectionPanel, StatusBadge, Table } from "../../components/ui";
+import { Button, PageHeader, SectionPanel, StatusBadge } from "../../components/ui";
 import { Alert, Spinner } from "../../design-system";
 import {
   clientPortalApiRequest,
@@ -9,6 +9,15 @@ import {
   type PendingApprovalSummary,
   type PendingApprovalsResponse
 } from "./client-portal-api";
+
+function PortalInlineLoading({ label }: { label: string }) {
+  return (
+    <p className="cf-inline-loading" role="status">
+      <Spinner size="sm" />
+      {label}
+    </p>
+  );
+}
 
 export function PendingApprovalsPage() {
   const [items, setItems] = useState<PendingApprovalSummary[]>([]);
@@ -33,37 +42,8 @@ export function PendingApprovalsPage() {
     void loadPendingApprovals();
   }, [loadPendingApprovals]);
 
-  const tableRows = useMemo(
-    () =>
-      items.map((item) => ({
-        key: item.id,
-        cells: [
-          <div key={`${item.id}-title`}>
-            <div style={{ marginBottom: 4 }}>
-              <StatusBadge status="Awaiting your approval" />
-            </div>
-            <strong>{item.title}</strong>
-          </div>,
-          <span className="entity-pill" key={`${item.id}-project`}>
-            {item.projectName}
-          </span>,
-          <span className="muted-text" key={`${item.id}-date`}>
-            {formatApprovalDate(item.createdAt)}
-          </span>,
-          <Button
-            key={`${item.id}-action`}
-            onClick={() => navigateToClientPortalHash(`client-portal/deliverables/${item.id}/approve`)}
-            size="sm"
-          >
-            Review
-          </Button>
-        ]
-      })),
-    [items]
-  );
-
   return (
-    <section className="view-section" aria-labelledby="pending-approvals-title" data-density="comfortable">
+    <section className="view-section cf-page" aria-labelledby="pending-approvals-title" data-density="comfortable">
       <PageHeader
         action={
           <Button disabled={loading} onClick={() => void loadPendingApprovals()} variant="tertiary">
@@ -94,30 +74,46 @@ export function PendingApprovalsPage() {
         </Button>
       </nav>
 
-      {loading ? (
-        <div className="state-panel loading-state-panel" role="status">
-          <Spinner size="sm" />
-          Loading pending approvals
-        </div>
-      ) : null}
+      {loading ? <PortalInlineLoading label="Loading pending approvals" /> : null}
 
       {!loading && error ? <Alert message={error} title="Approvals unavailable" variant="danger" /> : null}
 
       {!loading && !error ? (
-        <SectionPanel description="Review article drafts and images before publication." title="Awaiting your approval">
+        <SectionPanel
+          description="Review article drafts and images before publication."
+          title="Awaiting your approval"
+          tone="compact"
+        >
           {items.length === 0 ? (
             <EmptyState message="No articles pending your approval" title="All caught up" variant="inline" />
           ) : (
-            <div className="table-wrap">
-              <Table
-                headers={[
-                  { label: "Article", align: "left" },
-                  { label: "Project", align: "left" },
-                  { label: "Created", align: "right" },
-                  { label: "Action", align: "right" }
-                ]}
-                rows={tableRows}
-              />
+            <div className="cf-record-list">
+              {items.map((item) => (
+                <article className="cf-record" key={item.id}>
+                  <div className="cf-record-main">
+                    <div className="cf-record-title">
+                      <div className="cf-record-kicker">
+                        <StatusBadge status="Awaiting your approval" />
+                      </div>
+                      <h3>{item.title}</h3>
+                      <div className="cf-record-meta">
+                        <span className="entity-pill">{item.projectName}</span>
+                        <span>{formatApprovalDate(item.createdAt)}</span>
+                      </div>
+                    </div>
+                    <div className="dense-actions">
+                      <Button
+                        onClick={() => navigateToClientPortalHash(`client-portal/deliverables/${item.id}/approve`)}
+                        size="sm"
+                        type="button"
+                        variant="tertiary"
+                      >
+                        Review
+                      </Button>
+                    </div>
+                  </div>
+                </article>
+              ))}
             </div>
           )}
         </SectionPanel>
