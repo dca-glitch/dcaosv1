@@ -18,7 +18,7 @@ $lines = New-Object System.Collections.Generic.List[string]
 $CoreSteps = @(
   @{ Label = "validate"; Script = "validate"; NeedsApi = $false; NeedsWeb = $false; Boundary = "repo typecheck/build gate" },
   @{ Label = "smoke:puriva-client-portal-boundary:local"; Script = "smoke:puriva-client-portal-boundary:local"; NeedsApi = $true; NeedsWeb = $false; Boundary = "client portal forbidden fields, monthly report provenance, legacy /briefs scan" },
-  @{ Label = "smoke:ai-delivery-reviews"; Script = "smoke:ai-delivery-reviews"; NeedsApi = $true; NeedsWeb = $false; Boundary = "content plan, drafts, images, deliverables, WP draft prep guards" },
+  @{ Label = "smoke:ai-delivery-reviews"; Script = "smoke:ai-delivery-reviews"; NeedsApi = $true; NeedsWeb = $true; Boundary = "content plan, drafts, images, deliverables, WP draft prep guards" },
   @{ Label = "smoke:ai-seo-content-plan-pdf"; Script = "smoke:ai-seo-content-plan-pdf"; NeedsApi = $true; NeedsWeb = $false; Boundary = "admin-only content plan PDF export; no client storageKey leak" },
   @{ Label = "smoke:ai-knowledge-context"; Script = "smoke:ai-knowledge-context"; NeedsApi = $true; NeedsWeb = $false; Boundary = "knowledge isolation; no contextPreview/selectedSourcesJson on client paths" },
   @{ Label = "smoke:client-portal-monthly-report:browser"; Script = "smoke:client-portal-monthly-report:browser"; NeedsApi = $true; NeedsWeb = $true; Boundary = "FINAL-only client monthly reports UI; forbidden internals absent" },
@@ -218,17 +218,65 @@ function Restart-LocalApiForSmoke([string]$Reason) {
   Wait-ForLocalApiReady
 }
 
-function Ensure-LocalWebForBrowserSmoke {
-  $webListening = Get-NetTCPConnection -LocalPort 5173 -ErrorAction SilentlyContinue | Select-Object -First 1
-  if (-not $webListening) {
-    Add-LogLine "Starting local web dev server on port 5173"
-    $webOut = Join-Path $env:TEMP ("dca-staging-readiness-web-{0}.stdout.log" -f (Get-Date -Format "yyyyMMdd-HHmmss"))
-    $webErr = Join-Path $env:TEMP ("dca-staging-readiness-web-{0}.stderr.log" -f (Get-Date -Format "yyyyMMdd-HHmmss"))
-    Start-Process -FilePath "npm.cmd" -ArgumentList "run", "dev:web" -WorkingDirectory (Get-Location).Path -RedirectStandardOutput $webOut -RedirectStandardError $webErr
-    Start-Sleep -Seconds 10
-  } else {
-    Add-LogLine "Web dev server already listening on port 5173"
+function Test-LocalWebReady {
+  foreach ($url in @("http://localhost:5173/", "http://127.0.0.1:5173/")) {
+    try {
+      $status = & curl.exe -s -o $null -w "%{http_code}" --connect-timeout 5 $url 2>$null
+      if ($status -eq "200") {
+        return $true
+      }
+    } catch {
+      continue
+    }
   }
+  return $false
+}
+
+function Wait-ForLocalWebReady {
+  $deadline = (Get-Date).AddSeconds(45)
+  do {
+    Start-Sleep -Seconds 2
+    if (Test-LocalWebReady) {
+      Add-LogLine "Web dev server ready at http://localhost:5173/"
+      return
+    }
+  } while ((Get-Date) -lt $deadline)
+  Add-LogLine "FAIL Local web dev server did not become ready on port 5173 within 45 seconds"
+  Write-LogAndExit 1
+}
+
+function Stop-LocalWebDevServer {
+  $connections = Get-NetTCPConnection -LocalPort 5173 -ErrorAction SilentlyContinue
+  foreach ($conn in $connections) {
+    if ($conn.OwningProcess -gt 0) {
+      $proc = Get-Process -Id $conn.OwningProcess -ErrorAction SilentlyContinue
+      if ($proc -and $proc.Path -and ($proc.Path -ieq "C:\Program Files\nodejs\node.exe")) {
+        Stop-Process -Id $conn.OwningProcess -Force -ErrorAction SilentlyContinue
+      }
+    }
+  }
+  Start-Sleep -Seconds 2
+}
+
+function Ensure-LocalWebForBrowserSmoke {
+  if (Test-LocalWebReady) {
+    Add-LogLine "Web dev server already ready at http://localhost:5173/"
+    return
+  }
+
+  $webListening = Get-NetTCPConnection -LocalPort 5173 -ErrorAction SilentlyContinue | Select-Object -First 1
+  if ($webListening) {
+    Add-LogLine "Port 5173 is occupied but web HTTP is not ready; restarting local web dev server"
+    Stop-LocalWebDevServer
+  } else {
+    Add-LogLine "Starting local web dev server on port 5173"
+  }
+
+  $webOut = Join-Path $env:TEMP ("dca-staging-readiness-web-{0}.stdout.log" -f (Get-Date -Format "yyyyMMdd-HHmmss"))
+  $webErr = Join-Path $env:TEMP ("dca-staging-readiness-web-{0}.stderr.log" -f (Get-Date -Format "yyyyMMdd-HHmmss"))
+  Start-Process -FilePath "npm.cmd" -ArgumentList "run", "dev:web" -WorkingDirectory (Get-Location).Path -RedirectStandardOutput $webOut -RedirectStandardError $webErr
+  Start-Sleep -Seconds 10
+  Wait-ForLocalWebReady
 }
 
 function Invoke-SmokeStep([hashtable]$Step) {
@@ -321,6 +369,7 @@ try {
     }
     if ($step.Label -eq "smoke:client-portal-monthly-report:browser") {
       Restart-LocalApiForSmoke "Restart local API to clear rate limits before browser smokes"
+      Stop-LocalWebDevServer
     }
     Invoke-SmokeStep $step
   }
