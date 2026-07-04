@@ -4966,4 +4966,283 @@ div[role="dialog"][aria-modal="true"] {
   }
 }
 
+/* ═══ Block 3 — UI/UX consolidation pass (staging polish) ═══ */
+
+/* Darker near-black canvas with restrained navy / purple depth */
+:root {
+  --bg: #04050a;
+  --bg-deep: #020308;
+  --bg-purple: #0a0c18;
+  --panel: rgba(14, 16, 28, 0.94);
+  --panel-strong: rgba(18, 22, 40, 0.97);
+  --panel-outline: rgba(255, 255, 255, 0.03);
+  --shadow-soft: 0 1px 8px rgba(0, 0, 0, 0.38);
+}
+
+body {
+  background:
+    radial-gradient(circle at 12% 4%, rgba(32, 44, 82, 0.11), transparent 24%),
+    radial-gradient(circle at 88% 8%, rgba(48, 28, 72, 0.08), transparent 22%),
+    linear-gradient(180deg, #060712 0%, #04050a 54%, #020308 100%);
+}
+
+body::before {
+  opacity: 0.28;
+}
+
+body::after {
+  opacity: 0.55;
+}
+
+/* Admin shell — operator-first compact density */
+.app-shell:not(.portal-shell) .main-shell {
+  gap: 12px;
+  padding: clamp(12px, 2vw, 22px);
+}
+
+.app-shell:not(.portal-shell) .view-section,
+.app-shell:not(.portal-shell) .page-stack {
+  gap: 10px;
+}
+
+.app-shell:not(.portal-shell) .section-panel {
+  gap: 12px;
+  padding: 14px 16px;
+}
+
+.app-shell:not(.portal-shell) .section-panel-compact {
+  gap: 10px;
+  padding: 12px 14px;
+}
+
+.app-shell:not(.portal-shell) .section-panel-header {
+  gap: 10px;
+}
+
+.app-shell:not(.portal-shell) .section-panel-description {
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+.app-shell:not(.portal-shell) .dashboard-grid {
+  gap: 12px;
+  grid-template-columns: minmax(0, 1.3fr) minmax(280px, 0.7fr);
+}
+
+.app-shell:not(.portal-shell) .admin-operations-stack {
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.app-shell:not(.portal-shell) .admin-operations-grid,
+.app-shell:not(.portal-shell) .admin-operations-hints {
+  gap: 8px;
+}
+
+.app-shell:not(.portal-shell) .admin-operations-row {
+  font-size: 0.82rem;
+  gap: 8px;
+  grid-template-columns: minmax(108px, 0.85fr) auto minmax(0, 1.5fr);
+}
+
+.app-shell:not(.portal-shell) .admin-operations-footnote,
+.app-shell:not(.portal-shell) .admin-operations-command-list {
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+.app-shell:not(.portal-shell) .admin-operations-hint-toggle {
+  font-size: 0.84rem;
+  min-height: 28px;
+  padding: 4px 0;
+}
+
+.app-shell:not(.portal-shell) .dashboard-command-metrics--compact .metric-card {
+  min-height: 68px;
+  padding: 9px 11px;
+}
+
+.app-shell:not(.portal-shell) .dashboard-command-metrics--compact .metric-card strong {
+  font-size: clamp(1rem, 1.2vw, 1.2rem);
+}
+
+.app-shell:not(.portal-shell) .timeline-item {
+  font-size: 0.82rem;
+  gap: 8px;
+}
+
+.app-shell:not(.portal-shell) .timeline-item span {
+  box-shadow: none;
+  height: 7px;
+  width: 7px;
+}
+
+.app-shell:not(.portal-shell) .audit-feed-item {
+  gap: 6px;
+  padding: 7px 0;
+}
+
+/* Dim design-system buttons in admin — clear hierarchy, no neon */
+.app-shell:not(.portal-shell) button.border-border-accent {
+  background: rgba(124, 143, 202, 0.14) !important;
+  border-color: rgba(124, 143, 202, 0.3) !important;
+  box-shadow: none !important;
+  color: #e8ecff !important;
+  filter: none !important;
+}
+
+.app-shell:not(.portal-shell) button.border-border-accent:hover:not(:disabled) {
+  background: rgba(124, 143, 202, 0.2) !important;
+  border-color: rgba(124, 143, 202, 0.38) !important;
+  filter: none !important;
+}
+
+.app-shell:not(.portal-shell) button.border-border-danger:hover:not(:disabled) {
+  filter: none !important;
+}
+
+/* Quieter status / guidance blocks */
+.app-shell:not(.portal-shell) .status-notice:not(.status-notice-compact) {
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 8px 10px;
+}
+
+.app-shell:not(.portal-shell) .state-panel.empty-state-panel,
+.app-shell:not(.portal-shell) .state-panel.loading-state-panel {
+  padding: 11px 13px;
+}
+
+.app-shell:not(.portal-shell) .module-card {
+  gap: 12px;
+  min-height: 188px;
+  padding: 14px;
+}
+
+.app-shell:not(.portal-shell) .tenant-row {
+  padding: 10px 12px;
+}
+
+.app-shell:not(.portal-shell) th,
+.app-shell:not(.portal-shell) td {
+  padding: 8px 10px;
+}
+
+.app-shell:not(.portal-shell) th {
+  font-size: 0.76rem;
+}
+
+.app-shell:not(.portal-shell) td {
+  font-size: 0.82rem;
+}
+
+/* AI Delivery — tighter workflow panels, subdued CTAs */
+.ai-delivery-page .section-panel,
+.ai-delivery-modal-panel .section-panel {
+  padding: 12px 14px;
+}
+
+.ai-delivery-page .ai-delivery-inline-alert,
+.ai-delivery-page .ai-delivery-inline-notice,
+.ai-delivery-modal-panel .ai-delivery-inline-alert,
+.ai-delivery-modal-panel .ai-delivery-inline-notice {
+  font-size: 0.8rem;
+  margin-bottom: 6px;
+  padding: 7px 9px;
+}
+
+.ai-delivery-page .ai-delivery-action-row .primary-action,
+.ai-delivery-page .ai-delivery-action-row .secondary-action,
+.ai-delivery-modal-panel .ai-delivery-action-row .primary-action,
+.ai-delivery-modal-panel .ai-delivery-action-row .secondary-action {
+  font-size: 0.8rem;
+  min-height: 30px;
+  padding: 5px 10px;
+}
+
+.ai-delivery-page .brief-select-item,
+.ai-delivery-modal-panel .brief-select-item {
+  padding: 8px 10px;
+}
+
+/* Market Intelligence — compact operator layout */
+.mi-split-layout {
+  gap: 12px;
+}
+
+.mi-queue-sidebar {
+  gap: 10px;
+  padding: 12px;
+}
+
+.mi-queue-sidebar .entity-card {
+  padding: 9px 10px;
+}
+
+/* Monthly Reports — dense admin shell */
+.monthly-report-admin-panel .section-panel-body {
+  gap: 10px;
+}
+
+.monthly-report-summary-metrics .metric-card {
+  min-height: 72px;
+  padding: 9px 11px;
+}
+
+.monthly-report-inline-alert,
+.monthly-report-inline-notice,
+.monthly-report-inline-success,
+.monthly-report-inline-loading {
+  font-size: 0.8rem;
+  padding: 7px 9px;
+}
+
+.monthly-report-status-card {
+  padding: 10px 12px;
+}
+
+.monthly-report-deliverable-list .entity-card {
+  padding: 8px 10px;
+}
+
+/* Finance Lite — table/list consistency only */
+.finance-table-wrap table th,
+.finance-table-wrap table td {
+  font-size: 0.82rem;
+  padding: 8px 10px;
+}
+
+.finance-table-wrap table th {
+  font-size: 0.76rem;
+}
+
+/* Client portal — compact read-only, no internal ops chrome */
+.portal-shell .portal-main-shell {
+  gap: 12px;
+  padding: clamp(14px, 2.2vw, 24px);
+}
+
+.portal-shell .cf-context-strip {
+  font-size: 0.8rem;
+  padding: 8px 10px;
+}
+
+.portal-shell .cf-metric-strip .metric-card {
+  min-height: 70px;
+  padding: 9px 11px;
+}
+
+.portal-shell .portal-inline-notice {
+  font-size: 0.8rem;
+  padding: 6px 9px;
+}
+
+.portal-shell .cf-archive-month {
+  padding: 8px 10px;
+}
+
+.portal-shell .cf-archive-item {
+  padding: 7px 9px;
+}
+
 @tailwind utilities;
