@@ -1642,8 +1642,7 @@ tr:hover td {
 .secondary-action,
 .ghost-action,
 .danger-action,
-.subtle-action,
-.filter-chip {
+.subtle-action {
   border-radius: 8px;
   font-size: 0.84rem;
   font-weight: 750;
@@ -1663,14 +1662,34 @@ tr:hover td {
   box-shadow: none;
 }
 
-.secondary-action,
-.filter-chip {
+.secondary-action {
   background: rgba(255, 255, 255, 0.035);
   border-color: rgba(190, 211, 255, 0.13);
   color: var(--text-soft);
 }
 
-.secondary-action:hover,
+.secondary-action:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(190, 211, 255, 0.22);
+  color: var(--text);
+}
+
+.filter-chip {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(190, 211, 255, 0.13);
+  color: var(--text-soft);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 0.8rem;
+  font-weight: 650;
+  justify-content: center;
+  line-height: 1.2;
+  min-height: 30px;
+  padding: 5px 11px;
+  text-align: center;
+}
+
 .filter-chip:hover {
   background: rgba(255, 255, 255, 0.06);
   border-color: rgba(190, 211, 255, 0.22);
@@ -1683,9 +1702,9 @@ tr:hover td {
 }
 
 .filter-chip.is-active {
-  background: rgba(82, 224, 255, 0.1);
-  border-color: rgba(82, 224, 255, 0.24);
-  color: var(--accent-cyan);
+  background: rgba(124, 143, 202, 0.1);
+  border-color: rgba(124, 143, 202, 0.24);
+  color: var(--accent-strong);
 }
 
 .status-badge,
@@ -1978,21 +1997,22 @@ tr:hover td {
 
 /* P0-1 compact foundation — section panel, field grid, meta/value */
 .section-panel.section-panel-compact {
-  gap: 10px;
-  padding: 12px;
+  gap: 8px;
+  padding: 10px 12px;
 }
 
 .section-panel-compact .section-panel-header {
-  gap: 8px;
+  gap: 6px;
+  padding-bottom: 0;
 }
 
 .section-panel-compact .section-panel-header h2 {
-  font-size: 0.95rem;
+  font-size: 0.92rem;
   letter-spacing: -0.01em;
 }
 
 .section-panel-compact .section-panel-body {
-  gap: 8px;
+  gap: 6px;
 }
 
 .compact-meta {
@@ -2445,16 +2465,16 @@ tr:hover td {
 }
 
 .section-panel:not(.section-panel-compact):not(.section-panel-highlight) {
-  gap: 14px;
-  padding: 16px;
+  gap: 12px;
+  padding: 14px;
 }
 
 .section-panel-header-polished {
-  gap: 10px;
+  gap: 8px;
 }
 
 .section-panel:not(.section-panel-compact) .section-panel-body {
-  gap: 10px;
+  gap: 8px;
 }
 
 .section-panel-heading {
@@ -3289,21 +3309,21 @@ body::before {
 /* C — professional dimmed actions */
 .primary-action,
 .btn-primary {
-  background: linear-gradient(180deg, #5a6a9a 0%, #4a5880 100%);
-  border: 1px solid rgba(124, 143, 202, 0.32);
+  background: rgba(124, 143, 202, 0.14);
+  border: 1px solid rgba(124, 143, 202, 0.28);
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.28);
+  box-shadow: none;
   color: #eef2ff;
   font-weight: 650;
-  min-height: 36px;
-  padding: 8px 14px;
+  min-height: 32px;
+  padding: 6px 12px;
 }
 
 .primary-action:hover,
 .btn-primary:hover:not(.btn-disabled):not(:disabled) {
-  background: linear-gradient(180deg, #6b7bb0 0%, #5a6a96 100%);
-  border-color: rgba(124, 143, 202, 0.42);
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.32);
+  background: rgba(124, 143, 202, 0.2);
+  border-color: rgba(124, 143, 202, 0.36);
+  box-shadow: none;
   transform: none;
 }
 
@@ -3314,8 +3334,8 @@ body::before {
   border-radius: 8px;
   color: var(--text-soft);
   font-weight: 600;
-  min-height: 36px;
-  padding: 8px 14px;
+  min-height: 32px;
+  padding: 6px 12px;
 }
 
 .secondary-action:hover,
@@ -3334,17 +3354,32 @@ body::before {
 }
 
 .filter-chip {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(190, 211, 255, 0.13);
   border-radius: 999px;
+  color: var(--text-soft);
+  cursor: pointer;
+  display: inline-flex;
   font-size: 0.8rem;
   font-weight: 650;
-  min-height: 32px;
-  padding: 6px 12px;
+  justify-content: center;
+  line-height: 1.2;
+  min-height: 30px;
+  padding: 5px 11px;
+  text-align: center;
 }
 
 .filter-chip.is-active {
-  background: rgba(124, 143, 202, 0.14);
-  border-color: rgba(124, 143, 202, 0.32);
+  background: rgba(124, 143, 202, 0.1);
+  border-color: rgba(124, 143, 202, 0.24);
   color: var(--accent-strong);
+}
+
+.filter-chip:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(190, 211, 255, 0.22);
+  color: var(--text);
 }
 
 .danger-action {
