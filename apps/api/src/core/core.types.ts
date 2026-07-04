@@ -1473,6 +1473,76 @@ export interface MarketIntelligenceHandoffStatusRequest {
   handoffStatus?: string | null;
 }
 
+export interface MarketIntelligenceFindingInputRequest {
+  projectId?: string | null;
+  researchRunId?: string | null;
+  sourceId?: string | null;
+  findingCategory?: string | null;
+  findingText?: string | null;
+  priority?: string | null;
+}
+
+export interface MarketIntelligenceFindingSummary {
+  id: string;
+  projectId: string;
+  researchRunId: string | null;
+  sourceId: string | null;
+  findingCategory: string;
+  findingText: string;
+  priority: string | null;
+  isArchived: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MarketIntelligenceFindingResponse {
+  finding: MarketIntelligenceFindingSummary | null;
+}
+
+export interface MarketIntelligenceFindingsResponse {
+  findings: MarketIntelligenceFindingSummary[];
+}
+
+export interface MarketIntelligenceSummaryInputRequest {
+  title?: string | null;
+  summaryText?: string | null;
+  status?: string | null;
+  sourceNotes?: string | null;
+}
+
+export interface MarketIntelligenceSummaryRecord {
+  id: string;
+  projectId: string;
+  clientId: string | null;
+  title: string;
+  summaryText: string;
+  status: string;
+  sourceNotes: string | null;
+  integrationContext: Record<string, unknown> | null;
+  isArchived: boolean;
+  finalizedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MarketIntelligenceSummaryResponse {
+  summary: MarketIntelligenceSummaryRecord | null;
+}
+
+export interface MarketIntelligenceSummariesResponse {
+  summaries: MarketIntelligenceSummaryRecord[];
+}
+
+export interface MarketIntelligenceSummaryGenerateResponse {
+  preview: {
+    title: string;
+    summaryText: string;
+    sourceNotes: string;
+    integrationContext: Record<string, unknown>;
+  };
+  summary: MarketIntelligenceSummaryRecord | null;
+}
+
 export interface AiDeliveryMiContextApplyRequest {
   handoffId?: string | null;
 }

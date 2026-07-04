@@ -90,3 +90,31 @@ export interface MarketIntelligenceHandoffSummary {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface MarketIntelligenceFindingSummary {
+  id: string;
+  projectId: string;
+  researchRunId: string | null;
+  sourceId: string | null;
+  findingCategory: string;
+  findingText: string;
+  priority: string | null;
+  isArchived: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MarketIntelligenceSummaryRecord {
+  id: string;
+  projectId: string;
+  clientId: string | null;
+  title: string;
+  summaryText: string;
+  status: string;
+  sourceNotes: string | null;
+  integrationContext: Record<string, unknown> | null;
+  isArchived: boolean;
+  finalizedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}

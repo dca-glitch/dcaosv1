@@ -162,6 +162,16 @@ import {
   listMarketIntelligenceHandoffsHandler,
   updateMarketIntelligenceHandoffStatusHandler,
   archiveMarketIntelligenceHandoffHandler,
+  listMarketIntelligenceFindingsHandler,
+  createMarketIntelligenceFindingHandler,
+  updateMarketIntelligenceFindingHandler,
+  archiveMarketIntelligenceFindingHandler,
+  listMarketIntelligenceSummariesHandler,
+  generateMarketIntelligenceSummaryHandler,
+  createMarketIntelligenceSummaryHandler,
+  updateMarketIntelligenceSummaryHandler,
+  finalizeMarketIntelligenceSummaryHandler,
+  archiveMarketIntelligenceSummaryHandler,
   listAiDeliveryMiContextHandler,
   applyMiHandoffToAiDeliveryHandler,
   removeMiHandoffFromAiDeliveryHandler,
@@ -464,6 +474,18 @@ export function createCoreRouter() {
   router.post("/market-intelligence-projects/:projectId/handoffs/prepare", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), prepareMarketIntelligenceHandoffHandler);
   router.put("/market-intelligence-projects/:projectId/handoffs/:handoffId/status", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), updateMarketIntelligenceHandoffStatusHandler);
   router.post("/market-intelligence-projects/:projectId/handoffs/:handoffId/archive", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), archiveMarketIntelligenceHandoffHandler);
+
+  router.get("/market-intelligence-projects/:projectId/findings", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), listMarketIntelligenceFindingsHandler);
+  router.post("/market-intelligence-projects/:projectId/findings", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), createMarketIntelligenceFindingHandler);
+  router.put("/market-intelligence-projects/:projectId/findings/:findingId", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), updateMarketIntelligenceFindingHandler);
+  router.post("/market-intelligence-projects/:projectId/findings/:findingId/archive", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), archiveMarketIntelligenceFindingHandler);
+
+  router.get("/market-intelligence-projects/:projectId/summaries", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), listMarketIntelligenceSummariesHandler);
+  router.post("/market-intelligence-projects/:projectId/summaries/generate", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), generateMarketIntelligenceSummaryHandler);
+  router.post("/market-intelligence-projects/:projectId/summaries", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), createMarketIntelligenceSummaryHandler);
+  router.put("/market-intelligence-projects/:projectId/summaries/:summaryId", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), updateMarketIntelligenceSummaryHandler);
+  router.post("/market-intelligence-projects/:projectId/summaries/:summaryId/finalize", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), finalizeMarketIntelligenceSummaryHandler);
+  router.post("/market-intelligence-projects/:projectId/summaries/:summaryId/archive", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), archiveMarketIntelligenceSummaryHandler);
 
   // AI Delivery — Market Intelligence context linkage
   router.get("/ai-delivery/projects/:projectId/market-intelligence-context", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), listAiDeliveryMiContextHandler);

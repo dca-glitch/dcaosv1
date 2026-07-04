@@ -130,7 +130,7 @@ async function main() {
     }, token);
 
     await page.goto(`${webBaseUrl}/#/ai-market-intelligence`, { waitUntil: "domcontentloaded" });
-    await page.getByRole("heading", { name: "Market Intelligence" }).waitFor({ state: "visible", timeout: 20000 });
+    await page.locator("#market-intelligence-title").waitFor({ state: "visible", timeout: 20000 });
     record("mi page header renders", true, "#/ai-market-intelligence");
 
     const queueAside = page.locator("aside.entity-card").first();
@@ -143,15 +143,17 @@ async function main() {
 
     await page.getByRole("heading", { name: "Operator workflow", exact: true }).waitFor({ state: "visible", timeout: 15000 });
     await page.getByRole("heading", { name: "Research sources", exact: true }).waitFor({ state: "visible", timeout: 15000 });
+    await page.getByRole("heading", { name: "Research findings", exact: true }).waitFor({ state: "visible", timeout: 15000 });
     await page.getByRole("heading", { name: "Research runs", exact: true }).waitFor({ state: "visible", timeout: 15000 });
     await page.getByRole("heading", { name: "Market insights", exact: true }).waitFor({ state: "visible", timeout: 15000 });
+    await page.getByRole("heading", { name: "MI summary", exact: true }).waitFor({ state: "visible", timeout: 15000 });
     await page.getByRole("heading", { name: "Internal handoffs", exact: true }).waitFor({ state: "visible", timeout: 15000 });
-    record("mi operator workflow sections render", true, "5 panels");
+    record("mi operator workflow sections render", true, "7 panels");
 
     const metricGrid = page.locator(".summary-grid.metric-grid").first();
     await metricGrid.waitFor({ state: "visible", timeout: 10000 });
-    for (const label of ["Sources", "Runs", "Insights", "Handoffs"]) {
-      const card = metricGrid.locator(".metric-card", { hasText: label }).first();
+    for (const label of ["Sources", "Findings", "Runs", "Insights", "Summaries", "Handoffs"]) {
+      const card = metricGrid.locator(".card-elevated", { hasText: label }).first();
       await card.waitFor({ state: "visible", timeout: 10000 });
       record(`mi metric card ${label}`, true, label);
     }

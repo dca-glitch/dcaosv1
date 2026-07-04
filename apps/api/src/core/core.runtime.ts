@@ -107,6 +107,15 @@ import type {
   MarketIntelligenceHandoffResponse,
   MarketIntelligenceHandoffsResponse,
   MarketIntelligenceHandoffStatusRequest,
+  MarketIntelligenceFindingSummary,
+  MarketIntelligenceFindingResponse,
+  MarketIntelligenceFindingsResponse,
+  MarketIntelligenceFindingInputRequest,
+  MarketIntelligenceSummaryRecord,
+  MarketIntelligenceSummaryResponse,
+  MarketIntelligenceSummariesResponse,
+  MarketIntelligenceSummaryInputRequest,
+  MarketIntelligenceSummaryGenerateResponse,
   AiDeliveryMiContextResponse,
   AiDeliveryGoogleDocExportResponse,
   AiDeliveryMonthlyReportMiContextResponse,
@@ -123,6 +132,7 @@ import { generateAiDeliveryContentPlanPdf } from "./content-plan-pdf.service";
 import { recordAiDeliverySystemEvent } from "../services/system-events.service";
 import { recordPlatformAuditEvent } from "../security/audit-log.service";
 import type { AiDeliveryWordPressPublishResult } from "../services/wordpress.service";
+import { buildDeterministicMarketIntelligenceSummary } from "./market-intelligence-summary.execution";
 import { getAiProviderConfig } from "../config";
 import {
   createAiDeliveryWorkflowExecutionAdapter,
@@ -10916,6 +10926,527 @@ export async function archiveMarketIntelligenceHandoff(
     });
 
     return { handoff: toHandoffSummary(handoff) };
+  });
+}
+
+// ── Market Intelligence Findings + Summaries (core execution) ───────────────
+
+const MI_FINDING_SELECT = {
+  id: true,
+  projectId: true,
+  researchRunId: true,
+  sourceId: true,
+  findingCategory: true,
+  findingText: true,
+  priority: true,
+  isArchived: true,
+  createdAt: true,
+  updatedAt: true
+} as const;
+
+const MI_SUMMARY_SELECT = {
+  id: true,
+  projectId: true,
+  clientId: true,
+  title: true,
+  summaryText: true,
+  status: true,
+  sourceNotes: true,
+  integrationContext: true,
+  isArchived: true,
+  finalizedAt: true,
+  createdAt: true,
+  updatedAt: true
+} as const;
+
+function toMiFindingSummary(finding: {
+  id: string;
+  projectId: string;
+  researchRunId: string | null;
+  sourceId: string | null;
+  findingCategory: string;
+  findingText: string;
+  priority: string | null;
+  isArchived: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}): MarketIntelligenceFindingSummary {
+  return {
+    ...finding,
+    createdAt: finding.createdAt.toISOString(),
+    updatedAt: finding.updatedAt.toISOString()
+  };
+}
+
+function toMiSummaryRecord(summary: {
+  id: string;
+  projectId: string;
+  clientId: string | null;
+  title: string;
+  summaryText: string;
+  status: string;
+  sourceNotes: string | null;
+  integrationContext: unknown;
+  isArchived: boolean;
+  finalizedAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+}): MarketIntelligenceSummaryRecord {
+  return {
+    id: summary.id,
+    projectId: summary.projectId,
+    clientId: summary.clientId,
+    title: summary.title,
+    summaryText: summary.summaryText,
+    status: summary.status,
+    sourceNotes: summary.sourceNotes,
+    integrationContext:
+      summary.integrationContext && typeof summary.integrationContext === "object" && !Array.isArray(summary.integrationContext)
+        ? (summary.integrationContext as Record<string, unknown>)
+        : null,
+    isArchived: summary.isArchived,
+    finalizedAt: summary.finalizedAt?.toISOString() ?? null,
+    createdAt: summary.createdAt.toISOString(),
+    updatedAt: summary.updatedAt.toISOString()
+  };
+}
+
+export async function listMarketIntelligenceFindings(
+  authSession: AuthResolvedSessionContext,
+  projectId: string
+): Promise<MarketIntelligenceFindingsResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) {
+    return null;
+  }
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    if (!await verifyMiProjectAccess(tx, tenantId, projectId)) {
+      return null;
+    }
+
+    const findings = await tx.marketIntelligenceFinding.findMany({
+      where: { tenantId, projectId, isArchived: false },
+      select: MI_FINDING_SELECT,
+      orderBy: { createdAt: "desc" }
+    });
+
+    return { findings: findings.map(toMiFindingSummary) };
+  });
+}
+
+export async function createMarketIntelligenceFinding(
+  authSession: AuthResolvedSessionContext,
+  input: MarketIntelligenceFindingInputRequest
+): Promise<MarketIntelligenceFindingResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) {
+    return null;
+  }
+
+  const projectId = input.projectId ?? "";
+  const findingText = input.findingText?.trim() ?? "";
+  const findingCategory = input.findingCategory?.trim() ?? "";
+  if (!projectId || !findingText || !findingCategory) {
+    return { finding: null };
+  }
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    if (!await verifyMiProjectAccess(tx, tenantId, projectId)) {
+      return null;
+    }
+
+    if (input.sourceId) {
+      const source = await tx.marketIntelligenceSource.findFirst({
+        where: { id: input.sourceId, tenantId, projectId, isArchived: false },
+        select: { id: true }
+      });
+      if (!source) {
+        return { finding: null };
+      }
+    }
+
+    if (input.researchRunId) {
+      const run = await tx.marketIntelligenceResearchRun.findFirst({
+        where: { id: input.researchRunId, tenantId, projectId },
+        select: { id: true }
+      });
+      if (!run) {
+        return { finding: null };
+      }
+    }
+
+    const finding = await tx.marketIntelligenceFinding.create({
+      data: {
+        tenantId,
+        projectId,
+        researchRunId: toNullableString(input.researchRunId),
+        sourceId: toNullableString(input.sourceId),
+        findingCategory,
+        findingText,
+        priority: toNullableString(input.priority)
+      },
+      select: MI_FINDING_SELECT
+    });
+
+    return { finding: toMiFindingSummary(finding) };
+  });
+}
+
+export async function updateMarketIntelligenceFinding(
+  authSession: AuthResolvedSessionContext,
+  findingId: string,
+  projectId: string,
+  input: MarketIntelligenceFindingInputRequest
+): Promise<MarketIntelligenceFindingResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) {
+    return null;
+  }
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    const existing = await tx.marketIntelligenceFinding.findFirst({
+      where: { id: findingId, tenantId, projectId },
+      select: { id: true }
+    });
+    if (!existing) {
+      return { finding: null };
+    }
+
+    const updateData: Prisma.MarketIntelligenceFindingUpdateInput = {};
+    if (input.findingCategory !== undefined && input.findingCategory !== null) {
+      updateData.findingCategory = input.findingCategory;
+    }
+    if (input.findingText !== undefined && input.findingText !== null) {
+      updateData.findingText = input.findingText;
+    }
+    if (input.priority !== undefined) {
+      updateData.priority = input.priority;
+    }
+    if (input.sourceId !== undefined) {
+      if (input.sourceId) {
+        const source = await tx.marketIntelligenceSource.findFirst({
+          where: { id: input.sourceId, tenantId, projectId, isArchived: false },
+          select: { id: true }
+        });
+        if (!source) {
+          return { finding: null };
+        }
+      }
+      updateData.source = input.sourceId
+        ? { connect: { id: input.sourceId } }
+        : { disconnect: true };
+    }
+
+    const finding = await tx.marketIntelligenceFinding.update({
+      where: { id: findingId },
+      data: updateData,
+      select: MI_FINDING_SELECT
+    });
+
+    return { finding: toMiFindingSummary(finding) };
+  });
+}
+
+export async function archiveMarketIntelligenceFinding(
+  authSession: AuthResolvedSessionContext,
+  findingId: string,
+  projectId: string
+): Promise<MarketIntelligenceFindingResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) {
+    return null;
+  }
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    const existing = await tx.marketIntelligenceFinding.findFirst({
+      where: { id: findingId, tenantId, projectId },
+      select: { id: true }
+    });
+    if (!existing) {
+      return { finding: null };
+    }
+
+    const finding = await tx.marketIntelligenceFinding.update({
+      where: { id: findingId },
+      data: { isArchived: true },
+      select: MI_FINDING_SELECT
+    });
+
+    return { finding: toMiFindingSummary(finding) };
+  });
+}
+
+export async function listMarketIntelligenceSummaries(
+  authSession: AuthResolvedSessionContext,
+  projectId: string
+): Promise<MarketIntelligenceSummariesResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) {
+    return null;
+  }
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    if (!await verifyMiProjectAccess(tx, tenantId, projectId)) {
+      return null;
+    }
+
+    const summaries = await tx.marketIntelligenceSummary.findMany({
+      where: { tenantId, projectId, isArchived: false },
+      select: MI_SUMMARY_SELECT,
+      orderBy: { createdAt: "desc" }
+    });
+
+    return { summaries: summaries.map(toMiSummaryRecord) };
+  });
+}
+
+async function loadMiSummaryGenerationContext(
+  tx: PrismaTx,
+  tenantId: string,
+  projectId: string
+) {
+  const project = await tx.marketIntelligenceProject.findFirst({
+    where: { id: projectId, tenantId, isArchived: false },
+    select: {
+      id: true,
+      clientId: true,
+      title: true,
+      targetMonth: true,
+      targetClientName: true,
+      niche: true,
+      keywords: true,
+      competitors: true,
+      productServiceFocus: true,
+      client: { select: { name: true } }
+    }
+  });
+  if (!project) {
+    return null;
+  }
+
+  const sources = await tx.marketIntelligenceSource.findMany({
+    where: { tenantId, projectId, isArchived: false },
+    select: { id: true, title: true, sourceType: true, sourceNotes: true },
+    orderBy: { createdAt: "asc" }
+  });
+
+  const findings = await tx.marketIntelligenceFinding.findMany({
+    where: { tenantId, projectId, isArchived: false },
+    select: { id: true, findingCategory: true, findingText: true, priority: true },
+    orderBy: { createdAt: "asc" }
+  });
+
+  return { project, sources, findings };
+}
+
+export async function generateMarketIntelligenceSummary(
+  authSession: AuthResolvedSessionContext,
+  projectId: string,
+  options?: { persist?: boolean; title?: string | null }
+): Promise<MarketIntelligenceSummaryGenerateResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) {
+    return null;
+  }
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    const context = await loadMiSummaryGenerationContext(tx, tenantId, projectId);
+    if (!context) {
+      return null;
+    }
+
+    const generated = buildDeterministicMarketIntelligenceSummary({
+      project: {
+        projectId: context.project.id,
+        clientId: context.project.clientId,
+        title: context.project.title,
+        targetMonth: context.project.targetMonth,
+        targetClientName: context.project.client?.name ?? context.project.targetClientName,
+        niche: context.project.niche,
+        keywords: context.project.keywords,
+        competitors: context.project.competitors,
+        productServiceFocus: context.project.productServiceFocus
+      },
+      sources: context.sources,
+      findings: context.findings
+    });
+
+    const preview = {
+      title: options?.title?.trim() || generated.title,
+      summaryText: generated.summaryText,
+      sourceNotes: generated.sourceNotes,
+      integrationContext: generated.integrationContext as unknown as Record<string, unknown>
+    };
+
+    if (!options?.persist) {
+      return { preview, summary: null };
+    }
+
+    const summary = await tx.marketIntelligenceSummary.create({
+      data: {
+        tenantId,
+        projectId,
+        clientId: context.project.clientId,
+        title: preview.title,
+        summaryText: preview.summaryText,
+        status: "DRAFT",
+        sourceNotes: preview.sourceNotes,
+        integrationContext: preview.integrationContext as Prisma.InputJsonValue
+      },
+      select: MI_SUMMARY_SELECT
+    });
+
+    return {
+      preview,
+      summary: toMiSummaryRecord(summary)
+    };
+  });
+}
+
+export async function createMarketIntelligenceSummary(
+  authSession: AuthResolvedSessionContext,
+  projectId: string,
+  input: MarketIntelligenceSummaryInputRequest
+): Promise<MarketIntelligenceSummaryResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) {
+    return null;
+  }
+
+  const summaryText = input.summaryText?.trim() ?? "";
+  if (!summaryText) {
+    return { summary: null };
+  }
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    const project = await tx.marketIntelligenceProject.findFirst({
+      where: { id: projectId, tenantId, isArchived: false },
+      select: { id: true, clientId: true, title: true, targetMonth: true }
+    });
+    if (!project) {
+      return null;
+    }
+
+    const summary = await tx.marketIntelligenceSummary.create({
+      data: {
+        tenantId,
+        projectId,
+        clientId: project.clientId,
+        title: input.title?.trim() || `MI Summary — ${project.title}`,
+        summaryText,
+        status: input.status ?? "DRAFT",
+        sourceNotes: toNullableString(input.sourceNotes)
+      },
+      select: MI_SUMMARY_SELECT
+    });
+
+    return { summary: toMiSummaryRecord(summary) };
+  });
+}
+
+export async function updateMarketIntelligenceSummary(
+  authSession: AuthResolvedSessionContext,
+  summaryId: string,
+  projectId: string,
+  input: MarketIntelligenceSummaryInputRequest
+): Promise<MarketIntelligenceSummaryResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) {
+    return null;
+  }
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    const existing = await tx.marketIntelligenceSummary.findFirst({
+      where: { id: summaryId, tenantId, projectId, isArchived: false },
+      select: { id: true, status: true }
+    });
+    if (!existing || existing.status === "FINALIZED") {
+      return { summary: null };
+    }
+
+    const updateData: Prisma.MarketIntelligenceSummaryUpdateInput = {};
+    if (input.title !== undefined && input.title !== null) {
+      updateData.title = input.title;
+    }
+    if (input.summaryText !== undefined && input.summaryText !== null) {
+      updateData.summaryText = input.summaryText;
+    }
+    if (input.status !== undefined && input.status !== null) {
+      updateData.status = input.status;
+    }
+    if (input.sourceNotes !== undefined) {
+      updateData.sourceNotes = input.sourceNotes;
+    }
+
+    const summary = await tx.marketIntelligenceSummary.update({
+      where: { id: summaryId },
+      data: updateData,
+      select: MI_SUMMARY_SELECT
+    });
+
+    return { summary: toMiSummaryRecord(summary) };
+  });
+}
+
+export async function finalizeMarketIntelligenceSummary(
+  authSession: AuthResolvedSessionContext,
+  summaryId: string,
+  projectId: string
+): Promise<MarketIntelligenceSummaryResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) {
+    return null;
+  }
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    const existing = await tx.marketIntelligenceSummary.findFirst({
+      where: { id: summaryId, tenantId, projectId, isArchived: false },
+      select: { id: true, status: true }
+    });
+    if (!existing || existing.status === "FINALIZED") {
+      return { summary: null };
+    }
+
+    const summary = await tx.marketIntelligenceSummary.update({
+      where: { id: summaryId },
+      data: {
+        status: "FINALIZED",
+        finalizedAt: new Date()
+      },
+      select: MI_SUMMARY_SELECT
+    });
+
+    return { summary: toMiSummaryRecord(summary) };
+  });
+}
+
+export async function archiveMarketIntelligenceSummary(
+  authSession: AuthResolvedSessionContext,
+  summaryId: string,
+  projectId: string
+): Promise<MarketIntelligenceSummaryResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) {
+    return null;
+  }
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    const existing = await tx.marketIntelligenceSummary.findFirst({
+      where: { id: summaryId, tenantId, projectId },
+      select: { id: true }
+    });
+    if (!existing) {
+      return { summary: null };
+    }
+
+    const summary = await tx.marketIntelligenceSummary.update({
+      where: { id: summaryId },
+      data: { isArchived: true, status: "ARCHIVED" },
+      select: MI_SUMMARY_SELECT
+    });
+
+    return { summary: toMiSummaryRecord(summary) };
   });
 }
 

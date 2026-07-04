@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import type {
+  MarketIntelligenceFindingSummary,
   MarketIntelligenceHandoffSummary,
   MarketIntelligenceInsightSummary,
   MarketIntelligenceProjectSummary,
   MarketIntelligenceResearchRunSummary,
-  MarketIntelligenceSourceSummary
+  MarketIntelligenceSourceSummary,
+  MarketIntelligenceSummaryRecord
 } from "@dca-os-v1/shared";
 import { EmptyState } from "../../components/EmptyState";
 import { ErrorState } from "../../components/ErrorState";
@@ -53,6 +55,15 @@ type InsightFormValues = {
   summary: string;
   status: string;
 };
+
+type FindingFormValues = {
+  findingCategory: string;
+  findingText: string;
+  priority: string;
+};
+
+const FINDING_CATEGORY_OPTIONS = ["COMPETITOR", "MARKET_TREND", "OPPORTUNITY", "RISK", "AUDIENCE", "PRICING", "CONTENT_ANGLE", "OTHER"] as const;
+const FINDING_PRIORITY_OPTIONS = ["LOW", "MEDIUM", "HIGH"] as const;
 
 const EMPTY_PROJECT_FORM: ProjectFormValues = {
   title: "",
@@ -168,6 +179,9 @@ export function AiMarketIntelligencePage({ clients }: AiMarketIntelligencePagePr
   const [sources, setSources] = useState<MarketIntelligenceSourceSummary[]>([]);
   const [runs, setRuns] = useState<MarketIntelligenceResearchRunSummary[]>([]);
   const [insights, setInsights] = useState<MarketIntelligenceInsightSummary[]>([]);
+  const [findings, setFindings] = useState<MarketIntelligenceFindingSummary[]>([]);
+  const [summaries, setSummaries] = useState<MarketIntelligenceSummaryRecord[]>([]);
+  const [summaryPreview, setSummaryPreview] = useState<string | null>(null);
   const [handoffs, setHandoffs] = useState<MarketIntelligenceHandoffSummary[]>([]);
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState<string | null>(null);
@@ -176,12 +190,16 @@ export function AiMarketIntelligencePage({ clients }: AiMarketIntelligencePagePr
   const [showProjectModal, setShowProjectModal] = useState(false);
   const [showSourceModal, setShowSourceModal] = useState(false);
   const [showInsightModal, setShowInsightModal] = useState(false);
+  const [showFindingModal, setShowFindingModal] = useState(false);
   const [projectForm, setProjectForm] = useState<ProjectFormValues>(EMPTY_PROJECT_FORM);
   const [sourceForm, setSourceForm] = useState<SourceFormValues>({ title: "", sourceUrl: "", sourceNotes: "" });
   const [insightForm, setInsightForm] = useState<InsightFormValues>({ title: "", summary: "", status: "DRAFT" });
+  const [findingForm, setFindingForm] = useState<FindingFormValues>({ findingCategory: "COMPETITOR", findingText: "", priority: "MEDIUM" });
   const [savingProject, setSavingProject] = useState(false);
   const [savingSource, setSavingSource] = useState(false);
   const [savingInsight, setSavingInsight] = useState(false);
+  const [savingFinding, setSavingFinding] = useState(false);
+  const [generatingSummary, setGeneratingSummary] = useState(false);
 
   const activeClients = useMemo(
     () => clients.filter((client) => !client.isArchived),
@@ -250,23 +268,31 @@ export function AiMarketIntelligencePage({ clients }: AiMarketIntelligencePagePr
     setDetailLoading(true);
     setDetailError(null);
     try {
-      const [sourcesData, runsData, insightsData, handoffsData] = await Promise.all([
+      const [sourcesData, runsData, insightsData, findingsData, summariesData, handoffsData] = await Promise.all([
         apiData<{ sources: MarketIntelligenceSourceSummary[] }>("GET", `/market-intelligence-projects/${projectId}/sources`),
         apiData<{ researchRuns: MarketIntelligenceResearchRunSummary[] }>("GET", `/market-intelligence-projects/${projectId}/research-runs`),
         apiData<{ insights: MarketIntelligenceInsightSummary[] }>("GET", `/market-intelligence-projects/${projectId}/insights`),
+        apiData<{ findings: MarketIntelligenceFindingSummary[] }>("GET", `/market-intelligence-projects/${projectId}/findings`),
+        apiData<{ summaries: MarketIntelligenceSummaryRecord[] }>("GET", `/market-intelligence-projects/${projectId}/summaries`),
         apiData<{ handoffs: MarketIntelligenceHandoffSummary[] }>("GET", `/market-intelligence-projects/${projectId}/handoffs`)
       ]);
 
       setSources(sourcesData.sources ?? []);
       setRuns(runsData.researchRuns ?? []);
       setInsights(insightsData.insights ?? []);
+      setFindings(findingsData.findings ?? []);
+      setSummaries(summariesData.summaries ?? []);
       setHandoffs(handoffsData.handoffs ?? []);
+      setSummaryPreview(null);
     } catch (error) {
       setDetailError(error instanceof Error ? error.message : "Project research data could not be loaded.");
       setSources([]);
       setRuns([]);
       setInsights([]);
+      setFindings([]);
+      setSummaries([]);
       setHandoffs([]);
+      setSummaryPreview(null);
     } finally {
       setDetailLoading(false);
     }
@@ -356,6 +382,87 @@ export function AiMarketIntelligencePage({ clients }: AiMarketIntelligencePagePr
       setSavingInsight(false);
     }
   }, [insightForm, loadProjectData, selectedProjectId]);
+
+  const handleCreateFinding = useCallback(async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!selectedProjectId || !findingForm.findingText.trim()) {
+      setActionError("Select a project and provide finding text.");
+      return;
+    }
+
+    setSavingFinding(true);
+    setActionError(null);
+    try {
+      await apiData("POST", `/market-intelligence-projects/${selectedProjectId}/findings`, {
+        ...findingForm,
+        projectId: selectedProjectId
+      });
+      setFindingForm({ findingCategory: "COMPETITOR", findingText: "", priority: "MEDIUM" });
+      setShowFindingModal(false);
+      await loadProjectData(selectedProjectId);
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : "Finding could not be created.");
+    } finally {
+      setSavingFinding(false);
+    }
+  }, [findingForm, loadProjectData, selectedProjectId]);
+
+  const handleGenerateSummaryPreview = useCallback(async () => {
+    if (!selectedProjectId) {
+      return;
+    }
+
+    setGeneratingSummary(true);
+    setActionError(null);
+    try {
+      const data = await apiData<{ preview: { summaryText: string } }>(
+        "POST",
+        `/market-intelligence-projects/${selectedProjectId}/summaries/generate`,
+        { persist: false }
+      );
+      setSummaryPreview(data.preview?.summaryText ?? null);
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : "Summary preview could not be generated.");
+    } finally {
+      setGeneratingSummary(false);
+    }
+  }, [selectedProjectId]);
+
+  const handleSaveGeneratedSummary = useCallback(async () => {
+    if (!selectedProjectId) {
+      return;
+    }
+
+    setGeneratingSummary(true);
+    setActionError(null);
+    try {
+      await apiData(
+        "POST",
+        `/market-intelligence-projects/${selectedProjectId}/summaries/generate`,
+        { persist: true }
+      );
+      setSummaryPreview(null);
+      await loadProjectData(selectedProjectId);
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : "Summary could not be saved.");
+    } finally {
+      setGeneratingSummary(false);
+    }
+  }, [loadProjectData, selectedProjectId]);
+
+  const handleFinalizeSummary = useCallback(async (summaryId: string) => {
+    if (!selectedProjectId) {
+      return;
+    }
+
+    setActionError(null);
+    try {
+      await apiData("POST", `/market-intelligence-projects/${selectedProjectId}/summaries/${summaryId}/finalize`);
+      await loadProjectData(selectedProjectId);
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : "Summary could not be finalized.");
+    }
+  }, [loadProjectData, selectedProjectId]);
 
   const handleCreateRun = useCallback(async () => {
     if (!selectedProjectId) {
@@ -554,8 +661,10 @@ export function AiMarketIntelligencePage({ clients }: AiMarketIntelligencePagePr
 
               <div className="summary-grid metric-grid operator-summary-metrics">
                 <MetricCard accent="cyan" helper="Curated references" label="Sources" value={sources.filter((s) => !s.isArchived).length} />
+                <MetricCard accent="warning" helper="Admin-written notes" label="Findings" value={findings.filter((f) => !f.isArchived).length} />
                 <MetricCard accent="violet" helper="Bounded executions" label="Runs" value={runs.filter((r) => r.status === "EXECUTED").length} />
                 <MetricCard accent="purple" helper="Approved for handoff" label="Insights" value={approvedInsights.length} />
+                <MetricCard accent="cyan" helper="Draft or finalized" label="Summaries" value={summaries.filter((s) => !s.isArchived).length} />
                 <MetricCard accent="success" helper="READY or APPLIED" label="Handoffs" value={readyHandoffs.length} />
               </div>
 
@@ -619,6 +728,37 @@ export function AiMarketIntelligencePage({ clients }: AiMarketIntelligencePagePr
                             ) : null}
                           </div>
                           {source.sourceNotes ? <div className="dense-row-note">{source.sourceNotes}</div> : null}
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                )}
+              </SectionPanel>
+
+              <SectionPanel
+                action={
+                  <button className="secondary-action" disabled={!selectedProjectId} onClick={() => setShowFindingModal(true)} type="button">
+                    Add finding
+                  </button>
+                }
+                description="Admin-written granular findings from curated sources. No autonomous extraction."
+                title="Research findings"
+                tone="compact"
+              >
+                {findings.length === 0 ? (
+                  <EmptyState message="Add findings after recording sources." title="No findings yet" variant="inline" />
+                ) : (
+                  <div className="dense-list">
+                    {findings.map((finding) => (
+                      <article className="entity-card dense-record" key={finding.id}>
+                        <div className="dense-record-main">
+                          <div className="dense-title">
+                            <div className="dense-kicker">
+                              <StatusBadge status={finding.findingCategory} />
+                              {finding.priority ? <StatusBadge status={finding.priority} /> : null}
+                            </div>
+                            <div className="dense-row-note">{finding.findingText}</div>
+                          </div>
                         </div>
                       </article>
                     ))}
@@ -731,6 +871,59 @@ export function AiMarketIntelligencePage({ clients }: AiMarketIntelligencePagePr
                                 ))}
                               </select>
                             </label>
+                          </div>
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                )}
+              </SectionPanel>
+
+              <SectionPanel
+                action={
+                  <div className="dense-actions">
+                    <button className="secondary-action" disabled={!selectedProjectId || generatingSummary} onClick={() => void handleGenerateSummaryPreview()} type="button">
+                      {generatingSummary ? "Generating…" : "Preview summary"}
+                    </button>
+                    <button className="primary-action" disabled={!selectedProjectId || generatingSummary} onClick={() => void handleSaveGeneratedSummary()} type="button">
+                      Save summary
+                    </button>
+                  </div>
+                }
+                description="Deterministic admin draft from sources and findings. Labeled internal until Block 2 integration. No live AI provider."
+                title="MI summary"
+                tone="compact"
+              >
+                {summaryPreview ? (
+                  <pre className="dense-row-note">{summaryPreview}</pre>
+                ) : null}
+                {summaries.length === 0 ? (
+                  <EmptyState message="Generate and save a summary from current sources and findings." title="No summaries yet" variant="inline" />
+                ) : (
+                  <div className="dense-list">
+                    {summaries.map((summary) => (
+                      <article className="entity-card dense-record" key={summary.id}>
+                        <div className="dense-record-main">
+                          <div className="dense-title">
+                            <div className="dense-kicker">
+                              <StatusBadge status={summary.status} />
+                            </div>
+                            <h3>{summary.title}</h3>
+                            {summary.sourceNotes ? <div className="dense-meta"><span>{summary.sourceNotes}</span></div> : null}
+                          </div>
+                          <details className="row-action-menu">
+                            <summary>Summary text</summary>
+                            <pre className="dense-row-note">{summary.summaryText}</pre>
+                          </details>
+                          {summary.integrationContext?.label ? (
+                            <div className="dense-row-note muted-text">Integration label: {String(summary.integrationContext.label)}</div>
+                          ) : null}
+                          <div className="dense-actions">
+                            {summary.status !== "FINALIZED" ? (
+                              <button className="primary-action" onClick={() => void handleFinalizeSummary(summary.id)} type="button">
+                                Finalize
+                              </button>
+                            ) : null}
                           </div>
                         </div>
                       </article>
@@ -1033,6 +1226,58 @@ export function AiMarketIntelligencePage({ clients }: AiMarketIntelligencePagePr
               </button>
               <button className="primary-action" disabled={savingInsight} type="submit">
                 {savingInsight ? "Saving…" : "Add insight"}
+              </button>
+            </div>
+          </form>
+        </Modal>
+      ) : null}
+
+      {showFindingModal ? (
+        <Modal onClose={() => setShowFindingModal(false)} title="Add research finding">
+          <form className="entity-form" onSubmit={handleCreateFinding}>
+            <div className="field-grid">
+              <label>
+                Category
+                <select
+                  onChange={(event) => setFindingForm((current) => ({ ...current, findingCategory: event.target.value }))}
+                  value={findingForm.findingCategory}
+                >
+                  {FINDING_CATEGORY_OPTIONS.map((category) => (
+                    <option key={category} value={category}>
+                      {category}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                Priority
+                <select
+                  onChange={(event) => setFindingForm((current) => ({ ...current, priority: event.target.value }))}
+                  value={findingForm.priority}
+                >
+                  {FINDING_PRIORITY_OPTIONS.map((priority) => (
+                    <option key={priority} value={priority}>
+                      {priority}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="field-span-2">
+                Finding text — required
+                <textarea
+                  onChange={(event) => setFindingForm((current) => ({ ...current, findingText: event.target.value }))}
+                  required
+                  rows={4}
+                  value={findingForm.findingText}
+                />
+              </label>
+            </div>
+            <div className="modal-footer">
+              <button className="secondary-action" onClick={() => setShowFindingModal(false)} type="button">
+                Cancel
+              </button>
+              <button className="primary-action" disabled={savingFinding} type="submit">
+                {savingFinding ? "Saving…" : "Add finding"}
               </button>
             </div>
           </form>
