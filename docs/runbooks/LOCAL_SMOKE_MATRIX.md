@@ -11,6 +11,23 @@ Related:
 
 ---
 
+## Blocks 1–2 — readiness / operations (post–Block 4 baseline)
+
+Fast config and boundary proof after `validate`. No live external calls.
+
+| Command | Proves | Does not prove |
+|---------|--------|----------------|
+| `npm.cmd run smoke:external-integrations-readiness:local` | AI/WP/R2/GA-GSC config shape; negative cases; fetch guard (no network) | Live provider, publish, R2 IO, OAuth/sync |
+| `npm.cmd run smoke:admin-operations:local` | Admin operations summary loads; no secret leakage; client 403 on admin endpoints | Last smoke PASS store; staging/production |
+| `node scripts/smoke-client-approval-happy-path-local.mjs` | Pending approvals, editor, approve/reject, admin boundary, `CLIENT_REVIEW_DEFERRED` | Staging deploy; live publish |
+| `npm.cmd run smoke:production-readiness:local` | Orchestrated validate + revenue chain + MI + handoff + portal + monthly reports | Staging/production deploy; live integrations |
+
+Optional API probe for Block 1: `$env:SMOKE_PROBE_EXTERNAL_INTEGRATIONS_API = "true"`.
+
+Runbooks: [`EXTERNAL_INTEGRATIONS_READINESS.md`](./EXTERNAL_INTEGRATIONS_READINESS.md), [`ADMIN_OPERATIONS_RECOVERY.md`](./ADMIN_OPERATIONS_RECOVERY.md), [`../operator/OPERATOR_RUNBOOK.md`](../operator/OPERATOR_RUNBOOK.md).
+
+---
+
 ## Block A — focused pre-staging subset
 
 Minimum smoke set before staging GO / NO-GO discussion (see [`STAGING_READINESS.md`](./STAGING_READINESS.md)):
@@ -108,6 +125,10 @@ In-memory limit: 300 requests / 15 minutes per IP. Long smoke chains may hit 429
 | `smoke:credential-master-key-probe:local` | Master key probe |
 | `smoke:post-mvp-readonly-apis:local` | Read-only API closeout |
 | `smoke:legacy-wordpress-sunset:local` | Legacy WP config sunset |
+| `smoke:external-integrations-readiness:local` | Block 1 config-shape only; no live calls |
+| `smoke:admin-operations:local` | Block 2 admin summary + client boundary |
+| `smoke:production-readiness:local` | Orchestrated closeout pack (validate + broad smokes) |
+| `smoke:staging-readiness:local` | Block A minimum subset orchestrator |
 
 ### Browser (requires Web on `:5173`)
 

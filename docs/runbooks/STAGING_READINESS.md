@@ -4,7 +4,9 @@
 
 **Purpose:** Practical checklist to decide whether `main` is ready to **request** staging work (G4) — not to deploy staging.
 
-**Current baseline (2026-07-03):** `main` synced with `origin/main`; latest commit `3dc1de6` (`feat(web): extract AiDelivery WordPress publish confirm modal`); CI green; working tree clean; **0% deployed** to production; G4 VPS execution **not approved**; staging DNS **not created**.
+**Current baseline (2026-07-04):** `main` synced with `origin/main`; latest commit `cc40160` (`feat(web): consolidate dark-theme UI density for admin and client surfaces`); Blocks 1–3 CI green; Block 4 docs consolidation; **0% deployed** to production; G4 VPS execution **not approved**; staging DNS **not created**.
+
+**Source of truth:** [`docs/STATUS.md`](../STATUS.md). **Operator runbook:** [`docs/operator/OPERATOR_RUNBOOK.md`](../operator/OPERATOR_RUNBOOK.md).
 
 Related:
 
@@ -20,6 +22,24 @@ Related:
 
 ---
 
+## 0. Pre-staging gate (Blocks 1–4 + Claude audit)
+
+Before **requesting** G4 staging work (not deploy), all must be true:
+
+| # | Gate |
+|---|------|
+| 1 | Blocks 1–4 completed; CI green on pinned SHA (`cc40160` or later) |
+| 2 | **Claude full-code audit** completed — separate approved audit block; required before staging |
+| 3 | `npm.cmd run validate` PASS |
+| 4 | Required local smokes PASS — Block A minimum (`smoke:staging-readiness:local`) plus Block 1–2 (`smoke:external-integrations-readiness:local`, `smoke:admin-operations:local`) |
+| 5 | Working tree clean (no uncommitted runtime changes) |
+| 6 | `main` synced with `origin/main` |
+| 7 | No live calls / publish / sync / crawl during gate |
+| 8 | Staging deploy proof **not performed** — repo-side gate only |
+| 9 | Explicit owner approval before touching staging infrastructure |
+
+---
+
 ## 1. Current main / CI expectations
 
 | Expectation | Pass criteria |
@@ -27,6 +47,7 @@ Related:
 | Branch | `main` synced with `origin/main` |
 | Working tree | Clean (no uncommitted runtime changes) |
 | CI | Green on pinned commit SHA |
+| Closed blocks | 1 `136e93a`, 2 `5308f19`, 3 `cc40160`, 4 docs (pending) |
 | Production deploy | **None** — `system.digitalcubeagency.net` unchanged |
 | Staging deploy | **None** — G4 not approved |
 | Staging target (G1) | `staging.digitalcubeagency.net` documented; DNS not created |
@@ -346,8 +367,10 @@ These are intentionally out of scope for Block A GO. See [`deferred-scope-regist
 
 All must be true:
 
-- [ ] `main` synced; pinned SHA matches green CI
+- [ ] Blocks 1–4 complete; `main` synced; pinned SHA matches green CI
+- [ ] Claude full-code audit completed (pre-staging gate)
 - [ ] `npm.cmd run validate` PASS
+- [ ] Block 1–2 smokes PASS (`external-integrations-readiness`, `admin-operations`)
 - [ ] Block A smoke subset (§5) PASS
 - [ ] Manual QA checklist (§7) PASS or N/A with documented reason per area
 - [ ] No secrets in evidence

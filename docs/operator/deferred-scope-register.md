@@ -153,8 +153,13 @@ Current behavior:
 
 Deferred until separate module blocks:
 
-- POD AI Toolkit / POD management — see [`POD_AI_TOOLKIT_POD0_OPERATING_MODEL.md`](./architecture/POD_AI_TOOLKIT_POD0_OPERATING_MODEL.md);
-- Revenue Hub AI — see [`REVENUE_HUB_AI_RH0_OPERATING_MODEL.md`](./architecture/REVENUE_HUB_AI_RH0_OPERATING_MODEL.md);
+- POD AI Toolkit / POD management — see [`POD_AI_TOOLKIT_POD0_OPERATING_MODEL.md`](../architecture/POD_AI_TOOLKIT_POD0_OPERATING_MODEL.md);
+- Revenue Hub AI — see [`REVENUE_HUB_AI_RH0_OPERATING_MODEL.md`](../architecture/REVENUE_HUB_AI_RH0_OPERATING_MODEL.md);
+- Finance Lite completion (payment collection, Stripe, bank feeds);
+- hard deliverable gates;
+- richer client collaboration / comments;
+- public / share approval links;
+- client-facing curated Market Intelligence view;
 - full AI Market Intelligence expansion beyond current admin MVP;
 - advanced scraping/data collection module;
 - commerce connector workflows;
@@ -177,12 +182,16 @@ Current behavior:
 - owner/admin controlled access remains the safe path;
 - client access is client-level only.
 
-## Pre-Staging Non-Blockers (Block A)
+## Pre-Staging Non-Blockers (Block A / Block 4)
 
-These items are deferred but **must not block** local staging readiness planning or G4 request prep. Full Block A pack: [`docs/runbooks/STAGING_READINESS.md`](../runbooks/STAGING_READINESS.md).
+These items are deferred but **must not block** local staging readiness planning or G4 request prep. Full pack: [`docs/runbooks/STAGING_READINESS.md`](../runbooks/STAGING_READINESS.md). Source of truth: [`docs/STATUS.md`](../STATUS.md).
 
 | Item | Status | Notes |
 |------|--------|-------|
+| Claude full-code audit | Required pre-staging gate | Separate approved block; not a substitute for validate/smoke |
+| Staging deploy proof | Deferred | G4 only |
+| Production deploy proof | Deferred | Frozen |
+| Strict R2 real bucket proof | Deferred | Optional local env + smoke flag |
 | GA / GSC live sync | Deferred | Snapshot-first metrics; manual/Puriva placeholder proven |
 | Live provider proof | Deferred | Local deterministic default; OpenRouter opt-in |
 | WorkflowBriefs knowledge picker/override (6C-v2) | Deferred | 6C-v1 admin read-only visibility shipped |

@@ -2,7 +2,11 @@
 
 Status: Plain-language documentation set for admins, client delivery, and readiness planning.
 
-These documents explain how to use and plan DCA OS Lite without technical detail.
+**Primary entry points (Block 4):**
+
+- [`../STATUS.md`](../STATUS.md) — **source of truth** for current state, blocks, readiness, staging gates, deferred items
+- [`OPERATOR_RUNBOOK.md`](./OPERATOR_RUNBOOK.md) — consolidated validation, smoke, recovery, staging/production prerequisites, commit/push and secret policy
+- [`ENV_READINESS_INVENTORY.md`](./ENV_READINESS_INVENTORY.md) — env variable names by category (no values)
 
 ## For Daily Admin Use
 
@@ -18,6 +22,14 @@ These documents explain how to use and plan DCA OS Lite without technical detail
 - `module-completion-matrix.md` — plain-language status of each system area/module.
 - `first-client-dry-run-checklist.md` — controlled admin dry-run checklist.
 
+## Technical Runbooks (detailed)
+
+- [`../runbooks/STAGING_READINESS.md`](../runbooks/STAGING_READINESS.md) — pre-staging GO/NO-GO pack
+- [`../runbooks/PRE_STAGING_VALIDATION_GATE.md`](../runbooks/PRE_STAGING_VALIDATION_GATE.md) — one-command local gate
+- [`../runbooks/LOCAL_SMOKE_MATRIX.md`](../runbooks/LOCAL_SMOKE_MATRIX.md) — smoke catalog and what each proves
+- [`../runbooks/EXTERNAL_INTEGRATIONS_READINESS.md`](../runbooks/EXTERNAL_INTEGRATIONS_READINESS.md) — Block 1 config-only readiness
+- [`../runbooks/ADMIN_OPERATIONS_RECOVERY.md`](../runbooks/ADMIN_OPERATIONS_RECOVERY.md) — Block 2 admin operations recovery
+
 ## For GitHub-First Work
 
 - `chatgpt-github-operating-model.md` — GitHub-first operating model.
@@ -27,9 +39,11 @@ These documents explain how to use and plan DCA OS Lite without technical detail
 
 ## Current Operating Position
 
-DCA OS Lite is ready for controlled local/admin MVP work.
+DCA OS Lite is ready for controlled local/admin MVP work on `main` at `cc40160` (Blocks 1–3 CI green).
 
-It is not automatically approved for production deployment or live client portal rollout.
+It is not automatically approved for production deployment, staging deploy, or live client portal rollout.
+
+**Pre-staging:** Claude full-code audit required before staging; validate + Block 1–2 + Block A smokes; explicit owner approval before G4.
 
 ## Admin Rule
 

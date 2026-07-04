@@ -4,6 +4,8 @@
 
 **Purpose:** Single checklist of documented environment variables for API, Web, local smoke, and future staging execution (G4). Values belong in shell or server-side env files only.
 
+**Block 4 note:** Consolidated with [`docs/STATUS.md`](../STATUS.md) §4 and [`OPERATOR_RUNBOOK.md`](./OPERATOR_RUNBOOK.md) §10. This file remains the detailed category inventory.
+
 Related:
 
 - [`.env.example`](../../.env.example) — local placeholders (no secrets)
