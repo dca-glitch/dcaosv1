@@ -3143,14 +3143,14 @@ export function AiDeliveryPage({
         eyebrow="AI Workflow"
         title="AI Delivery Projects"
         titleId="ai-delivery-title"
-        description="Admin workflow: brief → content plan → drafts → deliverables → monthly report."
+        description="Brief through content plan, drafts, deliverables, and monthly report."
         actions={
           <>
             <div className="filter-bar" role="group" aria-label="AI delivery filter">
               {(["active", "archived", "all"] as const).map((value) => (
                 <button
                   aria-pressed={filter === value}
-                  className={filter === value ? "secondary-action filter-chip is-active" : "secondary-action filter-chip"}
+                  className={filter === value ? "filter-chip is-active" : "filter-chip"}
                   key={value}
                   onClick={() => setFilter(value)}
                   type="button"
@@ -3187,7 +3187,7 @@ export function AiDeliveryPage({
               <Button onClick={openCreateModal}>Add AI Delivery</Button>
             ) : null
           }
-          message={projects.length === 0 ? "No AI Delivery projects yet. Add one to begin the admin workflow." : "No AI Delivery projects match this filter. Switch filters to continue."}
+          message={projects.length === 0 ? "Add a project to start the monthly delivery workflow." : "No projects match this filter."}
           title="No AI delivery projects"
         />
       ) : (
@@ -3238,14 +3238,6 @@ export function AiDeliveryPage({
           title={editorProjectId ? "Edit AI Delivery" : "Add AI Delivery"}
         >
           <form className="entity-form" onSubmit={handleSubmit}>
-            <div className="modal-footer">
-              <button className="secondary-action" disabled={saving} onClick={closeProjectEditor} type="button">
-                Cancel
-              </button>
-              <button className="primary-action" disabled={saving} type="submit">
-                {saving ? "Saving" : editorProjectId ? "Update AI Delivery" : "Create AI Delivery"}
-              </button>
-            </div>
             <div className="field-grid">
               <label>
                 Client - Required
@@ -3391,14 +3383,6 @@ export function AiDeliveryPage({
                     <dd>{new Date(briefDetail.updatedAt).toLocaleString()}</dd>
                   </div>
                 </dl>
-                <p className="muted-text">Current status is shown above. Next step: update the brief fields or use the project-card review actions. This screen does not run research, planning, or delivery actions.</p>
-
-                <div className="modal-footer">
-                  <button className="secondary-action" onClick={() => { setOpenBriefId(null); setBriefError(null); setBriefDetail(null); }} type="button">Close</button>
-                  {canEdit && typeof onSaveBrief === "function" ? (
-                    <button className="primary-action" onClick={() => void handleSaveBrief(openProject.id)} type="button">Save brief</button>
-                  ) : null}
-                </div>
 
                 <section className="field-panel">
                   <h3>Client input / priorities - Optional</h3>
@@ -3536,24 +3520,25 @@ export function AiDeliveryPage({
           ) : openContentPlanProject ? (
             <div>
               {contentPlanError ? <ErrorState title="Content plan action blocked" message={contentPlanError} /> : null}
-              <div className="state-panel" role="status">
+              <p className="muted-text">
                 <strong>{openContentPlanProject.name}</strong>
-                <p className="muted-text" style={{ marginTop: "0.25rem" }}>
-                  Target month: {openContentPlanProject.targetMonth}
-                  {contentPlanMiContextCount > 0
-                    ? ` • ${contentPlanMiContextCount} applied Market Intelligence handoff${contentPlanMiContextCount === 1 ? "" : "s"} available for workflow context`
-                    : " • No applied Market Intelligence handoff yet"}
-                </p>
-              </div>
+                {" · "}
+                Target month: {openContentPlanProject.targetMonth}
+                {contentPlanMiContextCount > 0
+                  ? ` · ${contentPlanMiContextCount} MI handoff${contentPlanMiContextCount === 1 ? "" : "s"} applied`
+                  : ""}
+              </p>
               <SectionPanel
-                title="AI SEO workflow shell"
-                description="Research, sources, summaries, content plan, and admin draft handoff move through one operator-owned workflow. Live crawling, provider execution, OAuth sync, and client metrics remain deferred."
+                title="Workflow readiness"
+                description="Research, plan, and draft handoff status for this project."
                 className="metrics-section"
+                tone="compact"
               >
-                <div className="state-panel" role="status">
+                <p className="muted-text">
                   <strong>AI SEO readiness:</strong> {aiSeoWorkflowShell.readiness}
-                  <p className="muted-text" style={{ marginTop: "0.25rem" }}>{aiSeoWorkflowShell.guidance}</p>
-                </div>
+                  {" · "}
+                  {aiSeoWorkflowShell.guidance}
+                </p>
                 <dl className="brief-grid" style={{ marginTop: "1rem" }}>
                   <div>
                     <dt>Research requests</dt>
@@ -3581,9 +3566,7 @@ export function AiDeliveryPage({
                   </div>
                 </dl>
                 <div className="field-panel" style={{ marginTop: "1rem" }}>
-                  <h3>Flow summary</h3>
-                  <p className="muted-text">Research requests become sources, sources become summaries, summaries inform the monthly content plan, and approved plan items become admin draft handoff records.</p>
-                  <div className="summary-grid" style={{ marginTop: "1rem" }}>
+                  <div className="summary-grid" style={{ marginTop: "0.5rem" }}>
                     <MetricCard accent="violet" label="Research" value={aiSeoWorkflowShell.hasResearchRequests ? "Started" : "Pending"} helper={aiSeoWorkflowShell.researchStep} />
                     <MetricCard accent="cyan" label="Sources" value={aiSeoWorkflowShell.hasResearchSources ? "Recorded" : "Pending"} helper={aiSeoWorkflowShell.sourceStep} />
                     <MetricCard accent="warning" label="Summaries" value={aiSeoWorkflowShell.hasResearchSummaries ? "Ready" : "Pending"} helper={aiSeoWorkflowShell.summaryStep} />
@@ -3596,23 +3579,9 @@ export function AiDeliveryPage({
                 <>
                   <section className="field-panel">
                     <h3>SEO topic/research planning</h3>
-                    <p className="muted-text">Current status is shown below. Next step: add or refine topics, save the plan, then move it into review when ready. Saved plan items can run admin-only draft generation; this screen does not publish, deliver to clients, crawl, or run external services directly.</p>
-                    <div className="state-panel" role="status">Review actions follow the current content plan state shown below. If a transition is blocked, the reason stays in this modal.</div>
                     {contentPlanGenerationMessage ? <div className="state-panel" role="status">{contentPlanGenerationMessage}</div> : null}
                     {contentPlanPdfMessage ? <div className="state-panel" role="status">{contentPlanPdfMessage}</div> : null}
                   </section>
-                  <div className="modal-footer">
-                    <button className="secondary-action" disabled={isContentPlanBusy} onClick={closeContentPlan} type="button">Close</button>
-                    <button className="secondary-action" disabled={isContentPlanBusy} onClick={() => void handleContentPlanAction(openContentPlanProject.id, onRequestContentPlanReview)} type="button">Mark ready for review</button>
-                    <button className="secondary-action" disabled={isContentPlanBusy} onClick={() => void handleContentPlanAction(openContentPlanProject.id, onRequestContentPlanChanges)} type="button">Request changes</button>
-                    <button className="secondary-action" disabled={isContentPlanBusy} onClick={() => void handleContentPlanAction(openContentPlanProject.id, onApproveContentPlan)} type="button">Approve plan</button>
-                    <button className="secondary-action" disabled={isContentPlanBusy || contentPlanPdfGenerating} onClick={() => void handleGenerateContentPlanPdf(openContentPlanProject.id)} type="button">{contentPlanPdfGenerating ? "Generating PDF…" : "Export PDF"}</button>
-                    <button className="secondary-action" disabled={isContentPlanBusy || contentPlanPdfGenerating || contentPlanPdfReady !== true} onClick={() => void handleDownloadContentPlanDocument(openContentPlanProject.id)} type="button">Download PDF</button>
-                    <span className="muted-text" role="status">{contentPlanPdfReady === true ? "PDF ready" : contentPlanPdfReady === false ? "No PDF generated yet" : ""}</span>
-                    <button className="primary-action" disabled={isContentPlanBusy || contentPlanItems.some((item) => !item.title.trim())} onClick={() => void handleSaveContentPlan(openContentPlanProject.id)} type="button">
-                      {contentPlanSaving ? "Saving" : "Save draft"}
-                    </button>
-                  </div>
                   <dl className="brief-grid">
                     <div>
                       <dt>Status</dt>
@@ -3631,29 +3600,6 @@ export function AiDeliveryPage({
                       <dd>{formatOptionalDate(contentPlanDetail.approvedAt)}</dd>
                     </div>
                   </dl>
-
-                  <section className="field-panel">
-                    <h3>Current content plan status</h3>
-                    <p className="muted-text">Review the current approval state here, then use the action buttons for the next admin step. Existing client review routes remain separate and unchanged.</p>
-                    <dl className="brief-grid">
-                      <div>
-                        <dt>Approval state</dt>
-                        <dd>{formatContentPlanReviewStatus(contentPlanDetail)}</dd>
-                      </div>
-                      <div>
-                        <dt>Revision count</dt>
-                        <dd>{contentPlanDetail.revisionCount ?? 0}</dd>
-                      </div>
-                      <div>
-                        <dt>Review requested</dt>
-                        <dd>{formatOptionalDate(contentPlanDetail.reviewRequestedAt)}</dd>
-                      </div>
-                      <div>
-                        <dt>Approved</dt>
-                        <dd>{formatOptionalDate(contentPlanDetail.approvedAt)}</dd>
-                      </div>
-                    </dl>
-                  </section>
 
                   <section className="field-panel">
                     <h3>Monthly plan items</h3>
@@ -3783,7 +3729,7 @@ export function AiDeliveryPage({
                         <div className="field-span-2">
                           <div className="modal-footer modal-footer--flush">
                             <button
-                              className="primary-action"
+                              className="secondary-action"
                               disabled={isContentPlanBusy || !persistedItem?.id || persistedItem.approvalStatus === "CLIENT_CHANGES_REQUESTED"}
                               onClick={() => persistedItem ? void generateContentDraftFromPlanItem(openContentPlanProject.id, persistedItem) : undefined}
                               title={!persistedItem?.id ? "Save the monthly content plan before generating a draft from this item." : undefined}
@@ -3826,8 +3772,8 @@ export function AiDeliveryPage({
                     <button className="secondary-action" disabled={isContentPlanBusy} onClick={() => void handleContentPlanAction(openContentPlanProject.id, onRequestContentPlanReview)} type="button">Mark ready for review</button>
                     <button className="secondary-action" disabled={isContentPlanBusy} onClick={() => void handleContentPlanAction(openContentPlanProject.id, onRequestContentPlanChanges)} type="button">Request changes</button>
                     <button className="secondary-action" disabled={isContentPlanBusy} onClick={() => void handleContentPlanAction(openContentPlanProject.id, onApproveContentPlan)} type="button">Approve plan</button>
-                    <button className="secondary-action" disabled={isContentPlanBusy || contentPlanPdfGenerating} onClick={() => void handleGenerateContentPlanPdf(openContentPlanProject.id)} type="button">{contentPlanPdfGenerating ? "Generating PDF…" : "Export PDF"}</button>
-                    <button className="secondary-action" disabled={isContentPlanBusy || contentPlanPdfGenerating || contentPlanPdfReady !== true} onClick={() => void handleDownloadContentPlanDocument(openContentPlanProject.id)} type="button">Download PDF</button>
+                    <button className="ghost-action" disabled={isContentPlanBusy || contentPlanPdfGenerating} onClick={() => void handleGenerateContentPlanPdf(openContentPlanProject.id)} type="button">{contentPlanPdfGenerating ? "Generating PDF…" : "Export PDF"}</button>
+                    <button className="ghost-action" disabled={isContentPlanBusy || contentPlanPdfGenerating || contentPlanPdfReady !== true} onClick={() => void handleDownloadContentPlanDocument(openContentPlanProject.id)} type="button">Download PDF</button>
                     <span className="muted-text" role="status">{contentPlanPdfReady === true ? "PDF ready" : contentPlanPdfReady === false ? "No PDF generated yet" : ""}</span>
                     <button className="primary-action" disabled={isContentPlanBusy || contentPlanItems.some((item) => !item.title.trim())} onClick={() => void handleSaveContentPlan(openContentPlanProject.id)} type="button">
                       {contentPlanSaving ? "Saving" : "Save draft"}
@@ -3839,16 +3785,13 @@ export function AiDeliveryPage({
                 <div>
                   <EmptyState
                     title="No AI SEO content plan yet"
-                    message="Start with research requests and sources, then add a summary and create the monthly content plan. Live crawling, provider sync, and client metrics remain deferred."
+                    message="Add research notes, then create the monthly content plan."
                     action={(
                       <button className="primary-action" disabled={isContentPlanBusy} onClick={() => void handleCreateContentPlan(openContentPlanProject.id)} type="button">
                         {contentPlanSaving ? "Creating" : "Create content plan"}
                       </button>
                     )}
                   />
-                  <div className="state-panel" role="status" style={{ marginTop: "1rem" }}>
-                    Research requests, sources, summaries, and workflow runs stay admin-only in this workflow shell.
-                  </div>
                 </div>
               )}
             </div>
@@ -3866,15 +3809,6 @@ export function AiDeliveryPage({
               {researchError ? <ErrorState title="Research action blocked" message={researchError} /> : null}
               <section className="field-panel">
                 <h3>Research request editor</h3>
-                <p className="muted-text">Current status is set in the request record. Next step: create a request, then add summaries or sources as the work becomes clearer. This screen does not crawl or fetch external content.</p>
-                <div className="state-panel" role="status">Workflow run links must stay inside this same AI Delivery project. Guarded save failures remain visible in this modal.</div>
-                <div className="modal-footer">
-                  <button className="secondary-action" disabled={researchSaving} onClick={closeResearchSources} type="button">Close</button>
-                  <button className="secondary-action" disabled={researchSaving} onClick={() => { setResearchRequestEditorId(null); setResearchRequestForm(emptyResearchRequest()); }} type="button">New request</button>
-                  <button className="primary-action" disabled={researchSaving || !researchRequestForm.title.trim()} onClick={() => void saveResearchRequest(openResearchSourcesProject.id)} type="button">
-                    {researchSaving ? "Saving" : researchRequestEditorId ? "Save request" : "Create request"}
-                  </button>
-                </div>
                 <div className="field-grid">
                   <label>
                     Status - Required
@@ -3959,7 +3893,6 @@ export function AiDeliveryPage({
 
               <section className="field-panel">
                 <h3>Research summary editor</h3>
-                <p className="muted-text">Current status is set in the summary record. Next step: capture findings, then finalize or apply them to brief notes when ready. This screen does not run AI generation, crawling, or external fetching.</p>
                 <div className="modal-footer">
                   <button className="secondary-action" disabled={researchSaving} onClick={closeResearchSources} type="button">Close</button>
                   <button className="secondary-action" disabled={researchSaving} onClick={() => { setResearchSummaryEditorId(null); setResearchSummaryForm(emptyResearchSummary()); }} type="button">New summary</button>
@@ -4092,7 +4025,6 @@ export function AiDeliveryPage({
 
               <section className="field-panel">
                 <h3>Research source editor</h3>
-                <p className="muted-text">Current status is set in the source record. Next step: add a source, then approve, reject, or archive it. This screen does not crawl or fetch external content.</p>
                 <div className="modal-footer">
                   <button className="secondary-action" disabled={researchSaving} onClick={closeResearchSources} type="button">Close</button>
                   <button className="secondary-action" disabled={researchSaving} onClick={() => { setResearchSourceEditorId(null); setResearchSourceForm(emptyResearchSource()); }} type="button">New source</button>
@@ -4279,7 +4211,6 @@ export function AiDeliveryPage({
               {workflowRunsError ? <ErrorState title="Workflow run action blocked" message={workflowRunsError} /> : null}
               <section className="field-panel">
                 <h3>Workflow run editor</h3>
-                <p className="muted-text">Current status is set in the workflow run record. Next step: save the run, then execute the existing guarded workflow path when ready. This screen is admin-only execution history and operator context. It does not create client delivery, publishing, automation, or public review.</p>
                 <div className="state-panel" role="status">{workflowRunActionGuidance}</div>
                 <div className="field-panel">
                   <h4>Execution visibility summary</h4>
@@ -4520,14 +4451,13 @@ export function AiDeliveryPage({
             <div>
               {contentDraftsError ? <ErrorState title="Content draft action blocked" message={contentDraftsError} /> : null}
               <div className="state-panel" role="status">
-                <strong>Production chain:</strong> monthly plan item → admin draft → article images → deliverable package → WordPress draft handoff / monthly report (final-safe only).
+                <strong>Production chain:</strong> plan item → draft → images → deliverable → report.
                 <p className="muted-text" style={{ marginTop: "0.25rem" }}>
                   {openContentDraftsProject.targetMonth} • {eligibleContentDraftPlanItems.length} ready plan item(s) • {contentDrafts.filter((draft) => !draft.isArchived).length} active draft(s) • {articleImages.filter((image) => !image.isArchived).length} image record(s) • {deliverables.filter((deliverable) => !deliverable.isArchived).length} deliverable record(s)
                 </p>
               </div>
               <section className="field-panel">
                 <h3>Article production planning</h3>
-                <p className="muted-text">Current status is shown below. Next step: start from an approved or planned content plan item, generate or edit the draft, link image planning, package deliverables, then move it into internal review when ready. Client Portal MVP for Puriva shows client-safe delivery visibility after admin release; human/client review before publication is required. Advanced interactive client review routes remain phased.</p>
                 <div className="state-panel" role="status">{contentDraftActionGuidance}</div>
                 {contentDraftHandoffMessage ? <div className="state-panel" role="status">{contentDraftHandoffMessage}</div> : null}
                 <div className="field-panel">
@@ -4554,7 +4484,6 @@ export function AiDeliveryPage({
                 </div>
                 <div className="field-panel">
                   <h4>Plan item to draft handoff</h4>
-                  <p className="muted-text">Use the approved or planned monthly content plan item below to create the linked draft the admin team will edit. This is the internal handoff from monthly planning into production; it does not publish, hand off to clients, or expose draft review flows. Once saved, the same draft can flow into image planning and deliverable packaging.</p>
                   <dl className="brief-grid">
                     <div>
                       <dt>Linked plan item</dt>
@@ -4573,15 +4502,14 @@ export function AiDeliveryPage({
                       <dd>{activeContentDraftRecord ? activeContentDraftLinkedDeliverables.length : 0}</dd>
                     </div>
                   </dl>
-                  <div className="state-panel" role="status">
+                  <p className="muted-text">
                     {activeContentDraftRecord
-                      ? `This draft is tied to ${contentDraftEditorLinkedPlanLabel}. Save edits before using the review or archive actions.`
-                      : "Choose a ready plan item below to generate a new draft, or create a manual draft and link it back to the approved monthly plan item it fulfills."}
-                  </div>
+                      ? `Linked to ${contentDraftEditorLinkedPlanLabel}. Save edits before review or archive actions.`
+                      : "Choose a ready plan item below or create a manual draft linked to the monthly plan."}
+                  </p>
                 </div>
                 <div className="field-panel">
                   <h4>Draft actions</h4>
-                  <p className="muted-text">Keep the saved draft editable here, then use the existing actions for generation, review, reset, and archive transitions. Client Portal MVP visibility for Puriva is required; advanced in-portal draft review actions remain phased.</p>
                   <div className="modal-footer">
                     <button className="secondary-action" disabled={contentDraftsSaving} onClick={() => { setContentDraftHandoffMessage(null); setContentDraftEditorId(null); setContentDraftForm(emptyContentDraft()); }} type="button">New draft</button>
                     <button className="secondary-action" disabled={contentDraftsSaving} onClick={closeContentDrafts} type="button">Close</button>
@@ -4607,7 +4535,6 @@ export function AiDeliveryPage({
                 </div>
                 <div className="field-panel">
                   <h4>Approved / planned content plan items</h4>
-                  <p className="muted-text">Use approved or still-planned monthly content plan items to start a linked content draft. Items already marked as changes requested stay out of this picker until the plan is corrected.</p>
                   {eligibleContentDraftPlanItems.length === 0 ? <div className="state-panel">No ready plan items yet. Approve or add content plan items to continue draft production.</div> : null}
                   {eligibleContentDraftPlanItems.map((item) => {
                     const linkedDraft = contentDrafts.find((draftItem) => draftItem.contentPlanItemId === item.id && !draftItem.isArchived) ?? null;
@@ -4852,7 +4779,6 @@ export function AiDeliveryPage({
               {deliverablesError ? <ErrorState title="Deliverable action blocked" message={deliverablesError} /> : null}
               <section className="field-panel">
                 <h3>Deliverable editor</h3>
-                <p className="muted-text">Current status is shown below. Next step: package approved assets, upload a private document when needed, then use review placeholders when internal QA is needed. This screen does not perform client handoff, public links, export generation, publishing, or client self-service download.</p>
                 <div className="state-panel" role="status">{deliverableActionGuidance}</div>
                 <div className="modal-footer">
                   <button className="secondary-action" disabled={deliverablesSaving} onClick={() => { setDeliverableEditorId(null); setDeliverableForm({ contentDraftId: null, articleImageId: null, title: "", description: null, deliveryType: "CONTENT_PACKAGE", status: "DRAFT", exportUrl: null, storageKey: null, notes: null, isArchived: false }); }} type="button">New deliverable</button>
@@ -5437,7 +5363,7 @@ export function AiDeliveryPage({
               {selectedReviewDeliverable ? (
                 <section className="field-panel">
                   <h3>Deliverable reviews: {selectedReviewDeliverable.title}</h3>
-                  <p className="muted-text">Current review status is shown below. Next step: add or update an internal review placeholder. This screen does not create client portal, public review, token approval, or email actions.</p>
+                  <p className="muted-text">Add or update an internal review placeholder for QA tracking.</p>
                   <dl className="brief-grid">
                     <div>
                       <dt>Deliverable status</dt>
@@ -5464,7 +5390,6 @@ export function AiDeliveryPage({
                   ) : (
                     <>
                       {deliverableReviewsError ? <ErrorState title="Deliverable reviews unavailable" message={deliverableReviewsError} /> : null}
-                      <div className="state-panel" role="status">Review placeholders stay internal to the admin team. Archived deliverables keep history, but restore applies only to archived records.</div>
                       <div className="modal-footer">
                         <button className="secondary-action" disabled={deliverableReviewsSaving} onClick={closeDeliverables} type="button">Close</button>
                         <button className="secondary-action" disabled={deliverableReviewsSaving} onClick={() => { setDeliverableReviewEditorId(null); setDeliverableReviewForm(emptyDeliverableReview()); }} type="button">New review placeholder</button>
@@ -5570,7 +5495,6 @@ export function AiDeliveryPage({
               {articleImagesError ? <ErrorState title="Article image action blocked" message={articleImagesError} /> : null}
               <section className="field-panel">
                 <h3>Image planning workflow</h3>
-                <p className="muted-text">Current status is shown below. Next step: link a draft, save the request, record preview references manually, upload a private final asset when needed, then move it through preview and final-ready actions. This screen does not run AI image generation, upscaling, public links, publishing, or client image review.</p>
                 <div className="state-panel" role="status">{articleImageActionGuidance}</div>
                 <div className="modal-footer">
                   <button className="secondary-action" disabled={articleImagesSaving} onClick={() => { setArticleImageEditorId(null); setArticleImageForm((current) => ({ ...emptyArticleImage(), contentDraftId: current.contentDraftId })); }} type="button">New image request</button>
