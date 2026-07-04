@@ -4370,6 +4370,54 @@ tr:hover td {
   min-height: 28px;
 }
 
+/* P1-D Block 2 — Content Drafts modal density */
+.ai-delivery-content-drafts-panel .entity-card {
+  gap: 8px;
+  padding: 9px 10px;
+}
+
+.ai-delivery-content-drafts-panel .entity-card-header h3,
+.ai-delivery-content-drafts-panel .entity-card-header h4 {
+  font-size: 0.95rem;
+  margin-bottom: 2px;
+}
+
+.ai-delivery-content-drafts-panel .entity-card-header p {
+  font-size: 0.82rem;
+  margin: 0;
+}
+
+.ai-delivery-content-drafts-panel .brief-grid {
+  gap: 6px 10px;
+}
+
+.ai-delivery-content-drafts-panel .brief-grid dt {
+  font-size: 0.72rem;
+}
+
+.ai-delivery-content-drafts-panel .brief-grid dd {
+  font-size: 0.82rem;
+}
+
+.ai-delivery-content-drafts-panel .field-grid.field-grid-compact label {
+  gap: 4px;
+}
+
+.ai-delivery-content-drafts-panel .field-grid.field-grid-compact .muted-text {
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.ai-delivery-content-drafts-panel .field-grid.field-grid-compact textarea {
+  min-height: 0;
+}
+
+.ai-delivery-content-drafts-panel .card-actions .ghost-action,
+.ai-delivery-content-drafts-panel .card-actions .secondary-action {
+  font-size: 0.82rem;
+  min-height: 28px;
+}
+
 /* R — responsive */
 @media (max-width: 1180px) {
   .brief-workspace-layout,

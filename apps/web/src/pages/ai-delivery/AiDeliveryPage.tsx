@@ -4436,22 +4436,21 @@ export function AiDeliveryPage({
       {openContentDraftsId ? (
         <Modal onClose={closeContentDrafts} title="AI Content Production">
           {contentDraftsLoading ? (
-            <LoadingState label="Loading content drafts" />
+            <AiDeliveryInlineLoading label="Loading content drafts" />
           ) : openContentDraftsProject ? (
-            <div>
-              {contentDraftsError ? <ErrorState title="Content draft action blocked" message={contentDraftsError} /> : null}
-              <div className="state-panel" role="status">
+            <div className="ai-delivery-modal-panel ai-delivery-content-drafts-panel stack gap-md">
+              {contentDraftsError ? <AiDeliveryInlineAlert message={contentDraftsError} title="Content draft action blocked" /> : null}
+              <AiDeliveryInlineNotice>
                 <strong>Production chain:</strong> plan item → draft → images → deliverable → report.
-                <p className="muted-text" style={{ marginTop: "0.25rem" }}>
-                  {openContentDraftsProject.targetMonth} • {eligibleContentDraftPlanItems.length} ready plan item(s) • {contentDrafts.filter((draft) => !draft.isArchived).length} active draft(s) • {articleImages.filter((image) => !image.isArchived).length} image record(s) • {deliverables.filter((deliverable) => !deliverable.isArchived).length} deliverable record(s)
-                </p>
-              </div>
-              <section className="field-panel">
+                {" · "}
+                {openContentDraftsProject.targetMonth} · {eligibleContentDraftPlanItems.length} ready plan item(s) · {contentDrafts.filter((draft) => !draft.isArchived).length} active draft(s) · {articleImages.filter((image) => !image.isArchived).length} image record(s) · {deliverables.filter((deliverable) => !deliverable.isArchived).length} deliverable record(s)
+              </AiDeliveryInlineNotice>
+              <section className="field-panel ai-delivery-section-compact">
                 <h3>Article production planning</h3>
-                <div className="state-panel" role="status">{contentDraftActionGuidance}</div>
-                {contentDraftHandoffMessage ? <div className="state-panel" role="status">{contentDraftHandoffMessage}</div> : null}
+                <AiDeliveryInlineNotice>{contentDraftActionGuidance}</AiDeliveryInlineNotice>
+                {contentDraftHandoffMessage ? <AiDeliveryInlineNotice>{contentDraftHandoffMessage}</AiDeliveryInlineNotice> : null}
                 <div className="field-panel">
-                  <h4>AI Content Production readiness summary</h4>
+                  <h4>Editor summary</h4>
                   <dl className="brief-grid">
                     <div>
                       <dt>Editor mode</dt>
@@ -4469,63 +4468,28 @@ export function AiDeliveryPage({
                       <dt>Review readiness</dt>
                       <dd>{contentDraftReviewReadiness.ready ? "Ready for admin review" : "Needs attention before review"}</dd>
                     </div>
-                  </dl>
-                  <p className="muted-text">{contentDraftReviewReadiness.message}</p>
-                </div>
-                <div className="field-panel">
-                  <h4>Plan item to draft handoff</h4>
-                  <dl className="brief-grid">
-                    <div>
-                      <dt>Linked plan item</dt>
-                      <dd>{contentDraftEditorLinkedPlanLabel}</dd>
-                    </div>
                     <div>
                       <dt>Ready items available</dt>
                       <dd>{eligibleContentDraftPlanItems.length}</dd>
                     </div>
-                    <div>
-                      <dt>Linked images</dt>
-                      <dd>{activeContentDraftRecord ? activeContentDraftLinkedImages.length : 0}</dd>
-                    </div>
-                    <div>
-                      <dt>Linked deliverables</dt>
-                      <dd>{activeContentDraftRecord ? activeContentDraftLinkedDeliverables.length : 0}</dd>
-                    </div>
+                    {activeContentDraftRecord ? (
+                      <>
+                        <div>
+                          <dt>Linked images</dt>
+                          <dd>{activeContentDraftLinkedImages.length}</dd>
+                        </div>
+                        <div>
+                          <dt>Linked deliverables</dt>
+                          <dd>{activeContentDraftLinkedDeliverables.length}</dd>
+                        </div>
+                      </>
+                    ) : null}
                   </dl>
-                  <p className="muted-text">
-                    {activeContentDraftRecord
-                      ? `Linked to ${contentDraftEditorLinkedPlanLabel}. Save edits before review or archive actions.`
-                      : "Choose a ready plan item below or create a manual draft linked to the monthly plan."}
-                  </p>
-                </div>
-                <div className="field-panel">
-                  <h4>Draft actions</h4>
-                  <div className="modal-footer">
-                    <button className="secondary-action" disabled={contentDraftsSaving} onClick={() => { setContentDraftHandoffMessage(null); setContentDraftEditorId(null); setContentDraftForm(emptyContentDraft()); }} type="button">New draft</button>
-                    <button className="secondary-action" disabled={contentDraftsSaving} onClick={closeContentDrafts} type="button">Close</button>
-                    <button className="primary-action" disabled={contentDraftsSaving || !canSaveContentDraftForm} onClick={() => void saveContentDraft(openContentDraftsProject.id)} type="button">
-                      {contentDraftsSaving ? "Saving" : contentDraftPrimaryActionLabel}
-                    </button>
-                    {activeContentDraftRecord && !activeContentDraftRecord.isArchived ? (
-                      <button
-                        className="secondary-action"
-                        disabled={contentDraftsSaving || !canMarkReadyCurrentDraft}
-                        onClick={() => void requestContentDraftReview(openContentDraftsProject.id, activeContentDraftRecord.id)}
-                        type="button"
-                      >
-                        Mark ready for review
-                      </button>
-                    ) : null}
-                    {activeContentDraftRecord && !activeContentDraftRecord.isArchived && activeContentDraftRecord.status !== "DRAFT" ? (
-                      <button className="secondary-action" disabled={contentDraftsSaving} onClick={() => void returnContentDraftToDraft(openContentDraftsProject.id, activeContentDraftRecord.id)} type="button">
-                        Return to draft
-                      </button>
-                    ) : null}
-                  </div>
+                  {!contentDraftReviewReadiness.ready ? <p className="muted-text">{contentDraftReviewReadiness.message}</p> : null}
                 </div>
                 <div className="field-panel">
                   <h4>Approved / planned content plan items</h4>
-                  {eligibleContentDraftPlanItems.length === 0 ? <div className="state-panel">No ready plan items yet. Approve or add content plan items to continue draft production.</div> : null}
+                  {eligibleContentDraftPlanItems.length === 0 ? <AiDeliveryInlineEmpty>No ready plan items yet. Approve or add content plan items to continue draft production.</AiDeliveryInlineEmpty> : null}
                   {eligibleContentDraftPlanItems.map((item) => {
                     const linkedDraft = contentDrafts.find((draftItem) => draftItem.contentPlanItemId === item.id && !draftItem.isArchived) ?? null;
                     return (
@@ -4537,7 +4501,7 @@ export function AiDeliveryPage({
                             <p>{item.targetKeyword ? `Target keyword: ${item.targetKeyword}` : "No target keyword recorded yet."}</p>
                           </div>
                           <div className="card-actions">
-                            <button className="secondary-action" disabled={contentDraftsSaving} onClick={() => startContentDraftFromPlanItem(item)} type="button">
+                            <button className={linkedDraft ? "ghost-action" : "primary-action"} disabled={contentDraftsSaving} onClick={() => startContentDraftFromPlanItem(item)} type="button">
                               {linkedDraft ? "Edit linked draft" : "Create linked draft"}
                             </button>
                           </div>
@@ -4598,7 +4562,7 @@ export function AiDeliveryPage({
                 {activeContentDraftRecord ? (
                   <div className="field-panel">
                     <h4>Completion and export handoff</h4>
-                    <p className="muted-text">Use same-project image planning and deliverable records only. This handoff stays internal to the admin workflow and does not publish, export, or expose client delivery. If the draft needs a connector-ready handoff, use the deliverable record for the private document/export reference or the WordPress prepared draft path; monthly report/PDF stays in the reporting layer.</p>
+                    <AiDeliveryInlineNotice>Same-project image planning and deliverable records only. Internal admin handoff — does not publish, export, or expose client delivery.</AiDeliveryInlineNotice>
                     <dl className="brief-grid">
                       <div>
                         <dt>Linked image records</dt>
@@ -4619,7 +4583,7 @@ export function AiDeliveryPage({
                     </dl>
                     <div className="card-actions card-actions-spaced">
                       <button
-                        className="secondary-action"
+                        className="ghost-action"
                         disabled={contentDraftsSaving}
                         onClick={() => void handoffContentDraftToArticleImages(openContentDraftsProject.id, activeContentDraftRecord.id)}
                         type="button"
@@ -4627,7 +4591,7 @@ export function AiDeliveryPage({
                         Open image planning
                       </button>
                       <button
-                        className="secondary-action"
+                        className="ghost-action"
                         disabled={contentDraftsSaving}
                         onClick={() => void handoffContentDraftToDeliverables(openContentDraftsProject.id, activeContentDraftRecord.id)}
                         type="button"
@@ -4637,13 +4601,13 @@ export function AiDeliveryPage({
                     </div>
                   </div>
                 ) : null}
-                <div className="field-grid">
+                <div className="field-grid field-grid-compact">
                   <label>
                     Status - Required
                     <select value={contentDraftForm.status} onChange={(event) => setContentDraftForm((current) => ({ ...current, status: event.target.value }))}>
                       {(["DRAFT", "READY_FOR_REVIEW", "CHANGES_REQUESTED", "ARCHIVED"] as const).map((status) => <option key={status} value={status}>{formatContentDraftStatus(status)}</option>)}
                     </select>
-                    <span className="muted-text">Admin-only production state. Saving here does not publish, deliver to the client, or trigger the Client Portal.</span>
+                    <span className="muted-text">Admin-only production state.</span>
                   </label>
                   <label>
                     Linked SEO topic / monthly content plan item - Optional
@@ -4653,32 +4617,32 @@ export function AiDeliveryPage({
                         <option key={item.id} value={item.id}>{item.sortOrder}. {item.title} ({formatContentPlanItemApprovalStatus(item.approvalStatus)})</option>
                       ))}
                     </select>
-                    <span className="muted-text">Link this draft to the approved or planned monthly content plan item it fulfills.</span>
+                    <span className="muted-text">Link to the monthly content plan item this draft fulfills.</span>
                   </label>
                   <label className="field-span-2">
                     Title - Required
                     <input maxLength={255} placeholder="Working article title or draft headline" required value={contentDraftForm.title} onChange={(event) => setContentDraftForm((current) => ({ ...current, title: event.target.value }))} />
-                    <span className="muted-text">Used by admin to prepare a platform-neutral article or content draft.</span>
+                    <span className="muted-text">Platform-neutral article title for admin editing.</span>
                   </label>
                   <label>
                     Slug - Optional
                     <input maxLength={255} placeholder="Optional URL slug or short working slug" value={contentDraftForm.slug} onChange={(event) => setContentDraftForm((current) => ({ ...current, slug: event.target.value }))} />
-                    <span className="muted-text">Visible only to admin team.</span>
+                    <span className="muted-text">Admin-only.</span>
                   </label>
                   <label className="field-span-2">
                     Draft body - Required before client review
-                    <textarea maxLength={4000} placeholder="Manual draft body, article outline, sections, and review-ready copy" rows={10} value={contentDraftForm.draftBody} onChange={(event) => setContentDraftForm((current) => ({ ...current, draftBody: event.target.value }))} />
-                    <span className="muted-text">Admin review/editing only. Save changes here before using the ready-for-review action.</span>
+                    <textarea maxLength={4000} placeholder="Manual draft body, article outline, sections, and review-ready copy" rows={8} value={contentDraftForm.draftBody} onChange={(event) => setContentDraftForm((current) => ({ ...current, draftBody: event.target.value }))} />
+                    <span className="muted-text">Save before using ready-for-review.</span>
                   </label>
                   <label className="field-span-2">
                     Review / admin notes - Optional
                     <textarea maxLength={4000} placeholder="Admin comments, blockers, revision guidance, or handoff notes" rows={3} value={contentDraftForm.notes} onChange={(event) => setContentDraftForm((current) => ({ ...current, notes: event.target.value }))} />
-                    <span className="muted-text">Visible only to admin team. Client review comments stay visible in the saved draft status panel.</span>
+                    <span className="muted-text">Admin-only. Client comments appear in draft status above.</span>
                   </label>
                 </div>
-                <div className="modal-footer">
-                  <button className="secondary-action" disabled={contentDraftsSaving} onClick={() => { setContentDraftHandoffMessage(null); setContentDraftEditorId(null); setContentDraftForm(emptyContentDraft()); }} type="button">New draft</button>
-                  <button className="secondary-action" disabled={contentDraftsSaving} onClick={closeContentDrafts} type="button">Close</button>
+                <div className="modal-footer ai-delivery-modal-footer">
+                  <button className="ghost-action" disabled={contentDraftsSaving} onClick={closeContentDrafts} type="button">Close</button>
+                  <button className="ghost-action" disabled={contentDraftsSaving} onClick={() => { setContentDraftHandoffMessage(null); setContentDraftEditorId(null); setContentDraftForm(emptyContentDraft()); }} type="button">New draft</button>
                   <button className="primary-action" disabled={contentDraftsSaving || !canSaveContentDraftForm} onClick={() => void saveContentDraft(openContentDraftsProject.id)} type="button">
                     {contentDraftsSaving ? "Saving" : contentDraftPrimaryActionLabel}
                   </button>
@@ -4700,9 +4664,9 @@ export function AiDeliveryPage({
                 </div>
               </section>
 
-              <section className="field-panel">
+              <section className="field-panel ai-delivery-section-compact">
                 <h3>Existing article production records</h3>
-                {contentDrafts.length === 0 ? <div className="state-panel">No content drafts yet. Approve or select a plan item above, then generate the first linked draft for admin editing.</div> : null}
+                {contentDrafts.length === 0 ? <AiDeliveryInlineEmpty>No content drafts yet. Approve or select a plan item above, then generate the first linked draft for admin editing.</AiDeliveryInlineEmpty> : null}
                 {contentDrafts.map((draftItem) => (
                   <article className="entity-card" key={draftItem.id}>
                     <div className="entity-card-header">
@@ -4712,10 +4676,10 @@ export function AiDeliveryPage({
                         <p>{draftItem.contentPlanItem ? `Linked to SEO topic: ${draftItem.contentPlanItem.title}` : "Manual / unlinked production record"}</p>
                       </div>
                       <div className="card-actions">
-                        <button className="secondary-action" disabled={contentDraftsSaving} onClick={() => editContentDraft(draftItem)} type="button">Edit</button>
+                        <button className="ghost-action" disabled={contentDraftsSaving} onClick={() => editContentDraft(draftItem)} type="button">Edit</button>
                         {!draftItem.isArchived ? <button className="secondary-action" disabled={contentDraftsSaving || !draftItem.draftBody.trim() || draftItem.status === "READY_FOR_REVIEW"} onClick={() => void requestContentDraftReview(openContentDraftsProject.id, draftItem.id)} type="button">Mark ready for review</button> : null}
-                        {!draftItem.isArchived && draftItem.status !== "DRAFT" ? <button className="secondary-action" disabled={contentDraftsSaving} onClick={() => void returnContentDraftToDraft(openContentDraftsProject.id, draftItem.id)} type="button">Return to draft</button> : null}
-                        {!draftItem.isArchived ? <button className="secondary-action" disabled={contentDraftsSaving} onClick={() => void archiveContentDraft(openContentDraftsProject.id, draftItem.id)} type="button">Archive</button> : null}
+                        {!draftItem.isArchived && draftItem.status !== "DRAFT" ? <button className="ghost-action" disabled={contentDraftsSaving} onClick={() => void returnContentDraftToDraft(openContentDraftsProject.id, draftItem.id)} type="button">Return to draft</button> : null}
+                        {!draftItem.isArchived ? <button className="ghost-action" disabled={contentDraftsSaving} onClick={() => void archiveContentDraft(openContentDraftsProject.id, draftItem.id)} type="button">Archive</button> : null}
                       </div>
                     </div>
                     <dl className="brief-grid">
@@ -4755,7 +4719,6 @@ export function AiDeliveryPage({
                   </article>
                 ))}
               </section>
-              <div className="modal-footer"><button className="secondary-action" onClick={closeContentDrafts} type="button">Close</button></div>
             </div>
           ) : <div>Project not found.</div>}
         </Modal>
