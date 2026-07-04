@@ -85,6 +85,8 @@ Local smoke does not require Turnstile. Staging Turnstile behavior is an owner g
 
 Smoke: `smoke:r2-byte-roundtrip:local` — baseline passes with R2 disabled; optional `$env:SMOKE_EXPECT_R2_ROUNDTRIP = "true"` when locally configured.
 
+Unified config-only readiness (no bucket IO): `smoke:external-integrations-readiness:local` — see [`docs/runbooks/EXTERNAL_INTEGRATIONS_READINESS.md`](../runbooks/EXTERNAL_INTEGRATIONS_READINESS.md).
+
 ---
 
 ## WordPress provider
@@ -121,6 +123,20 @@ Smokes:
 
 ---
 
+## GA4 / Google Search Console (deferred live sync)
+
+| Variable | Local | Staging (G4) | Notes |
+|----------|-------|--------------|-------|
+| `GA4_GSC_SYNC_ENABLED` | Optional (default off) | Owner gate | When not `true`, sync/OAuth remain disabled |
+| `GOOGLE_OAUTH_CLIENT_ID` | Never commit | Staging server only | Presence checked only in readiness layer |
+| `GOOGLE_OAUTH_CLIENT_SECRET` | Never commit | Staging server only | Presence checked only; never logged |
+
+Live GA4/GSC OAuth and provider sync are deferred. Manual/imported metrics snapshots remain the active path.
+
+Smoke: `smoke:external-integrations-readiness:local` — config shape only; no OAuth or sync.
+
+---
+
 ## Tenant module enforcement
 
 | Variable | Local | Staging (G4) | Notes |
@@ -139,6 +155,7 @@ Pre-staging orchestrator sets `off` when restarting API. Restore `off` before fu
 | `SMOKE_EXPECT_WORDPRESS_PUBLISH_ENABLED` | `smoke:wordpress-publish:local` | Open-gate publish probe |
 | `SMOKE_EXPECT_TENANT_MODULE_ENFORCE` | `smoke:tenant-module:local` | Enforce-mode probe |
 | `SMOKE_EXPECT_OPENROUTER_LIVE` | `smoke:openrouter-guarded:local`, `smoke:ai-provider-config:local` | Live OpenRouter probe (owner/manual) |
+| `SMOKE_PROBE_EXTERNAL_INTEGRATIONS_API` | `smoke:external-integrations-readiness:local` | Optional `GET /integrations/readiness` API probe |
 | `SMOKE_EXPECT_GOOGLE_DRIVE_LIVE` | `smoke:google-drive-export-live:local` | Live Google export planning probe |
 | `SMOKE_EXPECT_CREDENTIAL_MASTER_KEY` | `smoke:credential-master-key-probe:local` | Master key configured probe |
 

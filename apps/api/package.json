@@ -5,9 +5,10 @@
   "type": "module",
   "main": "src/server.ts",
   "scripts": {
-    "check": "node ../../scripts/run-sequential.mjs \"node ../../scripts/check-package.mjs api\" \"npm run check:auth-skeleton\" \"npm run check:ai-provider-config\" \"npm run check:ai-workflow-knowledge-context\" \"npm run check:ai-workflow-engine\" \"tsc --noEmit\"",
+    "check": "node ../../scripts/run-sequential.mjs \"node ../../scripts/check-package.mjs api\" \"npm run check:auth-skeleton\" \"npm run check:ai-provider-config\" \"npm run check:external-integrations-readiness\" \"npm run check:ai-workflow-knowledge-context\" \"npm run check:ai-workflow-engine\" \"tsc --noEmit\"",
     "check:auth-skeleton": "node scripts/check-auth-skeleton.mjs",
     "check:ai-provider-config": "tsx scripts/check-ai-provider-config.runner.ts",
+    "check:external-integrations-readiness": "tsx scripts/check-external-integrations-readiness.runner.ts",
     "check:ai-workflow-knowledge-context": "tsx scripts/check-ai-workflow-knowledge-context.runner.ts",
     "check:ai-workflow-engine": "tsx scripts/check-ai-workflow-engine.runner.ts",
     "check:dist-esm": "node scripts/check-dist-esm.mjs",

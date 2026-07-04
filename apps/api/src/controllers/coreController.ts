@@ -31,6 +31,7 @@ import {
 import { sendAiDeliveryDeliverableForClientReview } from "../core/client-portal-approval.runtime";
 import { getAiProviderPlanningSnapshot } from "../services/ai-provider-planning.service";
 import { getGoogleDriveExportPlanningSnapshot } from "../services/google-drive-export-planning.service";
+import { getExternalIntegrationsReadinessSnapshot } from "../core/external-integrations-readiness.service";
 import {
   archiveAiDeliveryArticleImage,
   isAiDeliveryGuardError,
@@ -1383,6 +1384,29 @@ export const getGoogleDriveExportConfigHandler: RequestHandler = async (_req, re
     res.json(success({ exportConfig }, { phase: "runtime", scope: "google-drive-export-config" }));
   } catch {
     res.status(500).json(failure("GOOGLE_DRIVE_EXPORT_CONFIG_ERROR", "Google Drive export config could not be loaded."));
+  }
+};
+
+export const getExternalIntegrationsReadinessHandler: RequestHandler = async (_req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) {
+    res.status(401).json(unauthorizedFailure());
+    return;
+  }
+
+  const tenantId = authSession.tenantContext.activeMembership?.tenantId ?? null;
+  if (!tenantId) {
+    res.status(403).json(forbiddenFailure());
+    return;
+  }
+
+  try {
+    const readiness = getExternalIntegrationsReadinessSnapshot();
+    res.json(success({ readiness }, { phase: "runtime", scope: "external-integrations-readiness" }));
+  } catch {
+    res.status(500).json(
+      failure("EXTERNAL_INTEGRATIONS_READINESS_ERROR", "External integrations readiness could not be loaded.")
+    );
   }
 };
 
