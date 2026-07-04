@@ -192,6 +192,7 @@ import {
   updateMarketIntelligenceSummary,
   finalizeMarketIntelligenceSummary,
   archiveMarketIntelligenceSummary,
+  listFinalizedMarketIntelligenceSummaries,
   listAiDeliveryMiContext,
   applyMiHandoffToAiDelivery,
   removeMiHandoffFromAiDelivery,
@@ -5137,6 +5138,21 @@ export const removeMiHandoffFromAiDeliveryHandler: RequestHandler = async (req, 
     res.status(200).json(success(response, { phase: "runtime", scope: "ai-delivery-mi-context" }));
   } catch {
     res.status(500).json(failure("AI_DELIVERY_MI_CONTEXT_ERROR", "Could not remove Market Intelligence context."));
+  }
+};
+
+export const listFinalizedMarketIntelligenceSummariesHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) return void res.status(401).json(unauthorizedFailure());
+
+  const clientId = typeof req.query.clientId === "string" ? req.query.clientId.trim() : "";
+
+  try {
+    const response = await listFinalizedMarketIntelligenceSummaries(authSession, clientId || null);
+    if (!response) return void res.status(403).json(forbiddenFailure());
+    res.status(200).json(success(response, { phase: "runtime", scope: "market-intelligence-summary" }));
+  } catch {
+    res.status(500).json(failure("MARKET_INTELLIGENCE_RUNTIME_ERROR", "Finalized summaries could not be listed."));
   }
 };
 

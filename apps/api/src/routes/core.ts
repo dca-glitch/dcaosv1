@@ -172,6 +172,7 @@ import {
   updateMarketIntelligenceSummaryHandler,
   finalizeMarketIntelligenceSummaryHandler,
   archiveMarketIntelligenceSummaryHandler,
+  listFinalizedMarketIntelligenceSummariesHandler,
   applyMarketIntelligenceSummaryTargetHandler,
   listAiDeliveryMiContextHandler,
   applyMiHandoffToAiDeliveryHandler,
@@ -493,6 +494,7 @@ export function createCoreRouter() {
   router.post("/market-intelligence-projects/:projectId/summaries/:summaryId/finalize", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), finalizeMarketIntelligenceSummaryHandler);
   router.post("/market-intelligence-projects/:projectId/summaries/:summaryId/archive", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), archiveMarketIntelligenceSummaryHandler);
   router.post("/market-intelligence-projects/:projectId/summaries/:summaryId/apply", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), applyMarketIntelligenceSummaryTargetHandler);
+  router.get("/market-intelligence/finalized-summaries", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), listFinalizedMarketIntelligenceSummariesHandler);
 
   // AI Delivery — Market Intelligence context linkage
   router.get("/ai-delivery/projects/:projectId/market-intelligence-context", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), listAiDeliveryMiContextHandler);

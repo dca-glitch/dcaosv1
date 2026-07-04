@@ -376,6 +376,7 @@ export function MonthlyReportPanel({
   const [miContextMessage, setMiContextMessage] = useState<string | null>(null);
   const [miApplyHandoffId, setMiApplyHandoffId] = useState("");
   const [miApplySummaryId, setMiApplySummaryId] = useState("");
+  const [finalizedSummaryOptions, setFinalizedSummaryOptions] = useState<Array<{ id: string; title: string }>>([]);
   const [miDraftEditing, setMiDraftEditing] = useState(false);
   const [miDraftValue, setMiDraftValue] = useState("");
 
@@ -474,6 +475,26 @@ export function MonthlyReportPanel({
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [report?.id, onFetchMiContext]);
+
+  useEffect(() => {
+    const token = window.sessionStorage.getItem("dcaosv1.authToken");
+    if (!token) {
+      setFinalizedSummaryOptions([]);
+      return;
+    }
+    fetch(`/api/v1/market-intelligence/finalized-summaries?clientId=${encodeURIComponent(project.clientId)}`, {
+      headers: { Accept: "application/json", Authorization: `Bearer ${token}` }
+    })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data) => {
+        const options = (data?.data?.summaries ?? []).map((summary: { id: string; title: string }) => ({
+          id: summary.id,
+          title: summary.title
+        }));
+        setFinalizedSummaryOptions(options);
+      })
+      .catch(() => setFinalizedSummaryOptions([]));
+  }, [project.clientId]);
 
   async function handleCreate() {
     setReportSaving(true);
@@ -1168,7 +1189,7 @@ export function MonthlyReportPanel({
 
               {onFetchMiContext ? (
                 <SectionPanel
-                  description="Admin-only MI handoff context."
+                  description="Admin-only MI handoff or finalized summary context."
                   title="Market Intelligence context"
                   tone="compact"
                 >
@@ -1178,6 +1199,12 @@ export function MonthlyReportPanel({
                     <>
                       {miContextMessage ? <MonthlyReportInlineSuccess message={miContextMessage} /> : null}
                       {miContextError ? <MonthlyReportInlineAlert message={miContextError} /> : null}
+                      {miContext?.miHandoffId || miContext?.miSummaryId ? (
+                        <p className="muted-text" style={{ marginBottom: "0.75rem" }}>
+                          <strong>Source type:</strong>{" "}
+                          {miContext.miSummaryId ? "Finalized MI summary" : "MI handoff"}
+                        </p>
+                      ) : null}
                       {miContext?.handoff || miContext?.summary ? (
                         <div style={{ marginBottom: "0.75rem" }}>
                           {miContext.handoff ? (
@@ -1258,8 +1285,19 @@ export function MonthlyReportPanel({
                             </div>
                           ) : null}
                           <div className="monthly-report-mi-apply-row">
+                            <select
+                              value={miApplySummaryId}
+                              onChange={(e) => setMiApplySummaryId(e.target.value)}
+                            >
+                              <option value="">Select finalized summary</option>
+                              {finalizedSummaryOptions.map((summary) => (
+                                <option key={summary.id} value={summary.id}>
+                                  {summary.title}
+                                </option>
+                              ))}
+                            </select>
                             <input
-                              placeholder="Finalized MI summary ID"
+                              placeholder="Or summary ID (fallback)"
                               type="text"
                               value={miApplySummaryId}
                               onChange={(e) => setMiApplySummaryId(e.target.value)}

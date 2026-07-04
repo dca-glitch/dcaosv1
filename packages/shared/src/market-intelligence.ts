@@ -117,8 +117,28 @@ export interface MarketIntelligenceSummaryRecord {
   finalizedAt: string | null;
   aiDeliveryProjectId: string | null;
   appliedAt: string | null;
+  linkage?: MarketIntelligenceSummaryLinkageSummary | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface MarketIntelligenceSummaryLinkageSummary {
+  aiDeliveryProjectId: string | null;
+  aiDeliveryProjectName: string | null;
+  monthlyReportId: string | null;
+  monthlyReportTitle: string | null;
+  appliedAt: string | null;
+}
+
+export interface MarketIntelligenceFinalizedSummaryPickerItem {
+  id: string;
+  projectId: string;
+  title: string;
+  status: string;
+  clientId: string | null;
+  finalizedAt: string | null;
+  appliedAt: string | null;
+  aiDeliveryProjectId: string | null;
 }
 
 export interface MarketIntelligenceSummaryApplyTargetRequest {

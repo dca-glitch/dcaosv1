@@ -125,7 +125,7 @@ async function main() {
     await targetSelect.waitFor({ state: "visible", timeout: 15000 });
     await targetSelect.selectOption(aiDeliveryProjectId);
     await page.getByRole("button", { name: "Apply", exact: true }).click();
-    await page.getByText("Linked to AI Delivery").first().waitFor({ state: "visible", timeout: 15000 });
+    await page.getByText("Linked delivery:").first().waitFor({ state: "visible", timeout: 15000 });
     record("apply summary to AI Delivery from MI page", true);
 
     await page.goto(`${webBaseUrl}/#/ai-delivery`, { waitUntil: "networkidle" });

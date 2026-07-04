@@ -116,6 +116,9 @@ import type {
   MarketIntelligenceSummariesResponse,
   MarketIntelligenceSummaryInputRequest,
   MarketIntelligenceSummaryGenerateResponse,
+  MarketIntelligenceSummaryLinkageSummary,
+  MarketIntelligenceFinalizedSummaryPickerItem,
+  MarketIntelligenceFinalizedSummariesResponse,
   MarketIntelligenceSummaryApplyTargetRequest,
   MarketIntelligenceSummaryApplyResponse,
   AiDeliveryMiContextResponse,
@@ -11293,6 +11296,62 @@ export async function archiveMarketIntelligenceFinding(
   });
 }
 
+async function buildMiSummaryLinkageMap(
+  tx: PrismaTx,
+  tenantId: string,
+  summaries: Array<{
+    id: string;
+    aiDeliveryProjectId: string | null;
+    appliedAt: Date | null;
+  }>
+): Promise<Map<string, MarketIntelligenceSummaryLinkageSummary>> {
+  const linkageMap = new Map<string, MarketIntelligenceSummaryLinkageSummary>();
+  if (summaries.length === 0) {
+    return linkageMap;
+  }
+
+  const summaryIds = summaries.map((summary) => summary.id);
+  const deliveryProjectIds = [
+    ...new Set(summaries.map((summary) => summary.aiDeliveryProjectId).filter((id): id is string => Boolean(id)))
+  ];
+
+  const [deliveryProjects, monthlyReports] = await Promise.all([
+    deliveryProjectIds.length > 0
+      ? tx.aiDeliveryProject.findMany({
+          where: { tenantId, id: { in: deliveryProjectIds } },
+          select: { id: true, name: true }
+        })
+      : Promise.resolve([]),
+    (tx as any).aiDeliveryMonthlyReport.findMany({
+      where: { tenantId, miSummaryId: { in: summaryIds } },
+      select: { id: true, title: true, miSummaryId: true }
+    })
+  ]);
+
+  const deliveryNameById = new Map(deliveryProjects.map((project) => [project.id, project.name]));
+  const reportBySummaryId = new Map<string, { id: string; title: string | null }>();
+  for (const report of monthlyReports as Array<{ id: string; title: string | null; miSummaryId: string | null }>) {
+    if (report.miSummaryId) {
+      reportBySummaryId.set(report.miSummaryId, { id: report.id, title: report.title });
+    }
+  }
+
+  for (const summary of summaries) {
+    const report = reportBySummaryId.get(summary.id) ?? null;
+    linkageMap.set(summary.id, {
+      aiDeliveryProjectId: summary.aiDeliveryProjectId,
+      aiDeliveryProjectName: summary.aiDeliveryProjectId
+        ? deliveryNameById.get(summary.aiDeliveryProjectId) ?? null
+        : null,
+      monthlyReportId: report?.id ?? null,
+      monthlyReportTitle: report?.title ?? null,
+      appliedAt: summary.appliedAt?.toISOString() ?? null
+    });
+  }
+
+  return linkageMap;
+}
+
 export async function listMarketIntelligenceSummaries(
   authSession: AuthResolvedSessionContext,
   projectId: string
@@ -11313,8 +11372,51 @@ export async function listMarketIntelligenceSummaries(
       orderBy: { createdAt: "desc" }
     });
 
-    return { summaries: summaries.map(toMiSummaryRecord) };
+    const linkageMap = await buildMiSummaryLinkageMap(tx, tenantId, summaries);
+
+    return {
+      summaries: summaries.map((summary) => ({
+        ...toMiSummaryRecord(summary),
+        linkage: linkageMap.get(summary.id) ?? null
+      }))
+    };
   });
+}
+
+export async function listFinalizedMarketIntelligenceSummaries(
+  authSession: AuthResolvedSessionContext,
+  clientId?: string | null
+): Promise<MarketIntelligenceFinalizedSummariesResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) {
+    return null;
+  }
+
+  const summaries = await prisma.marketIntelligenceSummary.findMany({
+    where: {
+      tenantId,
+      isArchived: false,
+      status: "FINALIZED",
+      ...(clientId ? { clientId } : {})
+    },
+    select: MI_SUMMARY_SELECT,
+    orderBy: [{ finalizedAt: "desc" }, { createdAt: "desc" }]
+  });
+
+  const pickerItems = summaries
+    .filter((summary) => isFinalizedMiSummaryV1(toMiSummaryApplyRecord(summary)))
+    .map((summary) => ({
+      id: summary.id,
+      projectId: summary.projectId,
+      title: summary.title,
+      status: summary.status,
+      clientId: summary.clientId,
+      finalizedAt: summary.finalizedAt?.toISOString() ?? null,
+      appliedAt: summary.appliedAt?.toISOString() ?? null,
+      aiDeliveryProjectId: summary.aiDeliveryProjectId ?? null
+    }));
+
+  return { summaries: pickerItems };
 }
 
 async function loadMiSummaryGenerationContext(

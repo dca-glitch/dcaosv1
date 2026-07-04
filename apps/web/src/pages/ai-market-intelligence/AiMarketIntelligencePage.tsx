@@ -191,6 +191,7 @@ export function AiMarketIntelligencePage({ clients }: AiMarketIntelligencePagePr
   const [showSourceModal, setShowSourceModal] = useState(false);
   const [showInsightModal, setShowInsightModal] = useState(false);
   const [showFindingModal, setShowFindingModal] = useState(false);
+  const [editingFindingId, setEditingFindingId] = useState<string | null>(null);
   const [projectForm, setProjectForm] = useState<ProjectFormValues>(EMPTY_PROJECT_FORM);
   const [sourceForm, setSourceForm] = useState<SourceFormValues>({ title: "", sourceUrl: "", sourceNotes: "" });
   const [insightForm, setInsightForm] = useState<InsightFormValues>({ title: "", summary: "", status: "DRAFT" });
@@ -206,6 +207,7 @@ export function AiMarketIntelligencePage({ clients }: AiMarketIntelligencePagePr
   const [applyReportId, setApplyReportId] = useState("");
   const [applySaving, setApplySaving] = useState(false);
   const [deliveryProjects, setDeliveryProjects] = useState<Array<{ id: string; name: string; clientId: string }>>([]);
+  const [deliveryReports, setDeliveryReports] = useState<Array<{ id: string; title: string | null; status: string }>>([]);
 
   const activeClients = useMemo(
     () => clients.filter((client) => !client.isArchived),
@@ -413,6 +415,65 @@ export function AiMarketIntelligencePage({ clients }: AiMarketIntelligencePagePr
     }
   }, [findingForm, loadProjectData, selectedProjectId]);
 
+  const openEditFinding = useCallback((finding: MarketIntelligenceFindingSummary) => {
+    setEditingFindingId(finding.id);
+    setFindingForm({
+      findingCategory: finding.findingCategory,
+      findingText: finding.findingText,
+      priority: finding.priority ?? "MEDIUM"
+    });
+    setActionError(null);
+  }, []);
+
+  const handleUpdateFinding = useCallback(async () => {
+    if (!selectedProjectId || !editingFindingId || !findingForm.findingText.trim()) {
+      return;
+    }
+
+    setSavingFinding(true);
+    setActionError(null);
+    try {
+      await apiData("PUT", `/market-intelligence-projects/${selectedProjectId}/findings/${editingFindingId}`, findingForm);
+      setEditingFindingId(null);
+      setFindingForm({ findingCategory: "COMPETITOR", findingText: "", priority: "MEDIUM" });
+      await loadProjectData(selectedProjectId);
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : "Finding could not be updated.");
+    } finally {
+      setSavingFinding(false);
+    }
+  }, [editingFindingId, findingForm, loadProjectData, selectedProjectId]);
+
+  const handleArchiveFinding = useCallback(async (findingId: string) => {
+    if (!selectedProjectId) {
+      return;
+    }
+
+    setActionError(null);
+    try {
+      await apiData("POST", `/market-intelligence-projects/${selectedProjectId}/findings/${findingId}/archive`);
+      await loadProjectData(selectedProjectId);
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : "Finding could not be archived.");
+    }
+  }, [loadProjectData, selectedProjectId]);
+
+  const loadDeliveryReports = useCallback(async (aiDeliveryProjectId: string) => {
+    if (!aiDeliveryProjectId) {
+      setDeliveryReports([]);
+      return;
+    }
+    try {
+      const data = await apiData<{ report: { id: string; title: string | null; status: string } | null }>(
+        "GET",
+        `/ai-delivery/reports/monthly/${aiDeliveryProjectId}`
+      );
+      setDeliveryReports(data.report ? [data.report] : []);
+    } catch {
+      setDeliveryReports([]);
+    }
+  }, []);
+
   const handleGenerateSummaryPreview = useCallback(async () => {
     if (!selectedProjectId) {
       return;
@@ -475,6 +536,7 @@ export function AiMarketIntelligencePage({ clients }: AiMarketIntelligencePagePr
     setApplyTarget("delivery");
     setApplyDeliveryProjectId("");
     setApplyReportId("");
+    setDeliveryReports([]);
     setActionError(null);
     try {
       const data = await apiData<{ aiDeliveryProjects: Array<{ id: string; name: string; clientId: string }> }>(
@@ -810,6 +872,14 @@ export function AiMarketIntelligencePage({ clients }: AiMarketIntelligencePagePr
                             </div>
                             <div className="dense-row-note">{finding.findingText}</div>
                           </div>
+                          <div className="dense-actions">
+                            <button className="ghost-action" onClick={() => openEditFinding(finding)} type="button">
+                              Edit
+                            </button>
+                            <button className="ghost-action" onClick={() => void handleArchiveFinding(finding.id)} type="button">
+                              Archive
+                            </button>
+                          </div>
                         </div>
                       </article>
                     ))}
@@ -969,8 +1039,20 @@ export function AiMarketIntelligencePage({ clients }: AiMarketIntelligencePagePr
                           {summary.integrationContext?.version === "MI_SUMMARY_V1" ? (
                             <div className="dense-row-note muted-text">MI_SUMMARY_V1</div>
                           ) : null}
-                          {summary.aiDeliveryProjectId ? (
-                            <div className="dense-row-note muted-text">Linked to AI Delivery: {summary.aiDeliveryProjectId}</div>
+                          {summary.linkage?.aiDeliveryProjectName || summary.linkage?.aiDeliveryProjectId ? (
+                            <div className="dense-row-note muted-text">
+                              Linked delivery: {summary.linkage.aiDeliveryProjectName ?? summary.linkage.aiDeliveryProjectId}
+                            </div>
+                          ) : null}
+                          {summary.linkage?.monthlyReportId ? (
+                            <div className="dense-row-note muted-text">
+                              Linked report: {summary.linkage.monthlyReportTitle ?? summary.linkage.monthlyReportId}
+                            </div>
+                          ) : null}
+                          {summary.appliedAt || summary.linkage?.appliedAt ? (
+                            <div className="dense-row-note muted-text">
+                              Applied: {formatDateLabel(summary.appliedAt ?? summary.linkage?.appliedAt ?? null)}
+                            </div>
                           ) : null}
                           <div className="dense-actions">
                             {summary.status !== "FINALIZED" ? (
@@ -1342,6 +1424,58 @@ export function AiMarketIntelligencePage({ clients }: AiMarketIntelligencePagePr
         </Modal>
       ) : null}
 
+      {editingFindingId ? (
+        <Modal onClose={() => setEditingFindingId(null)} title="Edit research finding">
+          <div className="entity-form">
+            <div className="field-grid">
+              <label>
+                Category
+                <select
+                  onChange={(event) => setFindingForm((current) => ({ ...current, findingCategory: event.target.value }))}
+                  value={findingForm.findingCategory}
+                >
+                  {FINDING_CATEGORY_OPTIONS.map((category) => (
+                    <option key={category} value={category}>
+                      {category}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                Priority
+                <select
+                  onChange={(event) => setFindingForm((current) => ({ ...current, priority: event.target.value }))}
+                  value={findingForm.priority}
+                >
+                  {FINDING_PRIORITY_OPTIONS.map((priority) => (
+                    <option key={priority} value={priority}>
+                      {priority}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="field-span-2">
+                Finding text
+                <textarea
+                  onChange={(event) => setFindingForm((current) => ({ ...current, findingText: event.target.value }))}
+                  required
+                  rows={4}
+                  value={findingForm.findingText}
+                />
+              </label>
+            </div>
+            <div className="modal-footer">
+              <button className="secondary-action" onClick={() => setEditingFindingId(null)} type="button">
+                Cancel
+              </button>
+              <button className="primary-action" disabled={savingFinding} onClick={() => void handleUpdateFinding()} type="button">
+                {savingFinding ? "Saving…" : "Save changes"}
+              </button>
+            </div>
+          </div>
+        </Modal>
+      ) : null}
+
       {applySummaryId ? (
         <Modal onClose={() => setApplySummaryId(null)} title="Apply finalized MI summary">
           <div className="entity-form">
@@ -1356,7 +1490,15 @@ export function AiMarketIntelligencePage({ clients }: AiMarketIntelligencePagePr
             </label>
             <label>
               AI Delivery project
-              <select onChange={(event) => setApplyDeliveryProjectId(event.target.value)} value={applyDeliveryProjectId}>
+              <select
+                onChange={(event) => {
+                  const nextProjectId = event.target.value;
+                  setApplyDeliveryProjectId(nextProjectId);
+                  setApplyReportId("");
+                  void loadDeliveryReports(nextProjectId);
+                }}
+                value={applyDeliveryProjectId}
+              >
                 <option value="">Select project</option>
                 {deliveryProjects.map((project) => (
                   <option key={project.id} value={project.id}>
@@ -1366,10 +1508,23 @@ export function AiMarketIntelligencePage({ clients }: AiMarketIntelligencePagePr
               </select>
             </label>
             {applyTarget === "monthly_report" ? (
-              <label>
-                Monthly report ID
-                <input onChange={(event) => setApplyReportId(event.target.value)} type="text" value={applyReportId} />
-              </label>
+              <>
+                <label>
+                  Monthly report
+                  <select onChange={(event) => setApplyReportId(event.target.value)} value={applyReportId}>
+                    <option value="">Select report</option>
+                    {deliveryReports.map((report) => (
+                      <option key={report.id} value={report.id}>
+                        {report.title ?? report.id} ({report.status})
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  Or report ID (fallback)
+                  <input onChange={(event) => setApplyReportId(event.target.value)} type="text" value={applyReportId} />
+                </label>
+              </>
             ) : null}
             <div className="modal-footer">
               <button className="secondary-action" onClick={() => setApplySummaryId(null)} type="button">

@@ -1132,6 +1132,7 @@ export function AiDeliveryPage({
   const [miContextItems, setMiContextItems] = useState<MarketIntelligenceHandoffSummary[]>([]);
   const [miSummaryItems, setMiSummaryItems] = useState<AiDeliveryMiSummaryContextSummary[]>([]);
   const [miApplySummaryId, setMiApplySummaryId] = useState("");
+  const [finalizedSummaryOptions, setFinalizedSummaryOptions] = useState<Array<{ id: string; title: string }>>([]);
   const [miApplyHandoffId, setMiApplyHandoffId] = useState<string>("");
   const [researchWorkflowRuns, setResearchWorkflowRuns] = useState<AiDeliveryWorkflowRunSummary[]>([]);
   const [researchRequestEditorId, setResearchRequestEditorId] = useState<string | null>(null);
@@ -3103,21 +3104,40 @@ export function AiDeliveryPage({
     return (data?.data?.summaries ?? []) as AiDeliveryMiSummaryContextSummary[];
   }
 
+  async function fetchFinalizedMiSummaries(clientId: string | null): Promise<Array<{ id: string; title: string }>> {
+    const token = window.sessionStorage.getItem("dcaosv1.authToken");
+    if (!token) return [];
+    const query = clientId ? `?clientId=${encodeURIComponent(clientId)}` : "";
+    const response = await fetch(`/api/v1/market-intelligence/finalized-summaries${query}`, {
+      headers: { Accept: "application/json", Authorization: `Bearer ${token}` }
+    });
+    if (!response.ok) return [];
+    const data = await response.json();
+    return (data?.data?.summaries ?? []).map((summary: { id: string; title: string }) => ({
+      id: summary.id,
+      title: summary.title
+    }));
+  }
+
   async function openMiContext(projectId: string) {
     setOpenMiContextId(projectId);
     setMiContextLoading(true);
     setMiContextError(null);
     setMiContextItems([]);
     setMiSummaryItems([]);
+    setFinalizedSummaryOptions([]);
     setMiApplyHandoffId("");
     setMiApplySummaryId("");
+    const project = projects.find((entry) => entry.id === projectId) ?? null;
     try {
-      const [items, summaries] = await Promise.all([
+      const [items, summaries, pickerOptions] = await Promise.all([
         typeof onFetchMiContext === "function" ? onFetchMiContext(projectId) : Promise.resolve([]),
-        fetchMiSummaryContext(projectId)
+        fetchMiSummaryContext(projectId),
+        fetchFinalizedMiSummaries(project?.clientId ?? null)
       ]);
       setMiContextItems(items);
       setMiSummaryItems(summaries);
+      setFinalizedSummaryOptions(pickerOptions);
     } catch {
       setMiContextError("Could not load Market Intelligence context.");
     } finally {
@@ -3130,6 +3150,7 @@ export function AiDeliveryPage({
     setMiContextError(null);
     setMiContextItems([]);
     setMiSummaryItems([]);
+    setFinalizedSummaryOptions([]);
     setMiApplyHandoffId("");
     setMiApplySummaryId("");
   }
@@ -4255,11 +4276,29 @@ export function AiDeliveryPage({
                       <button className="ghost-action" disabled={miContextLoading} onClick={() => void removeMiSummary(openMiContextId, summary.id)} type="button">Remove</button>
                     </div>
                     {summary.sourceNotes ? <p className="muted-text">{summary.sourceNotes}</p> : null}
-                    {summary.appliedAt ? <p className="muted-text">Applied {summary.appliedAt}</p> : null}
+                    {summary.appliedAt ? (
+                      <p className="muted-text">Applied {new Date(summary.appliedAt).toLocaleString()}</p>
+                    ) : null}
                   </article>
                 ))}
                 <div className="form-field">
-                  <label htmlFor="mi-apply-summary-id">Finalized summary ID</label>
+                  <label htmlFor="mi-apply-summary-select">Finalized summary</label>
+                  <select
+                    id="mi-apply-summary-select"
+                    disabled={miContextLoading}
+                    onChange={(e) => setMiApplySummaryId(e.target.value)}
+                    value={miApplySummaryId}
+                  >
+                    <option value="">Select finalized summary</option>
+                    {finalizedSummaryOptions.map((summary) => (
+                      <option key={summary.id} value={summary.id}>
+                        {summary.title}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form-field">
+                  <label htmlFor="mi-apply-summary-id">Or summary ID (fallback)</label>
                   <input
                     id="mi-apply-summary-id"
                     type="text"
