@@ -747,6 +747,7 @@ model AiDeliveryProject {
   monthlyReports AiDeliveryMonthlyReport[]
   aiDeliveryMonthlyMetricSnapshots AiDeliveryMonthlyMetricSnapshot[]
   marketIntelligenceHandoffs MarketIntelligenceHandoff[]
+  marketIntelligenceSummaries MarketIntelligenceSummary[]
   aiKnowledgeItems         AiKnowledgeItem[]
   aiContextSnapshots       AiContextSnapshot[]
   productionPlans          ProductionPlan[]
@@ -1422,6 +1423,8 @@ model AiDeliveryMonthlyReport {
   aiDeliveryProject AiDeliveryProject @relation(fields: [aiDeliveryProjectId], references: [id], onDelete: Cascade)
   client            Client            @relation(fields: [clientId], references: [id], onDelete: Restrict)
   miHandoff         MarketIntelligenceHandoff? @relation(fields: [miHandoffId], references: [id], onDelete: SetNull)
+  miSummaryId       String?
+  miSummary         MarketIntelligenceSummary? @relation(fields: [miSummaryId], references: [id], onDelete: SetNull)
   aiDeliveryMonthlyMetricSnapshots AiDeliveryMonthlyMetricSnapshot[]
 
   @@unique([tenantId, aiDeliveryProjectId])
@@ -1430,6 +1433,7 @@ model AiDeliveryMonthlyReport {
   @@index([tenantId, clientId])
   @@index([tenantId, isArchived])
   @@index([tenantId, miHandoffId])
+  @@index([tenantId, miSummaryId])
 }
 
 model AiDeliveryMonthlyMetricSnapshot {
@@ -2027,29 +2031,34 @@ model MarketIntelligenceFinding {
 }
 
 model MarketIntelligenceSummary {
-  id                 String    @id @default(uuid())
-  tenantId           String
-  projectId          String
-  clientId           String?
-  title              String
-  summaryText        String
-  status             String    @default("DRAFT")
-  sourceNotes        String?
-  integrationContext Json?
-  isArchived         Boolean   @default(false)
-  finalizedAt        DateTime?
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
+  id                  String    @id @default(uuid())
+  tenantId            String
+  projectId           String
+  clientId            String?
+  title               String
+  summaryText         String
+  status              String    @default("DRAFT")
+  sourceNotes         String?
+  integrationContext  Json?
+  isArchived          Boolean   @default(false)
+  finalizedAt         DateTime?
+  aiDeliveryProjectId String?
+  appliedAt           DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
 
-  tenant  Tenant                    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  project MarketIntelligenceProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  client  Client?                   @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  tenant            Tenant                    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  project           MarketIntelligenceProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  client            Client?                   @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  aiDeliveryProject AiDeliveryProject?        @relation(fields: [aiDeliveryProjectId], references: [id], onDelete: SetNull)
+  monthlyReports    AiDeliveryMonthlyReport[]
 
   @@index([tenantId])
   @@index([tenantId, projectId])
   @@index([tenantId, clientId])
   @@index([tenantId, status])
   @@index([tenantId, isArchived])
+  @@index([tenantId, aiDeliveryProjectId])
 }
 
 model MarketIntelligenceInsight {

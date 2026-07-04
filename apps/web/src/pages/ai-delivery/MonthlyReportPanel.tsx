@@ -55,6 +55,7 @@ export type AiDeliveryMonthlyReportData = {
   isArchived: boolean;
   finalizedAt: string | null;
   miHandoffId?: string | null;
+  miSummaryId?: string | null;
   miContextDraft?: string | null;
   createdAt: string;
   updatedAt: string;
@@ -77,6 +78,7 @@ export type AiDeliveryMonthlyReportFormValues = {
 
 export type AiDeliveryMonthlyReportMiContext = {
   miHandoffId: string | null;
+  miSummaryId: string | null;
   miContextDraft: string | null;
   handoff: {
     id: string;
@@ -88,6 +90,14 @@ export type AiDeliveryMonthlyReportMiContext = {
     risks: unknown;
     recommendedActions: unknown;
     sourceNote: string | null;
+  } | null;
+  summary: {
+    id: string;
+    title: string;
+    status: string;
+    sourceNotes: string | null;
+    projectId: string;
+    finalizedAt: string | null;
   } | null;
 };
 
@@ -365,6 +375,7 @@ export function MonthlyReportPanel({
   const [miContextError, setMiContextError] = useState<string | null>(null);
   const [miContextMessage, setMiContextMessage] = useState<string | null>(null);
   const [miApplyHandoffId, setMiApplyHandoffId] = useState("");
+  const [miApplySummaryId, setMiApplySummaryId] = useState("");
   const [miDraftEditing, setMiDraftEditing] = useState(false);
   const [miDraftValue, setMiDraftValue] = useState("");
 
@@ -680,6 +691,35 @@ export function MonthlyReportPanel({
       setDocumentError(error instanceof Error ? error.message : "Unable to retrieve download link.");
     } finally {
       setDocumentDownloading(false);
+    }
+  }
+
+  async function handleMiSummaryApply() {
+    if (!report || !miApplySummaryId.trim()) return;
+    const token = window.sessionStorage.getItem("dcaosv1.authToken");
+    if (!token) return;
+    setMiContextLoading(true);
+    setMiContextError(null);
+    setMiContextMessage(null);
+    try {
+      const response = await fetch(`/api/v1/ai-delivery/reports/monthly/${encodeURIComponent(report.id)}/mi-context/apply`, {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ summaryId: miApplySummaryId.trim() })
+      });
+      if (!response.ok) throw new Error("apply failed");
+      const data = await response.json();
+      setMiContext(data?.data ?? null);
+      setMiApplySummaryId("");
+      setMiContextMessage("Finalized MI summary applied to report context.");
+    } catch (error) {
+      setMiContextError(error instanceof Error ? error.message : "Unable to apply MI summary.");
+    } finally {
+      setMiContextLoading(false);
     }
   }
 
@@ -1138,13 +1178,22 @@ export function MonthlyReportPanel({
                     <>
                       {miContextMessage ? <MonthlyReportInlineSuccess message={miContextMessage} /> : null}
                       {miContextError ? <MonthlyReportInlineAlert message={miContextError} /> : null}
-                      {miContext?.handoff ? (
+                      {miContext?.handoff || miContext?.summary ? (
                         <div style={{ marginBottom: "0.75rem" }}>
-                          <p className="muted-text">
-                            <strong>Linked handoff:</strong> {miContext.handoff.title}
-                            {" — "}
-                            <StatusBadge status={miContext.handoff.handoffStatus} />
-                          </p>
+                          {miContext.handoff ? (
+                            <p className="muted-text">
+                              <strong>Linked handoff:</strong> {miContext.handoff.title}
+                              {" — "}
+                              <StatusBadge status={miContext.handoff.handoffStatus} />
+                            </p>
+                          ) : null}
+                          {miContext.summary ? (
+                            <p className="muted-text">
+                              <strong>Linked MI summary:</strong> {miContext.summary.title}
+                              {" — "}
+                              <StatusBadge status={miContext.summary.status} />
+                            </p>
+                          ) : null}
                           {miDraftEditing ? (
                             <div style={{ marginTop: "0.5rem" }}>
                               <textarea
@@ -1189,7 +1238,7 @@ export function MonthlyReportPanel({
                         </div>
                       ) : (
                         <div style={{ marginBottom: "0.75rem" }}>
-                          <p className="muted-text">No MI context linked. Apply a READY handoff by ID.</p>
+                          <p className="muted-text">No MI context linked. Apply a READY handoff or finalized MI summary by ID.</p>
                           {onApplyMiHandoff ? (
                             <div className="monthly-report-mi-apply-row">
                               <input
@@ -1204,10 +1253,26 @@ export function MonthlyReportPanel({
                                 onClick={() => void handleMiApply()}
                                 type="button"
                               >
-                                Apply
+                                Apply handoff
                               </button>
                             </div>
                           ) : null}
+                          <div className="monthly-report-mi-apply-row">
+                            <input
+                              placeholder="Finalized MI summary ID"
+                              type="text"
+                              value={miApplySummaryId}
+                              onChange={(e) => setMiApplySummaryId(e.target.value)}
+                            />
+                            <button
+                              className="ghost-action"
+                              disabled={miContextLoading || !miApplySummaryId.trim()}
+                              onClick={() => void handleMiSummaryApply()}
+                              type="button"
+                            >
+                              Apply summary
+                            </button>
+                          </div>
                         </div>
                       )}
                     </>

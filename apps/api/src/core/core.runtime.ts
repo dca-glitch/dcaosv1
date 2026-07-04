@@ -116,7 +116,13 @@ import type {
   MarketIntelligenceSummariesResponse,
   MarketIntelligenceSummaryInputRequest,
   MarketIntelligenceSummaryGenerateResponse,
+  MarketIntelligenceSummaryApplyTargetRequest,
+  MarketIntelligenceSummaryApplyResponse,
   AiDeliveryMiContextResponse,
+  AiDeliveryMiSummaryContextResponse,
+  AiDeliveryMiSummaryApplyRequest,
+  AiDeliveryMiSummaryBriefApplyResponse,
+  AiDeliveryMiSummaryContextSummary,
   AiDeliveryGoogleDocExportResponse,
   AiDeliveryMonthlyReportMiContextResponse,
   AiDeliveryMonthlyReportMiApplyRequest,
@@ -133,6 +139,14 @@ import { recordAiDeliverySystemEvent } from "../services/system-events.service";
 import { recordPlatformAuditEvent } from "../security/audit-log.service";
 import type { AiDeliveryWordPressPublishResult } from "../services/wordpress.service";
 import { buildDeterministicMarketIntelligenceSummary } from "./market-intelligence-summary.execution";
+import {
+  buildAiDeliveryBriefNotesFromMiSummary,
+  buildMiSummaryContextDraft,
+  buildMiSummaryRecommendationsAppend,
+  buildMiSummarySeoPlanningNotes,
+  isFinalizedMiSummaryV1,
+  type MiSummaryApplyRecord
+} from "./market-intelligence-summary.integration";
 import { getAiProviderConfig } from "../config";
 import {
   createAiDeliveryWorkflowExecutionAdapter,
@@ -7819,6 +7833,7 @@ const aiDeliveryMonthlyReportSelect = {
   isArchived: true,
   finalizedAt: true,
   miHandoffId: true,
+  miSummaryId: true,
   miContextDraft: true,
   createdAt: true,
   updatedAt: true,
@@ -7844,6 +7859,7 @@ function toAiDeliveryMonthlyReportSummary(r: {
   isArchived: boolean;
   finalizedAt: Date | null;
   miHandoffId: string | null;
+  miSummaryId: string | null;
   miContextDraft: string | null;
   createdAt: Date;
   updatedAt: Date;
@@ -7867,6 +7883,7 @@ function toAiDeliveryMonthlyReportSummary(r: {
     isArchived: r.isArchived,
     finalizedAt: r.finalizedAt ? r.finalizedAt.toISOString() : null,
     miHandoffId: r.miHandoffId ?? null,
+    miSummaryId: r.miSummaryId ?? null,
     miContextDraft: r.miContextDraft ?? null,
     createdAt: r.createdAt.toISOString(),
     updatedAt: r.updatedAt.toISOString(),
@@ -10955,6 +10972,8 @@ const MI_SUMMARY_SELECT = {
   integrationContext: true,
   isArchived: true,
   finalizedAt: true,
+  aiDeliveryProjectId: true,
+  appliedAt: true,
   createdAt: true,
   updatedAt: true
 } as const;
@@ -10989,6 +11008,8 @@ function toMiSummaryRecord(summary: {
   integrationContext: unknown;
   isArchived: boolean;
   finalizedAt: Date | null;
+  aiDeliveryProjectId?: string | null;
+  appliedAt?: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }): MarketIntelligenceSummaryRecord {
@@ -11006,9 +11027,104 @@ function toMiSummaryRecord(summary: {
         : null,
     isArchived: summary.isArchived,
     finalizedAt: summary.finalizedAt?.toISOString() ?? null,
+    aiDeliveryProjectId: summary.aiDeliveryProjectId ?? null,
+    appliedAt: summary.appliedAt?.toISOString() ?? null,
     createdAt: summary.createdAt.toISOString(),
     updatedAt: summary.updatedAt.toISOString()
   };
+}
+
+function toMiSummaryApplyRecord(summary: {
+  id: string;
+  projectId: string;
+  clientId: string | null;
+  title: string;
+  summaryText: string;
+  status: string;
+  sourceNotes: string | null;
+  integrationContext: unknown;
+  isArchived: boolean;
+  finalizedAt: Date | null;
+  aiDeliveryProjectId?: string | null;
+  appliedAt?: Date | null;
+}): MiSummaryApplyRecord {
+  return {
+    id: summary.id,
+    projectId: summary.projectId,
+    clientId: summary.clientId,
+    title: summary.title,
+    summaryText: summary.summaryText,
+    status: summary.status,
+    sourceNotes: summary.sourceNotes,
+    integrationContext: summary.integrationContext,
+    isArchived: summary.isArchived,
+    finalizedAt: summary.finalizedAt,
+    aiDeliveryProjectId: summary.aiDeliveryProjectId ?? null,
+    appliedAt: summary.appliedAt ?? null
+  };
+}
+
+function toAiDeliveryMiSummaryContextSummary(summary: {
+  id: string;
+  projectId: string;
+  title: string;
+  status: string;
+  sourceNotes: string | null;
+  aiDeliveryProjectId: string | null;
+  appliedAt: Date | null;
+  finalizedAt: Date | null;
+}): AiDeliveryMiSummaryContextSummary {
+  return {
+    id: summary.id,
+    projectId: summary.projectId,
+    title: summary.title,
+    status: summary.status,
+    sourceNotes: summary.sourceNotes,
+    aiDeliveryProjectId: summary.aiDeliveryProjectId,
+    appliedAt: summary.appliedAt?.toISOString() ?? null,
+    finalizedAt: summary.finalizedAt?.toISOString() ?? null
+  };
+}
+
+async function loadFinalizedMiSummaryForApply(
+  tx: PrismaTx,
+  tenantId: string,
+  summaryId: string,
+  projectId?: string
+) {
+  const summary = await tx.marketIntelligenceSummary.findFirst({
+    where: {
+      id: summaryId,
+      tenantId,
+      isArchived: false,
+      ...(projectId ? { projectId } : {})
+    },
+    select: MI_SUMMARY_SELECT
+  });
+  if (!summary || !isFinalizedMiSummaryV1(toMiSummaryApplyRecord(summary))) {
+    return null;
+  }
+  return summary;
+}
+
+async function assertMiSummaryClientMatchesDeliveryProject(
+  tx: PrismaTx,
+  tenantId: string,
+  summary: { clientId: string | null; project: { clientId: string | null } },
+  aiDeliveryProjectId: string
+) {
+  const project = await tx.aiDeliveryProject.findFirst({
+    where: { id: aiDeliveryProjectId, tenantId, isArchived: false },
+    select: { id: true, clientId: true }
+  });
+  if (!project) {
+    return null;
+  }
+  const summaryClientId = summary.clientId ?? summary.project.clientId;
+  if (summaryClientId && summaryClientId !== project.clientId) {
+    return null;
+  }
+  return project;
 }
 
 export async function listMarketIntelligenceFindings(
@@ -11606,27 +11722,42 @@ function buildMiContextDraft(handoff: {
   return lines.join("");
 }
 
-/** Get MI context currently attached to a monthly report (admin-only). */
-export async function getAiDeliveryMonthlyReportMiContext(
-  authSession: AuthResolvedSessionContext,
-  reportId: string
-): Promise<AiDeliveryMonthlyReportMiContextResponse | null> {
-  const tenantId = getActiveTenantId(authSession);
-  if (!tenantId) return null;
+const MI_CONTEXT_SUMMARY_SELECT = {
+  id: true,
+  title: true,
+  status: true,
+  sourceNotes: true,
+  projectId: true,
+  finalizedAt: true
+} as const;
 
-  const report = await (prisma as any).aiDeliveryMonthlyReport.findFirst({
-    where: { id: reportId, tenantId },
-    select: {
-      id: true,
-      miHandoffId: true,
-      miContextDraft: true,
-      miHandoff: { select: MI_CONTEXT_HANDOFF_SELECT }
-    }
-  });
-  if (!report) return null;
-
+function buildMonthlyReportMiContextResponse(report: {
+  miHandoffId: string | null;
+  miSummaryId: string | null;
+  miContextDraft: string | null;
+  miHandoff: {
+    id: string;
+    title: string;
+    handoffStatus: string;
+    marketSummary: string | null;
+    audienceSignals: unknown;
+    opportunities: unknown;
+    risks: unknown;
+    recommendedActions: unknown;
+    sourceNote: string | null;
+  } | null;
+  miSummary: {
+    id: string;
+    title: string;
+    status: string;
+    sourceNotes: string | null;
+    projectId: string;
+    finalizedAt: Date | null;
+  } | null;
+}): AiDeliveryMonthlyReportMiContextResponse {
   return {
     miHandoffId: report.miHandoffId ?? null,
+    miSummaryId: report.miSummaryId ?? null,
     miContextDraft: report.miContextDraft ?? null,
     handoff: report.miHandoff
       ? {
@@ -11640,11 +11771,45 @@ export async function getAiDeliveryMonthlyReportMiContext(
           recommendedActions: report.miHandoff.recommendedActions ?? null,
           sourceNote: report.miHandoff.sourceNote ?? null
         }
+      : null,
+    summary: report.miSummary
+      ? {
+          id: report.miSummary.id,
+          title: report.miSummary.title,
+          status: report.miSummary.status,
+          sourceNotes: report.miSummary.sourceNotes ?? null,
+          projectId: report.miSummary.projectId,
+          finalizedAt: report.miSummary.finalizedAt?.toISOString() ?? null
+        }
       : null
   };
 }
 
-/** Apply a READY/APPLIED MI handoff to a monthly report as internal context (admin-only). */
+/** Get MI context currently attached to a monthly report (admin-only). */
+export async function getAiDeliveryMonthlyReportMiContext(
+  authSession: AuthResolvedSessionContext,
+  reportId: string
+): Promise<AiDeliveryMonthlyReportMiContextResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) return null;
+
+  const report = await (prisma as any).aiDeliveryMonthlyReport.findFirst({
+    where: { id: reportId, tenantId },
+    select: {
+      id: true,
+      miHandoffId: true,
+      miSummaryId: true,
+      miContextDraft: true,
+      miHandoff: { select: MI_CONTEXT_HANDOFF_SELECT },
+      miSummary: { select: MI_CONTEXT_SUMMARY_SELECT }
+    }
+  });
+  if (!report) return null;
+
+  return buildMonthlyReportMiContextResponse(report);
+}
+
+/** Apply a READY/APPLIED MI handoff or finalized MI summary to a monthly report (admin-only). */
 export async function applyMiHandoffToMonthlyReport(
   authSession: AuthResolvedSessionContext,
   reportId: string,
@@ -11653,20 +11818,26 @@ export async function applyMiHandoffToMonthlyReport(
   const tenantId = getActiveTenantId(authSession);
   if (!tenantId) return null;
 
+  if (body.summaryId) {
+    return applyFinalizedMiSummaryToMonthlyReport(authSession, reportId, body.summaryId);
+  }
+
+  const handoffId = body.handoffId?.trim() ?? "";
+  if (!handoffId) return null;
+
   return prisma.$transaction(async (tx: PrismaTx) => {
     const report = await (tx as any).aiDeliveryMonthlyReport.findFirst({
       where: { id: reportId, tenantId },
-      select: { id: true, aiDeliveryProjectId: true }
+      select: { id: true, aiDeliveryProjectId: true, status: true }
     });
-    if (!report) return null;
+    if (!report || report.status === "FINAL" || report.status === "ARCHIVED") return null;
 
     const handoff = await tx.marketIntelligenceHandoff.findFirst({
-      where: { id: body.handoffId, tenantId, aiDeliveryProjectId: report.aiDeliveryProjectId, isArchived: false },
+      where: { id: handoffId, tenantId, aiDeliveryProjectId: report.aiDeliveryProjectId, isArchived: false },
       select: MI_CONTEXT_HANDOFF_SELECT
     });
     if (!handoff) return null;
 
-    // Only READY or APPLIED handoffs may be referenced
     if (handoff.handoffStatus !== "READY" && handoff.handoffStatus !== "APPLIED") {
       return null;
     }
@@ -11675,24 +11846,16 @@ export async function applyMiHandoffToMonthlyReport(
 
     await (tx as any).aiDeliveryMonthlyReport.update({
       where: { id: reportId },
-      data: { miHandoffId: body.handoffId, miContextDraft: draft }
+      data: { miHandoffId: handoffId, miSummaryId: null, miContextDraft: draft }
     });
 
-    return {
-      miHandoffId: body.handoffId,
+    return buildMonthlyReportMiContextResponse({
+      miHandoffId: handoffId,
+      miSummaryId: null,
       miContextDraft: draft,
-      handoff: {
-        id: handoff.id,
-        title: handoff.title,
-        handoffStatus: handoff.handoffStatus,
-        marketSummary: handoff.marketSummary ?? null,
-        audienceSignals: handoff.audienceSignals ?? null,
-        opportunities: handoff.opportunities ?? null,
-        risks: handoff.risks ?? null,
-        recommendedActions: handoff.recommendedActions ?? null,
-        sourceNote: handoff.sourceNote ?? null
-      }
-    };
+      miHandoff: handoff,
+      miSummary: null
+    });
   });
 }
 
@@ -11708,7 +11871,7 @@ export async function updateMonthlyReportMiContextDraft(
   return prisma.$transaction(async (tx: PrismaTx) => {
     const report = await (tx as any).aiDeliveryMonthlyReport.findFirst({
       where: { id: reportId, tenantId },
-      select: { id: true, miHandoffId: true }
+      select: { id: true, miHandoffId: true, miSummaryId: true }
     });
     if (!report) return null;
 
@@ -11738,15 +11901,35 @@ export async function updateMonthlyReportMiContextDraft(
       }
     }
 
+    let summaryData = null;
+    if (report.miSummaryId) {
+      const s = await tx.marketIntelligenceSummary.findFirst({
+        where: { id: report.miSummaryId, tenantId },
+        select: MI_CONTEXT_SUMMARY_SELECT
+      });
+      if (s) {
+        summaryData = {
+          id: s.id,
+          title: s.title,
+          status: s.status,
+          sourceNotes: s.sourceNotes ?? null,
+          projectId: s.projectId,
+          finalizedAt: s.finalizedAt?.toISOString() ?? null
+        };
+      }
+    }
+
     return {
       miHandoffId: report.miHandoffId ?? null,
+      miSummaryId: report.miSummaryId ?? null,
       miContextDraft: body.miContextDraft,
-      handoff: handoffData
+      handoff: handoffData,
+      summary: summaryData
     };
   });
 }
 
-/** Remove MI handoff reference from a monthly report (clears both miHandoffId and miContextDraft). */
+/** Remove MI handoff/summary reference from a monthly report (clears internal context). */
 export async function removeMiHandoffFromMonthlyReport(
   authSession: AuthResolvedSessionContext,
   reportId: string
@@ -11757,15 +11940,392 @@ export async function removeMiHandoffFromMonthlyReport(
   return prisma.$transaction(async (tx: PrismaTx) => {
     const report = await (tx as any).aiDeliveryMonthlyReport.findFirst({
       where: { id: reportId, tenantId },
-      select: { id: true }
+      select: { id: true, status: true }
     });
-    if (!report) return null;
+    if (!report || report.status === "ARCHIVED") return null;
 
     await (tx as any).aiDeliveryMonthlyReport.update({
       where: { id: reportId },
-      data: { miHandoffId: null, miContextDraft: null }
+      data: { miHandoffId: null, miSummaryId: null, miContextDraft: null }
     });
 
-    return { miHandoffId: null, miContextDraft: null, handoff: null };
+    return { miHandoffId: null, miSummaryId: null, miContextDraft: null, handoff: null, summary: null };
   });
+}
+
+// ─── MI Summary → Delivery integration (Mega Block 2) ─────────────────────────
+
+export async function listAiDeliveryMiSummaryContext(
+  authSession: AuthResolvedSessionContext,
+  aiDeliveryProjectId: string
+): Promise<AiDeliveryMiSummaryContextResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) return null;
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    const project = await tx.aiDeliveryProject.findFirst({
+      where: { id: aiDeliveryProjectId, tenantId },
+      select: { id: true }
+    });
+    if (!project) return null;
+
+    const summaries = await tx.marketIntelligenceSummary.findMany({
+      where: { tenantId, aiDeliveryProjectId, isArchived: false, status: "FINALIZED" },
+      select: {
+        id: true,
+        projectId: true,
+        title: true,
+        status: true,
+        sourceNotes: true,
+        aiDeliveryProjectId: true,
+        appliedAt: true,
+        finalizedAt: true
+      },
+      orderBy: { appliedAt: "desc" }
+    });
+
+    return { summaries: summaries.map(toAiDeliveryMiSummaryContextSummary) };
+  });
+}
+
+export async function applyFinalizedMiSummaryToAiDelivery(
+  authSession: AuthResolvedSessionContext,
+  aiDeliveryProjectId: string,
+  summaryId: string
+): Promise<AiDeliveryMiSummaryContextResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) return null;
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    const summary = await tx.marketIntelligenceSummary.findFirst({
+      where: { id: summaryId, tenantId, isArchived: false },
+      select: {
+        ...MI_SUMMARY_SELECT,
+        project: { select: { clientId: true } }
+      }
+    });
+    if (!summary || !isFinalizedMiSummaryV1(toMiSummaryApplyRecord(summary))) return null;
+
+    const project = await assertMiSummaryClientMatchesDeliveryProject(tx, tenantId, summary, aiDeliveryProjectId);
+    if (!project) return null;
+
+    await tx.marketIntelligenceSummary.update({
+      where: { id: summaryId },
+      data: { aiDeliveryProjectId, appliedAt: new Date() }
+    });
+
+    const summaries = await tx.marketIntelligenceSummary.findMany({
+      where: { tenantId, aiDeliveryProjectId, isArchived: false, status: "FINALIZED" },
+      select: {
+        id: true,
+        projectId: true,
+        title: true,
+        status: true,
+        sourceNotes: true,
+        aiDeliveryProjectId: true,
+        appliedAt: true,
+        finalizedAt: true
+      },
+      orderBy: { appliedAt: "desc" }
+    });
+
+    await recordAiDeliverySystemEvent(
+      {
+        tenantId,
+        aiDeliveryProjectId,
+        eventName: "MI_SUMMARY_APPLIED_TO_DELIVERY",
+        relatedEntityId: summaryId
+      },
+      tx
+    );
+
+    return { summaries: summaries.map(toAiDeliveryMiSummaryContextSummary) };
+  });
+}
+
+export async function removeMiSummaryFromAiDelivery(
+  authSession: AuthResolvedSessionContext,
+  aiDeliveryProjectId: string,
+  summaryId: string
+): Promise<AiDeliveryMiSummaryContextResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) return null;
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    const summary = await tx.marketIntelligenceSummary.findFirst({
+      where: { id: summaryId, tenantId, aiDeliveryProjectId },
+      select: { id: true }
+    });
+    if (!summary) return null;
+
+    await tx.marketIntelligenceSummary.update({
+      where: { id: summaryId },
+      data: { aiDeliveryProjectId: null, appliedAt: null }
+    });
+
+    const summaries = await tx.marketIntelligenceSummary.findMany({
+      where: { tenantId, aiDeliveryProjectId, isArchived: false, status: "FINALIZED" },
+      select: {
+        id: true,
+        projectId: true,
+        title: true,
+        status: true,
+        sourceNotes: true,
+        aiDeliveryProjectId: true,
+        appliedAt: true,
+        finalizedAt: true
+      },
+      orderBy: { appliedAt: "desc" }
+    });
+
+    return { summaries: summaries.map(toAiDeliveryMiSummaryContextSummary) };
+  });
+}
+
+export async function applyFinalizedMiSummaryToAiDeliveryBrief(
+  authSession: AuthResolvedSessionContext,
+  aiDeliveryProjectId: string,
+  summaryId: string
+): Promise<AiDeliveryMiSummaryBriefApplyResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) return null;
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    const summary = await tx.marketIntelligenceSummary.findFirst({
+      where: { id: summaryId, tenantId, isArchived: false },
+      select: {
+        ...MI_SUMMARY_SELECT,
+        project: { select: { clientId: true } }
+      }
+    });
+    if (!summary || !isFinalizedMiSummaryV1(toMiSummaryApplyRecord(summary))) return null;
+
+    const project = await assertMiSummaryClientMatchesDeliveryProject(tx, tenantId, summary, aiDeliveryProjectId);
+    if (!project) return null;
+
+    const brief = await getAiDeliveryProjectBrief(tx, tenantId, aiDeliveryProjectId);
+    if (!brief) return null;
+
+    const appliedBlock = buildAiDeliveryBriefNotesFromMiSummary(summary);
+    const nextNotes = [brief.notes?.trim(), appliedBlock].filter(Boolean).join("\n\n");
+    const updatedBrief = await tx.aiDeliveryBrief.update({
+      where: { id: brief.id },
+      data: { notes: nextNotes },
+      select: { id: true, notes: true, updatedAt: true }
+    });
+
+    await tx.marketIntelligenceSummary.update({
+      where: { id: summaryId },
+      data: { aiDeliveryProjectId, appliedAt: new Date() }
+    });
+
+    await recordAiDeliverySystemEvent(
+      {
+        tenantId,
+        aiDeliveryProjectId,
+        eventName: "MI_SUMMARY_APPLIED_TO_BRIEF",
+        relatedEntityId: summaryId
+      },
+      tx
+    );
+
+    return {
+      summary: toMiSummaryRecord(summary),
+      brief: {
+        id: updatedBrief.id,
+        notes: updatedBrief.notes ?? null,
+        updatedAt: updatedBrief.updatedAt.toISOString()
+      }
+    };
+  });
+}
+
+export async function applyFinalizedMiSummaryToSeoContext(
+  authSession: AuthResolvedSessionContext,
+  aiDeliveryProjectId: string,
+  summaryId: string
+): Promise<{ summary: MarketIntelligenceSummaryRecord; aiDeliveryProject: { id: string; plannedContentScopeNotes: string | null; updatedAt: string } } | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) return null;
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    const summary = await tx.marketIntelligenceSummary.findFirst({
+      where: { id: summaryId, tenantId, isArchived: false },
+      select: {
+        ...MI_SUMMARY_SELECT,
+        project: { select: { clientId: true } }
+      }
+    });
+    if (!summary || !isFinalizedMiSummaryV1(toMiSummaryApplyRecord(summary))) return null;
+
+    const project = await assertMiSummaryClientMatchesDeliveryProject(tx, tenantId, summary, aiDeliveryProjectId);
+    if (!project) return null;
+
+    const existing = await tx.aiDeliveryProject.findFirst({
+      where: { id: aiDeliveryProjectId, tenantId },
+      select: { id: true, plannedContentScopeNotes: true }
+    });
+    if (!existing) return null;
+
+    const seoBlock = buildMiSummarySeoPlanningNotes(summary);
+    const nextNotes = [existing.plannedContentScopeNotes?.trim(), seoBlock].filter(Boolean).join("\n\n");
+    const updated = await tx.aiDeliveryProject.update({
+      where: { id: aiDeliveryProjectId },
+      data: { plannedContentScopeNotes: nextNotes },
+      select: { id: true, plannedContentScopeNotes: true, updatedAt: true }
+    });
+
+    await tx.marketIntelligenceSummary.update({
+      where: { id: summaryId },
+      data: { aiDeliveryProjectId, appliedAt: new Date() }
+    });
+
+    await recordAiDeliverySystemEvent(
+      {
+        tenantId,
+        aiDeliveryProjectId,
+        eventName: "MI_SUMMARY_APPLIED_TO_SEO_CONTEXT",
+        relatedEntityId: summaryId
+      },
+      tx
+    );
+
+    return {
+      summary: toMiSummaryRecord(summary),
+      aiDeliveryProject: {
+        id: updated.id,
+        plannedContentScopeNotes: updated.plannedContentScopeNotes ?? null,
+        updatedAt: updated.updatedAt.toISOString()
+      }
+    };
+  });
+}
+
+export async function applyFinalizedMiSummaryToMonthlyReport(
+  authSession: AuthResolvedSessionContext,
+  reportId: string,
+  summaryId: string
+): Promise<AiDeliveryMonthlyReportMiContextResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) return null;
+
+  return prisma.$transaction(async (tx: PrismaTx) => {
+    const report = await (tx as any).aiDeliveryMonthlyReport.findFirst({
+      where: { id: reportId, tenantId },
+      select: {
+        id: true,
+        aiDeliveryProjectId: true,
+        status: true,
+        recommendationsText: true
+      }
+    });
+    if (!report || report.status === "FINAL" || report.status === "ARCHIVED") return null;
+
+    const summary = await tx.marketIntelligenceSummary.findFirst({
+      where: { id: summaryId, tenantId, isArchived: false },
+      select: {
+        ...MI_SUMMARY_SELECT,
+        project: { select: { clientId: true } }
+      }
+    });
+    if (!summary || !isFinalizedMiSummaryV1(toMiSummaryApplyRecord(summary))) return null;
+
+    const project = await assertMiSummaryClientMatchesDeliveryProject(tx, tenantId, summary, report.aiDeliveryProjectId);
+    if (!project) return null;
+
+    const draft = buildMiSummaryContextDraft(summary);
+    const recommendationsAppend = buildMiSummaryRecommendationsAppend(summary);
+    const nextRecommendations = [report.recommendationsText?.trim(), recommendationsAppend]
+      .filter(Boolean)
+      .join("\n\n");
+
+    await (tx as any).aiDeliveryMonthlyReport.update({
+      where: { id: reportId },
+      data: {
+        miSummaryId: summaryId,
+        miHandoffId: null,
+        miContextDraft: draft,
+        recommendationsText: nextRecommendations
+      }
+    });
+
+    await tx.marketIntelligenceSummary.update({
+      where: { id: summaryId },
+      data: { aiDeliveryProjectId: report.aiDeliveryProjectId, appliedAt: new Date() }
+    });
+
+    return buildMonthlyReportMiContextResponse({
+      miHandoffId: null,
+      miSummaryId: summaryId,
+      miContextDraft: draft,
+      miHandoff: null,
+      miSummary: {
+        id: summary.id,
+        title: summary.title,
+        status: summary.status,
+        sourceNotes: summary.sourceNotes,
+        projectId: summary.projectId,
+        finalizedAt: summary.finalizedAt
+      }
+    });
+  });
+}
+
+export async function applyMarketIntelligenceSummaryTarget(
+  authSession: AuthResolvedSessionContext,
+  projectId: string,
+  summaryId: string,
+  input: MarketIntelligenceSummaryApplyTargetRequest
+): Promise<MarketIntelligenceSummaryApplyResponse | null> {
+  const tenantId = getActiveTenantId(authSession);
+  if (!tenantId) return null;
+
+  const target = input.target?.trim() ?? "";
+  const aiDeliveryProjectId = input.aiDeliveryProjectId?.trim() ?? "";
+  if (!target || !aiDeliveryProjectId) return null;
+
+  const summary = await loadFinalizedMiSummaryForApply(prisma, tenantId, summaryId, projectId);
+  if (!summary) return null;
+
+  if (target === "delivery") {
+    const result = await applyFinalizedMiSummaryToAiDelivery(authSession, aiDeliveryProjectId, summaryId);
+    if (!result) return null;
+    const refreshed = await prisma.marketIntelligenceSummary.findFirst({
+      where: { id: summaryId, tenantId },
+      select: MI_SUMMARY_SELECT
+    });
+    return {
+      summary: refreshed ? toMiSummaryRecord(refreshed) : null,
+      summaries: result.summaries
+    };
+  }
+
+  if (target === "brief") {
+    const result = await applyFinalizedMiSummaryToAiDeliveryBrief(authSession, aiDeliveryProjectId, summaryId);
+    if (!result) return null;
+    return { summary: result.summary, brief: result.brief };
+  }
+
+  if (target === "seo") {
+    const result = await applyFinalizedMiSummaryToSeoContext(authSession, aiDeliveryProjectId, summaryId);
+    if (!result) return null;
+    return { summary: result.summary, aiDeliveryProject: result.aiDeliveryProject };
+  }
+
+  if (target === "monthly_report") {
+    const reportId = input.reportId?.trim() ?? "";
+    if (!reportId) return null;
+    const reportContext = await applyFinalizedMiSummaryToMonthlyReport(authSession, reportId, summaryId);
+    if (!reportContext) return null;
+    const refreshed = await prisma.marketIntelligenceSummary.findFirst({
+      where: { id: summaryId, tenantId },
+      select: MI_SUMMARY_SELECT
+    });
+    return {
+      summary: refreshed ? toMiSummaryRecord(refreshed) : null,
+      report: reportContext
+    };
+  }
+
+  return null;
 }

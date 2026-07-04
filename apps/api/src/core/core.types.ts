@@ -1152,6 +1152,7 @@ export interface AiDeliveryMonthlyReportSummary {
   finalizedAt: string | null;
   // Market Intelligence internal context (admin-only)
   miHandoffId: string | null;
+  miSummaryId: string | null;
   miContextDraft: string | null;
   createdAt: string;
   updatedAt: string;
@@ -1204,6 +1205,7 @@ export interface AiDeliveryMonthlyReportStatusRequest {
 
 export interface AiDeliveryMonthlyReportMiContextResponse {
   miHandoffId: string | null;
+  miSummaryId: string | null;
   miContextDraft: string | null;
   handoff: {
     id: string;
@@ -1216,10 +1218,19 @@ export interface AiDeliveryMonthlyReportMiContextResponse {
     recommendedActions: unknown;
     sourceNote: string | null;
   } | null;
+  summary: {
+    id: string;
+    title: string;
+    status: string;
+    sourceNotes: string | null;
+    projectId: string;
+    finalizedAt: string | null;
+  } | null;
 }
 
 export interface AiDeliveryMonthlyReportMiApplyRequest {
-  handoffId: string;
+  handoffId?: string | null;
+  summaryId?: string | null;
 }
 
 export interface AiDeliveryMonthlyReportMiDraftRequest {
@@ -1521,8 +1532,48 @@ export interface MarketIntelligenceSummaryRecord {
   integrationContext: Record<string, unknown> | null;
   isArchived: boolean;
   finalizedAt: string | null;
+  aiDeliveryProjectId: string | null;
+  appliedAt: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface MarketIntelligenceSummaryApplyTargetRequest {
+  target?: "delivery" | "brief" | "seo" | "monthly_report" | null;
+  aiDeliveryProjectId?: string | null;
+  reportId?: string | null;
+}
+
+export interface MarketIntelligenceSummaryApplyResponse {
+  summary: MarketIntelligenceSummaryRecord | null;
+  brief?: { id: string; notes: string | null; updatedAt: string } | null;
+  aiDeliveryProject?: { id: string; plannedContentScopeNotes: string | null; updatedAt: string } | null;
+  report?: AiDeliveryMonthlyReportMiContextResponse | null;
+  summaries?: AiDeliveryMiSummaryContextSummary[];
+}
+
+export interface AiDeliveryMiSummaryContextSummary {
+  id: string;
+  projectId: string;
+  title: string;
+  status: string;
+  sourceNotes: string | null;
+  aiDeliveryProjectId: string | null;
+  appliedAt: string | null;
+  finalizedAt: string | null;
+}
+
+export interface AiDeliveryMiSummaryContextResponse {
+  summaries: AiDeliveryMiSummaryContextSummary[];
+}
+
+export interface AiDeliveryMiSummaryApplyRequest {
+  summaryId?: string | null;
+}
+
+export interface AiDeliveryMiSummaryBriefApplyResponse {
+  summary: MarketIntelligenceSummaryRecord;
+  brief: { id: string; notes: string | null; updatedAt: string };
 }
 
 export interface MarketIntelligenceSummaryResponse {

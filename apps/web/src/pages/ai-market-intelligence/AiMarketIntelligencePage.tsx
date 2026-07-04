@@ -200,6 +200,12 @@ export function AiMarketIntelligencePage({ clients }: AiMarketIntelligencePagePr
   const [savingInsight, setSavingInsight] = useState(false);
   const [savingFinding, setSavingFinding] = useState(false);
   const [generatingSummary, setGeneratingSummary] = useState(false);
+  const [applySummaryId, setApplySummaryId] = useState<string | null>(null);
+  const [applyTarget, setApplyTarget] = useState<"delivery" | "brief" | "seo" | "monthly_report">("delivery");
+  const [applyDeliveryProjectId, setApplyDeliveryProjectId] = useState("");
+  const [applyReportId, setApplyReportId] = useState("");
+  const [applySaving, setApplySaving] = useState(false);
+  const [deliveryProjects, setDeliveryProjects] = useState<Array<{ id: string; name: string; clientId: string }>>([]);
 
   const activeClients = useMemo(
     () => clients.filter((client) => !client.isArchived),
@@ -463,6 +469,51 @@ export function AiMarketIntelligencePage({ clients }: AiMarketIntelligencePagePr
       setActionError(error instanceof Error ? error.message : "Summary could not be finalized.");
     }
   }, [loadProjectData, selectedProjectId]);
+
+  const openSummaryApply = useCallback(async (summaryId: string) => {
+    setApplySummaryId(summaryId);
+    setApplyTarget("delivery");
+    setApplyDeliveryProjectId("");
+    setApplyReportId("");
+    setActionError(null);
+    try {
+      const data = await apiData<{ aiDeliveryProjects: Array<{ id: string; name: string; clientId: string }> }>(
+        "GET",
+        "/ai-delivery-projects"
+      );
+      const clientId = selectedProject?.clientId ?? null;
+      const filtered = (data.aiDeliveryProjects ?? []).filter((project) => !clientId || project.clientId === clientId);
+      setDeliveryProjects(filtered);
+    } catch {
+      setDeliveryProjects([]);
+    }
+  }, [selectedProject?.clientId]);
+
+  const handleApplySummaryTarget = useCallback(async () => {
+    if (!selectedProjectId || !applySummaryId || !applyDeliveryProjectId.trim()) {
+      return;
+    }
+
+    setApplySaving(true);
+    setActionError(null);
+    try {
+      await apiData(
+        "POST",
+        `/market-intelligence-projects/${selectedProjectId}/summaries/${applySummaryId}/apply`,
+        {
+          target: applyTarget,
+          aiDeliveryProjectId: applyDeliveryProjectId.trim(),
+          reportId: applyTarget === "monthly_report" ? applyReportId.trim() || null : null
+        }
+      );
+      setApplySummaryId(null);
+      await loadProjectData(selectedProjectId);
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : "Summary could not be applied.");
+    } finally {
+      setApplySaving(false);
+    }
+  }, [applyDeliveryProjectId, applyReportId, applySummaryId, applyTarget, loadProjectData, selectedProjectId]);
 
   const handleCreateRun = useCallback(async () => {
     if (!selectedProjectId) {
@@ -915,15 +966,22 @@ export function AiMarketIntelligencePage({ clients }: AiMarketIntelligencePagePr
                             <summary>Summary text</summary>
                             <pre className="dense-row-note">{summary.summaryText}</pre>
                           </details>
-                          {summary.integrationContext?.label ? (
-                            <div className="dense-row-note muted-text">Integration label: {String(summary.integrationContext.label)}</div>
+                          {summary.integrationContext?.version === "MI_SUMMARY_V1" ? (
+                            <div className="dense-row-note muted-text">MI_SUMMARY_V1</div>
+                          ) : null}
+                          {summary.aiDeliveryProjectId ? (
+                            <div className="dense-row-note muted-text">Linked to AI Delivery: {summary.aiDeliveryProjectId}</div>
                           ) : null}
                           <div className="dense-actions">
                             {summary.status !== "FINALIZED" ? (
                               <button className="primary-action" onClick={() => void handleFinalizeSummary(summary.id)} type="button">
                                 Finalize
                               </button>
-                            ) : null}
+                            ) : (
+                              <button className="ghost-action" onClick={() => void openSummaryApply(summary.id)} type="button">
+                                Apply to delivery
+                              </button>
+                            )}
                           </div>
                         </div>
                       </article>
@@ -1281,6 +1339,52 @@ export function AiMarketIntelligencePage({ clients }: AiMarketIntelligencePagePr
               </button>
             </div>
           </form>
+        </Modal>
+      ) : null}
+
+      {applySummaryId ? (
+        <Modal onClose={() => setApplySummaryId(null)} title="Apply finalized MI summary">
+          <div className="entity-form">
+            <label>
+              Target
+              <select onChange={(event) => setApplyTarget(event.target.value as typeof applyTarget)} value={applyTarget}>
+                <option value="delivery">AI Delivery context</option>
+                <option value="brief">AI Delivery brief notes</option>
+                <option value="seo">SEO / content plan notes</option>
+                <option value="monthly_report">Monthly report recommendations</option>
+              </select>
+            </label>
+            <label>
+              AI Delivery project
+              <select onChange={(event) => setApplyDeliveryProjectId(event.target.value)} value={applyDeliveryProjectId}>
+                <option value="">Select project</option>
+                {deliveryProjects.map((project) => (
+                  <option key={project.id} value={project.id}>
+                    {project.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            {applyTarget === "monthly_report" ? (
+              <label>
+                Monthly report ID
+                <input onChange={(event) => setApplyReportId(event.target.value)} type="text" value={applyReportId} />
+              </label>
+            ) : null}
+            <div className="modal-footer">
+              <button className="secondary-action" onClick={() => setApplySummaryId(null)} type="button">
+                Cancel
+              </button>
+              <button
+                className="primary-action"
+                disabled={applySaving || !applyDeliveryProjectId.trim() || (applyTarget === "monthly_report" && !applyReportId.trim())}
+                onClick={() => void handleApplySummaryTarget()}
+                type="button"
+              >
+                {applySaving ? "Applying…" : "Apply"}
+              </button>
+            </div>
+          </div>
         </Modal>
       ) : null}
     </section>

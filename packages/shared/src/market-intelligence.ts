@@ -115,6 +115,33 @@ export interface MarketIntelligenceSummaryRecord {
   integrationContext: Record<string, unknown> | null;
   isArchived: boolean;
   finalizedAt: string | null;
+  aiDeliveryProjectId: string | null;
+  appliedAt: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface MarketIntelligenceSummaryApplyTargetRequest {
+  target?: "delivery" | "brief" | "seo" | "monthly_report" | null;
+  aiDeliveryProjectId?: string | null;
+  reportId?: string | null;
+}
+
+export interface AiDeliveryMiSummaryContextSummary {
+  id: string;
+  projectId: string;
+  title: string;
+  status: string;
+  sourceNotes: string | null;
+  aiDeliveryProjectId: string | null;
+  appliedAt: string | null;
+  finalizedAt: string | null;
+}
+
+export interface AiDeliveryMiSummaryContextResponse {
+  summaries: AiDeliveryMiSummaryContextSummary[];
+}
+
+export interface AiDeliveryMiSummaryApplyRequest {
+  summaryId?: string | null;
 }

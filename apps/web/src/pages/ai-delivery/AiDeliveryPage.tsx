@@ -21,7 +21,7 @@ import type {
   MonthlyMetricSnapshotFormValues,
   AiDeliveryMonthlyReportMiContext
 } from "./MonthlyReportPanel";
-import type { MarketIntelligenceHandoffSummary } from "@dca-os-v1/shared";
+import type { MarketIntelligenceHandoffSummary, AiDeliveryMiSummaryContextSummary } from "@dca-os-v1/shared";
 
 export type AiDeliveryBriefSummary = {
   id: string;
@@ -1130,6 +1130,8 @@ export function AiDeliveryPage({
   const [miContextLoading, setMiContextLoading] = useState(false);
   const [miContextError, setMiContextError] = useState<string | null>(null);
   const [miContextItems, setMiContextItems] = useState<MarketIntelligenceHandoffSummary[]>([]);
+  const [miSummaryItems, setMiSummaryItems] = useState<AiDeliveryMiSummaryContextSummary[]>([]);
+  const [miApplySummaryId, setMiApplySummaryId] = useState("");
   const [miApplyHandoffId, setMiApplyHandoffId] = useState<string>("");
   const [researchWorkflowRuns, setResearchWorkflowRuns] = useState<AiDeliveryWorkflowRunSummary[]>([]);
   const [researchRequestEditorId, setResearchRequestEditorId] = useState<string | null>(null);
@@ -2059,10 +2061,11 @@ export function AiDeliveryPage({
     setContentPlanPdfMessage(null);
     setContentPlanPdfReady(null);
     try {
-      const [plan, drafts, miContext, pdfReadiness] = await Promise.all([
+      const [plan, drafts, miContext, miSummaries, pdfReadiness] = await Promise.all([
         typeof onFetchContentPlan === "function" ? onFetchContentPlan(projectId) : Promise.resolve(null),
         typeof onFetchContentDrafts === "function" ? onFetchContentDrafts(projectId) : Promise.resolve(contentDrafts),
         typeof onFetchMiContext === "function" ? onFetchMiContext(projectId) : Promise.resolve(null),
+        fetchMiSummaryContext(projectId),
         typeof onDownloadContentPlanDocument === "function"
           ? onDownloadContentPlanDocument(projectId).catch(() => null)
           : Promise.resolve(null)
@@ -2071,7 +2074,7 @@ export function AiDeliveryPage({
         setContentPlanDetail(plan);
         setContentPlanItems(plan?.items.map(itemDraftFromPlanItem) ?? []);
       }
-      setContentPlanMiContextCount(miContext?.length ?? 0);
+      setContentPlanMiContextCount((miContext?.length ?? 0) + (miSummaries?.length ?? 0));
       setContentDrafts(drafts);
       // Silent readiness check only; does not open the download window.
       setContentPlanPdfReady(Boolean(pdfReadiness?.downloadUrl));
@@ -3089,15 +3092,32 @@ export function AiDeliveryPage({
     setOpenMonthlyReportId(null);
   }
 
+  async function fetchMiSummaryContext(projectId: string): Promise<AiDeliveryMiSummaryContextSummary[]> {
+    const token = window.sessionStorage.getItem("dcaosv1.authToken");
+    if (!token) return [];
+    const response = await fetch(`/api/v1/ai-delivery/projects/${projectId}/mi-summary-context`, {
+      headers: { Accept: "application/json", Authorization: `Bearer ${token}` }
+    });
+    if (!response.ok) return [];
+    const data = await response.json();
+    return (data?.data?.summaries ?? []) as AiDeliveryMiSummaryContextSummary[];
+  }
+
   async function openMiContext(projectId: string) {
     setOpenMiContextId(projectId);
     setMiContextLoading(true);
     setMiContextError(null);
     setMiContextItems([]);
+    setMiSummaryItems([]);
     setMiApplyHandoffId("");
+    setMiApplySummaryId("");
     try {
-      const items = typeof onFetchMiContext === "function" ? await onFetchMiContext(projectId) : [];
+      const [items, summaries] = await Promise.all([
+        typeof onFetchMiContext === "function" ? onFetchMiContext(projectId) : Promise.resolve([]),
+        fetchMiSummaryContext(projectId)
+      ]);
       setMiContextItems(items);
+      setMiSummaryItems(summaries);
     } catch {
       setMiContextError("Could not load Market Intelligence context.");
     } finally {
@@ -3109,7 +3129,9 @@ export function AiDeliveryPage({
     setOpenMiContextId(null);
     setMiContextError(null);
     setMiContextItems([]);
+    setMiSummaryItems([]);
     setMiApplyHandoffId("");
+    setMiApplySummaryId("");
   }
 
   async function applyMiHandoff(projectId: string) {
@@ -3136,6 +3158,53 @@ export function AiDeliveryPage({
       setMiContextItems(items);
     } catch {
       setMiContextError("Could not remove Market Intelligence handoff.");
+    } finally {
+      setMiContextLoading(false);
+    }
+  }
+
+  async function applyMiSummary(projectId: string) {
+    if (!miApplySummaryId.trim()) return;
+    const token = window.sessionStorage.getItem("dcaosv1.authToken");
+    if (!token) return;
+    setMiContextLoading(true);
+    setMiContextError(null);
+    try {
+      const response = await fetch(`/api/v1/ai-delivery/projects/${projectId}/mi-summary-context/apply`, {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ summaryId: miApplySummaryId.trim() })
+      });
+      if (!response.ok) throw new Error("apply failed");
+      const data = await response.json();
+      setMiSummaryItems((data?.data?.summaries ?? []) as AiDeliveryMiSummaryContextSummary[]);
+      setMiApplySummaryId("");
+    } catch {
+      setMiContextError("Could not apply finalized MI summary.");
+    } finally {
+      setMiContextLoading(false);
+    }
+  }
+
+  async function removeMiSummary(projectId: string, summaryId: string) {
+    const token = window.sessionStorage.getItem("dcaosv1.authToken");
+    if (!token) return;
+    setMiContextLoading(true);
+    setMiContextError(null);
+    try {
+      const response = await fetch(`/api/v1/ai-delivery/projects/${projectId}/mi-summary-context/${summaryId}/remove`, {
+        method: "POST",
+        headers: { Accept: "application/json", Authorization: `Bearer ${token}` }
+      });
+      if (!response.ok) throw new Error("remove failed");
+      const data = await response.json();
+      setMiSummaryItems((data?.data?.summaries ?? []) as AiDeliveryMiSummaryContextSummary[]);
+    } catch {
+      setMiContextError("Could not remove MI summary link.");
     } finally {
       setMiContextLoading(false);
     }
@@ -3556,7 +3625,7 @@ export function AiDeliveryPage({
                 {" · "}
                 Target month: {openContentPlanProject.targetMonth}
                 {contentPlanMiContextCount > 0
-                  ? ` · ${contentPlanMiContextCount} MI handoff${contentPlanMiContextCount === 1 ? "" : "s"} applied`
+                  ? ` · ${contentPlanMiContextCount} MI context item${contentPlanMiContextCount === 1 ? "" : "s"} applied`
                   : ""}
               </p>
               <SectionPanel
@@ -4170,6 +4239,37 @@ export function AiDeliveryPage({
                     </dl>
                   </article>
                 ))}
+              </section>
+              <section className="field-panel ai-delivery-section-compact">
+                <h3>Applied MI summaries</h3>
+                <p className="muted-text">Finalized MI_SUMMARY_V1 records linked to this project.</p>
+                {miSummaryItems.length === 0 ? (
+                  <EmptyState title="No summaries applied" message="Apply a finalized MI summary below." />
+                ) : miSummaryItems.map((summary) => (
+                  <article key={summary.id} className="entity-card">
+                    <div className="entity-card-header">
+                      <div>
+                        <span className="entity-pill entity-pill-active">{summary.status}</span>
+                        <h4>{summary.title}</h4>
+                      </div>
+                      <button className="ghost-action" disabled={miContextLoading} onClick={() => void removeMiSummary(openMiContextId, summary.id)} type="button">Remove</button>
+                    </div>
+                    {summary.sourceNotes ? <p className="muted-text">{summary.sourceNotes}</p> : null}
+                    {summary.appliedAt ? <p className="muted-text">Applied {summary.appliedAt}</p> : null}
+                  </article>
+                ))}
+                <div className="form-field">
+                  <label htmlFor="mi-apply-summary-id">Finalized summary ID</label>
+                  <input
+                    id="mi-apply-summary-id"
+                    type="text"
+                    value={miApplySummaryId}
+                    onChange={(e) => setMiApplySummaryId(e.target.value)}
+                    placeholder="MI summary UUID"
+                    disabled={miContextLoading}
+                  />
+                </div>
+                <button className="primary-action" disabled={miContextLoading || !miApplySummaryId.trim()} onClick={() => openMiContextId && void applyMiSummary(openMiContextId)} type="button">Apply summary</button>
               </section>
               {typeof onApplyMiHandoff === "function" ? (
                 <section className="field-panel ai-delivery-section-compact">

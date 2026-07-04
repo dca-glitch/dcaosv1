@@ -172,9 +172,15 @@ import {
   updateMarketIntelligenceSummaryHandler,
   finalizeMarketIntelligenceSummaryHandler,
   archiveMarketIntelligenceSummaryHandler,
+  applyMarketIntelligenceSummaryTargetHandler,
   listAiDeliveryMiContextHandler,
   applyMiHandoffToAiDeliveryHandler,
   removeMiHandoffFromAiDeliveryHandler,
+  listAiDeliveryMiSummaryContextHandler,
+  applyFinalizedMiSummaryToAiDeliveryHandler,
+  removeMiSummaryFromAiDeliveryHandler,
+  applyFinalizedMiSummaryToAiDeliveryBriefHandler,
+  applyFinalizedMiSummaryToSeoContextHandler,
   getAiDeliveryMonthlyReportHandler,
   getAiDeliveryMonthlyReportMetricsHandler,
   createAiDeliveryMonthlyReportHandler,
@@ -486,11 +492,17 @@ export function createCoreRouter() {
   router.put("/market-intelligence-projects/:projectId/summaries/:summaryId", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), updateMarketIntelligenceSummaryHandler);
   router.post("/market-intelligence-projects/:projectId/summaries/:summaryId/finalize", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), finalizeMarketIntelligenceSummaryHandler);
   router.post("/market-intelligence-projects/:projectId/summaries/:summaryId/archive", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), archiveMarketIntelligenceSummaryHandler);
+  router.post("/market-intelligence-projects/:projectId/summaries/:summaryId/apply", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), applyMarketIntelligenceSummaryTargetHandler);
 
   // AI Delivery — Market Intelligence context linkage
   router.get("/ai-delivery/projects/:projectId/market-intelligence-context", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), listAiDeliveryMiContextHandler);
   router.post("/ai-delivery/projects/:projectId/market-intelligence-context/apply", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), applyMiHandoffToAiDeliveryHandler);
   router.post("/ai-delivery/projects/:projectId/market-intelligence-context/:handoffId/remove", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), removeMiHandoffFromAiDeliveryHandler);
+  router.get("/ai-delivery/projects/:projectId/mi-summary-context", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), listAiDeliveryMiSummaryContextHandler);
+  router.post("/ai-delivery/projects/:projectId/mi-summary-context/apply", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), applyFinalizedMiSummaryToAiDeliveryHandler);
+  router.post("/ai-delivery/projects/:projectId/mi-summary-context/:summaryId/remove", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), removeMiSummaryFromAiDeliveryHandler);
+  router.post("/ai-delivery/projects/:projectId/mi-summaries/:summaryId/apply-to-brief", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), applyFinalizedMiSummaryToAiDeliveryBriefHandler);
+  router.post("/ai-delivery/projects/:projectId/mi-summaries/:summaryId/apply-to-seo", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), applyFinalizedMiSummaryToSeoContextHandler);
 
   return router;
 }

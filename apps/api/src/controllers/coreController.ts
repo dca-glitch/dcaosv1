@@ -195,6 +195,13 @@ import {
   listAiDeliveryMiContext,
   applyMiHandoffToAiDelivery,
   removeMiHandoffFromAiDelivery,
+  listAiDeliveryMiSummaryContext,
+  applyFinalizedMiSummaryToAiDelivery,
+  removeMiSummaryFromAiDelivery,
+  applyFinalizedMiSummaryToAiDeliveryBrief,
+  applyFinalizedMiSummaryToSeoContext,
+  applyFinalizedMiSummaryToMonthlyReport,
+  applyMarketIntelligenceSummaryTarget,
   getAiDeliveryMonthlySummary,
   getAiDeliveryMonthlyReport,
   getAiDeliveryMonthlyReportMetrics,
@@ -264,6 +271,7 @@ import type {
   MarketIntelligenceInsightInputRequest,
   MarketIntelligenceFindingInputRequest,
   MarketIntelligenceSummaryInputRequest,
+  MarketIntelligenceSummaryApplyTargetRequest,
   AiDeliveryMonthlyReportInputRequest,
   AiDeliveryMonthlyReportUploadRequest,
   AiDeliveryMonthlyReportStatusRequest,
@@ -5132,6 +5140,118 @@ export const removeMiHandoffFromAiDeliveryHandler: RequestHandler = async (req, 
   }
 };
 
+export const listAiDeliveryMiSummaryContextHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) return void res.status(401).json(unauthorizedFailure());
+
+  const projectId = typeof req.params.projectId === "string" ? req.params.projectId.trim() : "";
+  if (!projectId) return void res.status(400).json(aiDeliveryProjectInvalidFailure());
+
+  try {
+    const response = await listAiDeliveryMiSummaryContext(authSession, projectId);
+    if (!response) return void res.status(403).json(forbiddenFailure());
+    res.status(200).json(success(response, { phase: "runtime", scope: "ai-delivery-mi-summary-context" }));
+  } catch {
+    res.status(500).json(failure("AI_DELIVERY_MI_SUMMARY_CONTEXT_ERROR", "Could not load MI summary context."));
+  }
+};
+
+export const applyFinalizedMiSummaryToAiDeliveryHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) return void res.status(401).json(unauthorizedFailure());
+
+  const projectId = typeof req.params.projectId === "string" ? req.params.projectId.trim() : "";
+  const summaryId = typeof req.body?.summaryId === "string" ? req.body.summaryId.trim() : "";
+  if (!projectId || !summaryId) {
+    return void res.status(400).json(failure("AI_DELIVERY_MI_SUMMARY_INVALID", "Project ID and summary ID are required."));
+  }
+
+  try {
+    const response = await applyFinalizedMiSummaryToAiDelivery(authSession, projectId, summaryId);
+    if (!response) return void res.status(403).json(forbiddenFailure());
+    res.status(200).json(success(response, { phase: "runtime", scope: "ai-delivery-mi-summary-context" }));
+  } catch {
+    res.status(500).json(failure("AI_DELIVERY_MI_SUMMARY_CONTEXT_ERROR", "Could not apply finalized MI summary."));
+  }
+};
+
+export const removeMiSummaryFromAiDeliveryHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) return void res.status(401).json(unauthorizedFailure());
+
+  const projectId = typeof req.params.projectId === "string" ? req.params.projectId.trim() : "";
+  const summaryId = typeof req.params.summaryId === "string" ? req.params.summaryId.trim() : "";
+  if (!projectId || !summaryId) {
+    return void res.status(400).json(failure("AI_DELIVERY_MI_SUMMARY_INVALID", "Project ID and summary ID are required."));
+  }
+
+  try {
+    const response = await removeMiSummaryFromAiDelivery(authSession, projectId, summaryId);
+    if (!response) return void res.status(403).json(forbiddenFailure());
+    res.status(200).json(success(response, { phase: "runtime", scope: "ai-delivery-mi-summary-context" }));
+  } catch {
+    res.status(500).json(failure("AI_DELIVERY_MI_SUMMARY_CONTEXT_ERROR", "Could not remove MI summary link."));
+  }
+};
+
+export const applyFinalizedMiSummaryToAiDeliveryBriefHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) return void res.status(401).json(unauthorizedFailure());
+
+  const projectId = typeof req.params.projectId === "string" ? req.params.projectId.trim() : "";
+  const summaryId = typeof req.params.summaryId === "string" ? req.params.summaryId.trim() : "";
+  if (!projectId || !summaryId) {
+    return void res.status(400).json(failure("AI_DELIVERY_MI_SUMMARY_INVALID", "Project ID and summary ID are required."));
+  }
+
+  try {
+    const response = await applyFinalizedMiSummaryToAiDeliveryBrief(authSession, projectId, summaryId);
+    if (!response) return void res.status(403).json(forbiddenFailure());
+    res.status(200).json(success(response, { phase: "runtime", scope: "ai-delivery-mi-summary-brief" }));
+  } catch {
+    res.status(500).json(failure("AI_DELIVERY_MI_SUMMARY_CONTEXT_ERROR", "Could not apply MI summary to brief."));
+  }
+};
+
+export const applyFinalizedMiSummaryToSeoContextHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) return void res.status(401).json(unauthorizedFailure());
+
+  const projectId = typeof req.params.projectId === "string" ? req.params.projectId.trim() : "";
+  const summaryId = typeof req.params.summaryId === "string" ? req.params.summaryId.trim() : "";
+  if (!projectId || !summaryId) {
+    return void res.status(400).json(failure("AI_DELIVERY_MI_SUMMARY_INVALID", "Project ID and summary ID are required."));
+  }
+
+  try {
+    const response = await applyFinalizedMiSummaryToSeoContext(authSession, projectId, summaryId);
+    if (!response) return void res.status(403).json(forbiddenFailure());
+    res.status(200).json(success(response, { phase: "runtime", scope: "ai-delivery-mi-summary-seo" }));
+  } catch {
+    res.status(500).json(failure("AI_DELIVERY_MI_SUMMARY_CONTEXT_ERROR", "Could not apply MI summary to SEO context."));
+  }
+};
+
+export const applyMarketIntelligenceSummaryTargetHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) return void res.status(401).json(unauthorizedFailure());
+
+  const projectId = typeof req.params.projectId === "string" ? req.params.projectId.trim() : "";
+  const summaryId = typeof req.params.summaryId === "string" ? req.params.summaryId.trim() : "";
+  const input = getMarketIntelligenceSummaryApplyInput(req.body);
+  if (!projectId || !summaryId || !input) {
+    return void res.status(400).json(failure("MARKET_INTELLIGENCE_SUMMARY_APPLY_INVALID", "Project ID, summary ID, target, and aiDeliveryProjectId are required."));
+  }
+
+  try {
+    const response = await applyMarketIntelligenceSummaryTarget(authSession, projectId, summaryId, input);
+    if (!response) return void res.status(403).json(forbiddenFailure());
+    res.status(200).json(success(response, { phase: "runtime", scope: "market-intelligence-summary-apply" }));
+  } catch {
+    res.status(500).json(failure("MARKET_INTELLIGENCE_RUNTIME_ERROR", "MI summary apply could not be completed."));
+  }
+};
+
 const AI_DELIVERY_MONTHLY_REPORT_STATUSES = new Set(["DRAFT", "ADMIN_REVIEW", "FINAL", "ARCHIVED"]);
 
 // Monthly Report handlers
@@ -5439,11 +5559,13 @@ export const applyMiHandoffToMonthlyReportHandler: RequestHandler = async (req, 
   const reportId = typeof req.params.reportId === "string" ? req.params.reportId.trim() : "";
   if (!reportId) return void res.status(400).json(failure("AI_DELIVERY_MONTHLY_REPORT_INVALID", "Report ID is invalid."));
   const body = req.body as AiDeliveryMonthlyReportMiApplyRequest;
-  if (!body?.handoffId || typeof body.handoffId !== "string") {
-    return void res.status(400).json(failure("HANDOFF_INVALID", "handoffId is required."));
+  const handoffId = typeof body?.handoffId === "string" ? body.handoffId.trim() : "";
+  const summaryId = typeof body?.summaryId === "string" ? body.summaryId.trim() : "";
+  if (!handoffId && !summaryId) {
+    return void res.status(400).json(failure("MI_CONTEXT_INVALID", "handoffId or summaryId is required."));
   }
   const response = await applyMiHandoffToMonthlyReport(authSession, reportId, body);
-  if (!response) return void res.status(404).json(failure("HANDOFF_NOT_FOUND", "Handoff not found or not in a valid status."));
+  if (!response) return void res.status(404).json(failure("MI_CONTEXT_NOT_FOUND", "MI context not found or not in a valid status."));
   res.status(200).json(success(response));
 };
 
@@ -5565,6 +5687,30 @@ function getMarketIntelligenceSummaryInput(value: unknown): MarketIntelligenceSu
     summaryText: getOptionalString(obj.summaryText),
     status: getOptionalString(obj.status),
     sourceNotes: getOptionalString(obj.sourceNotes)
+  };
+}
+
+function getMarketIntelligenceSummaryApplyInput(value: unknown): MarketIntelligenceSummaryApplyTargetRequest | null {
+  if (typeof value !== "object" || value === null) {
+    return null;
+  }
+
+  const obj = value as Record<string, unknown>;
+  const target = getOptionalString(obj.target);
+  const aiDeliveryProjectId = getOptionalString(obj.aiDeliveryProjectId);
+  if (!target || !aiDeliveryProjectId) {
+    return null;
+  }
+
+  const allowed = new Set(["delivery", "brief", "seo", "monthly_report"]);
+  if (!allowed.has(target)) {
+    return null;
+  }
+
+  return {
+    target: target as MarketIntelligenceSummaryApplyTargetRequest["target"],
+    aiDeliveryProjectId,
+    reportId: getOptionalString(obj.reportId)
   };
 }
 
