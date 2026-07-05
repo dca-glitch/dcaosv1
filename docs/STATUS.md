@@ -1,6 +1,6 @@
 # DCA OS Lite — Status (Source of Truth)
 
-**Last updated:** 2026-07-05 (G6 Puriva launch cockpit complete)
+**Last updated:** 2026-07-05 (G6 Wave 2 compact delivery handoff lanes complete)
 **Operator index:** [`docs/operator/OPERATOR_RUNBOOK.md`](./operator/OPERATOR_RUNBOOK.md)  
 **Architecture map:** [`docs/ARCHITECTURE.md`](./ARCHITECTURE.md) § Current application map  
 **Smoke matrix:** [`docs/runbooks/LOCAL_SMOKE_MATRIX.md`](./runbooks/LOCAL_SMOKE_MATRIX.md)  
@@ -114,6 +114,21 @@ Prior closeout baseline (still valid context): client approval happy-path `58db7
 | Production / staging / VPS | Untouched |
 | Working tree after push | Clean |
 | Remaining warning-only item | Vite chunk-size warning during build only |
+| Next block | Owner decision |
+
+### 2.5 G6 Wave 2 compact delivery handoff lanes completion (2026-07-05)
+
+**Result:** PASS — G6 Wave 2 complete on `95a92c9` (`polish(ops): compact delivery handoff lanes`).
+
+| Item | Evidence |
+|------|----------|
+| Main additions | Compact AI Delivery lanes; WorkflowBriefs intake/compliance handoff clarity; SEO/content/WordPress draft-only handoff tightening; client-safe archive/report wording |
+| Validation | Diff-only review PASS; earlier Wave 2 validation PASS (`git diff --check`, web check, full validate, browser QA) |
+| CI | Green |
+| Commit-script nuance | Local commit-script `npm.cmd run validate` later hit known Windows Prisma EPERM during `prisma:generate`; the script printed STOP, but the code commit/push still completed and CI green plus post-push verification superseded the local failure |
+| Post-push verification | PASS — `main` synced with `origin/main`; remote `origin/main` points to `95a92c9`; working tree clean |
+| Production / staging / VPS | Untouched |
+| Remaining warning-only item | Vite chunk-size warning during build only; future PowerShell runner should stop commit/push when local validation fails |
 | Next block | Owner decision |
 
 ## 3. Module readiness (local admin-operated)
