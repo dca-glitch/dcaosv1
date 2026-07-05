@@ -1,6 +1,6 @@
 # DCA OS Lite — Status (Source of Truth)
 
-**Last updated:** 2026-07-04 (Block 4 — documentation consolidation)  
+**Last updated:** 2026-07-05 (Block 5D-C — pre-staging local closeout docs)
 **Operator index:** [`docs/operator/OPERATOR_RUNBOOK.md`](./operator/OPERATOR_RUNBOOK.md)  
 **Architecture map:** [`docs/ARCHITECTURE.md`](./ARCHITECTURE.md) § Current application map  
 **Smoke matrix:** [`docs/runbooks/LOCAL_SMOKE_MATRIX.md`](./runbooks/LOCAL_SMOKE_MATRIX.md)  
@@ -15,9 +15,10 @@
 | Item | State |
 |------|--------|
 | Branch | `main` synced with `origin/main` |
-| HEAD (pinned) | `cc40160` — `feat(web): consolidate dark-theme UI density for admin and client surfaces` |
-| CI | Green on Blocks 1–3 commits |
-| Working tree | Clean before Block 4 doc edits |
+| HEAD (pinned) | `e54445f` — `fix(scripts): harden staging admin bootstrap guards` |
+| CI | Green on Blocks 1–4 and audit remediation commits (5A–5D-B) |
+| Working tree | Clean before Block 5D-C doc edits |
+| Pre-staging local closeout (5D-B) | **PASS** — manual workaround for orchestrator hang; see §2.1 |
 | Production deploy | **None** — `system.digitalcubeagency.net` unchanged |
 | Staging deploy | **None** — G4 not approved; DNS not created |
 | Staging target (G1) | `staging.digitalcubeagency.net` documented only |
@@ -35,9 +36,41 @@
 | **1** — External integrations readiness | `136e93a` | Config-only readiness layer: `GET /api/v1/integrations/readiness`, `check:external-integrations-readiness`, `smoke:external-integrations-readiness:local`. No live calls, publish, sync, or bucket IO. | Green |
 | **2** — Admin operations | `5308f19` | Read-only `GET /api/v1/admin/operations/summary`, dashboard Operational readiness panel, recovery runbook, `smoke:admin-operations:local`. | Green |
 | **3** — UI density | `cc40160` | Dark-theme UI density consolidation for admin and client surfaces (CSS-only). No backend/schema/API/auth changes. | Green |
-| **4** — Docs + operator runbook | *(this block)* | Consolidate STATUS, architecture map, smoke matrix, operator runbooks, env inventory, staging gate, deferred roadmap. Docs-only. | Pending validate |
+| **4** — Docs + operator runbook | `c7af674` | Consolidate STATUS, architecture map, smoke matrix, operator runbooks, env inventory, staging gate, deferred roadmap. Docs-only. | Green |
+| **5A–5D-A** — Claude audit remediation | `2437c84` … `e54445f` | Admin tenant-read RBAC, fail-closed client boundary smokes, CI unit-test proof, cross-platform test globs, remote staging opt-in, bootstrap guard hardening. | Green |
 
 Prior closeout baseline (still valid context): client approval happy-path `58db726`, production-readiness closeout pack `179dc04`.
+
+### 2.1 Block 5D-B — pre-staging local closeout (2026-07-05)
+
+**Result:** PASS with manual workaround. **Does not authorize G4 staging action or deploy.**
+
+| Phase | Result | Proof (compact) |
+|-------|--------|-----------------|
+| 0 Preflight | PASS | `main` = `origin/main`; clean tree; `git diff --check` exit 0 |
+| 1 No-service / local tests | PASS | `npm run validate`, `npm run test:unit`, `npm run test:integration`; syntax checks; guard tests |
+| 1b Guard refusal proofs | PASS | Staging security baseline and bootstrap check both exit 1 with refusal text; no remote/DB execution |
+| 2 Audit / Block 1–2 smokes | PASS | External integrations readiness; admin operations 16/16; client-role API boundary 48/48 |
+| 3 Block A core smokes | PASS (manual fallback) | Puriva client portal boundary 153/153; remaining core smokes run individually — all PASS |
+
+**Phase 3 manual core smokes (orchestrator fallback):** `smoke:ai-delivery-reviews`, `smoke:ai-seo-content-plan-pdf`, `smoke:ai-knowledge-context`, `smoke:client-portal-monthly-report:browser`, `smoke:monthly-report:browser`, `smoke:monthly-report:mi-context`. Final status: `PHASE3_MANUAL_CORE_PASS`.
+
+**Audit remediation commits (5A–5D-A, on `main`):**
+
+| Commit | Summary |
+|--------|---------|
+| `2437c84` | `fix(api): require admin role for internal tenant reads` |
+| `8b084a2` | `test(smoke): fail closed on client boundary prerequisites` |
+| `c26e241` | `test(ci): add unit test proof and remove integration false greens` |
+| `acd8962` | `fix(api): use node test runner globs for cross-platform CI` |
+| `5f37243` | `fix(smoke): require explicit opt-in for remote staging baseline` |
+| `e54445f` | `fix(scripts): harden staging admin bootstrap guards` |
+
+**Not performed during 5D-B:** staging/prod URLs, remote DB, bootstrap write, SSH/VPS/docker/DNS, deploy, commit, or push.
+
+**Known issue:** `npm run smoke:staging-readiness:local` orchestrator can hang after Puriva smoke completes (local PowerShell/log/process handling). Manual fallback for remaining Block A core smokes succeeded. Before G4, fix orchestrator or explicitly accept the manual workaround — see [`STAGING_READINESS.md`](./runbooks/STAGING_READINESS.md).
+
+**Next gate:** G4 staging action remains **blocked** until explicit owner approval. Local 5D-B PASS alone does not authorize staging infrastructure work or deploy.
 
 ---
 
@@ -141,10 +174,10 @@ All must pass before **requesting** G4 staging work (not deploy):
 
 | # | Gate | Command / proof |
 |---|------|-----------------|
-| 1 | Blocks 1–4 complete; CI green | Pin SHA; green CI on `main` |
-| 2 | **Claude full-code audit** | Required before staging; separate approved audit block — not a substitute for validate/smoke |
-| 3 | Validate PASS | `npm.cmd run validate` |
-| 4 | Required local smokes PASS | Block A minimum via `smoke:staging-readiness:local` **or** production-readiness closeout; plus Block 1–2 smokes |
+| 1 | Blocks 1–4 + audit remediation complete; CI green | Pin SHA `e54445f` or later; green CI on `main` |
+| 2 | **Claude full-code audit remediation** | Commits `2437c84`–`e54445f` on `main`; 5D-B local closeout PASS — not a substitute for owner G4 approval |
+| 3 | Validate PASS | `npm.cmd run validate` — PASS in 5D-B |
+| 4 | Required local smokes PASS | Block A core smokes PASS (5D-B manual fallback after orchestrator hang); Block 1–2 smokes PASS |
 | 5 | Working tree clean | No uncommitted runtime changes |
 | 6 | `main` synced | `main` = `origin/main` |
 | 7 | No live calls | No publish, sync, crawl, or live provider during gate |
@@ -210,7 +243,8 @@ The following remain true; detail preserved in linked docs and git history.
 - Market Intelligence Mega Blocks 1–3; AI Delivery Revenue Engine Layer 1; Delivery Handoff Layer 2.
 - Production Readiness closeout pack; Client Approval happy-path hardening.
 - Blocks 1–3 (external integrations readiness, admin operations, UI density) on `main`.
-- **Block 5B-C (test/CI wiring):** pending — CI adds `npm run test:unit`; integration tests and smokes remain local pre-staging gates (not CI).
+- **Block 5A–5D-A (Claude audit remediation):** closed on `main` — admin tenant RBAC, fail-closed boundary smokes, CI unit tests, cross-platform globs, remote staging opt-in, bootstrap guards (`2437c84`–`e54445f`).
+- **Block 5D-B (pre-staging local closeout):** PASS with manual orchestrator workaround; G4 still blocked.
 - Client Access Admin UI; EN2 audit writer foundation; security headers + rate limiting.
 - AI SEO Blocks 3B–3G, 4A–4G, 5A, 6A–6C-v1; Knowledge integration proven via `smoke:ai-knowledge-context`.
 - Phase F roadmap: [`docs/ROADMAP_LOCAL_COMPLETION_PHASE_F.md`](./ROADMAP_LOCAL_COMPLETION_PHASE_F.md).
@@ -229,8 +263,8 @@ The following remain true; detail preserved in linked docs and git history.
 
 AI SEO admin-operated MVP shell is in place. Live crawling, Google OAuth / GSC sync, autonomous SEO agents, and production deploy remain deferred. See §9 and [`deferred-scope-register.md`](./operator/deferred-scope-register.md).
 
-## Next work (after Block 4)
+## Next work (after Block 5D-C)
 
-- Owner review of consolidated docs.
-- Claude full-code audit (pre-staging gate).
-- G4 staging request only after explicit approval — not deploy.
+- Owner review of 5D-B local closeout evidence and this status update.
+- Decide: fix `smoke:staging-readiness:local` orchestrator hang **or** accept manual fallback as standard operator procedure.
+- G4 staging request only after **explicit owner approval** — local 5D-B PASS does not authorize staging action or deploy.

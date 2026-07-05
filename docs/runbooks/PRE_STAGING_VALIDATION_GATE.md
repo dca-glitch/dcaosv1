@@ -4,7 +4,7 @@
 
 **Purpose:** Confirm the local repository baseline before any future staging approval. PR #13 is already merged into `main`; this gate remains local-only and does not authorize VPS execution.
 
-**Phase G context (2026-07-04):** G1 closed — staging host `staging.digitalcubeagency.net`; production `system.digitalcubeagency.net`; G4 **not approved**; DNS **not created**. Current `main` baseline: `cc40160` (Block 3 UI density); Blocks 1–3 CI green. Source of truth: [`docs/STATUS.md`](../STATUS.md).
+**Phase G context (2026-07-05):** G1 closed — staging host `staging.digitalcubeagency.net`; production `system.digitalcubeagency.net`; G4 **not approved**; DNS **not created**. Current `main` baseline: `e54445f` (audit remediation + bootstrap guards); Blocks 1–4 + 5A–5D-A CI green; Block 5D-B local closeout PASS. Source of truth: [`docs/STATUS.md`](../STATUS.md).
 
 **Forbidden in this gate:** VPS login, Docker Compose apply, Caddy/DNS changes, staging migrations, production env, `smoke:mvp:staging` unless owner explicitly approves G4 and staging host access.
 
@@ -48,14 +48,14 @@ npm.cmd run smoke:admin-operations:local
 npm.cmd run smoke:client-role-api-boundary:local
 ```
 
-**Block 5A (client-role API boundary hotfix — required before staging):**
+**Block 5A (client-role API boundary — committed on `main`):**
 
 ```powershell
 cd C:\dcaosv1
 npm.cmd run smoke:client-role-api-boundary:local
 ```
 
-Proves client-role users receive 401/403 on generic admin/internal tenant GET routes in `core.ts`; `/client-portal/*` remains client-safe. Requires `AUTH_SEED_TEST_PASSWORD`; uses `AUTH_SEED_TESTER_EMAIL` or falls back to `puriva@puriva.id`. **Staging remains blocked until Block 5A is committed, pushed, and CI green.**
+Proves client-role users receive 401/403 on generic admin/internal tenant GET routes in `core.ts`; `/client-portal/*` remains client-safe. Requires `AUTH_SEED_TEST_PASSWORD`; uses `AUTH_SEED_TESTER_EMAIL` or falls back to `puriva@puriva.id`. **Status:** committed and pushed (`2437c84` and follow-on audit fixes through `e54445f`); CI green. Local 5D-B closeout re-proved this gate (48/48 PASS).
 
 **Production Readiness closeout (Mega Block 1 — deterministic delivery + MI + handoff):**
 
@@ -193,9 +193,36 @@ See block operator docs under `docs/security/`.
 ## Pass criteria
 
 - `validate` — PASS (check + build all workspaces)
-- All default local smokes — PASS
+- `npm run test:unit` and `npm run test:integration` — PASS (local; not full CI substitute)
+- Guard refusal proofs — staging security baseline and bootstrap check exit 1 with refusal text (no remote/DB execution)
+- Block 1–2 smokes — PASS (`external-integrations-readiness`, `admin-operations`, `client-role-api-boundary`)
+- Block A core smokes — PASS (orchestrator or documented manual fallback per [`STAGING_READINESS.md`](./STAGING_READINESS.md) §5)
+- All default local smokes — PASS (when running full closeout orchestrator)
 - No secrets printed in logs
 - Local `main` synced to `origin/main`
+
+**G4 staging is not authorized by local pass alone.** Explicit owner approval required before any staging infrastructure work or deploy.
+
+---
+
+## Block 5D-B local closeout evidence (2026-07-05)
+
+**Result:** PASS with manual orchestrator workaround. Record for owner review.
+
+| Phase | Command / proof | Result |
+|-------|-----------------|--------|
+| 0 Preflight | `git status`; `git diff --check`; `main` = `origin/main` | PASS |
+| 1 Validate + tests | `npm run validate`; `npm run test:unit`; `npm run test:integration` | PASS |
+| 1b Guard tests | Staging security baseline; bootstrap guard scripts | Refusal exit 1; no remote/DB |
+| 2 Block 1–2 smokes | `smoke:external-integrations-readiness:local`; `smoke:admin-operations:local`; `smoke:client-role-api-boundary:local` | PASS (16/16; 48/48) |
+| 3 Puriva boundary | `smoke:puriva-client-portal-boundary:local` | PASS 153/153 |
+| 3 Block A core (manual) | Remaining scripts after orchestrator hang — see [`STAGING_READINESS.md`](./STAGING_READINESS.md) §5 | PASS (`PHASE3_MANUAL_CORE_PASS`) |
+
+**Known issue:** `smoke:staging-readiness:local` hung after Puriva smoke (local PowerShell/log/process handling). Remaining core smokes passed via manual fallback.
+
+**Not performed:** staging/prod URLs, remote DB, bootstrap write, SSH/VPS/docker/DNS, deploy.
+
+**Next gate:** G4 staging action remains blocked until explicit owner approval. Before G4, fix orchestrator hang or accept manual fallback explicitly.
 
 ---
 
@@ -207,8 +234,10 @@ See block operator docs under `docs/security/`.
 - Full pre-staging reached final Finance admin browser smoke.
 - Finance admin browser smoke initially hit local HTTP **429** admin login/rate-limit.
 - After `restore-local-admin` and API/Web restart, isolated Finance browser smoke passed.
+- **Block 5D-B (2026-07-05):** pre-staging local closeout PASS with manual orchestrator workaround; audit remediation commits `2437c84`–`e54445f` on `main`; CI green.
 - No deploy, VPS migration, production restart, or release was performed.
 - G1 staging target: `staging.digitalcubeagency.net` (production: `system.digitalcubeagency.net`; DNS not created; G4 not approved).
+- **Local 5D-B PASS does not authorize G4 staging action or deploy.**
 
 ## After local closeout (owner decision — not this gate)
 
@@ -219,4 +248,4 @@ See block operator docs under `docs/security/`.
 5. Run `npm run smoke:mvp:staging` against `https://staging.digitalcubeagency.net/api/v1`.
 6. Block 4/5/6 prod env gates on staging.
 
-Local repo work can be **complete** while G4 VPS execution remains **not approved** and production remains **frozen**.
+Local repo work can be **complete** while G4 VPS execution remains **not approved** and production remains **frozen**. Block 5D-B local closeout PASS is repo-side evidence only — it does not substitute for explicit owner G4 approval.

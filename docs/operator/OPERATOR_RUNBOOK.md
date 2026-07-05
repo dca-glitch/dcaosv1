@@ -114,6 +114,8 @@ Local API rate limit: 300 req / 15 min per IP. Restart API (`npm.cmd run dev:api
 
 `smoke:staging-readiness:local` and `smoke:production-readiness:local` include one EPERM retry (Program Files `node.exe` only).
 
+**Orchestrator hang caveat (5D-B):** `smoke:staging-readiness:local` may hang on local Windows PowerShell after Puriva boundary smoke completes. If stuck, inspect `$env:TEMP` per-step logs and run only the remaining Block A scripts manually — see [`STAGING_READINESS.md`](../runbooks/STAGING_READINESS.md) §5 operational caveats. No staging/prod commands during fallback.
+
 Reference: [`docs/database/PRISMA_CLIENT_GENERATION_READINESS.md`](../database/PRISMA_CLIENT_GENERATION_READINESS.md).
 
 ---

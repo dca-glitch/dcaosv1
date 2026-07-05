@@ -4,7 +4,7 @@
 
 **Purpose:** Practical checklist to decide whether `main` is ready to **request** staging work (G4) — not to deploy staging.
 
-**Current baseline (2026-07-04):** `main` synced with `origin/main`; latest commit `cc40160` (`feat(web): consolidate dark-theme UI density for admin and client surfaces`); Blocks 1–3 CI green; Block 4 docs consolidation; **0% deployed** to production; G4 VPS execution **not approved**; staging DNS **not created**.
+**Current baseline (2026-07-05):** `main` synced with `origin/main`; latest commit `e54445f` (`fix(scripts): harden staging admin bootstrap guards`); Blocks 1–4 + audit remediation (5A–5D-A) CI green; Block 5D-B local closeout PASS (manual orchestrator workaround); **0% deployed** to production; G4 VPS execution **not approved**; staging DNS **not created**.
 
 **Source of truth:** [`docs/STATUS.md`](../STATUS.md). **Operator runbook:** [`docs/operator/OPERATOR_RUNBOOK.md`](../operator/OPERATOR_RUNBOOK.md).
 
@@ -28,8 +28,8 @@ Before **requesting** G4 staging work (not deploy), all must be true:
 
 | # | Gate |
 |---|------|
-| 1 | Blocks 1–4 completed; CI green on pinned SHA (`cc40160` or later) |
-| 2 | **Claude full-code audit** completed — separate approved audit block; required before staging |
+| 1 | Blocks 1–4 + audit remediation complete; CI green on pinned SHA (`e54445f` or later) |
+| 2 | **Claude audit remediation** closed on `main` (`2437c84`–`e54445f`); 5D-B local closeout PASS — separate from owner G4 approval |
 | 3 | `npm.cmd run validate` PASS |
 | 4 | Required local smokes PASS — Block A minimum (`smoke:staging-readiness:local`) plus Block 1–2 (`smoke:external-integrations-readiness:local`, `smoke:admin-operations:local`) |
 | 5 | Working tree clean (no uncommitted runtime changes) |
@@ -47,7 +47,7 @@ Before **requesting** G4 staging work (not deploy), all must be true:
 | Branch | `main` synced with `origin/main` |
 | Working tree | Clean (no uncommitted runtime changes) |
 | CI | Green on pinned commit SHA |
-| Closed blocks | 1 `136e93a`, 2 `5308f19`, 3 `cc40160`, 4 docs (pending) |
+| Closed blocks | 1 `136e93a`, 2 `5308f19`, 3 `cc40160`, 4 `c7af674`, 5A–5D-A `2437c84`–`e54445f`, 5D-B local closeout PASS |
 | Production deploy | **None** — `system.digitalcubeagency.net` unchanged |
 | Staging deploy | **None** — G4 not approved |
 | Staging target (G1) | `staging.digitalcubeagency.net` documented; DNS not created |
@@ -88,6 +88,28 @@ $log = Join-Path $env:TEMP "dca-pre-staging-$(Get-Date -Format 'yyyyMMdd-HHmmss'
 npm.cmd run validate 2>&1 | Tee-Object -FilePath $log
 notepad $log
 ```
+
+---
+
+## 2.1 Block 5D-B local closeout (2026-07-05)
+
+**Result:** PASS with manual workaround. **Does not authorize G4 staging action or deploy.**
+
+| Item | State |
+|------|-------|
+| Preflight | `main` = `origin/main`; clean tree; `git diff --check` exit 0 |
+| Validate + tests | `validate`, `test:unit`, `test:integration` — PASS |
+| Guard refusal proofs | Staging security baseline and bootstrap check exit 1 with refusal text; no remote/DB execution |
+| Block 1–2 smokes | External integrations readiness; admin operations 16/16; client-role API boundary 48/48 |
+| Puriva boundary | `smoke:puriva-client-portal-boundary:local` — 153/153 PASS |
+| Block A core smokes | PASS via manual fallback (see orchestrator caveat below) |
+
+**Default remote guards verified (5D-B):**
+
+- Staging security baseline smoke requires explicit `DCA_SMOKE_REMOTE_TARGET=staging` — refuses without opt-in.
+- Bootstrap script requires explicit target + write confirmation and refuses production-shaped host (`dcaosv1-postgres`).
+
+**Not performed:** staging/prod URLs, remote DB, bootstrap write, SSH/VPS/docker/DNS, deploy.
 
 ---
 
@@ -222,6 +244,18 @@ Full catalog: [`LOCAL_SMOKE_MATRIX.md`](./LOCAL_SMOKE_MATRIX.md).
 - **Prisma EPERM:** run `validate` before starting dev servers, or stop locking `node.exe`.
 - **HTTP 429:** restart API (`npm.cmd run dev:api`); `smoke:pre-staging:local` restarts API automatically.
 - **R2 / WP open-gate probes:** optional; not required for Block A GO.
+- **`smoke:staging-readiness:local` orchestrator hang (5D-B):** on local Windows PowerShell, the orchestrator may hang after `smoke:puriva-client-portal-boundary:local` completes even when that step PASSed. If the orchestrator appears stuck after a completed step:
+  1. Inspect per-step stdout/stderr logs under `$env:TEMP` (orchestrator opens Notepad on failure; check recent `dca-*` logs).
+  2. Confirm the completed step PASSed from its log before proceeding.
+  3. Run **only the remaining** Block A scripts manually — do not re-run completed steps unless debugging:
+     - `npm.cmd run smoke:ai-delivery-reviews`
+     - `npm.cmd run smoke:ai-seo-content-plan-pdf`
+     - `npm.cmd run smoke:ai-knowledge-context`
+     - `npm.cmd run smoke:client-portal-monthly-report:browser`
+     - `npm.cmd run smoke:monthly-report:browser`
+     - `npm.cmd run smoke:monthly-report:mi-context`
+  4. **No staging/prod commands** during manual fallback — local only.
+  5. Before G4 request, owner must fix orchestrator **or** explicitly accept this manual workaround.
 
 ---
 
@@ -368,8 +402,8 @@ These are intentionally out of scope for Block A GO. See [`deferred-scope-regist
 
 All must be true:
 
-- [ ] Blocks 1–4 complete; `main` synced; pinned SHA matches green CI
-- [ ] Claude full-code audit completed (pre-staging gate)
+- [ ] Blocks 1–4 + audit remediation complete; `main` synced; pinned SHA matches green CI
+- [ ] Claude audit remediation closed (`2437c84`–`e54445f`); 5D-B local closeout PASS
 - [ ] `npm.cmd run validate` PASS
 - [ ] Block 1–2 smokes PASS (`external-integrations-readiness`, `admin-operations`)
 - [ ] Block A smoke subset (§5) PASS
