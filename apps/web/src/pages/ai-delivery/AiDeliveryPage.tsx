@@ -3698,8 +3698,18 @@ export function AiDeliveryPage({
                 Target month: {openContentPlanProject.targetMonth}
                 {contentPlanMiContextCount > 0
                   ? ` · ${contentPlanMiContextCount} MI context item${contentPlanMiContextCount === 1 ? "" : "s"} applied`
-                  : ""}
+                  : " · No MI context applied"}
               </p>
+              <AiDeliveryInlineNotice>
+                <strong>Context readiness:</strong>{" "}
+                {openContentPlanProject.brief?.status === "APPROVED" && contentPlanMiContextCount > 0
+                  ? "Verified intake and context are in place. The plan can be treated as grounded."
+                  : openContentPlanProject.brief?.status === "APPROVED"
+                    ? "Intake is approved, but no MI/knowledge context is applied yet. The plan is still a scaffold."
+                    : openContentPlanProject.brief
+                      ? "Intake is started but not approved. Finalize the brief before treating the plan as grounded."
+                      : "Intake is missing. The SEO plan should not be treated as final until verified intake and approved context are in place."}
+              </AiDeliveryInlineNotice>
               <SectionPanel
                 title="Workflow readiness"
                 description="Research, plan, and draft handoff status."
@@ -3751,6 +3761,9 @@ export function AiDeliveryPage({
                 <>
                   <section className="field-panel ai-delivery-section-compact">
                     <h3>SEO topic/research planning</h3>
+                    <AiDeliveryInlineNotice>
+                      Planning items are objectives only. Generated admin drafts are internal scaffolds — not final client copy — until the compliance review checkpoint and admin review pass.
+                    </AiDeliveryInlineNotice>
                     {contentPlanGenerationMessage ? <AiDeliveryInlineNotice>{contentPlanGenerationMessage}</AiDeliveryInlineNotice> : null}
                     {contentPlanPdfMessage ? <AiDeliveryInlineNotice>{contentPlanPdfMessage}</AiDeliveryInlineNotice> : null}
                   </section>
@@ -3913,7 +3926,7 @@ export function AiDeliveryPage({
                           <span className="muted-text">
                             {!persistedItem?.id
                               ? "Save the plan before generating a linked admin draft."
-                              : "Admin-only draft generation from this plan item."}
+                              : "Admin-only draft scaffold from this plan item. Not final client copy until compliance review and admin review pass."}
                           </span>
                         </div>
                         <div className="field-span-2">
@@ -4984,6 +4997,12 @@ export function AiDeliveryPage({
                 <div className="field-panel">
                   <h4>Package completeness summary</h4>
                   <AiDeliveryInlineNotice>Internal readiness check from linked draft, image, and deliverable data only. Does not generate exports or client delivery.</AiDeliveryInlineNotice>
+                  <AiDeliveryInlineNotice>
+                    <strong>Handoff context:</strong>{" "}
+                    {deliverableLinkedDraftRecord?.status === "APPROVED" && deliverableReadinessBlockers.length === 0
+                      ? "Context ready — approved draft linked and readiness guard clear."
+                      : "Context missing or blocked — link an approved draft and clear readiness blockers before this package can advance."}
+                  </AiDeliveryInlineNotice>
                   <dl className="brief-grid">
                     <div>
                       <dt>Linked content draft</dt>
@@ -5022,6 +5041,9 @@ export function AiDeliveryPage({
                 <div className="field-panel">
                   <h4>Internal final handoff view</h4>
                   <AiDeliveryInlineNotice>Internal admin summary only — no client delivery, publication, WordPress transfer, or export output.</AiDeliveryInlineNotice>
+                  <AiDeliveryInlineNotice>
+                    Client Portal and monthly reports show only FINAL or approved deliverables. This internal view must not be shared with the client until compliance review and admin review pass.
+                  </AiDeliveryInlineNotice>
                   <dl className="brief-grid">
                     <div>
                       <dt>Article / package title</dt>
@@ -5158,6 +5180,15 @@ export function AiDeliveryPage({
                 <AiDeliveryInlineNotice>
                   Prepare the client WordPress draft payload here. This flow is draft-only in the current block; live publish remains deferred unless a separately approved block enables <code>WORDPRESS_PUBLISH_ENABLED=true</code>.
                 </AiDeliveryInlineNotice>
+                <AiDeliveryInlineNotice>
+                  <strong>Context readiness:</strong>{" "}
+                  {deliverableLinkedDraftRecord && deliverableLinkedDraftRecord.status === "APPROVED" && deliverableReadinessBlockers.length === 0
+                    ? "Linked draft and package readiness are sufficient for a draft-only WordPress handoff."
+                    : "Linked draft is missing, not approved, or package readiness blockers exist. Resolve these before treating any WordPress payload as ready."}
+                </AiDeliveryInlineNotice>
+                <AiDeliveryInlineNotice>
+                  No prepared WordPress draft is final client copy. Compliance review and admin review must pass before final archive or client delivery.
+                </AiDeliveryInlineNotice>
                 {deliverablePublicationTargets.length === 0 ? (
                   <AiDeliveryInlineEmpty>No publication targets for this client yet. Add one in Client Hub before website publishing.</AiDeliveryInlineEmpty>
                 ) : (
@@ -5254,7 +5285,11 @@ export function AiDeliveryPage({
                         {d.isArchived ? <button className="ghost-action" disabled={deliverablesSaving} onClick={() => void restoreDeliverable(openDeliverablesProject.id, d.id)} type="button">Restore</button> : null}
                       </div>
                     </div>
-                     <dl className="brief-grid">
+                    <dl className="brief-grid">
+                      <div>
+                        <dt>Context readiness</dt>
+                        <dd>{d.contentDraft?.status === "APPROVED" ? "Ready — approved draft linked" : "Missing / blocked — approved draft required"}</dd>
+                      </div>
                       <div>
                         <dt>Linked content draft</dt>
                         <dd>{d.contentDraft ? `${d.contentDraft.title} (${formatContentDraftStatus(d.contentDraft.status)})` : "Not linked"}</dd>

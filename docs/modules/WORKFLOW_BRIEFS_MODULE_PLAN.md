@@ -79,6 +79,10 @@ When WorkflowBriefs feeds a real Puriva delivery, the downstream sequence is:
 
 **Intake → Plan → Compliance Review → Drafts → Packaging → Handoff → Archive**
 
+Verified facts move through the path in this order:
+
+**Puriva intake facts → approved knowledge/context → WorkflowBriefs brief → MI/SEO reports → production plan → AI Delivery seed/handoff**
+
 1. **Intake validation:** Brief must have goal, business context, target audience, and offer context (at minimum). See [`PURIVA_OPERATIONAL_INTAKE_AND_COMPLIANCE.md`](../runbooks/PURIVA_OPERATIONAL_INTAKE_AND_COMPLIANCE.md) for Puriva-specific content guardrails.
 2. **AI planning:** Run AI to generate MI/SEO reports; generate production plan from reports.
 3. **Compliance review checkpoint:** Admin verifies all claims, medical language, contact facts, and service descriptions against [`PURIVA_OPERATIONAL_INTAKE_AND_COMPLIANCE.md`](../runbooks/PURIVA_OPERATIONAL_INTAKE_AND_COMPLIANCE.md). **This is manual and non-optional.** Flag any unverified claims before seeding content.
@@ -89,6 +93,8 @@ When WorkflowBriefs feeds a real Puriva delivery, the downstream sequence is:
 8. **Final archive + monthly report:** After client approval, publish to archive and generate monthly report.
 
 **Key rule:** No AI-generated draft should reach client review until compliance review is **explicitly documented** in brief notes or plan body. Compliance review stays between planning and draft generation.
+
+**Approved-only rule:** unverified claims, contact facts, partner wording, or medical certainty stay in notes or review comments only. They do not become approved knowledge, SEO plan language, or client-visible output until verified.
 
 ## Intake validation requirements
 

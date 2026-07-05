@@ -77,6 +77,8 @@ Useful questions:
 
 Keep this brief and practical. The goal is to guide the work, not create a long questionnaire.
 
+For Puriva work, verify the facts against the operational intake and compliance source before moving them into WorkflowBriefs or AI Knowledge. Unverified facts stay in admin notes until they are reviewed.
+
 ## Step 4: Prepare Market Context
 
 Use Market Intelligence when the admin needs better understanding of the market.
@@ -100,6 +102,8 @@ Prepare the content plan based on:
 - SEO direction;
 - available capacity for the month;
 - business value.
+
+For Puriva, the content plan should only use verified facts and approved context. If a contact detail, medical claim, partner statement, or service description is still pending verification, keep it out of the plan until it is reviewed.
 
 A useful content plan should make clear:
 

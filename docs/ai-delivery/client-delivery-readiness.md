@@ -43,7 +43,8 @@
 
 ## Safety rules
 
-- Client-visible data must be final or approved only.
+- SEO plan and AI Delivery handoff depend on verified Puriva intake and approved knowledge/context. A missing brief or unapproved knowledge items means the downstream plan/draft is not yet grounded.
+- Client-visible data must be final or approved only. No draft, scaffold, or prepared WordPress payload is treated as final before the compliance review checkpoint and admin review pass.
 - Client portal access is gated by `ClientUserAccess`.
 - Admin-managed Client Access is client-level in the current MVP foundation; it does not create invitation emails, password UI, magic links, or public links.
 - Owner/admin role alone does not grant client archive access.
@@ -56,6 +57,7 @@
 - `exportUrl` is the safe manual client-visible export link.
 - PDF handoff is supported through private upload/download.
 - Live Google Docs provider work remains deferred.
+- For Puriva, verified intake facts should enter AI Delivery only through approved knowledge/context or reviewed plan notes; raw intake notes stay internal until they are explicitly reviewed.
 
 ## Next safe handoff
 

@@ -169,6 +169,14 @@ export function AiKnowledgeContextPanel({
               title="Knowledge items"
               tone="compact"
             >
+              <div className="ai-knowledge-context-summary" role="status">
+                <strong>Context readiness:</strong>{" "}
+                {items.some((item) => item.status === "APPROVED" && item.allowedForPrompt)
+                  ? "Approved knowledge ready for prompt use."
+                  : items.length > 0
+                    ? "Knowledge items exist but none are approved for prompt use yet."
+                    : "Knowledge context missing — create and approve items before AI workflow runs are grounded."}
+              </div>
               {items.length === 0 ? (
                 <p className="inline-empty muted-text">No items yet. Create RAW, then approve for prompt use.</p>
               ) : (

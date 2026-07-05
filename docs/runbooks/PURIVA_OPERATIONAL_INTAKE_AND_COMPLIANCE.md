@@ -258,6 +258,27 @@ Standard monthly bundle:
 - any approved booking or handoff notes
 - updated page / topic inventory
 
+## 22) Puriva operational data path
+
+Use this path to move verified facts into working context without exposing raw intake notes to clients.
+
+| Stage | Admin-owned input | Becomes | Never expose |
+|---|---|---|---|
+| Intake | Goal, business context, target audience, offer context, location, notes | Brief notes and compliance notes | Raw intake dump, unverified claims, prompt text |
+| AI Knowledge | Verified clinic profile, approved services, verified contact facts, approved disclaimers, verified audience / geography notes | Approved `AiKnowledgeItem` / `AiContextSnapshot` metadata | Raw notes, prompt injection, provider metadata |
+| WorkflowBriefs | AI run results, MI/SEO reports, production plan, knowledge metadata | Brief detail, plan body, content-production seed state | Raw knowledge bodies, snapshot internals, client-visible leaks |
+| SEO plan | Approved topics, taxonomy, priorities, verified claims, compliance status | Content plan objectives and draft requests | Final copy, public claims without review |
+| AI Delivery | Content plan items, drafts, images, deliverables, WordPress draft handoff | Final archive and monthly report | Internal logs, `storageKey`, release-package internals, provider details |
+
+Before SEO/content work starts, confirm:
+
+- intake is complete;
+- compliance review is documented in notes or plan body;
+- approved knowledge/context exists for the verified facts;
+- the AI Delivery project is linked or ready to link for downstream handoff.
+
+If a fact is still pending verification, keep it in admin notes or WorkflowBriefs only. Do not promote it into client-facing copy, final reports, or approved knowledge.
+
 Keep the bundle small and easy to verify.
 
 ## 22) Approval contacts

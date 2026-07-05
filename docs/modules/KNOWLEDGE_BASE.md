@@ -37,6 +37,35 @@ Explicit admin-only overrides:
 
 All knowledge bodies, summaries, titles, and one-off admin instructions pass through `sanitizeUntrustedContextText` before appearing in `contextPreview`. Known injection phrases are replaced with `[REDACTED-UNTRUSTED]` and surfaced in `warnings`.
 
+## Puriva intake promotion policy
+
+For Puriva work, only verified facts should be promoted into approved knowledge items.
+
+Approved default items:
+
+- clinic identity and working domain
+- verified service descriptions
+- verified contact / booking facts
+- verified audience and location notes
+- approved medical disclaimers and caution language
+- verified partner / license / compliance evidence
+
+Pending or draft-only items:
+
+- unverified clinic profile details
+- unverified contact facts
+- unverified partner / license / regulator claims
+- unsupported treatment claims
+- any prompt text or intake note that has not been reviewed
+
+Rules:
+
+- Treat intake notes as untrusted until an admin reviews them.
+- Do not auto-promote raw intake text into approved knowledge.
+- Keep approved-only as the default; use raw/expired inclusion only when an admin explicitly opts in.
+- Never assume a live provider is available just because knowledge exists.
+- Before AI Delivery uses the knowledge, confirm the facts again in WorkflowBriefs and the Puriva compliance review notes.
+
 ## Boundary guards
 
 Context preview rejects mismatched `clientId` / `aiDeliveryProjectId` pairs and unknown/archived clients or projects for the active tenant. Blocked previews return `canRun: false` with `blockingReasons`.

@@ -48,7 +48,10 @@ export function AiDeliveryWordPressPublishConfirmModal({
         {publicationTargetSiteUrl ?? "site URL not set"}).
       </p>
       <p className="muted-text">
-        This writes a WordPress post when credentials and <code>WORDPRESS_PUBLISH_ENABLED</code> are configured. Otherwise the attempt is logged as provider-disabled.
+        Live WordPress publish is deferred by default. The attempt writes a WordPress post only when credentials and <code>WORDPRESS_PUBLISH_ENABLED</code> are explicitly configured in a separately approved block. Otherwise the attempt is logged as provider-disabled and no external publish occurs.
+      </p>
+      <p className="muted-text">
+        The prepared draft remains an internal scaffold until compliance review and admin review pass. Client delivery happens only through final archive or approved monthly report outputs.
       </p>
       <label style={{ display: "flex", gap: "0.5rem", marginTop: "1rem" }}>
         <input
@@ -56,7 +59,7 @@ export function AiDeliveryWordPressPublishConfirmModal({
           onChange={(event) => onAcknowledgedChange(event.target.checked)}
           type="checkbox"
         />
-        I confirm publish to this client WordPress target.
+        I confirm this is a draft-only handoff attempt; live publish is deferred unless explicitly enabled.
       </label>
     </Modal>
   );

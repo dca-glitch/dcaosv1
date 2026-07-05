@@ -64,7 +64,12 @@ Minimum planning coverage:
 
 ## Operator path
 
-SEO plan objectives -> content draft -> image/asset package -> compliance review checkpoint -> admin review -> draft-only WordPress prepared draft handoff -> final archive -> monthly report.
+Verified Puriva intake + approved KB/context -> SEO plan objectives -> content draft -> image/asset package -> compliance review checkpoint -> admin review -> draft-only WordPress prepared draft handoff -> final archive -> monthly report.
+
+- **Context ready / missing:** The SEO plan must be grounded in verified intake (brief) and approved knowledge/context. If the brief is missing or knowledge items are unapproved, the plan is a speculative scaffold and should not drive final client copy.
+- **No draft is final before compliance review:** Planning items, generated draft scaffolds, and prepared WordPress payloads are internal objectives until the compliance checkpoint and admin review pass.
+- **WordPress is draft-only:** The WordPress handoff prepares a local draft payload only. Live publish remains deferred and disabled in the current block.
+- **Client sees final/review-safe outputs only:** Client Portal and monthly reports expose only FINAL or approved deliverables. Internal drafts, review notes, and workflow metadata stay admin-only.
 
 Planning items stay as objectives only until the downstream draft/asset package is assembled and cleared by the compliance checkpoint and admin review.
 
@@ -100,7 +105,11 @@ npm.cmd run -w @dca-os-v1/api test:unit -- --test-name-pattern puriva-seo-plan
 
 ## Operator notes
 
+- **Context ready / missing:** The SEO plan depends on verified Puriva intake and approved knowledge/context. Do not treat the plan as grounded if the brief is missing or knowledge items are unapproved.
 - Planning items are **objectives only** — draft copy and image/asset work require compliance review and admin review before anything is marked ready for the draft-only WordPress handoff.
+- **No draft is final before compliance review:** Generated drafts, image packages, and prepared WordPress payloads remain internal scaffolds until the compliance checkpoint and admin review pass.
+- **WordPress is draft-only:** The handoff prepares a local draft payload only. Live publish remains deferred and disabled.
+- **Client sees final/review-safe outputs only:** Client Portal and monthly reports expose only FINAL or approved deliverables. Internal drafts, review notes, and workflow metadata stay admin-only.
 - High-risk categories (Wegovy, stem cell) require medical review before client-facing use.
 - Hospital/partner/license statements remain verification-required.
 - No OpenRouter, crawl, or live publish calls in this block; draft-only WordPress handoff stays downstream.

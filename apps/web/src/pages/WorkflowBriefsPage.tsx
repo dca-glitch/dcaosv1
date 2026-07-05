@@ -371,6 +371,117 @@ function checkIntakeCompleteness(brief: WorkflowBriefDetail | null): IntakeValid
   };
 }
 
+type ReadinessItem = {
+  id: string;
+  label: string;
+  state: "ready" | "pending" | "blocked";
+  note?: string;
+};
+
+function buildReadinessState(
+  brief: WorkflowBriefDetail | null,
+  isAdmin: boolean,
+  runKnowledgeContext: ReturnType<typeof parseWorkflowBriefKnowledgeContextMeta>,
+  planKnowledgeContext: ReturnType<typeof readPlanJsonKnowledgeContext>,
+  draftKnowledgeContext: ReturnType<typeof readContentDraftsKnowledgeContext>
+): ReadinessItem[] {
+  if (!brief) return [];
+
+  const intake = checkIntakeCompleteness(brief);
+  const items: ReadinessItem[] = [
+    {
+      id: "intake",
+      label: "Verified intake facts",
+      state: intake.isComplete ? "ready" : "blocked",
+      note: intake.isComplete
+        ? "Goal, business context, audience, and offer are set."
+        : `Missing: ${intake.missingFields.join(", ")}`
+    },
+    {
+      id: "brief",
+      label: "Brief submitted",
+      state: brief.status === "DRAFT" ? "pending" : "ready",
+      note: brief.status === "DRAFT" ? "Submit the brief to unlock AI reports." : `Status: ${brief.status}`
+    },
+    {
+      id: "reports",
+      label: "MI + SEO reports",
+      state: brief.miReports?.[0] && brief.seoReports?.[0] ? "ready" : "pending",
+      note:
+        brief.miReports?.[0] && brief.seoReports?.[0]
+          ? "Reports generated."
+          : "Run AI to generate reports."
+    },
+    {
+      id: "plan",
+      label: "SEO/content plan",
+      state: brief.productionPlans?.[0] ? "ready" : "pending",
+      note: brief.productionPlans?.[0]
+        ? `Plan status: ${brief.productionPlans[0].status}`
+        : "Generate a production plan from reports."
+    }
+  ];
+
+  if (isAdmin) {
+    const anyContextUsed =
+      runKnowledgeContext?.used || planKnowledgeContext?.used || draftKnowledgeContext?.used;
+    items.splice(1, 0, {
+      id: "knowledge",
+      label: "Approved KB/context",
+      state: anyContextUsed ? "ready" : "pending",
+      note: anyContextUsed
+        ? "Approved knowledge context is attached."
+        : "No approved knowledge context used yet."
+    });
+  }
+
+  return items;
+}
+
+function BriefReadinessChecklist({
+  items,
+  isAdmin
+}: {
+  items: ReadinessItem[];
+  isAdmin: boolean;
+}) {
+  if (items.length === 0) return null;
+
+  const blockedCount = items.filter((item) => item.state === "blocked").length;
+
+  return (
+    <div className="brief-readiness-checklist">
+      <div className="brief-section-kicker muted-text">Intake-to-brief path</div>
+      <ol className="brief-readiness-steps">
+        {items.map((item) => (
+          <li
+            key={item.id}
+            className={`brief-readiness-step brief-readiness-step--${item.state}`}
+          >
+            <span className="brief-readiness-step-marker" aria-hidden="true" />
+            <span className="brief-readiness-step-body">
+              <span className="brief-readiness-step-label">{item.label}</span>
+              {item.note ? (
+                <span className="brief-readiness-step-note muted-text">{item.note}</span>
+              ) : null}
+            </span>
+          </li>
+        ))}
+      </ol>
+      {blockedCount > 0 ? (
+        <p className="brief-readiness-footnote muted-text">
+          Complete blocked items before generating reports or plans.
+        </p>
+      ) : null}
+      {isAdmin && blockedCount === 0 ? (
+        <p className="brief-readiness-footnote muted-text">
+          Puriva readiness: verify medical, legal, and partner claims in Notes before running AI.
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
 type ReportListSection = {
   label: string;
   items: string[];
@@ -1208,11 +1319,24 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
               {(() => {
                 const intake = checkIntakeCompleteness(detail);
                 return intake.missingFields.length > 0 ? (
-                  <div className="brief-warning-banner muted-text" style={{ padding: "12px 16px", marginBottom: "16px", backgroundColor: "#fef3c7", borderLeft: "4px solid #f59e0b", borderRadius: "4px" }}>
-                    <strong>⚠ Incomplete intake:</strong> Complete the following fields before generating reports: {intake.missingFields.join(", ")}
+                  <div className="status-notice-compact status-warning brief-intake-warning">
+                    <span className="status-notice-text">
+                      <strong>Incomplete intake:</strong> Complete the following fields before generating reports:{" "}
+                      {intake.missingFields.join(", ")}
+                    </span>
                   </div>
                 ) : null;
               })()}
+              <BriefReadinessChecklist
+                items={buildReadinessState(
+                  detail,
+                  canManageAi,
+                  runKnowledgeContext,
+                  planKnowledgeContext,
+                  draftKnowledgeContext
+                )}
+                isAdmin={canManageAi}
+              />
               <SectionPanel
                 className="brief-detail-section"
                 title={detail.title}

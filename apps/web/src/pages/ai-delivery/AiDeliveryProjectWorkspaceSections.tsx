@@ -94,6 +94,16 @@ export function AiDeliveryProjectWorkspaceSections({
           <StatusBadge status={workspaceProject.brief?.status ?? "Brief not started"} />
           <span className="muted-text">Checkpoint: {briefCheckpointLabel}</span>
         </div>
+        <div className="ai-delivery-context-meta" style={{ marginTop: "0.5rem" }}>
+          <span className="muted-text">
+            <strong>Intake context:</strong>{" "}
+            {workspaceProject.brief?.status === "APPROVED"
+              ? "Verified intake ready"
+              : workspaceProject.brief
+                ? `Intake started — ${workspaceProject.brief.status}`
+                : "Intake missing — brief required before SEO plan is grounded"}
+          </span>
+        </div>
         {workspaceProject.plannedContentScopeNotes ? (
           <p className="ai-delivery-context-notes muted-text">{workspaceProject.plannedContentScopeNotes}</p>
         ) : null}
@@ -110,6 +120,7 @@ export function AiDeliveryProjectWorkspaceSections({
               <span className="ai-delivery-lane-number">1</span>
               <div className="ai-delivery-lane-info">
                 <h4>Intake & Brief</h4>
+                <span className="muted-text text-xs">Verified intake → approved KB/context → SEO plan</span>
                 <StatusBadge status={workspaceProject.brief?.status ?? "Not started"} />
               </div>
             </div>
@@ -255,7 +266,7 @@ export function AiDeliveryProjectWorkspaceSections({
 
       <SectionPanel
         className="ai-delivery-section ai-delivery-revenue-chain-readiness"
-        description="Deterministic admin-operated chain. Warnings do not block workflow — use for readiness checks only."
+        description="Deterministic admin-operated chain. Use verified intake and approved KB/context before SEO, drafts, and handoff. Warnings do not block workflow — use for readiness checks only."
         title="Delivery chain readiness"
         tone="compact"
       >

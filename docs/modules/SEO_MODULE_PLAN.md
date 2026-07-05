@@ -25,11 +25,16 @@ The SEO module supports admin-operated planning, tracking, and reporting for con
 
 ## Operator path
 
-Puriva SEO planning is the upstream start of the delivery chain:
+Puriva SEO planning is the upstream start of the delivery chain, but it may only proceed after verified intake and approved knowledge/context are in place:
 
-SEO plan objectives -> content draft -> image/asset package -> compliance review checkpoint -> admin review -> draft-only WordPress prepared draft handoff -> final archive/monthly report -> read-only archive.
+Verified Puriva intake + approved KB/context -> SEO plan objectives -> content draft -> image/asset package -> compliance review checkpoint -> admin review -> draft-only WordPress prepared draft handoff -> final archive/monthly report -> read-only archive.
 
-Planning items remain objectives only until the compliance checkpoint is passed, the draft/asset package is assembled, and admin review clears the draft-only WordPress handoff.
+Puriva planning should only use verified intake facts and approved WorkflowBriefs knowledge/context. If a claim or contact fact is still pending verification, keep it as an objective or note only and do not turn it into SEO copy yet.
+
+- **Context ready / missing:** A project brief and approved knowledge items (CLIENT_FACT, BRAND_VOICE, PROJECT_CONTEXT) should be present before the monthly content plan is treated as grounded. If these are missing, the plan remains a speculative scaffold.
+- **No draft is final before compliance review:** Planning items, generated drafts, and prepared WordPress payloads are objectives or internal scaffolds until the compliance review checkpoint and admin review pass.
+- **WordPress is draft-only:** The WordPress handoff prepares a local draft payload only. Live publish remains deferred and disabled unless a separately approved block enables it.
+- **Client sees final/review-safe outputs only:** Client Portal and monthly reports expose only FINAL or approved deliverables. Internal drafts, review notes, workflow runs, and provider metadata stay admin-only.
 
 ## Reusable knowledge / context relationship (Blocks 5A / 6A / 6B / XXL 3)
 
@@ -48,6 +53,8 @@ Knowledge integration depends on **how** the plan rows were created:
 Manual CRUD and PDF export are **intentionally not** Knowledge execution paths. Workflow-generated
 content plans already use the AiDelivery workflow Knowledge path. See
 [`docs/modules/KNOWLEDGE_BASE.md`](./KNOWLEDGE_BASE.md).
+
+For Puriva, the SEO plan is the bridge between verified clinic facts and the AI Delivery handoff. The plan can point to approved context and topic priorities, but it remains draft-only until compliance review and admin review are complete.
 
 ## Deferred
 
