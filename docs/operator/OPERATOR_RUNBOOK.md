@@ -12,10 +12,23 @@ Related detailed runbooks:
 | Smoke catalog | [`docs/runbooks/LOCAL_SMOKE_MATRIX.md`](../runbooks/LOCAL_SMOKE_MATRIX.md) |
 | External integrations readiness | [`docs/runbooks/EXTERNAL_INTEGRATIONS_READINESS.md`](../runbooks/EXTERNAL_INTEGRATIONS_READINESS.md) |
 | Admin operations recovery | [`docs/runbooks/ADMIN_OPERATIONS_RECOVERY.md`](../runbooks/ADMIN_OPERATIONS_RECOVERY.md) |
+| Client delivery SOP | [`docs/operator/client-delivery-sop.md`](./client-delivery-sop.md) |
+| Client delivery readiness | [`docs/ai-delivery/client-delivery-readiness.md`](../ai-delivery/client-delivery-readiness.md) |
+| G9 environment proof gate | [`docs/runbooks/G9_ENVIRONMENT_PROOF_APPROVAL_GATE.md`](../runbooks/G9_ENVIRONMENT_PROOF_APPROVAL_GATE.md) |
 | Env names (no values) | [`ENV_READINESS_INVENTORY.md`](./ENV_READINESS_INVENTORY.md) |
 | Deferred scope | [`deferred-scope-register.md`](./deferred-scope-register.md) |
 
 **Run location:** External Windows PowerShell from `C:\dcaosv1`. Log long runs to `$env:TEMP` and open in Notepad. Stop on first failure.
+
+## 0. G9 environment proof index
+
+1. Read `docs/STATUS.md` and `docs/STATUS_COMPLETION.md`.
+2. Confirm `PURIVA_OPERATING_PACK_V1_GO_NO_GO.md` and `PURIVA_LOCAL_E2E_OPERATOR_DRY_RUN.md`.
+3. Read `docs/runbooks/G9_ENVIRONMENT_PROOF_APPROVAL_GATE.md`.
+4. Wait for explicit owner approval.
+5. If approved, use the Sonnet-only execution prompt in the G9 gate doc.
+6. If the proof passes, run the docs-only closeout later.
+7. If the proof fails, stop and preserve logs/evidence.
 
 ---
 

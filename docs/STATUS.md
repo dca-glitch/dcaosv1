@@ -349,8 +349,12 @@ Local Puriva E2E operator dry-run proof is now documented in commit `a380bb2` (`
 
 Puriva Operating Pack v1 closeout is now documented in commit `b2e0287` (`docs: close Puriva operating pack v1`) and pushed to `main`. The local/admin operating pack is complete for the approved scope: intake/compliance source of truth, owner/client approval checklist, AI Knowledge/context handoff, WorkflowBriefs handoff, SEO/content production gate, WordPress prepared draft-only handoff, client-safe approval/archive/report path, local E2E proof, real client data packet checklist, and go/no-go checklist. It is local/admin-operational only and does **not** authorize production, staging, VPS, live provider, live WordPress publish, GA/GSC, or R2 work. Production/staging/VPS were untouched in this closeout.
 
+## G9 environment proof approval gate
+
+The G9 environment proof approval gate is now documented in commit `3fc779f` (`docs: add G9 environment proof approval gate`) and pushed to `main`. The gate is planning-only / approval-only, records the exact owner approval sentence, requires Sonnet for actual execution, and keeps production limited to health-check only in any future proof. No environment execution happened, and no production readiness is claimed. Backup/rollback evidence is required before any mutating action; live provider, live WordPress publish, GA/GSC, and R2 live IO remain deferred.
+
 ## Next work (after Block 5D-C)
 
-- Owner review of 5D-B / G9 local closeout evidence and this status update.
-- Decide: fix `smoke:staging-readiness:local` orchestrator hang **or** accept manual fallback as standard operator procedure.
-- G4 staging request only after **explicit owner approval** — local 5D-B PASS does not authorize staging action or deploy.
+- Owner review of 5D-B / G9 closeout evidence and this status update.
+- Decide whether to approve G9 environment proof; if approved, follow the Sonnet-only prompt in `docs/runbooks/G9_ENVIRONMENT_PROOF_APPROVAL_GATE.md`.
+- G4 staging request remains separate — local 5D-B PASS and G9 planning docs do not authorize staging action or deploy.

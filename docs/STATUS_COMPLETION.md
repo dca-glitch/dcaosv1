@@ -76,6 +76,10 @@ changes, no percentage re-audit performed as part of this addendum):
   handoff, SEO/content production gate, WordPress prepared draft-only handoff, client-safe
   approval/archive/report path, local E2E proof, real client data packet checklist, and go/no-go
   checklist are all documented; production/staging/VPS/live integrations remain deferred.
+- **G9 environment proof approval gate** — planning-only / approval-only gate recorded on `main`
+  in commit `3fc779f`; exact owner approval sentence, Sonnet-required execution prompt, health-only
+  production boundary, backup/rollback-before-mutation rule, and deferred live integration
+  boundaries are documented; no environment execution happened.
 
 **Knowledge arc — next / deferred (not in percentage baseline above):**
 
@@ -247,6 +251,7 @@ Do not treat local smoke alone as production readiness.
 | 2026-07-05 | G6 Wave 2 closeout: compact delivery handoff lanes, WorkflowBriefs intake/compliance clarity, draft-only WordPress handoff tightening, and client-safe archive/report wording |
 | 2026-07-05 | G7 Block 2 closeout: Puriva intake connected to AI Knowledge, WorkflowBriefs, SEO plan, and AI Delivery handoff; admin-only/client-safe/draft-only boundaries preserved |
 | 2026-07-06 | Puriva Operating Pack v1 closeout: local/admin-operational pack recorded/pushed, baseline updated, and production/staging/VPS remain untouched |
+| 2026-07-06 | G9 environment proof approval gate: planning-only gate recorded/pushed, Sonnet execution prompt indexed, and environment work remains owner-approved only |
 | 2026-07-06 | G8 local Puriva E2E closeout: local operator proof added, approval smoke labels aligned to real UI, validation/browser QA passed, push complete |
 | 2026-06-27 | G1 closed: staging host `staging.digitalcubeagency.net`; production `system.digitalcubeagency.net`; G4 not approved; DNS not created |
 | 2026-06-27 | Phase F Block 77: local closeout complete — Blocks 58–77 validated on `feature/local-closeout-blocks-58-77` |
