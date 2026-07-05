@@ -13,12 +13,12 @@ Related:
 
 ## What it proves
 
-1. **Delivery status aggregation** — planned SEO items, draft scaffolds, image scaffolds, medical review blockers, verification blockers, final release state
+1. **Delivery status aggregation** — planned SEO items, draft scaffolds, image scaffolds, compliance blockers, verification blockers, draft-handoff state, final release state
 2. **Next-month recommendations** — derived from taxonomy/MI/SEO templates with compliance-safe language
 3. **Admin report seed** — DRAFT monthly report with marker in title/admin notes; placeholder manual metrics imported and approved
 4. **Client boundary** — client portal lists zero monthly reports while status remains DRAFT (FINAL-only filter)
 5. **No live analytics** — placeholder metrics only; no GA/GSC OAuth
-6. **Client-safe archive** — finalized monthly reports are read-only in the portal and do not expose `storageKey`, provider metadata, or execution logs
+6. **Client-safe archive** — finalized monthly reports are read-only in the portal, close the content/image/handoff loop, and do not expose `storageKey`, provider metadata, or execution logs
 
 ---
 
@@ -51,7 +51,7 @@ Requires `AUTH_SEED_TEST_PASSWORD` (minimum 8 characters).
 
 ## Operator notes
 
-- Monthly report is a separate `AiDeliveryMonthlyReport` entity — not attached to workflow brief `structuredInputJson`.
+- Monthly report is a separate `AiDeliveryMonthlyReport` entity — not attached to workflow brief `structuredInputJson`, but it is the downstream archive record that closes the SEO/content/image/draft-handoff loop.
 - Setup keeps report in `DRAFT`; promote to `FINAL` only through existing admin status API when ready for client portal visibility.
 - MI context attach is admin-only via `/mi-context/apply`.
 - Live GA/GSC sync stays deferred unless a separate block proves it.

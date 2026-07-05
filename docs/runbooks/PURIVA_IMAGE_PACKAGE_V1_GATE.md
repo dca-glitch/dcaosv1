@@ -67,6 +67,14 @@ Concept counts by content type:
 
 ---
 
+## Operator path
+
+Content draft -> image/asset package -> compliance review checkpoint -> draft-only WordPress handoff -> final archive.
+
+The image package is the bridge that completes the asset set before the WordPress draft handoff is prepared.
+
+---
+
 ## Setup / smoke integration
 
 `scripts/lib/puriva-local-setup.mjs`:
@@ -96,6 +104,6 @@ npm.cmd run -w @dca-os-v1/api test:unit -- --test-name-pattern puriva-image-pack
 
 ## Operator notes
 
-- Image prompt scaffolds are **admin/internal only** — never treat as generation-ready or client-facing assets.
-- No OpenRouter, image provider, WordPress, or web fetch calls in this block.
+- Image prompt scaffolds are **admin/internal only** — never treat as generation-ready or client-facing assets outside the compliance-reviewed asset package.
+- No OpenRouter, image provider, live publish, WordPress, or web fetch calls in this block.
 - Final-ready gating remains blocked until medical/compliance review and approved generation workflow exists.

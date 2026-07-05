@@ -62,6 +62,14 @@ Minimum planning coverage:
 
 ---
 
+## Operator path
+
+SEO plan objectives -> content draft -> image/asset package -> compliance review checkpoint -> draft-only WordPress handoff -> final archive -> monthly report.
+
+Planning items stay as objectives only until the downstream draft/asset package is assembled and cleared by the compliance checkpoint.
+
+---
+
 ## Setup / smoke integration
 
 `scripts/lib/puriva-local-setup.mjs`:
@@ -92,8 +100,8 @@ npm.cmd run -w @dca-os-v1/api test:unit -- --test-name-pattern puriva-seo-plan
 
 ## Operator notes
 
-- Planning items are **objectives only** — draft copy requires compliance review.
+- Planning items are **objectives only** — draft copy and image/asset work require compliance review before anything is marked ready for the draft-only WordPress handoff.
 - High-risk categories (Wegovy, stem cell) require medical review before client-facing use.
 - Hospital/partner/license statements remain verification-required.
-- No OpenRouter, crawl, or WordPress calls in this block.
+- No OpenRouter, crawl, or live publish calls in this block.
 - This is planning-only; live automation stays deferred until a separately approved block.

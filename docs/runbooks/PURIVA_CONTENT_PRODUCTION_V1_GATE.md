@@ -48,6 +48,14 @@ Supported content types: `service_page`, `faq`, `blog_article`, `comparison_educ
 
 ---
 
+## Operator path
+
+SEO plan -> content draft scaffolds -> image/asset package -> compliance review checkpoint -> draft-only WordPress handoff -> final archive.
+
+This stage turns approved SEO objectives into internal draft scaffolds; the compliance checkpoint must pass before anything is handed off downstream.
+
+---
+
 ## Setup / smoke integration
 
 `scripts/lib/puriva-local-setup.mjs`:
@@ -77,7 +85,7 @@ npm.cmd run -w @dca-os-v1/api test:unit -- --test-name-pattern puriva-content-pr
 
 ## Operator notes
 
-- Draft scaffolds are **admin/internal only** — never treat as approved client copy.
+- Draft scaffolds are **admin/internal only** — never treat as approved client copy or draft-ready handoff without the compliance review checkpoint.
 - High-risk topics require medical review before expansion.
 - Credential/partner/license references remain verification-required.
-- No OpenRouter, crawl, WordPress, or client portal review requests in this block.
+- No OpenRouter, crawl, live publish, or client portal review requests in this block.

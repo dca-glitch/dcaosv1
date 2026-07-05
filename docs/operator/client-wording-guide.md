@@ -2,6 +2,8 @@
 
 Status: Plain-language guide for wording used with clients.
 
+For Puriva, treat [`PURIVA_OPERATIONAL_INTAKE_AND_COMPLIANCE.md`](../runbooks/PURIVA_OPERATIONAL_INTAKE_AND_COMPLIANCE.md) as the approval source for any medical, service, partner, ad, or compliance wording.
+
 This guide helps keep client communication simple, calm, and easy to understand.
 
 ## Main Rule

@@ -439,14 +439,14 @@ function ClientPortalStatusBadge({ status }: { status: string | null | undefined
 
 function getArchiveNextActionLabel(pendingApprovalCount: number, selectedProject: ClientPortalProjectSummary | null): string {
   if (pendingApprovalCount > 0) {
-    return `Next action: Review ${pendingApprovalCount} pending approval${pendingApprovalCount === 1 ? "" : "s"}`;
+    return `Next action: Review ${pendingApprovalCount} pending item${pendingApprovalCount === 1 ? "" : "s"} in Pending Reviews`;
   }
 
   if (selectedProject) {
-    return "Next action: Review the final deliverables below";
+    return "Next action: Review the contents below";
   }
 
-  return "Next action: Open a project to view final deliverables";
+  return "Next action: Select a delivery to view its contents";
 }
 
 function PortalInlineLoading({ label }: { label: string }) {
@@ -938,7 +938,7 @@ export function ClientPortalPage() {
     }
 
     setInquiryMessage("");
-    setInquiryNotice("Inquiry submitted. Your team will follow up directly — no checkout or payment in this portal.");
+    setInquiryNotice("Inquiry sent. Your team will follow up with you directly.");
   }, [
     inquiryContactEmail,
     inquiryContactName,
@@ -1017,7 +1017,7 @@ export function ClientPortalPage() {
           type="button"
           variant="tertiary"
         >
-          Pending Approvals
+          Pending Reviews
           {pendingApprovalCount > 0 ? <span className="nav-count-badge">{pendingApprovalCount}</span> : null}
         </Button>
         <Button
@@ -1064,7 +1064,7 @@ export function ClientPortalPage() {
           </div>
 
           {filteredProjects.length === 0 ? (
-            <p className="inline-empty muted-text">No projects match this filter. When your team shares material, it will appear here.</p>
+            <p className="inline-empty muted-text">No projects to display. When your team shares a delivery, it will appear here.</p>
           ) : (
             <div className="cf-project-list">
               {filteredProjects.map((project) => (
@@ -1098,11 +1098,11 @@ export function ClientPortalPage() {
         <div className="portal-detail-column">
           {!selectedProjectId ? (
             <SectionPanel
-              description="Choose a project to view deliverables and monthly reports."
-              title="Project overview"
+              description="Choose a delivery on the left to view its contents."
+              title="Delivery details"
               tone="compact"
             >
-              <EmptyState message="Select a project on the left to open its final archive." title="No project selected" variant="inline" />
+              <EmptyState message="Select a delivery to see its contents." title="No delivery selected" variant="inline" />
             </SectionPanel>
           ) : selectedProjectLoading ? (
             <PortalInlineLoading label="Loading project archive" />
@@ -1111,8 +1111,8 @@ export function ClientPortalPage() {
           ) : selectedProject ? (
             <>
               <SectionPanel
-                description="Overview for the selected project."
-                title="Project overview"
+                description="Details about this delivery."
+                title="Delivery summary"
                 tone="compact"
               >
                 <article className="cf-record">
@@ -1130,14 +1130,14 @@ export function ClientPortalPage() {
                     </div>
                   </div>
                   <p className="cf-record-note">
-                    Only final deliverables and reports shared with your account appear here.
+                    Completed and approved work shared with your account.
                   </p>
                 </article>
               </SectionPanel>
 
               <SectionPanel
-                description="Summary of completed work shared for this project."
-                title="Delivery summary"
+                description="Progress across content, publications, and analytics."
+                title="Work completed"
                 tone="compact"
               >
                 {deliverySummaryLoading ? (
@@ -1152,16 +1152,16 @@ export function ClientPortalPage() {
                           <div className="cf-record-kicker">
                             <ClientPortalStatusBadge status={deliverySummary.aiSeo?.contentPlanStatus} />
                           </div>
-                          <h3>Planned content</h3>
+                          <h3>Content plan</h3>
                           <div className="cf-record-meta">
                             <span>
                               {deliverySummary.aiSeo
-                                ? `${deliverySummary.aiSeo.approvedItemCount} of ${deliverySummary.aiSeo.totalItemCount} items complete`
-                                : "No planned content yet"}
+                                ? `${deliverySummary.aiSeo.approvedItemCount} of ${deliverySummary.aiSeo.totalItemCount} completed`
+                                : "No content plan yet"}
                             </span>
                             <span>
-                              {deliverySummary.aiSeo?.finalDeliverableCount ?? 0} deliverable
-                              {(deliverySummary.aiSeo?.finalDeliverableCount ?? 0) === 1 ? "" : "s"}
+                              {deliverySummary.aiSeo?.finalDeliverableCount ?? 0} published
+                              {(deliverySummary.aiSeo?.finalDeliverableCount ?? 0) === 1 ? "" : " items"}
                             </span>
                           </div>
                         </div>
@@ -1174,15 +1174,15 @@ export function ClientPortalPage() {
                           <div className="cf-record-kicker">
                             <ClientPortalStatusBadge status={deliverySummary.marketIntelligence?.status} />
                           </div>
-                          <h3>Market summary</h3>
+                          <h3>Market insights</h3>
                           {deliverySummary.marketIntelligence?.marketSummary ? (
                             <p className="cf-record-note">{deliverySummary.marketIntelligence.marketSummary}</p>
                           ) : (
-                            <p className="cf-record-note muted-text">No market summary is available yet.</p>
+                            <p className="cf-record-note muted-text">No market insights available yet.</p>
                           )}
                           {deliverySummary.marketIntelligence?.recommendedActions.length ? (
                             <p className="cf-record-note">
-                              <strong>Recommended actions: </strong>
+                              <strong>Next steps: </strong>
                               {deliverySummary.marketIntelligence.recommendedActions.join(" · ")}
                             </p>
                           ) : null}
@@ -1196,16 +1196,16 @@ export function ClientPortalPage() {
                           <div className="cf-record-kicker">
                             <ClientPortalStatusBadge status={deliverySummary.websitePublishing?.status} />
                           </div>
-                          <h3>Website updates</h3>
+                          <h3>Website status</h3>
                           <div className="cf-record-meta">
-                            <span>{deliverySummary.websitePublishing?.action ?? "No publishing activity yet"}</span>
+                            <span>{deliverySummary.websitePublishing?.action ?? "No updates yet"}</span>
                             {deliverySummary.websitePublishing?.siteUrlHost ? (
                               <span>{deliverySummary.websitePublishing.siteUrlHost}</span>
                             ) : null}
                           </div>
                           {!deliverySummary.websitePublishing ? (
                             <p className="cf-record-note muted-text">
-                              Website status appears here when your team shares an update.
+                              Website updates will appear here when they're available.
                             </p>
                           ) : null}
                         </div>
@@ -1240,13 +1240,13 @@ export function ClientPortalPage() {
                     </article>
                   </div>
                 ) : (
-                  <EmptyState message="Delivery summary is not available for this project yet." title="No delivery summary" variant="inline" />
+                  <EmptyState message="Delivery details will appear here once work is underway." title="Work details coming" variant="inline" />
                 )}
               </SectionPanel>
 
               <SectionPanel
-                description="Final released materials shared with your account."
-                title="Final deliverables"
+                description="Final approved materials."
+                title="Complete deliverables"
                 tone="compact"
               >
                 {releasePackageLoading ? (
@@ -1289,15 +1289,15 @@ export function ClientPortalPage() {
                   </article>
                 ) : (
                   <EmptyState
-                    message="When your delivery package is finalized, released materials will appear here."
-                    title="No release package yet"
+                    message="Complete deliverables will appear here after finalization."
+                    title="No deliverables yet"
                     variant="inline"
                   />
                 )}
               </SectionPanel>
 
               <SectionPanel
-                description="Browse products and send an inquiry. No checkout or payment in this workspace."
+                description="Send inquiries about products. Your team will follow up directly."
                 title="Product inquiries"
                 tone="compact"
               >
@@ -1307,7 +1307,7 @@ export function ClientPortalPage() {
                   <Alert message={catalogError} title="Product catalog unavailable" variant="danger" />
                 ) : catalogProducts.length === 0 ? (
                   <EmptyState
-                    message="When products are added to your account, they will appear here for inquiry."
+                    message="Products will appear here when they're added to your account."
                     title="No products yet"
                     variant="inline"
                   />
@@ -1391,7 +1391,7 @@ export function ClientPortalPage() {
               </SectionPanel>
 
               <SectionPanel
-                description="Completed items only. Download when a link is available."
+                description="Access approved files and exports."
                 title="Deliverables"
                 tone="compact"
               >
@@ -1403,7 +1403,7 @@ export function ClientPortalPage() {
                   <Alert message={deliverablesError} title="Deliverables unavailable" variant="danger" />
                 ) : deliverables.length === 0 ? (
                   <EmptyState
-                    message="Completed deliverables appear here once your team shares them to this archive."
+                    message="Approved deliverables will appear here once they're ready."
                     title="No deliverables yet"
                     variant="inline"
                   />
@@ -1451,7 +1451,7 @@ export function ClientPortalPage() {
               </SectionPanel>
 
               <SectionPanel
-                description="Monthly reports with completed work and performance snapshots."
+                description="Monthly summaries of completed work and recommendations."
                 title="Monthly reports"
                 tone="compact"
               >
@@ -1461,7 +1461,7 @@ export function ClientPortalPage() {
                   <Alert message={monthlyReportsError} title="Monthly reports unavailable" variant="danger" />
                 ) : monthlyReports.length === 0 ? (
                   <EmptyState
-                    message="Monthly reports appear here after your team finalizes and shares them."
+                    message="Monthly reports will appear here after they're finalized."
                     title="No reports yet"
                     variant="inline"
                   />
@@ -1547,7 +1547,7 @@ export function ClientPortalPage() {
                               helper={`${monthlyReportDetail.workSummary.acceptedCount} accepted · ${monthlyReportDetail.workSummary.deliveredCount} delivered`}
                             />
                             <MetricCard
-                              label="Planned content"
+                              label="Content plan"
                               value={String(monthlyReportDetail.workSummary.contentPlanItemCount)}
                               helper={`${monthlyReportDetail.workSummary.clientApprovedPlanItemCount} complete`}
                             />
@@ -1557,17 +1557,17 @@ export function ClientPortalPage() {
                             <SectionPanel
                               description={
                                 monthlyReportDetail.performanceSummary.placeholderOnly
-                                  ? "Manual placeholder metrics for reporting structure only — not measured traffic or live analytics."
-                                  : "Performance snapshot for this report month."
+                                  ? "Coming soon. Live analytics will appear here as they become available."
+                                  : "Traffic and engagement metrics for this month."
                               }
-                              title="Performance"
+                              title="Analytics"
                               tone="compact"
                             >
                               {monthlyReportDetail.performanceSummary.placeholderOnly &&
                               monthlyReportDetail.performanceSummary.disclaimer ? (
                                 <Alert
                                   message={monthlyReportDetail.performanceSummary.disclaimer}
-                                  title="Placeholder metrics — not live analytics"
+                                  title="Metrics not yet available"
                                   variant="info"
                                 />
                               ) : null}

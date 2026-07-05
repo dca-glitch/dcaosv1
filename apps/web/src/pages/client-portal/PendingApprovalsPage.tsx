@@ -50,16 +50,16 @@ export function PendingApprovalsPage() {
             Refresh
           </Button>
         }
-        description="Open each article to approve it or send it back with changes."
+        description="Review articles and approve them or send them back with changes."
         eyebrow="Client workspace"
         meta={
           <span className="muted-text">
             {items.length > 0
-              ? `Next action: Open ${items.length === 1 ? "the article" : "each article"} to review`
-              : "Next action: Wait for the next article to arrive"}
+              ? `Next action: ${items.length === 1 ? "Review the article below" : `Review ${items.length} articles below`}`
+              : "Next action: No articles waiting for your review right now"}
           </span>
         }
-        title="Pending Approvals"
+        title="Pending Reviews"
         titleId="pending-approvals-title"
       />
 
@@ -87,12 +87,12 @@ export function PendingApprovalsPage() {
 
       {!loading && !error ? (
         <SectionPanel
-          description="Review article drafts and images before publication."
-          title="Awaiting your approval"
+          description="Review articles and approve them or request changes."
+          title="Articles for your review"
           tone="compact"
         >
           {items.length === 0 ? (
-            <EmptyState message="No articles need your review right now." title="All caught up" variant="inline" />
+            <EmptyState message="No articles waiting for your review." title="All set" variant="inline" />
           ) : (
             <div className="cf-record-list">
               {items.map((item) => (
@@ -100,8 +100,8 @@ export function PendingApprovalsPage() {
                   <div className="dense-record-main">
                     <div className="dense-title">
                       <div className="dense-kicker">
-                        <StatusBadge status="Awaiting your approval" />
-                        <span className="entity-pill">Next action: Open review</span>
+                        <StatusBadge status="Needs your review" />
+                        <span className="entity-pill">Next action: Review now</span>
                       </div>
                       <h3>{item.title}</h3>
                       <div className="dense-meta">
@@ -116,7 +116,7 @@ export function PendingApprovalsPage() {
                         type="button"
                         variant="tertiary"
                       >
-                        Open review
+                        Review now
                       </Button>
                     </div>
                   </div>

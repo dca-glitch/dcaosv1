@@ -57,4 +57,4 @@ npm.cmd run -w @dca-os-v1/api test:unit -- --test-name-pattern puriva-medical-co
 
 - Hospital/partner/license claims are flagged for **verification**, not automatically blocked.
 - Compliance notes in taxonomy may reference forbidden phrases as prohibitions; the scanner targets promotional content only.
-- Future MI/SEO/draft/image/report blocks should call `assessPurivaMedicalCompliance` before client-visible output.
+- Future MI/SEO/content/image/report blocks should call `assessPurivaMedicalCompliance` before any draft-ready handoff or client-visible output.

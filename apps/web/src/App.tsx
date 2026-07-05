@@ -76,6 +76,7 @@ import type {
 } from "./pages/ai-delivery/MonthlyReportPanel";
 import { AiMarketIntelligencePage } from "./pages/ai-market-intelligence/AiMarketIntelligencePage";
 import { AiOperationsPage } from "./pages/ai-operations/AiOperationsPage";
+import { AdminDailyOperationsCockpit } from "./pages/ai-operations/AdminDailyOperationsCockpit";
 import { TasksPage, type TaskFormValues, type TaskSummary } from "./pages/tasks/TasksPage";
 import { BriefPanelPage } from "./pages/BriefPanelPage";
 import { WorkflowBriefsPage } from "./pages/WorkflowBriefsPage";
@@ -474,6 +475,7 @@ type ViewKey =
   | "company-profile"
   | "settings"
   | "team"
+  | "admin-daily-cockpit"
   | "design-system";
 
 type RequestOptions = {
@@ -521,6 +523,7 @@ const navigationItems: Array<{ view: ViewKey; label: string; section: string }> 
   { view: "clients", label: "Clients", section: "core" },
   { view: "projects", label: "Projects", section: "core" },
   { view: "ai-delivery", label: "AI Delivery", section: "core" },
+  { view: "admin-daily-cockpit", label: "Daily Cockpit", section: "core" },
   { view: "ai-operations", label: "AI Operations", section: "core" },
   { view: "ai-market-intelligence", label: "Market Intelligence", section: "core" },
   { view: "tasks", label: "Tasks", section: "core" },
@@ -4669,6 +4672,9 @@ export function App() {
       ) : null}
       {!loading && activeView === "ai-market-intelligence" ? (
         <AiMarketIntelligencePage clients={clients?.clients ?? []} />
+      ) : null}
+      {!loading && activeView === "admin-daily-cockpit" ? (
+        <AdminDailyOperationsCockpit />
       ) : null}
       {!loading && activeView === "ai-operations" ? (
         <AiOperationsPage />

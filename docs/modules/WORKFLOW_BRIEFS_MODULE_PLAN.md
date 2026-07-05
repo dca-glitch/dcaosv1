@@ -68,10 +68,18 @@ does not exist today).
 
 - `AiDeliveryProject` — the canonical project record.
 - Content plan, content drafts, article images, deliverables, deliverable reviews.
-- Exports (Google Docs) and the WordPress draft-preparation boundary.
-- Monthly reports.
+- Exports (Google Docs), the draft-only WordPress handoff boundary, and monthly reports.
+- Final archive surfaces for client-safe delivery after the handoff chain completes.
 - The admin production workspace (`AiDeliveryPage.tsx`) for direct manual CRUD across all
   of the above, independent of whether a WorkflowBrief was ever involved.
+
+## Puriva operator path
+
+When WorkflowBriefs feeds a real Puriva delivery, the downstream sequence is:
+
+SEO plan -> content draft -> image/asset package -> compliance review checkpoint -> draft-only WordPress handoff -> final archive -> monthly report.
+
+Compliance review stays between planning and anything that is draft-ready for handoff.
 
 ## How the two connect (confirmed by code evidence)
 
@@ -81,8 +89,8 @@ does not exist today).
   for provenance — the row itself is the same shared record type the admin UI manages
   manually.
 - WorkflowBriefs reuses AiDelivery's WordPress draft-preparation primitive
-  (`prepareAiDeliveryDeliverableWordPressDraft`) for its batched publication handoff instead
-  of duplicating that logic.
+  (`prepareAiDeliveryDeliverableWordPressDraft`) for its draft-only handoff instead of
+  duplicating that logic.
 - `AiDeliveryBrief` is the simpler, older, project-attached brief concept (client priorities,
   products/services focus, target audience, markets/competitors — four free-text fields).
   `Brief` (WorkflowBrief) is the richer, composable intake/context layer. Both currently

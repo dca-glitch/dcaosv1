@@ -23,6 +23,14 @@ The SEO module supports admin-operated planning, tracking, and reporting for con
 - admin UI shows PDF handoff readiness state on open (Block 3E) — Download PDF is enabled only once a document exists
 - editing plan items or changing plan status automatically invalidates a previously generated PDF (Block 3F) — prevents handing off a stale document
 
+## Operator path
+
+Puriva SEO planning is the upstream start of the delivery chain:
+
+SEO plan objectives -> compliance review -> content draft -> image/asset package -> draft-only WordPress handoff -> final monthly report -> read-only archive.
+
+Planning items remain objectives only until the compliance checkpoint is passed and the downstream draft/asset package is assembled.
+
 ## Reusable knowledge / context relationship (Blocks 5A / 6A / 6B / XXL 3)
 
 AI SEO content-plan work in this module uses `AiDeliveryContentPlan` (see
@@ -49,6 +57,7 @@ content plans already use the AiDelivery workflow Knowledge path. See
 - Google OAuth / GSC sync
 - report automation
 - autonomous agents
+- live WordPress publishing
 
 ## Source of truth
 

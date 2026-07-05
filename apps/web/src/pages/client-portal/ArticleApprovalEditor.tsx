@@ -370,7 +370,7 @@ export function ArticleApprovalEditor({ deliverableId }: ArticleApprovalEditorPr
       showToast(response.error.message, "error");
       return;
     }
-    showToast("Article approved. DCA has been notified.");
+    showToast("Article approved and sent for publication.");
     window.setTimeout(() => navigateToClientPortalHash("client-portal/pending-approvals"), 600);
   }
 
@@ -388,14 +388,14 @@ export function ArticleApprovalEditor({ deliverableId }: ArticleApprovalEditorPr
       showToast(response.error.message, "error");
       return;
     }
-    showToast("Article sent back with changes. DCA has been notified.");
+    showToast("Changes requested. Your team will review these updates.");
     window.setTimeout(() => navigateToClientPortalHash("client-portal/pending-approvals"), 600);
   }
 
   const pageTitle = deliverable ? metadata.title || deliverable.title : "Article approval";
   const pageDescription = deliverable
     ? `${deliverable.projectName} · Created ${formatApprovalDate(deliverable.createdAt)}`
-    : "Review article drafts and images before publication.";
+    : "Review and approve articles, or request changes.";
 
   return (
     <section className="view-section cf-page" aria-labelledby="article-approval-title" data-density="comfortable">
@@ -405,7 +405,7 @@ export function ArticleApprovalEditor({ deliverableId }: ArticleApprovalEditorPr
 
       <PageHeader
         description={pageDescription}
-        eyebrow="Article approval"
+        eyebrow="Article review"
         meta={<span className="muted-text">{deliverable ? `${deliverable.projectName} · ${reviewNextActionLabel}` : reviewNextActionLabel}</span>}
         title={pageTitle}
         titleId="article-approval-title"
@@ -430,7 +430,7 @@ export function ArticleApprovalEditor({ deliverableId }: ArticleApprovalEditorPr
         <>
       <div className="portal-approval-layout">
         <aside className="portal-approval-meta">
-          <SectionPanel description="Client-facing context for this review." title="Review summary" tone="compact">
+          <SectionPanel description="Details for this article." title="Review summary" tone="compact">
             <dl className="field-grid">
               <div>
                 <dt>Project</dt>
@@ -525,7 +525,7 @@ export function ArticleApprovalEditor({ deliverableId }: ArticleApprovalEditorPr
           </SectionPanel>
 
           <SectionPanel
-            description="Approve or send back each image before submitting the article."
+            description="Approve or request changes for each image before you finalize the article."
             title="Images"
             tone="compact"
           >
@@ -562,7 +562,7 @@ export function ArticleApprovalEditor({ deliverableId }: ArticleApprovalEditorPr
                             size="sm"
                             variant="secondary"
                           >
-                            Send back
+                            Request changes
                           </Button>
                         </div>
                       ) : null}
@@ -571,17 +571,17 @@ export function ArticleApprovalEditor({ deliverableId }: ArticleApprovalEditorPr
                         <div className="portal-image-reviewed">
                           <p className="portal-reviewed-label portal-reviewed-label-success">✓ Approved</p>
                           <Button disabled={imageBusyId === image.id} onClick={() => void handleUndoImage(image.id)} size="sm" variant="tertiary">
-                            Undo approval
+                            Undo
                           </Button>
                         </div>
                       ) : null}
 
                       {image.approvalStatus === "REJECTED" ? (
                         <div className="portal-image-reviewed">
-                          <p className="portal-reviewed-label portal-reviewed-label-danger">✕ Rejected</p>
+                          <p className="portal-reviewed-label portal-reviewed-label-danger">✕ Changes requested</p>
                           {image.rejectionReason ? <p className="cf-record-note">{image.rejectionReason}</p> : null}
                           <Button disabled={imageBusyId === image.id} onClick={() => void handleUndoImage(image.id)} size="sm" variant="tertiary">
-                            Undo changes request
+                            Undo
                           </Button>
                         </div>
                       ) : null}
@@ -591,13 +591,13 @@ export function ArticleApprovalEditor({ deliverableId }: ArticleApprovalEditorPr
                           <Input
                             className="entity-form"
                             onChange={(event) => setRejectImageReason(event.target.value)}
-                            placeholder="Rejection reason"
+                            placeholder="What should change?"
                             type="text"
                             value={rejectImageReason}
                           />
                           <div className="portal-action-row">
                             <Button disabled={!rejectImageReason.trim()} onClick={() => void handleRejectImage(image.id)} size="sm">
-                              Send back
+                              Request changes
                             </Button>
                             <Button onClick={() => setRejectImageId(null)} size="sm" variant="tertiary">
                               Cancel
@@ -628,7 +628,7 @@ export function ArticleApprovalEditor({ deliverableId }: ArticleApprovalEditorPr
           Save &amp; Continue
         </Button>
         <Button disabled={submitting} onClick={() => setShowRejectModal(true)} variant="tertiary">
-          Reject Article
+          Request Changes
         </Button>
       </footer>
         </>
@@ -636,10 +636,10 @@ export function ArticleApprovalEditor({ deliverableId }: ArticleApprovalEditorPr
 
       {showApproveModal ? (
         <Modal
-          eyebrow="Confirm approval"
+          eyebrow="Approve this article?"
           onClose={() => setShowApproveModal(false)}
           size="sm"
-          title="Approve this article?"
+          title="Approve for publication"
           footer={
             <div className="modal-footer">
               <Button disabled={submitting} onClick={() => setShowApproveModal(false)} variant="secondary">
@@ -651,23 +651,23 @@ export function ArticleApprovalEditor({ deliverableId }: ArticleApprovalEditorPr
             </div>
           }
         >
-          <p>DCA will be notified that you approved this article.</p>
+          <p>This article will be approved and sent to your team for final publication.</p>
         </Modal>
       ) : null}
 
       {showRejectModal ? (
         <Modal
-          eyebrow="Reject article"
+          eyebrow="Request changes"
           onClose={() => setShowRejectModal(false)}
           size="md"
-          title="Reject this article?"
+          title="Send back for changes?"
           footer={
             <div className="modal-footer">
               <Button disabled={submitting} onClick={() => setShowRejectModal(false)} variant="secondary">
                 Cancel
               </Button>
               <Button disabled={submitting || !articleRejectReason.trim()} onClick={() => void handleRejectArticle()}>
-                {submitting ? "Submitting…" : "Reject article"}
+                {submitting ? "Submitting…" : "Request changes"}
               </Button>
             </div>
           }
@@ -675,9 +675,9 @@ export function ArticleApprovalEditor({ deliverableId }: ArticleApprovalEditorPr
           <Textarea
             className="entity-form"
             id="article-reject-reason"
-            label="Rejection reason"
+            label="What should change?"
             onChange={(event) => setArticleRejectReason(event.target.value)}
-            placeholder="Tell DCA what needs to change…"
+            placeholder="Describe the changes you'd like to see…"
             rows={5}
             value={articleRejectReason}
           />
