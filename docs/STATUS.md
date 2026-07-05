@@ -1,6 +1,6 @@
 # DCA OS Lite — Status (Source of Truth)
 
-**Last updated:** 2026-07-05 (G7 Block 2 Puriva operational data path closeout)
+**Last updated:** 2026-07-06 (G8 local Puriva E2E operator dry run closeout)
 **Operator index:** [`docs/operator/OPERATOR_RUNBOOK.md`](./operator/OPERATOR_RUNBOOK.md)  
 **Architecture map:** [`docs/ARCHITECTURE.md`](./ARCHITECTURE.md) § Current application map  
 **Smoke matrix:** [`docs/runbooks/LOCAL_SMOKE_MATRIX.md`](./runbooks/LOCAL_SMOKE_MATRIX.md)  
@@ -15,7 +15,7 @@
 | Item | State |
 |------|--------|
 | Branch | `main` synced with `origin/main` |
-| HEAD (pinned) | `8cb41e2` — `polish(ops): connect Puriva intake to delivery path` |
+| HEAD (pinned) | `a380bb2` — `test(ops): add Puriva local E2E dry-run proof` |
 | CI | Green |
 | Working tree | Clean and synced with `origin/main` |
 | Pre-staging local closeout (5D-B) | **PASS** — manual workaround for orchestrator hang; see §2.1 |
@@ -339,6 +339,10 @@ AI SEO admin-operated MVP shell is in place. Live crawling, Google OAuth / GSC s
 ## G7 Block 2 closeout
 
 Puriva intake now flows through AI Knowledge, WorkflowBriefs, SEO planning, and AI Delivery handoff with verified-context / admin-only / draft-only boundaries intact. The closeout landed in commit `8cb41e2` (`polish(ops): connect Puriva intake to delivery path`) and passed diff-only review, web check, full validate, browser QA, and push. Production, staging, VPS, backend/API/schema/auth, and live provider / WordPress / GA/GSC / R2 paths were untouched.
+
+## G8 local Puriva E2E closeout
+
+Local Puriva E2E operator dry-run proof is now documented in commit `a380bb2` (`test(ops): add Puriva local E2E dry-run proof`). The local operator path is proven end to end: Puriva intake/compliance → AI Knowledge/context → WorkflowBriefs → SEO plan → content/compliance → image/asset handoff → WordPress prepared draft → client-safe monthly report/archive → client approval happy path. Browser smoke labels were aligned to the real UI (`Pending Reviews`, `Request Changes`, `Approve for publication`). Production, staging, VPS, backend/API/schema/auth, and live provider / WordPress / GA/GSC / R2 paths were untouched.
 
 ## Next work (after Block 5D-C)
 
