@@ -11,21 +11,25 @@ Current baseline: local `main` is synced and validated, and local pre-staging pr
 ## Next Actions
 
 1. Pick one test client.
-2. Pick one test month.
-3. Create one monthly project.
-4. Add a short brief.
-5. Prepare one content plan.
-6. Review one draft.
-7. Package one final item.
-8. Prepare one simple monthly summary.
-9. Check the client archive view.
-10. Record what was confusing.
+2. Confirm the intake facts that are already verified.
+3. Pick one test month.
+4. Create one monthly project.
+5. Add a short brief.
+6. Prepare one SEO plan scaffold with objectives only.
+7. Turn the plan into content objectives.
+8. Review one draft or draft shell.
+9. Package one final item.
+10. Prepare one simple monthly summary.
+11. Check the client archive view.
+12. Record what blocked progress and what should become AI Delivery work next.
 
 ## Done When
 
 The run is done when the admin can explain:
 
 - what was created;
+- what was blocked or left as an objective;
+- what moved into AI Delivery work;
 - where the final work is stored;
 - what the client would see;
 - what still needs improvement.
@@ -39,6 +43,7 @@ For Puriva, keep unresolved facts in brief notes or WorkflowBriefs until the com
 For a local rehearsal of the full Puriva operator path, use [`PURIVA_LOCAL_E2E_OPERATOR_DRY_RUN.md`](../runbooks/PURIVA_LOCAL_E2E_OPERATOR_DRY_RUN.md) after the intake/compliance source is confirmed.
 
 For any future environment proof, read [`G9_ENVIRONMENT_PROOF_APPROVAL_GATE.md`](../runbooks/G9_ENVIRONMENT_PROOF_APPROVAL_GATE.md) first, wait for explicit owner approval, and then use the Sonnet-only execution prompt there. Do not treat the planning gate as execution.
+No environment proof has run yet.
 
 ## Stop Conditions
 

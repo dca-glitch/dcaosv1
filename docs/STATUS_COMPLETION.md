@@ -79,7 +79,7 @@ changes, no percentage re-audit performed as part of this addendum):
 - **G9 environment proof approval gate** — planning-only / approval-only gate recorded on `main`
   in commit `3fc779f`; exact owner approval sentence, Sonnet-required execution prompt, health-only
   production boundary, backup/rollback-before-mutation rule, and deferred live integration
-  boundaries are documented; no environment execution happened.
+  boundaries are documented; no environment execution happened and no environment proof has run.
 
 **Knowledge arc — next / deferred (not in percentage baseline above):**
 

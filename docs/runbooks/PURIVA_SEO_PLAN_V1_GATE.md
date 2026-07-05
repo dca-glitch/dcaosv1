@@ -1,8 +1,9 @@
 # Puriva AI SEO Plan Foundation v1
 
-**Status:** Deterministic local/admin SEO planning scaffold for Puriva (`puriva.id`).
+**Status:** Deterministic local/admin SEO planning gate for Puriva (`puriva.id`).
 
-**Scope:** Monthly SEO planning objectives for Bali aesthetic clinic services. No final copy generation, provider calls, crawling, live publish, or credential claims.
+**Scope:** Monthly SEO planning objectives for Bali aesthetic clinic services. This is an operator workflow gate, not a final copy or publishing module. No provider calls, crawling, live publish, or credential claims.
+Planning objectives are review-only and must stay educational until verified facts, medical review, and compliance review are complete.
 
 Related:
 
@@ -48,6 +49,52 @@ Minimum planning coverage:
 5. Clinic trust/about/license verification support
 6. Block 3 planning input for AI SEO / AI Delivery planning
 
+Planning coverage must avoid:
+
+- before/after-as-proof framing
+- guaranteed or expected outcome language
+- medical certainty language
+- partner, hospital, or license assertions without evidence
+- BPOM or local-advertising compliance claims without current verification
+
+## Operator workflow
+
+This gate turns verified intake into monthly SEO objectives, then passes those objectives into AI Delivery work.
+
+### Required inputs
+
+- verified Puriva brief / intake
+- approved KB/context
+- current taxonomy + market intelligence
+- compliance review status
+- target month and priority focus
+
+### Progression
+
+verified intake -> SEO plan objectives -> content objectives -> draft/asset work -> compliance review -> admin review -> draft-only WordPress handoff -> final archive/report
+
+### What blocks progress
+
+- missing verified facts
+- pending medical review
+- pending verification for hospital / partner / license claims
+- unsupported contact, claim, or service facts
+- unclear target month or content priority
+
+### What becomes AI Delivery work
+
+- content objectives
+- draft briefs
+- asset package notes
+- review comments and handoff notes
+
+### What gets archived or reported later
+
+- approved deliverables
+- monthly report
+- client-safe archive items
+- summary notes for the operator record
+
 ---
 
 ## Helpers
@@ -70,6 +117,7 @@ Verified Puriva intake + approved KB/context -> SEO plan objectives -> content d
 - **No draft is final before compliance review:** Planning items, generated draft scaffolds, and prepared WordPress payloads are internal objectives until the compliance checkpoint and admin review pass.
 - **WordPress is draft-only:** The WordPress handoff prepares a local draft payload only. Live publish remains deferred and disabled in the current block.
 - **Client sees final/review-safe outputs only:** Client Portal and monthly reports expose only FINAL or approved deliverables. Internal drafts, review notes, and workflow metadata stay admin-only.
+- **Sensitive topics stay in review mode:** Wegovy/semaglutide, stem cell, hospital/partner/license, Bali medical-tourism, before/after, and BPOM-sensitive topics require cautious educational wording and human review before any client-facing use.
 
 Planning items stay as objectives only until the downstream draft/asset package is assembled and cleared by the compliance checkpoint and admin review.
 
@@ -110,7 +158,10 @@ npm.cmd run -w @dca-os-v1/api test:unit -- --test-name-pattern puriva-seo-plan
 - **No draft is final before compliance review:** Generated drafts, image packages, and prepared WordPress payloads remain internal scaffolds until the compliance checkpoint and admin review pass.
 - **WordPress is draft-only:** The handoff prepares a local draft payload only. Live publish remains deferred and disabled.
 - **Client sees final/review-safe outputs only:** Client Portal and monthly reports expose only FINAL or approved deliverables. Internal drafts, review notes, and workflow metadata stay admin-only.
-- High-risk categories (Wegovy, stem cell) require medical review before client-facing use.
-- Hospital/partner/license statements remain verification-required.
+- High-risk categories (Wegovy, semaglutide, stem cell) require medical review before client-facing use.
+- Hospital/partner/license statements remain verification-required and should not be implied by travel, referral, or familiarity language.
+- Bali medical-tourism pages should stay descriptive and logistical, not promising access, outcomes, or special treatment.
+- Before/after or outcome claims should be treated as prohibited unless separately approved and documented.
+- BPOM/local medical-advertising claims remain verification-required.
 - No OpenRouter, crawl, or live publish calls in this block; draft-only WordPress handoff stays downstream.
 - This is planning-only; live automation stays deferred until a separately approved block.

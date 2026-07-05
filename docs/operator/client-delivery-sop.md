@@ -39,6 +39,37 @@ AI can help with research, plans, drafts, images, and summaries, but the admin c
 
 The client sees final approved information only.
 
+## SEO Operator Path
+
+For SEO work, the operating sequence is:
+
+verified intake -> SEO plan objectives -> content objectives -> draft/asset work -> compliance review -> admin review -> final deliverable -> archive/report.
+
+The SEO plan is the operator scaffold that turns verified facts into content objectives the AI Delivery work can use.
+
+Progress stops when:
+
+- a client fact is unverified;
+- a medical, partner, or license claim still needs review;
+- the month, audience, or service focus is unclear;
+- a draft would rely on unsupported claims;
+- a step would require live publish or any other blocked runtime action.
+
+What becomes AI Delivery work:
+
+- content objectives;
+- draft briefs;
+- draft copy or draft shells;
+- image or asset package notes;
+- review comments and handoff notes.
+
+What stays for archive or report later:
+
+- approved deliverables;
+- final client-safe summaries;
+- monthly report notes;
+- read-only archive items.
+
 ## Step 1: Create Or Confirm The Client
 
 Before starting monthly work, confirm the client record exists and is correct.
@@ -117,11 +148,15 @@ A useful content plan should make clear:
 - suggested angle;
 - why the topic matters.
 
+Treat the plan as an operator scaffold, not a client-ready asset. If the plan is missing verified facts, keep it in objective form until the facts are approved.
+
 Admin should review the content plan before draft production starts.
 
 ## Step 6: Produce Drafts
 
 After the content plan is ready, generate or prepare content drafts.
+
+This is where the AI Delivery work begins. The draft should follow the approved content objectives, not invent new direction.
 
 Admin review checklist:
 
@@ -164,6 +199,8 @@ Before marking as final, check:
 
 If the client uses WordPress, prepare the WordPress draft after the deliverable is ready.
 
+This step is admin-reviewed draft-only preparation. It does not mutate production WordPress, does not handle credentials, and does not publish live.
+
 The admin remains responsible for the final publishing decision.
 
 Client review before publication is not part of the current MVP unless handled outside the system.
@@ -184,6 +221,8 @@ Include:
 
 The monthly report is reviewed by the admin and then made available as final client-safe material.
 
+The report should also reflect what was blocked, what moved into AI Delivery work, and what remains for the next month.
+
 ## Step 11: Client Archive
 
 The client archive should contain final approved work only.
@@ -195,7 +234,9 @@ Good archive content:
 - approved documents;
 - published links when available.
 
-Do not expose internal drafts, raw AI outputs, hidden context, technical logs, or unfinished items.
+Do not expose internal drafts, raw AI outputs, hidden context, technical logs, workflow metadata, provider/job/run data, storage references, or unfinished items.
+
+Anything still in operator-review status belongs in notes, not in the archive.
 
 For a full local rehearsal of the Puriva operator path, follow [`PURIVA_LOCAL_E2E_OPERATOR_DRY_RUN.md`](../runbooks/PURIVA_LOCAL_E2E_OPERATOR_DRY_RUN.md). Keep it local-only and stop if anything would require staging, production, or live provider/publish behavior.
 
@@ -216,5 +257,7 @@ The following are not part of the active process yet:
 - automatic live analytics sync;
 - fully automatic publishing;
 - production deployment without a separate approval block.
+
+Production readiness stays blocked until a separate owner-approved environment-proof block. Live integrations remain deferred.
 
 These limits are intentional. They keep the first delivery path controlled and safe.

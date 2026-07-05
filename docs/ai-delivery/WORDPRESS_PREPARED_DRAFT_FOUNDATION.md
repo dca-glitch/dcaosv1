@@ -25,11 +25,12 @@ POST /api/v1/ai-delivery-projects/:id/deliverables/:deliverableId/prepare-wordpr
 - Owner/admin only
 - Tenant-scoped: validates project and deliverable ownership
 - Prepares local draft payload only
-- This is the WordPress draft handoff boundary for Puriva; it does not publish, schedule, or call WordPress live.
+- This is the WordPress draft handoff boundary for Puriva; it does not publish, schedule, mutate production WordPress, or call WordPress live.
 - Admin review and the compliance review checkpoint must pass before any client/final archive step; this stage only prepares the draft payload.
 - **Does NOT call WordPress**
 - **Does NOT use WordPress credentials or secrets**
 - **Does NOT publish**
+- **Does NOT mutate production WordPress**
 - Returns prepared draft structure ready for future WordPress integration
 
 **Context dependency:** The prepare endpoint assumes the deliverable is linked to approved same-project content and that verified intake / approved knowledge/context are already in place. If context is missing, the prepared draft is still an unapproved scaffold and must not be treated as final client copy.
@@ -78,7 +79,14 @@ POST /api/v1/ai-delivery-projects/:id/deliverables/:deliverableId/prepare-wordpr
 
 **Operator Path:**
 
-SEO plan -> content draft -> image/asset package -> compliance review checkpoint -> admin review -> draft-only WordPress prepared draft handoff -> final archive.
+SEO plan -> AI Delivery content draft -> image/asset package -> compliance review checkpoint -> admin review -> draft-only WordPress prepared draft handoff -> final archive.
+
+**Handoff Contract:**
+
+- The SEO plan feeds AI Delivery draft production first.
+- The prepared WordPress step is a draft-only handoff, not publication.
+- No production WordPress mutation, credential handling, or live publish occurs in this block.
+- Client-visible outputs remain review-safe or final only; workflow runs, jobs, prompts, provider details, and storage metadata stay admin-only.
 
 ### Testing & Validation
 
@@ -119,7 +127,7 @@ SEO plan -> content draft -> image/asset package -> compliance review checkpoint
 - **Context ready / missing:** Before preparing a WordPress draft, confirm the project has verified intake (brief) and approved knowledge/context. The UI shows context readiness indicators; a missing context means the draft is not yet grounded.
 - **No draft is final before compliance review:** The prepared WordPress payload is an internal draft scaffold. It must pass the compliance review checkpoint and admin review before it can be handed off to final archive or client delivery.
 - **WordPress is draft-only:** The prepare endpoint never publishes. Live publish is deferred and disabled unless a separately approved block enables `WORDPRESS_PUBLISH_ENABLED=true`.
-- **Client sees final/review-safe outputs only:** Client Portal and monthly reports show only FINAL or approved deliverables. Prepared WordPress drafts, internal review notes, and workflow metadata stay admin-only.
+- **Client sees final/review-safe outputs only:** Client Portal and monthly reports show only FINAL or approved deliverables. Prepared WordPress drafts, internal review notes, workflow runs, provider/job details, storage metadata, and payload internals stay admin-only.
 
 ### What You Can Test Now
 
@@ -178,6 +186,7 @@ SEO plan -> content draft -> image/asset package -> compliance review checkpoint
 - ✅ No WordPress API calls are made during draft preparation
 - ✅ No credentials are embedded in the prepared payload
 - ✅ No `.env` WordPress secrets are inspected or used
+- ✅ No production WordPress content is mutated by this handoff
 
 **Future Blocks Must:**
 - Design credential storage before any WordPress API call is implemented

@@ -3,6 +3,7 @@
 **Status:** Deterministic draft scaffold production from Puriva SEO plan.
 
 **Scope:** Internal outline/brief scaffolds with compliance gates. No final client copy, provider calls, crawling, live publish, WordPress, or client portal exposure.
+Draft scaffolds must preserve the same safety limits as the SEO plan: educational only, review-only, and non-promissory until verified and approved.
 
 Related:
 
@@ -34,6 +35,14 @@ Each SEO plan item produces one `draftScaffold` with:
 
 Supported content types: `service_page`, `faq`, `blog_article`, `comparison_education`, `booking_contact_support`.
 
+Content production must not introduce:
+
+- before/after proof language
+- outcome guarantees or expected-result language
+- partner, hospital, or license assertions without evidence
+- BPOM or local medical-advertising claims without current verification
+- contraindication-free or universal-suitability wording
+
 ---
 
 ## Helpers
@@ -54,8 +63,9 @@ Verified Puriva intake + approved KB/context -> SEO plan -> content draft scaffo
 
 - **Context ready / missing:** Content draft scaffolds must be grounded in verified intake (brief) and approved knowledge/context. If context is missing, drafts are unapproved scaffolds and must not be treated as final client copy.
 - **No draft is final before compliance review:** Draft scaffolds, image packages, and prepared WordPress payloads are internal objectives until the compliance checkpoint and admin review pass.
-- **WordPress is draft-only:** The WordPress handoff prepares a local draft payload only. Live publish remains deferred and disabled.
-- **Client sees final/review-safe outputs only:** Client Portal and monthly reports expose only FINAL or approved deliverables. Internal drafts, review notes, and workflow metadata stay admin-only.
+- **WordPress is draft-only:** The WordPress handoff prepares a local draft payload only. Live publish remains deferred and disabled. It does not mutate production WordPress or handle credentials.
+- **Client sees final/review-safe outputs only:** Client Portal and monthly reports expose only FINAL or approved deliverables. Internal drafts, review notes, workflow metadata, provider/job/run details, and storage references stay admin-only.
+- **Sensitive topics stay cautious:** Wegovy/semaglutide education, stem cell therapy, Bali medical-tourism wording, aesthetic procedure descriptions, and any compliance-sensitive claim must remain educational until medical/compliance review clears the wording.
 
 This stage turns approved SEO objectives into internal draft scaffolds; the compliance checkpoint and admin review must pass before anything is handed off downstream.
 
@@ -96,5 +106,6 @@ npm.cmd run -w @dca-os-v1/api test:unit -- --test-name-pattern puriva-content-pr
 - **WordPress is draft-only:** The handoff prepares a local draft payload only. Live publish remains deferred and disabled.
 - **Client sees final/review-safe outputs only:** Client Portal and monthly reports expose only FINAL or approved deliverables. Internal drafts, review notes, and workflow metadata stay admin-only.
 - High-risk topics require medical review before expansion.
-- Credential/partner/license references remain verification-required.
+- Credential/partner/license references remain verification-required and must not be inferred from travel or service descriptions.
+- Do not convert outline sections into final claims about weight loss, suitability, outcomes, or local compliance.
 - No OpenRouter, crawl, live publish, or client portal review requests in this block.

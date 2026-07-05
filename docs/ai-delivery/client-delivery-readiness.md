@@ -25,6 +25,7 @@
 - `npm.cmd run smoke:mvp:local` proves the broader local auth/tenant/module readiness baseline.
 - `npm.cmd run smoke:browser` and `scripts/smoke-browser.ps1` remain the general local browser proof wrappers behind `npm.cmd run smoke:browser`.
 - `npm.cmd run smoke:local` and `scripts/smoke-local.ps1` remain the general local API proof wrappers behind `npm.cmd run smoke:local`.
+- These proofs do not authorize client-facing use of unreviewed medical, partner, license, BPOM, or before/after claims.
 
 ## Deferred
 
@@ -41,19 +42,24 @@
 - Revenue Hub AI.
 - POD AI Toolkit.
 
+No environment proof has run; owner-approved environment execution remains separate and planning-only.
+
 ## Safety rules
 
 - SEO plan and AI Delivery handoff depend on verified Puriva intake and approved knowledge/context. A missing brief or unapproved knowledge items means the downstream plan/draft is not yet grounded.
 - Client-visible data must be final or approved only. No draft, scaffold, or prepared WordPress payload is treated as final before the compliance review checkpoint and admin review pass.
+- Client-facing review boundaries stay strict: medical-review-only topics, partner/license-sensitive wording, and any compliance-sensitive claim stay internal until cleared.
 - Client portal access is gated by `ClientUserAccess`.
 - Admin-managed Client Access is client-level in the current MVP foundation; it does not create invitation emails, password UI, magic links, or public links.
 - Owner/admin role alone does not grant client archive access.
 - Client portal monthly reports also require `ClientUserAccess` and only expose FINAL, non-archived reports for the linked project.
 - WordPress handoff means draft-only preparation only; live publish stays deferred and disabled in the current MVP block.
+- The SEO plan -> AI Delivery -> WordPress prepared draft handoff is admin-reviewed, draft-only, and never mutates production WordPress or handles credentials.
 - Final archive/monthly report is the client-safe end state after the admin-reviewed handoff chain completes.
 - Raw `storageKey` stays hidden from client responses.
-- Workflow runs, jobs, prompts, research, review notes, draft body, cost, and provider metadata stay internal.
+- Workflow runs, jobs, prompts, research, review notes, draft body, cost, provider metadata, and storage references stay internal/admin-only.
 - Client portal monthly reports are FINAL-only and read-only; no public links, comments, or request-changes workflows are introduced by this handoff.
+- Before/after material, outcome claims, and medical certainty language do not belong in the client-facing archive unless separately approved and documented.
 - `exportUrl` is the safe manual client-visible export link.
 - PDF handoff is supported through private upload/download.
 - Live Google Docs provider work remains deferred.

@@ -53,6 +53,8 @@ Related:
 - Avoid hype, fear, urgency, miracle language, and sales pressure.
 - Use simple sentences and outcome-neutral wording.
 - Keep the voice educational, not promotional.
+- For sensitive health topics, prefer cautious review language over conversion language.
+- Never let trust-building copy become certainty, endorsement, or a substitute for clinician review.
 
 **Do not use:** `guaranteed`, `instant`, `cure`, `perfect`, `best`, `no risk`, `works for everyone`.
 
@@ -61,6 +63,7 @@ Related:
 - Default languages: **Indonesian and English**.
 - Add other languages only if the client explicitly approves them.
 - Service area wording should stay broad unless verified: Bali, Indonesia, and international inquiry support.
+- For Bali medical-tourism wording, describe logistics and inquiry support only; do not imply guaranteed access, priority care, or travel suitability.
 - If a region is not confirmed, do not list it as a service area.
 
 **Safe default when unknown:** `available for Indonesian and English-speaking inquiries`.
@@ -95,19 +98,23 @@ Use service descriptions as **education and consultation support**, not as outco
 
 - Treat as a **prescription-medication / medical-consultation** topic.
 - Keep copy educational and eligibility-based.
+- Frame the topic as clinician-reviewed education, not self-service weight loss guidance.
 - Do not claim a specific amount of weight loss.
 - Do not claim it is suitable for everyone.
 - Do not imply permanent or guaranteed results.
 - Do not present medication use as simple lifestyle advice.
+- Do not minimize contraindications, side effects, monitoring, or follow-up requirements.
 
 **Safe wording:** `consultation-based weight-management support` / `eligibility is assessed by the clinician`.
 
 ## 8) Stem cell therapy constraints
 
 - Treat as **verification-required** and medically sensitive.
+- Keep wording strictly informational unless a verified clinician-reviewed pathway exists.
 - Do not claim cure, reversal, regeneration guarantees, or permanent results.
 - Do not state partner, lab, or hospital authority unless current evidence exists.
 - Keep copy descriptive and cautious.
+- Do not imply experimental, regenerative, or specialty authority beyond verified evidence.
 
 **Safe wording:** `information about a specialist treatment option` / `suitability is determined after review`.
 
@@ -116,6 +123,8 @@ Use service descriptions as **education and consultation support**, not as outco
 - Use partner wording only with current, documented proof.
 - If proof is missing, say `may coordinate with` or omit the claim.
 - Do not use `official`, `authorized`, `exclusive`, or `certified partner` unless verified.
+- Do not convert a referral, discussion, or attendance into a partnership claim.
+- Do not imply hospital endorsement, referral exclusivity, or local authority status without evidence.
 - Do not list hospital names as facts without approval.
 
 **Safe default when unknown:** no partner claim at all.
@@ -125,7 +134,9 @@ Use service descriptions as **education and consultation support**, not as outco
 - Use neutral, service-led wording.
 - Focus on consultation, care, process, and support.
 - Avoid promises about beauty, transformation, guaranteed confidence, or instant results.
+- Avoid language that implies a predictable cosmetic outcome, superior result, or universal satisfaction.
 - If a treatment is cosmetic, say so plainly without overclaiming benefits.
+- When describing procedures, keep the wording educational and review-based rather than promotional.
 
 **Safe wording:** `aesthetic services`, `consultation-based treatment options`, `personalized review`.
 
@@ -141,6 +152,7 @@ Never publish:
 - before/after as proof of outcome
 - unsupported hospital / partner claims
 - unsupported licensing / regulator claims
+- BPOM, permit, or local advertising-compliance claims without current evidence
 - price or promo claims not approved by the client
 - any claim that sounds like medical certainty without evidence
 
@@ -164,8 +176,10 @@ Allowed when true and reviewed:
 - Use a short disclaimer on medical or treatment pages when needed.
 - Keep it plain and non-alarming.
 - State that information is educational and does not replace clinician review.
+- State that contraindications, eligibility, side effects, and monitoring may apply where relevant.
 - State that suitability and outcomes vary.
 - Do not let a disclaimer compensate for unsafe claims.
+- Do not pair a disclaimer with a stronger outcome claim in the same passage.
 
 **Working disclaimer:** `Information is for general education only and does not replace a medical consultation. Suitability and outcomes vary by person.`
 
@@ -174,8 +188,10 @@ Allowed when true and reviewed:
 - Use only if client-approved and policy-compliant.
 - Do not edit images in a misleading way.
 - Do not imply one example is a guaranteed outcome.
+- Do not present before/after material as proof of typical, expected, or medically certain results.
 - Keep consent, rights, and source notes attached.
 - If uncertain, omit before/after from public copy and ads.
+- Do not use before/after framing to support weight-loss, aesthetic, or regenerative certainty.
 
 **Safe default when unknown:** no before/after material.
 
@@ -193,8 +209,10 @@ Allowed when true and reviewed:
 
 - Treat BPOM, permits, registrations, import status, and Indonesian compliance topics as verification-required.
 - Do not state regulator approval or product compliance without current evidence.
+- Do not imply local medical-advertising compliance, registration status, or import legality from general marketing language.
 - Keep Indonesia-specific medical language conservative.
 - Escalate any claim that depends on a license, permit, or official status.
+- If the claim depends on an agency, ministry, hospital, or regulator, route it to review before any client-facing use.
 
 **Safe default when unknown:** omit the regulatory claim.
 
@@ -318,6 +336,7 @@ Use this order:
 5. remove or soften anything unverified
 6. record the reviewer and date
 7. publish only client-safe final text
+8. for sensitive topics, confirm the final wording still avoids certainty, guarantee, endorsement, and outcome proof language
 
 Evidence can be a client note, screenshot, document, URL, or signed approval.
 
@@ -337,6 +356,7 @@ If a statement is sensitive:
 - do not publish it until reviewed
 - prefer neutral educational language
 - use the least specific wording that is still true
+- keep treatment, partner, license, and outcome phrasing in review mode until verified
 
 If a page or deliverable is unverified:
 
@@ -361,6 +381,8 @@ Use:
 - `educational guidance`
 - `client-safe final work`
 - `subject to verification`
+- `eligibility is assessed by the clinician`
+- `may coordinate with verified partners`
 
 Avoid:
 
@@ -371,3 +393,5 @@ Avoid:
 - `permanent`
 - `no risk`
 - `official partner` unless proven
+- `before/after proves results`
+- `BPOM approved` unless current evidence exists

@@ -335,7 +335,7 @@ The following remain true; detail preserved in linked docs and git history.
 
 ## AI SEO / Content Plan closure
 
-AI SEO admin-operated MVP shell is in place. Live crawling, Google OAuth / GSC sync, autonomous SEO agents, and production deploy remain deferred. See §9 and [`deferred-scope-register.md`](./operator/deferred-scope-register.md).
+AI SEO admin-operated MVP shell is in place. Live crawling, Google OAuth / GSC sync, autonomous SEO agents, and production deploy remain deferred. No environment proof has run. See §9 and [`deferred-scope-register.md`](./operator/deferred-scope-register.md).
 
 ## G7 Block 2 closeout
 
@@ -351,7 +351,7 @@ Puriva Operating Pack v1 closeout is now documented in commit `b2e0287` (`docs: 
 
 ## G9 environment proof approval gate
 
-The G9 environment proof approval gate is now documented in commit `3fc779f` (`docs: add G9 environment proof approval gate`) and pushed to `main`. The gate is planning-only / approval-only, records the exact owner approval sentence, requires Sonnet for actual execution, and keeps production limited to health-check only in any future proof. No environment execution happened, and no production readiness is claimed. Backup/rollback evidence is required before any mutating action; live provider, live WordPress publish, GA/GSC, and R2 live IO remain deferred.
+The G9 environment proof approval gate is now documented in commit `3fc779f` (`docs: add G9 environment proof approval gate`) and pushed to `main`. The gate is planning-only / approval-only, records the exact owner approval sentence, requires Sonnet for actual execution, and keeps production limited to health-check only in any future proof. No environment execution happened, no environment proof has run, and no production readiness is claimed. Backup/rollback evidence is required before any mutating action; live provider, live WordPress publish, GA/GSC, and R2 live IO remain deferred.
 
 ## Next work (after Block 5D-C)
 

@@ -39,6 +39,8 @@ Use this before any real Puriva client work starts.
 ### What blocks work
 
 - Unverified clinic facts or unsupported claims.
+- Any before/after, outcome-proof, guarantee, or certainty language that has not been separately approved.
+- BPOM, license, partner, or hospital claims without current evidence.
 - Missing approval contacts or unclear approval route.
 - Missing asset rights or unclear source ownership.
 - Live publish requests.
@@ -64,6 +66,7 @@ Use this before any real Puriva client work starts.
 ## 3) Production / incident / rollback placeholder
 
 This pack does **not** claim production readiness.
+No environment proof has run for this pack.
 
 Before any later production use, all of the following would need to exist:
 
@@ -108,6 +111,7 @@ Gather and verify these items before real client work starts:
 - assets / logos / images
 - WordPress access decision
 - analytics access decision
+- sensitive-topic review notes for Wegovy/semaglutide, stem cell, aesthetic procedures, Bali medical-tourism wording, and before/after policy
 
 **Safe default:** if a field is missing, leave it out and keep it internal until verified.
 
@@ -129,6 +133,7 @@ Gather and verify these items before real client work starts:
 
 - **Go** when the first six gates are pass and the work stays local/admin-only.
 - **No-go** if any gate depends on production, staging, live provider use, or live publish.
+- **No-go** if the draft plan still contains unverified outcome, license, partner, BPOM, or before/after claims.
 
 ---
 
