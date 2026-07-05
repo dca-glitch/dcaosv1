@@ -245,6 +245,44 @@ Reference: [`docs/ai-delivery/copilot-cli-permissions.md`](../ai-delivery/copilo
 
 ---
 
+### Safe commit/push runner-control pattern
+
+Use the reusable PowerShell helper library at [`scripts/lib/runner-control.ps1`](../../scripts/lib/runner-control.ps1) for any manual commit gate or future script that may commit or push.
+
+Core rules:
+
+- Set `Set-StrictMode -Version Latest` and `$ErrorActionPreference = "Stop"` at the top of the script.
+- Run each native command through `Invoke-LoggedNativeStep` so `$LASTEXITCODE` is captured immediately after that command finishes.
+- Treat warning-only stderr as informational unless the command exits non-zero or you explicitly match a fatal sentinel.
+- Use `throw` for fail-fast paths; do **not** rely on `return` alone inside a top-level wrapper.
+- Run `git commit` only after all validation checks pass.
+- Run `git push` only after commit success and `Assert-WorkingTreeClean` confirms an empty `git status --porcelain`.
+- Open the log in Notepad from `finally` or after the gate completes.
+
+Minimal pattern:
+
+```powershell
+Set-StrictMode -Version Latest
+$ErrorActionPreference = "Stop"
+. "$PSScriptRoot\lib\runner-control.ps1"
+
+$log = New-RunnerControlLogPath -Prefix "dca-git-gate"
+try {
+  Invoke-LoggedNativeStep -Label "git diff --check" -Command { git diff --check } -LogPath $log
+  Invoke-LoggedNativeStep -Label "npm.cmd run validate" -Command { npm.cmd run validate } -LogPath $log
+  Assert-WorkingTreeClean -LogPath $log
+
+  Invoke-LoggedNativeStep -Label "git add" -Command { git add docs/STATUS.md docs/STATUS_COMPLETION.md } -LogPath $log
+  Invoke-LoggedNativeStep -Label "git commit" -Command { git commit -m "docs: record closeout" } -LogPath $log
+  Assert-WorkingTreeClean -LogPath $log
+  Invoke-LoggedNativeStep -Label "git push" -Command { git push origin main } -LogPath $log
+} finally {
+  Open-RunnerControlLog -LogPath $log
+}
+```
+
+This pattern prevents a failed validate/check from flowing into commit/push, even when the command output includes warning text on stderr.
+
 ## 10. Secret handling policy
 
 | Rule | Detail |
