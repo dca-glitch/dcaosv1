@@ -1,6 +1,6 @@
 # DCA OS Lite — Status (Source of Truth)
 
-**Last updated:** 2026-07-05 (G4 staging complete)
+**Last updated:** 2026-07-05 (G5 Puriva approval UX complete)
 **Operator index:** [`docs/operator/OPERATOR_RUNBOOK.md`](./operator/OPERATOR_RUNBOOK.md)  
 **Architecture map:** [`docs/ARCHITECTURE.md`](./ARCHITECTURE.md) § Current application map  
 **Smoke matrix:** [`docs/runbooks/LOCAL_SMOKE_MATRIX.md`](./runbooks/LOCAL_SMOKE_MATRIX.md)  
@@ -88,6 +88,19 @@ Prior closeout baseline (still valid context): client approval happy-path `58db7
 | Containers not touched | `dcaosv1-api`, `dcaosv1-postgres` |
 | Backups | `/opt/dca/backups/docker-compose.yml.20260705-063309.bak`; `/opt/dca/backups/Caddyfile.20260705-063309.bak`; `/opt/dca/apps/dcaosv1/staging/backups/pg-backup-staging-5ee8389-pre-migrate-20260705-043540.sql` |
 | Remaining warning-only item | HSTS missing on staging; production probe intentionally skipped in the final baseline rerun; admin login checks skipped when `AUTH_SEED_TEST_PASSWORD` was unset |
+
+### 2.3 G5 Puriva approval UX completion (2026-07-05)
+
+**Result:** PASS — client portal approval UX closeout on `ec4c41c` (`polish(client): clarify Puriva approval UX`).
+
+| Item | Evidence |
+|------|----------|
+| Changed area | Client portal approval UX |
+| Validation | `git diff --check` PASS; `npm.cmd run -w @dca-os-v1/web check` PASS; browser QA PASS |
+| CI | Green |
+| Production / staging | Untouched |
+| Working tree after push | Clean |
+| Next block | Owner decision |
 
 ## 3. Module readiness (local admin-operated)
 

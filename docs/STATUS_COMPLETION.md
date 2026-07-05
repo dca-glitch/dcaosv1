@@ -1,7 +1,7 @@
 # DCA OS Lite — Project Completion Overview
 
 **Status:** Planning and operator reference
-**Last updated:** 2026-07-02 (docs source-of-truth refresh after PR #38–#43)
+**Last updated:** 2026-07-05 (G5 Puriva approval UX closeout)
 **Reference branch:** `main` after PR #43 merge (`f8606f2`)
 **Reference commits:** PR #38 merge `a152cbd`; PR #39 merge `971ac41`; PR #40 merge `9a6eddc`; PR #41 merge `6a03cc1`; PR #42 merge `b341b5d`; PR #43 merge `f8606f2`
 **Scope:** Approved local admin MVP + client/domain operating model (blocks 1–6) + **MVP 1 Puriva client delivery** + **Post-MVP local closeout (Blocks 31–57)** + **Phase F local completion (Blocks 58–77)**. Local `main` is synced and validated. VPS/production intentionally excluded until separate owner approval.
@@ -48,6 +48,8 @@ changes, no percentage re-audit performed as part of this addendum):
   metadata only is persisted on admin-only surfaces. See
   [`docs/modules/WORKFLOW_BRIEFS_MODULE_PLAN.md`](./modules/WORKFLOW_BRIEFS_MODULE_PLAN.md) and
   [`docs/modules/KNOWLEDGE_BASE.md`](./modules/KNOWLEDGE_BASE.md).
+- **G5 Puriva approval UX** — client portal approval workflow clarity/density pass closed on
+  `main` in commit `ec4c41c`; browser QA passed; no backend/schema/auth changes.
 
 **Knowledge arc — next / deferred (not in percentage baseline above):**
 
