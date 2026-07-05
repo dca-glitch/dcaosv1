@@ -437,6 +437,18 @@ function ClientPortalStatusBadge({ status }: { status: string | null | undefined
   return <StatusBadge status={label} />;
 }
 
+function getArchiveNextActionLabel(pendingApprovalCount: number, selectedProject: ClientPortalProjectSummary | null): string {
+  if (pendingApprovalCount > 0) {
+    return `Next action: Review ${pendingApprovalCount} pending approval${pendingApprovalCount === 1 ? "" : "s"}`;
+  }
+
+  if (selectedProject) {
+    return "Next action: Review the final deliverables below";
+  }
+
+  return "Next action: Open a project to view final deliverables";
+}
+
 function PortalInlineLoading({ label }: { label: string }) {
   return (
     <p className="cf-inline-loading" role="status">
@@ -945,6 +957,7 @@ export function ClientPortalPage() {
     : -1;
 
   const clientName = selectedProject?.client?.name ?? projects[0]?.client?.name ?? "Client archive";
+  const archiveNextActionLabel = getArchiveNextActionLabel(pendingApprovalCount, selectedProject);
 
   if (projectsLoading) {
     return (
@@ -989,7 +1002,7 @@ export function ClientPortalPage() {
         }
         description="Final deliverables and monthly reports shared with your account."
         eyebrow="Client workspace"
-        meta={<span className="muted-text">{clientName}</span>}
+        meta={<span className="muted-text">{clientName} · {archiveNextActionLabel}</span>}
         title="Your archive"
         titleId="client-portal-title"
       />
@@ -1089,7 +1102,7 @@ export function ClientPortalPage() {
               title="Project overview"
               tone="compact"
             >
-              <EmptyState message="Select a project on the left to open its archive." title="No project selected" variant="inline" />
+              <EmptyState message="Select a project on the left to open its final archive." title="No project selected" variant="inline" />
             </SectionPanel>
           ) : selectedProjectLoading ? (
             <PortalInlineLoading label="Loading project archive" />
@@ -1117,13 +1130,13 @@ export function ClientPortalPage() {
                     </div>
                   </div>
                   <p className="cf-record-note">
-                    Only finalized items shared with your account appear here.
+                    Only final deliverables and reports shared with your account appear here.
                   </p>
                 </article>
               </SectionPanel>
 
               <SectionPanel
-                description="Summary of completed work for this project."
+                description="Summary of completed work shared for this project."
                 title="Delivery summary"
                 tone="compact"
               >
@@ -1233,7 +1246,7 @@ export function ClientPortalPage() {
 
               <SectionPanel
                 description="Final released materials shared with your account."
-                title="Release package"
+                title="Final deliverables"
                 tone="compact"
               >
                 {releasePackageLoading ? (

@@ -50,8 +50,15 @@ export function PendingApprovalsPage() {
             Refresh
           </Button>
         }
-        description="Articles awaiting your review"
+        description="Open each article to approve it or send it back with changes."
         eyebrow="Client workspace"
+        meta={
+          <span className="muted-text">
+            {items.length > 0
+              ? `Next action: Open ${items.length === 1 ? "the article" : "each article"} to review`
+              : "Next action: Wait for the next article to arrive"}
+          </span>
+        }
         title="Pending Approvals"
         titleId="pending-approvals-title"
       />
@@ -85,20 +92,21 @@ export function PendingApprovalsPage() {
           tone="compact"
         >
           {items.length === 0 ? (
-            <EmptyState message="No articles pending your approval" title="All caught up" variant="inline" />
+            <EmptyState message="No articles need your review right now." title="All caught up" variant="inline" />
           ) : (
             <div className="cf-record-list">
               {items.map((item) => (
-                <article className="cf-record" key={item.id}>
-                  <div className="cf-record-main">
-                    <div className="cf-record-title">
-                      <div className="cf-record-kicker">
+                <article className="cf-record dense-record" key={item.id}>
+                  <div className="dense-record-main">
+                    <div className="dense-title">
+                      <div className="dense-kicker">
                         <StatusBadge status="Awaiting your approval" />
+                        <span className="entity-pill">Next action: Open review</span>
                       </div>
                       <h3>{item.title}</h3>
-                      <div className="cf-record-meta">
-                        <span className="entity-pill">{item.projectName}</span>
-                        <span>{formatApprovalDate(item.createdAt)}</span>
+                      <div className="dense-meta">
+                        <span>{item.projectName}</span>
+                        <span>Shared {formatApprovalDate(item.createdAt)}</span>
                       </div>
                     </div>
                     <div className="dense-actions">
@@ -108,7 +116,7 @@ export function PendingApprovalsPage() {
                         type="button"
                         variant="tertiary"
                       >
-                        Review
+                        Open review
                       </Button>
                     </div>
                   </div>

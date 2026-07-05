@@ -282,6 +282,12 @@ export function ArticleApprovalEditor({ deliverableId }: ArticleApprovalEditorPr
     return deliverable.images.every((image) => image.approvalStatus === "APPROVED" || image.approvalStatus === "REJECTED");
   }, [deliverable]);
 
+  const reviewNextActionLabel = deliverable
+    ? allImagesReviewed
+      ? "Next action: Approve article or send it back with changes"
+      : "Next action: Review the body and image approvals"
+    : "Next action: Load the article review";
+
   async function handleApproveImage(imageId: string) {
     setImageBusyId(imageId);
     const response = await clientPortalApiRequest<{ imageApproval: { articleImageId: string; status: string } }>(
@@ -364,7 +370,7 @@ export function ArticleApprovalEditor({ deliverableId }: ArticleApprovalEditorPr
       showToast(response.error.message, "error");
       return;
     }
-    showToast("Article approved! DCA has been notified.");
+    showToast("Article approved. DCA has been notified.");
     window.setTimeout(() => navigateToClientPortalHash("client-portal/pending-approvals"), 600);
   }
 
@@ -382,7 +388,7 @@ export function ArticleApprovalEditor({ deliverableId }: ArticleApprovalEditorPr
       showToast(response.error.message, "error");
       return;
     }
-    showToast("Article rejected. DCA has been notified.");
+    showToast("Article sent back with changes. DCA has been notified.");
     window.setTimeout(() => navigateToClientPortalHash("client-portal/pending-approvals"), 600);
   }
 
@@ -400,6 +406,7 @@ export function ArticleApprovalEditor({ deliverableId }: ArticleApprovalEditorPr
       <PageHeader
         description={pageDescription}
         eyebrow="Article approval"
+        meta={<span className="muted-text">{deliverable ? `${deliverable.projectName} · ${reviewNextActionLabel}` : reviewNextActionLabel}</span>}
         title={pageTitle}
         titleId="article-approval-title"
       />
@@ -423,7 +430,7 @@ export function ArticleApprovalEditor({ deliverableId }: ArticleApprovalEditorPr
         <>
       <div className="portal-approval-layout">
         <aside className="portal-approval-meta">
-          <SectionPanel title="Review context" tone="compact">
+          <SectionPanel description="Client-facing context for this review." title="Review summary" tone="compact">
             <dl className="field-grid">
               <div>
                 <dt>Project</dt>
@@ -446,7 +453,7 @@ export function ArticleApprovalEditor({ deliverableId }: ArticleApprovalEditorPr
         <div className="portal-approval-main">
           <SectionPanel
             description="Title, description, tags, category, and optional publish date. Changes save automatically."
-            title="Article metadata"
+            title="Article details"
             tone="compact"
           >
             <Input
@@ -518,7 +525,7 @@ export function ArticleApprovalEditor({ deliverableId }: ArticleApprovalEditorPr
           </SectionPanel>
 
           <SectionPanel
-            description="Approve or reject each image before submitting the article."
+            description="Approve or send back each image before submitting the article."
             title="Images"
             tone="compact"
           >
@@ -555,7 +562,7 @@ export function ArticleApprovalEditor({ deliverableId }: ArticleApprovalEditorPr
                             size="sm"
                             variant="secondary"
                           >
-                            Reject
+                            Send back
                           </Button>
                         </div>
                       ) : null}
@@ -574,7 +581,7 @@ export function ArticleApprovalEditor({ deliverableId }: ArticleApprovalEditorPr
                           <p className="portal-reviewed-label portal-reviewed-label-danger">✕ Rejected</p>
                           {image.rejectionReason ? <p className="cf-record-note">{image.rejectionReason}</p> : null}
                           <Button disabled={imageBusyId === image.id} onClick={() => void handleUndoImage(image.id)} size="sm" variant="tertiary">
-                            Undo rejection
+                            Undo changes request
                           </Button>
                         </div>
                       ) : null}
@@ -590,7 +597,7 @@ export function ArticleApprovalEditor({ deliverableId }: ArticleApprovalEditorPr
                           />
                           <div className="portal-action-row">
                             <Button disabled={!rejectImageReason.trim()} onClick={() => void handleRejectImage(image.id)} size="sm">
-                              Submit rejection
+                              Send back
                             </Button>
                             <Button onClick={() => setRejectImageId(null)} size="sm" variant="tertiary">
                               Cancel
