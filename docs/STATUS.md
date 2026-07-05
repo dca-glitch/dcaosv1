@@ -1,6 +1,6 @@
 # DCA OS Lite — Status (Source of Truth)
 
-**Last updated:** 2026-07-05 (Block 5D-C — pre-staging local closeout docs)
+**Last updated:** 2026-07-05 (G4 staging complete)
 **Operator index:** [`docs/operator/OPERATOR_RUNBOOK.md`](./operator/OPERATOR_RUNBOOK.md)  
 **Architecture map:** [`docs/ARCHITECTURE.md`](./ARCHITECTURE.md) § Current application map  
 **Smoke matrix:** [`docs/runbooks/LOCAL_SMOKE_MATRIX.md`](./runbooks/LOCAL_SMOKE_MATRIX.md)  
@@ -17,11 +17,11 @@
 | Branch | `main` synced with `origin/main` |
 | HEAD (pinned) | `e54445f` — `fix(scripts): harden staging admin bootstrap guards` |
 | CI | Green on Blocks 1–4 and audit remediation commits (5A–5D-B) |
-| Working tree | Clean before Block 5D-C doc edits |
+| Working tree | Clean and synced with `origin/main` |
 | Pre-staging local closeout (5D-B) | **PASS** — manual workaround for orchestrator hang; see §2.1 |
 | Production deploy | **None** — `system.digitalcubeagency.net` unchanged |
-| Staging deploy | **None** — G4 not approved; DNS not created |
-| Staging target (G1) | `staging.digitalcubeagency.net` documented only |
+| Staging deploy | **Complete** on `staging.digitalcubeagency.net` for `5ee8389` |
+| Staging target (G1) | `staging.digitalcubeagency.net` live staging target |
 | Default AI execution | Local deterministic; live OpenRouter opt-in only |
 | Work mode | Local-first on Windows PowerShell from `C:\dcaosv1` |
 
@@ -73,6 +73,21 @@ Prior closeout baseline (still valid context): client approval happy-path `58db7
 **Next gate:** G4 staging action remains **blocked** until explicit owner approval. Local 5D-B PASS alone does not authorize staging infrastructure work or deploy.
 
 ---
+
+### 2.2 G4 staging completion (2026-07-05)
+
+**Result:** PASS — staging complete on `5ee838969343496c2b1ffc57628f44863b49be44` / `5ee8389`.
+
+| Item | Evidence |
+|------|----------|
+| Staging URL | `https://staging.digitalcubeagency.net` |
+| Phase 8 | PASS after bounded Caddy/web-root fix; rerun exit `0` |
+| Root cause | Stale `dca-caddy` bind mount / inode for `/srv/dcaosv1-staging/web/dist` |
+| Fix | Recreate only `dca-caddy` with `docker compose -f /opt/dca/docker-compose.yml up -d --force-recreate --no-deps caddy` |
+| Containers touched | `dca-caddy` only during web-root fix; staging API touched earlier in Phase 5; staging DB untouched after Phase 4/6 |
+| Containers not touched | `dcaosv1-api`, `dcaosv1-postgres` |
+| Backups | `/opt/dca/backups/docker-compose.yml.20260705-063309.bak`; `/opt/dca/backups/Caddyfile.20260705-063309.bak`; `/opt/dca/apps/dcaosv1/staging/backups/pg-backup-staging-5ee8389-pre-migrate-20260705-043540.sql` |
+| Remaining warning-only item | HSTS missing on staging; production probe intentionally skipped in the final baseline rerun; admin login checks skipped when `AUTH_SEED_TEST_PASSWORD` was unset |
 
 ## 3. Module readiness (local admin-operated)
 
@@ -161,8 +176,8 @@ Percentages are **local MVP readiness**, not production-proven. See [`docs/STATU
 | Target | URL | Status |
 |--------|-----|--------|
 | Production | `system.digitalcubeagency.net` | Live VPS; **current `main` not deployed** |
-| Staging (G1) | `staging.digitalcubeagency.net` | Documented; DNS not created; G4 not approved |
-| Deploy proof | — | **0%** for current `main` on staging and production |
+| Staging (G1) | `staging.digitalcubeagency.net` | Live staging for commit `5ee8389`; G4 complete |
+| Deploy proof | — | **100% on staging for `5ee8389`**; production remains untouched |
 
 No VPS, Caddy, Docker, DNS, migration on staging, or production restart was performed in Blocks 1–4.
 
@@ -181,7 +196,7 @@ All must pass before **requesting** G4 staging work (not deploy):
 | 5 | Working tree clean | No uncommitted runtime changes |
 | 6 | `main` synced | `main` = `origin/main` |
 | 7 | No live calls | No publish, sync, crawl, or live provider during gate |
-| 8 | Staging deploy proof | Still **not performed** — gate is repo-side only |
+| 8 | Staging deploy proof | **Completed** on `5ee8389` during G4; see §2.2 |
 | 9 | Owner approval | Explicit approval before touching staging infrastructure |
 
 Full pack: [`docs/runbooks/STAGING_READINESS.md`](./runbooks/STAGING_READINESS.md). One-command local gate: `npm.cmd run smoke:pre-staging:local`.
@@ -192,7 +207,7 @@ Full pack: [`docs/runbooks/STAGING_READINESS.md`](./runbooks/STAGING_READINESS.m
 
 | Item | Status |
 |------|--------|
-| Staging deploy proof | Deferred — G4 |
+| Staging deploy proof | Completed — G4 staging on `5ee8389` |
 | Production deploy proof | Deferred — frozen |
 | Live AI provider / OpenRouter execution | Deferred — opt-in only |
 | Live WordPress publish | Deferred — draft prep only |
