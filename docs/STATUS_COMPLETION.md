@@ -1,7 +1,7 @@
 # DCA OS Lite — Project Completion Overview
 
 **Status:** Planning and operator reference
-**Last updated:** 2026-07-05 (G6 Wave 2 compact delivery handoff lanes closeout)
+**Last updated:** 2026-07-05 (G7 Block 2 Puriva operational data path closeout)
 **Reference branch:** `main` after PR #43 merge (`f8606f2`)
 **Reference commits:** PR #38 merge `a152cbd`; PR #39 merge `971ac41`; PR #40 merge `9a6eddc`; PR #41 merge `6a03cc1`; PR #42 merge `b341b5d`; PR #43 merge `f8606f2`
 **Scope:** Approved local admin MVP + client/domain operating model (blocks 1–6) + **MVP 1 Puriva client delivery** + **Post-MVP local closeout (Blocks 31–57)** + **Phase F local completion (Blocks 58–77)**. Local `main` is synced and validated. VPS/production intentionally excluded until separate owner approval.
@@ -59,6 +59,12 @@ changes, no percentage re-audit performed as part of this addendum):
   passed; CI green; post-push verification passed; commit-script local validate later hit known
   Windows Prisma EPERM during `prisma:generate`, but that local failure was superseded by the green
   CI and post-push verification. No backend/schema/auth changes.
+- **G7 Block 2 Puriva operational data path** — Puriva intake now connects to AI Knowledge /
+  WorkflowBriefs / SEO plan / AI Delivery handoff; WorkflowBriefs readiness cues are clearer; AI
+  Knowledge operating links are clarified; SEO/content/WordPress draft-only handoff is aligned to
+  verified Puriva context; admin-only / client-safe / draft-only boundaries are preserved; closed
+  on `main` in commit `8cb41e2`; diff-only review, web check, full validate, browser QA, and push
+  passed; no backend/schema/auth changes.
 
 **Knowledge arc — next / deferred (not in percentage baseline above):**
 
@@ -227,6 +233,7 @@ Do not treat local smoke alone as production readiness.
 | 2026-06-28 | AI baseline on main: PR #33 AI Gateway v1 + smoke matrix; PR #34 AI Operations Console v1 |
 | 2026-07-02 | Docs source-of-truth refresh after PRs #38–#43; UI/route stabilization complete; next block is AI SEO / AI Delivery planning |
 | 2026-07-05 | G6 Wave 2 closeout: compact delivery handoff lanes, WorkflowBriefs intake/compliance clarity, draft-only WordPress handoff tightening, and client-safe archive/report wording |
+| 2026-07-05 | G7 Block 2 closeout: Puriva intake connected to AI Knowledge, WorkflowBriefs, SEO plan, and AI Delivery handoff; admin-only/client-safe/draft-only boundaries preserved |
 | 2026-06-27 | G1 closed: staging host `staging.digitalcubeagency.net`; production `system.digitalcubeagency.net`; G4 not approved; DNS not created |
 | 2026-06-27 | Phase F Block 77: local closeout complete — Blocks 58–77 validated on `feature/local-closeout-blocks-58-77` |
 | 2026-06-27 | Phase F Block 58: docs consistency — aligned Portal/WP/MI/R2 labels and blocks 4–6 percentages |

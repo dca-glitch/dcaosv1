@@ -1,6 +1,6 @@
 # DCA OS Lite — Status (Source of Truth)
 
-**Last updated:** 2026-07-05 (G6 Wave 2 compact delivery handoff lanes complete)
+**Last updated:** 2026-07-05 (G7 Block 2 Puriva operational data path closeout)
 **Operator index:** [`docs/operator/OPERATOR_RUNBOOK.md`](./operator/OPERATOR_RUNBOOK.md)  
 **Architecture map:** [`docs/ARCHITECTURE.md`](./ARCHITECTURE.md) § Current application map  
 **Smoke matrix:** [`docs/runbooks/LOCAL_SMOKE_MATRIX.md`](./runbooks/LOCAL_SMOKE_MATRIX.md)  
@@ -15,7 +15,7 @@
 | Item | State |
 |------|--------|
 | Branch | `main` synced with `origin/main` |
-| HEAD (pinned) | `4eeac1e` — `feat(ops): add G6 Puriva launch cockpit and operating pack` |
+| HEAD (pinned) | `8cb41e2` — `polish(ops): connect Puriva intake to delivery path` |
 | CI | Green |
 | Working tree | Clean and synced with `origin/main` |
 | Pre-staging local closeout (5D-B) | **PASS** — manual workaround for orchestrator hang; see §2.1 |
@@ -129,6 +129,20 @@ Prior closeout baseline (still valid context): client approval happy-path `58db7
 | Post-push verification | PASS — `main` synced with `origin/main`; remote `origin/main` points to `95a92c9`; working tree clean |
 | Production / staging / VPS | Untouched |
 | Remaining warning-only item | Vite chunk-size warning during build only; future PowerShell runner should stop commit/push when local validation fails |
+| Next block | Owner decision |
+
+### 2.6 G7 Block 2 Puriva operational data path completion (2026-07-05)
+
+**Result:** PASS — Puriva intake now connects to AI Knowledge, WorkflowBriefs, SEO planning, and AI Delivery handoff on `8cb41e2` (`polish(ops): connect Puriva intake to delivery path`).
+
+| Item | Evidence |
+|------|----------|
+| Main additions | Puriva intake now feeds AI Knowledge / WorkflowBriefs / SEO plan / AI Delivery handoff; WorkflowBriefs readiness cues are clearer; AI Knowledge operating links are clarified; SEO/content/WordPress draft-only handoff is aligned to verified Puriva context |
+| Validation | Diff-only review PASS; web check PASS; full validate PASS; browser QA PASS (`smoke:workflow-brief-publication-handoff:browser`, `smoke:ai-delivery-workflow:browser`); additional handoff-align agent also passed `smoke:ai-delivery-reviews` after Prisma EPERM recovery |
+| CI | Green |
+| Push | PASS — `main` synced with `origin/main` after commit/push |
+| Boundaries preserved | Admin-only / client-safe / draft-only boundaries preserved; no backend/schema/auth changes |
+| Production / staging / VPS | Untouched |
 | Next block | Owner decision |
 
 ## 3. Module readiness (local admin-operated)
@@ -304,6 +318,8 @@ The following remain true; detail preserved in linked docs and git history.
 - **Block 5D-B (pre-staging local closeout):** PASS with manual orchestrator workaround; G4 still blocked.
 - Client Access Admin UI; EN2 audit writer foundation; security headers + rate limiting.
 - AI SEO Blocks 3B–3G, 4A–4G, 5A, 6A–6C-v1; Knowledge integration proven via `smoke:ai-knowledge-context`.
+- G7 Block 2 Puriva operational data path: verified intake now feeds AI Knowledge, WorkflowBriefs,
+  SEO planning, and AI Delivery handoff with admin-only/client-safe boundaries preserved.
 - Phase F roadmap: [`docs/ROADMAP_LOCAL_COMPLETION_PHASE_F.md`](./ROADMAP_LOCAL_COMPLETION_PHASE_F.md).
 - Completion matrix: [`docs/STATUS_COMPLETION.md`](./STATUS_COMPLETION.md).
 
@@ -319,6 +335,10 @@ The following remain true; detail preserved in linked docs and git history.
 ## AI SEO / Content Plan closure
 
 AI SEO admin-operated MVP shell is in place. Live crawling, Google OAuth / GSC sync, autonomous SEO agents, and production deploy remain deferred. See §9 and [`deferred-scope-register.md`](./operator/deferred-scope-register.md).
+
+## G7 Block 2 closeout
+
+Puriva intake now flows through AI Knowledge, WorkflowBriefs, SEO planning, and AI Delivery handoff with verified-context / admin-only / draft-only boundaries intact. The closeout landed in commit `8cb41e2` (`polish(ops): connect Puriva intake to delivery path`) and passed diff-only review, web check, full validate, browser QA, and push. Production, staging, VPS, backend/API/schema/auth, and live provider / WordPress / GA/GSC / R2 paths were untouched.
 
 ## Next work (after Block 5D-C)
 
