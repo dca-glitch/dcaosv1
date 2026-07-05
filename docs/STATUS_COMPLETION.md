@@ -1,7 +1,7 @@
 # DCA OS Lite — Project Completion Overview
 
 **Status:** Planning and operator reference
-**Last updated:** 2026-07-06 (G8 local Puriva E2E operator dry run closeout)
+**Last updated:** 2026-07-06 (Puriva Operating Pack v1 closeout)
 **Reference branch:** `main` after PR #43 merge (`f8606f2`)
 **Reference commits:** PR #38 merge `a152cbd`; PR #39 merge `971ac41`; PR #40 merge `9a6eddc`; PR #41 merge `6a03cc1`; PR #42 merge `b341b5d`; PR #43 merge `f8606f2`
 **Scope:** Approved local admin MVP + client/domain operating model (blocks 1–6) + **MVP 1 Puriva client delivery** + **Post-MVP local closeout (Blocks 31–57)** + **Phase F local completion (Blocks 58–77)**. Local `main` is synced and validated. VPS/production intentionally excluded until separate owner approval.
@@ -71,6 +71,11 @@ changes, no percentage re-audit performed as part of this addendum):
   approval happy path proven locally; approval smoke labels aligned to real UI; closed on `main` in
   commit `a380bb2`; diff review, `git diff --check`, web check, full validate, browser QA, and push
   passed; no backend/schema/auth changes.
+- **G9 Puriva Operating Pack v1** — local/admin-operational closeout recorded on `main` in commit
+  `b2e0287` and pushed; owner/client approval checklist, AI Knowledge/context handoff, WorkflowBriefs
+  handoff, SEO/content production gate, WordPress prepared draft-only handoff, client-safe
+  approval/archive/report path, local E2E proof, real client data packet checklist, and go/no-go
+  checklist are all documented; production/staging/VPS/live integrations remain deferred.
 
 **Knowledge arc — next / deferred (not in percentage baseline above):**
 
@@ -140,6 +145,7 @@ block. WorkflowBriefs is a confirmed third module alongside AI Delivery and Mark
 | **Audit / activity** | **78%** | In progress | Dashboard feed + dedicated browser gate (Blocks 31, 51); full audit UI deferred |
 | **AI provider (OpenRouter)** | **62%** | In progress | AI Gateway v1 on main; local deterministic default; live provider opt-in only |
 | **AI Operations Console** | **75%** | In progress | v1 on main (AI Delivery runs); MI listing + filters/export in baseline closeout |
+| **Puriva Operating Pack v1** | **~88%** | Done (local/admin) | Local/admin-operational closeout complete; production readiness for the pack remains deferred (~60–65% baseline); live provider, live WordPress publish, GA/GSC, R2 live IO, production deploy, and incident/rollback execution stay deferred |
 | **Operator docs & runbooks** | **100%** | Done (local) | Puriva Blocks 7–30 + Post-MVP Phases A–E + Phase F Blocks 58–77 runbooks and closeout index |
 | **Tests / smoke** | **100%** | Done (local) | Puriva MVP + Post-MVP Phases A–D browser layers in pre-staging |
 | **PR #13 merge → main** | **100%** | Done | Merged at `584e041bd85e8179e795a0e4621a0d9d8908e0b6`; follow-up docs commit `07b1f1668d11cdef42b195cfad189c4df645acc6` |
@@ -240,6 +246,7 @@ Do not treat local smoke alone as production readiness.
 | 2026-07-02 | Docs source-of-truth refresh after PRs #38–#43; UI/route stabilization complete; next block is AI SEO / AI Delivery planning |
 | 2026-07-05 | G6 Wave 2 closeout: compact delivery handoff lanes, WorkflowBriefs intake/compliance clarity, draft-only WordPress handoff tightening, and client-safe archive/report wording |
 | 2026-07-05 | G7 Block 2 closeout: Puriva intake connected to AI Knowledge, WorkflowBriefs, SEO plan, and AI Delivery handoff; admin-only/client-safe/draft-only boundaries preserved |
+| 2026-07-06 | Puriva Operating Pack v1 closeout: local/admin-operational pack recorded/pushed, baseline updated, and production/staging/VPS remain untouched |
 | 2026-07-06 | G8 local Puriva E2E closeout: local operator proof added, approval smoke labels aligned to real UI, validation/browser QA passed, push complete |
 | 2026-06-27 | G1 closed: staging host `staging.digitalcubeagency.net`; production `system.digitalcubeagency.net`; G4 not approved; DNS not created |
 | 2026-06-27 | Phase F Block 77: local closeout complete — Blocks 58–77 validated on `feature/local-closeout-blocks-58-77` |

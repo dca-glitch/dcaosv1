@@ -1,6 +1,6 @@
 # DCA OS Lite — Status (Source of Truth)
 
-**Last updated:** 2026-07-06 (G8 local Puriva E2E operator dry run closeout)
+**Last updated:** 2026-07-06 (Puriva Operating Pack v1 closeout)
 **Operator index:** [`docs/operator/OPERATOR_RUNBOOK.md`](./operator/OPERATOR_RUNBOOK.md)  
 **Architecture map:** [`docs/ARCHITECTURE.md`](./ARCHITECTURE.md) § Current application map  
 **Smoke matrix:** [`docs/runbooks/LOCAL_SMOKE_MATRIX.md`](./runbooks/LOCAL_SMOKE_MATRIX.md)  
@@ -15,7 +15,7 @@
 | Item | State |
 |------|--------|
 | Branch | `main` synced with `origin/main` |
-| HEAD (pinned) | `a380bb2` — `test(ops): add Puriva local E2E dry-run proof` |
+| HEAD (pinned) | `b2e0287` — `docs: close Puriva operating pack v1` |
 | CI | Green |
 | Working tree | Clean and synced with `origin/main` |
 | Pre-staging local closeout (5D-B) | **PASS** — manual workaround for orchestrator hang; see §2.1 |
@@ -160,6 +160,7 @@ Percentages are **local MVP readiness**, not production-proven. See [`docs/STATU
 | **Client Portal** | ~88–92% | Archive, monthly reports, pending approvals happy-path, boundary smokes | Magic links, public share links, full comments |
 | **Private storage / R2** | ~76–84% | Guarded upload/download when configured; disabled-safe default | Strict real-bucket proof without env; prod R2 switch |
 | **WordPress handoff** | ~50–60% | Draft prep, publish gate metadata, disabled-safe smokes | Live publish, client-triggered publish |
+| **Puriva Operating Pack v1** | ~88% | Local/admin-operational closeout complete | Production readiness remains deferred (~60–65% baseline); live provider, live WordPress publish, GA/GSC, R2 live IO, production deploy, and incident/rollback execution stay deferred |
 | **External integrations readiness** | Block 1 closed | Config-shape checks only | Live provider, WP, R2 IO, GA/GSC sync |
 | **Admin operations / recovery** | Block 2 closed | Dashboard panel, operations summary API, recovery hints | Durable closeout store (manual run only) |
 | **Finance Lite** | ~70% | Admin ledger, invoices, browser smoke | Payment collection, Stripe, bank feeds |
@@ -344,8 +345,12 @@ Puriva intake now flows through AI Knowledge, WorkflowBriefs, SEO planning, and 
 
 Local Puriva E2E operator dry-run proof is now documented in commit `a380bb2` (`test(ops): add Puriva local E2E dry-run proof`). The local operator path is proven end to end: Puriva intake/compliance → AI Knowledge/context → WorkflowBriefs → SEO plan → content/compliance → image/asset handoff → WordPress prepared draft → client-safe monthly report/archive → client approval happy path. Browser smoke labels were aligned to the real UI (`Pending Reviews`, `Request Changes`, `Approve for publication`). Production, staging, VPS, backend/API/schema/auth, and live provider / WordPress / GA/GSC / R2 paths were untouched.
 
+## G9 Puriva Operating Pack v1 closeout
+
+Puriva Operating Pack v1 closeout is now documented in commit `b2e0287` (`docs: close Puriva operating pack v1`) and pushed to `main`. The local/admin operating pack is complete for the approved scope: intake/compliance source of truth, owner/client approval checklist, AI Knowledge/context handoff, WorkflowBriefs handoff, SEO/content production gate, WordPress prepared draft-only handoff, client-safe approval/archive/report path, local E2E proof, real client data packet checklist, and go/no-go checklist. It is local/admin-operational only and does **not** authorize production, staging, VPS, live provider, live WordPress publish, GA/GSC, or R2 work. Production/staging/VPS were untouched in this closeout.
+
 ## Next work (after Block 5D-C)
 
-- Owner review of 5D-B local closeout evidence and this status update.
+- Owner review of 5D-B / G9 local closeout evidence and this status update.
 - Decide: fix `smoke:staging-readiness:local` orchestrator hang **or** accept manual fallback as standard operator procedure.
 - G4 staging request only after **explicit owner approval** — local 5D-B PASS does not authorize staging action or deploy.
