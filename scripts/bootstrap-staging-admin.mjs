@@ -1,18 +1,21 @@
 import { randomBytes, scryptSync } from "node:crypto";
+import { fileURLToPath } from "node:url";
+import path from "node:path";
 import { PrismaClient } from "@prisma/client";
 
-const BOOTSTRAP_TARGET_ENV = "DCA_BOOTSTRAP_DATABASE_TARGET";
-const REQUIRED_TARGET = "staging";
+export const BOOTSTRAP_TARGET_ENV = "DCA_BOOTSTRAP_DATABASE_TARGET";
+export const CONFIRM_ENV = "DCA_BOOTSTRAP_CONFIRM_STAGING_ADMIN";
+export const REQUIRED_TARGET = "staging";
+export const REQUIRED_CONFIRM_PHRASE = "I_UNDERSTAND_THIS_MUTATES_STAGING";
 const DEFAULT_ADMIN_EMAIL = "admin@dca.local";
 const ALLOWED_DATABASE_NAMES = new Set(["dcaosv1_staging"]);
 const ALLOWED_DATABASE_HOSTS = new Set([
   "localhost",
   "127.0.0.1",
   "::1",
-  "postgres",
-  "dcaosv1-postgres",
   "dcaosv1-staging-postgres"
 ]);
+const DENIED_DATABASE_HOSTS = new Set(["dcaosv1-postgres", "postgres"]);
 const FORBIDDEN_DATABASE_HOST_FRAGMENTS = [
   "system.digitalcubeagency.net",
   "staging.digitalcubeagency.net",
@@ -51,7 +54,9 @@ const MODULE_DEFINITIONS = [
   }
 ];
 
-const args = new Set(process.argv.slice(2));
+const modulePath = fileURLToPath(import.meta.url);
+const isMainModule = Boolean(process.argv[1] && path.resolve(process.argv[1]) === path.resolve(modulePath));
+const args = isMainModule ? new Set(process.argv.slice(2)) : new Set();
 const checkOnly = args.has("--check");
 const help = args.has("--help") || args.has("-h");
 
@@ -62,14 +67,18 @@ function printHelp() {
   console.log(`  ${BOOTSTRAP_TARGET_ENV}=staging`);
   console.log("");
   console.log("Required for write mode:");
-  console.log("  DATABASE_URL");
+  console.log("  DATABASE_URL (approved staging host or loopback only; database name dcaosv1_staging)");
   console.log("  AUTH_SEED_TEST_PASSWORD");
+  console.log(`  ${CONFIRM_ENV}=${REQUIRED_CONFIRM_PHRASE}`);
   console.log("");
   console.log("Optional:");
   console.log(`  AUTH_SEED_TEST_EMAIL (defaults to ${DEFAULT_ADMIN_EMAIL})`);
   console.log("");
   console.log("Modes:");
   console.log("  --check  Read-only verification summary. Does not write password hashes or rows.");
+  console.log("");
+  console.log("Approved DATABASE_URL hosts: dcaosv1-staging-postgres, localhost, 127.0.0.1, ::1");
+  console.log("Refused DATABASE_URL hosts include dcaosv1-postgres and generic postgres.");
   console.log("");
   console.log("Output is intentionally redacted and never prints secrets, hashes, tokens, cookies, auth headers, or full DATABASE_URL.");
 }
@@ -87,7 +96,7 @@ function requireEnv(name) {
   return value;
 }
 
-function validateDatabaseUrl(rawDatabaseUrl) {
+export function validateDatabaseUrlForStagingBootstrap(rawDatabaseUrl) {
   let parsed;
   try {
     parsed = new URL(rawDatabaseUrl);
@@ -106,6 +115,18 @@ function validateDatabaseUrl(rawDatabaseUrl) {
     throw new Error("DATABASE_URL must include a database host and database name.");
   }
 
+  if (host === "dcaosv1-postgres") {
+    throw new Error(
+      'staging admin bootstrap does not allow production-shaped database host "dcaosv1-postgres". Use the approved staging database host or loopback tunnel only.'
+    );
+  }
+
+  if (DENIED_DATABASE_HOSTS.has(host)) {
+    throw new Error(
+      `staging admin bootstrap does not allow generic database host "${host}". Use the approved staging database host or loopback tunnel only.`
+    );
+  }
+
   if (FORBIDDEN_DATABASE_HOST_FRAGMENTS.some((fragment) => host.includes(fragment))) {
     throw new Error("DATABASE_URL host is not an approved staging database host.");
   }
@@ -115,12 +136,34 @@ function validateDatabaseUrl(rawDatabaseUrl) {
   }
 
   if (!ALLOWED_DATABASE_HOSTS.has(host)) {
-    throw new Error("DATABASE_URL host must match the approved staging/local compose database host allowlist.");
+    throw new Error("DATABASE_URL host must match the approved staging database host or loopback allowlist.");
   }
 
   if (!ALLOWED_DATABASE_NAMES.has(databaseName)) {
     throw new Error("DATABASE_URL database name must match the approved staging database name allowlist.");
   }
+}
+
+export function validateBootstrapTarget(target) {
+  if (target !== REQUIRED_TARGET) {
+    throw new Error(`${BOOTSTRAP_TARGET_ENV} must equal ${REQUIRED_TARGET}.`);
+  }
+}
+
+export function validateWriteConfirmation({ checkOnly, confirmPhrase }) {
+  if (checkOnly) {
+    return;
+  }
+
+  if (confirmPhrase !== REQUIRED_CONFIRM_PHRASE) {
+    throw new Error(`set ${CONFIRM_ENV}=${REQUIRED_CONFIRM_PHRASE} to allow staging admin mutations.`);
+  }
+}
+
+export function validateBootstrapEnvironment({ target, databaseUrl, checkOnly, confirmPhrase }) {
+  validateBootstrapTarget(target);
+  validateDatabaseUrlForStagingBootstrap(databaseUrl);
+  validateWriteConfirmation({ checkOnly, confirmPhrase });
 }
 
 function getAdminEmail() {
@@ -297,33 +340,40 @@ function printSummary(summary) {
   console.log("Full DATABASE_URL printed: no");
 }
 
-if (help) {
-  printHelp();
-  process.exit(0);
+async function runBootstrap() {
+  try {
+    validateBootstrapEnvironment({
+      target: requireEnv(BOOTSTRAP_TARGET_ENV),
+      databaseUrl: requireEnv("DATABASE_URL"),
+      checkOnly,
+      confirmPhrase: process.env[CONFIRM_ENV]
+    });
+
+    const email = getAdminEmail();
+    const password = checkOnly ? null : requireEnv("AUTH_SEED_TEST_PASSWORD");
+
+    const prisma = new PrismaClient();
+    try {
+      if (!checkOnly) {
+        await upsertBootstrapState(prisma, email, password);
+      }
+
+      const summary = await checkBootstrapState(prisma, email);
+      if (!checkOnly) summary.mode = "write";
+      printSummary(summary);
+    } finally {
+      await prisma.$disconnect();
+    }
+  } catch (error) {
+    fail(error instanceof Error ? error.message : "Unknown bootstrap error.");
+  }
 }
 
-try {
-  const target = requireEnv(BOOTSTRAP_TARGET_ENV);
-  if (target !== REQUIRED_TARGET) {
-    throw new Error(`${BOOTSTRAP_TARGET_ENV} must equal ${REQUIRED_TARGET}.`);
+if (isMainModule) {
+  if (help) {
+    printHelp();
+    process.exit(0);
   }
 
-  validateDatabaseUrl(requireEnv("DATABASE_URL"));
-  const email = getAdminEmail();
-  const password = checkOnly ? null : requireEnv("AUTH_SEED_TEST_PASSWORD");
-
-  const prisma = new PrismaClient();
-  try {
-    if (!checkOnly) {
-      await upsertBootstrapState(prisma, email, password);
-    }
-
-    const summary = await checkBootstrapState(prisma, email);
-    if (!checkOnly) summary.mode = "write";
-    printSummary(summary);
-  } finally {
-    await prisma.$disconnect();
-  }
-} catch (error) {
-  fail(error instanceof Error ? error.message : "Unknown bootstrap error.");
+  runBootstrap();
 }

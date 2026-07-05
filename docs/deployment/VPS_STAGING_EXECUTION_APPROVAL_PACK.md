@@ -263,7 +263,7 @@ The owner may use this exact shape for the future execution gate:
 I approve controlled VPS staging execution for DCA OS v1 commit <commit>.
 Approved staging host: staging.digitalcubeagency.net.
 Production host system.digitalcubeagency.net must remain unchanged by this execution.
-Approved runtime: Docker Compose using staging dcaosv1-api and dcaosv1-postgres on dca_net (separate from production stack).
+Approved runtime: Docker Compose using staging `dcaosv1-staging-api` and **`dcaosv1-staging-postgres`** on dca_net (separate from production stack). Production stack may continue to use `dcaosv1-postgres`; **staging admin bootstrap refuses `dcaosv1-postgres`** — use `dcaosv1-staging-postgres` or loopback tunnel only.
 Approved database target: staging-only PostgreSQL, no production/client data.
 Approved migration scope: Prisma migrations only, no db push.
 Approved smoke target: https://staging.digitalcubeagency.net/api/v1.

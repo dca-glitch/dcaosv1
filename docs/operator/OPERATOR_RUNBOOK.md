@@ -183,6 +183,8 @@ Full detail: [`docs/runbooks/EXTERNAL_INTEGRATIONS_READINESS.md`](../runbooks/EX
 
 **Forbidden before G4 approval:** VPS login, Docker apply, Caddy/DNS, staging migrations, `smoke:mvp:staging` without owner approval.
 
+**Staging admin bootstrap warning:** `npm run bootstrap:staging-admin` is mutation-capable (admin password hash, tenant, modules). Requires `DCA_BOOTSTRAP_DATABASE_TARGET=staging`, approved staging `DATABASE_URL` host (`dcaosv1-staging-postgres` or loopback only — **`dcaosv1-postgres` refused**), and write-mode confirmation `DCA_BOOTSTRAP_CONFIRM_STAGING_ADMIN=I_UNDERSTAND_THIS_MUTATES_STAGING`. Owner-approved at G4 only; never CI or local default gate. `--check` is read-only but still requires target guard + approved `DATABASE_URL`.
+
 ---
 
 ## 7. Production prerequisites

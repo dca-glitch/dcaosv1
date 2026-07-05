@@ -24,11 +24,16 @@ Public API health: https://system.digitalcubeagency.net/api/v1/health
 
 ## Runtime database target
 
-Production API container DATABASE_URL points to:
-host: dcaosv1-postgres
-port: 5432
-database: dcaosv1_staging
+**Docs-indicated only — not runtime-confirmed here.** Prior documentation indicated the production API container `DATABASE_URL` may point to:
+
+host: dcaosv1-postgres  
+port: 5432  
+database: dcaosv1_staging  
 schema: public
+
+That host/database shape overlaps the staging bootstrap target name (`dcaosv1_staging`). **Owner must confirm actual DCA01 runtime DB naming on VPS before any remote bootstrap or migration work.** Do not assume this section reflects live production without read-only VPS inspection and explicit owner approval.
+
+**Staging admin bootstrap safety:** `npm run bootstrap:staging-admin` refuses production-shaped host `dcaosv1-postgres` and requires approved staging host `dcaosv1-staging-postgres` or loopback tunnel only, plus explicit write confirmation env. See [`docs/operator/ENV_READINESS_INVENTORY.md`](../operator/ENV_READINESS_INVENTORY.md).
 
 ## Critical warning
 

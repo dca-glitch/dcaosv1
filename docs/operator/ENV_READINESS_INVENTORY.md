@@ -76,6 +76,18 @@ Local smoke does not require Turnstile. Staging Turnstile behavior is an owner g
 
 ---
 
+## Staging admin bootstrap (G4 — owner-approved only)
+
+| Variable | When needed | Notes |
+|----------|-------------|-------|
+| `DCA_BOOTSTRAP_DATABASE_TARGET` | `bootstrap:staging-admin` | Must equal `staging`; unset/wrong = refuse. Owner-approved / remote-only — never CI or local default gate |
+| `DCA_BOOTSTRAP_CONFIRM_STAGING_ADMIN` | Write mode only (`bootstrap:staging-admin` without `--check`) | Must equal `I_UNDERSTAND_THIS_MUTATES_STAGING`. `--check` exempt |
+| `DATABASE_URL` | Bootstrap check/write | Database name must be `dcaosv1_staging`. Host must be `dcaosv1-staging-postgres` or loopback (`localhost`, `127.0.0.1`, `::1`) only. **`dcaosv1-postgres` is refused** (production-shaped). Never commit; never default |
+
+Command: `npm run bootstrap:staging-admin -- [--check]`. Also requires `AUTH_SEED_TEST_PASSWORD` for write mode. Never print full `DATABASE_URL` or passwords in logs.
+
+---
+
 ## R2 / private storage
 
 | Variable | Local | Staging (G4) | Notes |

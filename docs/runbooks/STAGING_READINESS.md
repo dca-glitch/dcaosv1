@@ -122,6 +122,7 @@ Values belong in shell or server-side env only. See [`ENV_READINESS_INVENTORY.md
 | Storage | `R2_*` | Staging bucket; separate from prod |
 | WordPress | `WORDPRESS_PUBLISH_ENABLED`, `CREDENTIAL_ENCRYPTION_MASTER_KEY` | Draft-only until owner opens |
 | Modules | `TENANT_MODULE_ENFORCEMENT` | Start `off` or `dry_run` |
+| Bootstrap | `DCA_BOOTSTRAP_DATABASE_TARGET`, `DCA_BOOTSTRAP_CONFIRM_STAGING_ADMIN` | Staging admin bootstrap is mutation-capable; owner-approved at G4 only; refuses `dcaosv1-postgres` host |
 
 **Never print** staging or production secret values in logs, chat, or this pack.
 

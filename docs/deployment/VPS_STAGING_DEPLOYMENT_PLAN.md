@@ -179,6 +179,8 @@ After the staging database exists and approved Prisma migrations have been appli
 
 ```bash
 export DCA_BOOTSTRAP_DATABASE_TARGET="staging"
+export DATABASE_URL="postgresql://<user>:<password>@dcaosv1-staging-postgres:5432/dcaosv1_staging?schema=public"
+export DCA_BOOTSTRAP_CONFIRM_STAGING_ADMIN="I_UNDERSTAND_THIS_MUTATES_STAGING"
 export AUTH_SEED_TEST_EMAIL="<staging-admin-email>"
 export AUTH_SEED_TEST_PASSWORD="<staging-admin-password>"
 npm run bootstrap:staging-admin
@@ -188,6 +190,7 @@ For a non-mutating readiness check after the same staging target guard is set:
 
 ```bash
 export DCA_BOOTSTRAP_DATABASE_TARGET="staging"
+export DATABASE_URL="postgresql://<user>:<password>@dcaosv1-staging-postgres:5432/dcaosv1_staging?schema=public"
 npm run bootstrap:staging-admin -- --check
 ```
 
@@ -195,8 +198,10 @@ The bootstrap command:
 
 - uses only production/runtime-safe dependencies (`node:crypto` and `@prisma/client`);
 - refuses to run unless `DCA_BOOTSTRAP_DATABASE_TARGET=staging`;
-- validates `DATABASE_URL` before check/write mode without printing it; the DB host must match the approved local/staging compose allowlist and the database name must be `dcaosv1_staging`;
+- validates `DATABASE_URL` before check/write mode without printing it; the DB host must be `dcaosv1-staging-postgres` or loopback (`localhost`, `127.0.0.1`, `::1`) and the database name must be `dcaosv1_staging`;
+- **refuses production-shaped host `dcaosv1-postgres`** and generic host `postgres` (even though staging stack docs may reference `dcaosv1-postgres` as a compose service name on VPS — that shape is not allowed for staging admin bootstrap);
 - refuses production-like DB targets, including DB hosts containing `system.digitalcubeagency.net` or `staging.digitalcubeagency.net`, and database names containing `production`, `prod`, or `live`;
+- requires `DCA_BOOTSTRAP_CONFIRM_STAGING_ADMIN=I_UNDERSTAND_THIS_MUTATES_STAGING` for write mode;
 - requires `AUTH_SEED_TEST_PASSWORD` for write mode;
 - uses `AUTH_SEED_TEST_EMAIL` or defaults to `admin@dca.local`;
 - idempotently upserts the `local-dca` tenant, active admin user, active membership, active owner role, membership role, module definitions, and tenant modules for `core`, `ai-delivery`, `market-intelligence`, `finance-lite`, and `user-settings`;
