@@ -1,7 +1,7 @@
 # DCA OS Lite — Project Completion Overview
 
 **Status:** Planning and operator reference
-**Last updated:** 2026-07-05 (G5 Puriva approval UX closeout)
+**Last updated:** 2026-07-05 (G6 Puriva launch cockpit closeout)
 **Reference branch:** `main` after PR #43 merge (`f8606f2`)
 **Reference commits:** PR #38 merge `a152cbd`; PR #39 merge `971ac41`; PR #40 merge `9a6eddc`; PR #41 merge `6a03cc1`; PR #42 merge `b341b5d`; PR #43 merge `f8606f2`
 **Scope:** Approved local admin MVP + client/domain operating model (blocks 1–6) + **MVP 1 Puriva client delivery** + **Post-MVP local closeout (Blocks 31–57)** + **Phase F local completion (Blocks 58–77)**. Local `main` is synced and validated. VPS/production intentionally excluded until separate owner approval.
@@ -50,6 +50,9 @@ changes, no percentage re-audit performed as part of this addendum):
   [`docs/modules/KNOWLEDGE_BASE.md`](./modules/KNOWLEDGE_BASE.md).
 - **G5 Puriva approval UX** — client portal approval workflow clarity/density pass closed on
   `main` in commit `ec4c41c`; browser QA passed; no backend/schema/auth changes.
+- **G6 Puriva launch cockpit** — operational intake/compliance pack, admin daily cockpit, client
+  portal wording/request-changes polish, and SEO/content/asset/WordPress handoff docs tightened on
+  `main` in commit `4eeac1e`; browser QA passed; no backend/schema/auth changes.
 
 **Knowledge arc — next / deferred (not in percentage baseline above):**
 

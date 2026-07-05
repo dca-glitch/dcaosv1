@@ -1,6 +1,6 @@
 # DCA OS Lite — Status (Source of Truth)
 
-**Last updated:** 2026-07-05 (G5 Puriva approval UX complete)
+**Last updated:** 2026-07-05 (G6 Puriva launch cockpit complete)
 **Operator index:** [`docs/operator/OPERATOR_RUNBOOK.md`](./operator/OPERATOR_RUNBOOK.md)  
 **Architecture map:** [`docs/ARCHITECTURE.md`](./ARCHITECTURE.md) § Current application map  
 **Smoke matrix:** [`docs/runbooks/LOCAL_SMOKE_MATRIX.md`](./runbooks/LOCAL_SMOKE_MATRIX.md)  
@@ -15,8 +15,8 @@
 | Item | State |
 |------|--------|
 | Branch | `main` synced with `origin/main` |
-| HEAD (pinned) | `e54445f` — `fix(scripts): harden staging admin bootstrap guards` |
-| CI | Green on Blocks 1–4 and audit remediation commits (5A–5D-B) |
+| HEAD (pinned) | `4eeac1e` — `feat(ops): add G6 Puriva launch cockpit and operating pack` |
+| CI | Green |
 | Working tree | Clean and synced with `origin/main` |
 | Pre-staging local closeout (5D-B) | **PASS** — manual workaround for orchestrator hang; see §2.1 |
 | Production deploy | **None** — `system.digitalcubeagency.net` unchanged |
@@ -100,6 +100,20 @@ Prior closeout baseline (still valid context): client approval happy-path `58db7
 | CI | Green |
 | Production / staging | Untouched |
 | Working tree after push | Clean |
+| Next block | Owner decision |
+
+### 2.4 G6 Puriva launch cockpit completion (2026-07-05)
+
+**Result:** PASS — G6 Wave 1 complete on `4eeac1e` (`feat(ops): add G6 Puriva launch cockpit and operating pack`).
+
+| Item | Evidence |
+|------|----------|
+| Main additions | Puriva operational intake/compliance pack; admin daily operations cockpit; client portal wording/request-changes polish; SEO/content/asset/WordPress handoff docs tightening |
+| Validation | `git diff --check` PASS; `npm.cmd run -w @dca-os-v1/web check` PASS; `npm.cmd run validate` PASS; browser QA PASS |
+| CI | Green |
+| Production / staging / VPS | Untouched |
+| Working tree after push | Clean |
+| Remaining warning-only item | Vite chunk-size warning during build only |
 | Next block | Owner decision |
 
 ## 3. Module readiness (local admin-operated)
