@@ -193,6 +193,8 @@ Good archive content:
 
 Do not expose internal drafts, raw AI outputs, hidden context, technical logs, or unfinished items.
 
+For a full local rehearsal of the Puriva operator path, follow [`PURIVA_LOCAL_E2E_OPERATOR_DRY_RUN.md`](../runbooks/PURIVA_LOCAL_E2E_OPERATOR_DRY_RUN.md). Keep it local-only and stop if anything would require staging, production, or live provider/publish behavior.
+
 ## Client Communication Template
 
 Use this simple message when explaining the process:

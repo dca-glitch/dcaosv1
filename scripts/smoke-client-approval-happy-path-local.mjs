@@ -459,7 +459,7 @@ async function main() {
   try {
     await seedClientPortalAuth(page, clientToken);
     await page.goto(`${webBaseUrl}/#/client-portal/pending-approvals`, { waitUntil: "domcontentloaded" });
-    await page.getByRole("heading", { name: "Pending Approvals", exact: true }).waitFor({ state: "visible", timeout: 30000 });
+    await page.getByRole("heading", { name: "Pending Reviews", exact: true }).waitFor({ state: "visible", timeout: 30000 });
     record("browser pending approvals page", true, "#/client-portal/pending-approvals");
 
     const fixtureRecord = page.locator(".cf-record", { hasText: approveFixture.smokeId }).first();
@@ -471,8 +471,8 @@ async function main() {
 
     await page.getByRole("button", { name: "Save & Continue" }).waitFor({ state: "visible", timeout: 10000 });
     await page.getByRole("button", { name: "Approve Article" }).waitFor({ state: "visible", timeout: 10000 });
-    await page.getByRole("button", { name: "Reject Article" }).waitFor({ state: "visible", timeout: 10000 });
-    record("browser approval footer actions visible", true, "Save & Continue / Approve / Reject");
+    await page.getByRole("button", { name: "Request Changes" }).waitFor({ state: "visible", timeout: 10000 });
+    record("browser approval footer actions visible", true, "Save & Continue / Approve / Request Changes");
 
     const bodyField = page.locator("#article-body-content");
     await bodyField.waitFor({ state: "visible", timeout: 10000 });
@@ -503,9 +503,9 @@ async function main() {
     assertUiSafe("browser article approval editor", pageText);
 
     await page.getByRole("button", { name: "Approve Article" }).click();
-    await page.getByRole("heading", { name: "Approve this article?", exact: true }).waitFor({ state: "visible", timeout: 10000 });
+    await page.getByRole("heading", { name: "Approve for publication", exact: true }).waitFor({ state: "visible", timeout: 10000 });
     await page.getByRole("button", { name: "Approve", exact: true }).click();
-    await page.getByRole("heading", { name: "Pending Approvals", exact: true }).waitFor({ state: "visible", timeout: 30000 });
+    await page.getByRole("heading", { name: "Pending Reviews", exact: true }).waitFor({ state: "visible", timeout: 30000 });
     record("browser approve redirects to pending approvals", true, "redirect");
 
     const afterApproveText = await page.locator("body").innerText();

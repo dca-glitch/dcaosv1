@@ -34,6 +34,8 @@ Use one client, one month, one draft, and one final item for the first run.
 
 For Puriva, keep unresolved facts in brief notes or WorkflowBriefs until the compliance review is documented and the approved context is ready.
 
+For a local rehearsal of the full Puriva operator path, use [`PURIVA_LOCAL_E2E_OPERATOR_DRY_RUN.md`](../runbooks/PURIVA_LOCAL_E2E_OPERATOR_DRY_RUN.md) after the intake/compliance source is confirmed.
+
 ## Stop Conditions
 
 Stop the practice run if the client, month, project, or final item becomes unclear.
