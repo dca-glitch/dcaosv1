@@ -344,6 +344,12 @@ If a page or deliverable is unverified:
 - do not place it in the client archive
 - do not use it in ads or public SEO copy
 
+## 26) Operating Pack v1 completion
+
+For the local/admin completion layer, use [`PURIVA_OPERATING_PACK_V1_GO_NO_GO.md`](./PURIVA_OPERATING_PACK_V1_GO_NO_GO.md).
+
+That pack covers the owner/client approval checklist, live integration decision matrix, production placeholder, real client data packet checklist, and local go/no-go gates for first-client execution. It is local/admin only and does not authorize staging, production, or live integrations.
+
 ---
 
 ## Practical copy rules

@@ -4,6 +4,8 @@ Status: Simple admin/client delivery process for the local/admin MVP.
 
 For Puriva work, use [`PURIVA_OPERATIONAL_INTAKE_AND_COMPLIANCE.md`](../runbooks/PURIVA_OPERATIONAL_INTAKE_AND_COMPLIANCE.md) as the single working source of truth before drafting or publishing any client-facing material.
 
+For the local/admin operating-pack completion layer, use [`PURIVA_OPERATING_PACK_V1_GO_NO_GO.md`](../runbooks/PURIVA_OPERATING_PACK_V1_GO_NO_GO.md) as the first-client go/no-go pack.
+
 This document explains the standard delivery process in plain language. It is written for admins and for explaining the process to clients without technical detail.
 
 ## Purpose

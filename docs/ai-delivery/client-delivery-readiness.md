@@ -64,3 +64,5 @@
 Local client delivery readiness is closed for MVP scope. Staging execution remains a separate G4 owner gate — see [`docs/runbooks/STAGING_LOCAL_EXECUTION_PACK.md`](../runbooks/STAGING_LOCAL_EXECUTION_PACK.md).
 
 For new client-visible outputs in future modules, reuse the same final/approved-only archive pattern, hide internal workflow data, and document proof commands before implementation.
+
+For the local/admin operating-pack completion layer, use [`PURIVA_OPERATING_PACK_V1_GO_NO_GO.md`](../runbooks/PURIVA_OPERATING_PACK_V1_GO_NO_GO.md) as the first-client go/no-go pack.

@@ -4,6 +4,8 @@ Status: Short working list for the first client practice run after PR #13 merge 
 
 Before step 1, open [`PURIVA_OPERATIONAL_INTAKE_AND_COMPLIANCE.md`](../runbooks/PURIVA_OPERATIONAL_INTAKE_AND_COMPLIANCE.md) and verify the client identity, service areas, approval contacts, and compliance rules.
 
+Before the first local execution pass, also open [`PURIVA_OPERATING_PACK_V1_GO_NO_GO.md`](../runbooks/PURIVA_OPERATING_PACK_V1_GO_NO_GO.md) and confirm the approval checklist, integration decisions, and local go/no-go gates.
+
 Current baseline: local `main` is synced and validated, and local pre-staging proof was accepted. This is still local/admin work only: no deploy, no VPS migration, no production restart/release, and no confirmed staging target.
 
 ## Next Actions
