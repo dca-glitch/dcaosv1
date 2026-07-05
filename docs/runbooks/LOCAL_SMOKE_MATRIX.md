@@ -169,6 +169,7 @@ In-memory limit: 300 requests / 15 minutes per IP. Long smoke chains may hit 429
 | Script | Requirement |
 |--------|-------------|
 | `smoke:mvp:staging` | Explicit `MVP_SMOKE_API_BASE_URL=https://staging.digitalcubeagency.net/api/v1`, HTTPS, staging credentials |
+| `smoke:staging-security-baseline` | Remote/live only; **refuses by default** unless `DCA_SMOKE_REMOTE_TARGET=staging`. Optional production health probe requires `DCA_SMOKE_ALLOW_PRODUCTION_HEALTH_PROBE=1`. Not part of local default gate or `smoke:staging-readiness:local` |
 
 ---
 

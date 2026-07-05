@@ -68,6 +68,8 @@ Local smoke does not require Turnstile. Staging Turnstile behavior is an owner g
 | Variable | When needed | Notes |
 |----------|-------------|-------|
 | `MVP_SMOKE_API_BASE_URL` | Staging smoke (`smoke:mvp:staging`) | Must be explicit HTTPS `/api/v1` on **approved staging host only** (`staging.digitalcubeagency.net`) |
+| `DCA_SMOKE_REMOTE_TARGET` | Remote staging security baseline (`smoke:staging-security-baseline`) | Must equal `staging`; unset = refuse (no HTTP). Owner-approved / G4 remote only — never CI or local default gate |
+| `DCA_SMOKE_ALLOW_PRODUCTION_HEALTH_PROBE` | Optional production health probe in staging security baseline | Must equal `1`; unset = skip production health GET. Owner-approved only — never default |
 | `AI_DELIVERY_REVIEW_SMOKE_API_BASE_URL` | Optional AI Delivery reviews override | Default `http://127.0.0.1:4000/api/v1` |
 | `AI_DELIVERY_REVIEW_SMOKE_WEB_URL` | Optional browser override | Default `http://localhost:5173/#/ai-delivery` |
 | `MVP_SMOKE_WEB_BASE_URL` | Optional workflow browser override | Default local Vite |

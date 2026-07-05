@@ -1,3 +1,8 @@
+const REMOTE_TARGET_ENV = "DCA_SMOKE_REMOTE_TARGET";
+const REQUIRED_REMOTE_TARGET = "staging";
+const PRODUCTION_PROBE_ENV = "DCA_SMOKE_ALLOW_PRODUCTION_HEALTH_PROBE";
+const PRODUCTION_PROBE_VALUE = "1";
+
 const stagingApiBaseUrl = "https://staging.digitalcubeagency.net/api/v1";
 const stagingWebRootUrl = "https://staging.digitalcubeagency.net/";
 const productionHealthUrl = "https://system.digitalcubeagency.net/api/v1/health";
@@ -79,7 +84,23 @@ async function checkNoSensitiveLeak(name, response) {
   record(`${name} no sensitive leakage`, !responseLeaksSensitiveData(response), "bounded response scan");
 }
 
+function assertRemoteTargetAllowed() {
+  if (process.env[REMOTE_TARGET_ENV] !== REQUIRED_REMOTE_TARGET) {
+    console.error(
+      "Staging security baseline refused: set DCA_SMOKE_REMOTE_TARGET=staging to run live remote checks. Default is refuse (no HTTP requests)."
+    );
+    return false;
+  }
+
+  return true;
+}
+
 async function main() {
+  if (!assertRemoteTargetAllowed()) {
+    process.exitCode = 1;
+    return;
+  }
+
   console.log("[SMOKE][STAGING_SECURITY_BASELINE] starting");
 
   const health = await request("/health");
@@ -98,9 +119,15 @@ async function main() {
   record("staging web root reachable", webRoot.status >= 200 && webRoot.status < 400, `${webRoot.status}`);
   await checkNoSensitiveLeak("staging web root", webRoot);
 
-  const productionHealth = await request(productionHealthUrl);
-  record("production health reference", productionHealth.status === 200 && productionHealth.body?.ok === true, `${productionHealth.status}`);
-  await checkNoSensitiveLeak("production health reference", productionHealth);
+  if (process.env[PRODUCTION_PROBE_ENV] === PRODUCTION_PROBE_VALUE) {
+    const productionHealth = await request(productionHealthUrl);
+    record("production health reference", productionHealth.status === 200 && productionHealth.body?.ok === true, `${productionHealth.status}`);
+    await checkNoSensitiveLeak("production health reference", productionHealth);
+  } else {
+    console.log(
+      "WARN production health probe skipped: set DCA_SMOKE_ALLOW_PRODUCTION_HEALTH_PROBE=1 only with owner approval."
+    );
+  }
 
   const unauthenticatedChecks = [
     ["unauth auth/me", "/auth/me"],
