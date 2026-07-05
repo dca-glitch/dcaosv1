@@ -27,9 +27,9 @@ The SEO module supports admin-operated planning, tracking, and reporting for con
 
 Puriva SEO planning is the upstream start of the delivery chain:
 
-SEO plan objectives -> compliance review -> content draft -> image/asset package -> draft-only WordPress handoff -> final monthly report -> read-only archive.
+SEO plan objectives -> content draft -> image/asset package -> compliance review checkpoint -> admin review -> draft-only WordPress prepared draft handoff -> final archive/monthly report -> read-only archive.
 
-Planning items remain objectives only until the compliance checkpoint is passed and the downstream draft/asset package is assembled.
+Planning items remain objectives only until the compliance checkpoint is passed, the draft/asset package is assembled, and admin review clears the draft-only WordPress handoff.
 
 ## Reusable knowledge / context relationship (Blocks 5A / 6A / 6B / XXL 3)
 
@@ -57,7 +57,7 @@ content plans already use the AiDelivery workflow Knowledge path. See
 - Google OAuth / GSC sync
 - report automation
 - autonomous agents
-- live WordPress publishing
+- live WordPress publishing (disabled/deferred)
 
 ## Source of truth
 

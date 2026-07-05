@@ -19,6 +19,7 @@ Related:
 4. **Client boundary** — client portal lists zero monthly reports while status remains DRAFT (FINAL-only filter)
 5. **No live analytics** — placeholder metrics only; no GA/GSC OAuth
 6. **Client-safe archive** — finalized monthly reports are read-only in the portal, close the content/image/handoff loop, and do not expose `storageKey`, provider metadata, or execution logs
+7. **No scope creep** — no public links, comments, or request-changes workflow is added by this handoff
 
 ---
 

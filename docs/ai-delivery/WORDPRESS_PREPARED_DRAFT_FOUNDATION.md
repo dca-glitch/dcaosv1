@@ -1,6 +1,6 @@
 # WordPress Prepared Draft Foundation
 
-**Status:** WordPress prepared draft API, UI, and smoke coverage foundation is complete.
+**Status:** WordPress prepared draft API, UI, and smoke coverage foundation is complete; live publish remains deferred.
 
 **Branch:** `feature/ai-delivery-project-brief-foundation`
 
@@ -26,6 +26,7 @@ POST /api/v1/ai-delivery-projects/:id/deliverables/:deliverableId/prepare-wordpr
 - Tenant-scoped: validates project and deliverable ownership
 - Prepares local draft payload only
 - This is the WordPress draft handoff boundary for Puriva; it does not publish, schedule, or call WordPress live.
+- Admin review happens before any client/final archive step; this stage only prepares the draft payload.
 - **Does NOT call WordPress**
 - **Does NOT use WordPress credentials or secrets**
 - **Does NOT publish**
@@ -68,10 +69,14 @@ POST /api/v1/ai-delivery-projects/:id/deliverables/:deliverableId/prepare-wordpr
 
 **User Workflow:**
 1. Navigate to AI Delivery > Project
-2. Select deliverable
+2. Confirm the SEO plan, content draft, image package, compliance checkpoint, and admin review are complete
 3. Click "Prepare WordPress Draft" button
 4. View prepared draft payload inline
-5. Copy/review structure for the draft handoff
+5. Use the result for the draft-only handoff; final archive/client delivery happens downstream
+
+**Operator Path:**
+
+SEO plan -> content draft -> image/asset package -> compliance review checkpoint -> admin review -> draft-only WordPress prepared draft handoff -> final archive.
 
 ### Testing & Validation
 
@@ -192,4 +197,4 @@ Before releasing real WordPress integration:
 
 ## Summary
 
-WordPress prepared draft foundation is **ready for operator testing** of local draft preparation and UI workflow. Real WordPress API integration, credential storage, and live publish workflow remain intentionally deferred. All deferred items require separate scope approval and security design. Local draft structure is validated, vendor-neutral, and safe to export or review before any external publish step.
+WordPress prepared draft foundation is **ready for operator testing** of local draft preparation and UI workflow. It stops at admin-reviewed draft preparation; real WordPress API integration, credential storage, and live publish workflow remain intentionally deferred. All deferred items require separate scope approval and security design. Local draft structure is validated, vendor-neutral, and safe to export or review before any external publish step.

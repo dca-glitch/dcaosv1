@@ -11,7 +11,7 @@
 - Client Access Admin UI/API foundation for tenant-scoped client-level grants.
 - First-client onboarding runbook for controlled local/admin MVP work.
 - Export handoff foundation.
-- Puriva delivery chain summary: SEO plan -> content draft -> image/asset package -> compliance review checkpoint -> draft-only WordPress handoff -> final archive/monthly report.
+- Puriva delivery chain summary: SEO plan -> content draft -> image/asset package -> compliance review checkpoint -> admin review -> draft-only WordPress prepared draft handoff -> final archive/monthly report.
 
 ## Proof
 
@@ -48,8 +48,11 @@
 - Admin-managed Client Access is client-level in the current MVP foundation; it does not create invitation emails, password UI, magic links, or public links.
 - Owner/admin role alone does not grant client archive access.
 - Client portal monthly reports also require `ClientUserAccess` and only expose FINAL, non-archived reports for the linked project.
+- WordPress handoff means draft-only preparation only; live publish stays deferred and disabled in the current MVP block.
+- Final archive/monthly report is the client-safe end state after the admin-reviewed handoff chain completes.
 - Raw `storageKey` stays hidden from client responses.
-- Workflow runs, prompts, research, review notes, draft body, cost, and provider metadata stay internal.
+- Workflow runs, jobs, prompts, research, review notes, draft body, cost, and provider metadata stay internal.
+- Client portal monthly reports are FINAL-only and read-only; no public links, comments, or request-changes workflows are introduced by this handoff.
 - `exportUrl` is the safe manual client-visible export link.
 - PDF handoff is supported through private upload/download.
 - Live Google Docs provider work remains deferred.

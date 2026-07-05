@@ -5154,9 +5154,9 @@ export function AiDeliveryPage({
               </section>
 
               <section className="field-panel ai-delivery-section-compact">
-                <h3>Website publishing workflow</h3>
+                <h3>Website publishing workflow (draft-only handoff)</h3>
                 <AiDeliveryInlineNotice>
-                  Prepare drafts and publish to the client WordPress target. Credentials are encrypted per target in Client Hub. Live publish requires server env <code>WORDPRESS_PUBLISH_ENABLED=true</code>.
+                  Prepare the client WordPress draft payload here. This flow is draft-only in the current block; live publish remains deferred unless a separately approved block enables <code>WORDPRESS_PUBLISH_ENABLED=true</code>.
                 </AiDeliveryInlineNotice>
                 {deliverablePublicationTargets.length === 0 ? (
                   <AiDeliveryInlineEmpty>No publication targets for this client yet. Add one in Client Hub before website publishing.</AiDeliveryInlineEmpty>

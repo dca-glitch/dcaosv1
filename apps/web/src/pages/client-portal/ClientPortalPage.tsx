@@ -1694,7 +1694,7 @@ export function ClientPortalPage() {
       </div>
 
       <p className="portal-footer-note muted-text">
-        Final deliverables and monthly reports are read-only. Use Pending Approvals to review articles before publication.
+        Final deliverables and monthly reports are read-only client archive items. Use Pending Reviews to review articles before publication.
       </p>
     </section>
   );

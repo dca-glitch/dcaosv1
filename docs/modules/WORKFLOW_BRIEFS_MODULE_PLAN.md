@@ -77,9 +77,60 @@ does not exist today).
 
 When WorkflowBriefs feeds a real Puriva delivery, the downstream sequence is:
 
-SEO plan -> content draft -> image/asset package -> compliance review checkpoint -> draft-only WordPress handoff -> final archive -> monthly report.
+**Intake → Plan → Compliance Review → Drafts → Packaging → Handoff → Archive**
 
-Compliance review stays between planning and anything that is draft-ready for handoff.
+1. **Intake validation:** Brief must have goal, business context, target audience, and offer context (at minimum). See [`PURIVA_OPERATIONAL_INTAKE_AND_COMPLIANCE.md`](../runbooks/PURIVA_OPERATIONAL_INTAKE_AND_COMPLIANCE.md) for Puriva-specific content guardrails.
+2. **AI planning:** Run AI to generate MI/SEO reports; generate production plan from reports.
+3. **Compliance review checkpoint:** Admin verifies all claims, medical language, contact facts, and service descriptions against [`PURIVA_OPERATIONAL_INTAKE_AND_COMPLIANCE.md`](../runbooks/PURIVA_OPERATIONAL_INTAKE_AND_COMPLIANCE.md). **This is manual and non-optional.** Flag any unverified claims before seeding content.
+4. **Seed content:** Create content items from approved production plan.
+5. **Generate drafts:** AI creates article drafts from seeded items.
+6. **Package deliverables:** Wrap drafts + images into deliverables for client review.
+7. **Draft-only WordPress handoff:** Prepare for WordPress staging.
+8. **Final archive + monthly report:** After client approval, publish to archive and generate monthly report.
+
+**Key rule:** No AI-generated draft should reach client review until compliance review is **explicitly documented** in brief notes or plan body. Compliance review stays between planning and draft generation.
+
+## Intake validation requirements
+
+For a brief to be eligible for AI planning and production, it must have:
+
+| Field | Requirement | Puriva guidance |
+|---|---|---|
+| Goal | Required. Clear, specific client outcome | *Example:* "Rank for Wegovy treatment inquiries in Bali"; "Build trust around aesthetic services" |
+| Business context | Required. What does the clinic do? | *Verify against [`PURIVA_OPERATIONAL_INTAKE_AND_COMPLIANCE.md`](../runbooks/PURIVA_OPERATIONAL_INTAKE_AND_COMPLIANCE.md) section 2 (clinic profile) and section 6 (services).* Do not assume services exist. |
+| Target audience | Required. Who is reading? | *Must match section 17 (target audiences).* Example: "Indonesian local clients" or "international medical-tourism visitors" |
+| Offer context | Required. What is the specific offer or call-to-action? | *Must be verifiable.* Do not promise outcomes, prescriptions, or partners. Use "consultation-based" language per section 7–9. |
+| Location context | Optional but recommended. Where is the clinic? Service area? | *If present, must be factual.* Verify against section 2 and section 4 (languages/service areas). |
+| Notes | Optional. Admin can document intake review notes or Puriva compliance findings here. | *Document any verified/unverified claims, required approvals, or compliance flags.* |
+
+**Missing-input behavior:** If any required field is empty, the UI shows a warning banner and blocks progression to AI planning. The banner text reads: *"Complete the intake before generating reports: [list missing fields]."*
+
+## Compliance review requirements
+
+Before any draft reaches client review, an admin must verify:
+
+1. **All claims are supported by [`PURIVA_OPERATIONAL_INTAKE_AND_COMPLIANCE.md`](../runbooks/PURIVA_OPERATIONAL_INTAKE_AND_COMPLIANCE.md)** — use sections 2 (clinic profile), 6 (services), 7–9 (constraint topics) to test each assertion in the production plan.
+2. **No prohibited language** — see section 11 (prohibited claims). Flag and remove any "guaranteed," "cure," "instant," "best," "permanent," "no risk," "official partner" without proof.
+3. **Medical language is cautious** — use "consultation-based," "educational," "may support," "designed to" instead of outcome promises.
+4. **Contact facts are current** — phone, email, address, booking URL must be verified before appearing in drafts.
+5. **Partner/affiliate claims have evidence** — do not state "partner," "authorized," "certified," or "exclusive" without documentation.
+6. **Service descriptions match approved categories** — only mention services confirmed in section 6 of the compliance doc.
+
+**Documentation pattern:** Add a note to the brief's `notes` field or production plan body documenting the review:
+
+```
+COMPLIANCE REVIEW [DATE] [ADMIN]:
+✓ Verified clinic profile against PURIVA_OPERATIONAL_INTAKE_AND_COMPLIANCE.md section 2
+✓ All claims use "consultation-based" language per section 7–9
+✓ No prohibited cure/guarantee claims found
+✓ Contact facts verified with clinic ops
+✗ FLAGGED: Stem cell therapy claim pending medical reviewer approval (section 8)
+→ ACTION: await medical reviewer sign-off before draft generation
+```
+
+**UI surface:** The production plan section now shows a "Compliance review status" field (optional) where the admin can document findings before seeding content. The field is admin-only and never visible to clients.
+
+
 
 ## How the two connect (confirmed by code evidence)
 

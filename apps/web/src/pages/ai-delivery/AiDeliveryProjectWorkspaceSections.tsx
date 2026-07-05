@@ -82,9 +82,6 @@ export function AiDeliveryProjectWorkspaceSections({
                   Archive
                 </button>
               ) : null}
-              <button className="primary-action" onClick={() => void onOpenContentPlan()} type="button">
-                Open content plan
-              </button>
             </div>
           ) : null
         }
@@ -103,8 +100,162 @@ export function AiDeliveryProjectWorkspaceSections({
       </SectionPanel>
 
       <SectionPanel
+        className="ai-delivery-section ai-delivery-workflow-lanes"
+        title="Content delivery workflow"
+        tone="compact"
+      >
+        <div className="ai-delivery-workflow-container">
+          <div className="ai-delivery-lane">
+            <div className="ai-delivery-lane-header">
+              <span className="ai-delivery-lane-number">1</span>
+              <div className="ai-delivery-lane-info">
+                <h4>Intake & Brief</h4>
+                <StatusBadge status={workspaceProject.brief?.status ?? "Not started"} />
+              </div>
+            </div>
+            {canEdit ? (
+              <div className="ai-delivery-lane-actions">
+                <button
+                  className="primary-action"
+                  disabled={!workspaceProject.brief}
+                  onClick={() => void onOpenBrief()}
+                  type="button"
+                >
+                  {workspaceProject.brief ? "Edit brief" : "Create brief"}
+                </button>
+                <button className="ghost-action text-sm" onClick={() => void onOpenResearchSources()} type="button">
+                  Research / sources
+                </button>
+                {showMiContextButton ? (
+                  <button className="ghost-action text-sm" onClick={() => void onOpenMiContext()} type="button">
+                    MI
+                  </button>
+                ) : null}
+                {showKnowledgeButton ? (
+                  <button className="ghost-action text-sm" onClick={onOpenKnowledgePanel} type="button">
+                    Knowledge
+                  </button>
+                ) : null}
+              </div>
+            ) : null}
+          </div>
+
+          <div className="ai-delivery-lane">
+            <div className="ai-delivery-lane-header">
+              <span className="ai-delivery-lane-number">2</span>
+              <div className="ai-delivery-lane-info">
+                <h4>SEO Plan</h4>
+                <span className="muted-text text-xs">Monthly content plan</span>
+              </div>
+            </div>
+            {canEdit ? (
+              <div className="ai-delivery-lane-actions">
+                <button className="primary-action" onClick={() => void onOpenContentPlan()} type="button">
+                  SEO / content plan
+                </button>
+                <button className="ghost-action text-sm" onClick={() => void onOpenWorkflowRuns()} type="button">
+                  Workflow runs
+                </button>
+              </div>
+            ) : null}
+          </div>
+
+          <div className="ai-delivery-lane">
+            <div className="ai-delivery-lane-header">
+              <span className="ai-delivery-lane-number">3</span>
+              <div className="ai-delivery-lane-info">
+                <h4>Content Draft</h4>
+                <span className="muted-text text-xs">Article production</span>
+              </div>
+            </div>
+            {canEdit ? (
+              <div className="ai-delivery-lane-actions">
+                <button className="primary-action" onClick={() => void onOpenContentDrafts()} type="button">
+                  Content production
+                </button>
+              </div>
+            ) : null}
+          </div>
+
+          <div className="ai-delivery-lane">
+            <div className="ai-delivery-lane-header">
+              <span className="ai-delivery-lane-number">4</span>
+              <div className="ai-delivery-lane-info">
+                <h4>Compliance Review</h4>
+                <span className="muted-text text-xs">Client & plan approval</span>
+              </div>
+            </div>
+            {canEdit ? (
+              <div className="ai-delivery-lane-actions">
+                <button className="primary-action" onClick={() => void onApproveFinal()} type="button">
+                  Approve final
+                </button>
+                <button className="ghost-action text-sm" onClick={() => void onRequestClientInput()} type="button">
+                  Request input
+                </button>
+                <button className="ghost-action text-sm" onClick={() => void onRequestClientRevision()} type="button">
+                  Revise
+                </button>
+              </div>
+            ) : null}
+          </div>
+
+          <div className="ai-delivery-lane">
+            <div className="ai-delivery-lane-header">
+              <span className="ai-delivery-lane-number">5</span>
+              <div className="ai-delivery-lane-info">
+                <h4>Image & Assets</h4>
+                <span className="muted-text text-xs">Article imagery</span>
+              </div>
+            </div>
+            {canEdit ? (
+              <div className="ai-delivery-lane-actions">
+                <button className="primary-action" onClick={() => void onOpenArticleImages()} type="button">
+                  Article images
+                </button>
+              </div>
+            ) : null}
+          </div>
+
+          <div className="ai-delivery-lane">
+            <div className="ai-delivery-lane-header">
+              <span className="ai-delivery-lane-number">6</span>
+              <div className="ai-delivery-lane-info">
+                <h4>WordPress Handoff</h4>
+                <span className="muted-text text-xs">Publication packages</span>
+              </div>
+            </div>
+            {canEdit ? (
+              <div className="ai-delivery-lane-actions">
+                <button className="primary-action" onClick={() => void onOpenDeliverables()} type="button">
+                  Deliverables
+                </button>
+              </div>
+            ) : null}
+          </div>
+
+          <div className="ai-delivery-lane">
+            <div className="ai-delivery-lane-header">
+              <span className="ai-delivery-lane-number">7</span>
+              <div className="ai-delivery-lane-info">
+                <h4>Final Archive</h4>
+                <span className="muted-text text-xs">Monthly report</span>
+              </div>
+            </div>
+            {canEdit && showMonthlyReportButton ? (
+              <div className="ai-delivery-lane-actions">
+                <button className="primary-action" onClick={onOpenMonthlyReport} type="button">
+                  Report
+                </button>
+              </div>
+            ) : null}
+          </div>
+        </div>
+      </SectionPanel>
+
+      <SectionPanel
         className="ai-delivery-section ai-delivery-revenue-chain-readiness"
-        description="Deterministic admin-operated chain: brief → MI → plan → drafts → images → deliverables → private assets → WordPress handoff → monthly report."
+        description="Deterministic admin-operated chain. Warnings do not block workflow — use for readiness checks only."
         title="Delivery chain readiness"
         tone="compact"
       >
@@ -114,171 +265,28 @@ export function AiDeliveryProjectWorkspaceSections({
           <div className="stack gap-sm">
             <div className="ai-delivery-context-meta">
               <StatusBadge status={revenueChainReadiness.overallStatus} />
-              <span className="muted-text">Admin checklist only — warnings do not block manual workflow.</span>
+              <span className="muted-text">Admin checklist only.</span>
             </div>
-            <dl className="brief-grid">
-              {revenueChainReadiness.checks.map((check) => (
-                <div key={check.key}>
-                  <dt>{check.label}</dt>
-                  <dd>
-                    <StatusBadge status={check.status} />
-                    <span className="muted-text"> {check.detail}</span>
-                  </dd>
-                </div>
-              ))}
-            </dl>
+            {revenueChainReadiness.checks.length > 0 ? (
+              <dl className="ai-delivery-readiness-grid">
+                {revenueChainReadiness.checks.map((check) => (
+                  <div key={check.key} className="ai-delivery-readiness-item">
+                    <dt className="ai-delivery-readiness-label">{check.label}</dt>
+                    <dd className="ai-delivery-readiness-status">
+                      <StatusBadge status={check.status} />
+                      <span className="muted-text text-xs">{check.detail}</span>
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            ) : null}
             {revenueChainReadiness.warnings.length > 0 ? (
-              <p className="muted-text">{revenueChainReadiness.warnings.join(" · ")}</p>
+              <p className="muted-text text-xs">⚠ {revenueChainReadiness.warnings.join(" · ")}</p>
             ) : null}
           </div>
         ) : (
           <p className="muted-text">Select a project to view delivery chain readiness.</p>
         )}
-      </SectionPanel>
-
-      <SectionPanel
-        action={
-          canEdit ? (
-            <div className="ai-delivery-action-row">
-              <button
-                className="primary-action"
-                disabled={!workspaceProject.brief}
-                onClick={() => void onOpenBrief()}
-                type="button"
-              >
-                Brief
-              </button>
-              <button className="ghost-action" onClick={() => void onOpenResearchSources()} type="button">
-                Research / sources
-              </button>
-              {showMiContextButton ? (
-                <button className="ghost-action" onClick={() => void onOpenMiContext()} type="button">
-                  MI context
-                </button>
-              ) : null}
-              {showKnowledgeButton ? (
-                <button className="ghost-action" onClick={onOpenKnowledgePanel} type="button">
-                  AI knowledge
-                </button>
-              ) : null}
-            </div>
-          ) : null
-        }
-        className="ai-delivery-section"
-        description="Brief, research, and knowledge inputs."
-        title="Brief & knowledge context"
-        tone="compact"
-      >
-        {null}
-      </SectionPanel>
-
-      <SectionPanel
-        action={
-          canEdit ? (
-            <div className="ai-delivery-action-row">
-              <button className="primary-action" onClick={() => void onOpenContentPlan()} type="button">
-                SEO / content plan
-              </button>
-              <button className="ghost-action" onClick={() => void onOpenWorkflowRuns()} type="button">
-                Workflow runs
-              </button>
-            </div>
-          ) : null
-        }
-        className="ai-delivery-section"
-        description="Monthly SEO plan and workflow runs."
-        title="SEO plan & production"
-        tone="compact"
-      >
-        {null}
-      </SectionPanel>
-
-      <SectionPanel
-        action={
-          canEdit ? (
-            <button className="primary-action" onClick={() => void onOpenContentDrafts()} type="button">
-              Content production
-            </button>
-          ) : null
-        }
-        className="ai-delivery-section"
-        description="Draft articles for approved plan items."
-        title="Content drafts"
-        tone="compact"
-      >
-        {null}
-      </SectionPanel>
-
-      <SectionPanel
-        action={
-          canEdit ? (
-            <div className="ai-delivery-action-row">
-              <button className="ghost-action" onClick={() => void onRequestClientInput()} type="button">
-                Request input
-              </button>
-              <button className="ghost-action" onClick={() => void onRequestClientRevision()} type="button">
-                Request revision
-              </button>
-              <button className="secondary-action" onClick={() => void onApproveFinal()} type="button">
-                Approve final
-              </button>
-            </div>
-          ) : null
-        }
-        className="ai-delivery-section"
-        description="Client and content-plan review checkpoints."
-        title="Reviews & approvals"
-        tone="compact"
-      >
-        {null}
-      </SectionPanel>
-
-      <SectionPanel
-        action={
-          canEdit ? (
-            <button className="primary-action" onClick={() => void onOpenArticleImages()} type="button">
-              Article images
-            </button>
-          ) : null
-        }
-        className="ai-delivery-section"
-        description="Image requests for content drafts."
-        title="Images"
-        tone="compact"
-      >
-        {null}
-      </SectionPanel>
-
-      <SectionPanel
-        action={
-          canEdit ? (
-            <button className="primary-action" onClick={() => void onOpenDeliverables()} type="button">
-              Deliverables
-            </button>
-          ) : null
-        }
-        className="ai-delivery-section"
-        description="Publication packages and WordPress prep."
-        title="WordPress & publication"
-        tone="compact"
-      >
-        {null}
-      </SectionPanel>
-
-      <SectionPanel
-        action={
-          canEdit && showMonthlyReportButton ? (
-            <button className="primary-action" onClick={onOpenMonthlyReport} type="button">
-              Monthly report
-            </button>
-          ) : null
-        }
-        className="ai-delivery-section"
-        description="Monthly summary and client report."
-        title="Monthly report"
-        tone="compact"
-      >
-        {null}
       </SectionPanel>
     </>
   );

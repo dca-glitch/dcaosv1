@@ -351,6 +351,26 @@ function BriefItemRow({
   );
 }
 
+type IntakeValidation = {
+  isComplete: boolean;
+  missingFields: string[];
+};
+
+function checkIntakeCompleteness(brief: WorkflowBriefDetail | null): IntakeValidation {
+  if (!brief) {
+    return { isComplete: false, missingFields: [] };
+  }
+  const missing: string[] = [];
+  if (!brief.goal?.trim()) missing.push("Goal");
+  if (!brief.businessContext?.trim()) missing.push("Business context");
+  if (!brief.targetAudience?.trim()) missing.push("Target audience");
+  if (!brief.offerContext?.trim()) missing.push("Offer context");
+  return {
+    isComplete: missing.length === 0,
+    missingFields: missing
+  };
+}
+
 type ReportListSection = {
   label: string;
   items: string[];
@@ -1185,6 +1205,14 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
             <LoadingState label="Loading brief detail…" />
           ) : detail ? (
             <>
+              {(() => {
+                const intake = checkIntakeCompleteness(detail);
+                return intake.missingFields.length > 0 ? (
+                  <div className="brief-warning-banner muted-text" style={{ padding: "12px 16px", marginBottom: "16px", backgroundColor: "#fef3c7", borderLeft: "4px solid #f59e0b", borderRadius: "4px" }}>
+                    <strong>⚠ Incomplete intake:</strong> Complete the following fields before generating reports: {intake.missingFields.join(", ")}
+                  </div>
+                ) : null;
+              })()}
               <SectionPanel
                 className="brief-detail-section"
                 title={detail.title}
@@ -1359,6 +1387,14 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
                       </>
                     )}
 
+                    {canManageAi && !showPlanEdit ? (
+                      <div className="brief-detail-section--spaced" style={{ padding: "12px 16px", backgroundColor: "#f0f9ff", borderLeft: "4px solid #0284c7", borderRadius: "4px", marginTop: "16px" }}>
+                        <div className="muted-text" style={{ fontSize: "0.9em" }}>
+                          <strong>ℹ Compliance review checkpoint:</strong> Before seeding content production, verify all claims in this plan against the Puriva operational intake and compliance guide. Check medical language, contact facts, partner claims, and service descriptions. Document your findings in the brief Notes field.
+                        </div>
+                      </div>
+                    ) : null}
+
                     {planPriorityTopics.length > 0 ? (
                       <BriefDetailSection className="brief-detail-section--spaced" title="Priority topics">
                         <BriefBulletList items={planPriorityTopics.slice(0, 6)} />
@@ -1417,11 +1453,22 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
                         </Button>
                       </div>
                     ) : (
+                    <div>
                       <p className="brief-muted-note muted-text">
-                        Run AI first to generate MI and SEO reports, then generate a production plan.
+                        1. Complete the intake fields above (Goal, Business context, Target audience, Offer context)
                       </p>
-                    )}
-                  </>
+                      <p className="brief-muted-note muted-text">
+                        2. Run AI to generate MI and SEO reports
+                      </p>
+                      <p className="brief-muted-note muted-text">
+                        3. Generate a production plan from the reports
+                      </p>
+                      <p className="brief-muted-note muted-text">
+                        4. Review for Puriva compliance before seeding content production
+                      </p>
+                    </div>
+                  )}
+                </>
                 )}
               </SectionPanel>
 
@@ -1476,6 +1523,14 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
 
                       {seedStatus.blockReason && !seedStatus.isSeeded ? (
                         <p className="brief-muted-note muted-text">{seedStatus.blockReason}</p>
+                      ) : null}
+
+                      {seedStatus.canSeed && canManageAi ? (
+                        <div className="brief-detail-section--spaced" style={{ padding: "12px 16px", backgroundColor: "#fef3c7", borderLeft: "4px solid #f59e0b", borderRadius: "4px", marginBottom: "16px" }}>
+                          <div className="muted-text" style={{ fontSize: "0.9em" }}>
+                            <strong>→ Before seeding:</strong> Verify all production plan claims against the Puriva compliance guide. Document findings in the brief Notes field, then proceed.
+                          </div>
+                        </div>
                       ) : null}
 
                       {seedStatus.canSeed ? (
@@ -1559,6 +1614,14 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
                         ) : null}
                       </div>
 
+                      {draftStatus.canGenerateDrafts && canManageAi ? (
+                        <div className="brief-detail-section--spaced" style={{ padding: "12px 16px", backgroundColor: "#dbeafe", borderLeft: "4px solid #0284c7", borderRadius: "4px", marginTop: "16px" }}>
+                          <div className="muted-text" style={{ fontSize: "0.9em" }}>
+                            <strong>ℹ Puriva note:</strong> Ensure compliance review is documented in brief Notes before generating drafts. Drafts should not reach client review until compliance is verified.
+                          </div>
+                        </div>
+                      ) : null}
+
                       {draftStatus.items.length > 0 ? (
                         <BriefDetailSection className="brief-detail-section--spaced" title="Draft readiness by item">
                           <ul className="brief-bullet-list brief-bullet-list--flat">
@@ -1590,7 +1653,10 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
                       ) : null}
                     </div>
                   ) : (
-                    <p className="muted-text">Seed content production first to generate working drafts.</p>
+                    <div>
+                      <p className="muted-text">Seed content production first to generate working drafts.</p>
+                      <p className="brief-muted-note muted-text">Complete seeding in the Content Production section above.</p>
+                    </div>
                   )}
                 </SectionPanel>
               ) : null}
@@ -1598,6 +1664,7 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
               {canManageAi && !seedStatus?.isSeeded ? (
                 <SectionPanel className="brief-detail-section" title="Content Drafts">
                   <p className="muted-text">Content drafts become available after seeding the content plan.</p>
+                  <p className="brief-muted-note muted-text">After compliance review is complete, seed content production in the Content Production section above.</p>
                 </SectionPanel>
               ) : null}
 

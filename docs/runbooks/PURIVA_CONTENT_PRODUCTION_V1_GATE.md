@@ -2,7 +2,7 @@
 
 **Status:** Deterministic draft scaffold production from Puriva SEO plan.
 
-**Scope:** Internal outline/brief scaffolds with compliance gates. No final client copy, provider calls, crawling, WordPress, or client portal exposure.
+**Scope:** Internal outline/brief scaffolds with compliance gates. No final client copy, provider calls, crawling, live publish, WordPress, or client portal exposure.
 
 Related:
 
@@ -50,9 +50,9 @@ Supported content types: `service_page`, `faq`, `blog_article`, `comparison_educ
 
 ## Operator path
 
-SEO plan -> content draft scaffolds -> image/asset package -> compliance review checkpoint -> draft-only WordPress handoff -> final archive.
+SEO plan -> content draft scaffolds -> image/asset package -> compliance review checkpoint -> admin review -> draft-only WordPress prepared draft handoff -> final archive.
 
-This stage turns approved SEO objectives into internal draft scaffolds; the compliance checkpoint must pass before anything is handed off downstream.
+This stage turns approved SEO objectives into internal draft scaffolds; the compliance checkpoint and admin review must pass before anything is handed off downstream.
 
 ---
 
@@ -85,7 +85,7 @@ npm.cmd run -w @dca-os-v1/api test:unit -- --test-name-pattern puriva-content-pr
 
 ## Operator notes
 
-- Draft scaffolds are **admin/internal only** — never treat as approved client copy or draft-ready handoff without the compliance review checkpoint.
+- Draft scaffolds are **admin/internal only** — never treat as approved client copy or draft-ready handoff without the compliance review checkpoint and admin review.
 - High-risk topics require medical review before expansion.
 - Credential/partner/license references remain verification-required.
 - No OpenRouter, crawl, live publish, or client portal review requests in this block.

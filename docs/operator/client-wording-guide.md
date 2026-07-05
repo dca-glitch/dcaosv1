@@ -57,6 +57,10 @@ Good wording:
 
 `This report summarizes the work completed this month and the recommended focus for next month.`
 
+For final client delivery wording:
+
+`This final monthly report is read-only and ready for your archive.`
+
 ## Explaining Drafts
 
 Good wording:

@@ -2,7 +2,7 @@
 
 **Status:** Deterministic local/admin SEO planning scaffold for Puriva (`puriva.id`).
 
-**Scope:** Monthly SEO planning objectives for Bali aesthetic clinic services. No final copy generation, provider calls, crawling, or credential claims.
+**Scope:** Monthly SEO planning objectives for Bali aesthetic clinic services. No final copy generation, provider calls, crawling, live publish, or credential claims.
 
 Related:
 
@@ -64,9 +64,9 @@ Minimum planning coverage:
 
 ## Operator path
 
-SEO plan objectives -> content draft -> image/asset package -> compliance review checkpoint -> draft-only WordPress handoff -> final archive -> monthly report.
+SEO plan objectives -> content draft -> image/asset package -> compliance review checkpoint -> admin review -> draft-only WordPress prepared draft handoff -> final archive -> monthly report.
 
-Planning items stay as objectives only until the downstream draft/asset package is assembled and cleared by the compliance checkpoint.
+Planning items stay as objectives only until the downstream draft/asset package is assembled and cleared by the compliance checkpoint and admin review.
 
 ---
 
@@ -100,8 +100,8 @@ npm.cmd run -w @dca-os-v1/api test:unit -- --test-name-pattern puriva-seo-plan
 
 ## Operator notes
 
-- Planning items are **objectives only** — draft copy and image/asset work require compliance review before anything is marked ready for the draft-only WordPress handoff.
+- Planning items are **objectives only** — draft copy and image/asset work require compliance review and admin review before anything is marked ready for the draft-only WordPress handoff.
 - High-risk categories (Wegovy, stem cell) require medical review before client-facing use.
 - Hospital/partner/license statements remain verification-required.
-- No OpenRouter, crawl, or live publish calls in this block.
+- No OpenRouter, crawl, or live publish calls in this block; draft-only WordPress handoff stays downstream.
 - This is planning-only; live automation stays deferred until a separately approved block.

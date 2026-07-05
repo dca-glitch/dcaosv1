@@ -3777,6 +3777,117 @@ textarea:focus,
   min-height: 30px;
 }
 
+/* H1 — AI Delivery workflow lanes (compact lane dashboard) */
+.ai-delivery-workflow-container {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
+.ai-delivery-lane {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(190, 211, 255, 0.12);
+  border-radius: 12px;
+  display: grid;
+  gap: 8px;
+  padding: 11px 12px;
+  transition: border-color 120ms ease, background 120ms ease;
+}
+
+.ai-delivery-lane:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(190, 211, 255, 0.18);
+}
+
+.ai-delivery-lane-header {
+  align-items: flex-start;
+  display: flex;
+  gap: 10px;
+  min-width: 0;
+}
+
+.ai-delivery-lane-number {
+  align-items: center;
+  background: rgba(82, 224, 255, 0.18);
+  border-radius: 6px;
+  color: #dff9ff;
+  display: flex;
+  font-size: 0.75rem;
+  font-weight: 800;
+  height: 28px;
+  justify-content: center;
+  min-width: 28px;
+  text-align: center;
+}
+
+.ai-delivery-lane-info {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  flex: 1;
+}
+
+.ai-delivery-lane-info h4 {
+  font-size: 0.92rem;
+  font-weight: 700;
+  line-height: 1.2;
+  margin: 0;
+}
+
+.ai-delivery-lane-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.ai-delivery-lane-actions .primary-action {
+  font-size: 0.78rem;
+  min-height: 28px;
+  padding: 4px 9px;
+  flex-shrink: 0;
+}
+
+.ai-delivery-lane-actions .ghost-action {
+  font-size: 0.75rem;
+  min-height: 26px;
+  padding: 3px 7px;
+}
+
+.ai-delivery-readiness-grid {
+  display: grid;
+  gap: 8px 12px;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.ai-delivery-readiness-item {
+  display: grid;
+  gap: 4px;
+}
+
+.ai-delivery-readiness-label {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 650;
+  margin: 0;
+}
+
+.ai-delivery-readiness-status {
+  align-items: flex-start;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+}
+
+.text-xs {
+  font-size: 0.75rem !important;
+}
+
+.text-sm {
+  font-size: 0.82rem !important;
+}
+
 /* I — AI Knowledge context panel (admin modal) */
 .ai-knowledge-context-panel.stack.gap-md {
   gap: 10px;
