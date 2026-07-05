@@ -66,3 +66,5 @@ Local client delivery readiness is closed for MVP scope. Staging execution remai
 For new client-visible outputs in future modules, reuse the same final/approved-only archive pattern, hide internal workflow data, and document proof commands before implementation.
 
 For the local/admin operating-pack completion layer, use [`PURIVA_OPERATING_PACK_V1_GO_NO_GO.md`](../runbooks/PURIVA_OPERATING_PACK_V1_GO_NO_GO.md) as the first-client go/no-go pack.
+
+For any future owner-approved environment proof, use [`G9_ENVIRONMENT_PROOF_APPROVAL_GATE.md`](../runbooks/G9_ENVIRONMENT_PROOF_APPROVAL_GATE.md) as the planning-only gate and Sonnet prompt reference.
