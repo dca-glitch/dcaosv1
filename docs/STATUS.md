@@ -154,6 +154,7 @@ Percentages are **local MVP readiness**, not production-proven. See [`docs/STATU
 | **Core platform** (auth, tenant, modules, RBAC) | ~90% | Login, tenant switch, module enable/disable, settings read | Turnstile on staging; invite/reset flows |
 | **AI Delivery** | ~84–88% | Projects, briefs, workflow runs, deliverables, reviews, export, WP draft prep (disabled by default) | Live AI provider, live WP publish, staging deploy |
 | **Workflow Briefs / context composition** | **100% local/operator-ready** | Intake → submit → approved KB/context → MI/SEO runs → production plan → drafts → AI Delivery handoff; AI SEO lives inside Workflow Briefs | Knowledge picker (6C-v2) and per-brief audit (6D) remain deferred; live provider, staging proof, and production readiness stay deferred |
+| **AI Knowledge / Context layer** | **100% local/operator-safe** | Approved-only context path, tenant/client/project isolation, injection sanitization, missing-context warnings, safe snapshot metadata, and WorkflowBriefs context usage are smoke-proven | Vector search, live provider execution, staging proof, production readiness, live WordPress, live GA/GSC, and live R2 remain deferred |
 | **AI SEO / content plan** | ~88% | Research, summaries, plans, PDF export, stale-PDF invalidation, locally hardened operator path | Live crawling, GSC sync, Google Docs export |
 | **Market Intelligence** | ~80% | Findings, summaries, handoffs, delivery integration, operator hardening | Live AI, scraping, client-facing MI view |
 | **Monthly Reports** | ~88% | Admin CRUD, PDF, metrics snapshots, MI context, client FINAL-only archive | Live GA/GSC sync, client metrics automation |
@@ -198,6 +199,7 @@ Percentages are **local MVP readiness**, not production-proven. See [`docs/STATU
 
 - Local login/logout, tenant context, module entitlements, owner/admin RBAC
 - AI Delivery deterministic workflow chain (local gateway default)
+- AI Knowledge / Context layer (approved-only context path, tenant/client/project isolation, injection sanitization, safe snapshot metadata, WorkflowBriefs context usage)
 - Market Intelligence admin MVP (findings, summaries, handoffs, delivery bridge)
 - Monthly report admin lifecycle + client FINAL-only portal archive
 - Client portal read-only archive, monthly reports, approval happy-path (when seeded)
