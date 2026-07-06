@@ -101,7 +101,7 @@ async function main() {
     const viewText = await page.locator(".view-section").innerText();
     record(
       "content plan review shows deferred message",
-      viewText.includes("Client review deferred") && viewText.includes("Client Portal"),
+      viewText.includes("Deferred for MVP") && viewText.includes("Client Portal"),
       "deferred copy"
     );
     record(

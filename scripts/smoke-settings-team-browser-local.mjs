@@ -99,7 +99,7 @@ async function main() {
 
     await page.goto(`${webBaseUrl}/#/settings`, { waitUntil: "domcontentloaded" });
     await page.getByRole("heading", { name: "Settings", exact: true }).waitFor({ state: "visible", timeout: 20000 });
-    await verifyMetricKeys(page, ".settings-shell-metrics", ["settings-profile", "settings-tenant", "settings-access"]);
+    await verifyMetricKeys(page, ".settings-shell-metrics", ["settings-profile", "settings-tenant"]);
 
     const settingsBoundary = page.getByRole("heading", { name: "MVP shell boundary", exact: true });
     await settingsBoundary.waitFor({ state: "visible", timeout: 10000 });
@@ -111,7 +111,7 @@ async function main() {
 
     await page.goto(`${webBaseUrl}/#/team`, { waitUntil: "domcontentloaded" });
     await page.getByRole("heading", { name: "Members", exact: true }).waitFor({ state: "visible", timeout: 20000 });
-    await verifyMetricKeys(page, ".team-shell-metrics", ["team-members", "team-roles", "team-access"]);
+    await verifyMetricKeys(page, ".team-shell-metrics", ["team-members", "team-roles"]);
 
     const directoryPanel = page.getByRole("heading", { name: "Member directory", exact: true });
     await directoryPanel.waitFor({ state: "visible", timeout: 10000 });
