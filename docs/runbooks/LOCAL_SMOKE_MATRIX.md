@@ -104,7 +104,8 @@ In-memory limit: 300 requests / 15 minutes per IP. Long smoke chains may hit 429
 | `smoke:mvp:local` | Auth, tenant, modules, finance baseline |
 | `smoke:client-portal:local` | Client archive API, access guards, forbidden fields, `#/client-portal` archive behavior |
 | `smoke:client-access:local` | Admin grant/revoke, client bounds |
-| `smoke:ai-market-intelligence` | MI project, sources, run, insight, handoff, AI Delivery apply |
+| `smoke:ai-market-intelligence` | MI project, sources, run, insight, handoff, AI Delivery apply; client-linked MI project + client context carried through handoff (`clientId` proof) |
+| `smoke:ai-operations:local` | AI Operations runs list/detail, gateway filter, MI research run create+execute+list+detail via AI Operations endpoints |
 | `smoke:ai-knowledge-context` | Knowledge base approved/allowedForPrompt selection, injection sanitization, tenant/client/project isolation, AiDelivery workflow-run context attachment, WorkflowBriefs MI/SEO AI-run knowledge metadata (Blocks 5A/6A), admin-only route gating |
 | `smoke:ai-delivery-reviews` | Content plan, drafts, images, deliverables, WP draft prep |
 | `smoke:ai-seo-content-plan-pdf` | Content plan PDF export + private storage (admin-only; accepts 503 locally) |
@@ -163,6 +164,10 @@ In-memory limit: 300 requests / 15 minutes per IP. Long smoke chains may hit 429
 | `smoke:dashboard-data-backed:browser` | Dashboard metrics |
 | `smoke:auth-invite-boundary:browser` | Invite boundary copy |
 | `smoke:puriva-client-portal-boundary:local` | Puriva client-safe boundary: archive/monthly-report list+detail+download/release-package/deliverable field safety, `performanceSummary` provenance (`sourceType` allowed), legacy `/briefs` compatibility scan, admin-only WorkflowBriefs path denial, MI/SEO reportJson sanitization, Production Plan Review boundary (Blocks 4G/4B) |
+| `smoke:ai-operations:browser` | AI Operations Console UI: list/empty state, MI source filter control, CSV export button, run detail modal, admin-only nav (not client-reachable) |
+| `smoke:client-hub:catalog-inquiry:browser` | Client Hub catalog + portal-submitted inquiry visibility, admin acknowledge flow |
+| `smoke:client-hub:edge-cases:browser` | Client Hub empty publication targets, legacy WP sunset, archived-client read-only hub |
+| `smoke:client-domain:browser` | Client domain regression (dashboard → Clients → Add Client → Client Hub sections). **Known failing as of 2026-07-06:** reproducibly times out waiting for the "Add Client" modal after clicking the button; not fixed as part of docs/smoke-only closeouts — see `docs/STATUS_COMPLETION.md` "Clients (CRM)" row |
 
 ### Staging-only (G4 — not local)
 
