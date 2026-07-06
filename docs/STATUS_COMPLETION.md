@@ -1,7 +1,7 @@
 # DCA OS Lite — Project Completion Overview
 
 **Status:** Planning and operator reference
-**Last updated:** 2026-07-06 (Client Portal approval/report polish closeout)
+**Last updated:** 2026-07-06 (Admin cockpit / daily operations polish closeout)
 **Reference branch:** `main` after PR #43 merge (`f8606f2`)
 **Reference commits:** PR #38 merge `a152cbd`; PR #39 merge `971ac41`; PR #40 merge `9a6eddc`; PR #41 merge `6a03cc1`; PR #42 merge `b341b5d`; PR #43 merge `f8606f2`
 **Scope:** Approved local admin MVP + client/domain operating model (blocks 1–6) + **MVP 1 Puriva client delivery** + **Post-MVP local closeout (Blocks 31–57)** + **Phase F local completion (Blocks 58–77)**. Local `main` is synced and validated. VPS/production intentionally excluded until separate owner approval.
@@ -88,6 +88,10 @@ changes, no percentage re-audit performed as part of this addendum):
   archive/deliverables labels, and smoke assertions tightened on `main` in commit `b8319f9`;
   diff-only review, web check, full validate, browser/local QA, and push passed; no
   backend/schema/auth changes.
+- **G11 Admin cockpit / daily operations polish** — cockpit now separates Ready now / Needs review
+  / Blocked-waiting and keeps the Puriva path compact; operator docs aligned on `main` in commit
+  `831175980a87736faefbdbdbedafdbbdf9d97419`; diff-only review, web check, full validate,
+  admin/AI operations smokes, and push passed; no backend/schema/auth changes.
 
 **Knowledge arc — next / deferred (not in percentage baseline above):**
 

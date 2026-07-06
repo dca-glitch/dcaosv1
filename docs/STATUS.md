@@ -1,6 +1,6 @@
 # DCA OS Lite — Status (Source of Truth)
 
-**Last updated:** 2026-07-06 (Puriva Operating Pack v1 closeout)
+**Last updated:** 2026-07-06 (Admin cockpit / daily operations polish closeout)
 **Operator index:** [`docs/operator/OPERATOR_RUNBOOK.md`](./operator/OPERATOR_RUNBOOK.md)  
 **Architecture map:** [`docs/ARCHITECTURE.md`](./ARCHITECTURE.md) § Current application map  
 **Smoke matrix:** [`docs/runbooks/LOCAL_SMOKE_MATRIX.md`](./runbooks/LOCAL_SMOKE_MATRIX.md)  
@@ -362,6 +362,10 @@ The G9 environment proof approval gate is now documented in commit `3fc779f` (`d
 ## G10 Client Portal approval/report polish closeout
 
 Client Portal approval/report polish is documented in commit `b8319f9` (`polish(client): clarify approval and report surfaces`) and pushed to `main`. Client-facing approval wording, monthly report wording, final archive/deliverables wording, empty/error/loading states, and docs/smoke assertions were tightened. Review verdict was KEEP; `git diff --check`, web check, full validate, and browser/local QA all passed; `main` finished clean and synced with `origin/main`. No backend/API/schema/auth changes, no environment/VPS/production touch, no live integrations, no production readiness claim, and no medical/legal certainty were introduced. Owner approval remains required before any future environment work, and Sonnet remains required for any future environment execution.
+
+## G11 Admin cockpit / daily operations polish closeout
+
+Admin cockpit / daily operations polish is documented in commit `831175980a87736faefbdbdbedafdbbdf9d97419` (`polish(ops): clarify daily operations cockpit`) and pushed to `main`. The cockpit now separates Ready now / Needs review / Blocked-waiting and keeps the Puriva path compact; operator docs were aligned to match that flow. Review verdict was KEEP; `git diff --check`, web check, full validate, and admin/AI operations smokes all passed; `main` finished clean and synced with `origin/main`. No backend/API/schema/auth changes, no environment/VPS/production touch, no live integrations, no new API/persisted fields, no production readiness claim, and no environment proof claim were introduced. Owner approval remains required before any future environment work, and Sonnet remains required for any future environment execution.
 
 ## Next work (after Block 5D-C)
 
