@@ -136,6 +136,7 @@ Reference: [`docs/database/PRISMA_CLIENT_GENERATION_READINESS.md`](../database/P
 ## 4. Admin operations recovery
 
 **Surface:** Dashboard → Operational readiness; `GET /api/v1/admin/operations/summary`.
+**Cockpit cue:** `AdminDailyOperationsCockpit` groups work into `Ready now`, `Needs review`, and `Blocked / waiting`. Start there before opening deeper consoles.
 
 | Symptom | First action |
 |---------|----------------|
@@ -146,6 +147,7 @@ Reference: [`docs/database/PRISMA_CLIENT_GENERATION_READINESS.md`](../database/P
 | Integration `disabled` | Expected local default |
 | WordPress publish disabled | `WORDPRESS_PUBLISH_ENABLED` not true — draft prep only |
 | R2 disabled | Guarded IO; strict roundtrip needs explicit env |
+| Environment / owner gate blocked | Stop in the cockpit; no environment proof or execution until separate owner approval |
 | Closeout status `manual_run_required` | Expected — no fake green; run smokes manually |
 
 **Smoke:** `npm.cmd run smoke:admin-operations:local`

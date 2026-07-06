@@ -8,6 +8,8 @@ Before the first local execution pass, also open [`PURIVA_OPERATING_PACK_V1_GO_N
 
 Current baseline: local `main` is synced and validated, and local pre-staging proof was accepted. This is still local/admin work only: no deploy, no VPS migration, no production restart/release, and no confirmed staging target.
 
+Use the Admin Daily Operations Cockpit first so ready work, review work, and blocked work stay separated before you open deeper consoles.
+
 ## Next Actions
 
 1. Pick one test client.
