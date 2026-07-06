@@ -235,6 +235,10 @@ export function AdminDailyOperationsCockpit() {
     window.location.hash = `#/ai-operations?runId=${runId}`;
   }, []);
 
+  const navigateTo = useCallback((hash: string) => {
+    window.location.hash = hash;
+  }, []);
+
   return (
     <div className="page-stack" data-density="compact">
       <PageHeader
@@ -249,6 +253,23 @@ export function AdminDailyOperationsCockpit() {
       />
 
       {error ? <Alert message={error} title="Cockpit blocked" variant="danger" /> : null}
+
+      {!loading && !error ? (
+        <SectionPanel
+          tone="compact"
+          title="Start here — first client"
+          description="New to this? Follow the local practice path in order: pick one client and month, add a brief, run the SEO plan, review a draft, package a deliverable, then finalize the monthly report for client archive visibility."
+        >
+          <div className="stack gap-sm">
+            <Button onClick={() => navigateTo("#/workflow-briefs")} type="button" variant="primary">
+              Start with Workflow Briefs / AI SEO
+            </Button>
+            <p className="muted-copy compact">
+              This is a local/admin practice path only. It does not imply staging, production, or live-integration readiness.
+            </p>
+          </div>
+        </SectionPanel>
+      ) : null}
 
       {loading ? (
         <div className="state-panel loading-state-panel" role="status">
@@ -295,7 +316,7 @@ export function AdminDailyOperationsCockpit() {
           <SectionPanel
             tone="compact"
             title="Daily path"
-            description="Use this sequence to keep Puriva work moving without mixing in blocked or future work."
+            description="Use this sequence to keep Puriva work moving without mixing in blocked or future work. This is also the first-client operator path — see docs/operator/first-client-next-actions.md for the full local practice run."
           >
             <div className="cf-record-list">
               {PURIVA_DAILY_PATH.map((step, index) => (
@@ -402,18 +423,12 @@ export function AdminDailyOperationsCockpit() {
 
           <SectionPanel
             tone="compact"
-            title="Operator controls"
-            description="Open the deeper consoles when a run needs detail."
+            title="Handoffs"
+            description="Jump directly into each surface used by the local operator path."
           >
             <div className="stack gap-sm">
-              <Button
-                onClick={() => {
-                  window.location.hash = "#/ai-operations";
-                }}
-                type="button"
-                variant="secondary"
-              >
-                Open full AI Operations console
+              <Button onClick={() => navigateTo("#/workflow-briefs")} type="button" variant="secondary">
+                Open Workflow Briefs / AI SEO plan
               </Button>
               <Button
                 onClick={() => {
@@ -424,7 +439,59 @@ export function AdminDailyOperationsCockpit() {
               >
                 Open AI Delivery workspace
               </Button>
+              <Button onClick={() => navigateTo("#/monthly-reports")} type="button" variant="secondary">
+                Preview Monthly Reports (client-safe view)
+              </Button>
+              <Button onClick={() => navigateTo("#/archive")} type="button" variant="secondary">
+                Preview Client Portal archive (client-safe, read-only)
+              </Button>
+              <Button onClick={() => navigateTo("#/ai-market-intelligence")} type="button" variant="secondary">
+                Open Market Intelligence
+              </Button>
+              <Button onClick={() => navigateTo("#/invoices")} type="button" variant="secondary">
+                Open Finance Lite (Invoices)
+              </Button>
+              <Button
+                onClick={() => {
+                  window.location.hash = "#/ai-operations";
+                }}
+                type="button"
+                variant="secondary"
+              >
+                Open full AI Operations console
+              </Button>
             </div>
+          </SectionPanel>
+
+          <SectionPanel
+            tone="compact"
+            title="Deferred / gated (not active locally)"
+            description="These stay explicitly outside local/admin scope until a separate owner-approved block runs."
+          >
+            <div className="cf-record-list">
+              {[
+                "Staging deploy / environment proof",
+                "Production deploy / readiness",
+                "Live AI provider execution (OpenRouter)",
+                "Live WordPress publish",
+                "GA/GSC live sync",
+                "R2 live bucket IO"
+              ].map((label) => (
+                <article className="cf-record dense-record" key={label}>
+                  <div className="dense-record-main">
+                    <div className="dense-title">
+                      <div className="dense-kicker">
+                        <StatusBadge status="Deferred" />
+                      </div>
+                      <h3>{label}</h3>
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+            <p className="muted-copy compact">
+              No environment proof has run. Owner approval is required before any of the above starts, and Sonnet is required for any future environment execution.
+            </p>
           </SectionPanel>
 
           {lastRefreshed ? (

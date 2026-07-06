@@ -68,6 +68,7 @@
     "smoke:ai-provider-config:local": "node scripts/smoke-ai-provider-config-local.mjs",
     "smoke:external-integrations-readiness:local": "node scripts/smoke-external-integrations-readiness-local.mjs",
     "smoke:admin-operations:local": "node scripts/smoke-admin-operations-local.mjs",
+    "smoke:admin-daily-cockpit:browser": "node scripts/smoke-admin-daily-cockpit-browser-local.mjs",
     "smoke:client-role-api-boundary:local": "node scripts/smoke-client-role-api-boundary-local.mjs",
     "smoke:mi-operator:browser": "node scripts/smoke-mi-operator-browser-local.mjs",
     "smoke:ai-delivery-workflow:browser": "node scripts/smoke-ai-delivery-workflow-browser-local.mjs",

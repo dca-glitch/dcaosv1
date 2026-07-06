@@ -111,6 +111,16 @@ changes, no percentage re-audit performed as part of this addendum):
   validate` PASS (`check:ai-provider-config` 19/19, `check:external-integrations-readiness` 25/25)
   and a fresh `npm.cmd run smoke:openrouter-guarded:local` run (12/12 PASS); no backend/schema/auth
   changes, no environment/VPS/production touch, no live provider/WordPress/GA-GSC/R2 call.
+- **G15 Admin operations shell 100% local/admin-operational** — `AdminDailyOperationsCockpit.tsx`
+  gained a discoverable "Start here — first client" panel, a "Handoffs" panel linking directly into
+  Workflow Briefs, AI Delivery, Monthly Reports preview, Client Portal archive preview, Market
+  Intelligence, Finance Lite, and AI Operations, and an explicit "Deferred / gated" panel labeling
+  staging/environment proof, production readiness, live AI provider, live WordPress, GA/GSC, and R2
+  live IO as out of scope; Ready now / Needs review / Blocked-waiting queues were preserved. A new
+  `smoke:admin-daily-cockpit:browser` proof (28/28 PASS) plus the existing
+  `smoke:admin-operations:local` (16/16 PASS) validate the shell; `git diff --check`, web check, and
+  full validate all passed. No backend/API/schema/auth changes beyond one additive `package.json`
+  script line for the new smoke.
 
 **Knowledge arc — next / deferred (not in percentage baseline above):**
 
@@ -184,7 +194,7 @@ Decision selector: stop and wait for owner decision; if approved later, use the 
 | **AI provider (OpenRouter)** | **~85% foundation / ~62% overall live-readiness** | In progress | AI Gateway v1 foundation locally hardened (disabled/not-configured safe results, no secret leakage, client-portal-safe, verified via `check:ai-provider-config` 19/19 and `smoke:openrouter-guarded:local` 12/12); live provider execution, staging proof, and cost/rate-limit proof remain deferred |
 | **AI Operations Console** | **75%** | In progress | v1 on main (AI Delivery runs); MI listing + filters/export in baseline closeout |
 | **Puriva Operating Pack v1** | **~90%** | Done (local/admin) | Local/admin-operational closeout complete; production readiness for the pack remains deferred (~60–65% baseline); live provider, live WordPress publish, GA/GSC, R2 live IO, production deploy, and incident/rollback execution stay deferred |
-| **Admin cockpit / daily operations** | **~84%** | Done (local) | Ready now / Needs review / Blocked-waiting cockpit and operator docs alignment; environment proof, deployment, and live execution remain gated |
+| **Admin cockpit / daily operations** | **100% local/admin-operational** | Done (local) | Ready now / Needs review / Blocked-waiting queues, discoverable first-client path, complete handoffs into WorkflowBriefs, AI Delivery, Monthly Reports preview, Client Portal archive preview, Market Intelligence, and Finance Lite, explicit deferred/gated labeling; environment proof, deployment, and live execution remain gated |
 | **Operator docs & runbooks** | **100%** | Done (local) | Puriva Blocks 7–30 + Post-MVP Phases A–E + Phase F Blocks 58–77 runbooks and closeout index |
 | **Tests / smoke** | **100%** | Done (local) | Puriva MVP + Post-MVP Phases A–D browser layers in pre-staging |
 | **PR #13 merge → main** | **100%** | Done | Merged at `584e041bd85e8179e795a0e4621a0d9d8908e0b6`; follow-up docs commit `07b1f1668d11cdef42b195cfad189c4df645acc6` |
@@ -293,6 +303,7 @@ Do not treat local smoke alone as production readiness.
 | 2026-07-06 | G8 local Puriva E2E closeout: local operator proof added, approval smoke labels aligned to real UI, validation/browser QA passed, push complete |
 | 2026-07-06 | G13 local business modules polish: Finance Lite and Market Intelligence wording clarified, Revenue Hub stayed preview-label only, finance-ledger smoke aligned to login token shape, and push successful |
 | 2026-07-06 | G14 AI Gateway foundation local hardening: discovery confirmed existing gateway contract already safe (disabled/not-configured results, no secret leakage, no client-portal exposure); no code changes made; `npm run validate` and `smoke:openrouter-guarded:local` (12/12) reconfirmed |
+| 2026-07-06 | G15 Admin operations shell 100% local/admin-operational: cockpit gained first-client discoverability, complete handoffs (WorkflowBriefs/AI Delivery/Monthly Reports preview/Client Portal archive preview/Market Intelligence/Finance Lite), and explicit deferred/gated labeling; new `smoke:admin-daily-cockpit:browser` (28/28) plus existing `smoke:admin-operations:local` (16/16) passed |
 | 2026-06-27 | G1 closed: staging host `staging.digitalcubeagency.net`; production `system.digitalcubeagency.net`; G4 not approved; DNS not created |
 | 2026-06-27 | Phase F Block 77: local closeout complete — Blocks 58–77 validated on `feature/local-closeout-blocks-58-77` |
 | 2026-06-27 | Phase F Block 58: docs consistency — aligned Portal/WP/MI/R2 labels and blocks 4–6 percentages |
