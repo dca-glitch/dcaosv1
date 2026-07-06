@@ -141,6 +141,17 @@ changes, no percentage re-audit performed as part of this addendum):
   staging/environment proof, and production readiness remain explicitly deferred; no code changes
   were required.
 
+- **G23 Private storage / deliverable handling docs-only closeout** — Private storage disabled-safe
+  foundation is recorded as **100% local-safe**: R2-disabled mode is expected and safe locally,
+  missing `R2_ACCOUNT_ID` / `R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY` / `R2_BUCKET_NAME` returns
+  guarded `R2_STORAGE_NOT_CONFIGURED`, and no storage reference is persisted without config.
+  Deliverable handling is recorded as **100% local/operator-client-safe**: admin deliverable and
+  monthly report upload/download-reference handoffs are documented, generated monthly report PDF
+  storage is covered, Client Portal receives only FINAL/non-archived safe shapes, client download
+  endpoints return `downloadReference`, and raw `storageKey`/internal fields remain excluded. Live
+  R2 real-bucket proof remains deferred; no live bucket IO, staging/env proof, production storage
+  readiness claim, or storage/API/security behavior change is included.
+
 **Knowledge arc — next / deferred (not in percentage baseline above):**
 
 - **Block 6C-v1 (next)** — admin read-only visibility UI for safe `knowledgeContext` metadata on
@@ -212,7 +223,9 @@ Decision selector: stop and wait for owner decision; if approved later, use the 
 | **Client Portal advanced actions** (magic links, full comment threads) | **0%** | Deferred (Phase 2) | See deferred scope register |
 | **Finance** | **82%** | Done (local) | Finance admin browser sanity gate (Post-MVP Block 36) |
 | **AI SEO planning + content drafts** | **100% local/operator-ready** | Done (local) | WorkflowBriefs + AI Delivery local operator path is complete: MI/SEO report → production/content plan → content objectives → drafts → review/polish → package/export handoff; local deterministic/provider-deferred behavior, R2-disabled PDF/export safety, no `storageKey` leak, and draft-only handoff are smoke-proven. Live crawling, live GSC/GA sync, live provider execution, Google Docs live export, live R2 IO, live WordPress, staging/environment proof, production readiness, and unverified medical/legal/license/before-after claims remain deferred/out of scope |
-| **Private storage (R2)** | **65%** | In progress | Block 37 byte roundtrip smoke (disabled guard + optional full roundtrip); prod bucket deferred |
+| **Private storage disabled-safe foundation** | **100% local-safe** | Done (local) | Disabled/private-r2 status, guarded upload helper, and 300-second signed download-reference helper are documented; local R2-disabled mode is expected and safe; absent R2 config returns `R2_STORAGE_NOT_CONFIGURED` and prevents storage-reference persistence. Live R2 real-bucket proof, staging/env proof, and production storage readiness remain deferred |
+| **Deliverable handling** | **100% local/operator-client-safe** | Done (local) | Admin deliverable upload/download-reference/open, ready/revision/accept/archive/restore, reviews, WordPress draft prep, Google Docs export handoff, monthly report document/PDF handoff, client FINAL/non-archived visibility, safe `downloadReference`, and safe admin-provided `exportUrl` are documented; Client Portal excludes `storageKey`, internal notes, `contentDraftId`, `articleImageId`, and `tenantId` |
+| **Live R2 real-bucket proof** | **Deferred** | Deferred | Requires explicit env approval; no bucket IO in local closeout; no staging/prod storage readiness claim |
 | **Email / notifications** | **35%** | In progress | Read-only outbox API + local smoke (Post-MVP Block 38); no real sending |
 | **Audit / activity** | **78%** | In progress | Dashboard feed + dedicated browser gate (Blocks 31, 51); full audit UI deferred |
 | **AI provider (OpenRouter)** | **~85% foundation / ~62% overall live-readiness** | In progress | AI Gateway v1 foundation locally hardened (disabled/not-configured safe results, no secret leakage, client-portal-safe, verified via `check:ai-provider-config` 19/19 and `smoke:openrouter-guarded:local` 12/12); live provider execution, staging proof, and cost/rate-limit proof remain deferred |
@@ -333,6 +346,7 @@ Do not treat local smoke alone as production readiness.
 | 2026-07-06 | G18 AI Knowledge / Context layer 100% local/operator-safe: approved-only context path, tenant/client/project isolation, injection sanitization, missing-context warnings, safe snapshot metadata, and WorkflowBriefs context usage are smoke-proven; no code changes were needed |
 | 2026-07-06 | G19 AI SEO planning + content drafts 100% local/operator-ready: WorkflowBriefs + AI Delivery content production path documented as complete for local/admin use; existing AI SEO PDF/export, WorkflowBrief publication handoff, AI Delivery workflow, and content draft/review smokes remain the proof; live crawling/GSC/GA/provider/Google Docs/R2/WordPress/staging/production remain deferred |
 | 2026-07-06 | G20 AI Delivery workflow 100% local/operator-ready: full local operator sequence (project → brief/context handoff → workflow run → content plan → drafts → reviews → package → deliverables → WordPress draft-prep → monthly report → client-safe archive) documented as complete; existing AI Delivery/WorkflowBriefs/Monthly Report/Client Portal smokes remain the proof; live provider/WordPress/GA-GSC/R2/Google Docs/staging/production remain deferred |
+| 2026-07-06 | G23 Private storage / deliverable handling docs-only closeout: private storage disabled-safe foundation marked 100% local-safe; deliverable handling marked 100% local/operator-client-safe; live R2 real-bucket proof remains deferred with no bucket IO, staging/env proof, production storage readiness claim, or behavior change |
 | 2026-06-27 | G1 closed: staging host `staging.digitalcubeagency.net`; production `system.digitalcubeagency.net`; G4 not approved; DNS not created |
 | 2026-06-27 | Phase F Block 77: local closeout complete — Blocks 58–77 validated on `feature/local-closeout-blocks-58-77` |
 | 2026-06-27 | Phase F Block 58: docs consistency — aligned Portal/WP/MI/R2 labels and blocks 4–6 percentages |

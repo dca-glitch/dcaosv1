@@ -146,7 +146,7 @@ Reference: [`docs/database/PRISMA_CLIENT_GENERATION_READINESS.md`](../database/P
 | `missing_config` in readiness | Check [`ENV_READINESS_INVENTORY.md`](./ENV_READINESS_INVENTORY.md); restart API after env change |
 | Integration `disabled` | Expected local default |
 | WordPress publish disabled | `WORDPRESS_PUBLISH_ENABLED` not true — draft prep only |
-| R2 disabled | Guarded IO; strict roundtrip needs explicit env |
+| R2 disabled | Expected and safe locally; guarded paths return `R2_STORAGE_NOT_CONFIGURED` instead of persisting storage references; live real-bucket proof needs explicit env approval |
 | Environment / owner gate blocked | Stop in the cockpit; no environment proof or execution until separate owner approval |
 | Closeout status `manual_run_required` | Expected — no fake green; run smokes manually |
 
@@ -169,7 +169,7 @@ Approved local sequence:
 5. Generate drafts, then review/polish before packaging.
 6. Package/export handoff status, then prepare the AI Delivery handoff.
 
-Local export rules: R2-disabled behavior is safe and expected unless R2 env is explicitly configured; the system must not expose `storageKey` in client-safe responses. Google Docs live export, R2 live IO, live WordPress publish, live crawling, GSC/GA sync, and live provider execution remain deferred unless a separate owner-approved block proves them.
+Local export rules: R2-disabled behavior is safe and expected unless R2 env is explicitly configured; guarded storage writes return `R2_STORAGE_NOT_CONFIGURED` instead of persisting storage references. Admin handoffs may expose safe download-reference fields; client-safe responses must never expose `storageKey`. Google Docs live export, R2 live IO, live WordPress publish, live crawling, GSC/GA sync, and live provider execution remain deferred unless a separate owner-approved block proves them.
 
 Focused proof commands after `npm.cmd run validate` passes:
 
@@ -196,7 +196,7 @@ Approved local sequence:
 6. Prepare the WordPress draft (draft-only; live publish stays disabled unless a separately approved block enables `WORDPRESS_PUBLISH_ENABLED=true`).
 7. Prepare the monthly report and confirm client-safe FINAL-only archive visibility in Client Portal.
 
-Local export rules: R2-disabled behavior is safe and expected; the system must not expose `storageKey`, prompts, draft bodies, review notes, or provider/model/gateway/audit/cost metadata on client-visible surfaces. Live AI provider execution, live WordPress publish, live GA/GSC sync, live R2 IO, Google Docs live export, staging/environment proof, and production readiness remain deferred.
+Local export rules: R2-disabled behavior is safe and expected; the system must not expose `storageKey`, prompts, draft bodies, review notes, internal notes, contentDraftId/articleImageId storage internals, tenant IDs, or provider/model/gateway/audit/cost metadata on client-visible surfaces. Deliverable and monthly report client downloads use safe `downloadReference` responses, and `exportUrl` is intentionally client-visible only when admin provides a safe external handoff link. Live AI provider execution, live WordPress publish, live GA/GSC sync, live R2 IO, Google Docs live export, staging/environment proof, and production readiness remain deferred.
 
 Focused proof commands after `npm.cmd run validate` passes:
 

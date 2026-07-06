@@ -24,9 +24,9 @@ Monthly metrics snapshot foundation is now admin-only and snapshot-first. The co
 
 ## Private object storage environment
 
-Private object storage is optional in local development. R2/private storage foundation closed for the current MVP admin scope. When the storage configuration is absent, admin-only private upload endpoints stay guarded and return `R2_STORAGE_NOT_CONFIGURED` instead of persisting a storage reference.
+Private object storage is optional in local development. The private storage disabled-safe foundation is **100% local-safe** for the current MVP admin/operator scope. R2-disabled mode is expected and safe locally. When the storage configuration is absent, admin-only private upload endpoints stay guarded and return `R2_STORAGE_NOT_CONFIGURED` instead of persisting a storage reference.
 
-Local proof for the current branch used `R2_BUCKET_NAME=dca` and confirmed admin-only article image final upload, deliverable document upload, and monthly report document upload could persist private storage references and return secure download references. This is local-only proof; the VPS/production R2 switch remains deferred until an explicitly approved deploy block.
+The private storage service surface exposes disabled/private-r2 status, an upload helper, and a 300-second signed download-reference helper. Configured R2 supports private PUT and signed GET URL references for `pdf`, `png`, `jpeg`, and `webp` up to 5 MB using scoped storage keys. Existing proof is local/guarded only; live R2 real-bucket proof remains deferred and requires explicit env approval. This contract does not claim staging/env proof, production storage readiness, or live bucket IO.
 
 Exact environment variables currently used by the API storage helpers:
 
@@ -36,9 +36,9 @@ Exact environment variables currently used by the API storage helpers:
 Current behavior:
 
 - Missing required storage configuration keeps private storage disabled locally.
-- Upload/download flows use authenticated admin API routes and return a temporary `downloadUrl` plus `expiresSeconds`.
+- Upload/download-reference flows use authenticated admin API routes and return a temporary `downloadUrl` plus `expiresSeconds` inside `downloadReference` where the endpoint contract uses that wrapper.
 - Successful private uploads persist `storageKey` on the linked admin record.
-- No client self-service download route or public asset link is created by this block.
+- Client download endpoints return `downloadReference` only and never raw `storageKey`.
 - Secrets and storage credentials stay environment-only and must never be committed.
 
 ## Current admin workflow order
@@ -140,7 +140,7 @@ This wording marks the admin foundation as closed for the present admin scope on
 
 ## Private storage foundation closure
 
-R2/private storage foundation closed for the current MVP admin scope.
+Private storage disabled-safe foundation is closed as **100% local-safe** for the current MVP admin scope. This is not a live R2 readiness, staging/env proof, or production storage readiness claim.
 
 Closed private storage scope:
 
@@ -157,6 +157,9 @@ Deferred items below are explicitly not blockers for this closed admin foundatio
 
 - Client Portal
 - client-facing approvals/archive
+- live R2 real-bucket proof
+- staging/env proof
+- production storage readiness
 - real production configured-bucket proof
 - production-approved live provider execution
 - PDF/Google Docs export flows
@@ -447,7 +450,7 @@ Article images are platform-neutral deliverable assets. They may later support W
 
 ## Deliverables foundation
 
-Admin/owner-only deliverable records for packaging approved content drafts and approved/final-ready article image assets. Tenant-scoped and project-scoped; manual records only (no export generation, no connector publishing, and no client portal delivery in this block).
+Admin/owner-only deliverable records for packaging approved content drafts and approved/final-ready article image assets. Tenant-scoped and project-scoped; manual records only. Deliverable handling is closed as **100% local/operator-client-safe** for the documented local scope: admin upload/download-reference/open, ready/revision/accept/archive/restore, review records, WordPress draft prep, Google Docs export handoff, monthly report document handoff, generated monthly report PDF storage, and client FINAL visibility.
 
 - GET /api/v1/ai-delivery-projects/:id/deliverables
   - Lists deliverables for the ai delivery project (tenant-scoped).
@@ -496,6 +499,7 @@ Readiness rules:
 - Linked article images must be `APPROVED` or `FINAL_READY`.
 - `exportUrl` is set by admin and is included in client portal deliverable responses. Use only safe, client-appropriate URLs (e.g., a shared Google Docs link or pre-approved PDF reference). Internal or admin-only URLs must not be stored here.
 - `storageKey` is an internal storage reference only in this block.
+- Client Portal receives only safe deliverable/report shapes. FINAL/non-archived/client-access filtering remains part of the client-safe boundary. Client download endpoints return `downloadReference` only; raw `storageKey` is never returned.
 
 Current admin UI wiring includes private deliverable document upload/open actions for deliverable records.
 

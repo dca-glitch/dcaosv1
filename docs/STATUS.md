@@ -159,7 +159,8 @@ Percentages are **local MVP readiness**, not production-proven. See [`docs/STATU
 | **Market Intelligence** | **100% local/operator-ready + client-safe** | Admin MI workflow: projects, sources, research runs, insights, handoffs; AI Delivery integration. Client-facing MI summary: read-only delivery-summary endpoint (approved/READY/APPLIED handoffs only, no internal fields) | Live AI, scraping |
 | **Monthly Reports** | ~88% | Admin CRUD, PDF, metrics snapshots, MI context, client FINAL-only archive | Live GA/GSC sync, client metrics automation |
 | **Client Portal** | ~90% | Archive, monthly reports, pending approvals happy-path, approval/report polish, boundary smokes | Magic links, public share links, full comments |
-| **Private storage / R2** | ~76–84% | Guarded upload/download when configured; disabled-safe default | Strict real-bucket proof without env; prod R2 switch |
+| **Private storage disabled-safe foundation** | **100% local-safe** | R2-disabled mode is expected and safe locally; upload/download-reference helpers are guarded, return `R2_STORAGE_NOT_CONFIGURED` when config is absent, and do not persist storage references without required R2 config | Live R2 real-bucket proof, staging/env proof, and production storage readiness remain deferred |
+| **Deliverable handling** | **100% local/operator-client-safe** | Admin/operator deliverables support upload/download-reference/open, ready/revision/accept/archive/restore, reviews, WordPress draft prep, Google Docs export handoff, monthly report document handoff, generated PDF storage, and client FINAL-only visibility with safe `downloadReference`/`exportUrl` shapes | Live R2 real-bucket proof, live Google export/OAuth, live WordPress publish, staging/env proof, and production readiness remain deferred |
 | **WordPress handoff** | ~50–60% | Draft prep, publish gate metadata, disabled-safe smokes | Live publish, client-triggered publish |
 | **Puriva Operating Pack v1** | ~90% | Local/admin-operational closeout complete | Production readiness remains deferred (~60–65% baseline); live provider, live WordPress publish, GA/GSC, R2 live IO, production deploy, and incident/rollback execution stay deferred |
 | **Admin cockpit / daily operations** | **100% local/admin-operational** | Ready now / Needs review / Blocked-waiting queues, discoverable first-client path, complete handoffs into WorkflowBriefs, AI Delivery, Monthly Reports preview, Client Portal archive preview, Market Intelligence, and Finance Lite, explicit deferred/gated labeling | Environment proof, deployment, and live execution remain gated |
@@ -207,6 +208,8 @@ Percentages are **local MVP readiness**, not production-proven. See [`docs/STATU
 - Admin daily operations cockpit with separated ready/review/blocked lanes
 - AI SEO planning + content draft flow inside WorkflowBriefs and AI Delivery: MI/SEO report → production plan → content objectives → drafts → review/polish → package/export handoff
 - Content plan PDF export + private storage handoff status (admin; local R2-disabled behavior is safe and does not expose `storageKey`)
+- Private storage disabled-safe foundation: local-safe only. R2 requires `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, and `R2_BUCKET_NAME`; when absent, guarded paths return `R2_STORAGE_NOT_CONFIGURED` instead of persisting references. Signed download-reference behavior is documented as a safe helper surface, not live bucket proof.
+- Deliverable handling: local/operator-client-safe. Admin upload/download-reference handoffs and monthly report document/PDF handoffs keep `storageKey` internal; Client Portal receives only FINAL, non-archived client-safe records with `downloadReference` and intentional admin-provided `exportUrl`, never raw storage keys or internal notes.
 - WordPress **draft preparation** with publish gate disabled by default
 - External integrations **readiness inspection** (no live calls)
 - Admin operations summary and recovery hints on dashboard
@@ -223,7 +226,7 @@ Percentages are **local MVP readiness**, not production-proven. See [`docs/STATU
 - Production deploy on `system.digitalcubeagency.net`
 - Live OpenRouter / AI provider HTTP execution
 - Live WordPress publish to any host
-- Strict R2 real-bucket roundtrip without explicit local env
+- Live R2 real-bucket proof, staging/env proof, and production storage readiness
 - GA4 / GSC OAuth and live metrics sync
 - Scraping / crawling ingestion
 - Background queues / autonomous agents
@@ -274,7 +277,7 @@ Full pack: [`docs/runbooks/STAGING_READINESS.md`](./runbooks/STAGING_READINESS.m
 | Production deploy proof | Deferred — frozen |
 | Live AI provider / OpenRouter execution | Deferred — opt-in only |
 | Live WordPress publish | Deferred — draft prep only |
-| Strict R2 real bucket proof | Deferred — optional local env |
+| Live R2 real-bucket proof | Deferred — explicit env approval required; no bucket IO in local closeout; no staging/prod storage readiness claim |
 | GA/GSC live sync | Deferred — snapshot-first metrics |
 | Scraping / crawling ingestion | Deferred |
 | Autonomous agents / background queues | Deferred |
@@ -408,6 +411,14 @@ Existing local smoke proof remains valid for this closeout: `smoke:ai-seo-conten
 AI Delivery is now documented as the complete local/admin operator execution surface for the approved scope. The full local sequence is explicit: monthly project → brief/context handoff from WorkflowBriefs → workflow run visibility → content plan → content drafts → reviews → package → deliverables → WordPress draft-prep handoff → monthly report → client-safe archive handoff. This closeout records the dependencies already completed — WorkflowBriefs/context composition (100% local/operator-ready), AI Knowledge/Context layer (100% local/operator-safe), AI SEO planning + content drafts (100% local/operator-ready), Monthly Reports + Client Portal read-only (100% local/client-safe), and the admin operations shell (100% local/admin-operational) — and confirms the client-safe boundary: no workflow runs, jobs, prompts, draft bodies, review notes, provider/model/gateway/audit/cost metadata, `storageKey`, or non-final reports reach Client Portal.
 
 Existing local smoke proof remains valid for this closeout: `smoke:ai-delivery-workflow:browser`, `smoke:ai-delivery-reviews`, `smoke:workflow-brief-publication-handoff:browser`, `smoke:client-portal-monthly-report:browser`, `smoke:client-portal:browser`, and `smoke:ai-seo-content-plan-pdf`. This is local/operator-ready only and does **not** claim live AI provider execution, live WordPress publish, live GA/GSC sync, live R2 IO, Google Docs live export, staging/environment proof, or production readiness. No backend/API/schema/auth changes, no environment/VPS/production touch, and no live integrations were introduced; this was a discovery-first, docs-only closeout — no code changes were required because the existing operator UI and API contract already satisfied the target sequence and boundaries.
+
+## G23 Private storage / deliverable handling docs-only closeout
+
+Private storage disabled-safe foundation is now recorded as **100% local-safe**. The documented service surface exposes disabled/private-r2 status, a guarded upload helper, and a 300-second signed download-reference helper. R2 configuration requires `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, and `R2_BUCKET_NAME`; absent config is expected locally and returns guarded `R2_STORAGE_NOT_CONFIGURED` instead of persisting storage references. Supported private storage rules remain limited to scoped storage keys for pdf/png/jpeg/webp up to 5 MB, private PUT, and signed GET reference behavior when explicitly configured.
+
+Deliverable handling is now recorded as **100% local/operator-client-safe**. AI Delivery deliverables support admin upload/download-reference/open, ready/revision/accept/archive/restore, reviews, WordPress draft prep, Google Docs export handoff, and client FINAL visibility. Monthly report handoff supports admin upload, admin download-reference, generated PDF storage, and client FINAL-only download-reference. Client Portal excludes `storageKey`, internal notes, `contentDraftId`, `articleImageId`, and `tenantId`; client download endpoints return `downloadReference` only. `exportUrl` remains intentionally client-visible only as a safe admin-provided external handoff link.
+
+Existing proof coverage remains local-only: `smoke:r2-byte-roundtrip:local` for disabled-safe/local guarded storage behavior, `smoke:ai-delivery-reviews`, `smoke:monthly-report:local`, `smoke:ai-seo-content-plan-pdf`, and existing client-portal/monthly-report smokes where referenced above. Live R2 real-bucket proof remains **deferred** and requires explicit env approval. This closeout does not run bucket IO, does not claim staging/env proof, does not claim production storage readiness, and does not change storage/security/API/backend behavior.
 
 ## Next options after local/product polish
 

@@ -131,7 +131,7 @@ Values belong in shell or server-side env only. See [`ENV_READINESS_INVENTORY.md
 |----------|---------|
 | `AUTH_SEED_TESTER_EMAIL` | Client portal approval happy-path + final visibility smokes |
 | `AUTH_SEED_TESTER_PASSWORD` | Optional when tester password differs from `AUTH_SEED_TEST_PASSWORD` |
-| `R2_*` | Strict R2 roundtrip (`smoke:r2-byte-roundtrip:local`) |
+| `R2_*` | Optional guarded/local R2 proof (`smoke:r2-byte-roundtrip:local`); live real-bucket proof requires explicit env approval |
 | `CREDENTIAL_ENCRYPTION_MASTER_KEY` | Credential encryption smoke |
 | `WORDPRESS_PUBLISH_ENABLED` | Open-gate WP probe only (not default) |
 
@@ -189,7 +189,7 @@ List planned steps without running smokes:
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/smoke-production-readiness-local.ps1 -List
 ```
 
-Covers: `validate`, `git diff --check`, AI Delivery revenue engine + reviews + workflow browser, MI core/integration/hardening/market-intelligence/operator browser/summary-delivery browser, delivery handoff readiness, **client approval happy-path** (`smoke-client-approval-happy-path-local.mjs` — self-SKIP when portal user unavailable; uses `puriva@puriva.id` fallback), client final visibility (skip if no `AUTH_SEED_TESTER_EMAIL`), WordPress publish disabled-safe, R2 disabled-safe, Puriva client portal boundary, client portal local/browser, monthly report MI context + client/admin browser. Logs to `$env:TEMP` and opens Notepad. Stops on first hard failure. API restart between browser batches; one retry on HTTP 429.
+Covers: `validate`, `git diff --check`, AI Delivery revenue engine + reviews + workflow browser, MI core/integration/hardening/market-intelligence/operator browser/summary-delivery browser, delivery handoff readiness, **client approval happy-path** (`smoke-client-approval-happy-path-local.mjs` — self-SKIP when portal user unavailable; uses `puriva@puriva.id` fallback), client final visibility (skip if no `AUTH_SEED_TESTER_EMAIL`), WordPress publish disabled-safe, R2 disabled-safe (`R2_STORAGE_NOT_CONFIGURED` guard, no storage-reference persistence when config is absent), Puriva client portal boundary, client portal local/browser, monthly report MI context + client/admin browser. Logs to `$env:TEMP` and opens Notepad. Stops on first hard failure. API restart between browser batches; one retry on HTTP 429.
 
 **Client approval happy-path** (`node scripts/smoke-client-approval-happy-path-local.mjs`): requires `AUTH_SEED_TEST_PASSWORD`; proves pending approvals, Review → `ArticleApprovalEditor`, Save & Continue / Approve / Reject, admin `for-approval` 403, no internal leakage, `CLIENT_REVIEW_DEFERRED` on phased plan/draft review. SKIP when portal user cannot be ensured.
 
@@ -243,7 +243,7 @@ Full catalog: [`LOCAL_SMOKE_MATRIX.md`](./LOCAL_SMOKE_MATRIX.md).
 
 - **Prisma EPERM:** run `validate` before starting dev servers, or stop locking `node.exe`.
 - **HTTP 429:** restart API (`npm.cmd run dev:api`); `smoke:pre-staging:local` restarts API automatically.
-- **R2 / WP open-gate probes:** optional; not required for Block A GO.
+- **R2 / WP open-gate probes:** optional; not required for Block A GO. Do not treat local R2 disabled-safe proof as live R2 real-bucket proof, staging/env proof, or production storage readiness.
 - **`smoke:staging-readiness:local` orchestrator hang (5D-B):** on local Windows PowerShell, the orchestrator may hang after `smoke:puriva-client-portal-boundary:local` completes even when that step PASSed. If the orchestrator appears stuck after a completed step:
   1. Inspect per-step stdout/stderr logs under `$env:TEMP` (orchestrator opens Notepad on failure; check recent `dca-*` logs).
   2. Confirm the completed step PASSed from its log before proceeding.
@@ -392,7 +392,7 @@ These are intentionally out of scope for Block A GO. See [`deferred-scope-regist
 | Production deploy | Frozen; G4 staging is separate approval |
 | Client approval/comment/magic links | Phased after MVP visibility |
 | DNS / Caddy / Docker on VPS | G4 only |
-| Live R2 / WP / OpenRouter on staging | Owner gates at G4 |
+| Live R2 real-bucket proof / WP / OpenRouter on staging | Owner gates at G4; no bucket IO or production storage readiness claim in local closeout |
 
 ---
 
