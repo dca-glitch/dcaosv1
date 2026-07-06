@@ -104,6 +104,7 @@ In-memory limit: 300 requests / 15 minutes per IP. Long smoke chains may hit 429
 | `smoke:mvp:local` | Auth, tenant, modules, finance baseline |
 | `smoke:client-portal:local` | Client archive API, access guards, forbidden fields, `#/client-portal` archive behavior |
 | `smoke:client-access:local` | Admin grant/revoke, client bounds |
+| `smoke:projects-tasks:local` | Dedicated local API-level Projects & Tasks proof: projects list/create/get/list-verify/update/archive/restore; tasks list/create linked to project/get/list-verify/update status/priority/done/archive/restore; no staging/live claim |
 | `smoke:ai-market-intelligence` | MI project, sources, run, insight, handoff, AI Delivery apply; client-linked MI project + client context carried through handoff (`clientId` proof) |
 | `smoke:ai-operations:local` | AI Operations runs list/detail, gateway filter, MI research run create+execute+list+detail via AI Operations endpoints |
 | `smoke:ai-knowledge-context` | Knowledge base approved/allowedForPrompt selection, injection sanitization, tenant/client/project isolation, AiDelivery workflow-run context attachment, WorkflowBriefs MI/SEO AI-run knowledge metadata (Blocks 5A/6A), admin-only route gating |
