@@ -167,7 +167,7 @@ In-memory limit: 300 requests / 15 minutes per IP. Long smoke chains may hit 429
 | `smoke:ai-operations:browser` | AI Operations Console UI: list/empty state, MI source filter control, CSV export button, run detail modal, admin-only nav (not client-reachable) |
 | `smoke:client-hub:catalog-inquiry:browser` | Client Hub catalog + portal-submitted inquiry visibility, admin acknowledge flow |
 | `smoke:client-hub:edge-cases:browser` | Client Hub empty publication targets, legacy WP sunset, archived-client read-only hub |
-| `smoke:client-domain:browser` | Client domain regression (dashboard → Clients → Add Client → Client Hub sections). **Known failing as of 2026-07-06:** reproducibly times out waiting for the "Add Client" modal after clicking the button; not fixed as part of docs/smoke-only closeouts — see `docs/STATUS_COMPLETION.md` "Clients (CRM)" row |
+| `smoke:client-domain:browser` | Client domain regression (dashboard → Clients → Add Client → Client Hub sections) restored after G30 stale-selector fixes; local/admin proof now passable and covers Clients flow, Client Hub catalog/publication sections, and MI client picker usage in local admin workflows. No staging/live claim. |
 
 ### Staging-only (G4 — not local)
 
