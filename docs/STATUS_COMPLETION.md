@@ -183,7 +183,7 @@ Decision selector: stop and wait for owner decision; if approved later, use the 
 | **Projects & Tasks** | **88%** | Done | Admin MVP closed |
 | **AI Delivery** | **95%** | Done | Workspace sectioning complete; admin workflow matrix, gateway, operations console, and client-safe archive path in place |
 | **Market Intelligence** | **86%** | Done (local) | Admin MVP + operator browser gate; MI runs in AI Ops console deferred to closeout |
-| **Monthly Reports** | **93%** | In progress | Metrics snapshot foundation and client portal FINAL-only archive path in place; live GA/GSC deferred |
+| **Monthly Reports** | **100%** | Done (local/client-safe) | Metrics snapshot foundation, client portal FINAL-only archive path, and read-only monthly report handoff are in place; live GA/GSC deferred |
 | **Client Portal MVP** (Puriva — visibility + review) | **100%** | Done (local) — UX polish and route access fixed | Blocks 7–30 incl. sparse + populated delivery overview browser gates; `#/client-portal` now defaults to the archive shell; approval/report polish complete |
 | **Client Portal advanced actions** (magic links, full comment threads) | **0%** | Deferred (Phase 2) | See deferred scope register |
 | **Finance** | **82%** | Done (local) | Finance admin browser sanity gate (Post-MVP Block 36) |
@@ -304,6 +304,7 @@ Do not treat local smoke alone as production readiness.
 | 2026-07-06 | G13 local business modules polish: Finance Lite and Market Intelligence wording clarified, Revenue Hub stayed preview-label only, finance-ledger smoke aligned to login token shape, and push successful |
 | 2026-07-06 | G14 AI Gateway foundation local hardening: discovery confirmed existing gateway contract already safe (disabled/not-configured results, no secret leakage, no client-portal exposure); no code changes made; `npm run validate` and `smoke:openrouter-guarded:local` (12/12) reconfirmed |
 | 2026-07-06 | G15 Admin operations shell 100% local/admin-operational: cockpit gained first-client discoverability, complete handoffs (WorkflowBriefs/AI Delivery/Monthly Reports preview/Client Portal archive preview/Market Intelligence/Finance Lite), and explicit deferred/gated labeling; new `smoke:admin-daily-cockpit:browser` (28/28) plus existing `smoke:admin-operations:local` (16/16) passed |
+| 2026-07-06 | G16 Client Portal read-only surfaces + Monthly Reports local/client-safe closeout: existing `smoke:client-portal-monthly-report:browser` and `smoke:client-portal:browser` proved FINAL-only monthly reports, hidden DRAFT/ADMIN_REVIEW/ARCHIVED reports, and absent forbidden fields; Monthly Reports marked 100% local/client-safe handoff |
 | 2026-06-27 | G1 closed: staging host `staging.digitalcubeagency.net`; production `system.digitalcubeagency.net`; G4 not approved; DNS not created |
 | 2026-06-27 | Phase F Block 77: local closeout complete — Blocks 58–77 validated on `feature/local-closeout-blocks-58-77` |
 | 2026-06-27 | Phase F Block 58: docs consistency — aligned Portal/WP/MI/R2 labels and blocks 4–6 percentages |
