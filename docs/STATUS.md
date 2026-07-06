@@ -369,6 +369,10 @@ Client Portal approval/report polish is documented in commit `b8319f9` (`polish(
 
 Admin cockpit / daily operations polish is documented in commit `831175980a87736faefbdbdbedafdbbdf9d97419` (`polish(ops): clarify daily operations cockpit`) and pushed to `main`. The cockpit now separates Ready now / Needs review / Blocked-waiting and keeps the Puriva path compact; operator docs were aligned to match that flow. Review verdict was KEEP; `git diff --check`, web check, full validate, and admin/AI operations smokes all passed; `main` finished clean and synced with `origin/main`. No backend/API/schema/auth changes, no environment/VPS/production touch, no live integrations, no new API/persisted fields, no production readiness claim, and no environment proof claim were introduced. Owner approval remains required before any future environment work, and Sonnet remains required for any future environment execution.
 
+## G12 local/product final polish closeout
+
+Combined local/product final polish is documented in commit `5f3701f` (`polish(ops): finalize local product handoffs`) and pushed to `main`. AI Delivery review/package wording, monthly report wording around approved snapshots and FINAL visibility, WorkflowBriefs intake → verified facts → approved KB/context → brief → SEO/content plan wording, and the local/product next-options selector were clarified. Review verdict was KEEP; `git diff --check`, web check, full validate, and browser/local QA all passed; `main` finished clean and synced with `origin/main`. No backend/API/schema/auth changes, no environment/VPS/production touch, no live integrations, no new API/persisted fields, no production readiness claim, and no environment proof claim were introduced. Owner approval remains required before any future environment work, and Sonnet remains required for any future environment execution.
+
 ## Next options after local/product polish
 
 - Stop and wait for owner decision.

@@ -92,6 +92,11 @@ changes, no percentage re-audit performed as part of this addendum):
   / Blocked-waiting and keeps the Puriva path compact; operator docs aligned on `main` in commit
   `831175980a87736faefbdbdbedafdbbdf9d97419`; diff-only review, web check, full validate,
   admin/AI operations smokes, and push passed; no backend/schema/auth changes.
+- **G12 local/product final polish** — combined local/product final polish recorded on `main` in
+  commit `5f3701f`; AI Delivery review/package wording, monthly report approved-snapshot / FINAL
+  wording, WorkflowBriefs intake → verified facts → approved KB/context → brief → SEO/content
+  plan wording, and the local/product next-options selector are documented; KEEP, diff check, web
+  check, full validate, browser/local QA, and push passed; no backend/schema/auth changes.
 
 **Knowledge arc — next / deferred (not in percentage baseline above):**
 
