@@ -1,7 +1,7 @@
 # DCA OS Lite — Project Completion Overview
 
 **Status:** Planning and operator reference
-**Last updated:** 2026-07-06 (Admin cockpit / daily operations polish closeout)
+**Last updated:** 2026-07-06 (Product baseline / readiness refinement)
 **Reference branch:** `main` after PR #43 merge (`f8606f2`)
 **Reference commits:** PR #38 merge `a152cbd`; PR #39 merge `971ac41`; PR #40 merge `9a6eddc`; PR #41 merge `6a03cc1`; PR #42 merge `b341b5d`; PR #43 merge `f8606f2`
 **Scope:** Approved local admin MVP + client/domain operating model (blocks 1–6) + **MVP 1 Puriva client delivery** + **Post-MVP local closeout (Blocks 31–57)** + **Phase F local completion (Blocks 58–77)**. Local `main` is synced and validated. VPS/production intentionally excluded until separate owner approval.
@@ -113,7 +113,8 @@ block. WorkflowBriefs is a confirmed third module alongside AI Delivery and Mark
 |-------------|---|---------|
 | **Local admin MVP** (DCA operator, local dev) | **~100%** | Done | Post-MVP Phases A–E (Blocks 31–57) + Phase F local closeout (Blocks 58–77) |
 | **Client/domain roadmap (blocks 1–6)** | **~92%** | Local gates done; prod env keys = separate owner gates |
-| **Production readiness** (real clients, VPS) | **~38%** | Runbooks exist; deploy/migration deferred by owner |
+| **Local/admin operational readiness** | **~84%** | Done (local) | Puriva pack, AI SEO, client portal, and admin cockpit hardened locally; live integrations and env proof still deferred |
+| **Production readiness** (real clients, VPS) | **~62%** | Blocked | Runbooks exist; local hardening improved; deploy/migration deferred by owner |
 | **UI / route stabilization** | **100%** | Dark Nebula pass, AI Delivery sectioning, Workflow Briefs cleanup, client-only portal access |
 | **PR #13 merge to main** | **100%** | Merged; local `main` synced to `origin/main` |
 | **Local main validation** | **100%** | Prior accepted baseline after Windows Prisma DLL lock cleanup |
@@ -152,16 +153,17 @@ block. WorkflowBriefs is a confirmed third module alongside AI Delivery and Mark
 | **AI Delivery** | **95%** | Done | Workspace sectioning complete; admin workflow matrix, gateway, operations console, and client-safe archive path in place |
 | **Market Intelligence** | **86%** | Done (local) | Admin MVP + operator browser gate; MI runs in AI Ops console deferred to closeout |
 | **Monthly Reports** | **93%** | In progress | Metrics snapshot foundation and client portal FINAL-only archive path in place; live GA/GSC deferred |
-| **Client Portal MVP** (Puriva — visibility + review) | **100%** | Done (local) — UX polish and route access fixed | Blocks 7–30 incl. sparse + populated delivery overview browser gates; `#/client-portal` now defaults to the archive shell |
+| **Client Portal MVP** (Puriva — visibility + review) | **100%** | Done (local) — UX polish and route access fixed | Blocks 7–30 incl. sparse + populated delivery overview browser gates; `#/client-portal` now defaults to the archive shell; approval/report polish complete |
 | **Client Portal advanced actions** (magic links, full comment threads) | **0%** | Deferred (Phase 2) | See deferred scope register |
 | **Finance** | **82%** | Done (local) | Finance admin browser sanity gate (Post-MVP Block 36) |
-| **AI SEO + Content Production** | **72%** | In progress | Google Drive live planning gate (Block 43); live Google integrations deferred |
+| **AI SEO + Content Production** | **~88%** | In progress | Google Drive live planning gate (Block 43); locally hardened operator path; live Google integrations deferred |
 | **Private storage (R2)** | **65%** | In progress | Block 37 byte roundtrip smoke (disabled guard + optional full roundtrip); prod bucket deferred |
 | **Email / notifications** | **35%** | In progress | Read-only outbox API + local smoke (Post-MVP Block 38); no real sending |
 | **Audit / activity** | **78%** | In progress | Dashboard feed + dedicated browser gate (Blocks 31, 51); full audit UI deferred |
 | **AI provider (OpenRouter)** | **62%** | In progress | AI Gateway v1 on main; local deterministic default; live provider opt-in only |
 | **AI Operations Console** | **75%** | In progress | v1 on main (AI Delivery runs); MI listing + filters/export in baseline closeout |
-| **Puriva Operating Pack v1** | **~88%** | Done (local/admin) | Local/admin-operational closeout complete; production readiness for the pack remains deferred (~60–65% baseline); live provider, live WordPress publish, GA/GSC, R2 live IO, production deploy, and incident/rollback execution stay deferred |
+| **Puriva Operating Pack v1** | **~90%** | Done (local/admin) | Local/admin-operational closeout complete; production readiness for the pack remains deferred (~60–65% baseline); live provider, live WordPress publish, GA/GSC, R2 live IO, production deploy, and incident/rollback execution stay deferred |
+| **Admin cockpit / daily operations** | **~84%** | Done (local) | Ready now / Needs review / Blocked-waiting cockpit and operator docs alignment; environment proof, deployment, and live execution remain gated |
 | **Operator docs & runbooks** | **100%** | Done (local) | Puriva Blocks 7–30 + Post-MVP Phases A–E + Phase F Blocks 58–77 runbooks and closeout index |
 | **Tests / smoke** | **100%** | Done (local) | Puriva MVP + Post-MVP Phases A–D browser layers in pre-staging |
 | **PR #13 merge → main** | **100%** | Done | Merged at `584e041bd85e8179e795a0e4621a0d9d8908e0b6`; follow-up docs commit `07b1f1668d11cdef42b195cfad189c4df645acc6` |
@@ -199,7 +201,7 @@ block. WorkflowBriefs is a confirmed third module alongside AI Delivery and Mark
 
 ## Ready today vs waiting
 
-### Ready for local operator work (~88% of operational product)
+### Ready for local operator work (~84% of operational product)
 
 - CRM (Clients, Projects, Tasks)
 - AI Delivery admin workflow
@@ -208,6 +210,7 @@ block. WorkflowBriefs is a confirmed third module alongside AI Delivery and Mark
 - Monthly Reports (admin + client-safe archive path)
 - Client Portal MVP visibility path (Puriva smoke gate PASS locally)
 - Client Hub (profile, publication targets, credentials shell, analytics shell)
+- Admin daily operations cockpit with separated ready/review/blocked lanes
 - Architecture blocks 1–6 **local gates** (credential encrypt, WP publish smoke, tenant module enforce/dry_run, legacy WP sunset)
 - One-command local closeout: `npm run smoke:pre-staging:local`
 

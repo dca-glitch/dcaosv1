@@ -1,6 +1,6 @@
 # DCA OS Lite — Status (Source of Truth)
 
-**Last updated:** 2026-07-06 (Admin cockpit / daily operations polish closeout)
+**Last updated:** 2026-07-06 (Product baseline / readiness refinement)
 **Operator index:** [`docs/operator/OPERATOR_RUNBOOK.md`](./operator/OPERATOR_RUNBOOK.md)  
 **Architecture map:** [`docs/ARCHITECTURE.md`](./ARCHITECTURE.md) § Current application map  
 **Smoke matrix:** [`docs/runbooks/LOCAL_SMOKE_MATRIX.md`](./runbooks/LOCAL_SMOKE_MATRIX.md)  
@@ -154,13 +154,14 @@ Percentages are **local MVP readiness**, not production-proven. See [`docs/STATU
 | **Core platform** (auth, tenant, modules, RBAC) | ~90% | Login, tenant switch, module enable/disable, settings read | Turnstile on staging; invite/reset flows |
 | **AI Delivery** | ~84–88% | Projects, briefs, workflow runs, deliverables, reviews, export, WP draft prep (disabled by default) | Live AI provider, live WP publish, staging deploy |
 | **Workflow Briefs** | ~85% | MI/SEO runs, production plan, drafts, client Production Plan Review boundary | Knowledge picker (6C-v2), per-brief audit (6D) |
-| **AI SEO / content plan** | ~85% | Research, summaries, plans, PDF export, stale-PDF invalidation | Live crawling, GSC sync, Google Docs export |
+| **AI SEO / content plan** | ~88% | Research, summaries, plans, PDF export, stale-PDF invalidation, locally hardened operator path | Live crawling, GSC sync, Google Docs export |
 | **Market Intelligence** | ~80% | Findings, summaries, handoffs, delivery integration, operator hardening | Live AI, scraping, client-facing MI view |
 | **Monthly Reports** | ~88% | Admin CRUD, PDF, metrics snapshots, MI context, client FINAL-only archive | Live GA/GSC sync, client metrics automation |
-| **Client Portal** | ~88–92% | Archive, monthly reports, pending approvals happy-path, boundary smokes | Magic links, public share links, full comments |
+| **Client Portal** | ~90% | Archive, monthly reports, pending approvals happy-path, approval/report polish, boundary smokes | Magic links, public share links, full comments |
 | **Private storage / R2** | ~76–84% | Guarded upload/download when configured; disabled-safe default | Strict real-bucket proof without env; prod R2 switch |
 | **WordPress handoff** | ~50–60% | Draft prep, publish gate metadata, disabled-safe smokes | Live publish, client-triggered publish |
-| **Puriva Operating Pack v1** | ~88% | Local/admin-operational closeout complete | Production readiness remains deferred (~60–65% baseline); live provider, live WordPress publish, GA/GSC, R2 live IO, production deploy, and incident/rollback execution stay deferred |
+| **Puriva Operating Pack v1** | ~90% | Local/admin-operational closeout complete | Production readiness remains deferred (~60–65% baseline); live provider, live WordPress publish, GA/GSC, R2 live IO, production deploy, and incident/rollback execution stay deferred |
+| **Admin cockpit / daily operations** | ~84% | Ready now / Needs review / Blocked-waiting cockpit and operator docs alignment | Environment proof, deployment, and live execution remain gated |
 | **External integrations readiness** | Block 1 closed | Config-shape checks only | Live provider, WP, R2 IO, GA/GSC sync |
 | **Admin operations / recovery** | Block 2 closed | Dashboard panel, operations summary API, recovery hints | Durable closeout store (manual run only) |
 | **Finance Lite** | ~70% | Admin ledger, invoices, browser smoke | Payment collection, Stripe, bank feeds |
@@ -200,6 +201,7 @@ Percentages are **local MVP readiness**, not production-proven. See [`docs/STATU
 - Market Intelligence admin MVP (findings, summaries, handoffs, delivery bridge)
 - Monthly report admin lifecycle + client FINAL-only portal archive
 - Client portal read-only archive, monthly reports, approval happy-path (when seeded)
+- Admin daily operations cockpit with separated ready/review/blocked lanes
 - Content plan PDF export + private storage handoff (admin)
 - WordPress **draft preparation** with publish gate disabled by default
 - External integrations **readiness inspection** (no live calls)
@@ -335,7 +337,7 @@ The following remain true; detail preserved in linked docs and git history.
 
 ## AI SEO / Content Plan closure
 
-AI SEO admin-operated MVP shell is in place. Live crawling, Google OAuth / GSC sync, autonomous SEO agents, and production deploy remain deferred. No environment proof has run. See §9 and [`deferred-scope-register.md`](./operator/deferred-scope-register.md).
+AI SEO admin-operated MVP shell is in place and locally hardened for verified intake, approved KB/context, content-objective flow, compliance checkpoints, and draft-only handoff. Live crawling, Google OAuth / GSC sync, autonomous SEO agents, and production deploy remain deferred. No environment proof has run. See §9 and [`deferred-scope-register.md`](./operator/deferred-scope-register.md).
 
 ## AI SEO hardening closeout
 
