@@ -155,7 +155,7 @@ Percentages are **local MVP readiness**, not production-proven. See [`docs/STATU
 | **AI Delivery** | ~84–88% | Projects, briefs, workflow runs, deliverables, reviews, export, WP draft prep (disabled by default) | Live AI provider, live WP publish, staging deploy |
 | **Workflow Briefs / context composition** | **100% local/operator-ready** | Intake → submit → approved KB/context → MI/SEO runs → production plan → drafts → AI Delivery handoff; AI SEO lives inside Workflow Briefs | Knowledge picker (6C-v2) and per-brief audit (6D) remain deferred; live provider, staging proof, and production readiness stay deferred |
 | **AI Knowledge / Context layer** | **100% local/operator-safe** | Approved-only context path, tenant/client/project isolation, injection sanitization, missing-context warnings, safe snapshot metadata, and WorkflowBriefs context usage are smoke-proven | Vector search, live provider execution, staging proof, production readiness, live WordPress, live GA/GSC, and live R2 remain deferred |
-| **AI SEO / content plan** | ~88% | Research, summaries, plans, PDF export, stale-PDF invalidation, locally hardened operator path | Live crawling, GSC sync, Google Docs export |
+| **AI SEO planning + content drafts** | **100% local/operator-ready** | WorkflowBriefs MI/SEO outputs → production/content plan → content objectives → draft generation/review → PDF/export handoff status → AI Delivery handoff are locally smoke-proven for admin/operator use | Live crawling, GSC/GA sync, live provider execution, Google Docs live export, live R2 IO, live WordPress, staging/environment proof, production readiness |
 | **Market Intelligence** | ~80% | Findings, summaries, handoffs, delivery integration, operator hardening | Live AI, scraping, client-facing MI view |
 | **Monthly Reports** | ~88% | Admin CRUD, PDF, metrics snapshots, MI context, client FINAL-only archive | Live GA/GSC sync, client metrics automation |
 | **Client Portal** | ~90% | Archive, monthly reports, pending approvals happy-path, approval/report polish, boundary smokes | Magic links, public share links, full comments |
@@ -204,7 +204,8 @@ Percentages are **local MVP readiness**, not production-proven. See [`docs/STATU
 - Monthly report admin lifecycle + client FINAL-only portal archive
 - Client portal read-only archive, monthly reports, approval happy-path (when seeded)
 - Admin daily operations cockpit with separated ready/review/blocked lanes
-- Content plan PDF export + private storage handoff (admin)
+- AI SEO planning + content draft flow inside WorkflowBriefs and AI Delivery: MI/SEO report → production plan → content objectives → drafts → review/polish → package/export handoff
+- Content plan PDF export + private storage handoff status (admin; local R2-disabled behavior is safe and does not expose `storageKey`)
 - WordPress **draft preparation** with publish gate disabled by default
 - External integrations **readiness inspection** (no live calls)
 - Admin operations summary and recovery hints on dashboard
@@ -394,6 +395,12 @@ Client Portal read-only surfaces and Monthly Reports final handoff are now docum
 ## G17 WorkflowBriefs / context composition 100% local/operator-ready closeout
 
 WorkflowBriefs is now documented as the local/operator-ready context-composition surface for the first-client path. The approved local sequence is explicit in UI/docs: create brief → complete verified facts → submit brief → run AI/local deterministic reports → review MI/SEO outputs → generate production plan → send/approve → handoff into AI Delivery. The page is labeled `Workflow Briefs` for admins and `Production Plan Review` for client-facing review, and the existing smokes (`smoke:workflow-brief-publication-handoff:browser`, `smoke:ai-seo-content-plan-pdf`, `smoke:ai-knowledge-context`) already prove the local deterministic path, submit-before-run-ai prerequisite, and AI Delivery handoff boundary. No live provider, WordPress, GA/GSC, R2, staging, production, backend/API/schema/auth, or environment work was touched.
+
+## G19 AI SEO planning + content drafts 100% local/operator-ready closeout
+
+AI SEO planning + content drafts are complete for the approved local/admin operator scope. AI SEO lives in two operator surfaces: WorkflowBriefs for intake/context composition, MI/SEO outputs, production plan generation, content-objective seeding, draft generation, package/release preparation, and draft-only publication handoff; and AI Delivery for the monthly content plan, content drafts, review/polish records, PDF/export handoff status, deliverables, and monthly report/client-safe archive handoff. The local sequence is explicit: MI/SEO report → production/content plan → content objectives → drafts → review/polish → package/export handoff → AI Delivery handoff.
+
+Existing local smoke proof remains valid for this closeout: `smoke:ai-seo-content-plan-pdf` proves admin-only content plan PDF/export behavior, safe local `R2_STORAGE_NOT_CONFIGURED` handling when R2 is disabled, download-reference shape, auth guards, and no `storageKey` exposure; `smoke:workflow-brief-publication-handoff:browser` proves the WorkflowBriefs plan/draft/package/draft-only handoff path without live publish actions; `smoke:ai-delivery-workflow:browser` proves the AI Delivery workflow/content plan shell and local deterministic gateway context; `smoke:ai-delivery-reviews` covers content plan approval, content draft generation/review state, packaging, R2-disabled upload safety, and generated content draft persistence. This is local/operator-ready only and does **not** claim live crawling, live GSC/GA sync, live provider execution, Google Docs live export, live R2 IO, live WordPress, staging/environment proof, production readiness, medical/legal/license certainty, or before-after claims. No environment, VPS, staging, production, backend/API/schema/auth, provider/runtime, or secret changes were made.
 
 ## Next options after local/product polish
 

@@ -156,6 +156,32 @@ Full detail: [`docs/runbooks/ADMIN_OPERATIONS_RECOVERY.md`](../runbooks/ADMIN_OP
 
 ---
 
+## 4.1 AI SEO planning + content drafts operator path
+
+AI SEO lives in the local operator workflow inside **WorkflowBriefs** and **AI Delivery**. Use WorkflowBriefs first for intake, approved KB/context, MI/SEO reports, production/content plan generation, content objective seeding, draft generation, package completeness, and draft-only publication handoff. Use AI Delivery for the monthly content plan, content drafts, review/polish records, deliverables, PDF/export handoff status, monthly report handoff, and client-safe final/archive surfaces.
+
+Approved local sequence:
+
+1. Submit WorkflowBrief with verified intake facts.
+2. Run local deterministic MI/SEO outputs from the submitted brief.
+3. Generate the production/content plan.
+4. Seed content objectives into AI Delivery.
+5. Generate drafts, then review/polish before packaging.
+6. Package/export handoff status, then prepare the AI Delivery handoff.
+
+Local export rules: R2-disabled behavior is safe and expected unless R2 env is explicitly configured; the system must not expose `storageKey` in client-safe responses. Google Docs live export, R2 live IO, live WordPress publish, live crawling, GSC/GA sync, and live provider execution remain deferred unless a separate owner-approved block proves them.
+
+Focused proof commands after `npm.cmd run validate` passes:
+
+```powershell
+npm.cmd run smoke:ai-seo-content-plan-pdf
+npm.cmd run smoke:workflow-brief-publication-handoff:browser
+npm.cmd run smoke:ai-delivery-workflow:browser
+npm.cmd run smoke:ai-delivery-reviews
+```
+
+---
+
 ## 5. External integrations readiness
 
 **Purpose:** Config-shape validation only — no live provider calls, publish, sync, crawl, or bucket mutation.

@@ -17,10 +17,10 @@ Use the Admin Daily Operations Cockpit first so ready work, review work, and blo
 3. Pick one test month.
 4. Create one monthly project.
 5. Add a short brief, then **submit the brief** — the WorkflowBrief must be submitted before `run-ai` will accept it.
-6. Prepare one SEO plan scaffold with objectives only.
-7. Turn the plan into content objectives.
-8. Review one draft or draft shell.
-9. Package one final item.
+6. Review the local deterministic MI/SEO outputs, then prepare one SEO/content production plan scaffold with objectives only.
+7. Turn the production plan into content objectives inside AI Delivery.
+8. Generate and review one draft or draft shell; keep review/polish operator-side until approved.
+9. Package one final item and record PDF/export handoff status without exposing `storageKey`.
 10. Prepare one simple monthly summary.
 11. Check the client archive view.
 12. Record what blocked progress and what should become AI Delivery work next.
@@ -42,7 +42,9 @@ Use one client, one month, one draft, and one final item for the first run.
 
 For Puriva, keep unresolved facts in brief notes or WorkflowBriefs until the compliance review is documented and the approved context is ready.
 
-WorkflowBriefs is the AI SEO / context-composition surface here: the admin page is where you submit the brief, run AI, review MI/SEO outputs, generate the production plan, and hand off into AI Delivery. The client-facing label is `Production Plan Review`.
+WorkflowBriefs is the AI SEO / context-composition surface here: the admin page is where you submit the brief, run local deterministic AI, review MI/SEO outputs, generate the production plan, seed content objectives, generate drafts, and hand off into AI Delivery. AI Delivery is where the operator reviews/polishes drafts, tracks PDF/export handoff status, packages deliverables, and prepares final client-safe handoff. The client-facing WorkflowBriefs label is `Production Plan Review`.
+
+Do not treat this local flow as live crawling, live GSC/GA sync, live provider execution, Google Docs live export, live R2 IO, live WordPress publish, staging/environment proof, or production readiness. Do not imply unverified medical/legal/license/before-after claims; keep unresolved facts in brief notes until verified.
 
 For a local rehearsal of the full Puriva operator path, use [`PURIVA_LOCAL_E2E_OPERATOR_DRY_RUN.md`](../runbooks/PURIVA_LOCAL_E2E_OPERATOR_DRY_RUN.md) after the intake/compliance source is confirmed.
 

@@ -54,6 +54,19 @@ Current behavior:
 9. Operator summary / project-card workflow navigation
 10. Focused smoke coverage
 
+## AI SEO planning + content drafts local/operator contract
+
+AI SEO planning and content draft production are complete for the approved local/admin operator scope. The operator-facing path is split across WorkflowBriefs and AI Delivery:
+
+- **WorkflowBriefs:** verified intake and approved KB/context feed local deterministic MI/SEO outputs, production plan generation, content objective seeding, draft generation/regeneration, package completeness, release package status, and draft-only publication handoff.
+- **AI Delivery:** monthly content plan records, content draft records, review/polish statuses, deliverables, PDF/export handoff status, monthly report handoff, and client-safe final/archive surfaces.
+
+The supported local sequence is: MI/SEO report → production/content plan → content objectives → drafts → review/polish → package/export handoff → AI Delivery handoff. Default execution remains local deterministic/provider-deferred. No endpoint in this local contract claims live crawling, GSC/GA sync, live AI provider execution, live WordPress publish, Google Docs live export, or R2 live IO.
+
+PDF/export behavior is intentionally safe in local development. When R2/private storage is disabled, content plan PDF generation returns the guarded provider/storage-disabled state (`R2_STORAGE_NOT_CONFIGURED`) rather than persisting a storage reference. When a document exists, callers receive only safe handoff/download-reference fields; `storageKey` remains internal and must not be returned to client-visible surfaces. Google Docs link handoff can be represented by an admin-provided safe `exportUrl`; live Google Docs export remains deferred unless separately proven.
+
+Smoke proof: `smoke:ai-seo-content-plan-pdf`, `smoke:workflow-brief-publication-handoff:browser`, `smoke:ai-delivery-workflow:browser`, and `smoke:ai-delivery-reviews` cover the local deterministic content plan/draft/package/export path and the deferred/live-provider boundaries.
+
 ## Locally proven on the current branch
 
 - `npm.cmd run validate` passed for the current admin/operator foundations.

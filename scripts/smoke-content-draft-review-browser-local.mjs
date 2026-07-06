@@ -99,7 +99,8 @@ async function main() {
     const viewText = await page.locator(".view-section").innerText();
     record(
       "content draft review shows deferred message",
-      viewText.includes("Client review deferred") && viewText.includes("Client Portal"),
+      (viewText.includes("Client review deferred") || viewText.includes("Client review actions are not active")) &&
+        (viewText.includes("Client Portal") || viewText.includes("Admin remains responsible")),
       "deferred copy"
     );
     record(

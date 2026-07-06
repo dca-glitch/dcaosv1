@@ -121,6 +121,14 @@ changes, no percentage re-audit performed as part of this addendum):
   `smoke:admin-operations:local` (16/16 PASS) validate the shell; `git diff --check`, web check, and
   full validate all passed. No backend/API/schema/auth changes beyond one additive `package.json`
   script line for the new smoke.
+- **G19 AI SEO planning + content drafts 100% local/operator-ready** — WorkflowBriefs and AI
+  Delivery now carry the complete local/admin content production surface: MI/SEO report →
+  production/content plan → content objectives → drafts → review/polish → package/export handoff →
+  AI Delivery handoff. Existing smokes prove the local deterministic path, PDF/export handoff status,
+  R2-disabled safe behavior, no `storageKey` client leak, content draft generation/review state, and
+  draft-only publication handoff. Live crawling, live GSC/GA sync, live provider execution, Google
+  Docs live export, live R2 IO, live WordPress, staging/environment proof, production readiness, and
+  unverified medical/legal/license/before-after claims remain explicitly outside scope.
 
 **Knowledge arc — next / deferred (not in percentage baseline above):**
 
@@ -189,7 +197,7 @@ Decision selector: stop and wait for owner decision; if approved later, use the 
 | **Client Portal MVP** (Puriva — visibility + review) | **100%** | Done (local) — UX polish and route access fixed | Blocks 7–30 incl. sparse + populated delivery overview browser gates; `#/client-portal` now defaults to the archive shell; approval/report polish complete |
 | **Client Portal advanced actions** (magic links, full comment threads) | **0%** | Deferred (Phase 2) | See deferred scope register |
 | **Finance** | **82%** | Done (local) | Finance admin browser sanity gate (Post-MVP Block 36) |
-| **AI SEO + Content Production** | **~88%** | In progress | Google Drive live planning gate (Block 43); locally hardened operator path; live Google integrations deferred |
+| **AI SEO planning + content drafts** | **100% local/operator-ready** | Done (local) | WorkflowBriefs + AI Delivery local operator path is complete: MI/SEO report → production/content plan → content objectives → drafts → review/polish → package/export handoff; local deterministic/provider-deferred behavior, R2-disabled PDF/export safety, no `storageKey` leak, and draft-only handoff are smoke-proven. Live crawling, live GSC/GA sync, live provider execution, Google Docs live export, live R2 IO, live WordPress, staging/environment proof, production readiness, and unverified medical/legal/license/before-after claims remain deferred/out of scope |
 | **Private storage (R2)** | **65%** | In progress | Block 37 byte roundtrip smoke (disabled guard + optional full roundtrip); prod bucket deferred |
 | **Email / notifications** | **35%** | In progress | Read-only outbox API + local smoke (Post-MVP Block 38); no real sending |
 | **Audit / activity** | **78%** | In progress | Dashboard feed + dedicated browser gate (Blocks 31, 51); full audit UI deferred |
@@ -309,6 +317,7 @@ Do not treat local smoke alone as production readiness.
 | 2026-07-06 | G16 Client Portal read-only surfaces + Monthly Reports local/client-safe closeout: existing `smoke:client-portal-monthly-report:browser` and `smoke:client-portal:browser` proved FINAL-only monthly reports, hidden DRAFT/ADMIN_REVIEW/ARCHIVED reports, and absent forbidden fields; Monthly Reports marked 100% local/client-safe handoff |
 | 2026-07-06 | G17 WorkflowBriefs / context composition 100% local/operator-ready: the first-client sequence is explicit, AI SEO is labeled inside WorkflowBriefs, submit-before-run-ai is documented, and the existing WorkflowBrief/AI SEO/knowledge-context smokes already prove the local deterministic handoff path |
 | 2026-07-06 | G18 AI Knowledge / Context layer 100% local/operator-safe: approved-only context path, tenant/client/project isolation, injection sanitization, missing-context warnings, safe snapshot metadata, and WorkflowBriefs context usage are smoke-proven; no code changes were needed |
+| 2026-07-06 | G19 AI SEO planning + content drafts 100% local/operator-ready: WorkflowBriefs + AI Delivery content production path documented as complete for local/admin use; existing AI SEO PDF/export, WorkflowBrief publication handoff, AI Delivery workflow, and content draft/review smokes remain the proof; live crawling/GSC/GA/provider/Google Docs/R2/WordPress/staging/production remain deferred |
 | 2026-06-27 | G1 closed: staging host `staging.digitalcubeagency.net`; production `system.digitalcubeagency.net`; G4 not approved; DNS not created |
 | 2026-06-27 | Phase F Block 77: local closeout complete — Blocks 58–77 validated on `feature/local-closeout-blocks-58-77` |
 | 2026-06-27 | Phase F Block 58: docs consistency — aligned Portal/WP/MI/R2 labels and blocks 4–6 percentages |
