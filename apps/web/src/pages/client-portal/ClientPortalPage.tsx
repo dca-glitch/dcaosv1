@@ -824,7 +824,7 @@ export function ClientPortalPage() {
 
     const token = getStoredToken();
     if (!token) {
-      setDownloadNotice("Sign in again to download a deliverable.");
+      setDownloadNotice("Sign in again to download a final file.");
       return;
     }
 
@@ -845,7 +845,7 @@ export function ClientPortalPage() {
 
     const downloadUrl = response.data.downloadReference?.downloadUrl ?? null;
     if (!downloadUrl) {
-      setDownloadNotice("Download not available yet.");
+      setDownloadNotice("Final file not available yet.");
       return;
     }
 
@@ -862,7 +862,7 @@ export function ClientPortalPage() {
 
     const token = getStoredToken();
     if (!token) {
-      setDownloadNotice("Sign in again to download a report.");
+      setDownloadNotice("Sign in again to download a final report.");
       return;
     }
 
@@ -883,7 +883,7 @@ export function ClientPortalPage() {
 
     const downloadUrl = response.data.downloadReference?.downloadUrl ?? null;
     if (!downloadUrl) {
-      setDownloadNotice("Report document not available.");
+      setDownloadNotice("Final report file not available.");
       return;
     }
 
@@ -963,7 +963,7 @@ export function ClientPortalPage() {
     return (
       <section className="view-section cf-page" aria-labelledby="client-portal-title" data-density="comfortable">
         <PageHeader
-          description="Final deliverables and monthly reports shared with your account."
+          description="Final approved deliverables and read-only monthly reports for your account."
           eyebrow="Client workspace"
           title="Your archive"
           titleId="client-portal-title"
@@ -977,7 +977,7 @@ export function ClientPortalPage() {
     return (
       <section className="view-section cf-page" aria-labelledby="client-portal-title" data-density="comfortable">
         <PageHeader
-          description="Final deliverables and monthly reports shared with your account."
+          description="Final approved deliverables and read-only monthly reports for your account."
           eyebrow="Client workspace"
           title="Your archive"
           titleId="client-portal-title"
@@ -1000,7 +1000,7 @@ export function ClientPortalPage() {
             Refresh
           </Button>
         }
-        description="Final deliverables and monthly reports shared with your account."
+        description="Final approved deliverables and read-only monthly reports for your account."
         eyebrow="Client workspace"
         meta={<span className="muted-text">{clientName} · {archiveNextActionLabel}</span>}
         title="Your archive"
@@ -1045,7 +1045,7 @@ export function ClientPortalPage() {
         <aside className="cf-project-sidebar">
           <div className="cf-project-sidebar-header">
             <p className="eyebrow">Archive</p>
-            <h2>Shared documents</h2>
+            <h2>Final file links</h2>
           </div>
 
           <div className="filter-bar" role="group" aria-label="Project filter">
@@ -1129,14 +1129,12 @@ export function ClientPortalPage() {
                       </div>
                     </div>
                   </div>
-                  <p className="cf-record-note">
-                    Completed and approved work shared with your account.
-                  </p>
+                  <p className="cf-record-note">Final approved work shared with your account.</p>
                 </article>
               </SectionPanel>
 
               <SectionPanel
-                description="Progress across content, publications, and analytics."
+                description="Completed content, handoff status, and report snapshot."
                 title="Work completed"
                 tone="compact"
               >
@@ -1160,8 +1158,8 @@ export function ClientPortalPage() {
                                 : "No content plan yet"}
                             </span>
                             <span>
-                              {deliverySummary.aiSeo?.finalDeliverableCount ?? 0} published
-                              {(deliverySummary.aiSeo?.finalDeliverableCount ?? 0) === 1 ? "" : " items"}
+                              {deliverySummary.aiSeo?.finalDeliverableCount ?? 0} final
+                              {(deliverySummary.aiSeo?.finalDeliverableCount ?? 0) === 1 ? " item" : " items"}
                             </span>
                           </div>
                         </div>
@@ -1196,17 +1194,15 @@ export function ClientPortalPage() {
                           <div className="cf-record-kicker">
                             <ClientPortalStatusBadge status={deliverySummary.websitePublishing?.status} />
                           </div>
-                          <h3>Website status</h3>
+                          <h3>Website handoff</h3>
                           <div className="cf-record-meta">
-                            <span>{deliverySummary.websitePublishing?.action ?? "No updates yet"}</span>
+                            <span>{deliverySummary.websitePublishing?.action ?? "No handoff updates yet"}</span>
                             {deliverySummary.websitePublishing?.siteUrlHost ? (
                               <span>{deliverySummary.websitePublishing.siteUrlHost}</span>
                             ) : null}
                           </div>
                           {!deliverySummary.websitePublishing ? (
-                            <p className="cf-record-note muted-text">
-                              Website updates will appear here when they're available.
-                            </p>
+                            <p className="cf-record-note muted-text">Website handoff updates will appear here when they're available.</p>
                           ) : null}
                         </div>
                       </div>
@@ -1215,9 +1211,9 @@ export function ClientPortalPage() {
                     <article className="cf-record">
                       <div className="cf-record-main cf-record-main--stack">
                         <div className="cf-record-title">
-                          <h3>Shared documents</h3>
+                          <h3>Final file links</h3>
                           {deliverySummary.googleDocsExports.length === 0 ? (
-                            <p className="cf-record-note muted-text">No shared document links are available yet.</p>
+                            <p className="cf-record-note muted-text">No final file links are available yet.</p>
                           ) : (
                             <div className="cf-record-meta">
                               {deliverySummary.googleDocsExports.map((item) => (
@@ -1227,7 +1223,7 @@ export function ClientPortalPage() {
                                     <>
                                       {" · "}
                                       <a href={item.exportUrl} rel="noreferrer" target="_blank">
-                                        Open document
+                                        Open final file
                                       </a>
                                     </>
                                   ) : null}
@@ -1245,8 +1241,8 @@ export function ClientPortalPage() {
               </SectionPanel>
 
               <SectionPanel
-                description="Final approved materials."
-                title="Complete deliverables"
+                description="Final approved materials ready for client access."
+                title="Final deliverables"
                 tone="compact"
               >
                 {releasePackageLoading ? (
@@ -1278,7 +1274,7 @@ export function ClientPortalPage() {
                               <ClientPortalStatusBadge status={item.status} />
                               {item.exportUrl ? (
                                 <a href={item.exportUrl} rel="noreferrer" target="_blank">
-                                  Open export
+                                  Open final file
                                 </a>
                               ) : null}
                             </div>
@@ -1289,7 +1285,7 @@ export function ClientPortalPage() {
                   </article>
                 ) : (
                   <EmptyState
-                    message="Complete deliverables will appear here after finalization."
+                    message="Final deliverables will appear here after finalization."
                     title="No deliverables yet"
                     variant="inline"
                   />
@@ -1391,7 +1387,7 @@ export function ClientPortalPage() {
               </SectionPanel>
 
               <SectionPanel
-                description="Access approved files and exports."
+                description="Access approved final files and downloads."
                 title="Deliverables"
                 tone="compact"
               >
@@ -1403,7 +1399,7 @@ export function ClientPortalPage() {
                   <Alert message={deliverablesError} title="Deliverables unavailable" variant="danger" />
                 ) : deliverables.length === 0 ? (
                   <EmptyState
-                    message="Approved deliverables will appear here once they're ready."
+                    message="Final deliverables will appear here once they're ready."
                     title="No deliverables yet"
                     variant="inline"
                   />
@@ -1423,7 +1419,7 @@ export function ClientPortalPage() {
                               {deliverable.exportUrl ? (
                                 <span>
                                   <a href={deliverable.exportUrl} rel="noreferrer" target="_blank">
-                                    Open export
+                                    Open final file
                                   </a>
                                 </span>
                               ) : null}
@@ -1437,7 +1433,7 @@ export function ClientPortalPage() {
                               onClick={() => void handleDownload(deliverable.id)}
                               type="button"
                             >
-                              {downloadingDeliverableId === deliverable.id ? "Opening..." : "Download"}
+                              {downloadingDeliverableId === deliverable.id ? "Opening..." : "Download final file"}
                             </Button>
                           </div>
                         </div>
@@ -1451,7 +1447,7 @@ export function ClientPortalPage() {
               </SectionPanel>
 
               <SectionPanel
-                description="Monthly summaries of completed work and recommendations."
+                description="Final monthly snapshots of completed work and recommendations."
                 title="Monthly reports"
                 tone="compact"
               >
@@ -1461,7 +1457,7 @@ export function ClientPortalPage() {
                   <Alert message={monthlyReportsError} title="Monthly reports unavailable" variant="danger" />
                 ) : monthlyReports.length === 0 ? (
                   <EmptyState
-                    message="Monthly reports will appear here after they're finalized."
+                    message="Final monthly reports will appear here after they're finalized."
                     title="No reports yet"
                     variant="inline"
                   />
@@ -1523,7 +1519,7 @@ export function ClientPortalPage() {
                                     onClick={() => void handleMonthlyReportDownload(monthlyReportDetail.monthlyReport.id)}
                                     type="button"
                                   >
-                                    {downloadingMonthlyReportId === monthlyReportDetail.monthlyReport.id ? "Opening..." : "Download PDF"}
+                                    {downloadingMonthlyReportId === monthlyReportDetail.monthlyReport.id ? "Opening..." : "Download report PDF"}
                                   </Button>
                                 ) : null}
                                 {monthlyReportDetail.monthlyReport.exportUrl ? (
@@ -1533,7 +1529,7 @@ export function ClientPortalPage() {
                                     rel="noreferrer"
                                     target="_blank"
                                   >
-                                    Open export
+                                    Open final report
                                   </a>
                                 ) : null}
                               </div>
@@ -1557,66 +1553,66 @@ export function ClientPortalPage() {
                             <SectionPanel
                               description={
                                 monthlyReportDetail.performanceSummary.placeholderOnly
-                                  ? "Coming soon. Live analytics will appear here as they become available."
-                                  : "Traffic and engagement metrics for this month."
+                                  ? "This report shows a final snapshot only. Live analytics are not included unless separately approved."
+                                  : "Final snapshot metrics for this month."
                               }
-                              title="Analytics"
+                              title="Performance snapshot"
                               tone="compact"
                             >
                               {monthlyReportDetail.performanceSummary.placeholderOnly &&
                               monthlyReportDetail.performanceSummary.disclaimer ? (
                                 <Alert
                                   message={monthlyReportDetail.performanceSummary.disclaimer}
-                                  title="Metrics not yet available"
+                                  title="Snapshot not yet attached"
                                   variant="info"
                                 />
                               ) : null}
                               <div className="metric-grid">
                                 <MetricCard
-                                  label="GSC clicks"
+                                  label="Search clicks"
                                   value={formatPlaceholderMetricValue(
                                     monthlyReportDetail.performanceSummary.gscClicks,
                                     monthlyReportDetail.performanceSummary.placeholderOnly
                                   )}
                                   helper={
                                     monthlyReportDetail.performanceSummary.placeholderOnly
-                                      ? `Manual placeholder · Month ${monthlyReportDetail.performanceSummary.targetMonth}`
+                                      ? `Snapshot placeholder · Month ${monthlyReportDetail.performanceSummary.targetMonth}`
                                       : `Month ${monthlyReportDetail.performanceSummary.targetMonth}`
                                   }
                                 />
                                 <MetricCard
-                                  label="GSC impressions"
+                                  label="Search impressions"
                                   value={formatPlaceholderMetricValue(
                                     monthlyReportDetail.performanceSummary.gscImpressions,
                                     monthlyReportDetail.performanceSummary.placeholderOnly
                                   )}
                                   helper={
                                     monthlyReportDetail.performanceSummary.placeholderOnly
-                                      ? "GA/GSC not connected"
+                                      ? "Snapshot not attached"
                                       : `Month ${monthlyReportDetail.performanceSummary.targetMonth}`
                                   }
                                 />
                                 <MetricCard
-                                  label="GA4 sessions"
+                                  label="Sessions"
                                   value={formatPlaceholderMetricValue(
                                     monthlyReportDetail.performanceSummary.ga4Sessions,
                                     monthlyReportDetail.performanceSummary.placeholderOnly
                                   )}
                                   helper={
                                     monthlyReportDetail.performanceSummary.placeholderOnly
-                                      ? "Not measured traffic"
+                                      ? "Snapshot not attached"
                                       : `Users ${formatMetricValue(monthlyReportDetail.performanceSummary.ga4Users)}`
                                   }
                                 />
                                 <MetricCard
-                                  label="GA4 page views"
+                                  label="Page views"
                                   value={formatPlaceholderMetricValue(
                                     monthlyReportDetail.performanceSummary.ga4PageViews,
                                     monthlyReportDetail.performanceSummary.placeholderOnly
                                   )}
                                   helper={
                                     monthlyReportDetail.performanceSummary.placeholderOnly
-                                      ? "Placeholder values only"
+                                      ? "Snapshot not attached"
                                       : `CTR ${formatPercentValue(monthlyReportDetail.performanceSummary.gscAverageCtr)}`
                                   }
                                 />
@@ -1627,12 +1623,12 @@ export function ClientPortalPage() {
                           {!monthlyReportDetail.performanceSummary ? (
                             <SectionPanel
                               description="Performance metrics appear when your team attaches a snapshot to this report."
-                              title="Performance"
+                              title="Performance snapshot"
                               tone="compact"
                             >
                               <EmptyState
                                 message="No performance snapshot is attached to this report yet."
-                                title="No performance data"
+                                title="No performance snapshot"
                                 variant="inline"
                               />
                             </SectionPanel>
@@ -1657,7 +1653,7 @@ export function ClientPortalPage() {
                                       </div>
                                       {deliverable.exportUrl ? (
                                         <a href={deliverable.exportUrl} rel="noreferrer" target="_blank">
-                                          Open export
+                                          Open final file
                                         </a>
                                       ) : null}
                                     </div>
@@ -1694,7 +1690,7 @@ export function ClientPortalPage() {
       </div>
 
       <p className="portal-footer-note muted-text">
-        Final deliverables and monthly reports are read-only client archive items. Use Pending Reviews to review articles before publication.
+        Final deliverables and monthly reports are read-only client archive items. Use Pending Reviews to approve articles or request changes.
       </p>
     </section>
   );

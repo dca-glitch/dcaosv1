@@ -53,6 +53,7 @@ No environment proof has run; owner-approved environment execution remains separ
 - Admin-managed Client Access is client-level in the current MVP foundation; it does not create invitation emails, password UI, magic links, or public links.
 - Owner/admin role alone does not grant client archive access.
 - Client portal monthly reports also require `ClientUserAccess` and only expose FINAL, non-archived reports for the linked project.
+- Monthly report copy stays snapshot-based unless a separate live-sync block is approved.
 - WordPress handoff means draft-only preparation only; live publish stays deferred and disabled in the current MVP block.
 - The SEO plan -> AI Delivery -> WordPress prepared draft handoff is admin-reviewed, draft-only, and never mutates production WordPress or handles credentials.
 - Final archive/monthly report is the client-safe end state after the admin-reviewed handoff chain completes.

@@ -344,7 +344,7 @@ async function main() {
     );
     record(
       "project archive area renders",
-      portalText.includes("Project overview") && portalText.includes(fixture.project.name),
+      portalText.includes("Delivery summary") && portalText.includes("Final approved work shared with your account."),
       "selected project details visible"
     );
     record(
@@ -355,7 +355,7 @@ async function main() {
 
     record(
       "delivery summary section renders",
-      portalText.includes("Delivery summary") && portalText.includes("Planned content"),
+      portalText.includes("Delivery summary") && portalText.includes("Completed content, handoff status, and report snapshot."),
       "delivery summary visible"
     );
     record(
@@ -367,18 +367,18 @@ async function main() {
     );
     record(
       "delivery overview shows recommended actions",
-      portalText.includes("Recommended actions"),
+      portalText.includes("Next steps:"),
       "recommended actions visible"
     );
     record(
       "delivery summary shows google docs export link",
-      portalText.includes("Open document"),
+      portalText.includes("Open final file"),
       fixture.deliveryHints.googleExportUrl ?? "link"
     );
     record(
       "delivery summary shows website publishing handoff",
-      portalText.includes("Website updates") &&
-        (portalText.includes("PROVIDER_DISABLED") || portalText.includes("smoke-puriva.example.com")),
+      portalText.includes("Website handoff") &&
+        (portalText.toLowerCase().includes("provider disabled") || portalText.includes("smoke-puriva.example.com")),
       fixture.deliveryHints.publishingStatus ?? "status"
     );
 
@@ -399,7 +399,7 @@ async function main() {
     );
     record(
       "product catalog shows inquiry-only disclaimer",
-      catalogPortalText.includes("No checkout or payment"),
+      catalogPortalText.includes("Send inquiries about products. Your team will follow up directly."),
       "inquiry-only copy visible"
     );
 
@@ -430,7 +430,7 @@ async function main() {
     );
 
     await portalSection
-      .getByText("Inquiry submitted. Your team will follow up directly — no checkout or payment in this portal.")
+      .getByText("Inquiry sent. Your team will follow up with you directly.")
       .waitFor({ state: "visible", timeout: 10000 });
     record("catalog inquiry success notice visible", true, "client-safe confirmation shown");
 
@@ -484,7 +484,7 @@ async function main() {
     );
 
     if (!downloadJson?.data?.downloadReference) {
-      await page.getByText("Download not available yet.").waitFor({ state: "visible", timeout: 10000 });
+      await page.getByText("Final file not available yet.").waitFor({ state: "visible", timeout: 10000 });
       record("download notice shown for missing storage key", true, "downloadReference null");
     }
 

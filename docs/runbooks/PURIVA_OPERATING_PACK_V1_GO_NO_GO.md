@@ -126,7 +126,7 @@ Gather and verify these items before real client work starts:
 | Compliance ready | Verified facts, disclaimers, and claims are documented |
 | Content ready | Brief, SEO plan, draft, and image notes are coherent |
 | Review ready | Admin review can decide what becomes final |
-| Final archive/report ready | Client-safe archive and monthly report outputs are available |
+| Final archive/report ready | Client-safe archive and final snapshot monthly report outputs are available |
 | Not production-ready | Always true for this pack |
 
 ### Local go / no-go rule

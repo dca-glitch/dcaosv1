@@ -466,13 +466,13 @@ async function main() {
     await fixtureRecord.waitFor({ state: "visible", timeout: 20000 });
     await fixtureRecord.getByRole("button", { name: "Review" }).click();
 
-    await page.getByRole("heading", { name: "Article Body", exact: true }).waitFor({ state: "visible", timeout: 30000 });
-    record("browser article body editor visible", true, "Article Body");
+    await page.getByRole("heading", { name: "Article body", exact: true }).waitFor({ state: "visible", timeout: 30000 });
+    record("browser article body editor visible", true, "Article body");
 
-    await page.getByRole("button", { name: "Save & Continue" }).waitFor({ state: "visible", timeout: 10000 });
-    await page.getByRole("button", { name: "Approve Article" }).waitFor({ state: "visible", timeout: 10000 });
-    await page.getByRole("button", { name: "Request Changes" }).waitFor({ state: "visible", timeout: 10000 });
-    record("browser approval footer actions visible", true, "Save & Continue / Approve / Request Changes");
+    await page.getByRole("button", { name: "Save changes" }).waitFor({ state: "visible", timeout: 10000 });
+    await page.getByRole("button", { name: "Approve this version" }).waitFor({ state: "visible", timeout: 10000 });
+    await page.getByRole("button", { name: "Request changes" }).waitFor({ state: "visible", timeout: 10000 });
+    record("browser approval footer actions visible", true, "Save changes / Approve this version / Request changes");
 
     const bodyField = page.locator("#article-body-content");
     await bodyField.waitFor({ state: "visible", timeout: 10000 });
@@ -485,7 +485,7 @@ async function main() {
       })
     ).body?.data?.deliverable?.bodyContent;
     if (savedBody !== browserBody) {
-      await page.getByRole("button", { name: "Save & Continue" }).click();
+      await page.getByRole("button", { name: "Save changes" }).click();
       await page.waitForTimeout(1500);
       savedBody = (
         await request(`/client-portal/deliverables/${approveFixture.deliverableId}/for-approval`, {
@@ -502,8 +502,8 @@ async function main() {
     const pageText = await page.locator("body").innerText();
     assertUiSafe("browser article approval editor", pageText);
 
-    await page.getByRole("button", { name: "Approve Article" }).click();
-    await page.getByRole("heading", { name: "Approve for publication", exact: true }).waitFor({ state: "visible", timeout: 10000 });
+    await page.getByRole("button", { name: "Approve this version" }).click();
+    await page.getByRole("heading", { name: "Approve article", exact: true }).waitFor({ state: "visible", timeout: 10000 });
     await page.getByRole("button", { name: "Approve", exact: true }).click();
     await page.getByRole("heading", { name: "Pending Reviews", exact: true }).waitFor({ state: "visible", timeout: 30000 });
     record("browser approve redirects to pending approvals", true, "redirect");

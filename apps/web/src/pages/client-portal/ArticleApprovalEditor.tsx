@@ -111,7 +111,7 @@ function ApprovalBackLink() {
         type="button"
         variant="tertiary"
       >
-        Back to pending approvals
+        Back to pending reviews
       </Button>
     </div>
   );
@@ -284,7 +284,7 @@ export function ArticleApprovalEditor({ deliverableId }: ArticleApprovalEditorPr
 
   const reviewNextActionLabel = deliverable
     ? allImagesReviewed
-      ? "Next action: Approve article or send it back with changes"
+      ? "Next action: Approve this version or request changes"
       : "Next action: Review the body and image approvals"
     : "Next action: Load the article review";
 
@@ -370,7 +370,7 @@ export function ArticleApprovalEditor({ deliverableId }: ArticleApprovalEditorPr
       showToast(response.error.message, "error");
       return;
     }
-    showToast("Article approved and sent for publication.");
+    showToast("Article approved.");
     window.setTimeout(() => navigateToClientPortalHash("client-portal/pending-approvals"), 600);
   }
 
@@ -395,7 +395,7 @@ export function ArticleApprovalEditor({ deliverableId }: ArticleApprovalEditorPr
   const pageTitle = deliverable ? metadata.title || deliverable.title : "Article approval";
   const pageDescription = deliverable
     ? `${deliverable.projectName} · Created ${formatApprovalDate(deliverable.createdAt)}`
-    : "Review and approve articles, or request changes.";
+    : "Review the current draft, then approve it or request changes.";
 
   return (
     <section className="view-section cf-page" aria-labelledby="article-approval-title" data-density="comfortable">
@@ -430,7 +430,7 @@ export function ArticleApprovalEditor({ deliverableId }: ArticleApprovalEditorPr
         <>
       <div className="portal-approval-layout">
         <aside className="portal-approval-meta">
-          <SectionPanel description="Details for this article." title="Review summary" tone="compact">
+          <SectionPanel description="Details for this draft." title="Review summary" tone="compact">
             <dl className="field-grid">
               <div>
                 <dt>Project</dt>
@@ -452,7 +452,7 @@ export function ArticleApprovalEditor({ deliverableId }: ArticleApprovalEditorPr
 
         <div className="portal-approval-main">
           <SectionPanel
-            description="Title, description, tags, category, and optional publish date. Changes save automatically."
+            description="Title, summary, tags, category, and optional planned release date. Changes save automatically."
             title="Article details"
             tone="compact"
           >
@@ -478,7 +478,7 @@ export function ArticleApprovalEditor({ deliverableId }: ArticleApprovalEditorPr
             <Textarea
               className="entity-form"
               id="article-description"
-              label="Description"
+              label="Summary"
               onChange={(event) => setMetadata((current) => ({ ...current, description: event.target.value }))}
               placeholder="Short summary or excerpt"
               rows={3}
@@ -498,7 +498,7 @@ export function ArticleApprovalEditor({ deliverableId }: ArticleApprovalEditorPr
             <Input
               className="entity-form"
               id="article-scheduled-publish"
-              label="Scheduled publish date"
+              label="Planned release date"
               onChange={(event) => setMetadata((current) => ({ ...current, scheduledPublishAt: event.target.value }))}
               type="datetime-local"
               value={metadata.scheduledPublishAt}
@@ -508,13 +508,13 @@ export function ArticleApprovalEditor({ deliverableId }: ArticleApprovalEditorPr
 
           <SectionPanel
             description="Plain text article body. Changes save automatically."
-            title="Article Body"
+            title="Article body"
             tone="compact"
           >
             <Textarea
               className="entity-form portal-approval-textarea"
               id="article-body-content"
-              label="Body Content (editable)"
+              label="Article text"
               minLength={0}
               onChange={(event) => setBodyContent(event.target.value)}
               placeholder="Article body..."
@@ -525,7 +525,7 @@ export function ArticleApprovalEditor({ deliverableId }: ArticleApprovalEditorPr
           </SectionPanel>
 
           <SectionPanel
-            description="Approve or request changes for each image before you finalize the article."
+            description="Approve or request changes for each image before you finish this review."
             title="Images"
             tone="compact"
           >
@@ -551,7 +551,7 @@ export function ArticleApprovalEditor({ deliverableId }: ArticleApprovalEditorPr
                       {image.approvalStatus === "PENDING" ? (
                         <div className="portal-action-row">
                           <Button disabled={imageBusyId === image.id} onClick={() => void handleApproveImage(image.id)} size="sm">
-                            Approve
+                            Approve image
                           </Button>
                           <Button
                             disabled={imageBusyId === image.id}
@@ -571,7 +571,7 @@ export function ArticleApprovalEditor({ deliverableId }: ArticleApprovalEditorPr
                         <div className="portal-image-reviewed">
                           <p className="portal-reviewed-label portal-reviewed-label-success">✓ Approved</p>
                           <Button disabled={imageBusyId === image.id} onClick={() => void handleUndoImage(image.id)} size="sm" variant="tertiary">
-                            Undo
+                            Undo decision
                           </Button>
                         </div>
                       ) : null}
@@ -581,7 +581,7 @@ export function ArticleApprovalEditor({ deliverableId }: ArticleApprovalEditorPr
                           <p className="portal-reviewed-label portal-reviewed-label-danger">✕ Changes requested</p>
                           {image.rejectionReason ? <p className="cf-record-note">{image.rejectionReason}</p> : null}
                           <Button disabled={imageBusyId === image.id} onClick={() => void handleUndoImage(image.id)} size="sm" variant="tertiary">
-                            Undo
+                            Undo decision
                           </Button>
                         </div>
                       ) : null}
@@ -616,7 +616,7 @@ export function ArticleApprovalEditor({ deliverableId }: ArticleApprovalEditorPr
 
       <footer className="portal-approval-actions">
         <Button disabled={!allImagesReviewed || submitting} onClick={() => setShowApproveModal(true)}>
-          Approve Article
+          Approve this version
         </Button>
         <Button
           onClick={() => {
@@ -625,10 +625,10 @@ export function ArticleApprovalEditor({ deliverableId }: ArticleApprovalEditorPr
           }}
           variant="tertiary"
         >
-          Save &amp; Continue
+          Save changes
         </Button>
         <Button disabled={submitting} onClick={() => setShowRejectModal(true)} variant="tertiary">
-          Request Changes
+          Request changes
         </Button>
       </footer>
         </>
@@ -636,10 +636,10 @@ export function ArticleApprovalEditor({ deliverableId }: ArticleApprovalEditorPr
 
       {showApproveModal ? (
         <Modal
-          eyebrow="Approve this article?"
+          eyebrow="Approve this version?"
           onClose={() => setShowApproveModal(false)}
           size="sm"
-          title="Approve for publication"
+          title="Approve article"
           footer={
             <div className="modal-footer">
               <Button disabled={submitting} onClick={() => setShowApproveModal(false)} variant="secondary">
@@ -651,7 +651,7 @@ export function ArticleApprovalEditor({ deliverableId }: ArticleApprovalEditorPr
             </div>
           }
         >
-          <p>This article will be approved and sent to your team for final publication.</p>
+          <p>This article will be marked approved and sent to your team for the next step.</p>
         </Modal>
       ) : null}
 
@@ -660,7 +660,7 @@ export function ArticleApprovalEditor({ deliverableId }: ArticleApprovalEditorPr
           eyebrow="Request changes"
           onClose={() => setShowRejectModal(false)}
           size="md"
-          title="Send back for changes?"
+          title="Request changes"
           footer={
             <div className="modal-footer">
               <Button disabled={submitting} onClick={() => setShowRejectModal(false)} variant="secondary">

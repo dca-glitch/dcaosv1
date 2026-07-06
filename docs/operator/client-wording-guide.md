@@ -23,7 +23,7 @@ Use:
 - recommendations;
 - next steps;
 - prepared draft;
-- publication handoff;
+- final delivery handoff;
 - client archive;
 - approved content.
 
@@ -61,6 +61,8 @@ For final client delivery wording:
 
 `This final monthly report is read-only and ready for your archive.`
 
+If live analytics are not part of the approved scope, describe the report as a final snapshot rather than a live sync.
+
 ## Explaining Drafts
 
 Good wording:
@@ -69,7 +71,7 @@ Good wording:
 
 For final client-facing wording:
 
-`The final article is ready for publication handoff.`
+`The final article is ready for client delivery.`
 
 ## Explaining Missing Metrics
 

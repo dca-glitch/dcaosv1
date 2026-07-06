@@ -50,7 +50,7 @@ export function PendingApprovalsPage() {
             Refresh
           </Button>
         }
-        description="Review articles and approve them or send them back with changes."
+        description="Review the current draft and choose approve or request changes."
         eyebrow="Client workspace"
         meta={
           <span className="muted-text">
@@ -68,7 +68,7 @@ export function PendingApprovalsPage() {
           Archive
         </Button>
         <Button className="portal-subnav-link is-active" type="button" variant="tertiary">
-          Pending Approvals
+          Pending Reviews
           {items.length > 0 ? <span className="nav-count-badge">{items.length}</span> : null}
         </Button>
         <Button
@@ -87,7 +87,7 @@ export function PendingApprovalsPage() {
 
       {!loading && !error ? (
         <SectionPanel
-          description="Review articles and approve them or request changes."
+          description="Review the current draft and choose approve or request changes."
           title="Articles for your review"
           tone="compact"
         >
@@ -101,7 +101,7 @@ export function PendingApprovalsPage() {
                     <div className="dense-title">
                       <div className="dense-kicker">
                         <StatusBadge status="Needs your review" />
-                        <span className="entity-pill">Next action: Review now</span>
+                        <span className="entity-pill">Next action: Open review</span>
                       </div>
                       <h3>{item.title}</h3>
                       <div className="dense-meta">
@@ -116,7 +116,7 @@ export function PendingApprovalsPage() {
                         type="button"
                         variant="tertiary"
                       >
-                        Review now
+                        Open review
                       </Button>
                     </div>
                   </div>

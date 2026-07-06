@@ -184,7 +184,7 @@ Admin checks:
 
 ## Step 8: Package Final Deliverables
 
-A deliverable should be final enough for client archive, export, or publication handoff.
+A deliverable should be final enough for client archive, export, or final delivery handoff.
 
 Before marking as final, check:
 
@@ -209,12 +209,12 @@ Client review before publication is not part of the current MVP unless handled o
 
 At the end of the month, prepare the monthly report.
 
-The report should be simple and client-safe.
+The report should be simple, client-safe, and snapshot-based unless live analytics are separately approved.
 
 Include:
 
 - what was completed;
-- what was prepared or published;
+- what was prepared or finalized;
 - important performance notes when available;
 - recommendations for next month;
 - links or references to final deliverables where appropriate.
@@ -226,6 +226,8 @@ The report should also reflect what was blocked, what moved into AI Delivery wor
 ## Step 11: Client Archive
 
 The client archive should contain final approved work only.
+
+Monthly reports in the archive are final snapshot summaries, not live analytics feeds.
 
 Good archive content:
 
