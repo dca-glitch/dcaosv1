@@ -359,6 +359,10 @@ Puriva Operating Pack v1 closeout is now documented in commit `b2e0287` (`docs: 
 
 The G9 environment proof approval gate is now documented in commit `3fc779f` (`docs: add G9 environment proof approval gate`) and pushed to `main`. The gate is planning-only / approval-only, records the exact owner approval sentence, requires Sonnet for actual execution, and keeps production limited to health-check only in any future proof. No environment execution happened, no environment proof has run, and no production readiness is claimed. Backup/rollback evidence is required before any mutating action; live provider, live WordPress publish, GA/GSC, and R2 live IO remain deferred.
 
+## G10 Client Portal approval/report polish closeout
+
+Client Portal approval/report polish is documented in commit `b8319f9` (`polish(client): clarify approval and report surfaces`) and pushed to `main`. Client-facing approval wording, monthly report wording, final archive/deliverables wording, empty/error/loading states, and docs/smoke assertions were tightened. Review verdict was KEEP; `git diff --check`, web check, full validate, and browser/local QA all passed; `main` finished clean and synced with `origin/main`. No backend/API/schema/auth changes, no environment/VPS/production touch, no live integrations, no production readiness claim, and no medical/legal certainty were introduced. Owner approval remains required before any future environment work, and Sonnet remains required for any future environment execution.
+
 ## Next work (after Block 5D-C)
 
 - Owner review of 5D-B / G9 closeout evidence and this status update.

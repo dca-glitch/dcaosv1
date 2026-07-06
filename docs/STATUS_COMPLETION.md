@@ -1,7 +1,7 @@
 # DCA OS Lite — Project Completion Overview
 
 **Status:** Planning and operator reference
-**Last updated:** 2026-07-06 (Puriva Operating Pack v1 closeout)
+**Last updated:** 2026-07-06 (Client Portal approval/report polish closeout)
 **Reference branch:** `main` after PR #43 merge (`f8606f2`)
 **Reference commits:** PR #38 merge `a152cbd`; PR #39 merge `971ac41`; PR #40 merge `9a6eddc`; PR #41 merge `6a03cc1`; PR #42 merge `b341b5d`; PR #43 merge `f8606f2`
 **Scope:** Approved local admin MVP + client/domain operating model (blocks 1–6) + **MVP 1 Puriva client delivery** + **Post-MVP local closeout (Blocks 31–57)** + **Phase F local completion (Blocks 58–77)**. Local `main` is synced and validated. VPS/production intentionally excluded until separate owner approval.
@@ -84,6 +84,10 @@ changes, no percentage re-audit performed as part of this addendum):
   SEO operator path, compliance checkpoints, WordPress draft-only handoff, AI Delivery bridge,
   and client-safe archive/report wording are tightened; review PASS, `git diff --check` PASS, and
   push successful; no environment proof or production readiness claim.
+- **G10 Client Portal approval/report polish** — client-facing approval/report wording, final
+  archive/deliverables labels, and smoke assertions tightened on `main` in commit `b8319f9`;
+  diff-only review, web check, full validate, browser/local QA, and push passed; no
+  backend/schema/auth changes.
 
 **Knowledge arc — next / deferred (not in percentage baseline above):**
 
@@ -255,6 +259,7 @@ Do not treat local smoke alone as production readiness.
 | 2026-07-05 | G6 Wave 2 closeout: compact delivery handoff lanes, WorkflowBriefs intake/compliance clarity, draft-only WordPress handoff tightening, and client-safe archive/report wording |
 | 2026-07-05 | G7 Block 2 closeout: Puriva intake connected to AI Knowledge, WorkflowBriefs, SEO plan, and AI Delivery handoff; admin-only/client-safe/draft-only boundaries preserved |
 | 2026-07-06 | Puriva Operating Pack v1 closeout: local/admin-operational pack recorded/pushed, baseline updated, and production/staging/VPS remain untouched |
+| 2026-07-06 | Client Portal approval/report polish: client-facing approval/report wording clarified, final archive/deliverables wording improved, docs/smoke assertions aligned, and push successful |
 | 2026-07-06 | G9 environment proof approval gate: planning-only gate recorded/pushed, Sonnet execution prompt indexed, and environment work remains owner-approved only |
 | 2026-07-06 | AI SEO Module Hardening XL: docs-only hardening recorded/pushed, operator path/compliance/handoff wording tightened, and environment proof remains unrun |
 | 2026-07-06 | G8 local Puriva E2E closeout: local operator proof added, approval smoke labels aligned to real UI, validation/browser QA passed, push complete |
