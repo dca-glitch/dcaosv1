@@ -1,6 +1,6 @@
 # DCA OS Lite — Status (Source of Truth)
 
-**Last updated:** 2026-07-06 (Product baseline / readiness refinement)
+**Last updated:** 2026-07-06 (Business modules polish / finance smoke-fix closeout)
 **Operator index:** [`docs/operator/OPERATOR_RUNBOOK.md`](./operator/OPERATOR_RUNBOOK.md)  
 **Architecture map:** [`docs/ARCHITECTURE.md`](./ARCHITECTURE.md) § Current application map  
 **Smoke matrix:** [`docs/runbooks/LOCAL_SMOKE_MATRIX.md`](./runbooks/LOCAL_SMOKE_MATRIX.md)  
@@ -15,7 +15,7 @@
 | Item | State |
 |------|--------|
 | Branch | `main` synced with `origin/main` |
-| HEAD (pinned) | `b2e0287` — `docs: close Puriva operating pack v1` |
+| HEAD (pinned) | `cbe9311` — `polish(ops): tighten business module surfaces` |
 | CI | Green |
 | Working tree | Clean and synced with `origin/main` |
 | Pre-staging local closeout (5D-B) | **PASS** — manual workaround for orchestrator hang; see §2.1 |
@@ -372,6 +372,10 @@ Admin cockpit / daily operations polish is documented in commit `831175980a87736
 ## G12 local/product final polish closeout
 
 Combined local/product final polish is documented in commit `5f3701f` (`polish(ops): finalize local product handoffs`) and pushed to `main`. AI Delivery review/package wording, monthly report wording around approved snapshots and FINAL visibility, WorkflowBriefs intake → verified facts → approved KB/context → brief → SEO/content plan wording, and the local/product next-options selector were clarified. Review verdict was KEEP; `git diff --check`, web check, full validate, and browser/local QA all passed; `main` finished clean and synced with `origin/main`. No backend/API/schema/auth changes, no environment/VPS/production touch, no live integrations, no new API/persisted fields, no production readiness claim, and no environment proof claim were introduced. Owner approval remains required before any future environment work, and Sonnet remains required for any future environment execution.
+
+## G13 local business modules polish closeout
+
+Bounded local business modules polish and finance smoke-fix work is documented in commit `cbe9311` (`polish(ops): tighten business module surfaces`) and pushed to `main`. UI density polish was applied to existing local/admin business surfaces; Finance Lite labels/actions were clarified; Market Intelligence labels/actions were clarified; Revenue Hub remained preview-label copy only in `App.tsx`; and the finance-ledger smoke was fixed by aligning token extraction and payloads with the existing login/fixture shape. Review verdict was KEEP; `git diff --check`, `npm.cmd run -w @dca-os-v1/web check`, `npm.cmd run validate`, finance admin browser, finance ledger local, Market Intelligence, and admin operations smokes all passed; `main` finished clean and synced with `origin/main`. No backend/API/schema/auth changes, no environment/VPS/production touch, no live integrations, no new API/persisted fields, no production readiness claim, and no environment proof claim were introduced. Owner approval remains required before any future environment work, and Sonnet remains required for any future environment execution.
 
 ## Next options after local/product polish
 

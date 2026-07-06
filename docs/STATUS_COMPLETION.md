@@ -1,7 +1,7 @@
 # DCA OS Lite — Project Completion Overview
 
 **Status:** Planning and operator reference
-**Last updated:** 2026-07-06 (Product baseline / readiness refinement)
+**Last updated:** 2026-07-06 (Business modules polish / finance smoke-fix closeout)
 **Reference branch:** `main` after PR #43 merge (`f8606f2`)
 **Reference commits:** PR #38 merge `a152cbd`; PR #39 merge `971ac41`; PR #40 merge `9a6eddc`; PR #41 merge `6a03cc1`; PR #42 merge `b341b5d`; PR #43 merge `f8606f2`
 **Scope:** Approved local admin MVP + client/domain operating model (blocks 1–6) + **MVP 1 Puriva client delivery** + **Post-MVP local closeout (Blocks 31–57)** + **Phase F local completion (Blocks 58–77)**. Local `main` is synced and validated. VPS/production intentionally excluded until separate owner approval.
@@ -97,6 +97,12 @@ changes, no percentage re-audit performed as part of this addendum):
   wording, WorkflowBriefs intake → verified facts → approved KB/context → brief → SEO/content
   plan wording, and the local/product next-options selector are documented; KEEP, diff check, web
   check, full validate, browser/local QA, and push passed; no backend/schema/auth changes.
+- **G13 local business modules polish** — bounded local business-module UI density polish, finance
+  smoke auth/payload alignment, and Revenue Hub preview-label-only wording were recorded on `main`
+  in commit `cbe9311`; Finance Lite and Market Intelligence labels/actions were clarified, the
+  finance-ledger smoke token path was aligned to `data.session.token`, review passed, and
+  `git diff --check`, web check, full validate, browser QA, and push all passed; no
+  backend/API/schema/auth changes.
 
 **Knowledge arc — next / deferred (not in percentage baseline above):**
 
@@ -277,6 +283,7 @@ Do not treat local smoke alone as production readiness.
 | 2026-07-06 | G9 environment proof approval gate: planning-only gate recorded/pushed, Sonnet execution prompt indexed, and environment work remains owner-approved only |
 | 2026-07-06 | AI SEO Module Hardening XL: docs-only hardening recorded/pushed, operator path/compliance/handoff wording tightened, and environment proof remains unrun |
 | 2026-07-06 | G8 local Puriva E2E closeout: local operator proof added, approval smoke labels aligned to real UI, validation/browser QA passed, push complete |
+| 2026-07-06 | G13 local business modules polish: Finance Lite and Market Intelligence wording clarified, Revenue Hub stayed preview-label only, finance-ledger smoke aligned to login token shape, and push successful |
 | 2026-06-27 | G1 closed: staging host `staging.digitalcubeagency.net`; production `system.digitalcubeagency.net`; G4 not approved; DNS not created |
 | 2026-06-27 | Phase F Block 77: local closeout complete — Blocks 58–77 validated on `feature/local-closeout-blocks-58-77` |
 | 2026-06-27 | Phase F Block 58: docs consistency — aligned Portal/WP/MI/R2 labels and blocks 4–6 percentages |
