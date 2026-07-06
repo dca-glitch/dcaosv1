@@ -176,7 +176,7 @@ Decision selector: stop and wait for owner decision; if approved later, use the 
 | **Client/domain roadmap (blocks 1–6)** | **~92%** | Local gates done; prod env keys = separate owner gates |
 | **Local/admin operational readiness** | **~84%** | Done (local) | Puriva pack, AI SEO, client portal, and admin cockpit hardened locally; live integrations and env proof still deferred |
 | **Production readiness** (real clients, VPS) | **~62%** | Blocked | Runbooks exist; local hardening improved; deploy/migration deferred by owner |
-| **UI / route stabilization** | **100%** | Dark Nebula pass, AI Delivery sectioning, Workflow Briefs cleanup, client-only portal access |
+| **UI / route stabilization** | **100% local/admin-readable baseline** | Dark Nebula / data-dense admin readable baseline, AI Delivery sectioning, Workflow Briefs cleanup, client-only portal access; not a full design-system migration or full redesign claim |
 | **PR #13 merge to main** | **100%** | Merged; local `main` synced to `origin/main` |
 | **Local main validation** | **100%** | Prior accepted baseline after Windows Prisma DLL lock cleanup |
 | **Local pre-staging proof** | **95%** | Accepted; isolated Finance admin browser smoke passed after local admin restore and API/Web restart |
@@ -204,13 +204,15 @@ Decision selector: stop and wait for owner decision; if approved later, use the 
 | **Core app foundation (auth skeleton)** | **100% local-skeleton-foundation** | Done (local) | Auth structure protected by check:auth-skeleton; login/logout/tenant-switch routes scaffold locally (501 Not Implemented where intended); session persistence BLOCKED (SESSION_DB_RUNTIME_BLOCKED); permission/module enforcement skeleton-only and not wired; no real auth endpoints, no session DB, no invite/reset/Turnstile/OAuth/OIDC/MFA |
 | **Operator/admin RBAC boundary** | **100% local-proven** | Done (local) | Admin login, tenant switch, module entitlements UI, settings read, ClientUserAccess CRUD (grant/revoke/archive), authorization summary API, admin owner/admin separation, roles/permissions summary (Blocks 48–49 browser gates); smoke-proven by smoke:roles-permissions:browser |
 | **Client access isolation boundary** | **100% local/client-safe-proven** | Done (local) | Client-level access (ClientUserAccess), client portal projects hidden before grant/visible after grant, FINAL-only monthly report filtering, unrelated-client blocking, client-safe field exposure checks; smoke-proven by smoke:client-access:local, smoke:client-access:browser, smoke:client-role-api-boundary:local |
-| **Dark Nebula UI + data-dense admin** | **100%** | Done | Full-system Dark Nebula UI pass and client-facing polish complete |
+| **Dark Nebula UI + data-dense admin** | **100% local/admin-readable baseline** | Done (local) | Dense admin readability and Dark Nebula baseline are complete for current local surfaces; full design-system migration/full redesign remains outside this claim |
 | **Clients (CRM)** | **88%** | Done | CRUD, filters, `clientKind`, website |
 | **Client Hub + domain model (block 1)** | **97%** | Done | Hub UI + client-domain browser covers catalog, inquiries shell, publication log |
 | **PublicationTarget (block 2)** | **95%** | Done | CRUD per client; legacy tenant POST sunset (410); GET read-only |
 | **MI → clientId (block 3)** | **88%** | Done | FK, client picker UI, handoff; `clientId` parser fix applied |
 | **Encrypted credentials (block 4)** | **88%** | Done (local) | Master key local probe runbook (Post-MVP Block 44); staging/prod master key = owner gate |
-| **WordPress publish + PublicationLog (block 5)** | **90%** | Done (local) | Local gate smoke + Client Hub publication log browser proof |
+| **WordPress draft-prep handoff** | **100% local/operator-ready** | Done (local) | Draft preparation and operator handoff are complete for the approved local/admin workflow; live WordPress publish is deferred |
+| **WordPress disabled-safe publish gate** | **100% local-safe** | Done (local) | Publish gate metadata, disabled default behavior, local gate smoke, and Client Hub publication log browser proof confirm local-safe gating |
+| **Live WordPress publish** | **0%** | Deferred | No live publish, no client-triggered publish, no staging/environment proof, and no production publish claim |
 | **Module middleware (block 6)** | **96%** | Done (local) | dry_run + enforce probe runbooks (Blocks 39, 46); staging enforce pending |
 | **Projects & Tasks** | **88%** | Done | Admin MVP closed |
 | **AI Delivery** | **100% local/operator-ready** | Done (local) | Full local operator sequence complete: project/month → brief/context handoff → workflow run visibility → content plan → content drafts → reviews → package → deliverables → WordPress draft-prep handoff → monthly report → client-safe archive handoff; live AI provider execution, live WordPress publish, live GA/GSC, live R2 IO, Google Docs live export, staging/environment proof, and production readiness remain deferred |
@@ -218,8 +220,8 @@ Decision selector: stop and wait for owner decision; if approved later, use the 
 | **Client-facing MI summary** | **100% local/client-safe read-only** | Done (local) | GET /client-portal/projects/:projectId/delivery-summary returns marketIntelligence sub-object (title, summary, opportunities, actions) for READY/APPLIED handoffs only; DRAFT/internal/raw findings hidden; forbidden fields excluded (storageKey, tenantId, projectId, provider, prompt, review notes); tenant/client isolated; smoke-proven |
 | **Workflow Briefs / context composition** | **100% local/operator-ready** | Done (local) | Intake → submit → approved KB/context → MI/SEO runs, production plan, drafts, and AI Delivery handoff are in place; submit-before-run-ai is documented and smoke-proven locally |
 | **AI Knowledge / Context layer** | **100% local/operator-safe** | Done (local) | Approved-only context path, tenant/client/project isolation, injection sanitization, missing-context warnings, safe snapshot metadata, and WorkflowBriefs context usage are smoke-proven; raw context and provider metadata stay out of client-visible surfaces |
-| **Monthly Reports** | **100%** | Done (local/client-safe) | Metrics snapshot foundation, client portal FINAL-only archive path, and read-only monthly report handoff are in place; live GA/GSC deferred |
-| **Client Portal MVP** (Puriva — visibility + review) | **100%** | Done (local) — UX polish and route access fixed | Blocks 7–30 incl. sparse + populated delivery overview browser gates; `#/client-portal` now defaults to the archive shell; approval/report polish complete |
+| **Monthly Reports** | **100% local/client-safe handoff** | Done (local/client-safe) | Metrics snapshot foundation, client portal FINAL-only archive path, and read-only monthly report handoff are in place; live GA/GSC, staging/environment proof, and production readiness remain deferred |
+| **Client Portal read-only/archive** | **100% local/client-safe** | Done (local/client-safe) | Blocks 7–30 incl. sparse + populated delivery overview browser gates; `#/client-portal` defaults to the archive shell; FINAL-only reports/archive and approval/report polish complete for local scope |
 | **Client Portal advanced actions** (magic links, full comment threads) | **0%** | Deferred (Phase 2) | See deferred scope register |
 | **Finance** | **82%** | Done (local) | Finance admin browser sanity gate (Post-MVP Block 36) |
 | **AI SEO planning + content drafts** | **100% local/operator-ready** | Done (local) | WorkflowBriefs + AI Delivery local operator path is complete: MI/SEO report → production/content plan → content objectives → drafts → review/polish → package/export handoff; local deterministic/provider-deferred behavior, R2-disabled PDF/export safety, no `storageKey` leak, and draft-only handoff are smoke-proven. Live crawling, live GSC/GA sync, live provider execution, Google Docs live export, live R2 IO, live WordPress, staging/environment proof, production readiness, and unverified medical/legal/license/before-after claims remain deferred/out of scope |
@@ -228,7 +230,8 @@ Decision selector: stop and wait for owner decision; if approved later, use the 
 | **Live R2 real-bucket proof** | **Deferred** | Deferred | Requires explicit env approval; no bucket IO in local closeout; no staging/prod storage readiness claim |
 | **Email / notifications** | **35%** | In progress | Read-only outbox API + local smoke (Post-MVP Block 38); no real sending |
 | **Audit / activity** | **78%** | In progress | Dashboard feed + dedicated browser gate (Blocks 31, 51); full audit UI deferred |
-| **AI provider (OpenRouter)** | **~85% foundation / ~62% overall live-readiness** | In progress | AI Gateway v1 foundation locally hardened (disabled/not-configured safe results, no secret leakage, client-portal-safe, verified via `check:ai-provider-config` 19/19 and `smoke:openrouter-guarded:local` 12/12); live provider execution, staging proof, and cost/rate-limit proof remain deferred |
+| **AI Gateway foundation** | **100% local-safe foundation** | Done (local) | AI Gateway v1 foundation locally hardened (disabled/not-configured safe results, no secret leakage, client-portal-safe, verified via `check:ai-provider-config` 19/19 and `smoke:openrouter-guarded:local` 12/12); local deterministic default only |
+| **Live AI provider execution** | **0%** | Deferred | Live OpenRouter/provider execution, staging/environment proof, real provider-secret/config proof, cost proof, and rate-limit proof remain deferred |
 | **AI Operations Console** | **75%** | In progress | v1 on main (AI Delivery runs); MI listing + filters/export in baseline closeout |
 | **Puriva Operating Pack v1** | **~90%** | Done (local/admin) | Local/admin-operational closeout complete; production readiness for the pack remains deferred (~60–65% baseline); live provider, live WordPress publish, GA/GSC, R2 live IO, production deploy, and incident/rollback execution stay deferred |
 | **Admin cockpit / daily operations** | **100% local/admin-operational** | Done (local) | Ready now / Needs review / Blocked-waiting queues, discoverable first-client path, complete handoffs into WorkflowBriefs, AI Delivery, Monthly Reports preview, Client Portal archive preview, Market Intelligence, and Finance Lite, explicit deferred/gated labeling; environment proof, deployment, and live execution remain gated |
@@ -259,7 +262,7 @@ Decision selector: stop and wait for owner decision; if approved later, use the 
 | 2 | PublicationTarget | **95%** | Done |
 | 3 | MI → `clientId` | **88%** | Done |
 | 4 | Encrypted credentials | **88%** | Done (local); staging/prod key pending |
-| 5 | Real WP publish + PublicationLog | **90%** | Done (local); live Puriva pending |
+| 5 | WordPress draft-prep + disabled-safe PublicationLog gate | **100% local-safe gate** | Done (local); live WordPress publish deferred |
 | 6 | Module middleware | **96%** | Done (local); staging enforce pending |
 | *Future* | Licensee tenant migration | **0%** | Deferred |
 

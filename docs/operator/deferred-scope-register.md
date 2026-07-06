@@ -12,13 +12,12 @@ Deferred means: do not build, enable, deploy, or promise it as active until ther
 
 **Client Portal MVP (required — Puriva):** client-safe delivery visibility for MI summary, SEO status, Google Docs deliverables, website publishing handoff/status, final deliverables, and monthly reports. See `docs/architecture/CLIENT_DOMAIN_OPERATING_MODEL.md`.
 
-Phased after MVP visibility scope (still deferred):
+Phased after the current local/client-safe visibility and approval polish scope (still deferred):
 
-- client comments inside the portal;
-- client approval buttons;
-- request-changes actions;
-- public approval links;
+- full client comment threads inside the portal;
+- public/share approval links;
 - magic links;
+- broader interactive approval workflows beyond the current local happy-path/polish scope;
 - project-specific client access;
 - client-side workflow status tracking;
 - client access to internal drafts;
