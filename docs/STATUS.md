@@ -151,7 +151,7 @@ Percentages are **local MVP readiness**, not production-proven. See [`docs/STATU
 
 | Module / area | Local readiness | Safe for admin now | Not production-proven |
 |---------------|-----------------|--------------------|------------------------|
-| **Core platform** (auth, tenant, modules, RBAC) | ~90% | Login, tenant switch, module enable/disable, settings read | Turnstile on staging; invite/reset flows |
+| **Core platform** (auth, tenant, modules, RBAC) | **100% local-skeleton + proven-RBAC** | Core app foundation skeleton: auth structure protected by check:auth-skeleton, login/logout routes scaffold (501 Not Implemented where intended), session persistence BLOCKED (SESSION_DB_RUNTIME_BLOCKED), permission/module enforcement skeleton-only and not wired. Operator/admin RBAC proven: tenant switch, module entitlements UI, admin login, ClientUserAccess grant/revoke, client-level isolation, admin settings. Client access boundary proven: client portal projects hidden before grant/visible after (smoke:client-access:local), FINAL-only reporting, unrelated-client blocking | Session persistence deferred; full auth endpoints deferred; permission/module enforcement deferred; invite/reset flows, Turnstile on staging, OAuth/OIDC/MFA remain deferred |
 | **AI Delivery** | **100% local/operator-ready** | Full local operator sequence: project/month → brief/context handoff → workflow run visibility → content plan → content drafts → reviews → package → deliverables → WordPress draft-prep handoff → monthly report/client-safe archive handoff | Live AI provider, live WP publish, live GA/GSC, live R2 IO, Google Docs live export, staging/environment proof, production readiness |
 | **Workflow Briefs / context composition** | **100% local/operator-ready** | Intake → submit → approved KB/context → MI/SEO runs → production plan → drafts → AI Delivery handoff; AI SEO lives inside Workflow Briefs | Knowledge picker (6C-v2) and per-brief audit (6D) remain deferred; live provider, staging proof, and production readiness stay deferred |
 | **AI Knowledge / Context layer** | **100% local/operator-safe** | Approved-only context path, tenant/client/project isolation, injection sanitization, missing-context warnings, safe snapshot metadata, and WorkflowBriefs context usage are smoke-proven | Vector search, live provider execution, staging proof, production readiness, live WordPress, live GA/GSC, and live R2 remain deferred |
@@ -197,7 +197,8 @@ Percentages are **local MVP readiness**, not production-proven. See [`docs/STATU
 
 ## 5. What is safe / admin-operated now
 
-- Local login/logout, tenant context, module entitlements, owner/admin RBAC
+- Local login/logout (auth skeleton-only; real auth endpoints return 501 where intended; session persistence BLOCKED), tenant context/switch, module entitlements UI, owner/admin RBAC (proven locally)
+- Client-level access isolation (ClientUserAccess grant/revoke, client portal boundaries, FINAL-only reporting) smoke-proven
 - AI Delivery deterministic workflow chain (local gateway default)
 - AI Knowledge / Context layer (approved-only context path, tenant/client/project isolation, injection sanitization, safe snapshot metadata, WorkflowBriefs context usage)
 - Market Intelligence admin MVP (findings, summaries, handoffs, delivery bridge) + client-facing MI read-only summary (approved handoffs only, delivery-summary endpoint)
@@ -217,6 +218,7 @@ Percentages are **local MVP readiness**, not production-proven. See [`docs/STATU
 
 ## 6. What is not production-proven
 
+- **Auth/session:** Session persistence (BLOCKED/deferred), real auth endpoints (skeleton-only, return 501), permission/module access enforcement (skeleton-only, not wired), invite/reset flows, Turnstile on staging, OAuth/OIDC, MFA, magic links
 - Staging deploy on `staging.digitalcubeagency.net`
 - Production deploy on `system.digitalcubeagency.net`
 - Live OpenRouter / AI provider HTTP execution
@@ -226,7 +228,6 @@ Percentages are **local MVP readiness**, not production-proven. See [`docs/STATU
 - Scraping / crawling ingestion
 - Background queues / autonomous agents
 - Real email provider sending
-- Turnstile on staging (owner gate)
 - Client-facing curated Market Intelligence view
 - Revenue Hub, POD AI Toolkit, Finance Lite completion
 - Public / share approval links

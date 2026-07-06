@@ -190,7 +190,9 @@ Decision selector: stop and wait for owner decision; if approved later, use the 
 
 | Area / module | % in scope | Status | Notes |
 |---------------|------------|--------|-------|
-| **Platform core** (auth, tenant, modules, CI, validate) | **92%** | Done | Roles/permissions summary + module registry browser gates (Blocks 48–49) |
+| **Core app foundation (auth skeleton)** | **100% local-skeleton-foundation** | Done (local) | Auth structure protected by check:auth-skeleton; login/logout/tenant-switch routes scaffold locally (501 Not Implemented where intended); session persistence BLOCKED (SESSION_DB_RUNTIME_BLOCKED); permission/module enforcement skeleton-only and not wired; no real auth endpoints, no session DB, no invite/reset/Turnstile/OAuth/OIDC/MFA |
+| **Operator/admin RBAC boundary** | **100% local-proven** | Done (local) | Admin login, tenant switch, module entitlements UI, settings read, ClientUserAccess CRUD (grant/revoke/archive), authorization summary API, admin owner/admin separation, roles/permissions summary (Blocks 48–49 browser gates); smoke-proven by smoke:roles-permissions:browser |
+| **Client access isolation boundary** | **100% local/client-safe-proven** | Done (local) | Client-level access (ClientUserAccess), client portal projects hidden before grant/visible after grant, FINAL-only monthly report filtering, unrelated-client blocking, client-safe field exposure checks; smoke-proven by smoke:client-access:local, smoke:client-access:browser, smoke:client-role-api-boundary:local |
 | **Dark Nebula UI + data-dense admin** | **100%** | Done | Full-system Dark Nebula UI pass and client-facing polish complete |
 | **Clients (CRM)** | **88%** | Done | CRUD, filters, `clientKind`, website |
 | **Client Hub + domain model (block 1)** | **97%** | Done | Hub UI + client-domain browser covers catalog, inquiries shell, publication log |
