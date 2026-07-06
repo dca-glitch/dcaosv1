@@ -67,6 +67,18 @@ PDF/export behavior is intentionally safe in local development. When R2/private 
 
 Smoke proof: `smoke:ai-seo-content-plan-pdf`, `smoke:workflow-brief-publication-handoff:browser`, `smoke:ai-delivery-workflow:browser`, and `smoke:ai-delivery-reviews` cover the local deterministic content plan/draft/package/export path and the deferred/live-provider boundaries.
 
+## AI Delivery workflow 100% local/operator-ready closeout
+
+AI Delivery is complete as the local/admin operator execution surface for the approved scope. The full local sequence is explicit end to end: monthly project → brief/context handoff (from WorkflowBriefs) → workflow run visibility → content plan → content drafts → reviews → package → deliverables → WordPress draft-prep handoff → monthly report → client-safe archive handoff.
+
+Dependencies already completed and reflected here: WorkflowBriefs/context composition (100% local/operator-ready), AI Knowledge/Context layer (100% local/operator-safe), AI SEO planning + content drafts (100% local/operator-ready), Monthly Reports + Client Portal read-only (100% local/client-safe), and the admin operations shell (100% local/admin-operational).
+
+Client-visible surfaces remain safe: no workflow runs, jobs, prompts, draft bodies, review notes, provider/model/gateway/audit/cost metadata, `storageKey`, or non-final reports are exposed to Client Portal — see the client portal archive contract and export handoff hidden-fields list above for the enforced field boundary.
+
+Smoke proof: `smoke:ai-delivery-workflow:browser`, `smoke:ai-delivery-reviews`, `smoke:workflow-brief-publication-handoff:browser`, `smoke:client-portal-monthly-report:browser`, `smoke:client-portal:browser`, and `smoke:ai-seo-content-plan-pdf` cover the local operator sequence and the client-safe boundary.
+
+This is local/operator-ready only and does **not** claim live AI provider execution, live WordPress publish, live GA/GSC sync, live R2 IO, Google Docs live export, staging/environment proof, or production readiness. No schema/migration, auth/RBAC/security/backend persistence, provider/runtime, environment, VPS, or production change was made for this closeout.
+
 ## Locally proven on the current branch
 
 - `npm.cmd run validate` passed for the current admin/operator foundations.

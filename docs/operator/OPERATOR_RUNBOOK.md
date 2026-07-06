@@ -182,6 +182,35 @@ npm.cmd run smoke:ai-delivery-reviews
 
 ---
 
+## 4.2 AI Delivery workflow operator path
+
+AI Delivery is the local operator execution surface after WorkflowBriefs/AI SEO context composition closes. The complete local sequence is: monthly project → brief/context handoff (from WorkflowBriefs) → workflow run visibility → content plan → content drafts → reviews → package → deliverables → WordPress draft-prep handoff → monthly report → client-safe archive handoff.
+
+Approved local sequence:
+
+1. Create or select the monthly AI Delivery project and confirm the brief/context handoff from WorkflowBriefs (verified intake → approved KB/context → brief → SEO plan).
+2. Open Workflow runs for run visibility and status tracking (local deterministic gateway by default).
+3. Review the monthly content plan and content objectives seeded from WorkflowBriefs.
+4. Generate and review content drafts; keep review/polish operator-side until approved.
+5. Move approved drafts and approved/final-ready article images into deliverable reviews and packaging.
+6. Prepare the WordPress draft (draft-only; live publish stays disabled unless a separately approved block enables `WORDPRESS_PUBLISH_ENABLED=true`).
+7. Prepare the monthly report and confirm client-safe FINAL-only archive visibility in Client Portal.
+
+Local export rules: R2-disabled behavior is safe and expected; the system must not expose `storageKey`, prompts, draft bodies, review notes, or provider/model/gateway/audit/cost metadata on client-visible surfaces. Live AI provider execution, live WordPress publish, live GA/GSC sync, live R2 IO, Google Docs live export, staging/environment proof, and production readiness remain deferred.
+
+Focused proof commands after `npm.cmd run validate` passes:
+
+```powershell
+npm.cmd run smoke:ai-delivery-workflow:browser
+npm.cmd run smoke:ai-delivery-reviews
+npm.cmd run smoke:workflow-brief-publication-handoff:browser
+npm.cmd run smoke:client-portal-monthly-report:browser
+npm.cmd run smoke:client-portal:browser
+npm.cmd run smoke:ai-seo-content-plan-pdf
+```
+
+---
+
 ## 5. External integrations readiness
 
 **Purpose:** Config-shape validation only — no live provider calls, publish, sync, crawl, or bucket mutation.
