@@ -1,7 +1,7 @@
 # DCA OS Lite — Project Completion Overview
 
 **Status:** Planning and operator reference
-**Last updated:** 2026-07-06 (Business modules polish / finance smoke-fix closeout)
+**Last updated:** 2026-07-06 (G26 finance/audit/email local foundation closeout)
 **Reference branch:** `main` after PR #43 merge (`f8606f2`)
 **Reference commits:** PR #38 merge `a152cbd`; PR #39 merge `971ac41`; PR #40 merge `9a6eddc`; PR #41 merge `6a03cc1`; PR #42 merge `b341b5d`; PR #43 merge `f8606f2`
 **Scope:** Approved local admin MVP + client/domain operating model (blocks 1–6) + **MVP 1 Puriva client delivery** + **Post-MVP local closeout (Blocks 31–57)** + **Phase F local completion (Blocks 58–77)**. Local `main` is synced and validated. VPS/production intentionally excluded until separate owner approval.
@@ -223,13 +223,13 @@ Decision selector: stop and wait for owner decision; if approved later, use the 
 | **Monthly Reports** | **100% local/client-safe handoff** | Done (local/client-safe) | Metrics snapshot foundation, client portal FINAL-only archive path, and read-only monthly report handoff are in place; live GA/GSC, staging/environment proof, and production readiness remain deferred |
 | **Client Portal read-only/archive** | **100% local/client-safe** | Done (local/client-safe) | Blocks 7–30 incl. sparse + populated delivery overview browser gates; `#/client-portal` defaults to the archive shell; FINAL-only reports/archive and approval/report polish complete for local scope |
 | **Client Portal advanced actions** (magic links, full comment threads) | **0%** | Deferred (Phase 2) | See deferred scope register |
-| **Finance** | **82%** | Done (local) | Finance admin browser sanity gate (Post-MVP Block 36) |
+| **Finance Lite admin foundation** | **100% local/admin-safe foundation** | Done (local) | Admin finance records and ledger visibility are smoke-proven for vendors/services/bills/invoices/credit notes/recurring/ledger boundaries where implemented; `smoke:finance-admin:browser` and `smoke:finance-ledger:local` passed; payments, Stripe/payment provider proof, bank feeds, tax/legal/accounting production claims, and production invoicing readiness remain excluded |
 | **AI SEO planning + content drafts** | **100% local/operator-ready** | Done (local) | WorkflowBriefs + AI Delivery local operator path is complete: MI/SEO report → production/content plan → content objectives → drafts → review/polish → package/export handoff; local deterministic/provider-deferred behavior, R2-disabled PDF/export safety, no `storageKey` leak, and draft-only handoff are smoke-proven. Live crawling, live GSC/GA sync, live provider execution, Google Docs live export, live R2 IO, live WordPress, staging/environment proof, production readiness, and unverified medical/legal/license/before-after claims remain deferred/out of scope |
 | **Private storage disabled-safe foundation** | **100% local-safe** | Done (local) | Disabled/private-r2 status, guarded upload helper, and 300-second signed download-reference helper are documented; local R2-disabled mode is expected and safe; absent R2 config returns `R2_STORAGE_NOT_CONFIGURED` and prevents storage-reference persistence. Live R2 real-bucket proof, staging/env proof, and production storage readiness remain deferred |
 | **Deliverable handling** | **100% local/operator-client-safe** | Done (local) | Admin deliverable upload/download-reference/open, ready/revision/accept/archive/restore, reviews, WordPress draft prep, Google Docs export handoff, monthly report document/PDF handoff, client FINAL/non-archived visibility, safe `downloadReference`, and safe admin-provided `exportUrl` are documented; Client Portal excludes `storageKey`, internal notes, `contentDraftId`, `articleImageId`, and `tenantId` |
 | **Live R2 real-bucket proof** | **Deferred** | Deferred | Requires explicit env approval; no bucket IO in local closeout; no staging/prod storage readiness claim |
-| **Email / notifications** | **35%** | In progress | Read-only outbox API + local smoke (Post-MVP Block 38); no real sending |
-| **Audit / activity** | **78%** | In progress | Dashboard feed + dedicated browser gate (Blocks 31, 51); full audit UI deferred |
+| **Email/outbox disabled-safe foundation** | **100% local-safe foundation** | Done (local) | Read-only tenant-scoped outbox/local notification records are smoke-proven by `smoke:email-outbox:local`; local mode remains non-sending with `SKIPPED` records; real sending, SMTP/provider proof, queues, deliverability, and production notification readiness remain excluded |
+| **Audit/activity feed foundation** | **100% local/operator-safe foundation** | Done (local) | `AuditLog`/event feed/dashboard Recent Activity/operator visibility are smoke-proven by `smoke:audit-activity:browser`, `smoke:dashboard:audit-feed:browser`, and optional admin operations proof; SIEM/security audit, compliance-grade audit, production monitoring, and durable observability remain excluded |
 | **AI Gateway foundation** | **100% local-safe foundation** | Done (local) | AI Gateway v1 foundation locally hardened (disabled/not-configured safe results, no secret leakage, client-portal-safe, verified via `check:ai-provider-config` 19/19 and `smoke:openrouter-guarded:local` 12/12); local deterministic default only |
 | **Live AI provider execution** | **0%** | Deferred | Live OpenRouter/provider execution, staging/environment proof, real provider-secret/config proof, cost proof, and rate-limit proof remain deferred |
 | **AI Operations Console** | **75%** | In progress | v1 on main (AI Delivery runs); MI listing + filters/export in baseline closeout |
@@ -249,7 +249,7 @@ Decision selector: stop and wait for owner decision; if approved later, use the 
 | **Scraping / broad data collection** | **0%** | Deferred | Future module |
 | **Live GA/GSC, Google OAuth** | **0%** | Deferred | Snapshot-first only today |
 | **Live WordPress auto-publish (prod)** | **0%** | Deferred | Draft handoff yes; auto-publish no |
-| **Stripe / payments / accounting integrations** | **0%** | Deferred | Finance = admin records |
+| **Payments / Stripe / bank feeds** | **0%** | Deferred | Finance Lite remains admin records and ledger visibility only; no payment collection, provider proof, bank feeds, or accounting/tax production claim |
 | **Invite / password reset / role editing UI** | **0%** | Deferred | Security improvements deferred |
 
 ---
@@ -350,6 +350,7 @@ Do not treat local smoke alone as production readiness.
 | 2026-07-06 | G19 AI SEO planning + content drafts 100% local/operator-ready: WorkflowBriefs + AI Delivery content production path documented as complete for local/admin use; existing AI SEO PDF/export, WorkflowBrief publication handoff, AI Delivery workflow, and content draft/review smokes remain the proof; live crawling/GSC/GA/provider/Google Docs/R2/WordPress/staging/production remain deferred |
 | 2026-07-06 | G20 AI Delivery workflow 100% local/operator-ready: full local operator sequence (project → brief/context handoff → workflow run → content plan → drafts → reviews → package → deliverables → WordPress draft-prep → monthly report → client-safe archive) documented as complete; existing AI Delivery/WorkflowBriefs/Monthly Report/Client Portal smokes remain the proof; live provider/WordPress/GA-GSC/R2/Google Docs/staging/production remain deferred |
 | 2026-07-06 | G23 Private storage / deliverable handling docs-only closeout: private storage disabled-safe foundation marked 100% local-safe; deliverable handling marked 100% local/operator-client-safe; live R2 real-bucket proof remains deferred with no bucket IO, staging/env proof, production storage readiness claim, or behavior change |
+| 2026-07-06 | G26 Finance Lite + audit/activity + email/outbox local foundation closeout: focused smokes passed for finance admin/browser + ledger, audit activity + dashboard audit feed, email/outbox non-sending local records, and optional admin operations; docs now mark these as 100% local-safe foundations while payment/Stripe/bank feeds, SIEM/compliance monitoring, and real email/provider/queues remain deferred |
 | 2026-06-27 | G1 closed: staging host `staging.digitalcubeagency.net`; production `system.digitalcubeagency.net`; G4 not approved; DNS not created |
 | 2026-06-27 | Phase F Block 77: local closeout complete — Blocks 58–77 validated on `feature/local-closeout-blocks-58-77` |
 | 2026-06-27 | Phase F Block 58: docs consistency — aligned Portal/WP/MI/R2 labels and blocks 4–6 percentages |

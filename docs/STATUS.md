@@ -1,6 +1,6 @@
 # DCA OS Lite — Status (Source of Truth)
 
-**Last updated:** 2026-07-06 (Business modules polish / finance smoke-fix closeout)
+**Last updated:** 2026-07-06 (G26 finance/audit/email local foundation closeout)
 **Operator index:** [`docs/operator/OPERATOR_RUNBOOK.md`](./operator/OPERATOR_RUNBOOK.md)  
 **Architecture map:** [`docs/ARCHITECTURE.md`](./ARCHITECTURE.md) § Current application map  
 **Smoke matrix:** [`docs/runbooks/LOCAL_SMOKE_MATRIX.md`](./runbooks/LOCAL_SMOKE_MATRIX.md)  
@@ -15,7 +15,7 @@
 | Item | State |
 |------|--------|
 | Branch | `main` synced with `origin/main` |
-| HEAD (pinned) | `cbe9311` — `polish(ops): tighten business module surfaces` |
+| HEAD (pinned) | `a433e38` — `docs: align pre-staging local readiness labels` |
 | CI | Green |
 | Working tree | Clean and synced with `origin/main` |
 | Pre-staging local closeout (5D-B) | **PASS** — manual workaround for orchestrator hang; see §2.1 |
@@ -167,8 +167,9 @@ Percentages are **local MVP readiness**, not production-proven. See [`docs/STATU
 | **Admin cockpit / daily operations** | **100% local/admin-operational** | Ready now / Needs review / Blocked-waiting queues, discoverable first-client path, complete handoffs into WorkflowBriefs, AI Delivery, Monthly Reports preview, Client Portal archive preview, Market Intelligence, and Finance Lite, explicit deferred/gated labeling | Environment proof, deployment, and live execution remain gated |
 | **External integrations readiness** | Block 1 closed | Config-shape checks only | Live provider, WP, R2 IO, GA/GSC sync |
 | **Admin operations / recovery** | Block 2 closed | Dashboard panel, operations summary API, recovery hints | Durable closeout store (manual run only) |
-| **Finance Lite** | ~70% | Admin ledger, invoices, browser smoke | Payment collection, Stripe, bank feeds |
-| **Email / notifications** | Foundation only | Read-only outbox, audit writer | Real sending, queues |
+| **Finance Lite admin foundation** | **100% local/admin-safe foundation** | Admin finance records are smoke-proven for vendors/services/bills/invoices/credit notes/recurring/ledger boundaries where implemented; finance admin browser and ledger smokes passed for local operator use | Real payment collection, Stripe/payment provider proof, bank feeds, tax/legal/accounting production claims, production invoicing readiness |
+| **Audit/activity feed foundation** | **100% local/operator-safe foundation** | `AuditLog`/event feed/dashboard recent activity/operator visibility are smoke-proven locally through audit activity and dashboard audit feed browser gates | SIEM/security audit, compliance-grade audit log, production monitoring, durable incident observability stack |
+| **Email/outbox disabled-safe foundation** | **100% local-safe foundation** | Read-only tenant-scoped outbox/local notification records are smoke-proven; local provider remains non-sending and reports `SKIPPED` without provider delivery | Real sending, SMTP/provider proof, background queues, deliverability, production notification readiness |
 | **UI / UX polish (Dark Nebula / dense admin)** | **100% local/admin-readable baseline** | Compact Dark Nebula admin/client readability and density baseline is closed for current local surfaces | Full design-system migration, full redesign, staging/environment proof, production readiness |
 
 ---
@@ -214,7 +215,9 @@ Percentages are **local MVP readiness**, not production-proven. See [`docs/STATU
 - WordPress **draft preparation** with publish gate disabled by default
 - External integrations **readiness inspection** (no live calls)
 - Admin operations summary and recovery hints on dashboard
-- Finance Lite admin records (local smoke-proven boundaries)
+- Finance Lite admin foundation: local/admin-safe finance records and ledger visibility (vendors/services/bills/invoices/credit notes/recurring/ledger as implemented and smoke-proven); no payment collection, Stripe, bank feeds, tax/legal/accounting production claim, or production invoicing readiness.
+- Audit/activity feed foundation: local/operator-safe `AuditLog` events, dashboard recent activity feed, and admin operations visibility are smoke-proven; no SIEM, compliance-grade audit, production monitoring, or durable observability stack.
+- Email/outbox disabled-safe foundation: read-only tenant-scoped outbox and local notification log behavior are smoke-proven; local mode does not send real email and does not prove provider/SMTP, queues, deliverability, or production notification readiness.
 
 **Admin rule:** AI prepares; admin reviews and decides what becomes final. Clients see client-safe final material only.
 
@@ -231,9 +234,9 @@ Percentages are **local MVP readiness**, not production-proven. See [`docs/STATU
 - GA4 / GSC OAuth and live metrics sync
 - Scraping / crawling ingestion
 - Background queues / autonomous agents
-- Real email provider sending
+- Real email provider sending / SMTP provider proof / background queues / deliverability
 - Client-facing curated Market Intelligence view
-- Revenue Hub, POD AI Toolkit, Finance Lite completion
+- Revenue Hub, POD AI Toolkit, Finance payment/provider/bank-feed integrations
 - Public / share approval links
 
 ---
@@ -285,7 +288,7 @@ Full pack: [`docs/runbooks/STAGING_READINESS.md`](./runbooks/STAGING_READINESS.m
 | Client-facing curated MI view | Deferred |
 | Revenue Hub | Deferred — [`REVENUE_HUB_AI_RH0_OPERATING_MODEL.md`](./architecture/REVENUE_HUB_AI_RH0_OPERATING_MODEL.md) |
 | POD AI Toolkit | Deferred — [`POD_AI_TOOLKIT_POD0_OPERATING_MODEL.md`](./architecture/POD_AI_TOOLKIT_POD0_OPERATING_MODEL.md) |
-| Finance Lite completion | Deferred |
+| Payments / Stripe / bank feeds | Deferred |
 | Hard deliverable gates | Deferred |
 | Richer client collaboration / comments | Deferred |
 | Public / share links | Deferred |
@@ -420,6 +423,14 @@ Private storage disabled-safe foundation is now recorded as **100% local-safe**.
 Deliverable handling is now recorded as **100% local/operator-client-safe**. AI Delivery deliverables support admin upload/download-reference/open, ready/revision/accept/archive/restore, reviews, WordPress draft prep, Google Docs export handoff, and client FINAL visibility. Monthly report handoff supports admin upload, admin download-reference, generated PDF storage, and client FINAL-only download-reference. Client Portal excludes `storageKey`, internal notes, `contentDraftId`, `articleImageId`, and `tenantId`; client download endpoints return `downloadReference` only. `exportUrl` remains intentionally client-visible only as a safe admin-provided external handoff link.
 
 Existing proof coverage remains local-only: `smoke:r2-byte-roundtrip:local` for disabled-safe/local guarded storage behavior, `smoke:ai-delivery-reviews`, `smoke:monthly-report:local`, `smoke:ai-seo-content-plan-pdf`, and existing client-portal/monthly-report smokes where referenced above. Live R2 real-bucket proof remains **deferred** and requires explicit env approval. This closeout does not run bucket IO, does not claim staging/env proof, does not claim production storage readiness, and does not change storage/security/API/backend behavior.
+
+## G26 Finance Lite + audit/activity + email/outbox local foundation closeout
+
+Finance Lite admin foundation is recorded as **100% local/admin-safe foundation** for the current approved local operator scope. Existing focused smoke proof passed: `smoke:finance-admin:browser` confirmed the Invoices and Bills admin shells/API reachability, and `smoke:finance-ledger:local` confirmed local admin creation and ledger summaries for client/project revenue/cost events, finance integrity, and monthly PDF generation with no-storage local handling. This proves admin finance records and ledger visibility for implemented vendors/services/bills/invoices/credit notes/recurring/ledger boundaries only; it does **not** prove real payment collection, Stripe/payment provider behavior, bank feeds, tax/legal/accounting production correctness, or production invoicing readiness.
+
+Audit/activity feed foundation is recorded as **100% local/operator-safe foundation**. Existing focused smoke proof passed: `smoke:audit-activity:browser` confirmed audit logs API reachability and Dashboard Recent Activity rendering, and `smoke:dashboard:audit-feed:browser` confirmed tenant-scoped events render in the dashboard feed with formatted action and actor context. This proves local operator visibility over existing `AuditLog`/event feed/dashboard activity behavior only; it does **not** claim SIEM/security audit completeness, compliance-grade audit logging, production monitoring, or a durable incident observability stack.
+
+Email/outbox disabled-safe foundation is recorded as **100% local-safe foundation**. Existing focused smoke proof passed: `smoke:email-outbox:local` confirmed the read-only tenant-scoped outbox, secret-safe response shape, local non-sending provider status, no exposed Resend key, and `SKIPPED` non-delivery records for local notification events. Optional `smoke:admin-operations:local` also passed for operator visibility and admin/client boundary proof. This proves local disabled/outbox behavior only; it does **not** claim real sending, SMTP/provider proof, background queues, deliverability, or production notification readiness.
 
 ## Next options after local/product polish
 
