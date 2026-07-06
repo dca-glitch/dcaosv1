@@ -103,6 +103,14 @@ changes, no percentage re-audit performed as part of this addendum):
   finance-ledger smoke token path was aligned to `data.session.token`, review passed, and
   `git diff --check`, web check, full validate, browser QA, and push all passed; no
   backend/API/schema/auth changes.
+- **G14 AI Gateway foundation local hardening** — a discovery-first review confirmed the existing
+  AI Gateway v1 foundation (`ai-gateway-v1.service.ts`, `ai-provider.config.ts`,
+  `openrouter-text.service.ts`, WorkflowBriefs execution wiring) already provides safe disabled/
+  not-configured results, no secret leakage, no live provider call by default, and no client-portal
+  exposure of gateway/model/audit fields; no code changes were required. Proven by `npm.cmd run
+  validate` PASS (`check:ai-provider-config` 19/19, `check:external-integrations-readiness` 25/25)
+  and a fresh `npm.cmd run smoke:openrouter-guarded:local` run (12/12 PASS); no backend/schema/auth
+  changes, no environment/VPS/production touch, no live provider/WordPress/GA-GSC/R2 call.
 
 **Knowledge arc — next / deferred (not in percentage baseline above):**
 
@@ -173,7 +181,7 @@ Decision selector: stop and wait for owner decision; if approved later, use the 
 | **Private storage (R2)** | **65%** | In progress | Block 37 byte roundtrip smoke (disabled guard + optional full roundtrip); prod bucket deferred |
 | **Email / notifications** | **35%** | In progress | Read-only outbox API + local smoke (Post-MVP Block 38); no real sending |
 | **Audit / activity** | **78%** | In progress | Dashboard feed + dedicated browser gate (Blocks 31, 51); full audit UI deferred |
-| **AI provider (OpenRouter)** | **62%** | In progress | AI Gateway v1 on main; local deterministic default; live provider opt-in only |
+| **AI provider (OpenRouter)** | **~85% foundation / ~62% overall live-readiness** | In progress | AI Gateway v1 foundation locally hardened (disabled/not-configured safe results, no secret leakage, client-portal-safe, verified via `check:ai-provider-config` 19/19 and `smoke:openrouter-guarded:local` 12/12); live provider execution, staging proof, and cost/rate-limit proof remain deferred |
 | **AI Operations Console** | **75%** | In progress | v1 on main (AI Delivery runs); MI listing + filters/export in baseline closeout |
 | **Puriva Operating Pack v1** | **~90%** | Done (local/admin) | Local/admin-operational closeout complete; production readiness for the pack remains deferred (~60–65% baseline); live provider, live WordPress publish, GA/GSC, R2 live IO, production deploy, and incident/rollback execution stay deferred |
 | **Admin cockpit / daily operations** | **~84%** | Done (local) | Ready now / Needs review / Blocked-waiting cockpit and operator docs alignment; environment proof, deployment, and live execution remain gated |
@@ -284,6 +292,7 @@ Do not treat local smoke alone as production readiness.
 | 2026-07-06 | AI SEO Module Hardening XL: docs-only hardening recorded/pushed, operator path/compliance/handoff wording tightened, and environment proof remains unrun |
 | 2026-07-06 | G8 local Puriva E2E closeout: local operator proof added, approval smoke labels aligned to real UI, validation/browser QA passed, push complete |
 | 2026-07-06 | G13 local business modules polish: Finance Lite and Market Intelligence wording clarified, Revenue Hub stayed preview-label only, finance-ledger smoke aligned to login token shape, and push successful |
+| 2026-07-06 | G14 AI Gateway foundation local hardening: discovery confirmed existing gateway contract already safe (disabled/not-configured results, no secret leakage, no client-portal exposure); no code changes made; `npm run validate` and `smoke:openrouter-guarded:local` (12/12) reconfirmed |
 | 2026-06-27 | G1 closed: staging host `staging.digitalcubeagency.net`; production `system.digitalcubeagency.net`; G4 not approved; DNS not created |
 | 2026-06-27 | Phase F Block 77: local closeout complete — Blocks 58–77 validated on `feature/local-closeout-blocks-58-77` |
 | 2026-06-27 | Phase F Block 58: docs consistency — aligned Portal/WP/MI/R2 labels and blocks 4–6 percentages |
