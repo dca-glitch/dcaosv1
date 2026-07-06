@@ -156,7 +156,7 @@ Percentages are **local MVP readiness**, not production-proven. See [`docs/STATU
 | **Workflow Briefs / context composition** | **100% local/operator-ready** | Intake → submit → approved KB/context → MI/SEO runs → production plan → drafts → AI Delivery handoff; AI SEO lives inside Workflow Briefs | Knowledge picker (6C-v2) and per-brief audit (6D) remain deferred; live provider, staging proof, and production readiness stay deferred |
 | **AI Knowledge / Context layer** | **100% local/operator-safe** | Approved-only context path, tenant/client/project isolation, injection sanitization, missing-context warnings, safe snapshot metadata, and WorkflowBriefs context usage are smoke-proven | Vector search, live provider execution, staging proof, production readiness, live WordPress, live GA/GSC, and live R2 remain deferred |
 | **AI SEO planning + content drafts** | **100% local/operator-ready** | WorkflowBriefs MI/SEO outputs → production/content plan → content objectives → draft generation/review → PDF/export handoff status → AI Delivery handoff are locally smoke-proven for admin/operator use | Live crawling, GSC/GA sync, live provider execution, Google Docs live export, live R2 IO, live WordPress, staging/environment proof, production readiness |
-| **Market Intelligence** | ~80% | Findings, summaries, handoffs, delivery integration, operator hardening | Live AI, scraping, client-facing MI view |
+| **Market Intelligence** | **100% local/operator-ready + client-safe** | Admin MI workflow: projects, sources, research runs, insights, handoffs; AI Delivery integration. Client-facing MI summary: read-only delivery-summary endpoint (approved/READY/APPLIED handoffs only, no internal fields) | Live AI, scraping |
 | **Monthly Reports** | ~88% | Admin CRUD, PDF, metrics snapshots, MI context, client FINAL-only archive | Live GA/GSC sync, client metrics automation |
 | **Client Portal** | ~90% | Archive, monthly reports, pending approvals happy-path, approval/report polish, boundary smokes | Magic links, public share links, full comments |
 | **Private storage / R2** | ~76–84% | Guarded upload/download when configured; disabled-safe default | Strict real-bucket proof without env; prod R2 switch |
@@ -200,7 +200,7 @@ Percentages are **local MVP readiness**, not production-proven. See [`docs/STATU
 - Local login/logout, tenant context, module entitlements, owner/admin RBAC
 - AI Delivery deterministic workflow chain (local gateway default)
 - AI Knowledge / Context layer (approved-only context path, tenant/client/project isolation, injection sanitization, safe snapshot metadata, WorkflowBriefs context usage)
-- Market Intelligence admin MVP (findings, summaries, handoffs, delivery bridge)
+- Market Intelligence admin MVP (findings, summaries, handoffs, delivery bridge) + client-facing MI read-only summary (approved handoffs only, delivery-summary endpoint)
 - Monthly report admin lifecycle + client FINAL-only portal archive
 - Client portal read-only archive, monthly reports, approval happy-path (when seeded)
 - Admin daily operations cockpit with separated ready/review/blocked lanes

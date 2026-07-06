@@ -509,6 +509,16 @@ Admin-managed access uses `GET /api/v1/clients/:id/users`, `POST /api/v1/clients
 
 - `GET /api/v1/client-portal/projects/:projectId/delivery-summary`
   - Returns client-safe delivery overview: MI summary, AI SEO plan status, website publishing handoff, Google Docs export links.
+  - **Market Intelligence summary sub-object (when approved READY|APPLIED handoff exists):**
+    - `marketIntelligence`: `{ title, displayTitle, marketSummary, opportunities, recommendedActions, status, updatedAt }`
+    - `title` / `displayTitle`: Sanitized handoff title (scaffold markers removed)
+    - `marketSummary`: Client-safe market summary text (sanitized)
+    - `opportunities`: String array of client-safe opportunity summaries (sanitized, up to 12 items)
+    - `recommendedActions`: String array of client-safe recommended actions (sanitized, up to 12 items)
+    - `status`: `READY` or `APPLIED` (DRAFT handoffs never exposed)
+    - `updatedAt`: ISO timestamp
+    - **Forbidden fields (always excluded):** `storageKey`, `tenantId`, `aiDeliveryProjectId`, `projectId`, `provider`, `model`, `gateway`, `prompt`, `cost`, `jobId`, `workflowRunId`, `executionLog`, `review notes`, `insights`, `findings`, `raw MI internals`, `sources`, `research run data`
+  - **Isolation:** Tenant/client/project validation enforced at API boundary; DRAFT handoffs filtered before response
   - Excludes raw MI internals, prompts, workflow runs, credentials, and admin-only notes.
 - `GET /api/v1/client-portal/projects/:projectId/catalog-products`
   - Returns portal-visible catalog products for the project's client (`isVisibleInPortal`, non-archived).
@@ -537,6 +547,35 @@ Proof:
 - `npm.cmd run smoke:client-access:local` proves admin grant/list/revoke, client-level portal bounds, unrelated-client blocking, FINAL-only monthly report visibility, and revoke behavior.
 - `npm.cmd run smoke:client-portal:local` proves read-only deliverable archive access gating and final deliverable filtering.
 - `npm.cmd run smoke:client-portal-monthly-report:browser` proves FINAL-only monthly report visibility and forbidden-field non-exposure in the portal UI.
+
+## Client-facing Market Intelligence summary contract
+
+Client-facing Market Intelligence is delivered as a read-only approved summary through the client portal delivery-summary endpoint. It is local/operator-ready and client-safe.
+
+**Safety boundaries:**
+
+- **Access:** Requires authenticated `ClientUserAccess` user session
+- **Visibility:** Only READY or APPLIED handoff status; DRAFT handoffs always hidden (401)
+- **Isolation:** Tenant/client/project validation enforced; cross-client/project requests fail
+- **Read-only:** No mutations exposed; summary text and actions only
+- **Approved-only:** Handoff status must be READY or APPLIED before becoming client-visible
+- **Sanitization:** Internal markers removed; display titles cleaned; no raw internal text
+- **Forbidden fields (always excluded from response):**
+  - Storage/infrastructure: `storageKey`, `projectId`, `aiDeliveryProjectId`, `tenantId`
+  - AI/execution: `provider`, `model`, `gateway`, `prompt`, `cost`, `jobId`, `workflowRunId`
+  - Internal: `executionLog`, `review notes`, `insights`, `findings`, raw sources, research run data
+- **Included client-safe fields:** `title`, `displayTitle`, `marketSummary`, `opportunities`, `recommendedActions`, `status`, `updatedAt`
+
+**Endpoint:**
+- `GET /api/v1/client-portal/projects/:projectId/delivery-summary`
+  - Returns `deliverySummary.marketIntelligence` sub-object when READY/APPLIED handoff exists for the project
+  - Returns `null` when no approved handoff exists (no 404; empty summary)
+  - Tenant/client/project isolation enforced at API boundary before response
+
+**Proof:**
+- `npm.cmd run smoke:client-portal:populated-delivery:browser` proves MI visibility in client portal, client-safe field presence, forbidden-field exclusion, and tenant isolation
+
+This is **100% local/operator-ready** and **100% local/client-safe** for the approved delivery-summary summary-only scope. Live scraping, live AI provider execution, live market research, and production deployment remain deferred.
 
 ## Monthly report summary contract
 
