@@ -42,6 +42,8 @@ Use one client, one month, one draft, and one final item for the first run.
 
 For Puriva, keep unresolved facts in brief notes or WorkflowBriefs until the compliance review is documented and the approved context is ready.
 
+WorkflowBriefs is the AI SEO / context-composition surface here: the admin page is where you submit the brief, run AI, review MI/SEO outputs, generate the production plan, and hand off into AI Delivery. The client-facing label is `Production Plan Review`.
+
 For a local rehearsal of the full Puriva operator path, use [`PURIVA_LOCAL_E2E_OPERATOR_DRY_RUN.md`](../runbooks/PURIVA_LOCAL_E2E_OPERATOR_DRY_RUN.md) after the intake/compliance source is confirmed.
 
 For any future environment proof, read [`G9_ENVIRONMENT_PROOF_APPROVAL_GATE.md`](../runbooks/G9_ENVIRONMENT_PROOF_APPROVAL_GATE.md) first, wait for explicit owner approval, and then use the Sonnet-only execution prompt there. Do not treat the planning gate as execution.

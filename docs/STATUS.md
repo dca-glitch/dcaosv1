@@ -153,7 +153,7 @@ Percentages are **local MVP readiness**, not production-proven. See [`docs/STATU
 |---------------|-----------------|--------------------|------------------------|
 | **Core platform** (auth, tenant, modules, RBAC) | ~90% | Login, tenant switch, module enable/disable, settings read | Turnstile on staging; invite/reset flows |
 | **AI Delivery** | ~84–88% | Projects, briefs, workflow runs, deliverables, reviews, export, WP draft prep (disabled by default) | Live AI provider, live WP publish, staging deploy |
-| **Workflow Briefs** | ~85% | MI/SEO runs, production plan, drafts, client Production Plan Review boundary | Knowledge picker (6C-v2), per-brief audit (6D) |
+| **Workflow Briefs / context composition** | **100% local/operator-ready** | Intake → submit → approved KB/context → MI/SEO runs → production plan → drafts → AI Delivery handoff; AI SEO lives inside Workflow Briefs | Knowledge picker (6C-v2) and per-brief audit (6D) remain deferred; live provider, staging proof, and production readiness stay deferred |
 | **AI SEO / content plan** | ~88% | Research, summaries, plans, PDF export, stale-PDF invalidation, locally hardened operator path | Live crawling, GSC sync, Google Docs export |
 | **Market Intelligence** | ~80% | Findings, summaries, handoffs, delivery integration, operator hardening | Live AI, scraping, client-facing MI view |
 | **Monthly Reports** | ~88% | Admin CRUD, PDF, metrics snapshots, MI context, client FINAL-only archive | Live GA/GSC sync, client metrics automation |
@@ -388,6 +388,10 @@ A discovery-first review of the AI Gateway v1 foundation (`apps/api/src/core/ai-
 ## G16 Client Portal read-only surfaces + Monthly Reports local/client-safe closeout
 
 Client Portal read-only surfaces and Monthly Reports final handoff are now documented as complete for the approved local scope. The existing browser smokes `smoke:client-portal-monthly-report:browser` and `smoke:client-portal:browser` already prove the boundary: FINAL-only monthly reports are visible, DRAFT / ADMIN_REVIEW / ARCHIVED reports stay hidden, and forbidden fields such as `storageKey`, `adminSummaryNotes`, `tenantId`, `workflowRunId`, `prompt`, `draftBody`, `reviewNotes`, `provider`, `model`, `gateway`, and `cost` stay out of the rendered portal and API response. This closeout records Monthly Reports as **100% local/client-safe handoff** while keeping live GA/GSC, live provider execution, live WordPress, R2 live IO, staging, and production explicitly deferred. No backend/API/schema/auth changes were made, no environment/VPS/production work was touched, and no code changes were required for this docs-only closeout.
+
+## G17 WorkflowBriefs / context composition 100% local/operator-ready closeout
+
+WorkflowBriefs is now documented as the local/operator-ready context-composition surface for the first-client path. The approved local sequence is explicit in UI/docs: create brief → complete verified facts → submit brief → run AI/local deterministic reports → review MI/SEO outputs → generate production plan → send/approve → handoff into AI Delivery. The page is labeled `Workflow Briefs` for admins and `Production Plan Review` for client-facing review, and the existing smokes (`smoke:workflow-brief-publication-handoff:browser`, `smoke:ai-seo-content-plan-pdf`, `smoke:ai-knowledge-context`) already prove the local deterministic path, submit-before-run-ai prerequisite, and AI Delivery handoff boundary. No live provider, WordPress, GA/GSC, R2, staging, production, backend/API/schema/auth, or environment work was touched.
 
 ## Next options after local/product polish
 
