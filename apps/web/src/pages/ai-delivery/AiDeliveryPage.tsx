@@ -782,7 +782,7 @@ function formatArticleImageStatus(value?: string | null): string {
 
 function formatDeliverableStatus(value?: string | null): string {
   if (!value || value === "DRAFT") return "Draft / packaging";
-  if (value === "READY") return "Ready for internal handoff";
+  if (value === "READY") return "Ready for final handoff";
   if (value === "REVISION_REQUESTED") return "Revision requested";
   if (value === "ACCEPTED") return "Internally accepted";
   if (value === "DELIVERED") return "Delivered record";
@@ -1438,7 +1438,7 @@ export function AiDeliveryPage({
     const blockers: string[] = [];
 
     if (!deliverableLinkedDraftRecord) {
-      blockers.push("Link the approved content draft that this admin package is handing off.");
+      blockers.push("Link the approved content draft before this package can move to final handoff.");
     } else if (!canPackageApprovedContentDraft(deliverableLinkedDraftRecord)) {
       blockers.push(`Linked draft is ${formatContentDraftStatus(deliverableLinkedDraftRecord.status).toLowerCase()}; ready-state packaging expects an approved draft.`);
     }
@@ -1446,11 +1446,11 @@ export function AiDeliveryPage({
     if (deliverableRelatedImages.length === 0) {
       blockers.push("No same-project article image planning records are linked to this draft yet.");
     } else if (!deliverableRelatedImages.some((image) => canPackageApprovedArticleImage(image))) {
-      blockers.push("Linked image planning exists, but no image is approved or final-ready yet.");
+      blockers.push("Linked image planning exists, but no image is approved or final-ready for client-safe handoff yet.");
     }
 
     if (!deliverableHasRecordedReference) {
-      blockers.push("No export or private-storage reference is recorded for the final admin handoff yet.");
+      blockers.push("No export or private-storage reference is recorded for the client-safe handoff yet.");
     }
 
     if (deliverableStatusNeedsApprovedLinks(deliverableForm.status) && !deliverableFormHasReadyLinks(deliverableForm, contentDrafts, articleImages)) {
@@ -1537,7 +1537,7 @@ export function AiDeliveryPage({
       return "Ready, Delivered, and Accepted states require an approved same-project draft or approved/final-ready image link.";
     }
     if (deliverableStatusNeedsApprovedLinks(deliverableForm.status)) {
-      return "This ready-state package is linked to approved same-project assets and can stay in the guarded packaging workflow.";
+      return "This package is final-ready only when approved same-project assets are linked and can stay in the guarded packaging workflow.";
     }
     return "Mark ready and Internal accept stay guarded by approved same-project draft or image links.";
   }, [activeDeliverableRecord?.isArchived, articleImageDrafts, articleImages, deliverableForm]);
@@ -2933,7 +2933,7 @@ export function AiDeliveryPage({
       }
 
       setContentPlanGenerationMessage(`Admin draft generation completed for "${item.title}". Review the generated draft below before any review handoff.`);
-      setContentDraftHandoffMessage(`Generated draft handoff: "${item.title}" is open for admin editing and internal review preparation only. This does not publish, deliver to the client, or send content to WordPress.`);
+      setContentDraftHandoffMessage(`Generated draft handoff: "${item.title}" is open for admin editing and internal review preparation only. This stays internal and does not publish, deliver to the client, or send content to WordPress.`);
       setContentDraftsError(null);
       setContentDrafts(drafts);
       setContentDraftPlan(plan);
@@ -3323,7 +3323,7 @@ export function AiDeliveryPage({
     : "Open Workflow runs to review current status.";
   const deliverablesHelper = openDeliverablesId
     ? `Current status mix: ${formatStatusBreakdown(deliverables, "No deliverables in focus yet")} - Active: ${activeDeliverableCount} - Archived: ${archivedDeliverableCount}`
-    : "Open Deliverables to review package status.";
+    : "Open Deliverables to review package and final readiness.";
 
   return (
     <section className="view-section ai-delivery-page" aria-labelledby="ai-delivery-title">
@@ -3712,7 +3712,7 @@ export function AiDeliveryPage({
               </AiDeliveryInlineNotice>
               <SectionPanel
                 title="Workflow readiness"
-                description="Research, plan, and draft handoff status."
+                description="Research, plan, draft handoff, and final-readiness status."
                 className="metrics-section"
                 tone="compact"
               >
@@ -5114,7 +5114,7 @@ export function AiDeliveryPage({
                         <option key={ai.id} value={ai.id}>{ai.title} ({formatArticleImageStatus(ai.status)})</option>
                       ))}
                     </select>
-                    <span className="muted-text">Approved or final-ready image for the package.</span>
+                    <span className="muted-text">Approved or final-ready image for the client-safe package.</span>
                   </label>
                   <label className="field-span-2">
                     Title - Required
@@ -5758,7 +5758,7 @@ export function AiDeliveryPage({
                     <select value={articleImageForm.status} onChange={(event) => setArticleImageForm((current) => ({ ...current, status: event.target.value }))}>
                       {(["DRAFT", "READY_FOR_GENERATION", "PREVIEW_READY", "CHANGES_REQUESTED", "APPROVED", "FINAL_READY", "ARCHIVED"] as const).map((status) => <option key={status} value={status}>{formatArticleImageStatus(status)}</option>)}
                     </select>
-                    <span className="muted-text">Use action buttons for preview, approval, and final-ready.</span>
+                    <span className="muted-text">Use action buttons for preview, approval, and final-ready handoff.</span>
                   </label>
                   <label className="field-span-2">
                     Title - Required

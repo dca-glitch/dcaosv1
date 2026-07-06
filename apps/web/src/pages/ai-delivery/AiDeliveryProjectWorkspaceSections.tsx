@@ -119,8 +119,8 @@ export function AiDeliveryProjectWorkspaceSections({
             <div className="ai-delivery-lane-header">
               <span className="ai-delivery-lane-number">1</span>
               <div className="ai-delivery-lane-info">
-                <h4>Intake & Brief</h4>
-                <span className="muted-text text-xs">Verified intake → approved KB/context → SEO plan</span>
+                <h4>Intake & Verified Facts</h4>
+                <span className="muted-text text-xs">Verified intake → approved KB/context → brief → SEO plan</span>
                 <StatusBadge status={workspaceProject.brief?.status ?? "Not started"} />
               </div>
             </div>
@@ -156,7 +156,7 @@ export function AiDeliveryProjectWorkspaceSections({
               <span className="ai-delivery-lane-number">2</span>
               <div className="ai-delivery-lane-info">
                 <h4>SEO Plan</h4>
-                <span className="muted-text text-xs">Monthly content plan</span>
+                <span className="muted-text text-xs">Monthly content plan and review checkpoints</span>
               </div>
             </div>
             {canEdit ? (
@@ -176,7 +176,7 @@ export function AiDeliveryProjectWorkspaceSections({
               <span className="ai-delivery-lane-number">3</span>
               <div className="ai-delivery-lane-info">
                 <h4>Content Draft</h4>
-                <span className="muted-text text-xs">Article production</span>
+                <span className="muted-text text-xs">Article production and review-ready copy</span>
               </div>
             </div>
             {canEdit ? (
@@ -193,7 +193,7 @@ export function AiDeliveryProjectWorkspaceSections({
               <span className="ai-delivery-lane-number">4</span>
               <div className="ai-delivery-lane-info">
                 <h4>Compliance Review</h4>
-                <span className="muted-text text-xs">Client & plan approval</span>
+                <span className="muted-text text-xs">Admin review → client changes → final approval</span>
               </div>
             </div>
             {canEdit ? (
@@ -216,7 +216,7 @@ export function AiDeliveryProjectWorkspaceSections({
               <span className="ai-delivery-lane-number">5</span>
               <div className="ai-delivery-lane-info">
                 <h4>Image & Assets</h4>
-                <span className="muted-text text-xs">Article imagery</span>
+                <span className="muted-text text-xs">Approved or final-ready article imagery</span>
               </div>
             </div>
             {canEdit ? (
@@ -233,7 +233,7 @@ export function AiDeliveryProjectWorkspaceSections({
               <span className="ai-delivery-lane-number">6</span>
               <div className="ai-delivery-lane-info">
                 <h4>WordPress Handoff</h4>
-                <span className="muted-text text-xs">Publication packages</span>
+                <span className="muted-text text-xs">Draft-only publication packages</span>
               </div>
             </div>
             {canEdit ? (
@@ -249,14 +249,14 @@ export function AiDeliveryProjectWorkspaceSections({
             <div className="ai-delivery-lane-header">
               <span className="ai-delivery-lane-number">7</span>
               <div className="ai-delivery-lane-info">
-                <h4>Final Archive</h4>
-                <span className="muted-text text-xs">Monthly report</span>
+                <h4>Monthly report</h4>
+                <span className="muted-text text-xs">Monthly final snapshot</span>
               </div>
             </div>
             {canEdit && showMonthlyReportButton ? (
               <div className="ai-delivery-lane-actions">
                 <button className="primary-action" onClick={onOpenMonthlyReport} type="button">
-                  Report
+                  Monthly report
                 </button>
               </div>
             ) : null}
@@ -266,7 +266,7 @@ export function AiDeliveryProjectWorkspaceSections({
 
       <SectionPanel
         className="ai-delivery-section ai-delivery-revenue-chain-readiness"
-        description="Deterministic admin-operated chain. Use verified intake and approved KB/context before SEO, drafts, and handoff. Warnings do not block workflow — use for readiness checks only."
+        description="Deterministic admin-operated chain. Use verified intake and approved KB/context before SEO, drafts, handoff, and monthly snapshots. Warnings do not block workflow — use for readiness checks only."
         title="Delivery chain readiness"
         tone="compact"
       >

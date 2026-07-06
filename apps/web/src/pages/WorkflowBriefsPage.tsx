@@ -451,7 +451,7 @@ function BriefReadinessChecklist({
 
   return (
     <div className="brief-readiness-checklist">
-      <div className="brief-section-kicker muted-text">Intake-to-brief path</div>
+      <div className="brief-section-kicker muted-text">Intake-to-plan path</div>
       <ol className="brief-readiness-steps">
         {items.map((item) => (
           <li
@@ -1271,7 +1271,7 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
         titleId="workflow-briefs-title"
         description={
           canManageAi
-            ? "Brief-centered workflow foundation: brief input, AI reports, and production plan."
+            ? "Intake → verified facts → approved KB/context → brief → SEO/content plan."
             : "Review the production plan prepared for your project and approve or request changes before production begins."
         }
       />
@@ -1387,7 +1387,7 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
                     ) : null}
                   </>
                 ) : (
-                  <p className="muted-text">No AI runs yet. Run AI from an eligible brief status.</p>
+                  <p className="muted-text">No AI runs yet. Finish verified intake and approved KB/context first.</p>
                 )}
               </SectionPanel>
 

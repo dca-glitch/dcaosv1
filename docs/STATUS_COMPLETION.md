@@ -105,6 +105,8 @@ See [`docs/STATUS.md`](./STATUS.md) "AI SEO / Content Plan closure" section for 
 block. WorkflowBriefs is a confirmed third module alongside AI Delivery and Market Intelligence; see
 [`docs/AI_MODULES.md`](./AI_MODULES.md) "Current module split".
 
+Decision selector: stop and wait for owner decision; if approved later, use the Sonnet-only G9 environment proof prompt; otherwise continue deeper local/product UI polish only if desired.
+
 ---
 
 ## Overall summary

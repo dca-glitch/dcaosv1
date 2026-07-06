@@ -812,13 +812,13 @@ export function MonthlyReportPanel({
     const status = report.isArchived ? "Archived" : formatReportStatus(report.status);
     const headline = report.title?.trim() || `${project.name} monthly report`;
     const documentState = report.hasDocument ? "Document attached" : "No document attached";
-    const handoffState = report.exportUrl ? "Manual handoff URL set" : "No handoff URL";
-    const visibilityState = report.status === "FINAL" ? "Client-visible when FINAL" : "Admin-only working copy";
+    const handoffState = report.exportUrl ? "Final handoff URL set" : "No handoff URL";
+    const visibilityState = report.status === "FINAL" ? "Client-safe when FINAL" : "Internal working copy";
     const actionHint = report.isArchived
       ? "Restore to resume edits."
       : report.status === "FINAL"
-        ? "FINAL — client-safe summary and approved snapshots only."
-        : "Review, finalize, then attach the report document.";
+        ? "FINAL — client-safe snapshot and approved metrics only."
+        : "Review, finalize, then attach the report document and approved snapshot notes.";
 
     return {
       status,
@@ -858,7 +858,7 @@ export function MonthlyReportPanel({
       {/* Computed Summary Section */}
       <SectionPanel
         className="monthly-report-summary-panel"
-        description="Read-only overview. Approved snapshots are client-visible in FINAL reports. Live GA/GSC sync deferred."
+        description="Read-only overview. FINAL reports use approved snapshots and client-safe metrics only. Live GA/GSC sync deferred."
         title="Computed Monthly Summary"
         tone="compact"
       >
@@ -966,7 +966,7 @@ export function MonthlyReportPanel({
 
       <SectionPanel
         className="monthly-report-admin-panel"
-        description="Admin report shell. FINAL reports are client-visible; admin notes stay hidden."
+        description="Admin report shell. FINAL reports are client-visible; internal notes stay hidden."
         title="Persisted Monthly Report"
         tone="compact"
       >
@@ -978,7 +978,7 @@ export function MonthlyReportPanel({
         ) : reportNotFound && !report ? (
           <EmptyState
             title="No persisted monthly report yet"
-            message="Create the report shell first. Metrics import follows after the report exists."
+            message="Create the report shell first. Approved snapshots and metrics import follow after it exists."
             action={(
               <button
                 className="primary-action"

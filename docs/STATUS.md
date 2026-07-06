@@ -369,8 +369,8 @@ Client Portal approval/report polish is documented in commit `b8319f9` (`polish(
 
 Admin cockpit / daily operations polish is documented in commit `831175980a87736faefbdbdbedafdbbdf9d97419` (`polish(ops): clarify daily operations cockpit`) and pushed to `main`. The cockpit now separates Ready now / Needs review / Blocked-waiting and keeps the Puriva path compact; operator docs were aligned to match that flow. Review verdict was KEEP; `git diff --check`, web check, full validate, and admin/AI operations smokes all passed; `main` finished clean and synced with `origin/main`. No backend/API/schema/auth changes, no environment/VPS/production touch, no live integrations, no new API/persisted fields, no production readiness claim, and no environment proof claim were introduced. Owner approval remains required before any future environment work, and Sonnet remains required for any future environment execution.
 
-## Next work (after Block 5D-C)
+## Next options after local/product polish
 
-- Owner review of 5D-B / G9 closeout evidence and this status update.
-- Decide whether to approve G9 environment proof; if approved, follow the Sonnet-only prompt in `docs/runbooks/G9_ENVIRONMENT_PROOF_APPROVAL_GATE.md`.
-- G4 staging request remains separate — local 5D-B PASS and G9 planning docs do not authorize staging action or deploy.
+- Stop and wait for owner decision.
+- If approved later, use the Sonnet-only prompt in `docs/runbooks/G9_ENVIRONMENT_PROOF_APPROVAL_GATE.md`.
+- If desired, continue deeper local/product UI polish only.

@@ -1690,7 +1690,7 @@ export function ClientPortalPage() {
       </div>
 
       <p className="portal-footer-note muted-text">
-        Final deliverables and monthly reports are read-only client archive items. Use Pending Reviews to approve articles or request changes.
+        Final deliverables and monthly reports are read-only client archive items. Use Pending Reviews to approve articles or request changes; monthly reports are final snapshots only.
       </p>
     </section>
   );
