@@ -143,7 +143,7 @@ async function main() {
     await clientCard.waitFor({ state: "visible", timeout: 20000 });
     await clientCard.getByRole("button", { name: "Open", exact: true }).click();
 
-    const editModal = page.locator(".modal-panel", { hasText: "Edit Client" }).first();
+    const editModal = page.locator("[role='dialog']", { hasText: "Edit Client" }).first();
     await editModal.waitFor({ state: "visible", timeout: 15000 });
     await editModal.getByRole("heading", { name: "Client access", exact: true }).waitFor({ state: "visible", timeout: 15000 });
     record("edit client modal shows client access section", true, "Client access");
