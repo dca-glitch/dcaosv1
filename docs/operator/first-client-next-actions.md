@@ -16,7 +16,7 @@ Use the Admin Daily Operations Cockpit first so ready work, review work, and blo
 2. Confirm the intake facts that are already verified.
 3. Pick one test month.
 4. Create one monthly project.
-5. Add a short brief.
+5. Add a short brief, then **submit the brief** — the WorkflowBrief must be submitted before `run-ai` will accept it.
 6. Prepare one SEO plan scaffold with objectives only.
 7. Turn the plan into content objectives.
 8. Review one draft or draft shell.
@@ -46,6 +46,27 @@ For a local rehearsal of the full Puriva operator path, use [`PURIVA_LOCAL_E2E_O
 
 For any future environment proof, read [`G9_ENVIRONMENT_PROOF_APPROVAL_GATE.md`](../runbooks/G9_ENVIRONMENT_PROOF_APPROVAL_GATE.md) first, wait for explicit owner approval, and then use the Sonnet-only execution prompt there. Do not treat the planning gate as execution.
 No environment proof has run yet.
+
+## Local Dry-Run Recap (2026-07-06)
+
+A local/admin-only placeholder practice run of this 12-step list was completed via direct authenticated local API calls (mirroring existing smoke-script patterns), not through the browser. Repo was clean and synced (`## main...origin/main`) before and after; latest commit at the time was `9251315` (`docs: record business modules polish closeout`); no files changed during the run.
+
+**Fixtures used (placeholder only):**
+
+- Client: `"ZZZ LOCAL PRACTICE CLIENT (placeholder - not a real client)"`
+- Month: `2026-07`
+- Brief: `"PLACEHOLDER local practice brief - operator review required"`
+- All brief fields were explicit placeholder text; no medical/legal/license/before-after claims were used.
+
+**Chain proven end-to-end locally:** intake/client → WorkflowBrief submit → MI + SEO reports → production plan → client send/approval → AI Delivery monthly project → content production seed → 12 content drafts → package deliverables → monthly report → FINAL status → client portal visibility.
+
+**Client boundary result:** PASS. The client-side monthly report view showed only the FINAL report with client-safe fields (`id`, `aiDeliveryProjectId`, `title`, `displayTitle`, `recommendationsText`, `exportUrl`, `status`, `hasDocument`, `finalizedAt`, `createdAt`, `updatedAt`). No `storageKey`, provider/model/gateway, prompt, job/run id, cost, or review notes were exposed.
+
+**Local API/Web state:** the local API was already running on `:4000` (health OK) and used for all steps; local Web on `:5173` was running but not browser-driven for this recap.
+
+**Discovered documentation gap (now fixed above):** this doc did not previously state that a WorkflowBrief must be submitted before `run-ai` will accept it — step 5 above now reflects that.
+
+**Scope of this proof:** local/admin-only, placeholder data only. This does not constitute real-client readiness, environment proof, or production readiness. No code fix was needed and no environment escalation is needed. Environment/VPS/staging/production remain untouched, and live provider, live WordPress, GA/GSC, and R2 live IO remain deferred.
 
 ## Stop Conditions
 
