@@ -53,7 +53,7 @@ async function loginAsAdmin(password) {
     body: { email: adminEmail, password }
   });
   const loginData = requireOkData("admin login", loginResponse, 200);
-  return loginData.token;
+  return loginData.session?.token ?? "";
 }
 
 async function main() {
@@ -115,11 +115,14 @@ async function main() {
           invoiceNumber: `FL-${Date.now()}`,
           status: "ISSUED",
           issueDate: new Date().toISOString(),
+          dueDate: new Date().toISOString(),
+          paidAt: null,
           currency: "USD",
           subtotalCents: 25000,
           taxCents: 0,
           discountCents: 0,
           totalCents: 25000,
+          amountPaidCents: 0,
           lineItems: [
             {
               description: "Ledger integration item",
@@ -144,7 +147,10 @@ async function main() {
           vendorId: vendor.id,
           amountCents: 5000,
           paymentForm: "CASH",
-          paymentDate: new Date().toISOString()
+          paymentDate: new Date().toISOString(),
+          billDate: new Date().toISOString(),
+          dueDate: new Date().toISOString(),
+          referenceNumber: `FL-BILL-${Date.now()}`
         }
       }),
       201

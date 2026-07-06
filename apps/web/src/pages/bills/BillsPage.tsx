@@ -280,19 +280,19 @@ export function BillsPage({
         eyebrow="Expenses"
         title="Bills"
         titleId="bills-title"
-        description="Vendor bills, payment tracking, and document references."
+        description="Vendor bills, payment status, and document references."
         actions={
           canEdit ? (
             <>
               <Button onClick={openCreateVendorModal} type="button" variant="secondary">
-                Add Vendor
+                New vendor
               </Button>
               <Button
                 disabled={!hasActiveVendors}
                 onClick={openCreateBillModal}
                 type="button"
               >
-                Add Bill
+                New bill
               </Button>
             </>
           ) : null
@@ -337,7 +337,7 @@ export function BillsPage({
       ) : null}
 
       {vendors.length > 0 ? (
-        <SectionPanel tone="compact" title="Vendors" description="Active vendor records for bill entry.">
+        <SectionPanel tone="compact" title="Vendors" description="Vendors used for bill entry.">
           <div className="dense-list">
           {vendors.map((vendor) => (
             <article className="entity-card dense-record" key={vendor.id}>
@@ -365,7 +365,7 @@ export function BillsPage({
                 </div>
 
                 <div className="dense-actions">
-                  {canEdit ? <Button onClick={() => openEditVendorModal(vendor)} size="sm" variant="secondary" type="button">Open</Button> : null}
+                  {canEdit ? <Button onClick={() => openEditVendorModal(vendor)} size="sm" variant="secondary" type="button">Edit</Button> : null}
                   {canEdit ? (
                     <details className="row-action-menu">
                       <summary>More</summary>
@@ -386,7 +386,7 @@ export function BillsPage({
         </SectionPanel>
       ) : null}
 
-      <SectionPanel tone="compact" title="Bills" description="Filtered bill records for the active workspace.">
+      <SectionPanel tone="compact" title="Bills" description="Active and archived bill records for the workspace.">
       {filteredBills.length === 0 ? (
         <p className="inline-empty muted-text">No bills match the current filter.</p>
       ) : (
@@ -415,7 +415,7 @@ export function BillsPage({
                 formatPaymentForm(bill.paymentForm),
                 formatDateLabel(bill.dueDate),
                 <div className="finance-row-actions" key={`${bill.id}-actions`}>
-                  {canEdit ? <Button onClick={() => openEditBillModal(bill)} size="sm" variant="secondary" type="button">Open</Button> : null}
+                  {canEdit ? <Button onClick={() => openEditBillModal(bill)} size="sm" variant="secondary" type="button">Edit</Button> : null}
                   {canEdit ? (
                     <details className="row-action-menu">
                       <summary>More</summary>
@@ -446,7 +446,7 @@ export function BillsPage({
             setIsBillEditorOpen(false);
           }}
           size="md"
-          title={billEditorId ? "Edit Bill" : "Add Bill"}
+          title={billEditorId ? "Edit Bill" : "New Bill"}
         >
           <form className="entity-form" onSubmit={handleBillSubmit}>
             <ModalActions
@@ -588,7 +588,7 @@ export function BillsPage({
       ) : null}
 
       {isVendorEditorOpen ? (
-        <Modal eyebrow={vendorEditorId ? "Edit" : "Create"} onClose={() => setIsVendorEditorOpen(false)} size="sm" title={vendorEditorId ? "Edit Vendor" : "Add Vendor"}>
+        <Modal eyebrow={vendorEditorId ? "Edit" : "Create"} onClose={() => setIsVendorEditorOpen(false)} size="sm" title={vendorEditorId ? "Edit Vendor" : "New Vendor"}>
           <form className="entity-form" onSubmit={handleVendorSubmit}>
             <div className="field-grid">
               <Input

@@ -80,11 +80,11 @@ const INSIGHT_STATUS_OPTIONS = ["DRAFT", "NEEDS_REVISION", "REVIEWED", "APPROVED
 const HANDOFF_STATUS_OPTIONS = ["DRAFT", "READY", "APPLIED", "ARCHIVED"] as const;
 
 const WORKFLOW_STEPS = [
-  { id: "sources", label: "Add research sources", hint: "Capture URLs, competitors, and notes." },
-  { id: "run", label: "Execute a research run", hint: "Generate a bounded insight from project inputs." },
-  { id: "approve", label: "Approve a market insight", hint: "Human review before any handoff." },
-  { id: "handoff", label: "Prepare internal handoff", hint: "Package findings for AI Delivery." },
-  { id: "ready", label: "Mark handoff READY", hint: "Then attach it inside AI Delivery." }
+  { id: "sources", label: "Add sources", hint: "Capture URLs, competitors, and notes." },
+  { id: "run", label: "Run research", hint: "Generate bounded output from project inputs." },
+  { id: "approve", label: "Approve insight", hint: "Human review before any handoff." },
+  { id: "handoff", label: "Prepare handoff", hint: "Package findings for AI Delivery." },
+  { id: "ready", label: "Mark READY", hint: "Attach it inside AI Delivery." }
 ] as const;
 
 async function apiRequest<T>(method: string, path: string, body?: unknown): Promise<ApiResponse<T>> {
@@ -678,10 +678,10 @@ export function AiMarketIntelligencePage({ clients }: AiMarketIntelligencePagePr
       <PageHeader
         actions={
           <button className="primary-action" onClick={() => setShowProjectModal(true)} type="button">
-            New research project
+            New project
           </button>
         }
-        description="Admin-only competitive research. Sources are manually recorded and admin-reviewed — no live crawling. Approve insights, prepare READY handoffs, then attach them inside AI Delivery."
+        description="Admin-only research. Sources are manually recorded and reviewed; no live crawling. Approved insights can become READY handoffs into AI Delivery."
         eyebrow="Research"
         title="Market Intelligence"
         titleId="market-intelligence-title"
@@ -713,7 +713,7 @@ export function AiMarketIntelligencePage({ clients }: AiMarketIntelligencePagePr
           </div>
 
           {filteredProjects.length === 0 ? (
-            <p className="inline-empty muted-text">Create a research project to start the operator workflow.</p>
+            <p className="inline-empty muted-text">Create a project to start the workflow.</p>
           ) : (
             <div className="dense-list">
               {filteredProjects.map((project) => (
@@ -751,7 +751,7 @@ export function AiMarketIntelligencePage({ clients }: AiMarketIntelligencePagePr
 
         <div>
           {!selectedProject ? (
-            <p className="inline-empty muted-text">Choose a research project from the left queue to run the monthly operator workflow.</p>
+            <p className="inline-empty muted-text">Choose a project from the left queue.</p>
           ) : detailLoading ? (
             <LoadingState label="Loading project research data" />
           ) : (
@@ -774,15 +774,15 @@ export function AiMarketIntelligencePage({ clients }: AiMarketIntelligencePagePr
 
               <div className="summary-grid metric-grid operator-summary-metrics">
                 <MetricCard accent="cyan" helper="Curated references" label="Sources" value={sources.filter((s) => !s.isArchived).length} />
-                <MetricCard accent="warning" helper="Admin-written notes" label="Findings" value={findings.filter((f) => !f.isArchived).length} />
-                <MetricCard accent="violet" helper="Bounded executions" label="Runs" value={runs.filter((r) => r.status === "EXECUTED").length} />
-                <MetricCard accent="purple" helper="Approved for handoff" label="Insights" value={approvedInsights.length} />
-                <MetricCard accent="cyan" helper="Draft or finalized" label="Summaries" value={summaries.filter((s) => !s.isArchived).length} />
+                <MetricCard accent="warning" helper="Admin notes" label="Findings" value={findings.filter((f) => !f.isArchived).length} />
+                <MetricCard accent="violet" helper="Bounded runs" label="Runs" value={runs.filter((r) => r.status === "EXECUTED").length} />
+                <MetricCard accent="purple" helper="Approved handoff" label="Insights" value={approvedInsights.length} />
+                <MetricCard accent="cyan" helper="Draft or final" label="Summaries" value={summaries.filter((s) => !s.isArchived).length} />
                 <MetricCard accent="success" helper="READY or APPLIED" label="Handoffs" value={readyHandoffs.length} />
               </div>
 
               <SectionPanel
-                description="Complete each step in order. Only approved insights can become internal handoffs for AI Delivery."
+                description="Complete each step in order. Only approved insights can become handoffs for AI Delivery."
                 title="Operator workflow"
                 tone="compact"
               >
@@ -815,10 +815,10 @@ export function AiMarketIntelligencePage({ clients }: AiMarketIntelligencePagePr
               <SectionPanel
                 action={
                   <button className="secondary-action" disabled={!selectedProjectId} onClick={() => setShowSourceModal(true)} type="button">
-                    Add source
+                    New source
                   </button>
                 }
-                description="Manually recorded URLs, competitor pages, and internal notes. Approve or reject each source before it informs insights or handoffs. No automatic fetching or broad scraping."
+                description="Manually recorded URLs, competitor pages, and notes. Approve each source before it informs insights or handoffs."
                 title="Research sources"
                 tone="compact"
               >
@@ -851,10 +851,10 @@ export function AiMarketIntelligencePage({ clients }: AiMarketIntelligencePagePr
               <SectionPanel
                 action={
                   <button className="secondary-action" disabled={!selectedProjectId} onClick={() => setShowFindingModal(true)} type="button">
-                    Add finding
+                    New finding
                   </button>
                 }
-                description="Admin-written granular findings from curated sources. No autonomous extraction."
+                description="Admin-written findings from curated sources only."
                 title="Research findings"
                 tone="compact"
               >
@@ -890,15 +890,15 @@ export function AiMarketIntelligencePage({ clients }: AiMarketIntelligencePagePr
               <SectionPanel
                 action={
                   <button className="secondary-action" disabled={!selectedProjectId} onClick={() => void handleCreateRun()} type="button">
-                    Create run
+                    Run
                   </button>
                 }
-                description="Deterministic placeholder execution — no live crawling in MVP."
+                description="Deterministic execution only; no live crawling in MVP."
                 title="Research runs"
                 tone="compact"
               >
                 {runs.length === 0 ? (
-                  <EmptyState message="Create a run, then execute it to generate structured insight output." title="No runs yet" variant="inline" />
+                  <EmptyState message="Create a run to generate structured insight output." title="No runs yet" variant="inline" />
                 ) : (
                   <div className="dense-list">
                     {runs.map((run) => (
@@ -1319,7 +1319,7 @@ export function AiMarketIntelligencePage({ clients }: AiMarketIntelligencePagePr
                 Cancel
               </button>
               <button className="primary-action" disabled={savingSource} type="submit">
-                {savingSource ? "Saving…" : "Add source"}
+                {savingSource ? "Saving…" : "New source"}
               </button>
             </div>
           </form>
@@ -1417,7 +1417,7 @@ export function AiMarketIntelligencePage({ clients }: AiMarketIntelligencePagePr
                 Cancel
               </button>
               <button className="primary-action" disabled={savingFinding} type="submit">
-                {savingFinding ? "Saving…" : "Add finding"}
+                {savingFinding ? "Saving…" : "New finding"}
               </button>
             </div>
           </form>

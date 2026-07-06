@@ -97,12 +97,12 @@ async function main() {
     const invoicesText = await page.locator("#invoices-title").locator("xpath=ancestor::section[1]").innerText();
     record(
       "invoices admin shell shows create or empty state",
-      invoicesText.includes("Add Invoice") || invoicesText.includes("No invoices"),
+      invoicesText.includes("New invoice") || invoicesText.includes("No invoices"),
       "shell"
     );
 
     await page.goto(`${webBaseUrl}/#/bills`, { waitUntil: "domcontentloaded" });
-    await page.getByRole("heading", { name: "Bills", exact: true }).waitFor({ state: "visible", timeout: 20000 });
+    await page.locator("#bills-title").waitFor({ state: "visible", timeout: 20000 });
     record(
       "bills admin shell shows expenses eyebrow",
       await page.locator("#bills-title").locator("xpath=ancestor::section[1]").getByText("Expenses", { exact: true }).isVisible(),
@@ -111,7 +111,7 @@ async function main() {
     const billsText = await page.locator("#bills-title").locator("xpath=ancestor::section[1]").innerText();
     record(
       "bills admin shell shows create or empty state",
-      billsText.includes("Add Bill") || billsText.includes("Add Vendor") || billsText.includes("No bills"),
+      billsText.includes("New bill") || billsText.includes("New vendor") || billsText.includes("No bills"),
       "shell"
     );
 

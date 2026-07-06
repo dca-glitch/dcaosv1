@@ -660,7 +660,7 @@ export function InvoicesPage({
         eyebrow="Finance"
         title="Invoices"
         titleId="invoices-title"
-        description="Invoice lifecycle, payments, and recurring schedules."
+        description="Invoices, payments, and recurring schedules."
         actions={
           <>
             <div className="filter-bar" role="group" aria-label="Invoice view">
@@ -690,7 +690,7 @@ export function InvoicesPage({
                 type="button"
                 variant="primary"
               >
-                {tab === "invoices" ? "Add Invoice" : "Add Recurring"}
+                {tab === "invoices" ? "New invoice" : "New recurring"}
               </Button>
             ) : null}
           </>
@@ -1173,7 +1173,7 @@ function InvoiceCards({ invoices, canEdit, onEditInvoice, onArchiveInvoice, onMa
               <Td mono>{formatDateLabel(invoice.dueDate)}</Td>
               <Td>
                 <div className="finance-row-actions">
-                  {canEdit ? <Button size="sm" variant="secondary" onClick={() => onEditInvoice(invoice)} type="button">Open</Button> : null}
+                  {canEdit ? <Button size="sm" variant="secondary" onClick={() => onEditInvoice(invoice)} type="button">Edit</Button> : null}
                   {canEdit ? (
                     <details className="row-action-menu">
                       <summary>More</summary>
@@ -1264,7 +1264,7 @@ function RecurringInvoiceCards({ recurringInvoices, canEdit, onEditRecurringInvo
             <Td mono>{formatDateLabel(recurringInvoice.nextRunDate)}</Td>
             <Td>
               <div className="finance-row-actions">
-                {canEdit ? <Button size="sm" variant="secondary" onClick={() => onEditRecurringInvoice(recurringInvoice)} type="button">Open</Button> : null}
+                {canEdit ? <Button size="sm" variant="secondary" onClick={() => onEditRecurringInvoice(recurringInvoice)} type="button">Edit</Button> : null}
                 {canEdit ? (
                   <details className="row-action-menu">
                     <summary>More</summary>

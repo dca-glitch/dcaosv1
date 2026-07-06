@@ -364,11 +364,11 @@ export function CreditNotesPage({
         eyebrow="Finance"
         title="Credit Notes"
         titleId="credit-notes-title"
-        description="Refunds and billing adjustments linked to invoices."
+        description="Invoice corrections and billing adjustments."
         actions={
           canEdit ? (
             <Button disabled={invoices.length === 0} onClick={openCreateModal} type="button">
-              Add Credit Note
+              New credit note
             </Button>
           ) : null
         }
@@ -394,7 +394,7 @@ export function CreditNotesPage({
       />
 
       {isEditorOpen ? (
-        <Modal eyebrow={editorId ? "Edit" : "Create"} onClose={resetEditor} size="lg" title={editorId ? "Edit Credit Note" : "Add Credit Note"}>
+        <Modal eyebrow={editorId ? "Edit" : "Create"} onClose={resetEditor} size="lg" title={editorId ? "Edit Credit Note" : "New Credit Note"}>
           <form className="entity-form" onSubmit={handleSubmit}>
             <p className="muted-text">Used to document a refund, correction, or billing adjustment. This does not register a payment by itself.</p>
             <ModalActions
@@ -592,7 +592,7 @@ function CreditNoteCards({ creditNotes, canEdit, onEditCreditNote, onIssueCredit
             formatDateLabel(creditNote.issueDate),
             <div className="finance-row-actions" key={`${creditNote.id}-actions`}>
               {canEdit && creditNote.status === "DRAFT" ? (
-                <Button onClick={() => onEditCreditNote(creditNote)} size="sm" variant="secondary" type="button">Open</Button>
+                <Button onClick={() => onEditCreditNote(creditNote)} size="sm" variant="secondary" type="button">Edit</Button>
               ) : null}
               {canEdit ? (
                 <details className="row-action-menu">

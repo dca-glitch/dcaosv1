@@ -116,13 +116,13 @@ export function InvoiceItemsPage({
     <section className="view-section" aria-labelledby="invoice-items-title" data-density="compact">
       <PageHeader
         eyebrow="Finance"
-        title="Services Library"
+        title="Service library"
         titleId="invoice-items-title"
-        description="Reusable invoice items and service prices scoped to the active tenant. Use this library to standardize future invoice line items."
+        description="Reusable service prices for invoice drafting."
         actions={
           canEdit ? (
             <Button onClick={openCreateModal} type="button">
-              Add Service
+              New service
             </Button>
           ) : null
         }
@@ -136,8 +136,8 @@ export function InvoiceItemsPage({
 
       <SectionPanel
         tone="compact"
-        title="Invoice Items / Services"
-        description="Create, update, archive, and restore reusable service entries. Payments, credit notes, downloads, and project documents are intentionally out of scope here."
+        title="Services"
+        description="Create, update, archive, and restore reusable service entries."
         action={
           <div className="filter-bar" role="group" aria-label="Service library view">
             <Button
@@ -164,7 +164,7 @@ export function InvoiceItemsPage({
         {visibleItems.length === 0 ? (
           <p className="inline-empty muted-text">
             {tab === "active"
-              ? "Add your first reusable service to build the invoice item library."
+              ? "Add your first reusable service."
               : "Archived services will appear here when available."}
           </p>
         ) : (
@@ -205,7 +205,7 @@ export function InvoiceItemsPage({
                   <div className="dense-actions">
                     {canEdit && !item.isArchived ? (
                       <Button onClick={() => openEditModal(item)} type="button">
-                        Open
+                        Edit
                       </Button>
                     ) : null}
                     {canEdit ? (

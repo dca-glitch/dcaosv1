@@ -915,7 +915,7 @@ function LoginScreen({
         <span className="brand-mark login-brand-mark">DCA</span>
         <p className="eyebrow">DCA OS v1 / Lite</p>
         <h2>Run your operations from DCA OS command center.</h2>
-        <p>Clients, Projects, Tasks, Invoices, Bills, Modules, Revenue Hub, SEO Hub, and AI Workflow stay visible in one product workspace.</p>
+        <p>Clients, billing, modules, and future labels stay visible in one workspace.</p>
       </div>
       <section className="login-panel" aria-labelledby="login-title">
         <div>
@@ -1196,13 +1196,13 @@ function DashboardView({
             <a className="subtle-action" href="#/projects">Check project delivery</a>
           </div>
         </SectionPanel>
-        <SectionPanel tone="compact" title="Finance" description="Summaries in Invoices and Bills.">
+        <SectionPanel tone="compact" title="Finance" description="Invoices and Bills at a glance.">
           <div className="quick-link-list">
             <a className="subtle-action" href="#/invoices">Open invoices</a>
             <a className="subtle-action" href="#/bills">Open bills</a>
           </div>
         </SectionPanel>
-        <SectionPanel tone="compact" title="Quick links" description="Core workspaces. Future modules shown as preview labels only.">
+        <SectionPanel tone="compact" title="Quick links" description="Core workspaces and preview labels only.">
           <div className="quick-action-grid">
             <a className="secondary-action" href="#/clients">Clients</a>
             <a className="secondary-action" href="#/projects">Projects</a>
@@ -1294,7 +1294,7 @@ function ModuleRegistryView({
 
   return (
     <section className="view-section" aria-labelledby="modules-title">
-      <PageHeader eyebrow="Module Registry" title="Modules" titleId="modules-title" description="Manage Clients, Projects, Tasks, Invoices, Bills, Modules, and preview future Revenue Hub, SEO Hub, and AI Workflow labels without adding routes or backend logic." />
+      <PageHeader eyebrow="Module Registry" title="Modules" titleId="modules-title" description="Manage core workspaces and preview future Revenue Hub, SEO Hub, and AI Workflow labels only." />
       <div className="module-grid">
         {availableModules.map((moduleItem) => {
           const tenantModule = tenantModuleByKey.get(moduleItem.key);
@@ -1338,9 +1338,8 @@ function ModuleRegistryView({
           <p className="eyebrow">Module Registry</p>
           <h2>{selectedModuleKey}</h2>
           <p>
-            This module shell is ready for the next backend-backed pass. It stays inside the admin registry,
-            keeps navigation lightweight, and leaves Finance Lite, marketplace loading, billing, and dynamic
-            plugin mounting out of scope for this MVP shell.
+            This module shell is ready for the next backend-backed pass. Finance Lite, billing, and dynamic
+            plugin mounting stay out of scope for this MVP shell.
           </p>
         </div>
       ) : null}
