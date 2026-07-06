@@ -4,6 +4,8 @@
 
 **Status:** Closed (2026-06-27). Staging host documented; G4 not approved.
 
+**Addendum (2026-07-06, G28 reconciliation):** `docs/STATUS.md` §2.2 separately claims G4 staging execution occurred on 2026-07-05 (commit `5ee8389`), after this block closed. That claim is **unresolved and owner-gated** — neither confirmed nor refuted. This historical block record is left unchanged below; do not treat it as proof that G4 remains unapproved, and do not treat `STATUS.md`'s claim as proof G4 occurred. No further staging/VPS/env action until the owner confirms ground truth.
+
 ---
 
 ## Goal

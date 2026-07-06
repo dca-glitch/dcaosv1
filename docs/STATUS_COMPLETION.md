@@ -180,7 +180,7 @@ Decision selector: stop and wait for owner decision; if approved later, use the 
 | **PR #13 merge to main** | **100%** | Merged; local `main` synced to `origin/main` |
 | **Local main validation** | **100%** | Prior accepted baseline after Windows Prisma DLL lock cleanup |
 | **Local pre-staging proof** | **95%** | Accepted; isolated Finance admin browser smoke passed after local admin restore and API/Web restart |
-| **Confirmed staging target** | **100%** | G1 closed — `staging.digitalcubeagency.net`; production remains `system.digitalcubeagency.net`; same VPS, separate staging stack; DNS not created yet; G4 not approved |
+| **Confirmed staging target** | **100%** (target only) | G1 closed — `staging.digitalcubeagency.net`; production remains `system.digitalcubeagency.net`; same VPS, separate staging stack; DNS not created yet; G4 not approved. **Note:** `docs/STATUS.md` §2.2 separately claims G4 staging deploy completed on `5ee8389` — that claim is **unresolved/unverified**, pending owner confirmation. Do not treat G4 as either approved or executed until reconciled. |
 | **Current main deployed to production** | **0%** | Not deployed; production frozen |
 | **Full PRD vision** (future modules + automation) | **~28%** | Large portion intentionally deferred |
 
@@ -240,7 +240,7 @@ Decision selector: stop and wait for owner decision; if approved later, use the 
 | **PR #13 merge → main** | **100%** | Done | Merged at `584e041bd85e8179e795a0e4621a0d9d8908e0b6`; follow-up docs commit `07b1f1668d11cdef42b195cfad189c4df645acc6` |
 | **Local main validation** | **100%** | Done | Passed after Windows Prisma DLL lock cleanup |
 | **Local pre-staging proof** | **95%** | Accepted | Full pre-staging reached Finance admin browser smoke; isolated Finance smoke passed after local admin restore and API/Web restart |
-| **Confirmed staging target** | **100%** | Done (G1) | `staging.digitalcubeagency.net` approved; production `system.digitalcubeagency.net`; separate staging stack on same VPS; DNS deferred until G4 prep; G4 VPS execution not approved |
+| **Confirmed staging target** | **100%** (target only) | Done (G1) | `staging.digitalcubeagency.net` approved; production `system.digitalcubeagency.net`; separate staging stack on same VPS; DNS deferred until G4 prep; G4 VPS execution not approved. **Note:** `docs/STATUS.md` §2.2 separately claims G4 staging deploy completed on `5ee8389` — **unresolved/unverified**, pending owner confirmation. |
 | **Current main deployed to production** | **0%** | Deferred | Not deployed; no VPS migration, restart, or release performed |
 | **Production deployment of current main** | **0%** | Deferred | Frozen unless explicitly approved |
 | **Licensee tenant migration** (`OWN_DOMAIN` → separate tenant) | **0%** | Deferred | Future block |

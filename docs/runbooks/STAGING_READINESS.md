@@ -6,6 +6,8 @@
 
 **Current baseline (2026-07-05):** `main` synced with `origin/main`; latest commit `e54445f` (`fix(scripts): harden staging admin bootstrap guards`); Blocks 1–4 + audit remediation (5A–5D-A) CI green; Block 5D-B local closeout PASS (manual orchestrator workaround); **0% deployed** to production; G4 VPS execution **not approved**; staging DNS **not created**.
 
+**Ground-truth notice (added during G28 reconciliation):** `docs/STATUS.md` §2.2 separately claims a G4 staging deploy completed on `5ee8389` after this baseline was written. That claim is **unresolved and owner-gated** — neither confirmed nor refuted. Do not treat this doc's "G4 not approved / DNS not created" wording as settled fact either; both sides of the contradiction are pending owner confirmation. No new staging, VPS, production, deploy, live provider, live WordPress, live R2, GA/GSC, or env action may proceed until the owner confirms ground truth and docs are reconciled.
+
 **Source of truth:** [`docs/STATUS.md`](../STATUS.md). **Operator runbook:** [`docs/operator/OPERATOR_RUNBOOK.md`](../operator/OPERATOR_RUNBOOK.md).
 
 Related:

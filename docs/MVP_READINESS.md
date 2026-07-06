@@ -1,5 +1,7 @@
 # DCA OS v1 MVP Readiness
 
+**Status: Historical / superseded.** This document predates the current staging/deployment narrative (it still shows "Confirmed staging target: 0%") and is not maintained in step with later blocks. For current deployment, staging, and module-readiness state, use [`docs/STATUS.md`](./STATUS.md) as the live source of truth. As of the G28 reconciliation (2026-07-06), staging/G4 deploy state itself is **unresolved and owner-gated** — see `docs/STATUS.md` §2.2 for the open contradiction. The MVP capability/route/scope content below remains a useful historical reference for the original controlled-login MVP shape.
+
 ## Current MVP Capabilities
 
 - Controlled local login and logout.

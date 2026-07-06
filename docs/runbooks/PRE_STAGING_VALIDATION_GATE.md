@@ -6,6 +6,8 @@
 
 **Phase G context (2026-07-05):** G1 closed — staging host `staging.digitalcubeagency.net`; production `system.digitalcubeagency.net`; G4 **not approved**; DNS **not created**. Current `main` baseline: `e54445f` (audit remediation + bootstrap guards); Blocks 1–4 + 5A–5D-A CI green; Block 5D-B local closeout PASS. Source of truth: [`docs/STATUS.md`](../STATUS.md).
 
+**Ground-truth notice (added during G28 reconciliation):** `docs/STATUS.md` §2.2 separately claims a G4 staging deploy completed on `5ee8389` after this baseline was written. That claim is **unresolved and owner-gated** — neither confirmed nor refuted. Treat this doc's "G4 not approved / DNS not created" wording as also unverified pending owner confirmation. No new staging, VPS, production, deploy, live provider, live WordPress, live R2, GA/GSC, or env action may proceed until the owner confirms ground truth and docs are reconciled.
+
 **Forbidden in this gate:** VPS login, Docker Compose apply, Caddy/DNS changes, staging migrations, production env, `smoke:mvp:staging` unless owner explicitly approves G4 and staging host access.
 
 **Run location:** Use a local PowerShell terminal outside Cursor for `npm run validate` and `npm run smoke:pre-staging:local` (long-running). Cursor agents should not start API/Web servers or run full smoke suites during doc-only or UI-copy tasks.

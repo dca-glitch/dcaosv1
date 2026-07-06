@@ -33,6 +33,8 @@ Current behavior:
 
 ## Production And Deployment
 
+**Ground-truth notice (added during G28 reconciliation):** `docs/STATUS.md` §2.2 separately claims a G4 staging deploy completed on `5ee8389`, which would contradict the "deferred" items below. That claim is **unresolved and owner-gated** — neither confirmed nor refuted. Treat the items below as also unverified pending owner confirmation, not settled fact. No new staging, VPS, production, deploy, live provider, live WordPress, live R2, GA/GSC, or env action may proceed until the owner confirms ground truth and docs are reconciled.
+
 Deferred:
 
 - VPS production deployment;
