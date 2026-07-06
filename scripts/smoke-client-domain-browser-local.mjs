@@ -115,7 +115,7 @@ async function main() {
     record("clients page loads", true, "#/clients");
 
     await page.getByRole("button", { name: "Add Client" }).click();
-    const clientModal = page.locator(".modal-panel", { hasText: "Add Client" }).first();
+    const clientModal = page.getByRole("dialog", { name: "Add Client" });
     await clientModal.waitFor({ state: "visible", timeout: 10000 });
 
     await clientModal.getByLabel(/Client name/i).fill(clientName);
@@ -245,14 +245,14 @@ async function main() {
       { timeout: 45000 }
     );
     await page.goto(`${webBaseUrl}/#/ai-market-intelligence`, { waitUntil: "domcontentloaded" });
-    await page.getByRole("heading", { name: "Market Intelligence" }).waitFor({ state: "visible", timeout: 15000 });
+    await page.getByRole("heading", { name: "Market Intelligence", level: 1 }).waitFor({ state: "visible", timeout: 15000 });
     await projectsResponsePromise;
     record("market intelligence page loads", true, "#/ai-market-intelligence");
 
-    const newProjectButton = page.getByRole("button", { name: /^(New research project|Create first project)$/ });
+    const newProjectButton = page.getByRole("button", { name: "New project" });
     await newProjectButton.first().waitFor({ state: "visible", timeout: 30000 });
     await newProjectButton.first().click();
-    const miModal = page.locator(".modal-panel", { hasText: "Create research project" }).first();
+    const miModal = page.getByRole("dialog", { name: "Create research project" });
     await miModal.waitFor({ state: "visible", timeout: 10000 });
 
     await miModal.getByLabel(/Project name/i).fill(projectTitle);
