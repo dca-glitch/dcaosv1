@@ -255,7 +255,7 @@ Full detail: [`docs/runbooks/EXTERNAL_INTEGRATIONS_READINESS.md`](../runbooks/EX
 | 9 | Staging env names prepared — values server-side only at G4 |
 | 10 | Staging DB separate from production; migration procedure reviewed |
 
-**Staging target:** `staging.digitalcubeagency.net` (G1 documented; read-only discovery confirms DNS/routes/web/API exist and respond; staging appears tied to artifact/build context `5ee8389`; current `main`/G35 not proven deployed; G4 refresh/execution not approved).
+**Staging target:** `staging.digitalcubeagency.net` (G1 documented; G35 Phase C controlled refresh complete on `5e1ea5a`; artifact context `/opt/dca/staging-artifacts/5e1ea5a`; staging API/web/MVP smoke PASS; production untouched; any further staging/VPS/prod work requires fresh explicit owner approval).
 
 **Forbidden before G4 approval:** VPS login, Docker apply, Caddy/DNS, staging migrations, `smoke:mvp:staging` without owner approval.
 

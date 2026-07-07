@@ -90,7 +90,7 @@ Proof: `smoke:client-portal:local`, `smoke:client-portal:populated-delivery:brow
 | Client access on staging | no | Policy | Blocked until post-G4 approval |
 | Production | no | Frozen | `system.digitalcubeagency.net` unchanged |
 
-**Local staging readiness:** YES (repo-side proof and docs complete). **VPS staging execution:** NO (G4 separate approval).
+**Local staging readiness:** YES (repo-side proof and docs complete). **Phase C staging refresh:** COMPLETE on `5e1ea5a`. **Further VPS/staging/production execution:** requires fresh explicit owner approval.
 
 ---
 
@@ -98,8 +98,8 @@ Proof: `smoke:client-portal:local`, `smoke:client-portal:populated-delivery:brow
 
 | Deferred item | Reason | Required gate | Suggested future block |
 |---------------|--------|---------------|------------------------|
-| G4 VPS staging deploy | Owner not approved | G4 approval pack + DNS | Phase G Block G4 |
-| `smoke:mvp:staging` on live host | No staging stack yet | G4 deploy + HTTPS | Post-deploy smoke block |
+| G35 Phase C staging refresh | Complete on `5e1ea5a` | Artifact/API/web/MVP smoke proof recorded | Further staging/VPS/prod work requires fresh owner approval |
+| `smoke:mvp:staging` on live host | Phase C PASS on `5e1ea5a` | Existing staging HTTPS + artifact/API/web proof | Future staging smoke requires fresh owner approval |
 | Production deploy | Frozen | Separate production approval | G9+ |
 | Revenue Hub AI | Future module | Product approval | RH0+ |
 | POD AI Toolkit | Future module | Product approval | POD0+ |

@@ -15,7 +15,7 @@
 | Item | State |
 |------|--------|
 | Branch | `main` synced with `origin/main` |
-| Latest proven closeout commit | `217c11c` — `test: stabilize G35 Phase B browser smokes`; G35 Phase C controlled refresh completed on `5e1ea5a` (`docs: record staging discovery facts`) |
+| Latest docs/local closeout commit | `6de603e` — `docs: align G35 Phase C staging status`; G35 Phase B local smoke proof remains `217c11c`; G35 Phase C staging artifact source remains `5e1ea5a` |
 | CI | Green on `217c11c` |
 | Working tree | Clean and synced with `origin/main` |
 | Pre-staging local closeout (G35 Phase B) | **PASS** — full local pre-staging gate passed on `217c11c`; see §2.7 |
