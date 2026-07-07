@@ -6,7 +6,7 @@
 
 **Phase G context (2026-07-07):** G1 closed — staging host `staging.digitalcubeagency.net`; production `system.digitalcubeagency.net`; G4 **not approved**; DNS **not created**. Current proven closeout commit: `217c11c` (`test: stabilize G35 Phase B browser smokes`); CI green; full local `smoke:pre-staging:local` PASS for G35 Phase B. Source of truth: [`docs/STATUS.md`](../STATUS.md).
 
-**Ground-truth notice (added during G28 reconciliation):** `docs/STATUS.md` §2.2 separately claims a G4 staging deploy completed on `5ee8389` after this baseline was written. That claim is **unresolved and owner-gated** — neither confirmed nor refuted. Treat this doc's "G4 not approved / DNS not created" wording as also unverified pending owner confirmation. No new staging, VPS, production, deploy, live provider, live WordPress, live R2, GA/GSC, or env action may proceed until the owner confirms ground truth and docs are reconciled.
+**Ground-truth notice (reconciled 2026-07-07):** `docs/STATUS.md` §2.2 records a historical/unverified claim that a G4 staging deploy completed on `5ee8389`. **Owner cannot confirm this happened.** That claim must not be used as accepted staging deploy proof. Treat "G4 not approved / DNS not created" as the authoritative local-docs baseline. Staging/VPS/DNS/migration/deploy is **NOT approved**. Before any staging action, owner must explicitly approve a fresh bounded staging discovery/execution block. This docs reconciliation does not authorize any VPS, staging, production, deploy, DNS, migration, SSH, Docker, or Caddy action.
 
 **Forbidden in this gate:** VPS login, Docker Compose apply, Caddy/DNS changes, staging migrations, production env, `smoke:mvp:staging` unless owner explicitly approves G4 and staging host access.
 
