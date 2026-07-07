@@ -1,9 +1,12 @@
 import { chromium } from "@playwright/test";
+import { writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import {
   CLIENT_PORTAL_DELIVERY_SUMMARY_HEADING,
   gotoClientPortal,
   seedClientPortalAuth,
-  selectPortalProject
+  clientPortalSection
 } from "./lib/client-portal-browser-smoke-helpers.mjs";
 import { seedPurivaDeliverySummaryFixture } from "./lib/puriva-delivery-summary-fixture.mjs";
 
@@ -15,6 +18,9 @@ const adminPassword = process.env.AUTH_SEED_TEST_PASSWORD;
 const forbiddenTokens = ["storageKey", "workflowRunId", "executionLog", "tenantId", "prompt", "sourceNote", "audienceSignals"];
 
 const results = [];
+const artifactStamp = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+const screenshotPath = join(tmpdir(), `smoke-client-portal-populated-delivery-browser-${artifactStamp}.png`);
+const domTextPath = join(tmpdir(), `smoke-client-portal-populated-delivery-browser-${artifactStamp}.txt`);
 
 function record(name, ok, detail = "") {
   results.push({ name, ok, detail });
@@ -74,6 +80,35 @@ function containsForbiddenToken(text, token) {
   const escaped = token.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const pattern = new RegExp(`(^|[^A-Za-z0-9])${escaped}([^A-Za-z0-9]|$)`, "i");
   return pattern.test(text);
+}
+
+async function capturePortalProof(page, portalSection, projectName) {
+  const portalSectionCount = await portalSection.count();
+  const bodyText = await page.locator("body").innerText();
+  const detailColumn = page.locator(".portal-detail-column");
+  const detailText = (await detailColumn.count()) > 0 ? await detailColumn.innerText() : "";
+  const sectionText = portalSectionCount > 0 ? await portalSection.innerText() : "";
+
+  record("populated smoke selected project visible in body", bodyText.includes(projectName), projectName);
+  record("populated smoke delivery summary heading visible anywhere", bodyText.includes(CLIENT_PORTAL_DELIVERY_SUMMARY_HEADING), CLIENT_PORTAL_DELIVERY_SUMMARY_HEADING);
+  record("populated smoke client portal section wrapper is present", portalSectionCount === 1, `count=${portalSectionCount}`);
+  record(
+    "populated smoke current populated overview copy visible",
+    detailText.includes(projectName) &&
+      detailText.includes("Work completed") &&
+      detailText.includes("Market insights") &&
+      detailText.includes("Next steps:") &&
+      detailText.includes("Website handoff") &&
+      detailText.includes("Final file links"),
+    "Work completed / Market insights / Next steps / Website handoff / Final file links"
+  );
+
+  await writeFile(domTextPath, `BODY TEXT\n${bodyText}\n\nDETAIL COLUMN TEXT\n${detailText}\n`, "utf8");
+  await page.screenshot({ path: screenshotPath, fullPage: true });
+  console.log(`DOM_TEXT_PATH=${domTextPath}`);
+  console.log(`SCREENSHOT_PATH=${screenshotPath}`);
+
+  return detailText;
 }
 
 async function createPopulatedFixture(adminToken, adminUserId) {
@@ -213,17 +248,67 @@ async function main() {
     await seedClientPortalAuth(page, adminToken);
     await gotoClientPortal(page, webBaseUrl);
 
-    const portalSection = await selectPortalProject(page, fixture.projectName);
-    record("populated smoke project visible in portal sidebar", true, fixture.projectName);
-    await portalSection.getByRole("heading", { name: CLIENT_PORTAL_DELIVERY_SUMMARY_HEADING, exact: true }).waitFor({ state: "visible", timeout: 30000 });
+    const portalSection = clientPortalSection(page);
+    const projectCard = portalSection.locator(".cf-project-list .cf-project-item", { hasText: fixture.projectName }).first();
+    await projectCard.waitFor({ state: "visible", timeout: 20000 });
+    const selectedBeforeClick = ((await projectCard.getAttribute("class")) ?? "").includes("is-selected");
+    if (!selectedBeforeClick) {
+      await projectCard.click();
+    }
+    const selectedProjectCard = portalSection.locator(".cf-project-list .cf-project-item.is-selected", {
+      hasText: fixture.projectName
+    }).first();
+    const detailColumn = page.locator(".portal-detail-column");
 
-    const overviewText = await portalSection.innerText();
+    try {
+      await selectedProjectCard.waitFor({ state: "visible", timeout: 15000 });
+      record("populated smoke project selected in portal sidebar", true, fixture.projectName);
+
+      await page.waitForFunction(
+        ({ projectName }) => {
+          const detailColumn = document.querySelector(".portal-detail-column");
+          const detailText = detailColumn?.innerText ?? "";
+          return detailText.includes(projectName) &&
+            detailText.includes("Work completed") &&
+            detailText.includes("Market insights") &&
+            detailText.includes("Website handoff") &&
+            !detailText.includes("Loading project archive") &&
+            !detailText.includes("Loading delivery summary");
+        },
+        { projectName: fixture.projectName },
+        { timeout: 30000 }
+      );
+      record("populated smoke selected project detail rendered", true, fixture.projectName);
+    } catch (error) {
+      record(
+        "populated smoke selected project detail rendered",
+        false,
+        error instanceof Error ? error.message : "selection/detail wait failed"
+      );
+      const selectedClass = (await selectedProjectCard.getAttribute("class").catch(() => null)) ?? "missing";
+      const detailText = (await detailColumn.count()) > 0 ? await detailColumn.innerText().catch(() => "") : "";
+      await writeFile(
+        domTextPath,
+        [
+          `PROJECT_NAME\n${fixture.projectName}`,
+          `SELECTED_CARD_CLASS\n${selectedClass}`,
+          `DETAIL_COLUMN_TEXT\n${detailText}`,
+          `BODY TEXT\n${await page.locator("body").innerText().catch(() => "")}`
+        ].join("\n\n"),
+        "utf8"
+      );
+      await page.screenshot({ path: screenshotPath, fullPage: true });
+      console.log(`DOM_TEXT_PATH=${domTextPath}`);
+      console.log(`SCREENSHOT_PATH=${screenshotPath}`);
+      throw error;
+    }
+    const overviewText = await capturePortalProof(page, portalSection, fixture.projectName);
     const overviewHtml = await portalSection.innerHTML();
     const renderedOverview = `${overviewText}\n${overviewHtml}`;
 
     record(
       "populated delivery summary section renders",
-      overviewText.includes(CLIENT_PORTAL_DELIVERY_SUMMARY_HEADING) && overviewText.includes("Planned content"),
+      overviewText.includes(CLIENT_PORTAL_DELIVERY_SUMMARY_HEADING) && overviewText.includes("Work completed"),
       "summary visible"
     );
     record(
@@ -235,17 +320,17 @@ async function main() {
     );
     record(
       "populated delivery overview shows recommended actions",
-      overviewText.includes("Recommended actions"),
+      overviewText.includes("Next steps:"),
       "recommended actions visible"
     );
     record(
       "populated delivery summary shows google docs export link",
-      overviewText.includes("Open document"),
+      overviewText.includes("Open final file"),
       fixture.deliveryHints.googleExportUrl ?? "link"
     );
     record(
       "populated delivery summary shows website publishing status",
-      overviewText.includes("Website updates") &&
+      overviewText.includes("Website handoff") &&
         (overviewText.includes("PROVIDER_DISABLED") || overviewText.includes("smoke-puriva.example.com")),
       fixture.deliveryHints.publishingStatus ?? "status"
     );

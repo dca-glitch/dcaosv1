@@ -1,6 +1,6 @@
 /**
  * Post-MVP Block 53 — auth invite boundary browser proof.
- * Verifies deferred invite/password-reset boundary copy on Team and Settings shells only.
+ * Verifies invite/password-reset boundary proof on Team and Settings shells only.
  * Does not change auth behavior.
  */
 
@@ -135,14 +135,23 @@ async function main() {
     await teamDirectoryPanel.waitFor({ state: "visible", timeout: 15000 });
     const teamText = await teamDirectoryPanel.innerText();
     record(
-      "team shell states invites remain deferred",
-      teamText.includes("invites") && teamText.includes("deferred"),
-      "team deferred invite copy"
+      "team page renders member directory",
+      teamText.toLowerCase().includes("user email") && teamText.toLowerCase().includes("role / access level"),
+      "member directory table"
     );
+
+    const teamInviteButtons = teamDirectoryPanel.getByRole("button", { name: /invite/i });
     record(
-      "team shell states password reset remains deferred",
-      teamText.includes("password reset") && teamText.includes("deferred"),
-      "team deferred password reset copy"
+      "team page has no invite action buttons",
+      (await teamInviteButtons.count()) === 0,
+      `${await teamInviteButtons.count()} invite buttons`
+    );
+
+    const teamResetButtons = teamDirectoryPanel.getByRole("button", { name: /reset password/i });
+    record(
+      "team page exposes current admin reset-password action",
+      (await teamResetButtons.count()) > 0,
+      `${await teamResetButtons.count()} reset buttons`
     );
 
     await page.goto(`${webBaseUrl}/#/settings`, { waitUntil: "domcontentloaded" });

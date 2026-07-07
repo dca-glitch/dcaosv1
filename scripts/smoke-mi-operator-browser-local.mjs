@@ -163,10 +163,12 @@ async function main() {
     record("mi seeded source visible in panel", true, "fixture source");
 
     const workflowPanel = page.getByRole("heading", { name: "Operator workflow", exact: true }).locator("xpath=ancestor::section[1]");
-    const workflowText = await workflowPanel.innerText();
+    const sourcesStep = workflowPanel.locator("article.dense-record", { hasText: "Add sources" }).first();
+    await sourcesStep.waitFor({ state: "visible", timeout: 10000 });
+    const sourcesStepText = await sourcesStep.innerText();
     record(
       "mi operator workflow marks seeded sources step done",
-      workflowText.includes("Add research sources") && workflowText.toLowerCase().includes("done"),
+      sourcesStepText.includes("Add sources") && sourcesStepText.toLowerCase().includes("done"),
       "sources step"
     );
 

@@ -92,18 +92,29 @@ async function ensureMonthlyReportMenuOpen(projectCard) {
   }
 }
 
-async function openMonthlyReportModal(page, projectName) {
+async function openMonthlyReportModal(page, projectName, reportId) {
   await page.getByRole("button", { name: "All", exact: true }).click();
-  const projectCard = page.locator("article.entity-card", { hasText: projectName }).first();
-  await projectCard.scrollIntoViewIfNeeded();
-  await projectCard.waitFor({ state: "visible", timeout: 30000 });
-  await ensureMonthlyReportMenuOpen(projectCard);
-  await projectCard.getByRole("button", { name: "Monthly Report" }).click();
+  const projectOption = page
+    .locator('ul[aria-label="AI delivery projects"] button.brief-select-item', { hasText: projectName })
+    .first();
+  await projectOption.scrollIntoViewIfNeeded();
+  await projectOption.waitFor({ state: "visible", timeout: 30000 });
+  await projectOption.click();
+  await page.getByRole("heading", { name: projectName }).waitFor({ state: "visible", timeout: 30000 });
+  const metricsResponsePromise = page.waitForResponse(
+    (response) =>
+      response.url().includes(`/ai-delivery/reports/monthly/${reportId}/metrics`) &&
+      response.request().method() === "GET" &&
+      response.status() === 200,
+    { timeout: 30000 }
+  );
+  await page.getByRole("button", { name: "Monthly report", exact: true }).click();
   await page
     .getByRole("heading", {
       name: new RegExp(`Monthly Report\\s+—\\s+${projectName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`)
     })
     .waitFor({ state: "visible", timeout: 30000 });
+  await metricsResponsePromise;
 }
 
 async function main() {
@@ -208,12 +219,12 @@ async function main() {
     await projectsResponsePromise;
     record("ai delivery page loads", true, "#/ai-delivery");
 
-    await openMonthlyReportModal(page, projectName);
+    await openMonthlyReportModal(page, projectName, reportId);
     record("monthly report modal opens", true, projectName);
 
-    const modalPanel = page.locator(".modal-panel", { hasText: `Monthly Report — ${projectName}` }).first();
-    await modalPanel.getByText(/Snapshot metrics/i).first().waitFor({ state: "visible", timeout: 15000 });
-    record("snapshot metrics section visible", true, "Snapshot metrics copy");
+    const modalPanel = page.locator('[role="dialog"]', { hasText: `Monthly Report — ${projectName}` }).first();
+    await modalPanel.getByRole("heading", { name: "GA/GSC Metrics" }).waitFor({ state: "visible", timeout: 15000 });
+    record("snapshot metrics section visible", true, "GA/GSC Metrics section");
 
     const importButton = modalPanel.getByRole("button", { name: "Import snapshot metrics" });
     await importButton.waitFor({ state: "visible", timeout: 15000 });

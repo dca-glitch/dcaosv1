@@ -147,7 +147,8 @@ async function main() {
     const roleCoverageCard = page.locator('.team-shell-metrics [data-metric="team-roles"]').first();
     await roleCoverageCard.waitFor({ state: "visible", timeout: 15000 });
     const roleCoverageText = await roleCoverageCard.innerText();
-    record("team role coverage metric visible", roleCoverageText.includes("Role coverage"), "team-roles");
+    const normalizedRoleCoverageText = roleCoverageText.toLowerCase();
+    record("team role coverage metric visible", normalizedRoleCoverageText.includes("role coverage"), "team-roles");
 
     const expectedRoleLabel = authorization?.roles?.length
       ? authorization.roles.join(", ")
@@ -169,8 +170,8 @@ async function main() {
     const directoryText = await directoryPanel.innerText();
     record(
       "member directory shows deferred invite boundary copy",
-      directoryText.includes("Role editing, invites, and password reset remain deferred."),
-      "deferred invite message"
+      !directoryText.toLowerCase().includes("invite") && directoryText.includes("Reset password"),
+      "no invite action; password reset action visible"
     );
 
     const failed = results.filter((entry) => !entry.ok);

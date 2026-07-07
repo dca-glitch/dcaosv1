@@ -148,17 +148,16 @@ async function main() {
     const metricGrid = page.locator(".dashboard-command-metrics").first();
     await metricGrid.waitFor({ state: "visible", timeout: 15000 });
 
-    const signedInCard = metricGrid.locator('[data-metric="signed-in"]').first();
-    await signedInCard.waitFor({ state: "visible", timeout: 10000 });
-    const signedInText = await signedInCard.innerText();
+    const dashboardSection = page.locator('section[aria-labelledby="dashboard-title"]').first();
+    const dashboardHeaderText = await dashboardSection.innerText();
     record(
-      "signed-in metric matches auth me user",
-      expectedSignedIn ? signedInText.includes(expectedSignedIn) : signedInText.includes(adminEmail),
+      "dashboard header matches auth me user",
+      expectedSignedIn ? dashboardHeaderText.includes(expectedSignedIn) : dashboardHeaderText.includes(adminEmail),
       expectedSignedIn || adminEmail
     );
     record(
-      "signed-in metric helper shows auth me email",
-      meUser?.email ? signedInText.includes(meUser.email) : signedInText.includes(adminEmail),
+      "auth me API returns seeded admin email",
+      meUser?.email === adminEmail,
       meUser?.email ?? adminEmail
     );
 
@@ -176,19 +175,19 @@ async function main() {
       activeMembership ? "membership active" : "no membership"
     );
 
-    const roleCoverageCard = metricGrid.locator('[data-metric="role-coverage"]').first();
-    await roleCoverageCard.waitFor({ state: "visible", timeout: 10000 });
-    const roleCoverageText = await roleCoverageCard.innerText();
+    const workspaceStateCard = metricGrid.locator('[data-metric="workspace-state"]').first();
+    await workspaceStateCard.waitFor({ state: "visible", timeout: 10000 });
+    const workspaceStateText = await workspaceStateCard.innerText();
     record(
-      "role-coverage metric matches authorization summary roles",
+      "dashboard header matches authorization summary roles",
       expectedRoles.length
-        ? expectedRoles.every((role) => roleCoverageText.includes(role))
-        : roleCoverageText.includes("None"),
+        ? expectedRoles.every((role) => dashboardHeaderText.includes(role))
+        : !dashboardHeaderText.includes("owner") && !dashboardHeaderText.includes("admin") && !dashboardHeaderText.includes("client"),
       expectedRoleCoverage
     );
     record(
-      "role-coverage helper mentions effective permissions count",
-      roleCoverageText.includes(`${authorization?.effectivePermissions?.length ?? 0} effective permissions`),
+      "workspace-state helper mentions permissions count",
+      workspaceStateText.includes(`${authorization?.effectivePermissions?.length ?? 0} permissions`),
       `${authorization?.effectivePermissions?.length ?? 0} permissions`
     );
 
