@@ -1,6 +1,6 @@
 # DCA OS Lite — Operator Runbook (Consolidated)
 
-**Status:** Single operator entry point for local validation, smoke, recovery, and staging/production prerequisites.  
+**Status:** Single operator entry point for local validation, smoke, recovery, and staging/production prerequisites. G35 Phase B local pre-staging gate passed on `217c11c`; no VPS/staging/prod deploy was performed.
 **Source of truth for product state:** [`docs/STATUS.md`](../STATUS.md)
 
 Related detailed runbooks:
@@ -41,6 +41,7 @@ Related detailed runbooks:
 3. Stop dev servers if Prisma EPERM risk (ports 4000/5173).
 4. `npm.cmd run validate` — prisma generate + check + build all workspaces.
 5. Run smokes **only after validate PASS**.
+6. Latest proven local pre-staging closeout: `npm.cmd run smoke:pre-staging:local` PASS on `217c11c`; CI green; browser drift blockers resolved in the Phase B smoke set only.
 
 ### Command (with logging)
 
@@ -121,13 +122,16 @@ Local API rate limit: 300 req / 15 min per IP. Restart API (`npm.cmd run dev:api
 1. Run validate **before** starting dev servers (preferred).
 2. If already running, list Node PIDs: `Get-Process -Name node | Select-Object Id, StartTime`
 3. Stop **only** locking PIDs — prefer `C:\Program Files\nodejs\node.exe` from dev servers.
-4. **Do not** use `Stop-Process -Name node` (kills unrelated processes).
-5. Retry `npm.cmd run validate` **once**.
-6. If still failing, stop and report — do not guess further.
+4. Remove the generated Prisma client before retrying.
+5. **Do not** use `Stop-Process -Name node` (kills unrelated processes).
+6. Retry `npm.cmd run validate` **once**.
+7. If still failing, stop and report — do not guess further.
 
 `smoke:staging-readiness:local` and `smoke:production-readiness:local` include one EPERM retry (Program Files `node.exe` only).
 
 **Orchestrator hang caveat (5D-B):** `smoke:staging-readiness:local` may hang on local Windows PowerShell after Puriva boundary smoke completes. If stuck, inspect `$env:TEMP` per-step logs and run only the remaining Block A scripts manually — see [`STAGING_READINESS.md`](../runbooks/STAGING_READINESS.md) §5 operational caveats. No staging/prod commands during fallback.
+
+**G35 Phase B note:** the follow-on browser smoke stabilization closeout passed through full local `smoke:pre-staging:local` on `217c11c` with CI green. This closed browser drift blockers only; no app/backend/API/schema/auth/business-logic, staging, VPS, or production changes were made.
 
 Reference: [`docs/database/PRISMA_CLIENT_GENERATION_READINESS.md`](../database/PRISMA_CLIENT_GENERATION_READINESS.md).
 

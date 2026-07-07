@@ -4,7 +4,7 @@
 
 **Purpose:** Practical checklist to decide whether `main` is ready to **request** staging work (G4) — not to deploy staging.
 
-**Current baseline (2026-07-05):** `main` synced with `origin/main`; latest commit `e54445f` (`fix(scripts): harden staging admin bootstrap guards`); Blocks 1–4 + audit remediation (5A–5D-A) CI green; Block 5D-B local closeout PASS (manual orchestrator workaround); **0% deployed** to production; G4 VPS execution **not approved**; staging DNS **not created**.
+**Current baseline (2026-07-07):** latest proven closeout commit `217c11c` (`test: stabilize G35 Phase B browser smokes`); CI green; full local `smoke:pre-staging:local` PASS for G35 Phase B; browser drift blockers resolved for the Phase B smoke set; **0% deployed** to production; G4 VPS execution **not approved**; staging DNS **not created**.
 
 **Ground-truth notice (added during G28 reconciliation):** `docs/STATUS.md` §2.2 separately claims a G4 staging deploy completed on `5ee8389` after this baseline was written. That claim is **unresolved and owner-gated** — neither confirmed nor refuted. Do not treat this doc's "G4 not approved / DNS not created" wording as settled fact either; both sides of the contradiction are pending owner confirmation. No new staging, VPS, production, deploy, live provider, live WordPress, live R2, GA/GSC, or env action may proceed until the owner confirms ground truth and docs are reconciled.
 
@@ -30,7 +30,7 @@ Before **requesting** G4 staging work (not deploy), all must be true:
 
 | # | Gate |
 |---|------|
-| 1 | Blocks 1–4 + audit remediation complete; CI green on pinned SHA (`e54445f` or later) |
+| 1 | Blocks 1–4 + audit remediation complete; CI green on pinned SHA (`217c11c` current proven closeout) |
 | 2 | **Claude audit remediation** closed on `main` (`2437c84`–`e54445f`); 5D-B local closeout PASS — separate from owner G4 approval |
 | 3 | `npm.cmd run validate` PASS |
 | 4 | Required local smokes PASS — Block A minimum (`smoke:staging-readiness:local`) plus Block 1–2 (`smoke:external-integrations-readiness:local`, `smoke:admin-operations:local`) |
@@ -49,7 +49,7 @@ Before **requesting** G4 staging work (not deploy), all must be true:
 | Branch | `main` synced with `origin/main` |
 | Working tree | Clean (no uncommitted runtime changes) |
 | CI | Green on pinned commit SHA |
-| Closed blocks | 1 `136e93a`, 2 `5308f19`, 3 `cc40160`, 4 `c7af674`, 5A–5D-A `2437c84`–`e54445f`, 5D-B local closeout PASS |
+| Closed blocks | 1 `136e93a`, 2 `5308f19`, 3 `cc40160`, 4 `c7af674`, 5A–5D-A `2437c84`–`e54445f`, 5D-B local closeout PASS, G35 Phase B closeout PASS on `217c11c` |
 | Production deploy | **None** — `system.digitalcubeagency.net` unchanged |
 | Staging deploy | **None** — G4 not approved |
 | Staging target (G1) | `staging.digitalcubeagency.net` documented; DNS not created |
@@ -244,6 +244,7 @@ Full catalog: [`LOCAL_SMOKE_MATRIX.md`](./LOCAL_SMOKE_MATRIX.md).
 **Operational caveats:**
 
 - **Prisma EPERM:** run `validate` before starting dev servers, or stop locking `node.exe`.
+- **Prisma EPERM recovery note:** if the Windows lock persists, stop the locking `node.exe`, remove the generated Prisma client, then rerun `validate` once.
 - **HTTP 429:** restart API (`npm.cmd run dev:api`); `smoke:pre-staging:local` restarts API automatically.
 - **R2 / WP open-gate probes:** optional; not required for Block A GO. Do not treat local R2 disabled-safe proof as live R2 real-bucket proof, staging/env proof, or production storage readiness.
 - **`smoke:staging-readiness:local` orchestrator hang (5D-B):** on local Windows PowerShell, the orchestrator may hang after `smoke:puriva-client-portal-boundary:local` completes even when that step PASSed. If the orchestrator appears stuck after a completed step:
@@ -258,6 +259,7 @@ Full catalog: [`LOCAL_SMOKE_MATRIX.md`](./LOCAL_SMOKE_MATRIX.md).
      - `npm.cmd run smoke:monthly-report:mi-context`
   4. **No staging/prod commands** during manual fallback — local only.
   5. Before G4 request, owner must fix orchestrator **or** explicitly accept this manual workaround.
+- **G35 Phase B closeout:** `npm.cmd run smoke:pre-staging:local` passed locally on `217c11c`; this was a smoke stabilization closeout only and did not perform any VPS, staging, or production deploy.
 
 ---
 

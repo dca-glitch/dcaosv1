@@ -1,6 +1,6 @@
 # DCA OS Lite — Status (Source of Truth)
 
-**Last updated:** 2026-07-06 (G26 finance/audit/email local foundation closeout)
+**Last updated:** 2026-07-07 (G35 Phase B docs closeout)
 **Operator index:** [`docs/operator/OPERATOR_RUNBOOK.md`](./operator/OPERATOR_RUNBOOK.md)  
 **Architecture map:** [`docs/ARCHITECTURE.md`](./ARCHITECTURE.md) § Current application map  
 **Smoke matrix:** [`docs/runbooks/LOCAL_SMOKE_MATRIX.md`](./runbooks/LOCAL_SMOKE_MATRIX.md)  
@@ -15,10 +15,10 @@
 | Item | State |
 |------|--------|
 | Branch | `main` synced with `origin/main` |
-| HEAD (pinned) | `a433e38` — `docs: align pre-staging local readiness labels` |
-| CI | Green |
+| Latest proven closeout commit | `217c11c` — `test: stabilize G35 Phase B browser smokes` |
+| CI | Green on `217c11c` |
 | Working tree | Clean and synced with `origin/main` |
-| Pre-staging local closeout (5D-B) | **PASS** — manual workaround for orchestrator hang; see §2.1 |
+| Pre-staging local closeout (G35 Phase B) | **PASS** — full local pre-staging gate passed on `217c11c`; see §2.7 |
 | Production deploy | **None** — `system.digitalcubeagency.net` unchanged |
 | Staging deploy | **UNRESOLVED — owner confirmation pending.** §2.2 below records a claimed G4 deploy on `5ee8389`, but other staging docs (`STAGING_READINESS.md`, `PRE_STAGING_VALIDATION_GATE.md`, `deferred-scope-register.md`, `module-completion-matrix.md`) still state G4 is not approved and DNS was never created. Treat as unverified until the owner confirms which is correct. |
 | Staging target (G1) | `staging.digitalcubeagency.net` documented target; live/deployed status unresolved (see row above) |
@@ -146,6 +146,20 @@ Prior closeout baseline (still valid context): client approval happy-path `58db7
 | Boundaries preserved | Admin-only / client-safe / draft-only boundaries preserved; no backend/schema/auth changes |
 | Production / staging / VPS | Untouched |
 | Next block | Owner decision |
+
+### 2.7 G35 Phase B — browser smoke stabilization closeout (2026-07-07)
+
+**Result:** PASS — local pre-staging gate closed on `217c11c` (`test: stabilize G35 Phase B browser smokes`).
+
+| Item | Evidence |
+|------|----------|
+| Scope | Smoke/runner stabilization only in `scripts/smoke-auth-invite-boundary-browser-local.mjs`, `scripts/smoke-browser.ps1`, `scripts/smoke-client-portal-populated-delivery-browser-local.mjs`, `scripts/smoke-dashboard-data-backed-browser-local.mjs`, `scripts/smoke-mi-operator-browser-local.mjs`, `scripts/smoke-monthly-metrics-import-browser-local.mjs`, and `scripts/smoke-roles-permissions-browser-local.mjs` |
+| CI | Green on `217c11c` |
+| Local gate | `npm.cmd run smoke:pre-staging:local` PASS — local repo gate complete |
+| Browser drift blockers | Resolved for the Phase B browser smoke set above |
+| Prisma EPERM | Known local Windows lock issue; recover by stopping the locking Node process, removing the generated Prisma client, and rerunning validation/smoke once |
+| Deploy state | No VPS, staging, or production deploy performed |
+| Boundaries preserved | No app, backend, API, schema, auth, or business-logic changes |
 
 ## 3. Module readiness (local admin-operated)
 
