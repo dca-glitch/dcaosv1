@@ -1,6 +1,6 @@
 # DCA OS Lite — Status (Source of Truth)
 
-**Last updated:** 2026-07-07 (G35 Phase B docs closeout)
+**Last updated:** 2026-07-07 (read-only VPS discovery reconciliation)
 **Operator index:** [`docs/operator/OPERATOR_RUNBOOK.md`](./operator/OPERATOR_RUNBOOK.md)  
 **Architecture map:** [`docs/ARCHITECTURE.md`](./ARCHITECTURE.md) § Current application map  
 **Smoke matrix:** [`docs/runbooks/LOCAL_SMOKE_MATRIX.md`](./runbooks/LOCAL_SMOKE_MATRIX.md)  
@@ -15,13 +15,13 @@
 | Item | State |
 |------|--------|
 | Branch | `main` synced with `origin/main` |
-| Latest proven closeout commit | `217c11c` — `test: stabilize G35 Phase B browser smokes` |
+| Latest proven closeout commit | `217c11c` — `test: stabilize G35 Phase B browser smokes`; local `main` observed at `be441e3` during read-only VPS discovery follow-up |
 | CI | Green on `217c11c` |
 | Working tree | Clean and synced with `origin/main` |
 | Pre-staging local closeout (G35 Phase B) | **PASS** — full local pre-staging gate passed on `217c11c`; see §2.7 |
 | Production deploy | **None** — `system.digitalcubeagency.net` unchanged |
-| Staging deploy | **NOT APPROVED — no accepted staging deploy proof.** §2.2 preserves a historical/unverified claim of a G4 deploy on `5ee8389`; owner cannot confirm it happened. That claim must not be used as accepted staging deploy proof. Before any staging action, owner must explicitly approve a fresh bounded staging discovery/execution block. |
-| Staging target (G1) | `staging.digitalcubeagency.net` documented target; deploy status unverified (see §2.2); DNS not confirmed created |
+| Staging deploy | **NOT APPROVED — not proven current.** §2.2 now records read-only evidence that staging DNS/routes/containers/web/API exist and appear tied to artifact/build context `5ee8389`; this is not accepted proof that current `main` (`be441e3`) or G35 closeout (`217c11c`) is deployed. Any refresh requires a fresh explicit owner-approved staging execution block. |
+| Staging target (G1) | `staging.digitalcubeagency.net` exists and resolves to the same VPS as `system.digitalcubeagency.net`; staging responds, but current-main deployment and full DB/env isolation are not proven |
 | Default AI execution | Local deterministic; live OpenRouter opt-in only |
 | Work mode | Local-first on Windows PowerShell from `C:\dcaosv1` |
 
@@ -76,9 +76,11 @@ Prior closeout baseline (still valid context): client approval happy-path `58db7
 
 ### 2.2 G4 staging — historical/unverified claim (not accepted staging proof)
 
-**Owner cannot confirm whether the G4 deploy on `5ee8389` happened.** The original claim of a completed G4 deploy is contradicted by `docs/runbooks/STAGING_READINESS.md`, `docs/runbooks/PRE_STAGING_VALIDATION_GATE.md`, `docs/operator/deferred-scope-register.md`, and `docs/operator/module-completion-matrix.md`, which state G4 was not approved and DNS was never created. Because the owner cannot confirm either way, the claim is treated as a **historical/unverified record only** and must **not** be used as accepted staging deploy proof.
+**Read-only VPS discovery update (2026-07-07):** the earlier G4 deploy claim is no longer fully unknown. Read-only discovery confirmed that `staging.digitalcubeagency.net` and `system.digitalcubeagency.net` both point to `167.233.42.59` / `2a01:4f8:1c18:cefe::1`; the VPS hostname is `DCA01`; Caddy has routes for both hostnames; staging and production have separate API/Postgres containers and separate loopback ports; both `/api/v1/health` endpoints return 200 with DB ready; staging web root returns 200 and serves DCA OS v1 HTML; production web root returns 200 and serves different asset hashes. Staging compose build context references `/opt/dca/staging-artifacts/5ee8389`, and that artifact directory exists.
 
-**Authoritative current state (2026-07-07):** G35 Phase B local repo gate is closed on `217c11c` (local side only). Staging/VPS/DNS/migration/deploy is **NOT approved**. Before any staging action, owner must explicitly approve a fresh bounded staging discovery/execution block. This docs reconciliation does not authorize any VPS, staging, production, deploy, DNS, migration, SSH, Docker, or Caddy action.
+**Current interpretation:** staging infrastructure exists and responds, but staging is **not proven current** with local `main` observed at `be441e3` or the G35 local closeout on `217c11c`. The `5ee8389` artifact/build-context evidence must not be treated as proof of current-main deployment or G35 closeout deployment. Production and staging have separate containers/ports and separate Postgres containers, but full DB/env isolation is **not fully proven** without a secret-safe configuration review.
+
+**Authoritative current state (2026-07-07):** G35 Phase B local repo gate is closed on `217c11c` (local side only), and local `main` was observed at `be441e3`. Staging refresh/execution/VPS mutation/migration/deploy is **NOT approved**. Before any staging refresh or execution, owner must explicitly approve a fresh bounded staging execution block. This docs reconciliation does not authorize any VPS, staging, production, deploy, DNS, migration, SSH, Docker, or Caddy action.
 
 **Original (unverified, not accepted as proof):** claimed PASS — staging complete on `5ee838969343496c2b1ffc57628f44863b49be44` / `5ee8389`.
 
@@ -264,10 +266,10 @@ Percentages are **local MVP readiness**, not production-proven. See [`docs/STATU
 | Target | URL | Status |
 |--------|-----|--------|
 | Production | `system.digitalcubeagency.net` | Live VPS; **current `main` not deployed** |
-| Staging (G1) | `staging.digitalcubeagency.net` | Documented target; G4 deploy claim on `5ee8389` is **historical/unverified — not accepted staging proof** — see §2.2; DNS not confirmed created |
-| Deploy proof | — | **Not accepted** — G4 deploy claim on `5ee8389` is historical/unverified; owner cannot confirm it happened; staging deploy is NOT approved; production remains untouched |
+| Staging (G1) | `staging.digitalcubeagency.net` | DNS/routes/containers/web/API confirmed by read-only discovery; appears tied to artifact/build context `5ee8389`; **not proven current** with `be441e3` or G35 `217c11c`; see §2.2 |
+| Deploy proof | — | **Partial infrastructure proof only** — staging exists/responds, but current-main/G35 deploy proof is not accepted; staging refresh/execution is NOT approved; production remains untouched |
 
-No VPS, Caddy, Docker, DNS, migration on staging, or production restart was performed in Blocks 1–4.
+No deploy/restart/reload/migration/bootstrap was performed during the read-only VPS discovery. No `.env` files were read or printed. No new staging execution is approved by this documentation update.
 
 ---
 
@@ -284,7 +286,7 @@ All must pass before **requesting** G4 staging work (not deploy):
 | 5 | Working tree clean | No uncommitted runtime changes |
 | 6 | `main` synced | `main` = `origin/main` |
 | 7 | No live calls | No publish, sync, crawl, or live provider during gate |
-| 8 | Staging deploy proof | **NOT ACCEPTED** — G4 deploy claim on `5ee8389` is historical/unverified; owner cannot confirm it happened; do not treat as a satisfied gate; a fresh bounded staging discovery/execution block with explicit owner approval is required before any staging action |
+| 8 | Staging deploy proof | **NOT ACCEPTED FOR CURRENT MAIN** — read-only discovery confirms staging infrastructure exists/responds and appears tied to `5ee8389`, but current `main` (`be441e3`) and G35 (`217c11c`) are not proven deployed; a fresh bounded staging execution block with explicit owner approval is required before any refresh/action |
 | 9 | Owner approval | Explicit approval before touching staging infrastructure |
 
 Full pack: [`docs/runbooks/STAGING_READINESS.md`](./runbooks/STAGING_READINESS.md). One-command local gate: `npm.cmd run smoke:pre-staging:local`.
@@ -295,7 +297,7 @@ Full pack: [`docs/runbooks/STAGING_READINESS.md`](./runbooks/STAGING_READINESS.m
 
 | Item | Status |
 |------|--------|
-| Staging deploy proof | **Not accepted** — G4 deploy claim on `5ee8389` is historical/unverified; owner cannot confirm it happened; staging/VPS/DNS/migration/deploy NOT approved; owner must explicitly approve a fresh bounded staging discovery/execution block |
+| Staging deploy proof | **Not accepted for current main** — read-only discovery confirms staging exists/responds and appears tied to `5ee8389`; current `main` (`be441e3`) and G35 (`217c11c`) are not proven deployed; staging refresh/execution requires explicit owner approval |
 | Production deploy proof | Deferred — frozen |
 | Live AI provider / OpenRouter execution | Deferred — opt-in only |
 | Live WordPress publish | Deferred — draft prep only |

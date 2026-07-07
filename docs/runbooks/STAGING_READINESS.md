@@ -4,9 +4,9 @@
 
 **Purpose:** Practical checklist to decide whether `main` is ready to **request** staging work (G4) — not to deploy staging.
 
-**Current baseline (2026-07-07):** latest proven closeout commit `217c11c` (`test: stabilize G35 Phase B browser smokes`); CI green; full local `smoke:pre-staging:local` PASS for G35 Phase B; browser drift blockers resolved for the Phase B smoke set; **0% deployed** to production; G4 VPS execution **not approved**; staging DNS **not created**.
+**Current baseline (2026-07-07):** latest proven local closeout commit `217c11c` (`test: stabilize G35 Phase B browser smokes`); local `main` observed at `be441e3` during read-only VPS discovery follow-up; CI green; full local `smoke:pre-staging:local` PASS for G35 Phase B; browser drift blockers resolved for the Phase B smoke set; **current main is not proven deployed** to staging or production; staging refresh/VPS execution **not approved**.
 
-**Ground-truth notice (reconciled 2026-07-07):** `docs/STATUS.md` §2.2 records a historical/unverified claim that a G4 staging deploy completed on `5ee8389`. **Owner cannot confirm this happened.** That claim must not be used as accepted staging deploy proof. The authoritative current state is: G35 Phase B local repo gate is closed on `217c11c` (local side only); staging/VPS/DNS/migration/deploy is **NOT approved**; before any staging action, owner must explicitly approve a fresh bounded staging discovery/execution block. This docs reconciliation does not authorize any VPS, staging, production, deploy, DNS, migration, SSH, Docker, or Caddy action.
+**Ground-truth notice (reconciled 2026-07-07):** read-only VPS discovery confirmed that staging DNS/routes/containers/web/API exist and respond, and staging appears tied to artifact/build context `5ee8389`. This is not accepted proof that current `main` (`be441e3`) or G35 closeout (`217c11c`) is deployed. Staging refresh/VPS execution/migration/deploy is **NOT approved**; before any refresh/action, owner must explicitly approve a fresh bounded staging execution block. This docs reconciliation does not authorize any VPS, staging, production, deploy, DNS, migration, SSH, Docker, or Caddy action.
 
 **Source of truth:** [`docs/STATUS.md`](../STATUS.md). **Operator runbook:** [`docs/operator/OPERATOR_RUNBOOK.md`](../operator/OPERATOR_RUNBOOK.md).
 
@@ -50,9 +50,9 @@ Before **requesting** G4 staging work (not deploy), all must be true:
 | Working tree | Clean (no uncommitted runtime changes) |
 | CI | Green on pinned commit SHA |
 | Closed blocks | 1 `136e93a`, 2 `5308f19`, 3 `cc40160`, 4 `c7af674`, 5A–5D-A `2437c84`–`e54445f`, 5D-B local closeout PASS, G35 Phase B closeout PASS on `217c11c` |
-| Production deploy | **None** — `system.digitalcubeagency.net` unchanged |
-| Staging deploy | **None** — G4 not approved |
-| Staging target (G1) | `staging.digitalcubeagency.net` documented; DNS not created |
+| Production deploy | **Current main not proven deployed** — `system.digitalcubeagency.net` responds but serves different asset hashes than staging |
+| Staging deploy | **Infrastructure exists/responds; current main not proven deployed** — read-only discovery points staging to artifact/build context `5ee8389` |
+| Staging target (G1) | `staging.digitalcubeagency.net` resolves to the same VPS as `system.digitalcubeagency.net`; route/web/API exist |
 | Default AI execution | Local deterministic; live provider opt-in only |
 | Client Portal | Client-safe final data only; admin review required before publication |
 
@@ -260,6 +260,7 @@ Full catalog: [`LOCAL_SMOKE_MATRIX.md`](./LOCAL_SMOKE_MATRIX.md).
   4. **No staging/prod commands** during manual fallback — local only.
   5. Before G4 request, owner must fix orchestrator **or** explicitly accept this manual workaround.
 - **G35 Phase B closeout:** `npm.cmd run smoke:pre-staging:local` passed locally on `217c11c`; this was a smoke stabilization closeout only and did not perform any VPS, staging, or production deploy.
+- **Read-only VPS discovery update (2026-07-07):** staging DNS/routes/containers/web/API exist and respond, with staging API health 200/DB ready and staging web root 200 serving DCA OS v1 HTML. Staging appears tied to `/opt/dca/staging-artifacts/5ee8389`. Production and staging use separate API/Postgres containers and loopback ports, but full DB/env isolation is not proven without a secret-safe config review. No deploy/restart/reload/migration/bootstrap was performed, and no `.env` files were read or printed.
 
 ---
 

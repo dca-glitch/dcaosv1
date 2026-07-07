@@ -1,6 +1,6 @@
 # DCA OS Lite — Operator Runbook (Consolidated)
 
-**Status:** Single operator entry point for local validation, smoke, recovery, and staging/production prerequisites. G35 Phase B local pre-staging gate passed on `217c11c`; no VPS/staging/prod deploy was performed.
+**Status:** Single operator entry point for local validation, smoke, recovery, and staging/production prerequisites. G35 Phase B local pre-staging gate passed on `217c11c`; read-only VPS discovery later confirmed staging exists/responds but appears tied to artifact/build context `5ee8389`, not current `main` (`be441e3`). No refresh/deploy/restart/reload/migration/bootstrap was performed.
 **Source of truth for product state:** [`docs/STATUS.md`](../STATUS.md)
 
 Related detailed runbooks:
@@ -255,7 +255,7 @@ Full detail: [`docs/runbooks/EXTERNAL_INTEGRATIONS_READINESS.md`](../runbooks/EX
 | 9 | Staging env names prepared — values server-side only at G4 |
 | 10 | Staging DB separate from production; migration procedure reviewed |
 
-**Staging target:** `staging.digitalcubeagency.net` (G1 documented; DNS not created; G4 not approved).
+**Staging target:** `staging.digitalcubeagency.net` (G1 documented; read-only discovery confirms DNS/routes/web/API exist and respond; staging appears tied to artifact/build context `5ee8389`; current `main`/G35 not proven deployed; G4 refresh/execution not approved).
 
 **Forbidden before G4 approval:** VPS login, Docker apply, Caddy/DNS, staging migrations, `smoke:mvp:staging` without owner approval.
 

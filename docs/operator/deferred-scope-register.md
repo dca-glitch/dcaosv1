@@ -33,7 +33,7 @@ Current behavior:
 
 ## Production And Deployment
 
-**Ground-truth notice (reconciled 2026-07-07):** `docs/STATUS.md` §2.2 records a historical/unverified claim that a G4 staging deploy completed on `5ee8389`. **Owner cannot confirm this happened.** That claim must not be used as accepted staging deploy proof. The deferred items below remain deferred. Staging/VPS/DNS/migration/deploy is **NOT approved**. Before any staging action, owner must explicitly approve a fresh bounded staging discovery/execution block. This docs reconciliation does not authorize any VPS, staging, production, deploy, DNS, migration, SSH, Docker, or Caddy action.
+**Ground-truth notice (reconciled 2026-07-07):** read-only VPS discovery confirmed staging DNS/routes/containers/web/API exist and respond, and staging appears tied to artifact/build context `5ee8389`. This does not prove current `main` (`be441e3`) or G35 closeout (`217c11c`) is deployed. The deferred items below remain deferred. Staging refresh/VPS execution/migration/deploy is **NOT approved**. Before any staging refresh/action, owner must explicitly approve a fresh bounded staging execution block. This docs reconciliation does not authorize any VPS, staging, production, deploy, DNS, migration, SSH, Docker, or Caddy action.
 
 Deferred:
 
@@ -45,14 +45,14 @@ Deferred:
 - public production rollout;
 - Caddy/container/VPS changes without approval;
 - Block G4 controlled VPS staging execution (G1 staging target is documented; G4 not approved);
-- DNS for `staging.digitalcubeagency.net` (not created yet — G4 prep only).
+- staging refresh to current `main` / current closeout proof (not approved; requires a fresh owner-approved execution block).
 
 Current behavior:
 
 - work remains local-first;
 - PR #13 is merged to `main`, but current `main` is 0% deployed to production;
 - **production URL:** `system.digitalcubeagency.net`;
-- **staging URL (G1 approved):** `staging.digitalcubeagency.net` — same VPS, separate staging stack; DNS not created yet;
+- **staging URL (G1 approved):** `staging.digitalcubeagency.net` — same VPS, separate staging stack confirmed by read-only discovery; appears tied to artifact/build context `5ee8389`, not proven current with `be441e3` or `217c11c`;
 - production is frozen unless explicitly approved.
 
 ## Live Analytics And External Accounts
@@ -190,7 +190,7 @@ These items are deferred but **must not block** local staging readiness planning
 | Item | Status | Notes |
 |------|--------|-------|
 | Claude full-code audit | Required pre-staging gate | Separate approved block; not a substitute for validate/smoke |
-| Staging deploy proof | Deferred | G4 only |
+| Staging deploy proof | Deferred for current main | Read-only discovery confirms staging exists/responds and appears tied to `5ee8389`; current `main`/G35 proof requires a fresh owner-approved execution block |
 | Production deploy proof | Deferred | Frozen |
 | Strict R2 real bucket proof | Deferred | Optional local env + smoke flag |
 | GA / GSC live sync | Deferred | Snapshot-first metrics; manual/Puriva placeholder proven |

@@ -4,9 +4,9 @@
 
 **Purpose:** Confirm the local repository baseline before any future staging approval. PR #13 is already merged into `main`; this gate remains local-only and does not authorize VPS execution.
 
-**Phase G context (2026-07-07):** G1 closed — staging host `staging.digitalcubeagency.net`; production `system.digitalcubeagency.net`; G4 **not approved**; DNS **not created**. Current proven closeout commit: `217c11c` (`test: stabilize G35 Phase B browser smokes`); CI green; full local `smoke:pre-staging:local` PASS for G35 Phase B. Source of truth: [`docs/STATUS.md`](../STATUS.md).
+**Phase G context (2026-07-07):** G1 closed — staging host `staging.digitalcubeagency.net`; production `system.digitalcubeagency.net`; read-only VPS discovery confirms both DNS/routes respond on the same VPS; G4 refresh/execution **not approved**. Current proven local closeout commit: `217c11c` (`test: stabilize G35 Phase B browser smokes`); local `main` observed at `be441e3`; CI green; full local `smoke:pre-staging:local` PASS for G35 Phase B. Source of truth: [`docs/STATUS.md`](../STATUS.md).
 
-**Ground-truth notice (reconciled 2026-07-07):** `docs/STATUS.md` §2.2 records a historical/unverified claim that a G4 staging deploy completed on `5ee8389`. **Owner cannot confirm this happened.** That claim must not be used as accepted staging deploy proof. Treat "G4 not approved / DNS not created" as the authoritative local-docs baseline. Staging/VPS/DNS/migration/deploy is **NOT approved**. Before any staging action, owner must explicitly approve a fresh bounded staging discovery/execution block. This docs reconciliation does not authorize any VPS, staging, production, deploy, DNS, migration, SSH, Docker, or Caddy action.
+**Ground-truth notice (reconciled 2026-07-07):** read-only VPS discovery confirmed staging DNS/routes/containers/web/API exist and respond, and staging appears tied to artifact/build context `5ee8389`. This does **not** prove current `main` (`be441e3`) or G35 closeout (`217c11c`) is deployed. Staging refresh/VPS execution/migration/deploy is **NOT approved**. Before any staging refresh/action, owner must explicitly approve a fresh bounded staging execution block. This docs reconciliation does not authorize any VPS, staging, production, deploy, DNS, migration, SSH, Docker, or Caddy action.
 
 **Forbidden in this gate:** VPS login, Docker Compose apply, Caddy/DNS changes, staging migrations, production env, `smoke:mvp:staging` unless owner explicitly approves G4 and staging host access.
 
@@ -237,14 +237,14 @@ See block operator docs under `docs/security/`.
 - **Block 5D-B (2026-07-05):** pre-staging local closeout PASS with manual orchestrator workaround; audit remediation commits `2437c84`–`e54445f` on `main`; CI green.
 - **G35 Phase B (2026-07-07):** local `smoke:pre-staging:local` PASS on `217c11c`; CI green; browser drift blockers resolved for the Phase B browser smoke set.
 - No deploy, VPS migration, production restart, or release was performed.
-- G1 staging target: `staging.digitalcubeagency.net` (production: `system.digitalcubeagency.net`; DNS not created; G4 not approved).
+- G1 staging target: `staging.digitalcubeagency.net` (production: `system.digitalcubeagency.net`); read-only discovery confirms DNS/routes/web/API exist, but staging appears tied to `5ee8389` and current `main`/G35 are not proven deployed; G4 refresh/execution not approved.
 - **Local 5D-B / G35 PASS does not authorize G4 staging action or deploy.**
 
 ## After local closeout (owner decision — not this gate)
 
-1. G1 staging target is confirmed: `staging.digitalcubeagency.net` (production remains `system.digitalcubeagency.net`).
-2. Create DNS `staging` A record during G4 prep only — **not created yet**.
-3. Approve Block G4 VPS/staging execution pack separately — **not approved today**.
+1. G1 staging target is confirmed: `staging.digitalcubeagency.net` (production remains `system.digitalcubeagency.net`), and read-only discovery confirms both hostnames resolve/respond on the VPS.
+2. Treat existing staging as **not proven current**: artifact/build context evidence points to `5ee8389`, while current local `main` is `be441e3` and G35 local closeout is `217c11c`.
+3. Approve Block G4 VPS/staging refresh/execution pack separately — **not approved today**.
 4. Deploy exact commit to staging stack on VPS after G4 approval.
 5. Run `npm run smoke:mvp:staging` against `https://staging.digitalcubeagency.net/api/v1`.
 6. Block 4/5/6 prod env gates on staging.
