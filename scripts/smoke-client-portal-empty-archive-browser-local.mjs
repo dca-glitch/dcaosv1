@@ -61,6 +61,14 @@ function requireOkData(name, response, expectedStatus = 201) {
   return response.body.data;
 }
 
+function projectListItem(page, projectName) {
+  return page.locator(".cf-project-list .cf-project-item", { hasText: projectName }).first();
+}
+
+function sectionPanel(page, headingName) {
+  return page.locator("section.section-panel", { has: page.getByRole("heading", { name: headingName, exact: true }) }).first();
+}
+
 async function createEmptyArchiveFixture(adminToken, adminUserId) {
   const projectName = `[SMOKE][CLIENT_PORTAL_EMPTY_ARCHIVE] ${makeSmokeId("project")}`;
   const draftDeliverableTitle = `[SMOKE][CLIENT_PORTAL_EMPTY_ARCHIVE] ${makeSmokeId("draft-deliverable")}`;
@@ -181,24 +189,30 @@ async function main() {
     }, adminToken);
 
     await page.goto(`${webBaseUrl}/#/client-portal`, { waitUntil: "domcontentloaded" });
-    await page.getByRole("heading", { name: "Client Portal" }).waitFor({ state: "visible", timeout: 15000 });
+    await page.getByRole("heading", { name: "Your archive" }).waitFor({ state: "visible", timeout: 15000 });
 
-    const portalSection = page.locator('section[aria-labelledby="client-portal-title"]');
-    await portalSection.locator("article.entity-card", { hasText: fixture.projectName }).first().waitFor({
+    const portalRoot = page.locator("body");
+    const projectCard = projectListItem(page, fixture.projectName);
+    await projectCard.waitFor({
       state: "visible",
       timeout: 15000
     });
-    await portalSection.locator("article.entity-card", { hasText: fixture.projectName }).first().getByRole("button", { name: /^(Open project|View|Open)$/ }).click();
-    await portalSection.getByRole("heading", { name: "No final deliverables yet", exact: true }).waitFor({
+    await projectCard.click();
+    const deliverablesSection = sectionPanel(page, "Deliverables");
+    await deliverablesSection.waitFor({
       state: "visible",
       timeout: 20000
     });
+    await deliverablesSection.getByText(/No deliverables yet/i).waitFor({ state: "visible", timeout: 20000 });
+    await deliverablesSection
+      .getByText(/Final deliverables will appear here once they['’]re ready\./i)
+      .waitFor({ state: "visible", timeout: 20000 });
 
-    const archiveText = await portalSection.innerText();
+    const archiveText = await deliverablesSection.innerText();
     record(
       "empty final deliverables empty state renders",
-      archiveText.includes("No final deliverables yet") &&
-        archiveText.includes("Final deliverables appear here once they are marked DELIVERED or ACCEPTED."),
+      /No deliverables yet/i.test(archiveText) &&
+        /Final deliverables will appear here once they['’]re ready\./i.test(archiveText),
       "deliverables empty state"
     );
     record(
@@ -207,16 +221,21 @@ async function main() {
       fixture.draftDeliverableTitle
     );
 
-    await portalSection.getByRole("heading", { name: "No finalized reports yet", exact: true }).waitFor({
+    const monthlyReportsSection = sectionPanel(page, "Monthly reports");
+    await monthlyReportsSection.waitFor({
       state: "visible",
       timeout: 20000
     });
+    await monthlyReportsSection.getByText(/No reports yet/i).waitFor({ state: "visible", timeout: 20000 });
+    await monthlyReportsSection
+      .getByText(/Final monthly reports will appear here after they['’]re finalized\./i)
+      .waitFor({ state: "visible", timeout: 20000 });
 
-    const monthlyText = await portalSection.innerText();
+    const monthlyText = await monthlyReportsSection.innerText();
     record(
       "empty monthly reports empty state renders",
-      monthlyText.includes("No finalized reports yet") &&
-        monthlyText.includes("Finalized monthly reports appear here once the admin marks them FINAL."),
+      /No reports yet/i.test(monthlyText) &&
+        /Final monthly reports will appear here after they['’]re finalized\./i.test(monthlyText),
       "monthly reports empty state"
     );
     record(

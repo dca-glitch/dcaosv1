@@ -61,6 +61,14 @@ function requireOkData(name, response, expectedStatus = 201) {
   return response.body.data;
 }
 
+function projectListItem(page, projectName) {
+  return page.locator(".cf-project-list .cf-project-item", { hasText: projectName }).first();
+}
+
+function sectionPanel(page, headingName) {
+  return page.locator("section.section-panel", { has: page.getByRole("heading", { name: headingName, exact: true }) }).first();
+}
+
 async function createEdgeFixture(adminToken, adminUserId) {
   const clientName = `[SMOKE][CLIENT_PORTAL_EDGE] ${makeSmokeId("client")}`;
   const projectName = `[SMOKE][CLIENT_PORTAL_EDGE] ${makeSmokeId("project")}`;
@@ -209,31 +217,41 @@ async function main() {
     }, adminToken);
 
     await page.goto(`${webBaseUrl}/#/client-portal`, { waitUntil: "domcontentloaded" });
-    await page.getByRole("heading", { name: "Client Portal" }).waitFor({ state: "visible", timeout: 15000 });
+    await page.getByRole("heading", { name: "Your archive" }).waitFor({ state: "visible", timeout: 15000 });
     await page.getByText(fixture.projectName, { exact: true }).waitFor({ state: "visible", timeout: 15000 });
 
-    const portalSection = page.locator('section[aria-labelledby="client-portal-title"]');
-    const projectCard = portalSection.locator("article.entity-card", { hasText: fixture.projectName }).first();
-    await projectCard.getByRole("button", { name: /^(Open project|View|Open)$/ }).click();
-    await portalSection.getByRole("heading", { name: "Product catalog inquiry", exact: true }).waitFor({
+    const beforeClickProjects = await request("/client-portal/projects", { token: adminToken });
+    record(
+      "edge smoke project present in portal projects API before browser click",
+      beforeClickProjects.status === 200 &&
+        (beforeClickProjects.body?.data?.aiDeliveryProjects ?? []).some((entry) => entry.id === fixture.project.id),
+      `${beforeClickProjects.status}`
+    );
+
+    const portalRoot = page.locator("body");
+    const projectCard = projectListItem(page, fixture.projectName);
+    await projectCard.waitFor({ state: "visible", timeout: 15000 });
+    await projectCard.click();
+    const productInquiriesSection = sectionPanel(page, "Product inquiries");
+    await productInquiriesSection.waitFor({
       state: "visible",
       timeout: 15000
     });
 
-    await portalSection.getByRole("heading", { name: "No catalog products yet", exact: true }).waitFor({
-      state: "visible",
-      timeout: 15000
-    });
-    const catalogEmptyText = await portalSection.innerText();
+    await productInquiriesSection.getByText(/No products yet/i).waitFor({ state: "visible", timeout: 15000 });
+    await productInquiriesSection
+      .getByText(/Products will appear here when they['’]re added to your account\./i)
+      .waitFor({ state: "visible", timeout: 15000 });
+    const catalogEmptyText = await productInquiriesSection.innerText();
     record(
       "empty catalog empty state renders",
-      catalogEmptyText.includes("No catalog products yet") &&
-        catalogEmptyText.includes("Your team can add skincare or service products"),
+      /No products yet/i.test(catalogEmptyText) &&
+        /Products will appear here when they['’]re added to your account\./i.test(catalogEmptyText),
       "empty catalog copy visible"
     );
     record(
       "empty catalog hides inquiry submit button",
-      (await portalSection.getByRole("button", { name: "Send product inquiry" }).count()) === 0,
+      (await productInquiriesSection.getByRole("button", { name: "Send inquiry" }).count()) === 0,
       "submit button absent"
     );
 
@@ -262,7 +280,7 @@ async function main() {
       `${afterArchiveDetail.status}`
     );
 
-    await portalSection.getByRole("button", { name: "Refresh" }).click();
+    await portalRoot.getByRole("button", { name: "Refresh" }).click();
     await page.waitForResponse(
       (response) =>
         response.url().includes("/client-portal/projects") &&
@@ -270,13 +288,12 @@ async function main() {
         response.status() === 200,
       { timeout: 30000 }
     );
-    await portalSection.getByRole("button", { name: "Active", exact: true }).click();
+    await portalRoot.getByRole("button", { name: "Active", exact: true }).click();
 
-    const projectSidebar = portalSection.locator("aside");
-    const fixtureProjectCards = projectSidebar.locator("article.entity-card", { hasText: fixture.projectName });
+    const fixtureProjectCards = projectListItem(page, fixture.projectName);
     await page.waitForFunction(
       (projectName) => {
-        const sidebar = document.querySelector('section[aria-labelledby="client-portal-title"] aside');
+        const sidebar = document.querySelector(".cf-project-sidebar");
         return sidebar ? !sidebar.textContent?.includes(projectName) : false;
       },
       fixture.projectName,
@@ -289,8 +306,8 @@ async function main() {
       fixture.projectName
     );
 
-    await portalSection.getByRole("button", { name: "Archived", exact: true }).click();
-    const archivedSidebarCards = projectSidebar.locator("article.entity-card", { hasText: fixture.projectName });
+    await portalRoot.getByRole("button", { name: "Archived", exact: true }).click();
+    const archivedSidebarCards = projectListItem(page, fixture.projectName);
     record(
       "archived filter does not expose archived project records",
       (await archivedSidebarCards.count()) === 0,

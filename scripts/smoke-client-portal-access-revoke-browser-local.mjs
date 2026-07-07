@@ -61,6 +61,10 @@ function requireOkData(name, response, expectedStatus = 201) {
   return response.body.data;
 }
 
+function projectListItem(page, projectName) {
+  return page.locator(".cf-project-list .cf-project-item", { hasText: projectName }).first();
+}
+
 async function createRevokeFixture(adminToken, adminUserId) {
   const projectName = `[SMOKE][CLIENT_PORTAL_REVOKE] ${makeSmokeId("project")}`;
 
@@ -144,13 +148,12 @@ async function main() {
     }, adminToken);
 
     await page.goto(`${webBaseUrl}/#/client-portal`, { waitUntil: "domcontentloaded" });
-    await page.getByRole("heading", { name: "Client Portal" }).waitFor({ state: "visible", timeout: 15000 });
+    await page.getByRole("heading", { name: "Your archive" }).waitFor({ state: "visible", timeout: 15000 });
     await page.getByText(fixture.projectName, { exact: true }).waitFor({ state: "visible", timeout: 15000 });
 
-    const portalSection = page.locator('section[aria-labelledby="client-portal-title"]');
     record(
       "revoke browser project visible before revoke",
-      (await portalSection.locator("article.entity-card", { hasText: fixture.projectName }).count()) > 0,
+      (await projectListItem(page, fixture.projectName).count()) > 0,
       fixture.projectName
     );
 
@@ -178,7 +181,7 @@ async function main() {
       `${afterRevokeDetail.status}`
     );
 
-    await portalSection.getByRole("button", { name: "Refresh" }).click();
+    await page.getByRole("button", { name: "Refresh" }).click();
     await page.waitForFunction(
       (projectName) => !document.body.textContent?.includes(projectName),
       fixture.projectName,
@@ -187,7 +190,7 @@ async function main() {
 
     record(
       "revoke browser project hidden after refresh",
-      (await portalSection.locator("article.entity-card", { hasText: fixture.projectName }).count()) === 0,
+      (await projectListItem(page, fixture.projectName).count()) === 0,
       fixture.projectName
     );
 

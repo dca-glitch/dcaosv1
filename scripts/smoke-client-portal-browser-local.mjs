@@ -461,7 +461,7 @@ async function main() {
     );
 
     const finalDeliverableCard = portalSection.locator("article.cf-record", { hasText: fixture.finalDeliverable.title }).first();
-    await finalDeliverableCard.getByRole("button", { name: "Download" }).click();
+    await finalDeliverableCard.getByRole("button", { name: "Download final file" }).click();
 
     const downloadResponse = await downloadResponsePromise;
     const downloadJson = await downloadResponse.json();

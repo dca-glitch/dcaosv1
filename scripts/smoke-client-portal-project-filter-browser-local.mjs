@@ -61,6 +61,10 @@ function requireOkData(name, response, expectedStatus = 201) {
   return response.body.data;
 }
 
+function projectListItem(page, projectName) {
+  return page.locator(".cf-project-list .cf-project-item", { hasText: projectName }).first();
+}
+
 async function createFilterFixture(adminToken, adminUserId) {
   const projectName = `[SMOKE][CLIENT_PORTAL_FILTER] ${makeSmokeId("project")}`;
 
@@ -136,11 +140,10 @@ async function main() {
     }, adminToken);
 
     await page.goto(`${webBaseUrl}/#/client-portal`, { waitUntil: "domcontentloaded" });
-    await page.getByRole("heading", { name: "Client Portal" }).waitFor({ state: "visible", timeout: 15000 });
+    await page.getByRole("heading", { name: "Your archive" }).waitFor({ state: "visible", timeout: 15000 });
 
-    const portalSection = page.locator('section[aria-labelledby="client-portal-title"]');
-    const projectSidebar = portalSection.locator("aside");
-    const projectCard = projectSidebar.locator("article.entity-card", { hasText: fixture.projectName }).first();
+    const portalRoot = page.locator("body");
+    const projectCard = projectListItem(page, fixture.projectName);
     await projectCard.waitFor({ state: "visible", timeout: 20000 });
 
     record(
@@ -149,7 +152,7 @@ async function main() {
       fixture.projectName
     );
 
-    await portalSection.getByRole("button", { name: "All", exact: true }).click();
+    await portalRoot.getByRole("button", { name: "All", exact: true }).click();
     await projectCard.waitFor({ state: "visible", timeout: 15000 });
     record(
       "all filter keeps active project visible",
@@ -157,7 +160,7 @@ async function main() {
       fixture.projectName
     );
 
-    await portalSection.getByRole("button", { name: "Archived", exact: true }).click();
+    await portalRoot.getByRole("button", { name: "Archived", exact: true }).click();
     record(
       "archived filter hides active-only project",
       (await projectCard.count()) === 0,
@@ -181,21 +184,21 @@ async function main() {
       `${afterArchiveProjects.status}`
     );
 
-    await portalSection.getByRole("button", { name: "Refresh" }).click();
+    await portalRoot.getByRole("button", { name: "Refresh" }).click();
     await page.waitForFunction(
       (projectName) => !document.body.textContent?.includes(projectName),
       fixture.projectName,
       { timeout: 15000 }
     );
 
-    await portalSection.getByRole("button", { name: "Active", exact: true }).click();
+    await portalRoot.getByRole("button", { name: "Active", exact: true }).click();
     record(
       "active filter hides archived project after refresh",
       (await projectCard.count()) === 0,
       fixture.projectName
     );
 
-    await portalSection.getByRole("button", { name: "All", exact: true }).click();
+    await portalRoot.getByRole("button", { name: "All", exact: true }).click();
     record(
       "all filter still hides archived project after refresh",
       (await projectCard.count()) === 0,

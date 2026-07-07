@@ -63,6 +63,10 @@ function requireOkData(name, response, expectedStatus = 201) {
   return response.body.data;
 }
 
+function projectListItem(page, projectName) {
+  return page.locator(".cf-project-list .cf-project-item", { hasText: projectName }).first();
+}
+
 function containsForbiddenToken(text, token) {
   const escaped = token.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const pattern = new RegExp(`(^|[^A-Za-z0-9])${escaped}([^A-Za-z0-9]|$)`, "i");
@@ -197,25 +201,25 @@ async function main() {
     }, adminToken);
 
     await page.goto(`${webBaseUrl}/#/client-portal`, { waitUntil: "domcontentloaded" });
-    await page.getByRole("heading", { name: "Client Portal" }).waitFor({ state: "visible", timeout: 15000 });
+    await page.getByRole("heading", { name: "Your archive" }).waitFor({ state: "visible", timeout: 15000 });
     await page.getByText(fixture.projectName, { exact: true }).waitFor({ state: "visible", timeout: 15000 });
 
-    const portalSection = page.locator('section[aria-labelledby="client-portal-title"]');
-    await portalSection.locator("article.entity-card", { hasText: fixture.projectName }).first().getByRole("button", { name: /^(Open project|View|Open)$/ }).click();
-    await portalSection.getByRole("heading", { name: "Delivery overview", exact: true }).waitFor({ state: "visible", timeout: 15000 });
+    const portalRoot = page.locator("body");
+    await projectListItem(page, fixture.projectName).click();
+    await portalRoot.getByRole("heading", { name: "Work completed", exact: true }).waitFor({ state: "visible", timeout: 15000 });
 
-    const overviewText = await portalSection.innerText();
-    const overviewHtml = await portalSection.innerHTML();
+    const overviewText = await portalRoot.innerText();
+    const overviewHtml = await portalRoot.innerHTML();
     const renderedOverview = `${overviewText}\n${overviewHtml}`;
 
     record(
       "sparse delivery overview section renders",
-      overviewText.includes("Delivery overview") && overviewText.includes("AI SEO / content plan"),
+      overviewText.includes("Work completed") && overviewText.includes("Content plan"),
       "overview visible"
     );
     record(
       "sparse delivery overview shows no market summary yet",
-      overviewText.includes("No client-safe market summary is available yet"),
+      overviewText.includes("No market insights available yet."),
       "mi placeholder visible"
     );
     record(
@@ -225,17 +229,17 @@ async function main() {
     );
     record(
       "sparse delivery overview shows no google docs exports yet",
-      overviewText.includes("No client-safe export links are available yet"),
+      overviewText.includes("No final file links are available yet."),
       "export placeholder visible"
     );
     record(
       "sparse delivery overview hides open google doc link",
-      !overviewText.includes("Open Google Doc"),
+      !overviewText.includes("Open final file"),
       "no export link"
     );
     record(
       "sparse delivery overview shows publishing placeholder",
-      overviewText.includes("No publishing activity yet") || overviewText.includes("Publishing status appears here"),
+      overviewText.includes("No handoff updates yet") || overviewText.includes("Website handoff updates will appear here"),
       "publishing placeholder visible"
     );
 
