@@ -6,7 +6,7 @@
 
 **Current baseline (2026-07-07):** latest proven closeout commit `217c11c` (`test: stabilize G35 Phase B browser smokes`); CI green; full local `smoke:pre-staging:local` PASS for G35 Phase B; browser drift blockers resolved for the Phase B smoke set; **0% deployed** to production; G4 VPS execution **not approved**; staging DNS **not created**.
 
-**Ground-truth notice (added during G28 reconciliation):** `docs/STATUS.md` §2.2 separately claims a G4 staging deploy completed on `5ee8389` after this baseline was written. That claim is **unresolved and owner-gated** — neither confirmed nor refuted. Do not treat this doc's "G4 not approved / DNS not created" wording as settled fact either; both sides of the contradiction are pending owner confirmation. No new staging, VPS, production, deploy, live provider, live WordPress, live R2, GA/GSC, or env action may proceed until the owner confirms ground truth and docs are reconciled.
+**Ground-truth notice (reconciled 2026-07-07):** `docs/STATUS.md` §2.2 records a historical/unverified claim that a G4 staging deploy completed on `5ee8389`. **Owner cannot confirm this happened.** That claim must not be used as accepted staging deploy proof. The authoritative current state is: G35 Phase B local repo gate is closed on `217c11c` (local side only); staging/VPS/DNS/migration/deploy is **NOT approved**; before any staging action, owner must explicitly approve a fresh bounded staging discovery/execution block. This docs reconciliation does not authorize any VPS, staging, production, deploy, DNS, migration, SSH, Docker, or Caddy action.
 
 **Source of truth:** [`docs/STATUS.md`](../STATUS.md). **Operator runbook:** [`docs/operator/OPERATOR_RUNBOOK.md`](../operator/OPERATOR_RUNBOOK.md).
 

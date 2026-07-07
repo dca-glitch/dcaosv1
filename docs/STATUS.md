@@ -20,8 +20,8 @@
 | Working tree | Clean and synced with `origin/main` |
 | Pre-staging local closeout (G35 Phase B) | **PASS** — full local pre-staging gate passed on `217c11c`; see §2.7 |
 | Production deploy | **None** — `system.digitalcubeagency.net` unchanged |
-| Staging deploy | **UNRESOLVED — owner confirmation pending.** §2.2 below records a claimed G4 deploy on `5ee8389`, but other staging docs (`STAGING_READINESS.md`, `PRE_STAGING_VALIDATION_GATE.md`, `deferred-scope-register.md`, `module-completion-matrix.md`) still state G4 is not approved and DNS was never created. Treat as unverified until the owner confirms which is correct. |
-| Staging target (G1) | `staging.digitalcubeagency.net` documented target; live/deployed status unresolved (see row above) |
+| Staging deploy | **NOT APPROVED — no accepted staging deploy proof.** §2.2 preserves a historical/unverified claim of a G4 deploy on `5ee8389`; owner cannot confirm it happened. That claim must not be used as accepted staging deploy proof. Before any staging action, owner must explicitly approve a fresh bounded staging discovery/execution block. |
+| Staging target (G1) | `staging.digitalcubeagency.net` documented target; deploy status unverified (see §2.2); DNS not confirmed created |
 | Default AI execution | Local deterministic; live OpenRouter opt-in only |
 | Work mode | Local-first on Windows PowerShell from `C:\dcaosv1` |
 
@@ -74,16 +74,18 @@ Prior closeout baseline (still valid context): client approval happy-path `58db7
 
 ---
 
-### 2.2 G4 staging completion (2026-07-05) — UNRESOLVED, PENDING OWNER CONFIRMATION
+### 2.2 G4 staging — historical/unverified claim (not accepted staging proof)
 
-**Staging/environment proof is unresolved and owner-gated.** This section's claim of a completed G4 deploy on `5ee8389` is contradicted by other staging docs (`docs/runbooks/STAGING_READINESS.md`, `docs/runbooks/PRE_STAGING_VALIDATION_GATE.md`, `docs/operator/deferred-scope-register.md`, `docs/operator/module-completion-matrix.md`), which state G4 is not approved and DNS was never created. Ground truth is unknown as of this reconciliation — the record below is preserved as an unverified historical claim only, not a settled fact. No new staging, VPS, production, deploy, live provider, live WordPress, live R2, GA/GSC, or env action may proceed until the owner confirms ground truth and docs are reconciled.
+**Owner cannot confirm whether the G4 deploy on `5ee8389` happened.** The original claim of a completed G4 deploy is contradicted by `docs/runbooks/STAGING_READINESS.md`, `docs/runbooks/PRE_STAGING_VALIDATION_GATE.md`, `docs/operator/deferred-scope-register.md`, and `docs/operator/module-completion-matrix.md`, which state G4 was not approved and DNS was never created. Because the owner cannot confirm either way, the claim is treated as a **historical/unverified record only** and must **not** be used as accepted staging deploy proof.
 
-**Original (unverified) claim:** PASS — staging complete on `5ee838969343496c2b1ffc57628f44863b49be44` / `5ee8389`.
+**Authoritative current state (2026-07-07):** G35 Phase B local repo gate is closed on `217c11c` (local side only). Staging/VPS/DNS/migration/deploy is **NOT approved**. Before any staging action, owner must explicitly approve a fresh bounded staging discovery/execution block. This docs reconciliation does not authorize any VPS, staging, production, deploy, DNS, migration, SSH, Docker, or Caddy action.
 
-| Item | Evidence |
-|------|----------|
+**Original (unverified, not accepted as proof):** claimed PASS — staging complete on `5ee838969343496c2b1ffc57628f44863b49be44` / `5ee8389`.
+
+| Item | Evidence (unverified) |
+|------|-----------------------|
 | Staging URL | `https://staging.digitalcubeagency.net` |
-| Phase 8 | PASS after bounded Caddy/web-root fix; rerun exit `0` |
+| Phase 8 | Claimed PASS after bounded Caddy/web-root fix; rerun exit `0` |
 | Root cause | Stale `dca-caddy` bind mount / inode for `/srv/dcaosv1-staging/web/dist` |
 | Fix | Recreate only `dca-caddy` with `docker compose -f /opt/dca/docker-compose.yml up -d --force-recreate --no-deps caddy` |
 | Containers touched | `dca-caddy` only during web-root fix; staging API touched earlier in Phase 5; staging DB untouched after Phase 4/6 |
@@ -262,8 +264,8 @@ Percentages are **local MVP readiness**, not production-proven. See [`docs/STATU
 | Target | URL | Status |
 |--------|-----|--------|
 | Production | `system.digitalcubeagency.net` | Live VPS; **current `main` not deployed** |
-| Staging (G1) | `staging.digitalcubeagency.net` | Documented target; claimed live deploy for commit `5ee8389` is **unresolved/unverified** — see §2.2 |
-| Deploy proof | — | **Unresolved** — claimed staging completion for `5ee8389` is pending owner confirmation; production remains untouched |
+| Staging (G1) | `staging.digitalcubeagency.net` | Documented target; G4 deploy claim on `5ee8389` is **historical/unverified — not accepted staging proof** — see §2.2; DNS not confirmed created |
+| Deploy proof | — | **Not accepted** — G4 deploy claim on `5ee8389` is historical/unverified; owner cannot confirm it happened; staging deploy is NOT approved; production remains untouched |
 
 No VPS, Caddy, Docker, DNS, migration on staging, or production restart was performed in Blocks 1–4.
 
@@ -282,7 +284,7 @@ All must pass before **requesting** G4 staging work (not deploy):
 | 5 | Working tree clean | No uncommitted runtime changes |
 | 6 | `main` synced | `main` = `origin/main` |
 | 7 | No live calls | No publish, sync, crawl, or live provider during gate |
-| 8 | Staging deploy proof | **UNRESOLVED** — §2.2 records a claimed completion on `5ee8389` during G4, but this is contradicted by other staging docs and is pending owner confirmation; do not treat as a satisfied gate |
+| 8 | Staging deploy proof | **NOT ACCEPTED** — G4 deploy claim on `5ee8389` is historical/unverified; owner cannot confirm it happened; do not treat as a satisfied gate; a fresh bounded staging discovery/execution block with explicit owner approval is required before any staging action |
 | 9 | Owner approval | Explicit approval before touching staging infrastructure |
 
 Full pack: [`docs/runbooks/STAGING_READINESS.md`](./runbooks/STAGING_READINESS.md). One-command local gate: `npm.cmd run smoke:pre-staging:local`.
@@ -293,7 +295,7 @@ Full pack: [`docs/runbooks/STAGING_READINESS.md`](./runbooks/STAGING_READINESS.m
 
 | Item | Status |
 |------|--------|
-| Staging deploy proof | **Unresolved** — §2.2 claims G4 staging completion on `5ee8389`, contradicted by other staging docs; pending owner confirmation |
+| Staging deploy proof | **Not accepted** — G4 deploy claim on `5ee8389` is historical/unverified; owner cannot confirm it happened; staging/VPS/DNS/migration/deploy NOT approved; owner must explicitly approve a fresh bounded staging discovery/execution block |
 | Production deploy proof | Deferred — frozen |
 | Live AI provider / OpenRouter execution | Deferred — opt-in only |
 | Live WordPress publish | Deferred — draft prep only |
