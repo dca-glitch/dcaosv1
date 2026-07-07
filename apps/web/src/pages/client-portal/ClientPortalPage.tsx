@@ -1563,7 +1563,7 @@ export function ClientPortalPage() {
                               monthlyReportDetail.performanceSummary.disclaimer ? (
                                 <Alert
                                   message={monthlyReportDetail.performanceSummary.disclaimer}
-                                  title="Snapshot not yet attached"
+                                  title="Not yet available"
                                   variant="info"
                                 />
                               ) : null}
@@ -1576,7 +1576,7 @@ export function ClientPortalPage() {
                                   )}
                                   helper={
                                     monthlyReportDetail.performanceSummary.placeholderOnly
-                                      ? `Snapshot placeholder · Month ${monthlyReportDetail.performanceSummary.targetMonth}`
+                                      ? `Template metrics · Month ${monthlyReportDetail.performanceSummary.targetMonth}`
                                       : `Month ${monthlyReportDetail.performanceSummary.targetMonth}`
                                   }
                                 />
@@ -1588,7 +1588,7 @@ export function ClientPortalPage() {
                                   )}
                                   helper={
                                     monthlyReportDetail.performanceSummary.placeholderOnly
-                                      ? "Snapshot not attached"
+                                      ? "Data pending"
                                       : `Month ${monthlyReportDetail.performanceSummary.targetMonth}`
                                   }
                                 />
@@ -1600,7 +1600,7 @@ export function ClientPortalPage() {
                                   )}
                                   helper={
                                     monthlyReportDetail.performanceSummary.placeholderOnly
-                                      ? "Snapshot not attached"
+                                      ? "Data pending"
                                       : `Users ${formatMetricValue(monthlyReportDetail.performanceSummary.ga4Users)}`
                                   }
                                 />
@@ -1612,7 +1612,7 @@ export function ClientPortalPage() {
                                   )}
                                   helper={
                                     monthlyReportDetail.performanceSummary.placeholderOnly
-                                      ? "Snapshot not attached"
+                                      ? "Data pending"
                                       : `CTR ${formatPercentValue(monthlyReportDetail.performanceSummary.gscAverageCtr)}`
                                   }
                                 />
@@ -1622,12 +1622,12 @@ export function ClientPortalPage() {
 
                           {!monthlyReportDetail.performanceSummary ? (
                             <SectionPanel
-                              description="Performance metrics appear when your team attaches a snapshot to this report."
+                              description="Performance metrics appear when your team adds analytics data to this report."
                               title="Performance snapshot"
                               tone="compact"
                             >
                               <EmptyState
-                                message="No performance snapshot is attached to this report yet."
+                                message="No analytics data is included in this report yet."
                                 title="No performance snapshot"
                                 variant="inline"
                               />
