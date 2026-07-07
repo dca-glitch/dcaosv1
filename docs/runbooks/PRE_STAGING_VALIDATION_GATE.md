@@ -237,13 +237,13 @@ See block operator docs under `docs/security/`.
 - **Block 5D-B (2026-07-05):** pre-staging local closeout PASS with manual orchestrator workaround; audit remediation commits `2437c84`–`e54445f` on `main`; CI green.
 - **G35 Phase B (2026-07-07):** local `smoke:pre-staging:local` PASS on `217c11c`; CI green; browser drift blockers resolved for the Phase B browser smoke set.
 - No deploy, VPS migration, production restart, or release was performed.
-- G1 staging target: `staging.digitalcubeagency.net` (production: `system.digitalcubeagency.net`); read-only discovery confirms DNS/routes/web/API exist, but staging appears tied to `5ee8389` and current `main`/G35 are not proven deployed; G4 refresh/execution not approved.
+- G1 staging target: `staging.digitalcubeagency.net` (production: `system.digitalcubeagency.net`); G35 Phase C controlled refresh COMPLETE on `5e1ea5a`; staging artifact/API/web/MVP smoke verified; production untouched (see STATUS §2.2/§2.8); further staging work requires fresh owner approval.
 - **Local 5D-B / G35 PASS does not authorize G4 staging action or deploy.**
 
 ## After local closeout (owner decision — not this gate)
 
 1. G1 staging target is confirmed: `staging.digitalcubeagency.net` (production remains `system.digitalcubeagency.net`), and read-only discovery confirms both hostnames resolve/respond on the VPS.
-2. Treat existing staging as **not proven current**: artifact/build context evidence points to `5ee8389`, while current local `main` is `be441e3` and G35 local closeout is `217c11c`.
+2. **Phase C refresh COMPLETE:** staging artifact context now `/opt/dca/staging-artifacts/5e1ea5a`; API health 200; web root 200; MVP smoke PASS; production untouched. Staging is now current with refresh commit `5e1ea5a` (see STATUS §2.2/§2.8).
 3. Approve Block G4 VPS/staging refresh/execution pack separately — **not approved today**.
 4. Deploy exact commit to staging stack on VPS after G4 approval.
 5. Run `npm run smoke:mvp:staging` against `https://staging.digitalcubeagency.net/api/v1`.

@@ -322,7 +322,7 @@ Full pack: [`docs/runbooks/STAGING_READINESS.md`](./runbooks/STAGING_READINESS.m
 
 | Item | Status |
 |------|--------|
-| Staging deploy proof | **Not accepted for current main** — read-only discovery confirms staging exists/responds and appears tied to `5ee8389`; current `main` (`be441e3`) and G35 (`217c11c`) are not proven deployed; staging refresh/execution requires explicit owner approval |
+| Staging deploy proof | **Phase C refresh COMPLETE** — G35 Phase C controlled refresh on `5e1ea5a` PASS; staging artifact, API, web, and MVP smoke verified; production untouched (see §2.2, §2.8); further staging refresh/execution requires fresh explicit owner approval |
 | Production deploy proof | Deferred — frozen |
 | Live AI provider / OpenRouter execution | Deferred — opt-in only |
 | Live WordPress publish | Deferred — draft prep only |

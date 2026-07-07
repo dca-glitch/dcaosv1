@@ -52,7 +52,7 @@ Current behavior:
 - work remains local-first;
 - PR #13 is merged to `main`, but current `main` is 0% deployed to production;
 - **production URL:** `system.digitalcubeagency.net`;
-- **staging URL (G1 approved):** `staging.digitalcubeagency.net` — same VPS, separate staging stack confirmed by read-only discovery; appears tied to artifact/build context `5ee8389`, not proven current with `be441e3` or `217c11c`;
+- **staging URL (G1 approved):** `staging.digitalcubeagency.net` — same VPS, separate staging stack; G35 Phase C refresh COMPLETE on `5e1ea5a` (see STATUS §2.2/§2.8); artifact context `/opt/dca/staging-artifacts/5e1ea5a`; API health 200; MVP smoke PASS; production untouched;
 - production is frozen unless explicitly approved.
 
 ## Live Analytics And External Accounts
@@ -190,7 +190,7 @@ These items are deferred but **must not block** local staging readiness planning
 | Item | Status | Notes |
 |------|--------|-------|
 | Claude full-code audit | Required pre-staging gate | Separate approved block; not a substitute for validate/smoke |
-| Staging deploy proof | Deferred for current main | Read-only discovery confirms staging exists/responds and appears tied to `5ee8389`; current `main`/G35 proof requires a fresh owner-approved execution block |
+| Staging deploy proof | **Phase C COMPLETE** | G35 Phase C refresh on `5e1ea5a` PASS; artifact/API/web/MVP smoke verified (see STATUS §2.2/§2.8); production untouched; further staging work deferred pending fresh owner approval |
 | Production deploy proof | Deferred | Frozen |
 | Strict R2 real bucket proof | Deferred | Optional local env + smoke flag |
 | GA / GSC live sync | Deferred | Snapshot-first metrics; manual/Puriva placeholder proven |

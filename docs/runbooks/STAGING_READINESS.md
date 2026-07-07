@@ -50,8 +50,8 @@ Before **requesting** G4 staging work (not deploy), all must be true:
 | Working tree | Clean (no uncommitted runtime changes) |
 | CI | Green on pinned commit SHA |
 | Closed blocks | 1 `136e93a`, 2 `5308f19`, 3 `cc40160`, 4 `c7af674`, 5A–5D-A `2437c84`–`e54445f`, 5D-B local closeout PASS, G35 Phase B closeout PASS on `217c11c` |
-| Production deploy | **Current main not proven deployed** — `system.digitalcubeagency.net` responds but serves different asset hashes than staging |
-| Staging deploy | **Infrastructure exists/responds; current main not proven deployed** — read-only discovery points staging to artifact/build context `5ee8389` |
+| Production deploy | **Not deployed** — `system.digitalcubeagency.net` unchanged; untouched during Phase C refresh |
+| Staging deploy | **Phase C refresh COMPLETE** — G35 Phase C refresh on `5e1ea5a` PASS; artifact updated, API/web/MVP smoke verified (see STAGING_READINESS §2.1 and STATUS §2.2/§2.8); further staging work requires fresh owner approval |
 | Staging target (G1) | `staging.digitalcubeagency.net` resolves to the same VPS as `system.digitalcubeagency.net`; route/web/API exist |
 | Default AI execution | Local deterministic; live provider opt-in only |
 | Client Portal | Client-safe final data only; admin review required before publication |
