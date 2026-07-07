@@ -4,7 +4,7 @@
 
 **Purpose:** Confirm the local repository baseline before any future staging approval. PR #13 is already merged into `main`; this gate remains local-only and does not authorize VPS execution.
 
-**Phase G context (2026-07-05):** G1 closed — staging host `staging.digitalcubeagency.net`; production `system.digitalcubeagency.net`; G4 **not approved**; DNS **not created**. Current `main` baseline: `e54445f` (audit remediation + bootstrap guards); Blocks 1–4 + 5A–5D-A CI green; Block 5D-B local closeout PASS. Source of truth: [`docs/STATUS.md`](../STATUS.md).
+**Phase G context (2026-07-07):** G1 closed — staging host `staging.digitalcubeagency.net`; production `system.digitalcubeagency.net`; G4 **not approved**; DNS **not created**. Current proven closeout commit: `217c11c` (`test: stabilize G35 Phase B browser smokes`); CI green; full local `smoke:pre-staging:local` PASS for G35 Phase B. Source of truth: [`docs/STATUS.md`](../STATUS.md).
 
 **Ground-truth notice (added during G28 reconciliation):** `docs/STATUS.md` §2.2 separately claims a G4 staging deploy completed on `5ee8389` after this baseline was written. That claim is **unresolved and owner-gated** — neither confirmed nor refuted. Treat this doc's "G4 not approved / DNS not created" wording as also unverified pending owner confirmation. No new staging, VPS, production, deploy, live provider, live WordPress, live R2, GA/GSC, or env action may proceed until the owner confirms ground truth and docs are reconciled.
 
@@ -103,7 +103,7 @@ npm.cmd run smoke:pre-staging:local
 
 Runs `validate` then the approved local smoke suite (Puriva MVP Blocks 7–30, Post-MVP Blocks 31–53, architecture blocks 4–6, legacy sunset).
 
-If `validate` fails with Prisma `EPERM` on Windows, run validate **before** starting dev API/Web, or stop only the locking `node.exe` process and rerun once. See [`.github/instructions/validation.instructions.md`](../../.github/instructions/validation.instructions.md).
+If `validate` fails with Prisma `EPERM` on Windows, run validate **before** starting dev API/Web, or stop only the locking `node.exe` process, remove the generated Prisma client, and rerun once. See [`.github/instructions/validation.instructions.md`](../../.github/instructions/validation.instructions.md).
 
 If smoke fails with HTTP **429**, restart the API and rerun (or use `smoke:pre-staging:local`, which restarts API before heavy smokes). Long smoke chains share a 300 req / 15 min in-memory limit per IP.
 
@@ -232,14 +232,13 @@ See block operator docs under `docs/security/`.
 
 - PR #13 merged to `main`: **100%**.
 - Local `main` validation: **100%**, passed after Windows Prisma DLL lock cleanup.
-- Local pre-staging proof: **95% accepted**.
-- Full pre-staging reached final Finance admin browser smoke.
-- Finance admin browser smoke initially hit local HTTP **429** admin login/rate-limit.
-- After `restore-local-admin` and API/Web restart, isolated Finance browser smoke passed.
+- Local pre-staging proof: **PASS**.
+- Full local `smoke:pre-staging:local` gate passed on `217c11c`.
 - **Block 5D-B (2026-07-05):** pre-staging local closeout PASS with manual orchestrator workaround; audit remediation commits `2437c84`–`e54445f` on `main`; CI green.
+- **G35 Phase B (2026-07-07):** local `smoke:pre-staging:local` PASS on `217c11c`; CI green; browser drift blockers resolved for the Phase B browser smoke set.
 - No deploy, VPS migration, production restart, or release was performed.
 - G1 staging target: `staging.digitalcubeagency.net` (production: `system.digitalcubeagency.net`; DNS not created; G4 not approved).
-- **Local 5D-B PASS does not authorize G4 staging action or deploy.**
+- **Local 5D-B / G35 PASS does not authorize G4 staging action or deploy.**
 
 ## After local closeout (owner decision — not this gate)
 
