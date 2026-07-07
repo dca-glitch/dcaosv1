@@ -1,6 +1,6 @@
 # DCA OS Lite — Operator Runbook (Consolidated)
 
-**Status:** Single operator entry point for local validation, smoke, recovery, and staging/production prerequisites. G35 Phase B local pre-staging gate passed on `217c11c`; G35 Phase C controlled staging refresh completed on commit `5e1ea5a` (`docs: record staging discovery facts`). Staging artifact updated from `5ee8389` to `5e1ea5a` with local validation PASS, API recreation, DB health verified, and MVP smoke PASS. Production untouched. Further staging work requires fresh owner approval.
+**Status:** Single operator entry point for local validation, smoke, recovery, and staging/production prerequisites. G35 Phase B local pre-staging gate passed on `217c11c`; G35 Phase C controlled staging refresh completed on commit `5e1ea5a` (`docs: record staging discovery facts`). Staging artifact updated from `5ee8389` to `5e1ea5a` with local validation PASS, API recreation, DB health verified, and MVP smoke PASS. G43 later re-checked current `main` at `a18dcc1` after G38/G39/G41 copy polish: validate plus four focused local smokes PASS; no repo edits, commit/push/deploy, staging/VPS/prod. Production untouched. Further staging work requires fresh owner approval.
 **Source of truth for product state:** [`docs/STATUS.md`](../STATUS.md)
 
 Related detailed runbooks:
@@ -42,6 +42,7 @@ Related detailed runbooks:
 4. `npm.cmd run validate` — prisma generate + check + build all workspaces.
 5. Run smokes **only after validate PASS**.
 6. Latest proven local pre-staging closeout: `npm.cmd run smoke:pre-staging:local` PASS on `217c11c`; G35 Phase C controlled staging refresh complete on `5e1ea5a` with pre-artifact validation PASS; CI green; browser drift blockers resolved in the Phase B smoke set; staging artifact, API, and MVP smoke verified.
+7. G43 local re-check confirmed validate-before-services ordering on current `main` at `a18dcc1`: `npm.cmd run validate`, `smoke:client-portal:populated-delivery:browser`, `smoke:client-portal:edge-cases:browser`, `smoke:client-portal:sparse-delivery:browser`, and `smoke:monthly-report:local` all PASS after G38/G39/G41 copy polish. This remains local-only and does not authorize staging/VPS/prod/deploy.
 
 ### Command (with logging)
 
@@ -128,6 +129,8 @@ Local API rate limit: 300 req / 15 min per IP. Restart API (`npm.cmd run dev:api
 7. If still failing, stop and report — do not guess further.
 
 `smoke:staging-readiness:local` and `smoke:production-readiness:local` include one EPERM retry (Program Files `node.exe` only).
+
+**G43 runtime gate order:** stop local Node processes first; remove the generated Prisma client folder only if needed; run `npm.cmd run validate`; start API/Web only after validate passes; then run smokes. This avoids Windows Prisma DLL locks during validation.
 
 **Orchestrator hang caveat (5D-B):** `smoke:staging-readiness:local` may hang on local Windows PowerShell after Puriva boundary smoke completes. If stuck, inspect `$env:TEMP` per-step logs and run only the remaining Block A scripts manually — see [`STAGING_READINESS.md`](../runbooks/STAGING_READINESS.md) §5 operational caveats. No staging/prod commands during fallback.
 
@@ -332,6 +335,7 @@ Core rules:
 - Run `git commit` only after all validation checks pass.
 - Run `git push` only after commit success and `Assert-WorkingTreeClean` confirms an empty `git status --porcelain`.
 - Open the log in Notepad from `finally` or after the gate completes.
+- Avoid inline `powershell -Command` runner generation or shell interpolation for complex runners; if a runner is needed, create it through direct file-write/edit capability.
 
 Minimal pattern:
 

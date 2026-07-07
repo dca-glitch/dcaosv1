@@ -1,6 +1,6 @@
 # DCA OS Lite — Status (Source of Truth)
 
-**Last updated:** 2026-07-07 (controlled staging refresh closeout — commit 5e1ea5a)
+**Last updated:** 2026-07-07 (G44 docs-only status alignment after G43 local re-check — current `main` at `a18dcc1`)
 **Operator index:** [`docs/operator/OPERATOR_RUNBOOK.md`](./operator/OPERATOR_RUNBOOK.md)  
 **Architecture map:** [`docs/ARCHITECTURE.md`](./ARCHITECTURE.md) § Current application map  
 **Smoke matrix:** [`docs/runbooks/LOCAL_SMOKE_MATRIX.md`](./runbooks/LOCAL_SMOKE_MATRIX.md)  
@@ -15,10 +15,11 @@
 | Item | State |
 |------|--------|
 | Branch | `main` synced with `origin/main` |
-| Latest docs/local closeout commit | `6de603e` — `docs: align G35 Phase C staging status`; G35 Phase B local smoke proof remains `217c11c`; G35 Phase C staging artifact source remains `5e1ea5a` |
-| CI | Green on `217c11c` |
+| Latest docs/local closeout commit | `a18dcc1` — `fix: clarify client monthly report copy`; G35 Phase B local smoke proof remains `217c11c`; G35 Phase C staging artifact source remains `5e1ea5a` |
+| CI | Green through G38 `564e440`, G39 `691435c`, and G41 `a18dcc1`; G43 local re-check PASS |
 | Working tree | Clean and synced with `origin/main` |
 | Pre-staging local closeout (G35 Phase B) | **PASS** — full local pre-staging gate passed on `217c11c`; see §2.7 |
+| Latest local pre-staging re-check (G43) | **PASS** — validate plus four focused local smokes passed on current `main`; no repo edits, commit/push/deploy, staging/VPS/prod; see §2.9 |
 | Controlled refresh (G35 Phase C) | **PASS** — staging artifact refreshed from `5ee8389` to `5e1ea5a`; local validate PASS before artifact creation; staging API recreated; DB healthy; MVP smoke PASS; production untouched; see §2.8 |
 | Production deploy | **None** — `system.digitalcubeagency.net` unchanged; production API/DB untouched during Phase C refresh |
 | Staging deploy | **Phase C refresh COMPLETE on `5e1ea5a`.** Staging artifact, API, and web now current with commit `5e1ea5a`. Any further staging refresh/execution/migration requires fresh explicit owner approval. |
@@ -190,6 +191,30 @@ Prior artifact `5ee8389` was deployed on 2026-07-05 with claimed Phase 8 Caddy w
 | Deploy state | Controlled VPS artifact refresh only — no code push, no staging CI/migration deploy, no production touch |
 | Boundaries preserved | Docs-only update + discovery facts recorded in STATUS.md §2.2; no runtime code changes, no schema changes, no secret exposure |
 
+### 2.9 G38–G43 local/docs alignment closeout (2026-07-07)
+
+**Result:** PASS for the latest docs/local alignment baseline on `main` at `a18dcc1`. **Does not authorize staging, VPS, production, deploy, migration, Docker, Caddy, or secrets work.** G35 Phase C remains the latest controlled staging refresh baseline; G43 is the latest local pre-staging re-check baseline.
+
+| Gate | Commit / proof | Scope | Result |
+|------|----------------|-------|--------|
+| G38 | `564e440` | AI Delivery admin copy polish | CI green; no backend/API/auth/schema/VPS/deploy changes |
+| G39 | `691435c` | Monthly Report admin copy polish | CI green; no backend/API/auth/schema/VPS/deploy changes |
+| G41 | `a18dcc1` | Client Portal monthly report copy polish | CI green; no backend/API/auth/schema/VPS/deploy changes |
+| G42 | Discovery only | Local closure/docs alignment discovery | No edits; no blockers |
+| G43 | Local re-check | Pre-staging readiness re-check after copy polish | PASS; no repo edits; no commit/push/deploy/staging/VPS/prod |
+
+**G43 proof recorded:**
+
+- `npm.cmd run validate`: PASS
+- `smoke:client-portal:populated-delivery:browser`: PASS
+- `smoke:client-portal:edge-cases:browser`: PASS
+- `smoke:client-portal:sparse-delivery:browser`: PASS
+- `smoke:monthly-report:local`: PASS
+- Final git status: clean/synced on `main`
+- No repo edits, no commit, no push, no deploy, no staging/VPS/prod touch
+
+**G43 runtime-order lesson:** for future runtime gates, stop local Node processes first, remove the generated Prisma client folder only if needed, run `npm.cmd run validate` before starting API/Web, then start API/Web only after validate passes and run smokes. This avoids Windows Prisma DLL locks and preserves real process-exit-code capture.
+
 ## 3. Module readiness (local admin-operated)
 
 Percentages are **local MVP readiness**, not production-proven. See [`docs/STATUS_COMPLETION.md`](./STATUS_COMPLETION.md) for detail.
@@ -291,7 +316,7 @@ Percentages are **local MVP readiness**, not production-proven. See [`docs/STATU
 | Target | URL | Status |
 |--------|-----|--------|
 | Production | `system.digitalcubeagency.net` | Live VPS; untouched; API/DB unchanged during Phase C refresh |
-| Staging (G1) | `staging.digitalcubeagency.net` | Controlled refresh complete on `5e1ea5a`; artifact context `/opt/dca/staging-artifacts/5e1ea5a`; API health 200; web root 200; MVP smoke PASS; see §2.8 |
+| Staging (G1) | `staging.digitalcubeagency.net` | Controlled refresh complete on `5e1ea5a`; artifact context `/opt/dca/staging-artifacts/5e1ea5a`; API health 200; web root 200; MVP smoke PASS; see §2.8. G43 local re-check PASS does not authorize further staging action. |
 | Deploy proof | — | **Phase C refresh PASS** — staging artifact, API, and web updated from `5ee8389` to `5e1ea5a`; local validation passed before artifact creation; no code push; no production touch; no further staging action approved without explicit owner instruction |
 
 Phase C refresh included: local pre-artifact validation, artifact creation/upload, controlled VPS artifact swap, staging API recreation, admin bootstrap verification, and MVP smoke pass. Production containers untouched. No `.env` files read or printed. No further staging action authorized without explicit owner approval in writing.
@@ -312,7 +337,8 @@ Phase C refresh included: local pre-artifact validation, artifact creation/uploa
 | 6 | `main` synced | ✓ PASS — `main` = `origin/main` |
 | 7 | No live calls | ✓ PASS — No publish, sync, crawl, or live provider during gate |
 | 8 | Phase C refresh proof | ✓ PASS — Controlled refresh complete on `5e1ea5a`; local validation before artifact; staging API recreated; MVP smoke PASS; production untouched (see §2.8) |
-| 9 | Owner approval for future work | **Requires new explicit approval** — Phase C refresh is complete; any further staging action requires fresh owner instruction |
+| 9 | Latest local re-check | ✓ PASS — G43 validate + four focused local smokes PASS on `main` at `a18dcc1`; no repo edits, no commit/push/deploy/staging/VPS/prod (see §2.9) |
+| 10 | Owner approval for future work | **Requires new explicit approval** — Phase C refresh and G43 local re-check are complete; any further staging action requires fresh owner instruction |
 
 Full pack: [`docs/runbooks/STAGING_READINESS.md`](./runbooks/STAGING_READINESS.md). One-command local gate: `npm.cmd run smoke:pre-staging:local`.
 
@@ -322,7 +348,7 @@ Full pack: [`docs/runbooks/STAGING_READINESS.md`](./runbooks/STAGING_READINESS.m
 
 | Item | Status |
 |------|--------|
-| Staging deploy proof | **Phase C refresh COMPLETE** — G35 Phase C controlled refresh on `5e1ea5a` PASS; staging artifact, API, web, and MVP smoke verified; production untouched (see §2.2, §2.8); further staging refresh/execution requires fresh explicit owner approval |
+| Staging deploy proof | **Phase C refresh COMPLETE** — G35 Phase C controlled refresh on `5e1ea5a` PASS; staging artifact, API, web, and MVP smoke verified; production untouched (see §2.2, §2.8); G43 local re-check PASS does not change deferred status; further staging refresh/execution requires fresh explicit owner approval |
 | Production deploy proof | Deferred — frozen |
 | Live AI provider / OpenRouter execution | Deferred — opt-in only |
 | Live WordPress publish | Deferred — draft prep only |

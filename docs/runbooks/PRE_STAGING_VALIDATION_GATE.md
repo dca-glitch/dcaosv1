@@ -4,7 +4,7 @@
 
 **Purpose:** Confirm the local repository baseline before any future staging approval. PR #13 is already merged into `main`; this gate remains local-only and does not authorize VPS execution.
 
-**Phase G context (2026-07-07):** G1 closed — staging host `staging.digitalcubeagency.net`; production `system.digitalcubeagency.net`; G35 Phase C controlled staging refresh complete on commit `5e1ea5a`. Current proven local closeout commit: `217c11c` (`test: stabilize G35 Phase B browser smokes`); G35 Phase C refresh on `5e1ea5a` (`docs: record staging discovery facts`); CI green; full local `smoke:pre-staging:local` PASS for G35 Phase B; Phase C refresh local validation PASS; staging artifact updated; MVP smoke PASS; production untouched. Source of truth: [`docs/STATUS.md`](../STATUS.md).
+**Phase G context (2026-07-07):** G1 closed — staging host `staging.digitalcubeagency.net`; production `system.digitalcubeagency.net`; G35 Phase C controlled staging refresh complete on commit `5e1ea5a`. Current `main` is `a18dcc1` after G38/G39/G41 copy polish; CI green for those copy-polish commits. Current proven local closeout commit remains `217c11c` (`test: stabilize G35 Phase B browser smokes`); latest local pre-staging re-check is G43 PASS on `main` at `a18dcc1` (validate plus four focused local smokes; no repo edits, no commit/push/deploy/staging/VPS/prod). G35 Phase C refresh on `5e1ea5a` (`docs: record staging discovery facts`) remains the latest controlled staging refresh baseline. Source of truth: [`docs/STATUS.md`](../STATUS.md).
 
 **Ground-truth notice (updated 2026-07-07 post-Phase C refresh):** G35 Phase C controlled staging refresh is now COMPLETE. Staging artifact updated from `5ee8389` to `5e1ea5a` with verified local validation, staging API recreation, DB health check, and MVP smoke pass. Production containers untouched. Staging DNS/routes/containers/web/API confirmed responding with artifact context `/opt/dca/staging-artifacts/5e1ea5a`. Any further staging refresh/VPS execution/migration/deploy requires fresh explicit owner approval. This docs update does not authorize any new VPS, staging, production, deploy, DNS, migration, SSH, Docker, or Caddy action without explicit owner instruction.
 
@@ -104,6 +104,16 @@ npm.cmd run smoke:pre-staging:local
 Runs `validate` then the approved local smoke suite (Puriva MVP Blocks 7–30, Post-MVP Blocks 31–53, architecture blocks 4–6, legacy sunset).
 
 If `validate` fails with Prisma `EPERM` on Windows, run validate **before** starting dev API/Web, or stop only the locking `node.exe` process, remove the generated Prisma client, and rerun once. See [`.github/instructions/validation.instructions.md`](../../.github/instructions/validation.instructions.md).
+
+**G43 runtime gate order (preferred for future runtime gates):**
+
+1. Stop local Node processes first.
+2. Remove the generated Prisma client folder only if needed.
+3. Run `npm.cmd run validate` before starting API/Web.
+4. Start API/Web only after validate passes.
+5. Run the required smokes.
+
+Do not treat a local PASS as staging/VPS/prod/deploy approval; explicit owner approval remains required before any staging infrastructure work or deploy.
 
 If smoke fails with HTTP **429**, restart the API and rerun (or use `smoke:pre-staging:local`, which restarts API before heavy smokes). Long smoke chains share a 300 req / 15 min in-memory limit per IP.
 
@@ -238,6 +248,7 @@ See block operator docs under `docs/security/`.
 - **G35 Phase B (2026-07-07):** local `smoke:pre-staging:local` PASS on `217c11c`; CI green; browser drift blockers resolved for the Phase B browser smoke set.
 - No deploy, VPS migration, production restart, or release was performed.
 - G1 staging target: `staging.digitalcubeagency.net` (production: `system.digitalcubeagency.net`); G35 Phase C controlled refresh COMPLETE on `5e1ea5a`; staging artifact/API/web/MVP smoke verified; production untouched (see STATUS §2.2/§2.8); further staging work requires fresh owner approval.
+- **G43 (2026-07-07):** latest local pre-staging re-check PASS on `main` at `a18dcc1`: `npm.cmd run validate`, `smoke:client-portal:populated-delivery:browser`, `smoke:client-portal:edge-cases:browser`, `smoke:client-portal:sparse-delivery:browser`, and `smoke:monthly-report:local` all PASS; final git status clean/synced; no repo edits, commit/push/deploy/staging/VPS/prod.
 - **Local 5D-B / G35 PASS does not authorize G4 staging action or deploy.**
 
 ## After local closeout (owner decision — not this gate)

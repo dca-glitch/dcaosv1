@@ -4,7 +4,7 @@
 
 **Purpose:** Practical checklist to decide whether `main` is ready to **request** staging work (G4) — not to deploy staging.
 
-**Current baseline (2026-07-07):** latest proven local closeout commit `217c11c` (`test: stabilize G35 Phase B browser smokes`); G35 Phase C controlled staging refresh completed on commit `5e1ea5a` (`docs: record staging discovery facts`); CI green; full local `smoke:pre-staging:local` PASS for G35 Phase B; staging artifact refreshed from `5ee8389` to `5e1ea5a`; staging API recreated; MVP smoke PASS; production untouched; **further staging refresh/execution requires fresh explicit owner approval**.
+**Current baseline (2026-07-07):** latest proven full local closeout commit `217c11c` (`test: stabilize G35 Phase B browser smokes`); G35 Phase C controlled staging refresh completed on commit `5e1ea5a` (`docs: record staging discovery facts`); latest local pre-staging re-check is G43 PASS on current `main` at `a18dcc1` after G38/G39/G41 copy polish; CI green for those copy-polish commits; full local `smoke:pre-staging:local` PASS for G35 Phase B; staging artifact refreshed from `5ee8389` to `5e1ea5a`; staging API recreated; MVP smoke PASS; production untouched; **further staging refresh/execution requires fresh explicit owner approval**.
 
 **Ground-truth notice (updated 2026-07-07 post-Phase C refresh):** G35 Phase C controlled staging refresh is now complete. Staging artifact updated from `5ee8389` to `5e1ea5a` with local pre-artifact validation PASS. Staging API recreated; DB healthy; MVP smoke PASS; production untouched. Staging DNS/routes/containers/web/API confirmed responding with artifact context `/opt/dca/staging-artifacts/5e1ea5a`. Any further staging refresh/VPS execution/migration/deploy requires fresh explicit owner approval with bounded execution block instructions. This docs update authorizes no new VPS, staging, production, deploy, DNS, migration, SSH, Docker, or Caddy action without explicit owner instruction.
 
@@ -38,7 +38,8 @@ Before **requesting** G4 staging work (not deploy), all must be true:
 | 6 | `main` synced with `origin/main` |
 | 7 | No live calls / publish / sync / crawl during gate |
 | 8 | Staging deploy proof **not performed** — repo-side gate only |
-| 9 | Explicit owner approval before touching staging infrastructure |
+| 9 | G43 local re-check PASS on `main` at `a18dcc1` — validate plus four focused local smokes; no repo edits, commit/push/deploy/staging/VPS/prod |
+| 10 | Explicit owner approval before touching staging infrastructure |
 
 ---
 
@@ -245,6 +246,9 @@ Full catalog: [`LOCAL_SMOKE_MATRIX.md`](./LOCAL_SMOKE_MATRIX.md).
 
 - **Prisma EPERM:** run `validate` before starting dev servers, or stop locking `node.exe`.
 - **Prisma EPERM recovery note:** if the Windows lock persists, stop the locking `node.exe`, remove the generated Prisma client, then rerun `validate` once.
+- **G43 runtime order:** for future runtime gates, stop local Node processes first, remove the generated Prisma client folder only if needed, run `npm.cmd run validate`, start API/Web only after validate passes, then run smokes.
+- **Runner construction:** do not create PowerShell runners through inline `powershell -Command` or shell interpolation. If a temporary runner is needed, create it through direct file-write/edit capability so quoting and exit-code capture stay deterministic.
+- **Exit-code capture:** do not let `Tee-Object` or pipeline output become the source of truth for success/failure; capture actual process exit codes immediately after each native command.
 - **HTTP 429:** restart API (`npm.cmd run dev:api`); `smoke:pre-staging:local` restarts API automatically.
 - **R2 / WP open-gate probes:** optional; not required for Block A GO. Do not treat local R2 disabled-safe proof as live R2 real-bucket proof, staging/env proof, or production storage readiness.
 - **`smoke:staging-readiness:local` orchestrator hang (5D-B):** on local Windows PowerShell, the orchestrator may hang after `smoke:puriva-client-portal-boundary:local` completes even when that step PASSed. If the orchestrator appears stuck after a completed step:

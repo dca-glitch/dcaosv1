@@ -35,6 +35,8 @@ Current behavior:
 
 **Ground-truth notice (updated 2026-07-07 post-Phase C refresh):** G35 Phase C controlled staging refresh is now COMPLETE. Staging artifact updated from `5ee8389` to `5e1ea5a` with verified local validation, API recreation, DB health, and MVP smoke pass. Production untouched. The deferred items below remain deferred except for the completed Phase C refresh. Any further staging/VPS/production execution requires fresh explicit owner approval. This docs update does not authorize any new VPS, staging, production, deploy, DNS, migration, SSH, Docker, or Caddy action without explicit owner instruction.
 
+**G43 note:** the later local pre-staging re-check PASS on current `main` at `a18dcc1` does not move any deferred staging, VPS, production, deploy, migration, Docker, Caddy, live provider, or live storage item out of deferred status.
+
 Deferred:
 
 - VPS production deployment;
