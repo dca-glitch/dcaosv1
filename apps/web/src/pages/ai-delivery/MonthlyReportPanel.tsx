@@ -218,7 +218,7 @@ const MONTHLY_REPORT_STATUSES = ["DRAFT", "ADMIN_REVIEW", "FINAL", "ARCHIVED"] a
 type MonthlyReportStatus = (typeof MONTHLY_REPORT_STATUSES)[number];
 
 function formatReportStatus(value: string | null | undefined): string {
-  if (!value) return "Not set";
+  if (!value) return "No status";
   if (value === "DRAFT") return "Draft";
   if (value === "ADMIN_REVIEW") return "Admin review";
   if (value === "FINAL") return "Final";
@@ -227,12 +227,12 @@ function formatReportStatus(value: string | null | undefined): string {
 }
 
 function formatDate(value: string | null | undefined): string {
-  if (!value) return "Not set";
+  if (!value) return "N/A";
   return new Date(value).toLocaleString();
 }
 
 function formatDeliveryType(value: string | null | undefined): string {
-  if (!value) return "Not set";
+  if (!value) return "N/A";
   return value.toLowerCase().replace(/_/g, " ").replace(/(^|\s)\S/g, (s) => s.toUpperCase());
 }
 
@@ -706,7 +706,7 @@ export function MonthlyReportPanel({
       if (ref?.downloadUrl) {
         window.open(ref.downloadUrl, "_blank", "noopener,noreferrer");
       } else {
-        setDocumentError("No download available.");
+        setDocumentError("Report document is not available for download.");
       }
     } catch (error) {
       setDocumentError(error instanceof Error ? error.message : "Unable to retrieve download link.");
@@ -812,7 +812,7 @@ export function MonthlyReportPanel({
     const status = report.isArchived ? "Archived" : formatReportStatus(report.status);
     const headline = report.title?.trim() || `${project.name} monthly report`;
     const documentState = report.hasDocument ? "Document attached" : "No document attached";
-    const handoffState = report.exportUrl ? "Final handoff URL set" : "No handoff URL";
+    const handoffState = report.exportUrl ? "Handoff URL set" : "No handoff URL set";
     const visibilityState = report.status === "FINAL" ? "Client-safe when FINAL" : "Internal working copy";
     const actionHint = report.isArchived
       ? "Restore to resume edits."
@@ -1068,7 +1068,7 @@ export function MonthlyReportPanel({
                       ? "Loading snapshot metrics"
                       : metrics
                         ? `${metricsShellCopy?.snapshotCount ?? 0} snapshot${(metricsShellCopy?.snapshotCount ?? 0) === 1 ? "" : "s"} loaded`
-                        : "Pending"}
+                        : "Awaiting report creation"}
                   </dd>
                 </div>
               </dl>
@@ -1341,7 +1341,7 @@ export function MonthlyReportPanel({
                       <dl className="brief-grid monthly-report-trend-grid">
                         <div>
                           <dt>Snapshot status</dt>
-                          <dd>{metricsShellCopy?.dataStatus ?? "Not set"}</dd>
+                          <dd>{metricsShellCopy?.dataStatus ?? "N/A"}</dd>
                         </div>
                         <div>
                           <dt>Imported snapshots</dt>
@@ -1353,7 +1353,7 @@ export function MonthlyReportPanel({
                         </div>
                         <div>
                           <dt>Latest approved month</dt>
-                          <dd>{metrics.computedTrendSummary.latestMonth ?? "Not set"}</dd>
+                          <dd>{metrics.computedTrendSummary.latestMonth ?? "N/A"}</dd>
                         </div>
                       </dl>
                     </MonthlyReportInlineNotice>
@@ -1369,7 +1369,7 @@ export function MonthlyReportPanel({
                         accent="cyan"
                         helper="Latest approved month in the trend summary"
                         label="Latest month"
-                        value={metrics.computedTrendSummary.latestMonth ?? "Not set"}
+                        value={metrics.computedTrendSummary.latestMonth ?? "N/A"}
                       />
                       <MetricCard
                         helper="12-month approved totals"
