@@ -403,7 +403,7 @@ type ContentPlanItemDraft = {
 };
 
 const CONTENT_PLAN_SEARCH_INTENT_OPTIONS = [
-  { value: "", label: "Not set" },
+  { value: "", label: "No selection" },
   { value: "informational", label: "Informational" },
   { value: "commercial", label: "Commercial" },
   { value: "transactional", label: "Transactional" },
@@ -1322,7 +1322,7 @@ export function AiDeliveryPage({
     if (selectedContentDraftPlanItem?.id) {
       return `${selectedContentDraftPlanItem.sortOrder}. ${selectedContentDraftPlanItem.title}`;
     }
-    return "Manual / unlinked production record";
+    return "Unlinked draft (local-only state)";
   }, [activeContentDraftRecord, selectedContentDraftPlanItem]);
   const contentDraftSaveStateLabel = useMemo(() => {
     if (activeContentDraftRecord) {
@@ -1438,19 +1438,19 @@ export function AiDeliveryPage({
     const blockers: string[] = [];
 
     if (!deliverableLinkedDraftRecord) {
-      blockers.push("Link the approved content draft before this package can move to final handoff.");
+      blockers.push("Requires approved content draft link before packaging can move to final handoff status.");
     } else if (!canPackageApprovedContentDraft(deliverableLinkedDraftRecord)) {
       blockers.push(`Linked draft is ${formatContentDraftStatus(deliverableLinkedDraftRecord.status).toLowerCase()}; ready-state packaging expects an approved draft.`);
     }
 
     if (deliverableRelatedImages.length === 0) {
-      blockers.push("No same-project article image planning records are linked to this draft yet.");
+      blockers.push("No article images linked from this project. Associate an image before packaging for delivery.");
     } else if (!deliverableRelatedImages.some((image) => canPackageApprovedArticleImage(image))) {
-      blockers.push("Linked image planning exists, but no image is approved or final-ready for client-safe handoff yet.");
+      blockers.push("Linked images exist, but none are approved or final-ready for delivery. Approve or finalize one image to proceed.");
     }
 
     if (!deliverableHasRecordedReference) {
-      blockers.push("No export or private-storage reference is recorded for the client-safe handoff yet.");
+      blockers.push("Requires reference link (export URL or private storage) for delivery. Upload or provide one now.");
     }
 
     if (deliverableStatusNeedsApprovedLinks(deliverableForm.status) && !deliverableFormHasReadyLinks(deliverableForm, contentDrafts, articleImages)) {
