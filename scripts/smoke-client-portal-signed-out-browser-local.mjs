@@ -55,13 +55,13 @@ function getErrorCode(response) {
 
 async function expectSignIn(page) {
   await page.getByRole("heading", { name: "Sign In", exact: true }).waitFor({ state: "visible", timeout: 15000 });
-  const portalVisible = await page.getByRole("heading", { name: "Client Portal", exact: true }).isVisible().catch(() => false);
+  const portalVisible = await page.getByRole("heading", { name: "Your archive", exact: true }).isVisible().catch(() => false);
   return !portalVisible;
 }
 
 async function expectClientPortal(page) {
   await page.getByRole("button", { name: "Logout" }).waitFor({ state: "visible", timeout: 25000 });
-  await page.getByRole("heading", { name: "Client Portal", exact: true }).waitFor({ state: "visible", timeout: 15000 });
+  await page.getByRole("heading", { name: "Your archive", exact: true }).waitFor({ state: "visible", timeout: 15000 });
   return true;
 }
 
@@ -138,7 +138,7 @@ async function main() {
     record("unsigned client-portal route shows sign-in", await expectSignIn(signedOutPage), "#/client-portal without token");
 
     await authedPage.goto(`${webBaseUrl}/#/client-portal`, { waitUntil: "domcontentloaded" });
-    record("authenticated client portal loads", await expectClientPortal(authedPage), "Client Portal heading visible");
+    record("authenticated client portal loads", await expectClientPortal(authedPage), "Your archive heading visible");
 
     await authedPage.getByRole("button", { name: "Logout" }).click();
     record("logout returns to sign-in", await expectSignIn(authedPage), "Client Portal hidden after logout");
