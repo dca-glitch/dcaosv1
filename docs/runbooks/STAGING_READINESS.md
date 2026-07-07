@@ -4,9 +4,9 @@
 
 **Purpose:** Practical checklist to decide whether `main` is ready to **request** staging work (G4) — not to deploy staging.
 
-**Current baseline (2026-07-07):** latest proven local closeout commit `217c11c` (`test: stabilize G35 Phase B browser smokes`); local `main` observed at `be441e3` during read-only VPS discovery follow-up; CI green; full local `smoke:pre-staging:local` PASS for G35 Phase B; browser drift blockers resolved for the Phase B smoke set; **current main is not proven deployed** to staging or production; staging refresh/VPS execution **not approved**.
+**Current baseline (2026-07-07):** latest proven local closeout commit `217c11c` (`test: stabilize G35 Phase B browser smokes`); G35 Phase C controlled staging refresh completed on commit `5e1ea5a` (`docs: record staging discovery facts`); CI green; full local `smoke:pre-staging:local` PASS for G35 Phase B; staging artifact refreshed from `5ee8389` to `5e1ea5a`; staging API recreated; MVP smoke PASS; production untouched; **further staging refresh/execution requires fresh explicit owner approval**.
 
-**Ground-truth notice (reconciled 2026-07-07):** read-only VPS discovery confirmed that staging DNS/routes/containers/web/API exist and respond, and staging appears tied to artifact/build context `5ee8389`. This is not accepted proof that current `main` (`be441e3`) or G35 closeout (`217c11c`) is deployed. Staging refresh/VPS execution/migration/deploy is **NOT approved**; before any refresh/action, owner must explicitly approve a fresh bounded staging execution block. This docs reconciliation does not authorize any VPS, staging, production, deploy, DNS, migration, SSH, Docker, or Caddy action.
+**Ground-truth notice (updated 2026-07-07 post-Phase C refresh):** G35 Phase C controlled staging refresh is now complete. Staging artifact updated from `5ee8389` to `5e1ea5a` with local pre-artifact validation PASS. Staging API recreated; DB healthy; MVP smoke PASS; production untouched. Staging DNS/routes/containers/web/API confirmed responding with artifact context `/opt/dca/staging-artifacts/5e1ea5a`. Any further staging refresh/VPS execution/migration/deploy requires fresh explicit owner approval with bounded execution block instructions. This docs update authorizes no new VPS, staging, production, deploy, DNS, migration, SSH, Docker, or Caddy action without explicit owner instruction.
 
 **Source of truth:** [`docs/STATUS.md`](../STATUS.md). **Operator runbook:** [`docs/operator/OPERATOR_RUNBOOK.md`](../operator/OPERATOR_RUNBOOK.md).
 
@@ -260,7 +260,7 @@ Full catalog: [`LOCAL_SMOKE_MATRIX.md`](./LOCAL_SMOKE_MATRIX.md).
   4. **No staging/prod commands** during manual fallback — local only.
   5. Before G4 request, owner must fix orchestrator **or** explicitly accept this manual workaround.
 - **G35 Phase B closeout:** `npm.cmd run smoke:pre-staging:local` passed locally on `217c11c`; this was a smoke stabilization closeout only and did not perform any VPS, staging, or production deploy.
-- **Read-only VPS discovery update (2026-07-07):** staging DNS/routes/containers/web/API exist and respond, with staging API health 200/DB ready and staging web root 200 serving DCA OS v1 HTML. Staging appears tied to `/opt/dca/staging-artifacts/5ee8389`. Production and staging use separate API/Postgres containers and loopback ports, but full DB/env isolation is not proven without a secret-safe config review. No deploy/restart/reload/migration/bootstrap was performed, and no `.env` files were read or printed.
+- **Phase C controlled refresh (2026-07-07):** G35 Phase C refresh complete. Staging artifact updated from `5ee8389` to `5e1ea5a` with local validation PASS before artifact creation. Staging DNS/routes/containers/web/API confirmed responding with artifact context `/opt/dca/staging-artifacts/5e1ea5a`. Staging API health 200/DB ready; web root 200 serving DCA OS v1 HTML; MVP smoke PASS. Production and staging use separate API/Postgres containers and loopback ports; production untouched. Admin bootstrap verified with explicit guard. No `.env` files read or printed.
 
 ---
 

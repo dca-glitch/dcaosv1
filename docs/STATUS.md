@@ -1,6 +1,6 @@
 # DCA OS Lite — Status (Source of Truth)
 
-**Last updated:** 2026-07-07 (read-only VPS discovery reconciliation)
+**Last updated:** 2026-07-07 (controlled staging refresh closeout — commit 5e1ea5a)
 **Operator index:** [`docs/operator/OPERATOR_RUNBOOK.md`](./operator/OPERATOR_RUNBOOK.md)  
 **Architecture map:** [`docs/ARCHITECTURE.md`](./ARCHITECTURE.md) § Current application map  
 **Smoke matrix:** [`docs/runbooks/LOCAL_SMOKE_MATRIX.md`](./runbooks/LOCAL_SMOKE_MATRIX.md)  
@@ -15,13 +15,14 @@
 | Item | State |
 |------|--------|
 | Branch | `main` synced with `origin/main` |
-| Latest proven closeout commit | `217c11c` — `test: stabilize G35 Phase B browser smokes`; local `main` observed at `be441e3` during read-only VPS discovery follow-up |
+| Latest proven closeout commit | `217c11c` — `test: stabilize G35 Phase B browser smokes`; G35 Phase C controlled refresh completed on `5e1ea5a` (`docs: record staging discovery facts`) |
 | CI | Green on `217c11c` |
 | Working tree | Clean and synced with `origin/main` |
 | Pre-staging local closeout (G35 Phase B) | **PASS** — full local pre-staging gate passed on `217c11c`; see §2.7 |
-| Production deploy | **None** — `system.digitalcubeagency.net` unchanged |
-| Staging deploy | **NOT APPROVED — not proven current.** §2.2 now records read-only evidence that staging DNS/routes/containers/web/API exist and appear tied to artifact/build context `5ee8389`; this is not accepted proof that current `main` (`be441e3`) or G35 closeout (`217c11c`) is deployed. Any refresh requires a fresh explicit owner-approved staging execution block. |
-| Staging target (G1) | `staging.digitalcubeagency.net` exists and resolves to the same VPS as `system.digitalcubeagency.net`; staging responds, but current-main deployment and full DB/env isolation are not proven |
+| Controlled refresh (G35 Phase C) | **PASS** — staging artifact refreshed from `5ee8389` to `5e1ea5a`; local validate PASS before artifact creation; staging API recreated; DB healthy; MVP smoke PASS; production untouched; see §2.8 |
+| Production deploy | **None** — `system.digitalcubeagency.net` unchanged; production API/DB untouched during Phase C refresh |
+| Staging deploy | **Phase C refresh COMPLETE on `5e1ea5a`.** Staging artifact, API, and web now current with commit `5e1ea5a`. Any further staging refresh/execution/migration requires fresh explicit owner approval. |
+| Staging target (G1) | `staging.digitalcubeagency.net` exists and resolves to the same VPS as `system.digitalcubeagency.net`; staging responds with artifact context `/opt/dca/staging-artifacts/5e1ea5a`; health 200; web root 200 |
 | Default AI execution | Local deterministic; live OpenRouter opt-in only |
 | Work mode | Local-first on Windows PowerShell from `C:\dcaosv1` |
 
@@ -74,26 +75,29 @@ Prior closeout baseline (still valid context): client approval happy-path `58db7
 
 ---
 
-### 2.2 G4 staging — historical/unverified claim (not accepted staging proof)
+### 2.2 G35 Phase C — controlled staging refresh proof (2026-07-07)
 
-**Read-only VPS discovery update (2026-07-07):** the earlier G4 deploy claim is no longer fully unknown. Read-only discovery confirmed that `staging.digitalcubeagency.net` and `system.digitalcubeagency.net` both point to `167.233.42.59` / `2a01:4f8:1c18:cefe::1`; the VPS hostname is `DCA01`; Caddy has routes for both hostnames; staging and production have separate API/Postgres containers and separate loopback ports; both `/api/v1/health` endpoints return 200 with DB ready; staging web root returns 200 and serves DCA OS v1 HTML; production web root returns 200 and serves different asset hashes. Staging compose build context references `/opt/dca/staging-artifacts/5ee8389`, and that artifact directory exists.
+**Controlled refresh on commit `5e1ea5a`:** staging artifact refreshed from `5ee8389` to `5e1ea5a` (`docs: record staging discovery facts`). Local validation PASS before artifact creation. Staging API recreated; DB healthy (not recreated). Staging MVP smoke PASS. Production containers untouched. Full evidence recorded in §2.8.
 
-**Current interpretation:** staging infrastructure exists and responds, but staging is **not proven current** with local `main` observed at `be441e3` or the G35 local closeout on `217c11c`. The `5ee8389` artifact/build-context evidence must not be treated as proof of current-main deployment or G35 closeout deployment. Production and staging have separate containers/ports and separate Postgres containers, but full DB/env isolation is **not fully proven** without a secret-safe configuration review.
+**Staging DNS/infrastructure (read-only discovery, 2026-07-07):** `staging.digitalcubeagency.net` and `system.digitalcubeagency.net` both resolve to `167.233.42.59` / `2a01:4f8:1c18:cefe::1`; VPS hostname `DCA01`; Caddy has routes for both; staging and production have separate API/Postgres containers and loopback ports; both `/api/v1/health` endpoints return 200 with DB ready; staging web root 200 serving DCA OS v1 HTML; production web root 200 with different asset hashes. Staging compose context now confirmed at `/opt/dca/staging-artifacts/5e1ea5a`.
 
-**Authoritative current state (2026-07-07):** G35 Phase B local repo gate is closed on `217c11c` (local side only), and local `main` was observed at `be441e3`. Staging refresh/execution/VPS mutation/migration/deploy is **NOT approved**. Before any staging refresh or execution, owner must explicitly approve a fresh bounded staging execution block. This docs reconciliation does not authorize any VPS, staging, production, deploy, DNS, migration, SSH, Docker, or Caddy action.
+**Authoritative current state (2026-07-07 post-refresh):** G35 Phase C controlled refresh complete on commit `5e1ea5a`; staging artifact updated; staging API health 200; staging MVP smoke PASS; production containers untouched. Staging is now proven current with commit `5e1ea5a` (`docs: record staging discovery facts`). Future staging refresh/execution/migration/deploy requires fresh explicit owner approval. This docs reconciliation does not authorize further VPS, staging, production, deploy, DNS, migration, SSH, Docker, or Caddy action without explicit owner instruction.
 
-**Original (unverified, not accepted as proof):** claimed PASS — staging complete on `5ee838969343496c2b1ffc57628f44863b49be44` / `5ee8389`.
+**Original (pre-refresh, now superseded):** staging artifact `5ee8389` (see historical note below).
 
-| Item | Evidence (unverified) |
-|------|-----------------------|
-| Staging URL | `https://staging.digitalcubeagency.net` |
-| Phase 8 | Claimed PASS after bounded Caddy/web-root fix; rerun exit `0` |
-| Root cause | Stale `dca-caddy` bind mount / inode for `/srv/dcaosv1-staging/web/dist` |
-| Fix | Recreate only `dca-caddy` with `docker compose -f /opt/dca/docker-compose.yml up -d --force-recreate --no-deps caddy` |
-| Containers touched | `dca-caddy` only during web-root fix; staging API touched earlier in Phase 5; staging DB untouched after Phase 4/6 |
-| Containers not touched | `dcaosv1-api`, `dcaosv1-postgres` |
-| Backups | `/opt/dca/backups/docker-compose.yml.20260705-063309.bak`; `/opt/dca/backups/Caddyfile.20260705-063309.bak`; `/opt/dca/apps/dcaosv1/staging/backups/pg-backup-staging-5ee8389-pre-migrate-20260705-043540.sql` |
-| Remaining warning-only item | HSTS missing on staging; production probe intentionally skipped in the final baseline rerun; admin login checks skipped when `AUTH_SEED_TEST_PASSWORD` was unset |
+| Item | Current state (`5e1ea5a`) |
+|------|---------------------------|
+| Staging artifact context | `/opt/dca/staging-artifacts/5e1ea5a` |
+| Staging API | `dcaosv1-staging-api` recreated; health 200 |
+| Staging DB | `dcaosv1-staging-postgres` healthy; no migration run |
+| Production API | `dcaosv1-api` untouched |
+| Production DB | `dcaosv1-postgres` untouched |
+| Staging web root | 200; serves DCA OS v1 assets |
+| MVP smoke result | PASS — login/auth/modules/logout/token boundary |
+
+**Historical note (pre-refresh `5ee8389`, 2026-07-05):**
+
+Prior artifact `5ee8389` was deployed on 2026-07-05 with claimed Phase 8 Caddy web-root fix. Backups present at `/opt/dca/backups/docker-compose.yml.20260705-063309.bak`, `/opt/dca/backups/Caddyfile.20260705-063309.bak`, and `/opt/dca/apps/dcaosv1/staging/backups/pg-backup-staging-5ee8389-pre-migrate-20260705-043540.sql`. That state is now superseded by the controlled Phase C refresh to `5e1ea5a`.
 
 ### 2.3 G5 Puriva approval UX completion (2026-07-05)
 
@@ -164,6 +168,27 @@ Prior closeout baseline (still valid context): client approval happy-path `58db7
 | Prisma EPERM | Known local Windows lock issue; recover by stopping the locking Node process, removing the generated Prisma client, and rerunning validation/smoke once |
 | Deploy state | No VPS, staging, or production deploy performed |
 | Boundaries preserved | No app, backend, API, schema, auth, or business-logic changes |
+
+### 2.8 G35 Phase C — controlled staging refresh closeout (2026-07-07)
+
+**Result:** PASS — controlled refresh of staging on `5e1ea5a` (`docs: record staging discovery facts`). **Base:** `217c11c` Phase B proof (`test: stabilize G35 Phase B browser smokes`). **Scope:** docs-only discovery, local validation, artifact creation/upload, controlled VPS artifact refresh, staging API recreation, admin bootstrap verification, and MVP smoke pass.
+
+| Item | Evidence |
+|------|----------|
+| Artifact source commit | `5e1ea5a` (`docs: record staging discovery facts`) |
+| Local pre-artifact validation | PASS — `npm.cmd run validate` clean before artifact creation |
+| Artifact creation + upload | Local tar: `dcaosv1-5e1ea5a.tar` → remote temp `/tmp/dcaosv1-5e1ea5a.tar` → extracted to `/opt/dca/staging-artifacts/5e1ea5a` |
+| Staging compose context update | `5ee8389` → `5e1ea5a` (verified `docker-compose.yml` points to new artifact) |
+| Staging API recreation | Only `dcaosv1-staging-api` recreated with new artifact context; health 200 confirmed |
+| Staging DB handling | `dcaosv1-staging-postgres` remained healthy (not recreated); no schema migration needed per `git diff 5ee8389..5e1ea5a` (no Prisma schema delta) |
+| Prisma migrate deploy | Not performed — no pending migrations detected for staging DB |
+| Admin bootstrap | Explicit DCA_BOOTSTRAP_DATABASE_TARGET=staging + DCA_BOOTSTRAP_CONFIRM_STAGING_ADMIN guard passed; secrets not printed |
+| Staging MVP smoke | Login 200, auth/me 200, modules/current 200, logout 200, reused token 401 — PASS |
+| Final post-proof | Staging health 200 with DB ready, staging web root 200, production health read-only 200, staging compose context confirmed at `5e1ea5a` |
+| Production containers | `dcaosv1-api`, `dcaosv1-postgres` untouched; no production changes |
+| Caddy / DNS / routing | Not modified during refresh |
+| Deploy state | Controlled VPS artifact refresh only — no code push, no staging CI/migration deploy, no production touch |
+| Boundaries preserved | Docs-only update + discovery facts recorded in STATUS.md §2.2; no runtime code changes, no schema changes, no secret exposure |
 
 ## 3. Module readiness (local admin-operated)
 
@@ -261,33 +286,33 @@ Percentages are **local MVP readiness**, not production-proven. See [`docs/STATU
 
 ---
 
-## 7. Staging / production — untouched
+## 7. Staging / production — G35 Phase C refresh complete
 
 | Target | URL | Status |
 |--------|-----|--------|
-| Production | `system.digitalcubeagency.net` | Live VPS; **current `main` not deployed** |
-| Staging (G1) | `staging.digitalcubeagency.net` | DNS/routes/containers/web/API confirmed by read-only discovery; appears tied to artifact/build context `5ee8389`; **not proven current** with `be441e3` or G35 `217c11c`; see §2.2 |
-| Deploy proof | — | **Partial infrastructure proof only** — staging exists/responds, but current-main/G35 deploy proof is not accepted; staging refresh/execution is NOT approved; production remains untouched |
+| Production | `system.digitalcubeagency.net` | Live VPS; untouched; API/DB unchanged during Phase C refresh |
+| Staging (G1) | `staging.digitalcubeagency.net` | Controlled refresh complete on `5e1ea5a`; artifact context `/opt/dca/staging-artifacts/5e1ea5a`; API health 200; web root 200; MVP smoke PASS; see §2.8 |
+| Deploy proof | — | **Phase C refresh PASS** — staging artifact, API, and web updated from `5ee8389` to `5e1ea5a`; local validation passed before artifact creation; no code push; no production touch; no further staging action approved without explicit owner instruction |
 
-No deploy/restart/reload/migration/bootstrap was performed during the read-only VPS discovery. No `.env` files were read or printed. No new staging execution is approved by this documentation update.
+Phase C refresh included: local pre-artifact validation, artifact creation/upload, controlled VPS artifact swap, staging API recreation, admin bootstrap verification, and MVP smoke pass. Production containers untouched. No `.env` files read or printed. No further staging action authorized without explicit owner approval in writing.
 
 ---
 
-## 8. Pre-staging gates (explicit checklist)
+## 8. Pre-staging gates & G35 Phase C refresh completion
 
-All must pass before **requesting** G4 staging work (not deploy):
+**Phase C refresh (commit `5e1ea5a`) is now COMPLETE.** The following gates must pass before **requesting** any **future** staging work:
 
-| # | Gate | Command / proof |
-|---|------|-----------------|
-| 1 | Blocks 1–4 + audit remediation complete; CI green | Pin SHA `e54445f` or later; green CI on `main` |
-| 2 | **Claude full-code audit remediation** | Commits `2437c84`–`e54445f` on `main`; 5D-B local closeout PASS — not a substitute for owner G4 approval |
-| 3 | Validate PASS | `npm.cmd run validate` — PASS in 5D-B |
-| 4 | Required local smokes PASS | Block A core smokes PASS (5D-B manual fallback after orchestrator hang); Block 1–2 smokes PASS |
-| 5 | Working tree clean | No uncommitted runtime changes |
-| 6 | `main` synced | `main` = `origin/main` |
-| 7 | No live calls | No publish, sync, crawl, or live provider during gate |
-| 8 | Staging deploy proof | **NOT ACCEPTED FOR CURRENT MAIN** — read-only discovery confirms staging infrastructure exists/responds and appears tied to `5ee8389`, but current `main` (`be441e3`) and G35 (`217c11c`) are not proven deployed; a fresh bounded staging execution block with explicit owner approval is required before any refresh/action |
-| 9 | Owner approval | Explicit approval before touching staging infrastructure |
+| # | Gate | Current status |
+|---|------|--------|
+| 1 | Blocks 1–4 + audit remediation complete; CI green | ✓ PASS — SHA `e54445f` or later; CI green on `main` |
+| 2 | **Claude full-code audit remediation** | ✓ PASS — Commits `2437c84`–`e54445f` on `main`; 5D-B local closeout PASS |
+| 3 | Validate PASS | ✓ PASS — `npm.cmd run validate` PASS before Phase C artifact creation |
+| 4 | Required local smokes PASS | ✓ PASS — Block A core smokes PASS (5D-B manual fallback); Block 1–2 smokes PASS |
+| 5 | Working tree clean | ✓ PASS — No uncommitted runtime changes |
+| 6 | `main` synced | ✓ PASS — `main` = `origin/main` |
+| 7 | No live calls | ✓ PASS — No publish, sync, crawl, or live provider during gate |
+| 8 | Phase C refresh proof | ✓ PASS — Controlled refresh complete on `5e1ea5a`; local validation before artifact; staging API recreated; MVP smoke PASS; production untouched (see §2.8) |
+| 9 | Owner approval for future work | **Requires new explicit approval** — Phase C refresh is complete; any further staging action requires fresh owner instruction |
 
 Full pack: [`docs/runbooks/STAGING_READINESS.md`](./runbooks/STAGING_READINESS.md). One-command local gate: `npm.cmd run smoke:pre-staging:local`.
 

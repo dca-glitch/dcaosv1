@@ -1,6 +1,6 @@
 # DCA OS Lite — Operator Runbook (Consolidated)
 
-**Status:** Single operator entry point for local validation, smoke, recovery, and staging/production prerequisites. G35 Phase B local pre-staging gate passed on `217c11c`; read-only VPS discovery later confirmed staging exists/responds but appears tied to artifact/build context `5ee8389`, not current `main` (`be441e3`). No refresh/deploy/restart/reload/migration/bootstrap was performed.
+**Status:** Single operator entry point for local validation, smoke, recovery, and staging/production prerequisites. G35 Phase B local pre-staging gate passed on `217c11c`; G35 Phase C controlled staging refresh completed on commit `5e1ea5a` (`docs: record staging discovery facts`). Staging artifact updated from `5ee8389` to `5e1ea5a` with local validation PASS, API recreation, DB health verified, and MVP smoke PASS. Production untouched. Further staging work requires fresh owner approval.
 **Source of truth for product state:** [`docs/STATUS.md`](../STATUS.md)
 
 Related detailed runbooks:
@@ -41,7 +41,7 @@ Related detailed runbooks:
 3. Stop dev servers if Prisma EPERM risk (ports 4000/5173).
 4. `npm.cmd run validate` — prisma generate + check + build all workspaces.
 5. Run smokes **only after validate PASS**.
-6. Latest proven local pre-staging closeout: `npm.cmd run smoke:pre-staging:local` PASS on `217c11c`; CI green; browser drift blockers resolved in the Phase B smoke set only.
+6. Latest proven local pre-staging closeout: `npm.cmd run smoke:pre-staging:local` PASS on `217c11c`; G35 Phase C controlled staging refresh complete on `5e1ea5a` with pre-artifact validation PASS; CI green; browser drift blockers resolved in the Phase B smoke set; staging artifact, API, and MVP smoke verified.
 
 ### Command (with logging)
 

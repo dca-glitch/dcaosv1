@@ -33,7 +33,7 @@ Current behavior:
 
 ## Production And Deployment
 
-**Ground-truth notice (reconciled 2026-07-07):** read-only VPS discovery confirmed staging DNS/routes/containers/web/API exist and respond, and staging appears tied to artifact/build context `5ee8389`. This does not prove current `main` (`be441e3`) or G35 closeout (`217c11c`) is deployed. The deferred items below remain deferred. Staging refresh/VPS execution/migration/deploy is **NOT approved**. Before any staging refresh/action, owner must explicitly approve a fresh bounded staging execution block. This docs reconciliation does not authorize any VPS, staging, production, deploy, DNS, migration, SSH, Docker, or Caddy action.
+**Ground-truth notice (updated 2026-07-07 post-Phase C refresh):** G35 Phase C controlled staging refresh is now COMPLETE. Staging artifact updated from `5ee8389` to `5e1ea5a` with verified local validation, API recreation, DB health, and MVP smoke pass. Production untouched. The deferred items below remain deferred except for the completed Phase C refresh. Any further staging/VPS/production execution requires fresh explicit owner approval. This docs update does not authorize any new VPS, staging, production, deploy, DNS, migration, SSH, Docker, or Caddy action without explicit owner instruction.
 
 Deferred:
 
@@ -44,8 +44,8 @@ Deferred:
 - live production Client Portal rollout on `system.digitalcubeagency.net` (MVP build in progress locally);
 - public production rollout;
 - Caddy/container/VPS changes without approval;
-- Block G4 controlled VPS staging execution (G1 staging target is documented; G4 not approved);
-- staging refresh to current `main` / current closeout proof (not approved; requires a fresh owner-approved execution block).
+- **Block G4 controlled VPS staging execution:** Phase C controlled refresh now COMPLETE on commit `5e1ea5a`; further staging/VPS work deferred pending fresh owner approval;
+- **future staging refresh / updates:** deferred pending fresh explicit owner approval with bounded execution block.
 
 Current behavior:
 
