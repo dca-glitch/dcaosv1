@@ -44,6 +44,19 @@ Collected via `Invoke-WebRequest` from local PowerShell, read-only, no mutation:
 
 All four §6.2 probes PASS. §6.3 SSH read-only discovery was **not** performed (requires separate explicit SSH read-only approval). No production or staging mutation occurred while collecting this evidence.
 
+### 1.2 Public probe evidence re-run (2026-07-09, Subagent B — G49 formal closure documentation task)
+
+Collected via `Invoke-WebRequest` from local Windows PowerShell, read-only, no mutation. Log: `$env:TEMP\dca-subagent-b-g49.log`.
+
+| Target | HTTP | HSTS | DB |
+|--------|------|------|----|
+| `https://staging.digitalcubeagency.net` | 200 | `max-age=31536000; includeSubDomains` | n/a (root) |
+| `https://staging.digitalcubeagency.net/api/v1/health` | 200 | present | `ready` |
+| `https://system.digitalcubeagency.net` | 200 | `max-age=31536000; includeSubDomains` | n/a (root) |
+| `https://system.digitalcubeagency.net/api/v1/health` | 200 | present | `ready` |
+
+All four §6.2 probes PASS again. This confirms §1.1 evidence remains current as of 2026-07-09. **This re-run does not, by itself, satisfy §10 item 1** (owner-approval sentence for a specific G49 execution block) — that sentence still has not been separately recorded. Formal G49 gate closure therefore remains **NOT complete**. G50 remains **NOT executed / NOT authorized**. Production readiness remains **NO**. No SSH was used. No production or staging mutation occurred.
+
 ---
 
 ## 2. Purpose
@@ -360,8 +373,12 @@ Docs-only closeout (if PASS): update [`docs/STATUS.md`](../STATUS.md) § G49, op
 - **G48:** Production readiness planning PASS — production deploy ready NO.
 - **G53:** Production safety plan approved — planning only.
 - **G54:** HSTS/proxy fix PASS — blocker closed.
-- **G49:** Public read-only probe evidence collected 2026-07-09 (§1.1); full gate closure (owner approval sentence, §6.3 SSH discovery if desired) remains pending. Production readiness remains NO. G50 remains not executed.
+- **G49:** Public read-only probe evidence collected 2026-07-09 (§1.1); re-confirmed 2026-07-09 by Subagent B (§1.2). Full gate closure (owner approval sentence, §6.3 SSH discovery if desired) remains pending. Production readiness remains NO. G50 remains not executed.
 
 ## 16. Mega-block pre-production readiness session note (2026-07-09)
 
 As part of a documentation/audit mega-block (2026-07-09), the four §6.2 public probes were re-run and recorded in §1.1. **Repo was dirty at mega-block start** (uncommitted `G49` + production safety docs from a prior partial session); no runtime mutation occurred during probe collection. This mega-block produced/aligned production safety pack docs and readiness audits. No commit, push, deploy, VPS mutation, migration, or secret access occurred during probe collection. This session did not obtain or record the specific owner-approval sentence required by §10 item 1 for a full G49 gate PASS; treat §1.1 as evidence for a future formal G49 closure, not as G49 closure itself.
+
+## 17. Subagent B — G49 formal closure documentation task (2026-07-09)
+
+Subagent B was scoped to docs-only closure documentation plus a fresh public read-only probe re-run (see §1.2). Task scope: Windows PowerShell public HTTPS probes only, no SSH, no repo code changes, no commit. Result: all four §6.2 probes PASS again (HTTP 200, HSTS present, DB ready on both health endpoints). **Formal G49 gate closure (§10 item 1 owner-approval sentence) is still NOT recorded.** G50 remains **NOT EXECUTED / NOT AUTHORIZED**. Production readiness remains **NO**. No commit was made by Subagent B; no environment mutation occurred.

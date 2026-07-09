@@ -130,7 +130,7 @@ export type AiDeliveryArticleImageSummary = {
   status: string;
   previewImageUrl: string | null;
   finalImageUrl: string | null;
-  storageKey: string | null;
+  hasDocument: boolean;
   notes: string | null;
   isArchived: boolean;
   createdAt: string;
@@ -165,7 +165,7 @@ export type AiDeliveryDeliverableSummary = {
   deliveryType: string;
   status: string;
   exportUrl?: string | null;
-  storageKey?: string | null;
+  hasDocument: boolean;
   notes?: string | null;
   isArchived: boolean;
   createdAt: string;
@@ -863,7 +863,7 @@ function parseWorkflowRunResultPreview(value: string | null | undefined): Workfl
 
 function getDeliverableExportState(item: AiDeliveryDeliverableSummary): string {
   if ((item.exportUrl ?? "").trim()) return "Export URL reference set (visible to client in their portal).";
-  if ((item.storageKey ?? "").trim()) return "Storage reference recorded for admin use only.";
+  if (item.hasDocument) return "Private document stored (admin download-reference only).";
   return "No export or storage reference recorded.";
 }
 
@@ -1432,7 +1432,8 @@ export function AiDeliveryPage({
   ]);
   const deliverableHasRecordedReference = Boolean(
     (deliverableForm.exportUrl ?? activeDeliverableRecord?.exportUrl ?? "").trim()
-    || (deliverableForm.storageKey ?? activeDeliverableRecord?.storageKey ?? "").trim()
+    || (deliverableForm.storageKey ?? "").trim()
+    || activeDeliverableRecord?.hasDocument
   );
   const deliverableReadinessBlockers = useMemo(() => {
     const blockers: string[] = [];
@@ -1520,7 +1521,7 @@ export function AiDeliveryPage({
       return "Archived image records remain visible for admin history and cannot use active workflow actions.";
     }
     const hasPreviewReference = Boolean((activeArticleImageRecord.previewImageUrl ?? "").trim() || (activeArticleImageRecord.finalImageUrl ?? "").trim());
-    const hasFinalReference = Boolean((activeArticleImageRecord.finalImageUrl ?? "").trim() || (activeArticleImageRecord.storageKey ?? "").trim());
+    const hasFinalReference = Boolean((activeArticleImageRecord.finalImageUrl ?? "").trim() || activeArticleImageRecord.hasDocument);
     if (!hasPreviewReference) {
       return "Mark preview ready and Request changes require a preview or final reference on the active image record.";
     }
@@ -1756,9 +1757,8 @@ export function AiDeliveryPage({
   }
 
   async function fetchDeliverableDownloadReference(projectId: string, deliverableId: string) {
-    if (!openDeliverablesProject || !activeDeliverableRecord?.storageKey) return;
+    if (!openDeliverablesProject || !activeDeliverableRecord?.hasDocument) return;
     const requestedRecordId = deliverableId;
-    const deliverableStorageKey = activeDeliverableRecord.storageKey;
     setDeliverableDownloadRefLoading(true);
     setDeliverableDownloadRefError(null);
     setDeliverableDownloadRef(null);
@@ -1776,7 +1776,7 @@ export function AiDeliveryPage({
       } else {
         setDeliverableDownloadRef({
           recordId: requestedRecordId,
-          storageKey: deliverableStorageKey,
+          storageKey: "",
           downloadUrl: null,
           expiresSeconds: null
         });
@@ -1792,9 +1792,8 @@ export function AiDeliveryPage({
   }
 
   async function fetchArticleImageDownloadReference(projectId: string, imageId: string) {
-    if (!openArticleImagesProject || !activeArticleImageRecord?.storageKey) return;
+    if (!openArticleImagesProject || !activeArticleImageRecord?.hasDocument) return;
     const requestedRecordId = imageId;
-    const articleImageStorageKey = activeArticleImageRecord.storageKey;
     setArticleImageDownloadRefLoading(true);
     setArticleImageDownloadRefError(null);
     setArticleImageDownloadRef(null);
@@ -1812,7 +1811,7 @@ export function AiDeliveryPage({
       } else {
         setArticleImageDownloadRef({
           recordId: requestedRecordId,
-          storageKey: articleImageStorageKey,
+          storageKey: "",
           downloadUrl: null,
           expiresSeconds: null
         });
@@ -2484,7 +2483,7 @@ export function AiDeliveryPage({
       status: image.status,
       previewImageUrl: image.previewImageUrl ?? "",
       finalImageUrl: image.finalImageUrl ?? "",
-      storageKey: image.storageKey ?? "",
+      storageKey: "",
       notes: image.notes ?? ""
     });
   }
@@ -2656,7 +2655,7 @@ export function AiDeliveryPage({
       deliveryType: item.deliveryType,
       status: item.status,
       exportUrl: item.exportUrl ?? null,
-      storageKey: item.storageKey ?? null,
+      storageKey: null,
       notes: item.notes ?? null,
       isArchived: item.isArchived
     });
@@ -4956,14 +4955,14 @@ export function AiDeliveryPage({
                       </div>
                       <div>
                         <dt>Storage reference</dt>
-                        <dd>{activeDeliverableRecord.storageKey || "Not set"}</dd>
+                        <dd>{activeDeliverableRecord.hasDocument ? "Private document stored" : "Not set"}</dd>
                       </div>
                       <div>
                         <dt>Archived state</dt>
                         <dd>{activeDeliverableRecord.isArchived ? "Archived" : "Active admin packaging record"}</dd>
                       </div>
                     </dl>
-                    {activeDeliverableRecord.storageKey ? (
+                    {activeDeliverableRecord.hasDocument ? (
                       <div className="panel-divider-top">
                         <button
                           className="secondary-action"
@@ -5069,7 +5068,7 @@ export function AiDeliveryPage({
                       <dt>Image references</dt>
                       <dd>
                         {deliverableRelatedImages.length > 0
-                          ? deliverableRelatedImages.map((image) => `${image.title}: ${image.finalImageUrl || image.storageKey || image.previewImageUrl || "No reference yet"}`).join(" | ")
+                          ? deliverableRelatedImages.map((image) => `${image.title}: ${image.finalImageUrl || (image.hasDocument ? "private asset" : "") || image.previewImageUrl || "No reference yet"}`).join(" | ")
                           : "No linked image references yet"}
                       </dd>
                     </div>
@@ -5304,7 +5303,7 @@ export function AiDeliveryPage({
                       </div>
                       <div>
                         <dt>Storage key reference</dt>
-                        <dd>{d.storageKey || "Not set"}</dd>
+                        <dd>{d.hasDocument ? "Private document stored" : "Not set"}</dd>
                       </div>
                       <div>
                         <dt>Export / storage state</dt>
@@ -5316,7 +5315,7 @@ export function AiDeliveryPage({
                       </div>
                       <div>
                         <dt>Private asset</dt>
-                        <dd>{d.storageKey ? "Private asset stored" : "Not stored yet"}</dd>
+                        <dd>{d.hasDocument ? "Private asset stored" : "Not stored yet"}</dd>
                       </div>
                       <div>
                         <dt>Status</dt>
@@ -5502,7 +5501,7 @@ export function AiDeliveryPage({
                           {deliverableUploadTargetId === d.id ? "Uploading" : "Upload private document"}
                         </button>
                       ) : null}
-                      {d.storageKey ? (
+                      {d.hasDocument ? (
                         <button
                           className="secondary-action"
                           disabled={deliverableDownloadTargetId === d.id}
@@ -5670,14 +5669,14 @@ export function AiDeliveryPage({
                       </div>
                       <div>
                         <dt>Storage reference</dt>
-                        <dd>{activeArticleImageRecord.storageKey || "Not set"}</dd>
+                        <dd>{activeArticleImageRecord.hasDocument ? "Private final asset stored" : "Not set"}</dd>
                       </div>
                       <div>
                         <dt>Updated</dt>
                         <dd>{formatOptionalDate(activeArticleImageRecord.updatedAt)}</dd>
                       </div>
                     </dl>
-                    {activeArticleImageRecord.storageKey ? (
+                    {activeArticleImageRecord.hasDocument ? (
                       <div className="panel-divider-top">
                         <button
                           className="secondary-action"
@@ -5727,7 +5726,7 @@ export function AiDeliveryPage({
                       </div>
                       <div>
                         <dt>Final reference</dt>
-                        <dd>{activeArticleImageRecord.finalImageUrl || activeArticleImageRecord.storageKey || "Not set"}</dd>
+                        <dd>{activeArticleImageRecord.finalImageUrl || (activeArticleImageRecord.hasDocument ? "private asset" : "") || "Not set"}</dd>
                       </div>
                     </dl>
                     <div className="card-actions card-actions-spaced">
@@ -5835,7 +5834,7 @@ export function AiDeliveryPage({
                   {activeArticleImageRecord && !activeArticleImageRecord.isArchived ? (
                     <button
                       className="secondary-action"
-                      disabled={articleImagesSaving || !((activeArticleImageRecord.finalImageUrl ?? "").trim() || (activeArticleImageRecord.storageKey ?? "").trim()) || activeArticleImageRecord.status === "FINAL_READY"}
+                      disabled={articleImagesSaving || !((activeArticleImageRecord.finalImageUrl ?? "").trim() || activeArticleImageRecord.hasDocument) || activeArticleImageRecord.status === "FINAL_READY"}
                       onClick={() => void markArticleImageFinalReady(openArticleImagesProject.id, activeArticleImageRecord.id)}
                       type="button"
                     >
@@ -5861,7 +5860,7 @@ export function AiDeliveryPage({
                         {!image.isArchived ? <button className="secondary-action" disabled={articleImagesSaving || !image.previewImageUrl || image.status === "PREVIEW_READY"} onClick={() => void markArticleImagePreviewReady(openArticleImagesProject.id, image.id)} type="button">Mark preview ready</button> : null}
                         {!image.isArchived ? <button className="secondary-action" disabled={articleImagesSaving || !(image.previewImageUrl || image.finalImageUrl)} onClick={() => void requestArticleImageChanges(openArticleImagesProject.id, image.id)} type="button">Request changes</button> : null}
                         {!image.isArchived ? <button className="secondary-action" disabled={articleImagesSaving || !(image.previewImageUrl || image.finalImageUrl) || image.status === "APPROVED"} onClick={() => void approveArticleImage(openArticleImagesProject.id, image.id)} type="button">Approve image</button> : null}
-                        {!image.isArchived ? <button className="secondary-action" disabled={articleImagesSaving || !(image.finalImageUrl || image.storageKey) || image.status === "FINAL_READY"} onClick={() => void markArticleImageFinalReady(openArticleImagesProject.id, image.id)} type="button">Mark final ready</button> : null}
+                        {!image.isArchived ? <button className="secondary-action" disabled={articleImagesSaving || !(image.finalImageUrl || image.hasDocument) || image.status === "FINAL_READY"} onClick={() => void markArticleImageFinalReady(openArticleImagesProject.id, image.id)} type="button">Mark final ready</button> : null}
                         {!image.isArchived ? <button className="ghost-action" disabled={articleImagesSaving} onClick={() => void archiveArticleImage(openArticleImagesProject.id, image.id)} type="button">Archive</button> : null}
                       </div>
                     </div>
@@ -5880,7 +5879,7 @@ export function AiDeliveryPage({
                       </div>
                       <div>
                         <dt>Storage key</dt>
-                        <dd>{image.storageKey || "Not set"}</dd>
+                        <dd>{image.hasDocument ? "Private final asset stored" : "Not set"}</dd>
                       </div>
                       <div>
                         <dt>Updated</dt>
@@ -5888,7 +5887,7 @@ export function AiDeliveryPage({
                       </div>
                       <div>
                         <dt>Private asset</dt>
-                        <dd>{image.storageKey ? "Private final asset stored" : "Not stored yet"}</dd>
+                        <dd>{image.hasDocument ? "Private final asset stored" : "Not stored yet"}</dd>
                       </div>
                       <div className="field-span-2">
                         <dt>Style notes</dt>
@@ -5932,7 +5931,7 @@ export function AiDeliveryPage({
                           {articleImageUploadTargetId === image.id ? "Uploading" : "Upload final asset"}
                         </button>
                       ) : null}
-                      {image.storageKey ? (
+                      {image.hasDocument ? (
                         <button
                           className="secondary-action"
                           disabled={articleImageDownloadTargetId === image.id}

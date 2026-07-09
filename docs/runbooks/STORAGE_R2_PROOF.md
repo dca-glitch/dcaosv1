@@ -15,6 +15,23 @@ Related:
 
 ---
 
+## 0. Six-area coverage map (proof scope confirmation)
+
+This table maps the six required proof areas for private R2 storage to where each is actually exercised today. **Coverage confirmed by code/doc inspection only — no live bucket calls were made to produce this section.**
+
+| Proof area | Where covered | Status |
+|---|---|---|
+| Document roundtrip (deliverable/report/bill documents) | §2b (`smoke:r2-byte-roundtrip:local`, `SMOKE_EXPECT_R2_ROUNDTRIP=true`) | **Automated** — upload → signed download → SHA-256 byte match |
+| Hero / supporting / social image variants | §8 (`STORAGE_R2_PROOF.md` §8.1–§8.3) | **Not automated** — no live image provider wired yet (`IMAGE_GENERATION_PROOF.md` Phase B/C not started); checklist-only today. Proposed script logged in §9 |
+| Signed URL (issuance + expiry) | §2b (issuance, `expiresSeconds`), §3 (expiry re-fetch on staging) | **Automated locally for issuance; expiry re-fetch is staging-only manual step** |
+| Cross-tenant denial | §2c (manual spot-check bullets only) | **Not automated** — existing role-boundary smoke (`smoke:client-role-api-boundary:local`) proves admin-vs-client role denial, not same-role cross-tenant denial for R2-backed document routes. Proposed script logged in §9 |
+| Disabled mode fail-closed | §2a (`smoke:r2-byte-roundtrip:local` default run, no `SMOKE_EXPECT_R2_ROUNDTRIP`) | **Automated** — `503 R2_STORAGE_NOT_CONFIGURED`, `storageKey` stays `null`, `downloadReference` stays `null` |
+| Cleanup (smoke fixture teardown) | §2d (new) | **Not automated** — see §2d for the exact reason and current mitigation |
+
+Read §2d and §9 before assuming any "Not automated" row above is safe to skip in a future live-proof block.
+
+---
+
 ## 1. Required env var truth table (names only)
 
 | Variable | Required for private R2 | Purpose |
@@ -37,6 +54,26 @@ Related:
 | `SMOKE_EXPECT_R2_ROUNDTRIP` | Set to `true` to require full byte roundtrip in `smoke:r2-byte-roundtrip:local` |
 
 Never commit, print, or log secret values.
+
+### 1a. Boolean-only presence check (no secret values ever printed)
+
+Code seam `apps/api/src/storage/r2.config.ts` exposes `getR2EnvPresence()`, which returns **booleans only** — never the raw values — for exactly this purpose. Use this shape (not `console.log(process.env.R2_...)`) whenever presence needs to be confirmed locally, in a smoke script, or in a status report:
+
+```json
+{
+  "R2_ACCOUNT_ID": false,
+  "R2_ACCESS_KEY_ID": false,
+  "R2_SECRET_ACCESS_KEY": false,
+  "R2_BUCKET_NAME": false,
+  "R2_ENDPOINT": false,
+  "R2_PUBLIC_BASE_URL": false
+}
+```
+
+- [ ] All four required keys (`R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME`) report `true` before attempting §2b or §3
+- [ ] `getR2Config()` returns non-`null` only when all four required booleans above are `true` (see `r2.config.ts` lines 35–56)
+- [ ] Any report, log, or status doc referencing R2 readiness uses this boolean shape, never raw values
+- [ ] `scripts/smoke-r2-byte-roundtrip-local.mjs` already performs an equivalent boolean-only presence check (`getMissingR2EnvKeys()`) before touching the API — reuse that pattern rather than adding a new one
 
 ---
 
@@ -90,6 +127,16 @@ Pass when:
 - [ ] Client portal monthly-report download only for `FINAL` + non-archived reports
 - [ ] Cross-tenant and cross-project IDs return `404` (not `403` leakage)
 - [ ] Client download responses expose only `{ downloadUrl, expiresSeconds }` inside `downloadReference`
+
+### 2d. Test fixture cleanup
+
+`scripts/smoke-r2-byte-roundtrip-local.mjs` creates a client, an AI Delivery project, and a deliverable via the public API on every run (`createDeliverableFixture`) and **does not delete them afterward**.
+
+- [ ] Confirmed: no `DELETE /clients/:id` or `DELETE /ai-delivery-projects/:id` endpoint exists in the current API surface (checked `apps/api/src` routes) — automated cleanup is not possible without a backend change, which is out of scope for this docs-only pass
+- [ ] Local/dev database only: fixtures use the `[SMOKE][R2_BYTE_ROUNDTRIP]` marker prefix in client/project/deliverable names, so they are identifiable and safe to leave in a local/dev database
+- [ ] **Never** run `smoke:r2-byte-roundtrip:local` against a staging or production database — there is no cleanup path and fixtures would persist
+- [ ] If a staging bucket proof (§3) reuses this script or a variant, add an explicit fixture-teardown step (manual DB delete or a scoped admin cleanup endpoint) to the block plan **before** running it, and get owner approval for both the live call and the cleanup mechanism
+- [ ] See §9 for the proposed cleanup enhancement (logged, not implemented in this pass)
 
 ---
 
@@ -159,6 +206,9 @@ Stop immediately and do **not** claim storage readiness if any of the following 
 | Staging bucket proof | **Deferred** | Requires owner-approved env + live checklist §3 |
 | Production bucket proof | **Deferred** | Separate from staging; see `deferred-scope-register.md` |
 | Client portal storage boundary smokes | **Done (local)** | `storageKey` hidden from client responses |
+| Automated cross-tenant denial smoke (R2 document routes) | **Gap — proposed** | Not yet automated; see §0 and §9 (#1) |
+| Smoke fixture cleanup | **Gap — proposed** | No delete endpoint exists; see §2d and §9 (#2) |
+| Hero/supporting/social image variant R2 roundtrip | **Blocked** | No live image provider wired; see §8.3 and §9 (#3) |
 | Puriva launch gate | **Blocked** | Live R2 IO remains a launch dependency; track in `PURIVA_LAUNCH_GATE.md` |
 
 **Launch rule:** Puriva cannot claim production-ready private document delivery until live R2 proof (§3) passes on the target environment bucket **and** client-boundary smokes pass with R2 enabled.
@@ -205,6 +255,8 @@ Variants: `hero`, `supporting-1`, `supporting-2`, `social-preview`, `thumb-{vari
 
 ### 8.3 Image-specific live proof checklist (staging)
 
+**Current local coverage:** none. There is no live provider wired (`IMAGE_GENERATION_PROOF.md` §2), so no hero/supporting/social variant bytes exist to upload or roundtrip yet. `smoke:r2-byte-roundtrip:local` proves the document path only. Do not claim variant-level R2 proof from the document-only smoke. See §9 for the proposed local deterministic variant smoke (mock bytes, no live provider) that could close this gap once Phase B/C of `IMAGE_GENERATION_PROOF.md` starts.
+
 Prerequisites: §3 complete for documents; `IMAGE_GENERATION_PROOF.md` Phase D approved.
 
 - [ ] Mock or live provider returns PNG bytes → upload persists `storageKey` on `AiDeliveryArticleImage`
@@ -226,3 +278,17 @@ Prerequisites: §3 complete for documents; `IMAGE_GENERATION_PROOF.md` Phase D a
 | Image readiness category | `external-integrations-readiness.service.ts` | IMG-READY-1 |
 
 See [`IMAGE_GENERATION_PROOF.md`](./IMAGE_GENERATION_PROOF.md) for full product flow.
+
+---
+
+## 9. Proposed scripts (logged for a future block — not implemented in this pass)
+
+This docs-only pass identified three automation gaps against the six required proof areas (§0). None were implemented here because implementation is out of scope for a docs-only block; each is logged with enough detail to be picked up trivially in a future scoped block. Full proposal detail is also written to `$env:TEMP\dca-subagent-d-r2.log`.
+
+| # | Proposed script | Closes gap | Est. effort | Blocker |
+|---|---|---|---|---|
+| 1 | `scripts/smoke-r2-cross-tenant-denial-local.mjs` | Cross-tenant denial (automated) | Small — reuse `createDeliverableFixture` pattern from `smoke-r2-byte-roundtrip-local.mjs` twice (tenant A, tenant B), then assert tenant B's session gets `404` on tenant A's deliverable `document`/`download`/`download-reference` routes | None — can run today against existing routes |
+| 2 | Extend `smoke-r2-byte-roundtrip-local.mjs` with a fixture-teardown step, or add a scoped internal cleanup endpoint | Cleanup (automated) | Small script-side (mark-and-report only) to Medium (real delete requires a new `DELETE` endpoint, which is a backend change requiring separate approval) | Backend change needed for real deletion; script-side marking is trivial and available now |
+| 3 | `scripts/smoke-r2-image-variant-roundtrip-local.mjs` (mock bytes, no live provider) | Hero/supporting/social variant roundtrip (local deterministic only) | Medium — needs a deterministic PNG fixture per variant plus whatever local upload endpoint `IMAGE_GENERATION_PROOF.md` Phase B/C introduces | Blocked on `IMAGE_GENERATION_PROOF.md` Phase B (disabled-safe wiring) landing first; cannot be written against code that doesn't exist yet |
+
+**Recommendation for the next owner-approved block:** do #1 first (no blockers, closes a real proof gap today); do #2's script-side half alongside #1; defer #3 until `IMAGE_GENERATION_PROOF.md` Phase B lands.

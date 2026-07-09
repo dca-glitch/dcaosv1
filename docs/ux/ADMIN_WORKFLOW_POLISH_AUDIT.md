@@ -303,6 +303,68 @@ Optional after UX-P8: `npm.cmd run smoke:client-portal:browser` when local auth 
 
 ---
 
+## Puriva approval UX smoke coverage (detail)
+
+**Added:** 2026-07-09 (docs/smoke-prep block — Subagent I). Read-only smoke-script and code audit; no frontend/backend changes in this block.
+
+### Canonical approval UX smoke path
+
+1. **Admin sends for review** — admin marks a deliverable `send-for-client-review`; a direct client-review fetch is `403 CLIENT_REVIEW_DEFERRED` until then.
+2. **Client-safe review surface** — item appears on `#/client-portal/pending-approvals` with no internal fields (`storageKey`, `workflowRunId`, `structuredInputJson`, MI/provider metadata, etc.).
+3. **Image set placeholder approval/reject** — each attached image must be individually approved, rejected (with reason), or left pending; the article itself cannot be approved while any image is unresolved (`CLIENT_APPROVAL_IMAGES_PENDING`).
+4. **Reject reason** — both article-level and image-level rejection persist a `rejectionReason` and return the item to an actionable admin state for rework.
+5. **WordPress draft-prep gating** — `publication-handoff` always reports `executionMode: PREPARE_WORDPRESS_DRAFT`; `execute-publication-handoff` stays blocked with an explicit gate code until the release package is finalized. No live-publish path exists.
+6. **Final archive visibility** — once approved, the deliverable is visible client-side only in `DELIVERED`/`ACCEPTED` final form, still stripped of internal/admin fields.
+
+### Coverage matrix
+
+| Phase | Script(s) | Level | Status |
+|---|---|---|---|
+| 1. Send-for-review + `CLIENT_REVIEW_DEFERRED` gate | `smoke-client-approval-happy-path-local.mjs` | API | Covered |
+| 2. Client-safe pending-approvals list | `smoke-client-approval-happy-path-local.mjs`, `smoke-puriva-client-portal-boundary-local.mjs` | API + browser | Covered |
+| 3a. Article approve (edit body → save → approve) | `smoke-client-approval-happy-path-local.mjs` | API + browser (clicks "Approve this version") | Covered |
+| 3b. Article reject with reason | `smoke-client-approval-happy-path-local.mjs` | API only — "Request changes" button never clicked in browser | Partial |
+| 3c. Image set placeholder approve | `smoke-workflow-brief-publication-handoff-browser-local.mjs` | API only, used as a setup step toward the WP handoff gate — not a UI click | Partial |
+| 3d. Image set placeholder reject with reason | none found | — | **Gap — zero coverage** |
+| 3e. Image set undo (revert approve/reject) | none found | — | **Gap — zero coverage** |
+| 4. `IMAGES_PENDING` block on article approve | none found | — | **Gap — zero coverage** |
+| 5. WordPress draft-prep gating | `smoke-puriva-full-delivery-local.mjs`, `smoke-workflow-brief-publication-handoff-browser-local.mjs` | API + browser | Covered |
+| 6. Final archive visibility (client-safe FINAL only) | `smoke-client-final-visibility-local.mjs`, `smoke-puriva-full-delivery-local.mjs` | API | Covered |
+
+Endpoints confirmed reachable (`apps/api/src/routes/client-portal.ts`) but never exercised by any smoke script or automated test in this repo: `PATCH /client-portal/deliverables/:id/images/:imageId/reject` and `.../undo`. The corresponding client UI (`apps/web/src/pages/client-portal/ArticleApprovalEditor.tsx`) is fully built — per-image Approve / Reject-with-reason / Undo, plus the `allImagesReviewed` gate before the article approve button unlocks — but has no smoke or integration proof.
+
+### Gaps found (documentation only — no code changed)
+
+- **UXP-A1** — Image `reject` and `undo` (client-portal) have zero test coverage anywhere (smoke or integration). Only `approve` is exercised, and only as an API-level setup step.
+- **UXP-A2** — Article "Request changes" (reject) is never driven via browser automation; only exercised via a direct API call on a second fixture.
+- **UXP-A3** — The server-side `IMAGES_PENDING` article-approval gate (`CLIENT_APPROVAL_IMAGES_PENDING`) is untested.
+- **UXP-A4** — `smoke-client-approval-happy-path-local.mjs` and `smoke-client-final-visibility-local.mjs` exist and are already documented as direct `node scripts/...` commands (`LOCAL_SMOKE_MATRIX.md`, `STAGING_READINESS.md`, `PRE_STAGING_VALIDATION_GATE.md`) but have no `npm run smoke:*` alias in `package.json`. Pre-existing pattern, not introduced by this block — flagged only because it breaks `npm run smoke:*` discoverability parity with every other script. Adding an alias requires a `package.json` edit, which is out of scope for this docs-only block per workspace rule.
+
+### Recommended smoke command today (no code change required)
+
+Existing infrastructure already supports the full approval-UX-relevant chain without any new script; consolidated here for operator convenience:
+
+```powershell
+cd C:\dcaosv1
+$env:AUTH_SEED_TEST_PASSWORD = "<local seed password>"
+$env:AUTH_SEED_TESTER_EMAIL = "<optional - omit to use puriva@puriva.id portal fallback>"
+npm.cmd run dev:api
+npm.cmd run dev:web
+node scripts/smoke-client-approval-happy-path-local.mjs
+node scripts/smoke-client-final-visibility-local.mjs
+npm.cmd run smoke:workflow-brief-publication-handoff:browser
+npm.cmd run smoke:puriva-full-delivery:local
+```
+
+Set `SMOKE_ALLOW_SKIP=true` before the first command only for discovery/demo runs where a client-portal test user is not yet seeded.
+
+### Deferred to a future scoped block (not performed here)
+
+- Extend `smoke-client-approval-happy-path-local.mjs` (or a new sibling script) to browser-click per-image Approve / Reject / Undo and the article "Request changes" flow, and assert the `IMAGES_PENDING` gate. Requires local API/web + Playwright execution to validate — out of scope for this read-only block.
+- Register `smoke:client-approval-happy-path:local` and `smoke:client-final-visibility:local` in `package.json` for `npm run` parity — requires a `package.json` edit; flag to owner for a small approved block.
+
+---
+
 ## Audit metadata
 
 | Item | Value |

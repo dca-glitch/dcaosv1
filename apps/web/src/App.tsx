@@ -358,7 +358,7 @@ type AiDeliveryDeliverableSummary = {
   deliveryType: string;
   status: string;
   exportUrl?: string | null;
-  storageKey?: string | null;
+  hasDocument: boolean;
   notes?: string | null;
   isArchived: boolean;
   createdAt: string;

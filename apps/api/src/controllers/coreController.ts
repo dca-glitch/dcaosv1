@@ -32,6 +32,8 @@ import { sendAiDeliveryDeliverableForClientReview } from "../core/client-portal-
 import { getAiProviderPlanningSnapshot } from "../services/ai-provider-planning.service";
 import { getGoogleDriveExportPlanningSnapshot } from "../services/google-drive-export-planning.service";
 import { getExternalIntegrationsReadinessSnapshot } from "../core/external-integrations-readiness.service";
+import { getImageGenerationIntegrationReadiness } from "../config/image-generation.config";
+import { buildImageGenerationFoundationSnapshot } from "../core/image-generation.execution";
 import { buildAdminOperationsSummary } from "../core/admin-operations-summary.service";
 import {
   archiveAiDeliveryArticleImage,
@@ -1407,6 +1409,30 @@ export const getExternalIntegrationsReadinessHandler: RequestHandler = async (_r
   } catch {
     res.status(500).json(
       failure("EXTERNAL_INTEGRATIONS_READINESS_ERROR", "External integrations readiness could not be loaded.")
+    );
+  }
+};
+
+export const getImageGenerationFoundationConfigHandler: RequestHandler = async (_req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) {
+    res.status(401).json(unauthorizedFailure());
+    return;
+  }
+
+  const tenantId = authSession.tenantContext.activeMembership?.tenantId ?? null;
+  if (!tenantId) {
+    res.status(403).json(forbiddenFailure());
+    return;
+  }
+
+  try {
+    const readiness = getImageGenerationIntegrationReadiness();
+    const foundation = buildImageGenerationFoundationSnapshot(readiness);
+    res.json(success({ foundation }, { phase: "runtime", scope: "image-generation-foundation-config" }));
+  } catch {
+    res.status(500).json(
+      failure("IMAGE_GENERATION_FOUNDATION_CONFIG_ERROR", "Image generation foundation config could not be loaded.")
     );
   }
 };

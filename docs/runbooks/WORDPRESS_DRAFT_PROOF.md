@@ -1,6 +1,6 @@
 # WordPress Draft Proof
 
-**Status:** Draft preparation and guarded handoff proven locally; live publish remains off by default. Auto-publish is **not** in scope for this gate.
+**Status:** Draft preparation and guarded handoff proven locally; live publish remains off by default. Auto-publish is **not** in scope for this gate. §6 adds a live draft proof **plan** (title/body/meta, approved-image attach, alt/caption/social preview, idempotency, cleanup marker, disabled-safe mode, owner approval) for a future owner-approved staging-only session — no live WordPress call was made to produce this document.
 
 **Gate:** Puriva requires WordPress **draft/handoff**; WordPress **auto-publish** remains deferred (see [`docs/operator/deferred-scope-register.md`](../operator/deferred-scope-register.md)).
 
@@ -14,6 +14,9 @@ Related:
 - [`docs/security/CREDENTIAL_ENCRYPTION_FOUNDATION.md`](../security/CREDENTIAL_ENCRYPTION_FOUNDATION.md)
 - `scripts/smoke-wordpress-publish-local.mjs`
 - `scripts/smoke-ai-delivery-reviews-local.mjs`
+- [`INTEGRATIONS_TRUTH_MATRIX.md`](./INTEGRATIONS_TRUTH_MATRIX.md) (WordPress rows)
+- [`PURIVA_LAUNCH_GATE.md`](./PURIVA_LAUNCH_GATE.md) (§2 row 7, §7)
+- `packages/data/prisma/schema.prisma` (`AiDeliveryArticleImage`, `AiDeliveryDeliverableImageApproval`, `PublicationLog`)
 
 ---
 
@@ -25,8 +28,9 @@ Prove that DCA OS Lite WordPress integration:
 2. Never **auto-publishes** — publish path is gated by `WORDPRESS_PUBLISH_ENABLED` (default off).
 3. Handles **credentials safely** when publish is later enabled (encrypted storage, no secret leakage).
 4. Documents **rollback** expectations for failed or mistaken publish attempts.
+5. Defines the **pre-execution plan** (§6) a future owner-approved live draft proof session must satisfy — draft only, title/body/meta parity, approved-image-only attach, alt/caption/social preview, idempotency, cleanup marker, and disabled-safe restore.
 
-This runbook covers **draft proof**. Live publish proof is a separate owner gate (`POST_MVP_BLOCK_45`).
+This runbook covers **draft proof** and the **plan** for a future live draft proof. Live publish proof is a separate owner gate (`POST_MVP_BLOCK_45`); executing the §6 live draft proof itself also requires a separate owner-approved block — this document does not authorize execution.
 
 ---
 
@@ -140,7 +144,85 @@ For publish **adapter** proof only (expects HTTP error against non-WP smoke URL)
 
 ---
 
-## 6. Pass criteria (draft proof closure)
+## 6. Live draft proof plan (pre-execution checklist — no live call in this document)
+
+**Status:** Planning only. This section defines what an owner-approved, staging-only live draft proof session must verify. No live WordPress HTTP call was made to produce this section, and none is authorized by this document. Execution requires a separate approved block per §6.8.
+
+### 6.1 Scope confirmation (draft only, never publish)
+
+| Requirement | Detail |
+|---|---|
+| Post status created | `draft` only — never `publish`, `pending`, or `future` |
+| `WORDPRESS_PUBLISH_ENABLED` during proof | `true` only for the duration of the proof session, on a **staging-only** WordPress site — never a client's live/production site |
+| Target site | Must be a disposable/staging WordPress install the owner controls; never a Puriva or other client's real site |
+| Success definition | Exactly one draft post exists in WordPress admin with `status: Draft`, matching the prepared payload; nothing publicly visible on the front end |
+| Immediately after proof | Restore `WORDPRESS_PUBLISH_ENABLED=false`; re-run `smoke:wordpress-publish:local` to confirm disabled-safe baseline (see §6.7) |
+
+### 6.2 Title / body / meta verification checklist
+
+Verify in the WordPress admin editor that the created draft matches the prepared payload from `prepare-wordpress-draft` field-for-field:
+
+- [ ] Title matches deliverable title exactly (no truncation, no encoding artifacts)
+- [ ] Body/content renders with correct formatting (headings, paragraphs, lists) — no raw markdown or broken HTML
+- [ ] Excerpt is present and matches prepared summary
+- [ ] Slug matches prepared slug (or WordPress auto-generated equivalent is acceptable and recorded)
+- [ ] Categories and tags match prepared taxonomy list
+- [ ] SEO fields (`seoKeywords`, `metaDescription`) are captured — either via WordPress custom fields/SEO plugin mapping or recorded as "not mapped, informational only" if no SEO plugin is present on the proof site
+- [ ] No prompt text, provider internals, or admin-only workflow metadata leaked into any client/public-facing field
+
+### 6.3 Approved images attach (image approval boundary)
+
+- [ ] Only images with an `AiDeliveryDeliverableImageApproval.status = APPROVED` record for the target deliverable may be attached to the WordPress draft
+- [ ] `PENDING` or `REJECTED` article images must never be attached, even if a `finalImageUrl`/`previewImageUrl` exists on the `AiDeliveryArticleImage` record
+- [ ] Featured image (if any) is drawn from the same approved-image set — no substituting an unapproved image as featured image
+- [ ] **Known gap (must close before live proof):** the current draft-prep payload (`WORDPRESS_PREPARED_DRAFT_FOUNDATION.md`) carries `featuredImage` as a raw reference/URL and does not yet hard-filter on `AiDeliveryDeliverableImageApproval` status in code. Until that filter is enforced in code, the live proof session must enforce this manually — operator confirms approval status per image in the admin UI before attaching — and this manual check must be recorded in the evidence log
+
+### 6.4 Alt text, caption, and social preview
+
+- [ ] Every attached image has non-empty alt text set on the WordPress media item (accessibility requirement)
+- [ ] Every attached image has a caption where the content plan/image brief specifies one
+- [ ] Social preview (Open Graph `og:title`, `og:description`, `og:image` — or WordPress SEO-plugin equivalent) is checked with a link-preview/debug tool against the **draft preview URL**, not a published URL
+- [ ] **Known gap (must close before live proof):** `AiDeliveryArticleImage` has no `altText`, `caption`, or `socialPreview` fields in the current schema (`packages/data/prisma/schema.prisma`). This is a genuine blocking prerequisite, not a nice-to-have — either (a) add these fields via an approved schema change before live proof, or (b) require the operator to manually set alt/caption/social fields directly in the WordPress editor during the proof session and record that manual step in the evidence log. Do not claim automated alt/caption/social-preview proof until one of these is true.
+
+### 6.5 Idempotency (no duplicate posts on retry)
+
+- [ ] Re-running `prepare-wordpress-draft` for the same deliverable must not, by itself, create a second WordPress post (it only regenerates the local payload — confirmed safe today, no live call)
+- [ ] If/when the live publish or live-proof call is retried (e.g., after a network timeout), it must not create a duplicate draft post for the same deliverable + attempt
+- [ ] **Known gap (must close before live proof):** neither `AiDeliveryWordPressPublishRequest` nor `PublicationLog` currently carries an idempotency/dedupe key. Required before a live proof session: either (a) add an idempotency key (e.g., `deliverableId` + monotonic attempt counter) checked against `PublicationLog.externalPostId` before creating a new post, or (b) the proof operator manually checks WordPress admin for an existing draft matching the deliverable before each attempt and records the check in the evidence log. A live proof session must not run the same request twice without this check.
+
+### 6.6 Cleanup marker (every proof post must be findable and removable)
+
+- [ ] Every post created during a live proof session carries an unambiguous marker so it can be located and removed afterward:
+  - Title prefix: `[DCA-OS-PROOF-DO-NOT-PUBLISH]`
+  - A dedicated draft-only category or tag, e.g. `dca-proof`
+  - `PublicationLog.note` records the proof session date and marker used
+- [ ] Proof close-out step: operator confirms in WordPress admin that the marked draft is moved to **Trash** (or permanently deleted if the site is fully disposable) before ending the session
+- [ ] Evidence log records the WordPress post ID/edit URL and the cleanup action taken (trashed/deleted) with a timestamp
+
+### 6.7 Disabled-safe mode (before and after proof)
+
+- [ ] **Before proof:** confirm `WORDPRESS_PUBLISH_ENABLED` is unset/`false` and `smoke:wordpress-publish:local` passes with `provider_disabled`
+- [ ] **During proof:** flag is `true` only against the staging-only target for the minimum time needed
+- [ ] **After proof:** flag restored to `false`/unset; API restarted; `smoke:wordpress-publish:local` re-run and must pass with `provider_disabled` again before any other smoke or handoff proceeds
+- [ ] No other tenant's publish flag or credentials are touched during the proof
+
+### 6.8 Owner approval requirements (must all be true before scheduling a live session)
+
+| # | Approval item | Status |
+|---|---|---|
+| 1 | Owner has explicitly approved a live WordPress draft proof block (separate from this planning document) | Required |
+| 2 | Target site is confirmed staging-only / disposable, not a client's production site | Required |
+| 3 | §6.3 image-approval gap and §6.4 alt/caption/social-preview gap have an explicit decision recorded (schema change vs. manual-check-only) before the session | Required |
+| 4 | §6.5 idempotency gap has an explicit decision recorded (code change vs. manual-check-only) before the session | Required |
+| 5 | Cleanup/rollback plan (§6.6, §8) is understood by the operator running the session | Required |
+| 6 | `CREDENTIAL_ENCRYPTION_MASTER_KEY` and Application Password handling reviewed per `WORDPRESS_CREDENTIAL_SECURITY_DESIGN.md` if credential save paths are exercised | Required |
+| 7 | Evidence log location and template (§10) confirmed before starting | Required |
+
+This document does not itself constitute owner approval. It is the checklist an approval decision would be evaluated against.
+
+---
+
+## 7. Pass criteria (draft proof closure)
 
 | # | Criterion |
 |---|-----------|
@@ -153,14 +235,14 @@ For publish **adapter** proof only (expects HTTP error against non-WP smoke URL)
 
 ---
 
-## 7. Rollback
+## 8. Rollback
 
-### 7.1 Draft-only mistakes (no live publish)
+### 8.1 Draft-only mistakes (no live publish)
 
 - Discard or regenerate prepared draft in admin UI; no WordPress rollback needed.
 - Re-run compliance/admin review before re-handoff.
 
-### 7.2 Live publish mistakes (separate gate — when publish enabled)
+### 8.2 Live publish mistakes (separate gate — when publish enabled)
 
 Rollback is **manual operator responsibility** on the WordPress site:
 
@@ -174,7 +256,7 @@ Rollback is **manual operator responsibility** on the WordPress site:
 
 DCA OS does not auto-unpublish in MVP. Automated rollback requires a separate approved block.
 
-### 7.3 Env rollback after open-gate probe
+### 8.3 Env rollback after open-gate probe
 
 ```powershell
 # In target .env or secret store:
@@ -185,16 +267,21 @@ Restart API; re-run baseline `smoke:wordpress-publish:local`.
 
 ---
 
-## 8. Forbidden
+## 9. Forbidden
 
 - Enabling `WORDPRESS_PUBLISH_ENABLED=true` in production without owner sign-off
 - Treating draft preparation as client-visible or FINAL delivery
 - Storing WordPress passwords in repo, smoke fixtures, or client-visible fields
 - Auto-publish workflows, scheduling, or webhooks without separate approval
+- Attaching a `PENDING` or `REJECTED` article image to any prepared or live draft (§6.3)
+- Running a live proof session against a client's real/production WordPress site
+- Leaving a live-proof draft post in WordPress without a cleanup marker (§6.6) or without trashing/deleting it at session close-out
 
 ---
 
-## 9. Evidence template
+## 10. Evidence template
+
+### 10.1 Draft-prep (local, disabled-safe) evidence
 
 Save to `$env:TEMP\wordpress-draft-proof-<date>.log`:
 
@@ -208,4 +295,24 @@ WORDPRESS_PUBLISH_ENABLED: false (required for draft closure)
 Credentials in responses: no (required)
 Client portal draft leakage: no (required)
 Owner approval reference:
+```
+
+### 10.2 Live proof session evidence (when a separate approved block executes §6)
+
+Save to `$env:TEMP\wordpress-live-draft-proof-<date>.log`:
+
+```
+Date:
+Owner approval reference (§6.8):
+Target site (staging-only, confirm not client-production):
+WordPress post ID / edit URL created:
+Post status confirmed: draft (required)
+Title/body/meta match (§6.2): PASS | FAIL
+Images attached were APPROVED-only (§6.3): PASS | FAIL | N/A (no images)
+Alt/caption/social preview verified (§6.4): PASS | FAIL | manual-check-only (state which)
+Idempotency check performed before create (§6.5): PASS | FAIL | manual-check-only (state which)
+Cleanup marker used (§6.6):
+Cleanup action taken (trashed/deleted) + timestamp:
+WORDPRESS_PUBLISH_ENABLED restored to false + baseline smoke re-run: PASS | FAIL
+Credentials/ciphertext in responses or logs: no (required)
 ```

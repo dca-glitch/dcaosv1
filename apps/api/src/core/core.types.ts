@@ -537,7 +537,7 @@ export interface AiDeliveryArticleImageSummary {
   status: string;
   previewImageUrl: string | null;
   finalImageUrl: string | null;
-  storageKey: string | null;
+  hasDocument: boolean;
   notes: string | null;
   isArchived: boolean;
   createdAt: string;
@@ -1034,7 +1034,7 @@ export interface AiDeliveryDeliverableSummary {
   deliveryType: string;
   status: string;
   exportUrl?: string | null;
-  storageKey?: string | null;
+  hasDocument: boolean;
   notes?: string | null;
   isArchived: boolean;
   createdAt: string;
@@ -1150,7 +1150,6 @@ export interface AiDeliveryMonthlyReportSummary {
   adminSummaryNotes: string | null;
   recommendationsText: string | null;
   exportUrl: string | null;
-  storageKey: string | null;
   hasDocument: boolean;
   isArchived: boolean;
   finalizedAt: string | null;

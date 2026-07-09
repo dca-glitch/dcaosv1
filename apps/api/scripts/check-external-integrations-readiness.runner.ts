@@ -7,6 +7,7 @@ import {
   getAiProviderConfig
 } from "../src/config/ai-provider.config.ts";
 import { GA_GSC_ENV_KEYS } from "../src/config/ga-gsc.config.ts";
+import { IMAGE_GENERATION_ENV_KEYS } from "../src/config/image-generation.config.ts";
 import { WORDPRESS_INTEGRATION_ENV_KEYS } from "../src/config/wordpress-integration.config.ts";
 import {
   getExternalIntegrationsReadinessSnapshot,
@@ -21,6 +22,7 @@ const integrationEnvKeys = [
   ...Object.values(AI_PROVIDER_ENV_KEYS),
   ...Object.values(WORDPRESS_INTEGRATION_ENV_KEYS),
   ...Object.values(GA_GSC_ENV_KEYS),
+  ...Object.values(IMAGE_GENERATION_ENV_KEYS),
   "R2_ACCOUNT_ID",
   "R2_ACCESS_KEY_ID",
   "R2_SECRET_ACCESS_KEY",
@@ -97,7 +99,12 @@ async function main() {
     clearIntegrationEnv();
 
     const emptySnapshot = getExternalIntegrationsReadinessSnapshot();
-    record("snapshot builds with empty integration env", emptySnapshot.categories.length === 4, `categories=${emptySnapshot.categories.length}`);
+    record("snapshot builds with empty integration env", emptySnapshot.categories.length === 5, `categories=${emptySnapshot.categories.length}`);
+    record(
+      "empty env image_generation disabled",
+      findCategory(emptySnapshot, "image_generation")?.status === "disabled",
+      findCategory(emptySnapshot, "image_generation")?.status ?? "missing"
+    );
     record(
       "empty env AI provider defaults local/disabled-safe",
       findCategory(emptySnapshot, "ai_provider")?.aiProvider?.textGateway === "local",
@@ -272,6 +279,39 @@ async function main() {
       "GA/GSC readiness JSON omits OAuth secret value",
       !JSON.stringify(gaShaped).includes("smoke-client-secret"),
       "secret absent"
+    );
+
+    clearIntegrationEnv();
+    setIntegrationEnv({
+      [IMAGE_GENERATION_ENV_KEYS.enabled]: "true"
+    });
+    const imageGenMissing = getExternalIntegrationsReadinessSnapshot();
+    record(
+      "image_generation enabled without provider/key is missing_config",
+      findCategory(imageGenMissing, "image_generation")?.status === "missing_config",
+      findCategory(imageGenMissing, "image_generation")?.status ?? "missing"
+    );
+
+    setIntegrationEnv({
+      [IMAGE_GENERATION_ENV_KEYS.enabled]: "true",
+      [IMAGE_GENERATION_ENV_KEYS.provider]: "openai_images",
+      [IMAGE_GENERATION_ENV_KEYS.apiKey]: "smoke-image-provider-key"
+    });
+    const imageGenShaped = getExternalIntegrationsReadinessSnapshot();
+    record(
+      "image_generation full env shape reports configured_shape_ok",
+      findCategory(imageGenShaped, "image_generation")?.status === "configured_shape_ok",
+      findCategory(imageGenShaped, "image_generation")?.status ?? "missing"
+    );
+    record(
+      "image_generation readiness still defers live provider calls",
+      findCategory(imageGenShaped, "image_generation")?.imageGeneration?.liveProviderCallsDeferred === true,
+      "deferred"
+    );
+    record(
+      "image_generation readiness JSON omits API key value",
+      !JSON.stringify(imageGenShaped).includes("smoke-image-provider-key"),
+      "key absent"
     );
 
     record("no live fetch during readiness runner", fetchCallCount === 0, `calls=${fetchCallCount}`);

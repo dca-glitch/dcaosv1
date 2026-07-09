@@ -452,3 +452,7 @@ node scripts/smoke-client-approval-happy-path-local.mjs
 **Warning:** Caddy emitted a formatting warning only. `caddy validate` passed. No formatting-only change was applied during G54 to keep scope minimal.
 
 **Remaining production status:** Production readiness remains **NO**. G54 clears the HSTS/proxy blocker only. G49 dry-run and G50 production deploy are still **not executed** and require separate owner approval.
+
+## G49 formal closure documentation + fresh public probes (2026-07-09, Subagent B)
+
+Fresh public read-only probes were re-run from Windows PowerShell (no SSH, no mutation): all four §6.2 targets (staging root, staging health, production root, production health) returned HTTP 200 with HSTS present and database ready. Full detail: [`G49_PRODUCTION_DRY_RUN_READ_ONLY_PROOF.md`](../runbooks/G49_PRODUCTION_DRY_RUN_READ_ONLY_PROOF.md) §1.2 and §17. **G49 formal gate closure still requires a separately recorded owner-approval sentence** (§10 item 1 of that runbook) — this task did not supply it. **G50 remains not executed / not authorized. Production readiness remains NO.**

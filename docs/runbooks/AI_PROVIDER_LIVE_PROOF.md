@@ -6,6 +6,7 @@
 
 Related:
 
+- [`docs/architecture/AI_MODEL_POLICY.md`](../architecture/AI_MODEL_POLICY.md) — **model/provider policy (cost caps, live-call opt-in, retry/timeout, prompt logging, fallback). Provider model IDs are pending owner approval; this runbook proves execution behavior only, it does not select or approve a model.**
 - [`docs/operator/AI_PROVIDER_LOCAL_CONFIG.md`](../operator/AI_PROVIDER_LOCAL_CONFIG.md)
 - [`POST_MVP_BLOCK_40_OPENROUTER_GUARDED_LOCAL_GATE.md`](./POST_MVP_BLOCK_40_OPENROUTER_GUARDED_LOCAL_GATE.md)
 - [`EXTERNAL_INTEGRATIONS_READINESS.md`](./EXTERNAL_INTEGRATIONS_READINESS.md)
@@ -100,6 +101,8 @@ Fallback reports `Gateway: local`, `Model: local-deterministic`, `liveProviderCa
 ---
 
 ## 3. Environment (live proof only)
+
+**Model selection note:** the model IDs below must be owner-approved values per [`AI_MODEL_POLICY.md`](../architecture/AI_MODEL_POLICY.md) §1.1 before use in any shared (staging/production) environment. Local, throwaway smoke runs against a personal key are the only exception, and even those must follow the cost caps in §2.2 of that policy.
 
 Set on the **target machine only** — never commit secrets:
 
@@ -198,6 +201,7 @@ Follow [`G9_ENVIRONMENT_PROOF_APPROVAL_GATE.md`](./G9_ENVIRONMENT_PROOF_APPROVAL
 
 ## 6. Forbidden
 
+- Using a model ID that is not recorded as owner-approved in [`AI_MODEL_POLICY.md`](../architecture/AI_MODEL_POLICY.md) §1.1 for any shared environment
 - Enabling live provider in production without separate G9/G50-class owner approval
 - Widening token caps or timeouts via env (policy is code-only)
 - Autonomous/background AI execution

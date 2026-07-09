@@ -299,3 +299,7 @@ Keep the MVP admin-controlled and local-first until the first client delivery pa
 **Warning:** Caddy emitted a formatting warning only. `caddy validate` passed. No formatting-only change was applied during G54 to keep scope minimal.
 
 **Remaining production status:** Production readiness remains **NO**. G54 clears the HSTS/proxy blocker only. G49 dry-run and G50 production deploy are still **not executed** and require separate owner approval.
+
+## G49 formal closure documentation + fresh public probes (2026-07-09, Subagent B)
+
+Fresh public read-only probe re-run (Windows PowerShell, no SSH, no mutation) confirms staging and production root + `/api/v1/health` all return HTTP 200, HSTS present, database ready. See [`G49_PRODUCTION_DRY_RUN_READ_ONLY_PROOF.md`](../runbooks/G49_PRODUCTION_DRY_RUN_READ_ONLY_PROOF.md) §1.2/§17. This does not close the G49 gate formally (owner-approval sentence still pending per that runbook's §10 item 1), does not authorize G50, and does not move any item in this register out of deferred status. Production deploy remains deferred; production readiness remains **NO**.

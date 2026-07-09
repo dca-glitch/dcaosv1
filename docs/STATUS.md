@@ -31,7 +31,7 @@
 | Production deploy | **Frozen/deferred** — no deploy until G49 dry-run + G50 explicit approval |
 | G49 public probes (§6.2) | **PASS** — 2026-07-09; formal gate closure pending owner sentence |
 | G50 production deploy | **Not executed** — frozen/deferred |
-| Puriva Launch | **Blocked** — live proof gates required; SEC-B1 fixed locally (uncommitted); see security audit |
+| Puriva Launch | **Blocked** — live proof gates required; SEC-B1 fixed locally (uncommitted); SEC-H1 (`storageKey` leak on admin AI Delivery JSON) fixed locally (uncommitted); see security audit |
 | Roadmap tracks | Production Safety · Live Integration Proof · Client Operating Pack/Productization |
 
 Detail: [`G53_PRODUCTION_SAFETY_PLAN.md`](./runbooks/G53_PRODUCTION_SAFETY_PLAN.md) · [`deferred-scope-register.md`](./operator/deferred-scope-register.md) · §2.13 below.
@@ -684,3 +684,43 @@ Production readiness remains **NO**. G49/G50 remain not fully executed. Puriva L
 **Warning:** Caddy emitted a formatting warning only. `caddy validate` passed. No formatting-only change was applied during G54 to keep scope minimal.
 
 **Remaining production status:** Production readiness remains **NO**. G54 clears the HSTS/proxy blocker only. G49 dry-run and G50 production deploy are still **not executed** and require separate owner approval.
+
+## G49 formal closure documentation + fresh public read-only probes (2026-07-09, Subagent B)
+
+**Result:** Fresh public read-only probe evidence re-collected. **G49 formal gate closure remains NOT complete** — the owner-approval sentence required by §10 item 1 of the G49 runbook has still not been separately recorded for this exact execution block. **G50 remains NOT authorized/executed. Production readiness remains NO.**
+
+| Item | Result |
+|------|--------|
+| Probe method | `Invoke-WebRequest` from local Windows PowerShell, read-only, no mutation |
+| `https://staging.digitalcubeagency.net` | HTTP 200; HSTS `max-age=31536000; includeSubDomains` |
+| `https://staging.digitalcubeagency.net/api/v1/health` | HTTP 200; `database.status: ready` |
+| `https://system.digitalcubeagency.net` | HTTP 200; HSTS `max-age=31536000; includeSubDomains` |
+| `https://system.digitalcubeagency.net/api/v1/health` | HTTP 200; `database.status: ready` |
+| Verdict | **PASS** (§6.2 public probe evidence only) |
+| G49 full gate closure (owner approval sentence recorded) | **STILL PENDING** |
+| G50 production deploy | **NOT EXECUTED / NOT AUTHORIZED** |
+| Production readiness | **NO** |
+| Mutations performed | **NONE** — read-only probes only |
+| Log | `$env:TEMP\dca-subagent-b-g49.log` |
+
+Full detail recorded in [`G49_PRODUCTION_DRY_RUN_READ_ONLY_PROOF.md`](./runbooks/G49_PRODUCTION_DRY_RUN_READ_ONLY_PROOF.md) §1.2. This entry does not change production readiness status and does not authorize G50.
+
+## Mega-block blocks 1–9 coordination closeout (2026-07-09)
+
+**Result:** Coordinated multi-agent mega block completed on `main` (uncommitted). **Production readiness: NO.** **G50: NOT EXECUTED.** **Puriva Launch: BLOCKED.**
+
+| Block | Status | Summary |
+|-------|--------|---------|
+| 1 SEC-H1 | **CLOSED (local)** | `storageKey` stripped from admin list/detail JSON; `hasDocument` boolean added; regression tests added; download-reference endpoints retain `storageKey` internally only |
+| 2 G49 formal | **PARTIAL** | Public probes PASS (re-run 2026-07-09); owner approval sentence still required for full gate closure |
+| 3 Image foundation | **IMPLEMENTED (disabled-safe)** | Config + readiness category + execution scaffold; no live provider; no schema change |
+| 4 R2 proof prep | **DOCS PASS** | Six-area coverage map, env boolean checklist, gap scripts proposed |
+| 5 AI provider policy | **DOCS PASS** | `AI_MODEL_POLICY.md` created; owner model/provider decisions pending |
+| 6 WordPress proof prep | **DOCS PASS** | Live draft proof plan §6 added; schema gaps documented |
+| 7 GA/GSC monthly proof prep | **DOCS PASS** | OAuth/token ceiling + STOP criteria documented |
+| 8 Email notifications proof prep | **DOCS PASS** | `EMAIL_NOTIFICATIONS_PROOF.md` created; event wiring gaps documented |
+| 9 Puriva approval UX smoke prep | **DOCS PASS** | Canonical smoke path + coverage matrix; image reject/undo gaps flagged |
+
+**Validation:** `npm.cmd run validate` PASS; API integration tests **45/45** PASS. **No commit/push/deploy/runtime mutation.**
+
+**Next security focus:** SEC-M4 workflow-briefs client-role denial matrix; email event wiring gaps; R2 cross-tenant/image-variant smokes (proposed, not implemented).

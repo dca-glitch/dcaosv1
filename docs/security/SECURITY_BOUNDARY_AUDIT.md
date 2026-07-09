@@ -12,7 +12,7 @@
 | Severity | Count | Status |
 |----------|-------|--------|
 | BLOCKER | 1 | **FIXED** — SEC-B1 legacy `/api/v1/briefs` cross-tenant IDOR |
-| HIGH | 1 | **OPEN** — admin deliverables API returns raw `storageKey` |
+| HIGH | 1 | **FIXED** — SEC-H1 admin deliverables API returns raw `storageKey` |
 | MEDIUM | 4 | Documented; separate blocks recommended |
 | LOW | 2 | Documented |
 
@@ -39,15 +39,27 @@
 
 ---
 
-## HIGH — H1: Admin deliverables expose `storageKey`
+## HIGH — H1: Admin deliverables expose `storageKey` (FIXED)
 
-**Location:** `apps/api/src/core/core.runtime.ts` — `toAiDeliveryDeliverableSummary()` returns `storageKey` on `GET /api/v1/ai-delivery-projects/:id/deliverables`.
+**Location:** `apps/api/src/core/core.runtime.ts` — `toAiDeliveryDeliverableSummary()` returned `storageKey` on `GET /api/v1/ai-delivery-projects/:id/deliverables`.
 
-**Risk:** Internal bucket object keys visible to any authenticated owner/admin in tenant. Not a cross-tenant leak, but increases blast radius if admin session is compromised or logged.
+**Risk:** Internal bucket object keys visible to any authenticated owner/admin in tenant. Not a cross-tenant leak, but increased blast radius if admin session was compromised or logged.
 
-**Recommendation:** SEC-H1 block — strip `storageKey` from list/summary responses; keep `hasDocument` boolean; retain `storageKey` only on internal download-reference handlers.
+**Fix (SEC-H1 block):** Removed the `storageKey` field from three response mappers/types in `apps/api/src/core/core.runtime.ts` and `apps/api/src/core/core.types.ts`, replacing it with a `hasDocument` boolean:
 
-**Not fixed in this block** — scoped to SEC-B1 only.
+- `toAiDeliveryDeliverableSummary()` — admin deliverable list/detail (`AiDeliveryDeliverableSummary`)
+- `toAiDeliveryArticleImageSummary()` — admin article image list/detail (`AiDeliveryArticleImageSummary`)
+- `toAiDeliveryMonthlyReportSummary()` — admin monthly report detail (already had `hasDocument`; the redundant `storageKey` field was removed) (`AiDeliveryMonthlyReportSummary`)
+
+`storageKey` is still fetched from Prisma internally (to compute `hasDocument`) but is no longer serialized in any list/summary JSON response. The intentional exception — admin-only, per-record `download-reference` handlers (`getAiDeliveryDeliverableDownloadReference`, `getAiDeliveryArticleImageDownloadReference`) — retains `storageKey` in its response alongside the signed `downloadUrl`, per the original recommendation below. `client-portal.runtime.ts` was audited and already excluded `storageKey` correctly (no change required there).
+
+No provider-original-URL leak (e.g. raw Google Drive / WordPress URLs bypassing a safe wrapper) was found in `core.runtime.ts` during this pass; the only concrete finding was the `storageKey` field described above.
+
+**Recommendation (original):** SEC-H1 block — strip `storageKey` from list/summary responses; keep `hasDocument` boolean; retain `storageKey` only on internal download-reference handlers.
+
+**Regression coverage:** `apps/api/tests/integration/sec-h1-storage-key-leak.integration.test.ts` — asserts admin deliverable/article-image/monthly-report create, list, and detail responses never contain a `storageKey` field and correctly expose `hasDocument`; asserts client-portal project/deliverable/monthly-report responses never contain `storageKey`.
+
+**Known follow-up (frontend, out of scope for SEC-H1 backend block):** `apps/web/src/pages/ai-delivery/AiDeliveryPage.tsx` currently reads `.storageKey` directly off deliverable/article-image records (e.g. to gate the "fetch download reference" action and to render "stored/not stored" status text). Since the API no longer returns that field, those specific UI checks will need a follow-up change to key off `hasDocument` instead. This is a functional (non-security) regression risk for the admin AI Delivery UI until that frontend follow-up lands; it does not reintroduce the storageKey leak.
 
 ---
 
@@ -87,7 +99,7 @@
 
 ## Recommended next security blocks
 
-1. **SEC-H1** — Strip `storageKey` from admin deliverable list/detail JSON; add regression test.
+1. **SEC-H1** — **FIXED.** Stripped `storageKey` from admin deliverable/article-image/monthly-report list/detail JSON; added regression test. Follow-up: update `AiDeliveryPage.tsx` to key off `hasDocument` instead of `storageKey` (frontend-only, not a security regression).
 2. **SEC-M4** — Audit workflow-briefs mutating routes for client-role denial matrix.
 3. **SEC-PORTAL** — Extend `smoke:puriva-client-portal-boundary:local` for delivery-summary field allowlist.
 4. **SEC-DEPRECATE-BRIEFS** — Plan migration from legacy `/briefs` to workflow-briefs; 410 unused routes when UI migrated.
