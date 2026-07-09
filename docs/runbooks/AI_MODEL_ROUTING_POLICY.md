@@ -1,7 +1,7 @@
-# AI Model Routing Policy (G72 + G73 + G74)
+# AI Model Routing Policy (G72 + G73 + G74 + G75)
 
-**Status:** Implemented on `main` (G72 policy, G73 attribution proof, G74 completed ledger readiness).
-**Live execution:** G72–G74 are no-live — dry-run/preview and mocked completed attribution only.
+**Status:** Implemented on `main` (G72 policy, G73 attribution proof, G74 completed ledger readiness, G75 local live spend attribution proof).
+**Live execution:** G72–G74 are no-live — dry-run/preview and mocked completed attribution only. **G75 (local only):** one controlled OpenRouter live smoke PASS; completed attribution verifier PASS; persistent COMPLETED row **not** auto-written by smoke path.
 **Approved live text model (local proof):** `anthropic/claude-haiku-4.5` via OpenRouter.
 
 ## Principle
@@ -71,7 +71,7 @@ Do **not** use `openrouter/auto` for Puriva or medical/compliance content.
 |-------|--------|----------------------|-----------|
 | Preview (`modelRouting`) | G73 COMPLETE | `false` | Yes — preview endpoint |
 | Planned (`plannedLedgerMetadata`) | G73 COMPLETE | `false` | No — response only |
-| Completed (`completedLedgerMetadata`) | G74 READY (no-live) | explicit per mock | Via `recordCompletedAiLedgerEntry()` when wired |
+| Completed (`completedLedgerMetadata`) | G74 READY; G75 local proof PASS (generated-only) | explicit per execution | Via `recordCompletedAiLedgerEntry()` when wired; **not** auto-persisted by current smoke path |
 
 ### Completed attribution fields (G74)
 
@@ -80,7 +80,7 @@ Do **not** use `openrouter/auto` for Puriva or medical/compliance content.
 - `clientProfile`, `contentChannel`, `maxCostUsdPerRun`
 - `estimatedCostUsd`, `actualCostUsd` (when confirmed and within route cap)
 - `approximateInputTokens`, `approximateOutputTokens`
-- `liveProviderCalled` (explicit; mocked `true` allowed in unit tests only)
+- `liveProviderCalled` (explicit; `true` observed in G75 local live proof run `6e538323-8e68-4d41-a4c5-9e30ca0cf8a1`)
 - `safeError`, `overCap`, `overCapReason`
 - `workflowRunId`, `runId`
 
@@ -91,7 +91,9 @@ Do **not** use `openrouter/auto` for Puriva or medical/compliance content.
 - If `safeError` is present, status is `BLOCKED` and `actualCostUsd` is not recorded.
 - Skipped local execution (`ok=false`, no `safeError`) records `SKIPPED` with `liveProviderCalled=false`.
 
-**Deferred (G75):** Actual live provider execution with real `actualCostUsd` proof after controlled OpenRouter call.
+**G75 (local live spend attribution proof — PARTIAL):** After one controlled OpenRouter live smoke (`workflowRunId=6e538323-8e68-4d41-a4c5-9e30ca0cf8a1`), completed attribution metadata can be **generated** from live workflow observability via G74 `finalizeOrchestratorLiteLedgerAttribution` (verifier PASS in G75c). The current smoke/execution path does **not** automatically write a persistent COMPLETED ledger row — metadata is generated-only at verify time. Verifier requires `node --import tsx` when importing TypeScript source directly.
+
+**Deferred (G76):** Wire live execution endpoint to persist COMPLETED ledger rows via `recordCompletedAiLedgerEntry()` after approved provider execution; staging/production live proof remains blocked.
 
 ## Orchestrator task → routing task mapping
 
@@ -119,7 +121,8 @@ Unit tests: `ai-model-routing-policy.service.test.ts`, `ai-budget-guard.service.
 
 ## Next gate
 
-- **G75:** controlled live spend attribution proof after approved provider execution, or additional model approval matrix
+- **G76:** persistent live completed ledger row wiring after approved provider execution, or additional model approval matrix
+- **G75e:** commit/push G75d docs closeout (separate owner approval)
 
 ## Related docs
 

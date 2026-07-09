@@ -541,3 +541,17 @@ Evidence logs:
 **Deferred-scope status after G71f:** Live AI provider proof = **COMPLETE (local only)**. Staging/production live proof remains **BLOCKED**.
 
 **Recommended next gate:** G71g — commit/push G71f docs closeout; then G72 model routing policy. Production deploy is **not** included.
+
+### 9.16 G75 — live spend attribution cross-reference (2026-07-10)
+
+**Status:** **PARTIAL (local only)** — live OpenRouter smoke PASS; completed attribution verifier PASS (G75c); persistent COMPLETED ledger row **not** auto-written by smoke path.
+
+| Item | Result |
+|------|--------|
+| Live run ID | `6e538323-8e68-4d41-a4c5-9e30ca0cf8a1` |
+| Provider / model | OpenRouter — `anthropic/claude-haiku-4.5` |
+| `liveProviderCalled` | `true` |
+| Completed attribution | Generated via G74 helper against live observability — verifier PASS |
+| Persistent COMPLETED row | **Deferred G76** — smoke path does not auto-persist |
+
+Detail: [`AI_MODEL_ROUTING_POLICY.md`](./AI_MODEL_ROUTING_POLICY.md) (G75 section) · [`STATUS.md`](../STATUS.md) (G75 closeout).

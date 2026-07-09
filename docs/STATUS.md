@@ -1,6 +1,6 @@
 # DCA OS Lite — Status (Source of Truth)
 
-**Last updated:** 2026-07-09 (G74 — completed ledger attribution readiness, no-live)
+**Last updated:** 2026-07-10 (G75d — live spend attribution proof docs closeout)
 **G55 pre-live readiness:** [`docs/runbooks/G55_PRELIVE_READINESS.md`](./runbooks/G55_PRELIVE_READINESS.md)
 **G56 pre-live readiness:** [`docs/runbooks/G56_PRELIVE_READINESS.md`](./runbooks/G56_PRELIVE_READINESS.md)
 **G57–G68 pre-live readiness:** [`docs/runbooks/G57_G68_PRELIVE_READINESS.md`](./runbooks/G57_G68_PRELIVE_READINESS.md)
@@ -33,10 +33,13 @@
 | Latest baseline | G57–G68 pre-live completion on `main` — persistent budget ledger, workflow dry-run, notification contracts, admin operator wiring, integration boundaries |
 | **G69 merge** | **DONE** — G57–G68 fast-forward merged to `main`; final commit `64bfd06` |
 | Production readiness | **NO** |
-| Next gate | **G75** — controlled live spend attribution proof, or additional model approval matrix |
+| Next gate | **G76** — persistent live completed ledger row wiring, or additional model approval matrix |
 | G72 model routing | **Implemented** — backend policy per task type; approved model `anthropic/claude-haiku-4.5`; no live call in G72 |
-| G73 routing attribution | **Local PASS** — dry-run/preview `modelRouting` + `plannedLedgerMetadata`; budget guard route cap wired; persistent preview ledger records routing metadata; live spend attribution deferred |
-| G74 completed ledger attribution | **Implemented (no-live)** — `buildCompletedLedgerMetadata`, `prepareCompletedLedgerAttribution`, `recordCompletedAiLedgerEntry`; mocked provider execution in unit tests only; actual live spend proof deferred to G75 |
+| G73 routing attribution | **Local PASS** — dry-run/preview `modelRouting` + `plannedLedgerMetadata`; budget guard route cap wired; persistent preview ledger records routing metadata |
+| G74 completed ledger attribution | **Implemented (no-live)** — `buildCompletedLedgerMetadata`, `prepareCompletedLedgerAttribution`, `recordCompletedAiLedgerEntry`; mocked provider execution in unit tests only |
+| G75 live spend attribution proof | **PARTIAL (local only)** — Phase 1 baseline PASS; v2 Phase 2 live OpenRouter smoke PASS (`6e538323-8e68-4d41-a4c5-9e30ca0cf8a1`); Phase 3 restore PASS; completed attribution verifier PASS (G75c); **persistent COMPLETED row deferred** — smoke path does not auto-persist |
+| G75c verifier fix | **TEMP only** — verifier/tooling fix (`node --import tsx` + cross-client live evidence scan); repo source unchanged; no new live call |
+| G75d closeout | **Docs only** — local proof + limitation recorded; production remains frozen |
 | G55 pre-live | **Local PASS** — docs + disabled-safe orchestration foundation; no live providers/deploy |
 | G56 pre-live | **Local PASS** — expanded pre-live groundwork; admin orchestrator UI; orchestrator smoke; no live providers/deploy |
 | G57–G68 pre-live | **On main** (`64bfd06`) — persistent ledger, dry-run adapter, operator visibility, go/no-go docs; live proofs **BLOCKED** |
@@ -52,7 +55,31 @@
 | Puriva Launch | **Blocked** — live proof gates required; SEC-B1 fixed locally (uncommitted); SEC-H1 (`storageKey` leak on admin AI Delivery JSON) fixed locally (uncommitted); see security audit |
 | Roadmap tracks | Production Safety · Live Integration Proof · Client Operating Pack/Productization |
 
-Detail: [`G53_PRODUCTION_SAFETY_PLAN.md`](./runbooks/G53_PRODUCTION_SAFETY_PLAN.md) · [`deferred-scope-register.md`](./operator/deferred-scope-register.md) · §2.13 below.
+Detail: [`AI_MODEL_ROUTING_POLICY.md`](./runbooks/AI_MODEL_ROUTING_POLICY.md) · [`G53_PRODUCTION_SAFETY_PLAN.md`](./runbooks/G53_PRODUCTION_SAFETY_PLAN.md) · [`deferred-scope-register.md`](./operator/deferred-scope-register.md) · §2.13 below.
+
+## G75 live spend attribution proof closeout (2026-07-10)
+
+| Item | State |
+|------|--------|
+| Gate | G75 + G75c + G75d — controlled live spend attribution proof (local only) |
+| `main` commit (implementation base) | `e5269fc` — `feat: add AI completed ledger attribution` |
+| Operator | Piotr Pakula |
+| Phase 1 — local deterministic baseline | **PASS** — `smoke:openrouter-guarded:local` 12/12; `liveProviderCalled=false` |
+| Phase 2 (G75 v2) — one live OpenRouter proof | **PASS** — strict live smoke 12/12; exactly **one** live OpenRouter call |
+| Formal live run ID | `6e538323-8e68-4d41-a4c5-9e30ca0cf8a1` |
+| Provider / model | OpenRouter — `anthropic/claude-haiku-4.5` |
+| `liveProviderCalled` | `true` (Phase 2) |
+| Budget evidence | `AI_TEXT_BUDGET_POLICY_V1`; `approximateSessionCostUsd~0.000239` (below **$1.00 USD** cap) |
+| Phase 3 — restore local deterministic gateway | **PASS** — guarded smoke 12/12; `liveProviderCalled=false` after restore |
+| G75c completed attribution verifier | **PASS** — `node --import tsx $env:TEMP\verify-g75-completed-attribution-v2.mjs`; completed attribution metadata generated via G74 `finalizeOrchestratorLiteLedgerAttribution` against live observability |
+| Persistent COMPLETED ledger row | **NOT FOUND** — smoke path does not auto-persist completed attribution; metadata generated-only at verify time; **deferred to G76** |
+| G75c root cause | Verifier/tooling only — plain `node` could not resolve shared barrel `.ts` re-exports; original verifier selected post-restore local client instead of live OpenRouter evidence |
+| Forbidden integrations | **None triggered** |
+| Secrets | **Not exposed** |
+| Production readiness | **NO** — production remains frozen; staging/production live proof not claimed |
+| Next gate | **G75e** commit/push docs closeout; then **G76** persistent live completed ledger row wiring |
+
+Detail: [`AI_MODEL_ROUTING_POLICY.md`](./runbooks/AI_MODEL_ROUTING_POLICY.md) · [`AI_PROVIDER_LIVE_PROOF.md`](./runbooks/AI_PROVIDER_LIVE_PROOF.md) §9.16 · [`deferred-scope-register.md`](./operator/deferred-scope-register.md).
 
 ---
 
