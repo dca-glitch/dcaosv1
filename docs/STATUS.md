@@ -12,6 +12,8 @@
 **Deferred scope:** [`docs/operator/deferred-scope-register.md`](./operator/deferred-scope-register.md)
 **Production deployment/rollback/checklist (reference):** [`docs/runbooks/PRODUCTION_DEPLOYMENT.md`](./runbooks/PRODUCTION_DEPLOYMENT.md) · [`docs/runbooks/PRODUCTION_ROLLBACK.md`](./runbooks/PRODUCTION_ROLLBACK.md) · [`docs/runbooks/PRODUCTION_SAFETY_CHECKLIST.md`](./runbooks/PRODUCTION_SAFETY_CHECKLIST.md)
 **Puriva Launch Gate (15-area evaluation):** [`docs/runbooks/PURIVA_LAUNCH_GATE.md`](./runbooks/PURIVA_LAUNCH_GATE.md)
+**Image generation proof plan:** [`docs/runbooks/IMAGE_GENERATION_PROOF.md`](./runbooks/IMAGE_GENERATION_PROOF.md)
+**Security boundary audit:** [`docs/security/SECURITY_BOUNDARY_AUDIT.md`](./security/SECURITY_BOUNDARY_AUDIT.md)
 **Storage/R2 proof plan:** [`docs/runbooks/STORAGE_R2_PROOF.md`](./runbooks/STORAGE_R2_PROOF.md)
 **Integrations truth matrix:** [`docs/runbooks/INTEGRATIONS_TRUTH_MATRIX.md`](./runbooks/INTEGRATIONS_TRUTH_MATRIX.md)
 **Admin UI/workflow polish audit:** [`docs/ux/ADMIN_WORKFLOW_POLISH_AUDIT.md`](./ux/ADMIN_WORKFLOW_POLISH_AUDIT.md) (read-only; UX-P1–P12 queued blocks)
@@ -29,7 +31,7 @@
 | Production deploy | **Frozen/deferred** — no deploy until G49 dry-run + G50 explicit approval |
 | G49 public probes (§6.2) | **PASS** — 2026-07-09; formal gate closure pending owner sentence |
 | G50 production deploy | **Not executed** — frozen/deferred |
-| Puriva Launch | **Blocked** — live proof gates required (see deferred-scope register) |
+| Puriva Launch | **Blocked** — live proof gates required; SEC-B1 fixed locally (uncommitted); see security audit |
 | Roadmap tracks | Production Safety · Live Integration Proof · Client Operating Pack/Productization |
 
 Detail: [`G53_PRODUCTION_SAFETY_PLAN.md`](./runbooks/G53_PRODUCTION_SAFETY_PLAN.md) · [`deferred-scope-register.md`](./operator/deferred-scope-register.md) · §2.13 below.

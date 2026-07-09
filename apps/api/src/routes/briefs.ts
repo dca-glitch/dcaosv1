@@ -3,6 +3,7 @@ import type { BriefStatus, BriefType } from "@prisma/client";
 import { createPrismaClient } from "../../../../packages/data/src/client";
 import type { AuthResolvedSessionContext, AuthSessionLocals } from "../auth/types";
 import { requireAuth } from "../middlewares/auth.middleware";
+import { requireTenant } from "../middlewares/tenant.middleware";
 import { sendEmailNotification } from "../services/email-notifications.service";
 import { failure, forbiddenFailure, success, unauthorizedFailure } from "../utils/responses";
 
@@ -14,6 +15,22 @@ function getAuthSession(res: { locals: unknown }): AuthResolvedSessionContext | 
 
 function getActiveRoles(authSession: AuthResolvedSessionContext): string[] {
   return authSession.tenantContext.activeMembership?.roles ?? [];
+}
+
+function getTenantId(authSession: AuthResolvedSessionContext): string | null {
+  return authSession.tenantContext.activeMembership?.tenantId ?? null;
+}
+
+async function clientBelongsToTenant(tenantId: string, clientId: string): Promise<boolean> {
+  const client = await prisma.client.findFirst({
+    where: { id: clientId, tenantId },
+    select: { id: true }
+  });
+  return client !== null;
+}
+
+async function briefBelongsToTenant(tenantId: string, brief: { clientId: string }): Promise<boolean> {
+  return clientBelongsToTenant(tenantId, brief.clientId);
 }
 
 function isOwnerRole(roles: string[]): boolean {
@@ -121,7 +138,9 @@ function buildAutoBriefTitle(briefNumber: number): string {
 export function createBriefsRouter() {
   const router = Router();
 
-  router.get("/", requireAuth, async (req, res, next) => {
+  router.use(requireAuth, requireTenant);
+
+  router.get("/", async (req, res, next) => {
     try {
       const authSession = getAuthSession(res);
       if (!authSession) {
@@ -153,6 +172,12 @@ export function createBriefsRouter() {
       }
 
       if (isOwnerRole(roles)) {
+        const tenantId = getTenantId(authSession);
+        if (!tenantId || !(await clientBelongsToTenant(tenantId, clientId))) {
+          res.status(403).json(forbiddenFailure());
+          return;
+        }
+
         const briefs = await prisma.clientMonthlyBrief.findMany({
           where: { clientId },
           orderBy: { createdAt: "desc" }
@@ -167,7 +192,7 @@ export function createBriefsRouter() {
     }
   });
 
-  router.get("/admin", requireAuth, async (req, res, next) => {
+  router.get("/admin", async (req, res, next) => {
     try {
       const authSession = getAuthSession(res);
       if (!authSession) {
@@ -215,7 +240,7 @@ export function createBriefsRouter() {
     }
   });
 
-  router.get("/:id", requireAuth, async (req, res, next) => {
+  router.get("/:id", async (req, res, next) => {
     try {
       const authSession = getAuthSession(res);
       if (!authSession) {
@@ -230,13 +255,24 @@ export function createBriefsRouter() {
       }
 
       const roles = getActiveRoles(authSession);
+      const tenantId = getTenantId(authSession);
+      if (!tenantId) {
+        res.status(403).json(forbiddenFailure());
+        return;
+      }
+
       if (isClientRole(roles)) {
         const companyId = await resolveClientCompanyId(authSession, brief.clientId);
         if (!clientOwnsBrief(brief.companyId, companyId)) {
           res.status(403).json(forbiddenFailure());
           return;
         }
-      } else if (!isOwnerRole(roles)) {
+      } else if (isOwnerRole(roles)) {
+        if (!(await briefBelongsToTenant(tenantId, brief))) {
+          res.status(403).json(forbiddenFailure());
+          return;
+        }
+      } else {
         res.status(403).json(forbiddenFailure());
         return;
       }
@@ -247,7 +283,7 @@ export function createBriefsRouter() {
     }
   });
 
-  router.post("/", requireAuth, async (req, res, next) => {
+  router.post("/", async (req, res, next) => {
     try {
       const authSession = getAuthSession(res);
       if (!authSession) {
@@ -339,7 +375,7 @@ export function createBriefsRouter() {
     }
   });
 
-  router.patch("/:id", requireAuth, async (req, res, next) => {
+  router.patch("/:id", async (req, res, next) => {
     try {
       const authSession = getAuthSession(res);
       if (!authSession) {
@@ -354,13 +390,24 @@ export function createBriefsRouter() {
       }
 
       const roles = getActiveRoles(authSession);
+      const tenantId = getTenantId(authSession);
+      if (!tenantId) {
+        res.status(403).json(forbiddenFailure());
+        return;
+      }
+
       if (isClientRole(roles)) {
         const companyId = await resolveClientCompanyId(authSession, brief.clientId);
         if (!clientOwnsBrief(brief.companyId, companyId)) {
           res.status(403).json(forbiddenFailure());
           return;
         }
-      } else if (!isOwnerRole(roles)) {
+      } else if (isOwnerRole(roles)) {
+        if (!(await briefBelongsToTenant(tenantId, brief))) {
+          res.status(403).json(forbiddenFailure());
+          return;
+        }
+      } else {
         res.status(403).json(forbiddenFailure());
         return;
       }
@@ -427,7 +474,7 @@ export function createBriefsRouter() {
     }
   });
 
-  router.post("/:id/submit", requireAuth, async (req, res, next) => {
+  router.post("/:id/submit", async (req, res, next) => {
     try {
       const authSession = getAuthSession(res);
       if (!authSession) {
@@ -442,13 +489,24 @@ export function createBriefsRouter() {
       }
 
       const roles = getActiveRoles(authSession);
+      const tenantId = getTenantId(authSession);
+      if (!tenantId) {
+        res.status(403).json(forbiddenFailure());
+        return;
+      }
+
       if (isClientRole(roles)) {
         const companyId = await resolveClientCompanyId(authSession, brief.clientId);
         if (!clientOwnsBrief(brief.companyId, companyId)) {
           res.status(403).json(forbiddenFailure());
           return;
         }
-      } else if (!isOwnerRole(roles)) {
+      } else if (isOwnerRole(roles)) {
+        if (!(await briefBelongsToTenant(tenantId, brief))) {
+          res.status(403).json(forbiddenFailure());
+          return;
+        }
+      } else {
         res.status(403).json(forbiddenFailure());
         return;
       }
@@ -486,7 +544,6 @@ export function createBriefsRouter() {
         }
       });
 
-      const tenantId = authSession.tenantContext.activeMembership?.tenantId ?? null;
       await sendEmailNotification({
         tenantId,
         recipientEmail: "admin@dca.local",

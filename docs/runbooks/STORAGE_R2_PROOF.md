@@ -177,3 +177,52 @@ npm.cmd run smoke:puriva-client-portal-boundary:local
 ```
 
 Included in `npm run smoke:pre-staging:local` (disabled-safe baseline).
+
+---
+
+## 8. Generated image storage (Puriva dependency)
+
+**Scope extension:** AI-generated article images (hero, supporting, social preview) use the same private R2 path as deliverable documents and article-image final assets.
+
+### 8.1 Expected object layout
+
+```
+tenants/{tenantId}/years/{yyyy}/projects/{projectId}/months/{mm}/images/{imageId}/{variant}.png
+```
+
+Variants: `hero`, `supporting-1`, `supporting-2`, `social-preview`, `thumb-{variant}`.
+
+### 8.2 Metadata stored server-side (not client-visible)
+
+| Field | Stored | Client API |
+|-------|--------|------------|
+| `storageKey` | Yes | **Never** |
+| `prompt` | Yes (learning) | **Never** |
+| `provider` / `model` | Yes | **Never** |
+| `altText` / `caption` | Yes | Yes (approved only) |
+| `previewImageUrl` | Signed short-lived | Yes |
+| Provider original URL | Optional internal | **Never** if public/unsafe |
+
+### 8.3 Image-specific live proof checklist (staging)
+
+Prerequisites: §3 complete for documents; `IMAGE_GENERATION_PROOF.md` Phase D approved.
+
+- [ ] Mock or live provider returns PNG bytes → upload persists `storageKey` on `AiDeliveryArticleImage`
+- [ ] Admin `download-reference` returns signed URL; JSON has no raw `storageKey` on list endpoints (SEC-H1 alignment)
+- [ ] Client portal image preview uses signed URL only
+- [ ] Thumbnail variant readable via signed URL
+- [ ] Social preview variant stored and attachable to WordPress draft meta
+- [ ] Cross-tenant image ID returns `404`/`403` without bytes
+- [ ] Regenerate-after-reject replaces `storageKey` and clears stale signed URLs
+- [ ] Disabled R2: generation queue fails closed; no orphan keys
+
+### 8.4 Code gaps (2026-07-09)
+
+| Gap | Location | Block |
+|-----|----------|-------|
+| No provider→bytes pipeline | Not implemented | IMG-PROVIDER-1 |
+| List endpoint returns `storageKey` | `core.runtime.ts` deliverable + article image summaries | SEC-H1 |
+| Social preview generation | Not implemented | IMG-SOCIAL-1 |
+| Image readiness category | `external-integrations-readiness.service.ts` | IMG-READY-1 |
+
+See [`IMAGE_GENERATION_PROOF.md`](./IMAGE_GENERATION_PROOF.md) for full product flow.

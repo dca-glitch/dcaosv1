@@ -1,16 +1,27 @@
 # Puriva Launch Gate — 15-Area Evaluation
 
-**Status:** Docs-only evaluation. Overall verdict: **BLOCKED**. This document does not authorize Puriva Launch, live integrations, or production client-facing use.
+**Status:** Docs-only evaluation. Overall verdict: **BLOCKED**. SEC-B1 (legacy `/api/v1/briefs` cross-tenant IDOR) **fixed locally** in mega-block 2026-07-09 — regression test added; commit pending owner approval. This document does not authorize Puriva Launch, live integrations, or production client-facing use.
 
 **Gate separation:** Puriva Client-Service Launch Gate is independent from the DCA OS Production v1 Gate (G49 → G50). Clearing G49/G50 does **not** authorize Puriva Launch, and vice versa.
 
-**Source of truth:** [`docs/architecture/PURIVA_OPERATING_PACK_V1.md`](../architecture/PURIVA_OPERATING_PACK_V1.md) · [`docs/architecture/CLIENT_OPERATING_PACKS.md`](../architecture/CLIENT_OPERATING_PACKS.md) · [`docs/operator/deferred-scope-register.md`](../operator/deferred-scope-register.md) · [`docs/STATUS.md`](../STATUS.md)
+**Source of truth:** [`docs/architecture/PURIVA_OPERATING_PACK_V1.md`](../architecture/PURIVA_OPERATING_PACK_V1.md) · [`docs/architecture/CLIENT_OPERATING_PACKS.md`](../architecture/CLIENT_OPERATING_PACKS.md) · [`docs/operator/deferred-scope-register.md`](../operator/deferred-scope-register.md) · [`docs/STATUS.md`](../STATUS.md) · [`docs/security/SECURITY_BOUNDARY_AUDIT.md`](../security/SECURITY_BOUNDARY_AUDIT.md) · [`docs/runbooks/IMAGE_GENERATION_PROOF.md`](./IMAGE_GENERATION_PROOF.md)
 
 ---
 
 ## 1. Overall verdict
 
-**BLOCKED.** 8 of 15 evaluation areas are fully blocked pending live proof or a not-yet-started product/policy gate. 2 more areas have real local scaffolding but cannot support a live client-facing claim yet. 5 areas are genuinely usable now in local/admin-operated form only.
+**BLOCKED.** 8 of 15 evaluation areas are fully blocked pending live proof or a not-yet-started product/policy gate. 2 more areas have real local scaffolding but cannot support a live client-facing claim yet. 5 areas are genuinely usable now in local/admin-operated form only. **Security:** SEC-B1 fixed locally; SEC-H1 (`storageKey` in admin deliverable list) remains open — see security audit.
+
+---
+
+## 1b. Security gate (SEC-B1)
+
+| Item | Status |
+|------|--------|
+| SEC-B1 legacy `/api/v1/briefs` cross-tenant IDOR | **FIXED (local, uncommitted)** — `requireTenant` + tenant-scoped client/brief checks |
+| Regression test | `apps/api/tests/integration/briefs-tenant-boundary.integration.test.ts` |
+| SEC-H1 admin `storageKey` exposure | **OPEN** — separate block recommended |
+| Puriva launch impact | SEC-B1 was a **production safety blocker**; fix must be committed and validated before G50 |
 
 ---
 
@@ -21,8 +32,8 @@
 | 1 | GA/GSC live proof | **BLOCKED** | No live OAuth consent or sync has ever been executed. Snapshot-first manual metrics is the active local path. |
 | 2 | R2/storage live proof | **BLOCKED** | Disabled-safe local behavior proven (`smoke:r2-byte-roundtrip:local`); no real bucket round-trip ever executed. See [`STORAGE_R2_PROOF.md`](./STORAGE_R2_PROOF.md). |
 | 3 | Live AI text proof | **BLOCKED** | Local deterministic gateway is the proven default; OpenRouter path is coded and config-validated but never executed live. |
-| 4 | Image generation provider research | **BLOCKED** | No provider selected or researched in this repo's history. |
-| 5 | Image generation staging proof | **BLOCKED** | Depends on #4; cannot start until a provider is chosen. |
+| 4 | Image generation provider research | **BLOCKED** | No provider selected. Full flow spec: [`IMAGE_GENERATION_PROOF.md`](./IMAGE_GENERATION_PROOF.md). |
+| 5 | Image generation staging proof | **BLOCKED** | Depends on #4 + R2 live proof + AI Model Policy; scaffold exists (`prepare-image-sets`) but no live provider. |
 | 6 | Transactional notification proof (in-system + email) | **BLOCKED** | Local outbox/in-system foundation is disabled-safe and smoke-proven (`smoke:email-outbox:local`); real email send via Resend has never been executed. |
 | 7 | WordPress draft/handoff readiness | **PASS (local/operator-ready)** | Draft preparation and operator handoff smoke-proven; required scope for Puriva Launch is draft/handoff, not auto-publish, and that scope is met locally. |
 | 8 | Integration health visibility | **PASS (local/admin)** / **BLOCKED (live)** | `GET /api/v1/integrations/readiness` gives admin-visible config-shape health today; there is nothing live to show health for until other live proofs close. |
@@ -47,19 +58,47 @@
 
 Nothing in the Puriva delivery path may be shown to a real client on a production environment until the fully-blocked areas above (rows 1, 2, 3, 4, 5, 6, 9, 10, and the live-proof portions of 14 and 15) are closed with real evidence — not local-only or config-shape evidence.
 
+**Explicit image generation blockers:**
+
+- No live image provider wired or proven
+- R2 image byte roundtrip not proven on target bucket
+- Social preview generation not proven end-to-end
+- Medical compliance review gate for generated imagery not live-proven
+
+**Explicit security blockers (pre-launch):**
+
+- SEC-B1 fix must be committed and pass `npm run validate` + integration test
+- SEC-H1 (`storageKey` in admin deliverable list) should close before production G50
+
 ## 5. Deferred (intentionally out of scope, not blockers)
 
 Per `deferred-scope-register.md`: WordPress auto-publish, marketing email, SMS/WhatsApp, full SaaS onboarding, second-client proof, advanced learning dashboard, A/B testing, full DB-backed custom roles UI. These do not need to close before Puriva Launch — they are separate future tracks.
 
-## 6. Recommended next blocks (ordered by lowest-effort-to-close-first)
+## 6. Launch PASS criteria (all required)
 
-1. **R2 live proof** — code is fully written and unit/local-tested; only needs a real staging-only bucket + one owner-approved proof session (see `STORAGE_R2_PROOF.md` §6).
-2. **AI Model Research + AI Model Policy** — policy gates that unblock sequencing for live AI text proof; no code changes required, just research/decision documentation.
-3. **Transactional notification proof** — send one bounded test email to an owner-controlled inbox via Resend; low blast radius.
-4. **GA/GSC live proof** — requires OAuth consent screen setup; medium effort.
-5. **Image generation provider research → staging proof** — highest effort; blocks both Article+Image full proof and part of Monthly Report narrative quality; should follow AI Model Policy.
+1. SEC-B1 regression test PASS on target commit
+2. R2 live proof PASS on staging bucket (documents + generated images)
+3. Live AI text proof PASS (bounded, owner-approved)
+4. Image generation provider selected + staging proof PASS per [`IMAGE_GENERATION_PROOF.md`](./IMAGE_GENERATION_PROOF.md)
+5. Transactional email live proof PASS
+6. GA/GSC live proof PASS (or explicit waiver documented for MVP)
+7. Client portal approval UX proven on staging browser
+8. WordPress draft handoff proven on staging
+9. No HIGH security findings open (SEC-H1 minimum)
 
-## 7. What this document does not authorize
+---
+
+## 7. Recommended next blocks (ordered by lowest-effort-to-close-first)
+
+1. **SEC-B1 commit + validation** — merge tenant boundary fix and regression test (this mega-block).
+2. **R2 live proof** — code is fully written and unit/local-tested; only needs a real staging-only bucket + one owner-approved proof session (see `STORAGE_R2_PROOF.md` §3).
+3. **AI Model Research + AI Model Policy** — policy gates that unblock sequencing for live AI text + image proof; no code changes required, just research/decision documentation.
+4. **Image generation provider wiring (disabled-safe)** — per `IMAGE_GENERATION_PROOF.md` Phase B.
+5. **Transactional notification proof** — send one bounded test email to an owner-controlled inbox via Resend; low blast radius.
+6. **GA/GSC live proof** — requires OAuth consent screen setup; medium effort.
+7. **Image generation staging proof** — highest effort; blocks Article+Image full proof; follows AI Model Policy + R2.
+
+## 8. What this document does not authorize
 
 - No live integration was called to produce this evaluation.
 - No production or staging mutation occurred.
