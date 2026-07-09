@@ -1,6 +1,6 @@
 # DCA OS Lite — Operator Runbook (Consolidated)
 
-**Status:** Single operator entry point for local validation, smoke, recovery, and staging/production prerequisites. G35 Phase B local pre-staging gate passed on `217c11c`; G35 Phase C controlled staging refresh completed on commit `5e1ea5a`. G46d/G47 staging deploy/smoke/proof PASS. G48 production readiness planning PASS. **G53 production safety plan approved (planning only).** Production deploy ready: **NO**. G49/G50 **not executed**. Next safety blocker: **G54** HSTS/proxy. Puriva Launch **blocked** pending live proof gates. Staging proven; production frozen. Further staging or production work requires fresh owner approval.
+**Status:** Single operator entry point for local validation, smoke, recovery, and staging/production prerequisites. G35 Phase B local pre-staging gate passed on `217c11c`; G35 Phase C controlled staging refresh completed on commit `5e1ea5a`. G46d/G47 staging deploy/smoke/proof PASS. G48 production readiness planning PASS. **G53 production safety plan approved (planning only).** Production deploy ready: **NO**. G49/G50 **not executed**. G54 HSTS/proxy: **PASS**. Next production path remains G49 dry-run before G50, only after owner approval. Puriva Launch **blocked** pending live proof gates. Staging proven; production frozen. Further staging or production work requires fresh owner approval.
 **Source of truth for product state:** [`docs/STATUS.md`](../STATUS.md)
 
 Related detailed runbooks:
@@ -424,3 +424,26 @@ npm.cmd run smoke:staging-readiness:local
 npm.cmd run smoke:production-readiness:local
 node scripts/smoke-client-approval-happy-path-local.mjs
 ```
+
+## G54 HSTS/proxy fix completion (2026-07-09)
+
+**Result:** PASS — HSTS/proxy fix applied on VPS.
+
+**Scope:** Caddy/proxy only. No app deploy, no API/DB/schema/source changes, no migrations, no production app deployment.
+
+**Changed runtime file:** `/opt/dca/caddy/Caddyfile`
+
+**Backup:** `/opt/dca/backups/Caddyfile.G54-HSTS.20260709-073546.bak`
+
+**Reload scope:** `dca-caddy` only.
+
+**Proof:**
+
+- `https://staging.digitalcubeagency.net` returned HTTP/2 200 with `Strict-Transport-Security: max-age=31536000; includeSubDomains`
+- `https://system.digitalcubeagency.net` returned HTTP/2 200 with `Strict-Transport-Security: max-age=31536000; includeSubDomains`
+- staging `/api/v1/health` returned OK with database ready
+- production `/api/v1/health` returned OK with database ready
+
+**Warning:** Caddy emitted a formatting warning only. `caddy validate` passed. No formatting-only change was applied during G54 to keep scope minimal.
+
+**Remaining production status:** Production readiness remains **NO**. G54 clears the HSTS/proxy blocker only. G49 dry-run and G50 production deploy are still **not executed** and require separate owner approval.

@@ -85,7 +85,7 @@ These must be resolved or explicitly accepted with owner sign-off before any pro
 
 | # | Blocker | Status | Next gate / action |
 |---|---------|--------|-------------------|
-| 1 | **HSTS / proxy security warning** | Open — G47c reported HSTS missing (`31/31 passed, 1 warning`) | **G54** — HSTS/proxy fix planning; does not authorize fix implementation in G53 |
+| 1 | **HSTS / proxy security warning** | Open — G47c reported HSTS missing (`31/31 passed, 1 warning`) | **G54** — PASS; HSTS present on staging and production |
 | 2 | **Rollback / restore evidence** | Not proven for production promotion | Backup/rollback procedure must be evidenced before G50 |
 | 3 | **Env / secrets separation** | Not production-proven | Confirm staging credentials never in production; names-only inventory |
 | 4 | **Credential storage** | Not production-proven | Server-side only; no secrets in repo or logs |
@@ -187,3 +187,26 @@ Before requesting any future production gate:
 - **G48:** Production readiness planning PASS — sealed checklist; production deploy ready NO.
 - **G52-B:** Docs baseline reconciliation (planning).
 - **G53:** Production safety plan approved — planning only; supersedes any implied production-ready language from earlier gates.
+
+## G54 HSTS/proxy fix completion (2026-07-09)
+
+**Result:** PASS — HSTS/proxy fix applied on VPS.
+
+**Scope:** Caddy/proxy only. No app deploy, no API/DB/schema/source changes, no migrations, no production app deployment.
+
+**Changed runtime file:** `/opt/dca/caddy/Caddyfile`
+
+**Backup:** `/opt/dca/backups/Caddyfile.G54-HSTS.20260709-073546.bak`
+
+**Reload scope:** `dca-caddy` only.
+
+**Proof:**
+
+- `https://staging.digitalcubeagency.net` returned HTTP/2 200 with `Strict-Transport-Security: max-age=31536000; includeSubDomains`
+- `https://system.digitalcubeagency.net` returned HTTP/2 200 with `Strict-Transport-Security: max-age=31536000; includeSubDomains`
+- staging `/api/v1/health` returned OK with database ready
+- production `/api/v1/health` returned OK with database ready
+
+**Warning:** Caddy emitted a formatting warning only. `caddy validate` passed. No formatting-only change was applied during G54 to keep scope minimal.
+
+**Remaining production status:** Production readiness remains **NO**. G54 clears the HSTS/proxy blocker only. G49 dry-run and G50 production deploy are still **not executed** and require separate owner approval.

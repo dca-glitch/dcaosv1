@@ -84,7 +84,7 @@ Current behavior:
 
 ## Production And Deployment
 
-**Ground-truth notice (updated 2026-07-09 post-G53):** G46d controlled staging deploy/proof is PASS, followed by G47/G47b/G47c staging smoke/proof PASS, G48 production readiness planning PASS, and **G53 production safety plan approved (planning only)**. Production deploy ready: **NO**. G49 dry-run and G50 deploy: **not executed**. Next safety blocker: **G54** HSTS/proxy. Puriva Launch: **blocked** pending live proof gates. Staging proof used API context `/opt/dca/staging-artifacts/5e1ea5a`, host-side web target `/opt/dca/apps/dcaosv1/staging/web/dist`, staging compose `/opt/dca/apps/dcaosv1/staging/docker-compose.staging.yml`, `--env-file .env.staging`, and service `dcaosv1-staging-api`. G47c staging security baseline: `31/31 passed, 1 HSTS warning`. Production deploy attempted: NO. Any further staging/VPS/production execution requires fresh explicit owner approval.
+**Ground-truth notice (updated 2026-07-09 post-G53):** G46d controlled staging deploy/proof is PASS, followed by G47/G47b/G47c staging smoke/proof PASS, G48 production readiness planning PASS, and **G53 production safety plan approved (planning only)**. Production deploy ready: **NO**. G49 dry-run and G50 deploy: **not executed**. G54 HSTS/proxy: **PASS**. Next production path remains G49 dry-run before G50, only after owner approval. Puriva Launch: **blocked** pending live proof gates. Staging proof used API context `/opt/dca/staging-artifacts/5e1ea5a`, host-side web target `/opt/dca/apps/dcaosv1/staging/web/dist`, staging compose `/opt/dca/apps/dcaosv1/staging/docker-compose.staging.yml`, `--env-file .env.staging`, and service `dcaosv1-staging-api`. G47c staging security baseline: `31/31 passed, 1 HSTS warning`. Production deploy attempted: NO. Any further staging/VPS/production execution requires fresh explicit owner approval.
 
 **G43 note:** the later local pre-staging re-check PASS on current `main` at `a18dcc1` does not move any deferred staging, VPS, production, deploy, migration, Docker, Caddy, live provider, or live storage item out of deferred status.
 
@@ -244,7 +244,7 @@ These items are deferred but **must not block** local staging readiness planning
 |------|--------|-------|
 | Claude full-code audit | Required pre-staging gate | Separate approved block; not a substitute for validate/smoke |
 | Staging deploy and smoke proof | **G46d/G47 PASS** | G35 Phase C refresh on `5e1ea5a` PASS; G46d controlled staging deploy/proof PASS; G47 minimal proof PASS with staging root 200, staging health 200, prod health-only 200; G47b MVP staging smoke PASS with explicit target env; G47c staging security baseline 31/31 PASS with one HSTS warning; production deploy attempted NO; production app/API/DB mutation NO; further staging work deferred pending fresh owner approval |
-| HSTS proxy hardening | **G54 next safety blocker** | G47c reported HSTS missing as warning only; G53 records G54 as next gate; fix not authorized under G53 |
+| HSTS proxy hardening | **Fixed in G54** | G47c reported HSTS missing as warning only; G53 records G54 as next gate; fix not authorized under G53 |
 | Production deploy proof | Deferred | Frozen; G48/G53 planning PASS; production deploy ready NO; G49/G50 not executed |
 | Strict R2 real bucket proof | Deferred | Optional local env + smoke flag |
 | GA / GSC live sync | Deferred | Snapshot-first metrics; manual/Puriva placeholder proven |
@@ -274,3 +274,26 @@ To activate a deferred item:
 ## Current Recommendation
 
 Keep the MVP admin-controlled and local-first until the first client delivery path is stable, documented, and reviewed end to end.
+
+## G54 HSTS/proxy fix completion (2026-07-09)
+
+**Result:** PASS — HSTS/proxy fix applied on VPS.
+
+**Scope:** Caddy/proxy only. No app deploy, no API/DB/schema/source changes, no migrations, no production app deployment.
+
+**Changed runtime file:** `/opt/dca/caddy/Caddyfile`
+
+**Backup:** `/opt/dca/backups/Caddyfile.G54-HSTS.20260709-073546.bak`
+
+**Reload scope:** `dca-caddy` only.
+
+**Proof:**
+
+- `https://staging.digitalcubeagency.net` returned HTTP/2 200 with `Strict-Transport-Security: max-age=31536000; includeSubDomains`
+- `https://system.digitalcubeagency.net` returned HTTP/2 200 with `Strict-Transport-Security: max-age=31536000; includeSubDomains`
+- staging `/api/v1/health` returned OK with database ready
+- production `/api/v1/health` returned OK with database ready
+
+**Warning:** Caddy emitted a formatting warning only. `caddy validate` passed. No formatting-only change was applied during G54 to keep scope minimal.
+
+**Remaining production status:** Production readiness remains **NO**. G54 clears the HSTS/proxy blocker only. G49 dry-run and G50 production deploy are still **not executed** and require separate owner approval.

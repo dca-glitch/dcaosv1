@@ -17,7 +17,7 @@
 |------|--------|
 | Latest baseline | G52-B docs reconciliation + **G53 production safety plan approved** (planning only) |
 | Production readiness | **NO** |
-| Next gate | **G54** — HSTS/proxy fix (planning reference; does not authorize implementation) |
+| Next gate | **G49** — production dry-run/read-only proof, only after owner approval |
 | Staging | **Proven** — G46d/G47 PASS (artifact `5e1ea5a`) |
 | Production deploy | **Frozen/deferred** — no deploy until G49 dry-run + G50 explicit approval |
 | G49 / G50 | **Not executed** |
@@ -630,3 +630,26 @@ Email/outbox disabled-safe foundation is recorded as **100% local-safe foundatio
 - Stop and wait for owner decision.
 - If approved later, use the Sonnet-only prompt in `docs/runbooks/G9_ENVIRONMENT_PROOF_APPROVAL_GATE.md`.
 - If desired, continue deeper local/product UI polish only.
+
+## G54 HSTS/proxy fix completion (2026-07-09)
+
+**Result:** PASS — HSTS/proxy fix applied on VPS.
+
+**Scope:** Caddy/proxy only. No app deploy, no API/DB/schema/source changes, no migrations, no production app deployment.
+
+**Changed runtime file:** `/opt/dca/caddy/Caddyfile`
+
+**Backup:** `/opt/dca/backups/Caddyfile.G54-HSTS.20260709-073546.bak`
+
+**Reload scope:** `dca-caddy` only.
+
+**Proof:**
+
+- `https://staging.digitalcubeagency.net` returned HTTP/2 200 with `Strict-Transport-Security: max-age=31536000; includeSubDomains`
+- `https://system.digitalcubeagency.net` returned HTTP/2 200 with `Strict-Transport-Security: max-age=31536000; includeSubDomains`
+- staging `/api/v1/health` returned OK with database ready
+- production `/api/v1/health` returned OK with database ready
+
+**Warning:** Caddy emitted a formatting warning only. `caddy validate` passed. No formatting-only change was applied during G54 to keep scope minimal.
+
+**Remaining production status:** Production readiness remains **NO**. G54 clears the HSTS/proxy blocker only. G49 dry-run and G50 production deploy are still **not executed** and require separate owner approval.

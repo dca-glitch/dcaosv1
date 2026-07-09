@@ -12,7 +12,7 @@
 
 **G48 production readiness planning notice (updated 2026-07-09):** G48 production readiness planning PASS. Production deploy ready: **NO**. Production deploy attempted: **NO**. VPS/staging/prod mutation: **NO**. Refreshed runtime proof: `staging-root-http=200`, `staging-health-http=200`, `production-root-http=200`, `production-health-http=200`. Production remains frozen/deferred until separate explicit owner approval. HSTS remains a known G47c proxy hardening warning. Production deploy is not authorized by staging PASS, G47 PASS, or G48 planning PASS.
 
-**G53 production safety plan notice (updated 2026-07-09):** G53 production safety plan **approved** — planning only. Does **not** authorize implementation, G54 HSTS/proxy fix, G49 dry-run, G50 deploy, or production mutation. Production readiness: **NO**. G49/G50: **not executed**. Next safety blocker: **G54** HSTS/proxy. Puriva Launch: **blocked** pending live proof gates. Staging proven (G46d/G47); production deploy frozen. Full plan: [`G53_PRODUCTION_SAFETY_PLAN.md`](./G53_PRODUCTION_SAFETY_PLAN.md).
+**G53 production safety plan notice (updated 2026-07-09):** G53 production safety plan **approved** — planning only. Does **not** authorize implementation, G54 HSTS/proxy fix, G49 dry-run, G50 deploy, or production mutation. Production readiness: **NO**. G49/G50: **not executed**. G54 HSTS/proxy: **PASS**. Next production path remains G49 dry-run before G50, only after owner approval. Puriva Launch: **blocked** pending live proof gates. Staging proven (G46d/G47); production deploy frozen. Full plan: [`G53_PRODUCTION_SAFETY_PLAN.md`](./G53_PRODUCTION_SAFETY_PLAN.md).
 
 **Source of truth:** [`docs/STATUS.md`](../STATUS.md). **Operator runbook:** [`docs/operator/OPERATOR_RUNBOOK.md`](../operator/OPERATOR_RUNBOOK.md).
 
@@ -255,11 +255,11 @@ Staging smoke scripts may intentionally refuse to run without explicit remote ta
 | MVP staging smoke | `MVP_SMOKE_API_BASE_URL=https://staging.digitalcubeagency.net/api/v1` | PASS after retry with explicit target; `smoke-mvp-staging-exit=0` |
 | Staging security baseline | `DCA_SMOKE_REMOTE_TARGET=staging` | PASS after retry with explicit target; `smoke-staging-security-baseline-exit=0`; `31/31 passed, 1 warning(s)` |
 
-HSTS missing remains a known proxy hardening warning only — **G54** is the next production safety blocker. Do not run production probes or mutate proxy/Caddy/staging/prod unless explicitly approved in a separate bounded gate.
+HSTS proxy hardening was fixed in **G54**; HSTS is now present on staging and production. Do not run production probes or mutate proxy/Caddy/staging/prod unless explicitly approved in a separate bounded gate.
 
 ### Production readiness checklist (G48/G53 sealed planning checklist)
 
-Production deploy remains frozen/deferred. **Production readiness: NO.** G49/G50 **not executed**. Next safety blocker: **G54** HSTS/proxy. Before any production deploy or production mutation, all blockers below must be resolved:
+Production deploy remains frozen/deferred. **Production readiness: NO.** G49/G50 **not executed**. G54 HSTS/proxy: **PASS**. Next production path remains G49 dry-run before G50, only after owner approval. Before any production deploy or production mutation, all blockers below must be resolved:
 
 1. Explicit owner approval for a production deploy gate.
 2. Confirm exact artifact/commit intended for production promotion.
@@ -525,3 +525,26 @@ Next step (if GO): Request G4 approval per STAGING_LOCAL_EXECUTION_PACK.md — d
 ## 11. UI note (Block A discovery)
 
 No admin-only staging checklist UI was added. Existing surfaces (Settings read-only summary, AI Operations workflow review, AiDelivery workspace readiness panels) are module-specific, not staging GO/NO-GO. A static checklist would require new routing (`App.tsx`) — out of scope for Block A. **Docs-only.**
+
+## G54 HSTS/proxy fix completion (2026-07-09)
+
+**Result:** PASS — HSTS/proxy fix applied on VPS.
+
+**Scope:** Caddy/proxy only. No app deploy, no API/DB/schema/source changes, no migrations, no production app deployment.
+
+**Changed runtime file:** `/opt/dca/caddy/Caddyfile`
+
+**Backup:** `/opt/dca/backups/Caddyfile.G54-HSTS.20260709-073546.bak`
+
+**Reload scope:** `dca-caddy` only.
+
+**Proof:**
+
+- `https://staging.digitalcubeagency.net` returned HTTP/2 200 with `Strict-Transport-Security: max-age=31536000; includeSubDomains`
+- `https://system.digitalcubeagency.net` returned HTTP/2 200 with `Strict-Transport-Security: max-age=31536000; includeSubDomains`
+- staging `/api/v1/health` returned OK with database ready
+- production `/api/v1/health` returned OK with database ready
+
+**Warning:** Caddy emitted a formatting warning only. `caddy validate` passed. No formatting-only change was applied during G54 to keep scope minimal.
+
+**Remaining production status:** Production readiness remains **NO**. G54 clears the HSTS/proxy blocker only. G49 dry-run and G50 production deploy are still **not executed** and require separate owner approval.
