@@ -11,7 +11,7 @@
 - Client Access Admin UI/API foundation for tenant-scoped client-level grants.
 - First-client onboarding runbook for controlled local/admin MVP work.
 - Export handoff foundation.
-- Puriva delivery chain summary: SEO plan -> content draft -> image/asset package -> compliance review checkpoint -> admin review -> draft-only WordPress prepared draft handoff -> final archive/monthly report.
+- Puriva delivery chain summary: see [`docs/architecture/PURIVA_OPERATING_PACK_V1.md`](../architecture/PURIVA_OPERATING_PACK_V1.md) for canonical article/image and monthly report workflows.
 
 ## Proof
 
@@ -73,5 +73,7 @@ Local client delivery readiness is closed for MVP scope. Staging execution remai
 For new client-visible outputs in future modules, reuse the same final/approved-only archive pattern, hide internal workflow data, and document proof commands before implementation.
 
 For the local/admin operating-pack completion layer, use [`PURIVA_OPERATING_PACK_V1_GO_NO_GO.md`](../runbooks/PURIVA_OPERATING_PACK_V1_GO_NO_GO.md) as the first-client go/no-go pack.
+
+For launch blockers, article/image workflow, monthly report flow, and feedback learning, use [`docs/architecture/PURIVA_OPERATING_PACK_V1.md`](../architecture/PURIVA_OPERATING_PACK_V1.md) as the canonical architecture doc.
 
 For any future owner-approved environment proof, use [`G9_ENVIRONMENT_PROOF_APPROVAL_GATE.md`](../runbooks/G9_ENVIRONMENT_PROOF_APPROVAL_GATE.md) as the planning-only gate and Sonnet prompt reference.

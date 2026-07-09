@@ -39,9 +39,11 @@ These labels describe local readiness and documentation states only. They do not
 
 ## Operator path
 
+Canonical Puriva workflows (article/image package, monthly report, feedback learning): [`docs/architecture/PURIVA_OPERATING_PACK_V1.md`](../architecture/PURIVA_OPERATING_PACK_V1.md).
+
 Puriva SEO planning is the upstream start of the delivery chain, but it may only proceed after verified intake and approved knowledge/context are in place:
 
-Verified Puriva intake + approved KB/context -> SEO plan objectives -> content objectives -> content draft -> image/asset package -> compliance review checkpoint -> admin review -> draft-only WordPress prepared draft handoff -> final archive/monthly report -> read-only archive.
+Verified Puriva intake + approved KB/context → SEO plan objectives → content objectives → (see canonical workflow for downstream article/image/report steps).
 
 ### Required inputs
 

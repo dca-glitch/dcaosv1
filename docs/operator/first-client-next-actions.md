@@ -6,7 +6,9 @@ Before step 1, open [`PURIVA_OPERATIONAL_INTAKE_AND_COMPLIANCE.md`](../runbooks/
 
 Before the first local execution pass, also open [`PURIVA_OPERATING_PACK_V1_GO_NO_GO.md`](../runbooks/PURIVA_OPERATING_PACK_V1_GO_NO_GO.md) and confirm the approval checklist, integration decisions, and local go/no-go gates.
 
-Current baseline: local `main` is synced and validated, and local pre-staging proof was accepted. This is still local/admin work only: no deploy, no VPS migration, no production restart/release, and no confirmed staging target.
+For launch blockers and canonical workflows (article/image, monthly report, feedback learning), use [`docs/architecture/PURIVA_OPERATING_PACK_V1.md`](../architecture/PURIVA_OPERATING_PACK_V1.md).
+
+Current baseline: local `main` is synced and validated, and local pre-staging proof was accepted. Staging target `staging.digitalcubeagency.net` has prior proof history (G46d/G47); production readiness remains **NO** and deploy is frozen/deferred per G53. This list is still local/admin work only: no deploy, no VPS migration, no production restart/release, and no further staging or production action without explicit owner approval.
 
 Use the Admin Daily Operations Cockpit first so ready work, review work, and blocked work stay separated before you open deeper consoles.
 

@@ -34,7 +34,7 @@ This matrix explains what is usable now, what is partial, and what is waiting fo
 | Revenue Hub AI | Future | Planned later after shared foundations are stable. |
 | POD AI Toolkit | Future | Planned later after shared foundations are stable. |
 | Data collection / scraping | Future / deferred | Broad scraping and autonomous crawling are not active. |
-| Confirmed staging target | Closed (G1) | G1 approved: `staging.digitalcubeagency.net`; production `system.digitalcubeagency.net`; same VPS, separate stack; DNS not created; G4 not approved. Pre-staging GO/NO-GO pack: [`docs/runbooks/STAGING_READINESS.md`](../runbooks/STAGING_READINESS.md). **Ground-truth notice (G28):** `docs/STATUS.md` §2.2 separately claims G4 staging deploy completed on `5ee8389` — **unresolved/unverified**, pending owner confirmation; do not treat either claim as settled. |
+| Confirmed staging target | Closed (G1 + G46d/G47) | G1 approved: `staging.digitalcubeagency.net`; production `system.digitalcubeagency.net`; same VPS, separate stack. G46d controlled staging deploy/proof PASS and G47 staging smoke/proof PASS on artifact `5e1ea5a`. Pre-staging GO/NO-GO pack: [`docs/runbooks/STAGING_READINESS.md`](../runbooks/STAGING_READINESS.md). Production deploy frozen; see [`docs/STATUS.md`](../STATUS.md). |
 | Production deployment | Deferred | PR #13 is merged to `main`, but current `main` is 0% deployed to production. VPS/production remains frozen until separate approval. |
 
 ## Core Platform
@@ -170,4 +170,4 @@ For client delivery readiness, **MVP 1 Puriva client delivery** is locally merge
 2. admin operator path (AI Delivery, MI, publishing handoff);
 3. client delivery SOP;
 4. pre-production readiness checklist;
-5. G2/G3 local closeout, then G4 VPS staging execution only after separate owner approval — staging host is `staging.digitalcubeagency.net` (DNS not created yet).
+5. Staging proven (G46d/G47); production deploy frozen until G49/G50 explicit approval — see [`docs/runbooks/G53_PRODUCTION_SAFETY_PLAN.md`](../runbooks/G53_PRODUCTION_SAFETY_PLAN.md).

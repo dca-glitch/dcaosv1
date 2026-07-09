@@ -7,6 +7,7 @@ Draft scaffolds must preserve the same safety limits as the SEO plan: educationa
 
 Related:
 
+- [`docs/architecture/PURIVA_OPERATING_PACK_V1.md`](../architecture/PURIVA_OPERATING_PACK_V1.md) — canonical article/image workflow and launch blockers
 - `apps/api/src/core/puriva-content-production.json`
 - `apps/api/src/core/puriva-content-production.ts`
 - `apps/api/src/core/puriva-seo-plan.ts`
@@ -59,7 +60,9 @@ Content production must not introduce:
 
 ## Operator path
 
-Verified Puriva intake + approved KB/context -> SEO plan -> content draft scaffolds -> image/asset package -> compliance review checkpoint -> admin review -> draft-only WordPress prepared draft handoff -> final archive.
+Canonical end-to-end workflow (article approval, image package, upscale, social preview, WordPress handoff, learning): [`docs/architecture/PURIVA_OPERATING_PACK_V1.md`](../architecture/PURIVA_OPERATING_PACK_V1.md) — **Puriva Article + Image Package Workflow v1**.
+
+This gate covers **content draft scaffold** production only (steps 1–2 upstream of the canonical workflow).
 
 - **Context ready / missing:** Content draft scaffolds must be grounded in verified intake (brief) and approved knowledge/context. If context is missing, drafts are unapproved scaffolds and must not be treated as final client copy.
 - **No draft is final before compliance review:** Draft scaffolds, image packages, and prepared WordPress payloads are internal objectives until the compliance checkpoint and admin review pass.

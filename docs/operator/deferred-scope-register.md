@@ -1,12 +1,63 @@
 # Deferred Scope Register
 
-Status: Plain-language list of what is intentionally not active in the current local/admin MVP.
+Status: Plain-language list of what is intentionally not active in the current local/admin MVP, plus **Puriva Launch blockers** that are required before launch but not yet proven.
 
-This register prevents confusion. If something is listed here, it is not forgotten. It is intentionally waiting for a later approved block.
+This register prevents confusion. If something is listed under **Still deferred**, it is not forgotten — it is intentionally waiting for a later approved block. If something is listed under **Puriva Launch blockers**, it is required for Puriva Launch but not yet live-proven.
 
 ## Rule
 
 Deferred means: do not build, enable, deploy, or promise it as active until there is a separate approved task.
+
+Puriva Launch blocker means: required before Puriva Launch on production; must pass a live proof or product gate — not satisfied by local-only or staging config-shape proof alone.
+
+---
+
+## Puriva Launch blockers (required before launch — not yet proven)
+
+**Canonical list and workflows:** [`docs/architecture/PURIVA_OPERATING_PACK_V1.md`](../architecture/PURIVA_OPERATING_PACK_V1.md). Summary below; do not duplicate step-level workflow detail here.
+
+These are **not** "still deferred" long-term roadmap items. They are active blockers for Puriva Launch. WordPress **draft/handoff** is required; WordPress **auto-publish** remains in still-deferred below.
+
+| Blocker | Scope | Notes |
+|---------|-------|-------|
+| GA/GSC live sync proof | Live integration | Snapshot-first locally; live OAuth/sync proof required |
+| R2 real-bucket proof | Live integration | Disabled-safe locally; real bucket IO proof required |
+| Live AI provider proof | Live integration | Local deterministic default; OpenRouter opt-in proof required |
+| AI Model Research | Policy gate | Separate approved research gate |
+| AI Model Policy | Policy gate | Approved model/policy documentation before live AI |
+| Image generation proof | Live integration | Provider/workflow proof for Article+Image path |
+| Transactional notifications proof | Live integration | Workflow email delivery — **not** marketing campaigns |
+| Client Portal approval UX | Product gate | Client-safe approval path must be production-proven |
+| Task-oriented admin UX | Product gate | Operator task flows for daily delivery |
+| Article+Image workflow | Product gate | End-to-end article and image handoff |
+| Monthly Report flow | Product gate | FINAL-only client report path on target environment |
+| Feedback learning | Product gate | Client feedback loop for delivery iteration |
+
+**Puriva Launch status:** **Blocked** until the blockers above are closed with evidence. See [`G53_PRODUCTION_SAFETY_PLAN.md`](../runbooks/G53_PRODUCTION_SAFETY_PLAN.md).
+
+**Email clarification:** transactional workflow notifications (approval, handoff, delivery status) are in scope for proof; marketing email campaigns remain still-deferred.
+
+---
+
+## Still deferred (intentionally not active)
+
+These remain out of scope for current MVP and Puriva Launch v1 unless a separate approved block explicitly activates them.
+
+| Item | Notes |
+|------|-------|
+| Autonomous agents | Admin-triggered AI only |
+| WordPress auto-publish | Draft prep/handoff required for Puriva; auto-publish deferred |
+| Marketing emails | Transactional workflow email is separate proof gate |
+| SMS / WhatsApp | No messaging channel proof |
+| Full SaaS onboarding | Single-client/agency ops for Production v1 |
+| Second-client proof | First-client (Puriva) path first |
+| Big refactors | Cosmetic splits only where already scoped |
+| Advanced learning dashboard | Feedback learning is blocker; full dashboard deferred |
+| Multi-provider image optimization | Single proof path first |
+| A/B testing | Not in MVP scope |
+| Full DB-backed custom roles UI | RBAC not blocker for limited Production v1; custom roles UI deferred |
+
+---
 
 ## Client Portal And Client Actions
 
@@ -33,7 +84,7 @@ Current behavior:
 
 ## Production And Deployment
 
-**Ground-truth notice (updated 2026-07-09 post-G48 planning):** G46d controlled staging deploy/proof is PASS, followed by G47/G47b/G47c staging smoke/proof PASS and G48 production readiness planning PASS. Staging proof used API context `/opt/dca/staging-artifacts/5e1ea5a`, host-side web target `/opt/dca/apps/dcaosv1/staging/web/dist`, staging compose `/opt/dca/apps/dcaosv1/staging/docker-compose.staging.yml`, `--env-file .env.staging`, and service `dcaosv1-staging-api`. G48 refreshed runtime proof: staging root HTTP 200, staging health HTTP 200, production root HTTP 200, and production health HTTP 200. Runtime separation confirmed: shared Caddy `dca-caddy`; staging API `dcaosv1-staging-api` on `127.0.0.1:4011->4000`; staging DB `dcaosv1-staging-postgres` on `127.0.0.1:5435->5432`, healthy; production API `dcaosv1-api` on `127.0.0.1:4010->4000`; production DB `dcaosv1-postgres` on `127.0.0.1:5434->5432`, healthy. MVP staging smoke PASS with explicit `MVP_SMOKE_API_BASE_URL=https://staging.digitalcubeagency.net/api/v1`, and staging security baseline PASS with explicit `DCA_SMOKE_REMOTE_TARGET=staging` (`31/31 passed, 1 HSTS warning`). Production deploy ready: NO. Production deploy attempted: NO. Production app/API/DB mutation: NO. G48 planning involved no repo edits, commit/push, smoke, or VPS/staging/prod mutation. The deferred items below remain deferred except for the completed Phase C refresh, G46d staging proof, G47 smoke/proof, and G48 planning checklist. Any further staging/VPS/production execution requires fresh explicit owner approval. This docs update does not authorize any new VPS, staging, production, deploy, DNS, migration, SSH, Docker, or Caddy action without explicit owner instruction.
+**Ground-truth notice (updated 2026-07-09 post-G53):** G46d controlled staging deploy/proof is PASS, followed by G47/G47b/G47c staging smoke/proof PASS, G48 production readiness planning PASS, and **G53 production safety plan approved (planning only)**. Production deploy ready: **NO**. G49 dry-run and G50 deploy: **not executed**. Next safety blocker: **G54** HSTS/proxy. Puriva Launch: **blocked** pending live proof gates. Staging proof used API context `/opt/dca/staging-artifacts/5e1ea5a`, host-side web target `/opt/dca/apps/dcaosv1/staging/web/dist`, staging compose `/opt/dca/apps/dcaosv1/staging/docker-compose.staging.yml`, `--env-file .env.staging`, and service `dcaosv1-staging-api`. G47c staging security baseline: `31/31 passed, 1 HSTS warning`. Production deploy attempted: NO. Any further staging/VPS/production execution requires fresh explicit owner approval.
 
 **G43 note:** the later local pre-staging re-check PASS on current `main` at `a18dcc1` does not move any deferred staging, VPS, production, deploy, migration, Docker, Caddy, live provider, or live storage item out of deferred status.
 
@@ -55,7 +106,7 @@ Current behavior:
 - PR #13 is merged to `main`, but current `main` is 0% deployed to production;
 - **production URL:** `system.digitalcubeagency.net`;
 - **staging URL (G1 approved):** `staging.digitalcubeagency.net` — same VPS, separate staging stack; G35 Phase C refresh COMPLETE on `5e1ea5a` (see STATUS §2.2/§2.8); G46d controlled staging deploy/proof PASS; G47 staging smoke/proof PASS; artifact/API context `/opt/dca/staging-artifacts/5e1ea5a`; host-side web target `/opt/dca/apps/dcaosv1/staging/web/dist`; compose requires `--env-file .env.staging`; correct API service `dcaosv1-staging-api`; API health 200; MVP smoke PASS; staging security baseline 31/31 PASS with one HSTS warning; production untouched;
-- production is frozen unless explicitly approved; staging PASS, G47 PASS, and G48 production readiness planning PASS do not authorize production deploy.
+- production is frozen unless explicitly approved; G48/G53 planning PASS do not authorize production deploy; G49/G50 not executed; next safety blocker G54 HSTS/proxy.
 
 ## Live Analytics And External Accounts
 
@@ -193,8 +244,8 @@ These items are deferred but **must not block** local staging readiness planning
 |------|--------|-------|
 | Claude full-code audit | Required pre-staging gate | Separate approved block; not a substitute for validate/smoke |
 | Staging deploy and smoke proof | **G46d/G47 PASS** | G35 Phase C refresh on `5e1ea5a` PASS; G46d controlled staging deploy/proof PASS; G47 minimal proof PASS with staging root 200, staging health 200, prod health-only 200; G47b MVP staging smoke PASS with explicit target env; G47c staging security baseline 31/31 PASS with one HSTS warning; production deploy attempted NO; production app/API/DB mutation NO; further staging work deferred pending fresh owner approval |
-| HSTS proxy hardening | Deferred warning | G47c reported HSTS missing as warning only; handle in separate approved Caddy/proxy hardening block |
-| Production deploy proof | Deferred | Frozen; G48 production readiness planning PASS recorded, but production deploy ready remains NO pending explicit owner approval, exact artifact/commit selection, backup/rollback evidence, env separation proof, migration safety confirmation, HSTS decision, live integration gates, and G49 dry-run/read-only proof |
+| HSTS proxy hardening | **G54 next safety blocker** | G47c reported HSTS missing as warning only; G53 records G54 as next gate; fix not authorized under G53 |
+| Production deploy proof | Deferred | Frozen; G48/G53 planning PASS; production deploy ready NO; G49/G50 not executed |
 | Strict R2 real bucket proof | Deferred | Optional local env + smoke flag |
 | GA / GSC live sync | Deferred | Snapshot-first metrics; manual/Puriva placeholder proven |
 | Live provider proof | Deferred | Local deterministic default; OpenRouter opt-in |

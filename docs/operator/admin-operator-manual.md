@@ -180,7 +180,7 @@ A good monthly report explains:
 - important performance notes when available;
 - what is recommended next month.
 
-The client does not approve the monthly report in the current MVP. The admin reviews and finalizes it.
+The client does not approve the monthly report in the current MVP. The admin reviews and finalizes it. Canonical flow: [`docs/architecture/PURIVA_OPERATING_PACK_V1.md`](../architecture/PURIVA_OPERATING_PACK_V1.md) — **Puriva Monthly Report Flow v1**.
 
 ## Client Portal
 

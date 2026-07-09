@@ -2,11 +2,16 @@
 
 ## Product
 
-DCA OS v1 is a modular SaaS operating system for Digital Cube Agency.
+DCA OS Lite is an **internal agency operating system first**; a SaaS-like licensee product is a later track — not the current readiness claim.
 
-It is designed as a reusable platform foundation for future internal tools, client-facing portals, dashboards, automations, finance modules, SEO modules, AI modules, and reporting modules.
+It is a reusable platform foundation for agency operations: client-facing portals, dashboards, automations, finance modules, SEO modules, AI modules, and reporting modules.
+
+**Approved product disposition (G52-B, 2026-07-09):** [`docs/architecture/G52_OWNER_DISPOSITION.md`](./architecture/G52_OWNER_DISPOSITION.md).
+**Production readiness:** **NO** — see [`docs/STATUS.md`](./STATUS.md).
 
 ## Architecture Layers
+
+### Platform layers (generic)
 
 1. Core platform
 2. Authentication and session layer
@@ -16,8 +21,22 @@ It is designed as a reusable platform foundation for future internal tools, clie
 6. Settings layer
 7. Audit and activity layer
 8. Reusable module framework
-9. Business modules
-10. AI and automation modules
+9. Business modules (generic)
+10. AI and automation modules (generic)
+
+### Client delivery layers (configuration, not forks)
+
+Approved stack (G52-B):
+
+```text
+DCA OS Core → Generic Modules → Workflow Templates → Module Entitlements
+  → Compliance / Content / Image Profiles → Client Operating Packs → Client-safe Portal Surfaces
+```
+
+- **Core and modules stay generic.** Client-specific behavior belongs in profiles, workflow templates, entitlements, and Client Operating Packs — not Core forks.
+- **Puriva** (`puriva.id`) is the **first Client Operating Pack** — not a fork and not an architecture mistake.
+
+Canonical docs: [`docs/architecture/CLIENT_OPERATING_PACKS.md`](./architecture/CLIENT_OPERATING_PACKS.md), [`docs/architecture/PURIVA_OPERATING_PACK_V1.md`](./architecture/PURIVA_OPERATING_PACK_V1.md).
 
 ## Workspace Layout
 
@@ -106,9 +125,9 @@ A request should eventually resolve:
 
 Build reusable platform foundations first. Add business modules only after platform gates are stable.
 
-## Client / Domain Operating Model (approved 2026-06-26)
+## Client / Domain Operating Model (approved 2026-06-26; G52-B alignment 2026-07-09)
 
-Canonical architecture for how internet domains connect to the SaaS core:
+Canonical architecture for how internet domains connect to the platform core:
 
 - **Each domain = one `Client` record** (no separate `DomainProperty` entity).
 - **Tenant** = workspace / licensee (e.g. Digital Cube Agency LLC today; independent companies as future licensee tenants).
@@ -118,6 +137,10 @@ Canonical architecture for how internet domains connect to the SaaS core:
 - **Client Portal:** `client` role + `ClientUserAccess` per Client (not per project).
 
 Full specification: [`docs/architecture/CLIENT_DOMAIN_OPERATING_MODEL.md`](./architecture/CLIENT_DOMAIN_OPERATING_MODEL.md).
+
+**Client Operating Packs** configure delivery behavior per client (profiles, templates, entitlements) — see [`docs/architecture/CLIENT_OPERATING_PACKS.md`](./architecture/CLIENT_OPERATING_PACKS.md). Puriva is the first pack.
+
+**Gate separation:** DCA OS Production v1 Gate (platform deploy safety) is separate from Puriva Client-Service Launch Gate (client delivery live proofs). See [`docs/architecture/G52_OWNER_DISPOSITION.md`](./architecture/G52_OWNER_DISPOSITION.md).
 
 Approved implementation blocks 1–6 are listed in [`docs/ROADMAP.md`](./ROADMAP.md).
 

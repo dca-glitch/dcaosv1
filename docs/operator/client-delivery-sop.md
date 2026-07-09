@@ -6,6 +6,8 @@ For Puriva work, use [`PURIVA_OPERATIONAL_INTAKE_AND_COMPLIANCE.md`](../runbooks
 
 For the local/admin operating-pack completion layer, use [`PURIVA_OPERATING_PACK_V1_GO_NO_GO.md`](../runbooks/PURIVA_OPERATING_PACK_V1_GO_NO_GO.md) as the first-client go/no-go pack.
 
+For launch blockers and canonical article/image and monthly report workflows, use [`docs/architecture/PURIVA_OPERATING_PACK_V1.md`](../architecture/PURIVA_OPERATING_PACK_V1.md).
+
 If the next step is an owner decision on environment proof, read [`G9_ENVIRONMENT_PROOF_APPROVAL_GATE.md`](../runbooks/G9_ENVIRONMENT_PROOF_APPROVAL_GATE.md) first and do not treat it as execution.
 
 This document explains the standard delivery process in plain language. It is written for admins and for explaining the process to clients without technical detail.

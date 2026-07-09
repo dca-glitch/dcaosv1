@@ -6,6 +6,7 @@
 
 Related:
 
+- [`docs/architecture/PURIVA_OPERATING_PACK_V1.md`](../architecture/PURIVA_OPERATING_PACK_V1.md) — canonical launch blockers, workflows, and feedback learning
 - [`PURIVA_LOCAL_CLIENT_SETUP_FOUNDATION_GATE.md`](./PURIVA_LOCAL_CLIENT_SETUP_FOUNDATION_GATE.md)
 - [`PURIVA_MARKET_INTELLIGENCE_V1_GATE.md`](./PURIVA_MARKET_INTELLIGENCE_V1_GATE.md)
 - [`PURIVA_MEDICAL_COMPLIANCE_V1_GATE.md`](./PURIVA_MEDICAL_COMPLIANCE_V1_GATE.md)
@@ -365,6 +366,8 @@ If a page or deliverable is unverified:
 - do not use it in ads or public SEO copy
 
 ## 26) Operating Pack v1 completion
+
+**Canonical architecture:** Launch blockers, article/image workflow, monthly report flow, and feedback learning — [`docs/architecture/PURIVA_OPERATING_PACK_V1.md`](../architecture/PURIVA_OPERATING_PACK_V1.md).
 
 For the local/admin completion layer, use [`PURIVA_OPERATING_PACK_V1_GO_NO_GO.md`](./PURIVA_OPERATING_PACK_V1_GO_NO_GO.md).
 

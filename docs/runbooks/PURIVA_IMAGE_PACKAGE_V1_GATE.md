@@ -6,6 +6,7 @@
 
 Related:
 
+- [`docs/architecture/PURIVA_OPERATING_PACK_V1.md`](../architecture/PURIVA_OPERATING_PACK_V1.md) — canonical article/image workflow and launch blockers
 - `apps/api/src/core/puriva-image-package.json`
 - `apps/api/src/core/puriva-image-package.ts`
 - `apps/api/src/core/puriva-content-production.ts`
@@ -69,9 +70,9 @@ Concept counts by content type:
 
 ## Operator path
 
-Content draft -> image/asset package -> compliance review checkpoint -> draft-only WordPress handoff -> final archive.
+Canonical end-to-end workflow (hero + 2 inline images, admin/client review, regenerate, upscale, social preview, WordPress handoff): [`docs/architecture/PURIVA_OPERATING_PACK_V1.md`](../architecture/PURIVA_OPERATING_PACK_V1.md) — **Puriva Article + Image Package Workflow v1**.
 
-The image package is the bridge that completes the asset set before the WordPress draft handoff is prepared.
+This gate covers **image prompt scaffold** production only (internal admin scaffolds, not live generation).
 
 ---
 

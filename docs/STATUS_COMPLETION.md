@@ -1,5 +1,7 @@
 # DCA OS Lite — Project Completion Overview
 
+> **Historical snapshot.** Not the current readiness source of truth. Current status in [`docs/STATUS.md`](./STATUS.md) and G52/G53 planning docs ([`G53_PRODUCTION_SAFETY_PLAN.md`](./runbooks/G53_PRODUCTION_SAFETY_PLAN.md)).
+
 **Status:** Planning and operator reference
 **Last updated:** 2026-07-06 (G26 finance/audit/email local foundation closeout)
 **Reference branch:** `main` after PR #43 merge (`f8606f2`)

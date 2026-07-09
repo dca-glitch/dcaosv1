@@ -4,8 +4,11 @@
 **Use for:** Closing the first-client operating pack before any client work starts  
 **Scope:** Local/admin only. No deploy, VPS, staging, production, live provider, live WordPress publish, GA/GSC sync, or R2 IO.
 
+**Canonical architecture:** Launch blockers, article/image workflow, monthly report flow, and feedback learning are defined in [`docs/architecture/PURIVA_OPERATING_PACK_V1.md`](../architecture/PURIVA_OPERATING_PACK_V1.md). This runbook covers local/admin go/no-go only.
+
 Related:
 
+- [`docs/architecture/PURIVA_OPERATING_PACK_V1.md`](../architecture/PURIVA_OPERATING_PACK_V1.md) — canonical launch blockers and workflows
 - [`PURIVA_OPERATIONAL_INTAKE_AND_COMPLIANCE.md`](./PURIVA_OPERATIONAL_INTAKE_AND_COMPLIANCE.md)
 - [`PURIVA_LOCAL_E2E_OPERATOR_DRY_RUN.md`](./PURIVA_LOCAL_E2E_OPERATOR_DRY_RUN.md)
 - [`docs/operator/client-delivery-sop.md`](../operator/client-delivery-sop.md)

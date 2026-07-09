@@ -6,6 +6,7 @@
 
 Related:
 
+- [`docs/architecture/PURIVA_OPERATING_PACK_V1.md`](../architecture/PURIVA_OPERATING_PACK_V1.md) — canonical launch blockers; Client Portal approval UX blocker
 - `scripts/smoke-puriva-client-portal-boundary-local.mjs`
 - `scripts/lib/puriva-client-portal-boundary-helpers.mjs`
 - `scripts/lib/puriva-local-setup.mjs`

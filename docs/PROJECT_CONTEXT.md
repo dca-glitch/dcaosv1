@@ -10,7 +10,9 @@ Post-merge status: PR #43 is merged into `main` at `f8606f2`; local `main` is sy
 
 ## Product Definition
 
-DCA OS Lite is the reusable SaaS operating system foundation for Digital Cube Agency. It is the shared platform layer for DCA tools, dashboards, admin/operator workflows, finance modules, SEO/content operations, AI Delivery records, reports, and business operations.
+DCA OS Lite is the **internal agency operating system** for Digital Cube Agency (Internal Agency OS first; SaaS-like product later per G52-B). It is the shared platform layer for DCA tools, dashboards, admin/operator workflows, finance modules, SEO/content operations, AI Delivery records, reports, and business operations.
+
+**Approved disposition (G52-B, 2026-07-09):** production readiness **NO**; Puriva is the first **Client Operating Pack** on generic Core/modules — not a fork. See [`docs/architecture/G52_OWNER_DISPOSITION.md`](./architecture/G52_OWNER_DISPOSITION.md).
 
 **Approved operating model (2026-06-27):** each internet domain is one `Client` record; publication and analytics hang off Client; Digital Cube Agency LLC operates agency clients; own domains belong to independent companies that will use licensed tenant instances for Finance. **MVP 1:** Puriva client delivery — Client Portal MVP required now. See [`docs/architecture/CLIENT_DOMAIN_OPERATING_MODEL.md`](./architecture/CLIENT_DOMAIN_OPERATING_MODEL.md).
 

@@ -4,12 +4,19 @@
 
 Related:
 
+- [`docs/architecture/PURIVA_OPERATING_PACK_V1.md`](../architecture/PURIVA_OPERATING_PACK_V1.md) — canonical monthly report flow and launch blockers
 - `apps/api/src/core/puriva-monthly-report.ts`
 - `scripts/lib/puriva-monthly-report.mjs`
 - `scripts/lib/puriva-local-setup.mjs`
 - `docs/runbooks/PURIVA_CLIENT_PORTAL_BOUNDARY_GATE.md`
 
 ---
+
+## Canonical monthly report flow
+
+Admin date range → GA/GSC pull → report generation → admin review/approval → client notification → Client Portal. Full steps and rules: [`docs/architecture/PURIVA_OPERATING_PACK_V1.md`](../architecture/PURIVA_OPERATING_PACK_V1.md) — **Puriva Monthly Report Flow v1**.
+
+This gate proves **local deterministic scaffolding** only (placeholder metrics; no live GA/GSC).
 
 ## What it proves
 

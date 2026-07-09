@@ -1,11 +1,16 @@
 # Client / Domain Operating Model — DCA OS
 
-**Status:** Approved (owner decision)  
-**Date:** 2026-06-27 (portfolio + MVP priority update)  
-**Scope:** Canonical architecture for domains, clients, publication, finance separation, module portfolio, and implementation roadmap  
-**Audience:** Product owner, operators, implementers, AI agents  
+**Status:** Approved (owner decision)
+**Date:** 2026-06-27 (portfolio + MVP priority update); **G52-B alignment:** 2026-07-09
+
+**Scope:** Canonical architecture for domains, clients, publication, finance separation, module portfolio, Client Operating Packs, and implementation roadmap
+**Audience:** Product owner, operators, implementers, AI agents
 
 **Related documents:**
+
+- [`G52_OWNER_DISPOSITION.md`](./G52_OWNER_DISPOSITION.md) — G52-B product direction, gate separation, production readiness **NO**
+- [`CLIENT_OPERATING_PACKS.md`](./CLIENT_OPERATING_PACKS.md) — generic Client Operating Pack model
+- [`PURIVA_OPERATING_PACK_V1.md`](./PURIVA_OPERATING_PACK_V1.md) — Puriva Client-Service Launch requirements
 
 - [`prd.md.txt`](../../prd.md.txt) — product source of truth (updated to match this model)
 - [`docs/TENANT_MODEL.md`](../TENANT_MODEL.md) — tenant and licensee boundaries
@@ -16,7 +21,9 @@
 
 ## 1. Executive summary
 
-**Product naming:** Use **DCA OS** as the current product name. Do not use **DCA360** as current product naming except in historical context.
+**Product naming:** Use **DCA OS** / **DCA OS Lite** as the current product name. Do not use **DCA360** as current product naming except in historical context.
+
+**Product direction (G52-B, 2026-07-09):** DCA OS Lite = **Internal Agency OS first**, SaaS-like product later. Do not imply SaaS readiness or production readiness in this document.
 
 **System domains:**
 
@@ -37,9 +44,32 @@ Three organizational levels:
 
 **Client Portal:** Required now — not deferred. DCA has an active agreement with Puriva and must start client delivery. Client Portal MVP must support client-safe delivery visibility only.
 
-**MVP 1:** DCA OS Client Delivery for **Puriva** (`puriva.id`).
+**MVP 1 / first Client Operating Pack:** DCA OS Client Delivery for **Puriva** (`puriva.id`) via **Puriva Operating Pack v1** — configuration on generic Core/modules, **not a fork**. Launch blockers and workflows: [`PURIVA_OPERATING_PACK_V1.md`](./PURIVA_OPERATING_PACK_V1.md).
 
-**Approved:** 2026-06-26 (architecture); 2026-06-27 (domain portfolio + MVP priority).
+**Approved:** 2026-06-26 (architecture); 2026-06-27 (domain portfolio + MVP priority); 2026-07-09 (G52-B Client Operating Pack alignment).
+
+---
+
+## 1.1 Client Operating Packs (G52-B)
+
+Each `Client` may be operated through a **Client Operating Pack** — profiles, workflow templates, module entitlements, rules, and client-safe surfaces. Packs are **not forks** of Core or generic modules.
+
+```text
+Client (domain / agency client)
+  └── Client Operating Pack
+        ├── Compliance / content / image profiles
+        ├── Workflow templates
+        ├── Module entitlements
+        ├── AI task / risk classes
+        ├── Client-safe portal surfaces
+        └── Admin learning notes
+```
+
+- **Core and modules remain generic.** Client-specific behavior comes from pack configuration.
+- **Puriva** is the first pack. A second client later validates modularity.
+
+Full model: [`CLIENT_OPERATING_PACKS.md`](./CLIENT_OPERATING_PACKS.md).
+Gate separation: [`G52_OWNER_DISPOSITION.md`](./G52_OWNER_DISPOSITION.md).
 
 ---
 
@@ -239,11 +269,15 @@ Frontend: `ClientHubPage` module; WordPress config moves from Company Profile to
 
 ---
 
-## 11. MVP 1 — Puriva client delivery
+## 11. MVP 1 — Puriva Client Operating Pack v1
 
 **Active agency client:** `puriva.id` — beauty/clinic website, services, skincare catalog, product inquiry.
 
-**Puriva MVP requires:**
+**Operating model:** Puriva is the **first Client Operating Pack** — not a codebase fork and not an architecture mistake. Pack-specific compliance, content, image, workflow, and launch requirements are documented in [`PURIVA_OPERATING_PACK_V1.md`](./PURIVA_OPERATING_PACK_V1.md).
+
+**Historical note:** Local/admin operating pack closeout (pre-G52) lives in [`docs/runbooks/PURIVA_OPERATING_PACK_V1_GO_NO_GO.md`](../runbooks/PURIVA_OPERATING_PACK_V1_GO_NO_GO.md). That scope is local/admin only — not Puriva Client-Service Launch.
+
+**Puriva MVP / pack v1 requires:**
 
 | Capability | MVP scope |
 |------------|-----------|
@@ -460,3 +494,4 @@ Cross-reference domain against the portfolio matrix (section 13) before scoping 
 |------|--------|
 | 2026-06-26 | Initial approved architecture (owner audit + decisions 1B, independent company per own domain, multi-subdomain WordPress, finance licensee model, 6-block roadmap) |
 | 2026-06-27 | Product naming (DCA OS), system domains, domain portfolio matrix, Client Portal required (Puriva MVP 1), shared/deferred modules, implementation priority order, non-goals update; `digitalcubic.com` removed from active portfolio |
+| 2026-07-09 | G52-B alignment: Internal Agency OS first; Client Operating Pack model; Puriva as first pack; cross-links to G52 disposition and pack docs |

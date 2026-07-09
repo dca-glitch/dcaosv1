@@ -10,7 +10,9 @@
 
 **G47 staging smoke/proof notice (updated 2026-07-09):** G47 minimal staging proof PASS (`staging-root-http=200`, `staging-health-http=200`, `prod-health-only-http=200`) and staging/prod separation confirmed. G47b MVP staging smoke PASS requires explicit `MVP_SMOKE_API_BASE_URL=https://staging.digitalcubeagency.net/api/v1`; initial run without explicit target refused/failed by target guard, retry passed with `smoke-mvp-staging-exit=0`. G47c staging security baseline PASS requires explicit `DCA_SMOKE_REMOTE_TARGET=staging`; initial run without explicit target refused by remote target guard, retry passed with `smoke-staging-security-baseline-exit=0`; result `31/31 passed, 1 warning(s)`. HSTS missing is a known proxy hardening warning only. Production health probe inside smoke was skipped unless explicitly approved. No repo/source edits, deploy, VPS/staging/prod mutation, commit, or push occurred during smoke gates.
 
-**G48 production readiness planning notice (updated 2026-07-09):** G48 production readiness planning PASS. Production deploy ready: **NO**. Production deploy attempted: **NO**. VPS/staging/prod mutation: **NO**. Repo edits, commit/push, and smoke during G48 planning: **NO**. Refreshed runtime proof: `staging-root-http=200`, `staging-health-http=200`, `production-root-http=200`, `production-health-http=200`. Runtime separation confirmed: shared Caddy `dca-caddy`; staging API `dcaosv1-staging-api` on `127.0.0.1:4011->4000`; staging DB `dcaosv1-staging-postgres` on `127.0.0.1:5435->5432`, healthy; production API `dcaosv1-api` on `127.0.0.1:4010->4000`; production DB `dcaosv1-postgres` on `127.0.0.1:5434->5432`, healthy. Production remains frozen/deferred until separate explicit owner approval. HSTS remains a known G47c proxy hardening warning: fix before production promotion or explicitly defer with owner acceptance. Production deploy is not authorized by staging PASS, G47 PASS, or G48 planning PASS.
+**G48 production readiness planning notice (updated 2026-07-09):** G48 production readiness planning PASS. Production deploy ready: **NO**. Production deploy attempted: **NO**. VPS/staging/prod mutation: **NO**. Refreshed runtime proof: `staging-root-http=200`, `staging-health-http=200`, `production-root-http=200`, `production-health-http=200`. Production remains frozen/deferred until separate explicit owner approval. HSTS remains a known G47c proxy hardening warning. Production deploy is not authorized by staging PASS, G47 PASS, or G48 planning PASS.
+
+**G53 production safety plan notice (updated 2026-07-09):** G53 production safety plan **approved** — planning only. Does **not** authorize implementation, G54 HSTS/proxy fix, G49 dry-run, G50 deploy, or production mutation. Production readiness: **NO**. G49/G50: **not executed**. Next safety blocker: **G54** HSTS/proxy. Puriva Launch: **blocked** pending live proof gates. Staging proven (G46d/G47); production deploy frozen. Full plan: [`G53_PRODUCTION_SAFETY_PLAN.md`](./G53_PRODUCTION_SAFETY_PLAN.md).
 
 **Source of truth:** [`docs/STATUS.md`](../STATUS.md). **Operator runbook:** [`docs/operator/OPERATOR_RUNBOOK.md`](../operator/OPERATOR_RUNBOOK.md).
 
@@ -253,22 +255,25 @@ Staging smoke scripts may intentionally refuse to run without explicit remote ta
 | MVP staging smoke | `MVP_SMOKE_API_BASE_URL=https://staging.digitalcubeagency.net/api/v1` | PASS after retry with explicit target; `smoke-mvp-staging-exit=0` |
 | Staging security baseline | `DCA_SMOKE_REMOTE_TARGET=staging` | PASS after retry with explicit target; `smoke-staging-security-baseline-exit=0`; `31/31 passed, 1 warning(s)` |
 
-HSTS missing remains a known proxy hardening warning only. Do not run production probes or mutate proxy/Caddy/staging/prod unless explicitly approved in a separate bounded gate.
+HSTS missing remains a known proxy hardening warning only — **G54** is the next production safety blocker. Do not run production probes or mutate proxy/Caddy/staging/prod unless explicitly approved in a separate bounded gate.
 
-### Production readiness checklist (G48 sealed planning checklist)
+### Production readiness checklist (G48/G53 sealed planning checklist)
 
-Production deploy remains frozen/deferred. Before any production deploy or production mutation, all blockers below must be resolved:
+Production deploy remains frozen/deferred. **Production readiness: NO.** G49/G50 **not executed**. Next safety blocker: **G54** HSTS/proxy. Before any production deploy or production mutation, all blockers below must be resolved:
 
 1. Explicit owner approval for a production deploy gate.
 2. Confirm exact artifact/commit intended for production promotion.
 3. Confirm production backup and rollback evidence before any mutation.
 4. Confirm production env separation from staging and no staging credentials in production.
 5. Confirm schema/migration safety; stop if migration would drop tables/columns.
-6. Decide HSTS: fix before promotion or explicitly defer with owner acceptance.
-7. Keep live integrations gated unless separately approved: AI provider, WordPress, R2, GA/GSC, and email sending.
-8. Run a production deploy dry-run/read-only proof before any production mutation.
+6. **G54 HSTS/proxy fix** — next production safety blocker; fix or explicit owner deferral before promotion.
+7. Keep live integrations gated unless separately approved: AI provider, WordPress, R2, GA/GSC, and transactional email (workflow — not marketing).
+8. Run **G49** production deploy dry-run/read-only proof before any production mutation.
+9. **G50** production deploy gate only after G49 PASS and explicit owner approval.
 
-Proposed next gates: **G49 production deploy dry-run/read-only proof**, then **G50 production deploy gate only after explicit owner approval**.
+Puriva Launch remains **blocked** until live proof gates pass (see [`deferred-scope-register.md`](../operator/deferred-scope-register.md)).
+
+Full plan: [`G53_PRODUCTION_SAFETY_PLAN.md`](./G53_PRODUCTION_SAFETY_PLAN.md).
 
 Full catalog: [`LOCAL_SMOKE_MATRIX.md`](./LOCAL_SMOKE_MATRIX.md).
 
