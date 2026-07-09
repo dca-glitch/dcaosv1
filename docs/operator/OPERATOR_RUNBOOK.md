@@ -309,7 +309,7 @@ Full detail: [`docs/runbooks/EXTERNAL_INTEGRATIONS_READINESS.md`](../runbooks/EX
 - **Email = transactional workflow** (approval, handoff, delivery status) — not marketing campaigns.
 - **Puriva Launch blocked** until live proof gates pass: R2, GA/GSC, live AI, image gen, transactional notifications, and product workflow gates (see deferred-scope register).
 
-**Next gates (ordered reference):** G54 HSTS/proxy → R2 proof → GA/GSC proof → AI Model Research → AI Model Policy → live AI proof → image generation proof → transactional notifications proof → G49 dry-run → G50 deploy.
+**Next gates (ordered reference):** G49 production dry-run/read-only proof before any production deploy path. Puriva Launch proof gates remain separate: R2 proof → GA/GSC proof → AI Model Research → AI Model Policy → live AI proof → image generation proof → transactional notifications proof.
 
 **G48/G53 runtime proof (historical):** `staging-root-http=200`; `staging-health-http=200`; `production-root-http=200`; `production-health-http=200`. Runtime separation: shared Caddy `dca-caddy`; staging API `dcaosv1-staging-api` on `127.0.0.1:4011->4000`; production API `dcaosv1-api` on `127.0.0.1:4010->4000`.
 

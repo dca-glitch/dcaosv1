@@ -39,7 +39,7 @@ Detail: [`G53_PRODUCTION_SAFETY_PLAN.md`](./runbooks/G53_PRODUCTION_SAFETY_PLAN.
 | Pre-staging local closeout (G35 Phase B) | **PASS** — full local pre-staging gate passed on `217c11c`; see §2.7 |
 | Latest local pre-staging re-check (G43) | **PASS** — validate plus four focused local smokes passed on current `main`; no repo edits, commit/push/deploy, staging/VPS/prod; see §2.9 |
 | Controlled refresh (G35 Phase C) | **PASS** — staging artifact refreshed from `5ee8389` to `5e1ea5a`; local validate PASS before artifact creation; staging API recreated; DB healthy; MVP smoke PASS; production untouched; see §2.8 |
-| Production deploy | **Frozen/deferred; production deploy ready: NO** — `system.digitalcubeagency.net` unchanged; G48/G53 planning PASS do not authorize deploy. G49 dry-run and G50 deploy **not executed**. Next safety blocker: G54 HSTS/proxy. |
+| Production deploy | **Frozen/deferred; production deploy ready: NO** — `system.digitalcubeagency.net` unchanged; G48/G53 planning PASS do not authorize deploy. G49 dry-run and G50 deploy **not executed**. G54 HSTS/proxy: PASS. Next production path remains G49 dry-run before G50. |
 | Staging deploy | **G47 staging smoke/proof PASS after G46d controlled staging deploy/proof PASS.** Staging remains on artifact/API context `/opt/dca/staging-artifacts/5e1ea5a`; host-side web target `/opt/dca/apps/dcaosv1/staging/web/dist`; staging compose `/opt/dca/apps/dcaosv1/staging/docker-compose.staging.yml` with `--env-file .env.staging`; correct API service `dcaosv1-staging-api`. G47b MVP staging smoke requires explicit `MVP_SMOKE_API_BASE_URL=https://staging.digitalcubeagency.net/api/v1`; G47c staging security baseline requires explicit `DCA_SMOKE_REMOTE_TARGET=staging`. Any further staging refresh/execution/migration requires fresh explicit owner approval. |
 | Staging target (G1) | `staging.digitalcubeagency.net` exists and resolves to the same VPS as `system.digitalcubeagency.net`; staging responds with artifact context `/opt/dca/staging-artifacts/5e1ea5a`; health 200; web root 200 |
 | Default AI execution | Local deterministic; live OpenRouter opt-in only |
@@ -330,7 +330,7 @@ G46d was staging-only. No production deploy was attempted, and production app/AP
 
 **G53 blockers recorded:** HSTS/proxy security warning; rollback/restore evidence; env/secrets separation; credential storage; tenant/client boundary re-verification on target; integration truth matrix; controlled dry-run (G49); G49 before G50 sequence.
 
-**Next gates (ordered reference):** G54 HSTS/proxy → R2 proof → GA/GSC proof → AI Model Research → AI Model Policy → live AI proof → image generation proof → transactional notifications proof → G49 dry-run → G50 deploy.
+**Next gates (ordered reference):** G49 production dry-run/read-only proof before any production deploy path. Puriva Launch proof gates remain separate: R2 proof → GA/GSC proof → AI Model Research → AI Model Policy → live AI proof → image generation proof → transactional notifications proof.
 
 Full plan: [`docs/runbooks/G53_PRODUCTION_SAFETY_PLAN.md`](./runbooks/G53_PRODUCTION_SAFETY_PLAN.md).
 
@@ -470,7 +470,7 @@ Full pack: [`docs/runbooks/STAGING_READINESS.md`](./runbooks/STAGING_READINESS.m
 | Item | Status |
 |------|--------|
 | Staging deploy proof | **Phase C refresh COMPLETE** — G35 Phase C controlled refresh on `5e1ea5a` PASS; staging artifact, API, web, and MVP smoke verified; production untouched (see §2.2, §2.8); G43 local re-check PASS does not change deferred status; further staging refresh/execution requires fresh explicit owner approval |
-| Production deploy proof | Deferred — frozen; G48/G53 planning PASS recorded; production deploy ready **NO**; G49/G50 **not executed**; next safety blocker G54 HSTS/proxy; then G49 dry-run before G50 |
+| Production deploy proof | Deferred — frozen; G48/G53 planning PASS recorded; production deploy ready **NO**; G49/G50 **not executed**; G54 HSTS/proxy fixed; next production path remains G49 dry-run before G50 |
 | Puriva Launch | **Blocked** — live proof gates (R2, GA/GSC, live AI, image gen, transactional notifications) and product workflow gates required; see deferred-scope register |
 | Live AI provider / OpenRouter execution | Deferred — opt-in only |
 | Live WordPress publish | Deferred — draft prep only |
