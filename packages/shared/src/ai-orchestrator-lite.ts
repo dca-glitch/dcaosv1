@@ -188,6 +188,44 @@ export interface AiPlannedLedgerMetadata {
   ledgerStatus: "PREVIEW" | "BLOCKED";
 }
 
+/** Mocked provider execution result for completed ledger attribution (G74). No live calls in tests. */
+export interface AiMockedProviderExecutionResult {
+  ok: boolean;
+  providerKey: string;
+  model: string | null;
+  actualCostUsd?: number | null;
+  approximateInputTokens?: number | null;
+  approximateOutputTokens?: number | null;
+  liveProviderCalled: boolean;
+  safeError?: string | null;
+  runId?: string | null;
+}
+
+/** Completed ledger attribution metadata (G74) — post-execution, no secrets. */
+export interface AiCompletedLedgerMetadata {
+  ledgerVersion: "AI_BUDGET_LEDGER_V1";
+  ledgerStatus: "COMPLETED" | "BLOCKED" | "SKIPPED";
+  taskType: string;
+  routingTaskType: AiRoutingTaskType;
+  gateway: AiRoutingGateway;
+  provider: string;
+  model: string | null;
+  policyVersion: typeof AI_MODEL_ROUTING_POLICY_VERSION;
+  clientProfile: AiRoutingClientProfile | null;
+  contentChannel: AiRoutingContentChannel | null;
+  maxCostUsdPerRun: number;
+  estimatedCostUsd: number;
+  actualCostUsd: number | null;
+  approximateInputTokens: number | null;
+  approximateOutputTokens: number | null;
+  liveProviderCalled: boolean;
+  safeError: string | null;
+  overCap: boolean;
+  overCapReason: string | null;
+  workflowRunId: string | null;
+  runId: string | null;
+}
+
 export interface AiOrchestratorLitePlanRequest {
   workflow: string;
   step: string;

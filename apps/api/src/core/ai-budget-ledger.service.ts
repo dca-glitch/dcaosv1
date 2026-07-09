@@ -1,9 +1,17 @@
-import type { AiBudgetLedgerStatus, Prisma } from "@prisma/client";
+import type {
+  AiBudgetLedgerStatus,
+  Prisma
+} from "@prisma/client";
 import { createPrismaClient } from "../../../../packages/data/src/client";
-import type { AiModelRouteAudit, AiPlannedLedgerMetadata } from "@dca-os-v1/shared";
-import { AI_ORCHESTRATOR_LITE_VERSION } from "@dca-os-v1/shared";
-import { buildPeriodKey } from "./ai-budget-guard.service";
-import { normalizeClientProfile, normalizeContentChannel } from "./ai-model-routing-policy.service";
+import type {
+  AiCompletedLedgerMetadata,
+  AiMockedProviderExecutionResult,
+  AiModelRouteAudit,
+  AiPlannedLedgerMetadata
+} from "@dca-os-v1/shared";
+import { AI_MODEL_ROUTING_POLICY_VERSION, AI_ORCHESTRATOR_LITE_VERSION } from "@dca-os-v1/shared";
+import { PURIVA_AI_MONTHLY_CAP_USD, buildPeriodKey } from "./ai-budget-guard.service";
+import { normalizeClientProfile, normalizeContentChannel, resolveModelRoute } from "./ai-model-routing-policy.service";
 
 export const AI_BUDGET_LEDGER_VERSION = "AI_BUDGET_LEDGER_V1";
 
@@ -34,6 +42,271 @@ export function buildPlannedLedgerMetadata(input: {
     liveProviderCalled: false,
     ledgerStatus: input.canExecute ? "PREVIEW" : "BLOCKED"
   };
+}
+
+export interface PrepareCompletedLedgerAttributionInput {
+  orchestratorTaskType: string;
+  clientProfile?: string | null;
+  contentChannel?: string | null;
+  routingAudit?: AiModelRouteAudit | null;
+  plannedLedgerMetadata?: AiPlannedLedgerMetadata | null;
+  providerExecution: AiMockedProviderExecutionResult;
+  estimatedCostUsd?: number | null;
+  workflowRunId?: string | null;
+}
+
+export interface CompletedLedgerAttributionResult {
+  ok: boolean;
+  blockedReason: string | null;
+  metadata: AiCompletedLedgerMetadata | null;
+  ledgerStatus: AiBudgetLedgerStatus;
+}
+
+function refuseCompletedAttribution(
+  reason: string,
+  ledgerStatus: AiBudgetLedgerStatus = "BLOCKED"
+): CompletedLedgerAttributionResult {
+  return {
+    ok: false,
+    blockedReason: reason,
+    metadata: null,
+    ledgerStatus
+  };
+}
+
+export function buildCompletedLedgerMetadata(input: {
+  orchestratorTaskType: string;
+  clientProfile?: string | null;
+  contentChannel?: string | null;
+  routingAudit: AiModelRouteAudit;
+  providerExecution: AiMockedProviderExecutionResult;
+  estimatedCostUsd: number;
+  ledgerStatus: "COMPLETED" | "BLOCKED" | "SKIPPED";
+  actualCostUsd: number | null;
+  overCap: boolean;
+  overCapReason: string | null;
+  workflowRunId?: string | null;
+}): AiCompletedLedgerMetadata {
+  return {
+    ledgerVersion: AI_BUDGET_LEDGER_VERSION,
+    ledgerStatus: input.ledgerStatus,
+    taskType: input.orchestratorTaskType,
+    routingTaskType: input.routingAudit.routingTaskType,
+    gateway: input.routingAudit.gateway,
+    provider: input.providerExecution.providerKey,
+    model: input.providerExecution.model,
+    policyVersion: input.routingAudit.policyVersion,
+    clientProfile: normalizeClientProfile(input.clientProfile),
+    contentChannel: normalizeContentChannel(input.contentChannel ?? "website"),
+    maxCostUsdPerRun: input.routingAudit.maxCostUsdPerRun,
+    estimatedCostUsd: input.estimatedCostUsd,
+    actualCostUsd: input.actualCostUsd,
+    approximateInputTokens: input.providerExecution.approximateInputTokens ?? null,
+    approximateOutputTokens:
+      input.providerExecution.approximateOutputTokens ?? input.routingAudit.maxOutputTokens ?? null,
+    liveProviderCalled: input.providerExecution.liveProviderCalled,
+    safeError: input.providerExecution.safeError ?? null,
+    overCap: input.overCap,
+    overCapReason: input.overCapReason,
+    workflowRunId: input.workflowRunId ?? null,
+    runId: input.providerExecution.runId ?? null
+  };
+}
+
+export function prepareCompletedLedgerAttribution(
+  input: PrepareCompletedLedgerAttributionInput
+): CompletedLedgerAttributionResult {
+  const routingAudit =
+    input.routingAudit ??
+    (input.plannedLedgerMetadata
+      ? resolveModelRoute({
+          orchestratorTaskType: input.orchestratorTaskType,
+          clientProfile: input.clientProfile,
+          contentChannel: input.contentChannel ?? "website"
+        }).audit
+      : null);
+
+  if (!routingAudit?.policyVersion) {
+    return refuseCompletedAttribution(
+      "Routing policy metadata is required for completed ledger attribution."
+    );
+  }
+
+  if (routingAudit.policyVersion !== AI_MODEL_ROUTING_POLICY_VERSION) {
+    return refuseCompletedAttribution("Unsupported routing policy version for completed attribution.");
+  }
+
+  if (typeof input.providerExecution.liveProviderCalled !== "boolean") {
+    return refuseCompletedAttribution("liveProviderCalled must be explicit for completed attribution.");
+  }
+
+  if (routingAudit.blocked) {
+    return refuseCompletedAttribution(
+      routingAudit.blockedReason ?? "Route is blocked; completed attribution refused.",
+      "BLOCKED"
+    );
+  }
+
+  const estimatedCostUsd =
+    input.estimatedCostUsd ??
+    input.plannedLedgerMetadata?.estimatedCostUsd ??
+    routingAudit.maxCostUsdPerRun;
+
+  if (!(routingAudit.maxCostUsdPerRun >= 0)) {
+    return refuseCompletedAttribution("Route maxCostUsdPerRun metadata is required.");
+  }
+
+  if (routingAudit.primaryModel && input.providerExecution.ok) {
+    if (input.providerExecution.model !== routingAudit.primaryModel) {
+      return refuseCompletedAttribution(
+        "Provider model does not match backend routing policy model."
+      );
+    }
+  }
+
+  const safeError = input.providerExecution.safeError ?? null;
+  let ledgerStatus: "COMPLETED" | "BLOCKED" | "SKIPPED" = "COMPLETED";
+  let actualCostUsd: number | null = null;
+  let overCap = false;
+  let overCapReason: string | null = null;
+
+  if (!input.providerExecution.ok || safeError) {
+    ledgerStatus = safeError ? "BLOCKED" : "SKIPPED";
+    return {
+      ok: true,
+      blockedReason: safeError,
+      metadata: buildCompletedLedgerMetadata({
+        orchestratorTaskType: input.orchestratorTaskType,
+        clientProfile: input.clientProfile,
+        contentChannel: input.contentChannel,
+        routingAudit,
+        providerExecution: input.providerExecution,
+        estimatedCostUsd,
+        ledgerStatus,
+        actualCostUsd: null,
+        overCap: false,
+        overCapReason: null,
+        workflowRunId: input.workflowRunId
+      }),
+      ledgerStatus
+    };
+  }
+
+  if (input.providerExecution.actualCostUsd != null) {
+    const rawActual = Number(input.providerExecution.actualCostUsd);
+    if (
+      routingAudit.maxCostUsdPerRun > 0 &&
+      rawActual > routingAudit.maxCostUsdPerRun
+    ) {
+      overCap = true;
+      overCapReason = `Actual cost $${rawActual} exceeds route cap $${routingAudit.maxCostUsdPerRun}.`;
+      ledgerStatus = "BLOCKED";
+    } else {
+      actualCostUsd = rawActual;
+    }
+  }
+
+  if (overCap) {
+    return {
+      ok: true,
+      blockedReason: overCapReason,
+      metadata: buildCompletedLedgerMetadata({
+        orchestratorTaskType: input.orchestratorTaskType,
+        clientProfile: input.clientProfile,
+        contentChannel: input.contentChannel,
+        routingAudit,
+        providerExecution: input.providerExecution,
+        estimatedCostUsd,
+        ledgerStatus,
+        actualCostUsd: null,
+        overCap,
+        overCapReason,
+        workflowRunId: input.workflowRunId
+      }),
+      ledgerStatus
+    };
+  }
+
+  return {
+    ok: true,
+    blockedReason: null,
+    metadata: buildCompletedLedgerMetadata({
+      orchestratorTaskType: input.orchestratorTaskType,
+      clientProfile: input.clientProfile,
+      contentChannel: input.contentChannel,
+      routingAudit,
+      providerExecution: input.providerExecution,
+      estimatedCostUsd,
+      ledgerStatus: "COMPLETED",
+      actualCostUsd,
+      overCap: false,
+      overCapReason: null,
+      workflowRunId: input.workflowRunId
+    }),
+    ledgerStatus: "COMPLETED"
+  };
+}
+
+export function isCompletedAttributionCompatibleWithMonthlyCap(
+  metadata: AiCompletedLedgerMetadata,
+  monthlyCapUsd = PURIVA_AI_MONTHLY_CAP_USD
+): boolean {
+  const spend = metadata.actualCostUsd ?? metadata.estimatedCostUsd;
+  return metadata.maxCostUsdPerRun < monthlyCapUsd && spend <= monthlyCapUsd;
+}
+
+export async function recordCompletedAiLedgerEntry(input: {
+  tenantId: string;
+  clientId?: string | null;
+  aiDeliveryProjectId?: string | null;
+  workflowRunId?: string | null;
+  stepReference?: string | null;
+  agentRole?: string | null;
+  attribution: CompletedLedgerAttributionResult;
+}): Promise<{ recorded: boolean; reason: string | null }> {
+  if (!input.attribution.ok || !input.attribution.metadata) {
+    return {
+      recorded: false,
+      reason: input.attribution.blockedReason ?? "Completed attribution not ready for recording."
+    };
+  }
+
+  const metadata = input.attribution.metadata;
+  await recordAiBudgetLedgerEntry({
+    tenantId: input.tenantId,
+    clientId: input.clientId,
+    aiDeliveryProjectId: input.aiDeliveryProjectId,
+    workflowRunId: input.workflowRunId ?? metadata.workflowRunId,
+    provider: metadata.provider,
+    taskType: metadata.taskType,
+    agentRole: input.agentRole ?? null,
+    estimatedCostUsd: metadata.estimatedCostUsd,
+    actualCostUsd: metadata.actualCostUsd,
+    status: input.attribution.ledgerStatus,
+    liveProviderCalled: metadata.liveProviderCalled,
+    stepReference: input.stepReference ?? null,
+    metadata: {
+      completedAttribution: {
+        ledgerStatus: metadata.ledgerStatus,
+        routingTaskType: metadata.routingTaskType,
+        gateway: metadata.gateway,
+        model: metadata.model,
+        policyVersion: metadata.policyVersion,
+        clientProfile: metadata.clientProfile,
+        contentChannel: metadata.contentChannel,
+        maxCostUsdPerRun: metadata.maxCostUsdPerRun,
+        approximateInputTokens: metadata.approximateInputTokens,
+        approximateOutputTokens: metadata.approximateOutputTokens,
+        liveProviderCalled: metadata.liveProviderCalled,
+        safeError: metadata.safeError,
+        overCap: metadata.overCap,
+        overCapReason: metadata.overCapReason,
+        runId: metadata.runId
+      }
+    }
+  });
+
+  return { recorded: true, reason: null };
 }
 
 export interface AiBudgetLedgerRecordInput {

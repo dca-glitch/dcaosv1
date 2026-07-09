@@ -1,7 +1,7 @@
-# AI Model Routing Policy (G72 + G73)
+# AI Model Routing Policy (G72 + G73 + G74)
 
-**Status:** Implemented on `main` (G72 policy, G73 attribution proof) — backend policy selects models per task type.
-**Live execution:** Not part of G72/G73 — dry-run/preview only.
+**Status:** Implemented on `main` (G72 policy, G73 attribution proof, G74 completed ledger readiness).
+**Live execution:** G72–G74 are no-live — dry-run/preview and mocked completed attribution only.
 **Approved live text model (local proof):** `anthropic/claude-haiku-4.5` via OpenRouter.
 
 ## Principle
@@ -50,9 +50,10 @@ Do **not** use `openrouter/auto` for Puriva or medical/compliance content.
 - Preview/dry-run responses include `modelRouting` audit metadata (no secrets)
 - Preview/dry-run responses include `plannedLedgerMetadata` for budget attribution (G73)
 - `liveProviderCalled` remains `false` in G72/G73 dry-run/preview paths
+- G74 adds completed attribution helpers for post-execution ledger rows (mocked in tests only)
 - Registry exposes `modelRoutingPolicy` snapshot for admin visibility
 
-## Route metadata propagation (G73)
+## Route metadata propagation (G73 + G74)
 
 | Layer | Field | Source |
 |-------|-------|--------|
@@ -62,8 +63,35 @@ Do **not** use `openrouter/auto` for Puriva or medical/compliance content.
 | Budget guard | `budget.estimatedStepCostUsd` | Route `maxCostUsdPerRun` when provided; else step estimate table |
 | Persistent ledger (preview endpoint) | `metadata.modelRouting` | Written on `POST /material-routing-preview` with PREVIEW/BLOCKED status |
 | Workflow dry-run | `adapter.plan` + `adapter.plannedLedgerMetadata` | Adapter exposes plan metadata; no separate ledger write in dry-run path |
+| Completed attribution (G74) | `completedLedgerMetadata` | `prepareCompletedLedgerAttribution()` + `recordCompletedAiLedgerEntry()` — COMPLETED/BLOCKED/SKIPPED |
 
-**Deferred (G74+):** Live workflow execution spend attribution (`COMPLETED` ledger rows with `actualCostUsd`) after approved live provider calls.
+### Metadata layers
+
+| Layer | Status | `liveProviderCalled` | Persisted |
+|-------|--------|----------------------|-----------|
+| Preview (`modelRouting`) | G73 COMPLETE | `false` | Yes — preview endpoint |
+| Planned (`plannedLedgerMetadata`) | G73 COMPLETE | `false` | No — response only |
+| Completed (`completedLedgerMetadata`) | G74 READY (no-live) | explicit per mock | Via `recordCompletedAiLedgerEntry()` when wired |
+
+### Completed attribution fields (G74)
+
+- `ledgerStatus`: `COMPLETED` | `BLOCKED` | `SKIPPED`
+- `taskType`, `routingTaskType`, `gateway`, `provider`, `model`, `policyVersion`
+- `clientProfile`, `contentChannel`, `maxCostUsdPerRun`
+- `estimatedCostUsd`, `actualCostUsd` (when confirmed and within route cap)
+- `approximateInputTokens`, `approximateOutputTokens`
+- `liveProviderCalled` (explicit; mocked `true` allowed in unit tests only)
+- `safeError`, `overCap`, `overCapReason`
+- `workflowRunId`, `runId`
+
+### actualCostUsd limitations
+
+- Recorded only when provider execution reports success and cost is within `maxCostUsdPerRun`.
+- If `actualCostUsd > maxCostUsdPerRun`, attribution is `BLOCKED` with `overCap=true` and `actualCostUsd` is not recorded.
+- If `safeError` is present, status is `BLOCKED` and `actualCostUsd` is not recorded.
+- Skipped local execution (`ok=false`, no `safeError`) records `SKIPPED` with `liveProviderCalled=false`.
+
+**Deferred (G75):** Actual live provider execution with real `actualCostUsd` proof after controlled OpenRouter call.
 
 ## Orchestrator task → routing task mapping
 
@@ -91,7 +119,7 @@ Unit tests: `ai-model-routing-policy.service.test.ts`, `ai-budget-guard.service.
 
 ## Next gate
 
-- **G74:** live spend ledger attribution after workflow execution, or additional model approval matrix
+- **G75:** controlled live spend attribution proof after approved provider execution, or additional model approval matrix
 
 ## Related docs
 

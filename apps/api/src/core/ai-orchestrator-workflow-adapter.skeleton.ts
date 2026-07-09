@@ -1,12 +1,14 @@
 import type {
   AiContentDraftBatchPlan,
+  AiMockedProviderExecutionResult,
   AiOrchestratorLitePlanRequest,
   AiOrchestratorLitePlanResult,
   AiPlannedLedgerMetadata,
   AiResearchPackOutput,
   AiSeoPlanOutput
 } from "@dca-os-v1/shared";
-import { planAiOrchestratorLiteStep } from "./ai-orchestrator-lite.service";
+import { planAiOrchestratorLiteStep, finalizeOrchestratorLiteLedgerAttribution } from "./ai-orchestrator-lite.service";
+import type { CompletedLedgerAttributionResult } from "./ai-budget-ledger.service";
 import { resolveDryRunContractForTaskType } from "./ai-workflow-dry-run-contracts.service";
 
 /**
@@ -45,6 +47,11 @@ export interface AiOrchestratorWorkflowAdapterResult {
   canProceedToExecution: boolean;
   blockedReason: string | null;
   executionDeferred: true;
+}
+
+export interface AiOrchestratorWorkflowCompletedAttributionResult {
+  adapter: AiOrchestratorWorkflowAdapterResult;
+  completedLedgerAttribution: CompletedLedgerAttributionResult;
 }
 
 function buildDryRunOutput(taskType: string): AiOrchestratorWorkflowAdapterDryRunOutput {
@@ -97,4 +104,30 @@ export function planWorkflowStepWithOrchestrator(
     blockedReason: plan.blockedReason,
     executionDeferred: true
   };
+}
+
+export function completeWorkflowStepLedgerAttribution(input: {
+  workflow: string;
+  step: string;
+  agentRole: AiOrchestratorLitePlanRequest["agentRole"];
+  taskType: AiOrchestratorLitePlanRequest["taskType"];
+  clientId?: string | null;
+  operatingPackKey?: string | null;
+  briefApproved?: boolean;
+  spentThisPeriodUsd?: number;
+  contentChannel?: string | null;
+  workflowReference?: string | null;
+  stepReference?: string | null;
+  workflowRunId?: string | null;
+  providerExecution: AiMockedProviderExecutionResult;
+}): AiOrchestratorWorkflowCompletedAttributionResult {
+  const adapter = planWorkflowStepWithOrchestrator(input);
+  const completedLedgerAttribution = finalizeOrchestratorLiteLedgerAttribution({
+    plan: adapter.plan,
+    providerExecution: input.providerExecution,
+    workflowRunId: input.workflowRunId,
+    contentChannel: input.contentChannel,
+    operatingPackKey: input.operatingPackKey
+  });
+  return { adapter, completedLedgerAttribution };
 }

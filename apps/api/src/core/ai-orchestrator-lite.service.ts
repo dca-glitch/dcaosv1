@@ -1,6 +1,6 @@
-import type { AiModelRouteAudit } from "@dca-os-v1/shared";
 import type {
   AiMaterialRoutingPreview,
+  AiMockedProviderExecutionResult,
   AiOrchestratorLitePlanRequest,
   AiOrchestratorLitePlanResult,
   AiRunAuditMetadata
@@ -9,7 +9,11 @@ import { AI_ORCHESTRATOR_LITE_VERSION } from "@dca-os-v1/shared";
 import { getAiAgentRoleDefinition } from "./ai-agent-role-registry";
 import { applyAiMaterialPolicy, buildDefaultAiSafeMaterialSet } from "./ai-material-policy.guard";
 import { buildAiBudgetSnapshot, isAiBudgetBlocked } from "./ai-budget-guard.service";
-import { buildPlannedLedgerMetadata } from "./ai-budget-ledger.service";
+import {
+  buildPlannedLedgerMetadata,
+  prepareCompletedLedgerAttribution,
+  type CompletedLedgerAttributionResult
+} from "./ai-budget-ledger.service";
 import { resolveModelRoute, listAiModelRoutingPolicySnapshot } from "./ai-model-routing-policy.service";
 import { AI_AGENT_ROLE_REGISTRY } from "./ai-agent-role-registry";
 import { listAiProviderRegistrySnapshot, resolveProviderForRole } from "./ai-provider-registry.service";
@@ -147,6 +151,25 @@ export function getAiOrchestratorLiteRegistrySnapshot(): {
     providerRegistry: listAiProviderRegistrySnapshot(),
     modelRoutingPolicy: listAiModelRoutingPolicySnapshot()
   };
+}
+
+export function finalizeOrchestratorLiteLedgerAttribution(input: {
+  plan: AiOrchestratorLitePlanResult;
+  providerExecution: AiMockedProviderExecutionResult;
+  workflowRunId?: string | null;
+  contentChannel?: string | null;
+  operatingPackKey?: string | null;
+}): CompletedLedgerAttributionResult {
+  return prepareCompletedLedgerAttribution({
+    orchestratorTaskType: input.plan.plannedLedgerMetadata.taskType,
+    clientProfile: input.operatingPackKey ?? input.plan.plannedLedgerMetadata.clientProfile,
+    contentChannel: input.contentChannel ?? input.plan.plannedLedgerMetadata.contentChannel,
+    routingAudit: input.plan.preview.modelRouting,
+    plannedLedgerMetadata: input.plan.plannedLedgerMetadata,
+    providerExecution: input.providerExecution,
+    estimatedCostUsd: input.plan.plannedLedgerMetadata.estimatedCostUsd,
+    workflowRunId: input.workflowRunId ?? null
+  });
 }
 
 function buildBlockedPreview(

@@ -161,7 +161,9 @@ Current behavior:
 
 ## AI Provider And Automation
 
-**G73 (routing attribution dry-run proof):** `modelRouting` and `plannedLedgerMetadata` propagate through orchestrator preview/dry-run without live AI calls. Preview endpoint persists routing metadata to ledger; workflow dry-run exposes planned metadata only. **Live spend attribution** (`COMPLETED` rows with `actualCostUsd` after provider execution) remains deferred to G74+.
+**G73 (routing attribution dry-run proof):** `modelRouting` and `plannedLedgerMetadata` propagate through orchestrator preview/dry-run without live AI calls. Preview endpoint persists routing metadata to ledger; workflow dry-run exposes planned metadata only.
+
+**G74 (completed ledger attribution readiness, no-live):** `prepareCompletedLedgerAttribution`, `buildCompletedLedgerMetadata`, and `recordCompletedAiLedgerEntry` implement COMPLETED/BLOCKED/SKIPPED attribution with mocked provider results in unit tests. Persistent completed rows can be recorded when execution path is wired. **Actual live spend proof remains deferred to G75.**
 
 Deferred:
 
@@ -326,7 +328,7 @@ Keep the MVP admin-controlled and local-first until the first client delivery pa
 | Gate | Outcome |
 |------|---------|
 | G57 docs closeout | DONE — `G57_G68_PRELIVE_READINESS.md`, STATUS, this register |
-| G58 persistent AI budget ledger | DONE locally — `AiBudgetLedgerEntry`; dry-run preview records routing metadata in `metadata.modelRouting`; live spend attribution deferred (G74) |
+| G58 persistent AI budget ledger | DONE locally — `AiBudgetLedgerEntry`; preview records routing metadata; G74 completed attribution helpers ready (no-live); live spend proof deferred G75 |
 | G59 workflow adapter dry-run | DONE — contract placeholders; no live execution |
 | G60 admin operator wiring | DONE — kill switch, ledger, events, boundaries in admin panel |
 | G61 notification contracts | DONE — extended types; no-send internal recorder; live email deferred |

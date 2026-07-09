@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { planWorkflowStepWithOrchestrator } from "./ai-orchestrator-workflow-adapter.skeleton";
+import { planWorkflowStepWithOrchestrator, completeWorkflowStepLedgerAttribution } from "./ai-orchestrator-workflow-adapter.skeleton";
 import { resolveDryRunContractForTaskType } from "./ai-workflow-dry-run-contracts.service";
 
 describe("ai-orchestrator-workflow-adapter", () => {
@@ -61,6 +61,33 @@ describe("ai-orchestrator-workflow-adapter", () => {
     assert.equal(result.executionDeferred, true);
     assert.ok(result.dryRunOutput.researchPack);
     assert.equal(result.plan.preview.audit.liveProviderCalled, false);
+  });
+
+  it("completeWorkflowStepLedgerAttribution uses mocked provider result without live call", () => {
+    const result = completeWorkflowStepLedgerAttribution({
+      workflow: "puriva_content_production",
+      step: "research_pack",
+      agentRole: "research_agent",
+      taskType: "research_pack",
+      operatingPackKey: "puriva",
+      briefApproved: true,
+      workflowRunId: "wf-adapter-mock",
+      providerExecution: {
+        ok: true,
+        providerKey: "openrouter",
+        model: "anthropic/claude-haiku-4.5",
+        actualCostUsd: 0.08,
+        approximateInputTokens: 500,
+        approximateOutputTokens: 200,
+        liveProviderCalled: true,
+        runId: "adapter-mock-run"
+      }
+    });
+    assert.equal(result.adapter.executionDeferred, true);
+    assert.equal(result.adapter.plan.preview.audit.liveProviderCalled, false);
+    assert.equal(result.completedLedgerAttribution.ledgerStatus, "COMPLETED");
+    assert.equal(result.completedLedgerAttribution.metadata?.taskType, "research_pack");
+    assert.equal(result.completedLedgerAttribution.metadata?.maxCostUsdPerRun, 0.3);
   });
 
   it("blocks when brief is not approved", () => {

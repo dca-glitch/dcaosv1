@@ -1,6 +1,6 @@
 # DCA OS Lite — Status (Source of Truth)
 
-**Last updated:** 2026-07-09 (G73 — routing attribution dry-run proof)
+**Last updated:** 2026-07-09 (G74 — completed ledger attribution readiness, no-live)
 **G55 pre-live readiness:** [`docs/runbooks/G55_PRELIVE_READINESS.md`](./runbooks/G55_PRELIVE_READINESS.md)
 **G56 pre-live readiness:** [`docs/runbooks/G56_PRELIVE_READINESS.md`](./runbooks/G56_PRELIVE_READINESS.md)
 **G57–G68 pre-live readiness:** [`docs/runbooks/G57_G68_PRELIVE_READINESS.md`](./runbooks/G57_G68_PRELIVE_READINESS.md)
@@ -33,9 +33,10 @@
 | Latest baseline | G57–G68 pre-live completion on `main` — persistent budget ledger, workflow dry-run, notification contracts, admin operator wiring, integration boundaries |
 | **G69 merge** | **DONE** — G57–G68 fast-forward merged to `main`; final commit `64bfd06` |
 | Production readiness | **NO** |
-| Next gate | **G74** — live spend ledger attribution after workflow execution, or additional model approval matrix |
+| Next gate | **G75** — controlled live spend attribution proof, or additional model approval matrix |
 | G72 model routing | **Implemented** — backend policy per task type; approved model `anthropic/claude-haiku-4.5`; no live call in G72 |
 | G73 routing attribution | **Local PASS** — dry-run/preview `modelRouting` + `plannedLedgerMetadata`; budget guard route cap wired; persistent preview ledger records routing metadata; live spend attribution deferred |
+| G74 completed ledger attribution | **Implemented (no-live)** — `buildCompletedLedgerMetadata`, `prepareCompletedLedgerAttribution`, `recordCompletedAiLedgerEntry`; mocked provider execution in unit tests only; actual live spend proof deferred to G75 |
 | G55 pre-live | **Local PASS** — docs + disabled-safe orchestration foundation; no live providers/deploy |
 | G56 pre-live | **Local PASS** — expanded pre-live groundwork; admin orchestrator UI; orchestrator smoke; no live providers/deploy |
 | G57–G68 pre-live | **On main** (`64bfd06`) — persistent ledger, dry-run adapter, operator visibility, go/no-go docs; live proofs **BLOCKED** |

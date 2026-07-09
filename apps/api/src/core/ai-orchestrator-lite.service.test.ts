@@ -2,7 +2,7 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { applyAiMaterialPolicy } from "./ai-material-policy.guard";
 import { buildAiBudgetSnapshot, isAiBudgetBlocked, PURIVA_AI_MONTHLY_CAP_USD } from "./ai-budget-guard.service";
-import { planAiOrchestratorLiteStep } from "./ai-orchestrator-lite.service";
+import { planAiOrchestratorLiteStep, finalizeOrchestratorLiteLedgerAttribution } from "./ai-orchestrator-lite.service";
 import { resolveProviderForRole } from "./ai-provider-registry.service";
 import { getPurivaAiPolicyProfile } from "./puriva-ai-policy-profile";
 import { runAllComplianceFixturesLocally } from "./ai-compliance-review.fixtures";
@@ -204,6 +204,74 @@ describe("ai-orchestrator-lite foundation", () => {
     });
     assert.equal(result.canProceedToExecution, false);
     assert.match(result.blockedReason ?? "", /not approved/i);
+  });
+
+  it("dry-run preview keeps liveProviderCalled false", () => {
+    const plan = planAiOrchestratorLiteStep({
+      workflow: "puriva_content_production",
+      step: "research_pack",
+      agentRole: "research_agent",
+      taskType: "research_pack",
+      operatingPackKey: "puriva"
+    });
+    assert.equal(plan.preview.audit.liveProviderCalled, false);
+    assert.equal(plan.plannedLedgerMetadata.liveProviderCalled, false);
+  });
+
+  it("finalizeOrchestratorLiteLedgerAttribution records mocked COMPLETED metadata", () => {
+    const plan = planAiOrchestratorLiteStep({
+      workflow: "puriva_content_production",
+      step: "research_pack",
+      agentRole: "research_agent",
+      taskType: "research_pack",
+      operatingPackKey: "puriva"
+    });
+    const completed = finalizeOrchestratorLiteLedgerAttribution({
+      plan,
+      operatingPackKey: "puriva",
+      workflowRunId: "wf-mock-001",
+      providerExecution: {
+        ok: true,
+        providerKey: "openrouter",
+        model: "anthropic/claude-haiku-4.5",
+        actualCostUsd: 0.11,
+        approximateInputTokens: 900,
+        approximateOutputTokens: 300,
+        liveProviderCalled: true,
+        safeError: null,
+        runId: "mock-provider-run"
+      }
+    });
+    assert.equal(completed.ok, true);
+    assert.equal(completed.ledgerStatus, "COMPLETED");
+    assert.equal(completed.metadata?.routingTaskType, "research_pack");
+    assert.equal(completed.metadata?.gateway, "openrouter");
+    assert.equal(completed.metadata?.policyVersion, "AI_MODEL_ROUTING_POLICY_V1");
+    assert.equal(completed.metadata?.clientProfile, "puriva");
+    assert.equal(completed.metadata?.workflowRunId, "wf-mock-001");
+    assert.equal(completed.metadata?.liveProviderCalled, true);
+  });
+
+  it("finalizeOrchestratorLiteLedgerAttribution rejects mismatched model", () => {
+    const plan = planAiOrchestratorLiteStep({
+      workflow: "puriva_content_production",
+      step: "article_draft",
+      agentRole: "content_drafting_agent",
+      taskType: "article_draft",
+      operatingPackKey: "puriva"
+    });
+    const completed = finalizeOrchestratorLiteLedgerAttribution({
+      plan,
+      operatingPackKey: "puriva",
+      providerExecution: {
+        ok: true,
+        providerKey: "openrouter",
+        model: "openrouter/auto",
+        liveProviderCalled: true
+      }
+    });
+    assert.equal(completed.ok, false);
+    assert.match(completed.blockedReason ?? "", /does not match/i);
   });
 
   it("passes kill switch disabled-safe invariant", () => {
