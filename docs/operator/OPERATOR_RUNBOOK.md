@@ -1,6 +1,6 @@
 # DCA OS Lite — Operator Runbook (Consolidated)
 
-**Status:** Single operator entry point for local validation, smoke, recovery, and staging/production prerequisites. G35 Phase B local pre-staging gate passed on `217c11c`; G35 Phase C controlled staging refresh completed on commit `5e1ea5a` (`docs: record staging discovery facts`). G46d controlled staging deploy/proof PASS using API context `/opt/dca/staging-artifacts/5e1ea5a`, host-side web target `/opt/dca/apps/dcaosv1/staging/web/dist`, staging compose `/opt/dca/apps/dcaosv1/staging/docker-compose.staging.yml`, `--env-file .env.staging`, and service `dcaosv1-staging-api`. G47/G47b/G47c staging smoke/proof PASS on baseline `f25158d`: minimal HTTP proof 200/200/200, MVP staging smoke PASS with explicit `MVP_SMOKE_API_BASE_URL=https://staging.digitalcubeagency.net/api/v1`, and staging security baseline PASS with explicit `DCA_SMOKE_REMOTE_TARGET=staging` (`31/31 passed, 1 HSTS warning`). G43 later re-checked current `main` at `a18dcc1` after G38/G39/G41 copy polish: validate plus four focused local smokes PASS; no repo edits, commit/push/deploy, staging/VPS/prod. Production deploy attempted during G46d/G47 smoke gates: NO. Production app/API/DB mutation: NO. Further staging work requires fresh owner approval.
+**Status:** Single operator entry point for local validation, smoke, recovery, and staging/production prerequisites. G35 Phase B local pre-staging gate passed on `217c11c`; G35 Phase C controlled staging refresh completed on commit `5e1ea5a` (`docs: record staging discovery facts`). G46d controlled staging deploy/proof PASS using API context `/opt/dca/staging-artifacts/5e1ea5a`, host-side web target `/opt/dca/apps/dcaosv1/staging/web/dist`, staging compose `/opt/dca/apps/dcaosv1/staging/docker-compose.staging.yml`, `--env-file .env.staging`, and service `dcaosv1-staging-api`. G47/G47b/G47c staging smoke/proof PASS on baseline `f25158d`: minimal HTTP proof 200/200/200, MVP staging smoke PASS with explicit `MVP_SMOKE_API_BASE_URL=https://staging.digitalcubeagency.net/api/v1`, and staging security baseline PASS with explicit `DCA_SMOKE_REMOTE_TARGET=staging` (`31/31 passed, 1 HSTS warning`). G48 production readiness planning PASS on latest baseline commit before G48b docs `1b4e03c` (`docs: record G47 staging smoke proof`): production deploy ready NO; production deploy attempted NO; VPS/staging/prod mutation NO; refreshed runtime proof `staging-root-http=200`, `staging-health-http=200`, `production-root-http=200`, `production-health-http=200`; staging/prod runtime separation confirmed. G43 later re-checked current `main` at `a18dcc1` after G38/G39/G41 copy polish: validate plus four focused local smokes PASS; no repo edits, commit/push/deploy, staging/VPS/prod. Production remains frozen/deferred; staging PASS, G47 PASS, and G48 planning PASS do not authorize production deploy. Further staging or production work requires fresh owner approval.
 **Source of truth for product state:** [`docs/STATUS.md`](../STATUS.md)
 
 Related detailed runbooks:
@@ -285,19 +285,26 @@ Full detail: [`docs/runbooks/EXTERNAL_INTEGRATIONS_READINESS.md`](../runbooks/EX
 
 ## 7. Production prerequisites
 
-Production remains **frozen** unless explicitly approved in a separate block.
+Production remains **frozen** unless explicitly approved in a separate block. G48 production readiness planning is **PASS**, but production deploy ready remains **NO**.
 
 | # | Prerequisite (when approved) |
 |---|---------------------------|
-| 1 | Staging deploy proof complete on approved staging host |
-| 2 | Staging smokes PASS (`smoke:mvp:staging` with explicit HTTPS URL) |
-| 3 | Production env separate from staging; no staging DB credentials in prod |
-| 4 | R2, WordPress, AI provider, Turnstile — owner gates per category |
-| 5 | Backup before migration/deploy |
-| 6 | Rollback plan documented and tested on staging |
-| 7 | Explicit production deploy approval — separate from staging |
+| 1 | Explicit owner approval for a production deploy gate |
+| 2 | Confirm exact artifact/commit intended for production promotion |
+| 3 | Confirm production backup and rollback evidence before any mutation |
+| 4 | Confirm production env separation from staging and no staging credentials in production |
+| 5 | Confirm schema/migration safety; stop if migration would drop tables/columns |
+| 6 | Decide HSTS: fix before promotion or explicitly defer with owner acceptance |
+| 7 | Keep live integrations gated unless separately approved: AI provider, WordPress, R2, GA/GSC, and email sending |
+| 8 | Run a production deploy dry-run/read-only proof before any production mutation |
 
-**Production URL:** `system.digitalcubeagency.net` — current `main` is **0% deployed**.
+**G48 refreshed runtime proof:** `staging-root-http=200`; `staging-health-http=200`; `production-root-http=200`; `production-health-http=200`.
+
+**G48 runtime separation proof:** shared Caddy `dca-caddy`; staging API `dcaosv1-staging-api` on `127.0.0.1:4011->4000`; staging DB `dcaosv1-staging-postgres` on `127.0.0.1:5435->5432`, healthy; production API `dcaosv1-api` on `127.0.0.1:4010->4000`; production DB `dcaosv1-postgres` on `127.0.0.1:5434->5432`, healthy.
+
+**Proposed next gates:** G49 production deploy dry-run/read-only proof; G50 production deploy gate only after explicit owner approval.
+
+**Production URL:** `system.digitalcubeagency.net` — production deploy is not authorized by staging PASS, G47 PASS, or G48 planning PASS.
 
 ---
 

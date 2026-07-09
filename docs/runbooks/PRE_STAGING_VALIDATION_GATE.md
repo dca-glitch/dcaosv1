@@ -10,6 +10,8 @@
 
 **G47 staging smoke/proof notice (updated 2026-07-09):** G47 minimal staging proof PASS; G47b MVP staging smoke PASS after explicit staging target env; G47c staging security baseline PASS after explicit remote target env. Target guard lesson: staging smoke scripts may intentionally refuse to run without explicit remote target env. HSTS missing is a known proxy hardening warning only; production health probe inside the security smoke remains skipped unless explicitly approved. No repo/source edits, deploy, VPS/staging/prod mutation, commit, or push occurred during G47 smoke gates.
 
+**G48 production readiness planning notice (updated 2026-07-09):** G48 production readiness planning PASS on latest baseline commit before G48b docs `1b4e03c` (`docs: record G47 staging smoke proof`). Production deploy ready: **NO**. Production deploy attempted: **NO**. VPS/staging/prod mutation: **NO**. Repo edits, commit/push, and smoke during G48 planning: **NO**. Refreshed runtime proof: `staging-root-http=200`, `staging-health-http=200`, `production-root-http=200`, `production-health-http=200`. Runtime separation confirmed: shared Caddy `dca-caddy`; staging API `dcaosv1-staging-api` on `127.0.0.1:4011->4000`; staging DB `dcaosv1-staging-postgres` on `127.0.0.1:5435->5432`, healthy; production API `dcaosv1-api` on `127.0.0.1:4010->4000`; production DB `dcaosv1-postgres` on `127.0.0.1:5434->5432`, healthy. Production remains frozen/deferred until separate explicit owner approval, and production deploy is not authorized by staging PASS, G47 PASS, or G48 planning PASS.
+
 **Forbidden in this gate:** VPS login, Docker Compose apply, Caddy/DNS changes, staging migrations, production env, `smoke:mvp:staging` unless owner explicitly approves G4 and staging host access.
 
 **Run location:** Use a local PowerShell terminal outside Cursor for `npm run validate` and `npm run smoke:pre-staging:local` (long-running). Cursor agents should not start API/Web servers or run full smoke suites during doc-only or UI-copy tasks.
@@ -260,7 +262,21 @@ See block operator docs under `docs/security/`.
 2. **Phase C refresh COMPLETE:** staging artifact context now `/opt/dca/staging-artifacts/5e1ea5a`; API health 200; web root 200; MVP smoke PASS; production untouched. Staging is now current with refresh commit `5e1ea5a` (see STATUS §2.2/§2.8).
 3. Approve Block G4 VPS/staging refresh/execution pack separately — **not approved today**.
 4. Deploy exact commit to staging stack on VPS after G4 approval.
-5. Run `npm run smoke:mvp:staging` against `https://staging.digitalcubeagency.net/api/v1`.
-6. Block 4/5/6 prod env gates on staging.
+5. Run `npm run smoke:mvp:staging` against `https://staging.digitalcubeagency.net/api/v1` only when separately approved.
+6. G49 production deploy dry-run/read-only proof before any production mutation.
+7. G50 production deploy gate only after explicit owner approval.
+
+### Production deploy blockers after G48 planning PASS
+
+Production deploy ready remains **NO** until all blockers below are resolved:
+
+1. Explicit owner approval for a production deploy gate.
+2. Confirm exact artifact/commit intended for production promotion.
+3. Confirm production backup and rollback evidence before any mutation.
+4. Confirm production env separation from staging and no staging credentials in production.
+5. Confirm schema/migration safety; stop if migration would drop tables/columns.
+6. Decide HSTS: fix before promotion or explicitly defer with owner acceptance.
+7. Keep live integrations gated unless separately approved: AI provider, WordPress, R2, GA/GSC, and email sending.
+8. Run a production deploy dry-run/read-only proof before any production mutation.
 
 Local repo work can be **complete** while G4 VPS execution remains **not approved** and production remains **frozen**. Block 5D-B local closeout PASS is repo-side evidence only — it does not substitute for explicit owner G4 approval.

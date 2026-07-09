@@ -4,11 +4,13 @@
 
 **Purpose:** Practical checklist to decide whether `main` is ready to **request** staging work (G4) — not to deploy staging.
 
-**Current baseline (2026-07-09):** latest proven full local closeout commit `217c11c` (`test: stabilize G35 Phase B browser smokes`); G35 Phase C controlled staging refresh completed on commit `5e1ea5a` (`docs: record staging discovery facts`); G46d controlled staging deploy/proof PASS using API context `/opt/dca/staging-artifacts/5e1ea5a` and host-side web target `/opt/dca/apps/dcaosv1/staging/web/dist`; G47/G47b/G47c staging smoke/proof PASS on baseline `f25158d` with staging root 200, staging health 200, production health-only 200, MVP staging smoke PASS, and staging security baseline 31/31 PASS with one HSTS warning; latest local pre-staging re-check is G43 PASS on current `main` at `a18dcc1` after G38/G39/G41 copy polish; CI green for those copy-polish commits; full local `smoke:pre-staging:local` PASS for G35 Phase B; staging artifact refreshed from `5ee8389` to `5e1ea5a`; staging API recreated; MVP smoke PASS; production untouched; **further staging refresh/execution requires fresh explicit owner approval**.
+**Current baseline (2026-07-09):** latest proven full local closeout commit `217c11c` (`test: stabilize G35 Phase B browser smokes`); G35 Phase C controlled staging refresh completed on commit `5e1ea5a` (`docs: record staging discovery facts`); G46d controlled staging deploy/proof PASS using API context `/opt/dca/staging-artifacts/5e1ea5a` and host-side web target `/opt/dca/apps/dcaosv1/staging/web/dist`; G47/G47b/G47c staging smoke/proof PASS on baseline `f25158d` with staging root 200, staging health 200, production health-only 200, MVP staging smoke PASS, and staging security baseline 31/31 PASS with one HSTS warning; G48 production readiness planning PASS on latest baseline commit before G48b docs `1b4e03c` (`docs: record G47 staging smoke proof`) with production deploy ready **NO**; latest local pre-staging re-check is G43 PASS on current `main` at `a18dcc1` after G38/G39/G41 copy polish; CI green for those copy-polish commits; full local `smoke:pre-staging:local` PASS for G35 Phase B; staging artifact refreshed from `5ee8389` to `5e1ea5a`; staging API recreated; MVP smoke PASS; production untouched; **further staging refresh/execution or any production deploy requires fresh explicit owner approval**.
 
 **Ground-truth notice (updated 2026-07-09 post-G46d proof):** G46d controlled staging deploy/proof is PASS. Staging artifact/API context was `/opt/dca/staging-artifacts/5e1ea5a`; host-side web target was `/opt/dca/apps/dcaosv1/staging/web/dist`; staging compose was `/opt/dca/apps/dcaosv1/staging/docker-compose.staging.yml`; compose requires `--env-file .env.staging`; correct staging API compose service is `dcaosv1-staging-api`, not `api`. Final proof: staging root HTTP 200, staging health HTTP 200, production health-only HTTP 200. Production deploy attempted: NO. Production app/API/DB mutation: NO. Any further staging refresh/VPS execution/migration/deploy requires fresh explicit owner approval with bounded execution block instructions. This docs update authorizes no new VPS, staging, production, deploy, DNS, migration, SSH, Docker, or Caddy action without explicit owner instruction.
 
 **G47 staging smoke/proof notice (updated 2026-07-09):** G47 minimal staging proof PASS (`staging-root-http=200`, `staging-health-http=200`, `prod-health-only-http=200`) and staging/prod separation confirmed. G47b MVP staging smoke PASS requires explicit `MVP_SMOKE_API_BASE_URL=https://staging.digitalcubeagency.net/api/v1`; initial run without explicit target refused/failed by target guard, retry passed with `smoke-mvp-staging-exit=0`. G47c staging security baseline PASS requires explicit `DCA_SMOKE_REMOTE_TARGET=staging`; initial run without explicit target refused by remote target guard, retry passed with `smoke-staging-security-baseline-exit=0`; result `31/31 passed, 1 warning(s)`. HSTS missing is a known proxy hardening warning only. Production health probe inside smoke was skipped unless explicitly approved. No repo/source edits, deploy, VPS/staging/prod mutation, commit, or push occurred during smoke gates.
+
+**G48 production readiness planning notice (updated 2026-07-09):** G48 production readiness planning PASS. Production deploy ready: **NO**. Production deploy attempted: **NO**. VPS/staging/prod mutation: **NO**. Repo edits, commit/push, and smoke during G48 planning: **NO**. Refreshed runtime proof: `staging-root-http=200`, `staging-health-http=200`, `production-root-http=200`, `production-health-http=200`. Runtime separation confirmed: shared Caddy `dca-caddy`; staging API `dcaosv1-staging-api` on `127.0.0.1:4011->4000`; staging DB `dcaosv1-staging-postgres` on `127.0.0.1:5435->5432`, healthy; production API `dcaosv1-api` on `127.0.0.1:4010->4000`; production DB `dcaosv1-postgres` on `127.0.0.1:5434->5432`, healthy. Production remains frozen/deferred until separate explicit owner approval. HSTS remains a known G47c proxy hardening warning: fix before production promotion or explicitly defer with owner acceptance. Production deploy is not authorized by staging PASS, G47 PASS, or G48 planning PASS.
 
 **Source of truth:** [`docs/STATUS.md`](../STATUS.md). **Operator runbook:** [`docs/operator/OPERATOR_RUNBOOK.md`](../operator/OPERATOR_RUNBOOK.md).
 
@@ -252,6 +254,21 @@ Staging smoke scripts may intentionally refuse to run without explicit remote ta
 | Staging security baseline | `DCA_SMOKE_REMOTE_TARGET=staging` | PASS after retry with explicit target; `smoke-staging-security-baseline-exit=0`; `31/31 passed, 1 warning(s)` |
 
 HSTS missing remains a known proxy hardening warning only. Do not run production probes or mutate proxy/Caddy/staging/prod unless explicitly approved in a separate bounded gate.
+
+### Production readiness checklist (G48 sealed planning checklist)
+
+Production deploy remains frozen/deferred. Before any production deploy or production mutation, all blockers below must be resolved:
+
+1. Explicit owner approval for a production deploy gate.
+2. Confirm exact artifact/commit intended for production promotion.
+3. Confirm production backup and rollback evidence before any mutation.
+4. Confirm production env separation from staging and no staging credentials in production.
+5. Confirm schema/migration safety; stop if migration would drop tables/columns.
+6. Decide HSTS: fix before promotion or explicitly defer with owner acceptance.
+7. Keep live integrations gated unless separately approved: AI provider, WordPress, R2, GA/GSC, and email sending.
+8. Run a production deploy dry-run/read-only proof before any production mutation.
+
+Proposed next gates: **G49 production deploy dry-run/read-only proof**, then **G50 production deploy gate only after explicit owner approval**.
 
 Full catalog: [`LOCAL_SMOKE_MATRIX.md`](./LOCAL_SMOKE_MATRIX.md).
 
