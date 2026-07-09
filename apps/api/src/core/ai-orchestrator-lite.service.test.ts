@@ -5,6 +5,9 @@ import { buildAiBudgetSnapshot, isAiBudgetBlocked, PURIVA_AI_MONTHLY_CAP_USD } f
 import { planAiOrchestratorLiteStep } from "./ai-orchestrator-lite.service";
 import { resolveProviderForRole } from "./ai-provider-registry.service";
 import { getPurivaAiPolicyProfile } from "./puriva-ai-policy-profile";
+import { runAllComplianceFixturesLocally } from "./ai-compliance-review.fixtures";
+import { planWorkflowStepWithOrchestrator } from "./ai-orchestrator-workflow-adapter.skeleton";
+import { assertOrchestratorDisabledSafeInvariant } from "./ai-kill-switch.service";
 
 describe("ai-orchestrator-lite foundation", () => {
   it("excludes forbidden medical data for all roles", () => {
@@ -83,5 +86,29 @@ describe("ai-orchestrator-lite foundation", () => {
     assert.equal(profile.monthlyAiCapUsd, 100);
     assert.equal(profile.scope.paidAds, false);
     assert.equal(profile.beforeAfter.finalExportRetentionDays, 60);
+  });
+
+  it("blocks unapproved brief in workflow adapter", () => {
+    const result = planWorkflowStepWithOrchestrator({
+      workflow: "puriva_content_production",
+      step: "article_draft",
+      agentRole: "content_drafting_agent",
+      taskType: "article_draft",
+      operatingPackKey: "puriva",
+      briefApproved: false
+    });
+    assert.equal(result.canProceedToExecution, false);
+    assert.match(result.blockedReason ?? "", /not approved/i);
+  });
+
+  it("passes kill switch disabled-safe invariant", () => {
+    const invariant = assertOrchestratorDisabledSafeInvariant();
+    assert.equal(invariant.ok, true);
+  });
+
+  it("runs compliance fixtures deterministically", () => {
+    const results = runAllComplianceFixturesLocally();
+    assert.equal(results.length, 6);
+    assert.ok(results.every((entry) => entry.fixtureId.length > 0));
   });
 });

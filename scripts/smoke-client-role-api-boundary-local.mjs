@@ -37,7 +37,17 @@ const PROTECTED_GENERIC_ROUTES = [
   ["GET /recurring-invoices/:id", `/recurring-invoices/${PLACEHOLDER_ID}`],
   ["GET /vendors", "/vendors"],
   ["GET /bills", "/bills"],
-  ["GET /bills/:id/document/download", `/bills/${PLACEHOLDER_ID}/document/download`]
+  ["GET /bills/:id/document/download", `/bills/${PLACEHOLDER_ID}/document/download`],
+  ["GET /ai-orchestrator-lite/registry", "/ai-orchestrator-lite/registry"]
+];
+
+const PROTECTED_POST_ROUTES = [
+  ["POST /ai-orchestrator-lite/material-routing-preview", "/ai-orchestrator-lite/material-routing-preview", {
+    workflow: "puriva_content_production",
+    step: "article_draft",
+    agentRole: "content_drafting_agent",
+    taskType: "article_draft"
+  }]
 ];
 
 const ADMIN_LIST_ROUTES = [
@@ -139,6 +149,20 @@ async function main() {
 
   for (const [label, path] of PROTECTED_GENERIC_ROUTES) {
     const response = await apiCall("GET", path, undefined, clientToken);
+    assert(
+      response.status === 401 || response.status === 403,
+      `client denied ${label}`,
+      `status=${response.status}`
+    );
+    assert(
+      !FORBIDDEN_PATTERNS.some((pattern) => pattern.test(response.text)),
+      `client ${label} response hides secrets`,
+      `status=${response.status}`
+    );
+  }
+
+  for (const [label, path, body] of PROTECTED_POST_ROUTES) {
+    const response = await apiCall("POST", path, body, clientToken);
     assert(
       response.status === 401 || response.status === 403,
       `client denied ${label}`,

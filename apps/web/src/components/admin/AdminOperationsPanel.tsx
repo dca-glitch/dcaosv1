@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Button, SectionPanel, StatusBadge } from "../ui";
+import { AiOrchestratorLitePanel } from "./AiOrchestratorLitePanel";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "/api/v1";
 const SESSION_STORAGE_KEY = "dcaosv1.authToken";
@@ -224,6 +225,8 @@ export function AdminOperationsPanel() {
           </SectionPanel>
         </>
       ) : null}
+
+      <AiOrchestratorLitePanel />
     </div>
   );
 }

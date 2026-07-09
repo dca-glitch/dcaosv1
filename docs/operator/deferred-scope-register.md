@@ -24,7 +24,7 @@ These are **not** "still deferred" long-term roadmap items. They are active bloc
 | R2 real-bucket proof | Live integration | Disabled-safe locally; real bucket IO proof required |
 | Live AI provider proof | Live integration | Local deterministic default; OpenRouter opt-in proof required — runbook: [`docs/runbooks/AI_PROVIDER_LIVE_PROOF.md`](../runbooks/AI_PROVIDER_LIVE_PROOF.md) |
 | AI Model Research | Policy gate | Separate approved research gate |
-| AI Model Policy | Policy gate | **Docs + skeleton closed (G55)** — live provider proof still required — [`docs/ai/AI_MODEL_POLICY.md`](../ai/AI_MODEL_POLICY.md) |
+| AI Model Policy | Policy gate | **Docs + skeleton closed (G55/G56)** — live provider proof still required — [`docs/ai/AI_MODEL_POLICY.md`](../ai/AI_MODEL_POLICY.md) |
 | Image generation proof | Live integration | Provider/workflow proof for Article+Image path |
 | Transactional notifications proof | Live integration | Workflow email delivery — **not** marketing campaigns |
 | Client Portal approval UX | Product gate | Client-safe approval path must be production-proven |
@@ -126,8 +126,16 @@ Current behavior:
 
 ## AI Provider And Automation
 
+**G56 closed locally (pre-live skeleton):** orchestrator registry, material policy, budget guard, kill switch invariant, admin UI panels, orchestrator smoke, workflow adapter skeleton, compliance fixtures, prompt template registry. Live provider proof remains deferred.
+
 Deferred:
 
+- DB-persisted AI budget spend ledger (G56 — estimates only);
+- admin editable provider settings UI (G56 — read-only panel only);
+- live provider staging proof per role;
+- image generation live proof;
+- vision QA live proof;
+- orchestrator wired into workflow execution adapter live path;
 - autonomous AI agents;
 - background high-cost AI runs;
 - production live provider proof;

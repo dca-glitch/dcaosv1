@@ -1427,6 +1427,10 @@ export const previewAiMaterialRoutingHandler: RequestHandler = async (req, res) 
   }
 
   try {
+    const materialReferences = Array.isArray(body.materialReferences)
+      ? (body.materialReferences as import("@dca-os-v1/shared").AiMaterialReference[])
+      : undefined;
+
     const plan = planAiOrchestratorLiteStep({
       workflow,
       step,
@@ -1435,7 +1439,8 @@ export const previewAiMaterialRoutingHandler: RequestHandler = async (req, res) 
       clientId: typeof body.clientId === "string" ? body.clientId : null,
       operatingPackKey: typeof body.operatingPackKey === "string" ? body.operatingPackKey : null,
       workflowReference: typeof body.workflowReference === "string" ? body.workflowReference : null,
-      stepReference: typeof body.stepReference === "string" ? body.stepReference : null
+      stepReference: typeof body.stepReference === "string" ? body.stepReference : null,
+      materialReferences
     });
 
     res.json(success({ plan }, { phase: "runtime", scope: "ai-material-routing-preview" }));
