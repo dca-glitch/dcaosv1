@@ -84,8 +84,8 @@ async function probeReadinessApi() {
 
     if (
       !record(
-        "api integrations readiness has four categories",
-        Array.isArray(categories) && categories.length === 4,
+        "api integrations readiness has five categories",
+        Array.isArray(categories) && categories.length === 5,
         `count=${categories.length}`
       )
     ) {

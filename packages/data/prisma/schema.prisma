@@ -308,6 +308,7 @@ model Tenant {
   aiSeoReports         AiSeoReport[]
   briefApprovals       BriefApproval[]
   productionPlans      ProductionPlan[]
+  aiBudgetLedgerEntries AiBudgetLedgerEntry[]
 }
 
 model User {
@@ -518,6 +519,7 @@ model Client {
   financeEvents     FinanceEvent[]
   revenueAttributions RevenueAttribution[]
   workflowBriefs      Brief[]
+  aiBudgetLedgerEntries AiBudgetLedgerEntry[]
 
   @@index([tenantId])
   @@index([tenantId, isArchived])
@@ -1264,11 +1266,51 @@ model AiDeliveryWorkflowRun {
   researchSources     AiDeliveryResearchSource[]
   researchSummaries   AiDeliveryResearchSummary[]
   aiContextSnapshots  AiContextSnapshot[]
+  aiBudgetLedgerEntries AiBudgetLedgerEntry[]
 
   @@index([tenantId])
   @@index([tenantId, aiDeliveryProjectId])
   @@index([tenantId, status])
   @@index([createdAt])
+}
+
+enum AiBudgetLedgerStatus {
+  PREVIEW
+  PLANNED
+  BLOCKED
+  SKIPPED
+  COMPLETED
+}
+
+model AiBudgetLedgerEntry {
+  id                    String               @id @default(uuid())
+  tenantId              String
+  clientId              String?
+  aiDeliveryProjectId   String?
+  workflowRunId         String?
+  periodKey             String
+  provider              String
+  taskType              String?
+  agentRole             String?
+  estimatedCostUsd      Decimal              @db.Decimal(10, 4)
+  actualCostUsd         Decimal?             @db.Decimal(10, 4)
+  status                AiBudgetLedgerStatus @default(PREVIEW)
+  liveProviderCalled    Boolean              @default(false)
+  orchestratorVersion   String?
+  stepReference         String?
+  metadata              Json?
+  createdAt             DateTime             @default(now())
+  updatedAt             DateTime             @updatedAt
+
+  tenant                Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  client                Client?              @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  workflowRun           AiDeliveryWorkflowRun? @relation(fields: [workflowRunId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, clientId, periodKey])
+  @@index([tenantId, periodKey])
+  @@index([tenantId, workflowRunId])
+  @@index([tenantId, status, createdAt])
+  @@unique([tenantId, workflowRunId, stepReference])
 }
 
 enum AiDeliveryResearchRequestStatus {

@@ -285,6 +285,25 @@ To activate a deferred item:
 
 Keep the MVP admin-controlled and local-first until the first client delivery path is stable, documented, and reviewed end to end.
 
+## G57–G68 macro gate outcomes (2026-07-09)
+
+**Result:** Local implementation PASS on branch `cursor/g57-g68-prelive-completion` — pre-live groundwork only.
+
+| Gate | Outcome |
+|------|---------|
+| G57 docs closeout | DONE — `G57_G68_PRELIVE_READINESS.md`, STATUS, this register |
+| G58 persistent AI budget ledger | DONE locally — `AiBudgetLedgerEntry`; dry-run preview records; live spend attribution deferred |
+| G59 workflow adapter dry-run | DONE — contract placeholders; no live execution |
+| G60 admin operator wiring | DONE — kill switch, ledger, events, boundaries in admin panel |
+| G61 notification contracts | DONE — extended types; no-send internal recorder; live email deferred |
+| G62 Puriva pack wiring | PARTIAL — step→task map; full orchestrator template automation deferred |
+| G63–G65 integration boundaries | PARTIAL — config-shape + docs; live proof BLOCKED |
+| G66 E2E dry run | PARTIAL — orchestrator smoke extended; unified cross-module E2E deferred |
+| G67 live AI proof prep | PARTIAL — runbooks exist; execution BLOCKED |
+| G68 go/no-go | DONE — documented NO-GO for production; live proof checklist |
+
+**Still deferred after G57–G68:** live AI, image generation, email send, R2, WordPress live, GA/GSC OAuth, production deploy (G50), G49 formal owner sentence.
+
 ## G54 HSTS/proxy fix completion (2026-07-09)
 
 **Result:** PASS — HSTS/proxy fix applied on VPS.

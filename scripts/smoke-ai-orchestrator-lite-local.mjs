@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * G56 — AI Orchestrator Lite registry and material routing preview smoke.
+ * G56/G57–G68 — AI Orchestrator Lite registry, preview, workflow dry-run smoke.
  * Admin-only endpoints; no live provider calls.
  */
 
@@ -111,6 +111,28 @@ async function main() {
   assert(plan.preview.executionMode === "local", "execution mode local");
   assert(plan.preview.inputMaterials.length > 0, "default safe materials included");
   assert(plan.preview.budget.monthlyCapUsd === 100, "preview budget cap $100");
+
+  const dryRun = await apiCall(
+    "POST",
+    "/ai-orchestrator-lite/workflow-dry-run",
+    {
+      workflow: "puriva_content_production",
+      step: "research_pack",
+      agentRole: "research_agent",
+      taskType: "research_pack",
+      operatingPackKey: "puriva",
+      stepReference: "puriva_content_production:research_pack"
+    },
+    adminToken
+  );
+  assert(dryRun.ok, "workflow dry-run POST", `status=${dryRun.status}`);
+  const adapter = dryRun.json?.data?.adapter;
+  assert(Boolean(adapter?.dryRunOutput), "dry-run contract output present");
+  assert(adapter.executionDeferred === true, "execution deferred");
+  assert(Boolean(adapter.dryRunOutput.researchPack), "research pack dry-run placeholder");
+  assert(Boolean(registryData.budgetLedger), "budget ledger summary in registry");
+  assert(Boolean(registryData.killSwitch), "kill switch snapshot in registry");
+  assert(registryData.killSwitch.orchestratorLiveSafe === true, "orchestrator live-safe");
 
   if (CLIENT_PASSWORD) {
     const clientLogin = await login(CLIENT_EMAIL, CLIENT_PASSWORD);

@@ -34,6 +34,20 @@ import {
   getAiOrchestratorLiteRegistrySnapshot,
   planAiOrchestratorLiteStep
 } from "../core/ai-orchestrator-lite.service";
+import { getAiKillSwitchSnapshot } from "../core/ai-kill-switch.service";
+import {
+  getAiBudgetLedgerSummary,
+  recordAiBudgetLedgerEntry,
+  sumSpentUsdForPeriod
+} from "../core/ai-budget-ledger.service";
+import { planWorkflowStepWithOrchestrator } from "../core/ai-orchestrator-workflow-adapter.skeleton";
+import {
+  emitBudgetCapNotification,
+  emitKillSwitchNotification,
+  emitWorkflowBlockedNotification,
+  listAiNotificationEvents
+} from "../services/ai-notification-events.service";
+import { buildPurivaIntegrationBoundaryIndex } from "@dca-os-v1/shared";
 import { getPurivaAiPolicyProfile } from "../core/puriva-ai-policy-profile";
 import { getGoogleDriveExportPlanningSnapshot } from "../services/google-drive-export-planning.service";
 import { getExternalIntegrationsReadinessSnapshot } from "../core/external-integrations-readiness.service";
@@ -1390,8 +1404,30 @@ export const getAiOrchestratorLiteRegistryHandler: RequestHandler = async (_req,
   try {
     const registry = getAiOrchestratorLiteRegistrySnapshot();
     const purivaPolicyProfile = getPurivaAiPolicyProfile();
+    const killSwitch = getAiKillSwitchSnapshot();
+    const budgetLedger = await getAiBudgetLedgerSummary({ tenantId });
+    const recentNotificationEvents = listAiNotificationEvents(tenantId, 10);
+    const readiness = getExternalIntegrationsReadinessSnapshot();
+    const integrationBoundary = buildPurivaIntegrationBoundaryIndex({
+      monthlyAiCapUsd: purivaPolicyProfile.monthlyAiCapUsd,
+      categories: readiness.categories.map((category) => ({
+        key: category.key,
+        status: category.status,
+        notes: [category.detail]
+      }))
+    });
     res.json(
-      success({ registry, purivaPolicyProfile }, { phase: "runtime", scope: "ai-orchestrator-lite-registry" })
+      success(
+        {
+          registry,
+          purivaPolicyProfile,
+          killSwitch,
+          budgetLedger,
+          recentNotificationEvents,
+          integrationBoundary
+        },
+        { phase: "runtime", scope: "ai-orchestrator-lite-registry" }
+      )
     );
   } catch {
     res.status(500).json(
@@ -1431,23 +1467,142 @@ export const previewAiMaterialRoutingHandler: RequestHandler = async (req, res) 
       ? (body.materialReferences as import("@dca-os-v1/shared").AiMaterialReference[])
       : undefined;
 
+    const clientId = typeof body.clientId === "string" ? body.clientId : null;
+    const operatingPackKey = typeof body.operatingPackKey === "string" ? body.operatingPackKey : null;
+    const stepReference = typeof body.stepReference === "string" ? body.stepReference : `${workflow}:${step}`;
+    const workflowRunId = typeof body.workflowRunId === "string" ? body.workflowRunId : null;
+
+    const spentThisPeriodUsd = await sumSpentUsdForPeriod({ tenantId, clientId });
+
     const plan = planAiOrchestratorLiteStep({
       workflow,
       step,
       agentRole: agentRole as import("@dca-os-v1/shared").AiAgentRole,
       taskType: taskType as import("@dca-os-v1/shared").AiTaskType,
-      clientId: typeof body.clientId === "string" ? body.clientId : null,
-      operatingPackKey: typeof body.operatingPackKey === "string" ? body.operatingPackKey : null,
+      clientId,
+      operatingPackKey,
       workflowReference: typeof body.workflowReference === "string" ? body.workflowReference : null,
-      stepReference: typeof body.stepReference === "string" ? body.stepReference : null,
-      materialReferences
+      stepReference,
+      materialReferences,
+      spentThisPeriodUsd
     });
 
-    res.json(success({ plan }, { phase: "runtime", scope: "ai-material-routing-preview" }));
+    const ledgerStatus = plan.canExecute ? "PREVIEW" : "BLOCKED";
+    await recordAiBudgetLedgerEntry({
+      tenantId,
+      clientId,
+      workflowRunId,
+      provider: plan.preview.audit.providerKey,
+      taskType,
+      agentRole,
+      estimatedCostUsd: plan.preview.estimatedCostUsd,
+      status: ledgerStatus,
+      liveProviderCalled: false,
+      stepReference,
+      metadata: {
+        workflow,
+        step,
+        operatingPackKey,
+        blockedReason: plan.blockedReason
+      }
+    });
+
+    if (!plan.canExecute && plan.blockedReason) {
+      if (plan.preview.budget.killSwitchActive) {
+        emitBudgetCapNotification(tenantId, { clientId, message: plan.blockedReason });
+      } else {
+        emitWorkflowBlockedNotification(tenantId, {
+          clientId,
+          workflowReference: workflow,
+          message: plan.blockedReason
+        });
+      }
+    }
+
+    const killSwitch = getAiKillSwitchSnapshot();
+    if (!killSwitch.orchestratorLiveSafe) {
+      emitKillSwitchNotification(tenantId, {
+        message: "Orchestrator live-safe invariant not satisfied — preview-only mode enforced."
+      });
+    }
+
+    res.json(
+      success(
+        { plan, budgetLedger: await getAiBudgetLedgerSummary({ tenantId, clientId }) },
+        { phase: "runtime", scope: "ai-material-routing-preview" }
+      )
+    );
   } catch {
     res.status(500).json(
       failure("AI_MATERIAL_ROUTING_PREVIEW_ERROR", "AI material routing preview could not be generated.")
     );
+  }
+};
+
+export const workflowDryRunHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) {
+    res.status(401).json(unauthorizedFailure());
+    return;
+  }
+
+  const tenantId = authSession.tenantContext.activeMembership?.tenantId ?? null;
+  if (!tenantId) {
+    res.status(403).json(forbiddenFailure());
+    return;
+  }
+
+  const body = req.body as Record<string, unknown>;
+  const workflow = typeof body.workflow === "string" ? body.workflow.trim() : "";
+  const step = typeof body.step === "string" ? body.step.trim() : "";
+  const agentRole = typeof body.agentRole === "string" ? body.agentRole.trim() : "";
+  const taskType = typeof body.taskType === "string" ? body.taskType.trim() : "";
+
+  if (!workflow || !step || !agentRole || !taskType) {
+    res.status(400).json(
+      failure("AI_WORKFLOW_DRY_RUN_INVALID", "workflow, step, agentRole, and taskType are required.")
+    );
+    return;
+  }
+
+  try {
+    const clientId = typeof body.clientId === "string" ? body.clientId : null;
+    const spentThisPeriodUsd = await sumSpentUsdForPeriod({ tenantId, clientId });
+    const briefApproved = body.briefApproved === false ? false : true;
+
+    const adapterResult = planWorkflowStepWithOrchestrator({
+      workflow,
+      step,
+      agentRole: agentRole as import("@dca-os-v1/shared").AiAgentRole,
+      taskType: taskType as import("@dca-os-v1/shared").AiTaskType,
+      clientId,
+      operatingPackKey: typeof body.operatingPackKey === "string" ? body.operatingPackKey : "puriva",
+      briefApproved,
+      spentThisPeriodUsd,
+      workflowReference: typeof body.workflowReference === "string" ? body.workflowReference : workflow,
+      stepReference: typeof body.stepReference === "string" ? body.stepReference : `${workflow}:${step}`
+    });
+
+    if (!adapterResult.canProceedToExecution && adapterResult.blockedReason) {
+      emitWorkflowBlockedNotification(tenantId, {
+        clientId,
+        workflowReference: workflow,
+        message: adapterResult.blockedReason
+      });
+    }
+
+    res.json(
+      success(
+        {
+          adapter: adapterResult,
+          budgetLedger: await getAiBudgetLedgerSummary({ tenantId, clientId }),
+          recentNotificationEvents: listAiNotificationEvents(tenantId, 5)
+        },
+        { phase: "runtime", scope: "ai-workflow-dry-run" }
+      )
+    );
+  } catch {
+    res.status(500).json(failure("AI_WORKFLOW_DRY_RUN_ERROR", "AI workflow dry-run could not be generated."));
   }
 };
 

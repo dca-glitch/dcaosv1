@@ -39,7 +39,8 @@ export function planAiOrchestratorLiteStep(
     clientId: request.clientId,
     operatingPackKey: request.operatingPackKey,
     taskType: request.taskType,
-    workflowStepCount: 8
+    workflowStepCount: 8,
+    spentThisPeriodUsd: request.spentThisPeriodUsd
   });
 
   const budgetBlock = isAiBudgetBlocked(budget);

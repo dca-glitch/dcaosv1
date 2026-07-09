@@ -26,6 +26,33 @@ type RoleMapping = {
   fallbackProviderKey: string | null;
 };
 
+type KillSwitchSnapshot = {
+  orchestratorLiveSafe: boolean;
+  anyLiveProviderEnabled: boolean;
+  textGatewayLive: boolean;
+  imageGenerationLive: boolean;
+  notes: string[];
+};
+
+type BudgetLedgerSummary = {
+  periodKey: string;
+  spentThisPeriodUsd: number;
+  entryCount: number;
+};
+
+type NotificationEvent = {
+  eventType: string;
+  message: string;
+  workflowReference: string | null;
+  noSend: true;
+};
+
+type IntegrationBoundary = {
+  liveProofPending: boolean;
+  purivaBlockers: string[];
+  categories: Array<{ category: string; status: string; liveCallsDeferred: true }>;
+};
+
 type RegistryPayload = {
   registry: {
     orchestratorVersion: string;
@@ -38,7 +65,12 @@ type RegistryPayload = {
   purivaPolicyProfile: {
     monthlyAiCapUsd: number;
     scope: { website: boolean; socialMedia: boolean; paidAds: boolean };
+    workflowPreset: string[];
   };
+  killSwitch?: KillSwitchSnapshot;
+  budgetLedger?: BudgetLedgerSummary;
+  recentNotificationEvents?: NotificationEvent[];
+  integrationBoundary?: IntegrationBoundary;
 };
 
 type MaterialRoutingPlan = {
@@ -64,6 +96,30 @@ type MaterialRoutingPlan = {
   canExecute: boolean;
   blockedReason: string | null;
 };
+
+type WorkflowDryRunResult = {
+  adapter: {
+    adapterVersion: string;
+    canProceedToExecution: boolean;
+    blockedReason: string | null;
+    executionDeferred: true;
+    dryRunOutput: {
+      contractVersion: string;
+      researchPack: unknown | null;
+      seoPlan: unknown | null;
+      contentDraftBatch: unknown | null;
+    };
+    plan: MaterialRoutingPlan;
+  };
+  budgetLedger?: BudgetLedgerSummary;
+  recentNotificationEvents?: NotificationEvent[];
+};
+
+const PREVIEW_STEPS = [
+  { label: "Article draft", step: "article_draft", agentRole: "content_drafting_agent", taskType: "article_draft" },
+  { label: "Research pack", step: "research_pack", agentRole: "research_agent", taskType: "research_pack" },
+  { label: "SEO plan", step: "seo_plan", agentRole: "seo_planning_agent", taskType: "seo_plan" }
+] as const;
 
 async function apiRequest<T>(method: string, path: string, body?: unknown): Promise<ApiResponse<T>> {
   const token = window.sessionStorage.getItem(SESSION_STORAGE_KEY);
@@ -92,9 +148,12 @@ function executionModeLabel(mode: string): string {
 export function AiOrchestratorLitePanel() {
   const [registry, setRegistry] = useState<RegistryPayload | null>(null);
   const [plan, setPlan] = useState<MaterialRoutingPlan | null>(null);
+  const [dryRun, setDryRun] = useState<WorkflowDryRunResult | null>(null);
+  const [selectedStep, setSelectedStep] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [previewLoading, setPreviewLoading] = useState(false);
+  const [dryRunLoading, setDryRunLoading] = useState(false);
 
   const loadRegistry = async () => {
     setLoading(true);
@@ -111,17 +170,19 @@ export function AiOrchestratorLitePanel() {
   };
 
   const runPreview = async () => {
+    const stepConfig = PREVIEW_STEPS[selectedStep];
     setPreviewLoading(true);
     setError(null);
-    const response = await apiRequest<{ plan: MaterialRoutingPlan }>(
+    const response = await apiRequest<{ plan: MaterialRoutingPlan; budgetLedger?: BudgetLedgerSummary }>(
       "POST",
       "/ai-orchestrator-lite/material-routing-preview",
       {
         workflow: "puriva_content_production",
-        step: "article_draft",
-        agentRole: "content_drafting_agent",
-        taskType: "article_draft",
-        operatingPackKey: "puriva"
+        step: stepConfig.step,
+        agentRole: stepConfig.agentRole,
+        taskType: stepConfig.taskType,
+        operatingPackKey: "puriva",
+        stepReference: `puriva_content_production:${stepConfig.step}`
       }
     );
     if (!response.ok) {
@@ -131,7 +192,40 @@ export function AiOrchestratorLitePanel() {
       return;
     }
     setPlan(response.data.plan);
+    if (response.data.budgetLedger && registry) {
+      setRegistry({ ...registry, budgetLedger: response.data.budgetLedger });
+    }
     setPreviewLoading(false);
+  };
+
+  const runWorkflowDryRun = async () => {
+    const stepConfig = PREVIEW_STEPS[selectedStep];
+    setDryRunLoading(true);
+    setError(null);
+    const response = await apiRequest<WorkflowDryRunResult>("POST", "/ai-orchestrator-lite/workflow-dry-run", {
+      workflow: "puriva_content_production",
+      step: stepConfig.step,
+      agentRole: stepConfig.agentRole,
+      taskType: stepConfig.taskType,
+      operatingPackKey: "puriva",
+      stepReference: `puriva_content_production:${stepConfig.step}`
+    });
+    if (!response.ok) {
+      setDryRun(null);
+      setError(response.error.message || "Unable to run workflow dry-run.");
+      setDryRunLoading(false);
+      return;
+    }
+    setDryRun(response.data);
+    setPlan(response.data.adapter.plan);
+    if (response.data.budgetLedger && registry) {
+      setRegistry({
+        ...registry,
+        budgetLedger: response.data.budgetLedger,
+        recentNotificationEvents: response.data.recentNotificationEvents ?? registry.recentNotificationEvents
+      });
+    }
+    setDryRunLoading(false);
   };
 
   useEffect(() => {
@@ -140,6 +234,9 @@ export function AiOrchestratorLitePanel() {
 
   const providers = registry?.registry.providerRegistry.providers ?? [];
   const roleMappings = registry?.registry.providerRegistry.roleMappings ?? [];
+  const killSwitch = registry?.killSwitch;
+  const budgetLedger = registry?.budgetLedger;
+  const events = registry?.recentNotificationEvents ?? [];
 
   return (
     <div className="admin-operations-stack" aria-label="AI Orchestrator Lite pre-live panel">
@@ -169,8 +266,26 @@ export function AiOrchestratorLitePanel() {
               <StatusBadge status="System" />
               <span className="muted-text">{registry.registry.orchestratorVersion}</span>
             </div>
+            {budgetLedger ? (
+              <div className="admin-operations-row">
+                <span className="muted-text">Persistent ledger ({budgetLedger.periodKey})</span>
+                <StatusBadge status={budgetLedger.spentThisPeriodUsd > 0 ? "Warning" : "Ready"} />
+                <span className="muted-text">
+                  ${budgetLedger.spentThisPeriodUsd} spent · {budgetLedger.entryCount} entries
+                </span>
+              </div>
+            ) : null}
+            {killSwitch ? (
+              <div className="admin-operations-row">
+                <span className="muted-text">Kill switch / live-safe</span>
+                <StatusBadge status={killSwitch.orchestratorLiveSafe ? "Ready" : "Warning"} />
+                <span className="muted-text">
+                  {killSwitch.orchestratorLiveSafe ? "Orchestrator live-safe" : "Live flags detected — preview only"}
+                </span>
+              </div>
+            ) : null}
             <p className="muted-text admin-operations-footnote">
-              Actual live spend ledger is deferred — estimates only. No live provider calls from this panel.
+              Dry-run ledger records preview estimates only. No live provider calls from this panel.
             </p>
             {roleMappings.map((mapping) => {
               const provider = providers.find((entry) => entry.providerKey === mapping.primaryProviderKey);
@@ -193,11 +308,28 @@ export function AiOrchestratorLitePanel() {
       <SectionPanel
         tone="compact"
         title="Material routing preview"
-        description="Preview-only routing for Puriva article draft step — no execution."
+        description="Preview-only routing for Puriva workflow steps — no execution."
         action={
-          <Button onClick={() => void runPreview()} size="sm" variant="secondary" disabled={previewLoading}>
-            {previewLoading ? "Previewing…" : "Run sample preview"}
-          </Button>
+          <div className="admin-operations-inline-actions">
+            <select
+              className="admin-operations-select"
+              value={selectedStep}
+              onChange={(event) => setSelectedStep(Number(event.target.value))}
+              aria-label="Workflow step"
+            >
+              {PREVIEW_STEPS.map((entry, index) => (
+                <option key={entry.step} value={index}>
+                  {entry.label}
+                </option>
+              ))}
+            </select>
+            <Button onClick={() => void runPreview()} size="sm" variant="secondary" disabled={previewLoading}>
+              {previewLoading ? "Previewing…" : "Run preview"}
+            </Button>
+            <Button onClick={() => void runWorkflowDryRun()} size="sm" variant="secondary" disabled={dryRunLoading}>
+              {dryRunLoading ? "Dry-running…" : "Workflow dry-run"}
+            </Button>
+          </div>
         }
       >
         {error && registry ? (
@@ -226,6 +358,11 @@ export function AiOrchestratorLitePanel() {
               </span>
             </div>
             <div className="admin-operations-row">
+              <span className="muted-text">Budget kill switch</span>
+              <StatusBadge status={plan.preview.budget.killSwitchActive ? "Warning" : "Inactive"} />
+              <span className="muted-text">{plan.preview.budget.killSwitchActive ? "active" : "inactive"}</span>
+            </div>
+            <div className="admin-operations-row">
               <span className="muted-text">Live provider called</span>
               <StatusBadge status="Inactive" />
               <span className="muted-text">{plan.preview.audit.liveProviderCalled ? "yes" : "no"}</span>
@@ -236,9 +373,56 @@ export function AiOrchestratorLitePanel() {
             </p>
           </div>
         ) : (
-          <p className="muted-text">Run sample preview to see routing, policy, and budget estimate.</p>
+          <p className="muted-text">Run preview or workflow dry-run to see routing, policy, and budget estimate.</p>
         )}
+        {dryRun?.adapter.dryRunOutput ? (
+          <p className="muted-text admin-operations-footnote">
+            Dry-run contract: {dryRun.adapter.dryRunOutput.contractVersion}
+            {dryRun.adapter.dryRunOutput.researchPack ? " · research pack placeholder" : ""}
+            {dryRun.adapter.dryRunOutput.seoPlan ? " · SEO plan placeholder" : ""}
+            {dryRun.adapter.dryRunOutput.contentDraftBatch ? " · content draft batch placeholder" : ""}
+          </p>
+        ) : null}
       </SectionPanel>
+
+      {registry?.integrationBoundary ? (
+        <SectionPanel
+          tone="compact"
+          title="Puriva integration boundaries"
+          description="Pre-live readiness only — live proof pending owner credentials."
+        >
+          <div className="admin-operations-grid">
+            {registry.integrationBoundary.categories.map((category) => (
+              <div className="admin-operations-row" key={category.category}>
+                <span className="muted-text">{category.category}</span>
+                <StatusBadge status={category.status === "disabled" ? "Inactive" : "System"} />
+                <span className="muted-text">{category.status}</span>
+              </div>
+            ))}
+            <p className="muted-text admin-operations-footnote">
+              Live proof pending: {registry.integrationBoundary.purivaBlockers.slice(0, 3).join("; ")}…
+            </p>
+          </div>
+        </SectionPanel>
+      ) : null}
+
+      {events.length > 0 ? (
+        <SectionPanel
+          tone="compact"
+          title="Recent notification events (no-send)"
+          description="Internal dry-run events only — no live email delivery."
+        >
+          <div className="admin-operations-grid">
+            {events.map((event, index) => (
+              <div className="admin-operations-row" key={`${event.eventType}-${index}`}>
+                <span className="muted-text">{event.eventType}</span>
+                <StatusBadge status="System" />
+                <span className="muted-text">{event.message}</span>
+              </div>
+            ))}
+          </div>
+        </SectionPanel>
+      ) : null}
     </div>
   );
 }

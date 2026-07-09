@@ -52,6 +52,7 @@ import {
   getAiProviderPlanningConfigHandler,
   getAiOrchestratorLiteRegistryHandler,
   previewAiMaterialRoutingHandler,
+  workflowDryRunHandler,
   getGoogleDriveExportConfigHandler,
   getExternalIntegrationsReadinessHandler,
   getImageGenerationFoundationConfigHandler,
@@ -261,6 +262,7 @@ export function createCoreRouter() {
   router.get("/ai-provider/planning-config", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), getAiProviderPlanningConfigHandler);
   router.get("/ai-orchestrator-lite/registry", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), getAiOrchestratorLiteRegistryHandler);
   router.post("/ai-orchestrator-lite/material-routing-preview", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), previewAiMaterialRoutingHandler);
+  router.post("/ai-orchestrator-lite/workflow-dry-run", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), workflowDryRunHandler);
   router.get("/integrations/google-drive/export-config", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), getGoogleDriveExportConfigHandler);
   router.get("/integrations/readiness", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), getExternalIntegrationsReadinessHandler);
   router.get("/image-generation/foundation-config", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), getImageGenerationFoundationConfigHandler);

@@ -170,6 +170,7 @@ export interface AiOrchestratorLitePlanRequest {
   materialReferences?: AiMaterialReference[];
   workflowReference?: string | null;
   stepReference?: string | null;
+  spentThisPeriodUsd?: number;
 }
 
 export interface AiOrchestratorLitePlanResult {

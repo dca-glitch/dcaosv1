@@ -1,8 +1,9 @@
 # DCA OS Lite — Status (Source of Truth)
 
-**Last updated:** 2026-07-09 (G56 double-scope pre-live completion mega block)
+**Last updated:** 2026-07-09 (G57–G68 pre-live completion macro gate)
 **G55 pre-live readiness:** [`docs/runbooks/G55_PRELIVE_READINESS.md`](./runbooks/G55_PRELIVE_READINESS.md)
 **G56 pre-live readiness:** [`docs/runbooks/G56_PRELIVE_READINESS.md`](./runbooks/G56_PRELIVE_READINESS.md)
+**G57–G68 pre-live readiness:** [`docs/runbooks/G57_G68_PRELIVE_READINESS.md`](./runbooks/G57_G68_PRELIVE_READINESS.md)
 **AI policy:** [`docs/ai/AI_MODEL_POLICY.md`](./ai/AI_MODEL_POLICY.md) · [`docs/ai/AI_ORCHESTRATOR_LITE.md`](./ai/AI_ORCHESTRATOR_LITE.md)
 **Operator index:** [`docs/operator/OPERATOR_RUNBOOK.md`](./operator/OPERATOR_RUNBOOK.md)
 **Architecture map:** [`docs/ARCHITECTURE.md`](./ARCHITECTURE.md) § Current application map
@@ -23,15 +24,16 @@
 
 ---
 
-## Executive snapshot (G52-B + G53 + G55 + G56)
+## Executive snapshot (G52-B + G53 + G55 + G56 + G57–G68)
 
 | Item | State |
 |------|--------|
-| Latest baseline | G56 pre-live completion — hardened orchestrator contracts, guards, admin UI panels, workflow adapter skeleton, compliance fixtures, expanded smokes/docs |
+| Latest baseline | G57–G68 pre-live completion — persistent budget ledger, workflow dry-run, notification contracts, admin operator wiring, integration boundaries |
 | Production readiness | **NO** |
 | Next gate | **G49 formal closure** — public probes PASS (2026-07-09); owner approval sentence + optional SSH read-only still required before G50 |
 | G55 pre-live | **Local PASS** — docs + disabled-safe orchestration foundation; no live providers/deploy |
 | G56 pre-live | **Local PASS** — expanded pre-live groundwork; admin orchestrator UI; orchestrator smoke; no live providers/deploy |
+| G57–G68 pre-live | **Local PASS (implementation)** — persistent ledger, dry-run adapter, operator visibility, go/no-go docs; live proofs **BLOCKED** |
 | Staging | **Proven** — G46d/G47 PASS (artifact `5e1ea5a`) |
 | Production deploy | **Frozen/deferred** — no deploy until G49 dry-run + G50 explicit approval |
 | G49 public probes (§6.2) | **PASS** — 2026-07-09; formal gate closure pending owner sentence |

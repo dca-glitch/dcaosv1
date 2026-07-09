@@ -48,3 +48,20 @@ export type PurivaAiWorkflowPresetStep = (typeof PURIVA_AI_POLICY_PROFILE.workfl
 export function getPurivaAiPolicyProfile() {
   return PURIVA_AI_POLICY_PROFILE;
 }
+
+/** Maps Puriva workflow preset steps to orchestrator task types (dry-run wiring). */
+export const PURIVA_WORKFLOW_STEP_TASK_MAP: Record<
+  PurivaAiWorkflowPresetStep,
+  { agentRole: string; taskType: string }
+> = {
+  client_brief_review: { agentRole: "local_disabled_safe_agent", taskType: "local_deterministic" },
+  ai_safe_context_pack: { agentRole: "local_disabled_safe_agent", taskType: "local_deterministic" },
+  research_pack: { agentRole: "research_agent", taskType: "research_pack" },
+  seo_plan: { agentRole: "seo_planning_agent", taskType: "seo_plan" },
+  article_outlines: { agentRole: "seo_planning_agent", taskType: "article_outline" },
+  article_drafts: { agentRole: "content_drafting_agent", taskType: "article_draft" },
+  compliance_review: { agentRole: "compliance_review_agent", taskType: "compliance_review" },
+  rewrite_polish: { agentRole: "rewrite_localization_agent", taskType: "rewrite_polish" },
+  image_prompts: { agentRole: "image_prompt_agent", taskType: "image_prompt" },
+  admin_final_review: { agentRole: "local_disabled_safe_agent", taskType: "local_deterministic" }
+};
