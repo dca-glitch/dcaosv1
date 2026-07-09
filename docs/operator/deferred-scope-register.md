@@ -106,7 +106,7 @@ Current behavior:
 - PR #13 is merged to `main`, but current `main` is 0% deployed to production;
 - **production URL:** `system.digitalcubeagency.net`;
 - **staging URL (G1 approved):** `staging.digitalcubeagency.net` — same VPS, separate staging stack; G35 Phase C refresh COMPLETE on `5e1ea5a` (see STATUS §2.2/§2.8); G46d controlled staging deploy/proof PASS; G47 staging smoke/proof PASS; artifact/API context `/opt/dca/staging-artifacts/5e1ea5a`; host-side web target `/opt/dca/apps/dcaosv1/staging/web/dist`; compose requires `--env-file .env.staging`; correct API service `dcaosv1-staging-api`; API health 200; MVP smoke PASS; staging security baseline 31/31 PASS with one HSTS warning; production untouched;
-- production is frozen unless explicitly approved; G48/G53 planning PASS do not authorize production deploy; G49/G50 not executed; next safety blocker G54 HSTS/proxy.
+- production is frozen unless explicitly approved; G48/G53 planning PASS do not authorize production deploy; G54 HSTS/proxy is PASS; G49/G50 not executed; next production path remains G49 dry-run before G50.
 
 ## Live Analytics And External Accounts
 
