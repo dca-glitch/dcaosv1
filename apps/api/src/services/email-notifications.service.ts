@@ -157,6 +157,88 @@ export async function sendEmailNotification(
   };
 }
 
+export type AiDeliveryEmailTemplateKey = Extract<
+  EmailNotificationTemplateKey,
+  "AI_DELIVERY_REVIEW_REQUEST" | "AI_DELIVERY_APPROVED"
+>;
+
+export async function notifyDcaTeam(
+  tenantId: string,
+  subject: string,
+  templateKey: AiDeliveryEmailTemplateKey,
+  relatedEntityId: string,
+  textBody?: string | null
+) {
+  const config = getEmailProviderConfig();
+  const adminUsers = await prisma.user.findMany({
+    where: {
+      memberships: {
+        some: {
+          tenantId,
+          status: "ACTIVE",
+          membershipRoles: {
+            some: {
+              role: { key: { in: ["owner", "admin"] }, status: "ACTIVE" }
+            }
+          }
+        }
+      }
+    },
+    select: { email: true }
+  });
+
+  const uniqueEmails = [...new Set(adminUsers.map((user) => user.email.toLowerCase()))];
+  for (const recipientEmail of uniqueEmails) {
+    await sendEmailNotification({
+      tenantId,
+      recipientEmail,
+      subject,
+      templateKey,
+      relatedModule: "ai-delivery",
+      relatedEntityId,
+      textBody
+    });
+  }
+
+  if (config.replyTo) {
+    await sendEmailNotification({
+      tenantId,
+      recipientEmail: config.replyTo,
+      subject,
+      templateKey,
+      relatedModule: "ai-delivery",
+      relatedEntityId,
+      textBody
+    });
+  }
+}
+
+export async function notifyClientUsers(
+  tenantId: string,
+  clientId: string,
+  subject: string,
+  relatedEntityId: string,
+  textBody?: string | null
+) {
+  const clientUsers = await prisma.clientUserAccess.findMany({
+    where: { tenantId, clientId, isArchived: false },
+    include: { user: { select: { email: true } } }
+  });
+
+  for (const access of clientUsers) {
+    if (!access.user?.email) continue;
+    await sendEmailNotification({
+      tenantId,
+      recipientEmail: access.user.email,
+      subject,
+      templateKey: "AI_DELIVERY_REVIEW_REQUEST",
+      relatedModule: "ai-delivery",
+      relatedEntityId,
+      textBody
+    });
+  }
+}
+
 export interface TenantEmailLogListItem {
   id: string;
   tenantId: string | null;

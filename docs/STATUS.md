@@ -723,4 +723,16 @@ Full detail recorded in [`G49_PRODUCTION_DRY_RUN_READ_ONLY_PROOF.md`](./runbooks
 
 **Validation:** `npm.cmd run validate` PASS; API integration tests **45/45** PASS. **No commit/push/deploy/runtime mutation.**
 
-**Next security focus:** SEC-M4 workflow-briefs client-role denial matrix; email event wiring gaps; R2 cross-tenant/image-variant smokes (proposed, not implemented).
+**Next security focus:** SEC-M4 workflow-briefs client-role denial matrix; R2 live bucket proof (owner-gated).
+
+## Email + R2 combined block closeout (2026-07-09)
+
+**Result:** Email event wiring improved; R2/image-variant disabled-safe smokes and tests added. **No live Resend send. No live R2 bucket call.** **Puriva Launch: BLOCKED.**
+
+| Area | Status | Summary |
+|------|--------|---------|
+| Email event wiring | **IMPROVED** | `notifyDcaTeam`/`notifyClientUsers` centralized; real-path notifications wired for article ready, image set ready, admin review requests, monthly report FINAL, WordPress draft prepared; client approve/reject unchanged |
+| R2 storage boundary | **IMPROVED** | Unit tests (`r2.config`, `private-storage`); integration tests; `smoke:r2-storage-boundary:local` added |
+| Image variants | **COVERED (scaffold)** | hero/supporting_1/supporting_2/social_preview verified in foundation config + integration test |
+
+**Validation:** `npm.cmd run validate` PASS; API integration tests **52/52** PASS; unit tests **163/163** PASS.

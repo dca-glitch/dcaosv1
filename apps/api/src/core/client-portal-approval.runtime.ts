@@ -1,7 +1,6 @@
 import { createPrismaClient } from "../../../../packages/data/src/client";
 import type { AuthResolvedSessionContext } from "../auth/types";
-import { sendEmailNotification } from "../services/email-notifications.service";
-import { getEmailProviderConfig } from "../config";
+import { notifyClientUsers, notifyDcaTeam } from "../services/email-notifications.service";
 
 const prisma = createPrismaClient();
 
@@ -391,78 +390,6 @@ function allImagesReviewed(
   });
 }
 
-async function notifyDcaTeam(
-  tenantId: string,
-  subject: string,
-  templateKey: "AI_DELIVERY_REVIEW_REQUEST" | "AI_DELIVERY_APPROVED",
-  relatedEntityId: string
-) {
-  const config = getEmailProviderConfig();
-  const adminUsers = await prisma.user.findMany({
-    where: {
-      memberships: {
-        some: {
-          tenantId,
-          status: "ACTIVE",
-          membershipRoles: {
-            some: {
-              role: { key: { in: ["owner", "admin"] }, status: "ACTIVE" }
-            }
-          }
-        }
-      }
-    },
-    select: { email: true }
-  });
-
-  const uniqueEmails = [...new Set(adminUsers.map((user) => user.email.toLowerCase()))];
-  for (const recipientEmail of uniqueEmails) {
-    await sendEmailNotification({
-      tenantId,
-      recipientEmail,
-      subject,
-      templateKey,
-      relatedModule: "ai-delivery",
-      relatedEntityId
-    });
-  }
-
-  if (config.replyTo) {
-    await sendEmailNotification({
-      tenantId,
-      recipientEmail: config.replyTo,
-      subject,
-      templateKey,
-      relatedModule: "ai-delivery",
-      relatedEntityId
-    });
-  }
-}
-
-async function notifyClientUsers(
-  tenantId: string,
-  clientId: string,
-  subject: string,
-  relatedEntityId: string
-) {
-  const clientUsers = await prisma.clientUserAccess.findMany({
-    where: { tenantId, clientId, isArchived: false },
-    include: { user: { select: { email: true } } }
-  });
-
-  for (const access of clientUsers) {
-    if (!access.user?.email) continue;
-    await sendEmailNotification({
-      tenantId,
-      recipientEmail: access.user.email,
-      subject,
-      templateKey: "AI_DELIVERY_REVIEW_REQUEST",
-      relatedModule: "ai-delivery",
-      relatedEntityId
-    });
-  }
-}
-
 export async function approveClientPortalDeliverable(
   authSession: AuthResolvedSessionContext,
   deliverableId: string
@@ -537,11 +464,13 @@ export async function rejectClientPortalDeliverable(
   });
 
   const clientName = deliverable.aiDeliveryProject.client?.name ?? "Client";
+  const reasonPreview = reason.length > 120 ? `${reason.slice(0, 117)}...` : reason;
   await notifyDcaTeam(
     tenantId,
-    `[${clientName} Rejection] ${updated.title}`,
+    `[${clientName} Rejection] ${updated.title} — ${reasonPreview}`,
     "AI_DELIVERY_REVIEW_REQUEST",
-    updated.id
+    updated.id,
+    `Client rejection reason: ${reason}`
   );
 
   return {

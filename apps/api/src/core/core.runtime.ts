@@ -141,6 +141,7 @@ import {
 import { generateAiDeliveryMonthlyReportPdf } from "./monthly-report-pdf.service";
 import { generateAiDeliveryContentPlanPdf } from "./content-plan-pdf.service";
 import { recordAiDeliverySystemEvent } from "../services/system-events.service";
+import { notifyDcaTeam } from "../services/email-notifications.service";
 import { recordPlatformAuditEvent } from "../security/audit-log.service";
 import type { AiDeliveryWordPressPublishResult } from "../services/wordpress.service";
 import {
@@ -583,6 +584,24 @@ function toTaskSummary(task: {
 
 function getActiveTenantId(authSession: AuthResolvedSessionContext): string | null {
   return authSession.tenantContext.activeMembership?.tenantId ?? null;
+}
+
+async function notifyAiDeliveryDcaTeamSafely(
+  tenantId: string,
+  subject: string,
+  relatedEntityId: string,
+  approved = false
+) {
+  try {
+    await notifyDcaTeam(
+      tenantId,
+      subject,
+      approved ? "AI_DELIVERY_APPROVED" : "AI_DELIVERY_REVIEW_REQUEST",
+      relatedEntityId
+    );
+  } catch {
+    // Email notification failures must not block core AI Delivery workflows.
+  }
 }
 
 function userHasActiveTenantRole(authSession: AuthResolvedSessionContext, roles: string[]): boolean {
@@ -2293,7 +2312,7 @@ export async function requestAiDeliveryContentDraftClientReview(
   const tenantId = getActiveTenantId(authSession);
   if (!tenantId) return null;
 
-  return prisma.$transaction(async (tx: PrismaTx) => {
+  const result = await prisma.$transaction(async (tx: PrismaTx) => {
     const project = await getAiDeliveryProjectForDraft(tx, tenantId, aiDeliveryProjectId);
     if (!project) return null;
     const existing = await getAiDeliveryContentDraftDelegate(tx).findFirst({
@@ -2323,6 +2342,16 @@ export async function requestAiDeliveryContentDraftClientReview(
     );
     return { contentDraft: toAiDeliveryContentDraftSummary(updated) };
   });
+
+  if (result?.contentDraft) {
+    await notifyAiDeliveryDcaTeamSafely(
+      tenantId,
+      `[Article ready for review] ${result.contentDraft.title}`,
+      result.contentDraft.id
+    );
+  }
+
+  return result;
 }
 
 export async function returnAiDeliveryContentDraftToDraft(
@@ -2714,7 +2743,7 @@ async function transitionAiDeliveryArticleImageStatus(
   const tenantId = getActiveTenantId(authSession);
   if (!tenantId) return null;
 
-  return prisma.$transaction(async (tx: PrismaTx) => {
+  const result = await prisma.$transaction(async (tx: PrismaTx) => {
     const existing = await getAiDeliveryArticleImageDelegate(tx).findFirst({
       where: { id: articleImageId, tenantId, aiDeliveryProjectId },
       select: aiDeliveryArticleImageSelect
@@ -2751,6 +2780,16 @@ async function transitionAiDeliveryArticleImageStatus(
 
     return { articleImage: toAiDeliveryArticleImageSummary(updated) };
   });
+
+  if (result?.articleImage && options.eventName === "AI_DELIVERY_ARTICLE_IMAGE_FINAL_READY") {
+    await notifyAiDeliveryDcaTeamSafely(
+      tenantId,
+      `[Image set ready for review] ${result.articleImage.title}`,
+      result.articleImage.id
+    );
+  }
+
+  return result;
 }
 
 export async function markAiDeliveryArticleImagePreviewReady(
@@ -3314,7 +3353,7 @@ export async function requestAiDeliveryContentPlanClientReview(
   const tenantId = getActiveTenantId(authSession);
   if (!tenantId) return null;
 
-  return prisma.$transaction(async (tx: PrismaTx) => {
+  const result = await prisma.$transaction(async (tx: PrismaTx) => {
     const existing = await tx.aiDeliveryContentPlan.findFirst({ where: { tenantId, aiDeliveryProjectId } });
     if (!existing) return null;
 
@@ -3336,6 +3375,16 @@ export async function requestAiDeliveryContentPlanClientReview(
 
     return { contentPlan: updated };
   });
+
+  if (result?.contentPlan) {
+    await notifyAiDeliveryDcaTeamSafely(
+      tenantId,
+      "[Admin action required] Content plan ready for client review",
+      result.contentPlan.id
+    );
+  }
+
+  return result;
 }
 
 export async function approveAiDeliveryContentPlan(
@@ -3516,7 +3565,7 @@ export async function requestAiDeliveryBriefClientInput(
   const tenantId = getActiveTenantId(authSession);
   if (!tenantId) return null;
 
-  return prisma.$transaction(async (tx: PrismaTx) => {
+  const result = await prisma.$transaction(async (tx: PrismaTx) => {
     const existing = await getAiDeliveryProjectRecord(tx, tenantId, aiDeliveryProjectId);
     if (!existing) return null;
 
@@ -3550,9 +3599,20 @@ export async function requestAiDeliveryBriefClientInput(
     );
 
     return {
-      aiDeliveryProject: toAiDeliveryProjectSummary(updated as Parameters<typeof toAiDeliveryProjectSummary>[0])
+      aiDeliveryProject: toAiDeliveryProjectSummary(updated as Parameters<typeof toAiDeliveryProjectSummary>[0]),
+      briefId: brief.id
     };
   });
+
+  if (result?.briefId) {
+    await notifyAiDeliveryDcaTeamSafely(
+      tenantId,
+      "[Admin action required] Brief client input requested",
+      result.briefId
+    );
+  }
+
+  return result ? { aiDeliveryProject: result.aiDeliveryProject } : null;
 }
 
 export async function requestAiDeliveryBriefClientRevision(
@@ -8089,7 +8149,18 @@ export async function updateAiDeliveryMonthlyReportStatus(
     select: aiDeliveryMonthlyReportSelect
   }) as any;
 
-  return { report: toAiDeliveryMonthlyReportSummary(updated) };
+  const response = { report: toAiDeliveryMonthlyReportSummary(updated) };
+
+  if (newStatus === "FINAL") {
+    await notifyAiDeliveryDcaTeamSafely(
+      tenantId,
+      `[Monthly report final ready] ${response.report.title ?? "Monthly report"}`,
+      response.report.id,
+      true
+    );
+  }
+
+  return response;
 }
 
 export async function generateAiDeliveryMonthlyReportRecommendations(
@@ -9154,6 +9225,12 @@ export async function prepareAiDeliveryDeliverableWordPressDraft(
     actorUserId: authSession.user.id,
     note: `Prepared draft for ${publicationTarget!.label}`
   });
+
+  await notifyAiDeliveryDcaTeamSafely(
+    tenantId,
+    `[WordPress draft prepared] ${title}`,
+    deliverableId
+  );
 
   return {
     wordpressDraft: {

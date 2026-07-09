@@ -22,10 +22,10 @@ This table maps the six required proof areas for private R2 storage to where eac
 | Proof area | Where covered | Status |
 |---|---|---|
 | Document roundtrip (deliverable/report/bill documents) | §2b (`smoke:r2-byte-roundtrip:local`, `SMOKE_EXPECT_R2_ROUNDTRIP=true`) | **Automated** — upload → signed download → SHA-256 byte match |
-| Hero / supporting / social image variants | §8 (`STORAGE_R2_PROOF.md` §8.1–§8.3) | **Not automated** — no live image provider wired yet (`IMAGE_GENERATION_PROOF.md` Phase B/C not started); checklist-only today. Proposed script logged in §9 |
+| Hero / supporting / social image variants | §8 + `smoke:r2-storage-boundary:local` | **Scaffold verified** — four variant slots in image-generation foundation; live image byte roundtrip still deferred |
 | Signed URL (issuance + expiry) | §2b (issuance, `expiresSeconds`), §3 (expiry re-fetch on staging) | **Automated locally for issuance; expiry re-fetch is staging-only manual step** |
-| Cross-tenant denial | §2c (manual spot-check bullets only) | **Not automated** — existing role-boundary smoke (`smoke:client-role-api-boundary:local`) proves admin-vs-client role denial, not same-role cross-tenant denial for R2-backed document routes. Proposed script logged in §9 |
-| Disabled mode fail-closed | §2a (`smoke:r2-byte-roundtrip:local` default run, no `SMOKE_EXPECT_R2_ROUNDTRIP`) | **Automated** — `503 R2_STORAGE_NOT_CONFIGURED`, `storageKey` stays `null`, `downloadReference` stays `null` |
+| Cross-tenant denial | §2c + `r2-storage-boundary.integration.test.ts` | **Partially automated** — unknown cross-tenant ids return 404/null; full two-tenant live smoke still owner-gated |
+| Disabled mode fail-closed | §2a + `smoke:r2-storage-boundary:local` | **Automated** — `503 R2_STORAGE_NOT_CONFIGURED`, `hasDocument` only in list JSON, `downloadReference` null when disabled |
 | Cleanup (smoke fixture teardown) | §2d (new) | **Not automated** — see §2d for the exact reason and current mitigation |
 
 Read §2d and §9 before assuming any "Not automated" row above is safe to skip in a future live-proof block.
