@@ -4,9 +4,11 @@
 
 **Purpose:** Practical checklist to decide whether `main` is ready to **request** staging work (G4) — not to deploy staging.
 
-**Current baseline (2026-07-09):** latest proven full local closeout commit `217c11c` (`test: stabilize G35 Phase B browser smokes`); G35 Phase C controlled staging refresh completed on commit `5e1ea5a` (`docs: record staging discovery facts`); G46d controlled staging deploy/proof PASS using API context `/opt/dca/staging-artifacts/5e1ea5a` and host-side web target `/opt/dca/apps/dcaosv1/staging/web/dist`; latest local pre-staging re-check is G43 PASS on current `main` at `a18dcc1` after G38/G39/G41 copy polish; CI green for those copy-polish commits; full local `smoke:pre-staging:local` PASS for G35 Phase B; staging artifact refreshed from `5ee8389` to `5e1ea5a`; staging API recreated; MVP smoke PASS; production untouched; **further staging refresh/execution requires fresh explicit owner approval**.
+**Current baseline (2026-07-09):** latest proven full local closeout commit `217c11c` (`test: stabilize G35 Phase B browser smokes`); G35 Phase C controlled staging refresh completed on commit `5e1ea5a` (`docs: record staging discovery facts`); G46d controlled staging deploy/proof PASS using API context `/opt/dca/staging-artifacts/5e1ea5a` and host-side web target `/opt/dca/apps/dcaosv1/staging/web/dist`; G47/G47b/G47c staging smoke/proof PASS on baseline `f25158d` with staging root 200, staging health 200, production health-only 200, MVP staging smoke PASS, and staging security baseline 31/31 PASS with one HSTS warning; latest local pre-staging re-check is G43 PASS on current `main` at `a18dcc1` after G38/G39/G41 copy polish; CI green for those copy-polish commits; full local `smoke:pre-staging:local` PASS for G35 Phase B; staging artifact refreshed from `5ee8389` to `5e1ea5a`; staging API recreated; MVP smoke PASS; production untouched; **further staging refresh/execution requires fresh explicit owner approval**.
 
 **Ground-truth notice (updated 2026-07-09 post-G46d proof):** G46d controlled staging deploy/proof is PASS. Staging artifact/API context was `/opt/dca/staging-artifacts/5e1ea5a`; host-side web target was `/opt/dca/apps/dcaosv1/staging/web/dist`; staging compose was `/opt/dca/apps/dcaosv1/staging/docker-compose.staging.yml`; compose requires `--env-file .env.staging`; correct staging API compose service is `dcaosv1-staging-api`, not `api`. Final proof: staging root HTTP 200, staging health HTTP 200, production health-only HTTP 200. Production deploy attempted: NO. Production app/API/DB mutation: NO. Any further staging refresh/VPS execution/migration/deploy requires fresh explicit owner approval with bounded execution block instructions. This docs update authorizes no new VPS, staging, production, deploy, DNS, migration, SSH, Docker, or Caddy action without explicit owner instruction.
+
+**G47 staging smoke/proof notice (updated 2026-07-09):** G47 minimal staging proof PASS (`staging-root-http=200`, `staging-health-http=200`, `prod-health-only-http=200`) and staging/prod separation confirmed. G47b MVP staging smoke PASS requires explicit `MVP_SMOKE_API_BASE_URL=https://staging.digitalcubeagency.net/api/v1`; initial run without explicit target refused/failed by target guard, retry passed with `smoke-mvp-staging-exit=0`. G47c staging security baseline PASS requires explicit `DCA_SMOKE_REMOTE_TARGET=staging`; initial run without explicit target refused by remote target guard, retry passed with `smoke-staging-security-baseline-exit=0`; result `31/31 passed, 1 warning(s)`. HSTS missing is a known proxy hardening warning only. Production health probe inside smoke was skipped unless explicitly approved. No repo/source edits, deploy, VPS/staging/prod mutation, commit, or push occurred during smoke gates.
 
 **Source of truth:** [`docs/STATUS.md`](../STATUS.md). **Operator runbook:** [`docs/operator/OPERATOR_RUNBOOK.md`](../operator/OPERATOR_RUNBOOK.md).
 
@@ -239,6 +241,17 @@ Optional flags on the wrapper: `-IncludeOptional` (metrics + PDF), `-IncludeFull
 | `node scripts/smoke-delivery-handoff-readiness-local.mjs` | Delivery handoff readiness + WP draft prep disabled-safe (Mega Layer 2) |
 | `node scripts/smoke-client-final-visibility-local.mjs` | Client portal final deliverables/reports boundary |
 | `node scripts/smoke-ai-delivery-revenue-engine-local.mjs` | Deterministic revenue chain (Mega Layer 1) |
+
+### Staging smoke/proof target guards (G47)
+
+Staging smoke scripts may intentionally refuse to run without explicit remote target env. This is expected safety behavior, not a staging failure.
+
+| Gate | Required explicit env | G47 proof |
+|------|-----------------------|-----------|
+| MVP staging smoke | `MVP_SMOKE_API_BASE_URL=https://staging.digitalcubeagency.net/api/v1` | PASS after retry with explicit target; `smoke-mvp-staging-exit=0` |
+| Staging security baseline | `DCA_SMOKE_REMOTE_TARGET=staging` | PASS after retry with explicit target; `smoke-staging-security-baseline-exit=0`; `31/31 passed, 1 warning(s)` |
+
+HSTS missing remains a known proxy hardening warning only. Do not run production probes or mutate proxy/Caddy/staging/prod unless explicitly approved in a separate bounded gate.
 
 Full catalog: [`LOCAL_SMOKE_MATRIX.md`](./LOCAL_SMOKE_MATRIX.md).
 

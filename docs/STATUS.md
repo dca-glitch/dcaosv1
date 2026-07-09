@@ -1,6 +1,6 @@
 # DCA OS Lite — Status (Source of Truth)
 
-**Last updated:** 2026-07-09 (G46e docs-only staging deploy/proof closeout after G46d PASS)
+**Last updated:** 2026-07-09 (G47d docs-only staging smoke/proof closeout after G47/G47b/G47c PASS)
 **Operator index:** [`docs/operator/OPERATOR_RUNBOOK.md`](./operator/OPERATOR_RUNBOOK.md)  
 **Architecture map:** [`docs/ARCHITECTURE.md`](./ARCHITECTURE.md) § Current application map  
 **Smoke matrix:** [`docs/runbooks/LOCAL_SMOKE_MATRIX.md`](./runbooks/LOCAL_SMOKE_MATRIX.md)  
@@ -21,8 +21,8 @@
 | Pre-staging local closeout (G35 Phase B) | **PASS** — full local pre-staging gate passed on `217c11c`; see §2.7 |
 | Latest local pre-staging re-check (G43) | **PASS** — validate plus four focused local smokes passed on current `main`; no repo edits, commit/push/deploy, staging/VPS/prod; see §2.9 |
 | Controlled refresh (G35 Phase C) | **PASS** — staging artifact refreshed from `5ee8389` to `5e1ea5a`; local validate PASS before artifact creation; staging API recreated; DB healthy; MVP smoke PASS; production untouched; see §2.8 |
-| Production deploy | **None** — `system.digitalcubeagency.net` unchanged; production API/DB untouched during Phase C refresh and G46d controlled staging deploy/proof |
-| Staging deploy | **G46d controlled staging deploy/proof PASS.** Staging remains on artifact/API context `/opt/dca/staging-artifacts/5e1ea5a`; host-side web target `/opt/dca/apps/dcaosv1/staging/web/dist`; staging compose `/opt/dca/apps/dcaosv1/staging/docker-compose.staging.yml` with `--env-file .env.staging`; correct API service `dcaosv1-staging-api`. Any further staging refresh/execution/migration requires fresh explicit owner approval. |
+| Production deploy | **None** — `system.digitalcubeagency.net` unchanged; production API/DB untouched during Phase C refresh, G46d controlled staging deploy/proof, and G47 staging smoke/proof gates |
+| Staging deploy | **G47 staging smoke/proof PASS after G46d controlled staging deploy/proof PASS.** Staging remains on artifact/API context `/opt/dca/staging-artifacts/5e1ea5a`; host-side web target `/opt/dca/apps/dcaosv1/staging/web/dist`; staging compose `/opt/dca/apps/dcaosv1/staging/docker-compose.staging.yml` with `--env-file .env.staging`; correct API service `dcaosv1-staging-api`. G47b MVP staging smoke requires explicit `MVP_SMOKE_API_BASE_URL=https://staging.digitalcubeagency.net/api/v1`; G47c staging security baseline requires explicit `DCA_SMOKE_REMOTE_TARGET=staging`. Any further staging refresh/execution/migration requires fresh explicit owner approval. |
 | Staging target (G1) | `staging.digitalcubeagency.net` exists and resolves to the same VPS as `system.digitalcubeagency.net`; staging responds with artifact context `/opt/dca/staging-artifacts/5e1ea5a`; health 200; web root 200 |
 | Default AI execution | Local deterministic; live OpenRouter opt-in only |
 | Work mode | Local-first on Windows PowerShell from `C:\dcaosv1` |
@@ -240,6 +240,28 @@ Prior artifact `5ee8389` was deployed on 2026-07-05 with claimed Phase 8 Caddy w
 | Final local git status before docs | `## main...origin/main` |
 
 G46d was staging-only. No production deploy was attempted, and production app/API/DB were not mutated.
+
+### 2.11 G47 staging smoke/proof closeout (2026-07-09)
+
+**Result:** PASS — staging smoke/proof completed after G46d. Docs-only G47d records proof facts. No repo/source edits occurred during smoke gates. No deploy was attempted. VPS/staging/production were not mutated. No commit or push occurred during smoke gates.
+
+| Item | Evidence |
+|------|----------|
+| Baseline commit before G47 docs | `f25158d` (`docs: record G46d staging deploy proof`) |
+| G47 minimal staging proof | PASS — `staging-root-http=200`; `staging-health-http=200`; `prod-health-only-http=200`; staging/prod separation confirmed |
+| Staging/prod separation | Staging API `dcaosv1-staging-api` on `127.0.0.1:4011->4000`; production API `dcaosv1-api` on `127.0.0.1:4010->4000`; staging/prod Postgres containers remain separate |
+| G47b MVP staging smoke | PASS after explicit target env; initial run without explicit target refused/failed by target guard; retry passed with `smoke-mvp-staging-exit=0` |
+| G47b required env | `MVP_SMOKE_API_BASE_URL=https://staging.digitalcubeagency.net/api/v1` |
+| G47b key PASS items | staging API target; health; login; `auth/me`; `auth/context`; `tenants/current`; `modules/current`; logout; reused token unauthorized |
+| G47c staging security baseline smoke | PASS after explicit target env; initial run without explicit target refused by remote target guard; retry passed with `smoke-staging-security-baseline-exit=0` |
+| G47c required env | `DCA_SMOKE_REMOTE_TARGET=staging` |
+| G47c result | `31/31 passed, 1 warning(s)` |
+| G47c warning | HSTS missing — known proxy hardening item; warning only; production health probe inside smoke skipped unless explicitly approved |
+| Final git status before docs | `## main...origin/main` |
+
+**Target guard lesson:** staging smoke scripts may intentionally refuse to run without an explicit remote target env. Treat refusal as expected safety behavior, set only the documented staging target env for the approved smoke, and never infer production targets.
+
+**Known proxy hardening warning:** HSTS remains a warning-only deferred proxy hardening item until a separately approved Caddy/proxy hardening block.
 
 ## 3. Module readiness (local admin-operated)
 

@@ -33,7 +33,7 @@ Current behavior:
 
 ## Production And Deployment
 
-**Ground-truth notice (updated 2026-07-09 post-G46d proof):** G46d controlled staging deploy/proof is PASS. Staging proof used API context `/opt/dca/staging-artifacts/5e1ea5a`, host-side web target `/opt/dca/apps/dcaosv1/staging/web/dist`, staging compose `/opt/dca/apps/dcaosv1/staging/docker-compose.staging.yml`, `--env-file .env.staging`, and service `dcaosv1-staging-api`. Final proof: staging root HTTP 200, staging health HTTP 200, production health-only HTTP 200. Production deploy attempted: NO. Production app/API/DB mutation: NO. The deferred items below remain deferred except for the completed Phase C refresh and G46d staging proof. Any further staging/VPS/production execution requires fresh explicit owner approval. This docs update does not authorize any new VPS, staging, production, deploy, DNS, migration, SSH, Docker, or Caddy action without explicit owner instruction.
+**Ground-truth notice (updated 2026-07-09 post-G47 proof):** G46d controlled staging deploy/proof is PASS, followed by G47/G47b/G47c staging smoke/proof PASS. Staging proof used API context `/opt/dca/staging-artifacts/5e1ea5a`, host-side web target `/opt/dca/apps/dcaosv1/staging/web/dist`, staging compose `/opt/dca/apps/dcaosv1/staging/docker-compose.staging.yml`, `--env-file .env.staging`, and service `dcaosv1-staging-api`. Final proof: staging root HTTP 200, staging health HTTP 200, production health-only HTTP 200, MVP staging smoke PASS with explicit `MVP_SMOKE_API_BASE_URL=https://staging.digitalcubeagency.net/api/v1`, and staging security baseline PASS with explicit `DCA_SMOKE_REMOTE_TARGET=staging` (`31/31 passed, 1 HSTS warning`). Production deploy attempted: NO. Production app/API/DB mutation: NO. No repo/source edits, deploy, VPS/staging/prod mutation, commit, or push occurred during smoke gates. The deferred items below remain deferred except for the completed Phase C refresh, G46d staging proof, and G47 smoke/proof. Any further staging/VPS/production execution requires fresh explicit owner approval. This docs update does not authorize any new VPS, staging, production, deploy, DNS, migration, SSH, Docker, or Caddy action without explicit owner instruction.
 
 **G43 note:** the later local pre-staging re-check PASS on current `main` at `a18dcc1` does not move any deferred staging, VPS, production, deploy, migration, Docker, Caddy, live provider, or live storage item out of deferred status.
 
@@ -46,7 +46,7 @@ Deferred:
 - live production Client Portal rollout on `system.digitalcubeagency.net` (MVP build in progress locally);
 - public production rollout;
 - Caddy/container/VPS changes without approval;
-- **Block G4/G46d controlled VPS staging execution:** Phase C controlled refresh COMPLETE on commit `5e1ea5a`; G46d controlled staging deploy/proof PASS; further staging/VPS work deferred pending fresh owner approval;
+- **Block G4/G46d/G47 controlled staging execution and smoke proof:** Phase C controlled refresh COMPLETE on commit `5e1ea5a`; G46d controlled staging deploy/proof PASS; G47 staging smoke/proof PASS with explicit target env guards; further staging/VPS work deferred pending fresh owner approval;
 - **future staging refresh / updates:** deferred pending fresh explicit owner approval with bounded execution block.
 
 Current behavior:
@@ -54,7 +54,7 @@ Current behavior:
 - work remains local-first;
 - PR #13 is merged to `main`, but current `main` is 0% deployed to production;
 - **production URL:** `system.digitalcubeagency.net`;
-- **staging URL (G1 approved):** `staging.digitalcubeagency.net` — same VPS, separate staging stack; G35 Phase C refresh COMPLETE on `5e1ea5a` (see STATUS §2.2/§2.8); G46d controlled staging deploy/proof PASS; artifact/API context `/opt/dca/staging-artifacts/5e1ea5a`; host-side web target `/opt/dca/apps/dcaosv1/staging/web/dist`; compose requires `--env-file .env.staging`; correct API service `dcaosv1-staging-api`; API health 200; MVP smoke PASS; production untouched;
+- **staging URL (G1 approved):** `staging.digitalcubeagency.net` — same VPS, separate staging stack; G35 Phase C refresh COMPLETE on `5e1ea5a` (see STATUS §2.2/§2.8); G46d controlled staging deploy/proof PASS; G47 staging smoke/proof PASS; artifact/API context `/opt/dca/staging-artifacts/5e1ea5a`; host-side web target `/opt/dca/apps/dcaosv1/staging/web/dist`; compose requires `--env-file .env.staging`; correct API service `dcaosv1-staging-api`; API health 200; MVP smoke PASS; staging security baseline 31/31 PASS with one HSTS warning; production untouched;
 - production is frozen unless explicitly approved.
 
 ## Live Analytics And External Accounts
@@ -192,7 +192,8 @@ These items are deferred but **must not block** local staging readiness planning
 | Item | Status | Notes |
 |------|--------|-------|
 | Claude full-code audit | Required pre-staging gate | Separate approved block; not a substitute for validate/smoke |
-| Staging deploy proof | **G46d PASS** | G35 Phase C refresh on `5e1ea5a` PASS; G46d controlled staging deploy/proof PASS with staging root 200, staging health 200, prod health-only 200; production deploy attempted NO; production app/API/DB mutation NO; further staging work deferred pending fresh owner approval |
+| Staging deploy and smoke proof | **G46d/G47 PASS** | G35 Phase C refresh on `5e1ea5a` PASS; G46d controlled staging deploy/proof PASS; G47 minimal proof PASS with staging root 200, staging health 200, prod health-only 200; G47b MVP staging smoke PASS with explicit target env; G47c staging security baseline 31/31 PASS with one HSTS warning; production deploy attempted NO; production app/API/DB mutation NO; further staging work deferred pending fresh owner approval |
+| HSTS proxy hardening | Deferred warning | G47c reported HSTS missing as warning only; handle in separate approved Caddy/proxy hardening block |
 | Production deploy proof | Deferred | Frozen |
 | Strict R2 real bucket proof | Deferred | Optional local env + smoke flag |
 | GA / GSC live sync | Deferred | Snapshot-first metrics; manual/Puriva placeholder proven |
