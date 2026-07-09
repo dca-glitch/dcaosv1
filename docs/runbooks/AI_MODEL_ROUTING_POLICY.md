@@ -1,7 +1,7 @@
-# AI Model Routing Policy (G72)
+# AI Model Routing Policy (G72 + G73)
 
-**Status:** Implemented on `main` (G72) — backend policy selects models per task type.  
-**Live execution:** Not part of G72 — dry-run/preview only.  
+**Status:** Implemented on `main` (G72 policy, G73 attribution proof) — backend policy selects models per task type.
+**Live execution:** Not part of G72/G73 — dry-run/preview only.
 **Approved live text model (local proof):** `anthropic/claude-haiku-4.5` via OpenRouter.
 
 ## Principle
@@ -48,8 +48,22 @@ Do **not** use `openrouter/auto` for Puriva or medical/compliance content.
 
 - `planAiOrchestratorLiteStep` resolves route via `resolveModelRoute()`
 - Preview/dry-run responses include `modelRouting` audit metadata (no secrets)
-- `liveProviderCalled` remains `false` in G72 dry-run/preview paths
+- Preview/dry-run responses include `plannedLedgerMetadata` for budget attribution (G73)
+- `liveProviderCalled` remains `false` in G72/G73 dry-run/preview paths
 - Registry exposes `modelRoutingPolicy` snapshot for admin visibility
+
+## Route metadata propagation (G73)
+
+| Layer | Field | Source |
+|-------|-------|--------|
+| Policy | `routingTaskType`, `gateway`, `primaryModel`, `maxCostUsdPerRun`, `policyVersion` | `resolveModelRoute()` → `AI_MODEL_ROUTING_TABLE` |
+| Orchestrator preview | `preview.modelRouting` | Full routing audit attached to plan preview |
+| Orchestrator plan | `plannedLedgerMetadata` | `buildPlannedLedgerMetadata()` — taskType, gateway, model, caps, clientProfile, contentChannel |
+| Budget guard | `budget.estimatedStepCostUsd` | Route `maxCostUsdPerRun` when provided; else step estimate table |
+| Persistent ledger (preview endpoint) | `metadata.modelRouting` | Written on `POST /material-routing-preview` with PREVIEW/BLOCKED status |
+| Workflow dry-run | `adapter.plan` + `adapter.plannedLedgerMetadata` | Adapter exposes plan metadata; no separate ledger write in dry-run path |
+
+**Deferred (G74+):** Live workflow execution spend attribution (`COMPLETED` ledger rows with `actualCostUsd`) after approved live provider calls.
 
 ## Orchestrator task → routing task mapping
 
@@ -73,11 +87,11 @@ npm.cmd run test:unit --workspace=@dca-os-v1/api
 npm.cmd run smoke:ai-orchestrator-lite:local
 ```
 
-Unit tests: `ai-model-routing-policy.service.test.ts`, `ai-budget-guard.service.test.ts`, `ai-orchestrator-lite.service.test.ts`.
+Unit tests: `ai-model-routing-policy.service.test.ts`, `ai-budget-guard.service.test.ts`, `ai-budget-ledger.service.test.ts`, `ai-orchestrator-lite.service.test.ts`, `ai-orchestrator-workflow-adapter.skeleton.test.ts`.
 
 ## Next gate
 
-- **G73:** routing smoke + budget ledger attribution, or additional model approval matrix
+- **G74:** live spend ledger attribution after workflow execution, or additional model approval matrix
 
 ## Related docs
 

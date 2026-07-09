@@ -1,11 +1,40 @@
 import type { AiBudgetLedgerStatus, Prisma } from "@prisma/client";
 import { createPrismaClient } from "../../../../packages/data/src/client";
+import type { AiModelRouteAudit, AiPlannedLedgerMetadata } from "@dca-os-v1/shared";
 import { AI_ORCHESTRATOR_LITE_VERSION } from "@dca-os-v1/shared";
 import { buildPeriodKey } from "./ai-budget-guard.service";
+import { normalizeClientProfile, normalizeContentChannel } from "./ai-model-routing-policy.service";
 
 export const AI_BUDGET_LEDGER_VERSION = "AI_BUDGET_LEDGER_V1";
 
 const COUNTABLE_STATUSES: AiBudgetLedgerStatus[] = ["PREVIEW", "PLANNED", "COMPLETED"];
+
+export function buildPlannedLedgerMetadata(input: {
+  orchestratorTaskType: string;
+  clientProfile?: string | null;
+  contentChannel?: string | null;
+  providerKey: string;
+  estimatedCostUsd: number;
+  canExecute: boolean;
+  routingAudit: AiModelRouteAudit;
+}): AiPlannedLedgerMetadata {
+  return {
+    ledgerVersion: AI_BUDGET_LEDGER_VERSION,
+    taskType: input.orchestratorTaskType,
+    routingTaskType: input.routingAudit.routingTaskType,
+    gateway: input.routingAudit.gateway,
+    model: input.routingAudit.primaryModel,
+    maxCostUsdPerRun: input.routingAudit.maxCostUsdPerRun,
+    policyVersion: input.routingAudit.policyVersion,
+    clientProfile: normalizeClientProfile(input.clientProfile),
+    contentChannel: normalizeContentChannel(input.contentChannel ?? "website"),
+    provider: input.providerKey,
+    estimatedCostUsd: input.estimatedCostUsd,
+    requiresBudgetLedger: input.routingAudit.requiresBudgetLedger,
+    liveProviderCalled: false,
+    ledgerStatus: input.canExecute ? "PREVIEW" : "BLOCKED"
+  };
+}
 
 export interface AiBudgetLedgerRecordInput {
   tenantId: string;

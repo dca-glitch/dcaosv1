@@ -2,6 +2,7 @@ import type {
   AiContentDraftBatchPlan,
   AiOrchestratorLitePlanRequest,
   AiOrchestratorLitePlanResult,
+  AiPlannedLedgerMetadata,
   AiResearchPackOutput,
   AiSeoPlanOutput
 } from "@dca-os-v1/shared";
@@ -24,6 +25,7 @@ export interface AiOrchestratorWorkflowAdapterInput {
   operatingPackKey?: string | null;
   briefApproved?: boolean;
   spentThisPeriodUsd?: number;
+  contentChannel?: string | null;
   workflowReference?: string | null;
   stepReference?: string | null;
 }
@@ -38,6 +40,7 @@ export interface AiOrchestratorWorkflowAdapterDryRunOutput {
 export interface AiOrchestratorWorkflowAdapterResult {
   adapterVersion: typeof AI_ORCHESTRATOR_WORKFLOW_ADAPTER_VERSION;
   plan: AiOrchestratorLitePlanResult;
+  plannedLedgerMetadata: AiPlannedLedgerMetadata;
   dryRunOutput: AiOrchestratorWorkflowAdapterDryRunOutput;
   canProceedToExecution: boolean;
   blockedReason: string | null;
@@ -65,14 +68,17 @@ export function planWorkflowStepWithOrchestrator(
     clientId: input.clientId,
     operatingPackKey: input.operatingPackKey,
     spentThisPeriodUsd: input.spentThisPeriodUsd,
+    contentChannel: input.contentChannel,
     workflowReference: input.workflowReference,
     stepReference: input.stepReference
   };
 
   if (input.briefApproved === false) {
+    const plan = planAiOrchestratorLiteStep(planRequest);
     return {
       adapterVersion: AI_ORCHESTRATOR_WORKFLOW_ADAPTER_VERSION,
-      plan: planAiOrchestratorLiteStep(planRequest),
+      plan,
+      plannedLedgerMetadata: plan.plannedLedgerMetadata,
       dryRunOutput: buildDryRunOutput(input.taskType),
       canProceedToExecution: false,
       blockedReason: "Brief is not approved; cannot route as AI-safe context.",
@@ -85,6 +91,7 @@ export function planWorkflowStepWithOrchestrator(
   return {
     adapterVersion: AI_ORCHESTRATOR_WORKFLOW_ADAPTER_VERSION,
     plan,
+    plannedLedgerMetadata: plan.plannedLedgerMetadata,
     dryRunOutput: buildDryRunOutput(input.taskType),
     canProceedToExecution: plan.canExecute,
     blockedReason: plan.blockedReason,

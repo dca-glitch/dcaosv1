@@ -9,6 +9,7 @@ import { AI_ORCHESTRATOR_LITE_VERSION } from "@dca-os-v1/shared";
 import { getAiAgentRoleDefinition } from "./ai-agent-role-registry";
 import { applyAiMaterialPolicy, buildDefaultAiSafeMaterialSet } from "./ai-material-policy.guard";
 import { buildAiBudgetSnapshot, isAiBudgetBlocked } from "./ai-budget-guard.service";
+import { buildPlannedLedgerMetadata } from "./ai-budget-ledger.service";
 import { resolveModelRoute, listAiModelRoutingPolicySnapshot } from "./ai-model-routing-policy.service";
 import { AI_AGENT_ROLE_REGISTRY } from "./ai-agent-role-registry";
 import { listAiProviderRegistrySnapshot, resolveProviderForRole } from "./ai-provider-registry.service";
@@ -19,8 +20,10 @@ export function planAiOrchestratorLiteStep(
 ): AiOrchestratorLitePlanResult {
   const roleDefinition = getAiAgentRoleDefinition(request.agentRole);
   if (!roleDefinition) {
+    const blocked = buildBlockedPreview(request, `Unknown agent role "${request.agentRole}".`);
     return {
-      preview: buildBlockedPreview(request, `Unknown agent role "${request.agentRole}".`),
+      preview: blocked.preview,
+      plannedLedgerMetadata: blocked.plannedLedgerMetadata,
       canExecute: false,
       blockedReason: `Unknown agent role "${request.agentRole}".`
     };
@@ -40,7 +43,7 @@ export function planAiOrchestratorLiteStep(
   const routingResolution = resolveModelRoute({
     orchestratorTaskType: request.taskType,
     clientProfile: request.operatingPackKey,
-    contentChannel: "website",
+    contentChannel: request.contentChannel ?? "website",
     requestedModelOverride: request.requestedModelOverride ?? null
   });
 
@@ -113,9 +116,21 @@ export function planAiOrchestratorLiteStep(
     blockedReason = budgetBlock.reason;
   }
 
+  const canExecute = blockedReason === null;
+  const plannedLedgerMetadata = buildPlannedLedgerMetadata({
+    orchestratorTaskType: request.taskType,
+    clientProfile: request.operatingPackKey,
+    contentChannel: request.contentChannel ?? "website",
+    providerKey: providerResolution.effective.providerKey,
+    estimatedCostUsd,
+    canExecute,
+    routingAudit: routingResolution.audit
+  });
+
   return {
     preview,
-    canExecute: blockedReason === null,
+    plannedLedgerMetadata,
+    canExecute,
     blockedReason
   };
 }
@@ -137,10 +152,11 @@ export function getAiOrchestratorLiteRegistrySnapshot(): {
 function buildBlockedPreview(
   request: AiOrchestratorLitePlanRequest,
   reason: string
-): AiMaterialRoutingPreview {
+): { preview: AiMaterialRoutingPreview; plannedLedgerMetadata: ReturnType<typeof buildPlannedLedgerMetadata> } {
   const routingResolution = resolveModelRoute({
     orchestratorTaskType: request.taskType,
-    clientProfile: request.operatingPackKey
+    clientProfile: request.operatingPackKey,
+    contentChannel: request.contentChannel ?? "website"
   });
   const budget = buildAiBudgetSnapshot({
     clientId: request.clientId,
@@ -149,7 +165,18 @@ function buildBlockedPreview(
     maxCostUsdPerRun: routingResolution.route.maxCostUsdPerRun
   });
 
+  const plannedLedgerMetadata = buildPlannedLedgerMetadata({
+    orchestratorTaskType: request.taskType,
+    clientProfile: request.operatingPackKey,
+    contentChannel: request.contentChannel ?? "website",
+    providerKey: "local_deterministic",
+    estimatedCostUsd: 0,
+    canExecute: false,
+    routingAudit: routingResolution.audit
+  });
+
   return {
+    preview: {
     workflow: request.workflow,
     clientId: request.clientId ?? null,
     clientLabel: null,
@@ -191,5 +218,7 @@ function buildBlockedPreview(
       liveProviderCalled: false,
       providerSelectionReason: reason
     }
+    },
+    plannedLedgerMetadata
   };
 }

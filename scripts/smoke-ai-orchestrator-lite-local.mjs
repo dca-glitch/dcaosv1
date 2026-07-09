@@ -117,6 +117,91 @@ async function main() {
   assert(plan.preview.modelRouting.requiresBudgetLedger === true, "budget ledger required");
   assert(plan.preview.modelRouting.maxCostUsdPerRun > 0, "route cost cap present");
   assert(typeof plan.preview.modelRouting.allowLive === "boolean", "route allowLive flag present");
+  assert(plan.preview.modelRouting.routingTaskType === "content_draft", "article_draft maps to content_draft");
+  assert(Boolean(plan.plannedLedgerMetadata), "planned ledger metadata present");
+  assert(plan.plannedLedgerMetadata.taskType === "article_draft", "planned ledger taskType");
+  assert(plan.plannedLedgerMetadata.gateway === "openrouter", "planned ledger gateway");
+  assert(plan.plannedLedgerMetadata.model === "anthropic/claude-haiku-4.5", "planned ledger model");
+  assert(plan.plannedLedgerMetadata.policyVersion === "AI_MODEL_ROUTING_POLICY_V1", "planned ledger policyVersion");
+  assert(plan.plannedLedgerMetadata.clientProfile === "puriva", "planned ledger clientProfile");
+  assert(plan.plannedLedgerMetadata.contentChannel === "website", "planned ledger contentChannel");
+  assert(plan.plannedLedgerMetadata.liveProviderCalled === false, "planned ledger no live call");
+
+  const researchPreview = await apiCall(
+    "POST",
+    "/ai-orchestrator-lite/material-routing-preview",
+    {
+      workflow: "puriva_content_production",
+      step: "research_pack",
+      agentRole: "research_agent",
+      taskType: "research_pack",
+      operatingPackKey: "puriva"
+    },
+    adminToken
+  );
+  assert(researchPreview.ok, "research_pack preview POST", `status=${researchPreview.status}`);
+  const researchPlan = researchPreview.json?.data?.plan;
+  assert(researchPlan.preview.modelRouting.routingTaskType === "research_pack", "research_pack routing task");
+  assert(researchPlan.plannedLedgerMetadata.routingTaskType === "research_pack", "research planned routing");
+
+  const narrativePreview = await apiCall(
+    "POST",
+    "/ai-orchestrator-lite/material-routing-preview",
+    {
+      workflow: "puriva_content_production",
+      step: "report_narrative",
+      agentRole: "report_narrative_agent",
+      taskType: "report_narrative",
+      operatingPackKey: "puriva"
+    },
+    adminToken
+  );
+  assert(narrativePreview.ok, "report_narrative preview POST");
+  assert(
+    narrativePreview.json?.data?.plan?.preview?.modelRouting?.routingTaskType === "workflow_summary",
+    "report_narrative maps to workflow_summary"
+  );
+
+  const compliancePreview = await apiCall(
+    "POST",
+    "/ai-orchestrator-lite/material-routing-preview",
+    {
+      workflow: "puriva_content_production",
+      step: "compliance_review",
+      agentRole: "compliance_review_agent",
+      taskType: "compliance_review",
+      operatingPackKey: "puriva"
+    },
+    adminToken
+  );
+  assert(compliancePreview.ok, "compliance_review preview POST");
+  assert(
+    compliancePreview.json?.data?.plan?.preview?.modelRouting?.allowLive === false,
+    "medical_compliance_review allowLive false"
+  );
+
+  const overridePreview = await apiCall(
+    "POST",
+    "/ai-orchestrator-lite/material-routing-preview",
+    {
+      workflow: "puriva_content_production",
+      step: "research_pack",
+      agentRole: "research_agent",
+      taskType: "research_pack",
+      operatingPackKey: "puriva",
+      requestedModelOverride: "openrouter/auto"
+    },
+    adminToken
+  );
+  assert(overridePreview.ok, "model override rejection preview POST");
+  assert(
+    overridePreview.json?.data?.plan?.preview?.modelRouting?.modelOverrideRejected === true,
+    "unapproved model override rejected"
+  );
+  assert(
+    overridePreview.json?.data?.plan?.preview?.modelRouting?.primaryModel === "anthropic/claude-haiku-4.5",
+    "policy model retained after override rejection"
+  );
 
   const routingPolicy = registryData.registry.modelRoutingPolicy;
   assert(Boolean(routingPolicy), "model routing policy in registry");
@@ -141,6 +226,11 @@ async function main() {
   assert(Boolean(adapter?.dryRunOutput), "dry-run contract output present");
   assert(adapter.executionDeferred === true, "execution deferred");
   assert(Boolean(adapter.dryRunOutput.researchPack), "research pack dry-run placeholder");
+  assert(Boolean(adapter.plan?.preview?.modelRouting), "dry-run modelRouting present");
+  assert(adapter.plan.preview.modelRouting.routingTaskType === "research_pack", "dry-run research_pack route");
+  assert(Boolean(adapter.plannedLedgerMetadata), "dry-run plannedLedgerMetadata present");
+  assert(adapter.plannedLedgerMetadata.liveProviderCalled === false, "dry-run planned ledger no live call");
+  assert(adapter.plan.preview.audit.liveProviderCalled === false, "dry-run audit liveProviderCalled false");
   assert(Boolean(registryData.budgetLedger), "budget ledger summary in registry");
   assert(Boolean(registryData.killSwitch), "kill switch snapshot in registry");
   assert(registryData.killSwitch.orchestratorLiveSafe === true, "orchestrator live-safe");
@@ -158,6 +248,7 @@ async function main() {
 
   assert(!FORBIDDEN_PATTERNS.some((pattern) => pattern.test(registry.text)), "registry hides secrets");
   assert(!FORBIDDEN_PATTERNS.some((pattern) => pattern.test(preview.text)), "preview hides secrets");
+  assert(!FORBIDDEN_PATTERNS.some((pattern) => pattern.test(dryRun.text)), "dry-run hides secrets");
 
   log(`\n${SMOKE_MARKER} PASS`);
   writeFileSync(LOG_PATH, logLines.join("\n"), "utf8");

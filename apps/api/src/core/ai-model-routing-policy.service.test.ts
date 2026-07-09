@@ -19,6 +19,29 @@ describe("ai-model-routing-policy.service", () => {
     assert.equal(result.route.gateway, "openrouter");
   });
 
+  it("article_draft maps to content_draft routing task", () => {
+    const result = resolveModelRoute({
+      orchestratorTaskType: "article_draft",
+      clientProfile: "puriva",
+      contentChannel: "website"
+    });
+    assert.equal(result.blocked, false);
+    assert.equal(result.route.taskType, "content_draft");
+    assert.equal(result.audit.routingTaskType, "content_draft");
+  });
+
+  it("image_generation and vision_technical_qa map to fallback_stop_admin_review", () => {
+    for (const taskType of ["image_generation", "vision_technical_qa", "image_prompt"] as const) {
+      const result = resolveModelRoute({
+        orchestratorTaskType: taskType,
+        clientProfile: "puriva"
+      });
+      assert.equal(result.blocked, true);
+      assert.equal(result.route.taskType, "fallback_stop_admin_review");
+      assert.equal(result.route.allowLive, false);
+    }
+  });
+
   it("seo_plan and content_draft return approved routes", () => {
     for (const taskType of ["seo_plan", "article_draft"] as const) {
       const result = resolveModelRoute({

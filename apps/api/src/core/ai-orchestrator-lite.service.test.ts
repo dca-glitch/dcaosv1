@@ -66,6 +66,93 @@ describe("ai-orchestrator-lite foundation", () => {
     assert.equal(resolution.effective.executionMode, "local");
   });
 
+  it("passes route maxCostUsdPerRun into budget snapshot for orchestrator planning", () => {
+    const plan = planAiOrchestratorLiteStep({
+      workflow: "puriva_content_production",
+      step: "research_pack",
+      agentRole: "research_agent",
+      taskType: "research_pack",
+      operatingPackKey: "puriva"
+    });
+    assert.equal(plan.preview.budget.estimatedStepCostUsd, plan.preview.modelRouting.maxCostUsdPerRun);
+    assert.equal(plan.preview.modelRouting.maxCostUsdPerRun, 0.3);
+    assert.ok(plan.preview.modelRouting.maxCostUsdPerRun < PURIVA_AI_MONTHLY_CAP_USD);
+  });
+
+  it("research_pack route metadata appears in orchestrator preview", () => {
+    const plan = planAiOrchestratorLiteStep({
+      workflow: "puriva_content_production",
+      step: "research_pack",
+      agentRole: "research_agent",
+      taskType: "research_pack",
+      operatingPackKey: "puriva"
+    });
+    assert.equal(plan.preview.modelRouting.routingTaskType, "research_pack");
+    assert.equal(plan.preview.modelRouting.policyVersion, "AI_MODEL_ROUTING_POLICY_V1");
+    assert.equal(plan.preview.audit.liveProviderCalled, false);
+    assert.equal(plan.plannedLedgerMetadata.taskType, "research_pack");
+    assert.equal(plan.plannedLedgerMetadata.gateway, "openrouter");
+    assert.equal(plan.plannedLedgerMetadata.model, "anthropic/claude-haiku-4.5");
+    assert.equal(plan.plannedLedgerMetadata.clientProfile, "puriva");
+    assert.equal(plan.plannedLedgerMetadata.contentChannel, "website");
+    assert.equal(plan.plannedLedgerMetadata.ledgerStatus, "PREVIEW");
+  });
+
+  it("report_narrative maps to workflow_summary with modelRouting", () => {
+    const plan = planAiOrchestratorLiteStep({
+      workflow: "puriva_content_production",
+      step: "report_narrative",
+      agentRole: "report_narrative_agent",
+      taskType: "report_narrative",
+      operatingPackKey: "puriva"
+    });
+    assert.equal(plan.preview.modelRouting.routingTaskType, "workflow_summary");
+    assert.equal(plan.plannedLedgerMetadata.routingTaskType, "workflow_summary");
+    assert.equal(plan.preview.modelRouting.allowLive, true);
+  });
+
+  it("medical_compliance_review blocks live with allowLive false", () => {
+    const plan = planAiOrchestratorLiteStep({
+      workflow: "puriva_content_production",
+      step: "compliance_review",
+      agentRole: "compliance_review_agent",
+      taskType: "compliance_review",
+      operatingPackKey: "puriva"
+    });
+    assert.equal(plan.preview.modelRouting.routingTaskType, "medical_compliance_review");
+    assert.equal(plan.preview.modelRouting.allowLive, false);
+    assert.equal(plan.preview.modelRouting.complianceProfile, "puriva_medical_strict");
+  });
+
+  it("image_generation maps to fallback_stop_admin_review and blocks execution", () => {
+    const plan = planAiOrchestratorLiteStep({
+      workflow: "puriva_content_production",
+      step: "image_generation",
+      agentRole: "image_generation_agent",
+      taskType: "image_generation",
+      operatingPackKey: "puriva"
+    });
+    assert.equal(plan.preview.modelRouting.routingTaskType, "fallback_stop_admin_review");
+    assert.equal(plan.canExecute, false);
+    assert.equal(plan.plannedLedgerMetadata.ledgerStatus, "BLOCKED");
+    assert.equal(plan.preview.audit.liveProviderCalled, false);
+  });
+
+  it("paid_ads content channel is blocked in orchestrator preview", () => {
+    const plan = planAiOrchestratorLiteStep({
+      workflow: "puriva_content_production",
+      step: "research_pack",
+      agentRole: "research_agent",
+      taskType: "research_pack",
+      operatingPackKey: "puriva",
+      contentChannel: "paid_ads"
+    });
+    assert.equal(plan.canExecute, false);
+    assert.match(plan.blockedReason ?? "", /paid ads/i);
+    assert.equal(plan.plannedLedgerMetadata.contentChannel, "paid_ads");
+    assert.equal(plan.plannedLedgerMetadata.ledgerStatus, "BLOCKED");
+  });
+
   it("plans preview without live provider call", () => {
     const plan = planAiOrchestratorLiteStep({
       workflow: "puriva_content_production",

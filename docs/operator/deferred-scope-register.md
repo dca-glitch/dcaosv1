@@ -161,7 +161,7 @@ Current behavior:
 
 ## AI Provider And Automation
 
-**G57–G68 merged to `main` (G69, `64bfd06`):** persistent AI budget ledger (dry-run estimates), workflow adapter dry-run endpoint, extended orchestrator admin panel, notification event contracts, integration boundary index. Live provider proof **COMPLETE (local only)** after G71e + G71e-retry; staging/production live proof remains **BLOCKED**.
+**G73 (routing attribution dry-run proof):** `modelRouting` and `plannedLedgerMetadata` propagate through orchestrator preview/dry-run without live AI calls. Preview endpoint persists routing metadata to ledger; workflow dry-run exposes planned metadata only. **Live spend attribution** (`COMPLETED` rows with `actualCostUsd` after provider execution) remains deferred to G74+.
 
 Deferred:
 
@@ -326,7 +326,7 @@ Keep the MVP admin-controlled and local-first until the first client delivery pa
 | Gate | Outcome |
 |------|---------|
 | G57 docs closeout | DONE — `G57_G68_PRELIVE_READINESS.md`, STATUS, this register |
-| G58 persistent AI budget ledger | DONE locally — `AiBudgetLedgerEntry`; dry-run preview records; live spend attribution deferred |
+| G58 persistent AI budget ledger | DONE locally — `AiBudgetLedgerEntry`; dry-run preview records routing metadata in `metadata.modelRouting`; live spend attribution deferred (G74) |
 | G59 workflow adapter dry-run | DONE — contract placeholders; no live execution |
 | G60 admin operator wiring | DONE — kill switch, ledger, events, boundaries in admin panel |
 | G61 notification contracts | DONE — extended types; no-send internal recorder; live email deferred |

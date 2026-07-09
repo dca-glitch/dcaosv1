@@ -3,7 +3,14 @@
  * Planning/preview only; no live provider execution in this layer.
  */
 
-import type { AiModelRouteAudit } from "./ai-model-routing-policy";
+import type {
+  AiModelRouteAudit,
+  AiRoutingClientProfile,
+  AiRoutingContentChannel,
+  AiRoutingTaskType,
+  AiRoutingGateway
+} from "./ai-model-routing-policy";
+import type { AI_MODEL_ROUTING_POLICY_VERSION } from "./ai-model-routing-policy";
 
 export const AI_ORCHESTRATOR_LITE_VERSION = "AI_ORCHESTRATOR_LITE_V1";
 
@@ -163,6 +170,24 @@ export interface AiMaterialRoutingPreview {
   audit: AiRunAuditMetadata;
 }
 
+/** Preview/planned ledger attribution metadata (G73) — no live provider call. */
+export interface AiPlannedLedgerMetadata {
+  ledgerVersion: "AI_BUDGET_LEDGER_V1";
+  taskType: string;
+  routingTaskType: AiRoutingTaskType;
+  gateway: AiRoutingGateway;
+  model: string | null;
+  maxCostUsdPerRun: number;
+  policyVersion: typeof AI_MODEL_ROUTING_POLICY_VERSION;
+  clientProfile: AiRoutingClientProfile | null;
+  contentChannel: AiRoutingContentChannel | null;
+  provider: string;
+  estimatedCostUsd: number;
+  requiresBudgetLedger: boolean;
+  liveProviderCalled: false;
+  ledgerStatus: "PREVIEW" | "BLOCKED";
+}
+
 export interface AiOrchestratorLitePlanRequest {
   workflow: string;
   step: string;
@@ -174,12 +199,14 @@ export interface AiOrchestratorLitePlanRequest {
   workflowReference?: string | null;
   stepReference?: string | null;
   spentThisPeriodUsd?: number;
+  contentChannel?: string | null;
   /** Ignored if not owner-approved — backend policy selects model. */
   requestedModelOverride?: string | null;
 }
 
 export interface AiOrchestratorLitePlanResult {
   preview: AiMaterialRoutingPreview;
+  plannedLedgerMetadata: AiPlannedLedgerMetadata;
   canExecute: boolean;
   blockedReason: string | null;
 }
