@@ -1,6 +1,6 @@
 # DCA OS Lite — Status (Source of Truth)
 
-**Last updated:** 2026-07-07 (G44 docs-only status alignment after G43 local re-check — current `main` at `a18dcc1`)
+**Last updated:** 2026-07-09 (G46e docs-only staging deploy/proof closeout after G46d PASS)
 **Operator index:** [`docs/operator/OPERATOR_RUNBOOK.md`](./operator/OPERATOR_RUNBOOK.md)  
 **Architecture map:** [`docs/ARCHITECTURE.md`](./ARCHITECTURE.md) § Current application map  
 **Smoke matrix:** [`docs/runbooks/LOCAL_SMOKE_MATRIX.md`](./runbooks/LOCAL_SMOKE_MATRIX.md)  
@@ -21,8 +21,8 @@
 | Pre-staging local closeout (G35 Phase B) | **PASS** — full local pre-staging gate passed on `217c11c`; see §2.7 |
 | Latest local pre-staging re-check (G43) | **PASS** — validate plus four focused local smokes passed on current `main`; no repo edits, commit/push/deploy, staging/VPS/prod; see §2.9 |
 | Controlled refresh (G35 Phase C) | **PASS** — staging artifact refreshed from `5ee8389` to `5e1ea5a`; local validate PASS before artifact creation; staging API recreated; DB healthy; MVP smoke PASS; production untouched; see §2.8 |
-| Production deploy | **None** — `system.digitalcubeagency.net` unchanged; production API/DB untouched during Phase C refresh |
-| Staging deploy | **Phase C refresh COMPLETE on `5e1ea5a`.** Staging artifact, API, and web now current with commit `5e1ea5a`. Any further staging refresh/execution/migration requires fresh explicit owner approval. |
+| Production deploy | **None** — `system.digitalcubeagency.net` unchanged; production API/DB untouched during Phase C refresh and G46d controlled staging deploy/proof |
+| Staging deploy | **G46d controlled staging deploy/proof PASS.** Staging remains on artifact/API context `/opt/dca/staging-artifacts/5e1ea5a`; host-side web target `/opt/dca/apps/dcaosv1/staging/web/dist`; staging compose `/opt/dca/apps/dcaosv1/staging/docker-compose.staging.yml` with `--env-file .env.staging`; correct API service `dcaosv1-staging-api`. Any further staging refresh/execution/migration requires fresh explicit owner approval. |
 | Staging target (G1) | `staging.digitalcubeagency.net` exists and resolves to the same VPS as `system.digitalcubeagency.net`; staging responds with artifact context `/opt/dca/staging-artifacts/5e1ea5a`; health 200; web root 200 |
 | Default AI execution | Local deterministic; live OpenRouter opt-in only |
 | Work mode | Local-first on Windows PowerShell from `C:\dcaosv1` |
@@ -215,6 +215,32 @@ Prior artifact `5ee8389` was deployed on 2026-07-05 with claimed Phase 8 Caddy w
 
 **G43 runtime-order lesson:** for future runtime gates, stop local Node processes first, remove the generated Prisma client folder only if needed, run `npm.cmd run validate` before starting API/Web, then start API/Web only after validate passes and run smokes. This avoids Windows Prisma DLL locks and preserves real process-exit-code capture.
 
+### 2.10 G46d controlled staging deploy/proof closeout (2026-07-09)
+
+**Result:** PASS — controlled staging deploy/proof completed against staging only. Production deploy attempted: **NO**. Production app/API/DB mutation: **NO**.
+
+| Item | Evidence |
+|------|----------|
+| Local validation | PASS after Prisma DLL lock unlock retry. Initial `validate` failed due to Windows Prisma `query_engine` DLL `EPERM` lock; recovery was stopping `node.exe`, waiting, then rerunning `validate`. |
+| API context used | `/opt/dca/staging-artifacts/5e1ea5a` |
+| Host-side staging web target used | `/opt/dca/apps/dcaosv1/staging/web/dist` |
+| Staging compose used | `/opt/dca/apps/dcaosv1/staging/docker-compose.staging.yml` |
+| Compose env file | `--env-file .env.staging` is required |
+| Correct staging API compose service | `dcaosv1-staging-api` — not `api` |
+| Staging web backup created | `/opt/dca/apps/dcaosv1/staging/backups/web-dist-before-g46d-20260709-084640` |
+| Staging API image built | `staging-dcaosv1-staging-api:latest` |
+| Staging API container | `dcaosv1-staging-api`; `127.0.0.1:4011->4000` |
+| Staging DB container | `dcaosv1-staging-postgres`; `127.0.0.1:5435->5432` |
+| Production API remained running | `dcaosv1-api`; `127.0.0.1:4010->4000` |
+| Production DB remained running | `dcaosv1-postgres`; `127.0.0.1:5434->5432` |
+| Shared Caddy handling | Shared Caddy recreate was approved and performed only to refresh stale staging web bind mount. Working pattern: `cd /opt/dca && docker compose -f /opt/dca/docker-compose.yml up -d --force-recreate --no-deps caddy`. |
+| Caddy mount refresh lesson | Do not replace a mounted `dist` directory with `rm -rf` + `mv` without recreating Caddy afterward. Preferred future pattern: copy contents into the existing mounted `dist`, or force recreate Caddy with `--force-recreate --no-deps` after replacing `dist`. |
+| Caddy final view | `/srv/dcaosv1-staging/web/dist/index.html` visible inside Caddy |
+| Final HTTP proof | `staging-root-http=200`; `staging-health-http=200`; `prod-health-only-http=200` |
+| Final local git status before docs | `## main...origin/main` |
+
+G46d was staging-only. No production deploy was attempted, and production app/API/DB were not mutated.
+
 ## 3. Module readiness (local admin-operated)
 
 Percentages are **local MVP readiness**, not production-proven. See [`docs/STATUS_COMPLETION.md`](./STATUS_COMPLETION.md) for detail.
@@ -311,13 +337,13 @@ Percentages are **local MVP readiness**, not production-proven. See [`docs/STATU
 
 ---
 
-## 7. Staging / production — G35 Phase C refresh complete
+## 7. Staging / production — G46d staging proof complete
 
 | Target | URL | Status |
 |--------|-----|--------|
-| Production | `system.digitalcubeagency.net` | Live VPS; untouched; API/DB unchanged during Phase C refresh |
-| Staging (G1) | `staging.digitalcubeagency.net` | Controlled refresh complete on `5e1ea5a`; artifact context `/opt/dca/staging-artifacts/5e1ea5a`; API health 200; web root 200; MVP smoke PASS; see §2.8. G43 local re-check PASS does not authorize further staging action. |
-| Deploy proof | — | **Phase C refresh PASS** — staging artifact, API, and web updated from `5ee8389` to `5e1ea5a`; local validation passed before artifact creation; no code push; no production touch; no further staging action approved without explicit owner instruction |
+| Production | `system.digitalcubeagency.net` | Live VPS; untouched; API/DB unchanged during Phase C refresh and G46d controlled staging deploy/proof |
+| Staging (G1) | `staging.digitalcubeagency.net` | G46d controlled staging deploy/proof PASS; artifact/API context `/opt/dca/staging-artifacts/5e1ea5a`; host-side web target `/opt/dca/apps/dcaosv1/staging/web/dist`; compose `/opt/dca/apps/dcaosv1/staging/docker-compose.staging.yml` with `--env-file .env.staging`; correct API service `dcaosv1-staging-api`; final staging root and health HTTP 200. |
+| Deploy proof | — | **G46d PASS** — staging web/API proof complete; Caddy force recreate used only to refresh stale staging web bind mount after host-side `dist` replacement; production health checked read-only 200; no production deploy or app/API/DB mutation |
 
 Phase C refresh included: local pre-artifact validation, artifact creation/upload, controlled VPS artifact swap, staging API recreation, admin bootstrap verification, and MVP smoke pass. Production containers untouched. No `.env` files read or printed. No further staging action authorized without explicit owner approval in writing.
 

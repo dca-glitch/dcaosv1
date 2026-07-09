@@ -1,6 +1,6 @@
 # DCA OS Lite — Operator Runbook (Consolidated)
 
-**Status:** Single operator entry point for local validation, smoke, recovery, and staging/production prerequisites. G35 Phase B local pre-staging gate passed on `217c11c`; G35 Phase C controlled staging refresh completed on commit `5e1ea5a` (`docs: record staging discovery facts`). Staging artifact updated from `5ee8389` to `5e1ea5a` with local validation PASS, API recreation, DB health verified, and MVP smoke PASS. G43 later re-checked current `main` at `a18dcc1` after G38/G39/G41 copy polish: validate plus four focused local smokes PASS; no repo edits, commit/push/deploy, staging/VPS/prod. Production untouched. Further staging work requires fresh owner approval.
+**Status:** Single operator entry point for local validation, smoke, recovery, and staging/production prerequisites. G35 Phase B local pre-staging gate passed on `217c11c`; G35 Phase C controlled staging refresh completed on commit `5e1ea5a` (`docs: record staging discovery facts`). G46d controlled staging deploy/proof PASS using API context `/opt/dca/staging-artifacts/5e1ea5a`, host-side web target `/opt/dca/apps/dcaosv1/staging/web/dist`, staging compose `/opt/dca/apps/dcaosv1/staging/docker-compose.staging.yml`, `--env-file .env.staging`, and service `dcaosv1-staging-api`. G43 later re-checked current `main` at `a18dcc1` after G38/G39/G41 copy polish: validate plus four focused local smokes PASS; no repo edits, commit/push/deploy, staging/VPS/prod. Production deploy attempted during G46d: NO. Production app/API/DB mutation: NO. Further staging work requires fresh owner approval.
 **Source of truth for product state:** [`docs/STATUS.md`](../STATUS.md)
 
 Related detailed runbooks:
@@ -132,6 +132,8 @@ Local API rate limit: 300 req / 15 min per IP. Restart API (`npm.cmd run dev:api
 
 **G43 runtime gate order:** stop local Node processes first; remove the generated Prisma client folder only if needed; run `npm.cmd run validate`; start API/Web only after validate passes; then run smokes. This avoids Windows Prisma DLL locks during validation.
 
+**G46d validation lesson:** initial local validate failed due to Windows Prisma `query_engine` DLL `EPERM` lock. Recovery was stopping `node.exe`, waiting, then rerunning validate; rerun PASS. Stop after one retry if the same runtime error persists.
+
 **Orchestrator hang caveat (5D-B):** `smoke:staging-readiness:local` may hang on local Windows PowerShell after Puriva boundary smoke completes. If stuck, inspect `$env:TEMP` per-step logs and run only the remaining Block A scripts manually — see [`STAGING_READINESS.md`](../runbooks/STAGING_READINESS.md) §5 operational caveats. No staging/prod commands during fallback.
 
 **G35 Phase B note:** the follow-on browser smoke stabilization closeout passed through full local `smoke:pre-staging:local` on `217c11c` with CI green. This closed browser drift blockers only; no app/backend/API/schema/auth/business-logic, staging, VPS, or production changes were made.
@@ -259,6 +261,10 @@ Full detail: [`docs/runbooks/EXTERNAL_INTEGRATIONS_READINESS.md`](../runbooks/EX
 | 10 | Staging DB separate from production; migration procedure reviewed |
 
 **Staging target:** `staging.digitalcubeagency.net` (G1 documented; G35 Phase C controlled refresh complete on `5e1ea5a`; artifact context `/opt/dca/staging-artifacts/5e1ea5a`; staging API/web/MVP smoke PASS; production untouched; any further staging/VPS/prod work requires fresh explicit owner approval).
+
+**G46d staging deploy/proof facts:** staging API context `/opt/dca/staging-artifacts/5e1ea5a`; host-side staging web target `/opt/dca/apps/dcaosv1/staging/web/dist`; staging compose `/opt/dca/apps/dcaosv1/staging/docker-compose.staging.yml`; compose requires `--env-file .env.staging`; correct staging API service is `dcaosv1-staging-api` (not `api`). Staging web backup: `/opt/dca/apps/dcaosv1/staging/backups/web-dist-before-g46d-20260709-084640`; API image: `staging-dcaosv1-staging-api:latest`; staging API container `dcaosv1-staging-api` on `127.0.0.1:4011->4000`; staging DB `dcaosv1-staging-postgres` on `127.0.0.1:5435->5432`. Production API `dcaosv1-api` on `127.0.0.1:4010->4000` and production DB `dcaosv1-postgres` on `127.0.0.1:5434->5432` remained running.
+
+**Caddy mount refresh lesson:** G46d required an approved shared Caddy force recreate only because staging web deploy used `rm -rf` + `mv` on the host-side `dist` path, leaving Caddy seeing stale/missing mounted content until container recreate. Working pattern: `cd /opt/dca && docker compose -f /opt/dca/docker-compose.yml up -d --force-recreate --no-deps caddy`. Preferred future pattern: copy contents into the existing mounted `dist` directory, or force recreate Caddy with `--force-recreate --no-deps` after replacing `dist`. G46d final Caddy view included `/srv/dcaosv1-staging/web/dist/index.html`.
 
 **Forbidden before G4 approval:** VPS login, Docker apply, Caddy/DNS, staging migrations, `smoke:mvp:staging` without owner approval.
 
