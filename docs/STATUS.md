@@ -1,6 +1,6 @@
 # DCA OS Lite — Status (Source of Truth)
 
-**Last updated:** 2026-07-09 (G71c — partial live OpenRouter proof closeout; local gateway restored)
+**Last updated:** 2026-07-09 (G71f — formal clean local OpenRouter live proof docs closeout)
 **G55 pre-live readiness:** [`docs/runbooks/G55_PRELIVE_READINESS.md`](./runbooks/G55_PRELIVE_READINESS.md)
 **G56 pre-live readiness:** [`docs/runbooks/G56_PRELIVE_READINESS.md`](./runbooks/G56_PRELIVE_READINESS.md)
 **G57–G68 pre-live readiness:** [`docs/runbooks/G57_G68_PRELIVE_READINESS.md`](./runbooks/G57_G68_PRELIVE_READINESS.md)
@@ -32,13 +32,15 @@
 | Latest baseline | G57–G68 pre-live completion on `main` — persistent budget ledger, workflow dry-run, notification contracts, admin operator wiring, integration boundaries |
 | **G69 merge** | **DONE** — G57–G68 fast-forward merged to `main`; final commit `64bfd06` |
 | Production readiness | **NO** |
-| Next gate | **G71e formal clean live proof** (optional) — corrected procedure in [`AI_PROVIDER_LIVE_PROOF.md`](./runbooks/AI_PROVIDER_LIVE_PROOF.md) §9.14; or G49 formal closure before G50 |
+| Next gate | **G71g** — commit/push G71f docs closeout; then **G72** model routing policy; or G49 formal closure before G50 |
 | G55 pre-live | **Local PASS** — docs + disabled-safe orchestration foundation; no live providers/deploy |
 | G56 pre-live | **Local PASS** — expanded pre-live groundwork; admin orchestrator UI; orchestrator smoke; no live providers/deploy |
 | G57–G68 pre-live | **On main** (`64bfd06`) — persistent ledger, dry-run adapter, operator visibility, go/no-go docs; live proofs **BLOCKED** |
 | G70 closeout | **Docs only** — post-G69 STATUS/deferred/live-proof checklist; no live execution |
 | G71b live proof retry | **Procedural STOP** — one safe live OpenRouter call captured; baseline smoke failed because API was already on `openrouter` live; see [`AI_PROVIDER_LIVE_PROOF.md`](./runbooks/AI_PROVIDER_LIVE_PROOF.md) §9.13 |
 | G71c closeout | **Docs only** — partial live proof recorded; local gateway restored; production remains frozen |
+| G71e / G71e-retry | **Formal clean local live proof COMPLETE** — Phase 1 baseline PASS; Phase 2 live PASS (`90941e76-260d-4f99-b299-3a5c6b7a8d65`); restore PASS; model `anthropic/claude-haiku-4.5` |
+| G71f closeout | **Docs only** — formal clean proof recorded; production remains frozen |
 | Staging | **Proven** — G46d/G47 PASS (artifact `5e1ea5a`) |
 | Production deploy | **Frozen/deferred** — no deploy until G49 dry-run + G50 explicit approval |
 | G49 public probes (§6.2) | **PASS** — 2026-07-09; formal gate closure pending owner sentence |
@@ -65,7 +67,7 @@ Detail: [`G53_PRODUCTION_SAFETY_PLAN.md`](./runbooks/G53_PRODUCTION_SAFETY_PLAN.
 | Production deploy | **Frozen/deferred; production deploy ready: NO** — `system.digitalcubeagency.net` unchanged; G48/G53 planning PASS do not authorize deploy. G49 dry-run and G50 deploy **not executed**. G54 HSTS/proxy: PASS. Next production path remains G49 dry-run before G50. |
 | Staging deploy | **G47 staging smoke/proof PASS after G46d controlled staging deploy/proof PASS.** Staging remains on artifact/API context `/opt/dca/staging-artifacts/5e1ea5a`; host-side web target `/opt/dca/apps/dcaosv1/staging/web/dist`; staging compose `/opt/dca/apps/dcaosv1/staging/docker-compose.staging.yml` with `--env-file .env.staging`; correct API service `dcaosv1-staging-api`. G47b MVP staging smoke requires explicit `MVP_SMOKE_API_BASE_URL=https://staging.digitalcubeagency.net/api/v1`; G47c staging security baseline requires explicit `DCA_SMOKE_REMOTE_TARGET=staging`. Any further staging refresh/execution/migration requires fresh explicit owner approval. |
 | Staging target (G1) | `staging.digitalcubeagency.net` exists and resolves to the same VPS as `system.digitalcubeagency.net`; staging responds with artifact context `/opt/dca/staging-artifacts/5e1ea5a`; health 200; web root 200 |
-| Default AI execution | Local deterministic (restored after G71b); live OpenRouter opt-in only |
+| Default AI execution | Local deterministic (restored after G71e-retry); live OpenRouter opt-in only — **local formal proof complete** |
 | Work mode | Local-first on Windows PowerShell from `C:\dcaosv1` |
 
 **Rule:** Merge to `main`, staging PASS, G47 PASS, G48/G53 planning PASS, or G52-B baseline do not authorize staging or production deploy. G49/G50 require separate explicit owner approval. Explicit owner approval required before touching staging or production.
@@ -496,7 +498,7 @@ Full pack: [`docs/runbooks/STAGING_READINESS.md`](./runbooks/STAGING_READINESS.m
 | Staging deploy proof | **Phase C refresh COMPLETE** — G35 Phase C controlled refresh on `5e1ea5a` PASS; staging artifact, API, web, and MVP smoke verified; production untouched (see §2.2, §2.8); G43 local re-check PASS does not change deferred status; further staging refresh/execution requires fresh explicit owner approval |
 | Production deploy proof | Deferred — frozen; G48/G53 planning PASS recorded; production deploy ready **NO**; G49/G50 **not executed**; G54 HSTS/proxy fixed; next production path remains G49 dry-run before G50 |
 | Puriva Launch | **Blocked** — live proof gates (R2, GA/GSC, live AI, image gen, transactional notifications) and product workflow gates required; see deferred-scope register |
-| Live AI provider / OpenRouter execution | **PARTIAL** — G71b one safe local call; formal clean proof pending |
+| Live AI provider / OpenRouter execution | **COMPLETE (local only)** — formal clean proof G71e + G71e-retry; staging/production live proof still pending |
 | Live WordPress publish | Deferred — draft prep only |
 | Live R2 real-bucket proof | Deferred — explicit env approval required; no bucket IO in local closeout; no staging/prod storage readiness claim |
 | GA/GSC live sync | Deferred — snapshot-first metrics |
@@ -758,7 +760,30 @@ Detail: [`G56_PRELIVE_READINESS.md`](./runbooks/G56_PRELIVE_READINESS.md).
 | Final `main` commit | `64bfd06` — `prelive: complete post-G56 orchestration readiness` |
 | Pre-merge validation | `test:unit` 198/198 PASS; `smoke:ai-provider-config:local` 19/19 PASS; `smoke:ai-orchestrator-lite:local` PASS; `validate` PASS; `git diff --check` PASS |
 | Live integrations | **None** — production frozen |
-| Next gate | **G71e** (optional) — formal clean live proof per [`AI_PROVIDER_LIVE_PROOF.md`](./runbooks/AI_PROVIDER_LIVE_PROOF.md) §9.14; or G49 formal closure |
+| Next gate | **G71g** — commit/push G71f docs; then G72 model routing policy or G49 formal closure |
+
+## G71f formal clean OpenRouter live proof closeout (2026-07-09)
+
+| Item | State |
+|------|--------|
+| Gate | G71f — docs-only closeout (proof executed across G71e + G71e-retry) |
+| `main` commit (docs base) | `953b0c0` — docs: record G71 partial OpenRouter proof |
+| Operator | Piotr Pakula |
+| Formal clean proof | **COMPLETE (local only)** — §9.14 three-phase sequence validated |
+| Phase 1 (G71e) | **PASS** — baseline guarded smoke 12/12; `textGateway=local`; `liveProviderCalled=false` |
+| Phase 2 (G71e-retry) | **PASS** — strict live smoke 12/12; exactly **one** live OpenRouter call |
+| Phase 3 restore (G71e-retry) | **PASS** — baseline guarded smoke 12/12; local gateway restored |
+| Formal live run ID | `90941e76-260d-4f99-b299-3a5c6b7a8d65` |
+| Provider / model | OpenRouter — `anthropic/claude-haiku-4.5` |
+| `liveProviderCalled` | `true` (Phase 2); `false` after restore workflow |
+| Budget evidence | `AI_TEXT_BUDGET_POLICY_V1`; ~56 input tokens; max 180 output |
+| Session cost | Estimated below **$1.00 USD**; `actualCostUsd` not exposed in API |
+| Forbidden integrations | **None triggered** |
+| Secrets | **Not exposed** |
+| Production readiness | **NO** — production remains frozen; staging/production live proof not claimed |
+| Next gate | **G71g** commit/push docs; then **G72** model routing policy |
+
+Detail: [`AI_PROVIDER_LIVE_PROOF.md`](./runbooks/AI_PROVIDER_LIVE_PROOF.md) §9.15 · [`deferred-scope-register.md`](./operator/deferred-scope-register.md).
 
 ## G71b / G71c live OpenRouter proof closeout (2026-07-09)
 

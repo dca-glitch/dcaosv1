@@ -1,6 +1,6 @@
 # AI Provider Live Proof
 
-**Status:** Local deterministic default proven; live OpenRouter proof is owner/manual only. Does not authorize production enablement or autonomous AI.
+**Status:** Local deterministic default proven; **formal clean local OpenRouter live proof complete (G71e + G71e-retry)**. Does not authorize production enablement, staging live proof, or autonomous AI.
 
 **Gate:** Puriva Launch blocker — live AI provider proof (see [`docs/operator/deferred-scope-register.md`](../operator/deferred-scope-register.md)).
 
@@ -482,3 +482,62 @@ Evidence logs: `$env:TEMP\g71b-ai-provider-live-proof-retry.log`
 **Deferred-scope status after G71c:** Live AI provider proof = **PARTIAL** — substantive local call captured once; formal clean proof pending (optional G71e).
 
 **Recommended next gate:** G71e (optional) — formal clean live proof using §9.14 sequence; or G49 formal closure / other live proof gates per deferred-scope register. Production deploy is **not** included.
+
+### 9.15 G71e / G71e-retry / G71f — formal clean local live proof complete (2026-07-09)
+
+**Status:** **COMPLETE (local only)** — formal clean proof across G71e Phase 1 + G71e-retry Phase 2 + restore. G71f docs closeout. **Does not** authorize production deploy or staging live proof.
+
+| Item | Result |
+|------|--------|
+| Operator | Piotr Pakula |
+| Target | Local only — `127.0.0.1:4000` |
+| Corrected procedure | §9.14 three-phase sequence — **validated** |
+
+**Phase 1 (G71e) — local deterministic baseline**
+
+| Check | Result |
+|-------|--------|
+| API env | `AI_TEXT_GATEWAY=local`; no OpenRouter key in API process |
+| Guarded smoke | **PASS** 12/12 |
+| Gateway | `local` / `liveProviderCalled=false` |
+
+**Phase 2 (G71e-retry) — one live OpenRouter proof**
+
+| Check | Result |
+|-------|--------|
+| API env | `AI_TEXT_GATEWAY=openrouter`; key via secure prompt (not logged/persisted) |
+| Planning config | `textGateway=openrouter`; `openRouterLiveExecutionEnabled=true`; `hasOpenRouterApiKey=true`; model `anthropic/claude-haiku-4.5` |
+| Strict live smoke (`SMOKE_EXPECT_OPENROUTER_LIVE=true`) | **PASS** 12/12 — run once |
+| Live calls this session | **Exactly one** |
+| Run ID | `90941e76-260d-4f99-b299-3a5c6b7a8d65` |
+| Provider | OpenRouter |
+| Model | `anthropic/claude-haiku-4.5` |
+| `liveProviderCalled` | `true` |
+| `isDeterministic` | `false` |
+| Budget policy | `AI_TEXT_BUDGET_POLICY_V1` |
+| Tokens | ~56 input; max 180 output |
+| Session cost | Estimated below **$1.00 USD**; `actualCostUsd` not exposed in API |
+| Forbidden integrations | None triggered |
+| Secrets exposed | No |
+
+**Phase 3 (G71e-retry) — restore local deterministic gateway**
+
+| Check | Result |
+|-------|--------|
+| API env restored | `AI_TEXT_GATEWAY=local`; OpenRouter key cleared from active process |
+| Kill switch after restore | `textGatewayLive=false`; `orchestratorLiveSafe=true` |
+| Guarded smoke | **PASS** 12/12 |
+| Post-restore workflow | `liveProviderCalled=false`; `gateway=local` |
+
+**G71e note (prior session):** Phase 2 blocked when `OPENROUTER_API_KEY` unavailable; Phase 1 and Phase 3 restore both PASS in that session.
+
+**G71b context (historical):** Procedural STOP with unplanned live call during mis-ordered baseline — superseded by formal clean proof above.
+
+Evidence logs:
+
+- `$env:TEMP\g71e-formal-clean-openrouter-proof.log`
+- `$env:TEMP\g71e-retry-phase2-openrouter-proof.log`
+
+**Deferred-scope status after G71f:** Live AI provider proof = **COMPLETE (local only)**. Staging/production live proof remains **BLOCKED**.
+
+**Recommended next gate:** G71g — commit/push G71f docs closeout; then G72 model routing policy. Production deploy is **not** included.

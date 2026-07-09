@@ -30,7 +30,7 @@ Complete post-G56 orchestration readiness across docs, persistent budget ledger,
 | **G64** | WordPress draft pre-live boundary | **PARTIAL** | Local draft-prep proven; live draft **BLOCKED** |
 | **G65** | Image generation contract + approval loop | **PARTIAL** | Disabled-safe foundation; live generation **BLOCKED** |
 | **G66** | End-to-end dry run (no live providers) | **PARTIAL** | Orchestrator smoke extended; unified cross-module E2E deferred |
-| **G67** | Controlled live AI proof preparation | **PARTIAL** | Runbooks exist; execution **BLOCKED** (owner credentials) |
+| **G67** | Controlled live AI proof preparation | **COMPLETE (local only)** | Formal clean proof G71e + G71e-retry; staging/production **BLOCKED** |
 | **G68** | Final pre-production go/no-go documentation | **DONE** | See §Go/no-go below |
 
 ---
@@ -83,7 +83,7 @@ Stop on validate failure. Do not run smokes after failed validate.
 
 | Item | Status |
 |------|--------|
-| Live OpenRouter / AI provider proof | **PARTIAL** — G71b one safe local call captured; formal clean proof pending — [`AI_PROVIDER_LIVE_PROOF.md`](./AI_PROVIDER_LIVE_PROOF.md) §9.13–§9.14 |
+| Live OpenRouter / AI provider proof | **COMPLETE (local only)** — G71e + G71e-retry formal clean proof; staging/production live proof **BLOCKED** — [`AI_PROVIDER_LIVE_PROOF.md`](./AI_PROVIDER_LIVE_PROOF.md) §9.15 |
 | Live image generation | **BLOCKED** — `IMAGE_GENERATION_PROOF.md` |
 | Live email send (Resend) | **BLOCKED** — transactional proof gate |
 | R2 real-bucket IO | **BLOCKED** — `STORAGE_R2_PROOF.md` |
@@ -106,7 +106,8 @@ Local/admin pre-live groundwork PASS criteria:
 - [x] Admin operator visibility (no misleading live buttons)
 - [x] Notification event contracts (no-send default)
 - [x] Integration boundary index (all `liveCallsDeferred`)
-- [ ] Live AI provider proof (G71b partial — one safe local call; formal clean proof pending)
+- [x] Live AI provider proof (local only — G71e + G71e-retry formal clean proof complete)
+- [ ] Live AI provider proof (staging/production target environment)
 - [ ] Live image generation proof
 - [ ] Live GA/GSC sync proof
 - [ ] WordPress live draft proof
@@ -115,7 +116,7 @@ Local/admin pre-live groundwork PASS criteria:
 - [ ] G49 formal owner closure
 - [ ] G50 explicit production deploy approval
 
-**Recommended next owner decision:** Optional G71e formal clean live proof per `AI_PROVIDER_LIVE_PROOF.md` §9.14, then image/GA-GSC/WordPress/R2 proofs in dependency order. Production remains frozen.
+**Recommended next owner decision:** G71g commit/push G71f docs closeout; then G72 model routing policy; image/GA-GSC/WordPress/R2 proofs in dependency order. Production remains frozen.
 
 ---
 
@@ -142,15 +143,18 @@ G56 established orchestrator skeleton, guards, admin panel foundation, and workf
 
 ---
 
-## G69 merge + G70 closeout + G71c partial proof (2026-07-09)
+## G69 merge + G70 closeout + G71f formal local live proof (2026-07-09)
 
 | Item | State |
 |------|--------|
 | G69 merge to `main` | **DONE** — fast-forward; final commit `64bfd06` |
 | Pre-merge validation | `test:unit` 198/198; `smoke:ai-provider-config:local` 19/19; `smoke:ai-orchestrator-lite:local` PASS; `validate` PASS |
 | G70 | **Docs only** — post-G69 STATUS/deferred updates + controlled live AI proof checklist in [`AI_PROVIDER_LIVE_PROOF.md`](./AI_PROVIDER_LIVE_PROOF.md) §9 |
-| G71b retry | **Procedural STOP** — one safe live OpenRouter call captured; baseline smoke failed (API pre-configured live) |
-| G71c | **Docs only** — partial proof closeout; local gateway restored |
-| Production / live proof | **Frozen / NO-GO** — partial local AI call only; not production-ready; no deploy |
+| G71b retry | **Procedural STOP** — unplanned live call during mis-ordered baseline (historical) |
+| G71c | **Docs only** — partial proof closeout |
+| G71e + G71e-retry | **Formal clean local live proof COMPLETE** — Phase 1/2/restore PASS; run `90941e76-260d-4f99-b299-3a5c6b7a8d65` |
+| G71f | **Docs only** — formal clean proof recorded |
+| Staging migration / live proof | **BLOCKED** — separate owner gate |
+| Production / deploy | **Frozen / NO-GO** — local live proof only; no deploy |
 
-**Recommended next gate:** G71e (optional) — formal clean live proof per `AI_PROVIDER_LIVE_PROOF.md` §9.14; or G49 formal closure. Production deploy is **not** included.
+**Recommended next gate:** G71g — commit/push G71f docs closeout; then G72 model routing policy. Production deploy is **not** included.
