@@ -24,7 +24,7 @@ These are **not** "still deferred" long-term roadmap items. They are active bloc
 | R2 real-bucket proof | Live integration | Disabled-safe locally; real bucket IO proof required |
 | Live AI provider proof | Live integration | Local deterministic default; OpenRouter opt-in proof required — runbook: [`docs/runbooks/AI_PROVIDER_LIVE_PROOF.md`](../runbooks/AI_PROVIDER_LIVE_PROOF.md) |
 | AI Model Research | Policy gate | Separate approved research gate |
-| AI Model Policy | Policy gate | Approved model/policy documentation before live AI |
+| AI Model Policy | Policy gate | **Docs + skeleton closed (G55)** — live provider proof still required — [`docs/ai/AI_MODEL_POLICY.md`](../ai/AI_MODEL_POLICY.md) |
 | Image generation proof | Live integration | Provider/workflow proof for Article+Image path |
 | Transactional notifications proof | Live integration | Workflow email delivery — **not** marketing campaigns |
 | Client Portal approval UX | Product gate | Client-safe approval path must be production-proven |

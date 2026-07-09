@@ -1,6 +1,8 @@
 # DCA OS Lite — Status (Source of Truth)
 
-**Last updated:** 2026-07-09 (mega-block: G49 public probes PASS; production safety pack + readiness docs created; G49 formal closure still pending owner sentence)
+**Last updated:** 2026-07-09 (G55 pre-live readiness mega block — AI Orchestrator Lite skeleton + policy docs)
+**G55 pre-live readiness:** [`docs/runbooks/G55_PRELIVE_READINESS.md`](./runbooks/G55_PRELIVE_READINESS.md)
+**AI policy:** [`docs/ai/AI_MODEL_POLICY.md`](./ai/AI_MODEL_POLICY.md) · [`docs/ai/AI_ORCHESTRATOR_LITE.md`](./ai/AI_ORCHESTRATOR_LITE.md)
 **Operator index:** [`docs/operator/OPERATOR_RUNBOOK.md`](./operator/OPERATOR_RUNBOOK.md)
 **Architecture map:** [`docs/ARCHITECTURE.md`](./ARCHITECTURE.md) § Current application map
 **Smoke matrix:** [`docs/runbooks/LOCAL_SMOKE_MATRIX.md`](./runbooks/LOCAL_SMOKE_MATRIX.md)
@@ -20,13 +22,14 @@
 
 ---
 
-## Executive snapshot (G52-B + G53)
+## Executive snapshot (G52-B + G53 + G55)
 
 | Item | State |
 |------|--------|
-| Latest baseline | G52-B docs reconciliation + **G53 production safety plan approved** (planning only) |
+| Latest baseline | G55 pre-live readiness — AI Orchestrator Lite skeleton, provider registry, material policy, budget guard, Puriva AI policy profile |
 | Production readiness | **NO** |
 | Next gate | **G49 formal closure** — public probes PASS (2026-07-09); owner approval sentence + optional SSH read-only still required before G50 |
+| G55 pre-live | **Local PASS** — docs + disabled-safe orchestration foundation; no live providers/deploy |
 | Staging | **Proven** — G46d/G47 PASS (artifact `5e1ea5a`) |
 | Production deploy | **Frozen/deferred** — no deploy until G49 dry-run + G50 explicit approval |
 | G49 public probes (§6.2) | **PASS** — 2026-07-09; formal gate closure pending owner sentence |

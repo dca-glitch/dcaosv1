@@ -11,3 +11,4 @@ export * from "./clients";
 export * from "./ai-operating-layer";
 export * from "./ai-operations";
 export * from "./ai-workflow-result";
+export * from "./ai-orchestrator-lite";

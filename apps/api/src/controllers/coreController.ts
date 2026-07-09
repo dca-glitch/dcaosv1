@@ -30,6 +30,11 @@ import {
 } from "../services/email-notifications.service";
 import { sendAiDeliveryDeliverableForClientReview } from "../core/client-portal-approval.runtime";
 import { getAiProviderPlanningSnapshot } from "../services/ai-provider-planning.service";
+import {
+  getAiOrchestratorLiteRegistrySnapshot,
+  planAiOrchestratorLiteStep
+} from "../core/ai-orchestrator-lite.service";
+import { getPurivaAiPolicyProfile } from "../core/puriva-ai-policy-profile";
 import { getGoogleDriveExportPlanningSnapshot } from "../services/google-drive-export-planning.service";
 import { getExternalIntegrationsReadinessSnapshot } from "../core/external-integrations-readiness.service";
 import { getImageGenerationIntegrationReadiness } from "../config/image-generation.config";
@@ -1366,6 +1371,78 @@ export const getAiProviderPlanningConfigHandler: RequestHandler = async (_req, r
     res.json(success({ planning }, { phase: "runtime", scope: "ai-provider-planning-config" }));
   } catch {
     res.status(500).json(failure("AI_PROVIDER_PLANNING_CONFIG_ERROR", "AI provider planning config could not be loaded."));
+  }
+};
+
+export const getAiOrchestratorLiteRegistryHandler: RequestHandler = async (_req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) {
+    res.status(401).json(unauthorizedFailure());
+    return;
+  }
+
+  const tenantId = authSession.tenantContext.activeMembership?.tenantId ?? null;
+  if (!tenantId) {
+    res.status(403).json(forbiddenFailure());
+    return;
+  }
+
+  try {
+    const registry = getAiOrchestratorLiteRegistrySnapshot();
+    const purivaPolicyProfile = getPurivaAiPolicyProfile();
+    res.json(
+      success({ registry, purivaPolicyProfile }, { phase: "runtime", scope: "ai-orchestrator-lite-registry" })
+    );
+  } catch {
+    res.status(500).json(
+      failure("AI_ORCHESTRATOR_LITE_REGISTRY_ERROR", "AI Orchestrator Lite registry could not be loaded.")
+    );
+  }
+};
+
+export const previewAiMaterialRoutingHandler: RequestHandler = async (req, res) => {
+  const authSession = getAuthSession(res.locals);
+  if (!authSession) {
+    res.status(401).json(unauthorizedFailure());
+    return;
+  }
+
+  const tenantId = authSession.tenantContext.activeMembership?.tenantId ?? null;
+  if (!tenantId) {
+    res.status(403).json(forbiddenFailure());
+    return;
+  }
+
+  const body = req.body as Record<string, unknown>;
+  const workflow = typeof body.workflow === "string" ? body.workflow.trim() : "";
+  const step = typeof body.step === "string" ? body.step.trim() : "";
+  const agentRole = typeof body.agentRole === "string" ? body.agentRole.trim() : "";
+  const taskType = typeof body.taskType === "string" ? body.taskType.trim() : "";
+
+  if (!workflow || !step || !agentRole || !taskType) {
+    res.status(400).json(
+      failure("AI_MATERIAL_ROUTING_PREVIEW_INVALID", "workflow, step, agentRole, and taskType are required.")
+    );
+    return;
+  }
+
+  try {
+    const plan = planAiOrchestratorLiteStep({
+      workflow,
+      step,
+      agentRole: agentRole as import("@dca-os-v1/shared").AiAgentRole,
+      taskType: taskType as import("@dca-os-v1/shared").AiTaskType,
+      clientId: typeof body.clientId === "string" ? body.clientId : null,
+      operatingPackKey: typeof body.operatingPackKey === "string" ? body.operatingPackKey : null,
+      workflowReference: typeof body.workflowReference === "string" ? body.workflowReference : null,
+      stepReference: typeof body.stepReference === "string" ? body.stepReference : null
+    });
+
+    res.json(success({ plan }, { phase: "runtime", scope: "ai-material-routing-preview" }));
+  } catch {
+    res.status(500).json(
+      failure("AI_MATERIAL_ROUTING_PREVIEW_ERROR", "AI material routing preview could not be generated.")
+    );
   }
 };
 
