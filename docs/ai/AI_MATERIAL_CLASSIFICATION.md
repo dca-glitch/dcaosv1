@@ -52,7 +52,16 @@ Excluded automatically:
 
 ## Preview API
 
-`POST /api/v1/core/ai-orchestrator-lite/material-routing-preview` returns:
+`POST /api/v1/ai-orchestrator-lite/material-routing-preview` returns:
 - `inputMaterials` — included after policy
 - `excludedMaterials` — excluded with reason
 - `policyChecks` — allow/block decision
+
+---
+
+## Finance Lite / SaaS data boundary (G56)
+
+- Normal SaaS/user/account/billing/subscription data may exist in Finance Lite and platform tables.
+- Such data is **not routed to AI by default** (`saas_user_account_billing_data` class).
+- No medical data collection in AI workflows.
+- Payment provider integrations are out of scope for pre-live orchestration.

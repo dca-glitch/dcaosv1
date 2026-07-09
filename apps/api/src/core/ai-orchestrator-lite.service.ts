@@ -10,6 +10,7 @@ import { applyAiMaterialPolicy, buildDefaultAiSafeMaterialSet } from "./ai-mater
 import { buildAiBudgetSnapshot, isAiBudgetBlocked } from "./ai-budget-guard.service";
 import { AI_AGENT_ROLE_REGISTRY } from "./ai-agent-role-registry";
 import { listAiProviderRegistrySnapshot, resolveProviderForRole } from "./ai-provider-registry.service";
+import { resolvePromptTemplateVersion } from "./ai-prompt-template-registry.service";
 
 export function planAiOrchestratorLiteStep(
   request: AiOrchestratorLitePlanRequest
@@ -54,7 +55,7 @@ export function planAiOrchestratorLiteStep(
     agentRole: request.agentRole,
     providerKey: providerResolution.effective.providerKey,
     modelId: providerResolution.effective.modelId,
-    promptTemplateVersion: `${request.taskType}_v1`,
+    promptTemplateVersion: resolvePromptTemplateVersion(request.taskType, request.agentRole),
     inputMaterials,
     excludedMaterials,
     estimatedCostUsd,

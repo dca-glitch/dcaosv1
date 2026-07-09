@@ -18,6 +18,7 @@ Fast config and boundary proof after `validate`. No live external calls.
 | Command | Proves | Does not prove |
 |---------|--------|----------------|
 | `npm.cmd run smoke:external-integrations-readiness:local` | AI/WP/R2/GA-GSC config shape; negative cases; fetch guard (no network) | Live provider, publish, R2 IO, OAuth/sync |
+| `npm.cmd run smoke:ai-orchestrator-lite:local` | Orchestrator registry + material routing preview; admin-only; liveProviderCalled false; Puriva $100 cap | Live provider execution; DB budget ledger |
 | `npm.cmd run smoke:admin-operations:local` | Admin operations summary loads; no secret leakage; client 403 on admin endpoints | Last smoke PASS store; staging/production |
 | `node scripts/smoke-client-approval-happy-path-local.mjs` | Pending approvals, editor, approve/reject, admin boundary, `CLIENT_REVIEW_DEFERRED` | Staging deploy; live publish |
 | `npm.cmd run smoke:production-readiness:local` | Orchestrated validate + revenue chain + MI + handoff + portal + monthly reports | Staging/production deploy; live integrations |

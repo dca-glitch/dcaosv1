@@ -1,7 +1,8 @@
 # DCA OS Lite — Status (Source of Truth)
 
-**Last updated:** 2026-07-09 (G55 pre-live readiness mega block — AI Orchestrator Lite skeleton + policy docs)
+**Last updated:** 2026-07-09 (G56 double-scope pre-live completion mega block)
 **G55 pre-live readiness:** [`docs/runbooks/G55_PRELIVE_READINESS.md`](./runbooks/G55_PRELIVE_READINESS.md)
+**G56 pre-live readiness:** [`docs/runbooks/G56_PRELIVE_READINESS.md`](./runbooks/G56_PRELIVE_READINESS.md)
 **AI policy:** [`docs/ai/AI_MODEL_POLICY.md`](./ai/AI_MODEL_POLICY.md) · [`docs/ai/AI_ORCHESTRATOR_LITE.md`](./ai/AI_ORCHESTRATOR_LITE.md)
 **Operator index:** [`docs/operator/OPERATOR_RUNBOOK.md`](./operator/OPERATOR_RUNBOOK.md)
 **Architecture map:** [`docs/ARCHITECTURE.md`](./ARCHITECTURE.md) § Current application map
@@ -22,14 +23,15 @@
 
 ---
 
-## Executive snapshot (G52-B + G53 + G55)
+## Executive snapshot (G52-B + G53 + G55 + G56)
 
 | Item | State |
 |------|--------|
-| Latest baseline | G55 pre-live readiness — AI Orchestrator Lite skeleton, provider registry, material policy, budget guard, Puriva AI policy profile |
+| Latest baseline | G56 pre-live completion — hardened orchestrator contracts, guards, admin UI panels, workflow adapter skeleton, compliance fixtures, expanded smokes/docs |
 | Production readiness | **NO** |
 | Next gate | **G49 formal closure** — public probes PASS (2026-07-09); owner approval sentence + optional SSH read-only still required before G50 |
 | G55 pre-live | **Local PASS** — docs + disabled-safe orchestration foundation; no live providers/deploy |
+| G56 pre-live | **Local PASS** — expanded pre-live groundwork; admin orchestrator UI; orchestrator smoke; no live providers/deploy |
 | Staging | **Proven** — G46d/G47 PASS (artifact `5e1ea5a`) |
 | Production deploy | **Frozen/deferred** — no deploy until G49 dry-run + G50 explicit approval |
 | G49 public probes (§6.2) | **PASS** — 2026-07-09; formal gate closure pending owner sentence |
@@ -707,6 +709,37 @@ Production readiness remains **NO**. G49/G50 remain not fully executed. Puriva L
 | Log | `$env:TEMP\dca-subagent-b-g49.log` |
 
 Full detail recorded in [`G49_PRODUCTION_DRY_RUN_READ_ONLY_PROOF.md`](./runbooks/G49_PRODUCTION_DRY_RUN_READ_ONLY_PROOF.md) §1.2. This entry does not change production readiness status and does not authorize G50.
+
+## G56 component completion table (2026-07-09)
+
+| Component | Local / pre-live | Staging | Live / production |
+|-----------|------------------|---------|-------------------|
+| Core app | PASS | Proven (G47) | Frozen |
+| Auth/RBAC | PASS | Proven | Frozen |
+| Admin shell | PASS | — | Frozen |
+| Client Portal | PASS (final-only) | Proven | Blocked (live proof) |
+| WorkflowBriefs | PASS | — | Frozen |
+| AI Delivery | PASS (review-ready rules) | — | Blocked (live proof) |
+| AI Orchestrator Lite | PASS (G56 hardened) | Not proven | Disabled-safe |
+| Provider Registry | PASS (disabled-safe) | Not proven | Disabled |
+| Budget Guard | PASS (stub estimates) | Not proven | DB ledger deferred |
+| Material Routing Preview | PASS (API + UI) | Not proven | Preview only |
+| Compliance Review Agent | PASS (fixtures) | Not proven | Live model deferred |
+| Image foundation | PASS (disabled-safe) | Not proven | Live proof deferred |
+| Before/after retention | PASS (contract) | Not proven | Cleanup job deferred |
+| Monthly Reports | PASS (snapshot-first) | — | GA/GSC live deferred |
+| GA/GSC | Disabled-safe | Not proven | Live OAuth deferred |
+| Storage/R2 | Disabled-safe | Not proven | Live bucket deferred |
+| WordPress | Draft/handoff safe | Not proven | Live proof deferred |
+| Email/Notifications | No-send default | Not proven | Live send deferred |
+| Finance Lite | PASS (boundary docs) | — | Payments deferred |
+| Revenue Hub | Existing baseline | — | Frozen |
+| POD Toolkit | Existing baseline | — | Frozen |
+| Staging | Proven (G47) | PASS | N/A |
+| Production readiness | **NO** | — | Deploy frozen (G50) |
+| Puriva Operating Pack | Pre-live table updated | — | Launch blocked |
+
+Detail: [`G56_PRELIVE_READINESS.md`](./runbooks/G56_PRELIVE_READINESS.md).
 
 ## Mega-block blocks 1–9 coordination closeout (2026-07-09)
 

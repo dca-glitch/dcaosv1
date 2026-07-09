@@ -1,8 +1,8 @@
 # AI Orchestrator Lite — DCA OS Lite
 
-**Status:** Approved skeleton (G55, 2026-07-09)  
-**Version:** `AI_ORCHESTRATOR_LITE_V1`  
-**Scope:** Planning, policy, routing preview — not live execution  
+**Status:** Approved skeleton (G55/G56, 2026-07-09)
+**Version:** `AI_ORCHESTRATOR_LITE_V1`
+**Scope:** Planning, policy, routing preview — not live execution
 
 ---
 
@@ -59,8 +59,8 @@ Admin workflow step
 
 | Endpoint | Method | Purpose |
 |----------|--------|---------|
-| `/api/v1/core/ai-orchestrator-lite/registry` | GET | Agent roles, provider registry, Puriva profile |
-| `/api/v1/core/ai-orchestrator-lite/material-routing-preview` | POST | Material routing preview for a workflow step |
+| `/api/v1/ai-orchestrator-lite/registry` | GET | Agent roles, provider registry, Puriva profile |
+| `/api/v1/ai-orchestrator-lite/material-routing-preview` | POST | Material routing preview for a workflow step |
 
 Preview fields: workflow, client, step, agent role, provider/model, input materials, excluded materials, policy checks, estimated cost, remaining budget, approval required, output visibility.
 
@@ -77,9 +77,17 @@ Preview fields: workflow, client, step, agent role, provider/model, input materi
 
 ---
 
-## 6. Future work (deferred)
+## 6. G56 additions
+
+- `ai-kill-switch.service.ts` — live flag invariant checks
+- `ai-prompt-template-registry.service.ts` — prompt template versioning
+- `ai-orchestrator-workflow-adapter.skeleton.ts` — planning bridge (no live execution)
+- `AiOrchestratorLitePanel` — admin dashboard read-only registry + preview UI
+- `smoke:ai-orchestrator-lite:local` — registry + preview smoke
+
+## 7. Future work (deferred)
 
 - Persist budget spend per client/period in DB
-- Wire orchestrator plan into workflow execution adapter
-- Admin UI panel for material routing preview
+- Wire orchestrator plan into workflow execution adapter **live path**
+- Admin editable provider settings UI
 - Live provider enablement per role (owner gate)
