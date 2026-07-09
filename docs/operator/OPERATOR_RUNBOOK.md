@@ -18,6 +18,10 @@ Related detailed runbooks:
 | G9 environment proof gate | [`docs/runbooks/G9_ENVIRONMENT_PROOF_APPROVAL_GATE.md`](../runbooks/G9_ENVIRONMENT_PROOF_APPROVAL_GATE.md) |
 | G53 production safety plan | [`docs/runbooks/G53_PRODUCTION_SAFETY_PLAN.md`](../runbooks/G53_PRODUCTION_SAFETY_PLAN.md) |
 | G49 production dry-run proof | [`docs/runbooks/G49_PRODUCTION_DRY_RUN_READ_ONLY_PROOF.md`](../runbooks/G49_PRODUCTION_DRY_RUN_READ_ONLY_PROOF.md) |
+| Production deployment / rollback / checklist (reference, G50 not executed) | [`docs/runbooks/PRODUCTION_DEPLOYMENT.md`](../runbooks/PRODUCTION_DEPLOYMENT.md) · [`docs/runbooks/PRODUCTION_ROLLBACK.md`](../runbooks/PRODUCTION_ROLLBACK.md) · [`docs/runbooks/PRODUCTION_SAFETY_CHECKLIST.md`](../runbooks/PRODUCTION_SAFETY_CHECKLIST.md) |
+| Puriva Launch Gate (15-area evaluation) | [`docs/runbooks/PURIVA_LAUNCH_GATE.md`](../runbooks/PURIVA_LAUNCH_GATE.md) |
+| Storage/R2 live proof plan | [`docs/runbooks/STORAGE_R2_PROOF.md`](../runbooks/STORAGE_R2_PROOF.md) |
+| Integrations truth matrix | [`docs/runbooks/INTEGRATIONS_TRUTH_MATRIX.md`](../runbooks/INTEGRATIONS_TRUTH_MATRIX.md) |
 | Env names (no values) | [`ENV_READINESS_INVENTORY.md`](./ENV_READINESS_INVENTORY.md) |
 | Deferred scope | [`deferred-scope-register.md`](./deferred-scope-register.md) |
 

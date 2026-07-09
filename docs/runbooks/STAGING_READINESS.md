@@ -526,6 +526,46 @@ Next step (if GO): Request G4 approval per STAGING_LOCAL_EXECUTION_PACK.md — d
 
 No admin-only staging checklist UI was added. Existing surfaces (Settings read-only summary, AI Operations workflow review, AiDelivery workspace readiness panels) are module-specific, not staging GO/NO-GO. A static checklist would require new routing (`App.tsx`) — out of scope for Block A. **Docs-only.**
 
+## 12. Consolidated smoke/test matrix and gate-required packs (mega-block addition, 2026-07-09)
+
+**Purpose:** Single consolidated reference for which smoke packs are required before each remaining gate (G49, G50, Puriva Launch), plus known fragile areas. Does not replace [`LOCAL_SMOKE_MATRIX.md`](./LOCAL_SMOKE_MATRIX.md) — that remains the full catalog; this section is the gate-mapping view.
+
+### 12.1 Required packs by gate
+
+| Gate | Required local packs | Additional requirement |
+|------|----------------------|-------------------------|
+| **G49 (production dry-run / read-only proof)** | None (read-only public probes only — no local smoke required) | Public probes §8 of `G49_PRODUCTION_DRY_RUN_READ_ONLY_PROOF.md`; owner approval sentence |
+| **G50 (production deploy)** | `npm.cmd run validate`; Block 1–2 (`smoke:external-integrations-readiness:local`, `smoke:admin-operations:local`, `smoke:client-role-api-boundary:local`); Block A (§5 of this doc); full `smoke:pre-staging:local` recommended | G49 PASS; rollback evidence; exact commit SHA; explicit owner approval naming G50 |
+| **Puriva Launch** | All of the above, plus `smoke:puriva-client-portal-boundary:local`, `smoke:puriva-readiness:local`, `smoke:puriva-full-delivery:local`, monthly report + client portal packs | Live proof gates per [`PURIVA_LAUNCH_GATE.md`](./PURIVA_LAUNCH_GATE.md) — R2, GA/GSC, live AI, image gen, transactional notifications, AI Model Research/Policy |
+
+### 12.2 Consolidated STOP criteria (applies to any gate above)
+
+- Any local smoke fails and the failure is not already a documented/expected skip (see §12.3)
+- Any client forbidden-field leak observed in manual QA or boundary smoke
+- Secrets appear in any log, smoke output, or diff
+- Any attempt to run migrations, deploy, or mutate VPS without the specific gate's explicit owner approval
+- Critical admin delivery path broken (login, portal archive, monthly reports, AI Delivery workspace)
+- Public probe (G49) returns non-200, missing HSTS, or DB not ready
+
+### 12.3 Known fragile areas / expected skips (do not treat as failures)
+
+| Area | Symptom | Expected handling |
+|------|---------|---------------------|
+| Prisma EPERM (Windows) | `query_engine-windows.dll.node` EPERM during `prisma generate` | Stop locking `node.exe`, remove generated client, rerun `validate` once (see `OPERATOR_RUNBOOK.md` §3) |
+| `smoke:staging-readiness:local` orchestrator hang | Hangs after Puriva boundary smoke completes on local Windows PowerShell | Inspect `$env:TEMP` per-step logs; run remaining Block A scripts manually (§5 operational caveats) |
+| HTTP 429 | Local rate limit (300 req/15 min) | Restart API; rerun failed smoke |
+| R2/WordPress disabled-safe skip | `R2_STORAGE_NOT_CONFIGURED` / `provider_disabled` | Expected default; not a failure |
+| `smoke-client-final-visibility-local` skip | `AUTH_SEED_TESTER_EMAIL` absent | Expected discovery-only skip |
+| Staging remote smokes refuse without explicit target env | MVP staging smoke / staging security baseline exit non-zero without `MVP_SMOKE_API_BASE_URL` / `DCA_SMOKE_REMOTE_TARGET` | Expected safety refusal, not a bug — see G47 target-guard lesson |
+
+### 12.4 Recommended hardening (not executed this session — docs-only recommendation)
+
+1. Fix the `smoke:staging-readiness:local` orchestrator hang at its root cause (Windows PowerShell process/log handling after the Puriva boundary smoke) rather than relying on the manual fallback indefinitely.
+2. Add an `email` category to `GET /api/v1/integrations/readiness` (see `INTEGRATIONS_TRUTH_MATRIX.md` M-2) so the readiness API and this smoke matrix stay in sync as new integrations are added.
+3. Consider a lightweight CI job that runs `git diff --check` + doc-link validation on every docs-only PR, to catch stale cross-references automatically (this mega-block's stale scan was manual).
+
+---
+
 ## G54 HSTS/proxy fix completion (2026-07-09)
 
 **Result:** PASS — HSTS/proxy fix applied on VPS.

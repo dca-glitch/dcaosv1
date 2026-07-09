@@ -14,15 +14,15 @@ Puriva Launch blocker means: required before Puriva Launch on production; must p
 
 ## Puriva Launch blockers (required before launch — not yet proven)
 
-**Canonical list and workflows:** [`docs/architecture/PURIVA_OPERATING_PACK_V1.md`](../architecture/PURIVA_OPERATING_PACK_V1.md). Summary below; do not duplicate step-level workflow detail here.
+**Canonical list and workflows:** [`docs/architecture/PURIVA_OPERATING_PACK_V1.md`](../architecture/PURIVA_OPERATING_PACK_V1.md). Per-integration proof status: [`docs/runbooks/INTEGRATIONS_TRUTH_MATRIX.md`](../runbooks/INTEGRATIONS_TRUTH_MATRIX.md). Launch gate entry: [`docs/runbooks/PURIVA_LAUNCH_GATE.md`](../runbooks/PURIVA_LAUNCH_GATE.md). Summary below; do not duplicate step-level workflow detail here.
 
 These are **not** "still deferred" long-term roadmap items. They are active blockers for Puriva Launch. WordPress **draft/handoff** is required; WordPress **auto-publish** remains in still-deferred below.
 
 | Blocker | Scope | Notes |
 |---------|-------|-------|
-| GA/GSC live sync proof | Live integration | Snapshot-first locally; live OAuth/sync proof required |
+| GA/GSC live sync proof | Live integration | Snapshot-first locally; live OAuth/sync proof required — runbook: [`docs/runbooks/MONTHLY_REPORT_LIVE_DATA_PROOF.md`](../runbooks/MONTHLY_REPORT_LIVE_DATA_PROOF.md) |
 | R2 real-bucket proof | Live integration | Disabled-safe locally; real bucket IO proof required |
-| Live AI provider proof | Live integration | Local deterministic default; OpenRouter opt-in proof required |
+| Live AI provider proof | Live integration | Local deterministic default; OpenRouter opt-in proof required — runbook: [`docs/runbooks/AI_PROVIDER_LIVE_PROOF.md`](../runbooks/AI_PROVIDER_LIVE_PROOF.md) |
 | AI Model Research | Policy gate | Separate approved research gate |
 | AI Model Policy | Policy gate | Approved model/policy documentation before live AI |
 | Image generation proof | Live integration | Provider/workflow proof for Article+Image path |
@@ -30,7 +30,7 @@ These are **not** "still deferred" long-term roadmap items. They are active bloc
 | Client Portal approval UX | Product gate | Client-safe approval path must be production-proven |
 | Task-oriented admin UX | Product gate | Operator task flows for daily delivery |
 | Article+Image workflow | Product gate | End-to-end article and image handoff |
-| Monthly Report flow | Product gate | FINAL-only client report path on target environment |
+| Monthly Report flow | Product gate | FINAL-only client report path on target environment — runbook: [`docs/runbooks/MONTHLY_REPORT_LIVE_DATA_PROOF.md`](../runbooks/MONTHLY_REPORT_LIVE_DATA_PROOF.md) |
 | Feedback learning | Product gate | Client feedback loop for delivery iteration |
 
 **Puriva Launch status:** **Blocked** until the blockers above are closed with evidence. See [`G53_PRODUCTION_SAFETY_PLAN.md`](../runbooks/G53_PRODUCTION_SAFETY_PLAN.md).
@@ -46,7 +46,7 @@ These remain out of scope for current MVP and Puriva Launch v1 unless a separate
 | Item | Notes |
 |------|-------|
 | Autonomous agents | Admin-triggered AI only |
-| WordPress auto-publish | Draft prep/handoff required for Puriva; auto-publish deferred |
+| WordPress auto-publish | Draft prep/handoff required for Puriva — runbook: [`docs/runbooks/WORDPRESS_DRAFT_PROOF.md`](../runbooks/WORDPRESS_DRAFT_PROOF.md); auto-publish deferred |
 | Marketing emails | Transactional workflow email is separate proof gate |
 | SMS / WhatsApp | No messaging channel proof |
 | Full SaaS onboarding | Single-client/agency ops for Production v1 |
@@ -254,6 +254,8 @@ These items are deferred but **must not block** local staging readiness planning
 | `ClientMonthlyBrief` deprecation | Deferred | Legacy intake at `#/client-portal/briefs`; separate removal block |
 | Large AiDelivery modal refactor | Deferred | WP confirm modal extracted; further splits cosmetic |
 | Production deploy | Deferred | G4 staging is separate gate; prod frozen |
+| Admin workflow UX polish blocks UX-P1–P12 | Queued (not active) | Read-only audit 2026-07-09: small frontend-only operator polish — see [`docs/ux/ADMIN_WORKFLOW_POLISH_AUDIT.md`](../ux/ADMIN_WORKFLOW_POLISH_AUDIT.md). Activate one block at a time via DCA MODE gate. No broad UI implementation. |
+| Finance attribution admin visibility | Deferred | Backend DRAFT scaffold only; UI panel needs separate approved block |
 
 ---
 

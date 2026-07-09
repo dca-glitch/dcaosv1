@@ -1,10 +1,11 @@
 # G49 Production Dry-Run / Read-Only Proof
 
-**Status:** Not executed — planning and runbook only. Does **not** authorize production deploy, VPS mutation, or G50.
+**Status:** Public read-only probe evidence collected (2026-07-09, mega-block pre-production readiness session). This covers §6.2 of this runbook only (public HTTPS probes). It does **not** cover §6.3 (SSH read-only discovery, not performed) or the full §10 PASS criteria's requirement for a recorded owner-approval sentence naming this specific G49 execution block. Does **not** authorize production deploy, VPS mutation, or G50.
 
 **Gate:** G49 — Production dry-run / read-only proof  
 **Date prepared:** 2026-07-09  
-**Branch baseline:** `main` at `42f969f` (G54 HSTS/proxy PASS recorded)  
+**Date public probes executed:** 2026-07-09 (mega-block session)
+**Branch baseline:** `main` at `f6e545b` (repo had uncommitted doc changes at mega-block start — see §16)
 **Source of truth:** [`docs/STATUS.md`](../STATUS.md)
 
 Related:
@@ -21,14 +22,27 @@ Related:
 
 | Item | State |
 |------|--------|
-| G49 executed | **NO** |
-| G49 PASS | **NO** |
+| G49 public read-only probes (§6.2) executed | **YES** — 2026-07-09 |
+| G49 full gate PASS (all §10 criteria incl. owner approval sentence) | **NO** — probe evidence collected; formal approval sentence for this exact block not separately recorded |
 | Authorizes G50 production deploy | **NO** |
 | Authorizes production mutation | **NO** |
 | Production readiness | **NO** |
 | G54 HSTS/proxy baseline | **PASS** |
 | G50 production deploy | **Not executed** — frozen/deferred |
 | Puriva Launch | **Blocked** — separate live proof gates |
+
+### 1.1 Public probe evidence (2026-07-09)
+
+Collected via `Invoke-WebRequest` from local PowerShell, read-only, no mutation:
+
+| Target | HTTP | HSTS | DB |
+|--------|------|------|----|
+| `https://staging.digitalcubeagency.net` | 200 | `max-age=31536000; includeSubDomains` | n/a (root) |
+| `https://staging.digitalcubeagency.net/api/v1/health` | 200 | present | `ready` |
+| `https://system.digitalcubeagency.net` | 200 | `max-age=31536000; includeSubDomains` | n/a (root) |
+| `https://system.digitalcubeagency.net/api/v1/health` | 200 | present | `ready` |
+
+All four §6.2 probes PASS. §6.3 SSH read-only discovery was **not** performed (requires separate explicit SSH read-only approval). No production or staging mutation occurred while collecting this evidence.
 
 ---
 
@@ -346,4 +360,8 @@ Docs-only closeout (if PASS): update [`docs/STATUS.md`](../STATUS.md) § G49, op
 - **G48:** Production readiness planning PASS — production deploy ready NO.
 - **G53:** Production safety plan approved — planning only.
 - **G54:** HSTS/proxy fix PASS — blocker closed.
-- **G49:** Next production safety gate — read-only proof; not yet executed.
+- **G49:** Public read-only probe evidence collected 2026-07-09 (§1.1); full gate closure (owner approval sentence, §6.3 SSH discovery if desired) remains pending. Production readiness remains NO. G50 remains not executed.
+
+## 16. Mega-block pre-production readiness session note (2026-07-09)
+
+As part of a documentation/audit mega-block (2026-07-09), the four §6.2 public probes were re-run and recorded in §1.1. **Repo was dirty at mega-block start** (uncommitted `G49` + production safety docs from a prior partial session); no runtime mutation occurred during probe collection. This mega-block produced/aligned production safety pack docs and readiness audits. No commit, push, deploy, VPS mutation, migration, or secret access occurred during probe collection. This session did not obtain or record the specific owner-approval sentence required by §10 item 1 for a full G49 gate PASS; treat §1.1 as evidence for a future formal G49 closure, not as G49 closure itself.

@@ -1,14 +1,20 @@
 # DCA OS Lite — Status (Source of Truth)
 
-**Last updated:** 2026-07-09 (G54 HSTS/proxy PASS; G49 dry-run proof plan prepared — not executed)
-**Operator index:** [`docs/operator/OPERATOR_RUNBOOK.md`](./operator/OPERATOR_RUNBOOK.md)  
-**Architecture map:** [`docs/ARCHITECTURE.md`](./ARCHITECTURE.md) § Current application map  
-**Smoke matrix:** [`docs/runbooks/LOCAL_SMOKE_MATRIX.md`](./runbooks/LOCAL_SMOKE_MATRIX.md)  
-**Staging gate:** [`docs/runbooks/STAGING_READINESS.md`](./runbooks/STAGING_READINESS.md)  
+**Last updated:** 2026-07-09 (mega-block: G49 public probes PASS; production safety pack + readiness docs created; G49 formal closure still pending owner sentence)
+**Operator index:** [`docs/operator/OPERATOR_RUNBOOK.md`](./operator/OPERATOR_RUNBOOK.md)
+**Architecture map:** [`docs/ARCHITECTURE.md`](./ARCHITECTURE.md) § Current application map
+**Smoke matrix:** [`docs/runbooks/LOCAL_SMOKE_MATRIX.md`](./runbooks/LOCAL_SMOKE_MATRIX.md)
+**Staging gate:** [`docs/runbooks/STAGING_READINESS.md`](./runbooks/STAGING_READINESS.md)
 **Production safety plan:** [`docs/runbooks/G53_PRODUCTION_SAFETY_PLAN.md`](./runbooks/G53_PRODUCTION_SAFETY_PLAN.md)
 **G49 dry-run proof:** [`docs/runbooks/G49_PRODUCTION_DRY_RUN_READ_ONLY_PROOF.md`](./runbooks/G49_PRODUCTION_DRY_RUN_READ_ONLY_PROOF.md)
-**Env inventory (names only):** [`docs/operator/ENV_READINESS_INVENTORY.md`](./operator/ENV_READINESS_INVENTORY.md)  
+**Live proof runbooks:** [`AI_PROVIDER_LIVE_PROOF.md`](./runbooks/AI_PROVIDER_LIVE_PROOF.md) · [`WORDPRESS_DRAFT_PROOF.md`](./runbooks/WORDPRESS_DRAFT_PROOF.md) · [`MONTHLY_REPORT_LIVE_DATA_PROOF.md`](./runbooks/MONTHLY_REPORT_LIVE_DATA_PROOF.md)
+**Env inventory (names only):** [`docs/operator/ENV_READINESS_INVENTORY.md`](./operator/ENV_READINESS_INVENTORY.md)
 **Deferred scope:** [`docs/operator/deferred-scope-register.md`](./operator/deferred-scope-register.md)
+**Production deployment/rollback/checklist (reference):** [`docs/runbooks/PRODUCTION_DEPLOYMENT.md`](./runbooks/PRODUCTION_DEPLOYMENT.md) · [`docs/runbooks/PRODUCTION_ROLLBACK.md`](./runbooks/PRODUCTION_ROLLBACK.md) · [`docs/runbooks/PRODUCTION_SAFETY_CHECKLIST.md`](./runbooks/PRODUCTION_SAFETY_CHECKLIST.md)
+**Puriva Launch Gate (15-area evaluation):** [`docs/runbooks/PURIVA_LAUNCH_GATE.md`](./runbooks/PURIVA_LAUNCH_GATE.md)
+**Storage/R2 proof plan:** [`docs/runbooks/STORAGE_R2_PROOF.md`](./runbooks/STORAGE_R2_PROOF.md)
+**Integrations truth matrix:** [`docs/runbooks/INTEGRATIONS_TRUTH_MATRIX.md`](./runbooks/INTEGRATIONS_TRUTH_MATRIX.md)
+**Admin UI/workflow polish audit:** [`docs/ux/ADMIN_WORKFLOW_POLISH_AUDIT.md`](./ux/ADMIN_WORKFLOW_POLISH_AUDIT.md) (read-only; UX-P1–P12 queued blocks)
 
 ---
 
@@ -18,10 +24,11 @@
 |------|--------|
 | Latest baseline | G52-B docs reconciliation + **G53 production safety plan approved** (planning only) |
 | Production readiness | **NO** |
-| Next gate | **G49** — production dry-run/read-only proof, only after owner approval |
+| Next gate | **G49 formal closure** — public probes PASS (2026-07-09); owner approval sentence + optional SSH read-only still required before G50 |
 | Staging | **Proven** — G46d/G47 PASS (artifact `5e1ea5a`) |
 | Production deploy | **Frozen/deferred** — no deploy until G49 dry-run + G50 explicit approval |
-| G49 / G50 | **Not executed** |
+| G49 public probes (§6.2) | **PASS** — 2026-07-09; formal gate closure pending owner sentence |
+| G50 production deploy | **Not executed** — frozen/deferred |
 | Puriva Launch | **Blocked** — live proof gates required (see deferred-scope register) |
 | Roadmap tracks | Production Safety · Live Integration Proof · Client Operating Pack/Productization |
 
@@ -329,9 +336,9 @@ G46d was staging-only. No production deploy was attempted, and production app/AP
 | Puriva Launch | **Blocked** — live proof gates required before launch |
 | RBAC stance | Not blocker for limited Production v1 if boundaries safe; blocker before scaling/SaaS |
 
-**G53 blockers recorded:** HSTS/proxy security warning; rollback/restore evidence; env/secrets separation; credential storage; tenant/client boundary re-verification on target; integration truth matrix; controlled dry-run (G49); G49 before G50 sequence.
+**G53 blockers recorded:** HSTS/proxy security warning; rollback/restore evidence; env/secrets separation; credential storage; tenant/client boundary re-verification on target; integration truth matrix ([`INTEGRATIONS_TRUTH_MATRIX.md`](./runbooks/INTEGRATIONS_TRUTH_MATRIX.md) — audit baseline 2026-07-09); controlled dry-run (G49); G49 before G50 sequence.
 
-**Next gates (ordered reference):** G49 production dry-run/read-only proof before any production deploy path. Puriva Launch proof gates remain separate: R2 proof → GA/GSC proof → AI Model Research → AI Model Policy → live AI proof → image generation proof → transactional notifications proof.
+**Next gates (ordered reference):** G49 production dry-run/read-only proof before any production deploy path. Puriva Launch proof gates remain separate: R2 proof → GA/GSC proof ([`MONTHLY_REPORT_LIVE_DATA_PROOF.md`](./runbooks/MONTHLY_REPORT_LIVE_DATA_PROOF.md)) → AI Model Research → AI Model Policy → live AI proof ([`AI_PROVIDER_LIVE_PROOF.md`](./runbooks/AI_PROVIDER_LIVE_PROOF.md)) → image generation proof → transactional notifications proof. WordPress draft handoff: [`WORDPRESS_DRAFT_PROOF.md`](./runbooks/WORDPRESS_DRAFT_PROOF.md) (auto-publish remains deferred).
 
 Full plan: [`docs/runbooks/G53_PRODUCTION_SAFETY_PLAN.md`](./runbooks/G53_PRODUCTION_SAFETY_PLAN.md).
 
@@ -360,7 +367,7 @@ Percentages are **local MVP readiness**, not production-proven. See [`docs/STATU
 | **Finance Lite admin foundation** | **100% local/admin-safe foundation** | Admin finance records are smoke-proven for vendors/services/bills/invoices/credit notes/recurring/ledger boundaries where implemented; finance admin browser and ledger smokes passed for local operator use | Real payment collection, Stripe/payment provider proof, bank feeds, tax/legal/accounting production claims, production invoicing readiness |
 | **Audit/activity feed foundation** | **100% local/operator-safe foundation** | `AuditLog`/event feed/dashboard recent activity/operator visibility are smoke-proven locally through audit activity and dashboard audit feed browser gates | SIEM/security audit, compliance-grade audit log, production monitoring, durable incident observability stack |
 | **Email/outbox disabled-safe foundation** | **100% local-safe foundation** | Read-only tenant-scoped outbox/local notification records are smoke-proven; local provider remains non-sending and reports `SKIPPED` without provider delivery | Real sending, SMTP/provider proof, background queues, deliverability, production notification readiness |
-| **UI / UX polish (Dark Nebula / dense admin)** | **100% local/admin-readable baseline** | Compact Dark Nebula admin/client readability and density baseline is closed for current local surfaces | Full design-system migration, full redesign, staging/environment proof, production readiness |
+| **UI / UX polish (Dark Nebula / dense admin)** | **100% local/admin-readable baseline** | Compact Dark Nebula admin/client readability and density baseline is closed for current local surfaces; follow-on operator polish blocks UX-P1–P12 queued in [`ADMIN_WORKFLOW_POLISH_AUDIT.md`](./ux/ADMIN_WORKFLOW_POLISH_AUDIT.md) | Full design-system migration, full redesign, staging/environment proof, production readiness |
 
 ---
 
@@ -417,7 +424,7 @@ Percentages are **local MVP readiness**, not production-proven. See [`docs/STATU
 
 - **Auth/session:** Session persistence (BLOCKED/deferred), real auth endpoints (skeleton-only, return 501), permission/module access enforcement (skeleton-only, not wired), invite/reset flows, Turnstile on staging, OAuth/OIDC, MFA, magic links
 - **Production promotion of current `main`** to `system.digitalcubeagency.net` (staging deploy G46d/G47 is proven; production deploy is not)
-- Live integrations, AI provider execution, storage, analytics, and notifications (see G53 integration truth matrix)
+- Live integrations, AI provider execution, storage, analytics, and notifications (see [`INTEGRATIONS_TRUTH_MATRIX.md`](./runbooks/INTEGRATIONS_TRUTH_MATRIX.md))
 - Live OpenRouter / AI provider HTTP execution
 - Live WordPress publish to any host
 - Live R2 real-bucket proof, staging/env proof, and production storage readiness
@@ -632,6 +639,26 @@ Email/outbox disabled-safe foundation is recorded as **100% local-safe foundatio
 - Stop and wait for owner decision.
 - If approved later, use the Sonnet-only prompt in `docs/runbooks/G9_ENVIRONMENT_PROOF_APPROVAL_GATE.md`.
 - If desired, continue deeper local/product UI polish only.
+
+## Mega-block pre-production/Puriva readiness audit (2026-07-09)
+
+**Result:** Docs/audit-only mega-block completed across 8 workstreams (production gates, RBAC/tenant audit, storage/R2, integrations truth matrix, Puriva Launch Gate 15-area evaluation, AI/WordPress/monthly-report proof plans, smoke/test matrix, admin UI polish audit). No code, schema, or runtime changes. No commit/push/deploy/VPS mutation performed during the audit itself.
+
+| Item | Result |
+|------|--------|
+| Repo clean at session start | **YES** — `git status --porcelain` empty; HEAD at `f6e545b` |
+| G49 public read-only probes | **PASS** — all 4 probes 200, HSTS present, DB ready (see `G49_PRODUCTION_DRY_RUN_READ_ONLY_PROOF.md` §1.1) |
+| G49 full gate closure | **NOT executed** — owner approval sentence still required |
+| Production readiness | Unchanged — **NO** |
+| RBAC/tenant boundary audit | No BLOCKER found; 1 HIGH (convention-based client-boundary enforcement — see full findings) |
+| Storage/R2 | Disabled-safe local proven; live real-bucket proof still required before Puriva Launch |
+| Integrations truth matrix | No integration falsely claims live-proven status; all live proofs remain owner-gated |
+| Puriva Launch verdict | **BLOCKED** — 8 of 15 evaluated areas fully blocked; see `PURIVA_LAUNCH_GATE.md` |
+| New docs created | `PRODUCTION_DEPLOYMENT.md`, `PRODUCTION_ROLLBACK.md`, `PRODUCTION_SAFETY_CHECKLIST.md`, `PURIVA_LAUNCH_GATE.md`, `STORAGE_R2_PROOF.md`, `INTEGRATIONS_TRUTH_MATRIX.md` |
+| Docs updated | `G49_PRODUCTION_DRY_RUN_READ_ONLY_PROOF.md`, `STAGING_READINESS.md` (§12 smoke/gate matrix), `STATUS.md` (this section) |
+| Existing docs found already current (no change needed) | `AI_PROVIDER_LIVE_PROOF.md`, `WORDPRESS_DRAFT_PROOF.md`, `MONTHLY_REPORT_LIVE_DATA_PROOF.md`, `docs/ux/ADMIN_WORKFLOW_POLISH_AUDIT.md` |
+
+Production readiness remains **NO**. G49/G50 remain not fully executed. Puriva Launch remains **blocked**. This session did not commit, push, deploy, or mutate any environment.
 
 ## G54 HSTS/proxy fix completion (2026-07-09)
 
