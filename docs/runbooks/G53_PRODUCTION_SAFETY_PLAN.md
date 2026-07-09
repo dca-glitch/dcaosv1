@@ -85,7 +85,7 @@ These must be resolved or explicitly accepted with owner sign-off before any pro
 
 | # | Blocker | Status | Next gate / action |
 |---|---------|--------|-------------------|
-| 1 | **HSTS / proxy security warning** | Open — G47c reported HSTS missing (`31/31 passed, 1 warning`) | **G54** — PASS; HSTS present on staging and production |
+| 1 | **HSTS / proxy security warning** | **Fixed in G54** — HSTS present on staging and production | Closed; backup and proof recorded in G54 completion note |
 | 2 | **Rollback / restore evidence** | Not proven for production promotion | Backup/rollback procedure must be evidenced before G50 |
 | 3 | **Env / secrets separation** | Not production-proven | Confirm staging credentials never in production; names-only inventory |
 | 4 | **Credential storage** | Not production-proven | Server-side only; no secrets in repo or logs |
