@@ -39,6 +39,26 @@ These are **not** "still deferred" long-term roadmap items. They are active bloc
 
 ---
 
+## Post-G69 remaining gates (G70 — owner input before live proofs)
+
+These remain **blocked** after G57–G68 merged to `main` (`64bfd06`). G70 documents the checklist only; it does **not** execute live proofs.
+
+| Gate | Scope | Status | Runbook / note |
+|------|-------|--------|----------------|
+| G49 formal owner closure sentence | Production safety | **PENDING** | [`G49_PRODUCTION_DRY_RUN_READ_ONLY_PROOF.md`](../runbooks/G49_PRODUCTION_DRY_RUN_READ_ONLY_PROOF.md) |
+| Live AI provider proof | First controlled OpenRouter/text proof | **BLOCKED** | [`AI_PROVIDER_LIVE_PROOF.md`](../runbooks/AI_PROVIDER_LIVE_PROOF.md) §9 |
+| Live image generation proof | Article+Image path | **BLOCKED** | [`IMAGE_GENERATION_PROOF.md`](../runbooks/IMAGE_GENERATION_PROOF.md) |
+| GA/GSC OAuth + live sync | Monthly report live data | **BLOCKED** | [`MONTHLY_REPORT_LIVE_DATA_PROOF.md`](../runbooks/MONTHLY_REPORT_LIVE_DATA_PROOF.md) |
+| WordPress live draft proof | Draft/handoff on target env | **BLOCKED** | [`WORDPRESS_DRAFT_PROOF.md`](../runbooks/WORDPRESS_DRAFT_PROOF.md) |
+| R2 real-bucket IO proof | Private storage | **BLOCKED** | [`STORAGE_R2_PROOF.md`](../runbooks/STORAGE_R2_PROOF.md) |
+| Transactional email live proof | Resend/workflow notifications | **BLOCKED** | [`EMAIL_NOTIFICATIONS_PROOF.md`](../runbooks/EMAIL_NOTIFICATIONS_PROOF.md) (if present) or integrations matrix |
+| Staging migration application | `20260709120000_add_ai_budget_ledger` on staging DB | **BLOCKED** | Fresh owner approval; see [`STAGING_READINESS.md`](../runbooks/STAGING_READINESS.md) |
+| Explicit production deploy approval | G50 | **BLOCKED** | [`G53_PRODUCTION_SAFETY_PLAN.md`](../runbooks/G53_PRODUCTION_SAFETY_PLAN.md) |
+
+**Production deploy is not authorized** by completing G69 or G70 documentation.
+
+---
+
 ## Still deferred (intentionally not active)
 
 These remain out of scope for current MVP and Puriva Launch v1 unless a separate approved block explicitly activates them.
@@ -126,16 +146,15 @@ Current behavior:
 
 ## AI Provider And Automation
 
-**G56 closed locally (pre-live skeleton):** orchestrator registry, material policy, budget guard, kill switch invariant, admin UI panels, orchestrator smoke, workflow adapter skeleton, compliance fixtures, prompt template registry. Live provider proof remains deferred.
+**G57–G68 merged to `main` (G69, `64bfd06`):** persistent AI budget ledger (dry-run estimates), workflow adapter dry-run endpoint, extended orchestrator admin panel, notification event contracts, integration boundary index. Live provider proof remains **BLOCKED**.
 
 Deferred:
 
-- DB-persisted AI budget spend ledger (G56 — estimates only);
-- admin editable provider settings UI (G56 — read-only panel only);
-- live provider staging proof per role;
+- live provider staging proof per role (first proof: controlled session per `AI_PROVIDER_LIVE_PROOF.md` §9);
 - image generation live proof;
 - vision QA live proof;
-- orchestrator wired into workflow execution adapter live path;
+- orchestrator wired into workflow execution adapter **live path** (dry-run only on main today);
+- admin editable provider settings UI (read-only panel on main);
 - autonomous AI agents;
 - background high-cost AI runs;
 - production live provider proof;

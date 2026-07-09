@@ -1,9 +1,10 @@
 # DCA OS Lite — Status (Source of Truth)
 
-**Last updated:** 2026-07-09 (G57–G68 pre-live completion macro gate)
+**Last updated:** 2026-07-09 (G70 post-G69 closeout — controlled live proof checklist)
 **G55 pre-live readiness:** [`docs/runbooks/G55_PRELIVE_READINESS.md`](./runbooks/G55_PRELIVE_READINESS.md)
 **G56 pre-live readiness:** [`docs/runbooks/G56_PRELIVE_READINESS.md`](./runbooks/G56_PRELIVE_READINESS.md)
 **G57–G68 pre-live readiness:** [`docs/runbooks/G57_G68_PRELIVE_READINESS.md`](./runbooks/G57_G68_PRELIVE_READINESS.md)
+**G70 live proof checklist:** [`docs/runbooks/AI_PROVIDER_LIVE_PROOF.md`](./runbooks/AI_PROVIDER_LIVE_PROOF.md) §9
 **AI policy:** [`docs/ai/AI_MODEL_POLICY.md`](./ai/AI_MODEL_POLICY.md) · [`docs/ai/AI_ORCHESTRATOR_LITE.md`](./ai/AI_ORCHESTRATOR_LITE.md)
 **Operator index:** [`docs/operator/OPERATOR_RUNBOOK.md`](./operator/OPERATOR_RUNBOOK.md)
 **Architecture map:** [`docs/ARCHITECTURE.md`](./ARCHITECTURE.md) § Current application map
@@ -24,16 +25,18 @@
 
 ---
 
-## Executive snapshot (G52-B + G53 + G55 + G56 + G57–G68)
+## Executive snapshot (G52-B + G53 + G55 + G56 + G57–G68 + G69)
 
 | Item | State |
 |------|--------|
-| Latest baseline | G57–G68 pre-live completion — persistent budget ledger, workflow dry-run, notification contracts, admin operator wiring, integration boundaries |
+| Latest baseline | G57–G68 pre-live completion on `main` — persistent budget ledger, workflow dry-run, notification contracts, admin operator wiring, integration boundaries |
+| **G69 merge** | **DONE** — G57–G68 fast-forward merged to `main`; final commit `64bfd06` |
 | Production readiness | **NO** |
-| Next gate | **G49 formal closure** — public probes PASS (2026-07-09); owner approval sentence + optional SSH read-only still required before G50 |
+| Next gate | **G70 controlled live AI proof** — owner-input checklist in [`AI_PROVIDER_LIVE_PROOF.md`](./runbooks/AI_PROVIDER_LIVE_PROOF.md) §9; then G49 formal closure before G50 |
 | G55 pre-live | **Local PASS** — docs + disabled-safe orchestration foundation; no live providers/deploy |
 | G56 pre-live | **Local PASS** — expanded pre-live groundwork; admin orchestrator UI; orchestrator smoke; no live providers/deploy |
-| G57–G68 pre-live | **Local PASS (implementation)** — persistent ledger, dry-run adapter, operator visibility, go/no-go docs; live proofs **BLOCKED** |
+| G57–G68 pre-live | **On main** (`64bfd06`) — persistent ledger, dry-run adapter, operator visibility, go/no-go docs; live proofs **BLOCKED** |
+| G70 closeout | **Docs only** — post-G69 STATUS/deferred/live-proof checklist; no live execution |
 | Staging | **Proven** — G46d/G47 PASS (artifact `5e1ea5a`) |
 | Production deploy | **Frozen/deferred** — no deploy until G49 dry-run + G50 explicit approval |
 | G49 public probes (§6.2) | **PASS** — 2026-07-09; formal gate closure pending owner sentence |
@@ -50,9 +53,10 @@ Detail: [`G53_PRODUCTION_SAFETY_PLAN.md`](./runbooks/G53_PRODUCTION_SAFETY_PLAN.
 | Item | State |
 |------|--------|
 | Branch | `main` synced with `origin/main` |
+| Latest implementation commit | `64bfd06` — `prelive: complete post-G56 orchestration readiness` (G57–G68 merged via G69 fast-forward) |
+| G69 merge | **DONE** — branch `cursor/g57-g68-prelive-completion` fast-forward to `main`; validation before merge PASS (198 unit tests, orchestrator + provider smokes, validate) |
+| Working tree | Clean except untracked `.cursor/settings.json` (must not be committed) |
 | Latest docs/local closeout commit | `42f969f` — `docs: mark G54 HSTS blocker closed in G53 plan`; G35 Phase B local smoke proof remains `217c11c`; G35 Phase C staging artifact source remains `5e1ea5a` |
-| CI | Green through G38 `564e440`, G39 `691435c`, and G41 `a18dcc1`; G43 local re-check PASS |
-| Working tree | Clean and synced with `origin/main` |
 | Pre-staging local closeout (G35 Phase B) | **PASS** — full local pre-staging gate passed on `217c11c`; see §2.7 |
 | Latest local pre-staging re-check (G43) | **PASS** — validate plus four focused local smokes passed on current `main`; no repo edits, commit/push/deploy, staging/VPS/prod; see §2.9 |
 | Controlled refresh (G35 Phase C) | **PASS** — staging artifact refreshed from `5ee8389` to `5e1ea5a`; local validate PASS before artifact creation; staging API recreated; DB healthy; MVP smoke PASS; production untouched; see §2.8 |
@@ -742,6 +746,17 @@ Full detail recorded in [`G49_PRODUCTION_DRY_RUN_READ_ONLY_PROOF.md`](./runbooks
 | Puriva Operating Pack | Pre-live table updated | — | Launch blocked |
 
 Detail: [`G56_PRELIVE_READINESS.md`](./runbooks/G56_PRELIVE_READINESS.md).
+
+## G69 merge closeout (2026-07-09)
+
+| Item | State |
+|------|--------|
+| Gate | G69 — merge G57–G68 to `main` |
+| Method | Fast-forward |
+| Final `main` commit | `64bfd06` — `prelive: complete post-G56 orchestration readiness` |
+| Pre-merge validation | `test:unit` 198/198 PASS; `smoke:ai-provider-config:local` 19/19 PASS; `smoke:ai-orchestrator-lite:local` PASS; `validate` PASS; `git diff --check` PASS |
+| Live integrations | **None** — production frozen |
+| Next gate | **G70** — controlled live AI provider proof checklist (docs); execution blocked until owner inputs in [`AI_PROVIDER_LIVE_PROOF.md`](./runbooks/AI_PROVIDER_LIVE_PROOF.md) §9 |
 
 ## Mega-block blocks 1–9 coordination closeout (2026-07-09)
 

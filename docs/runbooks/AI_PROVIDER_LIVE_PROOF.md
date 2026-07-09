@@ -237,3 +237,181 @@ Fallback observed: yes | no
 Secrets leaked: no (required)
 Owner approval reference:
 ```
+
+---
+
+## 9. G70 — Controlled first live AI provider proof checklist (post-G69)
+
+**Status:** Owner-input checklist only. **Does not authorize production deploy**, staging mutation, or autonomous AI.
+
+**Prerequisite:** G57–G68 on `main` (`64bfd06`); local deterministic default proven; orchestrator kill switch and Puriva $100/month cap in place.
+
+### 9.1 Required owner inputs (before any live call)
+
+| # | Owner must provide | Recorded where |
+|---|-------------------|----------------|
+| 1 | Written approval sentence naming **target environment** (`local` throwaway only, or `staging` after separate staging approval) | Evidence log §8 |
+| 2 | Approval of **exact provider path** (default first proof: OpenRouter text via `AI_TEXT_GATEWAY=openrouter`) | Evidence log |
+| 3 | Approval of **primary model ID** per [`AI_MODEL_POLICY.md`](../architecture/AI_MODEL_POLICY.md) §1.1 | Evidence log (model name only) |
+| 4 | Confirmation **Puriva monthly AI cap = $100 USD** remains in force for proof runs | Evidence log |
+| 5 | Confirmation **kill switch** understood: set `AI_TEXT_GATEWAY=local` or unset to disable live immediately | Evidence log |
+| 6 | Named **operator** executing the proof (human admin, not background job) | Evidence log |
+| 7 | Confirmation proof is **admin-triggered single workflow** only — no batch, no client-visible output | Evidence log |
+| 8 | Explicit statement that **production deploy (G50) is not part of this proof** | Evidence log |
+
+### 9.2 Required secrets / env (names only — never log values)
+
+Set on target machine only; restart API after change:
+
+| Env name | Required for first proof | Notes |
+|----------|-------------------------|-------|
+| `AI_TEXT_GATEWAY` | yes | Must be `openrouter` for live path |
+| `OPENROUTER_API_KEY` | yes | Owner-provided; never commit or print |
+| `OPENROUTER_TEXT_PRIMARY_MODEL` | yes | Owner-approved model ID |
+| `OPENROUTER_BASE_URL` | optional | Default `https://openrouter.ai/api/v1` |
+| `OPENROUTER_TEXT_LONG_CONTEXT_MODEL` | optional | Not required for first minimal proof |
+| `AUTH_SEED_TEST_PASSWORD` | yes (local smoke) | Local admin login for smokes only |
+
+**Not in scope for first AI text proof:** `IMAGE_GENERATION_*`, `RESEND_*` / email, R2 keys, WordPress credentials, GA/GSC OAuth, payment provider keys.
+
+### 9.3 Budget cap confirmation
+
+| Check | Required value |
+|-------|----------------|
+| Puriva operating pack monthly cap | **$100 USD** (`PURIVA_AI_MONTHLY_CAP_USD`) |
+| Proof session additional spend ceiling | Owner must set **max $1.00 USD** for first controlled proof (single admin-triggered workflow execute) |
+| Persistent ledger | Dry-run estimates on main; live proof must not exceed owner session ceiling |
+| Over-budget behavior | Workflow must block or fall back to local deterministic — **stop proof** if cap exceeded |
+
+### 9.4 Kill switch confirmation
+
+Before live proof:
+
+1. Confirm `GET /ai-orchestrator-lite/registry` shows `orchestratorLiveSafe` / kill switch snapshot with no enabled live registry providers.
+2. Confirm default env has `AI_TEXT_GATEWAY` unset or `local`.
+
+During live proof:
+
+- One operator watches API logs; no parallel AI runs.
+
+Immediate disable (kill switch):
+
+```powershell
+# On target machine — remove or set local; restart API
+# AI_TEXT_GATEWAY=local  (or unset)
+# Remove OPENROUTER_API_KEY from active env
+```
+
+Re-verify: `npm.cmd run smoke:openrouter-guarded:local` **without** `SMOKE_EXPECT_OPENROUTER_LIVE=true` → `openRouterLiveExecutionEnabled=false`.
+
+### 9.5 Allowed provider / model (first proof)
+
+| Item | Allowed for G70 first proof | Forbidden |
+|------|---------------------------|-----------|
+| Provider | OpenRouter text gateway only | Anthropic/Gemini/Perplexity direct, image providers |
+| Gateway | `AI_TEXT_GATEWAY=openrouter` when key+model present | Production URL without G9-class approval |
+| Model | One owner-approved `OPENROUTER_TEXT_PRIMARY_MODEL` | Unapproved model IDs; long-context slot unless explicitly approved |
+| Execution surface | Admin workflow brief MI or SEO local proof path via `smoke:openrouter-guarded:local` strict mode | Client portal routes; orchestrator material-routing preview does **not** call live providers |
+| Target env | **Local throwaway** (`127.0.0.1:4000`) strongly preferred | Production `system.digitalcubeagency.net` **forbidden** in G70 |
+
+### 9.6 Allowed test prompt type
+
+| Allowed | Details |
+|---------|---------|
+| **Single admin-triggered workflow execute** | Existing workflow-brief MI summary or SEO planning deterministic proof path used by `smoke-openrouter-guarded-local.mjs` |
+| Input material | Approved test tenant data only; no real client medical data |
+| Output | Admin `executionLog` / observability block only; **not** client-visible |
+
+| Forbidden |
+|-----------|
+| Research agent live crawl; image generation; compliance review live model; batch article drafts; any client portal exposure |
+
+### 9.7 Expected max cost
+
+| Item | Limit |
+|------|-------|
+| First proof session total | **≤ $1.00 USD** (owner-enforced session ceiling) |
+| Single request output tokens | Bounded by `ai-text-budget.policy.ts` caps (summary ≤180, content plan ≤700, article ≤1800) |
+| Retries | **0** automatic provider retries per request |
+| Timeout | 20s HTTP abort (code default) |
+
+If estimated or actual cost exceeds session ceiling → **STOP** (§9.9).
+
+### 9.8 Exact success criteria
+
+All must pass:
+
+1. Baseline `npm.cmd run smoke:ai-provider-config:local` — **19/19 PASS** (no live env).
+2. Baseline `npm.cmd run smoke:openrouter-guarded:local` — PASS with `textGateway=local`, `liveProviderCalled=false`.
+3. With owner env set and `SMOKE_EXPECT_OPENROUTER_LIVE=true`: strict smoke PASS.
+4. `GET /ai-provider/planning-config` — no API keys in response.
+5. Workflow execute shows `Gateway: openrouter` and configured model name in admin-safe `executionLog`.
+6. No `sk-or-`, `OPENROUTER_API_KEY`, password hashes, or session tokens in smoke output.
+7. Evidence log completed (§8 + §9.10).
+8. Env restored to local/disabled defaults; baseline smoke re-run PASS.
+
+**Production deploy is not a success criterion and must not be performed.**
+
+### 9.9 Exact stop conditions
+
+Stop immediately (do not continue proof) if:
+
+| # | Condition |
+|---|-----------|
+| 1 | Any secret appears in API response, console, or log file |
+| 2 | Client-role caller receives AI execution metadata or live output |
+| 3 | `liveProviderCalled=true` outside the single approved admin workflow execute |
+| 4 | Session cost approaches or exceeds **$1.00 USD** owner ceiling |
+| 5 | Puriva monthly cap kill switch activates (`killSwitchActive=true` on budget snapshot) |
+| 6 | OpenRouter timeout, 5xx, or parse failure **without** safe local fallback |
+| 7 | Operator loses visibility into API process (runaway requests) |
+| 8 | Target environment is production without explicit G9/G50 approval |
+| 9 | `validate` or baseline smokes fail after env restore attempt |
+| 10 | Owner revokes approval verbally or in writing |
+
+On stop: execute rollback (§9.10) before closing the session.
+
+### 9.10 Rollback / disable steps
+
+1. Set `AI_TEXT_GATEWAY=local` or unset; remove `OPENROUTER_API_KEY` from active process env.
+2. Restart API (`npm.cmd run dev:api` locally, or approved staging container restart only if staging was approved).
+3. Run `npm.cmd run smoke:openrouter-guarded:local` without `SMOKE_EXPECT_OPENROUTER_LIVE`.
+4. Confirm `openRouterLiveExecutionEnabled=false` on planning config.
+5. Archive evidence log to `$env:TEMP`; redact any accidental secret fragments.
+6. Record STOP reason and rollback completion in deferred-scope / gate closeout notes.
+
+### 9.11 Proof log requirements
+
+Save to: `$env:TEMP\g70-ai-provider-live-proof-<yyyyMMdd-HHmmss>.log`
+
+Must include:
+
+- Gate name: **G70 / first controlled live AI provider proof**
+- `main` commit SHA (`64bfd06` or newer on approved branch)
+- Target environment: `local` | `staging` (never `production` for G70)
+- Owner approval sentence (verbatim, no secrets)
+- Env names set (boolean presence only for secrets)
+- Approved model ID (name only)
+- Budget cap confirmations ($100 Puriva / $1 session)
+- Kill switch tested: yes/no
+- Baseline smoke results
+- Strict live smoke result
+- `liveProviderCalled` observed: once only / none
+- Fallback observed: yes/no
+- Stop triggered: yes/no + reason
+- Rollback completed: yes/no
+- **Production deploy performed: no** (required)
+
+Open log in Notepad for owner review. **Do not commit log file.**
+
+### 9.12 Production deploy exclusion
+
+| Item | G70 scope |
+|------|-----------|
+| Production deploy (G50) | **Excluded** |
+| Staging artifact refresh | **Excluded** unless separate owner gate |
+| VPS / SSH / Caddy / DNS | **Excluded** |
+| Prisma migration on staging/production | **Excluded** |
+| Enabling live providers in production env | **Excluded** |
+
+Next recommended gate after successful G70 proof: **live image generation proof** or **staging migration + staging live proof** per deferred-scope register — each requires separate owner approval.

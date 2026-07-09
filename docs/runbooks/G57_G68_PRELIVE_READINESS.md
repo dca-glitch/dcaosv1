@@ -1,9 +1,10 @@
 # G57–G68 — Post-G56 Pre-Live Completion Macro Gate
 
-**Status:** Local implementation (pre-live groundwork)
+**Status:** Merged to `main` (G69 fast-forward, 2026-07-09)
 **Date:** 2026-07-09
-**Baseline:** G56 `cf0081b` on `main`
-**Branch:** `cursor/g57-g68-prelive-completion`
+**Baseline:** G56 on `main`; G57–G68 implementation branch `cursor/g57-g68-prelive-completion`
+**Final `main` commit:** `64bfd06` — `prelive: complete post-G56 orchestration readiness`
+**Branch:** merged — work is on `main` synced with `origin/main`
 **Production deploy:** Frozen — not authorized
 **Live providers:** Disabled-safe — not enabled
 
@@ -138,3 +139,16 @@ Local/admin pre-live groundwork PASS criteria:
 ## Relationship to G56
 
 G56 established orchestrator skeleton, guards, admin panel foundation, and workflow adapter planning stub. G57–G68 adds persistent ledger, dry-run contract wiring, operator visibility, notification contracts, integration boundary rollup, and formal go/no-go documentation. Live execution paths remain deferred.
+
+---
+
+## G69 merge + G70 closeout (2026-07-09)
+
+| Item | State |
+|------|--------|
+| G69 merge to `main` | **DONE** — fast-forward; final commit `64bfd06` |
+| Pre-merge validation | `test:unit` 198/198; `smoke:ai-provider-config:local` 19/19; `smoke:ai-orchestrator-lite:local` PASS; `validate` PASS |
+| G70 | **Docs only** — post-G69 STATUS/deferred updates + controlled live AI proof checklist in [`AI_PROVIDER_LIVE_PROOF.md`](./AI_PROVIDER_LIVE_PROOF.md) §9 |
+| Production / live proof | **Frozen / BLOCKED** — no live AI, deploy, or integration calls during G69/G70 |
+
+**Recommended next gate:** G71 (or owner-named gate) — controlled first live AI provider proof session per `AI_PROVIDER_LIVE_PROOF.md` §9 after owner completes required inputs. Production deploy is **not** included in that gate.
