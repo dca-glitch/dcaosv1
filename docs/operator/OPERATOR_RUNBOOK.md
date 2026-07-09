@@ -17,6 +17,7 @@ Related detailed runbooks:
 | Puriva operating pack (canonical) | [`docs/architecture/PURIVA_OPERATING_PACK_V1.md`](../architecture/PURIVA_OPERATING_PACK_V1.md) |
 | G9 environment proof gate | [`docs/runbooks/G9_ENVIRONMENT_PROOF_APPROVAL_GATE.md`](../runbooks/G9_ENVIRONMENT_PROOF_APPROVAL_GATE.md) |
 | G53 production safety plan | [`docs/runbooks/G53_PRODUCTION_SAFETY_PLAN.md`](../runbooks/G53_PRODUCTION_SAFETY_PLAN.md) |
+| G49 production dry-run proof | [`docs/runbooks/G49_PRODUCTION_DRY_RUN_READ_ONLY_PROOF.md`](../runbooks/G49_PRODUCTION_DRY_RUN_READ_ONLY_PROOF.md) |
 | Env names (no values) | [`ENV_READINESS_INVENTORY.md`](./ENV_READINESS_INVENTORY.md) |
 | Deferred scope | [`deferred-scope-register.md`](./deferred-scope-register.md) |
 
@@ -117,7 +118,7 @@ Remote staging smokes require explicit target env and may intentionally refuse t
 | MVP staging smoke | `MVP_SMOKE_API_BASE_URL=https://staging.digitalcubeagency.net/api/v1` | PASS after target-guard retry; `smoke-mvp-staging-exit=0` |
 | Staging security baseline | `DCA_SMOKE_REMOTE_TARGET=staging` | PASS after remote-target-guard retry; `smoke-staging-security-baseline-exit=0`; `31/31 passed, 1 warning(s)` |
 
-HSTS missing is a known proxy hardening warning only. Do not run production probes, deploy, or mutate VPS/staging/prod without separate explicit approval.
+G47c reported HSTS missing at G47 time (historical). **G54 HSTS/proxy: PASS** — HSTS is now present on staging and production. Do not run production probes, deploy, or mutate VPS/staging/prod without separate explicit approval. Next production path: **G49** read-only dry-run proof before G50.
 
 ### HTTP 429 recovery
 
@@ -296,7 +297,7 @@ Full detail: [`docs/runbooks/EXTERNAL_INTEGRATIONS_READINESS.md`](../runbooks/EX
 | 3 | Confirm production backup and rollback evidence before any mutation |
 | 4 | Confirm production env separation from staging and no staging credentials in production |
 | 5 | Confirm schema/migration safety; stop if migration would drop tables/columns |
-| 6 | **G54 HSTS/proxy fix** — next production safety blocker; fix or explicit owner deferral before promotion |
+| 6 | **G54 HSTS/proxy** — **PASS** (closed 2026-07-09) |
 | 7 | Keep live integrations gated unless separately approved: AI provider, WordPress, R2, GA/GSC, and email sending |
 | 8 | Run **G49** production deploy dry-run/read-only proof before any production mutation |
 | 9 | **G50** production deploy gate only after G49 PASS and explicit owner approval |

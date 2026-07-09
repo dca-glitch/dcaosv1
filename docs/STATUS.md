@@ -1,11 +1,12 @@
 # DCA OS Lite — Status (Source of Truth)
 
-**Last updated:** 2026-07-09 (G52-B baseline + G53 production safety plan approved — planning only)
+**Last updated:** 2026-07-09 (G54 HSTS/proxy PASS; G49 dry-run proof plan prepared — not executed)
 **Operator index:** [`docs/operator/OPERATOR_RUNBOOK.md`](./operator/OPERATOR_RUNBOOK.md)  
 **Architecture map:** [`docs/ARCHITECTURE.md`](./ARCHITECTURE.md) § Current application map  
 **Smoke matrix:** [`docs/runbooks/LOCAL_SMOKE_MATRIX.md`](./runbooks/LOCAL_SMOKE_MATRIX.md)  
 **Staging gate:** [`docs/runbooks/STAGING_READINESS.md`](./runbooks/STAGING_READINESS.md)  
 **Production safety plan:** [`docs/runbooks/G53_PRODUCTION_SAFETY_PLAN.md`](./runbooks/G53_PRODUCTION_SAFETY_PLAN.md)
+**G49 dry-run proof:** [`docs/runbooks/G49_PRODUCTION_DRY_RUN_READ_ONLY_PROOF.md`](./runbooks/G49_PRODUCTION_DRY_RUN_READ_ONLY_PROOF.md)
 **Env inventory (names only):** [`docs/operator/ENV_READINESS_INVENTORY.md`](./operator/ENV_READINESS_INVENTORY.md)  
 **Deferred scope:** [`docs/operator/deferred-scope-register.md`](./operator/deferred-scope-register.md)
 
@@ -33,7 +34,7 @@ Detail: [`G53_PRODUCTION_SAFETY_PLAN.md`](./runbooks/G53_PRODUCTION_SAFETY_PLAN.
 | Item | State |
 |------|--------|
 | Branch | `main` synced with `origin/main` |
-| Latest docs/local closeout commit | `a18dcc1` — `fix: clarify client monthly report copy`; G35 Phase B local smoke proof remains `217c11c`; G35 Phase C staging artifact source remains `5e1ea5a` |
+| Latest docs/local closeout commit | `42f969f` — `docs: mark G54 HSTS blocker closed in G53 plan`; G35 Phase B local smoke proof remains `217c11c`; G35 Phase C staging artifact source remains `5e1ea5a` |
 | CI | Green through G38 `564e440`, G39 `691435c`, and G41 `a18dcc1`; G43 local re-check PASS |
 | Working tree | Clean and synced with `origin/main` |
 | Pre-staging local closeout (G35 Phase B) | **PASS** — full local pre-staging gate passed on `217c11c`; see §2.7 |
@@ -279,7 +280,7 @@ G46d was staging-only. No production deploy was attempted, and production app/AP
 
 **Target guard lesson:** staging smoke scripts may intentionally refuse to run without an explicit remote target env. Treat refusal as expected safety behavior, set only the documented staging target env for the approved smoke, and never infer production targets.
 
-**Known proxy hardening warning:** HSTS remains a warning-only deferred proxy hardening item until a separately approved Caddy/proxy hardening block.
+**Historical G47c note:** G47c reported HSTS missing as warning only at that time. **G54 HSTS/proxy: PASS** — HSTS is now present on staging and production.
 
 ### 2.12 G48 production readiness planning closeout (2026-07-09)
 
@@ -324,7 +325,7 @@ G46d was staging-only. No production deploy was attempted, and production app/AP
 | Staging proven | G46d/G47 PASS from prior gates |
 | G49 dry-run | **Not executed** |
 | G50 production deploy | **Not executed** |
-| Next gate | **G54** — HSTS/proxy safety blocker (planning reference; fix not authorized under G53) |
+| Next gate | **G49** — production dry-run/read-only proof (not executed; owner approval required) |
 | Puriva Launch | **Blocked** — live proof gates required before launch |
 | RBAC stance | Not blocker for limited Production v1 if boundaries safe; blocker before scaling/SaaS |
 
@@ -438,9 +439,10 @@ Percentages are **local MVP readiness**, not production-proven. See [`docs/STATU
 | Staging (G1) | `staging.digitalcubeagency.net` | G46d controlled staging deploy/proof PASS and G47 staging smoke/proof PASS; artifact/API context `/opt/dca/staging-artifacts/5e1ea5a`; host-side web target `/opt/dca/apps/dcaosv1/staging/web/dist`; compose `/opt/dca/apps/dcaosv1/staging/docker-compose.staging.yml` with `--env-file .env.staging`; correct API service `dcaosv1-staging-api`; G48 refreshed proof: `staging-root-http=200`; `staging-health-http=200`. |
 | Runtime separation | — | Shared Caddy `dca-caddy`; staging API `dcaosv1-staging-api` on `127.0.0.1:4011->4000`; staging DB `dcaosv1-staging-postgres` on `127.0.0.1:5435->5432`, healthy; production API `dcaosv1-api` on `127.0.0.1:4010->4000`; production DB `dcaosv1-postgres` on `127.0.0.1:5434->5432`, healthy. |
 | Deploy proof | — | **G48 + G53 planning PASS only** — production deploy attempted NO; G49/G50 not executed; VPS/staging/prod mutation NO during planning. Staging PASS, G47 PASS, G48/G53 planning PASS do not authorize production deploy. |
-| Next safety blocker | — | **G54** HSTS/proxy fix (planning only under G53; fix not authorized) |
+| Next production gate | — | **G49** production dry-run/read-only proof (not executed; owner approval required) |
+| G54 HSTS/proxy | — | **PASS** — HSTS present on staging and production |
 
-Phase C refresh included: local pre-artifact validation, artifact creation/upload, controlled VPS artifact swap, staging API recreation, admin bootstrap verification, and MVP smoke pass. Production containers untouched. No `.env` files read or printed. No further staging or production action is authorized without explicit owner approval in writing. HSTS remains a known proxy hardening warning from G47c — next gate G54; must be fixed before production promotion or explicitly deferred with owner acceptance.
+Phase C refresh included: local pre-artifact validation, artifact creation/upload, controlled VPS artifact swap, staging API recreation, admin bootstrap verification, and MVP smoke pass. Production containers untouched. No `.env` files read or printed. No further staging or production action is authorized without explicit owner approval in writing. G54 HSTS/proxy is **PASS**. Next production path is G49 read-only proof before any G50 deploy decision.
 
 ---
 

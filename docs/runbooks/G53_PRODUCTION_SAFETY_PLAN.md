@@ -58,7 +58,7 @@ Production readiness remains **NO** as of G53 approval.
 | Area | Production-ready | Notes |
 |------|------------------|-------|
 | Local/admin MVP workflows | Local-proven only | Does not transfer to production without live proof gates |
-| Staging environment | Staging-proven | G46d/G47 PASS; HSTS warning remains |
+| Staging environment | Staging-proven | G46d/G47 PASS; G54 HSTS/proxy PASS |
 | Production deploy | **NO** | Frozen; G49/G50 not executed |
 | Live integrations | **NO** | AI provider, R2, GA/GSC, WP publish, transactional email — all gated |
 | Puriva Launch | **Blocked** | Live proof gates required before launch (see deferred-scope register) |
@@ -128,7 +128,7 @@ RBAC maturity does not substitute for live integration proof, deploy safety, or 
 
 - Production deploy or production API/DB mutation
 - VPS, Docker, Caddy, DNS, or migration execution
-- G54 HSTS/proxy fix implementation (next safety blocker — planning reference only)
+- G54 HSTS/proxy fix — **PASS** (closed 2026-07-09; does not authorize G49/G50)
 - G49 dry-run or G50 deploy execution
 - Live OpenRouter / AI provider HTTP execution
 - Live WordPress publish
@@ -143,7 +143,7 @@ RBAC maturity does not substitute for live integration proof, deploy safety, or 
 
 | Gate | Purpose | G53 authorizes execution |
 |------|---------|--------------------------|
-| **G54** | HSTS/proxy fix — next production safety blocker | **NO** — do not prepare or implement fix under G53 |
+| **G54** | HSTS/proxy fix | **PASS** — completed 2026-07-09; see G54 completion note |
 | R2 proof | Real-bucket storage proof | Separate approval |
 | GA/GSC proof | Live analytics sync proof | Separate approval |
 | AI Model Research | Model selection research gate | Separate approval |
@@ -151,7 +151,7 @@ RBAC maturity does not substitute for live integration proof, deploy safety, or 
 | Live AI proof | OpenRouter or approved provider execution proof | Separate approval |
 | Image generation proof | Image gen provider/workflow proof | Separate approval |
 | Transactional notifications proof | Workflow email delivery proof (not marketing) | Separate approval |
-| **G49** | Production deploy dry-run / read-only proof | **NO** — not yet executed |
+| **G49** | Production deploy dry-run / read-only proof — **next production gate** | **NO** — not yet executed; owner approval required |
 | **G50** | Production deploy gate (explicit owner approval) | **NO** — not yet executed |
 
 Puriva Launch remains **blocked** until the live proof gates above and product workflow gates are closed with evidence.
@@ -162,7 +162,7 @@ Puriva Launch remains **blocked** until the live proof gates above and product w
 
 | Track | G53 state |
 |-------|-----------|
-| **Production Safety** | G53 approved (this document); G54 HSTS/proxy next |
+| **Production Safety** | G53 approved (this document); G54 HSTS/proxy **PASS**; G49 dry-run next |
 | **Live Integration Proof** | Not started for production; staging config-shape only |
 | **Client Operating Pack / Productization** | Local/admin-operational; Puriva Launch blocked pending proof gates |
 
@@ -176,7 +176,7 @@ Before requesting any future production gate:
 2. Confirm production readiness is still **NO**.
 3. Confirm G49/G50 have not been executed unless new evidence exists.
 4. Confirm no live integrations are enabled without separate approval.
-5. Confirm HSTS/proxy status — G54 is next safety blocker.
+5. Confirm HSTS/proxy status — **G54 PASS**; next production gate is **G49** read-only proof.
 6. Confirm Puriva Launch blockers in deferred-scope register.
 7. Obtain explicit owner approval for the specific gate (G49, G50, or live proof).
 
