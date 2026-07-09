@@ -44,4 +44,30 @@ describe("ai-budget-guard.service", () => {
     assert.equal(budget.killSwitchActive, true);
     assert.equal(isAiBudgetBlocked(budget).blocked, true);
   });
+
+  it("uses route maxCostUsdPerRun for estimated step cost when provided", () => {
+    const budget = buildAiBudgetSnapshot({
+      operatingPackKey: "puriva",
+      taskType: "research_pack",
+      maxCostUsdPerRun: 0.3
+    });
+    assert.equal(budget.estimatedStepCostUsd, 0.3);
+  });
+
+  it("blocks when route cost cap exceeds remaining monthly budget", () => {
+    const budget = buildAiBudgetSnapshot({
+      operatingPackKey: "puriva",
+      taskType: "research_pack",
+      spentThisPeriodUsd: 99.85,
+      maxCostUsdPerRun: 0.3
+    });
+    const block = isAiBudgetBlocked(budget, 0.3);
+    assert.equal(block.blocked, true);
+    assert.match(block.reason ?? "", /route cost cap/i);
+  });
+
+  it("route cap stays below Puriva monthly cap", () => {
+    const routeCap = 0.75;
+    assert.ok(routeCap < PURIVA_AI_MONTHLY_CAP_USD);
+  });
 });

@@ -53,6 +53,27 @@ type IntegrationBoundary = {
   categories: Array<{ category: string; status: string; liveCallsDeferred: true }>;
 };
 
+type ModelRoutingAudit = {
+  policyVersion: string;
+  routingTaskType: string;
+  gateway: string;
+  primaryModel: string | null;
+  fallbackBehavior: string;
+  allowLive: boolean;
+  requiresBudgetLedger: boolean;
+  maxCostUsdPerRun: number;
+  complianceProfile: string;
+  blocked: boolean;
+  modelOverrideRejected: boolean;
+  selectionReason: string;
+};
+
+type ModelRoutingPolicySnapshot = {
+  policyVersion: string;
+  approvedModels: string[];
+  routes: Array<{ taskType: string; primaryModel: string | null; allowLive: boolean }>;
+};
+
 type RegistryPayload = {
   registry: {
     orchestratorVersion: string;
@@ -61,6 +82,7 @@ type RegistryPayload = {
       providers: ProviderEntry[];
       roleMappings: RoleMapping[];
     };
+    modelRoutingPolicy?: ModelRoutingPolicySnapshot;
   };
   purivaPolicyProfile: {
     monthlyAiCapUsd: number;
@@ -92,6 +114,7 @@ type MaterialRoutingPlan = {
       killSwitchActive: boolean;
     };
     audit: { liveProviderCalled: boolean; promptTemplateVersion: string | null };
+    modelRouting: ModelRoutingAudit;
   };
   canExecute: boolean;
   blockedReason: string | null;
@@ -266,6 +289,16 @@ export function AiOrchestratorLitePanel() {
               <StatusBadge status="System" />
               <span className="muted-text">{registry.registry.orchestratorVersion}</span>
             </div>
+            {registry.registry.modelRoutingPolicy ? (
+              <div className="admin-operations-row">
+                <span className="muted-text">Model routing policy</span>
+                <StatusBadge status="System" />
+                <span className="muted-text">
+                  {registry.registry.modelRoutingPolicy.policyVersion} ·{" "}
+                  {registry.registry.modelRoutingPolicy.approvedModels.join(", ")}
+                </span>
+              </div>
+            ) : null}
             {budgetLedger ? (
               <div className="admin-operations-row">
                 <span className="muted-text">Persistent ledger ({budgetLedger.periodKey})</span>
@@ -348,6 +381,23 @@ export function AiOrchestratorLitePanel() {
               <span className="muted-text">
                 {plan.preview.providerKey}
                 {plan.preview.modelId ? ` · ${plan.preview.modelId}` : ""}
+              </span>
+            </div>
+            <div className="admin-operations-row">
+              <span className="muted-text">Model routing</span>
+              <StatusBadge status={plan.preview.modelRouting.blocked ? "Warning" : "Ready"} />
+              <span className="muted-text">
+                {plan.preview.modelRouting.routingTaskType} · {plan.preview.modelRouting.gateway}
+                {plan.preview.modelRouting.primaryModel ? ` · ${plan.preview.modelRouting.primaryModel}` : ""}
+              </span>
+            </div>
+            <div className="admin-operations-row">
+              <span className="muted-text">Route cost cap / live</span>
+              <StatusBadge status={plan.preview.modelRouting.allowLive ? "Ready" : "Inactive"} />
+              <span className="muted-text">
+                ${plan.preview.modelRouting.maxCostUsdPerRun} cap · live{" "}
+                {plan.preview.modelRouting.allowLive ? "allowed" : "blocked"} · ledger{" "}
+                {plan.preview.modelRouting.requiresBudgetLedger ? "required" : "optional"}
               </span>
             </div>
             <div className="admin-operations-row">

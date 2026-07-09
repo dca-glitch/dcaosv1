@@ -111,6 +111,17 @@ async function main() {
   assert(plan.preview.executionMode === "local", "execution mode local");
   assert(plan.preview.inputMaterials.length > 0, "default safe materials included");
   assert(plan.preview.budget.monthlyCapUsd === 100, "preview budget cap $100");
+  assert(Boolean(plan.preview.modelRouting), "model routing audit present");
+  assert(plan.preview.modelRouting.primaryModel === "anthropic/claude-haiku-4.5", "approved model routed");
+  assert(plan.preview.modelRouting.gateway === "openrouter", "openrouter gateway planned");
+  assert(plan.preview.modelRouting.requiresBudgetLedger === true, "budget ledger required");
+  assert(plan.preview.modelRouting.maxCostUsdPerRun > 0, "route cost cap present");
+  assert(typeof plan.preview.modelRouting.allowLive === "boolean", "route allowLive flag present");
+
+  const routingPolicy = registryData.registry.modelRoutingPolicy;
+  assert(Boolean(routingPolicy), "model routing policy in registry");
+  assert(Array.isArray(routingPolicy.routes) && routingPolicy.routes.length >= 8, "routing table routes listed");
+  assert(routingPolicy.approvedModels?.includes("anthropic/claude-haiku-4.5"), "approved model in registry");
 
   const dryRun = await apiCall(
     "POST",

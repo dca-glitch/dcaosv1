@@ -12,6 +12,7 @@ export * from "./ai-operating-layer";
 export * from "./ai-operations";
 export * from "./ai-workflow-result";
 export * from "./ai-orchestrator-lite";
+export * from "./ai-model-routing-policy";
 export * from "./ai-prompt-template";
 export * from "./ai-before-after-retention";
 export * from "./ai-compliance-fixtures";

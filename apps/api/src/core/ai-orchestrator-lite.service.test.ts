@@ -79,6 +79,24 @@ describe("ai-orchestrator-lite foundation", () => {
     assert.equal(plan.preview.audit.liveProviderCalled, false);
     assert.equal(plan.preview.approvalRequired, true);
     assert.ok(plan.preview.inputMaterials.length > 0);
+    assert.equal(plan.preview.modelRouting.routingTaskType, "content_draft");
+    assert.equal(plan.preview.modelRouting.primaryModel, "anthropic/claude-haiku-4.5");
+    assert.equal(plan.preview.modelRouting.gateway, "openrouter");
+    assert.equal(plan.preview.modelRouting.requiresBudgetLedger, true);
+    assert.ok(plan.preview.modelRouting.maxCostUsdPerRun > 0);
+  });
+
+  it("rejects unapproved model override in preview routing audit", () => {
+    const plan = planAiOrchestratorLiteStep({
+      workflow: "puriva_content_production",
+      step: "research_pack",
+      agentRole: "research_agent",
+      taskType: "research_pack",
+      operatingPackKey: "puriva",
+      requestedModelOverride: "openrouter/auto"
+    });
+    assert.equal(plan.preview.modelRouting.modelOverrideRejected, true);
+    assert.equal(plan.preview.modelRouting.primaryModel, "anthropic/claude-haiku-4.5");
   });
 
   it("exposes Puriva policy profile with $100 cap", () => {

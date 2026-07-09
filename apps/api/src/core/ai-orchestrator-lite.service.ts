@@ -1,3 +1,4 @@
+import type { AiModelRouteAudit } from "@dca-os-v1/shared";
 import type {
   AiMaterialRoutingPreview,
   AiOrchestratorLitePlanRequest,
@@ -8,6 +9,7 @@ import { AI_ORCHESTRATOR_LITE_VERSION } from "@dca-os-v1/shared";
 import { getAiAgentRoleDefinition } from "./ai-agent-role-registry";
 import { applyAiMaterialPolicy, buildDefaultAiSafeMaterialSet } from "./ai-material-policy.guard";
 import { buildAiBudgetSnapshot, isAiBudgetBlocked } from "./ai-budget-guard.service";
+import { resolveModelRoute, listAiModelRoutingPolicySnapshot } from "./ai-model-routing-policy.service";
 import { AI_AGENT_ROLE_REGISTRY } from "./ai-agent-role-registry";
 import { listAiProviderRegistrySnapshot, resolveProviderForRole } from "./ai-provider-registry.service";
 import { resolvePromptTemplateVersion } from "./ai-prompt-template-registry.service";
@@ -35,16 +37,26 @@ export function planAiOrchestratorLiteStep(
   );
 
   const providerResolution = resolveProviderForRole(request.agentRole);
+  const routingResolution = resolveModelRoute({
+    orchestratorTaskType: request.taskType,
+    clientProfile: request.operatingPackKey,
+    contentChannel: "website",
+    requestedModelOverride: request.requestedModelOverride ?? null
+  });
+
   const budget = buildAiBudgetSnapshot({
     clientId: request.clientId,
     operatingPackKey: request.operatingPackKey,
     taskType: request.taskType,
     workflowStepCount: 8,
-    spentThisPeriodUsd: request.spentThisPeriodUsd
+    spentThisPeriodUsd: request.spentThisPeriodUsd,
+    maxCostUsdPerRun: routingResolution.route.maxCostUsdPerRun
   });
 
-  const budgetBlock = isAiBudgetBlocked(budget);
-  const estimatedCostUsd = budget.estimatedStepCostUsd;
+  const budgetBlock = isAiBudgetBlocked(budget, routingResolution.route.maxCostUsdPerRun);
+  const estimatedCostUsd = routingResolution.route.requiresBudgetLedger
+    ? routingResolution.route.maxCostUsdPerRun
+    : budget.estimatedStepCostUsd;
 
   const audit: AiRunAuditMetadata = {
     orchestratorVersion: AI_ORCHESTRATOR_LITE_VERSION,
@@ -68,7 +80,7 @@ export function planAiOrchestratorLiteStep(
     approvalStatus: roleDefinition.approvalRequired ? "pending" : "not_required",
     policyDecision,
     liveProviderCalled: false,
-    providerSelectionReason: providerResolution.selectionReason
+    providerSelectionReason: `${providerResolution.selectionReason} ${routingResolution.audit.selectionReason}`.trim()
   };
 
   const preview: AiMaterialRoutingPreview = {
@@ -79,7 +91,7 @@ export function planAiOrchestratorLiteStep(
     agentRole: request.agentRole,
     agentRoleLabel: roleDefinition.label,
     providerKey: providerResolution.effective.providerKey,
-    modelId: providerResolution.effective.modelId,
+    modelId: routingResolution.route.primaryModel ?? providerResolution.effective.modelId,
     inputMaterials,
     excludedMaterials,
     policyChecks: policyDecision,
@@ -88,12 +100,15 @@ export function planAiOrchestratorLiteStep(
     approvalRequired: roleDefinition.approvalRequired,
     outputVisibility: audit.outputVisibility,
     executionMode: providerResolution.effective.executionMode,
+    modelRouting: routingResolution.audit,
     audit
   };
 
   let blockedReason: string | null = null;
   if (!policyDecision.allowed) {
     blockedReason = policyDecision.blockedReason;
+  } else if (routingResolution.blocked) {
+    blockedReason = routingResolution.blockedReason;
   } else if (budgetBlock.blocked) {
     blockedReason = budgetBlock.reason;
   }
@@ -109,11 +124,13 @@ export function getAiOrchestratorLiteRegistrySnapshot(): {
   orchestratorVersion: typeof AI_ORCHESTRATOR_LITE_VERSION;
   agentRoles: typeof AI_AGENT_ROLE_REGISTRY;
   providerRegistry: ReturnType<typeof listAiProviderRegistrySnapshot>;
+  modelRoutingPolicy: ReturnType<typeof listAiModelRoutingPolicySnapshot>;
 } {
   return {
     orchestratorVersion: AI_ORCHESTRATOR_LITE_VERSION,
     agentRoles: AI_AGENT_ROLE_REGISTRY,
-    providerRegistry: listAiProviderRegistrySnapshot()
+    providerRegistry: listAiProviderRegistrySnapshot(),
+    modelRoutingPolicy: listAiModelRoutingPolicySnapshot()
   };
 }
 
@@ -121,10 +138,15 @@ function buildBlockedPreview(
   request: AiOrchestratorLitePlanRequest,
   reason: string
 ): AiMaterialRoutingPreview {
+  const routingResolution = resolveModelRoute({
+    orchestratorTaskType: request.taskType,
+    clientProfile: request.operatingPackKey
+  });
   const budget = buildAiBudgetSnapshot({
     clientId: request.clientId,
     operatingPackKey: request.operatingPackKey,
-    taskType: request.taskType
+    taskType: request.taskType,
+    maxCostUsdPerRun: routingResolution.route.maxCostUsdPerRun
   });
 
   return {
@@ -144,6 +166,7 @@ function buildBlockedPreview(
     approvalRequired: true,
     outputVisibility: "internal",
     executionMode: "disabled",
+    modelRouting: routingResolution.audit,
     audit: {
       orchestratorVersion: AI_ORCHESTRATOR_LITE_VERSION,
       workflowId: null,

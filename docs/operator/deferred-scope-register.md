@@ -82,6 +82,7 @@ These remain out of scope for current MVP and Puriva Launch v1 unless a separate
 | Autonomous agents | Admin-triggered AI only |
 | WordPress auto-publish | Draft prep/handoff required for Puriva — runbook: [`docs/runbooks/WORDPRESS_DRAFT_PROOF.md`](../runbooks/WORDPRESS_DRAFT_PROOF.md); auto-publish deferred |
 | Marketing emails | Transactional workflow email is separate proof gate |
+| Puriva paid ads AI content | Website and social media only for MVP; `paid_ads` channel blocked in backend model routing (G72) — manual/future gate |
 | SMS / WhatsApp | No messaging channel proof |
 | Full SaaS onboarding | Single-client/agency ops for Production v1 |
 | Second-client proof | First-client (Puriva) path first |

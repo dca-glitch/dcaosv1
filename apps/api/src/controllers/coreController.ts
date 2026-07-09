@@ -1474,6 +1474,9 @@ export const previewAiMaterialRoutingHandler: RequestHandler = async (req, res) 
 
     const spentThisPeriodUsd = await sumSpentUsdForPeriod({ tenantId, clientId });
 
+    const requestedModelOverride =
+      typeof body.requestedModelOverride === "string" ? body.requestedModelOverride.trim() : null;
+
     const plan = planAiOrchestratorLiteStep({
       workflow,
       step,
@@ -1484,7 +1487,8 @@ export const previewAiMaterialRoutingHandler: RequestHandler = async (req, res) 
       workflowReference: typeof body.workflowReference === "string" ? body.workflowReference : null,
       stepReference,
       materialReferences,
-      spentThisPeriodUsd
+      spentThisPeriodUsd,
+      requestedModelOverride
     });
 
     const ledgerStatus = plan.canExecute ? "PREVIEW" : "BLOCKED";
@@ -1503,7 +1507,20 @@ export const previewAiMaterialRoutingHandler: RequestHandler = async (req, res) 
         workflow,
         step,
         operatingPackKey,
-        blockedReason: plan.blockedReason
+        blockedReason: plan.blockedReason,
+        modelRouting: {
+          policyVersion: plan.preview.modelRouting.policyVersion,
+          routingTaskType: plan.preview.modelRouting.routingTaskType,
+          gateway: plan.preview.modelRouting.gateway,
+          primaryModel: plan.preview.modelRouting.primaryModel,
+          fallbackBehavior: plan.preview.modelRouting.fallbackBehavior,
+          allowLive: plan.preview.modelRouting.allowLive,
+          requiresBudgetLedger: plan.preview.modelRouting.requiresBudgetLedger,
+          maxCostUsdPerRun: plan.preview.modelRouting.maxCostUsdPerRun,
+          complianceProfile: plan.preview.modelRouting.complianceProfile,
+          blocked: plan.preview.modelRouting.blocked,
+          modelOverrideRejected: plan.preview.modelRouting.modelOverrideRejected
+        }
       }
     });
 

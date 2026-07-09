@@ -1,10 +1,11 @@
 # DCA OS Lite — Status (Source of Truth)
 
-**Last updated:** 2026-07-09 (G71f — formal clean local OpenRouter live proof docs closeout)
+**Last updated:** 2026-07-09 (G72 — AI model routing policy)
 **G55 pre-live readiness:** [`docs/runbooks/G55_PRELIVE_READINESS.md`](./runbooks/G55_PRELIVE_READINESS.md)
 **G56 pre-live readiness:** [`docs/runbooks/G56_PRELIVE_READINESS.md`](./runbooks/G56_PRELIVE_READINESS.md)
 **G57–G68 pre-live readiness:** [`docs/runbooks/G57_G68_PRELIVE_READINESS.md`](./runbooks/G57_G68_PRELIVE_READINESS.md)
 **G70 live proof checklist:** [`docs/runbooks/AI_PROVIDER_LIVE_PROOF.md`](./runbooks/AI_PROVIDER_LIVE_PROOF.md) §9
+**G72 model routing policy:** [`docs/runbooks/AI_MODEL_ROUTING_POLICY.md`](./runbooks/AI_MODEL_ROUTING_POLICY.md)
 **AI policy:** [`docs/ai/AI_MODEL_POLICY.md`](./ai/AI_MODEL_POLICY.md) · [`docs/ai/AI_ORCHESTRATOR_LITE.md`](./ai/AI_ORCHESTRATOR_LITE.md)
 **Operator index:** [`docs/operator/OPERATOR_RUNBOOK.md`](./operator/OPERATOR_RUNBOOK.md)
 **Architecture map:** [`docs/ARCHITECTURE.md`](./ARCHITECTURE.md) § Current application map
@@ -32,7 +33,8 @@
 | Latest baseline | G57–G68 pre-live completion on `main` — persistent budget ledger, workflow dry-run, notification contracts, admin operator wiring, integration boundaries |
 | **G69 merge** | **DONE** — G57–G68 fast-forward merged to `main`; final commit `64bfd06` |
 | Production readiness | **NO** |
-| Next gate | **G71g** — commit/push G71f docs closeout; then **G72** model routing policy; or G49 formal closure before G50 |
+| Next gate | **G73** — routing smoke + budget ledger attribution, or additional model approval matrix |
+| G72 model routing | **Implemented** — backend policy per task type; approved model `anthropic/claude-haiku-4.5`; no live call in G72 |
 | G55 pre-live | **Local PASS** — docs + disabled-safe orchestration foundation; no live providers/deploy |
 | G56 pre-live | **Local PASS** — expanded pre-live groundwork; admin orchestrator UI; orchestrator smoke; no live providers/deploy |
 | G57–G68 pre-live | **On main** (`64bfd06`) — persistent ledger, dry-run adapter, operator visibility, go/no-go docs; live proofs **BLOCKED** |

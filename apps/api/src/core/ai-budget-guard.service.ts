@@ -45,11 +45,14 @@ export interface AiBudgetGuardInput {
   workflowStepCount?: number;
   actualCostUsd?: number | null;
   spentThisPeriodUsd?: number;
+  maxCostUsdPerRun?: number | null;
 }
 
 export function buildAiBudgetSnapshot(input: AiBudgetGuardInput): AiBudgetSnapshot {
   const monthlyCapUsd = resolveMonthlyCapUsd(input.operatingPackKey);
-  const estimatedStepCostUsd = estimateStepCostUsd(input.taskType);
+  const routeCap = input.maxCostUsdPerRun;
+  const estimatedStepCostUsd =
+    typeof routeCap === "number" && routeCap > 0 ? routeCap : estimateStepCostUsd(input.taskType);
   const workflowStepCount = input.workflowStepCount ?? 1;
   const estimatedWorkflowCostUsd = Number((estimatedStepCostUsd * workflowStepCount).toFixed(4));
   const spentThisPeriodUsd = input.spentThisPeriodUsd ?? 0;
@@ -71,7 +74,10 @@ export function buildAiBudgetSnapshot(input: AiBudgetGuardInput): AiBudgetSnapsh
   };
 }
 
-export function isAiBudgetBlocked(budget: AiBudgetSnapshot): {
+export function isAiBudgetBlocked(
+  budget: AiBudgetSnapshot,
+  maxCostUsdPerRun?: number | null
+): {
   blocked: boolean;
   reason: string | null;
 } {
@@ -79,6 +85,17 @@ export function isAiBudgetBlocked(budget: AiBudgetSnapshot): {
     return {
       blocked: true,
       reason: `Monthly AI budget cap of $${budget.monthlyCapUsd} USD exceeded for period ${budget.periodKey}.`
+    };
+  }
+
+  if (
+    typeof maxCostUsdPerRun === "number" &&
+    maxCostUsdPerRun > 0 &&
+    budget.remainingBudgetUsd < maxCostUsdPerRun
+  ) {
+    return {
+      blocked: true,
+      reason: `Route cost cap of $${maxCostUsdPerRun} USD exceeds remaining monthly AI budget.`
     };
   }
 

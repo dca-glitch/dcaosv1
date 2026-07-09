@@ -3,6 +3,8 @@
  * Planning/preview only; no live provider execution in this layer.
  */
 
+import type { AiModelRouteAudit } from "./ai-model-routing-policy";
+
 export const AI_ORCHESTRATOR_LITE_VERSION = "AI_ORCHESTRATOR_LITE_V1";
 
 /** System-level AI agent roles. */
@@ -157,6 +159,7 @@ export interface AiMaterialRoutingPreview {
   approvalRequired: boolean;
   outputVisibility: AiMaterialVisibility;
   executionMode: AiProviderExecutionMode;
+  modelRouting: AiModelRouteAudit;
   audit: AiRunAuditMetadata;
 }
 
@@ -171,6 +174,8 @@ export interface AiOrchestratorLitePlanRequest {
   workflowReference?: string | null;
   stepReference?: string | null;
   spentThisPeriodUsd?: number;
+  /** Ignored if not owner-approved — backend policy selects model. */
+  requestedModelOverride?: string | null;
 }
 
 export interface AiOrchestratorLitePlanResult {
