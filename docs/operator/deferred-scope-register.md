@@ -22,7 +22,7 @@ These are **not** "still deferred" long-term roadmap items. They are active bloc
 |---------|-------|-------|
 | GA/GSC live sync proof | Live integration | Snapshot-first locally; live OAuth/sync proof required — runbook: [`docs/runbooks/MONTHLY_REPORT_LIVE_DATA_PROOF.md`](../runbooks/MONTHLY_REPORT_LIVE_DATA_PROOF.md) |
 | R2 real-bucket proof | Live integration | Disabled-safe locally; real bucket IO proof required |
-| Live AI provider proof | Live integration | Local deterministic default; OpenRouter opt-in proof required — runbook: [`docs/runbooks/AI_PROVIDER_LIVE_PROOF.md`](../runbooks/AI_PROVIDER_LIVE_PROOF.md) |
+| Live AI provider proof | Live integration | **PARTIAL** — one safe local OpenRouter call captured (G71b); formal clean proof pending — runbook: [`docs/runbooks/AI_PROVIDER_LIVE_PROOF.md`](../runbooks/AI_PROVIDER_LIVE_PROOF.md) §9.13–§9.14 |
 | AI Model Research | Policy gate | Separate approved research gate |
 | AI Model Policy | Policy gate | **Docs + skeleton closed (G55/G56)** — live provider proof still required — [`docs/ai/AI_MODEL_POLICY.md`](../ai/AI_MODEL_POLICY.md) |
 | Image generation proof | Live integration | Provider/workflow proof for Article+Image path |
@@ -41,12 +41,12 @@ These are **not** "still deferred" long-term roadmap items. They are active bloc
 
 ## Post-G69 remaining gates (G70 — owner input before live proofs)
 
-These remain **blocked** after G57–G68 merged to `main` (`64bfd06`). G70 documents the checklist only; it does **not** execute live proofs.
+These remain **blocked or partial** after G57–G68 merged to `main` (`64bfd06`). G70 documents the checklist only; G71b captured partial live evidence; G71c docs closeout recorded restore.
 
 | Gate | Scope | Status | Runbook / note |
 |------|-------|--------|----------------|
 | G49 formal owner closure sentence | Production safety | **PENDING** | [`G49_PRODUCTION_DRY_RUN_READ_ONLY_PROOF.md`](../runbooks/G49_PRODUCTION_DRY_RUN_READ_ONLY_PROOF.md) |
-| Live AI provider proof | First controlled OpenRouter/text proof | **BLOCKED** | [`AI_PROVIDER_LIVE_PROOF.md`](../runbooks/AI_PROVIDER_LIVE_PROOF.md) §9 |
+| Live AI provider proof | First controlled OpenRouter/text proof | **PARTIAL** | G71b: one safe live call (`anthropic/claude-haiku-4.5`); procedural STOP; local gateway restored; formal clean proof pending — [`AI_PROVIDER_LIVE_PROOF.md`](../runbooks/AI_PROVIDER_LIVE_PROOF.md) §9.13–§9.14 |
 | Live image generation proof | Article+Image path | **BLOCKED** | [`IMAGE_GENERATION_PROOF.md`](../runbooks/IMAGE_GENERATION_PROOF.md) |
 | GA/GSC OAuth + live sync | Monthly report live data | **BLOCKED** | [`MONTHLY_REPORT_LIVE_DATA_PROOF.md`](../runbooks/MONTHLY_REPORT_LIVE_DATA_PROOF.md) |
 | WordPress live draft proof | Draft/handoff on target env | **BLOCKED** | [`WORDPRESS_DRAFT_PROOF.md`](../runbooks/WORDPRESS_DRAFT_PROOF.md) |
@@ -55,7 +55,17 @@ These remain **blocked** after G57–G68 merged to `main` (`64bfd06`). G70 docum
 | Staging migration application | `20260709120000_add_ai_budget_ledger` on staging DB | **BLOCKED** | Fresh owner approval; see [`STAGING_READINESS.md`](../runbooks/STAGING_READINESS.md) |
 | Explicit production deploy approval | G50 | **BLOCKED** | [`G53_PRODUCTION_SAFETY_PLAN.md`](../runbooks/G53_PRODUCTION_SAFETY_PLAN.md) |
 
-**Production deploy is not authorized** by completing G69 or G70 documentation.
+**Production deploy is not authorized** by completing G69, G70 documentation, or G71c partial proof closeout.
+
+## G71b / G71c live OpenRouter proof (2026-07-09)
+
+| Item | Status |
+|------|--------|
+| G71b retry | **Procedural STOP** — baseline guarded smoke failed; one safe live OpenRouter call captured |
+| Substantive evidence | OpenRouter; `anthropic/claude-haiku-4.5`; run `0da6b6a1-2116-478f-ba95-fd674b019d1a`; `liveProviderCalled=true` |
+| Formal clean proof | **PENDING** — `SMOKE_EXPECT_OPENROUTER_LIVE=true` pass not completed |
+| G71c closeout | **Docs only** — partial proof recorded; local gateway restored |
+| Production readiness | **NO** — not production-ready |
 
 ---
 
@@ -318,7 +328,7 @@ Keep the MVP admin-controlled and local-first until the first client delivery pa
 | G62 Puriva pack wiring | PARTIAL — step→task map; full orchestrator template automation deferred |
 | G63–G65 integration boundaries | PARTIAL — config-shape + docs; live proof BLOCKED |
 | G66 E2E dry run | PARTIAL — orchestrator smoke extended; unified cross-module E2E deferred |
-| G67 live AI proof prep | PARTIAL — runbooks exist; execution BLOCKED |
+| G67 live AI proof prep | PARTIAL — runbooks exist; G71b one safe local call captured; formal clean proof pending |
 | G68 go/no-go | DONE — documented NO-GO for production; live proof checklist |
 
 **Still deferred after G57–G68:** live AI, image generation, email send, R2, WordPress live, GA/GSC OAuth, production deploy (G50), G49 formal owner sentence.

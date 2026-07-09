@@ -83,7 +83,7 @@ Stop on validate failure. Do not run smokes after failed validate.
 
 | Item | Status |
 |------|--------|
-| Live OpenRouter / AI provider proof | **BLOCKED** — owner credentials + `AI_PROVIDER_LIVE_PROOF.md` |
+| Live OpenRouter / AI provider proof | **PARTIAL** — G71b one safe local call captured; formal clean proof pending — [`AI_PROVIDER_LIVE_PROOF.md`](./AI_PROVIDER_LIVE_PROOF.md) §9.13–§9.14 |
 | Live image generation | **BLOCKED** — `IMAGE_GENERATION_PROOF.md` |
 | Live email send (Resend) | **BLOCKED** — transactional proof gate |
 | R2 real-bucket IO | **BLOCKED** — `STORAGE_R2_PROOF.md` |
@@ -106,7 +106,7 @@ Local/admin pre-live groundwork PASS criteria:
 - [x] Admin operator visibility (no misleading live buttons)
 - [x] Notification event contracts (no-send default)
 - [x] Integration boundary index (all `liveCallsDeferred`)
-- [ ] Live AI provider proof
+- [ ] Live AI provider proof (G71b partial — one safe local call; formal clean proof pending)
 - [ ] Live image generation proof
 - [ ] Live GA/GSC sync proof
 - [ ] WordPress live draft proof
@@ -115,7 +115,7 @@ Local/admin pre-live groundwork PASS criteria:
 - [ ] G49 formal owner closure
 - [ ] G50 explicit production deploy approval
 
-**Recommended next owner decision:** Execute controlled live AI proof session per `AI_PROVIDER_LIVE_PROOF.md` (G67 execution), then image/GA-GSC/WordPress/R2 proofs in dependency order. Production remains frozen.
+**Recommended next owner decision:** Optional G71e formal clean live proof per `AI_PROVIDER_LIVE_PROOF.md` §9.14, then image/GA-GSC/WordPress/R2 proofs in dependency order. Production remains frozen.
 
 ---
 
@@ -142,13 +142,15 @@ G56 established orchestrator skeleton, guards, admin panel foundation, and workf
 
 ---
 
-## G69 merge + G70 closeout (2026-07-09)
+## G69 merge + G70 closeout + G71c partial proof (2026-07-09)
 
 | Item | State |
 |------|--------|
 | G69 merge to `main` | **DONE** — fast-forward; final commit `64bfd06` |
 | Pre-merge validation | `test:unit` 198/198; `smoke:ai-provider-config:local` 19/19; `smoke:ai-orchestrator-lite:local` PASS; `validate` PASS |
 | G70 | **Docs only** — post-G69 STATUS/deferred updates + controlled live AI proof checklist in [`AI_PROVIDER_LIVE_PROOF.md`](./AI_PROVIDER_LIVE_PROOF.md) §9 |
-| Production / live proof | **Frozen / BLOCKED** — no live AI, deploy, or integration calls during G69/G70 |
+| G71b retry | **Procedural STOP** — one safe live OpenRouter call captured; baseline smoke failed (API pre-configured live) |
+| G71c | **Docs only** — partial proof closeout; local gateway restored |
+| Production / live proof | **Frozen / NO-GO** — partial local AI call only; not production-ready; no deploy |
 
-**Recommended next gate:** G71 (or owner-named gate) — controlled first live AI provider proof session per `AI_PROVIDER_LIVE_PROOF.md` §9 after owner completes required inputs. Production deploy is **not** included in that gate.
+**Recommended next gate:** G71e (optional) — formal clean live proof per `AI_PROVIDER_LIVE_PROOF.md` §9.14; or G49 formal closure. Production deploy is **not** included.

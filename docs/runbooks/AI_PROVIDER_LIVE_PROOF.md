@@ -415,3 +415,70 @@ Open log in Notepad for owner review. **Do not commit log file.**
 | Enabling live providers in production env | **Excluded** |
 
 Next recommended gate after successful G70 proof: **live image generation proof** or **staging migration + staging live proof** per deferred-scope register — each requires separate owner approval.
+
+### 9.13 G71b retry — partial live proof result (2026-07-09)
+
+**Status:** Procedural **STOP** with one substantive safe live OpenRouter call captured. **Not** a clean KEEP. **Not** a provider failure.
+
+| Item | Result |
+|------|--------|
+| Gate | G71b retry |
+| `main` commit | `6a1c569` |
+| Operator | Piotr Pakula |
+| Target | Local only — `127.0.0.1:4000` |
+| Config smoke | **PASS** — `smoke:ai-provider-config:local` 19/19 |
+| Baseline guarded smoke | **FAIL** — 10/12; API already had `textGateway=openrouter` and `openRouterLiveExecutionEnabled=true` |
+| Formal live smoke (`SMOKE_EXPECT_OPENROUTER_LIVE=true`) | **Not run** — stopped per §9.9 after baseline failure; second live call not attempted |
+| Live call observed | **One** — during baseline workflow execute |
+| Run ID | `0da6b6a1-2116-478f-ba95-fd674b019d1a` |
+| Provider | OpenRouter |
+| Model | `anthropic/claude-haiku-4.5` (approved) |
+| `liveProviderCalled` | `true` |
+| `isDeterministic` | `false` |
+| Smoke marker | `[SMOKE][OPENROUTER_GUARDED]` |
+| Budget policy | `AI_TEXT_BUDGET_POLICY_V1` |
+| Tokens | ~56 input; max 180 output |
+| Session cost | Estimated below **$1.00 USD**; `actualCostUsd` not exposed in API response |
+| Forbidden integrations | None triggered |
+| Secrets exposed | No |
+| Production deploy | No |
+
+**Root cause of procedural stop:** `smoke-openrouter-guarded-local.mjs` baseline mode expects `textGateway=local` and `openRouterLiveExecutionEnabled=false`. The running API process was started with OpenRouter live env **before** baseline smoke, so baseline assertions failed and workflow execute invoked live OpenRouter during the baseline run.
+
+**Interpretation:**
+
+- G71b is **partial live proof** — one safe admin workflow live call with the approved model.
+- G71b is **not** formal gate closure — strict live-mode smoke pass and full §9.8 checklist were not completed.
+
+Evidence logs: `$env:TEMP\g71b-ai-provider-live-proof-retry.log`
+
+### 9.14 G71c closeout — corrected live proof sequence (2026-07-09)
+
+**Status:** Docs-only closeout. No live AI. Local gateway restored after G71b.
+
+**Local restore evidence (G71b restore):**
+
+- API process on port 4000 with live OpenRouter env was stopped.
+- Shell live AI env vars cleared (`OPENROUTER_API_KEY`, `OPENROUTER_TEXT_PRIMARY_MODEL`, `SMOKE_EXPECT_OPENROUTER_LIVE` removed).
+- `AI_TEXT_GATEWAY` reset to `local`.
+- API restarted in local deterministic mode; health PASS.
+- Restore log: `$env:TEMP\dca-g71b-restore-local-gateway.log`
+
+**Corrected future procedure (mandatory for formal clean proof):**
+
+| Phase | API env | Smoke |
+|-------|---------|-------|
+| 1 — Baseline | `AI_TEXT_GATEWAY=local` (or unset); **no** OpenRouter key in active API process | `npm.cmd run smoke:ai-provider-config:local` then `npm.cmd run smoke:openrouter-guarded:local` **without** `SMOKE_EXPECT_OPENROUTER_LIVE` — expect 12/12 PASS, `liveProviderCalled=false` |
+| 2 — Live proof | Stop API; set `AI_TEXT_GATEWAY=openrouter` + owner key + approved model; restart API | `$env:SMOKE_EXPECT_OPENROUTER_LIVE = "true"`; `npm.cmd run smoke:openrouter-guarded:local` **once**; remove live expectation env immediately |
+| 3 — Restore | Set `AI_TEXT_GATEWAY=local`; remove OpenRouter key from active process; restart API | Re-run baseline guarded smoke without live expectation — expect 12/12 PASS |
+
+**Rules:**
+
+1. **Do not** run baseline guarded smoke against an API already configured for live OpenRouter — baseline will fail and may invoke an unplanned live call.
+2. **Do not** run an additional live call without separate owner approval.
+3. Formal clean proof requires phase 2 strict smoke **PASS** in addition to substantive live evidence.
+4. Production deploy remains **excluded**.
+
+**Deferred-scope status after G71c:** Live AI provider proof = **PARTIAL** — substantive local call captured once; formal clean proof pending (optional G71e).
+
+**Recommended next gate:** G71e (optional) — formal clean live proof using §9.14 sequence; or G49 formal closure / other live proof gates per deferred-scope register. Production deploy is **not** included.
