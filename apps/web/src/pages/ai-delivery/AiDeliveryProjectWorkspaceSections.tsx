@@ -91,6 +91,11 @@ export function AiDeliveryProjectWorkspaceSections({
         tone="compact"
       >
         <div className="ai-delivery-context-meta">
+          <span
+            className={`entity-pill entity-pill-${workspaceProject.isArchived ? "archived" : "active"}`}
+          >
+            {workspaceProject.isArchived ? "Archived" : "Active"}
+          </span>
           <StatusBadge status={workspaceProject.brief?.status ?? "Brief not started"} />
           <span className="muted-text">Checkpoint: {briefCheckpointLabel}</span>
         </div>

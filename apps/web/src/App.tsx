@@ -62,6 +62,7 @@ import {
   type AiDeliveryProjectSummary,
   type AiDeliveryProjectFormValues
 } from "./pages/ai-delivery/AiDeliveryPage";
+import { isMissingContentPlanFailure } from "./pages/ai-delivery/ai-delivery-content-plan-load";
 import type {
   AiDeliveryMonthlySummaryData,
   AiDeliveryMonthlyReportData,
@@ -2588,6 +2589,11 @@ export function App() {
       );
       if (!response) return null;
       if (!response.ok) {
+        // Backend historically returns AI_DELIVERY_PROJECT_NOT_FOUND when the plan row is absent.
+        // Treat that GET miss as an empty plan so the UI can show a neutral create state.
+        if (isMissingContentPlanFailure(response.error)) {
+          return null;
+        }
         throwAiDeliveryResponseError(response);
       }
       return response.data.contentPlan ?? null;
@@ -2682,6 +2688,9 @@ export function App() {
       );
       if (!response) return null;
       if (!response.ok) {
+        if (isMissingContentPlanFailure(response.error)) {
+          return null;
+        }
         throwAiDeliveryResponseError(response);
       }
       return response.data.downloadReference ?? null;

@@ -1,8 +1,7 @@
-import React, { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { EmptyState } from "../../components/EmptyState";
 import { Modal } from "../../components/Modal";
-import { Button, MetricCard, PageHeader, SectionPanel, StatusBadge } from "../../components/ui";
-import { Spinner } from "../../design-system";
+import { Button, PageHeader } from "../../components/ui";
 import type { ClientSummary } from "../clients/ClientsPage";
 import type { ProjectSummary as ProjectLinkSummary } from "../projects/ProjectsPage";
 import { MonthlyReportPanel } from "./MonthlyReportPanel";
@@ -10,7 +9,23 @@ import { AiKnowledgeContextPanel } from "./AiKnowledgeContextPanel";
 import { AiDeliveryOperatorSummary } from "./AiDeliveryOperatorSummary";
 import { AiDeliveryProjectPicker } from "./AiDeliveryProjectPicker";
 import { AiDeliveryProjectWorkspaceSections } from "./AiDeliveryProjectWorkspaceSections";
+import { AiDeliveryProjectEditorModal } from "./AiDeliveryProjectEditorModal";
 import { AiDeliveryWordPressPublishConfirmModal } from "./AiDeliveryWordPressPublishConfirmModal";
+import { AiDeliveryDashboard } from "./AiDeliveryDashboard";
+import { AiDeliveryBriefModal, type AiDeliveryBriefDetail } from "./AiDeliveryBriefModal";
+import { AiDeliveryContentDraftModal } from "./AiDeliveryContentDraftModal";
+import { AiDeliveryContentPlanModal, type AiDeliveryContentPlanItemDraft } from "./AiDeliveryContentPlanModal";
+import { AiDeliveryDeliverableModal } from "./AiDeliveryDeliverableModal";
+import { AiDeliveryImageApprovalModal } from "./AiDeliveryImageApprovalModal";
+import { AiDeliveryResearchModal } from "./AiDeliveryResearchModal";
+import { AiRunReviewModal } from "./AiRunReviewModal";
+import { isMissingContentPlanFailure } from "./ai-delivery-content-plan-load";
+import {
+  AiDeliveryInlineAlert,
+  AiDeliveryInlineLoading,
+} from "./ai-delivery-shared-ui";
+import "./ai-delivery-modals.css";
+import "./ai-delivery-dashboard.css";
 import type {
   AiDeliveryMonthlySummaryData,
   AiDeliveryMonthlyReportData,
@@ -392,24 +407,7 @@ export type AiDeliveryResearchSourceFormValues = {
   reviewNotes: string;
 };
 
-type ContentPlanItemDraft = {
-  localId: string;
-  title: string;
-  targetKeyword: string;
-  searchIntent: string;
-  contentType: string;
-  notes: string;
-  approvalStatus: string;
-  clientComment: string;
-};
-
-const CONTENT_PLAN_SEARCH_INTENT_OPTIONS = [
-  { value: "", label: "No selection" },
-  { value: "informational", label: "Informational" },
-  { value: "commercial", label: "Commercial" },
-  { value: "transactional", label: "Transactional" },
-  { value: "local", label: "Local" }
-] as const;
+type ContentPlanItemDraft = AiDeliveryContentPlanItemDraft;
 
 const CONTENT_PLAN_SEARCH_INTENT_PREFIX = /^\[search-intent:([a-z_]+)\]\s*(?:\n|$)/i;
 
@@ -434,23 +432,6 @@ function composeNotesWithSearchIntent(searchIntent: string, notesBody: string): 
 
   const prefix = `[search-intent:${normalizedIntent}]`;
   return normalizedNotes ? `${prefix}\n${normalizedNotes}` : prefix;
-}
-
-function formatContentPlanSearchIntent(value: string): string {
-  const option = CONTENT_PLAN_SEARCH_INTENT_OPTIONS.find((entry) => entry.value === value);
-  return option?.label ?? (value ? value.replace(/_/g, " ") : "Not set");
-}
-
-function moveContentPlanItem(items: ContentPlanItemDraft[], index: number, direction: -1 | 1): ContentPlanItemDraft[] {
-  const targetIndex = index + direction;
-  if (targetIndex < 0 || targetIndex >= items.length) {
-    return items;
-  }
-
-  const nextItems = [...items];
-  const [movedItem] = nextItems.splice(index, 1);
-  nextItems.splice(targetIndex, 0, movedItem);
-  return nextItems;
 }
 
 export type AiDeliveryProjectsProps = {
@@ -559,11 +540,6 @@ export type AiDeliveryProjectsProps = {
 };
 
 const workflowRunStatuses = ["DRAFT", "READY", "IN_PROGRESS", "REVIEW", "COMPLETED", "FAILED", "ARCHIVED"] as const;
-const contentPlanItemApprovalStatuses = ["DRAFT", "CLIENT_APPROVED", "CLIENT_CHANGES_REQUESTED"] as const;
-const researchRequestStatuses = ["DRAFT", "READY", "IN_REVIEW", "COMPLETED", "ARCHIVED"] as const;
-const researchSummaryStatuses = ["DRAFT", "IN_REVIEW", "FINALIZED", "ARCHIVED"] as const;
-const researchSourceStatuses = ["PROPOSED", "APPROVED", "REJECTED", "ARCHIVED"] as const;
-const researchSourceTypes = ["WEBSITE", "DOCUMENT", "OTHER"] as const;
 const workflowRunLifecycleStatuses = ["DRAFT", "READY", "IN_PROGRESS", "REVIEW", "COMPLETED", "ARCHIVED"] as const;
 type WorkflowRunStatus = (typeof workflowRunStatuses)[number];
 const workflowRunStatusLabels: Record<WorkflowRunStatus, string> = {
@@ -635,17 +611,6 @@ const itemDraftFromPlanItem = (item: AiDeliveryContentPlanItemSummary, index: nu
     clientComment: item.clientComment ?? ""
   };
 };
-
-const emptyContentPlanItem = (): ContentPlanItemDraft => ({
-  localId: `new-${Date.now()}-${Math.random().toString(36).slice(2)}`,
-  title: "",
-  targetKeyword: "",
-  searchIntent: "",
-  contentType: "article",
-  notes: "",
-  approvalStatus: "DRAFT",
-  clientComment: ""
-});
 
 const emptyContentDraft = (): AiDeliveryContentDraftFormValues => ({
   contentPlanItemId: null,
@@ -928,32 +893,6 @@ function formatStatusBreakdown(items: Array<{ status: string }>, fallback = "No 
     .join(" - ");
 }
 
-function AiDeliveryInlineLoading({ label }: { label: string }) {
-  return (
-    <p className="ai-delivery-inline-loading" role="status">
-      <Spinner size="sm" />
-      {label}
-    </p>
-  );
-}
-
-function AiDeliveryInlineAlert({ message, title }: { message: string; title?: string }) {
-  return (
-    <div className="ai-delivery-inline-alert" role="alert">
-      {title ? <strong>{title}: </strong> : null}
-      {message}
-    </div>
-  );
-}
-
-function AiDeliveryInlineNotice({ children }: { children: React.ReactNode }) {
-  return <div className="ai-delivery-inline-notice" role="status">{children}</div>;
-}
-
-function AiDeliveryInlineEmpty({ children }: { children: React.ReactNode }) {
-  return <p className="ai-delivery-inline-empty muted-text">{children}</p>;
-}
-
 export function AiDeliveryPage({
   projects,
   clients,
@@ -1038,6 +977,7 @@ export function AiDeliveryPage({
   onPreviewAiContext
 }: AiDeliveryProjectsProps) {
   const [filter, setFilter] = useState<"all" | "active" | "archived">("active");
+  const [viewMode, setViewMode] = useState<"dashboard" | "workspace">("workspace");
   const [focusedProjectId, setFocusedProjectId] = useState<string | null>(null);
   const [editorProjectId, setEditorProjectId] = useState<string | null>(null);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
@@ -1047,22 +987,7 @@ export function AiDeliveryPage({
   const [openBriefId, setOpenBriefId] = useState<string | null>(null);
   const [briefLoading, setBriefLoading] = useState(false);
   const [briefError, setBriefError] = useState<string | null>(null);
-  const [briefDetail, setBriefDetail] = useState<null | {
-    id: string;
-    status: string;
-    clientPriorities: string | null;
-    productsServicesFocus: string | null;
-    targetAudience: string | null;
-    marketsCompetitors: string | null;
-    notes: string | null;
-    revisionCount: number;
-    submittedAt: string | null;
-    revisionRequestedAt: string | null;
-    revisedAt: string | null;
-    approvedAt: string | null;
-    createdAt: string;
-    updatedAt: string;
-  }>(null);
+  const [briefDetail, setBriefDetail] = useState<AiDeliveryBriefDetail | null>(null);
   const [openContentPlanId, setOpenContentPlanId] = useState<string | null>(null);
   const [contentPlanLoading, setContentPlanLoading] = useState(false);
   const [contentPlanSaving, setContentPlanSaving] = useState(false);
@@ -1480,16 +1405,6 @@ export function AiDeliveryPage({
   const workflowRunStatusOptions = useMemo(() => getWorkflowRunStatusOptions(workflowRunBeingEdited?.status ?? null), [workflowRunBeingEdited?.status]);
   const workflowRunStatusHelper = useMemo(() => getWorkflowRunStatusHelper(workflowRunBeingEdited?.status ?? null), [workflowRunBeingEdited?.status]);
   const isWorkflowRunStatusAllowed = workflowRunStatusOptions.includes(normalizeWorkflowRunStatus(workflowRunForm.status));
-  const latestWorkflowRun = useMemo(() => workflowRuns.reduce<AiDeliveryWorkflowRunSummary | null>((latest, run) => {
-    if (!latest) return run;
-    const latestTime = new Date(latest.updatedAt || latest.createdAt).getTime();
-    const runTime = new Date(run.updatedAt || run.createdAt).getTime();
-    return runTime > latestTime ? run : latest;
-  }, null), [workflowRuns]);
-  const workflowRunEditorResultPreview = useMemo(
-    () => parseWorkflowRunResultPreview(workflowRunBeingEdited?.resultPlaceholder),
-    [workflowRunBeingEdited?.resultPlaceholder]
-  );
   const openResearchSourcesProject = useMemo(() => projects.find((p) => p.id === openResearchSourcesId) ?? null, [openResearchSourcesId, projects]);
   const openMiContextProject = useMemo(() => projects.find((p) => p.id === openMiContextId) ?? null, [openMiContextId, projects]);
   const contentDraftActionGuidance = useMemo(() => {
@@ -2107,14 +2022,11 @@ export function AiDeliveryPage({
     setContentPlanPdfMessage(null);
     setContentPlanPdfReady(null);
     try {
-      const [plan, drafts, miContext, miSummaries, pdfReadiness] = await Promise.all([
+      const [plan, drafts, miContext, miSummaries] = await Promise.all([
         typeof onFetchContentPlan === "function" ? onFetchContentPlan(projectId) : Promise.resolve(null),
         typeof onFetchContentDrafts === "function" ? onFetchContentDrafts(projectId) : Promise.resolve(contentDrafts),
         typeof onFetchMiContext === "function" ? onFetchMiContext(projectId) : Promise.resolve(null),
-        fetchMiSummaryContext(projectId),
-        typeof onDownloadContentPlanDocument === "function"
-          ? onDownloadContentPlanDocument(projectId).catch(() => null)
-          : Promise.resolve(null)
+        fetchMiSummaryContext(projectId)
       ]);
       if (typeof onFetchContentPlan === "function") {
         setContentPlanDetail(plan);
@@ -2122,10 +2034,25 @@ export function AiDeliveryPage({
       }
       setContentPlanMiContextCount((miContext?.length ?? 0) + (miSummaries?.length ?? 0));
       setContentDrafts(drafts);
-      // Silent readiness check only; does not open the download window.
-      setContentPlanPdfReady(Boolean(pdfReadiness?.downloadUrl));
+      // Only probe PDF readiness when a plan already exists — avoids noisy 404 download calls.
+      if (plan && typeof onDownloadContentPlanDocument === "function") {
+        const pdfReadiness = await onDownloadContentPlanDocument(projectId).catch(() => null);
+        setContentPlanPdfReady(Boolean(pdfReadiness?.downloadUrl));
+      } else {
+        setContentPlanPdfReady(false);
+      }
     } catch (error) {
-      setContentPlanError(getErrorMessage(error, "Unable to load the current content plan."));
+      const message = getErrorMessage(error, "Unable to load the current content plan.");
+      // Safety net: if a load adapter still throws the historical missing-plan 404 mapping,
+      // keep the modal on the neutral empty state when the project is already known locally.
+      if (isMissingContentPlanFailure({ message }) && projects.some((project) => project.id === projectId)) {
+        setContentPlanDetail(null);
+        setContentPlanItems([]);
+        setContentPlanError(null);
+        setContentPlanPdfReady(false);
+      } else {
+        setContentPlanError(message);
+      }
     } finally {
       setContentPlanLoading(false);
     }
@@ -2426,6 +2353,12 @@ export function AiDeliveryPage({
     setContentDraftEditorId(null);
     setContentDraftForm(emptyContentDraft());
     setContentDraftPlan(null);
+  }
+
+  function resetContentDraftEditor() {
+    setContentDraftHandoffMessage(null);
+    setContentDraftEditorId(null);
+    setContentDraftForm(emptyContentDraft());
   }
 
   async function openArticleImages(projectId: string, options?: { contentDraftId?: string | null; articleImageId?: string | null }) {
@@ -3330,28 +3263,60 @@ export function AiDeliveryPage({
         description="Brief through content plan, drafts, deliverables, and monthly report."
         actions={
           <>
-            <div className="filter-bar" role="group" aria-label="AI delivery filter">
-              {(["active", "archived", "all"] as const).map((value) => (
-                <button
-                  aria-pressed={filter === value}
-                  className={filter === value ? "filter-chip is-active" : "filter-chip"}
-                  key={value}
-                  onClick={() => setFilter(value)}
-                  type="button"
-                >
-                  {value[0].toUpperCase() + value.slice(1)}
-                </button>
-              ))}
+            <div aria-label="AI Delivery view" className="ai-delivery-view-toggle" role="group">
+              <button
+                aria-pressed={viewMode === "dashboard"}
+                onClick={() => setViewMode("dashboard")}
+                type="button"
+              >
+                Dashboard
+              </button>
+              <button
+                aria-pressed={viewMode === "workspace"}
+                onClick={() => setViewMode("workspace")}
+                type="button"
+              >
+                Project workspace
+              </button>
             </div>
+            {viewMode === "workspace" ? (
+              <div className="filter-bar" role="group" aria-label="AI delivery filter">
+                {(["active", "archived", "all"] as const).map((value) => (
+                  <button
+                    aria-pressed={filter === value}
+                    className={filter === value ? "filter-chip is-active" : "filter-chip"}
+                    key={value}
+                    onClick={() => setFilter(value)}
+                    type="button"
+                  >
+                    {value[0].toUpperCase() + value.slice(1)}
+                  </button>
+                ))}
+              </div>
+            ) : null}
             {canEdit && projects.length > 0 ? (
               <button className="primary-action" onClick={openCreateModal} type="button">
-                Add AI Delivery
+                Create Delivery Project
               </button>
             ) : null}
           </>
         }
       />
 
+      {viewMode === "dashboard" ? (
+        <AiDeliveryDashboard
+          canEdit={canEdit}
+          onCreateProject={canEdit ? openCreateModal : undefined}
+          onSelectProject={(projectId) => {
+            setFocusedProjectId(projectId);
+            setViewMode("workspace");
+          }}
+          projects={projects}
+        />
+      ) : null}
+
+      {viewMode === "workspace" ? (
+        <>
       <AiDeliveryOperatorSummary
         activeProjectCount={activeProjectCount}
         archivedProjectCount={archivedProjectCount}
@@ -3417,881 +3382,132 @@ export function AiDeliveryPage({
           </div>
         </div>
       )}
-
-      {isEditorOpen ? (
-        <Modal
-          onClose={closeProjectEditor}
-          title={editorProjectId ? "Edit AI Delivery" : "Add AI Delivery"}
-        >
-          <form className="entity-form ai-delivery-modal-panel" onSubmit={handleSubmit}>
-            <div className="field-grid">
-              <label>
-                Client - Required
-                <select
-                  onChange={(event) =>
-                    setDraft((current) => ({
-                      ...current,
-                      clientId: event.target.value,
-                      projectId: null
-                    }))
-                  }
-                  required
-                  value={draft.clientId}
-                >
-                  <option value="">No client</option>
-                  {clients.map((client) => (
-                    <option key={client.id} value={client.id}>
-                      {client.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <label>
-                Target month - Required
-                <input
-                  aria-describedby="ai-delivery-target-month-help"
-                  type="month"
-                  onChange={(event) => setDraft((current) => ({ ...current, targetMonth: event.target.value }))}
-                  required
-                  value={draft.targetMonth}
-                />
-              </label>
-
-              <label>
-                Project name - Required
-                <input
-                  maxLength={255}
-                  onChange={(event) => setDraft((current) => ({ ...current, name: event.target.value }))}
-                  placeholder="AI SEO & Content - June 2026"
-                  required
-                  value={draft.name}
-                />
-              </label>
-
-              <div>
-                <span>Project status</span>
-                <strong>{selectedProject?.isArchived ? "Archived" : "Active / new"}</strong>
-              </div>
-
-              <div>
-                <span>Brief status</span>
-                <strong>{formatEnumLabel(selectedProject?.brief?.status ?? null)}</strong>
-              </div>
-
-              <label className="field-span-2">
-                Scope / summary / notes - Optional
-                <textarea
-                  maxLength={4000}
-                  onChange={(event) => setDraft((current) => ({ ...current, plannedContentScopeNotes: event.target.value }))}
-                  placeholder="Notes for admin team only"
-                  rows={4}
-                  value={draft.plannedContentScopeNotes}
-                />
-                <span className="muted-text">Admin-only scope or planning notes.</span>
-              </label>
-
-              <label>
-                Linked internal project - Optional
-                <select
-                  onChange={(event) => setDraft((current) => ({ ...current, projectId: event.target.value || null }))}
-                  value={draft.projectId ?? ""}
-                >
-                  <option value="">No internal project link</option>
-                  {linkableProjects.map((proj) => (
-                    <option key={proj.id} value={proj.id}>
-                      {proj.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
-            <div className="modal-footer ai-delivery-modal-footer">
-              <button
-                className="ghost-action"
-                disabled={saving}
-                onClick={closeProjectEditor}
-                type="button"
-              >
-                Cancel
-              </button>
-              <button className="primary-action" disabled={saving} type="submit">
-                {saving ? "Saving" : editorProjectId ? "Update AI Delivery" : "Create AI Delivery"}
-              </button>
-            </div>
-          </form>
-        </Modal>
+        </>
       ) : null}
+
+      <AiDeliveryProjectEditorModal
+        clients={clients}
+        draft={draft}
+        formatEnumLabel={formatEnumLabel}
+        isEdit={Boolean(editorProjectId)}
+        isOpen={isEditorOpen}
+        linkableProjects={linkableProjects}
+        onClose={closeProjectEditor}
+        onDraftChange={setDraft}
+        onSubmit={handleSubmit}
+        saving={saving}
+        selectedProject={selectedProject}
+      />
       {openBriefId ? (
-        <Modal
+        <AiDeliveryBriefModal
+          isOpen={Boolean(openBriefId)}
           onClose={() => {
             setOpenBriefId(null);
             setBriefError(null);
             setBriefDetail(null);
           }}
-          title="AI Delivery Brief"
-        >
-          {briefLoading ? (
-            <AiDeliveryInlineLoading label="Loading brief" />
-          ) : openProject ? (
-            briefDetail ? (
-              <div className="ai-delivery-modal-panel stack gap-md">
-                {briefError ? <AiDeliveryInlineAlert message={briefError} title="Brief action blocked" /> : null}
-                <dl className="brief-grid">
-                  <div>
-                    <dt>Client</dt>
-                    <dd>{openProject.client?.name ?? "No client"}</dd>
-                  </div>
-                  <div>
-                    <dt>AI Delivery project</dt>
-                    <dd>{openProject.name}</dd>
-                  </div>
-                  <div>
-                    <dt>Brief status</dt>
-                    <dd>{formatEnumLabel(briefDetail.status)}</dd>
-                  </div>
-                  <div>
-                    <dt>Revisions</dt>
-                    <dd>{briefDetail.revisionCount ?? 0}</dd>
-                  </div>
-                  <div>
-                    <dt>Created</dt>
-                    <dd>{new Date(briefDetail.createdAt).toLocaleString()}</dd>
-                  </div>
-                  <div>
-                    <dt>Updated</dt>
-                    <dd>{new Date(briefDetail.updatedAt).toLocaleString()}</dd>
-                  </div>
-                </dl>
-
-                <section className="field-panel ai-delivery-section-compact">
-                  <h3>Client input / priorities - Optional</h3>
-                  {canEdit && typeof onSaveBrief === "function" ? (
-                    <textarea
-                      placeholder="Client priorities, requested topics, or campaign focus"
-                      rows={3}
-                      value={briefDetail.clientPriorities ?? ""}
-                      onChange={(e) => setBriefDetail({ ...briefDetail, clientPriorities: e.target.value })}
-                    />
-                  ) : (
-                    <pre className="pre-wrap-block">{briefDetail.clientPriorities ?? "Not set"}</pre>
-                  )}
-                </section>
-
-                <section className="field-panel ai-delivery-section-compact">
-                  <h3>Products / services focus - Optional</h3>
-                  {canEdit && typeof onSaveBrief === "function" ? (
-                    <textarea
-                      placeholder="Products, services, or offers to emphasize"
-                      rows={3}
-                      value={briefDetail.productsServicesFocus ?? ""}
-                      onChange={(e) => setBriefDetail({ ...briefDetail, productsServicesFocus: e.target.value })}
-                    />
-                  ) : (
-                    <pre className="pre-wrap-block">{briefDetail.productsServicesFocus ?? "Not set"}</pre>
-                  )}
-                </section>
-
-                <section className="field-panel ai-delivery-section-compact">
-                  <h3>Target audience - Optional</h3>
-                  {canEdit && typeof onSaveBrief === "function" ? (
-                    <textarea
-                      placeholder="Audience segments, buyer roles, or reader context"
-                      rows={3}
-                      value={briefDetail.targetAudience ?? ""}
-                      onChange={(e) => setBriefDetail({ ...briefDetail, targetAudience: e.target.value })}
-                    />
-                  ) : (
-                    <pre className="pre-wrap-block">{briefDetail.targetAudience ?? "Not set"}</pre>
-                  )}
-                </section>
-
-                <section className="field-panel ai-delivery-section-compact">
-                  <h3>Research / admin feedback - Optional</h3>
-                  {canEdit && typeof onSaveBrief === "function" ? (
-                    <textarea
-                      placeholder="Markets, competitors, research findings, or admin feedback"
-                      rows={3}
-                      value={briefDetail.marketsCompetitors ?? ""}
-                      onChange={(e) => setBriefDetail({ ...briefDetail, marketsCompetitors: e.target.value })}
-                    />
-                  ) : (
-                    <pre className="pre-wrap-block">{briefDetail.marketsCompetitors ?? "Not set"}</pre>
-                  )}
-                </section>
-
-                <section className="field-panel ai-delivery-section-compact">
-                  <h3>Optional internal notes</h3>
-                  {canEdit && typeof onSaveBrief === "function" ? (
-                    <>
-                      <textarea
-                        placeholder="Notes for admin team only"
-                        rows={6}
-                        value={briefDetail.notes ?? ""}
-                        onChange={(e) => setBriefDetail({ ...briefDetail, notes: e.target.value })}
-                      />
-                      <span className="muted-text">Admin-only.</span>
-                    </>
-                  ) : (
-                    <pre className="pre-wrap-block">{briefDetail.notes ?? "Not set"}</pre>
-                  )}
-                </section>
-
-                <div className="modal-footer ai-delivery-modal-footer">
-                  <button className="ghost-action" onClick={() => { setOpenBriefId(null); setBriefError(null); setBriefDetail(null); }} type="button">Close</button>
-                  {canEdit && typeof onSaveBrief === "function" ? (
-                    <button className="primary-action" onClick={() => void handleSaveBrief(openProject.id)} type="button">Save brief</button>
-                  ) : null}
-                </div>
-              </div>
-            ) : openProject.brief ? (
-              <div className="ai-delivery-modal-panel stack gap-md">
-                {briefError ? <AiDeliveryInlineAlert message={briefError} title="Brief action blocked" /> : null}
-                <dl className="brief-grid">
-                  <div>
-                    <dt>Status</dt>
-                    <dd>{openProject.brief.status}</dd>
-                  </div>
-                  <div>
-                    <dt>Revisions</dt>
-                    <dd>{openProject.brief.revisionCount ?? 0}</dd>
-                  </div>
-                  <div>
-                    <dt>Created</dt>
-                    <dd>{new Date(openProject.brief.createdAt).toLocaleString()}</dd>
-                  </div>
-                  <div>
-                    <dt>Updated</dt>
-                    <dd>{new Date(openProject.brief.updatedAt).toLocaleString()}</dd>
-                  </div>
-                </dl>
-                <section className="field-panel">
-                  <h3>Planned content scope notes</h3>
-                  <pre className="pre-wrap-block">{openProject.plannedContentScopeNotes ?? 'Not set'}</pre>
-                </section>
-                <div className="modal-footer ai-delivery-modal-footer">
-                  <button className="ghost-action" onClick={() => { setOpenBriefId(null); setBriefError(null); setBriefDetail(null); }} type="button">Close</button>
-                </div>
-              </div>
-            ) : (
-              <AiDeliveryInlineEmpty>No brief is available for this project yet. Create or open the project record to continue briefing.</AiDeliveryInlineEmpty>
-            )
-          ) : (
-            <div>Project not found.</div>
-          )}
-        </Modal>
+          project={openProject}
+          loading={briefLoading}
+          error={briefError}
+          brief={briefDetail}
+          onBriefChange={(next) => setBriefDetail(next)}
+          canEdit={canEdit}
+          canSave={typeof onSaveBrief === "function"}
+          formatEnumLabel={formatEnumLabel}
+          onSave={(projectId) => void handleSaveBrief(projectId)}
+        />
       ) : null}
+
       {openContentPlanId ? (
-        <Modal onClose={closeContentPlan} title="Monthly SEO / Content Plan">
-          {contentPlanLoading ? (
-            <AiDeliveryInlineLoading label="Loading content plan" />
-          ) : openContentPlanProject ? (
-            <div className="ai-delivery-modal-panel stack gap-md">
-              {contentPlanError ? <AiDeliveryInlineAlert message={contentPlanError} title="Content plan action blocked" /> : null}
-              <p className="muted-text">
-                <strong>{openContentPlanProject.name}</strong>
-                {" · "}
-                Target month: {openContentPlanProject.targetMonth}
-                {contentPlanMiContextCount > 0
-                  ? ` · ${contentPlanMiContextCount} MI context item${contentPlanMiContextCount === 1 ? "" : "s"} applied`
-                  : " · No MI context applied"}
-              </p>
-              <AiDeliveryInlineNotice>
-                <strong>Context readiness:</strong>{" "}
-                {openContentPlanProject.brief?.status === "APPROVED" && contentPlanMiContextCount > 0
-                  ? "Verified intake and context are in place. The plan can be treated as grounded."
-                  : openContentPlanProject.brief?.status === "APPROVED"
-                    ? "Intake is approved, but no MI/knowledge context is applied yet. The plan is still a scaffold."
-                    : openContentPlanProject.brief
-                      ? "Intake is started but not approved. Finalize the brief before treating the plan as grounded."
-                      : "Intake is missing. The SEO plan should not be treated as final until verified intake and approved context are in place."}
-              </AiDeliveryInlineNotice>
-              <SectionPanel
-                title="Workflow readiness"
-                description="Research, plan, draft handoff, and final-readiness status."
-                className="metrics-section"
-                tone="compact"
-              >
-                <p className="muted-text">
-                  <strong>AI SEO readiness:</strong> {aiSeoWorkflowShell.readiness}
-                  {" · "}
-                  {aiSeoWorkflowShell.guidance}
-                </p>
-                <dl className="brief-grid" style={{ marginTop: "1rem" }}>
-                  <div>
-                    <dt>Research requests</dt>
-                    <dd>{aiSeoWorkflowShell.researchCount}</dd>
-                  </div>
-                  <div>
-                    <dt>Research sources</dt>
-                    <dd>{aiSeoWorkflowShell.sourceCount}</dd>
-                  </div>
-                  <div>
-                    <dt>Research summaries</dt>
-                    <dd>{aiSeoWorkflowShell.summaryCount}</dd>
-                  </div>
-                  <div>
-                    <dt>Content plan items</dt>
-                    <dd>{aiSeoWorkflowShell.planItemCount}</dd>
-                  </div>
-                  <div>
-                    <dt>Draft handoffs</dt>
-                    <dd>{aiSeoWorkflowShell.draftCount}</dd>
-                  </div>
-                  <div>
-                    <dt>Plan state</dt>
-                    <dd>{aiSeoWorkflowShell.hasPlan ? formatContentPlanReviewStatus(contentPlanDetail) : "Not created yet"}</dd>
-                  </div>
-                </dl>
-                <div className="field-panel" style={{ marginTop: "1rem" }}>
-                  <div className="summary-grid" style={{ marginTop: "0.5rem" }}>
-                    <MetricCard accent="violet" label="Research" value={aiSeoWorkflowShell.hasResearchRequests ? "Started" : "Pending"} helper={aiSeoWorkflowShell.researchStep} />
-                    <MetricCard accent="cyan" label="Sources" value={aiSeoWorkflowShell.hasResearchSources ? "Recorded" : "Pending"} helper={aiSeoWorkflowShell.sourceStep} />
-                    <MetricCard accent="warning" label="Summaries" value={aiSeoWorkflowShell.hasResearchSummaries ? "Ready" : "Pending"} helper={aiSeoWorkflowShell.summaryStep} />
-                    <MetricCard accent="success" label="Content plan" value={aiSeoWorkflowShell.hasPlan ? "Open" : "Pending"} helper={aiSeoWorkflowShell.planStep} />
-                    <MetricCard accent="purple" label="Draft handoff" value={aiSeoWorkflowShell.hasDraftHandOff ? "Ready" : "Pending"} helper={aiSeoWorkflowShell.draftStep} />
-                  </div>
-                </div>
-              </SectionPanel>
-              {contentPlanDetail ? (
-                <>
-                  <section className="field-panel ai-delivery-section-compact">
-                    <h3>SEO topic/research planning</h3>
-                    <AiDeliveryInlineNotice>
-                      Planning items are objectives only. Generated admin drafts are internal scaffolds — not final client copy — until the compliance review checkpoint and admin review pass.
-                    </AiDeliveryInlineNotice>
-                    {contentPlanGenerationMessage ? <AiDeliveryInlineNotice>{contentPlanGenerationMessage}</AiDeliveryInlineNotice> : null}
-                    {contentPlanPdfMessage ? <AiDeliveryInlineNotice>{contentPlanPdfMessage}</AiDeliveryInlineNotice> : null}
-                  </section>
-                  <dl className="brief-grid">
-                    <div>
-                      <dt>Status</dt>
-                      <dd><StatusBadge status={formatContentPlanReviewStatus(contentPlanDetail)} /></dd>
-                    </div>
-                    <div>
-                      <dt>Revisions</dt>
-                      <dd>{contentPlanDetail.revisionCount ?? 0}</dd>
-                    </div>
-                    <div>
-                      <dt>Review requested</dt>
-                      <dd>{formatOptionalDate(contentPlanDetail.reviewRequestedAt)}</dd>
-                    </div>
-                    <div>
-                      <dt>Approved</dt>
-                      <dd>{formatOptionalDate(contentPlanDetail.approvedAt)}</dd>
-                    </div>
-                  </dl>
-
-                  <section className="field-panel ai-delivery-section-compact">
-                    <h3>Monthly plan items</h3>
-                    {contentPlanItems.length === 0 ? (
-                      <AiDeliveryInlineEmpty>No monthly plan items yet. Add a topic to continue planning.</AiDeliveryInlineEmpty>
-                    ) : null}
-                    {contentPlanItems.map((item, index) => {
-                      const persistedItem = contentPlanDetail.items.find((planItem) => planItem.id === item.localId) ?? null;
-                      const linkedDraft = persistedItem?.id
-                        ? contentDrafts.find((draftItem) => draftItem.contentPlanItemId === persistedItem.id && !draftItem.isArchived) ?? null
-                        : null;
-
-                      return (
-                      <div className="field-grid" key={item.localId}>
-                        <label className="field-span-2">
-                          Topic / working title - Required
-                          <input
-                            maxLength={255}
-                            placeholder="Main topic, keyword cluster, or service page focus"
-                            onChange={(event) => setContentPlanItems((current) => current.map((draftItem) => draftItem.localId === item.localId ? { ...draftItem, title: event.target.value } : draftItem))}
-                            required
-                            value={item.title}
-                          />
-                          <span className="muted-text">Used by admin to prepare monthly platform-neutral SEO/content work.</span>
-                        </label>
-                        <label>
-                          Target keyword - Optional
-                          <input
-                            maxLength={80}
-                            placeholder="Primary keyword or search phrase"
-                            onChange={(event) => setContentPlanItems((current) => current.map((draftItem) => draftItem.localId === item.localId ? { ...draftItem, targetKeyword: event.target.value } : draftItem))}
-                            value={item.targetKeyword}
-                          />
-                          <span className="muted-text">Visible only to admin team.</span>
-                        </label>
-                        <label>
-                          Search intent - Optional
-                          <select
-                            value={item.searchIntent}
-                            onChange={(event) => setContentPlanItems((current) => current.map((draftItem) => draftItem.localId === item.localId ? { ...draftItem, searchIntent: event.target.value } : draftItem))}
-                          >
-                            {CONTENT_PLAN_SEARCH_INTENT_OPTIONS.map((option) => (
-                              <option key={option.value || "unset"} value={option.value}>{option.label}</option>
-                            ))}
-                          </select>
-                          <span className="muted-text">Stored with the plan item for monthly SEO planning.</span>
-                        </label>
-                        <label className="field-span-2">
-                          Planning notes - Optional
-                          <textarea
-                            maxLength={4000}
-                            placeholder="Audience angle, SERP notes, internal review context"
-                            onChange={(event) => setContentPlanItems((current) => current.map((draftItem) => draftItem.localId === item.localId ? { ...draftItem, notes: event.target.value } : draftItem))}
-                            rows={3}
-                            value={item.notes}
-                          />
-                          <span className="muted-text">Admin-only notes for this monthly plan item.</span>
-                        </label>
-                        <label>
-                          Production type - Optional
-                          <input
-                            maxLength={80}
-                            placeholder="Blog post, service page, landing page, or other"
-                            onChange={(event) => setContentPlanItems((current) => current.map((draftItem) => draftItem.localId === item.localId ? { ...draftItem, contentType: event.target.value } : draftItem))}
-                            value={item.contentType}
-                          />
-                          <span className="muted-text">Internal planning label for the monthly content plan.</span>
-                        </label>
-                        <label>
-                          Item status - Required
-                          <select
-                            value={item.approvalStatus}
-                            onChange={(event) => setContentPlanItems((current) => current.map((draftItem) => draftItem.localId === item.localId ? { ...draftItem, approvalStatus: event.target.value } : draftItem))}
-                          >
-                            {contentPlanItemApprovalStatuses.map((status) => (
-                              <option key={status} value={status}>{formatContentPlanItemApprovalStatus(status)}</option>
-                            ))}
-                          </select>
-                          <span className="muted-text">Internal review state for this monthly plan item.</span>
-                        </label>
-                        <div>
-                          <span>Priority</span>
-                          <strong>{index + 1}</strong>
-                          <span className="muted-text">{formatContentPlanSearchIntent(item.searchIntent)} intent • lower numbers publish first.</span>
-                          <div className="modal-footer modal-footer--flush ai-delivery-modal-footer">
-                            <button
-                              className="ghost-action"
-                              disabled={isContentPlanBusy || index === 0}
-                              onClick={() => setContentPlanItems((current) => moveContentPlanItem(current, index, -1))}
-                              type="button"
-                            >
-                              Move up
-                            </button>
-                            <button
-                              className="ghost-action"
-                              disabled={isContentPlanBusy || index === contentPlanItems.length - 1}
-                              onClick={() => setContentPlanItems((current) => moveContentPlanItem(current, index, 1))}
-                              type="button"
-                            >
-                              Move down
-                            </button>
-                          </div>
-                        </div>
-                        <div>
-                          <span>Current item status</span>
-                          <strong>{formatContentPlanItemApprovalStatus(contentPlanDetail.items[index]?.approvalStatus)}</strong>
-                          <span className="muted-text">Latest persisted approval state for this record.</span>
-                        </div>
-                        <div className="field-span-2">
-                          <label>
-                            Approval / revision note - Optional
-                            <textarea
-                              maxLength={4000}
-                              placeholder="Why this item is approved, still planned, or needs revision before review"
-                              onChange={(event) => setContentPlanItems((current) => current.map((draftItem) => draftItem.localId === item.localId ? { ...draftItem, clientComment: event.target.value } : draftItem))}
-                              rows={3}
-                              value={item.clientComment}
-                            />
-                            <span className="muted-text">Use for internal approval context and any revision note that may later support review handling.</span>
-                          </label>
-                        </div>
-                        <div className="field-span-2">
-                          <span>Saved approval / revision note</span>
-                          <strong>{persistedItem?.clientComment ?? "No approval note yet"}</strong>
-                          <span className="muted-text">Latest persisted approval or revision note for this item.</span>
-                        </div>
-                        <div className="field-span-2">
-                          <div className="modal-footer modal-footer--flush ai-delivery-modal-footer">
-                            <button
-                              className="ghost-action"
-                              disabled={isContentPlanBusy || !persistedItem?.id || persistedItem.approvalStatus === "CLIENT_CHANGES_REQUESTED"}
-                              onClick={() => persistedItem ? void generateContentDraftFromPlanItem(openContentPlanProject.id, persistedItem) : undefined}
-                              title={!persistedItem?.id ? "Save the monthly content plan before generating a draft from this item." : undefined}
-                              type="button"
-                            >
-                              {contentPlanGeneratingItemId === persistedItem?.id ? "Generating draft" : linkedDraft ? "Regenerate admin draft" : "Generate admin draft"}
-                            </button>
-                          </div>
-                          <span className="muted-text">
-                            {!persistedItem?.id
-                              ? "Save the plan before generating a linked admin draft."
-                              : "Admin-only draft scaffold from this plan item. Not final client copy until compliance review and admin review pass."}
-                          </span>
-                        </div>
-                        <div className="field-span-2">
-                          <button
-                            className="ghost-action"
-                            disabled={isContentPlanBusy}
-                            onClick={() => setContentPlanItems((current) => current.filter((draftItem) => draftItem.localId !== item.localId))}
-                            type="button"
-                          >
-                            Remove topic
-                          </button>
-                        </div>
-                      </div>
-                      );
-                    })}
-                    <button
-                      className="ghost-action"
-                      disabled={isContentPlanBusy}
-                      onClick={() => setContentPlanItems((current) => [...current, emptyContentPlanItem()])}
-                      type="button"
-                    >
-                      Add monthly plan item
-                    </button>
-                  </section>
-
-                  <div className="modal-footer ai-delivery-modal-footer">
-                    <button className="ghost-action" disabled={isContentPlanBusy} onClick={closeContentPlan} type="button">Close</button>
-                    <button className="ghost-action" disabled={isContentPlanBusy} onClick={() => void handleContentPlanAction(openContentPlanProject.id, onRequestContentPlanReview)} type="button">Mark ready for review</button>
-                    <button className="ghost-action" disabled={isContentPlanBusy} onClick={() => void handleContentPlanAction(openContentPlanProject.id, onRequestContentPlanChanges)} type="button">Request changes</button>
-                    <button className="ghost-action" disabled={isContentPlanBusy} onClick={() => void handleContentPlanAction(openContentPlanProject.id, onApproveContentPlan)} type="button">Approve plan</button>
-                    <button className="ghost-action" disabled={isContentPlanBusy || contentPlanPdfGenerating} onClick={() => void handleGenerateContentPlanPdf(openContentPlanProject.id)} type="button">{contentPlanPdfGenerating ? "Generating PDF…" : "Export PDF"}</button>
-                    <button className="ghost-action" disabled={isContentPlanBusy || contentPlanPdfGenerating || contentPlanPdfReady !== true} onClick={() => void handleDownloadContentPlanDocument(openContentPlanProject.id)} type="button">Download PDF</button>
-                    <span className="muted-text" role="status">{contentPlanPdfReady === true ? "PDF ready" : contentPlanPdfReady === false ? "No PDF generated yet" : ""}</span>
-                    <button className="primary-action" disabled={isContentPlanBusy || contentPlanItems.some((item) => !item.title.trim())} onClick={() => void handleSaveContentPlan(openContentPlanProject.id)} type="button">
-                      {contentPlanSaving ? "Saving" : "Save draft"}
-                    </button>
-                  </div>
-                  </>
-
-              ) : (
-                <div>
-                  <EmptyState
-                    title="No AI SEO content plan yet"
-                    message="Add research notes, then create the monthly content plan."
-                    action={(
-                      <button className="primary-action" disabled={isContentPlanBusy} onClick={() => void handleCreateContentPlan(openContentPlanProject.id)} type="button">
-                        {contentPlanSaving ? "Creating" : "Create content plan"}
-                      </button>
-                    )}
-                  />
-                </div>
-              )}
-            </div>
-          ) : (
-            <div>Project not found.</div>
-          )}
-        </Modal>
+        <AiDeliveryContentPlanModal
+          isOpen={Boolean(openContentPlanId)}
+          onClose={closeContentPlan}
+          project={openContentPlanProject}
+          loading={contentPlanLoading}
+          saving={contentPlanSaving}
+          busy={isContentPlanBusy}
+          error={contentPlanError}
+          miContextCount={contentPlanMiContextCount}
+          plan={contentPlanDetail}
+          items={contentPlanItems}
+          onItemsChange={setContentPlanItems}
+          contentDrafts={contentDrafts}
+          generationMessage={contentPlanGenerationMessage}
+          pdfMessage={contentPlanPdfMessage}
+          pdfGenerating={contentPlanPdfGenerating}
+          pdfReady={contentPlanPdfReady}
+          generatingItemId={contentPlanGeneratingItemId}
+          workflowShell={aiSeoWorkflowShell}
+          formatContentPlanReviewStatus={formatContentPlanReviewStatus}
+          formatContentPlanItemApprovalStatus={formatContentPlanItemApprovalStatus}
+          formatOptionalDate={formatOptionalDate}
+          onCreate={(projectId) => void handleCreateContentPlan(projectId)}
+          onSave={(projectId) => void handleSaveContentPlan(projectId)}
+          onRequestReview={(projectId) => void handleContentPlanAction(projectId, onRequestContentPlanReview)}
+          onRequestChanges={(projectId) => void handleContentPlanAction(projectId, onRequestContentPlanChanges)}
+          onApprove={(projectId) => void handleContentPlanAction(projectId, onApproveContentPlan)}
+          onExportPdf={(projectId) => void handleGenerateContentPlanPdf(projectId)}
+          onDownloadPdf={(projectId) => void handleDownloadContentPlanDocument(projectId)}
+          onGenerateDraft={(projectId, item) => void generateContentDraftFromPlanItem(projectId, item)}
+        />
       ) : null}
+
       {openResearchSourcesId ? (
-        <Modal onClose={closeResearchSources} title="Research / Sources">
-          {researchLoading ? (
-            <AiDeliveryInlineLoading label="Loading research requests and sources" />
-          ) : openResearchSourcesProject ? (
-            <div className="ai-delivery-modal-panel ai-delivery-research-editor stack gap-md">
-              {researchError ? <AiDeliveryInlineAlert message={researchError} title="Research action blocked" /> : null}
-              <section className="field-panel ai-delivery-section-compact">
-                <h3>Research request editor</h3>
-                <div className="field-grid">
-                  <label>
-                    Status - Required
-                    <select value={researchRequestForm.status} onChange={(event) => setResearchRequestForm((current) => ({ ...current, status: event.target.value }))}>
-                      {researchRequestStatuses.map((status) => <option key={status} value={status}>{formatEnumLabel(status)}</option>)}
-                    </select>
-                  </label>
-                  <label>
-                    Linked workflow run - Optional
-                    <select value={researchRequestForm.workflowRunId ?? ""} onChange={(event) => setResearchRequestForm((current) => ({ ...current, workflowRunId: event.target.value || null }))}>
-                      <option value="">Manual / unlinked request</option>
-                      {researchWorkflowRuns.map((run) => <option key={run.id} value={run.id}>Workflow run - {formatEnumLabel(run.status)}</option>)}
-                    </select>
-                  </label>
-                  <label className="field-span-2">
-                    Title - Required
-                    <input maxLength={255} placeholder="Competitor review, source gathering, keyword gap, audience research" value={researchRequestForm.title} onChange={(event) => setResearchRequestForm((current) => ({ ...current, title: event.target.value }))} />
-                  </label>
-                  <label>
-                    Request type / topic - Optional
-                    <input maxLength={255} placeholder="Competitors, sources, SERP notes, local intent" value={researchRequestForm.requestType} onChange={(event) => setResearchRequestForm((current) => ({ ...current, requestType: event.target.value }))} />
-                  </label>
-                  <label className="field-span-2">
-                    Description / notes - Optional
-                    <textarea maxLength={4000} placeholder="What should be reviewed, what to collect manually, and what the source list should prove" rows={4} value={researchRequestForm.description} onChange={(event) => setResearchRequestForm((current) => ({ ...current, description: event.target.value }))} />
-                    <span className="muted-text">Admin-only. No external fetching runs here.</span>
-                  </label>
-                </div>
-                <div className="modal-footer ai-delivery-modal-footer">
-                  <button className="ghost-action" disabled={researchSaving} onClick={closeResearchSources} type="button">Close</button>
-                  <button className="ghost-action" disabled={researchSaving} onClick={() => { setResearchRequestEditorId(null); setResearchRequestForm(emptyResearchRequest()); }} type="button">New request</button>
-                  <button className="primary-action" disabled={researchSaving || !researchRequestForm.title.trim()} onClick={() => void saveResearchRequest(openResearchSourcesProject.id)} type="button">
-                    {researchSaving ? "Saving" : researchRequestEditorId ? "Save request" : "Create request"}
-                  </button>
-                </div>
-              </section>
-
-              <section className="field-panel ai-delivery-section-compact">
-                <h3>Existing research requests</h3>
-                {researchRequests.length === 0 ? <AiDeliveryInlineEmpty>No research requests yet. Add a request to continue.</AiDeliveryInlineEmpty> : null}
-                {researchRequests.map((request) => (
-                  <article className="entity-card" key={request.id}>
-                    <div className="entity-card-header">
-                      <div>
-                        <StatusBadge status={request.status} />
-                        <h3>{request.title}</h3>
-                        <p>Updated {formatOptionalDate(request.updatedAt)}</p>
-                      </div>
-                      <div className="card-actions">
-                        <button className="ghost-action" disabled={researchSaving} onClick={() => editResearchRequest(request)} type="button">Edit</button>
-                      </div>
-                    </div>
-                    <dl className="brief-grid">
-                      <div>
-                        <dt>Status</dt>
-                        <dd>{formatEnumLabel(request.status)}</dd>
-                      </div>
-                      <div>
-                        <dt>Linked workflow</dt>
-                        <dd>{request.workflowRun ? formatEnumLabel(request.workflowRun.status) : "Manual / none"}</dd>
-                      </div>
-                      <div>
-                        <dt>Type</dt>
-                        <dd>{request.requestType ?? "Not set"}</dd>
-                      </div>
-                      <div>
-                        <dt>Created</dt>
-                        <dd>{formatOptionalDate(request.createdAt)}</dd>
-                      </div>
-                      <div className="field-span-2">
-                        <dt>Description</dt>
-                        <dd>{formatPreview(request.description)}</dd>
-                      </div>
-                    </dl>
-                  </article>
-                ))}
-              </section>
-
-              <section className="field-panel ai-delivery-section-compact">
-                <h3>Research summary editor</h3>
-                <div className="field-grid">
-                  <label>
-                    Status - Required
-                    <select value={researchSummaryForm.status} onChange={(event) => setResearchSummaryForm((current) => ({ ...current, status: event.target.value }))}>
-                      {researchSummaryStatuses.map((status) => <option key={status} value={status}>{formatEnumLabel(status)}</option>)}
-                    </select>
-                  </label>
-                  <label>
-                    Linked workflow run - Optional
-                    <select value={researchSummaryForm.workflowRunId ?? ""} onChange={(event) => setResearchSummaryForm((current) => ({ ...current, workflowRunId: event.target.value || null }))}>
-                      <option value="">Manual / unlinked summary</option>
-                      {researchWorkflowRuns.map((run) => <option key={run.id} value={run.id}>Workflow run - {formatEnumLabel(run.status)}</option>)}
-                    </select>
-                  </label>
-                  <label className="field-span-2">
-                    Title - Required
-                    <input maxLength={255} placeholder="SEO findings summary for brief revision and content planning" value={researchSummaryForm.title} onChange={(event) => setResearchSummaryForm((current) => ({ ...current, title: event.target.value }))} />
-                  </label>
-                  <label className="field-span-2">
-                    Summary - Required
-                    <textarea maxLength={4000} placeholder="Summarize the research findings, business context, and what should influence planning next" rows={5} value={researchSummaryForm.summaryText} onChange={(event) => setResearchSummaryForm((current) => ({ ...current, summaryText: event.target.value }))} />
-                  </label>
-                  <label className="field-span-2">
-                    Key findings - Optional
-                    <textarea maxLength={4000} placeholder="Top findings the admin team wants to preserve from the manual research review" rows={3} value={researchSummaryForm.keyFindings} onChange={(event) => setResearchSummaryForm((current) => ({ ...current, keyFindings: event.target.value }))} />
-                  </label>
-                  <label className="field-span-2">
-                    Audience insights - Optional
-                    <textarea maxLength={4000} placeholder="Audience problems, intent signals, and messaging cues discovered during research" rows={3} value={researchSummaryForm.audienceInsights} onChange={(event) => setResearchSummaryForm((current) => ({ ...current, audienceInsights: event.target.value }))} />
-                  </label>
-                  <label className="field-span-2">
-                    Competitor insights - Optional
-                    <textarea maxLength={4000} placeholder="Competitor positioning, gaps, and useful benchmark observations" rows={3} value={researchSummaryForm.competitorInsights} onChange={(event) => setResearchSummaryForm((current) => ({ ...current, competitorInsights: event.target.value }))} />
-                  </label>
-                  <label className="field-span-2">
-                    Keyword opportunities - Optional
-                    <textarea maxLength={4000} placeholder="Search themes, target keyword opportunities, and promising topic clusters" rows={3} value={researchSummaryForm.keywordOpportunities} onChange={(event) => setResearchSummaryForm((current) => ({ ...current, keywordOpportunities: event.target.value }))} />
-                  </label>
-                  <label className="field-span-2">
-                    Content recommendations - Optional
-                    <textarea maxLength={4000} placeholder="Recommended content directions, angles, and deliverable ideas for later planning" rows={3} value={researchSummaryForm.contentRecommendations} onChange={(event) => setResearchSummaryForm((current) => ({ ...current, contentRecommendations: event.target.value }))} />
-                  </label>
-                  <label className="field-span-2">
-                    Brief revision notes - Optional
-                    <textarea maxLength={4000} placeholder="What should be revised or clarified in the project brief before planning continues" rows={3} value={researchSummaryForm.briefRevisionNotes} onChange={(event) => setResearchSummaryForm((current) => ({ ...current, briefRevisionNotes: event.target.value }))} />
-                  </label>
-                  <label className="field-span-2">
-                    Source notes - Optional
-                    <textarea maxLength={4000} placeholder="Manual notes about approved sources used for this summary and any limitations to keep in mind" rows={3} value={researchSummaryForm.sourceNotes} onChange={(event) => setResearchSummaryForm((current) => ({ ...current, sourceNotes: event.target.value }))} />
-                  </label>
-                </div>
-                <div className="modal-footer ai-delivery-modal-footer">
-                  <button className="ghost-action" disabled={researchSaving} onClick={closeResearchSources} type="button">Close</button>
-                  <button className="ghost-action" disabled={researchSaving} onClick={() => { setResearchSummaryEditorId(null); setResearchSummaryForm(emptyResearchSummary()); }} type="button">New summary</button>
-                  <button className="primary-action" disabled={researchSaving || !researchSummaryForm.title.trim() || !researchSummaryForm.summaryText.trim()} onClick={() => void saveResearchSummary(openResearchSourcesProject.id)} type="button">
-                    {researchSaving ? "Saving" : researchSummaryEditorId ? "Save summary" : "Create summary"}
-                  </button>
-                </div>
-              </section>
-
-              <section className="field-panel ai-delivery-section-compact">
-                <h3>Existing research summaries</h3>
-                {researchSummaries.length === 0 ? <AiDeliveryInlineEmpty>No research summaries yet. Add a summary after reviewing sources.</AiDeliveryInlineEmpty> : null}
-                {researchSummaries.map((summary) => (
-                  <article className="entity-card" key={summary.id}>
-                    <div className="entity-card-header">
-                      <div>
-                        <StatusBadge status={summary.status} />
-                        <h3>{summary.title}</h3>
-                        <p>Updated {formatOptionalDate(summary.updatedAt)}</p>
-                      </div>
-                      <div className="card-actions">
-                        <button className="ghost-action" disabled={researchSaving} onClick={() => editResearchSummary(summary)} type="button">Edit</button>
-                        {summary.status !== "FINALIZED" ? <button className="ghost-action" disabled={researchSaving} onClick={() => void setResearchSummaryStatus(openResearchSourcesProject.id, summary, "FINALIZED")} type="button">Finalize</button> : null}
-                        {summary.status !== "ARCHIVED" ? <button className="ghost-action" disabled={researchSaving} onClick={() => void setResearchSummaryStatus(openResearchSourcesProject.id, summary, "ARCHIVED")} type="button">Archive</button> : null}
-                        <button className="ghost-action" disabled={researchSaving} onClick={() => void applyResearchSummaryToBrief(openResearchSourcesProject.id, summary.id)} type="button">Apply to brief notes</button>
-                      </div>
-                    </div>
-                    <dl className="brief-grid">
-                      <div>
-                        <dt>Status</dt>
-                        <dd>{formatEnumLabel(summary.status)}</dd>
-                      </div>
-                      <div>
-                        <dt>Workflow run</dt>
-                        <dd>{summary.workflowRun ? formatEnumLabel(summary.workflowRun.status) : "Manual / none"}</dd>
-                      </div>
-                      <div>
-                        <dt>Finalized</dt>
-                        <dd>{formatOptionalDate(summary.finalizedAt)}</dd>
-                      </div>
-                      <div>
-                        <dt>Created</dt>
-                        <dd>{formatOptionalDate(summary.createdAt)}</dd>
-                      </div>
-                      <div className="field-span-2">
-                        <dt>Summary</dt>
-                        <dd>{formatPreview(summary.summaryText)}</dd>
-                      </div>
-                      <div className="field-span-2">
-                        <dt>Key findings</dt>
-                        <dd>{formatPreview(summary.keyFindings)}</dd>
-                      </div>
-                      <div className="field-span-2">
-                        <dt>Brief revision notes</dt>
-                        <dd>{formatPreview(summary.briefRevisionNotes)}</dd>
-                      </div>
-                    </dl>
-                  </article>
-                ))}
-              </section>
-
-              <section className="field-panel ai-delivery-section-compact">
-                <h3>Research source editor</h3>
-                <div className="field-grid">
-                  <label>
-                    Status - Required
-                    <select value={researchSourceForm.status} onChange={(event) => setResearchSourceForm((current) => ({ ...current, status: event.target.value }))}>
-                      {researchSourceStatuses.map((status) => <option key={status} value={status}>{formatEnumLabel(status)}</option>)}
-                    </select>
-                  </label>
-                  <label>
-                    Source type - Required
-                    <select value={researchSourceForm.sourceType} onChange={(event) => setResearchSourceForm((current) => ({ ...current, sourceType: event.target.value }))}>
-                      {researchSourceTypes.map((sourceType) => <option key={sourceType} value={sourceType}>{formatEnumLabel(sourceType)}</option>)}
-                    </select>
-                  </label>
-                  <label>
-                    Linked research request - Optional
-                    <select value={researchSourceForm.researchRequestId ?? ""} onChange={(event) => setResearchSourceForm((current) => ({ ...current, researchRequestId: event.target.value || null }))}>
-                      <option value="">Manual / unlinked source</option>
-                      {researchRequests.map((request) => <option key={request.id} value={request.id}>{request.title}</option>)}
-                    </select>
-                  </label>
-                  <label>
-                    Linked workflow run - Optional
-                    <select value={researchSourceForm.workflowRunId ?? ""} onChange={(event) => setResearchSourceForm((current) => ({ ...current, workflowRunId: event.target.value || null }))}>
-                      <option value="">Manual / unlinked source</option>
-                      {researchWorkflowRuns.map((run) => <option key={run.id} value={run.id}>Workflow run - {formatEnumLabel(run.status)}</option>)}
-                    </select>
-                  </label>
-                  <label className="field-span-2">
-                    Source URL - Required
-                    <input maxLength={2048} placeholder="https://example.com/source-page" value={researchSourceForm.sourceUrl} onChange={(event) => setResearchSourceForm((current) => ({ ...current, sourceUrl: event.target.value }))} />
-                    <span className="muted-text">Manual URL only. No fetch or crawl runs here.</span>
-                  </label>
-                  <label className="field-span-2">
-                    Source title - Optional
-                    <input maxLength={255} placeholder="Human-friendly source label for the admin team" value={researchSourceForm.sourceTitle} onChange={(event) => setResearchSourceForm((current) => ({ ...current, sourceTitle: event.target.value }))} />
-                  </label>
-                  <label className="field-span-2">
-                    Review notes - Optional
-                    <textarea maxLength={4000} placeholder="Why this source was approved, rejected, or archived for manual research use" rows={4} value={researchSourceForm.reviewNotes} onChange={(event) => setResearchSourceForm((current) => ({ ...current, reviewNotes: event.target.value }))} />
-                  </label>
-                </div>
-                <div className="modal-footer ai-delivery-modal-footer">
-                  <button className="ghost-action" disabled={researchSaving} onClick={closeResearchSources} type="button">Close</button>
-                  <button className="ghost-action" disabled={researchSaving} onClick={() => { setResearchSourceEditorId(null); setResearchSourceForm(emptyResearchSource()); }} type="button">New source</button>
-                  <button className="primary-action" disabled={researchSaving || !researchSourceForm.sourceUrl.trim()} onClick={() => void saveResearchSource(openResearchSourcesProject.id)} type="button">
-                    {researchSaving ? "Saving" : researchSourceEditorId ? "Save source" : "Create source"}
-                  </button>
-                </div>
-              </section>
-
-              <section className="field-panel ai-delivery-section-compact">
-                <h3>Existing research sources</h3>
-                {researchSources.length === 0 ? <AiDeliveryInlineEmpty>No research sources yet. Add a source to continue.</AiDeliveryInlineEmpty> : null}
-                {researchSources.map((source) => (
-                  <article className="entity-card" key={source.id}>
-                    <div className="entity-card-header">
-                      <div>
-                        <StatusBadge status={source.status} />
-                        <h3>{source.sourceTitle ?? source.sourceUrl}</h3>
-                        <p>Updated {formatOptionalDate(source.updatedAt)}</p>
-                      </div>
-                      <div className="card-actions">
-                        <button className="ghost-action" disabled={researchSaving} onClick={() => editResearchSource(source)} type="button">Edit</button>
-                        {source.status !== "APPROVED" ? <button className="ghost-action" disabled={researchSaving} onClick={() => void setResearchSourceStatus(openResearchSourcesProject.id, source, "APPROVED")} type="button">Approve</button> : null}
-                        {source.status !== "REJECTED" ? <button className="ghost-action" disabled={researchSaving} onClick={() => void setResearchSourceStatus(openResearchSourcesProject.id, source, "REJECTED")} type="button">Reject</button> : null}
-                        {source.status !== "ARCHIVED" ? <button className="ghost-action" disabled={researchSaving} onClick={() => void setResearchSourceStatus(openResearchSourcesProject.id, source, "ARCHIVED")} type="button">Archive</button> : null}
-                      </div>
-                    </div>
-                    <dl className="brief-grid">
-                      <div>
-                        <dt>Status</dt>
-                        <dd>{formatEnumLabel(source.status)}</dd>
-                      </div>
-                      <div>
-                        <dt>Type</dt>
-                        <dd>{formatEnumLabel(source.sourceType)}</dd>
-                      </div>
-                      <div className="field-span-2">
-                        <dt>Source URL</dt>
-                        <dd>{source.sourceUrl}</dd>
-                      </div>
-                      <div>
-                        <dt>Request</dt>
-                        <dd>{source.researchRequest?.title ?? "Manual / none"}</dd>
-                      </div>
-                      <div>
-                        <dt>Workflow run</dt>
-                        <dd>{source.workflowRun ? formatEnumLabel(source.workflowRun.status) : "Manual / none"}</dd>
-                      </div>
-                      <div className="field-span-2">
-                        <dt>Review notes</dt>
-                        <dd>{formatPreview(source.reviewNotes)}</dd>
-                      </div>
-                    </dl>
-                  </article>
-                ))}
-              </section>
-              <div className="modal-footer ai-delivery-modal-footer"><button className="ghost-action" onClick={closeResearchSources} type="button">Close</button></div>
-            </div>
-          ) : <div>Project not found.</div>}
-        </Modal>
+        <AiDeliveryResearchModal
+          isOpen={Boolean(openResearchSourcesId)}
+          onClose={closeResearchSources}
+          project={openResearchSourcesProject}
+          loading={researchLoading}
+          saving={researchSaving}
+          error={researchError}
+          researchRequests={researchRequests}
+          researchSummaries={researchSummaries}
+          researchSources={researchSources}
+          researchWorkflowRuns={researchWorkflowRuns}
+          requestForm={researchRequestForm}
+          onRequestFormChange={setResearchRequestForm}
+          requestEditorId={researchRequestEditorId}
+          summaryForm={researchSummaryForm}
+          onSummaryFormChange={setResearchSummaryForm}
+          summaryEditorId={researchSummaryEditorId}
+          sourceForm={researchSourceForm}
+          onSourceFormChange={setResearchSourceForm}
+          sourceEditorId={researchSourceEditorId}
+          formatEnumLabel={formatEnumLabel}
+          formatOptionalDate={formatOptionalDate}
+          formatPreview={formatPreview}
+          onNewRequest={() => {
+            setResearchRequestEditorId(null);
+            setResearchRequestForm(emptyResearchRequest());
+          }}
+          onSaveRequest={(projectId) => void saveResearchRequest(projectId)}
+          onEditRequest={editResearchRequest}
+          onNewSummary={() => {
+            setResearchSummaryEditorId(null);
+            setResearchSummaryForm(emptyResearchSummary());
+          }}
+          onSaveSummary={(projectId) => void saveResearchSummary(projectId)}
+          onEditSummary={editResearchSummary}
+          onFinalizeSummary={(projectId, summary) => void setResearchSummaryStatus(projectId, summary, "FINALIZED")}
+          onArchiveSummary={(projectId, summary) => void setResearchSummaryStatus(projectId, summary, "ARCHIVED")}
+          onApplySummaryToBrief={(projectId, summaryId) => void applyResearchSummaryToBrief(projectId, summaryId)}
+          onNewSource={() => {
+            setResearchSourceEditorId(null);
+            setResearchSourceForm(emptyResearchSource());
+          }}
+          onSaveSource={(projectId) => void saveResearchSource(projectId)}
+          onEditSource={editResearchSource}
+          onApproveSource={(projectId, source) => void setResearchSourceStatus(projectId, source, "APPROVED")}
+          onRejectSource={(projectId, source) => void setResearchSourceStatus(projectId, source, "REJECTED")}
+          onArchiveSource={(projectId, source) => void setResearchSourceStatus(projectId, source, "ARCHIVED")}
+        />
       ) : null}
       {openMiContextId ? (
         <Modal onClose={closeMiContext} title="Market Intelligence Context">
           {miContextLoading ? (
             <AiDeliveryInlineLoading label="Loading Market Intelligence context" />
           ) : openMiContextProject ? (
-            <div className="ai-delivery-modal-panel stack gap-md">
+            <div className="ai-delivery-modal-panel ai-delivery-lane-modal stack gap-md">
               {miContextError ? <AiDeliveryInlineAlert message={miContextError} title="Market Intelligence context blocked" /> : null}
               <section className="field-panel ai-delivery-section-compact">
                 <h3>Applied handoffs</h3>
@@ -4398,1568 +3614,209 @@ export function AiDeliveryPage({
         </Modal>
       ) : null}
       {openWorkflowRunsId ? (
-        <Modal onClose={closeWorkflowRuns} title="Workflow Runs">
-          {workflowRunsLoading ? (
-            <AiDeliveryInlineLoading label="Loading workflow runs" />
-          ) : openWorkflowRunsProject ? (
-            <div className="ai-delivery-modal-panel stack gap-md">
-              {workflowRunsError ? <AiDeliveryInlineAlert message={workflowRunsError} title="Workflow run action blocked" /> : null}
-              <section className="field-panel ai-delivery-section-compact">
-                <h3>Workflow run editor</h3>
-                <AiDeliveryInlineNotice>{workflowRunActionGuidance}</AiDeliveryInlineNotice>
-                <div className="field-panel">
-                  <h4>Execution visibility summary</h4>
-                  <dl className="brief-grid">
-                    <div>
-                      <dt>Runs in focus</dt>
-                      <dd>{workflowRuns.length}</dd>
-                    </div>
-                    <div>
-                      <dt>Status mix</dt>
-                      <dd>{formatStatusBreakdown(workflowRuns, "No workflow runs in focus yet")}</dd>
-                    </div>
-                    <div>
-                      <dt>Latest update</dt>
-                      <dd>{latestWorkflowRun ? formatOptionalDate(latestWorkflowRun.updatedAt) : "Not set"}</dd>
-                    </div>
-                    <div>
-                      <dt>Latest result state</dt>
-                      <dd>
-                        {latestWorkflowRun?.executionError
-                          ? "Latest run ended with a safe error"
-                          : latestWorkflowRun?.resultPlaceholder
-                            ? "Latest run recorded a result"
-                            : "No result recorded yet"}
-                      </dd>
-                    </div>
-                  </dl>
-                </div>
-                {workflowRunBeingEdited ? (
-                  <div className="field-panel">
-                    <h4>Current execution record</h4>
-                    <dl className="brief-grid">
-                      <div>
-                        <dt>Status</dt>
-                        <dd>{workflowRunStatusLabels[normalizeWorkflowRunStatus(workflowRunBeingEdited.status)]}</dd>
-                      </div>
-                      <div>
-                        <dt>Execution mode</dt>
-                        <dd>{canExecuteWorkflowRun(workflowRunBeingEdited.status) ? "Ready for admin-triggered execute" : "History / review state only"}</dd>
-                      </div>
-                      <div>
-                        <dt>Brief snapshot</dt>
-                        <dd>{workflowRunBeingEdited.brief ? formatEnumLabel(workflowRunBeingEdited.brief.status) : "No brief snapshot linked"}</dd>
-                      </div>
-                      <div>
-                        <dt>Created</dt>
-                        <dd>{formatOptionalDate(workflowRunBeingEdited.createdAt)}</dd>
-                      </div>
-                      <div>
-                        <dt>Started</dt>
-                        <dd>{formatOptionalDate(workflowRunBeingEdited.startedAt)}</dd>
-                      </div>
-                      <div>
-                        <dt>Finished</dt>
-                        <dd>{formatOptionalDate(workflowRunBeingEdited.finishedAt)}</dd>
-                      </div>
-                      <div>
-                        <dt>Gateway</dt>
-                        <dd>{workflowRunEditorResultPreview?.gateway ? formatEnumLabel(workflowRunEditorResultPreview.gateway) : "Not recorded in current result"}</dd>
-                      </div>
-                      <div>
-                        <dt>Model</dt>
-                        <dd>{workflowRunEditorResultPreview?.model || "Not recorded in current result"}</dd>
-                      </div>
-                      <div>
-                        <dt>Workflow output</dt>
-                        <dd>{workflowRunEditorResultPreview?.outputType ? formatEnumLabel(workflowRunEditorResultPreview.outputType) : "Not recorded in current result"}</dd>
-                      </div>
-                      <div>
-                        <dt>Result contract</dt>
-                        <dd>{workflowRunEditorResultPreview?.version || "Manual / summary placeholder only"}</dd>
-                      </div>
-                      <div className="field-span-2">
-                        <dt>Result summary</dt>
-                        <dd>{workflowRunEditorResultPreview?.summary || formatPreview(workflowRunBeingEdited.resultPlaceholder)}</dd>
-                      </div>
-                      <div className="field-span-2">
-                        <dt>Execution log preview</dt>
-                        <dd>{formatPreview(workflowRunBeingEdited.executionLog)}</dd>
-                      </div>
-                      <div className="field-span-2">
-                        <dt>Execution error preview</dt>
-                        <dd>{formatPreview(workflowRunBeingEdited.executionError || workflowRunEditorResultPreview?.safeError)}</dd>
-                      </div>
-                    </dl>
-                  </div>
-                ) : null}
-                <div className="field-grid">
-                  <div>
-                    <span>Run type / name</span>
-                    <strong>{workflowRunEditorId ? "Existing workflow run" : "New workflow run"}</strong>
-                    <span className="muted-text">Admin workflow run record for this AI Delivery project.</span>
-                  </div>
-                  <label>
-                    Status - Required
-                    <select value={workflowRunForm.status} onChange={(event) => setWorkflowRunForm((current) => ({ ...current, status: event.target.value }))}>
-                      {workflowRunStatusOptions.map((status) => <option key={status} value={status}>{workflowRunStatusLabels[status]}</option>)}
-                    </select>
-                    <span className="muted-text">Current internal status. {workflowRunStatusHelper}</span>
-                  </label>
-                  <label className="field-span-2">
-                    Input / context and review notes - Optional
-                    <textarea
-                      maxLength={4000}
-                      placeholder="Workflow inputs, admin context, blockers, or review notes"
-                      rows={4}
-                      value={workflowRunForm.adminNotes}
-                      onChange={(event) => setWorkflowRunForm((current) => ({ ...current, adminNotes: event.target.value }))}
-                    />
-                    <span className="muted-text">Admin-only. Include [stub-fail] to simulate a controlled local failure.</span>
-                  </label>
-                  <label className="field-span-2">
-                    Output / result summary - Optional
-                    <textarea
-                      maxLength={4000}
-                      placeholder="Summary of output, result, or next handoff step"
-                      rows={4}
-                      value={workflowRunForm.resultPlaceholder}
-                      onChange={(event) => setWorkflowRunForm((current) => ({ ...current, resultPlaceholder: event.target.value }))}
-                    />
-                  </label>
-                </div>
-                <div className="modal-footer ai-delivery-modal-footer">
-                  <button className="ghost-action" disabled={workflowRunsSaving || Boolean(workflowRunExecutingId)} onClick={closeWorkflowRuns} type="button">Close</button>
-                  <button className="ghost-action" disabled={workflowRunsSaving || Boolean(workflowRunExecutingId)} onClick={() => { setWorkflowRunEditorId(null); setWorkflowRunForm(emptyWorkflowRun()); }} type="button">New workflow run</button>
-                  <button className="primary-action" disabled={workflowRunsSaving || Boolean(workflowRunExecutingId) || !isWorkflowRunStatusAllowed} onClick={() => void saveWorkflowRun(openWorkflowRunsProject.id)} type="button">
-                    {workflowRunsSaving ? "Saving" : workflowRunEditorId ? "Save workflow run" : "Create workflow run"}
-                  </button>
-                </div>
-              </section>
-
-              <section className="field-panel ai-delivery-section-compact">
-                <h3>Existing workflow runs</h3>
-                {workflowRuns.length === 0 ? <AiDeliveryInlineEmpty>No workflow runs yet. Create one to track the next admin step.</AiDeliveryInlineEmpty> : null}
-                {workflowRuns.map((run) => {
-                  const resultPreview = parseWorkflowRunResultPreview(run.resultPlaceholder);
-                  return (
-                    <article className="entity-card" key={run.id}>
-                      <div className="entity-card-header">
-                        <div>
-                          <StatusBadge status={run.status} />
-                          <h3>Workflow run</h3>
-                          <p>
-                            {resultPreview?.outputType ? `${formatEnumLabel(resultPreview.outputType)} - ` : ""}
-                            Created {formatOptionalDate(run.createdAt)}
-                          </p>
-                        </div>
-                        <div className="card-actions">
-                          <button className="ghost-action" disabled={workflowRunsSaving || Boolean(workflowRunExecutingId)} onClick={() => editWorkflowRun(run)} type="button">Edit</button>
-                          {canExecuteWorkflowRun(run.status) ? (
-                            <button
-                              className="primary-action"
-                              disabled={workflowRunsSaving || Boolean(workflowRunExecutingId)}
-                              onClick={() => void executeWorkflowRun(openWorkflowRunsProject.id, run.id)}
-                              type="button"
-                            >
-                              {workflowRunExecutingId === run.id ? "Running" : "Execute"}
-                            </button>
-                          ) : null}
-                        </div>
-                      </div>
-                      <dl className="brief-grid">
-                        <div>
-                          <dt>Status</dt>
-                          <dd>{workflowRunStatusLabels[normalizeWorkflowRunStatus(run.status)]}</dd>
-                        </div>
-                        <div>
-                          <dt>Execution mode</dt>
-                          <dd>{canExecuteWorkflowRun(run.status) ? "Admin-triggerable" : "History / review state"}</dd>
-                        </div>
-                        <div>
-                          <dt>Started</dt>
-                          <dd>{formatOptionalDate(run.startedAt)}</dd>
-                        </div>
-                        <div>
-                          <dt>Finished</dt>
-                          <dd>{formatOptionalDate(run.finishedAt)}</dd>
-                        </div>
-                        <div>
-                          <dt>Gateway</dt>
-                          <dd>{resultPreview?.gateway ? formatEnumLabel(resultPreview.gateway) : "Not recorded"}</dd>
-                        </div>
-                        <div>
-                          <dt>Model</dt>
-                          <dd>{resultPreview?.model || "Not recorded"}</dd>
-                        </div>
-                        <div>
-                          <dt>Workflow output</dt>
-                          <dd>{resultPreview?.outputType ? formatEnumLabel(resultPreview.outputType) : "Manual / summary only"}</dd>
-                        </div>
-                        <div>
-                          <dt>Generated at</dt>
-                          <dd>{formatOptionalDate(resultPreview?.generatedAt)}</dd>
-                        </div>
-                        <div className="field-span-2">
-                          <dt>Result title</dt>
-                          <dd>{resultPreview?.title || "No structured result title recorded"}</dd>
-                        </div>
-                        <div className="field-span-2">
-                          <dt>Admin notes preview</dt>
-                          <dd>{formatPreview(run.adminNotes)}</dd>
-                        </div>
-                        <div className="field-span-2">
-                          <dt>Result placeholder preview</dt>
-                          <dd>{resultPreview?.summary || formatPreview(run.resultPlaceholder)}</dd>
-                        </div>
-                        <div className="field-span-2">
-                          <dt>Execution log</dt>
-                          <dd>{formatPreview(run.executionLog)}</dd>
-                        </div>
-                        <div className="field-span-2">
-                          <dt>Execution error</dt>
-                          <dd>{formatPreview(run.executionError || resultPreview?.safeError)}</dd>
-                        </div>
-                      </dl>
-                    </article>
-                  );
-                })}
-              </section>
-              <div className="modal-footer ai-delivery-modal-footer"><button className="ghost-action" onClick={closeWorkflowRuns} type="button">Close</button></div>
-            </div>
-          ) : <div>Project not found.</div>}
-        </Modal>
+        <AiRunReviewModal
+          actionGuidance={workflowRunActionGuidance}
+          canExecuteRun={canExecuteWorkflowRun}
+          canSave={isWorkflowRunStatusAllowed}
+          error={workflowRunsError}
+          executingId={workflowRunExecutingId}
+          form={workflowRunForm}
+          formatOptionalDate={formatOptionalDate}
+          formatPreview={formatPreview}
+          formatStatusBreakdown={formatStatusBreakdown}
+          isOpen={Boolean(openWorkflowRunsId)}
+          loading={workflowRunsLoading}
+          normalizeStatus={(status) => normalizeWorkflowRunStatus(status ?? "DRAFT")}
+          onClearSelection={() => {
+            setWorkflowRunEditorId(null);
+            setWorkflowRunForm(emptyWorkflowRun());
+          }}
+          onClose={closeWorkflowRuns}
+          onExecute={(runId) => openWorkflowRunsProject && void executeWorkflowRun(openWorkflowRunsProject.id, runId)}
+          onFormChange={setWorkflowRunForm}
+          onSave={() => openWorkflowRunsProject && void saveWorkflowRun(openWorkflowRunsProject.id)}
+          onSelectRun={editWorkflowRun}
+          parseResultPreview={parseWorkflowRunResultPreview}
+          project={openWorkflowRunsProject}
+          runs={workflowRuns}
+          saving={workflowRunsSaving}
+          selectedRunId={workflowRunEditorId}
+          statusHelper={workflowRunStatusHelper}
+          statusLabels={workflowRunStatusLabels}
+          statusOptions={workflowRunStatusOptions}
+        />
       ) : null}
       {openContentDraftsId ? (
-        <Modal onClose={closeContentDrafts} title="AI Content Production">
-          {contentDraftsLoading ? (
-            <AiDeliveryInlineLoading label="Loading content drafts" />
-          ) : openContentDraftsProject ? (
-            <div className="ai-delivery-modal-panel ai-delivery-content-drafts-panel stack gap-md">
-              {contentDraftsError ? <AiDeliveryInlineAlert message={contentDraftsError} title="Content draft action blocked" /> : null}
-              <AiDeliveryInlineNotice>
-                <strong>Production chain:</strong> plan item → draft → images → deliverable → report.
-                {" · "}
-                {openContentDraftsProject.targetMonth} · {eligibleContentDraftPlanItems.length} ready plan item(s) · {contentDrafts.filter((draft) => !draft.isArchived).length} active draft(s) · {articleImages.filter((image) => !image.isArchived).length} image record(s) · {deliverables.filter((deliverable) => !deliverable.isArchived).length} deliverable record(s)
-              </AiDeliveryInlineNotice>
-              <section className="field-panel ai-delivery-section-compact">
-                <h3>Article production planning</h3>
-                <AiDeliveryInlineNotice>{contentDraftActionGuidance}</AiDeliveryInlineNotice>
-                {contentDraftHandoffMessage ? <AiDeliveryInlineNotice>{contentDraftHandoffMessage}</AiDeliveryInlineNotice> : null}
-                <div className="field-panel">
-                  <h4>Editor summary</h4>
-                  <dl className="brief-grid">
-                    <div>
-                      <dt>Editor mode</dt>
-                      <dd>{contentDraftEditorId ? "Editing saved draft" : "Preparing new draft"}</dd>
-                    </div>
-                    <div>
-                      <dt>Save state</dt>
-                      <dd>{contentDraftSaveStateLabel}</dd>
-                    </div>
-                    <div>
-                      <dt>Linked plan item</dt>
-                      <dd>{contentDraftEditorLinkedPlanLabel}</dd>
-                    </div>
-                    <div>
-                      <dt>Review readiness</dt>
-                      <dd>{contentDraftReviewReadiness.ready ? "Ready for admin review" : "Needs attention before review"}</dd>
-                    </div>
-                    <div>
-                      <dt>Ready items available</dt>
-                      <dd>{eligibleContentDraftPlanItems.length}</dd>
-                    </div>
-                    {activeContentDraftRecord ? (
-                      <>
-                        <div>
-                          <dt>Linked images</dt>
-                          <dd>{activeContentDraftLinkedImages.length}</dd>
-                        </div>
-                        <div>
-                          <dt>Linked deliverables</dt>
-                          <dd>{activeContentDraftLinkedDeliverables.length}</dd>
-                        </div>
-                      </>
-                    ) : null}
-                  </dl>
-                  {!contentDraftReviewReadiness.ready ? <p className="muted-text">{contentDraftReviewReadiness.message}</p> : null}
-                </div>
-                <div className="field-panel">
-                  <h4>Approved / planned content plan items</h4>
-                  {eligibleContentDraftPlanItems.length === 0 ? <AiDeliveryInlineEmpty>No ready plan items yet. Approve or add content plan items to continue draft production.</AiDeliveryInlineEmpty> : null}
-                  {eligibleContentDraftPlanItems.map((item) => {
-                    const linkedDraft = contentDrafts.find((draftItem) => draftItem.contentPlanItemId === item.id && !draftItem.isArchived) ?? null;
-                    return (
-                      <article className="entity-card" key={item.id ?? `${item.sortOrder}-${item.title}`}>
-                        <div className="entity-card-header">
-                          <div>
-                            <StatusBadge status={formatContentPlanItemApprovalStatus(item.approvalStatus)} />
-                            <h4>{item.sortOrder}. {item.title}</h4>
-                            <p>{item.targetKeyword ? `Target keyword: ${item.targetKeyword}` : "No target keyword recorded yet."}</p>
-                          </div>
-                          <div className="card-actions">
-                            <button className={linkedDraft ? "ghost-action" : "primary-action"} disabled={contentDraftsSaving} onClick={() => startContentDraftFromPlanItem(item)} type="button">
-                              {linkedDraft ? "Edit linked draft" : "Create linked draft"}
-                            </button>
-                          </div>
-                        </div>
-                        <dl className="brief-grid">
-                          <div>
-                            <dt>Plan approval</dt>
-                            <dd>{formatContentPlanItemApprovalStatus(item.approvalStatus)}</dd>
-                          </div>
-                          <div>
-                            <dt>Linked draft</dt>
-                            <dd>{linkedDraft ? linkedDraft.title : "No active draft linked yet"}</dd>
-                          </div>
-                          <div className="field-span-2">
-                            <dt>Planning notes</dt>
-                            <dd>{item.notes ?? "No plan item notes"}</dd>
-                          </div>
-                          <div className="field-span-2">
-                            <dt>Client note</dt>
-                            <dd>{item.clientComment ?? "No client note"}</dd>
-                          </div>
-                        </dl>
-                      </article>
-                    );
-                  })}
-                </div>
-                {activeContentDraftRecord ? (
-                  <div className="field-panel">
-                    <h4>Current draft status</h4>
-                    <dl className="brief-grid">
-                      <div>
-                        <dt>Status</dt>
-                        <dd>{formatContentDraftStatus(activeContentDraftRecord.status)}</dd>
-                      </div>
-                      <div>
-                        <dt>Linked plan item</dt>
-                        <dd>{contentDraftEditorLinkedPlanLabel}</dd>
-                      </div>
-                      <div>
-                        <dt>Review requested</dt>
-                        <dd>{formatOptionalDate(activeContentDraftRecord.reviewRequestedAt)}</dd>
-                      </div>
-                      <div>
-                        <dt>Approved</dt>
-                        <dd>{formatOptionalDate(activeContentDraftRecord.approvedAt)}</dd>
-                      </div>
-                      <div>
-                        <dt>Revision count</dt>
-                        <dd>{activeContentDraftRecord.revisionCount ?? 0}</dd>
-                      </div>
-                      <div>
-                        <dt>Client comment</dt>
-                        <dd>{activeContentDraftRecord.clientComment ?? "No client comment"}</dd>
-                      </div>
-                    </dl>
-                  </div>
-                ) : null}
-                {activeContentDraftRecord ? (
-                  <div className="field-panel">
-                    <h4>Completion and export handoff</h4>
-                    <AiDeliveryInlineNotice>Same-project image planning and deliverable records only. Internal admin handoff — does not publish, export, or expose client delivery.</AiDeliveryInlineNotice>
-                    <dl className="brief-grid">
-                      <div>
-                        <dt>Linked image records</dt>
-                        <dd>{activeContentDraftLinkedImages.length}</dd>
-                      </div>
-                      <div>
-                        <dt>Image status mix</dt>
-                        <dd>{formatStatusBreakdown(activeContentDraftLinkedImages, "No linked image records yet")}</dd>
-                      </div>
-                      <div>
-                        <dt>Linked deliverables</dt>
-                        <dd>{activeContentDraftLinkedDeliverables.length}</dd>
-                      </div>
-                      <div>
-                        <dt>Deliverable status mix</dt>
-                        <dd>{formatStatusBreakdown(activeContentDraftLinkedDeliverables, "No linked deliverables yet")}</dd>
-                      </div>
-                    </dl>
-                    <div className="card-actions card-actions-spaced">
-                      <button
-                        className="ghost-action"
-                        disabled={contentDraftsSaving}
-                        onClick={() => void handoffContentDraftToArticleImages(openContentDraftsProject.id, activeContentDraftRecord.id)}
-                        type="button"
-                      >
-                        Open image planning
-                      </button>
-                      <button
-                        className="ghost-action"
-                        disabled={contentDraftsSaving}
-                        onClick={() => void handoffContentDraftToDeliverables(openContentDraftsProject.id, activeContentDraftRecord.id)}
-                        type="button"
-                      >
-                        Open deliverable packaging
-                      </button>
-                    </div>
-                  </div>
-                ) : null}
-                <div className="field-grid field-grid-compact">
-                  <label>
-                    Status - Required
-                    <select value={contentDraftForm.status} onChange={(event) => setContentDraftForm((current) => ({ ...current, status: event.target.value }))}>
-                      {(["DRAFT", "READY_FOR_REVIEW", "CHANGES_REQUESTED", "ARCHIVED"] as const).map((status) => <option key={status} value={status}>{formatContentDraftStatus(status)}</option>)}
-                    </select>
-                    <span className="muted-text">Admin-only production state.</span>
-                  </label>
-                  <label>
-                    Linked SEO topic / monthly content plan item - Optional
-                    <select value={contentDraftForm.contentPlanItemId ?? ""} onChange={(event) => setContentDraftForm((current) => ({ ...current, contentPlanItemId: event.target.value || null }))}>
-                      <option value="">Manual / unlinked production record</option>
-                      {eligibleContentDraftPlanItems.map((item) => (
-                        <option key={item.id} value={item.id}>{item.sortOrder}. {item.title} ({formatContentPlanItemApprovalStatus(item.approvalStatus)})</option>
-                      ))}
-                    </select>
-                    <span className="muted-text">Link to the monthly content plan item this draft fulfills.</span>
-                  </label>
-                  <label className="field-span-2">
-                    Title - Required
-                    <input maxLength={255} placeholder="Working article title or draft headline" required value={contentDraftForm.title} onChange={(event) => setContentDraftForm((current) => ({ ...current, title: event.target.value }))} />
-                    <span className="muted-text">Platform-neutral article title for admin editing.</span>
-                  </label>
-                  <label>
-                    Slug - Optional
-                    <input maxLength={255} placeholder="Optional URL slug or short working slug" value={contentDraftForm.slug} onChange={(event) => setContentDraftForm((current) => ({ ...current, slug: event.target.value }))} />
-                    <span className="muted-text">Admin-only.</span>
-                  </label>
-                  <label className="field-span-2">
-                    Draft body - Required before client review
-                    <textarea maxLength={4000} placeholder="Manual draft body, article outline, sections, and review-ready copy" rows={8} value={contentDraftForm.draftBody} onChange={(event) => setContentDraftForm((current) => ({ ...current, draftBody: event.target.value }))} />
-                    <span className="muted-text">Save before using ready-for-review.</span>
-                  </label>
-                  <label className="field-span-2">
-                    Review / admin notes - Optional
-                    <textarea maxLength={4000} placeholder="Admin comments, blockers, revision guidance, or handoff notes" rows={3} value={contentDraftForm.notes} onChange={(event) => setContentDraftForm((current) => ({ ...current, notes: event.target.value }))} />
-                    <span className="muted-text">Admin-only. Client comments appear in draft status above.</span>
-                  </label>
-                </div>
-                <div className="modal-footer ai-delivery-modal-footer">
-                  <button className="ghost-action" disabled={contentDraftsSaving} onClick={closeContentDrafts} type="button">Close</button>
-                  <button className="ghost-action" disabled={contentDraftsSaving} onClick={() => { setContentDraftHandoffMessage(null); setContentDraftEditorId(null); setContentDraftForm(emptyContentDraft()); }} type="button">New draft</button>
-                  <button className="primary-action" disabled={contentDraftsSaving || !canSaveContentDraftForm} onClick={() => void saveContentDraft(openContentDraftsProject.id)} type="button">
-                    {contentDraftsSaving ? "Saving" : contentDraftPrimaryActionLabel}
-                  </button>
-                  {activeContentDraftRecord && !activeContentDraftRecord.isArchived ? (
-                    <button
-                      className="secondary-action"
-                      disabled={contentDraftsSaving || !canMarkReadyCurrentDraft}
-                      onClick={() => void requestContentDraftReview(openContentDraftsProject.id, activeContentDraftRecord.id)}
-                      type="button"
-                    >
-                      Mark ready for review
-                    </button>
-                  ) : null}
-                  {activeContentDraftRecord && !activeContentDraftRecord.isArchived && activeContentDraftRecord.status !== "DRAFT" ? (
-                    <button className="secondary-action" disabled={contentDraftsSaving || !canReturnCurrentDraft} onClick={() => void returnContentDraftToDraft(openContentDraftsProject.id, activeContentDraftRecord.id)} type="button">
-                      Return to draft
-                    </button>
-                  ) : null}
-                </div>
-              </section>
-
-              <section className="field-panel ai-delivery-section-compact">
-                <h3>Existing article production records</h3>
-                {contentDrafts.length === 0 ? <AiDeliveryInlineEmpty>No content drafts yet. Approve or select a plan item above, then generate the first linked draft for admin editing.</AiDeliveryInlineEmpty> : null}
-                {contentDrafts.map((draftItem) => (
-                  <article className="entity-card" key={draftItem.id}>
-                    <div className="entity-card-header">
-                      <div>
-                        <StatusBadge status={formatContentDraftStatus(draftItem.isArchived ? "ARCHIVED" : draftItem.status)} />
-                        <h3>{draftItem.title}</h3>
-                        <p>{draftItem.contentPlanItem ? `Linked to SEO topic: ${draftItem.contentPlanItem.title}` : "Manual / unlinked production record"}</p>
-                      </div>
-                      <div className="card-actions">
-                        <button className="ghost-action" disabled={contentDraftsSaving} onClick={() => editContentDraft(draftItem)} type="button">Edit</button>
-                        {!draftItem.isArchived ? <button className="secondary-action" disabled={contentDraftsSaving || !draftItem.draftBody.trim() || draftItem.status === "READY_FOR_REVIEW"} onClick={() => void requestContentDraftReview(openContentDraftsProject.id, draftItem.id)} type="button">Mark ready for review</button> : null}
-                        {!draftItem.isArchived && draftItem.status !== "DRAFT" ? <button className="ghost-action" disabled={contentDraftsSaving} onClick={() => void returnContentDraftToDraft(openContentDraftsProject.id, draftItem.id)} type="button">Return to draft</button> : null}
-                        {!draftItem.isArchived ? <button className="ghost-action" disabled={contentDraftsSaving} onClick={() => void archiveContentDraft(openContentDraftsProject.id, draftItem.id)} type="button">Archive</button> : null}
-                      </div>
-                    </div>
-                    <dl className="brief-grid">
-                      <div>
-                        <dt>Status</dt>
-                        <dd>{formatContentDraftStatus(draftItem.status)}</dd>
-                      </div>
-                      <div>
-                        <dt>Slug</dt>
-                        <dd>{draftItem.slug ?? "Not set"}</dd>
-                      </div>
-                      <div>
-                        <dt>Review requested</dt>
-                        <dd>{formatOptionalDate(draftItem.reviewRequestedAt)}</dd>
-                      </div>
-                      <div>
-                        <dt>Approved</dt>
-                        <dd>{formatOptionalDate(draftItem.approvedAt)}</dd>
-                      </div>
-                      <div>
-                        <dt>Revisions</dt>
-                        <dd>{draftItem.revisionCount ?? 0}</dd>
-                      </div>
-                      <div>
-                        <dt>Client comment</dt>
-                        <dd>{draftItem.clientComment ?? "No client comment"}</dd>
-                      </div>
-                      <div className="field-span-2">
-                        <dt>Draft body preview</dt>
-                        <dd>{formatPreview(draftItem.draftBody)}</dd>
-                      </div>
-                      <div className="field-span-2">
-                        <dt>Admin notes preview</dt>
-                        <dd>{formatPreview(draftItem.notes)}</dd>
-                      </div>
-                    </dl>
-                  </article>
-                ))}
-              </section>
-            </div>
-          ) : <div>Project not found.</div>}
-        </Modal>
+        <AiDeliveryContentDraftModal
+          isOpen={Boolean(openContentDraftsId)}
+          onClose={closeContentDrafts}
+          project={openContentDraftsProject}
+          loading={contentDraftsLoading}
+          saving={contentDraftsSaving}
+          error={contentDraftsError}
+          handoffMessage={contentDraftHandoffMessage}
+          actionGuidance={contentDraftActionGuidance}
+          contentDrafts={contentDrafts}
+          eligiblePlanItems={eligibleContentDraftPlanItems}
+          form={contentDraftForm}
+          onFormChange={setContentDraftForm}
+          editorId={contentDraftEditorId}
+          activeRecord={activeContentDraftRecord}
+          linkedImages={activeContentDraftLinkedImages}
+          linkedDeliverables={activeContentDraftLinkedDeliverables}
+          activeArticleImageCount={articleImages.filter((image) => !image.isArchived).length}
+          activeDeliverableCount={deliverables.filter((deliverable) => !deliverable.isArchived).length}
+          editorLinkedPlanLabel={contentDraftEditorLinkedPlanLabel}
+          saveStateLabel={contentDraftSaveStateLabel}
+          reviewReadiness={contentDraftReviewReadiness}
+          canSave={canSaveContentDraftForm}
+          canMarkReady={canMarkReadyCurrentDraft}
+          canReturn={canReturnCurrentDraft}
+          primaryActionLabel={contentDraftPrimaryActionLabel}
+          formatContentDraftStatus={formatContentDraftStatus}
+          formatContentPlanItemApprovalStatus={formatContentPlanItemApprovalStatus}
+          formatOptionalDate={formatOptionalDate}
+          formatPreview={formatPreview}
+          formatStatusBreakdown={formatStatusBreakdown}
+          onNewDraft={resetContentDraftEditor}
+          onSave={(projectId) => void saveContentDraft(projectId)}
+          onStartFromPlanItem={startContentDraftFromPlanItem}
+          onEdit={editContentDraft}
+          onArchive={(projectId, draftId) => void archiveContentDraft(projectId, draftId)}
+          onRequestReview={(projectId, draftId) => void requestContentDraftReview(projectId, draftId)}
+          onReturnToDraft={(projectId, draftId) => void returnContentDraftToDraft(projectId, draftId)}
+          onHandoffToImages={(projectId, draftId) => void handoffContentDraftToArticleImages(projectId, draftId)}
+          onHandoffToDeliverables={(projectId, draftId) => void handoffContentDraftToDeliverables(projectId, draftId)}
+        />
       ) : null}
       {openDeliverablesId ? (
-        <Modal onClose={closeDeliverables} title="Deliverables">
-          {deliverablesLoading ? (
-            <AiDeliveryInlineLoading label="Loading deliverables" />
-          ) : openDeliverablesProject ? (
-            <div className="ai-delivery-modal-panel ai-delivery-deliverables-panel stack gap-md">
-              {deliverablesError ? <AiDeliveryInlineAlert message={deliverablesError} title="Deliverable action blocked" /> : null}
-              <section className="field-panel ai-delivery-section-compact">
-                <h3>Deliverable editor</h3>
-                <AiDeliveryInlineNotice>{deliverableActionGuidance}</AiDeliveryInlineNotice>
-                {activeDeliverableRecord ? (
-                  <div className="field-panel">
-                    <h4>Current deliverable status</h4>
-                    <dl className="brief-grid">
-                      <div>
-                        <dt>Status</dt>
-                        <dd>{formatDeliverableStatus(activeDeliverableRecord.isArchived ? "ARCHIVED" : activeDeliverableRecord.status)}</dd>
-                      </div>
-                      <div>
-                        <dt>Linked content draft</dt>
-                        <dd>{activeDeliverableRecord.contentDraft ? `${activeDeliverableRecord.contentDraft.title} (${formatContentDraftStatus(activeDeliverableRecord.contentDraft.status)})` : "Not linked"}</dd>
-                      </div>
-                      <div>
-                        <dt>Linked article image</dt>
-                        <dd>{activeDeliverableRecord.articleImage ? `${activeDeliverableRecord.articleImage.title} (${formatArticleImageStatus(activeDeliverableRecord.articleImage.status)})` : "Not linked"}</dd>
-                      </div>
-                      <div>
-                        <dt>Export reference</dt>
-                        <dd>{activeDeliverableRecord.exportUrl || "Not set"}</dd>
-                      </div>
-                      <div>
-                        <dt>Storage reference</dt>
-                        <dd>{activeDeliverableRecord.hasDocument ? "Private document stored" : "Not set"}</dd>
-                      </div>
-                      <div>
-                        <dt>Archived state</dt>
-                        <dd>{activeDeliverableRecord.isArchived ? "Archived" : "Active admin packaging record"}</dd>
-                      </div>
-                    </dl>
-                    {activeDeliverableRecord.hasDocument ? (
-                      <div className="panel-divider-top">
-                        <button
-                          className="secondary-action"
-                          disabled={deliverableDownloadRefLoading}
-                          onClick={() => void fetchDeliverableDownloadReference(openDeliverablesProject.id, activeDeliverableRecord.id)}
-                          type="button"
-                        >
-                          {deliverableDownloadRefLoading ? "Preparing download..." : "Download private document"}
-                        </button>
-                        {deliverableDownloadRefError && deliverableDownloadRefError.recordId === activeDeliverableRecord.id ? (
-                          <AiDeliveryInlineAlert
-                            message={deliverableDownloadRefError.message.includes("503") || deliverableDownloadRefError.message.includes("unconfigured") ? "Private document storage is not configured. Contact your administrator." : deliverableDownloadRefError.message}
-                            title="Download unavailable"
-                          />
-                        ) : null}
-                        {deliverableDownloadRef && deliverableDownloadRef.recordId === activeDeliverableRecord.id ? (
-                          deliverableDownloadRef.downloadUrl ? (
-                            <AiDeliveryInlineNotice>
-                              <strong>Download ready:</strong>{" "}
-                              <a href={deliverableDownloadRef.downloadUrl} target="_blank" rel="noopener noreferrer">Open private document</a>
-                              {deliverableDownloadRef.expiresSeconds ? <span className="muted-text"> (expires in {Math.floor(deliverableDownloadRef.expiresSeconds / 60)} min)</span> : null}
-                            </AiDeliveryInlineNotice>
-                          ) : (
-                            <AiDeliveryInlineAlert message="The document reference exists but storage is unavailable. Contact your administrator to configure storage." title="Storage not available" />
-                          )
-                        ) : null}
-                      </div>
-                    ) : null}
-                  </div>
-                ) : null}
-                <div className="field-panel">
-                  <h4>Package completeness summary</h4>
-                  <AiDeliveryInlineNotice>Internal readiness check from linked draft, image, and deliverable data only. Does not generate exports or client delivery.</AiDeliveryInlineNotice>
-                  <AiDeliveryInlineNotice>
-                    <strong>Handoff context:</strong>{" "}
-                    {deliverableLinkedDraftRecord?.status === "APPROVED" && deliverableReadinessBlockers.length === 0
-                      ? "Context ready — approved draft linked and readiness guard clear."
-                      : "Context missing or blocked — link an approved draft and clear readiness blockers before this package can advance."}
-                  </AiDeliveryInlineNotice>
-                  <dl className="brief-grid">
-                    <div>
-                      <dt>Linked content draft</dt>
-                      <dd>{deliverableLinkedDraftRecord ? `${deliverableLinkedDraftRecord.title} (${formatContentDraftStatus(deliverableLinkedDraftRecord.status)})` : "Missing"}</dd>
-                    </div>
-                    <div>
-                      <dt>Linked image records</dt>
-                      <dd>{formatStatusBreakdown(deliverableRelatedImages, "No linked image records yet")}</dd>
-                    </div>
-                    <div>
-                      <dt>Direct package image</dt>
-                      <dd>{deliverableLinkedImageRecord ? `${deliverableLinkedImageRecord.title} (${formatArticleImageStatus(deliverableLinkedImageRecord.status)})` : "Not linked"}</dd>
-                    </div>
-                    <div>
-                      <dt>Final reference</dt>
-                      <dd>{deliverableHasRecordedReference ? "Recorded" : "Missing"}</dd>
-                    </div>
-                    <div>
-                      <dt>Package status</dt>
-                      <dd>{formatDeliverableStatus(deliverableForm.status)}</dd>
-                    </div>
-                    <div>
-                      <dt>Ready-state guard</dt>
-                      <dd>{deliverableReadinessBlockers.length === 0 ? "Clear" : "Blocked"}</dd>
-                    </div>
-                  </dl>
-                  {deliverableReadinessBlockers.length === 0 ? (
-                    <AiDeliveryInlineNotice>Linked draft, image readiness, and final reference details are sufficient for internal handoff tracking.</AiDeliveryInlineNotice>
-                  ) : (
-                    <AiDeliveryInlineAlert
-                      message={deliverableReadinessBlockers.join(" · ")}
-                      title="Ready-state blockers"
-                    />
-                  )}
-                </div>
-                <div className="field-panel">
-                  <h4>Internal final handoff view</h4>
-                  <AiDeliveryInlineNotice>Internal admin summary only — no client delivery, publication, WordPress transfer, or export output.</AiDeliveryInlineNotice>
-                  <AiDeliveryInlineNotice>
-                    Client Portal and monthly reports show only FINAL or approved deliverables. This internal view must not be shared with the client until compliance review and admin review pass.
-                  </AiDeliveryInlineNotice>
-                  <dl className="brief-grid">
-                    <div>
-                      <dt>Article / package title</dt>
-                      <dd>{deliverableLinkedDraftRecord?.title || activeDeliverableRecord?.title || deliverableForm.title || "Not set"}</dd>
-                    </div>
-                    <div>
-                      <dt>Draft status</dt>
-                      <dd>{deliverableLinkedDraftRecord ? formatContentDraftStatus(deliverableLinkedDraftRecord.status) : "No linked draft loaded"}</dd>
-                    </div>
-                    <div className="field-span-2">
-                      <dt>Draft body preview</dt>
-                      <dd>{deliverableLinkedDraftRecord ? formatPreview(deliverableLinkedDraftRecord.draftBody) : "No linked draft body available"}</dd>
-                    </div>
-                    <div>
-                      <dt>Image planning records</dt>
-                      <dd>{deliverableRelatedImages.length}</dd>
-                    </div>
-                    <div>
-                      <dt>Image readiness mix</dt>
-                      <dd>{formatStatusBreakdown(deliverableRelatedImages, "No linked image records yet")}</dd>
-                    </div>
-                    <div className="field-span-2">
-                      <dt>Image references</dt>
-                      <dd>
-                        {deliverableRelatedImages.length > 0
-                          ? deliverableRelatedImages.map((image) => `${image.title}: ${image.finalImageUrl || (image.hasDocument ? "private asset" : "") || image.previewImageUrl || "No reference yet"}`).join(" | ")
-                          : "No linked image references yet"}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt>Package delivery type</dt>
-                      <dd>{formatEnumLabel(deliverableForm.deliveryType)}</dd>
-                    </div>
-                    <div>
-                      <dt>Package status</dt>
-                      <dd>{formatDeliverableStatus(activeDeliverableRecord?.isArchived ? "ARCHIVED" : deliverableForm.status)}</dd>
-                    </div>
-                    <div className="field-span-2">
-                      <dt>Package notes</dt>
-                      <dd>{formatPreview(deliverableForm.notes ?? activeDeliverableRecord?.notes)}</dd>
-                    </div>
-                    <div className="field-span-2">
-                      <dt>Latest internal review notes</dt>
-                      <dd>
-                        {selectedReviewDeliverableId === activeDeliverableRecord?.id && latestSelectedReview
-                          ? formatPreview(latestSelectedReview.reviewNotes)
-                          : "Open Reviews on this deliverable to load internal review placeholder notes."}
-                      </dd>
-                    </div>
-                  </dl>
-                </div>
-                <div className="field-grid field-grid-compact">
-                  <label>
-                    Linked content draft - Optional
-                    <select value={deliverableForm.contentDraftId || ""} onChange={(e) => setDeliverableForm((current: AiDeliveryDeliverableFormValues) => ({ ...current, contentDraftId: e.target.value || null }))}>
-                      <option value="">None</option>
-                      {deliverableDraftOptions.map((draftItem) => (
-                        <option key={draftItem.id} value={draftItem.id}>{draftItem.title} ({formatContentDraftStatus(draftItem.status)})</option>
-                      ))}
-                    </select>
-                    <span className="muted-text">Approved draft for this package record.</span>
-                  </label>
-                  <label>
-                    Linked article image - Optional
-                    <select value={deliverableForm.articleImageId || ""} onChange={(e) => setDeliverableForm((current: AiDeliveryDeliverableFormValues) => ({ ...current, articleImageId: e.target.value || null }))}>
-                      <option value="">None</option>
-                      {deliverableArticleImageOptions.map((ai) => (
-                        <option key={ai.id} value={ai.id}>{ai.title} ({formatArticleImageStatus(ai.status)})</option>
-                      ))}
-                    </select>
-                    <span className="muted-text">Approved or final-ready image for the client-safe package.</span>
-                  </label>
-                  <label className="field-span-2">
-                    Title - Required
-                    <input maxLength={255} placeholder="Internal package name for this content or image handoff record" required value={deliverableForm.title || ""} onChange={(e) => setDeliverableForm((current: AiDeliveryDeliverableFormValues) => ({ ...current, title: e.target.value }))} />
-                    <span className="muted-text">Platform-neutral package name.</span>
-                  </label>
-                  <label className="field-span-2">
-                    Description - Optional
-                    <textarea maxLength={4000} placeholder="What this deliverable contains and what stage it is in" rows={3} value={deliverableForm.description || ""} onChange={(e) => setDeliverableForm((current: AiDeliveryDeliverableFormValues) => ({ ...current, description: e.target.value }))} />
-                    <span className="muted-text">Internal packaging summary only.</span>
-                  </label>
-                  <label>
-                    Delivery type - Required
-                    <select value={deliverableForm.deliveryType || "CONTENT_PACKAGE"} onChange={(e) => setDeliverableForm((current: AiDeliveryDeliverableFormValues) => ({ ...current, deliveryType: e.target.value }))}>
-                      {(["CONTENT_PACKAGE","ARTICLE_DRAFT","ARTICLE_IMAGE","CLIENT_HANDOFF","OTHER"] as const).map((dt) => <option key={dt} value={dt}>{dt}</option>)}
-                    </select>
-                    <span className="muted-text">Platform-neutral classification.</span>
-                  </label>
-                  <label>
-                    Status - {deliverableEditorId ? "Workflow-controlled" : "Required"}
-                    {deliverableEditorId ? (
-                      <>
-                        <input type="text" readOnly value={formatDeliverableStatus(activeDeliverableRecord?.isArchived ? "ARCHIVED" : deliverableForm.status)} />
-                        <span className="muted-text">Status is driven by workflow actions (mark ready, send for client review, accept, archive/restore). Saving other fields will not change it.</span>
-                      </>
-                    ) : (
-                      <>
-                        <select value={deliverableForm.status || "DRAFT"} onChange={(e) => setDeliverableForm((current: AiDeliveryDeliverableFormValues) => ({ ...current, status: e.target.value }))}>
-                          {(["DRAFT","READY","DELIVERED","REVISION_REQUESTED","ACCEPTED","ARCHIVED"] as const).map((s) => <option key={s} value={s}>{s}</option>)}
-                        </select>
-                        <span className="muted-text">Use action buttons for ready, revision, accept, and restore.</span>
-                      </>
-                    )}
-                  </label>
-                  <label>
-                    Export reference - Optional
-                    <input maxLength={2048} type="url" placeholder="Safe export URL for client handoff (e.g., shared Google Docs or approved PDF link)" value={deliverableForm.exportUrl || ""} onChange={(e) => setDeliverableForm((current: AiDeliveryDeliverableFormValues) => ({ ...current, exportUrl: e.target.value }))} />
-                    <span className="muted-text">Client-visible in Client Portal. Safe URLs only.</span>
-                  </label>
-                  <label className="field-span-2">
-                    Storage key reference - Optional
-                    <input maxLength={1024} placeholder="Internal private-storage reference, if already assigned elsewhere" value={deliverableForm.storageKey || ""} onChange={(e) => setDeliverableForm((current: AiDeliveryDeliverableFormValues) => ({ ...current, storageKey: e.target.value }))} />
-                    <span className="muted-text">Internal reference. Use per-record upload controls below.</span>
-                  </label>
-                  <label className="field-span-2">
-                    Packaging notes - Optional
-                    <textarea maxLength={4000} placeholder="Internal QA notes, packaging context, or revision details for the admin team" rows={3} value={deliverableForm.notes || ""} onChange={(e) => setDeliverableForm((current: AiDeliveryDeliverableFormValues) => ({ ...current, notes: e.target.value }))} />
-                    <span className="muted-text">Admin and review placeholders only.</span>
-                  </label>
-                </div>
-                <div className="modal-footer ai-delivery-modal-footer">
-                  <button className="ghost-action" disabled={deliverablesSaving} onClick={closeDeliverables} type="button">Close</button>
-                  <button className="ghost-action" disabled={deliverablesSaving} onClick={() => { setDeliverableEditorId(null); setDeliverableForm({ contentDraftId: null, articleImageId: null, title: "", description: null, deliveryType: "CONTENT_PACKAGE", status: "DRAFT", exportUrl: null, storageKey: null, notes: null, isArchived: false }); }} type="button">New deliverable</button>
-                  <button className="primary-action" disabled={deliverablesSaving || !(deliverableForm.title || "").trim()} onClick={() => void saveDeliverable(openDeliverablesProject.id)} type="button">{deliverablesSaving ? "Saving" : deliverableEditorId ? "Save deliverable" : "Create deliverable"}</button>
-                  {activeDeliverableRecord && !activeDeliverableRecord.isArchived ? (
-                    <button className="secondary-action" disabled={deliverablesSaving || activeDeliverableRecord.status === "READY"} onClick={() => void markDeliverableReady(openDeliverablesProject.id, activeDeliverableRecord.id)} type="button">Mark ready</button>
-                  ) : null}
-                  {activeDeliverableRecord && !activeDeliverableRecord.isArchived ? (
-                    <button className="secondary-action" disabled={deliverablesSaving || !["READY", "ACCEPTED", "DELIVERED"].includes(activeDeliverableRecord.status)} onClick={() => void requestDeliverableRevision(openDeliverablesProject.id, activeDeliverableRecord.id)} type="button">Request revision</button>
-                  ) : null}
-                  {activeDeliverableRecord && !activeDeliverableRecord.isArchived ? (
-                    <button className="secondary-action" disabled={deliverablesSaving || !["READY", "DELIVERED"].includes(activeDeliverableRecord.status)} onClick={() => void acceptDeliverable(openDeliverablesProject.id, activeDeliverableRecord.id)} type="button">Internal accept</button>
-                  ) : null}
-                  {activeDeliverableRecord?.isArchived ? (
-                    <button className="secondary-action" disabled={deliverablesSaving} onClick={() => void restoreDeliverable(openDeliverablesProject.id, activeDeliverableRecord.id)} type="button">Restore deliverable</button>
-                  ) : null}
-                </div>
-              </section>
-
-              <section className="field-panel ai-delivery-section-compact">
-                <h3>Website publishing workflow (draft-only handoff)</h3>
-                <AiDeliveryInlineNotice>
-                  Prepare the client WordPress draft payload here. This flow is draft-only in the current block; live publish remains deferred unless a separately approved block enables <code>WORDPRESS_PUBLISH_ENABLED=true</code>.
-                </AiDeliveryInlineNotice>
-                <AiDeliveryInlineNotice>
-                  <strong>Context readiness:</strong>{" "}
-                  {deliverableLinkedDraftRecord && deliverableLinkedDraftRecord.status === "APPROVED" && deliverableReadinessBlockers.length === 0
-                    ? "Linked draft and package readiness are sufficient for a draft-only WordPress handoff."
-                    : "Linked draft is missing, not approved, or package readiness blockers exist. Resolve these before treating any WordPress payload as draft-prep eligible."}
-                </AiDeliveryInlineNotice>
-                <AiDeliveryInlineNotice>
-                  No prepared WordPress draft is final client copy. Compliance review and admin review must pass before final archive or client delivery.
-                </AiDeliveryInlineNotice>
-                {deliverablePublicationTargets.length === 0 ? (
-                  <AiDeliveryInlineEmpty>No publication targets for this client yet. Add one in Client Hub before website publishing.</AiDeliveryInlineEmpty>
-                ) : (
-                  <>
-                    <label>
-                      Publication target
-                      <select
-                        onChange={(event) => setDeliverablePublicationTargetId(event.target.value)}
-                        value={deliverablePublicationTargetId}
-                      >
-                        {deliverablePublicationTargets.map((target) => (
-                          <option key={target.id} value={target.id}>
-                            {target.label} ({target.siteUrl}){target.isDefault ? " — default" : ""}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <dl className="brief-grid brief-grid-spaced-top">
-                      <div>
-                        <dt>Selected site</dt>
-                        <dd>{selectedPublicationTarget?.siteUrl ?? "Not set"}</dd>
-                      </div>
-                      <div>
-                        <dt>Credentials</dt>
-                        <dd>
-                          {deliverablePublicationCredentialStatus?.configured ? (
-                            <StatusBadge status="CONFIGURED" />
-                          ) : (
-                            <StatusBadge status="NOT_CONFIGURED" />
-                          )}
-                        </dd>
-                      </div>
-                      <div>
-                        <dt>Encryption ready</dt>
-                        <dd>{deliverablePublicationCredentialStatus?.encryptionAvailable ? "Yes" : "No"}</dd>
-                      </div>
-                    </dl>
-                    {projectPublicationLogs.length > 0 ? (
-                      <div style={{ marginTop: "0.75rem" }}>
-                        <strong>Recent publication log</strong>
-                        <ul className="entity-list">
-                          {projectPublicationLogs.slice(0, 5).map((log) => (
-                            <li key={log.id}>
-                              <StatusBadge status={log.status} /> {log.action} — {log.siteUrlHost ?? "unknown host"} —{" "}
-                              {new Date(log.createdAt).toLocaleString()}
-                              {log.note ? ` — ${log.note}` : ""}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    ) : null}
-                  </>
-                )}
-              </section>
-
-              <section className="field-panel ai-delivery-section-compact">
-                <h3>Existing deliverables</h3>
-                <p className="muted-text">Active: {activeDeliverableCount} · Archived: {archivedDeliverableCount}</p>
-                {!deliverablesError && deliverables.length === 0 ? (
-                  <AiDeliveryInlineEmpty>No deliverables yet. Package approved assets when ready.</AiDeliveryInlineEmpty>
-                ) : null}
-                {visibleDeliverables.map((d) => {
-                  const latestPublicationLog = projectPublicationLogs.find((log) => log.deliverableId === d.id) ?? null;
-                  return (
-                  <article className="entity-card" key={d.id}>
-                    <div className="entity-card-header">
-                      <div>
-                        <StatusBadge status={formatDeliverableStatus(d.isArchived ? "ARCHIVED" : d.status)} />
-                        <h3>{d.title}</h3>
-                        <p>{formatEnumLabel(d.deliveryType)} - Updated {formatOptionalDate(d.updatedAt)}</p>
-                      </div>
-                      <div className="card-actions">
-                        <button className="ghost-action" disabled={deliverablesSaving} onClick={() => editDeliverable(d)} type="button">Edit</button>
-                        {!d.isArchived ? <button className="secondary-action" disabled={deliverablesSaving || d.status === "READY"} onClick={() => void markDeliverableReady(openDeliverablesProject.id, d.id)} type="button">Mark ready</button> : null}
-                        {!d.isArchived ? <button className="secondary-action" disabled={deliverablesSaving || !["READY", "ACCEPTED", "DELIVERED"].includes(d.status)} onClick={() => void requestDeliverableRevision(openDeliverablesProject.id, d.id)} type="button">Request revision</button> : null}
-                        {!d.isArchived ? <button className="secondary-action" disabled={deliverablesSaving || !["READY", "DELIVERED"].includes(d.status)} onClick={() => void acceptDeliverable(openDeliverablesProject.id, d.id)} type="button">Internal accept</button> : null}
-                        {!d.isArchived ? (
-                          <button className="secondary-action" disabled={deliverablesSaving || deliverableWordPressDraftTargetId === d.id} onClick={() => void prepareDeliverableWordPressDraft(openDeliverablesProject.id, d.id)} type="button">
-                            {deliverableWordPressDraftTargetId === d.id ? "Fetching..." : "Prepare WordPress draft"}
-                          </button>
-                        ) : null}
-                        {!d.isArchived ? (
-                          <button className="secondary-action" disabled={deliverablesSaving || deliverableWordPressPublishTargetId === d.id} onClick={() => requestWordPressPublish(openDeliverablesProject.id, d.id, d.title)} type="button">
-                            {deliverableWordPressPublishTargetId === d.id ? "Publishing..." : "Publish to WordPress"}
-                          </button>
-                        ) : null}
-                        {!d.isArchived ? (
-                          <button className="ghost-action" disabled={deliverablesSaving || deliverableGoogleDocExportTargetId === d.id} onClick={() => void exportDeliverableToGoogleDoc(openDeliverablesProject.id, d.id)} type="button">
-                            {deliverableGoogleDocExportTargetId === d.id ? "Exporting..." : "Export to Google Doc"}
-                          </button>
-                        ) : null}
-                        <button className="ghost-action" disabled={deliverablesSaving || deliverableReviewsLoading} onClick={() => void openDeliverableReviews(openDeliverablesProject.id, d.id)} type="button">Reviews</button>
-                        {!d.isArchived ? <button className="ghost-action" disabled={deliverablesSaving} onClick={() => void archiveDeliverable(openDeliverablesProject.id, d.id)} type="button">Archive</button> : null}
-                        {d.isArchived ? <button className="ghost-action" disabled={deliverablesSaving} onClick={() => void restoreDeliverable(openDeliverablesProject.id, d.id)} type="button">Restore</button> : null}
-                      </div>
-                    </div>
-                    <dl className="brief-grid">
-                      <div>
-                        <dt>Context readiness</dt>
-                        <dd>{d.contentDraft?.status === "APPROVED" ? "Ready — approved draft linked" : "Missing / blocked — approved draft required"}</dd>
-                      </div>
-                      <div>
-                        <dt>Linked content draft</dt>
-                        <dd>{d.contentDraft ? `${d.contentDraft.title} (${formatContentDraftStatus(d.contentDraft.status)})` : "Not linked"}</dd>
-                      </div>
-                      <div>
-                        <dt>Linked article image</dt>
-                        <dd>{d.articleImage ? `${d.articleImage.title} (${formatArticleImageStatus(d.articleImage.status)})` : "Not linked"}</dd>
-                      </div>
-                      <div>
-                        <dt>Export reference</dt>
-                        <dd>{d.exportUrl || "Not set"}</dd>
-                      </div>
-                      <div>
-                        <dt>Storage key reference</dt>
-                        <dd>{d.hasDocument ? "Private document stored" : "Not set"}</dd>
-                      </div>
-                      <div>
-                        <dt>Export / storage state</dt>
-                        <dd>{getDeliverableExportState(d)}</dd>
-                      </div>
-                      <div>
-                        <dt>Visibility</dt>
-                        <dd>{d.isArchived ? "Archived admin packaging record" : "Visible in active admin list only"}</dd>
-                      </div>
-                      <div>
-                        <dt>Private asset</dt>
-                        <dd>{d.hasDocument ? "Private asset stored" : "Not stored yet"}</dd>
-                      </div>
-                      <div>
-                        <dt>Status</dt>
-                        <dd><StatusBadge status={formatDeliverableStatus(d.isArchived ? "ARCHIVED" : d.status)} /></dd>
-                      </div>
-                      <div>
-                        <dt>Latest publication</dt>
-                        <dd>
-                          {latestPublicationLog
-                            ? `${latestPublicationLog.action} — ${latestPublicationLog.status}`
-                            : "No publication events yet"}
-                        </dd>
-                      </div>
-                      <div>
-                        <dt>Latest internal review</dt>
-                        <dd>
-                          {loadedDeliverableReviews[d.id] ? (
-                            (() => {
-                              const latestReview = getMostRecentReview(loadedDeliverableReviews[d.id]);
-                              return latestReview ? (
-                                <span>
-                                  <StatusBadge status={latestReview.status} /> {latestReview.reviewerName ? `by ${latestReview.reviewerName}` : "(no reviewer name)"} • {formatOptionalDate(latestReview.updatedAt)}
-                                </span>
-                              ) : "No review placeholders yet";
-                            })()
-                          ) : "Open Reviews to load review status."}
-                        </dd>
-                      </div>
-                      <div className="field-span-2">
-                        <dt>Notes</dt>
-                        <dd>{d.notes || "No notes"}</dd>
-                      </div>
-                    </dl>
-                    {deliverableWordPressDraftError && deliverableWordPressDraftError.recordId === d.id ? (
-                      <AiDeliveryInlineAlert message={deliverableWordPressDraftError.message} />
-                    ) : null}
-                    {deliverableWordPressDraft && deliverableWordPressDraft.recordId === d.id ? (
-                      <div className="field-panel">
-                        <h4>WordPress prepared draft</h4>
-                        <dl className="brief-grid">
-                          <div>
-                            <dt>Title</dt>
-                            <dd>{deliverableWordPressDraft.wordpressDraft.title}</dd>
-                          </div>
-                          <div>
-                            <dt>Source type</dt>
-                            <dd>{deliverableWordPressDraft.wordpressDraft.sourceType}</dd>
-                          </div>
-                          {deliverableWordPressDraft.wordpressDraft.slug ? (
-                            <div>
-                              <dt>Slug</dt>
-                              <dd>{deliverableWordPressDraft.wordpressDraft.slug}</dd>
-                            </div>
-                          ) : null}
-                          {deliverableWordPressDraft.wordpressDraft.publishGateStatus ? (
-                            <div>
-                              <dt>Publish gate</dt>
-                              <dd>
-                                <StatusBadge status={deliverableWordPressDraft.wordpressDraft.publishGateStatus} />
-                                {deliverableWordPressDraft.wordpressDraft.credentialConfigured === false
-                                  ? " · credentials not configured"
-                                  : ""}
-                              </dd>
-                            </div>
-                          ) : null}
-                          <div>
-                            <dt>Source ID</dt>
-                            <dd>{deliverableWordPressDraft.wordpressDraft.sourceId}</dd>
-                          </div>
-                          <div className="field-span-2">
-                            <dt>Body preview</dt>
-                            <dd>{formatPreview(deliverableWordPressDraft.wordpressDraft.body)}</dd>
-                          </div>
-                          <div className="field-span-2">
-                            <dt>Note</dt>
-                            <dd>{deliverableWordPressDraft.wordpressDraft.note}</dd>
-                          </div>
-                        </dl>
-                      </div>
-                    ) : null}
-                    {deliverableWordPressPublishError && deliverableWordPressPublishError.recordId === d.id ? (
-                      <AiDeliveryInlineAlert message={deliverableWordPressPublishError.message} />
-                    ) : null}
-                    {deliverableWordPressPublishResult && deliverableWordPressPublishResult.recordId === d.id ? (
-                      <div className="field-panel">
-                        <h4>WordPress publish result</h4>
-                       <dl className="brief-grid">
-                         <div>
-                           <dt>Provider status</dt>
-                           <dd><StatusBadge status={deliverableWordPressPublishResult.result.status} /></dd>
-                         </div>
-                         <div>
-                           <dt>External post ID</dt>
-                           <dd>{deliverableWordPressPublishResult.result.wordpressPostId || "Not returned"}</dd>
-                         </div>
-                         {deliverableWordPressPublishResult.result.wordpressPostUrl ? (
-                           <div className="field-span-2">
-                             <dt>Published URL</dt>
-                             <dd>
-                               <a href={deliverableWordPressPublishResult.result.wordpressPostUrl} rel="noreferrer" target="_blank">
-                                 {deliverableWordPressPublishResult.result.wordpressPostUrl}
-                               </a>
-                             </dd>
-                           </div>
-                         ) : null}
-                         <div className="field-span-2">
-                           <dt>Message</dt>
-                           <dd>
-                             {deliverableWordPressPublishResult.result.providerDisabledReason
-                               || deliverableWordPressPublishResult.result.errorMessage
-                               || (deliverableWordPressPublishResult.result.status === "published"
-                                 ? "Published to WordPress."
-                                 : deliverableWordPressPublishResult.result.status === "draft_prepared"
-                                   ? "Draft prepared locally — not published."
-                                   : deliverableWordPressPublishResult.result.status === "provider_disabled"
-                                     ? "Provider disabled — no external publish."
-                                     : deliverableWordPressPublishResult.result.ok
-                                       ? "Publish request finished."
-                                       : "Publish did not complete.")}
-                           </dd>
-                         </div>
-                       </dl>
-                      </div>
-                    ) : null}
-                    {deliverableGoogleDocExportError && deliverableGoogleDocExportError.recordId === d.id ? (
-                      <AiDeliveryInlineAlert message={deliverableGoogleDocExportError.message} />
-                    ) : null}
-                    {deliverableGoogleDocExportResult && deliverableGoogleDocExportResult.recordId === d.id ? (
-                      <div className="field-panel">
-                        <h4>Google Doc export result</h4>
-                        <dl className="brief-grid">
-                          <div>
-                            <dt>Provider status</dt>
-                            <dd><StatusBadge status={deliverableGoogleDocExportResult.result.providerStatus} /></dd>
-                          </div>
-                          <div>
-                            <dt>Export available</dt>
-                            <dd>{deliverableGoogleDocExportResult.result.hasGoogleDocExport ? "Yes" : "No"}</dd>
-                          </div>
-                          {deliverableGoogleDocExportResult.result.docTitle ? (
-                            <div>
-                              <dt>Document title</dt>
-                              <dd>{deliverableGoogleDocExportResult.result.docTitle}</dd>
-                            </div>
-                          ) : null}
-                          {deliverableGoogleDocExportResult.result.folderPath ? (
-                            <div>
-                              <dt>Folder path</dt>
-                              <dd>{deliverableGoogleDocExportResult.result.folderPath}</dd>
-                            </div>
-                          ) : null}
-                          <div className="field-span-2">
-                            <dt>Export link</dt>
-                            <dd>
-                              {deliverableGoogleDocExportResult.result.exportUrl
-                                ? <a href={deliverableGoogleDocExportResult.result.exportUrl} rel="noreferrer" target="_blank">Open in Google Docs</a>
-                                : (deliverableGoogleDocExportResult.result.providerDisabledReason || "Google Drive provider is not configured. Enable GOOGLE_DRIVE_EXPORT_ENABLED and provide service account credentials to activate.")}
-                            </dd>
-                          </div>
-                        </dl>
-                      </div>
-                    ) : null}
-                    {!d.isArchived ? (
-                      <div className="field-grid brief-grid-spaced-top">
-                        <label className="field-span-2">
-                          Private document upload - Optional
-                          <input
-                            accept=".pdf,image/png,image/jpeg,image/webp"
-                            onChange={(event) =>
-                              setDeliverableDocumentFiles((current) => ({
-                                ...current,
-                                [d.id]: event.target.files?.[0] ?? null
-                              }))
-                            }
-                            type="file"
-                          />
-                          <span className="muted-text">Private asset upload for this record.</span>
-                        </label>
-                      </div>
-                    ) : null}
-                    <div className="card-actions card-actions-spaced">
-                      {!d.isArchived ? (
-                        <button
-                          className="secondary-action"
-                          disabled={deliverablesSaving || !deliverableDocumentFiles[d.id]}
-                          onClick={() => void uploadDeliverableDocument(openDeliverablesProject.id, d.id)}
-                          type="button"
-                        >
-                          {deliverableUploadTargetId === d.id ? "Uploading" : "Upload private document"}
-                        </button>
-                      ) : null}
-                      {d.hasDocument ? (
-                        <button
-                          className="secondary-action"
-                          disabled={deliverableDownloadTargetId === d.id}
-                          onClick={() => void openDeliverableDocument(openDeliverablesProject.id, d.id)}
-                          type="button"
-                        >
-                          {deliverableDownloadTargetId === d.id ? "Opening" : "Open private document"}
-                        </button>
-                      ) : null}
-                    </div>
-                  </article>
-                  );
-                })}
-              </section>
-              {!selectedReviewDeliverable && deliverables.length > 0 ? (
-                <AiDeliveryInlineEmpty>Select Reviews on a deliverable to view or create admin/operator review placeholders.</AiDeliveryInlineEmpty>
-              ) : null}
-              {selectedReviewDeliverable ? (
-                <section className="field-panel ai-delivery-section-compact">
-                  <h3>Deliverable reviews: {selectedReviewDeliverable.title}</h3>
-                  <AiDeliveryInlineNotice>Add or update an internal review placeholder for QA tracking.</AiDeliveryInlineNotice>
-                  <dl className="brief-grid">
-                    <div>
-                      <dt>Deliverable status</dt>
-                      <dd><StatusBadge status={formatDeliverableStatus(selectedReviewDeliverable.isArchived ? "ARCHIVED" : selectedReviewDeliverable.status)} /></dd>
-                    </div>
-                    <div>
-                      <dt>Latest review status</dt>
-                      <dd>{latestSelectedReview ? <StatusBadge status={latestSelectedReview.status} /> : "No review placeholder yet"}</dd>
-                    </div>
-                    <div>
-                      <dt>Review placeholders</dt>
-                      <dd>{deliverableReviews.length}</dd>
-                    </div>
-                    <div>
-                      <dt>Last review update</dt>
-                      <dd>{latestSelectedReview ? formatOptionalDate(latestSelectedReview.updatedAt) : "Not set"}</dd>
-                    </div>
-                  </dl>
-                  {selectedReviewDeliverable.isArchived ? (
-                    <AiDeliveryInlineNotice>This deliverable is archived. Existing review placeholders remain visible for admin history.</AiDeliveryInlineNotice>
-                  ) : null}
-                  {deliverableReviewsLoading ? (
-                    <AiDeliveryInlineLoading label="Loading deliverable reviews" />
-                  ) : (
-                    <>
-                      {deliverableReviewsError ? <AiDeliveryInlineAlert message={deliverableReviewsError} title="Deliverable reviews unavailable" /> : null}
-                      <div className="field-grid field-grid-compact">
-                        <div className="field-span-2">
-                          <span>Deliverable context</span>
-                          <strong>{selectedReviewDeliverable.title}</strong>
-                          <span className="muted-text">Review placeholder for this deliverable only.</span>
-                        </div>
-                        <label>
-                          Review status - Required
-                          <select value={deliverableReviewForm.status} onChange={(event) => setDeliverableReviewForm((current) => ({ ...current, status: event.target.value }))}>
-                            {(["NOT_STARTED", "ADMIN_REVIEW", "CHANGES_REQUESTED", "APPROVED", "ARCHIVED"] as const).map((status) => <option key={status} value={status}>{formatEnumLabel(status)}</option>)}
-                          </select>
-                          <span className="muted-text">Current internal review status.</span>
-                        </label>
-                        <label>
-                          Reviewer name - Optional
-                          <input
-                            maxLength={255}
-                            placeholder="Admin reviewer or operator name"
-                            value={deliverableReviewForm.reviewerName}
-                            onChange={(event) => setDeliverableReviewForm((current) => ({ ...current, reviewerName: event.target.value }))}
-                          />
-                          <span className="muted-text">Admin-only.</span>
-                        </label>
-                        <label className="field-span-2">
-                          Review notes / change request - Optional
-                          <textarea
-                            maxLength={4000}
-                            placeholder="Change requests, approval notes, or internal review context"
-                            rows={3}
-                            value={deliverableReviewForm.reviewNotes}
-                            onChange={(event) => setDeliverableReviewForm((current) => ({ ...current, reviewNotes: event.target.value }))}
-                          />
-                          <span className="muted-text">Not shown to client.</span>
-                        </label>
-                      </div>
-                      <div className="modal-footer ai-delivery-modal-footer">
-                        <button className="ghost-action" disabled={deliverableReviewsSaving} onClick={closeDeliverables} type="button">Close</button>
-                        <button className="ghost-action" disabled={deliverableReviewsSaving} onClick={() => { setDeliverableReviewEditorId(null); setDeliverableReviewForm(emptyDeliverableReview()); }} type="button">New review placeholder</button>
-                        <button className="primary-action" disabled={deliverableReviewsSaving} onClick={() => void saveDeliverableReview(openDeliverablesProject.id)} type="button">
-                          {deliverableReviewsSaving ? "Saving" : deliverableReviewEditorId ? "Save review" : "Create review placeholder"}
-                        </button>
-                      </div>
-
-                      <h4>Existing review placeholders ({deliverableReviews.length})</h4>
-                      {!deliverableReviewsError && deliverableReviews.length === 0 ? (
-                        <AiDeliveryInlineEmpty>No review placeholders yet. Add one to continue internal QA.</AiDeliveryInlineEmpty>
-                      ) : null}
-                      {[...deliverableReviews].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()).map((review) => (
-                        <article className="entity-card" key={review.id}>
-                          <div className="entity-card-header">
-                            <div>
-                              <StatusBadge status={review.status} />
-                              <h3>{review.reviewerName || "Unnamed reviewer"}</h3>
-                              <p>Updated {formatOptionalDate(review.updatedAt)}</p>
-                            </div>
-                            <div className="card-actions">
-                              <button className="ghost-action" disabled={deliverableReviewsSaving} onClick={() => editDeliverableReview(review)} type="button">Edit review</button>
-                            </div>
-                          </div>
-                          <dl className="brief-grid">
-                            <div>
-                              <dt>Created</dt>
-                              <dd>{formatOptionalDate(review.createdAt)}</dd>
-                            </div>
-                            <div>
-                              <dt>Status</dt>
-                              <dd><StatusBadge status={review.status} /></dd>
-                            </div>
-                            <div>
-                              <dt>Reviewer</dt>
-                              <dd>{review.reviewerName || "Unnamed reviewer"}</dd>
-                            </div>
-                            <div className="field-span-2">
-                              <dt>Review notes</dt>
-                              <dd>{review.reviewNotes || "No review notes"}</dd>
-                            </div>
-                          </dl>
-                        </article>
-                      ))}
-                    </>
-                  )}
-                </section>
-              ) : null}
-            </div>
-          ) : <div>Project not found.</div>}
-        </Modal>
+        <AiDeliveryDeliverableModal
+          isOpen={Boolean(openDeliverablesId)}
+          onClose={closeDeliverables}
+          project={openDeliverablesProject}
+          loading={deliverablesLoading}
+          saving={deliverablesSaving}
+          error={deliverablesError}
+          actionGuidance={deliverableActionGuidance}
+          deliverables={deliverables}
+          visibleDeliverables={visibleDeliverables}
+          activeDeliverableCount={activeDeliverableCount}
+          archivedDeliverableCount={archivedDeliverableCount}
+          activeDeliverableRecord={activeDeliverableRecord}
+          deliverableEditorId={deliverableEditorId}
+          deliverableForm={deliverableForm}
+          onFormChange={setDeliverableForm}
+          onEditorIdChange={setDeliverableEditorId}
+          deliverableDraftOptions={deliverableDraftOptions}
+          deliverableArticleImageOptions={deliverableArticleImageOptions}
+          deliverableLinkedDraftRecord={deliverableLinkedDraftRecord}
+          deliverableLinkedImageRecord={deliverableLinkedImageRecord}
+          deliverableRelatedImages={deliverableRelatedImages}
+          deliverableHasRecordedReference={deliverableHasRecordedReference}
+          deliverableReadinessBlockers={deliverableReadinessBlockers}
+          deliverableDocumentFiles={deliverableDocumentFiles}
+          onDocumentFilesChange={setDeliverableDocumentFiles}
+          deliverableUploadTargetId={deliverableUploadTargetId}
+          deliverableDownloadTargetId={deliverableDownloadTargetId}
+          deliverableDownloadRefLoading={deliverableDownloadRefLoading}
+          deliverableDownloadRefError={deliverableDownloadRefError}
+          deliverableDownloadRef={deliverableDownloadRef}
+          deliverableWordPressDraftTargetId={deliverableWordPressDraftTargetId}
+          deliverableWordPressDraftError={deliverableWordPressDraftError}
+          deliverableWordPressDraft={deliverableWordPressDraft}
+          deliverableWordPressPublishTargetId={deliverableWordPressPublishTargetId}
+          deliverableWordPressPublishError={deliverableWordPressPublishError}
+          deliverableWordPressPublishResult={deliverableWordPressPublishResult}
+          deliverablePublicationTargets={deliverablePublicationTargets}
+          deliverablePublicationTargetId={deliverablePublicationTargetId}
+          onPublicationTargetIdChange={setDeliverablePublicationTargetId}
+          selectedPublicationTarget={selectedPublicationTarget}
+          deliverablePublicationCredentialStatus={deliverablePublicationCredentialStatus}
+          projectPublicationLogs={projectPublicationLogs}
+          deliverableGoogleDocExportTargetId={deliverableGoogleDocExportTargetId}
+          deliverableGoogleDocExportError={deliverableGoogleDocExportError}
+          deliverableGoogleDocExportResult={deliverableGoogleDocExportResult}
+          selectedReviewDeliverable={selectedReviewDeliverable}
+          selectedReviewDeliverableId={selectedReviewDeliverableId}
+          deliverableReviewsLoading={deliverableReviewsLoading}
+          deliverableReviewsSaving={deliverableReviewsSaving}
+          deliverableReviewsError={deliverableReviewsError}
+          deliverableReviews={deliverableReviews}
+          deliverableReviewEditorId={deliverableReviewEditorId}
+          deliverableReviewForm={deliverableReviewForm}
+          onReviewFormChange={setDeliverableReviewForm}
+          onReviewEditorIdChange={setDeliverableReviewEditorId}
+          latestSelectedReview={latestSelectedReview}
+          loadedDeliverableReviews={loadedDeliverableReviews}
+          formatDeliverableStatus={formatDeliverableStatus}
+          formatContentDraftStatus={formatContentDraftStatus}
+          formatArticleImageStatus={formatArticleImageStatus}
+          formatEnumLabel={formatEnumLabel}
+          formatOptionalDate={formatOptionalDate}
+          formatPreview={formatPreview}
+          formatStatusBreakdown={formatStatusBreakdown}
+          getDeliverableExportState={getDeliverableExportState}
+          getMostRecentReview={getMostRecentReview}
+          onEditDeliverable={editDeliverable}
+          onSaveDeliverable={(projectId) => void saveDeliverable(projectId)}
+          onMarkReady={(projectId, deliverableId) => void markDeliverableReady(projectId, deliverableId)}
+          onRequestRevision={(projectId, deliverableId) => void requestDeliverableRevision(projectId, deliverableId)}
+          onAccept={(projectId, deliverableId) => void acceptDeliverable(projectId, deliverableId)}
+          onArchive={(projectId, deliverableId) => void archiveDeliverable(projectId, deliverableId)}
+          onRestore={(projectId, deliverableId) => void restoreDeliverable(projectId, deliverableId)}
+          onUploadDocument={(projectId, deliverableId) => void uploadDeliverableDocument(projectId, deliverableId)}
+          onOpenDocument={(projectId, deliverableId) => void openDeliverableDocument(projectId, deliverableId)}
+          onFetchDownloadReference={(projectId, deliverableId) => void fetchDeliverableDownloadReference(projectId, deliverableId)}
+          onPrepareWordPressDraft={(projectId, deliverableId) => void prepareDeliverableWordPressDraft(projectId, deliverableId)}
+          onRequestWordPressPublish={requestWordPressPublish}
+          onExportGoogleDoc={(projectId, deliverableId) => void exportDeliverableToGoogleDoc(projectId, deliverableId)}
+          onOpenReviews={(projectId, deliverableId) => void openDeliverableReviews(projectId, deliverableId)}
+          onEditReview={editDeliverableReview}
+          onSaveReview={(projectId) => void saveDeliverableReview(projectId)}
+        />
       ) : null}
 
       {openArticleImagesId ? (
-        <Modal onClose={closeArticleImages} title="Image Production Planning">
-          {articleImagesLoading ? (
-            <AiDeliveryInlineLoading label="Loading article image requests" />
-          ) : openArticleImagesProject ? (
-            <div className="ai-delivery-modal-panel ai-delivery-article-images-panel stack gap-md">
-              {articleImagesError ? <AiDeliveryInlineAlert message={articleImagesError} title="Article image action blocked" /> : null}
-              <section className="field-panel ai-delivery-section-compact">
-                <h3>Image planning workflow</h3>
-                <AiDeliveryInlineNotice>{articleImageActionGuidance}</AiDeliveryInlineNotice>
-                {activeArticleImageRecord ? (
-                  <div className="field-panel">
-                    <h4>Current image status</h4>
-                    <dl className="brief-grid">
-                      <div>
-                        <dt>Status</dt>
-                        <dd>{formatArticleImageStatus(activeArticleImageRecord.status)}</dd>
-                      </div>
-                      <div>
-                        <dt>Linked content draft</dt>
-                        <dd>{activeArticleImageRecord.contentDraft?.title ?? "Not linked"}</dd>
-                      </div>
-                      <div>
-                        <dt>Preview image</dt>
-                        <dd>{activeArticleImageRecord.previewImageUrl || "Not set"}</dd>
-                      </div>
-                      <div>
-                        <dt>Final image</dt>
-                        <dd>{activeArticleImageRecord.finalImageUrl || "Not set"}</dd>
-                      </div>
-                      <div>
-                        <dt>Storage reference</dt>
-                        <dd>{activeArticleImageRecord.hasDocument ? "Private final asset stored" : "Not set"}</dd>
-                      </div>
-                      <div>
-                        <dt>Updated</dt>
-                        <dd>{formatOptionalDate(activeArticleImageRecord.updatedAt)}</dd>
-                      </div>
-                    </dl>
-                    {activeArticleImageRecord.hasDocument ? (
-                      <div className="panel-divider-top">
-                        <button
-                          className="secondary-action"
-                          disabled={articleImageDownloadRefLoading}
-                          onClick={() => void fetchArticleImageDownloadReference(openArticleImagesProject.id, activeArticleImageRecord.id)}
-                          type="button"
-                        >
-                          {articleImageDownloadRefLoading ? "Preparing download..." : "Download private image"}
-                        </button>
-                        {articleImageDownloadRefError && articleImageDownloadRefError.recordId === activeArticleImageRecord.id ? (
-                          <AiDeliveryInlineAlert
-                            message={articleImageDownloadRefError.message.includes("503") || articleImageDownloadRefError.message.includes("unconfigured") ? "Private image storage is not configured. Contact your administrator." : articleImageDownloadRefError.message}
-                            title="Download unavailable"
-                          />
-                        ) : null}
-                        {articleImageDownloadRef && articleImageDownloadRef.recordId === activeArticleImageRecord.id ? (
-                          articleImageDownloadRef.downloadUrl ? (
-                            <AiDeliveryInlineNotice>
-                              <strong>Download ready:</strong>{" "}
-                              <a href={articleImageDownloadRef.downloadUrl} target="_blank" rel="noopener noreferrer">Open private image</a>
-                              {articleImageDownloadRef.expiresSeconds ? <span className="muted-text"> (expires in {Math.floor(articleImageDownloadRef.expiresSeconds / 60)} min)</span> : null}
-                            </AiDeliveryInlineNotice>
-                          ) : (
-                            <AiDeliveryInlineAlert message="The image reference exists but storage is unavailable. Contact your administrator to configure storage." title="Storage not available" />
-                          )
-                        ) : null}
-                      </div>
-                    ) : null}
-                  </div>
-                ) : null}
-                {activeArticleImageRecord ? (
-                  <div className="field-panel">
-                    <h4>Packaging handoff</h4>
-                    <AiDeliveryInlineNotice>Hand off to deliverable packaging when linked draft and final references are ready. No generation, export, or client delivery from this section.</AiDeliveryInlineNotice>
-                    <dl className="brief-grid">
-                      <div>
-                        <dt>Linked draft</dt>
-                        <dd>{activeArticleImageRecord.contentDraft?.title ?? "Not linked"}</dd>
-                      </div>
-                      <div>
-                        <dt>Image readiness</dt>
-                        <dd>{formatArticleImageStatus(activeArticleImageRecord.status)}</dd>
-                      </div>
-                      <div>
-                        <dt>Preview reference</dt>
-                        <dd>{activeArticleImageRecord.previewImageUrl || "Not set"}</dd>
-                      </div>
-                      <div>
-                        <dt>Final reference</dt>
-                        <dd>{activeArticleImageRecord.finalImageUrl || (activeArticleImageRecord.hasDocument ? "private asset" : "") || "Not set"}</dd>
-                      </div>
-                    </dl>
-                    <div className="card-actions card-actions-spaced">
-                      <button
-                        className="ghost-action"
-                        disabled={articleImagesSaving}
-                        onClick={() => void handoffArticleImageToDeliverables(openArticleImagesProject.id, activeArticleImageRecord)}
-                        type="button"
-                      >
-                        Open deliverable packaging
-                      </button>
-                    </div>
-                  </div>
-                ) : null}
-                <div className="field-grid field-grid-compact">
-                  <label>
-                    Linked content draft - Required
-                    <select required value={articleImageForm.contentDraftId} onChange={(event) => setArticleImageForm((current) => ({ ...current, contentDraftId: event.target.value }))}>
-                      <option value="">Select draft</option>
-                      {articleImageDrafts.map((draftItem) => (
-                        <option key={draftItem.id} value={draftItem.id}>{draftItem.title} ({formatContentDraftStatus(draftItem.status)})</option>
-                      ))}
-                    </select>
-                    <span className="muted-text">Same-project content draft this image supports.</span>
-                  </label>
-                  <label>
-                    Status - Required
-                    <select value={articleImageForm.status} onChange={(event) => setArticleImageForm((current) => ({ ...current, status: event.target.value }))}>
-                      {(["DRAFT", "READY_FOR_GENERATION", "PREVIEW_READY", "CHANGES_REQUESTED", "APPROVED", "FINAL_READY", "ARCHIVED"] as const).map((status) => <option key={status} value={status}>{formatArticleImageStatus(status)}</option>)}
-                    </select>
-                    <span className="muted-text">Use action buttons for preview, approval, and final-ready handoff.</span>
-                  </label>
-                  <label className="field-span-2">
-                    Title - Required
-                    <input maxLength={255} required value={articleImageForm.title} onChange={(event) => setArticleImageForm((current) => ({ ...current, title: event.target.value }))} />
-                    <span className="muted-text">Working asset name for the linked article image.</span>
-                  </label>
-                  <label className="field-span-2">
-                    Prompt - Required
-                    <textarea maxLength={4000} required rows={4} value={articleImageForm.prompt} onChange={(event) => setArticleImageForm((current) => ({ ...current, prompt: event.target.value }))} />
-                    <span className="muted-text">Admin-only prompt. Not exposed to clients.</span>
-                  </label>
-                  <label className="field-span-2">
-                    Style notes - Optional
-                    <textarea maxLength={4000} rows={3} value={articleImageForm.styleNotes} onChange={(event) => setArticleImageForm((current) => ({ ...current, styleNotes: event.target.value }))} />
-                    <span className="muted-text">Internal visual direction only.</span>
-                  </label>
-                  <label>
-                    Preview image URL - Optional
-                    <input maxLength={2048} type="url" value={articleImageForm.previewImageUrl} onChange={(event) => setArticleImageForm((current) => ({ ...current, previewImageUrl: event.target.value }))} />
-                    <span className="muted-text">Manual admin preview reference.</span>
-                  </label>
-                  <label>
-                    Final image URL - Optional
-                    <input maxLength={2048} type="url" value={articleImageForm.finalImageUrl} onChange={(event) => setArticleImageForm((current) => ({ ...current, finalImageUrl: event.target.value }))} />
-                    <span className="muted-text">Manual admin final reference.</span>
-                  </label>
-                  <label className="field-span-2">
-                    Storage key reference - Optional
-                    <input maxLength={1024} value={articleImageForm.storageKey} onChange={(event) => setArticleImageForm((current) => ({ ...current, storageKey: event.target.value }))} />
-                    <span className="muted-text">Internal storage reference. Use per-record upload controls below.</span>
-                  </label>
-                  <label className="field-span-2">
-                    Notes - Optional
-                    <textarea maxLength={4000} rows={3} value={articleImageForm.notes} onChange={(event) => setArticleImageForm((current) => ({ ...current, notes: event.target.value }))} />
-                    <span className="muted-text">Admin-only review and handoff notes.</span>
-                  </label>
-                </div>
-                <div className="modal-footer ai-delivery-modal-footer">
-                  <button className="ghost-action" disabled={articleImagesSaving} onClick={closeArticleImages} type="button">Close</button>
-                  <button className="ghost-action" disabled={articleImagesSaving} onClick={() => { setArticleImageEditorId(null); setArticleImageForm((current) => ({ ...emptyArticleImage(), contentDraftId: current.contentDraftId })); }} type="button">New image request</button>
-                  <button className="primary-action" disabled={articleImagesSaving || !articleImageForm.contentDraftId || !articleImageForm.title.trim() || !articleImageForm.prompt.trim()} onClick={() => void saveArticleImage(openArticleImagesProject.id)} type="button">
-                    {articleImagesSaving ? "Saving" : articleImageEditorId ? "Save image request" : "Create image request"}
-                  </button>
-                  {activeArticleImageRecord && !activeArticleImageRecord.isArchived ? (
-                    <button
-                      className="secondary-action"
-                      disabled={articleImagesSaving || !(activeArticleImageRecord.previewImageUrl ?? "").trim() || activeArticleImageRecord.status === "PREVIEW_READY"}
-                      onClick={() => void markArticleImagePreviewReady(openArticleImagesProject.id, activeArticleImageRecord.id)}
-                      type="button"
-                    >
-                      Mark preview ready
-                    </button>
-                  ) : null}
-                  {activeArticleImageRecord && !activeArticleImageRecord.isArchived ? (
-                    <button
-                      className="secondary-action"
-                      disabled={articleImagesSaving || !((activeArticleImageRecord.previewImageUrl ?? "").trim() || (activeArticleImageRecord.finalImageUrl ?? "").trim())}
-                      onClick={() => void requestArticleImageChanges(openArticleImagesProject.id, activeArticleImageRecord.id)}
-                      type="button"
-                    >
-                      Request changes
-                    </button>
-                  ) : null}
-                  {activeArticleImageRecord && !activeArticleImageRecord.isArchived ? (
-                    <button
-                      className="secondary-action"
-                      disabled={articleImagesSaving || !((activeArticleImageRecord.previewImageUrl ?? "").trim() || (activeArticleImageRecord.finalImageUrl ?? "").trim()) || activeArticleImageRecord.status === "APPROVED"}
-                      onClick={() => void approveArticleImage(openArticleImagesProject.id, activeArticleImageRecord.id)}
-                      type="button"
-                    >
-                      Approve image
-                    </button>
-                  ) : null}
-                  {activeArticleImageRecord && !activeArticleImageRecord.isArchived ? (
-                    <button
-                      className="secondary-action"
-                      disabled={articleImagesSaving || !((activeArticleImageRecord.finalImageUrl ?? "").trim() || activeArticleImageRecord.hasDocument) || activeArticleImageRecord.status === "FINAL_READY"}
-                      onClick={() => void markArticleImageFinalReady(openArticleImagesProject.id, activeArticleImageRecord.id)}
-                      type="button"
-                    >
-                      Mark final ready
-                    </button>
-                  ) : null}
-                </div>
-              </section>
-
-              <section className="field-panel ai-delivery-section-compact">
-                <h3>Existing image production records</h3>
-                {articleImages.length === 0 ? <AiDeliveryInlineEmpty>No article image records yet. Add an image request after a content draft is ready.</AiDeliveryInlineEmpty> : null}
-                {articleImages.map((image) => (
-                  <article className="entity-card" key={image.id}>
-                    <div className="entity-card-header">
-                      <div>
-                        <StatusBadge status={formatArticleImageStatus(image.isArchived ? "ARCHIVED" : image.status)} />
-                        <h3>{image.title}</h3>
-                        <p>{image.contentDraft ? `Linked to draft: ${image.contentDraft.title}` : "No linked draft"}</p>
-                      </div>
-                      <div className="card-actions">
-                        <button className="ghost-action" disabled={articleImagesSaving} onClick={() => editArticleImage(image)} type="button">Edit</button>
-                        {!image.isArchived ? <button className="secondary-action" disabled={articleImagesSaving || !image.previewImageUrl || image.status === "PREVIEW_READY"} onClick={() => void markArticleImagePreviewReady(openArticleImagesProject.id, image.id)} type="button">Mark preview ready</button> : null}
-                        {!image.isArchived ? <button className="secondary-action" disabled={articleImagesSaving || !(image.previewImageUrl || image.finalImageUrl)} onClick={() => void requestArticleImageChanges(openArticleImagesProject.id, image.id)} type="button">Request changes</button> : null}
-                        {!image.isArchived ? <button className="secondary-action" disabled={articleImagesSaving || !(image.previewImageUrl || image.finalImageUrl) || image.status === "APPROVED"} onClick={() => void approveArticleImage(openArticleImagesProject.id, image.id)} type="button">Approve image</button> : null}
-                        {!image.isArchived ? <button className="secondary-action" disabled={articleImagesSaving || !(image.finalImageUrl || image.hasDocument) || image.status === "FINAL_READY"} onClick={() => void markArticleImageFinalReady(openArticleImagesProject.id, image.id)} type="button">Mark final ready</button> : null}
-                        {!image.isArchived ? <button className="ghost-action" disabled={articleImagesSaving} onClick={() => void archiveArticleImage(openArticleImagesProject.id, image.id)} type="button">Archive</button> : null}
-                      </div>
-                    </div>
-                    <dl className="brief-grid">
-                      <div>
-                        <dt>Status</dt>
-                        <dd>{formatArticleImageStatus(image.status)}</dd>
-                      </div>
-                      <div>
-                        <dt>Preview URL</dt>
-                        <dd>{image.previewImageUrl || "Not set"}</dd>
-                      </div>
-                      <div>
-                        <dt>Final URL</dt>
-                        <dd>{image.finalImageUrl || "Not set"}</dd>
-                      </div>
-                      <div>
-                        <dt>Storage key</dt>
-                        <dd>{image.hasDocument ? "Private final asset stored" : "Not set"}</dd>
-                      </div>
-                      <div>
-                        <dt>Updated</dt>
-                        <dd>{formatOptionalDate(image.updatedAt)}</dd>
-                      </div>
-                      <div>
-                        <dt>Private asset</dt>
-                        <dd>{image.hasDocument ? "Private final asset stored" : "Not stored yet"}</dd>
-                      </div>
-                      <div className="field-span-2">
-                        <dt>Style notes</dt>
-                        <dd>{image.styleNotes || "No style notes"}</dd>
-                      </div>
-                      <div className="field-span-2">
-                        <dt>Prompt</dt>
-                        <dd>{image.prompt}</dd>
-                      </div>
-                      <div className="field-span-2">
-                        <dt>Notes</dt>
-                        <dd>{image.notes || "No notes"}</dd>
-                      </div>
-                    </dl>
-                    {!image.isArchived ? (
-                      <div className="field-grid brief-grid-spaced-top">
-                        <label className="field-span-2">
-                          Private final image upload - Optional
-                          <input
-                            accept="image/png,image/jpeg,image/webp"
-                            onChange={(event) =>
-                              setArticleImageFinalAssetFiles((current) => ({
-                                ...current,
-                                [image.id]: event.target.files?.[0] ?? null
-                              }))
-                            }
-                            type="file"
-                          />
-                          <span className="muted-text">Private final asset upload for this record.</span>
-                        </label>
-                      </div>
-                    ) : null}
-                    <div className="card-actions card-actions-spaced">
-                      {!image.isArchived ? (
-                        <button
-                          className="secondary-action"
-                          disabled={articleImagesSaving || !articleImageFinalAssetFiles[image.id]}
-                          onClick={() => void uploadArticleImageFinalAsset(openArticleImagesProject.id, image.id)}
-                          type="button"
-                        >
-                          {articleImageUploadTargetId === image.id ? "Uploading" : "Upload final asset"}
-                        </button>
-                      ) : null}
-                      {image.hasDocument ? (
-                        <button
-                          className="secondary-action"
-                          disabled={articleImageDownloadTargetId === image.id}
-                          onClick={() => void openArticleImageDownload(openArticleImagesProject.id, image.id)}
-                          type="button"
-                        >
-                          {articleImageDownloadTargetId === image.id ? "Opening" : "Open private final asset"}
-                        </button>
-                      ) : null}
-                    </div>
-                  </article>
-                ))}
-              </section>
-            </div>
-          ) : <div>Project not found.</div>}
-        </Modal>
+        <AiDeliveryImageApprovalModal
+          isOpen={Boolean(openArticleImagesId)}
+          onClose={closeArticleImages}
+          project={openArticleImagesProject}
+          loading={articleImagesLoading}
+          saving={articleImagesSaving}
+          error={articleImagesError}
+          actionGuidance={articleImageActionGuidance}
+          articleImages={articleImages}
+          articleImageDrafts={articleImageDrafts}
+          form={articleImageForm}
+          onFormChange={setArticleImageForm}
+          editorId={articleImageEditorId}
+          activeRecord={activeArticleImageRecord}
+          finalAssetFiles={articleImageFinalAssetFiles}
+          onFinalAssetFilesChange={setArticleImageFinalAssetFiles}
+          uploadTargetId={articleImageUploadTargetId}
+          downloadTargetId={articleImageDownloadTargetId}
+          downloadRefLoading={articleImageDownloadRefLoading}
+          downloadRefError={articleImageDownloadRefError}
+          downloadRef={articleImageDownloadRef}
+          formatArticleImageStatus={formatArticleImageStatus}
+          formatContentDraftStatus={formatContentDraftStatus}
+          formatOptionalDate={formatOptionalDate}
+          onNewImageRequest={() => {
+            setArticleImageEditorId(null);
+            setArticleImageForm((current) => ({ ...emptyArticleImage(), contentDraftId: current.contentDraftId }));
+          }}
+          onSave={(projectId) => void saveArticleImage(projectId)}
+          onEdit={editArticleImage}
+          onArchive={(projectId, imageId) => void archiveArticleImage(projectId, imageId)}
+          onMarkPreviewReady={(projectId, imageId) => void markArticleImagePreviewReady(projectId, imageId)}
+          onRequestChanges={(projectId, imageId) => void requestArticleImageChanges(projectId, imageId)}
+          onApprove={(projectId, imageId) => void approveArticleImage(projectId, imageId)}
+          onMarkFinalReady={(projectId, imageId) => void markArticleImageFinalReady(projectId, imageId)}
+          onUploadFinalAsset={(projectId, imageId) => void uploadArticleImageFinalAsset(projectId, imageId)}
+          onOpenPrivateFinalAsset={(projectId, imageId) => void openArticleImageDownload(projectId, imageId)}
+          onFetchDownloadReference={(projectId, imageId) => void fetchArticleImageDownloadReference(projectId, imageId)}
+          onHandoffToDeliverables={(projectId, image) => void handoffArticleImageToDeliverables(projectId, image)}
+        />
       ) : null}
       {openMonthlyReportId ? (() => {
         const monthlyProject = projects.find((p) => p.id === openMonthlyReportId) ?? null;

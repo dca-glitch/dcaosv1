@@ -1,0 +1,390 @@
+/* AI Delivery lane modals and workflow history — Phase 4 */
+
+.ai-delivery-modal-panel {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.ai-delivery-modal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--ds-divider, rgba(255, 255, 255, 0.06));
+}
+
+.ai-delivery-inline-notice {
+  margin: 0;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--ds-radius-lg, 8px);
+  border: 1px solid var(--ds-divider, rgba(255, 255, 255, 0.06));
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.ai-delivery-inline-empty {
+  margin: 0;
+}
+
+.ai-run-review-modal__header-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.ai-run-review-modal__eyebrow {
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.ai-run-review-log {
+  margin: 0;
+  max-height: 16rem;
+  overflow: auto;
+  padding: 0.75rem;
+  border-radius: var(--ds-radius-lg, 8px);
+  border: 1px solid var(--ds-divider, rgba(255, 255, 255, 0.06));
+  background: var(--ds-surface-inset, #08090f);
+}
+
+.ai-delivery-workflow-history {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.ai-delivery-workflow-history__item {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.65rem;
+  align-items: flex-start;
+}
+
+.ai-delivery-workflow-history__dot {
+  width: 7px;
+  height: 7px;
+  margin-top: 0.45rem;
+  border-radius: 9999px;
+  background: #818cf8;
+  box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.15);
+}
+
+.ai-delivery-workflow-history__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.ai-delivery-workflow-history__status {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ds-text-primary, var(--text));
+}
+
+.ai-delivery-workflow-history__time {
+  font-size: 11px;
+  color: var(--ds-text-muted, var(--muted));
+  font-family: var(--ds-font-mono, ui-monospace, monospace);
+}
+
+.ai-delivery-workflow-history__meta {
+  margin: 0.25rem 0 0.5rem;
+  word-break: break-word;
+}
+
+.ai-delivery-lane-modal .entity-card.is-selected {
+  outline: 1px solid rgba(129, 140, 248, 0.45);
+}
+
+@media (max-width: 768px) {
+  .ai-delivery-modal-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+/*
+ * Shared sticky footer + wrap baseline for P4B/E/F/G/I/K panels.
+ * Modal-specific exceptions (field grids, entity-card actions, summary grids) stay below.
+ */
+.ai-delivery-deliverables-panel,
+.ai-delivery-content-plan-panel,
+.ai-delivery-brief-panel,
+.ai-delivery-content-drafts-panel,
+.ai-delivery-article-images-panel,
+.ai-delivery-research-editor {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.ai-delivery-deliverables-panel .modal-footer,
+.ai-delivery-deliverables-panel .ai-delivery-modal-footer,
+.ai-delivery-content-plan-panel .modal-footer,
+.ai-delivery-content-plan-panel .ai-delivery-modal-footer,
+.ai-delivery-brief-panel .modal-footer,
+.ai-delivery-brief-panel .ai-delivery-modal-footer,
+.ai-delivery-content-drafts-panel .modal-footer,
+.ai-delivery-content-drafts-panel .ai-delivery-modal-footer,
+.ai-delivery-article-images-panel .modal-footer,
+.ai-delivery-article-images-panel .ai-delivery-modal-footer,
+.ai-delivery-research-editor .modal-footer,
+.ai-delivery-research-editor .ai-delivery-modal-footer {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  margin-top: 0.75rem;
+  padding: 0.75rem 0 0.15rem;
+  background: linear-gradient(
+    to top,
+    var(--ds-surface, #0b0d14) 70%,
+    rgba(11, 13, 20, 0.92) 100%
+  );
+  border-top: 1px solid var(--ds-divider, rgba(255, 255, 255, 0.06));
+}
+
+.ai-delivery-deliverables-panel .modal-footer > button,
+.ai-delivery-deliverables-panel .ai-delivery-modal-footer > button,
+.ai-delivery-content-plan-panel .modal-footer > button,
+.ai-delivery-content-plan-panel .ai-delivery-modal-footer > button,
+.ai-delivery-brief-panel .modal-footer > button,
+.ai-delivery-brief-panel .ai-delivery-modal-footer > button,
+.ai-delivery-content-drafts-panel .modal-footer > button,
+.ai-delivery-content-drafts-panel .ai-delivery-modal-footer > button,
+.ai-delivery-article-images-panel .modal-footer > button,
+.ai-delivery-article-images-panel .ai-delivery-modal-footer > button,
+.ai-delivery-research-editor .modal-footer > button,
+.ai-delivery-research-editor .ai-delivery-modal-footer > button {
+  max-width: 100%;
+}
+
+@media (max-width: 768px) {
+  .ai-delivery-deliverables-panel .modal-footer,
+  .ai-delivery-deliverables-panel .ai-delivery-modal-footer,
+  .ai-delivery-content-plan-panel .modal-footer,
+  .ai-delivery-content-plan-panel .ai-delivery-modal-footer,
+  .ai-delivery-brief-panel .modal-footer,
+  .ai-delivery-brief-panel .ai-delivery-modal-footer,
+  .ai-delivery-content-drafts-panel .modal-footer,
+  .ai-delivery-content-drafts-panel .ai-delivery-modal-footer,
+  .ai-delivery-article-images-panel .modal-footer,
+  .ai-delivery-article-images-panel .ai-delivery-modal-footer,
+  .ai-delivery-research-editor .modal-footer,
+  .ai-delivery-research-editor .ai-delivery-modal-footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .ai-delivery-deliverables-panel .modal-footer > button,
+  .ai-delivery-deliverables-panel .ai-delivery-modal-footer > button,
+  .ai-delivery-content-plan-panel .modal-footer > button,
+  .ai-delivery-content-plan-panel .ai-delivery-modal-footer > button,
+  .ai-delivery-brief-panel .modal-footer > button,
+  .ai-delivery-brief-panel .ai-delivery-modal-footer > button,
+  .ai-delivery-content-drafts-panel .modal-footer > button,
+  .ai-delivery-content-drafts-panel .ai-delivery-modal-footer > button,
+  .ai-delivery-article-images-panel .modal-footer > button,
+  .ai-delivery-article-images-panel .ai-delivery-modal-footer > button,
+  .ai-delivery-research-editor .modal-footer > button,
+  .ai-delivery-research-editor .ai-delivery-modal-footer > button {
+    width: 100%;
+  }
+}
+
+/* P4B Deliverable Detail — wrap + entity-card action max-width */
+.ai-delivery-deliverables-panel dd,
+.ai-delivery-deliverables-panel a,
+.ai-delivery-deliverables-panel .entity-card h4,
+.ai-delivery-deliverables-panel .entity-card p {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.ai-delivery-deliverables-panel .entity-card .ghost-action,
+.ai-delivery-deliverables-panel .entity-card .secondary-action,
+.ai-delivery-deliverables-panel .entity-card .primary-action {
+  max-width: 100%;
+}
+
+/* P4F Content Plan — wrap + field/summary grid mobile */
+.ai-delivery-content-plan-panel dd,
+.ai-delivery-content-plan-panel a,
+.ai-delivery-content-plan-panel .field-grid input,
+.ai-delivery-content-plan-panel .field-grid textarea,
+.ai-delivery-content-plan-panel strong,
+.ai-delivery-content-plan-panel .muted-text {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.ai-delivery-content-plan-panel .field-grid {
+  min-width: 0;
+}
+
+@media (max-width: 768px) {
+  .ai-delivery-content-plan-panel .field-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .ai-delivery-content-plan-panel .summary-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* P4E Brief Form/View — wrap + textarea + brief-grid mobile */
+.ai-delivery-brief-panel dd,
+.ai-delivery-brief-panel textarea,
+.ai-delivery-brief-panel .pre-wrap-block,
+.ai-delivery-brief-panel .muted-text {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.ai-delivery-brief-panel textarea {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  min-height: 4.5rem;
+}
+
+@media (max-width: 768px) {
+  .ai-delivery-brief-panel .brief-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* P4G Content Draft — wrap + field/textarea + card-actions mobile */
+.ai-delivery-content-drafts-panel dd,
+.ai-delivery-content-drafts-panel a,
+.ai-delivery-content-drafts-panel .entity-card h3,
+.ai-delivery-content-drafts-panel .entity-card h4,
+.ai-delivery-content-drafts-panel .entity-card p,
+.ai-delivery-content-drafts-panel .field-grid input,
+.ai-delivery-content-drafts-panel .field-grid textarea,
+.ai-delivery-content-drafts-panel .muted-text {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.ai-delivery-content-drafts-panel .field-grid {
+  min-width: 0;
+}
+
+.ai-delivery-content-drafts-panel textarea {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  min-height: 4.5rem;
+}
+
+.ai-delivery-content-drafts-panel .entity-card .ghost-action,
+.ai-delivery-content-drafts-panel .entity-card .secondary-action,
+.ai-delivery-content-drafts-panel .entity-card .primary-action {
+  max-width: 100%;
+}
+
+@media (max-width: 768px) {
+  .ai-delivery-content-drafts-panel .field-grid,
+  .ai-delivery-content-drafts-panel .brief-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .ai-delivery-content-drafts-panel .card-actions {
+    flex-wrap: wrap;
+  }
+}
+
+/* P4I Article Images — wrap + field/textarea + card-actions mobile */
+.ai-delivery-article-images-panel dd,
+.ai-delivery-article-images-panel a,
+.ai-delivery-article-images-panel .entity-card h3,
+.ai-delivery-article-images-panel .entity-card h4,
+.ai-delivery-article-images-panel .entity-card p,
+.ai-delivery-article-images-panel .field-grid input,
+.ai-delivery-article-images-panel .field-grid textarea,
+.ai-delivery-article-images-panel .muted-text {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.ai-delivery-article-images-panel .field-grid {
+  min-width: 0;
+}
+
+.ai-delivery-article-images-panel textarea {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  min-height: 4.5rem;
+}
+
+.ai-delivery-article-images-panel .entity-card .ghost-action,
+.ai-delivery-article-images-panel .entity-card .secondary-action,
+.ai-delivery-article-images-panel .entity-card .primary-action {
+  max-width: 100%;
+}
+
+@media (max-width: 768px) {
+  .ai-delivery-article-images-panel .field-grid,
+  .ai-delivery-article-images-panel .brief-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .ai-delivery-article-images-panel .card-actions {
+    flex-wrap: wrap;
+  }
+}
+
+/* P4K Research / Sources — wrap + field/textarea + card-actions mobile */
+.ai-delivery-research-editor dd,
+.ai-delivery-research-editor a,
+.ai-delivery-research-editor .entity-card h3,
+.ai-delivery-research-editor .entity-card h4,
+.ai-delivery-research-editor .entity-card p,
+.ai-delivery-research-editor .field-grid input,
+.ai-delivery-research-editor .field-grid textarea,
+.ai-delivery-research-editor .muted-text {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.ai-delivery-research-editor .field-grid {
+  min-width: 0;
+}
+
+.ai-delivery-research-editor textarea {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  min-height: 4.5rem;
+}
+
+.ai-delivery-research-editor .entity-card .ghost-action,
+.ai-delivery-research-editor .entity-card .secondary-action,
+.ai-delivery-research-editor .entity-card .primary-action {
+  max-width: 100%;
+}
+
+@media (max-width: 768px) {
+  .ai-delivery-research-editor .field-grid,
+  .ai-delivery-research-editor .brief-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .ai-delivery-research-editor .card-actions {
+    flex-wrap: wrap;
+  }
+}
