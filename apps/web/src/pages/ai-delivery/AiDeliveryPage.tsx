@@ -22,6 +22,7 @@ import type {
   AiDeliveryMonthlyReportMiContext
 } from "./MonthlyReportPanel";
 import type { MarketIntelligenceHandoffSummary, AiDeliveryMiSummaryContextSummary, AiDeliveryRevenueChainReadinessResponse } from "@dca-os-v1/shared";
+import { formatAiDeliveryDeliverableStatusLabel } from "@dca-os-v1/shared";
 
 export type AiDeliveryBriefSummary = {
   id: string;
@@ -781,13 +782,9 @@ function formatArticleImageStatus(value?: string | null): string {
 }
 
 function formatDeliverableStatus(value?: string | null): string {
-  if (!value || value === "DRAFT") return "Draft / packaging";
-  if (value === "READY") return "Ready for final handoff";
-  if (value === "REVISION_REQUESTED") return "Revision requested";
-  if (value === "ACCEPTED") return "Internally accepted";
-  if (value === "DELIVERED") return "Delivered record";
-  if (value === "ARCHIVED") return "Archived";
-  return formatEnumLabel(value);
+  // Delegates to the canonical shared status policy so admin, client portal, and API stay aligned.
+  // Unknown/legacy statuses are humanized rather than silently coerced to DRAFT.
+  return formatAiDeliveryDeliverableStatusLabel(value);
 }
 
 function formatEnumLabel(value?: string | null): string {
@@ -5133,11 +5130,20 @@ export function AiDeliveryPage({
                     <span className="muted-text">Platform-neutral classification.</span>
                   </label>
                   <label>
-                    Status - Required
-                    <select value={deliverableForm.status || "DRAFT"} onChange={(e) => setDeliverableForm((current: AiDeliveryDeliverableFormValues) => ({ ...current, status: e.target.value }))}>
-                      {(["DRAFT","READY","DELIVERED","REVISION_REQUESTED","ACCEPTED","ARCHIVED"] as const).map((s) => <option key={s} value={s}>{s}</option>)}
-                    </select>
-                    <span className="muted-text">Use action buttons for ready, revision, accept, and restore.</span>
+                    Status - {deliverableEditorId ? "Workflow-controlled" : "Required"}
+                    {deliverableEditorId ? (
+                      <>
+                        <input type="text" readOnly value={formatDeliverableStatus(activeDeliverableRecord?.isArchived ? "ARCHIVED" : deliverableForm.status)} />
+                        <span className="muted-text">Status is driven by workflow actions (mark ready, send for client review, accept, archive/restore). Saving other fields will not change it.</span>
+                      </>
+                    ) : (
+                      <>
+                        <select value={deliverableForm.status || "DRAFT"} onChange={(e) => setDeliverableForm((current: AiDeliveryDeliverableFormValues) => ({ ...current, status: e.target.value }))}>
+                          {(["DRAFT","READY","DELIVERED","REVISION_REQUESTED","ACCEPTED","ARCHIVED"] as const).map((s) => <option key={s} value={s}>{s}</option>)}
+                        </select>
+                        <span className="muted-text">Use action buttons for ready, revision, accept, and restore.</span>
+                      </>
+                    )}
                   </label>
                   <label>
                     Export reference - Optional

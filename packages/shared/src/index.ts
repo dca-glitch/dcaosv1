@@ -1,4 +1,5 @@
 export * from "./ai-delivery-revenue-chain";
+export * from "./ai-delivery-deliverable-status";
 export * from "./api";
 export * from "./crud";
 export * from "./dashboard";

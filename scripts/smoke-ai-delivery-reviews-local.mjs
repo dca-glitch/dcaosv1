@@ -690,7 +690,7 @@ async function runAiDeliveryApiRegression(token, fixtureProjects) {
     !createdArticleImage?.id ||
     createdArticleImage.contentDraftId !== createdContentDraft.id ||
     createdArticleImage.status !== "DRAFT" ||
-    createdArticleImage.storageKey !== null ||
+    createdArticleImage.hasDocument !== false ||
     /downloadUrl/i.test(createdArticleImageResponse.text)
   ) {
     fail("AI Delivery article image create did not return the expected same-project draft linkage or leaked a download field.");
@@ -719,7 +719,7 @@ async function runAiDeliveryApiRegression(token, fixtureProjects) {
     !updatedArticleImage ||
     updatedArticleImage.previewImageUrl !== "https://example.com/smoke-image-preview.png" ||
     updatedArticleImage.styleNotes !== "Updated style notes for smoke coverage." ||
-    updatedArticleImage.storageKey !== null
+    updatedArticleImage.hasDocument !== false
   ) {
     fail("AI Delivery article image update did not persist the expected preview reference and style notes.");
   }
@@ -789,7 +789,7 @@ async function runAiDeliveryApiRegression(token, fixtureProjects) {
       : null;
     if (
       !articleImageAfterRejectedUpload ||
-      articleImageAfterRejectedUpload.storageKey !== null ||
+      articleImageAfterRejectedUpload.hasDocument !== false ||
       articleImageAfterRejectedUpload.finalImageUrl !== null
     ) {
       fail("AI Delivery article image final upload guard changed persisted final asset references while storage was unavailable.");
@@ -817,7 +817,7 @@ async function runAiDeliveryApiRegression(token, fixtureProjects) {
     if (
       !finalReadyUpdatedImage ||
       finalReadyUpdatedImage.finalImageUrl !== "https://example.com/smoke-image-final.png" ||
-      finalReadyUpdatedImage.storageKey !== null
+      finalReadyUpdatedImage.hasDocument !== false
     ) {
       fail("AI Delivery article image final reference update did not persist the expected fallback final URL.");
     }
@@ -830,8 +830,7 @@ async function runAiDeliveryApiRegression(token, fixtureProjects) {
     if (
       !uploadedArticleImage ||
       uploadedArticleImage.id !== createdArticleImage.id ||
-      typeof uploadedArticleImage.storageKey !== "string" ||
-      uploadedArticleImage.storageKey.length === 0 ||
+      uploadedArticleImage.hasDocument !== true ||
       uploadedArticleImage.finalImageUrl !== null
     ) {
       fail("AI Delivery article image final upload did not return the expected private final asset reference.");
@@ -846,7 +845,7 @@ async function runAiDeliveryApiRegression(token, fixtureProjects) {
       : null;
     if (
       !persistedUploadedArticleImage ||
-      persistedUploadedArticleImage.storageKey !== uploadedArticleImage.storageKey ||
+      persistedUploadedArticleImage.hasDocument !== true ||
       persistedUploadedArticleImage.finalImageUrl !== null
     ) {
       fail("AI Delivery article image final upload did not persist the expected private storage key.");
@@ -1499,7 +1498,7 @@ async function runAiDeliveryApiRegression(token, fixtureProjects) {
     createdDeliverable.contentDraftId !== approvedDraft.id ||
     createdDeliverable.articleImageId !== finalReadyArticleImage.id ||
     createdDeliverable.status !== "DRAFT" ||
-    createdDeliverable.storageKey !== null
+    createdDeliverable.hasDocument !== false
   ) {
     fail("AI Delivery deliverable create did not return the expected project-scoped package record.");
   }
@@ -1525,7 +1524,7 @@ async function runAiDeliveryApiRegression(token, fixtureProjects) {
   if (
     !updatedDeliverable ||
     updatedDeliverable.exportUrl !== "https://example.com/admin-reference-only-updated" ||
-    updatedDeliverable.storageKey !== null
+    updatedDeliverable.hasDocument !== false
   ) {
     fail("AI Delivery deliverable update did not persist the expected admin references.");
   }
@@ -1634,7 +1633,7 @@ async function runAiDeliveryApiRegression(token, fixtureProjects) {
       : null;
     if (
       !deliverableAfterRejectedUpload ||
-      deliverableAfterRejectedUpload.storageKey !== null ||
+      deliverableAfterRejectedUpload.hasDocument !== false ||
       deliverableAfterRejectedUpload.exportUrl !== "https://example.com/admin-reference-only-updated"
     ) {
       fail("AI Delivery deliverable document upload guard changed persisted references while storage was unavailable.");
@@ -1649,8 +1648,7 @@ async function runAiDeliveryApiRegression(token, fixtureProjects) {
     if (
       !uploadedDeliverable ||
       uploadedDeliverable.id !== createdDeliverable.id ||
-      typeof uploadedDeliverable.storageKey !== "string" ||
-      uploadedDeliverable.storageKey.length === 0 ||
+      uploadedDeliverable.hasDocument !== true ||
       uploadedDeliverable.exportUrl !== null
     ) {
       fail("AI Delivery deliverable document upload did not return the expected private storage reference.");
@@ -1665,7 +1663,7 @@ async function runAiDeliveryApiRegression(token, fixtureProjects) {
       : null;
     if (
       !persistedUploadedDeliverable ||
-      persistedUploadedDeliverable.storageKey !== uploadedDeliverable.storageKey ||
+      persistedUploadedDeliverable.hasDocument !== true ||
       persistedUploadedDeliverable.exportUrl !== null
     ) {
       fail("AI Delivery deliverable document upload did not persist the expected private storage key.");

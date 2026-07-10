@@ -7,8 +7,34 @@ import {
   serializeClientApprovalPendingItem
 } from "./client-approval-serializer";
 import { evaluateClientPortalApprovalAction } from "./client-portal-approval-policy";
+import { AiDeliveryGuardError } from "./ai-delivery-guard-error";
+import { CLIENT_REVISION_ROUND_LIMIT } from "./revision-policy";
 
 const prisma = createPrismaClient();
+
+/**
+ * Durable marker written into an AiDeliveryDeliverableReview row when a client requests changes.
+ * Counting these rows derives revision-round usage from persisted history (no schema change),
+ * so the one-client-revision policy survives re-send-for-review cycles.
+ */
+const CLIENT_REVISION_REVIEW_MARKER = "[CLIENT_REVISION_REQUEST]";
+
+/** Deliverable statuses from which a deliverable may (re)enter client review. */
+const CLIENT_REVIEW_ENTRY_SOURCE_STATUSES = new Set(["DRAFT", "REVISION_REQUESTED"]);
+
+function throwClientReviewConflict(code: string, message: string): never {
+  throw new AiDeliveryGuardError(409, code, message);
+}
+
+async function countClientRevisionRounds(tenantId: string, deliverableId: string): Promise<number> {
+  return prisma.aiDeliveryDeliverableReview.count({
+    where: {
+      tenantId,
+      deliverableId,
+      reviewNotes: { startsWith: CLIENT_REVISION_REVIEW_MARKER }
+    }
+  });
+}
 
 function getActiveTenantId(authSession: AuthResolvedSessionContext): string | null {
   return authSession.tenantContext.activeMembership?.tenantId ?? null;
@@ -516,13 +542,13 @@ export async function rejectClientPortalDeliverable(
   if (!deliverable) return null;
   if (!(await assertClientPortalApprovalAccess(authSession, deliverable.aiDeliveryProject.clientId))) return null;
 
-  // revisionRoundUsed stays false until a durable revision-round counter exists (no schema change in this block).
-  // The pure policy helper still enforces one-round rules when callers pass revisionRoundUsed: true.
+  // Derive revision-round usage from persisted history (durable review rows), not a hardcoded flag.
+  const revisionRoundsUsed = await countClientRevisionRounds(tenantId, deliverableId);
   const policy = evaluateClientPortalApprovalAction({
     action: "request_changes",
     deliverableStatus: deliverable.status,
     reason: rejectionReason,
-    revisionRoundUsed: false
+    revisionRoundUsed: revisionRoundsUsed >= CLIENT_REVISION_ROUND_LIMIT
   });
 
   if (!policy.ok) {
@@ -539,14 +565,32 @@ export async function rejectClientPortalDeliverable(
   }
 
   const reason = policy.sanitizedReason ?? rejectionReason.trim();
+  const requestedBy = authSession.user.name ?? authSession.user.email ?? authSession.user.id;
 
-  const updated = await prisma.aiDeliveryDeliverable.update({
-    where: { id: deliverableId },
-    data: {
-      status: "DRAFT",
-      clientRejectionReason: reason
-    },
-    select: { id: true, title: true, status: true }
+  // Move to the explicit revision-requested state and record a durable, attributed history row
+  // that consumes the single client revision allowance. Both writes are atomic.
+  const updated = await prisma.$transaction(async (tx) => {
+    const deliverableUpdate = await tx.aiDeliveryDeliverable.update({
+      where: { id: deliverableId },
+      data: {
+        status: "REVISION_REQUESTED",
+        clientRejectionReason: reason
+      },
+      select: { id: true, title: true, status: true }
+    });
+
+    await tx.aiDeliveryDeliverableReview.create({
+      data: {
+        tenantId,
+        aiDeliveryProjectId: deliverable.aiDeliveryProject.id,
+        deliverableId,
+        status: "CHANGES_REQUESTED",
+        reviewerName: requestedBy,
+        reviewNotes: `${CLIENT_REVISION_REVIEW_MARKER} ${reason}`
+      }
+    });
+
+    return deliverableUpdate;
   });
 
   const clientName = deliverable.aiDeliveryProject.client?.name ?? "Client";
@@ -584,6 +628,7 @@ export async function sendAiDeliveryDeliverableForClientReview(
     select: {
       id: true,
       title: true,
+      status: true,
       bodyContent: true,
       contentDraftId: true,
       aiDeliveryProject: { select: { clientId: true, name: true, client: { select: { name: true } } } },
@@ -602,6 +647,27 @@ export async function sendAiDeliveryDeliverableForClientReview(
 
   if (!deliverable || !deliverable.contentDraftId) return null;
 
+  // Idempotent repeat: already awaiting client review — do not reset image approvals or re-snapshot.
+  if (deliverable.status === "PENDING_CLIENT_REVIEW") {
+    return {
+      deliverable: {
+        id: deliverable.id,
+        title: deliverable.title,
+        status: deliverable.status,
+        bodyContent: deliverable.bodyContent ?? ""
+      }
+    };
+  }
+
+  // Strict source-status guard: only a draft or a client-revision-requested deliverable may
+  // (re)enter client review. Backward/invalid states (already-approved, internal, archived) are rejected.
+  if (!CLIENT_REVIEW_ENTRY_SOURCE_STATUSES.has(deliverable.status)) {
+    throwClientReviewConflict(
+      "AI_DELIVERY_DELIVERABLE_CLIENT_REVIEW_SOURCE_INVALID",
+      `Deliverable cannot be sent for client review from status ${deliverable.status}.`
+    );
+  }
+
   const bodyContent = deliverable.bodyContent ?? deliverable.contentDraft?.draftBody ?? "";
   const snapshotTitle = deliverable.title || deliverable.contentDraft?.title || "Untitled";
 
@@ -616,6 +682,7 @@ export async function sendAiDeliveryDeliverableForClientReview(
       }
     });
 
+    // Genuine new review/revision cycle (DRAFT or REVISION_REQUESTED): reset image approvals to PENDING.
     const imageIds = deliverable.contentDraft?.articleImages.map((image) => image.id) ?? [];
     for (const imageId of imageIds) {
       await tx.aiDeliveryDeliverableImageApproval.upsert({

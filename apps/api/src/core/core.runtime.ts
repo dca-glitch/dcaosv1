@@ -141,6 +141,13 @@ import {
 import { generateAiDeliveryMonthlyReportPdf } from "./monthly-report-pdf.service";
 import { generateAiDeliveryContentPlanPdf } from "./content-plan-pdf.service";
 import { recordAiDeliverySystemEvent } from "../services/system-events.service";
+import { AiDeliveryGuardError, isAiDeliveryGuardError } from "./ai-delivery-guard-error";
+import { buildMetricSnapshotImportUpdateData } from "./ai-delivery-metric-snapshot-import-policy";
+import {
+  canTransitionAiDeliveryDeliverableStatus,
+  parseAiDeliveryDeliverableStatus,
+  type AiDeliveryDeliverableStatus
+} from "@dca-os-v1/shared";
 import { notifyDcaTeam } from "../services/email-notifications.service";
 import { recordPlatformAuditEvent } from "../security/audit-log.service";
 import {
@@ -213,7 +220,7 @@ type AiDeliveryContentDraftStatus = "DRAFT" | "READY_FOR_REVIEW" | "APPROVED" | 
 type AiDeliveryArticleImageStatus = "DRAFT" | "READY_FOR_GENERATION" | "PREVIEW_READY" | "APPROVED" | "FINAL_READY" | "CHANGES_REQUESTED" | "ARCHIVED";
 // Deliverable types for AI Delivery
 type AiDeliveryDeliverableDeliveryType = "CONTENT_PACKAGE" | "ARTICLE_DRAFT" | "ARTICLE_IMAGE" | "CLIENT_HANDOFF" | "OTHER";
-type AiDeliveryDeliverableStatus = "DRAFT" | "READY" | "DELIVERED" | "REVISION_REQUESTED" | "ACCEPTED" | "ARCHIVED";
+// AiDeliveryDeliverableStatus is imported from the canonical shared status policy (@dca-os-v1/shared).
 type AiDeliveryDeliverableReviewStatus = "NOT_STARTED" | "ADMIN_REVIEW" | "CHANGES_REQUESTED" | "APPROVED" | "ARCHIVED";
 type CreditNoteStatus = "DRAFT" | "ISSUED" | "VOIDED";
 type PaymentMethod = "CASH" | "REVOLUT_BANK" | "WISE_BANK" | "REVOLUT_CARD" | "WISE_CARD" | "CARD_PROCESSOR" | "OTHER";
@@ -226,21 +233,8 @@ const AI_DELIVERY_RESEARCH_SUMMARY_STATUSES: AiDeliveryResearchSummaryStatus[] =
 const AI_DELIVERY_RESEARCH_SOURCE_STATUSES: AiDeliveryResearchSourceStatus[] = ["PROPOSED", "APPROVED", "REJECTED", "ARCHIVED"];
 const AI_DELIVERY_RESEARCH_SOURCE_TYPES: AiDeliveryResearchSourceType[] = ["WEBSITE", "DOCUMENT", "OTHER"];
 
-export class AiDeliveryGuardError extends Error {
-  readonly status: number;
-  readonly code: string;
-
-  constructor(status: number, code: string, message: string) {
-    super(message);
-    this.name = "AiDeliveryGuardError";
-    this.status = status;
-    this.code = code;
-  }
-}
-
-export function isAiDeliveryGuardError(error: unknown): error is AiDeliveryGuardError {
-  return error instanceof AiDeliveryGuardError;
-}
+// Re-exported for existing importers (controller, ai-knowledge.runtime) that import from core.runtime.
+export { AiDeliveryGuardError, isAiDeliveryGuardError };
 
 function throwAiDeliveryBadRequest(code: string, message: string): never {
   throw new AiDeliveryGuardError(400, code, message);
@@ -7682,8 +7676,8 @@ function normalizeAiDeliveryDeliverableDeliveryType(value: string | null | undef
 }
 
 function normalizeAiDeliveryDeliverableStatus(value: string | null | undefined): AiDeliveryDeliverableStatus {
-  const v = value ? value.trim().toUpperCase() : null;
-  return v && ["DRAFT", "READY", "DELIVERED", "REVISION_REQUESTED", "ACCEPTED", "ARCHIVED", "PENDING_CLIENT_REVIEW", "APPROVED_BY_CLIENT"].includes(v) ? (v as AiDeliveryDeliverableStatus) : "DRAFT";
+  // Canonical parse; unrecognized values fall back to DRAFT only at initial-create time.
+  return parseAiDeliveryDeliverableStatus(value) ?? "DRAFT";
 }
 
 function toAiDeliveryDeliverableSummary(d: any) {
@@ -7806,6 +7800,10 @@ async function updateAiDeliveryDeliverableStatus(
       throwAiDeliveryConflict("AI_DELIVERY_DELIVERABLE_ACTION_BLOCKED", `Deliverable action is not allowed from status ${existing.status}.`);
     }
     if (nextStatus === "ACCEPTED" && !["READY", "DELIVERED"].includes(existing.status)) {
+      throwAiDeliveryConflict("AI_DELIVERY_DELIVERABLE_ACTION_BLOCKED", `Deliverable action is not allowed from status ${existing.status}.`);
+    }
+    // Canonical policy backstop: dedicated actions must also respect the shared transition matrix.
+    if (!canTransitionAiDeliveryDeliverableStatus(existing.status as AiDeliveryDeliverableStatus, nextStatus)) {
       throwAiDeliveryConflict("AI_DELIVERY_DELIVERABLE_ACTION_BLOCKED", `Deliverable action is not allowed from status ${existing.status}.`);
     }
 
@@ -8799,10 +8797,12 @@ export async function importAiDeliveryMonthlyReportMetrics(
     }
   }
 
-  const snapshotData = {
+  // Import-owned fields only. Approval fields (status/approvedByUserId/approvedAt) are NOT
+  // import-owned and must be preserved on re-import of an already-approved snapshot so that a
+  // repeated metrics import cannot silently downgrade or erase an approval.
+  const importOwnedData = {
     targetMonth,
     sourceType,
-    status,
     gscClicks: input.gscClicks ?? null,
     gscImpressions: input.gscImpressions ?? null,
     gscAverageCtr: input.gscAverageCtr ?? null,
@@ -8812,10 +8812,13 @@ export async function importAiDeliveryMonthlyReportMetrics(
     ga4PageViews: input.ga4PageViews ?? null,
     notes: toNullableString(input.notes),
     importedByUserId: authSession.user.id,
-    importedAt: new Date(),
-    approvedByUserId: null,
-    approvedAt: null
+    importedAt: new Date()
   };
+
+  const existingSnapshot = await (prisma as any).aiDeliveryMonthlyMetricSnapshot.findUnique({
+    where: { tenantId_aiDeliveryMonthlyReportId: { tenantId, aiDeliveryMonthlyReportId: report.id } },
+    select: { id: true, status: true, approvedByUserId: true, approvedAt: true }
+  }) as { id: string; status: string; approvedByUserId: string | null; approvedAt: Date | null } | null;
 
   const snapshot = await (prisma as any).aiDeliveryMonthlyMetricSnapshot.upsert({
     where: { tenantId_aiDeliveryMonthlyReportId: { tenantId, aiDeliveryMonthlyReportId: report.id } },
@@ -8823,12 +8826,16 @@ export async function importAiDeliveryMonthlyReportMetrics(
       tenantId,
       aiDeliveryProjectId: report.aiDeliveryProjectId,
       aiDeliveryMonthlyReportId: report.id,
-      ...snapshotData
+      ...importOwnedData,
+      status,
+      approvedByUserId: null,
+      approvedAt: null
     },
-    update: {
-      aiDeliveryProjectId: report.aiDeliveryProjectId,
-      ...snapshotData
-    },
+    update: buildMetricSnapshotImportUpdateData(
+      { aiDeliveryProjectId: report.aiDeliveryProjectId, ...importOwnedData },
+      existingSnapshot?.status ?? null,
+      status
+    ),
     select: aiDeliveryMonthlyMetricSnapshotSelect
   }) as any;
 
@@ -8984,7 +8991,11 @@ export async function updateAiDeliveryDeliverable(
       }
       throwAiDeliveryBadRequest("AI_DELIVERY_DELIVERABLE_ARTICLE_IMAGE_LINK_INVALID", "Article image must belong to the same AI Delivery project.");
     }
-    const status = normalizeAiDeliveryDeliverableStatus(input.status);
+    // Generic update never mutates workflow status: status changes carry workflow meaning
+    // and must go through dedicated actions (mark-ready / send-for-client-review / accept /
+    // client approval / revision). This prevents an unrelated field save from silently
+    // resetting an in-review or client-approved deliverable back to DRAFT.
+    const status = normalizeAiDeliveryDeliverableStatus(existing.status);
     if (!validateDeliverableReadyLinks(status, contentDraft, articleImage)) {
       throwAiDeliveryBadRequest("AI_DELIVERY_DELIVERABLE_READY_LINKS_BLOCKED", "Ready, delivered, and accepted deliverables require approved same-project draft or image links.");
     }
@@ -8997,11 +9008,9 @@ export async function updateAiDeliveryDeliverable(
         title: input.title,
         description: input.description === undefined ? existing.description : toNullableString(input.description),
         deliveryType: normalizeAiDeliveryDeliverableDeliveryType(input.deliveryType),
-        status,
         exportUrl: input.exportUrl === undefined ? existing.exportUrl : toNullableString(input.exportUrl),
         storageKey: input.storageKey === undefined ? existing.storageKey : toNullableString(input.storageKey),
-        notes: input.notes === undefined ? existing.notes : toNullableString(input.notes),
-        isArchived: status === "ARCHIVED" ? true : existing.isArchived
+        notes: input.notes === undefined ? existing.notes : toNullableString(input.notes)
       },
       select: aiDeliveryDeliverableSelect
     }) as any;
