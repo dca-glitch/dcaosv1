@@ -56,7 +56,7 @@ describe("ai-budget-notification-mapping", () => {
         spentThisPeriodUsd: 100,
         monthlyCapUsd: 100
       }),
-      "cap_reached"
+      "kill_switch_active"
     );
     assert.equal(
       resolveAiBudgetNotificationSignal({
@@ -101,5 +101,23 @@ describe("ai-budget-notification-mapping", () => {
     assert.equal(mapped.sendDefault, "no_send_until_owner_gate");
     const contract = getAiBudgetNotificationMappingContract();
     assert.deepEqual(contract.proposedNewEventKeys, []);
+  });
+
+  it("maps kill_switch_active to kill_switch and prefers it over cap_reached", () => {
+    const signal = resolveAiBudgetNotificationSignal({
+      killSwitchActive: true,
+      projectedOverBudget: false,
+      spentThisPeriodUsd: 100,
+      monthlyCapUsd: 100
+    });
+    assert.equal(signal, "kill_switch_active");
+    const mapped = mapAiBudgetSignalToExistingNotification("kill_switch_active");
+    assert.equal(mapped.businessEventKey, "KILL_SWITCH");
+    assert.equal(mapped.notificationEventType, "kill_switch");
+    assert.equal(mapped.aiNotificationEventType, "kill_switch");
+    assert.equal(mapped.severityHint, "critical");
+
+    const capReached = mapAiBudgetSignalToExistingNotification("cap_reached");
+    assert.equal(capReached.severityHint, "blocked");
   });
 });

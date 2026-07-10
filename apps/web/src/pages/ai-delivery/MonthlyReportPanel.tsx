@@ -1363,7 +1363,11 @@ export function MonthlyReportPanel({
                         accent={metrics.computedTrendSummary.dataStatus === "READY" ? "success" : "warning"}
                         helper={`${metrics.snapshots.length} snapshot${metrics.snapshots.length === 1 ? "" : "s"}`}
                         label="Data status"
-                        value={metrics.computedTrendSummary.dataStatus}
+                        value={
+                          metrics.computedTrendSummary.dataStatus === "READY"
+                            ? "Snapshots complete"
+                            : metrics.computedTrendSummary.dataStatus
+                        }
                       />
                       <MetricCard
                         accent="cyan"

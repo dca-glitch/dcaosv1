@@ -199,6 +199,8 @@ const clientPortalDeliverableSelect = {
   deliveryType: true,
   status: true,
   exportUrl: true,
+  // storageKey is fetched only to compute hasDocument; it is not returned in the response.
+  storageKey: true,
   isArchived: true,
   createdAt: true,
   updatedAt: true
@@ -212,6 +214,7 @@ export function toClientPortalDeliverableSummary(d: {
   deliveryType: string;
   status: string;
   exportUrl: string | null;
+  storageKey?: string | null;
   isArchived: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -230,6 +233,7 @@ export function toClientPortalDeliverableSummary(d: {
     deliveryType: d.deliveryType,
     status: d.status,
     exportUrl: d.exportUrl ?? null,
+    hasDocument: !!d.storageKey,
     isArchived: d.isArchived,
     createdAt: d.createdAt instanceof Date ? d.createdAt.toISOString() : d.createdAt,
     updatedAt: d.updatedAt instanceof Date ? d.updatedAt.toISOString() : d.updatedAt

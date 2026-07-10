@@ -73,3 +73,14 @@ Do **not** run full `npm.cmd run validate` for this lane unless the owner reques
 - Backend runtime notification send paths were not changed.
 - Auth / Turnstile / VPS / deploy were not touched.
 - No commit / push / deploy in this lane.
+
+## Pre-staging closure follow-up (2026-07-10)
+
+Safe taxonomy/mapping fixes applied outside this original closeout commit:
+
+| Fix | Detail |
+|-----|--------|
+| Legacy alias severity parity | `client_deliverable_approved` severity aligned to canonical `content_approved` (`info`); G494 now asserts severity + launchCritical parity |
+| Kill-switch mapping | `ai-budget-notification-mapping` maps `kill_switch_active` → `kill_switch` / `KILL_SWITCH`; kill switch checked before cap_reached; `cap_reached` severityHint is `blocked` |
+
+**Still owner-gated / unwired:** runtime send paths still bypass taxonomy channel policy; correlation design not persisted; inbox schema; live email.

@@ -334,7 +334,7 @@ function ReportPlaceholderRow({ month, year }: { month: number; year: number }) 
     <article className="cf-archive-item">
       <span className="cf-archive-item-title">Monthly report — {monthLabel(month, year)}</span>
       <p className="cf-record-note">
-        Report placeholder — available when your team finalizes the monthly report.
+        Monthly report — available when your team finalizes it.
       </p>
     </article>
   );
@@ -486,7 +486,7 @@ export function ArchiveHubPage() {
           type="button"
           variant="tertiary"
         >
-          Pending Approvals
+          Pending Reviews
         </Button>
         <Button
           className="portal-subnav-link"

@@ -22,10 +22,12 @@ Security-facing summary of what client portal APIs may return for private delive
 
 | Surface | Allowed | Forbidden |
 |---------|---------|-----------|
-| Deliverable list/summary | `exportUrl`, status, titles | `storageKey`, notes, draft/image IDs |
+| Deliverable list/summary | `exportUrl`, `hasDocument`, status, titles | `storageKey`, `documentStorageKey`, notes, draft/image IDs |
 | Monthly report list/summary | `exportUrl`, `hasDocument`, FINAL fields | `storageKey`, admin notes, source IDs |
 | Image / asset client-safe views | preview/final URLs, `hasDocument` | `storageKey` |
 | Download reference endpoint | `{ downloadUrl, expiresSeconds }` or null | `storageKey` in JSON |
+
+**Pre-staging note (2026-07-10):** Deliverable summaries now include `hasDocument` (boolean only). `documentStorageKey` is on the client-portal forbidden-key list (defense-in-depth; finance remains admin-only). Presigned `downloadUrl` path segments may still appear in the URL string when R2 is configured — that is not a JSON `storageKey` field leak.
 
 ---
 

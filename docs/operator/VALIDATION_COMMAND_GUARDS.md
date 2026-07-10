@@ -1,8 +1,8 @@
 # Validation Command Guards
 
-**Status:** G650 refresh (extends G418/G225/G143) for the G469–G708 ultra-block on baseline `66dcb74`. Docs-only reference for command ordering and refusal rules. It does not run validation, smoke, live calls, staging/prod probes, commits, pushes, or deploys.
+**Status:** G650 refresh (extends G418/G225/G143) for the G469–G708 ultra-block; PRE-STAGING Lanes 14–15 reaffirm (2026-07-10). Docs-only reference for command ordering and refusal rules. It does not run validation, smoke, live calls, staging/prod probes, commits, pushes, or deploys.
 
-**Hard truths:** local foundations expanding; live proofs deferred; Puriva Launch **BLOCKED**; production frozen (readiness **NO**); **no smoke after failed validate**; PowerShell **one command per line**.
+**Hard truths:** local foundations expanding; live proofs deferred; Puriva Launch **BLOCKED**; production frozen (readiness **NO**); staging/prod live proofs **NOT proven**; next stage = owner-approved staging/live proof only; **no smoke after failed validate**; PowerShell **one command per line**.
 
 **Primary sources:** [`.github/instructions/validation.instructions.md`](../../.github/instructions/validation.instructions.md), [`.github/copilot-instructions.md`](../../.github/copilot-instructions.md), [`OPERATOR_RUNBOOK.md`](./OPERATOR_RUNBOOK.md), [`TEST_SMOKE_INVENTORY.md`](./TEST_SMOKE_INVENTORY.md), [`POWERSHELL_SAFETY_CHECKLIST.md`](./POWERSHELL_SAFETY_CHECKLIST.md), [`NEXT_GATE_EXECUTION_CHECKLIST.md`](./NEXT_GATE_EXECUTION_CHECKLIST.md), [`docs/security/SECURITY_CHECKLIST_G409.md`](../security/SECURITY_CHECKLIST_G409.md), [`LIVE_PROOF_APPROVAL_CHECKLIST.md`](./LIVE_PROOF_APPROVAL_CHECKLIST.md), and [`LOCAL_ONLY_PROOF_TAXONOMY.md`](./LOCAL_ONLY_PROOF_TAXONOMY.md).
 

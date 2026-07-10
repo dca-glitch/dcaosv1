@@ -5183,7 +5183,7 @@ export function AiDeliveryPage({
                   <strong>Context readiness:</strong>{" "}
                   {deliverableLinkedDraftRecord && deliverableLinkedDraftRecord.status === "APPROVED" && deliverableReadinessBlockers.length === 0
                     ? "Linked draft and package readiness are sufficient for a draft-only WordPress handoff."
-                    : "Linked draft is missing, not approved, or package readiness blockers exist. Resolve these before treating any WordPress payload as ready."}
+                    : "Linked draft is missing, not approved, or package readiness blockers exist. Resolve these before treating any WordPress payload as draft-prep eligible."}
                 </AiDeliveryInlineNotice>
                 <AiDeliveryInlineNotice>
                   No prepared WordPress draft is final client copy. Compliance review and admin review must pass before final archive or client delivery.
@@ -5426,9 +5426,15 @@ export function AiDeliveryPage({
                            <dd>
                              {deliverableWordPressPublishResult.result.providerDisabledReason
                                || deliverableWordPressPublishResult.result.errorMessage
-                               || (deliverableWordPressPublishResult.result.ok
-                                 ? "Publish completed."
-                                 : "Publish did not complete.")}
+                               || (deliverableWordPressPublishResult.result.status === "published"
+                                 ? "Published to WordPress."
+                                 : deliverableWordPressPublishResult.result.status === "draft_prepared"
+                                   ? "Draft prepared locally — not published."
+                                   : deliverableWordPressPublishResult.result.status === "provider_disabled"
+                                     ? "Provider disabled — no external publish."
+                                     : deliverableWordPressPublishResult.result.ok
+                                       ? "Publish request finished."
+                                       : "Publish did not complete.")}
                            </dd>
                          </div>
                        </dl>

@@ -2,7 +2,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { EmptyState } from "../../components/EmptyState";
 import { Button, MetricCard, PageHeader, SectionPanel, StatusBadge } from "../../components/ui";
 import { Alert, Input, Select, Spinner, Textarea } from "../../design-system";
-import { clientPortalApiRequest, navigateToClientPortalHash, type PendingApprovalsResponse } from "./client-portal-api";
+import {
+  clientPortalApiRequest,
+  navigateToClientPortalHash,
+  toClientPortalUiSafeErrorMessage,
+  type PendingApprovalsResponse
+} from "./client-portal-api";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "/api/v1";
 const SESSION_STORAGE_KEY = "dcaosv1.authToken";
@@ -45,6 +50,7 @@ type ClientPortalDeliverableSummary = {
   deliveryType: string;
   status: string;
   exportUrl: string | null;
+  hasDocument: boolean;
   isArchived: boolean;
   createdAt: string;
   updatedAt: string;
@@ -314,7 +320,10 @@ function getErrorMessage(response: ApiFailure): string {
     return "That monthly report is not available to this account.";
   }
 
-  return response.error.message || "Client archive could not be loaded.";
+  return toClientPortalUiSafeErrorMessage(
+    response.error.message,
+    "Client archive could not be loaded."
+  );
 }
 
 function formatMonthLabel(value: string | null | undefined): string {
@@ -381,10 +390,20 @@ function toClientPortalStatusLabel(status: string | null | undefined): string | 
     return "Approved";
   }
 
-  return status
-    .toLowerCase()
-    .replace(/_/g, " ")
-    .replace(/(^|\s)\S/g, (segment) => segment.toUpperCase());
+  if (normalized === "PENDING_CLIENT_REVIEW") {
+    return "Needs your review";
+  }
+
+  if (normalized === "APPROVED_BY_CLIENT") {
+    return "Approved";
+  }
+
+  if (normalized === "SENT_TO_CLIENT") {
+    return "Shared with you";
+  }
+
+  // Unknown internal enums — do not title-case leak workflow tokens to clients.
+  return null;
 }
 
 function toClientPortalDeliveryTypeLabel(value: string): string {
@@ -1246,9 +1265,9 @@ export function ClientPortalPage() {
                 tone="compact"
               >
                 {releasePackageLoading ? (
-                  <PortalInlineLoading label="Loading release package" />
+                  <PortalInlineLoading label="Loading final materials" />
                 ) : releasePackageError ? (
-                  <Alert message={releasePackageError} title="Release package unavailable" variant="danger" />
+                  <Alert message={releasePackageError} title="Final materials unavailable" variant="danger" />
                 ) : releasePackage ? (
                   <article className="cf-record">
                     <div className="cf-record-main cf-record-main--stack">
@@ -1576,7 +1595,7 @@ export function ClientPortalPage() {
                                   )}
                                   helper={
                                     monthlyReportDetail.performanceSummary.placeholderOnly
-                                      ? `Template metrics · Month ${monthlyReportDetail.performanceSummary.targetMonth}`
+                                      ? `Metrics not available yet · Month ${monthlyReportDetail.performanceSummary.targetMonth}`
                                       : `Month ${monthlyReportDetail.performanceSummary.targetMonth}`
                                   }
                                 />

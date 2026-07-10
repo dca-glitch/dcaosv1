@@ -1,6 +1,6 @@
 # DCA OS Lite — Status (Source of Truth)
 
-**Last updated:** 2026-07-10 (G708 — G469-G707 final integration closeout)
+**Last updated:** 2026-07-10 (PRE-STAGING CLOSURE — local/no-live audit + safe fixes; see [`docs/operator/PRE_STAGING_CLOSURE_VERDICT.md`](./operator/PRE_STAGING_CLOSURE_VERDICT.md))
 **G55 pre-live readiness:** [`docs/runbooks/G55_PRELIVE_READINESS.md`](./runbooks/G55_PRELIVE_READINESS.md)
 **G56 pre-live readiness:** [`docs/runbooks/G56_PRELIVE_READINESS.md`](./runbooks/G56_PRELIVE_READINESS.md)
 **G57–G68 pre-live readiness:** [`docs/runbooks/G57_G68_PRELIVE_READINESS.md`](./runbooks/G57_G68_PRELIVE_READINESS.md)
@@ -27,18 +27,23 @@
 **Admin UI/workflow polish audit:** [`docs/ux/ADMIN_WORKFLOW_POLISH_AUDIT.md`](./ux/ADMIN_WORKFLOW_POLISH_AUDIT.md) (read-only; UX-P1–P12 queued blocks)
 **G468 next 50 gates (historical):** [`docs/operator/G468_NEXT_50_GATES.md`](./operator/G468_NEXT_50_GATES.md)
 **G708 next gates:** [`docs/operator/G708_NEXT_GATES.md`](./operator/G708_NEXT_GATES.md)
+**PRE-STAGING closure verdict:** [`docs/operator/PRE_STAGING_CLOSURE_VERDICT.md`](./operator/PRE_STAGING_CLOSURE_VERDICT.md)
+**PRE-STAGING operator closeout:** [`docs/operator/PRE_STAGING_OPERATOR_CLOSEOUT.md`](./operator/PRE_STAGING_OPERATOR_CLOSEOUT.md)
+**PRE-STAGING architecture audit:** [`docs/architecture/PRE_STAGING_ARCHITECTURE_AUDIT.md`](./architecture/PRE_STAGING_ARCHITECTURE_AUDIT.md)
 
 ---
 
-## Executive snapshot (G52-B + G53 + G55 + G56 + G57–G68 + G69 + G89-G708)
+## Executive snapshot (G52-B + G53 + G55 + G56 + G57–G68 + G69 + G89-G708 + PRE-STAGING)
 
 | Item | State |
 |------|--------|
-| Latest baseline | G469-G708 ultra-block final integration on `main` (uncommitted) — consolidated local/no-IO foundations across 20 lanes (R2/storage, private delivery, notifications, email no-send, GA/GSC, monthly reports, WordPress, image compliance, Client Portal, approval/revision, Puriva pack, future modules, AI budget/routing, orchestrator guards, security inventories, operator runbooks, UI testability, stale-claim sweep, deferred/truth matrix, roadmap) |
+| Latest baseline | PRE-STAGING CLOSURE on `main` (uncommitted working tree) atop pushed `5153721` — local/no-live bug scan + safe fixes + UI/UX truth-label polish + docs/operator closeout after G469–G708 foundations |
+| **PRE-STAGING local closure** | **PASS (local/no-live only)** — see [`PRE_STAGING_CLOSURE_VERDICT.md`](./operator/PRE_STAGING_CLOSURE_VERDICT.md). Does **not** mean launch ready, staging proven, or production ready |
 | **G69 merge** | **DONE** — G57–G68 fast-forward merged to `main`; final commit `64bfd06` |
-| Production readiness | **NO** |
-| Next gate | **G709 recommended** — owner-selected launch-blocker execution gate; recommended first target remains R2 target-environment real-bucket proof. See [`docs/operator/G708_NEXT_GATES.md`](./operator/G708_NEXT_GATES.md). No live proof, staging mutation, production mutation, commit, push, or deploy is authorized by G469–G708. |
-| G469-G708 final integration | **KEEP pending validation** — 20 lanes reconciled; local/no-IO foundations only; live R2, live email, live GA/GSC, live WordPress, live image, staging/prod proofs, notification persistence/inbox, trusted `actualCostUsd` ingestion, commit, push, deploy remain blocked |
+| Production readiness | **NO** — production remains frozen |
+| Next gate | **Owner-approved staging/live proof only** — recommended first target remains R2 target-environment real-bucket proof (G709 sequence in [`G708_NEXT_GATES.md`](./operator/G708_NEXT_GATES.md)). No live proof, staging mutation, production mutation, commit, push, or deploy is authorized by PRE-STAGING CLOSURE |
+| PRE-STAGING Lanes 14–15 | **Docs closeout** — stale-claim sweep + operator runbook refresh; no live proof; Puriva Launch **BLOCKED** |
+| G469-G708 final integration | **KEEP** — 20 lanes reconciled; local/no-IO foundations only; live R2, live email, live GA/GSC, live WordPress, live image, staging/prod proofs, notification persistence/inbox, trusted `actualCostUsd` ingestion, commit, push, deploy remain blocked |
 | G229-G468 final integration | **KEEP** — 12 lanes reconciled; local/no-IO foundations only; superseded as latest baseline by G469-G708 |
 | G72 model routing | **Implemented** — backend policy per task type; approved model `anthropic/claude-haiku-4.5`; no live call in G72 |
 | G73 routing attribution | **Local PASS** — dry-run/preview `modelRouting` + `plannedLedgerMetadata`; budget guard route cap wired; persistent preview ledger records routing metadata |

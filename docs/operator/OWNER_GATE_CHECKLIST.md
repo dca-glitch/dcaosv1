@@ -62,13 +62,14 @@
 
 ## 5. This lane confirmation
 
-G649–G660 operator lane:
+G649–G660 operator lane + PRE-STAGING Lanes 14–15:
 
 - Did **not** obtain or claim live-proof approval.
 - Did **not** commit, push, or deploy.
-- Did **not** run full `validate` or smoke.
+- Did **not** run full `validate` or smoke (docs-scoped `git diff --check` only).
 - Left production freeze and Puriva Launch **BLOCKED** unchanged.
-- Left `.cursor/settings.json` untracked / untouched.
+- Left `.cursor/settings.json` untracked / untouched (`??` observed).
+- **Next stage** remains owner-approved staging/live proof only — not implied by local foundations.
 
 ---
 

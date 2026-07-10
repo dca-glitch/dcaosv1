@@ -10,16 +10,21 @@ export const AI_BUDGET_NOTIFICATION_MAPPING_VERSION = "AI_BUDGET_NOTIFICATION_MA
 export type AiBudgetExistingBusinessEventKey =
   | "BUDGET_THRESHOLD_WARNING"
   | "BUDGET_CAP_BLOCKED"
-  | "BUDGET_CAP_REACHED";
+  | "BUDGET_CAP_REACHED"
+  | "KILL_SWITCH";
 
 /** Existing NotificationEventType keys (Lane 2). */
 export type AiBudgetExistingNotificationEventType =
   | "budget_threshold_warning"
   | "budget_cap_blocked"
-  | "budget_cap_reached";
+  | "budget_cap_reached"
+  | "kill_switch";
 
 /** Existing AI notification event types (shared ai-notification-events). */
-export type AiBudgetExistingAiNotificationEventType = "budget_warning" | "budget_cap_reached";
+export type AiBudgetExistingAiNotificationEventType =
+  | "budget_warning"
+  | "budget_cap_reached"
+  | "kill_switch";
 
 export type AiBudgetNotificationSignal =
   | "threshold_warning"
@@ -68,18 +73,18 @@ const MAPPINGS: readonly AiBudgetNotificationMappingRow[] = [
     businessEventKey: "BUDGET_CAP_REACHED",
     notificationEventType: "budget_cap_reached",
     aiNotificationEventType: "budget_cap_reached",
-    severityHint: "critical",
+    severityHint: "blocked",
     sendDefault: "no_send_until_owner_gate",
     notes: "Emitted when spentThisPeriodUsd reaches the monthly cap."
   },
   {
     signal: "kill_switch_active",
-    businessEventKey: "BUDGET_CAP_REACHED",
-    notificationEventType: "budget_cap_reached",
-    aiNotificationEventType: "budget_cap_reached",
+    businessEventKey: "KILL_SWITCH",
+    notificationEventType: "kill_switch",
+    aiNotificationEventType: "kill_switch",
     severityHint: "critical",
     sendDefault: "no_send_until_owner_gate",
-    notes: "Kill switch maps to existing cap-reached events; no new Lane 2 key required."
+    notes: "Kill switch maps to existing Lane 2 kill_switch (critical, audit-only); checked before cap_reached."
   }
 ];
 
@@ -109,11 +114,12 @@ export function resolveAiBudgetNotificationSignal(input: {
   monthlyCapUsd: number;
   thresholdRatio?: number;
 }): AiBudgetNotificationSignal | null {
-  if (input.spentThisPeriodUsd >= input.monthlyCapUsd) {
-    return "cap_reached";
-  }
+  // Kill switch outranks cap-reached so operators get the critical audit-only signal.
   if (input.killSwitchActive) {
     return "kill_switch_active";
+  }
+  if (input.spentThisPeriodUsd >= input.monthlyCapUsd) {
+    return "cap_reached";
   }
   if (input.projectedOverBudget) {
     return "cap_blocked";

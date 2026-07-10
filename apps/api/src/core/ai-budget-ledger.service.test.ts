@@ -191,6 +191,27 @@ describe("ai-budget-ledger.service (unit logic)", () => {
     assert.equal(result.metadata?.actualCostUsd, null);
   });
 
+  it("rejects non-finite or negative actualCostUsd (trusted-source; leave null)", () => {
+    const routing = resolveModelRoute({
+      orchestratorTaskType: "research_pack",
+      clientProfile: "puriva"
+    });
+    for (const bad of [Number.NaN, Number.POSITIVE_INFINITY, -0.01]) {
+      const result = prepareCompletedLedgerAttribution({
+        orchestratorTaskType: "research_pack",
+        clientProfile: "puriva",
+        routingAudit: routing.audit,
+        providerExecution: mockSuccessExecution({ actualCostUsd: bad }),
+        estimatedCostUsd: 0.3
+      });
+      assert.equal(result.ok, true);
+      assert.equal(result.ledgerStatus, "COMPLETED");
+      assert.equal(result.metadata?.actualCostUsd, null);
+      assert.equal(result.metadata?.estimatedCostUsd, 0.3);
+      assert.equal(result.metadata?.overCap, false);
+    }
+  });
+
   it("records BLOCKED metadata when safeError is present", () => {
     const routing = resolveModelRoute({
       orchestratorTaskType: "research_pack",

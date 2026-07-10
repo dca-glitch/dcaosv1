@@ -1283,7 +1283,14 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
           {loading ? (
             <LoadingState label="Loading briefs…" />
           ) : briefs.length === 0 ? (
-            <EmptyState title="No workflow briefs" message="Create a brief via API or seed data to get started." />
+            <EmptyState
+              title={canManageAi ? "No workflow briefs" : "No production plans yet"}
+              message={
+                canManageAi
+                  ? "Create a brief via API or seed data to get started."
+                  : "When your team shares a production plan, it will appear here for review."
+              }
+            />
           ) : (
             <ul className="brief-select-list">
               {briefs.map((brief) => (
@@ -1310,7 +1317,14 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
         <div className="brief-detail-shell brief-detail-stack">
           {!selectedId ? (
             <SectionPanel title="Brief detail">
-              <EmptyState title="Select a brief" message="Choose a brief from the list to view details and AI outputs." />
+              <EmptyState
+                title={canManageAi ? "Select a brief" : "Select a plan"}
+                message={
+                  canManageAi
+                    ? "Choose a brief from the list to view details and AI outputs."
+                    : "Choose a plan from the list to review details and approve or request changes."
+                }
+              />
             </SectionPanel>
           ) : detailLoading ? (
             <LoadingState label="Loading brief detail…" />
@@ -1367,29 +1381,31 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
                 <BriefField label="Notes" value={detail.notes} />
               </SectionPanel>
 
-              <SectionPanel className="brief-detail-section" title="AI Run Status">
-                {latestRun ? (
-                  <>
-                    <div className="brief-detail-meta">
-                      <StatusBadge status={latestRun.status} />
-                      {latestRun.errorMessage ? (
-                        <span className="brief-detail-caption muted-text">{latestRun.errorMessage}</span>
+              {canManageAi ? (
+                <SectionPanel className="brief-detail-section" title="AI Run Status">
+                  {latestRun ? (
+                    <>
+                      <div className="brief-detail-meta">
+                        <StatusBadge status={latestRun.status} />
+                        {latestRun.errorMessage ? (
+                          <span className="brief-detail-caption muted-text">{latestRun.errorMessage}</span>
+                        ) : null}
+                      </div>
+                      <BriefField label="Started" value={formatRunTimestamp(latestRun.startedAt)} />
+                      <BriefField label="Completed" value={formatRunTimestamp(latestRun.completedAt)} />
+                      {runKnowledgeContext ? (
+                        <WorkflowBriefKnowledgeUsageSummary
+                          className="brief-detail-section--spaced"
+                          metadata={runKnowledgeContext}
+                          workflowType="summary (MI/SEO run)"
+                        />
                       ) : null}
-                    </div>
-                    <BriefField label="Started" value={formatRunTimestamp(latestRun.startedAt)} />
-                    <BriefField label="Completed" value={formatRunTimestamp(latestRun.completedAt)} />
-                    {canManageAi && runKnowledgeContext ? (
-                      <WorkflowBriefKnowledgeUsageSummary
-                        className="brief-detail-section--spaced"
-                        metadata={runKnowledgeContext}
-                        workflowType="summary (MI/SEO run)"
-                      />
-                    ) : null}
-                  </>
-                ) : (
-                  <p className="muted-text">No AI runs yet. Finish verified intake and approved KB/context first.</p>
-                )}
-              </SectionPanel>
+                    </>
+                  ) : (
+                    <p className="muted-text">No AI runs yet. Finish verified intake and approved KB/context first.</p>
+                  )}
+                </SectionPanel>
+              ) : null}
 
               {(miOpportunities.length > 0 || miRisks.length > 0 || seoKeywords.length > 0 || seoTopics.length > 0) ? (
                 <SectionPanel className="brief-detail-section" title="Key Highlights">

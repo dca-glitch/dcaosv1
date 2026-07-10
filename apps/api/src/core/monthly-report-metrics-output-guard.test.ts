@@ -149,6 +149,18 @@ describe("monthly-report-metrics-output-guard", () => {
     assert.equal(finalOk.audience, "client");
   });
 
+  it("G529: client FINAL check is case-insensitive", () => {
+    const ok = buildMonthlyReportClientOutput({
+      status: "final",
+      title: "Case fold",
+      recommendationsText: "Safe",
+      metricsTruthLabel: "Placeholder metrics for local proof",
+      ...secrets
+    });
+    assert.equal(ok.ok, true, ok.errors.join("; "));
+    assert.equal(ok.client?.status, "FINAL");
+  });
+
   it("G529: client payload never leaks googleAccessToken or refreshToken values", () => {
     const ok = buildMonthlyReportClientOutput({
       status: "FINAL",

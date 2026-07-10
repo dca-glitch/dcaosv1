@@ -1,5 +1,9 @@
 import { useEffect, useState } from "react";
 import { Button, SectionPanel, StatusBadge } from "../ui";
+import {
+  formatIntegrationReadinessLabel,
+  integrationReadinessBadgeLabel
+} from "../../lib/proof-state-labels";
 import { AiOrchestratorLitePanel } from "./AiOrchestratorLitePanel";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "/api/v1";
@@ -47,15 +51,11 @@ type AdminOperationsSummary = {
 };
 
 function readinessStatusLabel(status: IntegrationCategory["status"]): string {
-  if (status === "disabled") return "Disabled";
-  if (status === "missing_config") return "Missing config";
-  return "Shape OK";
+  return formatIntegrationReadinessLabel(status);
 }
 
 function readinessBadgeStatus(status: IntegrationCategory["status"]): string {
-  if (status === "configured_shape_ok") return "Ready";
-  if (status === "missing_config") return "Warning";
-  return "Inactive";
+  return integrationReadinessBadgeLabel(status);
 }
 
 function formatAuditActionLabel(action: string): string {
@@ -129,7 +129,7 @@ export function AdminOperationsPanel() {
           <div className="admin-operations-grid">
             <div className="admin-operations-row">
               <span className="muted-text">Database</span>
-              <StatusBadge status={summary.database.status === "ready" ? "Ready" : "Warning"} />
+              <StatusBadge status={summary.database.status === "ready" ? "Database ready" : "Warning"} />
               <span className="muted-text">{summary.database.message}</span>
             </div>
             {summary.externalIntegrations.categories.map((category) => (

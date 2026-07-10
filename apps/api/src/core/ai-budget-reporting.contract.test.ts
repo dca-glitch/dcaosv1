@@ -305,4 +305,43 @@ describe("ai-budget-reporting.contract", () => {
       false
     );
   });
+
+  it("treats non-finite or negative actualCostUsd as null (trusted-source)", () => {
+    const report = buildAiBudgetReportingContract({
+      periodKey: PERIOD_KEY,
+      monthlyCapUsd: 100,
+      rows: [
+        {
+          id: "bad-actual-nan",
+          periodKey: PERIOD_KEY,
+          provider: "openrouter",
+          model: "anthropic/claude-haiku-4.5",
+          taskType: "report_narrative",
+          estimatedCostUsd: 0.15,
+          actualCostUsd: Number.NaN,
+          status: "COMPLETED",
+          liveProviderCalled: true
+        },
+        {
+          id: "bad-actual-neg",
+          periodKey: PERIOD_KEY,
+          provider: "openrouter",
+          model: "anthropic/claude-haiku-4.5",
+          taskType: "report_narrative",
+          estimatedCostUsd: 0.2,
+          actualCostUsd: -1,
+          status: "COMPLETED",
+          liveProviderCalled: false
+        }
+      ]
+    });
+    assert.equal(report.rows.length, 2);
+    for (const row of report.rows) {
+      assert.equal(row.actualCostUsd, null);
+      assert.equal(row.spendBasis, "estimated");
+    }
+    assert.equal(report.totals.actualCostUsd, 0);
+    assert.equal(report.totals.estimatedFallbackCostUsd, 0.35);
+    assert.equal(report.spentThisPeriodUsd, 0.35);
+  });
 });

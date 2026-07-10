@@ -30,7 +30,7 @@
 | WordPress credentials | `wordpress-credentials-redaction.ts` | Shape/metadata/deep redact |
 | WordPress errors | `wordpress-error-redaction.ts` | Secret fragments in error text |
 | Email no-send adapter | `email-no-send-adapter.ts` | Safe metadata only; no provider call |
-| Email template/recipient redaction | `email-redaction.ts` (other lane; may be working-tree) | Template variable + recipient scrub |
+| Email template/recipient redaction | `email-redaction.ts` (tracked; notifications lane) | Template variable + recipient scrub |
 | Notification events | `notification-events.test.ts` | Asserts no secrets/provider raw responses |
 | Market intelligence | `packages/shared` + Puriva MI helpers | Client-safe payload sanitizers |
 | R2 proof stages | `r2-proof-stage.ts` | `clientSafe` boolean per stage |

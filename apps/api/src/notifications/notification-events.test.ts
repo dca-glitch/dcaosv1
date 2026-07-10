@@ -460,7 +460,7 @@ describe("event-to-notification mapping", () => {
 
 describe("approval and reject notification matrix", () => {
   it("marks deliverable approval and rejection as admin launch-critical notifications", () => {
-    assert.equal(APPROVAL_REJECT_NOTIFICATION_MATRIX.deliverableApproved.severity, "action_required");
+    assert.equal(APPROVAL_REJECT_NOTIFICATION_MATRIX.deliverableApproved.severity, "info");
     assert.deepEqual(APPROVAL_REJECT_NOTIFICATION_MATRIX.deliverableApproved.audiences, ["admin"]);
     assert.deepEqual(APPROVAL_REJECT_NOTIFICATION_MATRIX.deliverableRejected.requiredChannels, [
       "in_system",
@@ -554,6 +554,8 @@ describe("G494 legacy alias compatibility", () => {
       assert.ok(preferredDef.label.length > 0, preferred);
       assert.equal(legacyDef.auditOnly, preferredDef.auditOnly, legacy);
       assert.deepEqual(legacyDef.audiences, preferredDef.audiences, legacy);
+      assert.equal(legacyDef.severity, preferredDef.severity, `${legacy} severity parity`);
+      assert.equal(legacyDef.launchCritical, preferredDef.launchCritical, `${legacy} launchCritical parity`);
     }
   });
 

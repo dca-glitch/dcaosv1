@@ -6,7 +6,7 @@
 
 **Command convention:** Run from `C:\dcaosv1` in external Windows PowerShell. Prefer `npm.cmd run <script>` on Windows. **Validate must pass before smoke. Never run smoke after a failed validate.** One command per line (no `&&`). Long runs should log to `$env:TEMP` and open Notepad. Do not track or commit `.cursor/settings.json`.
 
-**Truth sweep:** Local foundations expanding; live proofs deferred; staging has historical G46d/G47 PASS evidence only; production readiness remains **NO** / frozen; G50 is not executed; Puriva Launch remains **BLOCKED**. This inventory does not authorize live calls, staging/VPS/prod mutation, commit, push, or deploy.
+**Truth sweep:** Local foundations expanding; live proofs deferred; staging has historical G46d/G47 PASS evidence only (not standing authorization); production readiness remains **NO** / frozen; G50 is not executed; Puriva Launch remains **BLOCKED**; staging/prod live proofs **NOT proven**. Next stage = owner-approved staging/live proof only. This inventory does not authorize live calls, staging/VPS/prod mutation, commit, push, or deploy. `.cursor/settings.json` stays untracked.
 
 ---
 

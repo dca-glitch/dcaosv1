@@ -143,7 +143,8 @@ export function evaluateImageAltTextPolicy(altText: string | null | undefined): 
   return {
     version: IMAGE_ALT_TEXT_POLICY_VERSION,
     allowed: issues.length === 0,
-    normalizedAltText: issues.length === 0 ? trimmed : trimmed,
+    // Rejected alt must not be treated as normalized/approved for WP inclusion.
+    normalizedAltText: issues.length === 0 ? trimmed : null,
     issues,
     checks
   };

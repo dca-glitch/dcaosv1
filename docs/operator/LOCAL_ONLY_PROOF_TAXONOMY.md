@@ -1,8 +1,8 @@
 # Local-Only Proof Taxonomy (G654)
 
-**Status:** Taxonomy for classifying local proofs. G654 refresh for G469–G708 ultra-block on baseline `66dcb74`. Complements [`NO_LIVE_PROOF_CATALOGUE.md`](./NO_LIVE_PROOF_CATALOGUE.md) and [`ENV_SHAPE_VS_LIVE_PROOF_LABELS.md`](../security/ENV_SHAPE_VS_LIVE_PROOF_LABELS.md).
+**Status:** Taxonomy for classifying local proofs. G654 refresh for G469–G708 ultra-block; PRE-STAGING Lanes 14–15 reaffirm (2026-07-10). Complements [`NO_LIVE_PROOF_CATALOGUE.md`](./NO_LIVE_PROOF_CATALOGUE.md) and [`ENV_SHAPE_VS_LIVE_PROOF_LABELS.md`](../security/ENV_SHAPE_VS_LIVE_PROOF_LABELS.md).
 
-**Hard truths:** local foundations expanding; live proofs deferred; Puriva Launch **BLOCKED** (L8 unreachable); production readiness **NO**.
+**Hard truths:** local foundations expanding; live proofs deferred; Puriva Launch **BLOCKED** (L8 unreachable); production readiness **NO**; staging/prod live proofs **NOT proven** from L0–L5 alone. `configured_shape_ok` is L1/L3 evidence at most — never L6–L8.
 
 ---
 

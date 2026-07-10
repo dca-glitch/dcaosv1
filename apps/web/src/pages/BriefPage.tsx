@@ -1369,7 +1369,7 @@ export function BriefPage() {
           type="button"
           variant="tertiary"
         >
-          Pending Approvals
+          Pending Reviews
         </Button>
         <Button className="portal-subnav-link is-active" type="button" variant="tertiary">
           Briefs

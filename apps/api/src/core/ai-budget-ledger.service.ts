@@ -194,15 +194,18 @@ export function prepareCompletedLedgerAttribution(
 
   if (input.providerExecution.actualCostUsd != null) {
     const rawActual = Number(input.providerExecution.actualCostUsd);
-    if (
-      routingAudit.maxCostUsdPerRun > 0 &&
-      rawActual > routingAudit.maxCostUsdPerRun
-    ) {
-      overCap = true;
-      overCapReason = `Actual cost $${rawActual} exceeds route cap $${routingAudit.maxCostUsdPerRun}.`;
-      ledgerStatus = "BLOCKED";
-    } else {
-      actualCostUsd = rawActual;
+    // Trusted-source policy: non-finite / negative values are not actuals — leave null.
+    if (Number.isFinite(rawActual) && rawActual >= 0) {
+      if (
+        routingAudit.maxCostUsdPerRun > 0 &&
+        rawActual > routingAudit.maxCostUsdPerRun
+      ) {
+        overCap = true;
+        overCapReason = `Actual cost $${rawActual} exceeds route cap $${routingAudit.maxCostUsdPerRun}.`;
+        ledgerStatus = "BLOCKED";
+      } else {
+        actualCostUsd = rawActual;
+      }
     }
   }
 

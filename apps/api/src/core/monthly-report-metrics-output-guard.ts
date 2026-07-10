@@ -95,7 +95,7 @@ export function buildMonthlyReportClientOutput(
   input: MonthlyReportOutputGuardInput
 ): MonthlyReportOutputGuardResult {
   const errors: string[] = [];
-  const status = input.status?.trim() ?? "";
+  const status = (input.status?.trim() ?? "").toUpperCase();
 
   if (status !== "FINAL") {
     errors.push("client monthly report output requires FINAL status");

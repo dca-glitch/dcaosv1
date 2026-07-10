@@ -12,6 +12,8 @@ This register prevents confusion. If something is listed under **Still deferred*
 
 **G708 update (G469–G707 + G708 integration):** Ultra-block consolidated local/no-IO foundations across 20 lanes (R2/storage, private delivery/download, notification taxonomy, email no-send, GA/GSC OAuth design, monthly report output, WordPress draft helpers, image compliance, Client Portal serializers, approval/revision policy, Puriva pack, future-module contracts, AI budget/routing, orchestrator local guards, security inventories, operator runbooks, UI testability, stale-claim sweep). Still **do not** move: real R2 IO, live email, live GA/GSC, live WordPress, live image provider, staging/prod live proofs, notification persistence/in-system inbox, or trusted `actualCostUsd` ingestion. Puriva Launch remains **BLOCKED**. Production remains frozen.
 
+**PRE-STAGING CLOSURE (2026-07-10):** Local/no-live bug scan + safe fixes + UI/UX truth-label polish + operator/security docs closeout. Still **do not** move: real R2 IO, live email, live GA/GSC, live WordPress, live image provider, staging/prod live proofs, notification persistence/inbox, runtime taxonomy consumption for email send, or trusted `actualCostUsd` ingestion. Optional follow-ups (owner-gated, not launch-closing alone): client download `truthLabel` wiring; client-portal errorMiddleware stack branch; WorkflowBriefs packaging internals for non-admin clients. Puriva Launch remains **BLOCKED**. Production remains frozen. Next stage = owner-approved staging/live proof only. See [`PRE_STAGING_CLOSURE_VERDICT.md`](./PRE_STAGING_CLOSURE_VERDICT.md).
+
 ## Rule
 
 Deferred means: do not build, enable, deploy, or promise it as active until there is a separate approved task.

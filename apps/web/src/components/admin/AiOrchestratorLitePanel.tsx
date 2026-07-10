@@ -163,9 +163,14 @@ async function apiRequest<T>(method: string, path: string, body?: unknown): Prom
 }
 
 function executionModeLabel(mode: string): string {
-  if (mode === "live") return "Live";
+  if (mode === "live") return "Live (config only)";
   if (mode === "local") return "Local";
   return "Disabled";
+}
+
+/** Local/config-shape badges — never unqualified Ready for orchestrator proof. */
+function localOkBadge(): string {
+  return "Local OK";
 }
 
 export function AiOrchestratorLitePanel() {
@@ -281,7 +286,7 @@ export function AiOrchestratorLitePanel() {
           <div className="admin-operations-grid">
             <div className="admin-operations-row">
               <span className="muted-text">Puriva monthly AI cap</span>
-              <StatusBadge status="Ready" />
+              <StatusBadge status={localOkBadge()} />
               <span className="muted-text">${registry.purivaPolicyProfile.monthlyAiCapUsd} USD</span>
             </div>
             <div className="admin-operations-row">
@@ -302,7 +307,7 @@ export function AiOrchestratorLitePanel() {
             {budgetLedger ? (
               <div className="admin-operations-row">
                 <span className="muted-text">Persistent ledger ({budgetLedger.periodKey})</span>
-                <StatusBadge status={budgetLedger.spentThisPeriodUsd > 0 ? "Warning" : "Ready"} />
+                <StatusBadge status={budgetLedger.spentThisPeriodUsd > 0 ? "Warning" : localOkBadge()} />
                 <span className="muted-text">
                   ${budgetLedger.spentThisPeriodUsd} spent · {budgetLedger.entryCount} entries
                 </span>
@@ -311,9 +316,11 @@ export function AiOrchestratorLitePanel() {
             {killSwitch ? (
               <div className="admin-operations-row">
                 <span className="muted-text">Kill switch / live-safe</span>
-                <StatusBadge status={killSwitch.orchestratorLiveSafe ? "Ready" : "Warning"} />
+                <StatusBadge status={killSwitch.orchestratorLiveSafe ? localOkBadge() : "Warning"} />
                 <span className="muted-text">
-                  {killSwitch.orchestratorLiveSafe ? "Orchestrator live-safe" : "Live flags detected — preview only"}
+                  {killSwitch.orchestratorLiveSafe
+                    ? "Orchestrator config-safe (no live proof)"
+                    : "Live flags detected — preview only"}
                 </span>
               </div>
             ) : null}
@@ -327,7 +334,7 @@ export function AiOrchestratorLitePanel() {
               return (
                 <div className="admin-operations-row" key={mapping.role}>
                   <span className="muted-text">{roleLabel}</span>
-                  <StatusBadge status={provider?.enabled ? "Ready" : "Inactive"} />
+                  <StatusBadge status={provider?.enabled ? localOkBadge() : "Inactive"} />
                   <span className="muted-text" title={provider?.displayName ?? mapping.primaryProviderKey}>
                     {provider?.displayName ?? mapping.primaryProviderKey} · {executionModeLabel(provider?.executionMode ?? "disabled")}
                   </span>
@@ -372,8 +379,8 @@ export function AiOrchestratorLitePanel() {
           <div className="admin-operations-grid">
             <div className="admin-operations-row">
               <span className="muted-text">Can execute</span>
-              <StatusBadge status={plan.canExecute ? "Ready" : "Warning"} />
-              <span className="muted-text">{plan.blockedReason ?? "Policy and budget checks passed."}</span>
+              <StatusBadge status={plan.canExecute ? localOkBadge() : "Warning"} />
+              <span className="muted-text">{plan.blockedReason ?? "Policy and budget checks passed (preview only)."}</span>
             </div>
             <div className="admin-operations-row">
               <span className="muted-text">Provider / model</span>
@@ -385,7 +392,7 @@ export function AiOrchestratorLitePanel() {
             </div>
             <div className="admin-operations-row">
               <span className="muted-text">Model routing</span>
-              <StatusBadge status={plan.preview.modelRouting.blocked ? "Warning" : "Ready"} />
+              <StatusBadge status={plan.preview.modelRouting.blocked ? "Warning" : localOkBadge()} />
               <span className="muted-text">
                 {plan.preview.modelRouting.routingTaskType} · {plan.preview.modelRouting.gateway}
                 {plan.preview.modelRouting.primaryModel ? ` · ${plan.preview.modelRouting.primaryModel}` : ""}
@@ -393,16 +400,16 @@ export function AiOrchestratorLitePanel() {
             </div>
             <div className="admin-operations-row">
               <span className="muted-text">Route cost cap / live</span>
-              <StatusBadge status={plan.preview.modelRouting.allowLive ? "Ready" : "Inactive"} />
+              <StatusBadge status={plan.preview.modelRouting.allowLive ? "Live flag on" : "Inactive"} />
               <span className="muted-text">
                 ${plan.preview.modelRouting.maxCostUsdPerRun} cap · live{" "}
-                {plan.preview.modelRouting.allowLive ? "allowed" : "blocked"} · ledger{" "}
+                {plan.preview.modelRouting.allowLive ? "flag on (not proven)" : "blocked"} · ledger{" "}
                 {plan.preview.modelRouting.requiresBudgetLedger ? "required" : "optional"}
               </span>
             </div>
             <div className="admin-operations-row">
               <span className="muted-text">Budget remaining</span>
-              <StatusBadge status={plan.preview.budget.projectedOverBudget ? "Warning" : "Ready"} />
+              <StatusBadge status={plan.preview.budget.projectedOverBudget ? "Warning" : localOkBadge()} />
               <span className="muted-text">
                 ${plan.preview.budget.remainingBudgetUsd} of ${plan.preview.budget.monthlyCapUsd} USD
               </span>
@@ -439,7 +446,7 @@ export function AiOrchestratorLitePanel() {
         <SectionPanel
           tone="compact"
           title="Puriva integration boundaries"
-          description="Pre-live readiness only — live proof pending owner credentials."
+          description="Config-shape / dry-run only — not staging or production proof."
         >
           <div className="admin-operations-grid">
             {registry.integrationBoundary.categories.map((category) => (

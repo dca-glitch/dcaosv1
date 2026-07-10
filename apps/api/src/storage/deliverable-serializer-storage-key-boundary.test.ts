@@ -51,6 +51,7 @@ describe("deliverable-serializer-storage-key-boundary (G153 / G240 / G483)", () 
     } as Parameters<typeof toClientPortalDeliverableSummary>[0] & { storageKey: string });
 
     assert.equal(fromPolluted.exportUrl, "https://docs.example.com/export/boundary-2");
+    assert.equal(fromPolluted.hasDocument, true);
     assert.equal("storageKey" in fromPolluted, false);
     assertNoStorageKeyLeak(fromPolluted, { forbiddenStorageKey: forbiddenKey });
     assert.equal(payloadRespectsClientStorageFieldPolicy(fromPolluted), true);
@@ -78,6 +79,7 @@ describe("deliverable-serializer-storage-key-boundary (G153 / G240 / G483)", () 
     });
 
     assert.equal(summary.exportUrl, null);
+    assert.equal(summary.hasDocument, false);
     assertNoStorageKeyLeak(summary);
   });
 

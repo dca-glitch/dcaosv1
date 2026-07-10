@@ -1,8 +1,8 @@
 # Live Proof Approval Checklist (G653)
 
-**Status:** Pre-session checklist. Do not start a live proof until every applicable box is satisfied. G653 refresh for G469–G708 ultra-block on baseline `66dcb74`. Docs lane did not run live proofs.
+**Status:** Pre-session checklist. Do not start a live proof until every applicable box is satisfied. G653 refresh for G469–G708 ultra-block; PRE-STAGING Lanes 14–15 reaffirm (2026-07-10). Docs lane did not run live proofs.
 
-**Hard truths:** live proofs remain **deferred**; Puriva Launch **BLOCKED**; production frozen. Local foundations (including G469+ no-IO helpers) do **not** satisfy this checklist.
+**Hard truths:** live proofs remain **deferred**; Puriva Launch **BLOCKED**; production frozen; staging/prod live proofs **NOT proven**. Local foundations (including G469–G708 no-IO helpers) and `configured_shape_ok` do **not** satisfy this checklist. **Next stage = owner-approved staging/live proof session only.**
 
 Related: [`OWNER_GATE_CHECKLIST.md`](./OWNER_GATE_CHECKLIST.md) · [`NEXT_GATE_EXECUTION_CHECKLIST.md`](./NEXT_GATE_EXECUTION_CHECKLIST.md) · [`LOCAL_ONLY_PROOF_TAXONOMY.md`](./LOCAL_ONLY_PROOF_TAXONOMY.md)
 

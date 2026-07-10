@@ -134,8 +134,8 @@ export async function clientPortalApiRequest<T>(path: string, options: RequestOp
       ok: false,
       error: {
         code: payload.error.code,
-        message: toClientPortalUiSafeErrorMessage(payload.error.message),
-        details: payload.error.details
+        message: toClientPortalUiSafeErrorMessage(payload.error.message)
+        // details intentionally omitted — may carry stacks/provider internals in non-prod
       }
     };
   }

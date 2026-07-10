@@ -24,10 +24,12 @@ Implementation: `apps/api/src/storage/export-url-storage-key-matrix.ts`.
 | Entity | Client-safe output | Forbidden |
 |--------|--------------------|-----------|
 | Monthly report | `exportUrl`, `hasDocument` (from internal key presence) | `storageKey` |
-| Deliverable | `exportUrl` (no key echo even if polluted input) | `storageKey`, notes, draft/image IDs |
+| Deliverable | `exportUrl`, `hasDocument` (from internal key presence; key never echoed) | `storageKey`, notes, draft/image IDs |
 | Image asset | `previewImageUrl` / `finalImageUrl`, `hasDocument` | `storageKey` |
 
 Tests live under `apps/api/src/storage/*-storage-key-boundary.test.ts` and import client serializers read-only.
+
+**Pre-staging closure (2026-07-10):** `toClientPortalDeliverableSummary` now emits `hasDocument` (aligned with monthly reports and the exportUrl/storageKey matrix). `buildR2StorageKey` uses upload `mimeType` for extension fallback; path segments no longer allow `.` (blocks `..` survival). No live R2 IO.
 
 ---
 

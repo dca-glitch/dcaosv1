@@ -22,10 +22,12 @@ describe("image-alt-text-policy", () => {
 
     assert.equal(decision.allowed, false);
     assert.ok(decision.issues.some((i) => i.code === "medical_claim"));
+    assert.equal(decision.normalizedAltText, null);
 
     const permanent = evaluateImageAltTextPolicy("Visual promising permanent results after one visit");
     assert.equal(permanent.allowed, false);
     assert.ok(permanent.issues.some((i) => i.code === "medical_claim"));
+    assert.equal(permanent.normalizedAltText, null);
   });
 
   it("G191/G315 rejects before/after implication", () => {

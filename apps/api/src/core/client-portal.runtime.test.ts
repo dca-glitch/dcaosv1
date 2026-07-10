@@ -67,10 +67,11 @@ describe("client-portal.runtime — serializer audit (G199/G329)", () => {
       isArchived: false,
       createdAt: new Date("2026-07-01T00:00:00.000Z"),
       updatedAt: new Date("2026-07-02T00:00:00.000Z")
-    } as Parameters<typeof toClientPortalDeliverableSummary>[0] & { storageKey: string });
+    });
 
     const serialized = JSON.stringify(summary);
     assert.equal(summary.exportUrl, "https://docs.example.com/export/client-deliverable");
+    assert.equal(summary.hasDocument, true);
     assert.equal(serialized.includes("storageKey"), false);
     assert.equal(serialized.includes("tenants/internal/private-object.pdf"), false);
     assertClientPortalPayloadHasNoForbiddenKeys(summary);

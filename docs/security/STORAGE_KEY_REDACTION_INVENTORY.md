@@ -42,8 +42,8 @@ Policy constants: `apps/api/src/storage/admin-vs-client-storage-field-policy.ts`
 | `toStorageKeyBoundarySnapshot` | same | Boolean leak flags; `liveProven: false` | Yes |
 | `redactStorageErrorMessage` | `storage-error-redaction.ts` | Scrubs key paths from error text | Yes (Lane 1 owns) |
 | `payloadRespectsClientStorageFieldPolicy` | `admin-vs-client-storage-field-policy.ts` | Client field allow/deny | Yes |
-| Private delivery download boundary | `private-delivery-download-boundary.ts` | Admin-only field inventory + client-safe URL labels | Working tree / storage lane |
-| Export URL storage-key matrix | `export-url-storage-key-matrix.ts` | Matrix of exportUrl vs storageKey exposure | Working tree / storage lane |
+| Private delivery download boundary | `private-delivery-download-boundary.ts` | Admin-only field inventory + client-safe URL labels | Tracked (storage lane) |
+| Export URL storage-key matrix | `export-url-storage-key-matrix.ts` | Matrix of exportUrl vs storageKey exposure | Tracked when present (storage lane) |
 
 ---
 

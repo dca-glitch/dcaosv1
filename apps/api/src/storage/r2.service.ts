@@ -9,6 +9,8 @@ export interface StorageKeyInput {
   documentType: R2DocumentType;
   documentDate?: Date | null;
   originalFileName: string;
+  /** When set, used for extension fallback when the filename has no allowed extension. */
+  mimeType?: string;
 }
 
 export interface UploadObjectInput extends StorageKeyInput {
@@ -39,7 +41,8 @@ function sanitizePathSegment(value: string, fallback: string): string {
     .normalize("NFKD")
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase()
-    .replace(/[^a-z0-9._-]+/g, "-")
+    // Dots are not allowed in path segments — prevents "../" surviving as ".."
+    .replace(/[^a-z0-9_-]+/g, "-")
     .replace(/^-+|-+$/g, "")
     .replace(/-{2,}/g, "-");
 
@@ -179,7 +182,8 @@ export function buildR2StorageKey(input: StorageKeyInput): string {
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const tenantSegment = sanitizePathSegment(input.tenantSlugOrId, "tenant");
   const projectSegment = input.projectSlugOrId ? sanitizePathSegment(input.projectSlugOrId, "no-project") : "no-project";
-  const extension = getSafeExtension(input.originalFileName, "application/octet-stream") ?? "bin";
+  const mimeType = input.mimeType ?? "application/octet-stream";
+  const extension = getSafeExtension(input.originalFileName, mimeType) ?? "bin";
   const baseName = sanitizePathSegment(input.originalFileName.replace(/\.[^.]+$/, ""), "document");
   const safeFileName = `${baseName}-${Date.now()}-${randomUUID().slice(0, 8)}.${extension}`;
 

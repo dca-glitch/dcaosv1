@@ -498,7 +498,7 @@ export const NOTIFICATION_EVENT_DEFINITIONS: Record<NotificationEventType, Notif
   client_deliverable_approved: def({
     eventType: "client_deliverable_approved",
     label: "Client approved deliverable",
-    severity: "action_required",
+    severity: "info",
     audiences: ["admin"],
     recipientRoles: ["admin", "owner_operator"],
     launchCritical: true,

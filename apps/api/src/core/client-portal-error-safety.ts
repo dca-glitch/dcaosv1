@@ -71,6 +71,7 @@ export function toClientPortalSafeErrorMessage(
 /** Forbidden keys that must never appear in client-portal JSON payloads. */
 export const CLIENT_PORTAL_FORBIDDEN_PAYLOAD_KEYS = [
   "storageKey",
+  "documentStorageKey",
   "providerMetadata",
   "provider",
   "workflowRunId",

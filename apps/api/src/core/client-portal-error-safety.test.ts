@@ -54,6 +54,7 @@ describe("client portal error message safety (G204/G330/G570)", () => {
         title: "Safe",
         nested: {
           storageKey: "tenants/x/y",
+          documentStorageKey: "tenants/x/invoice.pdf",
           workflowRunId: "run-1",
           provider: "openai",
           estimatedCostUsd: 3.3
@@ -67,6 +68,7 @@ describe("client portal error message safety (G204/G330/G570)", () => {
       "actualCostUsd",
       "adminSummaryNotes",
       "costRows",
+      "documentStorageKey",
       "estimatedCostUsd",
       "provider",
       "storageKey",

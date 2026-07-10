@@ -86,6 +86,22 @@ export function formatProofStateLabel(state: ProofState): string {
   return PROOF_STATE_LABELS[state];
 }
 
+/** API readiness token (`configured_shape_ok`) → admin proof-state label (`Config shape OK`). */
+export type IntegrationReadinessStatus = "disabled" | "missing_config" | "configured_shape_ok";
+
+export function formatIntegrationReadinessLabel(status: IntegrationReadinessStatus): string {
+  if (status === "disabled") return "Disabled";
+  if (status === "missing_config") return "Missing config";
+  return formatProofStateLabel("config_shape_ok");
+}
+
+/** Badge label for integration readiness — never unqualified "Ready" for config shape. */
+export function integrationReadinessBadgeLabel(status: IntegrationReadinessStatus): string {
+  if (status === "configured_shape_ok") return formatProofStateLabel("config_shape_ok");
+  if (status === "missing_config") return "Warning";
+  return "Inactive";
+}
+
 export function proofStateTone(state: ProofState): IntegrationTruthTone {
   return PROOF_STATE_TONES[state];
 }

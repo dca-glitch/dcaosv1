@@ -443,7 +443,17 @@ export function ArticleApprovalEditor({ deliverableId }: ArticleApprovalEditorPr
               <div>
                 <dt>Status</dt>
                 <dd>
-                  <StatusBadge status={deliverable.status} />
+                  <StatusBadge
+                    status={
+                      deliverable.status === "PENDING_CLIENT_REVIEW"
+                        ? "Needs your review"
+                        : deliverable.status === "APPROVED_BY_CLIENT"
+                          ? "Approved"
+                          : deliverable.status === "CHANGES_REQUESTED"
+                            ? "Changes requested"
+                            : "In review"
+                    }
+                  />
                 </dd>
               </div>
             </dl>

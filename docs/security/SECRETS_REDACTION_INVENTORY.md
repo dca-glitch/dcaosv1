@@ -35,12 +35,12 @@
 | Client publication credential keys | `apps/api/src/core/client-publication.runtime.ts` | Forbidden credential key list | No live |
 | Prompt injection sanitize | `apps/api/src/core/ai-prompt-injection-sanitize.ts` | Untrusted instruction patterns → `[REDACTED-UNTRUSTED]` | No live |
 
-### 2.1 Observed on disk / other-lane (not claimed as this lane’s deliverable)
+### 2.1 Related helpers (tracked; other-lane ownership)
 
 | Helper | Path | Note |
 |---|---|---|
-| Email recipient / template-variable redaction | `apps/api/src/notifications/email-redaction.ts` | Present on working tree; **not in HEAD `66dcb74`** — owned by notifications lane; do not edit here |
-| Private delivery download boundary | `apps/api/src/storage/private-delivery-download-boundary.ts` | Working-tree / storage lane; not claimed as secrets-lane proof |
+| Email recipient / template-variable redaction | `apps/api/src/notifications/email-redaction.ts` | **Tracked** — notifications lane ownership; inventory only here |
+| Private delivery download boundary | `apps/api/src/storage/private-delivery-download-boundary.ts` | **Tracked** — storage lane ownership; inventory only here |
 
 ---
 
@@ -65,7 +65,7 @@
 | Storage error redaction | `storage-error-redaction.test.ts` | Present (Lane 1 owns — do not edit) |
 | Notification event metadata exclusions | `notification-events.test.ts` | Present |
 | Client portal error safety | `client-portal-error-safety.test.ts` | Present (Lane 9 owns — do not edit) |
-| Email redaction unit tests | `email-redaction.test.ts` | Observed on disk / other lane — not in HEAD |
+| Email redaction unit tests | `email-redaction.test.ts` | Present (tracked; notifications lane) |
 
 ---
 

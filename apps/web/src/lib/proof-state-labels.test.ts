@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+  formatIntegrationReadinessLabel,
   formatIntegrationTruthChip,
   formatProofStateLabel,
+  integrationReadinessBadgeLabel,
   integrationTruthChipTone,
   isProofState,
   looksLikeLiveOverclaim,
@@ -41,6 +43,18 @@ describe("isProofState", () => {
     expect(isProofState("local_only")).toBe(true);
     expect(isProofState("live_ready")).toBe(false);
     expect(isProofState("")).toBe(false);
+  });
+});
+
+describe("formatIntegrationReadinessLabel", () => {
+  it("maps API configured_shape_ok to Config shape OK, never Ready", () => {
+    expect(formatIntegrationReadinessLabel("disabled")).toBe("Disabled");
+    expect(formatIntegrationReadinessLabel("missing_config")).toBe("Missing config");
+    expect(formatIntegrationReadinessLabel("configured_shape_ok")).toBe("Config shape OK");
+    expect(integrationReadinessBadgeLabel("configured_shape_ok")).toBe("Config shape OK");
+    expect(integrationReadinessBadgeLabel("configured_shape_ok")).not.toBe("Ready");
+    expect(integrationReadinessBadgeLabel("missing_config")).toBe("Warning");
+    expect(integrationReadinessBadgeLabel("disabled")).toBe("Inactive");
   });
 });
 

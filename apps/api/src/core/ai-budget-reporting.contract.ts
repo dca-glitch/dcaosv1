@@ -101,6 +101,20 @@ function moneyToNumber(value: AiBudgetLedgerSpendRow["estimatedCostUsd"]): numbe
   return Number(value.toString());
 }
 
+/** Trusted actual only — non-finite / negative values stay null (never invent spend). */
+function trustedActualCostToNumber(
+  value: AiBudgetLedgerSpendRow["actualCostUsd"]
+): number | null {
+  if (value == null) {
+    return null;
+  }
+  const parsed = moneyToNumber(value);
+  if (!Number.isFinite(parsed) || parsed < 0) {
+    return null;
+  }
+  return parsed;
+}
+
 function roundUsd(value: number): number {
   return Number(value.toFixed(4));
 }
@@ -141,7 +155,7 @@ export function buildAiBudgetReportingContract(input: {
     .filter((row) => row.periodKey === input.periodKey && COUNTABLE_STATUSES.has(row.status))
     .map((row): AiBudgetReportRow => {
       const estimatedCostUsd = moneyToNumber(row.estimatedCostUsd);
-      const actualCostUsd = row.actualCostUsd == null ? null : moneyToNumber(row.actualCostUsd);
+      const actualCostUsd = trustedActualCostToNumber(row.actualCostUsd);
       const spendBasis: AiBudgetSpendBasis = actualCostUsd == null ? "estimated" : "actual";
       return {
         id: row.id ?? null,
@@ -151,10 +165,10 @@ export function buildAiBudgetReportingContract(input: {
         taskType: row.taskType ?? null,
         status: row.status as AiBudgetReportRow["status"],
         liveProviderCalled: row.liveProviderCalled,
-        estimatedCostUsd: roundUsd(estimatedCostUsd),
+        estimatedCostUsd: roundUsd(Number.isFinite(estimatedCostUsd) ? estimatedCostUsd : 0),
         actualCostUsd: actualCostUsd == null ? null : roundUsd(actualCostUsd),
         spendBasis,
-        spentUsd: roundUsd(actualCostUsd ?? estimatedCostUsd)
+        spentUsd: roundUsd(actualCostUsd ?? (Number.isFinite(estimatedCostUsd) ? estimatedCostUsd : 0))
       };
     });
 
