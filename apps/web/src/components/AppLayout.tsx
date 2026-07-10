@@ -1,4 +1,8 @@
-import { Button } from "./ui/Button";
+import "./shell/shell.css";
+import { AdminSidebar } from "./shell/AdminSidebar";
+import { PortalSidebar } from "./shell/PortalSidebar";
+import { AppTopbar } from "./shell/AppTopbar";
+import { PageContainer } from "./shell/PageContainer";
 
 type AppLayoutNavigationItem = {
   view: string;
@@ -30,18 +34,6 @@ type AppLayoutProps = {
   children: React.ReactNode;
 };
 
-function portalSectionLabel(section: string): string {
-  if (section === "client") {
-    return "Archive";
-  }
-
-  return section === "protected" ? "Product" : section;
-}
-
-function adminSectionLabel(section: string): string {
-  return section === "protected" ? "Product" : section;
-}
-
 export function AppLayout({
   activeView,
   currentTenant,
@@ -53,55 +45,41 @@ export function AppLayout({
   children
 }: AppLayoutProps) {
   const isPortalShell = shellVariant === "portal";
-  const sectionLabel = isPortalShell ? portalSectionLabel : adminSectionLabel;
+  void isClientRole;
 
   return (
     <div className={isPortalShell ? "app-shell portal-shell" : "app-shell"}>
-      <aside className="sidebar" aria-label={isPortalShell ? "Client archive navigation" : "Primary navigation"}>
-        <div className="sidebar-brand brand">
-          <span className="brand-mark">DCA</span>
-          <span className="brand-copy">
-            <strong>{isPortalShell ? "Client Archive" : "DCA OS Lite"}</strong>
-            <small>{isPortalShell ? "Read-only deliverables" : "Operations Command"}</small>
-          </span>
-        </div>
-        <nav
-          className="sidebar-nav nav-list"
-          aria-label={isPortalShell ? "Archive sections" : "Workspace modules"}
+      <a className="shell-skip-link" href="#shell-main-content">
+        Skip to content
+      </a>
+      {isPortalShell ? (
+        <PortalSidebar
+          activeView={activeView}
+          currentTenant={currentTenant}
+          navigationItems={navigationItems}
+          onLogout={onLogout}
+          user={user}
+        />
+      ) : (
+        <AdminSidebar
+          activeView={activeView}
+          currentTenant={currentTenant}
+          navigationItems={navigationItems}
+          onLogout={onLogout}
+          user={user}
+        />
+      )}
+      <div className="shell-content-column">
+        <AppTopbar activeView={activeView} shellVariant={shellVariant} />
+        <main
+          id="shell-main-content"
+          className={isPortalShell ? "main-shell portal-main-shell shell-main" : "main-shell shell-main"}
+          data-density={isPortalShell ? "comfortable" : "compact"}
+          tabIndex={-1}
         >
-          {Array.from(new Set(navigationItems.map((item) => item.section))).map((section) => (
-            <div className="nav-section" key={section}>
-              <span className="nav-section-label">{sectionLabel(section)}</span>
-              {navigationItems
-                .filter((item) => item.section === section)
-                .map((item) => (
-                  <a
-                    aria-current={activeView === item.view ? "page" : undefined}
-                    data-section={item.section}
-                    href={`#/${item.view}`}
-                    key={item.view}
-                  >
-                    {item.icon ? <span className="nav-icon">{item.icon}</span> : <span className="nav-dot" aria-hidden="true" />}
-                    {isPortalShell && item.view === "client-portal" ? "Your archive" : item.label}
-                  </a>
-                ))}
-            </div>
-          ))}
-        </nav>
-        <div className="user-panel sidebar-footer">
-          <span>{user.name || user.email}</span>
-          <small>{user.email}</small>
-          <Button className="ghost-action shell-logout-action" onClick={onLogout} type="button" variant="tertiary">
-            Logout
-          </Button>
-        </div>
-      </aside>
-      <main
-        className={isPortalShell ? "main-shell portal-main-shell" : "main-shell"}
-        data-density={isPortalShell ? "comfortable" : "compact"}
-      >
-        {children}
-      </main>
+          <PageContainer shellVariant={shellVariant}>{children}</PageContainer>
+        </main>
+      </div>
     </div>
   );
 }
