@@ -4,6 +4,8 @@ export { MetricCard } from "./MetricCard";
 export { Modal, type ModalProps } from "./Modal";
 export { ModalActions } from "./ModalActions";
 export { PageHeader } from "./PageHeader";
+export { RingMeter, type RingMeterProps, type RingMeterSize } from "./RingMeter";
+export { RingMetricTile, type RingMetricTileProps } from "./RingMetricTile";
 export { SectionPanel } from "./SectionPanel";
 export { SideSheet, type SideSheetProps } from "./SideSheet";
 export { StatusBadge, getStatusTone } from "./StatusBadge";

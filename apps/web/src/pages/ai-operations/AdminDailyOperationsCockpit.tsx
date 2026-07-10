@@ -1,7 +1,20 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useId, useMemo, useState } from "react";
 import type { AiOperationsRunListItem, AiOperationsRunsResponse } from "@dca-os-v1/shared";
-import { Button, MetricCard, PageHeader, SectionPanel, StatusBadge } from "../../components/ui";
+import { Button, PageHeader, RingMetricTile, SectionPanel, StatusBadge } from "../../components/ui";
 import { Alert, Spinner } from "../../design-system";
+import { ActivityItem } from "../../design-system/components/Table";
+import {
+  DEFERRED_GATED_ITEMS,
+  PURIVA_DAILY_PATH,
+  buildAgencyActivity,
+  buildAgencyHealth,
+  buildAgencyOpsMetrics,
+  formatRelativeTimestamp,
+  generateDailyActions,
+  normalizeRunStatus,
+  type DailyAction,
+} from "./adminDailyOperationsModel";
+import "./admin-daily-operations.css";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "/api/v1";
 const SESSION_STORAGE_KEY = "dcaosv1.authToken";
@@ -10,17 +23,7 @@ type ApiSuccess<T> = { ok: true; data: T };
 type ApiFailure = { ok: false; error: { code: string; message: string } };
 type ApiResponse<T> = ApiSuccess<T> | ApiFailure;
 
-type ActionPriority = "critical" | "high" | "normal";
-
-interface DailyAction {
-  id: string;
-  priority: ActionPriority;
-  category: "approval" | "review" | "blocked" | "handoff" | "waiting";
-  title: string;
-  context: string;
-  relatedRun?: AiOperationsRunListItem;
-  timestamp?: string | null;
-}
+type WorkflowTabId = "ready" | "review" | "blocked";
 
 async function apiRequest<T>(path: string): Promise<ApiResponse<T>> {
   const headers: Record<string, string> = { Accept: "application/json" };
@@ -34,131 +37,15 @@ async function apiRequest<T>(path: string): Promise<ApiResponse<T>> {
   if (!response.ok && payload.ok) {
     return {
       ok: false,
-      error: { code: "REQUEST_FAILED", message: "Request could not be completed." }
+      error: { code: "REQUEST_FAILED", message: "Request could not be completed." },
     };
   }
   return payload;
 }
 
-function generateDailyActions(runs: AiOperationsRunListItem[]): DailyAction[] {
-  const actions: DailyAction[] = [];
-
-  const runsByStatus = new Map<string, AiOperationsRunListItem[]>();
-  runs.forEach((run) => {
-    const status = run.status || "unknown";
-    if (!runsByStatus.has(status)) {
-      runsByStatus.set(status, []);
-    }
-    runsByStatus.get(status)!.push(run);
-  });
-
-  const failedRuns = runsByStatus.get("failed") || [];
-  failedRuns.slice(0, 3).forEach((run) => {
-    actions.push({
-      id: `failed-${run.id}`,
-      priority: "critical",
-      category: "review",
-      title: `Needs review: ${run.shortId} (${run.projectName})`,
-      context: `${run.workflowType || "workflow"} needs follow-up`,
-      relatedRun: run,
-      timestamp: run.executedAt
-    });
-  });
-
-  const pendingRuns = runsByStatus.get("pending_approval") || [];
-  pendingRuns.slice(0, 3).forEach((run) => {
-    actions.push({
-      id: `approval-${run.id}`,
-      priority: "high",
-      category: "approval",
-      title: `Ready now: ${run.shortId} (${run.projectName})`,
-      context: run.outputType
-        ? `${run.outputType} ready for your decision`
-        : "Workflow output ready for your decision",
-      relatedRun: run,
-      timestamp: run.executedAt
-    });
-  });
-
-  const inProgressRuns = runsByStatus.get("in_progress") || [];
-  if (inProgressRuns.length > 0) {
-    actions.push({
-      id: "long-running",
-      priority: "normal",
-      category: "waiting",
-      title: `${inProgressRuns.length} workflow${inProgressRuns.length !== 1 ? "s" : ""} in progress`,
-      context: `Longest running: ${inProgressRuns[0].projectName} (${inProgressRuns[0].workflowType || "standard"})`
-    });
-  }
-
-  const blockedRuns = runsByStatus.get("blocked") || [];
-  blockedRuns.slice(0, 2).forEach((run) => {
-    actions.push({
-      id: `blocked-${run.id}`,
-      priority: "high",
-      category: "blocked",
-      title: `Blocked: ${run.shortId} (${run.projectName})`,
-      context: "Waiting on owner approval, external input, or a missing dependency",
-      relatedRun: run,
-      timestamp: run.executedAt
-    });
-  });
-
-  return actions;
-}
-
-function buildCompactMetrics(runs: AiOperationsRunListItem[]): {
-  totalRuns: number;
-  readyCount: number;
-  needsReviewCount: number;
-  failedCount: number;
-  pendingCount: number;
-  completedToday: number;
-  blockedCount: number;
-  costEstimate: string;
-} {
-  const now = new Date();
-  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
-
-  const totalRuns = runs.length;
-  const failedCount = runs.filter((r) => r.status === "failed").length;
-  const pendingCount = runs.filter((r) => r.status === "pending_approval").length;
-  const blockedCount = runs.filter((r) => r.status === "blocked").length;
-  const readyCount = pendingCount;
-  const needsReviewCount = failedCount;
-  const completedToday = runs.filter((r) => {
-    const execTime = r.executedAt || "";
-    return execTime >= todayStart && (r.status === "completed" || r.status === "success");
-  }).length;
-
-  const totalTokens = runs.reduce((sum, r) => sum + (r.approximateInputTokens || 0), 0);
-  const costEstimate = totalTokens > 0 ? `~${Math.round(totalTokens / 1000)}k tokens` : "—";
-
-  return {
-    totalRuns,
-    readyCount,
-    needsReviewCount,
-    failedCount,
-    pendingCount,
-    completedToday,
-    blockedCount,
-    costEstimate
-  };
-}
-
-const PURIVA_DAILY_PATH = [
-  "Intake and compliance",
-  "Approved KB/context",
-  "WorkflowBriefs",
-  "AI SEO plan",
-  "Content and compliance review",
-  "Client approval",
-  "Monthly report and archive"
-];
-
 function ActionStripItem({
   action,
-  onViewRun
+  onViewRun,
 }: {
   action: DailyAction;
   onViewRun?: (runId: string) => void;
@@ -170,34 +57,72 @@ function ActionStripItem({
         ? "pending"
         : action.category;
   const relatedRun = action.relatedRun;
+  const viewLabel = relatedRun
+    ? `Continue ${relatedRun.shortId} (${relatedRun.projectName})`
+    : "Continue";
 
   return (
-    <div className="action-strip-item" data-priority={action.priority}>
+    <div
+      className="action-strip-item"
+      data-priority={action.priority}
+      aria-label={`${action.priorityLabel} priority. ${action.title}`}
+    >
       <div className="action-strip-badge">
         <StatusBadge status={badgeStatus} />
       </div>
       <div className="action-strip-content flex-1">
         <p className="action-strip-title">{action.title}</p>
         <p className="action-strip-context">{action.context}</p>
+        <p className="action-strip-meta">
+          <span className="action-strip-priority">{action.priorityLabel} priority</span>
+          {action.timestamp ? (
+            <span className="action-strip-time">{formatRelativeTimestamp(action.timestamp)}</span>
+          ) : null}
+        </p>
       </div>
       {relatedRun && onViewRun ? (
         <button
-          className="action-strip-action"
+          className="agency-ops-continue"
           onClick={() => onViewRun(relatedRun.id)}
           type="button"
         >
-          View
+          {viewLabel}
         </button>
       ) : null}
     </div>
   );
 }
 
+function ActionQueue({
+  actions,
+  emptyCopy,
+  onViewRun,
+}: {
+  actions: DailyAction[];
+  emptyCopy: string;
+  onViewRun: (runId: string) => void;
+}) {
+  if (actions.length === 0) {
+    return <p className="muted-copy">{emptyCopy}</p>;
+  }
+  return (
+    <div className="action-strip" role="list">
+      {actions.map((action) => (
+        <div key={action.id} role="listitem">
+          <ActionStripItem action={action} onViewRun={onViewRun} />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function AdminDailyOperationsCockpit() {
+  const titleId = useId();
   const [runs, setRuns] = useState<AiOperationsRunListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null);
+  const [activeTab, setActiveTab] = useState<WorkflowTabId>("ready");
 
   const loadRuns = useCallback(async () => {
     setLoading(true);
@@ -224,11 +149,14 @@ export function AdminDailyOperationsCockpit() {
   }, [loadRuns]);
 
   const dailyActions = useMemo(() => generateDailyActions(runs), [runs]);
-  const metrics = useMemo(() => buildCompactMetrics(runs), [runs]);
+  const metrics = useMemo(() => buildAgencyOpsMetrics(runs), [runs]);
+  const health = useMemo(() => buildAgencyHealth(runs), [runs]);
+  const activity = useMemo(() => buildAgencyActivity(runs), [runs]);
+
   const readyNowActions = dailyActions.filter((action) => action.category === "approval");
   const needsReviewActions = dailyActions.filter((action) => action.category === "review");
   const blockedOrWaitingActions = dailyActions.filter(
-    (action) => action.category === "blocked" || action.category === "waiting"
+    (action) => action.category === "blocked" || action.category === "waiting",
   );
 
   const handleViewRun = useCallback((runId: string) => {
@@ -239,11 +167,32 @@ export function AdminDailyOperationsCockpit() {
     window.location.hash = hash;
   }, []);
 
+  const scrollToQueue = useCallback((tab: WorkflowTabId) => {
+    setActiveTab(tab);
+    const id =
+      tab === "ready"
+        ? "agency-ops-queue-ready"
+        : tab === "review"
+          ? "agency-ops-queue-review"
+          : "agency-ops-queue-blocked";
+    document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, []);
+
+  const projectSummaries = useMemo(() => {
+    const map = new Map<string, typeof runs>();
+    for (const run of runs) {
+      if (!map.has(run.projectName)) map.set(run.projectName, []);
+      map.get(run.projectName)!.push(run);
+    }
+    return Array.from(map.entries()).slice(0, 5);
+  }, [runs]);
+
   return (
-    <div className="page-stack" data-density="compact">
+    <section className="page-stack agency-ops-dashboard" data-density="compact" aria-labelledby={titleId}>
       <PageHeader
         eyebrow="Admin Operations"
         title="Daily Operations Cockpit"
+        titleId={titleId}
         description="Start with ready items, then clear blockers and keep the Puriva path moving."
         actions={
           <Button onClick={() => void loadRuns()} type="button" variant="secondary">
@@ -260,7 +209,7 @@ export function AdminDailyOperationsCockpit() {
           title="Start here — first client"
           description="New to this? Follow the local practice path in order: pick one client and month, add a brief, run the SEO plan, review a draft, package a deliverable, then finalize the monthly report for client archive visibility."
         >
-          <div className="stack gap-sm">
+          <div className="agency-ops-stack">
             <Button onClick={() => navigateTo("#/workflow-briefs")} type="button" variant="primary">
               Start with Workflow Briefs / AI SEO
             </Button>
@@ -279,37 +228,155 @@ export function AdminDailyOperationsCockpit() {
       ) : null}
 
       {!loading && !error ? (
-        <div className="stack gap-lg">
+        <div className="agency-ops-stack agency-ops-stack--lg">
           <SectionPanel
             tone="compact"
             title="Status snapshot"
             description="Compact view of what needs attention right now."
           >
-            <div className="summary-grid metric-grid" aria-label="Daily operations status">
-              <MetricCard
-                accent={metrics.readyCount > 0 ? "warning" : "success"}
-                label="Ready now"
-                value={metrics.readyCount}
-                helper="Awaiting your review"
+            <div className="agency-ops-kpi-grid" aria-label="Daily operations status">
+              <RingMetricTile
+                label="Blocked"
+                value={metrics.blocked}
+                max={metrics.ringMax}
+                helper="Owner or dependency blockers"
+                tone="blocked"
+                alert={metrics.blocked > 0}
+                metricKey="blocked"
               />
-              <MetricCard
-                accent={metrics.needsReviewCount > 0 ? "warning" : "success"}
-                label="Needs review"
-                value={metrics.needsReviewCount}
+              <RingMetricTile
+                label="Overdue"
+                value={metrics.overdue}
+                max={metrics.ringMax}
+                helper="Due dates not on run records"
+                tone="overdue"
+                alert={metrics.overdue > 0}
+                metricKey="overdue"
+              />
+              <RingMetricTile
+                label="In Review"
+                value={metrics.inReview}
+                max={metrics.ringMax}
                 helper="Failed or follow-up items"
+                tone="in_review"
+                alert={metrics.inReview > 0}
+                metricKey="in-review"
               />
-              <MetricCard
-                accent={metrics.blockedCount > 0 ? "warning" : "success"}
-                label="Blocked / waiting"
-                value={metrics.blockedCount}
-                helper="Owner, dependency, or input needed"
+              <RingMetricTile
+                label="Ready"
+                value={metrics.ready}
+                max={metrics.ringMax}
+                helper="Awaiting your decision"
+                tone="ready"
+                alert={metrics.ready > 0}
+                metricKey="ready"
               />
-              <MetricCard
-                accent="cyan"
-                label="Completed today"
-                value={metrics.completedToday}
-                helper={`Done today · est. ${metrics.costEstimate}`}
+              <RingMetricTile
+                label="In Progress"
+                value={metrics.inProgress}
+                max={metrics.ringMax}
+                helper="Active workflow runs"
+                tone="in_progress"
+                metricKey="in-progress"
               />
+              <RingMetricTile
+                label="Completed"
+                value={metrics.completed}
+                max={metrics.ringMax}
+                helper={`${metrics.completedToday} today · est. ${metrics.costEstimate}`}
+                tone="completed"
+                metricKey="completed"
+              />
+            </div>
+          </SectionPanel>
+
+          <div className="agency-ops-workflow" aria-label="Workflow queues">
+            <div className="agency-ops-tabs" role="tablist" aria-label="Workflow focus">
+              {(
+                [
+                  { id: "ready" as const, label: "Ready Now", count: readyNowActions.length },
+                  { id: "review" as const, label: "In Review", count: needsReviewActions.length },
+                  { id: "blocked" as const, label: "Blocked", count: blockedOrWaitingActions.length },
+                ] as const
+              ).map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={activeTab === tab.id}
+                  className={
+                    activeTab === tab.id ? "agency-ops-tab agency-ops-tab--active" : "agency-ops-tab"
+                  }
+                  onClick={() => scrollToQueue(tab.id)}
+                >
+                  {tab.label}
+                  <span className="agency-ops-tab__count">{tab.count}</span>
+                </button>
+              ))}
+            </div>
+
+            <div id="agency-ops-queue-ready">
+              <SectionPanel
+                tone="compact"
+                title="Ready now"
+                description="Admin actions that can be handled immediately."
+              >
+                <ActionQueue
+                  actions={readyNowActions}
+                  emptyCopy="No ready items at the moment."
+                  onViewRun={handleViewRun}
+                />
+              </SectionPanel>
+            </div>
+
+            <div id="agency-ops-queue-review">
+              <SectionPanel
+                tone="compact"
+                title="Needs review"
+                description="Items that need inspection before they can move forward."
+              >
+                <ActionQueue
+                  actions={needsReviewActions}
+                  emptyCopy="No review items waiting right now."
+                  onViewRun={handleViewRun}
+                />
+              </SectionPanel>
+            </div>
+
+            <div id="agency-ops-queue-blocked">
+              <SectionPanel
+                tone="compact"
+                title="Blocked / waiting"
+                description="Items waiting on approval, dependency, or external input."
+              >
+                <ActionQueue
+                  actions={blockedOrWaitingActions}
+                  emptyCopy="No blocked or waiting items."
+                  onViewRun={handleViewRun}
+                />
+              </SectionPanel>
+            </div>
+          </div>
+
+          <SectionPanel
+            tone="compact"
+            title="Agency health"
+            description="Clients and projects represented in current operations runs."
+          >
+            <div className="agency-ops-health" role="list" aria-label="Agency health summary">
+              <div className="agency-ops-health__item" role="listitem">
+                <span className="agency-ops-health__label">Clients</span>
+                <span className="agency-ops-health__value">{health.clientCount}</span>
+              </div>
+              <div className="agency-ops-health__item" role="listitem">
+                <span className="agency-ops-health__label">Active Projects</span>
+                <span className="agency-ops-health__value">{health.projectCount}</span>
+              </div>
+              <div className="agency-ops-health__item" role="listitem">
+                <span className="agency-ops-health__label">Overdue Items</span>
+                <span className="agency-ops-health__value">{health.overdueCount}</span>
+                <span className="agency-ops-health__hint">From run status only</span>
+              </div>
             </div>
           </SectionPanel>
 
@@ -324,12 +391,18 @@ export function AdminDailyOperationsCockpit() {
                   <div className="dense-record-main">
                     <div className="dense-title">
                       <div className="dense-kicker">
-                        <StatusBadge status={index < 2 ? "Active" : index === 6 ? "Complete" : "Review"} />
                         <span className="entity-pill">{`Step ${index + 1}`}</span>
+                        <span className="agency-ops-guide-label">Guide</span>
                       </div>
                       <h3>{step}</h3>
                       <div className="dense-meta">
-                        <span>{index === 0 ? "Start here" : index === 6 ? "Client-safe end state" : "Continue in order"}</span>
+                        <span>
+                          {index === 0
+                            ? "Start here"
+                            : index === 6
+                              ? "Client-safe end state"
+                              : "Continue in order"}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -341,46 +414,6 @@ export function AdminDailyOperationsCockpit() {
             </p>
           </SectionPanel>
 
-          <SectionPanel tone="compact" title="Ready now" description="Admin actions that can be handled immediately.">
-            {readyNowActions.length > 0 ? (
-              <div className="action-strip stack gap-sm">
-                {readyNowActions.map((action) => (
-                  <ActionStripItem key={action.id} action={action} onViewRun={handleViewRun} />
-                ))}
-              </div>
-            ) : (
-              <p className="muted-copy">No ready items at the moment.</p>
-            )}
-          </SectionPanel>
-
-          <SectionPanel tone="compact" title="Needs review" description="Items that need inspection before they can move forward.">
-            {needsReviewActions.length > 0 ? (
-              <div className="action-strip stack gap-sm">
-                {needsReviewActions.map((action) => (
-                  <ActionStripItem key={action.id} action={action} onViewRun={handleViewRun} />
-                ))}
-              </div>
-            ) : (
-              <p className="muted-copy">No review items waiting right now.</p>
-            )}
-          </SectionPanel>
-
-          <SectionPanel
-            tone="compact"
-            title="Blocked / waiting"
-            description="Items waiting on approval, dependency, or external input."
-          >
-            {blockedOrWaitingActions.length > 0 ? (
-              <div className="action-strip stack gap-sm">
-                {blockedOrWaitingActions.map((action) => (
-                  <ActionStripItem key={action.id} action={action} onViewRun={handleViewRun} />
-                ))}
-              </div>
-            ) : (
-              <p className="muted-copy">No blocked or waiting items.</p>
-            )}
-          </SectionPanel>
-
           {runs.length > 0 ? (
             <SectionPanel
               tone="compact"
@@ -388,45 +421,68 @@ export function AdminDailyOperationsCockpit() {
               description="Current workflows grouped by project."
             >
               <div className="project-summary-list">
-                {Array.from(
-                  runs.reduce(
-                    (acc, run) => {
-                      if (!acc.has(run.projectName)) {
-                        acc.set(run.projectName, []);
-                      }
-                      acc.get(run.projectName)!.push(run);
-                      return acc;
-                    },
-                    new Map<string, AiOperationsRunListItem[]>()
-                  )
-                )
-                  .slice(0, 5)
-                  .map(([projectName, projectRuns]) => {
-                    const statuses = new Set(projectRuns.map((r) => r.status));
-                    const statusStr = Array.from(statuses).join(", ");
-                    return (
-                      <div
-                        key={projectName}
-                        className="project-summary-item flex items-center gap-3 py-2 px-3 bg-surface rounded-lg border border-border"
-                      >
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate">{projectName}</p>
-                          <p className="text-xs text-text-muted">{projectRuns.length} run(s)</p>
-                        </div>
-                        <StatusBadge status={statusStr} />
+                {projectSummaries.map(([projectName, projectRuns]) => {
+                  const statusKeys = Array.from(
+                    new Set(projectRuns.map((r) => normalizeRunStatus(r.status))),
+                  );
+                  const primaryStatus =
+                    statusKeys.find((s) => s === "failed" || s === "blocked") ??
+                    statusKeys.find((s) => s === "in_review") ??
+                    statusKeys.find((s) => s === "ready") ??
+                    statusKeys[0] ??
+                    "unknown";
+                  return (
+                    <div key={projectName} className="project-summary-item agency-ops-project-row">
+                      <div className="flex-1 min-w-0">
+                        <p className="agency-ops-project-name">{projectName}</p>
+                        <p className="agency-ops-project-meta">
+                          {projectRuns.length} run(s)
+                          {statusKeys.length > 1
+                            ? ` · ${statusKeys.length} status groups`
+                            : null}
+                        </p>
                       </div>
-                    );
-                  })}
+                      <StatusBadge status={primaryStatus === "unknown" ? "pending" : primaryStatus} />
+                    </div>
+                  );
+                })}
               </div>
             </SectionPanel>
           ) : null}
 
           <SectionPanel
             tone="compact"
+            title="Recent activity"
+            description="Most recent operations runs with internal status labels."
+          >
+            {activity.length > 0 ? (
+              <ul className="agency-ops-activity">
+                {activity.map((item, index) => {
+                  const tone = normalizeRunStatus(item.status);
+                  return (
+                    <li key={item.id}>
+                      <ActivityItem
+                        title={item.title}
+                        description={item.description}
+                        timestamp={formatRelativeTimestamp(item.timestamp)}
+                        status={tone === "unknown" ? undefined : tone}
+                        className={index === activity.length - 1 ? "agency-ops-activity__last" : undefined}
+                      />
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : (
+              <p className="muted-copy">No recent run activity yet.</p>
+            )}
+          </SectionPanel>
+
+          <SectionPanel
+            tone="compact"
             title="Handoffs"
             description="Jump directly into each surface used by the local operator path."
           >
-            <div className="stack gap-sm">
+            <nav className="agency-ops-handoffs" aria-label="Operator handoffs">
               <Button onClick={() => navigateTo("#/workflow-briefs")} type="button" variant="secondary">
                 Open Workflow Briefs / AI SEO plan
               </Button>
@@ -460,7 +516,7 @@ export function AdminDailyOperationsCockpit() {
               >
                 Open full AI Operations console
               </Button>
-            </div>
+            </nav>
           </SectionPanel>
 
           <SectionPanel
@@ -469,14 +525,7 @@ export function AdminDailyOperationsCockpit() {
             description="These stay explicitly outside local/admin scope until a separate owner-approved block runs."
           >
             <div className="cf-record-list">
-              {[
-                "Staging deploy / environment proof",
-                "Production deploy / readiness",
-                "Live AI provider execution (OpenRouter)",
-                "Live WordPress publish",
-                "GA/GSC live sync",
-                "R2 live bucket IO"
-              ].map((label) => (
+              {DEFERRED_GATED_ITEMS.map((label) => (
                 <article className="cf-record dense-record" key={label}>
                   <div className="dense-record-main">
                     <div className="dense-title">
@@ -495,12 +544,12 @@ export function AdminDailyOperationsCockpit() {
           </SectionPanel>
 
           {lastRefreshed ? (
-            <p className="text-xs text-text-muted text-center">
+            <p className="agency-ops-refreshed" aria-live="polite">
               Last updated: {lastRefreshed.toLocaleTimeString()}
             </p>
           ) : null}
         </div>
       ) : null}
-    </div>
+    </section>
   );
 }
