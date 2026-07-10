@@ -68,12 +68,52 @@ See [`AI_MODEL_POLICY.md`](../architecture/AI_MODEL_POLICY.md) §2.8 for the can
 | No real-person likeness without consent | Prompt + manual review |
 | No misleading transformation imagery | Reject reason taxonomy + regenerate |
 
+### 1.8.1 Medical-aesthetic image safety policy
+
+For Puriva and similar aesthetic/medical clients, image generation must be treated as regulated-marketing adjacent. The proof path must reject any image concept, prompt, or output that implies clinical proof, treatment outcome, or a real care relationship that has not been documented and approved.
+
+Hard exclusions before any provider proof:
+
+- **No before/after framing** - no split-screen, transformation timeline, "after treatment" visual, measurement comparison, or implied result sequence.
+- **No fake doctors, nurses, clinicians, patients, or testimonials** - no fabricated uniforms, badges, clinic authority, quoted patient claim, review-style endorsement, or named medical identity.
+- **No treatment-result implication** - no "clearer skin after treatment", body change, guaranteed improvement, pain reduction, recovery claim, weight-loss result, or visible outcome attributed to a service or product.
+- **No real-person likeness without documented consent** - no celebrity, public figure, staff member, client, or patient likeness unless consent and usage rights are recorded outside the prompt.
+- **No unsafe medical-device or prescription-product staging** - no image should imply unsupervised use, prescription access, injection, dosage, clinical procedure, or device efficacy unless explicitly approved by medical/compliance review.
+
+Allowed visual direction should stay educational, neutral, and context-led: clinic environment details without identifiable clinicians/patients, abstract wellness/skin-care concepts, product-neutral lifestyle context, non-diagnostic diagrams, and brand-safe editorial imagery.
+
 ### 1.9 Learning layer
 
 Store per generation attempt:
 
 - `prompt`, `provider`, `model`, `approvalStatus`, `rejectReason`, `replacementLineageId`
 - Use reject reasons to improve future prompts (operator review first; automated tuning deferred)
+
+### 1.9.1 Prompt, alt, and lineage storage
+
+Minimum storage boundaries for a future persisted generation attempt:
+
+| Field | Storage audience | Client exposure |
+|-------|------------------|-----------------|
+| Raw prompt | Admin-only lineage/debug store | Never |
+| Negative prompt / compliance constraints | Admin-only lineage/debug store | Never |
+| Provider/model/attempt metadata | Admin-only observability | Never |
+| Generated alt text draft | Admin + client-facing only after review | Yes, after approval |
+| Caption/meta draft | Admin + client-facing only after review | Yes, after approval |
+| Reject reason | Admin learning loop; client reason only where submitted by client | Not as provider/debug metadata |
+| `storageKey` / provider URL | Server-side only | Never |
+
+Alt text is not a prompt dump. It must describe the approved visual asset for accessibility and editorial use, without medical claims, provider names, model names, internal prompt tokens, or unsupported treatment outcomes.
+
+### 1.9.2 Reject-reason learning loop
+
+Reject reasons should become a controlled prompt-improvement signal, not an automatic model-tuning mechanism.
+
+1. Admin or client reject requires a structured reason plus optional free-text note.
+2. System stores the reason against the specific slot and `replacementLineageId`.
+3. Operator reviews recurring reasons and maps them to a maintained taxonomy such as `medical_claim_risk`, `before_after_risk`, `fake_clinician_risk`, `likeness_consent_risk`, `brand_mismatch`, `low_quality`, `wrong_slot`, or `alt_text_issue`.
+4. Future regeneration uses only approved taxonomy guidance and sanitized notes; raw client text is not blindly pasted into prompts.
+5. Automated prompt tuning remains deferred until a separate owner-approved block defines controls, test coverage, and rollback.
 
 ### 1.10 Provider candidates (no vendor lock-in)
 
@@ -86,6 +126,21 @@ Store per generation attempt:
 | Local deterministic | Dev/test | Existing pattern for text |
 
 **Decision:** Not made in this block. Requires AI Model Research + AI Model Policy gates first. See [`AI_MODEL_POLICY.md`](../architecture/AI_MODEL_POLICY.md) §2.1 — Adobe Firefly is the approved *direction* for primary provider; exact provider/fallback pair and cost caps (§2.3) remain pending owner approval before any Phase B wiring below.
+
+### 1.11 Provider/no-live preflight
+
+Before any future block can claim image-provider readiness, it should expose a disabled-safe preflight that proves configuration shape without generating an image.
+
+Required preflight behavior:
+
+- Reports `disabled`, `missing_config`, or `configured_shape_ok`; never reports "verified live" without a live proof session.
+- Performs no provider SDK call, no HTTP request, no image generation, and no credential validation against a vendor.
+- Redacts key material and returns only presence/shape metadata.
+- Confirms provider decision status: `pending_owner_approval`, `approved_for_staging_proof`, or `approved_for_environment`.
+- Confirms safety policy status: medical-aesthetic policy loaded, required negative prompt constraints present, reject reason taxonomy present, and client-safe response mapper present.
+- Confirms cost guardrails are finite and code-enforced before any live call path can be reachable.
+
+This preflight is a readiness gate only. It does not replace the Phase D live proof checklist and must not be used to claim generated image quality, provider availability, or WordPress/R2 roundtrip success.
 
 ---
 
@@ -179,6 +234,23 @@ Store per generation attempt:
 3. Evidence log to `$env:TEMP`.
 
 **This document does not authorize Phase D.**
+
+### Phase D checklist — future live provider proof only
+
+A future owner-approved live provider proof must record all of the following before any "image generation proven" claim:
+
+- Named environment, provider, model, credential source, bucket, and operator approval.
+- Confirmation that no production, client-facing, or public WordPress surface is affected.
+- Preflight result showing provider/config shape only, with no secret material and no live generation.
+- One bounded generation each for hero, supporting, and social-preview slot types, with a finite attempt cap and no automatic retry loop.
+- Prompt package evidence: raw prompt retained admin-only, negative/compliance constraints present, no real-person likeness request, and no treatment-result implication.
+- Output review evidence: no before/after, no fake doctors/patients, no unsupported medical result, no unsafe prescription/device implication, and alt text reviewed separately.
+- Storage evidence: provider bytes stored privately, provider original URL not client-exposed, `storageKey` remains server-side, signed preview expires, and metadata stripping behavior is decided.
+- Reject/regenerate evidence: at least one safe rejected-slot-only regeneration using a structured reject reason, with lineage preserved.
+- Client-safe API evidence: response omits raw prompt, provider/model metadata, internal reject taxonomy, provider URL, and `storageKey`.
+- WordPress handoff evidence, if included in that block: draft-only attachment, reviewed alt/caption, no publish, and no live production site.
+- Cost evidence: exact attempt count, provider cost estimate/actual where available, timeout behavior, and proof that caps are not env-widenable.
+- Evidence storage: proof notes saved outside git (for example `$env:TEMP`) with no credentials, no raw provider secrets, and no client personal data.
 
 ---
 

@@ -1,8 +1,18 @@
 # WordPress Draft Proof
 
-**Status:** Draft preparation and guarded handoff proven locally; live publish remains off by default. Auto-publish is **not** in scope for this gate. §6 adds a live draft proof **plan** (title/body/meta, approved-image attach, alt/caption/social preview, idempotency, cleanup marker, disabled-safe mode, owner approval) for a future owner-approved staging-only session — no live WordPress call was made to produce this document.
+**Status:** Draft preparation and guarded handoff proven locally; live draft proof is **plan-only** for G86; live publish remains frozen. Auto-publish is **not** in scope for this gate. §6 defines a future owner-approved staging-only live draft proof **plan** (title/body/meta, approved-image attach, alt/caption/social preview, idempotency, cleanup marker, disabled-safe mode, owner approval) — no live WordPress call was made to produce this document.
 
 **Gate:** Puriva requires WordPress **draft/handoff**; WordPress **auto-publish** remains deferred (see [`docs/operator/deferred-scope-register.md`](../operator/deferred-scope-register.md)).
+
+**Three tiers (G86 boundary):**
+
+| Tier | What it proves | Current state | Puriva launch relevance |
+|---|---|---|---|
+| **1. Draft preparation** | DCA OS Lite can prepare local WordPress-shaped draft payloads without credentials or HTTP | Proven locally; launch-relevant | Supports Puriva draft-only handoff |
+| **2. Live draft proof** | A staging-only WordPress site can receive a single `draft` post matching approved content/images, then delete/trash it | **Plan-only in G86; not executed** | Future confidence proof only; not required to enable publish |
+| **3. Publish** | Public WordPress publication with `WORDPRESS_PUBLISH_ENABLED=true` | **Frozen** | Out of scope for Puriva launch v1 |
+
+G86 does not move tier 2 into execution and does not move tier 3 at all.
 
 Related:
 
@@ -148,6 +158,19 @@ For publish **adapter** proof only (expects HTTP error against non-WP smoke URL)
 
 **Status:** Planning only. This section defines what an owner-approved, staging-only live draft proof session must verify. No live WordPress HTTP call was made to produce this section, and none is authorized by this document. Execution requires a separate approved block per §6.8.
 
+### 6.0 G86 plan at a glance
+
+| Proof area | Required plan decision |
+|---|---|
+| Draft-only proof | The only WordPress mutation allowed in a future session is creation of one `draft` post on a staging/disposable site. |
+| No publish | The proof must never create `publish`, `pending`, `future`, or scheduled posts; public front-end visibility is failure. |
+| Credential boundary | Application Password may be used only through approved encrypted credential storage for the named staging target; secrets must not be copied into docs, logs, fixtures, or prepared payloads. |
+| Content inclusion | Title, body, excerpt, slug, categories/tags, SEO/meta fields, and admin-only exclusion must be checked against the prepared payload. |
+| Image inclusion | Only approved deliverable images may be attached; alt text, captions, and social preview must be verified or explicitly recorded as manual-check-only. |
+| Rollback/delete | The draft must carry a proof marker, record post ID/edit URL, and be moved to Trash or permanently deleted before session close-out. |
+| Staging/prod boundary | Staging/disposable target only; no Puriva production WordPress or client production site. |
+| Puriva launch relevance | Confirms future WordPress confidence path; does not expand Puriva launch beyond draft/handoff and final archive. |
+
 ### 6.1 Scope confirmation (draft only, never publish)
 
 | Requirement | Detail |
@@ -157,10 +180,11 @@ For publish **adapter** proof only (expects HTTP error against non-WP smoke URL)
 | Target site | Must be a disposable/staging WordPress install the owner controls; never a Puriva or other client's real site |
 | Success definition | Exactly one draft post exists in WordPress admin with `status: Draft`, matching the prepared payload; nothing publicly visible on the front end |
 | Immediately after proof | Restore `WORDPRESS_PUBLISH_ENABLED=false`; re-run `smoke:wordpress-publish:local` to confirm disabled-safe baseline (see §6.7) |
+| Credential use | If credentials are needed, use only encrypted PublicationTarget credentials for the named staging target; never paste Application Passwords into evidence, scripts, docs, or prepared draft JSON |
 
 ### 6.2 Title / body / meta verification checklist
 
-Verify in the WordPress admin editor that the created draft matches the prepared payload from `prepare-wordpress-draft` field-for-field:
+Verify in the WordPress admin editor that the created draft matches the prepared payload from `prepare-wordpress-draft` field-for-field. The proof records content inclusion only; it must not approve public publication.
 
 - [ ] Title matches deliverable title exactly (no truncation, no encoding artifacts)
 - [ ] Body/content renders with correct formatting (headings, paragraphs, lists) — no raw markdown or broken HTML
@@ -169,9 +193,11 @@ Verify in the WordPress admin editor that the created draft matches the prepared
 - [ ] Categories and tags match prepared taxonomy list
 - [ ] SEO fields (`seoKeywords`, `metaDescription`) are captured — either via WordPress custom fields/SEO plugin mapping or recorded as "not mapped, informational only" if no SEO plugin is present on the proof site
 - [ ] No prompt text, provider internals, or admin-only workflow metadata leaked into any client/public-facing field
+- [ ] Content source is the reviewed deliverable payload, not ad hoc WordPress editor copy created outside DCA OS Lite
 
 ### 6.3 Approved images attach (image approval boundary)
 
+- [ ] Image inclusion is optional for the proof only if the selected deliverable has no approved image package; record `N/A (no approved images)` rather than attaching an unapproved substitute
 - [ ] Only images with an `AiDeliveryDeliverableImageApproval.status = APPROVED` record for the target deliverable may be attached to the WordPress draft
 - [ ] `PENDING` or `REJECTED` article images must never be attached, even if a `finalImageUrl`/`previewImageUrl` exists on the `AiDeliveryArticleImage` record
 - [ ] Featured image (if any) is drawn from the same approved-image set — no substituting an unapproved image as featured image
@@ -197,6 +223,7 @@ Verify in the WordPress admin editor that the created draft matches the prepared
   - A dedicated draft-only category or tag, e.g. `dca-proof`
   - `PublicationLog.note` records the proof session date and marker used
 - [ ] Proof close-out step: operator confirms in WordPress admin that the marked draft is moved to **Trash** (or permanently deleted if the site is fully disposable) before ending the session
+- [ ] If deletion/trash fails, restore `WORDPRESS_PUBLISH_ENABLED=false`, revoke/rotate the staging Application Password if necessary, and stop with the draft still marked `[DCA-OS-PROOF-DO-NOT-PUBLISH]` until a human owner resolves cleanup
 - [ ] Evidence log records the WordPress post ID/edit URL and the cleanup action taken (trashed/deleted) with a timestamp
 
 ### 6.7 Disabled-safe mode (before and after proof)
@@ -242,7 +269,20 @@ This document does not itself constitute owner approval. It is the checklist an 
 - Discard or regenerate prepared draft in admin UI; no WordPress rollback needed.
 - Re-run compliance/admin review before re-handoff.
 
-### 8.2 Live publish mistakes (separate gate — when publish enabled)
+### 8.2 Live draft proof cleanup/delete (future tier 2 session)
+
+This applies only to an owner-approved staging-only live draft proof. It is not a publish rollback path.
+
+| Step | Action |
+|------|--------|
+| 1 | Locate the test draft by proof marker, WordPress post ID, or edit URL from the evidence log |
+| 2 | Confirm status is still **Draft** and the post is not publicly visible |
+| 3 | Move the marked draft to **Trash**, or permanently delete it if the target site is disposable and owner-approved |
+| 4 | Record cleanup action and timestamp in the evidence log |
+| 5 | Restore `WORDPRESS_PUBLISH_ENABLED=false`, restart API, and re-run disabled-safe smoke |
+| 6 | If cleanup fails, stop the session, leave the proof marker in place, and notify the owner; do not attempt publish or production workarounds |
+
+### 8.3 Live publish mistakes (separate tier 3 gate — when publish enabled)
 
 Rollback is **manual operator responsibility** on the WordPress site:
 
@@ -256,7 +296,7 @@ Rollback is **manual operator responsibility** on the WordPress site:
 
 DCA OS does not auto-unpublish in MVP. Automated rollback requires a separate approved block.
 
-### 8.3 Env rollback after open-gate probe
+### 8.4 Env rollback after open-gate probe
 
 ```powershell
 # In target .env or secret store:

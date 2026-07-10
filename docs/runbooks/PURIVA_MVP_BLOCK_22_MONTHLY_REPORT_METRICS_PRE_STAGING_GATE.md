@@ -2,7 +2,7 @@
 
 **Status:** Local operator gate addition for monthly report metrics API smoke.
 
-**Scope:** Adds `smoke:monthly-report:metrics` to the local pre-staging orchestrator after the PDF gate. Admin snapshot import/approve only — **`computedTrendSummary.dataStatus = PARTIAL`** reflects snapshot-first local foundation, not live GA/GSC sync. No OAuth, no Google API calls.
+**Scope:** Adds `smoke:monthly-report:metrics` to the local pre-staging orchestrator after the PDF gate. Admin snapshot import/approve only — **`computedTrendSummary.dataStatus = PARTIAL`** reflects snapshot-first local foundation, not live GA/GSC sync. No OAuth, no Google API calls. G85 live GA/GSC planning remains documentation-only in [`MONTHLY_REPORT_LIVE_DATA_PROOF.md`](./MONTHLY_REPORT_LIVE_DATA_PROOF.md) §3.1b.
 
 Related:
 
@@ -29,3 +29,4 @@ npm.cmd run smoke:monthly-report:metrics
 - Admin can import, approve, read, and archive a monthly metrics snapshot
 - Metrics GET returns report context, one snapshot, and `computedTrendSummary.dataStatus = PARTIAL`
 - Responses omit forbidden internal fields (storage keys, tenant IDs, draft bodies, etc.)
+- Snapshot evidence preserves MANUAL/placeholder truth labels and does not claim connected GA/GSC analytics

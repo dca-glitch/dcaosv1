@@ -635,3 +635,86 @@ Detail: [`AI_MODEL_ROUTING_POLICY.md`](./AI_MODEL_ROUTING_POLICY.md) (G77b secti
 - **G79:** monthly cap aggregation for `liveProviderCalled=true` COMPLETED rows — local proof required; **not** proven
 - **G80:** `actualCostUsd` when gateway exposes exact provider cost — local proof required; **not** proven
 - Staging/production live proof remains **BLOCKED**; no exact invoice/provider cost proof
+
+### 9.19 G81 — staging live proof planning only (no execution authorization)
+
+**Status:** **PLANNING ONLY** — prepares the checklist for a future staging live OpenRouter proof. This section does **not** authorize SSH, staging commands, production commands, live OpenRouter calls, deploy, VPS access, env mutation, or any runtime execution.
+
+**Staging assumption guard:**
+
+- Treat staging as untrusted until a fresh bounded owner gate confirms exact target, commit SHA, staging API base URL, staging container/process identity, staging DB separation, and rollback owner.
+- Do **not** infer staging readiness from local G71e/G77b proof. G77b proves only local controlled live execution and local persistent COMPLETED ledger row persistence.
+- Do **not** overwrite or relabel G77b local evidence as staging evidence. Staging evidence must be captured in a separate future proof log.
+- Production remains frozen. `system.digitalcubeagency.net`, production API, production DB, production env, Caddy/proxy, DNS, and deploy flow are out of scope for G81 and any future staging-only live proof unless separately approved.
+
+**Required staging env checklist (names only):**
+
+| Env name | Required for staging proof planning | Notes |
+|----------|--------------------------------------|-------|
+| `AI_TEXT_GATEWAY` | yes | Future staging live phase would require `openrouter`; restore must return to `local` or unset |
+| `OPENROUTER_API_KEY` | yes | Owner-provided staging-safe key; never print, persist, or commit |
+| `OPENROUTER_TEXT_PRIMARY_MODEL` | yes | Owner-approved model ID; record model name only |
+| `OPENROUTER_TEXT_LONG_CONTEXT_MODEL` | optional | Not required for minimal one-call staging proof unless separately approved |
+| `OPENROUTER_BASE_URL` | optional | Default provider URL unless owner approves an override |
+| `AUTH_SEED_TEST_PASSWORD` | yes if authenticated smoke path is used | Shell/process only; never log value |
+| Staging API base URL env used by the future smoke | yes | Name must be confirmed by the future implementation; value must target staging only |
+
+**Safe key handling:**
+
+- Use owner-provided staging-safe OpenRouter credentials only for the approved window.
+- Secret values must be injected into the target API process environment by the operator, not written into repo files, docs, shell transcripts, committed artifacts, or chat.
+- Evidence may record boolean presence (`hasOpenRouterApiKey=true`) and approved model name only; never record `OPENROUTER_API_KEY` value or token prefixes such as `sk-or-`.
+- If any secret appears in response, console output, log, screenshot, or diff, stop immediately and treat the proof as failed until the artifact is removed/redacted and key rotation is considered by the owner.
+
+**Process/env injection checks (G77b lesson):**
+
+- `GET /ai-provider/planning-config` and workflow execute read provider env from the **API process** via `process.env`; setting env in a separate smoke shell is not proof the staging API process received it.
+- Future staging proof must identify the active staging API process/container first, then verify that the listening API reports `textGateway=openrouter`, `hasOpenRouterApiKey=true`, and `openRouterLiveExecutionEnabled=true` before any live execute.
+- A successful process/container start is not enough. If the intended staging process fails to bind or an old process keeps serving traffic, the planning-config check must fail the gate before any live call.
+- No-live checks must happen before the live phase so env injection mistakes do not repeat the G71b/G77b class of procedural risk.
+
+**No-live preflight before live:**
+
+- Before any future staging live proof, add or run an approved staging equivalent of `smoke:openrouter-api-env-preflight:local` that uses dummy provider values, verifies the staging API planning-config shape, performs **no workflow execute**, and makes **no OpenRouter network call**.
+- The staging preflight must prove: target guard points to staging, production target is refused, keys are never returned, dummy-key presence is represented only as a boolean, and restore returns planning-config to local/disabled.
+- A failed no-live preflight is a STOP. Do not proceed to live proof by manual workaround.
+
+**One-live-call gate:**
+
+- Future staging live proof must require a fresh owner approval sentence naming staging, approved model, operator, spend ceiling, and exact smoke/proof command.
+- Allow exactly one admin-triggered workflow execute against staging. No retries, batches, background jobs, client-visible execution, research crawls, image generation, WordPress publish, R2 real-bucket IO, or production probes.
+- Before the one live call, confirm baseline staging planning-config is local/disabled, no-live preflight passed, live env landed in the API process, and the target URL cannot resolve to production.
+- After the one live call, remove live expectation/env from the operator shell and begin restore immediately.
+
+**Restore / rollback:**
+
+1. Set the staging API gateway back to `AI_TEXT_GATEWAY=local` or unset.
+2. Remove `OPENROUTER_API_KEY` from the active staging API process environment.
+3. Restart only the approved staging API process/container if the future gate explicitly authorizes that runtime action.
+4. Re-check planning-config and baseline guarded smoke in non-live mode.
+5. Confirm `openRouterLiveExecutionEnabled=false`, `liveProviderCalled=false` on the restore proof, and production remains untouched.
+6. Archive logs to `$env:TEMP`; do not commit runtime logs.
+
+**Proof artifacts (`$env:TEMP` only):**
+
+- Future staging evidence must be saved under a distinct path such as `$env:TEMP\g81-staging-openrouter-live-proof-<yyyyMMdd-HHmmss>.log`.
+- Required contents: gate name, date, operator, staging target URL (no secrets), commit SHA, owner approval reference, env names present (boolean only), approved model name, no-live preflight result, one-live-call result, `workflowRunId`, `liveProviderCalled`, ledger/verifier outcome if in scope, restore result, stop status, and `Production touched: no`.
+- Do not commit proof logs. Do not store proof artifacts outside `$env:TEMP` unless a future owner gate specifies an approved evidence location.
+
+**Failure stop rules:**
+
+Stop immediately if any of the following occur:
+
+| # | STOP condition |
+|---|----------------|
+| 1 | Target guard cannot prove staging-only target or any request points at production |
+| 2 | No-live staging preflight fails or would require a live OpenRouter network call |
+| 3 | Planning-config does not reflect the intended API process env before live execute |
+| 4 | Any secret value, token prefix, password, cookie, or credential appears in output or evidence |
+| 5 | More than one live provider call would be needed to prove success |
+| 6 | Provider timeout/failure does not fall back safely or creates client-visible output |
+| 7 | Ledger/proof artifact would overwrite G77b local evidence or claim local proof as staging proof |
+| 8 | Restore cannot prove `openRouterLiveExecutionEnabled=false` |
+| 9 | Any SSH, VPS, deploy, production, Caddy, DNS, schema, migration, or container action is needed outside a future explicit owner gate |
+
+**G81 decision:** This is a planning section only. It records how a future staging live proof should be guarded; it does **not** execute, authorize, or imply approval for staging live OpenRouter, production live OpenRouter, deploy, SSH, VPS, env mutation, or any live provider call.

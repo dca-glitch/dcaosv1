@@ -58,7 +58,7 @@ Both pathways write to the same `EmailLog` table (`packages/data/prisma/schema.p
 | 6 | **Monthly report final** | `updateAiDeliveryMonthlyReportStatus` when status → `FINAL` | **Wired (real path, disabled-safe)** — admin notification on FINAL transition (2026-07-09) |
 | 7 | **WordPress draft prepared** | `prepareAiDeliveryDeliverableWordPressDraft` | **Wired (real path, disabled-safe)** — admin notification after draft prep (2026-07-09) |
 
-**Summary:** of the six requested events, only "client approved" and "client rejected" reach a real inbox today. "Article ready" and "image set ready" reach only the internal always-`SKIPPED` placeholder log. "Admin action required" is partially covered depending on which specific sub-event is meant. "Monthly report final" and "WordPress draft prepared" have zero notification wiring of any kind.
+**Summary (G83 refresh):** current code has disabled-safe real-path email intent for article/content review requests, image `FINAL_READY`, client deliverable approved/rejected, monthly report `FINAL`, WordPress draft prepared, and several admin-action review requests. Local mode still writes `EmailLog.status=SKIPPED`; no live Resend send has been proven. The remaining launch gap is not "no code path exists"; it is that there is no user-scoped in-system notification model, no live inbox proof, no client email on monthly report `FINAL`, and no notification on image-level client approve/reject rows.
 
 ---
 
@@ -103,9 +103,16 @@ Status is a **hardcoded literal `"SKIPPED"`** in the `client.emailLog.create()` 
 
 This smoke was **not re-run** in this block (would require starting the local API server and database, which is out of scope for a docs/audit-only block per repository service-startup rules — no functional code changed that would require re-proof).
 
-### 3.6 Gap this audit surfaces for WordPress draft prepared
+### 3.6 G83 no-send proof checklist
 
-Per `WORDPRESS_DRAFT_PROOF.md`, WordPress draft preparation is already correctly disabled-safe with respect to **publishing** (no live WordPress call, no auto-publish). That remains true and is not being disputed here. The gap identified in this audit is narrower and additive: draft preparation currently produces **no notification of any kind** (§2 row 7) — not even an internal-only `EmailLog` row — so there is nothing to make "disabled-safe" yet for this specific event; it simply does not exist. Closing this gap (adding a `recordAiDeliverySystemEvent`-style internal log, or a real admin notification) would be a small, separately-scoped future block, not something this audit implements.
+Use this checklist before claiming a notification path is safe in local or staging dry-run mode:
+
+- [ ] `EMAIL_PROVIDER` is unset or resolves to `local`, or the test explicitly asserts `provider === "local"`.
+- [ ] Expected `EmailLog` rows have `status: SKIPPED`, `providerMessageId: null`, and no `sentAt`.
+- [ ] API responses and serialized test output do not contain `RESEND_API_KEY`, `re_...`, password hashes, session hashes, or raw credentials.
+- [ ] The code path under test uses `sendEmailNotification()`, `notifyDcaTeam()`, `notifyClientUsers()`, or `recordAiDeliverySystemEvent()` only; no direct `fetch("https://api.resend.com/emails", ...)` call appears outside `email-notifications.service.ts`.
+- [ ] Image-level client approve/reject tests do not claim email proof unless a notification call is added to `approveClientPortalDeliverableImage()` / `rejectClientPortalDeliverableImage()`.
+- [ ] Monthly report `FINAL` tests distinguish current admin notification intent from the still-missing client delivery notification.
 
 ---
 
@@ -134,7 +141,7 @@ Per `WORDPRESS_DRAFT_PROOF.md`, WordPress draft preparation is already correctly
 ### 4.3 Explicit exclusions from this first live proof
 
 - No fan-out send to real tenant owner/admin/client-user lists (`notifyDcaTeam` / `notifyClientUsers`) — those remain simulated/local until a broader proof is separately approved
-- No wiring of the currently-unwired events (article ready, image set ready, monthly report final, WordPress draft prepared) as part of this proof — the proof exercises the existing adapter only, not new event wiring
+- No new event wiring as part of this proof — the proof exercises the existing adapter only, not additional client/admin fan-out
 - No production Resend key use
 - No bulk or marketing email (out of scope per `docs/email-notifications-contract.md` explicit exclusions)
 
@@ -192,8 +199,9 @@ No new integration test was added under `apps/api/tests/integration/`. Every exi
 - Setting `EMAIL_PROVIDER=resend` with a real key without a separate owner-approved block
 - Sending to any real client address as a "test"
 - Printing or committing `RESEND_API_KEY` (or any other secret) in any log, doc, or commit
-- Treating the internal-event path (`recordAiDeliverySystemEvent`) as equivalent to a real notification — it is not, and this audit found several requested events (`article ready`, `image set ready`) that only reach that non-real path today
-- Claiming "monthly report final" or "WordPress draft prepared" notifications exist — they do not exist in code today (§2 rows 6–7)
+- Treating the internal-event path (`recordAiDeliverySystemEvent`) as equivalent to a real notification — it is not a user inbox and can never send
+- Claiming monthly report `FINAL` client delivery notification exists — current code only records admin notification intent for the `FINAL` transition
+- Claiming image-level client approve/reject sends notifications — current image approval handlers only persist review rows and rejection reason
 - Wiring new events into `core.runtime.ts` / `client-publication.runtime.ts` as part of this docs/audit block (those files are outside this block's allowed edit scope)
 
 ---
@@ -202,10 +210,10 @@ No new integration test was added under `apps/api/tests/integration/`. Every exi
 
 | # | Gap | Effort estimate | Notes |
 |---|---|---|---|
-| 1 | "Article ready" and "image set ready" only reach the internal placeholder log, never a real admin/client inbox | Small–Medium | Would reuse the existing `notifyDcaTeam`/`notifyClientUsers` pattern from `client-portal-approval.runtime.ts`; needs a decision on which template key to reuse or whether a schema migration adds dedicated keys |
-| 2 | "Monthly report final" has zero notification wiring | Small–Medium | Would need one `sendEmailNotification` or `recordAiDeliverySystemEvent` call added at the report's `FINAL` transition point in `puriva-monthly-report.ts` / equivalent |
-| 3 | "WordPress draft prepared" has zero notification wiring | Small | Would need one call added at the end of the `prepare-wordpress-draft` handler; no schema change required if reusing an existing template key |
-| 4 | Three "review requested" internal events (content draft, content plan, brief client-input) do not reach a real admin inbox, unlike brief-submitted and client-rejection | Medium | Would extend the real-path pattern to these three call sites |
+| 1 | No user-scoped in-system notification model, API, or UI feed | Medium–High | Required before "in-system + email" launch claim; do not treat `EmailLog` as the inbox |
+| 2 | Monthly report `FINAL` has admin notification intent but no client email/notification delivery path | Small–Medium | Add client fan-out after product copy/recipient rules are approved; no schema required if reusing an existing template key |
+| 3 | Image-level client approve/reject writes review rows only; no admin/client notification intent | Small–Medium | Add no-send admin notification after image approve/reject if product requires operators to react before final deliverable approval |
+| 4 | Live Resend adapter proof remains owner-gated and unrun | Low | Execute exactly one owner-inbox proof per §4 in a separate approved block |
 | 5 | No dedicated `EmailTemplateKey` values for ready/final/draft-prepared events — all currently borrow one of the six existing generic keys | Requires schema migration | Out of scope without explicit schema-change approval per `AGENTS.md` hard safety boundaries |
 
-**Recommendation for the next owner-approved block:** close gap #3 (WordPress draft prepared) first — smallest, no schema change, clearest business value for Puriva launch. Then #2 (monthly report final). Gaps #1 and #4 are larger because they touch the shared `core.runtime.ts` lifecycle functions used across many event types.
+**Recommendation for the next owner-approved block:** implement the no-schema in-system notification seam first (event type + mapping + no-send tests), then add monthly report `FINAL` client delivery fan-out. Keep dedicated template keys deferred until a schema gate approves them.

@@ -1,6 +1,6 @@
 # Monthly Report Live Data Proof
 
-**Status:** Snapshot-first metrics and FINAL-only client visibility proven locally; live GA/GSC OAuth sync remains deferred until §3.1a token/OAuth gaps close and this gate passes on target environment. **2026-07-10 G78 audit:** confirmed owned docs distinguish MANUAL/placeholder local baseline vs future live GA/GSC for Puriva launch — no overclaim on OAuth/live sync.
+**Status:** Snapshot-first metrics and FINAL-only client visibility proven locally; live GA/GSC OAuth sync remains deferred until §3.1a token/OAuth gaps close and this gate passes on target environment. **2026-07-10 G78 audit:** confirmed owned docs distinguish MANUAL/placeholder local baseline vs future live GA/GSC for Puriva launch — no overclaim on OAuth/live sync. **2026-07-10 G85 planning:** prepared live GA/GSC path requirements without live sync, OAuth execution, or Google API calls.
 
 **Gate:** Puriva Launch blocker — GA/GSC live proof + monthly report FINAL client path (see [`docs/operator/deferred-scope-register.md`](../operator/deferred-scope-register.md) and [`docs/architecture/PURIVA_OPERATING_PACK_V1.md`](../architecture/PURIVA_OPERATING_PACK_V1.md) — Monthly Report Flow v1).
 
@@ -89,6 +89,76 @@ This means "OAuth readiness" today can only prove **client credential shape**, n
 5. No token value (access or refresh) is ever written to `docs/`, logs, `$env:TEMP` evidence files, or committed anywhere in the repo.
 
 Until items in the gap table above are implemented and separately approved, GA/GSC remains at **config-shape readiness only** — this is the accurate ceiling for local/docs work and must not be represented as further along.
+
+### 3.1b G85 live GA/GSC path planning (no live sync)
+
+G85 is a planning-only gate for Puriva monthly reports. It defines what must be true before a later approved implementation/proof block can run live GA/GSC, but it does **not** run OAuth, call Google APIs, inspect secrets, or convert local placeholder proof into live proof.
+
+| Area | MANUAL / placeholder baseline today | Future live GA/GSC requirement |
+|------|-------------------------------------|--------------------------------|
+| OAuth/token storage readiness | No consent flow; no token model; readiness proves env shape only | Guarded consent + callback, encrypted refresh-token storage, tenant/project scoping, token refresh, revoke/fail-closed behavior |
+| GA4 property mapping | Not required for local snapshot import | Record approved Puriva GA4 property id/name out-of-band; map it to the DCA OS tenant/project/monthly report target without storing secrets in docs |
+| GSC site mapping | Not required for local snapshot import | Record approved Search Console site URL/property out-of-band; verify it matches the client domain or documented reporting domain before import |
+| Date range policy | Operator/admin selects `targetMonth`; placeholder values are deterministic fixtures | Use closed reporting periods by default: first day through last day of the target month in the account/site timezone; partial current-month reports require explicit "partial period" labeling |
+| Per-article mapping | Placeholder rows map to planned SEO items through snapshot notes | Live rows must map GA/GSC page/query metrics to SEO plan item URLs or approved deliverable URLs; unmapped rows require an exception note before approval |
+| Fallback/manual import | Admin snapshot import is the approved local fallback | If live sync is unavailable or fails, use admin snapshot import only with `sourceType=MANUAL` or equivalent and visible placeholder/manual truth labels |
+| Client-visible label | Placeholder/manual data must not be presented as live traffic | Live GA/GSC data may be labeled as live/imported only after approved sync, snapshot approval, totals reconciliation, FINAL promotion, and client boundary proof |
+
+#### OAuth and token storage readiness
+
+Before live proof is allowed, an approved implementation block must add and validate:
+
+1. Google OAuth consent start/callback routes scoped to the operator/admin path only.
+2. Encrypted token persistence for access token, refresh token, expiry, scopes, Google account identity, `tenantId`, and project/client mapping.
+3. Refresh-token rotation or renewal handling that updates stored token metadata without logging token values.
+4. Readiness states that distinguish `disabled`, `missing_config`, `configured_shape_ok`, `needs_oauth`, `token_valid`, `token_expired`, `token_revoked`, and `sync_failed`.
+5. Secret-safe evidence: no OAuth client secret, access token, refresh token, authorization code, or signed callback payload may appear in docs, logs, API responses, screenshots, or committed files.
+
+#### Property/site mapping policy
+
+Live proof must use an owner-approved Puriva mapping record. The evidence can name non-secret identifiers such as approved property/site labels, but must not include tokens or client secrets.
+
+| Mapping item | Required policy |
+|--------------|-----------------|
+| DCA OS tenant/project | Must match the Puriva monthly report shell being proven |
+| GA4 property | Must be approved by owner before sync; wrong-property sync is a proof failure |
+| GSC site property | Must match Puriva reporting domain or a documented alternate property |
+| Reporting URL mapping | Article/page URLs must normalize consistently before matching SEO plan items |
+| Mapping drift | Any mismatch stops FINAL promotion until corrected and re-proven |
+
+#### Date-range policy
+
+- Default report period is the complete target month: `YYYY-MM-01` through the calendar-month end date.
+- Account/site timezone must be documented in the evidence note for live proof.
+- Current-month or partial-period reports are allowed only when explicitly labeled `partial period` in admin evidence and client-safe language.
+- GA/GSC extraction, approved snapshot totals, PDF totals, and client `performanceSummary` must all use the same date range.
+- If GA4 and GSC have different data freshness windows, the report must either wait for both windows to close or label the affected source as partial.
+
+#### Fallback/manual import policy
+
+Manual import remains the allowed fallback when live GA/GSC is disabled, unavailable, revoked, unmapped, or blocked by OAuth/token readiness. Fallback reports must keep source labels truthful:
+
+| Scenario | Allowed action | Required label |
+|----------|----------------|----------------|
+| Local/dev proof | Use deterministic placeholder snapshot | `MANUAL`, `placeholderOnly: true`, local proof only |
+| Live OAuth not implemented | Use admin snapshot import | `MANUAL` or approved snapshot source; not live GA/GSC |
+| Token revoked/expired | Stop live sync; refresh/re-consent or fall back to manual import | `manual import` or `partial` if live data is incomplete |
+| Wrong property/site mapping | Disable sync and correct mapping; do not approve affected snapshot | No client-visible live label |
+| Google API unavailable | Retry per operator policy or import approved manual snapshot | `manual import` / `data unavailable` as applicable |
+
+#### Client-visible truth labels
+
+Client-facing copy and API fields must never imply live GA/GSC when the source is placeholder/manual. Recommended truth labels for later UI/shared-doc alignment:
+
+| Data source state | Admin/operator label | Client-safe label |
+|-------------------|----------------------|-------------------|
+| Local fixture | `MANUAL placeholder snapshot` | `Placeholder metrics for local proof` if ever exposed outside admin; normally not client-facing |
+| Admin manual import | `MANUAL approved snapshot` | `Metrics from approved manual snapshot` |
+| Live GA/GSC complete | `LIVE_GA_GSC approved snapshot` | `Metrics imported from connected analytics sources` |
+| Live GA/GSC partial | `LIVE_GA_GSC partial` | `Partial-period analytics snapshot` |
+| Sync failed / fallback used | `LIVE_GA_GSC failed; MANUAL fallback` | `Metrics from approved manual snapshot` plus internal failure evidence only |
+
+Any client-visible report using manual/placeholder data must preserve the approved disclaimer pattern and must not use phrases such as "live GA/GSC", "connected analytics", or "Google-synced" unless the live proof criteria in §7 are satisfied.
 
 ### 3.2 Admin snapshot import (local baseline — proven)
 

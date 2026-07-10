@@ -335,8 +335,24 @@ export interface AiBudgetLedgerSummary {
   entryCount: number;
 }
 
+export interface AiBudgetLedgerSpendRow {
+  estimatedCostUsd: Prisma.Decimal | number | string;
+  actualCostUsd?: Prisma.Decimal | number | string | null;
+}
+
 function getPrisma() {
   return createPrismaClient();
+}
+
+function ledgerCostToNumber(value: AiBudgetLedgerSpendRow["estimatedCostUsd"]): number {
+  return Number(value.toString());
+}
+
+export function sumAiBudgetLedgerRowsSpentUsd(rows: readonly AiBudgetLedgerSpendRow[]): number {
+  return rows.reduce((total, row) => {
+    const spend = row.actualCostUsd ?? row.estimatedCostUsd;
+    return total + ledgerCostToNumber(spend);
+  }, 0);
 }
 
 export async function sumSpentUsdForPeriod(input: {
@@ -347,18 +363,20 @@ export async function sumSpentUsdForPeriod(input: {
   const prisma = getPrisma();
   const periodKey = input.periodKey ?? buildPeriodKey();
 
-  const aggregate = await prisma.aiBudgetLedgerEntry.aggregate({
+  const rows = await prisma.aiBudgetLedgerEntry.findMany({
     where: {
       tenantId: input.tenantId,
       periodKey,
       clientId: input.clientId ?? undefined,
-      status: { in: COUNTABLE_STATUSES },
-      liveProviderCalled: false
+      status: { in: COUNTABLE_STATUSES }
     },
-    _sum: { estimatedCostUsd: true }
+    select: {
+      estimatedCostUsd: true,
+      actualCostUsd: true
+    }
   });
 
-  return Number(aggregate._sum.estimatedCostUsd ?? 0);
+  return sumAiBudgetLedgerRowsSpentUsd(rows);
 }
 
 export async function recordAiBudgetLedgerEntry(input: AiBudgetLedgerRecordInput): Promise<void> {

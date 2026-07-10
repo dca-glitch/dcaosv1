@@ -1,6 +1,6 @@
-# Notifications Blocker Plan (G78)
+# Notifications Blocker Plan (G78, refreshed G82-G84)
 
-**Status:** Planning only — docs block G78 (2026-07-10). No notification code implemented in this block.
+**Status:** Planning only — docs block G78, refreshed by G82-G84 (2026-07-10). No live email, schema migration, commit, push, or production action in these blocks.
 
 **Purpose:** Staged plan for transactional notifications required before Puriva Launch and before claiming production-proven client-facing approval flows. Consolidates scattered docs into one operator-facing sequence.
 
@@ -42,18 +42,28 @@ Local portal UX ≠ notification readiness. Approval surfaces exist; **reliable,
 | **Platform audit** | `AuditLog` — auth, tenant, module actions; AI Delivery lifecycle mostly via internal-event path | Local operator visibility; not a user notification inbox |
 | **Orchestrator dry-run events** | G61 `AiNotificationEventType` + in-memory no-send recorder on orchestrator preview | Dry-run only; not Client Portal or admin daily inbox |
 | **Admin email outbox API** | `GET /api/v1/notifications/email-logs` (admin/owner, tenant-scoped) | Read-only smoke proven |
+| **No-send notification tests** | `email-notification-wiring.integration.test.ts` checks disabled-safe outbox and content draft admin notification intent when local auth seed is available | Partial; does not prove every approval-loop event |
 
 ### What does not exist
 
 - User-scoped **in-app notification** model, API, or Client Portal / admin UI feed (no bell, unread count, or per-user inbox).
 - Live transactional email send proof (Resend never executed in a controlled proof session).
-- Client-visible notification when deliverable/report is ready — client must poll `#/client-portal/pending-approvals` or be contacted manually.
+- User-scoped client/admin in-system notification rows for approval-loop events — `EmailLog` is not a per-user notification inbox.
+- Client-visible in-system notification when deliverable/report is ready — client must poll `#/client-portal/pending-approvals` or be contacted manually if email is not proven.
+- Client email/notification delivery for monthly report `FINAL`; current code emits admin notification intent only.
+- Notification intent on image-level client approve/reject rows; current code records image review status/reason only.
 - Background queues, retry/deliverability monitoring, or invite/password-reset email (all deferred).
 - Dedicated `EmailTemplateKey` values for ready/final/draft-prepared (reuse of generic keys today; dedicated keys need schema approval).
 
-### Doc consistency note
+### G82-G84 consistency note
 
-[`EMAIL_NOTIFICATIONS_PROOF.md`](../runbooks/EMAIL_NOTIFICATIONS_PROOF.md) §2 event table reflects 2026-07-09 real-path wiring; §2 summary paragraph, §7, and §8 gap list are **stale** relative to STATUS mega-block closeout and INTEGRATIONS_TRUTH_MATRIX. Treat §1–§2 table + STATUS §Email + R2 combined block as wiring truth; refresh EMAIL_NOTIFICATIONS_PROOF §7–§8 in a future docs-only pass.
+[`EMAIL_NOTIFICATIONS_PROOF.md`](../runbooks/EMAIL_NOTIFICATIONS_PROOF.md) now separates current disabled-safe wiring from remaining launch blockers. Treat the code-backed facts as:
+
+- Real-path email intent exists for several admin/client events, but default local mode is still no-send (`SKIPPED`).
+- No in-system notification model exists for client/admin unread alerts.
+- Monthly report `FINAL` is not client-delivered by notification today.
+- Image-level approve/reject is not notification-wired today.
+- Phone/manual-only remains insufficient for Puriva Launch.
 
 ---
 
@@ -74,6 +84,57 @@ Operational reasons manual-only fails:
 4. **Production claim blocked** — [`PURIVA_LAUNCH_GATE.md`](../runbooks/PURIVA_LAUNCH_GATE.md) area 6 and area 11 (production-proven approval UX) both require system-delivered channels.
 
 Manual follow-up may supplement notifications; it **cannot replace** them for launch or production approval-flow claims.
+
+---
+
+## G82 — Internal Events / Audit Inspection
+
+**Finding:** no in-system notification model exists today.
+
+| Existing mechanism | What it proves | What it does not prove |
+|--------------------|----------------|-------------------------|
+| `EmailLog` via `sendEmailNotification()` | Outbound email intent and provider result (`SKIPPED` / `SENT` / `FAILED`) | User inbox, unread state, client/admin UI delivery |
+| `recordAiDeliverySystemEvent()` | Internal AI Delivery lifecycle event row, always `SKIPPED`, never sends | Real notification or client/admin delivery |
+| `AuditLog` via `recordPlatformAuditEvent()` | Platform/audit trail for selected actions | User notification, email delivery, or read receipt |
+| `recordAiNotificationEvent()` / `AiNotificationEventType` | In-memory no-send event taxonomy for orchestrator/budget previews | Persistent client/admin notification model or approval-loop delivery |
+
+**G82 recommendation:** next implementation should use a no-schema seam first if schema approval is not available: canonical event type union, mapping helpers, no-send recorder interface, and tests that prove event emission without provider/network calls. A real persisted notification inbox remains a later schema/API/UI block.
+
+---
+
+## G83 — Email No-Send Proof
+
+**Checklist source:** [`EMAIL_NOTIFICATIONS_PROOF.md`](../runbooks/EMAIL_NOTIFICATIONS_PROOF.md) §3.6.
+
+Current no-send proof is partial:
+
+- Existing email provider config test proves fail-safe local provider behavior without network or DB.
+- Existing email wiring integration test proves `GET /notifications/email-logs` hides secrets and content draft review can create `SKIPPED` admin notification intent when local auth seed is available.
+- No new G83 runtime test was added because this block stayed docs-only and the current code already has a no-send service seam.
+
+Required before launch claim:
+
+- Disabled-safe proof for each mapped event row below, with `EmailLog.status=SKIPPED` in local mode.
+- Secret-safety assertion on any notification API response used as evidence.
+- A separate owner-approved live Resend proof to one owner-controlled inbox before any client-facing send.
+
+---
+
+## G84 — Client Approval Notification Loop Map
+
+This is the exact current map as of G82-G84 inspection. "Wired" means code records email notification intent through the existing service path; in local mode this is still no-send (`SKIPPED`), not a live inbox proof.
+
+| Loop event | Current code trigger | Client channel today | Admin channel today | Gap / next action |
+|------------|----------------------|----------------------|---------------------|-------------------|
+| Content sent for client approval | `sendAiDeliveryDeliverableForClientReview()` → `notifyClientUsers()` | Email intent to `ClientUserAccess` users; no in-system notification | None beyond normal operator action | Add in-system client notification row; live email proof still needed |
+| Client content approval | `approveClientPortalDeliverable()` → `notifyDcaTeam(..., AI_DELIVERY_APPROVED)` | None | Email intent to owner/admin users + reply-to | Add admin in-system notification; no live proof yet |
+| Client content request changes | `rejectClientPortalDeliverable()` → `notifyDcaTeam(..., AI_DELIVERY_REVIEW_REQUEST)` with reason body | None | Email intent to owner/admin users + reply-to; reason included | Add admin in-system notification; prove reason is safe and present |
+| Image approved by client | `approveClientPortalDeliverableImage()` | None | None | Add optional admin alert if product requires image-level operator action |
+| Image rejected by client with reason | `rejectClientPortalDeliverableImage()` stores `rejectionReason` | None | None | Add admin alert/no-send test if image-level rejection should interrupt workflow |
+| Monthly report `FINAL` | `updateAiDeliveryMonthlyReportStatus()` when status becomes `FINAL` → `notifyDcaTeam(..., approved=true)` | None | Email intent to owner/admin users + reply-to | Add client delivery notification/email path; do not claim report client delivery yet |
+| Admin alert after client action | Covered for final deliverable approve/reject only | Not applicable | Email intent for deliverable approve/reject | Missing image-level admin alert and in-system admin notification |
+
+**G84 verdict:** approval-loop email intent exists for deliverable-level client action and client review prompt, but the loop is not launch-complete because in-system notifications are absent, live email is unproven, image-level review actions do not notify, and monthly report `FINAL` is not client-delivered.
 
 ---
 
@@ -143,7 +204,7 @@ Execute as separate owner-approved blocks. Order is dependency-safe: event sourc
 
 - Admin alerts → tenant owner/admin users + `EMAIL_REPLY_TO`
 - Client review prompts → `ClientUserAccess` emails for scoped client
-- Monthly report FINAL → client emails (no approval flow; informational delivery per Puriva pack)
+- Monthly report FINAL → currently admin email intent only; client email remains required for Puriva pack delivery
 
 **Stage 2 exit criteria:**
 
@@ -161,6 +222,8 @@ Execute as separate owner-approved blocks. Order is dependency-safe: event sourc
 |-------|-------------------|----------------|---------------------|---------------|
 | Deliverable / article sent for client review | Required | Required | Optional ack | Optional |
 | Image set ready for client review | Required | Required | — | Notify admin on FINAL_READY (existing wiring) |
+| Client image approved | Optional | Optional | Optional if operator action required | Missing today |
+| Client image rejected with reason | Optional | Optional | Required if rejection should interrupt workflow | Missing today |
 | Client approved | — | — | Required | Required (`AI_DELIVERY_APPROVED`) |
 | Client rejected / changes requested | — | — | Required | Required (`AI_DELIVERY_REVIEW_REQUEST`) |
 
@@ -187,7 +250,7 @@ Execute as separate owner-approved blocks. Order is dependency-safe: event sourc
 | Article ready for admin review | Required | Wired |
 | Image set FINAL_READY | Required | Wired |
 | Client approved / rejected | Required | Wired |
-| Monthly report → FINAL | Required | Wired |
+| Monthly report → FINAL | Required | Wired for admin only; client delivery missing |
 | WordPress draft prepared | Required | Wired |
 | Budget/orchestrator block (G61) | Optional dashboard | Deferred unless operator requests |
 
@@ -224,13 +287,14 @@ Execute as separate owner-approved blocks. Order is dependency-safe: event sourc
 
 | # | Business event | Primary trigger (conceptual) | Client channels | Admin channels |
 |---|----------------|------------------------------|-----------------|----------------|
-| 1 | Article / deliverable ready for client review | Send for client review | In-system + email | In-system + email (optional) |
-| 2 | Image set ready for client review | Image FINAL_READY + send path | In-system + email | In-system + email |
-| 3 | Client approved | Client portal approve | — | In-system + email |
-| 4 | Client rejected / changes requested | Client portal reject | — | In-system + email |
-| 5 | Admin action required | Brief submitted; review requested | — | In-system + email |
-| 6 | Monthly report FINAL | Report status → FINAL | In-system + email (informational) | In-system + email |
-| 7 | WordPress draft prepared | Draft prep complete | — | In-system + email |
+| 1 | Article / deliverable ready for client review | Send for client review | Email intent wired; in-system missing; live proof missing | Optional admin ack missing |
+| 2 | Image set ready for client review | Image FINAL_READY + send path | In-system + client email missing | Admin email intent wired on FINAL_READY; in-system missing |
+| 3 | Client approved | Client portal approve | — | Admin email intent wired; in-system missing; live proof missing |
+| 4 | Client rejected / changes requested | Client portal reject | — | Admin email intent wired with reason; in-system missing; live proof missing |
+| 5 | Client image approved/rejected | Client portal image review | — | Missing today unless final deliverable is later approved/rejected |
+| 6 | Admin action required | Brief submitted; review requested | — | Several admin email intents wired; in-system missing |
+| 7 | Monthly report FINAL | Report status → FINAL | Missing today; required informational delivery | Admin email intent wired; in-system missing |
+| 8 | WordPress draft prepared | Draft prep complete | — | Admin email intent wired; in-system missing |
 
 Marketing campaigns, invite email, password reset, SMS/WhatsApp: **out of scope** — remain deferred.
 
@@ -240,7 +304,7 @@ Marketing campaigns, invite email, password reset, SMS/WhatsApp: **out of scope*
 
 | Gate | Scope | Depends on |
 |------|-------|------------|
-| **N0** | Docs refresh — reconcile EMAIL_NOTIFICATIONS_PROOF §7–§8 with 2026-07-09 wiring | G78 |
+| **N0** | Docs refresh — keep EMAIL_NOTIFICATIONS_PROOF aligned with current disabled-safe wiring and remaining launch blockers | G78; refreshed G82-G84 |
 | **N1** | In-system notification MVP (schema + API + client/admin UI) | N0 |
 | **N2** | Email live proof — bounded Resend to owner inbox | [`EMAIL_NOTIFICATIONS_PROOF.md`](../runbooks/EMAIL_NOTIFICATIONS_PROOF.md) §4 |
 | **N3** | Staging: full client approval loop (both channels) | N1 + N2 |
@@ -272,7 +336,7 @@ Puriva Launch area 6 closes only after **N1 + N2 + N3** with evidence. Area 11 p
 |------|----------|------------|
 | First live send to real client without proof | High | Bounded owner-inbox proof first; restore `EMAIL_PROVIDER=local` immediately after |
 | Treating `EmailLog` as in-system inbox | Medium | Stage 1 requires user-scoped notification store; document separation in Stage 5 |
-| Stale EMAIL_NOTIFICATIONS_PROOF §7–§8 misleads planners | Medium | N0 docs refresh; this plan supersedes for G78 sequencing |
+| Notification docs drift as wiring changes | Medium | Keep G82-G84 map and EMAIL_NOTIFICATIONS_PROOF gaps aligned in each scoped notification block |
 | Manual WhatsApp/phone as workaround | High | Explicitly rejected for launch claims (§Manual communication) |
 | Template key reuse causes wrong email copy | Low | Accept for MVP; N4 migration if needed |
 | Client never opens portal without email | High | Stage 2 required for production; Stage 1 alone insufficient for launch |
@@ -290,4 +354,4 @@ Puriva Launch area 6 closes only after **N1 + N2 + N3** with evidence. Area 11 p
 
 ---
 
-*G78 — Subagent D — planning only. Backend/API/schema/auth not modified in this block.*
+*G78/G82-G84 — planning only. Backend/API/schema/auth not modified in this block.*

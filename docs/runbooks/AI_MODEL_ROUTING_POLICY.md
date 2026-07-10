@@ -1,7 +1,7 @@
-# AI Model Routing Policy (G72 + G73 + G74 + G75 + G76 + G77b)
+# AI Model Routing Policy (G72 + G73 + G74 + G75 + G76 + G77b + G79 + G80)
 
-**Status:** Implemented on `main` (G72 policy, G73 attribution proof, G74 completed ledger readiness, G75 local live spend attribution proof, G76 persistent completed ledger wiring, G77b local live COMPLETED ledger row proof).
-**Live execution:** G72–G74 are no-live — dry-run/preview and mocked completed attribution only. **G75 (local only):** one controlled OpenRouter live smoke PASS; completed attribution verifier PASS; at G75 time persistent row was generated-only. **G76 (mocked/no-live):** execute-path COMPLETED persistence wired. **G77b (local only):** live OpenRouter execute created persistent COMPLETED `AiBudgetLedgerEntry` row — staging/production still BLOCKED.
+**Status:** Implemented on `main` (G72 policy, G73 attribution proof, G74 completed ledger readiness, G75 local live spend attribution proof, G76 persistent completed ledger wiring, G77b local live COMPLETED ledger row proof, G79 monthly cap aggregation for live rows, G80 actual-cost policy).
+**Live execution:** G72–G74 are no-live — dry-run/preview and mocked completed attribution only. **G75 (local only):** one controlled OpenRouter live smoke PASS; completed attribution verifier PASS; at G75 time persistent row was generated-only. **G76 (mocked/no-live):** execute-path COMPLETED persistence wired. **G77b (local only):** live OpenRouter execute created persistent COMPLETED `AiBudgetLedgerEntry` row — staging/production still BLOCKED. **G79/G80:** no live provider calls; local unit/policy changes only.
 **Approved live text model (local proof):** `anthropic/claude-haiku-4.5` via OpenRouter.
 
 ## Principle
@@ -87,10 +87,20 @@ Do **not** use `openrouter/auto` for Puriva or medical/compliance content.
 ### actualCostUsd limitations
 
 - Populated only when the gateway exposes a confirmed provider cost **and** it is within `maxCostUsdPerRun`; otherwise `null` (G77b: COMPLETED success still stored `actualCostUsd=null` — **not** provider invoice proof).
+- Do **not** fabricate `actualCostUsd` from route caps, token estimates, local budgets, provider model pricing pages, or `estimatedCostUsd`.
+- Keep `estimatedCostUsd` separate as the budget-control estimate. Monthly cap aggregation uses `actualCostUsd` when a trusted provider cost exists, otherwise `estimatedCostUsd`.
+- Provider-cost reconciliation remains a later owner-gated workflow once a trusted provider billing/cost source is integrated.
 - If exposed cost exceeds `maxCostUsdPerRun`, attribution is `BLOCKED` with `overCap=true` and `actualCostUsd` is not recorded.
 - If `safeError` is present, status is `BLOCKED` and `actualCostUsd` is not recorded.
 - Skipped local execution (`ok=false`, no `safeError`) records `SKIPPED` with `liveProviderCalled=false`.
 - **G77b observation:** live COMPLETED row stored `actualCostUsd=null` — expected current limitation; does **not** prove provider invoice cost.
+
+### Monthly cap aggregation (G79)
+
+- `sumSpentUsdForPeriod()` includes countable ledger statuses: `PREVIEW`, `PLANNED`, and `COMPLETED`.
+- Live provider rows are not excluded from monthly spend. A `COMPLETED` row with `liveProviderCalled=true` counts toward the monthly cap.
+- Spend is summed per row as `actualCostUsd ?? estimatedCostUsd`; current OpenRouter live rows may have `actualCostUsd=null`, so they count by their route estimate until trusted provider cost exists.
+- `BLOCKED` and `SKIPPED` rows remain non-countable for monthly spend.
 
 **G75 (local live spend attribution proof — PARTIAL):** After one controlled OpenRouter live smoke (`workflowRunId=6e538323-8e68-4d41-a4c5-9e30ca0cf8a1`), completed attribution metadata could be **generated** from live workflow observability via G74 `finalizeOrchestratorLiteLedgerAttribution` (verifier PASS in G75c). At G75 time the execute path did not auto-persist a COMPLETED row.
 
@@ -98,7 +108,7 @@ Do **not** use `openrouter/auto` for Puriva or medical/compliance content.
 
 **G77b (persistent COMPLETED ledger live proof — COMPLETE local only):** Controlled live OpenRouter guarded smoke PASS (`workflowRunId=2244413e-d87b-45a1-8a26-6634ec8972d5`); ledger verifier PASS — row `5d8d635c-ced0-4a14-9b33-839e1fdee508` with `status=COMPLETED`, `stepReference=ai-delivery-execute:summary`, `provider=openrouter`, `liveProviderCalled=true`, `taskType=report_narrative`, `completedAttribution` present (`model=anthropic/claude-haiku-4.5`, `gateway=openrouter`, `runId` matches), `estimatedCostUsd=0.15`, `actualCostUsd=null`. Baseline + restore PASS. Staging/production live **not** claimed.
 
-**Deferred (post-G77b):** Monthly cap aggregation for `liveProviderCalled=true` rows; `actualCostUsd` when gateway exposes cost; `operatingPackKey` resolution; local SKIPPED/BLOCKED persistence optional gate; staging/production live proof remains blocked.
+**Deferred (post-G80):** Trusted provider-cost ingestion/reconciliation for `actualCostUsd`; `operatingPackKey` resolution; local SKIPPED/BLOCKED persistence optional gate; staging/production live proof remains blocked.
 
 ## Orchestrator task → routing task mapping
 
@@ -127,8 +137,8 @@ Unit tests: `ai-model-routing-policy.service.test.ts`, `ai-budget-guard.service.
 ## Next gate
 
 - **G78:** guarded commit/push of G77b + G78 runbook truth-label alignment (docs only; separate owner approval)
-- **G79:** monthly cap aggregation for `liveProviderCalled=true` COMPLETED ledger rows — implementation + local controlled proof (separate gate; **not** proven post-G77b)
-- **G80:** `actualCostUsd` population when gateway exposes exact provider cost — implementation + local controlled proof (separate gate; **not** proven post-G77b)
+- **G79:** monthly cap aggregation for `liveProviderCalled=true` COMPLETED ledger rows — implemented with no-live unit coverage; live provider proof remains local-only from G77b row shape.
+- **G80:** `actualCostUsd` policy documented: leave null until trusted provider cost is available; no fabricated actual costs.
 - Additional model approval matrix (optional parallel track); staging/production live proof remains **BLOCKED**
 
 ## Related docs

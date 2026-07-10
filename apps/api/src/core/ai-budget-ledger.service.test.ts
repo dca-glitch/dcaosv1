@@ -13,7 +13,8 @@ import {
   buildCompletedLedgerMetadata,
   prepareCompletedLedgerAttribution,
   recordCompletedAiLedgerEntry,
-  isCompletedAttributionCompatibleWithMonthlyCap
+  isCompletedAttributionCompatibleWithMonthlyCap,
+  sumAiBudgetLedgerRowsSpentUsd
 } from "./ai-budget-ledger.service";
 import { resolveModelRoute } from "./ai-model-routing-policy.service";
 
@@ -288,6 +289,25 @@ describe("ai-budget-ledger.service (unit logic)", () => {
     });
     assert.equal(budget.killSwitchActive, true);
     assert.equal(isAiBudgetBlocked(budget).blocked, true);
+  });
+
+  it("sums live completed ledger spend using actual cost when present and estimate otherwise", () => {
+    const spent = sumAiBudgetLedgerRowsSpentUsd([
+      {
+        estimatedCostUsd: 0.15,
+        actualCostUsd: null
+      },
+      {
+        estimatedCostUsd: 0.3,
+        actualCostUsd: 0.12
+      },
+      {
+        estimatedCostUsd: "0.25",
+        actualCostUsd: null
+      }
+    ]);
+
+    assert.equal(spent, 0.52);
   });
 
   it("buildPeriodKey returns YYYY-MM format", () => {

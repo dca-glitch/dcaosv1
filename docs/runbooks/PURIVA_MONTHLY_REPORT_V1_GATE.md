@@ -1,6 +1,6 @@
 # Puriva Monthly Report v1 Gate
 
-**Status:** Local deterministic monthly report scaffolding for Puriva delivery status and compliance-safe recommendations.
+**Status:** Local deterministic monthly report scaffolding for Puriva delivery status and compliance-safe recommendations. G85 live GA/GSC path planning is documented separately and does not change this gate into live analytics proof.
 
 Related:
 
@@ -20,7 +20,7 @@ Admin date range → GA/GSC pull *(live — deferred)* → report generation →
 
 Full steps and rules: [`docs/architecture/PURIVA_OPERATING_PACK_V1.md`](../architecture/PURIVA_OPERATING_PACK_V1.md) — **Puriva Monthly Report Flow v1**.
 
-**This gate proves local deterministic scaffolding only** — placeholder MANUAL metrics (`placeholderOnly: true`); no live GA/GSC OAuth or sync. See [`MONTHLY_REPORT_LIVE_DATA_PROOF.md`](./MONTHLY_REPORT_LIVE_DATA_PROOF.md) §3.2 vs §3.1 for the upgrade path.
+**This gate proves local deterministic scaffolding only** — placeholder MANUAL metrics (`placeholderOnly: true`); no live GA/GSC OAuth or sync. See [`MONTHLY_REPORT_LIVE_DATA_PROOF.md`](./MONTHLY_REPORT_LIVE_DATA_PROOF.md) §3.2 vs §3.1 for the upgrade path and §3.1b for G85 live-path planning requirements.
 
 ## What it proves
 
@@ -68,3 +68,4 @@ Requires `AUTH_SEED_TEST_PASSWORD` (minimum 8 characters).
 - MI context attach is admin-only via `/mi-context/apply`.
 - Live GA/GSC sync stays deferred unless a separate block proves it.
 - Client-facing monthly report wording should stay final-snapshot based unless live sync is separately approved.
+- G85 does not authorize OAuth execution, token storage changes, Google API calls, or client-visible "live analytics" labels; it only defines the preconditions and truth-label policy for a future live block.

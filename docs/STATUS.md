@@ -1,6 +1,6 @@
 # DCA OS Lite — Status (Source of Truth)
 
-**Last updated:** 2026-07-10 (G78 — multi-scope docs alignment after G77b local live proof closeout)
+**Last updated:** 2026-07-10 (G88 — G79-G88 multitask consolidation after local ledger aggregation proof)
 **G55 pre-live readiness:** [`docs/runbooks/G55_PRELIVE_READINESS.md`](./runbooks/G55_PRELIVE_READINESS.md)
 **G56 pre-live readiness:** [`docs/runbooks/G56_PRELIVE_READINESS.md`](./runbooks/G56_PRELIVE_READINESS.md)
 **G57–G68 pre-live readiness:** [`docs/runbooks/G57_G68_PRELIVE_READINESS.md`](./runbooks/G57_G68_PRELIVE_READINESS.md)
@@ -35,7 +35,7 @@
 | Latest baseline | G57–G68 pre-live completion on `main` — persistent budget ledger, workflow dry-run, notification contracts, admin operator wiring, integration boundaries |
 | **G69 merge** | **DONE** — G57–G68 fast-forward merged to `main`; final commit `64bfd06` |
 | Production readiness | **NO** |
-| Next gate | **G78** docs truth-label alignment (this block); **G79** monthly cap aggregation for live COMPLETED rows; **G80** `actualCostUsd` when gateway exposes cost; **G81** staging live proof planning (not execution) — each separate owner gate |
+| Next gate | **G89 recommended** — owner-selected launch-blocker execution gate; recommended first target is R2 real-bucket proof or another explicitly approved low-blast-radius live-proof gate. No live proof, staging mutation, production mutation, commit, push, or deploy is authorized by G88. |
 | G72 model routing | **Implemented** — backend policy per task type; approved model `anthropic/claude-haiku-4.5`; no live call in G72 |
 | G73 routing attribution | **Local PASS** — dry-run/preview `modelRouting` + `plannedLedgerMetadata`; budget guard route cap wired; persistent preview ledger records routing metadata |
 | G74 completed ledger attribution | **Implemented (no-live)** — `buildCompletedLedgerMetadata`, `prepareCompletedLedgerAttribution`, `recordCompletedAiLedgerEntry`; mocked provider execution in unit tests |
@@ -44,6 +44,10 @@
 | G77 persistent COMPLETED ledger live proof | **COMPLETE (local only)** — G77b live smoke + ledger verifier PASS; row `5d8d635c-ced0-4a14-9b33-839e1fdee508` for run `2244413e-d87b-45a1-8a26-6634ec8972d5` |
 | G77b closeout | **COMPLETE (local only)** — local controlled live proof recorded; production remains frozen; staging/production live not claimed |
 | G78 multi-scope docs | **Docs only — complete (uncommitted)** — runbook truth labels, deferred-scope buckets, notifications plan, integration/monthly-report/WordPress tier labels, pack implementation status |
+| G79 monthly cap aggregation | **Implemented (local unit proof)** — `sumSpentUsdForPeriod()` includes live `COMPLETED` rows and uses `actualCostUsd ?? estimatedCostUsd`; `ai-budget-ledger.service.test.ts` 18/18 PASS |
+| G80 `actualCostUsd` policy | **Policy documented only** — `actualCostUsd` remains `null` unless a trusted provider cost is exposed; no invoice-cost ingestion implemented |
+| G81-G87 live proof planning | **Planning/prep only** — staging live proof, notifications, email no-send proof, approval event map, GA/GSC live metrics, WordPress live draft, and image generation provider proof plans updated; no live calls or sends executed |
+| G88 consolidation | **Docs consolidation in shared files** — correct G79-G88 gate map recorded; Puriva Launch remains **BLOCKED** and production remains frozen |
 | G76c review | **KEEP** — PowerShell review-only; no code changes |
 | G76d closeout | **Docs only** — wiring + limitations recorded; production remains frozen |
 | G75c verifier fix | **TEMP only** — verifier/tooling fix (`node --import tsx` + cross-client live evidence scan); repo source unchanged; no new live call |
@@ -60,10 +64,10 @@
 | Production deploy | **Frozen/deferred** — no deploy until G49 dry-run + G50 explicit approval |
 | G49 public probes (§6.2) | **PASS** — 2026-07-09; formal gate closure pending owner sentence |
 | G50 production deploy | **Not executed** — frozen/deferred |
-| Puriva Launch | **Blocked** — live proof gates required; SEC-B1 fixed locally (uncommitted); SEC-H1 (`storageKey` leak on admin AI Delivery JSON) fixed locally (uncommitted); see security audit |
+| Puriva Launch | **Blocked** — live proof gates and product workflow gates required; G79 local ledger aggregation and G80 policy do not unblock launch; G81-G87 are planning/prep only; production remains frozen |
 | Roadmap tracks | Production Safety · Live Integration Proof · Client Operating Pack/Productization |
 
-Detail: [`AI_MODEL_ROUTING_POLICY.md`](./runbooks/AI_MODEL_ROUTING_POLICY.md) · [`G53_PRODUCTION_SAFETY_PLAN.md`](./runbooks/G53_PRODUCTION_SAFETY_PLAN.md) · [`deferred-scope-register.md`](./operator/deferred-scope-register.md) · §2.13 below.
+Detail: [`AI_MODEL_ROUTING_POLICY.md`](./runbooks/AI_MODEL_ROUTING_POLICY.md) · [`G53_PRODUCTION_SAFETY_PLAN.md`](./runbooks/G53_PRODUCTION_SAFETY_PLAN.md) · [`deferred-scope-register.md`](./operator/deferred-scope-register.md) · §2.14 below.
 
 ## G77b persistent COMPLETED ledger live proof closeout (2026-07-10)
 
@@ -98,8 +102,8 @@ Detail: [`AI_MODEL_ROUTING_POLICY.md`](./runbooks/AI_MODEL_ROUTING_POLICY.md) ·
 | Staging / VPS / production / deploy | **Not touched** |
 | Production readiness | **NO** — production remains frozen; staging/production live proof **not** claimed |
 | What G77b proves | Local controlled live OpenRouter execute creates persistent COMPLETED ledger row with completedAttribution metadata |
-| What G77b does **not** prove | Staging/production live; monthly cap aggregation for live rows; exact provider invoice cost via `actualCostUsd` |
-| Next gate | **G78** docs alignment closeout (separate owner approval for commit/push); then **G79** / **G80** / **G81** as separate gates |
+| What G77b does **not** prove | Staging/production live; exact provider invoice cost via `actualCostUsd`; later G79 closes local monthly aggregation only |
+| Next gate | Superseded by G78-G88 closeout sequence; post-G88 recommended next gate is **G89** owner-selected launch-blocker execution |
 
 Detail: [`AI_MODEL_ROUTING_POLICY.md`](./runbooks/AI_MODEL_ROUTING_POLICY.md) · [`AI_PROVIDER_LIVE_PROOF.md`](./runbooks/AI_PROVIDER_LIVE_PROOF.md) §9.18 · [`deferred-scope-register.md`](./operator/deferred-scope-register.md).
 
@@ -111,9 +115,28 @@ Detail: [`AI_MODEL_ROUTING_POLICY.md`](./runbooks/AI_MODEL_ROUTING_POLICY.md) ·
 | Scope | AI provider/ledger follow-up runbooks; deferred-scope buckets; notifications blocker plan; integration truth matrix; monthly report / WordPress tier labels; Client Operating Pack implementation status |
 | Live AI / OpenRouter | **Not executed in G78** — G77b evidence preserved |
 | Production / staging / deploy | **Not touched** — production remains frozen |
-| Next gates | **G79** monthly cap aggregation (impl + local proof); **G80** `actualCostUsd` policy (impl + local proof); **G81** staging live proof planning only |
+| Next gates | Superseded by G79-G88: G79 implemented locally; G80 policy documented only; G81-G87 planning/prep only; G88 consolidation records Puriva Launch still blocked |
 
 Detail: [`deferred-scope-register.md`](./operator/deferred-scope-register.md) (future scope buckets) · [`notifications-blocker-plan.md`](./operator/notifications-blocker-plan.md) · [`CLIENT_OPERATING_PACKS.md`](./architecture/CLIENT_OPERATING_PACKS.md) §14 · [`INTEGRATIONS_TRUTH_MATRIX.md`](./runbooks/INTEGRATIONS_TRUTH_MATRIX.md).
+
+## G79-G88 multitask consolidation (2026-07-10)
+
+| Gate | Result | Evidence / limitation |
+|------|--------|-----------------------|
+| **G79 — Monthly cap aggregation for live COMPLETED rows** | **READY (local implemented)** | `sumSpentUsdForPeriod()` now includes live `COMPLETED` rows and sums `actualCostUsd ?? estimatedCostUsd`; focused unit tests 18/18 PASS on `ai-budget-ledger.service.test.ts` |
+| **G80 — `actualCostUsd` policy** | **PARTIAL (policy only)** | Policy documented: `actualCostUsd` stays `null` unless trusted provider cost is exposed; trusted provider-cost ingestion remains deferred |
+| **G81 — Staging live proof planning** | **PARTIAL (planning only)** | `AI_PROVIDER_LIVE_PROOF.md` has a staging plan; no staging execution or live call occurred |
+| **G82 — Notifications foundation planning** | **BLOCKED (not started in-system)** | No in-system notification model exists; staged plan updated in `notifications-blocker-plan.md` |
+| **G83 — Email notification no-send proof** | **PARTIAL (no-send planning)** | `EMAIL_NOTIFICATIONS_PROOF.md` no-send checklist updated; no live email sent |
+| **G84 — Client approval notification loop event map** | **PARTIAL (event map)** | Approval event map documented; image-level approve/reject has no notification intent; monthly report `FINAL` is admin-only and not client delivery |
+| **G85 — GA/GSC live metrics planning** | **BLOCKED (live data)** | `MONTHLY_REPORT_LIVE_DATA_PROOF.md` and Puriva monthly gates separate MANUAL snapshot placeholders from live GA/GSC; no OAuth/live sync exists |
+| **G86 — WordPress live draft proof planning** | **PARTIAL (planning only)** | `WORDPRESS_DRAFT_PROOF.md` three-tier plan documented; live draft proof not executed; publish remains frozen |
+| **G87 — Image generation provider proof planning** | **BLOCKED (provider/live proof)** | `IMAGE_GENERATION_PROOF.md` medical-aesthetic and future proof checklist updated; no provider selected or called |
+| **G88 — Puriva launch readiness consolidation** | **BLOCKED (launch unchanged)** | Shared docs consolidated with the correct gate map; Puriva Launch remains blocked and production remains frozen |
+
+G77b evidence remains preserved: workflow run `2244413e-d87b-45a1-8a26-6634ec8972d5`, ledger row `5d8d635c-ced0-4a14-9b33-839e1fdee508`, and `actualCostUsd=null`. G79 changes the local monthly aggregation behavior for completed ledger rows; it does not prove staging/production live AI or provider invoice-cost ingestion.
+
+**Recommended next gate:** **G89** — owner-selected launch-blocker execution gate, preferably the lowest-blast-radius proof that unlocks downstream work (R2 real-bucket proof is the current recommended first candidate). Any live proof, staging/prod action, commit, push, or deploy still requires explicit owner approval.
 
 ## G76 persistent completed ledger wiring closeout (2026-07-10)
 
@@ -486,7 +509,7 @@ Percentages are **local MVP readiness**, not production-proven. See [`docs/STATU
 | **Deliverable handling** | **100% local/operator-client-safe** | Admin/operator deliverables support upload/download-reference/open, ready/revision/accept/archive/restore, reviews, WordPress draft prep, Google Docs export handoff, monthly report document handoff, generated PDF storage, and client FINAL-only visibility with safe `downloadReference`/`exportUrl` shapes | Live R2 real-bucket proof, live Google export/OAuth, live WordPress publish, staging/env proof, and production readiness remain deferred |
 | **WordPress draft-prep handoff** | **100% local/operator-ready** | Draft preparation and operator handoff are complete for the approved local/admin workflow | Live publish, client-triggered publish, staging/environment proof, production readiness |
 | **WordPress disabled-safe publish gate** | **100% local-safe** | Publish gate metadata and disabled-safe smokes prove local default safety when publish is not enabled | Live publish, client-triggered publish, staging/environment proof, production readiness |
-| **Puriva Operating Pack v1** | **100% local/admin-operational pack** — **Puriva Client-Service Launch: BLOCKED** | Local/admin-operational closeout complete (workflow/docs maturity only; not launch readiness); first Client Operating Pack instance per [`CLIENT_OPERATING_PACKS.md`](./architecture/CLIENT_OPERATING_PACKS.md) §14 | Puriva Launch blocked until staging/production live proof gates and product workflow gates are clean; local live AI text + COMPLETED ledger row proven (G77b); staging/production re-proof still required; GA/GSC, R2, image gen, in-system + email notifications, production deploy remain deferred |
+| **Puriva Operating Pack v1** | **100% local/admin-operational pack** — **Puriva Client-Service Launch: BLOCKED** | Local/admin-operational closeout complete (workflow/docs maturity only, not launch readiness); first Client Operating Pack instance per [`CLIENT_OPERATING_PACKS.md`](./architecture/CLIENT_OPERATING_PACKS.md) §14; G79 local ledger aggregation implemented; G80 policy documented | Puriva Launch blocked until staging/production live proof gates and product workflow gates are clean; local live AI text + COMPLETED ledger row proven (G77b); staging/production re-proof still required; GA/GSC, R2, image gen, in-system + email notifications, production deploy remain deferred |
 | **Admin cockpit / daily operations** | **100% local/admin-operational** | Ready now / Needs review / Blocked-waiting queues, discoverable first-client path, complete handoffs into WorkflowBriefs, AI Delivery, Monthly Reports preview, Client Portal archive preview, Market Intelligence, and Finance Lite, explicit deferred/gated labeling | Environment proof, deployment, and live execution remain gated |
 | **External integrations readiness** | Block 1 closed | Config-shape checks only | Live provider, WP, R2 IO, GA/GSC sync |
 | **Admin operations / recovery** | Block 2 closed | Dashboard panel, operations summary API, recovery hints | Durable closeout store (manual run only) |
@@ -551,7 +574,7 @@ Percentages are **local MVP readiness**, not production-proven. See [`docs/STATU
 - **Auth/session:** Session persistence (BLOCKED/deferred), real auth endpoints (skeleton-only, return 501), permission/module access enforcement (skeleton-only, not wired), invite/reset flows, Turnstile on staging, OAuth/OIDC, MFA, magic links
 - **Production promotion of current `main`** to `system.digitalcubeagency.net` (staging deploy G46d/G47 is proven; production deploy is not)
 - Live integrations, AI provider execution, storage, analytics, and notifications (see [`INTEGRATIONS_TRUTH_MATRIX.md`](./runbooks/INTEGRATIONS_TRUTH_MATRIX.md))
-- Live OpenRouter / AI provider HTTP execution
+- Staging/production OpenRouter / AI provider HTTP execution (local controlled live proof is complete; target-environment proof is not)
 - Live WordPress publish to any host
 - Live R2 real-bucket proof, staging/env proof, and production storage readiness
 - GA4 / GSC OAuth and live metrics sync
@@ -606,8 +629,8 @@ Full pack: [`docs/runbooks/STAGING_READINESS.md`](./runbooks/STAGING_READINESS.m
 |------|--------|
 | Staging deploy proof | **Phase C refresh COMPLETE** — G35 Phase C controlled refresh on `5e1ea5a` PASS; staging artifact, API, web, and MVP smoke verified; production untouched (see §2.2, §2.8); G43 local re-check PASS does not change deferred status; further staging refresh/execution requires fresh explicit owner approval |
 | Production deploy proof | Deferred — frozen; G48/G53 planning PASS recorded; production deploy ready **NO**; G49/G50 **not executed**; G54 HSTS/proxy fixed; next production path remains G49 dry-run before G50 |
-| Puriva Launch | **Blocked** — staging/production live proof gates (R2, GA/GSC, live AI re-proof, image gen, in-system + email notifications) and product workflow gates required; local live AI + COMPLETED ledger row proven (G77b) does not close launch; see deferred-scope register |
-| Live AI provider / OpenRouter execution | **COMPLETE (local only)** — formal clean proof G71e + G71e-retry; G77b persistent COMPLETED ledger row; `actualCostUsd=null` (not invoice cost); monthly cap aggregation for live rows deferred (G79); staging/production live proof still pending |
+| Puriva Launch | **Blocked** — staging/production live proof gates (R2, GA/GSC, live AI re-proof, image gen, in-system + email notifications) and product workflow gates required; local live AI + COMPLETED ledger row proven (G77b) and G79 local monthly aggregation do not close launch; see deferred-scope register |
+| Live AI provider / OpenRouter execution | **COMPLETE (local only)** — formal clean proof G71e + G71e-retry; G77b persistent COMPLETED ledger row; G79 monthly aggregation includes live `COMPLETED` rows locally; `actualCostUsd=null` remains policy-correct until trusted provider cost ingestion exists; staging/production live proof still pending |
 | Live WordPress publish | Deferred — draft prep only |
 | Live R2 real-bucket proof | Deferred — explicit env approval required; no bucket IO in local closeout; no staging/prod storage readiness claim |
 | GA/GSC live sync | Deferred — snapshot-first metrics |
