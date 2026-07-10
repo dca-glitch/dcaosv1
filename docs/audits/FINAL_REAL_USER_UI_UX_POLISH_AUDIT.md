@@ -140,7 +140,7 @@ Client-only viewers are constrained to `CLIENT_ALLOWED_ROUTE_VIEWS` (redirect en
 **F-003 — 9px uppercase micro-labels.** `[P2] · Effort S · CONFIRMED_FROM_CODE`
 - Evidence: `shell.css:106`, `:134` (nav section label), `:240` all `font-size: 9px`; `components/ui/MetricCard.tsx:39` `text-[9px]` label; `design-system/components/Table.tsx:110` and `Card.tsx:166` `text-[9px]`.
 - Problem: 9px uppercase labels are below the 11px caption token and, when combined with muted color (F-004), are low-legibility.
-- Recommended: standardize eyebrow/label to 11px (`--ds-text-caption`) with existing letter-spacing.
+- Recommended: standardize eyebrow/label to `--ds-text-caption` (11px fixed-pixel token, independent of the root size discussed in F-001) with existing letter-spacing; if F-001 changes the token scale, re-derive from the updated caption token rather than a literal 11px.
 
 **Positive:** Headings use a coherent token-driven scale with tuned `letter-spacing` and `line-height` (`tokens.css:498–501`); `line-height: 1.6` base is comfortable.
 
@@ -224,8 +224,8 @@ Density tokens are well-specified and intentionally split admin vs client (`toke
   - Impact: inconsistent, developer-flavored group labels in an otherwise polished sidebar.
   - Recommended: map all sections to intentional labels (e.g., `core→"Workspace"`/"Operations", `settings→"Settings"`, `client→"Client"`).
 - **F-017 — Long flat "core" group.** `[P3] · Effort S · STRONGLY_INFERRED` The admin `core` section holds ~12 items (`workflow-briefs, clients, projects, ai-delivery, admin-daily-cockpit, ai-operations, ai-market-intelligence, tasks, invoices, credit-notes, invoice-items, bills`). Consider sub-grouping (Delivery/AI vs Finance) to aid orientation.
-- **F-022 — Placeholder routes reachable from nav.** `[P3] · Effort S · RUNTIME_VERIFICATION_REQUIRED` `tenants` renders "Not available yet … intentionally paused" (`App.tsx:1359`) and `modules` has a placeholder panel (`:1337`). Confirm which roles see these entries; dead-end "not available" items hurt first-time orientation.
-- **F-023 — Design showcase ships in-app.** `[P3] · Effort XS · CONFIRMED_FROM_CODE` `#/admin/design-system` → `DesignShowcase` (`App.tsx:615, 4773`) is reachable by hash though absent from nav. Confirm role gating / production exclusion.
+- **F-022 — Placeholder routes reachable from nav.** `[P3] · Effort S · RUNTIME_VERIFICATION_REQUIRED` `tenants` renders "Not available yet … intentionally paused" (`App.tsx:1359`) and `modules` has a placeholder panel (`:1337`). Recommended: hide these nav entries for roles that cannot use them (or mark them "Coming soon" with a disabled style) instead of routing to dead-end panels; verify at runtime which roles currently see them.
+- **F-023 — Design showcase ships in-app.** `[P3] · Effort XS · CONFIRMED_FROM_CODE` `#/admin/design-system` → `DesignShowcase` (`App.tsx:615, 4773`) is reachable by hash though absent from nav. Recommended: gate the route to admin roles and exclude it from production builds (or remove the route registration); keep it available in dev only.
 
 **Positive:** Client vs admin shells are distinct (`shellVariant` at `App.tsx:4463`), and client-only viewers are redirected out of admin routes (`App.tsx:1810`).
 
