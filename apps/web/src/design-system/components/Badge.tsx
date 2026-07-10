@@ -1,4 +1,14 @@
 import React, { ReactNode } from 'react';
+import {
+  STATUS,
+  formatStatusLabel,
+  getClientStatusLabel,
+  getStatusVisual,
+  normalizeStatusKey,
+  statusBadgeStyle,
+  toneToStatusKey,
+  getStatusTone,
+} from '../status';
 
 export type BadgeVariant = 'primary' | 'success' | 'warning' | 'danger' | 'muted';
 
@@ -36,52 +46,76 @@ const Badge: React.FC<BadgeProps> = ({
 
 export default Badge;
 
-/* ── Convenience wrappers matching DCA workflow statuses ── */
+/** Spec §4.2 status pill — colors from STATUS / CSS vars only. */
 export const StatusBadge: React.FC<{ status: string; className?: string }> = ({
   status,
-  className,
+  className = '',
 }) => {
-  const map: Record<string, { variant: BadgeVariant; label: string }> = {
-    // Admin copy
-    APPROVED:                { variant: 'success', label: 'Approved'       },
-    PENDING_CLIENT_REVIEW:   { variant: 'warning', label: 'Needs review'   },
-    CHANGES_REQUESTED:       { variant: 'danger',  label: 'Changes req.'   },
-    IN_PROGRESS:             { variant: 'primary', label: 'In progress'    },
-    DRAFT:                   { variant: 'muted',   label: 'Draft'          },
-    PUBLISHED:               { variant: 'success', label: 'Published'      },
-    ARCHIVED:                { variant: 'muted',   label: 'Archived'       },
-    // Finance
-    PAID:                    { variant: 'success', label: 'Paid'           },
-    ISSUED:                  { variant: 'primary', label: 'Issued'         },
-    OVERDUE:                 { variant: 'danger',  label: 'Overdue'        },
-  };
+  const visual = getStatusVisual(status) ?? STATUS[toneToStatusKey(getStatusTone(status))];
+  const key = normalizeStatusKey(status);
+  const label = key ? STATUS[key].label : formatStatusLabel(status);
 
-  const entry = map[status] ?? { variant: 'muted' as BadgeVariant, label: status };
   return (
-    <Badge variant={entry.variant} className={className}>
-      {entry.label}
-    </Badge>
+    <span
+      className={`ds-badge ds-status-badge ${className}`.trim()}
+      data-status={key ?? undefined}
+      style={statusBadgeStyle(visual)}
+    >
+      <span className="ds-badge-dot" aria-hidden="true" />
+      {label}
+    </span>
   );
 };
 
-/* Client-facing label version (human copy) */
+/** Client-facing status pill (SPEC §3.2). Returns null when status must be hidden. */
 export const ClientStatusBadge: React.FC<{ status: string; className?: string }> = ({
   status,
-  className,
+  className = '',
 }) => {
-  const map: Record<string, { variant: BadgeVariant; label: string }> = {
-    PENDING_CLIENT_REVIEW: { variant: 'warning', label: 'Needs your review'   },
-    APPROVED:              { variant: 'success', label: 'Approved'             },
-    CHANGES_REQUESTED:     { variant: 'danger',  label: 'Changes requested'    },
-    PUBLISHED:             { variant: 'success', label: 'Published'            },
-    IN_PROGRESS:           { variant: 'primary', label: 'Being prepared'       },
-    DRAFT:                 { variant: 'muted',   label: 'Draft'                },
-  };
+  const key = normalizeStatusKey(status);
+  if (!key) {
+    return (
+      <StatusBadge status={status} className={className} />
+    );
+  }
 
-  const entry = map[status] ?? { variant: 'muted' as BadgeVariant, label: status };
+  const clientLabel = getClientStatusLabel(key);
+  if (clientLabel == null) return null;
+
+  const visual = STATUS[key];
   return (
-    <Badge variant={entry.variant} className={className}>
-      {entry.label}
-    </Badge>
+    <span
+      className={`ds-badge ds-status-badge ${className}`.trim()}
+      data-status={key}
+      data-surface="client"
+      style={statusBadgeStyle(visual)}
+    >
+      <span className="ds-badge-dot" aria-hidden="true" />
+      {clientLabel}
+    </span>
+  );
+};
+
+/** Compact status indicator (priority / pipeline dots). */
+export const StatusDot: React.FC<{
+  status: string;
+  className?: string;
+  title?: string;
+}> = ({ status, className = '', title }) => {
+  const visual = getStatusVisual(status) ?? STATUS[toneToStatusKey(getStatusTone(status))];
+  const key = normalizeStatusKey(status);
+  const label = title ?? (key ? STATUS[key].label : formatStatusLabel(status));
+
+  return (
+    <span
+      className={`ds-status-dot ${className}`.trim()}
+      data-status={key ?? undefined}
+      title={label}
+      aria-label={label}
+      style={{
+        background: visual.text,
+        boxShadow: `0 0 0 1px ${visual.border}`,
+      }}
+    />
   );
 };

@@ -11,8 +11,25 @@ export { default as Button }                from './components/Button';
 export type { ButtonVariant, ButtonSize }   from './components/Button';
 
 /* ── Status badges ── */
-export { default as Badge, StatusBadge, ClientStatusBadge } from './components/Badge';
+export { default as Badge, StatusBadge, ClientStatusBadge, StatusDot } from './components/Badge';
 export type { BadgeVariant }                from './components/Badge';
+
+/* ── Canonical STATUS map ── */
+export {
+  STATUS,
+  STATUS_KEYS,
+  CLIENT_STATUS_LABELS,
+  normalizeStatusKey,
+  getStatusVisual,
+  getStatusTone,
+  getClientStatusLabel,
+  isClientVisibleStatus,
+  formatStatusLabel,
+  statusBadgeStyle,
+  toneToStatusKey,
+  statusTokenSuffix,
+} from './status';
+export type { StatusKey, StatusVisual, LegacyStatusTone } from './status';
 
 /* ── Form fields ── */
 export {
@@ -36,6 +53,9 @@ export {
   EmptyState,
 } from './components/Card';
 
+/* ── Panel helper ── */
+export { panelCSS, raisedPanelCSS } from './panel';
+
 /* ── Tables ── */
 export {
   Table,
@@ -46,14 +66,17 @@ export {
   Td,
   TdDouble,
   TablePagination,
+  TimelineItem,
+  ActivityItem,
 } from './components/Table';
+export type { TableDensity } from './components/Table';
 
 /* ── Modals ── */
 export { default as Modal, ConfirmDialog }  from './components/Modal';
 export type { ModalSize }                   from './components/Modal';
 
 /* ── Alerts & feedback ── */
-export { default as Alert, Toast }          from './components/Alert';
+export { default as Alert, Toast, SuccessState }  from './components/Alert';
 export type { AlertVariant }                from './components/Alert';
 
 /* ── App layout ── */

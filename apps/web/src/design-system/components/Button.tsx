@@ -1,6 +1,6 @@
 import React, { ButtonHTMLAttributes, ReactNode } from 'react';
 
-export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'success';
+export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'success' | 'titanium';
 export type ButtonSize    = 'sm' | 'md' | 'lg';
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -30,44 +30,63 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     },
     ref,
   ) => {
+    // Spec §4.1 visual 8px radius maps to token --ds-radius-md (Tailwind rounded-md)
     const base =
       'inline-flex items-center justify-center gap-2 rounded-md font-semibold border ' +
-      'transition-all duration-[120ms] ' +
+      'transition-[opacity,background,border-color,box-shadow,filter] duration-[120ms] ease-out ' +
       'focus:outline-none focus-visible:shadow-focus ' +
-      'disabled:opacity-50 disabled:cursor-not-allowed ' +
+      'disabled:opacity-40 disabled:cursor-not-allowed ' +
       'select-none';
 
     const variants: Record<ButtonVariant, { className: string; style?: React.CSSProperties }> = {
       primary: {
-        className: 'text-text-primary border-border-accent hover:brightness-110 active:brightness-95',
-        style:     { background: 'var(--primary-btn-gradient)' },
+        className: 'text-white border-transparent hover:brightness-110 active:brightness-95',
+        style: {
+          background: 'var(--ds-primary-btn-gradient)',
+          boxShadow: 'var(--ds-shadow-glow)',
+        },
       },
       secondary: {
-        className:
-          'bg-transparent border-border text-text-secondary ' +
-          'hover:border-border-strong hover:text-text-primary active:opacity-80',
+        className: 'border-border text-text-secondary hover:opacity-80 active:opacity-70',
+        style: {
+          background: 'var(--ds-surface-panel)',
+        },
       },
       ghost: {
         className:
           'bg-transparent border-transparent text-text-muted ' +
-          'hover:text-text-secondary hover:bg-card active:opacity-80',
+          'hover:opacity-80 hover:text-text-secondary active:opacity-70',
       },
       danger: {
-        className:
-          'bg-danger-soft border-border-danger text-danger-text ' +
-          'hover:border-danger hover:text-danger hover:brightness-110 active:opacity-80',
+        className: 'hover:opacity-80 active:opacity-70',
+        style: {
+          background: 'var(--ds-btn-destructive-bg)',
+          borderColor: 'var(--ds-btn-destructive-border)',
+          color: 'var(--ds-accent-coral)',
+        },
       },
       success: {
-        className:
-          'bg-success-soft border-border-success text-success-text ' +
-          'hover:border-success hover:brightness-110 active:opacity-80',
+        className: 'hover:opacity-80 active:opacity-70',
+        style: {
+          background: 'var(--ds-btn-success-bg)',
+          borderColor: 'var(--ds-btn-success-border)',
+          color: 'var(--ds-accent-sage)',
+        },
+      },
+      titanium: {
+        className: 'hover:opacity-90 active:opacity-80',
+        style: {
+          background: 'var(--ds-btn-titanium-gradient)',
+          borderColor: 'var(--ds-btn-titanium-border)',
+          color: 'var(--ds-btn-titanium-text)',
+        },
       },
     };
 
     const sizes: Record<ButtonSize, string> = {
-      sm: 'px-3 py-1.5 text-body-xs',
-      md: 'px-4 py-2   text-body-xs',
-      lg: 'px-5 py-2.5 text-body-sm',
+      sm: 'px-3 py-1.5 text-[11px]',
+      md: 'px-4 py-2   text-[11px]',
+      lg: 'px-5 py-2.5 text-[12px]',
     };
 
     const v = variants[variant];

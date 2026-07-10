@@ -7,6 +7,16 @@ export { PageHeader } from "./PageHeader";
 export { SectionPanel } from "./SectionPanel";
 export { SideSheet, type SideSheetProps } from "./SideSheet";
 export { StatusBadge, getStatusTone } from "./StatusBadge";
+export {
+  STATUS,
+  STATUS_KEYS,
+  normalizeStatusKey,
+  getClientStatusLabel,
+  isClientVisibleStatus,
+  StatusDot,
+  ClientStatusBadge,
+} from "../../design-system";
+export type { StatusKey, StatusVisual } from "../../design-system";
 export { Table, type TableHeader, type TableProps, type TableRow } from "./Table";
 export {
   WorkflowBriefKnowledgeUsageSummary,

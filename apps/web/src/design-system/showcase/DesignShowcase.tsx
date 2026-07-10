@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import {
   Button,
-  Badge, StatusBadge,
+  Badge, StatusBadge, StatusDot,
   Input, Textarea, Select, Checkbox, RadioGroup,
   Card, CardHeader, CardFooter,
   MetricCard, PageHeader, SectionLabel, EmptyState,
   Table, TableHead, TableBody, TableRow, Th, Td, TdDouble,
+  TimelineItem, ActivityItem,
   Modal, ConfirmDialog,
-  Alert, Toast,
+  Alert, Toast, SuccessState,
   Spinner, Skeleton, SkeletonCard,
   Tabs, FilterPills,
 } from '../index';
@@ -51,6 +52,7 @@ const DesignShowcase: React.FC = () => {
           <Button variant="ghost">Ghost</Button>
           <Button variant="danger">Delete</Button>
           <Button variant="success">Approve</Button>
+          <Button variant="titanium">Continue</Button>
         </Row>
         <Row className="mt-3">
           <Button variant="primary" size="sm">Small</Button>
@@ -126,6 +128,13 @@ const DesignShowcase: React.FC = () => {
           <StatusBadge status="PAID" />
           <StatusBadge status="ISSUED" />
           <StatusBadge status="OVERDUE" />
+        </Row>
+        <Row className="mt-3 items-center">
+          <StatusDot status="approved" />
+          <StatusDot status="in_review" />
+          <StatusDot status="blocked" />
+          <StatusDot status="published" />
+          <span className="text-body-xs text-text-muted ml-2">StatusDot</span>
         </Row>
       </Section>
 
@@ -278,6 +287,22 @@ const DesignShowcase: React.FC = () => {
         </Table>
       </Section>
 
+      {/* ── TIMELINE / ACTIVITY ── */}
+      <Section title="Timeline & activity">
+        <div className="grid grid-cols-2 gap-6 max-w-3xl">
+          <div>
+            <TimelineItem title="Moved to Internal Review" meta="PH-D03 · 2h ago" status="in_review" />
+            <TimelineItem title="Draft generated" meta="AI run · 4h ago" status="in_progress" />
+            <TimelineItem title="Brief approved" meta="Admin · 1d ago" status="approved" isLast />
+          </div>
+          <div>
+            <ActivityItem title="Deliverable published" timestamp="2h ago" actor="System" status="published" />
+            <ActivityItem title="Changes requested" timestamp="5h ago" actor="Client" status="changes_requested" description="Please revise intro paragraph." />
+            <ActivityItem title="Run completed" timestamp="1d ago" status="completed" />
+          </div>
+        </div>
+      </Section>
+
       {/* ── ALERTS ── */}
       <Section title="Alerts">
         <div className="flex flex-col gap-3 max-w-xl">
@@ -285,6 +310,8 @@ const DesignShowcase: React.FC = () => {
           <Alert variant="warning" title="Review pending" message="2 items are waiting for client approval." />
           <Alert variant="danger"  title="Publish failed" message="WordPress connection timed out." action={{ label: 'Retry', onClick: () => {} }} />
           <Alert variant="info"    message="Staging deployment is in progress. This may take 2–3 minutes." />
+          <SuccessState message="Deliverable confirmed." />
+          <Toast variant="success" message="Saved" onClose={() => {}} />
         </div>
       </Section>
 

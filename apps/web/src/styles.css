@@ -1,12 +1,12 @@
-@import './design-system/tokens.css';
+/* tokens.css is imported once from main.tsx (P1B) — do not re-import here */
 
 @tailwind base;
 @tailwind components;
 
 :root {
-  color: var(--color-text);
-  background: var(--color-background);
-  font-family: var(--font-family);
+  color: var(--ds-text-primary);
+  background: var(--ds-surface-page);
+  font-family: var(--ds-font-sans);
 }
 
 * {
@@ -16,22 +16,16 @@
 body {
   margin: 0;
   min-height: 100vh;
-  background:
-    radial-gradient(circle at 12% 8%, rgba(74, 138, 153, 0.12), transparent 32%),
-    radial-gradient(circle at 88% 4%, rgba(26, 41, 66, 0.35), transparent 28%),
-    linear-gradient(135deg, var(--color-primary-dark) 0%, var(--color-background) 48%, var(--color-primary) 100%);
+  background: var(--ds-page-gradient);
+  background-color: var(--ds-surface-page);
+  color: var(--ds-text-primary);
+  font-family: var(--ds-font-sans);
 }
 
+/* Global grid overlay removed — approved foundation is solid page gradient only */
 body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  background:
-    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
-  background-size: 84px 84px;
-  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.58), transparent 76%);
+  content: none;
+  display: none;
 }
 
 a {
@@ -145,8 +139,9 @@ textarea {
 input:focus,
 select:focus,
 textarea:focus {
-  border-color: var(--accent);
-  outline: 3px solid var(--accent-glow);
+  border-color: var(--primary-text);
+  outline: none;
+  box-shadow: var(--ds-shadow-focus);
 }
 
 input::placeholder,
@@ -695,68 +690,68 @@ td {
   }
 }
 
-/* Dark Nebula Product UI Foundation — phase 1 */
+/* Dark Nebula Product UI Foundation — phase 1
+ * P1B: foundation aliases remapped to canonical --ds-* (no Sora/Inter/cyan).
+ * Non-foundation layout/component rules below remain for later blocks.
+ */
 :root {
   color-scheme: dark;
-  --font-display: Sora, Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --bg: #070a16;
-  --bg-deep: #030612;
-  --bg-purple: #14102b;
-  --surface: rgba(9, 14, 31, 0.78);
-  --surface-strong: rgba(16, 23, 48, 0.88);
-  --surface-soft: rgba(125, 92, 255, 0.08);
-  --panel: rgba(11, 17, 37, 0.78);
-  --panel-strong: rgba(16, 24, 50, 0.9);
-  --panel-soft: rgba(255, 255, 255, 0.055);
-  --border: rgba(190, 211, 255, 0.14);
-  --border-strong: rgba(141, 190, 255, 0.28);
-  --text: #f7fbff;
-  --text-soft: #c9d5f0;
-  --muted: #8d9abb;
-  --accent: #8b7cff;
-  --accent-strong: #b9c2ff;
-  --accent-cyan: #52e0ff;
-  --accent-purple: #d49cff;
-  --accent-glow: rgba(82, 224, 255, 0.22);
-  --success: #63e6be;
-  --warning: #ffd166;
-  --danger: #ff7c9a;
-  --field-surface: rgba(5, 11, 25, 0.82);
-  --field-surface-hover: rgba(8, 15, 31, 0.92);
-  --panel-outline: rgba(255, 255, 255, 0.06);
-  --focus-ring: rgba(82, 224, 255, 0.18);
-  --radius-sm: 12px;
-  --radius: 18px;
-  --radius-lg: 26px;
-  --shadow: 0 28px 90px rgba(0, 0, 0, 0.42);
-  --shadow-soft: 0 18px 58px rgba(0, 0, 0, 0.28);
+  --font-display: var(--ds-font-sans);
+  --bg: var(--ds-surface-page);
+  --bg-deep: var(--ds-surface-sidebar);
+  --bg-purple: var(--ds-surface-inset);
+  --surface: var(--ds-surface-panel);
+  --surface-strong: var(--ds-surface-hover);
+  --surface-soft: var(--ds-primary-soft-bg);
+  --panel: var(--ds-surface-panel);
+  --panel-strong: var(--ds-surface-hover);
+  --panel-soft: var(--ds-surface-panel);
+  --border: var(--ds-border);
+  --border-strong: var(--ds-border-strong);
+  --text: var(--ds-text-primary);
+  --text-soft: var(--ds-text-secondary);
+  --muted: var(--ds-text-muted);
+  --accent: var(--ds-accent-primary);
+  --accent-strong: var(--ds-accent-indigo);
+  --accent-cyan: var(--ds-accent-indigo);
+  --accent-purple: var(--ds-accent-mauve);
+  --accent-glow: rgba(99, 102, 241, 0.28);
+  --success: var(--ds-accent-sage);
+  --warning: var(--ds-accent-amber);
+  --danger: var(--ds-accent-coral);
+  --field-surface: var(--ds-surface-inset);
+  --field-surface-hover: var(--ds-surface-panel);
+  --panel-outline: var(--ds-divider);
+  --focus-ring: var(--ds-focus-ring-color);
+  --radius-sm: var(--ds-radius-sm);
+  --radius: var(--ds-radius-md);
+  --radius-lg: var(--ds-radius-lg);
+  --shadow: var(--ds-shadow-overlay);
+  --shadow-soft: var(--ds-shadow-flat);
+  --transition-fast: var(--ds-transition-fast);
+  --transition-base: var(--ds-transition-base);
+  --transition-slow: var(--ds-transition-slow);
 }
 
 html {
-  background: var(--bg-deep);
-  font-family: var(--font-display);
+  background: var(--ds-page-gradient);
+  background-color: var(--ds-surface-page);
+  font-family: var(--ds-font-sans);
+  color: var(--ds-text-primary);
 }
 
 body {
-  color: var(--text);
-  font-family: var(--font-display);
-  line-height: 1.55;
-  background:
-    radial-gradient(circle at 12% 10%, rgba(82, 224, 255, 0.13), transparent 26%),
-    radial-gradient(circle at 78% 18%, rgba(139, 124, 255, 0.18), transparent 32%),
-    radial-gradient(circle at 52% 82%, rgba(212, 156, 255, 0.12), transparent 34%),
-    linear-gradient(135deg, var(--bg-deep) 0%, var(--bg) 46%, var(--bg-purple) 100%);
+  color: var(--ds-text-primary);
+  font-family: var(--ds-font-sans);
+  line-height: 1.6;
+  background: var(--ds-page-gradient);
+  background-color: var(--ds-surface-page);
 }
 
+/* Cyan/purple glow overlay removed (P1B) */
 body::after {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  background:
-    linear-gradient(135deg, rgba(82, 224, 255, 0.05), transparent 34%),
-    linear-gradient(315deg, rgba(139, 124, 255, 0.08), transparent 42%);
+  content: none;
+  display: none;
 }
 
 button,
@@ -772,8 +767,8 @@ button:focus-visible,
 input:focus-visible,
 select:focus-visible,
 textarea:focus-visible {
-  outline: 3px solid var(--focus-ring);
-  outline-offset: 2px;
+  outline: none;
+  box-shadow: var(--ds-shadow-focus);
 }
 
 .login-page {
@@ -1322,7 +1317,9 @@ input:focus,
 select:focus,
 textarea:focus {
   background: var(--field-surface-hover);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 0 0 1px rgba(82, 224, 255, 0.14);
+  border-color: var(--primary-text);
+  outline: none;
+  box-shadow: var(--ds-shadow-focus);
 }
 
 .primary-action,
@@ -3230,44 +3227,48 @@ th {
 
 /* ═══ Full A–Z Dark Nebula system UI pass ═══ */
 
-/* A — global token alignment */
+/* A — global token alignment (P1B: remapped to canonical --ds-*) */
 :root {
-  --bg: #05060b;
-  --bg-deep: #030407;
-  --bg-purple: #0c0e1c;
-  --panel: rgba(17, 19, 32, 0.92);
-  --panel-strong: rgba(22, 27, 52, 0.96);
-  --border: rgba(51, 65, 85, 0.45);
-  --border-strong: rgba(71, 85, 105, 0.55);
-  --text: #f1f5f9;
-  --text-soft: rgba(148, 163, 184, 0.9);
-  --muted: rgba(100, 116, 139, 0.85);
-  --accent: #7c8fca;
-  --accent-strong: #8fa0d4;
-  --accent-cyan: #6b8fd4;
-  --accent-purple: #8b7cc8;
-  --accent-glow: rgba(124, 143, 202, 0.22);
-  --success: #6fa989;
-  --warning: #be8f68;
-  --danger: #b96f6f;
-  --radius-sm: 6px;
-  --radius: 8px;
-  --radius-lg: 10px;
-  --shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
-  --shadow-soft: 0 2px 12px rgba(0, 0, 0, 0.32);
-  --panel-outline: rgba(255, 255, 255, 0.04);
+  --bg: var(--ds-surface-page);
+  --bg-deep: var(--ds-surface-sidebar);
+  --bg-purple: var(--ds-surface-inset);
+  --panel: var(--ds-surface-panel);
+  --panel-strong: var(--ds-surface-hover);
+  --border: var(--ds-border);
+  --border-strong: var(--ds-border-strong);
+  --text: var(--ds-text-primary);
+  --text-soft: var(--ds-text-secondary);
+  --muted: var(--ds-text-muted);
+  --accent: var(--ds-accent-primary);
+  --accent-strong: var(--ds-accent-indigo);
+  --accent-cyan: var(--ds-accent-indigo);
+  --accent-purple: var(--ds-accent-mauve);
+  --accent-glow: rgba(99, 102, 241, 0.28);
+  --success: var(--ds-accent-sage);
+  --warning: var(--ds-accent-amber);
+  --danger: var(--ds-accent-coral);
+  --radius-sm: var(--ds-radius-sm);
+  --radius: var(--ds-radius-md);
+  --radius-lg: var(--ds-radius-lg);
+  --shadow: var(--ds-shadow-overlay);
+  --shadow-soft: var(--ds-shadow-flat);
+  --panel-outline: var(--ds-divider);
+  --focus-ring: var(--ds-focus-ring-color);
+  --transition-fast: var(--ds-transition-fast);
+  --transition-base: var(--ds-transition-base);
+  --transition-slow: var(--ds-transition-slow);
 }
 
 body {
-  background:
-    radial-gradient(circle at 14% 6%, rgba(35, 49, 95, 0.14), transparent 28%),
-    radial-gradient(circle at 86% 12%, rgba(55, 32, 92, 0.1), transparent 26%),
-    linear-gradient(180deg, #080915 0%, #05060b 52%, #030407 100%);
+  background: var(--ds-page-gradient);
+  background-color: var(--ds-surface-page);
+  color: var(--ds-text-primary);
+  font-family: var(--ds-font-sans);
 }
 
 body::before {
-  opacity: 0.35;
-  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.4), transparent 80%);
+  content: none;
+  display: none;
 }
 
 /* B — shell and navigation */
@@ -3556,8 +3557,8 @@ input:focus,
 select:focus,
 textarea:focus,
 .form-input:focus {
-  border-color: rgba(124, 143, 202, 0.55);
-  box-shadow: 0 0 0 2px rgba(124, 143, 202, 0.18);
+  border-color: var(--primary-text);
+  box-shadow: var(--ds-shadow-focus);
   outline: none;
 }
 
@@ -5155,30 +5156,30 @@ div[role="dialog"][aria-modal="true"] {
 
 /* ═══ Block 3 — UI/UX consolidation pass (staging polish) ═══ */
 
-/* Darker near-black canvas with restrained navy / purple depth */
+/* Darker near-black canvas — P1B remaps foundation to canonical tokens */
 :root {
-  --bg: #04050a;
-  --bg-deep: #020308;
-  --bg-purple: #0a0c18;
-  --panel: rgba(14, 16, 28, 0.94);
-  --panel-strong: rgba(18, 22, 40, 0.97);
-  --panel-outline: rgba(255, 255, 255, 0.03);
-  --shadow-soft: 0 1px 8px rgba(0, 0, 0, 0.38);
+  --bg: var(--ds-surface-page);
+  --bg-deep: var(--ds-surface-sidebar);
+  --bg-purple: var(--ds-surface-inset);
+  --panel: var(--ds-surface-panel);
+  --panel-strong: var(--ds-surface-hover);
+  --panel-outline: var(--ds-divider);
+  --shadow-soft: var(--ds-shadow-flat);
+  --font-display: var(--ds-font-sans);
+  --focus-ring: var(--ds-focus-ring-color);
 }
 
 body {
-  background:
-    radial-gradient(circle at 12% 4%, rgba(32, 44, 82, 0.11), transparent 24%),
-    radial-gradient(circle at 88% 8%, rgba(48, 28, 72, 0.08), transparent 22%),
-    linear-gradient(180deg, #060712 0%, #04050a 54%, #020308 100%);
+  background: var(--ds-page-gradient);
+  background-color: var(--ds-surface-page);
+  color: var(--ds-text-primary);
+  font-family: var(--ds-font-sans);
 }
 
-body::before {
-  opacity: 0.28;
-}
-
+body::before,
 body::after {
-  opacity: 0.55;
+  content: none;
+  display: none;
 }
 
 /* Admin shell — operator-first compact density */
@@ -5548,6 +5549,103 @@ body::after {
 
 .project-summary-item p:last-child {
   font-size: 0.76rem;
+}
+
+/* ═══ P1B — Document foundation lock (wins over earlier competing globals) ═══ */
+:root {
+  --font-display: var(--ds-font-sans);
+  --font-family: var(--ds-font-sans);
+  --font-sans: var(--ds-font-sans);
+  --font-mono: var(--ds-font-mono);
+  --focus-ring: var(--ds-focus-ring-color);
+  --shadow-focus: var(--ds-shadow-focus);
+  --bg-page-gradient: var(--ds-page-gradient);
+  --transition-fast: var(--ds-transition-fast);
+  --transition-base: var(--ds-transition-base);
+  --transition-slow: var(--ds-transition-slow);
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--ds-page-gradient) !important;
+  background-color: var(--ds-surface-page) !important;
+  color: var(--ds-text-primary);
+  font-family: var(--ds-font-sans) !important;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  min-height: 100vh;
+  font-family: inherit;
+  color: inherit;
+}
+
+body::before,
+body::after {
+  content: none !important;
+  display: none !important;
+}
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:not([tabindex="-1"]):focus-visible {
+  outline: none !important;
+  box-shadow: var(--ds-shadow-focus) !important;
+}
+
+/* ── P1D: action-class compatibility (kill neon/cyan + translateY) ── */
+.primary-action,
+.btn-primary {
+  background: var(--ds-primary-btn-gradient) !important;
+  border: 1px solid transparent !important;
+  border-radius: var(--ds-radius-md) !important;
+  box-shadow: var(--ds-shadow-glow) !important;
+  color: #ffffff !important;
+  font-weight: 600;
+  transform: none !important;
+  transition: opacity var(--ds-transition-fast), filter var(--ds-transition-fast),
+    box-shadow var(--ds-transition-fast) !important;
+}
+
+.primary-action:hover,
+.primary-action:hover:not(:disabled),
+.btn-primary:hover:not(.btn-disabled):not(:disabled) {
+  background: var(--ds-primary-btn-hover) !important;
+  filter: brightness(1.05);
+  transform: none !important;
+}
+
+.secondary-action,
+.btn-secondary {
+  background: var(--ds-surface-panel) !important;
+  border: 1px solid var(--ds-border) !important;
+  border-radius: var(--ds-radius-md) !important;
+  box-shadow: none !important;
+  color: var(--ds-text-secondary) !important;
+  font-weight: 600;
+  transform: none !important;
+  transition: opacity var(--ds-transition-fast), background var(--ds-transition-fast),
+    border-color var(--ds-transition-fast) !important;
+}
+
+.secondary-action:hover,
+.secondary-action:hover:not(:disabled),
+.btn-secondary:hover:not(.btn-disabled):not(:disabled) {
+  opacity: 0.8;
+  transform: none !important;
+}
+
+.primary-action:active,
+.secondary-action:active,
+.btn-primary:active,
+.btn-secondary:active {
+  transform: none !important;
 }
 
 @tailwind utilities;

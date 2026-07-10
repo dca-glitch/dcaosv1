@@ -1,4 +1,6 @@
-import React, { ReactNode, useEffect, useCallback } from 'react';
+import React, { ReactNode, useId, useRef } from 'react';
+import { useOverlayA11y } from '../useOverlayA11y';
+import Button from './Button';
 
 export type ModalSize = 'sm' | 'md' | 'lg' | 'xl' | 'full';
 
@@ -31,63 +33,51 @@ const Modal: React.FC<ModalProps> = ({
   size             = 'md',
   closeOnBackdrop  = true,
 }) => {
-  const handleEsc = useCallback(
-    (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); },
-    [onClose],
-  );
-
-  useEffect(() => {
-    if (!isOpen) return;
-    document.addEventListener('keydown', handleEsc);
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.removeEventListener('keydown', handleEsc);
-      document.body.style.overflow = '';
-    };
-  }, [isOpen, handleEsc]);
+  const titleId = useId();
+  const panelRef = useRef<HTMLDivElement>(null);
+  useOverlayA11y(isOpen, onClose, panelRef);
 
   if (!isOpen) return null;
 
   return (
-    /* Backdrop — normal flow div, not fixed */
     <div
       className="fixed inset-0 z-modal flex items-center justify-center p-4"
       style={{
-        alignItems: 'center',
-        background: 'rgba(2,3,6,0.80)',
-        bottom: 0,
-        display: 'flex',
-        justifyContent: 'center',
-        left: 0,
-        padding: '16px',
-        position: 'fixed',
-        right: 0,
-        top: 0,
-        zIndex: 'var(--z-modal)',
+        background: 'var(--ds-modal-backdrop)',
+        backdropFilter: 'blur(2px)',
+        zIndex: 'var(--ds-z-modal, var(--z-modal))',
       }}
       onClick={closeOnBackdrop ? onClose : undefined}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="modal-title"
+      role="presentation"
     >
-      {/* Panel */}
       <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        tabIndex={-1}
         className={[
-          'relative w-full flex flex-col',
-          'border border-border-strong rounded-lg',
-          'max-h-[90vh]',
+          'relative w-full flex flex-col outline-none',
+          'max-h-[88vh] overflow-hidden',
           sizeClass[size],
         ].join(' ')}
         style={{
-          background:   'var(--surface-elevated)',
-          boxShadow:    'var(--shadow-modal)',
+          borderRadius: 'var(--ds-radius-xl)',
+          border: '1px solid var(--ds-modal-border)',
+          background: 'var(--ds-modal-gradient)',
+          boxShadow: 'var(--ds-shadow-modal)',
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
-        <div className="flex items-start justify-between px-5 py-4 border-b border-border-subtle flex-shrink-0">
+        <div
+          className="flex items-start justify-between px-6 py-4 flex-shrink-0"
+          style={{
+            background: 'var(--ds-modal-chrome)',
+            borderBottom: '1px solid var(--ds-divider)',
+          }}
+        >
           <div>
-            <h2 id="modal-title" className="text-title-sm font-semibold text-text-primary">
+            <h2 id={titleId} className="text-[14px] font-semibold text-text-primary">
               {title}
             </h2>
             {subtitle && (
@@ -95,24 +85,30 @@ const Modal: React.FC<ModalProps> = ({
             )}
           </div>
           <button
+            type="button"
             onClick={onClose}
             aria-label="Close modal"
-            className="ml-4 flex-shrink-0 w-7 h-7 flex items-center justify-center rounded-md text-text-muted hover:text-text-primary hover:bg-card border border-transparent hover:border-border transition-all"
+            className="ml-4 flex-shrink-0 w-7 h-7 flex items-center justify-center rounded-md text-text-muted hover:text-text-primary transition-[opacity,color] duration-[120ms]"
+            style={{
+              background: 'var(--ds-surface-inset)',
+              border: '1px solid var(--ds-divider)',
+            }}
           >
-            <svg width={16} height={16} className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <svg width={13} height={13} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
 
-        {/* Body */}
-        <div className="px-5 py-4 overflow-y-auto flex-1">{children}</div>
+        <div className="px-6 py-5 overflow-y-auto flex-1">{children}</div>
 
-        {/* Footer */}
         {footer && (
           <div
-            className="flex items-center justify-end gap-2 px-5 py-3 flex-shrink-0 border-t border-border-subtle"
-            style={{ background: 'var(--surface-overlay)' }}
+            className="flex items-center justify-end gap-2 px-6 py-4 flex-shrink-0"
+            style={{
+              background: 'var(--ds-modal-chrome)',
+              borderTop: '1px solid var(--ds-divider)',
+            }}
           >
             {footer}
           </div>
@@ -123,9 +119,6 @@ const Modal: React.FC<ModalProps> = ({
 };
 
 export default Modal;
-
-/* ─── Confirm Dialog (opinionated Modal wrapper) ─── */
-import Button from './Button';
 
 interface ConfirmDialogProps {
   isOpen:      boolean;

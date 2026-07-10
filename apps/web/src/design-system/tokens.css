@@ -1,171 +1,522 @@
 /*
- * DCA OS Lite — Design Tokens
+ * DCA OS Lite — Design Tokens (P1A)
+ * Canonical source: docs/design/DESIGN_SYSTEM_SPEC.md
  * Dark theme only. Do NOT add light-mode overrides.
- * Import in: src/index.css before Tailwind directives
+ * Loaded via styles.css @import before product CSS.
+ *
+ * Structure:
+ *   1. Canonical --ds-* tokens (exact approved values)
+ *   2. Compatibility aliases (legacy names → canonical)
+ *   3. Base document defaults (consume aliases only)
  */
 
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 
 :root {
-  /* ─── PAGE BACKGROUND ─── */
-  --bg-page: #05060B;
-  --bg-page-gradient:
-    radial-gradient(circle at 20% 0%,   rgba(35, 49, 95, 0.22),  transparent 34%),
-    radial-gradient(circle at 85% 15%,  rgba(55, 32, 92, 0.16),  transparent 32%),
-    radial-gradient(circle at 70% 90%,  rgba(18, 24, 48, 0.18),  transparent 36%),
-    linear-gradient(180deg, #080915 0%, #05060B 52%, #030407 100%);
+  /* ═══════════════════════════════════════════════════════════
+   * 1. CANONICAL TOKENS
+   * ═══════════════════════════════════════════════════════════ */
 
-  /* ─── SURFACE LAYERS ─── */
-  --surface-sidebar:  linear-gradient(180deg, rgba(12,14,28,.99) 0%,  rgba(7,8,18,.99)  100%);
-  --surface-topbar:   linear-gradient(180deg, rgba(14,17,32,.99) 0%,  rgba(9,11,22,.99) 100%);
-  --surface-card:     linear-gradient(180deg, rgba(18,21,38,.97) 0%,  rgba(9,11,22,.99) 100%);
-  --surface-elevated: linear-gradient(180deg, rgba(24,28,52,.99) 0%,  rgba(12,14,30,.99) 100%);
+  /* ─── Accent roles (A.*) ─── */
+  --ds-accent-primary: #6366F1;
+  --ds-accent-indigo:  #818CF8;
+  --ds-accent-sage:    #4CAF85;
+  --ds-accent-teal:    #4CAFC0;
+  --ds-accent-amber:   #C98A42;
+  --ds-accent-coral:   #E07070;
+  --ds-accent-mauve:   #A07AC8;
+  --ds-accent-primary-deep: #4F46E5;
+
+  /* ─── Surface levels (L.*) ─── */
+  --ds-surface-page:     #06070D;
+  --ds-surface-sidebar:  #04050A;
+  --ds-surface-inset:    #08090F;
+  --ds-surface-panel:    #0C0F1A;
+  --ds-surface-hover:    #111525;
+  --ds-divider:          rgba(255, 255, 255, 0.06);
+  --ds-border:           rgba(255, 255, 255, 0.08);
+  --ds-border-strong:    rgba(255, 255, 255, 0.11);
+
+  /* Approved page background gradient (SPEC §1.3) */
+  --ds-page-gradient:
+    radial-gradient(ellipse 70% 50% at 0% 0%, #120820 0%, transparent 60%),
+    radial-gradient(ellipse 55% 40% at 100% 100%, #0E0620 0%, transparent 55%),
+    radial-gradient(ellipse 40% 30% at 60% 40%, #0A051A 0%, transparent 65%),
+    linear-gradient(160deg, #06070D 0%, #09060F 50%, #06070D 100%);
+
+  /* Panel helper base gradient (SPEC §1.5) */
+  --ds-panel-gradient: linear-gradient(135deg, #06070D 0%, #0D0818 100%);
+
+  /* ─── Text hierarchy (T.*) ─── */
+  --ds-text-primary:   #E2E6F2;
+  --ds-text-secondary: #9BA3BF;
+  --ds-text-muted:     #5C6380;
+  --ds-text-faint:     #3A4060;
+  --ds-text-inverse:   #06070D;
+  --ds-text-disabled:  rgba(58, 64, 96, 0.60);
+
+  /* ─── Fonts ─── */
+  --ds-font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+  --ds-font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  /* ─── Spacing (4px grid) ─── */
+  --ds-space-1:  4px;
+  --ds-space-2:  8px;
+  --ds-space-3:  12px;
+  --ds-space-4:  16px;
+  --ds-space-5:  20px;
+  --ds-space-6:  24px;
+  --ds-space-7:  28px;
+  --ds-space-8:  32px;
+  --ds-space-10: 40px;
+  --ds-space-12: 48px;
+
+  /* ─── Radius (SPEC §1.8) ─── */
+  --ds-radius-sm:   4px;
+  --ds-radius-md:   8px;
+  --ds-radius-lg:   12px;
+  --ds-radius-xl:   16px;
+  --ds-radius-full: 9999px;
+
+  /* ─── Borders (role aliases of L.*) ─── */
+  --ds-border-accent:  rgba(99, 102, 241, 0.28);
+  --ds-border-success: rgba(76, 175, 133, 0.30);
+  --ds-border-warning: rgba(201, 138, 66, 0.32);
+  --ds-border-danger:  rgba(224, 112, 112, 0.32);
+
+  /* ─── Shadows / elevation (SPEC §1.10) ─── */
+  --ds-shadow-flat:    0 1px 4px rgba(0, 0, 0, 0.30);
+  --ds-shadow-raised:  0 4px 16px rgba(0, 0, 0, 0.45), 0 1px 0 rgba(255, 255, 255, 0.03) inset;
+  --ds-shadow-overlay: 0 16px 48px rgba(0, 0, 0, 0.70);
+  --ds-shadow-modal:   0 32px 80px rgba(0, 0, 0, 0.80), 0 0 0 1px rgba(255, 255, 255, 0.03) inset;
+  --ds-shadow-glow:    0 2px 10px rgba(99, 102, 241, 0.30);
+  --ds-shadow-focus:   0 0 0 2px rgba(99, 102, 241, 0.40);
+  --ds-modal-gradient: linear-gradient(150deg, #09090F 0%, #0E0B1C 100%);
+  --ds-modal-border:   rgba(255, 255, 255, 0.13);
+  --ds-modal-backdrop: rgba(3, 3, 8, 0.72);
+  --ds-modal-chrome:   rgba(4, 5, 10, 0.60);
+
+  /* ─── Focus ─── */
+  --ds-focus-ring-color: rgba(99, 102, 241, 0.40);
+
+  /* ─── Motion (interactive ≤ 200ms) ─── */
+  --ds-transition-fast: 120ms ease;
+  --ds-transition-base: 200ms ease;
+  --ds-transition-slow: 200ms ease;
+
+  /* ─── Layout / density ─── */
+  --ds-sidebar-width:       220px;
+  --ds-sidebar-collapsed:   64px;
+  --ds-topbar-height:       52px;
+  --ds-admin-page-gutter:   28px;
+  --ds-client-page-gutter:  32px;
+  --ds-content-max-admin:   none;
+  --ds-content-max-client:  960px;
+
+  --ds-table-row-compact:     44px;
+  --ds-table-row-comfortable: 52px;
+  --ds-table-cell-px-admin:   16px;
+  --ds-table-cell-py-admin:   10px;
+  --ds-table-cell-px-client:  24px;
+  --ds-table-cell-py-client:  14px;
+  --ds-form-input-height-admin:  36px;
+  --ds-form-input-height-client: 44px;
+  --ds-card-padding-admin:  16px;
+  --ds-card-padding-client: 20px 24px;
+
+  /* ─── Primary / interactive derived ─── */
+  --ds-primary-btn-gradient: linear-gradient(135deg, #6366F1, #4F46E5);
+  --ds-primary-btn-hover:    linear-gradient(135deg, #818CF8, #6366F1);
+  --ds-primary-nav-active:   linear-gradient(90deg, rgba(99, 102, 241, 0.10) 0%, rgba(99, 102, 241, 0.03) 100%);
+  --ds-primary-soft-bg:      rgba(99, 102, 241, 0.10);
+  --ds-primary-soft-border:  rgba(99, 102, 241, 0.26);
+  --ds-primary-hover:        #818CF8;
+
+  /* Button variants (SPEC §4.1) */
+  --ds-btn-destructive-bg:     rgba(224, 112, 112, 0.10);
+  --ds-btn-destructive-border: rgba(224, 112, 112, 0.22);
+  --ds-btn-success-bg:         rgba(76, 175, 133, 0.10);
+  --ds-btn-success-border:     rgba(76, 175, 133, 0.28);
+  --ds-btn-titanium-gradient:  linear-gradient(160deg, #1A1A1F, #0F0F14, #0A0A0E);
+  --ds-btn-titanium-border:    rgba(255, 255, 255, 0.10);
+  --ds-btn-titanium-text:      #9A9AA8;
+
+  /* ─── Type scale (sizes preserved for consumers; families are canonical) ─── */
+  --ds-text-caption:    11px;
+  --ds-text-body-xs:    12px;
+  --ds-text-body-sm:    13px;
+  --ds-text-body-md:    14px;
+  --ds-text-body-lg:    15px;
+  --ds-text-title-sm:   16px;
+  --ds-text-title-md:   18px;
+  --ds-text-title-lg:   20px;
+  --ds-text-heading-sm: 22px;
+  --ds-text-heading-md: 24px;
+
+  /* ─── Z-index ─── */
+  --ds-z-dropdown: 100;
+  --ds-z-sticky:   200;
+  --ds-z-modal:    300;
+  --ds-z-tooltip:  400;
+
+  /* ─── Semantic STATUS map (SPEC §3.1) — 13 keys ─── */
+  --status-draft-text:              #7880A0;
+  --status-draft-bg:                rgba(120, 128, 160, 0.10);
+  --status-draft-border:            rgba(120, 128, 160, 0.16);
+
+  --status-ready-text:              #818CF8;
+  --status-ready-bg:                rgba(129, 140, 248, 0.10);
+  --status-ready-border:            rgba(129, 140, 248, 0.17);
+
+  --status-in-progress-text:        #818CF8;
+  --status-in-progress-bg:          rgba(129, 140, 248, 0.10);
+  --status-in-progress-border:      rgba(129, 140, 248, 0.17);
+
+  --status-in-review-text:          #C98A42;
+  --status-in-review-bg:            rgba(201, 138, 66, 0.10);
+  --status-in-review-border:        rgba(201, 138, 66, 0.17);
+
+  --status-awaiting-client-text:    #A07AC8;
+  --status-awaiting-client-bg:      rgba(160, 122, 200, 0.10);
+  --status-awaiting-client-border:  rgba(160, 122, 200, 0.17);
+
+  --status-changes-requested-text:  #E07070;
+  --status-changes-requested-bg:    rgba(224, 112, 112, 0.10);
+  --status-changes-requested-border: rgba(224, 112, 112, 0.17);
+
+  --status-approved-text:           #4CAF85;
+  --status-approved-bg:             rgba(76, 175, 133, 0.10);
+  --status-approved-border:         rgba(76, 175, 133, 0.17);
+
+  --status-completed-text:          #4CAF85;
+  --status-completed-bg:            rgba(76, 175, 133, 0.10);
+  --status-completed-border:        rgba(76, 175, 133, 0.17);
+
+  --status-published-text:          #4CAFC0;
+  --status-published-bg:            rgba(76, 175, 192, 0.10);
+  --status-published-border:        rgba(76, 175, 192, 0.17);
+
+  --status-blocked-text:            #E07070;
+  --status-blocked-bg:              rgba(224, 112, 112, 0.10);
+  --status-blocked-border:          rgba(224, 112, 112, 0.17);
+
+  --status-failed-text:             #E05050;
+  --status-failed-bg:               rgba(224, 80, 80, 0.10);
+  --status-failed-border:           rgba(224, 80, 80, 0.17);
+
+  --status-overdue-text:            #E06060;
+  --status-overdue-bg:              rgba(224, 96, 96, 0.12);
+  --status-overdue-border:          rgba(224, 96, 96, 0.22);
+
+  --status-archived-text:           #5C6380;
+  --status-archived-bg:             rgba(92, 99, 128, 0.08);
+  --status-archived-border:         rgba(92, 99, 128, 0.12);
+
+  /* ═══════════════════════════════════════════════════════════
+   * 2. COMPATIBILITY ALIASES
+   * Legacy names resolve to canonical tokens. No circular refs.
+   * ═══════════════════════════════════════════════════════════ */
+
+  /* Page / surfaces (design-system consumers) */
+  --bg-page:          var(--ds-surface-page);
+  --bg-page-gradient: var(--ds-page-gradient);
+  --surface-sidebar:  var(--ds-surface-sidebar);
+  --surface-topbar:   var(--ds-surface-panel);
+  --surface-card:     var(--ds-panel-gradient);
+  --surface-elevated: var(--ds-panel-gradient);
   --surface-overlay:  rgba(4, 5, 10, 0.88);
 
-  /* Solid fallbacks (Tailwind bg- utilities) */
-  --color-page:     #060710;
-  --color-sidebar:  #0C0E1C;
-  --color-card:     #111320;
-  --color-elevated: #161B34;
-  --color-overlay:  #04050A;
+  --color-page:     var(--ds-surface-page);
+  --color-sidebar:  var(--ds-surface-sidebar);
+  --color-card:     var(--ds-surface-panel);
+  --color-elevated: var(--ds-surface-hover);
+  --color-overlay:  var(--ds-surface-sidebar);
 
-  /* ─── BORDERS ─── */
-  --border-subtle:  rgba(41,  52,  71,  0.45);
-  --border-default: rgba(51,  65,  85,  0.50);
-  --border-strong:  rgba(71,  85, 105,  0.60);
-  --border-accent:  rgba(124,143, 202,  0.38);
-  --border-success: rgba(111,169, 137,  0.30);
-  --border-warning: rgba(190,143, 104,  0.32);
-  --border-danger:  rgba(185,111, 111,  0.32);
+  /* Borders */
+  --border-subtle:  var(--ds-divider);
+  --border-default: var(--ds-border);
+  --border-strong:  var(--ds-border-strong);
+  --border-accent:  var(--ds-border-accent);
+  --border-success: var(--ds-border-success);
+  --border-warning: var(--ds-border-warning);
+  --border-danger:  var(--ds-border-danger);
 
-  /* ─── TEXT ─── */
-  --text-primary:   #F1F5F9;
-  --text-secondary: rgba(148, 163, 184, 0.88);
-  --text-muted:     rgba(100, 116, 139, 0.80);
-  --text-disabled:  rgba(71,  85,  105, 0.60);
-  --text-inverse:   #060710;
+  /* Text */
+  --text-primary:      var(--ds-text-primary);
+  --text-secondary:    var(--ds-text-secondary);
+  --text-muted:        var(--ds-text-muted);
+  --text-faint:        var(--ds-text-faint);
+  --text-disabled:     var(--ds-text-disabled);
+  --text-inverse:      var(--ds-text-inverse);
+  --text-primary-role: var(--ds-accent-indigo);
+  --text-success:      var(--ds-accent-sage);
+  --text-warning:      var(--ds-accent-amber);
+  --text-danger:       var(--ds-accent-coral);
 
-  /* Status text — WCAG AA corrected */
-  --text-primary-role:  #7C8FCA;
-  --text-success:       #6FA989;
-  --text-warning:       #BE8F68;
-  --text-danger:        #B96F6F;
+  /* Badge role backgrounds (nearest semantic roles) */
+  --badge-primary-bg:  rgba(99, 102, 241, 0.12);
+  --badge-success-bg:  rgba(76, 175, 133, 0.12);
+  --badge-warning-bg:  rgba(201, 138, 66, 0.13);
+  --badge-danger-bg:   rgba(224, 112, 112, 0.13);
+  --badge-muted-bg:    rgba(92, 99, 128, 0.14);
 
-  /* ─── STATUS BADGE BACKGROUNDS ─── */
-  --badge-primary-bg:  rgba(124,143,202, 0.12);
-  --badge-success-bg:  rgba(111,169,137, 0.12);
-  --badge-warning-bg:  rgba(190,143,104, 0.13);
-  --badge-danger-bg:   rgba(185,111,111, 0.13);
-  --badge-muted-bg:    rgba(71, 85, 105, 0.14);
+  /* Primary accent aliases */
+  --primary-base:         var(--ds-accent-primary);
+  --primary-text:         var(--ds-accent-indigo);
+  --primary-hover:        var(--ds-primary-hover);
+  --primary-btn-gradient: var(--ds-primary-btn-gradient);
+  --primary-btn-hover:    var(--ds-primary-btn-hover);
+  --primary-nav-active:   var(--ds-primary-nav-active);
+  --primary-soft-bg:      var(--ds-primary-soft-bg);
+  --primary-soft-border:  var(--ds-primary-soft-border);
+  --primary-focus-ring:   var(--ds-focus-ring-color);
 
-  /* ─── PRIMARY ACCENT ─── */
-  --primary-base:        #5B6B9E;
-  --primary-text:        #7C8FCA;
-  --primary-hover:       #8FA0D4;
-  --primary-btn-gradient: linear-gradient(180deg, #6B7BB0 0%, #4E5D8E 100%);
-  --primary-btn-hover:    linear-gradient(180deg, #7A8CC0 0%, #5A6D9E 100%);
-  --primary-nav-active:   linear-gradient(90deg, rgba(124,143,202,.16) 0%, rgba(124,143,202,.03) 100%);
-  --primary-soft-bg:     rgba(124, 143, 202, 0.12);
-  --primary-soft-border: rgba(124, 143, 202, 0.26);
-  --primary-focus-ring:  rgba(124, 143, 202, 0.30);
+  /* Fonts */
+  --font-sans:     var(--ds-font-sans);
+  --font-mono:     var(--ds-font-mono);
+  --font-family:   var(--ds-font-sans);
+  --font-display:  var(--ds-font-sans);
 
-  /* ─── TYPOGRAPHY ─── */
-  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
-  --font-mono: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
+  /* Type scale aliases */
+  --text-caption:    var(--ds-text-caption);
+  --text-body-xs:    var(--ds-text-body-xs);
+  --text-body-sm:    var(--ds-text-body-sm);
+  --text-body-md:    var(--ds-text-body-md);
+  --text-body-lg:    var(--ds-text-body-lg);
+  --text-title-sm:   var(--ds-text-title-sm);
+  --text-title-md:   var(--ds-text-title-md);
+  --text-title-lg:   var(--ds-text-title-lg);
+  --text-heading-sm: var(--ds-text-heading-sm);
+  --text-heading-md: var(--ds-text-heading-md);
 
-  --text-caption:    11px;
-  --text-body-xs:    12px;
-  --text-body-sm:    13px;
-  --text-body-md:    14px;
-  --text-body-lg:    15px;
-  --text-title-sm:   16px;
-  --text-title-md:   18px;
-  --text-title-lg:   20px;
-  --text-heading-sm: 22px;
-  --text-heading-md: 24px;
+  /* Spacing */
+  --space-1:  var(--ds-space-1);
+  --space-2:  var(--ds-space-2);
+  --space-3:  var(--ds-space-3);
+  --space-4:  var(--ds-space-4);
+  --space-5:  var(--ds-space-5);
+  --space-6:  var(--ds-space-6);
+  --space-7:  var(--ds-space-7);
+  --space-8:  var(--ds-space-8);
+  --space-10: var(--ds-space-10);
+  --space-12: var(--ds-space-12);
 
-  /* ─── SPACING (8px grid) ─── */
-  --space-1: 4px;
-  --space-2: 8px;
-  --space-3: 12px;
-  --space-4: 16px;
-  --space-5: 20px;
-  --space-6: 24px;
-  --space-8: 32px;
-  --space-10: 40px;
-  --space-12: 48px;
+  /* Radius — obsolete 6px md maps to nearest approved 8px */
+  --radius-sm:   var(--ds-radius-sm);
+  --radius-md:   var(--ds-radius-md);
+  --radius-lg:   var(--ds-radius-lg);
+  --radius-xl:   var(--ds-radius-xl);
+  --radius-2xl:  var(--ds-radius-xl);
+  --radius-full: var(--ds-radius-full);
+  --radius:      var(--ds-radius-md);
 
-  /* ─── BORDER RADIUS ─── */
-  --radius-sm:   4px;   /* badges */
-  --radius-md:   6px;   /* inputs, compact cards, table */
-  --radius-lg:   8px;   /* cards, modals, frames */
-  --radius-xl:   12px;  /* client portal cards */
-  --radius-full: 9999px;
+  /* Layout */
+  --sidebar-width:      var(--ds-sidebar-width);
+  --sidebar-collapsed:  var(--ds-sidebar-collapsed);
+  --topbar-height:      var(--ds-topbar-height);
+  --admin-page-gutter:  var(--ds-admin-page-gutter);
+  --client-page-gutter: var(--ds-client-page-gutter);
+  --content-max-admin:  var(--ds-content-max-admin);
+  --content-max-client: var(--ds-content-max-client);
+  --content-padding:    var(--ds-admin-page-gutter);
 
-  /* ─── LAYOUT ─── */
-  --sidebar-width:       240px;
-  --sidebar-collapsed:   64px;
-  --topbar-height:       52px;
-  --content-max-admin:   none;
-  --content-max-client:  960px;
-  --content-padding:     24px;
+  /* Density */
+  --table-row-compact:       var(--ds-table-row-compact);
+  --table-row-comfortable:   var(--ds-table-row-comfortable);
+  --table-cell-px-admin:     var(--ds-table-cell-px-admin);
+  --table-cell-py-admin:     var(--ds-table-cell-py-admin);
+  --table-cell-px-client:    var(--ds-table-cell-px-client);
+  --table-cell-py-client:    var(--ds-table-cell-py-client);
+  --form-input-height-admin: var(--ds-form-input-height-admin);
+  --form-input-height-client: var(--ds-form-input-height-client);
+  --card-padding-admin:      var(--ds-card-padding-admin);
+  --card-padding-client:     var(--ds-card-padding-client);
 
-  /* ─── DENSITY (admin compact / client comfortable) ─── */
-  --table-row-compact:    44px;
-  --table-row-comfortable: 52px;
-  --table-cell-px-admin:  12px;
-  --table-cell-py-admin:  9px;
-  --table-cell-px-client: 16px;
-  --table-cell-py-client: 13px;
-  --form-input-height-admin:  36px;
-  --form-input-height-client: 44px;
-  --card-padding-admin:   12px 14px;
-  --card-padding-client:  16px 18px;
+  /* Motion */
+  --transition-fast: var(--ds-transition-fast);
+  --transition-base: var(--ds-transition-base);
+  --transition-slow: var(--ds-transition-slow);
 
-  /* ─── TRANSITIONS ─── */
-  --transition-fast: 120ms ease;
-  --transition-base: 200ms ease;
-  --transition-slow: 300ms ease;
+  /* Shadows */
+  --shadow-card:   var(--ds-shadow-flat);
+  --shadow-modal:  var(--ds-shadow-modal);
+  --shadow-focus:  var(--ds-shadow-focus);
+  --shadow-flat:   var(--ds-shadow-flat);
+  --shadow-raised: var(--ds-shadow-raised);
+  --shadow-overlay: var(--ds-shadow-overlay);
+  --shadow-glow:   var(--ds-shadow-glow);
+  --shadow-sm:     var(--ds-shadow-flat);
+  --shadow-md:     var(--ds-shadow-raised);
+  --shadow-lg:     var(--ds-shadow-overlay);
+  --shadow:        var(--ds-shadow-overlay);
+  --shadow-soft:   var(--ds-shadow-flat);
 
-  /* ─── SHADOWS ─── */
-  --shadow-card:   0 1px 3px rgba(0,0,0,.45), 0 1px 2px rgba(0,0,0,.35);
-  --shadow-modal:  0 8px 32px rgba(0,0,0,.60), 0 2px 8px rgba(0,0,0,.45);
-  --shadow-focus:  0 0 0 3px var(--primary-focus-ring);
+  /* Z-index */
+  --z-dropdown: var(--ds-z-dropdown);
+  --z-sticky:   var(--ds-z-sticky);
+  --z-modal:    var(--ds-z-modal);
+  --z-tooltip:  var(--ds-z-tooltip);
 
-  /* ─── Z-INDEX ─── */
-  --z-dropdown: 100;
-  --z-sticky:   200;
-  --z-modal:    300;
-  --z-tooltip:  400;
+  /* ─── globals.css / styles.css legacy bridge names ─── */
+  --color-primary:       var(--ds-surface-hover);
+  --color-primary-light: var(--ds-surface-panel);
+  --color-primary-dark:  var(--ds-surface-sidebar);
+
+  --color-accent:       var(--ds-accent-primary);
+  --color-accent-light: var(--ds-accent-indigo);
+  --color-accent-dark:  var(--ds-accent-primary-deep);
+
+  --color-background:     var(--ds-surface-page);
+  --color-surface:        var(--ds-surface-panel);
+  --color-surface-hover:  var(--ds-surface-hover);
+  --color-surface-active: var(--ds-surface-hover);
+
+  --color-text:           var(--ds-text-primary);
+  --color-text-secondary: var(--ds-text-secondary);
+  --color-text-muted:     var(--ds-text-muted);
+
+  --color-border:        var(--ds-border);
+  --color-border-subtle: var(--ds-divider);
+
+  --color-success:       var(--ds-accent-sage);
+  --color-success-light: var(--ds-accent-sage);
+  --color-success-dark:  #3D8F6C;
+
+  --color-error:       var(--ds-accent-coral);
+  --color-error-light: var(--ds-accent-coral);
+  --color-error-dark:  #C45A5A;
+
+  --color-warning:       var(--ds-accent-amber);
+  --color-warning-light: var(--ds-accent-amber);
+  --color-warning-dark:  #A67236;
+
+  --color-info:       var(--ds-accent-indigo);
+  --color-info-light: var(--ds-accent-indigo);
+  --color-info-dark:  var(--ds-accent-primary-deep);
+
+  --spacing-xs:  var(--ds-space-1);
+  --spacing-sm:  var(--ds-space-2);
+  --spacing-md:  var(--ds-space-3);
+  --spacing-lg:  var(--ds-space-4);
+  --spacing-xl:  var(--ds-space-6);
+  --spacing-2xl: var(--ds-space-8);
+  --spacing-3xl: var(--ds-space-12);
+
+  --font-size-display:    var(--ds-text-heading-md);
+  --font-size-heading:    var(--ds-text-title-md);
+  --font-size-subheading: var(--ds-text-body-md);
+  --font-size-body:       var(--ds-text-body-md);
+  --font-size-small:      var(--ds-text-body-xs);
+
+  --font-weight-regular:  400;
+  --font-weight-medium:   500;
+  --font-weight-semibold: 600;
+  --font-weight-bold:     700;
+
+  --line-height-display:    32px;
+  --line-height-heading:    24px;
+  --line-height-subheading: 20px;
+  --line-height-body:       20px;
+  --line-height-small:      16px;
+
+  --bg:          var(--ds-surface-page);
+  --bg-deep:     var(--ds-surface-sidebar);
+  --bg-purple:   var(--ds-surface-inset);
+  --panel:       var(--ds-surface-panel);
+  --panel-strong: var(--ds-surface-hover);
+  --panel-soft:  var(--ds-surface-panel);
+  --panel-outline: var(--ds-divider);
+  --surface:     var(--ds-surface-panel);
+  --surface-strong: var(--ds-surface-hover);
+  --surface-soft: var(--ds-primary-soft-bg);
+  --border:      var(--ds-border);
+  --text:        var(--ds-text-primary);
+  --text-soft:   var(--ds-text-secondary);
+  --muted:       var(--ds-text-muted);
+  --accent:      var(--ds-accent-primary);
+  --accent-strong: var(--ds-accent-indigo);
+  --accent-cyan: var(--ds-accent-indigo);
+  --accent-purple: var(--ds-accent-mauve);
+  --accent-glow: rgba(99, 102, 241, 0.28);
+  --success:     var(--ds-accent-sage);
+  --warning:     var(--ds-accent-amber);
+  --danger:      var(--ds-accent-coral);
+  --focus-ring:  var(--ds-focus-ring-color);
+  --field-surface: var(--ds-surface-inset);
+  --field-surface-hover: var(--ds-surface-panel);
+  --dense-surface: var(--ds-surface-panel);
+  --dense-surface-hover: var(--ds-surface-hover);
+  --dense-border: var(--ds-divider);
+  --dense-border-strong: var(--ds-border-strong);
 }
 
-/* ─── BASE RESET ─── */
+/* ═══════════════════════════════════════════════════════════
+ * 3. BASE DOCUMENT DEFAULTS (P1B foundation — consume aliases)
+ * ═══════════════════════════════════════════════════════════ */
+
 *, *::before, *::after { box-sizing: border-box; }
 
-html, body, #root {
-  min-height: 100vh;
-  background: var(--bg-page-gradient);
-  color: var(--text-primary);
-  font-family: var(--font-sans);
+html {
+  color-scheme: dark;
+  background: var(--ds-page-gradient);
+  background-color: var(--ds-surface-page);
+  color: var(--ds-text-primary);
+  font-family: var(--ds-font-sans);
   font-size: var(--text-body-sm);
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* ─── TYPOGRAPHY DEFAULTS ─── */
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  background: var(--ds-page-gradient);
+  background-color: var(--ds-surface-page);
+  color: var(--ds-text-primary);
+  font-family: var(--ds-font-sans);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  min-height: 100vh;
+  background: transparent;
+  color: inherit;
+  font-family: inherit;
+}
+
+/* Neutralize non-approved global overlays (grid / cyan glow layers live in styles.css) */
+body::before,
+body::after {
+  content: none !important;
+  display: none !important;
+}
+
 h1 { font-size: var(--text-heading-md); font-weight: 600; line-height: 1.25; letter-spacing: -0.03em; }
 h2 { font-size: var(--text-title-lg);   font-weight: 600; line-height: 1.30; letter-spacing: -0.02em; }
 h3 { font-size: var(--text-title-md);   font-weight: 600; line-height: 1.35; letter-spacing: -0.015em; }
 h4 { font-size: var(--text-title-sm);   font-weight: 600; line-height: 1.40; letter-spacing: -0.01em; }
 
-h1, h2, h3, h4 { margin: 0; color: var(--text-primary); }
+h1, h2, h3, h4 {
+  margin: 0;
+  color: var(--ds-text-primary);
+  font-family: var(--ds-font-sans);
+}
+
 p { margin: 0 0 var(--space-4); }
-a { color: var(--primary-text); text-decoration: none; transition: color var(--transition-base); }
+
+a {
+  color: var(--primary-text);
+  text-decoration: none;
+  transition: color var(--transition-base);
+}
 a:hover { color: var(--primary-hover); }
 
 code, kbd, pre {
-  font-family: var(--font-mono);
+  font-family: var(--ds-font-mono);
   font-size: var(--text-body-xs);
   background: var(--color-overlay);
   padding: 2px 6px;
@@ -173,34 +524,83 @@ code, kbd, pre {
   color: var(--text-primary);
 }
 
-/* ─── FORM DEFAULTS ─── */
 input, select, textarea {
-  font-family: var(--font-sans);
+  font-family: var(--ds-font-sans);
   font-size: var(--text-body-sm);
   color: var(--text-primary);
   background: var(--color-card);
   border: 1px solid var(--border-default);
   border-radius: var(--radius-md);
-  transition: all var(--transition-base);
+  transition: border-color var(--transition-base), box-shadow var(--transition-base), background var(--transition-base);
   appearance: none;
   -webkit-appearance: none;
 }
 input::placeholder, textarea::placeholder { color: var(--text-disabled); }
-input:focus, select:focus, textarea:focus {
-  outline: none;
-  border-color: var(--primary-text);
-  box-shadow: var(--shadow-focus);
-}
 input:disabled, select:disabled, textarea:disabled {
   opacity: 0.50;
   cursor: not-allowed;
 }
 
-/* ─── SCROLLBAR ─── */
+/* Canonical focus-visible (SPEC §1.12) — replaces cyan/outline stacks */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:not([tabindex="-1"]):focus-visible {
+  outline: none;
+  box-shadow: var(--ds-shadow-focus);
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--primary-text);
+  box-shadow: var(--ds-shadow-focus);
+}
+
+button:disabled:focus-visible,
+input:disabled:focus-visible,
+select:disabled:focus-visible,
+textarea:disabled:focus-visible {
+  box-shadow: none;
+}
+
+/* Selection + scrollbar */
+::selection {
+  background: var(--primary-soft-bg);
+  color: var(--ds-text-primary);
+}
+
 ::-webkit-scrollbar         { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track   { background: transparent; }
-::-webkit-scrollbar-thumb   { background: var(--border-default); border-radius: var(--radius-full); }
-::-webkit-scrollbar-thumb:hover { background: var(--border-strong); }
+::-webkit-scrollbar-thumb   {
+  background: var(--border-default);
+  border-radius: var(--radius-full);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--border-strong);
+}
 
-/* ─── SELECTION ─── */
-::selection { background: var(--primary-soft-bg); color: var(--text-primary); }
+/* Skeleton pulse (P1H) — opacity only, no shimmer/neon */
+@keyframes ds-skeleton-pulse {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 0.9; }
+}
+
+/* Motion — interactive ≤ 200ms; reduced-motion fallback */
+@media (prefers-reduced-motion: reduce) {
+  html:focus-within {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

@@ -8,62 +8,62 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        /* Page & surfaces */
-        page:     '#05060B',
-        sidebar:  '#0C0E1C',
-        card:     '#111320',
-        elevated: '#161B34',
-        overlay:  '#04050A',
+        /* Page & surfaces — CSS var mirrors (P1A canonical) */
+        page:     'var(--color-page)',
+        sidebar:  'var(--color-sidebar)',
+        card:     'var(--color-card)',
+        elevated: 'var(--color-elevated)',
+        overlay:  'var(--color-overlay)',
 
         /* Borders */
         border: {
-          subtle:  'rgba(41,52,71,0.45)',
-          DEFAULT: 'rgba(51,65,85,0.50)',
-          strong:  'rgba(71,85,105,0.60)',
-          accent:  'rgba(124,143,202,0.38)',
-          success: 'rgba(111,169,137,0.30)',
-          warning: 'rgba(190,143,104,0.32)',
-          danger:  'rgba(185,111,111,0.32)',
+          subtle:  'var(--border-subtle)',
+          DEFAULT: 'var(--border-default)',
+          strong:  'var(--border-strong)',
+          accent:  'var(--border-accent)',
+          success: 'var(--border-success)',
+          warning: 'var(--border-warning)',
+          danger:  'var(--border-danger)',
         },
 
         /* Text */
         text: {
-          primary:   '#F1F5F9',
-          secondary: 'rgba(148,163,184,0.88)',
-          muted:     'rgba(100,116,139,0.80)',
-          disabled:  'rgba(71,85,105,0.60)',
-          inverse:   '#060710',
+          primary:   'var(--text-primary)',
+          secondary: 'var(--text-secondary)',
+          muted:     'var(--text-muted)',
+          disabled:  'var(--text-disabled)',
+          inverse:   'var(--text-inverse)',
         },
 
         /* Primary accent */
         primary: {
-          DEFAULT: '#5B6B9E',
-          text:    '#7C8FCA',
-          hover:   '#8FA0D4',
-          soft:    'rgba(124,143,202,0.12)',
+          DEFAULT: 'var(--primary-base)',
+          text:    'var(--primary-text)',
+          hover:   'var(--primary-hover)',
+          soft:    'var(--primary-soft-bg)',
         },
 
-        /* Status — WCAG AA corrected */
+        /* Status — semantic roles via canonical accents */
         success: {
-          DEFAULT: '#4B8B6F',
-          text:    '#6FA989',
-          soft:    'rgba(111,169,137,0.12)',
+          DEFAULT: 'var(--text-success)',
+          text:    'var(--text-success)',
+          soft:    'var(--badge-success-bg)',
         },
         warning: {
-          DEFAULT: '#8B7055',
-          text:    '#BE8F68',
-          soft:    'rgba(190,143,104,0.13)',
+          DEFAULT: 'var(--text-warning)',
+          text:    'var(--text-warning)',
+          soft:    'var(--badge-warning-bg)',
         },
         danger: {
-          DEFAULT: '#8B5555',
-          text:    '#B96F6F',
-          soft:    'rgba(185,111,111,0.13)',
+          DEFAULT: 'var(--text-danger)',
+          text:    'var(--text-danger)',
+          soft:    'var(--badge-danger-bg)',
         },
       },
 
       fontFamily: {
-        sans: ['-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', '"Helvetica Neue"', 'sans-serif'],
-        mono: ['"JetBrains Mono"', '"Fira Code"', 'ui-monospace', 'monospace'],
+        sans: ['var(--font-sans)'],
+        mono: ['var(--font-mono)'],
       },
 
       fontSize: {
@@ -98,35 +98,36 @@ const config: Config = {
       },
 
       borderRadius: {
-        sm:   '4px',
-        md:   '6px',
-        lg:   '8px',
-        xl:   '12px',
-        full: '9999px',
+        sm:   'var(--radius-sm)',
+        md:   'var(--radius-md)',
+        lg:   'var(--radius-lg)',
+        xl:   'var(--radius-xl)',
+        '2xl': 'var(--radius-2xl)',
+        full: 'var(--radius-full)',
       },
 
       boxShadow: {
-        card:   '0 1px 3px rgba(0,0,0,.45), 0 1px 2px rgba(0,0,0,.35)',
-        modal:  '0 8px 32px rgba(0,0,0,.60), 0 2px 8px rgba(0,0,0,.45)',
-        focus:  '0 0 0 3px rgba(124,143,202,0.30)',
+        card:   'var(--shadow-card)',
+        modal:  'var(--shadow-modal)',
+        focus:  'var(--shadow-focus)',
       },
 
       transitionDuration: {
         fast: '120ms',
         base: '200ms',
-        slow: '300ms',
+        slow: '200ms',
       },
 
       height: {
-        'row-compact':     '44px',
-        'row-comfortable': '52px',
-        'input-admin':     '36px',
-        'input-client':    '44px',
-        'topbar':          '52px',
+        'row-compact':     'var(--table-row-compact)',
+        'row-comfortable': 'var(--table-row-comfortable)',
+        'input-admin':     'var(--form-input-height-admin)',
+        'input-client':    'var(--form-input-height-client)',
+        'topbar':          'var(--topbar-height)',
       },
 
-      width:   { sidebar: '240px', 'sidebar-sm': '64px' },
-      maxWidth: { client: '960px' },
+      width:   { sidebar: 'var(--sidebar-width)', 'sidebar-sm': 'var(--sidebar-collapsed)' },
+      maxWidth: { client: 'var(--content-max-client)' },
 
       zIndex: {
         modal: '300',
@@ -201,24 +202,27 @@ const config: Config = {
           overflowX: 'hidden',
         },
 
-        /* ── Cards ── */
+        /* ── Cards (panelCSS surfaces via CSS vars) ── */
         '.card': {
-          background:   'var(--surface-card)',
-          border:       '1px solid var(--border-default)',
-          borderRadius: '8px',
-          padding:      '12px 14px',
+          background:   'var(--ds-panel-gradient)',
+          border:       '1px solid var(--ds-border)',
+          borderRadius: 'var(--ds-radius-lg)',
+          boxShadow:    'var(--ds-shadow-flat)',
+          padding:      'var(--ds-card-padding-admin)',
         },
         '.card-elevated': {
-          background:   'var(--surface-elevated)',
-          border:       '1px solid var(--border-strong)',
-          borderRadius: '8px',
-          padding:      '12px 14px',
+          background:   'var(--ds-panel-gradient)',
+          border:       '1px solid var(--ds-border)',
+          borderRadius: 'var(--ds-radius-lg)',
+          boxShadow:    'var(--ds-shadow-raised)',
+          padding:      'var(--ds-card-padding-admin)',
         },
         '.card-client': {
-          background:   'var(--surface-card)',
-          border:       '1px solid var(--border-default)',
-          borderRadius: '12px',
-          padding:      '16px 18px',
+          background:   'var(--ds-panel-gradient)',
+          border:       '1px solid var(--ds-border)',
+          borderRadius: 'var(--ds-radius-lg)',
+          boxShadow:    'var(--ds-shadow-raised)',
+          padding:      'var(--ds-card-padding-client)',
         },
 
         /* ── Section label ── */
@@ -283,6 +287,23 @@ const config: Config = {
           borderRadius: '50%',
           background:   'currentColor',
           flexShrink:   '0',
+        },
+        /* Spec §4.2 — status pills are rounded-full; colors via inline CSS vars */
+        '.ds-status-badge': {
+          borderRadius: '9999px',
+          fontSize:     '10px',
+          fontWeight:   '500',
+          padding:      '3px 8px',
+          lineHeight:   '1',
+          gap:          '5px',
+        },
+        '.ds-status-dot': {
+          display:      'inline-block',
+          width:        '8px',
+          height:       '8px',
+          borderRadius: '9999px',
+          flexShrink:   '0',
+          verticalAlign: 'middle',
         },
       });
     },

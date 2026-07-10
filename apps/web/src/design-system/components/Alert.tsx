@@ -11,35 +11,31 @@ interface AlertProps {
   className?: string;
 }
 
+/** Spec §4.9 / §5 — semantic feedback colors via CSS vars (no sonner). */
 const alertConfig: Record<AlertVariant, {
-  border:   string;
-  bg:       string;
-  icon:     string;
-  textColor: string;
+  accent: string;
+  bg: string;
+  icon: string;
 }> = {
   success: {
-    border:    'border-l-4 border-l-success',
-    bg:        'bg-success-soft',
-    icon:      '✓',
-    textColor: 'text-success-text',
+    accent: 'var(--ds-accent-sage)',
+    bg: 'rgba(76, 175, 133, 0.10)',
+    icon: '✓',
   },
   warning: {
-    border:    'border-l-4 border-l-warning',
-    bg:        'bg-warning-soft',
-    icon:      '!',
-    textColor: 'text-warning-text',
+    accent: 'var(--ds-accent-amber)',
+    bg: 'rgba(201, 138, 66, 0.10)',
+    icon: '!',
   },
   danger: {
-    border:    'border-l-4 border-l-danger',
-    bg:        'bg-danger-soft',
-    icon:      '✕',
-    textColor: 'text-danger-text',
+    accent: 'var(--ds-accent-coral)',
+    bg: 'rgba(224, 112, 112, 0.10)',
+    icon: '✕',
   },
   info: {
-    border:    'border-l-4 border-l-primary',
-    bg:        'bg-primary-soft',
-    icon:      'i',
-    textColor: 'text-primary-text',
+    accent: 'var(--ds-accent-indigo)',
+    bg: 'var(--ds-primary-soft-bg)',
+    icon: 'i',
   },
 };
 
@@ -55,16 +51,17 @@ const Alert: React.FC<AlertProps> = ({
 
   return (
     <div
-      className={[
-        'flex gap-3 p-3.5 rounded-md border border-border-subtle',
-        cfg.border,
-        cfg.bg,
-        className,
-      ].join(' ')}
+      className={['flex gap-3 p-3.5 rounded-lg', className].join(' ')}
       role="alert"
+      style={{
+        background: cfg.bg,
+        border: '1px solid var(--ds-border)',
+        borderLeft: `4px solid ${cfg.accent}`,
+      }}
     >
       <span
-        className={`flex-shrink-0 w-5 h-5 flex items-center justify-center rounded-full text-caption font-semibold border border-current ${cfg.textColor}`}
+        className="flex-shrink-0 w-5 h-5 flex items-center justify-center rounded-full text-caption font-semibold"
+        style={{ color: cfg.accent, border: `1px solid ${cfg.accent}` }}
         aria-hidden="true"
       >
         {cfg.icon}
@@ -72,15 +69,17 @@ const Alert: React.FC<AlertProps> = ({
 
       <div className="flex-1 min-w-0">
         {title && (
-          <p className={`text-body-xs font-semibold ${cfg.textColor}`}>{title}</p>
+          <p className="text-body-xs font-semibold" style={{ color: cfg.accent }}>{title}</p>
         )}
-        <div className={`text-body-xs mt-0.5 ${title ? 'text-text-secondary' : cfg.textColor}`}>
+        <div className={`text-body-xs mt-0.5 ${title ? 'text-text-secondary' : ''}`} style={title ? undefined : { color: cfg.accent }}>
           {message}
         </div>
         {action && (
           <button
+            type="button"
             onClick={action.onClick}
-            className={`mt-1.5 text-body-xs font-semibold underline ${cfg.textColor} hover:opacity-80 transition-opacity`}
+            className="mt-1.5 text-body-xs font-semibold underline hover:opacity-80 transition-opacity duration-[120ms]"
+            style={{ color: cfg.accent }}
           >
             {action.label}
           </button>
@@ -89,9 +88,11 @@ const Alert: React.FC<AlertProps> = ({
 
       {onClose && (
         <button
+          type="button"
           onClick={onClose}
           aria-label="Dismiss"
-          className={`flex-shrink-0 ${cfg.textColor} opacity-70 hover:opacity-100 transition-opacity`}
+          className="flex-shrink-0 opacity-70 hover:opacity-100 transition-opacity duration-[120ms]"
+          style={{ color: cfg.accent }}
         >
           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -104,7 +105,7 @@ const Alert: React.FC<AlertProps> = ({
 
 export default Alert;
 
-/* ─── Toast (lightweight inline feedback) ─── */
+/* ─── Toast (lightweight inline feedback — no sonner) ─── */
 interface ToastProps {
   variant?: AlertVariant;
   message:  ReactNode;
@@ -120,22 +121,23 @@ export const Toast: React.FC<ToastProps> = ({
 
   return (
     <div
-      className={[
-        'inline-flex items-center gap-2.5 px-4 py-2.5',
-        'rounded-md border border-border-strong',
-        'text-body-xs font-medium',
-        cfg.bg,
-        cfg.textColor,
-      ].join(' ')}
+      className="inline-flex items-center gap-2.5 px-4 py-2.5 rounded-lg text-body-xs font-medium"
       role="status"
+      style={{
+        background: cfg.bg,
+        border: '1px solid var(--ds-border-strong)',
+        color: cfg.accent,
+        boxShadow: 'var(--ds-shadow-overlay)',
+      }}
     >
       <span className="flex-shrink-0 font-semibold" aria-hidden="true">{cfg.icon}</span>
       <span>{message}</span>
       {onClose && (
         <button
+          type="button"
           onClick={onClose}
           aria-label="Dismiss"
-          className="ml-1 opacity-70 hover:opacity-100 transition-opacity"
+          className="ml-1 opacity-70 hover:opacity-100 transition-opacity duration-[120ms]"
         >
           <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -145,3 +147,12 @@ export const Toast: React.FC<ToastProps> = ({
     </div>
   );
 };
+
+/** Inline success / confirmed confirmation (SPEC §5). */
+export const SuccessState: React.FC<{
+  title?: string;
+  message: ReactNode;
+  className?: string;
+}> = ({ title = 'Confirmed', message, className = '' }) => (
+  <Alert variant="success" title={title} message={message} className={className} />
+);

@@ -1,4 +1,5 @@
 import React, { HTMLAttributes, ReactNode } from 'react';
+import { panelCSS } from '../panel';
 
 /* ─────────────────────── CARD ─────────────────────── */
 interface CardProps extends HTMLAttributes<HTMLDivElement> {
@@ -6,6 +7,8 @@ interface CardProps extends HTMLAttributes<HTMLDivElement> {
   variant?:  'default' | 'elevated' | 'client';
   hoverable?: boolean;
   urgentBorderColor?: string;
+  /** Optional accent hex for panelCSS tint (action-required panels). */
+  tint?: string;
 }
 
 export const Card = React.forwardRef<HTMLDivElement, CardProps>(
@@ -15,6 +18,7 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
       variant    = 'default',
       hoverable  = false,
       urgentBorderColor,
+      tint,
       className  = '',
       style,
       ...props
@@ -26,6 +30,9 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
       elevated: 'card-elevated',
       client:   'card-client',
     };
+
+    const raised = variant === 'elevated' || variant === 'client';
+    const panelStyle = panelCSS(tint, raised);
 
     return (
       <div
@@ -39,6 +46,9 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
           className,
         ].join(' ')}
         style={{
+          ...panelStyle,
+          borderRadius: 'var(--ds-radius-lg)',
+          padding: variant === 'client' ? 'var(--ds-card-padding-client)' : 'var(--ds-card-padding-admin)',
           ...(urgentBorderColor
             ? {
                 borderLeft:   `2px solid ${urgentBorderColor}`,
@@ -110,15 +120,19 @@ export const CardFooter: React.FC<CardFooterProps> = ({
   );
 };
 
-/* ─────────────────────── METRIC CARD (KPI) ─────────────────────── */
+/* ─────────────────────── METRIC CARD (KPI) — numeric variant ─────────────────────── */
+/* RingMeter deferred to Phase 3 (Agency Operations). */
 interface MetricCardProps {
   label:      string;
   value:      string | number;
   valueColor?: 'default' | 'warning' | 'success' | 'danger' | 'primary';
   trend?:     { value: string; direction: 'up' | 'down' | 'neutral' };
   suffix?:    string;
+  helper?:    string;
   mono?:      boolean;
+  alert?:     boolean;
   className?: string;
+  tint?:      string;
 }
 
 const valueColorClass: Record<string, string> = {
@@ -135,18 +149,28 @@ export const MetricCard: React.FC<MetricCardProps> = ({
   valueColor = 'default',
   trend,
   suffix,
-  mono       = false,
+  helper,
+  mono       = true,
+  alert      = false,
   className  = '',
+  tint,
 }) => (
-  <div className={`card-elevated ${className}`}>
-    <p className="text-caption font-semibold uppercase tracking-widest text-text-muted">
+  <div
+    className={`card-elevated ${className}`}
+    style={{
+      ...panelCSS(tint, true),
+      borderRadius: 'var(--ds-radius-lg)',
+      padding: 'var(--ds-card-padding-admin)',
+    }}
+  >
+    <p className="text-[9px] font-semibold uppercase tracking-widest text-text-muted">
       {label}
     </p>
     <div className="flex items-baseline gap-1 mt-2">
       <span
         className={[
-          'text-title-lg font-semibold leading-none',
-          valueColorClass[valueColor],
+          'text-[26px] font-semibold leading-none',
+          alert ? 'text-danger-text' : valueColorClass[valueColor],
           mono ? 'font-mono' : '',
         ].join(' ')}
       >
@@ -156,17 +180,18 @@ export const MetricCard: React.FC<MetricCardProps> = ({
         <span className="text-body-xs text-text-muted font-mono">{suffix}</span>
       )}
     </div>
-    {trend && (
+    {(helper || trend) && (
       <p
         className={[
-          'text-caption mt-1.5',
-          trend.direction === 'up'      ? 'text-success-text' :
-          trend.direction === 'down'    ? 'text-danger-text'  :
+          'text-[11px] mt-1.5',
+          trend?.direction === 'up'      ? 'text-success-text' :
+          trend?.direction === 'down'    ? 'text-danger-text'  :
           'text-text-muted',
         ].join(' ')}
       >
-        {trend.direction === 'up'   ? '↑' :
-         trend.direction === 'down' ? '↓' : '→'} {trend.value}
+        {trend
+          ? `${trend.direction === 'up' ? '↑' : trend.direction === 'down' ? '↓' : '→'} ${trend.value}`
+          : helper}
       </p>
     )}
   </div>

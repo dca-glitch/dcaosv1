@@ -1,61 +1,64 @@
-/* DCA OS Lite — BLOK 7-UI design tokens */
+/* DCA OS Lite — BLOK 7-UI compatibility layer
+ * P1B: foundation variables remapped to canonical --ds-* (loaded before this file).
+ * Component helper classes (.btn, .badge, .modal-*) unchanged.
+ */
 
 :root {
-  /* COLORS — Dark Nebula token bridge */
-  --color-primary: #161b34;
-  --color-primary-light: #1e2544;
-  --color-primary-dark: #0c0e1c;
+  /* COLORS — bridge to P1A canonical tokens */
+  --color-primary: var(--ds-surface-hover);
+  --color-primary-light: var(--ds-surface-panel);
+  --color-primary-dark: var(--ds-surface-sidebar);
 
-  --color-accent: #5b6b9e;
-  --color-accent-light: #7c8fca;
-  --color-accent-dark: #4e5d8e;
+  --color-accent: var(--ds-accent-primary);
+  --color-accent-light: var(--ds-accent-indigo);
+  --color-accent-dark: var(--ds-accent-primary-deep);
 
-  --color-background: #05060b;
-  --color-surface: #111320;
-  --color-surface-hover: #161b2e;
-  --color-surface-active: #1c2240;
+  --color-background: var(--ds-surface-page);
+  --color-surface: var(--ds-surface-panel);
+  --color-surface-hover: var(--ds-surface-hover);
+  --color-surface-active: var(--ds-surface-hover);
 
-  --color-text: #f1f5f9;
-  --color-text-secondary: rgba(148, 163, 184, 0.88);
-  --color-text-muted: rgba(100, 116, 139, 0.8);
+  --color-text: var(--ds-text-primary);
+  --color-text-secondary: var(--ds-text-secondary);
+  --color-text-muted: var(--ds-text-muted);
 
-  --color-border: rgba(51, 65, 85, 0.5);
-  --color-border-subtle: rgba(41, 52, 71, 0.45);
+  --color-border: var(--ds-border);
+  --color-border-subtle: var(--ds-divider);
 
-  --color-success: #2ea043;
-  --color-success-light: #3fb950;
-  --color-success-dark: #238636;
+  --color-success: var(--ds-accent-sage);
+  --color-success-light: var(--ds-accent-sage);
+  --color-success-dark: #3D8F6C;
 
-  --color-error: #da3633;
-  --color-error-light: #f85149;
-  --color-error-dark: #c5222c;
+  --color-error: var(--ds-accent-coral);
+  --color-error-light: var(--ds-accent-coral);
+  --color-error-dark: #C45A5A;
 
-  --color-warning: #9e6a03;
-  --color-warning-light: #d29922;
-  --color-warning-dark: #7d5806;
+  --color-warning: var(--ds-accent-amber);
+  --color-warning-light: var(--ds-accent-amber);
+  --color-warning-dark: #A67236;
 
-  --color-info: #0969da;
-  --color-info-light: #1f6feb;
-  --color-info-dark: #033d8b;
+  --color-info: var(--ds-accent-indigo);
+  --color-info-light: var(--ds-accent-indigo);
+  --color-info-dark: var(--ds-accent-primary-deep);
 
   /* SPACING */
-  --spacing-xs: 4px;
-  --spacing-sm: 8px;
-  --spacing-md: 12px;
-  --spacing-lg: 16px;
-  --spacing-xl: 24px;
-  --spacing-2xl: 32px;
-  --spacing-3xl: 48px;
+  --spacing-xs: var(--ds-space-1);
+  --spacing-sm: var(--ds-space-2);
+  --spacing-md: var(--ds-space-3);
+  --spacing-lg: var(--ds-space-4);
+  --spacing-xl: var(--ds-space-6);
+  --spacing-2xl: var(--ds-space-8);
+  --spacing-3xl: var(--ds-space-12);
 
   /* TYPOGRAPHY */
-  --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-  --font-mono: "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Courier, monospace;
+  --font-family: var(--ds-font-sans);
+  --font-mono: var(--ds-font-mono);
 
-  --font-size-display: 24px;
-  --font-size-heading: 18px;
-  --font-size-subheading: 14px;
-  --font-size-body: 14px;
-  --font-size-small: 12px;
+  --font-size-display: var(--ds-text-heading-md);
+  --font-size-heading: var(--ds-text-title-md);
+  --font-size-subheading: var(--ds-text-body-md);
+  --font-size-body: var(--ds-text-body-md);
+  --font-size-small: var(--ds-text-body-xs);
 
   --font-weight-regular: 400;
   --font-weight-medium: 500;
@@ -69,45 +72,47 @@
   --line-height-small: 16px;
 
   /* BORDER RADIUS */
-  --radius-sm: 4px;
-  --radius-md: 6px;
-  --radius-lg: 8px;
+  --radius-sm: var(--ds-radius-sm);
+  --radius-md: var(--ds-radius-md);
+  --radius-lg: var(--ds-radius-lg);
 
   /* SHADOWS */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
+  --shadow-sm: var(--ds-shadow-flat);
+  --shadow-md: var(--ds-shadow-raised);
+  --shadow-lg: var(--ds-shadow-overlay);
 
-  /* TRANSITIONS */
-  --transition-fast: 150ms ease-in-out;
-  --transition-base: 200ms ease-in-out;
-  --transition-slow: 300ms ease-in-out;
+  /* TRANSITIONS (interactive ≤ 200ms) */
+  --transition-fast: var(--ds-transition-fast);
+  --transition-base: var(--ds-transition-base);
+  --transition-slow: var(--ds-transition-slow);
 
   /* Legacy bridge (styles.css compatibility) */
-  --bg: var(--color-background);
-  --bg-deep: var(--color-primary-dark);
-  --bg-purple: var(--color-primary);
-  --panel: var(--color-surface);
-  --panel-strong: var(--color-surface-hover);
-  --panel-soft: var(--color-surface);
-  --border: var(--color-border);
-  --border-strong: var(--color-border);
-  --text: var(--color-text);
-  --text-soft: var(--color-text-secondary);
-  --muted: var(--color-text-muted);
-  --accent: var(--color-accent);
-  --accent-strong: var(--color-accent-light);
-  --accent-glow: rgba(124, 143, 202, 0.28);
-  --success: var(--color-success-light);
-  --warning: var(--color-warning-light);
-  --danger: var(--color-error-light);
-  --shadow: var(--shadow-lg);
+  --bg: var(--ds-surface-page);
+  --bg-deep: var(--ds-surface-sidebar);
+  --bg-purple: var(--ds-surface-inset);
+  --panel: var(--ds-surface-panel);
+  --panel-strong: var(--ds-surface-hover);
+  --panel-soft: var(--ds-surface-panel);
+  --border: var(--ds-border);
+  --border-strong: var(--ds-border-strong);
+  --text: var(--ds-text-primary);
+  --text-soft: var(--ds-text-secondary);
+  --muted: var(--ds-text-muted);
+  --accent: var(--ds-accent-primary);
+  --accent-strong: var(--ds-accent-indigo);
+  --accent-glow: rgba(99, 102, 241, 0.28);
+  --success: var(--ds-accent-sage);
+  --warning: var(--ds-accent-amber);
+  --danger: var(--ds-accent-coral);
+  --shadow: var(--ds-shadow-overlay);
+  --focus-ring: var(--ds-focus-ring-color);
 }
 
 html {
-  font-family: var(--font-family);
-  background-color: var(--color-background);
-  color: var(--color-text);
+  font-family: var(--ds-font-sans);
+  background: var(--ds-page-gradient);
+  background-color: var(--ds-surface-page);
+  color: var(--ds-text-primary);
   font-size: 14px;
   line-height: 1.5;
 }
@@ -115,7 +120,10 @@ html {
 body {
   margin: 0;
   padding: 0;
-  background-color: var(--color-background);
+  background: var(--ds-page-gradient);
+  background-color: var(--ds-surface-page);
+  color: var(--ds-text-primary);
+  font-family: var(--ds-font-sans);
 }
 
 a {
@@ -130,7 +138,7 @@ a:hover {
 input,
 textarea,
 select {
-  font-family: var(--font-family);
+  font-family: var(--ds-font-sans);
   font-size: var(--font-size-body);
   color: var(--color-text);
   background-color: var(--color-surface);
@@ -143,8 +151,8 @@ input:focus,
 textarea:focus,
 select:focus {
   outline: none;
-  border-color: var(--color-accent);
-  box-shadow: 0 0 0 2px var(--color-accent);
+  border-color: var(--primary-text);
+  box-shadow: var(--ds-shadow-focus);
 }
 
 input:disabled {
@@ -506,48 +514,56 @@ input:disabled {
   margin-top: var(--spacing-sm);
 }
 
-/* Legacy action bridges */
+/* Legacy action bridges — P1D aligned to SPEC §4.1 */
 .primary-action {
   align-items: center;
-  background-color: var(--color-primary-light);
-  border: 1px solid var(--color-accent);
-  border-radius: var(--radius-md);
-  color: var(--color-text);
+  background: var(--ds-primary-btn-gradient);
+  border: 1px solid transparent;
+  border-radius: var(--ds-radius-md);
+  box-shadow: var(--ds-shadow-glow);
+  color: #ffffff;
   cursor: pointer;
   display: inline-flex;
   font-family: var(--font-family);
-  font-size: var(--font-size-body);
-  font-weight: var(--font-weight-semibold);
-  height: 36px;
+  font-size: 11px;
+  font-weight: 600;
   justify-content: center;
-  padding: 12px 16px;
-  transition: all var(--transition-fast);
+  min-height: 32px;
+  padding: 6px 12px;
+  transition: opacity var(--ds-transition-fast), filter var(--ds-transition-fast),
+    box-shadow var(--ds-transition-fast);
+  transform: none;
 }
 
 .primary-action:hover:not(:disabled) {
-  background-color: var(--color-accent);
+  background: var(--ds-primary-btn-hover);
+  filter: brightness(1.05);
+  transform: none;
 }
 
 .secondary-action {
   align-items: center;
-  background-color: transparent;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  color: var(--color-text);
+  background: var(--ds-surface-panel);
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-md);
+  box-shadow: none;
+  color: var(--ds-text-secondary);
   cursor: pointer;
   display: inline-flex;
   font-family: var(--font-family);
-  font-size: var(--font-size-body);
-  font-weight: var(--font-weight-medium);
-  height: 36px;
+  font-size: 11px;
+  font-weight: 600;
   justify-content: center;
-  padding: 12px 16px;
-  transition: all var(--transition-fast);
+  min-height: 32px;
+  padding: 6px 12px;
+  transition: opacity var(--ds-transition-fast), background var(--ds-transition-fast),
+    border-color var(--ds-transition-fast);
+  transform: none;
 }
 
 .secondary-action:hover:not(:disabled) {
-  background-color: var(--color-surface-hover);
-  border-color: var(--color-text-secondary);
+  opacity: 0.8;
+  transform: none;
 }
 
 .ghost-action,

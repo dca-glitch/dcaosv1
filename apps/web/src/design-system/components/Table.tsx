@@ -1,27 +1,48 @@
 import React, { ReactNode, HTMLAttributes, TdHTMLAttributes, ThHTMLAttributes } from 'react';
 
+export type TableDensity = 'admin' | 'client';
+
+const densityPad: Record<TableDensity, { th: string; td: string }> = {
+  admin:  { th: 'px-4 py-2.5', td: 'px-4 py-2.5' },
+  client: { th: 'px-6 py-3.5', td: 'px-6 py-3.5' },
+};
+
+const DensityContext = React.createContext<TableDensity>('admin');
+
 /* ─────────────────────── TABLE WRAPPER ─────────────────────── */
 interface TableProps extends HTMLAttributes<HTMLDivElement> {
   children: ReactNode;
+  density?: TableDensity;
 }
 
-export const Table: React.FC<TableProps> = ({ children, className = '', ...props }) => (
-  <div
-    className={`overflow-x-auto rounded-lg border border-border ${className}`}
-    style={{ background: 'var(--surface-card)' }}
-    {...props}
-  >
-    <table className="w-full border-collapse text-body-xs" style={{ tableLayout: 'fixed' }}>
-      {children}
-    </table>
-  </div>
+export const Table: React.FC<TableProps> = ({
+  children,
+  className = '',
+  density = 'admin',
+  ...props
+}) => (
+  <DensityContext.Provider value={density}>
+    <div
+      className={`overflow-x-auto rounded-xl border border-border ${className}`}
+      data-density={density}
+      style={{ background: 'var(--ds-panel-gradient)' }}
+      {...props}
+    >
+      <table className="w-full border-collapse text-[12px]" style={{ tableLayout: 'fixed' }}>
+        {children}
+      </table>
+    </div>
+  </DensityContext.Provider>
 );
 
 /* ─────────────────────── TABLE HEAD ─────────────────────── */
 export const TableHead: React.FC<{ children: ReactNode }> = ({ children }) => (
   <thead
-    className="border-b border-border"
-    style={{ background: 'var(--surface-overlay)' }}
+    className="border-b"
+    style={{
+      background: 'var(--ds-surface-inset)',
+      borderColor: 'var(--ds-divider)',
+    }}
   >
     {children}
   </thead>
@@ -48,14 +69,13 @@ export const TableRow: React.FC<TableRowProps> = ({
 }) => (
   <tr
     className={[
-      'border-b border-border-subtle last:border-0',
-      'transition-colors duration-[80ms]',
+      'group border-b last:border-0',
+      'transition-colors duration-[120ms]',
       clickable ? 'cursor-pointer' : '',
-      selected
-        ? 'bg-primary-soft border-l-2 border-l-primary-text'
-        : 'hover:bg-elevated/40',
+      selected ? 'bg-primary-soft' : 'hover:bg-[var(--ds-surface-hover)]',
       className,
     ].join(' ')}
+    style={{ borderColor: 'var(--ds-divider)' }}
     {...props}
   >
     {children}
@@ -79,31 +99,36 @@ export const Th: React.FC<TableHeadCellProps> = ({
   onSort,
   className = '',
   ...props
-}) => (
-  <th
-    className={[
-      'px-3 py-2',
-      'text-caption font-semibold uppercase tracking-wider text-text-muted',
-      `text-${align}`,
-      sortable ? 'cursor-pointer hover:text-text-secondary transition-colors' : '',
-      className,
-    ].join(' ')}
-    onClick={sortable ? onSort : undefined}
-    aria-sort={sorted === 'asc' ? 'ascending' : sorted === 'desc' ? 'descending' : undefined}
-    {...props}
-  >
-    {sortable ? (
-      <span className="inline-flex items-center gap-1">
-        {children}
-        <span className="text-text-disabled" aria-hidden="true">
-          {sorted === 'asc' ? '↑' : sorted === 'desc' ? '↓' : '↕'}
+}) => {
+  const density = React.useContext(DensityContext);
+  const pad = densityPad[density].th;
+
+  return (
+    <th
+      className={[
+        pad,
+        'text-[9px] font-semibold uppercase tracking-wider text-text-muted',
+        `text-${align}`,
+        sortable ? 'cursor-pointer hover:text-text-secondary transition-colors' : '',
+        className,
+      ].join(' ')}
+      onClick={sortable ? onSort : undefined}
+      aria-sort={sorted === 'asc' ? 'ascending' : sorted === 'desc' ? 'descending' : undefined}
+      {...props}
+    >
+      {sortable ? (
+        <span className="inline-flex items-center gap-1">
+          {children}
+          <span className="text-text-disabled" aria-hidden="true">
+            {sorted === 'asc' ? '↑' : sorted === 'desc' ? '↓' : '↕'}
+          </span>
         </span>
-      </span>
-    ) : (
-      children
-    )}
-  </th>
-);
+      ) : (
+        children
+      )}
+    </th>
+  );
+};
 
 interface TableDataCellProps extends TdHTMLAttributes<HTMLTableDataCellElement> {
   children:   ReactNode;
@@ -111,6 +136,8 @@ interface TableDataCellProps extends TdHTMLAttributes<HTMLTableDataCellElement> 
   mono?:      boolean;
   muted?:     boolean;
   secondary?: boolean;
+  /** Row action cell — hidden until row hover (SPEC §4.5). */
+  actions?:   boolean;
 }
 
 export const Td: React.FC<TableDataCellProps> = ({
@@ -119,36 +146,49 @@ export const Td: React.FC<TableDataCellProps> = ({
   mono      = false,
   muted     = false,
   secondary = false,
+  actions   = false,
   className = '',
   ...props
-}) => (
-  <td
-    className={[
-      'px-3 py-2.5 align-middle',
-      `text-${align}`,
-      mono      ? 'font-mono text-body-xs text-text-muted'                  : '',
-      muted     ? 'text-body-xs text-text-muted'                            : '',
-      secondary ? 'text-body-xs text-text-secondary'                        : '',
-      !mono && !muted && !secondary ? 'text-body-xs text-text-primary'      : '',
-      className,
-    ].join(' ')}
-    {...props}
-  >
-    {children}
-  </td>
-);
+}) => {
+  const density = React.useContext(DensityContext);
+  const pad = densityPad[density].td;
+
+  return (
+    <td
+      className={[
+        pad,
+        'align-middle',
+        `text-${align}`,
+        mono      ? 'font-mono text-[12px] text-text-muted' : '',
+        muted     ? 'text-[12px] text-text-muted' : '',
+        secondary ? 'text-[12px] text-text-secondary' : '',
+        !mono && !muted && !secondary ? 'text-[12px] font-medium text-text-primary' : '',
+        actions ? 'opacity-0 group-hover:opacity-100 transition-opacity duration-[120ms]' : '',
+        className,
+      ].join(' ')}
+      {...props}
+    >
+      {children}
+    </td>
+  );
+};
 
 /* ─── Convenience: two-line cell (primary + secondary row) ─── */
 export const TdDouble: React.FC<{
   primary:   ReactNode;
   secondary: ReactNode;
   className?: string;
-}> = ({ primary, secondary, className = '' }) => (
-  <td className={`px-3 py-2.5 align-middle ${className}`}>
-    <div className="text-body-xs text-text-primary font-medium leading-tight">{primary}</div>
-    <div className="text-caption text-text-muted mt-0.5 leading-tight">{secondary}</div>
-  </td>
-);
+}> = ({ primary, secondary, className = '' }) => {
+  const density = React.useContext(DensityContext);
+  const pad = densityPad[density].td;
+
+  return (
+    <td className={`${pad} align-middle ${className}`}>
+      <div className="text-[12px] text-text-primary font-medium leading-tight">{primary}</div>
+      <div className="text-[11px] text-text-muted mt-0.5 leading-tight">{secondary}</div>
+    </td>
+  );
+};
 
 /* ─── Table pagination footer ─── */
 interface TablePaginationProps {
@@ -172,7 +212,7 @@ export const TablePagination: React.FC<TablePaginationProps> = ({
   const hasPrev = page > 1;
 
   return (
-    <div className="flex items-center justify-between px-3 py-2.5 border-t border-border-subtle">
+    <div className="flex items-center justify-between px-4 py-2.5 border-t border-border-subtle">
       <span className="text-caption text-text-muted font-mono">
         {start}–{end} of {total}
       </span>
@@ -196,3 +236,80 @@ export const TablePagination: React.FC<TablePaginationProps> = ({
     </div>
   );
 };
+
+/* ─────────────────────── TIMELINE ITEM ─────────────────────── */
+export const TimelineItem: React.FC<{
+  title: ReactNode;
+  meta?: ReactNode;
+  children?: ReactNode;
+  status?: string;
+  isLast?: boolean;
+  className?: string;
+}> = ({ title, meta, children, status, isLast = false, className = '' }) => (
+  <div className={`relative flex gap-3 ${className}`} data-status={status}>
+    <div className="flex flex-col items-center flex-shrink-0">
+      <span
+        className="ds-status-dot mt-1.5"
+        style={{
+          background: status
+            ? `var(--status-${status.replace(/_/g, '-')}-text, var(--ds-accent-indigo))`
+            : 'var(--ds-accent-indigo)',
+        }}
+        aria-hidden="true"
+      />
+      {!isLast && (
+        <span
+          className="w-px flex-1 mt-1"
+          style={{ background: 'var(--ds-divider)', minHeight: 16 }}
+          aria-hidden="true"
+        />
+      )}
+    </div>
+    <div className="flex-1 min-w-0 pb-4">
+      <div className="text-[12px] font-medium text-text-primary">{title}</div>
+      {meta && (
+        <div className="text-[10px] font-mono mt-0.5" style={{ color: 'var(--ds-text-faint)' }}>
+          {meta}
+        </div>
+      )}
+      {children && <div className="mt-1.5 text-[12px] text-text-secondary">{children}</div>}
+    </div>
+  </div>
+);
+
+/* ─────────────────────── ACTIVITY ITEM ─────────────────────── */
+export const ActivityItem: React.FC<{
+  title: ReactNode;
+  description?: ReactNode;
+  timestamp?: ReactNode;
+  actor?: ReactNode;
+  status?: string;
+  className?: string;
+}> = ({ title, description, timestamp, actor, status, className = '' }) => (
+  <div
+    className={`flex items-start gap-3 px-3 py-2.5 rounded-lg transition-colors duration-[120ms] hover:bg-[var(--ds-surface-hover)] ${className}`}
+    data-status={status}
+  >
+    <span
+      className="ds-status-dot mt-1.5 flex-shrink-0"
+      style={{
+        background: status
+          ? `var(--status-${status.replace(/_/g, '-')}-text, var(--ds-accent-indigo))`
+          : 'var(--ds-accent-indigo)',
+      }}
+      aria-hidden="true"
+    />
+    <div className="flex-1 min-w-0">
+      <div className="flex items-baseline justify-between gap-2">
+        <span className="text-[12px] font-medium text-text-primary truncate">{title}</span>
+        {timestamp && (
+          <span className="text-[10px] font-mono flex-shrink-0" style={{ color: 'var(--ds-text-faint)' }}>
+            {timestamp}
+          </span>
+        )}
+      </div>
+      {actor && <div className="text-[11px] text-text-muted mt-0.5">{actor}</div>}
+      {description && <div className="text-[12px] text-text-secondary mt-1">{description}</div>}
+    </div>
+  </div>
+);

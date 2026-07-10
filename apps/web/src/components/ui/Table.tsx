@@ -1,4 +1,5 @@
 import { Table as DSTable, TableHead, TableBody, TableRow as DSTableRow, Th, Td } from "../../design-system";
+import type { TableDensity } from "../../design-system";
 import type { ReactNode, TableHTMLAttributes } from "react";
 
 export type TableHeader = {
@@ -14,11 +15,13 @@ export type TableRow = {
 export type TableProps = TableHTMLAttributes<HTMLTableElement> & {
   headers: TableHeader[];
   rows: TableRow[];
+  density?: TableDensity;
 };
 
-export function Table({ headers, rows, className }: TableProps) {
+/** Preserved headers/rows adapter API — density optional (default admin). */
+export function Table({ headers, rows, className, density = "admin" }: TableProps) {
   return (
-    <DSTable className={className}>
+    <DSTable className={className} density={density}>
       <TableHead>
         <DSTableRow>
           {headers.map((header, i) => (
