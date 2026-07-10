@@ -2,7 +2,7 @@
 
 **Status:** Local operator gate addition for monthly report admin smokes.
 
-**Scope:** Adds `smoke:monthly-report:local` and `smoke:monthly-report:pdf` to the local pre-staging orchestrator after the MI context gate.
+**Scope:** Adds `smoke:monthly-report:local` and `smoke:monthly-report:pdf` to the local pre-staging orchestrator after the MI context gate. Snapshot-first local admin lifecycle + PDF generation only — **no live GA/GSC OAuth, no Google API calls**.
 
 Related:
 

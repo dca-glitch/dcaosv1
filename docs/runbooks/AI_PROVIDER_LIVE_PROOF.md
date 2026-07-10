@@ -1,6 +1,6 @@
 # AI Provider Live Proof
 
-**Status:** Local deterministic default proven; **formal clean local OpenRouter live proof complete (G71e + G71e-retry)**. Does not authorize production enablement, staging live proof, or autonomous AI.
+**Status:** Local deterministic default proven; **formal clean local OpenRouter live proof complete (G71e + G71e-retry)**; **G77b persistent COMPLETED ledger row proven (local only)**. Does not authorize production enablement, staging live proof, or autonomous AI.
 
 **Gate:** Puriva Launch blocker — live AI provider proof (see [`docs/operator/deferred-scope-register.md`](../operator/deferred-scope-register.md)).
 
@@ -559,7 +559,7 @@ Evidence logs:
 
 **Deferred-scope status after G71f:** Live AI provider proof = **COMPLETE (local only)**. Staging/production live proof remains **BLOCKED**.
 
-**Recommended next gate:** G71g — commit/push G71f docs closeout; then G72 model routing policy. Production deploy is **not** included.
+**Recommended next gate (historical):** G71g — commit/push G71f docs closeout; then G72 model routing policy. Superseded by G72–G77b. Current next gates: **G78** docs commit/push; **G79** monthly cap aggregation (local proof); **G80** `actualCostUsd` when gateway exposes cost. Production deploy is **not** included.
 
 ### 9.16 G75 — live spend attribution cross-reference (2026-07-10)
 
@@ -627,4 +627,11 @@ Detail: [`AI_MODEL_ROUTING_POLICY.md`](./AI_MODEL_ROUTING_POLICY.md) (G76 sectio
 
 **Deferred-scope status after G77b:** Persistent COMPLETED live ledger row proof = **COMPLETE (local only)**. Staging/production live proof remains **BLOCKED**. Production remains frozen.
 
-Detail: [`AI_MODEL_ROUTING_POLICY.md`](./AI_MODEL_ROUTING_POLICY.md) (G77 section) · [`STATUS.md`](../STATUS.md) (G77b closeout).
+Detail: [`AI_MODEL_ROUTING_POLICY.md`](./AI_MODEL_ROUTING_POLICY.md) (G77b section) · [`STATUS.md`](../STATUS.md) (G77b closeout).
+
+**Recommended next gates (post-G77b):**
+
+- **G78:** guarded commit/push of G77b + G78 runbook truth-label alignment (docs only)
+- **G79:** monthly cap aggregation for `liveProviderCalled=true` COMPLETED rows — local proof required; **not** proven
+- **G80:** `actualCostUsd` when gateway exposes exact provider cost — local proof required; **not** proven
+- Staging/production live proof remains **BLOCKED**; no exact invoice/provider cost proof

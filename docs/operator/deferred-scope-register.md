@@ -12,21 +12,21 @@ Puriva Launch blocker means: required before Puriva Launch on production; must p
 
 ---
 
-## Puriva Launch blockers (required before launch — not yet proven)
+## Puriva Launch blockers (required before launch — staging/production proof pending)
 
-**Canonical list and workflows:** [`docs/architecture/PURIVA_OPERATING_PACK_V1.md`](../architecture/PURIVA_OPERATING_PACK_V1.md). Per-integration proof status: [`docs/runbooks/INTEGRATIONS_TRUTH_MATRIX.md`](../runbooks/INTEGRATIONS_TRUTH_MATRIX.md). Launch gate entry: [`docs/runbooks/PURIVA_LAUNCH_GATE.md`](../runbooks/PURIVA_LAUNCH_GATE.md). Summary below; do not duplicate step-level workflow detail here.
+**Canonical list and workflows:** [`docs/architecture/PURIVA_OPERATING_PACK_V1.md`](../architecture/PURIVA_OPERATING_PACK_V1.md). Per-integration proof status: [`docs/runbooks/INTEGRATIONS_TRUTH_MATRIX.md`](../runbooks/INTEGRATIONS_TRUTH_MATRIX.md). Launch gate entry: [`docs/runbooks/PURIVA_LAUNCH_GATE.md`](../runbooks/PURIVA_LAUNCH_GATE.md). Notifications staged plan: [`notifications-blocker-plan.md`](./notifications-blocker-plan.md). Summary below; do not duplicate step-level workflow detail here.
 
-These are **not** "still deferred" long-term roadmap items. They are active blockers for Puriva Launch. WordPress **draft/handoff** is required; WordPress **auto-publish** remains in still-deferred below.
+These are **not** "still deferred" long-term roadmap items. They are active blockers for Puriva Launch. Local-only proofs (e.g. G77b live AI + COMPLETED ledger row) **do not** satisfy staging/production launch requirements. WordPress **draft/handoff** is required; WordPress **auto-publish** remains in still-deferred below.
 
 | Blocker | Scope | Notes |
 |---------|-------|-------|
 | GA/GSC live sync proof | Live integration | Snapshot-first locally; live OAuth/sync proof required — runbook: [`docs/runbooks/MONTHLY_REPORT_LIVE_DATA_PROOF.md`](../runbooks/MONTHLY_REPORT_LIVE_DATA_PROOF.md) |
 | R2 real-bucket proof | Live integration | Disabled-safe locally; real bucket IO proof required |
-| Live AI provider proof | Live integration | **COMPLETE (local only)** — formal clean proof G71e + G71e-retry (`anthropic/claude-haiku-4.5`); staging/production live proof still required for launch — runbook: [`docs/runbooks/AI_PROVIDER_LIVE_PROOF.md`](../runbooks/AI_PROVIDER_LIVE_PROOF.md) §9.15 |
+| Live AI provider proof | Live integration | **Local COMPLETE (G77b)** — controlled OpenRouter execute + COMPLETED ledger row `5d8d635c-ced0-4a14-9b33-839e1fdee508`; `actualCostUsd=null`; **staging/production live proof still required for launch** — runbook: [`docs/runbooks/AI_PROVIDER_LIVE_PROOF.md`](../runbooks/AI_PROVIDER_LIVE_PROOF.md) §9.18 |
 | AI Model Research | Policy gate | Separate approved research gate |
 | AI Model Policy | Policy gate | **Docs + skeleton closed (G55/G56)** — local live provider proof complete (G71f); staging/production proof still required — [`docs/ai/AI_MODEL_POLICY.md`](../ai/AI_MODEL_POLICY.md) |
 | Image generation proof | Live integration | Provider/workflow proof for Article+Image path |
-| Transactional notifications proof | Live integration | Workflow email delivery — **not** marketing campaigns |
+| Transactional notifications proof | Live integration | In-system user inbox + live email — **not** marketing campaigns; staged plan: [`notifications-blocker-plan.md`](./notifications-blocker-plan.md) |
 | Client Portal approval UX | Product gate | Client-safe approval path must be production-proven |
 | Task-oriented admin UX | Product gate | Operator task flows for daily delivery |
 | Article+Image workflow | Product gate | End-to-end article and image handoff |
@@ -55,7 +55,35 @@ These remain **blocked or complete (local only)** after G57–G68 merged to `mai
 | Staging migration application | `20260709120000_add_ai_budget_ledger` on staging DB | **BLOCKED** | Fresh owner approval; see [`STAGING_READINESS.md`](../runbooks/STAGING_READINESS.md) |
 | Explicit production deploy approval | G50 | **BLOCKED** | [`G53_PRODUCTION_SAFETY_PLAN.md`](../runbooks/G53_PRODUCTION_SAFETY_PLAN.md) |
 
-**Production deploy is not authorized** by completing G69, G70 documentation, G71c partial proof closeout, or G71f local live proof.
+**Production deploy is not authorized** by completing G69, G70 documentation, G71c partial proof closeout, G71f local live proof, or G77b local COMPLETED ledger proof.
+
+---
+
+## Future scope buckets (G78 — actionable, owner-gated)
+
+Grouped for planning clarity. Items remain deferred until a separate approved block with proof requirement.
+
+| Bucket | Scope | Owner gate / proof | Status |
+|--------|-------|-------------------|--------|
+| **Live AI cost / accounting** | Monthly cap aggregation for `liveProviderCalled=true` COMPLETED rows; `actualCostUsd` when gateway exposes cost; provider cost dashboards | **G79** impl + local proof; **G80** impl + local proof | Not proven post-G77b |
+| **Staging / production live proof** | Re-run bounded live OpenRouter, R2, GA/GSC, WordPress draft, email on target env | **G81** staging live proof planning (not execution); separate execution gates per integration | BLOCKED |
+| **Notifications** | In-system MVP → email MVP → client approval events → admin alerts → audit alignment | **N1–N3** per [`notifications-blocker-plan.md`](./notifications-blocker-plan.md) | BLOCKED |
+| **GA / GSC live metrics** | OAuth/token storage, live sync, non-placeholder monthly report metrics | [`MONTHLY_REPORT_LIVE_DATA_PROOF.md`](../runbooks/MONTHLY_REPORT_LIVE_DATA_PROOF.md) | BLOCKED |
+| **WordPress publish proof** | Live draft proof session; publish remains frozen | [`WORDPRESS_DRAFT_PROOF.md`](../runbooks/WORDPRESS_DRAFT_PROOF.md) §6; publish separate gate | Draft prep local-proven; live proof BLOCKED |
+| **Image generation provider proof** | Provider research, disabled-safe wiring, live proof | [`IMAGE_GENERATION_PROOF.md`](../runbooks/IMAGE_GENERATION_PROOF.md) | BLOCKED |
+| **Market Intelligence** | Live AI, scraping, client-facing curated MI view | Module MVP local-proven; live ingestion deferred | Deferred |
+| **Revenue Hub** | RH0 operating model module | [`REVENUE_HUB_AI_RH0_OPERATING_MODEL.md`](../architecture/REVENUE_HUB_AI_RH0_OPERATING_MODEL.md) | Deferred |
+| **POD AI Toolkit** | POD0 operating model module | [`POD_AI_TOOLKIT_POD0_OPERATING_MODEL.md`](../architecture/POD_AI_TOOLKIT_POD0_OPERATING_MODEL.md) | Deferred |
+| **SaaS conversion / multi-tenant productization** | Second-client modularity, onboarding, pack registry DB | G52-B productization track | Deferred |
+
+**Post-G77b recommended gate sequence (docs reference):**
+
+| Gate | Scope |
+|------|-------|
+| **G78** | Docs truth-label alignment closeout (this block) |
+| **G79** | Monthly cap aggregation for live COMPLETED rows — implementation + local controlled proof |
+| **G80** | `actualCostUsd` population when gateway exposes exact provider cost — implementation + local controlled proof |
+| **G81** | Staging live proof planning only (not execution) — owner-approved checklist per integration |
 
 ## G71b / G71c / G71e / G71f live OpenRouter proof (2026-07-09)
 
@@ -226,10 +254,13 @@ Current behavior:
 
 ## Email And Notifications
 
+**G78 notifications blocker plan:** [`notifications-blocker-plan.md`](./notifications-blocker-plan.md) — canonical staged sequence. Phone/manual-only communication is explicitly insufficient for launch claims.
+
 Deferred:
 
 - real provider sending by default;
 - automatic client notifications;
+- **in-system user notification inbox (Client Portal + admin)** — not started; `EmailLog` is outbound attempt log only;
 - background notification queues;
 - invite emails;
 - password reset emails;

@@ -1,50 +1,61 @@
 # WordPress Credential Policy Decision
 
-**Status:** STOP — No WordPress credentials may be implemented or stored until approved encryption foundation block is merged.
+**Status:** Encryption foundation merged locally (Architecture Block 4). Encrypted Application Password save on `PublicationTargetCredential` is allowed when `CREDENTIAL_ENCRYPTION_MASTER_KEY` is set. **Live WordPress HTTP calls, connection testing, and publish remain frozen** unless a separately owner-approved proof block explicitly enables them.
 
-**Decision Date:** 2026-06-24
+**Decision Date:** 2026-06-24 (original STOP) · **Updated:** 2026-07-10 (G78 docs audit — reflects Block 4 merge; live API/publish freeze unchanged)
 
-**Scope:** All WordPress credential operations deferred to future approved block.
+**Scope:** Credential storage policy + live WordPress API/publish freeze gates.
+
+**Related:** [`docs/security/CREDENTIAL_ENCRYPTION_FOUNDATION.md`](../security/CREDENTIAL_ENCRYPTION_FOUNDATION.md) · [`docs/runbooks/WORDPRESS_DRAFT_PROOF.md`](../runbooks/WORDPRESS_DRAFT_PROOF.md) · [`docs/runbooks/INTEGRATIONS_TRUTH_MATRIX.md`](../runbooks/INTEGRATIONS_TRUTH_MATRIX.md)
+
+---
+
+## Three WordPress tiers (do not conflate)
+
+| Tier | What it is | Current state | Puriva Launch |
+|------|------------|---------------|---------------|
+| **1 — Draft preparation** | Local JSON payload via `prepare-wordpress-draft`; no HTTP, no credentials | Local-proven | **In scope** — draft/handoff only |
+| **2 — Live draft proof** | Real WordPress HTTP call creating a staging draft post | Plan-only (`WORDPRESS_DRAFT_PROOF.md` §6); not executed | Required before "verified against real site" claims |
+| **3 — Publish / production** | `publish-wordpress` with `WORDPRESS_PUBLISH_ENABLED=true` | Disabled-by-default; not proven on staging/production | **Out of scope** — auto-publish deferred |
+
+Credential save (encrypted) supports tier 2/3 prep only — it does **not** authorize live calls or publish.
 
 ---
 
 ## Current Decision
 
-### STOP — No Real WordPress Credentials Yet
+### ✅ Allowed now (local foundation)
 
-- ✋ **Blocking:** No WordPress credentials (passwords, tokens, application passwords, API keys) may be stored in TenantSetting or anywhere else.
-- ✋ **Blocking:** No credential reads from TenantSetting are permitted.
-- ✋ **Blocking:** No real WordPress API calls may be added.
-- ✋ **Blocking:** No live WordPress connection verification may be implemented.
-- ✋ **Blocking:** No credential fields may be added to any API contract.
-- ✅ **Allowed:** Non-secret WordPress tenant config (site URL, site slug, WordPress.com indicator) remains fully supported.
-- ✅ **Allowed:** Mock/disabled publish endpoint remains fully supported.
-- ✅ **Allowed:** Provider service scaffold remains fully supported.
+- Non-secret WordPress tenant config (`siteUrl`, `siteSlug`, `wordPressComSite`) via `GET/POST /api/v1/tenant/wordpress-config`
+- **Encrypted** Application Password save on `PublicationTargetCredential` via Client Hub when `CREDENTIAL_ENCRYPTION_MASTER_KEY` is set — see [`CREDENTIAL_ENCRYPTION_FOUNDATION.md`](../security/CREDENTIAL_ENCRYPTION_FOUNDATION.md)
+- Local draft preparation (`prepare-wordpress-draft`) — no credentials read during prep
+- Disabled-safe publish endpoint (`provider_disabled` when `WORDPRESS_PUBLISH_ENABLED` unset/false)
+- WordPress provider service scaffold (`wordpress.service.ts`)
+
+### ✋ Still frozen (owner-approved block required)
+
+- **No live WordPress REST API calls** for publish, draft proof, or connection testing unless an explicit owner-approved proof block is active on a named target environment
+- **No production publish** — `WORDPRESS_PUBLISH_ENABLED=true` requires separate owner approval per [`WORDPRESS_PUBLISH_LOCAL_GATE.md`](../security/WORDPRESS_PUBLISH_LOCAL_GATE.md) Phase D
+- **No plaintext credential storage** — never in `TenantSetting`, logs, API responses, or git
+- **No "connection verified" claims** without a completed live proof session recorded in evidence
+- **No auto-publish** — draft preparation success must never chain into publish
+
+### ✋ Forbidden permanently
+
+- Storing WordPress secrets in plain JSON (`TenantSetting.value` or any unencrypted field)
+- Returning Application Password plaintext from any API response
+- Logging full credential payloads, ciphertext, or auth headers
 
 ---
 
-## Reason for STOP Decision
+## Reason live API/publish remain frozen (encryption is no longer the blocker)
 
-### Missing Encryption Foundation
+Architecture Block 4 closed the original 2026-06-24 STOP rationale (missing encryption). What remains blocked:
 
-1. **No encryption library in dependencies**
-   - Zero crypto-encryption packages installed (no bcryptjs, tweetnacl, libsodium, etc.)
-   - Only built-in Node.js `crypto` module available (password hashing only)
-
-2. **No credential storage pattern**
-   - TenantSetting stores plain JSON: `value: Json` (no encrypted field type)
-   - No encryption/decryption utility functions exist
-   - No vault or KMS integration
-
-3. **Plaintext storage risk**
-   - Implementing credentials now would mean storing plaintext passwords in PostgreSQL
-   - Violates security best practices
-   - Would require future migration/remediation (expensive)
-
-4. **Existing secret pattern inadequate**
-   - OpenRouter API key: stored in env only, not per-tenant
-   - Not suitable as model for tenant-scoped credentials
-   - OpenRouter uses global single-key pattern; WordPress requires per-tenant credentials
+1. **Live draft proof not executed** — `WORDPRESS_DRAFT_PROOF.md` §6 is a pre-execution plan only; schema/code gaps (alt/caption/social preview fields, idempotency, approved-image-only filter) must be decided before a staging session
+2. **Publish proof not proven** — disabled-safe smokes pass locally; staging/production publish never exercised
+3. **Production safety** — irreversible public content if publish enabled prematurely (`INTEGRATIONS_TRUTH_MATRIX.md` WordPress publish row)
+4. **Owner approval gates** — live WordPress HTTP, open-gate probe, and production master key each require separate sign-off per `CREDENTIAL_ENCRYPTION_FOUNDATION.md` and `WORDPRESS_CREDENTIAL_SECURITY_DESIGN.md`
 
 ### Security Policy
 
@@ -72,20 +83,26 @@ Credentials must never be stored without:
    - Location: Company Profile > WordPress Config panel
    - Fields: Site URL input, Site Slug input, WordPress.com checkbox
    - Save button triggers POST /api/v1/tenant/wordpress-config
-   - Clear messaging: "non-secret config only", "no credentials stored", "publish remains disabled/mock"
+   - Clear messaging: non-secret config only; publish remains disabled unless explicitly enabled
 
-3. **Mock WordPress Publish Endpoint**
+3. **Encrypted Publication Target Credentials (Block 4)**
+   - Endpoints: `GET/POST/DELETE /api/v1/clients/:clientId/publication-targets/:id/credentials`
+   - Storage: `PublicationTargetCredential` with AES-256-GCM (`credential-encryption.service.ts`)
+   - API returns `configured` boolean only — never plaintext Application Password
+   - Requires `CREDENTIAL_ENCRYPTION_MASTER_KEY` in environment
+   - Smoke: `npm.cmd run smoke:credential-encryption:local`
+   - **Does not authorize live WordPress calls** — credentials are write-only until a proof block runs
+
+4. **Guarded WordPress Publish Endpoint**
    - Endpoint: `POST /api/v1/ai-delivery-projects/:id/deliverables/:deliverableId/publish-wordpress`
-   - Result: Always returns `ok: false, status: "provider_disabled"`
-   - No external WordPress API call
+   - Default: returns `provider_disabled` when `WORDPRESS_PUBLISH_ENABLED` unset/false
+   - When flag true + credentials configured: may call WordPress REST API (open-gate probe only — not default, not Puriva Launch scope)
    - RBAC: owner/admin only, tenant/project/deliverable scoped
    - UI action: "Test WordPress publish" button on deliverable card
 
-4. **WordPress Provider Service Scaffold**
+5. **WordPress Provider Service**
    - File: `apps/api/src/services/wordpress.service.ts`
-   - Mock functions return `provider_disabled` result
-   - No credential reads or env var reads
-   - Ready for real implementation after credential block approved
+   - Disabled-safe by default; real HTTP path exists behind publish gate only
 
 ### Documentation
 
@@ -94,44 +111,32 @@ Credentials must never be stored without:
 
 ---
 
-## Forbidden Until Future Approved Encryption Block
+## Forbidden Until Future Approved Live-Proof Blocks
 
-### ✋ Secret Storage (FORBIDDEN)
+### ✋ Plaintext Secret Storage (FORBIDDEN)
 
-- Do not store WordPress passwords in TenantSetting
-- Do not store WordPress tokens in TenantSetting
-- Do not store WordPress application passwords in TenantSetting
-- Do not store WordPress API keys in TenantSetting
-- Do not store any credential-like field in plain JSON
+- Do not store WordPress passwords, tokens, or application passwords in `TenantSetting` or any unencrypted JSON field
+- Do not store any credential-like field in plain JSON anywhere in the database
+- Use only `PublicationTargetCredential` + `credential-encryption.service.ts` for Application Passwords
 
-**Why:** No encryption layer exists to make plaintext storage safe.
+### ✋ Secret Exposure (FORBIDDEN)
 
-### ✋ Secret Reads (FORBIDDEN)
+- Do not return Application Password plaintext from any API response
+- Do not echo credentials, ciphertext, or auth headers in logs or error messages
+- Do not include credentials in audit metadata beyond `configured: true/false`
 
-- Do not read WordPress credentials from TenantSetting
-- Do not decrypt credentials from TenantSetting (no decryption utility exists)
-- Do not return credentials to API response
-- Do not echo credentials in logs
+### ✋ Live WordPress API Calls (FROZEN — owner block required)
 
-**Why:** No decryption pattern established; no redaction utilities built.
+- Do not call WordPress REST API for publish, draft proof, or connection testing unless an explicit owner-approved proof block is active on a named target
+- Do not enable `WORDPRESS_PUBLISH_ENABLED=true` on staging or production without owner sign-off
+- Do not claim "WordPress verified" or "publish proven" without evidence from an approved proof session
 
-### ✋ WordPress API Calls (FORBIDDEN)
+**Why:** Encryption foundation allows safe credential storage; live HTTP and publish proof remain separate owner gates with irreversible public-content risk.
 
-- Do not call WordPress REST API (`/wp-json/wp/v2/posts`)
-- Do not make HTTP requests to WordPress endpoints
-- Do not implement real publish functionality
-- Do not add credential validation/testing
+### ✋ Connection Testing (FROZEN — owner block required)
 
-**Why:** No real credential source exists yet; only mock endpoint allowed.
-
-### ✋ Connection Testing (FORBIDDEN)
-
-- Do not implement "test WordPress connection" action
-- Do not verify WordPress API accessibility
-- Do not validate WordPress credentials against live instance
-- Do not call WordPress site endpoint
-
-**Why:** Requires real credentials, which are not allowed yet.
+- Do not run "test WordPress connection" against production sites outside an approved proof block
+- Do not validate credentials against live instances as part of routine ops until live draft proof plan (`WORDPRESS_DRAFT_PROOF.md` §6) is executed and recorded
 
 ### ✋ Audit Logging Violations (FORBIDDEN)
 
@@ -144,59 +149,23 @@ Credentials must never be stored without:
 
 ---
 
-## Future Prerequisite: Credential Encryption & Redaction Foundation
+## Encryption Foundation — Status (Block 4 merged)
 
-Before any WordPress credential block may be implemented, a separate approved foundation block must:
+The prerequisite encryption block described below is **implemented locally**. Remaining open items are owner sign-off and production master key provisioning — not implementation of encrypt/decrypt itself.
 
-1. **Encryption Utility Layer**
-   - Choose encryption algorithm (AES-256-GCM recommended)
-   - Implement encrypt/decrypt functions in `apps/api/src/security/encryption.service.ts`
-   - Design key source (tenant seed derivation, KMS, or key rotation service)
-   - Document backup/recovery strategy
+See [`CREDENTIAL_ENCRYPTION_FOUNDATION.md`](../security/CREDENTIAL_ENCRYPTION_FOUNDATION.md) for current API, smoke, and completion checklist.
 
-2. **TenantSetting Schema Extension**
-   - Prisma migration: add optional `encrypted: boolean` field to TenantSetting
-   - OR define new EncryptedSetting model with automatic encryption
-   - Rationale: distinguish non-secret from encrypted fields
+**Still open before production credentials:**
 
-3. **Credential Policy Document**
-   - Define which fields require encryption (all credential-like fields)
-   - Define redaction rules (never log full value, only field name + timestamp)
-   - Define audit metadata rules (what is safe to log)
-   - Define key rotation strategy (rekey, rekeying schedule, rollback plan)
-   - Define backup/recovery implications
-
-4. **Redaction Utilities**
-   - Helper function: redactCredential(value: string): string → "***REDACTED***"
-   - Helper function: sanitizeCredentialMetadata(metadata: object): object → filters out secret fields
-   - Pattern consistent with WordPress config metadata redaction (siteUrlHost only)
-
-5. **Smoke Tests for Encryption Block**
-   - Encrypt credential field without error
-   - Decrypt credential field and verify value matches
-   - Attempt decrypt with wrong tenant ID → fails safely
-   - Verify plaintext never appears in logs
-   - Verify audit log redacts field values
-   - Exit code 0 on all encryption tests
-
-6. **Security Review**
-   - Credential policy reviewed by security/compliance team
-   - Encryption algorithm approved for production use
-   - Key management strategy documented and approved
-   - Risk assessment: data breach scenario and mitigation steps
-
-**Deliverables:**
-- `docs/ai-delivery/CREDENTIAL_ENCRYPTION_FOUNDATION.md` (policy document)
-- `apps/api/src/security/encryption.service.ts` (utilities)
-- Prisma migration + schema update
-- `scripts/smoke-credential-encryption.mjs` (smoke tests)
-- Security review approval + sign-off
+- [ ] Owner security sign-off (Phase A6)
+- [ ] Production `CREDENTIAL_ENCRYPTION_MASTER_KEY` provisioned (Phase D1)
+- [ ] Key rotation procedure exercised on target environment
 
 ---
 
-## Future WordPress Credentials Block (After Foundation Approved)
+## Future WordPress Live-Proof Blocks (after foundation + owner approval)
 
-Only after the credential encryption foundation block is merged and approved may a WordPress credentials block be implemented:
+Only after live draft proof (tier 2) or publish proof (tier 3) blocks are explicitly approved:
 
 ### Proposed API
 
@@ -289,11 +258,9 @@ DELETE /api/v1/tenant/wordpress-credentials
 
 ## Summary
 
-WordPress non-secret configuration (site URL, site slug, WordPress.com indicator) is fully implemented and approved for production use. Mock/disabled publish endpoint is fully implemented and approved for testing.
+WordPress operates at three distinct tiers — **draft preparation** (local, proven), **live draft proof** (planned, not executed), and **publish** (frozen by default). Non-secret configuration and encrypted Application Password storage (Block 4) are implemented locally; neither authorizes live WordPress HTTP or production publish.
 
-**Real WordPress credentials remain blocked** until a separate credential encryption/redaction foundation block is approved and merged. This prevents plaintext storage of secrets and ensures proper key management, redaction, audit logging, and security review.
+**Live WordPress API calls and publish remain frozen** until separately owner-approved proof blocks run on named target environments. Auto-publish stays out of Puriva Launch v1 scope.
 
-**No commits performed. No credentials touched. No encryption implemented. No real WordPress calls added.**
-
-The path forward: (1) Approve credential encryption foundation block → (2) Implement and merge foundation → (3) Implement WordPress credentials block → (4) Implement real WordPress publish.
+**Path forward:** (1) Resolve or accept `WORDPRESS_DRAFT_PROOF.md` §6 gaps → (2) Owner-approved live draft proof on staging → (3) Owner-approved publish proof (if ever needed) → (4) Production master key + security sign-off before real client credentials.
 

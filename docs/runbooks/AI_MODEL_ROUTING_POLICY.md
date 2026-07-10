@@ -1,4 +1,4 @@
-# AI Model Routing Policy (G72 + G73 + G74 + G75 + G76 + G77)
+# AI Model Routing Policy (G72 + G73 + G74 + G75 + G76 + G77b)
 
 **Status:** Implemented on `main` (G72 policy, G73 attribution proof, G74 completed ledger readiness, G75 local live spend attribution proof, G76 persistent completed ledger wiring, G77b local live COMPLETED ledger row proof).
 **Live execution:** G72–G74 are no-live — dry-run/preview and mocked completed attribution only. **G75 (local only):** one controlled OpenRouter live smoke PASS; completed attribution verifier PASS; at G75 time persistent row was generated-only. **G76 (mocked/no-live):** execute-path COMPLETED persistence wired. **G77b (local only):** live OpenRouter execute created persistent COMPLETED `AiBudgetLedgerEntry` row — staging/production still BLOCKED.
@@ -78,7 +78,7 @@ Do **not** use `openrouter/auto` for Puriva or medical/compliance content.
 - `ledgerStatus`: `COMPLETED` | `BLOCKED` | `SKIPPED`
 - `taskType`, `routingTaskType`, `gateway`, `provider`, `model`, `policyVersion`
 - `clientProfile`, `contentChannel`, `maxCostUsdPerRun`
-- `estimatedCostUsd`, `actualCostUsd` (when confirmed and within route cap)
+- `estimatedCostUsd`, `actualCostUsd` (populated only when gateway exposes confirmed cost within route cap; otherwise `null`)
 - `approximateInputTokens`, `approximateOutputTokens`
 - `liveProviderCalled` (explicit; `true` observed in G75 run `6e538323-8e68-4d41-a4c5-9e30ca0cf8a1` and G77b run `2244413e-d87b-45a1-8a26-6634ec8972d5`)
 - `safeError`, `overCap`, `overCapReason`
@@ -86,8 +86,8 @@ Do **not** use `openrouter/auto` for Puriva or medical/compliance content.
 
 ### actualCostUsd limitations
 
-- Recorded only when provider execution reports success and cost is within `maxCostUsdPerRun`.
-- If `actualCostUsd > maxCostUsdPerRun`, attribution is `BLOCKED` with `overCap=true` and `actualCostUsd` is not recorded.
+- Populated only when the gateway exposes a confirmed provider cost **and** it is within `maxCostUsdPerRun`; otherwise `null` (G77b: COMPLETED success still stored `actualCostUsd=null` — **not** provider invoice proof).
+- If exposed cost exceeds `maxCostUsdPerRun`, attribution is `BLOCKED` with `overCap=true` and `actualCostUsd` is not recorded.
 - If `safeError` is present, status is `BLOCKED` and `actualCostUsd` is not recorded.
 - Skipped local execution (`ok=false`, no `safeError`) records `SKIPPED` with `liveProviderCalled=false`.
 - **G77b observation:** live COMPLETED row stored `actualCostUsd=null` — expected current limitation; does **not** prove provider invoice cost.
@@ -126,10 +126,10 @@ Unit tests: `ai-model-routing-policy.service.test.ts`, `ai-budget-guard.service.
 
 ## Next gate
 
-- **G77c:** guarded commit/push of G77b docs closeout (separate owner approval)
-- Monthly cap aggregation for `liveProviderCalled=true` COMPLETED rows (separate gate)
-- `actualCostUsd` when gateway exposes exact provider cost (separate gate)
-- Additional model approval matrix (optional parallel track)
+- **G78:** guarded commit/push of G77b + G78 runbook truth-label alignment (docs only; separate owner approval)
+- **G79:** monthly cap aggregation for `liveProviderCalled=true` COMPLETED ledger rows — implementation + local controlled proof (separate gate; **not** proven post-G77b)
+- **G80:** `actualCostUsd` population when gateway exposes exact provider cost — implementation + local controlled proof (separate gate; **not** proven post-G77b)
+- Additional model approval matrix (optional parallel track); staging/production live proof remains **BLOCKED**
 
 ## Related docs
 

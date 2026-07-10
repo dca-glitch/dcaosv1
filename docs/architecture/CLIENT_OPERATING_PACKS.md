@@ -209,3 +209,29 @@ Client Operating Packs sit **above** the `Client` operational hub — they defin
 | Date | Change |
 |------|--------|
 | 2026-07-09 | Generic Client Operating Pack model approved (G52-B); Puriva documented as first pack |
+| 2026-07-10 | G78 — §14 implementation status matrix (implemented vs partial vs future) |
+
+---
+
+## 14. Implementation status (G78 — local vs launch vs future)
+
+Labels what exists in code/docs today vs what remains future work. Puriva is **first-pack scaffolding**, not a Core fork.
+
+| Pack layer | Status | Notes |
+|------------|--------|-------|
+| **Compliance / content / image profiles** | **Documented** | Operator checklists and intake/compliance runbooks; not structured DB config yet |
+| **Workflow templates** (Article+Image, Monthly Report) | **Documented; wiring PARTIAL** | G62 step→task map; full orchestrator template automation deferred |
+| **Module entitlements** | **Design** | CLIENT_DOMAIN §9; enforcement deferred |
+| **Integration boundary index** | **Implemented** | `external-integration-boundary.ts` — Puriva-specific keys as first-pack proof |
+| **AI routing / budget cap** | **Implemented** | Puriva profile keys (`puriva`, `$100` cap) — first-pack scaffolding until generic pack registry |
+| **Learning / feedback layer** | **Future** | Documented policy only; no persistent preference system |
+| **Generic pack registry (DB)** | **Future** | Second-client modularity proof track |
+| **Local/admin-operational pack closeout** | **Complete** | Docs + local operator path; not launch readiness |
+| **Puriva Client-Service Launch** | **BLOCKED** | Staging/production live proof + product gates required |
+
+**Two “workflow template” meanings (not contradictory):**
+
+- **AI orchestrator workflow template** — target architecture in [`ai-operating-layer-architecture.md`](../ai-delivery/ai-operating-layer-architecture.md)
+- **Pack delivery workflow** — Article+Image Package v1, Monthly Report Flow v1 in [`PURIVA_OPERATING_PACK_V1.md`](./PURIVA_OPERATING_PACK_V1.md)
+
+Puriva-specific code in `apps/api` / `packages/shared` is acceptable as **first Client Operating Pack proof** until a generic pack registry exists.

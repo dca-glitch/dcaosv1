@@ -2,7 +2,7 @@
 
 **Status:** Local operator gate addition for monthly report metrics API smoke.
 
-**Scope:** Adds `smoke:monthly-report:metrics` to the local pre-staging orchestrator after the PDF gate.
+**Scope:** Adds `smoke:monthly-report:metrics` to the local pre-staging orchestrator after the PDF gate. Admin snapshot import/approve only — **`computedTrendSummary.dataStatus = PARTIAL`** reflects snapshot-first local foundation, not live GA/GSC sync. No OAuth, no Google API calls.
 
 Related:
 

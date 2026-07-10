@@ -14,9 +14,13 @@ Related:
 
 ## Canonical monthly report flow
 
-Admin date range → GA/GSC pull → report generation → admin review/approval → client notification → Client Portal. Full steps and rules: [`docs/architecture/PURIVA_OPERATING_PACK_V1.md`](../architecture/PURIVA_OPERATING_PACK_V1.md) — **Puriva Monthly Report Flow v1**.
+**Target product flow** (Puriva Operating Pack — live analytics is a future gate, not current local proof):
 
-This gate proves **local deterministic scaffolding** only (placeholder metrics; no live GA/GSC).
+Admin date range → GA/GSC pull *(live — deferred)* → report generation → admin review/approval → client notification → Client Portal.
+
+Full steps and rules: [`docs/architecture/PURIVA_OPERATING_PACK_V1.md`](../architecture/PURIVA_OPERATING_PACK_V1.md) — **Puriva Monthly Report Flow v1**.
+
+**This gate proves local deterministic scaffolding only** — placeholder MANUAL metrics (`placeholderOnly: true`); no live GA/GSC OAuth or sync. See [`MONTHLY_REPORT_LIVE_DATA_PROOF.md`](./MONTHLY_REPORT_LIVE_DATA_PROOF.md) §3.2 vs §3.1 for the upgrade path.
 
 ## What it proves
 

@@ -1,6 +1,6 @@
 # Monthly Report Live Data Proof
 
-**Status:** Snapshot-first metrics and FINAL-only client visibility proven locally; live GA/GSC OAuth sync remains deferred until this gate passes on target environment. **2026-07-09 docs-only refresh:** added explicit OAuth/token readiness ceiling (§3.1a — no consent route, token storage, or refresh logic exists yet), totals reconciliation checks (§3.4), and dedicated STOP criteria (§8a). No code changed, no live call made.
+**Status:** Snapshot-first metrics and FINAL-only client visibility proven locally; live GA/GSC OAuth sync remains deferred until §3.1a token/OAuth gaps close and this gate passes on target environment. **2026-07-10 G78 audit:** confirmed owned docs distinguish MANUAL/placeholder local baseline vs future live GA/GSC for Puriva launch — no overclaim on OAuth/live sync.
 
 **Gate:** Puriva Launch blocker — GA/GSC live proof + monthly report FINAL client path (see [`docs/operator/deferred-scope-register.md`](../operator/deferred-scope-register.md) and [`docs/architecture/PURIVA_OPERATING_PACK_V1.md`](../architecture/PURIVA_OPERATING_PACK_V1.md) — Monthly Report Flow v1).
 

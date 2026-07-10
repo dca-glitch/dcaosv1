@@ -1,6 +1,6 @@
 # DCA OS Lite — Status (Source of Truth)
 
-**Last updated:** 2026-07-10 (G77b — persistent COMPLETED ledger live proof docs closeout)
+**Last updated:** 2026-07-10 (G78 — multi-scope docs alignment after G77b local live proof closeout)
 **G55 pre-live readiness:** [`docs/runbooks/G55_PRELIVE_READINESS.md`](./runbooks/G55_PRELIVE_READINESS.md)
 **G56 pre-live readiness:** [`docs/runbooks/G56_PRELIVE_READINESS.md`](./runbooks/G56_PRELIVE_READINESS.md)
 **G57–G68 pre-live readiness:** [`docs/runbooks/G57_G68_PRELIVE_READINESS.md`](./runbooks/G57_G68_PRELIVE_READINESS.md)
@@ -16,6 +16,8 @@
 **Live proof runbooks:** [`AI_PROVIDER_LIVE_PROOF.md`](./runbooks/AI_PROVIDER_LIVE_PROOF.md) · [`WORDPRESS_DRAFT_PROOF.md`](./runbooks/WORDPRESS_DRAFT_PROOF.md) · [`MONTHLY_REPORT_LIVE_DATA_PROOF.md`](./runbooks/MONTHLY_REPORT_LIVE_DATA_PROOF.md)
 **Env inventory (names only):** [`docs/operator/ENV_READINESS_INVENTORY.md`](./operator/ENV_READINESS_INVENTORY.md)
 **Deferred scope:** [`docs/operator/deferred-scope-register.md`](./operator/deferred-scope-register.md)
+**G78 notifications blocker plan:** [`docs/operator/notifications-blocker-plan.md`](./operator/notifications-blocker-plan.md)
+**Client Operating Pack model:** [`docs/architecture/CLIENT_OPERATING_PACKS.md`](./architecture/CLIENT_OPERATING_PACKS.md)
 **Production deployment/rollback/checklist (reference):** [`docs/runbooks/PRODUCTION_DEPLOYMENT.md`](./runbooks/PRODUCTION_DEPLOYMENT.md) · [`docs/runbooks/PRODUCTION_ROLLBACK.md`](./runbooks/PRODUCTION_ROLLBACK.md) · [`docs/runbooks/PRODUCTION_SAFETY_CHECKLIST.md`](./runbooks/PRODUCTION_SAFETY_CHECKLIST.md)
 **Puriva Launch Gate (15-area evaluation):** [`docs/runbooks/PURIVA_LAUNCH_GATE.md`](./runbooks/PURIVA_LAUNCH_GATE.md)
 **Image generation proof plan:** [`docs/runbooks/IMAGE_GENERATION_PROOF.md`](./runbooks/IMAGE_GENERATION_PROOF.md)
@@ -33,21 +35,22 @@
 | Latest baseline | G57–G68 pre-live completion on `main` — persistent budget ledger, workflow dry-run, notification contracts, admin operator wiring, integration boundaries |
 | **G69 merge** | **DONE** — G57–G68 fast-forward merged to `main`; final commit `64bfd06` |
 | Production readiness | **NO** |
-| Next gate | **G77c** guarded commit/push of this docs closeout (separate owner approval); then monthly cap aggregation for live rows / `actualCostUsd` / additional model matrix as separate gates |
+| Next gate | **G78** docs truth-label alignment (this block); **G79** monthly cap aggregation for live COMPLETED rows; **G80** `actualCostUsd` when gateway exposes cost; **G81** staging live proof planning (not execution) — each separate owner gate |
 | G72 model routing | **Implemented** — backend policy per task type; approved model `anthropic/claude-haiku-4.5`; no live call in G72 |
 | G73 routing attribution | **Local PASS** — dry-run/preview `modelRouting` + `plannedLedgerMetadata`; budget guard route cap wired; persistent preview ledger records routing metadata |
 | G74 completed ledger attribution | **Implemented (no-live)** — `buildCompletedLedgerMetadata`, `prepareCompletedLedgerAttribution`, `recordCompletedAiLedgerEntry`; mocked provider execution in unit tests |
 | G75 live spend attribution proof | **PARTIAL (local only)** — live OpenRouter smoke PASS; completed attribution verifier PASS (G75c); generated metadata only at G75 time — wiring gap since closed in G76 |
 | G76 persistent completed ledger wiring | **Implemented (mocked/no-live)** — AI Delivery execute success path persists COMPLETED row; live DB row since proven in G77b |
 | G77 persistent COMPLETED ledger live proof | **COMPLETE (local only)** — G77b live smoke + ledger verifier PASS; row `5d8d635c-ced0-4a14-9b33-839e1fdee508` for run `2244413e-d87b-45a1-8a26-6634ec8972d5` |
-| G77b closeout | **Docs only** — local controlled live proof recorded; production remains frozen; staging/production live not claimed |
+| G77b closeout | **COMPLETE (local only)** — local controlled live proof recorded; production remains frozen; staging/production live not claimed |
+| G78 multi-scope docs | **Docs only — complete (uncommitted)** — runbook truth labels, deferred-scope buckets, notifications plan, integration/monthly-report/WordPress tier labels, pack implementation status |
 | G76c review | **KEEP** — PowerShell review-only; no code changes |
 | G76d closeout | **Docs only** — wiring + limitations recorded; production remains frozen |
 | G75c verifier fix | **TEMP only** — verifier/tooling fix (`node --import tsx` + cross-client live evidence scan); repo source unchanged; no new live call |
 | G75d closeout | **Docs only** — local proof + limitation recorded; production remains frozen |
 | G55 pre-live | **Local PASS** — docs + disabled-safe orchestration foundation; no live providers/deploy |
 | G56 pre-live | **Local PASS** — expanded pre-live groundwork; admin orchestrator UI; orchestrator smoke; no live providers/deploy |
-| G57–G68 pre-live | **On main** (`64bfd06`) — persistent ledger, dry-run adapter, operator visibility, go/no-go docs; live proofs **BLOCKED** |
+| G57–G68 pre-live | **On main** (`64bfd06`) — persistent ledger, dry-run adapter, operator visibility, go/no-go docs; **local live AI + COMPLETED ledger row proven (G77b)**; staging/production live proofs **BLOCKED** |
 | G70 closeout | **Docs only** — post-G69 STATUS/deferred/live-proof checklist; no live execution |
 | G71b live proof retry | **Procedural STOP** — one safe live OpenRouter call captured; baseline smoke failed because API was already on `openrouter` live; see [`AI_PROVIDER_LIVE_PROOF.md`](./runbooks/AI_PROVIDER_LIVE_PROOF.md) §9.13 |
 | G71c closeout | **Docs only** — partial live proof recorded; local gateway restored; production remains frozen |
@@ -96,9 +99,21 @@ Detail: [`AI_MODEL_ROUTING_POLICY.md`](./runbooks/AI_MODEL_ROUTING_POLICY.md) ·
 | Production readiness | **NO** — production remains frozen; staging/production live proof **not** claimed |
 | What G77b proves | Local controlled live OpenRouter execute creates persistent COMPLETED ledger row with completedAttribution metadata |
 | What G77b does **not** prove | Staging/production live; monthly cap aggregation for live rows; exact provider invoice cost via `actualCostUsd` |
-| Next gate | **G77c** guarded commit/push of this docs closeout (separate owner approval) |
+| Next gate | **G78** docs alignment closeout (separate owner approval for commit/push); then **G79** / **G80** / **G81** as separate gates |
 
 Detail: [`AI_MODEL_ROUTING_POLICY.md`](./runbooks/AI_MODEL_ROUTING_POLICY.md) · [`AI_PROVIDER_LIVE_PROOF.md`](./runbooks/AI_PROVIDER_LIVE_PROOF.md) §9.18 · [`deferred-scope-register.md`](./operator/deferred-scope-register.md).
+
+## G78 multi-scope docs alignment (2026-07-10)
+
+| Item | State |
+|------|--------|
+| Gate | G78 — post-G77b clarity, readiness labels, and future-scope consolidation (docs only) |
+| Scope | AI provider/ledger follow-up runbooks; deferred-scope buckets; notifications blocker plan; integration truth matrix; monthly report / WordPress tier labels; Client Operating Pack implementation status |
+| Live AI / OpenRouter | **Not executed in G78** — G77b evidence preserved |
+| Production / staging / deploy | **Not touched** — production remains frozen |
+| Next gates | **G79** monthly cap aggregation (impl + local proof); **G80** `actualCostUsd` policy (impl + local proof); **G81** staging live proof planning only |
+
+Detail: [`deferred-scope-register.md`](./operator/deferred-scope-register.md) (future scope buckets) · [`notifications-blocker-plan.md`](./operator/notifications-blocker-plan.md) · [`CLIENT_OPERATING_PACKS.md`](./architecture/CLIENT_OPERATING_PACKS.md) §14 · [`INTEGRATIONS_TRUTH_MATRIX.md`](./runbooks/INTEGRATIONS_TRUTH_MATRIX.md).
 
 ## G76 persistent completed ledger wiring closeout (2026-07-10)
 
@@ -471,13 +486,13 @@ Percentages are **local MVP readiness**, not production-proven. See [`docs/STATU
 | **Deliverable handling** | **100% local/operator-client-safe** | Admin/operator deliverables support upload/download-reference/open, ready/revision/accept/archive/restore, reviews, WordPress draft prep, Google Docs export handoff, monthly report document handoff, generated PDF storage, and client FINAL-only visibility with safe `downloadReference`/`exportUrl` shapes | Live R2 real-bucket proof, live Google export/OAuth, live WordPress publish, staging/env proof, and production readiness remain deferred |
 | **WordPress draft-prep handoff** | **100% local/operator-ready** | Draft preparation and operator handoff are complete for the approved local/admin workflow | Live publish, client-triggered publish, staging/environment proof, production readiness |
 | **WordPress disabled-safe publish gate** | **100% local-safe** | Publish gate metadata and disabled-safe smokes prove local default safety when publish is not enabled | Live publish, client-triggered publish, staging/environment proof, production readiness |
-| **Puriva Operating Pack v1** | **100% local/admin-operational pack** — **Puriva Client-Service Launch: BLOCKED** | Local/admin-operational closeout complete (workflow/docs maturity only; not launch readiness) | Puriva Launch blocked until live proof gates and product workflow gates are clean; live provider, live WordPress publish, GA/GSC, R2 live IO, transactional notifications, production deploy, and incident/rollback execution remain deferred |
+| **Puriva Operating Pack v1** | **100% local/admin-operational pack** — **Puriva Client-Service Launch: BLOCKED** | Local/admin-operational closeout complete (workflow/docs maturity only; not launch readiness); first Client Operating Pack instance per [`CLIENT_OPERATING_PACKS.md`](./architecture/CLIENT_OPERATING_PACKS.md) §14 | Puriva Launch blocked until staging/production live proof gates and product workflow gates are clean; local live AI text + COMPLETED ledger row proven (G77b); staging/production re-proof still required; GA/GSC, R2, image gen, in-system + email notifications, production deploy remain deferred |
 | **Admin cockpit / daily operations** | **100% local/admin-operational** | Ready now / Needs review / Blocked-waiting queues, discoverable first-client path, complete handoffs into WorkflowBriefs, AI Delivery, Monthly Reports preview, Client Portal archive preview, Market Intelligence, and Finance Lite, explicit deferred/gated labeling | Environment proof, deployment, and live execution remain gated |
 | **External integrations readiness** | Block 1 closed | Config-shape checks only | Live provider, WP, R2 IO, GA/GSC sync |
 | **Admin operations / recovery** | Block 2 closed | Dashboard panel, operations summary API, recovery hints | Durable closeout store (manual run only) |
 | **Finance Lite admin foundation** | **100% local/admin-safe foundation** | Admin finance records are smoke-proven for vendors/services/bills/invoices/credit notes/recurring/ledger boundaries where implemented; finance admin browser and ledger smokes passed for local operator use | Real payment collection, Stripe/payment provider proof, bank feeds, tax/legal/accounting production claims, production invoicing readiness |
 | **Audit/activity feed foundation** | **100% local/operator-safe foundation** | `AuditLog`/event feed/dashboard recent activity/operator visibility are smoke-proven locally through audit activity and dashboard audit feed browser gates | SIEM/security audit, compliance-grade audit log, production monitoring, durable incident observability stack |
-| **Email/outbox disabled-safe foundation** | **100% local-safe foundation** | Read-only tenant-scoped outbox/local notification records are smoke-proven; local provider remains non-sending and reports `SKIPPED` without provider delivery | Real sending, SMTP/provider proof, background queues, deliverability, production notification readiness |
+| **Email/outbox disabled-safe foundation** | **100% local-safe foundation** | Read-only tenant-scoped outbox/local notification records are smoke-proven; local provider remains non-sending and reports `SKIPPED` without provider delivery; real-path wiring exists for Puriva taxonomy (2026-07-09) | **In-system user notification inbox not started**; live Resend transactional proof not done; background queues, deliverability, production notification readiness remain blocked — see [`notifications-blocker-plan.md`](./operator/notifications-blocker-plan.md) |
 | **UI / UX polish (Dark Nebula / dense admin)** | **100% local/admin-readable baseline** | Compact Dark Nebula admin/client readability and density baseline is closed for current local surfaces; follow-on operator polish blocks UX-P1–P12 queued in [`ADMIN_WORKFLOW_POLISH_AUDIT.md`](./ux/ADMIN_WORKFLOW_POLISH_AUDIT.md) | Full design-system migration, full redesign, staging/environment proof, production readiness |
 
 ---
@@ -591,8 +606,8 @@ Full pack: [`docs/runbooks/STAGING_READINESS.md`](./runbooks/STAGING_READINESS.m
 |------|--------|
 | Staging deploy proof | **Phase C refresh COMPLETE** — G35 Phase C controlled refresh on `5e1ea5a` PASS; staging artifact, API, web, and MVP smoke verified; production untouched (see §2.2, §2.8); G43 local re-check PASS does not change deferred status; further staging refresh/execution requires fresh explicit owner approval |
 | Production deploy proof | Deferred — frozen; G48/G53 planning PASS recorded; production deploy ready **NO**; G49/G50 **not executed**; G54 HSTS/proxy fixed; next production path remains G49 dry-run before G50 |
-| Puriva Launch | **Blocked** — live proof gates (R2, GA/GSC, live AI, image gen, transactional notifications) and product workflow gates required; see deferred-scope register |
-| Live AI provider / OpenRouter execution | **COMPLETE (local only)** — formal clean proof G71e + G71e-retry; staging/production live proof still pending |
+| Puriva Launch | **Blocked** — staging/production live proof gates (R2, GA/GSC, live AI re-proof, image gen, in-system + email notifications) and product workflow gates required; local live AI + COMPLETED ledger row proven (G77b) does not close launch; see deferred-scope register |
+| Live AI provider / OpenRouter execution | **COMPLETE (local only)** — formal clean proof G71e + G71e-retry; G77b persistent COMPLETED ledger row; `actualCostUsd=null` (not invoice cost); monthly cap aggregation for live rows deferred (G79); staging/production live proof still pending |
 | Live WordPress publish | Deferred — draft prep only |
 | Live R2 real-bucket proof | Deferred — explicit env approval required; no bucket IO in local closeout; no staging/prod storage readiness claim |
 | GA/GSC live sync | Deferred — snapshot-first metrics |
@@ -763,7 +778,7 @@ Email/outbox disabled-safe foundation is recorded as **100% local-safe foundatio
 | Production readiness | Unchanged — **NO** |
 | RBAC/tenant boundary audit | No BLOCKER found; 1 HIGH (convention-based client-boundary enforcement — see full findings) |
 | Storage/R2 | Disabled-safe local proven; live real-bucket proof still required before Puriva Launch |
-| Integrations truth matrix | No integration falsely claims live-proven status; all live proofs remain owner-gated |
+| Integrations truth matrix | OpenRouter local live proof recorded (G77b); no staging/production live-proven status; all environment live proofs remain owner-gated |
 | Puriva Launch verdict | **BLOCKED** — 8 of 15 evaluated areas fully blocked; see `PURIVA_LAUNCH_GATE.md` |
 | New docs created | `PRODUCTION_DEPLOYMENT.md`, `PRODUCTION_ROLLBACK.md`, `PRODUCTION_SAFETY_CHECKLIST.md`, `PURIVA_LAUNCH_GATE.md`, `STORAGE_R2_PROOF.md`, `INTEGRATIONS_TRUTH_MATRIX.md` |
 | Docs updated | `G49_PRODUCTION_DRY_RUN_READ_ONLY_PROOF.md`, `STAGING_READINESS.md` (§12 smoke/gate matrix), `STATUS.md` (this section) |
@@ -823,10 +838,10 @@ Full detail recorded in [`G49_PRODUCTION_DRY_RUN_READ_ONLY_PROOF.md`](./runbooks
 | Admin shell | PASS | — | Frozen |
 | Client Portal | PASS (final-only) | Proven | Blocked (live proof) |
 | WorkflowBriefs | PASS | — | Frozen |
-| AI Delivery | PASS (review-ready rules) | — | Blocked (live proof) |
+| AI Delivery | PASS (review-ready rules) | — | Local live proof complete (G77b); staging/prod blocked |
 | AI Orchestrator Lite | PASS (G56 hardened) | Not proven | Disabled-safe |
 | Provider Registry | PASS (disabled-safe) | Not proven | Disabled |
-| Budget Guard | PASS (stub estimates) | Not proven | DB ledger deferred |
+| Budget Guard | PASS (stub estimates) | Not proven | Local COMPLETED ledger row proven (G77b); monthly cap aggregation + staging/prod deferred |
 | Material Routing Preview | PASS (API + UI) | Not proven | Preview only |
 | Compliance Review Agent | PASS (fixtures) | Not proven | Live model deferred |
 | Image foundation | PASS (disabled-safe) | Not proven | Live proof deferred |

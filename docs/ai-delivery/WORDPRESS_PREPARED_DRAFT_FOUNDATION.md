@@ -1,6 +1,14 @@
 # WordPress Prepared Draft Foundation
 
-**Status:** WordPress prepared draft API, UI, and smoke coverage foundation is complete; live publish remains deferred.
+**Status:** WordPress prepared draft API, UI, and smoke coverage foundation is complete locally. **Live draft proof** (real WordPress HTTP) and **publish** remain deferred and frozen by default.
+
+**Three tiers (do not conflate):**
+
+| Tier | Scope | State |
+|------|-------|-------|
+| **Draft preparation** | Local JSON via `prepare-wordpress-draft`; no HTTP, no credentials | Local-proven — Puriva Launch in scope |
+| **Live draft proof** | Staging-only HTTP draft create per `WORDPRESS_DRAFT_PROOF.md` §6 | Plan-only — not executed |
+| **Publish** | `publish-wordpress` with `WORDPRESS_PUBLISH_ENABLED=true` | Frozen — auto-publish out of Puriva Launch v1 |
 
 **Branch:** `feature/ai-delivery-project-brief-foundation`
 
@@ -110,15 +118,16 @@ SEO plan -> AI Delivery content draft -> image/asset package -> compliance revie
 
 | Feature | Why Deferred | Future Block |
 |---|---|---|
-| **Real WordPress API Integration** | Requires WordPress.com/self-hosted credentials and external HTTP calls. Security/credential handling must be designed first. | WordPress integration (future block) |
-| **WordPress Credential Storage** | Needs secure secret management (vault, encrypted env, key rotation). Requires auth/RBAC design for credential scoping. | Credential storage design (separate block) |
-| **Actual Publication to WordPress** | Requires verified WordPress API contract, error handling, retry logic, and rollback strategy. | WordPress publish workflow (future block) |
+| **Live WordPress draft proof (HTTP)** | Requires owner-approved staging session; schema gaps documented in `WORDPRESS_DRAFT_PROOF.md` §6.3–§6.5 | Live draft proof block |
+| **Actual Publication to WordPress** | Requires verified live draft proof first; publish gate frozen (`WORDPRESS_PUBLISH_ENABLED` default off) | WordPress publish proof (future block) |
 | **WordPress Provider Error Handling** | Rate limits, network errors, authentication failures, partial publish recovery. | Provider resilience (future block) |
 | **Automatic Image Upload to WordPress** | Requires image hosting strategy (WordPress media library, CDN, or R2 reference). | Image hosting integration (future block) |
 | **WordPress Category/Tag Sync** | Requires WordPress taxonomy mapping and two-way sync logic. | Taxonomy management (future block) |
 | **WordPress Plugin Discovery** | Auto-detection of required WordPress plugins or theme compatibility. | Plugin compatibility check (future block) |
 | **Publish Scheduling** | WordPress future/scheduled publish dates. | Scheduled publish (future block) |
 | **WordPress Revisions & Rollback** | Handling WordPress post revisions and client-side rollback. | Revision management (future block) |
+
+**Note:** Encrypted Application Password storage on `PublicationTargetCredential` is implemented (Block 4 — see `CREDENTIAL_ENCRYPTION_FOUNDATION.md`). Credential save does **not** authorize live HTTP or publish; those remain separate owner gates.
 
 ---
 

@@ -39,7 +39,7 @@
 
 ### 1.5 WordPress handoff
 
-1. Approved images attach to WordPress draft (not publish).
+1. Approved images attach to WordPress **draft** (not publish) — tier 1 local prep only today; live HTTP attach is tier 2 (plan-only).
 2. Include alt text, caption/meta, social preview attachment.
 3. Provider original URLs never exposed to client if unsafe.
 
