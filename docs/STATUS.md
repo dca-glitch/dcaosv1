@@ -1,6 +1,6 @@
 # DCA OS Lite — Status (Source of Truth)
 
-**Last updated:** 2026-07-10 (G75d — live spend attribution proof docs closeout)
+**Last updated:** 2026-07-10 (G76d — persistent completed ledger wiring docs closeout)
 **G55 pre-live readiness:** [`docs/runbooks/G55_PRELIVE_READINESS.md`](./runbooks/G55_PRELIVE_READINESS.md)
 **G56 pre-live readiness:** [`docs/runbooks/G56_PRELIVE_READINESS.md`](./runbooks/G56_PRELIVE_READINESS.md)
 **G57–G68 pre-live readiness:** [`docs/runbooks/G57_G68_PRELIVE_READINESS.md`](./runbooks/G57_G68_PRELIVE_READINESS.md)
@@ -33,11 +33,14 @@
 | Latest baseline | G57–G68 pre-live completion on `main` — persistent budget ledger, workflow dry-run, notification contracts, admin operator wiring, integration boundaries |
 | **G69 merge** | **DONE** — G57–G68 fast-forward merged to `main`; final commit `64bfd06` |
 | Production readiness | **NO** |
-| Next gate | **G76** — persistent live completed ledger row wiring, or additional model approval matrix |
+| Next gate | **G77** — controlled live proof of persistent COMPLETED ledger row in DB, or additional model approval matrix |
 | G72 model routing | **Implemented** — backend policy per task type; approved model `anthropic/claude-haiku-4.5`; no live call in G72 |
 | G73 routing attribution | **Local PASS** — dry-run/preview `modelRouting` + `plannedLedgerMetadata`; budget guard route cap wired; persistent preview ledger records routing metadata |
-| G74 completed ledger attribution | **Implemented (no-live)** — `buildCompletedLedgerMetadata`, `prepareCompletedLedgerAttribution`, `recordCompletedAiLedgerEntry`; mocked provider execution in unit tests only |
-| G75 live spend attribution proof | **PARTIAL (local only)** — Phase 1 baseline PASS; v2 Phase 2 live OpenRouter smoke PASS (`6e538323-8e68-4d41-a4c5-9e30ca0cf8a1`); Phase 3 restore PASS; completed attribution verifier PASS (G75c); **persistent COMPLETED row deferred** — smoke path does not auto-persist |
+| G74 completed ledger attribution | **Implemented (no-live)** — `buildCompletedLedgerMetadata`, `prepareCompletedLedgerAttribution`, `recordCompletedAiLedgerEntry`; mocked provider execution in unit tests |
+| G75 live spend attribution proof | **PARTIAL (local only)** — live OpenRouter smoke PASS; completed attribution verifier PASS (G75c); generated metadata only at G75 time — wiring gap since closed in G76 |
+| G76 persistent completed ledger wiring | **Implemented (mocked/no-live)** — AI Delivery execute success path persists COMPLETED row via `ai-delivery-workflow-ledger-attribution.service.ts`; OpenRouter success only; `stepReference=ai-delivery-execute:{outputType}`; upsert idempotency; 252/252 unit tests PASS; **live DB row not yet proven** — deferred G77 |
+| G76c review | **KEEP** — PowerShell review-only; no code changes |
+| G76d closeout | **Docs only** — wiring + limitations recorded; production remains frozen |
 | G75c verifier fix | **TEMP only** — verifier/tooling fix (`node --import tsx` + cross-client live evidence scan); repo source unchanged; no new live call |
 | G75d closeout | **Docs only** — local proof + limitation recorded; production remains frozen |
 | G55 pre-live | **Local PASS** — docs + disabled-safe orchestration foundation; no live providers/deploy |
@@ -56,6 +59,26 @@
 | Roadmap tracks | Production Safety · Live Integration Proof · Client Operating Pack/Productization |
 
 Detail: [`AI_MODEL_ROUTING_POLICY.md`](./runbooks/AI_MODEL_ROUTING_POLICY.md) · [`G53_PRODUCTION_SAFETY_PLAN.md`](./runbooks/G53_PRODUCTION_SAFETY_PLAN.md) · [`deferred-scope-register.md`](./operator/deferred-scope-register.md) · §2.13 below.
+
+## G76 persistent completed ledger wiring closeout (2026-07-10)
+
+| Item | State |
+|------|--------|
+| Gate | G76b + G76c + G76d — persistent COMPLETED `AiBudgetLedgerEntry` wiring (mocked/no-live proof) |
+| Implementation | `ai-delivery-workflow-ledger-attribution.service.ts` bridge + `executeAiDeliveryWorkflowRun()` hook in `core.runtime.ts` |
+| Persistence path | Successful OpenRouter AI Delivery workflow execute → `recordCompletedAiLedgerEntry()` via existing G74 helpers |
+| Scope | OpenRouter success path only (`gateway=openrouter`, no `safeError`); local deterministic skipped safely |
+| `stepReference` | `ai-delivery-execute:summary` / `content_plan_draft` / `article_draft` |
+| Idempotency | Existing upsert on `(tenantId, workflowRunId, stepReference)` |
+| Failure handling | Ledger persistence failure does not roll back successful workflow execution; audit-safe executionLog note appended |
+| Schema | **No change** — existing `AiBudgetLedgerEntry` sufficient |
+| Validation | `test:unit` 252/252 PASS; `validate` PASS; `git diff --check` PASS |
+| Live proof | **NOT DONE** — G77 deferred; no claim that a real OpenRouter execute has yet created a persistent COMPLETED DB row post-G76 |
+| G75 context | G75 proved generated completed attribution from observability; G76 closes the auto-persist gap for future executes |
+| Production readiness | **NO** — production remains frozen; staging/production live proof not claimed |
+| Next gate | **G77** controlled live proof of persistent COMPLETED row; then guarded commit/push of G75+G76 stack |
+
+Detail: [`AI_MODEL_ROUTING_POLICY.md`](./runbooks/AI_MODEL_ROUTING_POLICY.md) · [`AI_PROVIDER_LIVE_PROOF.md`](./runbooks/AI_PROVIDER_LIVE_PROOF.md) §9.17 · [`deferred-scope-register.md`](./operator/deferred-scope-register.md).
 
 ## G75 live spend attribution proof closeout (2026-07-10)
 

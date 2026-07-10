@@ -165,14 +165,20 @@ Current behavior:
 
 **G74 (completed ledger attribution readiness, no-live):** `prepareCompletedLedgerAttribution`, `buildCompletedLedgerMetadata`, and `recordCompletedAiLedgerEntry` implement COMPLETED/BLOCKED/SKIPPED attribution with mocked provider results in unit tests. Persistent completed rows can be recorded when execution path is wired.
 
-**G75 (live spend attribution proof — PARTIAL, local only):** Phase 1 baseline PASS; v2 Phase 2 live OpenRouter smoke PASS (`6e538323-8e68-4d41-a4c5-9e30ca0cf8a1`); Phase 3 restore PASS; G75c completed attribution verifier PASS using G74 helper against live observability. **Persistent COMPLETED ledger row NOT auto-written** by current smoke path — generated-only at verify time. **Deferred to G76.** Staging/production live spend proof remains **BLOCKED**.
+**G75 (live spend attribution proof — PARTIAL, local only):** Phase 1 baseline PASS; v2 Phase 2 live OpenRouter smoke PASS (`6e538323-8e68-4d41-a4c5-9e30ca0cf8a1`); Phase 3 restore PASS; G75c completed attribution verifier PASS using G74 helper against live observability. At G75 time persistent COMPLETED row was not auto-written — generated-only at verify time. **G76 closes the wiring gap** (mocked/no-live); **G77** deferred for live DB proof.
+
+**G76 (persistent completed ledger wiring — mocked/no-live):** AI Delivery workflow execute success path wired to `recordCompletedAiLedgerEntry()` via `ai-delivery-workflow-ledger-attribution.service.ts`. OpenRouter success only; local deterministic skipped; stable `stepReference=ai-delivery-execute:{outputType}`; upsert idempotency; ledger failure non-blocking. Unit tests 252/252 PASS. **Live persistent COMPLETED row in DB not yet proven** — deferred G77. Staging/production remain **BLOCKED**.
 
 Deferred:
 
 - live provider staging proof per role (first proof: controlled session per `AI_PROVIDER_LIVE_PROOF.md` §9);
 - image generation live proof;
 - vision QA live proof;
-- persistent COMPLETED ledger row after live execution (G75 local proof complete; smoke path does not auto-persist — G76);
+- G77 live persistent COMPLETED row proof after OpenRouter execute (G76 wiring complete; live DB row not yet proven);
+- monthly cap aggregation review for `liveProviderCalled=true` COMPLETED rows (`sumSpentUsdForPeriod` still excludes live rows);
+- `actualCostUsd` population when gateway exposes exact provider cost;
+- `operatingPackKey` resolution beyond conservative `puriva` default in AI Delivery bridge;
+- local deterministic SKIPPED/BLOCKED ledger persistence (separate future gate);
 - admin editable provider settings UI (read-only panel on main);
 - autonomous AI agents;
 - background high-cost AI runs;
@@ -294,7 +300,7 @@ These items are deferred but **must not block** local staging readiness planning
 | Production deploy proof | Deferred | Frozen; G48/G53 planning PASS; production deploy ready NO; G49/G50 not executed |
 | Strict R2 real bucket proof | Deferred | Optional local env + smoke flag |
 | GA / GSC live sync | Deferred | Snapshot-first metrics; manual/Puriva placeholder proven |
-| Live provider proof | **COMPLETE (local only)** | Formal clean G71e + G71e-retry; G75 live spend attribution proof PARTIAL (verifier PASS; persistent COMPLETED row deferred G76); staging/production still pending |
+| Live provider proof | **COMPLETE (local only)** | Formal clean G71e + G71e-retry; G75 live spend attribution PARTIAL; G76 COMPLETED ledger wiring mocked/no-live PASS; G77 live DB row proof deferred; staging/production still pending |
 | WorkflowBriefs knowledge picker/override (6C-v2) | Deferred | 6C-v1 admin read-only visibility shipped |
 | `AiContextSnapshot` per-brief audit (6D) | Deferred | No `briefId` FK; safety via `smoke:ai-knowledge-context` |
 | `ClientMonthlyBrief` deprecation | Deferred | Legacy intake at `#/client-portal/briefs`; separate removal block |
@@ -330,7 +336,7 @@ Keep the MVP admin-controlled and local-first until the first client delivery pa
 | Gate | Outcome |
 |------|---------|
 | G57 docs closeout | DONE — `G57_G68_PRELIVE_READINESS.md`, STATUS, this register |
-| G58 persistent AI budget ledger | DONE locally — `AiBudgetLedgerEntry`; preview records routing metadata; G74 completed attribution helpers ready; G75 local live spend proof PARTIAL (verifier PASS; persistent COMPLETED row deferred G76) |
+| G58 persistent AI budget ledger | DONE locally — `AiBudgetLedgerEntry`; preview records routing metadata; G74 helpers; G76 execute-path COMPLETED wiring (mocked/no-live); G77 live DB proof deferred |
 | G59 workflow adapter dry-run | DONE — contract placeholders; no live execution |
 | G60 admin operator wiring | DONE — kill switch, ledger, events, boundaries in admin panel |
 | G61 notification contracts | DONE — extended types; no-send internal recorder; live email deferred |

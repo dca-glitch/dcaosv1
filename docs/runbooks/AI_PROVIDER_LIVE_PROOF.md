@@ -544,7 +544,7 @@ Evidence logs:
 
 ### 9.16 G75 — live spend attribution cross-reference (2026-07-10)
 
-**Status:** **PARTIAL (local only)** — live OpenRouter smoke PASS; completed attribution verifier PASS (G75c); persistent COMPLETED ledger row **not** auto-written by smoke path.
+**Status:** **PARTIAL (local only)** — live OpenRouter smoke PASS; completed attribution verifier PASS (G75c); at G75 time persistent COMPLETED row was generated-only (wiring closed in G76).
 
 | Item | Result |
 |------|--------|
@@ -552,6 +552,22 @@ Evidence logs:
 | Provider / model | OpenRouter — `anthropic/claude-haiku-4.5` |
 | `liveProviderCalled` | `true` |
 | Completed attribution | Generated via G74 helper against live observability — verifier PASS |
-| Persistent COMPLETED row | **Deferred G76** — smoke path does not auto-persist |
+| Persistent COMPLETED row at G75 | **Not auto-written** — G76 wiring added subsequently |
 
 Detail: [`AI_MODEL_ROUTING_POLICY.md`](./AI_MODEL_ROUTING_POLICY.md) (G75 section) · [`STATUS.md`](../STATUS.md) (G75 closeout).
+
+### 9.17 G76 — persistent completed ledger wiring cross-reference (2026-07-10)
+
+**Status:** **WIRED (mocked/no-live proof only)** — execute path persists COMPLETED rows for OpenRouter success; **live DB row not yet proven**.
+
+| Item | Result |
+|------|--------|
+| Bridge | `ai-delivery-workflow-ledger-attribution.service.ts` |
+| Hook | `executeAiDeliveryWorkflowRun()` success path |
+| Persistence | `recordCompletedAiLedgerEntry()` via G74 helpers |
+| Scope | OpenRouter success only; local deterministic skipped |
+| `stepReference` | `ai-delivery-execute:{outputType}` |
+| Idempotency | Upsert on `(tenantId, workflowRunId, stepReference)` |
+| Live DB proof | **Deferred G77** — no claim of post-G76 live persistent row |
+
+Detail: [`AI_MODEL_ROUTING_POLICY.md`](./AI_MODEL_ROUTING_POLICY.md) (G76 section) · [`STATUS.md`](../STATUS.md) (G76 closeout).

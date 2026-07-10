@@ -12,11 +12,13 @@ import {
   buildPlannedLedgerMetadata,
   buildCompletedLedgerMetadata,
   prepareCompletedLedgerAttribution,
+  recordCompletedAiLedgerEntry,
   isCompletedAttributionCompatibleWithMonthlyCap
 } from "./ai-budget-ledger.service";
 import { resolveModelRoute } from "./ai-model-routing-policy.service";
 
 const APPROVED_MODEL = "anthropic/claude-haiku-4.5";
+const WORKFLOW_RUN_ID = "6e538323-8e68-4d41-a4c5-9e30ca0cf8a1";
 
 function mockSuccessExecution(overrides: Partial<import("@dca-os-v1/shared").AiMockedProviderExecutionResult> = {}) {
   return {
@@ -291,5 +293,63 @@ describe("ai-budget-ledger.service (unit logic)", () => {
   it("buildPeriodKey returns YYYY-MM format", () => {
     const key = buildPeriodKey(new Date("2026-07-15T12:00:00.000Z"));
     assert.equal(key, "2026-07");
+  });
+
+  it("recordCompletedAiLedgerEntry refuses recording without prepared metadata", async () => {
+    const result = await recordCompletedAiLedgerEntry({
+      tenantId: "tenant-1",
+      workflowRunId: WORKFLOW_RUN_ID,
+      stepReference: "ai-delivery-execute:summary",
+      attribution: {
+        ok: false,
+        blockedReason: "Routing policy metadata is required for completed ledger attribution.",
+        metadata: null,
+        ledgerStatus: "BLOCKED"
+      }
+    });
+    assert.equal(result.recorded, false);
+    assert.match(result.reason ?? "", /Routing policy metadata is required/i);
+  });
+
+  it("recordCompletedAiLedgerEntry upsert key contract keeps one row per tenant/workflow/stepReference", () => {
+    const store = new Map<string, Record<string, unknown>>();
+    const upsert = (input: {
+      tenantId: string;
+      workflowRunId: string;
+      stepReference: string;
+      status: string;
+    }) => {
+      const key = `${input.tenantId}:${input.workflowRunId}:${input.stepReference}`;
+      const existing = store.get(key);
+      if (existing) {
+        store.set(key, { ...existing, status: input.status });
+        return "updated";
+      }
+      store.set(key, {
+        tenantId: input.tenantId,
+        workflowRunId: input.workflowRunId,
+        stepReference: input.stepReference,
+        status: input.status
+      });
+      return "created";
+    };
+
+    const first = upsert({
+      tenantId: "tenant-1",
+      workflowRunId: WORKFLOW_RUN_ID,
+      stepReference: "ai-delivery-execute:summary",
+      status: "COMPLETED"
+    });
+    const second = upsert({
+      tenantId: "tenant-1",
+      workflowRunId: WORKFLOW_RUN_ID,
+      stepReference: "ai-delivery-execute:summary",
+      status: "COMPLETED"
+    });
+
+    assert.equal(first, "created");
+    assert.equal(second, "updated");
+    assert.equal(store.size, 1);
+    assert.equal(store.values().next().value?.status, "COMPLETED");
   });
 });

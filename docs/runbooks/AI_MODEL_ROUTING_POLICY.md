@@ -1,7 +1,7 @@
-# AI Model Routing Policy (G72 + G73 + G74 + G75)
+# AI Model Routing Policy (G72 + G73 + G74 + G75 + G76)
 
-**Status:** Implemented on `main` (G72 policy, G73 attribution proof, G74 completed ledger readiness, G75 local live spend attribution proof).
-**Live execution:** G72–G74 are no-live — dry-run/preview and mocked completed attribution only. **G75 (local only):** one controlled OpenRouter live smoke PASS; completed attribution verifier PASS; persistent COMPLETED row **not** auto-written by smoke path.
+**Status:** Implemented on `main` (G72 policy, G73 attribution proof, G74 completed ledger readiness, G75 local live spend attribution proof, G76 persistent completed ledger wiring).
+**Live execution:** G72–G74 are no-live — dry-run/preview and mocked completed attribution only. **G75 (local only):** one controlled OpenRouter live smoke PASS; completed attribution verifier PASS; at G75 time persistent row was generated-only. **G76 (mocked/no-live):** execute-path COMPLETED persistence wired; live DB row proof deferred G77.
 **Approved live text model (local proof):** `anthropic/claude-haiku-4.5` via OpenRouter.
 
 ## Principle
@@ -71,7 +71,7 @@ Do **not** use `openrouter/auto` for Puriva or medical/compliance content.
 |-------|--------|----------------------|-----------|
 | Preview (`modelRouting`) | G73 COMPLETE | `false` | Yes — preview endpoint |
 | Planned (`plannedLedgerMetadata`) | G73 COMPLETE | `false` | No — response only |
-| Completed (`completedLedgerMetadata`) | G74 READY; G75 local proof PASS (generated-only) | explicit per execution | Via `recordCompletedAiLedgerEntry()` when wired; **not** auto-persisted by current smoke path |
+| Completed (`completedLedgerMetadata`) | G74 READY; G75 generated-only proof; G76 wired (mocked/no-live) | explicit per execution | Via `recordCompletedAiLedgerEntry()` on AI Delivery OpenRouter execute success; upsert `ai-delivery-execute:{outputType}` |
 
 ### Completed attribution fields (G74)
 
@@ -91,9 +91,11 @@ Do **not** use `openrouter/auto` for Puriva or medical/compliance content.
 - If `safeError` is present, status is `BLOCKED` and `actualCostUsd` is not recorded.
 - Skipped local execution (`ok=false`, no `safeError`) records `SKIPPED` with `liveProviderCalled=false`.
 
-**G75 (local live spend attribution proof — PARTIAL):** After one controlled OpenRouter live smoke (`workflowRunId=6e538323-8e68-4d41-a4c5-9e30ca0cf8a1`), completed attribution metadata can be **generated** from live workflow observability via G74 `finalizeOrchestratorLiteLedgerAttribution` (verifier PASS in G75c). The current smoke/execution path does **not** automatically write a persistent COMPLETED ledger row — metadata is generated-only at verify time. Verifier requires `node --import tsx` when importing TypeScript source directly.
+**G75 (local live spend attribution proof — PARTIAL):** After one controlled OpenRouter live smoke (`workflowRunId=6e538323-8e68-4d41-a4c5-9e30ca0cf8a1`), completed attribution metadata could be **generated** from live workflow observability via G74 `finalizeOrchestratorLiteLedgerAttribution` (verifier PASS in G75c). At G75 time the execute path did not auto-persist a COMPLETED row.
 
-**Deferred (G76):** Wire live execution endpoint to persist COMPLETED ledger rows via `recordCompletedAiLedgerEntry()` after approved provider execution; staging/production live proof remains blocked.
+**G76 (persistent completed ledger wiring — mocked/no-live):** `ai-delivery-workflow-ledger-attribution.service.ts` bridges AI Delivery workflow results to G74 `recordCompletedAiLedgerEntry()` on successful OpenRouter execute. Local deterministic path skipped; ledger failure is non-blocking. Validated by 252/252 unit tests only. **Does not claim** a live OpenRouter execute has yet created a persistent COMPLETED DB row — deferred G77.
+
+**Deferred (G77+):** Controlled live proof that execute creates persistent COMPLETED row; monthly cap aggregation for `liveProviderCalled=true` rows; `actualCostUsd` when gateway exposes cost; `operatingPackKey` resolution; local SKIPPED/BLOCKED persistence optional gate; staging/production live proof remains blocked.
 
 ## Orchestrator task → routing task mapping
 
@@ -121,8 +123,9 @@ Unit tests: `ai-model-routing-policy.service.test.ts`, `ai-budget-guard.service.
 
 ## Next gate
 
-- **G76:** persistent live completed ledger row wiring after approved provider execution, or additional model approval matrix
-- **G75e:** commit/push G75d docs closeout (separate owner approval)
+- **G77:** controlled live proof that OpenRouter execute creates persistent COMPLETED `AiBudgetLedgerEntry` row in DB
+- **G76e / G75e:** guarded commit/push of G75+G76 docs+code stack (separate owner approval)
+- Additional model approval matrix (optional parallel track)
 
 ## Related docs
 

@@ -168,6 +168,10 @@ import {
   type AiDeliveryWorkflowExecutionSourceContext
 } from "./ai-delivery-workflow-execution.adapter";
 import type { AiWorkflowResultV1 } from "./ai-delivery-workflow-result.contract";
+import {
+  buildAiDeliveryWorkflowLedgerPersistenceLogLine,
+  persistAiDeliveryWorkflowCompletedLedger
+} from "./ai-delivery-workflow-ledger-attribution.service";
 import { buildAiWorkflowKnowledgeContext } from "./ai-context-builder.service";
 import {
   getDecryptedPublicationTargetPassword,
@@ -4543,13 +4547,33 @@ export async function executeAiDeliveryWorkflowRun(
         })
       : [];
 
+    let ledgerPersistenceLogEntry: string | null = null;
+    try {
+      const ledgerPersistenceResult = await persistAiDeliveryWorkflowCompletedLedger({
+        tenantId,
+        clientId: startedExecution.clientId,
+        aiDeliveryProjectId,
+        workflowRunId,
+        workflowResult: executionPlan.workflowResult
+      });
+      ledgerPersistenceLogEntry = buildAiDeliveryWorkflowLedgerPersistenceLogLine({
+        finishedAtIso: finishedAt.toISOString(),
+        result: ledgerPersistenceResult
+      });
+    } catch (ledgerError) {
+      const safeMessage =
+        ledgerError instanceof Error ? ledgerError.message : "ledger persistence failed";
+      ledgerPersistenceLogEntry = `[${finishedAt.toISOString()}] AI budget ledger COMPLETED row persistence failed (workflow result preserved): ${safeMessage}.`;
+    }
+
     const completedLog = appendAiDeliveryWorkflowExecutionLog(
       startedExecution.startedLog,
       [
         ...executionPlan.finishedLogEntries,
         buildAiWorkflowObservabilityLogLine(executionPlan.workflowResult),
         ...contentPlanPersistenceLogEntries,
-        ...contentDraftPersistenceLogEntries
+        ...contentDraftPersistenceLogEntries,
+        ...(ledgerPersistenceLogEntry ? [ledgerPersistenceLogEntry] : [])
       ]
     );
 
