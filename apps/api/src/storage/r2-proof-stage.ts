@@ -140,3 +140,67 @@ export function assertNoLiveProofWithoutIo(key: R2ProofStageKey, ioPerformed: bo
     reason: "Live bucket IO performed under an allowed stage."
   };
 }
+
+/**
+ * G233 — Proof label “no-IO only” invariant for automated helpers.
+ * No-IO stages must keep truth labels that never contain "live_proven".
+ */
+export function assertR2ProofNoIoOnlyLabelInvariant(key: R2ProofStageKey): {
+  ok: boolean;
+  truthLabel: R2ProofTruthLabel;
+  liveBucketIoAllowed: boolean;
+  reason: string;
+} {
+  const stage = R2_PROOF_STAGES[key];
+  const truthLabel = getR2ProofTruthLabel(key);
+  const labelImpliesLive = truthLabel.includes("live_proven");
+
+  if (!stage.liveBucketIoAllowed && labelImpliesLive) {
+    return {
+      ok: false,
+      truthLabel,
+      liveBucketIoAllowed: false,
+      reason: `No-IO stage "${key}" must not use a live_proven truth label.`
+    };
+  }
+
+  if (!stage.liveBucketIoAllowed) {
+    return {
+      ok: true,
+      truthLabel,
+      liveBucketIoAllowed: false,
+      reason: `Stage "${key}" is no-IO only (${truthLabel}).`
+    };
+  }
+
+  return {
+    ok: truthLabel === "future_real_bucket_not_executed",
+    truthLabel,
+    liveBucketIoAllowed: true,
+    reason:
+      truthLabel === "future_real_bucket_not_executed"
+        ? "Future live stage remains labeled not_executed until IO runs."
+        : `Unexpected truth label for future live stage: ${truthLabel}`
+  };
+}
+
+/**
+ * Snapshot of all proof stages for exhaustive edge tests (no IO).
+ */
+export function toR2ProofStageSnapshot(): Array<{
+  key: R2ProofStageKey;
+  liveBucketIoAllowed: boolean;
+  clientSafe: boolean;
+  cleanupRequiredBeforeLiveProof: boolean;
+  truthLabel: R2ProofTruthLabel;
+  claimsLiveWithoutIo: false;
+}> {
+  return R2_PROOF_STAGE_KEYS.map((key) => ({
+    key,
+    liveBucketIoAllowed: R2_PROOF_STAGES[key].liveBucketIoAllowed,
+    clientSafe: R2_PROOF_STAGES[key].clientSafe,
+    cleanupRequiredBeforeLiveProof: R2_PROOF_STAGES[key].cleanupRequiredBeforeLiveProof,
+    truthLabel: getR2ProofTruthLabel(key),
+    claimsLiveWithoutIo: false as const
+  }));
+}

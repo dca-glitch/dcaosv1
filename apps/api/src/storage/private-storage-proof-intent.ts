@@ -2,6 +2,7 @@ import {
   assertNoLiveProofWithoutIo,
   getR2ProofStage,
   getR2ProofTruthLabel,
+  isR2ProofStageKey,
   type R2ProofStageKey,
   type R2ProofTruthLabel
 } from "./r2-proof-stage";
@@ -24,6 +25,10 @@ export type PrivateStorageProofIntent = {
   purpose: string;
 };
 
+export type PrivateStorageProofIntentResult =
+  | { ok: true; intent: PrivateStorageProofIntent }
+  | { ok: false; intent: null; error: string };
+
 const STAGE_PURPOSE: Record<R2ProofStageKey, string> = {
   local_mock: "Exercise local/mock private-storage helpers without bucket IO.",
   config_shape: "Validate required R2 env shape and redacted readiness labels only.",
@@ -34,7 +39,7 @@ const STAGE_PURPOSE: Record<R2ProofStageKey, string> = {
 
 export function buildPrivateStorageProofIntent(stage: R2ProofStageKey): PrivateStorageProofIntent {
   const proofStage = getR2ProofStage(stage);
-  const guard = assertNoLiveProofWithoutIo(stage, false);
+  void assertNoLiveProofWithoutIo(stage, false);
 
   return {
     stage,
@@ -49,6 +54,52 @@ export function buildPrivateStorageProofIntent(stage: R2ProofStageKey): PrivateS
   };
 }
 
+/**
+ * Safe resolver for untrusted stage input. Invalid keys never invent a live-proof intent.
+ */
+export function resolvePrivateStorageProofIntent(stage: unknown): PrivateStorageProofIntentResult {
+  if (typeof stage !== "string" || !stage.trim()) {
+    return {
+      ok: false,
+      intent: null,
+      error: "Proof stage must be a non-empty string."
+    };
+  }
+
+  if (!isR2ProofStageKey(stage)) {
+    return {
+      ok: false,
+      intent: null,
+      error: `Unknown proof stage "${stage}"; refusing to invent a live-proof intent.`
+    };
+  }
+
+  return { ok: true, intent: buildPrivateStorageProofIntent(stage) };
+}
+
 export function isPrivateStorageProofIntentLiveSafe(intent: PrivateStorageProofIntent): boolean {
   return intent.liveIoPerformed === false && intent.claimsLiveBucketProof === false;
+}
+
+/**
+ * Snapshot-friendly shape for proof intent (stable field order for tests).
+ */
+export function toPrivateStorageProofIntentSnapshot(intent: PrivateStorageProofIntent): {
+  stage: R2ProofStageKey;
+  truthLabel: R2ProofTruthLabel;
+  liveIoAllowed: boolean;
+  liveIoPerformed: false;
+  claimsLiveBucketProof: false;
+  clientSafe: boolean;
+  cleanupRequiredBeforeLiveProof: boolean;
+} {
+  return {
+    stage: intent.stage,
+    truthLabel: intent.truthLabel,
+    liveIoAllowed: intent.liveIoAllowed,
+    liveIoPerformed: false,
+    claimsLiveBucketProof: false,
+    clientSafe: intent.clientSafe,
+    cleanupRequiredBeforeLiveProof: intent.cleanupRequiredBeforeLiveProof
+  };
 }

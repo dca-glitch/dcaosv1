@@ -5,7 +5,7 @@
  * no before/after implication, and not keyword-stuffed. No provider calls, no DB.
  */
 
-export const IMAGE_ALT_TEXT_POLICY_VERSION = "IMAGE_ALT_TEXT_POLICY_V1";
+export const IMAGE_ALT_TEXT_POLICY_VERSION = "IMAGE_ALT_TEXT_POLICY_V2";
 
 export const IMAGE_ALT_TEXT_MAX_LENGTH = 160;
 export const IMAGE_ALT_TEXT_MIN_LENGTH = 8;
@@ -34,10 +34,10 @@ export type ImageAltTextPolicyDecision = {
 };
 
 const MEDICAL_CLAIM_PATTERN =
-  /\b(treats?|cures?|heals?|diagnos(?:e|es|is)|clinically\s+proven|guaranteed\s+(?:results?|improvement)|medical\s+grade\s+result|FDA\s+approved\s+result|BPOM\s+approved\s+result|removes?\s+(?:wrinkles?|fat|acne)|eliminates?\s+(?:wrinkles?|fat|acne)|anti[-\s]?aging\s+result)\b/i;
+  /\b(treats?|cures?|heals?|diagnos(?:e|es|is)|clinically\s+proven|guaranteed\s+(?:results?|improvement)|medical\s+grade\s+result|FDA\s+approved\s+result|BPOM\s+approved\s+result|removes?\s+(?:wrinkles?|fat|acne)|eliminates?\s+(?:wrinkles?|fat|acne)|anti[-\s]?aging\s+result|pain[-\s]?free\s+result|permanent\s+results?)\b/i;
 
 const BEFORE_AFTER_PATTERN =
-  /\b(before\s*\/?\s*after|before[-\s]?and[-\s]?after|after\s+treatment|transformation|glow[-\s]?up|results?\s+shown|side[-\s]?by[-\s]?side)\b/i;
+  /\b(before\s*\/?\s*after|before[-\s]?and[-\s]?after|after\s+treatment|transformation|glow[-\s]?up|results?\s+shown|side[-\s]?by[-\s]?side|progress\s+photos?|then\s+vs\s+now)\b/i;
 
 const PROVIDER_OR_PROMPT_LEAK_PATTERN =
   /\b(dall[-\s]?e|midjourney|firefly|ideogram|stable\s+diffusion|openai|prompt:|negative\s+prompt|IMAGE_COMPLIANCE|PURIVA_IMAGE_PACKAGE)\b/i;

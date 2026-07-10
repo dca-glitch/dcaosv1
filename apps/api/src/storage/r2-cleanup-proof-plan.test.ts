@@ -1,13 +1,15 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
+  assertR2CleanupProofPlanNoIoInvariant,
   buildR2CleanupProofPlan,
   getR2CleanupProofPlanStep,
+  isR2CleanupProofPlanStepKey,
   R2_CLEANUP_PROOF_PLAN_STEP_KEYS,
   R2_CLEANUP_PROOF_PLAN_STEPS
 } from "./r2-cleanup-proof-plan";
 
-describe("r2-cleanup-proof-plan (G156)", () => {
+describe("r2-cleanup-proof-plan (G156 / G234)", () => {
   it("defines create → read/download → delete → verify → rollback/failure-stop in order", () => {
     assert.deepEqual(R2_CLEANUP_PROOF_PLAN_STEP_KEYS, [
       "create_test_object",
@@ -39,5 +41,27 @@ describe("r2-cleanup-proof-plan (G156)", () => {
     assert.equal(R2_CLEANUP_PROOF_PLAN_STEPS.delete.liveIoRequiredWhenExecuted, true);
     assert.equal(R2_CLEANUP_PROOF_PLAN_STEPS.verify_delete.liveIoRequiredWhenExecuted, true);
     assert.equal(R2_CLEANUP_PROOF_PLAN_STEPS.rollback_failure_stop.liveIoRequiredWhenExecuted, false);
+  });
+
+  it("enforces no-IO cleanup plan invariant (G234)", () => {
+    const plan = buildR2CleanupProofPlan();
+    const invariant = assertR2CleanupProofPlanNoIoInvariant(plan);
+    assert.equal(invariant.ok, true);
+    assert.equal(invariant.liveIoPerformed, false);
+    assert.equal(invariant.claimsLiveBucketProof, false);
+    assert.equal(invariant.allStepsUnexecuted, true);
+  });
+
+  it("rejects unknown cleanup step keys without inventing execution", () => {
+    assert.equal(isR2CleanupProofPlanStepKey("create_test_object"), true);
+    assert.equal(isR2CleanupProofPlanStepKey("execute_now"), false);
+    assert.equal(isR2CleanupProofPlanStepKey("delete_all"), false);
+    assert.equal(isR2CleanupProofPlanStepKey(""), false);
+  });
+
+  it("keeps stopOnFailure true for every planned step", () => {
+    for (const key of R2_CLEANUP_PROOF_PLAN_STEP_KEYS) {
+      assert.equal(getR2CleanupProofPlanStep(key).stopOnFailure, true);
+    }
   });
 });

@@ -87,3 +87,34 @@ export function buildR2CleanupProofPlan(): R2CleanupProofPlan {
 export function getR2CleanupProofPlanStep(key: R2CleanupProofPlanStepKey): R2CleanupProofPlanStep {
   return R2_CLEANUP_PROOF_PLAN_STEPS[key];
 }
+
+export function isR2CleanupProofPlanStepKey(value: string): value is R2CleanupProofPlanStepKey {
+  return (R2_CLEANUP_PROOF_PLAN_STEP_KEYS as readonly string[]).includes(value);
+}
+
+/**
+ * Invariant: building/resolving the cleanup plan never claims live bucket proof or IO.
+ */
+export function assertR2CleanupProofPlanNoIoInvariant(plan: R2CleanupProofPlan = buildR2CleanupProofPlan()): {
+  ok: boolean;
+  liveIoPerformed: false;
+  claimsLiveBucketProof: false;
+  allStepsUnexecuted: boolean;
+  reason: string;
+} {
+  const allStepsUnexecuted = plan.steps.every((step) => step.executedInThisModule === false);
+  const ok =
+    plan.liveIoPerformed === false &&
+    plan.claimsLiveBucketProof === false &&
+    allStepsUnexecuted;
+
+  return {
+    ok,
+    liveIoPerformed: false,
+    claimsLiveBucketProof: false,
+    allStepsUnexecuted,
+    reason: ok
+      ? "Cleanup proof plan is planning-only; no live IO claimed."
+      : "Cleanup proof plan invariant violated."
+  };
+}

@@ -150,3 +150,81 @@ export function listImageApprovalLoopTransitions(
   }
   return transitions;
 }
+
+export type ImageFinalAcceptedInvariantInput = {
+  approvalState: ImageApprovalLoopState;
+  hasAltText: boolean;
+  altTextAllowed?: boolean;
+  complianceAllowed?: boolean;
+};
+
+export type ImageFinalAcceptedInvariantResult =
+  | {
+      ok: true;
+      version: typeof IMAGE_APPROVAL_LOOP_VERSION;
+      state: "final_accepted";
+      checks: string[];
+    }
+  | {
+      ok: false;
+      version: typeof IMAGE_APPROVAL_LOOP_VERSION;
+      state: ImageApprovalLoopState;
+      errors: string[];
+      checks: string[];
+    };
+
+/**
+ * G321 — Final-accepted invariant: only `final_accepted` with reviewed alt text
+ * (and optional compliance/alt policy passes) may advance to WordPress readiness.
+ */
+export function assertImageFinalAcceptedInvariant(
+  input: ImageFinalAcceptedInvariantInput
+): ImageFinalAcceptedInvariantResult {
+  const errors: string[] = [];
+  const checks: string[] = [];
+
+  if (input.approvalState !== "final_accepted") {
+    errors.push(`Expected final_accepted; got "${input.approvalState}".`);
+    checks.push("REJECT:not_final_accepted");
+  } else {
+    checks.push("ALLOW:final_accepted");
+  }
+
+  if (!input.hasAltText) {
+    errors.push("Reviewed alt text is required for final_accepted assets.");
+    checks.push("REJECT:missing_alt_text");
+  } else {
+    checks.push("ALLOW:alt_text_present");
+  }
+
+  if (input.altTextAllowed === false) {
+    errors.push("Alt text policy must allow the reviewed alt text.");
+    checks.push("REJECT:alt_text_policy");
+  } else if (input.altTextAllowed === true) {
+    checks.push("ALLOW:alt_text_policy");
+  }
+
+  if (input.complianceAllowed === false) {
+    errors.push("Image compliance policy must allow the final asset concept.");
+    checks.push("REJECT:compliance_policy");
+  } else if (input.complianceAllowed === true) {
+    checks.push("ALLOW:compliance_policy");
+  }
+
+  if (errors.length > 0) {
+    return {
+      ok: false,
+      version: IMAGE_APPROVAL_LOOP_VERSION,
+      state: input.approvalState,
+      errors,
+      checks
+    };
+  }
+
+  return {
+    ok: true,
+    version: IMAGE_APPROVAL_LOOP_VERSION,
+    state: "final_accepted",
+    checks: [...checks, "INVARIANT:final_accepted_ready"]
+  };
+}

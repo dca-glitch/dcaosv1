@@ -385,3 +385,51 @@ Stop and do not claim image generation ready if:
 - Provider proof remains no-live until owner-approved Phase D; Firefly direction unchanged.
 
 **Validation:** focused image unit tests only (see agent return). Live provider proof remains explicitly out of scope.
+
+---
+
+## 10. G309–G328 image compliance / approval / no-live closeout (2026-07-10)
+
+**Scope:** Harden medical/aesthetic image safety helpers and expand focused unit coverage. No live image provider, no image generation, no schema change, no edits to `packages/shared/src/notification-events.ts`, `wordpress-image-inclusion.ts`, or storage serializers.
+
+**Policy / helper updates:**
+
+| Module | Change |
+|--------|--------|
+| `image-compliance-policy.ts` | Policy version `IMAGE_COMPLIANCE_POLICY_V3`; expanded forbidden phrases (progress photos, sterile field, deepfake, at-home injection kit, etc.); expanded allowed neutral lifestyle examples; `buildImageCompliancePolicySnapshot()` |
+| `image-prompt-profile.ts` | Profile version `IMAGE_PROMPT_PROFILE_V2`; `resolveImagePromptProfileKindForSlot()`; hard-block codes shared with compliance policy |
+| `image-alt-text-policy.ts` | Policy version `IMAGE_ALT_TEXT_POLICY_V2`; expanded no-claim / no-before-after patterns |
+| `image-approval-loop.ts` | `assertImageFinalAcceptedInvariant()` for G321 |
+| `image-generation.execution.ts` | `IMAGE_GENERATION_LIVE_PROVIDER_CALLS_ALLOWED = false`; foundation snapshot exposes `liveProviderCallsAllowed: false` |
+| `image-provider-proof-plan.ts` | Unchanged plan shape; tests assert no-live phases |
+| `image-notification-mapping.ts` | Unchanged; tests confirm shared taxonomy events (post-G228) |
+| `image-wordpress-inclusion.ts` | Unchanged readiness rule; tests tie WP inclusion to `final_accepted` |
+
+**Per-gate summary:**
+
+| Gate | Result |
+|------|--------|
+| **G309** | Forbidden phrases expanded (progress photos, day-0 comparisons, sterile field, actor-as-doctor, clinically proven result, deepfake, at-home injection kit). |
+| **G310** | Allowed neutral lifestyle examples expanded (botanical still life, linen/spa-adjacent, gentle self-care ritual). |
+| **G311** | `buildImageCompliancePolicySnapshot()` + tests (`liveProviderCallsAllowed: false`). |
+| **G312** | Prompt profile validator hardening (aspect, ID mismatch, slot/kind mismatch, forbidden elements). |
+| **G313** | Slot→role mapping via `resolveImagePromptProfileKindForSlot` for all variant slots. |
+| **G314** | Alt text policy tests (empty/short/long/stuffed/leak). |
+| **G315** | Alt no-claim / no-before-after tests (permanent results, progress photos). |
+| **G316** | Reject reason validator covers hard-block codes + admin/client/replacement contexts. |
+| **G317** | Approval-loop happy path to `final_accepted`. |
+| **G318** | Illegal transitions rejected (terminal + skip-client + early accept). |
+| **G319** | Notification mapping tests for existing shared taxonomy events. |
+| **G320** | WordPress inclusion only for `final_accepted` hero/supporting/social + alt. |
+| **G321** | `assertImageFinalAcceptedInvariant` requires final state + alt (+ optional alt/compliance passes). |
+| **G322** | Provider proof plan phases covered; live phase out of scope. |
+| **G323** | No-live invariant: `IMAGE_GENERATION_LIVE_PROVIDER_CALLS_ALLOWED === false`; execution never sets `providerCalled: true`. |
+| **G324** | Puriva image/medical compliance runbooks refreshed (this lane). |
+| **G325** | This closeout section. |
+| **G326** | Focused `image*.test.ts` + Puriva image/medical unit tests. |
+| **G327** | Lane report → `$env:TEMP\dca-g309-g328-image-lane-report.log`. |
+| **G328** | Remaining blockers listed in lane report (Phase C/D, persistence, owner provider lock). |
+
+**Notification taxonomy note:** G228 integrated `image_candidate_generated`, `image_admin_rejected`, `image_replacement_requested`, and `image_final_accepted` into shared taxonomy. Image lane mapping marks these as `existing`; no further taxonomy edits from this lane.
+
+**Explicit confirmations:** no live image provider · no image generation · no secrets · no schema migrations · no commit/push.

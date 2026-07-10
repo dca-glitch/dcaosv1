@@ -107,3 +107,29 @@ export function getR2ConfigRedactedSummary(): R2ConfigRedactedSummary {
     secretAccessKeyPresent: presence[R2_ENV_KEYS.secretAccessKey]
   };
 }
+
+/**
+ * Snapshot-friendly redacted summary for tests/docs — stable keys, never secret values.
+ */
+export function toR2ConfigRedactedSummarySnapshot(
+  summary: R2ConfigRedactedSummary = getR2ConfigRedactedSummary()
+): {
+  readinessLabel: R2ConfigReadinessLabel;
+  liveProven: false;
+  endpointPresent: boolean;
+  bucketPresent: boolean;
+  accessKeyIdPresent: boolean;
+  secretAccessKeyPresent: boolean;
+  requiredKeysPresentCount: number;
+} {
+  const requiredKeysPresentCount = R2_REQUIRED_ENV_KEYS.filter((key) => summary.presence[key]).length;
+  return {
+    readinessLabel: summary.readinessLabel,
+    liveProven: false,
+    endpointPresent: summary.endpointPresent,
+    bucketPresent: summary.bucketPresent,
+    accessKeyIdPresent: summary.accessKeyIdPresent,
+    secretAccessKeyPresent: summary.secretAccessKeyPresent,
+    requiredKeysPresentCount
+  };
+}

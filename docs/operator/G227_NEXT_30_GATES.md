@@ -1,5 +1,7 @@
 # G227 — Next 30 Gates Roadmap (G229+)
 
+**Operator note (G409):** Lane-specific security/operator follow-on notes live in [`G409_NEXT_GATES.md`](./G409_NEXT_GATES.md). **L12 owns the final next-50 roadmap** after G409–G428. This G227 file remains the historical G229–G258 proposal.
+
 **Status:** Proposed roadmap only. This file does not authorize live integrations, staging mutation, production mutation, commit, push, deploy, or Puriva Launch.
 
 **Scope:** Conceptual gates **after G228**. G228 is reserved for the main-agent integration/closeout of the G149–G227 multitask block (or equivalent owner-assigned closeout). This roadmap therefore starts at **G229**.

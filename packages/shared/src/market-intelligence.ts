@@ -66,12 +66,32 @@ export type MarketIntelligenceSourceOrigin =
 
 export type MarketIntelligenceLiveSourceStatus = "not_requested" | "blocked_by_policy";
 
+export const MARKET_INTELLIGENCE_ALLOWED_SOURCE_ORIGINS: readonly MarketIntelligenceSourceOrigin[] =
+  [
+    "operator_note",
+    "uploaded_document",
+    "approved_url_reference",
+    "existing_internal_record"
+  ] as const;
+
 export interface MarketIntelligenceNoLiveSourcePolicy {
   liveCrawlingAllowed: false;
   marketplaceLiveLookupAllowed: false;
   crmLiveLookupAllowed: false;
+  /** Explicit: no uncontrolled scraping in this contract. */
+  uncontrolledScrapingAllowed: false;
   allowedOrigins: MarketIntelligenceSourceOrigin[];
 }
+
+/** Canonical no-live / no-scrape MI source policy (G369–G372). */
+export const MARKET_INTELLIGENCE_DEFAULT_NO_LIVE_SOURCE_POLICY: MarketIntelligenceNoLiveSourcePolicy =
+  {
+    liveCrawlingAllowed: false,
+    marketplaceLiveLookupAllowed: false,
+    crmLiveLookupAllowed: false,
+    uncontrolledScrapingAllowed: false,
+    allowedOrigins: [...MARKET_INTELLIGENCE_ALLOWED_SOURCE_ORIGINS]
+  };
 
 export interface MarketIntelligenceLocalSourceReference {
   id: string;
@@ -393,5 +413,84 @@ export function buildMarketIntelligenceClientSafeSummary(input: {
     ),
     adminReviewed: true,
     rawInternalsExposed: false
+  };
+}
+
+/**
+ * Returns policy violations for a candidate MI no-live source policy object.
+ * Used by contract proofs — does not mutate input / does not authorize scraping.
+ */
+export function findMarketIntelligenceSourcePolicyViolations(
+  policy: Record<string, unknown>
+): string[] {
+  const violations: string[] = [];
+  const requiredFalse = [
+    "liveCrawlingAllowed",
+    "marketplaceLiveLookupAllowed",
+    "crmLiveLookupAllowed",
+    "uncontrolledScrapingAllowed"
+  ] as const;
+
+  for (const key of requiredFalse) {
+    if (policy[key] !== false) {
+      violations.push(key);
+    }
+  }
+
+  const origins = policy.allowedOrigins;
+  if (!Array.isArray(origins)) {
+    violations.push("allowedOrigins");
+  } else {
+    const allowed = new Set<string>(MARKET_INTELLIGENCE_ALLOWED_SOURCE_ORIGINS);
+    for (const origin of origins) {
+      if (typeof origin !== "string" || !allowed.has(origin)) {
+        violations.push(`allowedOrigins:${String(origin)}`);
+      }
+    }
+  }
+
+  return violations;
+}
+
+/**
+ * Build a local-only MI result contract with canonical no-live source policy.
+ * Always requires operator review; never authorizes live crawl.
+ */
+export function buildMarketIntelligenceLocalResult(input: {
+  projectId: string;
+  generatedAt?: string | null;
+  sourceReferences: MarketIntelligenceLocalSourceReference[];
+  result: MarketIntelligenceInsightResultV1;
+  liveSourceStatus?: MarketIntelligenceLiveSourceStatus;
+}): MarketIntelligenceLocalResultContractV1 {
+  return {
+    version: MARKET_INTELLIGENCE_LOCAL_RESULT_CONTRACT_VERSION,
+    projectId: input.projectId,
+    generatedAt: input.generatedAt ?? null,
+    sourcePolicy: MARKET_INTELLIGENCE_DEFAULT_NO_LIVE_SOURCE_POLICY,
+    liveSourceStatus: input.liveSourceStatus ?? "blocked_by_policy",
+    sourceReferences: input.sourceReferences,
+    result: input.result,
+    operatorReviewRequired: true
+  };
+}
+
+/**
+ * Build an admin-reviewed source summary with scraping/crawl disabled.
+ */
+export function buildMarketIntelligenceAdminReviewedSourceSummary(input: {
+  projectId: string;
+  sources: MarketIntelligenceAdminReviewedSourceSummaryV1["sources"];
+  reviewedAt?: string | null;
+}): MarketIntelligenceAdminReviewedSourceSummaryV1 {
+  return {
+    version: MARKET_INTELLIGENCE_ADMIN_SOURCE_SUMMARY_CONTRACT_VERSION,
+    projectId: input.projectId,
+    sourceCount: input.sources.length,
+    sources: input.sources,
+    uncontrolledScrapingAllowed: false,
+    liveCrawlingAllowed: false,
+    operatorReviewRequired: true,
+    reviewedAt: input.reviewedAt ?? null
   };
 }

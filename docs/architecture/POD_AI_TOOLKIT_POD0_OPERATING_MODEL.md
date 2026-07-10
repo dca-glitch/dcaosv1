@@ -112,3 +112,17 @@ This document only. No module implementation until an approved POD1+ block.
 The G132 closeout adds a shared typed workflow contract for future admin-only POD
 planning. It does not activate marketplace lookup, broad crawling, publishing,
 supplier credential access, module code, schema, API, or UI.
+
+## 10. G377–G380 draft bundle / IP / no-live image (shared types only)
+
+`PodToolkitDraftBundleContractV1` and helpers in `packages/shared/src/pod-toolkit.ts`:
+
+- Idea + listing copy drafts for operator review
+- Prompt / image requirement with `liveImageGenerationAllowed: false`
+- Mandatory IP/compliance caution (`legalAdviceClaimed: false`)
+- `marketplaceSyncAllowed: false` on policy and draft bundle
+- Builders: `buildPodToolkitDraftBundle`, `buildPodToolkitPromptImageRequirement`
+- Proof helpers: `findPodToolkitMarketplacePolicyViolations`,
+  `findPodToolkitComplianceIpCautionViolations`
+
+No marketplace sync. No live image provider. No legal-advice claim.

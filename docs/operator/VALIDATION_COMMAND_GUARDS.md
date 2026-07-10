@@ -1,8 +1,8 @@
 # Validation Command Guards
 
-**Status:** G225 refresh of the G143 operator guard document. This is a docs-only reference for command ordering and refusal rules. It does not run validation, smoke, live calls, staging/prod probes, commits, pushes, or deploys.
+**Status:** G418 refresh (extends G225/G143). This is a docs-only reference for command ordering and refusal rules. It does not run validation, smoke, live calls, staging/prod probes, commits, pushes, or deploys.
 
-**Primary sources:** [`.github/instructions/validation.instructions.md`](../../.github/instructions/validation.instructions.md), [`.github/copilot-instructions.md`](../../.github/copilot-instructions.md), [`OPERATOR_RUNBOOK.md`](./OPERATOR_RUNBOOK.md), [`TEST_SMOKE_INVENTORY.md`](./TEST_SMOKE_INVENTORY.md), and [`docs/security/SECURITY_CHECKLIST_G223.md`](../security/SECURITY_CHECKLIST_G223.md).
+**Primary sources:** [`.github/instructions/validation.instructions.md`](../../.github/instructions/validation.instructions.md), [`.github/copilot-instructions.md`](../../.github/copilot-instructions.md), [`OPERATOR_RUNBOOK.md`](./OPERATOR_RUNBOOK.md), [`TEST_SMOKE_INVENTORY.md`](./TEST_SMOKE_INVENTORY.md), [`docs/security/SECURITY_CHECKLIST_G409.md`](../security/SECURITY_CHECKLIST_G409.md), [`LIVE_PROOF_APPROVAL_CHECKLIST.md`](./LIVE_PROOF_APPROVAL_CHECKLIST.md), and [`LOCAL_ONLY_PROOF_TAXONOMY.md`](./LOCAL_ONLY_PROOF_TAXONOMY.md).
 
 ---
 
@@ -129,13 +129,21 @@ Docs-only G138-G144 and G223-G227 did not run commands or smokes because the use
 
 ---
 
-## 8. G225 Quick Refusal Card
+## 8. G418 Quick Refusal Card
 
 | Situation | Action |
 |---|---|
 | Validate failed | Stop. Fix. Re-validate. No smoke. |
-| Owner has not approved live proof | Do not call providers, buckets, OAuth, WordPress HTTP, or email send. |
+| Owner has not approved live proof | Do not call providers, buckets, OAuth, WordPress HTTP, or email send. See [`LIVE_PROOF_APPROVAL_CHECKLIST.md`](./LIVE_PROOF_APPROVAL_CHECKLIST.md). |
 | Docs-only block | No API/web start; `git diff --check` is enough unless owner asks for validate. |
 | Log file may contain secrets | Do not paste into chat/PR; redact first. |
 | `.cursor/settings.json` appears in `git status` | Leave untracked; exclude from any commit. |
-| Staging/prod remote smoke requested without approval | Refuse; cite historical PASS is not standing authorization. |
+| Staging/prod remote smoke requested without approval | Refuse; cite historical PASS is not standing authorization. See [`STAGING_GUARD_SWEEP.md`](../security/STAGING_GUARD_SWEEP.md). |
+| Local smoke described as production/launch proof | Refuse; use [`LOCAL_ONLY_PROOF_TAXONOMY.md`](./LOCAL_ONLY_PROOF_TAXONOMY.md) labels. |
+| Production deploy / migration requested | Refuse while production readiness is **NO** ([`PRODUCTION_FREEZE_SWEEP.md`](../security/PRODUCTION_FREEZE_SWEEP.md)). |
+
+---
+
+## 9. G409–G428 lane note
+
+Docs-only security/operator refresh plus optional tiny unit tests. No live calls. Production freeze remains explicit. Puriva Launch remains **BLOCKED**. Preferred security checklist: [`SECURITY_CHECKLIST_G409.md`](../security/SECURITY_CHECKLIST_G409.md).

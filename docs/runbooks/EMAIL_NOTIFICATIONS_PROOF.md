@@ -1,6 +1,6 @@
 # Email Notifications Proof
 
-**Status:** Audit + wiring block (2026-07-09), refreshed by G94-G102 and G159–G170 no-schema notification foundation (2026-07-10). Local disabled-safe wiring improved for Puriva launch events; live Resend proof remains owner-gated. No live email was sent in these blocks. In-system persistence remains design-only.
+**Status:** Audit + wiring block (2026-07-09), refreshed by G94-G102, G159–G170, and G249–G268 no-schema notification foundation (2026-07-10). Local disabled-safe wiring improved for Puriva launch events; live Resend proof remains owner-gated. No live email was sent in these blocks. In-system persistence remains design-only.
 
 **Scope:** Audit the current transactional email/notification subsystem, define the event taxonomy requested for Puriva launch (article ready, image set ready, client approved/rejected, admin action required, monthly report final, WordPress draft prepared), confirm disabled-safe local mode, and lay out a bounded live-Resend proof plan for a future owner-approved session. This document does **not** authorize a live send.
 
@@ -15,7 +15,7 @@ Related:
 - Code: `apps/api/src/config/email.config.ts`, `apps/api/src/services/email-notifications.service.ts`, `apps/api/src/services/system-events.service.ts`, `apps/api/src/core/client-portal-approval.runtime.ts`, `apps/api/src/routes/briefs.ts`, `apps/api/src/controllers/coreController.ts`
 - Schema: `packages/data/prisma/schema.prisma` (`EmailLog`, `EmailStatus`, `EmailTemplateKey`)
 - Smoke: `scripts/smoke-email-outbox-local.mjs` (`npm run smoke:email-outbox:local`)
-- No-schema notification foundation tests: `apps/api/src/notifications/notification-events.test.ts`, `apps/api/src/notifications/email-no-send-adapter.test.ts`, `apps/api/src/config/email.config.test.ts`
+- No-schema notification foundation tests: `apps/api/src/notifications/*.test.ts` (taxonomy, correlation design, no-send adapter), `apps/api/src/config/email.config.test.ts`
 
 ---
 
@@ -60,20 +60,22 @@ Both pathways write to the same `EmailLog` table (`packages/data/prisma/schema.p
 
 **Summary (G83 refresh):** current code has disabled-safe real-path email intent for article/content review requests, image `FINAL_READY`, client deliverable approved/rejected, monthly report `FINAL`, WordPress draft prepared, and several admin-action review requests. Local mode still writes `EmailLog.status=SKIPPED`; no live Resend send has been proven. The remaining launch gap is not "no code path exists"; it is that there is no user-scoped in-system notification model, no live inbox proof, no client email on monthly report `FINAL`, and no notification on image-level client approve/reject rows.
 
-### 2.1 G94-G102 / G159–G170 pure mapping inventory
+### 2.1 G94-G102 / G159–G170 / G249–G268 pure mapping inventory
 
 `packages/shared/src/notification-events.ts` (`NOTIFICATION_EVENTS_V2`) is the schema-safe inventory for notification-worthy events before any DB migration. It includes:
 
-- Expanded `NotificationEventType` values for G159: content draft ready, content approved, content changes requested, image set ready, image rejected with reason, image approved, client approval needed, admin alert after client action, monthly report available, external integration disabled, external proof failed, budget threshold warning, budget cap blocked, WordPress draft prepared, storage proof failed — plus legacy G94–G102 aliases.
+- Expanded `NotificationEventType` values for G159: content draft ready, content approved, content changes requested, image set ready, image rejected with reason, image approved, client approval needed, admin alert after client action, monthly report available, external integration disabled, external proof failed, budget threshold warning, budget cap blocked, WordPress draft prepared, storage proof failed — plus legacy G94–G102 aliases (G249–G250 completeness/compat).
 - Pure `mapBusinessEventToNotification()` mapping with required channels and recipient roles.
-- `resolveNotificationRecipientPolicy()` (G160): admin / client / owner-operator / system-log-only.
-- `resolveNotificationChannelPolicy()` (G161): in-system always required; email for launch-critical non-audit events; audit-only for internal proof; phone supplement-only; local email remains no-send.
-- Severity scale (G162): `info` / `action_required` / `warning` / `blocked` / `critical`.
-- `redactNotificationPayload()` (G163): strips secrets, `storageKey`, raw provider responses, OAuth tokens, stack traces, private audit metadata.
+- `resolveNotificationRecipientPolicy()` (G160/G251): admin / client / owner-operator / system-log-only.
+- `resolveNotificationChannelPolicy()` (G161/G252): in-system always required; email for launch-critical non-audit events; audit-only for internal proof; phone supplement-only; local email remains no-send.
+- Severity scale (G162/G253): `info` / `action_required` / `warning` / `blocked` / `critical`.
+- `redactNotificationPayload()` (G163/G254): strips secrets, `storageKey`, raw provider responses, OAuth tokens, stack traces, private audit metadata.
+- `buildNotificationPayloadSnapshot()` (G255): allowlisted safe snapshot for future inbox/email bodies.
 - `APPROVAL_REJECT_NOTIFICATION_MATRIX` for deliverable/image/content approve/reject behavior.
-- `buildNotificationAuditMetadata()` for safe audit metadata, with provider key presence represented as a boolean only.
-- `EMAIL_TEMPLATE_INVENTORY` constrained to the current schema enum values; `TYPED_NOTIFICATION_TEMPLATE_CATALOG` (G166) maps logical keys onto those schema keys. Dedicated DB enum keys remain blocked without schema approval.
-- Persistence + inbox API design only: [`docs/operator/notification-persistence-design.md`](../operator/notification-persistence-design.md) (G167–G168).
+- `buildNotificationAuditMetadata()` (G256) for safe audit metadata, with provider key presence represented as a boolean only.
+- `EMAIL_TEMPLATE_INVENTORY` constrained to the current schema enum values; `TYPED_NOTIFICATION_TEMPLATE_CATALOG` (G166/G261) maps logical keys onto those schema keys. Dedicated DB enum keys remain blocked without schema approval.
+- Correlation/idempotency design only: `apps/api/src/notifications/notification-correlation.ts` (G257) — **no migration**.
+- Persistence + inbox API design only: [`docs/operator/notification-persistence-design.md`](../operator/notification-persistence-design.md) (G167–G168 / G257–G259).
 
 ---
 

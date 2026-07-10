@@ -11,7 +11,8 @@ Related:
 - [`../operator/ENV_READINESS_INVENTORY.md`](../operator/ENV_READINESS_INVENTORY.md)
 - [`../operator/deferred-scope-register.md`](../operator/deferred-scope-register.md)
 - [`PURIVA_LAUNCH_GATE.md`](./PURIVA_LAUNCH_GATE.md) (launch dependency tracker — create/approve separately)
-- Code seam: `apps/api/src/storage/private-storage.service.ts`, `apps/api/src/storage/r2.service.ts`, `apps/api/src/storage/r2.config.ts`, `apps/api/src/storage/r2-proof-stage.ts`, `apps/api/src/storage/private-storage-proof-intent.ts`, `apps/api/src/storage/client-safe-storage-url-policy.ts`, `apps/api/src/storage/r2-cleanup-proof-plan.ts`
+- Code seam: `apps/api/src/storage/private-storage.service.ts`, `apps/api/src/storage/r2.service.ts`, `apps/api/src/storage/r2.config.ts`, `apps/api/src/storage/r2-proof-stage.ts`, `apps/api/src/storage/private-storage-proof-intent.ts`, `apps/api/src/storage/client-safe-storage-url-policy.ts`, `apps/api/src/storage/r2-cleanup-proof-plan.ts`, `apps/api/src/storage/r2-partial-config-diagnostics.ts`, `apps/api/src/storage/storage-key-boundary.ts`, `apps/api/src/storage/admin-vs-client-storage-field-policy.ts`, `apps/api/src/storage/storage-error-redaction.ts`
+- Closeout: [`STORAGE_R2_G229_G248_CLOSEOUT.md`](./STORAGE_R2_G229_G248_CLOSEOUT.md)
 
 ---
 
@@ -73,10 +74,16 @@ Never commit, print, or log secret values.
 
 | Helper | File | Purpose |
 |---|---|---|
-| Private storage proof intent | `private-storage-proof-intent.ts` | Builds labeled intent objects; `liveIoPerformed` / `claimsLiveBucketProof` always `false` |
-| Client-safe URL policy | `client-safe-storage-url-policy.ts` | Allows `exportUrl` / `downloadUrl`; strips `storageKey`; truth-labels `mocked` / `future_placeholder` / `live_signed` |
+| Private storage proof intent | `private-storage-proof-intent.ts` | Builds labeled intent objects; `liveIoPerformed` / `claimsLiveBucketProof` always `false`; invalid stages resolve to error (no invented live intent) |
+| Client-safe URL policy | `client-safe-storage-url-policy.ts` | Allows `exportUrl` / `downloadUrl`; strips `storageKey`; truth-labels `mocked` / `future_placeholder` / `live_signed`; `liveProven: false` on payloads |
 | R2 cleanup proof plan | `r2-cleanup-proof-plan.ts` | Typed create → read/download → delete → verify → rollback/failure-stop plan; `executedInThisModule: false` |
-| Redacted config summary | `r2.config.ts` → `getR2ConfigRedactedSummary()` | Boolean presence + `disabled` / `missing_config` / `configured_shape_ok`; always `liveProven: false` |
+| Redacted config summary | `r2.config.ts` → `getR2ConfigRedactedSummary()` / `toR2ConfigRedactedSummarySnapshot()` | Boolean presence + `disabled` / `missing_config` / `configured_shape_ok`; always `liveProven: false` |
+| Partial-config diagnostics | `r2-partial-config-diagnostics.ts` | Missing/present **key names only**; fail-closed when not fully configured |
+| Storage key boundary | `storage-key-boundary.ts` | Shared `storageKey` / `documentStorageKey` leak assertions for serializer tests |
+| Admin vs client field policy | `admin-vs-client-storage-field-policy.ts` | Client forbids `storageKey` / `documentStorageKey`; admin may include them |
+| Storage error redaction | `storage-error-redaction.ts` | Scrubs storageKey paths, R2 secret fragments, and stack traces from messages |
+
+**Hardening (G229–G244):** exhaustive proof-stage edges, redacted summary snapshots, disabled/partial diagnostics, no-IO-only label invariant, cleanup plan invariant, proof-intent invalid input rejection, client-safe URL truth labels, serializer no-leak tests, admin-vs-client field policy, and storage error redaction — all **no live R2 IO**.
 
 **Current truth:** this runbook has not recorded a successful real R2 bucket proof for DCA OS Lite. The current automated coverage is config-shape, disabled/missing-config guards, secret non-serialization, proof-stage labeling, cleanup **plan** constants, and client-safe serializer boundaries only. Full env → `configured_shape_ok` is **not** live-proven.
 
@@ -169,6 +176,8 @@ Pass when:
 
 **Do not run against production without an explicit owner-approved block naming the target environment and bucket.**
 
+**G246 refresh (2026-07-10):** Local no-IO foundations for G229–G244 are complete (proof-stage edges, redacted snapshots, disabled/partial diagnostics, cleanup plan invariants, client-safe URL/serializer boundaries, admin-vs-client field policy, error redaction). This section remains the **target-environment** checklist only — completing local unit tests does **not** satisfy §3. Owner approval is still required before any live bucket IO.
+
 Prerequisites:
 
 - [ ] Staging (or approved pre-prod) bucket provisioned and isolated from production
@@ -209,9 +218,11 @@ Signed download URLs are **temporary** (300s default). Clients must request a fr
 
 | Gate | Test file | What it proves |
 |---|---|---|
-| G153 | `deliverable-serializer-storage-key-boundary.test.ts` | Client portal deliverable summary keeps `exportUrl`, never emits `storageKey` |
-| G154 | `image-asset-serializer-storage-key-boundary.test.ts` | Image client-safe variants + article-image boundary mirror: `hasDocument` only, no `storageKey` |
-| G155 | `monthly-report-export-url-storage-key-boundary.test.ts` | Monthly report `exportUrl` allowed; `storageKey` → `hasDocument` only |
+| G153 / G240 | `deliverable-serializer-storage-key-boundary.test.ts` | Client portal deliverable summary keeps `exportUrl`, never emits `storageKey` |
+| G154 / G241 | `image-asset-serializer-storage-key-boundary.test.ts` | Image client-safe variants + article-image boundary mirror: `hasDocument` only, no `storageKey` |
+| G155 / G242 | `monthly-report-export-url-storage-key-boundary.test.ts` | Monthly report `exportUrl` allowed; `storageKey` → `hasDocument` only |
+| G239 | `storage-key-boundary.test.ts` | Shared leak helper covers `storageKey` + `documentStorageKey` |
+| G243 | `admin-vs-client-storage-field-policy.test.ts` | Admin may see storage keys; client must not |
 
 There is **no local filesystem fallback**. Disabled mode is intentional and safe: guarded writes fail closed without persisting storage references.
 
@@ -275,7 +286,14 @@ npm.cmd run smoke:client-portal-local
 npm.cmd run smoke:puriva-client-portal-boundary:local
 ```
 
-Focused storage helper unit tests (no live R2 IO):
+Focused storage helper unit tests (no live R2 IO) — preferred single command (G247):
+
+```powershell
+cd C:\dcaosv1
+node --import tsx --test apps/api/src/storage/*.test.ts
+```
+
+Equivalent per-file commands (same suite):
 
 ```powershell
 cd C:\dcaosv1\apps\api
@@ -287,6 +305,9 @@ node --import tsx --test src/storage/r2-cleanup-proof-plan.test.ts
 node --import tsx --test src/storage/deliverable-serializer-storage-key-boundary.test.ts
 node --import tsx --test src/storage/image-asset-serializer-storage-key-boundary.test.ts
 node --import tsx --test src/storage/monthly-report-export-url-storage-key-boundary.test.ts
+node --import tsx --test src/storage/storage-key-boundary.test.ts
+node --import tsx --test src/storage/admin-vs-client-storage-field-policy.test.ts
+node --import tsx --test src/storage/storage-error-redaction.test.ts
 ```
 
 Included in `npm run smoke:pre-staging:local` (disabled-safe baseline).

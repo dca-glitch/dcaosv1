@@ -149,6 +149,30 @@ describe("ai-budget-ledger.service (unit logic)", () => {
     assert.equal(result.metadata?.estimatedCostUsd, 0.3);
   });
 
+  it("keeps actualCostUsd null on live success when provider cost is not exposed (trusted-source policy)", () => {
+    const routing = resolveModelRoute({
+      orchestratorTaskType: "report_narrative",
+      clientProfile: "puriva"
+    });
+    const result = prepareCompletedLedgerAttribution({
+      orchestratorTaskType: "report_narrative",
+      clientProfile: "puriva",
+      routingAudit: routing.audit,
+      providerExecution: mockSuccessExecution({
+        actualCostUsd: null,
+        liveProviderCalled: true,
+        model: APPROVED_MODEL
+      }),
+      estimatedCostUsd: 0.15
+    });
+    assert.equal(result.ok, true);
+    assert.equal(result.ledgerStatus, "COMPLETED");
+    assert.equal(result.metadata?.liveProviderCalled, true);
+    assert.equal(result.metadata?.actualCostUsd, null);
+    assert.equal(result.metadata?.estimatedCostUsd, 0.15);
+    assert.notEqual(result.metadata?.actualCostUsd, result.metadata?.estimatedCostUsd);
+  });
+
   it("flags over-cap actualCostUsd and blocks COMPLETED status", () => {
     const routing = resolveModelRoute({
       orchestratorTaskType: "research_pack",

@@ -62,6 +62,26 @@ export type NotificationEventType =
   | "budget_cap_reached"
   | "kill_switch";
 
+/**
+ * G250 — legacy G94–G102 event types that remain valid aliases of G159 counterparts.
+ * Keys are legacy names; values are the preferred G159 canonical event types.
+ * Both key and value remain valid `NotificationEventType` values (compat, not deletion).
+ * Legacy types without a clean rename (admin_action_required, workflow_blocked, kill_switch)
+ * stay first-class and are not listed here.
+ */
+export const NOTIFICATION_LEGACY_EVENT_ALIASES = {
+  article_ready_for_client_review: "client_approval_needed",
+  image_set_ready_for_client_review: "image_set_ready",
+  client_deliverable_approved: "content_approved",
+  client_deliverable_rejected: "content_changes_requested",
+  client_image_approved: "image_approved",
+  client_image_rejected: "image_rejected_with_reason",
+  monthly_report_final: "monthly_report_available",
+  budget_cap_reached: "budget_cap_blocked"
+} as const satisfies Record<string, NotificationEventType>;
+
+export type NotificationLegacyEventAlias = keyof typeof NOTIFICATION_LEGACY_EVENT_ALIASES;
+
 /** Schema-locked EmailTemplateKey values only. */
 export type SchemaEmailTemplateKey =
   | "CLIENT_INVITE"
@@ -958,3 +978,136 @@ export const G159_REQUIRED_EVENT_TYPES: readonly NotificationEventType[] = [
   "wordpress_draft_prepared",
   "storage_proof_failed"
 ] as const;
+
+/** Image-loop event types retained for Lane 5 mapping consumers (still taxonomy-complete). */
+export const G249_IMAGE_LOOP_EVENT_TYPES: readonly NotificationEventType[] = [
+  "image_candidate_generated",
+  "image_admin_rejected",
+  "image_replacement_requested",
+  "image_final_accepted"
+] as const;
+
+/**
+ * G250 — resolve a legacy alias to its preferred G159 canonical event type.
+ * Non-legacy (already canonical) types return themselves. Unknown strings return null.
+ */
+export function resolveNotificationLegacyAlias(
+  eventType: string
+): NotificationEventType | null {
+  if (Object.prototype.hasOwnProperty.call(NOTIFICATION_LEGACY_EVENT_ALIASES, eventType)) {
+    return NOTIFICATION_LEGACY_EVENT_ALIASES[eventType as NotificationLegacyEventAlias];
+  }
+  if (isNotificationEventType(eventType)) {
+    return eventType;
+  }
+  return null;
+}
+
+export function isNotificationLegacyEventAlias(value: string): value is NotificationLegacyEventAlias {
+  return Object.prototype.hasOwnProperty.call(NOTIFICATION_LEGACY_EVENT_ALIASES, value);
+}
+
+/** Allowed client-safe keys for notification payload snapshots (G255). */
+export const NOTIFICATION_PAYLOAD_SAFE_KEYS = [
+  "title",
+  "body",
+  "reason",
+  "message",
+  "clientId",
+  "relatedEntityType",
+  "relatedEntityId",
+  "deliverableId",
+  "projectId",
+  "reportId",
+  "deepLinkHash",
+  "statusLabel"
+] as const;
+
+export type NotificationPayloadSafeKey = (typeof NOTIFICATION_PAYLOAD_SAFE_KEYS)[number];
+
+export interface BuildNotificationPayloadSnapshotInput {
+  eventType: NotificationEventType;
+  title: string;
+  body?: string | null;
+  reason?: string | null;
+  message?: string | null;
+  clientId?: string | null;
+  relatedEntityType: string;
+  relatedEntityId: string;
+  deliverableId?: string | null;
+  projectId?: string | null;
+  reportId?: string | null;
+  deepLinkHash?: string | null;
+  statusLabel?: string | null;
+  /** Extra fields; redacted then filtered to safe keys only. */
+  extra?: Record<string, unknown> | null;
+}
+
+export interface NotificationPayloadSnapshot {
+  version: typeof NOTIFICATION_EVENTS_VERSION;
+  eventType: NotificationEventType;
+  severity: NotificationSeverity;
+  title: string;
+  body: string | null;
+  reason: string | null;
+  message: string | null;
+  clientId: string | null;
+  relatedEntityType: string;
+  relatedEntityId: string;
+  deliverableId: string | null;
+  projectId: string | null;
+  reportId: string | null;
+  deepLinkHash: string | null;
+  statusLabel: string | null;
+  /** Redacted + allowlisted extras only. */
+  safeExtra: Record<string, unknown>;
+}
+
+const SAFE_KEY_SET = new Set<string>(NOTIFICATION_PAYLOAD_SAFE_KEYS);
+
+function pickSafeExtra(extra: Record<string, unknown> | null | undefined): Record<string, unknown> {
+  if (!extra) {
+    return {};
+  }
+  const redacted = redactNotificationPayload(extra) as Record<string, unknown>;
+  const output: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(redacted)) {
+    if (!SAFE_KEY_SET.has(key)) {
+      continue;
+    }
+    if (value === "[REDACTED]") {
+      continue;
+    }
+    output[key] = value;
+  }
+  return output;
+}
+
+/**
+ * G255 — build a client/admin-safe notification payload snapshot.
+ * Always runs through redaction; never includes secrets, storageKey, OAuth, stacks, or private audit.
+ */
+export function buildNotificationPayloadSnapshot(
+  input: BuildNotificationPayloadSnapshotInput
+): NotificationPayloadSnapshot {
+  const definition = NOTIFICATION_EVENT_DEFINITIONS[input.eventType];
+  const safeExtra = pickSafeExtra(input.extra);
+  return {
+    version: NOTIFICATION_EVENTS_VERSION,
+    eventType: input.eventType,
+    severity: definition.severity,
+    title: input.title.trim(),
+    body: input.body?.trim() || null,
+    reason: input.reason?.trim() || null,
+    message: input.message?.trim() || null,
+    clientId: input.clientId ?? null,
+    relatedEntityType: input.relatedEntityType,
+    relatedEntityId: input.relatedEntityId,
+    deliverableId: input.deliverableId ?? null,
+    projectId: input.projectId ?? null,
+    reportId: input.reportId ?? null,
+    deepLinkHash: input.deepLinkHash ?? null,
+    statusLabel: input.statusLabel ?? null,
+    safeExtra
+  };
+}

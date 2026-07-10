@@ -1,6 +1,6 @@
 # DCA OS Lite — Operator Runbook (Consolidated)
 
-**Status:** Single operator entry point for local validation, smoke, recovery, and staging/production prerequisites. G35 Phase B local pre-staging gate passed on `217c11c`; G35 Phase C controlled staging refresh completed on commit `5e1ea5a`. G46d/G47 staging deploy/smoke/proof PASS. G48 production readiness planning PASS. **G53 production safety plan approved (planning only).** Production deploy ready: **NO**. G49 public read-only probes PASS, but formal G49 closure still needs the owner-approval sentence; G50 **not executed**. G54 HSTS/proxy: **PASS**. Next production path remains formal G49 closure before G50, only after owner approval. Puriva Launch **blocked** pending live proof gates. Staging proven historically; production frozen. Further staging or production work requires fresh owner approval. G138-G144 refreshed owned operator/security docs only; no live calls, staging/prod mutation, commit, push, or deploy.
+**Status:** Single operator entry point for local validation, smoke, recovery, and staging/production prerequisites. G35 Phase B local pre-staging gate passed on `217c11c`; G35 Phase C controlled staging refresh completed on commit `5e1ea5a`. G46d/G47 staging deploy/smoke/proof PASS. G48 production readiness planning PASS. **G53 production safety plan approved (planning only).** Production deploy ready: **NO**. G49 public read-only probes PASS, but formal G49 closure still needs the owner-approval sentence; G50 **not executed**. G54 HSTS/proxy: **PASS**. Next production path remains formal G49 closure before G50, only after owner approval. Puriva Launch **blocked** pending live proof gates. Staging proven historically; production frozen. Further staging or production work requires fresh owner approval. G138-G144 and G223-G227 refreshed owned operator/security docs; **G409–G428** refreshed security inventories + operator checklists (prefer [`SECURITY_CHECKLIST_G409.md`](../security/SECURITY_CHECKLIST_G409.md)). No live calls, staging/prod mutation, commit, push, or deploy in those docs lanes.
 **Source of truth for product state:** [`docs/STATUS.md`](../STATUS.md)
 
 Related detailed runbooks:
@@ -22,9 +22,14 @@ Related detailed runbooks:
 | Puriva Launch Gate (15-area evaluation) | [`docs/runbooks/PURIVA_LAUNCH_GATE.md`](../runbooks/PURIVA_LAUNCH_GATE.md) |
 | Storage/R2 live proof plan | [`docs/runbooks/STORAGE_R2_PROOF.md`](../runbooks/STORAGE_R2_PROOF.md) |
 | Integrations truth matrix | [`docs/runbooks/INTEGRATIONS_TRUTH_MATRIX.md`](../runbooks/INTEGRATIONS_TRUTH_MATRIX.md) |
-| G138 security checklist refresh | [`docs/security/SECURITY_CHECKLIST_G138.md`](../security/SECURITY_CHECKLIST_G138.md) |
-| G142 package-script test/smoke inventory | [`TEST_SMOKE_INVENTORY.md`](./TEST_SMOKE_INVENTORY.md) |
-| G143 validation command guards | [`VALIDATION_COMMAND_GUARDS.md`](./VALIDATION_COMMAND_GUARDS.md) |
+| G138 security checklist refresh (historical) | [`docs/security/SECURITY_CHECKLIST_G138.md`](../security/SECURITY_CHECKLIST_G138.md) |
+| G223 security checklist (historical) | [`docs/security/SECURITY_CHECKLIST_G223.md`](../security/SECURITY_CHECKLIST_G223.md) |
+| G409 security checklist (prefer) | [`docs/security/SECURITY_CHECKLIST_G409.md`](../security/SECURITY_CHECKLIST_G409.md) |
+| Production freeze / staging guard sweeps | [`PRODUCTION_FREEZE_SWEEP.md`](../security/PRODUCTION_FREEZE_SWEEP.md) · [`STAGING_GUARD_SWEEP.md`](../security/STAGING_GUARD_SWEEP.md) |
+| Redaction inventories | [`SECRETS_REDACTION_INVENTORY.md`](../security/SECRETS_REDACTION_INVENTORY.md) · [`STORAGE_KEY_REDACTION_INVENTORY.md`](../security/STORAGE_KEY_REDACTION_INVENTORY.md) · [`CLIENT_BOUNDARY_INVENTORY.md`](../security/CLIENT_BOUNDARY_INVENTORY.md) |
+| G419 package-script test/smoke inventory | [`TEST_SMOKE_INVENTORY.md`](./TEST_SMOKE_INVENTORY.md) |
+| G418 validation command guards | [`VALIDATION_COMMAND_GUARDS.md`](./VALIDATION_COMMAND_GUARDS.md) |
+| No-live / live-approval / owner checklists | [`NO_LIVE_PROOF_CATALOGUE.md`](./NO_LIVE_PROOF_CATALOGUE.md) · [`LIVE_PROOF_APPROVAL_CHECKLIST.md`](./LIVE_PROOF_APPROVAL_CHECKLIST.md) · [`OWNER_GATE_CHECKLIST.md`](./OWNER_GATE_CHECKLIST.md) · [`LOCAL_ONLY_PROOF_TAXONOMY.md`](./LOCAL_ONLY_PROOF_TAXONOMY.md) |
 | Env names (no values) | [`ENV_READINESS_INVENTORY.md`](./ENV_READINESS_INVENTORY.md) |
 | Deferred scope | [`deferred-scope-register.md`](./deferred-scope-register.md) |
 
@@ -188,7 +193,7 @@ Full detail: [`docs/runbooks/ADMIN_OPERATIONS_RECOVERY.md`](../runbooks/ADMIN_OP
 
 ---
 
-## 4.0 G138-G144 owned-doc truth sweep
+## 4.0 G138-G144 / G409-G428 owned-doc truth sweep
 
 This runbook refresh is docs-only. It does not supersede `docs/STATUS.md`, `deferred-scope-register.md`, `INTEGRATIONS_TRUTH_MATRIX.md`, or `PURIVA_LAUNCH_GATE.md`.
 
@@ -201,6 +206,7 @@ This runbook refresh is docs-only. It does not supersede `docs/STATUS.md`, `defe
 | G142 | Package-script test/smoke inventory added in [`TEST_SMOKE_INVENTORY.md`](./TEST_SMOKE_INVENTORY.md). |
 | G143 | Validation command guard doc added in [`VALIDATION_COMMAND_GUARDS.md`](./VALIDATION_COMMAND_GUARDS.md). |
 | G144 | Operator runbook refreshed with links, truth sweep, and report-only protected-doc patch proposals. |
+| G409–G428 | Security checklist G409 + redaction/freeze/staging inventories; validation/smoke/runbook refresh; no-live catalogue; live-proof and owner checklists; local-only taxonomy; lane roadmap notes in [`G409_NEXT_GATES.md`](./G409_NEXT_GATES.md) (L12 owns final next-50). |
 
 Truth sweep summary:
 

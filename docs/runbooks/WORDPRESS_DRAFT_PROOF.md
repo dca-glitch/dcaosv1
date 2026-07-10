@@ -1,6 +1,6 @@
 # WordPress Draft Proof
 
-**Status:** Draft preparation and guarded handoff proven locally; G110–G114 plus G181–G188 add local draft-payload hardening, slug policy, draft-status freeze, credential redaction, live-proof plan constants, image-inclusion contract, docs closeout, and focused unit tests. Live draft proof remains **plan-only**; live publish remains frozen. Auto-publish is **not** in scope for this gate. §6 defines a future owner-approved staging-only live draft proof **plan** (title/body/meta, approved-image attach, alt/caption/social preview, idempotency, cleanup marker, disabled-safe mode, owner approval) — no live WordPress call was made to produce this document. **Do not claim live WordPress proven.**
+**Status:** Draft preparation and guarded handoff proven locally; G110–G114, G181–G188, and G289–G308 add local draft-payload hardening, slug edge policy, draft-status freeze, publish freeze / no-live service guard, credential + error redaction, live-proof plan + rollback/delete invariants, image-inclusion / accepted-image-only contract, category/tag placeholders, author/tenant mapping design, payload sanitization, docs closeout, and focused unit tests. Live draft proof remains **plan-only**; live publish remains frozen. Auto-publish is **not** in scope for this gate. §6 defines a future owner-approved staging-only live draft proof **plan** (title/body/meta, approved-image attach, alt/caption/social preview, idempotency, cleanup marker, disabled-safe mode, owner approval) — no live WordPress call was made to produce this document. **Do not claim live WordPress proven.**
 
 **Gate:** Puriva requires WordPress **draft/handoff**; WordPress **auto-publish** remains deferred (see [`docs/operator/deferred-scope-register.md`](../operator/deferred-scope-register.md)).
 
@@ -14,7 +14,7 @@
 
 G86 does not move tier 2 into execution and does not move tier 3 at all.
 
-G110–G114 and G181–G188 keep the same three-tier boundary: tier 1 is local draft JSON only, tier 2 is a future owner-approved staging proof plan, and tier 3 publish remains frozen.
+G110–G114, G181–G188, and G289–G308 keep the same three-tier boundary: tier 1 is local draft JSON only, tier 2 is a future owner-approved staging proof plan, and tier 3 publish remains frozen.
 
 Related:
 
@@ -265,7 +265,7 @@ This document does not itself constitute owner approval. It is the checklist an 
 | 3 | No auto-publish after draft preparation |
 | 4 | No credentials required for or leaked by draft prep |
 | 5 | Client portal boundary smokes omit draft internals |
-| 6 | Focused WordPress unit tests PASS for G181–G188 (draft payload, slug policy, status freeze, credential redaction, proof-plan constants, image inclusion) — no live HTTP |
+| 6 | Focused WordPress unit tests PASS for G181–G188 and G289–G308 (draft payload snapshots, slug edges, status freeze, publish freeze, credential/error redaction, proof-plan + rollback invariants, image inclusion / accepted-only, taxonomy placeholders, author mapping design, sanitization) — no live HTTP |
 | 7 | Operator evidence log archived |
 | 8 | Docs do **not** claim live WordPress proven |
 

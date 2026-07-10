@@ -34,8 +34,38 @@ export const WORDPRESS_TEST_DRAFT_ROLLBACK_PLAN = {
     "wordpressPostIdOrEditUrl",
     "cleanupActionAndTimestamp",
     "disabledSafeSmokeResult"
-  ]
+  ],
+  /**
+   * Delete/trash must happen before session close-out; never leave a proof draft published.
+   */
+  deleteOrTrashRequired: true,
+  publishForbidden: true
 } as const;
 
 export const WORDPRESS_LIVE_DRAFT_PROOF_PLAN_NOTE =
   "Plan-only. No live WordPress HTTP is authorized by these constants. Execution requires a separate owner-approved staging block.";
+
+/**
+ * Invariant: proof plan is draft-only, includes delete/trash, and never authorizes publish.
+ */
+export function assertWordPressDraftProofPlanInvariants(): boolean {
+  const plan = WORDPRESS_TEST_DRAFT_ROLLBACK_PLAN;
+  if (plan.allowedStatus !== "draft") {
+    return false;
+  }
+  if (!plan.deleteOrTrashRequired || !plan.publishForbidden) {
+    return false;
+  }
+  if (!plan.steps.includes("delete_or_trash_draft") || !plan.steps.includes("no_publish")) {
+    return false;
+  }
+  if (plan.forbiddenStatuses.includes("draft" as never)) {
+    return false;
+  }
+  for (const status of ["publish", "pending", "future"] as const) {
+    if (!plan.forbiddenStatuses.includes(status)) {
+      return false;
+    }
+  }
+  return true;
+}

@@ -1,6 +1,6 @@
 # WordPress Prepared Draft Foundation
 
-**Status:** WordPress prepared draft API, UI, smoke coverage, G110 local payload-builder tests, and G181–G188 local hardening (slug policy, draft-status freeze, credential redaction, image-inclusion contract, proof-plan constants) are complete locally. **Live draft proof** (real WordPress HTTP) remains plan-only — **not proven** — and **publish** remains frozen.
+**Status:** WordPress prepared draft API, UI, smoke coverage, G110 local payload-builder tests, G181–G188 local hardening, and G289–G308 no-live draft foundations (slug edges, payload snapshots, draft-only status, publish freeze, credential/error redaction, proof-plan + rollback invariants, image inclusion / accepted-only, category/tag placeholders, author/tenant mapping design, payload sanitization) are complete locally. **Live draft proof** (real WordPress HTTP) remains plan-only — **not proven** — and **publish** remains frozen.
 
 **Three tiers (do not conflate):**
 
@@ -112,11 +112,16 @@ SEO plan -> AI Delivery content draft -> image/asset package -> compliance revie
 **Test Files:**
 - `scripts/smoke-ai-delivery-reviews-local.mjs` — WordPress draft API smoke tests
 - `scripts/smoke-ui-ai-delivery.mjs` or equivalent — WordPress draft UI smoke tests
-- `apps/api/src/services/wordpress.service.test.ts` — G181/G183 draft payload + status freeze tests (`postStatus: draft` only)
-- `apps/api/src/services/wordpress-slug-policy.test.ts` — G182 slug normalize
-- `apps/api/src/services/wordpress-credentials-redaction.test.ts` — G184 credential redaction
-- `apps/api/src/services/wordpress-draft-proof-plan.test.ts` — G185 live proof plan constants (no HTTP)
-- `apps/api/src/services/wordpress-image-inclusion.test.ts` — G186 accepted image → draft placeholder mapping
+- `apps/api/src/services/wordpress.service.test.ts` — G290/G291/G292/G300 draft payload snapshot, status freeze, publish freeze / no-live guard
+- `apps/api/src/services/wordpress-slug-policy.test.ts` — G289 slug edge normalize
+- `apps/api/src/services/wordpress-credentials-redaction.test.ts` — G293 credential redaction
+- `apps/api/src/services/wordpress-draft-proof-plan.test.ts` — G294/G295 proof-plan + rollback/delete invariants (no HTTP)
+- `apps/api/src/services/wordpress-image-inclusion.test.ts` — G296/G297 image inclusion + accepted-image-only
+- `apps/api/src/services/wordpress-taxonomy-placeholder.test.ts` — G298 category/tag placeholders
+- `apps/api/src/services/wordpress-author-tenant-mapping.test.ts` — G299 author/tenant mapping design
+- `apps/api/src/services/wordpress-payload-sanitization.test.ts` — G301 payload sanitization
+- `apps/api/src/services/wordpress-error-redaction.test.ts` — G302 error redaction
+- `apps/api/src/config/wordpress-integration.config.test.ts` — readiness always `livePublishDeferred: true`
 
 ---
 
@@ -128,7 +133,8 @@ SEO plan -> AI Delivery content draft -> image/asset package -> compliance revie
 | **Actual Publication to WordPress** | Requires verified live draft proof first; publish gate frozen (`WORDPRESS_PUBLISH_ENABLED` default off) | WordPress publish proof (future block) |
 | **WordPress Provider Error Handling** | Rate limits, network errors, authentication failures, partial publish recovery. | Provider resilience (future block) |
 | **Automatic Image Upload to WordPress** | Requires image hosting strategy (WordPress media library, CDN, or R2 reference). | Image hosting integration (future block) |
-| **WordPress Category/Tag Sync** | Requires WordPress taxonomy mapping and two-way sync logic. | Taxonomy management (future block) |
+| **WordPress Category/Tag Sync** | Local string placeholders only (`wordpress-taxonomy-placeholder.ts`); live term ID sync deferred. | Taxonomy management (future block) |
+| **WordPress Author Mapping** | Design-only (`wordpress-author-tenant-mapping.ts`); draft payloads never embed live author IDs. | Author/tenant mapping (future block) |
 | **WordPress Plugin Discovery** | Auto-detection of required WordPress plugins or theme compatibility. | Plugin compatibility check (future block) |
 | **Publish Scheduling** | WordPress future/scheduled publish dates. | Scheduled publish (future block) |
 | **WordPress Revisions & Rollback** | Handling WordPress post revisions and client-side rollback. | Revision management (future block) |

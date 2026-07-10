@@ -817,8 +817,8 @@ export function MonthlyReportPanel({
     const actionHint = report.isArchived
       ? "Restore to resume edits."
       : report.status === "FINAL"
-        ? "FINAL — client-safe snapshot and approved metrics only."
-        : "Review, finalize, then attach the report document and approved snapshot notes.";
+        ? "FINAL — visible in Client Portal monthly reports as a client-safe snapshot with approved metrics only. Live GA/GSC sync remains deferred."
+        : "Review, finalize, then attach the report document and approved snapshot notes. Client Portal shows the report only after FINAL.";
 
     return {
       status,
@@ -1546,7 +1546,9 @@ export function MonthlyReportPanel({
                     </div>
 
                     {metrics.snapshots.length === 0 ? (
-                      <p className="inline-empty muted-text">No snapshot metrics imported yet.</p>
+                      <p className="inline-empty muted-text">
+                        No snapshot metrics imported yet. Import a manual or CSV snapshot here; live GA/GSC sync is deferred and is not implied by empty metrics.
+                      </p>
                     ) : (
                       <div className="table-wrap finance-table-wrap finance-table-wrap-spaced monthly-report-metrics-table" aria-label="Monthly metrics snapshots">
                         <table>
@@ -1647,7 +1649,7 @@ export function MonthlyReportPanel({
                 ) : (
                   <EmptyState
                     title="Snapshot metrics not loaded yet"
-                    message="Create or open the persisted monthly report first."
+                    message="Create or open the persisted monthly report first, then import a manual or CSV snapshot. Live GA/GSC sync is deferred."
                   />
                 )}
               </SectionPanel>

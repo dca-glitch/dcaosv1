@@ -118,4 +118,18 @@ describe("puriva-market-intelligence", () => {
     assert.ok(forbidden.includes("competitorPlaceholders"));
     assert.equal(findForbiddenPurivaMiClientSafeFields(asRecord).length, 0);
   });
+
+  it("keeps admin-reviewed source labels free of marketplace lookup claims", () => {
+    const labels = buildPurivaMiAdminSourceLabels();
+    const clientSafe = buildPurivaMiClientSafeSummary({
+      title: "Bounded Puriva summary",
+      opportunities: ["Educational positioning only"],
+      recommendedActions: ["Admin review before client exposure"]
+    });
+
+    assert.equal(clientSafe.adminReviewed, true);
+    assert.equal(clientSafe.sourceLabel.marketplaceLookupImplied, false);
+    assert.ok(labels.every((entry) => entry.label.marketplaceLookupImplied === false));
+    assert.ok(labels.every((entry) => entry.label.liveCrawlImplied === false));
+  });
 });

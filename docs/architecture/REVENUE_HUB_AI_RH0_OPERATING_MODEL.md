@@ -119,3 +119,16 @@ recommendation shapes plus an explicit no-live CRM policy:
 
 This is a **contract/docs closeout only**. It does not activate Revenue Hub UI,
 schema, connectors, CRM sync, or live financial systems.
+
+## 11. G373–G376 recommendation / CRM guards (shared types only)
+
+Canonical helpers (still no live IO):
+
+- `REVENUE_HUB_DEFAULT_RECOMMENDATION_GUARD` — advisory only; payment / price /
+  refund / external write / financial guarantee / CRM live sync all `false`
+- `REVENUE_HUB_DEFAULT_NO_LIVE_CRM_POLICY` — CRM sync/write-back and billing writes disabled
+- `buildRevenueHubAiRecommendation` — always sets `financialGuarantee: false`
+- `findRevenueHubRecommendationGuardViolations` /
+  `findRevenueHubNoLiveCrmPolicyViolations` — proof helpers only
+
+No CRM live sync. No financial guarantee. No payment execution.

@@ -1,8 +1,8 @@
 # Client Operating Packs — SaaS-later truth
 
-**Status:** Architecture truth label (G214)  
-**Date:** 2026-07-10  
-**Audience:** Product owner, implementers, AI agents  
+**Status:** Architecture truth label (G214; refreshed G360 / G349-G368)
+**Date:** 2026-07-10
+**Audience:** Product owner, implementers, AI agents
 
 **Related:** [`CLIENT_OPERATING_PACKS.md`](./CLIENT_OPERATING_PACKS.md) · [`PURIVA_OPERATING_PACK_V1.md`](./PURIVA_OPERATING_PACK_V1.md)
 
@@ -44,3 +44,9 @@ Docs, status reports, and agent summaries must not describe current Client Opera
 - “client self-serve pack marketplace”
 
 Correct framing: **internal Agency OS configuration layer; SaaS productization is later.**
+
+---
+
+## G349-G368 refresh note
+
+G349-G368 add pack lookup helpers and expand focused tests. They do **not** change this truth label. Puriva remains the first Client Operating Pack proof on generic Core/modules — not a SaaS product surface and not a Core fork.

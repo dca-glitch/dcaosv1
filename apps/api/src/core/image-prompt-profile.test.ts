@@ -1,13 +1,16 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
+import { IMAGE_GENERATION_VARIANT_SLOTS } from "./image-generation.execution";
 import {
   buildDefaultImagePromptProfileCandidate,
   IMAGE_PROMPT_PROFILE_ID_BY_KIND,
+  IMAGE_PROMPT_PROFILE_KINDS,
+  resolveImagePromptProfileKindForSlot,
   validateImagePromptProfile
 } from "./image-prompt-profile";
 
 describe("image-prompt-profile", () => {
-  it("G190 validates hero profile with aspect ratio, profile ID, and alt text", () => {
+  it("G190/G312 validates hero profile with aspect ratio, profile ID, and alt text", () => {
     const result = validateImagePromptProfile(
       buildDefaultImagePromptProfileCandidate({
         kind: "hero",
@@ -27,7 +30,7 @@ describe("image-prompt-profile", () => {
     }
   });
 
-  it("G190 validates supporting inline and social preview profiles", () => {
+  it("G190/G312 validates supporting inline and social preview profiles", () => {
     const supporting = validateImagePromptProfile(
       buildDefaultImagePromptProfileCandidate({
         kind: "supporting_inline",
@@ -51,7 +54,35 @@ describe("image-prompt-profile", () => {
     assert.equal(social.ok, true);
   });
 
-  it("G190 validates service-specific profile requires serviceCategoryId", () => {
+  it("G313 maps variant slots to prompt profile roles", () => {
+    assert.deepEqual([...IMAGE_PROMPT_PROFILE_KINDS], [
+      "hero",
+      "supporting_inline",
+      "social_preview",
+      "service_specific"
+    ]);
+
+    assert.equal(resolveImagePromptProfileKindForSlot("hero"), "hero");
+    assert.equal(resolveImagePromptProfileKindForSlot("supporting_1"), "supporting_inline");
+    assert.equal(resolveImagePromptProfileKindForSlot("supporting_2"), "supporting_inline");
+    assert.equal(resolveImagePromptProfileKindForSlot("social_preview"), "social_preview");
+
+    for (const slot of IMAGE_GENERATION_VARIANT_SLOTS) {
+      const kind = resolveImagePromptProfileKindForSlot(slot);
+      const result = validateImagePromptProfile(
+        buildDefaultImagePromptProfileCandidate({
+          kind,
+          promptText: "Neutral wellness composition without procedure staging.",
+          altText: "Neutral wellness visual for role mapping",
+          slot,
+          serviceCategoryId: kind === "service_specific" ? "skin_health_education" : null
+        })
+      );
+      assert.equal(result.ok, true, slot);
+    }
+  });
+
+  it("G190/G312 validates service-specific profile requires serviceCategoryId", () => {
     const missing = validateImagePromptProfile(
       buildDefaultImagePromptProfileCandidate({
         kind: "service_specific",
@@ -75,7 +106,7 @@ describe("image-prompt-profile", () => {
     assert.equal(ok.ok, true);
   });
 
-  it("G190 rejects forbidden elements and missing alt text", () => {
+  it("G190/G312 rejects forbidden elements and missing alt text", () => {
     const forbidden = validateImagePromptProfile(
       buildDefaultImagePromptProfileCandidate({
         kind: "hero",
@@ -101,7 +132,7 @@ describe("image-prompt-profile", () => {
     }
   });
 
-  it("G190 rejects invalid aspect ratio and profile ID mismatch", () => {
+  it("G312 rejects invalid aspect ratio, profile ID mismatch, and slot/kind mismatch", () => {
     const badAspect = validateImagePromptProfile({
       profileId: "puriva_hero_v1",
       kind: "hero",
@@ -124,6 +155,19 @@ describe("image-prompt-profile", () => {
     assert.equal(badId.ok, false);
     if (!badId.ok) {
       assert.ok(badId.issues.some((i) => i.code === "profile_id_kind_mismatch"));
+    }
+
+    const badSlot = validateImagePromptProfile(
+      buildDefaultImagePromptProfileCandidate({
+        kind: "hero",
+        promptText: "Neutral wellness hero.",
+        altText: "Neutral wellness hero image",
+        slot: "social_preview"
+      })
+    );
+    assert.equal(badSlot.ok, false);
+    if (!badSlot.ok) {
+      assert.ok(badSlot.issues.some((i) => i.code === "slot_kind_mismatch"));
     }
   });
 });

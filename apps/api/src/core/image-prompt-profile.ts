@@ -12,12 +12,13 @@ import {
   type ImageGenerationVariantSlot
 } from "./image-generation.execution";
 import {
+  IMAGE_COMPLIANCE_HARD_BLOCK_CODES,
   IMAGE_COMPLIANCE_REJECT_CODES,
   type ImageComplianceRejectCode,
   evaluateImageCompliancePolicy
 } from "./image-compliance-policy";
 
-export const IMAGE_PROMPT_PROFILE_VERSION = "IMAGE_PROMPT_PROFILE_V1";
+export const IMAGE_PROMPT_PROFILE_VERSION = "IMAGE_PROMPT_PROFILE_V2";
 
 export const IMAGE_PROMPT_PROFILE_KINDS = [
   "hero",
@@ -100,14 +101,20 @@ export type ImagePromptProfileValidationResult =
       issues: ImagePromptProfileValidationIssue[];
     };
 
-const DEFAULT_FORBIDDEN: ImageComplianceRejectCode[] = [
-  "before_after_risk",
-  "fake_clinician_or_patient_risk",
-  "procedure_or_device_risk",
-  "treatment_result_risk",
-  "likeness_consent_risk",
-  "unsafe_prescription_or_device_risk"
-];
+const DEFAULT_FORBIDDEN: ImageComplianceRejectCode[] = [...IMAGE_COMPLIANCE_HARD_BLOCK_CODES];
+
+/** Maps generation variant slots to prompt-profile kinds (G313). */
+export function resolveImagePromptProfileKindForSlot(
+  slot: ImageGenerationVariantSlot
+): ImagePromptProfileKindId {
+  if (slot === "hero") {
+    return "hero";
+  }
+  if (slot === "social_preview") {
+    return "social_preview";
+  }
+  return "supporting_inline";
+}
 
 function slotMatchesKind(slot: ImageGenerationVariantSlot, kind: ImagePromptProfileKindId): boolean {
   if (kind === "hero") {

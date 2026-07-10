@@ -1,6 +1,16 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { getR2Config, getR2ConfigRedactedSummary, getR2EnvPresence } from "./r2.config";
+import {
+  getR2Config,
+  getR2ConfigRedactedSummary,
+  getR2EnvPresence,
+  toR2ConfigRedactedSummarySnapshot
+} from "./r2.config";
+import {
+  getR2DisabledStateLabel,
+  getR2PartialConfigDiagnostics,
+  isR2StorageFailClosed
+} from "./r2-partial-config-diagnostics";
 
 const R2_ENV_KEYS = [
   "R2_ACCOUNT_ID",
@@ -77,7 +87,7 @@ describe("r2.config — boolean presence and disabled-safe defaults", () => {
   });
 });
 
-describe("r2.config — redacted summary (G150)", () => {
+describe("r2.config — redacted summary (G150 / G230)", () => {
   it("redacts access key ID and secret while reporting endpoint/bucket presence safely", () => {
     withR2Env({
       R2_ACCOUNT_ID: "acct-redact",
@@ -126,6 +136,126 @@ describe("r2.config — redacted summary (G150)", () => {
       assert.equal(summary.readinessLabel, "configured_shape_ok");
       assert.equal(summary.liveProven, false);
       assert.ok(getR2Config());
+    });
+  });
+
+  it("snapshot stays boolean-only across disabled / partial / full shapes (G230)", () => {
+    withR2Env({}, () => {
+      const snap = toR2ConfigRedactedSummarySnapshot();
+      assert.deepEqual(snap, {
+        readinessLabel: "disabled",
+        liveProven: false,
+        endpointPresent: false,
+        bucketPresent: false,
+        accessKeyIdPresent: false,
+        secretAccessKeyPresent: false,
+        requiredKeysPresentCount: 0
+      });
+    });
+
+    withR2Env({
+      R2_ACCOUNT_ID: "snap-acct",
+      R2_ACCESS_KEY_ID: "snap-key",
+      R2_SECRET_ACCESS_KEY: "",
+      R2_BUCKET_NAME: "",
+      R2_ENDPOINT: "",
+      R2_PUBLIC_BASE_URL: ""
+    }, () => {
+      const snap = toR2ConfigRedactedSummarySnapshot();
+      const serialized = JSON.stringify(snap);
+      assert.equal(snap.readinessLabel, "missing_config");
+      assert.equal(snap.liveProven, false);
+      assert.equal(snap.accessKeyIdPresent, true);
+      assert.equal(snap.secretAccessKeyPresent, false);
+      assert.equal(snap.bucketPresent, false);
+      assert.equal(snap.requiredKeysPresentCount, 2);
+      assert.equal(serialized.includes("snap-key"), false);
+      assert.equal(serialized.includes("snap-acct"), false);
+    });
+
+    withR2Env({
+      R2_ACCOUNT_ID: "snap-full",
+      R2_ACCESS_KEY_ID: "snap-full-key",
+      R2_SECRET_ACCESS_KEY: "snap-full-secret",
+      R2_BUCKET_NAME: "snap-full-bucket",
+      R2_ENDPOINT: "https://snap.example.r2.cloudflarestorage.com"
+    }, () => {
+      const snap = toR2ConfigRedactedSummarySnapshot();
+      assert.equal(snap.readinessLabel, "configured_shape_ok");
+      assert.equal(snap.liveProven, false);
+      assert.equal(snap.requiredKeysPresentCount, 4);
+      assert.equal(snap.endpointPresent, true);
+      assert.equal(JSON.stringify(snap).includes("snap-full-secret"), false);
+    });
+  });
+});
+
+describe("r2 disabled-state + partial-config diagnostics (G231 / G232)", () => {
+  it("labels fully unset env as disabled and fail-closed (G231)", () => {
+    withR2Env({}, () => {
+      assert.equal(getR2DisabledStateLabel(), "disabled");
+      assert.equal(isR2StorageFailClosed(), true);
+      const diagnostics = getR2PartialConfigDiagnostics();
+      assert.equal(diagnostics.fullyDisabled, true);
+      assert.equal(diagnostics.partiallyConfigured, false);
+      assert.equal(diagnostics.configured, false);
+      assert.equal(diagnostics.liveProven, false);
+      assert.equal(diagnostics.liveIoPerformed, false);
+      assert.deepEqual(diagnostics.presentRequiredEnvKeys, []);
+      assert.equal(diagnostics.missingRequiredEnvKeys.length, 4);
+    });
+  });
+
+  it("reports partial config with missing key names only — never values (G232)", () => {
+    withR2Env({
+      R2_ACCOUNT_ID: "diag-acct-should-not-leak",
+      R2_ACCESS_KEY_ID: "diag-key-should-not-leak",
+      R2_SECRET_ACCESS_KEY: undefined,
+      R2_BUCKET_NAME: undefined,
+      R2_ENDPOINT: "https://diag.example.should-not-leak"
+    }, () => {
+      const diagnostics = getR2PartialConfigDiagnostics();
+      const serialized = JSON.stringify(diagnostics);
+
+      assert.equal(diagnostics.readinessLabel, "missing_config");
+      assert.equal(diagnostics.partiallyConfigured, true);
+      assert.equal(diagnostics.fullyDisabled, false);
+      assert.equal(isR2StorageFailClosed(), true);
+      assert.deepEqual(diagnostics.presentRequiredEnvKeys, ["R2_ACCOUNT_ID", "R2_ACCESS_KEY_ID"]);
+      assert.deepEqual(diagnostics.missingRequiredEnvKeys, ["R2_SECRET_ACCESS_KEY", "R2_BUCKET_NAME"]);
+      assert.equal(diagnostics.optionalEndpointPresent, true);
+      assert.equal(serialized.includes("diag-acct-should-not-leak"), false);
+      assert.equal(serialized.includes("diag-key-should-not-leak"), false);
+      assert.equal(serialized.includes("https://diag.example.should-not-leak"), false);
+    });
+  });
+
+  it("treats whitespace-only required keys as absent", () => {
+    withR2Env({
+      R2_ACCOUNT_ID: "   ",
+      R2_ACCESS_KEY_ID: "\t",
+      R2_SECRET_ACCESS_KEY: "",
+      R2_BUCKET_NAME: "  "
+    }, () => {
+      assert.equal(getR2Config(), null);
+      assert.equal(getR2DisabledStateLabel(), "disabled");
+      assert.equal(getR2PartialConfigDiagnostics().fullyDisabled, true);
+    });
+  });
+
+  it("marks full shape configured but still not live-proven", () => {
+    withR2Env({
+      R2_ACCOUNT_ID: "ok-acct",
+      R2_ACCESS_KEY_ID: "ok-key",
+      R2_SECRET_ACCESS_KEY: "ok-secret",
+      R2_BUCKET_NAME: "ok-bucket"
+    }, () => {
+      const diagnostics = getR2PartialConfigDiagnostics();
+      assert.equal(diagnostics.readinessLabel, "configured_shape_ok");
+      assert.equal(diagnostics.configured, true);
+      assert.equal(diagnostics.partiallyConfigured, false);
+      assert.equal(diagnostics.liveProven, false);
+      assert.equal(isR2StorageFailClosed(), false);
     });
   });
 });

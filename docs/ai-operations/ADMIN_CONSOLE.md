@@ -14,11 +14,19 @@ It answers:
 - What result metadata was recorded?
 - What failed, and what safe error summary exists?
 
+**Related admin surfaces (G429–G448):**
+
+- Daily Cockpit — `#/admin-daily-cockpit` ([`AdminDailyOperationsCockpit.tsx`](../../apps/web/src/pages/ai-operations/AdminDailyOperationsCockpit.tsx))
+- Admin surface inventory — [`docs/ui/admin-surface-inventory.md`](../ui/admin-surface-inventory.md)
+- Proof-state vocabulary — [`docs/ux/proof-state-vocabulary.md`](../ux/proof-state-vocabulary.md)
+- Integration truth matrix — [`docs/runbooks/INTEGRATIONS_TRUTH_MATRIX.md`](../runbooks/INTEGRATIONS_TRUTH_MATRIX.md)
+
 ## Access
 
 - **Admin / owner only** — same RBAC as AI Delivery workflow runs.
 - **Not exposed** in Client Portal.
-- Navigation: **AI Operations** in the core sidebar.
+- Navigation: **AI Operations** in the core sidebar (`#/ai-operations`).
+- Daily Cockpit is a separate core nav item (`#/admin-daily-cockpit`).
 
 ## Data sources (no new schema)
 
@@ -38,6 +46,8 @@ Missing or legacy fields render as **Unknown** / **Not recorded** without crashi
 | `local` | Local deterministic execution (default smoke/dev path) |
 | `openrouter` | Live provider path — **opt-in only**; not required for local operation |
 
+**Copy rule:** Showing `openrouter` or `liveProviderCalled: yes` on a **local** run does **not** mean staging/production proof. Use proof-state vocabulary (`local_only`, `owner_gated`, etc.) when labeling integration readiness elsewhere.
+
 ## API (read-only)
 
 - `GET /api/v1/ai-operations/runs` — recent runs, tenant-scoped, paginated by `limit` (default 100)
@@ -45,12 +55,34 @@ Missing or legacy fields render as **Unknown** / **Not recorded** without crashi
 
 Optional query filters: `status`, `outputType`, `gateway`, `workflowKind`, `clientId`, `aiDeliveryProjectId`, `miProjectId`.
 
+## UI surfaces
+
+| Hash | Component | Role |
+|------|-----------|------|
+| `#/ai-operations` | `AiOperationsPage.tsx` | Run list + detail drawer; filters; CSV export columns include `live_provider_called` as factual run metadata |
+| `#/admin-daily-cockpit` | `AdminDailyOperationsCockpit.tsx` | Ready/blocked queues; Puriva practice path; explicit non-production disclaimers |
+
+Supporting panels (embedded elsewhere, not separate nav):
+
+- `AdminOperationsPanel.tsx` — read-only external-integration **config-shape** signals; states “no live calls”
+- `AiOrchestratorLitePanel.tsx` — pre-live registry / dry-run ledger; kill-switch and “live proof pending” copy
+
 ## Safety boundaries
 
 - No provider calls from console endpoints.
 - No secrets, API keys, cookies, or raw provider bodies in responses.
 - Raw JSON preview is sanitized and truncated.
 - No VPS/deploy changes are part of this console.
+- Admin copy must not upgrade local run metadata into “production ready” or “fully connected” claims.
+
+## Empty / error / loading
+
+| State | Current pattern | Polish note |
+|-------|-----------------|-------------|
+| Loading | Inline spinner / state panel on cockpit | Prefer shared `LoadingState` in a future UX-P block |
+| Error | `Alert` / danger title | Prefer `ErrorState` for fatal load failures |
+| Empty runs | `EmptyState` on AI Operations | Good |
+| Empty queues | Muted paragraph on cockpit | UX-P11 — add CTAs to WorkflowBriefs / AI Delivery / MI |
 
 ## Deferred
 
@@ -60,6 +92,7 @@ Optional query filters: `status`, `outputType`, `gateway`, `workflowKind`, `clie
 - Per-tenant spend caps
 - Deeper provider observability (latency, retries, billing)
 - Autonomous agents
+- Launch-blocker board UI (design only — [`launch-blocker-board-ui-design.md`](../ui/launch-blocker-board-ui-design.md))
 
 ## Local validation
 

@@ -108,3 +108,19 @@ npm.cmd run -w @dca-os-v1/api test:unit -- --test-name-pattern puriva-image-pack
 - Image prompt scaffolds are **admin/internal only** — never treat as generation-ready or client-facing assets outside the compliance-reviewed asset package.
 - No OpenRouter, image provider, live publish, WordPress, or web fetch calls in this block.
 - Final-ready gating remains blocked until medical/compliance review and approved generation workflow exists.
+
+---
+
+## G324 — Image compliance profile cross-link (2026-07-10)
+
+Puriva image scaffolds must stay aligned with the pure image-lane safety helpers:
+
+| Concern | Helper / gate |
+|---------|----------------|
+| Prompt/output hard exclusions | `apps/api/src/core/image-compliance-policy.ts` (`IMAGE_COMPLIANCE_POLICY_V3`) |
+| Prompt profile roles / aspect / alt required | `apps/api/src/core/image-prompt-profile.ts` |
+| Alt text no-claim / no-before-after | `apps/api/src/core/image-alt-text-policy.ts` |
+| Approval → `final_accepted` before WP | `apps/api/src/core/image-approval-loop.ts` + `image-wordpress-inclusion.ts` |
+| No-live provider proof plan | `apps/api/src/core/image-provider-proof-plan.ts` + [`IMAGE_GENERATION_PROOF.md`](./IMAGE_GENERATION_PROOF.md) §10 |
+
+Scaffold packages remain `finalReadyGating.allowed: false`. Live generation and WordPress attach stay out of scope until owner-approved Phase C/D.

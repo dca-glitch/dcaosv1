@@ -1,6 +1,6 @@
 # Client Portal Route / Surface Inventory
 
-**Status:** Inventory for DCA OS Lite client portal (G206).  
+**Status:** Inventory for DCA OS Lite client portal (G206 / G339).
 **Scope:** Route and surface map only — no smoke execution, no deploy.
 
 Related:
@@ -81,3 +81,16 @@ All require auth + tenant unless noted.
 | Controllers | `apps/api/src/controllers/client-portal-approval.controller.ts` |
 | Routes | `apps/api/src/routes/client-portal.ts` |
 | Web API helpers | `apps/web/src/pages/client-portal/client-portal-api.ts` |
+
+---
+
+## Admin vs client route posture (G340)
+
+| Surface family | Client token | Owner/admin token |
+|---|---|---|
+| `/api/v1/client-portal/projects*` archive + FINAL reports | Allowed when `ClientUserAccess` matches | Same access rules when membership includes client access; otherwise 403/404 |
+| `/api/v1/client-portal/pending-approvals` + approval mutations | Allowed for client-only roles | Owner may list pending; approval/edit mutations return forbidden for owner/admin |
+| `/api/v1/client-portal/deliverables/:id/approve|reject|images/*` | Client-only | Forbidden for owner/admin via approval helpers |
+| Admin AI Delivery / workflow / storage / cost routes | 401/403 | Allowed per admin RBAC |
+
+Hash surfaces under `#/client-portal*` are client-facing. `#/archive` remains a separate hub and must not be treated as a substitute for portal FINAL guards.

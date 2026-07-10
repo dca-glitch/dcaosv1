@@ -50,7 +50,7 @@ describe("client portal approval user", () => {
   });
 });
 
-describe("client portal approval request serializer (G201)", () => {
+describe("client portal approval request serializer (G201/G332)", () => {
   it("serializes pending approval list rows with client-safe fields only", () => {
     const summary = toClientPortalPendingApprovalSummary({
       id: "del-1",
@@ -108,17 +108,43 @@ describe("client portal approval request serializer (G201)", () => {
     const serialized = JSON.stringify(detail);
     for (const forbidden of [
       "storageKey",
+      "provider",
       "providerMetadata",
       "workflowRunId",
       "jobQueueStatus",
       "auditLogs",
       "actualCostUsd",
+      "estimatedCostUsd",
       "adminSummaryNotes",
-      "contentDraftId"
+      "contentDraftId",
+      "executionLog"
     ]) {
       assert.equal(serialized.includes(forbidden), false, `leaked ${forbidden}`);
     }
     assert.equal(collectClientPortalForbiddenPayloadKeys(detail).length, 0);
     assert.equal(detail.images[0]?.approvalStatus, "PENDING");
+    assert.equal(detail.status, "PENDING_CLIENT_REVIEW");
+  });
+
+  it("keeps approval list status client-visible without leaking internal workflow status keys", () => {
+    const summary = toClientPortalPendingApprovalSummary({
+      id: "del-3",
+      title: "Second article",
+      status: "PENDING_CLIENT_REVIEW",
+      createdAt: "2026-07-02T00:00:00.000Z",
+      aiDeliveryProject: {
+        id: "proj-3",
+        name: "August plan",
+        clientId: "client-3",
+        client: null
+      }
+    });
+
+    assert.equal(summary.clientName, null);
+    assert.equal(summary.status, "PENDING_CLIENT_REVIEW");
+    assert.equal("workflowRunStatus" in summary, false);
+    assert.equal("jobQueueStatus" in summary, false);
+    assert.equal("provider" in summary, false);
+    assertClientPortalPayloadHasNoForbiddenKeys(summary);
   });
 });

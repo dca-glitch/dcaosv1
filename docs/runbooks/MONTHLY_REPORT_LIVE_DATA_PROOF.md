@@ -1,6 +1,6 @@
 # Monthly Report Live Data Proof
 
-**Status:** Snapshot-first metrics and FINAL-only client visibility proven locally; live GA/GSC OAuth sync remains deferred until §3.1a token/OAuth gaps close and this gate passes on target environment. **2026-07-10 G78 audit:** confirmed owned docs distinguish MANUAL/placeholder local baseline vs future live GA/GSC for Puriva launch — no overclaim on OAuth/live sync. **2026-07-10 G85 planning:** prepared live GA/GSC path requirements without live sync, OAuth execution, or Google API calls. **2026-07-10 G103-G109 closeout:** added pure config-shape/date-range/property-mapping/source-truth/input-contract helpers and tests; this still does not prove live GA/GSC, OAuth consent, token storage, or Google API access.
+**Status:** Snapshot-first metrics and FINAL-only client visibility proven locally; live GA/GSC OAuth sync remains deferred until §3.1a token/OAuth gaps close and this gate passes on target environment. **2026-07-10 G78 audit:** confirmed owned docs distinguish MANUAL/placeholder local baseline vs future live GA/GSC for Puriva launch — no overclaim on OAuth/live sync. **2026-07-10 G85 planning:** prepared live GA/GSC path requirements without live sync, OAuth execution, or Google API calls. **2026-07-10 G103-G109 closeout:** added pure config-shape/date-range/property-mapping/source-truth/input-contract helpers and tests; this still does not prove live GA/GSC, OAuth consent, token storage, or Google API access. **2026-07-10 G269-G288 hardening:** expanded no-live unit coverage (config redaction, period/timezone, source-truth, unavailable-state, export truth labels); live OAuth/sync remain deferred.
 
 **Gate:** Puriva Launch blocker — GA/GSC live proof + monthly report FINAL client path (see [`docs/operator/deferred-scope-register.md`](../operator/deferred-scope-register.md) and [`docs/architecture/PURIVA_OPERATING_PACK_V1.md`](../architecture/PURIVA_OPERATING_PACK_V1.md) — Monthly Report Flow v1).
 
@@ -170,6 +170,18 @@ G103-G109 add code-level guardrails only:
 - `client-portal.runtime.ts` exposes a pure FINAL-only visibility predicate used by unit tests alongside the existing runtime `status: "FINAL"` query filters.
 
 These helpers intentionally do **not** call Google, start OAuth, store tokens, validate real GA4/GSC property access, or convert local MANUAL/placeholder proof into live proof. OAuth remains deferred to a separate approved implementation block.
+
+### 3.1d G269-G288 analytics hardening (no live sync)
+
+G269-G288 deepen the same no-live contracts:
+
+- Exhaustive GA/GSC config-shape / redaction / `disabled` / `missing_config` / `configured_shape_ok`+`live_*Deferred` tests (`ga-gsc.config.ts`).
+- Period/timezone/future/current-month policy tests (`ga-gsc-period-policy.ts`, `monthly-report-policy.ts`).
+- Metrics source-truth + mixed-source hardening (`metrics-source-truth.ts`).
+- Unavailable-state helper (`monthly-report-metrics-unavailable-state.ts`) for truthful client/admin labels when metrics cannot be shown.
+- Export/download truth labels (`monthly-report-metrics-export-truth.ts`) — `hasDocument` / optional client `exportUrl`; never serialize `storageKey`.
+
+Still does **not** prove live GA/GSC, OAuth consent, token storage, or Google API access.
 
 ### 3.2 Admin snapshot import (local baseline — proven)
 

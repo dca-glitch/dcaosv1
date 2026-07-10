@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { evaluateClientPortalApprovalAction } from "./client-portal-approval-policy";
 
-describe("client portal approval action policy (G202)", () => {
+describe("client portal approval action policy (G202/G333–G335)", () => {
   it("allows approve when pending and all images reviewed, and notifies admin", () => {
     const result = evaluateClientPortalApprovalAction({
       action: "approve_deliverable",
@@ -31,6 +31,22 @@ describe("client portal approval action policy (G202)", () => {
     assert.equal(result.code, "IMAGES_PENDING");
   });
 
+  it("blocks approve when already approved or not pending review", () => {
+    const already = evaluateClientPortalApprovalAction({
+      action: "approve_deliverable",
+      deliverableStatus: "APPROVED_BY_CLIENT"
+    });
+    assert.equal(already.ok, false);
+    if (!already.ok) assert.equal(already.code, "ALREADY_APPROVED");
+
+    const notPending = evaluateClientPortalApprovalAction({
+      action: "approve_deliverable",
+      deliverableStatus: "DRAFT"
+    });
+    assert.equal(notPending.ok, false);
+    if (!notPending.ok) assert.equal(notPending.code, "NOT_PENDING_REVIEW");
+  });
+
   it("allows request changes with reason, one revision round, and admin notify", () => {
     const result = evaluateClientPortalApprovalAction({
       action: "request_changes",
@@ -48,7 +64,19 @@ describe("client portal approval action policy (G202)", () => {
     assert.equal(result.sanitizedReason, "Please tighten the intro");
   });
 
-  it("blocks a second revision round", () => {
+  it("requires a reason for request_changes", () => {
+    const result = evaluateClientPortalApprovalAction({
+      action: "request_changes",
+      deliverableStatus: "PENDING_CLIENT_REVIEW",
+      reason: "  ",
+      revisionRoundUsed: false
+    });
+    assert.equal(result.ok, false);
+    if (result.ok) return;
+    assert.equal(result.code, "REASON_REQUIRED");
+  });
+
+  it("blocks a second revision round (one-revision-round design)", () => {
     const result = evaluateClientPortalApprovalAction({
       action: "request_changes",
       deliverableStatus: "PENDING_CLIENT_REVIEW",
@@ -59,6 +87,33 @@ describe("client portal approval action policy (G202)", () => {
     assert.equal(result.ok, false);
     if (result.ok) return;
     assert.equal(result.code, "REVISION_ROUND_EXHAUSTED");
+    assert.equal(result.message.includes("one revision round"), true);
+  });
+
+  it("allows image approve and undo without admin notify", () => {
+    const approve = evaluateClientPortalApprovalAction({
+      action: "approve_image",
+      deliverableStatus: "PENDING_CLIENT_REVIEW",
+      imageIds: ["img-1"],
+      imageId: "img-1"
+    });
+    assert.equal(approve.ok, true);
+    if (approve.ok) {
+      assert.equal(approve.nextImageStatus, "APPROVED");
+      assert.equal(approve.notifyAdmin, false);
+    }
+
+    const undo = evaluateClientPortalApprovalAction({
+      action: "undo_image_review",
+      deliverableStatus: "PENDING_CLIENT_REVIEW",
+      imageIds: ["img-1"],
+      imageId: "img-1"
+    });
+    assert.equal(undo.ok, true);
+    if (undo.ok) {
+      assert.equal(undo.nextImageStatus, "PENDING");
+      assert.equal(undo.notifyAdmin, false);
+    }
   });
 
   it("requires a reason when rejecting an image", () => {
@@ -84,5 +139,18 @@ describe("client portal approval action policy (G202)", () => {
     if (!ok.ok) return;
     assert.equal(ok.nextImageStatus, "REJECTED");
     assert.equal(ok.notifyAdmin, false);
+  });
+
+  it("rejects unknown image ids with client-safe message", () => {
+    const result = evaluateClientPortalApprovalAction({
+      action: "approve_image",
+      deliverableStatus: "PENDING_CLIENT_REVIEW",
+      imageIds: ["img-1"],
+      imageId: "missing"
+    });
+    assert.equal(result.ok, false);
+    if (result.ok) return;
+    assert.equal(result.code, "IMAGE_NOT_FOUND");
+    assert.equal(result.message.includes("storageKey"), false);
   });
 });

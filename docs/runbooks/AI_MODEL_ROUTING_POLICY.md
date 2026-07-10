@@ -102,10 +102,14 @@ Do **not** use `openrouter/auto` for Puriva or medical/compliance content.
 - Spend is summed per row as `actualCostUsd ?? estimatedCostUsd`; current OpenRouter live rows may have `actualCostUsd=null`, so they count by their route estimate until trusted provider cost exists.
 - `BLOCKED` and `SKIPPED` rows remain non-countable for monthly spend.
 
-### Reporting/reconciliation contract (G134-G137)
+### Reporting/reconciliation contract (G134-G137 + G389–G408)
 
 - `ai-budget-reporting.contract.ts` is an additive pure contract layer; it does **not** modify `sumSpentUsdForPeriod()`.
 - Reporting rows keep monthly cap totals, live rows, estimated/actual split, provider, and model visible for operator reporting.
+- `actualCostNullPolicy` = `leave_null_until_trusted_provider_cost` — never fabricate actuals from estimates or pricing pages.
+- Trusted actual ingestion design + invoice variance design live in `ai-budget-trusted-actual-ingestion.design.ts` (design-only; no live calls).
+- Budget threshold/cap signals map to existing Lane 2 events via `ai-budget-notification-mapping.ts` (no Lane 2 edits).
+- Routing truth labels: `ai-model-routing-truth-labels.ts` + shared `AI_MODEL_ROUTING_TRUTH_LABELS`.
 - Finance Lite remains separate: no AI budget report creates, mutates, or reconciles a Finance Lite invoice.
 - Reconciliation design exposes estimate, trusted actual, invoice, and variance slots, but invoice fields remain `null` / `not_integrated` until a separately approved provider-invoice workflow exists.
 - Detail: [`AI_BUDGET_REPORTING_RECONCILIATION_CONTRACT.md`](./AI_BUDGET_REPORTING_RECONCILIATION_CONTRACT.md).
@@ -116,7 +120,7 @@ Do **not** use `openrouter/auto` for Puriva or medical/compliance content.
 
 **G77b (persistent COMPLETED ledger live proof — COMPLETE local only):** Controlled live OpenRouter guarded smoke PASS (`workflowRunId=2244413e-d87b-45a1-8a26-6634ec8972d5`); ledger verifier PASS — row `5d8d635c-ced0-4a14-9b33-839e1fdee508` with `status=COMPLETED`, `stepReference=ai-delivery-execute:summary`, `provider=openrouter`, `liveProviderCalled=true`, `taskType=report_narrative`, `completedAttribution` present (`model=anthropic/claude-haiku-4.5`, `gateway=openrouter`, `runId` matches), `estimatedCostUsd=0.15`, `actualCostUsd=null`. Baseline + restore PASS. Staging/production live **not** claimed.
 
-**Deferred (post-G137):** Trusted provider-cost ingestion/reconciliation for `actualCostUsd`; real provider invoice ingestion; Finance Lite invoice reconciliation/posting; `operatingPackKey` resolution; local SKIPPED/BLOCKED persistence optional gate; staging/production live proof remains blocked.
+**Deferred (post-G408):** Trusted provider-cost ingestion/reconciliation for `actualCostUsd` (next cost-proof gate); real provider invoice ingestion; Finance Lite invoice reconciliation/posting; `operatingPackKey` resolution; local SKIPPED/BLOCKED persistence optional gate; staging/production live proof remains blocked.
 
 ## Orchestrator task → routing task mapping
 
@@ -147,10 +151,13 @@ Unit tests: `ai-model-routing-policy.service.test.ts`, `ai-budget-guard.service.
 - **G78:** guarded commit/push of G77b + G78 runbook truth-label alignment (docs only; separate owner approval)
 - **G79:** monthly cap aggregation for `liveProviderCalled=true` COMPLETED ledger rows — implemented with no-live unit coverage; live provider proof remains local-only from G77b row shape.
 - **G80:** `actualCostUsd` policy documented: leave null until trusted provider cost is available; no fabricated actual costs.
+- **G389–G408 (this lane):** reporting/reconciliation/routing truth hardened locally — no live OpenRouter; no invoice overclaim.
+- **Next cost-proof gate (proposed):** trusted provider-cost ingestion for `actualCostUsd` from an owner-approved usage/billing source — still no Finance Lite invoice mutation; still no staging/production live without separate approval.
 - Additional model approval matrix (optional parallel track); staging/production live proof remains **BLOCKED**
 
 ## Related docs
 
 - [`AI_PROVIDER_LIVE_PROOF.md`](./AI_PROVIDER_LIVE_PROOF.md) — formal OpenRouter proof (G71e-retry)
+- [`AI_BUDGET_REPORTING_RECONCILIATION_CONTRACT.md`](./AI_BUDGET_REPORTING_RECONCILIATION_CONTRACT.md)
 - [`docs/ai/AI_MODEL_POLICY.md`](../ai/AI_MODEL_POLICY.md)
 - [`deferred-scope-register.md`](../operator/deferred-scope-register.md)

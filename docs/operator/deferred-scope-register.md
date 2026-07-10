@@ -8,6 +8,8 @@ This register prevents confusion. If something is listed under **Still deferred*
 
 **G228 update (G149-G227):** Expanded local/no-IO foundations across storage, notifications, GA/GSC/monthly reports, WordPress, image compliance/approval-loop, Client Portal boundaries, Puriva pack entitlements, future-module contracts, and operator/security docs. Still **do not** move: real R2 IO, live email, live GA/GSC, live WordPress, live image provider, staging/prod live proofs, notification persistence/in-system inbox, or trusted `actualCostUsd` ingestion. Puriva Launch remains blocked.
 
+**G468 update (G229–G448 + G449–G468):** Deepened local/no-IO foundations and contracts across all 12 lanes (storage, notifications, analytics, WordPress, image, portal, packs, future modules, AI budget, security/operator, UI/testability, deferred/roadmap). Still **do not** move: real R2 IO, live email, live GA/GSC, live WordPress, live image provider, staging/prod live proofs, notification persistence/in-system inbox, or trusted `actualCostUsd` ingestion. Puriva Launch remains **BLOCKED**. Production remains frozen.
+
 ## Rule
 
 Deferred means: do not build, enable, deploy, or promise it as active until there is a separate approved task.
@@ -39,7 +41,9 @@ These are **not** "still deferred" long-term roadmap items. They are active bloc
 
 **Puriva Launch status:** **Blocked** until the blockers above are closed with evidence. See [`G53_PRODUCTION_SAFETY_PLAN.md`](../runbooks/G53_PRODUCTION_SAFETY_PLAN.md).
 
-**Roadmap reference:** G147 created [`G147_NEXT_20_GATES.md`](./G147_NEXT_20_GATES.md) for G89-G108 planning. G227 created [`G227_NEXT_30_GATES.md`](./G227_NEXT_30_GATES.md) for G229+ after G228 closeout. Neither roadmap authorizes live proof or launch.
+**Roadmap reference:** G147 created [`G147_NEXT_20_GATES.md`](./G147_NEXT_20_GATES.md) for G89-G108 planning. G227 created [`G227_NEXT_30_GATES.md`](./G227_NEXT_30_GATES.md) for G229+ after G228 closeout. G468 created [`G468_NEXT_50_GATES.md`](./G468_NEXT_50_GATES.md) for G469+ after G229–G467 closeout. None of these roadmaps authorize live proof or launch.
+
+**G468 affirmation:** In-system user notification inbox (Client Portal + admin) remains deferred. `EmailLog` / outbox remains outbound attempt log only. Live provider sending remains deferred. Local/no-IO foundations do not satisfy staging/production launch requirements.
 
 **Email clarification:** transactional workflow notifications (approval, handoff, delivery status) are in scope for proof; marketing email campaigns remain still-deferred.
 
@@ -94,7 +98,9 @@ Grouped for planning clarity. Items remain deferred until a separate approved bl
 | **G88** | Shared-doc consolidation with correct G79-G88 gate map; Puriva Launch remains blocked |
 | **G149 recommended after G148** | Owner-selected launch-blocker execution gate; recommended first candidate: R2 target-environment real-bucket proof or another explicitly approved low-blast-radius proof |
 | **G228 closeout** | Main-agent integration of G149–G227; local foundations only; does not authorize live proof |
-| **G229+** | See [`G227_NEXT_30_GATES.md`](./G227_NEXT_30_GATES.md) — owner-gated; R2 target-bucket proof remains recommended first candidate |
+| **G229+** | See [`G227_NEXT_30_GATES.md`](./G227_NEXT_30_GATES.md) — historical plan; superseded as next-gate pointer by G468 |
+| **G468 closeout** | Main-agent integration of G229–G467 local foundations + deferred/roadmap docs; does not authorize live proof or launch |
+| **G469+** | See [`G468_NEXT_50_GATES.md`](./G468_NEXT_50_GATES.md) — owner-gated; R2 target-bucket proof remains recommended first candidate |
 
 ## G89-G148 deferred-scope reconciliation (2026-07-10)
 
@@ -126,6 +132,24 @@ G148 recommendation: keep local foundations, keep all live-provider/storage/emai
 | Operator/security docs | G223 checklist, smoke inventory, validation guards, G227 next-30 roadmap | External audit, production proof, deploy approval |
 
 G228 recommendation: keep local foundations, keep all live-provider/storage/email/Google/WordPress/image and staging/production proofs deferred until a separate owner-approved gate (G229+).
+
+## G229-G448 deferred-scope reconciliation (2026-07-10)
+
+| Area | Local/docs complete (G229–G448) | Still live-deferred / blocked |
+|------|----------------------------------|-------------------------------|
+| R2/private storage | No-IO hardening, diagnostics, redaction, URL policy, serializer boundary tests | Real bucket IO, target-env signed URL, staging/prod proof |
+| Notifications/email | Taxonomy aliases, payload snapshots, correlation/idempotency design, no-send/config tests | In-system inbox/persistence (migration), live email send |
+| GA/GSC/monthly reports | Config/period/source-truth/guards, unavailable/export truth helpers | OAuth/token storage/refresh, live GA/GSC sync |
+| WordPress | Draft helpers, sanitization/redaction, taxonomy placeholders, author mapping design | Live draft HTTP session; auto-publish still deferred |
+| Image generation | Compliance V3, prompt/alt/approval-loop, no-live provider invariant | Provider selection, live generation, R2 image-byte proof |
+| Client Portal | Serializer/error/approval no-leak tests; route inventory | Staging/prod browser proof; durable revision-round schema |
+| Client/future modules | Pack catalog + MI/RH/POD contract hardening | Live ingestion, marketplace/CRM/write connectors |
+| AI budget / cost | Reporting/reconciliation, trusted-actual design, routing truth labels | Trusted `actualCostUsd` ingestion; staging/prod AI re-proof |
+| Operator/security/UI | Inventories, freeze/staging sweeps, proof catalogues, UI testability | External audit, production proof, deploy approval (G49/G50) |
+
+**Classification:** Local PASS does not promote staging/production PASS. Puriva Launch remains **BLOCKED**.
+
+G468 recommendation: keep local foundations; keep all live-provider/storage/email/Google/WordPress/image and staging/production proofs deferred until a separate owner-approved gate (G469+). See [`G468_NEXT_50_GATES.md`](./G468_NEXT_50_GATES.md).
 
 ## G71b / G71c / G71e / G71f live OpenRouter proof (2026-07-09)
 

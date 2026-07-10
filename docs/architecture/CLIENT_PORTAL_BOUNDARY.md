@@ -1,6 +1,6 @@
 # Client Portal Admin/Client Boundary
 
-**Status:** Architecture refresh for DCA OS Lite client portal surfaces (G205).  
+**Status:** Architecture refresh for DCA OS Lite client portal surfaces (G205 / G329–G348).
 **Scope:** Boundary rules only — does not replace smoke gates or module plans.
 
 Related:
@@ -12,14 +12,25 @@ Related:
 
 ---
 
-## Roles
+## Roles (admin vs client matrix)
 
-| Role | Portal archive (final deliverables / FINAL reports) | Pending approval / edit | Admin workflow / storage / cost / audit |
-|---|---|---|---|
-| Client (client-only membership) | Yes, via `ClientUserAccess` | Yes, for own clients | No |
-| Owner / admin | Not via client-approval-only helpers | No (approval helpers exclude owner/admin) | Yes, on admin routes only |
+| Role | Portal archive (final deliverables / FINAL reports) | Pending approval / edit | Send-for-review (admin) | Admin workflow / storage / cost / audit |
+|---|---|---|---|---|
+| Client (client-only membership) | Yes, via `ClientUserAccess` | Yes, for own clients | No | No |
+| Owner / admin | List pending as owner-only helper; not via client mutation helpers | No (approval/edit helpers exclude owner/admin) | Yes, on admin AI Delivery routes | Yes, on admin routes only |
 
 Client-only users remain blocked from admin-only routes. Owner/admin must not use client-approval mutation helpers as a substitute for admin tooling.
+
+### Capability matrix (G340)
+
+| Capability | Client | Owner/Admin |
+|---|---|---|
+| `GET` archive deliverables / FINAL monthly reports | Yes (access-scoped) | Prefer admin module routes; portal archive helpers still require `ClientUserAccess` where used |
+| Approve / request-changes / image review | Yes (`PENDING_CLIENT_REVIEW` only) | No via portal approval helpers |
+| Edit article body/metadata while pending | Yes | No via portal edit helpers |
+| View client edit history | Yes (email redacted) | Yes (email visible) on portal edit-history when authorized |
+| See `storageKey` / provider / cost / audit | Never | Admin routes only |
+| Durable second revision round enforcement | Policy-ready; persistence deferred (see below) | N/A |
 
 ---
 
@@ -62,7 +73,18 @@ Serializers live in `apps/api/src/core/client-portal.runtime.ts` and
 - Request changes / reject deliverable → status `DRAFT` with reason; admin notified (`AI_DELIVERY_REVIEW_REQUEST`)
 - Image reject requires a non-empty reason; image-level approve/reject does not notify admin by default
 - Pure policy helper: `evaluateClientPortalApprovalAction` in `client-portal-approval-policy.ts`
-- One revision round is encoded in the policy helper; durable round counting may require a future schema field (do not invent persistence here)
+
+### One-revision-round design (G335)
+
+Product rule: a client may consume **one** request-changes round per deliverable review cycle.
+
+| Layer | Behavior today | Blocker |
+|---|---|---|
+| Pure policy (`client-portal-approval-policy.ts`) | When `revisionRoundUsed: true`, returns `REVISION_ROUND_EXHAUSTED` | None — unit-tested |
+| Runtime (`rejectClientPortalDeliverable`) | Passes `revisionRoundUsed: false` until a durable counter exists | Needs approved schema field (e.g. `clientRevisionRoundUsed` or equivalent) — **no schema change in G329–G348** |
+| UI | Should surface the policy message when API returns exhaustion | Wire after persistence lands |
+
+Do not invent persistence or weaken RBAC to approximate the counter.
 
 ---
 

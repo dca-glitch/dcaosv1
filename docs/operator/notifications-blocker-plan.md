@@ -1,6 +1,6 @@
-# Notifications Blocker Plan (G78, refreshed G82-G84, G94-G102, G159–G170)
+# Notifications Blocker Plan (G78, refreshed G82-G84, G94-G102, G159–G170, G249–G268)
 
-**Status:** Planning plus no-schema notification foundation — docs block G78, refreshed by G82-G84, G94-G102, and G159–G170 (2026-07-10). No live email, schema migration, commit, push, or production action in these blocks. Persistence/inbox remain design-only.
+**Status:** Planning plus no-schema notification foundation — docs block G78, refreshed by G82-G84, G94-G102, G159–G170, and G249–G268 (2026-07-10). No live email, schema migration, commit, push, or production action in these blocks. Persistence/inbox remain design-only.
 
 **Purpose:** Staged plan for transactional notifications required before Puriva Launch and before claiming production-proven client-facing approval flows. Consolidates scattered docs into one operator-facing sequence.
 
@@ -41,8 +41,8 @@ Local portal UX ≠ notification readiness. Approval surfaces exist; **reliable,
 | **Real-path email wiring** | `notifyDcaTeam` / `notifyClientUsers` on approve/reject, send-for-review, article ready, image FINAL_READY, monthly report FINAL, WordPress draft prepared (2026-07-09 wiring block) | Integration tests + disabled-safe smokes; **no live inbox proof** |
 | **Platform audit** | `AuditLog` — auth, tenant, module actions; AI Delivery lifecycle mostly via internal-event path | Local operator visibility; not a user notification inbox |
 | **Orchestrator dry-run events** | G61 `AiNotificationEventType` + in-memory no-send recorder on orchestrator preview | Dry-run only; not Client Portal or admin daily inbox |
-| **No-schema notification foundation** | G94-G102 / G159–G170 `notification-events` shared taxonomy (expanded), recipient/channel/severity policy, payload redaction, typed template catalog, approval/reject matrix, audit metadata builder, schema-safe template inventory, API no-send email adapter (edge-tested) | Pure unit tests only; no persistent inbox and no live email |
-| **Persistence + inbox design** | G167–G168 `docs/operator/notification-persistence-design.md` | Design only — no migration, no inbox API implementation |
+| **No-schema notification foundation** | G94-G102 / G159–G170 / G249–G268 `notification-events` shared taxonomy (expanded), recipient/channel/severity policy, payload redaction + safe snapshots, typed template catalog, approval/reject matrix, audit metadata builder, legacy alias map, correlation/idempotency design helpers, schema-safe template inventory, API no-send email adapter (edge-tested) | Pure unit tests only; no persistent inbox and no live email |
+| **Persistence + inbox design** | G167–G168 / G257–G259 `docs/operator/notification-persistence-design.md` | Design only — no migration, no inbox API implementation |
 | **Admin email outbox API** | `GET /api/v1/notifications/email-logs` (admin/owner, tenant-scoped) | Read-only smoke proven |
 | **No-send notification tests** | `email-notification-wiring.integration.test.ts` checks disabled-safe outbox and content draft admin notification intent when local auth seed is available | Partial; does not prove every approval-loop event |
 
@@ -57,14 +57,15 @@ Local portal UX ≠ notification readiness. Approval surfaces exist; **reliable,
 - Background queues, retry/deliverability monitoring, or invite/password-reset email (all deferred).
 - Dedicated `EmailTemplateKey` values for ready/final/draft-prepared (reuse of generic keys today; dedicated keys need schema approval).
 
-### G94-G102 / G159–G170 no-schema foundation
+### G94-G102 / G159–G170 / G249–G268 no-schema foundation
 
 Implementation-safe pieces that can exist before a DB notification model:
 
-- `packages/shared/src/notification-events.ts` (`NOTIFICATION_EVENTS_V2`) defines the expanded G159 launch/ops event taxonomy, recipient policy (G160), channel policy (G161), severity (G162), payload redaction (G163), typed template catalog (G166), approval/reject matrix, audit metadata builder, and schema-safe email template inventory.
-- `apps/api/src/notifications/email-no-send-adapter.ts` (`EMAIL_NO_SEND_ADAPTER_V2`) records skipped attempts, never calls an external provider, needs no API key, redacts payloads, optionally redacts recipients in log metadata, and treats missing templates as safe no-send (G165).
-- `apps/api/src/config/email.config.ts` exposes a serializable safety shape that separates "Resend is configured" from "live email proof is complete."
-- Persistence + admin/client inbox API design: [`notification-persistence-design.md`](./notification-persistence-design.md) (G167–G168) — **docs only**.
+- `packages/shared/src/notification-events.ts` (`NOTIFICATION_EVENTS_V2`) defines the expanded G159 launch/ops event taxonomy, legacy alias map (G250), recipient policy (G160/G251), channel policy (G161/G252), severity (G162/G253), payload redaction (G163/G254), payload snapshots (G255), typed template catalog (G166/G261), approval/reject matrix, audit metadata builder (G256), and schema-safe email template inventory.
+- `apps/api/src/notifications/email-no-send-adapter.ts` (`EMAIL_NO_SEND_ADAPTER_V2`) records skipped attempts, never calls an external provider, needs no API key, redacts payloads, optionally redacts recipients in log metadata, and treats missing templates as safe no-send (G165/G260–G263).
+- `apps/api/src/notifications/notification-correlation.ts` defines correlation/idempotency design keys only (G257) — **no migration**.
+- `apps/api/src/config/email.config.ts` exposes a serializable safety shape that separates "Resend is configured" from "live email proof is complete" (G264).
+- Persistence + admin/client inbox API design: [`notification-persistence-design.md`](./notification-persistence-design.md) (G167–G168 / G257–G259) — **docs only**.
 
 **Important blocker remains:** these modules do not create user-scoped in-system notification rows. In-system persistence stays blocked until a DB model/API/UI block is explicitly approved. Live email stays blocked until the owner-approved Resend proof in [`EMAIL_NOTIFICATIONS_PROOF.md`](../runbooks/EMAIL_NOTIFICATIONS_PROOF.md) is executed.
 
@@ -172,7 +173,7 @@ Execute as separate owner-approved blocks. Order is dependency-safe: event sourc
 - Event taxonomy row (§Event taxonomy) maps 1:1 to a code trigger and at least one `EmailLog` or `AuditLog` row in disabled-safe local proof.
 - No duplicate ad-hoc notification calls outside `notifyDcaTeam` / `notifyClientUsers` / `recordAiDeliverySystemEvent`.
 
-**G94-G102 / G159–G170 progress:** expanded taxonomy, recipient/channel/severity policy, redaction, typed template catalog, approval/reject matrix, audit metadata shape, no-send adapter edge coverage, and persistence/inbox design docs are complete. Runtime persistence is still deferred.
+**G94-G102 / G159–G170 / G249–G268 progress:** expanded taxonomy, recipient/channel/severity policy, redaction, payload snapshots, typed template catalog, approval/reject matrix, audit metadata shape, legacy alias map, correlation/idempotency design, no-send adapter edge coverage, and persistence/inbox design docs are complete. Runtime persistence is still deferred.
 
 **Deferred in Stage 0:** Schema migration for new `EmailTemplateKey` enum values (owner/schema gate) and user-scoped in-system notification persistence (see G167 design).
 
@@ -322,7 +323,8 @@ Marketing campaigns, invite email, password reset, SMS/WhatsApp: **out of scope*
 |------|-------|------------|
 | **N0** | Docs refresh — keep EMAIL_NOTIFICATIONS_PROOF aligned with current disabled-safe wiring and remaining launch blockers | G78; refreshed G82-G84 |
 | **N0.5** | No-schema notification foundation — taxonomy, mapping, channel policy, approval/reject matrix, audit metadata, no-send adapter, template inventory | G94-G102 complete |
-| **N0.6** | Expanded taxonomy + recipient/severity/redaction + typed templates + no-send edge tests + persistence/inbox design | G159–G170 complete (this refresh) |
+| **N0.6** | Expanded taxonomy + recipient/severity/redaction + typed templates + no-send edge tests + persistence/inbox design | G159–G170 complete |
+| **N0.7** | Taxonomy completeness/compat, payload snapshots, correlation/idempotency design, email config/adapter hardening | G249–G268 complete (this refresh) |
 | **N1** | In-system notification MVP (schema + API + client/admin UI) per `notification-persistence-design.md` | N0 + schema approval |
 | **N2** | Email live proof — bounded Resend to owner inbox | [`EMAIL_NOTIFICATIONS_PROOF.md`](../runbooks/EMAIL_NOTIFICATIONS_PROOF.md) §4 |
 | **N3** | Staging: full client approval loop (both channels) | N1 + N2 |
@@ -344,7 +346,7 @@ Puriva Launch area 6 closes only after **N1 + N2 + N3** with evidence. Area 11 p
 | Staging approval + notification (future) | Browser smoke on staging with explicit target env guards |
 | Secret safety | No `RESEND_API_KEY`, session hashes, or raw keys in API responses or docs |
 
-**G94-G102 / G159–G170 focused validation:** `node --import tsx --test src/notifications/notification-events.test.ts src/notifications/email-no-send-adapter.test.ts src/config/email.config.test.ts` from `apps/api`.
+**G94-G102 / G159–G170 / G249–G268 focused validation:** `node --import tsx --test apps/api/src/notifications/*.test.ts apps/api/src/config/email.config.test.ts` from repo root (or equivalent paths under `apps/api`).
 
 **G78 validation:** Docs-only — no runtime validation required for that block.
 
@@ -374,4 +376,4 @@ Puriva Launch area 6 closes only after **N1 + N2 + N3** with evidence. Area 11 p
 
 ---
 
-*G78/G82-G84 — planning only. G94-G102 and G159–G170 added/expanded pure notification foundation modules, tests, and persistence/inbox design docs. Backend runtime flows, schema/auth, live email, VPS, deploy were not modified in this block.*
+*G78/G82-G84 — planning only. G94-G102, G159–G170, and G249–G268 added/expanded pure notification foundation modules, tests, correlation/idempotency design, and persistence/inbox design docs. Backend runtime flows, schema/auth, live email, VPS, deploy were not modified in this block.*

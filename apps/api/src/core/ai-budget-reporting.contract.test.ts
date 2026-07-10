@@ -1,6 +1,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import {
+  AI_BUDGET_ACTUAL_COST_NULL_POLICY,
   AI_BUDGET_REPORTING_CONTRACT_VERSION,
   buildAiBudgetReconciliationDesign,
   buildAiBudgetReportingContract,
@@ -67,6 +68,17 @@ const rows: AiBudgetReportingLedgerRow[] = [
     liveProviderCalled: false
   },
   {
+    id: "skipped-1",
+    periodKey: PERIOD_KEY,
+    provider: "local_deterministic",
+    model: "local-deterministic-v1",
+    taskType: "research_pack",
+    estimatedCostUsd: 0.3,
+    actualCostUsd: null,
+    status: "SKIPPED",
+    liveProviderCalled: false
+  },
+  {
     id: "other-period-1",
     periodKey: "2026-08",
     provider: "openrouter",
@@ -90,6 +102,7 @@ describe("ai-budget-reporting.contract", () => {
     assert.equal(report.version, AI_BUDGET_REPORTING_CONTRACT_VERSION);
     assert.equal(report.source, "ai_budget_ledger");
     assert.equal(report.financeLiteBoundary, "separate_admin_finance_records_no_invoice_ingestion");
+    assert.equal(report.actualCostNullPolicy, AI_BUDGET_ACTUAL_COST_NULL_POLICY);
     assert.equal(report.periodKey, PERIOD_KEY);
     assert.equal(report.monthlyCapUsd, 100);
     assert.equal(report.countableRowCount, 4);
@@ -97,6 +110,10 @@ describe("ai-budget-reporting.contract", () => {
     assert.equal(report.spentThisPeriodUsd, 0.53);
     assert.equal(report.remainingBudgetUsd, 99.47);
     assert.equal(report.projectedOverBudget, false);
+    assert.equal(
+      report.rows.some((row) => row.id === "blocked-1" || row.id === "skipped-1"),
+      false
+    );
   });
 
   it("keeps estimated and trusted actual costs separate", () => {
@@ -177,5 +194,32 @@ describe("ai-budget-reporting.contract", () => {
         item.includes("must not create or mutate Finance Lite invoices")
       )
     );
+  });
+
+  it("keeps live COMPLETED rows with null actualCostUsd on estimated spend basis", () => {
+    const report = buildAiBudgetReportingContract({
+      periodKey: PERIOD_KEY,
+      monthlyCapUsd: 100,
+      rows
+    });
+    const liveEstimate = report.rows.find((row) => row.id === "live-estimate-1");
+    assert.ok(liveEstimate);
+    assert.equal(liveEstimate.liveProviderCalled, true);
+    assert.equal(liveEstimate.actualCostUsd, null);
+    assert.equal(liveEstimate.spendBasis, "estimated");
+    assert.equal(liveEstimate.spentUsd, 0.15);
+    assert.equal(report.actualCostNullPolicy, "leave_null_until_trusted_provider_cost");
+  });
+
+  it("does not treat estimated totals as invoice amounts in reconciliation", () => {
+    const report = buildAiBudgetReportingContract({
+      periodKey: PERIOD_KEY,
+      monthlyCapUsd: 100,
+      rows
+    });
+    const reconciliation = buildAiBudgetReconciliationDesign(report);
+    assert.notEqual(reconciliation.estimateTotalUsd, reconciliation.invoiceTotalUsd);
+    assert.equal(reconciliation.invoiceTotalUsd, null);
+    assert.match(reconciliation.notes.join(" "), /Finance Lite invoice reconciliation/i);
   });
 });

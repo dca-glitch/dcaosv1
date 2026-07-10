@@ -1,22 +1,30 @@
 import type { AiDeliveryWordPressDraftPrepared } from "../core/core.types";
 import {
+  resolveWordPressDraftAuthorMapping,
+  WORDPRESS_AUTHOR_TENANT_MAPPING_DESIGN
+} from "./wordpress-author-tenant-mapping";
+import {
   assertWordPressCredentialsNeverSerialize,
   redactWordPressCredentialMetadata,
   redactWordPressCredentialShape
 } from "./wordpress-credentials-redaction";
 import {
+  assertWordPressDraftProofPlanInvariants,
   WORDPRESS_LIVE_DRAFT_PROOF_PLAN_NOTE,
   WORDPRESS_LIVE_DRAFT_PROOF_STEPS,
   WORDPRESS_TEST_DRAFT_PROOF_MARKER,
   WORDPRESS_TEST_DRAFT_PROOF_TAG,
   WORDPRESS_TEST_DRAFT_ROLLBACK_PLAN
 } from "./wordpress-draft-proof-plan";
+import { buildWordPressRedactedError, redactWordPressErrorMessage } from "./wordpress-error-redaction";
 import {
   mapAcceptedImagesToWordPressDraftInclusion,
   type WordPressDraftImageCandidate,
   type WordPressDraftImageInclusion
 } from "./wordpress-image-inclusion";
+import { sanitizeWordPressDraftPayload, sanitizeWordPressDraftText } from "./wordpress-payload-sanitization";
 import { normalizeWordPressSlug } from "./wordpress-slug-policy";
+import { buildWordPressTaxonomyPlaceholders } from "./wordpress-taxonomy-placeholder";
 
 /**
  * WordPress provider service scaffold
@@ -206,11 +214,25 @@ export const WORDPRESS_LIVE_HTTP_FROZEN_REASON =
   "WordPress live HTTP is frozen for this gate. Draft preparation remains local-only and publish is disabled.";
 
 export {
+  assertWordPressDraftProofPlanInvariants,
   WORDPRESS_LIVE_DRAFT_PROOF_PLAN_NOTE,
   WORDPRESS_LIVE_DRAFT_PROOF_STEPS,
   WORDPRESS_TEST_DRAFT_PROOF_MARKER,
   WORDPRESS_TEST_DRAFT_PROOF_TAG,
   WORDPRESS_TEST_DRAFT_ROLLBACK_PLAN
+};
+
+export {
+  WORDPRESS_AUTHOR_TENANT_MAPPING_DESIGN,
+  resolveWordPressDraftAuthorMapping
+};
+
+export {
+  buildWordPressRedactedError,
+  redactWordPressErrorMessage,
+  sanitizeWordPressDraftPayload,
+  sanitizeWordPressDraftText,
+  buildWordPressTaxonomyPlaceholders
 };
 
 /**
@@ -258,26 +280,8 @@ function buildDraftNote(gateStatus: AiDeliveryWordPressPublishGateStatus): strin
   return "Local WordPress draft payload prepared. Live publish remains confirm-gated and env-controlled.";
 }
 
-function normalizeTaxonomyList(values: string[] | undefined): string[] {
-  if (!values?.length) {
-    return [];
-  }
-
-  const seen = new Set<string>();
-  const normalized: string[] = [];
-  for (const value of values) {
-    const trimmed = value?.trim();
-    if (!trimmed || seen.has(trimmed)) {
-      continue;
-    }
-    seen.add(trimmed);
-    normalized.push(trimmed);
-  }
-  return normalized;
-}
-
 /**
- * G183 — Draft status freeze guard.
+ * G183 / G291 — Draft status freeze guard.
  * The only post status local draft preparation may emit.
  */
 export function resolveWordPressDraftPostStatus(): WordPressDraftPostStatus {
@@ -307,25 +311,41 @@ export function isWordPressDraftStatusFrozen(): boolean {
 export function buildAiDeliveryWordPressDraftPayload(
   input: AiDeliveryWordPressDraftPayloadInput
 ): AiDeliveryWordPressDraftPayload {
-  const title = input.title.trim();
-  const body = input.body.trim();
-  const excerpt = input.excerpt?.trim() || null;
-  const categories = normalizeTaxonomyList(input.categories);
-  const tags = normalizeTaxonomyList(input.tags);
+  const sanitized = sanitizeWordPressDraftPayload({
+    title: input.title,
+    body: input.body,
+    excerpt: input.excerpt,
+    categories: input.categories,
+    tags: input.tags,
+    featuredImagePlaceholder: input.featuredImagePlaceholder
+  });
+
+  const title = sanitized.title ?? "";
+  const body = sanitized.body ?? "";
+  const excerpt = sanitized.excerpt;
+  const taxonomy = buildWordPressTaxonomyPlaceholders({
+    categories: sanitized.categories,
+    tags: sanitized.tags
+  });
+  const authorMapping = resolveWordPressDraftAuthorMapping({
+    publicationTargetId: input.publicationTargetId
+  });
   const imageInclusion =
     input.imageCandidates && input.imageCandidates.length > 0
       ? mapAcceptedImagesToWordPressDraftInclusion(input.imageCandidates)
       : mapAcceptedImagesToWordPressDraftInclusion([]);
 
   const featuredImagePlaceholder =
-    input.featuredImagePlaceholder?.trim() ||
+    sanitized.featuredImagePlaceholder ||
     imageInclusion.featuredImagePlaceholder ||
     null;
 
   const deliverableId =
     input.sourceType === "DELIVERABLE"
-      ? (input.deliverableId?.trim() || input.sourceId.trim() || null)
-      : input.deliverableId?.trim() || null;
+      ? (sanitizeWordPressDraftText(input.deliverableId) ||
+          sanitizeWordPressDraftText(input.sourceId) ||
+          null)
+      : sanitizeWordPressDraftText(input.deliverableId);
 
   const payload: AiDeliveryWordPressDraftPayload = {
     status: "PREPARED",
@@ -340,8 +360,8 @@ export function buildAiDeliveryWordPressDraftPayload(
     postStatus: resolveWordPressDraftPostStatus(),
     externalPostId: null,
     externalEditUrl: null,
-    categories,
-    tags,
+    categories: taxonomy.categories,
+    tags: taxonomy.tags,
     featuredImagePlaceholder,
     imageInclusion: {
       ...imageInclusion,
@@ -352,10 +372,13 @@ export function buildAiDeliveryWordPressDraftPayload(
     publicationSiteUrl: input.publicationSiteUrl,
     publishGateStatus: input.publishGateStatus,
     credentialConfigured: input.credentialConfigured,
-    note: buildDraftNote(input.publishGateStatus)
+    note: `${buildDraftNote(input.publishGateStatus)} ${taxonomy.note} ${authorMapping.note}`
   };
 
   assertWordPressDraftStatusFrozen(payload);
+  if (!assertWordPressCredentialsNeverSerialize(payload)) {
+    throw new Error("WordPress draft payload failed credential serialization invariant.");
+  }
   return payload;
 }
 
@@ -432,13 +455,18 @@ export async function publishAiDeliveryDeliverableToWordPress(
   }
 ): Promise<AiDeliveryWordPressPublishResult> {
   if (!request.deliverableId || !request.title || !request.body) {
+    const redacted = buildWordPressRedactedError({
+      status: "error",
+      errorMessage: "Deliverable ID, title, and body are required.",
+      errorCategory: "wordpress_validation_error"
+    });
     return {
       ok: false,
       wordpressPostId: null,
       wordpressPostUrl: null,
       wordpressEditUrl: null,
       status: "error",
-      errorMessage: "Deliverable ID, title, and body are required.",
+      errorMessage: redacted.errorMessage,
       providerDisabledReason: undefined
     };
   }
@@ -447,7 +475,13 @@ export async function publishAiDeliveryDeliverableToWordPress(
   const siteConfig = options?.siteConfig ?? null;
   const applicationPassword = options?.applicationPassword ?? null;
 
+  // G300 — no-live service guard: freeze returns before any fetch / credential use.
   if (isAiDeliveryWordPressPublishFrozen()) {
+    const redacted = buildWordPressRedactedError({
+      status: "provider_disabled",
+      providerDisabledReason: WORDPRESS_LIVE_HTTP_FROZEN_REASON,
+      errorCategory: "wordpress_live_http_frozen"
+    });
     return {
       ok: false,
       wordpressPostId: null,
@@ -455,11 +489,17 @@ export async function publishAiDeliveryDeliverableToWordPress(
       wordpressEditUrl: null,
       status: "provider_disabled",
       errorMessage: null,
-      providerDisabledReason: WORDPRESS_LIVE_HTTP_FROZEN_REASON
+      providerDisabledReason: redacted.providerDisabledReason
     };
   }
 
   if (!publishEnabled || !siteConfig?.siteUrl || !applicationPassword) {
+    const redacted = buildWordPressRedactedError({
+      status: "provider_disabled",
+      providerDisabledReason:
+        "WordPress publish is disabled or publication target credentials are not configured. Enable WORDPRESS_PUBLISH_ENABLED only after credential encryption is configured.",
+      errorCategory: "wordpress_provider_disabled"
+    });
     return {
       ok: false,
       wordpressPostId: null,
@@ -467,8 +507,7 @@ export async function publishAiDeliveryDeliverableToWordPress(
       wordpressEditUrl: null,
       status: "provider_disabled",
       errorMessage: null,
-      providerDisabledReason:
-        "WordPress publish is disabled or publication target credentials are not configured. Enable WORDPRESS_PUBLISH_ENABLED only after credential encryption is configured."
+      providerDisabledReason: redacted.providerDisabledReason
     };
   }
 
@@ -494,13 +533,18 @@ export async function publishAiDeliveryDeliverableToWordPress(
     });
 
     if (!response.ok) {
+      const redacted = buildWordPressRedactedError({
+        status: "error",
+        errorMessage: `WordPress API responded with status ${response.status}.`,
+        errorCategory: "wordpress_http_error"
+      });
       return {
         ok: false,
         wordpressPostId: null,
         wordpressPostUrl: null,
         wordpressEditUrl: null,
         status: "error",
-        errorMessage: `WordPress API responded with status ${response.status}.`,
+        errorMessage: redacted.errorMessage,
         providerDisabledReason: undefined
       };
     }
@@ -518,14 +562,22 @@ export async function publishAiDeliveryDeliverableToWordPress(
       errorMessage: null,
       providerDisabledReason: undefined
     };
-  } catch {
+  } catch (error) {
+    const rawMessage = error instanceof Error ? error.message : "WordPress API request failed.";
+    const redacted = buildWordPressRedactedError({
+      status: "error",
+      errorMessage: rawMessage.includes("applicationPassword")
+        ? "WordPress API request failed."
+        : rawMessage,
+      errorCategory: "wordpress_http_exception"
+    });
     return {
       ok: false,
       wordpressPostId: null,
       wordpressPostUrl: null,
       wordpressEditUrl: null,
       status: "error",
-      errorMessage: "WordPress API request failed.",
+      errorMessage: redacted.errorMessage ?? "WordPress API request failed.",
       providerDisabledReason: undefined
     };
   }

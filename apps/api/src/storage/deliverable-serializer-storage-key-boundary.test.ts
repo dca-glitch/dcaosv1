@@ -1,14 +1,15 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { toClientPortalDeliverableSummary } from "../core/client-portal.runtime";
-import { assertNoStorageKeyLeak } from "./storage-key-boundary";
+import { payloadRespectsClientStorageFieldPolicy } from "./admin-vs-client-storage-field-policy";
+import { assertNoStorageKeyLeak, toStorageKeyBoundarySnapshot } from "./storage-key-boundary";
 
 /**
- * G153 — Deliverable serializer storageKey leak boundary.
+ * G153 / G240 — Deliverable serializer storageKey leak boundary.
  * Exercises the exported client-portal deliverable serializer (read-only import).
  * Admin `toAiDeliveryDeliverableSummary` in core.runtime.ts is not exported; see main-agent note.
  */
-describe("deliverable-serializer-storage-key-boundary (G153)", () => {
+describe("deliverable-serializer-storage-key-boundary (G153 / G240)", () => {
   it("preserves exportUrl and never leaks storageKey from client deliverable summary", () => {
     const forbiddenKey = "tenants/acme/years/2026/projects/p1/months/07/documents/deliverable.pdf";
     const summary = toClientPortalDeliverableSummary({
@@ -48,6 +49,13 @@ describe("deliverable-serializer-storage-key-boundary (G153)", () => {
     assert.equal(fromPolluted.exportUrl, "https://docs.example.com/export/boundary-2");
     assert.equal("storageKey" in fromPolluted, false);
     assertNoStorageKeyLeak(fromPolluted, { forbiddenStorageKey: forbiddenKey });
+    assert.equal(payloadRespectsClientStorageFieldPolicy(fromPolluted), true);
+    assert.deepEqual(toStorageKeyBoundarySnapshot(fromPolluted, forbiddenKey), {
+      hasStorageKeyField: false,
+      hasDocumentStorageKeyField: false,
+      containsForbiddenKeyValue: false,
+      liveProven: false
+    });
   });
 
   it("allows null exportUrl without inventing storageKey", () => {
@@ -66,5 +74,27 @@ describe("deliverable-serializer-storage-key-boundary (G153)", () => {
 
     assert.equal(summary.exportUrl, null);
     assertNoStorageKeyLeak(summary);
+  });
+
+  it("keeps DRAFT and ACCEPTED client summaries free of storageKey (G240)", () => {
+    for (const status of ["DRAFT", "IN_REVIEW", "DELIVERED", "ACCEPTED"] as const) {
+      const forbiddenKey = `tenants/acme/documents/${status.toLowerCase()}.pdf`;
+      const summary = toClientPortalDeliverableSummary({
+        id: `deliverable-${status}`,
+        aiDeliveryProjectId: "project-boundary-1",
+        title: status,
+        description: null,
+        deliveryType: "OTHER",
+        status,
+        exportUrl: status === "DRAFT" ? null : "https://docs.example.com/export/x",
+        isArchived: false,
+        createdAt: new Date("2026-07-01T00:00:00.000Z"),
+        updatedAt: new Date("2026-07-02T00:00:00.000Z"),
+        storageKey: forbiddenKey
+      } as Parameters<typeof toClientPortalDeliverableSummary>[0] & { storageKey: string });
+
+      assertNoStorageKeyLeak(summary, { forbiddenStorageKey: forbiddenKey });
+      assert.equal(payloadRespectsClientStorageFieldPolicy(summary), true);
+    }
   });
 });

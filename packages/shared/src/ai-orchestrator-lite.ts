@@ -14,6 +14,13 @@ import type { AI_MODEL_ROUTING_POLICY_VERSION } from "./ai-model-routing-policy"
 
 export const AI_ORCHESTRATOR_LITE_VERSION = "AI_ORCHESTRATOR_LITE_V1";
 
+/**
+ * actualCostUsd remains null until a trusted provider cost source is integrated.
+ * Do not fabricate from estimates, route caps, or pricing pages.
+ */
+export const AI_BUDGET_ACTUAL_COST_NULL_POLICY =
+  "leave_null_until_trusted_provider_cost" as const;
+
 /** System-level AI agent roles. */
 export type AiAgentRole =
   | "research_agent"

@@ -136,4 +136,18 @@ describe("ai-model-routing-policy.service", () => {
     assert.equal(isApprovedModelId("openrouter/auto"), false);
     assert.equal(isApprovedModelId(null), false);
   });
+
+  it("routing audit truth: policy version, selection reason, and no fabricated live call", () => {
+    const result = resolveModelRoute({
+      orchestratorTaskType: "research_pack",
+      clientProfile: "puriva",
+      contentChannel: "website"
+    });
+    assert.equal(result.audit.policyVersion, "AI_MODEL_ROUTING_POLICY_V1");
+    assert.equal(result.audit.blocked, false);
+    assert.equal(result.audit.modelOverrideRejected, false);
+    assert.match(result.audit.selectionReason, /Backend policy route/i);
+    assert.equal(result.route.requiresBudgetLedger, true);
+    assert.ok(result.route.maxCostUsdPerRun > 0);
+  });
 });

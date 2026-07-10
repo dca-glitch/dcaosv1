@@ -2,7 +2,7 @@
 
 **Status:** Encryption foundation merged locally (Architecture Block 4). Encrypted Application Password save on `PublicationTargetCredential` is allowed when `CREDENTIAL_ENCRYPTION_MASTER_KEY` is set. Credential response shapes expose configured/encryption status only. **Live WordPress HTTP calls, connection testing, and publish remain frozen** unless a separately owner-approved proof block explicitly replaces the freeze guard.
 
-**Decision Date:** 2026-06-24 (original STOP) · **Updated:** 2026-07-10 (G78 docs audit — reflects Block 4 merge; live API/publish freeze unchanged)
+**Decision Date:** 2026-06-24 (original STOP) · **Updated:** 2026-07-10 (G78 docs audit + G289–G308 no-live draft lane — credential/error redaction helpers expanded; live API/publish freeze unchanged)
 
 **Scope:** Credential storage policy + live WordPress API/publish freeze gates.
 
@@ -29,8 +29,9 @@ Credential save (encrypted) supports tier 2/3 prep only — it does **not** auth
 - Non-secret WordPress tenant config (`siteUrl`, `siteSlug`, `wordPressComSite`) via `GET/POST /api/v1/tenant/wordpress-config`
 - **Encrypted** Application Password save on `PublicationTargetCredential` via Client Hub when `CREDENTIAL_ENCRYPTION_MASTER_KEY` is set — see [`CREDENTIAL_ENCRYPTION_FOUNDATION.md`](../security/CREDENTIAL_ENCRYPTION_FOUNDATION.md)
 - Credential policy shape helpers returning only `{ configured, encryptionAvailable, updatedAt }` plus audit metadata `{ credentialsPresent, siteUrlHost }`
-- Local draft preparation (`prepare-wordpress-draft`) — no credentials read during prep
-- Disabled-safe publish endpoint (`provider_disabled` when `WORDPRESS_PUBLISH_ENABLED` unset/false)
+- Credential + error redaction helpers (`wordpress-credentials-redaction.ts`, `wordpress-error-redaction.ts`) that strip Application Passwords, ciphertext, Authorization/Bearer fragments from serializable shapes
+- Local draft preparation (`prepare-wordpress-draft`) — no credentials read during prep; payload sanitization strips control chars and never serializes secrets
+- Disabled-safe publish endpoint (`provider_disabled` when `WORDPRESS_PUBLISH_ENABLED` unset/false); G300 freeze guard returns before `fetch` even when env + credentials are locally present
 - WordPress provider service scaffold (`wordpress.service.ts`)
 
 ### ✋ Still frozen (owner-approved block required)

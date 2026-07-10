@@ -73,4 +73,35 @@ describe("monthly-report-metrics-recommendation-policy", () => {
     assert.equal(ok.ok, true);
     assert.equal(ok.origin, "placeholder");
   });
+
+  it("G279: rejects missing origin/text; live truth allowed for metrics-based", () => {
+    const missing = resolveMonthlyReportRecommendationPolicy({});
+    assert.equal(missing.ok, false);
+    assert.ok(missing.errors.some((e) => /origin is required/i.test(e)));
+    assert.ok(missing.errors.some((e) => /text is required/i.test(e)));
+    assert.equal(missing.clientLabel, "Recommendation unavailable");
+    assert.equal(missing.liveAiBlocked, true);
+
+    const liveMetrics = resolveMonthlyReportRecommendationPolicy({
+      origin: "metrics_based",
+      text: "Focus on pages with rising impressions after live proof.",
+      metricsTruth: "live"
+    });
+    assert.equal(liveMetrics.ok, true);
+    assert.equal(liveMetrics.requiresAdminReview, true);
+    assert.equal(liveMetrics.liveAiBlocked, true);
+
+    const unavailableMetrics = resolveMonthlyReportRecommendationPolicy({
+      origin: "metrics_based",
+      text: "Should fail.",
+      metricsTruth: "unavailable"
+    });
+    assert.equal(unavailableMetrics.ok, false);
+
+    const unknownOrigin = resolveMonthlyReportRecommendationPolicy({
+      origin: "chatgpt_live",
+      text: "Nope"
+    });
+    assert.equal(unknownOrigin.ok, false);
+  });
 });

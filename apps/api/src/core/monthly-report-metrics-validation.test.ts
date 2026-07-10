@@ -69,4 +69,53 @@ describe("monthly-report-metrics-validation", () => {
     assert.equal(okUrl.ok, true);
     assert.equal(okUrl.articleUrl, "https://puriva.example/path");
   });
+
+  it("G278: expanded edge cases — NaN, infinite, unknown source, data/vbscript URLs", () => {
+    const nanClicks = validateMonthlyReportMetricRow({
+      source: "MANUAL",
+      clicks: Number.NaN,
+      impressions: 1
+    });
+    assert.equal(nanClicks.ok, false);
+
+    const infImpressions = validateMonthlyReportMetricRow({
+      source: "CSV_IMPORT",
+      clicks: 1,
+      impressions: Number.POSITIVE_INFINITY
+    });
+    assert.equal(infImpressions.ok, false);
+
+    const unknownSource = validateMonthlyReportMetricRow({
+      source: "LIVE_GOOGLE",
+      clicks: 0,
+      impressions: 0
+    });
+    assert.equal(unknownSource.ok, false);
+    assert.ok(unknownSource.errors.some((e) => /source must be one of/i.test(e)));
+
+    const ctrBoundary = validateMonthlyReportMetricRow({
+      source: "PLACEHOLDER",
+      clicks: 0,
+      impressions: 0,
+      ctr: 0
+    });
+    assert.equal(ctrBoundary.ok, true);
+
+    const ctrOne = validateMonthlyReportMetricRow({
+      source: "UNAVAILABLE",
+      clicks: 0,
+      impressions: 0,
+      ctr: 1,
+      position: 100
+    });
+    assert.equal(ctrOne.ok, true);
+
+    const dataUrl = sanitizeMonthlyReportArticleUrl("data:text/html,hi");
+    assert.equal(dataUrl.ok, false);
+    const vbUrl = sanitizeMonthlyReportArticleUrl("vbscript:msgbox(1)");
+    assert.equal(vbUrl.ok, false);
+
+    const tooLong = sanitizeMonthlyReportArticleUrl(`https://example.com/${"a".repeat(2100)}`);
+    assert.equal(tooLong.ok, false);
+  });
 });

@@ -1,14 +1,16 @@
-# Notification Persistence + Inbox API Design (G167–G168)
+# Notification Persistence + Inbox API Design (G167–G168, refreshed G257–G259)
 
-**Status:** Design only (G159–G170 notifications lane, 2026-07-10). **No migration. No API implementation. No live email.**
+**Status:** Design only (G159–G170 + G249–G268 notifications lane, 2026-07-10). **No migration. No API implementation. No live email.**
 
-**Purpose:** Implementation-ready design for user-scoped in-system notification persistence and admin/client inbox endpoints, using the expanded G159 taxonomy in `packages/shared/src/notification-events.ts`.
+**Purpose:** Implementation-ready design for user-scoped in-system notification persistence and admin/client inbox endpoints, using the expanded G159 taxonomy in `packages/shared/src/notification-events.ts`, plus G257 correlation/idempotency design helpers.
 
 **Related:**
 
-- Taxonomy / policy: `packages/shared/src/notification-events.ts`
+- Taxonomy / policy / payload snapshots: `packages/shared/src/notification-events.ts`
+- Correlation / idempotency design (no migration): `apps/api/src/notifications/notification-correlation.ts`
 - No-send adapter: `apps/api/src/notifications/email-no-send-adapter.ts`
 - Operator plan: [`notifications-blocker-plan.md`](./notifications-blocker-plan.md)
+- Client portal surface plan: [`../architecture/CLIENT_PORTAL_NOTIFICATIONS_PLAN.md`](../architecture/CLIENT_PORTAL_NOTIFICATIONS_PLAN.md)
 - Email proof (no live claim): [`../runbooks/EMAIL_NOTIFICATIONS_PROOF.md`](../runbooks/EMAIL_NOTIFICATIONS_PROOF.md)
 - EN1/EN2 contract: [`../email-notifications-contract.md`](../email-notifications-contract.md)
 
@@ -47,34 +49,44 @@ model InSystemNotification {
   body               String?
   relatedEntityType  String
   relatedEntityId    String
+  /// Stable business action (e.g. sent_for_review) — part of idempotency unique key (G257)
+  actionKey          String                      @default("default")
+  /// Links inbox row ↔ EmailLog ↔ AuditLog metadata (G257)
   correlationId      String?
+  /// Deterministic dedupe key from buildNotificationCorrelationDesign() (design helper today)
+  idempotencyKey     String?
   status             InSystemNotificationStatus  @default(UNREAD)
   readAt             DateTime?
   createdAt          DateTime                    @default(now())
   /// Redacted JSON only — never secrets, storageKey, OAuth, stack, raw provider, private audit
+  /// Prefer buildNotificationPayloadSnapshot() shape (G255)
   payloadJson        Json?
 
   tenant             Tenant                      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   // recipientUserId → User (or ClientUserAccess user) — exact FK TBD in schema block
 
+  @@unique([tenantId, eventType, relatedEntityType, relatedEntityId, recipientUserId, actionKey])
   @@index([tenantId, recipientUserId, status, createdAt])
   @@index([tenantId, clientId, status, createdAt])
   @@index([tenantId, eventType, createdAt])
   @@index([correlationId])
+  @@index([idempotencyKey])
 }
 ```
 
 ### Field rules
 
-- Persist **redacted** payload only (`redactNotificationPayload()` from shared).
+- Persist **redacted** payload only (`redactNotificationPayload()` / `buildNotificationPayloadSnapshot()` from shared).
 - Never store `storageKey`, API keys, OAuth tokens, raw provider responses, stack traces, or private audit metadata.
 - `system_log_only` rows may write to `AuditLog` instead of (or in addition to) this table; they must not appear in client inbox APIs.
 - Email delivery remains a separate concern via `EmailLog` + no-send / future Resend path. Inbox rows must be creatable when `EMAIL_PROVIDER=local`.
+- **G257 correlation / idempotency (design only):** use `buildNotificationCorrelationDesign()` to derive `correlationId` + `idempotencyKey` before insert. On conflict of the `@@unique` key, return the existing row (no duplicate fan-out). Store the same `correlationId` in `EmailLog` / `AuditLog` metadata when those writes occur. **No migration in G257.**
 
 ### Migration gate (future)
 
 - Requires explicit schema/migration approval per `AGENTS.md`.
 - Dedicated `EmailTemplateKey` enum expansion remains a **separate** optional gate; typed catalog keys already map onto existing schema keys.
+- G258 refresh does **not** authorize creating or applying this model.
 
 ---
 
@@ -82,10 +94,11 @@ model InSystemNotification {
 
 1. Domain handler emits a `NotificationBusinessEvent`.
 2. `mapBusinessEventToNotification()` + `resolveNotificationRecipientPolicy()` + `resolveNotificationChannelPolicy()` decide roles/channels.
-3. For each resolved recipient user:
-   - If channel policy requires in-system → insert `InSystemNotification` (redacted payload).
-   - If email required and not audit-only → call existing `sendEmailNotification` / no-send adapter (local → `SKIPPED`).
-4. Always keep `AuditLog` / `EmailLog` semantics unchanged: audit ≠ inbox ≠ email attempt.
+3. Build `buildNotificationPayloadSnapshot()` + `buildNotificationCorrelationDesign({ actionKey, recipientUserId, ... })`.
+4. For each resolved recipient user:
+   - If channel policy requires in-system → upsert `InSystemNotification` on the G257 unique key (redacted snapshot payload + correlationId).
+   - If email required and not audit-only → call existing `sendEmailNotification` / no-send adapter (local → `SKIPPED`), attaching the same `correlationId` in related metadata when available.
+5. Always keep `AuditLog` / `EmailLog` semantics unchanged: audit ≠ inbox ≠ email attempt.
 
 ---
 
@@ -168,11 +181,13 @@ Prefer design-only until the model above exists. **Do not implement these routes
 
 | Gate | Work | Depends on |
 |------|------|------------|
-| N1a | Schema migration for `InSystemNotification` | Owner/schema approval |
+| N1a | Schema migration for `InSystemNotification` (incl. correlation/idempotency unique) | Owner/schema approval |
 | N1b | Write helpers on existing domain triggers (no live email) | N1a |
 | N1c | Admin + client inbox list/unread/mark-read APIs | N1a |
 | N1d | Minimal UI unread indicator | N1c |
 | N2 | Owner-gated live Resend proof | Separate approval |
+
+**G249–G268 local foundation (this refresh):** taxonomy completeness/compat, recipient/channel/severity, redaction, payload snapshots, metadata builder, correlation/idempotency **design**, persistence/inbox design refresh, email no-send/template/recipient/disabled-config tests — **no migration, no live send.**
 
 ---
 
@@ -182,3 +197,4 @@ Prefer design-only until the model above exists. **Do not implement these routes
 - No inbox routes were implemented.
 - No live email was sent or claimed.
 - Persistence remains the primary launch blocker for in-system claims.
+- G257 helpers are pure design/unit-test only (`notification-correlation.ts`).

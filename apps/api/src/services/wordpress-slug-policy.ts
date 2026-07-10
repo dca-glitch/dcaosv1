@@ -8,13 +8,19 @@ export const WORDPRESS_SLUG_MAX_LENGTH = 80 as const;
 /**
  * Normalize a title or raw slug candidate into a WordPress-safe post slug.
  * Returns null when the input yields no usable characters.
+ *
+ * Edge rules (G289):
+ * - lowercase ASCII [a-z0-9-] only after NFKD diacritic strip
+ * - collapse whitespace / repeated hyphens; trim leading/trailing hyphens
+ * - truncate to WORDPRESS_SLUG_MAX_LENGTH without leaving a trailing hyphen
+ * - null for empty, whitespace-only, symbol-only, or non-string input
  */
 export function normalizeWordPressSlug(input: string | null | undefined): string | null {
   if (input == null || typeof input !== "string") {
     return null;
   }
 
-  const normalized = input
+  let normalized = input
     .trim()
     .toLowerCase()
     .normalize("NFKD")
@@ -28,5 +34,9 @@ export function normalizeWordPressSlug(input: string | null | undefined): string
     return null;
   }
 
-  return normalized.slice(0, WORDPRESS_SLUG_MAX_LENGTH);
+  if (normalized.length > WORDPRESS_SLUG_MAX_LENGTH) {
+    normalized = normalized.slice(0, WORDPRESS_SLUG_MAX_LENGTH).replace(/-+$/g, "");
+  }
+
+  return normalized || null;
 }

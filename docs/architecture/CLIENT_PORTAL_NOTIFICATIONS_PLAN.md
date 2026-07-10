@@ -1,13 +1,15 @@
 # Client Portal ↔ Inbox Notifications Plan
 
-**Status:** Future plan only (G207). No persistence, outbox schema, or live send implementation in this block.
+**Status:** Design refresh (G207 / G259 / G336 / G249–G268). No persistence, outbox schema, or live send implementation in this block.
 
 Related:
 
 - [`docs/architecture/CLIENT_PORTAL_BOUNDARY.md`](./CLIENT_PORTAL_BOUNDARY.md)
 - [`docs/runbooks/CLIENT_PORTAL_ROUTE_INVENTORY.md`](../runbooks/CLIENT_PORTAL_ROUTE_INVENTORY.md)
 - [`docs/operator/notifications-blocker-plan.md`](../operator/notifications-blocker-plan.md)
+- [`docs/operator/notification-persistence-design.md`](../operator/notification-persistence-design.md) (G257–G259 persistence/inbox/idempotency design)
 - Existing email intents: `notifyDcaTeam` / `notifyClientUsers` (local often `SKIPPED`)
+- Safe payload helper: `buildNotificationPayloadSnapshot()` in `packages/shared/src/notification-events.ts`
 
 ---
 
@@ -38,6 +40,7 @@ Client-visible notification payloads may include:
 - Client-safe titles and short reason previews
 - Entity ids that the client portal already authorizes (`deliverableId`, `projectId`, `reportId`)
 - Deep-link hash paths from the route inventory
+- Fields produced by `buildNotificationPayloadSnapshot()` (G255 allowlist)
 
 Client-visible notification payloads must not include:
 
@@ -46,8 +49,30 @@ Client-visible notification payloads must not include:
 - `workflowRunId`, job/queue status, audit log bodies
 - Raw cost rows or admin-only notes
 - Stack traces
+- OAuth tokens, API keys, raw provider responses, private audit metadata
 
 Admin inbox items may reference internal entities but should still avoid dumping provider secrets or storage keys into the UI.
+
+### G259 inbox surface refresh (design only)
+
+| Surface | Audience | MVP events | Deep link |
+|---------|----------|------------|-----------|
+| Client unread / list | `ClientUserAccess` user | `client_approval_needed`, `image_set_ready`, `monthly_report_available` (+ legacy aliases) | `#/client-portal/pending-approvals` / archive |
+| Admin unread / list | owner/admin | approve/reject alerts, brief submitted, WordPress draft prepared, budget blocked | existing admin AI Delivery routes |
+
+**Still blocked:** no `InSystemNotification` table, no inbox API, no UI bell. See persistence design for proposed routes. Correlation/idempotency keys are design-only (`buildNotificationCorrelationDesign`).
+
+---
+
+## Current email seams (already wired, local often SKIPPED)
+
+| Portal action | Helper | Kind / subject pattern |
+|---|---|---|
+| Admin send-for-review | `notifyClientUsers` | Client-facing "ready for your approval" |
+| Client approve | `notifyDcaTeam` | `AI_DELIVERY_APPROVED` |
+| Client request-changes | `notifyDcaTeam` | `AI_DELIVERY_REVIEW_REQUEST` + reason preview |
+
+These are **not** the in-system inbox. Inbox work remains a future block and must reuse the same client-safe payload rules.
 
 ---
 
@@ -58,12 +83,15 @@ Admin inbox items may reference internal entities but should still avoid dumping
 3. Wire client portal UI to unread count → pending approvals / archive
 4. Keep email/outbox as optional parallel channel; local remains no-send until separately approved
 5. Add boundary smoke asserting forbidden keys absent from inbox list/detail for client tokens
+6. After durable revision-round persistence, include exhaustion notices without leaking internal counters beyond a client-safe code/message
 
 ---
 
 ## Non-goals (this plan)
 
-- No schema/migration in G207
+- No schema/migration in G207 / G249–G268 / G336
 - No live email/provider proof
 - No public unauthenticated approval URLs
 - No weakening of `ClientUserAccess` or role checks
+- No treating `EmailLog` as the client inbox
+- No edits to Lane 2 `notification-events` helpers from the portal lane

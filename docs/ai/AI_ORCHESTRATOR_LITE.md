@@ -87,7 +87,15 @@ Preview fields: workflow, client, step, agent role, provider/model, input materi
 
 ## 7. Future work (deferred)
 
-- Persist budget spend per client/period in DB
-- Wire orchestrator plan into workflow execution adapter **live path**
+- Wire trusted provider-cost ingestion for `actualCostUsd` (owner-gated; no fabricated actuals)
+- Wire orchestrator plan into workflow execution adapter **live path** (separate live proof gate)
 - Admin editable provider settings UI
 - Live provider enablement per role (owner gate)
+- Finance Lite invoice reconciliation remains **out of scope** for AI Orchestrator Lite
+
+## 8. Budget / routing truth (G389–G408)
+
+- Preview/plan keeps `liveProviderCalled=false` and `actualCostUsd=null`
+- Monthly cap enforcement uses budget guard + ledger estimates until trusted actuals exist
+- Routing truth labels document backend policy selection, override rejection, and null-actual policy
+- See [`../runbooks/AI_BUDGET_REPORTING_RECONCILIATION_CONTRACT.md`](../runbooks/AI_BUDGET_REPORTING_RECONCILIATION_CONTRACT.md) and [`../runbooks/AI_MODEL_ROUTING_POLICY.md`](../runbooks/AI_MODEL_ROUTING_POLICY.md)

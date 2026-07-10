@@ -51,6 +51,27 @@ function isAccepted(candidate: WordPressDraftImageCandidate): boolean {
 }
 
 /**
+ * True when every mapped placeholder came from acceptance === "accepted".
+ * Rejected / pending / missing candidates never contribute placeholders.
+ */
+export function assertWordPressAcceptedImagesOnly(
+  candidates: WordPressDraftImageCandidate[],
+  inclusion: WordPressDraftImageInclusion
+): boolean {
+  const acceptedRefs = new Set(
+    candidates.filter(isAccepted).map((candidate) => candidate.reference!.trim())
+  );
+
+  const mapped = [
+    inclusion.featuredImagePlaceholder,
+    ...inclusion.supportingImagePlaceholders,
+    inclusion.socialPreviewPlaceholder
+  ].filter((reference): reference is string => Boolean(reference));
+
+  return mapped.every((reference) => acceptedRefs.has(reference));
+}
+
+/**
  * Map accepted image candidates into WordPress draft payload placeholders.
  * Rejected/pending/missing slots are ignored. No live media upload.
  */
@@ -73,7 +94,7 @@ export function mapAcceptedImagesToWordPressDraftInclusion(
   const socialPreviewPlaceholder = social?.reference?.trim() || null;
   const hasAcceptedImages = Boolean(featuredImagePlaceholder || supporting.length || socialPreviewPlaceholder);
 
-  return {
+  const inclusion: WordPressDraftImageInclusion = {
     featuredImagePlaceholder,
     supportingImagePlaceholders: supporting,
     socialPreviewPlaceholder,
@@ -82,4 +103,10 @@ export function mapAcceptedImagesToWordPressDraftInclusion(
       ? "Accepted hero maps to featuredImagePlaceholder; supporting_1/2 to supportingImagePlaceholders; social_preview to socialPreviewPlaceholder. No live WordPress media call."
       : "No accepted hero/supporting/social_preview images mapped. Featured and social placeholders remain null."
   };
+
+  if (!assertWordPressAcceptedImagesOnly(candidates, inclusion)) {
+    throw new Error("WordPress accepted-image-only invariant violated.");
+  }
+
+  return inclusion;
 }

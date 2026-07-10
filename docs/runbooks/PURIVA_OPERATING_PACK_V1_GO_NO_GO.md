@@ -6,9 +6,13 @@
 
 **Canonical architecture:** Launch blockers, article/image workflow, monthly report flow, and feedback learning are defined in [`docs/architecture/PURIVA_OPERATING_PACK_V1.md`](../architecture/PURIVA_OPERATING_PACK_V1.md). This runbook covers local/admin go/no-go only.
 
+**Typed pack config (G124-G127 / G209-G216 / G349-G368):** Shared constants in `packages/shared/src/client-operating-packs.ts` record compliance profile, entitlement matrix, and catalog-only workflow templates. They do **not** clear this go/no-go, authorize live integrations, or change Puriva Launch status.
+
 Related:
 
 - [`docs/architecture/PURIVA_OPERATING_PACK_V1.md`](../architecture/PURIVA_OPERATING_PACK_V1.md) — canonical launch blockers and workflows
+- [`docs/architecture/CLIENT_OPERATING_PACKS.md`](../architecture/CLIENT_OPERATING_PACKS.md) — generic pack model (Puriva = first pack, not a fork)
+- [`docs/architecture/CLIENT_OPERATING_PACK_SAAS_LATER.md`](../architecture/CLIENT_OPERATING_PACK_SAAS_LATER.md) — `saas_later` truth label
 - [`PURIVA_OPERATIONAL_INTAKE_AND_COMPLIANCE.md`](./PURIVA_OPERATIONAL_INTAKE_AND_COMPLIANCE.md)
 - [`PURIVA_LOCAL_E2E_OPERATOR_DRY_RUN.md`](./PURIVA_LOCAL_E2E_OPERATOR_DRY_RUN.md)
 - [`docs/operator/client-delivery-sop.md`](../operator/client-delivery-sop.md)

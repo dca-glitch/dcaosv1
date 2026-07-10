@@ -212,6 +212,7 @@ Client Operating Packs sit **above** the `Client` operational hub — they defin
 | 2026-07-10 | G78 — §14 implementation status matrix (implemented vs partial vs future) |
 | 2026-07-10 | G124-G127 — typed Puriva pack constants added for compliance profile, module entitlements, and workflow template catalog |
 | 2026-07-10 | G209-G216 — pack config hardening: entitlement matrix, compliance validator, expanded workflow catalog, client visibility helper, saas-later truth |
+| 2026-07-10 | G349-G368 — pack lane refresh: lookup helpers, launch-required keys, primary template keys, paid-ads/admin-review helpers, docs + focused tests |
 
 ---
 
@@ -228,6 +229,7 @@ Labels what exists in code/docs today vs what remains future work. Puriva is **f
 | **Workflow templates** (SEO article, image set, WordPress draft, monthly report, MI, revenue, POD + legacy composite) | **Implemented as catalog constants; execution deferred** | `PURIVA_WORKFLOW_TEMPLATE_CATALOG` records steps/rules only; full orchestrator template automation deferred |
 | **Module entitlements** | **Implemented as config map; enforcement deferred** | `CLIENT_OPERATING_PACK_MODULE_ENTITLEMENT_CONFIG.puriva` maps enabled/partial/future modules; runtime tenant enforcement remains generic module work |
 | **Client visibility guard** | **Pure helper only** | `isClientVisiblePackSurface` / `getClientVisiblePackModuleKeys` filter entitled+active client surfaces; portal auth runtime unchanged |
+| **Pack / catalog lookup helpers** | **Pure helpers only** | `getClientOperatingPackConfig`, `getLaunchRequiredPackModuleKeys`, `getPurivaWorkflowTemplate`, `PURIVA_PRIMARY_WORKFLOW_TEMPLATE_KEYS`, paid-ads/admin-review helpers — no runtime enforcement |
 | **Integration boundary index** | **Implemented** | `external-integration-boundary.ts` — Puriva-specific keys as first-pack proof |
 | **AI routing / budget cap** | **Implemented** | Puriva profile keys (`puriva`, `$100` cap) — first-pack scaffolding until generic pack registry |
 | **Learning / feedback layer** | **Future** | Documented policy only; no persistent preference system |
@@ -268,3 +270,22 @@ G209-G216 harden the typed pack layer without claiming SaaS readiness or enablin
 - **G214:** Docs and `CLIENT_OPERATING_PACK_SAAS_READINESS` label pack work as `saas_later` — Agency OS first, not multi-tenant SaaS ready.
 - **G215:** Puriva pack docs updated in this file and [`PURIVA_OPERATING_PACK_V1.md`](./PURIVA_OPERATING_PACK_V1.md).
 - **G216:** Focused shared/API tests cover constants, validator, matrix, catalog, and visibility helpers.
+
+---
+
+## 17. G349-G368 closeout (pack lane refresh)
+
+G349-G368 refresh the typed pack layer without enabling live execution, runtime entitlement enforcement, or SaaS claims:
+
+- **G349:** Pack config tests + `getClientOperatingPackConfig` / `listClientOperatingPackKeys`.
+- **G350:** Puriva entitlement matrix remains the single config truth (`PURIVA_MODULE_ENTITLEMENTS`).
+- **G351:** Module visibility + `getLaunchRequiredPackModuleKeys` (config-only launch matrix).
+- **G352:** Compliance profile validator coverage expanded (paid-ads scope rejection).
+- **G353:** Website/social allowed scope helpers; paid ads remain `future_out_of_scope`.
+- **G354:** Admin review required helpers (`isPurivaAdminReviewRequired`).
+- **G355-G359:** Workflow template catalog + `getPurivaWorkflowTemplate` / `PURIVA_PRIMARY_WORKFLOW_TEMPLATE_KEYS` (SEO, image, WordPress draft, monthly — catalog-only).
+- **G360:** SaaS-later truth labels unchanged (`CLIENT_OPERATING_PACK_SAAS_READINESS`).
+- **G361:** Generic reuse docs remain this file — second client = pack config, not Core fork.
+- **G362-G363:** Pack docs closeout in this file, [`PURIVA_OPERATING_PACK_V1.md`](./PURIVA_OPERATING_PACK_V1.md), [`CLIENT_OPERATING_PACK_SAAS_LATER.md`](./CLIENT_OPERATING_PACK_SAAS_LATER.md).
+- **G364:** Puriva launch mapping refresh proposed to main for [`PURIVA_LAUNCH_GATE.md`](../runbooks/PURIVA_LAUNCH_GATE.md) (areas 13–15) — see lane proposed-main-docs patch.
+- **G365-G368:** Focused validation, lane report, remaining blockers, next-gate proposal (lane report artifact).

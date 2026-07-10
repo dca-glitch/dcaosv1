@@ -1,7 +1,8 @@
 /**
- * Client Operating Pack constants (G124-G126, G209-G216).
+ * Client Operating Pack constants (G124-G126, G209-G216, G349-G368).
  * Configuration only: no workflow execution, live provider calls, or runtime entitlement enforcement.
  * Agency OS first — not a SaaS product surface.
+ * Puriva is the first Client Operating Pack proof — not a Core fork.
  */
 
 export const CLIENT_OPERATING_PACKS_VERSION = "CLIENT_OPERATING_PACKS_V1";
@@ -512,3 +513,72 @@ export const PURIVA_OPERATING_PACK_V1 = {
 export const CLIENT_OPERATING_PACK_CONFIGS = {
   puriva: PURIVA_OPERATING_PACK_V1
 } as const satisfies Record<ClientOperatingPackKey, ClientOperatingPackConfig>;
+
+/**
+ * G349/G350 — Pack config lookup helpers (pure; no I/O).
+ */
+export function getClientOperatingPackConfig(
+  packKey: ClientOperatingPackKey
+): ClientOperatingPackConfig {
+  return CLIENT_OPERATING_PACK_CONFIGS[packKey];
+}
+
+export function listClientOperatingPackKeys(): ClientOperatingPackKey[] {
+  return Object.keys(CLIENT_OPERATING_PACK_CONFIGS) as ClientOperatingPackKey[];
+}
+
+/**
+ * G351 — Launch-required module keys from entitlement matrix (config truth only).
+ */
+export function getLaunchRequiredPackModuleKeys(
+  packKey: ClientOperatingPackKey
+): ClientOperatingPackModuleKey[] {
+  return CLIENT_OPERATING_PACK_MODULE_ENTITLEMENT_CONFIG[packKey]
+    .filter((entry) => entry.requiredForLaunch)
+    .map((entry) => entry.moduleKey);
+}
+
+/**
+ * G356 — Workflow template catalog lookup (catalog-only; no execution).
+ */
+export function getPurivaWorkflowTemplate(
+  templateKey: ClientOperatingPackWorkflowTemplateKey
+): ClientOperatingPackWorkflowTemplate | undefined {
+  return PURIVA_WORKFLOW_TEMPLATE_CATALOG.find((template) => template.templateKey === templateKey);
+}
+
+export function listPurivaWorkflowTemplateKeys(): ClientOperatingPackWorkflowTemplateKey[] {
+  return PURIVA_WORKFLOW_TEMPLATE_CATALOG.map((template) => template.templateKey);
+}
+
+/** Primary Puriva delivery templates used for launch mapping (excludes future/legacy composites). */
+export const PURIVA_PRIMARY_WORKFLOW_TEMPLATE_KEYS = [
+  "puriva_seo_article_v1",
+  "puriva_image_set_v1",
+  "puriva_wordpress_draft_v1",
+  "puriva_monthly_report_flow_v1"
+] as const satisfies readonly ClientOperatingPackWorkflowTemplateKey[];
+
+/**
+ * G353 — Website/social allowed scope + paid-ads out-of-scope check (pure).
+ */
+export function isPurivaPaidAdsOutOfScope(
+  profile: PurivaComplianceProfile = PURIVA_COMPLIANCE_PROFILE_V1
+): boolean {
+  return profile.paidAdsScope === "future_out_of_scope";
+}
+
+export function getPurivaAllowedContentChannels(
+  profile: PurivaComplianceProfile = PURIVA_COMPLIANCE_PROFILE_V1
+): readonly PurivaComplianceContentChannel[] {
+  return profile.contentChannels;
+}
+
+/**
+ * G354 — Admin review required for Puriva medical content (pure).
+ */
+export function isPurivaAdminReviewRequired(
+  profile: PurivaComplianceProfile = PURIVA_COMPLIANCE_PROFILE_V1
+): boolean {
+  return profile.adminReviewRequired === true && profile.requiredHumanReview === true;
+}

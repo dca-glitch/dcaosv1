@@ -1,5 +1,7 @@
 # G223 Security Checklist — Code-to-Doc Alignment
 
+**Operator note (G409):** Prefer [`SECURITY_CHECKLIST_G409.md`](./SECURITY_CHECKLIST_G409.md) for post-G228 security/operator alignment. This G223 document remains historical.
+
 **Status:** Docs-only security checklist refresh for DCA OS Lite G223. No live calls, no secret reads, no staging or production mutation, no commit, and no deploy were performed while producing this document.
 
 **Scope:** Align operator/security language with actual local/no-live foundations after G89–G148 (and concurrent G149–G222 lane work). This checklist records evidence status; it does **not** move any Puriva Launch or production blocker to PASS without recorded target-environment proof.

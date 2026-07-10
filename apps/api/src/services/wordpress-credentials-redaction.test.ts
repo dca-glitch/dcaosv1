@@ -7,7 +7,7 @@ import {
   redactWordPressSerializableValue
 } from "./wordpress-credentials-redaction";
 
-describe("wordpress-credentials-redaction (G184)", () => {
+describe("wordpress-credentials-redaction (G293)", () => {
   it("redacts credential policy shape to presence flags only", () => {
     const raw = "wp-app-password-plain";
     const shape = redactWordPressCredentialShape({
@@ -64,5 +64,14 @@ describe("wordpress-credentials-redaction (G184)", () => {
     assert.equal(serialized.includes("applicationPassword"), false);
     assert.equal(serialized.includes("ciphertext"), false);
     assert.equal((redacted as { nested: { label: string } }).nested.label, "staging");
+  });
+
+  it("redacts sensitive string value hints", () => {
+    const redacted = redactWordPressSerializableValue({
+      note: "bearer abc.def.ghi leaked",
+      path: "/safe"
+    });
+    assert.equal((redacted as { note: string }).note, "[REDACTED]");
+    assert.equal((redacted as { path: string }).path, "/safe");
   });
 });

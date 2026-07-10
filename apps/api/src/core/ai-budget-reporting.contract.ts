@@ -2,6 +2,10 @@ import type { AiBudgetLedgerSpendRow } from "./ai-budget-ledger.service";
 
 export const AI_BUDGET_REPORTING_CONTRACT_VERSION = "AI_BUDGET_REPORTING_CONTRACT_V1";
 
+/** actualCostUsd stays null until a trusted provider cost source is integrated. */
+export const AI_BUDGET_ACTUAL_COST_NULL_POLICY =
+  "leave_null_until_trusted_provider_cost" as const;
+
 export type AiBudgetReportingLedgerStatus =
   | "PREVIEW"
   | "PLANNED"
@@ -50,6 +54,7 @@ export interface AiBudgetReportingContract {
   version: typeof AI_BUDGET_REPORTING_CONTRACT_VERSION;
   source: "ai_budget_ledger";
   financeLiteBoundary: "separate_admin_finance_records_no_invoice_ingestion";
+  actualCostNullPolicy: typeof AI_BUDGET_ACTUAL_COST_NULL_POLICY;
   periodKey: string;
   monthlyCapUsd: number;
   spentThisPeriodUsd: number;
@@ -210,6 +215,7 @@ export function buildAiBudgetReportingContract(input: {
     version: AI_BUDGET_REPORTING_CONTRACT_VERSION,
     source: "ai_budget_ledger",
     financeLiteBoundary: "separate_admin_finance_records_no_invoice_ingestion",
+    actualCostNullPolicy: AI_BUDGET_ACTUAL_COST_NULL_POLICY,
     periodKey: input.periodKey,
     monthlyCapUsd: input.monthlyCapUsd,
     spentThisPeriodUsd,

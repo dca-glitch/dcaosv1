@@ -95,12 +95,23 @@ describe("image-notification-mapping", () => {
     assert.ok(IMAGE_NOTIFICATION_NEEDED_EVENTS.image_candidate_generated);
   });
 
-  it("G194 returns null for no-op same-state changes", () => {
+  it("G194/G319 returns null for no-op same-state changes", () => {
     const noop = mapImageStateChangeToNotification({
       fromState: "candidate_generated",
       toState: "candidate_generated",
       transition: "generate_candidate"
     });
     assert.equal(noop, null);
+  });
+
+  it("G319 maps admin_rejected replacement_candidate_ready to image_candidate_generated", () => {
+    const mapping = mapImageStateChangeToNotification({
+      fromState: "admin_rejected",
+      toState: "candidate_generated",
+      transition: "replacement_candidate_ready"
+    });
+    assert.ok(mapping);
+    assert.equal(mapping.eventType, IMAGE_NOTIFICATION_EXISTING_EVENTS.image_candidate_generated);
+    assert.deepEqual(mapping.audiences, ["admin"]);
   });
 });

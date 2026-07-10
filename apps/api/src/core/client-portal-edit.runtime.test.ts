@@ -44,12 +44,18 @@ describe("client portal edit access", () => {
   it("allows only client-edit fields in edit history serialization", () => {
     assert.equal(isClientPortalEditableFieldName("title"), true);
     assert.equal(isClientPortalEditableFieldName("body"), true);
+    assert.equal(isClientPortalEditableFieldName("description"), true);
+    assert.equal(isClientPortalEditableFieldName("tags"), true);
+    assert.equal(isClientPortalEditableFieldName("category"), true);
     assert.equal(isClientPortalEditableFieldName("scheduledPublishAt"), true);
 
     assert.equal(isClientPortalEditableFieldName("storageKey"), false);
     assert.equal(isClientPortalEditableFieldName("workflowRunId"), false);
     assert.equal(isClientPortalEditableFieldName("provider"), false);
+    assert.equal(isClientPortalEditableFieldName("providerMetadata"), false);
     assert.equal(isClientPortalEditableFieldName("actualCostUsd"), false);
+    assert.equal(isClientPortalEditableFieldName("estimatedCostUsd"), false);
     assert.equal(isClientPortalEditableFieldName("audit"), false);
+    assert.equal(isClientPortalEditableFieldName("adminSummaryNotes"), false);
   });
 });

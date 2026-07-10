@@ -70,4 +70,32 @@ describe("ai-budget-guard.service", () => {
     const routeCap = 0.75;
     assert.ok(routeCap < PURIVA_AI_MONTHLY_CAP_USD);
   });
+
+  it("keeps actualCostUsd null on snapshot unless explicitly supplied", () => {
+    const withoutActual = buildAiBudgetSnapshot({
+      operatingPackKey: "puriva",
+      taskType: "research_pack",
+      spentThisPeriodUsd: 10
+    });
+    assert.equal(withoutActual.actualCostUsd, null);
+    assert.equal(withoutActual.monthlyCapUsd, 100);
+
+    const withActual = buildAiBudgetSnapshot({
+      operatingPackKey: "puriva",
+      taskType: "research_pack",
+      spentThisPeriodUsd: 10,
+      actualCostUsd: 0.08
+    });
+    assert.equal(withActual.actualCostUsd, 0.08);
+  });
+
+  it("does not treat estimated step cost as trusted actual", () => {
+    const budget = buildAiBudgetSnapshot({
+      operatingPackKey: "puriva",
+      taskType: "article_draft",
+      maxCostUsdPerRun: 0.6
+    });
+    assert.equal(budget.estimatedStepCostUsd, 0.6);
+    assert.equal(budget.actualCostUsd, null);
+  });
 });

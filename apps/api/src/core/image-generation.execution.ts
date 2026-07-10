@@ -114,6 +114,12 @@ export type ImageGenerationExecutionResult = {
  * status. `configured_shape_ok` still resolves to `skipped_not_implemented`
  * because no live provider client is wired in this block.
  */
+/**
+ * Hard no-live guard (G323): every execution path must set providerCalled=false.
+ * This block never contacts an image provider regardless of readiness status.
+ */
+export const IMAGE_GENERATION_LIVE_PROVIDER_CALLS_ALLOWED = false as const;
+
 export function executeImageGenerationVariantRequest(
   request: ImageGenerationVariantRequest,
   readiness: ImageGenerationIntegrationReadiness
@@ -285,6 +291,7 @@ export type ImageGenerationFoundationSnapshot = {
   readiness: ImageGenerationIntegrationReadiness;
   disabledSafe: true;
   liveProviderCallsDeferred: true;
+  liveProviderCallsAllowed: typeof IMAGE_GENERATION_LIVE_PROVIDER_CALLS_ALLOWED;
   note: string;
 };
 
@@ -306,6 +313,7 @@ export function buildImageGenerationFoundationSnapshot(
     readiness,
     disabledSafe: true,
     liveProviderCallsDeferred: true,
+    liveProviderCallsAllowed: IMAGE_GENERATION_LIVE_PROVIDER_CALLS_ALLOWED,
     note:
       "Foundation snapshot only. No provider call is made regardless of readiness status; see docs/runbooks/IMAGE_GENERATION_PROOF.md Phase B."
   };

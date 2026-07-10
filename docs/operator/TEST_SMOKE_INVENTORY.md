@@ -1,8 +1,8 @@
 # Test and Smoke Inventory
 
-**Status:** G224 refresh of the G142 package-script inventory. Root [`package.json`](../../package.json) smoke scripts re-checked on 2026-07-10. This document is an operator reference only; it does not run tests, smoke scripts, live probes, deploys, or migrations.
+**Status:** G419 refresh (extends G224/G142). Root [`package.json`](../../package.json) smoke scripts re-checked on 2026-07-10 for the G409–G428 security/operator lane. This document is an operator reference only; it does not run tests, smoke scripts, live probes, deploys, or migrations.
 
-**Honesty rule:** Sections 1–2 list **existing** root package scripts. Section 5 lists **expected / lane-added local focused tests and helpers** from G89–G222 work. Listing a focused test here does **not** mean a live smoke passed. Live smokes and target-environment proofs remain deferred until owner-approved execution gates.
+**Honesty rule:** Sections 1–2 list **existing** root package scripts. Section 5 lists **expected / lane-added local focused tests and helpers** from G89–G408 work. Listing a focused test here does **not** mean a live smoke passed. Live smokes and target-environment proofs remain deferred until owner-approved execution gates. See also [`NO_LIVE_PROOF_CATALOGUE.md`](./NO_LIVE_PROOF_CATALOGUE.md) and [`LOCAL_ONLY_PROOF_TAXONOMY.md`](./LOCAL_ONLY_PROOF_TAXONOMY.md).
 
 **Command convention:** Run from `C:\dcaosv1` in external Windows PowerShell. Prefer `npm.cmd run <script>` on Windows. Validate must pass before smoke. Long runs should log to `$env:TEMP` and open Notepad. Do not track or commit `.cursor/settings.json`.
 
@@ -155,11 +155,11 @@ This inventory covers root `package.json` scripts visible in the G142/G224 passe
 
 ---
 
-## 5. G224 — Focused local tests / helpers inventory (placeholders + known files)
+## 5. G419 — Focused local tests / helpers inventory (placeholders + known files)
 
 These are **local unit/integration/helper** surfaces other lanes are adding or have added. They are not live smokes. Status labels:
 
-- **Present** — file observed in repo during G224 inspection
+- **Present** — file observed in repo during G224/G419 inspection
 - **Expected** — placeholder for a focused test/helper other lanes may add; treat as inventory slot until confirmed Present
 - **Live deferred** — any real provider/bucket/OAuth/HTTP send remains owner-gated
 
@@ -168,9 +168,14 @@ These are **local unit/integration/helper** surfaces other lanes are adding or h
 | Storage / R2 | `apps/api/src/storage/r2.config.test.ts` | Present | Live deferred |
 | Storage / R2 | `apps/api/src/storage/r2-proof-stage.test.ts` | Present | Live deferred |
 | Storage / R2 | `apps/api/src/storage/private-storage.service.test.ts` | Present | Live deferred |
+| Storage / R2 | `apps/api/src/storage/storage-key-boundary.ts` (+ serializer boundary tests) | Present | Live deferred |
+| Storage / R2 | `apps/api/src/storage/storage-error-redaction.test.ts` | Present (G409 lane) | No live |
+| Storage / R2 | `apps/api/src/storage/admin-vs-client-storage-field-policy.ts` | Present | No live |
 | Storage / R2 | `apps/api/tests/integration/r2-storage-boundary.integration.test.ts` | Present | Live deferred |
 | Storage / R2 | `apps/api/tests/integration/sec-h1-storage-key-leak.integration.test.ts` | Present | Live deferred |
 | Storage / R2 | Additional signed-URL / image-variant byte helpers | Expected | Live deferred |
+| Security / redaction | `apps/api/src/services/wordpress-credentials-redaction.test.ts` | Present | No live |
+| Security / redaction | `apps/api/src/core/client-portal-error-safety.test.ts` | Present | No live |
 | Notifications | `apps/api/src/notifications/notification-events.test.ts` | Present | Live deferred |
 | Notifications | `apps/api/src/notifications/email-no-send-adapter.test.ts` | Present | Live deferred |
 | Notifications | `apps/api/src/config/email.config.test.ts` | Present | Live deferred |
@@ -212,7 +217,10 @@ These are **local unit/integration/helper** surfaces other lanes are adding or h
 
 ## 6. Related docs
 
-- Security alignment: [`docs/security/SECURITY_CHECKLIST_G223.md`](../security/SECURITY_CHECKLIST_G223.md)
+- Security alignment: [`docs/security/SECURITY_CHECKLIST_G409.md`](../security/SECURITY_CHECKLIST_G409.md) (prefer over G223)
+- No-live catalogue: [`NO_LIVE_PROOF_CATALOGUE.md`](./NO_LIVE_PROOF_CATALOGUE.md)
+- Local-only taxonomy: [`LOCAL_ONLY_PROOF_TAXONOMY.md`](./LOCAL_ONLY_PROOF_TAXONOMY.md)
 - Validation guards: [`VALIDATION_COMMAND_GUARDS.md`](./VALIDATION_COMMAND_GUARDS.md)
-- Next gates: [`G227_NEXT_30_GATES.md`](./G227_NEXT_30_GATES.md)
-- Proposed main-doc patches: [`_g223_g227_proposed_main_doc_updates.md`](./_g223_g227_proposed_main_doc_updates.md)
+- Lane roadmap notes: [`G409_NEXT_GATES.md`](./G409_NEXT_GATES.md) (L12 owns final next-50)
+- Historical next-30: [`G227_NEXT_30_GATES.md`](./G227_NEXT_30_GATES.md)
+- Proposed main-doc patches (G223 era): [`_g223_g227_proposed_main_doc_updates.md`](./_g223_g227_proposed_main_doc_updates.md); G409 proposals in `$env:TEMP\dca-g409-g428-security-proposed-main-docs.md`

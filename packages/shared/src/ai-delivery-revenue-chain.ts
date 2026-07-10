@@ -56,6 +56,15 @@ export interface RevenueHubDataContractV1 {
   clientVisibleByDefault: false;
 }
 
+export const REVENUE_HUB_ALLOWED_RECOMMENDATION_ACTION_TYPES: readonly RevenueHubRecommendationActionType[] =
+  [
+    "review_anomaly",
+    "follow_up_with_client",
+    "prepare_operator_note",
+    "check_source_data",
+    "defer"
+  ] as const;
+
 export interface RevenueHubAiRecommendationGuardV1 {
   advisoryOnly: true;
   allowedActionTypes: RevenueHubRecommendationActionType[];
@@ -63,8 +72,25 @@ export interface RevenueHubAiRecommendationGuardV1 {
   priceChangeAllowed: false;
   refundAllowed: false;
   externalSystemWriteAllowed: false;
+  /** Explicit: recommendations never constitute a financial guarantee. */
+  financialGuaranteeAllowed: false;
+  /** Explicit: no CRM live sync from recommendation actions. */
+  crmLiveSyncAllowed: false;
   operatorApprovalRequired: true;
 }
+
+/** Canonical advisory-only recommendation guard (G373–G376). */
+export const REVENUE_HUB_DEFAULT_RECOMMENDATION_GUARD: RevenueHubAiRecommendationGuardV1 = {
+  advisoryOnly: true,
+  allowedActionTypes: [...REVENUE_HUB_ALLOWED_RECOMMENDATION_ACTION_TYPES],
+  paymentExecutionAllowed: false,
+  priceChangeAllowed: false,
+  refundAllowed: false,
+  externalSystemWriteAllowed: false,
+  financialGuaranteeAllowed: false,
+  crmLiveSyncAllowed: false,
+  operatorApprovalRequired: true
+};
 
 export interface RevenueHubAiRecommendationContractV1 {
   id: string;
@@ -73,6 +99,8 @@ export interface RevenueHubAiRecommendationContractV1 {
   summary: string;
   rationale: string;
   confidence: "low" | "medium" | "high";
+  /** Explicit advisory disclaimer — never a financial guarantee. */
+  financialGuarantee: false;
   guard: RevenueHubAiRecommendationGuardV1;
 }
 
@@ -115,6 +143,15 @@ export interface RevenueHubNoLiveCrmPolicy {
   paymentExecutionAllowed: false;
   externalBillingWriteAllowed: false;
 }
+
+/** Canonical no-live CRM / no-guarantee policy (G373–G376). */
+export const REVENUE_HUB_DEFAULT_NO_LIVE_CRM_POLICY: RevenueHubNoLiveCrmPolicy = {
+  crmLiveSyncAllowed: false,
+  crmWriteBackAllowed: false,
+  financialGuaranteeAllowed: false,
+  paymentExecutionAllowed: false,
+  externalBillingWriteAllowed: false
+};
 
 export interface RevenueHubLeadContractV1 {
   id: string;
@@ -169,4 +206,120 @@ export interface RevenueHubOperatingContractV1 {
   policy: RevenueHubNoLiveCrmPolicy;
   operatorReviewRequired: true;
   clientVisibleByDefault: false;
+}
+
+/**
+ * Returns violations for a candidate Revenue Hub recommendation guard.
+ * Used by contract proofs — does not authorize payment/CRM/guarantee actions.
+ */
+export function findRevenueHubRecommendationGuardViolations(
+  guard: Record<string, unknown>
+): string[] {
+  const violations: string[] = [];
+  if (guard.advisoryOnly !== true) {
+    violations.push("advisoryOnly");
+  }
+  if (guard.operatorApprovalRequired !== true) {
+    violations.push("operatorApprovalRequired");
+  }
+
+  const requiredFalse = [
+    "paymentExecutionAllowed",
+    "priceChangeAllowed",
+    "refundAllowed",
+    "externalSystemWriteAllowed",
+    "financialGuaranteeAllowed",
+    "crmLiveSyncAllowed"
+  ] as const;
+
+  for (const key of requiredFalse) {
+    if (guard[key] !== false) {
+      violations.push(key);
+    }
+  }
+
+  const allowed = guard.allowedActionTypes;
+  if (!Array.isArray(allowed)) {
+    violations.push("allowedActionTypes");
+  } else {
+    const permitted = new Set<string>(REVENUE_HUB_ALLOWED_RECOMMENDATION_ACTION_TYPES);
+    for (const action of allowed) {
+      if (typeof action !== "string" || !permitted.has(action)) {
+        violations.push(`allowedActionTypes:${String(action)}`);
+      }
+    }
+  }
+
+  return violations;
+}
+
+/**
+ * Returns violations for a candidate no-live CRM policy object.
+ */
+export function findRevenueHubNoLiveCrmPolicyViolations(
+  policy: Record<string, unknown>
+): string[] {
+  const violations: string[] = [];
+  const requiredFalse = [
+    "crmLiveSyncAllowed",
+    "crmWriteBackAllowed",
+    "financialGuaranteeAllowed",
+    "paymentExecutionAllowed",
+    "externalBillingWriteAllowed"
+  ] as const;
+
+  for (const key of requiredFalse) {
+    if (policy[key] !== false) {
+      violations.push(key);
+    }
+  }
+  return violations;
+}
+
+/**
+ * Build an advisory-only recommendation with canonical guard (no financial guarantee).
+ */
+export function buildRevenueHubAiRecommendation(input: {
+  id: string;
+  recordIds: string[];
+  actionType: RevenueHubRecommendationActionType;
+  summary: string;
+  rationale: string;
+  confidence: "low" | "medium" | "high";
+}): RevenueHubAiRecommendationContractV1 {
+  return {
+    id: input.id,
+    recordIds: input.recordIds,
+    actionType: input.actionType,
+    summary: input.summary,
+    rationale: input.rationale,
+    confidence: input.confidence,
+    financialGuarantee: false,
+    guard: REVENUE_HUB_DEFAULT_RECOMMENDATION_GUARD
+  };
+}
+
+/**
+ * Build an operating contract snapshot with canonical no-live CRM policy.
+ */
+export function buildRevenueHubOperatingContract(input: {
+  tenantId: string;
+  clientId: string | null;
+  leads?: RevenueHubLeadContractV1[];
+  opportunities?: RevenueHubOpportunityContractV1[];
+  attributions?: RevenueHubAttributionContractV1[];
+  recommendations?: RevenueHubAiRecommendationContractV1[];
+}): RevenueHubOperatingContractV1 {
+  return {
+    version: REVENUE_HUB_OPERATING_CONTRACT_VERSION,
+    tenantId: input.tenantId,
+    clientId: input.clientId,
+    leads: input.leads ?? [],
+    opportunities: input.opportunities ?? [],
+    attributions: input.attributions ?? [],
+    recommendations: input.recommendations ?? [],
+    policy: REVENUE_HUB_DEFAULT_NO_LIVE_CRM_POLICY,
+    operatorReviewRequired: true,
+    clientVisibleByDefault: false
+  };
 }

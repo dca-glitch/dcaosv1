@@ -6,6 +6,7 @@ import {
   buildImageGenerationRejection,
   buildImageGenerationVariantRequestSet,
   executeImageGenerationVariantRequestSet,
+  IMAGE_GENERATION_LIVE_PROVIDER_CALLS_ALLOWED,
   IMAGE_GENERATION_VARIANT_SLOTS,
   isFreeOfInternalOnlyFields,
   summarizeImageGenerationExecutionResults,
@@ -164,12 +165,18 @@ describe("image-generation.execution", () => {
     assert.equal(disabledSnapshot.variantSlots.length, 4);
     assert.equal(disabledSnapshot.disabledSafe, true);
     assert.equal(disabledSnapshot.liveProviderCallsDeferred, true);
+    assert.equal(disabledSnapshot.liveProviderCallsAllowed, false);
     assert.equal(disabledSnapshot.readiness.status, "disabled");
 
     const configuredSnapshot = buildImageGenerationFoundationSnapshot(
       readiness({ status: "configured_shape_ok", generationEnabled: true, provider: "openai_images", hasApiKey: true })
     );
     assert.equal(configuredSnapshot.disabledSafe, true);
+    assert.equal(configuredSnapshot.liveProviderCallsAllowed, false);
     assert.equal(JSON.stringify(configuredSnapshot).includes("skipped"), false);
+  });
+
+  it("G323 enforces no-live provider invariant at the foundation constant", () => {
+    assert.equal(IMAGE_GENERATION_LIVE_PROVIDER_CALLS_ALLOWED, false);
   });
 });

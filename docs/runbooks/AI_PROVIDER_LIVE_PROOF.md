@@ -629,11 +629,12 @@ Detail: [`AI_MODEL_ROUTING_POLICY.md`](./AI_MODEL_ROUTING_POLICY.md) (G76 sectio
 
 Detail: [`AI_MODEL_ROUTING_POLICY.md`](./AI_MODEL_ROUTING_POLICY.md) (G77b section) · [`STATUS.md`](../STATUS.md) (G77b closeout).
 
-**Recommended next gates (post-G77b):**
+**Recommended next gates (post-G77b / post-G408 budget lane):**
 
 - **G78:** guarded commit/push of G77b + G78 runbook truth-label alignment (docs only)
-- **G79:** monthly cap aggregation for `liveProviderCalled=true` COMPLETED rows — local proof required; **not** proven
-- **G80:** `actualCostUsd` when gateway exposes exact provider cost — local proof required; **not** proven
+- **G79:** monthly cap aggregation for `liveProviderCalled=true` COMPLETED rows — local unit coverage present; live aggregation proof remains local-only from G77b row shape
+- **G80 / G389–G408:** `actualCostUsd` null-until-trusted policy + reporting/reconciliation/routing truth hardened (no live OpenRouter in this lane)
+- **Next cost-proof gate (proposed):** trusted provider-cost ingestion for `actualCostUsd` from owner-approved usage/billing source — **not** proven; no Finance Lite invoice mutation; no staging/production live without separate approval
 - Staging/production live proof remains **BLOCKED**; no exact invoice/provider cost proof
 
 ### 9.19 G81 — staging live proof planning only (no execution authorization)

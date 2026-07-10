@@ -1,6 +1,6 @@
 # Puriva Monthly Report v1 Gate
 
-**Status:** Local deterministic monthly report scaffolding for Puriva delivery status and compliance-safe recommendations. G85 live GA/GSC path planning, G103-G109 helper guardrails, and **G171-G180** config/period/source-truth/metric-validation/recommendation/output-guard closeout are documented here and in related runbooks — they do **not** change this gate into live analytics proof.
+**Status:** Local deterministic monthly report scaffolding for Puriva delivery status and compliance-safe recommendations. G85 live GA/GSC path planning, G103-G109 helper guardrails, **G171-G180** closeout, and **G269-G288** analytics hardening (exhaustive config/redaction, period/timezone, source-truth, unavailable-state, export truth labels) are documented here and in related runbooks — they do **not** change this gate into live analytics proof.
 
 Related:
 
@@ -8,11 +8,15 @@ Related:
 - `apps/api/src/core/puriva-monthly-report.ts`
 - `apps/api/src/core/monthly-report-policy.ts`
 - `apps/api/src/config/ga-gsc.config.ts`
+- `apps/api/src/core/ga-gsc-period-policy.ts`
 - `apps/api/src/core/monthly-report-metrics-validation.ts`
 - `apps/api/src/core/monthly-report-metrics-recommendation-policy.ts`
 - `apps/api/src/core/monthly-report-metrics-output-guard.ts`
+- `apps/api/src/core/monthly-report-metrics-unavailable-state.ts`
+- `apps/api/src/core/monthly-report-metrics-export-truth.ts`
 - `apps/api/src/core/metrics-source-truth.ts`
-- [`MONTHLY_REPORT_CSV_IMPORT_PROOF_PLAN.md`](./MONTHLY_REPORT_CSV_IMPORT_PROOF_PLAN.md) — G178 CSV/manual import proof plan (no live Google)
+- [`MONTHLY_REPORT_CSV_IMPORT_PROOF_PLAN.md`](./MONTHLY_REPORT_CSV_IMPORT_PROOF_PLAN.md) — CSV/manual import proof plan (no live Google)
+- [`MONTHLY_REPORT_LIVE_DATA_PROOF.md`](./MONTHLY_REPORT_LIVE_DATA_PROOF.md) — live GA/GSC remains deferred
 - `scripts/lib/puriva-monthly-report.mjs`
 - `scripts/lib/puriva-local-setup.mjs`
 - `docs/runbooks/PURIVA_CLIENT_PORTAL_BOUNDARY_GATE.md`
@@ -78,3 +82,4 @@ Requires `AUTH_SEED_TEST_PASSWORD` (minimum 8 characters).
 - G85 does not authorize OAuth execution, token storage changes, Google API calls, or client-visible "live analytics" labels; it only defines the preconditions and truth-label policy for a future live block.
 - G103-G109 helper tests cover config shape, date range policy, property mapping shape, metrics source truth, generation input contract, and FINAL-only client visibility; they do not prove OAuth or live analytics.
 - **G171-G180 closeout (2026-07-10):** credential presence hardening (missing client id/secret/refresh/property/GSC site; full shape still live-deferred; secrets not serialized); period policy (month bounds, leap Feb, future month rejected, partial current-month warning); metrics source truth serializer (manual/placeholder/csv/live/unavailable/mixed); metric row validation; recommendation input policy (metrics/manual/AI-draft/placeholder — no live AI); client FINAL-only and admin controlled output guards; CSV/manual import proof plan doc. Focused unit tests only — no live Google, no smoke required for this lane.
+- **G269-G288 hardening (2026-07-10):** exhaustive GA/GSC config-shape/redaction/disabled/missing_config/`configured_shape_ok`+live_deferred tests; period/timezone/future-current month policy tests; metrics source truth + mixed-source hardening; expanded metric validation and recommendation policy tests; client/admin output guard expansion; unavailable-state helper; export/download truth labels (`hasDocument` / `exportUrl` / never `storageKey`); CSV proof plan + this gate refresh. Still **no live Google**, no OAuth, no token storage.

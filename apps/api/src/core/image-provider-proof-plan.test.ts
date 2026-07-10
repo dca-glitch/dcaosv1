@@ -34,10 +34,22 @@ describe("image-provider-proof-plan", () => {
     }
   });
 
-  it("G196 summarize helper stays free of secrets and live claims", () => {
+  it("G196/G322 summarize helper stays free of secrets and live claims", () => {
     const summary = summarizeImageProviderProofPlan();
     assert.ok(summary.includes("live_in_block=false"));
     assert.ok(summary.includes("pending_owner_approval"));
     assert.ok(!/api[_-]?key|secret|password/i.test(summary));
+  });
+
+  it("G323 keeps every non-live phase at liveProviderCallAllowed=false", () => {
+    const plan = buildImageProviderProofPlan();
+    assert.equal(plan.liveProviderCallsInThisBlock, false);
+    for (const phase of plan.phases) {
+      if (phase.phase === "one_live_generation_later") {
+        assert.equal(phase.status, "explicitly_out_of_scope_this_block");
+        continue;
+      }
+      assert.equal(phase.liveProviderCallAllowed, false, phase.phase);
+    }
   });
 });

@@ -75,6 +75,42 @@ describe("client portal monthly report boundary (G200)", () => {
     assert.equal("storageKey" in summary, false);
     assert.equal("miHandoffId" in summary, false);
     assert.equal("adminSummaryNotes" in summary, false);
+    assert.equal("provider" in summary, false);
+    assert.equal("actualCostUsd" in summary, false);
     assert.equal(collectClientPortalForbiddenPayloadKeys(summary).length, 0);
+  });
+
+  it("forces serialized monthly report status to FINAL even when only storageKey presence varies (G331)", () => {
+    const withDoc = toClientPortalMonthlyReportSummary({
+      id: "report-a",
+      aiDeliveryProjectId: "project-1",
+      title: "With doc",
+      recommendationsText: null,
+      exportUrl: null,
+      finalizedAt: "2026-07-01T00:00:00.000Z",
+      storageKey: "tenants/internal/a.pdf",
+      createdAt: new Date("2026-07-01T00:00:00.000Z"),
+      updatedAt: new Date("2026-07-01T00:00:00.000Z")
+    });
+    const withoutDoc = toClientPortalMonthlyReportSummary({
+      id: "report-b",
+      aiDeliveryProjectId: "project-1",
+      title: "Without doc",
+      recommendationsText: null,
+      exportUrl: null,
+      finalizedAt: null,
+      storageKey: null,
+      createdAt: new Date("2026-07-01T00:00:00.000Z"),
+      updatedAt: new Date("2026-07-01T00:00:00.000Z")
+    });
+
+    assert.equal(withDoc.status, "FINAL");
+    assert.equal(withoutDoc.status, "FINAL");
+    assert.equal(withDoc.hasDocument, true);
+    assert.equal(withoutDoc.hasDocument, false);
+    assert.equal(JSON.stringify(withDoc).includes("storageKey"), false);
+    assert.equal(JSON.stringify(withoutDoc).includes("storageKey"), false);
+    assertClientPortalPayloadHasNoForbiddenKeys(withDoc);
+    assertClientPortalPayloadHasNoForbiddenKeys(withoutDoc);
   });
 });

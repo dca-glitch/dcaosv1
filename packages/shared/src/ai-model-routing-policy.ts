@@ -5,6 +5,23 @@
 
 export const AI_MODEL_ROUTING_POLICY_VERSION = "AI_MODEL_ROUTING_POLICY_V1";
 
+/**
+ * Operator-facing routing truth labels (shared vocabulary).
+ * Runtime builders live in API core; this list documents approved label keys.
+ */
+export const AI_MODEL_ROUTING_TRUTH_LABELS = [
+  "backend_policy_selected",
+  "model_override_rejected",
+  "route_blocked_admin_review",
+  "live_eligible_budget_ledger_required",
+  "live_disabled_conservative",
+  "preview_only_no_live_call",
+  "completed_attribution_mocked",
+  "actual_cost_null_until_trusted_source"
+] as const;
+
+export type AiModelRoutingTruthLabel = (typeof AI_MODEL_ROUTING_TRUTH_LABELS)[number];
+
 /** Approved live text model IDs (owner-gated). */
 export const APPROVED_AI_TEXT_MODEL_IDS = ["anthropic/claude-haiku-4.5"] as const;
 

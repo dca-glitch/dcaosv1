@@ -1,6 +1,7 @@
 # Admin Data-Dense UI
 
 Status: Phase 2 foundation closed for the current local/admin MVP.
+**G429–G448 note:** Density rules unchanged. New inventories and badge designs must follow this document — badges are compact chips, not landing cards.
 
 The admin workspace must prioritize scanning, comparison, and repeated operator actions over landing-page presentation. DCA OS Lite is an operator system, so overview pages should help the user answer quickly: what needs attention, what is blocked, what is ready, and which record should be opened next.
 
@@ -31,6 +32,7 @@ Do not use oversized landing cards or button walls for repeated operational reco
 - Destructive actions should be visually quiet until needed and clearly separated from safe actions.
 - Preserve existing workflows; density must not remove capabilities.
 - Preserve API contracts, auth/RBAC, schemas, finance calculations, client visibility, and AI workflow behavior.
+- **Proof / integration badges** (when implemented) must use the same chip density as status badges — never hero metrics that imply production readiness. See [`admin-proof-state-badge-design.md`](./admin-proof-state-badge-design.md).
 
 ## Button Rules
 
@@ -48,7 +50,8 @@ Avoid:
 - bright gradients for routine actions;
 - large glowing pill buttons;
 - repeated red action blocks;
-- showing every available action on every row.
+- showing every available action on every row;
+- seven simultaneous `primary-action` lane buttons (AI Delivery AD-2).
 
 ## Completed Phase 1 Screens
 
@@ -78,6 +81,7 @@ A page follows this design direction when an operator can answer these in a few 
 - What is the main next action?
 - Where are secondary actions?
 - Can I scan multiple records without scrolling through oversized cards?
+- If an integration chip is shown: is proof-state vocabulary used (local / disabled-safe / owner-gated) rather than “live” or “connected”?
 
 If the page cannot answer these quickly, it needs a data-dense pass.
 
@@ -87,3 +91,9 @@ If the page cannot answer these quickly, it needs a data-dense pass.
 - Monthly Reports and Client Portal shell can be reviewed separately, with client visibility rules unchanged.
 - Settings, Team, Company Profile, and modal internals may receive smaller density polish if operator feedback calls for it.
 - Deeper master-detail layouts can be considered later for AI Delivery project execution, but overview screens should stay data-first.
+- AI Delivery hotspot split is **planning-only** until an approved Phase A types extract — [`ai-delivery-hotspot-file-review.md`](./ai-delivery-hotspot-file-review.md).
+- Launch-blocker board remains design-only — [`launch-blocker-board-ui-design.md`](./launch-blocker-board-ui-design.md).
+
+## Surface inventory pointer
+
+Full admin hash-route inventory: [`admin-surface-inventory.md`](./admin-surface-inventory.md).

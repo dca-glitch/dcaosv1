@@ -118,3 +118,5 @@ Optional future naming or nav polish only.
 - broad refactors
 - public approval links
 - non-final client self-service flows
+- durable one-revision-round persistence (policy helper ready; schema field required — see `CLIENT_PORTAL_BOUNDARY.md`)
+- in-system inbox ↔ portal deep links (design in `CLIENT_PORTAL_NOTIFICATIONS_PLAN.md`)

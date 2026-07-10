@@ -92,6 +92,26 @@ No live readiness claim. No VPS/deploy/production claim.
 
 ---
 
+## G369–G388 hardening (contracts only)
+
+| Gate | Outcome |
+|------|---------|
+| G369–G372 MI | Default no-live source policy + `uncontrolledScrapingAllowed: false`; builders + policy violation helpers; client-safe summary still admin-reviewed |
+| G373–G376 Revenue Hub | Default recommendation guard + no-live CRM policy; `financialGuarantee: false` on recommendations; CRM live sync forbidden |
+| G377–G380 POD | Draft-bundle / prompt-image builders; IP caution + marketplace policy violation helpers; live image gen + marketplace sync forbidden |
+| G381–G382 Export / proof | Proof fixture refreshed; imports concrete modules (not `index.ts`); version-stable asserts |
+| G383–G388 Docs / validation | This closeout + RH0 / POD0 / Puriva MI runbook notes; shared check + focused tests; lane report |
+
+Helpers added (shared):
+
+- `MARKET_INTELLIGENCE_DEFAULT_NO_LIVE_SOURCE_POLICY`, `findMarketIntelligenceSourcePolicyViolations`, `buildMarketIntelligenceLocalResult`, `buildMarketIntelligenceAdminReviewedSourceSummary`
+- `REVENUE_HUB_DEFAULT_RECOMMENDATION_GUARD`, `REVENUE_HUB_DEFAULT_NO_LIVE_CRM_POLICY`, `buildRevenueHubAiRecommendation`, `findRevenueHubRecommendationGuardViolations`
+- `buildPodToolkitDraftBundle`, `buildPodToolkitPromptImageRequirement`, `findPodToolkitMarketplacePolicyViolations`, `findPodToolkitComplianceIpCautionViolations`
+
+No live IO. No schema/API activation.
+
+---
+
 ## Confirmations
 
 - No commit / push / deploy

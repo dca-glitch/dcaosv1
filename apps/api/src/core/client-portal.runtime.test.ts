@@ -32,7 +32,28 @@ describe("client portal final delivery guards", () => {
   });
 });
 
-describe("client-portal.runtime — serializer audit (G199)", () => {
+const CLIENT_PORTAL_SERIALIZER_FORBIDDEN_KEYS = [
+  "storageKey",
+  "provider",
+  "providerMetadata",
+  "workflowRunId",
+  "workflowRunStatus",
+  "jobQueueStatus",
+  "queueStatus",
+  "auditLog",
+  "auditLogs",
+  "actualCostUsd",
+  "estimatedCostUsd",
+  "rawCost",
+  "costRows",
+  "adminSummaryNotes",
+  "adminNotes",
+  "executionLog",
+  "releasePackageId",
+  "miHandoffId"
+] as const;
+
+describe("client-portal.runtime — serializer audit (G199/G329)", () => {
   it("preserves deliverable exportUrl without exposing storageKey", () => {
     const summary = toClientPortalDeliverableSummary({
       id: "deliverable-1",
@@ -77,7 +98,7 @@ describe("client-portal.runtime — serializer audit (G199)", () => {
     assertClientPortalPayloadHasNoForbiddenKeys(summary);
   });
 
-  it("does not expose provider metadata, workflow run status, job queue, audit logs, raw cost, or admin notes", () => {
+  it("does not expose provider, status internals, storageKey, or cost fields on serializer output (G329)", () => {
     const deliverable = toClientPortalDeliverableSummary({
       id: "deliverable-2",
       aiDeliveryProjectId: "project-2",
@@ -91,43 +112,52 @@ describe("client-portal.runtime — serializer audit (G199)", () => {
       updatedAt: new Date("2026-07-02T00:00:00.000Z")
     });
 
+    const monthly = toClientPortalMonthlyReportSummary({
+      id: "report-2",
+      aiDeliveryProjectId: "project-2",
+      title: "Final monthly",
+      recommendationsText: null,
+      exportUrl: null,
+      finalizedAt: null,
+      storageKey: null,
+      createdAt: new Date("2026-07-01T00:00:00.000Z"),
+      updatedAt: new Date("2026-07-02T00:00:00.000Z")
+    });
+
     const pollutedAttempt = {
       ...deliverable,
       // Simulate accidental merge of internal fields — serializer output itself must stay clean.
       __internalProbe: {
         storageKey: "tenants/x/y",
+        provider: "openai",
         providerMetadata: { model: "x" },
         workflowRunId: "run-1",
         workflowRunStatus: "RUNNING",
         jobQueueStatus: "queued",
+        queueStatus: "waiting",
+        auditLog: { id: "a0" },
         auditLogs: [{ id: "a1" }],
         actualCostUsd: 12.5,
-        adminSummaryNotes: "do not show"
+        estimatedCostUsd: 9.1,
+        rawCost: 12.5,
+        costRows: [{ usd: 1 }],
+        adminSummaryNotes: "do not show",
+        adminNotes: "internal",
+        executionLog: "step-1",
+        releasePackageId: "rp-1",
+        miHandoffId: "mi-1"
       }
     };
 
     assertClientPortalPayloadHasNoForbiddenKeys(deliverable);
-    const leaked = collectClientPortalForbiddenPayloadKeys(pollutedAttempt);
-    assert.ok(leaked.includes("storageKey"));
-    assert.ok(leaked.includes("providerMetadata"));
-    assert.ok(leaked.includes("workflowRunId"));
-    assert.ok(leaked.includes("jobQueueStatus"));
-    assert.ok(leaked.includes("auditLogs"));
-    assert.ok(leaked.includes("actualCostUsd"));
-    assert.ok(leaked.includes("adminSummaryNotes"));
+    assertClientPortalPayloadHasNoForbiddenKeys(monthly);
+    assert.equal(monthly.hasDocument, false);
 
-    const keys = Object.keys(deliverable);
-    for (const forbidden of [
-      "storageKey",
-      "providerMetadata",
-      "workflowRunId",
-      "workflowRunStatus",
-      "jobQueueStatus",
-      "auditLogs",
-      "actualCostUsd",
-      "adminSummaryNotes"
-    ]) {
-      assert.equal(keys.includes(forbidden), false, `unexpected key ${forbidden}`);
+    const leaked = collectClientPortalForbiddenPayloadKeys(pollutedAttempt);
+    for (const key of CLIENT_PORTAL_SERIALIZER_FORBIDDEN_KEYS) {
+      assert.ok(leaked.includes(key), `detector should flag ${key}`);
+      assert.equal(Object.keys(deliverable).includes(key), false, `deliverable leaked ${key}`);
+      assert.equal(Object.keys(monthly).includes(key), false, `monthly leaked ${key}`);
     }
   });
 });

@@ -149,4 +149,129 @@ describe("ga-gsc.config", () => {
     assert.equal(JSON.stringify(readiness).includes("present-id"), false);
     assert.equal(JSON.stringify(readiness).includes("present-secret"), false);
   });
+
+  it("G269: exhaustive config-shape matrix for sync flag and OAuth presence", () => {
+    const matrix: Array<{
+      sync: string | undefined;
+      id: string | undefined;
+      secret: string | undefined;
+      status: "disabled" | "missing_config" | "configured_shape_ok";
+      missing: string[];
+    }> = [
+      { sync: undefined, id: undefined, secret: undefined, status: "disabled", missing: [] },
+      { sync: "false", id: "id", secret: "secret", status: "disabled", missing: [] },
+      {
+        sync: "true",
+        id: undefined,
+        secret: undefined,
+        status: "missing_config",
+        missing: [GA_GSC_ENV_KEYS.oauthClientId, GA_GSC_ENV_KEYS.oauthClientSecret]
+      },
+      {
+        sync: "true",
+        id: "id-only",
+        secret: undefined,
+        status: "missing_config",
+        missing: [GA_GSC_ENV_KEYS.oauthClientSecret]
+      },
+      {
+        sync: "true",
+        id: undefined,
+        secret: "secret-only",
+        status: "missing_config",
+        missing: [GA_GSC_ENV_KEYS.oauthClientId]
+      },
+      {
+        sync: "true",
+        id: "id",
+        secret: "secret",
+        status: "configured_shape_ok",
+        missing: []
+      }
+    ];
+
+    for (const row of matrix) {
+      for (const key of trackedKeys) delete process.env[key];
+      if (row.sync !== undefined) process.env[GA_GSC_ENV_KEYS.syncEnabled] = row.sync;
+      if (row.id !== undefined) process.env[GA_GSC_ENV_KEYS.oauthClientId] = row.id;
+      if (row.secret !== undefined) process.env[GA_GSC_ENV_KEYS.oauthClientSecret] = row.secret;
+
+      const shape = getGaGscConfigShape();
+      const readiness = getGaGscIntegrationReadiness();
+      assert.equal(readiness.status, row.status, JSON.stringify(row));
+      assert.deepEqual(readiness.missingKeys, row.missing);
+      assert.equal(shape.liveOAuthDeferred, true);
+      assert.equal(shape.liveSyncDeferred, true);
+      assert.equal(readiness.liveOAuthDeferred, true);
+      assert.equal(readiness.liveSyncDeferred, true);
+    }
+  });
+
+  it("G270: redaction snapshot — env secrets never appear in serialized shape/readiness", () => {
+    for (const key of trackedKeys) delete process.env[key];
+    const secretId = "redaction-client-id-SHOULD-NOT-LEAK";
+    const secretSecret = "redaction-client-secret-SHOULD-NOT-LEAK";
+    process.env[GA_GSC_ENV_KEYS.syncEnabled] = "true";
+    process.env[GA_GSC_ENV_KEYS.oauthClientId] = secretId;
+    process.env[GA_GSC_ENV_KEYS.oauthClientSecret] = secretSecret;
+
+    const shape = getGaGscConfigShape();
+    const readiness = getGaGscIntegrationReadiness();
+    const snapshot = {
+      shape,
+      readiness,
+      safePresence: serializeGaGscCredentialPresenceSafe({
+        oauthClientId: secretId,
+        oauthClientSecret: secretSecret,
+        refreshToken: "refresh-SHOULD-NOT-LEAK",
+        ga4PropertyId: "properties/1",
+        gscSiteUrl: "sc-domain:example.com"
+      })
+    };
+    const serialized = JSON.stringify(snapshot);
+    assert.equal(serialized.includes(secretId), false);
+    assert.equal(serialized.includes(secretSecret), false);
+    assert.equal(serialized.includes("refresh-SHOULD-NOT-LEAK"), false);
+    assert.equal(snapshot.safePresence.oauthClientId, true);
+    assert.equal(snapshot.safePresence.oauthClientSecret, true);
+    assert.equal(snapshot.safePresence.refreshToken, true);
+  });
+
+  it("G271: disabled and missing_config truth labels", () => {
+    for (const key of trackedKeys) delete process.env[key];
+    const disabled = getGaGscIntegrationReadiness();
+    assert.equal(disabled.status, "disabled");
+    assert.equal(disabled.syncEnabled, false);
+    assert.deepEqual(disabled.missingKeys, []);
+
+    process.env[GA_GSC_ENV_KEYS.syncEnabled] = "true";
+    const missing = getGaGscIntegrationReadiness();
+    assert.equal(missing.status, "missing_config");
+    assert.ok(missing.missingKeys.includes(GA_GSC_ENV_KEYS.oauthClientId));
+    assert.ok(missing.missingKeys.includes(GA_GSC_ENV_KEYS.oauthClientSecret));
+  });
+
+  it("G272: configured_shape_ok still forces live_deferred invariants", () => {
+    for (const key of trackedKeys) delete process.env[key];
+    process.env[GA_GSC_ENV_KEYS.syncEnabled] = "true";
+    process.env[GA_GSC_ENV_KEYS.oauthClientId] = "shape-ok-id";
+    process.env[GA_GSC_ENV_KEYS.oauthClientSecret] = "shape-ok-secret";
+
+    const readiness = getGaGscIntegrationReadiness();
+    assert.equal(readiness.status, "configured_shape_ok");
+    assert.equal(readiness.liveOAuthDeferred, true);
+    assert.equal(readiness.liveSyncDeferred, true);
+
+    const fullPresence = assessGaGscCredentialPresence({
+      oauthClientId: "shape-ok-id",
+      oauthClientSecret: "shape-ok-secret",
+      refreshToken: "refresh",
+      ga4PropertyId: "properties/1",
+      gscSiteUrl: "sc-domain:example.com"
+    });
+    assert.equal(fullPresence.configuredShapeOk, true);
+    assert.equal(fullPresence.liveOAuthDeferred, true);
+    assert.equal(fullPresence.liveSyncDeferred, true);
+    assert.equal(fullPresence.secretFieldsSerialized, false);
+  });
 });

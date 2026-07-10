@@ -34,7 +34,7 @@ function toArticleImageClientSafeBoundarySummary(image: {
   };
 }
 
-describe("image-asset-serializer-storage-key-boundary (G154)", () => {
+describe("image-asset-serializer-storage-key-boundary (G154 / G241)", () => {
   it("keeps image-generation client-safe variants free of storageKey", () => {
     const variant = toImageGenerationClientSafeVariant({
       variantSlot: "hero",
@@ -80,5 +80,21 @@ describe("image-asset-serializer-storage-key-boundary (G154)", () => {
 
     assert.equal(summary.hasDocument, false);
     assertNoStorageKeyLeak(summary);
+  });
+
+  it("covers hero/supporting/social variant slots without storageKey leak (G241)", () => {
+    for (const variantSlot of ["hero", "supporting-1", "supporting-2", "social-preview"] as const) {
+      const forbiddenKey = `tenants/acme/images/${variantSlot}.png`;
+      const summary = toArticleImageClientSafeBoundarySummary({
+        id: `image-${variantSlot}`,
+        title: variantSlot,
+        previewImageUrl: "https://signed.example.com/preview",
+        finalImageUrl: null,
+        storageKey: forbiddenKey,
+        status: "APPROVED"
+      });
+      assert.equal(summary.hasDocument, true);
+      assertNoStorageKeyLeak(summary, { forbiddenStorageKey: forbiddenKey });
+    }
   });
 });

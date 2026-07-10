@@ -6,14 +6,15 @@
  * validate structured rejection reasons, and map approval-loop actions to
  * internal events before any future live image provider proof is considered.
  *
- * G189 hardening covers: before/after, syringes/procedure, fake doctor, fake
- * patient, body transformation, guaranteed results — while allowing neutral
- * wellness, clinic ambience without procedure, and product-neutral lifestyle.
+ * G189 / G309–G311 hardening covers: before/after, syringes/procedure, fake
+ * doctor, fake patient, body transformation, guaranteed results, clinical
+ * staging, and likeness risks — while allowing neutral wellness, clinic
+ * ambience without procedure, and product-neutral lifestyle.
  */
 
 import type { ImageGenerationVariantSlot } from "./image-generation.execution";
 
-export const IMAGE_COMPLIANCE_POLICY_VERSION = "IMAGE_COMPLIANCE_POLICY_V2";
+export const IMAGE_COMPLIANCE_POLICY_VERSION = "IMAGE_COMPLIANCE_POLICY_V3";
 
 export const IMAGE_COMPLIANCE_REJECT_CODES = [
   "before_after_risk",
@@ -44,6 +45,16 @@ export const IMAGE_COMPLIANCE_REJECT_LABEL: Record<ImageComplianceRejectCode, st
   wrong_slot: "Wrong slot",
   other: "Other"
 };
+
+/** Hard-block reject codes used by prompt/output screening (excludes operational codes). */
+export const IMAGE_COMPLIANCE_HARD_BLOCK_CODES: ImageComplianceRejectCode[] = [
+  "before_after_risk",
+  "fake_clinician_or_patient_risk",
+  "procedure_or_device_risk",
+  "treatment_result_risk",
+  "likeness_consent_risk",
+  "unsafe_prescription_or_device_risk"
+];
 
 export type ImageComplianceReviewStage = "pre_generation_prompt" | "post_generation_output";
 
@@ -76,47 +87,49 @@ const POLICY_RULES: Array<{
     code: "before_after_risk",
     matchedRule: "no_before_after_or_transformation_framing",
     pattern:
-      /\b(before\s*\/?\s*after|before[-\s]?and[-\s]?after|split[-\s]?screen|result timeline|measurement comparison|after treatment|side[-\s]?by[-\s]?side comparison)\b/i
+      /\b(before\s*\/?\s*after|before[-\s]?and[-\s]?after|split[-\s]?screen|result timeline|measurement comparison|after treatment|side[-\s]?by[-\s]?side comparison|progress\s+photos?|then\s+vs\s+now|day\s*0\s+vs\s+day\s*\d+)\b/i
   },
   {
     code: "before_after_risk",
     matchedRule: "no_body_transformation_framing",
     pattern:
-      /\b(body\s+transformation|dramatic\s+transformation|glow[-\s]?up|makeover\s+result|transformation\s+(?:shot|photo|image|visual|timeline))\b/i
+      /\b(body\s+transformation|dramatic\s+transformation|glow[-\s]?up|makeover\s+result|transformation\s+(?:shot|photo|image|visual|timeline)|slimmed\s+down\s+result|contouring\s+result)\b/i
   },
   {
     code: "fake_clinician_or_patient_risk",
     matchedRule: "no_fake_doctors_or_clinicians",
     pattern:
-      /\b(fake\s+doctor|doctor in|doctor with|nurse in|clinician in|lab coat|medical badge|white coat doctor|posed\s+doctor|stock\s+doctor)\b/i
+      /\b(fake\s+doctor|doctor in|doctor with|nurse in|clinician in|lab coat|medical badge|white coat doctor|posed\s+doctor|stock\s+doctor|actor\s+as\s+doctor|impersonat(?:e|ing)\s+(?:a\s+)?(?:doctor|nurse|clinician))\b/i
   },
   {
     code: "fake_clinician_or_patient_risk",
     matchedRule: "no_fake_patients_or_testimonials",
     pattern:
-      /\b(fake\s+patient|patient testimonial|patient review|happy patient|named patient|satisfied patient|patient endorsement|real patient story)\b/i
+      /\b(fake\s+patient|patient testimonial|patient review|happy patient|named patient|satisfied patient|patient endorsement|real patient story|5[-\s]?star patient|patient success story)\b/i
   },
   {
     code: "procedure_or_device_risk",
     matchedRule: "no_syringe_or_procedure_staging",
     pattern:
-      /\b(injection|injecting|syringe|needle|cannula|laser procedure|surgical|operation|clinical procedure|treatment chair|procedure room staging|iv drip)\b/i
+      /\b(injection|injecting|syringe|needle|cannula|laser procedure|surgical|operation|clinical procedure|treatment chair|procedure room staging|iv drip|scalpel|operating\s+theatre|sterile\s+field)\b/i
   },
   {
     code: "treatment_result_risk",
     matchedRule: "no_guaranteed_or_outcome_claim",
     pattern:
-      /\b(guaranteed\s+results?|guaranteed\s+improvement|clearer skin after|visible results?|weight[-\s]?loss result|pain reduction|recovery claim|body change|cure|healed|proven results?|instant results?)\b/i
+      /\b(guaranteed\s+results?|guaranteed\s+improvement|clearer skin after|visible results?|weight[-\s]?loss result|pain reduction|recovery claim|body change|cure|healed|proven results?|instant results?|wrinkle[-\s]?free\s+result|fat\s+melting\s+result|clinically\s+proven\s+result)\b/i
   },
   {
     code: "likeness_consent_risk",
     matchedRule: "no_real_person_likeness_without_consent",
-    pattern: /\b(celebrity|public figure|real patient|staff member likeness|client likeness|without consent)\b/i
+    pattern:
+      /\b(celebrity|public figure|real patient|staff member likeness|client likeness|without consent|lookalike\s+of|deepfake|face\s+swap)\b/i
   },
   {
     code: "unsafe_prescription_or_device_risk",
     matchedRule: "no_unsafe_prescription_or_device_implication",
-    pattern: /\b(prescription access|dosage|self-administer|unsupervised use|device efficacy|medical device result)\b/i
+    pattern:
+      /\b(prescription access|dosage|self-administer|unsupervised use|device efficacy|medical device result|buy\s+wegovy\s+online|compounded\s+semaglutide\s+kit|at[-\s]?home\s+injection\s+kit)\b/i
   }
 ];
 
@@ -124,8 +137,34 @@ const POLICY_RULES: Array<{
 export const IMAGE_COMPLIANCE_ALLOWED_DIRECTION_EXAMPLES = [
   "neutral wellness composition with soft skincare textures",
   "calm clinic ambience without procedure staging",
-  "product-neutral lifestyle self-care moment"
+  "product-neutral lifestyle self-care moment",
+  "abstract botanical wellness still life with soft daylight",
+  "editorial linen textures and calm spa-adjacent interior detail",
+  "gentle morning self-care ritual without treatment claims"
 ] as const;
+
+export type ImageCompliancePolicySnapshot = {
+  version: typeof IMAGE_COMPLIANCE_POLICY_VERSION;
+  hardBlockCodes: ImageComplianceRejectCode[];
+  rejectCodes: readonly ImageComplianceRejectCode[];
+  matchedRules: string[];
+  allowedDirectionExamples: readonly string[];
+  liveProviderCallsAllowed: false;
+};
+
+/**
+ * G311 — Stable policy snapshot for docs/tests. Pure; no provider contact.
+ */
+export function buildImageCompliancePolicySnapshot(): ImageCompliancePolicySnapshot {
+  return {
+    version: IMAGE_COMPLIANCE_POLICY_VERSION,
+    hardBlockCodes: [...IMAGE_COMPLIANCE_HARD_BLOCK_CODES],
+    rejectCodes: IMAGE_COMPLIANCE_REJECT_CODES,
+    matchedRules: POLICY_RULES.map((rule) => rule.matchedRule),
+    allowedDirectionExamples: IMAGE_COMPLIANCE_ALLOWED_DIRECTION_EXAMPLES,
+    liveProviderCallsAllowed: false
+  };
+}
 
 export function evaluateImageCompliancePolicy(
   input: ImageComplianceReviewInput
@@ -195,14 +234,7 @@ export function buildImagePromptProfile(slot: ImageGenerationVariantSlot): Image
         "clinic ambience without procedure staging"
       ]
     },
-    forbidden: [
-      "before_after_risk",
-      "fake_clinician_or_patient_risk",
-      "procedure_or_device_risk",
-      "treatment_result_risk",
-      "likeness_consent_risk",
-      "unsafe_prescription_or_device_risk"
-    ],
+    forbidden: [...IMAGE_COMPLIANCE_HARD_BLOCK_CODES],
     altRequirements: {
       required: true,
       mustDescribeApprovedAsset: true,

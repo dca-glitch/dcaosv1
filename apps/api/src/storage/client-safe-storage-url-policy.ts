@@ -11,6 +11,13 @@ export type ClientSafeUrlTruthLabel =
   | "mocked"
   | "future_placeholder";
 
+export const CLIENT_SAFE_URL_TRUTH_LABELS = [
+  "export_url",
+  "live_signed",
+  "mocked",
+  "future_placeholder"
+] as const;
+
 export type ClientSafeStorageUrlInput = {
   exportUrl?: string | null;
   downloadUrl?: string | null;
@@ -24,11 +31,24 @@ export type ClientSafeStorageUrlPayload = {
   downloadUrl: string | null;
   hasDocument: boolean;
   truthLabel: ClientSafeUrlTruthLabel;
+  /** Always false: building a client-safe payload is not live R2 proof. */
+  liveProven: false;
 };
 
 const STORAGE_KEY_LEAK_PATTERN = /storageKey|"tenants\//i;
 
+export function isClientSafeUrlTruthLabel(value: unknown): value is ClientSafeUrlTruthLabel {
+  return (
+    typeof value === "string" &&
+    (CLIENT_SAFE_URL_TRUTH_LABELS as readonly string[]).includes(value)
+  );
+}
+
 export function buildClientSafeStorageUrlPayload(input: ClientSafeStorageUrlInput): ClientSafeStorageUrlPayload {
+  if (!isClientSafeUrlTruthLabel(input.truthLabel)) {
+    throw new Error("Client-safe storage URL payload requires a valid truthLabel.");
+  }
+
   const exportUrl = input.exportUrl?.trim() ? input.exportUrl.trim() : null;
   const downloadUrl = input.downloadUrl?.trim() ? input.downloadUrl.trim() : null;
   const hasDocument = Boolean(input.storageKey?.trim()) || Boolean(exportUrl) || Boolean(downloadUrl);
@@ -37,7 +57,8 @@ export function buildClientSafeStorageUrlPayload(input: ClientSafeStorageUrlInpu
     exportUrl,
     downloadUrl,
     hasDocument,
-    truthLabel: input.truthLabel
+    truthLabel: input.truthLabel,
+    liveProven: false
   };
 }
 
@@ -51,7 +72,12 @@ export function isClientSafeStorageUrlPayload(value: unknown): boolean {
     return false;
   }
 
-  if ("storageKey" in value) {
+  if ("storageKey" in value || "documentStorageKey" in value) {
+    return false;
+  }
+
+  const record = value as Record<string, unknown>;
+  if ("truthLabel" in record && !isClientSafeUrlTruthLabel(record.truthLabel)) {
     return false;
   }
 
@@ -61,10 +87,40 @@ export function isClientSafeStorageUrlPayload(value: unknown): boolean {
 export function assertClientSafeUrlTruthLabel(label: ClientSafeUrlTruthLabel): {
   mayImplyLiveSignedUrl: boolean;
   requiresExplicitNonLiveLabel: boolean;
+  /** Mocked / future / export labels must never be reported as live-proven. */
+  liveProvenImplied: false | true;
 } {
   if (label === "live_signed") {
-    return { mayImplyLiveSignedUrl: true, requiresExplicitNonLiveLabel: false };
+    return {
+      mayImplyLiveSignedUrl: true,
+      requiresExplicitNonLiveLabel: false,
+      liveProvenImplied: true
+    };
   }
 
-  return { mayImplyLiveSignedUrl: false, requiresExplicitNonLiveLabel: true };
+  return {
+    mayImplyLiveSignedUrl: false,
+    requiresExplicitNonLiveLabel: true,
+    liveProvenImplied: false
+  };
+}
+
+/**
+ * Hardening: mocked / future_placeholder / export_url must never be treated as live signed proof.
+ */
+export function assertNonLiveClientSafeUrlLabel(label: ClientSafeUrlTruthLabel): {
+  ok: boolean;
+  reason: string;
+} {
+  const decision = assertClientSafeUrlTruthLabel(label);
+  if (decision.mayImplyLiveSignedUrl) {
+    return {
+      ok: false,
+      reason: `Truth label "${label}" may imply a live signed URL; use only when IO actually issued a signed URL.`
+    };
+  }
+  return {
+    ok: true,
+    reason: `Truth label "${label}" is explicitly non-live.`
+  };
 }

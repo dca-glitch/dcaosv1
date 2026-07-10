@@ -88,4 +88,39 @@ describe("monthly-report-metrics-output-guard", () => {
     assert.equal(serialized.includes(secrets.refreshToken), false);
     assert.equal(serialized.includes(secrets.googleAccessToken), false);
   });
+
+  it("G280: client output rejects ADMIN_REVIEW and strips snapshotSourceId", () => {
+    const blocked = buildMonthlyReportClientOutput({
+      status: "ADMIN_REVIEW",
+      title: "Almost ready",
+      recommendationsText: "Recs",
+      ...secrets
+    });
+    assert.equal(blocked.ok, false);
+    assert.equal(blocked.client, null);
+
+    const ok = buildMonthlyReportClientOutput({
+      ...secrets,
+      status: "FINAL",
+      title: "Client title",
+      recommendationsText: "Safe recs",
+      metricsTruthLabel: "Metrics unavailable",
+      snapshotSourceId: "snap_should_not_leak"
+    });
+    assert.equal(ok.ok, true, ok.errors.join("; "));
+    assert.equal("snapshotSourceId" in (ok.client ?? {}), false);
+    assert.equal(JSON.stringify(ok.client).includes("snap_should_not_leak"), false);
+    assert.equal(ok.client?.metricsTruthLabel, "Metrics unavailable");
+  });
+
+  it("G281: admin DRAFT default and hasDocument false without storageKey", () => {
+    const ok = buildMonthlyReportAdminOutput({
+      title: "Untitled",
+      recommendationsText: ""
+    });
+    assert.equal(ok.ok, true, ok.errors.join("; "));
+    assert.equal(ok.admin?.status, "DRAFT");
+    assert.equal(ok.admin?.hasDocument, false);
+    assert.equal(ok.admin?.internalSourceId, null);
+  });
 });

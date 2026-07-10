@@ -1,6 +1,6 @@
 # Puriva Client Portal Boundary Gate
 
-**Status:** Local proof that Puriva client portal exposes only safe read-only delivery surfaces.
+**Status:** Local proof that Puriva client portal exposes only safe read-only delivery surfaces (aligned with G329–G348 serializer/error/FINAL guards).
 
 **Scope:** Smoke and setup helpers only — no publication handoff client UI, no internal scaffold exposure, no credential logging.
 

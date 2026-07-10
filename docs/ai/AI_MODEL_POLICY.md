@@ -71,7 +71,10 @@ Live execution requires separate proof per [`AI_PROVIDER_LIVE_PROOF.md`](../runb
 - Puriva operating pack: **$100 USD/month** hard cap
 - Budget guard blocks projected over-budget workflows
 - Kill switch activates when cap is exceeded
-- Actual provider usage accounting is a future enhancement; estimates are planning-only
+- `actualCostUsd` remains **null** until a trusted provider cost source is integrated (`leave_null_until_trusted_provider_cost`)
+- Do **not** fabricate actual cost from estimates, route caps, token×list-price, or marketing pricing pages
+- Estimated AI cost is budget-control data only — **not** an invoice and **not** Finance Lite proof
+- Reporting/reconciliation contract: [`../runbooks/AI_BUDGET_REPORTING_RECONCILIATION_CONTRACT.md`](../runbooks/AI_BUDGET_REPORTING_RECONCILIATION_CONTRACT.md)
 
 ---
 

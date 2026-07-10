@@ -65,3 +65,17 @@ live publishing, and supplier credential access disabled.
 This closeout records that G128-G132 were completed as shared typed contracts
 and docs only. No backend, schema, API, provider, marketplace, CRM, crawler, VPS,
 deployment, or production changes were introduced.
+
+## G369–G388 follow-on (shared hardening)
+
+Later gates hardened the same contracts without activating modules:
+
+- MI: canonical `MARKET_INTELLIGENCE_DEFAULT_NO_LIVE_SOURCE_POLICY` including
+  `uncontrolledScrapingAllowed: false`; admin-reviewed client-safe summary only
+- Revenue Hub: recommendation guards forbid payment/CRM/guarantee actions;
+  `financialGuarantee: false` on recommendations and opportunities
+- POD: draft-bundle builders keep `marketplaceSyncAllowed: false` and
+  `liveImageGenerationAllowed: false`; IP/compliance caution is mandatory
+
+See [`G217_G222_FUTURE_MODULE_CONTRACTS_CLOSEOUT.md`](./G217_G222_FUTURE_MODULE_CONTRACTS_CLOSEOUT.md)
+for the G217–G222 / G369–G388 contract closeout. Still docs/contracts only.

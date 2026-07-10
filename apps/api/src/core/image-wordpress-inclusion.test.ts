@@ -40,7 +40,7 @@ describe("image-wordpress-inclusion", () => {
     }
   });
 
-  it("G195 rejects missing alt text and missing social asset", () => {
+  it("G195/G320 rejects missing alt text and missing social asset", () => {
     const noAlt = evaluateImageWordpressInclusionReadiness({
       approvalState: "final_accepted",
       role: "supporting",
@@ -57,5 +57,23 @@ describe("image-wordpress-inclusion", () => {
     });
     assert.equal(noSocial.ready, false);
     assert.ok(noSocial.checks.includes("REJECT:missing_social_preview_asset"));
+  });
+
+  it("G320/G321 ties WordPress readiness to final_accepted only", () => {
+    const ready = evaluateImageWordpressInclusionReadiness({
+      approvalState: "final_accepted",
+      role: "hero",
+      hasAltText: true
+    });
+    assert.equal(ready.ready, true);
+    assert.ok(ready.checks.includes("ALLOW:final_accepted"));
+
+    const clientApprovedOnly = evaluateImageWordpressInclusionReadiness({
+      approvalState: "client_approved",
+      role: "hero",
+      hasAltText: true
+    });
+    assert.equal(clientApprovedOnly.ready, false);
+    assert.ok(clientApprovedOnly.checks.includes("REJECT:not_final_accepted"));
   });
 });

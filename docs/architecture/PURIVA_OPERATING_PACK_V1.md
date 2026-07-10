@@ -8,7 +8,7 @@
 
 **Canonical rule:** This document is the single source of truth for Puriva launch blockers, article/image workflow, monthly report flow, and feedback learning. Implementation gates and runbooks link here; they do not duplicate these flows.
 
-**G124-G127 / G209-G216 implementation note:** Puriva's typed pack constants live in `packages/shared/src/client-operating-packs.ts` and are exported from `@dca-os-v1/shared` (via existing `export * from "./client-operating-packs"`). They define the compliance profile + validator, entitlement matrix, workflow template catalog, and client-visibility helpers only; they do **not** execute workflows, call live providers, enforce portal auth, or turn Puriva into a Core fork.
+**G124-G127 / G209-G216 / G349-G368 implementation note:** Puriva's typed pack constants live in `packages/shared/src/client-operating-packs.ts` and are exported from `@dca-os-v1/shared` (via existing `export * from "./client-operating-packs"`). They define the compliance profile + validator, entitlement matrix, workflow template catalog, client-visibility helpers, and catalog lookup helpers only; they do **not** execute workflows, call live providers, enforce portal auth, or turn Puriva into a Core fork.
 
 **SaaS-later truth (G214):** Puriva Operating Pack v1 is **Agency OS first**. Typed pack scaffolding is **not** multi-tenant SaaS readiness, self-serve client onboarding, or productized SaaS billing.
 
@@ -185,6 +185,22 @@ These constants are intentionally pack configuration. They do not replace `Clien
 | G214 | `CLIENT_OPERATING_PACK_SAAS_READINESS` | Explicit `saas_later` label — Agency OS first, not SaaS-ready |
 | G215 | This doc + [`CLIENT_OPERATING_PACKS.md`](./CLIENT_OPERATING_PACKS.md) | Puriva docs closeout for pack hardening |
 | G216 | `apps/api/src/core/client-operating-packs.test.ts` | Focused shared/API tests for the above |
+
+## G349-G368 pack lane refresh closeout
+
+| Gate | Artifact | Scope |
+|------|----------|-------|
+| G349 | `getClientOperatingPackConfig` / pack config tests | Pack config constants + lookup helpers |
+| G350 | `PURIVA_MODULE_ENTITLEMENTS` | Entitlement matrix unchanged as config truth |
+| G351 | `getLaunchRequiredPackModuleKeys` / visibility helpers | Launch-required keys + client-visible surfaces (pure) |
+| G352 | `validatePurivaComplianceProfile` | Medical + channels + paid-ads + admin review validator |
+| G353 | `getPurivaAllowedContentChannels` / `isPurivaPaidAdsOutOfScope` | Website/social only; paid ads out of scope |
+| G354 | `isPurivaAdminReviewRequired` | Admin review required for medical content |
+| G355-G359 | `PURIVA_WORKFLOW_TEMPLATE_CATALOG` + `getPurivaWorkflowTemplate` + `PURIVA_PRIMARY_WORKFLOW_TEMPLATE_KEYS` | SEO / image / WordPress draft / monthly (+ MI/revenue/POD/legacy) catalog-only |
+| G360 | `CLIENT_OPERATING_PACK_SAAS_READINESS` | `saas_later` — Agency OS first |
+| G361-G363 | Pack architecture docs | Generic reuse + Puriva docs closeout |
+| G364 | Proposed `PURIVA_LAUNCH_GATE.md` patch | Launch mapping refresh for areas 13–15 (main-owned; propose only) |
+| G365-G368 | Focused tests + lane report | Validation, blockers, next-gate proposal |
 
 ### Entitlement matrix (configuration truth only)
 

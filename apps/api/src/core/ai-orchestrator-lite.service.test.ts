@@ -274,6 +274,52 @@ describe("ai-orchestrator-lite foundation", () => {
     assert.match(completed.blockedReason ?? "", /does not match/i);
   });
 
+  it("preview audit keeps actualCostUsd null and liveProviderCalled false (guards/truth)", () => {
+    const plan = planAiOrchestratorLiteStep({
+      workflow: "puriva_content_production",
+      step: "research_pack",
+      agentRole: "research_agent",
+      taskType: "research_pack",
+      operatingPackKey: "puriva",
+      spentThisPeriodUsd: 0
+    });
+    assert.equal(plan.preview.audit.actualCostUsd, null);
+    assert.equal(plan.preview.audit.liveProviderCalled, false);
+    assert.equal(plan.preview.budget.actualCostUsd, null);
+    assert.equal(plan.canExecute, true);
+    assert.ok(plan.preview.estimatedCostUsd > 0);
+    assert.notEqual(plan.preview.audit.actualCostUsd, plan.preview.estimatedCostUsd);
+  });
+
+  it("finalize keeps actualCostUsd null when mocked live success omits provider cost", () => {
+    const plan = planAiOrchestratorLiteStep({
+      workflow: "puriva_content_production",
+      step: "report_narrative",
+      agentRole: "report_narrative_agent",
+      taskType: "report_narrative",
+      operatingPackKey: "puriva"
+    });
+    const completed = finalizeOrchestratorLiteLedgerAttribution({
+      plan,
+      operatingPackKey: "puriva",
+      workflowRunId: "wf-mock-null-actual",
+      providerExecution: {
+        ok: true,
+        providerKey: "openrouter",
+        model: "anthropic/claude-haiku-4.5",
+        actualCostUsd: null,
+        liveProviderCalled: true,
+        safeError: null,
+        runId: "mock-null-actual"
+      }
+    });
+    assert.equal(completed.ok, true);
+    assert.equal(completed.ledgerStatus, "COMPLETED");
+    assert.equal(completed.metadata?.actualCostUsd, null);
+    assert.equal(completed.metadata?.liveProviderCalled, true);
+    assert.equal(completed.metadata?.estimatedCostUsd, plan.plannedLedgerMetadata.estimatedCostUsd);
+  });
+
   it("passes kill switch disabled-safe invariant", () => {
     const invariant = assertOrchestratorDisabledSafeInvariant();
     assert.equal(invariant.ok, true);

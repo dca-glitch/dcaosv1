@@ -1,6 +1,6 @@
 # Email Notifications Backend Foundation Contract
 
-Status: EN1 backend notification scaffolding is complete. EN2 now includes a schema-free platform AuditLog writer foundation. G159–G170 expanded the pure notification taxonomy, recipient/channel/severity policy, payload redaction, typed template catalog, and no-send adapter edge coverage. Real provider sending remains inactive. No in-system notification DB model exists yet (design only — see `docs/operator/notification-persistence-design.md`).
+Status: EN1 backend notification scaffolding is complete. EN2 now includes a schema-free platform AuditLog writer foundation. G159–G170 and G249–G268 expanded the pure notification taxonomy, recipient/channel/severity policy, payload redaction + safe snapshots, typed template catalog, legacy alias map, correlation/idempotency design, and no-send adapter edge coverage. Real provider sending remains inactive. No in-system notification DB model exists yet (design only — see `docs/operator/notification-persistence-design.md`).
 
 ## Purpose
 
@@ -120,18 +120,25 @@ Local proof completed with a reversible module action:
 - `EmailLog` rows created during the proof: `0`
 - no provider/send path was triggered
 
-## G159–G170 pure notification foundation (no persistence)
+## G159–G170 / G249–G268 pure notification foundation (no persistence)
 
 Shared module `packages/shared/src/notification-events.ts` (version `NOTIFICATION_EVENTS_V2`) provides:
 
 - Expanded `NotificationEventType` taxonomy (content/image/approval/report/integration/budget/storage/WordPress events, plus legacy G94–G102 aliases)
+- Legacy alias map + `resolveNotificationLegacyAlias()` (G250)
 - Recipient policy helper: admin / client / owner-operator / system-log-only
 - Channel policy: in-system required; email for launch-critical non-audit events; audit-only for internal proof; local no-send
 - Severity scale: `info` / `action_required` / `warning` / `blocked` / `critical`
 - Payload redaction helper excluding secrets, `storageKey`, raw provider responses, OAuth tokens, stack traces, private audit metadata
+- `buildNotificationPayloadSnapshot()` allowlisted safe snapshot (G255)
 - Typed template catalog mapped onto schema-safe keys
+- `buildNotificationAuditMetadata()` for safe audit metadata (boolean key presence only)
 
-API module `apps/api/src/notifications/email-no-send-adapter.ts` records skipped attempts only — no provider call, no API key required.
+API modules:
+
+- `apps/api/src/notifications/email-no-send-adapter.ts` — skipped attempts only; no provider call; no API key required
+- `apps/api/src/notifications/notification-correlation.ts` — correlation/idempotency **design** keys only (G257); no migration
+- `apps/api/src/config/email.config.ts` — disabled-safe / live-deferred safety shape (G264)
 
 Persistence / inbox API design (docs only): `docs/operator/notification-persistence-design.md`.
 

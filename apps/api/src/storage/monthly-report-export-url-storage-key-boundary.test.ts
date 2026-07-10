@@ -12,7 +12,7 @@ import { assertNoStorageKeyLeak } from "./storage-key-boundary";
  * Prefers storage/-owned tests that import the exported client-portal monthly report serializer.
  * Does not edit client-portal or monthly-report core files.
  */
-describe("monthly-report-export-url-storage-key-boundary (G155)", () => {
+describe("monthly-report-export-url-storage-key-boundary (G155 / G242)", () => {
   it("keeps exportUrl and converts storageKey to hasDocument only", () => {
     const forbiddenKey = "tenants/acme/years/2026/projects/p1/months/07/documents/monthly-report.pdf";
     const summary = toClientPortalMonthlyReportSummary({
@@ -61,6 +61,26 @@ describe("monthly-report-export-url-storage-key-boundary (G155)", () => {
 
     assert.equal(payload.exportUrl, "https://docs.example.com/export/monthly-report");
     assert.equal(isClientSafeStorageUrlPayload(payload), true);
+    assert.equal(payload.liveProven, false);
     assertNoStorageKeyLeak(payload, { forbiddenStorageKey: "tenants/internal/monthly-report.pdf" });
+  });
+
+  it("keeps hasDocument true with null exportUrl when storageKey exists (G242)", () => {
+    const forbiddenKey = "tenants/acme/documents/monthly-report-storage-only.pdf";
+    const summary = toClientPortalMonthlyReportSummary({
+      id: "report-boundary-3",
+      aiDeliveryProjectId: "project-boundary-1",
+      title: "Storage-only report",
+      recommendationsText: null,
+      exportUrl: null,
+      finalizedAt: new Date("2026-07-03T00:00:00.000Z"),
+      storageKey: forbiddenKey,
+      createdAt: new Date("2026-07-01T00:00:00.000Z"),
+      updatedAt: new Date("2026-07-02T00:00:00.000Z")
+    });
+
+    assert.equal(summary.exportUrl, null);
+    assert.equal(summary.hasDocument, true);
+    assertNoStorageKeyLeak(summary, { forbiddenStorageKey: forbiddenKey });
   });
 });

@@ -58,3 +58,16 @@ npm.cmd run -w @dca-os-v1/api test:unit -- --test-name-pattern puriva-medical-co
 - Hospital/partner/license claims are flagged for **verification**, not automatically blocked.
 - Compliance notes in taxonomy may reference forbidden phrases as prohibitions; the scanner targets promotional content only.
 - Future MI/SEO/content/image/report blocks should call `assessPurivaMedicalCompliance` before any draft-ready handoff or client-visible output.
+
+---
+
+## G324 — Image-lane medical/aesthetic alignment (2026-07-10)
+
+Text claim scanning (`assessPurivaMedicalCompliance`) and image visual-concept screening (`evaluateImageCompliancePolicy`) are complementary:
+
+| Layer | Module | Blocks |
+|-------|--------|--------|
+| Copy / claims | `puriva-medical-compliance.ts` | Cure, guaranteed outcome, before/after transformation claims, Wegovy suitability, etc. |
+| Image concepts / prompts / alt | `image-compliance-policy.ts`, `image-alt-text-policy.ts` | Before/after visuals, fake clinician/patient, procedure staging, treatment-result imagery, likeness, unsafe device/prescription staging |
+
+Both layers remain **no-live**: no provider calls, no generation, no medical advice. Image WordPress inclusion still requires `final_accepted` plus reviewed alt text (see [`IMAGE_GENERATION_PROOF.md`](./IMAGE_GENERATION_PROOF.md) §10).

@@ -32,7 +32,7 @@ function withEnv(overrides: Partial<Record<(typeof ENV_KEYS)[number], string | u
   }
 }
 
-describe("email.config — disabled-safe local defaults", () => {
+describe("G264 email disabled / live-deferred config shape", () => {
   it("defaults to the local, non-sending provider when no env is set", () => {
     withEnv({}, () => {
       const config = getEmailProviderConfig();
@@ -45,6 +45,12 @@ describe("email.config — disabled-safe local defaults", () => {
 
   it("falls back to local for any unrecognized EMAIL_PROVIDER value", () => {
     withEnv({ EMAIL_PROVIDER: "sendgrid" }, () => {
+      assert.equal(getEmailProviderConfig().provider, "local");
+    });
+  });
+
+  it("treats empty EMAIL_PROVIDER as local", () => {
+    withEnv({ EMAIL_PROVIDER: "   " }, () => {
       assert.equal(getEmailProviderConfig().provider, "local");
     });
   });
@@ -63,6 +69,10 @@ describe("email.config — disabled-safe local defaults", () => {
       const config = getEmailProviderConfig();
       assert.equal(config.provider, "resend");
       assert.equal(config.hasResendApiKey, false);
+      const shape = getEmailProviderSafetyShape();
+      assert.equal(shape.sendingEnabled, false);
+      assert.equal(shape.localNoSend, true);
+      assert.equal(shape.liveProofRequired, false);
     });
   });
 
@@ -85,6 +95,25 @@ describe("email.config — disabled-safe local defaults", () => {
       assert.equal(shape.localNoSend, false);
       assert.equal(shape.liveProofRequired, true);
       assert.equal(JSON.stringify(shape).includes("re_test_should_not_leak"), false);
+    });
+  });
+
+  it("accepts case-insensitive resend provider label", () => {
+    withEnv({ EMAIL_PROVIDER: "ReSeNd" }, () => {
+      assert.equal(getEmailProviderConfig().provider, "resend");
+      assert.equal(getEmailProviderSafetyShape().sendingEnabled, false);
+    });
+  });
+
+  it("honors custom from/reply-to without enabling send", () => {
+    withEnv({
+      EMAIL_FROM_ADDRESS: "ops@example.com",
+      EMAIL_REPLY_TO: "reply@example.com"
+    }, () => {
+      const config = getEmailProviderConfig();
+      assert.equal(config.fromAddress, "ops@example.com");
+      assert.equal(config.replyTo, "reply@example.com");
+      assert.equal(getEmailProviderSafetyShape().localNoSend, true);
     });
   });
 });

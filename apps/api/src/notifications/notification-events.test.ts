@@ -4,19 +4,30 @@ import {
   APPROVAL_REJECT_NOTIFICATION_MATRIX,
   EMAIL_TEMPLATE_INVENTORY,
   G159_REQUIRED_EVENT_TYPES,
+  G249_IMAGE_LOOP_EVENT_TYPES,
   NOTIFICATION_EVENT_DEFINITIONS,
+  NOTIFICATION_LEGACY_EVENT_ALIASES,
+  NOTIFICATION_PAYLOAD_REDACT_KEYS,
   TYPED_NOTIFICATION_TEMPLATE_CATALOG,
   buildNotificationAuditMetadata,
+  buildNotificationPayloadSnapshot,
   isNotificationEventType,
+  isNotificationLegacyEventAlias,
   isTypedNotificationTemplateKey,
   mapBusinessEventToNotification,
   redactNotificationPayload,
   resolveNotificationChannelPolicy,
+  resolveNotificationLegacyAlias,
   resolveNotificationRecipientPolicy,
   resolveTypedTemplateToSchemaKey
 } from "@dca-os-v1/shared";
+import {
+  NOTIFICATION_CORRELATION_DESIGN_VERSION,
+  NOTIFICATION_IDEMPOTENCY_SCHEMA_NOTE,
+  buildNotificationCorrelationDesign
+} from "./notification-correlation";
 
-describe("G159 notification event taxonomy", () => {
+describe("G249 notification taxonomy completeness", () => {
   it("defines every required G159 event type", () => {
     for (const eventType of G159_REQUIRED_EVENT_TYPES) {
       assert.equal(isNotificationEventType(eventType), true, eventType);
@@ -24,22 +35,62 @@ describe("G159 notification event taxonomy", () => {
     }
   });
 
-  it("keeps legacy G94-G102 event types valid", () => {
-    assert.equal(isNotificationEventType("article_ready_for_client_review"), true);
-    assert.equal(isNotificationEventType("monthly_report_final"), true);
-    assert.equal(isNotificationEventType("client_image_rejected"), true);
-    assert.equal(isNotificationEventType("not_a_real_notification"), false);
+  it("includes image-loop event types for Lane 5 consumers", () => {
+    for (const eventType of G249_IMAGE_LOOP_EVENT_TYPES) {
+      assert.equal(isNotificationEventType(eventType), true, eventType);
+      assert.ok(NOTIFICATION_EVENT_DEFINITIONS[eventType].label.length > 0);
+    }
   });
 
   it("keeps every event mapped to a schema-compatible email template key", () => {
     const templateKeys = new Set(Object.keys(EMAIL_TEMPLATE_INVENTORY));
     for (const definition of Object.values(NOTIFICATION_EVENT_DEFINITIONS)) {
       assert.equal(templateKeys.has(definition.schemaTemplateKey), true, definition.eventType);
+      assert.equal(definition.severity === definition.priority, true, definition.eventType);
+    }
+  });
+
+  it("rejects unknown event types", () => {
+    assert.equal(isNotificationEventType("not_a_real_notification"), false);
+  });
+});
+
+describe("G250 notification taxonomy backward-compat aliases", () => {
+  it("keeps legacy G94-G102 event types valid", () => {
+    assert.equal(isNotificationEventType("article_ready_for_client_review"), true);
+    assert.equal(isNotificationEventType("monthly_report_final"), true);
+    assert.equal(isNotificationEventType("client_image_rejected"), true);
+    assert.equal(isNotificationEventType("admin_action_required"), true);
+    assert.equal(isNotificationEventType("workflow_blocked"), true);
+    assert.equal(isNotificationEventType("kill_switch"), true);
+  });
+
+  it("resolves legacy aliases to preferred G159 canonical types", () => {
+    assert.equal(resolveNotificationLegacyAlias("article_ready_for_client_review"), "client_approval_needed");
+    assert.equal(resolveNotificationLegacyAlias("image_set_ready_for_client_review"), "image_set_ready");
+    assert.equal(resolveNotificationLegacyAlias("client_deliverable_approved"), "content_approved");
+    assert.equal(resolveNotificationLegacyAlias("client_deliverable_rejected"), "content_changes_requested");
+    assert.equal(resolveNotificationLegacyAlias("budget_cap_reached"), "budget_cap_blocked");
+    assert.equal(resolveNotificationLegacyAlias("monthly_report_final"), "monthly_report_available");
+  });
+
+  it("returns canonical types unchanged and unknown as null", () => {
+    assert.equal(resolveNotificationLegacyAlias("content_draft_ready"), "content_draft_ready");
+    assert.equal(resolveNotificationLegacyAlias("kill_switch"), "kill_switch");
+    assert.equal(resolveNotificationLegacyAlias("totally_unknown"), null);
+  });
+
+  it("lists only known legacy alias keys", () => {
+    for (const key of Object.keys(NOTIFICATION_LEGACY_EVENT_ALIASES)) {
+      assert.equal(isNotificationLegacyEventAlias(key), true, key);
+      assert.equal(isNotificationEventType(key), true, key);
+      const preferred = NOTIFICATION_LEGACY_EVENT_ALIASES[key as keyof typeof NOTIFICATION_LEGACY_EVENT_ALIASES];
+      assert.equal(isNotificationEventType(preferred), true, preferred);
     }
   });
 });
 
-describe("G160 recipient policy helper", () => {
+describe("G251 recipient policy", () => {
   it("resolves admin / client / owner-operator / system-log-only roles without side effects", () => {
     const clientPolicy = resolveNotificationRecipientPolicy({ eventType: "client_approval_needed" });
     assert.deepEqual(clientPolicy.roles, ["client"]);
@@ -59,9 +110,17 @@ describe("G160 recipient policy helper", () => {
     assert.equal(mapping.eventType, "storage_proof_failed");
     assert.ok(mapping.recipientRoles.includes("system_log_only"));
   });
+
+  it("never marks client-facing approval events as system-log-only", () => {
+    for (const eventType of ["client_approval_needed", "image_set_ready", "monthly_report_available"] as const) {
+      const policy = resolveNotificationRecipientPolicy({ eventType });
+      assert.equal(policy.systemLogOnly, false, eventType);
+      assert.ok(policy.roles.includes("client"), eventType);
+    }
+  });
 });
 
-describe("G161 channel policy", () => {
+describe("G252 channel policy", () => {
   it("requires in-system persistence even when email is configured", () => {
     const policy = resolveNotificationChannelPolicy({
       eventType: "client_deliverable_approved",
@@ -113,9 +172,20 @@ describe("G161 channel policy", () => {
     assert.equal(policy.phone.allowedForLaunchClaim, false);
     assert.equal(policy.phone.reason, "phone_is_supplement_only");
   });
+
+  it("blocks email when resend is selected without a provider key", () => {
+    const policy = resolveNotificationChannelPolicy({
+      eventType: "content_draft_ready",
+      emailProvider: "resend",
+      hasEmailProviderKey: false,
+      hasInSystemPersistence: true
+    });
+    assert.equal(policy.email.required, true);
+    assert.equal(policy.email.status, "blocked_missing_provider_key");
+  });
 });
 
-describe("G162 severity and priority", () => {
+describe("G253 severity mapping", () => {
   it("assigns info / action_required / warning / blocked / critical severities", () => {
     assert.equal(NOTIFICATION_EVENT_DEFINITIONS.content_approved.severity, "info");
     assert.equal(NOTIFICATION_EVENT_DEFINITIONS.client_approval_needed.severity, "action_required");
@@ -129,9 +199,16 @@ describe("G162 severity and priority", () => {
     assert.equal(mapping.severity, "blocked");
     assert.equal(mapping.priority, "blocked");
   });
+
+  it("covers every severity value at least once in the taxonomy", () => {
+    const severities = new Set(Object.values(NOTIFICATION_EVENT_DEFINITIONS).map((d) => d.severity));
+    for (const required of ["info", "action_required", "warning", "blocked", "critical"] as const) {
+      assert.equal(severities.has(required), true, required);
+    }
+  });
 });
 
-describe("G163 payload redaction", () => {
+describe("G254 payload redaction hardening", () => {
   it("excludes secrets, storageKey, raw provider responses, OAuth tokens, stack traces, and private audit metadata", () => {
     const redacted = redactNotificationPayload({
       title: "Safe title",
@@ -166,6 +243,178 @@ describe("G163 payload redaction", () => {
     assert.equal(serialized.includes("re_test"), false);
     assert.equal(serialized.includes("ya29.secret"), false);
     assert.equal(serialized.includes("tenant/client/object.bin"), false);
+  });
+
+  it("redacts snake_case and substring secret-like keys", () => {
+    const redacted = redactNotificationPayload({
+      api_key: "x",
+      oauth_token: "y",
+      mySecretValue: "z",
+      providerResponse: { raw: true },
+      stack_trace: "boom",
+      private_audit_metadata: { a: 1 },
+      RESEND_API_KEY: "re_env",
+      client_secret: "cs"
+    });
+
+    assert.equal(redacted.api_key, "[REDACTED]");
+    assert.equal(redacted.oauth_token, "[REDACTED]");
+    assert.equal(redacted.mySecretValue, "[REDACTED]");
+    assert.equal(redacted.providerResponse, "[REDACTED]");
+    assert.equal(redacted.stack_trace, "[REDACTED]");
+    assert.equal(redacted.private_audit_metadata, "[REDACTED]");
+    assert.equal(redacted.RESEND_API_KEY, "[REDACTED]");
+    assert.equal(redacted.client_secret, "[REDACTED]");
+    assert.ok(NOTIFICATION_PAYLOAD_REDACT_KEYS.includes("storageKey"));
+  });
+
+  it("handles arrays and nullish values without throwing", () => {
+    assert.deepEqual(redactNotificationPayload(null), null);
+    assert.deepEqual(redactNotificationPayload(undefined), undefined);
+    assert.deepEqual(redactNotificationPayload([{ token: "secret", ok: true }]), [
+      { token: "[REDACTED]", ok: true }
+    ]);
+  });
+});
+
+describe("G255 notification payload safe snapshot", () => {
+  it("builds a redacted allowlisted snapshot without secret leakage", () => {
+    const snapshot = buildNotificationPayloadSnapshot({
+      eventType: "client_approval_needed",
+      title: " Approval needed ",
+      body: " Please review ",
+      reason: null,
+      clientId: "client_1",
+      relatedEntityType: "aiDeliveryDeliverable",
+      relatedEntityId: "deliverable_1",
+      deliverableId: "deliverable_1",
+      deepLinkHash: "#/client-portal/pending-approvals",
+      statusLabel: "PENDING_CLIENT_REVIEW",
+      extra: {
+        title: "ignored-extra-title",
+        storageKey: "must-not-appear",
+        apiKey: "re_secret",
+        reason: "safe-extra-reason",
+        workflowRunId: "internal-run"
+      }
+    });
+
+    assert.equal(snapshot.version, "NOTIFICATION_EVENTS_V2");
+    assert.equal(snapshot.title, "Approval needed");
+    assert.equal(snapshot.body, "Please review");
+    assert.equal(snapshot.severity, "action_required");
+    assert.equal(snapshot.deepLinkHash, "#/client-portal/pending-approvals");
+    assert.equal(snapshot.safeExtra.reason, "safe-extra-reason");
+    assert.equal(Object.prototype.hasOwnProperty.call(snapshot.safeExtra, "storageKey"), false);
+    assert.equal(Object.prototype.hasOwnProperty.call(snapshot.safeExtra, "apiKey"), false);
+    assert.equal(Object.prototype.hasOwnProperty.call(snapshot.safeExtra, "workflowRunId"), false);
+
+    const serialized = JSON.stringify(snapshot);
+    assert.equal(serialized.includes("must-not-appear"), false);
+    assert.equal(serialized.includes("re_secret"), false);
+    assert.equal(serialized.includes("internal-run"), false);
+  });
+});
+
+describe("G256 notification metadata builder", () => {
+  it("builds a stable audit metadata shape with recipient and channel policy", () => {
+    const metadata = buildNotificationAuditMetadata({
+      eventType: "content_changes_requested",
+      tenantId: "tenant_1",
+      clientId: "client_1",
+      actorUserId: "user_1",
+      relatedEntityType: "aiDeliveryDeliverable",
+      relatedEntityId: "deliverable_1",
+      correlationId: "corr_1",
+      emailProvider: "local",
+      hasEmailProviderKey: false,
+      hasInSystemPersistence: false
+    });
+
+    assert.equal(metadata.version, "NOTIFICATION_EVENTS_V2");
+    assert.equal(metadata.templateKey, "AI_DELIVERY_REVIEW_REQUEST");
+    assert.equal(metadata.typedTemplateKey, "CONTENT_CHANGES_REQUESTED");
+    assert.equal(metadata.channelPolicy.inSystem.status, "blocked_no_persistence");
+    assert.equal(metadata.channelPolicy.email.status, "no_send_local");
+    assert.ok(metadata.recipientPolicy.roles.includes("admin"));
+  });
+
+  it("does not serialize secret-like provider key values", () => {
+    const metadata = buildNotificationAuditMetadata({
+      eventType: "monthly_report_available",
+      tenantId: "tenant_1",
+      relatedEntityType: "monthlyReport",
+      relatedEntityId: "report_1",
+      emailProvider: "resend",
+      hasEmailProviderKey: true,
+      hasInSystemPersistence: true
+    });
+
+    const serialized = JSON.stringify(metadata);
+    assert.equal(serialized.includes("RESEND_API_KEY"), false);
+    assert.equal(serialized.includes("re_test"), false);
+    assert.equal(metadata.channelPolicy.email.status, "configured_not_live_proven");
+  });
+});
+
+describe("G257 correlation and idempotency design (no migration)", () => {
+  it("builds deterministic correlation and idempotency keys without persistence", () => {
+    const a = buildNotificationCorrelationDesign({
+      tenantId: "tenant_1",
+      eventType: "client_approval_needed",
+      relatedEntityType: "aiDeliveryDeliverable",
+      relatedEntityId: "deliverable_1",
+      recipientUserId: "user_1",
+      clientId: "client_1",
+      actionKey: "sent_for_review"
+    });
+    const b = buildNotificationCorrelationDesign({
+      tenantId: "tenant_1",
+      eventType: "client_approval_needed",
+      relatedEntityType: "aiDeliveryDeliverable",
+      relatedEntityId: "deliverable_1",
+      recipientUserId: "user_1",
+      clientId: "client_1",
+      actionKey: "sent_for_review"
+    });
+
+    assert.equal(a.version, NOTIFICATION_CORRELATION_DESIGN_VERSION);
+    assert.equal(a.persistence, "design_only_no_migration");
+    assert.equal(a.uniquenessScope, "tenant_event_entity_recipient_action");
+    assert.equal(a.correlationId, b.correlationId);
+    assert.equal(a.idempotencyKey, b.idempotencyKey);
+    assert.ok(a.correlationId.startsWith("corr_"));
+    assert.ok(NOTIFICATION_IDEMPOTENCY_SCHEMA_NOTE.includes("No migration"));
+  });
+
+  it("changes idempotency key when recipient or action differs", () => {
+    const base = buildNotificationCorrelationDesign({
+      tenantId: "tenant_1",
+      eventType: "content_approved",
+      relatedEntityType: "aiDeliveryDeliverable",
+      relatedEntityId: "deliverable_1",
+      recipientUserId: "admin_1",
+      actionKey: "approved"
+    });
+    const otherRecipient = buildNotificationCorrelationDesign({
+      tenantId: "tenant_1",
+      eventType: "content_approved",
+      relatedEntityType: "aiDeliveryDeliverable",
+      relatedEntityId: "deliverable_1",
+      recipientUserId: "admin_2",
+      actionKey: "approved"
+    });
+    const otherAction = buildNotificationCorrelationDesign({
+      tenantId: "tenant_1",
+      eventType: "content_approved",
+      relatedEntityType: "aiDeliveryDeliverable",
+      relatedEntityId: "deliverable_1",
+      recipientUserId: "admin_1",
+      actionKey: "reapproved"
+    });
+
+    assert.notEqual(base.idempotencyKey, otherRecipient.idempotencyKey);
+    assert.notEqual(base.idempotencyKey, otherAction.idempotencyKey);
   });
 });
 
@@ -220,48 +469,7 @@ describe("approval and reject notification matrix", () => {
   });
 });
 
-describe("notification audit metadata builder", () => {
-  it("builds a stable audit metadata shape with recipient and channel policy", () => {
-    const metadata = buildNotificationAuditMetadata({
-      eventType: "content_changes_requested",
-      tenantId: "tenant_1",
-      clientId: "client_1",
-      actorUserId: "user_1",
-      relatedEntityType: "aiDeliveryDeliverable",
-      relatedEntityId: "deliverable_1",
-      correlationId: "corr_1",
-      emailProvider: "local",
-      hasEmailProviderKey: false,
-      hasInSystemPersistence: false
-    });
-
-    assert.equal(metadata.version, "NOTIFICATION_EVENTS_V2");
-    assert.equal(metadata.templateKey, "AI_DELIVERY_REVIEW_REQUEST");
-    assert.equal(metadata.typedTemplateKey, "CONTENT_CHANGES_REQUESTED");
-    assert.equal(metadata.channelPolicy.inSystem.status, "blocked_no_persistence");
-    assert.equal(metadata.channelPolicy.email.status, "no_send_local");
-    assert.ok(metadata.recipientPolicy.roles.includes("admin"));
-  });
-
-  it("does not serialize secret-like provider key values", () => {
-    const metadata = buildNotificationAuditMetadata({
-      eventType: "monthly_report_available",
-      tenantId: "tenant_1",
-      relatedEntityType: "monthlyReport",
-      relatedEntityId: "report_1",
-      emailProvider: "resend",
-      hasEmailProviderKey: true,
-      hasInSystemPersistence: true
-    });
-
-    const serialized = JSON.stringify(metadata);
-    assert.equal(serialized.includes("RESEND_API_KEY"), false);
-    assert.equal(serialized.includes("re_test"), false);
-    assert.equal(metadata.channelPolicy.email.status, "configured_not_live_proven");
-  });
-});
-
-describe("G166 typed template catalog", () => {
+describe("G261 typed template catalog completeness", () => {
   it("lists the required typed templates and maps them onto schema keys", () => {
     const required = [
       "CLIENT_APPROVAL_REQUIRED",

@@ -1,17 +1,20 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
+  buildImageCompliancePolicySnapshot,
   buildImagePromptProfile,
   evaluateImageCompliancePolicy,
   getImageApprovalLoopEvent,
   IMAGE_APPROVAL_LOOP_ACTIONS,
   IMAGE_COMPLIANCE_ALLOWED_DIRECTION_EXAMPLES,
+  IMAGE_COMPLIANCE_HARD_BLOCK_CODES,
+  IMAGE_COMPLIANCE_POLICY_VERSION,
   IMAGE_COMPLIANCE_REJECT_CODES,
   validateMandatoryImageRejectReason
 } from "./image-compliance-policy";
 
 describe("image-compliance-policy", () => {
-  it("G189 rejects before/after concepts before generation", () => {
+  it("G189/G309 rejects before/after concepts before generation", () => {
     const decision = evaluateImageCompliancePolicy({
       stage: "pre_generation_prompt",
       text: "Create a split-screen before and after treatment showing side-by-side comparison."
@@ -20,6 +23,22 @@ describe("image-compliance-policy", () => {
     assert.equal(decision.allowed, false);
     assert.ok(decision.findings.some((finding) => finding.code === "before_after_risk"));
     assert.ok(decision.checks.includes("REJECT:before_after_risk"));
+  });
+
+  it("G309 expands forbidden phrases for progress photos and day-0 comparisons", () => {
+    const progress = evaluateImageCompliancePolicy({
+      stage: "pre_generation_prompt",
+      text: "Include progress photos and a day 0 vs day 30 comparison."
+    });
+    assert.equal(progress.allowed, false);
+    assert.ok(progress.findings.some((f) => f.code === "before_after_risk"));
+
+    const contour = evaluateImageCompliancePolicy({
+      stage: "pre_generation_prompt",
+      text: "Show a contouring result after the program."
+    });
+    assert.equal(contour.allowed, false);
+    assert.ok(contour.findings.some((f) => f.code === "before_after_risk"));
   });
 
   it("G189 rejects body transformation framing", () => {
@@ -33,7 +52,7 @@ describe("image-compliance-policy", () => {
     assert.ok(decision.findings.some((f) => f.matchedRule === "no_body_transformation_framing"));
   });
 
-  it("G189 rejects syringes and procedure staging", () => {
+  it("G189/G309 rejects syringes, procedure staging, and sterile-field cues", () => {
     const decision = evaluateImageCompliancePolicy({
       stage: "pre_generation_prompt",
       text: "Close-up of a syringe and needle preparing an injection in a treatment chair."
@@ -41,6 +60,13 @@ describe("image-compliance-policy", () => {
 
     assert.equal(decision.allowed, false);
     assert.ok(decision.findings.some((f) => f.code === "procedure_or_device_risk"));
+
+    const sterile = evaluateImageCompliancePolicy({
+      stage: "pre_generation_prompt",
+      text: "Operating theatre sterile field with a scalpel ready."
+    });
+    assert.equal(sterile.allowed, false);
+    assert.ok(sterile.findings.some((f) => f.code === "procedure_or_device_risk"));
   });
 
   it("G189 rejects fake doctor imagery", () => {
@@ -51,6 +77,22 @@ describe("image-compliance-policy", () => {
 
     assert.equal(decision.allowed, false);
     assert.ok(decision.findings.some((f) => f.code === "fake_clinician_or_patient_risk"));
+  });
+
+  it("G309 rejects actor-as-doctor and patient success story framing", () => {
+    const actor = evaluateImageCompliancePolicy({
+      stage: "pre_generation_prompt",
+      text: "Use an actor as doctor impersonating a clinician for the campaign."
+    });
+    assert.equal(actor.allowed, false);
+    assert.ok(actor.findings.some((f) => f.code === "fake_clinician_or_patient_risk"));
+
+    const story = evaluateImageCompliancePolicy({
+      stage: "post_generation_output",
+      text: "Caption with a 5-star patient success story endorsement."
+    });
+    assert.equal(story.allowed, false);
+    assert.ok(story.findings.some((f) => f.code === "fake_clinician_or_patient_risk"));
   });
 
   it("G189 rejects fake patient / testimonial imagery", () => {
@@ -64,7 +106,7 @@ describe("image-compliance-policy", () => {
     assert.ok(decision.findings.some((f) => f.matchedRule === "no_fake_patients_or_testimonials"));
   });
 
-  it("G189 rejects guaranteed results language", () => {
+  it("G189/G309 rejects guaranteed results and clinically proven result language", () => {
     const decision = evaluateImageCompliancePolicy({
       stage: "post_generation_output",
       text: "Marketing frame promising guaranteed results and instant results after the service."
@@ -72,9 +114,32 @@ describe("image-compliance-policy", () => {
 
     assert.equal(decision.allowed, false);
     assert.ok(decision.findings.some((f) => f.code === "treatment_result_risk"));
+
+    const clinical = evaluateImageCompliancePolicy({
+      stage: "pre_generation_prompt",
+      text: "Visual implying a clinically proven result and wrinkle-free result."
+    });
+    assert.equal(clinical.allowed, false);
+    assert.ok(clinical.findings.some((f) => f.code === "treatment_result_risk"));
   });
 
-  it("G189 allows neutral wellness imagery", () => {
+  it("G309 rejects likeness deepfake and at-home injection kit cues", () => {
+    const likeness = evaluateImageCompliancePolicy({
+      stage: "pre_generation_prompt",
+      text: "Create a deepfake lookalike of a celebrity without consent."
+    });
+    assert.equal(likeness.allowed, false);
+    assert.ok(likeness.findings.some((f) => f.code === "likeness_consent_risk"));
+
+    const kit = evaluateImageCompliancePolicy({
+      stage: "pre_generation_prompt",
+      text: "Show an at-home injection kit and buy Wegovy online packaging."
+    });
+    assert.equal(kit.allowed, false);
+    assert.ok(kit.findings.some((f) => f.code === "unsafe_prescription_or_device_risk"));
+  });
+
+  it("G189/G310 allows neutral wellness imagery", () => {
     const decision = evaluateImageCompliancePolicy({
       stage: "pre_generation_prompt",
       text: "Premium abstract wellness composition with soft skincare textures and a calm editorial mood."
@@ -85,24 +150,27 @@ describe("image-compliance-policy", () => {
     assert.deepEqual(decision.checks, ["ALLOW:neutral_wellness_context"]);
   });
 
-  it("G189 allows clinic ambience without procedure", () => {
-    const decision = evaluateImageCompliancePolicy({
-      stage: "pre_generation_prompt",
-      text: IMAGE_COMPLIANCE_ALLOWED_DIRECTION_EXAMPLES[1]
-    });
-
-    assert.equal(decision.allowed, true);
-    assert.deepEqual(decision.findings, []);
+  it("G310 allows expanded neutral lifestyle directions", () => {
+    for (const example of IMAGE_COMPLIANCE_ALLOWED_DIRECTION_EXAMPLES) {
+      const decision = evaluateImageCompliancePolicy({
+        stage: "pre_generation_prompt",
+        text: example
+      });
+      assert.equal(decision.allowed, true, example);
+      assert.deepEqual(decision.findings, []);
+    }
   });
 
-  it("G189 allows product-neutral lifestyle", () => {
-    const decision = evaluateImageCompliancePolicy({
-      stage: "pre_generation_prompt",
-      text: IMAGE_COMPLIANCE_ALLOWED_DIRECTION_EXAMPLES[2]
-    });
+  it("G311 builds a stable policy snapshot with hard blocks and no-live flag", () => {
+    const snapshot = buildImageCompliancePolicySnapshot();
 
-    assert.equal(decision.allowed, true);
-    assert.deepEqual(decision.findings, []);
+    assert.equal(snapshot.version, IMAGE_COMPLIANCE_POLICY_VERSION);
+    assert.equal(snapshot.liveProviderCallsAllowed, false);
+    assert.deepEqual(snapshot.hardBlockCodes, IMAGE_COMPLIANCE_HARD_BLOCK_CODES);
+    assert.ok(snapshot.matchedRules.includes("no_before_after_or_transformation_framing"));
+    assert.ok(snapshot.matchedRules.includes("no_body_transformation_framing"));
+    assert.ok(snapshot.allowedDirectionExamples.length >= 6);
+    assert.ok(snapshot.rejectCodes.includes("before_after_risk"));
   });
 
   it("defines slot prompt profiles with Puriva aesthetic, forbidden policy, and alt requirements", () => {
@@ -121,7 +189,7 @@ describe("image-compliance-policy", () => {
     assert.ok(hero.purivaAesthetic.visualDirection.includes("product-neutral lifestyle context"));
   });
 
-  it("G192 requires structured reject reason for admin reject, client reject, and replacement", () => {
+  it("G192/G316 requires structured reject reason for admin reject, client reject, and replacement", () => {
     assert.equal(validateMandatoryImageRejectReason({ submittedBy: "admin" }).ok, false);
 
     const adminReject = validateMandatoryImageRejectReason({
@@ -174,6 +242,15 @@ describe("image-compliance-policy", () => {
       submittedBy: "client"
     });
     assert.equal(otherWithoutNote.ok, false);
+
+    for (const code of IMAGE_COMPLIANCE_HARD_BLOCK_CODES) {
+      const result = validateMandatoryImageRejectReason({
+        reasonCode: code,
+        submittedBy: "admin",
+        context: "admin_reject"
+      });
+      assert.equal(result.ok, true, code);
+    }
   });
 
   it("maps approval-loop actions to pure events", () => {
