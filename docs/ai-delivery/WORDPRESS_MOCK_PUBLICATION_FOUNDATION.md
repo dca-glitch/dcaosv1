@@ -1,6 +1,6 @@
 # WordPress Mock Publication Foundation
 
-**Status:** WordPress disabled/mock publish endpoint, service scaffold, and UI action foundation is complete.
+**Status:** WordPress disabled/mock publish endpoint, service scaffold, UI action foundation, and G111 publish-freeze guard coverage are complete.
 
 > **Architecture update (2026-06-26):** Tenant-level WordPress config is **legacy**. Approved target model: **PublicationTarget per Client** (domain), multiple subdomains, encrypted credentials per target. See [`docs/architecture/CLIENT_DOMAIN_OPERATING_MODEL.md`](../architecture/CLIENT_DOMAIN_OPERATING_MODEL.md) and implementation blocks 2–5 in [`docs/ROADMAP.md`](../ROADMAP.md).
 
@@ -27,11 +27,12 @@
 - `getAiDeliveryWordPressConfigForTenant(tenantId: string): Promise<AiDeliveryWordPressSiteConfig | null>` — mock function returning null; future: reads from TenantSetting
 
 **Behavior:**
-- No external WordPress API calls
+- No external WordPress API calls while the freeze guard is active
 - No credentials read from env or TenantSetting
 - No credential storage in code
 - Mock functions return clear `provider_disabled` status
 - TypeScript types only; no runtime secret handling
+- G111 guard returns before `fetch`, even when `WORDPRESS_PUBLISH_ENABLED=true` and a local Application Password is passed
 
 **Response Structure:**
 ```json
@@ -249,6 +250,7 @@ POST /api/v1/tenant/wordpress-config
 
 **Test Files:**
 - `scripts/smoke-ai-delivery-reviews-local.mjs` — WordPress publish API and UI smoke tests
+- `apps/api/src/services/wordpress.service.test.ts` — G110 draft payload, G111 publish freeze, G112 credential shape, and G113 rollback constants tests
 
 ---
 
@@ -401,7 +403,7 @@ Before releasing real WordPress integration:
 
 ## Summary
 
-WordPress mock publication foundation + non-secret config management provides a safe, credential-free baseline for testing the publish workflow and storing tenant site configuration locally. No external WordPress calls are made. No credentials are stored or read. The endpoint and UI clearly indicate disabled/mock status to prevent confusion with real publication.
+WordPress mock publication foundation + non-secret config management provides a safe, credential-free baseline for testing the publish workflow and storing tenant site configuration locally. No external WordPress calls are made while the freeze guard is active. Credentials are stored only through the encrypted PublicationTargetCredential path, and response helpers serialize status/presence only. The endpoint and UI clearly indicate disabled/mock status to prevent confusion with real publication.
 
 **Completed Phases:**
 1. ✅ WordPress provider service scaffold (mock functions, no credentials)
@@ -412,5 +414,5 @@ WordPress mock publication foundation + non-secret config management provides a 
 
 Real WordPress API integration, credential storage, and external post persistence remain intentionally deferred. All deferred features require separate scope approval, security review, and explicit credential handling design. The mock foundation + non-secret config is sufficient for admin testing of the local publish workflow, config management, and endpoint contract validation.
 
-**No commits performed. No secrets touched. No TenantSetting credential reads implemented. No external WordPress calls made. Non-secret config API only — credentials require separate future block.**
+**No commits performed. No secrets touched. No TenantSetting credential reads implemented. No external WordPress calls made. Non-secret config API plus encrypted PublicationTargetCredential status only — live draft proof and publish require separate future blocks.**
 

@@ -8,6 +8,7 @@
 
 - [`docs/operator/deferred-scope-register.md`](../operator/deferred-scope-register.md)
 - [`docs/architecture/CLIENT_DOMAIN_OPERATING_MODEL.md`](./CLIENT_DOMAIN_OPERATING_MODEL.md)
+- [`docs/architecture/G128_G133_MI_RH_POD_CLOSEOUT.md`](./G128_G133_MI_RH_POD_CLOSEOUT.md)
 - [`docs/ROADMAP.md`](../ROADMAP.md)
 
 ---
@@ -107,3 +108,7 @@ Client Portal must **never** expose raw POD prompts, supplier credentials, or dr
 ## 9. POD0 deliverable
 
 This document only. No module implementation until an approved POD1+ block.
+
+The G132 closeout adds a shared typed workflow contract for future admin-only POD
+planning. It does not activate marketplace lookup, broad crawling, publishing,
+supplier credential access, module code, schema, API, or UI.

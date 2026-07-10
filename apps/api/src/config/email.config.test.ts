@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { getEmailProviderConfig } from "./email.config";
+import { getEmailProviderConfig, getEmailProviderSafetyShape } from "./email.config";
 
 const ENV_KEYS = ["EMAIL_PROVIDER", "EMAIL_FROM_ADDRESS", "EMAIL_REPLY_TO", "RESEND_API_KEY"] as const;
 
@@ -63,6 +63,28 @@ describe("email.config — disabled-safe local defaults", () => {
       const config = getEmailProviderConfig();
       assert.equal(config.provider, "resend");
       assert.equal(config.hasResendApiKey, false);
+    });
+  });
+
+  it("exposes a safe shape where missing config disables sending", () => {
+    withEnv({}, () => {
+      const shape = getEmailProviderSafetyShape();
+      assert.equal(shape.provider, "local");
+      assert.equal(shape.sendingEnabled, false);
+      assert.equal(shape.localNoSend, true);
+      assert.equal(shape.liveProofRequired, false);
+    });
+  });
+
+  it("treats configured Resend as live-proof-required without serializing secrets", () => {
+    withEnv({ EMAIL_PROVIDER: "resend", RESEND_API_KEY: "re_test_should_not_leak" }, () => {
+      const shape = getEmailProviderSafetyShape();
+      assert.equal(shape.provider, "resend");
+      assert.equal(shape.hasResendApiKey, true);
+      assert.equal(shape.sendingEnabled, true);
+      assert.equal(shape.localNoSend, false);
+      assert.equal(shape.liveProofRequired, true);
+      assert.equal(JSON.stringify(shape).includes("re_test_should_not_leak"), false);
     });
   });
 });

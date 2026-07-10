@@ -63,6 +63,24 @@ knowledge item content itself.
 - deliverable approval
 - FINAL-only monthly reports
 
+## Client approval surface map (G122/G123)
+
+Client approval and archive responses are intentionally field-mapped in API runtime code, not
+passed through as raw Prisma records.
+
+| Surface | Runtime | Client-visible payload | Guard |
+| --- | --- | --- | --- |
+| Pending approvals | `client-portal-approval.runtime.ts` | deliverable id/title/status, project/client names, created time | pending-review status only; narrow select excludes storage/provider/workflow/audit fields |
+| Approval editor | `client-portal-approval.runtime.ts` | article metadata/body and image preview/final URLs | client access plus `PENDING_CLIENT_REVIEW`; narrow select excludes storage/provider/workflow/audit fields |
+| Edit history | `client-portal-edit.runtime.ts` | allowlisted client-edit fields and user display identity | filters persisted rows to title/body/description/tags/category/scheduledPublishAt; client users do not receive editor email |
+| Archive deliverables | `client-portal.runtime.ts` | final deliverable summaries and Google Docs export links | `DELIVERED`/`ACCEPTED` only; `storageKey` never serialized |
+| Monthly reports | `client-portal.runtime.ts` | FINAL report summary/detail, work summary, client-safe metrics summary | `FINAL` only; `storageKey` used only to compute `hasDocument` or a private download reference |
+| Release package | `client-portal.runtime.ts` | finalized client snapshot only | requires finalized package version/kind and strips internal markers |
+
+Leakage scan coverage for G120 focuses on workflow run status/ids, `storageKey`,
+provider/model/cost metadata, and audit/admin fields. These remain forbidden on client-visible
+portal responses except for explicit private download references returned by download endpoints.
+
 ## Briefs vs Production Plan Review (stage distinction, corrected in Block 4F)
 
 **Correction to the Block 4D/4C finding:** `#/client-portal/briefs` renders `BriefPage`,

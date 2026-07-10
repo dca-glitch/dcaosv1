@@ -1,6 +1,6 @@
 # Email Notifications Proof
 
-**Status:** Audit + wiring block (2026-07-09). Local disabled-safe wiring improved for Puriva launch events; live Resend proof remains owner-gated. No live email was sent in this block.
+**Status:** Audit + wiring block (2026-07-09), refreshed by G94-G102 no-schema notification foundation (2026-07-10). Local disabled-safe wiring improved for Puriva launch events; live Resend proof remains owner-gated. No live email was sent in these blocks.
 
 **Scope:** Audit the current transactional email/notification subsystem, define the event taxonomy requested for Puriva launch (article ready, image set ready, client approved/rejected, admin action required, monthly report final, WordPress draft prepared), confirm disabled-safe local mode, and lay out a bounded live-Resend proof plan for a future owner-approved session. This document does **not** authorize a live send.
 
@@ -15,7 +15,7 @@ Related:
 - Code: `apps/api/src/config/email.config.ts`, `apps/api/src/services/email-notifications.service.ts`, `apps/api/src/services/system-events.service.ts`, `apps/api/src/core/client-portal-approval.runtime.ts`, `apps/api/src/routes/briefs.ts`, `apps/api/src/controllers/coreController.ts`
 - Schema: `packages/data/prisma/schema.prisma` (`EmailLog`, `EmailStatus`, `EmailTemplateKey`)
 - Smoke: `scripts/smoke-email-outbox-local.mjs` (`npm run smoke:email-outbox:local`)
-- New trivial test (this block): `apps/api/src/config/email.config.test.ts`
+- No-schema notification foundation tests: `apps/api/src/notifications/notification-events.test.ts`, `apps/api/src/notifications/email-no-send-adapter.test.ts`, `apps/api/src/config/email.config.test.ts`
 
 ---
 
@@ -60,6 +60,17 @@ Both pathways write to the same `EmailLog` table (`packages/data/prisma/schema.p
 
 **Summary (G83 refresh):** current code has disabled-safe real-path email intent for article/content review requests, image `FINAL_READY`, client deliverable approved/rejected, monthly report `FINAL`, WordPress draft prepared, and several admin-action review requests. Local mode still writes `EmailLog.status=SKIPPED`; no live Resend send has been proven. The remaining launch gap is not "no code path exists"; it is that there is no user-scoped in-system notification model, no live inbox proof, no client email on monthly report `FINAL`, and no notification on image-level client approve/reject rows.
 
+### 2.1 G94-G102 pure mapping inventory
+
+G94-G102 added `packages/shared/src/notification-events.ts` as the schema-safe inventory for notification-worthy events before any DB migration. It includes:
+
+- Canonical `NotificationEventType` values for article ready, image set ready, client approve/reject, image approve/reject, admin action required, monthly report final, WordPress draft prepared, workflow/budget/kill-switch events.
+- Pure `mapBusinessEventToNotification()` mapping with required channels.
+- `resolveNotificationChannelPolicy()` policy: in-system is always required; email is required for launch-critical events; phone is supplement-only and insufficient for launch; local email remains no-send.
+- `APPROVAL_REJECT_NOTIFICATION_MATRIX` for deliverable/image approve/reject behavior.
+- `buildNotificationAuditMetadata()` for safe audit metadata, with provider key presence represented as a boolean only.
+- `EMAIL_TEMPLATE_INVENTORY` constrained to the current schema enum values. Dedicated keys for ready/final/draft-prepared remain blocked without schema approval.
+
 ---
 
 ## 3. Disabled-safe local mode (confirmed by code inspection)
@@ -72,6 +83,8 @@ Both pathways write to the same `EmailLog` table (`packages/data/prisma/schema.p
 | `"resend"` | `resend` | Only value that can ever reach the live-call branch, and only combined with a present `RESEND_API_KEY` |
 
 `hasResendApiKey` is a **boolean presence check only** (`Boolean(readEnvString("RESEND_API_KEY"))`) — the key value itself is never returned from `getEmailProviderConfig()` or logged anywhere in the audited code path.
+
+G94-G102 also added `getEmailProviderSafetyShape()`, which serializes `sendingEnabled`, `localNoSend`, and `liveProofRequired` without serializing any secret value. A keyed Resend config means "sending branch is configured and live proof is required"; it does **not** mean live proof has been completed.
 
 ### 3.2 `sendEmailNotification()` resolved status by config (`email-notifications.service.ts::resolveSendStatus`)
 
@@ -113,6 +126,12 @@ Use this checklist before claiming a notification path is safe in local or stagi
 - [ ] The code path under test uses `sendEmailNotification()`, `notifyDcaTeam()`, `notifyClientUsers()`, or `recordAiDeliverySystemEvent()` only; no direct `fetch("https://api.resend.com/emails", ...)` call appears outside `email-notifications.service.ts`.
 - [ ] Image-level client approve/reject tests do not claim email proof unless a notification call is added to `approveClientPortalDeliverableImage()` / `rejectClientPortalDeliverableImage()`.
 - [ ] Monthly report `FINAL` tests distinguish current admin notification intent from the still-missing client delivery notification.
+
+### 3.7 G99 no-send adapter proof
+
+`apps/api/src/notifications/email-no-send-adapter.ts` defines a local no-send adapter interface for tests and future wiring seams. It returns `SKIPPED`, stores a normalized local attempt, sets `providerMessageId: null`, and never calls `fetch` or Resend.
+
+Focused proof: `apps/api/src/notifications/email-no-send-adapter.test.ts` overrides `globalThis.fetch` with a throwing stub and verifies the adapter does not invoke it.
 
 ---
 
@@ -166,7 +185,7 @@ Secrets printed or committed during this session: no (required)
 
 ---
 
-## 5. Tests added this block
+## 5. Tests added / refreshed
 
 `apps/api/src/config/email.config.test.ts` — new, trivial, disabled-safe unit test (`node:test`, no DB, no network, no server start). Verifies:
 
@@ -174,8 +193,15 @@ Secrets printed or committed during this session: no (required)
 2. Any unrecognized `EMAIL_PROVIDER` value falls back to `"local"` (fail-safe default, not fail-open).
 3. `hasResendApiKey` correctly reports `true` when a key is present, **without** the key value ever appearing in the serialized config object.
 4. `EMAIL_PROVIDER=resend` without `RESEND_API_KEY` is reported as configured-but-unkeyed.
+5. Missing config serializes as non-sending local mode.
+6. A keyed Resend config serializes as `liveProofRequired: true` without exposing the key value.
 
-Run in isolation (from `apps/api`): `node --import tsx --test src/config/email.config.test.ts` → 4/4 pass. Picked up automatically by the existing `npm run -w @dca-os-v1/api test:unit` glob (`src/**/*.test.ts`); no script changes were needed.
+G94-G102 added:
+
+- `apps/api/src/notifications/notification-events.test.ts` — event taxonomy, event-to-notification mapping, priority/channel policy, approval/reject matrix, audit metadata builder, and template inventory.
+- `apps/api/src/notifications/email-no-send-adapter.test.ts` — local no-send adapter result shape and no external `fetch` call.
+
+Run in isolation (from `apps/api`): `node --import tsx --test src/notifications/notification-events.test.ts src/notifications/email-no-send-adapter.test.ts src/config/email.config.test.ts` → 20/20 pass. Picked up automatically by the existing `npm run -w @dca-os-v1/api test:unit` glob (`src/**/*.test.ts`); no script changes were needed.
 
 No new integration test was added under `apps/api/tests/integration/`. Every existing integration test in that folder boots a live app instance and a real Prisma/DB connection (`createApp()` + `createPrismaClient()`); adding one was not necessary to prove disabled-safe behavior for this audit, and starting the API/DB was out of scope for a docs/audit-only block per the repository's local service-startup rules ("do not start API/web unless smoke/browser proof requires it").
 
@@ -191,6 +217,7 @@ No new integration test was added under `apps/api/tests/integration/`. Every exi
 | 4 | Live Resend proof plan defined with explicit pre-conditions, bounded scope, and exclusions | Done (§4) |
 | 5 | Trivial, safe, disabled-safe test added and run in isolation | Done (§5) — 4/4 pass, no network/DB |
 | 6 | No live email sent, no secret read/printed/committed | Done — confirmed throughout |
+| 7 | G94-G102 no-schema foundation proved with focused unit tests | Done (§5) — 20/20 pass, no network/DB |
 
 ---
 
@@ -203,6 +230,7 @@ No new integration test was added under `apps/api/tests/integration/`. Every exi
 - Claiming monthly report `FINAL` client delivery notification exists — current code only records admin notification intent for the `FINAL` transition
 - Claiming image-level client approve/reject sends notifications — current image approval handlers only persist review rows and rejection reason
 - Wiring new events into `core.runtime.ts` / `client-publication.runtime.ts` as part of this docs/audit block (those files are outside this block's allowed edit scope)
+- Treating G94-G102 pure mapping/policy as persistent in-system notifications — no DB notification model exists yet
 
 ---
 
@@ -215,5 +243,6 @@ No new integration test was added under `apps/api/tests/integration/`. Every exi
 | 3 | Image-level client approve/reject writes review rows only; no admin/client notification intent | Small–Medium | Add no-send admin notification after image approve/reject if product requires operators to react before final deliverable approval |
 | 4 | Live Resend adapter proof remains owner-gated and unrun | Low | Execute exactly one owner-inbox proof per §4 in a separate approved block |
 | 5 | No dedicated `EmailTemplateKey` values for ready/final/draft-prepared events — all currently borrow one of the six existing generic keys | Requires schema migration | Out of scope without explicit schema-change approval per `AGENTS.md` hard safety boundaries |
+| 6 | G94-G102 foundation is not wired to runtime notification persistence | Medium | Requires a separately approved in-system notification DB/API/UI block |
 
-**Recommendation for the next owner-approved block:** implement the no-schema in-system notification seam first (event type + mapping + no-send tests), then add monthly report `FINAL` client delivery fan-out. Keep dedicated template keys deferred until a schema gate approves them.
+**Recommendation for the next owner-approved block:** implement the persisted in-system notification model/API/UI using the G94-G102 taxonomy, then add monthly report `FINAL` client delivery fan-out. Keep dedicated template keys deferred until a schema gate approves them.

@@ -1,6 +1,6 @@
 # DCA OS Lite — Operator Runbook (Consolidated)
 
-**Status:** Single operator entry point for local validation, smoke, recovery, and staging/production prerequisites. G35 Phase B local pre-staging gate passed on `217c11c`; G35 Phase C controlled staging refresh completed on commit `5e1ea5a`. G46d/G47 staging deploy/smoke/proof PASS. G48 production readiness planning PASS. **G53 production safety plan approved (planning only).** Production deploy ready: **NO**. G49/G50 **not executed**. G54 HSTS/proxy: **PASS**. Next production path remains G49 dry-run before G50, only after owner approval. Puriva Launch **blocked** pending live proof gates. Staging proven; production frozen. Further staging or production work requires fresh owner approval.
+**Status:** Single operator entry point for local validation, smoke, recovery, and staging/production prerequisites. G35 Phase B local pre-staging gate passed on `217c11c`; G35 Phase C controlled staging refresh completed on commit `5e1ea5a`. G46d/G47 staging deploy/smoke/proof PASS. G48 production readiness planning PASS. **G53 production safety plan approved (planning only).** Production deploy ready: **NO**. G49 public read-only probes PASS, but formal G49 closure still needs the owner-approval sentence; G50 **not executed**. G54 HSTS/proxy: **PASS**. Next production path remains formal G49 closure before G50, only after owner approval. Puriva Launch **blocked** pending live proof gates. Staging proven historically; production frozen. Further staging or production work requires fresh owner approval. G138-G144 refreshed owned operator/security docs only; no live calls, staging/prod mutation, commit, push, or deploy.
 **Source of truth for product state:** [`docs/STATUS.md`](../STATUS.md)
 
 Related detailed runbooks:
@@ -22,6 +22,9 @@ Related detailed runbooks:
 | Puriva Launch Gate (15-area evaluation) | [`docs/runbooks/PURIVA_LAUNCH_GATE.md`](../runbooks/PURIVA_LAUNCH_GATE.md) |
 | Storage/R2 live proof plan | [`docs/runbooks/STORAGE_R2_PROOF.md`](../runbooks/STORAGE_R2_PROOF.md) |
 | Integrations truth matrix | [`docs/runbooks/INTEGRATIONS_TRUTH_MATRIX.md`](../runbooks/INTEGRATIONS_TRUTH_MATRIX.md) |
+| G138 security checklist refresh | [`docs/security/SECURITY_CHECKLIST_G138.md`](../security/SECURITY_CHECKLIST_G138.md) |
+| G142 package-script test/smoke inventory | [`TEST_SMOKE_INVENTORY.md`](./TEST_SMOKE_INVENTORY.md) |
+| G143 validation command guards | [`VALIDATION_COMMAND_GUARDS.md`](./VALIDATION_COMMAND_GUARDS.md) |
 | Env names (no values) | [`ENV_READINESS_INVENTORY.md`](./ENV_READINESS_INVENTORY.md) |
 | Deferred scope | [`deferred-scope-register.md`](./deferred-scope-register.md) |
 
@@ -75,6 +78,8 @@ notepad $log
 - Staging or production readiness
 
 See [`.github/instructions/validation.instructions.md`](../../.github/instructions/validation.instructions.md).
+
+G143 operator guard reference: [`VALIDATION_COMMAND_GUARDS.md`](./VALIDATION_COMMAND_GUARDS.md). It records PowerShell-only command discipline, validate-before-smoke ordering, Prisma EPERM recovery, staging/production command boundaries, and change-type validation expectations.
 
 ---
 
@@ -180,6 +185,29 @@ Reference: [`docs/database/PRISMA_CLIENT_GENERATION_READINESS.md`](../database/P
 **Smoke:** `npm.cmd run smoke:admin-operations:local`
 
 Full detail: [`docs/runbooks/ADMIN_OPERATIONS_RECOVERY.md`](../runbooks/ADMIN_OPERATIONS_RECOVERY.md).
+
+---
+
+## 4.0 G138-G144 owned-doc truth sweep
+
+This runbook refresh is docs-only. It does not supersede `docs/STATUS.md`, `deferred-scope-register.md`, `INTEGRATIONS_TRUTH_MATRIX.md`, or `PURIVA_LAUNCH_GATE.md`.
+
+| Gate | Outcome |
+|------|---------|
+| G138 | Security checklist refreshed in [`docs/security/SECURITY_CHECKLIST_G138.md`](../security/SECURITY_CHECKLIST_G138.md). |
+| G139 | Integrations truth matrix changes are report-only proposals; protected file not edited by this subagent. |
+| G140 | Production readiness truth sweep recorded in owned docs; production readiness remains **NO**. |
+| G141 | Staging readiness truth sweep recorded in owned docs; staging proof remains historical and future staging action needs fresh approval. |
+| G142 | Package-script test/smoke inventory added in [`TEST_SMOKE_INVENTORY.md`](./TEST_SMOKE_INVENTORY.md). |
+| G143 | Validation command guard doc added in [`VALIDATION_COMMAND_GUARDS.md`](./VALIDATION_COMMAND_GUARDS.md). |
+| G144 | Operator runbook refreshed with links, truth sweep, and report-only protected-doc patch proposals. |
+
+Truth sweep summary:
+
+- Staging: G46d/G47 PASS is recorded for the prior artifact/context only; no fresh staging action was performed here.
+- Production: G49 public read-only probes PASS, formal G49 closure pending owner sentence, G50 not executed, production readiness **NO**.
+- Puriva Launch: blocked pending live proof gates and product workflow gates.
+- Integrations: no staging/production live proof is newly claimed; local/config-shape evidence remains labeled as such.
 
 ---
 
@@ -456,3 +484,37 @@ node scripts/smoke-client-approval-happy-path-local.mjs
 ## G49 formal closure documentation + fresh public probes (2026-07-09, Subagent B)
 
 Fresh public read-only probes were re-run from Windows PowerShell (no SSH, no mutation): all four §6.2 targets (staging root, staging health, production root, production health) returned HTTP 200 with HSTS present and database ready. Full detail: [`G49_PRODUCTION_DRY_RUN_READ_ONLY_PROOF.md`](../runbooks/G49_PRODUCTION_DRY_RUN_READ_ONLY_PROOF.md) §1.2 and §17. **G49 formal gate closure still requires a separately recorded owner-approval sentence** (§10 item 1 of that runbook) — this task did not supply it. **G50 remains not executed / not authorized. Production readiness remains NO.**
+
+## G138-G144 report-only proposed patches for protected docs
+
+These are handoff notes for the main agent. This subagent did **not** edit `docs/STATUS.md`, `docs/operator/deferred-scope-register.md`, `docs/runbooks/INTEGRATIONS_TRUTH_MATRIX.md`, or `docs/runbooks/PURIVA_LAUNCH_GATE.md`.
+
+### Proposed `docs/runbooks/INTEGRATIONS_TRUTH_MATRIX.md` patch (G139)
+
+- Add a post-G138 note: "G138 security checklist refresh and G142/G143 operator docs introduced no integration proof changes. Staging proof remains `Not proven` and production proof remains `Not proven` for every live integration row unless already recorded otherwise."
+- Add explicit no-call scope: no OpenRouter, WordPress, GA/GSC, R2, Resend, image-provider, staging, production, VPS, commit, push, or deploy action occurred in G138-G144.
+- Preserve current local-only distinction for OpenRouter and disabled/config-shape distinction for R2, GA/GSC, WordPress, email, and image generation.
+
+### Proposed `docs/STATUS.md` patch (G140-G141)
+
+- Add a compact G138-G144 docs row under the current gate/status table:
+  - G138 security checklist refreshed in `docs/security/SECURITY_CHECKLIST_G138.md`.
+  - G139 integrations matrix patch proposed only.
+  - G140 production truth sweep recorded in owned docs; production readiness remains **NO**.
+  - G141 staging truth sweep recorded in owned docs; historical staging PASS does not authorize future staging action.
+  - G142 package-script test/smoke inventory added.
+  - G143 validation command guards added.
+  - G144 operator runbook refreshed.
+- Preserve current production wording: G49 public probes PASS, formal G49 closure pending owner sentence, G50 not executed.
+- Preserve current Puriva Launch wording: blocked pending live proof gates and product workflow gates.
+
+### Proposed `docs/operator/deferred-scope-register.md` patch (report-only)
+
+- Add one line in the production/deployment truth area noting G138-G144 were docs-only and did not move any deferred live integration, staging/prod proof, or production deploy item out of deferred status.
+- Do not alter the Puriva Launch blocker list unless a separately approved proof closes a blocker.
+
+### Proposed `docs/runbooks/PURIVA_LAUNCH_GATE.md` patch (report-only)
+
+- Add a short cross-reference to `docs/security/SECURITY_CHECKLIST_G138.md` under security evidence.
+- Keep overall verdict **BLOCKED**.
+- Do not count the G138 checklist as launch proof; it is a checklist/truth sweep only.

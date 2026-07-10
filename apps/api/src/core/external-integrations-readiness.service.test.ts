@@ -62,6 +62,57 @@ describe("external-integrations-readiness.service", () => {
     assert.doesNotMatch(serialized, /sk-or-/i);
   });
 
+  it("reports R2 configured_shape_ok from config shape only without bucket IO", () => {
+    for (const key of trackedKeys) {
+      delete process.env[key];
+    }
+    process.env.R2_ACCOUNT_ID = "unit-account";
+    process.env.R2_ACCESS_KEY_ID = "unit-access-key";
+    process.env.R2_SECRET_ACCESS_KEY = "unit-secret-value";
+    process.env.R2_BUCKET_NAME = "unit-bucket";
+
+    let fetchCallCount = 0;
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = ((..._args: Parameters<typeof fetch>) => {
+      fetchCallCount++;
+      return Promise.reject(new Error("Unexpected bucket IO in R2 readiness unit test"));
+    }) as typeof fetch;
+
+    try {
+      const readiness = getExternalIntegrationsReadinessSnapshot();
+      const privateStorage = readiness.categories.find((category) => category.key === "private_storage");
+      const serialized = JSON.stringify(readiness);
+
+      assert.equal(privateStorage?.status, "configured_shape_ok");
+      assert.equal(privateStorage?.privateStorage?.configured, true);
+      assert.equal(privateStorage?.privateStorage?.liveBucketMutationDeferred, true);
+      assert.equal(serialized.includes("unit-secret-value"), false);
+      assert.equal(fetchCallCount, 0);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it("reports R2 missing_config for partial required env and serializes no secrets", () => {
+    for (const key of trackedKeys) {
+      delete process.env[key];
+    }
+    process.env.R2_ACCOUNT_ID = "partial-account";
+    process.env.R2_SECRET_ACCESS_KEY = "partial-secret-value";
+
+    const readiness = getExternalIntegrationsReadinessSnapshot();
+    const privateStorage = readiness.categories.find((category) => category.key === "private_storage");
+    const serialized = JSON.stringify(readiness);
+
+    assert.equal(privateStorage?.status, "missing_config");
+    assert.equal(privateStorage?.privateStorage?.configured, false);
+    assert.deepEqual(privateStorage?.privateStorage?.missingKeys.sort(), [
+      "R2_ACCESS_KEY_ID",
+      "R2_BUCKET_NAME"
+    ]);
+    assert.equal(serialized.includes("partial-secret-value"), false);
+  });
+
   it("reports image_generation disabled by default with no live provider calls", () => {
     for (const key of trackedKeys) {
       delete process.env[key];

@@ -1,6 +1,6 @@
 # WordPress Credential Policy Decision
 
-**Status:** Encryption foundation merged locally (Architecture Block 4). Encrypted Application Password save on `PublicationTargetCredential` is allowed when `CREDENTIAL_ENCRYPTION_MASTER_KEY` is set. **Live WordPress HTTP calls, connection testing, and publish remain frozen** unless a separately owner-approved proof block explicitly enables them.
+**Status:** Encryption foundation merged locally (Architecture Block 4). Encrypted Application Password save on `PublicationTargetCredential` is allowed when `CREDENTIAL_ENCRYPTION_MASTER_KEY` is set. Credential response shapes expose configured/encryption status only. **Live WordPress HTTP calls, connection testing, and publish remain frozen** unless a separately owner-approved proof block explicitly replaces the freeze guard.
 
 **Decision Date:** 2026-06-24 (original STOP) · **Updated:** 2026-07-10 (G78 docs audit — reflects Block 4 merge; live API/publish freeze unchanged)
 
@@ -16,7 +16,7 @@
 |------|------------|---------------|---------------|
 | **1 — Draft preparation** | Local JSON payload via `prepare-wordpress-draft`; no HTTP, no credentials | Local-proven | **In scope** — draft/handoff only |
 | **2 — Live draft proof** | Real WordPress HTTP call creating a staging draft post | Plan-only (`WORDPRESS_DRAFT_PROOF.md` §6); not executed | Required before "verified against real site" claims |
-| **3 — Publish / production** | `publish-wordpress` with `WORDPRESS_PUBLISH_ENABLED=true` | Disabled-by-default; not proven on staging/production | **Out of scope** — auto-publish deferred |
+| **3 — Publish / production** | `publish-wordpress` with `WORDPRESS_PUBLISH_ENABLED=true` | Disabled-by-default and frozen by service guard; not proven on staging/production | **Out of scope** — auto-publish deferred |
 
 Credential save (encrypted) supports tier 2/3 prep only — it does **not** authorize live calls or publish.
 
@@ -28,6 +28,7 @@ Credential save (encrypted) supports tier 2/3 prep only — it does **not** auth
 
 - Non-secret WordPress tenant config (`siteUrl`, `siteSlug`, `wordPressComSite`) via `GET/POST /api/v1/tenant/wordpress-config`
 - **Encrypted** Application Password save on `PublicationTargetCredential` via Client Hub when `CREDENTIAL_ENCRYPTION_MASTER_KEY` is set — see [`CREDENTIAL_ENCRYPTION_FOUNDATION.md`](../security/CREDENTIAL_ENCRYPTION_FOUNDATION.md)
+- Credential policy shape helpers returning only `{ configured, encryptionAvailable, updatedAt }` plus audit metadata `{ credentialsPresent, siteUrlHost }`
 - Local draft preparation (`prepare-wordpress-draft`) — no credentials read during prep
 - Disabled-safe publish endpoint (`provider_disabled` when `WORDPRESS_PUBLISH_ENABLED` unset/false)
 - WordPress provider service scaffold (`wordpress.service.ts`)
@@ -37,6 +38,7 @@ Credential save (encrypted) supports tier 2/3 prep only — it does **not** auth
 - **No live WordPress REST API calls** for publish, draft proof, or connection testing unless an explicit owner-approved proof block is active on a named target environment
 - **No production publish** — `WORDPRESS_PUBLISH_ENABLED=true` requires separate owner approval per [`WORDPRESS_PUBLISH_LOCAL_GATE.md`](../security/WORDPRESS_PUBLISH_LOCAL_GATE.md) Phase D
 - **No plaintext credential storage** — never in `TenantSetting`, logs, API responses, or git
+- **No raw credential serialization** — response and audit helper shapes must not include plaintext Application Passwords, ciphertext, IVs, auth tags, authorization headers, or full URLs containing secret query strings
 - **No "connection verified" claims** without a completed live proof session recorded in evidence
 - **No auto-publish** — draft preparation success must never chain into publish
 
@@ -89,6 +91,7 @@ Credentials must never be stored without:
    - Endpoints: `GET/POST/DELETE /api/v1/clients/:clientId/publication-targets/:id/credentials`
    - Storage: `PublicationTargetCredential` with AES-256-GCM (`credential-encryption.service.ts`)
    - API returns `configured` boolean only — never plaintext Application Password
+   - Helper/unit coverage verifies credential response and audit shapes do not serialize raw credentials or ciphertext
    - Requires `CREDENTIAL_ENCRYPTION_MASTER_KEY` in environment
    - Smoke: `npm.cmd run smoke:credential-encryption:local`
    - **Does not authorize live WordPress calls** — credentials are write-only until a proof block runs
@@ -96,13 +99,13 @@ Credentials must never be stored without:
 4. **Guarded WordPress Publish Endpoint**
    - Endpoint: `POST /api/v1/ai-delivery-projects/:id/deliverables/:deliverableId/publish-wordpress`
    - Default: returns `provider_disabled` when `WORDPRESS_PUBLISH_ENABLED` unset/false
-   - When flag true + credentials configured: may call WordPress REST API (open-gate probe only — not default, not Puriva Launch scope)
+   - When flag true + credentials configured: still returns `provider_disabled` while the G111 freeze guard is active; live REST calls require a future approved block to replace that guard
    - RBAC: owner/admin only, tenant/project/deliverable scoped
    - UI action: "Test WordPress publish" button on deliverable card
 
 5. **WordPress Provider Service**
    - File: `apps/api/src/services/wordpress.service.ts`
-   - Disabled-safe by default; real HTTP path exists behind publish gate only
+   - Disabled-safe by default; G111 freeze guard returns `provider_disabled` before any live HTTP call even if publish env and credentials are locally present
 
 ### Documentation
 

@@ -20,4 +20,7 @@ export * from "./ai-research-pack";
 export * from "./ai-seo-planning-pack";
 export * from "./ai-content-draft-batch";
 export * from "./ai-notification-events";
+export * from "./notification-events";
 export * from "./external-integration-boundary";
+export * from "./client-operating-packs";
+export * from "./pod-toolkit";

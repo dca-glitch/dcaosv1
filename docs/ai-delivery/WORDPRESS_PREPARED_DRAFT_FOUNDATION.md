@@ -1,6 +1,6 @@
 # WordPress Prepared Draft Foundation
 
-**Status:** WordPress prepared draft API, UI, and smoke coverage foundation is complete locally. **Live draft proof** (real WordPress HTTP) and **publish** remain deferred and frozen by default.
+**Status:** WordPress prepared draft API, UI, smoke coverage, and G110 local payload-builder tests are complete locally. **Live draft proof** (real WordPress HTTP) remains plan-only, and **publish** remains frozen.
 
 **Three tiers (do not conflate):**
 
@@ -8,7 +8,7 @@
 |------|-------|-------|
 | **Draft preparation** | Local JSON via `prepare-wordpress-draft`; no HTTP, no credentials | Local-proven — Puriva Launch in scope |
 | **Live draft proof** | Staging-only HTTP draft create per `WORDPRESS_DRAFT_PROOF.md` §6 | Plan-only — not executed |
-| **Publish** | `publish-wordpress` with `WORDPRESS_PUBLISH_ENABLED=true` | Frozen — auto-publish out of Puriva Launch v1 |
+| **Publish** | `publish-wordpress` with `WORDPRESS_PUBLISH_ENABLED=true` | Frozen by guard — auto-publish out of Puriva Launch v1 |
 
 **Branch:** `feature/ai-delivery-project-brief-foundation`
 
@@ -39,6 +39,7 @@ POST /api/v1/ai-delivery-projects/:id/deliverables/:deliverableId/prepare-wordpr
 - **Does NOT use WordPress credentials or secrets**
 - **Does NOT publish**
 - **Does NOT mutate production WordPress**
+- Builder invariant: `postStatus` is always `draft`; helper tests reject `publish`, `pending`, or `future` status drift in local draft payloads
 - Returns prepared draft structure ready for future WordPress integration
 
 **Context dependency:** The prepare endpoint assumes the deliverable is linked to approved same-project content and that verified intake / approved knowledge/context are already in place. If context is missing, the prepared draft is still an unapproved scaffold and must not be treated as final client copy.
@@ -111,6 +112,7 @@ SEO plan -> AI Delivery content draft -> image/asset package -> compliance revie
 **Test Files:**
 - `scripts/smoke-ai-delivery-reviews-local.mjs` — WordPress draft API smoke tests
 - `scripts/smoke-ui-ai-delivery.mjs` or equivalent — WordPress draft UI smoke tests
+- `apps/api/src/services/wordpress.service.test.ts` — G110 local draft payload builder tests (`postStatus: draft` only)
 
 ---
 
@@ -222,4 +224,4 @@ Before releasing real WordPress integration:
 
 ## Summary
 
-WordPress prepared draft foundation is **ready for operator testing** of local draft preparation and UI workflow. It stops at admin-reviewed draft preparation; real WordPress API integration, credential storage, and live publish workflow remain intentionally deferred. All deferred items require separate scope approval and security design. Local draft structure is validated, vendor-neutral, and safe to export or review before any external publish step.
+WordPress prepared draft foundation is **ready for operator testing** of local draft preparation and UI workflow. It stops at admin-reviewed draft preparation; live draft proof is a separate staging-only plan, and publish remains frozen by guard. Local draft structure is validated, vendor-neutral, and safe to export or review before any external WordPress step.

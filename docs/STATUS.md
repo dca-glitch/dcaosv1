@@ -1,6 +1,6 @@
 # DCA OS Lite — Status (Source of Truth)
 
-**Last updated:** 2026-07-10 (G88 — G79-G88 multitask consolidation after local ledger aggregation proof)
+**Last updated:** 2026-07-10 (G148 — G89-G147 final integration closeout)
 **G55 pre-live readiness:** [`docs/runbooks/G55_PRELIVE_READINESS.md`](./runbooks/G55_PRELIVE_READINESS.md)
 **G56 pre-live readiness:** [`docs/runbooks/G56_PRELIVE_READINESS.md`](./runbooks/G56_PRELIVE_READINESS.md)
 **G57–G68 pre-live readiness:** [`docs/runbooks/G57_G68_PRELIVE_READINESS.md`](./runbooks/G57_G68_PRELIVE_READINESS.md)
@@ -28,14 +28,14 @@
 
 ---
 
-## Executive snapshot (G52-B + G53 + G55 + G56 + G57–G68 + G69)
+## Executive snapshot (G52-B + G53 + G55 + G56 + G57–G68 + G69 + G89-G148)
 
 | Item | State |
 |------|--------|
-| Latest baseline | G57–G68 pre-live completion on `main` — persistent budget ledger, workflow dry-run, notification contracts, admin operator wiring, integration boundaries |
+| Latest baseline | G89-G148 final integration on `main` (uncommitted) — local/no-IO foundations across R2, notifications, GA/GSC, WordPress, image policy, Client Portal, Puriva packs, future-module contracts, AI budget reporting, and operator/security docs |
 | **G69 merge** | **DONE** — G57–G68 fast-forward merged to `main`; final commit `64bfd06` |
 | Production readiness | **NO** |
-| Next gate | **G89 recommended** — owner-selected launch-blocker execution gate; recommended first target is R2 real-bucket proof or another explicitly approved low-blast-radius live-proof gate. No live proof, staging mutation, production mutation, commit, push, or deploy is authorized by G88. |
+| Next gate | **G149 recommended** — owner-selected launch-blocker execution gate; recommended first target is R2 target-environment real-bucket proof or another explicitly approved low-blast-radius live-proof gate. No live proof, staging mutation, production mutation, commit, push, or deploy is authorized by G148. |
 | G72 model routing | **Implemented** — backend policy per task type; approved model `anthropic/claude-haiku-4.5`; no live call in G72 |
 | G73 routing attribution | **Local PASS** — dry-run/preview `modelRouting` + `plannedLedgerMetadata`; budget guard route cap wired; persistent preview ledger records routing metadata |
 | G74 completed ledger attribution | **Implemented (no-live)** — `buildCompletedLedgerMetadata`, `prepareCompletedLedgerAttribution`, `recordCompletedAiLedgerEntry`; mocked provider execution in unit tests |
@@ -48,6 +48,8 @@
 | G80 `actualCostUsd` policy | **Policy documented only** — `actualCostUsd` remains `null` unless a trusted provider cost is exposed; no invoice-cost ingestion implemented |
 | G81-G87 live proof planning | **Planning/prep only** — staging live proof, notifications, email no-send proof, approval event map, GA/GSC live metrics, WordPress live draft, and image generation provider proof plans updated; no live calls or sends executed |
 | G88 consolidation | **Docs consolidation in shared files** — correct G79-G88 gate map recorded; Puriva Launch remains **BLOCKED** and production remains frozen |
+| G89-G148 final integration | **KEEP pending validation** — 11 lanes reconciled; local foundations only; live R2, live email, live GA/GSC, live WordPress, live image, staging/prod proofs, commit, push, deploy remain blocked |
+| G134-G137 AI budget reporting contract | **Implemented locally (contract + unit proof)** — additive reporting/reconciliation contract separates AI budget from Finance Lite, reports monthly cap/live rows/estimated-vs-actual/provider/model, and keeps invoice reconciliation `not_integrated`; no real invoice or Finance Lite mutation |
 | G76c review | **KEEP** — PowerShell review-only; no code changes |
 | G76d closeout | **Docs only** — wiring + limitations recorded; production remains frozen |
 | G75c verifier fix | **TEMP only** — verifier/tooling fix (`node --import tsx` + cross-client live evidence scan); repo source unchanged; no new live call |
@@ -64,7 +66,7 @@
 | Production deploy | **Frozen/deferred** — no deploy until G49 dry-run + G50 explicit approval |
 | G49 public probes (§6.2) | **PASS** — 2026-07-09; formal gate closure pending owner sentence |
 | G50 production deploy | **Not executed** — frozen/deferred |
-| Puriva Launch | **Blocked** — live proof gates and product workflow gates required; G79 local ledger aggregation and G80 policy do not unblock launch; G81-G87 are planning/prep only; production remains frozen |
+| Puriva Launch | **Blocked** — live proof gates and product workflow gates required; G89-G147 add local foundations and docs only; no live provider/storage/email/Google/WordPress/image proof, staging/prod proof, or production deploy is claimed |
 | Roadmap tracks | Production Safety · Live Integration Proof · Client Operating Pack/Productization |
 
 Detail: [`AI_MODEL_ROUTING_POLICY.md`](./runbooks/AI_MODEL_ROUTING_POLICY.md) · [`G53_PRODUCTION_SAFETY_PLAN.md`](./runbooks/G53_PRODUCTION_SAFETY_PLAN.md) · [`deferred-scope-register.md`](./operator/deferred-scope-register.md) · §2.14 below.
@@ -137,6 +139,86 @@ Detail: [`deferred-scope-register.md`](./operator/deferred-scope-register.md) (f
 G77b evidence remains preserved: workflow run `2244413e-d87b-45a1-8a26-6634ec8972d5`, ledger row `5d8d635c-ced0-4a14-9b33-839e1fdee508`, and `actualCostUsd=null`. G79 changes the local monthly aggregation behavior for completed ledger rows; it does not prove staging/production live AI or provider invoice-cost ingestion.
 
 **Recommended next gate:** **G89** — owner-selected launch-blocker execution gate, preferably the lowest-blast-radius proof that unlocks downstream work (R2 real-bucket proof is the current recommended first candidate). Any live proof, staging/prod action, commit, push, or deploy still requires explicit owner approval.
+
+## G89-G148 final integration closeout (2026-07-10)
+
+**Overall integration verdict:** **KEEP** if validation passes. All lanes are local/no-IO foundations unless explicitly labeled blocked. Puriva Launch remains **BLOCKED**; production remains frozen.
+
+| Gate | Status | Integrated result / limitation |
+|------|--------|--------------------------------|
+| **G89** | **READY** | R2 no-IO readiness foundation integrated; no real bucket IO performed |
+| **G90** | **READY** | R2 proof-stage contract and disabled-safe proof staging added locally |
+| **G91** | **READY** | Storage-key guards reviewed for client-safe paths |
+| **G92** | **READY** | `STORAGE_R2_PROOF.md` records local proof scope and live-bucket deferral |
+| **G93** | **READY** | External integrations readiness check reported 30/30 in lane proof |
+| **G94** | **READY** | Notification taxonomy foundation integrated |
+| **G95** | **READY** | Notification event mapping foundation integrated |
+| **G96** | **READY** | Notification policy foundation integrated |
+| **G97** | **READY** | No-send email adapter foundation integrated; no live send |
+| **G98** | **READY** | Transactional template foundation integrated locally |
+| **G99** | **READY** | Notification focused tests reported 20/20 in lane proof |
+| **G100** | **BLOCKED** | Notification persistence/in-system inbox remains deferred |
+| **G101** | **BLOCKED** | Live email/Resend proof remains deferred |
+| **G102** | **BLOCKED** | Puriva transactional notification proof remains blocked until in-system + live email proof |
+| **G103** | **READY** | GA/GSC config-helper foundation integrated; no OAuth/live sync |
+| **G104** | **READY** | Monthly report helper foundation integrated |
+| **G105** | **READY** | Client FINAL visibility/report guards integrated locally |
+| **G106** | **READY** | Manual/snapshot metrics handling remains explicit and client-safe |
+| **G107** | **READY** | Lane API check reported PASS |
+| **G108** | **BLOCKED** | Live GA/GSC OAuth/sync remains deferred |
+| **G109** | **PARTIAL** | Monthly report live-data docs updated; live data proof not executed |
+| **G110** | **READY** | WordPress draft payload foundation integrated |
+| **G111** | **READY** | Publish remains frozen before fetch/live action |
+| **G112** | **READY** | WordPress credential-shape checks integrated; no credential disclosure |
+| **G113** | **READY** | WordPress focused tests reported 5/5 in lane proof |
+| **G114** | **BLOCKED** | Live WordPress draft proof remains deferred; auto-publish remains deferred |
+| **G115** | **READY** | Image compliance policy helper foundation integrated |
+| **G116** | **READY** | Medical-aesthetic compliance helper behavior integrated locally |
+| **G117** | **READY** | Lane unit suite reported 276/276 at time of proof |
+| **G118** | **BLOCKED** | Live image provider selection/wiring remains deferred |
+| **G119** | **BLOCKED** | Image generation live proof remains blocked |
+| **G120** | **READY** | Client Portal leak hardening integrated locally |
+| **G121** | **READY** | Client Portal FINAL-only guards integrated |
+| **G122** | **READY** | Focused Client Portal tests reported 9 pass |
+| **G123** | **BLOCKED** | Staging/production Client Portal proof remains deferred |
+| **G124** | **READY** | Shared Client Operating Pack constants integrated |
+| **G125** | **READY** | Puriva operating pack constants integrated |
+| **G126** | **READY** | Client pack tests reported 4/4 |
+| **G127** | **READY** | Shared package check reported PASS |
+| **G128** | **READY** | Market Intelligence future-module contract integrated |
+| **G129** | **READY** | Revenue Hub future-module contract integrated |
+| **G130** | **READY** | POD Toolkit future-module contract integrated |
+| **G131** | **READY** | Future-module proof fixtures added |
+| **G132** | **READY** | Future-module closeout doc added |
+| **G133** | **READY** | Shared package check reported PASS |
+| **G134** | **READY** | AI budget vs Finance Lite reporting boundary added; ledger service not modified |
+| **G135** | **READY** | Reconciliation design models estimate/trusted actual/invoice/variance slots without invoice integration |
+| **G136** | **READY** | AI budget reporting contract and unit proof added |
+| **G137** | **READY** | AI budget reporting docs closeout added; focused tests reported 6/6 |
+| **G138** | **PARTIAL** | Security checklist/operator inventory docs added; no external audit or production proof |
+| **G139** | **READY** | Test/smoke inventory doc added |
+| **G140** | **READY** | Validation command guard doc added |
+| **G141** | **READY** | Operator runbook updates integrated |
+| **G142** | **PARTIAL** | Integrations truth labels updated; staging/prod proofs remain not proven |
+| **G143** | **PARTIAL** | Deferred scope register reconciled; live proofs stay deferred |
+| **G144** | **PARTIAL** | Security/inventory/operator docs closeout only; no runtime launch claim |
+| **G145** | **PARTIAL** | Proposal-only outcome; no runtime implementation applied |
+| **G146** | **PARTIAL** | Proposal-only outcome; no runtime implementation applied |
+| **G147** | **READY** | `docs/operator/G147_NEXT_20_GATES.md` created as the next-gate roadmap |
+| **G148** | **KEEP pending validation** | Main-agent integration/reconciliation, validation, and final report gate |
+
+**Recommended next gate:** **G149** — owner-selected launch-blocker execution gate, with R2 target-environment real-bucket proof still the recommended first low-blast-radius candidate. See [`docs/operator/G147_NEXT_20_GATES.md`](./operator/G147_NEXT_20_GATES.md).
+
+## G134-G137 AI budget reporting/reconciliation contract (2026-07-10)
+
+| Gate | Result | Evidence / limitation |
+|------|--------|-----------------------|
+| **G134 — AI budget vs Finance Lite separation** | **READY (contract/docs/tests)** | `ai-budget-reporting.contract.ts` defines a separate AI budget reporting boundary; Finance Lite remains admin finance records/invoices/bills only |
+| **G135 — Reconciliation design** | **READY (design only)** | Estimate, trusted actual, invoice, and variance slots are modeled; invoice fields remain `null` / `not_integrated`; no real invoice source is wired |
+| **G136 — Reporting contract** | **READY (local unit proof)** | Contract reports monthly cap, countable/live rows, estimated-vs-actual spend basis, provider/model breakdown, and G79-compatible spend math without changing `sumSpentUsdForPeriod()` |
+| **G137 — Docs closeout** | **READY (docs)** | Detail recorded in [`AI_BUDGET_REPORTING_RECONCILIATION_CONTRACT.md`](./runbooks/AI_BUDGET_REPORTING_RECONCILIATION_CONTRACT.md) and [`AI_MODEL_ROUTING_POLICY.md`](./runbooks/AI_MODEL_ROUTING_POLICY.md) |
+
+No backend route, Prisma schema, Finance Lite API, auth, provider runtime, VPS, deploy, production behavior, or real invoice ingestion changed in G134-G137.
 
 ## G76 persistent completed ledger wiring closeout (2026-07-10)
 

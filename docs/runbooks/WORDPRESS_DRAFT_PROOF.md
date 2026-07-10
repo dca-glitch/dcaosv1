@@ -1,6 +1,6 @@
 # WordPress Draft Proof
 
-**Status:** Draft preparation and guarded handoff proven locally; live draft proof is **plan-only** for G86; live publish remains frozen. Auto-publish is **not** in scope for this gate. §6 defines a future owner-approved staging-only live draft proof **plan** (title/body/meta, approved-image attach, alt/caption/social preview, idempotency, cleanup marker, disabled-safe mode, owner approval) — no live WordPress call was made to produce this document.
+**Status:** Draft preparation and guarded handoff proven locally; G110–G114 add local draft-payload, publish-freeze, credential-shape, rollback-constant, and docs closeout coverage. Live draft proof remains **plan-only**; live publish remains frozen. Auto-publish is **not** in scope for this gate. §6 defines a future owner-approved staging-only live draft proof **plan** (title/body/meta, approved-image attach, alt/caption/social preview, idempotency, cleanup marker, disabled-safe mode, owner approval) — no live WordPress call was made to produce this document.
 
 **Gate:** Puriva requires WordPress **draft/handoff**; WordPress **auto-publish** remains deferred (see [`docs/operator/deferred-scope-register.md`](../operator/deferred-scope-register.md)).
 
@@ -10,9 +10,11 @@
 |---|---|---|---|
 | **1. Draft preparation** | DCA OS Lite can prepare local WordPress-shaped draft payloads without credentials or HTTP | Proven locally; launch-relevant | Supports Puriva draft-only handoff |
 | **2. Live draft proof** | A staging-only WordPress site can receive a single `draft` post matching approved content/images, then delete/trash it | **Plan-only in G86; not executed** | Future confidence proof only; not required to enable publish |
-| **3. Publish** | Public WordPress publication with `WORDPRESS_PUBLISH_ENABLED=true` | **Frozen** | Out of scope for Puriva launch v1 |
+| **3. Publish** | Public WordPress publication with `WORDPRESS_PUBLISH_ENABLED=true` | **Frozen by service guard** | Out of scope for Puriva launch v1 |
 
 G86 does not move tier 2 into execution and does not move tier 3 at all.
+
+G110–G114 keep the same three-tier boundary: tier 1 is local draft JSON only, tier 2 is a future owner-approved staging proof plan, and tier 3 publish remains frozen.
 
 Related:
 
@@ -113,6 +115,7 @@ npm.cmd run smoke:ai-delivery-reviews
 Pass:
 
 - Valid prepare request returns `wordpressDraft` with `status: draft`
+- Local builder unit test verifies `postStatus: draft` only and no publish/pending/future status drift
 - 404 for invalid project/deliverable; 403 for unauthorized
 - No external HTTP; no secrets in response
 
@@ -130,6 +133,7 @@ npm.cmd run smoke:wordpress-publish:local
 Pass:
 
 - Publish returns `provider_disabled`
+- G111 unit test verifies the provider returns before `fetch` even when publish env and local credentials are present
 - PublicationLog entry `PROVIDER_DISABLED` without live HTTP
 - No Application Password or ciphertext in responses
 
@@ -222,6 +226,7 @@ Verify in the WordPress admin editor that the created draft matches the prepared
   - Title prefix: `[DCA-OS-PROOF-DO-NOT-PUBLISH]`
   - A dedicated draft-only category or tag, e.g. `dca-proof`
   - `PublicationLog.note` records the proof session date and marker used
+- [ ] Code constant parity: `WORDPRESS_TEST_DRAFT_PROOF_MARKER = "[DCA-OS-PROOF-DO-NOT-PUBLISH]"`, `WORDPRESS_TEST_DRAFT_PROOF_TAG = "dca-proof"`, and rollback plan constants live in `apps/api/src/services/wordpress.service.ts`
 - [ ] Proof close-out step: operator confirms in WordPress admin that the marked draft is moved to **Trash** (or permanently deleted if the site is fully disposable) before ending the session
 - [ ] If deletion/trash fails, restore `WORDPRESS_PUBLISH_ENABLED=false`, revoke/rotate the staging Application Password if necessary, and stop with the draft still marked `[DCA-OS-PROOF-DO-NOT-PUBLISH]` until a human owner resolves cleanup
 - [ ] Evidence log records the WordPress post ID/edit URL and the cleanup action taken (trashed/deleted) with a timestamp
@@ -258,7 +263,8 @@ This document does not itself constitute owner approval. It is the checklist an 
 | 3 | No auto-publish after draft preparation |
 | 4 | No credentials required for or leaked by draft prep |
 | 5 | Client portal boundary smokes omit draft internals |
-| 6 | Operator evidence log archived |
+| 6 | `apps/api/src/services/wordpress.service.test.ts` PASS for G110–G113 helper invariants |
+| 7 | Operator evidence log archived |
 
 ---
 

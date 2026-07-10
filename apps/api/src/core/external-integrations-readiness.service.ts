@@ -122,7 +122,7 @@ export function getPrivateStorageIntegrationReadiness(): PrivateStorageIntegrati
   const storage = getPrivateStorageStatus();
 
   return {
-    status: storage.configured ? "configured_shape_ok" : "disabled",
+    status: storage.configured ? "configured_shape_ok" : storage.requiredEnvPresent ? "missing_config" : "disabled",
     mode: storage.mode,
     provider: storage.provider,
     configured: storage.configured,
@@ -162,6 +162,9 @@ function buildWordPressDetail(readiness: WordPressIntegrationReadiness): string 
 function buildPrivateStorageDetail(readiness: PrivateStorageIntegrationReadiness): string {
   if (readiness.status === "disabled") {
     return `R2 not configured (mode=${readiness.mode}); upload/download guarded.`;
+  }
+  if (readiness.status === "missing_config") {
+    return `R2 config incomplete; missing: ${readiness.missingKeys.join(", ")}. Upload/download guarded.`;
   }
 
   return `R2 config shape OK (mode=${readiness.mode}); bucket mutation deferred in readiness layer.`;

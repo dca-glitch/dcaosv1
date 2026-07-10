@@ -8,6 +8,7 @@
 
 - [`docs/operator/deferred-scope-register.md`](../operator/deferred-scope-register.md)
 - [`docs/architecture/CLIENT_DOMAIN_OPERATING_MODEL.md`](./CLIENT_DOMAIN_OPERATING_MODEL.md)
+- [`docs/architecture/G128_G133_MI_RH_POD_CLOSEOUT.md`](./G128_G133_MI_RH_POD_CLOSEOUT.md)
 - [`docs/ROADMAP.md`](../ROADMAP.md)
 
 ---
@@ -100,3 +101,7 @@ All connectors must be **tenant-isolated**, **staging-first**, and **never reuse
 ## 9. RH0 deliverable
 
 This document only. No module code, migrations, API routes, or UI until an approved RH1+ block.
+
+The G130-G131 closeout adds shared typed contracts for future Revenue Hub data
+snapshots and advisory-only AI recommendation guards. These contracts do not
+activate a module, connector, payment flow, CRM flow, or client-visible surface.

@@ -1,6 +1,6 @@
-# AI Model Routing Policy (G72 + G73 + G74 + G75 + G76 + G77b + G79 + G80)
+# AI Model Routing Policy (G72 + G73 + G74 + G75 + G76 + G77b + G79 + G80 + G134-G137)
 
-**Status:** Implemented on `main` (G72 policy, G73 attribution proof, G74 completed ledger readiness, G75 local live spend attribution proof, G76 persistent completed ledger wiring, G77b local live COMPLETED ledger row proof, G79 monthly cap aggregation for live rows, G80 actual-cost policy).
+**Status:** Implemented on `main` through G80 (G72 policy, G73 attribution proof, G74 completed ledger readiness, G75 local live spend attribution proof, G76 persistent completed ledger wiring, G77b local live COMPLETED ledger row proof, G79 monthly cap aggregation for live rows, G80 actual-cost policy). G134-G137 add a local reporting/reconciliation contract on the current working branch.
 **Live execution:** G72–G74 are no-live — dry-run/preview and mocked completed attribution only. **G75 (local only):** one controlled OpenRouter live smoke PASS; completed attribution verifier PASS; at G75 time persistent row was generated-only. **G76 (mocked/no-live):** execute-path COMPLETED persistence wired. **G77b (local only):** live OpenRouter execute created persistent COMPLETED `AiBudgetLedgerEntry` row — staging/production still BLOCKED. **G79/G80:** no live provider calls; local unit/policy changes only.
 **Approved live text model (local proof):** `anthropic/claude-haiku-4.5` via OpenRouter.
 
@@ -102,13 +102,21 @@ Do **not** use `openrouter/auto` for Puriva or medical/compliance content.
 - Spend is summed per row as `actualCostUsd ?? estimatedCostUsd`; current OpenRouter live rows may have `actualCostUsd=null`, so they count by their route estimate until trusted provider cost exists.
 - `BLOCKED` and `SKIPPED` rows remain non-countable for monthly spend.
 
+### Reporting/reconciliation contract (G134-G137)
+
+- `ai-budget-reporting.contract.ts` is an additive pure contract layer; it does **not** modify `sumSpentUsdForPeriod()`.
+- Reporting rows keep monthly cap totals, live rows, estimated/actual split, provider, and model visible for operator reporting.
+- Finance Lite remains separate: no AI budget report creates, mutates, or reconciles a Finance Lite invoice.
+- Reconciliation design exposes estimate, trusted actual, invoice, and variance slots, but invoice fields remain `null` / `not_integrated` until a separately approved provider-invoice workflow exists.
+- Detail: [`AI_BUDGET_REPORTING_RECONCILIATION_CONTRACT.md`](./AI_BUDGET_REPORTING_RECONCILIATION_CONTRACT.md).
+
 **G75 (local live spend attribution proof — PARTIAL):** After one controlled OpenRouter live smoke (`workflowRunId=6e538323-8e68-4d41-a4c5-9e30ca0cf8a1`), completed attribution metadata could be **generated** from live workflow observability via G74 `finalizeOrchestratorLiteLedgerAttribution` (verifier PASS in G75c). At G75 time the execute path did not auto-persist a COMPLETED row.
 
 **G76 (persistent completed ledger wiring — mocked/no-live):** `ai-delivery-workflow-ledger-attribution.service.ts` bridges AI Delivery workflow results to G74 `recordCompletedAiLedgerEntry()` on successful OpenRouter execute. Local deterministic path skipped; ledger failure is non-blocking. Validated by 252/252 unit tests. Live DB row proof closed in G77b.
 
 **G77b (persistent COMPLETED ledger live proof — COMPLETE local only):** Controlled live OpenRouter guarded smoke PASS (`workflowRunId=2244413e-d87b-45a1-8a26-6634ec8972d5`); ledger verifier PASS — row `5d8d635c-ced0-4a14-9b33-839e1fdee508` with `status=COMPLETED`, `stepReference=ai-delivery-execute:summary`, `provider=openrouter`, `liveProviderCalled=true`, `taskType=report_narrative`, `completedAttribution` present (`model=anthropic/claude-haiku-4.5`, `gateway=openrouter`, `runId` matches), `estimatedCostUsd=0.15`, `actualCostUsd=null`. Baseline + restore PASS. Staging/production live **not** claimed.
 
-**Deferred (post-G80):** Trusted provider-cost ingestion/reconciliation for `actualCostUsd`; `operatingPackKey` resolution; local SKIPPED/BLOCKED persistence optional gate; staging/production live proof remains blocked.
+**Deferred (post-G137):** Trusted provider-cost ingestion/reconciliation for `actualCostUsd`; real provider invoice ingestion; Finance Lite invoice reconciliation/posting; `operatingPackKey` resolution; local SKIPPED/BLOCKED persistence optional gate; staging/production live proof remains blocked.
 
 ## Orchestrator task → routing task mapping
 
@@ -132,7 +140,7 @@ npm.cmd run test:unit --workspace=@dca-os-v1/api
 npm.cmd run smoke:ai-orchestrator-lite:local
 ```
 
-Unit tests: `ai-model-routing-policy.service.test.ts`, `ai-budget-guard.service.test.ts`, `ai-budget-ledger.service.test.ts`, `ai-orchestrator-lite.service.test.ts`, `ai-orchestrator-workflow-adapter.skeleton.test.ts`.
+Unit tests: `ai-model-routing-policy.service.test.ts`, `ai-budget-guard.service.test.ts`, `ai-budget-ledger.service.test.ts`, `ai-budget-reporting.contract.test.ts`, `ai-orchestrator-lite.service.test.ts`, `ai-orchestrator-workflow-adapter.skeleton.test.ts`.
 
 ## Next gate
 

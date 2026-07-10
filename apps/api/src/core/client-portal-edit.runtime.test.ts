@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import type { AuthResolvedSessionContext } from "../auth/types";
 import { isClientPortalApprovalUser } from "./client-portal-approval.runtime";
+import { isClientPortalEditableFieldName } from "./client-portal-edit.runtime";
 
 function mockSession(roles: string[]): AuthResolvedSessionContext {
   return {
@@ -38,5 +39,17 @@ describe("client portal edit access", () => {
   it("excludes owner and admin from client-only edit flows", () => {
     assert.equal(isClientPortalApprovalUser(mockSession(["owner"])), false);
     assert.equal(isClientPortalApprovalUser(mockSession(["admin"])), false);
+  });
+
+  it("allows only client-edit fields in edit history serialization", () => {
+    assert.equal(isClientPortalEditableFieldName("title"), true);
+    assert.equal(isClientPortalEditableFieldName("body"), true);
+    assert.equal(isClientPortalEditableFieldName("scheduledPublishAt"), true);
+
+    assert.equal(isClientPortalEditableFieldName("storageKey"), false);
+    assert.equal(isClientPortalEditableFieldName("workflowRunId"), false);
+    assert.equal(isClientPortalEditableFieldName("provider"), false);
+    assert.equal(isClientPortalEditableFieldName("actualCostUsd"), false);
+    assert.equal(isClientPortalEditableFieldName("audit"), false);
   });
 });

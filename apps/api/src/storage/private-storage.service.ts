@@ -1,4 +1,4 @@
-import { getR2Config, getR2EnvPresence } from "./r2.config";
+import { getR2Config, getR2EnvPresence, R2_REQUIRED_ENV_KEYS } from "./r2.config";
 import { getSignedR2ReadUrl, uploadR2Object, type R2DocumentType } from "./r2.service";
 
 export type PrivateStorageNamespace =
@@ -16,6 +16,7 @@ export interface PrivateStorageStatus {
   missingEnvKeys: string[];
   mode: "disabled" | "private-r2";
   provider: "r2";
+  requiredEnvPresent: boolean;
 }
 
 export interface PutPrivateStorageObjectInput {
@@ -78,9 +79,12 @@ function getFileNamePrefix(namespace: PrivateStorageNamespace): string {
 
 function getMissingStorageEnvKeys() {
   const presence = getR2EnvPresence();
-  return Object.entries(presence)
-    .filter(([, present]) => !present)
-    .map(([key]) => key);
+  return R2_REQUIRED_ENV_KEYS.filter((key) => !presence[key]);
+}
+
+function hasAnyRequiredStorageEnvKey() {
+  const presence = getR2EnvPresence();
+  return R2_REQUIRED_ENV_KEYS.some((key) => presence[key]);
 }
 
 function prefixFileName(fileName: string, namespace: PrivateStorageNamespace): string {
@@ -95,7 +99,8 @@ export function getPrivateStorageStatus(): PrivateStorageStatus {
     configured,
     missingEnvKeys: configured ? [] : getMissingStorageEnvKeys(),
     mode: configured ? "private-r2" : "disabled",
-    provider: "r2"
+    provider: "r2",
+    requiredEnvPresent: configured || hasAnyRequiredStorageEnvKey()
   };
 }
 

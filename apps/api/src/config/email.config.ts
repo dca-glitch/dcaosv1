@@ -7,6 +7,12 @@ export interface EmailProviderConfig {
   hasResendApiKey: boolean;
 }
 
+export interface EmailProviderSafetyShape extends EmailProviderConfig {
+  sendingEnabled: boolean;
+  localNoSend: boolean;
+  liveProofRequired: boolean;
+}
+
 const DEFAULT_EMAIL_PROVIDER: EmailProvider = "local";
 const DEFAULT_EMAIL_FROM_ADDRESS = "no-reply@notifications.digitalcubeagency.net";
 const DEFAULT_EMAIL_REPLY_TO = "admin@digitalcubeagency.net";
@@ -32,5 +38,17 @@ export function getEmailProviderConfig(): EmailProviderConfig {
     fromAddress: readEnvString("EMAIL_FROM_ADDRESS") ?? DEFAULT_EMAIL_FROM_ADDRESS,
     replyTo: readEnvString("EMAIL_REPLY_TO") ?? DEFAULT_EMAIL_REPLY_TO,
     hasResendApiKey: Boolean(readEnvString("RESEND_API_KEY"))
+  };
+}
+
+export function getEmailProviderSafetyShape(): EmailProviderSafetyShape {
+  const config = getEmailProviderConfig();
+  const sendingEnabled = config.provider === "resend" && config.hasResendApiKey;
+
+  return {
+    ...config,
+    sendingEnabled,
+    localNoSend: !sendingEnabled,
+    liveProofRequired: sendingEnabled
   };
 }

@@ -210,6 +210,7 @@ Client Operating Packs sit **above** the `Client` operational hub — they defin
 |------|--------|
 | 2026-07-09 | Generic Client Operating Pack model approved (G52-B); Puriva documented as first pack |
 | 2026-07-10 | G78 — §14 implementation status matrix (implemented vs partial vs future) |
+| 2026-07-10 | G124-G127 — typed Puriva pack constants added for compliance profile, module entitlements, and workflow template catalog |
 
 ---
 
@@ -219,9 +220,10 @@ Labels what exists in code/docs today vs what remains future work. Puriva is **f
 
 | Pack layer | Status | Notes |
 |------------|--------|-------|
-| **Compliance / content / image profiles** | **Documented** | Operator checklists and intake/compliance runbooks; not structured DB config yet |
-| **Workflow templates** (Article+Image, Monthly Report) | **Documented; wiring PARTIAL** | G62 step→task map; full orchestrator template automation deferred |
-| **Module entitlements** | **Design** | CLIENT_DOMAIN §9; enforcement deferred |
+| **Compliance profile** | **Implemented as typed constants** | `PURIVA_COMPLIANCE_PROFILE_V1` in `packages/shared/src/client-operating-packs.ts`; structured DB config remains future |
+| **Content / image profiles** | **Documented** | Operator checklists and intake/compliance runbooks; structured constants/DB config future |
+| **Workflow templates** (Article+Image, Monthly Report) | **Implemented as catalog constants; execution deferred** | `PURIVA_WORKFLOW_TEMPLATE_CATALOG` records steps/rules only; full orchestrator template automation deferred |
+| **Module entitlements** | **Implemented as config map; enforcement deferred** | `CLIENT_OPERATING_PACK_MODULE_ENTITLEMENT_CONFIG.puriva` maps pack module access; runtime tenant enforcement remains generic module work |
 | **Integration boundary index** | **Implemented** | `external-integration-boundary.ts` — Puriva-specific keys as first-pack proof |
 | **AI routing / budget cap** | **Implemented** | Puriva profile keys (`puriva`, `$100` cap) — first-pack scaffolding until generic pack registry |
 | **Learning / feedback layer** | **Future** | Documented policy only; no persistent preference system |
@@ -235,3 +237,14 @@ Labels what exists in code/docs today vs what remains future work. Puriva is **f
 - **Pack delivery workflow** — Article+Image Package v1, Monthly Report Flow v1 in [`PURIVA_OPERATING_PACK_V1.md`](./PURIVA_OPERATING_PACK_V1.md)
 
 Puriva-specific code in `apps/api` / `packages/shared` is acceptable as **first Client Operating Pack proof** until a generic pack registry exists.
+
+---
+
+## 15. G124-G127 closeout
+
+G124-G126 move Puriva from doc-only pack description to typed, reusable configuration constants:
+
+- **G124:** Puriva compliance profile constants define risk classes, review gates, prohibited claim categories, and immutable compliance boundaries.
+- **G125:** Module entitlement config map defines Puriva's allowed delivery modules without changing tenant enforcement behavior.
+- **G126:** Workflow template catalog records Article + Image Package v1 and Monthly Report Flow v1 as catalog-only templates; no execution adapter or live provider call is enabled.
+- **G127:** DCA OS Lite remains **Agency OS first**. Puriva is the first Client Operating Pack and proof of the pack layer, not a fork of Core or generic modules.

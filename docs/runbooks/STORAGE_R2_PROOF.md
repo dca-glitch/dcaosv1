@@ -11,7 +11,7 @@ Related:
 - [`../operator/ENV_READINESS_INVENTORY.md`](../operator/ENV_READINESS_INVENTORY.md)
 - [`../operator/deferred-scope-register.md`](../operator/deferred-scope-register.md)
 - [`PURIVA_LAUNCH_GATE.md`](./PURIVA_LAUNCH_GATE.md) (launch dependency tracker — create/approve separately)
-- Code seam: `apps/api/src/storage/private-storage.service.ts`, `apps/api/src/storage/r2.service.ts`, `apps/api/src/storage/r2.config.ts`
+- Code seam: `apps/api/src/storage/private-storage.service.ts`, `apps/api/src/storage/r2.service.ts`, `apps/api/src/storage/r2.config.ts`, `apps/api/src/storage/r2-proof-stage.ts`
 
 ---
 
@@ -45,7 +45,7 @@ Read §2d and §9 before assuming any "Not automated" row above is safe to skip 
 
 **Configured when:** all four required keys are non-empty after trim.
 
-**Disabled mode when:** any required key missing → `getPrivateStorageStatus().mode === "disabled"`; uploads return `503 R2_STORAGE_NOT_CONFIGURED`; no `storageKey` / `documentStorageKey` persistence on guarded write paths.
+**Disabled storage mode when:** any required key missing → `getPrivateStorageStatus().mode === "disabled"`; uploads return `503 R2_STORAGE_NOT_CONFIGURED`; no `storageKey` / `documentStorageKey` persistence on guarded write paths. Readiness status is `disabled` when all required keys are absent and `missing_config` when only part of the required shape is present.
 
 **Smoke helper (optional):**
 
@@ -55,7 +55,21 @@ Read §2d and §9 before assuming any "Not automated" row above is safe to skip 
 
 Never commit, print, or log secret values.
 
-### 1a. Boolean-only presence check (no secret values ever printed)
+### 1a. Current proof-stage constants (no live bucket proof)
+
+`apps/api/src/storage/r2-proof-stage.ts` defines the typed proof stages used by the R2 proof plan:
+
+| Stage | Current meaning | Live R2 IO |
+|---|---|---|
+| `local_mock` | Local/mock no-IO proof | No |
+| `config_shape` | Required env shape and serializer checks only | No |
+| `future_real_bucket` | Future owner-approved real bucket proof | Yes, future only |
+| `client_safe_download` | Client-safe response boundary: `exportUrl` / signed `downloadUrl`, no raw `storageKey` | No |
+| `cleanup` | Fixture cleanup planning before live proof | No |
+
+**Current truth:** this runbook has not recorded a successful real R2 bucket proof for DCA OS Lite. The current automated coverage is config-shape, disabled/missing-config guards, secret non-serialization, and client-safe serializer boundaries only.
+
+### 1b. Boolean-only presence check (no secret values ever printed)
 
 Code seam `apps/api/src/storage/r2.config.ts` exposes `getR2EnvPresence()`, which returns **booleans only** — never the raw values — for exactly this purpose. Use this shape (not `console.log(process.env.R2_...)`) whenever presence needs to be confirmed locally, in a smoke script, or in a status report:
 

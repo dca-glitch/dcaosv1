@@ -8,6 +8,8 @@
 
 **Canonical rule:** This document is the single source of truth for Puriva launch blockers, article/image workflow, monthly report flow, and feedback learning. Implementation gates and runbooks link here; they do not duplicate these flows.
 
+**G124-G127 implementation note:** Puriva's first typed pack constants live in `packages/shared/src/client-operating-packs.ts` and are exported from `@dca-os-v1/shared`. They define the compliance profile, module entitlement map, and workflow template catalog only; they do **not** execute workflows, call live providers, or turn Puriva into a Core fork.
+
 ---
 
 ## Related documents
@@ -152,6 +154,20 @@ Per-client learning that improves regeneration and long-term preferences without
 - **Long-term preference only after repeated pattern or admin approval** — persistent preferences require a repeated pattern or explicit admin approval.
 - **Compliance boundaries cannot be weakened** — learning cannot relax medical, legal, or image-boundary rules.
 - **Advanced analytics deferred** — learning analytics beyond basic notes/preferences are out of scope for v1.
+
+---
+
+## Typed constants closeout (G124-G127)
+
+Puriva Operating Pack v1 now has shared typed configuration for the parts that were previously doc-only:
+
+| Gate | Constant | Scope |
+|------|----------|-------|
+| G124 | `PURIVA_COMPLIANCE_PROFILE_V1` | Compliance risk classes, human review requirements, article/image client approval requirements, monthly report final-only rule, prohibited claim categories, immutable compliance boundaries |
+| G125 | `CLIENT_OPERATING_PACK_MODULE_ENTITLEMENT_CONFIG.puriva` | Pack-level module entitlement map for Core, AI Delivery, Market Intelligence, Client Portal, and Finance Lite |
+| G126 | `PURIVA_WORKFLOW_TEMPLATE_CATALOG` | Catalog-only Article + Image Package v1 and Monthly Report Flow v1 templates, with ordered steps and rules |
+
+These constants are intentionally pack configuration. They do not replace `Client`, `TenantModule`, workflow runtime, portal auth, or publication/integration services. DCA OS Lite remains **Internal Agency OS first**; Puriva is the first pack layered on generic Core/modules, not a fork.
 
 ---
 

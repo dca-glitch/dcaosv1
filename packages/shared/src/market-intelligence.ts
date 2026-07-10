@@ -55,6 +55,44 @@ export interface MarketIntelligenceInsightResultV1 {
   confidenceNotes: string | null;
 }
 
+export const MARKET_INTELLIGENCE_LOCAL_RESULT_CONTRACT_VERSION =
+  "MARKET_INTELLIGENCE_LOCAL_RESULT_V1";
+
+export type MarketIntelligenceSourceOrigin =
+  | "operator_note"
+  | "uploaded_document"
+  | "approved_url_reference"
+  | "existing_internal_record";
+
+export type MarketIntelligenceLiveSourceStatus = "not_requested" | "blocked_by_policy";
+
+export interface MarketIntelligenceNoLiveSourcePolicy {
+  liveCrawlingAllowed: false;
+  marketplaceLiveLookupAllowed: false;
+  crmLiveLookupAllowed: false;
+  allowedOrigins: MarketIntelligenceSourceOrigin[];
+}
+
+export interface MarketIntelligenceLocalSourceReference {
+  id: string;
+  origin: MarketIntelligenceSourceOrigin;
+  title: string;
+  sourceUrl: string | null;
+  operatorProvidedAt: string | null;
+  notes: string | null;
+}
+
+export interface MarketIntelligenceLocalResultContractV1 {
+  version: typeof MARKET_INTELLIGENCE_LOCAL_RESULT_CONTRACT_VERSION;
+  projectId: string;
+  generatedAt: string | null;
+  sourcePolicy: MarketIntelligenceNoLiveSourcePolicy;
+  liveSourceStatus: MarketIntelligenceLiveSourceStatus;
+  sourceReferences: MarketIntelligenceLocalSourceReference[];
+  result: MarketIntelligenceInsightResultV1;
+  operatorReviewRequired: true;
+}
+
 export interface MarketIntelligenceInsightSummary {
   id: string;
   projectId: string;

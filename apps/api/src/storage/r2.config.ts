@@ -7,7 +7,7 @@ export interface R2Config {
   publicBaseUrl: string | null;
 }
 
-const R2_ENV_KEYS = {
+export const R2_ENV_KEYS = {
   accountId: "R2_ACCOUNT_ID",
   accessKeyId: "R2_ACCESS_KEY_ID",
   secretAccessKey: "R2_SECRET_ACCESS_KEY",
@@ -15,6 +15,13 @@ const R2_ENV_KEYS = {
   endpoint: "R2_ENDPOINT",
   publicBaseUrl: "R2_PUBLIC_BASE_URL"
 } as const;
+
+export const R2_REQUIRED_ENV_KEYS = [
+  R2_ENV_KEYS.accountId,
+  R2_ENV_KEYS.accessKeyId,
+  R2_ENV_KEYS.secretAccessKey,
+  R2_ENV_KEYS.bucketName
+] as const;
 
 function readEnvString(key: string): string | null {
   const value = process.env[key]?.trim();

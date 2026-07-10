@@ -1,6 +1,6 @@
 # Monthly Report Live Data Proof
 
-**Status:** Snapshot-first metrics and FINAL-only client visibility proven locally; live GA/GSC OAuth sync remains deferred until §3.1a token/OAuth gaps close and this gate passes on target environment. **2026-07-10 G78 audit:** confirmed owned docs distinguish MANUAL/placeholder local baseline vs future live GA/GSC for Puriva launch — no overclaim on OAuth/live sync. **2026-07-10 G85 planning:** prepared live GA/GSC path requirements without live sync, OAuth execution, or Google API calls.
+**Status:** Snapshot-first metrics and FINAL-only client visibility proven locally; live GA/GSC OAuth sync remains deferred until §3.1a token/OAuth gaps close and this gate passes on target environment. **2026-07-10 G78 audit:** confirmed owned docs distinguish MANUAL/placeholder local baseline vs future live GA/GSC for Puriva launch — no overclaim on OAuth/live sync. **2026-07-10 G85 planning:** prepared live GA/GSC path requirements without live sync, OAuth execution, or Google API calls. **2026-07-10 G103-G109 closeout:** added pure config-shape/date-range/property-mapping/source-truth/input-contract helpers and tests; this still does not prove live GA/GSC, OAuth consent, token storage, or Google API access.
 
 **Gate:** Puriva Launch blocker — GA/GSC live proof + monthly report FINAL client path (see [`docs/operator/deferred-scope-register.md`](../operator/deferred-scope-register.md) and [`docs/architecture/PURIVA_OPERATING_PACK_V1.md`](../architecture/PURIVA_OPERATING_PACK_V1.md) — Monthly Report Flow v1).
 
@@ -15,6 +15,7 @@ Related:
 - [`INTEGRATIONS_TRUTH_MATRIX.md`](./INTEGRATIONS_TRUTH_MATRIX.md)
 - [`PHASE_F_BLOCK_61_ENCRYPTED_CREDENTIALS_LOCAL_CHECKLIST.md`](./PHASE_F_BLOCK_61_ENCRYPTED_CREDENTIALS_LOCAL_CHECKLIST.md)
 - `apps/api/src/config/ga-gsc.config.ts`
+- `apps/api/src/core/monthly-report-policy.ts`
 - `apps/api/src/core/monthly-report-pdf.service.ts`
 - `scripts/smoke-monthly-report-metrics-local.mjs`
 - `scripts/smoke-monthly-report-pdf-local.mjs`
@@ -159,6 +160,16 @@ Client-facing copy and API fields must never imply live GA/GSC when the source i
 | Sync failed / fallback used | `LIVE_GA_GSC failed; MANUAL fallback` | `Metrics from approved manual snapshot` plus internal failure evidence only |
 
 Any client-visible report using manual/placeholder data must preserve the approved disclaimer pattern and must not use phrases such as "live GA/GSC", "connected analytics", or "Google-synced" unless the live proof criteria in §7 are satisfied.
+
+### 3.1c G103-G109 local helper closeout (no live sync)
+
+G103-G109 add code-level guardrails only:
+
+- `ga-gsc.config.ts` exposes config-shape readiness and typed non-secret property mapping fields.
+- `monthly-report-policy.ts` resolves closed-month date ranges, source truth (`manual`, `placeholder`, `csv`, `live`, `unavailable`), and report generation input validity.
+- `client-portal.runtime.ts` exposes a pure FINAL-only visibility predicate used by unit tests alongside the existing runtime `status: "FINAL"` query filters.
+
+These helpers intentionally do **not** call Google, start OAuth, store tokens, validate real GA4/GSC property access, or convert local MANUAL/placeholder proof into live proof. OAuth remains deferred to a separate approved implementation block.
 
 ### 3.2 Admin snapshot import (local baseline — proven)
 

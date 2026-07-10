@@ -4,6 +4,8 @@ Status: Plain-language list of what is intentionally not active in the current l
 
 This register prevents confusion. If something is listed under **Still deferred**, it is not forgotten — it is intentionally waiting for a later approved block. If something is listed under **Puriva Launch blockers**, it is required for Puriva Launch but not yet live-proven.
 
+**G148 update:** G89-G147 moved several local foundations out of "not started" status, but did **not** move any live proof out of deferred. R2 readiness/proof stages, notification taxonomy/no-send adapter, GA/GSC helpers, WordPress draft payload/publish-freeze tests, image compliance policy helpers, Client Portal FINAL guards, Client Operating Pack constants, future-module contracts, AI budget reporting contracts, and operator/security inventories are local foundations only.
+
 ## Rule
 
 Deferred means: do not build, enable, deploy, or promise it as active until there is a separate approved task.
@@ -21,12 +23,12 @@ These are **not** "still deferred" long-term roadmap items. They are active bloc
 | Blocker | Scope | Notes |
 |---------|-------|-------|
 | GA/GSC live sync proof | Live integration | Snapshot-first locally; live OAuth/sync proof required — runbook: [`docs/runbooks/MONTHLY_REPORT_LIVE_DATA_PROOF.md`](../runbooks/MONTHLY_REPORT_LIVE_DATA_PROOF.md) |
-| R2 real-bucket proof | Live integration | Disabled-safe locally; real bucket IO proof required |
+| R2 real-bucket proof | Live integration | G89-G93 local no-IO readiness/proof-stage/storage-key guard foundation complete; real bucket IO proof still required |
 | Live AI provider proof | Live integration | **Local COMPLETE (G77b + G79)** — controlled OpenRouter execute + COMPLETED ledger row `5d8d635c-ced0-4a14-9b33-839e1fdee508`; monthly cap aggregation now includes live `COMPLETED` rows locally; `actualCostUsd=null`; **staging/production live proof still required for launch** — runbook: [`docs/runbooks/AI_PROVIDER_LIVE_PROOF.md`](../runbooks/AI_PROVIDER_LIVE_PROOF.md) §9.18 |
 | AI Model Research | Policy gate | Separate approved research gate |
 | AI Model Policy | Policy gate | **Docs + skeleton closed (G55/G56)** — local live provider proof complete (G71f); staging/production proof still required — [`docs/ai/AI_MODEL_POLICY.md`](../ai/AI_MODEL_POLICY.md) |
-| Image generation proof | Live integration | Provider/workflow proof for Article+Image path |
-| Transactional notifications proof | Live integration | In-system user inbox + live email — **not** marketing campaigns; staged plan: [`notifications-blocker-plan.md`](./notifications-blocker-plan.md) |
+| Image generation proof | Live integration | G115-G119 compliance policy/helper foundation complete; provider selection/wiring/live proof for Article+Image path still required |
+| Transactional notifications proof | Live integration | G94-G99 taxonomy/mapping/policy/no-send/templates foundation complete; in-system user inbox + live email still required — **not** marketing campaigns; staged plan: [`notifications-blocker-plan.md`](./notifications-blocker-plan.md) |
 | Client Portal approval UX | Product gate | Client-safe approval path must be production-proven |
 | Task-oriented admin UX | Product gate | Operator task flows for daily delivery |
 | Article+Image workflow | Product gate | End-to-end article and image handoff |
@@ -34,6 +36,8 @@ These are **not** "still deferred" long-term roadmap items. They are active bloc
 | Feedback learning | Product gate | Client feedback loop for delivery iteration |
 
 **Puriva Launch status:** **Blocked** until the blockers above are closed with evidence. See [`G53_PRODUCTION_SAFETY_PLAN.md`](../runbooks/G53_PRODUCTION_SAFETY_PLAN.md).
+
+**Roadmap reference:** G147 created [`G147_NEXT_20_GATES.md`](./G147_NEXT_20_GATES.md) for the next 20 owner-gated blocks. G148 does not execute those gates.
 
 **Email clarification:** transactional workflow notifications (approval, handoff, delivery status) are in scope for proof; marketing email campaigns remain still-deferred.
 
@@ -86,7 +90,23 @@ Grouped for planning clarity. Items remain deferred until a separate approved bl
 | **G82-G84** | Notifications foundation/no-send/email/approval event-map planning — no live send and no in-system inbox yet |
 | **G85-G87** | GA/GSC, WordPress live draft, and image generation proof planning — no live calls |
 | **G88** | Shared-doc consolidation with correct G79-G88 gate map; Puriva Launch remains blocked |
-| **G89 recommended** | Owner-selected launch-blocker execution gate; recommended first candidate: R2 real-bucket proof or another explicitly approved low-blast-radius proof |
+| **G149 recommended after G148** | Owner-selected launch-blocker execution gate; recommended first candidate: R2 target-environment real-bucket proof or another explicitly approved low-blast-radius proof |
+
+## G89-G148 deferred-scope reconciliation (2026-07-10)
+
+| Area | Moved out of "not started" | Still deferred / blocked |
+|------|-----------------------------|--------------------------|
+| R2/private storage | No-IO readiness, proof-stage helpers, storage-key guard docs/tests | Real bucket IO, signed URL proof against target bucket, staging/prod proof |
+| Notifications/email | Taxonomy, event mapping, policy, no-send adapter, local templates | In-system inbox/persistence, live email send, client notification proof |
+| GA/GSC/monthly reports | Config helpers, manual/snapshot report helpers, FINAL-only visibility | OAuth consent, token storage/refresh, live GA/GSC sync, target-env report proof |
+| WordPress | Draft payload, credential-shape checks, publish freeze before fetch | Live draft proof session, approved-image attach proof, auto-publish |
+| Image generation | Compliance policy/helper foundation | Provider selection, live generation, R2 image-byte proof |
+| Client Portal | Leak hardening and FINAL guards | Staging/prod browser proof and broader collaboration workflows |
+| Client/future modules | Client Operating Pack constants and MI/RH/POD typed contracts | Live ingestion, marketplace/CRM/write connectors, client-facing future modules |
+| AI budget reporting | Reporting/reconciliation contract only | Finance Lite mutation, invoice ingestion, trusted provider-cost ingestion |
+| Operator/security docs | Checklists, inventories, next-gate roadmap | External audit, production proof, deploy approval |
+
+G148 recommendation: keep local foundations, keep all live-provider/storage/email/Google/WordPress/image and staging/production proofs deferred until a separate owner-approved gate.
 
 ## G71b / G71c / G71e / G71f live OpenRouter proof (2026-07-09)
 

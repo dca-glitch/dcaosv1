@@ -143,7 +143,10 @@ import { generateAiDeliveryContentPlanPdf } from "./content-plan-pdf.service";
 import { recordAiDeliverySystemEvent } from "../services/system-events.service";
 import { notifyDcaTeam } from "../services/email-notifications.service";
 import { recordPlatformAuditEvent } from "../security/audit-log.service";
-import type { AiDeliveryWordPressPublishResult } from "../services/wordpress.service";
+import {
+  buildAiDeliveryWordPressDraftPayload,
+  type AiDeliveryWordPressPublishResult
+} from "../services/wordpress.service";
 import {
   buildDeterministicMarketIntelligenceSummary,
   MI_SUMMARY_INTEGRATION_VERSION
@@ -183,7 +186,6 @@ import {
 import {
   buildClientPortalVisibilityCheck,
   buildPrivateAssetReadinessChecks,
-  buildSlugFromPublicationTitle,
   buildWordPressHandoffReadinessCheck,
   resolveWordPressPublishGateStatus,
   type DeliverableAssetRow,
@@ -9224,11 +9226,6 @@ export async function prepareAiDeliveryDeliverableWordPressDraft(
     throwAiDeliveryConflict("AI_DELIVERY_WORDPRESS_DRAFT_BODY_REQUIRED", "Content is required to prepare a WordPress draft.");
   }
 
-  const slug = buildSlugFromPublicationTitle(title);
-  if (!slug) {
-    throwAiDeliveryConflict("AI_DELIVERY_WORDPRESS_DRAFT_SLUG_INVALID", "A valid slug could not be derived from the draft title.");
-  }
-
   const excerptCandidate = (deliverable.description ?? "").trim();
   let siteUrlHost: string | null = null;
   try {
@@ -9257,28 +9254,18 @@ export async function prepareAiDeliveryDeliverableWordPressDraft(
   );
 
   return {
-    wordpressDraft: {
-      status: "PREPARED",
+    wordpressDraft: buildAiDeliveryWordPressDraftPayload({
       title,
       body,
       excerpt: excerptCandidate || null,
       sourceType,
       sourceId,
-      slug,
-      postStatus: "draft",
-      externalPostId: null,
-      externalEditUrl: null,
       publicationTargetId: publicationTarget!.id,
       publicationTargetLabel: publicationTarget!.label,
       publicationSiteUrl: publicationTarget!.siteUrl,
       publishGateStatus,
       credentialConfigured: credentialStatus?.configured === true,
-      note: publishGateStatus === "disabled"
-        ? "Local WordPress draft payload only. Live publish is disabled by default (WORDPRESS_PUBLISH_ENABLED is not true)."
-        : publishGateStatus === "credentials_missing"
-          ? "Local WordPress draft payload prepared. Save publication target credentials before guarded publish."
-          : "Local WordPress draft payload prepared. Live publish remains confirm-gated and env-controlled."
-    }
+    })
   };
 }
 

@@ -30,6 +30,19 @@ export type ClientPortalEditableFieldName =
   | "category"
   | "scheduledPublishAt";
 
+const CLIENT_PORTAL_EDITABLE_FIELD_NAMES = new Set<string>([
+  "title",
+  "body",
+  "description",
+  "tags",
+  "category",
+  "scheduledPublishAt"
+]);
+
+export function isClientPortalEditableFieldName(value: string): value is ClientPortalEditableFieldName {
+  return CLIENT_PORTAL_EDITABLE_FIELD_NAMES.has(value);
+}
+
 function getActiveTenantId(authSession: AuthResolvedSessionContext): string | null {
   return authSession.tenantContext.activeMembership?.tenantId ?? null;
 }
@@ -304,17 +317,19 @@ export async function getClientPortalDeliverableEditHistory(
   });
 
   return {
-    edits: edits.map((edit) => ({
-      id: edit.id,
-      fieldName: edit.fieldName,
-      oldValue: edit.oldValue,
-      newValue: edit.newValue,
-      createdAt: edit.createdAt.toISOString(),
-      user: {
-        id: edit.user.id,
-        name: edit.user.name,
-        email: isAdmin ? edit.user.email : null
-      }
-    }))
+    edits: edits
+      .filter((edit) => isClientPortalEditableFieldName(edit.fieldName))
+      .map((edit) => ({
+        id: edit.id,
+        fieldName: edit.fieldName,
+        oldValue: edit.oldValue,
+        newValue: edit.newValue,
+        createdAt: edit.createdAt.toISOString(),
+        user: {
+          id: edit.user.id,
+          name: edit.user.name,
+          email: isAdmin ? edit.user.email : null
+        }
+      }))
   };
 }

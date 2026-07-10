@@ -299,3 +299,25 @@ Stop and do not claim image generation ready if:
 - `npm run -w @dca-os-v1/api test:integration` — 45/45 pass, including the new `image-generation.integration.test.ts`.
 
 **What this proves:** the config/readiness/variant/reject/client-safe-metadata shape exists and is exercised by tests, and no code path in this shape makes a network call regardless of `IMAGE_GENERATION_ENABLED` value. **What this does not prove:** live provider execution, R2 byte roundtrip for generated images, or any change to `AiDeliveryArticleImage` persistence — those remain blocked per §3.1/§3.7 until schema approval + Phase C/D.
+
+---
+
+## 8. G115-G119 image compliance policy helpers — proof log (2026-07-10)
+
+**Scope:** Pure image compliance/policy helpers only. No live image generation, no provider SDK/client, no HTTP call, no storage write, no schema change, and no runtime provider wiring.
+
+**Files added/changed:**
+
+- `apps/api/src/core/image-compliance-policy.ts` (new) — provider-independent image compliance policy evaluator; rejects before/after framing, fake doctors/patients/testimonials, procedure/device staging, treatment-result claims, real-person likeness risk, and unsafe prescription/device implications at pre-generation prompt and post-generation output review stages. Also defines prompt profile metadata for hero/supporting/social slots, Puriva aesthetic guidance, forbidden policy codes, alt-text requirements, mandatory structured reject-reason validation, and a pure image approval-loop event map.
+- `apps/api/src/core/image-compliance-policy.test.ts` (new) — unit tests for hard rejection categories, neutral wellness allowance, prompt profile shape, mandatory reject reason validation, sanitized reject metadata, and approval-loop event mapping.
+- `docs/runbooks/IMAGE_GENERATION_PROOF.md` — this closeout section.
+
+**G115:** Image compliance policy helper added with tests proving rejection before/after generation review for before/after framing, fake doctors/patients, procedure/device staging, and treatment-result language; neutral wellness imagery remains allowed.
+
+**G116:** Prompt profile types added for `hero`, `supporting`, and `social` slot profiles, with Puriva aesthetic direction, forbidden compliance codes, and alt-text requirements that prohibit prompt/provider/model leakage and unsupported claims.
+
+**G117:** Mandatory structured reject-reason validation added. Admin/client rejects require a known reason code; `other` additionally requires a free-text note; notes are trimmed before returning validated metadata.
+
+**G118:** Pure image approval-loop event map added for admin/client approve/reject and replacement lifecycle events. Reject-like actions are marked as requiring a reject reason; the map has no side effects.
+
+**G119:** Runbook closeout recorded here. `npm.cmd run -w @dca-os-v1/api test:unit` passed locally (276/276). `npm.cmd run -w @dca-os-v1/api check` passed all scripted API checks, then stopped at `tsc --noEmit` on unrelated `apps/api/src/core/client-operating-packs.test.ts` type errors outside this block (`TS2367`, `TS2339`). Live provider proof remains explicitly out of scope.

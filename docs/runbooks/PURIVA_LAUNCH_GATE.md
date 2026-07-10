@@ -1,6 +1,6 @@
 # Puriva Launch Gate — 15-Area Evaluation
 
-**Status:** Docs-only evaluation. Overall verdict: **BLOCKED**. G88 consolidation recorded the correct G79-G88 gate map: G79 local ledger aggregation implemented, G80 policy documented, G81-G87 planning/prep only. This document does not authorize Puriva Launch, live integrations, or production client-facing use.
+**Status:** Docs-only evaluation. Overall verdict: **BLOCKED**. G148 integration recorded the G89-G147 lane outcomes as local/no-IO foundations only: R2 readiness/proof stages, notification taxonomy/no-send adapter, GA/GSC helpers, WordPress draft payload/publish-freeze checks, image compliance policy helpers, Client Portal FINAL guards, Puriva packs, future-module contracts, AI budget reporting contract, and operator/security docs. This document does not authorize Puriva Launch, live integrations, or production client-facing use.
 
 **Gate separation:** Puriva Client-Service Launch Gate is independent from the DCA OS Production v1 Gate (G49 → G50). Clearing G49/G50 does **not** authorize Puriva Launch, and vice versa.
 
@@ -10,7 +10,7 @@
 
 ## 1. Overall verdict
 
-**BLOCKED.** G79 improves the local AI budget ledger by aggregating live `COMPLETED` rows, and G80 clarifies that `actualCostUsd` remains `null` unless trusted provider cost is available. Neither closes Puriva Launch. G81-G87 are planning/prep only: no staging/prod live proof, live AI call, email send, Google OAuth/sync, WordPress HTTP call, image-provider call, R2 IO, commit, push, or deploy is claimed here.
+**BLOCKED.** G89-G147 add useful local/admin foundations across storage, notifications, analytics helpers, WordPress draft preparation, image compliance, Client Portal visibility, operating packs, future-module contracts, AI budget reporting, and operator/security inventories. None closes Puriva Launch. No staging/prod live proof, live AI call, email send, Google OAuth/sync, WordPress HTTP call, image-provider call, R2 IO, commit, push, or deploy is claimed here.
 
 8 of 15 evaluation areas remain fully blocked pending live proof or a not-yet-started product/policy gate. 2 more areas have real local scaffolding but cannot support a live client-facing claim yet. 5 areas are genuinely usable now in local/admin-operated form only.
 
@@ -31,19 +31,19 @@
 
 | # | Area | Verdict | Evidence / gap |
 |---|------|---------|-----------------|
-| 1 | GA/GSC live proof | **BLOCKED** | No live OAuth consent or sync has ever been executed. Snapshot-first manual metrics is the active local path. |
-| 2 | R2/storage live proof | **BLOCKED** | Disabled-safe local behavior proven (`smoke:r2-byte-roundtrip:local`); no real bucket round-trip ever executed. See [`STORAGE_R2_PROOF.md`](./STORAGE_R2_PROOF.md). |
+| 1 | GA/GSC live proof | **BLOCKED** | G103-G109 add helper/config/manual-metrics foundation only. No live OAuth consent or sync has ever been executed. Snapshot-first manual metrics is the active local path. |
+| 2 | R2/storage live proof | **BLOCKED** | G89-G93 add no-IO readiness/proof-stage/storage-key guard foundation. Disabled-safe local behavior is proven; no real bucket round-trip ever executed. See [`STORAGE_R2_PROOF.md`](./STORAGE_R2_PROOF.md). |
 | 3 | Live AI text proof | **PARTIAL — local only** | Local controlled OpenRouter execute proven (G71e/G71e-retry, G75, G77b COMPLETED ledger row `5d8d635c-ced0-4a14-9b33-839e1fdee508`; G79 monthly aggregation includes live `COMPLETED` rows locally; `actualCostUsd=null` per G80 policy until trusted provider cost exists). Staging/production live **NOT** claimed; Puriva Launch still requires staging/production re-proof. |
-| 4 | Image generation provider research | **BLOCKED** | No provider selected. Full flow spec: [`IMAGE_GENERATION_PROOF.md`](./IMAGE_GENERATION_PROOF.md). Phase B disabled-safe wiring foundation (readiness category `image_generation`, `IMAGE_GENERATION_ENABLED` + provider/key config shape, hero/supporting_1/supporting_2/social_preview variant scaffolding, required-reason reject, client-safe metadata mapper) is now local/unit+integration-proven with zero live calls — see `IMAGE_GENERATION_PROOF.md` §2/§7. Provider selection itself remains not started. |
+| 4 | Image generation provider research | **BLOCKED** | No provider selected. G115-G119 add compliance policy/helper foundation with zero live calls. Full flow spec: [`IMAGE_GENERATION_PROOF.md`](./IMAGE_GENERATION_PROOF.md). Provider selection itself remains not started. |
 | 5 | Image generation staging proof | **BLOCKED** | Depends on #4 + R2 live proof + AI Model Policy; scaffold exists (`prepare-image-sets`) plus the new Phase B disabled-safe foundation, but no live provider client is wired and none was called in this block. |
-| 6 | Transactional notification proof (in-system + email) | **BLOCKED** | G82-G84 planning confirms no in-system notification model exists yet. Email/outbox is disabled-safe/no-send locally; real email send via Resend has never been executed. Approval event map is documented; image-level approve/reject has no notification intent; monthly report `FINAL` is admin-only and not client delivery. |
-| 7 | WordPress draft/handoff readiness | **PASS (local/operator-ready)** / **PLANNED, NOT EXECUTED (live draft proof)** | Draft preparation and operator handoff smoke-proven locally; required scope for Puriva Launch is draft/handoff, not auto-publish, and that local scope is met. A live draft proof **plan** (title/body/meta parity, approved-image-only attach, alt/caption/social preview, idempotency, cleanup marker, disabled-safe restore, owner approval) is written in [`WORDPRESS_DRAFT_PROOF.md`](./WORDPRESS_DRAFT_PROOF.md) §6 — docs only, no live WordPress call made. Three gaps must be explicitly resolved (schema change vs. manual-check-only) before that session can run: no `altText`/`caption`/`socialPreview` fields on `AiDeliveryArticleImage`, no idempotency key on `PublicationLog`, no code-level approved-image-only filter. |
+| 6 | Transactional notification proof (in-system + email) | **BLOCKED** | G94-G102 add taxonomy/mapping/policy/no-send adapter/template foundation only. No in-system notification model exists yet. Email/outbox is disabled-safe/no-send locally; real email send via Resend has never been executed. |
+| 7 | WordPress draft/handoff readiness | **PASS (local/operator-ready)** / **PLANNED, NOT EXECUTED (live draft proof)** | G110-G113 add draft payload, credential-shape checks, and publish-freeze-before-fetch coverage. Draft preparation and operator handoff are local-only; required scope for Puriva Launch is draft/handoff, not auto-publish. A live draft proof **plan** is written in [`WORDPRESS_DRAFT_PROOF.md`](./WORDPRESS_DRAFT_PROOF.md) §6 — docs only, no live WordPress call made. Three gaps must be explicitly resolved before that session can run: no `altText`/`caption`/`socialPreview` fields on `AiDeliveryArticleImage`, no idempotency key on `PublicationLog`, no code-level approved-image-only filter. |
 | 8 | Integration health visibility | **PASS (local/admin)** / **BLOCKED (live)** | `GET /api/v1/integrations/readiness` gives admin-visible config-shape health today; there is nothing live to show health for until other live proofs close. |
 | 9 | AI Model Research Gate | **BLOCKED** | Not started. |
 | 10 | AI Model Policy | **BLOCKED** | Depends on #9. |
-| 11 | Client Portal approval UX | **PASS (local/admin-operated MVP)** / **BLOCKED (production-proven claim)** | Approval happy-path is smoke-proven locally; no staging/production browser QA evidence exists yet. |
+| 11 | Client Portal approval UX | **PASS (local/admin-operated MVP)** / **BLOCKED (production-proven claim)** | G120-G123 add leak hardening and FINAL guards locally. Approval happy-path is smoke-proven locally; no staging/production browser QA evidence exists yet. |
 | 12 | Task-oriented admin UX / admin operating checklist | **PASS (local)** | Admin daily operations cockpit (Ready now / Needs review / Blocked-waiting) and Puriva operating pack checklist exist and are smoke-proven. |
-| 13 | Client profiles and boundaries (medical compliance, content/tone, image profile/dimensions) | **PARTIAL — usable as documented checklist** | Per `CLIENT_OPERATING_PACKS.md` §7, profiles may start as documented operator checklists before becoming structured configuration; that is the current state — usable now as an admin discipline, not yet a database-enforced control. |
+| 13 | Client profiles and boundaries (medical compliance, content/tone, image profile/dimensions) | **PARTIAL — usable as documented checklist** | G124-G127 add shared Client Operating Pack/Puriva constants and tests. Per `CLIENT_OPERATING_PACKS.md` §7, profiles may start as documented operator checklists before becoming structured configuration; usable now as admin discipline, not yet a database-enforced control. |
 | 14 | Article + Image Package Workflow v1 | **PASS (local scaffold/workflow shape)** / **BLOCKED (full live proof)** | Step order, reject-reason, regenerate-only-rejected, upscale-after-approval, and social-preview rules are documented and largely implemented as a workflow scaffold; full proof requires live image generation (#4/#5). |
 | 15 | Monthly Report Flow v1 + feedback learning layer | **PASS (local/client-safe FINAL-only report)** / **BLOCKED (live metrics + feedback learning)** | Admin report lifecycle, PDF, and client FINAL-only visibility are smoke-proven locally; live GA/GSC-sourced metrics depend on #1; a dedicated feedback-learning-notes persistence layer was not found in code this session — treat as not started, not partially built. G85 separates MANUAL/snapshot placeholder gates from live GA/GSC: manual Puriva metrics are not live analytics and must not be promoted as such. GA/GSC OAuth/token readiness remains env-presence-only (no consent route, token storage, or refresh logic) per [`MONTHLY_REPORT_LIVE_DATA_PROOF.md`](./MONTHLY_REPORT_LIVE_DATA_PROOF.md) §3.1a. |
 
@@ -63,7 +63,7 @@ Summary for the launch gate (docs-only clarification, added 2026-07-09 — no ve
 
 ## 3. What is usable now (admin-operated, local, not client-facing on production)
 
-- Full local Puriva E2E operator dry-run: intake → compliance → AI Knowledge/context → WorkflowBriefs → SEO plan → content/compliance → image/asset handoff scaffold → WordPress prepared draft → client-safe monthly report/archive → client approval happy path.
+- Full local Puriva E2E operator foundation: intake → compliance → AI Knowledge/context → WorkflowBriefs → SEO plan → content/compliance → image/asset handoff scaffold → WordPress prepared draft → client-safe monthly report/archive → client approval happy path.
 - Admin daily operations cockpit with a discoverable first-client path and explicit deferred/gated labeling.
 - Client Portal read-only archive and FINAL-only monthly reports, proven locally, not deployed to any client-facing production environment.
 - WordPress draft/handoff preparation (no auto-publish). A live draft proof **plan** exists (`WORDPRESS_DRAFT_PROOF.md` §6) but has not been executed against any real WordPress site; that plan, not an executed proof, is what is usable now.
@@ -104,7 +104,7 @@ Per `deferred-scope-register.md`: WordPress auto-publish, marketing email, SMS/W
 
 ## 7. Recommended next blocks (ordered by lowest-effort-to-close-first)
 
-1. **G89 recommended: owner-selected launch-blocker execution gate** — recommended first candidate is R2 real-bucket proof because it is low blast radius and unlocks document/image proof paths.
+1. **G149 recommended: owner-selected launch-blocker execution gate** — recommended first candidate is R2 target-environment real-bucket proof because it is low blast radius and unlocks document/image proof paths.
 2. **Notifications MVP block** — create/prove in-system notification model before claiming transactional notification readiness; email live send remains a separate owner-approved proof.
 3. **AI target-environment re-proof** — bounded OpenRouter proof on staging/target environment after owner approval; G79 local aggregation is already done, but target proof remains blocked.
 4. **GA/GSC live proof path** — first solve OAuth token storage/encryption; then run bounded read-only sync.
@@ -117,4 +117,4 @@ Per `deferred-scope-register.md`: WordPress auto-publish, marketing email, SMS/W
 - No production or staging mutation occurred.
 - No live WordPress call was made or authorized by this update; `WORDPRESS_DRAFT_PROOF.md` §6 is a plan only, and executing it requires a separate owner-approved block.
 - Puriva Launch remains **blocked**. This document does not change that status; it only makes the remaining gap explicit and orderable.
-- G88 consolidation does not authorize G89 or any execution gate.
+- G148 integration does not authorize G149 or any execution gate.

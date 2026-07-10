@@ -17,6 +17,16 @@ type ClientPortalDeliverableStatus = "DELIVERED" | "ACCEPTED";
 
 const CLIENT_PORTAL_VISIBLE_STATUSES: ClientPortalDeliverableStatus[] = ["DELIVERED", "ACCEPTED"];
 
+export function isClientPortalVisibleDeliverableStatus(
+  status: string
+): status is ClientPortalDeliverableStatus {
+  return CLIENT_PORTAL_VISIBLE_STATUSES.includes(status as ClientPortalDeliverableStatus);
+}
+
+export function isClientPortalFinalMonthlyReportStatus(status: string): status is "FINAL" {
+  return status === "FINAL";
+}
+
 function getActiveTenantId(authSession: AuthResolvedSessionContext): string | null {
   return authSession.tenantContext.activeMembership?.tenantId ?? null;
 }
@@ -193,7 +203,7 @@ const clientPortalDeliverableSelect = {
   updatedAt: true
 } as const;
 
-function toClientPortalDeliverableSummary(d: {
+export function toClientPortalDeliverableSummary(d: {
   id: string;
   aiDeliveryProjectId: string;
   title: string;
@@ -367,7 +377,14 @@ export function sanitizeClientPortalMonthlyReportDisplayTitle(
   });
 }
 
-function toClientPortalMonthlyReportSummary(r: {
+export function isClientPortalMonthlyReportVisible(report: {
+  status?: string | null;
+  isArchived?: boolean | null;
+}): boolean {
+  return report.status === "FINAL" && report.isArchived !== true;
+}
+
+export function toClientPortalMonthlyReportSummary(r: {
   id: string;
   aiDeliveryProjectId: string;
   title: string | null;
@@ -573,19 +590,20 @@ async function buildClientPortalMonthlyReportWorkSummary(tenantId: string, proje
     })
   ]);
 
-  const deliveredCount = deliverables.filter((item) => item.status === "DELIVERED").length;
-  const acceptedCount = deliverables.filter((item) => item.status === "ACCEPTED").length;
+  const finalDeliverables = deliverables.filter((item) => isClientPortalVisibleDeliverableStatus(item.status));
+  const deliveredCount = finalDeliverables.filter((item) => item.status === "DELIVERED").length;
+  const acceptedCount = finalDeliverables.filter((item) => item.status === "ACCEPTED").length;
   const contentPlanItems = contentPlan?.items ?? [];
   const clientApprovedPlanItemCount = contentPlanItems.filter((item) => item.approvalStatus === "CLIENT_APPROVED").length;
 
   return {
     targetMonth: formatTargetMonth(project.targetMonth),
-    finalDeliverableCount: deliverables.length,
+    finalDeliverableCount: finalDeliverables.length,
     deliveredCount,
     acceptedCount,
     contentPlanItemCount: contentPlanItems.length,
     clientApprovedPlanItemCount,
-    deliverables: deliverables.map((item) => ({
+    deliverables: finalDeliverables.map((item) => ({
       id: item.id,
       title:
         sanitizeClientPortalDisplayText(item.title, {

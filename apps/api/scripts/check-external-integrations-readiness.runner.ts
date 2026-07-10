@@ -242,8 +242,8 @@ async function main() {
     });
     const r2Partial = getExternalIntegrationsReadinessSnapshot();
     record(
-      "partial R2 env stays disabled",
-      findCategory(r2Partial, "private_storage")?.status === "disabled",
+      "partial R2 env reports missing_config",
+      findCategory(r2Partial, "private_storage")?.status === "missing_config",
       findCategory(r2Partial, "private_storage")?.status ?? "missing"
     );
 

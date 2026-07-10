@@ -1,3 +1,5 @@
+import type { AiDeliveryWordPressDraftPrepared } from "../core/core.types";
+
 /**
  * WordPress provider service scaffold
  *
@@ -108,6 +110,54 @@ export interface AiDeliveryWordPressPublishResult {
   providerDisabledReason?: string;
 }
 
+export type AiDeliveryWordPressDraftSourceType = "DELIVERABLE" | "CONTENT_DRAFT";
+export type AiDeliveryWordPressPublishGateStatus = "disabled" | "credentials_missing" | "target_configured";
+
+export interface AiDeliveryWordPressDraftPayloadInput {
+  title: string;
+  body: string;
+  excerpt?: string | null;
+  sourceType: AiDeliveryWordPressDraftSourceType;
+  sourceId: string;
+  publicationTargetId?: string;
+  publicationTargetLabel?: string;
+  publicationSiteUrl?: string;
+  publishGateStatus: AiDeliveryWordPressPublishGateStatus;
+  credentialConfigured: boolean;
+}
+
+export interface AiDeliveryWordPressCredentialPolicyShape {
+  configured: boolean;
+  encryptionAvailable: boolean;
+  updatedAt: string | null;
+}
+
+export interface AiDeliveryWordPressCredentialPolicyMetadata {
+  credentialsPresent: boolean;
+  siteUrlHost: string | null;
+}
+
+export const WORDPRESS_LIVE_HTTP_FROZEN = true as const;
+export const WORDPRESS_LIVE_HTTP_FROZEN_REASON =
+  "WordPress live HTTP is frozen for this gate. Draft preparation remains local-only and publish is disabled.";
+
+export const WORDPRESS_TEST_DRAFT_PROOF_MARKER = "[DCA-OS-PROOF-DO-NOT-PUBLISH]";
+export const WORDPRESS_TEST_DRAFT_PROOF_TAG = "dca-proof";
+export const WORDPRESS_TEST_DRAFT_ROLLBACK_PLAN = {
+  marker: WORDPRESS_TEST_DRAFT_PROOF_MARKER,
+  tag: WORDPRESS_TEST_DRAFT_PROOF_TAG,
+  allowedStatus: "draft",
+  cleanupAction: "trash_or_delete_staging_test_draft",
+  restorePublishEnv: "WORDPRESS_PUBLISH_ENABLED=false",
+  evidenceRequired: [
+    "ownerApprovalReference",
+    "stagingOnlyTarget",
+    "wordpressPostIdOrEditUrl",
+    "cleanupActionAndTimestamp",
+    "disabledSafeSmokeResult"
+  ]
+} as const;
+
 /**
  * WordPress configuration validation result
  */
@@ -139,6 +189,91 @@ function validateWordPressSiteUrl(url: string): boolean {
  */
 function normalizeWordPressSiteUrl(url: string): string {
   return url.replace(/\/+$/, "");
+}
+
+function buildDraftSlug(title: string): string | null {
+  const normalized = title
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+
+  return normalized ? normalized.slice(0, 80) : null;
+}
+
+function buildDraftNote(gateStatus: AiDeliveryWordPressPublishGateStatus): string {
+  if (gateStatus === "disabled") {
+    return "Local WordPress draft payload only. Live publish is disabled by default (WORDPRESS_PUBLISH_ENABLED is not true).";
+  }
+
+  if (gateStatus === "credentials_missing") {
+    return "Local WordPress draft payload prepared. Save publication target credentials before guarded publish.";
+  }
+
+  return "Local WordPress draft payload prepared. Live publish remains confirm-gated and env-controlled.";
+}
+
+export function buildAiDeliveryWordPressDraftPayload(
+  input: AiDeliveryWordPressDraftPayloadInput
+): AiDeliveryWordPressDraftPrepared {
+  const title = input.title.trim();
+  const body = input.body.trim();
+  const excerpt = input.excerpt?.trim() || null;
+
+  return {
+    status: "PREPARED",
+    title,
+    body,
+    excerpt,
+    sourceType: input.sourceType,
+    sourceId: input.sourceId,
+    slug: buildDraftSlug(title),
+    postStatus: "draft",
+    externalPostId: null,
+    externalEditUrl: null,
+    publicationTargetId: input.publicationTargetId,
+    publicationTargetLabel: input.publicationTargetLabel,
+    publicationSiteUrl: input.publicationSiteUrl,
+    publishGateStatus: input.publishGateStatus,
+    credentialConfigured: input.credentialConfigured,
+    note: buildDraftNote(input.publishGateStatus)
+  };
+}
+
+export function isAiDeliveryWordPressPublishFrozen(): boolean {
+  return WORDPRESS_LIVE_HTTP_FROZEN;
+}
+
+export function buildWordPressCredentialPolicyShape(input: {
+  configured?: boolean;
+  encryptionAvailable?: boolean;
+  updatedAt?: string | Date | null;
+}): AiDeliveryWordPressCredentialPolicyShape {
+  return {
+    configured: input.configured === true,
+    encryptionAvailable: input.encryptionAvailable === true,
+    updatedAt: input.updatedAt instanceof Date ? input.updatedAt.toISOString() : input.updatedAt ?? null
+  };
+}
+
+export function buildWordPressCredentialPolicyMetadata(input: {
+  credentialsPresent?: boolean;
+  siteUrl?: string | null;
+}): AiDeliveryWordPressCredentialPolicyMetadata {
+  let siteUrlHost: string | null = null;
+  if (input.siteUrl) {
+    try {
+      siteUrlHost = new URL(input.siteUrl).hostname;
+    } catch {
+      siteUrlHost = null;
+    }
+  }
+
+  return {
+    credentialsPresent: input.credentialsPresent === true,
+    siteUrlHost
+  };
 }
 
 /**
@@ -199,6 +334,18 @@ export async function publishAiDeliveryDeliverableToWordPress(
   const publishEnabled = (process.env.WORDPRESS_PUBLISH_ENABLED ?? "").trim().toLowerCase() === "true";
   const siteConfig = options?.siteConfig ?? null;
   const applicationPassword = options?.applicationPassword ?? null;
+
+  if (isAiDeliveryWordPressPublishFrozen()) {
+    return {
+      ok: false,
+      wordpressPostId: null,
+      wordpressPostUrl: null,
+      wordpressEditUrl: null,
+      status: "provider_disabled",
+      errorMessage: null,
+      providerDisabledReason: WORDPRESS_LIVE_HTTP_FROZEN_REASON
+    };
+  }
 
   if (!publishEnabled || !siteConfig?.siteUrl || !applicationPassword) {
     return {

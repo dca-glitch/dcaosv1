@@ -42,7 +42,17 @@ export async function assertClientPortalApprovalAccess(
 async function getDeliverableForClientApproval(tenantId: string, deliverableId: string) {
   return prisma.aiDeliveryDeliverable.findFirst({
     where: { id: deliverableId, tenantId, isArchived: false },
-    include: {
+    select: {
+      id: true,
+      title: true,
+      description: true,
+      tags: true,
+      category: true,
+      scheduledPublishAt: true,
+      status: true,
+      bodyContent: true,
+      contentDraftId: true,
+      createdAt: true,
       aiDeliveryProject: {
         select: {
           id: true,
@@ -114,7 +124,11 @@ export async function listClientPortalPendingApprovals(
         status: "PENDING_CLIENT_REVIEW",
         ...(clientId ? { aiDeliveryProject: { clientId } } : {})
       },
-      include: {
+      select: {
+        id: true,
+        title: true,
+        status: true,
+        createdAt: true,
         aiDeliveryProject: {
           select: {
             id: true,
@@ -155,7 +169,11 @@ export async function listClientPortalPendingApprovals(
       status: "PENDING_CLIENT_REVIEW",
       aiDeliveryProject: { clientId: { in: clientFilter } }
     },
-    include: {
+    select: {
+      id: true,
+      title: true,
+      status: true,
+      createdAt: true,
       aiDeliveryProject: {
         select: {
           id: true,
@@ -492,7 +510,11 @@ export async function sendAiDeliveryDeliverableForClientReview(
 
   const deliverable = await prisma.aiDeliveryDeliverable.findFirst({
     where: { id: deliverableId, tenantId, aiDeliveryProjectId, isArchived: false },
-    include: {
+    select: {
+      id: true,
+      title: true,
+      bodyContent: true,
+      contentDraftId: true,
       aiDeliveryProject: { select: { clientId: true, name: true, client: { select: { name: true } } } },
       contentDraft: {
         select: {
