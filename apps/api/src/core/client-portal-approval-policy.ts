@@ -36,7 +36,7 @@ export type ClientPortalApprovalPolicySuccess = {
   ok: true;
   action: ClientPortalApprovalActionType;
   /** Deliverable status after a successful deliverable-level action. */
-  nextDeliverableStatus?: "APPROVED_BY_CLIENT" | "DRAFT";
+  nextDeliverableStatus?: "APPROVED_BY_CLIENT" | "REVISION_REQUESTED";
   /** Image approval status after a successful image-level action. */
   nextImageStatus?: "APPROVED" | "REJECTED" | "PENDING";
   notifyAdmin: boolean;
@@ -172,7 +172,7 @@ export function evaluateClientPortalApprovalAction(
     return {
       ok: true,
       action,
-      nextDeliverableStatus: "DRAFT",
+      nextDeliverableStatus: "REVISION_REQUESTED",
       notifyAdmin: true,
       notificationKind: "AI_DELIVERY_REVIEW_REQUEST",
       revisionRoundConsumed: true,
