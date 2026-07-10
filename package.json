@@ -66,6 +66,7 @@
     "smoke:tenant-module:dry-run-probe": "node scripts/smoke-tenant-module-dry-run-probe-local.mjs",
     "smoke:tenant-module:phase-f-local": "node scripts/smoke-tenant-module-phase-f-local.mjs",
     "smoke:openrouter-guarded:local": "node scripts/smoke-openrouter-guarded-local.mjs",
+    "smoke:openrouter-api-env-preflight:local": "node scripts/smoke-openrouter-api-env-preflight-local.mjs",
     "smoke:ai-provider-config:local": "node scripts/smoke-ai-provider-config-local.mjs",
     "smoke:ai-orchestrator-lite:local": "node scripts/smoke-ai-orchestrator-lite-local.mjs",
     "smoke:external-integrations-readiness:local": "node scripts/smoke-external-integrations-readiness-local.mjs",

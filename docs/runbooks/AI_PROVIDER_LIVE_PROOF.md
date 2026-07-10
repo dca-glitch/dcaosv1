@@ -155,9 +155,18 @@ Included in `npm run smoke:pre-staging:local`.
 
 ### 4.3 Strict — live OpenRouter (owner/manual only)
 
-1. Stop API.
-2. Set live env (§3).
-3. Restart API.
+0. Optional no-live preflight (dummy key; no execute; no OpenRouter network):
+
+```powershell
+cd C:\dcaosv1
+npm.cmd run smoke:openrouter-api-env-preflight:local
+```
+
+Pass: planning-config shows `textGateway=openrouter`, `hasOpenRouterApiKey=true`, model `anthropic/claude-haiku-4.5`, `openRouterLiveExecutionEnabled=true`, then restores local.
+
+1. Stop **all** listeners on port 4000 (confirm with health after stop).
+2. Set live env on the **API process** (§3) — not only the smoke shell. Prefer starting API with an explicit process env object.
+3. Restart API; wait for health; confirm planning-config live shape **before** strict smoke.
 4. Run:
 
 ```powershell
@@ -173,7 +182,7 @@ Pass:
 - Workflow execute reports `Gateway: openrouter` with configured model
 - No API keys or `sk-or-` tokens in responses or console output
 
-5. Restore local defaults (`AI_TEXT_GATEWAY` unset or `local`; remove provider key) before other smokes.
+5. Restore local defaults (`AI_TEXT_GATEWAY` unset or `local`; remove provider key from API process) before other smokes.
 
 ### 4.4 Target-environment live proof (staging/production)
 
@@ -472,12 +481,22 @@ Evidence logs: `$env:TEMP\g71b-ai-provider-live-proof-retry.log`
 | 2 — Live proof | Stop API; set `AI_TEXT_GATEWAY=openrouter` + owner key + approved model; restart API | `$env:SMOKE_EXPECT_OPENROUTER_LIVE = "true"`; `npm.cmd run smoke:openrouter-guarded:local` **once**; remove live expectation env immediately |
 | 3 — Restore | Set `AI_TEXT_GATEWAY=local`; remove OpenRouter key from active process; restart API | Re-run baseline guarded smoke without live expectation — expect 12/12 PASS |
 
+**API process env injection (G77b failure lesson):**
+
+- `GET /ai-provider/planning-config` and workflow execute read OpenRouter env from the **API process** at request time via `getAiProviderConfig()` / `process.env`.
+- Setting `$env:AI_TEXT_GATEWAY` / `$env:OPENROUTER_*` only in the **smoke shell** does **not** change an already-running API.
+- Smoke `loadRepoEnv()` affects the smoke Node process only; it cannot inject env into a separate API process.
+- `.env` load at API startup (`loadStartupEnvironment`) fills keys only when they are **undefined** in the process env — shell/process env wins and is never overridden by `.env`.
+- Live Phase 2 must **stop listeners on port 4000**, start `npm.cmd run dev:api` with OpenRouter vars in that API process env (explicit `Start-Process`/`spawn` env object preferred), wait for health, then confirm planning-config shows `textGateway=openrouter`, `hasOpenRouterApiKey=true`, `openRouterLiveExecutionEnabled=true` **before** running strict live smoke.
+- No-live preflight (dummy key, no execute, no OpenRouter network): `npm.cmd run smoke:openrouter-api-env-preflight:local`.
+
 **Rules:**
 
 1. **Do not** run baseline guarded smoke against an API already configured for live OpenRouter — baseline will fail and may invoke an unplanned live call.
 2. **Do not** run an additional live call without separate owner approval.
 3. Formal clean proof requires phase 2 strict smoke **PASS** in addition to substantive live evidence.
 4. Production deploy remains **excluded**.
+5. **Do not** treat a live-phase PID as proof the OpenRouter env landed — verify planning-config on the listening API first. If live start hits `EADDRINUSE`, the old local API is still answering.
 
 **Deferred-scope status after G71c:** Live AI provider proof = **PARTIAL** — substantive local call captured once; formal clean proof pending (optional G71e).
 

@@ -69,6 +69,13 @@ cd C:\dcaosv1
 npm.cmd run smoke:ai-provider-config:local
 ```
 
+API env injection preflight (starts/stops local API; dummy OpenRouter key; **no** live provider call; **no** workflow execute):
+
+```powershell
+cd C:\dcaosv1
+npm.cmd run smoke:openrouter-api-env-preflight:local
+```
+
 API-integrated guarded proof (requires local API + auth seed password):
 
 ```powershell
