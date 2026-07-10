@@ -90,7 +90,7 @@ describe("G578 request changes policy", () => {
 
     assert.equal(result.ok, true);
     if (!result.ok) return;
-    assert.equal(result.nextDeliverableStatus, "DRAFT");
+    assert.equal(result.nextDeliverableStatus, "REVISION_REQUESTED");
     assert.equal(result.notifyAdmin, true);
     assert.equal(result.notificationKind, "AI_DELIVERY_REVIEW_REQUEST");
     assert.equal(result.revisionRoundConsumed, true);

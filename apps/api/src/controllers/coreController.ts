@@ -47,7 +47,7 @@ import {
   emitWorkflowBlockedNotification,
   listAiNotificationEvents
 } from "../services/ai-notification-events.service";
-import { buildPurivaIntegrationBoundaryIndex } from "@dca-os-v1/shared";
+import { buildPurivaIntegrationBoundaryIndex, AI_DELIVERY_DELIVERABLE_STATUSES as CANONICAL_AI_DELIVERY_DELIVERABLE_STATUSES } from "@dca-os-v1/shared";
 import { getPurivaAiPolicyProfile } from "../core/puriva-ai-policy-profile";
 import { getGoogleDriveExportPlanningSnapshot } from "../services/google-drive-export-planning.service";
 import { getExternalIntegrationsReadinessSnapshot } from "../core/external-integrations-readiness.service";
@@ -321,7 +321,9 @@ const AI_DELIVERY_RESEARCH_SOURCE_TYPES = new Set(["WEBSITE", "DOCUMENT", "OTHER
 const AI_DELIVERY_CONTENT_DRAFT_STATUSES = new Set(["DRAFT", "READY_FOR_REVIEW", "CHANGES_REQUESTED", "ARCHIVED"]);
 const AI_DELIVERY_ARTICLE_IMAGE_STATUSES = new Set(["DRAFT", "READY_FOR_GENERATION", "PREVIEW_READY", "APPROVED", "FINAL_READY", "CHANGES_REQUESTED", "ARCHIVED"]);
 const AI_DELIVERY_DELIVERABLE_TYPES = new Set(["CONTENT_PACKAGE", "ARTICLE_DRAFT", "ARTICLE_IMAGE", "CLIENT_HANDOFF", "OTHER"]);
-const AI_DELIVERY_DELIVERABLE_STATUSES = new Set(["DRAFT", "READY", "DELIVERED", "REVISION_REQUESTED", "ACCEPTED", "ARCHIVED"]);
+// Canonical status set (includes client-review states) so a valid in-review deliverable
+// can be read/saved without a 400 caused solely by enum drift between controller and runtime.
+const AI_DELIVERY_DELIVERABLE_STATUSES = new Set<string>(CANONICAL_AI_DELIVERY_DELIVERABLE_STATUSES);
 const AI_DELIVERY_DELIVERABLE_REVIEW_STATUSES = new Set(["NOT_STARTED", "ADMIN_REVIEW", "CHANGES_REQUESTED", "APPROVED", "ARCHIVED"]);
 const ACTIVITY_AUDIT_LOG_LIMIT_DEFAULT = 50;
 const ACTIVITY_AUDIT_LOG_LIMIT_MAX = 100;
