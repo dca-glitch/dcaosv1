@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { normalizeWordPressSlug, WORDPRESS_SLUG_MAX_LENGTH } from "./wordpress-slug-policy";
 
-describe("wordpress-slug-policy (G289)", () => {
+describe("wordpress-slug-policy (G289 / G542)", () => {
   it("normalizes titles into lowercase hyphenated slugs", () => {
     assert.equal(
       normalizeWordPressSlug("  Puriva SEO Article: Recovery & Wellness  "),
@@ -54,5 +54,19 @@ describe("wordpress-slug-policy (G289)", () => {
 
   it("returns null for non-string typed input cast through any", () => {
     assert.equal(normalizeWordPressSlug(42 as unknown as string), null);
+  });
+
+  it("G542 converts underscores to hyphens", () => {
+    assert.equal(normalizeWordPressSlug("puriva_seo_article"), "puriva-seo-article");
+    assert.equal(normalizeWordPressSlug("mixed_under-score__run"), "mixed-under-score-run");
+  });
+
+  it("G542 returns null for emoji-only or CJK-only titles after strip", () => {
+    assert.equal(normalizeWordPressSlug("🔥🔥🔥"), null);
+    assert.equal(normalizeWordPressSlug("日本語タイトル"), null);
+  });
+
+  it("G542 preserves ascii when mixed with emoji", () => {
+    assert.equal(normalizeWordPressSlug("Puriva 🔥 Launch"), "puriva-launch");
   });
 });

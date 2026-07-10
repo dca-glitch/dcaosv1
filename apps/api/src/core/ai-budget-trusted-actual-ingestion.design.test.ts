@@ -3,12 +3,66 @@ import assert from "node:assert/strict";
 import { AI_BUDGET_REPORTING_CONTRACT_VERSION } from "./ai-budget-reporting.contract";
 import {
   AI_BUDGET_TRUSTED_ACTUAL_INGESTION_VERSION,
+  assertActualCostUsdTrustedSourceInvariant,
+  buildAiBudgetReconciliationVarianceDesign,
   getAiBudgetInvoiceVarianceDesign,
   getAiBudgetTrustedActualIngestionDesign,
   resolveTrustedActualCostUsd
 } from "./ai-budget-trusted-actual-ingestion.design";
 
 describe("ai-budget-trusted-actual-ingestion.design", () => {
+  it("G613: actualCostUsd trusted-source invariant rejects estimates and caps", () => {
+    assert.equal(
+      assertActualCostUsdTrustedSourceInvariant({
+        actualCostUsd: null,
+        estimatedCostUsd: 0.15
+      }).actualCostUsd,
+      null
+    );
+    assert.equal(
+      assertActualCostUsdTrustedSourceInvariant({
+        actualCostUsd: 0.15,
+        estimatedCostUsd: 0.15,
+        sourceKind: "estimated_cost_usd"
+      }).ok,
+      false
+    );
+    assert.equal(
+      assertActualCostUsdTrustedSourceInvariant({
+        actualCostUsd: 0.3,
+        sourceKind: "route_max_cost_cap"
+      }).ok,
+      false
+    );
+    assert.equal(
+      assertActualCostUsdTrustedSourceInvariant({
+        actualCostUsd: 0.08,
+        sourceKind: "provider_usage_api_confirmed_cost"
+      }).ok,
+      true
+    );
+    assert.equal(
+      assertActualCostUsdTrustedSourceInvariant({
+        actualCostUsd: 0.08,
+        sourceKind: "finance_lite_client_invoice"
+      }).ok,
+      false
+    );
+  });
+
+  it("G619: reconciliation variance keeps invoice slots null", () => {
+    const variance = buildAiBudgetReconciliationVarianceDesign({
+      estimateTotalUsd: 0.6,
+      trustedActualTotalUsd: 0.08
+    });
+    assert.equal(variance.varianceEstimateVsActualUsd, -0.52);
+    assert.equal(variance.varianceInvoiceVsActualUsd, null);
+    assert.equal(variance.invoiceTotalUsd, null);
+    assert.equal(variance.invoiceStatus, "not_integrated");
+    assert.equal(variance.realInvoiceOverclaimForbidden, true);
+    assert.equal(variance.estimateIsNotInvoice, true);
+  });
+
   it("documents trusted-source-only actualCostUsd null policy", () => {
     const design = getAiBudgetTrustedActualIngestionDesign();
 

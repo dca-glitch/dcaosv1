@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
+  assertPurivaAdminReviewRequired,
+  assertPurivaPaidAdsOutOfScope,
+  assertPurivaWebsiteSocialOnlyScope,
   CLIENT_OPERATING_PACK_CONFIGS,
   CLIENT_OPERATING_PACK_MODULE_ENTITLEMENT_CONFIG,
   CLIENT_OPERATING_PACK_SAAS_READINESS,
@@ -9,12 +12,21 @@ import {
   getClientOperatingPackConfig,
   getClientVisiblePackModuleKeys,
   getLaunchRequiredPackModuleKeys,
+  getPackModuleEntitlement,
+  getPackModuleEntitlementStatus,
+  getPackModuleVisibility,
   getPurivaAllowedContentChannels,
   getPurivaWorkflowTemplate,
   isClientVisiblePackSurface,
+  isPackModuleEntitledActive,
   isPurivaAdminReviewRequired,
   isPurivaPaidAdsOutOfScope,
+  isPurivaWebsiteSocialOnlyScope,
+  isPurivaWorkflowTemplateCatalogOnly,
+  listAdminOnlyPackModuleKeys,
   listClientOperatingPackKeys,
+  listPackModuleEntitlementKeys,
+  listPurivaCatalogOnlyWorkflowTemplates,
   listPurivaWorkflowTemplateKeys,
   PURIVA_COMPLIANCE_PROFILE_V1,
   PURIVA_MODULE_ENTITLEMENTS,
@@ -49,6 +61,7 @@ const EXPECTED_WORKFLOW_KEYS = [
   "puriva_market_intelligence_v1",
   "puriva_revenue_insight_v1",
   "puriva_pod_listing_v1",
+  "puriva_feedback_learning_v1",
   "puriva_article_image_package_v1"
 ] as const;
 
@@ -63,6 +76,12 @@ const EXPECTED_LAUNCH_REQUIRED_KEYS: readonly ClientOperatingPackModuleKey[] = [
   "ga-gsc",
   "notifications",
   "market-intelligence"
+];
+
+const EXPECTED_CLIENT_VISIBLE_KEYS: readonly ClientOperatingPackModuleKey[] = [
+  "monthly-reports",
+  "client-portal",
+  "image-generation"
 ];
 
 describe("client-operating-packs", () => {
@@ -93,7 +112,7 @@ describe("client-operating-packs", () => {
     assert.ok(PURIVA_COMPLIANCE_PROFILE_V1.requiredBoundaries.some((boundary) => /paid ads/i.test(boundary)));
   });
 
-  it("G352: validates Puriva compliance profile (medical, channels, paid ads, admin review)", () => {
+  it("G352/G591: validates Puriva compliance profile (medical, channels, paid ads, admin review)", () => {
     const valid = validatePurivaComplianceProfile(PURIVA_COMPLIANCE_PROFILE_V1);
     assert.equal(valid.ok, true);
     assert.deepEqual(valid.errors, []);
@@ -118,15 +137,30 @@ describe("client-operating-packs", () => {
     });
     assert.equal(paidAdsEnabled.ok, false);
     assert.ok(paidAdsEnabled.errors.some((error) => /paidAdsScope/i.test(error)));
+
+    const wrongProfileKey = validatePurivaComplianceProfile({
+      ...PURIVA_COMPLIANCE_PROFILE_V1,
+      profileKey: "other_profile" as unknown as typeof PURIVA_COMPLIANCE_PROFILE_V1.profileKey
+    });
+    assert.equal(wrongProfileKey.ok, false);
+    assert.ok(wrongProfileKey.errors.some((error) => /profileKey/i.test(error)));
+
+    const missingMedicalRisk = validatePurivaComplianceProfile({
+      ...PURIVA_COMPLIANCE_PROFILE_V1,
+      riskClasses: ["before_after_results"] as unknown as typeof PURIVA_COMPLIANCE_PROFILE_V1.riskClasses
+    });
+    assert.equal(missingMedicalRisk.ok, false);
+    assert.ok(missingMedicalRisk.errors.some((error) => /medical_aesthetic_claims/i.test(error)));
   });
 
-  it("G350/G351: maps Puriva module entitlement matrix without enforcing them", () => {
+  it("G350/G351/G589: maps Puriva module entitlement matrix without enforcing them", () => {
     const entitlements = CLIENT_OPERATING_PACK_MODULE_ENTITLEMENT_CONFIG.puriva;
     assert.equal(entitlements, PURIVA_MODULE_ENTITLEMENTS);
     assert.deepEqual(
       entitlements.map((entry) => entry.moduleKey),
       [...EXPECTED_MODULE_KEYS]
     );
+    assert.deepEqual(listPackModuleEntitlementKeys("puriva"), [...EXPECTED_MODULE_KEYS]);
 
     const byModule = new Map(entitlements.map((entry) => [entry.moduleKey, entry]));
 
@@ -155,9 +189,19 @@ describe("client-operating-packs", () => {
     assert.equal(getLaunchRequiredPackModuleKeys("puriva").includes("revenue-hub"), false);
     assert.equal(getLaunchRequiredPackModuleKeys("puriva").includes("pod-toolkit"), false);
     assert.equal(getLaunchRequiredPackModuleKeys("puriva").includes("finance-lite"), false);
+
+    assert.equal(getPackModuleEntitlement("puriva", "client-portal")?.status, "enabled");
+    assert.equal(getPackModuleEntitlementStatus("puriva", "ga-gsc"), "future");
+    assert.equal(getPackModuleEntitlementStatus("puriva", "monthly-reports"), "partial");
+    assert.equal(isPackModuleEntitledActive("puriva", "ai-seo"), true);
+    assert.equal(isPackModuleEntitledActive("puriva", "wordpress-draft"), true);
+    assert.equal(isPackModuleEntitledActive("puriva", "ga-gsc"), false);
+    assert.equal(isPackModuleEntitledActive("puriva", "revenue-hub"), false);
+    assert.equal(getPackModuleEntitlement("puriva", "core")?.clientVisibleSurface, false);
+    assert.equal(getPackModuleEntitlement("puriva", "image-generation")?.clientVisibleSurface, true);
   });
 
-  it("G351: guards client-visible pack surfaces to entitled active modules", () => {
+  it("G351/G590: guards client-visible pack surfaces to entitled active modules", () => {
     assert.equal(
       isClientVisiblePackSurface({ status: "enabled", clientVisibleSurface: true }),
       true
@@ -185,23 +229,74 @@ describe("client-operating-packs", () => {
       visible.map((entry) => entry.moduleKey),
       visibleKeys
     );
-    assert.deepEqual(visibleKeys, ["monthly-reports", "client-portal", "image-generation"]);
+    assert.deepEqual(visibleKeys, [...EXPECTED_CLIENT_VISIBLE_KEYS]);
     assert.equal(visibleKeys.includes("ga-gsc"), false);
     assert.equal(visibleKeys.includes("notifications"), false);
     assert.equal(visibleKeys.includes("finance-lite"), false);
     assert.equal(visibleKeys.includes("revenue-hub"), false);
     assert.equal(visibleKeys.includes("core"), false);
+
+    const portalVisibility = getPackModuleVisibility("puriva", "client-portal");
+    assert.deepEqual(portalVisibility, { entitledActive: true, clientVisible: true });
+    const gaVisibility = getPackModuleVisibility("puriva", "ga-gsc");
+    assert.deepEqual(gaVisibility, { entitledActive: false, clientVisible: false });
+    const financeVisibility = getPackModuleVisibility("puriva", "finance-lite");
+    assert.deepEqual(financeVisibility, { entitledActive: true, clientVisible: false });
+
+    const adminOnly = listAdminOnlyPackModuleKeys("puriva");
+    assert.equal(adminOnly.includes("client-portal"), false);
+    assert.equal(adminOnly.includes("monthly-reports"), false);
+    assert.equal(adminOnly.includes("image-generation"), false);
+    assert.ok(adminOnly.includes("core"));
+    assert.ok(adminOnly.includes("ai-workflow"));
+    assert.ok(adminOnly.includes("finance-lite"));
+    assert.equal(adminOnly.length + visibleKeys.length, EXPECTED_MODULE_KEYS.length);
   });
 
-  it("G353/G354: website/social allowed; paid ads out of scope; admin review required", () => {
+  it("G353/G354/G592-G594: website/social allowed; paid ads out of scope; admin review required", () => {
     assert.deepEqual([...getPurivaAllowedContentChannels()], ["website", "social"]);
+    assert.equal(isPurivaWebsiteSocialOnlyScope(), true);
     assert.equal(isPurivaPaidAdsOutOfScope(), true);
     assert.equal(isPurivaAdminReviewRequired(), true);
     assert.equal(PURIVA_OPERATING_PACK_V1.complianceProfile.paidAdsScope, "future_out_of_scope");
     assert.equal(PURIVA_OPERATING_PACK_V1.complianceProfile.adminReviewRequired, true);
+
+    const channelsOk = assertPurivaWebsiteSocialOnlyScope();
+    assert.equal(channelsOk.ok, true);
+    assert.deepEqual(channelsOk.errors, []);
+
+    const channelsBad = assertPurivaWebsiteSocialOnlyScope({
+      ...PURIVA_COMPLIANCE_PROFILE_V1,
+      contentChannels: ["website"] as unknown as typeof PURIVA_COMPLIANCE_PROFILE_V1.contentChannels
+    });
+    assert.equal(channelsBad.ok, false);
+    assert.ok(channelsBad.errors.some((error) => /website and social/i.test(error)));
+
+    const paidAdsOk = assertPurivaPaidAdsOutOfScope();
+    assert.equal(paidAdsOk.ok, true);
+    const paidAdsBad = assertPurivaPaidAdsOutOfScope({
+      ...PURIVA_COMPLIANCE_PROFILE_V1,
+      paidAdsScope: "enabled" as unknown as typeof PURIVA_COMPLIANCE_PROFILE_V1.paidAdsScope,
+      requiredBoundaries: ["Content stays educational and consultative."]
+    });
+    assert.equal(paidAdsBad.ok, false);
+    assert.ok(paidAdsBad.errors.some((error) => /paidAdsScope/i.test(error)));
+    assert.ok(paidAdsBad.errors.some((error) => /paid ads/i.test(error)));
+
+    const adminOk = assertPurivaAdminReviewRequired();
+    assert.equal(adminOk.ok, true);
+    const adminBad = assertPurivaAdminReviewRequired({
+      ...PURIVA_COMPLIANCE_PROFILE_V1,
+      medicalContent: false,
+      adminReviewRequired: false,
+      requiredHumanReview: false
+    } as unknown as typeof PURIVA_COMPLIANCE_PROFILE_V1);
+    assert.equal(adminBad.ok, false);
+    assert.ok(adminBad.errors.some((error) => /medicalContent/i.test(error)));
+    assert.ok(adminBad.errors.some((error) => /admin review/i.test(error)));
   });
 
-  it("G355-G359: catalogs workflow templates without execution hooks", () => {
+  it("G355-G359/G595: catalogs workflow templates without execution hooks", () => {
     assert.deepEqual(
       PURIVA_WORKFLOW_TEMPLATE_CATALOG.map((template) => template.templateKey),
       [...EXPECTED_WORKFLOW_KEYS]
@@ -219,12 +314,15 @@ describe("client-operating-packs", () => {
       assert.equal(template.executionEnabled, false);
       assert.equal(template.liveProviderCalls, false);
       assert.equal(template.executionAdapter, null);
+      assert.equal(isPurivaWorkflowTemplateCatalogOnly(template), true);
       assert.ok(template.steps.length > 0);
       assert.deepEqual(
         template.steps.map((step) => step.order),
         [...template.steps].sort((left, right) => left.order - right.order).map((step) => step.order)
       );
     }
+
+    assert.equal(listPurivaCatalogOnlyWorkflowTemplates().length, PURIVA_WORKFLOW_TEMPLATE_CATALOG.length);
 
     for (const key of PURIVA_PRIMARY_WORKFLOW_TEMPLATE_KEYS) {
       const template = getPurivaWorkflowTemplate(key);
@@ -261,12 +359,22 @@ describe("client-operating-packs", () => {
     const pod = getPurivaWorkflowTemplate("puriva_pod_listing_v1");
     assert.ok(pod);
 
+    const feedbackLearning = getPurivaWorkflowTemplate("puriva_feedback_learning_v1");
+    assert.ok(feedbackLearning);
+    assert.equal(feedbackLearning?.executionEnabled, false);
+    assert.ok(feedbackLearning?.rules.some((rule) => /admin-only/i.test(rule)));
+    assert.ok(feedbackLearning?.rules.some((rule) => /cannot be weakened/i.test(rule)));
+    assert.ok(
+      feedbackLearning?.steps.some((step) => step.key === "admin_learning_note_review" && step.approvalGate)
+    );
+    assert.equal(feedbackLearning?.steps.some((step) => step.clientVisible), false);
+
     const articleImage = getPurivaWorkflowTemplate("puriva_article_image_package_v1");
     assert.ok(articleImage?.steps.some((step) => step.key === "client_article_approval" && step.clientVisible));
     assert.ok(articleImage?.rules.some((rule) => /Reject reason required/i.test(rule)));
   });
 
-  it("G360: assembles Puriva as first pack config with saas-later truth", () => {
+  it("G360/G598: assembles Puriva as first pack config with saas-later truth", () => {
     assert.equal(PURIVA_OPERATING_PACK_V1.version, CLIENT_OPERATING_PACKS_VERSION);
     assert.equal(PURIVA_OPERATING_PACK_V1.packKey, "puriva");
     assert.equal(PURIVA_OPERATING_PACK_V1.firstPackProof, true);
@@ -277,6 +385,8 @@ describe("client-operating-packs", () => {
     assert.equal(CLIENT_OPERATING_PACK_SAAS_READINESS.agencyOsFirst, true);
     assert.equal(CLIENT_OPERATING_PACK_SAAS_READINESS.multiTenantSaasReady, false);
     assert.equal(CLIENT_OPERATING_PACK_CONFIGS.puriva, PURIVA_OPERATING_PACK_V1);
+    assert.match(CLIENT_OPERATING_PACK_SAAS_READINESS.notes, /agency delivery/i);
+    assert.match(CLIENT_OPERATING_PACK_SAAS_READINESS.notes, /do not claim SaaS/i);
 
     const complianceCheck = validatePurivaComplianceProfile(PURIVA_OPERATING_PACK_V1.complianceProfile);
     assert.equal(complianceCheck.ok, true);

@@ -1,6 +1,11 @@
 import { createPrismaClient } from "../../../../packages/data/src/client";
 import type { AuthResolvedSessionContext } from "../auth/types";
 import { notifyClientUsers, notifyDcaTeam } from "../services/email-notifications.service";
+import { mapApprovalSignalToNotification } from "./approval-notification-mapping";
+import {
+  serializeClientApprovalDetail,
+  serializeClientApprovalPendingItem
+} from "./client-approval-serializer";
 import { evaluateClientPortalApprovalAction } from "./client-portal-approval-policy";
 
 const prisma = createPrismaClient();
@@ -91,7 +96,7 @@ async function getDeliverableForClientApproval(tenantId: string, deliverableId: 
   });
 }
 
-/** Client-safe pending-approval list row (G201). Internal workflow/storage/cost fields are never included. */
+/** Client-safe pending-approval list row (G201 / G584). Internal workflow/storage/cost fields are never included. */
 export function toClientPortalPendingApprovalSummary(deliverable: {
   id: string;
   title: string;
@@ -104,25 +109,13 @@ export function toClientPortalPendingApprovalSummary(deliverable: {
     client: { id: string; name: string } | null;
   };
 }) {
-  return {
-    id: deliverable.id,
-    title: deliverable.title,
-    status: deliverable.status,
-    projectId: deliverable.aiDeliveryProject.id,
-    projectName: deliverable.aiDeliveryProject.name,
-    clientId: deliverable.aiDeliveryProject.clientId,
-    clientName: deliverable.aiDeliveryProject.client?.name ?? null,
-    createdAt:
-      deliverable.createdAt instanceof Date
-        ? deliverable.createdAt.toISOString()
-        : deliverable.createdAt
-  };
+  return serializeClientApprovalPendingItem(deliverable);
 }
 
 /** @deprecated Use toClientPortalPendingApprovalSummary */
 const toPendingApprovalSummary = toClientPortalPendingApprovalSummary;
 
-/** Client-safe approval detail payload (G201). Omits storageKey, provider, workflow, cost, audit, admin notes. */
+/** Client-safe approval detail payload (G201 / G584). Omits storageKey, provider, workflow, cost, audit, admin notes. */
 export function toClientPortalApprovalDeliverableSummary(input: {
   id: string;
   title: string;
@@ -145,34 +138,13 @@ export function toClientPortalApprovalDeliverableSummary(input: {
     approvalStatus: string;
     rejectionReason: string | null;
   }>;
+  revisionRoundAvailable?: boolean;
 }) {
-  return {
-    id: input.id,
-    title: input.title,
-    description: input.description,
-    tags: input.tags,
-    category: input.category,
-    scheduledPublishAt:
-      input.scheduledPublishAt instanceof Date
-        ? input.scheduledPublishAt.toISOString()
-        : (input.scheduledPublishAt ?? null),
-    status: input.status,
-    bodyContent: input.bodyContent,
-    projectId: input.projectId,
-    projectName: input.projectName,
-    clientId: input.clientId,
-    clientName: input.clientName,
-    createdAt:
-      input.createdAt instanceof Date ? input.createdAt.toISOString() : input.createdAt,
-    images: input.images.map((image) => ({
-      id: image.id,
-      title: image.title,
-      altText: image.altText,
-      imageUrl: image.imageUrl,
-      approvalStatus: image.approvalStatus,
-      rejectionReason: image.rejectionReason
-    }))
-  };
+  const detail = serializeClientApprovalDetail(input);
+  // Preserve prior response shape for existing clients (omit soft design hint until UI opts in).
+  const { revisionRoundAvailable: _revisionRoundAvailable, ...legacyShape } = detail;
+  void _revisionRoundAvailable;
+  return legacyShape;
 }
 
 export async function listClientPortalPendingApprovals(
@@ -334,11 +306,17 @@ export async function approveClientPortalDeliverableImage(
   if (!tenantId || !isClientPortalApprovalUser(authSession)) return null;
 
   const deliverable = await getDeliverableForClientApproval(tenantId, deliverableId);
-  if (!deliverable || deliverable.status !== "PENDING_CLIENT_REVIEW") return null;
+  if (!deliverable) return null;
   if (!(await assertClientPortalApprovalAccess(authSession, deliverable.aiDeliveryProject.clientId))) return null;
 
-  const imageExists = deliverable.contentDraft?.articleImages.some((image) => image.id === imageId);
-  if (!imageExists) return null;
+  const imageIds = (deliverable.contentDraft?.articleImages ?? []).map((image) => image.id);
+  const policy = evaluateClientPortalApprovalAction({
+    action: "approve_image",
+    deliverableStatus: deliverable.status,
+    imageIds,
+    imageId
+  });
+  if (!policy.ok) return null;
 
   const existing = await getImageApprovalRow(tenantId, deliverableId, imageId);
   const now = new Date();
@@ -508,10 +486,11 @@ export async function approveClientPortalDeliverable(
 
   const clientName = deliverable.aiDeliveryProject.client?.name ?? "Client";
   if (policy.notifyAdmin) {
+    const mapped = mapApprovalSignalToNotification("content_approved_by_client");
     await notifyDcaTeam(
       tenantId,
       `[${clientName} Approval] ${updated.title}`,
-      policy.notificationKind ?? "AI_DELIVERY_APPROVED",
+      policy.notificationKind ?? mapped.schemaKind ?? "AI_DELIVERY_APPROVED",
       updated.id
     );
   }
@@ -547,6 +526,15 @@ export async function rejectClientPortalDeliverable(
   });
 
   if (!policy.ok) {
+    if (policy.code === "REVISION_ROUND_EXHAUSTED") {
+      return { error: "REVISION_ROUND_EXHAUSTED" as const };
+    }
+    if (policy.code === "REASON_REQUIRED") {
+      return { error: "REASON_REQUIRED" as const };
+    }
+    if (policy.code === "NOT_PENDING_REVIEW") {
+      return { error: "NOT_PENDING_REVIEW" as const };
+    }
     return null;
   }
 
@@ -564,10 +552,11 @@ export async function rejectClientPortalDeliverable(
   const clientName = deliverable.aiDeliveryProject.client?.name ?? "Client";
   const reasonPreview = reason.length > 120 ? `${reason.slice(0, 117)}...` : reason;
   if (policy.notifyAdmin) {
+    const mapped = mapApprovalSignalToNotification("content_changes_requested_by_client");
     await notifyDcaTeam(
       tenantId,
       `[${clientName} Rejection] ${updated.title} — ${reasonPreview}`,
-      policy.notificationKind ?? "AI_DELIVERY_REVIEW_REQUEST",
+      policy.notificationKind ?? mapped.schemaKind ?? "AI_DELIVERY_REVIEW_REQUEST",
       updated.id,
       `Client rejection reason: ${reason}`
     );

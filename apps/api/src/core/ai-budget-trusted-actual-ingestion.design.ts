@@ -1,5 +1,5 @@
 /**
- * Trusted actual AI cost ingestion design (G389–G408).
+ * Trusted actual AI cost ingestion design (G389–G408 + G613–G619).
  * Design-only: no live provider calls, no invoice ingestion, no Finance Lite posting.
  */
 
@@ -121,4 +121,89 @@ export function resolveTrustedActualCostUsd(input: {
     return null;
   }
   return value;
+}
+
+/**
+ * G613 invariant: never promote an estimate (or rejected source) into actualCostUsd.
+ * Returns the trusted actual when present; otherwise null — never the estimate.
+ */
+export function assertActualCostUsdTrustedSourceInvariant(input: {
+  actualCostUsd: number | null | undefined;
+  estimatedCostUsd?: number | null;
+  sourceKind?: AiBudgetTrustedActualSourceKind | AiBudgetRejectedActualSourceKind | null;
+}): {
+  ok: boolean;
+  actualCostUsd: number | null;
+  reason: string;
+} {
+  const resolved = resolveTrustedActualCostUsd({
+    trustedActualCostUsd: input.actualCostUsd,
+    estimatedCostUsd: input.estimatedCostUsd,
+    sourceKind: input.sourceKind
+  });
+
+  if (input.actualCostUsd == null) {
+    return {
+      ok: true,
+      actualCostUsd: null,
+      reason: "actualCostUsd remains null until a trusted provider cost source is integrated."
+    };
+  }
+
+  if (resolved == null) {
+    return {
+      ok: false,
+      actualCostUsd: null,
+      reason:
+        "Rejected or untrusted source must not populate actualCostUsd; leave null (do not fall back to estimate)."
+    };
+  }
+
+  if (
+    input.estimatedCostUsd != null &&
+    Number(input.estimatedCostUsd) === resolved &&
+    input.sourceKind &&
+    (getAiBudgetTrustedActualIngestionDesign().rejectedSources as readonly string[]).includes(
+      input.sourceKind
+    )
+  ) {
+    return {
+      ok: false,
+      actualCostUsd: null,
+      reason: "Estimate-equal values from rejected sources are not trusted actuals."
+    };
+  }
+
+  return {
+    ok: true,
+    actualCostUsd: resolved,
+    reason: "Trusted actual accepted from an approved source kind."
+  };
+}
+
+/**
+ * G619: estimate-vs-actual variance only; invoice variance stays deferred/null.
+ */
+export function buildAiBudgetReconciliationVarianceDesign(input: {
+  estimateTotalUsd: number;
+  trustedActualTotalUsd: number;
+}): {
+  varianceEstimateVsActualUsd: number;
+  varianceInvoiceVsActualUsd: null;
+  invoiceTotalUsd: null;
+  invoiceStatus: "not_integrated";
+  realInvoiceOverclaimForbidden: true;
+  estimateIsNotInvoice: true;
+} {
+  const invoice = getAiBudgetInvoiceVarianceDesign();
+  return {
+    varianceEstimateVsActualUsd: Number(
+      (input.trustedActualTotalUsd - input.estimateTotalUsd).toFixed(4)
+    ),
+    varianceInvoiceVsActualUsd: invoice.varianceInvoiceVsActualUsd,
+    invoiceTotalUsd: invoice.invoiceTotalUsd,
+    invoiceStatus: invoice.invoiceStatus,
+    realInvoiceOverclaimForbidden: invoice.realInvoiceOverclaimForbidden,
+    estimateIsNotInvoice: true
+  };
 }

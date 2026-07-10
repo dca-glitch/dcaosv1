@@ -11,8 +11,9 @@ Related:
 - [`../operator/ENV_READINESS_INVENTORY.md`](../operator/ENV_READINESS_INVENTORY.md)
 - [`../operator/deferred-scope-register.md`](../operator/deferred-scope-register.md)
 - [`PURIVA_LAUNCH_GATE.md`](./PURIVA_LAUNCH_GATE.md) (launch dependency tracker — create/approve separately)
-- Code seam: `apps/api/src/storage/private-storage.service.ts`, `apps/api/src/storage/r2.service.ts`, `apps/api/src/storage/r2.config.ts`, `apps/api/src/storage/r2-proof-stage.ts`, `apps/api/src/storage/private-storage-proof-intent.ts`, `apps/api/src/storage/client-safe-storage-url-policy.ts`, `apps/api/src/storage/r2-cleanup-proof-plan.ts`, `apps/api/src/storage/r2-partial-config-diagnostics.ts`, `apps/api/src/storage/storage-key-boundary.ts`, `apps/api/src/storage/admin-vs-client-storage-field-policy.ts`, `apps/api/src/storage/storage-error-redaction.ts`
+- Code seam: `apps/api/src/storage/private-storage.service.ts`, `apps/api/src/storage/r2.service.ts`, `apps/api/src/storage/r2.config.ts`, `apps/api/src/storage/r2-proof-stage.ts`, `apps/api/src/storage/r2-proof-contracts.ts`, `apps/api/src/storage/r2-target-environment-proof-plan.ts`, `apps/api/src/storage/r2-no-io-readiness-invariant.ts`, `apps/api/src/storage/private-storage-proof-intent.ts`, `apps/api/src/storage/client-safe-storage-url-policy.ts`, `apps/api/src/storage/r2-cleanup-proof-plan.ts`, `apps/api/src/storage/r2-partial-config-diagnostics.ts`, `apps/api/src/storage/storage-key-boundary.ts`, `apps/api/src/storage/admin-vs-client-storage-field-policy.ts`, `apps/api/src/storage/storage-error-redaction.ts`
 - Closeout: [`STORAGE_R2_G229_G248_CLOSEOUT.md`](./STORAGE_R2_G229_G248_CLOSEOUT.md)
+- Closeout: [`STORAGE_R2_G469_G480_CLOSEOUT.md`](./STORAGE_R2_G469_G480_CLOSEOUT.md)
 
 ---
 
@@ -85,7 +86,9 @@ Never commit, print, or log secret values.
 
 **Hardening (G229–G244):** exhaustive proof-stage edges, redacted summary snapshots, disabled/partial diagnostics, no-IO-only label invariant, cleanup plan invariant, proof-intent invalid input rejection, client-safe URL truth labels, serializer no-leak tests, admin-vs-client field policy, and storage error redaction — all **no live R2 IO**.
 
-**Current truth:** this runbook has not recorded a successful real R2 bucket proof for DCA OS Lite. The current automated coverage is config-shape, disabled/missing-config guards, secret non-serialization, proof-stage labeling, cleanup **plan** constants, and client-safe serializer boundaries only. Full env → `configured_shape_ok` is **not** live-proven.
+**Hardening (G469–G477, local no-IO):** target-environment proof **plan freeze** (`r2-target-environment-proof-plan.ts`), consolidated proof contracts barrel (`r2-proof-contracts.ts`), no-IO readiness invariant, partial-diagnostics + redacted-summary snapshot expansions, storageKey boundary consolidation, error-redaction expansion, admin/client field-policy expansion, client-safe URL truth-label matrix — all **no live R2 IO**. Plan freeze does **not** satisfy §3.
+
+**Current truth:** this runbook has not recorded a successful real R2 bucket proof for DCA OS Lite. The current automated coverage is config-shape, disabled/missing-config guards, secret non-serialization, proof-stage labeling, cleanup **plan** constants, target-environment **plan freeze**, and client-safe serializer boundaries only. Full env → `configured_shape_ok` is **not** live-proven.
 
 ### 1b. Boolean-only presence check (no secret values ever printed)
 
@@ -176,7 +179,9 @@ Pass when:
 
 **Do not run against production without an explicit owner-approved block naming the target environment and bucket.**
 
-**G246 refresh (2026-07-10):** Local no-IO foundations for G229–G244 are complete (proof-stage edges, redacted snapshots, disabled/partial diagnostics, cleanup plan invariants, client-safe URL/serializer boundaries, admin-vs-client field policy, error redaction). This section remains the **target-environment** checklist only — completing local unit tests does **not** satisfy §3. Owner approval is still required before any live bucket IO.
+**G246 / G469 refresh (2026-07-10):** Local no-IO foundations for G229–G244 and G469–G477 are complete (proof-stage edges, redacted/partial snapshots, cleanup + **target-environment plan freeze**, no-IO readiness invariant, client-safe URL/serializer boundaries, admin-vs-client field policy, error redaction). This section remains the **target-environment** checklist only — plan freeze and local unit tests do **not** satisfy §3. Owner approval is still required before any live bucket IO.
+
+**Plan freeze helper:** `buildR2TargetEnvironmentProofPlan()` records ordered pre-flight steps and references required `R2_*` **key names** + cleanup plan keys. Building the plan never performs bucket IO (`liveIoPerformed: false`, `claimsLiveBucketProof: false`).
 
 Prerequisites:
 
@@ -218,11 +223,16 @@ Signed download URLs are **temporary** (300s default). Clients must request a fr
 
 | Gate | Test file | What it proves |
 |---|---|---|
-| G153 / G240 | `deliverable-serializer-storage-key-boundary.test.ts` | Client portal deliverable summary keeps `exportUrl`, never emits `storageKey` |
-| G154 / G241 | `image-asset-serializer-storage-key-boundary.test.ts` | Image client-safe variants + article-image boundary mirror: `hasDocument` only, no `storageKey` |
-| G155 / G242 | `monthly-report-export-url-storage-key-boundary.test.ts` | Monthly report `exportUrl` allowed; `storageKey` → `hasDocument` only |
-| G239 | `storage-key-boundary.test.ts` | Shared leak helper covers `storageKey` + `documentStorageKey` |
-| G243 | `admin-vs-client-storage-field-policy.test.ts` | Admin may see storage keys; client must not |
+| G153 / G240 | `deliverable-serializer-storage-key-boundary.test.ts` | Client portal deliverable summary keeps `exportUrl`, never emits `storageKey` (Lane 2) |
+| G154 / G241 | `image-asset-serializer-storage-key-boundary.test.ts` | Image client-safe variants + article-image boundary mirror: `hasDocument` only, no `storageKey` (Lane 2) |
+| G155 / G242 | `monthly-report-export-url-storage-key-boundary.test.ts` | Monthly report `exportUrl` allowed; `storageKey` → `hasDocument` only (Lane 2) |
+| G239 / G474 | `storage-key-boundary.test.ts` | Shared leak helper covers `storageKey` + `documentStorageKey` + nested paths |
+| G243 / G476 | `admin-vs-client-storage-field-policy.test.ts` | Admin may see storage keys; client must not (expanded admin-only fields) |
+| G469 | `r2-target-environment-proof-plan.test.ts` | Target-environment proof plan freeze; no live IO claimed |
+| G470 | `r2-proof-contracts.test.ts` | Consolidated proof contracts barrel surface |
+| G471 | `r2-no-io-readiness-invariant.test.ts` | Aggregated no-IO readiness invariant |
+| G477 | `client-safe-storage-url-policy.test.ts` | Truth-label matrix + payload snapshot |
+| G478 PARTIAL | `serializer-storage-boundary-contract.test.ts` | Lane-1 contract models for deliverable/image/monthly shapes (serializer files remain Lane 2) |
 
 There is **no local filesystem fallback**. Disabled mode is intentional and safe: guarded writes fail closed without persisting storage references.
 
@@ -286,25 +296,29 @@ npm.cmd run smoke:client-portal-local
 npm.cmd run smoke:puriva-client-portal-boundary:local
 ```
 
-Focused storage helper unit tests (no live R2 IO) — preferred single command (G247):
+Focused storage helper unit tests (no live R2 IO) — preferred single command (G247 / G480):
 
 ```powershell
 cd C:\dcaosv1
 node --import tsx --test apps/api/src/storage/*.test.ts
 ```
 
-Equivalent per-file commands (same suite):
+Equivalent per-file commands (same suite; G469–G478 additions included):
 
 ```powershell
 cd C:\dcaosv1\apps\api
 node --import tsx --test src/storage/r2-proof-stage.test.ts
 node --import tsx --test src/storage/r2.config.test.ts
+node --import tsx --test src/storage/r2-proof-contracts.test.ts
+node --import tsx --test src/storage/r2-target-environment-proof-plan.test.ts
+node --import tsx --test src/storage/r2-no-io-readiness-invariant.test.ts
 node --import tsx --test src/storage/private-storage-proof-intent.test.ts
 node --import tsx --test src/storage/client-safe-storage-url-policy.test.ts
 node --import tsx --test src/storage/r2-cleanup-proof-plan.test.ts
 node --import tsx --test src/storage/deliverable-serializer-storage-key-boundary.test.ts
 node --import tsx --test src/storage/image-asset-serializer-storage-key-boundary.test.ts
 node --import tsx --test src/storage/monthly-report-export-url-storage-key-boundary.test.ts
+node --import tsx --test src/storage/serializer-storage-boundary-contract.test.ts
 node --import tsx --test src/storage/storage-key-boundary.test.ts
 node --import tsx --test src/storage/admin-vs-client-storage-field-policy.test.ts
 node --import tsx --test src/storage/storage-error-redaction.test.ts

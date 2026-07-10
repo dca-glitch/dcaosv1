@@ -10,6 +10,8 @@ This register prevents confusion. If something is listed under **Still deferred*
 
 **G468 update (G229–G448 + G449–G468):** Deepened local/no-IO foundations and contracts across all 12 lanes (storage, notifications, analytics, WordPress, image, portal, packs, future modules, AI budget, security/operator, UI/testability, deferred/roadmap). Still **do not** move: real R2 IO, live email, live GA/GSC, live WordPress, live image provider, staging/prod live proofs, notification persistence/in-system inbox, or trusted `actualCostUsd` ingestion. Puriva Launch remains **BLOCKED**. Production remains frozen.
 
+**G708 update (G469–G707 + G708 integration):** Ultra-block consolidated local/no-IO foundations across 20 lanes (R2/storage, private delivery/download, notification taxonomy, email no-send, GA/GSC OAuth design, monthly report output, WordPress draft helpers, image compliance, Client Portal serializers, approval/revision policy, Puriva pack, future-module contracts, AI budget/routing, orchestrator local guards, security inventories, operator runbooks, UI testability, stale-claim sweep). Still **do not** move: real R2 IO, live email, live GA/GSC, live WordPress, live image provider, staging/prod live proofs, notification persistence/in-system inbox, or trusted `actualCostUsd` ingestion. Puriva Launch remains **BLOCKED**. Production remains frozen.
+
 ## Rule
 
 Deferred means: do not build, enable, deploy, or promise it as active until there is a separate approved task.
@@ -26,8 +28,8 @@ These are **not** "still deferred" long-term roadmap items. They are active bloc
 
 | Blocker | Scope | Notes |
 |---------|-------|-------|
-| GA/GSC live sync proof | Live integration | Snapshot-first locally; live OAuth/sync proof required — runbook: [`docs/runbooks/MONTHLY_REPORT_LIVE_DATA_PROOF.md`](../runbooks/MONTHLY_REPORT_LIVE_DATA_PROOF.md) |
-| R2 real-bucket proof | Live integration | G89-G93 local no-IO readiness/proof-stage/storage-key guard foundation complete; real bucket IO proof still required |
+| GA/GSC live sync proof | Live integration | Snapshot-first locally; live OAuth/sync proof required — runbook: [`docs/runbooks/MONTHLY_REPORT_LIVE_DATA_PROOF.md`](../runbooks/MONTHLY_REPORT_LIVE_DATA_PROOF.md). Config-shape / env presence is **not** “Google ready”. |
+| R2 real-bucket proof | Live integration | G89-G93 + G469-G480 local no-IO readiness/proof-stage/storage-key guard foundation complete; real bucket IO proof still required. Local disabled-safe PASS is **not** “R2 ready” / live storage proven. |
 | Live AI provider proof | Live integration | **Local COMPLETE (G77b + G79)** — controlled OpenRouter execute + COMPLETED ledger row `5d8d635c-ced0-4a14-9b33-839e1fdee508`; monthly cap aggregation now includes live `COMPLETED` rows locally; `actualCostUsd=null`; **staging/production live proof still required for launch** — runbook: [`docs/runbooks/AI_PROVIDER_LIVE_PROOF.md`](../runbooks/AI_PROVIDER_LIVE_PROOF.md) §9.18 |
 | AI Model Research | Policy gate | Separate approved research gate |
 | AI Model Policy | Policy gate | **Docs + skeleton closed (G55/G56)** — local live provider proof complete (G71f); staging/production proof still required — [`docs/ai/AI_MODEL_POLICY.md`](../ai/AI_MODEL_POLICY.md) |
@@ -41,11 +43,11 @@ These are **not** "still deferred" long-term roadmap items. They are active bloc
 
 **Puriva Launch status:** **Blocked** until the blockers above are closed with evidence. See [`G53_PRODUCTION_SAFETY_PLAN.md`](../runbooks/G53_PRODUCTION_SAFETY_PLAN.md).
 
-**Roadmap reference:** G147 created [`G147_NEXT_20_GATES.md`](./G147_NEXT_20_GATES.md) for G89-G108 planning. G227 created [`G227_NEXT_30_GATES.md`](./G227_NEXT_30_GATES.md) for G229+ after G228 closeout. G468 created [`G468_NEXT_50_GATES.md`](./G468_NEXT_50_GATES.md) for G469+ after G229–G467 closeout. None of these roadmaps authorize live proof or launch.
+**Roadmap reference:** G147 created [`G147_NEXT_20_GATES.md`](./G147_NEXT_20_GATES.md) for G89-G108 planning. G227 created [`G227_NEXT_30_GATES.md`](./G227_NEXT_30_GATES.md) for G229+ after G228 closeout. G468 created [`G468_NEXT_50_GATES.md`](./G468_NEXT_50_GATES.md) for G469+ after G229–G467 closeout. G708 created [`G708_NEXT_GATES.md`](./G708_NEXT_GATES.md) for G709+ after G469–G707 closeout. None of these roadmaps authorize live proof or launch.
 
-**G468 affirmation:** In-system user notification inbox (Client Portal + admin) remains deferred. `EmailLog` / outbox remains outbound attempt log only. Live provider sending remains deferred. Local/no-IO foundations do not satisfy staging/production launch requirements.
+**G708 affirmation:** In-system user notification inbox (Client Portal + admin) remains deferred. `EmailLog` / outbox remains outbound attempt log only. Live provider sending remains deferred. Local/no-IO foundations do not satisfy staging/production launch requirements.
 
-**Email clarification:** transactional workflow notifications (approval, handoff, delivery status) are in scope for proof; marketing email campaigns remain still-deferred.
+**Email clarification:** transactional workflow notifications (approval, handoff, delivery status) are in scope for proof; marketing email campaigns remain still-deferred. Do **not** label email “ready” — no-send/outbox foundation and local `SKIPPED` behavior are not live Resend proof; in-system inbox remains deferred.
 
 ---
 
@@ -100,7 +102,9 @@ Grouped for planning clarity. Items remain deferred until a separate approved bl
 | **G228 closeout** | Main-agent integration of G149–G227; local foundations only; does not authorize live proof |
 | **G229+** | See [`G227_NEXT_30_GATES.md`](./G227_NEXT_30_GATES.md) — historical plan; superseded as next-gate pointer by G468 |
 | **G468 closeout** | Main-agent integration of G229–G467 local foundations + deferred/roadmap docs; does not authorize live proof or launch |
-| **G469+** | See [`G468_NEXT_50_GATES.md`](./G468_NEXT_50_GATES.md) — owner-gated; R2 target-bucket proof remains recommended first candidate |
+| **G469–G707** | Ultra-block local/no-IO foundations across 20 lanes — see lane closeouts; does not authorize live proof |
+| **G708 closeout** | Main-agent integration of G469–G707 + deferred/truth/STATUS/roadmap; does not authorize live proof or launch |
+| **G709+** | See [`G708_NEXT_GATES.md`](./G708_NEXT_GATES.md) — owner-gated; R2 target-bucket proof remains recommended first candidate |
 
 ## G89-G148 deferred-scope reconciliation (2026-07-10)
 
@@ -150,6 +154,24 @@ G228 recommendation: keep local foundations, keep all live-provider/storage/emai
 **Classification:** Local PASS does not promote staging/production PASS. Puriva Launch remains **BLOCKED**.
 
 G468 recommendation: keep local foundations; keep all live-provider/storage/email/Google/WordPress/image and staging/production proofs deferred until a separate owner-approved gate (G469+). See [`G468_NEXT_50_GATES.md`](./G468_NEXT_50_GATES.md).
+
+## G469-G708 deferred-scope reconciliation (2026-07-10)
+
+| Area | Local/docs complete (G469–G707) | Still live-deferred / blocked |
+|------|----------------------------------|-------------------------------|
+| R2/private storage | Target-env plan freeze, proof contracts, no-IO invariants, diagnostics/redaction, field/URL policy, exportUrl vs storageKey matrix, download boundary design | Real bucket IO, target-env signed URL, staging/prod proof |
+| Notifications/email | Taxonomy families + correlation/redaction/audit metadata; no-send adapter + template catalogue + recipient/variable redaction | In-system inbox/persistence (migration), live email send |
+| GA/GSC/monthly reports | OAuth token storage **design**, property/site mapping, period/source-truth, monthly FINAL/admin redaction/unavailable/approval wording | OAuth/token storage **implementation**, live GA/GSC sync |
+| WordPress | Draft payload/slug/freeze/sanitization/redaction/taxonomy/author/image-inclusion hardening | Live draft HTTP session; auto-publish still deferred |
+| Image generation | Compliance/alt/prompt/approval-loop/notification/WP-inclusion/provider-proof-plan expansion | Provider selection, live generation, R2 image-byte proof |
+| Client Portal / approval | Serializer no-leak, error safety, route inventory, approval/revision/notification-map helpers | Staging/prod browser proof; durable revision-round schema |
+| Client/future modules | Pack entitlement/visibility/compliance/scope invariants; MI/RH/POD contract hardening | Live ingestion, marketplace/CRM/write connectors |
+| AI budget / orchestrator | Reporting/reconciliation, finance-lite separation, routing truth, local orchestrator guards | Trusted `actualCostUsd` ingestion; staging/prod AI re-proof |
+| Operator/security/UI | Inventories, freeze/staging sweeps, proof catalogues, UI testability, stale-claim sweep | External audit, production proof, deploy approval (G49/G50) |
+
+**Classification:** Local PASS does not promote staging/production PASS. Puriva Launch remains **BLOCKED**.
+
+G708 recommendation: keep local foundations; keep all live-provider/storage/email/Google/WordPress/image and staging/production proofs deferred until a separate owner-approved gate (G709+). See [`G708_NEXT_GATES.md`](./G708_NEXT_GATES.md).
 
 ## G71b / G71c / G71e / G71f live OpenRouter proof (2026-07-09)
 

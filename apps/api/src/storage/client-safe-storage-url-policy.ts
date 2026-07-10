@@ -124,3 +124,50 @@ export function assertNonLiveClientSafeUrlLabel(label: ClientSafeUrlTruthLabel):
     reason: `Truth label "${label}" is explicitly non-live.`
   };
 }
+
+/**
+ * G477 — Truth-label matrix for client-safe storage URLs (no live IO).
+ * Documents which labels may imply a live signed URL vs explicit non-live labels.
+ */
+export function toClientSafeUrlTruthLabelMatrix(): Array<{
+  truthLabel: ClientSafeUrlTruthLabel;
+  mayImplyLiveSignedUrl: boolean;
+  requiresExplicitNonLiveLabel: boolean;
+  liveProvenImplied: boolean;
+  nonLiveAssertOk: boolean;
+}> {
+  return CLIENT_SAFE_URL_TRUTH_LABELS.map((truthLabel) => {
+    const decision = assertClientSafeUrlTruthLabel(truthLabel);
+    const nonLive = assertNonLiveClientSafeUrlLabel(truthLabel);
+    return {
+      truthLabel,
+      mayImplyLiveSignedUrl: decision.mayImplyLiveSignedUrl,
+      requiresExplicitNonLiveLabel: decision.requiresExplicitNonLiveLabel,
+      liveProvenImplied: decision.liveProvenImplied === true,
+      nonLiveAssertOk: nonLive.ok
+    };
+  });
+}
+
+/**
+ * Snapshot of a client-safe URL payload — never includes storageKey values.
+ */
+export function toClientSafeStorageUrlPayloadSnapshot(
+  payload: ClientSafeStorageUrlPayload
+): {
+  hasExportUrl: boolean;
+  hasDownloadUrl: boolean;
+  hasDocument: boolean;
+  truthLabel: ClientSafeUrlTruthLabel;
+  liveProven: false;
+  containsStorageKeyField: false;
+} {
+  return {
+    hasExportUrl: Boolean(payload.exportUrl),
+    hasDownloadUrl: Boolean(payload.downloadUrl),
+    hasDocument: payload.hasDocument,
+    truthLabel: payload.truthLabel,
+    liveProven: false,
+    containsStorageKeyField: false
+  };
+}

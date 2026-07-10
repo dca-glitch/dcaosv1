@@ -5,8 +5,9 @@ import {
   createEmailNoSendAdapter,
   isKnownTypedTemplate
 } from "./email-no-send-adapter";
+import { REQUIRED_TYPED_LAUNCH_EMAIL_TEMPLATES } from "./email-template-catalog";
 
-describe("G260 email no-send adapter result contract", () => {
+describe("G506 email no-send adapter contract hardening", () => {
   it("records an email attempt as skipped without provider metadata", async () => {
     const adapter = createEmailNoSendAdapter();
 
@@ -30,6 +31,10 @@ describe("G260 email no-send adapter result contract", () => {
     assert.equal(result.templateMissing, false);
     assert.equal(result.safeMetadata.noSend, true);
     assert.equal(result.safeMetadata.provider, "local");
+    assert.equal(
+      result.reason,
+      "Local no-send adapter selected; no external email request was made."
+    );
     assert.deepEqual(adapter.listAttempts()[0], {
       tenantId: "tenant_1",
       recipientEmail: "client@example.com",
@@ -99,9 +104,29 @@ describe("G260 email no-send adapter result contract", () => {
     assert.equal(adapter.listAttempts().length, 1);
     assert.equal(adapter.listSafeMetadata().length, 1);
   });
+
+  it("keeps contract fields stable across repeated sends", async () => {
+    const adapter = createEmailNoSendAdapter();
+    for (let i = 0; i < 3; i += 1) {
+      const result = await adapter.send({
+        tenantId: "tenant_1",
+        recipientEmail: `user${i}@example.com`,
+        subject: `Subject ${i}`,
+        templateKey: "CLIENT_APPROVAL_REQUIRED",
+        eventType: "client_approval_needed"
+      });
+      assert.equal(result.status, "SKIPPED");
+      assert.equal(result.noSend, true);
+      assert.equal(result.providerMessageId, null);
+      assert.equal(result.sentAt, null);
+      assert.equal(result.safeMetadata.noSend, true);
+    }
+    assert.equal(adapter.listAttempts().length, 3);
+    assert.equal(adapter.listSafeMetadata().length, 3);
+  });
 });
 
-describe("G261 email template catalog via no-send adapter", () => {
+describe("G507 email template catalog via no-send adapter", () => {
   it("resolves typed catalog keys onto schema template keys", async () => {
     assert.equal(isKnownTypedTemplate("CLIENT_APPROVAL_REQUIRED"), true);
     assert.equal(isKnownTypedTemplate("NOT_A_TEMPLATE"), false);
@@ -122,17 +147,8 @@ describe("G261 email template catalog via no-send adapter", () => {
 
   it("resolves all required typed launch templates without sending", async () => {
     const adapter = createEmailNoSendAdapter();
-    const keys = [
-      "CLIENT_APPROVAL_REQUIRED",
-      "CONTENT_CHANGES_REQUESTED",
-      "IMAGE_REPLACEMENT_READY",
-      "MONTHLY_REPORT_AVAILABLE",
-      "WORDPRESS_DRAFT_PREPARED",
-      "INTEGRATION_PROOF_FAILED",
-      "BUDGET_CAP_BLOCKED"
-    ] as const;
 
-    for (const templateKey of keys) {
+    for (const templateKey of REQUIRED_TYPED_LAUNCH_EMAIL_TEMPLATES) {
       const result = await adapter.send({
         tenantId: "tenant_1",
         recipientEmail: "ops@example.com",
@@ -148,7 +164,7 @@ describe("G261 email template catalog via no-send adapter", () => {
   });
 });
 
-describe("G262 email missing-template safe behavior", () => {
+describe("G508 email missing-template safe behavior", () => {
   it("treats a missing or unknown template as safe no-send without throwing", async () => {
     const adapter = createEmailNoSendAdapter();
     const missing = await adapter.send({
@@ -193,7 +209,7 @@ describe("G262 email missing-template safe behavior", () => {
   });
 });
 
-describe("G263 email recipient redaction policy", () => {
+describe("G509 email recipient redaction via no-send adapter", () => {
   it("exposes only safe metadata and redacts sensitive payload fields", async () => {
     const adapter = createEmailNoSendAdapter();
     const result = await adapter.send({

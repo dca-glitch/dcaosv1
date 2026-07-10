@@ -6,10 +6,14 @@ import {
   toImageGenerationClientSafeVariant,
   toImageGenerationClientSafeVariantSet
 } from "../core/image-generation.execution";
+import {
+  evaluateExportUrlStorageKeyMatrix,
+  payloadRespectsExportUrlStorageKeyMatrix
+} from "./export-url-storage-key-matrix";
 import { assertNoStorageKeyLeak } from "./storage-key-boundary";
 
 /**
- * G154 — Image asset serializer storageKey leak boundary.
+ * G154 / G241 / G484 — Image asset serializer storageKey leak boundary.
  * Exercises exported image-generation client-safe serializers (read-only import).
  * Admin `toAiDeliveryArticleImageSummary` in core.runtime.ts is not exported; see main-agent note.
  *
@@ -34,7 +38,7 @@ function toArticleImageClientSafeBoundarySummary(image: {
   };
 }
 
-describe("image-asset-serializer-storage-key-boundary (G154 / G241)", () => {
+describe("image-asset-serializer-storage-key-boundary (G154 / G241 / G484)", () => {
   it("keeps image-generation client-safe variants free of storageKey", () => {
     const variant = toImageGenerationClientSafeVariant({
       variantSlot: "hero",
@@ -96,5 +100,35 @@ describe("image-asset-serializer-storage-key-boundary (G154 / G241)", () => {
       assert.equal(summary.hasDocument, true);
       assertNoStorageKeyLeak(summary, { forbiddenStorageKey: forbiddenKey });
     }
+  });
+
+  it("proves client-safe image asset output: hasDocument only, storageKey forbidden (G484)", () => {
+    const forbiddenKey = "tenants/acme/years/2026/images/g484-hero.png";
+    const summary = toArticleImageClientSafeBoundarySummary({
+      id: "image-g484",
+      title: "G484 hero",
+      previewImageUrl: "https://signed.example.com/preview/g484",
+      finalImageUrl: "https://docs.example.com/export/g484-final",
+      storageKey: forbiddenKey,
+      status: "APPROVED"
+    });
+
+    assert.equal(
+      evaluateExportUrlStorageKeyMatrix("client_portal_image_summary", "hasDocument").allowed,
+      true
+    );
+    assert.equal(
+      evaluateExportUrlStorageKeyMatrix("client_portal_image_summary", "storageKey").allowed,
+      false
+    );
+    assert.equal(summary.hasDocument, true);
+    assert.equal(summary.previewImageUrl, "https://signed.example.com/preview/g484");
+    assert.equal(summary.finalImageUrl, "https://docs.example.com/export/g484-final");
+    assert.equal("storageKey" in summary, false);
+    assert.equal(
+      payloadRespectsExportUrlStorageKeyMatrix("client_portal_image_summary", summary).ok,
+      true
+    );
+    assertNoStorageKeyLeak(summary, { forbiddenStorageKey: forbiddenKey });
   });
 });

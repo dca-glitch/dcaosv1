@@ -1,6 +1,8 @@
-# Env-Shape vs Live Proof Labels (G415)
+# Env-Shape vs Live Proof Labels (G643)
 
-**Status:** Labeling standard for G409–G428. Prevents overclaiming config readiness as live proof.
+**Status:** Labeling standard refresh for G637–G648. Prevents overclaiming config readiness as live proof during the G469–G708 wave.
+
+**Context:** Local foundations expanded (G89–G468 integrated; G469–G708 concurrent lanes deepen no-live helpers). Live proofs remain deferred unless a separate owner-approved session records evidence. Production remains frozen. Puriva Launch remains **BLOCKED**.
 
 ---
 
@@ -26,7 +28,7 @@
 | OpenRouter | Local controlled live (G77b) + deterministic default | Not proven |
 | R2 | Disabled-safe / no-IO readiness | Not proven |
 | Email / Resend | No-send / outbox foundation | Not proven |
-| GA/GSC | Config-shape helpers only (no OAuth token store) | Not proven |
+| GA/GSC | Config-shape helpers only (no OAuth token store proven live) | Not proven |
 | WordPress draft | Local draft-prep; live draft plan-only | Not proven |
 | WordPress publish | Disabled-safe freeze | Not proven |
 | Image provider | Compliance / disabled-safe scaffolding | Not proven |
@@ -44,6 +46,7 @@ Source of truth for columns: [`INTEGRATIONS_TRUTH_MATRIX.md`](../runbooks/INTEGR
 | "Launch ready" | Puriva Launch remains **BLOCKED** |
 | "Live GA/GSC working" | Only env presence / config-shape |
 | "R2 proven" | Only disabled-safe or unit tests |
+| "G469–G708 closed live proofs" | Concurrent lanes are local/docs unless owner session recorded |
 
 ---
 
@@ -53,6 +56,7 @@ Source of truth for columns: [`INTEGRATIONS_TRUTH_MATRIX.md`](../runbooks/INTEGR
 2. Was a live network call made? If no → cannot use staging/prod/live labels.
 3. Was owner approval recorded before the session? If no → live proof invalid.
 4. Are secrets scrubbed from evidence? If no → do not share.
+5. Is the claim about a helper that only exists on a dirty working tree? Prefer HEAD baseline labels until committed.
 
 ---
 

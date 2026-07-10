@@ -104,4 +104,77 @@ describe("monthly-report-metrics-recommendation-policy", () => {
     });
     assert.equal(unknownOrigin.ok, false);
   });
+
+  it("G533: recommendation source policy matrix — origins, review, live-AI block", () => {
+    const matrix: Array<{
+      origin: string;
+      extra?: Record<string, unknown>;
+      expectOk: boolean;
+      expectReview?: boolean;
+      expectClientSafe?: boolean;
+    }> = [
+      {
+        origin: "metrics_based",
+        extra: { metricsTruth: "manual" },
+        expectOk: true,
+        expectReview: true,
+        expectClientSafe: true
+      },
+      {
+        origin: "metrics_based",
+        extra: { metricsTruth: "csv" },
+        expectOk: true,
+        expectReview: true,
+        expectClientSafe: true
+      },
+      {
+        origin: "metrics_based",
+        extra: { metricsTruth: "placeholder" },
+        expectOk: false
+      },
+      {
+        origin: "manual_admin",
+        extra: { adminAuthored: true },
+        expectOk: true,
+        expectReview: false,
+        expectClientSafe: true
+      },
+      {
+        origin: "ai_drafted",
+        extra: { aiDraftAllowed: true, liveAiExecuted: false },
+        expectOk: true,
+        expectReview: true,
+        expectClientSafe: false
+      },
+      {
+        origin: "placeholder",
+        expectOk: true,
+        expectReview: false,
+        expectClientSafe: true
+      }
+    ];
+
+    for (const row of matrix) {
+      const result = resolveMonthlyReportRecommendationPolicy({
+        origin: row.origin,
+        text: "Recommendation body for policy matrix.",
+        ...(row.extra as object)
+      });
+      assert.equal(result.ok, row.expectOk, `${row.origin} ok mismatch: ${result.errors.join("; ")}`);
+      assert.equal(result.liveAiBlocked, true);
+      if (row.expectOk) {
+        assert.equal(result.requiresAdminReview, row.expectReview);
+        assert.equal(result.clientSafe, row.expectClientSafe);
+      }
+    }
+
+    const liveAiAlwaysBlocked = resolveMonthlyReportRecommendationPolicy({
+      origin: "manual_admin",
+      text: "Should reject live AI flag.",
+      adminAuthored: true,
+      liveAiExecuted: true
+    });
+    assert.equal(liveAiAlwaysBlocked.ok, false);
+    assert.ok(liveAiAlwaysBlocked.errors.some((e) => /live AI execution is not allowed/i.test(e)));
+  });
 });

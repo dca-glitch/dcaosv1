@@ -1111,3 +1111,381 @@ export function buildNotificationPayloadSnapshot(
     safeExtra
   };
 }
+
+/** G493–G504 taxonomy closeout marker (contracts only; no persistence). */
+export const NOTIFICATION_TAXONOMY_CLOSEOUT_VERSION = "NOTIFICATION_TAXONOMY_G493_G504_V1";
+
+/**
+ * G495 — typed event families for storage, budget, WordPress, reports, images
+ * (plus content/approvals/integrations/ops for coverage audit).
+ */
+export type NotificationEventFamily =
+  | "content"
+  | "images"
+  | "approvals"
+  | "reports"
+  | "budget"
+  | "wordpress"
+  | "storage"
+  | "integrations"
+  | "ops";
+
+/** Canonical family membership — every NotificationEventType appears in exactly one family. */
+export const NOTIFICATION_EVENT_FAMILIES: Record<NotificationEventFamily, readonly NotificationEventType[]> = {
+  content: ["content_draft_ready", "content_approved", "content_changes_requested"],
+  images: [
+    "image_set_ready",
+    "image_rejected_with_reason",
+    "image_approved",
+    "image_candidate_generated",
+    "image_admin_rejected",
+    "image_replacement_requested",
+    "image_final_accepted",
+    "image_set_ready_for_client_review",
+    "client_image_approved",
+    "client_image_rejected"
+  ],
+  approvals: [
+    "client_approval_needed",
+    "admin_alert_after_client_action",
+    "article_ready_for_client_review",
+    "client_deliverable_approved",
+    "client_deliverable_rejected",
+    "admin_action_required"
+  ],
+  reports: ["monthly_report_available", "monthly_report_final"],
+  budget: ["budget_threshold_warning", "budget_cap_blocked", "budget_cap_reached"],
+  wordpress: ["wordpress_draft_prepared"],
+  storage: ["storage_proof_failed"],
+  integrations: ["external_integration_disabled", "external_proof_failed"],
+  ops: ["workflow_blocked", "kill_switch"]
+} as const;
+
+/** G495 required family anchors (typed contracts only; no DB). */
+export const G495_REQUIRED_FAMILY_EVENT_TYPES = {
+  storage: ["storage_proof_failed"] as const satisfies readonly NotificationEventType[],
+  budget: [
+    "budget_threshold_warning",
+    "budget_cap_blocked",
+    "budget_cap_reached"
+  ] as const satisfies readonly NotificationEventType[],
+  wordpress: ["wordpress_draft_prepared"] as const satisfies readonly NotificationEventType[],
+  reports: [
+    "monthly_report_available",
+    "monthly_report_final"
+  ] as const satisfies readonly NotificationEventType[],
+  images: [
+    "image_set_ready",
+    "image_rejected_with_reason",
+    "image_approved",
+    "image_candidate_generated",
+    "image_admin_rejected",
+    "image_replacement_requested",
+    "image_final_accepted"
+  ] as const satisfies readonly NotificationEventType[]
+} as const;
+
+const EVENT_TYPE_TO_FAMILY: Record<NotificationEventType, NotificationEventFamily> = (() => {
+  const map = {} as Record<NotificationEventType, NotificationEventFamily>;
+  for (const [family, eventTypes] of Object.entries(NOTIFICATION_EVENT_FAMILIES) as Array<
+    [NotificationEventFamily, readonly NotificationEventType[]]
+  >) {
+    for (const eventType of eventTypes) {
+      map[eventType] = family;
+    }
+  }
+  return map;
+})();
+
+export function getNotificationEventFamily(eventType: NotificationEventType): NotificationEventFamily {
+  return EVENT_TYPE_TO_FAMILY[eventType];
+}
+
+export interface NotificationTaxonomyCoverageAudit {
+  version: typeof NOTIFICATION_TAXONOMY_CLOSEOUT_VERSION;
+  totalEventTypes: number;
+  definedEventTypes: number;
+  missingDefinitions: NotificationEventType[];
+  orphanFamilyMembers: NotificationEventType[];
+  uncoveredByFamily: NotificationEventType[];
+  familyCounts: Record<NotificationEventFamily, number>;
+  g159CoverageComplete: boolean;
+  g495FamilyCoverageComplete: boolean;
+  complete: boolean;
+}
+
+/**
+ * G493 — pure taxonomy coverage audit (no DB, no email).
+ * Verifies every event type has a definition and exactly one family membership.
+ */
+export function auditNotificationTaxonomyCoverage(): NotificationTaxonomyCoverageAudit {
+  const definedKeys = Object.keys(NOTIFICATION_EVENT_DEFINITIONS) as NotificationEventType[];
+  const familyMembers = new Set<NotificationEventType>();
+  const orphanFamilyMembers: NotificationEventType[] = [];
+  const familyCounts = {} as Record<NotificationEventFamily, number>;
+
+  for (const [family, eventTypes] of Object.entries(NOTIFICATION_EVENT_FAMILIES) as Array<
+    [NotificationEventFamily, readonly NotificationEventType[]]
+  >) {
+    familyCounts[family] = eventTypes.length;
+    for (const eventType of eventTypes) {
+      if (familyMembers.has(eventType)) {
+        orphanFamilyMembers.push(eventType);
+      }
+      familyMembers.add(eventType);
+      if (!isNotificationEventType(eventType)) {
+        orphanFamilyMembers.push(eventType);
+      }
+    }
+  }
+
+  const uncoveredByFamily = definedKeys.filter((eventType) => !familyMembers.has(eventType));
+  const missingDefinitions: NotificationEventType[] = [];
+  for (const eventType of familyMembers) {
+    if (!Object.prototype.hasOwnProperty.call(NOTIFICATION_EVENT_DEFINITIONS, eventType)) {
+      missingDefinitions.push(eventType);
+    }
+  }
+
+  const g159CoverageComplete = G159_REQUIRED_EVENT_TYPES.every((eventType) =>
+    isNotificationEventType(eventType)
+  );
+  const g495FamilyCoverageComplete = (
+    Object.values(G495_REQUIRED_FAMILY_EVENT_TYPES) as ReadonlyArray<readonly NotificationEventType[]>
+  ).every((eventTypes) => eventTypes.every((eventType) => isNotificationEventType(eventType)));
+
+  const complete =
+    missingDefinitions.length === 0 &&
+    orphanFamilyMembers.length === 0 &&
+    uncoveredByFamily.length === 0 &&
+    g159CoverageComplete &&
+    g495FamilyCoverageComplete &&
+    definedKeys.length === familyMembers.size;
+
+  return {
+    version: NOTIFICATION_TAXONOMY_CLOSEOUT_VERSION,
+    totalEventTypes: definedKeys.length,
+    definedEventTypes: definedKeys.length,
+    missingDefinitions,
+    orphanFamilyMembers,
+    uncoveredByFamily,
+    familyCounts,
+    g159CoverageComplete,
+    g495FamilyCoverageComplete,
+    complete
+  };
+}
+
+export interface BuildNotificationEventMetadataInput {
+  eventType: NotificationEventType;
+  tenantId: string;
+  clientId?: string | null;
+  actorUserId?: string | null;
+  relatedEntityType: string;
+  relatedEntityId: string;
+  correlationId?: string | null;
+  actionKey?: string | null;
+  title: string;
+  body?: string | null;
+  reason?: string | null;
+  message?: string | null;
+  deliverableId?: string | null;
+  projectId?: string | null;
+  reportId?: string | null;
+  deepLinkHash?: string | null;
+  statusLabel?: string | null;
+  extra?: Record<string, unknown> | null;
+  emailProvider: NotificationEmailProvider;
+  hasEmailProviderKey: boolean;
+  hasInSystemPersistence: boolean;
+}
+
+/**
+ * G499 — composed event metadata: family + policies + redacted payload snapshot + audit metadata.
+ * Never includes secrets, storage keys, or raw provider payloads.
+ */
+export interface NotificationEventMetadata {
+  version: typeof NOTIFICATION_TAXONOMY_CLOSEOUT_VERSION;
+  eventsVersion: typeof NOTIFICATION_EVENTS_VERSION;
+  family: NotificationEventFamily;
+  eventType: NotificationEventType;
+  severity: NotificationSeverity;
+  launchCritical: boolean;
+  auditOnly: boolean;
+  recipientPolicy: NotificationRecipientPolicy;
+  channelPolicy: NotificationChannelPolicy;
+  payload: NotificationPayloadSnapshot;
+  audit: NotificationAuditMetadata;
+  actionKey: string | null;
+}
+
+export function buildNotificationEventMetadata(
+  input: BuildNotificationEventMetadataInput
+): NotificationEventMetadata {
+  const definition = NOTIFICATION_EVENT_DEFINITIONS[input.eventType];
+  const recipientPolicy = resolveNotificationRecipientPolicy({ eventType: input.eventType });
+  const channelPolicy = resolveNotificationChannelPolicy(input);
+  const payload = buildNotificationPayloadSnapshot(input);
+  const audit = buildNotificationAuditMetadata(input);
+
+  return {
+    version: NOTIFICATION_TAXONOMY_CLOSEOUT_VERSION,
+    eventsVersion: NOTIFICATION_EVENTS_VERSION,
+    family: getNotificationEventFamily(input.eventType),
+    eventType: input.eventType,
+    severity: definition.severity,
+    launchCritical: definition.launchCritical,
+    auditOnly: definition.auditOnly,
+    recipientPolicy,
+    channelPolicy,
+    payload,
+    audit,
+    actionKey: input.actionKey ?? null
+  };
+}
+
+/** Keys forbidden on any persisted/serialized audit metadata safe shape (G500). */
+export const NOTIFICATION_AUDIT_FORBIDDEN_KEYS = [
+  ...NOTIFICATION_PAYLOAD_REDACT_KEYS,
+  "passwordHash",
+  "password_hash",
+  "sessionToken",
+  "session_token",
+  "cookie",
+  "authorizationHeader",
+  "rawHeaders",
+  "connectionString",
+  "databaseUrl",
+  "DATABASE_URL"
+] as const;
+
+export interface BuildNotificationAuditMetadataSafeShapeInput extends BuildNotificationAuditMetadataInput {
+  /** Optional extra audit fields; redacted and stripped of forbidden keys. */
+  extra?: Record<string, unknown> | null;
+}
+
+/**
+ * G500 — audit metadata safe shape for future AuditLog / inbox correlation.
+ * Boolean flags only for provider key presence — never the key value.
+ */
+export interface NotificationAuditMetadataSafeShape {
+  version: typeof NOTIFICATION_TAXONOMY_CLOSEOUT_VERSION;
+  eventsVersion: typeof NOTIFICATION_EVENTS_VERSION;
+  eventType: NotificationEventType;
+  family: NotificationEventFamily;
+  severity: NotificationSeverity;
+  tenantId: string;
+  clientId: string | null;
+  actorUserId: string | null;
+  relatedEntityType: string;
+  relatedEntityId: string;
+  correlationId: string | null;
+  templateKey: SchemaEmailTemplateKey;
+  typedTemplateKey: TypedNotificationTemplateKey | null;
+  recipientRoles: NotificationRecipientRole[];
+  audiences: NotificationAudience[];
+  channelSummary: {
+    inSystemStatus: NotificationChannelPolicy["inSystem"]["status"];
+    emailRequired: boolean;
+    emailStatus: NotificationChannelPolicy["email"]["status"];
+    auditOnly: boolean;
+    phoneAllowedForLaunchClaim: false;
+  };
+  /** Redacted allowlisted extras only (never secrets/storage keys). */
+  safeExtra: Record<string, unknown>;
+}
+
+function stripForbiddenAuditKeys(value: Record<string, unknown>): Record<string, unknown> {
+  const redacted = redactNotificationPayload(value) as Record<string, unknown>;
+  const forbidden = new Set(NOTIFICATION_AUDIT_FORBIDDEN_KEYS.map((k) => k.toLowerCase()));
+  const output: Record<string, unknown> = {};
+  for (const [key, nested] of Object.entries(redacted)) {
+    const normalized = key.toLowerCase();
+    if (forbidden.has(normalized) || nested === "[REDACTED]") {
+      continue;
+    }
+    if (
+      normalized.includes("secret") ||
+      normalized.includes("apikey") ||
+      normalized.includes("storagekey") ||
+      normalized.includes("password") ||
+      normalized.includes("token")
+    ) {
+      continue;
+    }
+    output[key] = nested;
+  }
+  return output;
+}
+
+export function buildNotificationAuditMetadataSafeShape(
+  input: BuildNotificationAuditMetadataSafeShapeInput
+): NotificationAuditMetadataSafeShape {
+  const audit = buildNotificationAuditMetadata(input);
+  return {
+    version: NOTIFICATION_TAXONOMY_CLOSEOUT_VERSION,
+    eventsVersion: NOTIFICATION_EVENTS_VERSION,
+    eventType: audit.eventType,
+    family: getNotificationEventFamily(audit.eventType),
+    severity: audit.severity,
+    tenantId: audit.tenantId,
+    clientId: audit.clientId,
+    actorUserId: audit.actorUserId,
+    relatedEntityType: audit.relatedEntityType,
+    relatedEntityId: audit.relatedEntityId,
+    correlationId: audit.correlationId,
+    templateKey: audit.templateKey,
+    typedTemplateKey: audit.typedTemplateKey,
+    recipientRoles: [...audit.recipientPolicy.roles],
+    audiences: [...audit.recipientPolicy.audiences],
+    channelSummary: {
+      inSystemStatus: audit.channelPolicy.inSystem.status,
+      emailRequired: audit.channelPolicy.email.required,
+      emailStatus: audit.channelPolicy.email.status,
+      auditOnly: audit.channelPolicy.auditOnly.required,
+      phoneAllowedForLaunchClaim: false
+    },
+    safeExtra: stripForbiddenAuditKeys(input.extra ?? {})
+  };
+}
+
+/**
+ * G500 — returns true when the value tree has no forbidden secret/storage keys
+ * and no residual `[REDACTED]` markers (those imply a secret field was still present).
+ */
+export function isNotificationAuditMetadataSafe(value: unknown): boolean {
+  return !containsForbiddenAuditValue(value);
+}
+
+function containsForbiddenAuditValue(value: unknown): boolean {
+  if (value === null || value === undefined) {
+    return false;
+  }
+  if (typeof value === "string") {
+    return value === "[REDACTED]";
+  }
+  if (Array.isArray(value)) {
+    return value.some((item) => containsForbiddenAuditValue(item));
+  }
+  if (typeof value !== "object") {
+    return false;
+  }
+  for (const [key, nested] of Object.entries(value as Record<string, unknown>)) {
+    if (shouldRedactKey(key)) {
+      return true;
+    }
+    const normalized = key.toLowerCase();
+    if (
+      normalized.includes("password") ||
+      normalized.includes("storagekey") ||
+      normalized.includes("database_url") ||
+      normalized.includes("connectionstring")
+    ) {
+      return true;
+    }
+    if (containsForbiddenAuditValue(nested)) {
+      return true;
+    }
+  }
+  return false;
+}

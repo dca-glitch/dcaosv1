@@ -1,5 +1,5 @@
 /**
- * Client Operating Pack constants (G124-G126, G209-G216, G349-G368).
+ * Client Operating Pack constants (G124-G126, G209-G216, G349-G368, G589-G600).
  * Configuration only: no workflow execution, live provider calls, or runtime entitlement enforcement.
  * Agency OS first — not a SaaS product surface.
  * Puriva is the first Client Operating Pack proof — not a Core fork.
@@ -59,6 +59,8 @@ export type ClientOperatingPackWorkflowTemplateKey =
   | "puriva_market_intelligence_v1"
   | "puriva_revenue_insight_v1"
   | "puriva_pod_listing_v1"
+  /** Catalog-only feedback learning scaffold (G595); no persistence adapter. */
+  | "puriva_feedback_learning_v1"
   /** Legacy composite catalog entry retained for G124-G126 continuity. */
   | "puriva_article_image_package_v1";
 
@@ -471,6 +473,21 @@ export const PURIVA_WORKFLOW_TEMPLATE_CATALOG = [
     ]
   ),
   catalogTemplate(
+    "puriva_feedback_learning_v1",
+    "Puriva Feedback Learning Workflow v1",
+    [
+      { order: 1, key: "reject_reason_captured", label: "Reject reason captured", actor: "system", approvalGate: false, clientVisible: false },
+      { order: 2, key: "learning_note_drafted", label: "Learning note drafted", actor: "system", approvalGate: false, clientVisible: false },
+      { order: 3, key: "admin_learning_note_review", label: "Admin learning note review", actor: "admin", approvalGate: true, clientVisible: false }
+    ],
+    [
+      "Catalog-only scaffold; no learning-notes persistence adapter in this pack layer.",
+      "Learning notes are admin-only; clients never see preference internals.",
+      "Compliance boundaries cannot be weakened by learning notes.",
+      "Long-term preferences require repeated pattern or explicit admin approval."
+    ]
+  ),
+  catalogTemplate(
     "puriva_article_image_package_v1",
     "Puriva Article + Image Package Workflow v1",
     [
@@ -581,4 +598,151 @@ export function isPurivaAdminReviewRequired(
   profile: PurivaComplianceProfile = PURIVA_COMPLIANCE_PROFILE_V1
 ): boolean {
   return profile.adminReviewRequired === true && profile.requiredHumanReview === true;
+}
+
+/**
+ * G589 — Entitlement matrix lookup (config truth only; no runtime enforcement).
+ */
+export function getPackModuleEntitlement(
+  packKey: ClientOperatingPackKey,
+  moduleKey: ClientOperatingPackModuleKey
+): ClientOperatingPackModuleEntitlement | undefined {
+  return CLIENT_OPERATING_PACK_MODULE_ENTITLEMENT_CONFIG[packKey].find(
+    (entry) => entry.moduleKey === moduleKey
+  );
+}
+
+export function getPackModuleEntitlementStatus(
+  packKey: ClientOperatingPackKey,
+  moduleKey: ClientOperatingPackModuleKey
+): ClientOperatingPackEntitlementStatus | undefined {
+  return getPackModuleEntitlement(packKey, moduleKey)?.status;
+}
+
+/** Active for pack ops: enabled or partial (scaffolded). Future/disabled are not active. */
+const PACK_ACTIVE_ENTITLEMENT_STATUSES: ReadonlySet<ClientOperatingPackEntitlementStatus> = new Set([
+  "enabled",
+  "partial"
+]);
+
+export function isPackModuleEntitledActive(
+  packKey: ClientOperatingPackKey,
+  moduleKey: ClientOperatingPackModuleKey
+): boolean {
+  const status = getPackModuleEntitlementStatus(packKey, moduleKey);
+  return status !== undefined && PACK_ACTIVE_ENTITLEMENT_STATUSES.has(status);
+}
+
+export function listPackModuleEntitlementKeys(
+  packKey: ClientOperatingPackKey
+): ClientOperatingPackModuleKey[] {
+  return CLIENT_OPERATING_PACK_MODULE_ENTITLEMENT_CONFIG[packKey].map((entry) => entry.moduleKey);
+}
+
+/**
+ * G590 — Module visibility matrix helpers (pure; no portal auth).
+ */
+export function getPackModuleVisibility(
+  packKey: ClientOperatingPackKey,
+  moduleKey: ClientOperatingPackModuleKey
+): { entitledActive: boolean; clientVisible: boolean } | undefined {
+  const entitlement = getPackModuleEntitlement(packKey, moduleKey);
+  if (!entitlement) {
+    return undefined;
+  }
+  return {
+    entitledActive: PACK_ACTIVE_ENTITLEMENT_STATUSES.has(entitlement.status),
+    clientVisible: isClientVisiblePackSurface(entitlement)
+  };
+}
+
+export function listAdminOnlyPackModuleKeys(
+  packKey: ClientOperatingPackKey
+): ClientOperatingPackModuleKey[] {
+  return CLIENT_OPERATING_PACK_MODULE_ENTITLEMENT_CONFIG[packKey]
+    .filter((entry) => !isClientVisiblePackSurface(entry))
+    .map((entry) => entry.moduleKey);
+}
+
+/**
+ * G592 — Website/social-only content channel invariant (pure).
+ */
+export function isPurivaWebsiteSocialOnlyScope(
+  profile: PurivaComplianceProfile = PURIVA_COMPLIANCE_PROFILE_V1
+): boolean {
+  if (profile.contentChannels.length !== 2) {
+    return false;
+  }
+  const channels = new Set(profile.contentChannels);
+  return channels.has("website") && channels.has("social");
+}
+
+export function assertPurivaWebsiteSocialOnlyScope(
+  profile: PurivaComplianceProfile = PURIVA_COMPLIANCE_PROFILE_V1
+): PurivaComplianceValidationResult {
+  const errors: string[] = [];
+  if (!isPurivaWebsiteSocialOnlyScope(profile)) {
+    errors.push("contentChannels must be exactly website and social");
+  }
+  for (const channel of profile.contentChannels) {
+    if (channel !== "website" && channel !== "social") {
+      errors.push(`unsupported content channel: ${String(channel)}`);
+    }
+  }
+  return { ok: errors.length === 0, errors };
+}
+
+/**
+ * G593 — Paid ads future/out-of-scope invariant (pure).
+ */
+export function assertPurivaPaidAdsOutOfScope(
+  profile: PurivaComplianceProfile = PURIVA_COMPLIANCE_PROFILE_V1
+): PurivaComplianceValidationResult {
+  const errors: string[] = [];
+  if (!isPurivaPaidAdsOutOfScope(profile)) {
+    errors.push("paidAdsScope must be future_out_of_scope");
+  }
+  if (!profile.requiredBoundaries.some((boundary) => /paid ads/i.test(boundary))) {
+    errors.push("requiredBoundaries must state paid ads are future/out of scope");
+  }
+  return { ok: errors.length === 0, errors };
+}
+
+/**
+ * G594 — Admin review required invariant for medical content (pure).
+ */
+export function assertPurivaAdminReviewRequired(
+  profile: PurivaComplianceProfile = PURIVA_COMPLIANCE_PROFILE_V1
+): PurivaComplianceValidationResult {
+  const errors: string[] = [];
+  if (profile.medicalContent !== true) {
+    errors.push("medicalContent must be true for Puriva");
+  }
+  if (!isPurivaAdminReviewRequired(profile)) {
+    errors.push("admin review is required for Puriva medical content");
+  }
+  return { ok: errors.length === 0, errors };
+}
+
+/**
+ * G595 — Catalog-only workflow template invariant (pure; no execution).
+ */
+export function isPurivaWorkflowTemplateCatalogOnly(
+  template: Pick<
+    ClientOperatingPackWorkflowTemplate,
+    "status" | "executionEnabled" | "liveProviderCalls" | "executionAdapter"
+  >
+): boolean {
+  return (
+    template.status === "catalog_only" &&
+    template.executionEnabled === false &&
+    template.liveProviderCalls === false &&
+    template.executionAdapter === null
+  );
+}
+
+export function listPurivaCatalogOnlyWorkflowTemplates(): readonly ClientOperatingPackWorkflowTemplate[] {
+  return PURIVA_WORKFLOW_TEMPLATE_CATALOG.filter((template) =>
+    isPurivaWorkflowTemplateCatalogOnly(template)
+  );
 }

@@ -6,7 +6,7 @@ import {
   WORDPRESS_DRAFT_IMAGE_SLOTS
 } from "./wordpress-image-inclusion";
 
-describe("wordpress-image-inclusion (G296/G297)", () => {
+describe("wordpress-image-inclusion (G296/G297 / G550)", () => {
   it("exposes hero / supporting / social_preview slots", () => {
     assert.deepEqual([...WORDPRESS_DRAFT_IMAGE_SLOTS], [
       "hero",
@@ -59,5 +59,26 @@ describe("wordpress-image-inclusion (G296/G297)", () => {
     assert.equal(inclusion.hasAcceptedImages, false);
     assert.equal(inclusion.featuredImagePlaceholder, null);
     assert.deepEqual(inclusion.supportingImagePlaceholders, []);
+  });
+
+  it("G550 maps both supporting slots when accepted and keeps note local-only", () => {
+    const inclusion = mapAcceptedImagesToWordPressDraftInclusion([
+      { slot: "supporting_1", acceptance: "accepted", reference: "assets/s1.png" },
+      { slot: "supporting_2", acceptance: "accepted", reference: "assets/s2.png" }
+    ]);
+    assert.equal(inclusion.featuredImagePlaceholder, null);
+    assert.deepEqual(inclusion.supportingImagePlaceholders, ["assets/s1.png", "assets/s2.png"]);
+    assert.equal(inclusion.hasAcceptedImages, true);
+    assert.match(inclusion.note, /No live WordPress media call/);
+  });
+
+  it("G550 never maps rejected hero even when reference is present", () => {
+    const candidates = [
+      { slot: "hero" as const, acceptance: "rejected" as const, reference: "assets/bad-hero.png" }
+    ];
+    const inclusion = mapAcceptedImagesToWordPressDraftInclusion(candidates);
+    assert.equal(inclusion.featuredImagePlaceholder, null);
+    assert.equal(JSON.stringify(inclusion).includes("bad-hero"), false);
+    assert.equal(assertWordPressAcceptedImagesOnly(candidates, inclusion), true);
   });
 });

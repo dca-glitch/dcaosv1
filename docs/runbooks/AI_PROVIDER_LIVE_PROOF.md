@@ -634,8 +634,24 @@ Detail: [`AI_MODEL_ROUTING_POLICY.md`](./AI_MODEL_ROUTING_POLICY.md) (G77b secti
 - **G78:** guarded commit/push of G77b + G78 runbook truth-label alignment (docs only)
 - **G79:** monthly cap aggregation for `liveProviderCalled=true` COMPLETED rows — local unit coverage present; live aggregation proof remains local-only from G77b row shape
 - **G80 / G389–G408:** `actualCostUsd` null-until-trusted policy + reporting/reconciliation/routing truth hardened (no live OpenRouter in this lane)
+- **G625–G636 (orchestrator local guards):** local-only safety, blocked routing, disabled-gateway truth labels, deterministic fallback, sanitization, knowledge inclusion (no raw body), metadata redaction — unit-tested; **no live OpenRouter**; see [`AI_ORCHESTRATOR_G625_G636_CLOSEOUT.md`](./AI_ORCHESTRATOR_G625_G636_CLOSEOUT.md)
 - **Next cost-proof gate (proposed):** trusted provider-cost ingestion for `actualCostUsd` from owner-approved usage/billing source — **not** proven; no Finance Lite invoice mutation; no staging/production live without separate approval
 - Staging/production live proof remains **BLOCKED**; no exact invoice/provider cost proof
+
+### 9.18a G625–G636 — orchestrator / model-policy local guards (truth labels; no live)
+
+**Status:** **LOCAL ONLY** — helpers + focused unit tests. Does **not** authorize, execute, or claim live OpenRouter, staging, or production AI proof.
+
+| Label / invariant | Meaning | Live claim? |
+|-------------------|---------|-------------|
+| `disabled_gateway_no_live` | Gateway/execution disabled path | No |
+| `local_deterministic_fallback` | Local deterministic / disabled-safe provider path | No |
+| `preview_only_orchestrator` | Orchestrator plan/preview; execution deferred | No |
+| `live_provider_called_false` | Plan/preview audit must keep `liveProviderCalled=false` | No |
+| `actual_cost_null_until_trusted` | `actualCostUsd` null until trusted ingestion | No |
+
+Code: `apps/api/src/core/ai-local-guard-orchestrator.ts`.
+Closeout: [`AI_ORCHESTRATOR_G625_G636_CLOSEOUT.md`](./AI_ORCHESTRATOR_G625_G636_CLOSEOUT.md).
 
 ### 9.19 G81 — staging live proof planning only (no execution authorization)
 

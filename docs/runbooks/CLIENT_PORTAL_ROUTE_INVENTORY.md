@@ -74,6 +74,7 @@ All require auth + tenant unless noted.
 | Concern | Primary files |
 |---|---|
 | Archive serializers / FINAL guards | `apps/api/src/core/client-portal.runtime.ts` |
+| Serializer / no-leak helpers (G565–G569) | `apps/api/src/core/client-portal-serializer.ts` |
 | Approval runtime | `apps/api/src/core/client-portal-approval.runtime.ts` |
 | Approval policy (pure) | `apps/api/src/core/client-portal-approval-policy.ts` |
 | Error / payload safety | `apps/api/src/core/client-portal-error-safety.ts` |
@@ -81,6 +82,8 @@ All require auth + tenant unless noted.
 | Controllers | `apps/api/src/controllers/client-portal-approval.controller.ts` |
 | Routes | `apps/api/src/routes/client-portal.ts` |
 | Web API helpers | `apps/web/src/pages/client-portal/client-portal-api.ts` |
+| G565–G576 closeout | `docs/runbooks/CLIENT_PORTAL_G565_G576_CLOSEOUT.md` |
+| Serializer no-leak architecture | `docs/architecture/CLIENT_PORTAL_SERIALIZER_NO_LEAK.md` |
 
 ---
 

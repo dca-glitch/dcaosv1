@@ -8,6 +8,11 @@ import { getPurivaAiPolicyProfile } from "./puriva-ai-policy-profile";
 import { runAllComplianceFixturesLocally } from "./ai-compliance-review.fixtures";
 import { planWorkflowStepWithOrchestrator } from "./ai-orchestrator-workflow-adapter.skeleton";
 import { assertOrchestratorDisabledSafeInvariant } from "./ai-kill-switch.service";
+import {
+  assertOrchestratorLocalOnlySafety,
+  buildOrchestratorDisabledGatewayTruthLabels,
+  summarizeOrchestratorBlockedRouting
+} from "./ai-local-guard-orchestrator";
 
 describe("ai-orchestrator-lite foundation", () => {
   it("excludes forbidden medical data for all roles", () => {
@@ -329,5 +334,31 @@ describe("ai-orchestrator-lite foundation", () => {
     const results = runAllComplianceFixturesLocally();
     assert.equal(results.length, 6);
     assert.ok(results.every((entry) => entry.fixtureId.length > 0));
+  });
+
+  it("G625–G627: local-only safety + blocked routing + disabled-gateway labels", () => {
+    const plan = planAiOrchestratorLiteStep({
+      workflow: "puriva_content_production",
+      step: "research_pack",
+      agentRole: "research_agent",
+      taskType: "research_pack",
+      operatingPackKey: "puriva"
+    });
+    const safety = assertOrchestratorLocalOnlySafety(plan);
+    assert.equal(safety.ok, true);
+
+    const blocked = planAiOrchestratorLiteStep({
+      workflow: "puriva_content_production",
+      step: "image_generation",
+      agentRole: "image_generation_agent",
+      taskType: "image_generation",
+      operatingPackKey: "puriva"
+    });
+    const blockedSummary = summarizeOrchestratorBlockedRouting(blocked);
+    assert.equal(blockedSummary.blocked, true);
+    assert.equal(blockedSummary.ledgerStatus, "BLOCKED");
+
+    const labels = buildOrchestratorDisabledGatewayTruthLabels({ plan, textGateway: "local" });
+    assert.ok(labels.labels.some((row) => row.label === "live_provider_called_false" && row.active));
   });
 });

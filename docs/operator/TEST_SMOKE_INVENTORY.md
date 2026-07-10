@@ -1,12 +1,12 @@
 # Test and Smoke Inventory
 
-**Status:** G419 refresh (extends G224/G142). Root [`package.json`](../../package.json) smoke scripts re-checked on 2026-07-10 for the G409–G428 security/operator lane. This document is an operator reference only; it does not run tests, smoke scripts, live probes, deploys, or migrations.
+**Status:** G651 refresh (extends G419/G224/G142) for the G469–G708 ultra-block on baseline `66dcb74`. Root [`package.json`](../../package.json) smoke scripts re-counted on 2026-07-10 (**80** `smoke:*` scripts). Operator reference only; does not run tests, smoke scripts, live probes, deploys, or migrations.
 
-**Honesty rule:** Sections 1–2 list **existing** root package scripts. Section 5 lists **expected / lane-added local focused tests and helpers** from G89–G408 work. Listing a focused test here does **not** mean a live smoke passed. Live smokes and target-environment proofs remain deferred until owner-approved execution gates. See also [`NO_LIVE_PROOF_CATALOGUE.md`](./NO_LIVE_PROOF_CATALOGUE.md) and [`LOCAL_ONLY_PROOF_TAXONOMY.md`](./LOCAL_ONLY_PROOF_TAXONOMY.md).
+**Honesty rule:** Sections 1–2 list **existing** root package scripts. Section 5 lists **local focused tests and helpers** (Present / Expected). Listing a focused test here does **not** mean a live smoke passed. Live smokes and target-environment proofs remain **deferred** until owner-approved execution gates. See also [`NO_LIVE_PROOF_CATALOGUE.md`](./NO_LIVE_PROOF_CATALOGUE.md) and [`LOCAL_ONLY_PROOF_TAXONOMY.md`](./LOCAL_ONLY_PROOF_TAXONOMY.md).
 
-**Command convention:** Run from `C:\dcaosv1` in external Windows PowerShell. Prefer `npm.cmd run <script>` on Windows. Validate must pass before smoke. Long runs should log to `$env:TEMP` and open Notepad. Do not track or commit `.cursor/settings.json`.
+**Command convention:** Run from `C:\dcaosv1` in external Windows PowerShell. Prefer `npm.cmd run <script>` on Windows. **Validate must pass before smoke. Never run smoke after a failed validate.** One command per line (no `&&`). Long runs should log to `$env:TEMP` and open Notepad. Do not track or commit `.cursor/settings.json`.
 
-**Truth sweep:** Staging has historical G46d/G47 PASS evidence; production readiness remains **NO**; G50 is not executed; Puriva Launch remains blocked. This inventory does not authorize live calls, staging/VPS/prod mutation, commit, push, or deploy.
+**Truth sweep:** Local foundations expanding; live proofs deferred; staging has historical G46d/G47 PASS evidence only; production readiness remains **NO** / frozen; G50 is not executed; Puriva Launch remains **BLOCKED**. This inventory does not authorize live calls, staging/VPS/prod mutation, commit, push, or deploy.
 
 ---
 
@@ -155,11 +155,11 @@ This inventory covers root `package.json` scripts visible in the G142/G224 passe
 
 ---
 
-## 5. G419 — Focused local tests / helpers inventory (placeholders + known files)
+## 5. G651 — Focused local tests / helpers inventory (placeholders + known files)
 
 These are **local unit/integration/helper** surfaces other lanes are adding or have added. They are not live smokes. Status labels:
 
-- **Present** — file observed in repo during G224/G419 inspection
+- **Present** — file observed in repo during G651 inspection (2026-07-10, baseline `66dcb74` + concurrent lane WIP)
 - **Expected** — placeholder for a focused test/helper other lanes may add; treat as inventory slot until confirmed Present
 - **Live deferred** — any real provider/bucket/OAuth/HTTP send remains owner-gated
 
@@ -167,7 +167,13 @@ These are **local unit/integration/helper** surfaces other lanes are adding or h
 |---|---|---|---|
 | Storage / R2 | `apps/api/src/storage/r2.config.test.ts` | Present | Live deferred |
 | Storage / R2 | `apps/api/src/storage/r2-proof-stage.test.ts` | Present | Live deferred |
+| Storage / R2 | `apps/api/src/storage/r2-proof-contracts.ts` | Present (G469+ WIP) | Live deferred — contracts only |
+| Storage / R2 | `apps/api/src/storage/r2-target-environment-proof-plan.ts` | Present (G469+ WIP) | Live deferred — plan/helpers only; no bucket IO |
+| Storage / R2 | `apps/api/src/storage/r2-no-io-readiness-invariant.ts` | Present (G469+ WIP) | No live |
+| Storage / R2 | `apps/api/src/storage/r2-cleanup-proof-plan.ts` (+ test) | Present | Live deferred |
 | Storage / R2 | `apps/api/src/storage/private-storage.service.test.ts` | Present | Live deferred |
+| Storage / R2 | `apps/api/src/storage/private-delivery-download-boundary.ts` | Present (G469+ WIP) | No live — boundary helper |
+| Storage / R2 | `apps/api/src/storage/export-url-storage-key-matrix.ts` | Present (G469+ WIP) | No live |
 | Storage / R2 | `apps/api/src/storage/storage-key-boundary.ts` (+ serializer boundary tests) | Present | Live deferred |
 | Storage / R2 | `apps/api/src/storage/storage-error-redaction.test.ts` | Present (G409 lane) | No live |
 | Storage / R2 | `apps/api/src/storage/admin-vs-client-storage-field-policy.ts` | Present | No live |
@@ -182,8 +188,11 @@ These are **local unit/integration/helper** surfaces other lanes are adding or h
 | Notifications | `apps/api/tests/integration/email-notification-wiring.integration.test.ts` | Present | Live deferred |
 | Notifications | In-system inbox / persistence model tests | Expected | Live deferred (persistence may still be unimplemented) |
 | GA / GSC | `apps/api/src/config/ga-gsc.config.test.ts` | Present | Live deferred |
+| GA / GSC | `apps/api/src/core/ga-gsc-oauth-token-storage.design.ts` (+ test) | Present (G469+ WIP) | Live deferred — design/helpers only; no OAuth |
+| GA / GSC | `apps/api/src/core/ga-gsc-property-mapping.ts` (+ test) | Present (G469+ WIP) | No live |
+| GA / GSC | `apps/api/src/core/ga-gsc-site-url-mapping.ts` | Present | No live |
+| GA / GSC | `apps/api/src/core/ga-gsc-period-policy.ts` (+ test) | Present | No live |
 | GA / GSC | Monthly report policy / FINAL visibility helpers (`monthly-report-policy.test.ts`, `client-portal-monthly-report.test.ts`) | Present | Live deferred |
-| GA / GSC | OAuth token storage / refresh unit suite | Expected | Live deferred |
 | WordPress | `apps/api/src/services/wordpress.service.test.ts` | Present | Live deferred |
 | WordPress | Publish-freeze / credential-shape focused coverage | Expected (may already be inside wordpress.service.test) | Live deferred; auto-publish stays deferred |
 | Image | `apps/api/src/core/image-compliance-policy.test.ts` | Present | Live deferred |
@@ -221,6 +230,9 @@ These are **local unit/integration/helper** surfaces other lanes are adding or h
 - No-live catalogue: [`NO_LIVE_PROOF_CATALOGUE.md`](./NO_LIVE_PROOF_CATALOGUE.md)
 - Local-only taxonomy: [`LOCAL_ONLY_PROOF_TAXONOMY.md`](./LOCAL_ONLY_PROOF_TAXONOMY.md)
 - Validation guards: [`VALIDATION_COMMAND_GUARDS.md`](./VALIDATION_COMMAND_GUARDS.md)
-- Lane roadmap notes: [`G409_NEXT_GATES.md`](./G409_NEXT_GATES.md) (L12 owns final next-50)
+- Next-gate execution: [`NEXT_GATE_EXECUTION_CHECKLIST.md`](./NEXT_GATE_EXECUTION_CHECKLIST.md)
+- PowerShell safety: [`POWERSHELL_SAFETY_CHECKLIST.md`](./POWERSHELL_SAFETY_CHECKLIST.md)
+- Lane closeout: [`G649_G660_OPERATOR_CLOSEOUT.md`](./G649_G660_OPERATOR_CLOSEOUT.md)
+- Lane roadmap notes: [`G409_NEXT_GATES.md`](./G409_NEXT_GATES.md); post-G468: [`G468_NEXT_50_GATES.md`](./G468_NEXT_50_GATES.md)
 - Historical next-30: [`G227_NEXT_30_GATES.md`](./G227_NEXT_30_GATES.md)
-- Proposed main-doc patches (G223 era): [`_g223_g227_proposed_main_doc_updates.md`](./_g223_g227_proposed_main_doc_updates.md); G409 proposals in `$env:TEMP\dca-g409-g428-security-proposed-main-docs.md`
+- Proposed main-doc patches (G223 era): [`_g223_g227_proposed_main_doc_updates.md`](./_g223_g227_proposed_main_doc_updates.md)

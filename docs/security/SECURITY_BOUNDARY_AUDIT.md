@@ -3,9 +3,11 @@
 **Date:** 2026-07-09  
 **Scope:** Client Portal / admin API tenant boundaries after SEC-B1 fix. Read-only code audit; no live exploit execution.
 
-**Related:** [`docs/runbooks/PURIVA_CLIENT_PORTAL_BOUNDARY_GATE.md`](../runbooks/PURIVA_CLIENT_PORTAL_BOUNDARY_GATE.md) · [`docs/STATUS.md`](../STATUS.md) · [`SECURITY_CHECKLIST_G409.md`](./SECURITY_CHECKLIST_G409.md) · [`STORAGE_KEY_REDACTION_INVENTORY.md`](./STORAGE_KEY_REDACTION_INVENTORY.md) · [`CLIENT_BOUNDARY_INVENTORY.md`](./CLIENT_BOUNDARY_INVENTORY.md)
+**Related:** [`docs/runbooks/PURIVA_CLIENT_PORTAL_BOUNDARY_GATE.md`](../runbooks/PURIVA_CLIENT_PORTAL_BOUNDARY_GATE.md) · [`docs/STATUS.md`](../STATUS.md) · [`SECURITY_CHECKLIST_G637.md`](./SECURITY_CHECKLIST_G637.md) · [`SECURITY_CHECKLIST_G409.md`](./SECURITY_CHECKLIST_G409.md) · [`STORAGE_KEY_REDACTION_INVENTORY.md`](./STORAGE_KEY_REDACTION_INVENTORY.md) · [`CLIENT_BOUNDARY_INVENTORY.md`](./CLIENT_BOUNDARY_INVENTORY.md) · [`SECURITY_G637_G648_CLOSEOUT.md`](./SECURITY_G637_G648_CLOSEOUT.md)
 
 **G409 refresh note (docs-only, 2026-07-10):** SEC-B1 and SEC-H1 remain **FIXED** with existing regressions. No new exploit execution. Production readiness remains **NO**; Puriva Launch remains **BLOCKED**. Follow-up items M1–M5 / recommended next blocks below are unchanged in severity; inventories under `docs/security/` now index redaction helpers without weakening RBAC.
+
+**G646 refresh note (docs-only, 2026-07-10, G637–G648 / G469–G708 context):** Re-affirmed on baseline `main` @ `66dcb74`. SEC-B1 and SEC-H1 remain **FIXED**; no new exploit execution; no severity changes to M1–M5 / L1–L2. Local/no-live foundations expanded elsewhere do **not** close target-env re-verification (G473-class), staging Client Portal browser proof (G492-class), or production readiness. Prefer [`SECURITY_CHECKLIST_G637.md`](./SECURITY_CHECKLIST_G637.md) for current operator checklist language.
 
 ---
 

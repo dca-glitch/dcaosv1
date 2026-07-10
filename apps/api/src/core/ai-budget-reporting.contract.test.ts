@@ -222,4 +222,87 @@ describe("ai-budget-reporting.contract", () => {
     assert.equal(reconciliation.invoiceTotalUsd, null);
     assert.match(reconciliation.notes.join(" "), /Finance Lite invoice reconciliation/i);
   });
+
+  it("G614: estimated vs actual cost reporting keeps spendBasis honest", () => {
+    const report = buildAiBudgetReportingContract({
+      periodKey: PERIOD_KEY,
+      monthlyCapUsd: 100,
+      rows
+    });
+    const actualRow = report.rows.find((row) => row.id === "live-actual-1");
+    const estimateRow = report.rows.find((row) => row.id === "live-estimate-1");
+    assert.ok(actualRow && estimateRow);
+    assert.equal(actualRow.spendBasis, "actual");
+    assert.equal(actualRow.spentUsd, actualRow.actualCostUsd);
+    assert.equal(estimateRow.spendBasis, "estimated");
+    assert.equal(estimateRow.actualCostUsd, null);
+    assert.equal(estimateRow.spentUsd, estimateRow.estimatedCostUsd);
+    assert.equal(report.totals.actualCostUsd, 0.08);
+    assert.equal(report.totals.estimatedFallbackCostUsd, 0.45);
+    assert.notEqual(report.totals.estimatedCostUsd, report.totals.actualCostUsd);
+  });
+
+  it("G615: monthly cap report shape exposes cap, spend, remaining, and over-budget", () => {
+    const under = buildAiBudgetReportingContract({
+      periodKey: PERIOD_KEY,
+      monthlyCapUsd: 100,
+      rows
+    });
+    assert.equal(under.monthlyCapUsd, 100);
+    assert.equal(under.spentThisPeriodUsd, 0.53);
+    assert.equal(under.remainingBudgetUsd, 99.47);
+    assert.equal(under.projectedOverBudget, false);
+    assert.equal(under.countableRowCount, 4);
+    assert.ok(Array.isArray(under.rows));
+    assert.ok(Array.isArray(under.providerModelBreakdown));
+
+    const over = buildAiBudgetReportingContract({
+      periodKey: PERIOD_KEY,
+      monthlyCapUsd: 0.4,
+      rows
+    });
+    assert.equal(over.projectedOverBudget, true);
+    assert.equal(over.remainingBudgetUsd, 0);
+    assert.ok(over.spentThisPeriodUsd > over.monthlyCapUsd);
+  });
+
+  it("G616: provider/model breakdown aggregates estimated and actual separately", () => {
+    const report = buildAiBudgetReportingContract({
+      periodKey: PERIOD_KEY,
+      monthlyCapUsd: 100,
+      rows
+    });
+    const openRouter = report.providerModelBreakdown.find(
+      (row) => row.provider === "openrouter" && row.model === "anthropic/claude-haiku-4.5"
+    );
+    const local = report.providerModelBreakdown.find(
+      (row) => row.provider === "local_deterministic"
+    );
+    assert.ok(openRouter);
+    assert.ok(local);
+    assert.equal(openRouter.rowCount, 3);
+    assert.equal(openRouter.liveRowCount, 2);
+    assert.equal(openRouter.actualCostUsd, 0.08);
+    assert.equal(openRouter.estimatedFallbackCostUsd, 0.45);
+    assert.equal(openRouter.spentUsd, 0.53);
+    assert.equal(local.rowCount, 1);
+    assert.equal(local.liveRowCount, 0);
+    assert.equal(local.spentUsd, 0);
+  });
+
+  it("G617: live COMPLETED rows are included in reporting and liveRowCount", () => {
+    const report = buildAiBudgetReportingContract({
+      periodKey: PERIOD_KEY,
+      monthlyCapUsd: 100,
+      rows
+    });
+    const liveIds = report.rows.filter((row) => row.liveProviderCalled).map((row) => row.id);
+    assert.deepEqual(liveIds.sort(), ["live-actual-1", "live-estimate-1"]);
+    assert.equal(report.liveRowCount, 2);
+    assert.ok(report.spentThisPeriodUsd >= 0.08 + 0.15);
+    assert.equal(
+      report.rows.some((row) => row.id === "other-period-1"),
+      false
+    );
+  });
 });

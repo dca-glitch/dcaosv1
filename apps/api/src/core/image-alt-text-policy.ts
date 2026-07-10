@@ -5,7 +5,7 @@
  * no before/after implication, and not keyword-stuffed. No provider calls, no DB.
  */
 
-export const IMAGE_ALT_TEXT_POLICY_VERSION = "IMAGE_ALT_TEXT_POLICY_V2";
+export const IMAGE_ALT_TEXT_POLICY_VERSION = "IMAGE_ALT_TEXT_POLICY_V3";
 
 export const IMAGE_ALT_TEXT_MAX_LENGTH = 160;
 export const IMAGE_ALT_TEXT_MIN_LENGTH = 8;
@@ -34,10 +34,10 @@ export type ImageAltTextPolicyDecision = {
 };
 
 const MEDICAL_CLAIM_PATTERN =
-  /\b(treats?|cures?|heals?|diagnos(?:e|es|is)|clinically\s+proven|guaranteed\s+(?:results?|improvement)|medical\s+grade\s+result|FDA\s+approved\s+result|BPOM\s+approved\s+result|removes?\s+(?:wrinkles?|fat|acne)|eliminates?\s+(?:wrinkles?|fat|acne)|anti[-\s]?aging\s+result|pain[-\s]?free\s+result|permanent\s+results?)\b/i;
+  /\b(treats?|cures?|heals?|diagnos(?:e|es|is)|clinically\s+proven|guaranteed\s+(?:results?|improvement)|medical\s+grade\s+result|FDA\s+approved\s+result|BPOM\s+approved\s+result|removes?\s+(?:wrinkles?|fat|acne)|eliminates?\s+(?:wrinkles?|fat|acne)|anti[-\s]?aging\s+result|pain[-\s]?free\s+result|permanent\s+results?|botox\s+result|filler\s+result|clinically\s+proven\s+outcome)\b/i;
 
 const BEFORE_AFTER_PATTERN =
-  /\b(before\s*\/?\s*after|before[-\s]?and[-\s]?after|after\s+treatment|transformation|glow[-\s]?up|results?\s+shown|side[-\s]?by[-\s]?side|progress\s+photos?|then\s+vs\s+now)\b/i;
+  /\b(before\s*\/?\s*after|before[-\s]?and[-\s]?after|after\s+treatment|transformation|glow[-\s]?up|results?\s+shown|side[-\s]?by[-\s]?side|progress\s+photos?|then\s+vs\s+now|day\s*0\s+vs\s+day\s*\d+|weight[-\s]?loss\s+journey\s+photos?)\b/i;
 
 const PROVIDER_OR_PROMPT_LEAK_PATTERN =
   /\b(dall[-\s]?e|midjourney|firefly|ideogram|stable\s+diffusion|openai|prompt:|negative\s+prompt|IMAGE_COMPLIANCE|PURIVA_IMAGE_PACKAGE)\b/i;
@@ -146,5 +146,45 @@ export function evaluateImageAltTextPolicy(altText: string | null | undefined): 
     normalizedAltText: issues.length === 0 ? trimmed : trimmed,
     issues,
     checks
+  };
+}
+
+export type ImageAltTextReviewGateInput = {
+  altText: string | null | undefined;
+  /** When true, empty alt fails the gate (WordPress / final_accepted path). */
+  required: boolean;
+};
+
+export type ImageAltTextReviewGateResult = {
+  version: typeof IMAGE_ALT_TEXT_POLICY_VERSION;
+  ok: boolean;
+  policy: ImageAltTextPolicyDecision | null;
+  checks: string[];
+};
+
+/**
+ * G555 — Review gate for final/WP paths: required alt must pass policy.
+ */
+export function evaluateImageAltTextReviewGate(
+  input: ImageAltTextReviewGateInput
+): ImageAltTextReviewGateResult {
+  const trimmed = (input.altText ?? "").trim();
+  if (!input.required && !trimmed) {
+    return {
+      version: IMAGE_ALT_TEXT_POLICY_VERSION,
+      ok: true,
+      policy: null,
+      checks: ["ALLOW:alt_optional_absent"]
+    };
+  }
+
+  const policy = evaluateImageAltTextPolicy(input.altText);
+  return {
+    version: IMAGE_ALT_TEXT_POLICY_VERSION,
+    ok: policy.allowed,
+    policy,
+    checks: policy.allowed
+      ? ["ALLOW:alt_review_gate"]
+      : policy.checks.map((check) => `GATE:${check}`)
   };
 }

@@ -207,4 +207,93 @@ describe("monthly-report-policy", () => {
     assert.equal(futureBlocked.ok, false);
     assert.ok(futureBlocked.errors.some((error) => /future month/i.test(error)));
   });
+
+  it("G531: manual / placeholder / live metric labeling stays truthful", () => {
+    const placeholder = resolveMonthlyMetricsSourceTruth({
+      sourceType: "MANUAL",
+      placeholderOnly: true
+    });
+    assert.equal(placeholder.truth, "placeholder");
+    assert.match(placeholder.adminLabel, /placeholder/i);
+    assert.match(placeholder.clientLabel, /Placeholder/i);
+    assert.equal(placeholder.clientMayUseLiveLanguage, false);
+    assert.equal(placeholder.liveGaGscProven, false);
+
+    const manual = resolveMonthlyMetricsSourceTruth({
+      sourceType: "MANUAL",
+      placeholderOnly: false,
+      status: "APPROVED"
+    });
+    assert.equal(manual.truth, "manual");
+    assert.match(manual.adminLabel, /MANUAL approved/i);
+    assert.match(manual.clientLabel, /approved manual snapshot/i);
+    assert.equal(manual.clientMayUseLiveLanguage, false);
+
+    const live = resolveMonthlyMetricsSourceTruth({
+      sourceType: "GA4",
+      status: "APPROVED",
+      gaGscReadinessStatus: "configured_shape_ok",
+      liveProofApproved: true
+    });
+    assert.equal(live.truth, "live");
+    assert.equal(live.clientMayUseLiveLanguage, true);
+    assert.equal(live.liveGaGscProven, true);
+    assert.match(live.clientLabel, /connected analytics/i);
+    assert.equal(/live GA\/GSC/i.test(live.clientLabel), false);
+
+    const unprovenLiveShape = resolveMonthlyMetricsSourceTruth({
+      sourceType: "GSC",
+      status: "APPROVED",
+      gaGscReadinessStatus: "configured_shape_ok",
+      liveProofApproved: false
+    });
+    assert.equal(unprovenLiveShape.truth, "unavailable");
+    assert.equal(unprovenLiveShape.clientMayUseLiveLanguage, false);
+    assert.equal(unprovenLiveShape.clientLabel, "Metrics unavailable");
+  });
+
+  it("G532: CSV import truth labels never claim live analytics", () => {
+    const csv = resolveMonthlyMetricsSourceTruth({
+      sourceType: "CSV_IMPORT",
+      status: "APPROVED"
+    });
+    assert.equal(csv.truth, "csv");
+    assert.match(csv.adminLabel, /CSV imported/i);
+    assert.match(csv.clientLabel, /imported snapshot/i);
+    assert.equal(csv.clientMayUseLiveLanguage, false);
+    assert.equal(csv.liveGaGscProven, false);
+    assert.equal(/live/i.test(csv.clientLabel), false);
+    assert.equal(/GA\/GSC/i.test(csv.clientLabel), false);
+
+    const serialized = serializeMonthlyMetricsSourceTruth({
+      sourceType: "CSV_IMPORT",
+      status: "APPROVED"
+    });
+    assert.equal(serialized.truth, "csv");
+    const clientView = toClientMonthlyMetricsSourceTruthView(serialized);
+    assert.equal(clientView.truth, "csv");
+    assert.equal("gaGscReadinessStatus" in clientView, false);
+    assert.equal("liveProofApproved" in clientView, false);
+    assert.equal(clientView.mayUseLiveLanguage, false);
+    // Label text must not claim live analytics (ignore mayUseLiveLanguage key name).
+    assert.equal(/live/i.test(clientView.label), false);
+    assert.equal(/GA\/GSC/i.test(clientView.label), false);
+
+    const gen = validateMonthlyReportGenerationInput({
+      reportId: "csv-report-1",
+      targetMonth: "2026-06",
+      reportingTimezone: "Asia/Bangkok",
+      approvedSnapshotId: "csv-snap-1",
+      reportStatus: "FINAL",
+      dateRange: resolveMonthlyReportDateRangePolicy({
+        targetMonth: "2026-06",
+        reportingTimezone: "Asia/Bangkok",
+        referenceDate: new Date("2026-07-10T00:00:00.000Z")
+      }),
+      metricsSource: { sourceType: "CSV_IMPORT", status: "APPROVED" }
+    });
+    assert.equal(gen.ok, true, gen.errors.join("; "));
+    assert.equal(gen.normalized?.metricsTruth.truth, "csv");
+    assert.equal(gen.normalized?.metricsTruth.clientMayUseLiveLanguage, false);
+  });
 });

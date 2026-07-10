@@ -1,6 +1,6 @@
 # DCA OS Lite — Status (Source of Truth)
 
-**Last updated:** 2026-07-10 (G468 — G229-G467 final integration closeout)
+**Last updated:** 2026-07-10 (G708 — G469-G707 final integration closeout)
 **G55 pre-live readiness:** [`docs/runbooks/G55_PRELIVE_READINESS.md`](./runbooks/G55_PRELIVE_READINESS.md)
 **G56 pre-live readiness:** [`docs/runbooks/G56_PRELIVE_READINESS.md`](./runbooks/G56_PRELIVE_READINESS.md)
 **G57–G68 pre-live readiness:** [`docs/runbooks/G57_G68_PRELIVE_READINESS.md`](./runbooks/G57_G68_PRELIVE_READINESS.md)
@@ -25,19 +25,21 @@
 **Storage/R2 proof plan:** [`docs/runbooks/STORAGE_R2_PROOF.md`](./runbooks/STORAGE_R2_PROOF.md)
 **Integrations truth matrix:** [`docs/runbooks/INTEGRATIONS_TRUTH_MATRIX.md`](./runbooks/INTEGRATIONS_TRUTH_MATRIX.md)
 **Admin UI/workflow polish audit:** [`docs/ux/ADMIN_WORKFLOW_POLISH_AUDIT.md`](./ux/ADMIN_WORKFLOW_POLISH_AUDIT.md) (read-only; UX-P1–P12 queued blocks)
-**G468 next 50 gates:** [`docs/operator/G468_NEXT_50_GATES.md`](./operator/G468_NEXT_50_GATES.md)
+**G468 next 50 gates (historical):** [`docs/operator/G468_NEXT_50_GATES.md`](./operator/G468_NEXT_50_GATES.md)
+**G708 next gates:** [`docs/operator/G708_NEXT_GATES.md`](./operator/G708_NEXT_GATES.md)
 
 ---
 
-## Executive snapshot (G52-B + G53 + G55 + G56 + G57–G68 + G69 + G89-G468)
+## Executive snapshot (G52-B + G53 + G55 + G56 + G57–G68 + G69 + G89-G708)
 
 | Item | State |
 |------|--------|
-| Latest baseline | G229-G468 final integration on `main` (uncommitted) — deepened local/no-IO foundations across R2, notifications, GA/GSC/monthly, WordPress, image compliance V3, Client Portal, Puriva packs, future-module contracts, AI budget/routing, security inventories, and UI testability docs |
+| Latest baseline | G469-G708 ultra-block final integration on `main` (uncommitted) — consolidated local/no-IO foundations across 20 lanes (R2/storage, private delivery, notifications, email no-send, GA/GSC, monthly reports, WordPress, image compliance, Client Portal, approval/revision, Puriva pack, future modules, AI budget/routing, orchestrator guards, security inventories, operator runbooks, UI testability, stale-claim sweep, deferred/truth matrix, roadmap) |
 | **G69 merge** | **DONE** — G57–G68 fast-forward merged to `main`; final commit `64bfd06` |
 | Production readiness | **NO** |
-| Next gate | **G469 recommended** — owner-selected launch-blocker execution gate; recommended first target remains R2 target-environment real-bucket proof. See [`docs/operator/G468_NEXT_50_GATES.md`](./operator/G468_NEXT_50_GATES.md). No live proof, staging mutation, production mutation, commit, push, or deploy is authorized by G468. |
-| G229-G468 final integration | **KEEP pending validation** — 12 lanes reconciled; local/no-IO foundations only; live R2, live email, live GA/GSC, live WordPress, live image, staging/prod proofs, notification persistence/inbox, trusted `actualCostUsd` ingestion, commit, push, deploy remain blocked |
+| Next gate | **G709 recommended** — owner-selected launch-blocker execution gate; recommended first target remains R2 target-environment real-bucket proof. See [`docs/operator/G708_NEXT_GATES.md`](./operator/G708_NEXT_GATES.md). No live proof, staging mutation, production mutation, commit, push, or deploy is authorized by G469–G708. |
+| G469-G708 final integration | **KEEP pending validation** — 20 lanes reconciled; local/no-IO foundations only; live R2, live email, live GA/GSC, live WordPress, live image, staging/prod proofs, notification persistence/inbox, trusted `actualCostUsd` ingestion, commit, push, deploy remain blocked |
+| G229-G468 final integration | **KEEP** — 12 lanes reconciled; local/no-IO foundations only; superseded as latest baseline by G469-G708 |
 | G72 model routing | **Implemented** — backend policy per task type; approved model `anthropic/claude-haiku-4.5`; no live call in G72 |
 | G73 routing attribution | **Local PASS** — dry-run/preview `modelRouting` + `plannedLedgerMetadata`; budget guard route cap wired; persistent preview ledger records routing metadata |
 | G74 completed ledger attribution | **Implemented (no-live)** — `buildCompletedLedgerMetadata`, `prepareCompletedLedgerAttribution`, `recordCompletedAiLedgerEntry`; mocked provider execution in unit tests |
@@ -51,7 +53,7 @@
 | G81-G87 live proof planning | **Planning/prep only** — staging live proof, notifications, email no-send proof, approval event map, GA/GSC live metrics, WordPress live draft, and image generation provider proof plans updated; no live calls or sends executed |
 | G88 consolidation | **Docs consolidation in shared files** — correct G79-G88 gate map recorded; Puriva Launch remains **BLOCKED** and production remains frozen |
 | G89-G148 final integration | **KEEP** — local foundations only; live proofs remain blocked |
-| G149-G228 final integration | **KEEP** — 9 lanes reconciled; local/no-IO foundations only; superseded as latest baseline by G229-G468 |
+| G149-G228 final integration | **KEEP** — 9 lanes reconciled; local/no-IO foundations only; superseded as latest baseline by G469-G708 |
 | Notification persistence / inbox | **DEFERRED** — taxonomy/no-send + correlation design only; no migration/inbox MVP |
 | Live email / Resend | **DEFERRED** — no-send only; live send blocked |
 | Trusted `actualCostUsd` ingestion | **DEFERRED** — G80 policy + G389-G408 design helpers; ingestion not wired |
@@ -72,7 +74,7 @@
 | Production deploy | **Frozen/deferred** — no deploy until G49 dry-run + G50 explicit approval |
 | G49 public probes (§6.2) | **PASS** — 2026-07-09; formal gate closure pending owner sentence |
 | G50 production deploy | **Not executed** — frozen/deferred |
-| Puriva Launch | **Blocked** — live proof gates and product workflow gates required; G89-G467 add local foundations and docs only; no live provider/storage/email/Google/WordPress/image proof, staging/prod proof, or production deploy is claimed |
+| Puriva Launch | **Blocked** — live proof gates and product workflow gates required; G89-G707 add local foundations and docs only; no live provider/storage/email/Google/WordPress/image proof, staging/prod proof, or production deploy is claimed |
 | Roadmap tracks | Production Safety · Live Integration Proof · Client Operating Pack/Productization |
 
 Detail: [`AI_MODEL_ROUTING_POLICY.md`](./runbooks/AI_MODEL_ROUTING_POLICY.md) · [`G53_PRODUCTION_SAFETY_PLAN.md`](./runbooks/G53_PRODUCTION_SAFETY_PLAN.md) · [`deferred-scope-register.md`](./operator/deferred-scope-register.md) · §2.14 below.
@@ -810,7 +812,7 @@ The following remain true; detail preserved in linked docs and git history.
 - **Block 5A–5D-A (Claude audit remediation):** closed on `main` — admin tenant RBAC, fail-closed boundary smokes, CI unit tests, cross-platform globs, remote staging opt-in, bootstrap guards (`2437c84`–`e54445f`).
 - **Block 5D-B (pre-staging local closeout):** PASS with manual orchestrator workaround; G4 still blocked.
 - Client Access Admin UI; EN2 audit writer foundation; security headers + rate limiting.
-- AI SEO Blocks 3B–3G, 4A–4G, 5A, 6A–6C-v1; Knowledge integration proven via `smoke:ai-knowledge-context`.
+- AI SEO Blocks 3B–3G, 4A–4G, 5A, 6A–6C-v1; Knowledge **local** integration smoke-proven via `smoke:ai-knowledge-context` (not staging/production or live-provider proof).
 - G7 Block 2 Puriva operational data path: verified intake now feeds AI Knowledge, WorkflowBriefs,
   SEO planning, and AI Delivery handoff with admin-only/client-safe boundaries preserved.
 - Phase F roadmap: [`docs/ROADMAP_LOCAL_COMPLETION_PHASE_F.md`](./ROADMAP_LOCAL_COMPLETION_PHASE_F.md).

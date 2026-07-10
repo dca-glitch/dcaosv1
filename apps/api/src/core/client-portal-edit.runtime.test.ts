@@ -31,14 +31,16 @@ function mockSession(roles: string[]): AuthResolvedSessionContext {
   };
 }
 
-describe("client portal edit access", () => {
+describe("client portal edit access (G573 surface)", () => {
   it("treats client role as portal edit user", () => {
     assert.equal(isClientPortalApprovalUser(mockSession(["client"])), true);
   });
 
-  it("excludes owner and admin from client-only edit flows", () => {
+  it("excludes owner and admin from client-only edit flows — no RBAC weakening", () => {
     assert.equal(isClientPortalApprovalUser(mockSession(["owner"])), false);
     assert.equal(isClientPortalApprovalUser(mockSession(["admin"])), false);
+    assert.equal(isClientPortalApprovalUser(mockSession(["owner", "client"])), false);
+    assert.equal(isClientPortalApprovalUser(mockSession(["admin", "client"])), false);
   });
 
   it("allows only client-edit fields in edit history serialization", () => {
@@ -55,7 +57,9 @@ describe("client portal edit access", () => {
     assert.equal(isClientPortalEditableFieldName("providerMetadata"), false);
     assert.equal(isClientPortalEditableFieldName("actualCostUsd"), false);
     assert.equal(isClientPortalEditableFieldName("estimatedCostUsd"), false);
+    assert.equal(isClientPortalEditableFieldName("rawCost"), false);
     assert.equal(isClientPortalEditableFieldName("audit"), false);
     assert.equal(isClientPortalEditableFieldName("adminSummaryNotes"), false);
+    assert.equal(isClientPortalEditableFieldName("jobQueueStatus"), false);
   });
 });

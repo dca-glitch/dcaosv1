@@ -1,6 +1,6 @@
 # DCA OS Lite — Operator Runbook (Consolidated)
 
-**Status:** Single operator entry point for local validation, smoke, recovery, and staging/production prerequisites. G35 Phase B local pre-staging gate passed on `217c11c`; G35 Phase C controlled staging refresh completed on commit `5e1ea5a`. G46d/G47 staging deploy/smoke/proof PASS. G48 production readiness planning PASS. **G53 production safety plan approved (planning only).** Production deploy ready: **NO**. G49 public read-only probes PASS, but formal G49 closure still needs the owner-approval sentence; G50 **not executed**. G54 HSTS/proxy: **PASS**. Next production path remains formal G49 closure before G50, only after owner approval. Puriva Launch **blocked** pending live proof gates. Staging proven historically; production frozen. Further staging or production work requires fresh owner approval. G138-G144 and G223-G227 refreshed owned operator/security docs; **G409–G428** refreshed security inventories + operator checklists (prefer [`SECURITY_CHECKLIST_G409.md`](../security/SECURITY_CHECKLIST_G409.md)). No live calls, staging/prod mutation, commit, push, or deploy in those docs lanes.
+**Status:** Single operator entry point for local validation, smoke, recovery, and staging/production prerequisites. **G649–G660 operator refresh (2026-07-10)** for the G469–G708 ultra-block context on baseline `66dcb74`. Hard truths: local foundations expanding; **live proofs deferred**; **Puriva Launch BLOCKED**; **production frozen** (readiness **NO**); no smoke after failed validate; PowerShell one-command-per-line. G35 Phase B local pre-staging gate passed on `217c11c`; G35 Phase C controlled staging refresh completed on commit `5e1ea5a`. G46d/G47 staging deploy/smoke/proof PASS (historical). G48 production readiness planning PASS. **G53 production safety plan approved (planning only).** G49 public read-only probes PASS, but formal G49 closure still needs the owner-approval sentence; G50 **not executed**. G54 HSTS/proxy: **PASS**. Next production path remains formal G49 closure before G50, only after owner approval. Staging proven historically; further staging or production work requires fresh owner approval. Prior operator refreshes: G138-G144, G223-G227, G409–G428 (prefer [`SECURITY_CHECKLIST_G409.md`](../security/SECURITY_CHECKLIST_G409.md)). Post-G468 roadmap: [`G468_NEXT_50_GATES.md`](./G468_NEXT_50_GATES.md). G649–G660 closeout: [`G649_G660_OPERATOR_CLOSEOUT.md`](./G649_G660_OPERATOR_CLOSEOUT.md). No live calls, staging/prod mutation, commit, push, or deploy in this docs lane.
 **Source of truth for product state:** [`docs/STATUS.md`](../STATUS.md)
 
 Related detailed runbooks:
@@ -27,11 +27,13 @@ Related detailed runbooks:
 | G409 security checklist (prefer) | [`docs/security/SECURITY_CHECKLIST_G409.md`](../security/SECURITY_CHECKLIST_G409.md) |
 | Production freeze / staging guard sweeps | [`PRODUCTION_FREEZE_SWEEP.md`](../security/PRODUCTION_FREEZE_SWEEP.md) · [`STAGING_GUARD_SWEEP.md`](../security/STAGING_GUARD_SWEEP.md) |
 | Redaction inventories | [`SECRETS_REDACTION_INVENTORY.md`](../security/SECRETS_REDACTION_INVENTORY.md) · [`STORAGE_KEY_REDACTION_INVENTORY.md`](../security/STORAGE_KEY_REDACTION_INVENTORY.md) · [`CLIENT_BOUNDARY_INVENTORY.md`](../security/CLIENT_BOUNDARY_INVENTORY.md) |
-| G419 package-script test/smoke inventory | [`TEST_SMOKE_INVENTORY.md`](./TEST_SMOKE_INVENTORY.md) |
-| G418 validation command guards | [`VALIDATION_COMMAND_GUARDS.md`](./VALIDATION_COMMAND_GUARDS.md) |
+| G651 / G419 package-script test/smoke inventory | [`TEST_SMOKE_INVENTORY.md`](./TEST_SMOKE_INVENTORY.md) |
+| G650 / G418 validation command guards | [`VALIDATION_COMMAND_GUARDS.md`](./VALIDATION_COMMAND_GUARDS.md) |
 | No-live / live-approval / owner checklists | [`NO_LIVE_PROOF_CATALOGUE.md`](./NO_LIVE_PROOF_CATALOGUE.md) · [`LIVE_PROOF_APPROVAL_CHECKLIST.md`](./LIVE_PROOF_APPROVAL_CHECKLIST.md) · [`OWNER_GATE_CHECKLIST.md`](./OWNER_GATE_CHECKLIST.md) · [`LOCAL_ONLY_PROOF_TAXONOMY.md`](./LOCAL_ONLY_PROOF_TAXONOMY.md) |
+| Next-gate execution / PowerShell safety | [`NEXT_GATE_EXECUTION_CHECKLIST.md`](./NEXT_GATE_EXECUTION_CHECKLIST.md) · [`POWERSHELL_SAFETY_CHECKLIST.md`](./POWERSHELL_SAFETY_CHECKLIST.md) |
 | Env names (no values) | [`ENV_READINESS_INVENTORY.md`](./ENV_READINESS_INVENTORY.md) |
-| Deferred scope | [`deferred-scope-register.md`](./deferred-scope-register.md) |
+| Deferred scope (main-owned) | [`deferred-scope-register.md`](./deferred-scope-register.md) |
+| G468 next-50 / G649–G660 closeout | [`G468_NEXT_50_GATES.md`](./G468_NEXT_50_GATES.md) · [`G649_G660_OPERATOR_CLOSEOUT.md`](./G649_G660_OPERATOR_CLOSEOUT.md) |
 
 **Run location:** External Windows PowerShell from `C:\dcaosv1`. Log long runs to `$env:TEMP` and open in Notepad. Stop on first failure.
 
@@ -193,9 +195,9 @@ Full detail: [`docs/runbooks/ADMIN_OPERATIONS_RECOVERY.md`](../runbooks/ADMIN_OP
 
 ---
 
-## 4.0 G138-G144 / G409-G428 owned-doc truth sweep
+## 4.0 G138-G144 / G409-G428 / G649-G660 owned-doc truth sweep
 
-This runbook refresh is docs-only. It does not supersede `docs/STATUS.md`, `deferred-scope-register.md`, `INTEGRATIONS_TRUTH_MATRIX.md`, or `PURIVA_LAUNCH_GATE.md`.
+This runbook refresh is docs-only. It does not supersede `docs/STATUS.md`, `deferred-scope-register.md`, `INTEGRATIONS_TRUTH_MATRIX.md`, `PURIVA_LAUNCH_GATE.md`, or `G708_NEXT_GATES.md`.
 
 | Gate | Outcome |
 |------|---------|
@@ -206,14 +208,18 @@ This runbook refresh is docs-only. It does not supersede `docs/STATUS.md`, `defe
 | G142 | Package-script test/smoke inventory added in [`TEST_SMOKE_INVENTORY.md`](./TEST_SMOKE_INVENTORY.md). |
 | G143 | Validation command guard doc added in [`VALIDATION_COMMAND_GUARDS.md`](./VALIDATION_COMMAND_GUARDS.md). |
 | G144 | Operator runbook refreshed with links, truth sweep, and report-only protected-doc patch proposals. |
-| G409–G428 | Security checklist G409 + redaction/freeze/staging inventories; validation/smoke/runbook refresh; no-live catalogue; live-proof and owner checklists; local-only taxonomy; lane roadmap notes in [`G409_NEXT_GATES.md`](./G409_NEXT_GATES.md) (L12 owns final next-50). |
+| G409–G428 | Security checklist G409 + redaction/freeze/staging inventories; validation/smoke/runbook refresh; no-live catalogue; live-proof and owner checklists; local-only taxonomy; lane roadmap notes in [`G409_NEXT_GATES.md`](./G409_NEXT_GATES.md). |
+| G649–G660 | Operator runbook / validation / proof-approval refresh for G469–G708 ultra-block; next-gate + PowerShell safety checklists; closeout in [`G649_G660_OPERATOR_CLOSEOUT.md`](./G649_G660_OPERATOR_CLOSEOUT.md). |
 
-Truth sweep summary:
+Truth sweep summary (current):
 
+- Local foundations: expanding under G469–G708 lanes (no-IO / disabled-safe / design-only). Do **not** treat as launch proof.
+- Live proofs: **deferred** until a separately approved execution gate (default first candidate: R2 target-bucket proof per G468/G469).
 - Staging: G46d/G47 PASS is recorded for the prior artifact/context only; no fresh staging action was performed here.
-- Production: G49 public read-only probes PASS, formal G49 closure pending owner sentence, G50 not executed, production readiness **NO**.
-- Puriva Launch: blocked pending live proof gates and product workflow gates.
+- Production: G49 public read-only probes PASS, formal G49 closure pending owner sentence, G50 not executed, production readiness **NO**, production **frozen**.
+- Puriva Launch: **BLOCKED** pending live proof gates and product workflow gates.
 - Integrations: no staging/production live proof is newly claimed; local/config-shape evidence remains labeled as such.
+- `.cursor/settings.json`: must remain **untracked**; never `git add`.
 
 ---
 

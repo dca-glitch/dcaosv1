@@ -1,6 +1,11 @@
 import type { EmailStatus, EmailTemplateKey, Prisma } from "@prisma/client";
 import { createPrismaClient } from "../../../../packages/data/src/client";
-import { getEmailProviderConfig, type EmailProviderConfig } from "../config";
+import {
+  getEmailProviderConfig,
+  getEmailProviderSafetyShape,
+  type EmailProviderConfig
+} from "../config/email.config";
+import { resolveEmailTemplateKey } from "../notifications/email-template-catalog";
 
 export type EmailNotificationTemplateKey = EmailTemplateKey;
 export type EmailNotificationStatus = EmailStatus;
@@ -106,6 +111,18 @@ async function resolveSendStatus(
   config: EmailProviderConfig,
   input: SendEmailNotificationInput
 ): Promise<Pick<SendEmailNotificationResult, "status" | "providerMessageId" | "errorMessage">> {
+  const safety = getEmailProviderSafetyShape();
+  const template = resolveEmailTemplateKey(input.templateKey);
+
+  // Missing/unknown template remains no-send safe (G508); never call a provider.
+  if (template.templateMissing) {
+    return {
+      status: "SKIPPED",
+      providerMessageId: null,
+      errorMessage: "Email template key is missing or unknown; no email was sent."
+    };
+  }
+
   if (config.provider === "local") {
     return {
       status: "SKIPPED",
@@ -122,6 +139,17 @@ async function resolveSendStatus(
     };
   }
 
+  // G505 / G515 — keyed Resend without explicit authorization stays deferred (no network).
+  if (safety.liveSendDeferred || !safety.sendingEnabled) {
+    return {
+      status: "SKIPPED",
+      providerMessageId: null,
+      errorMessage:
+        "Resend is configured but live send is deferred; EMAIL_LIVE_SEND_AUTHORIZED is not true. No email was sent."
+    };
+  }
+
+  // Live path remains owner-gated; this lane does not authorize production sends.
   return sendViaResend(config, input);
 }
 
@@ -260,6 +288,9 @@ export interface EmailNotificationOutboxStatus {
   replyTo: string;
   hasResendApiKey: boolean;
   sendingEnabled: boolean;
+  localNoSend: boolean;
+  liveSendDeferred: boolean;
+  liveProofRequired: boolean;
 }
 
 export interface TenantEmailLogListResponse {
@@ -275,14 +306,17 @@ export interface ListTenantEmailLogsFilters {
 }
 
 export function getEmailNotificationOutboxStatus(): EmailNotificationOutboxStatus {
-  const config = getEmailProviderConfig();
+  const safety = getEmailProviderSafetyShape();
 
   return {
-    provider: config.provider,
-    fromAddress: config.fromAddress,
-    replyTo: config.replyTo,
-    hasResendApiKey: config.hasResendApiKey,
-    sendingEnabled: config.provider === "resend" && config.hasResendApiKey
+    provider: safety.provider,
+    fromAddress: safety.fromAddress,
+    replyTo: safety.replyTo,
+    hasResendApiKey: safety.hasResendApiKey,
+    sendingEnabled: safety.sendingEnabled,
+    localNoSend: safety.localNoSend,
+    liveSendDeferred: safety.liveSendDeferred,
+    liveProofRequired: safety.liveProofRequired
   };
 }
 

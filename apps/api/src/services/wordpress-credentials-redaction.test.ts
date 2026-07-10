@@ -7,7 +7,7 @@ import {
   redactWordPressSerializableValue
 } from "./wordpress-credentials-redaction";
 
-describe("wordpress-credentials-redaction (G293)", () => {
+describe("wordpress-credentials-redaction (G293 / G545)", () => {
   it("redacts credential policy shape to presence flags only", () => {
     const raw = "wp-app-password-plain";
     const shape = redactWordPressCredentialShape({
@@ -73,5 +73,30 @@ describe("wordpress-credentials-redaction (G293)", () => {
     });
     assert.equal((redacted as { note: string }).note, "[REDACTED]");
     assert.equal((redacted as { path: string }).path, "/safe");
+  });
+
+  it("G545 drops authHeader / apiKey / masterKey keys from nested objects", () => {
+    const redacted = redactWordPressSerializableValue({
+      status: "ok",
+      authHeader: "Basic abc123",
+      apiKey: "key-value",
+      masterKey: "master-value",
+      safe: true
+    });
+    const serialized = JSON.stringify(redacted);
+    assert.equal(serialized.includes("authHeader"), false);
+    assert.equal(serialized.includes("apiKey"), false);
+    assert.equal(serialized.includes("masterKey"), false);
+    assert.equal(serialized.includes("Basic abc123"), false);
+    assert.equal((redacted as { safe: boolean }).safe, true);
+  });
+
+  it("G545 treats invalid siteUrl as null host without leaking path", () => {
+    const metadata = redactWordPressCredentialMetadata({
+      credentialsPresent: false,
+      siteUrl: "not-a-url/with/path?token=x"
+    });
+    assert.equal(metadata.siteUrlHost, null);
+    assert.equal(JSON.stringify(metadata).includes("token"), false);
   });
 });

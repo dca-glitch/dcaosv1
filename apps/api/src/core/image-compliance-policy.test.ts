@@ -4,12 +4,14 @@ import {
   buildImageCompliancePolicySnapshot,
   buildImagePromptProfile,
   evaluateImageCompliancePolicy,
+  evaluateImageConceptComplianceBundle,
   getImageApprovalLoopEvent,
   IMAGE_APPROVAL_LOOP_ACTIONS,
   IMAGE_COMPLIANCE_ALLOWED_DIRECTION_EXAMPLES,
   IMAGE_COMPLIANCE_HARD_BLOCK_CODES,
   IMAGE_COMPLIANCE_POLICY_VERSION,
   IMAGE_COMPLIANCE_REJECT_CODES,
+  requireImageRejectReasonForApprovalAction,
   validateMandatoryImageRejectReason
 } from "./image-compliance-policy";
 
@@ -281,5 +283,69 @@ describe("image-compliance-policy", () => {
 
     assert.equal(getImageApprovalLoopEvent("admin_approve").requiresRejectReason, false);
     assert.equal(getImageApprovalLoopEvent("replacement_ready").nextStatus, "admin_review_ready");
+  });
+
+  it("G553/G554 expands filler/Botox result and clinical staging blocks while allowing new neutrals", () => {
+    const filler = evaluateImageCompliancePolicy({
+      stage: "pre_generation_prompt",
+      text: "Show a lip filler result and Botox result comparison."
+    });
+    assert.equal(filler.allowed, false);
+    assert.ok(filler.findings.some((f) => f.code === "treatment_result_risk"));
+
+    const staging = evaluateImageCompliancePolicy({
+      stage: "pre_generation_prompt",
+      text: "Clinical staging in a treatment bay with procedure bay lighting."
+    });
+    assert.equal(staging.allowed, false);
+    assert.ok(staging.findings.some((f) => f.code === "procedure_or_device_risk"));
+
+    const ceramic = evaluateImageCompliancePolicy({
+      stage: "pre_generation_prompt",
+      text: "Soft daylight on ceramic skincare vessels without brand claims"
+    });
+    assert.equal(ceramic.allowed, true);
+
+    assert.equal(IMAGE_COMPLIANCE_POLICY_VERSION, "IMAGE_COMPLIANCE_POLICY_V4");
+    assert.ok(IMAGE_COMPLIANCE_ALLOWED_DIRECTION_EXAMPLES.length >= 8);
+  });
+
+  it("G553 evaluates prompt/alt/output concept bundles without provider contact", () => {
+    const ok = evaluateImageConceptComplianceBundle({
+      promptText: "Calm editorial wellness composition with soft textures.",
+      altText: "Soft linen textures in a quiet wellness interior",
+      outputReviewText: "Neutral lifestyle still life with botanical detail"
+    });
+    assert.equal(ok.allowed, true);
+    assert.ok(ok.checks.includes("ALLOW:concept_bundle"));
+
+    const blocked = evaluateImageConceptComplianceBundle({
+      promptText: "Neutral wellness hero.",
+      altText: "Weight-loss journey photos then vs now"
+    });
+    assert.equal(blocked.allowed, false);
+    assert.ok(blocked.altTextScreen && blocked.altTextScreen.allowed === false);
+  });
+
+  it("G557 requires structured reject reasons for reject-like approval actions", () => {
+    const missing = requireImageRejectReasonForApprovalAction("admin_reject", {
+      submittedBy: "admin"
+    });
+    assert.equal(missing.ok, false);
+
+    const ok = requireImageRejectReasonForApprovalAction("client_reject", {
+      reasonCode: "brand_mismatch",
+      submittedBy: "client"
+    });
+    assert.equal(ok.ok, true);
+    if (ok.ok) {
+      assert.equal(ok.reason.context, "client_reject");
+    }
+
+    const notRequired = requireImageRejectReasonForApprovalAction("admin_approve", {
+      reasonCode: "low_quality",
+      submittedBy: "admin"
+    });
+    assert.equal(notRequired.ok, false);
   });
 });

@@ -4,6 +4,7 @@ import { PURIVA_HIGH_RISK_CATEGORY_IDS } from "./puriva-service-taxonomy";
 import { buildPurivaContentProductionContext } from "./puriva-content-production";
 import { buildPurivaSeoPlanContext } from "./puriva-seo-plan";
 import {
+  assessPurivaImagePackageComplianceAlignment,
   buildPurivaImagePackageContext,
   buildPurivaWorkflowBriefImagePackageInput,
   buildAiDeliveryArticleImageRequestsFromImagePackage,
@@ -125,5 +126,15 @@ describe("puriva-image-package", () => {
       (first.imagePackage as { imagePackages: unknown[] }).imagePackages.length,
       (second.imagePackage as { imagePackages: unknown[] }).imagePackages.length
     );
+  });
+
+  it("G563 aligns client-facing scaffold text with image compliance and alt policies", () => {
+    const context = buildPurivaImagePackageContext(targetMonth);
+    const alignment = assessPurivaImagePackageComplianceAlignment(context);
+
+    assert.equal(alignment.ok, true, alignment.failures.join("; "));
+    assert.equal(alignment.finalReadyAlwaysBlocked, true);
+    assert.equal(alignment.liveGenerationAllowed, false);
+    assert.ok(alignment.conceptCountChecked > 0);
   });
 });

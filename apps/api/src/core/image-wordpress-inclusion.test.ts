@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
+  evaluateImageWordpressInclusionBundle,
   evaluateImageWordpressInclusionReadiness,
   IMAGE_WORDPRESS_INCLUSION_ROLES
 } from "./image-wordpress-inclusion";
@@ -75,5 +76,39 @@ describe("image-wordpress-inclusion", () => {
     });
     assert.equal(clientApprovedOnly.ready, false);
     assert.ok(clientApprovedOnly.checks.includes("REJECT:not_final_accepted"));
+  });
+
+  it("G560 bundles WP readiness with alt and compliance gates", () => {
+    const ready = evaluateImageWordpressInclusionBundle({
+      approvalState: "final_accepted",
+      role: "hero",
+      hasAltText: true,
+      altTextAllowed: true,
+      complianceAllowed: true
+    });
+    assert.equal(ready.ready, true);
+    assert.ok(ready.checks.includes("READY:wordpress_draft_inclusion"));
+    assert.ok(ready.checks.includes("ALLOW:alt_text_policy"));
+    assert.ok(ready.checks.includes("ALLOW:compliance_policy"));
+
+    const badAlt = evaluateImageWordpressInclusionBundle({
+      approvalState: "final_accepted",
+      role: "supporting",
+      hasAltText: true,
+      altTextAllowed: false,
+      complianceAllowed: true
+    });
+    assert.equal(badAlt.ready, false);
+    assert.ok(badAlt.checks.includes("REJECT:alt_text_policy"));
+
+    const badCompliance = evaluateImageWordpressInclusionBundle({
+      approvalState: "final_accepted",
+      role: "social",
+      hasAltText: true,
+      hasSocialPreviewAsset: true,
+      complianceAllowed: false
+    });
+    assert.equal(badCompliance.ready, false);
+    assert.ok(badCompliance.checks.includes("REJECT:compliance_policy"));
   });
 });

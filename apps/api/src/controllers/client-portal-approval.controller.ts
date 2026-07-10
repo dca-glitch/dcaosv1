@@ -9,6 +9,7 @@ import {
   rejectClientPortalDeliverableImage,
   undoClientPortalDeliverableImageReview
 } from "../core/client-portal-approval.runtime";
+import { getClientPortalApprovalPolicyMessage } from "../core/client-portal-approval-policy";
 import {
   getClientPortalDeliverableEditHistory,
   updateArticleBody,
@@ -181,6 +182,13 @@ export const rejectClientPortalDeliverableImageHandler: RequestHandler = async (
     return;
   }
 
+  if (!rejectionReason.trim()) {
+    res.status(400).json(
+      failure("CLIENT_APPROVAL_REASON_REQUIRED", getClientPortalApprovalPolicyMessage("REASON_REQUIRED"))
+    );
+    return;
+  }
+
   const result = await rejectClientPortalDeliverableImage(authSession, deliverableId, imageId, rejectionReason);
   if (!result) {
     res.status(400).json(failure("CLIENT_APPROVAL_INVALID", "Image rejection could not be saved."));
@@ -257,8 +265,40 @@ export const rejectClientPortalDeliverableHandler: RequestHandler = async (req, 
     return;
   }
 
+  if (!rejectionReason.trim()) {
+    res.status(400).json(
+      failure("CLIENT_APPROVAL_REASON_REQUIRED", getClientPortalApprovalPolicyMessage("REASON_REQUIRED"))
+    );
+    return;
+  }
+
   const result = await rejectClientPortalDeliverable(authSession, deliverableId, rejectionReason);
   if (!result) {
+    res.status(400).json(failure("CLIENT_APPROVAL_INVALID", "Article rejection could not be saved."));
+    return;
+  }
+  if ("error" in result) {
+    if (result.error === "REVISION_ROUND_EXHAUSTED") {
+      res.status(409).json(
+        failure(
+          "CLIENT_APPROVAL_REVISION_ROUND_EXHAUSTED",
+          getClientPortalApprovalPolicyMessage("REVISION_ROUND_EXHAUSTED")
+        )
+      );
+      return;
+    }
+    if (result.error === "REASON_REQUIRED") {
+      res.status(400).json(
+        failure("CLIENT_APPROVAL_REASON_REQUIRED", getClientPortalApprovalPolicyMessage("REASON_REQUIRED"))
+      );
+      return;
+    }
+    if (result.error === "NOT_PENDING_REVIEW") {
+      res.status(409).json(
+        failure("CLIENT_APPROVAL_NOT_PENDING_REVIEW", getClientPortalApprovalPolicyMessage("NOT_PENDING_REVIEW"))
+      );
+      return;
+    }
     res.status(400).json(failure("CLIENT_APPROVAL_INVALID", "Article rejection could not be saved."));
     return;
   }

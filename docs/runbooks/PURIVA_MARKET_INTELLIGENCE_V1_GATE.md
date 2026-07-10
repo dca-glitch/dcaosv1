@@ -101,3 +101,16 @@ Puriva helpers in `apps/api/src/core/puriva-market-intelligence.ts`:
 - `findForbiddenPurivaMiClientSafeFields()` — detect internal field leaks in candidates
 
 These helpers do **not** claim live Market Intelligence readiness, live crawl, or production client-portal activation beyond existing local client-safe summary paths. No uncontrolled scraping.
+
+## G601–G604 / G611 truth labels (contracts + focused tests)
+
+| Label | Truth |
+|-------|--------|
+| Bounded sources only | `operator_note`, `uploaded_document`, `approved_url_reference`, `existing_internal_record` |
+| Uncontrolled scraping | **Disabled** (`uncontrolledScrapingAllowed: false`) |
+| Live crawl / marketplace / CRM lookup | **Disabled** |
+| Client-safe summary | Admin-reviewed surface only; forbidden internals stripped |
+| Admin review | Required on local results, admin source summaries, and client-safe summaries |
+| Live MI readiness | **Not claimed** — contracts/docs/tests only |
+
+Focused tests: `apps/api/src/core/future-module-contracts.test.ts` (G601–G610). Closeout: `docs/runbooks/FUTURE_MODULES_G601_G612_CLOSEOUT.md`.

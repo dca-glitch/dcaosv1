@@ -3,6 +3,12 @@ export const WORDPRESS_INTEGRATION_ENV_KEYS = {
   credentialEncryptionMasterKey: "CREDENTIAL_ENCRYPTION_MASTER_KEY"
 } as const;
 
+/**
+ * G544 — config-level freeze label. Env shape never authorizes live HTTP/publish.
+ * Service guard (`WORDPRESS_LIVE_HTTP_FROZEN`) remains the runtime no-fetch gate.
+ */
+export const WORDPRESS_INTEGRATION_LIVE_HTTP_DEFERRED = true as const;
+
 export type WordPressIntegrationReadinessStatus = "disabled" | "missing_config" | "configured_shape_ok";
 
 export interface WordPressIntegrationReadiness {
@@ -28,7 +34,7 @@ export function getWordPressIntegrationReadiness(): WordPressIntegrationReadines
       publishEnabled: false,
       hasCredentialEncryptionKey,
       missingKeys: [],
-      livePublishDeferred: true
+      livePublishDeferred: WORDPRESS_INTEGRATION_LIVE_HTTP_DEFERRED
     };
   }
 
@@ -38,7 +44,7 @@ export function getWordPressIntegrationReadiness(): WordPressIntegrationReadines
       publishEnabled: true,
       hasCredentialEncryptionKey: false,
       missingKeys: [WORDPRESS_INTEGRATION_ENV_KEYS.credentialEncryptionMasterKey],
-      livePublishDeferred: true
+      livePublishDeferred: WORDPRESS_INTEGRATION_LIVE_HTTP_DEFERRED
     };
   }
 
@@ -47,6 +53,6 @@ export function getWordPressIntegrationReadiness(): WordPressIntegrationReadines
     publishEnabled: true,
     hasCredentialEncryptionKey: true,
     missingKeys: [],
-    livePublishDeferred: true
+    livePublishDeferred: WORDPRESS_INTEGRATION_LIVE_HTTP_DEFERRED
   };
 }

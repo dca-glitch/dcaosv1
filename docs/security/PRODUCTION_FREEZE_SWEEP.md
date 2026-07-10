@@ -1,6 +1,8 @@
-# Production Freeze Sweep (G416)
+# Production Freeze Sweep (G644)
 
-**Status:** Docs-only truth sweep for G409–G428. Does not authorize G49 closure, G50 deploy, or any production mutation.
+**Status:** Docs-only truth sweep for G637–G648. Does not authorize G49 closure, G50 deploy, or any production mutation.
+
+**Context (G469–G708):** Expanded local/no-live launch readiness hardening on `main` @ `66dcb74` does **not** lift the production freeze. Concurrent lane work must not treat local foundations as production authorization.
 
 ---
 
@@ -18,6 +20,7 @@ Forbidden without separate explicit owner approval:
 - Production Caddy / container / Docker mutation (beyond historically closed G54 HSTS scope)
 - Production live integration enablement (AI, R2, email, GA/GSC, WordPress publish, image)
 - Treating historical public health/HSTS probes as deploy authorization
+- Treating G469–G708 local/docs work as production readiness YES
 
 ---
 

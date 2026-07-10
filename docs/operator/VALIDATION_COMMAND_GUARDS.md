@@ -1,8 +1,10 @@
 # Validation Command Guards
 
-**Status:** G418 refresh (extends G225/G143). This is a docs-only reference for command ordering and refusal rules. It does not run validation, smoke, live calls, staging/prod probes, commits, pushes, or deploys.
+**Status:** G650 refresh (extends G418/G225/G143) for the G469–G708 ultra-block on baseline `66dcb74`. Docs-only reference for command ordering and refusal rules. It does not run validation, smoke, live calls, staging/prod probes, commits, pushes, or deploys.
 
-**Primary sources:** [`.github/instructions/validation.instructions.md`](../../.github/instructions/validation.instructions.md), [`.github/copilot-instructions.md`](../../.github/copilot-instructions.md), [`OPERATOR_RUNBOOK.md`](./OPERATOR_RUNBOOK.md), [`TEST_SMOKE_INVENTORY.md`](./TEST_SMOKE_INVENTORY.md), [`docs/security/SECURITY_CHECKLIST_G409.md`](../security/SECURITY_CHECKLIST_G409.md), [`LIVE_PROOF_APPROVAL_CHECKLIST.md`](./LIVE_PROOF_APPROVAL_CHECKLIST.md), and [`LOCAL_ONLY_PROOF_TAXONOMY.md`](./LOCAL_ONLY_PROOF_TAXONOMY.md).
+**Hard truths:** local foundations expanding; live proofs deferred; Puriva Launch **BLOCKED**; production frozen (readiness **NO**); **no smoke after failed validate**; PowerShell **one command per line**.
+
+**Primary sources:** [`.github/instructions/validation.instructions.md`](../../.github/instructions/validation.instructions.md), [`.github/copilot-instructions.md`](../../.github/copilot-instructions.md), [`OPERATOR_RUNBOOK.md`](./OPERATOR_RUNBOOK.md), [`TEST_SMOKE_INVENTORY.md`](./TEST_SMOKE_INVENTORY.md), [`POWERSHELL_SAFETY_CHECKLIST.md`](./POWERSHELL_SAFETY_CHECKLIST.md), [`NEXT_GATE_EXECUTION_CHECKLIST.md`](./NEXT_GATE_EXECUTION_CHECKLIST.md), [`docs/security/SECURITY_CHECKLIST_G409.md`](../security/SECURITY_CHECKLIST_G409.md), [`LIVE_PROOF_APPROVAL_CHECKLIST.md`](./LIVE_PROOF_APPROVAL_CHECKLIST.md), and [`LOCAL_ONLY_PROOF_TAXONOMY.md`](./LOCAL_ONLY_PROOF_TAXONOMY.md).
 
 ---
 
@@ -144,6 +146,11 @@ Docs-only G138-G144 and G223-G227 did not run commands or smokes because the use
 
 ---
 
-## 9. G409–G428 lane note
+## 9. G409–G428 / G649–G660 lane notes
 
-Docs-only security/operator refresh plus optional tiny unit tests. No live calls. Production freeze remains explicit. Puriva Launch remains **BLOCKED**. Preferred security checklist: [`SECURITY_CHECKLIST_G409.md`](../security/SECURITY_CHECKLIST_G409.md).
+| Lane | Note |
+|---|---|
+| G409–G428 | Docs-only security/operator refresh plus optional tiny unit tests. Preferred security checklist: [`SECURITY_CHECKLIST_G409.md`](../security/SECURITY_CHECKLIST_G409.md). |
+| G649–G660 | Operator runbooks / validation / proof-approval refresh for G469–G708. No full `validate` in this docs lane. No live calls. Closeout: [`G649_G660_OPERATOR_CLOSEOUT.md`](./G649_G660_OPERATOR_CLOSEOUT.md). |
+
+Shared refusals: production freeze remains explicit; Puriva Launch remains **BLOCKED**; historical staging PASS is not standing authorization; `.cursor/settings.json` stays untracked.

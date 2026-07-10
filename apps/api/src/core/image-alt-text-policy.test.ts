@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { evaluateImageAltTextPolicy } from "./image-alt-text-policy";
+import { evaluateImageAltTextPolicy, evaluateImageAltTextReviewGate } from "./image-alt-text-policy";
 
 describe("image-alt-text-policy", () => {
   it("G191/G314 allows descriptive neutral alt text", () => {
@@ -60,5 +60,30 @@ describe("image-alt-text-policy", () => {
     const leak = evaluateImageAltTextPolicy("Generated with Midjourney prompt: soft light");
     assert.equal(leak.allowed, false);
     assert.ok(leak.issues.some((i) => i.code === "provider_or_prompt_leak"));
+  });
+
+  it("G555 rejects filler/Botox result and day-0 comparison alt text", () => {
+    const filler = evaluateImageAltTextPolicy("Clinic visual showing Botox result after visit");
+    assert.equal(filler.allowed, false);
+    assert.ok(filler.issues.some((i) => i.code === "medical_claim"));
+
+    const day0 = evaluateImageAltTextPolicy("Day 0 vs day 30 progress photos for wellness");
+    assert.equal(day0.allowed, false);
+    assert.ok(day0.issues.some((i) => i.code === "before_after_implication"));
+  });
+
+  it("G555 enforces required alt review gate for final/WP paths", () => {
+    const optionalOk = evaluateImageAltTextReviewGate({ altText: "", required: false });
+    assert.equal(optionalOk.ok, true);
+
+    const requiredEmpty = evaluateImageAltTextReviewGate({ altText: "", required: true });
+    assert.equal(requiredEmpty.ok, false);
+
+    const requiredOk = evaluateImageAltTextReviewGate({
+      altText: "Soft-lit wellness interior with linen textures",
+      required: true
+    });
+    assert.equal(requiredOk.ok, true);
+    assert.ok(requiredOk.checks.includes("ALLOW:alt_review_gate"));
   });
 });

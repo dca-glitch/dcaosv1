@@ -1,8 +1,8 @@
 # Monthly Report CSV / Manual Import Proof Plan
 
 **Status:** Typed proof plan only — no live Google, no OAuth, no GA/GSC API calls.
-**Lane:** G178 + **G282** refresh (GA/GSC / monthly reports G269–G288).
-**Related:** [`PURIVA_MONTHLY_REPORT_V1_GATE.md`](./PURIVA_MONTHLY_REPORT_V1_GATE.md), [`MONTHLY_REPORT_LIVE_DATA_PROOF.md`](./MONTHLY_REPORT_LIVE_DATA_PROOF.md), [`POST_MVP_BLOCK_47_MONTHLY_METRICS_IMPORT_BROWSER_GATE.md`](./POST_MVP_BLOCK_47_MONTHLY_METRICS_IMPORT_BROWSER_GATE.md).
+**Lane:** G178 + **G282** refresh (GA/GSC / monthly reports G269–G288) + **G525** refresh (Lane 5 G517–G528).
+**Related:** [`PURIVA_MONTHLY_REPORT_V1_GATE.md`](./PURIVA_MONTHLY_REPORT_V1_GATE.md), [`MONTHLY_REPORT_LIVE_DATA_PROOF.md`](./MONTHLY_REPORT_LIVE_DATA_PROOF.md), [`GA_GSC_OAUTH_DESIGN_G517_G528.md`](./GA_GSC_OAUTH_DESIGN_G517_G528.md), [`GA_GSC_G517_G528_CLOSEOUT.md`](./GA_GSC_G517_G528_CLOSEOUT.md), [`POST_MVP_BLOCK_47_MONTHLY_METRICS_IMPORT_BROWSER_GATE.md`](./POST_MVP_BLOCK_47_MONTHLY_METRICS_IMPORT_BROWSER_GATE.md).
 
 ---
 
@@ -24,9 +24,9 @@ This plan is the local/staging proof path until a separately approved live GA/GS
 | Live GA/GSC | `GA4` / `GSC` / `HYBRID` | `live` only after readiness + live proof + approved snapshot | Connected analytics — **deferred** |
 | Missing / unproven | any incomplete | `unavailable` | Metrics unavailable |
 
-Helpers: `apps/api/src/core/monthly-report-policy.ts`, `apps/api/src/core/metrics-source-truth.ts`, `apps/api/src/core/monthly-report-metrics-unavailable-state.ts`, `apps/api/src/core/monthly-report-metrics-export-truth.ts`.
+Helpers: `apps/api/src/core/monthly-report-policy.ts`, `apps/api/src/core/metrics-source-truth.ts` (incl. G523 label catalog + G524 `assessGaGscMetricsUnavailableState`), `apps/api/src/core/monthly-report-metrics-unavailable-state.ts` (Lane 6), `apps/api/src/core/monthly-report-metrics-export-truth.ts`. Mapping contracts (no live pull): `ga-gsc-property-mapping.ts`, `ga-gsc-site-url-mapping.ts`.
 
-**G282 note:** CSV/manual import remains the approved local/staging path. Live GA/GSC is still deferred until OAuth/token gaps in [`MONTHLY_REPORT_LIVE_DATA_PROOF.md`](./MONTHLY_REPORT_LIVE_DATA_PROOF.md) §3.1a close under a separate owner-approved block. Unavailable metrics must use the unavailable-state helper labels; export/download must use export-truth labels (`hasDocument` / optional client `exportUrl`) and must never expose `storageKey`.
+**G282 / G525 note:** CSV/manual import remains the approved local/staging path. Live GA/GSC is still deferred until OAuth/token gaps in [`MONTHLY_REPORT_LIVE_DATA_PROOF.md`](./MONTHLY_REPORT_LIVE_DATA_PROOF.md) §3.1a and the design in [`GA_GSC_OAUTH_DESIGN_G517_G528.md`](./GA_GSC_OAUTH_DESIGN_G517_G528.md) close under a separate owner-approved block (schema + consent — not this lane). Unavailable metrics must use unavailable-state / GA-GSC unavailable helper labels; export/download must use export-truth labels (`hasDocument` / optional client `exportUrl`) and must never expose `storageKey`.
 
 ---
 
@@ -87,7 +87,14 @@ Helpers: `apps/api/src/core/monthly-report-policy.ts`, `apps/api/src/core/metric
 
 ```powershell
 cd C:\dcaosv1\apps\api
-node --import tsx --test src/config/ga-gsc.config.test.ts src/core/ga-gsc-period-policy.test.ts src/core/monthly-report-policy.test.ts src/core/metrics-source-truth.test.ts src/core/monthly-report-metrics-validation.test.ts src/core/monthly-report-metrics-recommendation-policy.test.ts src/core/monthly-report-metrics-output-guard.test.ts src/core/monthly-report-metrics-unavailable-state.test.ts src/core/monthly-report-metrics-export-truth.test.ts src/core/puriva-monthly-report.test.ts src/core/puriva-manual-metrics.test.ts
+node --import tsx --test src/config/ga-gsc.config.test.ts src/core/ga-gsc-period-policy.test.ts src/core/metrics-source-truth.test.ts src/core/ga-gsc-oauth-token-storage.design.test.ts src/core/ga-gsc-property-mapping.test.ts src/core/ga-gsc-site-url-mapping.test.ts src/core/monthly-report-policy.test.ts src/core/monthly-report-metrics-validation.test.ts src/core/monthly-report-metrics-recommendation-policy.test.ts src/core/monthly-report-metrics-output-guard.test.ts src/core/monthly-report-metrics-unavailable-state.test.ts src/core/monthly-report-metrics-export-truth.test.ts src/core/puriva-monthly-report.test.ts src/core/puriva-manual-metrics.test.ts
 ```
 
-No smoke required for G178/G282 proof-plan refresh; G287 runs the focused tests above.
+**Lane 5–only subset (G528):**
+
+```powershell
+cd C:\dcaosv1\apps\api
+node --import tsx --test src/config/ga-gsc.config.test.ts src/core/ga-gsc-period-policy.test.ts src/core/metrics-source-truth.test.ts src/core/ga-gsc-oauth-token-storage.design.test.ts src/core/ga-gsc-property-mapping.test.ts src/core/ga-gsc-site-url-mapping.test.ts
+```
+
+No smoke required for G178/G282/G525 proof-plan refresh; G287 / G528 run focused tests only — no full validate in Lane 5.

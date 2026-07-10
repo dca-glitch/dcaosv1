@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
+  assessGaGscMetricsUnavailableState,
+  metricsSourceTruthLabelCatalog,
   serializeMonthlyMetricsSourceTruth,
   toClientMonthlyMetricsSourceTruthView
 } from "./metrics-source-truth";
@@ -93,5 +95,49 @@ describe("metrics-source-truth", () => {
     assert.equal(csv.truth, "csv");
     assert.equal(csv.client.mayUseLiveLanguage, false);
     assert.equal(csv.client.label.includes("live"), false);
+  });
+
+  it("G523: label catalog matches serializer examples and blocks live language except live", () => {
+    const catalog = metricsSourceTruthLabelCatalog();
+    assert.equal(catalog.csv.clientMayUseLiveLanguage, false);
+    assert.equal(catalog.live.clientMayUseLiveLanguage, true);
+    assert.equal(catalog.unavailable.clientExample, "Metrics unavailable");
+
+    const live = serializeMonthlyMetricsSourceTruth({
+      sourceType: "HYBRID",
+      status: "APPROVED",
+      gaGscReadinessStatus: "configured_shape_ok",
+      liveProofApproved: true
+    });
+    assert.equal(live.admin.label, catalog.live.adminExample);
+    assert.equal(live.client.label, catalog.live.clientExample);
+  });
+
+  it("G524: assessGaGscMetricsUnavailableState reasons without Lane 6 collision", () => {
+    const available = assessGaGscMetricsUnavailableState({
+      metricsSource: { sourceType: "CSV_IMPORT" }
+    });
+    assert.equal(available.unavailable, false);
+    assert.equal(available.truth, "csv");
+    assert.equal(available.liveOAuthDeferred, true);
+
+    const disabled = assessGaGscMetricsUnavailableState({
+      metricsSource: {
+        sourceType: "GA4",
+        gaGscReadinessStatus: "disabled"
+      }
+    });
+    assert.equal(disabled.unavailable, true);
+    assert.equal(disabled.reason, "ga_gsc_disabled");
+    assert.equal(disabled.clientMayUseLiveLanguage, false);
+
+    const period = assessGaGscMetricsUnavailableState({
+      metricsSource: {},
+      dateRangeStatus: "future_month"
+    });
+    assert.equal(period.reason, "period_blocked");
+
+    const missing = assessGaGscMetricsUnavailableState({ metricsSource: {} });
+    assert.equal(missing.reason, "missing_source");
   });
 });

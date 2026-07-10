@@ -5,6 +5,7 @@ import {
   buildDefaultImagePromptProfileCandidate,
   IMAGE_PROMPT_PROFILE_ID_BY_KIND,
   IMAGE_PROMPT_PROFILE_KINDS,
+  listImagePromptProfileCatalog,
   resolveImagePromptProfileKindForSlot,
   validateImagePromptProfile
 } from "./image-prompt-profile";
@@ -168,6 +169,17 @@ describe("image-prompt-profile", () => {
     assert.equal(badSlot.ok, false);
     if (!badSlot.ok) {
       assert.ok(badSlot.issues.some((i) => i.code === "slot_kind_mismatch"));
+    }
+  });
+
+  it("G556 lists a stable prompt profile catalog with alt required and hard blocks", () => {
+    const catalog = listImagePromptProfileCatalog();
+    assert.equal(catalog.length, IMAGE_PROMPT_PROFILE_KINDS.length);
+    for (const entry of catalog) {
+      assert.equal(entry.profileId, IMAGE_PROMPT_PROFILE_ID_BY_KIND[entry.kind]);
+      assert.equal(entry.altTextRequired, true);
+      assert.ok(entry.forbiddenElements.includes("before_after_risk"));
+      assert.ok(entry.allowedAspectRatios.includes(entry.defaultAspectRatio));
     }
   });
 });

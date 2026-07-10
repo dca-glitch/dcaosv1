@@ -6,15 +6,15 @@
  * validate structured rejection reasons, and map approval-loop actions to
  * internal events before any future live image provider proof is considered.
  *
- * G189 / G309–G311 hardening covers: before/after, syringes/procedure, fake
- * doctor, fake patient, body transformation, guaranteed results, clinical
- * staging, and likeness risks — while allowing neutral wellness, clinic
- * ambience without procedure, and product-neutral lifestyle.
+ * G189 / G309–G311 / G553–G554 hardening covers: before/after, syringes/procedure,
+ * fake doctor, fake patient, body transformation, guaranteed results, clinical
+ * staging, filler/Botox result framing, and likeness risks — while allowing
+ * neutral wellness, clinic ambience without procedure, and product-neutral lifestyle.
  */
 
 import type { ImageGenerationVariantSlot } from "./image-generation.execution";
 
-export const IMAGE_COMPLIANCE_POLICY_VERSION = "IMAGE_COMPLIANCE_POLICY_V3";
+export const IMAGE_COMPLIANCE_POLICY_VERSION = "IMAGE_COMPLIANCE_POLICY_V4";
 
 export const IMAGE_COMPLIANCE_REJECT_CODES = [
   "before_after_risk",
@@ -111,13 +111,13 @@ const POLICY_RULES: Array<{
     code: "procedure_or_device_risk",
     matchedRule: "no_syringe_or_procedure_staging",
     pattern:
-      /\b(injection|injecting|syringe|needle|cannula|laser procedure|surgical|operation|clinical procedure|treatment chair|procedure room staging|iv drip|scalpel|operating\s+theatre|sterile\s+field)\b/i
+      /\b(injection|injecting|syringe|needle|cannula|laser procedure|surgical|operation|clinical procedure|treatment chair|procedure room staging|iv drip|scalpel|operating\s+theatre|sterile\s+field|clinical\s+staging|treatment\s+bay|procedure\s+bay)\b/i
   },
   {
     code: "treatment_result_risk",
     matchedRule: "no_guaranteed_or_outcome_claim",
     pattern:
-      /\b(guaranteed\s+results?|guaranteed\s+improvement|clearer skin after|visible results?|weight[-\s]?loss result|pain reduction|recovery claim|body change|cure|healed|proven results?|instant results?|wrinkle[-\s]?free\s+result|fat\s+melting\s+result|clinically\s+proven\s+result)\b/i
+      /\b(guaranteed\s+results?|guaranteed\s+improvement|clearer skin after|visible results?|weight[-\s]?loss result|pain reduction|recovery claim|body change|cure|healed|proven results?|instant results?|wrinkle[-\s]?free\s+result|fat\s+melting\s+result|clinically\s+proven\s+result|botox\s+result|filler\s+result|lip\s+filler\s+(?:result|comparison)|weight[-\s]?loss\s+journey\s+photos?)\b/i
   },
   {
     code: "likeness_consent_risk",
@@ -140,7 +140,9 @@ export const IMAGE_COMPLIANCE_ALLOWED_DIRECTION_EXAMPLES = [
   "product-neutral lifestyle self-care moment",
   "abstract botanical wellness still life with soft daylight",
   "editorial linen textures and calm spa-adjacent interior detail",
-  "gentle morning self-care ritual without treatment claims"
+  "gentle morning self-care ritual without treatment claims",
+  "soft daylight on ceramic skincare vessels without brand claims",
+  "quiet waiting-lounge architecture detail with natural materials"
 ] as const;
 
 export type ImageCompliancePolicySnapshot = {
@@ -400,4 +402,92 @@ export const IMAGE_APPROVAL_LOOP_EVENT_MAP: Record<ImageApprovalLoopAction, Imag
 
 export function getImageApprovalLoopEvent(action: ImageApprovalLoopAction): ImageApprovalLoopEvent {
   return IMAGE_APPROVAL_LOOP_EVENT_MAP[action];
+}
+
+export type ImageConceptComplianceBundleInput = {
+  promptText: string;
+  altText?: string | null;
+  outputReviewText?: string | null;
+};
+
+export type ImageConceptComplianceBundle = {
+  version: typeof IMAGE_COMPLIANCE_POLICY_VERSION;
+  allowed: boolean;
+  prompt: ImageCompliancePolicyDecision;
+  altTextScreen: ImageCompliancePolicyDecision | null;
+  output: ImageCompliancePolicyDecision | null;
+  checks: string[];
+};
+
+/**
+ * G553 — Screens prompt (+ optional alt / post-output text) as one concept bundle.
+ * Pure; never contacts a provider.
+ */
+export function evaluateImageConceptComplianceBundle(
+  input: ImageConceptComplianceBundleInput
+): ImageConceptComplianceBundle {
+  const prompt = evaluateImageCompliancePolicy({
+    stage: "pre_generation_prompt",
+    text: input.promptText
+  });
+  const altTrimmed = input.altText?.trim() ?? "";
+  const altTextScreen = altTrimmed
+    ? evaluateImageCompliancePolicy({
+        stage: "pre_generation_prompt",
+        text: altTrimmed
+      })
+    : null;
+  const outputTrimmed = input.outputReviewText?.trim() ?? "";
+  const output = outputTrimmed
+    ? evaluateImageCompliancePolicy({
+        stage: "post_generation_output",
+        text: outputTrimmed
+      })
+    : null;
+
+  const allowed =
+    prompt.allowed && (altTextScreen?.allowed ?? true) && (output?.allowed ?? true);
+  const checks = [
+    ...prompt.checks.map((check) => `PROMPT:${check}`),
+    ...(altTextScreen?.checks.map((check) => `ALT:${check}`) ?? ["ALT:SKIPPED:not_provided"]),
+    ...(output?.checks.map((check) => `OUTPUT:${check}`) ?? ["OUTPUT:SKIPPED:not_provided"])
+  ];
+
+  return {
+    version: IMAGE_COMPLIANCE_POLICY_VERSION,
+    allowed,
+    prompt,
+    altTextScreen,
+    output,
+    checks: allowed ? [...checks, "ALLOW:concept_bundle"] : checks
+  };
+}
+
+/**
+ * G557 — Ties approval-loop reject transitions to mandatory structured reject reasons.
+ */
+export function requireImageRejectReasonForApprovalAction(
+  action: ImageApprovalLoopAction,
+  input: ImageRejectReasonValidationInput
+): ImageRejectReasonValidation {
+  const event = getImageApprovalLoopEvent(action);
+  if (!event.requiresRejectReason) {
+    return {
+      ok: false,
+      error: `Action "${action}" does not require a reject reason.`
+    };
+  }
+
+  const context: ImageRejectReasonContext =
+    input.context ??
+    (action === "replacement_requested"
+      ? "replacement_generation"
+      : action === "client_reject"
+        ? "client_reject"
+        : "admin_reject");
+
+  return validateMandatoryImageRejectReason({
+    ...input,
+    context
+  });
 }

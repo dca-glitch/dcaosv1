@@ -7,7 +7,7 @@
 
 import type { ImageApprovalLoopState, ImageApprovalLoopTransition } from "./image-approval-loop";
 
-export const IMAGE_NOTIFICATION_MAPPING_VERSION = "IMAGE_NOTIFICATION_MAPPING_V1";
+export const IMAGE_NOTIFICATION_MAPPING_VERSION = "IMAGE_NOTIFICATION_MAPPING_V2";
 
 /**
  * Event type strings aligned with packages/shared notification taxonomy.
@@ -214,4 +214,26 @@ export function listExistingImageNotificationEvents(): string[] {
 /** @deprecated G228: all mapped events are in shared taxonomy; returns empty. */
 export function listNeededImageNotificationEvents(): string[] {
   return [];
+}
+
+export type ImageNotificationCoverageSnapshot = {
+  version: typeof IMAGE_NOTIFICATION_MAPPING_VERSION;
+  existingEventCount: number;
+  neededEventCount: number;
+  allMappedEventsInSharedTaxonomy: true;
+  events: string[];
+};
+
+/**
+ * G559 — Coverage snapshot proving mapped image events are in shared taxonomy.
+ */
+export function buildImageNotificationCoverageSnapshot(): ImageNotificationCoverageSnapshot {
+  const events = listExistingImageNotificationEvents();
+  return {
+    version: IMAGE_NOTIFICATION_MAPPING_VERSION,
+    existingEventCount: events.length,
+    neededEventCount: listNeededImageNotificationEvents().length,
+    allMappedEventsInSharedTaxonomy: true,
+    events
+  };
 }

@@ -1,4 +1,11 @@
 import { Router } from "express";
+/**
+ * Client Portal API routes (G574 inventory).
+ * Archive serializers: client-portal.runtime.ts + client-portal-serializer.ts
+ * Error / payload safety: client-portal-error-safety.ts
+ * Approval mutations: client-portal-approval.* (Lane 10) — no RBAC weakening here.
+ * Forbidden client exposure: storageKey, providerMetadata, raw cost, workflow internals.
+ */
 import { requireAuth } from "../middlewares/auth.middleware";
 import { requireTenant } from "../middlewares/tenant.middleware";
 import { failure, forbiddenFailure, success, unauthorizedFailure } from "../utils/responses";

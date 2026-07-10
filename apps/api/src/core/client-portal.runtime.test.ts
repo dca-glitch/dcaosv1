@@ -11,8 +11,8 @@ import {
   toClientPortalMonthlyReportSummary
 } from "./client-portal.runtime";
 
-describe("client portal final delivery guards", () => {
-  it("allows only final deliverable statuses in client archive responses (G203)", () => {
+describe("client portal final delivery guards (G571/G572)", () => {
+  it("allows only final deliverable statuses in client archive responses (G203/G572)", () => {
     assert.equal(isClientPortalVisibleDeliverableStatus("DELIVERED"), true);
     assert.equal(isClientPortalVisibleDeliverableStatus("ACCEPTED"), true);
 
@@ -22,7 +22,7 @@ describe("client portal final delivery guards", () => {
     assert.equal(isClientPortalVisibleDeliverableStatus("ADMIN_REVIEW"), false);
   });
 
-  it("allows only FINAL monthly reports in client archive responses (G203)", () => {
+  it("allows only FINAL monthly reports in client archive responses (G203/G571)", () => {
     assert.equal(isClientPortalFinalMonthlyReportStatus("FINAL"), true);
 
     assert.equal(isClientPortalFinalMonthlyReportStatus("DRAFT"), false);

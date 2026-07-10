@@ -55,6 +55,6 @@ Market Intelligence -> AI Delivery brief/context -> SEO plan -> content draft ->
 
 ## Ready To Use Locally
 
-The local/admin MVP is ready for controlled DCA-operated client work.
+The local/admin MVP supports controlled DCA-operated client work **locally** only.
 
-Production or live client access requires a separate deploy and security approval block.
+This is **not** production ready, **not** Puriva Launch ready, and **not** live-integration proven (R2 / email / GA/GSC / WordPress HTTP / image provider remain deferred). Production or live client access requires a separate deploy and security approval block.

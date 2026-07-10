@@ -6,7 +6,9 @@ import {
   IMAGE_APPROVAL_LOOP_STATES,
   IMAGE_APPROVAL_LOOP_TRANSITIONS,
   isTerminalImageApprovalState,
-  listImageApprovalLoopTransitions
+  listImageApprovalHappyPathToFinal,
+  listImageApprovalLoopTransitions,
+  walkImageApprovalHappyPathToFinal
 } from "./image-approval-loop";
 
 describe("image-approval-loop", () => {
@@ -130,5 +132,16 @@ describe("image-approval-loop", () => {
       complianceAllowed: false
     });
     assert.equal(badCompliance.ok, false);
+  });
+
+  it("G558 walks the canonical happy path to final_accepted", () => {
+    const steps = listImageApprovalHappyPathToFinal();
+    assert.equal(steps.length, 3);
+    assert.equal(steps[2]?.to, "final_accepted");
+
+    const walk = walkImageApprovalHappyPathToFinal();
+    assert.equal(walk.ok, true);
+    assert.equal(walk.state, "final_accepted");
+    assert.equal(walk.steps.every((step) => step.ok), true);
   });
 });

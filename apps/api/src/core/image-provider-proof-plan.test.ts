@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
+  buildImageProviderProofNoLiveGuard,
   buildImageProviderProofPlan,
   IMAGE_PROVIDER_PROOF_PHASES,
   summarizeImageProviderProofPlan
@@ -51,5 +52,14 @@ describe("image-provider-proof-plan", () => {
       }
       assert.equal(phase.liveProviderCallAllowed, false, phase.phase);
     }
+  });
+
+  it("G561 builds an explicit no-live guard from the proof plan", () => {
+    const guard = buildImageProviderProofNoLiveGuard();
+    assert.equal(guard.liveProviderCallsInThisBlock, false);
+    assert.equal(guard.livePhaseOutOfScope, true);
+    assert.equal(guard.nonLivePhasesForbidProviderCalls, true);
+    assert.equal(guard.primaryProviderDirection, "adobe_firefly");
+    assert.equal(guard.relatedRunbook, "docs/runbooks/IMAGE_GENERATION_PROOF.md");
   });
 });

@@ -1,6 +1,6 @@
 # Puriva Monthly Report v1 Gate
 
-**Status:** Local deterministic monthly report scaffolding for Puriva delivery status and compliance-safe recommendations. G85 live GA/GSC path planning, G103-G109 helper guardrails, **G171-G180** closeout, and **G269-G288** analytics hardening (exhaustive config/redaction, period/timezone, source-truth, unavailable-state, export truth labels) are documented here and in related runbooks — they do **not** change this gate into live analytics proof.
+**Status:** Local deterministic monthly report scaffolding for Puriva delivery status and compliance-safe recommendations. G85 live GA/GSC path planning, G103-G109 helper guardrails, **G171-G180** closeout, **G269-G288** analytics hardening, and **G529–G540** client/admin output hardening (FINAL-only, secret redaction, metric/CSV/recommendation/export/unavailable/approval wording) are documented here and in related runbooks — they do **not** change this gate into live analytics proof.
 
 Related:
 
@@ -14,7 +14,9 @@ Related:
 - `apps/api/src/core/monthly-report-metrics-output-guard.ts`
 - `apps/api/src/core/monthly-report-metrics-unavailable-state.ts`
 - `apps/api/src/core/monthly-report-metrics-export-truth.ts`
+- `apps/api/src/core/monthly-report-metrics-approval-state.ts`
 - `apps/api/src/core/metrics-source-truth.ts`
+- [`MONTHLY_REPORT_G529_G540_CLOSEOUT.md`](./MONTHLY_REPORT_G529_G540_CLOSEOUT.md) — G529–G540 output hardening closeout
 - [`MONTHLY_REPORT_CSV_IMPORT_PROOF_PLAN.md`](./MONTHLY_REPORT_CSV_IMPORT_PROOF_PLAN.md) — CSV/manual import proof plan (no live Google)
 - [`MONTHLY_REPORT_LIVE_DATA_PROOF.md`](./MONTHLY_REPORT_LIVE_DATA_PROOF.md) — live GA/GSC remains deferred
 - `scripts/lib/puriva-monthly-report.mjs`
@@ -83,3 +85,4 @@ Requires `AUTH_SEED_TEST_PASSWORD` (minimum 8 characters).
 - G103-G109 helper tests cover config shape, date range policy, property mapping shape, metrics source truth, generation input contract, and FINAL-only client visibility; they do not prove OAuth or live analytics.
 - **G171-G180 closeout (2026-07-10):** credential presence hardening (missing client id/secret/refresh/property/GSC site; full shape still live-deferred; secrets not serialized); period policy (month bounds, leap Feb, future month rejected, partial current-month warning); metrics source truth serializer (manual/placeholder/csv/live/unavailable/mixed); metric row validation; recommendation input policy (metrics/manual/AI-draft/placeholder — no live AI); client FINAL-only and admin controlled output guards; CSV/manual import proof plan doc. Focused unit tests only — no live Google, no smoke required for this lane.
 - **G269-G288 hardening (2026-07-10):** exhaustive GA/GSC config-shape/redaction/disabled/missing_config/`configured_shape_ok`+live_deferred tests; period/timezone/future-current month policy tests; metrics source truth + mixed-source hardening; expanded metric validation and recommendation policy tests; client/admin output guard expansion; unavailable-state helper; export/download truth labels (`hasDocument` / `exportUrl` / never `storageKey`); CSV proof plan + this gate refresh. Still **no live Google**, no OAuth, no token storage.
+- **G529–G540 output hardening (2026-07-10):** client FINAL-only matrix; admin secret/storage redaction across statuses; manual/placeholder/live + CSV truth labels; recommendation source policy matrix; metric validation edges; export/download boundary; empty/unavailable state; approval-state wording (`DRAFT` / `ADMIN_REVIEW` / `FINAL` / `ARCHIVED`). Focused unit tests only — **no live Google**, no OAuth, no token storage, no launch-blocker status change (proposal only in closeout).

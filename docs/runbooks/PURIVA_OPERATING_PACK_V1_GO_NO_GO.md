@@ -6,7 +6,11 @@
 
 **Canonical architecture:** Launch blockers, article/image workflow, monthly report flow, and feedback learning are defined in [`docs/architecture/PURIVA_OPERATING_PACK_V1.md`](../architecture/PURIVA_OPERATING_PACK_V1.md). This runbook covers local/admin go/no-go only.
 
-**Typed pack config (G124-G127 / G209-G216 / G349-G368):** Shared constants in `packages/shared/src/client-operating-packs.ts` record compliance profile, entitlement matrix, and catalog-only workflow templates. They do **not** clear this go/no-go, authorize live integrations, or change Puriva Launch status.
+**Typed pack config (G124-G127 / G209-G216 / G349-G368 / G589-G600):** Shared constants in `packages/shared/src/client-operating-packs.ts` record compliance profile, entitlement matrix, module-visibility helpers, and catalog-only workflow templates (including feedback-learning catalog entry). They do **not** clear this go/no-go, authorize live integrations, enforce runtime entitlements, or change Puriva Launch status.
+
+**SaaS-later truth (G598):** Pack scaffolding remains **Agency OS first** (`CLIENT_OPERATING_PACK_SAAS_READINESS.label = saas_later`). It is **not** multi-tenant SaaS readiness.
+
+**Lane closeout:** [`PURIVA_PACK_G589_G600_CLOSEOUT.md`](./PURIVA_PACK_G589_G600_CLOSEOUT.md)
 
 Related:
 

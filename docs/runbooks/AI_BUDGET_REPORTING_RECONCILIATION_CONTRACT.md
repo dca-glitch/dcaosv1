@@ -1,9 +1,10 @@
-# AI Budget Reporting + Reconciliation Contract (G134-G137 + G389–G408)
+# AI Budget Reporting + Reconciliation Contract (G134-G137 + G389–G408 + G613–G624)
 
-**Status:** Implemented locally as an additive reporting contract (hardened for G389–G408).
+**Status:** Implemented locally as an additive reporting contract (hardened for G389–G408; deepened tests/helpers for G613–G624).
 **Runtime scope:** Pure contract/types/helpers and unit tests only.
 **Finance Lite scope:** Boundary documented only; no invoice ingestion, invoice mutation, payment posting, or accounting claim.
 **Live provider scope:** No live OpenRouter calls in this contract layer.
+**G613–G624 closeout:** [`AI_BUDGET_ROUTING_G613_G624_CLOSEOUT.md`](./AI_BUDGET_ROUTING_G613_G624_CLOSEOUT.md).
 
 ## G134 / G389 — AI Budget vs Finance Lite Separation
 
@@ -71,3 +72,17 @@ npm.cmd run -w @dca-os-v1/api test:unit -- src/core/ai-budget-notification-mappi
 ```
 
 No backend route, Prisma schema, Finance Lite API, auth, provider runtime, VPS, deploy, or production behavior is changed by this contract.
+
+## G613–G624 — Deepened local tests (Lane 13)
+
+| Gate | Local proof |
+|------|-------------|
+| G613 | Trusted-source invariant for `actualCostUsd` (reject estimate/cap/Finance Lite invoice sources) |
+| G614–G617 | Estimated vs actual, monthly cap shape, provider/model breakdown, live row inclusion |
+| G618 | `finance-lite-ai-budget-separation.ts` — hard no-invoice-mutation / no-estimate-as-invoice |
+| G619 | Estimate-vs-actual variance only; invoice variance remains `null` / `not_integrated` |
+| G620–G621 | Threshold + cap-blocked mapping onto existing `BUDGET_*` events (no-send) |
+| G622 | Routing truth labels for `live_completed` null vs trusted actual |
+| G623–G624 | Docs closeout + focused unit tests only |
+
+Still deferred: trusted provider-cost ingestion implementation, real invoice reconciliation, staging/prod live AI re-proof.

@@ -2,6 +2,8 @@
 
 **Status:** Docs-only security checklist refresh for DCA OS Lite G409–G428 (Security / redaction / readiness / operator lane). No live calls, no secret reads, no staging or production mutation, no commit, and no deploy were performed while producing this document.
 
+**Operator note (G637):** For G469–G708 / post-G468 alignment, prefer [`SECURITY_CHECKLIST_G637.md`](./SECURITY_CHECKLIST_G637.md). This G409 file remains historical for the G409–G428 wave.
+
 **Scope:** Align operator/security language with actual local/no-live foundations after G223–G228 and concurrent G229–G408 lane work. This checklist records evidence status; it does **not** move any Puriva Launch or production blocker to PASS without recorded target-environment proof.
 
 **Supersedes for operator use:** Prefer this document over [`SECURITY_CHECKLIST_G223.md`](./SECURITY_CHECKLIST_G223.md) for post-G228 alignment. G223 and G138 remain historical.

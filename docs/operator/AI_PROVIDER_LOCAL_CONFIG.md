@@ -90,6 +90,21 @@ npm.cmd run smoke:openrouter-guarded:local
 - `docs/AI_PROVIDER_DATA_COLLECTION_DECISION.md`
 - `docs/operator/ENV_READINESS_INVENTORY.md`
 - `docs/runbooks/POST_MVP_BLOCK_40_OPENROUTER_GUARDED_LOCAL_GATE.md`
+- `docs/runbooks/AI_PROVIDER_LIVE_PROOF.md` — live-proof runbook (local G71e/G77b only; staging/prod still deferred)
+- `docs/runbooks/AI_ORCHESTRATOR_G625_G636_CLOSEOUT.md` — orchestrator local-guard closeout (no live)
+
+## Orchestrator local guards (G625–G636)
+
+Local-only helpers under `apps/api/src/core/ai-local-guard-orchestrator.ts` assert:
+
+- Plan/preview keeps `liveProviderCalled=false` and `actualCostUsd=null`
+- Blocked routing states (e.g. image generation, paid ads) surface `ledgerStatus=BLOCKED`
+- Disabled-gateway / local-deterministic truth labels (operator-facing; **not** a live claim)
+- Prompt/context sanitization edges and approved-knowledge inclusion logs **without** raw body text
+- Workflow result / audit metadata redaction (no secrets)
+
+Focused tests: `ai-local-guard-orchestrator.test.ts` (plus orchestrator lite / workflow adapter tests).
+**Do not** set `SMOKE_EXPECT_OPENROUTER_LIVE` for these checks.
 
 ## VPS / staging note
 

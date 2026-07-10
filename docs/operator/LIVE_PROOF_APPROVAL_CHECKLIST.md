@@ -1,6 +1,10 @@
-# Live Proof Approval Checklist (G422)
+# Live Proof Approval Checklist (G653)
 
-**Status:** Pre-session checklist. Do not start a live proof until every applicable box is satisfied. G409–G428 docs lane did not run live proofs.
+**Status:** Pre-session checklist. Do not start a live proof until every applicable box is satisfied. G653 refresh for G469–G708 ultra-block on baseline `66dcb74`. Docs lane did not run live proofs.
+
+**Hard truths:** live proofs remain **deferred**; Puriva Launch **BLOCKED**; production frozen. Local foundations (including G469+ no-IO helpers) do **not** satisfy this checklist.
+
+Related: [`OWNER_GATE_CHECKLIST.md`](./OWNER_GATE_CHECKLIST.md) · [`NEXT_GATE_EXECUTION_CHECKLIST.md`](./NEXT_GATE_EXECUTION_CHECKLIST.md) · [`LOCAL_ONLY_PROOF_TAXONOMY.md`](./LOCAL_ONLY_PROOF_TAXONOMY.md)
 
 ---
 
@@ -14,12 +18,14 @@
 - [ ] Restore / disabled-safe plan written (how to turn off after proof).
 - [ ] Secrets handling: values only in shell/server env; never printed; log path in `$env:TEMP` planned.
 - [ ] Commit / push / deploy are **not** implied by live-proof approval (separate approvals).
+- [ ] PowerShell one-command-per-line plan ready (no `&&` chaining in operator steps).
 
 ---
 
 ## 2. During the session
 
 - [ ] Run `git diff --check` and `npm.cmd run validate` first when code/runtime is involved.
+- [ ] If validate fails: **stop**. Do not run smoke or live calls.
 - [ ] Prefer no-live baseline smoke before the live call.
 - [ ] One bounded proof only (one call / one draft / one send / one bucket roundtrip) unless the approved plan says otherwise.
 - [ ] Capture evidence to `$env:TEMP`; scrub secrets before any share.
@@ -44,6 +50,8 @@
 | No owner sentence for this session | Do not call providers / mutate remote |
 | Approval was for staging but command targets production | Refuse |
 | Historical G46d/G47 PASS cited as approval | Refuse — not standing authorization |
+| Local no-IO foundation cited as live proof | Refuse — see taxonomy L0–L4 |
+| Validate failed | Stop; no smoke; no live call |
 | Log may contain secrets | Do not paste; redact first |
 
 ---

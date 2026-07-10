@@ -79,4 +79,48 @@ describe("monthly-report-metrics-export-truth", () => {
     assert.equal(draft.clientSafe, false);
     assert.ok(draft.errors.some((e) => /FINAL/i.test(e)));
   });
+
+  it("G535: export/download boundary — hasDocument boolean only; never storageKey field", () => {
+    const clientUrl = resolveMonthlyReportExportTruth({
+      audience: "client",
+      reportStatus: "FINAL",
+      hasDocument: true,
+      storageKeyPresent: true,
+      exportUrl: "https://cdn.example.com/reports/june.pdf"
+    });
+    assert.equal(clientUrl.kind, "client_safe_export_url");
+    assert.equal(clientUrl.hasDocument, true);
+    assert.equal(clientUrl.exportUrl, "https://cdn.example.com/reports/june.pdf");
+    assert.equal(clientUrl.storageKeyExposed, false);
+    assert.equal("storageKey" in clientUrl, false);
+    assert.equal("storageKeyPresent" in clientUrl, false);
+    assert.match(clientUrl.clientLabel, /Download available/i);
+
+    const adminWithUrl = resolveMonthlyReportExportTruth({
+      audience: "admin",
+      storageKeyPresent: true,
+      exportUrl: "https://cdn.example.com/reports/june.pdf"
+    });
+    assert.equal(adminWithUrl.hasDocument, true);
+    assert.equal(adminWithUrl.storageKeyExposed, false);
+    assert.match(adminWithUrl.adminLabel, /not serialized/i);
+    assert.equal(JSON.stringify(adminWithUrl).includes("private/"), false);
+
+    const httpOk = resolveMonthlyReportExportTruth({
+      audience: "client",
+      reportStatus: "FINAL",
+      exportUrl: "http://localhost:5173/export/local-proof"
+    });
+    assert.equal(httpOk.kind, "client_safe_export_url");
+    assert.equal(httpOk.clientSafe, true);
+
+    const adminReviewBlocked = resolveMonthlyReportExportTruth({
+      audience: "client",
+      reportStatus: "ADMIN_REVIEW",
+      hasDocument: true,
+      exportUrl: "https://docs.example.com/x"
+    });
+    assert.equal(adminReviewBlocked.clientSafe, false);
+    assert.ok(adminReviewBlocked.errors.some((e) => /FINAL/i.test(e)));
+  });
 });

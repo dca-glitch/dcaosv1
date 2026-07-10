@@ -1,5 +1,12 @@
 import { getR2Config, getR2EnvPresence, R2_REQUIRED_ENV_KEYS } from "./r2.config";
 import { getSignedR2ReadUrl, uploadR2Object, type R2DocumentType } from "./r2.service";
+import {
+  buildDownloadFailureClientError,
+  buildLocalMockDownloadTruth,
+  type DownloadFailureClientError,
+  type LocalMockDownloadTruth
+} from "./private-delivery-download-boundary";
+import type { ClientSafeUrlTruthLabel } from "./client-safe-storage-url-policy";
 
 export type PrivateStorageNamespace =
   | "invoice-document"
@@ -40,7 +47,18 @@ export interface PrivateStorageDownloadReference {
   provider: "r2";
 }
 
+/** Client-facing download reference — never includes storageKey. */
+export interface PrivateStorageClientDownloadReference {
+  downloadUrl: string | null;
+  expiresSeconds: number | null;
+  provider: "r2" | "mock";
+  truthLabel: ClientSafeUrlTruthLabel;
+  hasDocument: boolean;
+  liveProven: false;
+}
+
 const DEFAULT_DOWNLOAD_EXPIRY_SECONDS = 300;
+const LOCAL_MOCK_DOWNLOAD_URL = "https://mock.local/private-storage/download-fixture";
 
 function getDocumentType(namespace: PrivateStorageNamespace): R2DocumentType {
   if (namespace === "invoice-document") {
@@ -131,7 +149,7 @@ export function getPrivateStorageDownloadReference(
   storageKey: string,
   expiresSeconds = DEFAULT_DOWNLOAD_EXPIRY_SECONDS
 ): PrivateStorageDownloadReference | null {
-  if (!storageKey) {
+  if (!storageKey?.trim()) {
     return null;
   }
 
@@ -145,4 +163,80 @@ export function getPrivateStorageDownloadReference(
     expiresSeconds,
     provider: "r2"
   };
+}
+
+/**
+ * G487 — Local mock client download reference with explicit non-live truth label.
+ * Never performs R2 IO and never returns storageKey.
+ */
+export function getPrivateStorageLocalMockDownloadReference(input: {
+  storageKeyPresent?: boolean;
+  exportUrl?: string | null;
+}): PrivateStorageClientDownloadReference {
+  const mock: LocalMockDownloadTruth = buildLocalMockDownloadTruth({
+    downloadUrl: LOCAL_MOCK_DOWNLOAD_URL,
+    exportUrl: input.exportUrl ?? null,
+    storageKeyPresent: Boolean(input.storageKeyPresent)
+  });
+
+  return {
+    downloadUrl: mock.downloadUrl,
+    expiresSeconds: null,
+    provider: "mock",
+    truthLabel: mock.truthLabel,
+    hasDocument: mock.hasDocument,
+    liveProven: false
+  };
+}
+
+/**
+ * Disabled-safe client download boundary: when storage is not configured,
+ * return a null-URL client reference labeled mocked (not live_signed).
+ * Does not call R2 and does not echo storageKey.
+ */
+export function getPrivateStorageClientDownloadBoundary(input: {
+  storageKey?: string | null;
+  exportUrl?: string | null;
+}): PrivateStorageClientDownloadReference | null {
+  const key = input.storageKey?.trim() ?? "";
+  const status = getPrivateStorageStatus();
+
+  if (!key) {
+    if (input.exportUrl?.trim()) {
+      return {
+        downloadUrl: null,
+        expiresSeconds: null,
+        provider: "mock",
+        truthLabel: "export_url",
+        hasDocument: true,
+        liveProven: false
+      };
+    }
+    return null;
+  }
+
+  if (!status.configured) {
+    return getPrivateStorageLocalMockDownloadReference({
+      storageKeyPresent: true,
+      exportUrl: input.exportUrl ?? null
+    });
+  }
+
+  // Configured path still does not auto-issue live signed URLs from this helper —
+  // live issuance remains behind getPrivateStorageDownloadReference + owner gates.
+  return {
+    downloadUrl: null,
+    expiresSeconds: null,
+    provider: "r2",
+    truthLabel: "future_placeholder",
+    hasDocument: true,
+    liveProven: false
+  };
+}
+
+/**
+ * G488 — Client-safe download failure payload (redacted).
+ */
+export function toPrivateStorageDownloadFailurePayload(raw: unknown): DownloadFailureClientError {
+  return buildDownloadFailureClientError(raw);
 }

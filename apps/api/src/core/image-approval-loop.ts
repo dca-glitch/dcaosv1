@@ -7,7 +7,7 @@
  * client_approved | client_rejected → replacement_requested → final_accepted
  */
 
-export const IMAGE_APPROVAL_LOOP_VERSION = "IMAGE_APPROVAL_LOOP_V1";
+export const IMAGE_APPROVAL_LOOP_VERSION = "IMAGE_APPROVAL_LOOP_V2";
 
 export const IMAGE_APPROVAL_LOOP_STATES = [
   "candidate_generated",
@@ -227,4 +227,44 @@ export function assertImageFinalAcceptedInvariant(
     state: "final_accepted",
     checks: [...checks, "INVARIANT:final_accepted_ready"]
   };
+}
+
+export type ImageApprovalHappyPathStep = {
+  from: ImageApprovalLoopState;
+  transition: ImageApprovalLoopTransition;
+  to: ImageApprovalLoopState;
+};
+
+/**
+ * G558 — Canonical happy-path steps to `final_accepted` (docs/tests only).
+ */
+export function listImageApprovalHappyPathToFinal(): ImageApprovalHappyPathStep[] {
+  return [
+    { from: "candidate_generated", transition: "admin_approve", to: "admin_approved" },
+    { from: "admin_approved", transition: "client_approve", to: "client_approved" },
+    { from: "client_approved", transition: "accept_final", to: "final_accepted" }
+  ];
+}
+
+/**
+ * G558 — Walks the happy path and returns the terminal state or first failure.
+ */
+export function walkImageApprovalHappyPathToFinal(): {
+  ok: boolean;
+  state: ImageApprovalLoopState;
+  steps: ImageApprovalLoopTransitionResult[];
+} {
+  const steps: ImageApprovalLoopTransitionResult[] = [];
+  let state: ImageApprovalLoopState = "candidate_generated";
+
+  for (const step of listImageApprovalHappyPathToFinal()) {
+    const result = applyImageApprovalLoopTransition(state, step.transition);
+    steps.push(result);
+    if (!result.ok) {
+      return { ok: false, state, steps };
+    }
+    state = result.to;
+  }
+
+  return { ok: true, state, steps };
 }

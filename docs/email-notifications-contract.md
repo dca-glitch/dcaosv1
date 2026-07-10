@@ -1,6 +1,6 @@
 # Email Notifications Backend Foundation Contract
 
-Status: EN1 backend notification scaffolding is complete. EN2 now includes a schema-free platform AuditLog writer foundation. G159–G170 and G249–G268 expanded the pure notification taxonomy, recipient/channel/severity policy, payload redaction + safe snapshots, typed template catalog, legacy alias map, correlation/idempotency design, and no-send adapter edge coverage. Real provider sending remains inactive. No in-system notification DB model exists yet (design only — see `docs/operator/notification-persistence-design.md`).
+Status: EN1 backend notification scaffolding is complete. EN2 now includes a schema-free platform AuditLog writer foundation. G159–G170 and G249–G268 expanded the pure notification taxonomy, recipient/channel/severity policy, payload redaction + safe snapshots, typed template catalog, legacy alias map, correlation/idempotency design, and no-send adapter edge coverage. **G505–G516** hardened email config (disabled / missing / live-deferred), no-send adapter contract, template catalogue completeness, missing-template safety, recipient + template-variable redaction, and launch-critical / admin-only email matrices. Real provider sending remains inactive by default. No in-system notification DB model exists yet (design only — see `docs/operator/notification-persistence-design.md`).
 
 ## Purpose
 
@@ -27,6 +27,14 @@ EMAIL_PROVIDER=resend
 ```
 
 `RESEND_API_KEY` is read only from the runtime environment as a presence check. The key must not be committed, hardcoded, printed, or requested.
+
+G505 live-send authorization (names only; never commit values):
+
+```text
+EMAIL_LIVE_SEND_AUTHORIZED=true
+```
+
+Without this exact value, a keyed Resend config is **live-deferred**: `sendingEnabled=false`, `localNoSend=true`, `liveSendDeferred=true`. No network call is made.
 
 ## Template keys
 
@@ -81,9 +89,13 @@ The backend utility `sendEmailNotification` logs an `EmailLog` record for every 
 
 - `EMAIL_PROVIDER=local`: logs `SKIPPED`; no email is sent.
 - `EMAIL_PROVIDER=resend` without `RESEND_API_KEY`: logs `FAILED`; no email is sent.
-- `EMAIL_PROVIDER=resend` with `RESEND_API_KEY`: adapter-shaped only in EN1; logs `SKIPPED`; no email is sent.
+- `EMAIL_PROVIDER=resend` with `RESEND_API_KEY` but without `EMAIL_LIVE_SEND_AUTHORIZED=true`: logs `SKIPPED` (live-deferred); no email is sent (G505).
+- `EMAIL_PROVIDER=resend` with `RESEND_API_KEY` and `EMAIL_LIVE_SEND_AUTHORIZED=true`: only then may the Resend adapter path run — still requires a separate owner-approved live proof block (G515 deferred).
+- Missing / unknown template key: logs `SKIPPED`; no email is sent (G508).
 
 The utility returns the email log id, final status, provider, provider message id, and error message. It does not expose secret values.
+
+Outbox status (`getEmailNotificationOutboxStatus`) exposes `sendingEnabled`, `localNoSend`, `liveSendDeferred`, and `liveProofRequired` without serializing secrets.
 
 ## EN2 schema-free platform audit foundation
 
@@ -136,11 +148,15 @@ Shared module `packages/shared/src/notification-events.ts` (version `NOTIFICATIO
 
 API modules:
 
-- `apps/api/src/notifications/email-no-send-adapter.ts` — skipped attempts only; no provider call; no API key required
+- `apps/api/src/notifications/email-no-send-adapter.ts` — skipped attempts only; no provider call; no API key required (G506)
+- `apps/api/src/notifications/email-template-catalog.ts` — schema/typed catalogue completeness + launch-critical / admin-only matrices (G507–G508, G511–G512)
+- `apps/api/src/notifications/email-redaction.ts` — recipient + template-variable redaction (G509–G510)
 - `apps/api/src/notifications/notification-correlation.ts` — correlation/idempotency **design** keys only (G257); no migration
-- `apps/api/src/config/email.config.ts` — disabled-safe / live-deferred safety shape (G264)
+- `apps/api/src/config/email.config.ts` — disabled-safe / live-deferred safety shape (G264 / G505)
 
 Persistence / inbox API design (docs only): `docs/operator/notification-persistence-design.md`.
+
+Lane closeout: `docs/runbooks/EMAIL_NO_SEND_G505_G516_CLOSEOUT.md`.
 
 ## Explicit exclusions
 

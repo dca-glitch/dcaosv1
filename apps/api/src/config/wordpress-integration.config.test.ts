@@ -2,7 +2,8 @@ import assert from "node:assert/strict";
 import { afterEach, describe, it } from "node:test";
 import {
   getWordPressIntegrationReadiness,
-  WORDPRESS_INTEGRATION_ENV_KEYS
+  WORDPRESS_INTEGRATION_ENV_KEYS,
+  WORDPRESS_INTEGRATION_LIVE_HTTP_DEFERRED
 } from "../config/wordpress-integration.config";
 
 const originalPublishEnabled = process.env[WORDPRESS_INTEGRATION_ENV_KEYS.publishEnabled];
@@ -22,7 +23,7 @@ afterEach(() => {
   }
 });
 
-describe("wordpress-integration.config (G300 readiness)", () => {
+describe("wordpress-integration.config (G300 / G544 readiness)", () => {
   it("reports disabled with livePublishDeferred when publish env is off", () => {
     delete process.env[WORDPRESS_INTEGRATION_ENV_KEYS.publishEnabled];
     delete process.env[WORDPRESS_INTEGRATION_ENV_KEYS.credentialEncryptionMasterKey];
@@ -31,6 +32,7 @@ describe("wordpress-integration.config (G300 readiness)", () => {
     assert.equal(readiness.status, "disabled");
     assert.equal(readiness.publishEnabled, false);
     assert.equal(readiness.livePublishDeferred, true);
+    assert.equal(WORDPRESS_INTEGRATION_LIVE_HTTP_DEFERRED, true);
     assert.deepEqual(readiness.missingKeys, []);
   });
 
@@ -53,6 +55,7 @@ describe("wordpress-integration.config (G300 readiness)", () => {
     const readiness = getWordPressIntegrationReadiness();
     assert.equal(readiness.status, "configured_shape_ok");
     assert.equal(readiness.livePublishDeferred, true);
+    assert.equal(readiness.livePublishDeferred, WORDPRESS_INTEGRATION_LIVE_HTTP_DEFERRED);
     assert.equal(JSON.stringify(readiness).includes("test-key-presence-only"), false);
   });
 });

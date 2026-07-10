@@ -37,7 +37,7 @@ afterEach(() => {
 });
 
 describe("wordpress.service", () => {
-  describe("G290 draft payload snapshot", () => {
+  describe("G290 / G541 draft payload snapshot", () => {
     it("builds a stable local draft payload snapshot (draft-only, no live ids)", () => {
       const payload = buildAiDeliveryWordPressDraftPayload({
         title: "  Puriva SEO Article: Recovery & Wellness  ",
@@ -142,9 +142,30 @@ describe("wordpress.service", () => {
       assert.equal(payload.imageInclusion.socialPreviewPlaceholder, "og-ref");
       assert.equal(payload.deliverableId, null);
     });
+
+    it("G541 drops numeric taxonomy ids and redacts secret fragments in body", () => {
+      const payload = buildAiDeliveryWordPressDraftPayload({
+        title: "Taxonomy edge draft",
+        body: "Safe copy. applicationPassword: leak-me-not",
+        sourceType: "DELIVERABLE",
+        sourceId: "deliverable-99",
+        categories: ["12", "Wellness"],
+        tags: ["7", "seo"],
+        publishGateStatus: "credentials_missing",
+        credentialConfigured: true
+      });
+
+      assert.deepEqual(payload.categories, ["Wellness"]);
+      assert.deepEqual(payload.tags, ["seo"]);
+      assert.equal(payload.body.includes("leak-me-not"), false);
+      assert.equal(payload.body.includes("applicationPassword"), false);
+      assert.match(payload.body, /\[REDACTED\]/);
+      assert.equal(payload.postStatus, "draft");
+      assert.match(payload.note, /Save publication target credentials/);
+    });
   });
 
-  describe("G291 draft-only status invariant", () => {
+  describe("G291 / G543 draft-only status invariant", () => {
     it("resolves only draft status and rejects publish status drift", () => {
       assert.equal(resolveWordPressDraftPostStatus(), "draft");
       assert.equal(isWordPressDraftStatusFrozen(), true);
@@ -174,9 +195,24 @@ describe("wordpress.service", () => {
       assert.equal(builderBody.includes('postStatus: "future"'), false);
       assert.match(builderBody, /resolveWordPressDraftPostStatus\(\)/);
     });
+
+    it("G543 freezes every gate-status draft payload to postStatus draft", () => {
+      for (const gate of ["disabled", "credentials_missing", "target_configured"] as const) {
+        const payload = buildAiDeliveryWordPressDraftPayload({
+          title: `Gate ${gate}`,
+          body: "Body",
+          sourceType: "DELIVERABLE",
+          sourceId: "d-1",
+          publishGateStatus: gate,
+          credentialConfigured: gate !== "disabled"
+        });
+        assert.equal(payload.postStatus, WORDPRESS_DRAFT_POST_STATUS);
+        assertWordPressDraftStatusFrozen(payload);
+      }
+    });
   });
 
-  describe("G292 / G300 publish freeze and no-live service guard", () => {
+  describe("G292 / G300 / G544 publish freeze and no-live service guard", () => {
     it("keeps publish frozen before any live WordPress HTTP can run", async () => {
       process.env.WORDPRESS_PUBLISH_ENABLED = "true";
       let fetchCalled = false;
@@ -220,6 +256,25 @@ describe("wordpress.service", () => {
       assert.ok(publishStart >= 0);
       assert.ok(freezeIndex > publishStart);
       assert.ok(fetchIndex > freezeIndex);
+    });
+
+    it("G544 returns validation error without fetch when required fields missing", async () => {
+      let fetchCalled = false;
+      globalThis.fetch = (async () => {
+        fetchCalled = true;
+        return new Response("{}", { status: 200 });
+      }) as typeof fetch;
+
+      const result = await publishAiDeliveryDeliverableToWordPress({
+        deliverableId: "",
+        title: "",
+        body: ""
+      });
+
+      assert.equal(fetchCalled, false);
+      assert.equal(result.status, "error");
+      assert.equal(result.ok, false);
+      assert.ok(result.errorMessage);
     });
   });
 

@@ -95,3 +95,5 @@ Live execution requires separate proof per [`AI_PROVIDER_LIVE_PROOF.md`](../runb
 - [`AI_MATERIAL_CLASSIFICATION.md`](./AI_MATERIAL_CLASSIFICATION.md)
 - [`PURIVA_AI_PRELIVE_WORKFLOW_PACK.md`](./PURIVA_AI_PRELIVE_WORKFLOW_PACK.md)
 - [`../architecture/PURIVA_OPERATING_PACK_V1.md`](../architecture/PURIVA_OPERATING_PACK_V1.md)
+- [`../runbooks/AI_MODEL_ROUTING_POLICY.md`](../runbooks/AI_MODEL_ROUTING_POLICY.md) — routing + budget ledger truth
+- [`../runbooks/AI_BUDGET_ROUTING_G613_G624_CLOSEOUT.md`](../runbooks/AI_BUDGET_ROUTING_G613_G624_CLOSEOUT.md) — G613–G624 local budget/routing closeout (no live provider; no invoice overclaim)

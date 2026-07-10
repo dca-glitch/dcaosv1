@@ -3,6 +3,7 @@ import { describe, it } from "node:test";
 import {
   IMAGE_NOTIFICATION_EXISTING_EVENTS,
   IMAGE_NOTIFICATION_NEEDED_EVENTS,
+  buildImageNotificationCoverageSnapshot,
   listExistingImageNotificationEvents,
   listNeededImageNotificationEvents,
   mapImageApprovalTransitionToNotification,
@@ -113,5 +114,13 @@ describe("image-notification-mapping", () => {
     assert.ok(mapping);
     assert.equal(mapping.eventType, IMAGE_NOTIFICATION_EXISTING_EVENTS.image_candidate_generated);
     assert.deepEqual(mapping.audiences, ["admin"]);
+  });
+
+  it("G559 builds notification coverage snapshot with zero needed events", () => {
+    const snapshot = buildImageNotificationCoverageSnapshot();
+    assert.equal(snapshot.allMappedEventsInSharedTaxonomy, true);
+    assert.equal(snapshot.neededEventCount, 0);
+    assert.ok(snapshot.existingEventCount >= 8);
+    assert.ok(snapshot.events.includes("image_final_accepted"));
   });
 });

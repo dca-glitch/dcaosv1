@@ -102,17 +102,17 @@ Do **not** use `openrouter/auto` for Puriva or medical/compliance content.
 - Spend is summed per row as `actualCostUsd ?? estimatedCostUsd`; current OpenRouter live rows may have `actualCostUsd=null`, so they count by their route estimate until trusted provider cost exists.
 - `BLOCKED` and `SKIPPED` rows remain non-countable for monthly spend.
 
-### Reporting/reconciliation contract (G134-G137 + G389–G408)
+### Reporting/reconciliation contract (G134-G137 + G389–G408 + G613–G624)
 
 - `ai-budget-reporting.contract.ts` is an additive pure contract layer; it does **not** modify `sumSpentUsdForPeriod()`.
 - Reporting rows keep monthly cap totals, live rows, estimated/actual split, provider, and model visible for operator reporting.
 - `actualCostNullPolicy` = `leave_null_until_trusted_provider_cost` — never fabricate actuals from estimates or pricing pages.
-- Trusted actual ingestion design + invoice variance design live in `ai-budget-trusted-actual-ingestion.design.ts` (design-only; no live calls).
-- Budget threshold/cap signals map to existing Lane 2 events via `ai-budget-notification-mapping.ts` (no Lane 2 edits).
-- Routing truth labels: `ai-model-routing-truth-labels.ts` + shared `AI_MODEL_ROUTING_TRUTH_LABELS`.
-- Finance Lite remains separate: no AI budget report creates, mutates, or reconciles a Finance Lite invoice.
+- Trusted actual ingestion design + invoice variance design live in `ai-budget-trusted-actual-ingestion.design.ts` (design-only; no live calls). G613 adds `assertActualCostUsdTrustedSourceInvariant`.
+- Budget threshold/cap signals map to existing Lane 2 events via `ai-budget-notification-mapping.ts` (no Lane 2 edits). G620–G621 deepen threshold + cap-blocked mapping tests.
+- Routing truth labels: `ai-model-routing-truth-labels.ts` + shared `AI_MODEL_ROUTING_TRUTH_LABELS` (G622 live_completed cases).
+- Finance Lite remains separate: no AI budget report creates, mutates, or reconciles a Finance Lite invoice. G618 helper: `finance-lite-ai-budget-separation.ts`.
 - Reconciliation design exposes estimate, trusted actual, invoice, and variance slots, but invoice fields remain `null` / `not_integrated` until a separately approved provider-invoice workflow exists.
-- Detail: [`AI_BUDGET_REPORTING_RECONCILIATION_CONTRACT.md`](./AI_BUDGET_REPORTING_RECONCILIATION_CONTRACT.md).
+- Detail: [`AI_BUDGET_REPORTING_RECONCILIATION_CONTRACT.md`](./AI_BUDGET_REPORTING_RECONCILIATION_CONTRACT.md) · [`AI_BUDGET_ROUTING_G613_G624_CLOSEOUT.md`](./AI_BUDGET_ROUTING_G613_G624_CLOSEOUT.md).
 
 **G75 (local live spend attribution proof — PARTIAL):** After one controlled OpenRouter live smoke (`workflowRunId=6e538323-8e68-4d41-a4c5-9e30ca0cf8a1`), completed attribution metadata could be **generated** from live workflow observability via G74 `finalizeOrchestratorLiteLedgerAttribution` (verifier PASS in G75c). At G75 time the execute path did not auto-persist a COMPLETED row.
 

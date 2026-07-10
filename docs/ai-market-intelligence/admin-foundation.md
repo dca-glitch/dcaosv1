@@ -266,7 +266,20 @@ Shared typed contracts (no live scrape / no uncontrolled source ingestion):
 - Client-safe summary exposes only title, market summary, opportunities, recommended actions, status, and a non-live source label.
 - Forbidden on client-safe payloads: `tenantId`, `storageKey`, `executionLog`, `reviewerNotes`, `resultData`, `sourceUrl`, `sourceNotes`, `confidenceNotes`, `provider`, `prompt`, `rawFindings`, `researchRunId`, `insightId`.
 
-Proof coverage lives in `packages/shared/src/future-module-contracts.proof.ts` and Puriva unit tests. This does **not** claim new live crawl, provider, or production readiness.
+Proof coverage lives in `packages/shared/src/future-module-contracts.proof.ts`,
+`apps/api/src/core/future-module-contracts.test.ts` (G601–G610), and Puriva unit tests.
+This does **not** claim new live crawl, provider, or production readiness.
+
+### G601–G604 truth labels
+
+| Claim | Status |
+|-------|--------|
+| Bounded local sources only | True (contract-enforced) |
+| Uncontrolled scraping / live crawl | False / disabled |
+| Client-safe summary without admin review | Not allowed |
+| Live Market Intelligence module readiness | Not claimed |
+
+See `docs/runbooks/FUTURE_MODULES_G601_G612_CLOSEOUT.md`.
 
 ## Future Phases
 

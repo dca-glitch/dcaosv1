@@ -224,3 +224,70 @@ export function findPodToolkitComplianceIpCautionViolations(
   }
   return violations;
 }
+
+/**
+ * G609 — Detect marketplace sync / live publish claims on policy or draft bundle.
+ */
+export function findPodToolkitMarketplaceSyncViolations(
+  candidate: Record<string, unknown>
+): string[] {
+  const violations: string[] = [];
+
+  if (
+    Object.prototype.hasOwnProperty.call(candidate, "marketplaceSyncAllowed") &&
+    candidate.marketplaceSyncAllowed !== false
+  ) {
+    violations.push("marketplaceSyncAllowed");
+  }
+
+  if (
+    Object.prototype.hasOwnProperty.call(candidate, "livePublishAllowed") &&
+    candidate.livePublishAllowed !== false
+  ) {
+    violations.push("livePublishAllowed");
+  }
+
+  const policy = candidate.policy;
+  if (policy && typeof policy === "object" && !Array.isArray(policy)) {
+    const policyRecord = policy as Record<string, unknown>;
+    for (const key of ["marketplaceSyncAllowed", "livePublishAllowed"] as const) {
+      if (
+        Object.prototype.hasOwnProperty.call(policyRecord, key) &&
+        policyRecord[key] !== false
+      ) {
+        violations.push(`policy.${key}`);
+      }
+    }
+  }
+
+  return violations;
+}
+
+/**
+ * G610 — Detect live image generation claims on prompt/image requirements or draft bundles.
+ */
+export function findPodToolkitLiveImageViolations(
+  candidate: Record<string, unknown>
+): string[] {
+  const violations: string[] = [];
+
+  if (
+    Object.prototype.hasOwnProperty.call(candidate, "liveImageGenerationAllowed") &&
+    candidate.liveImageGenerationAllowed !== false
+  ) {
+    violations.push("liveImageGenerationAllowed");
+  }
+
+  const promptImage = candidate.promptImageRequirement;
+  if (promptImage && typeof promptImage === "object" && !Array.isArray(promptImage)) {
+    const promptRecord = promptImage as Record<string, unknown>;
+    if (
+      Object.prototype.hasOwnProperty.call(promptRecord, "liveImageGenerationAllowed") &&
+      promptRecord.liveImageGenerationAllowed !== false
+    ) {
+      violations.push("promptImageRequirement.liveImageGenerationAllowed");
+    }
+  }
+
+  return violations;
+}

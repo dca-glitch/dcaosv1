@@ -123,4 +123,82 @@ describe("monthly-report-metrics-output-guard", () => {
     assert.equal(ok.admin?.hasDocument, false);
     assert.equal(ok.admin?.internalSourceId, null);
   });
+
+  it("G529: client FINAL-only matrix rejects DRAFT/ADMIN_REVIEW/ARCHIVED/empty", () => {
+    for (const status of ["DRAFT", "ADMIN_REVIEW", "ARCHIVED", "", "  ", "PENDING"]) {
+      const blocked = buildMonthlyReportClientOutput({
+        status,
+        title: "T",
+        recommendationsText: "R",
+        ...secrets
+      });
+      assert.equal(blocked.ok, false, `expected reject for status=${JSON.stringify(status)}`);
+      assert.equal(blocked.client, null);
+      assert.ok(blocked.errors.some((e) => /FINAL/i.test(e)));
+    }
+
+    const finalOk = buildMonthlyReportClientOutput({
+      status: "FINAL",
+      title: "June summary",
+      recommendationsText: "Keep cadence",
+      metricsTruthLabel: "Placeholder metrics for local proof",
+      ...secrets
+    });
+    assert.equal(finalOk.ok, true, finalOk.errors.join("; "));
+    assert.equal(finalOk.client?.status, "FINAL");
+    assert.equal(finalOk.audience, "client");
+  });
+
+  it("G529: client payload never leaks googleAccessToken or refreshToken values", () => {
+    const ok = buildMonthlyReportClientOutput({
+      status: "FINAL",
+      title: "Safe",
+      recommendationsText: "Safe",
+      ...secrets
+    });
+    assert.equal(ok.ok, true, ok.errors.join("; "));
+    const serialized = JSON.stringify(ok.client);
+    assert.equal(serialized.includes(secrets.googleAccessToken), false);
+    assert.equal(serialized.includes(secrets.refreshToken), false);
+    assert.equal(serialized.includes(secrets.oauthClientSecret), false);
+    assert.equal(serialized.includes(secrets.snapshotSourceId), false);
+  });
+
+  it("G530: admin output redacts storageKey and OAuth secrets across statuses", () => {
+    for (const status of ["DRAFT", "ADMIN_REVIEW", "FINAL", "ARCHIVED"]) {
+      const ok = buildMonthlyReportAdminOutput({
+        status,
+        title: "Admin view",
+        recommendationsText: "Internal recs",
+        ...secrets
+      });
+      assert.equal(ok.ok, true, ok.errors.join("; "));
+      assert.ok(ok.admin);
+      assert.equal(ok.admin.status, status);
+      assert.equal("storageKey" in ok.admin, false);
+      assert.equal("oauthClientSecret" in ok.admin, false);
+      assert.equal("refreshToken" in ok.admin, false);
+      assert.equal("googleAccessToken" in ok.admin, false);
+      const serialized = JSON.stringify(ok.admin);
+      assert.equal(serialized.includes(secrets.storageKey), false);
+      assert.equal(serialized.includes(secrets.oauthClientSecret), false);
+      assert.equal(serialized.includes(secrets.refreshToken), false);
+      assert.equal(serialized.includes(secrets.googleAccessToken), false);
+      // Admin may retain internal metadata
+      assert.equal(ok.admin.adminSummaryNotes, secrets.adminSummaryNotes);
+      assert.equal(ok.admin.hasDocument, true);
+    }
+  });
+
+  it("G530: admin falls back to snapshotSourceId when internalSourceId absent", () => {
+    const ok = buildMonthlyReportAdminOutput({
+      status: "DRAFT",
+      title: "T",
+      recommendationsText: "R",
+      snapshotSourceId: "snap_only_77"
+    });
+    assert.equal(ok.ok, true, ok.errors.join("; "));
+    assert.equal(ok.admin?.internalSourceId, "snap_only_77");
+    assert.equal("snapshotSourceId" in (ok.admin ?? {}), false);
+  });
 });

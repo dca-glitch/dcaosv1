@@ -7,7 +7,7 @@ import {
   toClientPortalSafeErrorMessage
 } from "./client-portal-error-safety";
 
-describe("client portal error message safety (G204/G330)", () => {
+describe("client portal error message safety (G204/G330/G570)", () => {
   it("strips stack traces and storage keys from client-facing messages", () => {
     const raw =
       "Failed at Object.open (C:\\app\\storage.ts:12:3)\nstorageKey=tenants/acme/private.pdf\nproviderMetadata=openai";
@@ -19,12 +19,18 @@ describe("client portal error message safety (G204/G330)", () => {
   it("replaces messages that mention cost, audit, or workflow internals", () => {
     for (const raw of [
       "actualCostUsd=12.50 billed",
+      "estimatedCostUsd=9.1 estimated",
+      "rawCost leaked",
       "auditLog write failed",
       "workflowRunId=run-99 crashed",
+      "workflowRunStatus=FAILED",
+      "jobQueueStatus=queued",
+      "queueStatus=waiting",
       "adminSummaryNotes leaked",
-      "executionLog step failed"
+      "executionLog step failed",
+      "provider=openai failed"
     ]) {
-      assert.equal(containsClientPortalUnsafeErrorContent(raw), true);
+      assert.equal(containsClientPortalUnsafeErrorContent(raw), true, raw);
       assert.equal(toClientPortalSafeErrorMessage(raw), "Request could not be completed.");
     }
   });
@@ -67,5 +73,11 @@ describe("client portal error message safety (G204/G330)", () => {
       "workflowRunId"
     ]);
     assert.throws(() => assertClientPortalPayloadHasNoForbiddenKeys(payload));
+  });
+
+  it("replaces non-string raw errors with the safe fallback (G570)", () => {
+    assert.equal(toClientPortalSafeErrorMessage({ message: "boom" }), "Request could not be completed.");
+    assert.equal(toClientPortalSafeErrorMessage(null), "Request could not be completed.");
+    assert.equal(toClientPortalSafeErrorMessage(42, "Fallback."), "Fallback.");
   });
 });

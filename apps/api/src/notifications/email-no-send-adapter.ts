@@ -3,14 +3,9 @@ import type {
   SchemaEmailTemplateKey,
   TypedNotificationTemplateKey
 } from "@dca-os-v1/shared";
-import {
-  EMAIL_TEMPLATE_INVENTORY,
-  TYPED_NOTIFICATION_TEMPLATE_CATALOG,
-  isSchemaEmailTemplateKey,
-  isTypedNotificationTemplateKey,
-  redactNotificationPayload,
-  resolveTypedTemplateToSchemaKey
-} from "@dca-os-v1/shared";
+import { TYPED_NOTIFICATION_TEMPLATE_CATALOG } from "@dca-os-v1/shared";
+import { redactEmailRecipient, redactEmailTemplateVariables } from "./email-redaction";
+import { resolveEmailTemplateKey } from "./email-template-catalog";
 
 export const EMAIL_NO_SEND_ADAPTER_VERSION = "EMAIL_NO_SEND_ADAPTER_V2";
 
@@ -67,57 +62,6 @@ export interface EmailNoSendAdapter {
   listSafeMetadata(): readonly EmailNoSendSafeMetadata[];
 }
 
-function resolveTemplateKeys(templateKey: string): {
-  schemaTemplateKey: SchemaEmailTemplateKey | null;
-  typedTemplateKey: TypedNotificationTemplateKey | null;
-  templateResolved: boolean;
-  templateMissing: boolean;
-} {
-  const trimmed = templateKey.trim();
-  if (!trimmed) {
-    return {
-      schemaTemplateKey: null,
-      typedTemplateKey: null,
-      templateResolved: false,
-      templateMissing: true
-    };
-  }
-
-  if (isTypedNotificationTemplateKey(trimmed)) {
-    return {
-      schemaTemplateKey: resolveTypedTemplateToSchemaKey(trimmed),
-      typedTemplateKey: trimmed,
-      templateResolved: true,
-      templateMissing: false
-    };
-  }
-
-  if (isSchemaEmailTemplateKey(trimmed)) {
-    return {
-      schemaTemplateKey: trimmed,
-      typedTemplateKey: null,
-      templateResolved: Boolean(EMAIL_TEMPLATE_INVENTORY[trimmed]),
-      templateMissing: false
-    };
-  }
-
-  // Unknown / missing template — still no-send safe; never throws or calls a provider.
-  return {
-    schemaTemplateKey: null,
-    typedTemplateKey: null,
-    templateResolved: false,
-    templateMissing: true
-  };
-}
-
-function redactRecipient(email: string): string {
-  const at = email.indexOf("@");
-  if (at <= 0) {
-    return "[REDACTED_RECIPIENT]";
-  }
-  return `***@${email.slice(at + 1)}`;
-}
-
 function normalizeAttempt(input: EmailNoSendAdapterInput): EmailNoSendAdapterInput {
   return {
     ...input,
@@ -125,15 +69,15 @@ function normalizeAttempt(input: EmailNoSendAdapterInput): EmailNoSendAdapterInp
     subject: input.subject.trim(),
     relatedEntityId: input.relatedEntityId?.trim() || null,
     textBody: input.textBody?.trim() || null,
-    payload: input.payload ? redactNotificationPayload(input.payload) : null,
+    payload: input.payload ? redactEmailTemplateVariables(input.payload) : null,
     redactRecipientInLogs: Boolean(input.redactRecipientInLogs)
   };
 }
 
 function toSafeMetadata(attempt: EmailNoSendAdapterInput): EmailNoSendSafeMetadata {
-  const resolved = resolveTemplateKeys(attempt.templateKey);
+  const resolved = resolveEmailTemplateKey(String(attempt.templateKey));
   const recipientEmail = attempt.redactRecipientInLogs
-    ? redactRecipient(attempt.recipientEmail)
+    ? redactEmailRecipient(attempt.recipientEmail)
     : attempt.recipientEmail;
 
   return {
@@ -153,7 +97,7 @@ function toSafeMetadata(attempt: EmailNoSendAdapterInput): EmailNoSendSafeMetada
 }
 
 /**
- * Local no-send email adapter (G99 / G165).
+ * Local no-send email adapter (G99 / G165 / G506).
  * Never calls an external provider, never requires an API key, and exposes only safe metadata.
  */
 export function createEmailNoSendAdapter(): EmailNoSendAdapter {

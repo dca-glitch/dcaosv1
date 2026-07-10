@@ -1,7 +1,8 @@
 # Client Portal Admin/Client Boundary
 
-**Status:** Architecture refresh for DCA OS Lite client portal surfaces (G205 / G329–G348).
+**Status:** Architecture refresh for DCA OS Lite client portal surfaces (G205 / G329–G348 / G577–G588).
 **Scope:** Boundary rules only — does not replace smoke gates or module plans.
+**Closeout:** [`docs/runbooks/CLIENT_APPROVAL_G577_G588_CLOSEOUT.md`](../runbooks/CLIENT_APPROVAL_G577_G588_CLOSEOUT.md)
 
 Related:
 
@@ -74,15 +75,16 @@ Serializers live in `apps/api/src/core/client-portal.runtime.ts` and
 - Image reject requires a non-empty reason; image-level approve/reject does not notify admin by default
 - Pure policy helper: `evaluateClientPortalApprovalAction` in `client-portal-approval-policy.ts`
 
-### One-revision-round design (G335)
+### One-revision-round design (G335 / G579)
 
 Product rule: a client may consume **one** request-changes round per deliverable review cycle.
 
 | Layer | Behavior today | Blocker |
 |---|---|---|
-| Pure policy (`client-portal-approval-policy.ts`) | When `revisionRoundUsed: true`, returns `REVISION_ROUND_EXHAUSTED` | None — unit-tested |
-| Runtime (`rejectClientPortalDeliverable`) | Passes `revisionRoundUsed: false` until a durable counter exists | Needs approved schema field (e.g. `clientRevisionRoundUsed` or equivalent) — **no schema change in G329–G348** |
-| UI | Should surface the policy message when API returns exhaustion | Wire after persistence lands |
+| Pure policy (`client-portal-approval-policy.ts` + `revision-policy.ts`) | When `revisionRoundUsed: true`, returns `REVISION_ROUND_EXHAUSTED` | None — unit-tested |
+| Runtime (`rejectClientPortalDeliverable`) | Passes `revisionRoundUsed: false` until a durable counter exists; can return typed `REVISION_ROUND_EXHAUSTED` when policy exhausts | Needs approved schema field (e.g. `clientRevisionRoundUsed` or equivalent) — **no schema change in G577–G588** |
+| Controller | Maps exhaustion / missing reason to stable client-safe codes | Wire UI after persistence lands |
+| Notification map | `approval-notification-mapping.ts` maps approve/request-changes/image/monthly-report onto existing taxonomy events | Image-level + monthly-report client delivery still unwired |
 
 Do not invent persistence or weaken RBAC to approximate the counter.
 

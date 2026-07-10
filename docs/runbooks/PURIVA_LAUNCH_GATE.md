@@ -1,6 +1,6 @@
 # Puriva Launch Gate — 15-Area Evaluation
 
-**Status:** Docs-only evaluation. Overall verdict: **BLOCKED**. G148 recorded G89-G147 local/no-IO foundations. G228 recorded G149-G227 expanded local foundations. G468 recorded G229-G467 deepened local foundations (R2 no-IO hardening, notification taxonomy/correlation design, GA/GSC/monthly guards, WordPress draft helpers, image compliance V3, Client Portal boundary tests, Puriva pack catalog, future-module contracts, AI budget/routing truth labels, security inventories, UI testability) — still local/docs only. This document does not authorize Puriva Launch, live integrations, or production client-facing use.
+**Status:** Docs-only evaluation. Overall verdict: **BLOCKED**. G148 recorded G89-G147 local/no-IO foundations. G228 recorded G149-G227 expanded local foundations. G468 recorded G229-G467 deepened local foundations. G708 recorded G469-G707 ultra-block consolidated local foundations (R2/storage + private delivery, notification taxonomy, email no-send, GA/GSC OAuth design, monthly output guards, WordPress draft helpers, image compliance, Client Portal/approval serializers, Puriva pack, future-module contracts, AI budget/orchestrator guards, security inventories, operator runbooks, UI testability, stale-claim sweep) — still local/docs only. This document does not authorize Puriva Launch, live integrations, or production client-facing use.
 
 **Gate separation:** Puriva Client-Service Launch Gate is independent from the DCA OS Production v1 Gate (G49 → G50). Clearing G49/G50 does **not** authorize Puriva Launch, and vice versa.
 
@@ -10,7 +10,7 @@
 
 ## 1. Overall verdict
 
-**BLOCKED.** G89-G467 add useful local/admin foundations across storage, notifications, analytics helpers, WordPress draft preparation, image compliance/approval-loop, Client Portal visibility, operating packs, future-module contracts, AI budget reporting, and operator/security inventories. None closes Puriva Launch. No staging/prod live proof, live AI call, email send, Google OAuth/sync, WordPress HTTP call, image-provider call, R2 IO, commit, push, or deploy is claimed here.
+**BLOCKED.** G89-G707 add useful local/admin foundations across storage, private delivery, notifications, analytics helpers, WordPress draft preparation, image compliance/approval-loop, Client Portal visibility, operating packs, future-module contracts, AI budget reporting, orchestrator local guards, and operator/security/UI inventories. None closes Puriva Launch. No staging/prod live proof, live AI call, email send, Google OAuth/sync, WordPress HTTP call, image-provider call, R2 IO, commit, push, or deploy is claimed here.
 
 8 of 15 evaluation areas remain fully blocked pending live proof or a not-yet-started product/policy gate. 2 more areas have real local scaffolding but cannot support a live client-facing claim yet. 5 areas are genuinely usable now in local/admin-operated form only.
 
@@ -20,10 +20,10 @@
 
 | Item | Status |
 |------|--------|
-| SEC-B1 legacy `/api/v1/briefs` cross-tenant IDOR | **FIXED (local, uncommitted)** — `requireTenant` + tenant-scoped client/brief checks |
+| SEC-B1 legacy `/api/v1/briefs` cross-tenant IDOR | **FIXED (local)** — `requireTenant` + tenant-scoped client/brief checks; confirm commit presence on target SHA before G50; does **not** authorize Puriva Launch |
 | Regression test | `apps/api/tests/integration/briefs-tenant-boundary.integration.test.ts` |
 | SEC-H1 admin `storageKey` exposure | **OPEN** — separate block recommended |
-| Puriva launch impact | SEC-B1 was a **production safety blocker**; fix must be committed and validated before G50 |
+| Puriva launch impact | SEC-B1 was a **production safety blocker**; fix must be present on the deploy SHA and validated before G50. Clearing SEC-B1 does **not** make Puriva Launch ready. |
 
 ---
 
@@ -37,7 +37,7 @@
 | 4 | Image generation provider research | **BLOCKED** | No provider selected. G115-G119 add compliance policy/helper foundation with zero live calls. Full flow spec: [`IMAGE_GENERATION_PROOF.md`](./IMAGE_GENERATION_PROOF.md). Provider selection itself remains not started. |
 | 5 | Image generation staging proof | **BLOCKED** | Depends on #4 + R2 live proof + AI Model Policy; scaffold exists (`prepare-image-sets`) plus the new Phase B disabled-safe foundation, but no live provider client is wired and none was called in this block. |
 | 6 | Transactional notification proof (in-system + email) | **BLOCKED** | G94-G102 add taxonomy/mapping/policy/no-send adapter/template foundation only. No in-system notification model exists yet. Email/outbox is disabled-safe/no-send locally; real email send via Resend has never been executed. |
-| 7 | WordPress draft/handoff readiness | **PASS (local/operator-ready)** / **PLANNED, NOT EXECUTED (live draft proof)** | G110-G113 add draft payload, credential-shape checks, and publish-freeze-before-fetch coverage. Draft preparation and operator handoff are local-only; required scope for Puriva Launch is draft/handoff, not auto-publish. A live draft proof **plan** is written in [`WORDPRESS_DRAFT_PROOF.md`](./WORDPRESS_DRAFT_PROOF.md) §6 — docs only, no live WordPress call made. Three gaps must be explicitly resolved before that session can run: no `altText`/`caption`/`socialPreview` fields on `AiDeliveryArticleImage`, no idempotency key on `PublicationLog`, no code-level approved-image-only filter. |
+| 7 | WordPress draft/handoff readiness | **PASS (local draft-prep only)** / **PLANNED, NOT EXECUTED (live draft proof)** — not “WordPress ready” for live HTTP or publish | G110-G113 add draft payload, credential-shape checks, and publish-freeze-before-fetch coverage. Draft preparation and operator handoff are local-only; required scope for Puriva Launch is draft/handoff, not auto-publish. A live draft proof **plan** is written in [`WORDPRESS_DRAFT_PROOF.md`](./WORDPRESS_DRAFT_PROOF.md) §6 — docs only, no live WordPress call made. Three gaps must be explicitly resolved before that session can run: no `altText`/`caption`/`socialPreview` fields on `AiDeliveryArticleImage`, no idempotency key on `PublicationLog`, no code-level approved-image-only filter. |
 | 8 | Integration health visibility | **PASS (local/admin)** / **BLOCKED (live)** | `GET /api/v1/integrations/readiness` gives admin-visible config-shape health today; there is nothing live to show health for until other live proofs close. |
 | 9 | AI Model Research Gate | **BLOCKED** | Not started. |
 | 10 | AI Model Policy | **BLOCKED** | Depends on #9. |

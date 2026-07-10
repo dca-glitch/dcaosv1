@@ -20,7 +20,12 @@ const CLIENT_PORTAL_UNSAFE_MESSAGE_PATTERNS = [
   /\bstorageKey\b/i,
   /\btenants\/[A-Za-z0-9_\-./]+/,
   /\bproviderMetadata\b/i,
+  /\bprovider\b\s*[:=]/i,
   /\bworkflowRunId\b/i,
+  /\bworkflowRunStatus\b/i,
+  /\bactualCostUsd\b/i,
+  /\bestimatedCostUsd\b/i,
+  /\brawCost\b/i,
   /\bat\s+\S+\s+\([^)]+:\d+:\d+\)/,
   /\bstack\b\s*:/i
 ];

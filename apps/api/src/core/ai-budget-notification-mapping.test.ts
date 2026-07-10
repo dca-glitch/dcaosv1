@@ -68,4 +68,38 @@ describe("ai-budget-notification-mapping", () => {
       null
     );
   });
+
+  it("G620: threshold warning maps to BUDGET_THRESHOLD_WARNING with no-send default", () => {
+    const signal = resolveAiBudgetNotificationSignal({
+      killSwitchActive: false,
+      projectedOverBudget: false,
+      spentThisPeriodUsd: 80,
+      monthlyCapUsd: 100,
+      thresholdRatio: 0.8
+    });
+    assert.equal(signal, "threshold_warning");
+    const mapped = mapAiBudgetSignalToExistingNotification("threshold_warning");
+    assert.equal(mapped.businessEventKey, "BUDGET_THRESHOLD_WARNING");
+    assert.equal(mapped.notificationEventType, "budget_threshold_warning");
+    assert.equal(mapped.aiNotificationEventType, "budget_warning");
+    assert.equal(mapped.severityHint, "warning");
+    assert.equal(mapped.sendDefault, "no_send_until_owner_gate");
+  });
+
+  it("G621: cap blocked maps to BUDGET_CAP_BLOCKED without inventing new keys", () => {
+    const signal = resolveAiBudgetNotificationSignal({
+      killSwitchActive: false,
+      projectedOverBudget: true,
+      spentThisPeriodUsd: 95,
+      monthlyCapUsd: 100
+    });
+    assert.equal(signal, "cap_blocked");
+    const mapped = mapAiBudgetSignalToExistingNotification("cap_blocked");
+    assert.equal(mapped.businessEventKey, "BUDGET_CAP_BLOCKED");
+    assert.equal(mapped.notificationEventType, "budget_cap_blocked");
+    assert.equal(mapped.severityHint, "blocked");
+    assert.equal(mapped.sendDefault, "no_send_until_owner_gate");
+    const contract = getAiBudgetNotificationMappingContract();
+    assert.deepEqual(contract.proposedNewEventKeys, []);
+  });
 });

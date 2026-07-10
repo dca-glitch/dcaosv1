@@ -6,7 +6,7 @@ import {
   WORDPRESS_AUTHOR_TENANT_MAPPING_DESIGN
 } from "./wordpress-author-tenant-mapping";
 
-describe("wordpress-author-tenant-mapping (G299)", () => {
+describe("wordpress-author-tenant-mapping (G299 / G549)", () => {
   it("keeps author mapping design-only with null draft author id", () => {
     assert.equal(WORDPRESS_AUTHOR_TENANT_MAPPING_DESIGN.mode, WORDPRESS_AUTHOR_MAPPING_MODE);
     assert.equal(WORDPRESS_AUTHOR_TENANT_MAPPING_DESIGN.draftAuthorId, null);
@@ -37,5 +37,26 @@ describe("wordpress-author-tenant-mapping (G299)", () => {
     const serialized = JSON.stringify(mapping);
     assert.equal(serialized.includes('"authorId":'), false);
     assert.equal(serialized.includes("live_wordpress"), false);
+  });
+
+  it("G549 ignores input identity fields and never embeds author ids", () => {
+    const mapping = resolveWordPressDraftAuthorMapping({
+      tenantId: "tenant-cross",
+      publicationTargetId: "target-cross",
+      operatorUserId: "operator-999"
+    });
+    assert.deepEqual(mapping, {
+      mode: "deferred_design",
+      draftAuthorId: null,
+      note: WORDPRESS_AUTHOR_TENANT_MAPPING_DESIGN.note
+    });
+    assert.ok(
+      WORDPRESS_AUTHOR_TENANT_MAPPING_DESIGN.preferredStrategies.includes(
+        "publication_target_default_author"
+      )
+    );
+    assert.ok(
+      WORDPRESS_AUTHOR_TENANT_MAPPING_DESIGN.forbiddenNow.includes("cross_tenant_author_reuse")
+    );
   });
 });

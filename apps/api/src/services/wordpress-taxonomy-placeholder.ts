@@ -36,6 +36,11 @@ function normalizeLabel(value: string | null | undefined): string | null {
     return null;
   }
 
+  // G548 — numeric-only values look like live WordPress term IDs; never keep as labels.
+  if (isWordPressTaxonomyTermIdPlaceholder(trimmed)) {
+    return null;
+  }
+
   return trimmed.slice(0, WORDPRESS_TAXONOMY_PLACEHOLDER_MAX_LENGTH);
 }
 

@@ -1,8 +1,14 @@
 /**
- * Pure client-portal approval action policy (G202).
+ * Pure client-portal approval action policy (G202 / G577–G580).
  * Encodes allow/deny for approve, request-changes, image reject-with-reason,
  * one revision round, and whether admin should be notified — no I/O.
  */
+
+import {
+  evaluateRevisionRound,
+  revisionRoundStateFromUsedFlag,
+  REVISION_ROUND_EXHAUSTED_MESSAGE
+} from "./revision-policy";
 
 export type ClientPortalApprovalActionType =
   | "approve_deliverable"
@@ -62,13 +68,47 @@ const CLIENT_SAFE_POLICY_MESSAGES: Record<ClientPortalApprovalPolicyFailure["cod
   ALREADY_APPROVED: "This article has already been approved.",
   IMAGES_PENDING: "Approve or reject all images before approving the article.",
   REASON_REQUIRED: "A reason is required.",
-  REVISION_ROUND_EXHAUSTED: "Only one revision round is available for this article.",
+  REVISION_ROUND_EXHAUSTED: REVISION_ROUND_EXHAUSTED_MESSAGE,
   IMAGE_NOT_FOUND: "Image was not found for this article.",
   INVALID_ACTION: "This approval action is not allowed."
 };
 
+export function getClientPortalApprovalPolicyMessage(
+  code: ClientPortalApprovalPolicyFailure["code"]
+): string {
+  return CLIENT_SAFE_POLICY_MESSAGES[code];
+}
+
 function sanitizeReason(reason: string | null | undefined): string {
   return typeof reason === "string" ? reason.trim() : "";
+}
+
+/** G580 — image reject requires a non-empty sanitized reason. */
+export function evaluateImageRejectReasonPolicy(reason: string | null | undefined): {
+  ok: boolean;
+  sanitizedReason?: string;
+  code?: "REASON_REQUIRED";
+  message?: string;
+} {
+  const sanitizedReason = sanitizeReason(reason);
+  if (!sanitizedReason) {
+    return {
+      ok: false,
+      code: "REASON_REQUIRED",
+      message: CLIENT_SAFE_POLICY_MESSAGES.REASON_REQUIRED
+    };
+  }
+  return { ok: true, sanitizedReason };
+}
+
+/** G578 — request-changes requires a non-empty sanitized reason. */
+export function evaluateRequestChangesReasonPolicy(reason: string | null | undefined): {
+  ok: boolean;
+  sanitizedReason?: string;
+  code?: "REASON_REQUIRED";
+  message?: string;
+} {
+  return evaluateImageRejectReasonPolicy(reason);
 }
 
 function allImagesReviewed(
@@ -113,16 +153,21 @@ export function evaluateClientPortalApprovalAction(
     if (deliverableStatus !== "PENDING_CLIENT_REVIEW") {
       return { ok: false, code: "NOT_PENDING_REVIEW", message: CLIENT_SAFE_POLICY_MESSAGES.NOT_PENDING_REVIEW };
     }
-    if (revisionRoundUsed) {
+    const revision = evaluateRevisionRound(revisionRoundStateFromUsedFlag(revisionRoundUsed));
+    if (!revision.ok) {
       return {
         ok: false,
         code: "REVISION_ROUND_EXHAUSTED",
         message: CLIENT_SAFE_POLICY_MESSAGES.REVISION_ROUND_EXHAUSTED
       };
     }
-    const reason = sanitizeReason(input.reason);
-    if (!reason) {
-      return { ok: false, code: "REASON_REQUIRED", message: CLIENT_SAFE_POLICY_MESSAGES.REASON_REQUIRED };
+    const reasonPolicy = evaluateRequestChangesReasonPolicy(input.reason);
+    if (!reasonPolicy.ok) {
+      return {
+        ok: false,
+        code: "REASON_REQUIRED",
+        message: CLIENT_SAFE_POLICY_MESSAGES.REASON_REQUIRED
+      };
     }
     return {
       ok: true,
@@ -131,7 +176,7 @@ export function evaluateClientPortalApprovalAction(
       notifyAdmin: true,
       notificationKind: "AI_DELIVERY_REVIEW_REQUEST",
       revisionRoundConsumed: true,
-      sanitizedReason: reason
+      sanitizedReason: reasonPolicy.sanitizedReason
     };
   }
 
@@ -154,16 +199,20 @@ export function evaluateClientPortalApprovalAction(
     }
 
     if (action === "reject_image") {
-      const reason = sanitizeReason(input.reason);
-      if (!reason) {
-        return { ok: false, code: "REASON_REQUIRED", message: CLIENT_SAFE_POLICY_MESSAGES.REASON_REQUIRED };
+      const reasonPolicy = evaluateImageRejectReasonPolicy(input.reason);
+      if (!reasonPolicy.ok) {
+        return {
+          ok: false,
+          code: "REASON_REQUIRED",
+          message: CLIENT_SAFE_POLICY_MESSAGES.REASON_REQUIRED
+        };
       }
       return {
         ok: true,
         action,
         nextImageStatus: "REJECTED",
         notifyAdmin: false,
-        sanitizedReason: reason
+        sanitizedReason: reasonPolicy.sanitizedReason
       };
     }
 

@@ -95,4 +95,38 @@ function simpleStableHash(value: string): string {
  * plus optional correlationId index shared with EmailLog / AuditLog metadata.
  */
 export const NOTIFICATION_IDEMPOTENCY_SCHEMA_NOTE =
-  "Future InSystemNotification should unique on tenant+event+entity+recipient+action; correlationId links EmailLog/AuditLog. No migration in G257.";
+  "Future InSystemNotification should unique on tenant+event+entity+recipient+action; correlationId links EmailLog/AuditLog. No migration in G257/G496.";
+
+/**
+ * G496 — contract assertion helpers for correlation/idempotency (pure; no DB).
+ */
+export interface NotificationCorrelationContractCheck {
+  deterministic: boolean;
+  persistenceDesignOnly: boolean;
+  uniquenessScope: NotificationCorrelationDesign["uniquenessScope"];
+  correlationIdFormatOk: boolean;
+  idempotencyKeyNonEmpty: boolean;
+}
+
+export function assertNotificationCorrelationContract(
+  design: NotificationCorrelationDesign
+): NotificationCorrelationContractCheck {
+  const expectedCorrelationId = `corr_${simpleStableHash(design.idempotencyKey)}`;
+  return {
+    deterministic: design.correlationId === expectedCorrelationId,
+    persistenceDesignOnly: design.persistence === "design_only_no_migration",
+    uniquenessScope: design.uniquenessScope,
+    correlationIdFormatOk: /^corr_[0-9a-f]{8}$/.test(design.correlationId),
+    idempotencyKeyNonEmpty: design.idempotencyKey.length > 0 && design.idempotencyKey.includes("|")
+  };
+}
+
+/**
+ * G496 — compare two designs for idempotent equality (same key ⇒ same correlation).
+ */
+export function notificationCorrelationDesignsEqual(
+  a: NotificationCorrelationDesign,
+  b: NotificationCorrelationDesign
+): boolean {
+  return a.idempotencyKey === b.idempotencyKey && a.correlationId === b.correlationId;
+}

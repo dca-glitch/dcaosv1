@@ -1,6 +1,7 @@
 /**
  * Admin vs client storage field policy — which fields may appear on which surface.
  * Pure policy constants + helpers. No R2 IO.
+ * G476 — expanded admin-only fields + policy snapshot helper.
  */
 
 export const ADMIN_STORAGE_FIELDS = [
@@ -10,7 +11,10 @@ export const ADMIN_STORAGE_FIELDS = [
   "downloadUrl",
   "downloadReference",
   "hasDocument",
-  "expiresSeconds"
+  "expiresSeconds",
+  "publicUrl",
+  "bucketName",
+  "objectEtag"
 ] as const;
 
 export const CLIENT_ALLOWED_STORAGE_FIELDS = [
@@ -24,7 +28,10 @@ export const CLIENT_ALLOWED_STORAGE_FIELDS = [
 
 export const CLIENT_FORBIDDEN_STORAGE_FIELDS = [
   "storageKey",
-  "documentStorageKey"
+  "documentStorageKey",
+  "publicUrl",
+  "bucketName",
+  "objectEtag"
 ] as const;
 
 export type StorageAudience = "admin" | "client";
@@ -42,6 +49,10 @@ export function isClientForbiddenStorageField(field: string): boolean {
 
 export function isClientAllowedStorageField(field: string): boolean {
   return (CLIENT_ALLOWED_STORAGE_FIELDS as readonly string[]).includes(field);
+}
+
+export function isAdminStorageField(field: string): boolean {
+  return (ADMIN_STORAGE_FIELDS as readonly string[]).includes(field);
 }
 
 export function evaluateStorageFieldPolicy(
@@ -62,7 +73,7 @@ export function evaluateStorageFieldPolicy(
       audience,
       field,
       allowed: false,
-      reason: "Client surfaces must never receive storageKey or documentStorageKey."
+      reason: "Client surfaces must never receive storageKey, documentStorageKey, or admin-only storage metadata."
     };
   }
 
@@ -110,4 +121,25 @@ export function payloadRespectsClientStorageFieldPolicy(value: unknown): boolean
   };
 
   return walk(value);
+}
+
+/**
+ * Snapshot of field-policy decisions for tests/docs — field names only, never values.
+ */
+export function toAdminVsClientStorageFieldPolicySnapshot(): {
+  clientAllowedFields: readonly string[];
+  clientForbiddenFields: readonly string[];
+  adminFields: readonly string[];
+  liveProven: false;
+  clientStorageKeyAllowed: false;
+  clientDocumentStorageKeyAllowed: false;
+} {
+  return {
+    clientAllowedFields: CLIENT_ALLOWED_STORAGE_FIELDS,
+    clientForbiddenFields: CLIENT_FORBIDDEN_STORAGE_FIELDS,
+    adminFields: ADMIN_STORAGE_FIELDS,
+    liveProven: false,
+    clientStorageKeyAllowed: false,
+    clientDocumentStorageKeyAllowed: false
+  };
 }

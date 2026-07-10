@@ -98,4 +98,19 @@ describe("ai-budget-guard.service", () => {
     assert.equal(budget.estimatedStepCostUsd, 0.6);
     assert.equal(budget.actualCostUsd, null);
   });
+
+  it("G613/G621: projected over-budget blocks without inventing actualCostUsd", () => {
+    const budget = buildAiBudgetSnapshot({
+      operatingPackKey: "puriva",
+      taskType: "article_draft",
+      spentThisPeriodUsd: 99.5,
+      workflowStepCount: 8,
+      maxCostUsdPerRun: 0.6
+    });
+    const block = isAiBudgetBlocked(budget, 0.6);
+    assert.equal(budget.projectedOverBudget, true);
+    assert.equal(block.blocked, true);
+    assert.equal(budget.actualCostUsd, null);
+    assert.match(block.reason ?? "", /exceed/i);
+  });
 });

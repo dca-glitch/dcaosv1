@@ -5,7 +5,7 @@ import {
   redactWordPressErrorMessage
 } from "./wordpress-error-redaction";
 
-describe("wordpress-error-redaction (G302)", () => {
+describe("wordpress-error-redaction (G302 / G547)", () => {
   it("redacts credential-like fragments from error messages", () => {
     const redacted = redactWordPressErrorMessage(
       "Failed with Authorization: Bearer abc.token and applicationPassword=xxxx-yyyy"
@@ -45,5 +45,25 @@ describe("wordpress-error-redaction (G302)", () => {
     assert.equal(error.status, "provider_disabled");
     assert.ok(error.providerDisabledReason);
     assert.equal(error.providerDisabledReason.includes("Basic abc123"), false);
+  });
+
+  it("G547 returns null for empty or non-string messages", () => {
+    assert.equal(redactWordPressErrorMessage(""), null);
+    assert.equal(redactWordPressErrorMessage("   "), null);
+    assert.equal(redactWordPressErrorMessage(null), null);
+    assert.equal(redactWordPressErrorMessage(undefined), null);
+  });
+
+  it("G547 defaults errorCategory and truncates oversized categories", () => {
+    const error = buildWordPressRedactedError({
+      errorMessage: "safe failure"
+    });
+    assert.equal(error.errorCategory, "wordpress_provider_error");
+
+    const long = buildWordPressRedactedError({
+      errorMessage: "x",
+      errorCategory: "c".repeat(120)
+    });
+    assert.equal(long.errorCategory.length, 80);
   });
 });

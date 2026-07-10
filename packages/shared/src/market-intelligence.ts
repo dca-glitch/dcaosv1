@@ -494,3 +494,51 @@ export function buildMarketIntelligenceAdminReviewedSourceSummary(input: {
     reviewedAt: input.reviewedAt ?? null
   };
 }
+
+/**
+ * G601–G602 — Returns violations when a candidate policy enables live/uncontrolled sources.
+ * Alias-friendly wrapper used by focused lane tests; same rules as source-policy finder.
+ */
+export function findMarketIntelligenceUncontrolledScrapingViolations(
+  policy: Record<string, unknown>
+): string[] {
+  return findMarketIntelligenceSourcePolicyViolations(policy).filter(
+    (v) =>
+      v === "uncontrolledScrapingAllowed" ||
+      v === "liveCrawlingAllowed" ||
+      v.startsWith("allowedOrigins:")
+  );
+}
+
+/**
+ * G604 — Admin / operator review must remain required on local results,
+ * admin source summaries, and client-safe summaries.
+ */
+export function findMarketIntelligenceAdminReviewViolations(
+  candidate: Record<string, unknown>
+): string[] {
+  const violations: string[] = [];
+
+  if (
+    Object.prototype.hasOwnProperty.call(candidate, "operatorReviewRequired") &&
+    candidate.operatorReviewRequired !== true
+  ) {
+    violations.push("operatorReviewRequired");
+  }
+
+  if (
+    Object.prototype.hasOwnProperty.call(candidate, "adminReviewed") &&
+    candidate.adminReviewed !== true
+  ) {
+    violations.push("adminReviewed");
+  }
+
+  if (
+    !Object.prototype.hasOwnProperty.call(candidate, "operatorReviewRequired") &&
+    !Object.prototype.hasOwnProperty.call(candidate, "adminReviewed")
+  ) {
+    violations.push("adminReviewFlagMissing");
+  }
+
+  return violations;
+}

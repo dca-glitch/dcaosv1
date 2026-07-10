@@ -1,6 +1,8 @@
-# Owner Gate Checklist (G423)
+# Owner Gate Checklist (G652)
 
-**Status:** Compact checklist of decisions that require explicit owner approval. Docs-only for G409–G428.
+**Status:** Compact checklist of decisions that require explicit owner approval. G652 refresh for G469–G708 ultra-block on baseline `66dcb74`. Docs-only; no live execution.
+
+**Hard truths:** local foundations expanding; live proofs deferred; Puriva Launch **BLOCKED**; production frozen (readiness **NO**).
 
 ---
 
@@ -15,6 +17,7 @@
 | Commit | Yes — after validation/proof review |
 | Push | Yes — separate from commit |
 | Deploy / merge to production path | Yes — never implied |
+| G469+ launch-blocker execution (e.g. R2 target-bucket) | Yes — before any live IO |
 
 ---
 
@@ -28,6 +31,7 @@
 | G9 environment proof | Exact approval sentence in G9 gate doc |
 | G49 formal closure | Owner-approval sentence |
 | G50 production deploy | Explicit deploy approval |
+| G469 first launch-blocker selection | Owner picks candidate (default R2) before execution |
 
 ---
 
@@ -49,19 +53,22 @@
 
 | Item | Owner role |
 |---|---|
-| Editing protected main docs (`STATUS`, deferred register, truth matrix, Puriva launch) | Main-agent integrate after proposal review |
+| Editing protected main docs (`STATUS`, deferred register, truth matrix, Puriva launch, `G708_NEXT_GATES`) | Main-agent integrate after proposal review |
 | Claiming Puriva Launch movement | Only after launch re-score with evidence |
 | Lifting production freeze language | Only with production readiness YES evidence |
+| Treating local foundations as launch proof | Refuse — local ≠ launch |
 
 ---
 
 ## 5. This lane confirmation
 
-G409–G428 security/operator lane:
+G649–G660 operator lane:
 
 - Did **not** obtain or claim live-proof approval.
 - Did **not** commit, push, or deploy.
+- Did **not** run full `validate` or smoke.
 - Left production freeze and Puriva Launch **BLOCKED** unchanged.
+- Left `.cursor/settings.json` untracked / untouched.
 
 ---
 

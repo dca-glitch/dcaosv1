@@ -97,4 +97,56 @@ describe("ai-model-routing-truth-labels", () => {
       false
     );
   });
+
+  it("G622: live_completed with null actual keeps trusted-source null label active", () => {
+    const routing = resolveModelRoute({
+      orchestratorTaskType: "research_pack",
+      clientProfile: "puriva",
+      contentChannel: "website"
+    });
+    const snapshot = buildAiModelRoutingTruthLabels({
+      audit: routing.audit,
+      liveProviderCalled: true,
+      actualCostUsd: null,
+      attributionMode: "live_completed"
+    });
+    assert.equal(
+      snapshot.labels.find((row) => row.label === "actual_cost_null_until_trusted_source")?.active,
+      true
+    );
+    assert.equal(
+      snapshot.labels.find((row) => row.label === "preview_only_no_live_call")?.active,
+      false
+    );
+    assert.equal(
+      snapshot.labels.find((row) => row.label === "completed_attribution_mocked")?.active,
+      false
+    );
+    assert.equal(
+      snapshot.labels.find((row) => row.label === "live_eligible_budget_ledger_required")?.active,
+      true
+    );
+  });
+
+  it("G622: trusted actual deactivates null-until-trusted label without invoice claim", () => {
+    const routing = resolveModelRoute({
+      orchestratorTaskType: "report_narrative",
+      clientProfile: "puriva"
+    });
+    const snapshot = buildAiModelRoutingTruthLabels({
+      audit: routing.audit,
+      liveProviderCalled: true,
+      actualCostUsd: 0.08,
+      attributionMode: "live_completed"
+    });
+    assert.equal(
+      snapshot.labels.find((row) => row.label === "actual_cost_null_until_trusted_source")?.active,
+      false
+    );
+    assert.match(
+      snapshot.labels.find((row) => row.label === "actual_cost_null_until_trusted_source")?.detail ??
+        "",
+      /Trusted actualCostUsd=0\.08/
+    );
+  });
 });

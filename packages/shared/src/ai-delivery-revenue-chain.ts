@@ -323,3 +323,82 @@ export function buildRevenueHubOperatingContract(input: {
     clientVisibleByDefault: false
   };
 }
+
+/**
+ * G605 — Detect financial-guarantee claims on recommendations, opportunities, or policy.
+ */
+export function findRevenueHubFinancialGuaranteeViolations(
+  candidate: Record<string, unknown>
+): string[] {
+  const violations: string[] = [];
+
+  if (
+    Object.prototype.hasOwnProperty.call(candidate, "financialGuarantee") &&
+    candidate.financialGuarantee !== false
+  ) {
+    violations.push("financialGuarantee");
+  }
+
+  if (
+    Object.prototype.hasOwnProperty.call(candidate, "financialGuaranteeAllowed") &&
+    candidate.financialGuaranteeAllowed !== false
+  ) {
+    violations.push("financialGuaranteeAllowed");
+  }
+
+  const guard = candidate.guard;
+  if (guard && typeof guard === "object" && !Array.isArray(guard)) {
+    const guardRecord = guard as Record<string, unknown>;
+    if (
+      Object.prototype.hasOwnProperty.call(guardRecord, "financialGuaranteeAllowed") &&
+      guardRecord.financialGuaranteeAllowed !== false
+    ) {
+      violations.push("guard.financialGuaranteeAllowed");
+    }
+  }
+
+  return violations;
+}
+
+/**
+ * G606 — Detect CRM live-sync / write-back claims on policy, attribution, or guard.
+ */
+export function findRevenueHubCrmLiveSyncViolations(
+  candidate: Record<string, unknown>
+): string[] {
+  const violations: string[] = [];
+
+  if (
+    Object.prototype.hasOwnProperty.call(candidate, "crmLiveSyncAllowed") &&
+    candidate.crmLiveSyncAllowed !== false
+  ) {
+    violations.push("crmLiveSyncAllowed");
+  }
+
+  if (
+    Object.prototype.hasOwnProperty.call(candidate, "crmWriteBackAllowed") &&
+    candidate.crmWriteBackAllowed !== false
+  ) {
+    violations.push("crmWriteBackAllowed");
+  }
+
+  if (
+    Object.prototype.hasOwnProperty.call(candidate, "crmLiveSynced") &&
+    candidate.crmLiveSynced !== false
+  ) {
+    violations.push("crmLiveSynced");
+  }
+
+  const guard = candidate.guard;
+  if (guard && typeof guard === "object" && !Array.isArray(guard)) {
+    const guardRecord = guard as Record<string, unknown>;
+    if (
+      Object.prototype.hasOwnProperty.call(guardRecord, "crmLiveSyncAllowed") &&
+      guardRecord.crmLiveSyncAllowed !== false
+    ) {
+      violations.push("guard.crmLiveSyncAllowed");
+    }
+  }
+
+  return violations;
+}

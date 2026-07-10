@@ -18,7 +18,7 @@ import {
   evaluateImageCompliancePolicy
 } from "./image-compliance-policy";
 
-export const IMAGE_PROMPT_PROFILE_VERSION = "IMAGE_PROMPT_PROFILE_V2";
+export const IMAGE_PROMPT_PROFILE_VERSION = "IMAGE_PROMPT_PROFILE_V3";
 
 export const IMAGE_PROMPT_PROFILE_KINDS = [
   "hero",
@@ -257,4 +257,27 @@ export function buildDefaultImagePromptProfileCandidate(input: {
     serviceCategoryId: input.serviceCategoryId ?? null,
     forbiddenElements: [...DEFAULT_FORBIDDEN]
   };
+}
+
+export type ImagePromptProfileCatalogEntry = {
+  kind: ImagePromptProfileKindId;
+  profileId: ImagePromptProfileId;
+  defaultAspectRatio: string;
+  allowedAspectRatios: readonly string[];
+  altTextRequired: true;
+  forbiddenElements: ImageComplianceRejectCode[];
+};
+
+/**
+ * G556 — Stable catalog of prompt profiles for docs/tests (no provider contact).
+ */
+export function listImagePromptProfileCatalog(): ImagePromptProfileCatalogEntry[] {
+  return IMAGE_PROMPT_PROFILE_KINDS.map((kind) => ({
+    kind,
+    profileId: IMAGE_PROMPT_PROFILE_ID_BY_KIND[kind],
+    defaultAspectRatio: IMAGE_PROMPT_PROFILE_DEFAULT_ASPECT[kind],
+    allowedAspectRatios: IMAGE_PROMPT_PROFILE_ALLOWED_ASPECTS[kind],
+    altTextRequired: true as const,
+    forbiddenElements: [...DEFAULT_FORBIDDEN]
+  }));
 }

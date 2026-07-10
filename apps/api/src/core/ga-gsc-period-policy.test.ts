@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
+  classifyGaGscPeriodHandling,
   daysInTargetMonth,
+  gaGscMonthCalendarBounds,
+  isGaGscPeriodBlockedForGeneration,
   isLeapYearMonthFebruary,
   resolveGaGscReportingPeriod
 } from "./ga-gsc-period-policy";
@@ -100,5 +103,72 @@ describe("ga-gsc-period-policy", () => {
       reportingTimezone: "   "
     });
     assert.equal(noTz.status, "invalid");
+  });
+
+  it("G521: calendar bounds and 30/31-day edge months", () => {
+    assert.deepEqual(gaGscMonthCalendarBounds("2026-01"), {
+      ok: true,
+      startDate: "2026-01-01",
+      endDate: "2026-01-31",
+      dayCount: 31
+    });
+    assert.deepEqual(gaGscMonthCalendarBounds("2026-09"), {
+      ok: true,
+      startDate: "2026-09-01",
+      endDate: "2026-09-30",
+      dayCount: 30
+    });
+    assert.equal(gaGscMonthCalendarBounds("2026-00").ok, false);
+    assert.equal(gaGscMonthCalendarBounds("bad").ok, false);
+
+    const dec = resolveGaGscReportingPeriod({
+      targetMonth: "2025-12",
+      reportingTimezone: "UTC",
+      referenceDate: new Date("2026-07-10T00:00:00.000Z")
+    });
+    assert.equal(dec.startDate, "2025-12-01");
+    assert.equal(dec.endDate, "2025-12-31");
+  });
+
+  it("G522: classify future / current / partial / closed handling", () => {
+    const ref = new Date("2026-07-10T00:00:00.000Z");
+
+    const future = classifyGaGscPeriodHandling({
+      targetMonth: "2026-08",
+      reportingTimezone: "UTC",
+      referenceDate: ref
+    });
+    assert.equal(future.kind, "future_month");
+    assert.equal(future.mayGenerateReport, false);
+    assert.equal(isGaGscPeriodBlockedForGeneration(future.status), true);
+
+    const blocked = classifyGaGscPeriodHandling({
+      targetMonth: "2026-07",
+      reportingTimezone: "UTC",
+      referenceDate: ref
+    });
+    assert.equal(blocked.kind, "blocked_current_month");
+    assert.equal(blocked.requiresPartialLabel, true);
+    assert.equal(blocked.mayGenerateReport, false);
+
+    const partial = classifyGaGscPeriodHandling({
+      targetMonth: "2026-07",
+      reportingTimezone: "UTC",
+      allowPartialPeriod: true,
+      referenceDate: ref
+    });
+    assert.equal(partial.kind, "partial_current_month");
+    assert.equal(partial.mayGenerateReport, true);
+    assert.equal(partial.period.partialPeriod, true);
+    assert.equal(partial.period.endDate, "2026-07-10");
+
+    const closed = classifyGaGscPeriodHandling({
+      targetMonth: "2026-06",
+      reportingTimezone: "Asia/Bangkok",
+      referenceDate: ref
+    });
+    assert.equal(closed.kind, "closed_month");
+    assert.equal(closed.mayGenerateReport, true);
+    assert.equal(isGaGscPeriodBlockedForGeneration(closed.status), false);
   });
 });

@@ -1,6 +1,6 @@
 # Environment Readiness Inventory
 
-**Status:** Local/staging planning reference. Names only — never commit, print, or infer secret values.
+**Status:** Local/staging planning reference. Names only — never commit, print, or infer secret values. G658/G649 note (2026-07-10): operator lane refresh for G469–G708; no env values changed; live proofs remain deferred; Puriva Launch **BLOCKED**; production frozen. Keep `.cursor/settings.json` untracked.
 
 **Purpose:** Single checklist of documented environment variables for API, Web, local smoke, and future staging execution (G4). Values belong in shell or server-side env files only.
 
@@ -189,3 +189,5 @@ Documented in `.env.example` for staging service DNS inside `dca_net`. Real valu
 - Do not print passwords, tokens, session hashes, or full `DATABASE_URL` in reports.
 - Local, staging, and production env files must remain separate.
 - Staging must not contain production DB credentials.
+- `.cursor/settings.json` is local IDE config — keep **untracked**; never commit.
+- Live provider env enablement still requires owner-approved proof sessions ([`LIVE_PROOF_APPROVAL_CHECKLIST.md`](./LIVE_PROOF_APPROVAL_CHECKLIST.md)).

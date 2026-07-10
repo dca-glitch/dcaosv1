@@ -6,7 +6,7 @@
  * No live provider call is made by this module.
  */
 
-export const IMAGE_PROVIDER_PROOF_PLAN_VERSION = "IMAGE_PROVIDER_PROOF_PLAN_V1";
+export const IMAGE_PROVIDER_PROOF_PLAN_VERSION = "IMAGE_PROVIDER_PROOF_PLAN_V2";
 
 export const IMAGE_PROVIDER_PROOF_PHASES = [
   "provider_selection",
@@ -139,4 +139,42 @@ export function summarizeImageProviderProofPlan(
     `provider_decision=${plan.providerDecisionStatus}`,
     `phases=[${phaseSummary}]`
   ].join(" · ");
+}
+
+export type ImageProviderProofNoLiveGuard = {
+  version: typeof IMAGE_PROVIDER_PROOF_PLAN_VERSION;
+  liveProviderCallsInThisBlock: false;
+  livePhaseOutOfScope: true;
+  nonLivePhasesForbidProviderCalls: true;
+  primaryProviderDirection: ImageProviderProofPlan["primaryProviderDirection"];
+  relatedRunbook: ImageProviderProofPlan["relatedRunbook"];
+};
+
+/**
+ * G561 — Explicit no-live guard derived from the typed proof plan.
+ */
+export function buildImageProviderProofNoLiveGuard(
+  plan: ImageProviderProofPlan = buildImageProviderProofPlan()
+): ImageProviderProofNoLiveGuard {
+  const livePhase = plan.phases.find((phase) => phase.phase === "one_live_generation_later");
+  if (!livePhase || livePhase.status !== "explicitly_out_of_scope_this_block") {
+    throw new Error("Image provider proof plan must keep live generation out of scope.");
+  }
+  for (const phase of plan.phases) {
+    if (phase.phase === "one_live_generation_later") {
+      continue;
+    }
+    if (phase.liveProviderCallAllowed !== false) {
+      throw new Error(`Phase ${phase.phase} must forbid live provider calls.`);
+    }
+  }
+
+  return {
+    version: plan.version,
+    liveProviderCallsInThisBlock: false,
+    livePhaseOutOfScope: true,
+    nonLivePhasesForbidProviderCalls: true,
+    primaryProviderDirection: plan.primaryProviderDirection,
+    relatedRunbook: plan.relatedRunbook
+  };
 }

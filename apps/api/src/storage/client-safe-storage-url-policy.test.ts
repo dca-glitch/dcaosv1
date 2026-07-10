@@ -6,10 +6,12 @@ import {
   buildClientSafeStorageUrlPayload,
   CLIENT_SAFE_URL_TRUTH_LABELS,
   isClientSafeStorageUrlPayload,
-  isClientSafeUrlTruthLabel
+  isClientSafeUrlTruthLabel,
+  toClientSafeStorageUrlPayloadSnapshot,
+  toClientSafeUrlTruthLabelMatrix
 } from "./client-safe-storage-url-policy";
 
-describe("client-safe-storage-url-policy (G152 / G237 / G238)", () => {
+describe("client-safe-storage-url-policy (G152 / G237 / G238 / G477)", () => {
   it("allows exportUrl and downloadUrl while stripping storageKey (G237)", () => {
     const payload = buildClientSafeStorageUrlPayload({
       exportUrl: "https://docs.example.com/export/client-file",
@@ -106,5 +108,44 @@ describe("client-safe-storage-url-policy (G152 / G237 / G238)", () => {
       }),
       false
     );
+  });
+
+  it("exposes truth-label matrix and payload snapshot without storageKey (G477)", () => {
+    const matrix = toClientSafeUrlTruthLabelMatrix();
+    assert.equal(matrix.length, CLIENT_SAFE_URL_TRUTH_LABELS.length);
+    assert.deepEqual(
+      matrix.map((row) => row.truthLabel),
+      [...CLIENT_SAFE_URL_TRUTH_LABELS]
+    );
+
+    const live = matrix.find((row) => row.truthLabel === "live_signed");
+    assert.ok(live);
+    assert.equal(live.mayImplyLiveSignedUrl, true);
+    assert.equal(live.nonLiveAssertOk, false);
+
+    for (const label of ["mocked", "future_placeholder", "export_url"] as const) {
+      const row = matrix.find((entry) => entry.truthLabel === label);
+      assert.ok(row);
+      assert.equal(row.mayImplyLiveSignedUrl, false);
+      assert.equal(row.nonLiveAssertOk, true);
+      assert.equal(row.liveProvenImplied, false);
+    }
+
+    const payload = buildClientSafeStorageUrlPayload({
+      exportUrl: "https://docs.example.com/export/g477",
+      storageKey: "tenants/acme/private/g477.pdf",
+      truthLabel: "export_url"
+    });
+    const snap = toClientSafeStorageUrlPayloadSnapshot(payload);
+    assert.deepEqual(snap, {
+      hasExportUrl: true,
+      hasDownloadUrl: false,
+      hasDocument: true,
+      truthLabel: "export_url",
+      liveProven: false,
+      containsStorageKeyField: false
+    });
+    assert.equal(JSON.stringify(snap).includes("tenants/"), false);
+    assert.equal(JSON.stringify(snap).includes("storageKey"), false);
   });
 });

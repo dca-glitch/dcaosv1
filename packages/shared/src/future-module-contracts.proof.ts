@@ -1,5 +1,5 @@
 /**
- * G217–G221 / G369–G388 future-module contract proofs.
+ * G217–G221 / G369–G388 / G601–G612 future-module contract proofs.
  * Imports concrete modules directly (not via index.ts) so shared check stays stable
  * without requiring index re-exports for every new symbol.
  */
@@ -33,7 +33,9 @@ import {
   buildMarketIntelligenceLocalResult,
   buildMarketIntelligenceSourceLabel,
   findForbiddenClientSafeMiFields,
+  findMarketIntelligenceAdminReviewViolations,
   findMarketIntelligenceSourcePolicyViolations,
+  findMarketIntelligenceUncontrolledScrapingViolations,
   mapOriginToSourceLabelKind,
   sanitizeMarketIntelligenceClientSafePayload
 } from "./market-intelligence";
@@ -45,6 +47,8 @@ import {
   REVENUE_HUB_OPERATING_CONTRACT_VERSION,
   buildRevenueHubAiRecommendation,
   buildRevenueHubOperatingContract,
+  findRevenueHubCrmLiveSyncViolations,
+  findRevenueHubFinancialGuaranteeViolations,
   findRevenueHubNoLiveCrmPolicyViolations,
   findRevenueHubRecommendationGuardViolations
 } from "./ai-delivery-revenue-chain";
@@ -57,7 +61,9 @@ import {
   buildPodToolkitDraftBundle,
   buildPodToolkitPromptImageRequirement,
   findPodToolkitComplianceIpCautionViolations,
-  findPodToolkitMarketplacePolicyViolations
+  findPodToolkitLiveImageViolations,
+  findPodToolkitMarketplacePolicyViolations,
+  findPodToolkitMarketplaceSyncViolations
 } from "./pod-toolkit";
 
 // ---------------------------------------------------------------------------
@@ -508,7 +514,92 @@ if (podToolkitDraftBundleProof.version !== POD_TOOLKIT_DRAFT_BUNDLE_CONTRACT_VER
 }
 
 // ---------------------------------------------------------------------------
-// G221 / G381 — Export / compile stability bundle
+// G601–G610 — Focused invariant helpers (lane 12)
+// ---------------------------------------------------------------------------
+
+const miUncontrolledViolations = findMarketIntelligenceUncontrolledScrapingViolations({
+  liveCrawlingAllowed: true,
+  marketplaceLiveLookupAllowed: false,
+  crmLiveLookupAllowed: false,
+  uncontrolledScrapingAllowed: true,
+  allowedOrigins: ["operator_note", "live_scrape"]
+});
+
+const miAdminReviewViolations = findMarketIntelligenceAdminReviewViolations({
+  operatorReviewRequired: false
+});
+
+const rhFinancialGuaranteeViolations = findRevenueHubFinancialGuaranteeViolations({
+  financialGuarantee: true,
+  guard: { financialGuaranteeAllowed: true }
+});
+
+const rhCrmLiveSyncViolations = findRevenueHubCrmLiveSyncViolations({
+  crmLiveSyncAllowed: true,
+  crmLiveSynced: true,
+  guard: { crmLiveSyncAllowed: true }
+});
+
+const podMarketplaceSyncViolations = findPodToolkitMarketplaceSyncViolations({
+  marketplaceSyncAllowed: true,
+  policy: { marketplaceSyncAllowed: true, livePublishAllowed: true }
+});
+
+const podLiveImageViolations = findPodToolkitLiveImageViolations({
+  liveImageGenerationAllowed: true,
+  promptImageRequirement: { liveImageGenerationAllowed: true }
+});
+
+if (!miUncontrolledViolations.includes("uncontrolledScrapingAllowed")) {
+  throw new Error("G602 must detect uncontrolledScrapingAllowed via focused helper");
+}
+
+if (!miAdminReviewViolations.includes("operatorReviewRequired")) {
+  throw new Error("G604 must detect missing operator review");
+}
+
+if (!rhFinancialGuaranteeViolations.includes("financialGuarantee")) {
+  throw new Error("G605 must detect financialGuarantee violation");
+}
+
+if (!rhCrmLiveSyncViolations.includes("crmLiveSyncAllowed")) {
+  throw new Error("G606 must detect crmLiveSyncAllowed violation");
+}
+
+if (!podMarketplaceSyncViolations.includes("marketplaceSyncAllowed")) {
+  throw new Error("G609 must detect marketplaceSyncAllowed violation");
+}
+
+if (!podLiveImageViolations.includes("liveImageGenerationAllowed")) {
+  throw new Error("G610 must detect liveImageGenerationAllowed violation");
+}
+
+if (
+  findMarketIntelligenceAdminReviewViolations(
+    marketIntelligenceLocalResultProof as unknown as Record<string, unknown>
+  ).length !== 0
+) {
+  throw new Error("G604 local result must satisfy admin review invariant");
+}
+
+if (
+  findRevenueHubFinancialGuaranteeViolations(
+    revenueHubRecommendationProof as unknown as Record<string, unknown>
+  ).length !== 0
+) {
+  throw new Error("G605 recommendation must satisfy no-financial-guarantee invariant");
+}
+
+if (
+  findPodToolkitLiveImageViolations(
+    podToolkitDraftBundleProof as unknown as Record<string, unknown>
+  ).length !== 0
+) {
+  throw new Error("G610 draft bundle must satisfy no-live-image invariant");
+}
+
+// ---------------------------------------------------------------------------
+// G221 / G381 / G612 — Export / compile stability bundle
 // ---------------------------------------------------------------------------
 
 export const futureModuleContractProofs = {
@@ -519,18 +610,24 @@ export const futureModuleContractProofs = {
   forbiddenFieldsFound,
   miSourcePolicyViolations,
   miUnsafeSourcePolicyViolations,
+  miUncontrolledViolations,
+  miAdminReviewViolations,
   revenueHubDataProof,
   revenueHubRecommendationProof,
   revenueHubOperatingProof,
   rhGuardViolations,
   rhUnsafeGuardViolations,
   rhPolicyViolations,
+  rhFinancialGuaranteeViolations,
+  rhCrmLiveSyncViolations,
   podToolkitDraftBundleProof,
   podToolkitWorkflowProof,
   podPolicyViolations,
   podUnsafePolicyViolations,
   podCautionViolations,
-  podUnsafeCautionViolations
+  podUnsafeCautionViolations,
+  podMarketplaceSyncViolations,
+  podLiveImageViolations
 };
 
 /** Compile-time / runtime smoke that proofs remain importable and version-stable. */

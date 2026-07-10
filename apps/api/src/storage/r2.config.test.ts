@@ -9,7 +9,8 @@ import {
 import {
   getR2DisabledStateLabel,
   getR2PartialConfigDiagnostics,
-  isR2StorageFailClosed
+  isR2StorageFailClosed,
+  toR2PartialConfigDiagnosticsSnapshot
 } from "./r2-partial-config-diagnostics";
 
 const R2_ENV_KEYS = [
@@ -149,7 +150,10 @@ describe("r2.config — redacted summary (G150 / G230)", () => {
         bucketPresent: false,
         accessKeyIdPresent: false,
         secretAccessKeyPresent: false,
-        requiredKeysPresentCount: 0
+        accountIdPresent: false,
+        publicBaseUrlPresent: false,
+        requiredKeysPresentCount: 0,
+        allRequiredPresent: false
       });
     });
 
@@ -256,6 +260,89 @@ describe("r2 disabled-state + partial-config diagnostics (G231 / G232)", () => {
       assert.equal(diagnostics.partiallyConfigured, false);
       assert.equal(diagnostics.liveProven, false);
       assert.equal(isR2StorageFailClosed(), false);
+    });
+  });
+
+  it("partial diagnostics snapshot stays key-names-only across shapes (G472)", () => {
+    withR2Env({}, () => {
+      const snap = toR2PartialConfigDiagnosticsSnapshot();
+      assert.deepEqual(snap, {
+        readinessLabel: "disabled",
+        liveProven: false,
+        liveIoPerformed: false,
+        configured: false,
+        fullyDisabled: true,
+        partiallyConfigured: false,
+        missingRequiredEnvKeys: [
+          "R2_ACCOUNT_ID",
+          "R2_ACCESS_KEY_ID",
+          "R2_SECRET_ACCESS_KEY",
+          "R2_BUCKET_NAME"
+        ],
+        presentRequiredEnvKeys: [],
+        optionalEndpointPresent: false,
+        optionalPublicBaseUrlPresent: false,
+        missingRequiredCount: 4,
+        presentRequiredCount: 0
+      });
+    });
+
+    withR2Env({
+      R2_ACCOUNT_ID: "snap-diag-acct-must-not-leak",
+      R2_ACCESS_KEY_ID: "snap-diag-key-must-not-leak",
+      R2_SECRET_ACCESS_KEY: undefined,
+      R2_BUCKET_NAME: undefined,
+      R2_ENDPOINT: "https://snap-diag.example.must-not-leak"
+    }, () => {
+      const snap = toR2PartialConfigDiagnosticsSnapshot();
+      const serialized = JSON.stringify(snap);
+      assert.equal(snap.readinessLabel, "missing_config");
+      assert.equal(snap.partiallyConfigured, true);
+      assert.equal(snap.liveProven, false);
+      assert.equal(snap.liveIoPerformed, false);
+      assert.deepEqual(snap.presentRequiredEnvKeys, ["R2_ACCOUNT_ID", "R2_ACCESS_KEY_ID"]);
+      assert.deepEqual(snap.missingRequiredEnvKeys, ["R2_SECRET_ACCESS_KEY", "R2_BUCKET_NAME"]);
+      assert.equal(snap.optionalEndpointPresent, true);
+      assert.equal(serialized.includes("snap-diag-acct-must-not-leak"), false);
+      assert.equal(serialized.includes("snap-diag-key-must-not-leak"), false);
+      assert.equal(serialized.includes("https://snap-diag.example.must-not-leak"), false);
+    });
+
+    withR2Env({
+      R2_ACCOUNT_ID: "snap-diag-full",
+      R2_ACCESS_KEY_ID: "snap-diag-full-key",
+      R2_SECRET_ACCESS_KEY: "snap-diag-full-secret",
+      R2_BUCKET_NAME: "snap-diag-full-bucket"
+    }, () => {
+      const snap = toR2PartialConfigDiagnosticsSnapshot();
+      assert.equal(snap.readinessLabel, "configured_shape_ok");
+      assert.equal(snap.configured, true);
+      assert.equal(snap.liveProven, false);
+      assert.equal(snap.missingRequiredCount, 0);
+      assert.equal(snap.presentRequiredCount, 4);
+      assert.equal(JSON.stringify(snap).includes("snap-diag-full-secret"), false);
+    });
+  });
+});
+
+describe("r2.config — redacted summary expanded snapshot (G473)", () => {
+  it("includes account/publicBaseUrl presence flags without values", () => {
+    withR2Env({
+      R2_ACCOUNT_ID: "g473-acct-secret",
+      R2_ACCESS_KEY_ID: "g473-key-secret",
+      R2_SECRET_ACCESS_KEY: "g473-secret-value",
+      R2_BUCKET_NAME: "g473-bucket-secret",
+      R2_PUBLIC_BASE_URL: "https://g473.public.example"
+    }, () => {
+      const snap = toR2ConfigRedactedSummarySnapshot();
+      const serialized = JSON.stringify(snap);
+      assert.equal(snap.accountIdPresent, true);
+      assert.equal(snap.publicBaseUrlPresent, true);
+      assert.equal(snap.allRequiredPresent, true);
+      assert.equal(snap.liveProven, false);
+      assert.equal(serialized.includes("g473-acct-secret"), false);
+      assert.equal(serialized.includes("g473-secret-value"), false);
+      assert.equal(serialized.includes("https://g473.public.example"), false);
     });
   });
 });

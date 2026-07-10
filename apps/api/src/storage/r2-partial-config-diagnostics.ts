@@ -74,3 +74,38 @@ export function getR2DisabledStateLabel(): "disabled" | "missing_config" | "conf
 export function isR2StorageFailClosed(): boolean {
   return !getR2PartialConfigDiagnostics().configured;
 }
+
+/**
+ * G472 — Snapshot-friendly partial/disabled diagnostics (key names + booleans only).
+ */
+export function toR2PartialConfigDiagnosticsSnapshot(
+  diagnostics: R2PartialConfigDiagnostics = getR2PartialConfigDiagnostics()
+): {
+  readinessLabel: R2ConfigReadinessLabel;
+  liveProven: false;
+  liveIoPerformed: false;
+  configured: boolean;
+  fullyDisabled: boolean;
+  partiallyConfigured: boolean;
+  missingRequiredEnvKeys: Array<(typeof R2_REQUIRED_ENV_KEYS)[number]>;
+  presentRequiredEnvKeys: Array<(typeof R2_REQUIRED_ENV_KEYS)[number]>;
+  optionalEndpointPresent: boolean;
+  optionalPublicBaseUrlPresent: boolean;
+  missingRequiredCount: number;
+  presentRequiredCount: number;
+} {
+  return {
+    readinessLabel: diagnostics.readinessLabel,
+    liveProven: false,
+    liveIoPerformed: false,
+    configured: diagnostics.configured,
+    fullyDisabled: diagnostics.fullyDisabled,
+    partiallyConfigured: diagnostics.partiallyConfigured,
+    missingRequiredEnvKeys: [...diagnostics.missingRequiredEnvKeys],
+    presentRequiredEnvKeys: [...diagnostics.presentRequiredEnvKeys],
+    optionalEndpointPresent: diagnostics.optionalEndpointPresent,
+    optionalPublicBaseUrlPresent: diagnostics.optionalPublicBaseUrlPresent,
+    missingRequiredCount: diagnostics.missingRequiredEnvKeys.length,
+    presentRequiredCount: diagnostics.presentRequiredEnvKeys.length
+  };
+}

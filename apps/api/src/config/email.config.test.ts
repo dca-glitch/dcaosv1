@@ -2,7 +2,13 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { getEmailProviderConfig, getEmailProviderSafetyShape } from "./email.config";
 
-const ENV_KEYS = ["EMAIL_PROVIDER", "EMAIL_FROM_ADDRESS", "EMAIL_REPLY_TO", "RESEND_API_KEY"] as const;
+const ENV_KEYS = [
+  "EMAIL_PROVIDER",
+  "EMAIL_FROM_ADDRESS",
+  "EMAIL_REPLY_TO",
+  "RESEND_API_KEY",
+  "EMAIL_LIVE_SEND_AUTHORIZED"
+] as const;
 
 function withEnv(overrides: Partial<Record<(typeof ENV_KEYS)[number], string | undefined>>, run: () => void) {
   const saved: Partial<Record<(typeof ENV_KEYS)[number], string | undefined>> = {};
@@ -32,7 +38,7 @@ function withEnv(overrides: Partial<Record<(typeof ENV_KEYS)[number], string | u
   }
 }
 
-describe("G264 email disabled / live-deferred config shape", () => {
+describe("G505 email config disabled / missing / live-deferred", () => {
   it("defaults to the local, non-sending provider when no env is set", () => {
     withEnv({}, () => {
       const config = getEmailProviderConfig();
@@ -40,18 +46,36 @@ describe("G264 email disabled / live-deferred config shape", () => {
       assert.equal(config.hasResendApiKey, false);
       assert.equal(config.fromAddress, "no-reply@notifications.digitalcubeagency.net");
       assert.equal(config.replyTo, "admin@digitalcubeagency.net");
+      const shape = getEmailProviderSafetyShape();
+      assert.equal(shape.sendingEnabled, false);
+      assert.equal(shape.localNoSend, true);
+      assert.equal(shape.liveProofRequired, false);
+      assert.equal(shape.liveSendDeferred, false);
+      assert.equal(shape.liveSendAuthorized, false);
     });
   });
 
   it("falls back to local for any unrecognized EMAIL_PROVIDER value", () => {
     withEnv({ EMAIL_PROVIDER: "sendgrid" }, () => {
       assert.equal(getEmailProviderConfig().provider, "local");
+      assert.equal(getEmailProviderSafetyShape().localNoSend, true);
     });
   });
 
   it("treats empty EMAIL_PROVIDER as local", () => {
     withEnv({ EMAIL_PROVIDER: "   " }, () => {
       assert.equal(getEmailProviderConfig().provider, "local");
+    });
+  });
+
+  it("treats whitespace-only RESEND_API_KEY as missing", () => {
+    withEnv({ EMAIL_PROVIDER: "resend", RESEND_API_KEY: "   " }, () => {
+      const config = getEmailProviderConfig();
+      assert.equal(config.hasResendApiKey, false);
+      const shape = getEmailProviderSafetyShape();
+      assert.equal(shape.sendingEnabled, false);
+      assert.equal(shape.localNoSend, true);
+      assert.equal(shape.liveSendDeferred, false);
     });
   });
 
@@ -73,28 +97,50 @@ describe("G264 email disabled / live-deferred config shape", () => {
       assert.equal(shape.sendingEnabled, false);
       assert.equal(shape.localNoSend, true);
       assert.equal(shape.liveProofRequired, false);
+      assert.equal(shape.liveSendDeferred, false);
     });
   });
 
-  it("exposes a safe shape where missing config disables sending", () => {
-    withEnv({}, () => {
-      const shape = getEmailProviderSafetyShape();
-      assert.equal(shape.provider, "local");
-      assert.equal(shape.sendingEnabled, false);
-      assert.equal(shape.localNoSend, true);
-      assert.equal(shape.liveProofRequired, false);
-    });
-  });
-
-  it("treats configured Resend as live-proof-required without serializing secrets", () => {
+  it("treats keyed Resend without authorization as live-deferred (no-send)", () => {
     withEnv({ EMAIL_PROVIDER: "resend", RESEND_API_KEY: "re_test_should_not_leak" }, () => {
       const shape = getEmailProviderSafetyShape();
       assert.equal(shape.provider, "resend");
       assert.equal(shape.hasResendApiKey, true);
-      assert.equal(shape.sendingEnabled, true);
-      assert.equal(shape.localNoSend, false);
+      assert.equal(shape.liveSendAuthorized, false);
+      assert.equal(shape.liveSendDeferred, true);
+      assert.equal(shape.sendingEnabled, false);
+      assert.equal(shape.localNoSend, true);
       assert.equal(shape.liveProofRequired, true);
       assert.equal(JSON.stringify(shape).includes("re_test_should_not_leak"), false);
+    });
+  });
+
+  it("enables sending shape only when live send is explicitly authorized", () => {
+    withEnv({
+      EMAIL_PROVIDER: "resend",
+      RESEND_API_KEY: "re_test_should_not_leak",
+      EMAIL_LIVE_SEND_AUTHORIZED: "true"
+    }, () => {
+      const shape = getEmailProviderSafetyShape();
+      assert.equal(shape.sendingEnabled, true);
+      assert.equal(shape.localNoSend, false);
+      assert.equal(shape.liveSendDeferred, false);
+      assert.equal(shape.liveSendAuthorized, true);
+      assert.equal(shape.liveProofRequired, true);
+      assert.equal(JSON.stringify(shape).includes("re_test_should_not_leak"), false);
+    });
+  });
+
+  it("ignores non-true EMAIL_LIVE_SEND_AUTHORIZED values", () => {
+    withEnv({
+      EMAIL_PROVIDER: "resend",
+      RESEND_API_KEY: "re_test_should_not_leak",
+      EMAIL_LIVE_SEND_AUTHORIZED: "yes"
+    }, () => {
+      const shape = getEmailProviderSafetyShape();
+      assert.equal(shape.liveSendAuthorized, false);
+      assert.equal(shape.sendingEnabled, false);
+      assert.equal(shape.liveSendDeferred, true);
     });
   });
 

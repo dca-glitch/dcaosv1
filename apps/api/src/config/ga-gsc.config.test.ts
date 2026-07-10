@@ -2,10 +2,12 @@ import assert from "node:assert/strict";
 import { afterEach, describe, it } from "node:test";
 import {
   assessGaGscCredentialPresence,
+  buildGaGscConfigRedactionSnapshot,
   GA_GSC_CREDENTIAL_PRESENCE_FIELDS,
   GA_GSC_ENV_KEYS,
   GA_GSC_PROPERTY_MAPPING_FIELDS,
   GA_GSC_REQUIRED_CONFIG_SHAPE_KEYS,
+  gaGscRedactionSnapshotLeaksSecrets,
   getGaGscConfigShape,
   getGaGscIntegrationReadiness,
   serializeGaGscCredentialPresenceSafe,
@@ -273,5 +275,32 @@ describe("ga-gsc.config", () => {
     assert.equal(fullPresence.liveOAuthDeferred, true);
     assert.equal(fullPresence.liveSyncDeferred, true);
     assert.equal(fullPresence.secretFieldsSerialized, false);
+  });
+
+  it("G517: buildGaGscConfigRedactionSnapshot never serializes secret probes", () => {
+    for (const key of trackedKeys) delete process.env[key];
+    const secretId = "G517-client-id-MUST-NOT-LEAK";
+    const secretSecret = "G517-client-secret-MUST-NOT-LEAK";
+    const refresh = "G517-refresh-MUST-NOT-LEAK";
+    process.env[GA_GSC_ENV_KEYS.syncEnabled] = "true";
+    process.env[GA_GSC_ENV_KEYS.oauthClientId] = secretId;
+    process.env[GA_GSC_ENV_KEYS.oauthClientSecret] = secretSecret;
+
+    const snapshot = buildGaGscConfigRedactionSnapshot({
+      oauthClientId: secretId,
+      oauthClientSecret: secretSecret,
+      refreshToken: refresh,
+      ga4PropertyId: "properties/517",
+      gscSiteUrl: "sc-domain:example.com"
+    });
+
+    assert.equal(snapshot.readiness.status, "configured_shape_ok");
+    assert.equal(snapshot.secretValuesSerialized, false);
+    assert.equal(snapshot.liveOAuthDeferred, true);
+    assert.equal(snapshot.credentialPresenceSafe.refreshToken, true);
+    assert.equal(
+      gaGscRedactionSnapshotLeaksSecrets(snapshot, [secretId, secretSecret, refresh]),
+      false
+    );
   });
 });

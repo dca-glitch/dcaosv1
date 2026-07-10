@@ -10,6 +10,7 @@ import {
   WORKFLOW_BRIEF_FINAL_RELEASE_PACKAGE_VERSION,
   type ClientSafeReleasePackage
 } from "./workflow-brief-final-release.execution";
+import { toClientPortalSafeDownloadReference } from "./client-portal-serializer";
 
 const prisma = createPrismaClient();
 
@@ -732,11 +733,12 @@ export async function getClientPortalDeliverableDownloadReference(
   }
 
   const downloadRef = getPrivateStorageDownloadReference(deliverable.storageKey);
-  return {
-    downloadReference: downloadRef
-      ? { downloadUrl: downloadRef.downloadUrl, expiresSeconds: downloadRef.expiresSeconds }
-      : null
-  };
+  // storageKey is consumed internally; client envelope never includes it (G568).
+  return toClientPortalSafeDownloadReference(
+    deliverable.storageKey,
+    downloadRef?.downloadUrl ?? null,
+    downloadRef?.expiresSeconds ?? null
+  );
 }
 
 function toClientSafeStringList(value: unknown): string[] {
@@ -958,11 +960,12 @@ export async function getClientPortalMonthlyReportDownloadReference(
   }
 
   const downloadRef = getPrivateStorageDownloadReference(report.storageKey);
-  return {
-    downloadReference: downloadRef
-      ? { downloadUrl: downloadRef.downloadUrl, expiresSeconds: downloadRef.expiresSeconds }
-      : null
-  };
+  // storageKey is consumed internally; client envelope never includes it (G568).
+  return toClientPortalSafeDownloadReference(
+    report.storageKey,
+    downloadRef?.downloadUrl ?? null,
+    downloadRef?.expiresSeconds ?? null
+  );
 }
 
 function readFinalReleasePackageFromPlanJson(planJson: unknown): {

@@ -42,7 +42,7 @@ describe("formatApprovalDate", () => {
   });
 });
 
-describe("toClientPortalUiSafeErrorMessage (G204/G344)", () => {
+describe("toClientPortalUiSafeErrorMessage (G204/G344/G570)", () => {
   it("keeps short safe messages", () => {
     expect(toClientPortalUiSafeErrorMessage("Monthly report not found.")).toBe(
       "Monthly report not found."
@@ -61,7 +61,25 @@ describe("toClientPortalUiSafeErrorMessage (G204/G344)", () => {
     expect(toClientPortalUiSafeErrorMessage("providerMetadata=openai failed")).toBe(
       "Request could not be completed."
     );
+    expect(toClientPortalUiSafeErrorMessage("provider=openai failed")).toBe(
+      "Request could not be completed."
+    );
     expect(toClientPortalUiSafeErrorMessage("workflowRunId=run-1 failed")).toBe(
+      "Request could not be completed."
+    );
+    expect(toClientPortalUiSafeErrorMessage("workflowRunStatus=FAILED")).toBe(
+      "Request could not be completed."
+    );
+  });
+
+  it("replaces raw cost markers in UI errors (G569)", () => {
+    expect(toClientPortalUiSafeErrorMessage("actualCostUsd=12.5 billed")).toBe(
+      "Request could not be completed."
+    );
+    expect(toClientPortalUiSafeErrorMessage("estimatedCostUsd=9.1")).toBe(
+      "Request could not be completed."
+    );
+    expect(toClientPortalUiSafeErrorMessage("rawCost leaked")).toBe(
       "Request could not be completed."
     );
   });

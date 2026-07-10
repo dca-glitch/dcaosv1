@@ -1,6 +1,6 @@
 # Email Notifications Proof
 
-**Status:** Audit + wiring block (2026-07-09), refreshed by G94-G102, G159–G170, and G249–G268 no-schema notification foundation (2026-07-10). Local disabled-safe wiring improved for Puriva launch events; live Resend proof remains owner-gated. No live email was sent in these blocks. In-system persistence remains design-only.
+**Status:** Audit + wiring block (2026-07-09), refreshed by G94-G102, G159–G170, G249–G268, and **G505–G516** email no-send / template hardening (2026-07-10). Local disabled-safe + live-deferred wiring improved; live Resend proof remains owner-gated. No live email was sent in these blocks. In-system persistence remains design-only.
 
 **Scope:** Audit the current transactional email/notification subsystem, define the event taxonomy requested for Puriva launch (article ready, image set ready, client approved/rejected, admin action required, monthly report final, WordPress draft prepared), confirm disabled-safe local mode, and lay out a bounded live-Resend proof plan for a future owner-approved session. This document does **not** authorize a live send.
 
@@ -15,7 +15,8 @@ Related:
 - Code: `apps/api/src/config/email.config.ts`, `apps/api/src/services/email-notifications.service.ts`, `apps/api/src/services/system-events.service.ts`, `apps/api/src/core/client-portal-approval.runtime.ts`, `apps/api/src/routes/briefs.ts`, `apps/api/src/controllers/coreController.ts`
 - Schema: `packages/data/prisma/schema.prisma` (`EmailLog`, `EmailStatus`, `EmailTemplateKey`)
 - Smoke: `scripts/smoke-email-outbox-local.mjs` (`npm run smoke:email-outbox:local`)
-- No-schema notification foundation tests: `apps/api/src/notifications/*.test.ts` (taxonomy, correlation design, no-send adapter), `apps/api/src/config/email.config.test.ts`
+- No-schema notification foundation tests: `apps/api/src/notifications/*.test.ts` (taxonomy, correlation design, no-send adapter, template catalogue, redaction), `apps/api/src/config/email.config.test.ts`
+- Lane closeout: [`EMAIL_NO_SEND_G505_G516_CLOSEOUT.md`](./EMAIL_NO_SEND_G505_G516_CLOSEOUT.md)
 
 ---
 
@@ -98,7 +99,9 @@ G94-G102 also added `getEmailProviderSafetyShape()`, which serializes `sendingEn
 |---|---|---|
 | `provider === "local"` (default) | `status: "SKIPPED"`, `errorMessage: "Local email provider selected; no email was sent."` | **No** |
 | `provider === "resend"`, no `RESEND_API_KEY` | `status: "FAILED"`, `errorMessage: "Resend provider selected but RESEND_API_KEY is not configured."` | **No** |
-| `provider === "resend"`, `RESEND_API_KEY` present | Calls `sendViaResend()` → real `fetch("https://api.resend.com/emails", ...)` | **Yes — the only live-call branch in the entire subsystem** |
+| `provider === "resend"`, `RESEND_API_KEY` present, `EMAIL_LIVE_SEND_AUTHORIZED` unset/false | `status: "SKIPPED"` (live-deferred); no provider call (G505) | **No** |
+| `provider === "resend"`, `RESEND_API_KEY` present, `EMAIL_LIVE_SEND_AUTHORIZED=true` | Calls `sendViaResend()` → real `fetch("https://api.resend.com/emails", ...)` | **Yes — the only live-call branch; still owner-gated (G515)** |
+| Missing / unknown `templateKey` | `status: "SKIPPED"`; no provider call (G508) | **No** |
 
 ### 3.3 `recordAiDeliverySystemEvent()` (`system-events.service.ts`)
 
@@ -133,17 +136,40 @@ Use this checklist before claiming a notification path is safe in local or stagi
 - [ ] Image-level client approve/reject tests do not claim email proof unless a notification call is added to `approveClientPortalDeliverableImage()` / `rejectClientPortalDeliverableImage()`.
 - [ ] Monthly report `FINAL` tests distinguish current admin notification intent from the still-missing client delivery notification.
 
-### 3.7 G99 / G165 no-send adapter proof
+### 3.7 G99 / G165 / G506 no-send adapter proof
 
 `apps/api/src/notifications/email-no-send-adapter.ts` (`EMAIL_NO_SEND_ADAPTER_V2`) defines a local no-send adapter interface for tests and future wiring seams. It returns `SKIPPED`, stores a normalized local attempt, sets `providerMessageId: null`, never calls `fetch` or Resend, and does not require an API key.
 
-G165 edge coverage also proves:
+G165 / G506–G510 edge coverage also proves:
 
-- Safe metadata only (payload redaction applied)
+- Safe metadata only (payload / template-variable redaction applied via `email-redaction.ts`)
 - Recipient redaction in log/metadata views when `redactRecipientInLogs` is set
 - Missing/unknown template keys remain no-send safe (`templateMissing: true`, no throw, no provider call)
+- Template catalogue completeness + launch-critical / admin-only matrices (`email-template-catalog.ts`)
 
-Focused proof: `apps/api/src/notifications/email-no-send-adapter.test.ts`.
+Focused proof: `apps/api/src/notifications/email-no-send-adapter.test.ts`, `email-template-catalog.test.ts`, `email-redaction.test.ts`, `email.config.test.ts`.
+
+### 3.8 G513 — Email proof checklist: no-send vs live
+
+Use this checklist to keep no-send claims honest and live claims owner-gated.
+
+**No-send / local / live-deferred (default — this lane):**
+
+- [x] `EMAIL_PROVIDER` unset or `local`, **or** Resend keyed but `EMAIL_LIVE_SEND_AUTHORIZED` not `true` (live-deferred)
+- [x] Expected outcomes: `SKIPPED` (local / deferred) or `FAILED` (resend without key); `providerMessageId: null`; no `sentAt`
+- [x] No `fetch` to Resend; no outbound network in unit proofs
+- [x] Serialized config / outbox / safe metadata never contain `RESEND_API_KEY` values or `re_...` secrets
+- [x] Missing/unknown templates stay `SKIPPED` / `templateMissing` without throwing
+- [x] Recipient + template-variable redaction covered by focused unit tests
+- [ ] `npm run smoke:email-outbox:local` (optional; needs local API+DB — not required for G505–G516 unit closeout)
+
+**Live Resend (owner-approved block only — not executed here):**
+
+- [ ] Separate owner approval recorded for a live send block
+- [ ] Staging-only key; owner-controlled inbox only
+- [ ] `EMAIL_LIVE_SEND_AUTHORIZED=true` set only for the proof session
+- [ ] Exactly one `sendEmailNotification` call; `EmailLog.status=SENT` + `providerMessageId` present
+- [ ] Immediately restore `EMAIL_PROVIDER=local` (or unset) and clear live authorization; re-confirm `sendingEnabled: false`
 
 ---
 
@@ -158,7 +184,8 @@ Focused proof: `apps/api/src/notifications/email-no-send-adapter.test.ts`.
 - [ ] Sending domain (`notifications.digitalcubeagency.net`, per `docs/email-notifications-contract.md`) is confirmed verified in the Resend dashboard by the owner before the session
 - [ ] Recipient is an **owner-controlled inbox only** — never a real client address, and never a distribution list
 - [ ] `EMAIL_FROM_ADDRESS` / `EMAIL_REPLY_TO` env values are confirmed (not guessed) before the session
-- [ ] Rollback step agreed: restore `EMAIL_PROVIDER=local` (or unset) immediately after the proof session, and confirm via §3.2 table that the subsystem is back to non-sending before any other work continues
+- [ ] `EMAIL_LIVE_SEND_AUTHORIZED=true` is set only for the proof session (G505 gate); never left enabled after rollback
+- [ ] Rollback step agreed: restore `EMAIL_PROVIDER=local` (or unset), clear `EMAIL_LIVE_SEND_AUTHORIZED`, immediately after the proof session, and confirm via §3.2 table that the subsystem is back to non-sending before any other work continues
 
 ### 4.2 Bounded scope of the live proof session itself
 
@@ -199,21 +226,26 @@ Secrets printed or committed during this session: no (required)
 
 ## 5. Tests added / refreshed
 
-`apps/api/src/config/email.config.test.ts` — new, trivial, disabled-safe unit test (`node:test`, no DB, no network, no server start). Verifies:
+`apps/api/src/config/email.config.test.ts` — disabled-safe / live-deferred unit test (`node:test`, no DB, no network, no server start). Verifies:
 
 1. Default provider (no env set) is `"local"` with `hasResendApiKey: false` and the documented default `fromAddress`/`replyTo`.
 2. Any unrecognized `EMAIL_PROVIDER` value falls back to `"local"` (fail-safe default, not fail-open).
 3. `hasResendApiKey` correctly reports `true` when a key is present, **without** the key value ever appearing in the serialized config object.
 4. `EMAIL_PROVIDER=resend` without `RESEND_API_KEY` is reported as configured-but-unkeyed.
 5. Missing config serializes as non-sending local mode.
-6. A keyed Resend config serializes as `liveProofRequired: true` without exposing the key value.
+6. A keyed Resend config **without** `EMAIL_LIVE_SEND_AUTHORIZED=true` is live-deferred (`sendingEnabled: false`, `liveSendDeferred: true`).
+7. Sending shape enables only when Resend + key + `EMAIL_LIVE_SEND_AUTHORIZED=true` (still not a live proof).
 
-G94-G102 / G159–G170 added or refreshed:
+G94-G102 / G159–G170 / G505–G516 added or refreshed:
 
-- `apps/api/src/notifications/notification-events.test.ts` — G159 taxonomy, G160 recipient policy, G161 channel policy, G162 severity, G163 redaction, mapping, approval/reject matrix, audit metadata, G166 typed template catalog.
-- `apps/api/src/notifications/email-no-send-adapter.test.ts` — G165 no-send edge cases (no fetch, no API key, safe metadata, recipient redaction, missing template).
+- `apps/api/src/notifications/notification-events.test.ts` — taxonomy / policy (Lane 3 ownership).
+- `apps/api/src/notifications/email-no-send-adapter.test.ts` — G506–G509 no-send contract, catalogue via adapter, missing template, recipient redaction.
+- `apps/api/src/notifications/email-template-catalog.test.ts` — G507–G508, G511–G512 catalogue + matrices.
+- `apps/api/src/notifications/email-redaction.test.ts` — G509–G510 recipient + template-variable redaction.
 
-Run in isolation (from `apps/api`): `node --import tsx --test src/notifications/notification-events.test.ts src/notifications/email-no-send-adapter.test.ts src/config/email.config.test.ts` → **32/32 pass** (G170, 2026-07-10). Log: `$env:TEMP\g159-g170-notification-tests.log`. Picked up automatically by the existing `npm run -w @dca-os-v1/api test:unit` glob (`src/**/*.test.ts`); no script changes were needed.
+Focused Lane 4 proof (from `apps/api`):
+`node --import tsx --test src/config/email.config.test.ts src/notifications/email-no-send-adapter.test.ts src/notifications/email-template-catalog.test.ts src/notifications/email-redaction.test.ts`
+See closeout doc for pass counts. Picked up automatically by `npm run -w @dca-os-v1/api test:unit` glob (`src/**/*.test.ts`); no script changes were needed.
 
 No new integration test was added under `apps/api/tests/integration/`. Every existing integration test in that folder boots a live app instance and a real Prisma/DB connection (`createApp()` + `createPrismaClient()`); adding one was not necessary to prove disabled-safe behavior for this audit, and starting the API/DB was out of scope for a docs/audit-only block per the repository's local service-startup rules ("do not start API/web unless smoke/browser proof requires it").
 

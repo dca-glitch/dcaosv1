@@ -1,6 +1,8 @@
-# Local-Only Proof Taxonomy (G424)
+# Local-Only Proof Taxonomy (G654)
 
-**Status:** Taxonomy for classifying local proofs. Complements [`NO_LIVE_PROOF_CATALOGUE.md`](./NO_LIVE_PROOF_CATALOGUE.md) and [`ENV_SHAPE_VS_LIVE_PROOF_LABELS.md`](../security/ENV_SHAPE_VS_LIVE_PROOF_LABELS.md).
+**Status:** Taxonomy for classifying local proofs. G654 refresh for G469–G708 ultra-block on baseline `66dcb74`. Complements [`NO_LIVE_PROOF_CATALOGUE.md`](./NO_LIVE_PROOF_CATALOGUE.md) and [`ENV_SHAPE_VS_LIVE_PROOF_LABELS.md`](../security/ENV_SHAPE_VS_LIVE_PROOF_LABELS.md).
+
+**Hard truths:** local foundations expanding; live proofs deferred; Puriva Launch **BLOCKED** (L8 unreachable); production readiness **NO**.
 
 ---
 
@@ -8,8 +10,8 @@
 
 | Level | Name | Examples | Authorizes |
 |---|---|---|---|
-| L0 | Docs / inventory | Security checklists, this taxonomy | Nothing runtime |
-| L1 | Pure unit (no DB/network) | Redaction helpers, policy constants | Local helper correctness |
+| L0 | Docs / inventory | Security checklists, this taxonomy, operator closeouts | Nothing runtime |
+| L1 | Pure unit (no DB/network) | Redaction helpers, policy constants, R2 no-IO invariants, GA/GSC mapping helpers | Local helper correctness |
 | L2 | Unit/integration with local DB | API integration tests, SEC-H1 optional admin path | Local API contracts |
 | L3 | Local smoke (disabled-safe) | R2/email/WP disabled-safe smokes | Local safety defaults |
 | L4 | Local smoke (operator workflow) | AI Delivery reviews, portal browser | Local operator readiness |
@@ -19,6 +21,8 @@
 | L8 | Puriva Launch | All launch blockers closed | Client-service launch |
 
 **Rule:** A lower level never upgrades a higher level without new evidence and owner approval.
+
+**G469+ note:** R2 proof-plan / contracts / no-IO invariants, GA/GSC OAuth **design** helpers, and similar WIP are **L0–L1** at most. They do not authorize L5–L8.
 
 ---
 
@@ -49,7 +53,7 @@
 | L7 | "Production proof (recorded)" — still may leave readiness NO |
 | L8 | Only when launch gate says PASS |
 
-Never say "production ready" from L0–L6 alone. Production readiness remains **NO** until a production gate says otherwise.
+Never say "production ready" from L0–L6 alone. Production readiness remains **NO** until a production gate says otherwise. Never say "Puriva Launch ready" from L0–L7 alone.
 
 ---
 

@@ -118,4 +118,56 @@ describe("monthly-report-metrics-validation", () => {
     const tooLong = sanitizeMonthlyReportArticleUrl(`https://example.com/${"a".repeat(2100)}`);
     assert.equal(tooLong.ok, false);
   });
+
+  it("G534: metric validation edges — zero rows, HYBRID, control chars, non-number types", () => {
+    const zeros = validateMonthlyReportMetricRow({
+      source: "HYBRID",
+      clicks: 0,
+      impressions: 0,
+      ctr: null,
+      position: null,
+      articleUrl: null
+    });
+    assert.equal(zeros.ok, true, zeros.errors.join("; "));
+    assert.equal(zeros.normalized?.source, "HYBRID");
+    assert.equal(zeros.normalized?.clicks, 0);
+    assert.equal(zeros.normalized?.impressions, 0);
+    assert.equal(zeros.normalized?.ctr, null);
+    assert.equal(zeros.normalized?.position, null);
+
+    const controlChars = sanitizeMonthlyReportArticleUrl("https://example.com/a\u0001b");
+    assert.equal(controlChars.ok, true);
+    assert.equal(controlChars.articleUrl, "https://example.com/ab");
+
+    const nonNumberClicks = validateMonthlyReportMetricRow({
+      source: "MANUAL",
+      clicks: "10" as unknown as number,
+      impressions: 10
+    });
+    assert.equal(nonNumberClicks.ok, false);
+    assert.ok(nonNumberClicks.errors.some((e) => /clicks must be a number/i.test(e)));
+
+    const positionHigh = validateMonthlyReportMetricRow({
+      source: "GSC",
+      clicks: 1,
+      impressions: 10,
+      position: 101
+    });
+    assert.equal(positionHigh.ok, false);
+
+    const ctrNeg = validateMonthlyReportMetricRow({
+      source: "CSV_IMPORT",
+      clicks: 1,
+      impressions: 10,
+      ctr: -0.01
+    });
+    assert.equal(ctrNeg.ok, false);
+
+    const missingImpressions = validateMonthlyReportMetricRow({
+      source: "MANUAL",
+      clicks: 1
+    });
+    assert.equal(missingImpressions.ok, false);
+    assert.ok(missingImpressions.errors.some((e) => /impressions must be a number/i.test(e)));
+  });
 });

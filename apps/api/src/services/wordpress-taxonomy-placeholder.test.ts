@@ -7,7 +7,7 @@ import {
   WORDPRESS_TAXONOMY_PLACEHOLDER_MAX_LENGTH
 } from "./wordpress-taxonomy-placeholder";
 
-describe("wordpress-taxonomy-placeholder (G298)", () => {
+describe("wordpress-taxonomy-placeholder (G298 / G548)", () => {
   it("normalizes category/tag placeholders without resolving live term IDs", () => {
     const policy = buildWordPressTaxonomyPlaceholders({
       categories: ["Wellness", " Recovery ", "Wellness", "wellness"],
@@ -44,5 +44,15 @@ describe("wordpress-taxonomy-placeholder (G298)", () => {
     assert.equal(isWordPressTaxonomyTermIdPlaceholder("42"), true);
     assert.equal(isWordPressTaxonomyTermIdPlaceholder("Wellness"), false);
     assert.equal(isWordPressTaxonomyTermIdPlaceholder(null), false);
+  });
+
+  it("G548 drops numeric-only term-id shaped labels from placeholder lists", () => {
+    const policy = buildWordPressTaxonomyPlaceholders({
+      categories: ["12", "Wellness", " 99 "],
+      tags: ["7", "seo", "007"]
+    });
+    assert.deepEqual(policy.categories, ["Wellness"]);
+    assert.deepEqual(policy.tags, ["seo"]);
+    assert.equal(policy.hasPlaceholders, true);
   });
 });

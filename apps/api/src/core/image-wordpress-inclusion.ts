@@ -7,7 +7,7 @@
 
 import type { ImageApprovalLoopState } from "./image-approval-loop";
 
-export const IMAGE_WORDPRESS_INCLUSION_VERSION = "IMAGE_WORDPRESS_INCLUSION_V1";
+export const IMAGE_WORDPRESS_INCLUSION_VERSION = "IMAGE_WORDPRESS_INCLUSION_V2";
 
 export const IMAGE_WORDPRESS_INCLUSION_ROLES = ["hero", "supporting", "social"] as const;
 
@@ -89,4 +89,57 @@ export function evaluateImageWordpressInclusionReadiness(
 
 export function isWordpressInclusionRole(value: string): value is ImageWordpressInclusionRole {
   return (IMAGE_WORDPRESS_INCLUSION_ROLES as readonly string[]).includes(value);
+}
+
+export type ImageWordpressInclusionBundleInput = {
+  approvalState: ImageApprovalLoopState;
+  role: ImageWordpressInclusionRole;
+  hasAltText: boolean;
+  hasSocialPreviewAsset?: boolean;
+  altTextAllowed?: boolean;
+  complianceAllowed?: boolean;
+};
+
+/**
+ * G560 — Combines WP role readiness with optional alt/compliance gates.
+ * Still pure policy; does not call WordPress or Lane 7 serializers.
+ */
+export function evaluateImageWordpressInclusionBundle(
+  input: ImageWordpressInclusionBundleInput
+): ImageWordpressInclusionDecision {
+  const base = evaluateImageWordpressInclusionReadiness({
+    approvalState: input.approvalState,
+    role: input.role,
+    hasAltText: input.hasAltText,
+    hasSocialPreviewAsset: input.hasSocialPreviewAsset
+  });
+
+  const reasons = [...base.reasons];
+  const checks = [...base.checks];
+
+  if (input.altTextAllowed === false) {
+    reasons.push("Alt text policy must allow the reviewed alt text before WordPress inclusion.");
+    checks.push("REJECT:alt_text_policy");
+  } else if (input.altTextAllowed === true) {
+    checks.push("ALLOW:alt_text_policy");
+  }
+
+  if (input.complianceAllowed === false) {
+    reasons.push("Image compliance policy must allow the asset before WordPress inclusion.");
+    checks.push("REJECT:compliance_policy");
+  } else if (input.complianceAllowed === true) {
+    checks.push("ALLOW:compliance_policy");
+  }
+
+  const ready = reasons.length === 0;
+  return {
+    version: IMAGE_WORDPRESS_INCLUSION_VERSION,
+    ready,
+    role: input.role,
+    approvalState: input.approvalState,
+    reasons,
+    checks: ready
+      ? [...checks.filter((c) => c !== "READY:wordpress_draft_inclusion"), "READY:wordpress_draft_inclusion"]
+      : checks.filter((c) => c !== "READY:wordpress_draft_inclusion")
+  };
 }

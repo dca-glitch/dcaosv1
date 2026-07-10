@@ -2,13 +2,16 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
   assertNoStorageKeyLeak,
+  collectForbiddenStorageKeyFieldPaths,
   collectForbiddenStorageKeyFields,
+  FORBIDDEN_CLIENT_STORAGE_KEY_FIELDS,
+  isForbiddenClientStorageKeyField,
   serializedContainsStorageKeyField,
   serializedContainsTenantStoragePath,
   toStorageKeyBoundarySnapshot
 } from "./storage-key-boundary";
 
-describe("storage-key-boundary shared helper (G239)", () => {
+describe("storage-key-boundary shared helper (G239 / G474)", () => {
   it("detects storageKey and documentStorageKey fields", () => {
     assert.equal(serializedContainsStorageKeyField({ id: "ok", title: "Safe" }), false);
     assert.equal(serializedContainsStorageKeyField({ storageKey: "tenants/x/y" }), true);
@@ -48,13 +51,28 @@ describe("storage-key-boundary shared helper (G239)", () => {
       hasStorageKeyField: false,
       hasDocumentStorageKeyField: false,
       containsForbiddenKeyValue: false,
+      forbiddenFieldPathCount: 0,
       liveProven: false
     });
 
     const dirty = toStorageKeyBoundarySnapshot({ storageKey: forbidden }, forbidden);
     assert.equal(dirty.hasStorageKeyField, true);
     assert.equal(dirty.containsForbiddenKeyValue, true);
+    assert.equal(dirty.forbiddenFieldPathCount, 1);
     assert.equal(dirty.liveProven, false);
     assert.equal(JSON.stringify(dirty).includes(forbidden), false);
+  });
+
+  it("consolidates forbidden field list and nested path collection (G474)", () => {
+    assert.deepEqual([...FORBIDDEN_CLIENT_STORAGE_KEY_FIELDS], ["storageKey", "documentStorageKey"]);
+    assert.equal(isForbiddenClientStorageKeyField("storageKey"), true);
+    assert.equal(isForbiddenClientStorageKeyField("exportUrl"), false);
+
+    const paths = collectForbiddenStorageKeyFieldPaths({
+      deliverable: { storageKey: "tenants/x" },
+      items: [{ documentStorageKey: "tenants/y" }, { exportUrl: "https://ok" }]
+    });
+    assert.deepEqual(paths, ["deliverable.storageKey", "items[0].documentStorageKey"]);
+    assert.equal(JSON.stringify(paths).includes("tenants/"), false);
   });
 });

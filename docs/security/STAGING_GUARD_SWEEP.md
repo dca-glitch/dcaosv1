@@ -1,6 +1,8 @@
-# Staging Guard Sweep (G417)
+# Staging Guard Sweep (G645)
 
-**Status:** Docs-only truth sweep for G409–G428. Historical staging PASS is not standing authorization for further staging/VPS work.
+**Status:** Docs-only truth sweep for G637–G648. Historical staging PASS is not standing authorization for further staging/VPS work.
+
+**Context (G469–G708):** Local staging-readiness / pre-staging smokes remain safe substitutes. Remote staging mutation, live provider proofs on staging, and staging browser QA still require **fresh** explicit owner approval.
 
 ---
 
@@ -12,6 +14,7 @@
 | Artifact context | `/opt/dca/staging-artifacts/5e1ea5a` |
 | Staging host | `staging.digitalcubeagency.net` |
 | Further staging action | Requires **fresh** explicit owner approval |
+| G469–G708 remote staging | **Not authorized** by this docs lane |
 
 ---
 
@@ -35,7 +38,7 @@ Guard unit coverage: `scripts/smoke-staging-security-baseline.guard.test.mjs`, `
 - Staging admin bootstrap write mode
 - Caddy recreate / DNS changes
 - Staging live provider proofs (AI, R2, WP, email, GA/GSC, image)
-- Staging browser QA against remote host
+- Staging browser QA against remote host (including Client Portal G492-class)
 
 ---
 

@@ -2,6 +2,10 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { planWorkflowStepWithOrchestrator, completeWorkflowStepLedgerAttribution } from "./ai-orchestrator-workflow-adapter.skeleton";
 import { resolveDryRunContractForTaskType } from "./ai-workflow-dry-run-contracts.service";
+import {
+  assertOrchestratorLocalOnlySafety,
+  buildOrchestratorDeterministicFallbackSnapshot
+} from "./ai-local-guard-orchestrator";
 
 describe("ai-orchestrator-workflow-adapter", () => {
   it("returns dry-run research pack contract with routing metadata", () => {
@@ -100,6 +104,22 @@ describe("ai-orchestrator-workflow-adapter", () => {
     });
     assert.equal(result.canProceedToExecution, false);
     assert.match(result.blockedReason ?? "", /not approved/i);
+  });
+
+  it("G625/G628: adapter dry-run local-only safety and deterministic fallback", () => {
+    const result = planWorkflowStepWithOrchestrator({
+      workflow: "puriva_content_production",
+      step: "research_pack",
+      agentRole: "research_agent",
+      taskType: "research_pack",
+      operatingPackKey: "puriva",
+      briefApproved: true
+    });
+    const safety = assertOrchestratorLocalOnlySafety(result.plan);
+    assert.equal(safety.ok, true);
+    const fallback = buildOrchestratorDeterministicFallbackSnapshot(result.plan);
+    assert.equal(fallback.liveProviderCalled, false);
+    assert.equal(fallback.isLocalDeterministic, true);
   });
 });
 

@@ -9,12 +9,19 @@ import { redactWordPressSerializableValue } from "./wordpress-credentials-redact
 
 const CONTROL_CHARS_PATTERN = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g;
 
+/** G546 — strip credential-shaped fragments that must never ride in draft text. */
+const DRAFT_SECRET_FRAGMENT_PATTERN =
+  /(application[_-]?password\s*[:=]\s*\S+|wp[_-]?app[_-]?password\s*[:=]\s*\S+|authorization\s*:\s*\S+|bearer\s+[a-z0-9._-]+|basic\s+[a-z0-9+/=]+)/gi;
+
 export function sanitizeWordPressDraftText(value: string | null | undefined): string | null {
   if (value == null || typeof value !== "string") {
     return null;
   }
 
-  const sanitized = value.replace(CONTROL_CHARS_PATTERN, "").trim();
+  const sanitized = value
+    .replace(CONTROL_CHARS_PATTERN, "")
+    .replace(DRAFT_SECRET_FRAGMENT_PATTERN, "[REDACTED]")
+    .trim();
   return sanitized.length > 0 ? sanitized : null;
 }
 

@@ -50,7 +50,7 @@ describe("client portal approval user", () => {
   });
 });
 
-describe("client portal approval request serializer (G201/G332)", () => {
+describe("client portal approval request serializer (G201/G332/G584)", () => {
   it("serializes pending approval list rows with client-safe fields only", () => {
     const summary = toClientPortalPendingApprovalSummary({
       id: "del-1",
@@ -117,7 +117,8 @@ describe("client portal approval request serializer (G201/G332)", () => {
       "estimatedCostUsd",
       "adminSummaryNotes",
       "contentDraftId",
-      "executionLog"
+      "executionLog",
+      "revisionRoundAvailable"
     ]) {
       assert.equal(serialized.includes(forbidden), false, `leaked ${forbidden}`);
     }

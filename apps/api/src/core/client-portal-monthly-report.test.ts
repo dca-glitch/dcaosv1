@@ -113,4 +113,16 @@ describe("client portal monthly report boundary (G200)", () => {
     assertClientPortalPayloadHasNoForbiddenKeys(withDoc);
     assertClientPortalPayloadHasNoForbiddenKeys(withoutDoc);
   });
+
+  it("G529: client portal visibility stays FINAL-only across approval statuses", () => {
+    assert.equal(isClientPortalMonthlyReportVisible({ status: "FINAL", isArchived: false }), true);
+    for (const status of ["DRAFT", "ADMIN_REVIEW", "ARCHIVED", "UNKNOWN"]) {
+      assert.equal(
+        isClientPortalMonthlyReportVisible({ status, isArchived: false }),
+        false,
+        `status ${status} must not be client-visible`
+      );
+    }
+    assert.equal(isClientPortalMonthlyReportVisible({ status: "FINAL", isArchived: true }), false);
+  });
 });

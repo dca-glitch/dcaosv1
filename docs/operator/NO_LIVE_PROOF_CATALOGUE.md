@@ -1,8 +1,10 @@
-# No-Live Proof Catalogue (G421)
+# No-Live Proof Catalogue (G655)
 
-**Status:** Catalogue of proofs that are intentionally **local / disabled-safe / config-shape** and must not be described as staging, production, or Puriva Launch proof. G409–G428 docs lane; no live execution.
+**Status:** Catalogue of proofs that are intentionally **local / disabled-safe / config-shape** and must not be described as staging, production, or Puriva Launch proof. G655 refresh for G469–G708 ultra-block on baseline `66dcb74`. No live execution in this lane.
 
 Related: [`LOCAL_ONLY_PROOF_TAXONOMY.md`](./LOCAL_ONLY_PROOF_TAXONOMY.md), [`ENV_SHAPE_VS_LIVE_PROOF_LABELS.md`](../security/ENV_SHAPE_VS_LIVE_PROOF_LABELS.md), [`TEST_SMOKE_INVENTORY.md`](./TEST_SMOKE_INVENTORY.md).
+
+**Hard truths:** local foundations expanding; live proofs deferred; Puriva Launch **BLOCKED**; production frozen.
 
 ---
 
@@ -55,6 +57,9 @@ Related: [`LOCAL_ONLY_PROOF_TAXONOMY.md`](./LOCAL_ONLY_PROOF_TAXONOMY.md), [`ENV
 | `sec-h1-storage-key-leak.integration.test.ts` | Local SEC-H1 regression |
 | `storage-key-boundary` / serializer boundary tests | Local no-IO |
 | `storage-error-redaction.test.ts` | Local string redaction |
+| `r2-no-io-readiness-invariant.ts` / `r2-proof-contracts.ts` / `r2-target-environment-proof-plan.ts` | Local plan/contracts — not bucket proof |
+| `private-delivery-download-boundary.ts` / `export-url-storage-key-matrix.ts` | Local boundary helpers |
+| `ga-gsc-oauth-token-storage.design.ts` (+ mapping/period helpers) | Design/local mapping — not OAuth/live sync |
 | `wordpress-credentials-redaction.test.ts` | Local credential shape |
 | `client-portal-error-safety.test.ts` | Local error safety |
 | `smoke-staging-security-baseline.guard.test.mjs` | Guard unit — not remote PASS |
@@ -70,6 +75,7 @@ These require separate owner approval and are **not** no-live proofs:
 - `smoke:google-drive-export-live:local` when live probe enabled
 - Any OpenRouter/R2/email/GA/GSC/WordPress/image live session
 - G50 production deploy
+- G469+ R2 target-bucket live IO (even if plan helpers exist)
 
 ---
 

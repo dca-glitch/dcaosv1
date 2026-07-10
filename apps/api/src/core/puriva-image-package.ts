@@ -24,6 +24,8 @@ import {
   PURIVA_HIGH_RISK_CATEGORY_IDS,
   type PurivaContentType
 } from "./puriva-service-taxonomy";
+import { evaluateImageAltTextPolicy } from "./image-alt-text-policy";
+import { evaluateImageCompliancePolicy } from "./image-compliance-policy";
 
 export const PURIVA_IMAGE_PACKAGE_VERSION = "PURIVA_IMAGE_PACKAGE_V1";
 
@@ -429,4 +431,59 @@ export function summarizePurivaImagePackageContext(
     `concepts=${conceptCount}`,
     `medical_review=${context.imagePackages.filter((entry) => entry.medicalReviewRequired).length}`
   ].join(" · ");
+}
+
+export type PurivaImagePackageComplianceAlignment = {
+  ok: boolean;
+  finalReadyAlwaysBlocked: true;
+  liveGenerationAllowed: false;
+  conceptCountChecked: number;
+  failures: string[];
+};
+
+/**
+ * G563 — Aligns Puriva scaffolds with image compliance + alt policies.
+ * Client-facing title/alt are screened; prompt scaffolds may mention exclusions
+ * in negation (same boundary as unsafe-phrase scan). Packages stay non-final.
+ */
+export function assessPurivaImagePackageComplianceAlignment(
+  context: PurivaImagePackageContext = buildPurivaImagePackageContext("2026-01")
+): PurivaImagePackageComplianceAlignment {
+  const failures: string[] = [];
+  let conceptCountChecked = 0;
+
+  for (const pkg of context.imagePackages) {
+    if (pkg.finalReadyGating.allowed !== false) {
+      failures.push(`${pkg.seoPlanItemId}: finalReadyGating must stay blocked`);
+    }
+    for (const concept of pkg.concepts) {
+      conceptCountChecked += 1;
+      const clientFacing = `${concept.title}\n${concept.altTextDraft}`;
+      const conceptDecision = evaluateImageCompliancePolicy({
+        stage: "pre_generation_prompt",
+        text: clientFacing
+      });
+      if (!conceptDecision.allowed) {
+        failures.push(
+          `${concept.id}: client-facing text blocked by ${conceptDecision.findings
+            .map((f) => f.code)
+            .join(",")}`
+        );
+      }
+      const altDecision = evaluateImageAltTextPolicy(concept.altTextDraft);
+      if (!altDecision.allowed) {
+        failures.push(
+          `${concept.id}: alt blocked by ${altDecision.issues.map((i) => i.code).join(",")}`
+        );
+      }
+    }
+  }
+
+  return {
+    ok: failures.length === 0,
+    finalReadyAlwaysBlocked: true,
+    liveGenerationAllowed: false,
+    conceptCountChecked,
+    failures
+  };
 }

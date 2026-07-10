@@ -120,7 +120,10 @@ export function toR2ConfigRedactedSummarySnapshot(
   bucketPresent: boolean;
   accessKeyIdPresent: boolean;
   secretAccessKeyPresent: boolean;
+  accountIdPresent: boolean;
+  publicBaseUrlPresent: boolean;
   requiredKeysPresentCount: number;
+  allRequiredPresent: boolean;
 } {
   const requiredKeysPresentCount = R2_REQUIRED_ENV_KEYS.filter((key) => summary.presence[key]).length;
   return {
@@ -130,6 +133,9 @@ export function toR2ConfigRedactedSummarySnapshot(
     bucketPresent: summary.bucketPresent,
     accessKeyIdPresent: summary.accessKeyIdPresent,
     secretAccessKeyPresent: summary.secretAccessKeyPresent,
-    requiredKeysPresentCount
+    accountIdPresent: summary.presence[R2_ENV_KEYS.accountId],
+    publicBaseUrlPresent: summary.presence[R2_ENV_KEYS.publicBaseUrl],
+    requiredKeysPresentCount,
+    allRequiredPresent: requiredKeysPresentCount === R2_REQUIRED_ENV_KEYS.length
   };
 }

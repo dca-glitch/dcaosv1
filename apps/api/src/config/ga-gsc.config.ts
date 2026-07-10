@@ -205,3 +205,35 @@ export function getGaGscIntegrationReadiness(): GaGscIntegrationReadiness {
     liveSyncDeferred: true
   };
 }
+
+/** G517 — redaction snapshot of config/readiness/presence (booleans + keys only). */
+export interface GaGscConfigRedactionSnapshot {
+  shape: GaGscConfigShape;
+  readiness: GaGscIntegrationReadiness;
+  credentialPresenceSafe: ReturnType<typeof serializeGaGscCredentialPresenceSafe>;
+  liveOAuthDeferred: true;
+  liveSyncDeferred: true;
+  secretValuesSerialized: false;
+}
+
+export function buildGaGscConfigRedactionSnapshot(
+  credentialInput?: GaGscCredentialPresenceInput
+): GaGscConfigRedactionSnapshot {
+  return {
+    shape: getGaGscConfigShape(),
+    readiness: getGaGscIntegrationReadiness(),
+    credentialPresenceSafe: serializeGaGscCredentialPresenceSafe(credentialInput ?? {}),
+    liveOAuthDeferred: true,
+    liveSyncDeferred: true,
+    secretValuesSerialized: false
+  };
+}
+
+/** Returns true when serialized JSON contains any of the provided secret probe strings. */
+export function gaGscRedactionSnapshotLeaksSecrets(
+  snapshot: GaGscConfigRedactionSnapshot,
+  secretProbes: string[]
+): boolean {
+  const serialized = JSON.stringify(snapshot);
+  return secretProbes.some((probe) => probe.length > 0 && serialized.includes(probe));
+}

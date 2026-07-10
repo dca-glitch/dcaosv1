@@ -15,6 +15,14 @@ export type ProofState =
 
 export type IntegrationTruthTone = "neutral" | "local" | "warning" | "success" | "danger";
 
+/** Local / Staging / Production truth-matrix chip keys (design-only until UI mounts). */
+export type IntegrationTruthChip =
+  | "not_proven"
+  | "pass_local"
+  | "pass_disabled_safe"
+  | "pass_recorded"
+  | "na";
+
 const PROOF_STATE_LABELS: Record<ProofState, string> = {
   not_started: "Not started",
   local_only: "Local only",
@@ -37,9 +45,27 @@ const PROOF_STATE_TONES: Record<ProofState, IntegrationTruthTone> = {
   blocked: "danger"
 };
 
+const INTEGRATION_TRUTH_CHIP_LABELS: Record<IntegrationTruthChip, string> = {
+  not_proven: "Not proven",
+  pass_local: "PASS local",
+  pass_disabled_safe: "PASS disabled-safe",
+  pass_recorded: "PASS (recorded)",
+  na: "N/A"
+};
+
+const INTEGRATION_TRUTH_CHIP_TONES: Record<IntegrationTruthChip, IntegrationTruthTone> = {
+  not_proven: "warning",
+  pass_local: "local",
+  pass_disabled_safe: "local",
+  pass_recorded: "success",
+  na: "neutral"
+};
+
 /** Copy that must never appear as an unqualified live/production claim on admin surfaces. */
 const LIVE_OVERCLAIM_PATTERNS: RegExp[] = [
   /\blive\s+synced\b/i,
+  /\blive\s+ready\b/i,
+  /\blaunch\s+ready\b/i,
   /\bproduction\s+ready\b/i,
   /\bstaging\s+proven\b/i,
   /\bfully\s+connected\b/i,
@@ -50,12 +76,26 @@ const LIVE_OVERCLAIM_PATTERNS: RegExp[] = [
 /** If present, the phrase is treated as explicitly non-claiming (deferred / gated / recorded). */
 const SAFE_QUALIFIER = /\b(deferred|not\s+proven|pending|disabled|owner-?gated|gated|recorded|opt-in\s+only|no\s+live\s+calls)\b/i;
 
+const PROOF_STATE_SET = new Set<string>(Object.keys(PROOF_STATE_LABELS));
+
+export function isProofState(value: string): value is ProofState {
+  return PROOF_STATE_SET.has(value);
+}
+
 export function formatProofStateLabel(state: ProofState): string {
   return PROOF_STATE_LABELS[state];
 }
 
 export function proofStateTone(state: ProofState): IntegrationTruthTone {
   return PROOF_STATE_TONES[state];
+}
+
+export function formatIntegrationTruthChip(chip: IntegrationTruthChip): string {
+  return INTEGRATION_TRUTH_CHIP_LABELS[chip];
+}
+
+export function integrationTruthChipTone(chip: IntegrationTruthChip): IntegrationTruthTone {
+  return INTEGRATION_TRUTH_CHIP_TONES[chip];
 }
 
 /**

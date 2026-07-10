@@ -87,4 +87,52 @@ describe("monthly-report-metrics-unavailable-state", () => {
     assert.equal(live.reason, null);
     assert.equal(live.clientMayUseLiveLanguage, true);
   });
+
+  it("G536: empty/unavailable state — snapshot_unapproved and empty metrics never use live language", () => {
+    const unapproved = resolveMonthlyReportUnavailableState({
+      reportStatus: "ADMIN_REVIEW",
+      metricsSource: {
+        sourceType: "GA4",
+        status: "APPROVED",
+        gaGscReadinessStatus: "configured_shape_ok",
+        liveProofApproved: true
+      }
+    });
+    // Live-proven source truth is not unavailable; empty/unavailable path focuses on truth===unavailable.
+    // When source resolves to live, unavailable=false even without snapshot id on this helper.
+    assert.equal(unapproved.unavailable, false);
+    assert.equal(unapproved.clientMayUseLiveLanguage, true);
+
+    const snapshotGate = resolveMonthlyReportUnavailableState({
+      reportStatus: "DRAFT",
+      metricsSource: {
+        sourceType: "GA4",
+        status: "IMPORTED",
+        gaGscReadinessStatus: "configured_shape_ok"
+      }
+    });
+    assert.equal(snapshotGate.unavailable, true);
+    assert.equal(snapshotGate.reason, "snapshot_unapproved");
+    assert.equal(snapshotGate.clientLabel, "Metrics unavailable");
+    assert.equal(snapshotGate.clientMayUseLiveLanguage, false);
+    assert.equal(snapshotGate.mayExposeToClient, false);
+
+    const emptyFinal = resolveMonthlyReportUnavailableState({
+      reportStatus: "FINAL",
+      metricsSource: null
+    });
+    assert.equal(emptyFinal.unavailable, true);
+    assert.equal(emptyFinal.reason, "missing_source");
+    assert.equal(emptyFinal.mayExposeToClient, true);
+    assert.equal(emptyFinal.clientMayUseLiveLanguage, false);
+    assert.match(emptyFinal.adminLabel, /no source type/i);
+
+    const blockedPeriod = resolveMonthlyReportUnavailableState({
+      dateRangeStatus: "blocked_current_month",
+      reportStatus: "FINAL",
+      metricsSource: {}
+    });
+    assert.equal(blockedPeriod.reason, "future_or_blocked_period");
+    assert.equal(blockedPeriod.clientLabel, "Metrics unavailable");
+  });
 });

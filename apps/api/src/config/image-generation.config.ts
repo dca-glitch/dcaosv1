@@ -80,3 +80,22 @@ export function getImageGenerationIntegrationReadiness(): ImageGenerationIntegra
     liveProviderCallsDeferred: true
   };
 }
+
+export type ImageGenerationNoLiveConfigSnapshot = {
+  liveProviderCallsDeferred: true;
+  liveProviderCallsAllowed: false;
+  readinessStatuses: ImageGenerationIntegrationReadinessStatus[];
+  envKeys: typeof IMAGE_GENERATION_ENV_KEYS;
+};
+
+/**
+ * G562 — Safe no-live config snapshot. Never reads secret values into the snapshot.
+ */
+export function buildImageGenerationNoLiveConfigSnapshot(): ImageGenerationNoLiveConfigSnapshot {
+  return {
+    liveProviderCallsDeferred: true,
+    liveProviderCallsAllowed: false,
+    readinessStatuses: ["disabled", "missing_config", "configured_shape_ok"],
+    envKeys: IMAGE_GENERATION_ENV_KEYS
+  };
+}

@@ -117,10 +117,18 @@ Puriva image scaffolds must stay aligned with the pure image-lane safety helpers
 
 | Concern | Helper / gate |
 |---------|----------------|
-| Prompt/output hard exclusions | `apps/api/src/core/image-compliance-policy.ts` (`IMAGE_COMPLIANCE_POLICY_V3`) |
+| Prompt/output hard exclusions | `apps/api/src/core/image-compliance-policy.ts` (`IMAGE_COMPLIANCE_POLICY_V4`) |
 | Prompt profile roles / aspect / alt required | `apps/api/src/core/image-prompt-profile.ts` |
 | Alt text no-claim / no-before-after | `apps/api/src/core/image-alt-text-policy.ts` |
 | Approval → `final_accepted` before WP | `apps/api/src/core/image-approval-loop.ts` + `image-wordpress-inclusion.ts` |
 | No-live provider proof plan | `apps/api/src/core/image-provider-proof-plan.ts` + [`IMAGE_GENERATION_PROOF.md`](./IMAGE_GENERATION_PROOF.md) §10 |
 
 Scaffold packages remain `finalReadyGating.allowed: false`. Live generation and WordPress attach stay out of scope until owner-approved Phase C/D.
+
+---
+
+## G563 — Compliance alignment helper (2026-07-10)
+
+`assessPurivaImagePackageComplianceAlignment()` screens **client-facing** title + alt drafts against `evaluateImageCompliancePolicy` and `evaluateImageAltTextPolicy`. Internal prompt scaffolds may still mention exclusions in negation (same boundary as the unsafe-phrase scan). Alignment always reports `liveGenerationAllowed: false` and requires `finalReadyGating` to stay blocked.
+
+See [`IMAGE_COMPLIANCE_G553_G564_CLOSEOUT.md`](./IMAGE_COMPLIANCE_G553_G564_CLOSEOUT.md).
