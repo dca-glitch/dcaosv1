@@ -1,10 +1,17 @@
 import assert from "node:assert/strict";
 import { afterEach, describe, it } from "node:test";
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import {
+  assertWordPressDraftStatusFrozen,
   buildAiDeliveryWordPressDraftPayload,
   buildWordPressCredentialPolicyMetadata,
   buildWordPressCredentialPolicyShape,
+  isWordPressDraftStatusFrozen,
   publishAiDeliveryDeliverableToWordPress,
+  resolveWordPressDraftPostStatus,
+  WORDPRESS_DRAFT_POST_STATUS,
   WORDPRESS_LIVE_HTTP_FROZEN_REASON,
   WORDPRESS_TEST_DRAFT_PROOF_MARKER,
   WORDPRESS_TEST_DRAFT_PROOF_TAG,
@@ -13,6 +20,7 @@ import {
 
 const originalPublishEnabled = process.env.WORDPRESS_PUBLISH_ENABLED;
 const originalFetch = globalThis.fetch;
+const serviceSourcePath = join(dirname(fileURLToPath(import.meta.url)), "wordpress.service.ts");
 
 afterEach(() => {
   if (originalPublishEnabled === undefined) {
@@ -25,32 +33,94 @@ afterEach(() => {
 });
 
 describe("wordpress.service", () => {
-  it("builds local draft payloads with draft status only", () => {
-    const payload = buildAiDeliveryWordPressDraftPayload({
-      title: "  Puriva SEO Article: Recovery & Wellness  ",
-      body: "  Draft body for admin review.  ",
-      excerpt: "  Short summary.  ",
-      sourceType: "CONTENT_DRAFT",
-      sourceId: "content-draft-1",
-      publicationTargetId: "target-1",
-      publicationTargetLabel: "Puriva staging",
-      publicationSiteUrl: "https://staging.example.test",
-      publishGateStatus: "disabled",
-      credentialConfigured: false
+  describe("G181 draft payload builder hardening", () => {
+    it("builds local draft payloads with title, slug, excerpt, body/content, taxonomy, featured placeholder, draft status, and source deliverable id", () => {
+      const payload = buildAiDeliveryWordPressDraftPayload({
+        title: "  Puriva SEO Article: Recovery & Wellness  ",
+        body: "  Draft body for admin review.  ",
+        excerpt: "  Short summary.  ",
+        sourceType: "DELIVERABLE",
+        sourceId: "deliverable-42",
+        deliverableId: "deliverable-42",
+        categories: ["Wellness", " Recovery ", "Wellness"],
+        tags: ["puriva", "seo"],
+        featuredImagePlaceholder: "assets/hero-placeholder.png",
+        publicationTargetId: "target-1",
+        publicationTargetLabel: "Puriva staging",
+        publicationSiteUrl: "https://staging.example.test",
+        publishGateStatus: "disabled",
+        credentialConfigured: false
+      });
+
+      assert.equal(payload.status, "PREPARED");
+      assert.equal(payload.postStatus, "draft");
+      assert.equal(payload.postStatus, WORDPRESS_DRAFT_POST_STATUS);
+      assert.equal(payload.externalPostId, null);
+      assert.equal(payload.externalEditUrl, null);
+      assert.equal(payload.title, "Puriva SEO Article: Recovery & Wellness");
+      assert.equal(payload.body, "Draft body for admin review.");
+      assert.equal(payload.content, "Draft body for admin review.");
+      assert.equal(payload.excerpt, "Short summary.");
+      assert.equal(payload.slug, "puriva-seo-article-recovery-wellness");
+      assert.equal(payload.sourceId, "deliverable-42");
+      assert.equal(payload.deliverableId, "deliverable-42");
+      assert.deepEqual(payload.categories, ["Wellness", "Recovery"]);
+      assert.deepEqual(payload.tags, ["puriva", "seo"]);
+      assert.equal(payload.featuredImagePlaceholder, "assets/hero-placeholder.png");
+      assert.match(payload.note, /Local WordPress draft payload only/);
+
+      const serialized = JSON.stringify(payload);
+      assert.equal(serialized.includes('"publish"'), false);
+      assert.equal(serialized.includes('"future"'), false);
+      assert.equal(serialized.includes('"pending"'), false);
+      assert.notEqual(String(payload.postStatus), "publish");
     });
 
-    assert.equal(payload.status, "PREPARED");
-    assert.equal(payload.postStatus, "draft");
-    assert.equal(payload.externalPostId, null);
-    assert.equal(payload.externalEditUrl, null);
-    assert.equal(payload.title, "Puriva SEO Article: Recovery & Wellness");
-    assert.equal(payload.body, "Draft body for admin review.");
-    assert.equal(payload.excerpt, "Short summary.");
-    assert.equal(payload.slug, "puriva-seo-article-recovery-wellness");
-    assert.match(payload.note, /Local WordPress draft payload only/);
-    assert.equal(JSON.stringify(payload).includes("publish\""), false);
-    assert.equal(JSON.stringify(payload).includes("future\""), false);
-    assert.equal(JSON.stringify(payload).includes("pending\""), false);
+    it("maps accepted image candidates into featured placeholder via inclusion contract", () => {
+      const payload = buildAiDeliveryWordPressDraftPayload({
+        title: "Image mapped draft",
+        body: "Body",
+        sourceType: "CONTENT_DRAFT",
+        sourceId: "content-draft-1",
+        imageCandidates: [
+          { slot: "hero", acceptance: "accepted", reference: "hero-ref" },
+          { slot: "supporting_1", acceptance: "accepted", reference: "s1-ref" },
+          { slot: "social_preview", acceptance: "accepted", reference: "og-ref" }
+        ],
+        publishGateStatus: "disabled",
+        credentialConfigured: false
+      });
+
+      assert.equal(payload.featuredImagePlaceholder, "hero-ref");
+      assert.equal(payload.imageInclusion.featuredImagePlaceholder, "hero-ref");
+      assert.deepEqual(payload.imageInclusion.supportingImagePlaceholders, ["s1-ref"]);
+      assert.equal(payload.imageInclusion.socialPreviewPlaceholder, "og-ref");
+      assert.equal(payload.deliverableId, null);
+    });
+  });
+
+  describe("G183 draft status freeze guard", () => {
+    it("resolves only draft status and rejects publish status drift", () => {
+      assert.equal(resolveWordPressDraftPostStatus(), "draft");
+      assert.equal(isWordPressDraftStatusFrozen(), true);
+      assert.doesNotThrow(() => assertWordPressDraftStatusFrozen({ postStatus: "draft" }));
+      assert.throws(
+        () => assertWordPressDraftStatusFrozen({ postStatus: "publish" }),
+        /status freeze violated/
+      );
+    });
+
+    it("ensures no local draft-prep helper assigns publish status in source", () => {
+      const source = readFileSync(serviceSourcePath, "utf8");
+      const builderStart = source.indexOf("export function buildAiDeliveryWordPressDraftPayload");
+      const builderEnd = source.indexOf("export function isAiDeliveryWordPressPublishFrozen");
+      assert.ok(builderStart >= 0 && builderEnd > builderStart);
+      const builderBody = source.slice(builderStart, builderEnd);
+      assert.equal(builderBody.includes('postStatus: "publish"'), false);
+      assert.equal(builderBody.includes('postStatus: "pending"'), false);
+      assert.equal(builderBody.includes('postStatus: "future"'), false);
+      assert.match(builderBody, /resolveWordPressDraftPostStatus\(\)/);
+    });
   });
 
   it("keeps publish frozen before any live WordPress HTTP can run", async () => {
@@ -93,12 +163,6 @@ describe("wordpress.service", () => {
       updatedAt: new Date("2026-07-10T00:00:00.000Z"),
       applicationPassword: rawCredential,
       ciphertext: "ciphertext-blob"
-    } as {
-      configured: boolean;
-      encryptionAvailable: boolean;
-      updatedAt: Date;
-      applicationPassword: string;
-      ciphertext: string;
     });
 
     const serialized = JSON.stringify(shape);
@@ -134,5 +198,8 @@ describe("wordpress.service", () => {
     assert.equal(WORDPRESS_TEST_DRAFT_ROLLBACK_PLAN.allowedStatus, "draft");
     assert.equal(WORDPRESS_TEST_DRAFT_ROLLBACK_PLAN.restorePublishEnv, "WORDPRESS_PUBLISH_ENABLED=false");
     assert.ok(WORDPRESS_TEST_DRAFT_ROLLBACK_PLAN.evidenceRequired.includes("cleanupActionAndTimestamp"));
+    assert.ok(WORDPRESS_TEST_DRAFT_ROLLBACK_PLAN.steps.includes("create_draft"));
+    assert.ok(WORDPRESS_TEST_DRAFT_ROLLBACK_PLAN.steps.includes("delete_or_trash_draft"));
+    assert.ok(WORDPRESS_TEST_DRAFT_ROLLBACK_PLAN.steps.includes("no_publish"));
   });
 });

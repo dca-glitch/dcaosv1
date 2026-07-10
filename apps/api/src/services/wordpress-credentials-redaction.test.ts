@@ -1,0 +1,68 @@
+import assert from "node:assert/strict";
+import { describe, it } from "node:test";
+import {
+  assertWordPressCredentialsNeverSerialize,
+  redactWordPressCredentialMetadata,
+  redactWordPressCredentialShape,
+  redactWordPressSerializableValue
+} from "./wordpress-credentials-redaction";
+
+describe("wordpress-credentials-redaction (G184)", () => {
+  it("redacts credential policy shape to presence flags only", () => {
+    const raw = "wp-app-password-plain";
+    const shape = redactWordPressCredentialShape({
+      configured: true,
+      encryptionAvailable: true,
+      updatedAt: new Date("2026-07-10T00:00:00.000Z"),
+      applicationPassword: raw,
+      ciphertext: "ciphertext-blob",
+      token: "secret-token"
+    });
+
+    const serialized = JSON.stringify(shape);
+    assert.deepEqual(shape, {
+      configured: true,
+      encryptionAvailable: true,
+      updatedAt: "2026-07-10T00:00:00.000Z"
+    });
+    assert.equal(serialized.includes(raw), false);
+    assert.equal(serialized.includes("applicationPassword"), false);
+    assert.equal(serialized.includes("ciphertext"), false);
+    assert.equal(serialized.includes("token"), false);
+    assert.equal(assertWordPressCredentialsNeverSerialize(shape), true);
+  });
+
+  it("redacts metadata to host and presence only", () => {
+    const metadata = redactWordPressCredentialMetadata({
+      credentialsPresent: true,
+      siteUrl: "https://example.test/client-blog/path?token=do-not-serialize",
+      applicationPassword: "must-not-appear"
+    });
+
+    const serialized = JSON.stringify(metadata);
+    assert.deepEqual(metadata, {
+      credentialsPresent: true,
+      siteUrlHost: "example.test"
+    });
+    assert.equal(serialized.includes("do-not-serialize"), false);
+    assert.equal(serialized.includes("must-not-appear"), false);
+    assert.equal(serialized.includes("client-blog"), false);
+  });
+
+  it("strips credential keys from nested serializable values", () => {
+    const redacted = redactWordPressSerializableValue({
+      ok: true,
+      nested: {
+        applicationPassword: "raw-secret",
+        ciphertext: "blob",
+        label: "staging"
+      }
+    });
+
+    const serialized = JSON.stringify(redacted);
+    assert.equal(serialized.includes("raw-secret"), false);
+    assert.equal(serialized.includes("applicationPassword"), false);
+    assert.equal(serialized.includes("ciphertext"), false);
+    assert.equal((redacted as { nested: { label: string } }).nested.label, "staging");
+  });
+});

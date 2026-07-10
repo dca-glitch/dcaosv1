@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { formatApprovalDate, parseClientPortalHash } from "./client-portal-api";
+import {
+  formatApprovalDate,
+  parseClientPortalHash,
+  toClientPortalUiSafeErrorMessage
+} from "./client-portal-api";
 
 describe("parseClientPortalHash", () => {
   it("parses archive as default view", () => {
@@ -11,6 +15,10 @@ describe("parseClientPortalHash", () => {
     expect(parseClientPortalHash("#/client-portal/pending-approvals")).toEqual({
       view: "pending-approvals"
     });
+  });
+
+  it("parses briefs route", () => {
+    expect(parseClientPortalHash("#/client-portal/briefs")).toEqual({ view: "briefs" });
   });
 
   it("parses deliverable approval route", () => {
@@ -29,5 +37,21 @@ describe("formatApprovalDate", () => {
 
   it("falls back to date prefix for invalid values", () => {
     expect(formatApprovalDate("not-a-date-value-here")).toBe("not-a-date");
+  });
+});
+
+describe("toClientPortalUiSafeErrorMessage (G204)", () => {
+  it("keeps short safe messages", () => {
+    expect(toClientPortalUiSafeErrorMessage("Monthly report not found.")).toBe(
+      "Monthly report not found."
+    );
+  });
+
+  it("replaces messages that leak storage keys or stacks", () => {
+    expect(
+      toClientPortalUiSafeErrorMessage(
+        "Failed storageKey=tenants/acme/file.pdf at Object.open (runtime.ts:1:1)"
+      )
+    ).toBe("Request could not be completed.");
   });
 });

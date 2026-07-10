@@ -1,6 +1,6 @@
 # WordPress Draft Proof
 
-**Status:** Draft preparation and guarded handoff proven locally; G110–G114 add local draft-payload, publish-freeze, credential-shape, rollback-constant, and docs closeout coverage. Live draft proof remains **plan-only**; live publish remains frozen. Auto-publish is **not** in scope for this gate. §6 defines a future owner-approved staging-only live draft proof **plan** (title/body/meta, approved-image attach, alt/caption/social preview, idempotency, cleanup marker, disabled-safe mode, owner approval) — no live WordPress call was made to produce this document.
+**Status:** Draft preparation and guarded handoff proven locally; G110–G114 plus G181–G188 add local draft-payload hardening, slug policy, draft-status freeze, credential redaction, live-proof plan constants, image-inclusion contract, docs closeout, and focused unit tests. Live draft proof remains **plan-only**; live publish remains frozen. Auto-publish is **not** in scope for this gate. §6 defines a future owner-approved staging-only live draft proof **plan** (title/body/meta, approved-image attach, alt/caption/social preview, idempotency, cleanup marker, disabled-safe mode, owner approval) — no live WordPress call was made to produce this document. **Do not claim live WordPress proven.**
 
 **Gate:** Puriva requires WordPress **draft/handoff**; WordPress **auto-publish** remains deferred (see [`docs/operator/deferred-scope-register.md`](../operator/deferred-scope-register.md)).
 
@@ -14,7 +14,7 @@
 
 G86 does not move tier 2 into execution and does not move tier 3 at all.
 
-G110–G114 keep the same three-tier boundary: tier 1 is local draft JSON only, tier 2 is a future owner-approved staging proof plan, and tier 3 publish remains frozen.
+G110–G114 and G181–G188 keep the same three-tier boundary: tier 1 is local draft JSON only, tier 2 is a future owner-approved staging proof plan, and tier 3 publish remains frozen.
 
 Related:
 
@@ -162,7 +162,7 @@ For publish **adapter** proof only (expects HTTP error against non-WP smoke URL)
 
 **Status:** Planning only. This section defines what an owner-approved, staging-only live draft proof session must verify. No live WordPress HTTP call was made to produce this section, and none is authorized by this document. Execution requires a separate approved block per §6.8.
 
-### 6.0 G86 plan at a glance
+### 6.0 G86 / G185 plan at a glance
 
 | Proof area | Required plan decision |
 |---|---|
@@ -170,10 +170,12 @@ For publish **adapter** proof only (expects HTTP error against non-WP smoke URL)
 | No publish | The proof must never create `publish`, `pending`, `future`, or scheduled posts; public front-end visibility is failure. |
 | Credential boundary | Application Password may be used only through approved encrypted credential storage for the named staging target; secrets must not be copied into docs, logs, fixtures, or prepared payloads. |
 | Content inclusion | Title, body, excerpt, slug, categories/tags, SEO/meta fields, and admin-only exclusion must be checked against the prepared payload. |
-| Image inclusion | Only approved deliverable images may be attached; alt text, captions, and social preview must be verified or explicitly recorded as manual-check-only. |
+| Image inclusion | Only approved deliverable images may be attached; alt text, captions, and social preview must be verified or explicitly recorded as manual-check-only. Local contract: accepted `hero` → `featuredImagePlaceholder`; accepted `supporting_1`/`supporting_2` → `supportingImagePlaceholders`; accepted `social_preview` → `socialPreviewPlaceholder` (`wordpress-image-inclusion.ts`). No live media call in this gate. |
 | Rollback/delete | The draft must carry a proof marker, record post ID/edit URL, and be moved to Trash or permanently deleted before session close-out. |
 | Staging/prod boundary | Staging/disposable target only; no Puriva production WordPress or client production site. |
 | Puriva launch relevance | Confirms future WordPress confidence path; does not expand Puriva launch beyond draft/handoff and final archive. |
+
+**G185 plan constants (code, no HTTP):** `WORDPRESS_LIVE_DRAFT_PROOF_STEPS` = `create_draft` → `verify_draft` → `delete_or_trash_draft` → `no_publish` → `rollback_publish_env` in `apps/api/src/services/wordpress-draft-proof-plan.ts` (re-exported from `wordpress.service.ts`).
 
 ### 6.1 Scope confirmation (draft only, never publish)
 
@@ -226,7 +228,7 @@ Verify in the WordPress admin editor that the created draft matches the prepared
   - Title prefix: `[DCA-OS-PROOF-DO-NOT-PUBLISH]`
   - A dedicated draft-only category or tag, e.g. `dca-proof`
   - `PublicationLog.note` records the proof session date and marker used
-- [ ] Code constant parity: `WORDPRESS_TEST_DRAFT_PROOF_MARKER = "[DCA-OS-PROOF-DO-NOT-PUBLISH]"`, `WORDPRESS_TEST_DRAFT_PROOF_TAG = "dca-proof"`, and rollback plan constants live in `apps/api/src/services/wordpress.service.ts`
+- [ ] Code constant parity: `WORDPRESS_TEST_DRAFT_PROOF_MARKER = "[DCA-OS-PROOF-DO-NOT-PUBLISH]"`, `WORDPRESS_TEST_DRAFT_PROOF_TAG = "dca-proof"`, and rollback plan constants live in `apps/api/src/services/wordpress-draft-proof-plan.ts` (re-exported from `wordpress.service.ts`)
 - [ ] Proof close-out step: operator confirms in WordPress admin that the marked draft is moved to **Trash** (or permanently deleted if the site is fully disposable) before ending the session
 - [ ] If deletion/trash fails, restore `WORDPRESS_PUBLISH_ENABLED=false`, revoke/rotate the staging Application Password if necessary, and stop with the draft still marked `[DCA-OS-PROOF-DO-NOT-PUBLISH]` until a human owner resolves cleanup
 - [ ] Evidence log records the WordPress post ID/edit URL and the cleanup action taken (trashed/deleted) with a timestamp
@@ -263,8 +265,9 @@ This document does not itself constitute owner approval. It is the checklist an 
 | 3 | No auto-publish after draft preparation |
 | 4 | No credentials required for or leaked by draft prep |
 | 5 | Client portal boundary smokes omit draft internals |
-| 6 | `apps/api/src/services/wordpress.service.test.ts` PASS for G110–G113 helper invariants |
+| 6 | Focused WordPress unit tests PASS for G181–G188 (draft payload, slug policy, status freeze, credential redaction, proof-plan constants, image inclusion) — no live HTTP |
 | 7 | Operator evidence log archived |
+| 8 | Docs do **not** claim live WordPress proven |
 
 ---
 

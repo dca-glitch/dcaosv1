@@ -4,13 +4,15 @@
 
 **Source of truth:** [`docs/STATUS.md`](../STATUS.md) · [`docs/operator/ENV_READINESS_INVENTORY.md`](../operator/ENV_READINESS_INVENTORY.md) · [`docs/runbooks/EXTERNAL_INTEGRATIONS_READINESS.md`](./EXTERNAL_INTEGRATIONS_READINESS.md) · [`docs/operator/deferred-scope-register.md`](../operator/deferred-scope-register.md) · [`docs/architecture/AI_MODEL_POLICY.md`](../architecture/AI_MODEL_POLICY.md) (AI provider/model policy — provider decisions pending owner approval)
 
-**Rule:** Every row's "Production proof" and "Staging proof" columns reflect actual evidence recorded in `docs/STATUS.md` as of 2026-07-10 (G148 final integration) — not aspirational status. "Not proven" for staging/production means exactly that. G89-G147 added local/no-IO foundations only; no integration claims staging or production live-proven status.
+**Rule:** Every row's "Production proof" and "Staging proof" columns reflect actual evidence recorded in `docs/STATUS.md` as of 2026-07-10 (G228 final integration) — not aspirational status. "Not proven" for staging/production means exactly that. G89-G227 added local/no-IO foundations only; no integration claims staging or production live-proven status.
 
 **G78 docs audit (2026-07-10):** Monthly report metrics and WordPress tier labels refreshed in owned integration docs. Headline confirmations: (1) monthly reports — local baseline is MANUAL/snapshot placeholder (`placeholderOnly: true`); live GA/GSC is config-shape-only with no OAuth/token implementation; (2) WordPress — draft prep local-proven; live draft proof plan-only; publish frozen by default.
 
 **G88 consolidation (2026-07-10):** Correct gate map recorded for G79-G88. G79 is implemented locally for monthly cap aggregation of live `COMPLETED` rows; G80 is policy-only (`actualCostUsd` remains `null` unless trusted provider cost is available); G81-G87 are planning/prep only. No staging/prod live proof, live AI call, email send, Google OAuth/sync, WordPress HTTP call, image-provider call, R2 IO, commit, push, or deploy was performed by this consolidation.
 
 **G148 integration (2026-07-10):** Labels updated for G89-G147 lane outcomes: R2 no-IO readiness/proof stages/storage-key guards, notifications taxonomy/no-send foundation, GA/GSC helper/config foundation, WordPress draft payload + publish-freeze-before-fetch tests, image compliance policy helpers, Client Portal FINAL guards, pack/future-module contracts, AI budget reporting contract, and operator/security docs. Staging and production proof columns remain **Not proven** unless a prior recorded proof explicitly says otherwise.
+
+**G228 integration (2026-07-10):** G149-G227 expanded local foundations (R2 proof-stage/redaction/URL policy, notification taxonomy V2 + persistence design, GA/GSC period/source-truth/output guards, WordPress slug/freeze/redaction/image-inclusion, image approval-loop helpers, Client Portal boundary tests, Puriva pack entitlements, future-module contracts, operator security/inventory/roadmap). **No staging or production proof column changes.** No live provider call, R2 IO, OAuth/sync, WordPress HTTP, email send, image-provider call, staging/prod probe, commit, push, or deploy was performed.
 
 ---
 
@@ -43,6 +45,7 @@
 - **Monthly report metrics tiers (G78, 2026-07-10):** Local Puriva path uses MANUAL/snapshot placeholders (`PURIVA_MANUAL_METRICS_V1_GATE.md`, `placeholderOnly: true`). Live GA/GSC OAuth sync is a separate integration row — config-shape readiness only today; do not represent manual placeholders as live analytics or conflate env-presence with working OAuth.
 - **WordPress credential policy (G78, 2026-07-10):** Block 4 encryption foundation merged — encrypted Application Password save allowed locally; live HTTP and publish remain frozen per updated `WORDPRESS_CREDENTIAL_POLICY_DECISION.md` three-tier model.
 - **G148 consolidation (2026-07-10):** G89-G147 local foundations are integrated, but do not change any staging/production proof column. R2, notifications/email, GA/GSC, WordPress, image generation, Client Portal staging QA, and production launch proofs remain owner-gated.
+- **G228 consolidation (2026-07-10):** G149-G227 local foundations are integrated. Staging/production columns remain **Not proven** for R2, email, GA/GSC, WordPress live draft, image generation, and target-env AI re-proof. Next owner-gated sequence: [`G227_NEXT_30_GATES.md`](../operator/G227_NEXT_30_GATES.md).
 
 ## Do NOT call external provider APIs with credentials
 

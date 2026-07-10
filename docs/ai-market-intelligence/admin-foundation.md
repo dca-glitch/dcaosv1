@@ -258,6 +258,16 @@ An approved MI handoff (READY status) can be attached to an AI Delivery project 
 - Brand-specific models
 - Finance/payment logic
 
+## G217–G218 shared contract alignment
+
+Shared typed contracts (no live scrape / no uncontrolled source ingestion):
+
+- Admin-reviewed source summary requires operator review and forbids uncontrolled scraping.
+- Client-safe summary exposes only title, market summary, opportunities, recommended actions, status, and a non-live source label.
+- Forbidden on client-safe payloads: `tenantId`, `storageKey`, `executionLog`, `reviewerNotes`, `resultData`, `sourceUrl`, `sourceNotes`, `confidenceNotes`, `provider`, `prompt`, `rawFindings`, `researchRunId`, `insightId`.
+
+Proof coverage lives in `packages/shared/src/future-module-contracts.proof.ts` and Puriva unit tests. This does **not** claim new live crawl, provider, or production readiness.
+
 ## Future Phases
 
 Potential enhancements for future consideration:

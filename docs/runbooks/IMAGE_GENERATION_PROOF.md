@@ -321,3 +321,67 @@ Stop and do not claim image generation ready if:
 **G118:** Pure image approval-loop event map added for admin/client approve/reject and replacement lifecycle events. Reject-like actions are marked as requiring a reject reason; the map has no side effects.
 
 **G119:** Runbook closeout recorded here. `npm.cmd run -w @dca-os-v1/api test:unit` passed locally (276/276). `npm.cmd run -w @dca-os-v1/api check` passed all scripted API checks, then stopped at `tsc --noEmit` on unrelated `apps/api/src/core/client-operating-packs.test.ts` type errors outside this block (`TS2367`, `TS2339`). Live provider proof remains explicitly out of scope.
+
+---
+
+## 9. G189–G198 image compliance / approval-loop / proof-plan closeout (2026-07-10)
+
+**Scope:** Pure image policy helpers only. No live image generation, no provider SDK/client, no HTTP call, no storage write, no schema change, no edits to `packages/shared/src/notification-events.ts` or `notifications/notification-events.ts`.
+
+**Files added/changed (image lane exclusive ownership):**
+
+| File | Role |
+|------|------|
+| `apps/api/src/core/image-compliance-policy.ts` | G189 hardening + G192 reject-reason contexts |
+| `apps/api/src/core/image-compliance-policy.test.ts` | Focused G189/G192 tests |
+| `apps/api/src/core/image-prompt-profile.ts` | G190 prompt profile validator (new) |
+| `apps/api/src/core/image-prompt-profile.test.ts` | G190 tests |
+| `apps/api/src/core/image-alt-text-policy.ts` | G191 alt text policy (new) |
+| `apps/api/src/core/image-alt-text-policy.test.ts` | G191 tests |
+| `apps/api/src/core/image-approval-loop.ts` | G193 approval-loop state machine (new) |
+| `apps/api/src/core/image-approval-loop.test.ts` | G193 tests |
+| `apps/api/src/core/image-notification-mapping.ts` | G194 state→notification mapping (new) |
+| `apps/api/src/core/image-notification-mapping.test.ts` | G194 tests |
+| `apps/api/src/core/image-wordpress-inclusion.ts` | G195 WP inclusion readiness (new) |
+| `apps/api/src/core/image-wordpress-inclusion.test.ts` | G195 tests |
+| `apps/api/src/core/image-provider-proof-plan.ts` | G196 typed no-live proof plan (new) |
+| `apps/api/src/core/image-provider-proof-plan.test.ts` | G196 tests |
+| `docs/runbooks/IMAGE_GENERATION_PROOF.md` | G197 closeout (this section) |
+
+**Per-gate summary:**
+
+| Gate | Result |
+|------|--------|
+| **G189** | Compliance helper hardened: rejects before/after, syringes/procedure, fake doctor, fake patient, body transformation, guaranteed results; allows neutral wellness, clinic ambience without procedure, product-neutral lifestyle. Policy version `IMAGE_COMPLIANCE_POLICY_V2`. |
+| **G190** | Prompt profile validator for `hero`, `supporting_inline`, `social_preview`, `service_specific` with profile IDs, aspect ratios, forbidden elements, and required alt text. |
+| **G191** | Alt text policy: no medical claims, no before/after implication, descriptive neutral, not keyword-stuffed; blocks provider/prompt leaks. |
+| **G192** | Reject reason required for `admin_reject`, `client_reject`, and `replacement_generation` contexts; `other` still requires a note. |
+| **G193** | Pure approval-loop states: `candidate_generated`, `admin_approved`, `admin_rejected`, `client_approved`, `client_rejected`, `replacement_requested`, `final_accepted`. No DB. |
+| **G194** | Maps state changes to notification events using existing taxonomy where present; needed missing names listed below (string literals only — taxonomy file not edited). |
+| **G195** | WordPress inclusion readiness: only `final_accepted` + roles `hero` / `supporting` / `social` + alt text (social also needs preview asset). |
+| **G196** | Typed provider proof plan: provider selection → no-live preflight → one live generation later (out of scope) → compliance review → reject/cleanup. `liveProviderCallsInThisBlock: false`. |
+| **G197** | This runbook closeout. |
+| **G198** | Focused unit tests for all new/updated image policy modules (no live provider). |
+
+**G194 — existing notification events used (from `packages/shared/src/notification-events.ts`):**
+
+- `image_set_ready_for_client_review` (admin approve → client review)
+- `client_image_approved`
+- `client_image_rejected`
+- `admin_action_required` (fallback for unmapped admin-action paths)
+
+**G194 — needed notification event names (notifications lane should add; image lane uses matching string literals):**
+
+- `image_candidate_generated`
+- `image_admin_rejected`
+- `image_replacement_requested`
+- `image_final_accepted`
+
+**Proposed main-doc bullets (for main-owned docs — not edited here):**
+
+- Image compliance policy V2 hardens medical-aesthetic exclusions and allowed wellness/lifestyle direction.
+- Approval-loop states through `final_accepted` gate WordPress inclusion readiness.
+- Notification taxonomy should add the four image lifecycle events listed above.
+- Provider proof remains no-live until owner-approved Phase D; Firefly direction unchanged.
+
+**Validation:** focused image unit tests only (see agent return). Live provider proof remains explicitly out of scope.

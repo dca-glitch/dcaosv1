@@ -1,6 +1,6 @@
 # WordPress Prepared Draft Foundation
 
-**Status:** WordPress prepared draft API, UI, smoke coverage, and G110 local payload-builder tests are complete locally. **Live draft proof** (real WordPress HTTP) remains plan-only, and **publish** remains frozen.
+**Status:** WordPress prepared draft API, UI, smoke coverage, G110 local payload-builder tests, and G181–G188 local hardening (slug policy, draft-status freeze, credential redaction, image-inclusion contract, proof-plan constants) are complete locally. **Live draft proof** (real WordPress HTTP) remains plan-only — **not proven** — and **publish** remains frozen.
 
 **Three tiers (do not conflate):**
 
@@ -112,7 +112,11 @@ SEO plan -> AI Delivery content draft -> image/asset package -> compliance revie
 **Test Files:**
 - `scripts/smoke-ai-delivery-reviews-local.mjs` — WordPress draft API smoke tests
 - `scripts/smoke-ui-ai-delivery.mjs` or equivalent — WordPress draft UI smoke tests
-- `apps/api/src/services/wordpress.service.test.ts` — G110 local draft payload builder tests (`postStatus: draft` only)
+- `apps/api/src/services/wordpress.service.test.ts` — G181/G183 draft payload + status freeze tests (`postStatus: draft` only)
+- `apps/api/src/services/wordpress-slug-policy.test.ts` — G182 slug normalize
+- `apps/api/src/services/wordpress-credentials-redaction.test.ts` — G184 credential redaction
+- `apps/api/src/services/wordpress-draft-proof-plan.test.ts` — G185 live proof plan constants (no HTTP)
+- `apps/api/src/services/wordpress-image-inclusion.test.ts` — G186 accepted image → draft placeholder mapping
 
 ---
 

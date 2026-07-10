@@ -1,5 +1,7 @@
 # G138 Security Checklist Refresh
 
+**Superseded for post-G148 operator use by:** [`SECURITY_CHECKLIST_G223.md`](./SECURITY_CHECKLIST_G223.md). Keep this file as the G138 historical record.
+
 **Status:** Docs-only security checklist refresh for DCA OS Lite G138. No live calls, no secret reads, no staging or production mutation, no commit, and no deploy were performed while producing this document.
 
 **Scope:** Current local/admin MVP, staging-readiness posture, production-readiness posture, and Puriva Launch blockers. This checklist intentionally records evidence status; it does not move any blocker to PASS without recorded proof in the source-of-truth docs.

@@ -1,6 +1,6 @@
 # Email Notifications Backend Foundation Contract
 
-Status: EN1 backend notification scaffolding is complete. EN2 now includes a schema-free platform AuditLog writer foundation. Real provider sending remains inactive.
+Status: EN1 backend notification scaffolding is complete. EN2 now includes a schema-free platform AuditLog writer foundation. G159–G170 expanded the pure notification taxonomy, recipient/channel/severity policy, payload redaction, typed template catalog, and no-send adapter edge coverage. Real provider sending remains inactive. No in-system notification DB model exists yet (design only — see `docs/operator/notification-persistence-design.md`).
 
 ## Purpose
 
@@ -30,7 +30,7 @@ EMAIL_PROVIDER=resend
 
 ## Template keys
 
-Only these template keys are part of the EN1 contract:
+Only these **schema** template keys are part of the EN1 contract (Prisma `EmailTemplateKey`):
 
 - `CLIENT_INVITE`
 - `PASSWORD_RESET`
@@ -38,6 +38,18 @@ Only these template keys are part of the EN1 contract:
 - `AI_DELIVERY_REVIEW_REQUEST`
 - `AI_DELIVERY_APPROVED`
 - `INVOICE_ISSUED`
+
+G166 adds a **typed logical catalog** in `packages/shared/src/notification-events.ts` (`TYPED_NOTIFICATION_TEMPLATE_CATALOG`) for:
+
+- `CLIENT_APPROVAL_REQUIRED`
+- `CONTENT_CHANGES_REQUESTED`
+- `IMAGE_REPLACEMENT_READY`
+- `MONTHLY_REPORT_AVAILABLE`
+- `WORDPRESS_DRAFT_PREPARED`
+- `INTEGRATION_PROOF_FAILED`
+- `BUDGET_CAP_BLOCKED`
+
+Those typed keys are **not** schema enum values. Until a schema gate adds dedicated keys, they map onto the existing schema keys above (typically `AI_DELIVERY_REVIEW_REQUEST` or `AI_DELIVERY_BRIEF_REQUEST`). Do not claim dedicated template keys exist in the database.
 
 ## Email log persistence
 
@@ -108,6 +120,21 @@ Local proof completed with a reversible module action:
 - `EmailLog` rows created during the proof: `0`
 - no provider/send path was triggered
 
+## G159–G170 pure notification foundation (no persistence)
+
+Shared module `packages/shared/src/notification-events.ts` (version `NOTIFICATION_EVENTS_V2`) provides:
+
+- Expanded `NotificationEventType` taxonomy (content/image/approval/report/integration/budget/storage/WordPress events, plus legacy G94–G102 aliases)
+- Recipient policy helper: admin / client / owner-operator / system-log-only
+- Channel policy: in-system required; email for launch-critical non-audit events; audit-only for internal proof; local no-send
+- Severity scale: `info` / `action_required` / `warning` / `blocked` / `critical`
+- Payload redaction helper excluding secrets, `storageKey`, raw provider responses, OAuth tokens, stack traces, private audit metadata
+- Typed template catalog mapped onto schema-safe keys
+
+API module `apps/api/src/notifications/email-no-send-adapter.ts` records skipped attempts only — no provider call, no API key required.
+
+Persistence / inbox API design (docs only): `docs/operator/notification-persistence-design.md`.
+
 ## Explicit exclusions
 
 EN1 does not include:
@@ -126,3 +153,4 @@ EN1 does not include:
 - cron or scheduled jobs
 - real provider delivery from EN2 audit events
 - VPS/deploy changes
+- in-system notification DB model or inbox API implementation (design only as of G167–G168)

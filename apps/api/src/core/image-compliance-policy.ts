@@ -5,11 +5,15 @@
  * These helpers screen prompt/output concepts, define prompt profile metadata,
  * validate structured rejection reasons, and map approval-loop actions to
  * internal events before any future live image provider proof is considered.
+ *
+ * G189 hardening covers: before/after, syringes/procedure, fake doctor, fake
+ * patient, body transformation, guaranteed results — while allowing neutral
+ * wellness, clinic ambience without procedure, and product-neutral lifestyle.
  */
 
 import type { ImageGenerationVariantSlot } from "./image-generation.execution";
 
-export const IMAGE_COMPLIANCE_POLICY_VERSION = "IMAGE_COMPLIANCE_POLICY_V1";
+export const IMAGE_COMPLIANCE_POLICY_VERSION = "IMAGE_COMPLIANCE_POLICY_V2";
 
 export const IMAGE_COMPLIANCE_REJECT_CODES = [
   "before_after_risk",
@@ -72,24 +76,37 @@ const POLICY_RULES: Array<{
     code: "before_after_risk",
     matchedRule: "no_before_after_or_transformation_framing",
     pattern:
-      /\b(before\s*\/?\s*after|before[-\s]?and[-\s]?after|split[-\s]?screen|transformation|result timeline|measurement comparison|after treatment)\b/i
+      /\b(before\s*\/?\s*after|before[-\s]?and[-\s]?after|split[-\s]?screen|result timeline|measurement comparison|after treatment|side[-\s]?by[-\s]?side comparison)\b/i
+  },
+  {
+    code: "before_after_risk",
+    matchedRule: "no_body_transformation_framing",
+    pattern:
+      /\b(body\s+transformation|dramatic\s+transformation|glow[-\s]?up|makeover\s+result|transformation\s+(?:shot|photo|image|visual|timeline))\b/i
   },
   {
     code: "fake_clinician_or_patient_risk",
-    matchedRule: "no_fake_doctors_patients_or_testimonials",
+    matchedRule: "no_fake_doctors_or_clinicians",
     pattern:
-      /\b(fake\s+doctor|doctor in|doctor with|nurse in|clinician in|patient testimonial|patient review|happy patient|named patient|lab coat|medical badge)\b/i
+      /\b(fake\s+doctor|doctor in|doctor with|nurse in|clinician in|lab coat|medical badge|white coat doctor|posed\s+doctor|stock\s+doctor)\b/i
+  },
+  {
+    code: "fake_clinician_or_patient_risk",
+    matchedRule: "no_fake_patients_or_testimonials",
+    pattern:
+      /\b(fake\s+patient|patient testimonial|patient review|happy patient|named patient|satisfied patient|patient endorsement|real patient story)\b/i
   },
   {
     code: "procedure_or_device_risk",
-    matchedRule: "no_procedure_or_clinical_staging",
-    pattern: /\b(injection|injecting|syringe|needle|laser procedure|surgical|operation|clinical procedure|treatment chair)\b/i
+    matchedRule: "no_syringe_or_procedure_staging",
+    pattern:
+      /\b(injection|injecting|syringe|needle|cannula|laser procedure|surgical|operation|clinical procedure|treatment chair|procedure room staging|iv drip)\b/i
   },
   {
     code: "treatment_result_risk",
-    matchedRule: "no_treatment_result_or_outcome_claim",
+    matchedRule: "no_guaranteed_or_outcome_claim",
     pattern:
-      /\b(clearer skin after|after treatment|guaranteed improvement|visible results?|weight[-\s]?loss result|pain reduction|recovery claim|body change|cure|healed)\b/i
+      /\b(guaranteed\s+results?|guaranteed\s+improvement|clearer skin after|visible results?|weight[-\s]?loss result|pain reduction|recovery claim|body change|cure|healed|proven results?|instant results?)\b/i
   },
   {
     code: "likeness_consent_risk",
@@ -103,6 +120,13 @@ const POLICY_RULES: Array<{
   }
 ];
 
+/** Phrases that should remain allowed when no hard-exclusion rule matches. */
+export const IMAGE_COMPLIANCE_ALLOWED_DIRECTION_EXAMPLES = [
+  "neutral wellness composition with soft skincare textures",
+  "calm clinic ambience without procedure staging",
+  "product-neutral lifestyle self-care moment"
+] as const;
+
 export function evaluateImageCompliancePolicy(
   input: ImageComplianceReviewInput
 ): ImageCompliancePolicyDecision {
@@ -114,12 +138,26 @@ export function evaluateImageCompliancePolicy(
     matchedRule: rule.matchedRule
   }));
 
+  // Deduplicate by code+matchedRule while preserving order
+  const seen = new Set<string>();
+  const uniqueFindings = findings.filter((finding) => {
+    const key = `${finding.code}:${finding.matchedRule}`;
+    if (seen.has(key)) {
+      return false;
+    }
+    seen.add(key);
+    return true;
+  });
+
   return {
     version: IMAGE_COMPLIANCE_POLICY_VERSION,
     stage: input.stage,
-    allowed: findings.length === 0,
-    findings,
-    checks: findings.length > 0 ? findings.map((finding) => `REJECT:${finding.code}`) : ["ALLOW:neutral_wellness_context"]
+    allowed: uniqueFindings.length === 0,
+    findings: uniqueFindings,
+    checks:
+      uniqueFindings.length > 0
+        ? uniqueFindings.map((finding) => `REJECT:${finding.code}`)
+        : ["ALLOW:neutral_wellness_context"]
   };
 }
 
@@ -152,7 +190,9 @@ export function buildImagePromptProfile(slot: ImageGenerationVariantSlot): Image
         "neutral wellness context",
         "clinic-adjacent environment without identifiable clinicians or patients",
         "premium skincare editorial lighting",
-        "abstract skin-health or self-care composition"
+        "abstract skin-health or self-care composition",
+        "product-neutral lifestyle context",
+        "clinic ambience without procedure staging"
       ]
     },
     forbidden: [
@@ -177,10 +217,14 @@ export function buildImagePromptProfile(slot: ImageGenerationVariantSlot): Image
   };
 }
 
+export type ImageRejectReasonContext = "admin_reject" | "client_reject" | "replacement_generation";
+
 export type ImageRejectReasonValidationInput = {
   reasonCode?: ImageComplianceRejectCode | null;
   note?: string | null;
   submittedBy: "admin" | "client";
+  /** G192: reject context — admin reject, client reject, or replacement generation. */
+  context?: ImageRejectReasonContext;
 };
 
 export type ValidatedImageRejectReason = {
@@ -188,17 +232,34 @@ export type ValidatedImageRejectReason = {
   label: string;
   note: string | null;
   submittedBy: "admin" | "client";
+  context: ImageRejectReasonContext;
 };
 
 export type ImageRejectReasonValidation =
   | { ok: true; reason: ValidatedImageRejectReason }
   | { ok: false; error: string };
 
+function resolveRejectContext(input: ImageRejectReasonValidationInput): ImageRejectReasonContext {
+  if (input.context) {
+    return input.context;
+  }
+  return input.submittedBy === "client" ? "client_reject" : "admin_reject";
+}
+
+/**
+ * G192 — Structured reject reason is mandatory for admin reject, client reject,
+ * and replacement generation. `other` additionally requires a free-text note.
+ */
 export function validateMandatoryImageRejectReason(
   input: ImageRejectReasonValidationInput
 ): ImageRejectReasonValidation {
+  const context = resolveRejectContext(input);
+
   if (!input.reasonCode) {
-    return { ok: false, error: "Structured image reject reason is required." };
+    return {
+      ok: false,
+      error: `Structured image reject reason is required for ${context.replace(/_/g, " ")}.`
+    };
   }
 
   if (!IMAGE_COMPLIANCE_REJECT_CODES.includes(input.reasonCode)) {
@@ -210,13 +271,21 @@ export function validateMandatoryImageRejectReason(
     return { ok: false, error: "Free-text note is required when image reject reason is other." };
   }
 
+  if (context === "replacement_generation" && input.submittedBy !== "admin") {
+    return {
+      ok: false,
+      error: "Replacement generation reject reason must be submitted by admin."
+    };
+  }
+
   return {
     ok: true,
     reason: {
       reasonCode: input.reasonCode,
       label: IMAGE_COMPLIANCE_REJECT_LABEL[input.reasonCode],
       note,
-      submittedBy: input.submittedBy
+      submittedBy: input.submittedBy,
+      context
     }
   };
 }

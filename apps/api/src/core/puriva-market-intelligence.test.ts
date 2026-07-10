@@ -2,10 +2,14 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
   buildPurivaMarketIntelligenceContext,
+  buildPurivaMiAdminSourceLabels,
+  buildPurivaMiClientSafeSummary,
   buildPurivaWorkflowBriefFoundationInput,
+  findForbiddenPurivaMiClientSafeFields,
   findUnsafeApprovedPhrasesInMarketIntelligence,
   isPurivaMarketIntelligenceBriefAttachment,
   PURIVA_MARKET_INTELLIGENCE_VERSION,
+  PURIVA_MI_SOURCE_LABEL,
   validatePurivaMarketIntelligenceContext,
   workflowBriefFoundationMatches
 } from "./puriva-market-intelligence";
@@ -80,5 +84,38 @@ describe("puriva-market-intelligence", () => {
     assert.equal(workflowBriefFoundationMatches(second), true);
     assert.equal(isPurivaMarketIntelligenceBriefAttachment(first.marketIntelligence), true);
     assert.equal(mi.serviceCategorySummaries.length, PURIVA_REQUIRED_SERVICE_CATEGORY_IDS.length);
+  });
+
+  it("labels admin sources as operator-reviewed placeholders without live-crawl implication", () => {
+    const labels = buildPurivaMiAdminSourceLabels();
+
+    assert.ok(labels.length >= 1);
+    for (const entry of labels) {
+      assert.equal(entry.label.kind, "operator_reviewed_placeholder");
+      assert.equal(entry.label.liveCrawlImplied, false);
+      assert.equal(entry.label.marketplaceLookupImplied, false);
+      assert.equal(entry.label.displayLabel, PURIVA_MI_SOURCE_LABEL.displayLabel);
+      assert.ok(entry.sourceUrl.includes("example.com"));
+    }
+  });
+
+  it("builds client-safe MI summary without forbidden internal fields", () => {
+    const summary = buildPurivaMiClientSafeSummary();
+    const asRecord = summary as unknown as Record<string, unknown>;
+    const forbidden = findForbiddenPurivaMiClientSafeFields({
+      ...asRecord,
+      tenantId: "leak",
+      sourceUrl: "https://example.invalid",
+      competitorPlaceholders: []
+    });
+
+    assert.equal(summary.adminReviewed, true);
+    assert.equal(summary.rawInternalsExposed, false);
+    assert.equal(summary.liveCrawlImplied, false);
+    assert.equal(summary.sourceLabel.liveCrawlImplied, false);
+    assert.ok(forbidden.includes("tenantId"));
+    assert.ok(forbidden.includes("sourceUrl"));
+    assert.ok(forbidden.includes("competitorPlaceholders"));
+    assert.equal(findForbiddenPurivaMiClientSafeFields(asRecord).length, 0);
   });
 });

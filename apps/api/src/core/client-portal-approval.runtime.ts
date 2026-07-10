@@ -1,6 +1,7 @@
 import { createPrismaClient } from "../../../../packages/data/src/client";
 import type { AuthResolvedSessionContext } from "../auth/types";
 import { notifyClientUsers, notifyDcaTeam } from "../services/email-notifications.service";
+import { evaluateClientPortalApprovalAction } from "./client-portal-approval-policy";
 
 const prisma = createPrismaClient();
 
@@ -90,12 +91,18 @@ async function getDeliverableForClientApproval(tenantId: string, deliverableId: 
   });
 }
 
-function toPendingApprovalSummary(deliverable: {
+/** Client-safe pending-approval list row (G201). Internal workflow/storage/cost fields are never included. */
+export function toClientPortalPendingApprovalSummary(deliverable: {
   id: string;
   title: string;
   status: string;
-  createdAt: Date;
-  aiDeliveryProject: { id: string; name: string; clientId: string; client: { id: string; name: string } | null };
+  createdAt: Date | string;
+  aiDeliveryProject: {
+    id: string;
+    name: string;
+    clientId: string;
+    client: { id: string; name: string } | null;
+  };
 }) {
   return {
     id: deliverable.id,
@@ -105,7 +112,66 @@ function toPendingApprovalSummary(deliverable: {
     projectName: deliverable.aiDeliveryProject.name,
     clientId: deliverable.aiDeliveryProject.clientId,
     clientName: deliverable.aiDeliveryProject.client?.name ?? null,
-    createdAt: deliverable.createdAt.toISOString()
+    createdAt:
+      deliverable.createdAt instanceof Date
+        ? deliverable.createdAt.toISOString()
+        : deliverable.createdAt
+  };
+}
+
+/** @deprecated Use toClientPortalPendingApprovalSummary */
+const toPendingApprovalSummary = toClientPortalPendingApprovalSummary;
+
+/** Client-safe approval detail payload (G201). Omits storageKey, provider, workflow, cost, audit, admin notes. */
+export function toClientPortalApprovalDeliverableSummary(input: {
+  id: string;
+  title: string;
+  description: string | null;
+  tags: string[];
+  category: string | null;
+  scheduledPublishAt: Date | string | null;
+  status: string;
+  bodyContent: string;
+  projectId: string;
+  projectName: string;
+  clientId: string;
+  clientName: string | null;
+  createdAt: Date | string;
+  images: Array<{
+    id: string;
+    title: string;
+    altText: string;
+    imageUrl: string | null;
+    approvalStatus: string;
+    rejectionReason: string | null;
+  }>;
+}) {
+  return {
+    id: input.id,
+    title: input.title,
+    description: input.description,
+    tags: input.tags,
+    category: input.category,
+    scheduledPublishAt:
+      input.scheduledPublishAt instanceof Date
+        ? input.scheduledPublishAt.toISOString()
+        : (input.scheduledPublishAt ?? null),
+    status: input.status,
+    bodyContent: input.bodyContent,
+    projectId: input.projectId,
+    projectName: input.projectName,
+    clientId: input.clientId,
+    clientName: input.clientName,
+    createdAt:
+      input.createdAt instanceof Date ? input.createdAt.toISOString() : input.createdAt,
+    images: input.images.map((image) => ({
+      id: image.id,
+      title: image.title,
+      altText: image.altText,
+      imageUrl: image.imageUrl,
+      approvalStatus: image.approvalStatus,
+      rejectionReason: image.rejectionReason
+    }))
   };
 }
 
@@ -225,22 +291,22 @@ export async function getClientPortalDeliverableForApproval(
     "";
 
   return {
-    deliverable: {
+    deliverable: toClientPortalApprovalDeliverableSummary({
       id: deliverable.id,
       title: deliverable.title,
       description: deliverable.description ?? null,
       tags: deliverable.tags ?? [],
       category: deliverable.category ?? null,
-      scheduledPublishAt: deliverable.scheduledPublishAt?.toISOString() ?? null,
+      scheduledPublishAt: deliverable.scheduledPublishAt,
       status: deliverable.status,
       bodyContent,
       projectId: deliverable.aiDeliveryProject.id,
       projectName: deliverable.aiDeliveryProject.name,
       clientId: deliverable.aiDeliveryProject.clientId,
       clientName: deliverable.aiDeliveryProject.client?.name ?? null,
-      createdAt: deliverable.createdAt.toISOString(),
+      createdAt: deliverable.createdAt,
       images
-    }
+    })
   };
 }
 
@@ -317,16 +383,21 @@ export async function rejectClientPortalDeliverableImage(
   const tenantId = getActiveTenantId(authSession);
   if (!tenantId || !isClientPortalApprovalUser(authSession)) return null;
 
-  const reason = rejectionReason.trim();
-  if (!reason) return null;
-
   const deliverable = await getDeliverableForClientApproval(tenantId, deliverableId);
-  if (!deliverable || deliverable.status !== "PENDING_CLIENT_REVIEW") return null;
+  if (!deliverable) return null;
   if (!(await assertClientPortalApprovalAccess(authSession, deliverable.aiDeliveryProject.clientId))) return null;
 
-  const imageExists = deliverable.contentDraft?.articleImages.some((image) => image.id === imageId);
-  if (!imageExists) return null;
+  const imageIds = (deliverable.contentDraft?.articleImages ?? []).map((image) => image.id);
+  const policy = evaluateClientPortalApprovalAction({
+    action: "reject_image",
+    deliverableStatus: deliverable.status,
+    imageIds,
+    imageId,
+    reason: rejectionReason
+  });
+  if (!policy.ok) return null;
 
+  const reason = policy.sanitizedReason ?? rejectionReason.trim();
   const existing = await getImageApprovalRow(tenantId, deliverableId, imageId);
   const now = new Date();
 
@@ -397,17 +468,6 @@ export async function undoClientPortalDeliverableImageReview(
   };
 }
 
-function allImagesReviewed(
-  imageIds: string[],
-  approvals: Array<{ articleImageId: string; status: string }>
-): boolean {
-  if (imageIds.length === 0) return true;
-  return imageIds.every((imageId) => {
-    const approval = approvals.find((row) => row.articleImageId === imageId);
-    return approval && (approval.status === "APPROVED" || approval.status === "REJECTED");
-  });
-}
-
 export async function approveClientPortalDeliverable(
   authSession: AuthResolvedSessionContext,
   deliverableId: string
@@ -419,16 +479,22 @@ export async function approveClientPortalDeliverable(
   if (!deliverable) return null;
   if (!(await assertClientPortalApprovalAccess(authSession, deliverable.aiDeliveryProject.clientId))) return null;
 
-  if (deliverable.status === "APPROVED_BY_CLIENT") {
-    return { error: "ALREADY_APPROVED" as const };
-  }
-  if (deliverable.status !== "PENDING_CLIENT_REVIEW") {
-    return null;
-  }
-
   const imageIds = (deliverable.contentDraft?.articleImages ?? []).map((image) => image.id);
-  if (!allImagesReviewed(imageIds, deliverable.imageApprovals)) {
-    return { error: "IMAGES_PENDING" as const };
+  const policy = evaluateClientPortalApprovalAction({
+    action: "approve_deliverable",
+    deliverableStatus: deliverable.status,
+    imageIds,
+    imageApprovals: deliverable.imageApprovals
+  });
+
+  if (!policy.ok) {
+    if (policy.code === "ALREADY_APPROVED") {
+      return { error: "ALREADY_APPROVED" as const };
+    }
+    if (policy.code === "IMAGES_PENDING") {
+      return { error: "IMAGES_PENDING" as const };
+    }
+    return null;
   }
 
   const updated = await prisma.aiDeliveryDeliverable.update({
@@ -441,12 +507,14 @@ export async function approveClientPortalDeliverable(
   });
 
   const clientName = deliverable.aiDeliveryProject.client?.name ?? "Client";
-  await notifyDcaTeam(
-    tenantId,
-    `[${clientName} Approval] ${updated.title}`,
-    "AI_DELIVERY_APPROVED",
-    updated.id
-  );
+  if (policy.notifyAdmin) {
+    await notifyDcaTeam(
+      tenantId,
+      `[${clientName} Approval] ${updated.title}`,
+      policy.notificationKind ?? "AI_DELIVERY_APPROVED",
+      updated.id
+    );
+  }
 
   return {
     deliverable: {
@@ -465,12 +533,24 @@ export async function rejectClientPortalDeliverable(
   const tenantId = getActiveTenantId(authSession);
   if (!tenantId || !isClientPortalApprovalUser(authSession)) return null;
 
-  const reason = rejectionReason.trim();
-  if (!reason) return null;
-
   const deliverable = await getDeliverableForClientApproval(tenantId, deliverableId);
-  if (!deliverable || deliverable.status !== "PENDING_CLIENT_REVIEW") return null;
+  if (!deliverable) return null;
   if (!(await assertClientPortalApprovalAccess(authSession, deliverable.aiDeliveryProject.clientId))) return null;
+
+  // revisionRoundUsed stays false until a durable revision-round counter exists (no schema change in this block).
+  // The pure policy helper still enforces one-round rules when callers pass revisionRoundUsed: true.
+  const policy = evaluateClientPortalApprovalAction({
+    action: "request_changes",
+    deliverableStatus: deliverable.status,
+    reason: rejectionReason,
+    revisionRoundUsed: false
+  });
+
+  if (!policy.ok) {
+    return null;
+  }
+
+  const reason = policy.sanitizedReason ?? rejectionReason.trim();
 
   const updated = await prisma.aiDeliveryDeliverable.update({
     where: { id: deliverableId },
@@ -483,13 +563,15 @@ export async function rejectClientPortalDeliverable(
 
   const clientName = deliverable.aiDeliveryProject.client?.name ?? "Client";
   const reasonPreview = reason.length > 120 ? `${reason.slice(0, 117)}...` : reason;
-  await notifyDcaTeam(
-    tenantId,
-    `[${clientName} Rejection] ${updated.title} — ${reasonPreview}`,
-    "AI_DELIVERY_REVIEW_REQUEST",
-    updated.id,
-    `Client rejection reason: ${reason}`
-  );
+  if (policy.notifyAdmin) {
+    await notifyDcaTeam(
+      tenantId,
+      `[${clientName} Rejection] ${updated.title} — ${reasonPreview}`,
+      policy.notificationKind ?? "AI_DELIVERY_REVIEW_REQUEST",
+      updated.id,
+      `Client rejection reason: ${reason}`
+    );
+  }
 
   return {
     deliverable: {

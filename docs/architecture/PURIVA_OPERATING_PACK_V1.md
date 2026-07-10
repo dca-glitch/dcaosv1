@@ -8,7 +8,9 @@
 
 **Canonical rule:** This document is the single source of truth for Puriva launch blockers, article/image workflow, monthly report flow, and feedback learning. Implementation gates and runbooks link here; they do not duplicate these flows.
 
-**G124-G127 implementation note:** Puriva's first typed pack constants live in `packages/shared/src/client-operating-packs.ts` and are exported from `@dca-os-v1/shared`. They define the compliance profile, module entitlement map, and workflow template catalog only; they do **not** execute workflows, call live providers, or turn Puriva into a Core fork.
+**G124-G127 / G209-G216 implementation note:** Puriva's typed pack constants live in `packages/shared/src/client-operating-packs.ts` and are exported from `@dca-os-v1/shared` (via existing `export * from "./client-operating-packs"`). They define the compliance profile + validator, entitlement matrix, workflow template catalog, and client-visibility helpers only; they do **not** execute workflows, call live providers, enforce portal auth, or turn Puriva into a Core fork.
+
+**SaaS-later truth (G214):** Puriva Operating Pack v1 is **Agency OS first**. Typed pack scaffolding is **not** multi-tenant SaaS readiness, self-serve client onboarding, or productized SaaS billing.
 
 ---
 
@@ -164,10 +166,45 @@ Puriva Operating Pack v1 now has shared typed configuration for the parts that w
 | Gate | Constant | Scope |
 |------|----------|-------|
 | G124 | `PURIVA_COMPLIANCE_PROFILE_V1` | Compliance risk classes, human review requirements, article/image client approval requirements, monthly report final-only rule, prohibited claim categories, immutable compliance boundaries |
-| G125 | `CLIENT_OPERATING_PACK_MODULE_ENTITLEMENT_CONFIG.puriva` | Pack-level module entitlement map for Core, AI Delivery, Market Intelligence, Client Portal, and Finance Lite |
-| G126 | `PURIVA_WORKFLOW_TEMPLATE_CATALOG` | Catalog-only Article + Image Package v1 and Monthly Report Flow v1 templates, with ordered steps and rules |
+| G125 | `CLIENT_OPERATING_PACK_MODULE_ENTITLEMENT_CONFIG.puriva` | Pack-level module entitlement map (expanded in G210) |
+| G126 | `PURIVA_WORKFLOW_TEMPLATE_CATALOG` | Catalog-only workflow templates (expanded in G212) |
 
 These constants are intentionally pack configuration. They do not replace `Client`, `TenantModule`, workflow runtime, portal auth, or publication/integration services. DCA OS Lite remains **Internal Agency OS first**; Puriva is the first pack layered on generic Core/modules, not a fork.
+
+---
+
+## G209-G216 pack hardening closeout
+
+| Gate | Artifact | Scope |
+|------|----------|-------|
+| G209 | `PURIVA_OPERATING_PACK_V1` / `CLIENT_OPERATING_PACK_CONFIGS` | Hardened assembled pack config + version constants |
+| G210 | `PURIVA_MODULE_ENTITLEMENTS` | Entitlement matrix: AI Workflow, AI SEO, Monthly Reports, Client Portal, WordPress Draft, Image Generation, GA/GSC, Notifications, Market Intelligence, Revenue Hub, POD Toolkit, Finance Lite — statuses `enabled` / `partial` / `future` |
+| G211 | `validatePurivaComplianceProfile` | Medical content required; website/social only; paid ads `future_out_of_scope`; admin review required |
+| G212 | `PURIVA_WORKFLOW_TEMPLATE_CATALOG` | SEO article, image set, WordPress draft, monthly report, market intelligence, revenue insight, POD listing (+ legacy Article+Image composite); all `catalog_only`, no execution |
+| G213 | `isClientVisiblePackSurface` / `getClientVisiblePackModuleKeys` | Pure helpers: client sees only entitled + active (`enabled`/`partial`) surfaces |
+| G214 | `CLIENT_OPERATING_PACK_SAAS_READINESS` | Explicit `saas_later` label — Agency OS first, not SaaS-ready |
+| G215 | This doc + [`CLIENT_OPERATING_PACKS.md`](./CLIENT_OPERATING_PACKS.md) | Puriva docs closeout for pack hardening |
+| G216 | `apps/api/src/core/client-operating-packs.test.ts` | Focused shared/API tests for the above |
+
+### Entitlement matrix (configuration truth only)
+
+| Module | Status | Client-visible surface | Required for launch |
+|--------|--------|------------------------|---------------------|
+| Core | enabled | no | yes |
+| AI Workflow | enabled | no | yes |
+| AI SEO | enabled | no | yes |
+| Monthly Reports | partial | yes | yes |
+| Client Portal | enabled | yes | yes |
+| WordPress Draft | partial | no | yes |
+| Image Generation | partial | yes | yes |
+| GA/GSC | future | no | yes |
+| Notifications | future | no | yes |
+| Market Intelligence | enabled | no | yes |
+| Revenue Hub | future | no | no |
+| POD Toolkit | future | no | no |
+| Finance Lite | enabled | no | no |
+
+Runtime tenant/module enforcement, live providers, and portal auth are **not** changed by these constants.
 
 ---
 

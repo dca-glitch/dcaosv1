@@ -1,6 +1,6 @@
 # Puriva Launch Gate — 15-Area Evaluation
 
-**Status:** Docs-only evaluation. Overall verdict: **BLOCKED**. G148 integration recorded the G89-G147 lane outcomes as local/no-IO foundations only: R2 readiness/proof stages, notification taxonomy/no-send adapter, GA/GSC helpers, WordPress draft payload/publish-freeze checks, image compliance policy helpers, Client Portal FINAL guards, Puriva packs, future-module contracts, AI budget reporting contract, and operator/security docs. This document does not authorize Puriva Launch, live integrations, or production client-facing use.
+**Status:** Docs-only evaluation. Overall verdict: **BLOCKED**. G148 recorded G89-G147 local/no-IO foundations. G228 recorded G149-G227 expanded local foundations (storage, notifications, GA/GSC/monthly, WordPress, image approval-loop, Client Portal, Puriva packs, future modules, operator security/roadmap) — still local/docs only. This document does not authorize Puriva Launch, live integrations, or production client-facing use.
 
 **Gate separation:** Puriva Client-Service Launch Gate is independent from the DCA OS Production v1 Gate (G49 → G50). Clearing G49/G50 does **not** authorize Puriva Launch, and vice versa.
 
@@ -10,7 +10,7 @@
 
 ## 1. Overall verdict
 
-**BLOCKED.** G89-G147 add useful local/admin foundations across storage, notifications, analytics helpers, WordPress draft preparation, image compliance, Client Portal visibility, operating packs, future-module contracts, AI budget reporting, and operator/security inventories. None closes Puriva Launch. No staging/prod live proof, live AI call, email send, Google OAuth/sync, WordPress HTTP call, image-provider call, R2 IO, commit, push, or deploy is claimed here.
+**BLOCKED.** G89-G227 add useful local/admin foundations across storage, notifications, analytics helpers, WordPress draft preparation, image compliance/approval-loop, Client Portal visibility, operating packs, future-module contracts, AI budget reporting, and operator/security inventories. None closes Puriva Launch. No staging/prod live proof, live AI call, email send, Google OAuth/sync, WordPress HTTP call, image-provider call, R2 IO, commit, push, or deploy is claimed here.
 
 8 of 15 evaluation areas remain fully blocked pending live proof or a not-yet-started product/policy gate. 2 more areas have real local scaffolding but cannot support a live client-facing claim yet. 5 areas are genuinely usable now in local/admin-operated form only.
 
@@ -104,7 +104,7 @@ Per `deferred-scope-register.md`: WordPress auto-publish, marketing email, SMS/W
 
 ## 7. Recommended next blocks (ordered by lowest-effort-to-close-first)
 
-1. **G149 recommended: owner-selected launch-blocker execution gate** — recommended first candidate is R2 target-environment real-bucket proof because it is low blast radius and unlocks document/image proof paths.
+1. **G229 recommended: owner-selected launch-blocker execution gate** — recommended first candidate is R2 target-environment real-bucket proof because it is low blast radius and unlocks document/image proof paths. See [`G227_NEXT_30_GATES.md`](../operator/G227_NEXT_30_GATES.md).
 2. **Notifications MVP block** — create/prove in-system notification model before claiming transactional notification readiness; email live send remains a separate owner-approved proof.
 3. **AI target-environment re-proof** — bounded OpenRouter proof on staging/target environment after owner approval; G79 local aggregation is already done, but target proof remains blocked.
 4. **GA/GSC live proof path** — first solve OAuth token storage/encryption; then run bounded read-only sync.
@@ -118,3 +118,4 @@ Per `deferred-scope-register.md`: WordPress auto-publish, marketing email, SMS/W
 - No live WordPress call was made or authorized by this update; `WORDPRESS_DRAFT_PROOF.md` §6 is a plan only, and executing it requires a separate owner-approved block.
 - Puriva Launch remains **blocked**. This document does not change that status; it only makes the remaining gap explicit and orderable.
 - G148 integration does not authorize G149 or any execution gate.
+- G228 integration does not authorize G229+ execution, live proof, or Puriva Launch. See `docs/operator/G227_NEXT_30_GATES.md` for proposed G229–G258 sequencing only.

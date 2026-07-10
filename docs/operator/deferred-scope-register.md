@@ -6,6 +6,8 @@ This register prevents confusion. If something is listed under **Still deferred*
 
 **G148 update:** G89-G147 moved several local foundations out of "not started" status, but did **not** move any live proof out of deferred. R2 readiness/proof stages, notification taxonomy/no-send adapter, GA/GSC helpers, WordPress draft payload/publish-freeze tests, image compliance policy helpers, Client Portal FINAL guards, Client Operating Pack constants, future-module contracts, AI budget reporting contracts, and operator/security inventories are local foundations only.
 
+**G228 update (G149-G227):** Expanded local/no-IO foundations across storage, notifications, GA/GSC/monthly reports, WordPress, image compliance/approval-loop, Client Portal boundaries, Puriva pack entitlements, future-module contracts, and operator/security docs. Still **do not** move: real R2 IO, live email, live GA/GSC, live WordPress, live image provider, staging/prod live proofs, notification persistence/in-system inbox, or trusted `actualCostUsd` ingestion. Puriva Launch remains blocked.
+
 ## Rule
 
 Deferred means: do not build, enable, deploy, or promise it as active until there is a separate approved task.
@@ -37,7 +39,7 @@ These are **not** "still deferred" long-term roadmap items. They are active bloc
 
 **Puriva Launch status:** **Blocked** until the blockers above are closed with evidence. See [`G53_PRODUCTION_SAFETY_PLAN.md`](../runbooks/G53_PRODUCTION_SAFETY_PLAN.md).
 
-**Roadmap reference:** G147 created [`G147_NEXT_20_GATES.md`](./G147_NEXT_20_GATES.md) for the next 20 owner-gated blocks. G148 does not execute those gates.
+**Roadmap reference:** G147 created [`G147_NEXT_20_GATES.md`](./G147_NEXT_20_GATES.md) for G89-G108 planning. G227 created [`G227_NEXT_30_GATES.md`](./G227_NEXT_30_GATES.md) for G229+ after G228 closeout. Neither roadmap authorizes live proof or launch.
 
 **Email clarification:** transactional workflow notifications (approval, handoff, delivery status) are in scope for proof; marketing email campaigns remain still-deferred.
 
@@ -91,6 +93,8 @@ Grouped for planning clarity. Items remain deferred until a separate approved bl
 | **G85-G87** | GA/GSC, WordPress live draft, and image generation proof planning — no live calls |
 | **G88** | Shared-doc consolidation with correct G79-G88 gate map; Puriva Launch remains blocked |
 | **G149 recommended after G148** | Owner-selected launch-blocker execution gate; recommended first candidate: R2 target-environment real-bucket proof or another explicitly approved low-blast-radius proof |
+| **G228 closeout** | Main-agent integration of G149–G227; local foundations only; does not authorize live proof |
+| **G229+** | See [`G227_NEXT_30_GATES.md`](./G227_NEXT_30_GATES.md) — owner-gated; R2 target-bucket proof remains recommended first candidate |
 
 ## G89-G148 deferred-scope reconciliation (2026-07-10)
 
@@ -107,6 +111,21 @@ Grouped for planning clarity. Items remain deferred until a separate approved bl
 | Operator/security docs | Checklists, inventories, next-gate roadmap | External audit, production proof, deploy approval |
 
 G148 recommendation: keep local foundations, keep all live-provider/storage/email/Google/WordPress/image and staging/production proofs deferred until a separate owner-approved gate.
+
+## G149-G228 deferred-scope reconciliation (2026-07-10)
+
+| Area | Local/docs complete (G149-G227) | Still deferred / blocked |
+|------|----------------------------------|--------------------------|
+| R2/private storage | Proof-stage hardening, redacted config, proof intent, client-safe URL policy, serializer leak tests, cleanup plan constants | Real bucket IO, signed URL against target bucket, staging/prod proof |
+| Notifications/email | Taxonomy V2, recipient/channel/severity/redaction, typed templates, no-send edges, persistence/inbox **design** | In-system inbox/persistence (migration), live email send, client notification proof |
+| GA/GSC/monthly reports | Credential presence, period/source-truth/metric/recommendation/output guards, CSV import proof plan | OAuth consent, token storage/refresh, live GA/GSC sync, target-env report proof |
+| WordPress | Draft payload, slug, status freeze, credential redaction, image-inclusion contract, proof-plan constants | Live draft proof session, auto-publish |
+| Image generation | Compliance V2, prompt/alt/reject/approval-loop, WP inclusion readiness, provider proof plan | Provider selection, live generation, R2 image-byte proof |
+| Client Portal | Serializer/archive/monthly guards, approval policy helper, error-safety, route inventory | Staging/prod browser proof; durable revision-round schema field |
+| Client/future modules | Pack entitlement matrix, compliance validator, MI/RH/POD contract hardening | Live ingestion, marketplace/CRM/write connectors |
+| Operator/security docs | G223 checklist, smoke inventory, validation guards, G227 next-30 roadmap | External audit, production proof, deploy approval |
+
+G228 recommendation: keep local foundations, keep all live-provider/storage/email/Google/WordPress/image and staging/production proofs deferred until a separate owner-approved gate (G229+).
 
 ## G71b / G71c / G71e / G71f live OpenRouter proof (2026-07-09)
 

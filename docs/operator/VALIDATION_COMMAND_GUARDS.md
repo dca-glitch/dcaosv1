@@ -1,8 +1,8 @@
 # Validation Command Guards
 
-**Status:** G143 operator guard document. This is a docs-only reference for command ordering and refusal rules. It does not run validation, smoke, live calls, staging/prod probes, commits, pushes, or deploys.
+**Status:** G225 refresh of the G143 operator guard document. This is a docs-only reference for command ordering and refusal rules. It does not run validation, smoke, live calls, staging/prod probes, commits, pushes, or deploys.
 
-**Primary sources:** [`.github/instructions/validation.instructions.md`](../../.github/instructions/validation.instructions.md), [`.github/copilot-instructions.md`](../../.github/copilot-instructions.md), [`OPERATOR_RUNBOOK.md`](./OPERATOR_RUNBOOK.md), and [`TEST_SMOKE_INVENTORY.md`](./TEST_SMOKE_INVENTORY.md).
+**Primary sources:** [`.github/instructions/validation.instructions.md`](../../.github/instructions/validation.instructions.md), [`.github/copilot-instructions.md`](../../.github/copilot-instructions.md), [`OPERATOR_RUNBOOK.md`](./OPERATOR_RUNBOOK.md), [`TEST_SMOKE_INVENTORY.md`](./TEST_SMOKE_INVENTORY.md), and [`docs/security/SECURITY_CHECKLIST_G223.md`](../security/SECURITY_CHECKLIST_G223.md).
 
 ---
 
@@ -37,12 +37,15 @@ npm.cmd run smoke:pre-staging:local
 | Guard | Rule |
 |---|---|
 | PowerShell only | Use Windows PowerShell commands. Do not use bash, Unix paths, `&&`, or Unix-style pipes in operator instructions. |
-| One command per line | Multi-step package scripts use `scripts/run-sequential.mjs`; operator command blocks should not chain with `&&`. |
-| Validate before smoke | If `npm.cmd run validate` fails, stop. Do not run smoke. |
+| One command per line | Multi-step package scripts use `scripts/run-sequential.mjs`; operator command blocks should not chain with `&&`. Do not use `exit` in operator instruction blocks. |
+| Validate before smoke | Always run `npm.cmd run validate` (or the scoped frontend check/build pair when docs/UI-only) before smoke. If validate fails, **stop**. Do not run smoke after a failed validate. |
+| No smoke after validate fail | Re-run validate after fixing; only then choose a focused smoke. |
+| No live proof without owner approval | Live AI, R2, GA/GSC, WordPress, email, image provider, staging/prod probes, VPS, Docker, Caddy, DNS, migrations, and deploys require explicit owner approval **before** the session. |
+| Logs to temp / Notepad | Long validation or smoke runs log to `$env:TEMP` via `Tee-Object`, then open Notepad. Scrub secrets before sharing. |
+| `.cursor/settings.json` untracked | Keep `.cursor/settings.json` untracked. Never `git add` it. Observed as `??` during G225; do not commit. |
 | No services for docs-only | Do not start API or web for docs-only or static review blocks. |
 | No broad stop-process | Do not use `Stop-Process -Name node`; stop only explicit PIDs when recovering from Prisma EPERM. |
 | Secrets stay out | Never print, persist, commit, or infer secrets. Never read `.env` or credential files unless explicitly scoped by the human. |
-| No default live calls | Live AI, R2, GA/GSC, WordPress, email, staging/prod probes, VPS, Docker, Caddy, DNS, migrations, and deploys require explicit owner approval. |
 | No commit/push | Commit and push require separate explicit approvals after validation/proof review. |
 
 ---
@@ -122,4 +125,17 @@ Production readiness remains **NO**. G49 public read-only probes are recorded as
 | Pre-staging discussion | `git diff --check`, `npm.cmd run validate`, `npm.cmd run smoke:staging-readiness:local`. |
 | Broad local closeout | `git diff --check`, `npm.cmd run validate`, `npm.cmd run smoke:production-readiness:local` or `npm.cmd run smoke:pre-staging:local`. |
 
-Docs-only G138-G144 did not run commands or smokes because the user requested no live calls and no commit; this document records the command guards for future execution.
+Docs-only G138-G144 and G223-G227 did not run commands or smokes because the user requested no live calls and no commit; this document records the command guards for future execution.
+
+---
+
+## 8. G225 Quick Refusal Card
+
+| Situation | Action |
+|---|---|
+| Validate failed | Stop. Fix. Re-validate. No smoke. |
+| Owner has not approved live proof | Do not call providers, buckets, OAuth, WordPress HTTP, or email send. |
+| Docs-only block | No API/web start; `git diff --check` is enough unless owner asks for validate. |
+| Log file may contain secrets | Do not paste into chat/PR; redact first. |
+| `.cursor/settings.json` appears in `git status` | Leave untracked; exclude from any commit. |
+| Staging/prod remote smoke requested without approval | Refuse; cite historical PASS is not standing authorization. |

@@ -1,4 +1,22 @@
 import type { AiDeliveryWordPressDraftPrepared } from "../core/core.types";
+import {
+  assertWordPressCredentialsNeverSerialize,
+  redactWordPressCredentialMetadata,
+  redactWordPressCredentialShape
+} from "./wordpress-credentials-redaction";
+import {
+  WORDPRESS_LIVE_DRAFT_PROOF_PLAN_NOTE,
+  WORDPRESS_LIVE_DRAFT_PROOF_STEPS,
+  WORDPRESS_TEST_DRAFT_PROOF_MARKER,
+  WORDPRESS_TEST_DRAFT_PROOF_TAG,
+  WORDPRESS_TEST_DRAFT_ROLLBACK_PLAN
+} from "./wordpress-draft-proof-plan";
+import {
+  mapAcceptedImagesToWordPressDraftInclusion,
+  type WordPressDraftImageCandidate,
+  type WordPressDraftImageInclusion
+} from "./wordpress-image-inclusion";
+import { normalizeWordPressSlug } from "./wordpress-slug-policy";
 
 /**
  * WordPress provider service scaffold
@@ -68,6 +86,7 @@ export interface AiDeliveryWordPressPublishRequest {
   featuredImageUrl?: string | null;
   /**
    * WordPress post status; default "draft"
+   * Live HTTP remains frozen; draft preparation never uses this field.
    */
   status?: "draft" | "pending" | "publish" | "future";
   /**
@@ -113,17 +132,62 @@ export interface AiDeliveryWordPressPublishResult {
 export type AiDeliveryWordPressDraftSourceType = "DELIVERABLE" | "CONTENT_DRAFT";
 export type AiDeliveryWordPressPublishGateStatus = "disabled" | "credentials_missing" | "target_configured";
 
+/** Hard-frozen post status for all local draft preparation. */
+export const WORDPRESS_DRAFT_POST_STATUS = "draft" as const;
+export type WordPressDraftPostStatus = typeof WORDPRESS_DRAFT_POST_STATUS;
+
 export interface AiDeliveryWordPressDraftPayloadInput {
   title: string;
   body: string;
   excerpt?: string | null;
   sourceType: AiDeliveryWordPressDraftSourceType;
+  /**
+   * Source deliverable or content-draft ID (required for provenance).
+   */
   sourceId: string;
+  /**
+   * Explicit deliverable ID when sourceType is DELIVERABLE (defaults to sourceId).
+   */
+  deliverableId?: string;
+  categories?: string[];
+  tags?: string[];
+  /**
+   * Featured image placeholder reference (accepted hero mapping). No live upload.
+   */
+  featuredImagePlaceholder?: string | null;
+  /**
+   * Optional accepted image candidates; mapped via wordpress-image-inclusion contract.
+   */
+  imageCandidates?: WordPressDraftImageCandidate[];
   publicationTargetId?: string;
   publicationTargetLabel?: string;
   publicationSiteUrl?: string;
   publishGateStatus: AiDeliveryWordPressPublishGateStatus;
   credentialConfigured: boolean;
+}
+
+/**
+ * Local WordPress draft payload (G181 surface).
+ * Extends the core prepared shape with taxonomy + image placeholders.
+ * `postStatus` is always `"draft"` — never publish/pending/future.
+ */
+export interface AiDeliveryWordPressDraftPayload extends AiDeliveryWordPressDraftPrepared {
+  postStatus: WordPressDraftPostStatus;
+  /**
+   * Source deliverable ID when preparing from a deliverable; mirrors sourceId for DELIVERABLE.
+   */
+  deliverableId: string | null;
+  categories: string[];
+  tags: string[];
+  /**
+   * Featured image placeholder only — not a live media ID.
+   */
+  featuredImagePlaceholder: string | null;
+  imageInclusion: WordPressDraftImageInclusion;
+  /**
+   * Body alias for WordPress content field naming in handoff docs.
+   */
+  content: string;
 }
 
 export interface AiDeliveryWordPressCredentialPolicyShape {
@@ -141,22 +205,13 @@ export const WORDPRESS_LIVE_HTTP_FROZEN = true as const;
 export const WORDPRESS_LIVE_HTTP_FROZEN_REASON =
   "WordPress live HTTP is frozen for this gate. Draft preparation remains local-only and publish is disabled.";
 
-export const WORDPRESS_TEST_DRAFT_PROOF_MARKER = "[DCA-OS-PROOF-DO-NOT-PUBLISH]";
-export const WORDPRESS_TEST_DRAFT_PROOF_TAG = "dca-proof";
-export const WORDPRESS_TEST_DRAFT_ROLLBACK_PLAN = {
-  marker: WORDPRESS_TEST_DRAFT_PROOF_MARKER,
-  tag: WORDPRESS_TEST_DRAFT_PROOF_TAG,
-  allowedStatus: "draft",
-  cleanupAction: "trash_or_delete_staging_test_draft",
-  restorePublishEnv: "WORDPRESS_PUBLISH_ENABLED=false",
-  evidenceRequired: [
-    "ownerApprovalReference",
-    "stagingOnlyTarget",
-    "wordpressPostIdOrEditUrl",
-    "cleanupActionAndTimestamp",
-    "disabledSafeSmokeResult"
-  ]
-} as const;
+export {
+  WORDPRESS_LIVE_DRAFT_PROOF_PLAN_NOTE,
+  WORDPRESS_LIVE_DRAFT_PROOF_STEPS,
+  WORDPRESS_TEST_DRAFT_PROOF_MARKER,
+  WORDPRESS_TEST_DRAFT_PROOF_TAG,
+  WORDPRESS_TEST_DRAFT_ROLLBACK_PLAN
+};
 
 /**
  * WordPress configuration validation result
@@ -191,17 +246,6 @@ function normalizeWordPressSiteUrl(url: string): string {
   return url.replace(/\/+$/, "");
 }
 
-function buildDraftSlug(title: string): string | null {
-  const normalized = title
-    .toLowerCase()
-    .replace(/[^a-z0-9\s-]/g, "")
-    .replace(/\s+/g, "-")
-    .replace(/-+/g, "-")
-    .replace(/^-|-$/g, "");
-
-  return normalized ? normalized.slice(0, 80) : null;
-}
-
 function buildDraftNote(gateStatus: AiDeliveryWordPressPublishGateStatus): string {
   if (gateStatus === "disabled") {
     return "Local WordPress draft payload only. Live publish is disabled by default (WORDPRESS_PUBLISH_ENABLED is not true).";
@@ -214,24 +258,95 @@ function buildDraftNote(gateStatus: AiDeliveryWordPressPublishGateStatus): strin
   return "Local WordPress draft payload prepared. Live publish remains confirm-gated and env-controlled.";
 }
 
+function normalizeTaxonomyList(values: string[] | undefined): string[] {
+  if (!values?.length) {
+    return [];
+  }
+
+  const seen = new Set<string>();
+  const normalized: string[] = [];
+  for (const value of values) {
+    const trimmed = value?.trim();
+    if (!trimmed || seen.has(trimmed)) {
+      continue;
+    }
+    seen.add(trimmed);
+    normalized.push(trimmed);
+  }
+  return normalized;
+}
+
+/**
+ * G183 — Draft status freeze guard.
+ * The only post status local draft preparation may emit.
+ */
+export function resolveWordPressDraftPostStatus(): WordPressDraftPostStatus {
+  return WORDPRESS_DRAFT_POST_STATUS;
+}
+
+/**
+ * Assert a prepared payload never carries a publishable WordPress status.
+ */
+export function assertWordPressDraftStatusFrozen(payload: {
+  postStatus: string;
+}): asserts payload is { postStatus: WordPressDraftPostStatus } {
+  if (payload.postStatus !== WORDPRESS_DRAFT_POST_STATUS) {
+    throw new Error(
+      `WordPress draft status freeze violated: expected "${WORDPRESS_DRAFT_POST_STATUS}", received "${payload.postStatus}".`
+    );
+  }
+}
+
+/**
+ * True when a local draft-prep helper would never emit publish/pending/future.
+ */
+export function isWordPressDraftStatusFrozen(): boolean {
+  return resolveWordPressDraftPostStatus() === WORDPRESS_DRAFT_POST_STATUS;
+}
+
 export function buildAiDeliveryWordPressDraftPayload(
   input: AiDeliveryWordPressDraftPayloadInput
-): AiDeliveryWordPressDraftPrepared {
+): AiDeliveryWordPressDraftPayload {
   const title = input.title.trim();
   const body = input.body.trim();
   const excerpt = input.excerpt?.trim() || null;
+  const categories = normalizeTaxonomyList(input.categories);
+  const tags = normalizeTaxonomyList(input.tags);
+  const imageInclusion =
+    input.imageCandidates && input.imageCandidates.length > 0
+      ? mapAcceptedImagesToWordPressDraftInclusion(input.imageCandidates)
+      : mapAcceptedImagesToWordPressDraftInclusion([]);
 
-  return {
+  const featuredImagePlaceholder =
+    input.featuredImagePlaceholder?.trim() ||
+    imageInclusion.featuredImagePlaceholder ||
+    null;
+
+  const deliverableId =
+    input.sourceType === "DELIVERABLE"
+      ? (input.deliverableId?.trim() || input.sourceId.trim() || null)
+      : input.deliverableId?.trim() || null;
+
+  const payload: AiDeliveryWordPressDraftPayload = {
     status: "PREPARED",
     title,
     body,
+    content: body,
     excerpt,
     sourceType: input.sourceType,
     sourceId: input.sourceId,
-    slug: buildDraftSlug(title),
-    postStatus: "draft",
+    deliverableId,
+    slug: normalizeWordPressSlug(title),
+    postStatus: resolveWordPressDraftPostStatus(),
     externalPostId: null,
     externalEditUrl: null,
+    categories,
+    tags,
+    featuredImagePlaceholder,
+    imageInclusion: {
+      ...imageInclusion,
+      featuredImagePlaceholder
+    },
     publicationTargetId: input.publicationTargetId,
     publicationTargetLabel: input.publicationTargetLabel,
     publicationSiteUrl: input.publicationSiteUrl,
@@ -239,6 +354,9 @@ export function buildAiDeliveryWordPressDraftPayload(
     credentialConfigured: input.credentialConfigured,
     note: buildDraftNote(input.publishGateStatus)
   };
+
+  assertWordPressDraftStatusFrozen(payload);
+  return payload;
 }
 
 export function isAiDeliveryWordPressPublishFrozen(): boolean {
@@ -249,31 +367,25 @@ export function buildWordPressCredentialPolicyShape(input: {
   configured?: boolean;
   encryptionAvailable?: boolean;
   updatedAt?: string | Date | null;
+  [key: string]: unknown;
 }): AiDeliveryWordPressCredentialPolicyShape {
-  return {
-    configured: input.configured === true,
-    encryptionAvailable: input.encryptionAvailable === true,
-    updatedAt: input.updatedAt instanceof Date ? input.updatedAt.toISOString() : input.updatedAt ?? null
-  };
+  const shape = redactWordPressCredentialShape(input);
+  if (!assertWordPressCredentialsNeverSerialize(shape)) {
+    throw new Error("WordPress credential policy shape failed redaction invariant.");
+  }
+  return shape;
 }
 
 export function buildWordPressCredentialPolicyMetadata(input: {
   credentialsPresent?: boolean;
   siteUrl?: string | null;
+  [key: string]: unknown;
 }): AiDeliveryWordPressCredentialPolicyMetadata {
-  let siteUrlHost: string | null = null;
-  if (input.siteUrl) {
-    try {
-      siteUrlHost = new URL(input.siteUrl).hostname;
-    } catch {
-      siteUrlHost = null;
-    }
+  const metadata = redactWordPressCredentialMetadata(input);
+  if (!assertWordPressCredentialsNeverSerialize(metadata)) {
+    throw new Error("WordPress credential policy metadata failed redaction invariant.");
   }
-
-  return {
-    credentialsPresent: input.credentialsPresent === true,
-    siteUrlHost
-  };
+  return metadata;
 }
 
 /**

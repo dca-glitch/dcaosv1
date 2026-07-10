@@ -75,3 +75,98 @@ export interface RevenueHubAiRecommendationContractV1 {
   confidence: "low" | "medium" | "high";
   guard: RevenueHubAiRecommendationGuardV1;
 }
+
+// ---------------------------------------------------------------------------
+// G219 — Revenue Hub operating contract (lead / opportunity / attribution)
+// ---------------------------------------------------------------------------
+
+export const REVENUE_HUB_OPERATING_CONTRACT_VERSION = "REVENUE_HUB_OPERATING_CONTRACT_V1";
+
+export type RevenueHubLeadStatus =
+  | "new"
+  | "qualified"
+  | "nurturing"
+  | "converted"
+  | "disqualified"
+  | "archived";
+
+export type RevenueHubOpportunityStage =
+  | "identified"
+  | "discovery"
+  | "proposal"
+  | "negotiation"
+  | "won"
+  | "lost"
+  | "deferred";
+
+export type RevenueHubAttributionChannel =
+  | "manual_entry"
+  | "referral"
+  | "organic_search"
+  | "paid_campaign"
+  | "partner"
+  | "unknown";
+
+/** Explicit CRM / finance execution policy — all live sync and guarantees disabled. */
+export interface RevenueHubNoLiveCrmPolicy {
+  crmLiveSyncAllowed: false;
+  crmWriteBackAllowed: false;
+  financialGuaranteeAllowed: false;
+  paymentExecutionAllowed: false;
+  externalBillingWriteAllowed: false;
+}
+
+export interface RevenueHubLeadContractV1 {
+  id: string;
+  tenantId: string;
+  clientId: string | null;
+  displayName: string;
+  status: RevenueHubLeadStatus;
+  sourceNote: string | null;
+  ownerOperatorId: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface RevenueHubOpportunityContractV1 {
+  id: string;
+  tenantId: string;
+  clientId: string | null;
+  leadId: string | null;
+  title: string;
+  stage: RevenueHubOpportunityStage;
+  /** Advisory estimate only — never a financial guarantee. */
+  estimatedValueMinor: number | null;
+  currencyCode: string | null;
+  financialGuarantee: false;
+  notes: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface RevenueHubAttributionContractV1 {
+  id: string;
+  tenantId: string;
+  clientId: string | null;
+  leadId: string | null;
+  opportunityId: string | null;
+  channel: RevenueHubAttributionChannel;
+  campaignLabel: string | null;
+  /** Operator-entered attribution note; not a live CRM sync artifact. */
+  attributionNote: string | null;
+  recordedAt: string;
+  crmLiveSynced: false;
+}
+
+export interface RevenueHubOperatingContractV1 {
+  version: typeof REVENUE_HUB_OPERATING_CONTRACT_VERSION;
+  tenantId: string;
+  clientId: string | null;
+  leads: RevenueHubLeadContractV1[];
+  opportunities: RevenueHubOpportunityContractV1[];
+  attributions: RevenueHubAttributionContractV1[];
+  recommendations: RevenueHubAiRecommendationContractV1[];
+  policy: RevenueHubNoLiveCrmPolicy;
+  operatorReviewRequired: true;
+  clientVisibleByDefault: false;
+}

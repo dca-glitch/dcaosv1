@@ -61,3 +61,49 @@ export function getR2Config(): R2Config | null {
     publicBaseUrl: readEnvString(R2_ENV_KEYS.publicBaseUrl)?.replace(/\/+$/, "") ?? null
   };
 }
+
+/**
+ * Config-shape readiness labels for R2. Shape-only — never implies live bucket proof.
+ */
+export type R2ConfigReadinessLabel = "disabled" | "missing_config" | "configured_shape_ok";
+
+export type R2ConfigRedactedSummary = {
+  readinessLabel: R2ConfigReadinessLabel;
+  /** Always false: reading env shape is not live R2 proof. */
+  liveProven: false;
+  presence: ReturnType<typeof getR2EnvPresence>;
+  /** Boolean-only: whether endpoint/bucket keys are present (never values). */
+  endpointPresent: boolean;
+  bucketPresent: boolean;
+  accessKeyIdPresent: boolean;
+  secretAccessKeyPresent: boolean;
+};
+
+/**
+ * Redacted R2 config summary for logs/tests/status docs.
+ * Never includes access key ID, secret, account id, bucket name, or endpoint values.
+ */
+export function getR2ConfigRedactedSummary(): R2ConfigRedactedSummary {
+  const presence = getR2EnvPresence();
+  const configured = Boolean(getR2Config());
+  const anyRequiredPresent = R2_REQUIRED_ENV_KEYS.some((key) => presence[key]);
+
+  let readinessLabel: R2ConfigReadinessLabel;
+  if (configured) {
+    readinessLabel = "configured_shape_ok";
+  } else if (anyRequiredPresent) {
+    readinessLabel = "missing_config";
+  } else {
+    readinessLabel = "disabled";
+  }
+
+  return {
+    readinessLabel,
+    liveProven: false,
+    presence,
+    endpointPresent: presence[R2_ENV_KEYS.endpoint],
+    bucketPresent: presence[R2_ENV_KEYS.bucketName],
+    accessKeyIdPresent: presence[R2_ENV_KEYS.accessKeyId],
+    secretAccessKeyPresent: presence[R2_ENV_KEYS.secretAccessKey]
+  };
+}

@@ -16,6 +16,33 @@ export type ApiFailure = {
   };
 };
 
+const CLIENT_PORTAL_UNSAFE_MESSAGE_PATTERNS = [
+  /\bstorageKey\b/i,
+  /\btenants\/[A-Za-z0-9_\-./]+/,
+  /\bproviderMetadata\b/i,
+  /\bworkflowRunId\b/i,
+  /\bat\s+\S+\s+\([^)]+:\d+:\d+\)/,
+  /\bstack\b\s*:/i
+];
+
+/** Keeps client-portal UI error copy free of stacks, storage keys, and provider internals (G204). */
+export function toClientPortalUiSafeErrorMessage(
+  message: string | null | undefined,
+  fallback = "Request could not be completed."
+): string {
+  if (typeof message !== "string" || !message.trim()) {
+    return fallback;
+  }
+  const trimmed = message.trim();
+  if (CLIENT_PORTAL_UNSAFE_MESSAGE_PATTERNS.some((pattern) => pattern.test(trimmed))) {
+    return fallback;
+  }
+  if (trimmed.length > 240) {
+    return fallback;
+  }
+  return trimmed;
+}
+
 export type ApiResponse<T> = ApiSuccess<T> | ApiFailure;
 
 type RequestOptions = {
@@ -93,6 +120,17 @@ export async function clientPortalApiRequest<T>(path: string, options: RequestOp
       error: {
         code: "REQUEST_FAILED",
         message: "Request could not be completed."
+      }
+    };
+  }
+
+  if (!payload.ok) {
+    return {
+      ok: false,
+      error: {
+        code: payload.error.code,
+        message: toClientPortalUiSafeErrorMessage(payload.error.message),
+        details: payload.error.details
       }
     };
   }

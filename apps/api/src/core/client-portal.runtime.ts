@@ -518,6 +518,7 @@ export function toClientPortalMonthlyReportPerformanceSummary(
     notes: approvedSnapshot.notes
   });
 
+  // Client-safe provenance only: never expose snapshot id, notes, or internal source IDs.
   const base = {
     targetMonth: approvedSnapshot.targetMonth,
     sourceType: approvedSnapshot.sourceType,

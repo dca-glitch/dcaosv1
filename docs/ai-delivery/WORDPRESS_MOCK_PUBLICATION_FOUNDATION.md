@@ -1,6 +1,6 @@
 # WordPress Mock Publication Foundation
 
-**Status:** WordPress disabled/mock publish endpoint, service scaffold, UI action foundation, and G111 publish-freeze guard coverage are complete.
+**Status:** WordPress disabled/mock publish endpoint, service scaffold, UI action foundation, G111 publish-freeze guard coverage, and G181–G188 local draft/redaction/proof-plan helpers are complete. Live WordPress HTTP remains frozen and **not proven**.
 
 > **Architecture update (2026-06-26):** Tenant-level WordPress config is **legacy**. Approved target model: **PublicationTarget per Client** (domain), multiple subdomains, encrypted credentials per target. See [`docs/architecture/CLIENT_DOMAIN_OPERATING_MODEL.md`](../architecture/CLIENT_DOMAIN_OPERATING_MODEL.md) and implementation blocks 2–5 in [`docs/ROADMAP.md`](../ROADMAP.md).
 
@@ -250,7 +250,8 @@ POST /api/v1/tenant/wordpress-config
 
 **Test Files:**
 - `scripts/smoke-ai-delivery-reviews-local.mjs` — WordPress publish API and UI smoke tests
-- `apps/api/src/services/wordpress.service.test.ts` — G110 draft payload, G111 publish freeze, G112 credential shape, and G113 rollback constants tests
+- `apps/api/src/services/wordpress.service.test.ts` — G181 draft payload, G183 status freeze, publish freeze, credential shape, rollback constants
+- `apps/api/src/services/wordpress-*.test.ts` — G182 slug, G184 redaction, G185 proof plan, G186 image inclusion (no HTTP)
 
 ---
 

@@ -1,8 +1,10 @@
 # Test and Smoke Inventory
 
-**Status:** G142 package-script inventory generated from root [`package.json`](../../package.json) as inspected on 2026-07-10. This document is an operator reference only; it does not run tests, smoke scripts, live probes, deploys, or migrations.
+**Status:** G224 refresh of the G142 package-script inventory. Root [`package.json`](../../package.json) smoke scripts re-checked on 2026-07-10. This document is an operator reference only; it does not run tests, smoke scripts, live probes, deploys, or migrations.
 
-**Command convention:** Run from `C:\dcaosv1` in external Windows PowerShell. Prefer `npm.cmd run <script>` on Windows. Validate must pass before smoke. Long runs should log to `$env:TEMP` and open Notepad.
+**Honesty rule:** Sections 1–2 list **existing** root package scripts. Section 5 lists **expected / lane-added local focused tests and helpers** from G89–G222 work. Listing a focused test here does **not** mean a live smoke passed. Live smokes and target-environment proofs remain deferred until owner-approved execution gates.
+
+**Command convention:** Run from `C:\dcaosv1` in external Windows PowerShell. Prefer `npm.cmd run <script>` on Windows. Validate must pass before smoke. Long runs should log to `$env:TEMP` and open Notepad. Do not track or commit `.cursor/settings.json`.
 
 **Truth sweep:** Staging has historical G46d/G47 PASS evidence; production readiness remains **NO**; G50 is not executed; Puriva Launch remains blocked. This inventory does not authorize live calls, staging/VPS/prod mutation, commit, push, or deploy.
 
@@ -149,4 +151,68 @@ These scripts are not local default gates. They must not be run as a substitute 
 
 ## 4. Package Script Completeness Note
 
-This inventory covers all root `package.json` scripts visible in this G142 pass. If future scripts are added, update this document and [`LOCAL_SMOKE_MATRIX.md`](../runbooks/LOCAL_SMOKE_MATRIX.md) together, preserving the distinction between local proof, guarded remote proof, mutation-capable setup, and live integration execution.
+This inventory covers root `package.json` scripts visible in the G142/G224 passes. If future scripts are added, update this document and [`LOCAL_SMOKE_MATRIX.md`](../runbooks/LOCAL_SMOKE_MATRIX.md) together, preserving the distinction between local proof, guarded remote proof, mutation-capable setup, and live integration execution.
+
+---
+
+## 5. G224 — Focused local tests / helpers inventory (placeholders + known files)
+
+These are **local unit/integration/helper** surfaces other lanes are adding or have added. They are not live smokes. Status labels:
+
+- **Present** — file observed in repo during G224 inspection
+- **Expected** — placeholder for a focused test/helper other lanes may add; treat as inventory slot until confirmed Present
+- **Live deferred** — any real provider/bucket/OAuth/HTTP send remains owner-gated
+
+| Area | Focused local surface | Status | Live? |
+|---|---|---|---|
+| Storage / R2 | `apps/api/src/storage/r2.config.test.ts` | Present | Live deferred |
+| Storage / R2 | `apps/api/src/storage/r2-proof-stage.test.ts` | Present | Live deferred |
+| Storage / R2 | `apps/api/src/storage/private-storage.service.test.ts` | Present | Live deferred |
+| Storage / R2 | `apps/api/tests/integration/r2-storage-boundary.integration.test.ts` | Present | Live deferred |
+| Storage / R2 | `apps/api/tests/integration/sec-h1-storage-key-leak.integration.test.ts` | Present | Live deferred |
+| Storage / R2 | Additional signed-URL / image-variant byte helpers | Expected | Live deferred |
+| Notifications | `apps/api/src/notifications/notification-events.test.ts` | Present | Live deferred |
+| Notifications | `apps/api/src/notifications/email-no-send-adapter.test.ts` | Present | Live deferred |
+| Notifications | `apps/api/src/config/email.config.test.ts` | Present | Live deferred |
+| Notifications | `apps/api/tests/integration/email-notification-wiring.integration.test.ts` | Present | Live deferred |
+| Notifications | In-system inbox / persistence model tests | Expected | Live deferred (persistence may still be unimplemented) |
+| GA / GSC | `apps/api/src/config/ga-gsc.config.test.ts` | Present | Live deferred |
+| GA / GSC | Monthly report policy / FINAL visibility helpers (`monthly-report-policy.test.ts`, `client-portal-monthly-report.test.ts`) | Present | Live deferred |
+| GA / GSC | OAuth token storage / refresh unit suite | Expected | Live deferred |
+| WordPress | `apps/api/src/services/wordpress.service.test.ts` | Present | Live deferred |
+| WordPress | Publish-freeze / credential-shape focused coverage | Expected (may already be inside wordpress.service.test) | Live deferred; auto-publish stays deferred |
+| Image | `apps/api/src/core/image-compliance-policy.test.ts` | Present | Live deferred |
+| Image | `apps/api/src/core/image-generation.execution.test.ts` | Present | Live deferred |
+| Image | `apps/api/tests/integration/image-generation.integration.test.ts` | Present | Live deferred |
+| Image | Live provider client wiring tests | Expected | Live deferred |
+| Client Portal | `apps/api/src/core/client-portal.runtime.test.ts` | Present | Live deferred |
+| Client Portal | `apps/api/src/core/client-portal-edit.runtime.test.ts` | Present | Live deferred |
+| Client Portal | `apps/api/src/core/client-portal-monthly-report.test.ts` | Present | Live deferred |
+| Client Portal | `apps/api/tests/integration/client-portal.integration.test.ts` | Present | Live deferred |
+| Client Portal | Staging/production browser proof suite | Expected | Live deferred |
+| Packs | `apps/api/src/core/client-operating-packs.test.ts` | Present | No live |
+| Future modules | `packages/shared/src/future-module-contracts.proof.ts` | Present | No live (contracts only) |
+| Future modules | MI / Revenue Hub / POD live ingestion tests | Expected | Live deferred |
+| AI budget | `apps/api/src/core/ai-budget-reporting.contract.test.ts` | Present | No live |
+| AI budget | Trusted `actualCostUsd` ingestion tests | Expected | Live deferred (ingestion not implemented) |
+| External readiness | `apps/api/src/core/external-integrations-readiness.service.test.ts` | Present | Config-shape only |
+| Staging guards | `scripts/smoke-staging-security-baseline.guard.test.mjs` | Present | Remote live deferred |
+| Staging guards | `scripts/bootstrap-staging-admin.guard.test.mjs` | Present | Mutation deferred |
+
+### 5.1 Live smoke deferral reminder
+
+| Category | Inventory meaning |
+|---|---|
+| Local focused tests above | May be run after `npm.cmd run validate` when scoped |
+| Existing `smoke:*:local` / browser scripts in §2 | Local/disabled-safe or config-shape unless a recorded proof says otherwise |
+| `smoke:mvp:staging`, `smoke:staging-security-baseline` | Guarded remote; owner approval required |
+| Real R2 IO, live email, live GA/GSC, live WordPress, live image provider | **Not** inventory-complete; remain deferred |
+
+---
+
+## 6. Related docs
+
+- Security alignment: [`docs/security/SECURITY_CHECKLIST_G223.md`](../security/SECURITY_CHECKLIST_G223.md)
+- Validation guards: [`VALIDATION_COMMAND_GUARDS.md`](./VALIDATION_COMMAND_GUARDS.md)
+- Next gates: [`G227_NEXT_30_GATES.md`](./G227_NEXT_30_GATES.md)
+- Proposed main-doc patches: [`_g223_g227_proposed_main_doc_updates.md`](./_g223_g227_proposed_main_doc_updates.md)

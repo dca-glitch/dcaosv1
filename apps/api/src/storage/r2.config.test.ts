@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { getR2Config, getR2EnvPresence } from "./r2.config";
+import { getR2Config, getR2ConfigRedactedSummary, getR2EnvPresence } from "./r2.config";
 
 const R2_ENV_KEYS = [
   "R2_ACCOUNT_ID",
@@ -73,6 +73,59 @@ describe("r2.config — boolean presence and disabled-safe defaults", () => {
       R2_BUCKET_NAME: "bucket-test"
     }, () => {
       assert.equal(getR2Config(), null);
+    });
+  });
+});
+
+describe("r2.config — redacted summary (G150)", () => {
+  it("redacts access key ID and secret while reporting endpoint/bucket presence safely", () => {
+    withR2Env({
+      R2_ACCOUNT_ID: "acct-redact",
+      R2_ACCESS_KEY_ID: "AKIA_SHOULD_NOT_LEAK",
+      R2_SECRET_ACCESS_KEY: "super-secret-value-should-not-leak",
+      R2_BUCKET_NAME: "private-bucket-name",
+      R2_ENDPOINT: "https://example.r2.cloudflarestorage.com"
+    }, () => {
+      const summary = getR2ConfigRedactedSummary();
+      const serialized = JSON.stringify(summary);
+
+      assert.equal(summary.accessKeyIdPresent, true);
+      assert.equal(summary.secretAccessKeyPresent, true);
+      assert.equal(summary.endpointPresent, true);
+      assert.equal(summary.bucketPresent, true);
+      assert.equal(serialized.includes("AKIA_SHOULD_NOT_LEAK"), false);
+      assert.equal(serialized.includes("super-secret-value-should-not-leak"), false);
+      assert.equal(serialized.includes("private-bucket-name"), false);
+      assert.equal(serialized.includes("https://example.r2.cloudflarestorage.com"), false);
+      assert.equal(serialized.includes("acct-redact"), false);
+    });
+  });
+
+  it("labels partial env as missing_config and never live_proven", () => {
+    withR2Env({
+      R2_ACCOUNT_ID: "partial-acct",
+      R2_ACCESS_KEY_ID: "partial-key",
+      R2_SECRET_ACCESS_KEY: undefined,
+      R2_BUCKET_NAME: undefined
+    }, () => {
+      const summary = getR2ConfigRedactedSummary();
+      assert.equal(summary.readinessLabel, "missing_config");
+      assert.equal(summary.liveProven, false);
+      assert.equal(getR2Config(), null);
+    });
+  });
+
+  it("labels full env as configured_shape_ok but not live_proven", () => {
+    withR2Env({
+      R2_ACCOUNT_ID: "full-acct",
+      R2_ACCESS_KEY_ID: "full-key",
+      R2_SECRET_ACCESS_KEY: "full-secret",
+      R2_BUCKET_NAME: "full-bucket"
+    }, () => {
+      const summary = getR2ConfigRedactedSummary();
+      assert.equal(summary.readinessLabel, "configured_shape_ok");
+      assert.equal(summary.liveProven, false);
+      assert.ok(getR2Config());
     });
   });
 });

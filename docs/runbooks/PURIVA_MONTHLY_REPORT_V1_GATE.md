@@ -1,12 +1,18 @@
 # Puriva Monthly Report v1 Gate
 
-**Status:** Local deterministic monthly report scaffolding for Puriva delivery status and compliance-safe recommendations. G85 live GA/GSC path planning and G103-G109 helper guardrails are documented separately and do not change this gate into live analytics proof.
+**Status:** Local deterministic monthly report scaffolding for Puriva delivery status and compliance-safe recommendations. G85 live GA/GSC path planning, G103-G109 helper guardrails, and **G171-G180** config/period/source-truth/metric-validation/recommendation/output-guard closeout are documented here and in related runbooks — they do **not** change this gate into live analytics proof.
 
 Related:
 
 - [`docs/architecture/PURIVA_OPERATING_PACK_V1.md`](../architecture/PURIVA_OPERATING_PACK_V1.md) — canonical monthly report flow and launch blockers
 - `apps/api/src/core/puriva-monthly-report.ts`
 - `apps/api/src/core/monthly-report-policy.ts`
+- `apps/api/src/config/ga-gsc.config.ts`
+- `apps/api/src/core/monthly-report-metrics-validation.ts`
+- `apps/api/src/core/monthly-report-metrics-recommendation-policy.ts`
+- `apps/api/src/core/monthly-report-metrics-output-guard.ts`
+- `apps/api/src/core/metrics-source-truth.ts`
+- [`MONTHLY_REPORT_CSV_IMPORT_PROOF_PLAN.md`](./MONTHLY_REPORT_CSV_IMPORT_PROOF_PLAN.md) — G178 CSV/manual import proof plan (no live Google)
 - `scripts/lib/puriva-monthly-report.mjs`
 - `scripts/lib/puriva-local-setup.mjs`
 - `docs/runbooks/PURIVA_CLIENT_PORTAL_BOUNDARY_GATE.md`
@@ -71,3 +77,4 @@ Requires `AUTH_SEED_TEST_PASSWORD` (minimum 8 characters).
 - Client-facing monthly report wording should stay final-snapshot based unless live sync is separately approved.
 - G85 does not authorize OAuth execution, token storage changes, Google API calls, or client-visible "live analytics" labels; it only defines the preconditions and truth-label policy for a future live block.
 - G103-G109 helper tests cover config shape, date range policy, property mapping shape, metrics source truth, generation input contract, and FINAL-only client visibility; they do not prove OAuth or live analytics.
+- **G171-G180 closeout (2026-07-10):** credential presence hardening (missing client id/secret/refresh/property/GSC site; full shape still live-deferred; secrets not serialized); period policy (month bounds, leap Feb, future month rejected, partial current-month warning); metrics source truth serializer (manual/placeholder/csv/live/unavailable/mixed); metric row validation; recommendation input policy (metrics/manual/AI-draft/placeholder — no live AI); client FINAL-only and admin controlled output guards; CSV/manual import proof plan doc. Focused unit tests only — no live Google, no smoke required for this lane.

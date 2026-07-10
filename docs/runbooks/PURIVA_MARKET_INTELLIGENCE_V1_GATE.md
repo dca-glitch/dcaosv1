@@ -83,3 +83,19 @@ npm.cmd run -w @dca-os-v1/api test:unit -- --test-name-pattern puriva-market-int
 - Do not publish hospital/partner/license statements without compliance verification.
 - No medical treatment efficacy claims; educational positioning only.
 - MI API execute is deterministic/local — no OpenRouter, crawl, or WordPress calls in this block.
+
+## G217–G218 contract notes (shared + Puriva helpers)
+
+Shared contracts in `packages/shared/src/market-intelligence.ts`:
+
+- `MarketIntelligenceAdminReviewedSourceSummaryV1` — bounded admin source summary; `uncontrolledScrapingAllowed: false`
+- `MarketIntelligenceClientSafeSummaryContractV1` — client-safe title/summary/opportunities/actions + source label only
+- `sanitizeMarketIntelligenceClientSafePayload` / `findForbiddenClientSafeMiFields` — strip/detect forbidden internals
+
+Puriva helpers in `apps/api/src/core/puriva-market-intelligence.ts`:
+
+- `buildPurivaMiAdminSourceLabels()` — labels competitor placeholders without live-crawl implication
+- `buildPurivaMiClientSafeSummary()` — client-safe surface only
+- `findForbiddenPurivaMiClientSafeFields()` — detect internal field leaks in candidates
+
+These helpers do **not** claim live Market Intelligence readiness, live crawl, or production client-portal activation beyond existing local client-safe summary paths.

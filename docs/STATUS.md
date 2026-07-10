@@ -1,6 +1,6 @@
 # DCA OS Lite — Status (Source of Truth)
 
-**Last updated:** 2026-07-10 (G148 — G89-G147 final integration closeout)
+**Last updated:** 2026-07-10 (G228 — G149-G227 final integration closeout)
 **G55 pre-live readiness:** [`docs/runbooks/G55_PRELIVE_READINESS.md`](./runbooks/G55_PRELIVE_READINESS.md)
 **G56 pre-live readiness:** [`docs/runbooks/G56_PRELIVE_READINESS.md`](./runbooks/G56_PRELIVE_READINESS.md)
 **G57–G68 pre-live readiness:** [`docs/runbooks/G57_G68_PRELIVE_READINESS.md`](./runbooks/G57_G68_PRELIVE_READINESS.md)
@@ -28,14 +28,14 @@
 
 ---
 
-## Executive snapshot (G52-B + G53 + G55 + G56 + G57–G68 + G69 + G89-G148)
+## Executive snapshot (G52-B + G53 + G55 + G56 + G57–G68 + G69 + G89-G228)
 
 | Item | State |
 |------|--------|
-| Latest baseline | G89-G148 final integration on `main` (uncommitted) — local/no-IO foundations across R2, notifications, GA/GSC, WordPress, image policy, Client Portal, Puriva packs, future-module contracts, AI budget reporting, and operator/security docs |
+| Latest baseline | G149-G228 final integration on `main` (uncommitted) — expanded local/no-IO foundations across R2, notifications, GA/GSC, WordPress, image policy, Client Portal, Puriva packs, future-module contracts, and operator/security docs |
 | **G69 merge** | **DONE** — G57–G68 fast-forward merged to `main`; final commit `64bfd06` |
 | Production readiness | **NO** |
-| Next gate | **G149 recommended** — owner-selected launch-blocker execution gate; recommended first target is R2 target-environment real-bucket proof or another explicitly approved low-blast-radius live-proof gate. No live proof, staging mutation, production mutation, commit, push, or deploy is authorized by G148. |
+| Next gate | **G229 recommended** — owner-selected launch-blocker execution gate; recommended first target remains R2 target-environment real-bucket proof. See [`docs/operator/G227_NEXT_30_GATES.md`](./operator/G227_NEXT_30_GATES.md). No live proof, staging mutation, production mutation, commit, push, or deploy is authorized by G228. |
 | G72 model routing | **Implemented** — backend policy per task type; approved model `anthropic/claude-haiku-4.5`; no live call in G72 |
 | G73 routing attribution | **Local PASS** — dry-run/preview `modelRouting` + `plannedLedgerMetadata`; budget guard route cap wired; persistent preview ledger records routing metadata |
 | G74 completed ledger attribution | **Implemented (no-live)** — `buildCompletedLedgerMetadata`, `prepareCompletedLedgerAttribution`, `recordCompletedAiLedgerEntry`; mocked provider execution in unit tests |
@@ -48,7 +48,8 @@
 | G80 `actualCostUsd` policy | **Policy documented only** — `actualCostUsd` remains `null` unless a trusted provider cost is exposed; no invoice-cost ingestion implemented |
 | G81-G87 live proof planning | **Planning/prep only** — staging live proof, notifications, email no-send proof, approval event map, GA/GSC live metrics, WordPress live draft, and image generation provider proof plans updated; no live calls or sends executed |
 | G88 consolidation | **Docs consolidation in shared files** — correct G79-G88 gate map recorded; Puriva Launch remains **BLOCKED** and production remains frozen |
-| G89-G148 final integration | **KEEP pending validation** — 11 lanes reconciled; local foundations only; live R2, live email, live GA/GSC, live WordPress, live image, staging/prod proofs, commit, push, deploy remain blocked |
+| G89-G148 final integration | **KEEP** — local foundations only; live proofs remain blocked |
+| G149-G228 final integration | **KEEP pending validation** — 9 lanes reconciled; local/no-IO foundations only; live R2, live email, live GA/GSC, live WordPress, live image, staging/prod proofs, notification persistence, commit, push, deploy remain blocked |
 | G134-G137 AI budget reporting contract | **Implemented locally (contract + unit proof)** — additive reporting/reconciliation contract separates AI budget from Finance Lite, reports monthly cap/live rows/estimated-vs-actual/provider/model, and keeps invoice reconciliation `not_integrated`; no real invoice or Finance Lite mutation |
 | G76c review | **KEEP** — PowerShell review-only; no code changes |
 | G76d closeout | **Docs only** — wiring + limitations recorded; production remains frozen |
@@ -66,7 +67,7 @@
 | Production deploy | **Frozen/deferred** — no deploy until G49 dry-run + G50 explicit approval |
 | G49 public probes (§6.2) | **PASS** — 2026-07-09; formal gate closure pending owner sentence |
 | G50 production deploy | **Not executed** — frozen/deferred |
-| Puriva Launch | **Blocked** — live proof gates and product workflow gates required; G89-G147 add local foundations and docs only; no live provider/storage/email/Google/WordPress/image proof, staging/prod proof, or production deploy is claimed |
+| Puriva Launch | **Blocked** — live proof gates and product workflow gates required; G89-G227 add local foundations and docs only; no live provider/storage/email/Google/WordPress/image proof, staging/prod proof, or production deploy is claimed |
 | Roadmap tracks | Production Safety · Live Integration Proof · Client Operating Pack/Productization |
 
 Detail: [`AI_MODEL_ROUTING_POLICY.md`](./runbooks/AI_MODEL_ROUTING_POLICY.md) · [`G53_PRODUCTION_SAFETY_PLAN.md`](./runbooks/G53_PRODUCTION_SAFETY_PLAN.md) · [`deferred-scope-register.md`](./operator/deferred-scope-register.md) · §2.14 below.
@@ -208,6 +209,25 @@ G77b evidence remains preserved: workflow run `2244413e-d87b-45a1-8a26-6634ec897
 | **G148** | **KEEP pending validation** | Main-agent integration/reconciliation, validation, and final report gate |
 
 **Recommended next gate:** **G149** — owner-selected launch-blocker execution gate, with R2 target-environment real-bucket proof still the recommended first low-blast-radius candidate. See [`docs/operator/G147_NEXT_20_GATES.md`](./operator/G147_NEXT_20_GATES.md).
+
+## G149-G228 final integration closeout (2026-07-10)
+
+**Overall integration verdict:** **KEEP** if validation passes. All lanes are local/no-IO foundations unless explicitly labeled blocked. Puriva Launch remains **BLOCKED**; production remains frozen. No commit/push/deploy authorized by G228.
+
+| Gate range | Status | Integrated result / limitation |
+|------------|--------|--------------------------------|
+| **G149–G158** Storage/R2 | **READY (local)** | Proof-stage hardening, redacted config summary, private-storage proof intent, client-safe URL policy, serializer storageKey boundary tests, cleanup proof-plan constants; **no real bucket IO** |
+| **G159–G170** Notifications | **READY (local) / BLOCKED (inbox+live)** | Expanded taxonomy V2, recipient/channel/severity/redaction helpers, typed templates, no-send edge tests; persistence/inbox **design only** — no migration; live email still deferred |
+| **G171–G180** GA/GSC/monthly | **READY (local) / BLOCKED (live)** | Credential presence, period policy, source-truth serializer, metric validation, recommendation policy, client/admin output guards, CSV import proof plan; **no live Google** |
+| **G181–G188** WordPress | **READY (local) / BLOCKED (live)** | Draft payload hardening, slug policy, status freeze, credential redaction, proof-plan constants, image-inclusion contract; **no live HTTP** |
+| **G189–G198** Image | **READY (local) / BLOCKED (live)** | Compliance V2, prompt/alt/reject/approval-loop helpers, WP inclusion readiness, provider proof plan; G228 added four image-loop events to shared taxonomy; **no live provider** |
+| **G199–G208** Client Portal | **READY (local) / BLOCKED (staging)** | Serializer/archive/monthly guards, approval serializers, pure approval policy, error-safety helpers, route inventory docs; one-revision-round needs durable schema field |
+| **G209–G216** Puriva pack | **READY (local)** | Entitlement matrix, compliance validator, workflow catalog, client-visibility helpers, saas-later truth docs |
+| **G217–G222** Future modules | **READY (contracts)** | MI/Revenue Hub/POD contracts hardened; no live scrape/CRM/marketplace |
+| **G223–G227** Security/roadmap | **READY (docs)** | Security checklist G223, smoke inventory, validation guards, deferred cleanup proposal, [`G227_NEXT_30_GATES.md`](./operator/G227_NEXT_30_GATES.md) |
+| **G228** | **KEEP pending validation** | Main-agent integration, cross-lane image notification taxonomy join, validation, final report |
+
+**Recommended next gate:** **G229** — owner-selected launch-blocker execution gate; R2 target-environment real-bucket proof remains the recommended first low-blast-radius candidate. See [`docs/operator/G227_NEXT_30_GATES.md`](./operator/G227_NEXT_30_GATES.md).
 
 ## G134-G137 AI budget reporting/reconciliation contract (2026-07-10)
 

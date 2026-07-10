@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
+  assertClientPortalPayloadHasNoForbiddenKeys,
+  collectClientPortalForbiddenPayloadKeys
+} from "./client-portal-error-safety";
+import {
   isClientPortalFinalMonthlyReportStatus,
   isClientPortalVisibleDeliverableStatus,
   toClientPortalDeliverableSummary,
@@ -8,7 +12,7 @@ import {
 } from "./client-portal.runtime";
 
 describe("client portal final delivery guards", () => {
-  it("allows only final deliverable statuses in client archive responses", () => {
+  it("allows only final deliverable statuses in client archive responses (G203)", () => {
     assert.equal(isClientPortalVisibleDeliverableStatus("DELIVERED"), true);
     assert.equal(isClientPortalVisibleDeliverableStatus("ACCEPTED"), true);
 
@@ -18,7 +22,7 @@ describe("client portal final delivery guards", () => {
     assert.equal(isClientPortalVisibleDeliverableStatus("ADMIN_REVIEW"), false);
   });
 
-  it("allows only FINAL monthly reports in client archive responses", () => {
+  it("allows only FINAL monthly reports in client archive responses (G203)", () => {
     assert.equal(isClientPortalFinalMonthlyReportStatus("FINAL"), true);
 
     assert.equal(isClientPortalFinalMonthlyReportStatus("DRAFT"), false);
@@ -28,7 +32,7 @@ describe("client portal final delivery guards", () => {
   });
 });
 
-describe("client-portal.runtime — client-safe storage serialization", () => {
+describe("client-portal.runtime — serializer audit (G199)", () => {
   it("preserves deliverable exportUrl without exposing storageKey", () => {
     const summary = toClientPortalDeliverableSummary({
       id: "deliverable-1",
@@ -48,6 +52,7 @@ describe("client-portal.runtime — client-safe storage serialization", () => {
     assert.equal(summary.exportUrl, "https://docs.example.com/export/client-deliverable");
     assert.equal(serialized.includes("storageKey"), false);
     assert.equal(serialized.includes("tenants/internal/private-object.pdf"), false);
+    assertClientPortalPayloadHasNoForbiddenKeys(summary);
   });
 
   it("turns monthly report storageKey into hasDocument only", () => {
@@ -66,7 +71,63 @@ describe("client-portal.runtime — client-safe storage serialization", () => {
     const serialized = JSON.stringify(summary);
     assert.equal(summary.exportUrl, "https://docs.example.com/export/monthly-report");
     assert.equal(summary.hasDocument, true);
+    assert.equal(summary.status, "FINAL");
     assert.equal(serialized.includes("storageKey"), false);
     assert.equal(serialized.includes("tenants/internal/monthly-report.pdf"), false);
+    assertClientPortalPayloadHasNoForbiddenKeys(summary);
+  });
+
+  it("does not expose provider metadata, workflow run status, job queue, audit logs, raw cost, or admin notes", () => {
+    const deliverable = toClientPortalDeliverableSummary({
+      id: "deliverable-2",
+      aiDeliveryProjectId: "project-2",
+      title: "Final article",
+      description: "Client-visible",
+      deliveryType: "ARTICLE_DRAFT",
+      status: "ACCEPTED",
+      exportUrl: "https://docs.example.com/export/final-article",
+      isArchived: false,
+      createdAt: new Date("2026-07-01T00:00:00.000Z"),
+      updatedAt: new Date("2026-07-02T00:00:00.000Z")
+    });
+
+    const pollutedAttempt = {
+      ...deliverable,
+      // Simulate accidental merge of internal fields — serializer output itself must stay clean.
+      __internalProbe: {
+        storageKey: "tenants/x/y",
+        providerMetadata: { model: "x" },
+        workflowRunId: "run-1",
+        workflowRunStatus: "RUNNING",
+        jobQueueStatus: "queued",
+        auditLogs: [{ id: "a1" }],
+        actualCostUsd: 12.5,
+        adminSummaryNotes: "do not show"
+      }
+    };
+
+    assertClientPortalPayloadHasNoForbiddenKeys(deliverable);
+    const leaked = collectClientPortalForbiddenPayloadKeys(pollutedAttempt);
+    assert.ok(leaked.includes("storageKey"));
+    assert.ok(leaked.includes("providerMetadata"));
+    assert.ok(leaked.includes("workflowRunId"));
+    assert.ok(leaked.includes("jobQueueStatus"));
+    assert.ok(leaked.includes("auditLogs"));
+    assert.ok(leaked.includes("actualCostUsd"));
+    assert.ok(leaked.includes("adminSummaryNotes"));
+
+    const keys = Object.keys(deliverable);
+    for (const forbidden of [
+      "storageKey",
+      "providerMetadata",
+      "workflowRunId",
+      "workflowRunStatus",
+      "jobQueueStatus",
+      "auditLogs",
+      "actualCostUsd",
+      "adminSummaryNotes"
+    ]) {
+      assert.equal(keys.includes(forbidden), false, `unexpected key ${forbidden}`);
+    }
   });
 });

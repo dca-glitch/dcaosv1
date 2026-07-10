@@ -12,6 +12,7 @@ export type MonthlyReportDateRangeStatus =
   | "closed_month"
   | "partial_period"
   | "blocked_current_month"
+  | "future_month"
   | "invalid";
 
 export interface MonthlyReportDateRangePolicyInput {
@@ -30,6 +31,7 @@ export interface MonthlyReportDateRangePolicy {
   partialPeriod: boolean;
   label: string;
   errors: string[];
+  warnings: string[];
 }
 
 export interface MonthlyMetricsSourceTruthInput {
@@ -38,6 +40,7 @@ export interface MonthlyMetricsSourceTruthInput {
   placeholderOnly?: boolean | null;
   gaGscReadinessStatus?: GaGscIntegrationReadinessStatus | null;
   liveProofApproved?: boolean | null;
+  mixedSources?: boolean | null;
 }
 
 export interface MonthlyMetricsSourceTruth {
@@ -46,6 +49,7 @@ export interface MonthlyMetricsSourceTruth {
   clientLabel: string;
   liveGaGscProven: boolean;
   clientMayUseLiveLanguage: boolean;
+  mixedSources: boolean;
 }
 
 export interface MonthlyReportGenerationInputContract {
@@ -83,12 +87,18 @@ function referenceTargetMonth(referenceDate: Date): string {
   return referenceDate.toISOString().slice(0, 7);
 }
 
+function compareYearMonth(a: string, b: string): number {
+  if (a === b) return 0;
+  return a < b ? -1 : 1;
+}
+
 export function resolveMonthlyReportDateRangePolicy(
   input: MonthlyReportDateRangePolicyInput
 ): MonthlyReportDateRangePolicy {
   const targetMonth = input.targetMonth.trim();
   const reportingTimezone = input.reportingTimezone.trim();
   const errors: string[] = [];
+  const warnings: string[] = [];
 
   if (!isTargetMonth(targetMonth)) {
     errors.push("targetMonth must use YYYY-MM format");
@@ -106,37 +116,59 @@ export function resolveMonthlyReportDateRangePolicy(
       reportingTimezone,
       partialPeriod: false,
       label: "Invalid monthly report date range",
-      errors
+      errors,
+      warnings
     };
   }
 
   const referenceDate = input.referenceDate ?? new Date();
-  const isCurrentMonth = referenceTargetMonth(referenceDate) === targetMonth;
+  const referenceMonth = referenceTargetMonth(referenceDate);
   const startDate = `${targetMonth}-01`;
+  const closedEnd = monthEndDate(targetMonth);
+
+  if (compareYearMonth(targetMonth, referenceMonth) > 0) {
+    return {
+      status: "future_month",
+      targetMonth,
+      startDate,
+      endDate: closedEnd,
+      reportingTimezone,
+      partialPeriod: false,
+      label: `Future month ${targetMonth} is unavailable for reporting (${reportingTimezone})`,
+      errors: ["future month is unavailable for monthly report generation"],
+      warnings
+    };
+  }
+
+  const isCurrentMonth = referenceMonth === targetMonth;
 
   if (isCurrentMonth && !input.allowPartialPeriod) {
     return {
       status: "blocked_current_month",
       targetMonth,
       startDate,
-      endDate: monthEndDate(targetMonth),
+      endDate: closedEnd,
       reportingTimezone,
       partialPeriod: false,
       label: "Current-month report requires explicit partial-period labeling",
-      errors: ["current month is not a closed reporting period"]
+      errors: ["current month is not a closed reporting period"],
+      warnings
     };
   }
 
   if (isCurrentMonth && input.allowPartialPeriod) {
+    const endDate = referenceDate.toISOString().slice(0, 10);
+    warnings.push("partial current-month period — metrics are incomplete until month close");
     return {
       status: "partial_period",
       targetMonth,
       startDate,
-      endDate: referenceDate.toISOString().slice(0, 10),
+      endDate,
       reportingTimezone,
       partialPeriod: true,
-      label: `Partial period ${startDate} through ${referenceDate.toISOString().slice(0, 10)} (${reportingTimezone})`,
-      errors: []
+      label: `Partial period ${startDate} through ${endDate} (${reportingTimezone})`,
+      errors: [],
+      warnings
     };
   }
 
@@ -144,24 +176,28 @@ export function resolveMonthlyReportDateRangePolicy(
     status: "closed_month",
     targetMonth,
     startDate,
-    endDate: monthEndDate(targetMonth),
+    endDate: closedEnd,
     reportingTimezone,
     partialPeriod: false,
-    label: `Closed month ${startDate} through ${monthEndDate(targetMonth)} (${reportingTimezone})`,
-    errors: []
+    label: `Closed month ${startDate} through ${closedEnd} (${reportingTimezone})`,
+    errors: [],
+    warnings
   };
 }
 
 export function resolveMonthlyMetricsSourceTruth(
   input: MonthlyMetricsSourceTruthInput
 ): MonthlyMetricsSourceTruth {
+  const mixedSources = input.mixedSources === true;
+
   if (!input.sourceType) {
     return {
       truth: "unavailable",
       adminLabel: "metrics unavailable",
       clientLabel: "Metrics unavailable",
       liveGaGscProven: false,
-      clientMayUseLiveLanguage: false
+      clientMayUseLiveLanguage: false,
+      mixedSources
     };
   }
 
@@ -172,7 +208,8 @@ export function resolveMonthlyMetricsSourceTruth(
       adminLabel: placeholder ? "MANUAL placeholder snapshot" : "MANUAL approved snapshot",
       clientLabel: placeholder ? "Placeholder metrics for local proof" : "Metrics from approved manual snapshot",
       liveGaGscProven: false,
-      clientMayUseLiveLanguage: false
+      clientMayUseLiveLanguage: false,
+      mixedSources
     };
   }
 
@@ -182,26 +219,33 @@ export function resolveMonthlyMetricsSourceTruth(
       adminLabel: "CSV imported snapshot",
       clientLabel: "Metrics from approved imported snapshot",
       liveGaGscProven: false,
-      clientMayUseLiveLanguage: false
+      clientMayUseLiveLanguage: false,
+      mixedSources
     };
   }
 
   if (input.status === "APPROVED" && input.gaGscReadinessStatus === "configured_shape_ok" && input.liveProofApproved) {
     return {
       truth: "live",
-      adminLabel: "LIVE_GA_GSC approved snapshot",
+      adminLabel: mixedSources
+        ? "LIVE_GA_GSC approved snapshot (mixed sources)"
+        : "LIVE_GA_GSC approved snapshot",
       clientLabel: "Metrics imported from connected analytics sources",
       liveGaGscProven: true,
-      clientMayUseLiveLanguage: true
+      clientMayUseLiveLanguage: true,
+      mixedSources
     };
   }
 
   return {
     truth: "unavailable",
-    adminLabel: "GA/GSC unavailable or not live-proven",
+    adminLabel: mixedSources
+      ? "GA/GSC unavailable or not live-proven (mixed sources)"
+      : "GA/GSC unavailable or not live-proven",
     clientLabel: "Metrics unavailable",
     liveGaGscProven: false,
-    clientMayUseLiveLanguage: false
+    clientMayUseLiveLanguage: false,
+    mixedSources
   };
 }
 
@@ -228,7 +272,11 @@ export function validateMonthlyReportGenerationInput(
       allowPartialPeriod: false
     });
 
-  if (dateRange.status === "invalid" || dateRange.status === "blocked_current_month") {
+  if (
+    dateRange.status === "invalid" ||
+    dateRange.status === "blocked_current_month" ||
+    dateRange.status === "future_month"
+  ) {
     errors.push(...dateRange.errors);
   }
 

@@ -297,3 +297,98 @@ export function summarizePurivaMarketIntelligenceContext(
     `gaps=${context.contentGapCategories.length}`
   ].join(" · ");
 }
+
+/** Admin-facing source label — never implies live crawl or marketplace lookup. */
+export type PurivaMiSourceLabel = {
+  kind: "operator_reviewed_placeholder";
+  displayLabel: string;
+  liveCrawlImplied: false;
+  marketplaceLookupImplied: false;
+};
+
+export const PURIVA_MI_SOURCE_LABEL: PurivaMiSourceLabel = {
+  kind: "operator_reviewed_placeholder",
+  displayLabel: "Operator-reviewed placeholder (not live research)",
+  liveCrawlImplied: false,
+  marketplaceLookupImplied: false
+};
+
+/**
+ * Build admin-reviewed source summary rows from Puriva competitor placeholders.
+ * URLs stay admin-only; labels never claim live crawl proof.
+ */
+export function buildPurivaMiAdminSourceLabels(
+  context: PurivaMarketIntelligenceContext = buildPurivaMarketIntelligenceContext()
+): Array<{
+  id: string;
+  title: string;
+  sourceType: PurivaMiCompetitorPlaceholder["sourceType"];
+  sourceUrl: string;
+  label: PurivaMiSourceLabel;
+  notes: string;
+}> {
+  return context.competitorPlaceholders.map((entry) => ({
+    id: entry.id,
+    title: entry.name,
+    sourceType: entry.sourceType,
+    sourceUrl: entry.sourceUrl,
+    label: PURIVA_MI_SOURCE_LABEL,
+    notes: entry.notes
+  }));
+}
+
+/**
+ * Client-safe Puriva MI surface — title/summary/opportunities/actions + source label only.
+ * Strips admin URLs, compliance internals, and raw research summaries.
+ */
+export function buildPurivaMiClientSafeSummary(input?: {
+  title?: string;
+  marketSummary?: string | null;
+  opportunities?: string[];
+  recommendedActions?: string[];
+}): {
+  title: string;
+  marketSummary: string | null;
+  opportunities: string[];
+  recommendedActions: string[];
+  sourceLabel: PurivaMiSourceLabel;
+  adminReviewed: true;
+  rawInternalsExposed: false;
+  liveCrawlImplied: false;
+} {
+  return {
+    title: input?.title ?? "Puriva market intelligence summary",
+    marketSummary:
+      input?.marketSummary ??
+      "Operator-reviewed educational market context for Bali aesthetic clinic planning. Not live research.",
+    opportunities: (input?.opportunities ?? ["Clarify educational positioning for consultation eligibility"]).slice(
+      0,
+      12
+    ),
+    recommendedActions: (
+      input?.recommendedActions ?? ["Keep hospital/partner/license claims verification-gated"]
+    ).slice(0, 12),
+    sourceLabel: PURIVA_MI_SOURCE_LABEL,
+    adminReviewed: true,
+    rawInternalsExposed: false,
+    liveCrawlImplied: false
+  };
+}
+
+/** Detect forbidden internal keys on a candidate client-safe Puriva MI payload. */
+export function findForbiddenPurivaMiClientSafeFields(payload: Record<string, unknown>): string[] {
+  const forbidden = [
+    "tenantId",
+    "storageKey",
+    "executionLog",
+    "reviewerNotes",
+    "sourceUrl",
+    "competitorPlaceholders",
+    "serviceCategorySummaries",
+    "complianceAnnotations",
+    "verificationRequiredNotes",
+    "provider",
+    "prompt"
+  ];
+  return forbidden.filter((key) => Object.prototype.hasOwnProperty.call(payload, key));
+}

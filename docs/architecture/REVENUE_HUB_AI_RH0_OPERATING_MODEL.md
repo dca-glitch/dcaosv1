@@ -105,3 +105,17 @@ This document only. No module code, migrations, API routes, or UI until an appro
 The G130-G131 closeout adds shared typed contracts for future Revenue Hub data
 snapshots and advisory-only AI recommendation guards. These contracts do not
 activate a module, connector, payment flow, CRM flow, or client-visible surface.
+
+## 10. G219 operating contract (shared types only)
+
+`RevenueHubOperatingContractV1` (in `packages/shared/src/ai-delivery-revenue-chain.ts`)
+extends the RH0 boundary with typed lead, opportunity, attribution, and
+recommendation shapes plus an explicit no-live CRM policy:
+
+- CRM live sync / write-back: disabled
+- Financial guarantees: disabled (`financialGuarantee: false` on opportunities)
+- Payment / external billing writes: disabled
+- Operator review required; client-visible by default: false
+
+This is a **contract/docs closeout only**. It does not activate Revenue Hub UI,
+schema, connectors, CRM sync, or live financial systems.

@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
+  buildMonthlyReportAdminOutput,
+  buildMonthlyReportClientOutput
+} from "./monthly-report-metrics-output-guard";
+import {
   buildPurivaMonthlyReportAdminSummaryNotes,
   buildPurivaMonthlyReportClientRecommendationsText,
   buildPurivaMonthlyReportClientSafeSummary,
@@ -111,5 +115,86 @@ describe("puriva-monthly-report", () => {
 
     assert.ok(monthlyReportHasPurivaMarker({ title }));
     assert.ok(title.includes(PURIVA_MONTHLY_REPORT_MARKER));
+  });
+
+  it("G176: client monthly report output guard — FINAL only, no admin/internal leaks", () => {
+    const context = buildPurivaMonthlyReportContext(targetMonth);
+    const adminNotes = buildPurivaMonthlyReportAdminSummaryNotes(context);
+    const clientSummary = buildPurivaMonthlyReportClientSafeSummary(context);
+
+    const draftBlocked = buildMonthlyReportClientOutput({
+      status: "DRAFT",
+      title: clientSummary.title,
+      recommendationsText: clientSummary.recommendationsText,
+      adminSummaryNotes: adminNotes,
+      storageKey: "private/puriva/report-key",
+      internalSourceId: "src_internal",
+      jobStatus: "RUNNING",
+      runStatus: "QUEUED"
+    });
+    assert.equal(draftBlocked.ok, false);
+
+    const finalOk = buildMonthlyReportClientOutput({
+      status: "FINAL",
+      title: clientSummary.title,
+      recommendationsText: clientSummary.recommendationsText,
+      deliveryHeadline: clientSummary.deliveryHeadline,
+      clientSafePerformanceNote: clientSummary.performanceNote,
+      metricsTruthLabel: "Placeholder metrics for local proof",
+      adminSummaryNotes: adminNotes,
+      storageKey: "private/puriva/report-key",
+      oauthClientSecret: "secret-value",
+      refreshToken: "refresh-value",
+      internalSourceId: "src_internal",
+      jobStatus: "RUNNING",
+      runStatus: "QUEUED",
+      workflowRunId: "run_abc"
+    });
+
+    assert.equal(finalOk.ok, true, finalOk.errors.join("; "));
+    assert.ok(finalOk.client);
+    assert.equal(finalOk.client.status, "FINAL");
+    const serialized = JSON.stringify(finalOk.client);
+    assert.equal(serialized.includes(adminNotes), false);
+    assert.equal(serialized.includes("private/puriva/report-key"), false);
+    assert.equal(serialized.includes("src_internal"), false);
+    assert.equal(serialized.includes("RUNNING"), false);
+    assert.equal(serialized.includes("secret-value"), false);
+    assert.equal("storageKey" in finalOk.client, false);
+  });
+
+  it("G177: admin monthly report output may include notes/status but not secrets/storageKey", () => {
+    const context = buildPurivaMonthlyReportContext(targetMonth);
+    const adminNotes = buildPurivaMonthlyReportAdminSummaryNotes(context);
+    const clientSummary = buildPurivaMonthlyReportClientSafeSummary(context);
+
+    const adminOk = buildMonthlyReportAdminOutput({
+      status: "ADMIN_REVIEW",
+      title: purivaMonthlyReportTitle(targetMonth),
+      recommendationsText: clientSummary.recommendationsText,
+      adminSummaryNotes: adminNotes,
+      performanceNote: context.metricsFixtureNote,
+      metricsTruthLabel: "MANUAL placeholder snapshot",
+      storageKey: "private/puriva/report-key",
+      oauthClientSecret: "secret-value",
+      refreshToken: "refresh-value",
+      googleAccessToken: "access-value",
+      internalSourceId: "src_internal",
+      jobStatus: "IDLE",
+      runStatus: "COMPLETE",
+      workflowRunId: "run_abc"
+    });
+
+    assert.equal(adminOk.ok, true, adminOk.errors.join("; "));
+    assert.ok(adminOk.admin);
+    assert.equal(adminOk.admin.adminSummaryNotes, adminNotes);
+    assert.equal(adminOk.admin.internalSourceId, "src_internal");
+    assert.equal(adminOk.admin.hasDocument, true);
+    assert.equal("storageKey" in adminOk.admin, false);
+    const serialized = JSON.stringify(adminOk.admin);
+    assert.equal(serialized.includes("private/puriva/report-key"), false);
+    assert.equal(serialized.includes("secret-value"), false);
+    assert.equal(serialized.includes("refresh-value"), false);
+    assert.equal(serialized.includes("access-value"), false);
   });
 });

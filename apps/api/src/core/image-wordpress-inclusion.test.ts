@@ -1,0 +1,61 @@
+import assert from "node:assert/strict";
+import { describe, it } from "node:test";
+import {
+  evaluateImageWordpressInclusionReadiness,
+  IMAGE_WORDPRESS_INCLUSION_ROLES
+} from "./image-wordpress-inclusion";
+
+describe("image-wordpress-inclusion", () => {
+  it("G195 allows only final_accepted hero/supporting/social with alt text", () => {
+    assert.deepEqual(IMAGE_WORDPRESS_INCLUSION_ROLES, ["hero", "supporting", "social"]);
+
+    for (const role of IMAGE_WORDPRESS_INCLUSION_ROLES) {
+      const decision = evaluateImageWordpressInclusionReadiness({
+        approvalState: "final_accepted",
+        role,
+        hasAltText: true,
+        hasSocialPreviewAsset: role === "social" ? true : undefined
+      });
+      assert.equal(decision.ready, true, role);
+      assert.ok(decision.checks.includes("READY:wordpress_draft_inclusion"));
+    }
+  });
+
+  it("G195 rejects non-final states", () => {
+    for (const state of [
+      "candidate_generated",
+      "admin_approved",
+      "admin_rejected",
+      "client_approved",
+      "client_rejected",
+      "replacement_requested"
+    ] as const) {
+      const decision = evaluateImageWordpressInclusionReadiness({
+        approvalState: state,
+        role: "hero",
+        hasAltText: true
+      });
+      assert.equal(decision.ready, false, state);
+      assert.ok(decision.reasons.some((r) => r.includes("final_accepted")));
+    }
+  });
+
+  it("G195 rejects missing alt text and missing social asset", () => {
+    const noAlt = evaluateImageWordpressInclusionReadiness({
+      approvalState: "final_accepted",
+      role: "supporting",
+      hasAltText: false
+    });
+    assert.equal(noAlt.ready, false);
+    assert.ok(noAlt.checks.includes("REJECT:missing_alt_text"));
+
+    const noSocial = evaluateImageWordpressInclusionReadiness({
+      approvalState: "final_accepted",
+      role: "social",
+      hasAltText: true,
+      hasSocialPreviewAsset: false
+    });
+    assert.equal(noSocial.ready, false);
+    assert.ok(noSocial.checks.includes("REJECT:missing_social_preview_asset"));
+  });
+});

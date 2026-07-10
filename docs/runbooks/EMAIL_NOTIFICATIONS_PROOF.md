@@ -1,6 +1,6 @@
 # Email Notifications Proof
 
-**Status:** Audit + wiring block (2026-07-09), refreshed by G94-G102 no-schema notification foundation (2026-07-10). Local disabled-safe wiring improved for Puriva launch events; live Resend proof remains owner-gated. No live email was sent in these blocks.
+**Status:** Audit + wiring block (2026-07-09), refreshed by G94-G102 and G159–G170 no-schema notification foundation (2026-07-10). Local disabled-safe wiring improved for Puriva launch events; live Resend proof remains owner-gated. No live email was sent in these blocks. In-system persistence remains design-only.
 
 **Scope:** Audit the current transactional email/notification subsystem, define the event taxonomy requested for Puriva launch (article ready, image set ready, client approved/rejected, admin action required, monthly report final, WordPress draft prepared), confirm disabled-safe local mode, and lay out a bounded live-Resend proof plan for a future owner-approved session. This document does **not** authorize a live send.
 
@@ -60,16 +60,20 @@ Both pathways write to the same `EmailLog` table (`packages/data/prisma/schema.p
 
 **Summary (G83 refresh):** current code has disabled-safe real-path email intent for article/content review requests, image `FINAL_READY`, client deliverable approved/rejected, monthly report `FINAL`, WordPress draft prepared, and several admin-action review requests. Local mode still writes `EmailLog.status=SKIPPED`; no live Resend send has been proven. The remaining launch gap is not "no code path exists"; it is that there is no user-scoped in-system notification model, no live inbox proof, no client email on monthly report `FINAL`, and no notification on image-level client approve/reject rows.
 
-### 2.1 G94-G102 pure mapping inventory
+### 2.1 G94-G102 / G159–G170 pure mapping inventory
 
-G94-G102 added `packages/shared/src/notification-events.ts` as the schema-safe inventory for notification-worthy events before any DB migration. It includes:
+`packages/shared/src/notification-events.ts` (`NOTIFICATION_EVENTS_V2`) is the schema-safe inventory for notification-worthy events before any DB migration. It includes:
 
-- Canonical `NotificationEventType` values for article ready, image set ready, client approve/reject, image approve/reject, admin action required, monthly report final, WordPress draft prepared, workflow/budget/kill-switch events.
-- Pure `mapBusinessEventToNotification()` mapping with required channels.
-- `resolveNotificationChannelPolicy()` policy: in-system is always required; email is required for launch-critical events; phone is supplement-only and insufficient for launch; local email remains no-send.
-- `APPROVAL_REJECT_NOTIFICATION_MATRIX` for deliverable/image approve/reject behavior.
+- Expanded `NotificationEventType` values for G159: content draft ready, content approved, content changes requested, image set ready, image rejected with reason, image approved, client approval needed, admin alert after client action, monthly report available, external integration disabled, external proof failed, budget threshold warning, budget cap blocked, WordPress draft prepared, storage proof failed — plus legacy G94–G102 aliases.
+- Pure `mapBusinessEventToNotification()` mapping with required channels and recipient roles.
+- `resolveNotificationRecipientPolicy()` (G160): admin / client / owner-operator / system-log-only.
+- `resolveNotificationChannelPolicy()` (G161): in-system always required; email for launch-critical non-audit events; audit-only for internal proof; phone supplement-only; local email remains no-send.
+- Severity scale (G162): `info` / `action_required` / `warning` / `blocked` / `critical`.
+- `redactNotificationPayload()` (G163): strips secrets, `storageKey`, raw provider responses, OAuth tokens, stack traces, private audit metadata.
+- `APPROVAL_REJECT_NOTIFICATION_MATRIX` for deliverable/image/content approve/reject behavior.
 - `buildNotificationAuditMetadata()` for safe audit metadata, with provider key presence represented as a boolean only.
-- `EMAIL_TEMPLATE_INVENTORY` constrained to the current schema enum values. Dedicated keys for ready/final/draft-prepared remain blocked without schema approval.
+- `EMAIL_TEMPLATE_INVENTORY` constrained to the current schema enum values; `TYPED_NOTIFICATION_TEMPLATE_CATALOG` (G166) maps logical keys onto those schema keys. Dedicated DB enum keys remain blocked without schema approval.
+- Persistence + inbox API design only: [`docs/operator/notification-persistence-design.md`](../operator/notification-persistence-design.md) (G167–G168).
 
 ---
 
@@ -127,11 +131,17 @@ Use this checklist before claiming a notification path is safe in local or stagi
 - [ ] Image-level client approve/reject tests do not claim email proof unless a notification call is added to `approveClientPortalDeliverableImage()` / `rejectClientPortalDeliverableImage()`.
 - [ ] Monthly report `FINAL` tests distinguish current admin notification intent from the still-missing client delivery notification.
 
-### 3.7 G99 no-send adapter proof
+### 3.7 G99 / G165 no-send adapter proof
 
-`apps/api/src/notifications/email-no-send-adapter.ts` defines a local no-send adapter interface for tests and future wiring seams. It returns `SKIPPED`, stores a normalized local attempt, sets `providerMessageId: null`, and never calls `fetch` or Resend.
+`apps/api/src/notifications/email-no-send-adapter.ts` (`EMAIL_NO_SEND_ADAPTER_V2`) defines a local no-send adapter interface for tests and future wiring seams. It returns `SKIPPED`, stores a normalized local attempt, sets `providerMessageId: null`, never calls `fetch` or Resend, and does not require an API key.
 
-Focused proof: `apps/api/src/notifications/email-no-send-adapter.test.ts` overrides `globalThis.fetch` with a throwing stub and verifies the adapter does not invoke it.
+G165 edge coverage also proves:
+
+- Safe metadata only (payload redaction applied)
+- Recipient redaction in log/metadata views when `redactRecipientInLogs` is set
+- Missing/unknown template keys remain no-send safe (`templateMissing: true`, no throw, no provider call)
+
+Focused proof: `apps/api/src/notifications/email-no-send-adapter.test.ts`.
 
 ---
 
@@ -196,12 +206,12 @@ Secrets printed or committed during this session: no (required)
 5. Missing config serializes as non-sending local mode.
 6. A keyed Resend config serializes as `liveProofRequired: true` without exposing the key value.
 
-G94-G102 added:
+G94-G102 / G159–G170 added or refreshed:
 
-- `apps/api/src/notifications/notification-events.test.ts` — event taxonomy, event-to-notification mapping, priority/channel policy, approval/reject matrix, audit metadata builder, and template inventory.
-- `apps/api/src/notifications/email-no-send-adapter.test.ts` — local no-send adapter result shape and no external `fetch` call.
+- `apps/api/src/notifications/notification-events.test.ts` — G159 taxonomy, G160 recipient policy, G161 channel policy, G162 severity, G163 redaction, mapping, approval/reject matrix, audit metadata, G166 typed template catalog.
+- `apps/api/src/notifications/email-no-send-adapter.test.ts` — G165 no-send edge cases (no fetch, no API key, safe metadata, recipient redaction, missing template).
 
-Run in isolation (from `apps/api`): `node --import tsx --test src/notifications/notification-events.test.ts src/notifications/email-no-send-adapter.test.ts src/config/email.config.test.ts` → 20/20 pass. Picked up automatically by the existing `npm run -w @dca-os-v1/api test:unit` glob (`src/**/*.test.ts`); no script changes were needed.
+Run in isolation (from `apps/api`): `node --import tsx --test src/notifications/notification-events.test.ts src/notifications/email-no-send-adapter.test.ts src/config/email.config.test.ts` → **32/32 pass** (G170, 2026-07-10). Log: `$env:TEMP\g159-g170-notification-tests.log`. Picked up automatically by the existing `npm run -w @dca-os-v1/api test:unit` glob (`src/**/*.test.ts`); no script changes were needed.
 
 No new integration test was added under `apps/api/tests/integration/`. Every existing integration test in that folder boots a live app instance and a real Prisma/DB connection (`createApp()` + `createPrismaClient()`); adding one was not necessary to prove disabled-safe behavior for this audit, and starting the API/DB was out of scope for a docs/audit-only block per the repository's local service-startup rules ("do not start API/web unless smoke/browser proof requires it").
 
@@ -217,7 +227,8 @@ No new integration test was added under `apps/api/tests/integration/`. Every exi
 | 4 | Live Resend proof plan defined with explicit pre-conditions, bounded scope, and exclusions | Done (§4) |
 | 5 | Trivial, safe, disabled-safe test added and run in isolation | Done (§5) — 4/4 pass, no network/DB |
 | 6 | No live email sent, no secret read/printed/committed | Done — confirmed throughout |
-| 7 | G94-G102 no-schema foundation proved with focused unit tests | Done (§5) — 20/20 pass, no network/DB |
+| 7 | G94-G102 / G159–G170 no-schema foundation proved with focused unit tests | Done (§5) — focused notification/email unit tests, no network/DB |
+| 8 | G167–G168 persistence + inbox API design documented without migration | Done — `docs/operator/notification-persistence-design.md` |
 
 ---
 
@@ -243,6 +254,6 @@ No new integration test was added under `apps/api/tests/integration/`. Every exi
 | 3 | Image-level client approve/reject writes review rows only; no admin/client notification intent | Small–Medium | Add no-send admin notification after image approve/reject if product requires operators to react before final deliverable approval |
 | 4 | Live Resend adapter proof remains owner-gated and unrun | Low | Execute exactly one owner-inbox proof per §4 in a separate approved block |
 | 5 | No dedicated `EmailTemplateKey` values for ready/final/draft-prepared events — all currently borrow one of the six existing generic keys | Requires schema migration | Out of scope without explicit schema-change approval per `AGENTS.md` hard safety boundaries |
-| 6 | G94-G102 foundation is not wired to runtime notification persistence | Medium | Requires a separately approved in-system notification DB/API/UI block |
+| 6 | G94-G102 / G159–G170 foundation is not wired to runtime notification persistence | Medium | Design ready in `notification-persistence-design.md`; requires separately approved schema/API/UI block |
 
-**Recommendation for the next owner-approved block:** implement the persisted in-system notification model/API/UI using the G94-G102 taxonomy, then add monthly report `FINAL` client delivery fan-out. Keep dedicated template keys deferred until a schema gate approves them.
+**Recommendation for the next owner-approved block:** implement the persisted in-system notification model/API/UI using the G159 taxonomy and G167–G168 design, then add monthly report `FINAL` client delivery fan-out. Keep dedicated template keys deferred until a schema gate approves them. Do not claim live email.

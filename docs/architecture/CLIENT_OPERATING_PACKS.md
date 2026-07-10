@@ -211,6 +211,7 @@ Client Operating Packs sit **above** the `Client` operational hub — they defin
 | 2026-07-09 | Generic Client Operating Pack model approved (G52-B); Puriva documented as first pack |
 | 2026-07-10 | G78 — §14 implementation status matrix (implemented vs partial vs future) |
 | 2026-07-10 | G124-G127 — typed Puriva pack constants added for compliance profile, module entitlements, and workflow template catalog |
+| 2026-07-10 | G209-G216 — pack config hardening: entitlement matrix, compliance validator, expanded workflow catalog, client visibility helper, saas-later truth |
 
 ---
 
@@ -218,23 +219,27 @@ Client Operating Packs sit **above** the `Client` operational hub — they defin
 
 Labels what exists in code/docs today vs what remains future work. Puriva is **first-pack scaffolding**, not a Core fork.
 
+**SaaS readiness truth (G214):** Client Operating Packs are **Agency OS first** (`saas_later`). Typed pack config does **not** mean multi-tenant SaaS product readiness, self-serve onboarding, or productized billing.
+
 | Pack layer | Status | Notes |
 |------------|--------|-------|
-| **Compliance profile** | **Implemented as typed constants** | `PURIVA_COMPLIANCE_PROFILE_V1` in `packages/shared/src/client-operating-packs.ts`; structured DB config remains future |
+| **Compliance profile** | **Implemented as typed constants + validator** | `PURIVA_COMPLIANCE_PROFILE_V1` + `validatePurivaComplianceProfile` in `packages/shared/src/client-operating-packs.ts`; structured DB config remains future |
 | **Content / image profiles** | **Documented** | Operator checklists and intake/compliance runbooks; structured constants/DB config future |
-| **Workflow templates** (Article+Image, Monthly Report) | **Implemented as catalog constants; execution deferred** | `PURIVA_WORKFLOW_TEMPLATE_CATALOG` records steps/rules only; full orchestrator template automation deferred |
-| **Module entitlements** | **Implemented as config map; enforcement deferred** | `CLIENT_OPERATING_PACK_MODULE_ENTITLEMENT_CONFIG.puriva` maps pack module access; runtime tenant enforcement remains generic module work |
+| **Workflow templates** (SEO article, image set, WordPress draft, monthly report, MI, revenue, POD + legacy composite) | **Implemented as catalog constants; execution deferred** | `PURIVA_WORKFLOW_TEMPLATE_CATALOG` records steps/rules only; full orchestrator template automation deferred |
+| **Module entitlements** | **Implemented as config map; enforcement deferred** | `CLIENT_OPERATING_PACK_MODULE_ENTITLEMENT_CONFIG.puriva` maps enabled/partial/future modules; runtime tenant enforcement remains generic module work |
+| **Client visibility guard** | **Pure helper only** | `isClientVisiblePackSurface` / `getClientVisiblePackModuleKeys` filter entitled+active client surfaces; portal auth runtime unchanged |
 | **Integration boundary index** | **Implemented** | `external-integration-boundary.ts` — Puriva-specific keys as first-pack proof |
 | **AI routing / budget cap** | **Implemented** | Puriva profile keys (`puriva`, `$100` cap) — first-pack scaffolding until generic pack registry |
 | **Learning / feedback layer** | **Future** | Documented policy only; no persistent preference system |
 | **Generic pack registry (DB)** | **Future** | Second-client modularity proof track |
 | **Local/admin-operational pack closeout** | **Complete** | Docs + local operator path; not launch readiness |
 | **Puriva Client-Service Launch** | **BLOCKED** | Staging/production live proof + product gates required |
+| **Multi-tenant SaaS productization** | **Future (`saas_later`)** | Pack layer is internal agency configuration, not a SaaS claim |
 
 **Two “workflow template” meanings (not contradictory):**
 
 - **AI orchestrator workflow template** — target architecture in [`ai-operating-layer-architecture.md`](../ai-delivery/ai-operating-layer-architecture.md)
-- **Pack delivery workflow** — Article+Image Package v1, Monthly Report Flow v1 in [`PURIVA_OPERATING_PACK_V1.md`](./PURIVA_OPERATING_PACK_V1.md)
+- **Pack delivery workflow** — SEO article, image set, WordPress draft, Monthly Report, and related catalog entries in [`PURIVA_OPERATING_PACK_V1.md`](./PURIVA_OPERATING_PACK_V1.md)
 
 Puriva-specific code in `apps/api` / `packages/shared` is acceptable as **first Client Operating Pack proof** until a generic pack registry exists.
 
@@ -248,3 +253,18 @@ G124-G126 move Puriva from doc-only pack description to typed, reusable configur
 - **G125:** Module entitlement config map defines Puriva's allowed delivery modules without changing tenant enforcement behavior.
 - **G126:** Workflow template catalog records Article + Image Package v1 and Monthly Report Flow v1 as catalog-only templates; no execution adapter or live provider call is enabled.
 - **G127:** DCA OS Lite remains **Agency OS first**. Puriva is the first Client Operating Pack and proof of the pack layer, not a fork of Core or generic modules.
+
+---
+
+## 16. G209-G216 closeout
+
+G209-G216 harden the typed pack layer without claiming SaaS readiness or enabling live execution:
+
+- **G209:** Pack config constants expanded (version, saas-later label, assembled `PURIVA_OPERATING_PACK_V1`).
+- **G210:** Puriva entitlement matrix covers AI Workflow, AI SEO, Monthly Reports, Client Portal, WordPress Draft, Image Generation, GA/GSC, Notifications, Market Intelligence, Revenue Hub, POD Toolkit, Finance Lite (`enabled` / `partial` / `future`).
+- **G211:** `validatePurivaComplianceProfile` enforces medical content, website/social-only channels, paid-ads future/out of scope, and admin review required.
+- **G212:** Workflow template catalog expanded to SEO article, image set, WordPress draft, monthly report, market intelligence, revenue insight, POD listing (plus legacy Article+Image composite); all `catalog_only`.
+- **G213:** Pure client visibility helpers expose only entitled + active (`enabled`/`partial`) client surfaces.
+- **G214:** Docs and `CLIENT_OPERATING_PACK_SAAS_READINESS` label pack work as `saas_later` — Agency OS first, not multi-tenant SaaS ready.
+- **G215:** Puriva pack docs updated in this file and [`PURIVA_OPERATING_PACK_V1.md`](./PURIVA_OPERATING_PACK_V1.md).
+- **G216:** Focused shared/API tests cover constants, validator, matrix, catalog, and visibility helpers.

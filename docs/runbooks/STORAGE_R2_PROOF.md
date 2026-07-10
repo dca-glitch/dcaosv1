@@ -11,7 +11,7 @@ Related:
 - [`../operator/ENV_READINESS_INVENTORY.md`](../operator/ENV_READINESS_INVENTORY.md)
 - [`../operator/deferred-scope-register.md`](../operator/deferred-scope-register.md)
 - [`PURIVA_LAUNCH_GATE.md`](./PURIVA_LAUNCH_GATE.md) (launch dependency tracker — create/approve separately)
-- Code seam: `apps/api/src/storage/private-storage.service.ts`, `apps/api/src/storage/r2.service.ts`, `apps/api/src/storage/r2.config.ts`, `apps/api/src/storage/r2-proof-stage.ts`
+- Code seam: `apps/api/src/storage/private-storage.service.ts`, `apps/api/src/storage/r2.service.ts`, `apps/api/src/storage/r2.config.ts`, `apps/api/src/storage/r2-proof-stage.ts`, `apps/api/src/storage/private-storage-proof-intent.ts`, `apps/api/src/storage/client-safe-storage-url-policy.ts`, `apps/api/src/storage/r2-cleanup-proof-plan.ts`
 
 ---
 
@@ -59,15 +59,26 @@ Never commit, print, or log secret values.
 
 `apps/api/src/storage/r2-proof-stage.ts` defines the typed proof stages used by the R2 proof plan:
 
-| Stage | Current meaning | Live R2 IO |
-|---|---|---|
-| `local_mock` | Local/mock no-IO proof | No |
-| `config_shape` | Required env shape and serializer checks only | No |
-| `future_real_bucket` | Future owner-approved real bucket proof | Yes, future only |
-| `client_safe_download` | Client-safe response boundary: `exportUrl` / signed `downloadUrl`, no raw `storageKey` | No |
-| `cleanup` | Fixture cleanup planning before live proof | No |
+| Stage | Current meaning | Live R2 IO | Truth label (no IO) |
+|---|---|---|---|
+| `local_mock` | Local/mock no-IO proof | No | `local_mock_no_io` |
+| `config_shape` | Required env shape and serializer checks only | No | `config_shape_only` |
+| `future_real_bucket` | Future owner-approved real bucket proof | Yes, future only | `future_real_bucket_not_executed` until IO actually runs |
+| `client_safe_download` | Client-safe response boundary: `exportUrl` / signed `downloadUrl`, no raw `storageKey` | No | `client_safe_boundary_only` |
+| `cleanup` | Fixture cleanup planning before live proof | No | `cleanup_plan_only` |
 
-**Current truth:** this runbook has not recorded a successful real R2 bucket proof for DCA OS Lite. The current automated coverage is config-shape, disabled/missing-config guards, secret non-serialization, and client-safe serializer boundaries only.
+**Hardening (G149):** invalid stage keys resolve to `null`; no-IO stages never claim live proof; `claimsLiveBucketProof(stage, ioPerformed)` is true only when the stage allows IO **and** IO actually ran.
+
+**Related pure helpers (still no live bucket IO):**
+
+| Helper | File | Purpose |
+|---|---|---|
+| Private storage proof intent | `private-storage-proof-intent.ts` | Builds labeled intent objects; `liveIoPerformed` / `claimsLiveBucketProof` always `false` |
+| Client-safe URL policy | `client-safe-storage-url-policy.ts` | Allows `exportUrl` / `downloadUrl`; strips `storageKey`; truth-labels `mocked` / `future_placeholder` / `live_signed` |
+| R2 cleanup proof plan | `r2-cleanup-proof-plan.ts` | Typed create → read/download → delete → verify → rollback/failure-stop plan; `executedInThisModule: false` |
+| Redacted config summary | `r2.config.ts` → `getR2ConfigRedactedSummary()` | Boolean presence + `disabled` / `missing_config` / `configured_shape_ok`; always `liveProven: false` |
+
+**Current truth:** this runbook has not recorded a successful real R2 bucket proof for DCA OS Lite. The current automated coverage is config-shape, disabled/missing-config guards, secret non-serialization, proof-stage labeling, cleanup **plan** constants, and client-safe serializer boundaries only. Full env → `configured_shape_ok` is **not** live-proven.
 
 ### 1b. Boolean-only presence check (no secret values ever printed)
 
@@ -192,7 +203,31 @@ Record evidence to `$env:TEMP` and reference in docs-only closeout (separate com
 
 Signed download URLs are **temporary** (300s default). Clients must request a fresh reference per download action.
 
+**URL truth labels (G152):** mocked or future placeholder download URLs must be labeled (`mocked` / `future_placeholder`) so they are not mistaken for live signed URLs (`live_signed`). Policy helper: `client-safe-storage-url-policy.ts`.
+
+**Serializer boundary unit coverage under `apps/api/src/storage/` (no live IO):**
+
+| Gate | Test file | What it proves |
+|---|---|---|
+| G153 | `deliverable-serializer-storage-key-boundary.test.ts` | Client portal deliverable summary keeps `exportUrl`, never emits `storageKey` |
+| G154 | `image-asset-serializer-storage-key-boundary.test.ts` | Image client-safe variants + article-image boundary mirror: `hasDocument` only, no `storageKey` |
+| G155 | `monthly-report-export-url-storage-key-boundary.test.ts` | Monthly report `exportUrl` allowed; `storageKey` → `hasDocument` only |
+
 There is **no local filesystem fallback**. Disabled mode is intentional and safe: guarded writes fail closed without persisting storage references.
+
+### 4a. Cleanup / rollback proof plan (constants only — G156)
+
+`r2-cleanup-proof-plan.ts` defines the ordered plan for a **future** live cleanup proof. Building the plan does **not** create, read, or delete bucket objects.
+
+| Step | Key | Live IO when executed later |
+|---|---|---|
+| 1 | `create_test_object` | Yes (future) |
+| 2 | `read_download` | Yes (future) |
+| 3 | `delete` | Yes (future) |
+| 4 | `verify_delete` | Yes (future) |
+| 5 | `rollback_failure_stop` | No — stop and record rollback need |
+
+Any failure in a future live run must stop; do not continue past a failed step.
 
 ---
 
@@ -238,6 +273,20 @@ npm.cmd run smoke:ai-delivery-reviews
 npm.cmd run smoke:ai-seo-content-plan-pdf
 npm.cmd run smoke:client-portal-local
 npm.cmd run smoke:puriva-client-portal-boundary:local
+```
+
+Focused storage helper unit tests (no live R2 IO):
+
+```powershell
+cd C:\dcaosv1\apps\api
+node --import tsx --test src/storage/r2-proof-stage.test.ts
+node --import tsx --test src/storage/r2.config.test.ts
+node --import tsx --test src/storage/private-storage-proof-intent.test.ts
+node --import tsx --test src/storage/client-safe-storage-url-policy.test.ts
+node --import tsx --test src/storage/r2-cleanup-proof-plan.test.ts
+node --import tsx --test src/storage/deliverable-serializer-storage-key-boundary.test.ts
+node --import tsx --test src/storage/image-asset-serializer-storage-key-boundary.test.ts
+node --import tsx --test src/storage/monthly-report-export-url-storage-key-boundary.test.ts
 ```
 
 Included in `npm run smoke:pre-staging:local` (disabled-safe baseline).

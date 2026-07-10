@@ -203,3 +203,195 @@ export interface AiDeliveryMiSummaryContextResponse {
 export interface AiDeliveryMiSummaryApplyRequest {
   summaryId?: string | null;
 }
+
+// ---------------------------------------------------------------------------
+// G217–G218 — Client-safe MI summary + source-label sanitization contracts
+// ---------------------------------------------------------------------------
+
+export const MARKET_INTELLIGENCE_CLIENT_SAFE_SUMMARY_CONTRACT_VERSION =
+  "MARKET_INTELLIGENCE_CLIENT_SAFE_SUMMARY_V1";
+
+export const MARKET_INTELLIGENCE_ADMIN_SOURCE_SUMMARY_CONTRACT_VERSION =
+  "MARKET_INTELLIGENCE_ADMIN_SOURCE_SUMMARY_V1";
+
+/** Fields that must never appear on a client-safe MI summary payload. */
+export const MARKET_INTELLIGENCE_CLIENT_SAFE_FORBIDDEN_FIELDS = [
+  "tenantId",
+  "storageKey",
+  "executionLog",
+  "reviewerNotes",
+  "resultData",
+  "sourceUrl",
+  "sourceNotes",
+  "confidenceNotes",
+  "provider",
+  "prompt",
+  "rawFindings",
+  "researchRunId",
+  "insightId"
+] as const;
+
+export type MarketIntelligenceClientSafeForbiddenField =
+  (typeof MARKET_INTELLIGENCE_CLIENT_SAFE_FORBIDDEN_FIELDS)[number];
+
+export type MarketIntelligenceSourceLabelKind =
+  | "operator_reviewed_placeholder"
+  | "approved_url_reference"
+  | "uploaded_document"
+  | "existing_internal_record"
+  | "admin_curated_note";
+
+export interface MarketIntelligenceSourceLabelV1 {
+  kind: MarketIntelligenceSourceLabelKind;
+  /** Human-readable label safe for admin UI; never implies live crawl proof. */
+  displayLabel: string;
+  liveCrawlImplied: false;
+  marketplaceLookupImplied: false;
+}
+
+export interface MarketIntelligenceAdminReviewedSourceSummaryV1 {
+  version: typeof MARKET_INTELLIGENCE_ADMIN_SOURCE_SUMMARY_CONTRACT_VERSION;
+  projectId: string;
+  sourceCount: number;
+  sources: Array<{
+    id: string;
+    title: string;
+    origin: MarketIntelligenceSourceOrigin;
+    label: MarketIntelligenceSourceLabelV1;
+    /** Admin-only URL reference; omitted from client-safe payloads. */
+    sourceUrl: string | null;
+    notes: string | null;
+  }>;
+  /** Explicit policy: no uncontrolled scraping / live crawl. */
+  uncontrolledScrapingAllowed: false;
+  liveCrawlingAllowed: false;
+  operatorReviewRequired: true;
+  reviewedAt: string | null;
+}
+
+/**
+ * Client-visible MI summary only — no raw internals, URLs, prompts, or run metadata.
+ * Admin must approve before any client exposure.
+ */
+export interface MarketIntelligenceClientSafeSummaryContractV1 {
+  version: typeof MARKET_INTELLIGENCE_CLIENT_SAFE_SUMMARY_CONTRACT_VERSION;
+  title: string;
+  marketSummary: string | null;
+  opportunities: string[];
+  recommendedActions: string[];
+  status: "READY" | "APPLIED";
+  /** Provenance label only — never a live source claim. */
+  sourceLabel: MarketIntelligenceSourceLabelV1;
+  adminReviewed: true;
+  rawInternalsExposed: false;
+}
+
+const SOURCE_LABEL_DISPLAY: Record<MarketIntelligenceSourceLabelKind, string> = {
+  operator_reviewed_placeholder: "Operator-reviewed placeholder (not live research)",
+  approved_url_reference: "Approved URL reference (manual)",
+  uploaded_document: "Uploaded document (operator-provided)",
+  existing_internal_record: "Existing internal record",
+  admin_curated_note: "Admin-curated note"
+};
+
+export function buildMarketIntelligenceSourceLabel(
+  kind: MarketIntelligenceSourceLabelKind
+): MarketIntelligenceSourceLabelV1 {
+  return {
+    kind,
+    displayLabel: SOURCE_LABEL_DISPLAY[kind],
+    liveCrawlImplied: false,
+    marketplaceLookupImplied: false
+  };
+}
+
+export function mapOriginToSourceLabelKind(
+  origin: MarketIntelligenceSourceOrigin
+): MarketIntelligenceSourceLabelKind {
+  switch (origin) {
+    case "operator_note":
+      return "admin_curated_note";
+    case "uploaded_document":
+      return "uploaded_document";
+    case "approved_url_reference":
+      return "approved_url_reference";
+    case "existing_internal_record":
+      return "existing_internal_record";
+    default: {
+      const _exhaustive: never = origin;
+      return _exhaustive;
+    }
+  }
+}
+
+const CLIENT_SAFE_FORBIDDEN_KEY_SET = new Set<string>(
+  MARKET_INTELLIGENCE_CLIENT_SAFE_FORBIDDEN_FIELDS
+);
+
+/**
+ * Returns forbidden keys present on a candidate client-safe payload.
+ * Used by contract proofs — does not mutate input.
+ */
+export function findForbiddenClientSafeMiFields(
+  payload: Record<string, unknown>
+): MarketIntelligenceClientSafeForbiddenField[] {
+  return MARKET_INTELLIGENCE_CLIENT_SAFE_FORBIDDEN_FIELDS.filter((key) =>
+    Object.prototype.hasOwnProperty.call(payload, key)
+  );
+}
+
+/**
+ * Strip forbidden internal keys from a candidate MI summary object.
+ * Preserves only client-safe surface fields when present.
+ */
+export function sanitizeMarketIntelligenceClientSafePayload(
+  candidate: Record<string, unknown>
+): {
+  sanitized: Record<string, unknown>;
+  removedFields: string[];
+  wasSanitized: boolean;
+} {
+  const removedFields: string[] = [];
+  const sanitized: Record<string, unknown> = {};
+
+  for (const [key, value] of Object.entries(candidate)) {
+    if (CLIENT_SAFE_FORBIDDEN_KEY_SET.has(key)) {
+      removedFields.push(key);
+      continue;
+    }
+    sanitized[key] = value;
+  }
+
+  return {
+    sanitized,
+    removedFields,
+    wasSanitized: removedFields.length > 0
+  };
+}
+
+/**
+ * Build a typed client-safe summary from admin-reviewed handoff-style fields.
+ * Does not authorize live crawl or raw internal exposure.
+ */
+export function buildMarketIntelligenceClientSafeSummary(input: {
+  title: string;
+  marketSummary: string | null;
+  opportunities: string[] | null;
+  recommendedActions: string[] | null;
+  status: "READY" | "APPLIED";
+  sourceLabelKind?: MarketIntelligenceSourceLabelKind;
+}): MarketIntelligenceClientSafeSummaryContractV1 {
+  return {
+    version: MARKET_INTELLIGENCE_CLIENT_SAFE_SUMMARY_CONTRACT_VERSION,
+    title: input.title,
+    marketSummary: input.marketSummary,
+    opportunities: (input.opportunities ?? []).slice(0, 12),
+    recommendedActions: (input.recommendedActions ?? []).slice(0, 12),
+    status: input.status,
+    sourceLabel: buildMarketIntelligenceSourceLabel(
+      input.sourceLabelKind ?? "operator_reviewed_placeholder"
+    ),
+    adminReviewed: true,
+    rawInternalsExposed: false
+  };
+}

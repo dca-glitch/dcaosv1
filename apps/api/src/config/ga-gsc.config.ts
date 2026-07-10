@@ -19,9 +19,20 @@ export const GA_GSC_PROPERTY_MAPPING_FIELDS = [
   "reportingTimezone"
 ] as const;
 
+/** Presence-only credential fields for live-path completeness checks. Values are never returned. */
+export const GA_GSC_CREDENTIAL_PRESENCE_FIELDS = [
+  "oauthClientId",
+  "oauthClientSecret",
+  "refreshToken",
+  "ga4PropertyId",
+  "gscSiteUrl"
+] as const;
+
 export type GaGscIntegrationReadinessStatus = "disabled" | "missing_config" | "configured_shape_ok";
 
 export type GaGscPropertyMappingField = (typeof GA_GSC_PROPERTY_MAPPING_FIELDS)[number];
+
+export type GaGscCredentialPresenceField = (typeof GA_GSC_CREDENTIAL_PRESENCE_FIELDS)[number];
 
 export interface GaGscConfigShape {
   requiredKeys: readonly string[];
@@ -44,9 +55,30 @@ export interface GaGscIntegrationReadiness {
   liveSyncDeferred: true;
 }
 
+export interface GaGscCredentialPresenceInput {
+  oauthClientId?: string | null;
+  oauthClientSecret?: string | null;
+  refreshToken?: string | null;
+  ga4PropertyId?: string | null;
+  gscSiteUrl?: string | null;
+}
+
+export interface GaGscCredentialPresenceAssessment {
+  presentFields: GaGscCredentialPresenceField[];
+  missingFields: GaGscCredentialPresenceField[];
+  configuredShapeOk: boolean;
+  liveOAuthDeferred: true;
+  liveSyncDeferred: true;
+  secretFieldsSerialized: false;
+}
+
 function readEnvPresent(key: string): boolean {
   const value = process.env[key]?.trim();
   return Boolean(value);
+}
+
+function isNonEmptyString(value: string | null | undefined): boolean {
+  return typeof value === "string" && value.trim().length > 0;
 }
 
 export function getGaGscConfigShape(): GaGscConfigShape {
@@ -82,6 +114,48 @@ export function validateGaGscPropertyMappingShape(
     ok: missingFields.length === 0,
     missingFields,
     secretFieldsAllowed: false
+  };
+}
+
+/**
+ * Presence-only completeness for live-path prerequisites (client id/secret/refresh/property/GSC site).
+ * Never returns secret values. Live OAuth/sync remain deferred even when shape is complete.
+ */
+export function assessGaGscCredentialPresence(
+  input: GaGscCredentialPresenceInput
+): GaGscCredentialPresenceAssessment {
+  const presentFields = GA_GSC_CREDENTIAL_PRESENCE_FIELDS.filter((field) =>
+    isNonEmptyString(input[field])
+  );
+  const missingFields = GA_GSC_CREDENTIAL_PRESENCE_FIELDS.filter(
+    (field) => !presentFields.includes(field)
+  );
+
+  return {
+    presentFields,
+    missingFields,
+    configuredShapeOk: missingFields.length === 0,
+    liveOAuthDeferred: true,
+    liveSyncDeferred: true,
+    secretFieldsSerialized: false
+  };
+}
+
+/** Safe JSON view of credential presence — booleans only, never secret values. */
+export function serializeGaGscCredentialPresenceSafe(
+  input: GaGscCredentialPresenceInput
+): Record<GaGscCredentialPresenceField, boolean> & {
+  liveOAuthDeferred: true;
+  liveSyncDeferred: true;
+} {
+  return {
+    oauthClientId: isNonEmptyString(input.oauthClientId),
+    oauthClientSecret: isNonEmptyString(input.oauthClientSecret),
+    refreshToken: isNonEmptyString(input.refreshToken),
+    ga4PropertyId: isNonEmptyString(input.ga4PropertyId),
+    gscSiteUrl: isNonEmptyString(input.gscSiteUrl),
+    liveOAuthDeferred: true,
+    liveSyncDeferred: true
   };
 }
 
