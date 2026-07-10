@@ -577,7 +577,7 @@ Detail: [`AI_MODEL_ROUTING_POLICY.md`](./AI_MODEL_ROUTING_POLICY.md) (G75 sectio
 
 ### 9.17 G76 — persistent completed ledger wiring cross-reference (2026-07-10)
 
-**Status:** **WIRED (mocked/no-live proof only)** — execute path persists COMPLETED rows for OpenRouter success; **live DB row not yet proven**.
+**Status:** **WIRED (mocked/no-live proof at G76)** — execute path persists COMPLETED rows for OpenRouter success; live DB row later proven in **§9.18 G77b (local only)**.
 
 | Item | Result |
 |------|--------|
@@ -587,6 +587,44 @@ Detail: [`AI_MODEL_ROUTING_POLICY.md`](./AI_MODEL_ROUTING_POLICY.md) (G75 sectio
 | Scope | OpenRouter success only; local deterministic skipped |
 | `stepReference` | `ai-delivery-execute:{outputType}` |
 | Idempotency | Upsert on `(tenantId, workflowRunId, stepReference)` |
-| Live DB proof | **Deferred G77** — no claim of post-G76 live persistent row |
+| Live DB proof | **DONE in G77b (local only)** — see §9.18 |
 
 Detail: [`AI_MODEL_ROUTING_POLICY.md`](./AI_MODEL_ROUTING_POLICY.md) (G76 section) · [`STATUS.md`](../STATUS.md) (G76 closeout).
+
+### 9.18 G77b — persistent COMPLETED ledger live proof (2026-07-10)
+
+**Status:** **COMPLETE (local only)** — controlled live OpenRouter AI Delivery execute created a persistent COMPLETED `AiBudgetLedgerEntry` row. **Does not** authorize staging/production live proof or production deploy.
+
+| Item | Result |
+|------|--------|
+| Operator | Piotr Pakula |
+| Target | Local only — `127.0.0.1:4000` |
+| Preflight commit | `9ba707f` — OpenRouter API env preflight |
+| No-live API env preflight | **PASS** 18/18 |
+| Phase 1 — baseline local guarded smoke | **PASS** 12/12 |
+| Phase 2 — one live OpenRouter guarded smoke | **PASS** 12/12 |
+| Formal live `workflowRunId` | `2244413e-d87b-45a1-8a26-6634ec8972d5` |
+| Provider / model | OpenRouter — `anthropic/claude-haiku-4.5` |
+| Phase 3 — restore local guarded smoke | **PASS** 12/12 |
+| Ledger verifier | **PASS** |
+| Ledger row `id` | `5d8d635c-ced0-4a14-9b33-839e1fdee508` |
+| Ledger `createdAt` | `2026-07-10T00:48:46.882Z` |
+| Ledger `status` | `COMPLETED` |
+| Ledger `stepReference` | `ai-delivery-execute:summary` |
+| Ledger `provider` | `openrouter` |
+| Ledger `liveProviderCalled` | `true` |
+| Ledger `taskType` | `report_narrative` |
+| `completedAttribution` | Present — `model=anthropic/claude-haiku-4.5`, `gateway=openrouter`, `liveProviderCalled=true`, `runId` matches `workflowRunId` |
+| `estimatedCostUsd` | `0.15` |
+| `actualCostUsd` | `null` — expected current limitation; **not** provider invoice proof |
+| Forbidden integrations | None triggered |
+| Secrets exposed | No |
+| Staging / VPS / production / deploy | Untouched |
+
+**What this proves:** Local controlled live OpenRouter execute persists a COMPLETED ledger row with completedAttribution metadata (G76 wiring live-proven).
+
+**What this does not prove:** Staging/production live; monthly cap aggregation for `liveProviderCalled=true` rows; exact provider invoice cost via `actualCostUsd`.
+
+**Deferred-scope status after G77b:** Persistent COMPLETED live ledger row proof = **COMPLETE (local only)**. Staging/production live proof remains **BLOCKED**. Production remains frozen.
+
+Detail: [`AI_MODEL_ROUTING_POLICY.md`](./AI_MODEL_ROUTING_POLICY.md) (G77 section) · [`STATUS.md`](../STATUS.md) (G77b closeout).
