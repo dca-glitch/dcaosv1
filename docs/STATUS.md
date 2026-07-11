@@ -1,6 +1,7 @@
 # DCA OS Lite — Status (Source of Truth)
 
-**Last updated:** 2026-07-11 (STAGING DEPLOY `1b8d00d` CLOSEOUT + PRODUCTION PHASE A PG/API CREDENTIAL ROTATION CLOSEOUT)
+**Last updated:** 2026-07-12 (WORKSTREAM 1A — docs-only project control reconciliation; staging `1b8d00d` PASS preserved; production frozen)
+**Authoritative project control:** [`docs/project-control/AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md`](./project-control/AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md)
 **PRE-STAGING closure:** 2026-07-10 (local/no-live audit + safe fixes; see [`docs/operator/PRE_STAGING_CLOSURE_VERDICT.md`](./operator/PRE_STAGING_CLOSURE_VERDICT.md))
 **G55 pre-live readiness:** [`docs/runbooks/G55_PRELIVE_READINESS.md`](./runbooks/G55_PRELIVE_READINESS.md)
 **G56 pre-live readiness:** [`docs/runbooks/G56_PRELIVE_READINESS.md`](./runbooks/G56_PRELIVE_READINESS.md)
@@ -44,7 +45,7 @@
 | Production readiness | **NO** — production remains frozen |
 | Next gate | **Owner-approved staging/live proof only** — recommended first target remains R2 target-environment real-bucket proof (G709 sequence in [`G708_NEXT_GATES.md`](./operator/G708_NEXT_GATES.md)). No live proof, staging mutation, production mutation, commit, push, or deploy is authorized by PRE-STAGING CLOSURE |
 | PRE-STAGING Lanes 14–15 | **Docs closeout** — stale-claim sweep + operator runbook refresh; no live proof; Puriva Launch **BLOCKED** |
-| G469-G708 final integration | **KEEP** — 20 lanes reconciled; local/no-IO foundations only; live R2, live email, live GA/GSC, live WordPress, live image, staging/prod proofs, notification persistence/inbox, trusted `actualCostUsd` ingestion, commit, push, deploy remain blocked |
+| G469-G708 final integration | **KEEP** — 20 lanes reconciled; local/no-IO foundations only; live R2, live email, live GA/GSC, live WordPress, live image, staging/prod live proofs, full notification E2E launch proof, trusted `actualCostUsd` ingestion, commit, push, deploy remain blocked (in-app notification persistence/UI foundation now exists — see notification rows below) |
 | G229-G468 final integration | **KEEP** — 12 lanes reconciled; local/no-IO foundations only; superseded as latest baseline by G469-G708 |
 | G72 model routing | **Implemented** — backend policy per task type; approved model `anthropic/claude-haiku-4.5`; no live call in G72 |
 | G73 routing attribution | **Local PASS** — dry-run/preview `modelRouting` + `plannedLedgerMetadata`; budget guard route cap wired; persistent preview ledger records routing metadata |
@@ -60,8 +61,9 @@
 | G88 consolidation | **Docs consolidation in shared files** — correct G79-G88 gate map recorded; Puriva Launch remains **BLOCKED** and production remains frozen |
 | G89-G148 final integration | **KEEP** — local foundations only; live proofs remain blocked |
 | G149-G228 final integration | **KEEP** — 9 lanes reconciled; local/no-IO foundations only; superseded as latest baseline by G469-G708 |
-| Notification persistence / inbox | **DEFERRED** — taxonomy/no-send + correlation design only; no migration/inbox MVP |
-| Live email / Resend | **DEFERRED** — no-send only; live send blocked |
+| Notification persistence / inbox | **LOCAL FOUNDATION** — Prisma `InAppNotification`, migration `20260711115000_add_in_app_notifications` (applied on staging with `1b8d00d`), service/controller/API, integration tests, frontend `NotificationPanel`; full E2E/launch proof **not** closed — see [`AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md`](./project-control/AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md) |
+| Live email / Resend | **LOCAL FOUNDATION** — no-send/outbox foundation; **not** STAGING LIVE PROVEN; live send blocked |
+| Dependency audit (2026-07-12) | **OPEN — BOUNDED TRIAGE REQUIRED** — `npm audit`: 1 high (`vite` `<=6.4.2`, repo uses `5.4.21`, suggested fix `8.1.4` major; advisory set includes `GHSA-fx2h-pf6j-xcff`), 5 moderate (`esbuild`, `gaxios`, `googleapis`, `googleapis-common`, `uuid`); **not fixed**; no automatic upgrade authorized |
 | Trusted `actualCostUsd` ingestion | **DEFERRED** — G80 policy + G389-G408 design helpers; ingestion not wired |
 | G134-G137 AI budget reporting contract | **Implemented locally (contract + unit proof)** — additive reporting/reconciliation contract separates AI budget from Finance Lite, reports monthly cap/live rows/estimated-vs-actual/provider/model, and keeps invoice reconciliation `not_integrated`; no real invoice or Finance Lite mutation |
 | G76c review | **KEEP** — PowerShell review-only; no code changes |
@@ -146,6 +148,25 @@ Production PostgreSQL role password and `DATABASE_URL` were rotated, the product
 
 **Production safety:** Production `system.digitalcubeagency.net` was not modified. The production PostgreSQL/API credential rotation Phase A result (`PRODUCTION PHASE A RECOVERED AFTER FAILURE`) and the unresolved Turnstile/R2 deferred security work remain recorded in [`deferred-scope-register.md`](./operator/deferred-scope-register.md) and are **not** closed by this staging deploy.
 
+## WORKSTREAM 1A — project control reconciliation (2026-07-12)
+
+**Result:** Docs-only. Authoritative project-control matrix recorded. No app/schema/dependency/staging/production mutation.
+
+| Item | State |
+|------|--------|
+| Repo baseline | `main` @ `fac108be16e779fdbff0a2867b302679c8c4da6f` |
+| Staging baseline | `1b8d00d` PASS (unchanged) |
+| Relation | `1b8d00d → fac108b` (docs-only descendant) |
+| Numbering systems | BLOKI 1–13 · Fazy UI 1–13 · Workstreamy 1–9 · G-gates (separate; do not mix) |
+| Capability labels | Owner-approved five-level standard in matrix |
+| Notifications | Persistence/UI = LOCAL FOUNDATION; staging migration APPLIED; live email **not** STAGING LIVE PROVEN; full E2E launch proof open |
+| Dependency finding | Vite high + 5 moderate — OPEN — BOUNDED TRIAGE REQUIRED (not fixed) |
+| Open decisions preserved | Canonical component system; Orchestrator proof position; rollback/compatibility; image provider; production artifact/rollback target; staging credentials; Turnstile/R2 rotation |
+| Production | FROZEN |
+| Canonical doc | [`AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md`](./project-control/AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md) |
+
+**Historical note:** Older G-gate rows below that still say “no notification migration/inbox” are **historical context** from the date of that gate. Current ground truth is this section and the authoritative matrix.
+
 ## G77b persistent COMPLETED ledger live proof closeout (2026-07-10)
 
 | Item | State |
@@ -198,12 +219,14 @@ Detail: [`deferred-scope-register.md`](./operator/deferred-scope-register.md) (f
 
 ## G79-G88 multitask consolidation (2026-07-10)
 
+> **Historical context (superseded for notifications):** G82 row below recorded the 2026-07-10 planning state (“no in-system notification model”). Current ground truth (2026-07-12): in-app notification persistence/UI = LOCAL FOUNDATION; staging migration APPLIED on `1b8d00d`; live email still not STAGING LIVE PROVEN — see WORKSTREAM 1A and [`AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md`](./project-control/AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md).
+
 | Gate | Result | Evidence / limitation |
 |------|--------|-----------------------|
 | **G79 — Monthly cap aggregation for live COMPLETED rows** | **READY (local implemented)** | `sumSpentUsdForPeriod()` now includes live `COMPLETED` rows and sums `actualCostUsd ?? estimatedCostUsd`; focused unit tests 18/18 PASS on `ai-budget-ledger.service.test.ts` |
 | **G80 — `actualCostUsd` policy** | **PARTIAL (policy only)** | Policy documented: `actualCostUsd` stays `null` unless trusted provider cost is exposed; trusted provider-cost ingestion remains deferred |
 | **G81 — Staging live proof planning** | **PARTIAL (planning only)** | `AI_PROVIDER_LIVE_PROOF.md` has a staging plan; no staging execution or live call occurred |
-| **G82 — Notifications foundation planning** | **BLOCKED (not started in-system)** | No in-system notification model exists; staged plan updated in `notifications-blocker-plan.md` |
+| **G82 — Notifications foundation planning** | **BLOCKED (not started in-system)** *(historical as of 2026-07-10)* | No in-system notification model exists *at G82 date*; staged plan updated in `notifications-blocker-plan.md` |
 | **G83 — Email notification no-send proof** | **PARTIAL (no-send planning)** | `EMAIL_NOTIFICATIONS_PROOF.md` no-send checklist updated; no live email sent |
 | **G84 — Client approval notification loop event map** | **PARTIAL (event map)** | Approval event map documented; image-level approve/reject has no notification intent; monthly report `FINAL` is admin-only and not client delivery |
 | **G85 — GA/GSC live metrics planning** | **BLOCKED (live data)** | `MONTHLY_REPORT_LIVE_DATA_PROOF.md` and Puriva monthly gates separate MANUAL snapshot placeholders from live GA/GSC; no OAuth/live sync exists |
@@ -232,9 +255,9 @@ G77b evidence remains preserved: workflow run `2244413e-d87b-45a1-8a26-6634ec897
 | **G97** | **READY** | No-send email adapter foundation integrated; no live send |
 | **G98** | **READY** | Transactional template foundation integrated locally |
 | **G99** | **READY** | Notification focused tests reported 20/20 in lane proof |
-| **G100** | **BLOCKED** | Notification persistence/in-system inbox remains deferred |
-| **G101** | **BLOCKED** | Live email/Resend proof remains deferred |
-| **G102** | **BLOCKED** | Puriva transactional notification proof remains blocked until in-system + live email proof |
+| **G100** | **BLOCKED** *(historical as of G89–G148 / 2026-07-10)* | Notification persistence/in-system inbox remained deferred **at that gate**; **superseded 2026-07-12** — persistence/UI LOCAL FOUNDATION; staging migration APPLIED; see WORKSTREAM 1A |
+| **G101** | **BLOCKED** | Live email/Resend proof remains deferred (**still current** — not STAGING LIVE PROVEN) |
+| **G102** | **BLOCKED** | Puriva transactional notification E2E/launch proof remains blocked until live email + full workflow proof (**still current**; persistence foundation no longer the missing piece alone) |
 | **G103** | **READY** | GA/GSC config-helper foundation integrated; no OAuth/live sync |
 | **G104** | **READY** | Monthly report helper foundation integrated |
 | **G105** | **READY** | Client FINAL visibility/report guards integrated locally |
@@ -291,7 +314,7 @@ G77b evidence remains preserved: workflow run `2244413e-d87b-45a1-8a26-6634ec897
 | Gate range | Status | Integrated result / limitation |
 |------------|--------|--------------------------------|
 | **G149–G158** Storage/R2 | **READY (local)** | Proof-stage hardening, redacted config summary, private-storage proof intent, client-safe URL policy, serializer storageKey boundary tests, cleanup proof-plan constants; **no real bucket IO** |
-| **G159–G170** Notifications | **READY (local) / BLOCKED (inbox+live)** | Expanded taxonomy V2, recipient/channel/severity/redaction helpers, typed templates, no-send edge tests; persistence/inbox **design only** — no migration; live email still deferred |
+| **G159–G170** Notifications | **READY (local) / BLOCKED (inbox+live)** *(historical persistence claim)* | Expanded taxonomy V2, recipient/channel/severity/redaction helpers, typed templates, no-send edge tests; persistence/inbox **design only** — no migration **at G149–G228 date**; **superseded 2026-07-12** (persistence implemented; live email still deferred) |
 | **G171–G180** GA/GSC/monthly | **READY (local) / BLOCKED (live)** | Credential presence, period policy, source-truth serializer, metric validation, recommendation policy, client/admin output guards, CSV import proof plan; **no live Google** |
 | **G181–G188** WordPress | **READY (local) / BLOCKED (live)** | Draft payload hardening, slug policy, status freeze, credential redaction, proof-plan constants, image-inclusion contract; **no live HTTP** |
 | **G189–G198** Image | **READY (local) / BLOCKED (live)** | Compliance V2, prompt/alt/reject/approval-loop helpers, WP inclusion readiness, provider proof plan; G228 added four image-loop events to shared taxonomy; **no live provider** |
@@ -310,7 +333,7 @@ G77b evidence remains preserved: workflow run `2244413e-d87b-45a1-8a26-6634ec897
 | Gate range | Status | Integrated result / limitation |
 |------------|--------|--------------------------------|
 | **G229–G248** Storage/R2 | **READY (local)** | Proof-stage edges, partial-config diagnostics, no-IO label invariant, cleanup plan, proof-intent, client-safe URL policy, storageKey boundary, admin-vs-client field policy, error redaction; **no real bucket IO** |
-| **G249–G268** Notifications | **READY (local) / BLOCKED (inbox+live)** | Taxonomy aliases, payload snapshots, correlation/idempotency design, no-send/template/config tests; persistence/inbox **design only** — no migration; live email still deferred |
+| **G249–G268** Notifications | **READY (local) / BLOCKED (inbox+live)** *(historical persistence claim)* | Taxonomy aliases, payload snapshots, correlation/idempotency design, no-send/template/config tests; persistence/inbox **design only** — no migration **at G229–G468 date**; **superseded 2026-07-12** (persistence implemented; live email still deferred) |
 | **G269–G288** GA/GSC/monthly | **READY (local) / BLOCKED (live)** | Config/redaction/period/source-truth, unavailable-state + export-truth helpers, output guards; **no live Google** |
 | **G289–G308** WordPress | **READY (local) / BLOCKED (live)** | Slug/draft/freeze/redaction, sanitization, taxonomy placeholders, author-tenant mapping design; **no live HTTP**; publish frozen |
 | **G309–G328** Image | **READY (local) / BLOCKED (live)** | Compliance V3, prompt/alt/approval-loop, no-live provider invariant; **no live provider** |
@@ -712,7 +735,7 @@ Percentages are **local MVP readiness**, not production-proven. See [`docs/STATU
 | **Admin operations / recovery** | Block 2 closed | Dashboard panel, operations summary API, recovery hints | Durable closeout store (manual run only) |
 | **Finance Lite admin foundation** | **100% local/admin-safe foundation** | Admin finance records are smoke-proven for vendors/services/bills/invoices/credit notes/recurring/ledger boundaries where implemented; finance admin browser and ledger smokes passed for local operator use | Real payment collection, Stripe/payment provider proof, bank feeds, tax/legal/accounting production claims, production invoicing readiness |
 | **Audit/activity feed foundation** | **100% local/operator-safe foundation** | `AuditLog`/event feed/dashboard recent activity/operator visibility are smoke-proven locally through audit activity and dashboard audit feed browser gates | SIEM/security audit, compliance-grade audit log, production monitoring, durable incident observability stack |
-| **Email/outbox disabled-safe foundation** | **100% local-safe foundation** | Read-only tenant-scoped outbox/local notification records are smoke-proven; local provider remains non-sending and reports `SKIPPED` without provider delivery; real-path wiring exists for Puriva taxonomy (2026-07-09) | **In-system user notification inbox not started**; live Resend transactional proof not done; background queues, deliverability, production notification readiness remain blocked — see [`notifications-blocker-plan.md`](./operator/notifications-blocker-plan.md) |
+| **Email/outbox disabled-safe foundation** | **100% local-safe foundation** | Read-only tenant-scoped outbox/local notification records are smoke-proven; local provider remains non-sending and reports `SKIPPED` without provider delivery; real-path wiring exists for Puriva taxonomy (2026-07-09); **in-app notification persistence/UI foundation exists** (`InAppNotification` + `NotificationPanel`; staging migration applied with `1b8d00d`) | Live Resend transactional proof **not** STAGING LIVE PROVEN; full notification E2E/launch proof open; background queues, deliverability, production notification readiness remain blocked — see [`notifications-blocker-plan.md`](./operator/notifications-blocker-plan.md) and [`AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md`](./project-control/AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md) |
 | **UI / UX polish (Dark Nebula / dense admin)** | **100% local/admin-readable baseline** | Compact Dark Nebula admin/client readability and density baseline is closed for current local surfaces; follow-on operator polish blocks UX-P1–P12 queued in [`ADMIN_WORKFLOW_POLISH_AUDIT.md`](./ux/ADMIN_WORKFLOW_POLISH_AUDIT.md) | Full design-system migration, full redesign, staging/environment proof, production readiness |
 
 ---

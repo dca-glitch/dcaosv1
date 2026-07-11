@@ -4,15 +4,19 @@ Status: Plain-language list of what is intentionally not active in the current l
 
 This register prevents confusion. If something is listed under **Still deferred**, it is not forgotten — it is intentionally waiting for a later approved block. If something is listed under **Puriva Launch blockers**, it is required for Puriva Launch but not yet live-proven.
 
+**Authoritative project control:** [`docs/project-control/AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md`](../project-control/AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md)
+
+**WORKSTREAM 1A update (2026-07-12):** Docs-only reconciliation. Numbering systems (BLOKI / Fazy UI / Workstreamy / G-gates) must not be mixed. In-app notification **persistence and UI foundation are implemented** (LOCAL FOUNDATION); staging migration `20260711115000_add_in_app_notifications` is **APPLIED** on `1b8d00d`. Live email/Resend send remains **not STAGING LIVE PROVEN**. Full notification E2E/launch proof remains open. Google Docs frontend BLOK 9 remains deferred. Production Turnstile/R2 rotation remains open. Production remains frozen. Older G-gate paragraphs below that still say “notification persistence/inbox does not exist” are **historical context** only.
+
 **G148 update:** G89-G147 moved several local foundations out of "not started" status, but did **not** move any live proof out of deferred. R2 readiness/proof stages, notification taxonomy/no-send adapter, GA/GSC helpers, WordPress draft payload/publish-freeze tests, image compliance policy helpers, Client Portal FINAL guards, Client Operating Pack constants, future-module contracts, AI budget reporting contracts, and operator/security inventories are local foundations only.
 
-**G228 update (G149-G227):** Expanded local/no-IO foundations across storage, notifications, GA/GSC/monthly reports, WordPress, image compliance/approval-loop, Client Portal boundaries, Puriva pack entitlements, future-module contracts, and operator/security docs. Still **do not** move: real R2 IO, live email, live GA/GSC, live WordPress, live image provider, staging/prod live proofs, notification persistence/in-system inbox, or trusted `actualCostUsd` ingestion. Puriva Launch remains blocked.
+**G228 update (G149-G227):** *(historical)* Expanded local/no-IO foundations across storage, notifications, GA/GSC/monthly reports, WordPress, image compliance/approval-loop, Client Portal boundaries, Puriva pack entitlements, future-module contracts, and operator/security docs. At that date still deferred: real R2 IO, live email, live GA/GSC, live WordPress, live image provider, staging/prod live proofs, notification persistence/in-system inbox, or trusted `actualCostUsd` ingestion. **Superseded for notification persistence (2026-07-12):** persistence/UI foundation now exists; live email and full E2E launch proof remain deferred. Puriva Launch remains blocked.
 
-**G468 update (G229–G448 + G449–G468):** Deepened local/no-IO foundations and contracts across all 12 lanes (storage, notifications, analytics, WordPress, image, portal, packs, future modules, AI budget, security/operator, UI/testability, deferred/roadmap). Still **do not** move: real R2 IO, live email, live GA/GSC, live WordPress, live image provider, staging/prod live proofs, notification persistence/in-system inbox, or trusted `actualCostUsd` ingestion. Puriva Launch remains **BLOCKED**. Production remains frozen.
+**G468 update (G229–G448 + G449–G468):** *(historical)* Deepened local/no-IO foundations and contracts across all 12 lanes. At that date still deferred: real R2 IO, live email, live GA/GSC, live WordPress, live image provider, staging/prod live proofs, notification persistence/in-system inbox, or trusted `actualCostUsd` ingestion. **Superseded for notification persistence (2026-07-12)** as above. Puriva Launch remains **BLOCKED**. Production remains frozen.
 
-**G708 update (G469–G707 + G708 integration):** Ultra-block consolidated local/no-IO foundations across 20 lanes (R2/storage, private delivery/download, notification taxonomy, email no-send, GA/GSC OAuth design, monthly report output, WordPress draft helpers, image compliance, Client Portal serializers, approval/revision policy, Puriva pack, future-module contracts, AI budget/routing, orchestrator local guards, security inventories, operator runbooks, UI testability, stale-claim sweep). Still **do not** move: real R2 IO, live email, live GA/GSC, live WordPress, live image provider, staging/prod live proofs, notification persistence/in-system inbox, or trusted `actualCostUsd` ingestion. Puriva Launch remains **BLOCKED**. Production remains frozen.
+**G708 update (G469–G707 + G708 integration):** *(historical)* Ultra-block consolidated local/no-IO foundations across 20 lanes. At that date still deferred: real R2 IO, live email, live GA/GSC, live WordPress, live image provider, staging/prod live proofs, notification persistence/in-system inbox, or trusted `actualCostUsd` ingestion. **Superseded for notification persistence (2026-07-12)** as above. Puriva Launch remains **BLOCKED**. Production remains frozen.
 
-**PRE-STAGING CLOSURE (2026-07-10):** Local/no-live bug scan + safe fixes + UI/UX truth-label polish + operator/security docs closeout. Still **do not** move: real R2 IO, live email, live GA/GSC, live WordPress, live image provider, staging/prod live proofs, notification persistence/inbox, runtime taxonomy consumption for email send, or trusted `actualCostUsd` ingestion. Optional follow-ups (owner-gated, not launch-closing alone): client download `truthLabel` wiring; client-portal errorMiddleware stack branch; WorkflowBriefs packaging internals for non-admin clients. Puriva Launch remains **BLOCKED**. Production remains frozen. Next stage = owner-approved staging/live proof only. See [`PRE_STAGING_CLOSURE_VERDICT.md`](./PRE_STAGING_CLOSURE_VERDICT.md).
+**PRE-STAGING CLOSURE (2026-07-10):** *(historical for inbox wording)* Local/no-live bug scan + safe fixes + UI/UX truth-label polish + operator/security docs closeout. At that date still deferred: real R2 IO, live email, live GA/GSC, live WordPress, live image provider, staging/prod live proofs, notification persistence/inbox, runtime taxonomy consumption for email send, or trusted `actualCostUsd` ingestion. **Superseded for notification persistence (2026-07-12)** as above; live email and full E2E launch proof remain deferred. Puriva Launch remains **BLOCKED**. Production remains frozen. Next stage = owner-approved staging/live proof only. See [`PRE_STAGING_CLOSURE_VERDICT.md`](./PRE_STAGING_CLOSURE_VERDICT.md).
 
 **PRODUCTION PHASE A PG/API ROTATION (2026-07-11):** Production PostgreSQL/API credential rotation Phase A completed with emergency recovery. PostgreSQL password and `DATABASE_URL` are synchronized; production and staging health are HTTP 200. Cloudflare Turnstile and R2 credentials remain exposed/unrotated and are recorded below as **OPEN DEFERRED SECURITY WORK**. The incident is **not** claimed as fully closed. Production remains frozen for unrelated deployment. See [`docs/STATUS.md`](../STATUS.md) §Production PostgreSQL/API credential rotation Phase A closeout.
 
@@ -40,7 +44,7 @@ These are **not** "still deferred" long-term roadmap items. They are active bloc
 | AI Model Research | Policy gate | Separate approved research gate |
 | AI Model Policy | Policy gate | **Docs + skeleton closed (G55/G56)** — local live provider proof complete (G71f); staging/production proof still required — [`docs/ai/AI_MODEL_POLICY.md`](../ai/AI_MODEL_POLICY.md) |
 | Image generation proof | Live integration | G115-G119 compliance policy/helper foundation complete; provider selection/wiring/live proof for Article+Image path still required |
-| Transactional notifications proof | Live integration | G94-G99 taxonomy/mapping/policy/no-send/templates foundation complete; in-system user inbox + live email still required — **not** marketing campaigns; staged plan: [`notifications-blocker-plan.md`](./notifications-blocker-plan.md) |
+| Transactional notifications proof | Live integration | G94-G99 taxonomy/mapping/policy/no-send/templates foundation complete; **in-app persistence/UI foundation exists** (LOCAL FOUNDATION; staging migration APPLIED on `1b8d00d`); **live email/Resend send still required** and is **not** STAGING LIVE PROVEN; full E2E notification launch proof open — **not** marketing campaigns; staged plan: [`notifications-blocker-plan.md`](./notifications-blocker-plan.md) |
 | Client Portal approval UX | Product gate | Client-safe approval path must be production-proven |
 | Task-oriented admin UX | Product gate | Operator task flows for daily delivery |
 | Article+Image workflow | Product gate | End-to-end article and image handoff |
@@ -66,9 +70,11 @@ This section records credentials that were exposed in operational artifacts and 
 
 **Roadmap reference:** G147 created [`G147_NEXT_20_GATES.md`](./G147_NEXT_20_GATES.md) for G89-G108 planning. G227 created [`G227_NEXT_30_GATES.md`](./G227_NEXT_30_GATES.md) for G229+ after G228 closeout. G468 created [`G468_NEXT_50_GATES.md`](./G468_NEXT_50_GATES.md) for G469+ after G229–G467 closeout. G708 created [`G708_NEXT_GATES.md`](./G708_NEXT_GATES.md) for G709+ after G469–G707 closeout. None of these roadmaps authorize live proof or launch.
 
-**G708 affirmation:** In-system user notification inbox (Client Portal + admin) remains deferred. `EmailLog` / outbox remains outbound attempt log only. Live provider sending remains deferred. Local/no-IO foundations do not satisfy staging/production launch requirements.
+**G708 affirmation (historical inbox wording; superseded 2026-07-12 for persistence):** At G708 closeout, in-system user notification inbox remained deferred as a product claim. **Current (2026-07-12):** in-app notification persistence + UI foundation = LOCAL FOUNDATION; staging migration APPLIED; live provider sending remains deferred; full E2E/launch proof open. `EmailLog` / outbox remains outbound attempt log only. Local/no-IO foundations do not satisfy staging/production launch requirements.
 
-**Email clarification:** transactional workflow notifications (approval, handoff, delivery status) are in scope for proof; marketing email campaigns remain still-deferred. Do **not** label email “ready” — no-send/outbox foundation and local `SKIPPED` behavior are not live Resend proof; in-system inbox remains deferred.
+**Email clarification:** transactional workflow notifications (approval, handoff, delivery status) are in scope for proof; marketing email campaigns remain still-deferred. Do **not** label email “ready” — no-send/outbox foundation and local `SKIPPED` behavior are not live Resend proof; in-app persistence/UI foundation exists but does **not** equal STAGING LIVE PROVEN email or full launch proof.
+
+**BLOK 9:** Google Docs UI frontend remains **DEFERRED** (owner decision 2026-07-11). BLOKI 10–13 are **ABSORBED INTO SNAPSHOT WORKSTREAMS**, not cancelled.
 
 ---
 
@@ -100,7 +106,7 @@ Grouped for planning clarity. Items remain deferred until a separate approved bl
 |--------|-------|-------------------|--------|
 | **Live AI cost / accounting** | Monthly cap aggregation for `liveProviderCalled=true` COMPLETED rows; `actualCostUsd` trusted provider-cost ingestion; provider cost dashboards | **G79** implemented + local unit proof; **G80** policy documented only | G79 DONE locally; trusted `actualCostUsd` ingestion and dashboards deferred |
 | **Staging / production live proof** | Re-run bounded live OpenRouter, R2, GA/GSC, WordPress draft, email on target env | **G81** staging live proof planning (not execution); separate execution gates per integration | BLOCKED |
-| **Notifications** | In-system MVP → email MVP → client approval events → admin alerts → audit alignment | **G82-G84** planning/event-map outcomes; **N1-N3** per [`notifications-blocker-plan.md`](./notifications-blocker-plan.md) | BLOCKED — no in-system notification model |
+| **Notifications** | In-app persistence/UI foundation → email MVP → client approval events → admin alerts → audit alignment | **G82-G84** planning/event-map outcomes; **N1-N3** per [`notifications-blocker-plan.md`](./notifications-blocker-plan.md); **current:** persistence/UI LOCAL FOUNDATION; staging migration APPLIED; live email **BLOCKED** (not STAGING LIVE PROVEN); full E2E launch proof open | Live email BLOCKED; full launch proof open — see [`AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md`](../project-control/AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md) |
 | **GA / GSC live metrics** | OAuth/token storage, live sync, non-placeholder monthly report metrics | **G85** planning in [`MONTHLY_REPORT_LIVE_DATA_PROOF.md`](../runbooks/MONTHLY_REPORT_LIVE_DATA_PROOF.md) | BLOCKED — MANUAL snapshots are separate from live GA/GSC |
 | **WordPress live draft proof** | Live draft proof session; publish remains frozen | **G86** three-tier plan in [`WORDPRESS_DRAFT_PROOF.md`](../runbooks/WORDPRESS_DRAFT_PROOF.md) | Draft prep local-proven; live proof BLOCKED; publish frozen |
 | **Image generation provider proof** | Provider research, disabled-safe wiring, medical-aesthetic proof checklist, live proof | **G87** planning in [`IMAGE_GENERATION_PROOF.md`](../runbooks/IMAGE_GENERATION_PROOF.md) | BLOCKED |
@@ -116,7 +122,7 @@ Grouped for planning clarity. Items remain deferred until a separate approved bl
 | **G79** | Monthly cap aggregation for live `COMPLETED` rows — **implemented locally** |
 | **G80** | `actualCostUsd` trusted-provider-cost policy — **documented only**; ingestion remains deferred |
 | **G81** | Staging live proof planning only (not execution) — owner-approved checklist per integration |
-| **G82-G84** | Notifications foundation/no-send/email/approval event-map planning — no live send and no in-system inbox yet |
+| **G82-G84** | Notifications foundation/no-send/email/approval event-map planning — no live send; *(historical)* “no in-system inbox yet” at G88 date — **superseded 2026-07-12** for persistence/UI foundation |
 | **G85-G87** | GA/GSC, WordPress live draft, and image generation proof planning — no live calls |
 | **G88** | Shared-doc consolidation with correct G79-G88 gate map; Puriva Launch remains blocked |
 | **G149 recommended after G148** | Owner-selected launch-blocker execution gate; recommended first candidate: R2 target-environment real-bucket proof or another explicitly approved low-blast-radius proof |
@@ -132,7 +138,7 @@ Grouped for planning clarity. Items remain deferred until a separate approved bl
 | Area | Moved out of "not started" | Still deferred / blocked |
 |------|-----------------------------|--------------------------|
 | R2/private storage | No-IO readiness, proof-stage helpers, storage-key guard docs/tests | Real bucket IO, signed URL proof against target bucket, staging/prod proof |
-| Notifications/email | Taxonomy, event mapping, policy, no-send adapter, local templates | In-system inbox/persistence, live email send, client notification proof |
+| Notifications/email | Taxonomy, event mapping, policy, no-send adapter, local templates | *(historical row)* In-system inbox/persistence, live email send, client notification proof — **persistence/UI since implemented (2026-07-12)**; live email + full E2E launch proof still deferred |
 | GA/GSC/monthly reports | Config helpers, manual/snapshot report helpers, FINAL-only visibility | OAuth consent, token storage/refresh, live GA/GSC sync, target-env report proof |
 | WordPress | Draft payload, credential-shape checks, publish freeze before fetch | Live draft proof session, approved-image attach proof, auto-publish |
 | Image generation | Compliance policy/helper foundation | Provider selection, live generation, R2 image-byte proof |
@@ -148,7 +154,7 @@ G148 recommendation: keep local foundations, keep all live-provider/storage/emai
 | Area | Local/docs complete (G149-G227) | Still deferred / blocked |
 |------|----------------------------------|--------------------------|
 | R2/private storage | Proof-stage hardening, redacted config, proof intent, client-safe URL policy, serializer leak tests, cleanup plan constants | Real bucket IO, signed URL against target bucket, staging/prod proof |
-| Notifications/email | Taxonomy V2, recipient/channel/severity/redaction, typed templates, no-send edges, persistence/inbox **design** | In-system inbox/persistence (migration), live email send, client notification proof |
+| Notifications/email | Taxonomy V2, recipient/channel/severity/redaction, typed templates, no-send edges, persistence/inbox **design** | *(historical)* In-system inbox/persistence (migration), live email send, client notification proof — **persistence/migration since implemented & APPLIED on staging (2026-07-12)**; live email still deferred |
 | GA/GSC/monthly reports | Credential presence, period/source-truth/metric/recommendation/output guards, CSV import proof plan | OAuth consent, token storage/refresh, live GA/GSC sync, target-env report proof |
 | WordPress | Draft payload, slug, status freeze, credential redaction, image-inclusion contract, proof-plan constants | Live draft proof session, auto-publish |
 | Image generation | Compliance V2, prompt/alt/reject/approval-loop, WP inclusion readiness, provider proof plan | Provider selection, live generation, R2 image-byte proof |
@@ -163,7 +169,7 @@ G228 recommendation: keep local foundations, keep all live-provider/storage/emai
 | Area | Local/docs complete (G229–G448) | Still live-deferred / blocked |
 |------|----------------------------------|-------------------------------|
 | R2/private storage | No-IO hardening, diagnostics, redaction, URL policy, serializer boundary tests | Real bucket IO, target-env signed URL, staging/prod proof |
-| Notifications/email | Taxonomy aliases, payload snapshots, correlation/idempotency design, no-send/config tests | In-system inbox/persistence (migration), live email send |
+| Notifications/email | Taxonomy aliases, payload snapshots, correlation/idempotency design, no-send/config tests | *(historical)* In-system inbox/persistence (migration), live email send — **persistence/migration since implemented & APPLIED on staging (2026-07-12)**; live email still deferred |
 | GA/GSC/monthly reports | Config/period/source-truth/guards, unavailable/export truth helpers | OAuth/token storage/refresh, live GA/GSC sync |
 | WordPress | Draft helpers, sanitization/redaction, taxonomy placeholders, author mapping design | Live draft HTTP session; auto-publish still deferred |
 | Image generation | Compliance V3, prompt/alt/approval-loop, no-live provider invariant | Provider selection, live generation, R2 image-byte proof |
@@ -181,7 +187,7 @@ G468 recommendation: keep local foundations; keep all live-provider/storage/emai
 | Area | Local/docs complete (G469–G707) | Still live-deferred / blocked |
 |------|----------------------------------|-------------------------------|
 | R2/private storage | Target-env plan freeze, proof contracts, no-IO invariants, diagnostics/redaction, field/URL policy, exportUrl vs storageKey matrix, download boundary design | Real bucket IO, target-env signed URL, staging/prod proof |
-| Notifications/email | Taxonomy families + correlation/redaction/audit metadata; no-send adapter + template catalogue + recipient/variable redaction | In-system inbox/persistence (migration), live email send |
+| Notifications/email | Taxonomy families + correlation/redaction/audit metadata; no-send adapter + template catalogue + recipient/variable redaction | *(historical)* In-system inbox/persistence (migration), live email send — **persistence/migration since implemented & APPLIED on staging (2026-07-12)**; live email still deferred |
 | GA/GSC/monthly reports | OAuth token storage **design**, property/site mapping, period/source-truth, monthly FINAL/admin redaction/unavailable/approval wording | OAuth/token storage **implementation**, live GA/GSC sync |
 | WordPress | Draft payload/slug/freeze/sanitization/redaction/taxonomy/author/image-inclusion hardening | Live draft HTTP session; auto-publish still deferred |
 | Image generation | Compliance/alt/prompt/approval-loop/notification/WP-inclusion/provider-proof-plan expansion | Provider selection, live generation, R2 image-byte proof |
@@ -364,11 +370,20 @@ Current behavior:
 
 **G78 notifications blocker plan:** [`notifications-blocker-plan.md`](./notifications-blocker-plan.md) — canonical staged sequence. Phone/manual-only communication is explicitly insufficient for launch claims.
 
+**Current (2026-07-12):**
+
+| Layer | Status |
+|-------|--------|
+| In-app notification persistence (`InAppNotification`) | LOCAL FOUNDATION / IMPLEMENTED |
+| Staging migration `20260711115000_add_in_app_notifications` | APPLIED (`1b8d00d`) |
+| In-app notification UI foundation (`NotificationPanel`) | LOCAL FOUNDATION |
+| Live email / Resend send proof | NOT STAGING LIVE PROVEN — deferred/blocked |
+| Full E2E notification launch proof | OPEN |
+
 Deferred:
 
 - real provider sending by default;
-- automatic client notifications;
-- **in-system user notification inbox (Client Portal + admin)** — not started; `EmailLog` is outbound attempt log only;
+- automatic client notifications as launch-proven E2E;
 - background notification queues;
 - invite emails;
 - password reset emails;
@@ -377,7 +392,9 @@ Deferred:
 Current behavior:
 
 - email foundation exists as controlled groundwork;
-- sending must be separately approved and tested.
+- in-app persistence/UI foundation exists locally and migration is on staging;
+- sending must be separately approved and tested;
+- do not claim notification capability is fully launch-proven.
 
 ## Finance Integrations
 

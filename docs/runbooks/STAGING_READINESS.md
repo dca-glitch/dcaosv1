@@ -14,7 +14,21 @@
 
 **G53 production safety plan notice (updated 2026-07-09):** G53 production safety plan **approved** — planning only. Does **not** authorize G49 dry-run, G50 deploy, or production mutation. Production readiness: **NO**. G49/G50: **not executed**. G54 HSTS/proxy: **PASS**. Next production path remains G49 dry-run before G50, only after owner approval. Puriva Launch: **blocked** pending live proof gates. Staging proven (G46d/G47); production deploy frozen. Full plan: [`G53_PRODUCTION_SAFETY_PLAN.md`](./G53_PRODUCTION_SAFETY_PLAN.md). G49 runbook: [`G49_PRODUCTION_DRY_RUN_READ_ONLY_PROOF.md`](./G49_PRODUCTION_DRY_RUN_READ_ONLY_PROOF.md).
 
-**Source of truth:** [`docs/STATUS.md`](../STATUS.md). **Operator runbook:** [`docs/operator/OPERATOR_RUNBOOK.md`](../operator/OPERATOR_RUNBOOK.md).
+**Source of truth:** [`docs/STATUS.md`](../STATUS.md). **Authoritative project control:** [`docs/project-control/AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md`](../project-control/AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md). **Operator runbook:** [`docs/operator/OPERATOR_RUNBOOK.md`](../operator/OPERATOR_RUNBOOK.md).
+
+### Next staging cycle prerequisites (Workstream control — 2026-07-12)
+
+The closed `1b8d00d` deploy result above is **unchanged**. Before requesting or executing a **next** staging artifact/deploy:
+
+| Item | State |
+|------|--------|
+| Local Workstreams 1–5 | Required to complete (or owner-waive) before next staging Workstream 6 |
+| Vite high dependency finding | OPEN — BOUNDED TRIAGE REQUIRED (`vite` `<=6.4.2`, repo `5.4.21`, suggested major `8.1.4`, advisory set includes `GHSA-fx2h-pf6j-xcff`); not fixed; pre-next-staging triage item |
+| Canonical component-system decision | OPEN |
+| Rollback / compatibility plan (incl. rehearsal) | OPEN — rehearsal not executed |
+| Orchestrator proof sequencing vs mandatory live-proof chain | OPEN DECISION |
+| Next staging artifact | Does not exist yet |
+| Production | Remains frozen; staging PASS does not authorize production |
 
 Related:
 
