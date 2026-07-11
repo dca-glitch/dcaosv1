@@ -207,7 +207,7 @@ describe("AppLayout public contract", () => {
 describe("shell section labels", () => {
   it("maps admin and portal section labels without renaming view keys", () => {
     expect(adminSectionLabel("protected")).toBe("Product");
-    expect(adminSectionLabel("core")).toBe("core");
+    expect(adminSectionLabel("core")).toBe("Core workflows");
     expect(portalSectionLabel("client")).toBe("Archive");
     expect(portalSectionLabel("protected")).toBe("Overview");
   });
