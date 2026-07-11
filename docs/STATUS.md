@@ -1,6 +1,6 @@
 # DCA OS Lite — Status (Source of Truth)
 
-**Last updated:** 2026-07-11 (PRODUCTION PHASE A PG/API CREDENTIAL ROTATION CLOSEOUT — see §Production PostgreSQL/API credential rotation Phase A closeout below)
+**Last updated:** 2026-07-11 (STAGING DEPLOY `1b8d00d` CLOSEOUT + PRODUCTION PHASE A PG/API CREDENTIAL ROTATION CLOSEOUT)
 **PRE-STAGING closure:** 2026-07-10 (local/no-live audit + safe fixes; see [`docs/operator/PRE_STAGING_CLOSURE_VERDICT.md`](./operator/PRE_STAGING_CLOSURE_VERDICT.md))
 **G55 pre-live readiness:** [`docs/runbooks/G55_PRELIVE_READINESS.md`](./runbooks/G55_PRELIVE_READINESS.md)
 **G56 pre-live readiness:** [`docs/runbooks/G56_PRELIVE_READINESS.md`](./runbooks/G56_PRELIVE_READINESS.md)
@@ -76,7 +76,7 @@
 | G71c closeout | **Docs only** — partial live proof recorded; local gateway restored; production remains frozen |
 | G71e / G71e-retry | **Formal clean local live proof COMPLETE** — Phase 1 baseline PASS; Phase 2 live PASS (`90941e76-260d-4f99-b299-3a5c6b7a8d65`); restore PASS; model `anthropic/claude-haiku-4.5` |
 | G71f closeout | **Docs only** — formal clean proof recorded; production remains frozen |
-| Staging | **Proven** — G46d/G47 PASS (artifact `5e1ea5a`) |
+| Staging | **Proven** — controlled staging deploy of `1b8d00d` completed; post-deploy smoke PASS; migrations `20260709120000_add_ai_budget_ledger` and `20260711115000_add_in_app_notifications` applied; prior G46d/G47 PASS on `5e1ea5a` is historical context only |
 | Production deploy | **Frozen/deferred** — no deploy until G49 dry-run + G50 explicit approval |
 | G49 public probes (§6.2) | **PASS** — 2026-07-09; formal gate closure pending owner sentence |
 | G50 production deploy | **Not executed** — frozen/deferred |
@@ -118,6 +118,33 @@ Production PostgreSQL role password and `DATABASE_URL` were rotated, the product
 - **Phase D — old external credential revocation:** requires literal token `APPROVE_EXTERNAL_CREDENTIAL_REVOCATION`.
 
 **Execution issue / prevention rule:** The first Phase A attempt failed because `psql` is not installed on the VPS host; `pg_restore --list` must also run inside the PostgreSQL container. Future production runners must use container-native PostgreSQL tools and must not treat normal Docker stderr output as a fatal error.
+
+## Staging deploy `1b8d00d` closeout (2026-07-11)
+
+**Result:** PASS — controlled staging deployment of commit `1b8d00d` completed; post-deploy smoke PASS; production untouched.
+
+| Item | State |
+|------|--------|
+| Deployed commit | `1b8d00d` |
+| Local validation before deploy | `npm.cmd run validate` PASS |
+| Staging artifact path | `/opt/dca/staging-artifacts/1b8d00d` |
+| Staging DB backup | `/opt/dca/apps/dcaosv1/staging/backups/staging-db-before-1b8d00d-20260711-200155.dump` |
+| Applied migrations | `20260709120000_add_ai_budget_ledger`, `20260711115000_add_in_app_notifications` |
+| Staging compose API context | `/opt/dca/staging-artifacts/1b8d00d` |
+| Staging API container | `dcaosv1-staging-api` recreated successfully; `127.0.0.1:4011->4000` |
+| Public frontend | HTTP 200 |
+| Public API health | PASS |
+| Loopback API health (`127.0.0.1:4011`) | PASS |
+| PostgreSQL container | `dcaosv1-staging-postgres` healthy and accepting connections |
+| Web dist | Deployed successfully |
+| Caddy | Not restarted or changed |
+| Production | **Not modified** — production remains frozen |
+| Production health during deploy | HTTP 200 |
+| Post-deploy smoke | PASS |
+| Source code / schema / migration change in repo | **None** — migrations were already in repo; only applied to staging DB |
+| Commit / push / deploy in this docs task | **None** |
+
+**Production safety:** Production `system.digitalcubeagency.net` was not modified. The production PostgreSQL/API credential rotation Phase A result (`PRODUCTION PHASE A RECOVERED AFTER FAILURE`) and the unresolved Turnstile/R2 deferred security work remain recorded in [`deferred-scope-register.md`](./operator/deferred-scope-register.md) and are **not** closed by this staging deploy.
 
 ## G77b persistent COMPLETED ledger live proof closeout (2026-07-10)
 
@@ -362,13 +389,13 @@ Detail: [`AI_MODEL_ROUTING_POLICY.md`](./runbooks/AI_MODEL_ROUTING_POLICY.md) ·
 | Latest implementation commit | `64bfd06` — `prelive: complete post-G56 orchestration readiness` (G57–G68 merged via G69 fast-forward) |
 | G69 merge | **DONE** — branch `cursor/g57-g68-prelive-completion` fast-forward to `main`; validation before merge PASS (198 unit tests, orchestrator + provider smokes, validate) |
 | Working tree | Clean except untracked `.cursor/settings.json` (must not be committed) |
-| Latest docs/local closeout commit | `42f969f` — `docs: mark G54 HSTS blocker closed in G53 plan`; G35 Phase B local smoke proof remains `217c11c`; G35 Phase C staging artifact source remains `5e1ea5a` |
+| Latest docs/local closeout commit | `42f969f` — `docs: mark G54 HSTS blocker closed in G53 plan`; G35 Phase B local smoke proof remains `217c11c`; current staging artifact is `1b8d00d` after 2026-07-11 controlled deploy |
 | Pre-staging local closeout (G35 Phase B) | **PASS** — full local pre-staging gate passed on `217c11c`; see §2.7 |
 | Latest local pre-staging re-check (G43) | **PASS** — validate plus four focused local smokes passed on current `main`; no repo edits, commit/push/deploy, staging/VPS/prod; see §2.9 |
 | Controlled refresh (G35 Phase C) | **PASS** — staging artifact refreshed from `5ee8389` to `5e1ea5a`; local validate PASS before artifact creation; staging API recreated; DB healthy; MVP smoke PASS; production untouched; see §2.8 |
 | Production deploy | **Frozen/deferred; production deploy ready: NO** — `system.digitalcubeagency.net` unchanged; G48/G53 planning PASS do not authorize deploy. G49 dry-run and G50 deploy **not executed**. G54 HSTS/proxy: PASS. Next production path remains G49 dry-run before G50. |
-| Staging deploy | **G47 staging smoke/proof PASS after G46d controlled staging deploy/proof PASS.** Staging remains on artifact/API context `/opt/dca/staging-artifacts/5e1ea5a`; host-side web target `/opt/dca/apps/dcaosv1/staging/web/dist`; staging compose `/opt/dca/apps/dcaosv1/staging/docker-compose.staging.yml` with `--env-file .env.staging`; correct API service `dcaosv1-staging-api`. G47b MVP staging smoke requires explicit `MVP_SMOKE_API_BASE_URL=https://staging.digitalcubeagency.net/api/v1`; G47c staging security baseline requires explicit `DCA_SMOKE_REMOTE_TARGET=staging`. Any further staging refresh/execution/migration requires fresh explicit owner approval. |
-| Staging target (G1) | `staging.digitalcubeagency.net` exists and resolves to the same VPS as `system.digitalcubeagency.net`; staging responds with artifact context `/opt/dca/staging-artifacts/5e1ea5a`; health 200; web root 200 |
+| Staging deploy | **Controlled staging deploy of `1b8d00d` completed 2026-07-11 with post-deploy smoke PASS.** Current artifact/API context `/opt/dca/staging-artifacts/1b8d00d`; host-side web target `/opt/dca/apps/dcaosv1/staging/web/dist`; staging compose `/opt/dca/apps/dcaosv1/staging/docker-compose.staging.yml` with `--env-file .env.staging`; correct API service `dcaosv1-staging-api`. Applied migrations: `20260709120000_add_ai_budget_ledger`, `20260711115000_add_in_app_notifications`. Prior G46d/G47 PASS on `5e1ea5a` is historical. Any further staging refresh/execution/migration requires fresh explicit owner approval. |
+| Staging target (G1) | `staging.digitalcubeagency.net` exists and resolves to the same VPS as `system.digitalcubeagency.net`; staging responds with artifact context `/opt/dca/staging-artifacts/1b8d00d`; health 200; web root 200 |
 | Default AI execution | Local deterministic (restored after G71e-retry); live OpenRouter opt-in only — **local formal proof complete** |
 | Work mode | Local-first on Windows PowerShell from `C:\dcaosv1` |
 

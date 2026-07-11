@@ -16,6 +16,8 @@ This register prevents confusion. If something is listed under **Still deferred*
 
 **PRODUCTION PHASE A PG/API ROTATION (2026-07-11):** Production PostgreSQL/API credential rotation Phase A completed with emergency recovery. PostgreSQL password and `DATABASE_URL` are synchronized; production and staging health are HTTP 200. Cloudflare Turnstile and R2 credentials remain exposed/unrotated and are recorded below as **OPEN DEFERRED SECURITY WORK**. The incident is **not** claimed as fully closed. Production remains frozen for unrelated deployment. See [`docs/STATUS.md`](../STATUS.md) §Production PostgreSQL/API credential rotation Phase A closeout.
 
+**STAGING DEPLOY `1b8d00d` (2026-07-11):** Controlled staging deployment of commit `1b8d00d` completed with post-deploy smoke PASS. Current staging artifact/API context is `/opt/dca/staging-artifacts/1b8d00d`. Migrations `20260709120000_add_ai_budget_ledger` and `20260711115000_add_in_app_notifications` applied on staging. Production was not modified. Prior G35 Phase C refresh on `5e1ea5a` and G46d/G47 PASS are historical context only. See [`docs/STATUS.md`](../STATUS.md) §Staging deploy `1b8d00d` closeout and [`docs/runbooks/STAGING_READINESS.md`](../runbooks/STAGING_READINESS.md).
+
 ## Rule
 
 Deferred means: do not build, enable, deploy, or promise it as active until there is a separate approved task.
@@ -83,7 +85,7 @@ These remain **blocked or complete (local only)** after G57–G68 merged to `mai
 | WordPress live draft proof | Draft/handoff on target env | **BLOCKED** | [`WORDPRESS_DRAFT_PROOF.md`](../runbooks/WORDPRESS_DRAFT_PROOF.md) |
 | R2 real-bucket IO proof | Private storage | **BLOCKED** | [`STORAGE_R2_PROOF.md`](../runbooks/STORAGE_R2_PROOF.md) |
 | Transactional email live proof | Resend/workflow notifications | **BLOCKED** | [`EMAIL_NOTIFICATIONS_PROOF.md`](../runbooks/EMAIL_NOTIFICATIONS_PROOF.md) (if present) or integrations matrix |
-| Staging migration application | `20260709120000_add_ai_budget_ledger` on staging DB | **BLOCKED** | Fresh owner approval; see [`STAGING_READINESS.md`](../runbooks/STAGING_READINESS.md) |
+| Staging migration application | `20260709120000_add_ai_budget_ledger` and `20260711115000_add_in_app_notifications` on staging DB | **APPLIED** — during controlled staging deploy of `1b8d00d`; staging DB backed up before migration; see [`STAGING_READINESS.md`](../runbooks/STAGING_READINESS.md) |
 | Explicit production deploy approval | G50 | **BLOCKED** | [`G53_PRODUCTION_SAFETY_PLAN.md`](../runbooks/G53_PRODUCTION_SAFETY_PLAN.md) |
 
 **Production deploy is not authorized** by completing G69, G70 documentation, G71c partial proof closeout, G71f local live proof, or G77b local COMPLETED ledger proof.
@@ -254,7 +256,7 @@ Current behavior:
 
 ## Production And Deployment
 
-**Ground-truth notice (updated 2026-07-09 post-G54):** G46d controlled staging deploy/proof is PASS, followed by G47/G47b/G47c staging smoke/proof PASS, G48 production readiness planning PASS, **G53 production safety plan approved (planning only)**, and **G54 HSTS/proxy PASS**. Production deploy ready: **NO**. G49 dry-run and G50 deploy: **not executed**. Next production path remains G49 dry-run before G50, only after owner approval. Puriva Launch: **blocked** pending live proof gates. Staging proof used API context `/opt/dca/staging-artifacts/5e1ea5a`, host-side web target `/opt/dca/apps/dcaosv1/staging/web/dist`, staging compose `/opt/dca/apps/dcaosv1/staging/docker-compose.staging.yml`, `--env-file .env.staging`, and service `dcaosv1-staging-api`. G47c staging security baseline: `31/31 passed` (HSTS warning at G47 time; closed in G54). Production deploy attempted: NO. Any further staging/VPS/production execution requires fresh explicit owner approval.
+**Ground-truth notice (updated 2026-07-11 post-`1b8d00d` deploy):** Controlled staging deploy of `1b8d00d` is PASS with post-deploy smoke PASS. Migrations `20260709120000_add_ai_budget_ledger` and `20260711115000_add_in_app_notifications` applied on staging. Prior G46d/G47/G47b/G47c PASS on `5e1ea5a`, G48 production readiness planning PASS, **G53 production safety plan approved (planning only)**, and **G54 HSTS/proxy PASS** remain in historical context. Production deploy ready: **NO**. G49 dry-run and G50 deploy: **not executed**. Next production path remains G49 dry-run before G50, only after owner approval. Puriva Launch: **blocked** pending live proof gates. Current staging artifact/API context is `/opt/dca/staging-artifacts/1b8d00d`, host-side web target `/opt/dca/apps/dcaosv1/staging/web/dist`, staging compose `/opt/dca/apps/dcaosv1/staging/docker-compose.staging.yml`, `--env-file .env.staging`, and service `dcaosv1-staging-api`. Production deploy attempted: NO. Production remains frozen. Any further staging/VPS/production execution requires fresh explicit owner approval.
 
 **G43 note:** the later local pre-staging re-check PASS on current `main` at `a18dcc1` does not move any deferred staging, VPS, production, deploy, migration, Docker, Caddy, live provider, or live storage item out of deferred status.
 
@@ -267,7 +269,7 @@ Deferred:
 - live production Client Portal rollout on `system.digitalcubeagency.net` (MVP build in progress locally);
 - public production rollout;
 - Caddy/container/VPS changes without approval;
-- **Block G4/G46d/G47 controlled staging execution and smoke proof:** Phase C controlled refresh COMPLETE on commit `5e1ea5a`; G46d controlled staging deploy/proof PASS; G47 staging smoke/proof PASS with explicit target env guards; further staging/VPS work deferred pending fresh owner approval;
+- **Controlled staging deploy of `1b8d00d` (2026-07-11):** PASS. Artifact context `/opt/dca/staging-artifacts/1b8d00d`; migrations `20260709120000_add_ai_budget_ledger` and `20260711115000_add_in_app_notifications` applied; public frontend HTTP 200; public and loopback API health PASS; production untouched. Prior G35 Phase C refresh on `5e1ea5a` and G46d/G47 PASS are historical; further staging/VPS work deferred pending fresh owner approval;
 - **future staging refresh / updates:** deferred pending fresh explicit owner approval with bounded execution block.
 
 Current behavior:
@@ -275,7 +277,7 @@ Current behavior:
 - work remains local-first;
 - PR #13 is merged to `main`, but current `main` is 0% deployed to production;
 - **production URL:** `system.digitalcubeagency.net`;
-- **staging URL (G1 approved):** `staging.digitalcubeagency.net` — same VPS, separate staging stack; G35 Phase C refresh COMPLETE on `5e1ea5a` (see STATUS §2.2/§2.8); G46d controlled staging deploy/proof PASS; G47 staging smoke/proof PASS; artifact/API context `/opt/dca/staging-artifacts/5e1ea5a`; host-side web target `/opt/dca/apps/dcaosv1/staging/web/dist`; compose requires `--env-file .env.staging`; correct API service `dcaosv1-staging-api`; API health 200; MVP smoke PASS; G54 HSTS/proxy PASS; production untouched;
+- **staging URL (G1 approved):** `staging.digitalcubeagency.net` — same VPS, separate staging stack; controlled staging deploy of `1b8d00d` COMPLETE (see STATUS §Staging deploy `1b8d00d` closeout); current artifact/API context `/opt/dca/staging-artifacts/1b8d00d`; host-side web target `/opt/dca/apps/dcaosv1/staging/web/dist`; compose requires `--env-file .env.staging`; correct API service `dcaosv1-staging-api`; API health 200; public frontend 200; post-deploy smoke PASS; G54 HSTS/proxy PASS; production untouched;
 - production is frozen unless explicitly approved; G48/G53 planning PASS do not authorize production deploy; G54 HSTS/proxy is PASS; G49/G50 not executed; next production path remains G49 dry-run before G50.
 
 ## Live Analytics And External Accounts
@@ -433,7 +435,7 @@ These items are deferred but **must not block** local staging readiness planning
 | Item | Status | Notes |
 |------|--------|-------|
 | Claude full-code audit | Required pre-staging gate | Separate approved block; not a substitute for validate/smoke |
-| Staging deploy and smoke proof | **G46d/G47 PASS** | G35 Phase C refresh on `5e1ea5a` PASS; G46d controlled staging deploy/proof PASS; G47 minimal proof PASS with staging root 200, staging health 200, prod health-only 200; G47b MVP staging smoke PASS with explicit target env; G47c staging security baseline 31/31 PASS with one HSTS warning; production deploy attempted NO; production app/API/DB mutation NO; further staging work deferred pending fresh owner approval |
+| Staging deploy and smoke proof | **`1b8d00d` deploy PASS** | Controlled staging deploy of `1b8d00d` completed 2026-07-11 with post-deploy smoke PASS; artifact context `/opt/dca/staging-artifacts/1b8d00d`; migrations `20260709120000_add_ai_budget_ledger` and `20260711115000_add_in_app_notifications` applied; public frontend HTTP 200; public and loopback API health PASS; production untouched; prior G46d/G47 PASS on `5e1ea5a` is historical; further staging work deferred pending fresh owner approval |
 | HSTS proxy hardening | **Fixed in G54 — PASS** | G47c reported HSTS missing as warning only; fixed in G54 with backup and public proof |
 | Production deploy proof | Deferred | Frozen; G48/G53 planning PASS; production deploy ready NO; G49/G50 not executed |
 | Strict R2 real bucket proof | Deferred | Optional local env + smoke flag |
