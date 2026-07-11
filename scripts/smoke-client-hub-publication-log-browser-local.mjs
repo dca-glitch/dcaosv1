@@ -172,15 +172,17 @@ async function main() {
     await page.getByRole("heading", { name: "Clients", exact: true }).waitFor({ state: "visible", timeout: 15000 });
     await page.getByRole("button", { name: "All", exact: true }).click();
 
-    const clientCard = page.locator("article.entity-card", { hasText: fixture.clientName }).first();
-    await clientCard.scrollIntoViewIfNeeded();
-    await clientCard.waitFor({ state: "visible", timeout: 30000 });
-    await clientCard.getByRole("button", { name: "Open hub" }).click();
+    const clientRow = page.locator("tr", { hasText: fixture.clientName }).first();
+    await clientRow.scrollIntoViewIfNeeded();
+    await clientRow.waitFor({ state: "visible", timeout: 30000 });
+    await clientRow.getByRole("button", { name: "Open hub" }).click();
 
     await page.getByRole("heading", { name: fixture.clientName, exact: true }).waitFor({ state: "visible", timeout: 30000 });
     await page.getByRole("heading", { name: "Publication log", exact: true }).waitFor({ state: "visible", timeout: 15000 });
 
     const hubText = await page.locator(".page-stack").innerText();
+    const normalizedHubText = hubText.toUpperCase().replace(/\s+/g, "_");
+    const normalizedStatus = fixture.publishStatus.toUpperCase().replace(/\s+/g, "_");
     record(
       "client hub publication log section renders publish event",
       hubText.includes("Publication log") &&
@@ -190,7 +192,7 @@ async function main() {
     );
     record(
       "client hub publication log shows client-safe status",
-      hubText.includes(fixture.publishStatus) || hubText.includes("PROVIDER_DISABLED") || hubText.includes("provider_disabled"),
+      normalizedHubText.includes(normalizedStatus) || normalizedHubText.includes("PROVIDER_DISABLED"),
       fixture.publishStatus
     );
     record(

@@ -8,19 +8,75 @@ import type { ShellVariant } from "./types";
 
 type AppTopbarProps = {
   activeView: string;
+  isClientRole?: boolean;
   navOpen?: boolean;
   onNavToggle?: () => void;
   shellVariant: ShellVariant;
+  token?: string | null;
 };
 
-export function AppTopbar({ activeView, navOpen = false, onNavToggle, shellVariant }: AppTopbarProps) {
+const API_BASE_URL = "/api/v1";
+
+type InboxUnreadResponse = {
+  ok: boolean;
+  data?: {
+    unreadCount?: number;
+  };
+};
+
+function getUnreadEndpoint(isClientRole: boolean): string {
+  return isClientRole ? "/client-portal/notifications/unread" : "/notifications/inbox/unread";
+}
+
+export function AppTopbar({
+  activeView,
+  isClientRole = false,
+  navOpen = false,
+  onNavToggle,
+  shellVariant,
+  token = null
+}: AppTopbarProps) {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   const title = getShellViewTitle(activeView, shellVariant);
   const titleId = useId();
   const notifyBtnRef = useRef<HTMLButtonElement | null>(null);
   const searchBtnRef = useRef<HTMLButtonElement | null>(null);
   const overlayOpen = notificationsOpen || searchOpen;
+
+  useEffect(() => {
+    if (!token) {
+      setUnreadCount(0);
+      return;
+    }
+
+    let cancelled = false;
+    async function loadUnreadCount() {
+      const response = await fetch(`${API_BASE_URL}${getUnreadEndpoint(isClientRole)}`, {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok || cancelled) {
+        return;
+      }
+
+      const payload = (await response.json()) as InboxUnreadResponse;
+      if (cancelled) {
+        return;
+      }
+      setUnreadCount(typeof payload.data?.unreadCount === "number" ? payload.data.unreadCount : 0);
+    }
+
+    void loadUnreadCount();
+    return () => {
+      cancelled = true;
+    };
+  }, [token, isClientRole, notificationsOpen]);
 
   useEffect(() => {
     if (!overlayOpen) {
@@ -108,7 +164,7 @@ export function AppTopbar({ activeView, navOpen = false, onNavToggle, shellVaria
           ref={notifyBtnRef}
           type="button"
           className="shell-topbar__icon-btn"
-          aria-label="Open notifications"
+          aria-label={unreadCount > 0 ? `Open notifications (${unreadCount} unread)` : "Open notifications"}
           aria-expanded={notificationsOpen}
           aria-controls="shell-notification-panel"
           onClick={() => {
@@ -119,17 +175,27 @@ export function AppTopbar({ activeView, navOpen = false, onNavToggle, shellVaria
           {notificationsOpen ? (
             <X size={14} strokeWidth={2} aria-hidden="true" />
           ) : (
-            <Bell size={14} strokeWidth={2} aria-hidden="true" />
+            <>
+              <Bell size={14} strokeWidth={2} aria-hidden="true" />
+              {unreadCount > 0 ? (
+                <span className="shell-topbar__icon-badge" aria-hidden="true">
+                  {unreadCount > 99 ? "99+" : unreadCount}
+                </span>
+              ) : null}
+            </>
           )}
         </button>
       </div>
 
       {notificationsOpen ? (
         <NotificationPanel
+          isClientRole={isClientRole}
+          onUnreadCountChange={setUnreadCount}
           onClose={() => {
             setNotificationsOpen(false);
             notifyBtnRef.current?.focus();
           }}
+          token={token}
         />
       ) : null}
 

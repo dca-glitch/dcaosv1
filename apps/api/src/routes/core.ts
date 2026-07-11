@@ -242,6 +242,12 @@ import {
   updateClientCatalogProductHandler
 } from "../controllers/clientCatalogController";
 import {
+  listAdminInboxNotificationsHandler,
+  listAdminUnreadInboxNotificationsHandler,
+  markAdminInboxNotificationReadHandler,
+  markAllAdminInboxNotificationsReadHandler
+} from "../controllers/notification-inbox.controller";
+import {
   generateFinanceMonthlyReportPdfHandler,
   getFinanceClientSummaryHandler,
   getFinanceIntegrityHandler,
@@ -259,6 +265,10 @@ export function createCoreRouter() {
   router.post("/tenant/wordpress-config", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), saveAiDeliveryWordPressConfigHandler);
   router.get("/activity/audit-logs", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), listActivityAuditLogsHandler);
   router.get("/notifications/email-logs", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), listEmailNotificationLogsHandler);
+  router.get("/notifications/inbox", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), listAdminInboxNotificationsHandler);
+  router.get("/notifications/inbox/unread", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), listAdminUnreadInboxNotificationsHandler);
+  router.post("/notifications/inbox/:id/read", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), markAdminInboxNotificationReadHandler);
+  router.post("/notifications/inbox/read-all", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), markAllAdminInboxNotificationsReadHandler);
   router.get("/ai-provider/planning-config", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), getAiProviderPlanningConfigHandler);
   router.get("/ai-orchestrator-lite/registry", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), getAiOrchestratorLiteRegistryHandler);
   router.post("/ai-orchestrator-lite/material-routing-preview", requireAuth, requireTenant, tenantModuleGuard, requireRole("owner", "admin"), previewAiMaterialRoutingHandler);

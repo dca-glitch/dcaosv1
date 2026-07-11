@@ -417,6 +417,18 @@ button.shell-workspace-switcher__control:focus-visible {
   box-shadow: var(--ds-shadow-focus, 0 0 0 2px rgba(99, 102, 241, 0.4));
 }
 
+.shell-topbar__icon-badge {
+  min-width: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: #4f46e5;
+  color: #f5f7ff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 14px;
+  text-align: center;
+}
+
 /* ─── Main + page container gutters ─── */
 .app-shell .main-shell.shell-main,
 .app-shell .shell-main.main-shell {
@@ -496,8 +508,22 @@ button.shell-workspace-switcher__control:focus-visible {
   color: var(--ds-text-primary, #e2e6f2);
 }
 
+.shell-notification-panel__header-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.shell-notification-panel__count {
+  color: var(--ds-text-faint, #3a4060);
+  font-size: 11px;
+  font-weight: 600;
+}
+
 .shell-notification-panel__body {
-  padding: 20px 14px;
+  max-height: min(420px, 70vh);
+  overflow: auto;
+  padding: 14px;
 }
 
 .shell-notification-panel__empty {
@@ -522,6 +548,88 @@ button.shell-workspace-switcher__control:focus-visible {
 .shell-notification-panel__empty-icon {
   opacity: 0.45;
   margin-bottom: 4px;
+}
+
+.shell-notification-panel__state p {
+  margin: 0;
+  color: var(--ds-text-muted, #5c6380);
+  font-size: 12px;
+}
+
+.shell-notification-panel__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.shell-notification-panel__item {
+  border: 1px solid var(--ds-border, rgba(255, 255, 255, 0.08));
+  border-radius: 8px;
+  background: var(--ds-surface-inset, #08090f);
+  padding: 10px;
+  display: grid;
+  gap: 8px;
+}
+
+.shell-notification-panel__item-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.shell-notification-panel__item-title {
+  margin: 0;
+  color: var(--ds-text-primary, #e2e6f2);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.shell-notification-panel__item-time {
+  color: var(--ds-text-faint, #3a4060);
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+.shell-notification-panel__item-body {
+  margin: 0;
+  color: var(--ds-text-muted, #5c6380);
+  font-size: 12px;
+}
+
+.shell-notification-panel__item-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.shell-notification-panel__status {
+  color: var(--ds-text-faint, #3a4060);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.shell-notification-panel__status.unread {
+  color: var(--ds-text-secondary, #9ba3bf);
+}
+
+.shell-notification-panel__mark-read {
+  border: 1px solid var(--ds-border, rgba(255, 255, 255, 0.08));
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ds-text-secondary, #9ba3bf);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 8px;
+  cursor: pointer;
+}
+
+.shell-notification-panel__mark-read:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 /* ─── Search overlay ─── */

@@ -3,7 +3,7 @@
 export const CLIENT_ARCHIVE_PAGE_HEADING = "Archive";
 export const CLIENT_PORTAL_PAGE_HEADING = "Your archive";
 export const CLIENT_PORTAL_DELIVERY_SUMMARY_HEADING = "Delivery summary";
-export const CLIENT_PORTAL_MONTHLY_REPORTS_HEADING = "Monthly reports";
+export const CLIENT_PORTAL_MONTHLY_REPORTS_HEADING = "Monthly reports archive";
 export const CLIENT_PORTAL_RECOMMENDATIONS_HEADING = "Recommendations";
 
 export async function seedClientPortalAuth(page, token) {

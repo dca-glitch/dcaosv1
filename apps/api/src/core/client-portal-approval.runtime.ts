@@ -1,6 +1,10 @@
 import { createPrismaClient } from "../../../../packages/data/src/client";
 import type { AuthResolvedSessionContext } from "../auth/types";
 import { notifyClientUsers, notifyDcaTeam } from "../services/email-notifications.service";
+import {
+  createAdminInAppNotifications,
+  createClientInAppNotifications
+} from "../notifications/in-app-notifications.service";
 import { mapApprovalSignalToNotification } from "./approval-notification-mapping";
 import {
   serializeClientApprovalDetail,
@@ -368,6 +372,19 @@ export async function approveClientPortalDeliverableImage(
         }
       });
 
+  const reviewedImage = deliverable.contentDraft?.articleImages.find((image) => image.id === imageId);
+  const clientName = deliverable.aiDeliveryProject.client?.name ?? "Client";
+  await createAdminInAppNotifications({
+    tenantId,
+    eventType: "image_approved",
+    severity: "info",
+    title: `[${clientName} Approval] Image approved${reviewedImage?.title ? `: ${reviewedImage.title}` : ""}`,
+    relatedEntityType: "aiDeliveryDeliverableImage",
+    relatedEntityId: imageId,
+    actionKey: "client_image_approved",
+    clientId: deliverable.aiDeliveryProject.clientId
+  });
+
   return {
     imageApproval: {
       id: approval.id,
@@ -426,6 +443,20 @@ export async function rejectClientPortalDeliverableImage(
           reviewedAt: now
         }
       });
+
+  const reviewedImage = deliverable.contentDraft?.articleImages.find((image) => image.id === imageId);
+  const clientName = deliverable.aiDeliveryProject.client?.name ?? "Client";
+  await createAdminInAppNotifications({
+    tenantId,
+    eventType: "image_rejected_with_reason",
+    severity: "action_required",
+    title: `[${clientName} Rejection] Image rejected${reviewedImage?.title ? `: ${reviewedImage.title}` : ""}`,
+    body: reason,
+    relatedEntityType: "aiDeliveryDeliverableImage",
+    relatedEntityId: imageId,
+    actionKey: "client_image_rejected",
+    clientId: deliverable.aiDeliveryProject.clientId
+  });
 
   return {
     imageApproval: {
@@ -513,6 +544,16 @@ export async function approveClientPortalDeliverable(
   const clientName = deliverable.aiDeliveryProject.client?.name ?? "Client";
   if (policy.notifyAdmin) {
     const mapped = mapApprovalSignalToNotification("content_approved_by_client");
+    await createAdminInAppNotifications({
+      tenantId,
+      eventType: mapped.eventType,
+      severity: "info",
+      title: `[${clientName} Approval] ${updated.title}`,
+      relatedEntityType: "aiDeliveryDeliverable",
+      relatedEntityId: updated.id,
+      actionKey: "client_deliverable_approved",
+      clientId: deliverable.aiDeliveryProject.clientId
+    });
     await notifyDcaTeam(
       tenantId,
       `[${clientName} Approval] ${updated.title}`,
@@ -597,6 +638,17 @@ export async function rejectClientPortalDeliverable(
   const reasonPreview = reason.length > 120 ? `${reason.slice(0, 117)}...` : reason;
   if (policy.notifyAdmin) {
     const mapped = mapApprovalSignalToNotification("content_changes_requested_by_client");
+    await createAdminInAppNotifications({
+      tenantId,
+      eventType: mapped.eventType,
+      severity: "action_required",
+      title: `[${clientName} Rejection] ${updated.title}`,
+      body: reason,
+      relatedEntityType: "aiDeliveryDeliverable",
+      relatedEntityId: updated.id,
+      actionKey: "client_deliverable_changes_requested",
+      clientId: deliverable.aiDeliveryProject.clientId
+    });
     await notifyDcaTeam(
       tenantId,
       `[${clientName} Rejection] ${updated.title} — ${reasonPreview}`,
@@ -709,6 +761,18 @@ export async function sendAiDeliveryDeliverableForClientReview(
   });
 
   const clientName = deliverable.aiDeliveryProject.client?.name ?? "Client";
+  const mapped = mapApprovalSignalToNotification("content_sent_for_client_review");
+  await createClientInAppNotifications({
+    tenantId,
+    clientId: deliverable.aiDeliveryProject.clientId,
+    eventType: mapped.eventType,
+    severity: "action_required",
+    title: `[${clientName}] Article ready for your approval: ${deliverable.title}`,
+    body: "A deliverable is ready for your review in Client Portal.",
+    relatedEntityType: "aiDeliveryDeliverable",
+    relatedEntityId: deliverableId,
+    actionKey: "client_review_requested"
+  });
   await notifyClientUsers(
     tenantId,
     deliverable.aiDeliveryProject.clientId,

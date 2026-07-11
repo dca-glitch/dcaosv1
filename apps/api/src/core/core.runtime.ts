@@ -148,7 +148,11 @@ import {
   parseAiDeliveryDeliverableStatus,
   type AiDeliveryDeliverableStatus
 } from "@dca-os-v1/shared";
-import { notifyDcaTeam } from "../services/email-notifications.service";
+import { notifyClientUsers, notifyDcaTeam } from "../services/email-notifications.service";
+import {
+  createAdminInAppNotifications,
+  createClientInAppNotifications
+} from "../notifications/in-app-notifications.service";
 import { recordPlatformAuditEvent } from "../security/audit-log.service";
 import {
   buildAiDeliveryWordPressDraftPayload,
@@ -8176,9 +8180,38 @@ export async function updateAiDeliveryMonthlyReportStatus(
   const response = { report: toAiDeliveryMonthlyReportSummary(updated) };
 
   if (newStatus === "FINAL") {
+    const reportTitle = response.report.title ?? "Monthly report";
+    await createAdminInAppNotifications({
+      tenantId,
+      eventType: "monthly_report_available",
+      severity: "info",
+      title: `[Monthly report final ready] ${reportTitle}`,
+      relatedEntityType: "aiDeliveryMonthlyReport",
+      relatedEntityId: response.report.id,
+      actionKey: "monthly_report_finalized",
+      clientId: response.report.clientId
+    });
+    await createClientInAppNotifications({
+      tenantId,
+      clientId: response.report.clientId,
+      eventType: "monthly_report_available",
+      severity: "info",
+      title: "Monthly report is now available",
+      body: reportTitle,
+      relatedEntityType: "aiDeliveryMonthlyReport",
+      relatedEntityId: response.report.id,
+      actionKey: "monthly_report_finalized"
+    });
+    await notifyClientUsers(
+      tenantId,
+      response.report.clientId,
+      `[Monthly report available] ${reportTitle}`,
+      response.report.id,
+      "Your latest monthly report is now available in Client Portal."
+    );
     await notifyAiDeliveryDcaTeamSafely(
       tenantId,
-      `[Monthly report final ready] ${response.report.title ?? "Monthly report"}`,
+      `[Monthly report final ready] ${reportTitle}`,
       response.report.id,
       true
     );

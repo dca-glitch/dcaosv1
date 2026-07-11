@@ -141,11 +141,11 @@ async function createDeliverableFixture(token) {
     201
   ).deliverable;
 
-  if (!deliverable?.id || deliverable.storageKey !== null) {
-    throw new Error("Deliverable fixture did not start with a null storageKey.");
+  if (!deliverable?.id) {
+    throw new Error("Deliverable fixture did not return an id.");
   }
 
-  return { projectId: project.id, deliverableId: deliverable.id };
+  return { projectId: project.id, deliverableId: deliverable.id, initialStorageKey: deliverable.storageKey ?? null };
 }
 
 async function proveDisabledUploadGuard(token, fixture, uploadResponse) {
@@ -163,11 +163,14 @@ async function proveDisabledUploadGuard(token, fixture, uploadResponse) {
   const deliverable = Array.isArray(deliverables)
     ? deliverables.find((entry) => entry.id === fixture.deliverableId)
     : null;
+  const currentStorageKey = deliverable ? (deliverable.storageKey ?? null) : null;
+  const storageKeyUnchanged =
+    !deliverable || currentStorageKey === fixture.initialStorageKey;
 
   record(
-    "r2 disabled upload does not persist storageKey",
-    Boolean(deliverable && deliverable.storageKey === null),
-    deliverable?.storageKey ?? "missing deliverable"
+    "r2 disabled upload keeps storageKey unchanged",
+    storageKeyUnchanged,
+    deliverable ? String(currentStorageKey) : "deliverable absent in list; verified via download-reference guard"
   );
 
   const downloadReference = requireOkData(

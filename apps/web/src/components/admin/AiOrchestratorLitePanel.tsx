@@ -77,7 +77,9 @@ type ModelRoutingPolicySnapshot = {
 type RegistryPayload = {
   registry: {
     orchestratorVersion: string;
-    agentRoles: Array<{ role: string; label: string }>;
+    agentRoles:
+      | Array<{ role: string; label: string }>
+      | Record<string, { role: string; label: string }>;
     providerRegistry: {
       providers: ProviderEntry[];
       roleMappings: RoleMapping[];
@@ -262,6 +264,11 @@ export function AiOrchestratorLitePanel() {
 
   const providers = registry?.registry.providerRegistry.providers ?? [];
   const roleMappings = registry?.registry.providerRegistry.roleMappings ?? [];
+  const agentRoles = Array.isArray(registry?.registry.agentRoles)
+    ? registry.registry.agentRoles
+    : registry?.registry.agentRoles
+      ? Object.values(registry.registry.agentRoles)
+      : [];
   const killSwitch = registry?.killSwitch;
   const budgetLedger = registry?.budgetLedger;
   const events = registry?.recentNotificationEvents ?? [];
@@ -329,8 +336,7 @@ export function AiOrchestratorLitePanel() {
             </p>
             {roleMappings.map((mapping) => {
               const provider = providers.find((entry) => entry.providerKey === mapping.primaryProviderKey);
-              const roleLabel =
-                registry.registry.agentRoles.find((role) => role.role === mapping.role)?.label ?? mapping.role;
+              const roleLabel = agentRoles.find((role) => role.role === mapping.role)?.label ?? mapping.role;
               return (
                 <div className="admin-operations-row" key={mapping.role}>
                   <span className="muted-text">{roleLabel}</span>

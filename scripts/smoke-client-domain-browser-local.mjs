@@ -126,14 +126,14 @@ async function main() {
     await page.getByText("Client created.", { exact: true }).waitFor({ state: "visible", timeout: 15000 });
     record("create client via UI", true, clientName);
 
-    const clientCard = page.locator("article.entity-card.dense-record", { hasText: clientName }).first();
-    await clientCard.waitFor({ state: "visible", timeout: 15000 });
+    const clientRow = page.locator("tr", { hasText: clientName }).first();
+    await clientRow.waitFor({ state: "visible", timeout: 15000 });
     record("client card visible in list", true, clientName);
 
     await page.getByRole("button", { name: "Agency" }).click();
-    record("agency kind filter clickable", await clientCard.isVisible(), "Agency filter");
+    record("agency kind filter clickable", await clientRow.isVisible(), "Agency filter");
 
-    await clientCard.getByRole("button", { name: "Open hub" }).click();
+    await clientRow.getByRole("button", { name: "Open hub" }).click();
     await page.getByText("Client Operating Hub").waitFor({ state: "visible", timeout: 15000 });
     await page.getByRole("heading", { name: clientName }).waitFor({ state: "visible", timeout: 10000 });
     record("client hub opens", true, clientName);
@@ -217,9 +217,9 @@ async function main() {
 
     await page.getByRole("button", { name: "Back to clients" }).click();
     await page.getByRole("heading", { name: "Clients", exact: true }).waitFor({ state: "visible", timeout: 15000 });
-    const refreshedClientCard = page.locator("article.entity-card.dense-record", { hasText: clientName }).first();
-    await refreshedClientCard.waitFor({ state: "visible", timeout: 15000 });
-    await refreshedClientCard.getByRole("button", { name: "Open hub" }).click();
+    const refreshedClientRow = page.locator("tr", { hasText: clientName }).first();
+    await refreshedClientRow.waitFor({ state: "visible", timeout: 15000 });
+    await refreshedClientRow.getByRole("button", { name: "Open hub" }).click();
     await page.getByRole("heading", { name: clientName }).waitFor({ state: "visible", timeout: 15000 });
     await page.getByRole("heading", { name: "Publication log", exact: true }).waitFor({ state: "visible", timeout: 15000 });
 

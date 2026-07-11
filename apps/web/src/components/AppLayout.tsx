@@ -28,6 +28,7 @@ type AppLayoutProps = {
   activeView: string;
   currentTenant: AppLayoutTenant;
   isClientRole?: boolean;
+  token?: string | null;
   navigationItems: AppLayoutNavigationItem[];
   onLogout: () => void;
   shellVariant?: AppLayoutShellVariant;
@@ -39,6 +40,7 @@ export function AppLayout({
   activeView,
   currentTenant,
   isClientRole = false,
+  token = null,
   navigationItems,
   onLogout,
   shellVariant = "admin",
@@ -47,7 +49,6 @@ export function AppLayout({
 }: AppLayoutProps) {
   const isPortalShell = shellVariant === "portal";
   const [navOpen, setNavOpen] = useState(false);
-  void isClientRole;
 
   useEffect(() => {
     setNavOpen(false);
@@ -113,9 +114,11 @@ export function AppLayout({
       <div className="shell-content-column">
         <AppTopbar
           activeView={activeView}
+          isClientRole={isClientRole}
           navOpen={navOpen}
           onNavToggle={() => setNavOpen((open) => !open)}
           shellVariant={shellVariant}
+          token={token}
         />
         <main
           id="shell-main-content"

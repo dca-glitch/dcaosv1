@@ -139,9 +139,9 @@ async function main() {
     await page.goto(`${webBaseUrl}/#/clients`, { waitUntil: "domcontentloaded" });
     await page.getByRole("heading", { name: "Clients", exact: true }).waitFor({ state: "visible", timeout: 20000 });
 
-    const clientCard = page.locator("article.entity-card.dense-record", { hasText: fixture.clientName }).first();
-    await clientCard.waitFor({ state: "visible", timeout: 20000 });
-    await clientCard.getByRole("button", { name: "Open", exact: true }).click();
+    const clientRow = page.locator("tr", { hasText: fixture.clientName }).first();
+    await clientRow.waitFor({ state: "visible", timeout: 20000 });
+    await clientRow.getByRole("button", { name: "Open", exact: true }).click();
 
     const editModal = page.locator("[role='dialog']", { hasText: "Edit Client" }).first();
     await editModal.waitFor({ state: "visible", timeout: 15000 });

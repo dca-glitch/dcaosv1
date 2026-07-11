@@ -4607,6 +4607,7 @@ export function App() {
       activeView={activeView}
       currentTenant={currentTenant}
       isClientRole={isClientOnlyViewer}
+      token={token}
       navigationItems={layoutNavigationItems}
       onLogout={() => void handleLogout()}
       shellVariant={isClientPortalView ? "portal" : "admin"}

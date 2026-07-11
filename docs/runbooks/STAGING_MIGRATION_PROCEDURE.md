@@ -40,6 +40,17 @@ Use this runbook to apply Prisma/database migrations safely in staging before an
 - List the pending Prisma migrations
 - Confirm no unrelated schema changes are included
 - Confirm the migration order is expected
+- Confirm the reviewed migration-readiness classification in `docs/database/MIGRATION_READINESS_PLAN.md` still matches the pending list
+- Abort if any pending migration is destructive/backfill-required without explicit execution and rollback approval
+
+## Current migration-readiness gate focus (pre-staging)
+
+- Tenant/module entitlement behavior (`ModuleDefinition`, `TenantModule`, `ClientUserAccess`)
+- AI budget ledger (`AiBudgetLedgerEntry`)
+- Notification persistence (`EmailLog`, `InAppNotification`)
+- Monthly-report dependencies used by approval/notification flows
+
+This gate is documentation and local proof only. It does **not** execute staging/prod/remote database mutations.
 
 ## Backup before migration
 
@@ -84,9 +95,17 @@ prisma migrate deploy 2>&1 | Tee-Object -FilePath $migrationLog
 
 1. Stop the migration workflow.
 2. Capture the error output.
-3. Restore the pre-migration backup into staging if needed.
-4. Re-evaluate the migration plan before retrying.
-5. Do not promote to production until the failure is understood.
+3. Decide rollback mode:
+   - app rollback only (when schema compatibility is preserved), or
+   - database restore from verified pre-migration backup.
+4. Restore the pre-migration backup into staging if needed.
+5. Re-evaluate the migration plan before retrying.
+6. Do not promote to production until the failure is understood.
+
+### Important rollback reality
+
+- Prisma `migrate deploy` does not provide automatic down-migrations for applied changes.
+- Do not claim automatic Prisma rollback; use verified restore or approved forward-fix migrations.
 
 ## Production promotion gate
 

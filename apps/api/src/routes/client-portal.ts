@@ -8,6 +8,7 @@ import { Router } from "express";
  */
 import { requireAuth } from "../middlewares/auth.middleware";
 import { requireTenant } from "../middlewares/tenant.middleware";
+import { createTenantModuleGuard } from "../middlewares/tenant-module.middleware";
 import { failure, forbiddenFailure, success, unauthorizedFailure } from "../utils/responses";
 import type { AuthSessionLocals } from "../auth/types";
 import {
@@ -38,9 +39,17 @@ import {
   rejectClientPortalDeliverableImageHandler,
   undoClientPortalDeliverableImageReviewHandler
 } from "../controllers/client-portal-approval.controller";
+import {
+  listClientInboxNotificationsHandler,
+  listClientUnreadInboxNotificationsHandler,
+  markClientInboxNotificationReadHandler
+} from "../controllers/notification-inbox.controller";
 
 export function createClientPortalRouter() {
   const router = Router();
+  const clientPortalModuleGuard = createTenantModuleGuard("ai-delivery");
+
+  router.use(requireAuth, requireTenant, clientPortalModuleGuard);
 
   router.get("/my-client", requireAuth, requireTenant, async (_req, res) => {
     const authSession = (res.locals as AuthSessionLocals).authSession;
@@ -248,6 +257,9 @@ export function createClientPortalRouter() {
   router.patch("/deliverables/:deliverableId/images/:imageId/undo", requireAuth, requireTenant, undoClientPortalDeliverableImageReviewHandler);
   router.patch("/deliverables/:deliverableId/approve", requireAuth, requireTenant, approveClientPortalDeliverableHandler);
   router.patch("/deliverables/:deliverableId/reject", requireAuth, requireTenant, rejectClientPortalDeliverableHandler);
+  router.get("/notifications", requireAuth, requireTenant, listClientInboxNotificationsHandler);
+  router.get("/notifications/unread", requireAuth, requireTenant, listClientUnreadInboxNotificationsHandler);
+  router.post("/notifications/:id/read", requireAuth, requireTenant, markClientInboxNotificationReadHandler);
 
   return router;
 }

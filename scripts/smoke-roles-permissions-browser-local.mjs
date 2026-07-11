@@ -154,9 +154,10 @@ async function main() {
       ? authorization.roles.join(", ")
       : null;
     if (expectedRoleLabel) {
+      const expectedPrimaryRole = expectedRoleLabel.split(", ")[0].toLowerCase();
       record(
         "team role coverage metric reflects API roles",
-        roleCoverageText.includes(expectedRoleLabel.split(", ")[0]),
+        normalizedRoleCoverageText.includes(expectedPrimaryRole),
         expectedRoleLabel
       );
     } else {

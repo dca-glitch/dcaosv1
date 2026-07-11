@@ -1,6 +1,8 @@
 # Notification Persistence + Inbox API Design (G167–G168, refreshed G257–G259, G503)
 
-**Status:** Design only (G159–G170 + G249–G268 + G493–G504 taxonomy closeout, 2026-07-10). **No migration. No API implementation. No live email.**
+**Status:** Implemented locally for v1 inbox persistence (2026-07-11): Prisma `InAppNotification` model + migration, admin/client inbox APIs, and shell notification panel wiring. Live provider email proof is still owner-gated.
+
+> Historical note: this document originally described design-only scope. The "do not migrate / do not implement API" lines below are retained as prior planning context and are superseded by the status line above.
 
 **Purpose:** Implementation-ready design for user-scoped in-system notification persistence and admin/client inbox endpoints, using the expanded G159 taxonomy in `packages/shared/src/notification-events.ts`, plus G257/G496 correlation/idempotency design helpers and G499–G500 metadata/audit safe shapes.
 

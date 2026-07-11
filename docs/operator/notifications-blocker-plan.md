@@ -1,6 +1,6 @@
 # Notifications Blocker Plan (G78, refreshed G82-G84, G94-G102, G159–G170, G249–G268, G493–G504)
 
-**Status:** Planning plus no-schema notification foundation — docs block G78, refreshed by G82-G84, G94-G102, G159–G170, G249–G268, and G493–G504 taxonomy closeout (2026-07-10). No live email, schema migration, commit, push, or production action in these blocks. Persistence/inbox remain design-only.
+**Status:** Updated 2026-07-11: local v1 inbox persistence is implemented (schema + API + shell panel). Live email proof and staging/production delivery proof remain blocked until owner-gated execution.
 
 **Purpose:** Staged plan for transactional notifications required before Puriva Launch and before claiming production-proven client-facing approval flows. Consolidates scattered docs into one operator-facing sequence.
 

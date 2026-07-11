@@ -221,7 +221,7 @@ async function main() {
       fixture.draftDeliverableTitle
     );
 
-    const monthlyReportsSection = sectionPanel(page, "Monthly reports");
+    const monthlyReportsSection = sectionPanel(page, "Monthly reports archive");
     await monthlyReportsSection.waitFor({
       state: "visible",
       timeout: 20000
