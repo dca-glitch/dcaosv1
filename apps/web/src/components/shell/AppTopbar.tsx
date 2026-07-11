@@ -1,4 +1,4 @@
-import { Bell, Search, X } from "lucide-react";
+import { Bell, Menu, Search, X } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { getShellViewTitle } from "./viewTitles";
@@ -8,10 +8,12 @@ import type { ShellVariant } from "./types";
 
 type AppTopbarProps = {
   activeView: string;
+  navOpen?: boolean;
+  onNavToggle?: () => void;
   shellVariant: ShellVariant;
 };
 
-export function AppTopbar({ activeView, shellVariant }: AppTopbarProps) {
+export function AppTopbar({ activeView, navOpen = false, onNavToggle, shellVariant }: AppTopbarProps) {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const title = getShellViewTitle(activeView, shellVariant);
@@ -67,6 +69,22 @@ export function AppTopbar({ activeView, shellVariant }: AppTopbarProps) {
   return (
     <header className="shell-topbar" data-shell-variant={shellVariant}>
       <div className="shell-topbar__leading">
+        {onNavToggle ? (
+          <button
+            type="button"
+            className="shell-topbar__icon-btn shell-topbar__menu-btn"
+            aria-label={navOpen ? "Close navigation" : "Open navigation"}
+            aria-expanded={navOpen}
+            aria-controls="shell-primary-nav"
+            onClick={onNavToggle}
+          >
+            {navOpen ? (
+              <X size={14} strokeWidth={2} aria-hidden="true" />
+            ) : (
+              <Menu size={14} strokeWidth={2} aria-hidden="true" />
+            )}
+          </button>
+        ) : null}
         <p className="shell-topbar__title" id={titleId}>
           {title}
         </p>

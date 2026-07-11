@@ -1,3 +1,4 @@
+import { useEffect, useState, type MouseEvent } from "react";
 import "./shell/shell.css";
 import { AdminSidebar } from "./shell/AdminSidebar";
 import { PortalSidebar } from "./shell/PortalSidebar";
@@ -45,13 +46,53 @@ export function AppLayout({
   children
 }: AppLayoutProps) {
   const isPortalShell = shellVariant === "portal";
+  const [navOpen, setNavOpen] = useState(false);
   void isClientRole;
 
+  useEffect(() => {
+    setNavOpen(false);
+  }, [activeView]);
+
+  useEffect(() => {
+    if (!navOpen) {
+      return;
+    }
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setNavOpen(false);
+      }
+    };
+
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [navOpen]);
+
+  function handleSkipToContent(event: MouseEvent<HTMLAnchorElement>) {
+    event.preventDefault();
+    const main = document.getElementById("shell-main-content");
+    main?.focus({ preventScroll: false });
+    if (typeof main?.scrollIntoView === "function") {
+      main.scrollIntoView({ block: "start" });
+    }
+  }
+
   return (
-    <div className={isPortalShell ? "app-shell portal-shell" : "app-shell"}>
-      <a className="shell-skip-link" href="#shell-main-content">
+    <div
+      className={isPortalShell ? "app-shell portal-shell" : "app-shell"}
+      data-nav-open={navOpen ? "true" : "false"}
+    >
+      <a className="shell-skip-link" href="#shell-main-content" onClick={handleSkipToContent}>
         Skip to content
       </a>
+      {navOpen ? (
+        <button
+          aria-label="Close navigation"
+          className="shell-nav-backdrop"
+          onClick={() => setNavOpen(false)}
+          type="button"
+        />
+      ) : null}
       {isPortalShell ? (
         <PortalSidebar
           activeView={activeView}
@@ -70,7 +111,12 @@ export function AppLayout({
         />
       )}
       <div className="shell-content-column">
-        <AppTopbar activeView={activeView} shellVariant={shellVariant} />
+        <AppTopbar
+          activeView={activeView}
+          navOpen={navOpen}
+          onNavToggle={() => setNavOpen((open) => !open)}
+          shellVariant={shellVariant}
+        />
         <main
           id="shell-main-content"
           className={isPortalShell ? "main-shell portal-main-shell shell-main" : "main-shell shell-main"}

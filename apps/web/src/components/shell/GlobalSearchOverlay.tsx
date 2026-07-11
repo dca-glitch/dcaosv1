@@ -19,6 +19,7 @@ export function GlobalSearchOverlay({ onClose }: GlobalSearchOverlayProps) {
         type="button"
         className="shell-search-overlay__backdrop"
         aria-label="Dismiss search"
+        tabIndex={-1}
         onClick={onClose}
       />
       <div

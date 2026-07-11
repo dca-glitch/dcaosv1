@@ -95,15 +95,19 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       <button
         ref={ref}
         disabled={disabled || loading}
+        aria-busy={loading || undefined}
         className={[base, v.className, sizes[size], fullWidth ? 'w-full' : '', className].join(' ')}
         style={{ ...(v.style ?? {}), ...(style ?? {}) }}
         {...props}
       >
         {loading ? (
-          <span
-            className="inline-block w-3.5 h-3.5 rounded-full border-2 border-current border-t-transparent animate-spin"
-            aria-hidden="true"
-          />
+          <>
+            <span
+              className="inline-block w-3.5 h-3.5 rounded-full border-2 border-current border-t-transparent animate-spin"
+              aria-hidden="true"
+            />
+            <span className="sr-only">{children}</span>
+          </>
         ) : (
           <>
             {icon && <span className="flex-shrink-0 flex items-center" aria-hidden="true">{icon}</span>}

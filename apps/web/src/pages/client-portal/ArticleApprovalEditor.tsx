@@ -617,8 +617,9 @@ export function ArticleApprovalEditor({ deliverableId }: ArticleApprovalEditorPr
                         <div className="portal-inline-reject">
                           <Input
                             className="entity-form"
+                            label="What should change?"
                             onChange={(event) => setRejectImageReason(event.target.value)}
-                            placeholder="What should change?"
+                            placeholder="Describe the image changes you'd like to see…"
                             type="text"
                             value={rejectImageReason}
                           />

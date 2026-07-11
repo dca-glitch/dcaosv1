@@ -19,13 +19,14 @@ export type TableProps = TableHTMLAttributes<HTMLTableElement> & {
 };
 
 /** Preserved headers/rows adapter API — density optional (default admin). */
-export function Table({ headers, rows, className, density = "admin" }: TableProps) {
+export function Table({ headers, rows, className, density = "admin", ...tableProps }: TableProps) {
+  const { "aria-label": ariaLabel, ...rest } = tableProps;
   return (
-    <DSTable className={className} density={density}>
+    <DSTable aria-label={ariaLabel} className={className} density={density} {...rest}>
       <TableHead>
         <DSTableRow>
           {headers.map((header, i) => (
-            <Th key={i} align={header.align ?? "left"}>{header.label}</Th>
+            <Th key={i} align={header.align ?? "left"}>{header.label || <span className="sr-only">Actions</span>}</Th>
           ))}
         </DSTableRow>
       </TableHead>

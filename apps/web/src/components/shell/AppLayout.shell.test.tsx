@@ -79,6 +79,47 @@ describe("AppLayout public contract", () => {
     expect(document.querySelector(".shell-page-container--portal")).toBeTruthy();
   });
 
+  it("skip-to-content focuses main without changing the hash route", () => {
+    window.location.hash = "#/ai-delivery";
+    render(
+      <AppLayout
+        activeView="ai-delivery"
+        currentTenant={null}
+        navigationItems={adminNav}
+        onLogout={() => undefined}
+        user={{ email: "admin@dca.local" }}
+      >
+        <div>Admin content</div>
+      </AppLayout>
+    );
+
+    const skip = screen.getByRole("link", { name: "Skip to content" });
+    fireEvent.click(skip);
+    expect(window.location.hash).toBe("#/ai-delivery");
+    expect(document.activeElement?.id).toBe("shell-main-content");
+  });
+
+  it("exposes a navigation menu control that toggles shell nav-open state", () => {
+    render(
+      <AppLayout
+        activeView="dashboard"
+        currentTenant={null}
+        navigationItems={adminNav}
+        onLogout={() => undefined}
+        user={{ email: "admin@dca.local" }}
+      >
+        <div>Content</div>
+      </AppLayout>
+    );
+
+    const shell = document.querySelector(".app-shell");
+    expect(shell?.getAttribute("data-nav-open")).toBe("false");
+    fireEvent.click(screen.getByRole("button", { name: "Open navigation" }));
+    expect(shell?.getAttribute("data-nav-open")).toBe("true");
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(shell?.getAttribute("data-nav-open")).toBe("false");
+  });
+
   it("opens notification panel as empty UI-only surface and closes on Escape", () => {
     render(
       <AppLayout

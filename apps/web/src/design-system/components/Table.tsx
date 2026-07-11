@@ -19,6 +19,7 @@ export const Table: React.FC<TableProps> = ({
   children,
   className = '',
   density = 'admin',
+  'aria-label': ariaLabel,
   ...props
 }) => (
   <DensityContext.Provider value={density}>
@@ -28,7 +29,11 @@ export const Table: React.FC<TableProps> = ({
       style={{ background: 'var(--ds-panel-gradient)' }}
       {...props}
     >
-      <table className="w-full border-collapse text-[12px]" style={{ tableLayout: 'fixed' }}>
+      <table
+        className="w-full border-collapse text-[12px]"
+        style={{ tableLayout: 'fixed' }}
+        aria-label={ariaLabel}
+      >
         {children}
       </table>
     </div>
@@ -163,7 +168,7 @@ export const Td: React.FC<TableDataCellProps> = ({
         muted     ? 'text-[12px] text-text-muted' : '',
         secondary ? 'text-[12px] text-text-secondary' : '',
         !mono && !muted && !secondary ? 'text-[12px] font-medium text-text-primary' : '',
-        actions ? 'opacity-0 group-hover:opacity-100 transition-opacity duration-[120ms]' : '',
+        actions ? 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-[120ms] [@media(hover:none)]:opacity-100' : '',
         className,
       ].join(' ')}
       {...props}
@@ -218,17 +223,23 @@ export const TablePagination: React.FC<TablePaginationProps> = ({
       </span>
       <div className="flex items-center gap-1">
         <button
+          type="button"
           onClick={onPrev}
           disabled={!hasPrev}
-          className="px-2 py-1 text-body-xs text-text-muted border border-border rounded hover:border-border-strong hover:text-text-secondary disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          aria-label="Previous page"
+          className="min-w-11 min-h-11 px-2 py-1 text-body-xs text-text-muted border border-border rounded hover:border-border-strong hover:text-text-secondary disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
           ←
         </button>
-        <span className="px-2 text-caption text-text-muted font-mono">{page}</span>
+        <span className="px-2 text-caption text-text-muted font-mono" aria-live="polite">
+          {page}
+        </span>
         <button
+          type="button"
           onClick={onNext}
           disabled={!hasNext}
-          className="px-2 py-1 text-body-xs text-text-muted border border-border rounded hover:border-border-strong hover:text-text-secondary disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          aria-label="Next page"
+          className="min-w-11 min-h-11 px-2 py-1 text-body-xs text-text-muted border border-border rounded hover:border-border-strong hover:text-text-secondary disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
           →
         </button>

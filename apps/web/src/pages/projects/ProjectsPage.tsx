@@ -266,6 +266,7 @@ export function ProjectsPage({
         <SectionPanel title="Project delivery" tone="compact">
           <div className="table-wrap table-scroll">
             <Table
+              aria-label="Projects"
               headers={[
                 { label: "Project", align: "left" },
                 { label: "Client", align: "left" },

@@ -88,7 +88,7 @@ const Modal: React.FC<ModalProps> = ({
             type="button"
             onClick={onClose}
             aria-label="Close modal"
-            className="ml-4 flex-shrink-0 w-7 h-7 flex items-center justify-center rounded-md text-text-muted hover:text-text-primary transition-[opacity,color] duration-[120ms]"
+            className="ml-4 flex-shrink-0 min-w-11 min-h-11 w-11 h-11 flex items-center justify-center rounded-md text-text-muted hover:text-text-primary transition-[opacity,color] duration-[120ms]"
             style={{
               background: 'var(--ds-surface-inset)',
               border: '1px solid var(--ds-divider)',

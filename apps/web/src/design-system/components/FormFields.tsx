@@ -3,6 +3,7 @@ import React, {
   SelectHTMLAttributes,
   TextareaHTMLAttributes,
   ReactNode,
+  useId,
 } from 'react';
 
 /* ─── shared label row ─── */
@@ -21,18 +22,34 @@ const FieldLabel: React.FC<{ label?: string; required?: boolean; htmlFor?: strin
     </label>
   ) : null;
 
-const FieldError: React.FC<{ error?: string }> = ({ error }) =>
+const FieldError: React.FC<{ error?: string; id?: string }> = ({ error, id }) =>
   error ? (
-    <p className="mt-1.5 text-caption font-semibold text-danger-text">{error}</p>
+    <p id={id} className="mt-1.5 text-caption font-semibold text-danger-text" role="alert">
+      {error}
+    </p>
   ) : null;
 
-const FieldHelper: React.FC<{ helperText?: string; error?: string }> = ({
+const FieldHelper: React.FC<{ helperText?: string; error?: string; id?: string }> = ({
   helperText,
   error,
+  id,
 }) =>
   helperText && !error ? (
-    <p className="mt-1.5 text-caption text-text-muted">{helperText}</p>
+    <p id={id} className="mt-1.5 text-caption text-text-muted">
+      {helperText}
+    </p>
   ) : null;
+
+function describedById(
+  inputId: string | undefined,
+  hasError: boolean,
+  helperText?: string,
+): string | undefined {
+  if (!inputId) return undefined;
+  if (hasError) return `${inputId}-error`;
+  if (helperText) return `${inputId}-helper`;
+  return undefined;
+}
 
 /* ─────────────────────── INPUT ─────────────────────── */
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
@@ -59,7 +76,8 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
     },
     ref,
   ) => {
-    const inputId = id ?? label?.toLowerCase().replace(/\s+/g, '-');
+    const reactId = useId();
+    const inputId = id ?? (label ? label.toLowerCase().replace(/\s+/g, '-') : reactId);
     const hasError = !!error;
 
     return (
@@ -91,13 +109,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
               className,
             ].join(' ')}
             aria-invalid={hasError}
-            aria-describedby={
-              hasError
-                ? `${inputId}-error`
-                : helperText
-                  ? `${inputId}-helper`
-                  : undefined
-            }
+            aria-describedby={describedById(inputId, hasError, helperText)}
             {...props}
           />
           {iconRight && (
@@ -109,8 +121,8 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
             </span>
           )}
         </div>
-        <FieldError error={error} />
-        <FieldHelper helperText={helperText} error={error} />
+        <FieldError error={error} id={`${inputId}-error`} />
+        <FieldHelper helperText={helperText} error={error} id={`${inputId}-helper`} />
       </div>
     );
   },
@@ -140,7 +152,8 @@ export const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
     },
     ref,
   ) => {
-    const inputId   = id ?? label?.toLowerCase().replace(/\s+/g, '-');
+    const reactId = useId();
+    const inputId = id ?? (label ? label.toLowerCase().replace(/\s+/g, '-') : reactId);
     const hasError  = !!error;
 
     return (
@@ -162,10 +175,11 @@ export const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
             className,
           ].join(' ')}
           aria-invalid={hasError}
+          aria-describedby={describedById(inputId, hasError, helperText)}
           {...props}
         />
-        <FieldError error={error} />
-        <FieldHelper helperText={helperText} error={error} />
+        <FieldError error={error} id={`${inputId}-error`} />
+        <FieldHelper helperText={helperText} error={error} id={`${inputId}-helper`} />
       </div>
     );
   },
@@ -205,7 +219,8 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
     },
     ref,
   ) => {
-    const inputId  = id ?? label?.toLowerCase().replace(/\s+/g, '-');
+    const reactId = useId();
+    const inputId = id ?? (label ? label.toLowerCase().replace(/\s+/g, '-') : reactId);
     const hasError = !!error;
 
     return (
@@ -236,6 +251,7 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
               className,
             ].join(' ')}
             aria-invalid={hasError}
+            aria-describedby={describedById(inputId, hasError, helperText)}
             {...props}
           >
             {placeholder && (
@@ -249,7 +265,6 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
               </option>
             ))}
           </select>
-          {/* Chevron icon */}
           <svg
             className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-text-muted pointer-events-none"
             fill="none"
@@ -260,8 +275,8 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
           </svg>
         </div>
-        <FieldError error={error} />
-        <FieldHelper helperText={helperText} error={error} />
+        <FieldError error={error} id={`${inputId}-error`} />
+        <FieldHelper helperText={helperText} error={error} id={`${inputId}-helper`} />
       </div>
     );
   },
@@ -277,26 +292,38 @@ interface CheckboxProps extends InputHTMLAttributes<HTMLInputElement> {
 
 export const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
   ({ label, helperText, error, className = '', id, ...props }, ref) => {
-    const inputId = id ?? label?.toLowerCase().replace(/\s+/g, '-');
+    const reactId = useId();
+    const inputId = id ?? (label ? label.toLowerCase().replace(/\s+/g, '-') : reactId);
+    const hasError = !!error;
 
     return (
       <div className={className}>
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2.5 min-h-11">
           <input
             ref={ref}
             id={inputId}
             type="checkbox"
             className="w-4 h-4 rounded-sm border border-border bg-card cursor-pointer accent-primary-text focus:outline-none focus:shadow-focus disabled:opacity-50 disabled:cursor-not-allowed"
+            aria-invalid={hasError}
+            aria-describedby={describedById(inputId, hasError, helperText)}
             {...props}
           />
           {label && (
-            <label htmlFor={inputId} className="text-body-sm text-text-secondary font-medium cursor-pointer">
+            <label htmlFor={inputId} className="text-body-sm text-text-secondary font-medium cursor-pointer py-2">
               {label}
             </label>
           )}
         </div>
-        {error      && <p className="mt-1 ml-6 text-caption text-danger-text font-semibold">{error}</p>}
-        {helperText && !error && <p className="mt-1 ml-6 text-caption text-text-muted">{helperText}</p>}
+        {error ? (
+          <p id={`${inputId}-error`} className="mt-1 ml-6 text-caption text-danger-text font-semibold" role="alert">
+            {error}
+          </p>
+        ) : null}
+        {helperText && !error ? (
+          <p id={`${inputId}-helper`} className="mt-1 ml-6 text-caption text-text-muted">
+            {helperText}
+          </p>
+        ) : null}
       </div>
     );
   },
@@ -326,34 +353,44 @@ export const RadioGroup: React.FC<RadioGroupProps> = ({
   helperText,
   error,
   className = '',
-}) => (
-  <div className={className}>
-    {label && (
-      <p className="text-body-xs font-semibold text-text-secondary mb-3">{label}</p>
-    )}
-    <div className="flex flex-col gap-2">
-      {options.map((opt) => (
-        <div key={opt.value} className="flex items-center gap-2.5">
-          <input
-            type="radio"
-            id={`${name}-${opt.value}`}
-            name={name}
-            value={opt.value}
-            checked={value === opt.value}
-            onChange={(e) => onChange?.(e.target.value)}
-            disabled={opt.disabled}
-            className="w-4 h-4 rounded-full border border-border bg-card cursor-pointer accent-primary-text focus:outline-none focus:shadow-focus disabled:opacity-50 disabled:cursor-not-allowed"
-          />
-          <label
-            htmlFor={`${name}-${opt.value}`}
-            className="text-body-sm text-text-secondary font-medium cursor-pointer"
-          >
-            {opt.label}
-          </label>
-        </div>
-      ))}
+}) => {
+  const labelId = useId();
+  return (
+    <div
+      className={className}
+      role="radiogroup"
+      aria-labelledby={label ? labelId : undefined}
+      aria-invalid={error ? true : undefined}
+    >
+      {label && (
+        <p id={labelId} className="text-body-xs font-semibold text-text-secondary mb-3">
+          {label}
+        </p>
+      )}
+      <div className="flex flex-col gap-2">
+        {options.map((opt) => (
+          <div key={opt.value} className="flex items-center gap-2.5 min-h-11">
+            <input
+              type="radio"
+              id={`${name}-${opt.value}`}
+              name={name}
+              value={opt.value}
+              checked={value === opt.value}
+              onChange={(e) => onChange?.(e.target.value)}
+              disabled={opt.disabled}
+              className="w-4 h-4 rounded-full border border-border bg-card cursor-pointer accent-primary-text focus:outline-none focus:shadow-focus disabled:opacity-50 disabled:cursor-not-allowed"
+            />
+            <label
+              htmlFor={`${name}-${opt.value}`}
+              className="text-body-sm text-text-secondary font-medium cursor-pointer py-2"
+            >
+              {opt.label}
+            </label>
+          </div>
+        ))}
+      </div>
+      {error ? <p className="mt-2 text-caption text-danger-text font-semibold" role="alert">{error}</p> : null}
+      {helperText && !error ? <p className="mt-2 text-caption text-text-muted">{helperText}</p> : null}
     </div>
-    {error      && <p className="mt-2 text-caption text-danger-text font-semibold">{error}</p>}
-    {helperText && !error && <p className="mt-2 text-caption text-text-muted">{helperText}</p>}
-  </div>
-);
+  );
+};

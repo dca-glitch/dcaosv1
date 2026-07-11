@@ -507,6 +507,7 @@ export function AiOperationsPage() {
               <>
                 <div className="table-wrap table-scroll">
                   <Table
+                    aria-label="AI operations runs"
                     className="data-table compact ai-ops-runs-table"
                     headers={[
                       { label: "Run", align: "left" },
@@ -521,7 +522,7 @@ export function AiOperationsPage() {
                       { label: "Context", align: "left" },
                       { label: "Tokens (est.)", align: "left" },
                       { label: "Executed", align: "left" },
-                      { label: "", align: "right" }
+                      { label: "Actions", align: "right" }
                     ]}
                     rows={pageSlice.items.map((run) => ({
                       key: run.id,

@@ -1871,7 +1871,7 @@ tr:hover td {
   font-size: 0.84rem;
   font-weight: 750;
   list-style: none;
-  min-height: 32px;
+  min-height: 44px;
   padding: 6px 10px;
 }
 
@@ -2498,7 +2498,7 @@ tr:hover td {
 
 .modal-close-action {
   flex-shrink: 0;
-  min-height: 30px;
+  min-height: 44px;
   padding: 4px 10px;
 }
 
@@ -3359,7 +3359,7 @@ body::before {
 
 .main-shell[data-density="comfortable"],
 .portal-main-shell {
-  --form-control-min-height: 40px;
+  --form-control-min-height: 44px;
   --table-cell-py: 12px;
 }
 
@@ -3542,7 +3542,8 @@ body::before {
 .modal-close-action {
   border-radius: 6px;
   color: var(--muted);
-  min-height: 28px;
+  min-height: 44px;
+  min-width: 44px;
   padding: 4px 8px;
 }
 
@@ -4796,7 +4797,7 @@ tr:hover td {
 }
 
 /* Design-system modal overlay — defensive positioning after legacy rules (ds-modal-* avoids .modal-* collision) */
-div[role="dialog"][aria-modal="true"] {
+div[role="dialog"][aria-modal="true"]:not(.side-sheet):not(.shell-search-overlay__panel):not(.shell-notification-panel) {
   align-items: center;
   display: flex;
   inset: 0;

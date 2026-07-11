@@ -20,7 +20,11 @@ export function PortalSidebar({
   user
 }: PortalSidebarProps) {
   return (
-    <aside className="sidebar shell-sidebar shell-sidebar--portal" aria-label="Client archive navigation">
+    <aside
+      className="sidebar shell-sidebar shell-sidebar--portal"
+      aria-label="Client archive navigation"
+      id="shell-primary-nav"
+    >
       <ShellBrand shellVariant="portal" />
       <WorkspaceSwitcher currentTenant={currentTenant} />
       <ShellNav activeView={activeView} navigationItems={navigationItems} shellVariant="portal" />

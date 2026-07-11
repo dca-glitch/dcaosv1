@@ -20,7 +20,11 @@ export function AdminSidebar({
   user
 }: AdminSidebarProps) {
   return (
-    <aside className="sidebar shell-sidebar shell-sidebar--admin" aria-label="Primary navigation">
+    <aside
+      className="sidebar shell-sidebar shell-sidebar--admin"
+      aria-label="Primary navigation"
+      id="shell-primary-nav"
+    >
       <ShellBrand shellVariant="admin" />
       <WorkspaceSwitcher currentTenant={currentTenant} />
       <ShellNav activeView={activeView} navigationItems={navigationItems} shellVariant="admin" />

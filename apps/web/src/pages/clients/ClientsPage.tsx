@@ -319,6 +319,7 @@ export function ClientsPage({
         <SectionPanel title="Client records" tone="compact">
           <div className="table-wrap table-scroll">
             <Table
+              aria-label="Clients"
               headers={[
                 { label: "Client", align: "left" },
                 { label: "Kind", align: "left" },
