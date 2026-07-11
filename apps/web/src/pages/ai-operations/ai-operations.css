@@ -1,0 +1,118 @@
+/* AI Operations Console — Phase 9 local styles */
+
+.ai-ops-console {
+  gap: 1rem;
+  min-width: 0;
+}
+
+.ai-ops-console .filter-bar {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  align-items: end;
+}
+
+.ai-ops-console .filter-bar .muted-copy {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+
+.ai-ops-console .op-status-summary-bar,
+.ai-ops-console .op-table-pagination-bar {
+  grid-column: 1 / -1;
+}
+
+.ai-ops-analytics-grid {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.ai-ops-error-log {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.ai-ops-error-log__row {
+  display: grid;
+  gap: 0.35rem 0.75rem;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--ds-border, rgba(255, 255, 255, 0.08));
+  border-radius: var(--ds-radius-md, 8px);
+  background: var(--ds-surface-panel, #0c0f1a);
+}
+
+.ai-ops-error-log__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.75rem;
+  align-items: center;
+  min-width: 0;
+}
+
+.ai-ops-error-log__message {
+  margin: 0;
+  color: var(--ds-text-muted, #5c6380);
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.ai-ops-context-detail {
+  margin: 0;
+  color: var(--ds-text-secondary, #a8b0c8);
+  font-size: 0.875rem;
+  line-height: 1.45;
+}
+
+.ai-ops-runs-table {
+  min-width: 720px;
+}
+
+.ai-ops-detail-stack {
+  display: grid;
+  gap: 0.75rem;
+}
+
+@media (max-width: 1100px) {
+  .ai-ops-analytics-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  /* Month, Type, Gateway, Model, Tokens */
+  .ai-ops-runs-table th:nth-child(5),
+  .ai-ops-runs-table td:nth-child(5),
+  .ai-ops-runs-table th:nth-child(6),
+  .ai-ops-runs-table td:nth-child(6),
+  .ai-ops-runs-table th:nth-child(8),
+  .ai-ops-runs-table td:nth-child(8),
+  .ai-ops-runs-table th:nth-child(9),
+  .ai-ops-runs-table td:nth-child(9),
+  .ai-ops-runs-table th:nth-child(11),
+  .ai-ops-runs-table td:nth-child(11) {
+    display: none;
+  }
+}
+
+@media (max-width: 720px) {
+  .ai-ops-analytics-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ai-ops-error-log__row {
+    grid-template-columns: 1fr;
+  }
+
+  /* Client, Context, Executed */
+  .ai-ops-runs-table th:nth-child(4),
+  .ai-ops-runs-table td:nth-child(4),
+  .ai-ops-runs-table th:nth-child(10),
+  .ai-ops-runs-table td:nth-child(10),
+  .ai-ops-runs-table th:nth-child(12),
+  .ai-ops-runs-table td:nth-child(12) {
+    display: none;
+  }
+}

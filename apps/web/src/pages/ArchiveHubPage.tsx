@@ -8,6 +8,7 @@ import {
   navigateToClientPortalHash,
   type ApiResponse
 } from "./client-portal/client-portal-api";
+import { toClientBriefStatusLabel, toClientPortalStatusLabel } from "./client-portal/client-portal-status";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "/api/v1";
 
@@ -181,14 +182,16 @@ function getBriefStatusBadge(
   status: string,
   role: string
 ): { label: string; color: "amber" | "blue" | "green" } {
+  if (role === "client") {
+    const client = toClientBriefStatusLabel(status);
+    if (client.tone === "success") return { label: client.label, color: "green" };
+    if (client.tone === "info") return { label: client.label, color: "blue" };
+    return { label: client.label, color: "amber" };
+  }
   if (status === "DRAFT") return { label: "Draft", color: "amber" };
   if (status === "SUBMITTED") return { label: "Submitted", color: "green" };
-  if (status === "AWAITING_CLIENT") {
-    return role === "client"
-      ? { label: "Awaiting your input", color: "blue" }
-      : { label: "Sent to Client", color: "blue" };
-  }
-  return { label: status, color: "amber" };
+  if (status === "AWAITING_CLIENT") return { label: "Sent to Client", color: "blue" };
+  return { label: "In progress", color: "amber" };
 }
 
 function briefBadgeVariant(color: "amber" | "blue" | "green"): "success" | "info" | "warning" {
@@ -278,24 +281,16 @@ function buildMonthGroups(briefs: BriefRecord[], articles: ArticleRecord[]): Mon
 }
 
 function toClientArchiveStatusLabel(status: string | null | undefined): string | null {
-  if (!status || !status.trim()) {
+  const normalized = status?.trim().toUpperCase();
+  // Keep incomplete internal review hidden on the archive hub.
+  if (normalized === "ADMIN_REVIEW") {
     return null;
   }
-
-  const normalized = status.trim().toUpperCase();
-  if (["DRAFT", "NONE", "PENDING", "NOT_STARTED", "IN_PROGRESS", "ADMIN_REVIEW"].includes(normalized)) {
-    return null;
-  }
-
+  // Archive hub prefers "Published" for completed article outcomes.
   if (normalized === "DELIVERED" || normalized === "ACCEPTED" || normalized === "FINAL") {
     return "Published";
   }
-
-  if (normalized === "APPROVED") {
-    return "Approved";
-  }
-
-  return null;
+  return toClientPortalStatusLabel(status);
 }
 
 function BriefArchiveRow({ brief }: { brief: BriefRecord }) {

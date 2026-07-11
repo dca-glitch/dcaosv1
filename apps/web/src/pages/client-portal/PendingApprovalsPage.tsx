@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { EmptyState } from "../../components/EmptyState";
-import { Button, PageHeader, SectionPanel, StatusBadge } from "../../components/ui";
+import { Button, PageHeader, SectionPanel } from "../../components/ui";
 import { Alert, Spinner } from "../../design-system";
+import { ClientPortalStatusBadge } from "./ClientPortalStatusBadge";
 import {
   clientPortalApiRequest,
   formatApprovalDate,
@@ -9,6 +10,9 @@ import {
   type PendingApprovalSummary,
   type PendingApprovalsResponse
 } from "./client-portal-api";
+import "./client-portal.css";
+
+const AMBER_TINT = "#C98A42";
 
 function PortalInlineLoading({ label }: { label: string }) {
   return (
@@ -43,7 +47,11 @@ export function PendingApprovalsPage() {
   }, [loadPendingApprovals]);
 
   return (
-    <section className="view-section cf-page" aria-labelledby="pending-approvals-title" data-density="comfortable">
+    <section
+      className="view-section cf-page client-portal-page"
+      aria-labelledby="pending-approvals-title"
+      data-density="comfortable"
+    >
       <PageHeader
         action={
           <Button disabled={loading} onClick={() => void loadPendingApprovals()} variant="tertiary">
@@ -88,39 +96,38 @@ export function PendingApprovalsPage() {
       {!loading && !error ? (
         <SectionPanel
           description="Review the current draft and choose approve or request changes."
-          title="Articles for your review"
-          tone="compact"
+          tint={items.length > 0 ? AMBER_TINT : undefined}
+          title="Required attention"
+          tone={items.length > 0 ? "highlight" : "compact"}
         >
           {items.length === 0 ? (
             <EmptyState message="No articles waiting for your review." title="All set" variant="inline" />
           ) : (
-            <div className="cf-record-list">
+            <div className="client-portal-attention-list" role="list" aria-label="Pending approval articles">
               {items.map((item) => (
-                <article className="cf-record dense-record" key={item.id}>
-                  <div className="dense-record-main">
-                    <div className="dense-title">
-                      <div className="dense-kicker">
-                        <StatusBadge status="Needs your review" />
-                        <span className="entity-pill">Next action: Open review</span>
-                      </div>
-                      <h3>{item.title}</h3>
-                      <div className="dense-meta">
-                        <span>{item.projectName}</span>
-                        <span>Shared {formatApprovalDate(item.createdAt)}</span>
-                      </div>
+                <div
+                  className="client-portal-attention-row is-urgent cf-record"
+                  data-testid="pending-approval-record"
+                  key={item.id}
+                  role="listitem"
+                >
+                  <div className="client-portal-attention-copy">
+                    <div className="cf-record-kicker">
+                      <ClientPortalStatusBadge status={item.status} />
                     </div>
-                    <div className="dense-actions">
-                      <Button
-                        onClick={() => navigateToClientPortalHash(`client-portal/deliverables/${item.id}/approve`)}
-                        size="sm"
-                        type="button"
-                        variant="tertiary"
-                      >
-                        Open review
-                      </Button>
-                    </div>
+                    <strong>{item.title}</strong>
+                    <span className="muted-text text-small">
+                      {item.projectName} · Shared {formatApprovalDate(item.createdAt)}
+                    </span>
                   </div>
-                </article>
+                  <Button
+                    onClick={() => navigateToClientPortalHash(`client-portal/deliverables/${item.id}/approve`)}
+                    size="sm"
+                    type="button"
+                  >
+                    Review &amp; Approve
+                  </Button>
+                </div>
               ))}
             </div>
           )}

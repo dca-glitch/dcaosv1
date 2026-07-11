@@ -13,7 +13,24 @@ import { ErrorState } from "../../components/ErrorState";
 import { LoadingState } from "../../components/LoadingState";
 import { StatusNotice } from "../../components/StatusNotice";
 import { Modal } from "../../components/Modal";
-import { MetricCard, PageHeader, SectionPanel, StatusBadge } from "../../components/ui";
+import {
+  FilterBar,
+  MetricCard,
+  PageHeader,
+  SectionPanel,
+  StatusBadge,
+  Table
+} from "../../components/ui";
+import {
+  MI_PROJECT_FILTER_OPTIONS,
+  filterMiProjects,
+  formatMiDateLabel,
+  formatMiLastUpdatedLabel,
+  formatMiResultFieldLabel,
+  parseMiListField,
+  type MiProjectFilter
+} from "./aiMarketIntelligenceModel";
+import "./ai-market-intelligence.css";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "/api/v1";
 const SESSION_STORAGE_KEY = "dcaosv1.authToken";
@@ -123,22 +140,6 @@ async function apiData<T>(method: string, path: string, body?: unknown): Promise
   return response.data;
 }
 
-function formatDateLabel(value: string | null | undefined): string {
-  if (!value) {
-    return "Not set";
-  }
-
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString();
-}
-
-function formatResultFieldLabel(key: string): string {
-  return key
-    .replace(/([A-Z])/g, " $1")
-    .replace(/^./, (char) => char.toUpperCase())
-    .trim();
-}
-
 function renderResultData(resultData: MarketIntelligenceInsightSummary["resultData"]) {
   if (!resultData) {
     return null;
@@ -156,7 +157,7 @@ function renderResultData(resultData: MarketIntelligenceInsightSummary["resultDa
     })
     .map(([key, value]) => (
       <div className="dense-field" key={key}>
-        <span>{formatResultFieldLabel(key)}</span>
+        <span>{formatMiResultFieldLabel(key)}</span>
         {Array.isArray(value) ? (
           <ul className="muted-text compact-nested-list">
             {value.map((entry, index) => (
@@ -174,7 +175,7 @@ export function AiMarketIntelligencePage({ clients }: AiMarketIntelligencePagePr
   const [projects, setProjects] = useState<MarketIntelligenceProjectSummary[]>([]);
   const [projectsLoading, setProjectsLoading] = useState(true);
   const [projectsError, setProjectsError] = useState<string | null>(null);
-  const [projectFilter, setProjectFilter] = useState<"active" | "archived" | "all">("active");
+  const [projectFilter, setProjectFilter] = useState<MiProjectFilter>("active");
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [sources, setSources] = useState<MarketIntelligenceSourceSummary[]>([]);
   const [runs, setRuns] = useState<MarketIntelligenceResearchRunSummary[]>([]);
@@ -220,18 +221,34 @@ export function AiMarketIntelligencePage({ clients }: AiMarketIntelligencePagePr
   );
 
   const filteredProjects = useMemo(
-    () =>
-      projects.filter((project) => {
-        if (projectFilter === "active") {
-          return !project.isArchived;
-        }
-        if (projectFilter === "archived") {
-          return project.isArchived;
-        }
-        return true;
-      }),
+    () => filterMiProjects(projects, projectFilter),
     [projectFilter, projects]
   );
+
+  const selectedKeywords = useMemo(
+    () => parseMiListField(selectedProject?.keywords),
+    [selectedProject?.keywords]
+  );
+
+  const selectedCompetitors = useMemo(
+    () => parseMiListField(selectedProject?.competitors),
+    [selectedProject?.competitors]
+  );
+
+  const projectLastUpdatedLabel = useMemo(() => {
+    if (!selectedProject) {
+      return null;
+    }
+    return formatMiLastUpdatedLabel([
+      selectedProject,
+      ...sources,
+      ...runs,
+      ...insights,
+      ...findings,
+      ...summaries,
+      ...handoffs
+    ]);
+  }, [findings, handoffs, insights, runs, selectedProject, sources, summaries]);
 
   const approvedInsights = useMemo(
     () => insights.filter((insight) => insight.status === "APPROVED" && !insight.isArchived),
@@ -674,7 +691,7 @@ export function AiMarketIntelligencePage({ clients }: AiMarketIntelligencePagePr
   }
 
   return (
-    <section className="view-section" aria-labelledby="market-intelligence-title">
+    <section className="view-section mi-page" aria-labelledby="market-intelligence-title">
       <PageHeader
         actions={
           <button className="primary-action" onClick={() => setShowProjectModal(true)} type="button">
@@ -698,22 +715,19 @@ export function AiMarketIntelligencePage({ clients }: AiMarketIntelligencePagePr
             </div>
           </div>
 
-          <div className="filter-bar" role="group" aria-label="Project filter">
-            {(["active", "archived", "all"] as const).map((value) => (
-              <button
-                aria-pressed={projectFilter === value}
-                className={projectFilter === value ? "secondary-action filter-chip is-active" : "secondary-action filter-chip"}
-                key={value}
-                onClick={() => setProjectFilter(value)}
-                type="button"
-              >
-                {value[0].toUpperCase() + value.slice(1)}
-              </button>
-            ))}
-          </div>
+          <FilterBar
+            ariaLabel="Project filter"
+            onChange={(value) => setProjectFilter(value as MiProjectFilter)}
+            options={MI_PROJECT_FILTER_OPTIONS}
+            value={projectFilter}
+          />
 
           {filteredProjects.length === 0 ? (
-            <p className="inline-empty muted-text">Create a project to start the workflow.</p>
+            <EmptyState
+              message="Create a project to start the workflow."
+              title="No projects in this filter"
+              variant="inline"
+            />
           ) : (
             <div className="dense-list">
               {filteredProjects.map((project) => (
@@ -737,7 +751,7 @@ export function AiMarketIntelligencePage({ clients }: AiMarketIntelligencePagePr
                       </div>
                       <h3>{project.title}</h3>
                       <div className="dense-meta">
-                        <span>{formatDateLabel(project.createdAt)}</span>
+                        <span>{formatMiDateLabel(project.updatedAt || project.createdAt)}</span>
                         {project.targetMonth ? <span>{project.targetMonth}</span> : null}
                         {project.client?.name ? <span>{project.client.name}</span> : null}
                       </div>
@@ -749,9 +763,13 @@ export function AiMarketIntelligencePage({ clients }: AiMarketIntelligencePagePr
           )}
         </aside>
 
-        <div>
+        <div className="mi-detail-stack">
           {!selectedProject ? (
-            <p className="inline-empty muted-text">Choose a project from the left queue.</p>
+            <EmptyState
+              message="Choose a project from the left queue."
+              title="No project selected"
+              variant="inline"
+            />
           ) : detailLoading ? (
             <LoadingState label="Loading project research data" />
           ) : (
@@ -767,12 +785,15 @@ export function AiMarketIntelligencePage({ clients }: AiMarketIntelligencePagePr
                     {selectedProject.targetMonth ? <span>Month: {selectedProject.targetMonth}</span> : null}
                     {selectedProject.niche ? <span>Niche: {selectedProject.niche}</span> : null}
                     {selectedProject.productServiceFocus ? <span>Focus: {selectedProject.productServiceFocus}</span> : null}
+                    {projectLastUpdatedLabel ? (
+                      <span className="mi-last-updated muted-text">Last updated: {projectLastUpdatedLabel}</span>
+                    ) : null}
                   </div>
                 }
                 title={selectedProject.title}
               />
 
-              <div className="summary-grid metric-grid operator-summary-metrics">
+              <div className="summary-grid metric-grid operator-summary-metrics mi-summary-metrics">
                 <MetricCard accent="cyan" helper="Curated references" label="Sources" value={sources.filter((s) => !s.isArchived).length} />
                 <MetricCard accent="warning" helper="Admin notes" label="Findings" value={findings.filter((f) => !f.isArchived).length} />
                 <MetricCard accent="violet" helper="Bounded runs" label="Runs" value={runs.filter((r) => r.status === "EXECUTED").length} />
@@ -804,10 +825,48 @@ export function AiMarketIntelligencePage({ clients }: AiMarketIntelligencePagePr
                     );
                   })}
                 </div>
-                {(selectedProject.keywords || selectedProject.competitors) && (
-                  <div className="dense-row-note mi-row-note-spaced">
-                    {selectedProject.keywords ? <>Keywords: {selectedProject.keywords}. </> : null}
-                    {selectedProject.competitors ? <>Competitors: {selectedProject.competitors}.</> : null}
+              </SectionPanel>
+
+              <SectionPanel
+                description="Topics and search phrases recorded on this project. Manual input only — no live keyword API."
+                title="Keyword and topic research"
+                tone="compact"
+              >
+                {selectedKeywords.length === 0 ? (
+                  <EmptyState
+                    message="Add keywords when creating or editing the project."
+                    title="No keywords recorded"
+                    variant="inline"
+                  />
+                ) : (
+                  <div className="mi-chip-row" aria-label="Project keywords">
+                    {selectedKeywords.map((keyword) => (
+                      <span className="mi-chip" key={keyword}>
+                        {keyword}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </SectionPanel>
+
+              <SectionPanel
+                description="Competitor names recorded on this project. Tracking is operator-curated — no live crawl."
+                title="Competitor tracking"
+                tone="compact"
+              >
+                {selectedCompetitors.length === 0 ? (
+                  <EmptyState
+                    message="Add competitors when creating or editing the project."
+                    title="No competitors recorded"
+                    variant="inline"
+                  />
+                ) : (
+                  <div className="mi-chip-row" aria-label="Project competitors">
+                    {selectedCompetitors.map((competitor) => (
+                      <span className="mi-chip" key={competitor}>
+                        {competitor}
+                      </span>
+                    ))}
                   </div>
                 )}
               </SectionPanel>
@@ -825,25 +884,37 @@ export function AiMarketIntelligencePage({ clients }: AiMarketIntelligencePagePr
                 {sources.length === 0 ? (
                   <EmptyState message="Add at least one source before running research." title="No sources yet" variant="inline" />
                 ) : (
-                  <div className="dense-list">
-                    {sources.map((source) => (
-                      <article className="entity-card dense-record" key={source.id}>
-                        <div className="dense-record-main">
-                          <div className="dense-title">
-                            <div className="dense-kicker">
-                              <StatusBadge status={source.isArchived ? "ARCHIVED" : "ACTIVE"} />
-                            </div>
-                            <h3>{source.title}</h3>
-                            {source.sourceUrl ? (
-                              <a href={source.sourceUrl} rel="noopener noreferrer" target="_blank">
-                                {source.sourceUrl}
-                              </a>
+                  <div className="mi-table-wrap table-wrap table-scroll">
+                    <Table
+                      headers={[
+                        { label: "Status" },
+                        { label: "Title" },
+                        { label: "URL" },
+                        { label: "Updated" }
+                      ]}
+                      rows={sources.map((source) => ({
+                        key: source.id,
+                        cells: [
+                          <StatusBadge key={`${source.id}-status`} status={source.isArchived ? "ARCHIVED" : "ACTIVE"} />,
+                          <span key={`${source.id}-title`}>
+                            {source.title}
+                            {source.sourceNotes ? (
+                              <span className="muted-text"> — {source.sourceNotes}</span>
                             ) : null}
-                          </div>
-                          {source.sourceNotes ? <div className="dense-row-note">{source.sourceNotes}</div> : null}
-                        </div>
-                      </article>
-                    ))}
+                          </span>,
+                          source.sourceUrl ? (
+                            <a href={source.sourceUrl} key={`${source.id}-url`} rel="noopener noreferrer" target="_blank">
+                              {source.sourceUrl}
+                            </a>
+                          ) : (
+                            <span className="muted-text" key={`${source.id}-url`}>
+                              —
+                            </span>
+                          ),
+                          <span key={`${source.id}-updated`}>{formatMiDateLabel(source.updatedAt || source.createdAt)}</span>
+                        ]
+                      }))}
+                    />
                   </div>
                 )}
               </SectionPanel>
@@ -861,18 +932,29 @@ export function AiMarketIntelligencePage({ clients }: AiMarketIntelligencePagePr
                 {findings.length === 0 ? (
                   <EmptyState message="Add findings after recording sources." title="No findings yet" variant="inline" />
                 ) : (
-                  <div className="dense-list">
-                    {findings.map((finding) => (
-                      <article className="entity-card dense-record" key={finding.id}>
-                        <div className="dense-record-main">
-                          <div className="dense-title">
-                            <div className="dense-kicker">
-                              <StatusBadge status={finding.findingCategory} />
-                              {finding.priority ? <StatusBadge status={finding.priority} /> : null}
-                            </div>
-                            <div className="dense-row-note">{finding.findingText}</div>
-                          </div>
-                          <div className="dense-actions">
+                  <div className="mi-table-wrap table-wrap table-scroll">
+                    <Table
+                      headers={[
+                        { label: "Category" },
+                        { label: "Priority" },
+                        { label: "Finding" },
+                        { label: "Updated" },
+                        { label: "Actions" }
+                      ]}
+                      rows={findings.map((finding) => ({
+                        key: finding.id,
+                        cells: [
+                          <StatusBadge key={`${finding.id}-cat`} status={finding.findingCategory} />,
+                          finding.priority ? (
+                            <StatusBadge key={`${finding.id}-pri`} status={finding.priority} />
+                          ) : (
+                            <span className="muted-text" key={`${finding.id}-pri`}>
+                              —
+                            </span>
+                          ),
+                          <span key={`${finding.id}-text`}>{finding.findingText}</span>,
+                          <span key={`${finding.id}-updated`}>{formatMiDateLabel(finding.updatedAt || finding.createdAt)}</span>,
+                          <div className="dense-actions" key={`${finding.id}-actions`}>
                             <button className="ghost-action" onClick={() => openEditFinding(finding)} type="button">
                               Edit
                             </button>
@@ -880,9 +962,9 @@ export function AiMarketIntelligencePage({ clients }: AiMarketIntelligencePagePr
                               Archive
                             </button>
                           </div>
-                        </div>
-                      </article>
-                    ))}
+                        ]
+                      }))}
+                    />
                   </div>
                 )}
               </SectionPanel>
@@ -910,7 +992,7 @@ export function AiMarketIntelligencePage({ clients }: AiMarketIntelligencePagePr
                             </div>
                             <div className="dense-meta">
                               {run.sourceCount !== undefined ? <span>{run.sourceCount} source(s)</span> : null}
-                              <span>{formatDateLabel(run.executedAt ?? run.createdAt)}</span>
+                              <span>{formatMiDateLabel(run.executedAt ?? run.updatedAt ?? run.createdAt)}</span>
                             </div>
                           </div>
                           {run.resultSummary ? <div className="dense-row-note">{run.resultSummary}</div> : null}
@@ -1051,7 +1133,7 @@ export function AiMarketIntelligencePage({ clients }: AiMarketIntelligencePagePr
                           ) : null}
                           {summary.appliedAt || summary.linkage?.appliedAt ? (
                             <div className="dense-row-note muted-text">
-                              Applied: {formatDateLabel(summary.appliedAt ?? summary.linkage?.appliedAt ?? null)}
+                              Applied: {formatMiDateLabel(summary.appliedAt ?? summary.linkage?.appliedAt ?? null)}
                             </div>
                           ) : null}
                           <div className="dense-actions">

@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { EmptyState } from "../EmptyState";
 import { StatusNotice } from "../StatusNotice";
-import { SectionPanel, StatusBadge } from "../ui";
+import { Button, FilterBar, SectionPanel, StatusBadge } from "../ui";
+import { Select, Spinner } from "../../design-system";
 import type { ClientAccessTenantUser, ClientAccessUserSummary } from "../../pages/clients/ClientsPage";
 
 type AccessFilter = "active" | "archived" | "all";
@@ -156,21 +157,24 @@ export function ClientAccessPanel({
         <StatusNotice message={accessNotice} onDismiss={() => setAccessNotice(null)} tone="success" />
       ) : null}
 
-      <div className="filter-bar client-access-filter" role="group" aria-label="Access records filter">
-        {(["active", "archived", "all"] as const).map((value) => (
-          <button
-            aria-pressed={accessFilter === value}
-            className={accessFilter === value ? "secondary-action filter-chip is-active" : "secondary-action filter-chip"}
-            key={value}
-            onClick={() => setAccessFilter(value)}
-            type="button"
-          >
-            {value[0].toUpperCase() + value.slice(1)}
-          </button>
-        ))}
-      </div>
+      <FilterBar
+        ariaLabel="Access records filter"
+        className="client-access-filter"
+        onChange={(value) => setAccessFilter(value as AccessFilter)}
+        options={[
+          { value: "active", label: "Active" },
+          { value: "archived", label: "Archived" },
+          { value: "all", label: "All" }
+        ]}
+        value={accessFilter}
+      />
 
-      {accessLoading && accessRecords.length === 0 ? <p className="muted-text">Loading access records...</p> : null}
+      {accessLoading && accessRecords.length === 0 ? (
+        <div className="state-panel loading-state-panel client-access-loading" role="status">
+          <Spinner size="sm" />
+          Loading access records...
+        </div>
+      ) : null}
 
       {!accessLoading && filteredRecords.length === 0 ? (
         <EmptyState message="No users linked to this client." title="No access records" variant="inline" />
@@ -196,23 +200,25 @@ export function ClientAccessPanel({
               {canEdit ? (
                 <div className="client-access-record-actions">
                   {!access.isArchived ? (
-                    <button
-                      className="secondary-action"
+                    <Button
                       disabled={accessLoading}
                       onClick={() => void handleArchiveAccess(access.user.id)}
+                      size="sm"
                       type="button"
+                      variant="secondary"
                     >
                       Archive access
-                    </button>
+                    </Button>
                   ) : (
-                    <button
-                      className="secondary-action"
+                    <Button
                       disabled={accessLoading}
                       onClick={() => void handleRestoreAccess(access.user.id)}
+                      size="sm"
                       type="button"
+                      variant="secondary"
                     >
                       Restore access
-                    </button>
+                    </Button>
                   )}
                 </div>
               ) : null}
@@ -223,31 +229,30 @@ export function ClientAccessPanel({
 
       {canEdit ? (
         <div className="client-access-grant field-grid">
-          <label>
-            Link tenant user
-            <select
-              disabled={accessLoading || linkableTenantUsers.length === 0}
-              onChange={(event) => setAccessUserId(event.target.value)}
-              value={accessUserId}
-            >
-              <option value="">Select active user</option>
-              {linkableTenantUsers.map((user) => (
-                <option key={user.id} value={user.id}>
-                  {user.name ? `${user.name} (${user.email})` : user.email}
-                </option>
-              ))}
-            </select>
-          </label>
+          <Select
+            disabled={accessLoading || linkableTenantUsers.length === 0}
+            fullWidth
+            label="Link tenant user"
+            onChange={(event) => setAccessUserId(event.target.value)}
+            options={[
+              { value: "", label: "Select active user" },
+              ...linkableTenantUsers.map((user) => ({
+                value: user.id,
+                label: user.name ? `${user.name} (${user.email})` : user.email
+              }))
+            ]}
+            value={accessUserId}
+          />
           <div className="client-access-grant-action">
             <span className="muted-text">&nbsp;</span>
-            <button
-              className="secondary-action"
+            <Button
               disabled={accessLoading || !accessUserId}
               onClick={() => void handleGrantAccess()}
               type="button"
+              variant="secondary"
             >
               Link user
-            </button>
+            </Button>
           </div>
         </div>
       ) : null}

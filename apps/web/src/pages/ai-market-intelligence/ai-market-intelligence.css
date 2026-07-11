@@ -1,0 +1,78 @@
+/* Market Intelligence — Phase 12 local styles */
+
+.mi-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.mi-page .mi-split-layout {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
+  align-items: start;
+}
+
+.mi-page .mi-queue-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-width: 0;
+  padding: 0.85rem 0.95rem;
+}
+
+.mi-page .mi-detail-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.mi-page .mi-summary-metrics {
+  gap: 0.75rem;
+}
+
+.mi-page .mi-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.mi-page .mi-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.28rem 0.65rem;
+  border-radius: var(--ds-radius-md, 8px);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  background: rgba(15, 23, 42, 0.4);
+  color: var(--text-secondary, #94a3b8);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.mi-page .mi-last-updated {
+  margin: 0;
+  font-size: 0.8rem;
+}
+
+.mi-page .mi-table-wrap {
+  overflow-x: auto;
+  min-width: 0;
+}
+
+.mi-page .mi-table-wrap table th,
+.mi-page .mi-table-wrap table td {
+  font-size: 0.82rem;
+  padding: 8px 10px;
+}
+
+.mi-page .mi-table-wrap table th {
+  font-size: 0.76rem;
+}
+
+@media (max-width: 900px) {
+  .mi-page .mi-split-layout {
+    grid-template-columns: 1fr;
+  }
+}

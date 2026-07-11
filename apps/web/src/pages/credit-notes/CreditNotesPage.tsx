@@ -1,10 +1,26 @@
 import { type FormEvent, useMemo, useState } from "react";
 import { EmptyState } from "../../components/EmptyState";
+import { ErrorState } from "../../components/ErrorState";
+import { LoadingState } from "../../components/LoadingState";
 import { Modal } from "../../components/Modal";
-import { Button, ModalActions, PageHeader, StatusBadge, Table } from "../../components/ui";
-import { Alert, Input, Select, Spinner, Textarea } from "../../design-system";
+import {
+  Button,
+  MetricCard,
+  ModalActions,
+  PageHeader,
+  StatusBadge,
+  StatusSummaryBar,
+  Table
+} from "../../components/ui";
+import { Input, Select, Textarea } from "../../design-system";
+import {
+  buildCreditNoteStatusSummary,
+  formatFinanceDateLabel,
+  formatFinanceMoney
+} from "../finance/finance-display";
 import type { InvoiceItemSummary } from "../invoice-items/InvoiceItemsPage";
 import type { InvoiceSummary } from "../invoices/InvoicesPage";
+import "../finance/finance.css";
 
 type CreditNoteLineItemFormValues = {
   description: string;
@@ -99,16 +115,11 @@ function toDateInputValue(value: string | null): string {
 }
 
 function formatDateLabel(value: string | null): string {
-  if (!value) {
-    return "Not set";
-  }
-
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString();
+  return formatFinanceDateLabel(value);
 }
 
 function formatMoney(cents: number, currency: string): string {
-  return new Intl.NumberFormat(undefined, { currency, style: "currency" }).format(cents / 100);
+  return formatFinanceMoney(cents, currency);
 }
 
 function moneyFieldLabel(label: string, currency: string): string {
@@ -220,6 +231,7 @@ export function CreditNotesPage({
       voidedCount: creditNotes.filter((creditNote) => creditNote.status === "VOIDED").length
     };
   }, [creditNotes]);
+  const creditNoteStatusSummary = useMemo(() => buildCreditNoteStatusSummary(creditNotes), [creditNotes]);
   const selectedInvoice = useMemo(() => invoices.find((invoice) => invoice.id === invoiceId) ?? null, [invoiceId, invoices]);
   const submitLabel = editorId ? "Update credit note" : "Create credit note";
 
@@ -346,20 +358,15 @@ export function CreditNotesPage({
   }
 
   if (isLoading) {
-    return (
-      <div className="state-panel loading-state-panel" role="status">
-        <Spinner size="sm" />
-        Loading credit notes
-      </div>
-    );
+    return <LoadingState label="Loading credit notes" />;
   }
 
   if (errorMessage) {
-    return <Alert message={errorMessage} title="Credit notes unavailable" variant="danger" />;
+    return <ErrorState message={errorMessage} title="Credit notes unavailable" />;
   }
 
   return (
-    <section className="view-section" aria-labelledby="credit-notes-title" data-density="compact">
+    <section className="view-section finance-lite" aria-labelledby="credit-notes-title" data-density="compact">
       <PageHeader
         eyebrow="Finance"
         title="Credit Notes"
@@ -374,11 +381,15 @@ export function CreditNotesPage({
         }
       />
 
-      <div className="summary-grid">
-        <article className="summary-panel"><small>Total notes</small><strong>{totals.totalCount}</strong></article>
-        <article className="summary-panel"><small>Draft</small><strong>{totals.draftCount}</strong></article>
-        <article className="summary-panel"><small>Issued value</small><strong>{formatMoney(totals.issuedCents, "USD")}</strong></article>
-        <article className="summary-panel"><small>Voided</small><strong>{totals.voidedCount}</strong></article>
+      <StatusSummaryBar ariaLabel="Credit note status summary" items={creditNoteStatusSummary} />
+
+      <div className="summary-grid finance-summary-strip" aria-label="Credit note totals from loaded records">
+        <MetricCard
+          accent="cyan"
+          helper={`${totals.totalCount} notes · ${totals.draftCount} draft · ${totals.voidedCount} voided`}
+          label="Issued value"
+          value={formatMoney(totals.issuedCents, "USD")}
+        />
       </div>
 
       {canEdit && invoices.length === 0 ? (
@@ -562,7 +573,13 @@ type CreditNoteCardsProps = {
 
 function CreditNoteCards({ creditNotes, canEdit, onEditCreditNote, onIssueCreditNote, onVoidCreditNote }: CreditNoteCardsProps) {
   if (creditNotes.length === 0) {
-    return <p className="inline-empty muted-text">No credit notes have been created yet.</p>;
+    return (
+      <EmptyState
+        message="Create a credit note to document a refund, correction, or billing adjustment."
+        title="No credit notes yet"
+        variant="inline"
+      />
+    );
   }
 
   return (

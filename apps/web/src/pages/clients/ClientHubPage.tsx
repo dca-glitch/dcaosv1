@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { EmptyState } from "../../components/EmptyState";
 import { ErrorState } from "../../components/ErrorState";
 import { LoadingState } from "../../components/LoadingState";
-import { PageHeader, SectionPanel, StatusBadge } from "../../components/ui";
+import { Button, PageHeader, SectionPanel, StatusBadge } from "../../components/ui";
 import { ClientAccessPanel } from "../../components/clients/ClientAccessPanel";
 import { StatusNotice } from "../../components/StatusNotice";
 import type { ClientAccessTenantUser, ClientAccessUserSummary, ClientSummary } from "./ClientsPage";
@@ -272,11 +272,12 @@ export function ClientHubPage({
       <PageHeader
         eyebrow="Client Operating Hub"
         title={client.name}
+        titleId="client-hub-title"
         description={client.website ?? "Domain/client operating context"}
         actions={
-          <button className="secondary-action" type="button" onClick={onBack}>
+          <Button onClick={onBack} type="button" variant="secondary">
             Back to clients
-          </button>
+          </Button>
         }
       />
 
@@ -305,7 +306,9 @@ export function ClientHubPage({
           </div>
           <div>
             <strong>Migration</strong>
-            <div>{client.migrationStatus}</div>
+            <div>
+              <StatusBadge status={client.migrationStatus} />
+            </div>
           </div>
         </div>
       </SectionPanel>
@@ -353,9 +356,9 @@ export function ClientHubPage({
               Site URL
               <input value={targetUrl} onChange={(event) => setTargetUrl(event.target.value)} required />
             </label>
-            <button className="primary-action" type="submit">
+            <Button type="submit" variant="primary">
               Add publication target
-            </button>
+            </Button>
           </form>
         ) : null}
       </SectionPanel>
@@ -400,21 +403,21 @@ export function ClientHubPage({
               />
             </label>
             <div className="modal-footer modal-footer--align-start">
-              <button
-                className="secondary-action"
+              <Button
                 disabled={encryptionAvailable === false || !credentialTargetId || !applicationPassword.trim()}
                 type="submit"
+                variant="secondary"
               >
                 Save credentials
-              </button>
-              <button
-                className="secondary-action"
+              </Button>
+              <Button
                 disabled={!credentialTargetId || !credentialStatusByTargetId[credentialTargetId]?.configured}
                 onClick={() => void handleDeleteCredentials()}
                 type="button"
+                variant="secondary"
               >
                 Remove credentials
-              </button>
+              </Button>
             </div>
           </form>
           {credentialTargetId && credentialStatusByTargetId[credentialTargetId]?.updatedAt ? (
@@ -439,12 +442,16 @@ export function ClientHubPage({
             <input value={ga4PropertyId} onChange={(event) => setGa4PropertyId(event.target.value)} disabled={!hubCanEdit} />
           </label>
           {hubCanEdit ? (
-            <button className="secondary-action" type="submit">
+            <Button type="submit" variant="secondary">
               Save analytics profile
-            </button>
+            </Button>
           ) : null}
         </form>
-        {analytics ? <p className="muted-copy">Connection status: {analytics.connectionStatus}</p> : null}
+        {analytics ? (
+          <p className="muted-copy">
+            Connection status: <StatusBadge status={analytics.connectionStatus} />
+          </p>
+        ) : null}
       </SectionPanel>
 
       <SectionPanel tone="compact" title="Product catalog" description="Inquiry-only catalog for Client Portal (Puriva skincare/products). No cart or checkout.">
@@ -480,9 +487,9 @@ export function ClientHubPage({
               Description
               <textarea rows={3} value={productDescription} onChange={(event) => setProductDescription(event.target.value)} />
             </label>
-            <button className="primary-action" type="submit">
+            <Button type="submit" variant="primary">
               Add catalog product
-            </button>
+            </Button>
           </form>
         ) : null}
       </SectionPanel>
@@ -494,14 +501,20 @@ export function ClientHubPage({
           <ul className="entity-list">
             {catalogInquiries.map((inquiry) => (
               <li key={inquiry.id}>
-                <strong>{inquiry.contactName}</strong> ({inquiry.contactEmail}) — {inquiry.status}
+                <strong>{inquiry.contactName}</strong> ({inquiry.contactEmail}){" "}
+                <StatusBadge status={inquiry.status} />
                 {inquiry.productName ? ` — ${inquiry.productName}` : ""}
                 <div className="muted-text">{inquiry.message}</div>
                 <div className="muted-text">{new Date(inquiry.createdAt).toLocaleString()}</div>
                 {hubCanEdit && inquiry.status === "NEW" ? (
-                  <button className="secondary-action" onClick={() => void handleAcknowledgeInquiry(inquiry.id)} type="button">
+                  <Button
+                    onClick={() => void handleAcknowledgeInquiry(inquiry.id)}
+                    size="sm"
+                    type="button"
+                    variant="secondary"
+                  >
                     Mark acknowledged
-                  </button>
+                  </Button>
                 ) : null}
               </li>
             ))}
@@ -516,8 +529,8 @@ export function ClientHubPage({
           <ul className="entity-list">
             {logs.map((log) => (
               <li key={log.id}>
-                <strong>{log.action}</strong> — {log.status} — {log.siteUrlHost ?? "unknown host"} —{" "}
-                {new Date(log.createdAt).toLocaleString()}
+                <strong>{log.action}</strong> — <StatusBadge status={log.status} /> —{" "}
+                {log.siteUrlHost ?? "unknown host"} — {new Date(log.createdAt).toLocaleString()}
               </li>
             ))}
           </ul>

@@ -1,0 +1,49 @@
+/* Finance Lite — Phase 10 local styles (display only) */
+
+.finance-lite {
+  gap: 1rem;
+  min-width: 0;
+}
+
+.finance-lite .op-status-summary-bar {
+  margin-bottom: 0.25rem;
+}
+
+.finance-summary-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1rem;
+  align-items: center;
+}
+
+.finance-summary-strip .metric-card,
+.finance-summary-strip .summary-panel {
+  flex: 1 1 140px;
+  min-width: 0;
+}
+
+/* Overdue: coral due-date text only — never tint the row background */
+.finance-due-date.is-overdue {
+  color: var(--ds-accent-coral, #e07070);
+  font-weight: 600;
+}
+
+.finance-lite .finance-table-wrap,
+.finance-lite .table-scroll {
+  min-width: 0;
+  overflow-x: auto;
+}
+
+.finance-lite .finance-row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  justify-content: flex-end;
+}
+
+@media (max-width: 900px) {
+  .finance-summary-strip {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

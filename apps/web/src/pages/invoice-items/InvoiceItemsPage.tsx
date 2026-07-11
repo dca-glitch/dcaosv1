@@ -1,9 +1,11 @@
 import { type FormEvent, useMemo, useState } from "react";
+import { EmptyState } from "../../components/EmptyState";
+import { ErrorState } from "../../components/ErrorState";
+import { LoadingState } from "../../components/LoadingState";
 import { Modal } from "../../components/Modal";
-import { MetricCard, PageHeader, SectionPanel, StatusBadge } from "../../components/ui";
-import { Button } from "../../components/ui/Button";
-import { ModalActions } from "../../components/ui/ModalActions";
-import { Alert, Input, Spinner, Textarea } from "../../design-system";
+import { Button, FilterBar, MetricCard, ModalActions, PageHeader, SectionPanel, StatusBadge } from "../../components/ui";
+import { Input, Textarea } from "../../design-system";
+import "../finance/finance.css";
 
 export type InvoiceItemSummary = {
   id: string;
@@ -100,25 +102,31 @@ export function InvoiceItemsPage({
   }
 
   if (isLoading) {
-    return (
-      <div className="state-panel loading-state-panel" role="status">
-        <Spinner size="sm" />
-        Loading services library
-      </div>
-    );
+    return <LoadingState label="Loading services library" />;
   }
 
   if (errorMessage) {
-    return <Alert message={errorMessage} title="Services library unavailable" variant="danger" />;
+    return <ErrorState message={errorMessage} title="Services library unavailable" />;
   }
 
   return (
-    <section className="view-section" aria-labelledby="invoice-items-title" data-density="compact">
+    <section className="view-section finance-lite" aria-labelledby="invoice-items-title" data-density="compact">
       <PageHeader
         eyebrow="Finance"
         title="Service library"
         titleId="invoice-items-title"
         description="Reusable service prices for invoice drafting."
+        filters={
+          <FilterBar
+            ariaLabel="Service library view"
+            onChange={(value) => setTab(value as "active" | "archived")}
+            options={[
+              { value: "active", label: "Active" },
+              { value: "archived", label: "Archived" }
+            ]}
+            value={tab}
+          />
+        }
         actions={
           canEdit ? (
             <Button onClick={openCreateModal} type="button">
@@ -128,7 +136,7 @@ export function InvoiceItemsPage({
         }
       />
 
-      <div className="summary-grid metric-grid dashboard-command-metrics--compact">
+      <div className="summary-grid metric-grid dashboard-command-metrics--compact finance-summary-strip" aria-label="Service library summary from loaded records">
         <MetricCard label="Active services" value={String(activeItems.length)} helper="Available for invoice drafting" accent="cyan" />
         <MetricCard label="Archived services" value={String(archivedItems.length)} helper="Hidden from active library" accent={archivedItems.length ? "warning" : "success"} />
         <MetricCard label="Catalog value" value={formatMoney(totalActiveValue)} helper="Sum of active unit prices" accent="purple" />
@@ -138,35 +146,17 @@ export function InvoiceItemsPage({
         tone="compact"
         title="Services"
         description="Create, update, archive, and restore reusable service entries."
-        action={
-          <div className="filter-bar" role="group" aria-label="Service library view">
-            <Button
-              aria-pressed={tab === "active"}
-              className={tab === "active" ? "secondary-action filter-chip is-active" : "secondary-action filter-chip"}
-              onClick={() => setTab("active")}
-              type="button"
-              variant="secondary"
-            >
-              Active
-            </Button>
-            <Button
-              aria-pressed={tab === "archived"}
-              className={tab === "archived" ? "secondary-action filter-chip is-active" : "secondary-action filter-chip"}
-              onClick={() => setTab("archived")}
-              type="button"
-              variant="secondary"
-            >
-              Archived
-            </Button>
-          </div>
-        }
       >
         {visibleItems.length === 0 ? (
-          <p className="inline-empty muted-text">
-            {tab === "active"
-              ? "Add your first reusable service."
-              : "Archived services will appear here when available."}
-          </p>
+          <EmptyState
+            message={
+              tab === "active"
+                ? "Add your first reusable service."
+                : "Archived services will appear here when available."
+            }
+            title={tab === "active" ? "No active services" : "No archived services"}
+            variant="inline"
+          />
         ) : (
           <div className="dense-list">
             {visibleItems.map((item) => (

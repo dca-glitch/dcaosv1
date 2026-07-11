@@ -1,10 +1,29 @@
 import { type FormEvent, useMemo, useState } from "react";
 import { EmptyState } from "../../components/EmptyState";
+import { ErrorState } from "../../components/ErrorState";
+import { LoadingState } from "../../components/LoadingState";
 import { Modal } from "../../components/Modal";
-import { Button, ModalActions, PageHeader, SectionPanel, StatusBadge, Table } from "../../components/ui";
-import { Alert, Input, Select, Spinner, Textarea } from "../../design-system";
+import {
+  Button,
+  FilterBar,
+  ModalActions,
+  PageHeader,
+  SectionPanel,
+  StatusBadge,
+  Table,
+  useUrlFilterState
+} from "../../components/ui";
+import { Input, Select, Textarea } from "../../design-system";
+import {
+  buildProjectArchiveConfirm,
+  buildProjectRestoreConfirm,
+  type ArchiveConfirmCopy
+} from "../clients/archive-confirm-copy";
 import type { ClientSummary } from "../clients/ClientsPage";
 import type { TaskSummary } from "../tasks/TasksPage";
+
+const PROJECT_FILTERS = ["all", "active", "archived"] as const;
+type ProjectFilter = (typeof PROJECT_FILTERS)[number];
 
 export type ProjectSummary = {
   id: string;
@@ -57,6 +76,12 @@ const emptyForm = (clientId = ""): ProjectFormValues => ({
 
 const PROJECT_STATUS_OPTIONS = ["Active", "Paused", "Completed", "Archived"] as const;
 
+type PendingLifecycle = {
+  action: "archive" | "restore";
+  project: ProjectSummary;
+  copy: ArchiveConfirmCopy;
+};
+
 function toDateInputValue(value: string | null): string {
   return value ? value.slice(0, 10) : "";
 }
@@ -81,11 +106,18 @@ export function ProjectsPage({
   onRestore,
   onSave
 }: ProjectsPageProps) {
-  const [filter, setFilter] = useState<"all" | "active" | "archived">("active");
+  const [filter, setFilter] = useUrlFilterState<ProjectFilter>({
+    key: "filter",
+    defaultValue: "active",
+    allowed: PROJECT_FILTERS
+  });
   const [editorProjectId, setEditorProjectId] = useState<string | null>(null);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [draft, setDraft] = useState<ProjectFormValues>(emptyForm());
   const [saving, setSaving] = useState(false);
+  const [pendingLifecycle, setPendingLifecycle] = useState<PendingLifecycle | null>(null);
+  const [lifecycleBusy, setLifecycleBusy] = useState(false);
+
   const selectedProject = useMemo(
     () => projects.find((project) => project.id === editorProjectId) ?? null,
     [editorProjectId, projects]
@@ -150,17 +182,46 @@ export function ProjectsPage({
     }
   }
 
+  function requestArchive(project: ProjectSummary) {
+    setPendingLifecycle({
+      action: "archive",
+      project,
+      copy: buildProjectArchiveConfirm(project)
+    });
+  }
+
+  function requestRestore(project: ProjectSummary) {
+    setPendingLifecycle({
+      action: "restore",
+      project,
+      copy: buildProjectRestoreConfirm(project)
+    });
+  }
+
+  async function confirmLifecycle() {
+    if (!pendingLifecycle) {
+      return;
+    }
+    setLifecycleBusy(true);
+    try {
+      const ok =
+        pendingLifecycle.action === "archive"
+          ? await onArchive(pendingLifecycle.project.id)
+          : await onRestore(pendingLifecycle.project.id);
+      if (ok) {
+        setPendingLifecycle(null);
+      }
+    } finally {
+      setLifecycleBusy(false);
+    }
+  }
+
   if (loading) {
-    return (
-      <div className="state-panel loading-state-panel" role="status">
-        <Spinner size="sm" />
-        Loading projects
-      </div>
-    );
+    return <LoadingState label="Loading projects" />;
   }
 
   if (error) {
-    return <Alert message={error} title="Projects unavailable" variant="danger" />;
+    return <ErrorState message={error} title="Projects unavailable" />;
   }
 
   return (
@@ -172,99 +233,147 @@ export function ProjectsPage({
         description="Organize delivery work by client. Related: Clients, AI Delivery, Tasks."
         actions={
           <>
-            <div className="filter-bar" role="group" aria-label="Projects filter">
-              {(["active", "archived", "all"] as const).map((value) => (
-                <Button
-                  aria-pressed={filter === value}
-                  className={filter === value ? "secondary-action filter-chip is-active" : "secondary-action filter-chip"}
-                  key={value}
-                  onClick={() => setFilter(value)}
-                  type="button"
-                  variant="secondary"
-                >
-                  {value[0].toUpperCase() + value.slice(1)}
-                </Button>
-              ))}
-            </div>
-            {canEdit ? (
-              <Button onClick={openCreateModal}>Add Project</Button>
-            ) : null}
+            <FilterBar
+              ariaLabel="Projects filter"
+              onChange={(value) => setFilter(value as ProjectFilter)}
+              options={[
+                { value: "active", label: "Active" },
+                { value: "archived", label: "Archived" },
+                { value: "all", label: "All" }
+              ]}
+              value={filter}
+            />
+            {canEdit ? <Button onClick={openCreateModal}>Add Project</Button> : null}
           </>
         }
       />
 
       <div className="quick-link-list projects-quick-links">
-        <a className="subtle-action" href="#/clients">Clients</a>
-        <a className="subtle-action" href="#/ai-delivery">AI Delivery</a>
-        <a className="subtle-action" href="#/tasks">Tasks</a>
+        <a className="subtle-action" href="#/clients">
+          Clients
+        </a>
+        <a className="subtle-action" href="#/ai-delivery">
+          AI Delivery
+        </a>
+        <a className="subtle-action" href="#/tasks">
+          Tasks
+        </a>
       </div>
 
       {filteredProjects.length === 0 ? (
-        <EmptyState message="No projects match the current filter." title="No projects" />
+        <EmptyState message="No projects match the current filter." title="No projects" variant="inline" />
       ) : (
         <SectionPanel title="Project delivery" tone="compact">
           <div className="table-wrap table-scroll">
-          <Table
-            headers={[
-              { label: "Project", align: "left" },
-              { label: "Client", align: "left" },
-              { label: "Status", align: "left" },
-              { label: "Tasks", align: "right" },
-              { label: "Due", align: "right" },
-              { label: "Action", align: "right" }
-            ]}
-            rows={filteredProjects.map((project) => ({
-              key: project.id,
-              cells: [
-                <div key={`${project.id}-name`}>
-                  <strong>{project.name}</strong>
-                  <div className="muted-text">Start: {formatDateLabel(project.startDate)}</div>
-                </div>,
-                project.client?.name ?? "No client",
-                <StatusBadge key={`${project.id}-status`} status={project.isArchived ? "ARCHIVED" : project.status} />,
-                <span key={`${project.id}-tasks`}>{project.openTaskCount} / {project.taskCount}</span>,
-                formatDateLabel(project.dueDate),
-                <div className="dense-actions" key={`${project.id}-actions`}>
-                  {canEdit ? (
-                    <Button onClick={() => openEditModal(project)} size="sm" variant="secondary">
-                      Open
-                    </Button>
-                  ) : null}
-                  {canEdit ? (
-                    <details className="row-action-menu">
-                      <summary>More</summary>
-                      <div className="row-action-menu-panel">
-                        <div className="row-action-menu-group">
-                          <span className="row-action-menu-label">Project</span>
-                          {!project.isArchived ? (
-                            <Button onClick={() => void onArchive(project.id)} size="sm" variant="secondary">
-                              Archive
-                            </Button>
-                          ) : null}
-                          {project.isArchived ? (
-                            <Button onClick={() => void onRestore(project.id)} size="sm" variant="secondary">
-                              Restore
-                            </Button>
-                          ) : null}
+            <Table
+              headers={[
+                { label: "Project", align: "left" },
+                { label: "Client", align: "left" },
+                { label: "Status", align: "left" },
+                { label: "Tasks", align: "right" },
+                { label: "Due", align: "right" },
+                { label: "Action", align: "right" }
+              ]}
+              rows={filteredProjects.map((project) => ({
+                key: project.id,
+                cells: [
+                  <div key={`${project.id}-name`}>
+                    <strong>{project.name}</strong>
+                    <div className="muted-text">Start: {formatDateLabel(project.startDate)}</div>
+                  </div>,
+                  project.client?.name ?? "No client",
+                  <StatusBadge
+                    key={`${project.id}-status`}
+                    status={project.isArchived ? "ARCHIVED" : project.status}
+                  />,
+                  <span key={`${project.id}-tasks`}>
+                    {project.openTaskCount} / {project.taskCount}
+                  </span>,
+                  formatDateLabel(project.dueDate),
+                  <div className="dense-actions" key={`${project.id}-actions`}>
+                    {canEdit ? (
+                      <Button onClick={() => openEditModal(project)} size="sm" variant="secondary">
+                        Open
+                      </Button>
+                    ) : null}
+                    {canEdit ? (
+                      <details className="row-action-menu">
+                        <summary>More</summary>
+                        <div className="row-action-menu-panel">
+                          <div className="row-action-menu-group">
+                            <span className="row-action-menu-label">Project</span>
+                            {!project.isArchived ? (
+                              <Button
+                                onClick={() => requestArchive(project)}
+                                size="sm"
+                                variant="secondary"
+                              >
+                                Archive
+                              </Button>
+                            ) : null}
+                            {project.isArchived ? (
+                              <Button
+                                onClick={() => requestRestore(project)}
+                                size="sm"
+                                variant="secondary"
+                              >
+                                Restore
+                              </Button>
+                            ) : null}
+                          </div>
                         </div>
-                      </div>
-                    </details>
-                  ) : null}
-                </div>
-              ]
-            }))}
-          />
+                      </details>
+                    ) : null}
+                  </div>
+                ]
+              }))}
+            />
           </div>
         </SectionPanel>
       )}
 
-      {isEditorOpen ? (
+      {pendingLifecycle ? (
         <Modal
-          onClose={closeEditor}
-          title={editorProjectId ? "Edit Project" : "Add Project"}
+          eyebrow="Confirm"
+          onClose={() => {
+            if (!lifecycleBusy) {
+              setPendingLifecycle(null);
+            }
+          }}
+          size="sm"
+          title={pendingLifecycle.copy.title}
+          footer={
+            <>
+              <Button
+                disabled={lifecycleBusy}
+                onClick={() => setPendingLifecycle(null)}
+                type="button"
+                variant="secondary"
+              >
+                Cancel
+              </Button>
+              <Button
+                disabled={lifecycleBusy}
+                onClick={() => void confirmLifecycle()}
+                type="button"
+                variant={pendingLifecycle.copy.danger ? "destructive" : "primary"}
+              >
+                {lifecycleBusy ? "Working…" : pendingLifecycle.copy.confirmLabel}
+              </Button>
+            </>
+          }
         >
+          <p>{pendingLifecycle.copy.description}</p>
+        </Modal>
+      ) : null}
+
+      {isEditorOpen ? (
+        <Modal onClose={closeEditor} title={editorProjectId ? "Edit Project" : "Add Project"}>
           <form className="entity-form" onSubmit={handleSubmit}>
-            <p className="muted-text">Used by admin team to organize work and billing. Archived items are hidden from active work but can be restored.</p>
+            <p className="muted-text">
+              Used by admin team to organize work and billing. Archived items are hidden from active work but can be
+              restored.
+            </p>
             <ModalActions disabled={saving} label={submitLabel} onCancel={closeEditor} saving={saving} />
             <div className="field-grid">
               <Input
@@ -346,4 +455,3 @@ export function ProjectsPage({
     </section>
   );
 }
-

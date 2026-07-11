@@ -1,9 +1,30 @@
 import React, { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { EmptyState } from "../../components/EmptyState";
 import { Modal } from "../../components/Modal";
-import { MetricCard, SectionPanel, StatusBadge } from "../../components/ui";
+import { Button, MetricCard, SectionPanel, StatusBadge } from "../../components/ui";
 import { Spinner } from "../../design-system";
 import type { AiDeliveryProjectSummary } from "./AiDeliveryPage";
+import {
+  MONTHLY_REPORT_WORKFLOW_STEPS,
+  buildMetricsShellCopy,
+  buildReportShellCopy,
+  emptyForm,
+  emptyMetricsForm,
+  formFromReport,
+  formatDate,
+  formatDeliveryType,
+  formatLastUpdatedMeta,
+  formatMetricDecimal,
+  formatMetricInteger,
+  formatPeriodMeta,
+  formatReportStatus,
+  isSafeExternalUrl,
+  isWorkflowStepComplete,
+  isWorkflowStepCurrent,
+  resolveWorkflowStepKey,
+  type MonthlyMetricSnapshotFormValues,
+  type MonthlyReportStatus
+} from "./monthlyReportPanel.helpers";
 
 export type AiDeliveryMonthlySummaryDeliverable = {
   id: string;
@@ -200,94 +221,7 @@ type MonthlyReportPanelProps = {
   onRemoveMiHandoff?: (reportId: string) => Promise<AiDeliveryMonthlyReportMiContext | null>;
 };
 
-export type MonthlyMetricSnapshotFormValues = {
-  targetMonth: string;
-  sourceType: MonthlyMetricSourceType;
-  status: "DRAFT" | "IMPORTED";
-  gscClicks: string;
-  gscImpressions: string;
-  gscAverageCtr: string;
-  gscAveragePosition: string;
-  ga4Sessions: string;
-  ga4Users: string;
-  ga4PageViews: string;
-  notes: string;
-};
-
-const MONTHLY_REPORT_STATUSES = ["DRAFT", "ADMIN_REVIEW", "FINAL", "ARCHIVED"] as const;
-type MonthlyReportStatus = (typeof MONTHLY_REPORT_STATUSES)[number];
-
-function formatReportStatus(value: string | null | undefined): string {
-  if (!value) return "No status";
-  if (value === "DRAFT") return "Draft";
-  if (value === "ADMIN_REVIEW") return "Admin review";
-  if (value === "FINAL") return "Final";
-  if (value === "ARCHIVED") return "Archived";
-  return value.toLowerCase().replace(/_/g, " ");
-}
-
-function formatDate(value: string | null | undefined): string {
-  if (!value) return "N/A";
-  return new Date(value).toLocaleString();
-}
-
-function formatDeliveryType(value: string | null | undefined): string {
-  if (!value) return "N/A";
-  return value.toLowerCase().replace(/_/g, " ").replace(/(^|\s)\S/g, (s) => s.toUpperCase());
-}
-
-function isSafeExternalUrl(url: string): boolean {
-  return /^https?:\/\//i.test(url);
-}
-
-function emptyForm(): AiDeliveryMonthlyReportFormValues {
-  return {
-    title: "",
-    adminSummaryNotes: "",
-    recommendationsText: "",
-    exportUrl: ""
-  };
-}
-
-function formFromReport(report: AiDeliveryMonthlyReportData): AiDeliveryMonthlyReportFormValues {
-  return {
-    title: report.title ?? "",
-    adminSummaryNotes: report.adminSummaryNotes ?? "",
-    recommendationsText: report.recommendationsText ?? "",
-    exportUrl: report.exportUrl ?? ""
-  };
-}
-
-function emptyMetricsForm(targetMonth: string): MonthlyMetricSnapshotFormValues {
-  return {
-    targetMonth,
-    sourceType: "HYBRID",
-    status: "IMPORTED",
-    gscClicks: "",
-    gscImpressions: "",
-    gscAverageCtr: "",
-    gscAveragePosition: "",
-    ga4Sessions: "",
-    ga4Users: "",
-    ga4PageViews: "",
-    notes: ""
-  };
-}
-
-function parseMetricInput(value: string): number | undefined {
-  const trimmed = value.trim();
-  if (!trimmed) return undefined;
-  const parsed = Number(trimmed);
-  return Number.isFinite(parsed) ? parsed : undefined;
-}
-
-function formatMetricInteger(value: number | null | undefined): string {
-  return typeof value === "number" ? value.toLocaleString() : "—";
-}
-
-function formatMetricDecimal(value: number | null | undefined): string {
-  return typeof value === "number" ? value.toLocaleString(undefined, { maximumFractionDigits: 2 }) : "—";
-}
+export type { MonthlyMetricSnapshotFormValues };
 
 function MonthlyReportInlineLoading({ label }: { label: string }) {
   return (
@@ -808,46 +742,30 @@ export function MonthlyReportPanel({
 
   const reportShellCopy = useMemo(() => {
     if (!report) return null;
-
-    const status = report.isArchived ? "Archived" : formatReportStatus(report.status);
-    const headline = report.title?.trim() || `${project.name} monthly report`;
-    const documentState = report.hasDocument ? "Document attached" : "No document attached";
-    const handoffState = report.exportUrl ? "Handoff URL set" : "No handoff URL set";
-    const visibilityState = report.status === "FINAL" ? "Client-safe when FINAL" : "Internal working copy";
-    const actionHint = report.isArchived
-      ? "Restore to resume edits."
-      : report.status === "FINAL"
-        ? "FINAL — visible in Client Portal monthly reports as a client-safe snapshot with approved metrics only. Live GA/GSC sync remains deferred."
-        : "Review, finalize, then attach the report document and approved snapshot notes. Client Portal shows the report only after FINAL.";
-
-    return {
-      status,
-      headline,
-      documentState,
-      handoffState,
-      visibilityState,
-      actionHint
-    };
+    return buildReportShellCopy({
+      status: report.status,
+      isArchived: report.isArchived,
+      title: report.title,
+      hasDocument: report.hasDocument,
+      exportUrl: report.exportUrl,
+      projectName: project.name
+    });
   }, [project.name, report]);
 
   const metricsShellCopy = useMemo(() => {
     if (!metrics) return null;
-
-    const dataStatus = metrics.computedTrendSummary.dataStatus;
-    const trendHint =
-      dataStatus === "READY"
-        ? "Trend summary is ready from approved snapshots."
-        : dataStatus === "PARTIAL"
-          ? "Trend summary is partial; approve more snapshots to complete it."
-          : "No approved snapshot data yet. Import or approve snapshots to populate the trend summary.";
-
-    return {
-      dataStatus,
-      trendHint,
+    return buildMetricsShellCopy({
+      dataStatus: metrics.computedTrendSummary.dataStatus,
       snapshotCount: metrics.snapshots.length,
       trendMonthCount: metrics.computedTrendSummary.last12Months.length
-    };
+    });
   }, [metrics]);
+
+  const workflowStepKey = report
+    ? resolveWorkflowStepKey(report.status, report.isArchived)
+    : null;
+  const periodMeta = formatPeriodMeta(project.targetMonth);
+  const lastUpdatedMeta = formatLastUpdatedMeta(report?.updatedAt);
 
   return (
     <Modal
@@ -934,7 +852,7 @@ export function MonthlyReportPanel({
             )}
 
             {(summary.contentPlanItems ?? []).length > 0 ? (
-              <div className="table-wrap finance-table-wrap">
+              <div className="table-wrap finance-table-wrap monthly-report-table-scroll">
                 <h4 className="monthly-report-plan-heading">Content plan items</h4>
                 <table className="finance-table">
                   <thead>
@@ -980,14 +898,14 @@ export function MonthlyReportPanel({
             title="No persisted monthly report yet"
             message="Create the report shell first. Approved snapshots and metrics import follow after it exists."
             action={(
-              <button
-                className="primary-action"
+              <Button
                 disabled={reportSaving}
                 onClick={() => void handleCreate()}
                 type="button"
+                variant="primary"
               >
                 {reportSaving ? "Creating..." : "Create Monthly Report"}
-              </button>
+              </Button>
             )}
           />
         ) : report ? (
@@ -1006,49 +924,93 @@ export function MonthlyReportPanel({
                 </div>
                 <div className="card-actions monthly-report-status-actions">
                   {canMoveToAdminReview ? (
-                    <button
-                      className="ghost-action"
+                    <Button
                       disabled={reportSaving}
                       onClick={() => void handleSetStatus("ADMIN_REVIEW")}
+                      size="sm"
                       type="button"
+                      variant="tertiary"
                     >
                       Move to Admin Review
-                    </button>
+                    </Button>
                   ) : null}
                   {canFinalize ? (
-                    <button
-                      className="secondary-action"
+                    <Button
                       disabled={reportSaving}
                       onClick={() => void handleSetStatus("FINAL")}
+                      size="sm"
                       type="button"
+                      variant="secondary"
                     >
                       Finalize
-                    </button>
+                    </Button>
                   ) : null}
                   {canArchive ? (
-                    <button
-                      className="ghost-action"
+                    <Button
                       disabled={reportSaving}
                       onClick={() => void handleArchive()}
+                      size="sm"
                       type="button"
+                      variant="tertiary"
                     >
                       Archive
-                    </button>
+                    </Button>
                   ) : null}
                   {canRestore ? (
-                    <button
-                      className="ghost-action"
+                    <Button
                       disabled={reportSaving}
                       onClick={() => void handleRestore()}
+                      size="sm"
                       type="button"
+                      variant="tertiary"
                     >
                       Restore
-                    </button>
+                    </Button>
                   ) : null}
                 </div>
               </div>
 
+              {workflowStepKey ? (
+                <ol className="monthly-report-workflow-steps" aria-label="Report workflow">
+                  {MONTHLY_REPORT_WORKFLOW_STEPS.map((step) => {
+                    const current = isWorkflowStepCurrent(step.key, workflowStepKey);
+                    const complete = isWorkflowStepComplete(step.key, workflowStepKey);
+                    return (
+                      <li
+                        className={[
+                          "monthly-report-workflow-step",
+                          current ? "is-current" : null,
+                          complete ? "is-complete" : null
+                        ]
+                          .filter(Boolean)
+                          .join(" ")}
+                        key={step.key}
+                      >
+                        <span className="monthly-report-workflow-step-label">{step.label}</span>
+                      </li>
+                    );
+                  })}
+                  {workflowStepKey === "ARCHIVED" ? (
+                    <li className="monthly-report-workflow-step is-current">
+                      <span className="monthly-report-workflow-step-label">Archived</span>
+                    </li>
+                  ) : null}
+                </ol>
+              ) : null}
+
               <dl className="brief-grid monthly-report-status-grid">
+                {periodMeta ? (
+                  <div>
+                    <dt>Period</dt>
+                    <dd>{periodMeta}</dd>
+                  </div>
+                ) : null}
+                {lastUpdatedMeta ? (
+                  <div>
+                    <dt>Last updated</dt>
+                    <dd>{lastUpdatedMeta}</dd>
+                  </div>
+                ) : null}
                 <div>
                   <dt>Document</dt>
                   <dd>{reportShellCopy?.documentState ?? "Not set"}</dd>
@@ -1140,14 +1102,15 @@ export function MonthlyReportPanel({
                       {pdfMessage ? <MonthlyReportInlineSuccess message={pdfMessage} /> : null}
                       {pdfError ? <MonthlyReportInlineAlert message={pdfError} /> : null}
                       <div className="card-actions">
-                        <button
-                          className="ghost-action"
+                        <Button
                           disabled={pdfGenerating || report.isArchived}
                           onClick={() => void handleGeneratePdf()}
+                          size="sm"
                           type="button"
+                          variant="tertiary"
                         >
                           {pdfGenerating ? "Generating..." : "Generate PDF"}
-                        </button>
+                        </Button>
                       </div>
                     </div>
                   ) : null}
@@ -1160,14 +1123,15 @@ export function MonthlyReportPanel({
                   )}
                   <div className="card-actions">
                     {onDownloadDocument && report.hasDocument ? (
-                      <button
-                        className="ghost-action"
+                      <Button
                         disabled={documentDownloading}
                         onClick={() => void handleDownloadDocument()}
+                        size="sm"
                         type="button"
+                        variant="tertiary"
                       >
                         {documentDownloading ? "Loading..." : "Download report document"}
-                      </button>
+                      </Button>
                     ) : null}
                     {onUploadDocument ? (
                       <label style={{ cursor: documentUploading ? "wait" : "pointer" }}>
@@ -1230,12 +1194,12 @@ export function MonthlyReportPanel({
                                 onChange={(e) => setMiDraftValue(e.target.value)}
                               />
                               <div className="card-actions" style={{ marginTop: "0.5rem" }}>
-                                <button className="primary-action" disabled={miContextLoading} onClick={() => void handleMiDraftSave()} type="button">
+                                <Button disabled={miContextLoading} onClick={() => void handleMiDraftSave()} type="button" variant="primary">
                                   Save draft
-                                </button>
-                                <button className="ghost-action" onClick={() => setMiDraftEditing(false)} type="button">
+                                </Button>
+                                <Button onClick={() => setMiDraftEditing(false)} type="button" variant="tertiary">
                                   Cancel
-                                </button>
+                                </Button>
                               </div>
                             </div>
                           ) : (
@@ -1245,19 +1209,20 @@ export function MonthlyReportPanel({
                               ) : null}
                               <div className="card-actions" style={{ marginTop: "0.5rem" }}>
                                 {onUpdateMiContextDraft ? (
-                                  <button
-                                    className="ghost-action"
+                                  <Button
                                     disabled={miContextLoading}
                                     onClick={() => { setMiDraftValue(miContext.miContextDraft ?? ""); setMiDraftEditing(true); }}
+                                    size="sm"
                                     type="button"
+                                    variant="tertiary"
                                   >
                                     Edit draft
-                                  </button>
+                                  </Button>
                                 ) : null}
                                 {onRemoveMiHandoff ? (
-                                  <button className="ghost-action" disabled={miContextLoading} onClick={() => void handleMiRemove()} type="button">
+                                  <Button disabled={miContextLoading} onClick={() => void handleMiRemove()} size="sm" type="button" variant="tertiary">
                                     Remove context
-                                  </button>
+                                  </Button>
                                 ) : null}
                               </div>
                             </>
@@ -1274,14 +1239,15 @@ export function MonthlyReportPanel({
                                 value={miApplyHandoffId}
                                 onChange={(e) => setMiApplyHandoffId(e.target.value)}
                               />
-                              <button
-                                className="ghost-action"
+                              <Button
                                 disabled={miContextLoading || !miApplyHandoffId.trim()}
                                 onClick={() => void handleMiApply()}
+                                size="sm"
                                 type="button"
+                                variant="tertiary"
                               >
                                 Apply handoff
-                              </button>
+                              </Button>
                             </div>
                           ) : null}
                           <div className="monthly-report-mi-apply-row">
@@ -1302,14 +1268,15 @@ export function MonthlyReportPanel({
                               value={miApplySummaryId}
                               onChange={(e) => setMiApplySummaryId(e.target.value)}
                             />
-                            <button
-                              className="ghost-action"
+                            <Button
                               disabled={miContextLoading || !miApplySummaryId.trim()}
                               onClick={() => void handleMiSummaryApply()}
+                              size="sm"
                               type="button"
+                              variant="tertiary"
                             >
                               Apply summary
-                            </button>
+                            </Button>
                           </div>
                         </div>
                       )}
@@ -1543,9 +1510,9 @@ export function MonthlyReportPanel({
                         </label>
                       </div>
                       <div className="modal-footer modal-footer-spaced">
-                        <button className="primary-action" disabled={metricsSaving} onClick={() => void handleImportMetrics()} type="button">
+                        <Button disabled={metricsSaving} onClick={() => void handleImportMetrics()} type="button" variant="primary">
                           {metricsSaving ? "Importing..." : "Import snapshot metrics"}
-                        </button>
+                        </Button>
                       </div>
                     </div>
 
@@ -1554,7 +1521,7 @@ export function MonthlyReportPanel({
                         No snapshot metrics imported yet. Import a manual or CSV snapshot here; live GA/GSC sync is deferred and is not implied by empty metrics.
                       </p>
                     ) : (
-                      <div className="table-wrap finance-table-wrap finance-table-wrap-spaced monthly-report-metrics-table" aria-label="Monthly metrics snapshots">
+                      <div className="table-wrap finance-table-wrap finance-table-wrap-spaced monthly-report-metrics-table monthly-report-table-scroll" aria-label="Monthly metrics snapshots">
                         <table>
                           <thead>
                             <tr>
@@ -1590,22 +1557,24 @@ export function MonthlyReportPanel({
                                 <td>{formatDate(snapshot.approvedAt)}</td>
                                 <td>
                                   <div className="card-actions">
-                                    <button
-                                      className="ghost-action"
+                                    <Button
                                       disabled={metricsSaving || snapshot.status === "APPROVED" || snapshot.status === "ARCHIVED"}
                                       onClick={() => void handleApproveMetricSnapshot(snapshot.id)}
+                                      size="sm"
                                       type="button"
+                                      variant="tertiary"
                                     >
                                       Approve
-                                    </button>
-                                    <button
-                                      className="ghost-action"
+                                    </Button>
+                                    <Button
                                       disabled={metricsSaving || snapshot.status === "ARCHIVED"}
                                       onClick={() => void handleArchiveMetricSnapshot(snapshot.id)}
+                                      size="sm"
                                       type="button"
+                                      variant="tertiary"
                                     >
                                       Archive
-                                    </button>
+                                    </Button>
                                   </div>
                                 </td>
                               </tr>
@@ -1616,7 +1585,7 @@ export function MonthlyReportPanel({
                     )}
 
                     {metrics.computedTrendSummary.last12Months.length > 0 ? (
-                      <div className="table-wrap" aria-label="Monthly metrics trend summary">
+                      <div className="table-wrap monthly-report-table-scroll monthly-report-metrics-table" aria-label="Monthly metrics trend summary">
                         <table>
                           <thead>
                             <tr>
@@ -1659,16 +1628,16 @@ export function MonthlyReportPanel({
               </SectionPanel>
 
               <div className="modal-footer monthly-report-footer">
-                <button className="ghost-action" disabled={reportSaving} onClick={onClose} type="button">
+                <Button disabled={reportSaving} onClick={onClose} type="button" variant="tertiary">
                   Close
-                </button>
-                <button
-                  className="primary-action"
+                </Button>
+                <Button
                   disabled={reportSaving || !canEdit}
                   type="submit"
+                  variant="primary"
                 >
                   {reportSaving ? "Saving..." : "Save report"}
-                </button>
+                </Button>
               </div>
             </form>
           </>
@@ -1677,9 +1646,9 @@ export function MonthlyReportPanel({
         {/* Footer when no report / error / loading */}
         {(reportNotFound && !report) || reportError || reportLoading ? (
           <div className="modal-footer modal-footer-spaced monthly-report-footer">
-            <button className="ghost-action" onClick={onClose} type="button">
+            <Button onClick={onClose} type="button" variant="tertiary">
               Close
-            </button>
+            </Button>
           </div>
         ) : null}
       </SectionPanel>

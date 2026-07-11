@@ -1,0 +1,203 @@
+/* Client portal / client dashboard — Phase 6 calm density */
+
+.cf-page.client-portal-page,
+.cf-page.client-dashboard-page {
+  --cp-section-gap: 1.5rem;
+}
+
+.client-dashboard-page,
+.client-portal-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cp-section-gap, 1.5rem);
+}
+
+.client-dashboard-kpi-row,
+.client-portal-kpi-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.75rem;
+}
+
+.client-dashboard-attention-list,
+.client-portal-attention-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.client-dashboard-attention-row,
+.client-portal-attention-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1rem;
+  padding: 0.85rem 1rem;
+  border-radius: var(--ds-radius-md, 10px);
+  border: 1px solid rgba(201, 138, 66, 0.22);
+  background: rgba(201, 138, 66, 0.06);
+}
+
+.client-dashboard-attention-row.is-urgent::before,
+.client-portal-attention-row.is-urgent::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--ds-accent-coral, #e07070);
+  flex-shrink: 0;
+}
+
+.client-dashboard-attention-copy,
+.client-portal-attention-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  flex: 1 1 12rem;
+  min-width: 0;
+}
+
+.client-dashboard-attention-copy strong,
+.client-portal-attention-copy strong {
+  font-size: 0.95rem;
+  color: var(--text-primary, inherit);
+}
+
+.client-dashboard-brief-row {
+  display: flex;
+  gap: 0.75rem;
+  overflow-x: auto;
+  padding-bottom: 0.25rem;
+}
+
+.client-dashboard-brief-card {
+  cursor: pointer;
+  flex: 0 0 min(260px, 80vw);
+  min-width: 220px;
+  text-align: left;
+}
+
+.client-dashboard-bottom-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.25rem;
+}
+
+.client-dashboard-unavailable,
+.client-portal-unavailable {
+  border: 1px dashed rgba(148, 163, 184, 0.35);
+  border-radius: 8px;
+  background: rgba(148, 163, 184, 0.06);
+  padding: 1rem 1.25rem;
+}
+
+.client-dashboard-unavailable p,
+.client-portal-unavailable p {
+  margin: 0;
+}
+
+.client-portal-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.client-portal-assets-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.75rem;
+}
+
+.client-portal-asset-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem 1.1rem;
+  border-radius: var(--ds-radius-lg, 12px);
+  border: 1px solid var(--ds-border, rgba(255, 255, 255, 0.1));
+  min-height: 5.5rem;
+}
+
+.client-portal-asset-card h3 {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.client-portal-asset-card .muted-text {
+  margin: 0;
+  font-size: 0.8rem;
+}
+
+.client-portal-report-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.1rem 1.25rem;
+  border-radius: var(--ds-radius-lg, 12px);
+}
+
+.client-portal-report-banner-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  flex: 1 1 16rem;
+  min-width: 0;
+}
+
+.client-portal-report-banner-copy h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.portal-approval-actions.is-sticky {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  margin-top: 1.25rem;
+  padding: 0.85rem 0;
+  background: linear-gradient(180deg, transparent 0%, rgba(8, 8, 14, 0.92) 28%);
+  backdrop-filter: blur(6px);
+}
+
+.approval-checklist {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  margin: 1rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.approval-checklist-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.approval-checklist-item input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  margin-top: 0.15rem;
+  flex-shrink: 0;
+  accent-color: var(--ds-accent-sage, #6ee7b7);
+  border-radius: 4px;
+}
+
+.approval-checklist-hint {
+  margin: 0.75rem 0 0;
+  font-size: 0.8rem;
+}
+
+@media (max-width: 720px) {
+  .client-dashboard-attention-row,
+  .client-portal-attention-row,
+  .client-portal-report-banner {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

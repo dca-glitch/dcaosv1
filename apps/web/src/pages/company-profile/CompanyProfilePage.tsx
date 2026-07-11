@@ -4,7 +4,10 @@ import { ErrorState } from "../../components/ErrorState";
 import { LoadingState } from "../../components/LoadingState";
 import { Modal } from "../../components/Modal";
 import { ModalActions } from "../../components/ui/ModalActions";
-import { MetricCard, PageHeader, SectionPanel } from "../../components/ui";
+import { Button, MetricCard, PageHeader, SectionPanel, StatusBadge } from "../../components/ui";
+import { SettingsSubNav } from "../settings/SettingsSubNav";
+import { settingsAccessModeLabel } from "../settings/settings-display";
+import "../settings/settings.css";
 
 export type CompanyProfileSummary = {
   id: string;
@@ -152,13 +155,13 @@ export function CompanyProfilePage({ companyProfile, canEdit, error, loading, on
   const profileStatusLabel = companyProfile ? (companyProfile.isActive ? "Active" : "Inactive") : "Not set";
 
   return (
-    <section className="view-section" aria-labelledby="company-profile-title">
+    <section className="view-section settings-admin" aria-labelledby="company-profile-title" data-density="compact">
       <PageHeader
         actions={
           canEdit ? (
-            <button className="primary-action" onClick={openEditor} type="button">
+            <Button onClick={openEditor} type="button">
               {companyProfile ? "Edit Profile" : "Create Profile"}
-            </button>
+            </Button>
           ) : undefined
         }
         description="Issuer details for finance documents. Invite and password reset remain deferred."
@@ -166,6 +169,7 @@ export function CompanyProfilePage({ companyProfile, canEdit, error, loading, on
         title="Company Profile"
         titleId="company-profile-title"
       />
+      <SettingsSubNav activeView="company-profile" />
       <div className="summary-grid metric-grid company-profile-shell-metrics" aria-label="Company profile shell metrics">
         <MetricCard
           accent={companyProfile?.isActive ? "success" : "warning"}
@@ -181,7 +185,17 @@ export function CompanyProfilePage({ companyProfile, canEdit, error, loading, on
           metricKey="company-profile-currency"
           value={companyProfile?.currency ?? "—"}
         />
+        <MetricCard
+          accent={canEdit ? "success" : "violet"}
+          helper={canEdit ? "Admins can update issuer details" : "View-only for this membership"}
+          label="Access mode"
+          metricKey="company-profile-access-mode"
+          value={settingsAccessModeLabel(canEdit)}
+        />
       </div>
+      {!canEdit ? (
+        <p className="muted-text">Read-only view. Company profile edits require an owner or admin tenant role.</p>
+      ) : null}
       {!companyProfile ? (
         <EmptyState
           message="No company profile exists yet. Create the single active profile when you're ready."
@@ -190,21 +204,19 @@ export function CompanyProfilePage({ companyProfile, canEdit, error, loading, on
       ) : (
         <SectionPanel
           tone="compact"
-          description="Single active company profile used as issuer on invoices and credit notes."
+          description="Single active company profile used as issuer on invoices and credit notes. API keys are never shown on this page."
           title="Profile details"
         >
         <article className="entity-card entity-card-wide">
           <div className="entity-card-header">
             <div>
-              <span className={`entity-pill entity-pill-${companyProfile.isActive ? "active" : "archived"}`}>
-                {companyProfile.isActive ? "Active" : "Inactive"}
-              </span>
+              <StatusBadge status={companyProfile.isActive ? "Active" : "Inactive"} />
               <h2>{companyProfile.name}</h2>
             </div>
             {canEdit ? (
-              <button className="secondary-action" onClick={openEditor} type="button">
+              <Button onClick={openEditor} type="button" variant="secondary">
                 Edit
-              </button>
+              </Button>
             ) : null}
           </div>
           <div className="entity-field-grid">

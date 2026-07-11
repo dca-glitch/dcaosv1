@@ -2,6 +2,7 @@ import { type FormEvent, type ReactNode, useCallback, useEffect, useMemo, useRef
 import { Archive, BarChart2, ClipboardList, Clock } from "lucide-react";
 import { AppLayout } from "./components/AppLayout";
 import { AdminOperationsPanel } from "./components/admin/AdminOperationsPanel";
+import { EmptyState } from "./components/EmptyState";
 import { StatusNotice } from "./components/StatusNotice";
 import { MetricCard, PageHeader, SectionPanel, StatusBadge, Button, Table } from "./components/ui";
 import {
@@ -13,6 +14,23 @@ import {
   type VendorSummary
 } from "./pages/bills/BillsPage";
 import { CompanyProfilePage, type CompanyProfileFormValues, type CompanyProfileSummary } from "./pages/company-profile/CompanyProfilePage";
+import { SettingsDeferredAreasPanel } from "./pages/settings/SettingsDeferredAreasPanel";
+import { SettingsSubNav } from "./pages/settings/SettingsSubNav";
+import {
+  countSettingsAreasByAvailability,
+  formatSettingsRoleLabel,
+  formatSettingsRoleList,
+  settingsAccessModeLabel
+} from "./pages/settings/settings-display";
+import "./pages/settings/settings.css";
+import { ModulesAvailabilityPanel } from "./pages/modules/ModulesAvailabilityPanel";
+import {
+  countModuleSurfacesByAvailability,
+  moduleEnablementBadgeStatus,
+  moduleRegistryStatusBadge,
+  selectedModulePlaceholderCopy
+} from "./pages/modules/modules-display";
+import "./pages/modules/modules.css";
 import { ClientsPage, type ClientAccessUserSummary, type ClientFormValues, type ClientSummary } from "./pages/clients/ClientsPage";
 import { ClientHubPage } from "./pages/clients/ClientHubPage";
 import { ClientPortalRouter } from "./pages/client-portal/ClientPortalRouter";
@@ -1292,56 +1310,88 @@ function ModuleRegistryView({
     () => new Map(tenantModules.map((moduleItem) => [moduleItem.key, moduleItem])),
     [tenantModules]
   );
+  const secondaryCounts = countModuleSurfacesByAvailability();
+  const selectedPlaceholder = selectedModuleKey
+    ? selectedModulePlaceholderCopy(selectedModuleKey)
+    : null;
 
   return (
-    <section className="view-section" aria-labelledby="modules-title">
-      <PageHeader eyebrow="Module Registry" title="Modules" titleId="modules-title" description="Manage core workspaces and preview future Revenue Hub, SEO Hub, and AI Workflow labels only." />
-      <div className="module-grid">
-        {availableModules.map((moduleItem) => {
-          const tenantModule = tenantModuleByKey.get(moduleItem.key);
-          const enabled = tenantModule?.enabled ?? false;
-          const busy = moduleActionKey === moduleItem.key;
+    <section className="view-section modules-registry" aria-labelledby="modules-title">
+      <PageHeader
+        eyebrow="Module Registry"
+        title="Modules"
+        titleId="modules-title"
+        description="Manage core workspaces and preview future Revenue Hub, SEO Hub, and AI Workflow labels only."
+      />
 
-          return (
-            <article className="module-card" key={moduleItem.key}>
-              <div>
-                <StatusBadge status={enabled ? "Enabled" : "Disabled"} className="module-status" />
-                <h2>{moduleItem.name}</h2>
-                <p>{moduleItem.description}</p>
-              </div>
-              <dl>
+      {availableModules.length === 0 ? (
+        <EmptyState
+          message="No modules are registered for this workspace yet."
+          title="No modules"
+          variant="inline"
+        />
+      ) : (
+        <div className="module-grid">
+          {availableModules.map((moduleItem) => {
+            const tenantModule = tenantModuleByKey.get(moduleItem.key);
+            const enabled = tenantModule?.enabled ?? false;
+            const busy = moduleActionKey === moduleItem.key;
+
+            return (
+              <article className="module-card" key={moduleItem.key}>
                 <div>
-                  <dt>Key</dt>
-                  <dd>{moduleItem.key}</dd>
+                  <div className="module-card-kicker">
+                    <StatusBadge
+                      status={moduleEnablementBadgeStatus(enabled)}
+                      className="module-status"
+                    />
+                    <StatusBadge status={moduleRegistryStatusBadge(moduleItem.status)} />
+                  </div>
+                  <h2>{moduleItem.name}</h2>
+                  <p>{moduleItem.description}</p>
                 </div>
-                <div>
-                  <dt>Status</dt>
-                  <dd>{moduleItem.status}</dd>
+                <dl>
+                  <div>
+                    <dt>Key</dt>
+                    <dd>{moduleItem.key}</dd>
+                  </div>
+                  <div>
+                    <dt>Status</dt>
+                    <dd>{moduleItem.status}</dd>
+                  </div>
+                </dl>
+                <div className="module-card-actions">
+                  <button
+                    className={enabled ? "secondary-action" : "primary-action"}
+                    disabled={!canManageModules || busy}
+                    onClick={() => void onSetModuleEnabled(moduleItem.key, !enabled)}
+                    type="button"
+                  >
+                    {enabled ? "Disable" : "Enable"}
+                  </button>
+                  <a className="module-link" href={`#/modules/${moduleItem.key}`}>
+                    Open module
+                  </a>
                 </div>
-              </dl>
-              <button
-                className={enabled ? "secondary-action" : "primary-action"}
-                disabled={!canManageModules || busy}
-                onClick={() => void onSetModuleEnabled(moduleItem.key, !enabled)}
-                type="button"
-              >
-                {enabled ? "Disable" : "Enable"}
-              </button>
-              <a className="module-link" href={`#/modules/${moduleItem.key}`}>
-                Open module
-              </a>
-            </article>
-          );
-        })}
-      </div>
-      {selectedModuleKey ? (
+              </article>
+            );
+          })}
+        </div>
+      )}
+
+      <SectionPanel
+        description={`${secondaryCounts.paused} Phase 12 secondary surface(s) stay paused until a backend-backed block is approved.`}
+        title="Paused secondary modules"
+        tone="compact"
+      >
+        <ModulesAvailabilityPanel pausedOnly />
+      </SectionPanel>
+
+      {selectedPlaceholder ? (
         <div className="module-placeholder-panel" aria-live="polite">
           <p className="eyebrow">Module Registry</p>
-          <h2>{selectedModuleKey}</h2>
-          <p>
-            This module shell is ready for the next backend-backed pass. Finance Lite, billing, and dynamic
-            plugin mounting stay out of scope for this MVP shell.
-          </p>
+          <h2>{selectedPlaceholder.title}</h2>
+          <p>{selectedPlaceholder.body}</p>
         </div>
       ) : null}
       {!canManageModules ? (
@@ -1355,10 +1405,20 @@ function PlaceholderView({ title, eyebrow }: { title: string; eyebrow: string })
   const titleId = `${title.toLowerCase().replace(/\s+/g, "-")}-title`;
 
   return (
-    <section className="view-section" aria-labelledby={titleId}>
-      <PageHeader eyebrow={eyebrow} title={title} titleId={titleId} description="Reserved shell — backend-backed features arrive in a later block." />
-      <SectionPanel tone="compact" title="Not available yet" description="This route stays intentionally paused until its backend block is approved.">
+    <section className="view-section modules-registry" aria-labelledby={titleId}>
+      <PageHeader
+        eyebrow={eyebrow}
+        title={title}
+        titleId={titleId}
+        description="Reserved shell — backend-backed features arrive in a later block."
+      />
+      <SectionPanel
+        tone="compact"
+        title="Not available yet"
+        description="This route stays intentionally paused until its backend block is approved."
+      >
         <p className="inline-empty muted-text">This area is reserved for the next backend-backed pass.</p>
+        <StatusBadge status="Paused" />
       </SectionPanel>
     </section>
   );
@@ -1404,6 +1464,7 @@ function TeamView({
   const canReadUsers = hasPermission(authContext, "users:read") || hasActiveRole(authContext, ["owner", "admin"]);
   const canManageUsers = hasActiveRole(authContext, ["owner", "admin"]);
   const members = teamMembers?.members ?? [];
+  const directoryUnavailable = canReadUsers && teamMembers === null;
   const activeMembers = members.filter((member) => member.status.toLowerCase() === "active");
   const roleLabels = [...new Set(members.flatMap((member) => member.roles))];
 
@@ -1454,27 +1515,41 @@ function TeamView({
   }
 
   return (
-    <section className="view-section" aria-labelledby="team-title">
+    <section className="view-section settings-admin" aria-labelledby="team-title" data-density="compact">
       <PageHeader
         eyebrow="Team"
         title="Members"
         titleId="team-title"
         description="Tenant member directory. Admins can create users and reset passwords."
       />
+      <SettingsSubNav activeView="team" />
       <div className="summary-grid metric-grid team-shell-metrics" aria-label="Team shell metrics">
         <MetricCard
           accent="cyan"
           helper={`${activeMembers.length} active of ${members.length} listed`}
           label="Members"
           metricKey="team-members"
-          value={String(members.length)}
+          value={directoryUnavailable ? "—" : String(members.length)}
         />
         <MetricCard
           accent="purple"
-          helper={roleLabels.length ? roleLabels.join(", ") : "No roles assigned"}
+          helper={
+            roleLabels.length
+              ? formatSettingsRoleList(roleLabels)
+              : directoryUnavailable
+                ? "Directory unavailable"
+                : "No roles assigned"
+          }
           label="Role coverage"
           metricKey="team-roles"
-          value={roleLabels.length ? String(roleLabels.length) : "None"}
+          value={roleLabels.length ? String(roleLabels.length) : directoryUnavailable ? "—" : "None"}
+        />
+        <MetricCard
+          accent={canManageUsers ? "success" : "violet"}
+          helper={canManageUsers ? "Create user and password reset enabled" : "Member directory visibility only"}
+          label="Access mode"
+          metricKey="team-access-mode"
+          value={settingsAccessModeLabel(canManageUsers)}
         />
       </div>
       {!canReadUsers ? (
@@ -1493,7 +1568,10 @@ function TeamView({
         >
           {createResult ? (
             <div className="status-notice status-notice--success">
-              <p>User created. Share these credentials securely.</p>
+              <p>User created. Share these credentials securely, then dismiss this panel.</p>
+              <p className="muted-text settings-credential-notice">
+                One-time admin handoff only. API keys and provider secrets are never shown here.
+              </p>
               <dl>
                 <div><dt>Email</dt><dd>{createResult.email}</dd></div>
                 <div><dt>Temp password</dt><dd><code>{createResult.tempPassword}</code></dd></div>
@@ -1507,7 +1585,9 @@ function TeamView({
                   </div>
                 ) : null}
               </dl>
-              <button className="secondary-action" onClick={() => setCreateResult(null)} type="button">Dismiss</button>
+              <Button onClick={() => setCreateResult(null)} type="button" variant="secondary">
+                Dismiss
+              </Button>
             </div>
           ) : null}
           {showCreateForm ? (
@@ -1578,7 +1658,11 @@ function TeamView({
           title="Member directory"
           description={canManageUsers ? "Admin actions: reset password per member." : "Read-only view."}
         >
-          {members.length === 0 ? (
+          {directoryUnavailable ? (
+            <p className="inline-empty muted-text" role="alert">
+              Member directory is unavailable. Refresh the workspace or retry after reconnecting.
+            </p>
+          ) : members.length === 0 ? (
             <p className="inline-empty muted-text">Active tenant members appear here once membership records exist.</p>
           ) : (
             <div className="table-wrap" aria-label="Tenant members">
@@ -1597,7 +1681,7 @@ function TeamView({
                     cells: [
                       member.user.name || "Unassigned",
                       member.user.email,
-                      member.roles.join(", ") || "None",
+                      formatSettingsRoleList(member.roles),
                       <StatusBadge key={`${member.tenantMembershipId}-status`} status={member.status} />,
                       ...(canManageUsers
                         ? [
@@ -1654,15 +1738,18 @@ function SettingsView({
 }) {
   const canReadSettings =
     hasPermission(authContext, "settings:read") || hasActiveRole(authContext, ["owner", "admin"]);
+  const areaCounts = countSettingsAreasByAvailability();
+  const membershipRoles = tenantSettings?.currentMembership.roles ?? authContext?.tenantContext.roles ?? [];
 
   return (
-    <section className="view-section" aria-labelledby="settings-title">
+    <section className="view-section settings-admin" aria-labelledby="settings-title" data-density="compact">
       <PageHeader
         eyebrow="Settings"
         title="Settings"
         titleId="settings-title"
         description="Read-only tenant and profile context for this MVP shell."
       />
+      <SettingsSubNav activeView="settings" />
       <div className="summary-grid metric-grid settings-shell-metrics" aria-label="Settings shell metrics">
         <MetricCard
           accent="cyan"
@@ -1678,9 +1765,48 @@ function SettingsView({
           metricKey="settings-tenant"
           value={tenantSettings?.tenant.name ?? "Unavailable"}
         />
+        <MetricCard
+          accent="purple"
+          helper={`${areaCounts.available} available · ${areaCounts.deferred} deferred`}
+          label="Access mode"
+          metricKey="settings-access-mode"
+          value={settingsAccessModeLabel(false)}
+        />
       </div>
       {!canReadSettings ? (
         <StatusNotice tone="info" message="Tenant settings visibility requires settings read access." />
+      ) : null}
+      {canReadSettings ? (
+        <SectionPanel
+          tone="compact"
+          title="Tenant context"
+          description="Read-only workspace identity. API keys and provider secrets are never rendered here."
+        >
+          {tenantSettings ? (
+            <div className="settings-readonly-grid" aria-label="Tenant settings summary">
+              <div>
+                <span>Tenant name</span>
+                <strong>{tenantSettings.tenant.name}</strong>
+              </div>
+              <div>
+                <span>Tenant slug</span>
+                <strong>{tenantSettings.tenant.slug}</strong>
+              </div>
+              <div>
+                <span>Tenant status</span>
+                <strong>{formatSettingsRoleLabel(tenantSettings.tenant.status)}</strong>
+              </div>
+              <div>
+                <span>Your roles</span>
+                <strong>{formatSettingsRoleList(membershipRoles)}</strong>
+              </div>
+            </div>
+          ) : (
+            <p className="inline-empty muted-text" role="alert">
+              Tenant settings are unavailable. Refresh the workspace or retry after reconnecting.
+            </p>
+          )}
+        </SectionPanel>
       ) : null}
       <SectionPanel
         tone="compact"
@@ -1690,6 +1816,13 @@ function SettingsView({
         <p className="inline-empty muted-text">
           Password reset, OAuth, billing, invite flow, and destructive tenant changes remain out of scope for this shell.
         </p>
+      </SectionPanel>
+      <SectionPanel
+        tone="compact"
+        title="Not available in this MVP"
+        description="These Phase 11 settings screens have no dedicated UI or API surface yet. Controls are not invented here."
+      >
+        <SettingsDeferredAreasPanel />
       </SectionPanel>
     </section>
   );

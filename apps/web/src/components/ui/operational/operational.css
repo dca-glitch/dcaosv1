@@ -1,0 +1,188 @@
+/* Shared operational patterns — layout only; uses existing Dark Nebula tokens */
+
+.op-action-queue {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.op-action-queue-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--ds-border, rgba(255, 255, 255, 0.08));
+  border-radius: var(--ds-radius-md, 8px);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.op-action-queue-item[data-priority="critical"] {
+  border-color: color-mix(in srgb, var(--status-failed-text, #e07070) 35%, transparent);
+  background: color-mix(in srgb, var(--status-failed-text, #e07070) 8%, transparent);
+}
+
+.op-action-queue-item[data-priority="high"] {
+  border-color: color-mix(in srgb, var(--status-in-review-text, #c98a42) 30%, transparent);
+  background: color-mix(in srgb, var(--status-in-review-text, #c98a42) 6%, transparent);
+}
+
+.op-action-queue-body {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.op-action-queue-title {
+  margin: 0;
+  font-size: 0.88rem;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--ds-text-primary, #e2e6f2);
+}
+
+.op-action-queue-description {
+  margin: 0;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: var(--ds-text-muted, #5c6380);
+}
+
+.op-action-queue-meta {
+  margin: 0.15rem 0 0;
+  font-size: 0.72rem;
+  color: var(--ds-text-faint, #3a4060);
+}
+
+.op-action-queue-priority {
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.op-action-queue-empty {
+  margin: 0;
+  color: var(--ds-text-muted, #5c6380);
+  font-size: 0.875rem;
+}
+
+.op-bulk-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  padding: 8px 12px;
+  border: 1px solid var(--ds-border, rgba(255, 255, 255, 0.08));
+  border-radius: var(--ds-radius-md, 8px);
+  background: var(--ds-surface-panel, #0c0f1a);
+}
+
+.op-bulk-toolbar-count {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--ds-text-primary, #e2e6f2);
+}
+
+.op-bulk-toolbar-actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.op-filter-bar {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--density-gap, 8px);
+}
+
+.op-filter-side-sheet-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.op-sort-controls {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.op-sort-controls-field,
+.op-sort-controls-direction {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.op-sort-controls-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--ds-text-muted, #5c6380);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.op-sort-controls-select {
+  min-height: 32px;
+  padding: 4px 8px;
+  border: 1px solid var(--ds-border, rgba(255, 255, 255, 0.08));
+  border-radius: var(--ds-radius-md, 8px);
+  background: var(--ds-surface-panel, #0c0f1a);
+  color: var(--ds-text-primary, #e2e6f2);
+  font-size: 0.8125rem;
+}
+
+.op-sort-controls-select:focus-visible {
+  outline: none;
+  box-shadow: var(--ds-shadow-focus, 0 0 0 2px rgba(99, 102, 241, 0.4));
+}
+
+.op-table-pagination-bar {
+  width: 100%;
+}
+
+.op-activity-feed {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.op-activity-feed-empty {
+  margin: 0;
+  padding: 8px 0;
+  color: var(--ds-text-muted, #5c6380);
+  font-size: 0.875rem;
+}
+
+.op-status-summary-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.op-status-summary-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border: 1px solid var(--ds-border, rgba(255, 255, 255, 0.08));
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.03);
+  font-size: 0.75rem;
+  color: var(--ds-text-secondary, #9ba3bf);
+}
+
+.op-status-summary-chip-count {
+  font-family: var(--ds-font-mono, ui-monospace, monospace);
+  font-weight: 600;
+  color: var(--ds-text-primary, #e2e6f2);
+}
+
+.op-export-button {
+  display: inline-flex;
+}

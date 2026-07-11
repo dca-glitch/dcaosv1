@@ -1,8 +1,25 @@
 import { type FormEvent, useMemo, useState } from "react";
 import { EmptyState } from "../../components/EmptyState";
+import { ErrorState } from "../../components/ErrorState";
+import { LoadingState } from "../../components/LoadingState";
 import { Modal } from "../../components/Modal";
-import { Button, ModalActions, PageHeader, SectionPanel, StatusBadge, Table } from "../../components/ui";
-import { Alert, Input, Select, Spinner, Textarea } from "../../design-system";
+import {
+  Button,
+  FilterBar,
+  ModalActions,
+  PageHeader,
+  SectionPanel,
+  StatusBadge,
+  StatusSummaryBar,
+  Table
+} from "../../components/ui";
+import { Input, Select, Textarea } from "../../design-system";
+import {
+  buildBillStatusSummary,
+  formatFinanceDateLabel,
+  formatFinanceMoney
+} from "../finance/finance-display";
+import "../finance/finance.css";
 
 export type VendorSummary = {
   id: string;
@@ -112,16 +129,11 @@ function toLocalDateInputValue(date = new Date()): string {
 }
 
 function formatDateLabel(value: string | null): string {
-  if (!value) {
-    return "Not set";
-  }
-
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString();
+  return formatFinanceDateLabel(value);
 }
 
 function formatMoney(cents: number): string {
-  return new Intl.NumberFormat(undefined, { currency: "USD", style: "currency" }).format(cents / 100);
+  return formatFinanceMoney(cents, "USD");
 }
 
 function formatPaymentForm(value: string): string {
@@ -181,6 +193,8 @@ export function BillsPage({
       archivedCount: archivedBills.length
     };
   }, [bills]);
+
+  const billStatusSummary = useMemo(() => buildBillStatusSummary(bills), [bills]);
 
   function openCreateBillModal() {
     setBillEditorId(null);
@@ -259,28 +273,35 @@ export function BillsPage({
   }
 
   if (isLoading) {
-    return (
-      <div className="state-panel loading-state-panel" role="status">
-        <Spinner size="sm" />
-        Loading bills
-      </div>
-    );
+    return <LoadingState label="Loading bills" />;
   }
 
   if (errorMessage) {
-    return <Alert message={errorMessage} title="Bills unavailable" variant="danger" />;
+    return <ErrorState message={errorMessage} title="Bills unavailable" />;
   }
 
   const billSubmitLabel = billEditorId ? "Update bill" : "Create bill";
   const vendorSubmitLabel = vendorEditorId ? "Update Vendor" : "Save Vendor";
 
   return (
-    <section className="view-section" aria-labelledby="bills-title" data-density="compact">
+    <section className="view-section finance-lite" aria-labelledby="bills-title" data-density="compact">
       <PageHeader
         eyebrow="Expenses"
         title="Bills"
         titleId="bills-title"
         description="Vendor bills, payment status, and document references."
+        filters={
+          <FilterBar
+            ariaLabel="Bill view"
+            onChange={(value) => setFilter(value as "active" | "archived" | "all")}
+            options={[
+              { value: "active", label: "Active" },
+              { value: "archived", label: "Archived" },
+              { value: "all", label: "All" }
+            ]}
+            value={filter}
+          />
+        }
         actions={
           canEdit ? (
             <>
@@ -299,22 +320,9 @@ export function BillsPage({
         }
       />
 
-      <div className="filter-bar bills-filter-bar" role="group" aria-label="Bill view">
-        {(["active", "archived", "all"] as const).map((value) => (
-          <Button
-            aria-pressed={filter === value}
-            className={filter === value ? "secondary-action filter-chip is-active" : "secondary-action filter-chip"}
-            key={value}
-            onClick={() => setFilter(value)}
-            type="button"
-            variant="secondary"
-          >
-            {value[0].toUpperCase() + value.slice(1)}
-          </Button>
-        ))}
-      </div>
+      <StatusSummaryBar ariaLabel="Bill status summary" items={billStatusSummary} />
 
-      <div className="summary-grid">
+      <div className="summary-grid finance-summary-strip" aria-label="Bill totals from loaded records">
         <article className="summary-panel">
           <span>Active Bills</span>
           <strong>{formatMoney(totals.activeCents)}</strong>
@@ -388,7 +396,7 @@ export function BillsPage({
 
       <SectionPanel tone="compact" title="Bills" description="Active and archived bill records for the workspace.">
       {filteredBills.length === 0 ? (
-        <p className="inline-empty muted-text">No bills match the current filter.</p>
+        <EmptyState message="No bills match the current filter." title="No bills" variant="inline" />
       ) : (
         <div className="table-wrap finance-table-wrap" aria-label="Bills">
           <Table

@@ -1,11 +1,29 @@
 import { Fragment, type FormEvent, useMemo, useState } from "react";
 import { EmptyState } from "../../components/EmptyState";
+import { ErrorState } from "../../components/ErrorState";
+import { LoadingState } from "../../components/LoadingState";
 import { Modal } from "../../components/Modal";
-import { Button, ModalActions, PageHeader, StatusBadge } from "../../components/ui";
-import { Alert, Input, Select, Spinner, Table as DSTable, TableHead, TableBody, TableRow as DSTableRow, Th, Td, TdDouble, Textarea } from "../../design-system";
+import {
+  Button,
+  FilterBar,
+  ModalActions,
+  PageHeader,
+  StatusBadge,
+  StatusSummaryBar
+} from "../../components/ui";
+import { Input, Select, Table as DSTable, TableHead, TableBody, TableRow as DSTableRow, Th, Td, TdDouble, Textarea } from "../../design-system";
 import type { ClientSummary } from "../clients/ClientsPage";
+import {
+  buildInvoiceStatusSummary,
+  buildRecurringStatusSummary,
+  financeDueDateClassName,
+  formatFinanceDateLabel,
+  formatFinanceMoney,
+  isInvoiceOverdue
+} from "../finance/finance-display";
 import type { InvoiceItemSummary } from "../invoice-items/InvoiceItemsPage";
 import type { ProjectSummary } from "../projects/ProjectsPage";
+import "../finance/finance.css";
 
 export type InvoiceLineItemFormValues = {
   description: string;
@@ -251,16 +269,11 @@ function toLocalDateInputValue(date = new Date()): string {
 }
 
 function formatDateLabel(value: string | null): string {
-  if (!value) {
-    return "Not set";
-  }
-
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString();
+  return formatFinanceDateLabel(value);
 }
 
 function formatMoney(cents: number, currency: string): string {
-  return new Intl.NumberFormat(undefined, { currency, style: "currency" }).format(cents / 100);
+  return formatFinanceMoney(cents, currency);
 }
 
 function moneyFieldLabel(label: string, currency: string): string {
@@ -383,6 +396,12 @@ export function InvoicesPage({
 
   const invoiceProjects = projectByClientId.get(invoiceDraft.clientId) ?? [];
   const recurringProjects = projectByClientId.get(recurringDraft.clientId) ?? [];
+
+  const invoiceStatusSummary = useMemo(() => buildInvoiceStatusSummary(invoices), [invoices]);
+  const recurringStatusSummary = useMemo(
+    () => buildRecurringStatusSummary(recurringInvoices),
+    [recurringInvoices]
+  );
 
   function setInvoiceDraftWithCalculatedTotals(
     values: InvoiceFormValues,
@@ -642,59 +661,48 @@ export function InvoicesPage({
   }
 
   if (isLoading) {
-    return (
-      <div className="state-panel loading-state-panel" role="status">
-        <Spinner size="sm" />
-        Loading invoices
-      </div>
-    );
+    return <LoadingState label="Loading invoices" />;
   }
 
   if (errorMessage) {
-    return <Alert message={errorMessage} title="Invoices unavailable" variant="danger" />;
+    return <ErrorState message={errorMessage} title="Invoices unavailable" />;
   }
 
   return (
-    <section className="view-section" aria-labelledby="invoices-title" data-density="compact">
+    <section className="view-section finance-lite" aria-labelledby="invoices-title" data-density="compact">
       <PageHeader
         eyebrow="Finance"
         title="Invoices"
         titleId="invoices-title"
         description="Invoices, payments, and recurring schedules."
-        actions={
-          <>
-            <div className="filter-bar" role="group" aria-label="Invoice view">
-              <Button
-                aria-pressed={tab === "invoices"}
-                className={tab === "invoices" ? "secondary-action filter-chip is-active" : "secondary-action filter-chip"}
-                onClick={() => setTab("invoices")}
-                type="button"
-                variant="secondary"
-              >
-                Invoices
-              </Button>
-              <Button
-                aria-pressed={tab === "recurring"}
-                className={tab === "recurring" ? "secondary-action filter-chip is-active" : "secondary-action filter-chip"}
-                onClick={() => setTab("recurring")}
-                type="button"
-                variant="secondary"
-              >
-                Recurring
-              </Button>
-            </div>
-            {canEdit ? (
-              <Button
-                disabled={clients.length === 0}
-                onClick={tab === "invoices" ? openCreateInvoiceModal : openCreateRecurringModal}
-                type="button"
-                variant="primary"
-              >
-                {tab === "invoices" ? "New invoice" : "New recurring"}
-              </Button>
-            ) : null}
-          </>
+        filters={
+          <FilterBar
+            ariaLabel="Invoice view"
+            onChange={(value) => setTab(value as "invoices" | "recurring")}
+            options={[
+              { value: "invoices", label: "Invoices" },
+              { value: "recurring", label: "Recurring" }
+            ]}
+            value={tab}
+          />
         }
+        actions={
+          canEdit ? (
+            <Button
+              disabled={clients.length === 0}
+              onClick={tab === "invoices" ? openCreateInvoiceModal : openCreateRecurringModal}
+              type="button"
+              variant="primary"
+            >
+              {tab === "invoices" ? "New invoice" : "New recurring"}
+            </Button>
+          ) : null
+        }
+      />
+
+      <StatusSummaryBar
+        ariaLabel={tab === "invoices" ? "Invoice status summary" : "Recurring invoice status summary"}
+        items={tab === "invoices" ? invoiceStatusSummary : recurringStatusSummary}
       />
 
       {canEdit && clients.length === 0 ? (
@@ -1139,73 +1147,87 @@ function canMarkUncollectible(invoice: InvoiceSummary): boolean {
 
 function InvoiceCards({ invoices, canEdit, onEditInvoice, onArchiveInvoice, onMarkInvoiceSent, onCancelInvoice, onMarkInvoiceUncollectible, onRegisterInvoicePayment }: InvoiceCardsProps) {
   if (invoices.length === 0) {
-    return <p className="inline-empty muted-text">No invoices have been created yet.</p>;
+    return (
+      <EmptyState
+        message="Create an invoice to start tracking billing and payments."
+        title="No invoices yet"
+        variant="inline"
+      />
+    );
   }
 
   return (
-    <DSTable aria-label="Invoices">
-      <TableHead>
-        <DSTableRow>
-          <Th>Invoice</Th>
-          <Th>Client</Th>
-          <Th>Status</Th>
-          <Th align="right">Total</Th>
-          <Th align="right">Paid</Th>
-          <Th>Due</Th>
-          <Th>Actions</Th>
-        </DSTableRow>
-      </TableHead>
-      <TableBody>
-        {invoices.map((invoice) => (
-          <Fragment key={invoice.id}>
-            <DSTableRow>
-              <TdDouble
-                primary={invoice.title}
-                secondary={[invoice.invoiceNumber || "No invoice number", invoice.project?.name ?? "No project"].filter(Boolean).join(" · ")}
-              />
-              <Td secondary>{invoice.client.name}</Td>
-              <Td>
-                <StatusBadge status={invoice.isArchived ? "ARCHIVED" : invoice.status} />
-                {invoice.payment ? <> <StatusBadge status="Paid recorded" /></> : null}
-              </Td>
-              <Td mono align="right">{formatMoney(invoice.totalCents, invoice.currency)}</Td>
-              <Td mono align="right">{formatMoney(invoice.amountPaidCents, invoice.currency)}</Td>
-              <Td mono>{formatDateLabel(invoice.dueDate)}</Td>
-              <Td>
-                <div className="finance-row-actions">
-                  {canEdit ? <Button size="sm" variant="secondary" onClick={() => onEditInvoice(invoice)} type="button">Edit</Button> : null}
-                  {canEdit ? (
-                    <details className="row-action-menu">
-                      <summary>More</summary>
-                      <div className="row-action-menu-panel">
-                        <div className="row-action-menu-group">
-                          <span className="row-action-menu-label">Lifecycle</span>
-                          <Button size="sm" variant="secondary" onClick={() => void onMarkInvoiceSent(invoice.id)} type="button">Mark sent</Button>
-                          {canRegisterPayment(invoice) ? <Button size="sm" variant="secondary" onClick={() => onRegisterInvoicePayment(invoice)} type="button">Register payment</Button> : null}
-                        </div>
-                        <div className="row-action-menu-group">
-                          <span className="row-action-menu-label">Exceptions</span>
-                          <Button size="sm" variant="secondary" onClick={() => void onCancelInvoice(invoice.id)} type="button">Cancel</Button>
-                          {canMarkUncollectible(invoice) ? <Button size="sm" variant="secondary" onClick={() => void onMarkInvoiceUncollectible(invoice.id)} type="button">Mark uncollectible</Button> : null}
-                          {!invoice.isArchived ? <Button size="sm" variant="secondary" onClick={() => void onArchiveInvoice(invoice.id)} type="button">Archive</Button> : null}
-                        </div>
-                      </div>
-                    </details>
-                  ) : null}
-                </div>
-              </Td>
-            </DSTableRow>
-            {invoice.payment ? (
-              <DSTableRow key={`${invoice.id}-payment`}>
-                <Td colSpan={7}>
-                  <PaymentDetails currency={invoice.currency} payment={invoice.payment} />
-                </Td>
-              </DSTableRow>
-            ) : null}
-          </Fragment>
-        ))}
-      </TableBody>
-    </DSTable>
+    <div className="table-wrap finance-table-wrap table-scroll">
+      <DSTable aria-label="Invoices">
+        <TableHead>
+          <DSTableRow>
+            <Th>Invoice</Th>
+            <Th>Client</Th>
+            <Th>Status</Th>
+            <Th align="right">Total</Th>
+            <Th align="right">Paid</Th>
+            <Th>Due</Th>
+            <Th>Actions</Th>
+          </DSTableRow>
+        </TableHead>
+        <TableBody>
+          {invoices.map((invoice) => {
+            const overdue = isInvoiceOverdue(invoice);
+            return (
+              <Fragment key={invoice.id}>
+                <DSTableRow>
+                  <TdDouble
+                    primary={invoice.title}
+                    secondary={[invoice.invoiceNumber || "No invoice number", invoice.project?.name ?? "No project"].filter(Boolean).join(" · ")}
+                  />
+                  <Td secondary>{invoice.client.name}</Td>
+                  <Td>
+                    <StatusBadge status={invoice.isArchived ? "ARCHIVED" : invoice.status} />
+                    {invoice.payment ? <> <StatusBadge status="Paid recorded" /></> : null}
+                    {overdue ? <> <StatusBadge status="overdue" /></> : null}
+                  </Td>
+                  <Td mono align="right">{formatMoney(invoice.totalCents, invoice.currency)}</Td>
+                  <Td mono align="right">{formatMoney(invoice.amountPaidCents, invoice.currency)}</Td>
+                  <Td mono>
+                    <span className={financeDueDateClassName(overdue)}>{formatDateLabel(invoice.dueDate)}</span>
+                  </Td>
+                  <Td>
+                    <div className="finance-row-actions">
+                      {canEdit ? <Button size="sm" variant="secondary" onClick={() => onEditInvoice(invoice)} type="button">Edit</Button> : null}
+                      {canEdit ? (
+                        <details className="row-action-menu">
+                          <summary>More</summary>
+                          <div className="row-action-menu-panel">
+                            <div className="row-action-menu-group">
+                              <span className="row-action-menu-label">Lifecycle</span>
+                              <Button size="sm" variant="secondary" onClick={() => void onMarkInvoiceSent(invoice.id)} type="button">Mark sent</Button>
+                              {canRegisterPayment(invoice) ? <Button size="sm" variant="secondary" onClick={() => onRegisterInvoicePayment(invoice)} type="button">Register payment</Button> : null}
+                            </div>
+                            <div className="row-action-menu-group">
+                              <span className="row-action-menu-label">Exceptions</span>
+                              <Button size="sm" variant="secondary" onClick={() => void onCancelInvoice(invoice.id)} type="button">Cancel</Button>
+                              {canMarkUncollectible(invoice) ? <Button size="sm" variant="secondary" onClick={() => void onMarkInvoiceUncollectible(invoice.id)} type="button">Mark uncollectible</Button> : null}
+                              {!invoice.isArchived ? <Button size="sm" variant="secondary" onClick={() => void onArchiveInvoice(invoice.id)} type="button">Archive</Button> : null}
+                            </div>
+                          </div>
+                        </details>
+                      ) : null}
+                    </div>
+                  </Td>
+                </DSTableRow>
+                {invoice.payment ? (
+                  <DSTableRow key={`${invoice.id}-payment`}>
+                    <Td colSpan={7}>
+                      <PaymentDetails currency={invoice.currency} payment={invoice.payment} />
+                    </Td>
+                  </DSTableRow>
+                ) : null}
+              </Fragment>
+            );
+          })}
+        </TableBody>
+      </DSTable>
+    </div>
   );
 }
 
@@ -1232,64 +1254,72 @@ type RecurringInvoiceCardsProps = {
 
 function RecurringInvoiceCards({ recurringInvoices, canEdit, onEditRecurringInvoice, onArchiveRecurringInvoice, onGenerateDueRecurringInvoice }: RecurringInvoiceCardsProps) {
   if (recurringInvoices.length === 0) {
-    return <p className="inline-empty muted-text">No recurring invoices have been configured yet.</p>;
+    return (
+      <EmptyState
+        message="Configure a recurring schedule to generate invoices on an interval."
+        title="No recurring invoices yet"
+        variant="inline"
+      />
+    );
   }
 
   return (
-    <DSTable aria-label="Recurring invoices">
-      <TableHead>
-        <DSTableRow>
-          <Th>Schedule</Th>
-          <Th>Client</Th>
-          <Th>Status</Th>
-          <Th align="right">Total</Th>
-          <Th>Interval</Th>
-          <Th>Next run</Th>
-          <Th>Actions</Th>
-        </DSTableRow>
-      </TableHead>
-      <TableBody>
-        {recurringInvoices.map((recurringInvoice) => (
-          <DSTableRow key={recurringInvoice.id}>
-            <TdDouble
-              primary={recurringInvoice.title}
-              secondary={recurringInvoice.project?.name ?? "No project"}
-            />
-            <Td secondary>{recurringInvoice.client.name}</Td>
-            <Td>
-              <StatusBadge status={recurringInvoice.isArchived ? "ARCHIVED" : recurringInvoice.isActive ? "ACTIVE" : "PAUSED"} />
-            </Td>
-            <Td mono align="right">{formatMoney(recurringInvoice.totalCents, recurringInvoice.currency)}</Td>
-            <Td>{recurringInvoice.interval}</Td>
-            <Td mono>{formatDateLabel(recurringInvoice.nextRunDate)}</Td>
-            <Td>
-              <div className="finance-row-actions">
-                {canEdit ? <Button size="sm" variant="secondary" onClick={() => onEditRecurringInvoice(recurringInvoice)} type="button">Edit</Button> : null}
-                {canEdit ? (
-                  <details className="row-action-menu">
-                    <summary>More</summary>
-                    <div className="row-action-menu-panel">
-                      <div className="row-action-menu-group">
-                        <span className="row-action-menu-label">Recurring</span>
-                        <Button
-                          size="sm"
-                          variant="secondary"
-                          onClick={() => void onGenerateDueRecurringInvoice(recurringInvoice.id, toLocalDateInputValue())}
-                          type="button"
-                        >
-                          Generate due
-                        </Button>
-                        {!recurringInvoice.isArchived ? <Button size="sm" variant="secondary" onClick={() => void onArchiveRecurringInvoice(recurringInvoice.id)} type="button">Archive</Button> : null}
-                      </div>
-                    </div>
-                  </details>
-                ) : null}
-              </div>
-            </Td>
+    <div className="table-wrap finance-table-wrap table-scroll">
+      <DSTable aria-label="Recurring invoices">
+        <TableHead>
+          <DSTableRow>
+            <Th>Schedule</Th>
+            <Th>Client</Th>
+            <Th>Status</Th>
+            <Th align="right">Total</Th>
+            <Th>Interval</Th>
+            <Th>Next run</Th>
+            <Th>Actions</Th>
           </DSTableRow>
-        ))}
-      </TableBody>
-    </DSTable>
+        </TableHead>
+        <TableBody>
+          {recurringInvoices.map((recurringInvoice) => (
+            <DSTableRow key={recurringInvoice.id}>
+              <TdDouble
+                primary={recurringInvoice.title}
+                secondary={recurringInvoice.project?.name ?? "No project"}
+              />
+              <Td secondary>{recurringInvoice.client.name}</Td>
+              <Td>
+                <StatusBadge status={recurringInvoice.isArchived ? "ARCHIVED" : recurringInvoice.isActive ? "ACTIVE" : "PAUSED"} />
+              </Td>
+              <Td mono align="right">{formatMoney(recurringInvoice.totalCents, recurringInvoice.currency)}</Td>
+              <Td>{recurringInvoice.interval}</Td>
+              <Td mono>{formatDateLabel(recurringInvoice.nextRunDate)}</Td>
+              <Td>
+                <div className="finance-row-actions">
+                  {canEdit ? <Button size="sm" variant="secondary" onClick={() => onEditRecurringInvoice(recurringInvoice)} type="button">Edit</Button> : null}
+                  {canEdit ? (
+                    <details className="row-action-menu">
+                      <summary>More</summary>
+                      <div className="row-action-menu-panel">
+                        <div className="row-action-menu-group">
+                          <span className="row-action-menu-label">Recurring</span>
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            onClick={() => void onGenerateDueRecurringInvoice(recurringInvoice.id, toLocalDateInputValue())}
+                            type="button"
+                          >
+                            Generate due
+                          </Button>
+                          {!recurringInvoice.isArchived ? <Button size="sm" variant="secondary" onClick={() => void onArchiveRecurringInvoice(recurringInvoice.id)} type="button">Archive</Button> : null}
+                        </div>
+                      </div>
+                    </details>
+                  ) : null}
+                </div>
+              </Td>
+            </DSTableRow>
+          ))}
+        </TableBody>
+      </DSTable>
+    </div>
   );
 }
 

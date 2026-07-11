@@ -1,10 +1,27 @@
-import { ClientAccessPanel } from "../../components/clients/ClientAccessPanel";
 import { type FormEvent, useMemo, useState } from "react";
+import { ClientAccessPanel } from "../../components/clients/ClientAccessPanel";
 import { EmptyState } from "../../components/EmptyState";
+import { ErrorState } from "../../components/ErrorState";
+import { LoadingState } from "../../components/LoadingState";
 import { Modal } from "../../components/Modal";
-import { Button, ModalActions, PageHeader, SectionPanel, StatusBadge } from "../../components/ui";
-import { Alert, Input, Select, Spinner, Textarea } from "../../design-system";
+import {
+  Button,
+  FilterBar,
+  ModalActions,
+  PageHeader,
+  SectionPanel,
+  StatusBadge,
+  Table,
+  useUrlFilterState
+} from "../../components/ui";
+import { Input, Select, Textarea } from "../../design-system";
 import type { ProjectSummary } from "../projects/ProjectsPage";
+import {
+  buildClientArchiveConfirm,
+  buildClientRestoreConfirm,
+  type ArchiveConfirmCopy
+} from "./archive-confirm-copy";
+import { deriveClientHealth, formatClientHealthDetail } from "./client-health";
 
 export type ClientSummary = {
   id: string;
@@ -78,6 +95,16 @@ type ClientsPageProps = {
 
 const COUNTRY_OPTIONS = ["Indonesia", "Poland", "United States", "United Kingdom", "Singapore", "Australia"];
 
+const CLIENT_STATUS_FILTERS = ["all", "active", "archived"] as const;
+type ClientStatusFilter = (typeof CLIENT_STATUS_FILTERS)[number];
+
+const CLIENT_KIND_FILTERS = ["all", "AGENCY_CLIENT", "OWN_DOMAIN"] as const;
+type ClientKindFilter = (typeof CLIENT_KIND_FILTERS)[number];
+
+type PendingLifecycle =
+  | { action: "archive" | "restore"; client: ClientSummary; copy: ArchiveConfirmCopy }
+  | { action: "blocked"; client: ClientSummary; title: string; description: string };
+
 const emptyForm = (): ClientFormValues => ({
   name: "",
   email: "",
@@ -107,12 +134,23 @@ export function ClientsPage({
   onOpenHub,
   tenantUsers
 }: ClientsPageProps) {
-  const [filter, setFilter] = useState<"all" | "active" | "archived">("active");
-  const [kindFilter, setKindFilter] = useState<"all" | "AGENCY_CLIENT" | "OWN_DOMAIN">("all");
+  const [filter, setFilter] = useUrlFilterState<ClientStatusFilter>({
+    key: "filter",
+    defaultValue: "active",
+    allowed: CLIENT_STATUS_FILTERS
+  });
+  const [kindFilter, setKindFilter] = useUrlFilterState<ClientKindFilter>({
+    key: "kind",
+    defaultValue: "all",
+    allowed: CLIENT_KIND_FILTERS
+  });
   const [editorClientId, setEditorClientId] = useState<string | null>(null);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [draft, setDraft] = useState<ClientFormValues>(emptyForm());
   const [saving, setSaving] = useState(false);
+  const [pendingLifecycle, setPendingLifecycle] = useState<PendingLifecycle | null>(null);
+  const [lifecycleBusy, setLifecycleBusy] = useState(false);
+
   const selectedClient = useMemo(
     () => clients.find((client) => client.id === editorClientId) ?? null,
     [clients, editorClientId]
@@ -186,17 +224,53 @@ export function ClientsPage({
     }
   }
 
+  function requestArchive(client: ClientSummary) {
+    const copy = buildClientArchiveConfirm(client);
+    if ("blocked" in copy) {
+      setPendingLifecycle({
+        action: "blocked",
+        client,
+        title: copy.title,
+        description: copy.description
+      });
+      return;
+    }
+    setPendingLifecycle({ action: "archive", client, copy });
+  }
+
+  function requestRestore(client: ClientSummary) {
+    setPendingLifecycle({
+      action: "restore",
+      client,
+      copy: buildClientRestoreConfirm(client)
+    });
+  }
+
+  async function confirmLifecycle() {
+    if (!pendingLifecycle || pendingLifecycle.action === "blocked") {
+      setPendingLifecycle(null);
+      return;
+    }
+    setLifecycleBusy(true);
+    try {
+      const ok =
+        pendingLifecycle.action === "archive"
+          ? await onArchive(pendingLifecycle.client.id)
+          : await onRestore(pendingLifecycle.client.id);
+      if (ok) {
+        setPendingLifecycle(null);
+      }
+    } finally {
+      setLifecycleBusy(false);
+    }
+  }
+
   if (loading) {
-    return (
-      <div className="state-panel loading-state-panel" role="status">
-        <Spinner size="sm" />
-        Loading clients
-      </div>
-    );
+    return <LoadingState label="Loading clients" />;
   }
 
   if (error) {
-    return <Alert message={error} title="Clients unavailable" variant="danger" />;
+    return <ErrorState message={error} title="Clients unavailable" />;
   }
 
   return (
@@ -206,44 +280,36 @@ export function ClientsPage({
         title="Clients"
         titleId="clients-title"
         description="Client records, contacts, and delivery links."
+        filters={
+          <div className="clients-toolbar-filters">
+            <FilterBar
+              ariaLabel="Clients kind filter"
+              onChange={(value) => setKindFilter(value as ClientKindFilter)}
+              options={[
+                { value: "all", label: "All kinds" },
+                { value: "AGENCY_CLIENT", label: "Agency" },
+                { value: "OWN_DOMAIN", label: "Own domain" }
+              ]}
+              value={kindFilter}
+            />
+            <FilterBar
+              ariaLabel="Clients filter"
+              onChange={(value) => setFilter(value as ClientStatusFilter)}
+              options={[
+                { value: "active", label: "Active" },
+                { value: "archived", label: "Archived" },
+                { value: "all", label: "All" }
+              ]}
+              value={filter}
+            />
+          </div>
+        }
         actions={
-          <>
-            <div className="clients-toolbar-filters">
-              <div className="filter-bar" role="group" aria-label="Clients kind filter">
-                {(["all", "AGENCY_CLIENT", "OWN_DOMAIN"] as const).map((value) => (
-                  <Button
-                    aria-pressed={kindFilter === value}
-                    className={kindFilter === value ? "secondary-action filter-chip is-active" : "secondary-action filter-chip"}
-                    key={value}
-                    onClick={() => setKindFilter(value)}
-                    type="button"
-                    variant="secondary"
-                  >
-                    {value === "all" ? "All kinds" : value === "AGENCY_CLIENT" ? "Agency" : "Own domain"}
-                  </Button>
-                ))}
-              </div>
-              <div className="filter-bar" role="group" aria-label="Clients filter">
-                {(["active", "archived", "all"] as const).map((value) => (
-                  <Button
-                    aria-pressed={filter === value}
-                    className={filter === value ? "secondary-action filter-chip is-active" : "secondary-action filter-chip"}
-                    key={value}
-                    onClick={() => setFilter(value)}
-                    type="button"
-                    variant="secondary"
-                  >
-                    {value[0].toUpperCase() + value.slice(1)}
-                  </Button>
-                ))}
-              </div>
-            </div>
-            {canEdit ? (
-              <Button onClick={openCreateModal} type="button" variant="primary">
-                Add Client
-              </Button>
-            ) : null}
-          </>
+          canEdit ? (
+            <Button onClick={openCreateModal} type="button" variant="primary">
+              Add Client
+            </Button>
+          ) : null
         }
       />
 
@@ -251,83 +317,147 @@ export function ClientsPage({
         <EmptyState message="No clients match the current filter." title="No clients" variant="inline" />
       ) : (
         <SectionPanel title="Client records" tone="compact">
-          <div className="dense-list">
-          {filteredClients.map((client) => (
-            <article className="entity-card dense-record" key={client.id}>
-              <div className="dense-record-main">
-                <div className="dense-title">
-                  <div className="dense-kicker">
-                    <StatusBadge status={client.isArchived ? "archived" : "active"} />
-                    <StatusBadge status={client.clientKind === "OWN_DOMAIN" ? "own-domain" : "agency-client"} />
-                  </div>
-                  <h2>{client.name}</h2>
-                  <div className="dense-meta">
-                    <span><strong>{client.contactPerson || "No contact"}</strong></span>
-                    <span>{client.email || "No email"}</span>
-                    <span>{client.website || "No website"}</span>
-                    <span>{client.country || "No country"}</span>
-                  </div>
-                </div>
-
-                <div className="dense-fields">
-                  <div className="dense-field">
-                    <span>Email</span>
-                    <strong>{client.email || "Not set"}</strong>
-                  </div>
-                  <div className="dense-field">
-                    <span>Country</span>
-                    <strong>{client.country || "Not set"}</strong>
-                  </div>
-                  <div className="dense-field">
-                    <span>Projects</span>
-                    <strong>{client.projectCount}</strong>
-                  </div>
-                </div>
-
-                <div className="dense-actions">
-                  <Button size="sm" variant="secondary" onClick={() => onOpenHub(client)} type="button">
-                    Open hub
-                  </Button>
-                  {canEdit ? <Button size="sm" variant="secondary" onClick={() => void openEditModal(client)} type="button">Open</Button> : null}
-                  {canEdit ? (
-                    <details className="row-action-menu">
-                      <summary>More</summary>
-                      <div className="row-action-menu-panel">
-                        <div className="row-action-menu-group">
-                          <span className="row-action-menu-label">Client</span>
-                          {!client.isArchived ? (
-                            <Button
-                              size="sm"
-                              variant="secondary"
-                              disabled={client.projectCount > 0}
-                              onClick={() => void onArchive(client.id)}
-                              title={client.projectCount > 0 ? "Archive blocked while active projects exist." : undefined}
-                              type="button"
-                            >
-                              Archive
-                            </Button>
-                          ) : null}
-                          {client.isArchived ? (
-                            <Button size="sm" variant="secondary" onClick={() => void onRestore(client.id)} type="button">
-                              Restore
-                            </Button>
-                          ) : null}
-                        </div>
+          <div className="table-wrap table-scroll">
+            <Table
+              headers={[
+                { label: "Client", align: "left" },
+                { label: "Kind", align: "left" },
+                { label: "Health", align: "left" },
+                { label: "Projects", align: "right" },
+                { label: "Contact", align: "left" },
+                { label: "Action", align: "right" }
+              ]}
+              rows={filteredClients.map((client) => {
+                const health = deriveClientHealth(client, projects);
+                return {
+                  key: client.id,
+                  cells: [
+                    <div key={`${client.id}-name`}>
+                      <strong>{client.name}</strong>
+                      <div className="muted-text">
+                        <StatusBadge status={client.isArchived ? "archived" : "active"} />
                       </div>
-                    </details>
-                  ) : null}
-                </div>
-              </div>
-              <div className="dense-row-note">
-                Tax/VAT: {client.taxId || "Not set"}. Billing address: {client.billingAddress || "Not set"}.
-                {client.legalEntityName ? ` Legal entity: ${client.legalEntityName}.` : ""}
-                {client.accountGroupName ? ` Group: ${client.accountGroupName}.` : ""}
-              </div>
-            </article>
-          ))}
+                      <div className="muted-text">{client.website || "No website"}</div>
+                    </div>,
+                    <StatusBadge
+                      key={`${client.id}-kind`}
+                      status={client.clientKind === "OWN_DOMAIN" ? "own-domain" : "agency-client"}
+                    />,
+                    <div key={`${client.id}-health`}>
+                      <StatusBadge status={health.status} />
+                      <div className="muted-text">{formatClientHealthDetail(health)}</div>
+                    </div>,
+                    <span key={`${client.id}-projects`}>{client.projectCount}</span>,
+                    <div key={`${client.id}-contact`}>
+                      <div>{client.contactPerson || "No contact"}</div>
+                      <div className="muted-text">{client.email || "No email"}</div>
+                      <div className="muted-text">{client.country || "No country"}</div>
+                    </div>,
+                    <div className="dense-actions" key={`${client.id}-actions`}>
+                      <Button size="sm" variant="secondary" onClick={() => onOpenHub(client)} type="button">
+                        Open hub
+                      </Button>
+                      {canEdit ? (
+                        <Button size="sm" variant="secondary" onClick={() => void openEditModal(client)} type="button">
+                          Open
+                        </Button>
+                      ) : null}
+                      {canEdit ? (
+                        <details className="row-action-menu">
+                          <summary>More</summary>
+                          <div className="row-action-menu-panel">
+                            <div className="row-action-menu-group">
+                              <span className="row-action-menu-label">Client</span>
+                              {!client.isArchived ? (
+                                <Button
+                                  size="sm"
+                                  variant="secondary"
+                                  onClick={() => requestArchive(client)}
+                                  title={
+                                    client.projectCount > 0
+                                      ? "Archive blocked while active projects exist."
+                                      : undefined
+                                  }
+                                  type="button"
+                                >
+                                  Archive
+                                </Button>
+                              ) : null}
+                              {client.isArchived ? (
+                                <Button
+                                  size="sm"
+                                  variant="secondary"
+                                  onClick={() => requestRestore(client)}
+                                  type="button"
+                                >
+                                  Restore
+                                </Button>
+                              ) : null}
+                            </div>
+                          </div>
+                        </details>
+                      ) : null}
+                    </div>
+                  ]
+                };
+              })}
+            />
           </div>
         </SectionPanel>
       )}
+
+      {pendingLifecycle ? (
+        <Modal
+          eyebrow={pendingLifecycle.action === "blocked" ? "Blocked" : "Confirm"}
+          onClose={() => {
+            if (!lifecycleBusy) {
+              setPendingLifecycle(null);
+            }
+          }}
+          size="sm"
+          title={
+            pendingLifecycle.action === "blocked"
+              ? pendingLifecycle.title
+              : pendingLifecycle.copy.title
+          }
+          footer={
+            pendingLifecycle.action === "blocked" ? (
+              <Button
+                onClick={() => setPendingLifecycle(null)}
+                type="button"
+                variant="secondary"
+              >
+                Close
+              </Button>
+            ) : (
+              <>
+                <Button
+                  disabled={lifecycleBusy}
+                  onClick={() => setPendingLifecycle(null)}
+                  type="button"
+                  variant="secondary"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  disabled={lifecycleBusy}
+                  onClick={() => void confirmLifecycle()}
+                  type="button"
+                  variant={pendingLifecycle.copy.danger ? "destructive" : "primary"}
+                >
+                  {lifecycleBusy ? "Working…" : pendingLifecycle.copy.confirmLabel}
+                </Button>
+              </>
+            )
+          }
+        >
+          <p>
+            {pendingLifecycle.action === "blocked"
+              ? pendingLifecycle.description
+              : pendingLifecycle.copy.description}
+          </p>
+        </Modal>
+      ) : null}
 
       {isEditorOpen ? (
         <Modal

@@ -4,6 +4,13 @@ import { EmptyState } from "../../components/EmptyState";
 import { Button, PageHeader, SectionPanel, StatusBadge } from "../../components/ui";
 import { Alert, Input, Spinner, Textarea, Toast } from "../../design-system";
 import {
+  DEFAULT_APPROVAL_CHECKLIST,
+  createEmptyApprovalChecklistState,
+  isApprovalChecklistComplete
+} from "./approval-checklist";
+import { ClientPortalStatusBadge } from "./ClientPortalStatusBadge";
+import { isClientPortalStatusVisible } from "./client-portal-status";
+import {
   clientPortalApiRequest,
   formatApprovalDate,
   navigateToClientPortalHash,
@@ -12,6 +19,7 @@ import {
   type DeliverableImageApproval,
   type DeliverableMetadataPatchResponse
 } from "./client-portal-api";
+import "./client-portal.css";
 
 type ArticleApprovalEditorProps = {
   deliverableId: string;
@@ -90,7 +98,7 @@ function metadataStatesEqual(a: MetadataFormState, b: MetadataFormState): boolea
 
 function imageStatusLabel(status: DeliverableImageApproval["approvalStatus"]): string {
   if (status === "APPROVED") return "Approved";
-  if (status === "REJECTED") return "Rejected";
+  if (status === "REJECTED") return "Pending updates";
   return "Pending";
 }
 
@@ -139,6 +147,7 @@ export function ArticleApprovalEditor({ deliverableId }: ArticleApprovalEditorPr
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [articleRejectReason, setArticleRejectReason] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [checklistState, setChecklistState] = useState(() => createEmptyApprovalChecklistState());
   const saveTimerRef = useRef<number | null>(null);
   const metadataSaveTimerRef = useRef<number | null>(null);
   const lastSavedBodyRef = useRef("");
@@ -282,11 +291,25 @@ export function ArticleApprovalEditor({ deliverableId }: ArticleApprovalEditorPr
     return deliverable.images.every((image) => image.approvalStatus === "APPROVED" || image.approvalStatus === "REJECTED");
   }, [deliverable]);
 
+  const checklistComplete = useMemo(
+    () => isApprovalChecklistComplete(checklistState),
+    [checklistState]
+  );
+
+  const canApproveArticle = allImagesReviewed && checklistComplete && !submitting;
+
   const reviewNextActionLabel = deliverable
-    ? allImagesReviewed
-      ? "Next action: Approve this version or request changes"
-      : "Next action: Review the body and image approvals"
+    ? !allImagesReviewed
+      ? "Next action: Review the body and image approvals"
+      : !checklistComplete
+        ? "Next action: Complete the approval checklist"
+        : "Next action: Approve this version or request changes"
     : "Next action: Load the article review";
+
+  function openApproveModal() {
+    setChecklistState(createEmptyApprovalChecklistState());
+    setShowApproveModal(true);
+  }
 
   async function handleApproveImage(imageId: string) {
     setImageBusyId(imageId);
@@ -443,17 +466,11 @@ export function ArticleApprovalEditor({ deliverableId }: ArticleApprovalEditorPr
               <div>
                 <dt>Status</dt>
                 <dd>
-                  <StatusBadge
-                    status={
-                      deliverable.status === "PENDING_CLIENT_REVIEW"
-                        ? "Needs your review"
-                        : deliverable.status === "APPROVED_BY_CLIENT"
-                          ? "Approved"
-                          : deliverable.status === "CHANGES_REQUESTED"
-                            ? "Changes requested"
-                            : "In review"
-                    }
-                  />
+                  {isClientPortalStatusVisible(deliverable.status) ? (
+                    <ClientPortalStatusBadge status={deliverable.status} />
+                  ) : (
+                    <span className="muted-text">In review</span>
+                  )}
                 </dd>
               </div>
             </dl>
@@ -624,8 +641,17 @@ export function ArticleApprovalEditor({ deliverableId }: ArticleApprovalEditorPr
         </div>
       </div>
 
-      <footer className="portal-approval-actions">
-        <Button disabled={!allImagesReviewed || submitting} onClick={() => setShowApproveModal(true)}>
+      <footer className="portal-approval-actions is-sticky">
+        <Button
+          aria-disabled={!allImagesReviewed || submitting}
+          disabled={!allImagesReviewed || submitting}
+          onClick={() => openApproveModal()}
+          title={
+            !allImagesReviewed
+              ? "Review all images before approving"
+              : "Open approval checklist to confirm and approve"
+          }
+        >
           Approve this version
         </Button>
         <Button
@@ -646,22 +672,57 @@ export function ArticleApprovalEditor({ deliverableId }: ArticleApprovalEditorPr
 
       {showApproveModal ? (
         <Modal
-          eyebrow="Approve this version?"
+          eyebrow="Deliverable Approval"
           onClose={() => setShowApproveModal(false)}
-          size="sm"
+          size="md"
           title="Approve article"
           footer={
             <div className="modal-footer">
               <Button disabled={submitting} onClick={() => setShowApproveModal(false)} variant="secondary">
-                Cancel
+                Close
               </Button>
-              <Button disabled={submitting} onClick={() => void handleApproveArticle()}>
+              <Button
+                aria-disabled={!checklistComplete || submitting}
+                disabled={!checklistComplete || submitting}
+                onClick={() => void handleApproveArticle()}
+                title={
+                  checklistComplete
+                    ? undefined
+                    : "Complete all checklist items before approving"
+                }
+              >
                 {submitting ? "Approving…" : "Approve"}
               </Button>
             </div>
           }
         >
-          <p>This article will be marked approved and sent to your team for the next step.</p>
+          <p>
+            Confirm you have reviewed this article. Completing the checklist enables Approve.
+            After approval, your team will move this work to the next step.
+          </p>
+          <ul className="approval-checklist" aria-label="Approval checklist">
+            {DEFAULT_APPROVAL_CHECKLIST.map((item) => (
+              <li className="approval-checklist-item" key={item.id}>
+                <input
+                  checked={checklistState[item.id] === true}
+                  id={`approval-check-${item.id}`}
+                  onChange={(event) =>
+                    setChecklistState((current) => ({
+                      ...current,
+                      [item.id]: event.target.checked
+                    }))
+                  }
+                  type="checkbox"
+                />
+                <label htmlFor={`approval-check-${item.id}`}>{item.label}</label>
+              </li>
+            ))}
+          </ul>
+          {!checklistComplete ? (
+            <p className="approval-checklist-hint muted-text">
+              Check every item above to enable Approve.
+            </p>
+          ) : null}
         </Modal>
       ) : null}
 
@@ -676,7 +737,16 @@ export function ArticleApprovalEditor({ deliverableId }: ArticleApprovalEditorPr
               <Button disabled={submitting} onClick={() => setShowRejectModal(false)} variant="secondary">
                 Cancel
               </Button>
-              <Button disabled={submitting || !articleRejectReason.trim()} onClick={() => void handleRejectArticle()}>
+              <Button
+                aria-disabled={submitting || !articleRejectReason.trim()}
+                disabled={submitting || !articleRejectReason.trim()}
+                onClick={() => void handleRejectArticle()}
+                title={
+                  !articleRejectReason.trim()
+                    ? "Describe the changes you want before submitting"
+                    : undefined
+                }
+              >
                 {submitting ? "Submitting…" : "Request changes"}
               </Button>
             </div>

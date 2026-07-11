@@ -1,15 +1,25 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { EmptyState } from "../components/EmptyState";
-import { Badge, Button, PageHeader, SectionPanel } from "../components/ui";
+import { Badge, Button, MetricCard, PageHeader, SectionPanel } from "../components/ui";
 import { Alert, Spinner } from "../design-system";
+import {
+  buildClientDashboardAttentionItems,
+  buildClientDashboardKpis,
+  formatClientBriefArticleSummary,
+  formatClientBriefDate,
+  selectRecentClientBriefs
+} from "./client-portal/client-dashboard-model";
 import {
   clientPortalApiRequest,
   getClientPortalAuthToken,
   type ApiResponse,
   type PendingApprovalsResponse
 } from "./client-portal/client-portal-api";
+import { toClientBriefStatusLabel } from "./client-portal/client-portal-status";
+import "./client-portal/client-portal.css";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "/api/v1";
+const AMBER_TINT = "#C98A42";
 
 type BriefStatus = "DRAFT" | "AWAITING_CLIENT" | "SUBMITTED";
 
@@ -97,49 +107,6 @@ function navigateToView(path: string) {
   window.dispatchEvent(new HashChangeEvent("hashchange"));
 }
 
-function formatBriefDate(value: string): string {
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) {
-    return value.slice(0, 10);
-  }
-  const pad = (part: number) => String(part).padStart(2, "0");
-  return `${pad(parsed.getDate())}.${pad(parsed.getMonth() + 1)}.${parsed.getFullYear()}`;
-}
-
-function formatArticleSummary(brief: BriefRecord): string | null {
-  const parts: string[] = [];
-  if (brief.hubCount > 0) parts.push(`Hub ×${brief.hubCount}`);
-  if (brief.geoSeoCount > 0) parts.push(`Geo SEO ×${brief.geoSeoCount}`);
-  if (brief.lifestyleCount > 0) parts.push(`Lifestyle ×${brief.lifestyleCount}`);
-  if (brief.otherCount > 0) parts.push(`Other ×${brief.otherCount}`);
-  return parts.length > 0 ? parts.join(" · ") : null;
-}
-
-function getBriefStatusBadge(status: BriefStatus): { label: string; variant: "success" | "info" | "warning" } {
-  if (status === "DRAFT") return { label: "Draft", variant: "warning" };
-  if (status === "SUBMITTED") return { label: "Submitted", variant: "success" };
-  if (status === "AWAITING_CLIENT") return { label: "Awaiting your input", variant: "info" };
-  return { label: status, variant: "warning" };
-}
-
-function ActivityFeedPlaceholder() {
-  return (
-    <div
-      className="brief-ai-research-placeholder"
-      style={{
-        border: "1px dashed rgba(148, 163, 184, 0.35)",
-        borderRadius: "8px",
-        background: "rgba(148, 163, 184, 0.06)",
-        padding: "1rem 1.25rem"
-      }}
-    >
-      <p className="muted-text" style={{ margin: 0 }}>
-        Your recent activity will appear here.
-      </p>
-    </div>
-  );
-}
-
 export function ClientDashboardPage({ user }: ClientDashboardPageProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -194,18 +161,17 @@ export function ClientDashboardPage({ user }: ClientDashboardPageProps) {
     void loadDashboard();
   }, [loadDashboard]);
 
-  const recentBriefs = useMemo(
-    () =>
-      [...briefs]
-        .sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime())
-        .slice(0, 6),
-    [briefs]
+  const kpis = useMemo(
+    () => buildClientDashboardKpis(briefs, pendingApprovalCount),
+    [briefs, pendingApprovalCount]
   );
 
-  const awaitingBriefCount = useMemo(
-    () => briefs.filter((brief) => brief.status === "AWAITING_CLIENT").length,
-    [briefs]
+  const attentionItems = useMemo(
+    () => buildClientDashboardAttentionItems(briefs, pendingApprovalCount),
+    [briefs, pendingApprovalCount]
   );
+
+  const recentBriefs = useMemo(() => selectRecentClientBriefs(briefs, 6), [briefs]);
 
   if (loading) {
     return (
@@ -218,7 +184,11 @@ export function ClientDashboardPage({ user }: ClientDashboardPageProps) {
 
   if (error) {
     return (
-      <section className="view-section" aria-labelledby="client-dashboard-title" data-density="comfortable">
+      <section
+        className="view-section cf-page client-dashboard-page"
+        aria-labelledby="client-dashboard-title"
+        data-density="comfortable"
+      >
         <PageHeader
           description="Your client workspace overview."
           eyebrow="Client workspace"
@@ -236,11 +206,15 @@ export function ClientDashboardPage({ user }: ClientDashboardPageProps) {
   }
 
   return (
-    <section className="view-section" aria-labelledby="client-dashboard-title" data-density="comfortable">
+    <section
+      className="view-section cf-page client-dashboard-page"
+      aria-labelledby="client-dashboard-title"
+      data-density="comfortable"
+    >
       <PageHeader
         description={
           clientName
-            ? `Overview for ${clientName} — recent briefs and items awaiting your action.`
+            ? `Overview for ${clientName} — items awaiting your action and recent briefs.`
             : "Your client workspace overview."
         }
         eyebrow="Client workspace"
@@ -249,7 +223,64 @@ export function ClientDashboardPage({ user }: ClientDashboardPageProps) {
         titleId="client-dashboard-title"
       />
 
-      <SectionPanel description="Your six most recent briefs." title="Recent Briefs">
+      <div className="client-dashboard-kpi-row portal-metric-grid cf-metric-strip" role="group" aria-label="Workspace summary">
+        <MetricCard
+          accent="cyan"
+          helper="Briefs in your workspace"
+          label="Active briefs"
+          value={String(kpis.briefCount)}
+        />
+        <MetricCard
+          accent="warning"
+          helper="Articles waiting for you"
+          label="Awaiting your approval"
+          value={String(kpis.awaitingApprovalCount)}
+        />
+        <MetricCard
+          accent="violet"
+          helper="Briefs needing your input"
+          label="Awaiting your input"
+          value={String(kpis.awaitingBriefCount)}
+        />
+        <MetricCard
+          accent="success"
+          helper="Briefs already submitted"
+          label="Submitted briefs"
+          value={String(kpis.submittedBriefCount)}
+        />
+      </div>
+
+      <SectionPanel
+        description="Items that need a decision from you."
+        tint={AMBER_TINT}
+        title="Required attention"
+        tone="highlight"
+      >
+        {attentionItems.length === 0 ? (
+          <p className="muted-text" style={{ color: "rgba(110, 231, 183, 0.95)", margin: 0 }}>
+            You&apos;re all caught up
+          </p>
+        ) : (
+          <div className="client-dashboard-attention-list">
+            {attentionItems.map((item) => (
+              <div
+                className={`client-dashboard-attention-row${item.urgent ? " is-urgent" : ""}`}
+                key={item.id}
+              >
+                <div className="client-dashboard-attention-copy">
+                  <strong>{item.title}</strong>
+                  <span className="muted-text text-small">{item.detail}</span>
+                </div>
+                <Button onClick={() => navigateToView(item.href)} size="sm" type="button">
+                  {item.kind === "approval" ? "Review & Approve" : "Open brief"}
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
+      </SectionPanel>
+
+      <SectionPanel description="Your six most recent briefs." title="Recent briefs">
         {recentBriefs.length === 0 ? (
           <EmptyState
             action={
@@ -262,37 +293,23 @@ export function ClientDashboardPage({ user }: ClientDashboardPageProps) {
             variant="inline"
           />
         ) : (
-          <div
-            className="client-dashboard-brief-row"
-            style={{
-              display: "flex",
-              gap: "0.75rem",
-              overflowX: "auto",
-              paddingBottom: "0.25rem"
-            }}
-          >
+          <div className="client-dashboard-brief-row">
             {recentBriefs.map((brief) => {
-              const badge = getBriefStatusBadge(brief.status);
-              const articleSummary = formatArticleSummary(brief);
+              const badge = toClientBriefStatusLabel(brief.status);
+              const articleSummary = formatClientBriefArticleSummary(brief);
               return (
                 <Button
                   className="entity-card dense-record client-dashboard-brief-card"
                   key={brief.id}
                   onClick={() => navigateToView("briefs")}
-                  style={{
-                    cursor: "pointer",
-                    flex: "0 0 min(260px, 80vw)",
-                    minWidth: "220px",
-                    textAlign: "left"
-                  }}
                   type="button"
                   variant="tertiary"
                 >
                   <div className="dense-record-main dense-record-main--stack">
                     <strong>{brief.title}</strong>
-                    <Badge variant={badge.variant}>{badge.label}</Badge>
+                    <Badge variant={badge.tone}>{badge.label}</Badge>
                     {articleSummary ? <span className="muted-text text-small">{articleSummary}</span> : null}
-                    <span className="muted-text text-small">{formatBriefDate(brief.createdAt)}</span>
+                    <span className="muted-text text-small">{formatClientBriefDate(brief.createdAt)}</span>
                   </div>
                 </Button>
               );
@@ -301,45 +318,26 @@ export function ClientDashboardPage({ user }: ClientDashboardPageProps) {
         )}
       </SectionPanel>
 
-      <div
-        className="dashboard-grid client-dashboard-bottom-grid"
-        style={{ marginTop: "1.25rem" }}
-      >
-        <SectionPanel description="Items that need your attention." title="Awaiting Your Action">
-          {awaitingBriefCount === 0 && pendingApprovalCount === 0 ? (
-            <p className="muted-text" style={{ color: "rgba(110, 231, 183, 0.95)", margin: 0 }}>
-              ✓ You&apos;re all caught up
+      <div className="client-dashboard-bottom-grid">
+        <SectionPanel
+          description="Performance charts appear when analytics are shared with your account."
+          title="Content performance"
+        >
+          <div className="client-dashboard-unavailable">
+            <p className="muted-text">
+              Content performance is not available yet. When your team shares analytics for your
+              account, they will appear here.
             </p>
-          ) : (
-            <div className="quick-link-list">
-              {awaitingBriefCount > 0 ? (
-                <Button
-                  className="subtle-action"
-                  onClick={() => navigateToView("briefs")}
-                  style={{ background: "none", border: "none", cursor: "pointer", padding: 0, textAlign: "left" }}
-                  type="button"
-                  variant="tertiary"
-                >
-                  📋 {awaitingBriefCount} brief{awaitingBriefCount === 1 ? "" : "s"} awaiting your input
-                </Button>
-              ) : null}
-              {pendingApprovalCount > 0 ? (
-                <Button
-                  className="subtle-action"
-                  onClick={() => navigateToView("pending-approvals")}
-                  style={{ background: "none", border: "none", cursor: "pointer", padding: 0, textAlign: "left" }}
-                  type="button"
-                  variant="tertiary"
-                >
-                  📄 {pendingApprovalCount} article{pendingApprovalCount === 1 ? "" : "s"} pending your approval
-                </Button>
-              ) : null}
-            </div>
-          )}
+          </div>
         </SectionPanel>
 
-        <SectionPanel description="Updates from your workspace." title="Recent Activity">
-          <ActivityFeedPlaceholder />
+        <SectionPanel description="Updates from your workspace." title="Updates">
+          <div className="client-dashboard-unavailable">
+            <p className="muted-text">
+              Notifications are not connected in this workspace yet. Check Pending Reviews for items
+              that need your approval.
+            </p>
+          </div>
         </SectionPanel>
       </div>
     </section>

@@ -430,7 +430,7 @@ async function main() {
   const rejectStatus = rejectResponse.body?.data?.deliverable?.status ?? null;
   record(
     "client reject article",
-    rejectResponse.status === 200 && rejectStatus === "DRAFT",
+    rejectResponse.status === 200 && rejectStatus === "REVISION_REQUESTED",
     `${rejectResponse.status}${rejectStatus ? ` ${rejectStatus}` : ""}`
   );
 
@@ -462,9 +462,13 @@ async function main() {
     await page.getByRole("heading", { name: "Pending Reviews", exact: true }).waitFor({ state: "visible", timeout: 30000 });
     record("browser pending approvals page", true, "#/client-portal/pending-approvals");
 
-    const fixtureRecord = page.locator(".cf-record", { hasText: approveFixture.smokeId }).first();
+    const fixtureRecord = page
+      .getByTestId("pending-approval-record")
+      .filter({ hasText: approveFixture.smokeId })
+      .first();
     await fixtureRecord.waitFor({ state: "visible", timeout: 20000 });
-    await fixtureRecord.getByRole("button", { name: "Review" }).click();
+    record("browser pending approval fixture row visible", true, approveFixture.smokeId);
+    await fixtureRecord.getByRole("button", { name: "Review & Approve" }).click();
 
     await page.getByRole("heading", { name: "Article body", exact: true }).waitFor({ state: "visible", timeout: 30000 });
     record("browser article body editor visible", true, "Article body");
@@ -504,6 +508,18 @@ async function main() {
 
     await page.getByRole("button", { name: "Approve this version" }).click();
     await page.getByRole("heading", { name: "Approve article", exact: true }).waitFor({ state: "visible", timeout: 10000 });
+    const checklist = page.getByRole("list", { name: "Approval checklist" });
+    await checklist.waitFor({ state: "visible", timeout: 10000 });
+    const checklistBoxes = checklist.getByRole("checkbox");
+    const checklistCount = await checklistBoxes.count();
+    for (let index = 0; index < checklistCount; index += 1) {
+      await checklistBoxes.nth(index).check();
+    }
+    record(
+      "browser approval checklist completed",
+      checklistCount >= 1,
+      `${checklistCount} checklist item(s)`
+    );
     await page.getByRole("button", { name: "Approve", exact: true }).click();
     await page.getByRole("heading", { name: "Pending Reviews", exact: true }).waitFor({ state: "visible", timeout: 30000 });
     record("browser approve redirects to pending approvals", true, "redirect");

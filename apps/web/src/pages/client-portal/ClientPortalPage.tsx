@@ -1,16 +1,20 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { EmptyState } from "../../components/EmptyState";
-import { Button, MetricCard, PageHeader, SectionPanel, StatusBadge } from "../../components/ui";
+import { Button, MetricCard, PageHeader, SectionPanel } from "../../components/ui";
 import { Alert, Input, Select, Spinner, Textarea } from "../../design-system";
+import { ClientPortalStatusBadge } from "./ClientPortalStatusBadge";
 import {
   clientPortalApiRequest,
   navigateToClientPortalHash,
   toClientPortalUiSafeErrorMessage,
   type PendingApprovalsResponse
 } from "./client-portal-api";
+import "./client-portal.css";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "/api/v1";
 const SESSION_STORAGE_KEY = "dcaosv1.authToken";
+const AMBER_TINT = "#C98A42";
+const INDIGO_TINT = "#818CF8";
 
 type ApiSuccess<T> = {
   ok: true;
@@ -352,60 +356,6 @@ function isFinalDeliverable(status: string) {
   return ["DELIVERED", "ACCEPTED"].includes(status);
 }
 
-function toClientPortalStatusLabel(status: string | null | undefined): string | null {
-  if (!status || !status.trim()) {
-    return null;
-  }
-
-  const normalized = status.trim().toUpperCase();
-  if (["DRAFT", "NONE", "PENDING", "NOT_STARTED", "IN_PROGRESS"].includes(normalized)) {
-    return null;
-  }
-
-  if (normalized === "ADMIN_REVIEW") {
-    return "Under review";
-  }
-
-  if (normalized === "FINAL") {
-    return "Complete";
-  }
-
-  if (normalized === "DELIVERED") {
-    return "Delivered";
-  }
-
-  if (normalized === "ACCEPTED") {
-    return "Accepted";
-  }
-
-  if (normalized === "ACTIVE") {
-    return "Active";
-  }
-
-  if (normalized === "ARCHIVED") {
-    return "Archived";
-  }
-
-  if (normalized === "APPROVED") {
-    return "Approved";
-  }
-
-  if (normalized === "PENDING_CLIENT_REVIEW") {
-    return "Needs your review";
-  }
-
-  if (normalized === "APPROVED_BY_CLIENT") {
-    return "Approved";
-  }
-
-  if (normalized === "SENT_TO_CLIENT") {
-    return "Shared with you";
-  }
-
-  // Unknown internal enums — do not title-case leak workflow tokens to clients.
-  return null;
-}
-
 function toClientPortalDeliveryTypeLabel(value: string): string {
   return value
     .toLowerCase()
@@ -445,15 +395,6 @@ function toClientPortalMonthlyReportDisplayTitle(
   fallback: string
 ): string {
   return report.displayTitle ?? report.title ?? fallback;
-}
-
-function ClientPortalStatusBadge({ status }: { status: string | null | undefined }) {
-  const label = toClientPortalStatusLabel(status);
-  if (!label) {
-    return null;
-  }
-
-  return <StatusBadge status={label} />;
 }
 
 function getArchiveNextActionLabel(pendingApprovalCount: number, selectedProject: ClientPortalProjectSummary | null): string {
@@ -980,7 +921,7 @@ export function ClientPortalPage() {
 
   if (projectsLoading) {
     return (
-      <section className="view-section cf-page" aria-labelledby="client-portal-title" data-density="comfortable">
+      <section className="view-section cf-page client-portal-page" aria-labelledby="client-portal-title" data-density="comfortable">
         <PageHeader
           description="Final approved deliverables and read-only monthly reports for your account."
           eyebrow="Client workspace"
@@ -994,7 +935,7 @@ export function ClientPortalPage() {
 
   if (projectsError && projects.length === 0) {
     return (
-      <section className="view-section cf-page" aria-labelledby="client-portal-title" data-density="comfortable">
+      <section className="view-section cf-page client-portal-page" aria-labelledby="client-portal-title" data-density="comfortable">
         <PageHeader
           description="Final approved deliverables and read-only monthly reports for your account."
           eyebrow="Client workspace"
@@ -1012,7 +953,7 @@ export function ClientPortalPage() {
   }
 
   return (
-    <section className="view-section cf-page" aria-labelledby="client-portal-title" data-density="comfortable">
+    <section className="view-section cf-page client-portal-page" aria-labelledby="client-portal-title" data-density="comfortable">
       <PageHeader
         actions={
           <Button variant="tertiary" disabled={projectsLoading} onClick={handleRefresh} type="button">
@@ -1049,14 +990,56 @@ export function ClientPortalPage() {
         </Button>
       </nav>
 
-      <div className="summary-grid metric-grid portal-metric-grid cf-metric-strip">
+      <div className="summary-grid metric-grid portal-metric-grid cf-metric-strip client-portal-kpi-row">
         <MetricCard helper="Projects shared with your account" label="Projects" value={String(projectCount)} />
         <MetricCard
           helper="Completed items only"
-          label="Deliverables"
+          label="Final assets"
           value={deliverablesLoading ? "…" : String(finalDeliverableCount)}
         />
+        <MetricCard
+          accent="warning"
+          helper="Open Pending Reviews to continue"
+          label="Awaiting your approval"
+          value={String(pendingApprovalCount)}
+        />
+        <MetricCard
+          helper="Finalized snapshots for your account"
+          label="Monthly reports"
+          value={monthlyReportsLoading ? "…" : String(monthlyReports.length)}
+        />
       </div>
+
+      {pendingApprovalCount > 0 ? (
+        <SectionPanel
+          description="These items need a decision from you before work can continue."
+          tint={AMBER_TINT}
+          title="Required attention"
+          tone="highlight"
+        >
+          <div className="client-portal-attention-list">
+            <div className="client-portal-attention-row is-urgent">
+              <div className="client-portal-attention-copy">
+                <strong>
+                  {pendingApprovalCount === 1
+                    ? "1 article needs your approval"
+                    : `${pendingApprovalCount} articles need your approval`}
+                </strong>
+                <span className="muted-text text-small">
+                  Review the draft and approve or request changes.
+                </span>
+              </div>
+              <Button
+                onClick={() => navigateToClientPortalHash("client-portal/pending-approvals")}
+                size="sm"
+                type="button"
+              >
+                Review &amp; Approve
+              </Button>
+            </div>
+          </div>
+        </SectionPanel>
+      ) : null}
 
       {projectsError ? <Alert message={projectsError} variant="danger" /> : null}
 
@@ -1088,6 +1071,8 @@ export function ClientPortalPage() {
             <div className="cf-project-list">
               {filteredProjects.map((project) => (
                 <article
+                  aria-current={selectedProjectId === project.id ? "true" : undefined}
+                  aria-label={`${project.name}${selectedProjectId === project.id ? ", selected" : ""}`}
                   className={`cf-project-item${selectedProjectId === project.id ? " is-selected" : ""}`}
                   key={project.id}
                   onClick={() => handleSelectProject(project.id)}
@@ -1260,8 +1245,8 @@ export function ClientPortalPage() {
               </SectionPanel>
 
               <SectionPanel
-                description="Final approved materials ready for client access."
-                title="Final deliverables"
+                description="Final approved materials ready for download or open links."
+                title="Final assets"
                 tone="compact"
               >
                 {releasePackageLoading ? (
@@ -1269,43 +1254,80 @@ export function ClientPortalPage() {
                 ) : releasePackageError ? (
                   <Alert message={releasePackageError} title="Final materials unavailable" variant="danger" />
                 ) : releasePackage ? (
-                  <article className="cf-record">
-                    <div className="cf-record-main cf-record-main--stack">
-                      <div className="cf-record-title">
-                        <h3>{releasePackage.briefTitle}</h3>
-                        <div className="cf-record-meta">
-                          <ClientPortalStatusBadge status={releasePackage.releaseStatus} />
-                          <span>Finalized {formatDateLabel(releasePackage.finalizedAt)}</span>
-                          <span>
-                            {releasePackage.deliverables.length} deliverable
-                            {releasePackage.deliverables.length === 1 ? "" : "s"}
-                          </span>
+                  <div className="cf-detail-stack">
+                    <article className="cf-record">
+                      <div className="cf-record-main cf-record-main--stack">
+                        <div className="cf-record-title">
+                          <h3>{releasePackage.briefTitle}</h3>
+                          <div className="cf-record-meta">
+                            <ClientPortalStatusBadge status={releasePackage.releaseStatus} />
+                            <span>Finalized {formatDateLabel(releasePackage.finalizedAt)}</span>
+                            <span>
+                              {releasePackage.deliverables.length} deliverable
+                              {releasePackage.deliverables.length === 1 ? "" : "s"}
+                            </span>
+                          </div>
+                          {releasePackage.summary ? (
+                            <p className="cf-record-note">{releasePackage.summary}</p>
+                          ) : null}
                         </div>
-                        {releasePackage.summary ? (
-                          <p className="cf-record-note">{releasePackage.summary}</p>
-                        ) : null}
                       </div>
-                      {releasePackage.deliverables.length > 0 ? (
-                        <div className="cf-record-list">
-                          {releasePackage.deliverables.map((item) => (
-                            <div className="cf-record-meta" key={`${item.title}-${item.type}`}>
-                              <strong>{item.title}</strong>
-                              <ClientPortalStatusBadge status={item.status} />
-                              {item.exportUrl ? (
-                                <a href={item.exportUrl} rel="noreferrer" target="_blank">
-                                  Open final file
-                                </a>
-                              ) : null}
-                            </div>
-                          ))}
-                        </div>
-                      ) : null}
+                    </article>
+                    <div className="client-portal-assets-grid">
+                      <div className="client-portal-asset-card">
+                        <h3>Published articles</h3>
+                        <p className="muted-text">
+                          {releasePackage.deliverables.length} file
+                          {releasePackage.deliverables.length === 1 ? "" : "s"}
+                        </p>
+                        {releasePackage.deliverables.length === 0 ? (
+                          <p className="muted-text text-small">No article files in this release yet.</p>
+                        ) : (
+                          <div className="cf-record-list">
+                            {releasePackage.deliverables.map((item) => (
+                              <div className="cf-record-meta" key={`${item.title}-${item.type}`}>
+                                <strong>{item.title}</strong>
+                                <ClientPortalStatusBadge status={item.status} />
+                                {item.exportUrl ? (
+                                  <a href={item.exportUrl} rel="noreferrer" target="_blank">
+                                    Open final file
+                                  </a>
+                                ) : null}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      <div className="client-portal-asset-card">
+                        <h3>Approved images</h3>
+                        <p className="muted-text">
+                          {releasePackage.images.length} image
+                          {releasePackage.images.length === 1 ? "" : "s"}
+                        </p>
+                        {releasePackage.images.length === 0 ? (
+                          <p className="muted-text text-small">No images in this release yet.</p>
+                        ) : (
+                          <div className="cf-record-list">
+                            {releasePackage.images.slice(0, 6).map((image) => (
+                              <div className="cf-record-meta" key={`${image.title}-${image.imageUrl ?? "none"}`}>
+                                <strong>{image.title}</strong>
+                                <ClientPortalStatusBadge status={image.status} />
+                                {image.imageUrl ? (
+                                  <a href={image.imageUrl} rel="noreferrer" target="_blank">
+                                    Open image
+                                  </a>
+                                ) : null}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </article>
+                  </div>
                 ) : (
                   <EmptyState
-                    message="Final deliverables will appear here after finalization."
-                    title="No deliverables yet"
+                    message="Final assets will appear here after finalization."
+                    title="No assets yet"
                     variant="inline"
                   />
                 )}
@@ -1423,52 +1445,55 @@ export function ClientPortalPage() {
                     variant="inline"
                   />
                 ) : (
-                  <div className="cf-record-list">
-                    {deliverables.map((deliverable) => (
-                      <article className="cf-record" key={deliverable.id}>
-                        <div className="cf-record-main">
-                          <div className="cf-record-title">
-                            <div className="cf-record-kicker">
-                              <ClientPortalStatusBadge status={deliverable.status} />
-                              <span className="cf-type-pill">{toClientPortalDeliveryTypeLabel(deliverable.deliveryType)}</span>
+                  <div className="client-portal-table-wrap">
+                    <div className="cf-record-list">
+                      {deliverables.map((deliverable) => (
+                        <article className="cf-record" key={deliverable.id}>
+                          <div className="cf-record-main">
+                            <div className="cf-record-title">
+                              <div className="cf-record-kicker">
+                                <ClientPortalStatusBadge status={deliverable.status} />
+                                <span className="cf-type-pill">{toClientPortalDeliveryTypeLabel(deliverable.deliveryType)}</span>
+                              </div>
+                              <h3>{deliverable.title}</h3>
+                              <div className="cf-record-meta">
+                                <span>Updated {formatDateLabel(deliverable.updatedAt)}</span>
+                                {deliverable.exportUrl ? (
+                                  <span>
+                                    <a href={deliverable.exportUrl} rel="noreferrer" target="_blank">
+                                      Open final file
+                                    </a>
+                                  </span>
+                                ) : null}
+                              </div>
                             </div>
-                            <h3>{deliverable.title}</h3>
-                            <div className="cf-record-meta">
-                              <span>Updated {formatDateLabel(deliverable.updatedAt)}</span>
-                              {deliverable.exportUrl ? (
-                                <span>
-                                  <a href={deliverable.exportUrl} rel="noreferrer" target="_blank">
-                                    Open final file
-                                  </a>
-                                </span>
-                              ) : null}
+                            <div className="dense-actions">
+                              <Button
+                                size="sm"
+                                variant="secondary"
+                                disabled={downloadingDeliverableId === deliverable.id}
+                                onClick={() => void handleDownload(deliverable.id)}
+                                type="button"
+                              >
+                                {downloadingDeliverableId === deliverable.id ? "Opening..." : "Download final file"}
+                              </Button>
                             </div>
                           </div>
-                          <div className="dense-actions">
-                            <Button
-                              size="sm"
-                              variant="secondary"
-                              disabled={downloadingDeliverableId === deliverable.id}
-                              onClick={() => void handleDownload(deliverable.id)}
-                              type="button"
-                            >
-                              {downloadingDeliverableId === deliverable.id ? "Opening..." : "Download final file"}
-                            </Button>
-                          </div>
-                        </div>
-                        {deliverable.description ? (
-                          <p className="cf-record-note">{deliverable.description}</p>
-                        ) : null}
-                      </article>
-                    ))}
+                          {deliverable.description ? (
+                            <p className="cf-record-note">{deliverable.description}</p>
+                          ) : null}
+                        </article>
+                      ))}
+                    </div>
                   </div>
                 )}
               </SectionPanel>
 
               <SectionPanel
                 description="Final monthly snapshots of completed work and recommendations."
-                title="Monthly reports"
+                title="Monthly reports archive"
                 tone="compact"
+                tint={monthlyReports.length > 0 ? INDIGO_TINT : undefined}
               >
                 {monthlyReportsLoading ? (
                   <PortalInlineLoading label="Loading monthly reports" />
@@ -1507,53 +1532,53 @@ export function ClientPortalPage() {
                         <Alert message={monthlyReportDetailError} title="Monthly report unavailable" variant="danger" />
                       ) : monthlyReportDetail ? (
                         <div className="stack-gap-sm">
-                          <article className="cf-record">
-                            <div className="cf-record-main">
-                              <div className="cf-record-title">
-                                <div className="cf-record-kicker">
-                                  <ClientPortalStatusBadge status={monthlyReportDetail.monthlyReport.status} />
-                                  {selectedMonthlyReportIndex >= 0 ? (
-                                    <span className="muted-text">
-                                      Report {selectedMonthlyReportIndex + 1} of {monthlyReports.length}
-                                    </span>
-                                  ) : null}
-                                </div>
-                                <h3>
-                                  {toClientPortalMonthlyReportDisplayTitle(
-                                    monthlyReportDetail.monthlyReport,
-                                    "Monthly report"
-                                  )}
-                                </h3>
-                                <div className="cf-record-meta">
-                                  <span>Month {formatMonthLabel(monthlyReportDetail.workSummary.targetMonth)}</span>
-                                  <span>Finalized {formatReportDate(monthlyReportDetail.monthlyReport.finalizedAt)}</span>
-                                </div>
-                              </div>
-                              <div className="dense-actions">
-                                {monthlyReportDetail.monthlyReport.hasDocument ? (
-                                  <Button
-                                    size="sm"
-                                    variant="secondary"
-                                    disabled={downloadingMonthlyReportId === monthlyReportDetail.monthlyReport.id}
-                                    onClick={() => void handleMonthlyReportDownload(monthlyReportDetail.monthlyReport.id)}
-                                    type="button"
-                                  >
-                                    {downloadingMonthlyReportId === monthlyReportDetail.monthlyReport.id ? "Opening..." : "Download report PDF"}
-                                  </Button>
-                                ) : null}
-                                {monthlyReportDetail.monthlyReport.exportUrl ? (
-                                  <a
-                                    className="cf-text-link"
-                                    href={monthlyReportDetail.monthlyReport.exportUrl}
-                                    rel="noreferrer"
-                                    target="_blank"
-                                  >
-                                    Open final report
-                                  </a>
+                          <div className="client-portal-report-banner" style={{ background: "rgba(129, 140, 248, 0.08)" }}>
+                            <div className="client-portal-report-banner-copy">
+                              <div className="cf-record-kicker">
+                                <ClientPortalStatusBadge status={monthlyReportDetail.monthlyReport.status} />
+                                {selectedMonthlyReportIndex >= 0 ? (
+                                  <span className="muted-text">
+                                    Report {selectedMonthlyReportIndex + 1} of {monthlyReports.length}
+                                  </span>
                                 ) : null}
                               </div>
+                              <h3>
+                                {toClientPortalMonthlyReportDisplayTitle(
+                                  monthlyReportDetail.monthlyReport,
+                                  "Monthly report"
+                                )}
+                              </h3>
+                              <p className="muted-text text-small">
+                                Month {formatMonthLabel(monthlyReportDetail.workSummary.targetMonth)} · Finalized{" "}
+                                {formatReportDate(monthlyReportDetail.monthlyReport.finalizedAt)}
+                              </p>
                             </div>
-                          </article>
+                            <div className="dense-actions">
+                              {monthlyReportDetail.monthlyReport.hasDocument ? (
+                                <Button
+                                  size="sm"
+                                  variant="secondary"
+                                  disabled={downloadingMonthlyReportId === monthlyReportDetail.monthlyReport.id}
+                                  onClick={() => void handleMonthlyReportDownload(monthlyReportDetail.monthlyReport.id)}
+                                  type="button"
+                                >
+                                  {downloadingMonthlyReportId === monthlyReportDetail.monthlyReport.id
+                                    ? "Opening..."
+                                    : "Download PDF"}
+                                </Button>
+                              ) : null}
+                              {monthlyReportDetail.monthlyReport.exportUrl ? (
+                                <a
+                                  className="cf-text-link"
+                                  href={monthlyReportDetail.monthlyReport.exportUrl}
+                                  rel="noreferrer"
+                                  target="_blank"
+                                >
+                                  Preview
+                                </a>
+                              ) : null}
+                            </div>
+                          </div>
 
                           <div className="summary-grid metric-grid portal-metric-grid cf-metric-strip">
                             <MetricCard

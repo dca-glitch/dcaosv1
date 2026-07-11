@@ -2004,6 +2004,17 @@ tr:hover td {
   gap: 4px;
 }
 
+.client-access-loading {
+  justify-content: flex-start;
+  min-height: 0;
+  padding: 8px 0;
+}
+
+.table-wrap.table-scroll {
+  -webkit-overflow-scrolling: touch;
+  max-width: 100%;
+}
+
 @media (max-width: 1120px) {
   .dense-record-main {
     grid-template-columns: 1fr;
