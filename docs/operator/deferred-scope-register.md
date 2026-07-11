@@ -14,6 +14,8 @@ This register prevents confusion. If something is listed under **Still deferred*
 
 **PRE-STAGING CLOSURE (2026-07-10):** Local/no-live bug scan + safe fixes + UI/UX truth-label polish + operator/security docs closeout. Still **do not** move: real R2 IO, live email, live GA/GSC, live WordPress, live image provider, staging/prod live proofs, notification persistence/inbox, runtime taxonomy consumption for email send, or trusted `actualCostUsd` ingestion. Optional follow-ups (owner-gated, not launch-closing alone): client download `truthLabel` wiring; client-portal errorMiddleware stack branch; WorkflowBriefs packaging internals for non-admin clients. Puriva Launch remains **BLOCKED**. Production remains frozen. Next stage = owner-approved staging/live proof only. See [`PRE_STAGING_CLOSURE_VERDICT.md`](./PRE_STAGING_CLOSURE_VERDICT.md).
 
+**PRODUCTION PHASE A PG/API ROTATION (2026-07-11):** Production PostgreSQL/API credential rotation Phase A completed with emergency recovery. PostgreSQL password and `DATABASE_URL` are synchronized; production and staging health are HTTP 200. Cloudflare Turnstile and R2 credentials remain exposed/unrotated and are recorded below as **OPEN DEFERRED SECURITY WORK**. The incident is **not** claimed as fully closed. Production remains frozen for unrelated deployment. See [`docs/STATUS.md`](../STATUS.md) §Production PostgreSQL/API credential rotation Phase A closeout.
+
 ## Rule
 
 Deferred means: do not build, enable, deploy, or promise it as active until there is a separate approved task.
@@ -44,6 +46,21 @@ These are **not** "still deferred" long-term roadmap items. They are active bloc
 | Feedback learning | Product gate | Client feedback loop for delivery iteration |
 
 **Puriva Launch status:** **Blocked** until the blockers above are closed with evidence. See [`G53_PRODUCTION_SAFETY_PLAN.md`](../runbooks/G53_PRODUCTION_SAFETY_PLAN.md).
+
+## Open deferred security work (2026-07-11)
+
+This section records credentials that were exposed in operational artifacts and are **not yet rotated**. It is **not** a roadmap item — it is active security debt that must be closed before the incident can be considered fully contained.
+
+| Item | Status | Scope | Owner gate |
+|------|--------|-------|------------|
+| PostgreSQL production credential | **REMEDIATED** | Production DB role password and `DATABASE_URL` rotated; API recreated and healthy | Phase A complete — `PRODUCTION PHASE A RECOVERED AFTER FAILURE` |
+| Cloudflare Turnstile secret | **OPEN — DEFERRED** | Exposed credential remains in production env history; owner explicitly deferred rotation | Phase B — new owner-supplied Turnstile secret required |
+| Cloudflare R2 access key pair | **OPEN — DEFERRED** | Exposed credential remains in production env history; owner explicitly deferred rotation | Phase C — new owner-supplied R2 access key pair required |
+| Old external credential revocation | **OPEN — DEFERRED** | Revocation of superseded Turnstile/R2 credentials blocked until new credentials are proven | Phase D — literal token `APPROVE_EXTERNAL_CREDENTIAL_REVOCATION` required |
+
+**Incident closure status:** **NOT CLOSED**. PostgreSQL exposure is remediated, but Turnstile and R2 exposures remain open. Do not treat this register entry as a closure statement.
+
+**Prevention rule for future runners:** VPS host `psql` is not available; use `docker exec` into the PostgreSQL container for `psql` and `pg_restore --list`. Do not fail merely because Docker writes routine messages to stderr.
 
 **Roadmap reference:** G147 created [`G147_NEXT_20_GATES.md`](./G147_NEXT_20_GATES.md) for G89-G108 planning. G227 created [`G227_NEXT_30_GATES.md`](./G227_NEXT_30_GATES.md) for G229+ after G228 closeout. G468 created [`G468_NEXT_50_GATES.md`](./G468_NEXT_50_GATES.md) for G469+ after G229–G467 closeout. G708 created [`G708_NEXT_GATES.md`](./G708_NEXT_GATES.md) for G709+ after G469–G707 closeout. None of these roadmaps authorize live proof or launch.
 

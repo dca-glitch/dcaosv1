@@ -1,6 +1,7 @@
 # DCA OS Lite — Status (Source of Truth)
 
-**Last updated:** 2026-07-10 (PRE-STAGING CLOSURE — local/no-live audit + safe fixes; see [`docs/operator/PRE_STAGING_CLOSURE_VERDICT.md`](./operator/PRE_STAGING_CLOSURE_VERDICT.md))
+**Last updated:** 2026-07-11 (PRODUCTION PHASE A PG/API CREDENTIAL ROTATION CLOSEOUT — see §Production PostgreSQL/API credential rotation Phase A closeout below)
+**PRE-STAGING closure:** 2026-07-10 (local/no-live audit + safe fixes; see [`docs/operator/PRE_STAGING_CLOSURE_VERDICT.md`](./operator/PRE_STAGING_CLOSURE_VERDICT.md))
 **G55 pre-live readiness:** [`docs/runbooks/G55_PRELIVE_READINESS.md`](./runbooks/G55_PRELIVE_READINESS.md)
 **G56 pre-live readiness:** [`docs/runbooks/G56_PRELIVE_READINESS.md`](./runbooks/G56_PRELIVE_READINESS.md)
 **G57–G68 pre-live readiness:** [`docs/runbooks/G57_G68_PRELIVE_READINESS.md`](./runbooks/G57_G68_PRELIVE_READINESS.md)
@@ -83,6 +84,40 @@
 | Roadmap tracks | Production Safety · Live Integration Proof · Client Operating Pack/Productization |
 
 Detail: [`AI_MODEL_ROUTING_POLICY.md`](./runbooks/AI_MODEL_ROUTING_POLICY.md) · [`G53_PRODUCTION_SAFETY_PLAN.md`](./runbooks/G53_PRODUCTION_SAFETY_PLAN.md) · [`deferred-scope-register.md`](./operator/deferred-scope-register.md) · §2.14 below.
+
+## Production PostgreSQL/API credential rotation Phase A closeout (2026-07-11)
+
+**Result:** `PRODUCTION PHASE A RECOVERED AFTER FAILURE`.
+
+Production PostgreSQL role password and `DATABASE_URL` were rotated, the production env was reconstructed, and the production API was recreated using a temporary API-only compose file. Production and staging health returned to HTTP 200. No tracked source files were modified; no commit or push was performed.
+
+| Item | State |
+|------|--------|
+| Classification | **PRODUCTION PHASE A RECOVERED AFTER FAILURE** |
+| Local repo | `C:\dcaosv1`, `main` @ `c8c711a`, `main` equals `origin/main`, tracked tree clean |
+| VPS | `DCA01`, SSH user `deploy` |
+| Production local health (`127.0.0.1:4010/api/v1/health`) | **HTTP 200**, database ready |
+| Production public health (`https://system.digitalcubeagency.net/api/v1/health`) | **HTTP 200**, database ready |
+| Staging local health (`127.0.0.1:4011/api/v1/health`) | **HTTP 200**, database ready |
+| Staging public health (`https://staging.digitalcubeagency.net/api/v1/health`) | **HTTP 200**, database ready |
+| `dcaosv1-postgres` | Unchanged — `StartedAt` 2026-06-14T10:52:09Z, Restarts=0 |
+| `dca-caddy` | Unchanged — `StartedAt` 2026-07-09T00:59:48Z, Restarts=0 |
+| `dcaosv1-staging-api` | Unchanged — `StartedAt` 2026-07-11T10:01:34Z, Restarts=0 |
+| `dcaosv1-staging-postgres` | Unchanged — `StartedAt` 2026-07-04T00:38:06Z, Restarts=0 |
+| New authoritative production files | `/opt/dca/apps/dcaosv1/app/.env` (deploy:deploy, mode 600); `/opt/dca/apps/dcaosv1/app/docker-compose.production-api-only.yml` (deploy:deploy, mode 600) |
+| Backups created | Production pg_dump (validated with container `pg_restore --list`); frontend dist backup; env candidate backup |
+| Source code / schema / migration change | **None** |
+| Commit / push / deploy | **None** |
+| Production general deploy approval | **Not granted** — production remains frozen for unrelated deployment |
+
+**Incident status:** The exposed PostgreSQL credential was remediated. Cloudflare Turnstile and R2 credentials remain exposed/unrotated. The owner explicitly deferred their rotation. This is recorded as **OPEN DEFERRED SECURITY WORK** in [`deferred-scope-register.md`](./operator/deferred-scope-register.md); the incident is **not** claimed as fully closed.
+
+**Future gates:**
+- **Phase B — Turnstile cutover:** requires new owner-supplied Cloudflare Turnstile secret.
+- **Phase C — R2 cutover:** requires new owner-supplied Cloudflare R2 access key pair.
+- **Phase D — old external credential revocation:** requires literal token `APPROVE_EXTERNAL_CREDENTIAL_REVOCATION`.
+
+**Execution issue / prevention rule:** The first Phase A attempt failed because `psql` is not installed on the VPS host; `pg_restore --list` must also run inside the PostgreSQL container. Future production runners must use container-native PostgreSQL tools and must not treat normal Docker stderr output as a fatal error.
 
 ## G77b persistent COMPLETED ledger live proof closeout (2026-07-10)
 

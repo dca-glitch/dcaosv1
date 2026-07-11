@@ -52,12 +52,14 @@ Stop and do not proceed (or roll back per `PRODUCTION_ROLLBACK.md`) if any of th
 | Owner | Approves G49/G50 execution blocks; approves commit/push; makes the STOP/GO call |
 | Operator/agent | Executes only the explicitly approved, bounded step; documents evidence; never improvises beyond scope |
 
-## 6. Current status snapshot (2026-07-09)
+## 6. Current status snapshot (2026-07-11)
 
 | Item | Status |
 |------|--------|
-| Production readiness | **NO** |
-| G49 | Public read-only proof collected this session (see `G49_PRODUCTION_DRY_RUN_READ_ONLY_PROOF.md` §1); formal gate closure sentence still required |
+| Production readiness | **NO** — production remains frozen for unrelated deployment |
+| G49 | Public read-only proof collected (see `G49_PRODUCTION_DRY_RUN_READ_ONLY_PROOF.md` §1); formal gate closure sentence still required |
 | G50 | Not executed |
-| Rollback evidence | Not yet proven (procedure documented in `PRODUCTION_ROLLBACK.md`; no real drill executed) |
+| Production PostgreSQL/API credential rotation Phase A | **RECOVERED AFTER FAILURE** — PostgreSQL password and `DATABASE_URL` rotated; production API recreated via `/opt/dca/apps/dcaosv1/app/docker-compose.production-api-only.yml`; production and staging health HTTP 200; `dcaosv1-postgres` and `dca-caddy` unchanged |
+| Turnstile / R2 credential rotation | **OPEN DEFERRED SECURITY WORK** — owner explicitly deferred; requires separate Phase B/C/D gates |
+| Rollback evidence | Production DB dump + env + dist backups taken 2026-07-11; emergency recovery executed successfully; old unproven env candidates were **not** used as rollback source |
 | Puriva Launch | Blocked — separate gate, see `PURIVA_LAUNCH_GATE.md` |
