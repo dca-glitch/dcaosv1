@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { EmptyState } from "../EmptyState";
+import { LoadingState } from "../LoadingState";
 import { StatusNotice } from "../StatusNotice";
 import { Button, FilterBar, SectionPanel, StatusBadge } from "../ui";
-import { Select, Spinner } from "../../design-system";
+import { Select } from "../../design-system";
 import type { ClientAccessTenantUser, ClientAccessUserSummary } from "../../pages/clients/ClientsPage";
 
 type AccessFilter = "active" | "archived" | "all";
@@ -170,9 +171,8 @@ export function ClientAccessPanel({
       />
 
       {accessLoading && accessRecords.length === 0 ? (
-        <div className="state-panel loading-state-panel client-access-loading" role="status">
-          <Spinner size="sm" />
-          Loading access records...
+        <div className="client-access-loading">
+          <LoadingState label="Loading access records…" />
         </div>
       ) : null}
 

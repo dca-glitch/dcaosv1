@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { EmptyState } from "../components/EmptyState";
+import { LoadingState } from "../components/LoadingState";
 import { Badge, Button, MetricCard, PageHeader, SectionPanel } from "../components/ui";
-import { Alert, Spinner } from "../design-system";
+import { Alert } from "../design-system";
 import {
   buildClientDashboardAttentionItems,
   buildClientDashboardKpis,
@@ -174,12 +175,7 @@ export function ClientDashboardPage({ user }: ClientDashboardPageProps) {
   const recentBriefs = useMemo(() => selectRecentClientBriefs(briefs, 6), [briefs]);
 
   if (loading) {
-    return (
-      <div className="state-panel loading-state-panel" role="status">
-        <Spinner size="sm" />
-        Loading dashboard
-      </div>
-    );
+    return <LoadingState label="Loading dashboard" />;
   }
 
   if (error) {

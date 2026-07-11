@@ -50,7 +50,7 @@
   /* ─── Text hierarchy (T.*) ─── */
   --ds-text-primary:   #E2E6F2;
   --ds-text-secondary: #9BA3BF;
-  --ds-text-muted:     #5C6380;
+  --ds-text-muted:     #7F89A8;
   --ds-text-faint:     #3A4060;
   --ds-text-inverse:   #06070D;
   --ds-text-disabled:  rgba(58, 64, 96, 0.60);
@@ -208,9 +208,9 @@
   --status-overdue-bg:              rgba(224, 96, 96, 0.12);
   --status-overdue-border:          rgba(224, 96, 96, 0.22);
 
-  --status-archived-text:           #5C6380;
-  --status-archived-bg:             rgba(92, 99, 128, 0.08);
-  --status-archived-border:         rgba(92, 99, 128, 0.12);
+  --status-archived-text:           #7F89A8;
+  --status-archived-bg:             rgba(127, 137, 168, 0.09);
+  --status-archived-border:         rgba(127, 137, 168, 0.16);
 
   /* ═══════════════════════════════════════════════════════════
    * 2. COMPATIBILITY ALIASES
@@ -462,7 +462,7 @@ html {
   background-color: var(--ds-surface-page);
   color: var(--ds-text-primary);
   font-family: var(--ds-font-sans);
-  font-size: var(--text-body-sm);
+  font-size: var(--text-body-md);
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;

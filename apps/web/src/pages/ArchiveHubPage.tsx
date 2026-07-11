@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { EmptyState } from "../components/EmptyState";
+import { LoadingState } from "../components/LoadingState";
 import { Badge, Button, PageHeader, SectionPanel, StatusBadge } from "../components/ui";
-import { Alert, Spinner } from "../design-system";
+import { Alert } from "../design-system";
 import {
   clientPortalApiRequest,
   getClientPortalAuthToken,
@@ -431,10 +432,7 @@ export function ArchiveHubPage() {
 
   if (loading) {
     return (
-      <div className="state-panel loading-state-panel" role="status">
-        <Spinner size="sm" />
-        Loading archive
-      </div>
+      <LoadingState label="Loading archive" />
     );
   }
 

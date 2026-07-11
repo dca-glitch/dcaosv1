@@ -35,7 +35,7 @@ export function SideSheet({
         onClick={onClose}
         role="presentation"
         style={{
-          background: "rgba(3, 3, 8, 0.72)",
+          background: "var(--ds-modal-backdrop)",
           backdropFilter: "blur(2px)",
         }}
       />
@@ -48,8 +48,8 @@ export function SideSheet({
         tabIndex={-1}
         style={{
           borderRadius: "var(--ds-radius-lg) 0 0 var(--ds-radius-lg)",
-          border: "1px solid rgba(255, 255, 255, 0.13)",
-          background: "linear-gradient(150deg, #09090F 0%, #0E0B1C 100%)",
+          border: "1px solid var(--ds-modal-border)",
+          background: "var(--ds-modal-gradient)",
           boxShadow: "var(--ds-shadow-overlay)",
         }}
         {...props}
