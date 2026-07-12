@@ -1,6 +1,6 @@
 # DCA OS Lite — Status (Source of Truth)
 
-**Last updated:** 2026-07-12 (AI-B AI Delivery OpenRouter staging live KEEP on `a8a74e6`; next gate R2; production frozen)
+**Last updated:** 2026-07-12 (R2 private storage staging live KEEP on `4cd6d58`; next gate Image; production frozen)
 **Authoritative project control:** [`docs/project-control/AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md`](./project-control/AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md)
 **PRE-STAGING closure:** 2026-07-10 (local/no-live audit + safe fixes; see [`docs/operator/PRE_STAGING_CLOSURE_VERDICT.md`](./operator/PRE_STAGING_CLOSURE_VERDICT.md))
 **G55 pre-live readiness:** [`docs/runbooks/G55_PRELIVE_READINESS.md`](./runbooks/G55_PRELIVE_READINESS.md)
@@ -43,7 +43,7 @@
 | **PRE-STAGING local closure** | **PASS (local/no-live only)** — see [`PRE_STAGING_CLOSURE_VERDICT.md`](./operator/PRE_STAGING_CLOSURE_VERDICT.md). Does **not** mean launch ready, staging proven, or production ready |
 | **G69 merge** | **DONE** — G57–G68 fast-forward merged to `main`; final commit `64bfd06` |
 | Production readiness | **NO** — production remains frozen |
-| Next gate | R2 private storage live create/read/delete proof (owner-gated; AI-B AI Delivery OpenRouter path KEEP) |
+| Next gate | Image provider / live generation proof (owner-gated; R2 staging private-object KEEP) |
 | PRE-STAGING Lanes 14–15 | **Docs closeout** — stale-claim sweep + operator runbook refresh; no live proof; Puriva Launch **BLOCKED** |
 | G469-G708 final integration | **KEEP** — 20 lanes reconciled; local/no-IO foundations only; live R2, live email, live GA/GSC, live WordPress, live image, staging/prod live proofs, full notification E2E launch proof, trusted `actualCostUsd` ingestion, commit, push, deploy remain blocked (in-app notification persistence/UI foundation now exists — see notification rows below) |
 | G229-G468 final integration | **KEEP** — 12 lanes reconciled; local/no-IO foundations only; superseded as latest baseline by G469-G708 |
@@ -146,9 +146,9 @@ Production PostgreSQL role password and `DATABASE_URL` were rotated, the product
 | Required smokes | `smoke:mvp:staging` PASS; `smoke:staging-security-baseline` 32/32 PASS |
 | Caddy | Not restarted or changed |
 | Production | **Not modified** — FROZEN; prod API `65b4b9d4…` StartedAt `2026-07-11T10:51:44Z` unchanged |
-| Live integrations | Email = **STAGING PROVIDER ACCEPTANCE PROVEN**; AI-A = **CONFIG SHAPE PROVEN**; AI-B AI Delivery OpenRouter = **STAGING LIVE PROVEN**; R2 / Image / WordPress / GA-GSC / MI remain open |
+| Live integrations | Email = **STAGING PROVIDER ACCEPTANCE PROVEN**; AI-A = **CONFIG SHAPE PROVEN**; AI-B AI Delivery OpenRouter = **STAGING LIVE PROVEN**; R2 private-object IO = **STAGING LIVE PROVEN** on `4cd6d58`; Image / WordPress / GA-GSC / MI remain open |
 | VPS evidence | `/opt/dca/apps/dcaosv1/staging/backups/STAGING_DEPLOY_A8A74E6_RESULT_20260712-043322.txt` |
-| Next sequence | AI-B COMPLETE → R2 → Image → WordPress → GA/GSC → MI |
+| Next sequence | R2 COMPLETE → Image → WordPress → GA/GSC → MI |
 
 **Production safety:** This staging PASS does **not** authorize production deploy, Caddy changes, DB restore, or further live integration proofs without separate owner gates.
 
@@ -199,7 +199,29 @@ Production PostgreSQL role password and `DATABASE_URL` were rotated, the product
 | Health / smoke | Health PASS; post-restore `smoke-openrouter-guarded-local` 12/12 PASS (local) |
 | DB / Caddy / production | Unchanged (staging API recreated only for env load/restore) |
 | VPS evidence | `/opt/dca/apps/dcaosv1/staging/backups/AI_B_AI_DELIVERY_LIVE_PROOF_20260712-071332.txt` |
-| Next gate | R2 private storage live create/read/delete proof |
+| Next gate | R2 private storage live create/read/delete proof (COMPLETE 2026-07-12) |
+
+## R2 staging live private-storage proof closeout (2026-07-12)
+
+**Result:** KEEP — R2 / private storage **STAGING LIVE PROVEN** for one isolated staging object (not production; not image storage; not client deliverable storage; not public delivery).
+
+| Item | State |
+|------|--------|
+| Staging artifact / compose context | `4cd6d58` (`/opt/dca/staging-artifacts/4cd6d58`) |
+| Bucket | `dcastaging` (staging-only; Cloudflare R2) |
+| Marker | `DCA-R2-20260712T081648Z-cc7ee7` |
+| Path | `uploadR2Object` → `headR2Object` → signed GET → `deleteR2Object` → `headR2Object` absence |
+| Object key | `tenants/dca-r2-proof/years/2026/projects/dca-r2-20260712t081648z-cc7ee7/months/07/documents/…pdf` |
+| Create / delete attempts | Exactly **1** / **1** |
+| Payload | `application/pdf`; 107 bytes; sha256 `39b787ccfa252b3ac067ec3fb6533d5be01ee31a619ebc033216c4a18b7f52a7` |
+| Integrity | Byte-for-byte + SHA-256 match on signed read |
+| Public URL | `null` (signed URL expiry 120s; full URL not logged) |
+| Client boundary | `storageKey` omitted; download URL null until explicit signed issuance |
+| Absence | HEAD `not_found` after delete; residual re-check still absent |
+| DB / Caddy / production | Unchanged / FROZEN |
+| Email / OpenRouter | Disabled / local no-live |
+| VPS evidence | `/opt/dca/apps/dcaosv1/staging/backups/R2_STAGING_LIVE_PROOF_20260712-081648.txt` |
+| Next gate | Image provider / live generation proof |
 
 ## Staging email one-send proof closeout (2026-07-12)
 

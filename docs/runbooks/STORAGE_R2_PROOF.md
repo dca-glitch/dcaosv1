@@ -1,6 +1,6 @@
 # Storage / R2 Proof Checklist
 
-**Status:** Operator proof gate for Cloudflare R2 private storage in DCA OS Lite.
+**Status:** Operator proof gate for Cloudflare R2 private storage in DCA OS Lite. **Staging private-object create/read/HEAD/delete/absence = STAGING LIVE PROVEN (2026-07-12, artifact `4cd6d58`, marker `DCA-R2-20260712T081648Z-cc7ee7`).** Production / image-variant / client-deliverable / public delivery remain not proven.
 
 **Scope:** Deliverable documents, article-image final assets, content-plan PDFs, monthly-report documents/PDFs, finance bill documents, and finance monthly-report PDFs. Does **not** authorize production deploy, VPS changes, or bucket credential commits.
 
@@ -88,7 +88,7 @@ Never commit, print, or log secret values.
 
 **Hardening (G469–G477, local no-IO):** target-environment proof **plan freeze** (`r2-target-environment-proof-plan.ts`), consolidated proof contracts barrel (`r2-proof-contracts.ts`), no-IO readiness invariant, partial-diagnostics + redacted-summary snapshot expansions, storageKey boundary consolidation, error-redaction expansion, admin/client field-policy expansion, client-safe URL truth-label matrix — all **no live R2 IO**. Plan freeze does **not** satisfy §3.
 
-**Current truth:** this runbook has not recorded a successful real R2 bucket proof for DCA OS Lite. The current automated coverage is config-shape, disabled/missing-config guards, secret non-serialization, proof-stage labeling, cleanup **plan** constants, target-environment **plan freeze**, and client-safe serializer boundaries only. Full env → `configured_shape_ok` is **not** live-proven.
+**Current truth (updated 2026-07-12):** Staging private-object create/read/HEAD/delete/absence is **STAGING LIVE PROVEN** on artifact `4cd6d58` / bucket `dcastaging` (marker `DCA-R2-20260712T081648Z-cc7ee7`; 107-byte PDF; `publicUrl=null`). This does **not** prove production R2, image-variant storage, client deliverable storage, or public delivery. Local automated coverage remains config-shape + disabled-safe + fake exact-key harness.
 
 ### 1b. Boolean-only presence check (no secret values ever printed)
 
@@ -273,7 +273,7 @@ Stop immediately and do **not** claim storage readiness if any of the following 
 |------------|--------|-------|
 | Private storage disabled-safe foundation | **Done (local)** | Guarded uploads, signed download helper, 5 MB / pdf+image validation |
 | Local R2 byte roundtrip smoke | **Available** | `npm run smoke:r2-byte-roundtrip:local`; strict mode via `SMOKE_EXPECT_R2_ROUNDTRIP` |
-| Staging bucket proof | **Deferred** | Requires owner-approved env + live checklist §3 |
+| Staging bucket proof | **KEEP / STAGING LIVE PROVEN** (bounded private object IO on `dcastaging` / `4cd6d58`) | Marker `DCA-R2-20260712T081648Z-cc7ee7`; does not claim image/client-deliverable/public surfaces |
 | Production bucket proof | **Deferred** | Separate from staging; see `deferred-scope-register.md` |
 | Client portal storage boundary smokes | **Done (local)** | `storageKey` hidden from client responses |
 | Automated cross-tenant denial smoke (R2 document routes) | **Gap — proposed** | Not yet automated; see §0 and §9 (#1) |
