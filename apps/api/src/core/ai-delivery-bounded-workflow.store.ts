@@ -19,6 +19,15 @@ import {
 type PrismaClientLike = ReturnType<typeof createPrismaClient>;
 type RunRow = Awaited<ReturnType<PrismaClientLike["aiDeliveryBoundedWorkflowRun"]["findUnique"]>>;
 
+export type PrismaBoundedWorkflowExactScope = {
+  tenantId: string;
+  clientId: string;
+  aiDeliveryProjectId: string;
+  contentDraftId: string;
+  publicationTargetId: string;
+  actorUserId: string;
+};
+
 function mapRun(row: NonNullable<RunRow>): BoundedWorkflowRun {
   return {
     id: row.id,
@@ -105,15 +114,28 @@ function runPatch(
 }
 
 export function createPrismaBoundedWorkflowStore(
-  prisma: PrismaClientLike = createPrismaClient()
+  prisma: PrismaClientLike = createPrismaClient(),
+  options: { exactScope?: PrismaBoundedWorkflowExactScope } = {}
 ): BoundedWorkflowStore {
   return {
     async resolveStartContext(input) {
+      const exactScope = options.exactScope;
+      if (
+        exactScope &&
+        (input.tenantId !== exactScope.tenantId ||
+          input.contentDraftId !== exactScope.contentDraftId ||
+          input.actorUserId !== exactScope.actorUserId)
+      ) {
+        return null;
+      }
       const [draft, membership] = await Promise.all([
         prisma.aiDeliveryContentDraft.findFirst({
           where: {
             id: input.contentDraftId,
-            tenantId: input.tenantId
+            tenantId: input.tenantId,
+            ...(exactScope
+              ? { aiDeliveryProjectId: exactScope.aiDeliveryProjectId }
+              : {})
           },
           include: {
             aiDeliveryProject: true
@@ -132,7 +154,14 @@ export function createPrismaBoundedWorkflowStore(
           }
         })
       ]);
-      if (!draft || !membership || draft.aiDeliveryProject.tenantId !== input.tenantId) {
+      if (
+        !draft ||
+        !membership ||
+        draft.aiDeliveryProject.tenantId !== input.tenantId ||
+        (exactScope &&
+          (draft.aiDeliveryProject.id !== exactScope.aiDeliveryProjectId ||
+            draft.aiDeliveryProject.clientId !== exactScope.clientId))
+      ) {
         return null;
       }
 
@@ -141,10 +170,16 @@ export function createPrismaBoundedWorkflowStore(
           tenantId: input.tenantId,
           clientId: draft.aiDeliveryProject.clientId,
           connectorType: "WORDPRESS",
-          isArchived: false
+          isArchived: false,
+          ...(exactScope ? { id: exactScope.publicationTargetId } : {})
         },
-        orderBy: [{ isDefault: "desc" }, { createdAt: "asc" }]
+        ...(exactScope
+          ? {}
+          : { orderBy: [{ isDefault: "desc" as const }, { createdAt: "asc" as const }] })
       });
+      if (exactScope && !publicationTarget) {
+        return null;
+      }
 
       return {
         tenantId: input.tenantId,
@@ -224,7 +259,18 @@ export function createPrismaBoundedWorkflowStore(
 
     async getRun(tenantId, workflowRunId) {
       const row = await prisma.aiDeliveryBoundedWorkflowRun.findFirst({
-        where: { id: workflowRunId, tenantId }
+        where: {
+          id: workflowRunId,
+          tenantId,
+          ...(options.exactScope
+            ? {
+                aiDeliveryProjectId: options.exactScope.aiDeliveryProjectId,
+                contentDraftId: options.exactScope.contentDraftId,
+                publicationTargetId: options.exactScope.publicationTargetId,
+                initiatedByUserId: options.exactScope.actorUserId
+              }
+            : {})
+        }
       });
       return row ? mapRun(row) : null;
     },
@@ -310,7 +356,18 @@ export function createPrismaBoundedWorkflowStore(
 
     async resolveContinuationContext(tenantId, workflowRunId) {
       const run = await prisma.aiDeliveryBoundedWorkflowRun.findFirst({
-        where: { id: workflowRunId, tenantId }
+        where: {
+          id: workflowRunId,
+          tenantId,
+          ...(options.exactScope
+            ? {
+                aiDeliveryProjectId: options.exactScope.aiDeliveryProjectId,
+                contentDraftId: options.exactScope.contentDraftId,
+                publicationTargetId: options.exactScope.publicationTargetId,
+                initiatedByUserId: options.exactScope.actorUserId
+              }
+            : {})
+        }
       });
       if (!run || !run.articleImageId || !run.publicationTargetId || !run.initiatedByUserId) {
         return null;

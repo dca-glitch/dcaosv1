@@ -29,6 +29,18 @@ export interface SendEmailNotificationResult {
   errorMessage: string | null;
 }
 
+export type EmailProviderDeliveryResult = {
+  status: EmailNotificationStatus;
+  provider: EmailProviderConfig["provider"];
+  providerMessageId: string | null;
+  errorMessage: string | null;
+  providerCalled: boolean;
+};
+
+export type EmailProviderDeliveryOptions = {
+  fetchImpl?: typeof fetch;
+};
+
 type PrismaClientLike = Prisma.TransactionClient | ReturnType<typeof createPrismaClient>;
 
 const prisma = createPrismaClient();
@@ -55,19 +67,21 @@ function buildDefaultHtmlBody(input: SendEmailNotificationInput): string {
 
 async function sendViaResend(
   config: EmailProviderConfig,
-  input: SendEmailNotificationInput
-): Promise<Pick<SendEmailNotificationResult, "status" | "providerMessageId" | "errorMessage">> {
+  input: SendEmailNotificationInput,
+  fetchImpl: typeof fetch
+): Promise<Pick<EmailProviderDeliveryResult, "status" | "providerMessageId" | "errorMessage" | "providerCalled">> {
   const apiKey = process.env.RESEND_API_KEY?.trim();
   if (!apiKey) {
     return {
       status: "FAILED",
       providerMessageId: null,
-      errorMessage: "Resend provider selected but RESEND_API_KEY is not configured."
+      errorMessage: "Resend provider selected but RESEND_API_KEY is not configured.",
+      providerCalled: false
     };
   }
 
   try {
-    const response = await fetch("https://api.resend.com/emails", {
+    const response = await fetchImpl("https://api.resend.com/emails", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,
@@ -89,28 +103,32 @@ async function sendViaResend(
       return {
         status: "FAILED",
         providerMessageId: null,
-        errorMessage: payload.message ?? `Resend request failed with status ${response.status}.`
+        errorMessage: payload.message ?? `Resend request failed with status ${response.status}.`,
+        providerCalled: true
       };
     }
 
     return {
       status: "SENT",
       providerMessageId: payload.id ?? null,
-      errorMessage: null
+      errorMessage: null,
+      providerCalled: true
     };
   } catch (error) {
     return {
       status: "FAILED",
       providerMessageId: null,
-      errorMessage: error instanceof Error ? error.message : "Resend request failed."
+      errorMessage: error instanceof Error ? error.message : "Resend request failed.",
+      providerCalled: true
     };
   }
 }
 
 async function resolveSendStatus(
   config: EmailProviderConfig,
-  input: SendEmailNotificationInput
-): Promise<Pick<SendEmailNotificationResult, "status" | "providerMessageId" | "errorMessage">> {
+  input: SendEmailNotificationInput,
+  fetchImpl: typeof fetch
+): Promise<Pick<EmailProviderDeliveryResult, "status" | "providerMessageId" | "errorMessage" | "providerCalled">> {
   const safety = getEmailProviderSafetyShape();
   const template = resolveEmailTemplateKey(input.templateKey);
 
@@ -119,7 +137,8 @@ async function resolveSendStatus(
     return {
       status: "SKIPPED",
       providerMessageId: null,
-      errorMessage: "Email template key is missing or unknown; no email was sent."
+      errorMessage: "Email template key is missing or unknown; no email was sent.",
+      providerCalled: false
     };
   }
 
@@ -127,7 +146,8 @@ async function resolveSendStatus(
     return {
       status: "SKIPPED",
       providerMessageId: null,
-      errorMessage: "Local email provider selected; no email was sent."
+      errorMessage: "Local email provider selected; no email was sent.",
+      providerCalled: false
     };
   }
 
@@ -135,7 +155,8 @@ async function resolveSendStatus(
     return {
       status: "FAILED",
       providerMessageId: null,
-      errorMessage: "Resend provider selected but RESEND_API_KEY is not configured."
+      errorMessage: "Resend provider selected but RESEND_API_KEY is not configured.",
+      providerCalled: false
     };
   }
 
@@ -145,20 +166,36 @@ async function resolveSendStatus(
       status: "SKIPPED",
       providerMessageId: null,
       errorMessage:
-        "Resend is configured but live send is deferred; EMAIL_LIVE_SEND_AUTHORIZED is not true. No email was sent."
+        "Resend is configured but live send is deferred; EMAIL_LIVE_SEND_AUTHORIZED is not true. No email was sent.",
+      providerCalled: false
     };
   }
 
   // Live path remains owner-gated; this lane does not authorize production sends.
-  return sendViaResend(config, input);
+  return sendViaResend(config, input, fetchImpl);
+}
+
+/**
+ * Provider-only delivery for workflows that persist their EmailLog atomically.
+ * This function never writes EmailLog rows.
+ */
+export async function deliverEmailNotification(
+  input: SendEmailNotificationInput,
+  options: EmailProviderDeliveryOptions = {}
+): Promise<EmailProviderDeliveryResult> {
+  const config = getEmailProviderConfig();
+  const delivery = await resolveSendStatus(config, input, options.fetchImpl ?? fetch);
+  return {
+    ...delivery,
+    provider: config.provider
+  };
 }
 
 export async function sendEmailNotification(
   input: SendEmailNotificationInput,
   client: PrismaClientLike = prisma
 ): Promise<SendEmailNotificationResult> {
-  const config = getEmailProviderConfig();
-  const delivery = await resolveSendStatus(config, input);
+  const delivery = await deliverEmailNotification(input);
   const now = new Date();
 
   const emailLog = await client.emailLog.create({
@@ -179,7 +216,7 @@ export async function sendEmailNotification(
   return {
     emailLogId: emailLog.id,
     status: emailLog.status,
-    provider: config.provider,
+    provider: delivery.provider,
     providerMessageId: emailLog.providerMessageId,
     errorMessage: emailLog.errorMessage
   };
