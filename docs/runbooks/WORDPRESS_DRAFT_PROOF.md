@@ -1,8 +1,10 @@
 # WordPress Draft Proof
 
-**Status:** Dedicated live-draft adapter **LOCAL IMPLEMENTED / FAKE-TRANSPORT PROVEN** (2026-07-12). Local draft preparation remains proven. Staging live draft remains **NOT PROVEN**. Live publish remains frozen (`WORDPRESS_LIVE_HTTP_FROZEN`). Auto-publish is **not** in scope.
+**Status:** Dedicated staging one-draft path **STAGING LIVE PROVEN** (2026-07-12) — bounded one-draft create-and-trash only. Local draft preparation remains proven. Dedicated adapter remains LOCAL IMPLEMENTED / FAKE-TRANSPORT PROVEN. Live publish remains frozen (`WORDPRESS_LIVE_HTTP_FROZEN`). Auto-publish is **not** in scope. General publication, image attachment, and production WordPress remain **NOT PROVEN**.
 
-**Dedicated live-draft path (2026-07-12):** `apps/api/src/services/wordpress-live-draft.adapter.ts` — `createWordPressDraft` hard-locks `status=draft`, Basic auth `username:applicationPassword`, dual flags `WORDPRESS_DRAFT_LIVE_ENABLED` + `WORDPRESS_DRAFT_LIVE_CALLS_ALLOWED`, exactly one create, retry=0, no media, idempotency via `WordPressDraftLiveAttempt`, exact-ID trash helper. Generic `publish-wordpress` is **not** unfrozen. Fake smoke: `npm.cmd run smoke:wordpress-live-draft-adapter:local`.
+**Dedicated live-draft path (2026-07-12):** `apps/api/src/services/wordpress-live-draft.adapter.ts` — `createWordPressDraft` hard-locks `status=draft`, Basic auth `authIdentifier:applicationPassword` (for this staging target the stored `wordpressUsername` is the WordPress user e-mail), dual flags `WORDPRESS_DRAFT_LIVE_ENABLED` + `WORDPRESS_DRAFT_LIVE_CALLS_ALLOWED`, exactly one create, retry=0, no media, idempotency via `WordPressDraftLiveAttempt`, exact-ID trash helper. Generic `publish-wordpress` is **not** unfrozen. Fake smoke: `npm.cmd run smoke:wordpress-live-draft-adapter:local`.
+
+**Staging live proof (2026-07-12, artifact `bd649d5`):** marker `DCA-WP-DRAFT-20260712T130503Z-8ecfacb2`; target `05ef12aa-662a-4bf7-b1c5-c17d295e5e0b` on `purivastaging.digitalcubeagency.net`; auth identifier length 17 (e-mail); Application Password length 29 (encrypted); create → `wordpress_draft_created` / status `draft` / post ID `6`; exact-ID trash `force=false`; attempt **TRASHED**; retry=0; fallback=false; media=0; dedicated flags restored false; three prior AMBIGUOUS 401 attempts retained unchanged.
 
 **Gate:** Puriva requires WordPress **draft/handoff**; WordPress **auto-publish** remains deferred (see [`docs/operator/deferred-scope-register.md`](../operator/deferred-scope-register.md)).
 
@@ -11,7 +13,7 @@
 | Tier | What it proves | Current state | Puriva launch relevance |
 |---|---|---|---|
 | **1. Draft preparation** | DCA OS Lite can prepare local WordPress-shaped draft payloads without credentials or HTTP | Proven locally; launch-relevant | Supports Puriva draft-only handoff |
-| **2. Live draft proof** | A staging-only WordPress site can receive a single `draft` post, then trash/delete it | Adapter locally implemented (fake transport); **staging live NOT PROVEN** | Future owner-gated staging session |
+| **2. Live draft proof** | A staging-only WordPress site can receive a single `draft` post, then trash/delete it | **STAGING LIVE PROVEN** (bounded create-and-trash only on `bd649d5`) | Staging draft handoff path proven; image attach / product publish still separate |
 | **3. Publish** | Public WordPress publication with `WORDPRESS_PUBLISH_ENABLED=true` | **Frozen by service guard** | Out of scope for Puriva launch v1 |
 
 G86 does not move tier 2 into execution and does not move tier 3 at all.
