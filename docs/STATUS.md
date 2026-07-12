@@ -1,6 +1,6 @@
 # DCA OS Lite — Status (Source of Truth)
 
-**Last updated:** 2026-07-12 (OpenAI ImageProviderAdapter active route local KEEP; BFL preserved inactive; staging image live still open; production frozen)
+**Last updated:** 2026-07-12 (OpenAI Images staging one-image AI Policy path STAGING LIVE PROVEN on `c07df10`; BFL successful generation NOT PROVEN; final image live disabled; production frozen)
 **Authoritative project control:** [`docs/project-control/AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md`](./project-control/AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md)
 **AI Policy / provider routing:** [`docs/architecture/AI_POLICY_PROVIDER_ROUTING.md`](./architecture/AI_POLICY_PROVIDER_ROUTING.md)
 **PRE-STAGING closure:** 2026-07-10 (local/no-live audit + safe fixes; see [`docs/operator/PRE_STAGING_CLOSURE_VERDICT.md`](./operator/PRE_STAGING_CLOSURE_VERDICT.md))
@@ -44,7 +44,7 @@
 | **PRE-STAGING local closure** | **PASS (local/no-live only)** — see [`PRE_STAGING_CLOSURE_VERDICT.md`](./operator/PRE_STAGING_CLOSURE_VERDICT.md). Does **not** mean launch ready, staging proven, or production ready |
 | **G69 merge** | **DONE** — G57–G68 fast-forward merged to `main`; final commit `64bfd06` |
 | Production readiness | **NO** — production remains frozen |
-| Next gate | Image provider / live generation proof (owner-gated; R2 staging private-object KEEP) |
+| Next gate | WordPress live draft proof (owner-gated; OpenAI Images staging one-image KEEP) |
 | PRE-STAGING Lanes 14–15 | **Docs closeout** — stale-claim sweep + operator runbook refresh; no live proof; Puriva Launch **BLOCKED** |
 | G469-G708 final integration | **KEEP** — 20 lanes reconciled; local/no-IO foundations only; live R2, live email, live GA/GSC, live WordPress, live image, staging/prod live proofs, full notification E2E launch proof, trusted `actualCostUsd` ingestion, commit, push, deploy remain blocked (in-app notification persistence/UI foundation now exists — see notification rows below) |
 | G229-G468 final integration | **KEEP** — 12 lanes reconciled; local/no-IO foundations only; superseded as latest baseline by G469-G708 |
@@ -147,10 +147,10 @@ Production PostgreSQL role password and `DATABASE_URL` were rotated, the product
 | Required smokes | `smoke:mvp:staging` PASS; `smoke:staging-security-baseline` 32/32 PASS |
 | Caddy | Not restarted or changed |
 | Production | **Not modified** — FROZEN; prod API `65b4b9d4…` StartedAt `2026-07-11T10:51:44Z` unchanged |
-| Live integrations | Email = **STAGING PROVIDER ACCEPTANCE PROVEN**; AI-A = **CONFIG SHAPE PROVEN**; AI-B AI Delivery OpenRouter = **STAGING LIVE PROVEN**; R2 private-object IO = **STAGING LIVE PROVEN** on `4cd6d58`; Image / WordPress / GA-GSC / MI remain open |
-| AI Policy / provider routing | **Docs alignment COMPLETE (2026-07-12)** — [`AI_POLICY_PROVIDER_ROUTING.md`](./architecture/AI_POLICY_PROVIDER_ROUTING.md); OpenRouter = preferred text broker/adapter; direct image adapters under same AI Policy; **not** universal routing implemented; FLUX/image live **not** claimed |
+| Live integrations | Email = **STAGING PROVIDER ACCEPTANCE PROVEN**; AI-A = **CONFIG SHAPE PROVEN**; AI-B AI Delivery OpenRouter = **STAGING LIVE PROVEN**; R2 private-object IO = **STAGING LIVE PROVEN** on `4cd6d58`; OpenAI Images one-image = **STAGING LIVE PROVEN** on `c07df10`; WordPress / GA-GSC / MI remain open |
+| AI Policy / provider routing | **Docs alignment COMPLETE (2026-07-12)** — [`AI_POLICY_PROVIDER_ROUTING.md`](./architecture/AI_POLICY_PROVIDER_ROUTING.md); OpenRouter = preferred text broker/adapter; direct OpenAI image adapter under same AI Policy; **not** universal routing implemented; BFL successful generation **not** claimed |
 | VPS evidence | `/opt/dca/apps/dcaosv1/staging/backups/STAGING_DEPLOY_A8A74E6_RESULT_20260712-043322.txt` |
-| Next sequence | R2 COMPLETE → Image (after owner provider choice + bounded `ImageProviderAdapter` block) → WordPress → GA/GSC → MI |
+| Next sequence | Image one-image COMPLETE → WordPress → GA/GSC → MI |
 
 **Production safety:** This staging PASS does **not** authorize production deploy, Caddy changes, DB restore, or further live integration proofs without separate owner gates.
 
@@ -223,7 +223,29 @@ Production PostgreSQL role password and `DATABASE_URL` were rotated, the product
 | DB / Caddy / production | Unchanged / FROZEN |
 | Email / OpenRouter | Disabled / local no-live |
 | VPS evidence | `/opt/dca/apps/dcaosv1/staging/backups/R2_STAGING_LIVE_PROOF_20260712-081648.txt` |
-| Next gate | Image provider / live generation proof |
+| Next gate | Image provider / live generation proof (COMPLETE 2026-07-12 — OpenAI one-image) |
+
+## OpenAI Images staging one-image live proof closeout (2026-07-12)
+
+**Result:** KEEP — OpenAI Images staging one-image AI Policy path **STAGING LIVE PROVEN** (one bounded neutral image only; not three-image sets; not regeneration; not client/WordPress/publication; not production).
+
+| Item | State |
+|------|--------|
+| Staging artifact / compose context | `c07df10` (`/opt/dca/staging-artifacts/c07df10`) |
+| Marker | `DCA-IMG-OPENAI-20260712T102457Z-a08x91rb` |
+| Path | AI Policy → `image_single` → `ImageProviderAdapter` → `OpenAIImageAdapter` → OpenAI Images API |
+| Provider / broker / model | `openai` / `direct` / `gpt-image-1` |
+| Quality / size / n | `low` / `1024x1024` / `1` |
+| Submit / output / retry / fallback | Exactly **1** / **1** / **0** / **false** |
+| BFL requests | **0** (adapter retained but inactive) |
+| Output | `image/png`; 1213472 bytes; 1024×1024; sha256 `5892cadcf699d1607e77ae72084780ca8d7f519968715ecdbe630e4c4c0da82f` |
+| Ledger | COMPLETED `e46ae5cd-a980-4a8f-a957-5e1f3a2e37b4`; `liveProviderCalled=true`; estimatedCostUsd `0.10`; `actualCostUsd=null` (not fabricated) |
+| R2 | Not applicable for this provider proof (`r2Called=false`; no object created) |
+| Final live state | `IMAGE_GENERATION_ENABLED=false`; `IMAGE_GENERATION_LIVE_CALLS_ALLOWED=false`; key remains installed |
+| OpenRouter text / email | `AI_TEXT_GATEWAY=local`; email live send remains disabled |
+| DB / Caddy / production | DB+Caddy IDs unchanged; production FROZEN |
+| VPS evidence | `/opt/dca/apps/dcaosv1/staging/backups/OPENAI_IMAGE_STAGING_ONE_IMAGE_PROOF_20260712-102457.json` |
+| Next gate | WordPress live draft proof |
 
 ## Staging email one-send proof closeout (2026-07-12)
 

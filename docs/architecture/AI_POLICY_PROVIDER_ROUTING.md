@@ -1,8 +1,8 @@
 # AI Policy / Provider Routing Architecture
 
-**Status:** Authoritative architecture alignment (docs-only, 2026-07-12).  
-**Does not claim:** universal multi-provider routing implemented, FLUX implemented, image live, research live, production readiness.  
-**Preserved proofs:** AI Delivery OpenRouter text = STAGING LIVE PROVEN (AI-B only); R2 private storage = STAGING LIVE PROVEN; Orchestrator Lite = CONFIG SHAPE PROVEN; Image provider = LOCAL FOUNDATION; Production = FROZEN.
+**Status:** Authoritative architecture alignment (docs-only, 2026-07-12).
+**Does not claim:** universal multi-provider routing implemented, BFL successful generation, three-image sets, research live, production readiness.
+**Preserved proofs:** AI Delivery OpenRouter text = STAGING LIVE PROVEN (AI-B only); R2 private storage = STAGING LIVE PROVEN; Orchestrator Lite = CONFIG SHAPE PROVEN; OpenAI Images one-image staging path = STAGING LIVE PROVEN; Production = FROZEN.
 
 **Authority:** Linked from [`AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md`](../project-control/AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md). Provider/model selection details remain in [`AI_MODEL_POLICY.md`](./AI_MODEL_POLICY.md). Proof procedures remain in runbooks.
 
@@ -71,7 +71,7 @@ Examples (not all implemented):
 |--------------------|------------------|
 | Text provider/broker | OpenRouter text adapter (implemented path) |
 | Research provider | OpenRouter or future dedicated research adapter |
-| Image provider | BFL FLUX / OpenAI Images / Firefly adapter (none live) |
+| Image provider | OpenAI Images adapter (**STAGING LIVE PROVEN** one-image path); BFL FLUX adapter retained inactive (**successful generation NOT PROVEN**); Firefly future |
 | Audio provider | ElevenLabs adapter (future) |
 | Embedding provider | Future |
 | Media / OCR / video | Future |
