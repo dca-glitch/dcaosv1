@@ -75,7 +75,7 @@ Three implementation/planning systems plus historical G-gates. **Do not mix or s
 | 8 | VPS staging | Puriva E2E, failure paths, runtime UI/UX audit, security audit, rollback rehearsal |
 | 9 | Planning | Credential rotation, migration plan, explicit owner go/no-go |
 
-**Active closeout:** Workstreams 1–5 local + Workstream 6 controlled staging deploy `a8a74e6` COMPLETE. Workstream 7 Email step = **STAGING PROVIDER ACCEPTANCE PROVEN**. Next: AI-A Orchestrator staging preflight (no live provider) → AI-B → R2 → Image → WordPress → GA/GSC → MI. Production remains FROZEN.
+**Active closeout:** Workstreams 1–5 local + Workstream 6 controlled staging deploy `a8a74e6` COMPLETE. Workstream 7 Email = **STAGING PROVIDER ACCEPTANCE PROVEN**. AI-A Orchestrator = **CONFIG SHAPE PROVEN**. Next: AI-B AI Delivery live E2E → R2 → Image → WordPress → GA/GSC → MI. Production remains FROZEN.
 
 ---
 
@@ -104,7 +104,8 @@ Applied migration or local unit/integration proof alone does **not** justify `ST
 | RBAC / role-based UI | LOCAL FOUNDATION | BLOKI 3–5 COMPLETE; client redirect / navigation filters | Target-env RBAC browser proof | No | Yes |
 | Client Portal | LOCAL FOUNDATION | BLOK 2 COMPLETE; pending approvals / FINAL visibility | Staging/prod portal proof; broader collaboration deferred | No | Yes |
 | Briefs | LOCAL FOUNDATION | BLOK 8 COMPLETE; model/API/UI | Target-env brief workflow proof | No | Yes |
-| AI Delivery | LOCAL FOUNDATION | Local operator path + ledger foundations; local live AI text proof (G77b) is local-only | Staging/prod AI re-proof; decomposition (WS3/WS4) | Partially — local Workstreams 3–5 before next staging | Yes |
+| AI Delivery | LOCAL FOUNDATION | Local operator path + ledger foundations; local live AI text proof (G77b) is local-only | Staging/prod AI re-proof (AI-B); decomposition (WS3/WS4) | Yes for WS7 AI-B | Yes |
+| Orchestrator Lite | CONFIG SHAPE PROVEN | Staging `a8a74e6` AI-A preflight 2026-07-12 (`DCA-WS7-AI-A-20260712-064227`): admin registry/preview/dry-run; routing matrix; budget/material/override guards; `executionDeferred=true`; `liveProviderCalled=false`; live calls 0; cost $0; PREVIEW/BLOCKED ledger only | Plan→execute wiring; `STAGING LIVE PROVEN` not claimed | Soft — AI-A done; AI-B separate | Yes |
 | Notifications persistence (InAppNotification) | LOCAL FOUNDATION | Prisma model; migration `20260711115000_add_in_app_notifications`; service/controller/API; integration tests; frontend `NotificationPanel` | Full E2E notification workflow not closed; not launch-proven | No (migration already on staging) | Yes (launch) |
 | In-app notification staging migration | APPLIED (staging fact; not a capability label) | Staging deploy `1b8d00d` applied migration | N/A | No | No |
 | In-app notification UI foundation | LOCAL FOUNDATION | `NotificationPanel` and related UI | Client/admin inbox product completeness + live workflow | No | Yes |
@@ -158,7 +159,7 @@ Applied migration or local unit/integration proof alone does **not** justify `ST
 |----------|--------|
 | Canonical component system (`components/ui` public + `design-system` private) | **COMPLETE** (WS1 Point 2) — Waves 1–5 migration still open |
 | Wave 0 component import guard | **COMPLETE** (`250e958`; 108 frozen baseline violations) |
-| Orchestrator proof position in mandatory live-proof sequence | **COMPLETE** — `HYBRID — PREFLIGHT + EMBEDDED LIVE PROOF` (AI-A no-live staging Orchestrator preflight; AI-B one bounded AI Delivery live E2E). Orchestrator remains `LOCAL FOUNDATION`; may reach `CONFIG SHAPE PROVEN` after staging preflight; **cannot** reach `STAGING LIVE PROVEN` until plan→execute is wired |
+| Orchestrator proof position in mandatory live-proof sequence | **COMPLETE decision** — `HYBRID — PREFLIGHT + EMBEDDED LIVE PROOF`. **AI-A staging preflight KEEP (2026-07-12):** Orchestrator = `CONFIG SHAPE PROVEN`. **Cannot** reach `STAGING LIVE PROVEN` until plan→execute is wired. AI-B remains the next live AI gate via AI Delivery. |
 | Rollback / compatibility plan | **COMPLETE** — verdict `ROLLBACK READY WITH CONDITIONS`; known-good target `1b8d00d` |
 | Rollback rehearsal | **OPEN** — separately gated; **not executed** |
 | SHA-tagged retained staging API image (`staging-dcaosv1-staging-api:1b8d00d`) | **OPEN** until staging safeguard phase |

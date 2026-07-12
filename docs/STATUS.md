@@ -1,6 +1,6 @@
 # DCA OS Lite — Status (Source of Truth)
 
-**Last updated:** 2026-07-12 (staging email one-send provider acceptance proven on `a8a74e6`; live send re-disabled; next gate AI-A; production frozen)
+**Last updated:** 2026-07-12 (AI-A Orchestrator staging preflight CONFIG SHAPE PROVEN on `a8a74e6`; next gate AI-B; production frozen)
 **Authoritative project control:** [`docs/project-control/AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md`](./project-control/AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md)
 **PRE-STAGING closure:** 2026-07-10 (local/no-live audit + safe fixes; see [`docs/operator/PRE_STAGING_CLOSURE_VERDICT.md`](./operator/PRE_STAGING_CLOSURE_VERDICT.md))
 **G55 pre-live readiness:** [`docs/runbooks/G55_PRELIVE_READINESS.md`](./runbooks/G55_PRELIVE_READINESS.md)
@@ -43,7 +43,7 @@
 | **PRE-STAGING local closure** | **PASS (local/no-live only)** — see [`PRE_STAGING_CLOSURE_VERDICT.md`](./operator/PRE_STAGING_CLOSURE_VERDICT.md). Does **not** mean launch ready, staging proven, or production ready |
 | **G69 merge** | **DONE** — G57–G68 fast-forward merged to `main`; final commit `64bfd06` |
 | Production readiness | **NO** — production remains frozen |
-| Next gate | **Owner-approved staging/live proof only** — recommended first target remains R2 target-environment real-bucket proof (G709 sequence in [`G708_NEXT_GATES.md`](./operator/G708_NEXT_GATES.md)). No live proof, staging mutation, production mutation, commit, push, or deploy is authorized by PRE-STAGING CLOSURE |
+| Next gate | AI-B AI Delivery live E2E with one bounded OpenRouter execution (owner-gated; separate from Orchestrator plan→execute) |
 | PRE-STAGING Lanes 14–15 | **Docs closeout** — stale-claim sweep + operator runbook refresh; no live proof; Puriva Launch **BLOCKED** |
 | G469-G708 final integration | **KEEP** — 20 lanes reconciled; local/no-IO foundations only; live R2, live email, live GA/GSC, live WordPress, live image, staging/prod live proofs, full notification E2E launch proof, trusted `actualCostUsd` ingestion, commit, push, deploy remain blocked (in-app notification persistence/UI foundation now exists — see notification rows below) |
 | G229-G468 final integration | **KEEP** — 12 lanes reconciled; local/no-IO foundations only; superseded as latest baseline by G469-G708 |
@@ -148,9 +148,32 @@ Production PostgreSQL role password and `DATABASE_URL` were rotated, the product
 | Production | **Not modified** — FROZEN; prod API `65b4b9d4…` StartedAt `2026-07-11T10:51:44Z` unchanged |
 | Live integrations | Email = **STAGING PROVIDER ACCEPTANCE PROVEN**; AI-A / AI-B / R2 / Image / WordPress / GA-GSC / MI remain open |
 | VPS evidence | `/opt/dca/apps/dcaosv1/staging/backups/STAGING_DEPLOY_A8A74E6_RESULT_20260712-043322.txt` |
-| Next sequence | After email KEEP: AI-A Orchestrator staging preflight (no live provider call) → AI-B → R2 → Image → WordPress → GA/GSC → MI |
+| Next sequence | After email KEEP: AI-A COMPLETE → AI-B AI Delivery live E2E → R2 → Image → WordPress → GA/GSC → MI |
 
 **Production safety:** This staging PASS does **not** authorize production deploy, Caddy changes, DB restore, or further live integration proofs without separate owner gates.
+
+## AI-A Orchestrator staging preflight closeout (2026-07-12)
+
+**Result:** KEEP — Orchestrator Lite **CONFIG SHAPE PROVEN** (not `STAGING LIVE PROVEN`; plan→execute not claimed).
+
+| Item | State |
+|------|--------|
+| Staging artifact | `a8a74e6` |
+| Marker | `DCA-WS7-AI-A-20260712-064227` |
+| Entry point | Admin-only `GET /ai-orchestrator-lite/registry`, `POST …/material-routing-preview`, `POST …/workflow-dry-run` |
+| Unauth denial | 401 on all three routes |
+| Registry | Puriva cap `$100`; `orchestratorLiveSafe=true`; no live providers enabled |
+| Routing matrix | research_pack, article_draft→content_draft, report_narrative→workflow_summary, compliance allowLive=false, image_generation blocked, unknown blocked |
+| Guards | Model override reject/handle; medical material blocked; saas handled; budget estimates only |
+| Workflow dry-run | `executionDeferred=true`; `liveProviderCalled=false`; no provider request id |
+| Ledger | PREVIEW/BLOCKED rows only for marker; `liveProviderCalled=false`; `actualCostUsd=null` |
+| Live calls / cost | `0` / `$0.00` |
+| Unit tests | 81/81 PASS (orchestrator/routing/material/budget/kill-switch/truth/adapter) |
+| Health / smokes | PASS; `smoke:mvp:staging` PASS; `smoke:staging-security-baseline` 32/32 PASS |
+| DB / Caddy / production | Unchanged |
+| Email sendingEnabled | false |
+| VPS evidence | `/opt/dca/apps/dcaosv1/staging/backups/AI_A_ORCHESTRATOR_PREFLIGHT_20260712-064227.txt` |
+| Next gate | AI-B AI Delivery live E2E with one bounded OpenRouter execution |
 
 ## Staging email one-send proof closeout (2026-07-12)
 
@@ -173,7 +196,7 @@ Production PostgreSQL role password and `DATABASE_URL` were rotated, the product
 | Health / smokes | Health PASS; `smoke:mvp:staging` PASS; `smoke:staging-security-baseline` 32/32 PASS |
 | DB / Caddy / production | Unchanged |
 | VPS evidence | `/opt/dca/apps/dcaosv1/staging/backups/EMAIL_STAGING_PROOF_20260712-062159.txt` |
-| Next gate | AI-A Orchestrator staging preflight with no live provider call |
+| Next gate | AI-A Orchestrator staging preflight with no live provider call (COMPLETE 2026-07-12) |
 
 ## Staging deploy `1b8d00d` closeout (2026-07-11)
 

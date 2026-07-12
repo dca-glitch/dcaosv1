@@ -1,6 +1,6 @@
 # AI Provider Live Proof
 
-**Status:** Local deterministic default proven; **formal clean local OpenRouter live proof complete (G71e + G71e-retry)**; **G77b persistent COMPLETED ledger row proven (local only)**. Does not authorize production enablement, staging live proof, or autonomous AI.
+**Status:** Local deterministic default proven; **formal clean local OpenRouter live proof complete (G71e + G71e-retry)**; **G77b persistent COMPLETED ledger row proven (local only)**; **AI-A Orchestrator staging preflight KEEP (2026-07-12) = CONFIG SHAPE PROVEN** (no live OpenRouter call; marker `DCA-WS7-AI-A-20260712-064227`). Does not authorize production enablement, staging AI Delivery live E2E (AI-B), or autonomous AI.
 
 **Gate:** Puriva Launch blocker — live AI provider proof (see [`docs/operator/deferred-scope-register.md`](../operator/deferred-scope-register.md)).
 
