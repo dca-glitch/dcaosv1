@@ -140,6 +140,7 @@ describe("external-integrations-readiness.service", () => {
     assert.equal(imageGeneration?.status, "missing_config");
     assert.ok(imageGeneration?.imageGeneration?.missingKeys.includes(IMAGE_GENERATION_ENV_KEYS.provider));
     assert.ok(imageGeneration?.imageGeneration?.missingKeys.includes(IMAGE_GENERATION_ENV_KEYS.apiKey));
+    assert.ok(imageGeneration?.imageGeneration?.missingKeys.includes(IMAGE_GENERATION_ENV_KEYS.model));
   });
 
   it("reports image_generation configured_shape_ok without exposing the API key value", () => {
@@ -147,8 +148,9 @@ describe("external-integrations-readiness.service", () => {
       delete process.env[key];
     }
     process.env[IMAGE_GENERATION_ENV_KEYS.enabled] = "true";
-    process.env[IMAGE_GENERATION_ENV_KEYS.provider] = "openai_images";
+    process.env[IMAGE_GENERATION_ENV_KEYS.provider] = "bfl";
     process.env[IMAGE_GENERATION_ENV_KEYS.apiKey] = "smoke-secret-key-value";
+    process.env[IMAGE_GENERATION_ENV_KEYS.model] = "flux-2-pro";
 
     const readiness = getExternalIntegrationsReadinessSnapshot();
     const imageGeneration = readiness.categories.find((category) => category.key === "image_generation");
