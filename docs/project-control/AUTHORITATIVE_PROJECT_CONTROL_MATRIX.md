@@ -75,7 +75,7 @@ Three implementation/planning systems plus historical G-gates. **Do not mix or s
 | 8 | VPS staging | Puriva E2E, failure paths, runtime UI/UX audit, security audit, rollback rehearsal |
 | 9 | Planning | Credential rotation, migration plan, explicit owner go/no-go |
 
-**Active closeout:** Workstreams 1–5 local + Workstream 6 controlled staging deploy `a8a74e6` COMPLETE. Next: Workstream 7 live proofs in approved order (Email → AI-A → AI-B → R2 → Image → WordPress → GA/GSC → MI). Production remains FROZEN.
+**Active closeout:** Workstreams 1–5 local + Workstream 6 controlled staging deploy `a8a74e6` COMPLETE. Workstream 7 Email step = **STAGING PROVIDER ACCEPTANCE PROVEN**. Next: AI-A Orchestrator staging preflight (no live provider) → AI-B → R2 → Image → WordPress → GA/GSC → MI. Production remains FROZEN.
 
 ---
 
@@ -88,7 +88,8 @@ Owner-approved five-level labels. Do **not** invent a competing status system.
 | NOT IMPLEMENTED | No code |
 | LOCAL FOUNDATION | Code or workflow exists locally; no live proof |
 | CONFIG SHAPE PROVEN | Configuration or contract confirmed without live IO |
-| STAGING LIVE PROVEN | Real proof on staging |
+| STAGING PROVIDER ACCEPTANCE PROVEN | Staging provider accepted the request (e.g. Resend HTTP OK + message id + EmailLog); not inbox/webhook delivery |
+| STAGING LIVE PROVEN | Real proof on staging including delivery/receipt where the capability requires it |
 | PRODUCTION LIVE PROVEN | Real proof on production |
 
 Applied migration or local unit/integration proof alone does **not** justify `STAGING LIVE PROVEN` or `PRODUCTION LIVE PROVEN`.
@@ -107,8 +108,8 @@ Applied migration or local unit/integration proof alone does **not** justify `ST
 | Notifications persistence (InAppNotification) | LOCAL FOUNDATION | Prisma model; migration `20260711115000_add_in_app_notifications`; service/controller/API; integration tests; frontend `NotificationPanel` | Full E2E notification workflow not closed; not launch-proven | No (migration already on staging) | Yes (launch) |
 | In-app notification staging migration | APPLIED (staging fact; not a capability label) | Staging deploy `1b8d00d` applied migration | N/A | No | No |
 | In-app notification UI foundation | LOCAL FOUNDATION | `NotificationPanel` and related UI | Client/admin inbox product completeness + live workflow | No | Yes |
-| Live email / Resend send | LOCAL FOUNDATION (send not staging-live-proven) | Outbox/no-send foundation; Resend wiring exists without staging live send proof | Staging live email proof | Yes for live-email claims in WS7 | Yes |
-| Full notification E2E / launch proof | NOT closed | Persistence + UI foundation exist; live email not staging-live-proven | Event → inbox → email E2E on target env | Yes for launch claims | Yes |
+| Live email / Resend send | STAGING PROVIDER ACCEPTANCE PROVEN | Staging `a8a74e6` one-send adapter-only `AI_DELIVERY_APPROVED` via `sendEmailNotification`; owner-controlled test inbox; EmailLog SENT + provider message id; sender `notifications.digitalcubeagency.net`; `EMAIL_LIVE_SEND_AUTHORIZED=false` / `sendingEnabled=false` restored | Inbox/webhook delivery not claimed; fan-out/client paths unproven; full E2E open | Soft — WS7 Email step done; next AI-A | Yes |
+| Full notification E2E / launch proof | NOT closed | Persistence + UI foundation exist; email = provider acceptance only (not inbox E2E) | Event → inbox → email E2E on target env | Yes for launch claims | Yes |
 | AI provider / OpenRouter | LOCAL FOUNDATION | Local live proof exists; staging/prod re-proof required | Staging live AI proof | Yes for WS7 AI step | Yes |
 | R2 / private storage | LOCAL FOUNDATION | Disabled-safe / no-IO foundations | Real bucket IO on target env | Yes for WS7 R2 step | Yes |
 | Image provider | LOCAL FOUNDATION | Compliance/helpers; provider selection OPEN | Provider choice + live generation proof | Yes for WS7 image step | Yes |

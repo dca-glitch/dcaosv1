@@ -1,6 +1,6 @@
 # Notifications Blocker Plan (G78, refreshed G82-G84, G94-G102, G159–G170, G249–G268, G493–G504)
 
-**Status:** Updated 2026-07-11: local v1 inbox persistence is implemented (schema + API + shell panel). Live email proof and staging/production delivery proof remain blocked until owner-gated execution.
+**Status:** Updated 2026-07-12: local v1 inbox persistence remains implemented. Staging email **provider acceptance** is proven on `a8a74e6` (one owner-controlled adapter-only Resend send; live auth re-disabled). Inbox/webhook delivery, client fan-out, and full notification E2E/launch proof remain open.
 
 **Purpose:** Staged plan for transactional notifications required before Puriva Launch and before claiming production-proven client-facing approval flows. Consolidates scattered docs into one operator-facing sequence.
 
@@ -37,7 +37,7 @@ Local portal UX ≠ notification readiness. Approval surfaces exist; **reliable,
 
 | Layer | Implementation | Proven? |
 |-------|------------------|---------|
-| **Email attempt log** | `EmailLog` + `sendEmailNotification()` — local default `SKIPPED`; Resend path when keyed | Disabled-safe only (`smoke:email-outbox:local`) |
+| **Email attempt log** | `EmailLog` + `sendEmailNotification()` — local default `SKIPPED`; Resend path when keyed + authorized | Staging provider acceptance proven once (2026-07-12); default remains live-deferred/`sendingEnabled=false` |
 | **Internal AI Delivery events** | `recordAiDeliverySystemEvent()` — always `SKIPPED`, placeholder recipient | Admin outbox rows only |
 | **Real-path email wiring** | `notifyDcaTeam` / `notifyClientUsers` on approve/reject, send-for-review, article ready, image FINAL_READY, monthly report FINAL, WordPress draft prepared (2026-07-09 wiring block) | Integration tests + disabled-safe smokes; **no live inbox proof** |
 | **Platform audit** | `AuditLog` — auth, tenant, module actions; AI Delivery lifecycle mostly via internal-event path | Local operator visibility; not a user notification inbox |
@@ -50,13 +50,13 @@ Local portal UX ≠ notification readiness. Approval surfaces exist; **reliable,
 
 ### What does not exist (remaining blockers)
 
-- Live transactional email send proof (Resend never executed in a controlled proof session).
+- Inbox/webhook delivery proof for the staging Resend send (provider acceptance only so far; not `STAGING LIVE PROVEN` delivery).
 - Complete approval-loop coverage that always writes user-scoped in-app rows for every launch-critical event (model/API exist; not every path is wired).
 - Client email/notification delivery for monthly report `FINAL` proven to a real inbox; current code emits admin notification intent only in local no-send mode.
 - Notification intent on image-level client approve/reject rows; current code records image review status/reason only.
 - Background queues, retry/deliverability monitoring, or invite/password-reset email (all deferred).
 - Dedicated `EmailTemplateKey` values for ready/final/draft-prepared (reuse of generic keys today; dedicated keys need schema approval).
-- Staging/production delivery proof for in-app + email channels.
+- Production delivery proof for in-app + email channels; staging in-app E2E still incomplete.
 
 ### G94-G102 / G159–G170 / G249–G268 / G493–G504 no-schema foundation
 
@@ -69,7 +69,7 @@ Shared taxonomy and no-send adapters remain the contract layer above persistence
 - Local v1 persistence service: `apps/api/src/notifications/in-app-notifications.service.ts` (redact on write). Historical design: [`notification-persistence-design.md`](./notification-persistence-design.md).
 - Taxonomy closeout runbook: [`../runbooks/NOTIFICATION_TAXONOMY_G493_G504_CLOSEOUT.md`](../runbooks/NOTIFICATION_TAXONOMY_G493_G504_CLOSEOUT.md).
 
-**Important blocker remains:** live email stays blocked until the owner-approved Resend proof in [`EMAIL_NOTIFICATIONS_PROOF.md`](../runbooks/EMAIL_NOTIFICATIONS_PROOF.md) is executed. In-app model exists locally; launch still requires proven event→inbox wiring and live email proof.
+**Important blocker remains:** full launch still requires event→inbox wiring plus client-facing email paths; staging Resend **provider acceptance** is recorded (2026-07-12) but inbox delivery and fan-out are not. See [`EMAIL_NOTIFICATIONS_PROOF.md`](../runbooks/EMAIL_NOTIFICATIONS_PROOF.md).
 
 ### G82-G84 consistency note
 

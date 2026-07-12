@@ -8,7 +8,7 @@ The Email Notifications foundation provides a safe, general backend contract for
 
 EN1 is persistence and runtime scaffolding only. It does not send real email.
 
-Current state note: provider defaults exist and the Resend domain `notifications.digitalcubeagency.net` is verified. No `RESEND_API_KEY` has been added, no real sending is active, and no module events are wired to send notifications. Platform audit events now write to `AuditLog`; `EmailLog` remains non-sending notification scaffolding only.
+Current state note: provider defaults exist and the Resend domain `notifications.digitalcubeagency.net` is verified. **Staging (artifact `a8a74e6`, 2026-07-12):** one owner-controlled adapter-only Resend send (`AI_DELIVERY_APPROVED` via `sendEmailNotification`) achieved **STAGING PROVIDER ACCEPTANCE PROVEN**; `EMAIL_LIVE_SEND_AUTHORIZED=false` and `sendingEnabled=false` were restored immediately after. Inbox/webhook delivery is **not** claimed. Default runtime remains live-deferred/no-send unless an owner re-authorizes a bounded session. Platform audit events write to `AuditLog`; module fan-out/client email paths remain unproven for launch.
 
 ## Environment configuration
 

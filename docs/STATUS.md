@@ -1,6 +1,6 @@
 # DCA OS Lite — Status (Source of Truth)
 
-**Last updated:** 2026-07-12 (controlled staging deploy `a8a74e6` PASS; rollback target `1b8d00d` retained; production frozen)
+**Last updated:** 2026-07-12 (staging email one-send provider acceptance proven on `a8a74e6`; live send re-disabled; next gate AI-A; production frozen)
 **Authoritative project control:** [`docs/project-control/AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md`](./project-control/AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md)
 **PRE-STAGING closure:** 2026-07-10 (local/no-live audit + safe fixes; see [`docs/operator/PRE_STAGING_CLOSURE_VERDICT.md`](./operator/PRE_STAGING_CLOSURE_VERDICT.md))
 **G55 pre-live readiness:** [`docs/runbooks/G55_PRELIVE_READINESS.md`](./runbooks/G55_PRELIVE_READINESS.md)
@@ -62,7 +62,7 @@
 | G89-G148 final integration | **KEEP** — local foundations only; live proofs remain blocked |
 | G149-G228 final integration | **KEEP** — 9 lanes reconciled; local/no-IO foundations only; superseded as latest baseline by G469-G708 |
 | Notification persistence / inbox | **LOCAL FOUNDATION** — Prisma `InAppNotification`, migration `20260711115000_add_in_app_notifications` (applied on staging with `1b8d00d`), service/controller/API, integration tests, frontend `NotificationPanel`; full E2E/launch proof **not** closed — see [`AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md`](./project-control/AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md) |
-| Live email / Resend | **LOCAL FOUNDATION** — no-send/outbox foundation; **not** STAGING LIVE PROVEN; live send blocked |
+| Live email / Resend | **STAGING PROVIDER ACCEPTANCE PROVEN** — one owner-controlled adapter-only send on staging `a8a74e6` (`AI_DELIVERY_APPROVED`); EmailLog SENT + provider message id; **not** inbox/webhook delivery; `EMAIL_LIVE_SEND_AUTHORIZED=false` / `sendingEnabled=false` restored |
 | Dependency audit (2026-07-12) | **Vite high CLOSED** — Vite `6.4.3` via commit `95af080`; full validate PASS; moderate transitive findings may remain and are **not** claimed closed |
 | Trusted `actualCostUsd` ingestion | **DEFERRED** — G80 policy + G389-G408 design helpers; ingestion not wired |
 | G134-G137 AI budget reporting contract | **Implemented locally (contract + unit proof)** — additive reporting/reconciliation contract separates AI budget from Finance Lite, reports monthly cap/live rows/estimated-vs-actual/provider/model, and keeps invoice reconciliation `not_integrated`; no real invoice or Finance Lite mutation |
@@ -146,11 +146,34 @@ Production PostgreSQL role password and `DATABASE_URL` were rotated, the product
 | Required smokes | `smoke:mvp:staging` PASS; `smoke:staging-security-baseline` 32/32 PASS |
 | Caddy | Not restarted or changed |
 | Production | **Not modified** — FROZEN; prod API `65b4b9d4…` StartedAt `2026-07-11T10:51:44Z` unchanged |
-| Live integrations | **not proven** (Email / AI-A / AI-B / R2 / Image / WordPress / GA-GSC / MI remain open) |
+| Live integrations | Email = **STAGING PROVIDER ACCEPTANCE PROVEN**; AI-A / AI-B / R2 / Image / WordPress / GA-GSC / MI remain open |
 | VPS evidence | `/opt/dca/apps/dcaosv1/staging/backups/STAGING_DEPLOY_A8A74E6_RESULT_20260712-043322.txt` |
-| Next sequence | Workstream 7 live-proof order: Email → AI-A → AI-B → R2 → Image → WordPress → GA/GSC → MI |
+| Next sequence | After email KEEP: AI-A Orchestrator staging preflight (no live provider call) → AI-B → R2 → Image → WordPress → GA/GSC → MI |
 
-**Production safety:** This staging PASS does **not** authorize production deploy, Caddy changes, DB restore, or live integration proofs.
+**Production safety:** This staging PASS does **not** authorize production deploy, Caddy changes, DB restore, or further live integration proofs without separate owner gates.
+
+## Staging email one-send proof closeout (2026-07-12)
+
+**Result:** KEEP — **STAGING PROVIDER ACCEPTANCE PROVEN** (not inbox/webhook `STAGING LIVE PROVEN`).
+
+| Item | State |
+|------|--------|
+| Staging artifact | `a8a74e6` |
+| Provider | Resend |
+| Sender domain | `notifications.digitalcubeagency.net` (`notifications@notifications.digitalcubeagency.net`) |
+| Selected event/template | Adapter-only `AI_DELIVERY_APPROVED` via `sendEmailNotification` |
+| Marker | `DCA-EMAIL-STAGING-PROOF-20260712-062159` |
+| Message count | Exactly one `SENT` EmailLog in proof window |
+| EmailLog id | `59b511db-646f-4dcb-8c2e-7eb5845bec15` |
+| Provider message id | Present (SHA256 prefix hash only in evidence) |
+| Recipient | Owner-controlled test inbox only (redacted in docs) |
+| In-app | NOT PART OF THIS ADAPTER-ONLY PROOF |
+| Client email | None |
+| Live auth after proof | `EMAIL_LIVE_SEND_AUTHORIZED=false`; `sendingEnabled=false` |
+| Health / smokes | Health PASS; `smoke:mvp:staging` PASS; `smoke:staging-security-baseline` 32/32 PASS |
+| DB / Caddy / production | Unchanged |
+| VPS evidence | `/opt/dca/apps/dcaosv1/staging/backups/EMAIL_STAGING_PROOF_20260712-062159.txt` |
+| Next gate | AI-A Orchestrator staging preflight with no live provider call |
 
 ## Staging deploy `1b8d00d` closeout (2026-07-11)
 
@@ -209,7 +232,7 @@ Production PostgreSQL role password and `DATABASE_URL` were rotated, the product
 | Relation (at 1A) | `1b8d00d → fac108b` (docs-only descendant) |
 | Numbering systems | BLOKI 1–13 · Fazy UI 1–13 · Workstreamy 1–9 · G-gates (separate; do not mix) |
 | Capability labels | Owner-approved five-level standard in matrix |
-| Notifications | Persistence/UI = LOCAL FOUNDATION; staging migration APPLIED; live email **not** STAGING LIVE PROVEN; full E2E launch proof open |
+| Notifications | Persistence/UI = LOCAL FOUNDATION; staging migration APPLIED; email = **STAGING PROVIDER ACCEPTANCE PROVEN** on `a8a74e6`; full E2E launch proof open |
 | Dependency finding (at 1A) | Vite high was OPEN — later closed by Point 1 / `95af080` |
 | Open decisions (at 1A) | Later closed for canonical / Orchestrator proof / rollback **plan**; rehearsal and Waves 1–5 remain open |
 | Production | FROZEN |
