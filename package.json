@@ -66,6 +66,7 @@
     "smoke:image-bfl-adapter:local": "node --import tsx scripts/smoke-image-bfl-adapter-local.mjs",
     "smoke:image-openai-adapter:local": "node --import tsx scripts/smoke-image-openai-adapter-local.mjs",
     "smoke:wordpress-live-draft-adapter:local": "node --import tsx scripts/smoke-wordpress-live-draft-adapter-local.mjs",
+    "wordpress:staging-one-draft-proof": "node --import tsx scripts/wordpress-staging-one-draft-proof.mjs",
     "smoke:email-outbox:local": "node scripts/smoke-email-outbox-local.mjs",
     "smoke:tenant-module:dry-run-probe": "node scripts/smoke-tenant-module-dry-run-probe-local.mjs",
     "smoke:tenant-module:phase-f-local": "node scripts/smoke-tenant-module-phase-f-local.mjs",

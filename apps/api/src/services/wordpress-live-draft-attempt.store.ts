@@ -1,7 +1,10 @@
 /**
- * In-memory WordPress draft live-attempt store for unit/smoke tests.
- * Prisma-backed store is available for runtime; tests must not require DB.
+ * WordPress draft live-attempt store.
+ * Memory store: unit/smoke tests (no DB).
+ * Prisma store: staging/runtime proof harness only.
  */
+
+import type { createPrismaClient } from "../../../../packages/data/src/client";
 
 export type WordPressDraftLiveAttemptState =
   | "NOT_STARTED"
@@ -28,6 +31,30 @@ export interface WordPressDraftLiveAttemptStore {
   getByPostId(tenantId: string, wordpressPostId: string): Promise<WordPressDraftLiveAttemptRecord | null>;
 }
 
+type PrismaClientLike = ReturnType<typeof createPrismaClient>;
+
+function toRecord(row: {
+  tenantId: string;
+  publicationTargetId: string | null;
+  idempotencyKey: string;
+  marker: string | null;
+  state: string;
+  wordpressPostId: string | null;
+  safeError: string | null;
+  submitRequestCount: number;
+}): WordPressDraftLiveAttemptRecord {
+  return {
+    tenantId: row.tenantId,
+    publicationTargetId: row.publicationTargetId,
+    idempotencyKey: row.idempotencyKey,
+    marker: row.marker,
+    state: row.state as WordPressDraftLiveAttemptState,
+    wordpressPostId: row.wordpressPostId,
+    safeError: row.safeError,
+    submitRequestCount: row.submitRequestCount
+  };
+}
+
 export function createMemoryWordPressDraftLiveAttemptStore(): WordPressDraftLiveAttemptStore {
   const map = new Map<string, WordPressDraftLiveAttemptRecord>();
   const keyOf = (tenantId: string, idempotencyKey: string) => `${tenantId}::${idempotencyKey}`;
@@ -48,6 +75,60 @@ export function createMemoryWordPressDraftLiveAttemptStore(): WordPressDraftLive
         }
       }
       return null;
+    }
+  };
+}
+
+/**
+ * Prisma-backed attempt store for staging live proof.
+ * Inject a Prisma client so tests can mock without a real DB.
+ */
+export function createPrismaWordPressDraftLiveAttemptStore(
+  prisma: PrismaClientLike
+): WordPressDraftLiveAttemptStore {
+  return {
+    async get(tenantId, idempotencyKey) {
+      const row = await prisma.wordPressDraftLiveAttempt.findUnique({
+        where: {
+          tenantId_idempotencyKey: { tenantId, idempotencyKey }
+        }
+      });
+      return row ? toRecord(row) : null;
+    },
+    async upsert(record) {
+      const row = await prisma.wordPressDraftLiveAttempt.upsert({
+        where: {
+          tenantId_idempotencyKey: {
+            tenantId: record.tenantId,
+            idempotencyKey: record.idempotencyKey
+          }
+        },
+        create: {
+          tenantId: record.tenantId,
+          publicationTargetId: record.publicationTargetId,
+          idempotencyKey: record.idempotencyKey,
+          marker: record.marker,
+          state: record.state,
+          wordpressPostId: record.wordpressPostId,
+          safeError: record.safeError,
+          submitRequestCount: record.submitRequestCount
+        },
+        update: {
+          publicationTargetId: record.publicationTargetId,
+          marker: record.marker,
+          state: record.state,
+          wordpressPostId: record.wordpressPostId,
+          safeError: record.safeError,
+          submitRequestCount: record.submitRequestCount
+        }
+      });
+      return toRecord(row);
+    },
+    async getByPostId(tenantId, wordpressPostId) {
+      const row = await prisma.wordPressDraftLiveAttempt.findFirst({
+        where: { tenantId, wordpressPostId }
+      });
+      return row ? toRecord(row) : null;
     }
   };
 }
