@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "check": "node ../../scripts/run-sequential.mjs \"node ../../scripts/check-package.mjs web\" \"tsc --noEmit\"",
+    "check": "node ../../scripts/run-sequential.mjs \"node ../../scripts/check-package.mjs web\" \"node ../../scripts/check-web-component-imports.mjs\" \"tsc --noEmit\"",
+    "check:component-imports": "node ../../scripts/check-web-component-imports.mjs",
     "build": "vite build",
     "dev": "vite",
     "test:unit": "vitest run",
