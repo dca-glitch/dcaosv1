@@ -1,5 +1,13 @@
 import { getR2Config, getR2EnvPresence, R2_REQUIRED_ENV_KEYS } from "./r2.config";
-import { getSignedR2ReadUrl, uploadR2Object, type R2DocumentType } from "./r2.service";
+import {
+  deleteR2Object,
+  getSignedR2ReadUrl,
+  headR2Object,
+  uploadR2Object,
+  type R2DocumentType,
+  type R2ObjectDeleteResult,
+  type R2ObjectHeadResult
+} from "./r2.service";
 import {
   buildDownloadFailureClientError,
   buildLocalMockDownloadTruth,
@@ -163,6 +171,35 @@ export function getPrivateStorageDownloadReference(
     expiresSeconds,
     provider: "r2"
   };
+}
+
+/**
+ * Exact-key HEAD via private-storage facade.
+ * Never accepts caller bucket/endpoint overrides. Never returns a public URL.
+ */
+export async function headPrivateStorageObject(storageKey: string): Promise<R2ObjectHeadResult> {
+  return headR2Object(storageKey);
+}
+
+/**
+ * Exact-key existence helper.
+ * - true / false when HEAD succeeds (exists / not_found)
+ * - null when config missing, invalid key, or provider failure
+ */
+export async function privateStorageObjectExists(storageKey: string): Promise<boolean | null> {
+  const result = await headR2Object(storageKey);
+  if (!result.ok) {
+    return null;
+  }
+  return result.exists;
+}
+
+/**
+ * Exact-key DELETE via private-storage facade.
+ * Idempotent for provider not-found (alreadyAbsent). No prefix/batch delete.
+ */
+export async function deletePrivateStorageObject(storageKey: string): Promise<R2ObjectDeleteResult> {
+  return deleteR2Object(storageKey);
 }
 
 /**

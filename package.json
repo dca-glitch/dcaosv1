@@ -62,6 +62,7 @@
     "smoke:finance-ledger:local": "node scripts/smoke-finance-ledger-local.mjs",
     "smoke:r2-byte-roundtrip:local": "node scripts/smoke-r2-byte-roundtrip-local.mjs",
     "smoke:r2-storage-boundary:local": "node scripts/smoke-r2-storage-boundary-local.mjs",
+    "smoke:r2-exact-key-cleanup:local": "node --import tsx scripts/smoke-r2-exact-key-cleanup-local.mjs",
     "smoke:email-outbox:local": "node scripts/smoke-email-outbox-local.mjs",
     "smoke:tenant-module:dry-run-probe": "node scripts/smoke-tenant-module-dry-run-probe-local.mjs",
     "smoke:tenant-module:phase-f-local": "node scripts/smoke-tenant-module-phase-f-local.mjs",

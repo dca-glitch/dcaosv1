@@ -1,6 +1,11 @@
 /**
  * Typed R2 cleanup / rollback proof-plan constants.
- * Planning only — no real bucket create/read/delete IO.
+ * Planning only for staging live IO — no real bucket create/read/delete is executed here.
+ *
+ * Local capability status (application layer):
+ * - exact-key HEAD: implemented (`headR2Object`)
+ * - exact-key DELETE: implemented (`deleteR2Object`, idempotent 404 → alreadyAbsent)
+ * - staging live create/read/delete: NOT proven
  */
 
 export const R2_CLEANUP_PROOF_PLAN_STEP_KEYS = [
@@ -18,8 +23,11 @@ export type R2CleanupProofPlanStep = {
   label: string;
   order: number;
   liveIoRequiredWhenExecuted: boolean;
-  /** This module only plans steps; execution is always deferred. */
+  /** This module only plans steps; staging live execution is always deferred. */
   executedInThisModule: false;
+  /** Application-layer capability available locally (not staging live proof). */
+  localCapabilityImplemented: boolean;
+  canonicalOperation: string | null;
   stopOnFailure: boolean;
 };
 
@@ -30,6 +38,8 @@ export const R2_CLEANUP_PROOF_PLAN_STEPS: Record<R2CleanupProofPlanStepKey, R2Cl
     order: 1,
     liveIoRequiredWhenExecuted: true,
     executedInThisModule: false,
+    localCapabilityImplemented: true,
+    canonicalOperation: "uploadR2Object / putPrivateStorageObject",
     stopOnFailure: true
   },
   read_download: {
@@ -38,22 +48,28 @@ export const R2_CLEANUP_PROOF_PLAN_STEPS: Record<R2CleanupProofPlanStepKey, R2Cl
     order: 2,
     liveIoRequiredWhenExecuted: true,
     executedInThisModule: false,
+    localCapabilityImplemented: true,
+    canonicalOperation: "getSignedR2ReadUrl / getPrivateStorageDownloadReference",
     stopOnFailure: true
   },
   delete: {
     key: "delete",
-    label: "Delete proof object from bucket",
+    label: "Delete exact proof object via deleteR2Object (no prefix/batch)",
     order: 3,
     liveIoRequiredWhenExecuted: true,
     executedInThisModule: false,
+    localCapabilityImplemented: true,
+    canonicalOperation: "deleteR2Object / deletePrivateStorageObject",
     stopOnFailure: true
   },
   verify_delete: {
     key: "verify_delete",
-    label: "Verify object is gone (GET/HEAD must fail)",
+    label: "Verify object is gone via exact-key HEAD (headR2Object)",
     order: 4,
     liveIoRequiredWhenExecuted: true,
     executedInThisModule: false,
+    localCapabilityImplemented: true,
+    canonicalOperation: "headR2Object / privateStorageObjectExists",
     stopOnFailure: true
   },
   rollback_failure_stop: {
@@ -62,6 +78,8 @@ export const R2_CLEANUP_PROOF_PLAN_STEPS: Record<R2CleanupProofPlanStepKey, R2Cl
     order: 5,
     liveIoRequiredWhenExecuted: false,
     executedInThisModule: false,
+    localCapabilityImplemented: true,
+    canonicalOperation: null,
     stopOnFailure: true
   }
 } as const;
@@ -70,6 +88,7 @@ export type R2CleanupProofPlan = {
   version: "r2-cleanup-proof-plan-v1";
   liveIoPerformed: false;
   claimsLiveBucketProof: false;
+  localExactKeyCleanupImplemented: true;
   steps: R2CleanupProofPlanStep[];
   note: string;
 };
@@ -79,8 +98,10 @@ export function buildR2CleanupProofPlan(): R2CleanupProofPlan {
     version: "r2-cleanup-proof-plan-v1",
     liveIoPerformed: false,
     claimsLiveBucketProof: false,
+    localExactKeyCleanupImplemented: true,
     steps: R2_CLEANUP_PROOF_PLAN_STEP_KEYS.map((key) => R2_CLEANUP_PROOF_PLAN_STEPS[key]),
-    note: "Proof-plan constants only. No create/read/delete against a real R2 bucket is performed by this helper."
+    note:
+      "Proof-plan constants only. Exact-key HEAD/DELETE are implemented locally; no staging live create/read/delete is claimed by this helper."
   };
 }
 
@@ -100,21 +121,24 @@ export function assertR2CleanupProofPlanNoIoInvariant(plan: R2CleanupProofPlan =
   liveIoPerformed: false;
   claimsLiveBucketProof: false;
   allStepsUnexecuted: boolean;
+  localExactKeyCleanupImplemented: true;
   reason: string;
 } {
   const allStepsUnexecuted = plan.steps.every((step) => step.executedInThisModule === false);
   const ok =
     plan.liveIoPerformed === false &&
     plan.claimsLiveBucketProof === false &&
-    allStepsUnexecuted;
+    allStepsUnexecuted &&
+    plan.localExactKeyCleanupImplemented === true;
 
   return {
     ok,
     liveIoPerformed: false,
     claimsLiveBucketProof: false,
     allStepsUnexecuted,
+    localExactKeyCleanupImplemented: true,
     reason: ok
-      ? "Cleanup proof plan is planning-only; no live IO claimed."
+      ? "Cleanup proof plan is planning-only for staging live IO; local exact-key HEAD/DELETE capability is recorded without claiming live proof."
       : "Cleanup proof plan invariant violated."
   };
 }

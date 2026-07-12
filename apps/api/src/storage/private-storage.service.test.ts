@@ -1,14 +1,22 @@
-import assert from "node:assert/strict";
-import { describe, it } from "node:test";
 import {
   getPrivateStorageClientDownloadBoundary,
   getPrivateStorageDownloadReference,
   getPrivateStorageLocalMockDownloadReference,
   getPrivateStorageStatus,
+  deletePrivateStorageObject,
+  headPrivateStorageObject,
+  privateStorageObjectExists,
   putPrivateStorageObject,
   toPrivateStorageDownloadFailurePayload
 } from "./private-storage.service";
 import { assertNoStorageKeyLeak } from "./storage-key-boundary";
+import { setR2HttpTransportForTests } from "./r2.service";
+import { afterEach, describe, it } from "node:test";
+import assert from "node:assert/strict";
+
+afterEach(() => {
+  setR2HttpTransportForTests(null);
+});
 
 describe("private-storage.service — disabled-safe local behavior", () => {
   it("reports disabled mode when R2 is not configured", () => {
@@ -86,5 +94,30 @@ describe("private-storage.service — disabled-safe local behavior", () => {
     assert.equal(payload.storageKeyExposed, false);
     assert.equal(JSON.stringify(payload).includes("tenants/acme"), false);
     assertNoStorageKeyLeak(payload);
+  });
+
+  it("exact-key facade methods stay disabled-safe and reject unsafe keys", async () => {
+    if (process.env.R2_ACCOUNT_ID && process.env.R2_ACCESS_KEY_ID && process.env.R2_SECRET_ACCESS_KEY && process.env.R2_BUCKET_NAME) {
+      return;
+    }
+
+    let calls = 0;
+    setR2HttpTransportForTests(async () => {
+      calls += 1;
+      return new Response(null, { status: 200 });
+    });
+
+    const head = await headPrivateStorageObject("tenants/demo/years/2026/projects/p/months/07/documents/a.pdf");
+    const exists = await privateStorageObjectExists("tenants/demo/years/2026/projects/p/months/07/documents/a.pdf");
+    const deleted = await deletePrivateStorageObject("tenants/demo/years/2026/projects/p/months/07/documents/a.pdf");
+    const unsafe = await deletePrivateStorageObject("tenants/*");
+
+    assert.equal(calls, 0);
+    assert.equal(head.ok, false);
+    assert.equal(exists, null);
+    assert.equal(deleted.ok, false);
+    assert.equal(unsafe.ok, false);
+    assert.equal("publicUrl" in head, false);
+    assert.equal("publicUrl" in deleted, false);
   });
 });
