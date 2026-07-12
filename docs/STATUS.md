@@ -1,6 +1,6 @@
 # DCA OS Lite — Status (Source of Truth)
 
-**Last updated:** 2026-07-12 (OpenAI Images staging one-image AI Policy path STAGING LIVE PROVEN on `c07df10`; BFL successful generation NOT PROVEN; final image live disabled; production frozen)
+**Last updated:** 2026-07-12 (WordPress dedicated live-draft adapter LOCAL IMPLEMENTED / FAKE-TRANSPORT PROVEN; staging live draft NOT PROVEN; generic publish frozen; production frozen)
 **Authoritative project control:** [`docs/project-control/AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md`](./project-control/AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md)
 **AI Policy / provider routing:** [`docs/architecture/AI_POLICY_PROVIDER_ROUTING.md`](./architecture/AI_POLICY_PROVIDER_ROUTING.md)
 **PRE-STAGING closure:** 2026-07-10 (local/no-live audit + safe fixes; see [`docs/operator/PRE_STAGING_CLOSURE_VERDICT.md`](./operator/PRE_STAGING_CLOSURE_VERDICT.md))
@@ -44,7 +44,7 @@
 | **PRE-STAGING local closure** | **PASS (local/no-live only)** — see [`PRE_STAGING_CLOSURE_VERDICT.md`](./operator/PRE_STAGING_CLOSURE_VERDICT.md). Does **not** mean launch ready, staging proven, or production ready |
 | **G69 merge** | **DONE** — G57–G68 fast-forward merged to `main`; final commit `64bfd06` |
 | Production readiness | **NO** — production remains frozen |
-| Next gate | WordPress live draft proof (owner-gated; OpenAI Images staging one-image KEEP) |
+| Next gate | WordPress staging one-draft live proof (owner-gated; dedicated live-draft adapter fake-transport KEEP) |
 | PRE-STAGING Lanes 14–15 | **Docs closeout** — stale-claim sweep + operator runbook refresh; no live proof; Puriva Launch **BLOCKED** |
 | G469-G708 final integration | **KEEP** — 20 lanes reconciled; local/no-IO foundations only; live R2, live email, live GA/GSC, live WordPress, live image, staging/prod live proofs, full notification E2E launch proof, trusted `actualCostUsd` ingestion, commit, push, deploy remain blocked (in-app notification persistence/UI foundation now exists — see notification rows below) |
 | G229-G468 final integration | **KEEP** — 12 lanes reconciled; local/no-IO foundations only; superseded as latest baseline by G469-G708 |
@@ -245,7 +245,23 @@ Production PostgreSQL role password and `DATABASE_URL` were rotated, the product
 | OpenRouter text / email | `AI_TEXT_GATEWAY=local`; email live send remains disabled |
 | DB / Caddy / production | DB+Caddy IDs unchanged; production FROZEN |
 | VPS evidence | `/opt/dca/apps/dcaosv1/staging/backups/OPENAI_IMAGE_STAGING_ONE_IMAGE_PROOF_20260712-102457.json` |
-| Next gate | WordPress live draft proof |
+| Next gate | WordPress staging one-draft live proof (adapter LOCAL IMPLEMENTED / FAKE-TRANSPORT PROVEN) |
+
+**Result:** KEEP — WordPress dedicated live-draft adapter **LOCAL IMPLEMENTED / FAKE-TRANSPORT PROVEN** (not staging live; not publish; not production).
+
+| Item | State |
+|------|--------|
+| Entry | `createWordPressDraft` / `trashWordPressDraftByExactId` in `wordpress-live-draft.adapter.ts` |
+| Auth | Basic `username:applicationPassword`; username non-secret on `PublicationTarget.wordpressUsername`; password encrypted in `PublicationTargetCredential` |
+| Flags | `WORDPRESS_DRAFT_LIVE_ENABLED` + `WORDPRESS_DRAFT_LIVE_CALLS_ALLOWED` (both exact `"true"`; default false) |
+| Status lock | Hard `status=draft`; caller `publish`/`pending`/`future` rejected |
+| Request contract | submit=1; retry=0; fallback=false; media=0; no image required |
+| Idempotency | `WordPressDraftLiveAttempt` + memory store for tests; duplicate key blocks second create; ambiguous does not retry |
+| Cleanup | Exact-ID trash (`force=false`) only for recorded post ID + idempotency key |
+| Generic publish | Remains `WORDPRESS_LIVE_HTTP_FROZEN=true` |
+| Smoke | `smoke:wordpress-live-draft-adapter:local` PASS (fake transport) |
+| Staging / production | Untouched / FROZEN; no live WordPress HTTP in this gate |
+| Next gate | Owner-approved staging one-draft live proof |
 
 ## Staging email one-send proof closeout (2026-07-12)
 

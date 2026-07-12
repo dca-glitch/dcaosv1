@@ -90,6 +90,8 @@ export interface PublicationTargetSummary {
   connectorType: string;
   siteUrl: string;
   siteSlug: string | null;
+  /** Non-secret WordPress Application Password username. Never the password. */
+  wordpressUsername: string | null;
   wordPressComSite: boolean;
   isDefault: boolean;
   isArchived: boolean;
@@ -109,6 +111,8 @@ export interface PublicationTargetInputRequest {
   label?: string;
   siteUrl?: string;
   siteSlug?: string | null;
+  /** Non-secret WordPress username for Application Password Basic auth. */
+  wordpressUsername?: string | null;
   wordPressComSite?: boolean;
   isDefault?: boolean;
 }

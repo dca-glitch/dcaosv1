@@ -305,6 +305,7 @@ model Tenant {
   revenueAttributions  RevenueAttribution[]
   publicationTargets   PublicationTarget[]
   publicationTargetCredentials PublicationTargetCredential[]
+  wordPressDraftLiveAttempts WordPressDraftLiveAttempt[]
   clientAnalyticsProfiles ClientAnalyticsProfile[]
   publicationLogs      PublicationLog[]
   clientCatalogProducts ClientCatalogProduct[]
@@ -544,6 +545,8 @@ model PublicationTarget {
   connectorType    PublicationConnectorType @default(WORDPRESS)
   siteUrl          String
   siteSlug         String?
+  /// Non-secret WordPress Application Password username (Author role). Never stores the password.
+  wordpressUsername String?
   wordPressComSite Boolean                  @default(false)
   isDefault        Boolean                  @default(false)
   isArchived       Boolean                  @default(false)
@@ -554,11 +557,34 @@ model PublicationTarget {
   client       Client                      @relation(fields: [clientId], references: [id], onDelete: Cascade)
   credentials  PublicationTargetCredential?
   publicationLogs PublicationLog[]
+  wordPressDraftLiveAttempts WordPressDraftLiveAttempt[]
 
   @@index([tenantId])
   @@index([tenantId, clientId])
   @@index([tenantId, clientId, isArchived])
   @@index([tenantId, clientId, isDefault])
+}
+
+/// Bounded WordPress live-draft attempt ledger (idempotency / no-retry guard).
+model WordPressDraftLiveAttempt {
+  id                  String   @id @default(uuid())
+  tenantId            String
+  publicationTargetId String?
+  idempotencyKey      String
+  marker              String?
+  state               String
+  wordpressPostId     String?
+  safeError           String?
+  submitRequestCount  Int      @default(0)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  tenant            Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  publicationTarget PublicationTarget? @relation(fields: [publicationTargetId], references: [id], onDelete: SetNull)
+
+  @@unique([tenantId, idempotencyKey])
+  @@index([tenantId])
+  @@index([tenantId, wordpressPostId])
 }
 
 model PublicationTargetCredential {

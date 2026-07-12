@@ -40,6 +40,8 @@ function getPublicationTargetInput(body: unknown): PublicationTargetInputRequest
     label,
     siteUrl,
     siteSlug: typeof value.siteSlug === "string" ? value.siteSlug.trim() || null : null,
+    wordpressUsername:
+      typeof value.wordpressUsername === "string" ? value.wordpressUsername.trim() || null : null,
     wordPressComSite: Boolean(value.wordPressComSite),
     isDefault: value.isDefault === undefined ? undefined : Boolean(value.isDefault)
   };

@@ -1,6 +1,8 @@
 # WordPress Draft Proof
 
-**Status:** Draft preparation and guarded handoff proven locally; G110–G114, G181–G188, G289–G308, and G541–G552 add local draft-payload hardening, slug edge policy, draft-status freeze, publish freeze / no-live service guard, credential + error redaction, live-proof plan + rollback/delete invariants, image-inclusion / accepted-image-only contract, category/tag placeholders (numeric term-id drop), author/tenant mapping design, payload sanitization (secret-fragment strip), docs closeout, and focused unit tests. Live draft proof remains **plan-only**; live publish remains frozen. Auto-publish is **not** in scope for this gate. §6 defines a future owner-approved staging-only live draft proof **plan** (title/body/meta, approved-image attach, alt/caption/social preview, idempotency, cleanup marker, disabled-safe mode, owner approval) — no live WordPress call was made to produce this document. **Do not claim live WordPress proven.**
+**Status:** Dedicated live-draft adapter **LOCAL IMPLEMENTED / FAKE-TRANSPORT PROVEN** (2026-07-12). Local draft preparation remains proven. Staging live draft remains **NOT PROVEN**. Live publish remains frozen (`WORDPRESS_LIVE_HTTP_FROZEN`). Auto-publish is **not** in scope.
+
+**Dedicated live-draft path (2026-07-12):** `apps/api/src/services/wordpress-live-draft.adapter.ts` — `createWordPressDraft` hard-locks `status=draft`, Basic auth `username:applicationPassword`, dual flags `WORDPRESS_DRAFT_LIVE_ENABLED` + `WORDPRESS_DRAFT_LIVE_CALLS_ALLOWED`, exactly one create, retry=0, no media, idempotency via `WordPressDraftLiveAttempt`, exact-ID trash helper. Generic `publish-wordpress` is **not** unfrozen. Fake smoke: `npm.cmd run smoke:wordpress-live-draft-adapter:local`.
 
 **Gate:** Puriva requires WordPress **draft/handoff**; WordPress **auto-publish** remains deferred (see [`docs/operator/deferred-scope-register.md`](../operator/deferred-scope-register.md)).
 
@@ -9,7 +11,7 @@
 | Tier | What it proves | Current state | Puriva launch relevance |
 |---|---|---|---|
 | **1. Draft preparation** | DCA OS Lite can prepare local WordPress-shaped draft payloads without credentials or HTTP | Proven locally; launch-relevant | Supports Puriva draft-only handoff |
-| **2. Live draft proof** | A staging-only WordPress site can receive a single `draft` post matching approved content/images, then delete/trash it | **Plan-only in G86; not executed** | Future confidence proof only; not required to enable publish |
+| **2. Live draft proof** | A staging-only WordPress site can receive a single `draft` post, then trash/delete it | Adapter locally implemented (fake transport); **staging live NOT PROVEN** | Future owner-gated staging session |
 | **3. Publish** | Public WordPress publication with `WORDPRESS_PUBLISH_ENABLED=true` | **Frozen by service guard** | Out of scope for Puriva launch v1 |
 
 G86 does not move tier 2 into execution and does not move tier 3 at all.

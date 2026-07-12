@@ -96,6 +96,7 @@ const publicationTargetSelect = {
   connectorType: true,
   siteUrl: true,
   siteSlug: true,
+  wordpressUsername: true,
   wordPressComSite: true,
   isDefault: true,
   isArchived: true,
@@ -110,6 +111,7 @@ function toPublicationTargetSummary(target: {
   connectorType: string;
   siteUrl: string;
   siteSlug: string | null;
+  wordpressUsername: string | null;
   wordPressComSite: boolean;
   isDefault: boolean;
   isArchived: boolean;
@@ -123,6 +125,7 @@ function toPublicationTargetSummary(target: {
     connectorType: target.connectorType,
     siteUrl: target.siteUrl,
     siteSlug: target.siteSlug,
+    wordpressUsername: target.wordpressUsername,
     wordPressComSite: target.wordPressComSite,
     isDefault: target.isDefault,
     isArchived: target.isArchived,
@@ -199,6 +202,7 @@ export async function createPublicationTargetForClient(
         connectorType: "WORDPRESS",
         siteUrl,
         siteSlug: toNullableString(input.siteSlug),
+        wordpressUsername: toNullableString(input.wordpressUsername),
         wordPressComSite: Boolean(input.wordPressComSite),
         isDefault: shouldDefault || existingDefault === 0
       },
@@ -262,6 +266,9 @@ export async function updatePublicationTargetForClient(
     }
     if (input.siteSlug !== undefined) {
       updateData.siteSlug = toNullableString(input.siteSlug);
+    }
+    if (input.wordpressUsername !== undefined) {
+      updateData.wordpressUsername = toNullableString(input.wordpressUsername);
     }
     if (input.wordPressComSite !== undefined) {
       updateData.wordPressComSite = Boolean(input.wordPressComSite);
