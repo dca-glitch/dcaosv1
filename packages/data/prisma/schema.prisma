@@ -130,6 +130,24 @@ enum EmailTemplateKey {
   INVOICE_ISSUED
 }
 
+enum AiDeliveryBoundedWorkflowState {
+  CONTENT_APPROVED
+  IMAGE_REQUEST_STARTED
+  IMAGE_PREVIEW_READY
+  WAITING_FOR_IMAGE_APPROVAL
+  IMAGE_APPROVED
+  WORDPRESS_REQUEST_STARTED
+  WORDPRESS_DRAFT_CREATED
+  EMAIL_REQUEST_STARTED
+  EMAIL_SENT
+  COMPLETED
+  FAILED_BEFORE_EXTERNAL_CALL
+  AMBIGUOUS_IMAGE
+  AMBIGUOUS_WORDPRESS
+  AMBIGUOUS_EMAIL
+  BLOCKED
+}
+
 enum InAppNotificationStatus {
   UNREAD
   READ
@@ -283,6 +301,7 @@ model Tenant {
   aiDeliveryDeliverables AiDeliveryDeliverable[]
   aiDeliveryDeliverableReviews AiDeliveryDeliverableReview[]
   aiDeliveryWorkflowRuns AiDeliveryWorkflowRun[]
+  aiDeliveryBoundedWorkflowRuns AiDeliveryBoundedWorkflowRun[]
   aiDeliveryResearchRequests AiDeliveryResearchRequest[]
   aiDeliveryResearchSources AiDeliveryResearchSource[]
   aiDeliveryResearchSummaries AiDeliveryResearchSummary[]
@@ -352,6 +371,7 @@ model User {
   aiBriefRunsTriggered      AiBriefRun[]        @relation("AiBriefRunTriggeredBy")
   briefApprovals            BriefApproval[]     @relation("BriefApprovalActor")
   inAppNotifications        InAppNotification[] @relation("UserInAppNotifications")
+  aiDeliveryBoundedWorkflowRunsInitiated AiDeliveryBoundedWorkflowRun[] @relation("AiDeliveryBoundedWorkflowInitiator")
 }
 
 model Session {
@@ -558,6 +578,7 @@ model PublicationTarget {
   credentials  PublicationTargetCredential?
   publicationLogs PublicationLog[]
   wordPressDraftLiveAttempts WordPressDraftLiveAttempt[]
+  aiDeliveryBoundedWorkflowRuns AiDeliveryBoundedWorkflowRun[]
 
   @@index([tenantId])
   @@index([tenantId, clientId])
@@ -581,6 +602,7 @@ model WordPressDraftLiveAttempt {
 
   tenant            Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   publicationTarget PublicationTarget? @relation(fields: [publicationTargetId], references: [id], onDelete: SetNull)
+  boundedWorkflowRun AiDeliveryBoundedWorkflowRun?
 
   @@unique([tenantId, idempotencyKey])
   @@index([tenantId])
@@ -778,6 +800,7 @@ model AiDeliveryProject {
   deliverables AiDeliveryDeliverable[]
   deliverableReviews AiDeliveryDeliverableReview[]
   workflowRuns AiDeliveryWorkflowRun[]
+  boundedWorkflowRuns AiDeliveryBoundedWorkflowRun[]
   researchRequests AiDeliveryResearchRequest[]
   researchSources AiDeliveryResearchSource[]
   researchSummaries AiDeliveryResearchSummary[]
@@ -1089,6 +1112,7 @@ model AiDeliveryContentDraft {
   contentPlanItem     AiDeliveryContentPlanItem? @relation(fields: [contentPlanItemId], references: [id], onDelete: SetNull)
   articleImages       AiDeliveryArticleImage[]
   deliverables         AiDeliveryDeliverable[]
+  boundedWorkflowRuns  AiDeliveryBoundedWorkflowRun[]
 
   @@index([tenantId])
   @@index([tenantId, aiDeliveryProjectId])
@@ -1109,6 +1133,19 @@ model AiDeliveryArticleImage {
   previewImageUrl     String?
   finalImageUrl       String?
   storageKey          String?
+  provider            String?
+  providerModel       String?
+  correlationId       String?
+  contentType         String?
+  width               Int?
+  height              Int?
+  byteLength          Int?
+  sha256              String?
+  retryCount          Int      @default(0)
+  fallbackUsed        Boolean  @default(false)
+  estimatedCostUsd    Decimal? @db.Decimal(12, 6)
+  actualCostUsd       Decimal? @db.Decimal(12, 6)
+  generatedAt         DateTime?
   notes               String?
   isArchived          Boolean  @default(false)
   createdAt           DateTime @default(now())
@@ -1119,12 +1156,69 @@ model AiDeliveryArticleImage {
   contentDraft        AiDeliveryContentDraft  @relation(fields: [contentDraftId], references: [id], onDelete: Cascade)
   deliverables         AiDeliveryDeliverable[]
   deliverableImageApprovals AiDeliveryDeliverableImageApproval[]
+  boundedWorkflowRun  AiDeliveryBoundedWorkflowRun?
 
   @@index([tenantId])
   @@index([tenantId, aiDeliveryProjectId])
   @@index([tenantId, contentDraftId])
   @@index([tenantId, status])
   @@index([tenantId, isArchived])
+}
+
+/// Durable, bounded content-to-draft workflow ledger. External stages use guarded state transitions.
+model AiDeliveryBoundedWorkflowRun {
+  id                       String                         @id @default(uuid())
+  tenantId                 String
+  aiDeliveryProjectId      String
+  contentDraftId           String
+  publicationTargetId      String?
+  articleImageId           String?                        @unique
+  wordpressAttemptId       String?                        @unique
+  emailLogId               String?                        @unique
+  initiatedByUserId        String?
+  workflowType             String                         @default("CONTENT_TO_WORDPRESS_DRAFT")
+  state                    AiDeliveryBoundedWorkflowState @default(CONTENT_APPROVED)
+  stateVersion             Int                            @default(0)
+  imageIdempotencyKey      String
+  storageIdempotencyKey    String
+  wordpressIdempotencyKey  String
+  emailIdempotencyKey      String
+  imageProviderRequestId   String?
+  imageCorrelationId       String?
+  storageKey               String?
+  wordpressPostId          String?
+  emailProviderMessageId   String?
+  imageRequestCount        Int                            @default(0)
+  storageUploadCount       Int                            @default(0)
+  wordpressRequestCount    Int                            @default(0)
+  emailRequestCount        Int                            @default(0)
+  retryCount               Int                            @default(0)
+  fallbackUsed             Boolean                        @default(false)
+  safeError                String?
+  imageRequestStartedAt    DateTime?
+  imagePreviewReadyAt      DateTime?
+  imageApprovedAt          DateTime?
+  wordpressRequestStartedAt DateTime?
+  wordpressDraftCreatedAt  DateTime?
+  emailRequestStartedAt    DateTime?
+  emailSentAt              DateTime?
+  completedAt              DateTime?
+  createdAt                DateTime                       @default(now())
+  updatedAt                DateTime                       @updatedAt
+
+  tenant             Tenant                         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  aiDeliveryProject  AiDeliveryProject              @relation(fields: [aiDeliveryProjectId], references: [id], onDelete: Cascade)
+  contentDraft       AiDeliveryContentDraft         @relation(fields: [contentDraftId], references: [id], onDelete: Cascade)
+  publicationTarget  PublicationTarget?             @relation(fields: [publicationTargetId], references: [id], onDelete: SetNull)
+  articleImage       AiDeliveryArticleImage?        @relation(fields: [articleImageId], references: [id], onDelete: SetNull)
+  wordpressAttempt   WordPressDraftLiveAttempt?     @relation(fields: [wordpressAttemptId], references: [id], onDelete: SetNull)
+  emailLog           EmailLog?                      @relation(fields: [emailLogId], references: [id], onDelete: SetNull)
+  initiatedByUser    User?                          @relation("AiDeliveryBoundedWorkflowInitiator", fields: [initiatedByUserId], references: [id], onDelete: SetNull)
+
+  @@unique([tenantId, contentDraftId, workflowType])
+  @@index([tenantId, state])
+  @@index([tenantId, aiDeliveryProjectId])
+  @@index([tenantId, publicationTargetId])
 }
 
 model AiDeliveryDeliverableImageApproval {
@@ -1876,6 +1970,7 @@ model EmailLog {
   createdAt         DateTime         @default(now())
   sentAt            DateTime?
   tenant            Tenant?          @relation("TenantEmailLogs", fields: [tenantId], references: [id], onDelete: SetNull)
+  boundedWorkflowRun AiDeliveryBoundedWorkflowRun?
 
   @@index([tenantId])
   @@index([recipientEmail])
