@@ -16,7 +16,7 @@ const STEP_COST_ESTIMATES_USD: Record<string, number> = {
   rewrite_polish: 0.3,
   report_narrative: 0.4,
   image_prompt: 0.1,
-  image_generation: 0,
+  image_generation: 0.1,
   vision_technical_qa: 0.2,
   local_deterministic: 0
 };

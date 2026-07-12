@@ -19,9 +19,15 @@ function readiness(overrides: Partial<ImageGenerationIntegrationReadiness>): Ima
     status: "disabled",
     generationEnabled: false,
     provider: null,
+    model: null,
     hasApiKey: false,
     missingKeys: [],
     liveProviderCallsDeferred: true,
+    baseHostname: "api.bfl.ai",
+    maxCostUsd: 0.1,
+    timeoutMs: 120_000,
+    maxPollAttempts: 40,
+    pollIntervalMs: 3_000,
     ...overrides
   };
 }

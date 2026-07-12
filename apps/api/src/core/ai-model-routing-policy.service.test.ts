@@ -30,7 +30,16 @@ describe("ai-model-routing-policy.service", () => {
     assert.equal(result.audit.routingTaskType, "content_draft");
   });
 
-  it("image_generation and vision_technical_qa map to fallback_stop_admin_review", () => {
+  it("image_single route resolves BFL; orchestrator image_generation remains blocked", () => {
+    const image = resolveModelRoute({
+      orchestratorTaskType: "image_single",
+      clientProfile: "puriva"
+    });
+    assert.equal(image.blocked, false);
+    assert.equal(image.route.taskType, "image_single");
+    assert.equal(image.route.provider, "bfl");
+    assert.equal(image.route.primaryModel, "flux-2-pro");
+
     for (const taskType of ["image_generation", "vision_technical_qa", "image_prompt"] as const) {
       const result = resolveModelRoute({
         orchestratorTaskType: taskType,

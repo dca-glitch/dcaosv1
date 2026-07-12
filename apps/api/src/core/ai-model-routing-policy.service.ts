@@ -9,7 +9,8 @@ import type {
 } from "@dca-os-v1/shared";
 import {
   AI_MODEL_ROUTING_POLICY_VERSION,
-  APPROVED_AI_TEXT_MODEL_IDS
+  APPROVED_AI_TEXT_MODEL_IDS,
+  APPROVED_AI_IMAGE_MODEL_IDS
 } from "@dca-os-v1/shared";
 import type { AiTaskType } from "@dca-os-v1/shared";
 
@@ -144,6 +145,31 @@ export const AI_MODEL_ROUTING_TABLE: Record<AiRoutingTaskType, AiModelRoute> = {
     riskLevel: "low",
     description: "Internal workflow summary for admin observability."
   }),
+  image_single: route({
+    taskType: "image_single",
+    gateway: "bfl",
+    primaryModel: "flux-2-pro",
+    fallbackModels: [],
+    fallbackBehavior: "STOP_AND_ADMIN_REVIEW",
+    allowLive: true,
+    requiresBudgetLedger: true,
+    maxInputTokens: 0,
+    maxOutputTokens: 0,
+    maxCostUsdPerRun: 0.1,
+    complianceProfile: "puriva_medical_safe",
+    supportedClientProfiles: ["puriva"],
+    supportedContentChannels: PURIVA_CHANNELS,
+    riskLevel: "medium",
+    description: "Single image generation via BFL FLUX.2 Pro (direct adapter; not OpenRouter).",
+    provider: "bfl",
+    broker: "direct",
+    outputCount: 1,
+    maxMegapixels: 1,
+    maxProviderRequests: 1,
+    maxGenerationJobs: 1,
+    retryLimit: 0,
+    fallbackAllowed: false
+  }),
   fallback_stop_admin_review: route({
     taskType: "fallback_stop_admin_review",
     gateway: "local",
@@ -175,6 +201,7 @@ export const ORCHESTRATOR_TASK_TO_ROUTING_TASK: Partial<Record<AiTaskType, AiRou
   report_narrative: "workflow_summary",
   local_deterministic: "fallback_stop_admin_review",
   image_prompt: "fallback_stop_admin_review",
+  /** Orchestrator preview remains blocked; live single-image uses routing task `image_single` directly. */
   image_generation: "fallback_stop_admin_review",
   vision_technical_qa: "fallback_stop_admin_review"
 };
@@ -206,6 +233,15 @@ export function normalizeContentChannel(channel: string | null | undefined): AiR
 export function isApprovedModelId(modelId: string | null | undefined): modelId is ApprovedAiTextModelId {
   if (!modelId) return false;
   return (APPROVED_AI_TEXT_MODEL_IDS as readonly string[]).includes(modelId);
+}
+
+export function isApprovedImageModelId(modelId: string | null | undefined): boolean {
+  if (!modelId) return false;
+  return (APPROVED_AI_IMAGE_MODEL_IDS as readonly string[]).includes(modelId);
+}
+
+export function isApprovedRoutingModelId(modelId: string | null | undefined): boolean {
+  return isApprovedModelId(modelId) || isApprovedImageModelId(modelId);
 }
 
 export function resolveRoutingTaskType(
@@ -290,7 +326,7 @@ export function resolveModelRoute(input: ResolveModelRouteInput): ResolveModelRo
   const contentChannel = normalizeContentChannel(input.contentChannel ?? "website");
 
   let modelOverrideRejected = false;
-  if (input.requestedModelOverride && !isApprovedModelId(input.requestedModelOverride)) {
+  if (input.requestedModelOverride && !isApprovedRoutingModelId(input.requestedModelOverride)) {
     modelOverrideRejected = true;
   }
 
@@ -377,11 +413,13 @@ export function resolveModelRoute(input: ResolveModelRouteInput): ResolveModelRo
 export function listAiModelRoutingPolicySnapshot(): {
   policyVersion: typeof AI_MODEL_ROUTING_POLICY_VERSION;
   approvedModels: readonly string[];
+  approvedImageModels: readonly string[];
   routes: AiModelRoute[];
 } {
   return {
     policyVersion: AI_MODEL_ROUTING_POLICY_VERSION,
     approvedModels: APPROVED_AI_TEXT_MODEL_IDS,
+    approvedImageModels: APPROVED_AI_IMAGE_MODEL_IDS,
     routes: Object.values(AI_MODEL_ROUTING_TABLE)
   };
 }

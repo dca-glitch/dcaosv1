@@ -35,9 +35,11 @@ export type AiRoutingTaskType =
   | "final_client_polish"
   | "long_context_review"
   | "workflow_summary"
+  | "image_single"
   | "fallback_stop_admin_review";
 
-export type AiRoutingGateway = "openrouter" | "local";
+/** `bfl` = direct Black Forest Labs image gateway (not OpenRouter). */
+export type AiRoutingGateway = "openrouter" | "local" | "bfl";
 
 export type AiFallbackBehavior = "USE_FALLBACK_MODEL" | "STOP_AND_ADMIN_REVIEW" | "BLOCK_UNSUPPORTED";
 
@@ -64,6 +66,22 @@ export interface AiModelRoute {
   riskLevel: AiRoutingRiskLevel;
   description: string;
   blockedReason?: string;
+  /** Direct provider id when gateway is not a text broker (e.g. bfl). */
+  provider?: string | null;
+  /** Broker role: openrouter text broker vs direct provider API. */
+  broker?: "openrouter" | "direct" | "local" | null;
+  /** Image routes only — hard output count. */
+  outputCount?: number;
+  /** Image routes only — megapixel ceiling. */
+  maxMegapixels?: number;
+  /** Image routes only — max provider submit requests. */
+  maxProviderRequests?: number;
+  /** Image routes only — max generation jobs. */
+  maxGenerationJobs?: number;
+  /** Image routes only — hard retry limit (0 = no generation retry). */
+  retryLimit?: number;
+  /** Image routes only — policy fallback permission. */
+  fallbackAllowed?: boolean;
 }
 
 export interface AiModelRouteAudit {

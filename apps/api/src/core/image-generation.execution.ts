@@ -10,6 +10,9 @@
  */
 
 import type { ImageGenerationIntegrationReadiness } from "../config/image-generation.config";
+import { IMAGE_GENERATION_LIVE_PROVIDER_CALLS_ALLOWED } from "./image-generation-guard.service";
+
+export { IMAGE_GENERATION_LIVE_PROVIDER_CALLS_ALLOWED };
 
 export const IMAGE_GENERATION_FOUNDATION_VERSION = "IMAGE_GENERATION_FOUNDATION_V1";
 
@@ -110,16 +113,11 @@ export type ImageGenerationExecutionResult = {
 };
 
 /**
- * Disabled-safe execution: never issues a provider call regardless of readiness
- * status. `configured_shape_ok` still resolves to `skipped_not_implemented`
- * because no live provider client is wired in this block.
+ * Hard no-live guard (G323) for the foundation variant-set path.
+ * Live single-image generation uses layered authorization in
+ * image-generation-guard.service + generateOneImageViaAiPolicy — never this path.
+ * IMAGE_GENERATION_LIVE_PROVIDER_CALLS_ALLOWED remains false for variant-set scaffolding.
  */
-/**
- * Hard no-live guard (G323): every execution path must set providerCalled=false.
- * This block never contacts an image provider regardless of readiness status.
- */
-export const IMAGE_GENERATION_LIVE_PROVIDER_CALLS_ALLOWED = false as const;
-
 export function executeImageGenerationVariantRequest(
   request: ImageGenerationVariantRequest,
   readiness: ImageGenerationIntegrationReadiness
@@ -149,7 +147,8 @@ export function executeImageGenerationVariantRequest(
     variantSlot: request.variantSlot,
     outcome: "skipped_not_implemented",
     providerCalled: false,
-    reason: "Provider config shape OK; live provider execution is not implemented in this block."
+    reason:
+      "Foundation variant-set path remains no-live; use AI Policy single-image path (generateOneImageViaAiPolicy) when live-authorized."
   };
 }
 

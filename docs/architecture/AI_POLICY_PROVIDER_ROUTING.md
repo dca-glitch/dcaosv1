@@ -172,23 +172,20 @@ Do **not** force one giant universal `execute()` if modality I/O differs; share 
 
 ---
 
-## 11. FLUX integration position (future)
-
-When owner-approved:
+## 11. FLUX integration position
 
 ```text
-AI Policy image route
+AI Policy image route (image_single)
   → ImageProviderAdapter
-  → BFLFluxAdapter (example)
-  → one-image execution guard (requestCount=1, retry=0, no fallback)
+  → BFLFluxAdapter
+  → one-image execution guard
+  → BFL submit / bounded poll / one download
   → normalized image result
-  → optional private R2 persistence (canonical path only)
+  → optional private R2 persistence (orchestration layer; not in adapter)
   → ledger attribution
 ```
 
-**Must not:** call FLUX from AI Delivery workflow code; route images through `AI_GATEWAY_V1` text OpenRouter client; invent a second budget system; auto-generate multi-image sets in the first live proof.
-
-**Provider selection remains OPEN.** Documented image direction historically preferred Adobe Firefly; BFL FLUX / OpenAI Images remain valid candidates under the same `ImageProviderAdapter` pattern. Owner must record the primary choice in [`AI_MODEL_POLICY.md`](./AI_MODEL_POLICY.md) §2.1 before wiring.
+**Local adapter status (2026-07-12):** implemented under AI Policy; fake-transport proven; **staging live NOT PROVEN**. Do not call FLUX from AI Delivery workflow code. Do not route images through `AI_GATEWAY_V1`.
 
 ---
 

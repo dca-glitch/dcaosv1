@@ -112,23 +112,16 @@ No future provider change may remove the deterministic fallback path without a s
 
 | Candidate | Mode | Role | Approval status |
 |-----------|------|------|------------------|
-| Adobe Firefly | Direct API via `ImageProviderAdapter` | **Preferred primary** direction (historical) | Direction approved — [`AI_PROVIDER_DATA_COLLECTION_DECISION.md`](../AI_PROVIDER_DATA_COLLECTION_DECISION.md) §2; **final provider selection PENDING OWNER APPROVAL** |
-| BFL FLUX | Direct API via `ImageProviderAdapter` | Valid primary/candidate under AI Policy | Architecture position defined — [`AI_POLICY_PROVIDER_ROUTING.md`](./AI_POLICY_PROVIDER_ROUTING.md) §11; **not selected / not implemented** |
-| OpenAI Images | Direct API via `ImageProviderAdapter` | Candidate | Under evaluation only; not selected |
-| Ideogram | Direct API | Candidate (typography-strong) | Listed candidate only; not evaluated for compliance fit |
+| BFL FLUX (`bfl` / `flux-2-pro`) | Direct API via `ImageProviderAdapter` → `BFLFluxAdapter` | **Owner-approved primary** (2026-07-12) for first adapter block | Approved for local adapter implementation; **staging live proof NOT YET** |
+| Adobe Firefly | Direct API via `ImageProviderAdapter` | Historical preferred direction / future alternate | Not selected for first adapter |
+| OpenAI Images | Direct API via `ImageProviderAdapter` | Candidate | Not selected |
+| Ideogram | Direct API | Candidate (typography-strong) | Listed candidate only |
 | Midjourney-like | Manual/external | Admin-only inspiration, not a backend integration target | Explicitly excluded as a coded integration |
-| Local deterministic (mock bytes) | Dev/test | Dev/test path only — never a silent live substitute | Approved for dev/test only |
+| Local deterministic (mock bytes) | Dev/test | Dev/test path only — never a silent live substitute | Approved for fake-transport tests only |
 
-**Architecture rule:** whichever provider is chosen plugs into **AI Policy → image route → `ImageProviderAdapter` → concrete adapter** (e.g. `BFLFluxAdapter`). Workflows must not call the vendor directly. OpenRouter text gateway is **not** the image path.
+**Architecture rule:** image generation plugs into **AI Policy → `image_single` route → `ImageProviderAdapter` → `BFLFluxAdapter`**. Workflows must not call BFL directly. OpenRouter text gateway is **not** the image path. Fixed model snapshot: `flux-2-pro` (not preview/max/flex/klein/1.1).
 
-**Owner action required before any image provider is wired (even disabled-by-default):**
-
-1. Confirm one **primary** image provider (Firefly direction stated; FLUX/OpenAI Images remain valid) and at most one **fallback** provider.
-2. Confirm the fallback is only invoked if AI Policy explicitly allows it after primary failure — never silently inside an adapter, and never as a cost-optimization swap.
-3. Record the decision in this document (§2.1 table) and in [`IMAGE_GENERATION_PROOF.md`](../runbooks/IMAGE_GENERATION_PROOF.md) §1.10 before adapter wiring begins.
-4. Confirm finite per-image cost caps (§2.3) and one-request live-proof constraints.
-
-Until that owner approval is recorded, **no image provider API key or SDK may be added**, consistent with current LOCAL FOUNDATION status (no live adapter) in [`IMAGE_GENERATION_PROOF.md`](../runbooks/IMAGE_GENERATION_PROOF.md) and the [`INTEGRATIONS_TRUTH_MATRIX.md`](../runbooks/INTEGRATIONS_TRUTH_MATRIX.md) "Image generation" row.
+**Initial route limits:** outputCount=1; submit/jobs=1; retry=0; fallback=false; maxCostUsd=0.10; ≤1 MP; poll ≤120s (status polls are not generation retries).
 
 ### 2.2 Generation scope (policy ceiling)
 
@@ -149,15 +142,17 @@ This policy requires that whatever provider is finally approved, a **finite per-
 
 ### 2.4 Live-call opt-in (hard requirement, mirrors text policy)
 
-Live image provider calls are permitted **only** when **all** of the following are true (target design, to be enforced in code at Phase B/D):
+Live image provider calls are permitted **only** when **all** of the following are true (enforced by `evaluateImageGenerationLiveAuthorization`):
 
-- An explicit enablement flag (e.g. `IMAGE_GENERATION_ENABLED`) is set to true
-- Provider API key/credential is present in the target environment (never committed)
-- Owner has approved the specific provider (§2.1) and recorded it in this document
-- Execution is admin-triggered only (queue-generation action or regenerate action) — never autonomous/background/scheduled
-- A staging live-proof pass (Phase D in [`IMAGE_GENERATION_PROOF.md`](../runbooks/IMAGE_GENERATION_PROOF.md) §4) has been run with recorded owner approval before that environment is treated as "live-enabled"
+- `IMAGE_GENERATION_ENABLED=true`
+- allowlisted provider (`bfl`) and model (`flux-2-pro`) present
+- `IMAGE_GENERATION_API_KEY` present (never logged)
+- `IMAGE_GENERATION_LIVE_CALLS_ALLOWED=true` (explicit live opt-in — key alone is insufficient)
+- AI Policy `image_single` route authorizes live (`allowLive`, retry=0, fallback=false, cost ≤ $0.10)
+- Execution is admin-triggered only — never autonomous/background/scheduled
+- A staging live-proof pass has been run with owner approval before that environment is treated as live-proven
 
-Default/production posture today: no image provider wired at all (scaffold only). This document does **not** authorize Phase B, C, or D work.
+Default posture: no-live. Foundation variant-set path keeps `IMAGE_GENERATION_LIVE_PROVIDER_CALLS_ALLOWED=false`. This document does **not** authorize staging live proof by itself.
 
 ### 2.5 Retry / timeout policy
 
@@ -220,9 +215,9 @@ Unlike text, image generation currently has **no deterministic "local" visual fa
 | Text primary model family = OpenAI (via OpenRouter) | Approved direction (docs); exact model ID pending |
 | Text long-context/reviewer model family = Gemini (via OpenRouter) | Approved direction (docs); exact model ID pending |
 | Text local deterministic fallback | **Approved and active default** |
-| Image primary provider | Approved *direction* historically = Adobe Firefly; BFL FLUX / OpenAI Images valid under `ImageProviderAdapter`; **final selection pending owner approval** |
-| Image fallback provider | **Not selected — pending owner approval**; fallback is AI Policy–controlled only |
-| AI Policy / provider routing architecture | **Aligned (docs 2026-07-12)** — [`AI_POLICY_PROVIDER_ROUTING.md`](./AI_POLICY_PROVIDER_ROUTING.md); adapters not yet implemented for image |
+| Image primary provider | **bfl / flux-2-pro** owner-approved (2026-07-12); local adapter implemented; staging live NOT PROVEN |
+| Image fallback provider | **Disabled** for initial route (`fallbackAllowed=false`) |
+| AI Policy / provider routing architecture | **Aligned** — [`AI_POLICY_PROVIDER_ROUTING.md`](./AI_POLICY_PROVIDER_ROUTING.md); `BFLFluxAdapter` local |
 | Cost caps (text) | Approved and code-enforced today |
 | Cost caps (image) | **Pending — must be defined before Phase B wiring** (§2.3) |
 | Medical/compliance guardrails (§2.8) | Approved policy; enforcement mechanism (templates/checklists) not yet built |
