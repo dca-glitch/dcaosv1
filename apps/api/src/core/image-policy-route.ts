@@ -11,7 +11,7 @@ import type {
 } from "@dca-os-v1/shared";
 import { APPROVED_AI_IMAGE_MODEL_IDS, APPROVED_AI_IMAGE_PROVIDER_IDS } from "@dca-os-v1/shared";
 import {
-  IMAGE_BFL_HTTP_CONTRACT,
+  IMAGE_GENERATION_COST_USD_CEILING,
   IMAGE_GENERATION_DEFAULTS,
   getImageGenerationProviderConfig
 } from "../config/image-generation.config";
@@ -77,7 +77,7 @@ export function validateImageGenerationRequestAgainstPolicy(
   if (policy.fallbackAllowed) {
     return { ok: false, safeError: "Image policy fallback is disabled for this route." };
   }
-  if (policy.maxCostUsd > IMAGE_BFL_HTTP_CONTRACT.maxCostUsdCeiling + 1e-9) {
+  if (policy.maxCostUsd > IMAGE_GENERATION_COST_USD_CEILING + 1e-9) {
     return { ok: false, safeError: "Image policy cost cap exceeds USD 0.10 ceiling." };
   }
   if (!Number.isInteger(request.width) || !Number.isInteger(request.height) || request.width <= 0 || request.height <= 0) {
@@ -86,7 +86,8 @@ export function validateImageGenerationRequestAgainstPolicy(
   if (request.width > policy.maxWidth || request.height > policy.maxHeight) {
     return { ok: false, safeError: "Image dimensions exceed policy maximum." };
   }
-  if (megapixelsForDimensions(request.width, request.height) > policy.maxMegapixels + 1e-9) {
+  // Allow 1024×1024 (exactly maxWidth×maxHeight) as the 1MP-class ceiling used by OpenAI gpt-image-1.
+  if (request.width * request.height > policy.maxWidth * policy.maxHeight) {
     return { ok: false, safeError: "Image dimensions exceed 1 MP policy maximum." };
   }
   if (request.outputFormat !== "jpeg" && request.outputFormat !== "png") {
@@ -99,7 +100,7 @@ export function validateImageGenerationRequestAgainstPolicy(
 }
 
 /**
- * Resolves the owner-approved BFL image_single route under AI Policy.
+ * Resolves the owner-approved active image_single route under AI Policy (OpenAI by default).
  * liveExecutionAuthorized is supplied by the layered guard — never inferred from key alone.
  */
 export function resolveImageSinglePolicyRoute(input: {
@@ -135,10 +136,10 @@ export function resolveImageSinglePolicyRoute(input: {
   const maxCostUsd = Math.min(
     routed.route.maxCostUsdPerRun,
     config.maxCostUsd,
-    IMAGE_BFL_HTTP_CONTRACT.maxCostUsdCeiling
+    IMAGE_GENERATION_COST_USD_CEILING
   );
 
-  if (maxCostUsd > IMAGE_BFL_HTTP_CONTRACT.maxCostUsdCeiling + 1e-9) {
+  if (maxCostUsd > IMAGE_GENERATION_COST_USD_CEILING + 1e-9) {
     return { ok: false, safeError: "Resolved image cost cap exceeds USD 0.10." };
   }
 

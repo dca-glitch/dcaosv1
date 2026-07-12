@@ -1,10 +1,11 @@
 /**
  * AI Policy single-image generation orchestration.
- * Workflows call this — never BFL directly. Adapter never calls R2.
+ * Workflows call this — never vendor APIs directly. Adapter never calls R2.
  */
 
 import type { ImageGenerationRequestInput, NormalizedImageGenerationResult } from "@dca-os-v1/shared";
-import type { BflFluxAdapterOptions } from "../services/bfl-flux.adapter";
+import { IMAGE_GENERATION_DEFAULTS } from "../config/image-generation.config";
+import type { ImageProviderAdapterResolveOptions } from "./image-provider-adapter.registry";
 import {
   assertOneGenerationGuard,
   evaluateImageGenerationLiveAuthorization
@@ -18,7 +19,7 @@ export type GenerateOneImageViaAiPolicyInput = {
   clientProfile?: string | null;
   contentChannel?: string | null;
   /** Test-only transport options. */
-  adapterOptions?: BflFluxAdapterOptions;
+  adapterOptions?: ImageProviderAdapterResolveOptions;
   /**
    * Test-only: authorize liveExecutionAuthorized without IMAGE_GENERATION_LIVE_CALLS_ALLOWED.
    * Must never be used by production HTTP routes.
@@ -41,9 +42,9 @@ function blockedResult(
     status,
     taskType: "image_single",
     capability: "image_generation",
-    provider: "bfl",
+    provider: IMAGE_GENERATION_DEFAULTS.provider,
     broker: "direct",
-    model: "flux-2-pro",
+    model: IMAGE_GENERATION_DEFAULTS.model,
     correlationId,
     providerRequestId: null,
     providerJobId: null,
@@ -67,9 +68,9 @@ function blockedResult(
     safeError,
     ledgerAttribution: {
       capability: "image_generation",
-      provider: "bfl",
+      provider: IMAGE_GENERATION_DEFAULTS.provider,
       broker: "direct",
-      model: "flux-2-pro",
+      model: IMAGE_GENERATION_DEFAULTS.model,
       correlationId,
       providerRequestId: null,
       providerJobId: null,

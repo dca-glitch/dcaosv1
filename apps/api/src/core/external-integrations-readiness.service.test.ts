@@ -148,9 +148,9 @@ describe("external-integrations-readiness.service", () => {
       delete process.env[key];
     }
     process.env[IMAGE_GENERATION_ENV_KEYS.enabled] = "true";
-    process.env[IMAGE_GENERATION_ENV_KEYS.provider] = "bfl";
+    process.env[IMAGE_GENERATION_ENV_KEYS.provider] = "openai";
     process.env[IMAGE_GENERATION_ENV_KEYS.apiKey] = "smoke-secret-key-value";
-    process.env[IMAGE_GENERATION_ENV_KEYS.model] = "flux-2-pro";
+    process.env[IMAGE_GENERATION_ENV_KEYS.model] = "gpt-image-1";
 
     const readiness = getExternalIntegrationsReadinessSnapshot();
     const imageGeneration = readiness.categories.find((category) => category.key === "image_generation");

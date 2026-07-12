@@ -294,9 +294,9 @@ async function main() {
 
     setIntegrationEnv({
       [IMAGE_GENERATION_ENV_KEYS.enabled]: "true",
-      [IMAGE_GENERATION_ENV_KEYS.provider]: "bfl",
+      [IMAGE_GENERATION_ENV_KEYS.provider]: "openai",
       [IMAGE_GENERATION_ENV_KEYS.apiKey]: "smoke-image-provider-key",
-      [IMAGE_GENERATION_ENV_KEYS.model]: "flux-2-pro"
+      [IMAGE_GENERATION_ENV_KEYS.model]: "gpt-image-1"
     });
     const imageGenShaped = getExternalIntegrationsReadinessSnapshot();
     record(

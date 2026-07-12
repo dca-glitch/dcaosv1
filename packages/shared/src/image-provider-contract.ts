@@ -5,10 +5,10 @@
 
 export const AI_IMAGE_PROVIDER_CONTRACT_VERSION = "AI_IMAGE_PROVIDER_CONTRACT_V1" as const;
 
-export const APPROVED_AI_IMAGE_MODEL_IDS = ["flux-2-pro"] as const;
+export const APPROVED_AI_IMAGE_MODEL_IDS = ["gpt-image-1", "flux-2-pro"] as const;
 export type ApprovedAiImageModelId = (typeof APPROVED_AI_IMAGE_MODEL_IDS)[number];
 
-export const APPROVED_AI_IMAGE_PROVIDER_IDS = ["bfl"] as const;
+export const APPROVED_AI_IMAGE_PROVIDER_IDS = ["openai", "bfl"] as const;
 export type ApprovedAiImageProviderId = (typeof APPROVED_AI_IMAGE_PROVIDER_IDS)[number];
 
 export type AiImageBroker = "direct";

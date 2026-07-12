@@ -30,15 +30,16 @@ describe("ai-model-routing-policy.service", () => {
     assert.equal(result.audit.routingTaskType, "content_draft");
   });
 
-  it("image_single route resolves BFL; orchestrator image_generation remains blocked", () => {
+  it("image_single route resolves OpenAI; orchestrator image_generation remains blocked", () => {
     const image = resolveModelRoute({
       orchestratorTaskType: "image_single",
       clientProfile: "puriva"
     });
     assert.equal(image.blocked, false);
     assert.equal(image.route.taskType, "image_single");
-    assert.equal(image.route.provider, "bfl");
-    assert.equal(image.route.primaryModel, "flux-2-pro");
+    assert.equal(image.route.provider, "openai");
+    assert.equal(image.route.primaryModel, "gpt-image-1");
+    assert.equal(image.route.gateway, "openai");
 
     for (const taskType of ["image_generation", "vision_technical_qa", "image_prompt"] as const) {
       const result = resolveModelRoute({

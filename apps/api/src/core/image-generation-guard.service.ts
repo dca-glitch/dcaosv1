@@ -8,7 +8,7 @@ import {
   getImageGenerationIntegrationReadiness,
   getImageGenerationProviderConfig,
   IMAGE_GENERATION_DEFAULTS,
-  IMAGE_BFL_HTTP_CONTRACT
+  IMAGE_GENERATION_COST_USD_CEILING
 } from "../config/image-generation.config";
 import { isAllowlistedImageModel, isAllowlistedImageProvider } from "./image-policy-route";
 import { resolveModelRoute } from "./ai-model-routing-policy.service";
@@ -40,7 +40,7 @@ function buildSnapshot(
     enabled: config.generationEnabled,
     liveAuthorized,
     baseHostname: config.baseHostname,
-    costCapUsd: Math.min(config.maxCostUsd, IMAGE_BFL_HTTP_CONTRACT.maxCostUsdCeiling),
+    costCapUsd: Math.min(config.maxCostUsd, IMAGE_GENERATION_COST_USD_CEILING),
     timeoutMs: config.timeoutMs,
     maxPollAttempts: config.maxPollAttempts,
     pollIntervalMs: config.pollIntervalMs,
@@ -49,7 +49,7 @@ function buildSnapshot(
 }
 
 /**
- * All layers must pass. Code supports BFL, but foundation const remains false and
+ * All layers must pass. Foundation const remains false and
  * IMAGE_GENERATION_LIVE_CALLS_ALLOWED must be explicitly true for live authorization.
  */
 export function evaluateImageGenerationLiveAuthorization(): ImageLiveAuthorizationResult {
@@ -115,7 +115,7 @@ export function evaluateImageGenerationLiveAuthorization(): ImageLiveAuthorizati
     };
   }
 
-  if (routed.route.maxCostUsdPerRun > IMAGE_BFL_HTTP_CONTRACT.maxCostUsdCeiling + 1e-9) {
+  if (routed.route.maxCostUsdPerRun > IMAGE_GENERATION_COST_USD_CEILING + 1e-9) {
     return {
       authorized: false,
       reason: "AI Policy image cost cap exceeds USD 0.10.",

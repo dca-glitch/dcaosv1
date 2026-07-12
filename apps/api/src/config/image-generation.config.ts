@@ -1,5 +1,6 @@
 /**
- * Image generation provider config — disabled-safe shape + BFL route defaults.
+ * Image generation provider config — disabled-safe shape + active OpenAI defaults.
+ * BFL remains supported when env/route select provider=bfl.
  *
  * Live calls require layered authorization (see image-generation-guard.service).
  * Merely having IMAGE_GENERATION_API_KEY present does not authorize a provider call.
@@ -19,11 +20,14 @@ export const IMAGE_GENERATION_ENV_KEYS = {
   liveCallsAllowed: "IMAGE_GENERATION_LIVE_CALLS_ALLOWED"
 } as const;
 
+/** Shared hard cost ceiling for all image adapters under AI Policy. */
+export const IMAGE_GENERATION_COST_USD_CEILING = 0.1 as const;
+
 export const IMAGE_GENERATION_DEFAULTS = {
-  provider: "bfl",
-  model: "flux-2-pro",
-  baseUrl: "https://api.bfl.ai",
-  maxCostUsd: 0.1,
+  provider: "openai",
+  model: "gpt-image-1",
+  baseUrl: "https://api.openai.com/v1",
+  maxCostUsd: IMAGE_GENERATION_COST_USD_CEILING,
   timeoutMs: 120_000,
   maxPollAttempts: 40,
   pollIntervalMs: 3_000,
@@ -32,18 +36,35 @@ export const IMAGE_GENERATION_DEFAULTS = {
   maxHeight: 1024,
   maxDownloadBytes: 8 * 1024 * 1024,
   estimatedCostUsd: 0.1,
-  submitPath: "/v1/flux-2-pro"
+  generationsPath: "/images/generations"
 } as const;
 
-/** Hard HTTP/poll contract — not env-widenable beyond policy ceilings. */
+/** OpenAI Images HTTP contract — synchronous generations; quality locked low for cost bound. */
+export const IMAGE_OPENAI_HTTP_CONTRACT = {
+  retryCount: 0 as const,
+  defaultTimeoutMs: IMAGE_GENERATION_DEFAULTS.timeoutMs,
+  maxCostUsdCeiling: IMAGE_GENERATION_COST_USD_CEILING,
+  allowedHostnames: ["api.openai.com"] as const,
+  generationsPath: "/images/generations",
+  /** Only square 1024 within ≤1MP / maxWidth×maxHeight policy. */
+  allowedSizes: ["1024x1024"] as const,
+  /** High quality exceeds USD 0.10; adapter must not accept higher. */
+  quality: "low" as const,
+  n: 1 as const
+} as const;
+
+/** Hard HTTP/poll contract for BFL — retained; not the active default route. */
 export const IMAGE_BFL_HTTP_CONTRACT = {
   retryCount: 0 as const,
   defaultTimeoutMs: IMAGE_GENERATION_DEFAULTS.timeoutMs,
   defaultPollIntervalMs: IMAGE_GENERATION_DEFAULTS.pollIntervalMs,
   defaultMaxPollAttempts: IMAGE_GENERATION_DEFAULTS.maxPollAttempts,
-  maxCostUsdCeiling: IMAGE_GENERATION_DEFAULTS.maxCostUsd,
+  maxCostUsdCeiling: IMAGE_GENERATION_COST_USD_CEILING,
   allowedSubmitHostnames: ["api.bfl.ai"] as const,
-  allowedPollHostnameSuffixes: [".bfl.ai", "api.bfl.ai"] as const
+  allowedPollHostnameSuffixes: [".bfl.ai", "api.bfl.ai"] as const,
+  submitPath: "/v1/flux-2-pro",
+  defaultBaseUrl: "https://api.bfl.ai",
+  defaultModel: "flux-2-pro"
 } as const;
 
 export type ImageGenerationIntegrationReadinessStatus = "disabled" | "missing_config" | "configured_shape_ok";
@@ -117,7 +138,7 @@ export function getImageGenerationProviderConfig(): ImageGenerationProviderConfi
     maxCostUsd: readPositiveNumber(
       IMAGE_GENERATION_ENV_KEYS.maxCostUsd,
       IMAGE_GENERATION_DEFAULTS.maxCostUsd,
-      IMAGE_BFL_HTTP_CONTRACT.maxCostUsdCeiling
+      IMAGE_GENERATION_COST_USD_CEILING
     ),
     timeoutMs: readPositiveNumber(
       IMAGE_GENERATION_ENV_KEYS.timeoutMs,

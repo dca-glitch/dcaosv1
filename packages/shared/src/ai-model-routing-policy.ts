@@ -38,8 +38,8 @@ export type AiRoutingTaskType =
   | "image_single"
   | "fallback_stop_admin_review";
 
-/** `bfl` = direct Black Forest Labs image gateway (not OpenRouter). */
-export type AiRoutingGateway = "openrouter" | "local" | "bfl";
+/** Direct image gateways (`openai`, `bfl`) are not OpenRouter text brokers. */
+export type AiRoutingGateway = "openrouter" | "local" | "openai" | "bfl";
 
 export type AiFallbackBehavior = "USE_FALLBACK_MODEL" | "STOP_AND_ADMIN_REVIEW" | "BLOCK_UNSUPPORTED";
 
@@ -66,7 +66,7 @@ export interface AiModelRoute {
   riskLevel: AiRoutingRiskLevel;
   description: string;
   blockedReason?: string;
-  /** Direct provider id when gateway is not a text broker (e.g. bfl). */
+  /** Direct provider id when gateway is not a text broker (e.g. openai, bfl). */
   provider?: string | null;
   /** Broker role: openrouter text broker vs direct provider API. */
   broker?: "openrouter" | "direct" | "local" | null;

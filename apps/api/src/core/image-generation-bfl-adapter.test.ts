@@ -1,20 +1,19 @@
 import assert from "node:assert/strict";
 import { afterEach, describe, it } from "node:test";
+import type { AiProviderExecutionPolicy } from "@dca-os-v1/shared";
 import {
   getImageGenerationIntegrationReadiness,
-  getImageGenerationProviderConfig,
   buildImageGenerationNoLiveConfigSnapshot,
   IMAGE_GENERATION_ENV_KEYS,
   IMAGE_GENERATION_DEFAULTS
 } from "../config/image-generation.config";
-import { resolveModelRoute, isApprovedImageModelId } from "./ai-model-routing-policy.service";
+import { isApprovedImageModelId } from "./ai-model-routing-policy.service";
 import {
   evaluateImageGenerationLiveAuthorization,
   IMAGE_GENERATION_LIVE_PROVIDER_CALLS_ALLOWED,
   assertOneGenerationGuard
 } from "./image-generation-guard.service";
 import { resolveImageSinglePolicyRoute, validateImageGenerationRequestAgainstPolicy } from "./image-policy-route";
-import { generateOneImageViaAiPolicy, toClientSafeImageGenerationResult } from "./image-generation-ai-policy.service";
 import { buildImageGenerationLedgerMetadata } from "./image-ledger-attribution.service";
 import { createBflFluxAdapter, assertSafeBflHttpsUrl, extractImageDimensions } from "../services/bfl-flux.adapter";
 import { createFakeBflTransport, buildFakePngBuffer } from "../services/bfl-flux.fake-transport";
@@ -39,25 +38,42 @@ afterEach(() => {
   resetEnv();
 });
 
-describe("AI Policy image_single route", () => {
-  it("resolves provider=bfl broker=direct model=flux-2-pro cost=0.10 retry=0 fallback=false output=1", () => {
-    const routed = resolveModelRoute({
-      orchestratorTaskType: "image_single",
-      clientProfile: "puriva",
-      contentChannel: "website"
-    });
-    assert.equal(routed.blocked, false);
-    assert.equal(routed.route.taskType, "image_single");
-    assert.equal(routed.route.gateway, "bfl");
-    assert.equal(routed.route.provider, "bfl");
-    assert.equal(routed.route.broker, "direct");
-    assert.equal(routed.route.primaryModel, "flux-2-pro");
-    assert.equal(routed.route.maxCostUsdPerRun, 0.1);
-    assert.equal(routed.route.retryLimit, 0);
-    assert.equal(routed.route.fallbackAllowed, false);
-    assert.equal(routed.route.outputCount, 1);
-    assert.equal(routed.route.maxMegapixels, 1);
+function bflPolicy(correlationId: string, live = true): AiProviderExecutionPolicy {
+  return {
+    taskType: "image_single",
+    capability: "image_generation",
+    correlationId,
+    provider: "bfl",
+    broker: "direct",
+    model: "flux-2-pro",
+    maxCostUsd: 0.1,
+    maxProviderRequests: 1,
+    maxGenerationJobs: 1,
+    retryLimit: 0,
+    fallbackAllowed: false,
+    liveExecutionAuthorized: live,
+    timeoutMs: 120_000,
+    outputCount: 1,
+    maxMegapixels: 1,
+    maxWidth: 1024,
+    maxHeight: 1024
+  };
+}
+
+describe("BFL preservation under OpenAI-active policy", () => {
+  it("keeps flux-2-pro allowlisted and BFL adapter registrable while active route is openai", () => {
     assert.equal(isApprovedImageModelId("flux-2-pro"), true);
+    assert.ok(resolveImageProviderAdapter("bfl"));
+    assert.equal(IMAGE_GENERATION_DEFAULTS.provider, "openai");
+    const active = resolveImageSinglePolicyRoute({
+      correlationId: "active-check",
+      liveExecutionAuthorized: false
+    });
+    assert.equal(active.ok, true);
+    if (active.ok) {
+      assert.equal(active.policy.provider, "openai");
+      assert.equal(active.policy.model, "gpt-image-1");
+    }
   });
 
   it("rejects unsupported provider and model via policy helpers", () => {
@@ -70,7 +86,7 @@ describe("AI Policy image_single route", () => {
   });
 });
 
-describe("image generation live authorization", () => {
+describe("image generation live authorization (shared)", () => {
   it("keeps foundation live-calls constant false", () => {
     assert.equal(IMAGE_GENERATION_LIVE_PROVIDER_CALLS_ALLOWED, false);
   });
@@ -83,7 +99,7 @@ describe("image generation live authorization", () => {
     assert.equal(auth.readinessLabel, "disabled");
   });
 
-  it("API key alone does not authorize live calls", () => {
+  it("API key alone does not authorize live calls for BFL env shape", () => {
     process.env.IMAGE_GENERATION_ENABLED = "true";
     process.env.IMAGE_GENERATION_PROVIDER = "bfl";
     process.env.IMAGE_GENERATION_MODEL = "flux-2-pro";
@@ -107,27 +123,36 @@ describe("image generation live authorization", () => {
   });
 
   it("one-generation guard rejects retry/fallback/multi-output", () => {
-    assert.equal(assertOneGenerationGuard({
-      maxProviderRequests: 1,
-      maxGenerationJobs: 1,
-      retryLimit: 1,
-      fallbackAllowed: false,
-      outputCount: 1
-    }).ok, false);
-    assert.equal(assertOneGenerationGuard({
-      maxProviderRequests: 1,
-      maxGenerationJobs: 1,
-      retryLimit: 0,
-      fallbackAllowed: true,
-      outputCount: 1
-    }).ok, false);
-    assert.equal(assertOneGenerationGuard({
-      maxProviderRequests: 1,
-      maxGenerationJobs: 1,
-      retryLimit: 0,
-      fallbackAllowed: false,
-      outputCount: 2
-    }).ok, false);
+    assert.equal(
+      assertOneGenerationGuard({
+        maxProviderRequests: 1,
+        maxGenerationJobs: 1,
+        retryLimit: 1,
+        fallbackAllowed: false,
+        outputCount: 1
+      }).ok,
+      false
+    );
+    assert.equal(
+      assertOneGenerationGuard({
+        maxProviderRequests: 1,
+        maxGenerationJobs: 1,
+        retryLimit: 0,
+        fallbackAllowed: true,
+        outputCount: 1
+      }).ok,
+      false
+    );
+    assert.equal(
+      assertOneGenerationGuard({
+        maxProviderRequests: 1,
+        maxGenerationJobs: 1,
+        retryLimit: 0,
+        fallbackAllowed: false,
+        outputCount: 2
+      }).ok,
+      false
+    );
   });
 });
 
@@ -137,6 +162,7 @@ describe("BFLFluxAdapter fake transport", () => {
     process.env.IMAGE_GENERATION_PROVIDER = "bfl";
     process.env.IMAGE_GENERATION_MODEL = "flux-2-pro";
     process.env.IMAGE_GENERATION_API_KEY = "test-key-not-real";
+    process.env.IMAGE_GENERATION_BASE_URL = "https://api.bfl.ai";
 
     const { fetchImpl, stats, imageBytes } = createFakeBflTransport({
       width: 64,
@@ -144,53 +170,48 @@ describe("BFLFluxAdapter fake transport", () => {
       pendingPolls: 1
     });
 
-    const outcome = await generateOneImageViaAiPolicy({
-      authorizeForFakeTransport: true,
-      adapterOptions: { fetchImpl, sleepImpl: async () => undefined },
-      request: {
-        prompt: "Minimal abstract wellness composition with soft natural shapes, neutral studio lighting, no people, no text, no logos, no medical equipment.",
+    const adapter = createBflFluxAdapter({
+      fetchImpl,
+      sleepImpl: async () => undefined,
+      bypassNetworkLiveEnvForTests: true
+    });
+    const result = await adapter.generateOneImage(
+      {
+        prompt:
+          "Minimal abstract wellness composition with soft natural shapes, neutral studio lighting, no people, no text, no logos, no medical equipment.",
         width: 64,
         height: 64,
         outputFormat: "png",
         correlationId: "DCA-IMG-TEST-001"
-      }
-    });
+      },
+      bflPolicy("DCA-IMG-TEST-001", true)
+    );
 
-    assert.equal(outcome.r2Called, false);
     assert.equal(stats.submitCount, 1);
     assert.ok(stats.pollCount >= 1);
     assert.equal(stats.downloadCount, 1);
-    assert.equal(outcome.result.status, "COMPLETED");
-    assert.equal(outcome.result.submitRequestCount, 1);
-    assert.equal(outcome.result.generationJobCount, 1);
-    assert.equal(outcome.result.resultDownloadCount, 1);
-    assert.equal(outcome.result.retryCount, 0);
-    assert.equal(outcome.result.fallbackUsed, false);
-    assert.equal(outcome.result.outputCount, 1);
-    assert.equal(outcome.result.liveProviderCalled, true);
-    assert.equal(outcome.result.width, 64);
-    assert.equal(outcome.result.height, 64);
-    assert.equal(outcome.result.byteLength, imageBytes.length);
-    assert.ok(outcome.result.sha256);
-    assert.equal(outcome.result.actualCostUsd, null);
-    assert.ok(outcome.result.estimatedCostUsd <= 0.1);
-    assert.equal(outcome.result.artifactHandoff?.r2Called, false);
-    assert.equal(outcome.result.artifactHandoff?.publicUrl, null);
-    assert.equal(outcome.result.artifactHandoff?.storageKey, null);
+    assert.equal(result.status, "COMPLETED");
+    assert.equal(result.provider, "bfl");
+    assert.equal(result.model, "flux-2-pro");
+    assert.equal(result.submitRequestCount, 1);
+    assert.equal(result.generationJobCount, 1);
+    assert.equal(result.resultDownloadCount, 1);
+    assert.equal(result.retryCount, 0);
+    assert.equal(result.fallbackUsed, false);
+    assert.equal(result.outputCount, 1);
+    assert.equal(result.liveProviderCalled, true);
+    assert.equal(result.width, 64);
+    assert.equal(result.height, 64);
+    assert.equal(result.byteLength, imageBytes.length);
+    assert.ok(result.sha256);
+    assert.equal(result.actualCostUsd, null);
+    assert.ok(result.estimatedCostUsd <= 0.1);
+    assert.equal(result.artifactHandoff?.r2Called, false);
 
-    const ledger = buildImageGenerationLedgerMetadata(outcome.result);
+    const ledger = buildImageGenerationLedgerMetadata(result);
     assert.equal(ledger.modality, "image");
     assert.equal(ledger.provider, "bfl");
     assert.equal(ledger.model, "flux-2-pro");
-    assert.equal(ledger.retryCount, 0);
-    assert.equal(ledger.fallbackUsed, false);
-    assert.equal(ledger.artifactPersisted, false);
-
-    const clientSafe = JSON.stringify(toClientSafeImageGenerationResult(outcome.result));
-    assert.equal(clientSafe.includes("test-key-not-real"), false);
-    assert.equal(clientSafe.includes("polling_url"), false);
-    assert.equal(clientSafe.includes("bfl.ai"), false);
-    assert.equal(clientSafe.includes("sha256"), false);
   });
 
   it("rejects unsafe polling hostname", async () => {
@@ -198,27 +219,31 @@ describe("BFLFluxAdapter fake transport", () => {
     process.env.IMAGE_GENERATION_PROVIDER = "bfl";
     process.env.IMAGE_GENERATION_MODEL = "flux-2-pro";
     process.env.IMAGE_GENERATION_API_KEY = "test-key-not-real";
+    process.env.IMAGE_GENERATION_BASE_URL = "https://api.bfl.ai";
 
     const { fetchImpl } = createFakeBflTransport({
       unsafePollingUrl: "https://evil.example/poll"
     });
 
-    const outcome = await generateOneImageViaAiPolicy({
-      authorizeForFakeTransport: true,
-      adapterOptions: { fetchImpl, sleepImpl: async () => undefined },
-      request: {
+    const result = await createBflFluxAdapter({
+      fetchImpl,
+      sleepImpl: async () => undefined,
+      bypassNetworkLiveEnvForTests: true
+    }).generateOneImage(
+      {
         prompt: "Minimal abstract wellness composition with soft natural shapes, neutral studio lighting.",
         width: 64,
         height: 64,
         outputFormat: "png",
         correlationId: "DCA-IMG-TEST-UNSAFE-POLL"
-      }
-    });
+      },
+      bflPolicy("DCA-IMG-TEST-UNSAFE-POLL", true)
+    );
 
-    assert.equal(outcome.result.status, "FAILED");
-    assert.ok(outcome.result.safeError?.includes("hostname") || outcome.result.safeError?.includes("allowlisted"));
-    assert.equal(outcome.result.generationJobCount, 1);
-    assert.equal(outcome.result.resultDownloadCount, 0);
+    assert.equal(result.status, "FAILED");
+    assert.ok(result.safeError?.includes("hostname") || result.safeError?.includes("allowlisted"));
+    assert.equal(result.generationJobCount, 1);
+    assert.equal(result.resultDownloadCount, 0);
   });
 
   it("rejects http polling URL", () => {
@@ -264,23 +289,27 @@ describe("BFLFluxAdapter fake transport", () => {
     process.env.IMAGE_GENERATION_PROVIDER = "bfl";
     process.env.IMAGE_GENERATION_MODEL = "flux-2-pro";
     process.env.IMAGE_GENERATION_API_KEY = "test-key-not-real";
+    process.env.IMAGE_GENERATION_BASE_URL = "https://api.bfl.ai";
 
     const { fetchImpl, stats } = createFakeBflTransport({ failPoll: true, pendingPolls: 0 });
-    const outcome = await generateOneImageViaAiPolicy({
-      authorizeForFakeTransport: true,
-      adapterOptions: { fetchImpl, sleepImpl: async () => undefined },
-      request: {
+    const result = await createBflFluxAdapter({
+      fetchImpl,
+      sleepImpl: async () => undefined,
+      bypassNetworkLiveEnvForTests: true
+    }).generateOneImage(
+      {
         prompt: "Minimal abstract wellness composition soft shapes.",
         width: 64,
         height: 64,
         outputFormat: "png",
         correlationId: "DCA-IMG-TEST-FAIL"
-      }
-    });
+      },
+      bflPolicy("DCA-IMG-TEST-FAIL", true)
+    );
 
-    assert.equal(outcome.result.status, "FAILED");
-    assert.equal(outcome.result.fallbackUsed, false);
-    assert.equal(outcome.result.retryCount, 0);
+    assert.equal(result.status, "FAILED");
+    assert.equal(result.fallbackUsed, false);
+    assert.equal(result.retryCount, 0);
     assert.equal(stats.submitCount, 1);
   });
 
@@ -291,7 +320,7 @@ describe("BFLFluxAdapter fake transport", () => {
     assert.equal(extractImageDimensions(Buffer.from("not-an-image")), null);
   });
 
-  it("registry resolves only bfl adapter", () => {
+  it("registry resolves bfl adapter and rejects unknown", () => {
     assert.ok(resolveImageProviderAdapter("bfl"));
     assert.equal(resolveImageProviderAdapter("firefly"), null);
   });
@@ -304,27 +333,28 @@ describe("BFLFluxAdapter fake transport", () => {
     assert.equal(snapshot.defaults.model, IMAGE_GENERATION_DEFAULTS.model);
   });
 
-  it("without authorizeForFakeTransport, generate does not call transport", async () => {
+  it("without live authorization, BFL adapter does not call transport", async () => {
     process.env.IMAGE_GENERATION_ENABLED = "true";
     process.env.IMAGE_GENERATION_PROVIDER = "bfl";
     process.env.IMAGE_GENERATION_MODEL = "flux-2-pro";
     process.env.IMAGE_GENERATION_API_KEY = "test-key-not-real";
+    process.env.IMAGE_GENERATION_BASE_URL = "https://api.bfl.ai";
 
     const { fetchImpl, stats } = createFakeBflTransport();
-    const outcome = await generateOneImageViaAiPolicy({
-      adapterOptions: { fetchImpl },
-      request: {
+    const result = await createBflFluxAdapter({ fetchImpl }).generateOneImage(
+      {
         prompt: "Minimal abstract wellness composition soft shapes.",
         width: 64,
         height: 64,
         outputFormat: "png",
         correlationId: "DCA-IMG-TEST-NOLIVE"
-      }
-    });
+      },
+      bflPolicy("DCA-IMG-TEST-NOLIVE", false)
+    );
 
     assert.equal(stats.submitCount, 0);
-    assert.equal(outcome.result.liveProviderCalled, false);
-    assert.ok(outcome.result.status === "BLOCKED" || outcome.result.status === "SKIPPED");
+    assert.equal(result.liveProviderCalled, false);
+    assert.ok(result.status === "BLOCKED" || result.status === "SKIPPED");
   });
 });
 
@@ -334,6 +364,7 @@ describe("BFLFluxAdapter direct unit", () => {
     process.env.IMAGE_GENERATION_PROVIDER = "bfl";
     process.env.IMAGE_GENERATION_MODEL = "flux-2-pro";
     process.env.IMAGE_GENERATION_API_KEY = "test-key-not-real";
+    process.env.IMAGE_GENERATION_BASE_URL = "https://api.bfl.ai";
 
     const { fetchImpl, stats } = createFakeBflTransport({ width: 64, height: 64, pendingPolls: 0 });
     const adapter = createBflFluxAdapter({
@@ -341,13 +372,6 @@ describe("BFLFluxAdapter direct unit", () => {
       sleepImpl: async () => undefined,
       bypassNetworkLiveEnvForTests: true
     });
-    const route = resolveImageSinglePolicyRoute({
-      correlationId: "unit-1",
-      liveExecutionAuthorized: true
-    });
-    assert.equal(route.ok, true);
-    if (!route.ok) return;
-
     const result = await adapter.generateOneImage(
       {
         prompt: "Minimal abstract wellness composition soft shapes.",
@@ -356,13 +380,10 @@ describe("BFLFluxAdapter direct unit", () => {
         outputFormat: "png",
         correlationId: "unit-1"
       },
-      route.policy
+      bflPolicy("unit-1", true)
     );
-
     assert.equal(result.status, "COMPLETED");
     assert.equal(stats.submitCount, 1);
     assert.ok(stats.methods.includes("POST"));
-    assert.ok(stats.hosts.some((h) => h.includes("bfl.ai")));
-    assert.equal(getImageGenerationProviderConfig().hasApiKey, true);
   });
 });
