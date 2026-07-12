@@ -2,8 +2,9 @@
 
 **Status:** Spec + proof plan. **No live provider implementation in this block.**
 
-**Related:** [`../architecture/AI_MODEL_POLICY.md`](../architecture/AI_MODEL_POLICY.md) **(image provider/model policy — §2; final provider selection pending owner approval)** · [`PURIVA_LAUNCH_GATE.md`](./PURIVA_LAUNCH_GATE.md) · [`STORAGE_R2_PROOF.md`](./STORAGE_R2_PROOF.md) · [`INTEGRATIONS_TRUTH_MATRIX.md`](./INTEGRATIONS_TRUTH_MATRIX.md) · [`PURIVA_IMAGE_PACKAGE_V1_GATE.md`](./PURIVA_IMAGE_PACKAGE_V1_GATE.md)
+**Related:** [`../architecture/AI_MODEL_POLICY.md`](../architecture/AI_MODEL_POLICY.md) **(image provider/model policy — §2; final provider selection pending owner approval)** · [`../architecture/AI_POLICY_PROVIDER_ROUTING.md`](../architecture/AI_POLICY_PROVIDER_ROUTING.md) **(AI Policy / adapter architecture — FLUX plugs in as `ImageProviderAdapter`, not via text OpenRouter)** · [`PURIVA_LAUNCH_GATE.md`](./PURIVA_LAUNCH_GATE.md) · [`STORAGE_R2_PROOF.md`](./STORAGE_R2_PROOF.md) · [`INTEGRATIONS_TRUTH_MATRIX.md`](./INTEGRATIONS_TRUTH_MATRIX.md) · [`PURIVA_IMAGE_PACKAGE_V1_GATE.md`](./PURIVA_IMAGE_PACKAGE_V1_GATE.md)
 
+**Architecture alignment (2026-07-12):** Image generation remains **LOCAL FOUNDATION** (no live adapter). Future FLUX/Firefly/OpenAI Images wiring must follow: AI Policy image route → `ImageProviderAdapter` → concrete adapter → one-image guard → normalized result → optional private R2 → ledger. Workflows must not call vendors directly. Do not create a parallel image-only routing system.
 ---
 
 ## 1. Product flow (target state)

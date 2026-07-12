@@ -1,14 +1,15 @@
 # DCA OS Lite — Status (Source of Truth)
 
-**Last updated:** 2026-07-12 (R2 private storage staging live KEEP on `4cd6d58`; next gate Image; production frozen)
+**Last updated:** 2026-07-12 (AI Policy / provider routing architecture alignment; R2 STAGING LIVE PROVEN; next gate Image after owner provider choice + adapter block; production frozen)
 **Authoritative project control:** [`docs/project-control/AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md`](./project-control/AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md)
+**AI Policy / provider routing:** [`docs/architecture/AI_POLICY_PROVIDER_ROUTING.md`](./architecture/AI_POLICY_PROVIDER_ROUTING.md)
 **PRE-STAGING closure:** 2026-07-10 (local/no-live audit + safe fixes; see [`docs/operator/PRE_STAGING_CLOSURE_VERDICT.md`](./operator/PRE_STAGING_CLOSURE_VERDICT.md))
 **G55 pre-live readiness:** [`docs/runbooks/G55_PRELIVE_READINESS.md`](./runbooks/G55_PRELIVE_READINESS.md)
 **G56 pre-live readiness:** [`docs/runbooks/G56_PRELIVE_READINESS.md`](./runbooks/G56_PRELIVE_READINESS.md)
 **G57–G68 pre-live readiness:** [`docs/runbooks/G57_G68_PRELIVE_READINESS.md`](./runbooks/G57_G68_PRELIVE_READINESS.md)
 **G70 live proof checklist:** [`docs/runbooks/AI_PROVIDER_LIVE_PROOF.md`](./runbooks/AI_PROVIDER_LIVE_PROOF.md) §9
 **G72 model routing policy:** [`docs/runbooks/AI_MODEL_ROUTING_POLICY.md`](./runbooks/AI_MODEL_ROUTING_POLICY.md)
-**AI policy:** [`docs/ai/AI_MODEL_POLICY.md`](./ai/AI_MODEL_POLICY.md) · [`docs/ai/AI_ORCHESTRATOR_LITE.md`](./ai/AI_ORCHESTRATOR_LITE.md)
+**AI policy:** [`docs/ai/AI_MODEL_POLICY.md`](./ai/AI_MODEL_POLICY.md) · [`docs/architecture/AI_MODEL_POLICY.md`](./architecture/AI_MODEL_POLICY.md) · [`docs/architecture/AI_POLICY_PROVIDER_ROUTING.md`](./architecture/AI_POLICY_PROVIDER_ROUTING.md) · [`docs/ai/AI_ORCHESTRATOR_LITE.md`](./ai/AI_ORCHESTRATOR_LITE.md)
 **Operator index:** [`docs/operator/OPERATOR_RUNBOOK.md`](./operator/OPERATOR_RUNBOOK.md)
 **Architecture map:** [`docs/ARCHITECTURE.md`](./ARCHITECTURE.md) § Current application map
 **Smoke matrix:** [`docs/runbooks/LOCAL_SMOKE_MATRIX.md`](./runbooks/LOCAL_SMOKE_MATRIX.md)
@@ -147,8 +148,9 @@ Production PostgreSQL role password and `DATABASE_URL` were rotated, the product
 | Caddy | Not restarted or changed |
 | Production | **Not modified** — FROZEN; prod API `65b4b9d4…` StartedAt `2026-07-11T10:51:44Z` unchanged |
 | Live integrations | Email = **STAGING PROVIDER ACCEPTANCE PROVEN**; AI-A = **CONFIG SHAPE PROVEN**; AI-B AI Delivery OpenRouter = **STAGING LIVE PROVEN**; R2 private-object IO = **STAGING LIVE PROVEN** on `4cd6d58`; Image / WordPress / GA-GSC / MI remain open |
+| AI Policy / provider routing | **Docs alignment COMPLETE (2026-07-12)** — [`AI_POLICY_PROVIDER_ROUTING.md`](./architecture/AI_POLICY_PROVIDER_ROUTING.md); OpenRouter = preferred text broker/adapter; direct image adapters under same AI Policy; **not** universal routing implemented; FLUX/image live **not** claimed |
 | VPS evidence | `/opt/dca/apps/dcaosv1/staging/backups/STAGING_DEPLOY_A8A74E6_RESULT_20260712-043322.txt` |
-| Next sequence | R2 COMPLETE → Image → WordPress → GA/GSC → MI |
+| Next sequence | R2 COMPLETE → Image (after owner provider choice + bounded `ImageProviderAdapter` block) → WordPress → GA/GSC → MI |
 
 **Production safety:** This staging PASS does **not** authorize production deploy, Caddy changes, DB restore, or further live integration proofs without separate owner gates.
 

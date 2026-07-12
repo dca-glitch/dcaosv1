@@ -113,7 +113,8 @@ Applied migration or local unit/integration proof alone does **not** justify `ST
 | Full notification E2E / launch proof | NOT closed | Persistence + UI foundation exist; email = provider acceptance only (not inbox E2E) | Event → inbox → email E2E on target env | Yes for launch claims | Yes |
 | AI provider / OpenRouter | STAGING LIVE PROVEN (AI Delivery path only) | Staging `a8a74e6` AI-B: one OpenRouter call via AI Delivery execute → `AI_GATEWAY_V1` → `openrouter-text.service`; model `anthropic/claude-haiku-4.5`; COMPLETED ledger estimatedCostUsd `0.15` (`actualCostUsd=null`); restored `AI_TEXT_GATEWAY=local` | Production live not proven; Orchestrator plan→execute not proven; trusted invoice cost not proven | Soft — staging AI Delivery path done; next WS7 = Image | Yes |
 | R2 / private storage | STAGING LIVE PROVEN | Staging artifact `4cd6d58` (`/opt/dca/staging-artifacts/4cd6d58`) 2026-07-12 marker `DCA-R2-20260712T081648Z-cc7ee7`: bucket `dcastaging`; one exact-key create → HEAD → signed read → DELETE → HEAD absence; sha256 `39b787cc…52a7`; 107 bytes `application/pdf`; `publicUrl=null` | Production R2 not proven; image/client-deliverable/public delivery not claimed | Soft — R2 done; next WS7 = Image | Yes |
-| Image provider | LOCAL FOUNDATION | Compliance/helpers; provider selection OPEN | Provider choice + live generation proof | Yes for WS7 image step | Yes |
+| Image provider | LOCAL FOUNDATION | Compliance/helpers; live adapter not implemented; architecture alignment 2026-07-12 — image must plug into AI Policy via `ImageProviderAdapter` (not a parallel routing system; not via text `AI_GATEWAY_V1`) — see [`AI_POLICY_PROVIDER_ROUTING.md`](../architecture/AI_POLICY_PROVIDER_ROUTING.md) | Owner provider/model choice + bounded adapter block + staging one-image live proof | Yes for WS7 image step | Yes |
+| AI Policy / provider routing architecture | LOCAL FOUNDATION (docs alignment COMPLETE 2026-07-12) | Canonical layers + terminology in [`AI_POLICY_PROVIDER_ROUTING.md`](../architecture/AI_POLICY_PROVIDER_ROUTING.md); OpenRouter = preferred text broker/adapter, not universal boundary; direct image/audio adapters valid under AI Policy | Universal multi-provider switching / FLUX / image live / Orchestrator plan→execute **not** claimed | Soft — guides next image adapter block | Yes if claimed as fully implemented |
 | WordPress | LOCAL FOUNDATION | Draft-prep / publish-freeze foundations | Live draft/publish proof per owner gate | Yes for WS7 WP step | Yes |
 | GA/GSC | LOCAL FOUNDATION | Snapshot-first / config helpers | OAuth + live sync proof | Yes for WS7 GA/GSC step | Yes |
 | Market Intelligence | LOCAL FOUNDATION | Admin MI MVP local | Live ingestion / staging proof | Yes for WS7 MI step | Yes |
@@ -163,7 +164,8 @@ Applied migration or local unit/integration proof alone does **not** justify `ST
 | Rollback / compatibility plan | **COMPLETE** — verdict `ROLLBACK READY WITH CONDITIONS`; known-good target `1b8d00d` |
 | Rollback rehearsal | **OPEN** — separately gated; **not executed** |
 | SHA-tagged retained staging API image (`staging-dcaosv1-staging-api:1b8d00d`) | **OPEN** until staging safeguard phase |
-| Image provider selection | OPEN |
+| Image provider selection | OPEN — Firefly direction documented; BFL FLUX / OpenAI Images valid `ImageProviderAdapter` candidates; must resolve under AI Policy before wiring ([`AI_POLICY_PROVIDER_ROUTING.md`](../architecture/AI_POLICY_PROVIDER_ROUTING.md)) |
+| AI Policy / provider routing architecture alignment | **COMPLETE** (docs-only 2026-07-12) — prohibits parallel modality routing systems; does not implement adapters |
 | Production artifact SHA and rollback target | UNKNOWN / OPEN (production FROZEN; staging target remains `1b8d00d`) |
 | Staging credential availability for next live proofs | OPEN |
 | Production Turnstile and R2 credential rotation execution | OPEN — DEFERRED (Phase B/C) |
@@ -198,5 +200,7 @@ Applied migration or local unit/integration proof alone does **not** justify `ST
 Related operator docs:
 
 - [`docs/STATUS.md`](../STATUS.md)
+- [`docs/architecture/AI_POLICY_PROVIDER_ROUTING.md`](../architecture/AI_POLICY_PROVIDER_ROUTING.md) — AI Policy / provider routing architecture (authoritative alignment)
+- [`docs/architecture/AI_MODEL_POLICY.md`](../architecture/AI_MODEL_POLICY.md) — provider/model selection policy
 - [`docs/operator/deferred-scope-register.md`](../operator/deferred-scope-register.md)
 - [`docs/runbooks/STAGING_READINESS.md`](../runbooks/STAGING_READINESS.md)

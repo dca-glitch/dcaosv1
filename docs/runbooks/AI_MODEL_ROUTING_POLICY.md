@@ -2,14 +2,16 @@
 
 **Status:** Implemented on `main` through G80 (G72 policy, G73 attribution proof, G74 completed ledger readiness, G75 local live spend attribution proof, G76 persistent completed ledger wiring, G77b local live COMPLETED ledger row proof, G79 monthly cap aggregation for live rows, G80 actual-cost policy). G134-G137 add a local reporting/reconciliation contract on the current working branch.
 **Live execution:** G72–G74 are no-live — dry-run/preview and mocked completed attribution only. **G75 (local only):** one controlled OpenRouter live smoke PASS; completed attribution verifier PASS; at G75 time persistent row was generated-only. **G76 (mocked/no-live):** execute-path COMPLETED persistence wired. **G77b (local only):** live OpenRouter execute created persistent COMPLETED `AiBudgetLedgerEntry` row — staging/production still BLOCKED. **G79/G80:** no live provider calls; local unit/policy changes only.
-**Approved live text model (local proof):** `anthropic/claude-haiku-4.5` via OpenRouter.
+**Approved live text model (local + staging AI Delivery proof):** `anthropic/claude-haiku-4.5` via OpenRouter.
+**Architecture:** This runbook is the **text-centric** routing/ledger procedure under AI Policy. OpenRouter is the preferred text broker/adapter — not a parallel policy owner. Image/audio routes must extend the same AI Policy system via modality adapters — see [`../architecture/AI_POLICY_PROVIDER_ROUTING.md`](../architecture/AI_POLICY_PROVIDER_ROUTING.md). Do not invent a separate image routing/budget system.
 
 ## Principle
 
-All AI task model selection **must** come from backend routing policy (`ai-model-routing-policy.service.ts`). Arbitrary model IDs from user prompts, UI inputs, agent suggestions, or free-form request payloads are **forbidden** and rejected.
+All AI task model selection **must** come from backend routing policy (`ai-model-routing-policy.service.ts`) under AI Policy. Arbitrary model IDs from user prompts, UI inputs, agent suggestions, or free-form request payloads are **forbidden** and rejected.
 
 Do **not** use `openrouter/auto` for Puriva or medical/compliance content.
 
+**Scope note (2026-07-12):** The table below is **text routing**. Orchestrator tasks `image_generation` / `image_prompt` / `vision_technical_qa` currently map to `fallback_stop_admin_review` until an owner-approved image route + `ImageProviderAdapter` exists. That future route remains under AI Policy — not a workflow-hardcoded vendor call.
 ## Approved models
 
 | Model ID | Status |

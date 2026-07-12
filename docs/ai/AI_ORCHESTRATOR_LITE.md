@@ -2,11 +2,13 @@
 
 **Status:** Approved skeleton (G55/G56) + **staging AI-A preflight KEEP (2026-07-12) on artifact `a8a74e6`** — capability **CONFIG SHAPE PROVEN**. Marker `DCA-WS7-AI-A-20260712-064227`. Admin-only registry/preview/dry-run proven with `executionDeferred=true`, `liveProviderCalled=false`, live calls `0`, cost `$0`. **Not** `STAGING LIVE PROVEN` (plan→execute not wired). **Note:** AI-B (2026-07-12) proves the AI Delivery/gateway OpenRouter path only — it does **not** promote Orchestrator Lite to staging-live. Version: `AI_ORCHESTRATOR_LITE_V1`. Scope: Planning, policy, routing preview — not live execution.
 
+**Architecture:** Orchestrator Lite plans under **AI Policy**. It does not own a second routing system. OpenRouter is one text broker/adapter; image/audio use future modality adapters under the same policy — see [`../architecture/AI_POLICY_PROVIDER_ROUTING.md`](../architecture/AI_POLICY_PROVIDER_ROUTING.md).
+
 ---
 
 ## 1. Purpose
 
-AI Orchestrator Lite sits **above AI Gateway v1**. It coordinates:
+AI Orchestrator Lite sits **above** modality execution adapters (today: text via AI Gateway v1). It coordinates:
 
 1. Workflow request intake
 2. Task type resolution
@@ -15,11 +17,11 @@ AI Orchestrator Lite sits **above AI Gateway v1**. It coordinates:
 5. Provider registry lookup
 6. Cost estimate
 7. Prompt template selection (version label)
-8. AI Gateway execution **or** disabled-safe fallback
+8. Execution **or** disabled-safe fallback **when plan→execute is wired** (not wired today)
 9. Audit metadata
 10. Approval state
 
-It does **not** replace AI Gateway. It does **not** call providers directly except through existing gateway abstractions.
+It does **not** replace AI Policy or modality adapters. It does **not** call providers directly. It must not embed vendor-specific APIs (OpenRouter, FLUX, Firefly, ElevenLabs) in workflow code.
 
 ---
 
@@ -27,16 +29,24 @@ It does **not** replace AI Gateway. It does **not** call providers directly exce
 
 ```text
 Admin workflow step
-  → AI Orchestrator Lite (plan/preview)
+  → AI Orchestrator Lite (plan/preview under AI Policy)
        → Material policy guard
        → Budget guard
-       → Provider registry (role → provider)
+       → Provider registry (role → provider label)
+       → Model route resolution (resolveModelRoute)
        → Audit metadata builder
-  → AI Gateway v1 (execution only when approved + enabled)
-       → Local deterministic (default)
-       → OpenRouter (opt-in live)
+  → Modality adapter (when owner-gated execute is authorized)
+       → Text: AI Gateway v1 → local deterministic | OpenRouter text adapter
+       → Image (future): ImageProviderAdapter → Firefly / BFL FLUX / …
+       → Audio/research (future): matching adapters
 ```
 
+**Clarifications (2026-07-12):**
+
+- `AI_GATEWAY_V1` is the **text** execution path; not a universal multi-modality gateway.
+- OpenRouter is the preferred **text broker/adapter**, not the owner of routing policy.
+- Image generation must not route through the OpenRouter text client.
+- Orchestrator remains **CONFIG SHAPE PROVEN** only until plan→execute is separately owner-gated.
 ---
 
 ## 3. Code locations

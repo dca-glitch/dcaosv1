@@ -4,6 +4,8 @@
 **Scope:** Owner-level AI/provider decisions for pre-live readiness  
 **Audience:** Product owner, operators, implementers  
 
+**Related architecture:** Provider/model selection details → [`../architecture/AI_MODEL_POLICY.md`](../architecture/AI_MODEL_POLICY.md). Routing layers / OpenRouter vs direct adapters → [`../architecture/AI_POLICY_PROVIDER_ROUTING.md`](../architecture/AI_POLICY_PROVIDER_ROUTING.md).
+
 ---
 
 ## 1. Core principles
@@ -20,8 +22,11 @@
 | Client visibility | **Human approval required** before client-visible output |
 | Live providers | **No live provider calls** unless explicitly enabled by owner |
 | Auto publication | **No automatic publication** |
-| Provider roles | **Configurable** via provider registry (not hardcoded per button) |
-| Orchestrator | **AI Orchestrator Lite** is the approved coordination layer above AI Gateway |
+| Provider roles | **Configurable** via provider registry / AI Policy routes (not hardcoded per button) |
+| AI Policy | **Authoritative** decision layer for capability → provider/model → caps → fallback |
+| OpenRouter | Preferred **text broker/adapter** where appropriate — not the universal boundary |
+| Direct adapters | Valid for image/audio/provider-native APIs under AI Policy |
+| Orchestrator | **AI Orchestrator Lite** is the approved planning/coordination layer above modality adapters |
 
 ---
 
