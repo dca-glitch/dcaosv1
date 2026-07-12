@@ -1,6 +1,6 @@
 # AI Orchestrator Lite — DCA OS Lite
 
-**Status:** Approved skeleton (G55/G56) + **staging AI-A preflight KEEP (2026-07-12) on artifact `a8a74e6`** — capability **CONFIG SHAPE PROVEN**. Marker `DCA-WS7-AI-A-20260712-064227`. Admin-only registry/preview/dry-run proven with `executionDeferred=true`, `liveProviderCalled=false`, live calls `0`, cost `$0`. **Not** `STAGING LIVE PROVEN` (plan→execute not wired). Version: `AI_ORCHESTRATOR_LITE_V1`. Scope: Planning, policy, routing preview — not live execution.
+**Status:** Approved skeleton (G55/G56) + **staging AI-A preflight KEEP (2026-07-12) on artifact `a8a74e6`** — capability **CONFIG SHAPE PROVEN**. Marker `DCA-WS7-AI-A-20260712-064227`. Admin-only registry/preview/dry-run proven with `executionDeferred=true`, `liveProviderCalled=false`, live calls `0`, cost `$0`. **Not** `STAGING LIVE PROVEN` (plan→execute not wired). **Note:** AI-B (2026-07-12) proves the AI Delivery/gateway OpenRouter path only — it does **not** promote Orchestrator Lite to staging-live. Version: `AI_ORCHESTRATOR_LITE_V1`. Scope: Planning, policy, routing preview — not live execution.
 
 ---
 

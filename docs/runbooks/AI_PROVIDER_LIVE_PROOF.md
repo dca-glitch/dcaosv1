@@ -1,6 +1,6 @@
 # AI Provider Live Proof
 
-**Status:** Local deterministic default proven; **formal clean local OpenRouter live proof complete (G71e + G71e-retry)**; **G77b persistent COMPLETED ledger row proven (local only)**; **AI-A Orchestrator staging preflight KEEP (2026-07-12) = CONFIG SHAPE PROVEN** (no live OpenRouter call; marker `DCA-WS7-AI-A-20260712-064227`). Does not authorize production enablement, staging AI Delivery live E2E (AI-B), or autonomous AI.
+**Status:** Local deterministic default proven; **formal clean local OpenRouter live proof complete (G71e + G71e-retry)**; **G77b persistent COMPLETED ledger row proven (local only)**; **AI-A Orchestrator staging preflight KEEP (2026-07-12) = CONFIG SHAPE PROVEN**; **AI-B AI Delivery staging live KEEP (2026-07-12) = STAGING LIVE PROVEN** for the bounded AI Delivery OpenRouter path only (marker `DCA-AI-B-20260712T071332Z-5vytpl`). Does **not** authorize production enablement, Orchestrator plan→execute live, autonomous AI, or other WS7 integrations.
 
 **Gate:** Puriva Launch blocker — live AI provider proof (see [`docs/operator/deferred-scope-register.md`](../operator/deferred-scope-register.md)).
 
@@ -735,3 +735,23 @@ Stop immediately if any of the following occur:
 | 9 | Any SSH, VPS, deploy, production, Caddy, DNS, schema, migration, or container action is needed outside a future explicit owner gate |
 
 **G81 decision:** This is a planning section only. It records how a future staging live proof should be guarded; it does **not** execute, authorize, or imply approval for staging live OpenRouter, production live OpenRouter, deploy, SSH, VPS, env mutation, or any live provider call.
+
+### 9.20 AI-B — AI Delivery staging live E2E KEEP (2026-07-12)
+
+**Status:** **KEEP** — AI Delivery OpenRouter path **STAGING LIVE PROVEN** on artifact `a8a74e6`. Exactly one OpenRouter live call. Does **not** prove production live, Orchestrator plan→execute, all AI workflows, client delivery, or trusted invoice `actualCostUsd`.
+
+| Item | Evidence |
+|------|----------|
+| Marker | `DCA-AI-B-20260712T071332Z-5vytpl` |
+| Execute | `POST …/workflow-runs/:id/execute` summary path |
+| Path | AI Delivery → `AI_GATEWAY_V1` → `openrouter-text.service` |
+| Workflow | `a09cc309-9482-4a79-ad69-f2df8211ef6a` → status `REVIEW` |
+| Gateway | `openrouter`; `liveProviderCalled=true`; model `anthropic/claude-haiku-4.5` |
+| Ledger | COMPLETED `a37577de-d55a-4166-8966-bf19eb1829c5`; `stepReference=ai-delivery-execute:summary`; `estimatedCostUsd=0.15`; `actualCostUsd=null` |
+| Live calls | Exactly 1; no retry; no deterministic fallback |
+| Restore | `AI_TEXT_GATEWAY=local`; `openRouterLiveExecutionEnabled=false`; staging key retained |
+| Email | Remained disabled (`EMAIL_LIVE_SEND_AUTHORIZED=false`, `sendingEnabled=false`) |
+| VPS evidence | `/opt/dca/apps/dcaosv1/staging/backups/AI_B_AI_DELIVERY_LIVE_PROOF_20260712-071332.txt` |
+| Next gate | R2 private storage live create/read/delete proof |
+
+**Not claimed:** production OpenRouter; Orchestrator Lite `STAGING LIVE PROVEN`; all models/workflows; retry/failure live behavior; client-facing delivery; R2/image/WordPress/GA/GSC/MI.
