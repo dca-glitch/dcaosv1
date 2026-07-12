@@ -25,6 +25,12 @@ export interface UploadObjectResult {
   publicUrl: string | null;
 }
 
+export interface UploadExactObjectInput {
+  body: Buffer;
+  mimeType: string;
+  storageKey: string;
+}
+
 export type R2ExactKeyFailureReason = "not_configured" | "invalid_key" | "provider_error";
 
 export type R2ObjectHeadResult =
@@ -393,6 +399,49 @@ export async function uploadR2Object(input: UploadObjectInput): Promise<UploadOb
     storageKey,
     publicUrl: null
   };
+}
+
+/**
+ * Exact-key private upload for bounded execution workflows.
+ * One PUT only; no public URL, retry, fallback, prefix, or caller endpoint override.
+ */
+export async function uploadR2ObjectAtExactKey(
+  input: UploadExactObjectInput
+): Promise<UploadObjectResult> {
+  const config = getR2Config();
+  if (!config) {
+    throw new Error("R2 storage is not configured.");
+  }
+  const keyCheck = assertExactR2ObjectKey(input.storageKey);
+  if (!keyCheck.ok) {
+    throw new Error(keyCheck.safeMessage);
+  }
+  const fileName = keyCheck.storageKey.split("/").at(-1) ?? "";
+  if (!validateR2Upload({ body: input.body, mimeType: input.mimeType, originalFileName: fileName })) {
+    throw new Error("R2 upload validation failed.");
+  }
+
+  const url = getObjectUrl(config, keyCheck.storageKey);
+  const bodyHash = createHash("sha256").update(input.body).digest("hex");
+  const headers = signRequest({
+    bodyHash,
+    config,
+    contentType: input.mimeType,
+    method: "PUT",
+    url
+  });
+  const response = await r2HttpTransport(url, {
+    body: input.body.buffer.slice(
+      input.body.byteOffset,
+      input.body.byteOffset + input.body.byteLength
+    ) as ArrayBuffer,
+    headers,
+    method: "PUT"
+  });
+  if (!response.ok) {
+    throw new Error("R2 exact-key upload request failed.");
+  }
+  return { storageKey: keyCheck.storageKey, publicUrl: null };
 }
 
 export function getSignedR2ReadUrl(storageKey: string, expiresSeconds = 300): string | null {

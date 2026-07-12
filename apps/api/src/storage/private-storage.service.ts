@@ -4,6 +4,7 @@ import {
   getSignedR2ReadUrl,
   headR2Object,
   uploadR2Object,
+  uploadR2ObjectAtExactKey,
   type R2DocumentType,
   type R2ObjectDeleteResult,
   type R2ObjectHeadResult
@@ -46,6 +47,12 @@ export interface PutPrivateStorageObjectInput {
 
 export interface PutPrivateStorageObjectResult {
   provider: "r2";
+  storageKey: string;
+}
+
+export interface PutPrivateStorageExactObjectInput {
+  body: Buffer;
+  mimeType: string;
   storageKey: string;
 }
 
@@ -147,6 +154,19 @@ export async function putPrivateStorageObject(
     tenantSlugOrId: input.tenantSlugOrId
   });
 
+  return {
+    provider: "r2",
+    storageKey: upload.storageKey
+  };
+}
+
+export async function putPrivateStorageObjectAtExactKey(
+  input: PutPrivateStorageExactObjectInput
+): Promise<PutPrivateStorageObjectResult | null> {
+  if (!getR2Config()) {
+    return null;
+  }
+  const upload = await uploadR2ObjectAtExactKey(input);
   return {
     provider: "r2",
     storageKey: upload.storageKey

@@ -1,6 +1,6 @@
 # DCA OS Lite — Status (Source of Truth)
 
-**Last updated:** 2026-07-12 (AI Delivery content-to-draft bounded workflow LOCAL IMPLEMENTED / FAKE-PROVIDER PROVEN; staging connected workflow not proven; production frozen)
+**Last updated:** 2026-07-13 (AI Delivery content-to-draft execution bridge LOCAL IMPLEMENTED / FAKE-PROVIDER AND REAL-PRISMA PROVEN; staging connected workflow not proven; production frozen)
 **Authoritative project control:** [`docs/project-control/AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md`](./project-control/AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md)
 **AI Policy / provider routing:** [`docs/architecture/AI_POLICY_PROVIDER_ROUTING.md`](./architecture/AI_POLICY_PROVIDER_ROUTING.md)
 **PRE-STAGING closure:** 2026-07-10 (local/no-live audit + safe fixes; see [`docs/operator/PRE_STAGING_CLOSURE_VERDICT.md`](./operator/PRE_STAGING_CLOSURE_VERDICT.md))
@@ -289,6 +289,22 @@ Production PostgreSQL role password and `DATABASE_URL` were rotated, the product
 | Not claimed | Connected workflow staging proof; real image/R2/WordPress/email calls; WordPress media attachment; three-image sets; regeneration; client approval/email; production |
 | Migration | Additive migration applied only to the isolated ephemeral local test database; not applied to staging or production |
 | Gate 6 | Owner-controlled staging migration/deploy/live-call proof remains separately gated |
+
+## AI Delivery bounded execution bridge local closeout (2026-07-13)
+
+**Result:** KEEP — AI Delivery content-to-draft execution bridge **LOCAL IMPLEMENTED / FAKE-PROVIDER AND REAL-PRISMA PROVEN**.
+
+| Item | State |
+|------|-------|
+| Surface | Staging-only operator CLI; separate prepare/start/inspect/continue/cleanup commands; no public HTTP route |
+| Provider construction | Existing OpenAI one-image policy, exact-key private R2 upload/delete, draft-only WordPress adapter/exact-post trash, provider-only owner email delivery plus durable EmailLog persistence |
+| Guards | Explicit staging marker; non-production runtime; staging database allowlist; exact tenant/client/project/draft/target/user IDs; all image/WordPress/email live flags; exact staging WordPress hostname; generic publish freeze |
+| Manual boundary | Start stops at `WAITING_FOR_IMAGE_APPROVAL`; CLI contains no approval mutation; continuation requires existing image status `APPROVED` |
+| Proof data | Deterministic correlation labels; IDs-only JSON manifest; exact isolated project/draft creation; shared tenant/client/user/publication target preserved |
+| Cleanup | Manifest-driven exact WordPress post trash, exact R2 key delete, exact proof-row deletion, and zero-residual verification; broad or malformed manifests refused |
+| Local proof | Isolated ephemeral loopback PostgreSQL; fake OpenAI/R2/WordPress/email; full CLI sequence including duplicate calls and cleanup |
+| Not claimed | Staging bridge deployment; connected staging execution; real provider calls; production readiness |
+| Staging baseline | Artifact `8a506c5` and additive migration are already deployed/applied; bridge commit remains local/PR-only until a separate owner deployment gate |
 
 ## Staging email one-send proof closeout (2026-07-12)
 
