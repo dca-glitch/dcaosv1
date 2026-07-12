@@ -1,6 +1,6 @@
 # DCA OS Lite — Status (Source of Truth)
 
-**Last updated:** 2026-07-12 (WORKSTREAM 1 Points 1–4 closeout at `250e958`; staging `1b8d00d` PASS preserved; production frozen)
+**Last updated:** 2026-07-12 (controlled staging deploy `a8a74e6` PASS; rollback target `1b8d00d` retained; production frozen)
 **Authoritative project control:** [`docs/project-control/AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md`](./project-control/AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md)
 **PRE-STAGING closure:** 2026-07-10 (local/no-live audit + safe fixes; see [`docs/operator/PRE_STAGING_CLOSURE_VERDICT.md`](./operator/PRE_STAGING_CLOSURE_VERDICT.md))
 **G55 pre-live readiness:** [`docs/runbooks/G55_PRELIVE_READINESS.md`](./runbooks/G55_PRELIVE_READINESS.md)
@@ -121,9 +121,40 @@ Production PostgreSQL role password and `DATABASE_URL` were rotated, the product
 
 **Execution issue / prevention rule:** The first Phase A attempt failed because `psql` is not installed on the VPS host; `pg_restore --list` must also run inside the PostgreSQL container. Future production runners must use container-native PostgreSQL tools and must not treat normal Docker stderr output as a fatal error.
 
+## Staging deploy `a8a74e6` closeout (2026-07-12)
+
+**Result:** PASS — controlled staging deployment of commit `a8a74e6` completed; health PASS; required staging smokes PASS; no migration performed; production untouched.
+
+| Item | State |
+|------|--------|
+| Deployed commit | `a8a74e60e05a6e9d21691bfc83bb0123899ba6f6` (`a8a74e6`) |
+| Prior staging artifact | `1b8d00d` (retained as rollback target) |
+| Local validation before deploy | `validate` PASS; API unit 806 PASS; web unit 288 PASS; integration 56 PASS; `smoke:browser` + `smoke:local` PASS |
+| Local mega smoke note | `smoke:staging-readiness:local` hung/skipped — does not invalidate staging PASS |
+| Staging artifact path | `/opt/dca/staging-artifacts/a8a74e6` |
+| Tar SHA256 | `a23ab3c9c75be6e0d5f921e034df95f2090b96f0652791b8d9ead13f90322662` |
+| Schema / migration delta `1b8d00d..a8a74e6` | **none** |
+| `prisma migrate deploy` | **not performed** — read-only status: Database schema is up to date (47 migrations) |
+| Staging compose API context | `/opt/dca/staging-artifacts/a8a74e6` |
+| Staging API image | `staging-dcaosv1-staging-api:a8a74e6` (`sha256:2c80bd51ef7aac7a232ffab5ef1a5ebe2d6dd0d0fa67530a32886649324a308a`) |
+| Retained rollback API image | `staging-dcaosv1-staging-api:1b8d00d` |
+| Staging API container | `1c768ba94d0e…`; StartedAt `2026-07-12T04:31:06Z`; `127.0.0.1:4011->4000` |
+| Web index hash (active) | `9cc804892b186c3e426c866afe0bdb7be78590643a07d3531d310e20e0b74083` |
+| Web backup | `/opt/dca/apps/dcaosv1/staging/web/backups/dist-before-a8a74e6-20260712-042923` |
+| DB container | `c70f523d…` StartedAt `2026-07-04T00:38:06Z` **unchanged** |
+| Health | loopback/public API 200; root 200; asset 200; DB ready |
+| Required smokes | `smoke:mvp:staging` PASS; `smoke:staging-security-baseline` 32/32 PASS |
+| Caddy | Not restarted or changed |
+| Production | **Not modified** — FROZEN; prod API `65b4b9d4…` StartedAt `2026-07-11T10:51:44Z` unchanged |
+| Live integrations | **not proven** (Email / AI-A / AI-B / R2 / Image / WordPress / GA-GSC / MI remain open) |
+| VPS evidence | `/opt/dca/apps/dcaosv1/staging/backups/STAGING_DEPLOY_A8A74E6_RESULT_20260712-043322.txt` |
+| Next sequence | Workstream 7 live-proof order: Email → AI-A → AI-B → R2 → Image → WordPress → GA/GSC → MI |
+
+**Production safety:** This staging PASS does **not** authorize production deploy, Caddy changes, DB restore, or live integration proofs.
+
 ## Staging deploy `1b8d00d` closeout (2026-07-11)
 
-**Result:** PASS — controlled staging deployment of commit `1b8d00d` completed; post-deploy smoke PASS; production untouched.
+**Result:** PASS — controlled staging deployment of commit `1b8d00d` completed; post-deploy smoke PASS; production untouched. **Superseded as current staging runtime by `a8a74e6` (2026-07-12); retained as rollback target.**
 
 | Item | State |
 |------|--------|

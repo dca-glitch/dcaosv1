@@ -3,7 +3,7 @@
 **Document role:** Owner-approved project-control source for nomenclature and capability status before the next staging cycle.
 
 **Date:** 2026-07-12
-**Workstream:** WORKSTREAM 1 — Points 1–4 closeout (Vite, canonical components, rollback plan, Orchestrator proof decision)
+**Workstream:** WORKSTREAM 6 — controlled staging deploy `a8a74e6` (post local pre-staging convergence)
 
 ---
 
@@ -13,13 +13,14 @@
 |------|--------|
 | Repo | `C:\dcaosv1` |
 | Branch | `main` |
-| Repo baseline (HEAD) | `250e95828db7a8313e38401add6e4efc61d2160d` (`250e958`) |
-| Staging baseline / known-good artifact | `1b8d00db2f9d46ac6678abd576a02683ffa6d86c` (`1b8d00d`) |
-| Relation | `250e958` is a local descendant of staging artifact `1b8d00d` (includes Vite remediation `95af080` + canonical import guard `250e958`; schema delta `1b8d00d..250e958`: none) |
-| Staging `1b8d00d` | PASS |
+| Repo baseline (HEAD) | `a8a74e60e05a6e9d21691bfc83bb0123899ba6f6` (`a8a74e6`) |
+| Staging baseline / current artifact | `a8a74e60e05a6e9d21691bfc83bb0123899ba6f6` (`a8a74e6`) |
+| Rollback target (retained) | `1b8d00db2f9d46ac6678abd576a02683ffa6d86c` (`1b8d00d`) |
+| Relation | `a8a74e6` is the controlled staging deploy of local pre-staging convergence; schema delta `1b8d00d..a8a74e6`: none |
+| Staging `a8a74e6` | PASS (health + required smokes) |
 | Validate at baseline | PASS |
 | Production | FROZEN |
-| Remote freshness | `origin/main` = `250e958` (verified at Workstream 1 closeout) |
+| Remote freshness | `origin/main` = `a8a74e6` (pre-docs-closeout deploy HEAD; docs closeout commit follows) |
 
 This document controls **nomenclature** and **status labels** for planning and execution before the next staging cycle. It does **not** replace technical runbooks (`STAGING_READINESS`, `PRODUCTION_DEPLOYMENT`, `PRODUCTION_ROLLBACK`, integration proof runbooks, or operator checklists).
 
@@ -74,7 +75,7 @@ Three implementation/planning systems plus historical G-gates. **Do not mix or s
 | 8 | VPS staging | Puriva E2E, failure paths, runtime UI/UX audit, security audit, rollback rehearsal |
 | 9 | Planning | Credential rotation, migration plan, explicit owner go/no-go |
 
-**Active closeout:** Workstream 1 Points 1–4 COMPLETE at `250e958`. Workstreams 2–5 are the next local execution phases before staging Workstream 6.
+**Active closeout:** Workstreams 1–5 local + Workstream 6 controlled staging deploy `a8a74e6` COMPLETE. Next: Workstream 7 live proofs in approved order (Email → AI-A → AI-B → R2 → Image → WordPress → GA/GSC → MI). Production remains FROZEN.
 
 ---
 
@@ -116,7 +117,7 @@ Applied migration or local unit/integration proof alone does **not** justify `ST
 | Market Intelligence | LOCAL FOUNDATION | Admin MI MVP local | Live ingestion / staging proof | Yes for WS7 MI step | Yes |
 | Google Docs / Drive frontend | DEFERRED | BLOK 9 owner-deferred 2026-07-11 | Owner reactivation of BLOK 9 | No (explicitly deferred) | Yes if claimed as ready |
 | Component system | LOCAL FOUNDATION — canonical decision COMPLETE | Public system: `apps/web/src/components/ui`; private foundation: `apps/web/src/design-system`; Wave 0 import guard at `250e958` freezes 108 existing violations; Waves 1–5 migration still open | Complete Waves 1–5 migration; Modal Wave separately gated | Soft — migration waves remain | Soft |
-| Rollback / compatibility plan | ROLLBACK READY WITH CONDITIONS | Known-good staging artifact `1b8d00d` remains rollback target; schema delta `1b8d00d..250e958`: none; plan COMPLETE at WS1 Point 3 | Rollback rehearsal **pending** (separately gated); no SHA-tagged retained staging API image yet (pre-safeguard phase) | Soft — rehearsal still required before claiming drill-proven | Yes |
+| Rollback / compatibility plan | ROLLBACK READY WITH CONDITIONS | Current staging `a8a74e6`; retained rollback API tag `staging-dcaosv1-staging-api:1b8d00d` + web backup `dist-before-a8a74e6-20260712-042923`; schema delta none; rollback rehearsal PASS (2026-07-12) | Owner-gated rollback only if needed; do not delete retained tags/backups | Soft | Yes |
 | Production | FROZEN | Staging PASS does not authorize production; artifact SHA / rollback target UNKNOWN | Turnstile/R2 rotation; G49/G50; explicit go/no-go | N/A (not staging) | Yes — frozen |
 
 ---
