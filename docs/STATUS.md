@@ -1,6 +1,6 @@
 # DCA OS Lite — Status (Source of Truth)
 
-**Last updated:** 2026-07-12 (WordPress dedicated staging one-draft path STAGING LIVE PROVEN — bounded create-and-trash only; generic publish frozen; production frozen)
+**Last updated:** 2026-07-12 (AI Delivery content-to-draft bounded workflow LOCAL IMPLEMENTED / FAKE-PROVIDER PROVEN; staging connected workflow not proven; production frozen)
 **Authoritative project control:** [`docs/project-control/AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md`](./project-control/AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md)
 **AI Policy / provider routing:** [`docs/architecture/AI_POLICY_PROVIDER_ROUTING.md`](./architecture/AI_POLICY_PROVIDER_ROUTING.md)
 **PRE-STAGING closure:** 2026-07-10 (local/no-live audit + safe fixes; see [`docs/operator/PRE_STAGING_CLOSURE_VERDICT.md`](./operator/PRE_STAGING_CLOSURE_VERDICT.md))
@@ -273,6 +273,21 @@ Production PostgreSQL role password and `DATABASE_URL` were rotated, the product
 | Next gate | GA/GSC live proof |
 
 **Prior local adapter result (retained):** dedicated live-draft adapter **LOCAL IMPLEMENTED / FAKE-TRANSPORT PROVEN** on the same baseline (`createWordPressDraft` / exact-ID trash; dual `WORDPRESS_DRAFT_LIVE_*` flags; fake smoke PASS).
+
+## AI Delivery bounded content-to-draft local closeout (2026-07-12)
+
+**Result:** KEEP — AI Delivery content-to-draft bounded workflow **LOCAL IMPLEMENTED / FAKE-PROVIDER PROVEN**.
+
+| Item | State |
+|------|-------|
+| Path | approved content draft → one fake OpenAI image → one deterministic private fake storage object → `AiDeliveryArticleImage.PREVIEW_READY` → durable `WAITING_FOR_IMAGE_APPROVAL` → existing image approval status → one fake WordPress draft → one fake owner/admin email → `COMPLETED` |
+| Durable contract | Additive `AiDeliveryBoundedWorkflowRun` ledger, unique tenant+draft+workflow key, guarded stage claims, stable stage keys, explicit ambiguous states |
+| Local proof | `npm.cmd run smoke:ai-delivery-bounded-content-draft:local` |
+| Counts | image=1; private upload=1; WordPress create=1; email=1; retry=0; fallback=false; media=0 |
+| Safety | Tenant/client/project/content/image/target guards; owner/admin recipient derived from workflow initiator; generic WordPress publish remains frozen |
+| Not claimed | Connected workflow staging proof; real image/R2/WordPress/email calls; WordPress media attachment; three-image sets; regeneration; client approval/email; production |
+| Migration | Additive migration created; not applied to staging or production in this local block |
+| Gate 6 | Owner-controlled staging migration/deploy/live-call proof remains separately gated |
 
 ## Staging email one-send proof closeout (2026-07-12)
 

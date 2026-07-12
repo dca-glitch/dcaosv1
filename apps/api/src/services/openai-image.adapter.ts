@@ -28,6 +28,8 @@ export type OpenAIImageAdapterOptions = {
   fetchImpl?: OpenAIFetch;
   /** Test-only: allow generate when policy.liveExecutionAuthorized without env live flag. */
   bypassNetworkLiveEnvForTests?: boolean;
+  /** Test-only placeholder accepted only with an injected non-global transport. */
+  apiKeyForTests?: string;
 };
 
 type OpenAIImagesResponse = {
@@ -287,7 +289,24 @@ export class OpenAIImageAdapter implements ImageProviderAdapter {
       );
     }
 
-    const apiKey = readImageGenerationApiKey();
+    if (this.options.bypassNetworkLiveEnvForTests && this.fetchImpl === fetch) {
+      return failResult(
+        policy,
+        "Fake image authorization requires an injected transport; refusing global fetch.",
+        {
+          submitRequestCount: 0,
+          generationJobCount: 0,
+          pollRequestCount: 0,
+          resultDownloadCount: 0,
+          liveProviderCalled: false
+        },
+        "BLOCKED"
+      );
+    }
+
+    const apiKey = this.options.bypassNetworkLiveEnvForTests
+      ? this.options.apiKeyForTests?.trim() || readImageGenerationApiKey()
+      : readImageGenerationApiKey();
     if (!apiKey) {
       return failResult(
         policy,
