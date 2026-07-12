@@ -282,11 +282,12 @@ Production PostgreSQL role password and `DATABASE_URL` were rotated, the product
 |------|-------|
 | Path | approved content draft → one fake OpenAI image → one deterministic private fake storage object → `AiDeliveryArticleImage.PREVIEW_READY` → durable `WAITING_FOR_IMAGE_APPROVAL` → existing image approval status → one fake WordPress draft → one fake owner/admin email → `COMPLETED` |
 | Durable contract | Additive `AiDeliveryBoundedWorkflowRun` ledger, unique tenant+draft+workflow key, guarded stage claims, stable stage keys, explicit ambiguous states |
-| Local proof | `npm.cmd run smoke:ai-delivery-bounded-content-draft:local` |
+| Prisma durability proof | PASS — full repository migration chain applied to an isolated ephemeral loopback PostgreSQL database; real Prisma store proved restart/reload, linked image/WordPress/EmailLog rows, concurrent claims, duplicate blocking, ambiguity blocking, and tenant/client isolation; database dropped after proof |
+| Local proof | `npm.cmd run test:ai-delivery-bounded-prisma:local`; `npm.cmd run smoke:ai-delivery-bounded-content-draft:local` |
 | Counts | image=1; private upload=1; WordPress create=1; email=1; retry=0; fallback=false; media=0 |
 | Safety | Tenant/client/project/content/image/target guards; owner/admin recipient derived from workflow initiator; generic WordPress publish remains frozen |
 | Not claimed | Connected workflow staging proof; real image/R2/WordPress/email calls; WordPress media attachment; three-image sets; regeneration; client approval/email; production |
-| Migration | Additive migration created; not applied to staging or production in this local block |
+| Migration | Additive migration applied only to the isolated ephemeral local test database; not applied to staging or production |
 | Gate 6 | Owner-controlled staging migration/deploy/live-call proof remains separately gated |
 
 ## Staging email one-send proof closeout (2026-07-12)

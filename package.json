@@ -86,6 +86,7 @@
     "smoke:puriva-client-setup:local": "node scripts/smoke-puriva-client-setup-local.mjs",
     "smoke:puriva-full-delivery:local": "node scripts/smoke-puriva-full-delivery-local.mjs",
     "smoke:ai-delivery-bounded-content-draft:local": "node --import tsx scripts/smoke-ai-delivery-bounded-content-draft-local.mjs",
+    "test:ai-delivery-bounded-prisma:local": "node scripts/run-ai-delivery-bounded-prisma-integration-local.mjs",
     "smoke:puriva-client-portal-boundary:local": "node scripts/smoke-puriva-client-portal-boundary-local.mjs",
     "smoke:puriva-readiness:local": "powershell -ExecutionPolicy Bypass -File scripts/smoke-puriva-readiness-local.ps1",
     "smoke:google-drive-export-live:local": "node scripts/smoke-google-drive-export-live-local.mjs",

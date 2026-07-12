@@ -6,6 +6,7 @@ import type {
 } from "../core/ai-delivery-bounded-workflow.service";
 import { createFakeOpenAITransport, type CreateFakeOpenAITransportOptions } from "./openai-image.fake-transport";
 import { createMemoryWordPressDraftLiveAttemptStore } from "./wordpress-live-draft-attempt.store";
+import type { WordPressDraftLiveAttemptStore } from "./wordpress-live-draft-attempt.store";
 import { createWordPressDraft } from "./wordpress-live-draft.adapter";
 import { createFakeWordPressTransport } from "./wordpress-live-draft.fake-transport";
 
@@ -25,6 +26,7 @@ export type BoundedFakeProviderOptions = {
   ambiguousWordPress?: boolean;
   rejectEmail?: boolean;
   ambiguousEmail?: boolean;
+  wordpressAttemptStore?: WordPressDraftLiveAttemptStore;
 };
 
 export function createBoundedFakeWorkflowProviders(options: BoundedFakeProviderOptions = {}): {
@@ -35,7 +37,7 @@ export function createBoundedFakeWorkflowProviders(options: BoundedFakeProviderO
   const wordpress = createFakeWordPressTransport({
     ambiguousCreate: options.ambiguousWordPress
   });
-  const wordpressAttempts = createMemoryWordPressDraftLiveAttemptStore();
+  const wordpressAttempts = options.wordpressAttemptStore ?? createMemoryWordPressDraftLiveAttemptStore();
   const stored = new Map<string, { sha256: string; byteLength: number }>();
   const sentEmails = new Map<string, string>();
   const stats: BoundedFakeProviderStats = {
@@ -153,7 +155,10 @@ export function createBoundedFakeWorkflowProviders(options: BoundedFakeProviderO
         return {
           ok: result.ok,
           status: result.status,
-          attemptId: result.ok ? `fake-wp-attempt-${input.context.run.id}` : null,
+          attemptId:
+            result.ok && !options.wordpressAttemptStore
+              ? `fake-wp-attempt-${input.context.run.id}`
+              : null,
           wordpressPostId: result.wordpressPostId,
           wordpressStatus: result.wordpressStatus,
           submitRequestCount: result.submitRequestCount,
