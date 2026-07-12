@@ -1,6 +1,12 @@
 import type { AiProviderConfig } from "../config";
+import { AI_OPENROUTER_HTTP_CONTRACT } from "../config/ai-provider.config";
 
-const OPENROUTER_REQUEST_TIMEOUT_MS = 20000;
+/**
+ * OpenRouter request timeout (ms). Exported for contract tests and gateway metadata.
+ * Retry count is always 0 — this client never retries failed/timed-out requests.
+ */
+export const OPENROUTER_REQUEST_TIMEOUT_MS = AI_OPENROUTER_HTTP_CONTRACT.timeoutMs;
+export const OPENROUTER_REQUEST_RETRY_COUNT = AI_OPENROUTER_HTTP_CONTRACT.retryCount;
 
 export interface OpenRouterTextRequestInput {
   config: AiProviderConfig;
@@ -35,7 +41,8 @@ function normalizeBaseUrl(value: string): string {
   return value.replace(/\/+$/, "");
 }
 
-function getSafeOpenRouterError(status: number): string {
+/** Safe, status-only error — never includes response body or Authorization material. */
+export function getSafeOpenRouterError(status: number): string {
   return `OpenRouter request failed with HTTP ${status}.`;
 }
 
@@ -51,6 +58,7 @@ export async function executeOpenRouterTextRequest(input: OpenRouterTextRequestI
     };
   }
 
+  // Contract: single attempt only (OPENROUTER_REQUEST_RETRY_COUNT === 0). No retry loop.
   const abortController = new AbortController();
   const timeoutId = setTimeout(() => abortController.abort(), OPENROUTER_REQUEST_TIMEOUT_MS);
 
@@ -81,6 +89,7 @@ export async function executeOpenRouterTextRequest(input: OpenRouterTextRequestI
     });
 
     if (!response.ok) {
+      // Intentionally discard response body — may echo secrets; never surface to callers.
       return {
         ok: false,
         content: null,

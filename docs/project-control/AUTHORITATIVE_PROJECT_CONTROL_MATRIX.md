@@ -3,7 +3,7 @@
 **Document role:** Owner-approved project-control source for nomenclature and capability status before the next staging cycle.
 
 **Date:** 2026-07-12
-**Workstream:** WORKSTREAM 1A — docs-only project control reconciliation
+**Workstream:** WORKSTREAM 1 — Points 1–4 closeout (Vite, canonical components, rollback plan, Orchestrator proof decision)
 
 ---
 
@@ -13,14 +13,13 @@
 |------|--------|
 | Repo | `C:\dcaosv1` |
 | Branch | `main` |
-| Repo baseline (HEAD) | `fac108be16e779fdbff0a2867b302679c8c4da6f` (`fac108b`) |
+| Repo baseline (HEAD) | `250e95828db7a8313e38401add6e4efc61d2160d` (`250e958`) |
 | Staging baseline / known-good artifact | `1b8d00db2f9d46ac6678abd576a02683ffa6d86c` (`1b8d00d`) |
-| Relation | `fac108b` is a direct docs-only descendant of `1b8d00d` (`1b8d00d → fac108b`) |
-| App/schema/tests/config between baselines | Identical (docs-only delta on `fac108b`) |
+| Relation | `250e958` is a local descendant of staging artifact `1b8d00d` (includes Vite remediation `95af080` + canonical import guard `250e958`; schema delta `1b8d00d..250e958`: none) |
 | Staging `1b8d00d` | PASS |
 | Validate at baseline | PASS |
 | Production | FROZEN |
-| Remote freshness | Unverified |
+| Remote freshness | `origin/main` = `250e958` (verified at Workstream 1 closeout) |
 
 This document controls **nomenclature** and **status labels** for planning and execution before the next staging cycle. It does **not** replace technical runbooks (`STAGING_READINESS`, `PRODUCTION_DEPLOYMENT`, `PRODUCTION_ROLLBACK`, integration proof runbooks, or operator checklists).
 
@@ -75,7 +74,7 @@ Three implementation/planning systems plus historical G-gates. **Do not mix or s
 | 8 | VPS staging | Puriva E2E, failure paths, runtime UI/UX audit, security audit, rollback rehearsal |
 | 9 | Planning | Credential rotation, migration plan, explicit owner go/no-go |
 
-**Active:** Workstream 1 (this reconciliation is Workstream 1A docs-only).
+**Active closeout:** Workstream 1 Points 1–4 COMPLETE at `250e958`. Workstreams 2–5 are the next local execution phases before staging Workstream 6.
 
 ---
 
@@ -116,50 +115,38 @@ Applied migration or local unit/integration proof alone does **not** justify `ST
 | GA/GSC | LOCAL FOUNDATION | Snapshot-first / config helpers | OAuth + live sync proof | Yes for WS7 GA/GSC step | Yes |
 | Market Intelligence | LOCAL FOUNDATION | Admin MI MVP local | Live ingestion / staging proof | Yes for WS7 MI step | Yes |
 | Google Docs / Drive frontend | DEFERRED | BLOK 9 owner-deferred 2026-07-11 | Owner reactivation of BLOK 9 | No (explicitly deferred) | Yes if claimed as ready |
-| Component system | LOCAL FOUNDATION — decision OPEN | Three overlapping systems: `components`, `components/ui`, `design-system/components`; parallel Modal/Badge | Canonical system decision | Soft — WS1 item; should resolve before broad UI consolidation | Soft |
-| Rollback / compatibility plan | OPEN | Runbooks exist (`PRODUCTION_ROLLBACK`, `PRODUCTION_DEPLOYMENT`, `STAGING_READINESS`, `G53_PRODUCTION_SAFETY_PLAN`); known-good staging artifact `1b8d00d` | Rollback rehearsal **not executed**; WS1 rollback/compatibility plan not COMPLETE | Soft — WS1 open item before next staging | Yes |
+| Component system | LOCAL FOUNDATION — canonical decision COMPLETE | Public system: `apps/web/src/components/ui`; private foundation: `apps/web/src/design-system`; Wave 0 import guard at `250e958` freezes 108 existing violations; Waves 1–5 migration still open | Complete Waves 1–5 migration; Modal Wave separately gated | Soft — migration waves remain | Soft |
+| Rollback / compatibility plan | ROLLBACK READY WITH CONDITIONS | Known-good staging artifact `1b8d00d` remains rollback target; schema delta `1b8d00d..250e958`: none; plan COMPLETE at WS1 Point 3 | Rollback rehearsal **pending** (separately gated); no SHA-tagged retained staging API image yet (pre-safeguard phase) | Soft — rehearsal still required before claiming drill-proven | Yes |
 | Production | FROZEN | Staging PASS does not authorize production; artifact SHA / rollback target UNKNOWN | Turnstile/R2 rotation; G49/G50; explicit go/no-go | N/A (not staging) | Yes — frozen |
 
 ---
 
 ## 7. Current dependency findings
 
-**Source:** Current `npm audit` confirmation recorded 2026-07-12 (Workstream 1A).
-**Fix status:** NOT FIXED. No automatic fix applied. No owner approval for upgrade in this workstream.
+**Source:** Vite remediation closeout (commit `95af080`) + Workstream 1 Point 1 confirmation at `250e958` (2026-07-12).
+**Fix status:** Vite high finding **CLOSED** locally. No `npm audit fix` / `--force` was used.
 
-### Audit summary
+### Audit summary (post-remediation)
 
 | Metric | Value |
 |--------|--------|
 | Critical | 0 |
-| High | 1 |
-| Moderate | 5 |
+| High | 0 (Vite high finding remediated via Vite `6.4.3`) |
+| Moderate | Remaining transitive findings may still exist (`esbuild`, `gaxios`, `googleapis`, `googleapis-common`, `uuid`) — not claimed closed here |
 | Low / info | not claimed here |
 
-### High finding
+### Vite remediation (Point 1 — COMPLETE)
 
 | Field | Value |
 |-------|--------|
-| Package | `vite` (direct dependency) |
-| Severity | high |
-| Affected range | `<=6.4.2` |
-| Repo build version | Vite `5.4.21` |
-| Suggested automatic fix | Vite `8.1.4` (major upgrade) |
-| Advisory set includes | `GHSA-fx2h-pf6j-xcff` (among others in advisory set) |
-| Classification | Confirmed dependency finding — **OPEN — BOUNDED TRIAGE REQUIRED** |
-| Not claimed | Production exploit without separate triage; fixed; safe to ignore |
+| Package | `vite` (direct dependency of `@dca-os-v1/web`) |
+| Repo build version | Vite `6.4.3` |
+| Remediation commit | `95af080` |
+| Prior high advisory set | Included `GHSA-fx2h-pf6j-xcff` for `vite` `<=6.4.2` |
+| Classification | **COMPLETE** — high finding closed locally; full validate PASS at remediation |
+| Not claimed | Production exploit history rewritten; all moderate findings closed; staging redeploy of Vite change |
 
-### Moderate findings
-
-| Package | Severity |
-|---------|----------|
-| `esbuild` | moderate |
-| `gaxios` | moderate |
-| `googleapis` | moderate |
-| `googleapis-common` | moderate |
-| `uuid` | moderate |
-
-**Rules:** Do not run `npm audit fix` / major Vite upgrade without a separate bounded triage gate. Do not claim these findings remediated in STATUS or this matrix until triage closes them.
+**Rules:** Do not run `npm audit fix` / `--force`. Do not claim moderate findings remediated until separately triaged. Do not treat Vite remediation as a staging deploy authorization.
 
 ---
 
@@ -167,11 +154,14 @@ Applied migration or local unit/integration proof alone does **not** justify `ST
 
 | Decision | Status |
 |----------|--------|
-| Canonical component system (`components` vs `components/ui` vs `design-system`) | OPEN |
-| Separate Orchestrator proof position in mandatory live-proof sequence | OPEN DECISION |
-| Rollback / compatibility plan completion (incl. rehearsal) | OPEN — rehearsal not executed |
+| Canonical component system (`components/ui` public + `design-system` private) | **COMPLETE** (WS1 Point 2) — Waves 1–5 migration still open |
+| Wave 0 component import guard | **COMPLETE** (`250e958`; 108 frozen baseline violations) |
+| Orchestrator proof position in mandatory live-proof sequence | **COMPLETE** — `HYBRID — PREFLIGHT + EMBEDDED LIVE PROOF` (AI-A no-live staging Orchestrator preflight; AI-B one bounded AI Delivery live E2E). Orchestrator remains `LOCAL FOUNDATION`; may reach `CONFIG SHAPE PROVEN` after staging preflight; **cannot** reach `STAGING LIVE PROVEN` until plan→execute is wired |
+| Rollback / compatibility plan | **COMPLETE** — verdict `ROLLBACK READY WITH CONDITIONS`; known-good target `1b8d00d` |
+| Rollback rehearsal | **OPEN** — separately gated; **not executed** |
+| SHA-tagged retained staging API image (`staging-dcaosv1-staging-api:1b8d00d`) | **OPEN** until staging safeguard phase |
 | Image provider selection | OPEN |
-| Production artifact SHA and rollback target | UNKNOWN / OPEN |
+| Production artifact SHA and rollback target | UNKNOWN / OPEN (production FROZEN; staging target remains `1b8d00d`) |
 | Staging credential availability for next live proofs | OPEN |
 | Production Turnstile and R2 credential rotation execution | OPEN — DEFERRED (Phase B/C) |
 
@@ -181,13 +171,26 @@ Applied migration or local unit/integration proof alone does **not** justify `ST
 
 | Boundary | State |
 |----------|--------|
-| Active Workstream | **1** (1A docs-only reconciliation in progress / complete as docs) |
-| Commit / push / deploy | **No approval** |
-| Staging mutation | **No** — last proven artifact remains `1b8d00d` |
+| Workstream 1 Points 1–4 | **COMPLETE** at repo HEAD `250e958` |
+| Active next local Workstreams | **2–5** (integration contracts → architecture/UI → workflow hardening → full local validation) |
+| Commit / push / deploy | **No approval** unless owner grants separately |
+| Staging mutation | **No deploy** — last proven artifact remains `1b8d00d`; safeguard backups/tags only when separately authorized |
 | Production mutation | **No** — production FROZEN |
 | Next staging artifact | **Does not exist yet** |
-| Live provider calls in this workstream | **No** |
-| Dependency upgrades in this workstream | **No** |
+| Live provider calls in local Workstreams 2–5 | **No** (except explicitly gated live proofs later) |
+| Orchestrator plan→execute live wiring | **Not authorized** by WS1 closeout |
+
+## 10. Workstream 1 point ledger
+
+| Point | Result | Evidence |
+|-------|--------|----------|
+| 1 — Vite security remediation | **COMPLETE** | Vite `6.4.3`; high finding closed; validate PASS; commit `95af080` |
+| 2 — Canonical component system decision | **COMPLETE** | Public: `apps/web/src/components/ui`; private: `apps/web/src/design-system` |
+| Wave 0 — import guard | **COMPLETE** | Commit `250e958`; baseline freezes 108 existing violations; new violations = 0 |
+| 3 — Rollback / compatibility plan | **COMPLETE** (rehearsal separately gated) | Verdict `ROLLBACK READY WITH CONDITIONS`; target `1b8d00d`; schema delta none |
+| 4 — Orchestrator proof decision | **COMPLETE** | `HYBRID — PREFLIGHT + EMBEDDED LIVE PROOF`; Orchestrator stays `LOCAL FOUNDATION` |
+
+**Not marked complete:** rollback rehearsal; SHA-tagged retained API image (pre-safeguard); Waves 1–5 UI migration; Orchestrator `STAGING LIVE PROVEN`.
 
 Related operator docs:
 

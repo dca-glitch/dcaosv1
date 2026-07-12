@@ -88,6 +88,17 @@ export function formatMiResultFieldLabel(key: string): string {
     .trim();
 }
 
+/** Re-export structured MI confidence labels for admin UI (no free-text-only). */
+export {
+  MARKET_INTELLIGENCE_CONFIDENCE_LABELS,
+  MARKET_INTELLIGENCE_CONFIDENCE_LABEL_DISPLAY,
+  buildMarketIntelligenceConfidenceReviewLabel,
+  isMarketIntelligenceConfidenceLabel,
+  resolveMarketIntelligenceConfidenceLabel,
+  validateMarketIntelligenceSourceUrl,
+  type MarketIntelligenceConfidenceLabel
+} from "@dca-os-v1/shared";
+
 export function filterMiProjects<T extends { isArchived: boolean }>(
   projects: T[],
   filter: MiProjectFilter

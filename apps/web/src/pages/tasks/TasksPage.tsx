@@ -1,7 +1,6 @@
 import { type FormEvent, useMemo, useState } from "react";
 import { Modal } from "../../components/Modal";
-import { Button, ModalActions, PageHeader, StatusBadge, Table } from "../../components/ui";
-import { Alert, Input, Select, Spinner, Textarea } from "../../design-system";
+import { Alert, Button, Input, ModalActions, PageHeader, Select, Spinner, StatusBadge, Table, Textarea } from "../../components/ui";
 import type { ProjectSummary } from "../projects/ProjectsPage";
 
 export type TaskSummary = {

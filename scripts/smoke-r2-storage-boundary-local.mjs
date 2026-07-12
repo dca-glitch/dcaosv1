@@ -78,7 +78,10 @@ async function main() {
   record("admin login", true);
 
   const readiness = await request("/integrations/readiness", { token });
-  const r2Category = readiness.json?.data?.categories?.find((row) => row.key === "r2");
+  // Canonical readiness key is private_storage (label: Private storage (R2)).
+  // Response envelope: { data: { readiness: { categories: [...] } } }
+  const categories = readiness.json?.data?.readiness?.categories ?? readiness.json?.data?.categories ?? [];
+  const r2Category = categories.find((row) => row.key === "private_storage" || row.key === "r2");
   record("integrations readiness R2 category present", Boolean(r2Category));
   record(
     "R2 disabled-safe by default",
@@ -87,7 +90,12 @@ async function main() {
   );
 
   const serializedReadiness = JSON.stringify(readiness.json ?? {});
-  record("readiness JSON hides secrets", !/R2_SECRET_ACCESS_KEY|secret/i.test(serializedReadiness));
+  // Env key NAMES may appear in missingKeys / presence flags. Fail only if a secret VALUE is present.
+  const leaksSecretValue =
+    /"secretAccessKey"\s*:\s*"(?!true|false)[^"]+"/i.test(serializedReadiness) ||
+    /"R2_SECRET_ACCESS_KEY"\s*:\s*"(?!true|false)[^"]+"/i.test(serializedReadiness) ||
+    /"AWS_SECRET_ACCESS_KEY"\s*:\s*"(?!true|false)[^"]+"/i.test(serializedReadiness);
+  record("readiness JSON hides secrets", !leaksSecretValue);
 
   const foundation = await request("/image-generation/foundation-config", { token });
   const slots = foundation.json?.data?.foundation?.variantSlots?.map((row) => row.slot) ?? [];

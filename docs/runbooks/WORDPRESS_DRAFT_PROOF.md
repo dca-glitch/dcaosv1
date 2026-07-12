@@ -62,6 +62,8 @@ This runbook covers **draft proof** and the **plan** for a future live draft pro
 
 Prepared draft is an internal scaffold until compliance and admin review pass. Client portal shows **FINAL** material only.
 
+**WS4 local precondition (no HTTP):** `evaluateWordPressDraftPrepPreconditions` requires accepted content (flag + non-empty title/body) and accepted hero image before draft prep is considered ready. Publish freeze and idempotency design helper (`wordpress-draft-idempotency.design.ts`) remain unchanged — no live WordPress call.
+
 ### 2.2 What draft proof does NOT do
 
 - Publish, schedule, or update live WordPress posts
@@ -220,7 +222,8 @@ Verify in the WordPress admin editor that the created draft matches the prepared
 
 - [ ] Re-running `prepare-wordpress-draft` for the same deliverable must not, by itself, create a second WordPress post (it only regenerates the local payload — confirmed safe today, no live call)
 - [ ] If/when the live publish or live-proof call is retried (e.g., after a network timeout), it must not create a duplicate draft post for the same deliverable + attempt
-- [ ] **Known gap (must close before live proof):** neither `AiDeliveryWordPressPublishRequest` nor `PublicationLog` currently carries an idempotency/dedupe key. Required before a live proof session: either (a) add an idempotency key (e.g., `deliverableId` + monotonic attempt counter) checked against `PublicationLog.externalPostId` before creating a new post, or (b) the proof operator manually checks WordPress admin for an existing draft matching the deliverable before each attempt and records the check in the evidence log. A live proof session must not run the same request twice without this check.
+- [ ] **Decision (WS2 integration contract closure):** ship pure design helper `buildWordPressDraftIdempotencyKey` in `apps/api/src/services/wordpress-draft-idempotency.design.ts` (no Prisma column, no HTTP). Until an owner-approved live draft gate (and optional schema to persist the key on `PublicationLog` / request rows), live sessions must use **manual WordPress-admin duplicate checks** and record them in the evidence log. Policy label: `design_helper_plus_manual_check_until_live_gate`.
+- [ ] **Known gap (must close before live proof):** neither `AiDeliveryWordPressPublishRequest` nor `PublicationLog` currently carries a persisted idempotency/dedupe key. Required before a live proof session: either (a) schema/owner gate to persist the design helper key and check it before creating a new post, or (b) the proof operator manually checks WordPress admin for an existing draft matching the deliverable before each attempt and records the check in the evidence log. A live proof session must not run the same request twice without this check.
 
 ### 6.6 Cleanup marker (every proof post must be findable and removable)
 

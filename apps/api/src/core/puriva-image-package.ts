@@ -38,6 +38,49 @@ export const PURIVA_IMAGE_INTERNAL_PROMPT_LABEL =
 
 export type PurivaImageConceptRole = "hero_header" | "supporting_education" | "lifestyle_context";
 
+/**
+ * Explicit Puriva concept-role → image-generation variant-slot mapping.
+ * Puriva scaffolds define 3 concept roles; generation always expands to the
+ * canonical 4-slot set (hero / supporting_1 / supporting_2 / social_preview).
+ * `social_preview` is not a Puriva concept role — it is always appended.
+ */
+export const PURIVA_IMAGE_ROLE_TO_GENERATION_SLOT = {
+  hero_header: "hero",
+  supporting_education: "supporting_1",
+  lifestyle_context: "supporting_2"
+} as const satisfies Record<PurivaImageConceptRole, "hero" | "supporting_1" | "supporting_2">;
+
+export const PURIVA_IMAGE_GENERATION_SLOT_SET = [
+  "hero",
+  "supporting_1",
+  "supporting_2",
+  "social_preview"
+] as const;
+
+export type PurivaImageGenerationSlot = (typeof PURIVA_IMAGE_GENERATION_SLOT_SET)[number];
+
+export function mapPurivaImageConceptRoleToGenerationSlot(
+  role: PurivaImageConceptRole
+): Exclude<PurivaImageGenerationSlot, "social_preview"> {
+  return PURIVA_IMAGE_ROLE_TO_GENERATION_SLOT[role];
+}
+
+/**
+ * Expand Puriva's 3 concept roles into the full 4-slot generation set.
+ * Always includes `social_preview` even when no Puriva role maps to it.
+ */
+export function buildPurivaImageGenerationSlotSet(
+  roles: readonly PurivaImageConceptRole[] = [
+    "hero_header",
+    "supporting_education",
+    "lifestyle_context"
+  ]
+): PurivaImageGenerationSlot[] {
+  const mapped = roles.map(mapPurivaImageConceptRoleToGenerationSlot);
+  const unique = [...new Set(mapped)];
+  return [...unique, "social_preview"];
+}
+
 export type PurivaImageConcept = {
   id: string;
   role: PurivaImageConceptRole;

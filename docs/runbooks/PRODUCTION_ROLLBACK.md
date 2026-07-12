@@ -1,6 +1,8 @@
 # Production Rollback Procedure (Reference)
 
-**Status:** Planning/reference document only. No rollback has been executed because no production deploy (G50) has been executed. This document exists to close the "rollback/restore evidence not proven" blocker from [`G53_PRODUCTION_SAFETY_PLAN.md`](./G53_PRODUCTION_SAFETY_PLAN.md) §4.1 item 2 with a concrete procedure, not with live evidence.
+**Status:** Planning/reference document only. No production rollback has been executed because no production deploy (G50) has been executed. This document exists to close the "rollback/restore evidence not proven" blocker from [`G53_PRODUCTION_SAFETY_PLAN.md`](./G53_PRODUCTION_SAFETY_PLAN.md) §4.1 item 2 with a concrete procedure, not with live evidence.
+
+**Workstream 1 Point 3 (2026-07-12):** Staging/local compatibility verdict is `ROLLBACK READY WITH CONDITIONS`. Known-good staging rollback target remains artifact `1b8d00d`. Schema delta `1b8d00d..250e958`: none. Rollback **rehearsal is not executed** and remains separately gated. No SHA-tagged retained staging API image is claimed until the staging safeguard phase tags `staging-dcaosv1-staging-api:1b8d00d`. Production remains FROZEN.
 
 ---
 
@@ -70,6 +72,8 @@ Production health check fails OR smoke fails OR unexpected error rate
 ## 4. Rollback drill recommendation (future, separate approval)
 
 Before G50 is used for a real client-facing change, consider running one deliberate rollback drill on **staging** (not production) to validate this exact procedure end-to-end and attach the resulting log as the first real evidence artifact for §3. This is a recommendation only — it requires its own separate owner approval and is not authorized by this document.
+
+**Current gate status (WS1 Point 3):** plan = `ROLLBACK READY WITH CONDITIONS`; rehearsal = **pending / not executed**. Do not mark rehearsal complete from documentation alone.
 
 ---
 

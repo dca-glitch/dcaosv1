@@ -1,8 +1,6 @@
 import React, { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
-import { EmptyState } from "../../components/EmptyState";
 import { Modal } from "../../components/Modal";
-import { Button, MetricCard, SectionPanel, StatusBadge } from "../../components/ui";
-import { Spinner } from "../../design-system";
+import { Button, EmptyState, MetricCard, SectionPanel, Spinner, StatusBadge } from "../../components/ui";
 import type { AiDeliveryProjectSummary } from "./AiDeliveryPage";
 import {
   MONTHLY_REPORT_WORKFLOW_STEPS,

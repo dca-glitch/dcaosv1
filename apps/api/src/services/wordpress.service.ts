@@ -308,6 +308,104 @@ export function isWordPressDraftStatusFrozen(): boolean {
   return resolveWordPressDraftPostStatus() === WORDPRESS_DRAFT_POST_STATUS;
 }
 
+export type WordPressDraftPrepContentAcceptance = {
+  /** Content draft / deliverable acceptance flag from review loop. */
+  contentAccepted: boolean;
+  title?: string | null;
+  body?: string | null;
+};
+
+export type WordPressDraftPrepPreconditionInput = {
+  content: WordPressDraftPrepContentAcceptance;
+  /**
+   * Accepted image candidates (hero / supporting / social_preview).
+   * At least one accepted hero (or any accepted mapped image) is required.
+   */
+  imageCandidates?: WordPressDraftImageCandidate[];
+};
+
+export type WordPressDraftPrepPreconditionResult =
+  | {
+      ok: true;
+      contentAccepted: true;
+      imagesAccepted: true;
+      liveHttpFrozen: typeof WORDPRESS_LIVE_HTTP_FROZEN;
+      postStatus: WordPressDraftPostStatus;
+      checks: string[];
+    }
+  | {
+      ok: false;
+      contentAccepted: boolean;
+      imagesAccepted: boolean;
+      liveHttpFrozen: typeof WORDPRESS_LIVE_HTTP_FROZEN;
+      postStatus: WordPressDraftPostStatus;
+      errors: string[];
+      checks: string[];
+    };
+
+/**
+ * Local draft-prep precondition: accepted content + accepted images required.
+ * Pure helper — no WordPress HTTP. Publish remains frozen.
+ */
+export function evaluateWordPressDraftPrepPreconditions(
+  input: WordPressDraftPrepPreconditionInput
+): WordPressDraftPrepPreconditionResult {
+  const errors: string[] = [];
+  const checks: string[] = [];
+
+  const title = (input.content.title ?? "").trim();
+  const body = (input.content.body ?? "").trim();
+  const contentAccepted =
+    input.content.contentAccepted === true && Boolean(title) && Boolean(body);
+
+  if (!input.content.contentAccepted) {
+    errors.push("Accepted content is required before WordPress draft prep.");
+    checks.push("REJECT:content_not_accepted");
+  } else if (!title || !body) {
+    errors.push("Accepted content must include non-empty title and body.");
+    checks.push("REJECT:content_missing_title_or_body");
+  } else {
+    checks.push("ALLOW:content_accepted");
+  }
+
+  const inclusion = mapAcceptedImagesToWordPressDraftInclusion(input.imageCandidates ?? []);
+  const imagesAccepted = inclusion.hasAcceptedImages && Boolean(inclusion.featuredImagePlaceholder);
+
+  if (!inclusion.hasAcceptedImages) {
+    errors.push("At least one accepted image is required before WordPress draft prep.");
+    checks.push("REJECT:no_accepted_images");
+  } else if (!inclusion.featuredImagePlaceholder) {
+    errors.push("Accepted hero image is required for featuredImagePlaceholder before draft prep.");
+    checks.push("REJECT:missing_accepted_hero");
+  } else {
+    checks.push("ALLOW:accepted_images");
+  }
+
+  checks.push("ALLOW:live_http_frozen");
+  checks.push("ALLOW:post_status_draft");
+
+  if (errors.length > 0) {
+    return {
+      ok: false,
+      contentAccepted,
+      imagesAccepted,
+      liveHttpFrozen: WORDPRESS_LIVE_HTTP_FROZEN,
+      postStatus: WORDPRESS_DRAFT_POST_STATUS,
+      errors,
+      checks
+    };
+  }
+
+  return {
+    ok: true,
+    contentAccepted: true,
+    imagesAccepted: true,
+    liveHttpFrozen: WORDPRESS_LIVE_HTTP_FROZEN,
+    postStatus: WORDPRESS_DRAFT_POST_STATUS,
+    checks: [...checks, "INVARIANT:draft_prep_ready_local"]
+  };
+}
+
 export function buildAiDeliveryWordPressDraftPayload(
   input: AiDeliveryWordPressDraftPayloadInput
 ): AiDeliveryWordPressDraftPayload {

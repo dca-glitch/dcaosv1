@@ -1,9 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { EmptyState } from "../EmptyState";
-import { LoadingState } from "../LoadingState";
-import { StatusNotice } from "../StatusNotice";
-import { Button, FilterBar, SectionPanel, StatusBadge } from "../ui";
-import { Select } from "../../design-system";
+import { Button, EmptyState, FilterBar, LoadingState, SectionPanel, Select, StatusBadge, StatusNotice } from "../ui";
 import type { ClientAccessTenantUser, ClientAccessUserSummary } from "../../pages/clients/ClientsPage";
 
 type AccessFilter = "active" | "archived" | "all";

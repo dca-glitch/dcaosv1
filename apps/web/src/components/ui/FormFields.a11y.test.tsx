@@ -1,6 +1,6 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
-import { Input, Textarea, Select } from "../../design-system";
+import { Input, Textarea, Select } from "./FormFields";
 
 afterEach(() => {
   cleanup();

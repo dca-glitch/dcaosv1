@@ -18,15 +18,17 @@
 
 ### Next staging cycle prerequisites (Workstream control — 2026-07-12)
 
-The closed `1b8d00d` deploy result above is **unchanged**. Before requesting or executing a **next** staging artifact/deploy:
+The closed `1b8d00d` deploy result above is **unchanged**. Repo HEAD for local closeout work is `250e958` (Vite remediation + canonical import guard). Before requesting or executing a **next** staging artifact/deploy:
 
 | Item | State |
 |------|--------|
-| Local Workstreams 1–5 | Required to complete (or owner-waive) before next staging Workstream 6 |
-| Vite high dependency finding | OPEN — BOUNDED TRIAGE REQUIRED (`vite` `<=6.4.2`, repo `5.4.21`, suggested major `8.1.4`, advisory set includes `GHSA-fx2h-pf6j-xcff`); not fixed; pre-next-staging triage item |
-| Canonical component-system decision | OPEN |
-| Rollback / compatibility plan (incl. rehearsal) | OPEN — rehearsal not executed |
-| Orchestrator proof sequencing vs mandatory live-proof chain | OPEN DECISION |
+| Local Workstreams 1–5 | Workstream 1 Points 1–4 **COMPLETE**; Workstreams 2–5 still required (or owner-waive) before next staging Workstream 6 |
+| Vite high dependency finding | **COMPLETE** — Vite `6.4.3`; high finding closed; commit `95af080`; validate PASS |
+| Canonical component-system decision | **COMPLETE** — public `apps/web/src/components/ui`; private `apps/web/src/design-system`; Wave 0 guard at `250e958` (108 frozen violations); Waves 1–5 migration open |
+| Rollback / compatibility plan | **COMPLETE** — verdict `ROLLBACK READY WITH CONDITIONS`; target `1b8d00d`; schema delta `1b8d00d..250e958`: none |
+| Rollback rehearsal | **OPEN** — separately gated; **not executed** |
+| SHA-tagged retained staging API image | **OPEN** until staging safeguard phase (`staging-dcaosv1-staging-api:1b8d00d`) |
+| Orchestrator proof sequencing vs mandatory live-proof chain | **COMPLETE** — `HYBRID — PREFLIGHT + EMBEDDED LIVE PROOF`; Orchestrator remains `LOCAL FOUNDATION`; not `STAGING LIVE PROVEN` until plan→execute is wired |
 | Next staging artifact | Does not exist yet |
 | Production | Remains frozen; staging PASS does not authorize production |
 

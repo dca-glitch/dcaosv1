@@ -1,4 +1,5 @@
 import type { InAppNotificationStatus, Prisma } from "@prisma/client";
+import { redactNotificationPayload } from "@dca-os-v1/shared";
 import { createPrismaClient } from "../../../../packages/data/src/client";
 
 const prisma = createPrismaClient();
@@ -140,6 +141,19 @@ function resolveListLimit(input: number | undefined): number {
   return rounded;
 }
 
+/**
+ * Persist only redacted payload JSON — never secrets, storageKey, OAuth tokens,
+ * stack traces, or raw provider responses (shared G163 contract).
+ */
+export function toPersistedInAppPayloadJson(
+  payloadJson: Prisma.InputJsonValue | null | undefined
+): Prisma.InputJsonValue | undefined {
+  if (payloadJson === null || payloadJson === undefined) {
+    return undefined;
+  }
+  return redactNotificationPayload(payloadJson) as Prisma.InputJsonValue;
+}
+
 export async function upsertInAppNotification(
   input: InAppNotificationWriteInput,
   client: PrismaClientLike = prisma
@@ -149,6 +163,7 @@ export async function upsertInAppNotification(
   const body = toNullableString(input.body);
   const correlationId = toNullableString(input.correlationId);
   const idempotencyKey = buildIdempotencyKey(input);
+  const payloadJson = toPersistedInAppPayloadJson(input.payloadJson);
 
   return client.inAppNotification.upsert({
     where: {
@@ -169,7 +184,7 @@ export async function upsertInAppNotification(
       clientId,
       correlationId,
       idempotencyKey,
-      payloadJson: input.payloadJson ?? undefined
+      payloadJson
     },
     create: {
       tenantId: input.tenantId,
@@ -185,7 +200,7 @@ export async function upsertInAppNotification(
       actionKey,
       correlationId,
       idempotencyKey,
-      payloadJson: input.payloadJson ?? undefined
+      payloadJson
     }
   });
 }

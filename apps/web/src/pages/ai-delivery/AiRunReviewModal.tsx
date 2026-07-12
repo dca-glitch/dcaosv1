@@ -1,7 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { Modal } from "../../components/Modal";
-import { Button, StatusBadge } from "../../components/ui";
-import { Alert, Spinner } from "../../design-system";
+import { Alert, Button, Spinner, StatusBadge } from "../../components/ui";
 import { Tabs } from "../../design-system/components/Tabs";
 import { AiDeliveryWorkflowHistoryPanel } from "./AiDeliveryWorkflowHistoryPanel";
 import "./ai-delivery-modals.css";

@@ -94,3 +94,17 @@ No secrets in mapping records. Wrong property/site is a proof failure — do not
 - No token plaintext storage
 - No edits to Lane 6 `monthly-report-metrics-*` files
 - No claim that live GA/GSC is proven
+
+---
+
+## 7. State / callback / redirect design (WS2 extension)
+
+Design-only helpers in `ga-gsc-oauth-token-storage.design.ts` (flags remain `schemaImplemented: false`, `liveOAuthDeferred: true`):
+
+| Helper | Role |
+|--------|------|
+| `buildGaGscOauthStateDesign` | Opaque CSRF/state shape (`tenantId`, `aiDeliveryProjectId`, `nonce`, allowlisted `redirectPath`) — never embeds tokens/secrets |
+| `getGaGscOauthCallbackDesign` | Planned callback path `/api/v1/integrations/ga-gsc/oauth/callback`; `consentCallbackRouteImplemented: false`; authorization code persistence = `never_plaintext` |
+| `resolveGaGscOauthRedirectDesign` | Allowlist-only relative `#/` admin redirects; rejects absolute/external open redirects |
+
+Consent route registration, token exchange, and schema remain owner-gated separate blocks.

@@ -32,8 +32,12 @@ import {
   findRevenueHubFinancialGuaranteeViolations,
   findRevenueHubNoLiveCrmPolicyViolations,
   findRevenueHubRecommendationGuardViolations,
+  isMarketIntelligenceConfidenceLabel,
   mapOriginToSourceLabelKind,
-  sanitizeMarketIntelligenceClientSafePayload
+  resolveMarketIntelligenceConfidenceLabel,
+  runMarketIntelligenceLocalIngestPipeline,
+  sanitizeMarketIntelligenceClientSafePayload,
+  validateMarketIntelligenceSourceUrl
 } from "@dca-os-v1/shared";
 
 describe("G601 MI bounded source policy", () => {
@@ -386,5 +390,59 @@ describe("G612 future module contract surface", () => {
     assert.equal(REVENUE_HUB_DEFAULT_RECOMMENDATION_GUARD.financialGuaranteeAllowed, false);
     assert.equal(REVENUE_HUB_DEFAULT_NO_LIVE_CRM_POLICY.crmLiveSyncAllowed, false);
     assert.equal(POD_TOOLKIT_DEFAULT_NO_LIVE_MARKETPLACE_POLICY.marketplaceSyncAllowed, false);
+  });
+});
+
+describe("G613 MI local ingest → validate → dedupe → confidence labels", () => {
+  it("validates source URL shape and blocks unsafe protocols", () => {
+    assert.equal(validateMarketIntelligenceSourceUrl(null).ok, true);
+    assert.equal(validateMarketIntelligenceSourceUrl("https://example.test/a/").ok, true);
+    const blocked = validateMarketIntelligenceSourceUrl("javascript:alert(1)");
+    assert.equal(blocked.ok, false);
+    const missingUrl = validateMarketIntelligenceSourceUrl(null, "approved_url_reference");
+    assert.equal(missingUrl.ok, false);
+  });
+
+  it("dedupes by normalized URL fingerprint and keeps structured confidence labels", () => {
+    const pipeline = runMarketIntelligenceLocalIngestPipeline(
+      [
+        {
+          origin: "approved_url_reference",
+          title: "Competitor A",
+          sourceUrl: "https://Example.TEST/path/"
+        },
+        {
+          origin: "approved_url_reference",
+          title: "Competitor A duplicate",
+          sourceUrl: "https://example.test/path"
+        },
+        {
+          origin: "operator_note",
+          title: "Operator note",
+          notes: "manual observation"
+        },
+        {
+          origin: "approved_url_reference",
+          title: "Missing URL",
+          sourceUrl: ""
+        }
+      ],
+      {
+        "url:https://example.test/path": "medium"
+      }
+    );
+
+    assert.equal(pipeline.liveCrawlingAllowed, false);
+    assert.equal(pipeline.operatorReviewRequired, true);
+    assert.equal(pipeline.ok, false);
+    assert.equal(pipeline.rejected.length, 1);
+    assert.equal(pipeline.deduped.unique.length, 2);
+    assert.equal(pipeline.deduped.droppedCount, 1);
+    assert.equal(pipeline.confidenceReviews[0]?.review.label, "medium");
+    assert.equal(pipeline.confidenceReviews[0]?.review.freeTextOnly, false);
+    assert.equal(pipeline.confidenceReviews[1]?.review.label, "unreviewed");
+    assert.equal(resolveMarketIntelligenceConfidenceLabel("not-a-label"), "unreviewed");
+    assert.equal(isMarketIntelligenceConfidenceLabel("high"), true);
+    assert.equal(isMarketIntelligenceConfidenceLabel("pretty sure"), false);
   });
 });

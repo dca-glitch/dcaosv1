@@ -1,6 +1,6 @@
 # DCA OS Lite — Status (Source of Truth)
 
-**Last updated:** 2026-07-12 (WORKSTREAM 1A — docs-only project control reconciliation; staging `1b8d00d` PASS preserved; production frozen)
+**Last updated:** 2026-07-12 (WORKSTREAM 1 Points 1–4 closeout at `250e958`; staging `1b8d00d` PASS preserved; production frozen)
 **Authoritative project control:** [`docs/project-control/AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md`](./project-control/AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md)
 **PRE-STAGING closure:** 2026-07-10 (local/no-live audit + safe fixes; see [`docs/operator/PRE_STAGING_CLOSURE_VERDICT.md`](./operator/PRE_STAGING_CLOSURE_VERDICT.md))
 **G55 pre-live readiness:** [`docs/runbooks/G55_PRELIVE_READINESS.md`](./runbooks/G55_PRELIVE_READINESS.md)
@@ -63,7 +63,7 @@
 | G149-G228 final integration | **KEEP** — 9 lanes reconciled; local/no-IO foundations only; superseded as latest baseline by G469-G708 |
 | Notification persistence / inbox | **LOCAL FOUNDATION** — Prisma `InAppNotification`, migration `20260711115000_add_in_app_notifications` (applied on staging with `1b8d00d`), service/controller/API, integration tests, frontend `NotificationPanel`; full E2E/launch proof **not** closed — see [`AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md`](./project-control/AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md) |
 | Live email / Resend | **LOCAL FOUNDATION** — no-send/outbox foundation; **not** STAGING LIVE PROVEN; live send blocked |
-| Dependency audit (2026-07-12) | **OPEN — BOUNDED TRIAGE REQUIRED** — `npm audit`: 1 high (`vite` `<=6.4.2`, repo uses `5.4.21`, suggested fix `8.1.4` major; advisory set includes `GHSA-fx2h-pf6j-xcff`), 5 moderate (`esbuild`, `gaxios`, `googleapis`, `googleapis-common`, `uuid`); **not fixed**; no automatic upgrade authorized |
+| Dependency audit (2026-07-12) | **Vite high CLOSED** — Vite `6.4.3` via commit `95af080`; full validate PASS; moderate transitive findings may remain and are **not** claimed closed |
 | Trusted `actualCostUsd` ingestion | **DEFERRED** — G80 policy + G389-G408 design helpers; ingestion not wired |
 | G134-G137 AI budget reporting contract | **Implemented locally (contract + unit proof)** — additive reporting/reconciliation contract separates AI budget from Finance Lite, reports monthly cap/live rows/estimated-vs-actual/provider/model, and keeps invoice reconciliation `not_integrated`; no real invoice or Finance Lite mutation |
 | G76c review | **KEEP** — PowerShell review-only; no code changes |
@@ -148,24 +148,43 @@ Production PostgreSQL role password and `DATABASE_URL` were rotated, the product
 
 **Production safety:** Production `system.digitalcubeagency.net` was not modified. The production PostgreSQL/API credential rotation Phase A result (`PRODUCTION PHASE A RECOVERED AFTER FAILURE`) and the unresolved Turnstile/R2 deferred security work remain recorded in [`deferred-scope-register.md`](./operator/deferred-scope-register.md) and are **not** closed by this staging deploy.
 
-## WORKSTREAM 1A — project control reconciliation (2026-07-12)
+## WORKSTREAM 1 — Points 1–4 closeout (2026-07-12)
 
-**Result:** Docs-only. Authoritative project-control matrix recorded. No app/schema/dependency/staging/production mutation.
+**Result:** Workstream 1 Points 1–4 COMPLETE at `main` @ `250e958`. Staging artifact `1b8d00d` remains known-good PASS. Production remains FROZEN. No commit/push/deploy authorized by this status update alone.
 
 | Item | State |
 |------|--------|
-| Repo baseline | `main` @ `fac108be16e779fdbff0a2867b302679c8c4da6f` |
+| Repo baseline | `main` @ `250e95828db7a8313e38401add6e4efc61d2160d` |
 | Staging baseline | `1b8d00d` PASS (unchanged) |
-| Relation | `1b8d00d → fac108b` (docs-only descendant) |
-| Numbering systems | BLOKI 1–13 · Fazy UI 1–13 · Workstreamy 1–9 · G-gates (separate; do not mix) |
-| Capability labels | Owner-approved five-level standard in matrix |
-| Notifications | Persistence/UI = LOCAL FOUNDATION; staging migration APPLIED; live email **not** STAGING LIVE PROVEN; full E2E launch proof open |
-| Dependency finding | Vite high + 5 moderate — OPEN — BOUNDED TRIAGE REQUIRED (not fixed) |
-| Open decisions preserved | Canonical component system; Orchestrator proof position; rollback/compatibility; image provider; production artifact/rollback target; staging credentials; Turnstile/R2 rotation |
+| Schema delta `1b8d00d..250e958` | **none** |
+| Point 1 — Vite | **COMPLETE** — Vite `6.4.3`; high finding closed; validate PASS; commit `95af080` |
+| Point 2 — Canonical component system | **COMPLETE** — public `apps/web/src/components/ui`; private `apps/web/src/design-system` |
+| Wave 0 — import guard | **COMPLETE** — commit `250e958`; 108 frozen existing violations; new = 0 |
+| Point 3 — Rollback plan | **COMPLETE** — verdict `ROLLBACK READY WITH CONDITIONS`; rehearsal **not executed** (separately gated); no SHA-tagged retained staging API image yet |
+| Point 4 — Orchestrator proof decision | **COMPLETE** — `HYBRID — PREFLIGHT + EMBEDDED LIVE PROOF`; Orchestrator remains `LOCAL FOUNDATION`; not `STAGING LIVE PROVEN` until plan→execute is wired |
+| Waves 1–5 UI migration | **OPEN** |
+| Next local Workstreams | **2–5** before staging Workstream 6 |
 | Production | FROZEN |
 | Canonical doc | [`AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md`](./project-control/AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md) |
 
-**Historical note:** Older G-gate rows below that still say “no notification migration/inbox” are **historical context** from the date of that gate. Current ground truth is this section and the authoritative matrix.
+## WORKSTREAM 1A — project control reconciliation (2026-07-12) — historical
+
+**Result:** Docs-only. Authoritative project-control matrix recorded. Superseded for Points 1–4 by WORKSTREAM 1 closeout above. No app/schema/staging/production mutation in 1A itself.
+
+| Item | State |
+|------|--------|
+| Repo baseline (at 1A) | `main` @ `fac108be16e779fdbff0a2867b302679c8c4da6f` |
+| Staging baseline | `1b8d00d` PASS (unchanged) |
+| Relation (at 1A) | `1b8d00d → fac108b` (docs-only descendant) |
+| Numbering systems | BLOKI 1–13 · Fazy UI 1–13 · Workstreamy 1–9 · G-gates (separate; do not mix) |
+| Capability labels | Owner-approved five-level standard in matrix |
+| Notifications | Persistence/UI = LOCAL FOUNDATION; staging migration APPLIED; live email **not** STAGING LIVE PROVEN; full E2E launch proof open |
+| Dependency finding (at 1A) | Vite high was OPEN — later closed by Point 1 / `95af080` |
+| Open decisions (at 1A) | Later closed for canonical / Orchestrator proof / rollback **plan**; rehearsal and Waves 1–5 remain open |
+| Production | FROZEN |
+| Canonical doc | [`AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md`](./project-control/AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md) |
+
+**Historical note:** Older G-gate rows below that still say “no notification migration/inbox” are **historical context** from the date of that gate. Current ground truth is the WORKSTREAM 1 closeout section and the authoritative matrix.
 
 ## G77b persistent COMPLETED ledger live proof closeout (2026-07-10)
 

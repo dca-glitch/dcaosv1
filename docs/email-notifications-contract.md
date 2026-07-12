@@ -1,6 +1,6 @@
 # Email Notifications Backend Foundation Contract
 
-Status: EN1 backend notification scaffolding is complete. EN2 now includes a schema-free platform AuditLog writer foundation. G159–G170 and G249–G268 expanded the pure notification taxonomy, recipient/channel/severity policy, payload redaction + safe snapshots, typed template catalog, legacy alias map, correlation/idempotency design, and no-send adapter edge coverage. **G505–G516** hardened email config (disabled / missing / live-deferred), no-send adapter contract, template catalogue completeness, missing-template safety, recipient + template-variable redaction, and launch-critical / admin-only email matrices. Real provider sending remains inactive by default. No in-system notification DB model exists yet (design only — see `docs/operator/notification-persistence-design.md`).
+Status: EN1 backend notification scaffolding is complete. EN2 now includes a schema-free platform AuditLog writer foundation. G159–G170 and G249–G268 expanded the pure notification taxonomy, recipient/channel/severity policy, payload redaction + safe snapshots, typed template catalog, legacy alias map, correlation/idempotency design, and no-send adapter edge coverage. **G505–G516** hardened email config (disabled / missing / live-deferred), no-send adapter contract, template catalogue completeness, missing-template safety, recipient + template-variable redaction, and launch-critical / admin-only email matrices. Real provider sending remains inactive by default. **Local v1 in-app inbox** (`InAppNotification` + admin/client list/mark-read APIs + shell panel) is implemented; write path must redact `payloadJson` via `redactNotificationPayload` (see `apps/api/src/notifications/in-app-notifications.service.ts`). Live Resend / staging delivery proof remains owner-gated. Historical design notes: `docs/operator/notification-persistence-design.md`.
 
 ## Purpose
 
@@ -154,7 +154,7 @@ API modules:
 - `apps/api/src/notifications/notification-correlation.ts` — correlation/idempotency **design** keys only (G257); no migration
 - `apps/api/src/config/email.config.ts` — disabled-safe / live-deferred safety shape (G264 / G505)
 
-Persistence / inbox API design (docs only): `docs/operator/notification-persistence-design.md`.
+In-app persistence (local v1): Prisma `InAppNotification` + `in-app-notifications.service.ts` (upsert/list/mark-read). Payload redaction on write is mandatory. Historical design doc: `docs/operator/notification-persistence-design.md`.
 
 Lane closeout: `docs/runbooks/EMAIL_NO_SEND_G505_G516_CLOSEOUT.md`.
 
@@ -165,9 +165,7 @@ EN1 does not include:
 - real email sending in local mode
 - real Resend sending
 - API keys or secrets in the repository
-- UI
-- Client Access behavior changes
-- Client Portal behavior changes
+- Client Access behavior changes beyond existing inbox surfaces
 - AI Delivery behavior changes
 - invoice/task behavior changes
 - bulk email
@@ -176,4 +174,4 @@ EN1 does not include:
 - cron or scheduled jobs
 - real provider delivery from EN2 audit events
 - VPS/deploy changes
-- in-system notification DB model or inbox API implementation (design only as of G167–G168)
+- staging/production live email proof (owner-gated separately)

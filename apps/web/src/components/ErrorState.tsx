@@ -1,10 +1,2 @@
-import { Alert } from "../design-system";
-
-type ErrorStateProps = {
-  title: string;
-  message: string;
-};
-
-export function ErrorState({ title, message }: ErrorStateProps) {
-  return <Alert message={message} title={title} variant="danger" />;
-}
+/** @deprecated Prefer `components/ui` — thin re-export for safety. */
+export { ErrorState } from "./ui";

@@ -31,7 +31,7 @@ Local portal UX ≠ notification readiness. Approval surfaces exist; **reliable,
 
 ---
 
-## Current implementation snapshot (2026-07-10)
+## Current implementation snapshot (2026-07-11)
 
 ### What exists
 
@@ -42,42 +42,42 @@ Local portal UX ≠ notification readiness. Approval surfaces exist; **reliable,
 | **Real-path email wiring** | `notifyDcaTeam` / `notifyClientUsers` on approve/reject, send-for-review, article ready, image FINAL_READY, monthly report FINAL, WordPress draft prepared (2026-07-09 wiring block) | Integration tests + disabled-safe smokes; **no live inbox proof** |
 | **Platform audit** | `AuditLog` — auth, tenant, module actions; AI Delivery lifecycle mostly via internal-event path | Local operator visibility; not a user notification inbox |
 | **Orchestrator dry-run events** | G61 `AiNotificationEventType` + in-memory no-send recorder on orchestrator preview | Dry-run only; not Client Portal or admin daily inbox |
-| **No-schema notification foundation** | G94-G102 / G159–G170 / G249–G268 / G493–G504 `notification-events` shared taxonomy (expanded + families), recipient/channel/severity policy, payload redaction + safe snapshots, event metadata + audit safe shape, typed template catalog, approval/reject matrix, audit metadata builder, legacy alias map, correlation/idempotency design helpers, schema-safe template inventory, API no-send email adapter (edge-tested) | Pure unit tests only; no persistent inbox and no live email |
-| **Persistence + inbox design** | G167–G168 / G257–G259 / G503 `docs/operator/notification-persistence-design.md` | Design only — no migration, no inbox API implementation |
+| **No-schema notification foundation** | G94-G102 / G159–G170 / G249–G268 / G493–G504 `notification-events` shared taxonomy (expanded + families), recipient/channel/severity policy, payload redaction + safe snapshots, event metadata + audit safe shape, typed template catalog, approval/reject matrix, audit metadata builder, legacy alias map, correlation/idempotency design helpers, schema-safe template inventory, API no-send email adapter (edge-tested) | Pure unit tests; no live email |
+| **In-app inbox (local v1)** | Prisma `InAppNotification` + `in-app-notifications.service.ts` (upsert/list/mark-read) + admin/client APIs + shell notification panel; `payloadJson` redacted on write | Local persistence implemented; approval-loop event coverage + staging/prod delivery still incomplete |
+| **Persistence design doc** | [`notification-persistence-design.md`](./notification-persistence-design.md) | **Historical** for pre-implementation planning; superseded by local v1 inbox above |
 | **Admin email outbox API** | `GET /api/v1/notifications/email-logs` (admin/owner, tenant-scoped) | Read-only smoke proven |
 | **No-send notification tests** | `email-notification-wiring.integration.test.ts` checks disabled-safe outbox and content draft admin notification intent when local auth seed is available | Partial; does not prove every approval-loop event |
 
-### What does not exist
+### What does not exist (remaining blockers)
 
-- User-scoped **in-app notification** model, API, or Client Portal / admin UI feed (no bell, unread count, or per-user inbox).
 - Live transactional email send proof (Resend never executed in a controlled proof session).
-- User-scoped client/admin in-system notification rows for approval-loop events — `EmailLog` is not a per-user notification inbox.
-- Client-visible in-system notification when deliverable/report is ready — client must poll `#/client-portal/pending-approvals` or be contacted manually if email is not proven.
-- Client email/notification delivery for monthly report `FINAL`; current code emits admin notification intent only.
+- Complete approval-loop coverage that always writes user-scoped in-app rows for every launch-critical event (model/API exist; not every path is wired).
+- Client email/notification delivery for monthly report `FINAL` proven to a real inbox; current code emits admin notification intent only in local no-send mode.
 - Notification intent on image-level client approve/reject rows; current code records image review status/reason only.
 - Background queues, retry/deliverability monitoring, or invite/password-reset email (all deferred).
 - Dedicated `EmailTemplateKey` values for ready/final/draft-prepared (reuse of generic keys today; dedicated keys need schema approval).
+- Staging/production delivery proof for in-app + email channels.
 
 ### G94-G102 / G159–G170 / G249–G268 / G493–G504 no-schema foundation
 
-Implementation-safe pieces that can exist before a DB notification model:
+Shared taxonomy and no-send adapters remain the contract layer above persistence:
 
 - `packages/shared/src/notification-events.ts` (`NOTIFICATION_EVENTS_V2` + `NOTIFICATION_TAXONOMY_G493_G504_V1`) defines the expanded G159 launch/ops event taxonomy, event families (G495), coverage audit (G493), legacy alias map (G250/G494), recipient policy (G160/G251/G498), channel policy (G161/G252/G498), severity (G162/G253/G498), payload redaction (G163/G254/G497), payload snapshots (G255/G497), event metadata builder (G499), audit safe shape (G500), typed template catalog (G166/G261), approval/reject matrix, audit metadata builder (G256), and schema-safe email template inventory.
 - `apps/api/src/notifications/email-no-send-adapter.ts` (`EMAIL_NO_SEND_ADAPTER_V2`) records skipped attempts, never calls an external provider, needs no API key, redacts payloads, optionally redacts recipients in log metadata, and treats missing templates as safe no-send (G165/G260–G263). Owned by Lane 4.
-- `apps/api/src/notifications/notification-correlation.ts` defines correlation/idempotency design keys only (G257/G496) — **no migration**.
+- `apps/api/src/notifications/notification-correlation.ts` defines correlation/idempotency design keys only (G257/G496).
 - `apps/api/src/config/email.config.ts` exposes a serializable safety shape that separates "Resend is configured" from "live email proof is complete" (G264). Owned by Lane 4.
-- Persistence + admin/client inbox API design: [`notification-persistence-design.md`](./notification-persistence-design.md) (G167–G168 / G257–G259 / G503) — **docs only**.
+- Local v1 persistence service: `apps/api/src/notifications/in-app-notifications.service.ts` (redact on write). Historical design: [`notification-persistence-design.md`](./notification-persistence-design.md).
 - Taxonomy closeout runbook: [`../runbooks/NOTIFICATION_TAXONOMY_G493_G504_CLOSEOUT.md`](../runbooks/NOTIFICATION_TAXONOMY_G493_G504_CLOSEOUT.md).
 
-**Important blocker remains:** these modules do not create user-scoped in-system notification rows. In-system persistence stays blocked until a DB model/API/UI block is explicitly approved. Live email stays blocked until the owner-approved Resend proof in [`EMAIL_NOTIFICATIONS_PROOF.md`](../runbooks/EMAIL_NOTIFICATIONS_PROOF.md) is executed.
+**Important blocker remains:** live email stays blocked until the owner-approved Resend proof in [`EMAIL_NOTIFICATIONS_PROOF.md`](../runbooks/EMAIL_NOTIFICATIONS_PROOF.md) is executed. In-app model exists locally; launch still requires proven event→inbox wiring and live email proof.
 
 ### G82-G84 consistency note
 
 [`EMAIL_NOTIFICATIONS_PROOF.md`](../runbooks/EMAIL_NOTIFICATIONS_PROOF.md) now separates current disabled-safe wiring from remaining launch blockers. Treat the code-backed facts as:
 
 - Real-path email intent exists for several admin/client events, but default local mode is still no-send (`SKIPPED`).
-- No in-system notification model exists for client/admin unread alerts.
-- Monthly report `FINAL` is not client-delivered by notification today.
+- Local v1 in-app notification model/API/panel exist; not every approval-loop path is proven to write inbox rows.
+- Monthly report `FINAL` is not client-delivered by live email today.
 - Image-level approve/reject is not notification-wired today.
 - Phone/manual-only remains insufficient for Puriva Launch.
 
@@ -105,16 +105,17 @@ Manual follow-up may supplement notifications; it **cannot replace** them for la
 
 ## G82 — Internal Events / Audit Inspection
 
-**Finding:** no in-system notification model exists today.
+**Finding (historical G82):** at the time of G82 there was no in-system notification model. **Update (2026-07-11):** local v1 `InAppNotification` persistence + inbox APIs exist. G82 table below remains useful for distinguishing audit/email logs from the inbox.
 
 | Existing mechanism | What it proves | What it does not prove |
 |--------------------|----------------|-------------------------|
 | `EmailLog` via `sendEmailNotification()` | Outbound email intent and provider result (`SKIPPED` / `SENT` / `FAILED`) | User inbox, unread state, client/admin UI delivery |
-| `recordAiDeliverySystemEvent()` | Internal AI Delivery lifecycle event row, always `SKIPPED`, never sends | Real notification or client/admin delivery |
+| `InAppNotification` via `in-app-notifications.service.ts` | User-scoped unread/read inbox rows (local v1) | Live email delivery; complete approval-loop wiring coverage |
+| `recordAiDeliverySystemEvent()` | Internal AI Delivery lifecycle event row, always `SKIPPED`, never sends | Real email or complete client/admin delivery proof |
 | `AuditLog` via `recordPlatformAuditEvent()` | Platform/audit trail for selected actions | User notification, email delivery, or read receipt |
-| `recordAiNotificationEvent()` / `AiNotificationEventType` | In-memory no-send event taxonomy for orchestrator/budget previews | Persistent client/admin notification model or approval-loop delivery |
+| `recordAiNotificationEvent()` / `AiNotificationEventType` | In-memory no-send event taxonomy for orchestrator/budget previews | Approval-loop delivery completeness |
 
-**G82 recommendation:** next implementation should use a no-schema seam first if schema approval is not available: canonical event type union, mapping helpers, no-send recorder interface, and tests that prove event emission without provider/network calls. A real persisted notification inbox remains a later schema/API/UI block.
+**G82 recommendation (updated):** keep taxonomy + no-send seams; finish wiring launch-critical events into `InAppNotification`; execute owner-gated live email proof separately.
 
 ---
 
@@ -142,15 +143,15 @@ This is the exact current map as of G82-G84 inspection. "Wired" means code recor
 
 | Loop event | Current code trigger | Client channel today | Admin channel today | Gap / next action |
 |------------|----------------------|----------------------|---------------------|-------------------|
-| Content sent for client approval | `sendAiDeliveryDeliverableForClientReview()` → `notifyClientUsers()` | Email intent to `ClientUserAccess` users; no in-system notification | None beyond normal operator action | Add in-system client notification row; live email proof still needed |
-| Client content approval | `approveClientPortalDeliverable()` → `notifyDcaTeam(..., AI_DELIVERY_APPROVED)` | None | Email intent to owner/admin users + reply-to | Add admin in-system notification; no live proof yet |
-| Client content request changes | `rejectClientPortalDeliverable()` → `notifyDcaTeam(..., AI_DELIVERY_REVIEW_REQUEST)` with reason body | None | Email intent to owner/admin users + reply-to; reason included | Add admin in-system notification; prove reason is safe and present |
+| Content sent for client approval | `sendAiDeliveryDeliverableForClientReview()` → `notifyClientUsers()` | Email intent to `ClientUserAccess` users; in-app row wiring not proven for this path | None beyond normal operator action | Ensure in-app client notification row on send-for-review; live email proof still needed |
+| Client content approval | `approveClientPortalDeliverable()` → `notifyDcaTeam(..., AI_DELIVERY_APPROVED)` | None | Email intent to owner/admin users + reply-to | Ensure admin in-app notification; no live email proof yet |
+| Client content request changes | `rejectClientPortalDeliverable()` → `notifyDcaTeam(..., AI_DELIVERY_REVIEW_REQUEST)` with reason body | None | Email intent to owner/admin users + reply-to; reason included | Ensure admin in-app notification; prove reason is safe and present |
 | Image approved by client | `approveClientPortalDeliverableImage()` | None | None | Add optional admin alert if product requires image-level operator action |
 | Image rejected by client with reason | `rejectClientPortalDeliverableImage()` stores `rejectionReason` | None | None | Add admin alert/no-send test if image-level rejection should interrupt workflow |
 | Monthly report `FINAL` | `updateAiDeliveryMonthlyReportStatus()` when status becomes `FINAL` → `notifyDcaTeam(..., approved=true)` | None | Email intent to owner/admin users + reply-to | Add client delivery notification/email path; do not claim report client delivery yet |
-| Admin alert after client action | Covered for final deliverable approve/reject only | Not applicable | Email intent for deliverable approve/reject | Missing image-level admin alert and in-system admin notification |
+| Admin alert after client action | Covered for final deliverable approve/reject only | Not applicable | Email intent for deliverable approve/reject | Missing image-level admin alert and proven in-app admin notification coverage |
 
-**G84 verdict:** approval-loop email intent exists for deliverable-level client action and client review prompt, but the loop is not launch-complete because in-system notifications are absent, live email is unproven, image-level review actions do not notify, and monthly report `FINAL` is not client-delivered.
+**G84 verdict:** approval-loop email intent exists for deliverable-level client action and client review prompt, but the loop is not launch-complete because in-app event→inbox wiring coverage is incomplete, live email is unproven, image-level review actions do not notify, and monthly report `FINAL` is not client-delivered. (Local `InAppNotification` model/API exist; do not equate model presence with full loop proof.)
 
 ---
 

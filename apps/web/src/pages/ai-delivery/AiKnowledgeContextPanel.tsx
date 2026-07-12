@@ -5,8 +5,7 @@ import type {
   AiKnowledgeItemSummary
 } from "@dca-os-v1/shared";
 import { Modal } from "../../components/Modal";
-import { SectionPanel, StatusBadge } from "../../components/ui";
-import { Spinner } from "../../design-system";
+import { SectionPanel, Spinner, StatusBadge } from "../../components/ui";
 import type { AiDeliveryProjectSummary } from "./AiDeliveryPage";
 
 type AiKnowledgeContextPanelProps = {

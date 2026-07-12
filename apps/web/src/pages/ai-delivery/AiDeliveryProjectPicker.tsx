@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { EmptyState } from "../../components/EmptyState";
-import { SectionPanel, StatusBadge } from "../../components/ui";
+import { EmptyState, SectionPanel, StatusBadge } from "../../components/ui";
 import type { AiDeliveryProjectSummary } from "./AiDeliveryPage";
 import {
   AI_DELIVERY_PROJECT_PICKER_PAGE_SIZE,

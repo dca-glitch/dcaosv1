@@ -3,6 +3,7 @@ import { describe, it } from "node:test";
 import {
   applyImageApprovalLoopTransition,
   assertImageFinalAcceptedInvariant,
+  IMAGE_APPROVAL_LOOP_PROVIDER_CALLED,
   IMAGE_APPROVAL_LOOP_STATES,
   IMAGE_APPROVAL_LOOP_TRANSITIONS,
   isTerminalImageApprovalState,
@@ -54,6 +55,7 @@ describe("image-approval-loop", () => {
     if (adminReject.ok) {
       assert.equal(adminReject.to, "admin_rejected");
       assert.equal(adminReject.requiresRejectReason, true);
+      assert.equal(adminReject.providerCalled, false);
     }
 
     const clientReject = applyImageApprovalLoopTransition("admin_approved", "client_reject");
@@ -61,6 +63,7 @@ describe("image-approval-loop", () => {
     if (clientReject.ok) {
       assert.equal(clientReject.to, "client_rejected");
       assert.equal(clientReject.requiresRejectReason, true);
+      assert.equal(clientReject.providerCalled, IMAGE_APPROVAL_LOOP_PROVIDER_CALLED);
     }
 
     const replacement = applyImageApprovalLoopTransition("client_rejected", "request_replacement");
@@ -68,12 +71,14 @@ describe("image-approval-loop", () => {
     if (replacement.ok) {
       assert.equal(replacement.to, "replacement_requested");
       assert.equal(replacement.requiresRejectReason, true);
+      assert.equal(replacement.providerCalled, false);
     }
 
     const ready = applyImageApprovalLoopTransition("replacement_requested", "replacement_candidate_ready");
     assert.equal(ready.ok, true);
     if (ready.ok) {
       assert.equal(ready.to, "candidate_generated");
+      assert.equal(ready.providerCalled, false);
     }
   });
 

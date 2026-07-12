@@ -1,5 +1,5 @@
 import type { AppModuleContract } from "@dca-os-v1/shared";
-import { EmptyState } from "../components/EmptyState";
+import { EmptyState } from "../components/ui";
 
 type ModuleListPageProps = {
   moduleDefinition: AppModuleContract;

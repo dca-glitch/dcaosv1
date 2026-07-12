@@ -9,6 +9,9 @@
 
 export const IMAGE_APPROVAL_LOOP_VERSION = "IMAGE_APPROVAL_LOOP_V2";
 
+/** Reject / replace / approve paths never call an image provider (local state only). */
+export const IMAGE_APPROVAL_LOOP_PROVIDER_CALLED = false as const;
+
 export const IMAGE_APPROVAL_LOOP_STATES = [
   "candidate_generated",
   "admin_approved",
@@ -42,6 +45,7 @@ export type ImageApprovalLoopTransitionResult =
       to: ImageApprovalLoopState;
       transition: ImageApprovalLoopTransition;
       requiresRejectReason: boolean;
+      providerCalled: typeof IMAGE_APPROVAL_LOOP_PROVIDER_CALLED;
     }
   | {
       ok: false;
@@ -49,6 +53,7 @@ export type ImageApprovalLoopTransitionResult =
       from: ImageApprovalLoopState;
       transition: ImageApprovalLoopTransition;
       error: string;
+      providerCalled: typeof IMAGE_APPROVAL_LOOP_PROVIDER_CALLED;
     };
 
 type TransitionRule = {
@@ -112,7 +117,8 @@ export function applyImageApprovalLoopTransition(
       from,
       to: "candidate_generated",
       transition,
-      requiresRejectReason: false
+      requiresRejectReason: false,
+      providerCalled: IMAGE_APPROVAL_LOOP_PROVIDER_CALLED
     };
   }
 
@@ -123,7 +129,8 @@ export function applyImageApprovalLoopTransition(
       version: IMAGE_APPROVAL_LOOP_VERSION,
       from,
       transition,
-      error: `Transition "${transition}" is not allowed from state "${from}".`
+      error: `Transition "${transition}" is not allowed from state "${from}".`,
+      providerCalled: IMAGE_APPROVAL_LOOP_PROVIDER_CALLED
     };
   }
 
@@ -133,7 +140,8 @@ export function applyImageApprovalLoopTransition(
     from,
     to: rule.to,
     transition,
-    requiresRejectReason: rule.requiresRejectReason
+    requiresRejectReason: rule.requiresRejectReason,
+    providerCalled: IMAGE_APPROVAL_LOOP_PROVIDER_CALLED
   };
 }
 

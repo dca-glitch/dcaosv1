@@ -1,8 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Modal } from "../../components/Modal";
-import { EmptyState } from "../../components/EmptyState";
-import { Button, PageHeader, SectionPanel, StatusBadge } from "../../components/ui";
-import { Alert, Input, Spinner, Textarea, Toast } from "../../design-system";
+import { Alert, Button, EmptyState, Input, PageHeader, SectionPanel, Spinner, StatusBadge, Textarea, Toast } from "../../components/ui";
 import {
   DEFAULT_APPROVAL_CHECKLIST,
   createEmptyApprovalChecklistState,

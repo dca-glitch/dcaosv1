@@ -3,82 +3,10 @@
   "note": "Frozen Wave 0 baseline. Shrink only with owner approval after violations are removed. Never auto-regenerate during validate.",
   "entries": [
     {
-      "importer": "apps/web/src/App.tsx",
-      "specifier": "./components/EmptyState",
-      "resolvedTarget": "apps/web/src/components/EmptyState.tsx",
-      "rule": "legacy-root-component"
-    },
-    {
-      "importer": "apps/web/src/App.tsx",
-      "specifier": "./components/StatusNotice",
-      "resolvedTarget": "apps/web/src/components/StatusNotice.tsx",
-      "rule": "legacy-root-component"
-    },
-    {
-      "importer": "apps/web/src/components/clients/ClientAccessPanel.tsx",
-      "specifier": "../../design-system",
-      "resolvedTarget": "apps/web/src/design-system/index.ts",
-      "rule": "ds-barrel"
-    },
-    {
-      "importer": "apps/web/src/components/clients/ClientAccessPanel.tsx",
-      "specifier": "../EmptyState",
-      "resolvedTarget": "apps/web/src/components/EmptyState.tsx",
-      "rule": "legacy-root-component"
-    },
-    {
-      "importer": "apps/web/src/components/clients/ClientAccessPanel.tsx",
-      "specifier": "../LoadingState",
-      "resolvedTarget": "apps/web/src/components/LoadingState.tsx",
-      "rule": "legacy-root-component"
-    },
-    {
-      "importer": "apps/web/src/components/clients/ClientAccessPanel.tsx",
-      "specifier": "../StatusNotice",
-      "resolvedTarget": "apps/web/src/components/StatusNotice.tsx",
-      "rule": "legacy-root-component"
-    },
-    {
-      "importer": "apps/web/src/components/ErrorState.tsx",
-      "specifier": "../design-system",
-      "resolvedTarget": "apps/web/src/design-system/index.ts",
-      "rule": "ds-barrel"
-    },
-    {
-      "importer": "apps/web/src/components/LoadingState.tsx",
-      "specifier": "../design-system",
-      "resolvedTarget": "apps/web/src/design-system/index.ts",
-      "rule": "ds-barrel"
-    },
-    {
       "importer": "apps/web/src/components/Modal.tsx",
       "specifier": "../design-system/components/Modal",
       "resolvedTarget": "apps/web/src/design-system/components/Modal.tsx",
       "rule": "ds-deep-component"
-    },
-    {
-      "importer": "apps/web/src/components/shell/ShellUserPanel.tsx",
-      "specifier": "../ui/Button",
-      "resolvedTarget": "apps/web/src/components/ui/Button.tsx",
-      "rule": "ui-deep-import"
-    },
-    {
-      "importer": "apps/web/src/components/StatusNotice.tsx",
-      "specifier": "../design-system",
-      "resolvedTarget": "apps/web/src/design-system/index.ts",
-      "rule": "ds-barrel"
-    },
-    {
-      "importer": "apps/web/src/modules/ModuleListPage.tsx",
-      "specifier": "../components/EmptyState",
-      "resolvedTarget": "apps/web/src/components/EmptyState.tsx",
-      "rule": "legacy-root-component"
-    },
-    {
-      "importer": "apps/web/src/pages/ai-delivery/ai-delivery-shared-ui.tsx",
-      "specifier": "../../design-system",
-      "resolvedTarget": "apps/web/src/design-system/index.ts",
-      "rule": "ds-barrel"
     },
     {
       "importer": "apps/web/src/pages/ai-delivery/AiDeliveryBriefModal.tsx",
@@ -90,12 +18,6 @@
       "importer": "apps/web/src/pages/ai-delivery/AiDeliveryContentDraftModal.tsx",
       "specifier": "../../components/Modal",
       "resolvedTarget": "apps/web/src/components/Modal.tsx",
-      "rule": "legacy-root-component"
-    },
-    {
-      "importer": "apps/web/src/pages/ai-delivery/AiDeliveryContentPlanModal.tsx",
-      "specifier": "../../components/EmptyState",
-      "resolvedTarget": "apps/web/src/components/EmptyState.tsx",
       "rule": "legacy-root-component"
     },
     {
@@ -118,12 +40,6 @@
     },
     {
       "importer": "apps/web/src/pages/ai-delivery/AiDeliveryPage.tsx",
-      "specifier": "../../components/EmptyState",
-      "resolvedTarget": "apps/web/src/components/EmptyState.tsx",
-      "rule": "legacy-root-component"
-    },
-    {
-      "importer": "apps/web/src/pages/ai-delivery/AiDeliveryPage.tsx",
       "specifier": "../../components/Modal",
       "resolvedTarget": "apps/web/src/components/Modal.tsx",
       "rule": "legacy-root-component"
@@ -132,18 +48,6 @@
       "importer": "apps/web/src/pages/ai-delivery/AiDeliveryProjectEditorModal.tsx",
       "specifier": "../../components/Modal",
       "resolvedTarget": "apps/web/src/components/Modal.tsx",
-      "rule": "legacy-root-component"
-    },
-    {
-      "importer": "apps/web/src/pages/ai-delivery/AiDeliveryProjectPicker.tsx",
-      "specifier": "../../components/EmptyState",
-      "resolvedTarget": "apps/web/src/components/EmptyState.tsx",
-      "rule": "legacy-root-component"
-    },
-    {
-      "importer": "apps/web/src/pages/ai-delivery/AiDeliveryProjectWorkspaceSections.tsx",
-      "specifier": "../../components/EmptyState",
-      "resolvedTarget": "apps/web/src/components/EmptyState.tsx",
       "rule": "legacy-root-component"
     },
     {
@@ -165,12 +69,6 @@
       "rule": "legacy-root-component"
     },
     {
-      "importer": "apps/web/src/pages/ai-delivery/AiKnowledgeContextPanel.tsx",
-      "specifier": "../../design-system",
-      "resolvedTarget": "apps/web/src/design-system/index.ts",
-      "rule": "ds-barrel"
-    },
-    {
       "importer": "apps/web/src/pages/ai-delivery/AiRunReviewModal.tsx",
       "specifier": "../../components/Modal",
       "resolvedTarget": "apps/web/src/components/Modal.tsx",
@@ -183,57 +81,15 @@
       "rule": "ds-deep-component"
     },
     {
-      "importer": "apps/web/src/pages/ai-delivery/AiRunReviewModal.tsx",
-      "specifier": "../../design-system",
-      "resolvedTarget": "apps/web/src/design-system/index.ts",
-      "rule": "ds-barrel"
-    },
-    {
-      "importer": "apps/web/src/pages/ai-delivery/MonthlyReportPanel.tsx",
-      "specifier": "../../components/EmptyState",
-      "resolvedTarget": "apps/web/src/components/EmptyState.tsx",
-      "rule": "legacy-root-component"
-    },
-    {
       "importer": "apps/web/src/pages/ai-delivery/MonthlyReportPanel.tsx",
       "specifier": "../../components/Modal",
       "resolvedTarget": "apps/web/src/components/Modal.tsx",
       "rule": "legacy-root-component"
     },
     {
-      "importer": "apps/web/src/pages/ai-delivery/MonthlyReportPanel.tsx",
-      "specifier": "../../design-system",
-      "resolvedTarget": "apps/web/src/design-system/index.ts",
-      "rule": "ds-barrel"
-    },
-    {
-      "importer": "apps/web/src/pages/ai-market-intelligence/AiMarketIntelligencePage.tsx",
-      "specifier": "../../components/EmptyState",
-      "resolvedTarget": "apps/web/src/components/EmptyState.tsx",
-      "rule": "legacy-root-component"
-    },
-    {
-      "importer": "apps/web/src/pages/ai-market-intelligence/AiMarketIntelligencePage.tsx",
-      "specifier": "../../components/ErrorState",
-      "resolvedTarget": "apps/web/src/components/ErrorState.tsx",
-      "rule": "legacy-root-component"
-    },
-    {
-      "importer": "apps/web/src/pages/ai-market-intelligence/AiMarketIntelligencePage.tsx",
-      "specifier": "../../components/LoadingState",
-      "resolvedTarget": "apps/web/src/components/LoadingState.tsx",
-      "rule": "legacy-root-component"
-    },
-    {
       "importer": "apps/web/src/pages/ai-market-intelligence/AiMarketIntelligencePage.tsx",
       "specifier": "../../components/Modal",
       "resolvedTarget": "apps/web/src/components/Modal.tsx",
-      "rule": "legacy-root-component"
-    },
-    {
-      "importer": "apps/web/src/pages/ai-market-intelligence/AiMarketIntelligencePage.tsx",
-      "specifier": "../../components/StatusNotice",
-      "resolvedTarget": "apps/web/src/components/StatusNotice.tsx",
       "rule": "legacy-root-component"
     },
     {
@@ -243,123 +99,15 @@
       "rule": "ds-deep-component"
     },
     {
-      "importer": "apps/web/src/pages/ai-operations/AdminDailyOperationsCockpit.tsx",
-      "specifier": "../../design-system",
-      "resolvedTarget": "apps/web/src/design-system/index.ts",
-      "rule": "ds-barrel"
-    },
-    {
-      "importer": "apps/web/src/pages/ai-operations/AiOperationsPage.tsx",
-      "specifier": "../../components/EmptyState",
-      "resolvedTarget": "apps/web/src/components/EmptyState.tsx",
-      "rule": "legacy-root-component"
-    },
-    {
-      "importer": "apps/web/src/pages/ai-operations/AiOperationsPage.tsx",
-      "specifier": "../../components/ErrorState",
-      "resolvedTarget": "apps/web/src/components/ErrorState.tsx",
-      "rule": "legacy-root-component"
-    },
-    {
-      "importer": "apps/web/src/pages/ai-operations/AiOperationsPage.tsx",
-      "specifier": "../../components/LoadingState",
-      "resolvedTarget": "apps/web/src/components/LoadingState.tsx",
-      "rule": "legacy-root-component"
-    },
-    {
       "importer": "apps/web/src/pages/ai-operations/AiOperationsPage.tsx",
       "specifier": "../../components/Modal",
       "resolvedTarget": "apps/web/src/components/Modal.tsx",
       "rule": "legacy-root-component"
     },
     {
-      "importer": "apps/web/src/pages/ai-operations/AiOperationsPage.tsx",
-      "specifier": "../../design-system",
-      "resolvedTarget": "apps/web/src/design-system/index.ts",
-      "rule": "ds-barrel"
-    },
-    {
-      "importer": "apps/web/src/pages/ArchiveHubPage.tsx",
-      "specifier": "../components/EmptyState",
-      "resolvedTarget": "apps/web/src/components/EmptyState.tsx",
-      "rule": "legacy-root-component"
-    },
-    {
-      "importer": "apps/web/src/pages/ArchiveHubPage.tsx",
-      "specifier": "../components/LoadingState",
-      "resolvedTarget": "apps/web/src/components/LoadingState.tsx",
-      "rule": "legacy-root-component"
-    },
-    {
-      "importer": "apps/web/src/pages/ArchiveHubPage.tsx",
-      "specifier": "../design-system",
-      "resolvedTarget": "apps/web/src/design-system/index.ts",
-      "rule": "ds-barrel"
-    },
-    {
-      "importer": "apps/web/src/pages/bills/BillsPage.tsx",
-      "specifier": "../../components/EmptyState",
-      "resolvedTarget": "apps/web/src/components/EmptyState.tsx",
-      "rule": "legacy-root-component"
-    },
-    {
-      "importer": "apps/web/src/pages/bills/BillsPage.tsx",
-      "specifier": "../../components/ErrorState",
-      "resolvedTarget": "apps/web/src/components/ErrorState.tsx",
-      "rule": "legacy-root-component"
-    },
-    {
-      "importer": "apps/web/src/pages/bills/BillsPage.tsx",
-      "specifier": "../../components/LoadingState",
-      "resolvedTarget": "apps/web/src/components/LoadingState.tsx",
-      "rule": "legacy-root-component"
-    },
-    {
       "importer": "apps/web/src/pages/bills/BillsPage.tsx",
       "specifier": "../../components/Modal",
       "resolvedTarget": "apps/web/src/components/Modal.tsx",
-      "rule": "legacy-root-component"
-    },
-    {
-      "importer": "apps/web/src/pages/bills/BillsPage.tsx",
-      "specifier": "../../design-system",
-      "resolvedTarget": "apps/web/src/design-system/index.ts",
-      "rule": "ds-barrel"
-    },
-    {
-      "importer": "apps/web/src/pages/BriefPage.tsx",
-      "specifier": "../components/EmptyState",
-      "resolvedTarget": "apps/web/src/components/EmptyState.tsx",
-      "rule": "legacy-root-component"
-    },
-    {
-      "importer": "apps/web/src/pages/BriefPage.tsx",
-      "specifier": "../design-system",
-      "resolvedTarget": "apps/web/src/design-system/index.ts",
-      "rule": "ds-barrel"
-    },
-    {
-      "importer": "apps/web/src/pages/BriefPanelPage.tsx",
-      "specifier": "../components/EmptyState",
-      "resolvedTarget": "apps/web/src/components/EmptyState.tsx",
-      "rule": "legacy-root-component"
-    },
-    {
-      "importer": "apps/web/src/pages/BriefPanelPage.tsx",
-      "specifier": "../components/ErrorState",
-      "resolvedTarget": "apps/web/src/components/ErrorState.tsx",
-      "rule": "legacy-root-component"
-    },
-    {
-      "importer": "apps/web/src/pages/BriefPanelPage.tsx",
-      "specifier": "../components/LoadingState",
-      "resolvedTarget": "apps/web/src/components/LoadingState.tsx",
-      "rule": "legacy-root-component"
-    },
-    {
-      "importer": "apps/web/src/pages/client-portal/ArticleApprovalEditor.tsx",
-      "specifier": "../../components/EmptyState",
-      "resolvedTarget": "apps/web/src/components/EmptyState.tsx",
       "rule": "legacy-root-component"
     },
     {
@@ -369,123 +117,9 @@
       "rule": "legacy-root-component"
     },
     {
-      "importer": "apps/web/src/pages/client-portal/ArticleApprovalEditor.tsx",
-      "specifier": "../../design-system",
-      "resolvedTarget": "apps/web/src/design-system/index.ts",
-      "rule": "ds-barrel"
-    },
-    {
-      "importer": "apps/web/src/pages/client-portal/ClientPortalPage.tsx",
-      "specifier": "../../components/EmptyState",
-      "resolvedTarget": "apps/web/src/components/EmptyState.tsx",
-      "rule": "legacy-root-component"
-    },
-    {
-      "importer": "apps/web/src/pages/client-portal/ClientPortalPage.tsx",
-      "specifier": "../../design-system",
-      "resolvedTarget": "apps/web/src/design-system/index.ts",
-      "rule": "ds-barrel"
-    },
-    {
-      "importer": "apps/web/src/pages/client-portal/PendingApprovalsPage.tsx",
-      "specifier": "../../components/EmptyState",
-      "resolvedTarget": "apps/web/src/components/EmptyState.tsx",
-      "rule": "legacy-root-component"
-    },
-    {
-      "importer": "apps/web/src/pages/client-portal/PendingApprovalsPage.tsx",
-      "specifier": "../../design-system",
-      "resolvedTarget": "apps/web/src/design-system/index.ts",
-      "rule": "ds-barrel"
-    },
-    {
-      "importer": "apps/web/src/pages/ClientDashboardPage.tsx",
-      "specifier": "../components/EmptyState",
-      "resolvedTarget": "apps/web/src/components/EmptyState.tsx",
-      "rule": "legacy-root-component"
-    },
-    {
-      "importer": "apps/web/src/pages/ClientDashboardPage.tsx",
-      "specifier": "../components/LoadingState",
-      "resolvedTarget": "apps/web/src/components/LoadingState.tsx",
-      "rule": "legacy-root-component"
-    },
-    {
-      "importer": "apps/web/src/pages/ClientDashboardPage.tsx",
-      "specifier": "../design-system",
-      "resolvedTarget": "apps/web/src/design-system/index.ts",
-      "rule": "ds-barrel"
-    },
-    {
-      "importer": "apps/web/src/pages/clients/ClientHubPage.tsx",
-      "specifier": "../../components/EmptyState",
-      "resolvedTarget": "apps/web/src/components/EmptyState.tsx",
-      "rule": "legacy-root-component"
-    },
-    {
-      "importer": "apps/web/src/pages/clients/ClientHubPage.tsx",
-      "specifier": "../../components/ErrorState",
-      "resolvedTarget": "apps/web/src/components/ErrorState.tsx",
-      "rule": "legacy-root-component"
-    },
-    {
-      "importer": "apps/web/src/pages/clients/ClientHubPage.tsx",
-      "specifier": "../../components/LoadingState",
-      "resolvedTarget": "apps/web/src/components/LoadingState.tsx",
-      "rule": "legacy-root-component"
-    },
-    {
-      "importer": "apps/web/src/pages/clients/ClientHubPage.tsx",
-      "specifier": "../../components/StatusNotice",
-      "resolvedTarget": "apps/web/src/components/StatusNotice.tsx",
-      "rule": "legacy-root-component"
-    },
-    {
-      "importer": "apps/web/src/pages/clients/ClientsPage.tsx",
-      "specifier": "../../components/EmptyState",
-      "resolvedTarget": "apps/web/src/components/EmptyState.tsx",
-      "rule": "legacy-root-component"
-    },
-    {
-      "importer": "apps/web/src/pages/clients/ClientsPage.tsx",
-      "specifier": "../../components/ErrorState",
-      "resolvedTarget": "apps/web/src/components/ErrorState.tsx",
-      "rule": "legacy-root-component"
-    },
-    {
-      "importer": "apps/web/src/pages/clients/ClientsPage.tsx",
-      "specifier": "../../components/LoadingState",
-      "resolvedTarget": "apps/web/src/components/LoadingState.tsx",
-      "rule": "legacy-root-component"
-    },
-    {
       "importer": "apps/web/src/pages/clients/ClientsPage.tsx",
       "specifier": "../../components/Modal",
       "resolvedTarget": "apps/web/src/components/Modal.tsx",
-      "rule": "legacy-root-component"
-    },
-    {
-      "importer": "apps/web/src/pages/clients/ClientsPage.tsx",
-      "specifier": "../../design-system",
-      "resolvedTarget": "apps/web/src/design-system/index.ts",
-      "rule": "ds-barrel"
-    },
-    {
-      "importer": "apps/web/src/pages/company-profile/CompanyProfilePage.tsx",
-      "specifier": "../../components/EmptyState",
-      "resolvedTarget": "apps/web/src/components/EmptyState.tsx",
-      "rule": "legacy-root-component"
-    },
-    {
-      "importer": "apps/web/src/pages/company-profile/CompanyProfilePage.tsx",
-      "specifier": "../../components/ErrorState",
-      "resolvedTarget": "apps/web/src/components/ErrorState.tsx",
-      "rule": "legacy-root-component"
-    },
-    {
-      "importer": "apps/web/src/pages/company-profile/CompanyProfilePage.tsx",
-      "specifier": "../../components/LoadingState",
-      "resolvedTarget": "apps/web/src/components/LoadingState.tsx",
       "rule": "legacy-root-component"
     },
     {
@@ -495,87 +129,15 @@
       "rule": "legacy-root-component"
     },
     {
-      "importer": "apps/web/src/pages/company-profile/CompanyProfilePage.tsx",
-      "specifier": "../../components/ui/ModalActions",
-      "resolvedTarget": "apps/web/src/components/ui/ModalActions.tsx",
-      "rule": "ui-deep-import"
-    },
-    {
-      "importer": "apps/web/src/pages/credit-notes/CreditNotesPage.tsx",
-      "specifier": "../../components/EmptyState",
-      "resolvedTarget": "apps/web/src/components/EmptyState.tsx",
-      "rule": "legacy-root-component"
-    },
-    {
-      "importer": "apps/web/src/pages/credit-notes/CreditNotesPage.tsx",
-      "specifier": "../../components/ErrorState",
-      "resolvedTarget": "apps/web/src/components/ErrorState.tsx",
-      "rule": "legacy-root-component"
-    },
-    {
-      "importer": "apps/web/src/pages/credit-notes/CreditNotesPage.tsx",
-      "specifier": "../../components/LoadingState",
-      "resolvedTarget": "apps/web/src/components/LoadingState.tsx",
-      "rule": "legacy-root-component"
-    },
-    {
       "importer": "apps/web/src/pages/credit-notes/CreditNotesPage.tsx",
       "specifier": "../../components/Modal",
       "resolvedTarget": "apps/web/src/components/Modal.tsx",
       "rule": "legacy-root-component"
     },
     {
-      "importer": "apps/web/src/pages/credit-notes/CreditNotesPage.tsx",
-      "specifier": "../../design-system",
-      "resolvedTarget": "apps/web/src/design-system/index.ts",
-      "rule": "ds-barrel"
-    },
-    {
-      "importer": "apps/web/src/pages/invoice-items/InvoiceItemsPage.tsx",
-      "specifier": "../../components/EmptyState",
-      "resolvedTarget": "apps/web/src/components/EmptyState.tsx",
-      "rule": "legacy-root-component"
-    },
-    {
-      "importer": "apps/web/src/pages/invoice-items/InvoiceItemsPage.tsx",
-      "specifier": "../../components/ErrorState",
-      "resolvedTarget": "apps/web/src/components/ErrorState.tsx",
-      "rule": "legacy-root-component"
-    },
-    {
-      "importer": "apps/web/src/pages/invoice-items/InvoiceItemsPage.tsx",
-      "specifier": "../../components/LoadingState",
-      "resolvedTarget": "apps/web/src/components/LoadingState.tsx",
-      "rule": "legacy-root-component"
-    },
-    {
       "importer": "apps/web/src/pages/invoice-items/InvoiceItemsPage.tsx",
       "specifier": "../../components/Modal",
       "resolvedTarget": "apps/web/src/components/Modal.tsx",
-      "rule": "legacy-root-component"
-    },
-    {
-      "importer": "apps/web/src/pages/invoice-items/InvoiceItemsPage.tsx",
-      "specifier": "../../design-system",
-      "resolvedTarget": "apps/web/src/design-system/index.ts",
-      "rule": "ds-barrel"
-    },
-    {
-      "importer": "apps/web/src/pages/invoices/InvoicesPage.tsx",
-      "specifier": "../../components/EmptyState",
-      "resolvedTarget": "apps/web/src/components/EmptyState.tsx",
-      "rule": "legacy-root-component"
-    },
-    {
-      "importer": "apps/web/src/pages/invoices/InvoicesPage.tsx",
-      "specifier": "../../components/ErrorState",
-      "resolvedTarget": "apps/web/src/components/ErrorState.tsx",
-      "rule": "legacy-root-component"
-    },
-    {
-      "importer": "apps/web/src/pages/invoices/InvoicesPage.tsx",
-      "specifier": "../../components/LoadingState",
-      "resolvedTarget": "apps/web/src/components/LoadingState.tsx",
       "rule": "legacy-root-component"
     },
     {
@@ -592,62 +154,14 @@
     },
     {
       "importer": "apps/web/src/pages/projects/ProjectsPage.tsx",
-      "specifier": "../../components/EmptyState",
-      "resolvedTarget": "apps/web/src/components/EmptyState.tsx",
-      "rule": "legacy-root-component"
-    },
-    {
-      "importer": "apps/web/src/pages/projects/ProjectsPage.tsx",
-      "specifier": "../../components/ErrorState",
-      "resolvedTarget": "apps/web/src/components/ErrorState.tsx",
-      "rule": "legacy-root-component"
-    },
-    {
-      "importer": "apps/web/src/pages/projects/ProjectsPage.tsx",
-      "specifier": "../../components/LoadingState",
-      "resolvedTarget": "apps/web/src/components/LoadingState.tsx",
-      "rule": "legacy-root-component"
-    },
-    {
-      "importer": "apps/web/src/pages/projects/ProjectsPage.tsx",
-      "specifier": "../../components/Modal",
-      "resolvedTarget": "apps/web/src/components/Modal.tsx",
-      "rule": "legacy-root-component"
-    },
-    {
-      "importer": "apps/web/src/pages/projects/ProjectsPage.tsx",
-      "specifier": "../../design-system",
-      "resolvedTarget": "apps/web/src/design-system/index.ts",
-      "rule": "ds-barrel"
-    },
-    {
-      "importer": "apps/web/src/pages/tasks/TasksPage.tsx",
       "specifier": "../../components/Modal",
       "resolvedTarget": "apps/web/src/components/Modal.tsx",
       "rule": "legacy-root-component"
     },
     {
       "importer": "apps/web/src/pages/tasks/TasksPage.tsx",
-      "specifier": "../../design-system",
-      "resolvedTarget": "apps/web/src/design-system/index.ts",
-      "rule": "ds-barrel"
-    },
-    {
-      "importer": "apps/web/src/pages/WorkflowBriefsPage.tsx",
-      "specifier": "../components/EmptyState",
-      "resolvedTarget": "apps/web/src/components/EmptyState.tsx",
-      "rule": "legacy-root-component"
-    },
-    {
-      "importer": "apps/web/src/pages/WorkflowBriefsPage.tsx",
-      "specifier": "../components/ErrorState",
-      "resolvedTarget": "apps/web/src/components/ErrorState.tsx",
-      "rule": "legacy-root-component"
-    },
-    {
-      "importer": "apps/web/src/pages/WorkflowBriefsPage.tsx",
-      "specifier": "../components/LoadingState",
-      "resolvedTarget": "apps/web/src/components/LoadingState.tsx",
+      "specifier": "../../components/Modal",
+      "resolvedTarget": "apps/web/src/components/Modal.tsx",
       "rule": "legacy-root-component"
     }
   ]

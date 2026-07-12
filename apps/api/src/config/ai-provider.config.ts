@@ -31,6 +31,17 @@ export const DEFAULT_AI_TEXT_GATEWAY: AiTextGateway = "local";
 const PREFERRED_TEXT_GATEWAY = "openrouter" as const;
 const DEFAULT_OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
 
+/**
+ * OpenRouter HTTP contract (aligned with `openrouter-text.service.ts`).
+ * No automatic retries — a single attempt times out, then fails closed with a safe error.
+ * Does not authorize live calls; live execution still requires gateway + key + model readiness.
+ */
+export const AI_OPENROUTER_HTTP_CONTRACT = {
+  timeoutMs: 20_000,
+  retryCount: 0,
+  retryPolicy: "none"
+} as const;
+
 function readEnvString(key: string): string | null {
   const value = process.env[key]?.trim();
   return value ? value : null;

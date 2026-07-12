@@ -430,6 +430,12 @@ Stop and do not claim image generation ready if:
 | **G327** | Lane report → `$env:TEMP\dca-g309-g328-image-lane-report.log`. |
 | **G328** | Remaining blockers listed in lane report (Phase C/D, persistence, owner provider lock). |
 
+### WS4 local mapping truth
+
+- Puriva scaffolds expose **3 concept roles** (`hero_header`, `supporting_education`, `lifestyle_context`).
+- Generation request set remains the canonical **4 slots** (`hero`, `supporting_1`, `supporting_2`, `social_preview`) via `PURIVA_IMAGE_ROLE_TO_GENERATION_SLOT` / `buildPurivaImageGenerationSlotSet` in `puriva-image-package.ts`.
+- Approval-loop reject/replace transitions always return `providerCalled: false` (no live provider wiring; no `ImageGenerationJob` schema in this block).
+
 **Notification taxonomy note:** G228 integrated `image_candidate_generated`, `image_admin_rejected`, `image_replacement_requested`, and `image_final_accepted` into shared taxonomy. Image lane mapping marks these as `existing`; no further taxonomy edits from this lane.
 
 **Explicit confirmations:** no live image provider · no image generation · no secrets · no schema migrations · no commit/push.

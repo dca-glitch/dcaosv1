@@ -1,5 +1,5 @@
 import React from "react";
-import { Alert, Spinner } from "../../design-system";
+import { Alert, Spinner } from "../../components/ui";
 
 export function AiDeliveryInlineLoading({ label }: { label: string }) {
   return (

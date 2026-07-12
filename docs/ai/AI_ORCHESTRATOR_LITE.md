@@ -73,6 +73,9 @@ Preview fields: workflow, client, step, agent role, provider/model, input materi
 - All provider placeholders are **disabled**
 - `local_deterministic` is the **enabled** default
 - `liveProviderCalled` is always `false` in preview/plan mode
+- Workflow dry-run adapter always returns `executionDeferred: true` (no live plan→execute wiring without owner gate)
+- Kill switch (`ai-kill-switch.service.ts`) keeps orchestrator preview-safe when any live provider is enabled
+- Preview audit redaction (`ai-local-guard-orchestrator.ts`) strips secret-like material from operator-safe previews; planned ledger carries provider/model metadata
 - Puriva monthly cap: **$100 USD**
 
 ---
@@ -81,14 +84,14 @@ Preview fields: workflow, client, step, agent role, provider/model, input materi
 
 - `ai-kill-switch.service.ts` — live flag invariant checks
 - `ai-prompt-template-registry.service.ts` — prompt template versioning
-- `ai-orchestrator-workflow-adapter.skeleton.ts` — planning bridge (no live execution)
+- `ai-orchestrator-workflow-adapter.skeleton.ts` — planning bridge (no live execution; `executionDeferred: true`)
 - `AiOrchestratorLitePanel` — admin dashboard read-only registry + preview UI
 - `smoke:ai-orchestrator-lite:local` — registry + preview smoke
 
 ## 7. Future work (deferred)
 
 - Wire trusted provider-cost ingestion for `actualCostUsd` (owner-gated; no fabricated actuals)
-- Wire orchestrator plan into workflow execution adapter **live path** (separate live proof gate)
+- Wire orchestrator plan into workflow execution adapter **live path** (separate live proof gate — **STOP: ORCHESTRATOR LIVE WIRING REQUIRES OWNER GATE**)
 - Admin editable provider settings UI
 - Live provider enablement per role (owner gate)
 - Finance Lite invoice reconciliation remains **out of scope** for AI Orchestrator Lite

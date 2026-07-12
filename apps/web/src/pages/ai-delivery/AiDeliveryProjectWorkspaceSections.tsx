@@ -1,6 +1,5 @@
 import React from "react";
-import { EmptyState } from "../../components/EmptyState";
-import { SectionPanel, StatusBadge } from "../../components/ui";
+import { EmptyState, SectionPanel, StatusBadge } from "../../components/ui";
 import type { AiDeliveryRevenueChainReadinessResponse } from "@dca-os-v1/shared";
 import type { AiDeliveryProjectSummary } from "./AiDeliveryPage";
 

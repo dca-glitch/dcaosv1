@@ -730,6 +730,10 @@ export interface NotificationChannelPolicyInput {
   eventType: NotificationEventType;
   emailProvider: NotificationEmailProvider;
   hasEmailProviderKey: boolean;
+  /**
+   * Local v1: Prisma `InAppNotification` exists — pass `true` when evaluating
+   * channel policy for inbox-capable runtimes. Email live send remains deferred.
+   */
   hasInSystemPersistence: boolean;
 }
 

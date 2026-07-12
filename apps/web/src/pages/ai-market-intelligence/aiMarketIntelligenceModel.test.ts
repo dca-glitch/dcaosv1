@@ -5,8 +5,11 @@ import {
   formatMiDateLabel,
   formatMiLastUpdatedLabel,
   formatMiResultFieldLabel,
+  isMarketIntelligenceConfidenceLabel,
   parseMiListField,
-  resolveMiLastUpdated
+  resolveMarketIntelligenceConfidenceLabel,
+  resolveMiLastUpdated,
+  validateMarketIntelligenceSourceUrl
 } from "./aiMarketIntelligenceModel";
 
 describe("MI_PROJECT_FILTER_OPTIONS", () => {
@@ -89,5 +92,15 @@ describe("filterMiProjects", () => {
     expect(filterMiProjects(projects, "active").map((p) => p.id)).toEqual(["a"]);
     expect(filterMiProjects(projects, "archived").map((p) => p.id)).toEqual(["b"]);
     expect(filterMiProjects(projects, "all").map((p) => p.id)).toEqual(["a", "b"]);
+  });
+});
+
+describe("MI structured confidence + source URL helpers", () => {
+  it("exposes enum confidence labels and rejects free-text as labels", () => {
+    expect(isMarketIntelligenceConfidenceLabel("medium")).toBe(true);
+    expect(isMarketIntelligenceConfidenceLabel("pretty sure")).toBe(false);
+    expect(resolveMarketIntelligenceConfidenceLabel("nope")).toBe("unreviewed");
+    expect(validateMarketIntelligenceSourceUrl("javascript:alert(1)").ok).toBe(false);
+    expect(validateMarketIntelligenceSourceUrl("https://example.test/a").ok).toBe(true);
   });
 });

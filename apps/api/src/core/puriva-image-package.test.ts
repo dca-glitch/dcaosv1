@@ -5,14 +5,18 @@ import { buildPurivaContentProductionContext } from "./puriva-content-production
 import { buildPurivaSeoPlanContext } from "./puriva-seo-plan";
 import {
   assessPurivaImagePackageComplianceAlignment,
+  buildPurivaImageGenerationSlotSet,
   buildPurivaImagePackageContext,
   buildPurivaWorkflowBriefImagePackageInput,
   buildAiDeliveryArticleImageRequestsFromImagePackage,
   findUnsafeVisualPhrasesInImagePackage,
   getPurivaImagePackageSeed,
   isPurivaImagePackageBriefAttachment,
+  mapPurivaImageConceptRoleToGenerationSlot,
+  PURIVA_IMAGE_GENERATION_SLOT_SET,
   PURIVA_IMAGE_INTERNAL_PROMPT_LABEL,
   PURIVA_IMAGE_PACKAGE_VERSION,
+  PURIVA_IMAGE_ROLE_TO_GENERATION_SLOT,
   validatePurivaImagePackageContext,
   workflowBriefImagePackageMatches
 } from "./puriva-image-package";
@@ -136,5 +140,28 @@ describe("puriva-image-package", () => {
     assert.equal(alignment.finalReadyAlwaysBlocked, true);
     assert.equal(alignment.liveGenerationAllowed, false);
     assert.ok(alignment.conceptCountChecked > 0);
+  });
+
+  it("maps Puriva 3 concept roles onto the explicit 4-slot generation set including social_preview", () => {
+    assert.deepEqual(PURIVA_IMAGE_ROLE_TO_GENERATION_SLOT, {
+      hero_header: "hero",
+      supporting_education: "supporting_1",
+      lifestyle_context: "supporting_2"
+    });
+    assert.equal(mapPurivaImageConceptRoleToGenerationSlot("hero_header"), "hero");
+    assert.equal(mapPurivaImageConceptRoleToGenerationSlot("supporting_education"), "supporting_1");
+    assert.equal(mapPurivaImageConceptRoleToGenerationSlot("lifestyle_context"), "supporting_2");
+    assert.deepEqual(buildPurivaImageGenerationSlotSet(), [
+      "hero",
+      "supporting_1",
+      "supporting_2",
+      "social_preview"
+    ]);
+    assert.deepEqual([...PURIVA_IMAGE_GENERATION_SLOT_SET], [
+      "hero",
+      "supporting_1",
+      "supporting_2",
+      "social_preview"
+    ]);
   });
 });

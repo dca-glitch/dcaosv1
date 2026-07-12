@@ -1,7 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { EmptyState } from "../../components/EmptyState";
-import { Button, PageHeader, SectionPanel } from "../../components/ui";
-import { Alert, Spinner } from "../../design-system";
+import { Alert, Button, EmptyState, PageHeader, SectionPanel, Spinner } from "../../components/ui";
 import { ClientPortalStatusBadge } from "./ClientPortalStatusBadge";
 import {
   clientPortalApiRequest,

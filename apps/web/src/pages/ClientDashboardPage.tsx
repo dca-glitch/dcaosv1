@@ -1,8 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { EmptyState } from "../components/EmptyState";
-import { LoadingState } from "../components/LoadingState";
-import { Badge, Button, MetricCard, PageHeader, SectionPanel } from "../components/ui";
-import { Alert } from "../design-system";
+import { Alert, Badge, Button, EmptyState, LoadingState, MetricCard, PageHeader, SectionPanel } from "../components/ui";
 import {
   buildClientDashboardAttentionItems,
   buildClientDashboardKpis,

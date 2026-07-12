@@ -9,6 +9,7 @@ import {
   buildAiDeliveryWordPressDraftPayload,
   buildWordPressCredentialPolicyMetadata,
   buildWordPressCredentialPolicyShape,
+  evaluateWordPressDraftPrepPreconditions,
   isAiDeliveryWordPressPublishFrozen,
   isWordPressDraftStatusFrozen,
   publishAiDeliveryDeliverableToWordPress,
@@ -275,6 +276,46 @@ describe("wordpress.service", () => {
       assert.equal(result.status, "error");
       assert.equal(result.ok, false);
       assert.ok(result.errorMessage);
+    });
+  });
+
+  describe("accepted content + accepted images draft-prep preconditions", () => {
+    it("requires accepted content and accepted hero before local draft prep", () => {
+      const blocked = evaluateWordPressDraftPrepPreconditions({
+        content: { contentAccepted: false, title: "T", body: "B" },
+        imageCandidates: []
+      });
+      assert.equal(blocked.ok, false);
+      assert.equal(blocked.liveHttpFrozen, true);
+      assert.equal(blocked.postStatus, "draft");
+      assert.ok(blocked.errors.some((e) => /Accepted content/i.test(e)));
+
+      const noHero = evaluateWordPressDraftPrepPreconditions({
+        content: { contentAccepted: true, title: "Accepted title", body: "Accepted body" },
+        imageCandidates: [
+          {
+            slot: "supporting_1",
+            acceptance: "accepted",
+            reference: "asset-supporting-1"
+          }
+        ]
+      });
+      assert.equal(noHero.ok, false);
+      assert.ok(noHero.errors.some((e) => /hero/i.test(e)));
+
+      const ready = evaluateWordPressDraftPrepPreconditions({
+        content: { contentAccepted: true, title: "Accepted title", body: "Accepted body" },
+        imageCandidates: [
+          { slot: "hero", acceptance: "accepted", reference: "asset-hero" },
+          { slot: "social_preview", acceptance: "accepted", reference: "asset-social" }
+        ]
+      });
+      assert.equal(ready.ok, true);
+      assert.equal(ready.contentAccepted, true);
+      assert.equal(ready.imagesAccepted, true);
+      assert.equal(ready.liveHttpFrozen, true);
+      assert.equal(ready.postStatus, "draft");
+      assert.ok(ready.checks.includes("INVARIANT:draft_prep_ready_local"));
     });
   });
 

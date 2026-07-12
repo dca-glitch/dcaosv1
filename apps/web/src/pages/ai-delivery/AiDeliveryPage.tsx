@@ -1,7 +1,6 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { EmptyState } from "../../components/EmptyState";
 import { Modal } from "../../components/Modal";
-import { Button, PageHeader } from "../../components/ui";
+import { Button, EmptyState, PageHeader } from "../../components/ui";
 import type { ClientSummary } from "../clients/ClientsPage";
 import type { ProjectSummary as ProjectLinkSummary } from "../projects/ProjectsPage";
 import { MonthlyReportPanel } from "./MonthlyReportPanel";
@@ -37,377 +36,100 @@ import type {
   AiDeliveryMonthlyReportMiContext
 } from "./MonthlyReportPanel";
 import type { MarketIntelligenceHandoffSummary, AiDeliveryMiSummaryContextSummary, AiDeliveryRevenueChainReadinessResponse } from "@dca-os-v1/shared";
-import { formatAiDeliveryDeliverableStatusLabel } from "@dca-os-v1/shared";
 
-export type AiDeliveryBriefSummary = {
-  id: string;
-  status: string;
-  createdAt: string;
-  updatedAt: string;
-  revisionCount?: number;
-};
+export type {
+  AiDeliveryArticleImageFormValues,
+  AiDeliveryArticleImageSummary,
+  AiDeliveryBriefSummary,
+  AiDeliveryContentDraftFormValues,
+  AiDeliveryContentDraftSummary,
+  AiDeliveryContentPlanFormValues,
+  AiDeliveryContentPlanItemSummary,
+  AiDeliveryContentPlanSummary,
+  AiDeliveryDeliverableFormValues,
+  AiDeliveryDeliverableReviewFormValues,
+  AiDeliveryDeliverableReviewSummary,
+  AiDeliveryDeliverableSummary,
+  AiDeliveryGoogleDocExportResult,
+  AiDeliveryPrivateAssetUploadValues,
+  AiDeliveryProjectFormValues,
+  AiDeliveryProjectSummary,
+  AiDeliveryProjectsProps,
+  AiDeliveryResearchRequestFormValues,
+  AiDeliveryResearchRequestSummary,
+  AiDeliveryResearchSourceFormValues,
+  AiDeliveryResearchSourceSummary,
+  AiDeliveryResearchSummaryFormValues,
+  AiDeliveryResearchSummarySummary,
+  AiDeliveryWordPressPreparedDraft,
+  AiDeliveryWordPressPublishResult,
+  AiDeliveryWorkflowRunFormValues,
+  AiDeliveryWorkflowRunSummary,
+  ContentPlanItemDraft,
+  WorkflowRunResultPreview
+} from "./ai-delivery-types";
 
-export type AiDeliveryProjectSummary = {
-  id: string;
-  clientId: string;
-  client: { id: string; name: string } | null;
-  projectId: string | null;
-  project: { id: string; name: string } | null;
-  name: string;
-  targetMonth: string;
-  plannedContentScopeNotes: string | null;
-  isArchived: boolean;
-  brief: AiDeliveryBriefSummary | null;
-  createdAt: string;
-  updatedAt: string;
-};
+import type {
+  AiDeliveryArticleImageFormValues,
+  AiDeliveryArticleImageSummary,
+  AiDeliveryContentDraftFormValues,
+  AiDeliveryContentDraftSummary,
+  AiDeliveryContentPlanItemSummary,
+  AiDeliveryContentPlanSummary,
+  AiDeliveryDeliverableFormValues,
+  AiDeliveryDeliverableReviewFormValues,
+  AiDeliveryDeliverableReviewSummary,
+  AiDeliveryDeliverableSummary,
+  AiDeliveryGoogleDocExportResult,
+  AiDeliveryProjectFormValues,
+  AiDeliveryProjectSummary,
+  AiDeliveryProjectsProps,
+  AiDeliveryPublicationTargetOption,
+  AiDeliveryResearchRequestFormValues,
+  AiDeliveryResearchRequestSummary,
+  AiDeliveryResearchSourceFormValues,
+  AiDeliveryResearchSourceSummary,
+  AiDeliveryResearchSummaryFormValues,
+  AiDeliveryResearchSummarySummary,
+  AiDeliveryWordPressPreparedDraft,
+  AiDeliveryWordPressPublishResult,
+  AiDeliveryWorkflowRunFormValues,
+  AiDeliveryWorkflowRunSummary,
+  ClientPublicationLogSummary,
+  ContentPlanItemDraft,
+  PublicationTargetCredentialStatus,
+  WordPressPublishConfirmState
+} from "./ai-delivery-types";
 
-export type AiDeliveryProjectFormValues = {
-  clientId: string;
-  projectId: string | null;
-  name: string;
-  targetMonth: string;
-  plannedContentScopeNotes: string;
-};
+import {
+  canExecuteWorkflowRun,
+  getWorkflowRunNextStatus,
+  getWorkflowRunStatusHelper,
+  getWorkflowRunStatusOptions,
+  normalizeWorkflowRunStatus,
+  workflowRunStatusLabels
+} from "./ai-delivery-workflow-run-helpers";
 
-export type AiDeliveryContentPlanItemSummary = {
-  id?: string;
-  title: string;
-  targetKeyword: string | null;
-  contentType: string | null;
-  notes: string | null;
-  sortOrder: number;
-  approvalStatus?: string | null;
-  clientComment?: string | null;
-  createdAt?: string;
-  updatedAt?: string;
-};
+import {
+  canPackageApprovedArticleImage,
+  canPackageApprovedContentDraft,
+  deliverableFormHasReadyLinks,
+  deliverableStatusNeedsApprovedLinks,
+  formatArticleImageStatus,
+  formatContentDraftStatus,
+  formatContentPlanItemApprovalStatus,
+  formatContentPlanReviewStatus,
+  formatDeliverableStatus,
+  formatEnumLabel,
+  formatOptionalDate,
+  formatPreview,
+  formatStatusBreakdown,
+  getDeliverableExportState,
+  getErrorMessage,
+  getMostRecentReview,
+  parseWorkflowRunResultPreview
+} from "./ai-delivery-formatters";
 
-export type AiDeliveryContentPlanSummary = {
-  id: string;
-  aiDeliveryProjectId: string;
-  status: string;
-  revisionCount: number;
-  reviewRequestedAt: string | null;
-  approvedAt: string | null;
-  items: AiDeliveryContentPlanItemSummary[];
-  createdAt: string;
-  updatedAt: string;
-};
-
-export type AiDeliveryContentPlanFormValues = {
-  items: Array<{
-    title: string;
-    targetKeyword?: string | null;
-    contentType?: string | null;
-    notes?: string | null;
-    sortOrder: number;
-    approvalStatus?: string | null;
-    clientComment?: string | null;
-  }>;
-};
-
-export type AiDeliveryContentDraftSummary = {
-  id: string;
-  aiDeliveryProjectId: string;
-  contentPlanItemId: string | null;
-  contentPlanItem: { id: string; title: string; sortOrder: number } | null;
-  title: string;
-  slug: string | null;
-  draftBody: string;
-  status: string;
-  notes: string | null;
-  reviewRequestedAt: string | null;
-  approvedAt: string | null;
-  revisionCount: number;
-  clientComment: string | null;
-  isArchived: boolean;
-  createdAt: string;
-  updatedAt: string;
-};
-
-export type AiDeliveryContentDraftFormValues = {
-  contentPlanItemId: string | null;
-  title: string;
-  slug: string;
-  draftBody: string;
-  status: string;
-  notes: string;
-};
-
-export type AiDeliveryArticleImageSummary = {
-  id: string;
-  aiDeliveryProjectId: string;
-  contentDraftId: string;
-  contentDraft: { id: string; title: string };
-  title: string;
-  prompt: string;
-  styleNotes: string | null;
-  status: string;
-  previewImageUrl: string | null;
-  finalImageUrl: string | null;
-  hasDocument: boolean;
-  notes: string | null;
-  isArchived: boolean;
-  createdAt: string;
-  updatedAt: string;
-};
-
-export type AiDeliveryArticleImageFormValues = {
-  contentDraftId: string;
-  title: string;
-  prompt: string;
-  styleNotes: string;
-  status: string;
-  previewImageUrl: string;
-  finalImageUrl: string;
-  storageKey: string;
-  notes: string;
-};
-
-export type AiDeliveryPrivateAssetUploadValues = {
-  file: File;
-};
-
-export type AiDeliveryDeliverableSummary = {
-  id: string;
-  aiDeliveryProjectId: string;
-  contentDraftId?: string | null;
-  articleImageId?: string | null;
-  contentDraft?: { id: string; title: string; status: string; approvedAt?: string | null } | null;
-  articleImage?: { id: string; title: string; status: string } | null;
-  title: string;
-  description?: string | null;
-  deliveryType: string;
-  status: string;
-  exportUrl?: string | null;
-  hasDocument: boolean;
-  notes?: string | null;
-  isArchived: boolean;
-  createdAt: string;
-  updatedAt: string;
-};
-
-export type AiDeliveryDeliverableFormValues = {
-  contentDraftId: string | null;
-  articleImageId: string | null;
-  title: string;
-  description?: string | null;
-  deliveryType: string;
-  status: string;
-  exportUrl?: string | null;
-  storageKey?: string | null;
-  notes?: string | null;
-  isArchived?: boolean;
-};
-
-export type AiDeliveryWordPressPreparedDraft = {
-  status: "PREPARED";
-  title: string;
-  body: string;
-  excerpt: string | null;
-  sourceType: "DELIVERABLE" | "CONTENT_DRAFT";
-  sourceId: string;
-  slug?: string | null;
-  postStatus?: "draft";
-  externalPostId: null;
-  externalEditUrl: null;
-  publicationTargetId?: string;
-  publicationTargetLabel?: string;
-  publicationSiteUrl?: string;
-  publishGateStatus?: "disabled" | "credentials_missing" | "target_configured";
-  credentialConfigured?: boolean;
-  note: string;
-};
-
-export type AiDeliveryWordPressPublishResult = {
-  ok: boolean;
-  wordpressPostId: string | null;
-  wordpressPostUrl: string | null;
-  wordpressEditUrl: string | null;
-  status: "published" | "draft_prepared" | "provider_disabled" | "error";
-  errorMessage: string | null;
-  providerDisabledReason?: string;
-};
-
-type AiDeliveryPublicationTargetOption = {
-  id: string;
-  label: string;
-  siteUrl: string;
-  isDefault: boolean;
-};
-
-type ClientPublicationLogSummary = {
-  id: string;
-  action: string;
-  status: string;
-  siteUrlHost: string | null;
-  aiDeliveryProjectId: string | null;
-  deliverableId: string | null;
-  createdAt: string;
-  note: string | null;
-};
-
-type PublicationTargetCredentialStatus = {
-  configured: boolean;
-  encryptionAvailable: boolean;
-};
-
-type WordPressPublishConfirmState = {
-  projectId: string;
-  deliverableId: string;
-  deliverableTitle: string;
-};
-
-export type AiDeliveryGoogleDocExportResult = {
-  deliverableId: string;
-  hasGoogleDocExport: boolean;
-  exportUrl: string | null;
-  docTitle: string | null;
-  folderPath: string | null;
-  providerStatus: "exported" | "provider_disabled" | "provider_not_configured" | "error";
-  providerDisabledReason?: string | null;
-  errorMessage: string | null;
-  generatedAt: string | null;
-};
-
-export type AiDeliveryDeliverableReviewSummary = {
-  id: string;
-  tenantId?: string;
-  aiDeliveryProjectId: string;
-  deliverableId: string;
-  workflowRunId?: string | null;
-  status: string;
-  reviewerName?: string | null;
-  reviewNotes?: string | null;
-  createdAt: string;
-  updatedAt: string;
-};
-
-export type AiDeliveryDeliverableReviewFormValues = {
-  status: string;
-  reviewerName: string;
-  reviewNotes: string;
-};
-
-export type AiDeliveryWorkflowRunSummary = {
-  id: string;
-  tenantId: string;
-  aiDeliveryProjectId: string;
-  status: string;
-  adminNotes: string | null;
-  resultPlaceholder: string | null;
-  executionLog: string | null;
-  executionError: string | null;
-  startedAt: string | null;
-  finishedAt: string | null;
-  brief: AiDeliveryBriefSummary | null;
-  createdAt: string;
-  updatedAt: string;
-};
-
-export type AiDeliveryWorkflowRunFormValues = {
-  status: string;
-  adminNotes: string;
-  resultPlaceholder: string;
-};
-
-export type AiDeliveryResearchRequestSummary = {
-  id: string;
-  tenantId: string;
-  aiDeliveryProjectId: string;
-  workflowRunId: string | null;
-  workflowRun: { id: string; status: string } | null;
-  title: string;
-  description: string | null;
-  requestType: string | null;
-  status: string;
-  createdAt: string;
-  updatedAt: string;
-};
-
-export type AiDeliveryResearchRequestFormValues = {
-  workflowRunId: string | null;
-  title: string;
-  description: string;
-  requestType: string;
-  status: string;
-};
-
-export type AiDeliveryResearchSummarySummary = {
-  id: string;
-  tenantId: string;
-  aiDeliveryProjectId: string;
-  workflowRunId: string | null;
-  workflowRun: { id: string; status: string } | null;
-  title: string;
-  status: string;
-  summaryText: string;
-  keyFindings: string | null;
-  audienceInsights: string | null;
-  competitorInsights: string | null;
-  keywordOpportunities: string | null;
-  contentRecommendations: string | null;
-  briefRevisionNotes: string | null;
-  sourceNotes: string | null;
-  finalizedAt: string | null;
-  createdAt: string;
-  updatedAt: string;
-};
-
-export type AiDeliveryResearchSummaryFormValues = {
-  workflowRunId: string | null;
-  title: string;
-  status: string;
-  summaryText: string;
-  keyFindings: string;
-  audienceInsights: string;
-  competitorInsights: string;
-  keywordOpportunities: string;
-  contentRecommendations: string;
-  briefRevisionNotes: string;
-  sourceNotes: string;
-};
-
-type WorkflowRunResultPreview = {
-  version: string | null;
-  gateway: string | null;
-  model: string | null;
-  outputType: string | null;
-  title: string | null;
-  summary: string | null;
-  generatedAt: string | null;
-  safeError: string | null;
-};
-
-export type AiDeliveryResearchSourceSummary = {
-  id: string;
-  tenantId: string;
-  aiDeliveryProjectId: string;
-  researchRequestId: string | null;
-  workflowRunId: string | null;
-  researchRequest: { id: string; title: string; status: string } | null;
-  workflowRun: { id: string; status: string } | null;
-  sourceUrl: string;
-  sourceTitle: string | null;
-  sourceType: string;
-  status: string;
-  reviewNotes: string | null;
-  createdAt: string;
-  updatedAt: string;
-};
-
-export type AiDeliveryResearchSourceFormValues = {
-  researchRequestId: string | null;
-  workflowRunId: string | null;
-  sourceUrl: string;
-  sourceTitle: string;
-  sourceType: string;
-  status: string;
-  reviewNotes: string;
-};
-
-type ContentPlanItemDraft = AiDeliveryContentPlanItemDraft;
 
 const CONTENT_PLAN_SEARCH_INTENT_PREFIX = /^\[search-intent:([a-z_]+)\]\s*(?:\n|$)/i;
 
@@ -432,162 +154,6 @@ function composeNotesWithSearchIntent(searchIntent: string, notesBody: string): 
 
   const prefix = `[search-intent:${normalizedIntent}]`;
   return normalizedNotes ? `${prefix}\n${normalizedNotes}` : prefix;
-}
-
-export type AiDeliveryProjectsProps = {
-  projects: AiDeliveryProjectSummary[];
-  clients: ClientSummary[];
-  projectsList: ProjectLinkSummary[];
-  canEdit: boolean;
-  loading: boolean;
-  error: string | null;
-  onArchive: (projectId: string) => Promise<boolean>;
-  onSave: (projectId: string | null, values: AiDeliveryProjectFormValues) => Promise<boolean>;
-  onRequestClientInput: (projectId: string) => Promise<boolean>;
-  onRequestClientRevision: (projectId: string) => Promise<boolean>;
-  onApproveFinal: (projectId: string) => Promise<boolean>;
-  onFetchBrief?: (projectId: string) => Promise<null | {
-    id: string;
-    status: string;
-    clientPriorities: string | null;
-    productsServicesFocus: string | null;
-    targetAudience: string | null;
-    marketsCompetitors: string | null;
-    notes: string | null;
-    revisionCount: number;
-    submittedAt: string | null;
-    revisionRequestedAt: string | null;
-    revisedAt: string | null;
-    approvedAt: string | null;
-    createdAt: string;
-    updatedAt: string;
-  }>;
-  onSaveBrief?: (projectId: string, values: {
-    clientPriorities?: string | null;
-    productsServicesFocus?: string | null;
-    targetAudience?: string | null;
-    marketsCompetitors?: string | null;
-    notes?: string | null;
-  }) => Promise<boolean>;
-  onFetchContentPlan?: (projectId: string) => Promise<AiDeliveryContentPlanSummary | null>;
-  onCreateContentPlan?: (projectId: string) => Promise<AiDeliveryContentPlanSummary | null>;
-  onSaveContentPlan?: (projectId: string, values: AiDeliveryContentPlanFormValues) => Promise<AiDeliveryContentPlanSummary | null>;
-  onRequestContentPlanReview?: (projectId: string) => Promise<AiDeliveryContentPlanSummary | null>;
-  onApproveContentPlan?: (projectId: string) => Promise<AiDeliveryContentPlanSummary | null>;
-  onRequestContentPlanChanges?: (projectId: string) => Promise<AiDeliveryContentPlanSummary | null>;
-  onGenerateContentPlanPdf?: (projectId: string) => Promise<{ contentPlanId: string; hasDocument: boolean; generatedAt: string; fileName: string } | null>;
-  onDownloadContentPlanDocument?: (projectId: string) => Promise<{ downloadUrl: string } | null>;
-  onFetchContentDrafts?: (projectId: string) => Promise<AiDeliveryContentDraftSummary[]>;
-  onSaveContentDraft?: (projectId: string, draftId: string | null, values: AiDeliveryContentDraftFormValues) => Promise<AiDeliveryContentDraftSummary | null>;
-  onArchiveContentDraft?: (projectId: string, draftId: string) => Promise<AiDeliveryContentDraftSummary | null>;
-  onRequestContentDraftReview?: (projectId: string, draftId: string) => Promise<AiDeliveryContentDraftSummary | null>;
-  onReturnContentDraftToDraft?: (projectId: string, draftId: string) => Promise<AiDeliveryContentDraftSummary | null>;
-  onFetchArticleImages?: (projectId: string) => Promise<AiDeliveryArticleImageSummary[]>;
-  onSaveArticleImage?: (projectId: string, imageId: string | null, values: AiDeliveryArticleImageFormValues) => Promise<AiDeliveryArticleImageSummary | null>;
-  onArchiveArticleImage?: (projectId: string, imageId: string) => Promise<AiDeliveryArticleImageSummary | null>;
-  onUploadArticleImageFinalAsset?: (projectId: string, imageId: string, values: AiDeliveryPrivateAssetUploadValues) => Promise<AiDeliveryArticleImageSummary | null>;
-  onOpenArticleImage?: (projectId: string, imageId: string) => Promise<boolean>;
-  onMarkArticleImagePreviewReady?: (projectId: string, imageId: string) => Promise<AiDeliveryArticleImageSummary | null>;
-  onRequestArticleImageChanges?: (projectId: string, imageId: string) => Promise<AiDeliveryArticleImageSummary | null>;
-  onApproveArticleImage?: (projectId: string, imageId: string) => Promise<AiDeliveryArticleImageSummary | null>;
-  onMarkArticleImageFinalReady?: (projectId: string, imageId: string) => Promise<AiDeliveryArticleImageSummary | null>;
-  onFetchDeliverables?: (projectId: string) => Promise<AiDeliveryDeliverableSummary[]>;
-  onSaveDeliverable?: (projectId: string, deliverableId: string | null, values: AiDeliveryDeliverableFormValues) => Promise<AiDeliveryDeliverableSummary | null>;
-  onUploadDeliverableDocument?: (projectId: string, deliverableId: string, values: AiDeliveryPrivateAssetUploadValues) => Promise<AiDeliveryDeliverableSummary | null>;
-  onOpenDeliverableDocument?: (projectId: string, deliverableId: string) => Promise<boolean>;
-  onArchiveDeliverable?: (projectId: string, deliverableId: string) => Promise<boolean>;
-  onRestoreDeliverable?: (projectId: string, deliverableId: string) => Promise<AiDeliveryDeliverableSummary | null>;
-  onMarkDeliverableReady?: (projectId: string, deliverableId: string) => Promise<AiDeliveryDeliverableSummary | null>;
-  onRequestDeliverableRevision?: (projectId: string, deliverableId: string) => Promise<AiDeliveryDeliverableSummary | null>;
-  onAcceptDeliverable?: (projectId: string, deliverableId: string) => Promise<AiDeliveryDeliverableSummary | null>;
-  onFetchDeliverableReviews?: (projectId: string, deliverableId: string) => Promise<AiDeliveryDeliverableReviewSummary[]>;
-  onSaveDeliverableReview?: (projectId: string, deliverableId: string, reviewId: string | null, values: AiDeliveryDeliverableReviewFormValues) => Promise<AiDeliveryDeliverableReviewSummary | null>;
-  onFetchWorkflowRuns?: (projectId: string) => Promise<AiDeliveryWorkflowRunSummary[]>;
-  onSaveWorkflowRun?: (projectId: string, workflowRunId: string | null, values: AiDeliveryWorkflowRunFormValues) => Promise<AiDeliveryWorkflowRunSummary | null>;
-  onExecuteWorkflowRun?: (projectId: string, workflowRunId: string, input?: { contentPlanItemId?: string | null }) => Promise<AiDeliveryWorkflowRunSummary | null>;
-  onFetchResearchRequests?: (projectId: string) => Promise<AiDeliveryResearchRequestSummary[]>;
-  onSaveResearchRequest?: (projectId: string, researchRequestId: string | null, values: AiDeliveryResearchRequestFormValues) => Promise<AiDeliveryResearchRequestSummary | null>;
-  onFetchResearchSummaries?: (projectId: string) => Promise<AiDeliveryResearchSummarySummary[]>;
-  onSaveResearchSummary?: (projectId: string, researchSummaryId: string | null, values: AiDeliveryResearchSummaryFormValues) => Promise<AiDeliveryResearchSummarySummary | null>;
-  onApplyResearchSummaryToBrief?: (projectId: string, researchSummaryId: string) => Promise<{ researchSummary: AiDeliveryResearchSummarySummary | null; brief: { id: string; notes: string | null; updatedAt: string } | null } | null>;
-  onFetchResearchSources?: (projectId: string, researchRequestId?: string | null) => Promise<AiDeliveryResearchSourceSummary[]>;
-  onSaveResearchSource?: (projectId: string, researchSourceId: string | null, values: AiDeliveryResearchSourceFormValues) => Promise<AiDeliveryResearchSourceSummary | null>;
-  onFetchMonthlyComputedSummary?: (projectId: string) => Promise<AiDeliveryMonthlySummaryData | null>;
-  onFetchMonthlyReport?: (projectId: string) => Promise<AiDeliveryMonthlyReportData | null>;
-  onFetchMonthlyMetrics?: (reportId: string) => Promise<AiDeliveryMonthlyMetricsSummary | null>;
-  onCreateMonthlyReport?: (projectId: string) => Promise<AiDeliveryMonthlyReportData | null>;
-  onUpdateMonthlyReport?: (reportId: string, values: AiDeliveryMonthlyReportFormValues) => Promise<AiDeliveryMonthlyReportData | null>;
-  onSetMonthlyReportStatus?: (reportId: string, status: string) => Promise<AiDeliveryMonthlyReportData | null>;
-  onArchiveMonthlyReport?: (reportId: string) => Promise<AiDeliveryMonthlyReportData | null>;
-  onRestoreMonthlyReport?: (reportId: string) => Promise<AiDeliveryMonthlyReportData | null>;
-  onGenerateMonthlyReportPdf?: (reportId: string) => Promise<AiDeliveryMonthlyReportGeneratePdfSummary | null>;
-  onUploadMonthlyReportDocument?: (reportId: string, file: File) => Promise<AiDeliveryMonthlyReportData | null>;
-  onDownloadMonthlyReportDocument?: (reportId: string) => Promise<{ downloadUrl: string } | null>;
-  onImportMonthlyMetrics?: (reportId: string, values: MonthlyMetricSnapshotFormValues) => Promise<AiDeliveryMonthlyMetricSnapshotSummary | null>;
-  onApproveMonthlyMetricSnapshot?: (reportId: string, snapshotId: string) => Promise<AiDeliveryMonthlyMetricSnapshotSummary | null>;
-  onArchiveMonthlyMetricSnapshot?: (reportId: string, snapshotId: string) => Promise<AiDeliveryMonthlyMetricSnapshotSummary | null>;
-  onFetchMiContext?: (projectId: string) => Promise<MarketIntelligenceHandoffSummary[]>;
-  onApplyMiHandoff?: (projectId: string, handoffId: string) => Promise<MarketIntelligenceHandoffSummary[]>;
-  onRemoveMiHandoff?: (projectId: string, handoffId: string) => Promise<MarketIntelligenceHandoffSummary[]>;
-  onFetchMonthlyReportMiContext?: (reportId: string) => Promise<AiDeliveryMonthlyReportMiContext | null>;
-  onApplyMiHandoffToMonthlyReport?: (reportId: string, handoffId: string) => Promise<AiDeliveryMonthlyReportMiContext | null>;
-  onUpdateMonthlyReportMiContextDraft?: (reportId: string, draft: string) => Promise<AiDeliveryMonthlyReportMiContext | null>;
-  onRemoveMiHandoffFromMonthlyReport?: (reportId: string) => Promise<AiDeliveryMonthlyReportMiContext | null>;
-  onFetchKnowledgeItems?: (projectId: string) => Promise<import("@dca-os-v1/shared").AiKnowledgeItemSummary[]>;
-  onCreateKnowledgeItem?: (input: import("@dca-os-v1/shared").AiKnowledgeItemInputRequest) => Promise<import("@dca-os-v1/shared").AiKnowledgeItemSummary | null>;
-  onUpdateKnowledgeItem?: (id: string, input: import("@dca-os-v1/shared").AiKnowledgeItemInputRequest) => Promise<import("@dca-os-v1/shared").AiKnowledgeItemSummary | null>;
-  onPreviewAiContext?: (input: import("@dca-os-v1/shared").AiContextPreviewInputRequest) => Promise<import("@dca-os-v1/shared").AiContextPreviewResponse | null>;
-};
-
-const workflowRunStatuses = ["DRAFT", "READY", "IN_PROGRESS", "REVIEW", "COMPLETED", "FAILED", "ARCHIVED"] as const;
-const workflowRunLifecycleStatuses = ["DRAFT", "READY", "IN_PROGRESS", "REVIEW", "COMPLETED", "ARCHIVED"] as const;
-type WorkflowRunStatus = (typeof workflowRunStatuses)[number];
-const workflowRunStatusLabels: Record<WorkflowRunStatus, string> = {
-  DRAFT: "Draft",
-  READY: "Ready",
-  IN_PROGRESS: "In progress",
-  REVIEW: "Review",
-  COMPLETED: "Completed",
-  FAILED: "Failed",
-  ARCHIVED: "Archived"
-};
-
-function normalizeWorkflowRunStatus(status: string | null | undefined): WorkflowRunStatus {
-  return workflowRunStatuses.includes(status as WorkflowRunStatus) ? (status as WorkflowRunStatus) : "DRAFT";
-}
-
-function getWorkflowRunNextStatus(status: string | null | undefined): WorkflowRunStatus | null {
-  const currentIndex = workflowRunLifecycleStatuses.indexOf(normalizeWorkflowRunStatus(status) as (typeof workflowRunLifecycleStatuses)[number]);
-  return currentIndex >= 0 && currentIndex < workflowRunLifecycleStatuses.length - 1 ? workflowRunLifecycleStatuses[currentIndex + 1] : null;
-}
-
-function getWorkflowRunStatusOptions(status: string | null | undefined): WorkflowRunStatus[] {
-  if (!status) return ["DRAFT"];
-  const currentStatus = normalizeWorkflowRunStatus(status);
-  if (currentStatus === "FAILED") {
-    return ["FAILED", "ARCHIVED"];
-  }
-  const nextStatus = getWorkflowRunNextStatus(currentStatus);
-  const options: WorkflowRunStatus[] = nextStatus ? [currentStatus, nextStatus] : [currentStatus];
-  if (currentStatus === "IN_PROGRESS" || currentStatus === "REVIEW") {
-    options.push("FAILED");
-  }
-  return options;
-}
-
-function getWorkflowRunStatusHelper(status: string | null | undefined): string {
-  if (!status) return "New workflow runs start in Draft.";
-  const currentStatus = normalizeWorkflowRunStatus(status);
-  if (currentStatus === "FAILED") return "Failed runs can be archived or rerun through the controlled stub execution action.";
-  const nextStatus = getWorkflowRunNextStatus(currentStatus);
-  const failedNote = currentStatus === "IN_PROGRESS" || currentStatus === "REVIEW" ? " You can also mark the run as Failed." : "";
-  if (!nextStatus) return `No further status transitions are available. Same-status save is allowed for notes/result edits.${failedNote}`;
-  return `Allowed next status: ${workflowRunStatusLabels[nextStatus]}. Same-status save is allowed for notes/result edits.${failedNote}`;
-}
-
-function canExecuteWorkflowRun(status: string | null | undefined): boolean {
-  const currentStatus = normalizeWorkflowRunStatus(status);
-  return currentStatus === "DRAFT" || currentStatus === "READY" || currentStatus === "FAILED";
 }
 
 const emptyForm = (clientId = ""): AiDeliveryProjectFormValues => ({
@@ -700,198 +266,6 @@ const researchSummaryFormFromSummary = (summary: AiDeliveryResearchSummarySummar
   briefRevisionNotes: summary.briefRevisionNotes ?? "",
   sourceNotes: summary.sourceNotes ?? ""
 });
-
-function formatOptionalDate(value: string | null | undefined): string {
-  return value ? new Date(value).toLocaleString() : "Not set";
-}
-
-function formatPreview(value: string | null | undefined): string {
-  const text = (value ?? "").trim();
-  if (!text) return "Not set";
-  return text.length > 160 ? `${text.slice(0, 157)}...` : text;
-}
-
-function formatContentPlanReviewStatus(plan: AiDeliveryContentPlanSummary | null): string {
-  if (!plan) return "Pending / not requested";
-  if (plan.status === "CLIENT_REVIEW_REQUESTED") return "Ready for review";
-  if (plan.status === "CLIENT_APPROVED") return "Approved";
-  if (plan.status === "CLIENT_CHANGES_REQUESTED") return "Changes requested";
-  return "Draft / preparing";
-}
-
-function formatContentPlanItemApprovalStatus(value?: string | null): string {
-  if (!value || value === "DRAFT") return "Planned";
-  if (value === "CLIENT_APPROVED") return "Approved";
-  if (value === "CLIENT_CHANGES_REQUESTED") return "Changes requested";
-  return formatEnumLabel(value);
-}
-
-function formatContentDraftStatus(value?: string | null): string {
-  if (!value || value === "DRAFT") return "Draft / preparing";
-  if (value === "READY_FOR_REVIEW") return "Ready for review";
-  if (value === "APPROVED") return "Approved";
-  if (value === "CHANGES_REQUESTED") return "Changes requested";
-  if (value === "ARCHIVED") return "Archived";
-  return formatEnumLabel(value);
-}
-
-function formatArticleImageStatus(value?: string | null): string {
-  if (!value || value === "DRAFT") return "Draft / preparing";
-  if (value === "READY_FOR_GENERATION") return "Preparing preview";
-  if (value === "PREVIEW_READY") return "Preview ready";
-  if (value === "CHANGES_REQUESTED") return "Changes requested";
-  if (value === "APPROVED") return "Approved";
-  if (value === "FINAL_READY") return "Final ready";
-  if (value === "ARCHIVED") return "Archived";
-  return formatEnumLabel(value);
-}
-
-function formatDeliverableStatus(value?: string | null): string {
-  // Delegates to the canonical shared status policy so admin, client portal, and API stay aligned.
-  // Unknown/legacy statuses are humanized rather than silently coerced to DRAFT.
-  return formatAiDeliveryDeliverableStatusLabel(value);
-}
-
-function formatEnumLabel(value?: string | null): string {
-  if (!value) return "Not set";
-  return String(value).toLowerCase().replace(/_/g, " ").replace(/(^|\s)\S/g, (s) => s.toUpperCase());
-}
-
-function parseWorkflowRunResultPreview(value: string | null | undefined): WorkflowRunResultPreview | null {
-  const text = (value ?? "").trim();
-  if (!text) return null;
-
-  if (text.startsWith("{")) {
-    try {
-      const parsed: unknown = JSON.parse(text);
-      if (!parsed || typeof parsed !== "object") {
-        return null;
-      }
-
-      const record = parsed as Record<string, unknown>;
-      return {
-        version: typeof record.version === "string" ? record.version : null,
-        gateway: typeof record.gateway === "string" ? record.gateway : null,
-        model: typeof record.model === "string" ? record.model : null,
-        outputType: typeof record.outputType === "string" ? record.outputType : null,
-        title: typeof record.title === "string" ? record.title : null,
-        summary: typeof record.summary === "string" ? record.summary : null,
-        generatedAt: typeof record.generatedAt === "string" ? record.generatedAt : null,
-        safeError: typeof record.safeError === "string" ? record.safeError : null
-      };
-    } catch {
-      return null;
-    }
-  }
-
-  const gatewayMatch = text.match(/^Gateway:\s*(.+)$/m);
-  const modelMatch = text.match(/^Model:\s*(.+)$/m);
-  const generatedAtMatch = text.match(/^Generated at:\s*(.+)$/m);
-  const safeErrorMatch = text.match(/^Safe error:\s*(.+)$/m);
-
-  if (!gatewayMatch && !modelMatch) {
-    return null;
-  }
-
-  const lines = text.split("\n").map((line) => line.trim()).filter(Boolean);
-  const metadataLineIndexes = new Set<number>();
-  for (let index = 0; index < lines.length; index += 1) {
-    const line = lines[index];
-    if (
-      line.startsWith("Gateway:") ||
-      line.startsWith("Model:") ||
-      line.startsWith("Generated at:") ||
-      line.startsWith("Budget policy:") ||
-      line.startsWith("Approximate input tokens:") ||
-      line.startsWith("Max output tokens:") ||
-      line.startsWith("Safe error:")
-    ) {
-      metadataLineIndexes.add(index);
-    }
-  }
-
-  const contentLines = lines.filter((_, index) => !metadataLineIndexes.has(index));
-  return {
-    version: "AI_WORKFLOW_RESULT_V1",
-    gateway: gatewayMatch?.[1]?.trim() ?? null,
-    model: modelMatch?.[1]?.trim() ?? null,
-    outputType: "summary",
-    title: contentLines[0] ?? null,
-    summary: contentLines[1] ?? contentLines[0] ?? null,
-    generatedAt: generatedAtMatch?.[1]?.trim() ?? null,
-    safeError: safeErrorMatch?.[1]?.trim() ?? null
-  };
-}
-
-function getDeliverableExportState(item: AiDeliveryDeliverableSummary): string {
-  if ((item.exportUrl ?? "").trim()) return "Export URL reference set (visible to client in their portal).";
-  if (item.hasDocument) return "Private document stored (admin download-reference only).";
-  return "No export or storage reference recorded.";
-}
-
-function getErrorMessage(error: unknown, fallback: string): string {
-  return error instanceof Error && error.message ? error.message : fallback;
-}
-
-function canPackageApprovedContentDraft(draft: Pick<AiDeliveryContentDraftSummary, "isArchived" | "status"> | null | undefined) {
-  return !!draft && draft.isArchived !== true && draft.status === "APPROVED";
-}
-
-function canPackageApprovedArticleImage(image: Pick<AiDeliveryArticleImageSummary, "isArchived" | "status"> | null | undefined) {
-  return !!image && image.isArchived !== true && ["APPROVED", "FINAL_READY"].includes(image.status);
-}
-
-function deliverableStatusNeedsApprovedLinks(status: string | null | undefined) {
-  return ["READY", "DELIVERED", "ACCEPTED"].includes((status ?? "").trim().toUpperCase());
-}
-
-function deliverableFormHasReadyLinks(
-  form: AiDeliveryDeliverableFormValues,
-  drafts: AiDeliveryContentDraftSummary[],
-  images: AiDeliveryArticleImageSummary[]
-) {
-  if (!deliverableStatusNeedsApprovedLinks(form.status)) {
-    return true;
-  }
-
-  const linkedDraft = drafts.find((draft) => draft.id === form.contentDraftId) ?? null;
-  const linkedImage = images.find((image) => image.id === form.articleImageId) ?? null;
-
-  if (!linkedDraft && !linkedImage) {
-    return false;
-  }
-
-  if (linkedDraft && !canPackageApprovedContentDraft(linkedDraft)) {
-    return false;
-  }
-
-  if (linkedImage && !canPackageApprovedArticleImage(linkedImage)) {
-    return false;
-  }
-
-  return true;
-}
-
-function getMostRecentReview(reviews: AiDeliveryDeliverableReviewSummary[]): AiDeliveryDeliverableReviewSummary | null {
-  return reviews.reduce<AiDeliveryDeliverableReviewSummary | null>((latest, review) => {
-    if (!latest) return review;
-    const latestTime = new Date(latest.updatedAt || latest.createdAt).getTime();
-    const reviewTime = new Date(review.updatedAt || review.createdAt).getTime();
-    return reviewTime > latestTime ? review : latest;
-  }, null);
-}
-
-function formatStatusBreakdown(items: Array<{ status: string }>, fallback = "No records loaded"): string {
-  if (items.length === 0) return fallback;
-  const counts = items.reduce<Record<string, number>>((summary, item) => {
-    summary[item.status] = (summary[item.status] ?? 0) + 1;
-    return summary;
-  }, {});
-  return Object.entries(counts)
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([status, count]) => `${formatEnumLabel(status)}: ${count}`)
-    .join(" - ");
-}
 
 export function AiDeliveryPage({
   projects,

@@ -11,6 +11,12 @@ import {
   type AiWorkflowOutputType
 } from "./ai-text-budget.policy";
 
+/**
+ * OpenRouter path contract (see `openrouter-text.service.ts` + `AI_OPENROUTER_HTTP_CONTRACT`):
+ * - timeoutMs: 20_000
+ * - retryCount: 0 (no automatic retries)
+ * - failures surface only as safeError strings (never API keys / raw bodies)
+ */
 export type AiGatewayExecutionMode = "disabled" | "local" | "openrouter";
 
 export const AI_GATEWAY_V1_NAME = "AI_GATEWAY_V1";

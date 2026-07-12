@@ -1,7 +1,6 @@
 import React from "react";
-import { EmptyState } from "../../components/EmptyState";
 import { Modal } from "../../components/Modal";
-import { MetricCard, SectionPanel, StatusBadge } from "../../components/ui";
+import { EmptyState, MetricCard, SectionPanel, StatusBadge } from "../../components/ui";
 import {
   AiDeliveryInlineAlert,
   AiDeliveryInlineEmpty,

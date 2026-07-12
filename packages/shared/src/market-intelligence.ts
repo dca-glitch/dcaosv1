@@ -542,3 +542,273 @@ export function findMarketIntelligenceAdminReviewViolations(
 
   return violations;
 }
+
+// ---------------------------------------------------------------------------
+// G610+ local ingest contracts — URL/shape validate, dedupe, confidence labels
+// (no live crawl / paid APIs)
+// ---------------------------------------------------------------------------
+
+export const MARKET_INTELLIGENCE_CONFIDENCE_LABELS = [
+  "unreviewed",
+  "insufficient_evidence",
+  "low",
+  "medium",
+  "high"
+] as const;
+
+export type MarketIntelligenceConfidenceLabel =
+  (typeof MARKET_INTELLIGENCE_CONFIDENCE_LABELS)[number];
+
+export const MARKET_INTELLIGENCE_CONFIDENCE_LABEL_DISPLAY: Record<
+  MarketIntelligenceConfidenceLabel,
+  string
+> = {
+  unreviewed: "Unreviewed — admin review required",
+  insufficient_evidence: "Insufficient evidence",
+  low: "Low confidence",
+  medium: "Medium confidence",
+  high: "High confidence"
+};
+
+export function isMarketIntelligenceConfidenceLabel(
+  value: unknown
+): value is MarketIntelligenceConfidenceLabel {
+  return (
+    typeof value === "string" &&
+    (MARKET_INTELLIGENCE_CONFIDENCE_LABELS as readonly string[]).includes(value)
+  );
+}
+
+/**
+ * Resolve a structured confidence label. Free-text notes are never treated as labels.
+ * Default remains `unreviewed` until an admin assigns a known enum value.
+ */
+export function resolveMarketIntelligenceConfidenceLabel(
+  value: unknown
+): MarketIntelligenceConfidenceLabel {
+  if (isMarketIntelligenceConfidenceLabel(value)) {
+    return value;
+  }
+  return "unreviewed";
+}
+
+export function buildMarketIntelligenceConfidenceReviewLabel(
+  label: MarketIntelligenceConfidenceLabel = "unreviewed"
+): {
+  label: MarketIntelligenceConfidenceLabel;
+  displayLabel: string;
+  adminReviewRequired: true;
+  freeTextOnly: false;
+} {
+  const resolved = resolveMarketIntelligenceConfidenceLabel(label);
+  return {
+    label: resolved,
+    displayLabel: MARKET_INTELLIGENCE_CONFIDENCE_LABEL_DISPLAY[resolved],
+    adminReviewRequired: true,
+    freeTextOnly: false
+  };
+}
+
+export type MarketIntelligenceSourceIngestCandidate = {
+  id?: string | null;
+  origin: MarketIntelligenceSourceOrigin;
+  title: string;
+  sourceUrl?: string | null;
+  notes?: string | null;
+};
+
+export type MarketIntelligenceSourceUrlValidation =
+  | { ok: true; normalizedUrl: string | null }
+  | { ok: false; errors: string[] };
+
+const BLOCKED_SOURCE_URL_PROTOCOLS = new Set([
+  "javascript:",
+  "data:",
+  "file:",
+  "vbscript:"
+]);
+
+/**
+ * Validate optional source URL shape for local MI ingest.
+ * - Empty/null URL is allowed for non-URL origins.
+ * - `approved_url_reference` requires an http(s) URL.
+ * - Never authorizes crawl/fetch; shape-only.
+ */
+export function validateMarketIntelligenceSourceUrl(
+  sourceUrl: string | null | undefined,
+  origin?: MarketIntelligenceSourceOrigin
+): MarketIntelligenceSourceUrlValidation {
+  const trimmed = (sourceUrl ?? "").trim();
+  const errors: string[] = [];
+
+  if (!trimmed) {
+    if (origin === "approved_url_reference") {
+      return { ok: false, errors: ["approved_url_reference requires a sourceUrl"] };
+    }
+    return { ok: true, normalizedUrl: null };
+  }
+
+  const lower = trimmed.toLowerCase();
+  for (const protocol of BLOCKED_SOURCE_URL_PROTOCOLS) {
+    if (lower.startsWith(protocol)) {
+      errors.push(`blocked URL protocol: ${protocol.replace(":", "")}`);
+    }
+  }
+
+  let parsed: URL;
+  try {
+    parsed = new URL(trimmed);
+  } catch {
+    return { ok: false, errors: ["sourceUrl must be a valid absolute URL"] };
+  }
+
+  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+    errors.push("sourceUrl must use http or https");
+  }
+
+  if (errors.length > 0) {
+    return { ok: false, errors };
+  }
+
+  parsed.hash = "";
+  const normalized =
+    parsed.protocol +
+    "//" +
+    parsed.host.toLowerCase() +
+    parsed.pathname.replace(/\/+$/, "") +
+    (parsed.search || "");
+
+  return { ok: true, normalizedUrl: normalized || null };
+}
+
+/**
+ * Validate local ingest candidate shape (origin, title, URL policy).
+ * Does not crawl or call providers.
+ */
+export function validateMarketIntelligenceSourceIngestShape(
+  candidate: MarketIntelligenceSourceIngestCandidate
+): { ok: boolean; errors: string[] } {
+  const errors: string[] = [];
+  const allowed = new Set<string>(MARKET_INTELLIGENCE_ALLOWED_SOURCE_ORIGINS);
+
+  if (!allowed.has(candidate.origin)) {
+    errors.push(`origin not allowed: ${String(candidate.origin)}`);
+  }
+
+  if (!candidate.title?.trim()) {
+    errors.push("title is required");
+  }
+
+  const urlCheck = validateMarketIntelligenceSourceUrl(candidate.sourceUrl, candidate.origin);
+  if (!urlCheck.ok) {
+    errors.push(...urlCheck.errors);
+  }
+
+  return { ok: errors.length === 0, errors };
+}
+
+/**
+ * Deterministic fingerprint for dedupe: prefers normalized URL, else title+origin+notes.
+ */
+export function fingerprintMarketIntelligenceSource(
+  candidate: MarketIntelligenceSourceIngestCandidate
+): string {
+  const urlCheck = validateMarketIntelligenceSourceUrl(candidate.sourceUrl, candidate.origin);
+  if (urlCheck.ok && urlCheck.normalizedUrl) {
+    return `url:${urlCheck.normalizedUrl}`;
+  }
+
+  const title = (candidate.title ?? "").trim().toLowerCase().replace(/\s+/g, " ");
+  const notes = (candidate.notes ?? "").trim().toLowerCase().replace(/\s+/g, " ");
+  return `local:${candidate.origin}|${title}|${notes}`;
+}
+
+export type MarketIntelligenceDedupeResult = {
+  unique: MarketIntelligenceSourceIngestCandidate[];
+  duplicateFingerprints: string[];
+  droppedCount: number;
+};
+
+/**
+ * Dedupe ingest candidates by URL fingerprint (or local title fingerprint).
+ * First occurrence wins; order preserved.
+ */
+export function dedupeMarketIntelligenceSources(
+  candidates: MarketIntelligenceSourceIngestCandidate[]
+): MarketIntelligenceDedupeResult {
+  const seen = new Set<string>();
+  const unique: MarketIntelligenceSourceIngestCandidate[] = [];
+  const duplicateFingerprints: string[] = [];
+
+  for (const candidate of candidates) {
+    const fingerprint = fingerprintMarketIntelligenceSource(candidate);
+    if (seen.has(fingerprint)) {
+      duplicateFingerprints.push(fingerprint);
+      continue;
+    }
+    seen.add(fingerprint);
+    unique.push(candidate);
+  }
+
+  return {
+    unique,
+    duplicateFingerprints,
+    droppedCount: duplicateFingerprints.length
+  };
+}
+
+export type MarketIntelligenceLocalIngestPipelineResult = {
+  ok: boolean;
+  validated: MarketIntelligenceSourceIngestCandidate[];
+  rejected: Array<{ candidate: MarketIntelligenceSourceIngestCandidate; errors: string[] }>;
+  deduped: MarketIntelligenceDedupeResult;
+  confidenceReviews: Array<{
+    fingerprint: string;
+    review: ReturnType<typeof buildMarketIntelligenceConfidenceReviewLabel>;
+  }>;
+  operatorReviewRequired: true;
+  liveCrawlingAllowed: false;
+};
+
+/**
+ * Fixture-friendly local pipeline: validate → dedupe → structured confidence review labels.
+ * Always requires admin/operator review; never enables live crawl.
+ */
+export function runMarketIntelligenceLocalIngestPipeline(
+  candidates: MarketIntelligenceSourceIngestCandidate[],
+  confidenceByFingerprint?: Record<string, MarketIntelligenceConfidenceLabel>
+): MarketIntelligenceLocalIngestPipelineResult {
+  const validated: MarketIntelligenceSourceIngestCandidate[] = [];
+  const rejected: MarketIntelligenceLocalIngestPipelineResult["rejected"] = [];
+
+  for (const candidate of candidates) {
+    const shape = validateMarketIntelligenceSourceIngestShape(candidate);
+    if (!shape.ok) {
+      rejected.push({ candidate, errors: shape.errors });
+      continue;
+    }
+    validated.push(candidate);
+  }
+
+  const deduped = dedupeMarketIntelligenceSources(validated);
+  const confidenceReviews = deduped.unique.map((candidate) => {
+    const fingerprint = fingerprintMarketIntelligenceSource(candidate);
+    const label = resolveMarketIntelligenceConfidenceLabel(
+      confidenceByFingerprint?.[fingerprint] ?? "unreviewed"
+    );
+    return {
+      fingerprint,
+      review: buildMarketIntelligenceConfidenceReviewLabel(label)
+    };
+  });
+
+  return {
+    ok: rejected.length === 0,
+    validated,
+    rejected,
+    deduped,
+    confidenceReviews,
+    operatorReviewRequired: true,
+    liveCrawlingAllowed: false
+  };
+}

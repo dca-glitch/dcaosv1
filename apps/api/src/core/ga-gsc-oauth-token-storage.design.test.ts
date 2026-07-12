@@ -2,12 +2,17 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
   assertGaGscOauthTokenSecretFieldsNeverInSafeView,
+  buildGaGscOauthStateDesign,
   buildGaGscOauthTokenStorageDesignRecord,
+  GA_GSC_OAUTH_CALLBACK_DESIGN_VERSION,
   GA_GSC_OAUTH_TOKEN_READINESS_STATES,
+  GA_GSC_OAUTH_REDIRECT_PATH_ALLOWLIST,
   GA_GSC_OAUTH_TOKEN_RECORD_SAFE_FIELDS,
   GA_GSC_OAUTH_TOKEN_RECORD_SECRET_FIELDS,
   GA_GSC_OAUTH_TOKEN_STORAGE_DESIGN_VERSION,
+  getGaGscOauthCallbackDesign,
   getGaGscOauthTokenStorageDesignGaps,
+  resolveGaGscOauthRedirectDesign,
   serializeGaGscOauthTokenStorageSafeView
 } from "./ga-gsc-oauth-token-storage.design";
 
@@ -53,5 +58,36 @@ describe("ga-gsc-oauth-token-storage.design (G518)", () => {
     assert.equal(safe.schemaImplemented, false);
     assert.equal(safe.refreshTokenPresent, true);
     assert.equal(serialized.includes("ciphertext"), false);
+  });
+
+  it("defines callback/state/redirect design with deferred flags and no open redirects", () => {
+    assert.equal(GA_GSC_OAUTH_CALLBACK_DESIGN_VERSION, "G518-callback-2026-07-12");
+
+    const callback = getGaGscOauthCallbackDesign();
+    assert.equal(callback.liveOAuthDeferred, true);
+    assert.equal(callback.schemaImplemented, false);
+    assert.equal(callback.consentCallbackRouteImplemented, false);
+    assert.equal(callback.authorizationCodePersistence, "never_plaintext");
+    assert.equal(callback.requiresStateValidation, true);
+
+    const state = buildGaGscOauthStateDesign({
+      tenantId: "tenant-1",
+      aiDeliveryProjectId: "project-1",
+      nonce: "csrf-nonce-abc",
+      redirectPath: GA_GSC_OAUTH_REDIRECT_PATH_ALLOWLIST[0]
+    });
+    assert.equal(state.liveOAuthDeferred, true);
+    assert.equal(state.schemaImplemented, false);
+    assert.equal(JSON.stringify(state).includes("Bearer "), false);
+    assert.equal(JSON.stringify(state).includes("client_secret"), false);
+
+    const allowed = resolveGaGscOauthRedirectDesign("/#/integrations/ga-gsc");
+    assert.equal(allowed.ok, true);
+    assert.equal(allowed.liveOAuthDeferred, true);
+    assert.equal(allowed.schemaImplemented, false);
+
+    const rejected = resolveGaGscOauthRedirectDesign("https://evil.example/phish");
+    assert.equal(rejected.ok, false);
+    assert.equal(rejected.reason, "rejected_absolute_or_external");
   });
 });

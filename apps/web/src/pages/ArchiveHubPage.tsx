@@ -1,8 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { EmptyState } from "../components/EmptyState";
-import { LoadingState } from "../components/LoadingState";
-import { Badge, Button, PageHeader, SectionPanel, StatusBadge } from "../components/ui";
-import { Alert } from "../design-system";
+import { Alert, Badge, Button, EmptyState, LoadingState, PageHeader, SectionPanel, StatusBadge } from "../components/ui";
 import {
   clientPortalApiRequest,
   getClientPortalAuthToken,

@@ -8,18 +8,18 @@ import type {
   MarketIntelligenceSourceSummary,
   MarketIntelligenceSummaryRecord
 } from "@dca-os-v1/shared";
-import { EmptyState } from "../../components/EmptyState";
-import { ErrorState } from "../../components/ErrorState";
-import { LoadingState } from "../../components/LoadingState";
-import { StatusNotice } from "../../components/StatusNotice";
 import { Modal } from "../../components/Modal";
 import {
+  EmptyState,
+  ErrorState,
   FilterBar,
+  LoadingState,
   MetricCard,
   PageHeader,
   SectionPanel,
   StatusBadge,
-  Table
+  StatusNotice,
+  Table,
 } from "../../components/ui";
 import {
   MI_PROJECT_FILTER_OPTIONS,

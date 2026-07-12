@@ -41,7 +41,10 @@ export function buildPurivaIntegrationBoundaryIndex(input: {
     ai_provider: ["Local deterministic default; OpenRouter live proof deferred."],
     wordpress: ["Draft prep local-only; live draft/publish proof deferred."],
     private_storage: ["R2 disabled-safe; real bucket IO proof deferred."],
-    ga_gsc: ["Config-shape only; OAuth/token storage not implemented."],
+    ga_gsc: [
+      "Config-shape only; OAuth/token storage not implemented.",
+      "Design contracts exist for encrypted token record + state/callback/redirect (schemaImplemented:false, liveOAuthDeferred:true)."
+    ],
     image_generation: ["Foundation scaffold; live provider calls deferred."]
   };
 

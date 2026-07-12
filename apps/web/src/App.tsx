@@ -1,10 +1,8 @@
-import { type FormEvent, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { type FormEvent, type ReactNode, lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Archive, BarChart2, ClipboardList, Clock } from "lucide-react";
 import { AppLayout } from "./components/AppLayout";
 import { AdminOperationsPanel } from "./components/admin/AdminOperationsPanel";
-import { EmptyState } from "./components/EmptyState";
-import { StatusNotice } from "./components/StatusNotice";
-import { MetricCard, PageHeader, SectionPanel, StatusBadge, Button, Table } from "./components/ui";
+import { Button, EmptyState, MetricCard, PageHeader, SectionPanel, StatusBadge, StatusNotice, Table } from "./components/ui";
 import {
   BillsPage,
   type BillDocumentUploadValues,
@@ -100,7 +98,7 @@ import { TasksPage, type TaskFormValues, type TaskSummary } from "./pages/tasks/
 import { BriefPanelPage } from "./pages/BriefPanelPage";
 import { WorkflowBriefsPage } from "./pages/WorkflowBriefsPage";
 import { ClientDashboardPage } from "./pages/ClientDashboardPage";
-import DesignShowcase from './design-system/showcase/DesignShowcase';
+const DesignShowcase = lazy(() => import("./design-system/showcase/DesignShowcase"));
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "/api/v1";
 const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY ?? "";
@@ -4913,7 +4911,11 @@ export function App() {
           teamMembers={teamMembers}
         />
       ) : null}
-      {!loading && activeView === "design-system" ? <DesignShowcase /> : null}
+      {!loading && activeView === "design-system" ? (
+        <Suspense fallback={<EmptyState title="Loading design system" message="Preparing the showcase." />}>
+          <DesignShowcase />
+        </Suspense>
+      ) : null}
     </AppLayout>
   );
 }

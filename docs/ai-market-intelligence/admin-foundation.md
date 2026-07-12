@@ -279,6 +279,17 @@ This does **not** claim new live crawl, provider, or production readiness.
 | Client-safe summary without admin review | Not allowed |
 | Live Market Intelligence module readiness | Not claimed |
 
+### Local ingest contracts (WS4)
+
+Pure helpers in `packages/shared/src/market-intelligence.ts` (no crawl / paid APIs):
+
+- Source URL/shape validation (`validateMarketIntelligenceSourceUrl`, `validateMarketIntelligenceSourceIngestShape`)
+- Dedupe by URL/fingerprint (`fingerprintMarketIntelligenceSource`, `dedupeMarketIntelligenceSources`)
+- Structured confidence labels (`unreviewed` | `insufficient_evidence` | `low` | `medium` | `high`) — not free-text-only
+- Fixture pipeline: `runMarketIntelligenceLocalIngestPipeline` (validate → dedupe → review labels; `operatorReviewRequired: true`)
+
+Admin review remains required. Live Market Intelligence readiness is **not** claimed.
+
 See `docs/runbooks/FUTURE_MODULES_G601_G612_CLOSEOUT.md`.
 
 ## Future Phases
