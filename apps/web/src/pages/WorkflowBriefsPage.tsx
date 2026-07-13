@@ -1525,8 +1525,8 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
                     )}
 
                     {canManageAi && !showPlanEdit ? (
-                      <div className="brief-detail-section--spaced" style={{ padding: "12px 16px", backgroundColor: "#f0f9ff", borderLeft: "4px solid #0284c7", borderRadius: "4px", marginTop: "16px" }}>
-                        <div className="muted-text" style={{ fontSize: "0.9em" }}>
+                      <div className="brief-detail-section--spaced status-notice status-notice-compact status-info brief-intake-warning">
+                        <div className="status-notice-text muted-text">
                           <strong>ℹ Compliance review checkpoint:</strong> Before seeding content production, verify all claims in this plan against the Puriva operational intake and compliance guide. Check medical language, contact facts, partner claims, and service descriptions. Document your findings in the brief Notes field.
                         </div>
                       </div>
@@ -1666,8 +1666,8 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
                       ) : null}
 
                       {seedStatus.canSeed && canManageAi ? (
-                        <div className="brief-detail-section--spaced" style={{ padding: "12px 16px", backgroundColor: "#fef3c7", borderLeft: "4px solid #f59e0b", borderRadius: "4px", marginBottom: "16px" }}>
-                          <div className="muted-text" style={{ fontSize: "0.9em" }}>
+                        <div className="brief-detail-section--spaced status-notice status-notice-compact status-warning brief-intake-warning">
+                          <div className="status-notice-text muted-text">
                             <strong>→ Before seeding:</strong> Verify all production plan claims against the Puriva compliance guide. Document findings in the brief Notes field, then proceed.
                           </div>
                         </div>
@@ -1755,8 +1755,8 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
                       </div>
 
                       {draftStatus.canGenerateDrafts && canManageAi ? (
-                        <div className="brief-detail-section--spaced" style={{ padding: "12px 16px", backgroundColor: "#dbeafe", borderLeft: "4px solid #0284c7", borderRadius: "4px", marginTop: "16px" }}>
-                          <div className="muted-text" style={{ fontSize: "0.9em" }}>
+                        <div className="brief-detail-section--spaced status-notice status-notice-compact status-info brief-intake-warning">
+                          <div className="status-notice-text muted-text">
                             <strong>ℹ Puriva note:</strong> Ensure compliance review is documented in brief Notes before generating drafts. Drafts should not reach client review until compliance is verified.
                           </div>
                         </div>

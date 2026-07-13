@@ -34,6 +34,7 @@ const Modal: React.FC<ModalProps> = ({
   closeOnBackdrop  = true,
 }) => {
   const titleId = useId();
+  const subtitleId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
   useOverlayA11y(isOpen, onClose, panelRef);
 
@@ -55,6 +56,7 @@ const Modal: React.FC<ModalProps> = ({
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
+        aria-describedby={subtitle ? subtitleId : undefined}
         tabIndex={-1}
         className={[
           'relative w-full flex flex-col outline-none',
@@ -81,7 +83,9 @@ const Modal: React.FC<ModalProps> = ({
               {title}
             </h2>
             {subtitle && (
-              <p className="text-body-xs text-text-muted mt-0.5">{subtitle}</p>
+              <p id={subtitleId} className="text-body-xs text-text-muted mt-0.5">
+                {subtitle}
+              </p>
             )}
           </div>
           <button

@@ -36,6 +36,7 @@ describe("canonical ui/Modal", () => {
       </Modal>,
     );
     expect(screen.getByText("Edit")).toBeTruthy();
+    expect(screen.getByRole("dialog", { name: "Client" }).getAttribute("aria-describedby")).toBeTruthy();
   });
 
   it("maps description to subtitle when eyebrow is absent", () => {
