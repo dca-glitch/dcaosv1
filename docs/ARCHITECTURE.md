@@ -157,7 +157,7 @@ Node.js + Express backend. Versioned boundary: `/api/v1`.
 | Routes | HTTP entry; auth/tenant/module middleware |
 | Controllers | Request/response wiring |
 | Services / runtime | Business logic (`*.runtime.ts`, `*.service.ts`) |
-| Config | Env-driven feature gates (`auth.config`, `ai-provider.config`, `wordpress-integration.config`, `ga-gsc.config`) |
+| Config | Env-driven feature gates (`auth.config`, `ai-provider.config`, `wordpress-integration.config`) |
 | Middlewares | Auth, authorization, tenant, rate limit, security headers |
 
 Key runtime areas:
@@ -228,7 +228,7 @@ Admin-only MVP: research inputs → findings → deterministic summaries (`MI_SU
 
 ### Monthly Reports
 
-Admin lifecycle: create/edit → metrics snapshot → MI context (internal) → PDF generation → FINAL status → client portal archive (FINAL only). Live GA/GSC sync deferred; snapshot-first metrics.
+Admin lifecycle: create/edit → metrics snapshot → MI context (internal) → PDF generation → FINAL status → client portal archive (FINAL only). Live GA4/GSC sync **WITHDRAWN**; MANUAL/snapshot metrics remain.
 
 ### Private storage / R2
 
@@ -244,7 +244,7 @@ Cloudflare R2 for private assets (PDFs, deliverables). Guarded when `R2_*` env a
 
 ### External integrations readiness layer (Block 1)
 
-Read-only config inspection for: AI provider (OpenRouter shape), WordPress publish gate, R2 env presence, GA/GSC OAuth shape. No live HTTP, OAuth, publish, sync, or bucket IO.
+Read-only config inspection for: AI provider (OpenRouter shape), WordPress publish gate, R2 env presence. GA4/GSC readiness category **withdrawn** 2026-07-13. No live HTTP, OAuth, publish, sync, or bucket IO.
 
 ### Admin operations / recovery surface (Block 2)
 

@@ -145,7 +145,7 @@ These scripts are not local default gates. They must not be run as a substitute 
 | `$env:AUTH_SEED_TEST_PASSWORD` | Most authenticated local smokes. Never print the value. |
 | Explicit remote target | `smoke:mvp:staging`, `smoke:staging-security-baseline`. |
 | Owner approval | Staging/prod remote proof, live integrations, bootstrap write mode, deploy, migrations, commit, push. |
-| No live-call default | External integrations readiness, email/outbox, R2, WordPress, AI provider, GA/GSC docs must preserve disabled/config-shape language unless proof is recorded. |
+| No live-call default | External integrations readiness, email/outbox, R2, WordPress, AI provider docs must preserve disabled/config-shape language unless proof is recorded. GA4/GSC live scope **WITHDRAWN**. |
 
 ---
 
@@ -187,12 +187,8 @@ These are **local unit/integration/helper** surfaces other lanes are adding or h
 | Notifications | `apps/api/src/config/email.config.test.ts` | Present | Live deferred |
 | Notifications | `apps/api/tests/integration/email-notification-wiring.integration.test.ts` | Present | Live deferred |
 | Notifications | In-system inbox / persistence model tests | Expected | Live deferred (persistence may still be unimplemented) |
-| GA / GSC | `apps/api/src/config/ga-gsc.config.test.ts` | Present | Live deferred |
-| GA / GSC | `apps/api/src/core/ga-gsc-oauth-token-storage.design.ts` (+ test) | Present (G469+ WIP) | Live deferred — design/helpers only; no OAuth |
-| GA / GSC | `apps/api/src/core/ga-gsc-property-mapping.ts` (+ test) | Present (G469+ WIP) | No live |
-| GA / GSC | `apps/api/src/core/ga-gsc-site-url-mapping.ts` | Present | No live |
-| GA / GSC | `apps/api/src/core/ga-gsc-period-policy.ts` (+ test) | Present | No live |
-| GA / GSC | Monthly report policy / FINAL visibility helpers (`monthly-report-policy.test.ts`, `client-portal-monthly-report.test.ts`) | Present | Live deferred |
+| GA / GSC | `apps/api/src/core/monthly-report-policy.test.ts`, `client-portal-monthly-report.test.ts`, `metrics-source-truth.test.ts` | Present | Live **WITHDRAWN** — prior `ga-gsc.config` / OAuth design / property-mapping / period-policy files **deleted** |
+| GA / GSC (deleted) | `ga-gsc.config.ts`, `ga-gsc-oauth-token-storage.design.ts`, `ga-gsc-property-mapping.ts`, `ga-gsc-site-url-mapping.ts`, `ga-gsc-period-policy.ts` (+ tests) | **Removed** | Live scope **WITHDRAWN** 2026-07-13 |
 | WordPress | `apps/api/src/services/wordpress.service.test.ts` | Present | Live deferred |
 | WordPress | Publish-freeze / credential-shape focused coverage | Expected (may already be inside wordpress.service.test) | Live deferred; auto-publish stays deferred |
 | Image | `apps/api/src/core/image-compliance-policy.test.ts` | Present | Live deferred |
@@ -220,7 +216,7 @@ These are **local unit/integration/helper** surfaces other lanes are adding or h
 | Local focused tests above | May be run after `npm.cmd run validate` when scoped |
 | Existing `smoke:*:local` / browser scripts in §2 | Local/disabled-safe or config-shape unless a recorded proof says otherwise |
 | `smoke:mvp:staging`, `smoke:staging-security-baseline` | Guarded remote; owner approval required |
-| Real R2 IO, live email, live GA/GSC, live WordPress, live image provider | **Not** inventory-complete; remain deferred |
+| Real R2 IO, live email, live WordPress, live image provider | **Not** inventory-complete; remain deferred. **Live GA4/GSC: WITHDRAWN.** |
 
 ---
 

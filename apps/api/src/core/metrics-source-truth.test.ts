@@ -28,8 +28,8 @@ describe("metrics-source-truth", () => {
           gaGscReadinessStatus: "configured_shape_ok",
           liveProofApproved: true
         },
-        truth: "live",
-        mayLive: true
+        truth: "unavailable",
+        mayLive: false
       },
       { input: {}, truth: "unavailable", mayLive: false },
       {
@@ -47,6 +47,7 @@ describe("metrics-source-truth", () => {
       const serialized = serializeMonthlyMetricsSourceTruth(entry.input);
       assert.equal(serialized.truth, entry.truth);
       assert.equal(serialized.client.mayUseLiveLanguage, entry.mayLive);
+      assert.equal(serialized.admin.liveGaGscProven, false);
       const clientView = toClientMonthlyMetricsSourceTruthView(serialized);
       assert.equal(clientView.mayUseLiveLanguage, entry.mayLive);
       assert.equal("gaGscReadinessStatus" in clientView, false);
@@ -58,19 +59,20 @@ describe("metrics-source-truth", () => {
     }
   });
 
-  it("G277: mixed-source live and unavailable labels stay truthful", () => {
-    const liveMixed = serializeMonthlyMetricsSourceTruth({
+  it("G277: mixed-source withdrawn GA/GSC labels stay truthful", () => {
+    const withdrawnMixed = serializeMonthlyMetricsSourceTruth({
       sourceType: "HYBRID",
       status: "APPROVED",
       gaGscReadinessStatus: "configured_shape_ok",
       liveProofApproved: true,
       mixedSources: true
     });
-    assert.equal(liveMixed.truth, "live");
-    assert.equal(liveMixed.admin.mixedSources, true);
-    assert.match(liveMixed.admin.label, /mixed/i);
-    assert.equal(liveMixed.client.mayUseLiveLanguage, true);
-    assert.match(liveMixed.client.label, /connected analytics/i);
+    assert.equal(withdrawnMixed.truth, "unavailable");
+    assert.equal(withdrawnMixed.admin.mixedSources, true);
+    assert.match(withdrawnMixed.admin.label, /mixed/i);
+    assert.match(withdrawnMixed.admin.label, /withdrawn/i);
+    assert.equal(withdrawnMixed.client.mayUseLiveLanguage, false);
+    assert.equal(withdrawnMixed.client.label, "Metrics unavailable");
 
     const unprovenMixed = serializeMonthlyMetricsSourceTruth({
       sourceType: "GA4",
@@ -97,20 +99,21 @@ describe("metrics-source-truth", () => {
     assert.equal(csv.client.label.includes("live"), false);
   });
 
-  it("G523: label catalog matches serializer examples and blocks live language except live", () => {
+  it("G523: label catalog matches serializer examples and blocks live language", () => {
     const catalog = metricsSourceTruthLabelCatalog();
     assert.equal(catalog.csv.clientMayUseLiveLanguage, false);
-    assert.equal(catalog.live.clientMayUseLiveLanguage, true);
+    assert.equal(catalog.live.clientMayUseLiveLanguage, false);
     assert.equal(catalog.unavailable.clientExample, "Metrics unavailable");
+    assert.match(catalog.unavailable.adminExample, /withdrawn/i);
 
-    const live = serializeMonthlyMetricsSourceTruth({
+    const withdrawn = serializeMonthlyMetricsSourceTruth({
       sourceType: "HYBRID",
       status: "APPROVED",
       gaGscReadinessStatus: "configured_shape_ok",
       liveProofApproved: true
     });
-    assert.equal(live.admin.label, catalog.live.adminExample);
-    assert.equal(live.client.label, catalog.live.clientExample);
+    assert.equal(withdrawn.admin.label, catalog.unavailable.adminExample);
+    assert.equal(withdrawn.client.label, catalog.unavailable.clientExample);
   });
 
   it("G524: assessGaGscMetricsUnavailableState reasons without Lane 6 collision", () => {
@@ -119,7 +122,7 @@ describe("metrics-source-truth", () => {
     });
     assert.equal(available.unavailable, false);
     assert.equal(available.truth, "csv");
-    assert.equal(available.liveOAuthDeferred, true);
+    assert.equal(available.liveIntegrationWithdrawn, true);
 
     const disabled = assessGaGscMetricsUnavailableState({
       metricsSource: {

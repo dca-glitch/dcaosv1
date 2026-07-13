@@ -73,7 +73,6 @@ const EXPECTED_LAUNCH_REQUIRED_KEYS: readonly ClientOperatingPackModuleKey[] = [
   "client-portal",
   "wordpress-draft",
   "image-generation",
-  "ga-gsc",
   "notifications",
   "market-intelligence"
 ];
@@ -192,7 +191,7 @@ describe("client-operating-packs", () => {
     assert.equal(byModule.get("client-portal")?.status, "enabled");
     assert.equal(byModule.get("wordpress-draft")?.status, "partial");
     assert.equal(byModule.get("image-generation")?.status, "partial");
-    assert.equal(byModule.get("ga-gsc")?.status, "future");
+    assert.equal(byModule.get("ga-gsc")?.status, "disabled");
     assert.equal(byModule.get("notifications")?.status, "future");
     assert.equal(byModule.get("market-intelligence")?.status, "enabled");
     assert.equal(byModule.get("revenue-hub")?.status, "future");
@@ -201,18 +200,20 @@ describe("client-operating-packs", () => {
 
     assert.equal(byModule.get("ai-workflow")?.requiredForLaunch, true);
     assert.equal(byModule.get("monthly-reports")?.requiredForLaunch, true);
-    assert.equal(byModule.get("ga-gsc")?.requiredForLaunch, true);
+    assert.equal(byModule.get("ga-gsc")?.requiredForLaunch, false);
     assert.equal(byModule.get("revenue-hub")?.requiredForLaunch, false);
     assert.equal(byModule.get("finance-lite")?.requiredForLaunch, false);
     assert.equal(typeof byModule.get("client-portal")?.notes, "string");
+    assert.match(byModule.get("ga-gsc")?.notes ?? "", /WITHDRAWN/i);
 
     assert.deepEqual(getLaunchRequiredPackModuleKeys("puriva"), [...EXPECTED_LAUNCH_REQUIRED_KEYS]);
     assert.equal(getLaunchRequiredPackModuleKeys("puriva").includes("revenue-hub"), false);
     assert.equal(getLaunchRequiredPackModuleKeys("puriva").includes("pod-toolkit"), false);
     assert.equal(getLaunchRequiredPackModuleKeys("puriva").includes("finance-lite"), false);
+    assert.equal(getLaunchRequiredPackModuleKeys("puriva").includes("ga-gsc"), false);
 
     assert.equal(getPackModuleEntitlement("puriva", "client-portal")?.status, "enabled");
-    assert.equal(getPackModuleEntitlementStatus("puriva", "ga-gsc"), "future");
+    assert.equal(getPackModuleEntitlementStatus("puriva", "ga-gsc"), "disabled");
     assert.equal(getPackModuleEntitlementStatus("puriva", "monthly-reports"), "partial");
     assert.equal(isPackModuleEntitledActive("puriva", "ai-seo"), true);
     assert.equal(isPackModuleEntitledActive("puriva", "wordpress-draft"), true);

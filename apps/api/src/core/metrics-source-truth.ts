@@ -97,12 +97,12 @@ export function metricsSourceTruthLabelCatalog(): Record<
       clientMayUseLiveLanguage: false
     },
     live: {
-      adminExample: "LIVE_GA_GSC approved snapshot",
-      clientExample: "Metrics imported from connected analytics sources",
-      clientMayUseLiveLanguage: true
+      adminExample: "GA/GSC live integration withdrawn (historical live label unused)",
+      clientExample: "Metrics unavailable",
+      clientMayUseLiveLanguage: false
     },
     unavailable: {
-      adminExample: "GA/GSC unavailable or not live-proven",
+      adminExample: "GA/GSC live integration withdrawn",
       clientExample: "Metrics unavailable",
       clientMayUseLiveLanguage: false
     }
@@ -128,7 +128,7 @@ export interface GaGscMetricsUnavailableAssessment {
   adminLabel: string;
   clientLabel: string;
   clientMayUseLiveLanguage: boolean;
-  liveOAuthDeferred: true;
+  liveIntegrationWithdrawn: true;
 }
 
 export function assessGaGscMetricsUnavailableState(input: {
@@ -146,7 +146,7 @@ export function assessGaGscMetricsUnavailableState(input: {
       adminLabel: serialized.admin.label,
       clientLabel: serialized.client.label,
       clientMayUseLiveLanguage: serialized.client.mayUseLiveLanguage,
-      liveOAuthDeferred: true
+      liveIntegrationWithdrawn: true
     };
   }
 
@@ -172,6 +172,6 @@ export function assessGaGscMetricsUnavailableState(input: {
     adminLabel: serialized.admin.label,
     clientLabel: "Metrics unavailable",
     clientMayUseLiveLanguage: false,
-    liveOAuthDeferred: true
+    liveIntegrationWithdrawn: true
   };
 }

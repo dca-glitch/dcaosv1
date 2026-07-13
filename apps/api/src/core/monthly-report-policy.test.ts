@@ -5,7 +5,6 @@ import {
   resolveMonthlyReportDateRangePolicy,
   validateMonthlyReportGenerationInput
 } from "./monthly-report-policy";
-import { daysInTargetMonth, isLeapYearMonthFebruary, resolveGaGscReportingPeriod } from "./ga-gsc-period-policy";
 import {
   serializeMonthlyMetricsSourceTruth,
   toClientMonthlyMetricsSourceTruthView
@@ -64,7 +63,7 @@ describe("monthly-report-policy", () => {
   });
 
   it("G172: leap-year February ends on day 29", () => {
-    const leap = resolveGaGscReportingPeriod({
+    const leap = resolveMonthlyReportDateRangePolicy({
       targetMonth: "2024-02",
       reportingTimezone: "UTC",
       referenceDate: new Date("2026-07-10T00:00:00.000Z")
@@ -73,10 +72,13 @@ describe("monthly-report-policy", () => {
     assert.equal(leap.status, "closed_month");
     assert.equal(leap.startDate, "2024-02-01");
     assert.equal(leap.endDate, "2024-02-29");
-    assert.equal(daysInTargetMonth("2024-02"), 29);
-    assert.equal(isLeapYearMonthFebruary("2024-02"), true);
-    assert.equal(daysInTargetMonth("2025-02"), 28);
-    assert.equal(isLeapYearMonthFebruary("2025-02"), false);
+
+    const nonLeap = resolveMonthlyReportDateRangePolicy({
+      targetMonth: "2025-02",
+      reportingTimezone: "UTC",
+      referenceDate: new Date("2026-07-10T00:00:00.000Z")
+    });
+    assert.equal(nonLeap.endDate, "2025-02-28");
   });
 
   it("G172: timezone edge keeps month bounds on calendar month", () => {
@@ -92,7 +94,7 @@ describe("monthly-report-policy", () => {
     assert.match(nearMonthBoundary.label, /Pacific\/Kiritimati/);
   });
 
-  it("classifies manual, placeholder, CSV, live, and unavailable metric source truth", () => {
+  it("classifies manual, placeholder, CSV, and withdrawn GA/GSC metric source truth", () => {
     assert.equal(resolveMonthlyMetricsSourceTruth({ sourceType: "MANUAL" }).truth, "placeholder");
     assert.equal(
       resolveMonthlyMetricsSourceTruth({ sourceType: "MANUAL", placeholderOnly: false }).truth,
@@ -100,14 +102,16 @@ describe("monthly-report-policy", () => {
     );
     assert.equal(resolveMonthlyMetricsSourceTruth({ sourceType: "CSV_IMPORT" }).truth, "csv");
 
-    const live = resolveMonthlyMetricsSourceTruth({
+    const withdrawnHybrid = resolveMonthlyMetricsSourceTruth({
       sourceType: "HYBRID",
       status: "APPROVED",
       gaGscReadinessStatus: "configured_shape_ok",
       liveProofApproved: true
     });
-    assert.equal(live.truth, "live");
-    assert.equal(live.clientMayUseLiveLanguage, true);
+    assert.equal(withdrawnHybrid.truth, "unavailable");
+    assert.equal(withdrawnHybrid.liveGaGscProven, false);
+    assert.equal(withdrawnHybrid.clientMayUseLiveLanguage, false);
+    assert.match(withdrawnHybrid.adminLabel, /withdrawn/i);
 
     const notProven = resolveMonthlyMetricsSourceTruth({
       sourceType: "GA4",
@@ -116,6 +120,7 @@ describe("monthly-report-policy", () => {
     });
     assert.equal(notProven.truth, "unavailable");
     assert.equal(notProven.clientMayUseLiveLanguage, false);
+    assert.match(notProven.adminLabel, /withdrawn/i);
   });
 
   it("G173: serializes metrics source truth for all source kinds including mixed", () => {
@@ -130,7 +135,7 @@ describe("monthly-report-policy", () => {
           gaGscReadinessStatus: "configured_shape_ok" as const,
           liveProofApproved: true
         },
-        truth: "live"
+        truth: "unavailable"
       },
       { input: {}, truth: "unavailable" },
       {
@@ -141,7 +146,7 @@ describe("monthly-report-policy", () => {
           liveProofApproved: true,
           mixedSources: true
         },
-        truth: "live"
+        truth: "unavailable"
       }
     ];
 
@@ -208,7 +213,7 @@ describe("monthly-report-policy", () => {
     assert.ok(futureBlocked.errors.some((error) => /future month/i.test(error)));
   });
 
-  it("G531: manual / placeholder / live metric labeling stays truthful", () => {
+  it("G531: manual / placeholder / withdrawn GA/GSC labeling stays truthful", () => {
     const placeholder = resolveMonthlyMetricsSourceTruth({
       sourceType: "MANUAL",
       placeholderOnly: true
@@ -229,17 +234,17 @@ describe("monthly-report-policy", () => {
     assert.match(manual.clientLabel, /approved manual snapshot/i);
     assert.equal(manual.clientMayUseLiveLanguage, false);
 
-    const live = resolveMonthlyMetricsSourceTruth({
+    const withdrawn = resolveMonthlyMetricsSourceTruth({
       sourceType: "GA4",
       status: "APPROVED",
       gaGscReadinessStatus: "configured_shape_ok",
       liveProofApproved: true
     });
-    assert.equal(live.truth, "live");
-    assert.equal(live.clientMayUseLiveLanguage, true);
-    assert.equal(live.liveGaGscProven, true);
-    assert.match(live.clientLabel, /connected analytics/i);
-    assert.equal(/live GA\/GSC/i.test(live.clientLabel), false);
+    assert.equal(withdrawn.truth, "unavailable");
+    assert.equal(withdrawn.clientMayUseLiveLanguage, false);
+    assert.equal(withdrawn.liveGaGscProven, false);
+    assert.match(withdrawn.adminLabel, /withdrawn/i);
+    assert.equal(withdrawn.clientLabel, "Metrics unavailable");
 
     const unprovenLiveShape = resolveMonthlyMetricsSourceTruth({
       sourceType: "GSC",

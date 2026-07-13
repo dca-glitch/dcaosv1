@@ -7,6 +7,9 @@
 **Production clients:** 0 active (acceptance Puriva + Bali placeholder removed); owner adds first real client via `#/setup`
 **Production classification:** `CLEAN_FIRST_RUN_OWNER_SETUP` · `TURNSTILE_ENABLED=false` (temporary) · `PURIVA_FULL_LAUNCH=NOT_YET_CLAIMED` · live provider flags false · `SHARED_PROXY_ACTION=none`
 **Interactive browser login:** Turnstile temporarily disabled; password auth + rate limiting active; owner completes company settings + first client on `#/setup`. See [`docs/operator/PRODUCTION_CLEAN_STATE_RESET_2026-07-13.md`](./operator/PRODUCTION_CLEAN_STATE_RESET_2026-07-13.md).
+
+> **LIVE GA4/GSC WITHDRAWN (2026-07-13, owner decision):** Live Google Analytics 4 and Google Search Console integrations are **withdrawn** from current and planned scope — not deferred for automatic resumption. No live OAuth, service accounts, sync, property discovery, refresh tokens, or scheduled sync. Manual CSV import is **not** implemented and **not** authorized now. Generic monthly-report / MANUAL / CSV_IMPORT metric structures remain. Schema fields `gscSiteUrl` / `ga4PropertyId` and enum values GA4/GSC/HYBRID remain for `SCHEMA_DEPRECATE_LATER`. **Google Drive** remains a separate capability. Live GA4/GSC is **not** a Puriva Launch blocker. Historical paragraphs below that still say "deferred" or "next gate = GA/GSC" are superseded by this closeout.
+
 **Authoritative project control:** [`docs/project-control/AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md`](./project-control/AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md)
 **AI Policy / provider routing:** [`docs/architecture/AI_POLICY_PROVIDER_ROUTING.md`](./architecture/AI_POLICY_PROVIDER_ROUTING.md)
 **PRE-STAGING closure:** 2026-07-10 (local/no-live audit + safe fixes; see [`docs/operator/PRE_STAGING_CLOSURE_VERDICT.md`](./operator/PRE_STAGING_CLOSURE_VERDICT.md))
@@ -50,9 +53,9 @@
 | **PRE-STAGING local closure** | **PASS (local/no-live only)** — see [`PRE_STAGING_CLOSURE_VERDICT.md`](./operator/PRE_STAGING_CLOSURE_VERDICT.md). Historical; superseded by production deploy for env readiness |
 | **G69 merge** | **DONE** — G57–G68 fast-forward merged to `main`; final commit `64bfd06` |
 | Production readiness | **CONTROLLED LIVE TESTING READY** — runtime `57f9c52` deployed; external providers owner-gated; Puriva full launch NOT claimed |
-| Next gate | Owner interactive Turnstile login + separately approved external-provider live proofs (GA/GSC / OpenAI / WP / Resend / R2 write) |
+| Next gate | Owner interactive Turnstile login + separately approved external-provider live proofs (OpenAI / WP / Resend / R2 write). **Live GA4/GSC: WITHDRAWN — not next gate.** |
 | PRE-STAGING Lanes 14–15 | **Docs closeout** — stale-claim sweep + operator runbook refresh; no live proof; Puriva Launch **BLOCKED** |
-| G469-G708 final integration | **KEEP** — 20 lanes reconciled; local/no-IO foundations only; live R2, live email, live GA/GSC, live WordPress, live image, staging/prod live proofs, full notification E2E launch proof, trusted `actualCostUsd` ingestion, commit, push, deploy remain blocked (in-app notification persistence/UI foundation now exists — see notification rows below) |
+| G469-G708 final integration | **KEEP** — 20 lanes reconciled; local/no-IO foundations only; live R2, live email, live WordPress, live image, staging/prod live proofs, full notification E2E launch proof, trusted `actualCostUsd` ingestion, commit, push, deploy remain blocked (in-app notification persistence/UI foundation now exists — see notification rows below). **Live GA4/GSC: WITHDRAWN.** |
 | G229-G468 final integration | **KEEP** — 12 lanes reconciled; local/no-IO foundations only; superseded as latest baseline by G469-G708 |
 | G72 model routing | **Implemented** — backend policy per task type; approved model `anthropic/claude-haiku-4.5`; no live call in G72 |
 | G73 routing attribution | **Local PASS** — dry-run/preview `modelRouting` + `plannedLedgerMetadata`; budget guard route cap wired; persistent preview ledger records routing metadata |
@@ -64,7 +67,7 @@
 | G78 multi-scope docs | **Docs only — complete (uncommitted)** — runbook truth labels, deferred-scope buckets, notifications plan, integration/monthly-report/WordPress tier labels, pack implementation status |
 | G79 monthly cap aggregation | **Implemented (local unit proof)** — `sumSpentUsdForPeriod()` includes live `COMPLETED` rows and uses `actualCostUsd ?? estimatedCostUsd`; `ai-budget-ledger.service.test.ts` 18/18 PASS |
 | G80 `actualCostUsd` policy | **Policy documented only** — `actualCostUsd` remains `null` unless a trusted provider cost is exposed; no invoice-cost ingestion implemented |
-| G81-G87 live proof planning | **Planning/prep only** — staging live proof, notifications, email no-send proof, approval event map, GA/GSC live metrics, WordPress live draft, and image generation provider proof plans updated; no live calls or sends executed |
+| G81-G87 live proof planning | **Planning/prep only** — staging live proof, notifications, email no-send proof, approval event map, WordPress live draft, and image generation provider proof plans updated; no live calls or sends executed. **GA/GSC live metrics planning superseded — live scope WITHDRAWN.** |
 | G88 consolidation | **Docs consolidation in shared files** — correct G79-G88 gate map recorded; Puriva Launch remains **BLOCKED** and production remains frozen |
 | G89-G148 final integration | **KEEP** — local foundations only; live proofs remain blocked |
 | G149-G228 final integration | **KEEP** — 9 lanes reconciled; local/no-IO foundations only; superseded as latest baseline by G469-G708 |
@@ -154,10 +157,10 @@ Production PostgreSQL role password and `DATABASE_URL` were rotated, the product
 | Required smokes | `smoke:mvp:staging` PASS; `smoke:staging-security-baseline` 32/32 PASS |
 | Caddy | Not restarted or changed |
 | Production | **Not modified** — FROZEN; prod API `65b4b9d4…` StartedAt `2026-07-11T10:51:44Z` unchanged |
-| Live integrations | Email = **STAGING PROVIDER ACCEPTANCE PROVEN**; AI-A = **CONFIG SHAPE PROVEN**; AI-B AI Delivery OpenRouter = **STAGING LIVE PROVEN**; R2 private-object IO = **STAGING LIVE PROVEN** on `4cd6d58`; OpenAI Images one-image = **STAGING LIVE PROVEN** on `c07df10`; WordPress dedicated one-draft = **STAGING LIVE PROVEN** on `bd649d5`; GA-GSC / MI remain open |
+| Live integrations | Email = **STAGING PROVIDER ACCEPTANCE PROVEN**; AI-A = **CONFIG SHAPE PROVEN**; AI-B AI Delivery OpenRouter = **STAGING LIVE PROVEN**; R2 private-object IO = **STAGING LIVE PROVEN** on `4cd6d58`; OpenAI Images one-image = **STAGING LIVE PROVEN** on `c07df10`; WordPress dedicated one-draft = **STAGING LIVE PROVEN** on `bd649d5`; GA4/GSC **WITHDRAWN**; MI remains open |
 | AI Policy / provider routing | **Docs alignment COMPLETE (2026-07-12)** — [`AI_POLICY_PROVIDER_ROUTING.md`](./architecture/AI_POLICY_PROVIDER_ROUTING.md); OpenRouter = preferred text broker/adapter; direct OpenAI image adapter under same AI Policy; **not** universal routing implemented; BFL successful generation **not** claimed |
 | VPS evidence | `/opt/dca/apps/dcaosv1/staging/backups/STAGING_DEPLOY_A8A74E6_RESULT_20260712-043322.txt` |
-| Next sequence | WordPress one-draft COMPLETE → GA/GSC → MI |
+| Next sequence | WordPress one-draft COMPLETE → MI (GA4/GSC **WITHDRAWN**) |
 
 **Production safety:** This staging PASS does **not** authorize production deploy, Caddy changes, DB restore, or further live integration proofs without separate owner gates.
 
@@ -252,7 +255,7 @@ Production PostgreSQL role password and `DATABASE_URL` were rotated, the product
 | OpenRouter text / email | `AI_TEXT_GATEWAY=local`; email live send remains disabled |
 | DB / Caddy / production | DB+Caddy IDs unchanged; production FROZEN |
 | VPS evidence | `/opt/dca/apps/dcaosv1/staging/backups/OPENAI_IMAGE_STAGING_ONE_IMAGE_PROOF_20260712-102457.json` |
-| Next gate | GA/GSC live proof (WordPress dedicated staging one-draft COMPLETE) |
+| Next gate | MI (GA4/GSC **WITHDRAWN**; WordPress dedicated staging one-draft COMPLETE) |
 
 ## WordPress staging one-draft live proof closeout (2026-07-12)
 
@@ -277,7 +280,7 @@ Production PostgreSQL role password and `DATABASE_URL` were rotated, the product
 | Image / email / OpenRouter live | false / false / not exercised |
 | DB / Caddy / production | DB+Caddy IDs unchanged; production FROZEN |
 | Not claimed | General publication; image attachment; product publish path; production WordPress |
-| Next gate | GA/GSC live proof |
+| Next gate | MI (GA4/GSC **WITHDRAWN**) |
 
 **Prior local adapter result (retained):** dedicated live-draft adapter **LOCAL IMPLEMENTED / FAKE-TRANSPORT PROVEN** on the same baseline (`createWordPressDraft` / exact-ID trash; dual `WORDPRESS_DRAFT_LIVE_*` flags; fake smoke PASS).
 
@@ -330,7 +333,7 @@ Production PostgreSQL role password and `DATABASE_URL` were rotated, the product
 | Narrow staging product-approve proof | **PROVEN** on staging `57f1881` — correlation `approve-gap-a637cdad-…`; product `POST …/approve` → `APPROVED`; URLs remained null; no direct DB status update; OpenAI/WP/email = 0; exact R2+DB cleanup residual 0 |
 | Staging deploy | Artifact `/opt/dca/staging-artifacts/57f1881`; API recreated; DB/PG identity unchanged; migration SKIP; live flags false; production unchanged |
 | Production | **Frozen** — unchanged |
-| Deferred non-blocking | GA4/GSC credentials; in-system notification E2E; production release — email remains priority notification path |
+| Deferred non-blocking | In-system notification E2E; production release — email remains priority notification path. **GA4/GSC: WITHDRAWN (not deferred).** |
 
 ## Staging email one-send proof closeout (2026-07-12)
 
@@ -452,7 +455,7 @@ Production PostgreSQL role password and `DATABASE_URL` were rotated, the product
 | Browser correlation | `puriva-staging-browser-3b2a26e5-…` |
 | Cleanup | Exact-ID archive of projects/deliverables/reports; retained archived client rows as evidence (no broad delete) |
 | Local validation | `npm.cmd run validate` PASS; focused Puriva unit PASS; `smoke:mvp:staging` PASS |
-| Go-live readiness | `READY_WITH_PRODUCTION_AND_GOOGLE_GATES` (production deploy + live GA4/GSC remain owner gates) |
+| Go-live readiness | `READY_WITH_PRODUCTION_GATES` (production deploy remains owner gate; **live GA4/GSC WITHDRAWN**) |
 | Evidence | `/opt/dca/apps/dcaosv1/staging/backups/STAGING_PURIVA_DEPLOY_632d9a9_20260713-040821.txt` |
 
 **Truth labels (post-proof):** `PURIVA_CONFIGURATION_STAGING_RUNTIME=PASS`; `CROSS_TENANT_ISOLATION_STAGING=PASS`; `CLIENT_PORTAL_STAGING_BROWSER_PROOF=PASS`; `MONTHLY_REPORT_STAGING_COMPOSITION=PASS`.
@@ -511,7 +514,7 @@ Production PostgreSQL role password and `DATABASE_URL` were rotated, the product
 | Smokes | `smoke:mvp:staging` PASS; Modal a11y against staging PASS 14/14 |
 | Evidence | `/opt/dca/apps/dcaosv1/staging/backups/STAGING_RC_WEB_FIX_9921bb3_20260713-030802.txt` |
 
-**Production safety:** This staging PASS does **not** authorize production deploy. GA/GSC, notification E2E, and DS Modal `aria-describedby` remain deferred.
+**Production safety:** This staging PASS does **not** authorize production deploy. Notification E2E and DS Modal `aria-describedby` remain deferred. **Live GA4/GSC: WITHDRAWN** (not deferred).
 
 ## Puriva pre-production readiness closeout (2026-07-13)
 
@@ -531,7 +534,7 @@ Production PostgreSQL role password and `DATABASE_URL` were rotated, the product
 | Production public probes | staging+prod `/api/v1/health` HTTP 200; HSTS present |
 | Production dry-run doc | [`PRODUCTION_DRY_RUN_PURIVA_PREPROD.md`](./runbooks/PRODUCTION_DRY_RUN_PURIVA_PREPROD.md) |
 | Monthly ops runbook | [`PURIVA_MONTHLY_OPERATION.md`](./runbooks/PURIVA_MONTHLY_OPERATION.md) |
-| GA4/GSC live | **DEFERRED** — fail-closed owner ID envs `PURIVA_GA4_PROPERTY_ID` / `PURIVA_GSC_SITE_PROPERTY` |
+| GA4/GSC live | **WITHDRAWN** — live GA4/GSC not in scope; MANUAL/snapshot monthly reports remain |
 | In-system notification E2E | **DEFERRED** |
 | Staging redeploy | **COMPLETE** on `632d9a9` — see Puriva staging redeploy + composition closeout above |
 | Production | **FROZEN** — `BLOCKED_OWNER_ACTION=APPROVE_PRODUCTION_DEPLOY` |
@@ -1096,7 +1099,7 @@ G46d was staging-only. No production deploy was attempted, and production app/AP
 
 **G53 blockers recorded:** HSTS/proxy security warning; rollback/restore evidence; env/secrets separation; credential storage; tenant/client boundary re-verification on target; integration truth matrix ([`INTEGRATIONS_TRUTH_MATRIX.md`](./runbooks/INTEGRATIONS_TRUTH_MATRIX.md) — audit baseline 2026-07-09); controlled dry-run (G49); G49 before G50 sequence.
 
-**Next gates (ordered reference):** G49 production dry-run/read-only proof before any production deploy path. Puriva Launch proof gates remain separate: R2 proof → GA/GSC proof ([`MONTHLY_REPORT_LIVE_DATA_PROOF.md`](./runbooks/MONTHLY_REPORT_LIVE_DATA_PROOF.md)) → AI Model Research → AI Model Policy → live AI proof ([`AI_PROVIDER_LIVE_PROOF.md`](./runbooks/AI_PROVIDER_LIVE_PROOF.md)) → image generation proof → transactional notifications proof. WordPress draft handoff: [`WORDPRESS_DRAFT_PROOF.md`](./runbooks/WORDPRESS_DRAFT_PROOF.md) (auto-publish remains deferred).
+**Next gates (ordered reference):** G49 production dry-run/read-only proof before any production deploy path. Puriva Launch proof gates remain separate: R2 proof → AI Model Research → AI Model Policy → live AI proof ([`AI_PROVIDER_LIVE_PROOF.md`](./runbooks/AI_PROVIDER_LIVE_PROOF.md)) → image generation proof → transactional notifications proof. **Live GA4/GSC: WITHDRAWN — not a launch gate.** WordPress draft handoff: [`WORDPRESS_DRAFT_PROOF.md`](./runbooks/WORDPRESS_DRAFT_PROOF.md) (auto-publish remains deferred).
 
 Full plan: [`docs/runbooks/G53_PRODUCTION_SAFETY_PLAN.md`](./runbooks/G53_PRODUCTION_SAFETY_PLAN.md).
 
@@ -1149,7 +1152,7 @@ Percentages are **local MVP readiness**, not production-proven. See [`docs/STATU
 | AI provider | `configured_shape_ok` (gateway `local`) | Deterministic default |
 | WordPress | `disabled` | Publish not enabled |
 | R2 | `disabled` | Bucket env absent |
-| GA/GSC | `disabled` | Sync not enabled |
+| GA/GSC | **WITHDRAWN** | Live GA4/GSC not in scope; MANUAL/snapshot monthly reports remain |
 
 ---
 
@@ -1238,11 +1241,11 @@ Full pack: [`docs/runbooks/STAGING_READINESS.md`](./runbooks/STAGING_READINESS.m
 |------|--------|
 | Staging deploy proof | **Phase C refresh COMPLETE** — G35 Phase C controlled refresh on `5e1ea5a` PASS; staging artifact, API, web, and MVP smoke verified; production untouched (see §2.2, §2.8); G43 local re-check PASS does not change deferred status; further staging refresh/execution requires fresh explicit owner approval |
 | Production deploy proof | Deferred — frozen; G48/G53 planning PASS recorded; production deploy ready **NO**; G49/G50 **not executed**; G54 HSTS/proxy fixed; next production path remains G49 dry-run before G50 |
-| Puriva Launch | **Blocked** — staging/production live proof gates (R2, GA/GSC, live AI re-proof, image gen, in-system + email notifications) and product workflow gates required; local live AI + COMPLETED ledger row proven (G77b) and G79 local monthly aggregation do not close launch; see deferred-scope register |
+| Puriva Launch | **Blocked** — staging/production live proof gates (R2, live AI re-proof, image gen, in-system + email notifications) and product workflow gates required; local live AI + COMPLETED ledger row proven (G77b) and G79 local monthly aggregation do not close launch; **live GA4/GSC WITHDRAWN**; see deferred-scope register |
 | Live AI provider / OpenRouter execution | **COMPLETE (local only)** — formal clean proof G71e + G71e-retry; G77b persistent COMPLETED ledger row; G79 monthly aggregation includes live `COMPLETED` rows locally; `actualCostUsd=null` remains policy-correct until trusted provider cost ingestion exists; staging/production live proof still pending |
 | Live WordPress publish | Deferred — draft prep only |
 | Live R2 real-bucket proof | Deferred — explicit env approval required; no bucket IO in local closeout; no staging/prod storage readiness claim |
-| GA/GSC live sync | Deferred — snapshot-first metrics |
+| GA/GSC live sync | **WITHDRAWN** — MANUAL/snapshot monthly reports remain |
 | Scraping / crawling ingestion | Deferred |
 | Autonomous agents / background queues | Deferred |
 | Client-facing curated MI view | Deferred |

@@ -1,14 +1,16 @@
 # Puriva Monthly Report v1 Gate
 
-**Status:** Local deterministic monthly report scaffolding for Puriva delivery status and compliance-safe recommendations. G85 live GA/GSC path planning, G103-G109 helper guardrails, **G171-G180** closeout, **G269-G288** analytics hardening, and **G529–G540** client/admin output hardening (FINAL-only, secret redaction, metric/CSV/recommendation/export/unavailable/approval wording) are documented here and in related runbooks — they do **not** change this gate into live analytics proof.
+> **Superseded (2026-07-13):** Live GA4/GSC scope **WITHDRAWN**. This gate proves MANUAL/snapshot local scaffolding only. Deleted file refs below are historical.
+
+**Status:** Local deterministic monthly report scaffolding for Puriva delivery status and compliance-safe recommendations.
 
 Related:
 
 - [`docs/architecture/PURIVA_OPERATING_PACK_V1.md`](../architecture/PURIVA_OPERATING_PACK_V1.md) — canonical monthly report flow and launch blockers
 - `apps/api/src/core/puriva-monthly-report.ts`
 - `apps/api/src/core/monthly-report-policy.ts`
-- `apps/api/src/config/ga-gsc.config.ts`
-- `apps/api/src/core/ga-gsc-period-policy.ts`
+- ~~`apps/api/src/config/ga-gsc.config.ts`~~ — **deleted** (live scope WITHDRAWN)
+- ~~`apps/api/src/core/ga-gsc-period-policy.ts`~~ — **deleted** (live scope WITHDRAWN)
 - `apps/api/src/core/monthly-report-metrics-validation.ts`
 - `apps/api/src/core/monthly-report-metrics-recommendation-policy.ts`
 - `apps/api/src/core/monthly-report-metrics-output-guard.ts`
@@ -18,7 +20,7 @@ Related:
 - `apps/api/src/core/metrics-source-truth.ts`
 - [`MONTHLY_REPORT_G529_G540_CLOSEOUT.md`](./MONTHLY_REPORT_G529_G540_CLOSEOUT.md) — G529–G540 output hardening closeout
 - [`MONTHLY_REPORT_CSV_IMPORT_PROOF_PLAN.md`](./MONTHLY_REPORT_CSV_IMPORT_PROOF_PLAN.md) — CSV/manual import proof plan (no live Google)
-- [`MONTHLY_REPORT_LIVE_DATA_PROOF.md`](./MONTHLY_REPORT_LIVE_DATA_PROOF.md) — live GA/GSC remains deferred
+- [`MONTHLY_REPORT_LIVE_DATA_PROOF.md`](./MONTHLY_REPORT_LIVE_DATA_PROOF.md) — live GA4/GSC **WITHDRAWN**; MANUAL/snapshot path remains
 - `scripts/lib/puriva-monthly-report.mjs`
 - `scripts/lib/puriva-local-setup.mjs`
 - `docs/runbooks/PURIVA_CLIENT_PORTAL_BOUNDARY_GATE.md`

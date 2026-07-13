@@ -24,14 +24,14 @@ export const PURIVA_STAGING_ALLOWED_WP_HOSTS = Object.freeze([
 export const PURIVA_STAGING_MONTHLY_AI_CAP_USD = 100;
 
 /**
- * GA4 / GSC readiness placeholders — fail closed until owner supplies exact IDs.
- * Never select the first Google property returned.
+ * GA4 / GSC owner mapping placeholders — live access WITHDRAWN.
+ * Env IDs may still be recorded for archival mapping; never select the first Google property returned.
  */
 export const PURIVA_ANALYTICS_OWNER_GATE = {
   ga4PropertyIdEnv: "PURIVA_GA4_PROPERTY_ID",
   gscSitePropertyEnv: "PURIVA_GSC_SITE_PROPERTY",
-  liveAccess: "DEFERRED",
-  rule: "Require explicit GA4 Property ID and exact GSC site property; mismatch = fail closed."
+  liveAccess: "WITHDRAWN",
+  rule: "Live GA4/GSC WITHDRAWN by owner; explicit IDs are archival only and never unlock live sync."
 };
 
 export function normalizeHostname(website) {
@@ -67,7 +67,7 @@ export function assertPurivaStagingWordpressHost(siteUrl, { allowlist = PURIVA_S
 }
 
 /**
- * Analytics mapping — require explicit IDs; never invent or pick first property.
+ * Analytics mapping — archival IDs only; live access WITHDRAWN.
  */
 export function resolvePurivaAnalyticsMapping(env = process.env) {
   const ga4PropertyId = String(env.PURIVA_GA4_PROPERTY_ID ?? "").trim();
@@ -78,7 +78,7 @@ export function resolvePurivaAnalyticsMapping(env = process.env) {
       status: "MISSING_OWNER_IDS",
       ga4PropertyId: ga4PropertyId || null,
       gscSiteProperty: gscSiteProperty || null,
-      liveAccess: "DEFERRED"
+      liveAccess: "WITHDRAWN"
     };
   }
   return {
@@ -86,7 +86,7 @@ export function resolvePurivaAnalyticsMapping(env = process.env) {
     status: "CONFIGURED_IDS_ONLY",
     ga4PropertyId,
     gscSiteProperty,
-    liveAccess: "DEFERRED"
+    liveAccess: "WITHDRAWN"
   };
 }
 

@@ -179,7 +179,7 @@ export function buildReportShellCopy(input: {
   const actionHint = input.isArchived
     ? "Restore to resume edits."
     : input.status === "FINAL"
-      ? "FINAL — visible in Client Portal monthly reports as a client-safe snapshot with approved metrics only. Live GA/GSC sync remains deferred."
+      ? "FINAL — visible in Client Portal monthly reports as a client-safe snapshot with approved metrics only. Live GA/GSC sync is WITHDRAWN."
       : "Review, finalize, then attach the report document and approved snapshot notes. Client Portal shows the report only after FINAL.";
 
   return {

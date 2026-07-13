@@ -139,17 +139,17 @@ Smokes:
 
 ---
 
-## GA4 / Google Search Console (deferred live sync)
+## GA4 / Google Search Console — WITHDRAWN (2026-07-13)
+
+> **Owner decision:** Live GA4/GSC OAuth/sync is **withdrawn** from current and planned scope. These env vars are **not required**.
 
 | Variable | Local | Staging (G4) | Notes |
 |----------|-------|--------------|-------|
-| `GA4_GSC_SYNC_ENABLED` | Optional (default off) | Owner gate | When not `true`, sync/OAuth remain disabled |
-| `GOOGLE_OAUTH_CLIENT_ID` | Never commit | Staging server only | Presence checked only in readiness layer |
-| `GOOGLE_OAUTH_CLIENT_SECRET` | Never commit | Staging server only | Presence checked only; never logged |
+| `GA4_GSC_SYNC_ENABLED` | Not required | Not required | **WITHDRAWN** — live GA4/GSC not in scope |
+| `GOOGLE_OAUTH_CLIENT_ID` | Not required | Not required | **WITHDRAWN** for GA4/GSC; Google Drive (separate capability) may need its own OAuth vars |
+| `GOOGLE_OAUTH_CLIENT_SECRET` | Not required | Not required | **WITHDRAWN** for GA4/GSC |
 
-Live GA4/GSC OAuth and provider sync are deferred. Manual/imported metrics snapshots remain the active path.
-
-Smoke: `smoke:external-integrations-readiness:local` — config shape only; no OAuth or sync.
+MANUAL/snapshot monthly-report metrics remain the active path. Manual CSV import is **not** implemented and **not** authorized now.
 
 ---
 

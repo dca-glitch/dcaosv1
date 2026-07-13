@@ -109,7 +109,7 @@ The current foundation intentionally avoids:
 - real external provider execution (local deterministic/bounded AI only)
 - crawling
 - WordPress publishing integration (draft preparation foundation exists; full integration gated)
-- GA/GSC integration
+- GA/GSC integration **WITHDRAWN** (not deferred)
 - Resend sending or API key handling
 - advanced Client Portal actions beyond the MVP visibility path (public magic links, full interactive comment threads, approval/request-change actions)
 - advanced Client Portal actions (public magic links, full interactive comment threads)

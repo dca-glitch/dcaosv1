@@ -7857,7 +7857,7 @@ export async function getAiDeliveryMonthlySummary(
         approvalStatus: item.approvalStatus ?? null
       })),
       deferred: {
-        gaGscMetricsStatus: "DEFERRED",
+        gaGscMetricsStatus: "WITHDRAWN",
         trendMonthsStatus: "DEFERRED",
         recommendationsStatus: "DEFERRED_REQUIRES_PERSISTED_REPORT"
       }
@@ -8225,7 +8225,7 @@ export async function generateAiDeliveryMonthlyReportRecommendations(
     ? `- Latest approved metrics snapshot (${latestApprovedSnapshot.targetMonth}): GSC clicks ${latestApprovedSnapshot.gscClicks ?? "n/a"}, impressions ${latestApprovedSnapshot.gscImpressions ?? "n/a"}, GA4 sessions ${latestApprovedSnapshot.ga4Sessions ?? "n/a"}.`
     : metricsCount > 0
       ? `- Metric snapshots on file: ${metricsCount} (none approved yet for recommendation emphasis).`
-      : "- Metric snapshots: none on file (manual/import path only; live GA/GSC deferred).";
+      : "- Metric snapshots: none on file (manual/import path only; live GA/GSC WITHDRAWN).";
 
   const lines = [
     `# Admin recommendation summary (${project.name})`,

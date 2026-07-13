@@ -1,23 +1,26 @@
 # GA/GSC OAuth Token Storage Design (G517–G528)
 
-**Status:** Design-only refresh — **no schema**, no Prisma model, no consent routes, no live Google, no token I/O.
+> **SUPERSEDED (2026-07-13):** Live GA4/GSC scope is **WITHDRAWN**. Design helpers (`ga-gsc-oauth-token-storage.design.ts`, `ga-gsc.config.ts`) were removed. This document is historical only — do not implement OAuth/token storage from it.
+
+**Status:** Historical design-only — **WITHDRAWN**; no schema, no consent routes, no live Google.
 **Lane:** Lane 5 (G517–G528). Written here to avoid conflicting edits to [`MONTHLY_REPORT_LIVE_DATA_PROOF.md`](./MONTHLY_REPORT_LIVE_DATA_PROOF.md) analytics sections owned by parallel work.
-**Code contract:** `apps/api/src/core/ga-gsc-oauth-token-storage.design.ts`
+**Code contract:** removed (`apps/api/src/core/ga-gsc-oauth-token-storage.design.ts` deleted with withdrawal)
 **Related:** [`PHASE_F_BLOCK_61_ENCRYPTED_CREDENTIALS_LOCAL_CHECKLIST.md`](./PHASE_F_BLOCK_61_ENCRYPTED_CREDENTIALS_LOCAL_CHECKLIST.md), [`../security/CREDENTIAL_ENCRYPTION_FOUNDATION.md`](../security/CREDENTIAL_ENCRYPTION_FOUNDATION.md), [`MONTHLY_REPORT_LIVE_DATA_PROOF.md`](./MONTHLY_REPORT_LIVE_DATA_PROOF.md) §3.1a.
 
 ---
 
 ## 1. Current ceiling (unchanged)
 
-Today’s readiness (`ga-gsc.config.ts`) proves **env presence only**:
+~~Today’s readiness (`ga-gsc.config.ts`) proves **env presence only**:~~ **Removed with withdrawal.** Historical env keys were:
 
 | Env key | Role |
 |---------|------|
-| `GA4_GSC_SYNC_ENABLED` | Arms sync flag (`true` / not) |
-| `GOOGLE_OAUTH_CLIENT_ID` | Presence only |
-| `GOOGLE_OAUTH_CLIENT_SECRET` | Presence only — never logged |
+| `GA4_GSC_SYNC_ENABLED` | Arms sync flag (`true` / not) — **withdrawn / not required** |
+| `GOOGLE_OAUTH_CLIENT_ID` | Presence only — **withdrawn / not required** |
+| `GOOGLE_OAUTH_CLIENT_SECRET` | Presence only — never logged — **withdrawn / not required** |
 
-Every shape/readiness/presence result forces `liveOAuthDeferred: true` and `liveSyncDeferred: true`.  
+Every shape/readiness/presence result forced `liveOAuthDeferred: true` and `liveSyncDeferred: true`.
+
 `configured_shape_ok` ≠ working OAuth token.
 
 ---

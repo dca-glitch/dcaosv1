@@ -1,4 +1,3 @@
-import { type GaGscIntegrationReadinessStatus } from "../config/ga-gsc.config";
 import { type MonthlyMetricSourceType } from "./core.types";
 
 export type MonthlyReportMetricsSourceTruth =
@@ -38,7 +37,7 @@ export interface MonthlyMetricsSourceTruthInput {
   sourceType?: MonthlyMetricSourceType | null;
   status?: string | null;
   placeholderOnly?: boolean | null;
-  gaGscReadinessStatus?: GaGscIntegrationReadinessStatus | null;
+  gaGscReadinessStatus?: string | null;
   liveProofApproved?: boolean | null;
   mixedSources?: boolean | null;
 }
@@ -224,15 +223,16 @@ export function resolveMonthlyMetricsSourceTruth(
     };
   }
 
-  if (input.status === "APPROVED" && input.gaGscReadinessStatus === "configured_shape_ok" && input.liveProofApproved) {
+  // GA4 | GSC | HYBRID — live GA4/GSC integration WITHDRAWN; never prove live.
+  if (input.sourceType === "GA4" || input.sourceType === "GSC" || input.sourceType === "HYBRID") {
     return {
-      truth: "live",
+      truth: "unavailable",
       adminLabel: mixedSources
-        ? "LIVE_GA_GSC approved snapshot (mixed sources)"
-        : "LIVE_GA_GSC approved snapshot",
-      clientLabel: "Metrics imported from connected analytics sources",
-      liveGaGscProven: true,
-      clientMayUseLiveLanguage: true,
+        ? "GA/GSC live integration withdrawn (mixed sources)"
+        : "GA/GSC live integration withdrawn",
+      clientLabel: "Metrics unavailable",
+      liveGaGscProven: false,
+      clientMayUseLiveLanguage: false,
       mixedSources
     };
   }
@@ -240,8 +240,8 @@ export function resolveMonthlyMetricsSourceTruth(
   return {
     truth: "unavailable",
     adminLabel: mixedSources
-      ? "GA/GSC unavailable or not live-proven (mixed sources)"
-      : "GA/GSC unavailable or not live-proven",
+      ? "GA/GSC live integration withdrawn (mixed sources)"
+      : "GA/GSC live integration withdrawn",
     clientLabel: "Metrics unavailable",
     liveGaGscProven: false,
     clientMayUseLiveLanguage: false,
@@ -281,8 +281,8 @@ export function validateMonthlyReportGenerationInput(
   }
 
   const metricsTruth = resolveMonthlyMetricsSourceTruth(input.metricsSource ?? {});
-  if (metricsTruth.truth === "live" && !input.approvedSnapshotId) {
-    errors.push("live GA/GSC report generation requires an approved snapshot id");
+  if (metricsTruth.liveGaGscProven) {
+    errors.push("live GA/GSC report generation is withdrawn and cannot be proven");
   }
 
   if (metricsTruth.truth === "placeholder" && metricsTruth.clientMayUseLiveLanguage) {

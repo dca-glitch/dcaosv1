@@ -1,24 +1,26 @@
 # Deferred Scope Register
 
+> **LIVE GA4/GSC WITHDRAWN (2026-07-13, owner decision):** Live Google Analytics 4 and Google Search Console integrations — OAuth, service accounts, sync, property discovery, refresh tokens, scheduled sync — are **withdrawn** from current and planned scope (not deferred for automatic resumption). Manual CSV import is **not** implemented and **not** authorized now. Generic monthly-report / MANUAL / CSV_IMPORT metric structures remain. Schema fields `gscSiteUrl` / `ga4PropertyId` and enum values GA4/GSC/HYBRID remain for `SCHEMA_DEPRECATE_LATER` — do not claim they were dropped. **Google Drive** remains a separate capability. See [`docs/STATUS.md`](../STATUS.md) §Live GA4/GSC withdrawal closeout.
+
 Status: Plain-language list of what is intentionally not active in the current local/admin MVP, plus **Puriva Launch blockers** that are required before launch but not yet proven.
 
 This register prevents confusion. If something is listed under **Still deferred**, it is not forgotten — it is intentionally waiting for a later approved block. If something is listed under **Puriva Launch blockers**, it is required for Puriva Launch but not yet live-proven.
 
 **Authoritative project control:** [`docs/project-control/AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md`](../project-control/AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md)
 
-**Production controlled deploy (2026-07-13):** Runtime `57f9c52` deployed to production (API + in-place web). Migration catch-up **39** applied. Puriva client `84878363-…` bound `PURIVA_OPERATING_PACK_V1`. Classification: **READY_FOR_CONTROLLED_LIVE_TESTING**. Still deferred / owner-gated: live OpenAI, live R2 writes, WordPress draft/publish, Resend live send, GA4/GSC, interactive Turnstile browser login proof (API acceptance used revoked short-lived sessions). **PURIVA_FULL_LAUNCH=NOT_YET_CLAIMED**.
+**Production controlled deploy (2026-07-13):** Runtime `57f9c52` deployed to production (API + in-place web). Migration catch-up **39** applied. Puriva client `84878363-…` bound `PURIVA_OPERATING_PACK_V1`. Classification: **READY_FOR_CONTROLLED_LIVE_TESTING**. Still deferred / owner-gated: live OpenAI, live R2 writes, WordPress draft/publish, Resend live send, interactive Turnstile browser login proof (API acceptance used revoked short-lived sessions). **Live GA4/GSC: WITHDRAWN** (not a launch blocker). **PURIVA_FULL_LAUNCH=NOT_YET_CLAIMED**.
 
 **AI POLICY / PROVIDER ROUTING ALIGNMENT (2026-07-12):** Docs-only architecture KEEP. Canonical layers + terminology in [`AI_POLICY_PROVIDER_ROUTING.md`](../architecture/AI_POLICY_PROVIDER_ROUTING.md). OpenRouter remains preferred text broker/adapter (AI Delivery path STAGING LIVE PROVEN — AI-B only). Direct image/audio adapters are valid under AI Policy; parallel modality routing systems are prohibited. OpenAI Images staging one-image path = **STAGING LIVE PROVEN** (`c07df10`; marker `DCA-IMG-OPENAI-20260712T102457Z-a08x91rb`). BFL successful generation remains NOT PROVEN. Orchestrator Lite remains CONFIG SHAPE PROVEN.
 
 **Vite high-severity re-verification (2026-07-13):** `GHSA-fx2h-pf6j-xcff` remains **RESOLVED** at Vite `6.4.3` (exact pin; single lockfile copy). Staging/prod static serve path remains **NOT_AFFECTED** (no Vite server). Staging redeploy **NOT_REQUIRED** for this triage. Remaining `npm audit` findings are **4 moderate** (`uuid`/googleapis tree) — deferred/non-blocking unless separately opened. Production remains frozen.
 
-**AI Delivery bounded staging live proof (2026-07-13):** Connected staging workflow **COMPLETE / PASS** (`c0cc2bd5-…`) with proof-only recipient override `25f846e`. Product API approval of storageKey-only Stage A images was **NOT_PROVEN** on that run (URL-only gate); follow-on fix treats private `storageKey` as a valid preview reference without publicizing R2 or persisting signed URLs. Narrow product `/approve` staging re-proof follows controlled deploy. **GA4/GSC remain deferred and non-blocking. In-system notification E2E remains deferred and non-blocking. Email remains the priority notification path. Production remains frozen.**
+**AI Delivery bounded staging live proof (2026-07-13):** Connected staging workflow **COMPLETE / PASS** (`c0cc2bd5-…`) with proof-only recipient override `25f846e`. Product API approval of storageKey-only Stage A images was **NOT_PROVEN** on that run (URL-only gate); follow-on fix treats private `storageKey` as a valid preview reference without publicizing R2 or persisting signed URLs. Narrow product `/approve` staging re-proof follows controlled deploy. **Live GA4/GSC: WITHDRAWN — not a blocker.** In-system notification E2E remains deferred and non-blocking. Email remains the priority notification path. Production remains frozen.
 
 **Puriva Operating Pack assembly + local monthly rehearsal (2026-07-13):** Shared pack assembles identity/tone/language/dimensions/WP staging host/review/fallbacks/`$100` cap. Local rehearsal `smoke-puriva-monthly-rehearsal-local.mjs` **29/29 PASS**. Production dry-run public probes PASS; production mutation false.
 
 **Puriva staging redeploy + composition (2026-07-13):** Staging runtime advanced to `632d9a9` (`MIGRATION=SKIP`, `SHARED_PROXY_ACTION=none`, production unchanged). Staging composition **PROVEN**.
 
-**Client Operating Pack DB binding (2026-07-13):** `Client.operatingPackKey` nullable binding key (`PURIVA_OPERATING_PACK_V1`) + central fail-closed resolver (`database_binding`). Unbound clients do not receive Puriva rules/cap. Unknown keys rejected. Admin select-from-registry; portal does not expose pack internals. Migration additive with no global Puriva default. Production migrate/deploy remain owner-gated. GA4/GSC still deferred / not required for binding.
+**Client Operating Pack DB binding (2026-07-13):** `Client.operatingPackKey` nullable binding key (`PURIVA_OPERATING_PACK_V1`) + central fail-closed resolver (`database_binding`). Unbound clients do not receive Puriva rules/cap. Unknown keys rejected. Admin select-from-registry; portal does not expose pack internals. Migration additive with no global Puriva default. Production migrate/deploy remain owner-gated. Live GA4/GSC withdrawn — not required for binding.
 
 **Modal Wave (2026-07-13):** Canonical Modal = `apps/web/src/components/ui/Modal` (design-system adapter + portal). All **23** former `components/Modal` page consumers migrated to `components/ui`. Legacy root `components/Modal.tsx` **deleted**. Import-guard baseline **0**. Impl commit `a447b9e`. Docs-closeout `67d9aa4`. Staging web-only deploy COMPLETE at artifact `/opt/dca/staging-artifacts/a447b9e` (local web dist + **shared Caddy remount/restart** for stale bind after directory replacement — **not** production app/API/DB mutation). Staging Modal browser proof PASS; API/DB identities unchanged; live flags false. DS Modal `aria-describedby` remains DEFERRED (requires DS edit; workspace forbids). Nested WP confirm Escape mitigated in product by suspending Deliverables modal `isOpen` while confirm is open. `alertdialog` still DEFERRED. Preferred future static deploy: in-place sync into `/opt/dca/apps/dcaosv1/staging/web/dist`. Production remains frozen.
 
@@ -70,7 +72,6 @@ These are **not** "still deferred" long-term roadmap items. They are active bloc
 
 | Blocker | Scope | Notes |
 |---------|-------|-------|
-| GA/GSC live sync proof | Live integration | Snapshot-first locally; live OAuth/sync proof required — runbook: [`docs/runbooks/MONTHLY_REPORT_LIVE_DATA_PROOF.md`](../runbooks/MONTHLY_REPORT_LIVE_DATA_PROOF.md). Config-shape / env presence is **not** “Google ready”. |
 | R2 real-bucket proof | Live integration | **Staging private-object IO COMPLETE (2026-07-12)** on `4cd6d58` / `dcastaging` (`DCA-R2-20260712T081648Z-cc7ee7`). Local no-IO foundations remain. **Production R2 + image/client-deliverable/public delivery still required for launch.** |
 | Live AI provider proof | Live integration | **Local COMPLETE (G77b + G79)**; **staging AI Delivery OpenRouter path COMPLETE (AI-B 2026-07-12)** — marker `DCA-AI-B-20260712T071332Z-5vytpl`; COMPLETED ledger `a37577de-…`; `estimatedCostUsd=0.15`; `actualCostUsd=null`; gateway restored local. **Production live proof still required for launch** — runbook: [`docs/runbooks/AI_PROVIDER_LIVE_PROOF.md`](../runbooks/AI_PROVIDER_LIVE_PROOF.md) §9.20 |
 | AI Model Research | Policy gate | Separate approved research gate |
@@ -119,7 +120,7 @@ These remain **blocked or complete (local only)** after G57–G68 merged to `mai
 | G49 formal owner closure sentence | Production safety | **PENDING** | [`G49_PRODUCTION_DRY_RUN_READ_ONLY_PROOF.md`](../runbooks/G49_PRODUCTION_DRY_RUN_READ_ONLY_PROOF.md) |
 | Live AI provider proof | First controlled OpenRouter/text proof | **COMPLETE (local G71e/G77b + staging AI-B)** | Staging AI Delivery OpenRouter path KEEP 2026-07-12; production live proof still **BLOCKED** — [`AI_PROVIDER_LIVE_PROOF.md`](../runbooks/AI_PROVIDER_LIVE_PROOF.md) §9.20 |
 | Live image generation proof | Article+Image path | **PARTIAL** — OpenAI one-image staging path **STAGING LIVE PROVEN**; three-image/article/client/WordPress/production still **BLOCKED** | [`IMAGE_GENERATION_PROOF.md`](../runbooks/IMAGE_GENERATION_PROOF.md) |
-| GA/GSC OAuth + live sync | Monthly report live data | **BLOCKED** | [`MONTHLY_REPORT_LIVE_DATA_PROOF.md`](../runbooks/MONTHLY_REPORT_LIVE_DATA_PROOF.md) |
+| GA/GSC OAuth + live sync | Monthly report live data | **WITHDRAWN** | Owner decision 2026-07-13 — live GA4/GSC not in scope; MANUAL/snapshot monthly reports remain; see [`MONTHLY_REPORT_LIVE_DATA_PROOF.md`](../runbooks/MONTHLY_REPORT_LIVE_DATA_PROOF.md) |
 | WordPress live draft proof | Draft/handoff on target env | **PARTIAL** — dedicated staging one-draft create-and-trash **STAGING LIVE PROVEN**; image attach / general publish / production still **BLOCKED** | [`WORDPRESS_DRAFT_PROOF.md`](../runbooks/WORDPRESS_DRAFT_PROOF.md) |
 | R2 real-bucket IO proof | Private storage | **COMPLETE (staging bounded)** / production still **BLOCKED** | [`STORAGE_R2_PROOF.md`](../runbooks/STORAGE_R2_PROOF.md) |
 | Transactional email live proof | Resend/workflow notifications | **BLOCKED** | [`EMAIL_NOTIFICATIONS_PROOF.md`](../runbooks/EMAIL_NOTIFICATIONS_PROOF.md) (if present) or integrations matrix |
@@ -139,7 +140,7 @@ Grouped for planning clarity. Items remain deferred until a separate approved bl
 | **Live AI cost / accounting** | Monthly cap aggregation for `liveProviderCalled=true` COMPLETED rows; `actualCostUsd` trusted provider-cost ingestion; provider cost dashboards | **G79** implemented + local unit proof; **G80** policy documented only | G79 DONE locally; trusted `actualCostUsd` ingestion and dashboards deferred |
 | **Staging / production live proof** | Re-run bounded live OpenRouter, R2, GA/GSC, WordPress draft, email on target env | **G81** staging live proof planning (not execution); separate execution gates per integration | BLOCKED |
 | **Notifications** | In-app persistence/UI foundation → email MVP → client approval events → admin alerts → audit alignment | **G82-G84** planning/event-map outcomes; **N1-N3** per [`notifications-blocker-plan.md`](./notifications-blocker-plan.md); **current:** persistence/UI LOCAL FOUNDATION; staging migration APPLIED; live email **BLOCKED** (not STAGING LIVE PROVEN); full E2E launch proof open | Live email BLOCKED; full launch proof open — see [`AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md`](../project-control/AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md) |
-| **GA / GSC live metrics** | OAuth/token storage, live sync, non-placeholder monthly report metrics | **G85** planning in [`MONTHLY_REPORT_LIVE_DATA_PROOF.md`](../runbooks/MONTHLY_REPORT_LIVE_DATA_PROOF.md) | BLOCKED — MANUAL snapshots are separate from live GA/GSC |
+| **GA / GSC live metrics** | OAuth/token storage, live sync, non-placeholder monthly report metrics | **G85** planning in [`MONTHLY_REPORT_LIVE_DATA_PROOF.md`](../runbooks/MONTHLY_REPORT_LIVE_DATA_PROOF.md) | **WITHDRAWN** — MANUAL/snapshot monthly reports remain; live GA4/GSC not authorized |
 | **WordPress live draft proof** | Live draft proof session; publish remains frozen | **G86** three-tier plan in [`WORDPRESS_DRAFT_PROOF.md`](../runbooks/WORDPRESS_DRAFT_PROOF.md) | Draft prep local-proven; live proof BLOCKED; publish frozen |
 | **Image generation provider proof** | Provider research, disabled-safe wiring, medical-aesthetic proof checklist, live proof | **G87** planning + OpenAI one-image staging KEEP in [`IMAGE_GENERATION_PROOF.md`](../runbooks/IMAGE_GENERATION_PROOF.md) | PARTIAL — broader surfaces BLOCKED |
 | **Market Intelligence** | Live AI, scraping, client-facing curated MI view | Module MVP local-proven; live ingestion deferred | Deferred |
@@ -320,19 +321,21 @@ Current behavior:
 
 ## Live Analytics And External Accounts
 
-Deferred:
+**WITHDRAWN (2026-07-13):** Live GA4/GSC OAuth, sync, property discovery, refresh tokens, and scheduled sync are **withdrawn** from current and planned scope — not deferred for automatic resumption. Manual CSV import is **not** implemented and **not** authorized now.
 
-- Google OAuth;
-- live Google Search Console sync;
-- live Google Analytics sync;
-- automatic client-facing metrics exposure;
-- CSV upload flow for metrics;
+Still deferred (separate from withdrawn GA4/GSC):
+
+- Google Drive live export (BLOK 9 / separate capability);
+- automatic client-facing metrics exposure from live analytics;
 - automatic trend interpretation from live data.
 
 Current behavior:
 
-- monthly metrics use an admin-controlled snapshot-first foundation;
-- report metrics should be reviewed before client-facing use.
+- monthly metrics use an admin-controlled snapshot-first / MANUAL foundation;
+- report metrics should be reviewed before client-facing use;
+- schema fields `gscSiteUrl` / `ga4PropertyId` and GA4/GSC/HYBRID enum values remain for `SCHEMA_DEPRECATE_LATER`;
+- `GET /clients/:clientId/analytics-profile` remains read-only for any existing `ClientAnalyticsProfile` rows (no live Google calls);
+- `PUT /clients/:clientId/analytics-profile` returns **410** `GA4_GSC_LIVE_INTEGRATION_WITHDRAWN` (writes stopped; UI property editors removed).
 
 ## AI Provider And Automation
 
@@ -488,7 +491,7 @@ These items are deferred but **must not block** local staging readiness planning
 | HSTS proxy hardening | **Fixed in G54 — PASS** | G47c reported HSTS missing as warning only; fixed in G54 with backup and public proof |
 | Production deploy proof | Deferred | Frozen; G48/G53 planning PASS; production deploy ready NO; G49/G50 not executed |
 | Strict R2 real bucket proof | Deferred | Optional local env + smoke flag |
-| GA / GSC live sync | Deferred | Snapshot-first metrics; manual/Puriva placeholder proven |
+| GA / GSC live sync | **WITHDRAWN** | Snapshot-first / MANUAL metrics remain; live GA4/GSC not in scope |
 | Live provider proof | **COMPLETE (local only)** | Formal clean G71e + G71e-retry; G75 live spend attribution PARTIAL; G76 COMPLETED ledger wiring mocked/no-live PASS; **G77b persistent COMPLETED live ledger row PASS (local only)**; **G79 monthly aggregation includes live COMPLETED rows locally**; staging/production still pending |
 | WorkflowBriefs knowledge picker/override (6C-v2) | Deferred | 6C-v1 admin read-only visibility shipped |
 | `AiContextSnapshot` per-brief audit (6D) | Deferred | No `briefId` FK; safety via `smoke:ai-knowledge-context` |

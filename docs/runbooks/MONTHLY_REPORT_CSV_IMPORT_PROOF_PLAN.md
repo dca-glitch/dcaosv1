@@ -1,6 +1,8 @@
 # Monthly Report CSV / Manual Import Proof Plan
 
-**Status:** Typed proof plan only — no live Google, no OAuth, no GA/GSC API calls.
+> **LIVE GA4/GSC WITHDRAWN (2026-07-13):** Live GA4/GSC is withdrawn. This plan remains relevant only for existing MANUAL/snapshot paths. **Manual CSV import is not authorized for new implementation** unless the owner explicitly reopens that scope. Commands below that referenced deleted `ga-gsc.*` helpers are obsolete.
+
+**Status:** Typed proof plan only — no live Google, no OAuth, no GA/GSC API calls. Live GA4/GSC scope **WITHDRAWN**.
 **Lane:** G178 + **G282** refresh (GA/GSC / monthly reports G269–G288) + **G525** refresh (Lane 5 G517–G528).
 **Related:** [`PURIVA_MONTHLY_REPORT_V1_GATE.md`](./PURIVA_MONTHLY_REPORT_V1_GATE.md), [`MONTHLY_REPORT_LIVE_DATA_PROOF.md`](./MONTHLY_REPORT_LIVE_DATA_PROOF.md), [`GA_GSC_OAUTH_DESIGN_G517_G528.md`](./GA_GSC_OAUTH_DESIGN_G517_G528.md), [`GA_GSC_G517_G528_CLOSEOUT.md`](./GA_GSC_G517_G528_CLOSEOUT.md), [`POST_MVP_BLOCK_47_MONTHLY_METRICS_IMPORT_BROWSER_GATE.md`](./POST_MVP_BLOCK_47_MONTHLY_METRICS_IMPORT_BROWSER_GATE.md).
 
@@ -10,7 +12,7 @@
 
 Define how DCA OS Lite proves **CSV import** and **manual snapshot** metrics for monthly reports without claiming live GA/GSC.
 
-This plan is the local/staging proof path until a separately approved live GA/GSC block closes OAuth/token gaps.
+This plan historically bridged toward a live GA/GSC block; that live path is **WITHDRAWN**. Existing MANUAL/snapshot proofs remain valid; do not implement a new CSV importer from this document without a new owner gate.
 
 ---
 
@@ -85,16 +87,11 @@ Helpers: `apps/api/src/core/monthly-report-policy.ts`, `apps/api/src/core/metric
 
 ## 7. Focused unit commands
 
-```powershell
-cd C:\dcaosv1\apps\api
-node --import tsx --test src/config/ga-gsc.config.test.ts src/core/ga-gsc-period-policy.test.ts src/core/metrics-source-truth.test.ts src/core/ga-gsc-oauth-token-storage.design.test.ts src/core/ga-gsc-property-mapping.test.ts src/core/ga-gsc-site-url-mapping.test.ts src/core/monthly-report-policy.test.ts src/core/monthly-report-metrics-validation.test.ts src/core/monthly-report-metrics-recommendation-policy.test.ts src/core/monthly-report-metrics-output-guard.test.ts src/core/monthly-report-metrics-unavailable-state.test.ts src/core/monthly-report-metrics-export-truth.test.ts src/core/puriva-monthly-report.test.ts src/core/puriva-manual-metrics.test.ts
-```
-
-**Lane 5–only subset (G528):**
+Deleted `ga-gsc.*` helpers are gone. Remaining monthly-report / MANUAL path tests:
 
 ```powershell
 cd C:\dcaosv1\apps\api
-node --import tsx --test src/config/ga-gsc.config.test.ts src/core/ga-gsc-period-policy.test.ts src/core/metrics-source-truth.test.ts src/core/ga-gsc-oauth-token-storage.design.test.ts src/core/ga-gsc-property-mapping.test.ts src/core/ga-gsc-site-url-mapping.test.ts
+node --import tsx --test src/core/metrics-source-truth.test.ts src/core/monthly-report-policy.test.ts src/core/monthly-report-metrics-validation.test.ts src/core/monthly-report-metrics-recommendation-policy.test.ts src/core/monthly-report-metrics-output-guard.test.ts src/core/monthly-report-metrics-unavailable-state.test.ts src/core/monthly-report-metrics-export-truth.test.ts src/core/puriva-monthly-report.test.ts src/core/puriva-manual-metrics.test.ts
 ```
 
 No smoke required for G178/G282/G525 proof-plan refresh; G287 / G528 run focused tests only — no full validate in Lane 5.

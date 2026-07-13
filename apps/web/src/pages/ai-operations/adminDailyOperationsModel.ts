@@ -263,6 +263,6 @@ export const DEFERRED_GATED_ITEMS = [
   "Production deploy / readiness",
   "Live AI provider execution (OpenRouter)",
   "Live WordPress publish",
-  "GA/GSC live sync",
+  "GA/GSC live sync — WITHDRAWN",
   "R2 live bucket IO",
 ] as const;

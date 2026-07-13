@@ -1,8 +1,8 @@
 # Monthly Report Live Data Proof
 
-**Status:** Snapshot-first metrics and FINAL-only client visibility proven locally; live GA/GSC OAuth sync remains deferred until §3.1a token/OAuth gaps close and this gate passes on target environment. **2026-07-10 G78 audit:** confirmed owned docs distinguish MANUAL/placeholder local baseline vs future live GA/GSC for Puriva launch — no overclaim on OAuth/live sync. **2026-07-10 G85 planning:** prepared live GA/GSC path requirements without live sync, OAuth execution, or Google API calls. **2026-07-10 G103-G109 closeout:** added pure config-shape/date-range/property-mapping/source-truth/input-contract helpers and tests; this still does not prove live GA/GSC, OAuth consent, token storage, or Google API access. **2026-07-10 G269-G288 hardening:** expanded no-live unit coverage (config redaction, period/timezone, source-truth, unavailable-state, export truth labels); live OAuth/sync remain deferred.
+> **LIVE GA4/GSC WITHDRAWN (2026-07-13):** Live GA4/GSC OAuth/sync path is **withdrawn** — not deferred. This runbook now documents the **MANUAL/snapshot** monthly-report path only. No OAuth proof required. Manual CSV import is **not** implemented and **not** authorized now. Historical §3.1 live-path sections are superseded.
 
-**Gate:** Puriva Launch blocker — GA/GSC live proof + monthly report FINAL client path (see [`docs/operator/deferred-scope-register.md`](../operator/deferred-scope-register.md) and [`docs/architecture/PURIVA_OPERATING_PACK_V1.md`](../architecture/PURIVA_OPERATING_PACK_V1.md) — Monthly Report Flow v1).
+**Status:** Snapshot-first / MANUAL metrics and FINAL-only client visibility proven locally. Live GA4/GSC OAuth sync **WITHDRAWN** (owner decision 2026-07-13).
 
 Related:
 

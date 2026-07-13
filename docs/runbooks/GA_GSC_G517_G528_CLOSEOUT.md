@@ -1,5 +1,7 @@
 # GA/GSC Lane 5 Closeout — G517–G528
 
+> **Superseded (2026-07-13):** Live GA4/GSC scope **WITHDRAWN** — not deferred for automatic resumption.
+
 **Date:** 2026-07-10  
 **Base:** `main` @ `66dcb74`  
 **Agent:** Lane 5 subagent  

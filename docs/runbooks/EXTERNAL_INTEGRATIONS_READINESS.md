@@ -1,5 +1,7 @@
 # External Integrations Readiness (Block 1)
 
+> **LIVE GA4/GSC WITHDRAWN (2026-07-13):** GA4/GSC is no longer an active readiness category. Google Drive remains a separate capability.
+
 **Status:** Local-only config-shape validation. No live provider calls, publish, sync, crawl, or bucket mutation.
 
 Related:
@@ -39,11 +41,12 @@ Validate also runs `apps/api` check `check:external-integrations-readiness` (con
 | **AI provider** | `AI_TEXT_GATEWAY`, OpenRouter key/model presence (boolean only), runtime validation warnings, live execution blocked when misconfigured | `disabled`, `missing_config`, `configured_shape_ok` |
 | **WordPress** | `WORDPRESS_PUBLISH_ENABLED`, `CREDENTIAL_ENCRYPTION_MASTER_KEY` presence (never value) | `disabled`, `missing_config`, `configured_shape_ok` |
 | **Private storage (R2)** | Required R2 env key presence via `getPrivateStorageStatus()` / `getR2EnvPresence()` | `disabled`, `configured_shape_ok` |
-| **GA4 / GSC** | `GA4_GSC_SYNC_ENABLED`, `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET` presence (never values) | `disabled`, `missing_config`, `configured_shape_ok` |
 
-Negative cases in the runner: empty env, partial OpenRouter, partial R2, publish-on without encryption key, sync-on without OAuth.
+**Withdrawn (not checked):** GA4/GSC — live scope withdrawn 2026-07-13; `GA4_GSC_*` / `GOOGLE_OAUTH_*` env vars not required.
 
-Positive shape cases: full OpenRouter model/key names (values not echoed), full R2 env set (no upload), WordPress publish + encryption key present (no publish call), GA/GSC OAuth shape (no OAuth flow).
+Negative cases in the runner: empty env, partial OpenRouter, partial R2, publish-on without encryption key.
+
+Positive shape cases: full OpenRouter model/key names (values not echoed), full R2 env set (no upload), WordPress publish + encryption key present (no publish call).
 
 ---
 
@@ -52,7 +55,7 @@ Positive shape cases: full OpenRouter model/key names (values not echoed), full 
 - Live OpenRouter / AI provider HTTP execution
 - WordPress draft creation or publish against any host
 - R2 upload, download, delete, or signed URL generation
-- GA4 / GSC OAuth consent or metrics API sync
+- GA4 / GSC OAuth consent or metrics API sync — **WITHDRAWN** (not in scope)
 - Google Drive export live planning
 - Staging or production hosts
 - Credential values, session tokens, or database contents
@@ -68,7 +71,8 @@ Deferred to later blocks / owner gates: staging deploy, production deploy, live 
 | AI provider | `configured_shape_ok` (gateway `local`) | Deterministic local gateway; live provider deferred |
 | WordPress | `disabled` | `WORDPRESS_PUBLISH_ENABLED` not true |
 | Private storage | `disabled` | R2 env absent; guarded responses |
-| GA4 / GSC | `disabled` | `GA4_GSC_SYNC_ENABLED` not true |
+
+GA4/GSC row **removed** — live scope **WITHDRAWN** 2026-07-13.
 
 Partial env is safe: statuses may be `missing_config` without failing the smoke unless validation/check runner assertions fail.
 

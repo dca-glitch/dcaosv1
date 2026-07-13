@@ -1,5 +1,7 @@
 # Monthly Report — G529–G540 Closeout (client/admin output hardening)
 
+> **Superseded (2026-07-13):** Live GA4/GSC scope **WITHDRAWN** — MANUAL/snapshot monthly reports remain.
+
 **Lane:** Lane 6 — Monthly report client/admin output hardening  
 **Date:** 2026-07-10  
 **Branch context:** `main` @ `66dcb74` (lane work; **no commit/push/deploy** by this subagent)  

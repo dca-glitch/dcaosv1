@@ -8,7 +8,6 @@ import {
   validateAiProviderConfigForRuntime,
   type AiProviderConfigValidationResult
 } from "../config/ai-provider.config";
-import { getGaGscIntegrationReadiness, type GaGscIntegrationReadiness } from "../config/ga-gsc.config";
 import {
   getImageGenerationIntegrationReadiness,
   type ImageGenerationIntegrationReadiness
@@ -28,7 +27,6 @@ export type ExternalIntegrationCategoryKey =
   | "ai_provider"
   | "wordpress"
   | "private_storage"
-  | "ga_gsc"
   | "image_generation";
 
 export interface AiProviderIntegrationReadiness {
@@ -59,7 +57,6 @@ export interface ExternalIntegrationReadinessCategory {
   aiProvider?: AiProviderIntegrationReadiness;
   wordpress?: WordPressIntegrationReadiness;
   privateStorage?: PrivateStorageIntegrationReadiness;
-  gaGsc?: GaGscIntegrationReadiness;
   imageGeneration?: ImageGenerationIntegrationReadiness;
 }
 
@@ -170,18 +167,6 @@ function buildPrivateStorageDetail(readiness: PrivateStorageIntegrationReadiness
   return `R2 config shape OK (mode=${readiness.mode}); bucket mutation deferred in readiness layer.`;
 }
 
-function buildGaGscDetail(readiness: GaGscIntegrationReadiness): string {
-  if (readiness.status === "disabled") {
-    return "GA4/GSC sync disabled; OAuth and provider sync deferred.";
-  }
-
-  if (readiness.status === "missing_config") {
-    return `Sync flag on but missing: ${readiness.missingKeys.join(", ")}; OAuth/sync not executed.`;
-  }
-
-  return "OAuth credential shape present; live GA4/GSC OAuth and sync remain deferred.";
-}
-
 function buildImageGenerationDetail(readiness: ImageGenerationIntegrationReadiness): string {
   if (readiness.status === "disabled") {
     return "IMAGE_GENERATION_ENABLED is not true; no image provider execution.";
@@ -198,7 +183,6 @@ export function getExternalIntegrationsReadinessSnapshot(): ExternalIntegrations
   const aiProvider = getAiProviderIntegrationReadiness();
   const wordpress = getWordPressIntegrationReadiness();
   const privateStorage = getPrivateStorageIntegrationReadiness();
-  const gaGsc = getGaGscIntegrationReadiness();
   const imageGeneration = getImageGenerationIntegrationReadiness();
 
   const categories: ExternalIntegrationReadinessCategory[] = [
@@ -227,14 +211,6 @@ export function getExternalIntegrationsReadinessSnapshot(): ExternalIntegrations
       privateStorage
     },
     {
-      key: "ga_gsc",
-      label: "GA4 / GSC",
-      status: gaGsc.status,
-      detail: buildGaGscDetail(gaGsc),
-      liveCallsDeferred: true,
-      gaGsc
-    },
-    {
       key: "image_generation",
       label: "Image generation",
       status: imageGeneration.status,
@@ -248,7 +224,6 @@ export function getExternalIntegrationsReadinessSnapshot(): ExternalIntegrations
     !aiProvider.openRouterLiveExecutionEnabled &&
     wordpress.status !== "configured_shape_ok" &&
     !privateStorage.configured &&
-    gaGsc.status !== "configured_shape_ok" &&
     imageGeneration.status !== "configured_shape_ok";
 
   return {
