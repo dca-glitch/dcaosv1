@@ -1,6 +1,7 @@
 import type { createPrismaClient } from "../../../../packages/data/src/client";
 import {
   assertBoundedExecutionExactScope,
+  assertValidBoundedProofOwnerRecipientEmail,
   type BoundedExecutionExactScope
 } from "../config/ai-delivery-bounded-execution.config";
 import {
@@ -10,7 +11,8 @@ import {
   BOUNDED_CONTENT_TO_DRAFT_WORKFLOW_TYPE,
   continueBoundedContentToDraftWorkflowAfterImageApproval,
   startBoundedContentToDraftWorkflow,
-  type BoundedWorkflowProviders
+  type BoundedWorkflowProviders,
+  type BoundedWorkflowStore
 } from "./ai-delivery-bounded-workflow.service";
 import type {
   BoundedProofCleanupProviders
@@ -391,17 +393,52 @@ export async function inspectBoundedProof(
   };
 }
 
+/**
+ * Proof-path-only: override continuation ownerRecipient.email while keeping userId.
+ * Normal application email resolution never calls this helper.
+ */
+export function withBoundedProofOwnerRecipientOverride(
+  store: BoundedWorkflowStore,
+  ownerRecipientEmail: string
+): BoundedWorkflowStore {
+  const normalized = assertValidBoundedProofOwnerRecipientEmail(ownerRecipientEmail);
+  return {
+    ...store,
+    async resolveContinuationContext(tenantId, workflowRunId) {
+      const context = await store.resolveContinuationContext(tenantId, workflowRunId);
+      if (!context) {
+        return null;
+      }
+      return {
+        ...context,
+        ownerRecipient: {
+          userId: context.ownerRecipient.userId,
+          email: normalized
+        }
+      };
+    }
+  };
+}
+
 export async function continueBoundedProof(
   manifest: BoundedProofManifest,
-  dependencies: { prisma: PrismaClientLike; providers: BoundedWorkflowProviders }
+  dependencies: {
+    prisma: PrismaClientLike;
+    providers: BoundedWorkflowProviders;
+    /** Required for live/staging proof CLI; optional only for injected unit fixtures. */
+    ownerRecipientEmailOverride?: string;
+  }
 ): Promise<BoundedProofManifest> {
   const parsed = parseBoundedProofManifest(manifest);
   if (!parsed.workflowRunId) {
     throw new Error("Proof manifest has no workflowRunId.");
   }
-  const store = createPrismaBoundedWorkflowStore(dependencies.prisma, {
+  const baseStore = createPrismaBoundedWorkflowStore(dependencies.prisma, {
     exactScope: exactScope(parsed)
   });
+  const store = dependencies.ownerRecipientEmailOverride
+    ? withBoundedProofOwnerRecipientOverride(baseStore, dependencies.ownerRecipientEmailOverride)
+    : baseStore;
   const run = await continueBoundedContentToDraftWorkflowAfterImageApproval(
     { tenantId: parsed.tenantId, workflowRunId: parsed.workflowRunId },
     { store, providers: dependencies.providers }

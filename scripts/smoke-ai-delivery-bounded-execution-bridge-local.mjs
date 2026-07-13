@@ -126,7 +126,7 @@ try {
 
   const completed = await runBoundedProofCli(
     "continue-after-image-approval",
-    manifestArgs,
+    [...manifestArgs, "--owner-recipient-email", "bounded-proof-owner@gmail.com"],
     options
   );
   assert.equal(completed.state, "COMPLETED");
@@ -145,7 +145,11 @@ try {
     /retry\/fallback invariants/
   );
   await assert.rejects(
-    runBoundedProofCli("continue-after-image-approval", manifestArgs, options),
+    runBoundedProofCli(
+      "continue-after-image-approval",
+      [...manifestArgs, "--owner-recipient-email", "bounded-proof-owner@gmail.com"],
+      options
+    ),
     /retry\/fallback invariants/
   );
   await prisma.aiDeliveryBoundedWorkflowRun.update({
@@ -155,12 +159,16 @@ try {
   console.log(`${marker} PASS CLI enforces post-execution retry/fallback invariants`);
 
   await runBoundedProofCli("start", manifestArgs, options);
-  await runBoundedProofCli("continue-after-image-approval", manifestArgs, options);
+  await runBoundedProofCli(
+    "continue-after-image-approval",
+    [...manifestArgs, "--owner-recipient-email", "bounded-proof-owner@gmail.com"],
+    options
+  );
   assert.equal(fake.stats.imageRequests, 1);
   assert.equal(fake.stats.storageUploads, 1);
   assert.equal(fake.stats.wordpressCreates, 1);
   assert.equal(fake.stats.emailSends, 1);
-  assert.deepEqual(fake.stats.emailRecipients, [owner.email.toLowerCase()]);
+  assert.deepEqual(fake.stats.emailRecipients, ["bounded-proof-owner@gmail.com"]);
   console.log(`${marker} PASS duplicate start and continue are idempotent`);
 
   const cleanup = await runBoundedProofCli("cleanup-exact-ids", manifestArgs, options);

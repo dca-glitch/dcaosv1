@@ -3,6 +3,9 @@ import { describe, it } from "node:test";
 import {
   assertBoundedStagingDatabaseGuard,
   assertBoundedStagingLiveExecutionGuards,
+  assertValidBoundedProofOwnerRecipientEmail,
+  redactBoundedProofOwnerRecipientEmail,
+  resolveBoundedProofOwnerRecipientOverride,
   type BoundedExecutionExactScope
 } from "./ai-delivery-bounded-execution.config";
 
@@ -122,6 +125,87 @@ describe("bounded execution staging guards", () => {
           fallbackUsed: false
         }),
       /clientId/
+    );
+  });
+});
+
+describe("bounded proof owner recipient override", () => {
+  it("defaults to null when neither CLI nor proof-only env is supplied", () => {
+    assert.equal(
+      resolveBoundedProofOwnerRecipientOverride({
+        cliValue: null,
+        env: liveEnv()
+      }),
+      null
+    );
+  });
+
+  it("accepts a valid non-local override from CLI (CLI wins over env)", () => {
+    assert.equal(
+      resolveBoundedProofOwnerRecipientOverride({
+        cliValue: " Owner.Proof@Gmail.com ",
+        env: {
+          ...liveEnv(),
+          DCA_AI_DELIVERY_BOUNDED_PROOF_OWNER_RECIPIENT_EMAIL: "other@gmail.com"
+        }
+      }),
+      "owner.proof@gmail.com"
+    );
+  });
+
+  it("accepts a valid override from the proof-only env var", () => {
+    assert.equal(
+      resolveBoundedProofOwnerRecipientOverride({
+        env: {
+          ...liveEnv(),
+          DCA_AI_DELIVERY_BOUNDED_PROOF_OWNER_RECIPIENT_EMAIL: "Owner.Proof@Gmail.com"
+        }
+      }),
+      "owner.proof@gmail.com"
+    );
+  });
+
+  it("rejects invalid and .local overrides", () => {
+    assert.throws(() => assertValidBoundedProofOwnerRecipientEmail("not-an-email"), /valid email/);
+    assert.throws(
+      () => assertValidBoundedProofOwnerRecipientEmail("admin@dca.local"),
+      /\.local|localhost/
+    );
+    assert.throws(
+      () =>
+        resolveBoundedProofOwnerRecipientOverride({
+          cliValue: "admin@dca.local"
+        }),
+      /\.local|localhost/
+    );
+    assert.throws(
+      () => assertValidBoundedProofOwnerRecipientEmail("admin@localhost"),
+      /valid email|\.local|localhost/
+    );
+  });
+
+  it("redacts local-part while keeping domain", () => {
+    assert.equal(
+      redactBoundedProofOwnerRecipientEmail("owner.proof@gmail.com"),
+      "o***@gmail.com"
+    );
+  });
+
+  it("proof-only env key is ignored by normal staging live guards", () => {
+    const env = liveEnv();
+    delete env.DCA_AI_DELIVERY_BOUNDED_PROOF_OWNER_RECIPIENT_EMAIL;
+    assert.doesNotThrow(() =>
+      assertBoundedStagingLiveExecutionGuards({
+        env,
+        scope,
+        wordpressSiteUrl: "https://wp-staging.example.test",
+        retryCount: 0,
+        fallbackUsed: false
+      })
+    );
+    assert.equal(
+      resolveBoundedProofOwnerRecipientOverride({ env }),
+      null
     );
   });
 });

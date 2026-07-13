@@ -9,7 +9,9 @@ import { fileURLToPath } from "node:url";
 import { createPrismaClient } from "../packages/data/src/client/index.ts";
 import {
   assertBoundedStagingDatabaseGuard,
-  assertBoundedStagingLiveExecutionGuards
+  assertBoundedStagingLiveExecutionGuards,
+  redactBoundedProofOwnerRecipientEmail,
+  resolveBoundedProofOwnerRecipientOverride
 } from "../apps/api/src/config/ai-delivery-bounded-execution.config.ts";
 import {
   BOUNDED_PROOF_MANIFEST_VERSION,
@@ -222,16 +224,31 @@ export async function runBoundedProofCli(command, args, options = {}) {
       return inspection;
     }
     if (command === "continue-after-image-approval") {
+      const ownerRecipientEmailOverride = resolveBoundedProofOwnerRecipientOverride({
+        cliValue: flags.get("--owner-recipient-email"),
+        env
+      });
+      if (!ownerRecipientEmailOverride) {
+        throw new Error(
+          "continue-after-image-approval requires --owner-recipient-email <address> or DCA_AI_DELIVERY_BOUNDED_PROOF_OWNER_RECIPIENT_EMAIL."
+        );
+      }
       manifest = await continueBoundedProof(manifest, {
         prisma,
-        providers: liveProviders.providers
+        providers: liveProviders.providers,
+        ownerRecipientEmailOverride
       });
       await writeManifest(manifestPath, manifest);
       const inspection = await inspectBoundedProof(manifest, prisma);
       if (inspection.retryCount !== 0 || inspection.fallbackUsed) {
         throw new Error("Bounded execution violated retry/fallback invariants.");
       }
-      emit({ ok: true, command, ...inspection });
+      emit({
+        ok: true,
+        command,
+        ownerRecipientEmailRedacted: redactBoundedProofOwnerRecipientEmail(ownerRecipientEmailOverride),
+        ...inspection
+      });
       return inspection;
     }
 
@@ -253,7 +270,8 @@ if (isMain) {
   runBoundedProofCli(command, args).catch((error) => {
     const safeMessage = (error instanceof Error ? error.message : "Bounded proof command failed.")
       .replace(/Basic\s+[A-Za-z0-9+/=]+/gi, "Basic [REDACTED]")
-      .replace(/(password|secret|token|api[_-]?key)\s*[=:]\s*\S+/gi, "$1=[REDACTED]");
+      .replace(/(password|secret|token|api[_-]?key)\s*[=:]\s*\S+/gi, "$1=[REDACTED]")
+      .replace(/[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/gi, "[REDACTED_EMAIL]");
     console.error(JSON.stringify({ ok: false, safeError: safeMessage }));
     process.exitCode = 1;
   });

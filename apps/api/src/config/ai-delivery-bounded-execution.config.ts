@@ -2,8 +2,17 @@ import { WORDPRESS_LIVE_HTTP_FROZEN } from "../services/wordpress.service";
 
 export const AI_DELIVERY_BOUNDED_EXECUTION_ENV_KEYS = {
   target: "DCA_AI_DELIVERY_EXECUTION_TARGET",
-  stagingWordPressHost: "DCA_AI_DELIVERY_STAGING_WORDPRESS_HOST"
+  stagingWordPressHost: "DCA_AI_DELIVERY_STAGING_WORDPRESS_HOST",
+  /**
+   * Proof-CLI-only Stage B recipient override.
+   * Never read by normal application email/notification paths.
+   */
+  proofOwnerRecipientEmail: "DCA_AI_DELIVERY_BOUNDED_PROOF_OWNER_RECIPIENT_EMAIL"
 } as const;
+
+const BOUNDED_PROOF_OWNER_RECIPIENT_PATTERN =
+  /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/i;
+const BOUNDED_PROOF_FORBIDDEN_RECIPIENT_TLDS = new Set(["local", "localhost"]);
 
 export type BoundedExecutionExactScope = {
   tenantId: string;
@@ -156,4 +165,58 @@ export function assertBoundedStagingLiveExecutionGuards(input: {
   if (input.fallbackUsed !== false) {
     throw new Error("fallbackUsed must remain false.");
   }
+}
+
+/**
+ * Proof-CLI-only Stage B recipient. Rejects empty, malformed, and *.local addresses.
+ * Does not read User.email and is not used by normal application email paths.
+ */
+export function assertValidBoundedProofOwnerRecipientEmail(value: string): string {
+  const email = value.trim().toLowerCase();
+  if (!email) {
+    throw new Error("Bounded proof owner recipient email is required.");
+  }
+  if (!BOUNDED_PROOF_OWNER_RECIPIENT_PATTERN.test(email)) {
+    throw new Error("Bounded proof owner recipient email must be a valid email address.");
+  }
+  const domain = email.split("@")[1] ?? "";
+  const tld = domain.split(".").at(-1) ?? "";
+  if (!domain || domain === "localhost" || BOUNDED_PROOF_FORBIDDEN_RECIPIENT_TLDS.has(tld)) {
+    throw new Error("Bounded proof owner recipient email must not use a .local or localhost domain.");
+  }
+  return email;
+}
+
+/**
+ * Resolve an explicit proof-only override from CLI flag and/or proof-only env var.
+ * Returns null when neither is supplied (caller decides whether that is required).
+ * CLI value wins over env when both are present.
+ */
+export function resolveBoundedProofOwnerRecipientOverride(input: {
+  cliValue?: string | null;
+  env?: NodeJS.ProcessEnv;
+}): string | null {
+  const env = input.env ?? process.env;
+  const fromCli = (input.cliValue ?? "").trim();
+  const fromEnv = (
+    env[AI_DELIVERY_BOUNDED_EXECUTION_ENV_KEYS.proofOwnerRecipientEmail] ?? ""
+  ).trim();
+  const raw = fromCli || fromEnv;
+  if (!raw) {
+    return null;
+  }
+  return assertValidBoundedProofOwnerRecipientEmail(raw);
+}
+
+/** Redact local-part for proof logs; keep domain for operator confirmation. */
+export function redactBoundedProofOwnerRecipientEmail(email: string): string {
+  const normalized = email.trim().toLowerCase();
+  const at = normalized.lastIndexOf("@");
+  if (at <= 0 || at === normalized.length - 1) {
+    return "[REDACTED_EMAIL]";
+  }
+  const local = normalized.slice(0, at);
+  const domain = normalized.slice(at + 1);
+  const visible = local.slice(0, Math.min(1, local.length));
+  return `${visible}***@${domain}`;
 }
