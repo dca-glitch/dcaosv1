@@ -398,6 +398,30 @@ Production PostgreSQL role password and `DATABASE_URL` were rotated, the product
 | Production | FROZEN |
 | Canonical doc | [`AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md`](./project-control/AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md) |
 
+## Staging RC deploy `9921bb3` closeout (2026-07-13)
+
+**Result:** PASS — controlled staging deploy of `9921bb3` (storageKey preserve + UI state/readability convergence + docs truth). Migration SKIP. Shared Caddy **not** restarted. Production app/API/DB unchanged.
+
+| Item | State |
+|------|--------|
+| Deployed commit | `9921bb3877abc72f3e7a3778f005988d1d17676c` (`9921bb3`) |
+| Docs closeout HEAD | `9525fc85f9fdccc226f2da1b64b336de710dcca6` (this section) |
+| Artifact | `/opt/dca/staging-artifacts/9921bb3` |
+| Tar SHA256 | `C8E02BA5742589AD18A48813C7914E95DEAF38D6D0F5A77F2D8FF1CD0D49E2C4` |
+| Migration | **SKIP** (no prisma delta `67d9aa4..9921bb3`) |
+| Staging API | Recreated — id `c1a9fc1e…` StartedAt `2026-07-13T03:07:22Z` |
+| Staging DB | Unchanged — id `c70f523d…` StartedAt `2026-07-04T00:38:06Z` |
+| Web deploy | In-place sync into `/opt/dca/apps/dcaosv1/staging/web/dist` (inode preserved); index sha256 `fb3e4bdd…` |
+| Live assets | `index-DY5z8SCD.js` / `index-i_JTDDN4.css` |
+| Shared proxy | `SHARED_PROXY_ACTION=none` — Caddy id/StartedAt unchanged |
+| Production API/DB | Unchanged (`65b4b9d4…` / `db95bada…`) |
+| Health | staging loopback/public API/web 200; production API/web 200 |
+| Live flags | `AI_TEXT_GATEWAY=local`; image/WP draft/email live flags false |
+| Smokes | `smoke:mvp:staging` PASS; Modal a11y against staging PASS 14/14 |
+| Evidence | `/opt/dca/apps/dcaosv1/staging/backups/STAGING_RC_WEB_FIX_9921bb3_20260713-030802.txt` |
+
+**Production safety:** This staging PASS does **not** authorize production deploy. GA/GSC, notification E2E, and DS Modal `aria-describedby` remain deferred.
+
 ## WORKSTREAM 1A — project control reconciliation (2026-07-12) — historical
 
 **Result:** Docs-only. Authoritative project-control matrix recorded. Superseded for Points 1–4 by WORKSTREAM 1 closeout above. No app/schema/staging/production mutation in 1A itself.
