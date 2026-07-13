@@ -128,28 +128,32 @@ Applied migration or local unit/integration proof alone does **not** justify `ST
 
 ## 7. Current dependency findings
 
-**Source:** Vite remediation closeout (commit `95af080`) + Workstream 1 Point 1 confirmation at `250e958` (2026-07-12).
-**Fix status:** Vite high finding **CLOSED** locally. No `npm audit fix` / `--force` was used.
+**Source:** Vite remediation closeout (commit `95af080`) + Workstream 1 Point 1 confirmation at `250e958` (2026-07-12) + **re-verification 2026-07-13** at `main` `622b1ed`.
+**Fix status:** Vite high finding **CLOSED / RESOLVED**. No `npm audit fix` / `--force` was used. No further Vite upgrade required on this triage.
 
-### Audit summary (post-remediation)
+### Audit summary (post-remediation; re-verified 2026-07-13)
 
 | Metric | Value |
 |--------|--------|
 | Critical | 0 |
-| High | 0 (Vite high finding remediated via Vite `6.4.3`) |
-| Moderate | Remaining transitive findings may still exist (`esbuild`, `gaxios`, `googleapis`, `googleapis-common`, `uuid`) — not claimed closed here |
+| High | 0 (Vite high finding remediated via Vite `6.4.3`; GHSA-fx2h-pf6j-xcff absent from current `npm audit`) |
+| Moderate | 4 remaining transitive (`uuid` → `gaxios` / `googleapis-common` / `googleapis`) — **not** claimed closed here |
 | Low / info | not claimed here |
 
-### Vite remediation (Point 1 — COMPLETE)
+### Vite remediation (Point 1 — COMPLETE; re-verified 2026-07-13)
 
 | Field | Value |
 |-------|--------|
-| Package | `vite` (direct dependency of `@dca-os-v1/web`) |
-| Repo build version | Vite `6.4.3` |
+| Advisory | `GHSA-fx2h-pf6j-xcff` / `CVE-2026-53571` — Windows Vite **dev server** `server.fs.deny` bypass |
+| Affected range | `vite` `<=6.4.2` (also other majors; not installed here) |
+| Patched (6.x) | `6.4.3` |
+| Package | `vite` (direct dependency of `@dca-os-v1/web`, exact pin) |
+| Declared / installed | Vite `6.4.3` only (single lockfile copy; `npm ls vite --all` → no duplicates) |
 | Remediation commit | `95af080` |
-| Prior high advisory set | Included `GHSA-fx2h-pf6j-xcff` for `vite` `<=6.4.2` |
-| Classification | **COMPLETE** — high finding closed locally; full validate PASS at remediation |
-| Not claimed | Production exploit history rewritten; all moderate findings closed; staging redeploy of Vite change |
+| Classification | **RESOLVED** — patched version installed; high advisory absent; validate PASS on re-check |
+| Staging / production applicability | **NOT_AFFECTED** for static Caddy `dist` + API-only container (Linux; no Vite HTTP server). Local Windows `vite`/`dev:web` was the in-scope surface and is patched. |
+| Staging redeploy for this finding | **NOT_REQUIRED** (no dependency change on re-triage; exploit path is not staging/prod static serve) |
+| Not claimed | Production exploit history rewritten; moderate `uuid`/googleapis findings closed; all dependency risk closed |
 
 **Rules:** Do not run `npm audit fix` / `--force`. Do not claim moderate findings remediated until separately triaged. Do not treat Vite remediation as a staging deploy authorization.
 
