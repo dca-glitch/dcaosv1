@@ -1,5 +1,7 @@
 # G708 — Next Gates Roadmap (G709+)
 
+> **Superseded (2026-07-13):** Live GA4/GSC scope **WITHDRAWN** — not next gate. Historical GA/GSC sequencing below is planning context only.
+
 **Status:** Published by main agent after G469–G708 ultra-block integration closeout on 2026-07-10.
 
 **Hard truths (current):**
@@ -40,7 +42,7 @@
 2. Storage real-bucket proof unlocks document/image byte paths.
 3. Notification persistence before any live email claim.
 4. Target-environment AI re-proof separate from local G77b/G79.
-5. GA/GSC OAuth/token storage **implementation** before live sync (design exists from G517–G528).
+5. ~~GA/GSC OAuth/token storage implementation~~ — **WITHDRAWN** (not in scope).
 6. WordPress staging draft proof only after §6.3–§6.5 gap decisions.
 7. Image provider selection/disabled-safe wiring before live image proof.
 8. Client Portal staging browser proof.
@@ -56,7 +58,7 @@
 | 1 | **R2 target-environment real-bucket proof** | Unlocks docs + image bytes; plan freeze already local-complete (G469) | Medium | Staging/target bucket + owner approval |
 | 2 | Notification persistence / inbox MVP (local) | Unblocks transactional notification path without live send | Medium (schema) | Design gate + migration approval |
 | 3 | Target-env AI bounded re-proof | Required for Puriva AI claim beyond local G77b | High (cost) | Staging AI plan + budget cap |
-| 4 | GA/GSC token storage **implementation** | Design refreshed in G517–G528; still no schema/impl | High (security) | Security review + schema approval |
+| 4 | ~~GA/GSC token storage implementation~~ | **WITHDRAWN** — live GA4/GSC not in scope | N/A | N/A |
 | 5 | WordPress §6.3–§6.5 gap decisions | Unblocks staging live draft session | Medium | Product/schema decisions |
 | 6 | SEC-H1 storageKey non-exposure close | Production safety before G50 | High (security) | Code + validation |
 | 7 | Image provider research/selection | Unblocks Article+Image live path | High (cost/policy) | Medical-aesthetic policy |
@@ -85,7 +87,7 @@
 | A | G709–G720 | Owner selection + R2 live proof execution + evidence capture |
 | B | G721–G740 | Notification persistence/inbox MVP (schema-gated) + no-send→live email prep |
 | C | G741–G760 | Target-env AI re-proof + trusted `actualCostUsd` ingestion design→impl |
-| D | G761–G780 | GA/GSC OAuth token storage impl + bounded read-only sync |
+| D | G761–G780 | ~~GA/GSC OAuth token storage impl + bounded read-only sync~~ — **WITHDRAWN** |
 | E | G781–G800 | WordPress staging live draft + publish remains frozen |
 | F | G801–G820 | Image provider selection + disabled-safe wiring + R2 image bytes |
 | G | G821–G840 | Client Portal staging browser + approval UX evidence |
@@ -110,7 +112,7 @@ Bands are planning aids only. Owner may reorder. No band authorizes work without
 |-------|---------------|----------------|
 | R2 real bucket | Target bucket + `STORAGE_R2_PROOF.md` §3 checklist | Yes |
 | Live email | Inbox MVP + allowlist recipient + Resend key in target env | Yes |
-| GA/GSC live | OAuth token storage design **and** implementation | Yes |
+| GA/GSC live | **WITHDRAWN** — not in scope | N/A |
 | WP live draft | §6.3–§6.5 decisions + staging site | Yes |
 | Image live | Provider selection + R2 image bytes + compliance gate | Yes |
 | Staging AI | Budget cap + staging plan + restore procedure | Yes |
