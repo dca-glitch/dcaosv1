@@ -1,44 +1,22 @@
 # DCA OS Lite — Status (Source of Truth)
 
-**Last updated:** 2026-07-13 (Production clean-state reset COMPLETE — acceptance fixtures removed; Turnstile temporarily disabled; first-run onboarding ready; external providers still owner-gated; Puriva full launch NOT claimed)
-**Production runtime:** `57f9c524118a5bf6c93270626cef7c8bd52d140b` / image `bd61d5deb331` · web `index-DX4AMrb2.js` · tip docs pending closeout commit after `e36758b`
-**Production artifact:** `/opt/dca/production-artifacts/57f9c52` (web refreshed in place earlier; no redeploy on resume)
-**Production migration catch-up:** 50 finished / 0 unfinished (unchanged by clean reset)
-**Production clients:** 0 active (acceptance Puriva + Bali placeholder removed); owner adds first real client via `#/setup`
-**Production classification:** `CLEAN_FIRST_RUN_OWNER_SETUP` · `TURNSTILE_ENABLED=false` (temporary) · `PURIVA_FULL_LAUNCH=NOT_YET_CLAIMED` · live provider flags false · `SHARED_PROXY_ACTION=none`
-**Interactive browser login:** Turnstile temporarily disabled; password auth + rate limiting active; owner completes company settings + first client on `#/setup`. See [`docs/operator/PRODUCTION_CLEAN_STATE_RESET_2026-07-13.md`](./operator/PRODUCTION_CLEAN_STATE_RESET_2026-07-13.md).
+**Last updated:** 2026-07-13 (Production clean-state reset PASS; interactive admin login verified; Turnstile temporarily disabled; first-run owner setup ready)
+**Production runtime:** `57f9c524118a5bf6c93270626cef7c8bd52d140b` / image `bd61d5deb331` · web `index-DX4AMrb2.js`
+**Production baseline:** green CI on `e36758b06594f35c252ccf1cfed69bcccfd78b79` (`29229779236`, success)
+**Production clean-state reset:** PASS — exact-ID test-data deletion completed, real owner/admin and tenant retained, production deploy not repeated during resume, temporary cleanup files removed, and owner onboarding now continues in the production UI
+**Production clients:** 0 active (all approved test records removed; owner adds first real client via `#/setup`)
+**Production classification:** `CLEAN_FIRST_RUN_OWNER_SETUP` · `TURNSTILE_ENABLED=false` (temporary) · `PRODUCTION_CLEAN_STATE_RESET=PASS` · `PURIVA_FULL_LAUNCH=NOT_YET_CLAIMED` · live provider flags false · `SHARED_PROXY_ACTION=none`
+**Interactive browser login:** verified; password auth + rate limiting active; owner completes company settings + first client on `#/setup`. See [`docs/operator/PRODUCTION_CLEAN_STATE_RESET_2026-07-13.md`](./operator/PRODUCTION_CLEAN_STATE_RESET_2026-07-13.md).
 **Authoritative project control:** [`docs/project-control/AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md`](./project-control/AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md)
 **AI Policy / provider routing:** [`docs/architecture/AI_POLICY_PROVIDER_ROUTING.md`](./architecture/AI_POLICY_PROVIDER_ROUTING.md)
-**PRE-STAGING closure:** 2026-07-10 (local/no-live audit + safe fixes; see [`docs/operator/PRE_STAGING_CLOSURE_VERDICT.md`](./operator/PRE_STAGING_CLOSURE_VERDICT.md))
-**G55 pre-live readiness:** [`docs/runbooks/G55_PRELIVE_READINESS.md`](./runbooks/G55_PRELIVE_READINESS.md)
-**G56 pre-live readiness:** [`docs/runbooks/G56_PRELIVE_READINESS.md`](./runbooks/G56_PRELIVE_READINESS.md)
-**G57–G68 pre-live readiness:** [`docs/runbooks/G57_G68_PRELIVE_READINESS.md`](./runbooks/G57_G68_PRELIVE_READINESS.md)
-**G70 live proof checklist:** [`docs/runbooks/AI_PROVIDER_LIVE_PROOF.md`](./runbooks/AI_PROVIDER_LIVE_PROOF.md) §9
-**G72 model routing policy:** [`docs/runbooks/AI_MODEL_ROUTING_POLICY.md`](./runbooks/AI_MODEL_ROUTING_POLICY.md)
-**AI policy:** [`docs/ai/AI_MODEL_POLICY.md`](./ai/AI_MODEL_POLICY.md) · [`docs/architecture/AI_MODEL_POLICY.md`](./architecture/AI_MODEL_POLICY.md) · [`docs/architecture/AI_POLICY_PROVIDER_ROUTING.md`](./architecture/AI_POLICY_PROVIDER_ROUTING.md) · [`docs/ai/AI_ORCHESTRATOR_LITE.md`](./ai/AI_ORCHESTRATOR_LITE.md)
+**Production deployment / rollback / checklist (reference):** [`docs/runbooks/PRODUCTION_DEPLOYMENT.md`](./runbooks/PRODUCTION_DEPLOYMENT.md) · [`docs/runbooks/PRODUCTION_ROLLBACK.md`](./runbooks/PRODUCTION_ROLLBACK.md) · [`docs/runbooks/PRODUCTION_SAFETY_CHECKLIST.md`](./runbooks/PRODUCTION_SAFETY_CHECKLIST.md)
 **Operator index:** [`docs/operator/OPERATOR_RUNBOOK.md`](./operator/OPERATOR_RUNBOOK.md)
-**Architecture map:** [`docs/ARCHITECTURE.md`](./ARCHITECTURE.md) § Current application map
 **Smoke matrix:** [`docs/runbooks/LOCAL_SMOKE_MATRIX.md`](./runbooks/LOCAL_SMOKE_MATRIX.md)
 **Staging gate:** [`docs/runbooks/STAGING_READINESS.md`](./runbooks/STAGING_READINESS.md)
-**Production safety plan:** [`docs/runbooks/G53_PRODUCTION_SAFETY_PLAN.md`](./runbooks/G53_PRODUCTION_SAFETY_PLAN.md)
-**G49 dry-run proof:** [`docs/runbooks/G49_PRODUCTION_DRY_RUN_READ_ONLY_PROOF.md`](./runbooks/G49_PRODUCTION_DRY_RUN_READ_ONLY_PROOF.md)
-**Live proof runbooks:** [`AI_PROVIDER_LIVE_PROOF.md`](./runbooks/AI_PROVIDER_LIVE_PROOF.md) · [`WORDPRESS_DRAFT_PROOF.md`](./runbooks/WORDPRESS_DRAFT_PROOF.md) · [`MONTHLY_REPORT_LIVE_DATA_PROOF.md`](./runbooks/MONTHLY_REPORT_LIVE_DATA_PROOF.md)
 **Env inventory (names only):** [`docs/operator/ENV_READINESS_INVENTORY.md`](./operator/ENV_READINESS_INVENTORY.md)
 **Deferred scope:** [`docs/operator/deferred-scope-register.md`](./operator/deferred-scope-register.md)
-**G78 notifications blocker plan:** [`docs/operator/notifications-blocker-plan.md`](./operator/notifications-blocker-plan.md)
-**Client Operating Pack model:** [`docs/architecture/CLIENT_OPERATING_PACKS.md`](./architecture/CLIENT_OPERATING_PACKS.md)
-**Production deployment/rollback/checklist (reference):** [`docs/runbooks/PRODUCTION_DEPLOYMENT.md`](./runbooks/PRODUCTION_DEPLOYMENT.md) · [`docs/runbooks/PRODUCTION_ROLLBACK.md`](./runbooks/PRODUCTION_ROLLBACK.md) · [`docs/runbooks/PRODUCTION_SAFETY_CHECKLIST.md`](./runbooks/PRODUCTION_SAFETY_CHECKLIST.md)
-**Puriva Launch Gate (15-area evaluation):** [`docs/runbooks/PURIVA_LAUNCH_GATE.md`](./runbooks/PURIVA_LAUNCH_GATE.md)
-**Image generation proof plan:** [`docs/runbooks/IMAGE_GENERATION_PROOF.md`](./runbooks/IMAGE_GENERATION_PROOF.md)
-**Security boundary audit:** [`docs/security/SECURITY_BOUNDARY_AUDIT.md`](./security/SECURITY_BOUNDARY_AUDIT.md)
-**Storage/R2 proof plan:** [`docs/runbooks/STORAGE_R2_PROOF.md`](./runbooks/STORAGE_R2_PROOF.md)
-**Integrations truth matrix:** [`docs/runbooks/INTEGRATIONS_TRUTH_MATRIX.md`](./runbooks/INTEGRATIONS_TRUTH_MATRIX.md)
-**Admin UI/workflow polish audit:** [`docs/ux/ADMIN_WORKFLOW_POLISH_AUDIT.md`](./ux/ADMIN_WORKFLOW_POLISH_AUDIT.md) (read-only; UX-P1–P12 queued blocks)
-**G468 next 50 gates (historical):** [`docs/operator/G468_NEXT_50_GATES.md`](./operator/G468_NEXT_50_GATES.md)
-**G708 next gates:** [`docs/operator/G708_NEXT_GATES.md`](./operator/G708_NEXT_GATES.md)
-**PRE-STAGING closure verdict:** [`docs/operator/PRE_STAGING_CLOSURE_VERDICT.md`](./operator/PRE_STAGING_CLOSURE_VERDICT.md)
-**PRE-STAGING operator closeout:** [`docs/operator/PRE_STAGING_OPERATOR_CLOSEOUT.md`](./operator/PRE_STAGING_OPERATOR_CLOSEOUT.md)
-**PRE-STAGING architecture audit:** [`docs/architecture/PRE_STAGING_ARCHITECTURE_AUDIT.md`](./architecture/PRE_STAGING_ARCHITECTURE_AUDIT.md)
+**Client operating model:** [`docs/architecture/CLIENT_DOMAIN_OPERATING_MODEL.md`](./architecture/CLIENT_DOMAIN_OPERATING_MODEL.md)
+**Documentation index:** [`docs/operator/README.md`](./operator/README.md)
 
 ---
 
@@ -46,11 +24,11 @@
 
 | Item | State |
 |------|--------|
-| Latest baseline | Production controlled deploy of runtime `57f9c52` on `main` (docs closeout follows); staging pack-binding prior tip `0e5ac4d` |
+| Latest baseline | Green CI on `e36758b06594f35c252ccf1cfed69bcccfd78b79` (`29229779236`, success) and production clean-state reset PASS; runtime `57f9c52` remains the live production baseline |
 | **PRE-STAGING local closure** | **PASS (local/no-live only)** — see [`PRE_STAGING_CLOSURE_VERDICT.md`](./operator/PRE_STAGING_CLOSURE_VERDICT.md). Historical; superseded by production deploy for env readiness |
 | **G69 merge** | **DONE** — G57–G68 fast-forward merged to `main`; final commit `64bfd06` |
-| Production readiness | **CONTROLLED LIVE TESTING READY** — runtime `57f9c52` deployed; external providers owner-gated; Puriva full launch NOT claimed |
-| Next gate | Owner interactive Turnstile login + separately approved external-provider live proofs (GA/GSC / OpenAI / WP / Resend / R2 write) |
+| Production readiness | **CLEAN_FIRST_RUN_OWNER_SETUP** — production is healthy, reset complete, and owner onboarding continues in the UI |
+| Next gate | Company settings + first-client setup in the production UI; separately approved external-provider live proofs remain owner-gated |
 | PRE-STAGING Lanes 14–15 | **Docs closeout** — stale-claim sweep + operator runbook refresh; no live proof; Puriva Launch **BLOCKED** |
 | G469-G708 final integration | **KEEP** — 20 lanes reconciled; local/no-IO foundations only; live R2, live email, live GA/GSC, live WordPress, live image, staging/prod live proofs, full notification E2E launch proof, trusted `actualCostUsd` ingestion, commit, push, deploy remain blocked (in-app notification persistence/UI foundation now exists — see notification rows below) |
 | G229-G468 final integration | **KEEP** — 12 lanes reconciled; local/no-IO foundations only; superseded as latest baseline by G469-G708 |
@@ -119,7 +97,7 @@ Production PostgreSQL role password and `DATABASE_URL` were rotated, the product
 | Commit / push / deploy | **None** |
 | Production general deploy approval | **Not granted** — production remains frozen for unrelated deployment |
 
-**Incident status:** The exposed PostgreSQL credential was remediated. Cloudflare Turnstile and R2 credentials remain exposed/unrotated. The owner explicitly deferred their rotation. This is recorded as **OPEN DEFERRED SECURITY WORK** in [`deferred-scope-register.md`](./operator/deferred-scope-register.md); the incident is **not** claimed as fully closed.
+**Incident status:** The exposed PostgreSQL credential was remediated. Cloudflare Turnstile and R2 credentials remain exposed/unrotated. The owner explicitly deferred their rotation. This is recorded as **OPEN DEFERRED SECURITY WORK** in [`deferred-scope-register.md`](./operator/deferred-scope-register.md); it is separate from the production clean-state reset closeout and does **not** reopen that reset.
 
 **Future gates:**
 - **Phase B — Turnstile cutover:** requires new owner-supplied Cloudflare Turnstile secret.

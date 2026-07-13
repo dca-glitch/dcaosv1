@@ -6,7 +6,7 @@
 - Local reference path: `C:\dcaosv1`
 - Production URL: `system.digitalcubeagency.net`
 
-Post-merge status: PR #43 is merged into `main` at `f8606f2`; local `main` is synced to `origin/main`. No deploy, VPS migration, production restart, or release was performed. `system.digitalcubeagency.net` is a live production VPS target, not a confirmed staging target.
+Historical note: PR #43 merged to `main` at `f8606f2`; current production truth now lives in `docs/STATUS.md`. The production clean-state reset is complete, production is healthy, and the interactive admin login has been verified.
 
 ## Product Definition
 
@@ -124,8 +124,8 @@ ce8db8f Add CI validation workflow
 
 ## Current Known Risks
 
-- Production is frozen unless explicitly approved.
-- Current `main` is 0% deployed to production; merge to `main` must not be described as production deployment.
+- Production is frozen for further mutations unless explicitly approved.
+- Current production is healthy and in clean-state reset PASS; merge to `main` must not be described as a new production deploy authorization.
 - Client Portal MVP is required for Puriva delivery; advanced client actions (comments, magic links) remain phased.
 - Email Notifications EN1 has provider defaults and Resend domain verification, but no API key and no real sending.
 - EN2 event wiring remains paused until modules are stable.

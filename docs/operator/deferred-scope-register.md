@@ -6,7 +6,7 @@ This register prevents confusion. If something is listed under **Still deferred*
 
 **Authoritative project control:** [`docs/project-control/AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md`](../project-control/AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md)
 
-**Production controlled deploy (2026-07-13):** Runtime `57f9c52` deployed to production (API + in-place web). Migration catch-up **39** applied. Puriva client `84878363-…` bound `PURIVA_OPERATING_PACK_V1`. Classification: **READY_FOR_CONTROLLED_LIVE_TESTING**. Still deferred / owner-gated: live OpenAI, live R2 writes, WordPress draft/publish, Resend live send, GA4/GSC, interactive Turnstile browser login proof (API acceptance used revoked short-lived sessions). **PURIVA_FULL_LAUNCH=NOT_YET_CLAIMED**.
+**Production controlled deploy (2026-07-13):** Runtime `57f9c52` deployed to production (API + in-place web). Migration catch-up **39** applied. Puriva client `84878363-…` bound `PURIVA_OPERATING_PACK_V1`. Production clean-state reset completed successfully; production remains healthy; deploy was not repeated during the resume; interactive admin login is verified; `TURNSTILE_ENABLED=false` remains temporary. Still deferred / owner-gated: live OpenAI, live R2 writes, WordPress draft/publish, Resend live send, GA4/GSC, and future production hardening. **PURIVA_FULL_LAUNCH=NOT_YET_CLAIMED**.
 
 **AI POLICY / PROVIDER ROUTING ALIGNMENT (2026-07-12):** Docs-only architecture KEEP. Canonical layers + terminology in [`AI_POLICY_PROVIDER_ROUTING.md`](../architecture/AI_POLICY_PROVIDER_ROUTING.md). OpenRouter remains preferred text broker/adapter (AI Delivery path STAGING LIVE PROVEN — AI-B only). Direct image/audio adapters are valid under AI Policy; parallel modality routing systems are prohibited. OpenAI Images staging one-image path = **STAGING LIVE PROVEN** (`c07df10`; marker `DCA-IMG-OPENAI-20260712T102457Z-a08x91rb`). BFL successful generation remains NOT PROVEN. Orchestrator Lite remains CONFIG SHAPE PROVEN.
 
@@ -96,7 +96,7 @@ This section records credentials that were exposed in operational artifacts and 
 | Cloudflare R2 access key pair | **OPEN — DEFERRED** | Exposed credential remains in production env history; owner explicitly deferred rotation | Phase C — new owner-supplied R2 access key pair required |
 | Old external credential revocation | **OPEN — DEFERRED** | Revocation of superseded Turnstile/R2 credentials blocked until new credentials are proven | Phase D — literal token `APPROVE_EXTERNAL_CREDENTIAL_REVOCATION` required |
 
-**Incident closure status:** **NOT CLOSED**. PostgreSQL exposure is remediated, but Turnstile and R2 exposures remain open. Do not treat this register entry as a closure statement.
+**Incident closure status:** **NOT CLOSED** for the credential-rotation work. PostgreSQL exposure is remediated, but Turnstile and R2 exposures remain open. Do not treat this register entry as a production clean-state reset blocker; the reset is closed separately in `PRODUCTION_CLEAN_STATE_RESET_2026-07-13.md`.
 
 **Prevention rule for future runners:** VPS host `psql` is not available; use `docker exec` into the PostgreSQL container for `psql` and `pg_restore --list`. Do not fail merely because Docker writes routine messages to stderr.
 

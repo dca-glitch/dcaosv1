@@ -1,49 +1,85 @@
 # Production clean-state reset — 2026-07-13
 
-## Summary
+## Authorization and scope
 
-Production was reset from Puriva acceptance-test fixtures to a clean first-run owner setup state.
+- Authorized clean-state reset after production had already been deployed and verified healthy.
+- Scope: remove approved acceptance-test fixtures and test records, preserve the real owner/admin and tenant, keep the production deploy intact, and verify the resulting first-run owner setup state.
+- No production redeploy was repeated during the resumed cleanup.
 
-**Completed (resume after CI green `e36758b`):** exact-ID test-data deletion + verification. Deploy was **not** repeated. Turnstile was already `TURNSTILE_ENABLED=false` from the earlier authorized pre-CI step and was left unchanged (no API recreate).
+## Interruption and resume checkpoint
 
-## Retained
+- The original reset work was interrupted while CI was red.
+- Resume occurred after green CI at commit `e36758b06594f35c252ccf1cfed69bcccfd78b79`.
+- Green CI run evidence: `29229779236` (`success`).
 
-- Tenant `digital-cube-agency` (`055cecc5-56c2-4d42-a663-05181cd1e332`)
-- Owner/admin user `digitalcubeagency360@gmail.com` (`beb65d64-833a-425c-99ec-2cf4c4080b8e`) with `owner` + `admin` roles
-- Migration history (50 finished)
-- Auth secrets and Turnstile secret key (keys retained; enforcement temporarily off)
-- Backups under `/opt/dca/backups/prod-pg-clean-reset-20260713T062726Z.dump` (sha256 `eedf6aacc6540fd3d78bc977ca2ecedb17735c315312aa81d2fa0ceb1c9690af`)
+## Backup proof
 
-## Removed (exact-ID / acceptance-marked)
+- Production backup was created before cleanup.
+- Backup path: `/opt/dca/backups/prod-pg-clean-reset-20260713T062726Z.dump`.
+- Backup checksum: `eedf6aacc6540fd3d78bc977ca2ecedb17735c315312aa81d2fa0ceb1c9690af`.
 
-- Puriva test client `84878363-344e-4841-a6a4-96e0664d17c5`
-- Bali Medika placeholder client `363d0672-82c0-4c21-95d3-150f69ec7de9`
-- Acceptance portal users `@dca.invalid` (`181a61fc-…`, `f00f18a7-…`)
-- TEST DATA AI Delivery project `44d9fde5-…`, brief `06fdce62-…`, report `9a622e68-…`
-- Legacy Bali project `8560a607-…` (Google Ads) under placeholder client
-- Acceptance sessions, client-access rows, membership/role for portal test user, related notifications, budget ledger row
+## Turnstile state
 
-## Turnstile
+- `TURNSTILE_ENABLED=false` during the cleanup window.
+- Turnstile had already been disabled before the CI interruption and was not repeated during the resume.
+- Password auth remained active, with rate limiting preserved.
 
-- `TURNSTILE_ENABLED=false` on production API (temporary, controlled testing)
-- Turnstile code retained; secret key retained
-- Web already serving onboarding bundle without site key (`index-DX4AMrb2.js`)
-- Password auth + login rate limiting remain active (wrong-password probe → `AUTH_LOGIN_FAILED` 401 without Turnstile token)
+## Exact-ID deletion methodology
 
-## First-run onboarding
+- Deletion used exact identifiers and approved fixture selectors only.
+- No broad tenant purge, pattern-based delete, or blind cleanup sweep was used.
+- Fail-closed behavior preserved the real owner/admin and tenant while targeting only approved test data.
 
-- Frontend route `#/setup`
-- After owner/admin login, if company profile missing or zero active clients → redirect to setup
-- Company profile count = 0 and clients = 0 after cleanup → clean first-run state
+## Deleted records
 
-## Providers
+Removed categories included:
 
-- Live provider flags remain disabled / absent
-- WordPress publish remains disabled
-- `SHARED_PROXY_ACTION=none`
+- Puriva acceptance client and placeholder client records
+- Acceptance portal users and portal access rows
+- Test AI Delivery project / brief / report records
+- Legacy placeholder project rows tied to the acceptance client
+- Acceptance sessions and related notifications
+- Budget / ledger rows tied to test fixtures
 
-## Classification
+## Retained records
+
+Preserved records included:
+
+- Real tenant `digital-cube-agency`
+- Real owner/admin account and roles
+- Migration history
+- Auth secrets and the Turnstile secret key material already present in production
+- Production runtime artifact and deploy identity
+
+## Verification results
+
+- Exact-ID test-data deletion completed successfully.
+- Real owner/admin and tenant data were retained.
+- Production API, web, loopback API, staging, and production JS asset checks returned HTTP 200.
+- Production remained healthy after the cleanup.
+- Interactive production admin login succeeded.
+- Password authentication worked as expected.
+
+## Container and deploy preservation proof
+
+- Production API, DB, and Caddy identities remained unchanged during the resumed cleanup.
+- The production deploy was not repeated.
+- No production recreate, rollback, or redeploy was required to finish the reset.
+
+## Temporary credential cleanup
+
+- Temporary credential files used during the cleanup were overwritten and deleted.
+- No password, token, or secret values are recorded here.
+
+## Remaining owner onboarding actions
+
+These are normal product-onboarding steps, not cleanup blockers:
+
+- Configure company settings
+- Complete first-client setup in the production UI
+
+## Final classification
 
 `PRODUCTION CLEAN-STATE RESET PASS`
 
-`PRODUCTION_READY_FOR_CLEAN_OWNER_SETUP=true` after owner interactive login completes company + first client steps.
+No further reset action is required.

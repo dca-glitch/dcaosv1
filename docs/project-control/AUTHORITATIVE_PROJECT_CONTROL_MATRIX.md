@@ -13,12 +13,12 @@
 |------|--------|
 | Repo | `C:\dcaosv1` |
 | Branch | `main` |
-| Repo baseline (HEAD) | Prefer `docs/STATUS.md` — production runtime `57f9c52`; tip may be docs-only after that SHA |
+| Repo baseline (HEAD) | Prefer `docs/STATUS.md` — production runtime `57f9c52`; reset closeout and green CI evidence are recorded there |
 | Staging API baseline (last full API artifact) | `57f9c52` (pack binding) / prior composition `632d9a9` |
 | Staging web baseline | In-place sync into `/opt/dca/apps/dcaosv1/staging/web/dist` when UI changes |
 | Production artifact | `/opt/dca/production-artifacts/57f9c52` · rollback image `app-dcaosv1-api:pre-57f9c52-20260713T050725Z` |
 | Relation | Pack binding `Client.operatingPackKey`; production catch-up of 39 migrations applied 2026-07-13 |
-| Production | DEPLOYED — `READY_FOR_CONTROLLED_LIVE_TESTING`; external providers owner-gated; Puriva full launch NOT claimed |
+| Production | DEPLOYED + healthy — `CLEAN_FIRST_RUN_OWNER_SETUP`; clean-state reset PASS; interactive admin login verified; Turnstile temporarily disabled; external providers owner-gated; Puriva full launch NOT claimed |
 | Remote freshness | `origin/main` must match repo HEAD after RC push |
 
 This document controls **nomenclature** and **status labels** for planning and execution before the next staging cycle. It does **not** replace technical runbooks (`STAGING_READINESS`, `PRODUCTION_DEPLOYMENT`, `PRODUCTION_ROLLBACK`, integration proof runbooks, or operator checklists).
@@ -101,7 +101,7 @@ Applied migration or local unit/integration proof alone does **not** justify `ST
 
 | Capability | Label | Evidence | Open condition | Blocks next staging? | Blocks production? |
 |------------|-------|----------|----------------|----------------------|--------------------|
-| Auth (modals / local admin auth path) | LOCAL FOUNDATION | BLOK 1 COMPLETE; local auth/smokes | Staging/prod auth + Turnstile cutover incomplete | No (local Workstreams first) | Yes |
+| Auth (modals / local admin auth path) | LOCAL FOUNDATION | BLOK 1 COMPLETE; local auth/smokes; production password login verified with temporary Turnstile disablement | Staging/prod auth cutover remains owner-gated | No (local Workstreams first) | Yes |
 | RBAC / role-based UI | LOCAL FOUNDATION | BLOKI 3–5 COMPLETE; client redirect / navigation filters | Target-env RBAC browser proof | No | Yes |
 | Client Portal | LOCAL FOUNDATION | BLOK 2 COMPLETE; pending approvals / FINAL visibility | Staging/prod portal proof; broader collaboration deferred | No | Yes |
 | Briefs | LOCAL FOUNDATION | BLOK 8 COMPLETE; model/API/UI | Target-env brief workflow proof | No | Yes |
@@ -123,7 +123,7 @@ Applied migration or local unit/integration proof alone does **not** justify `ST
 | Google Docs / Drive frontend | DEFERRED | BLOK 9 owner-deferred 2026-07-11 | Owner reactivation of BLOK 9 | No (explicitly deferred) | Yes if claimed as ready |
 | Component system | LOCAL FOUNDATION — canonical decision COMPLETE; Wave 1 + **Modal Wave COMPLETE** | Public system: `apps/web/src/components/ui`; private foundation: `apps/web/src/design-system`; [`CANONICAL_COMPONENT_SYSTEM.md`](./CANONICAL_COMPONENT_SYSTEM.md); import-guard baseline **0**; canonical Modal = `ui/Modal` (DS adapter + portal); legacy `components/Modal` **deleted**; 23/23 page consumers migrated | Remaining: Card adapter; DS Modal `aria-describedby` / nested stack (gated) | Soft — later waves remain | Soft |
 | Rollback / compatibility plan | ROLLBACK READY WITH CONDITIONS | Current staging `a8a74e6`; retained rollback API tag `staging-dcaosv1-staging-api:1b8d00d` + web backup `dist-before-a8a74e6-20260712-042923`; schema delta none; rollback rehearsal PASS (2026-07-12) | Owner-gated rollback only if needed; do not delete retained tags/backups | Soft | Yes |
-| Production | FROZEN | Staging PASS does not authorize production; artifact SHA / rollback target UNKNOWN | Turnstile/R2 rotation; G49/G50; explicit go/no-go | N/A (not staging) | Yes — frozen |
+| Production | HEALTHY / CLEAN_FIRST_RUN_OWNER_SETUP | Production is live and healthy; clean-state reset PASS; deploy not repeated during resume | Normal owner onboarding in production UI; further mutations remain owner-gated | N/A (not staging) | Yes — frozen for future mutations |
 
 ---
 
@@ -172,7 +172,7 @@ Applied migration or local unit/integration proof alone does **not** justify `ST
 | SHA-tagged retained staging API image (`staging-dcaosv1-staging-api:1b8d00d`) | **OPEN** until staging safeguard phase |
 | Image provider selection | **COMPLETE (2026-07-12 pivot + staging one-image KEEP)** — active primary=`openai`, model=`gpt-image-1`, adapter=`OpenAIImageAdapter`; BFL/`flux-2-pro` preserved inactive; staging one-image live proven on `c07df10`; broader image workflows still OPEN |
 | AI Policy / provider routing architecture alignment | **COMPLETE** (docs-only 2026-07-12) — prohibits parallel modality routing systems; does not implement adapters |
-| Production artifact SHA and rollback target | UNKNOWN / OPEN (production FROZEN; staging target remains `1b8d00d`) |
+| Production artifact SHA and rollback target | KNOWN — production runtime `57f9c52`; rollback image `app-dcaosv1-api:pre-57f9c52-20260713T050725Z` |
 | Staging credential availability for next live proofs | OPEN |
 | Production Turnstile and R2 credential rotation execution | OPEN — DEFERRED (Phase B/C) |
 

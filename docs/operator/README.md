@@ -39,9 +39,9 @@ Status: Plain-language documentation set for admins, client delivery, and readin
 
 ## Current Operating Position
 
-DCA OS Lite supports **controlled local/admin MVP** work on `main` (baseline at sweep time: `66dcb74`). Blocks 1–3 CI green remains historical foundation; later gates added local/no-IO foundations only.
+DCA OS Lite supports **controlled local/admin MVP** work on `main` (baseline at sweep time: `66dcb74`). Current production state is healthy and in clean-state reset PASS; interactive admin login is verified; Turnstile is temporarily disabled; Puriva Launch remains blocked; and further production mutations require explicit approval.
 
-**Truth labels (do not upgrade):** Production readiness **NO**. Puriva Launch **BLOCKED**. Live R2 / email / GA/GSC / WordPress HTTP / image provider / staging–prod integration proofs are **not** claimed. Local controlled OpenRouter proof (G77b) does not satisfy staging/production launch requirements.
+**Truth labels (do not upgrade):** Launch readiness **NO**. Puriva Launch **BLOCKED**. Live provider / WordPress / GA/GSC / R2 / staging / production live proofs are **not** claimed.
 
 It is not automatically approved for production deployment, staging deploy, or live client portal rollout.
 
