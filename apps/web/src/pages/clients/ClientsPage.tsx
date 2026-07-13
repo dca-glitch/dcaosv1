@@ -323,7 +323,15 @@ export function ClientsPage({
       />
 
       {filteredClients.length === 0 ? (
-        <EmptyState message="No clients match the current filter." title="No clients" variant="inline" />
+        <EmptyState
+          message={
+            clients.length === 0
+              ? "Add your first client to start delivery, approvals, and reporting."
+              : "No clients match the current filter."
+          }
+          title={clients.length === 0 ? "No clients yet" : "No clients"}
+          variant="inline"
+        />
       ) : (
         <SectionPanel title="Client records" tone="compact">
           <div className="table-wrap table-scroll">

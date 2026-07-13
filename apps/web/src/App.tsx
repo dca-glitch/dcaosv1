@@ -12,6 +12,8 @@ import {
   type VendorSummary
 } from "./pages/bills/BillsPage";
 import { CompanyProfilePage, type CompanyProfileFormValues, type CompanyProfileSummary } from "./pages/company-profile/CompanyProfilePage";
+import { FirstRunSetupPage } from "./pages/setup/FirstRunSetupPage";
+import { deriveFirstRunSetupState } from "./lib/first-run-setup";
 import { SettingsDeferredAreasPanel } from "./pages/settings/SettingsDeferredAreasPanel";
 import { SettingsSubNav } from "./pages/settings/SettingsSubNav";
 import {
@@ -106,6 +108,7 @@ const SESSION_STORAGE_KEY = "dcaosv1.authToken";
 const TURNSTILE_SCRIPT_URL = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
 const LOGIN_HASH = "#/login";
 const DASHBOARD_HASH = "#/dashboard";
+const SETUP_HASH = "#/setup";
 
 type ApiSuccess<T> = {
   ok: true;
@@ -493,7 +496,8 @@ type ViewKey =
   | "settings"
   | "team"
   | "admin-daily-cockpit"
-  | "design-system";
+  | "design-system"
+  | "setup";
 
 type RequestOptions = {
   method?: string;
@@ -631,6 +635,9 @@ function normalizeHash(hash: string): ViewKey {
   }
   if (value === "admin/design-system") {
     return "design-system";
+  }
+  if (value === "setup") {
+    return "setup";
   }
   if (deferredClientReviewViews.has(value as ViewKey)) {
     return value as ViewKey;
@@ -1943,6 +1950,36 @@ export function App() {
       replaceHash(DASHBOARD_HASH);
     }
   }, [authContext, activeView]);
+
+  useEffect(() => {
+    if (loading || !authContext || !token || !currentUser || forcePasswordChangeContext) {
+      return;
+    }
+
+    const canManage = hasActiveRole(authContext, ["owner", "admin"]);
+    if (!canManage || isClientOnlyRole(authContext.tenantContext.roles)) {
+      return;
+    }
+
+    const setup = deriveFirstRunSetupState(companyProfile, clients, canManage);
+    if (setup.setupIncomplete && activeView !== "setup") {
+      replaceHash(SETUP_HASH);
+      return;
+    }
+
+    if (!setup.setupIncomplete && activeView === "setup") {
+      replaceHash(DASHBOARD_HASH);
+    }
+  }, [
+    loading,
+    authContext,
+    token,
+    currentUser,
+    forcePasswordChangeContext,
+    companyProfile,
+    clients,
+    activeView
+  ]);
 
   const redirectToLogin = useCallback(() => {
     setSelectedModuleKey(null);
@@ -4596,6 +4633,7 @@ export function App() {
   const canManageCore = hasActiveRole(authContext, ["owner", "admin"]);
   const currentTenant = tenantContext?.currentTenant?.tenant ?? null;
   const isClientOnlyViewer = isClientOnlyRole(authContext?.tenantContext.roles ?? []);
+  const firstRunSetup = deriveFirstRunSetupState(companyProfile, clients, canManageCore);
   const layoutNavigationItems = isClientOnlyViewer
     ? clientNavigationItems
     : filterNavigationByRole(navigationItems, authContext);
@@ -4634,6 +4672,21 @@ export function App() {
         />
       ) : null}
       {loading ? <LoadingState label="Loading" /> : null}
+      {!loading && activeView === "setup" ? (
+        <FirstRunSetupPage
+          clientSaving={false}
+          companySaving={false}
+          error={appMessage?.tone === "error" ? appMessage.text : null}
+          needsCompanyProfile={firstRunSetup.needsCompanyProfile}
+          needsFirstClient={firstRunSetup.needsFirstClient}
+          onFinished={() => {
+            setAppMessage({ tone: "success", text: "Setup complete. Welcome to your workspace." });
+            replaceHash(DASHBOARD_HASH);
+          }}
+          onSaveClient={(values) => handleSaveClient(null, values)}
+          onSaveCompany={handleSaveCompanyProfile}
+        />
+      ) : null}
       {!loading && activeView === "dashboard" ? (
         <DashboardView
           activityAuditLogs={activityAuditLogs}
