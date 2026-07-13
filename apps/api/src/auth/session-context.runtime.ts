@@ -199,3 +199,19 @@ export async function revokeAuthSession(sessionId: string): Promise<Date> {
 
   return revokedAt;
 }
+
+export async function revokeAllAuthSessionsForUser(userId: string): Promise<{ revokedAt: Date; count: number }> {
+  const revokedAt = new Date();
+
+  const result = await prisma.session.updateMany({
+    where: {
+      userId,
+      revokedAt: null
+    },
+    data: {
+      revokedAt
+    }
+  });
+
+  return { revokedAt, count: result.count };
+}

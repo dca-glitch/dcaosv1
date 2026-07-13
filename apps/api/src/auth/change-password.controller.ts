@@ -5,6 +5,7 @@ import type { AuthSessionLocals } from "./types";
 import { hashPassword, verifyPassword } from "./password.service";
 import { recordPlatformAuditEvent } from "../security/audit-log.service";
 import { AUTH_RUNTIME_AUDIT_EVENTS } from "./auth.constants";
+import { revokeAllAuthSessionsForUser } from "./session-context.runtime";
 
 const prisma = createPrismaClient();
 
@@ -60,6 +61,8 @@ export const changePasswordHandler: RequestHandler = async (req, res) => {
         passwordChangedAt: new Date()
       }
     });
+
+    await revokeAllAuthSessionsForUser(user.id);
 
     await recordPlatformAuditEvent({
       tenantId: authSession.tenantContext.activeMembership?.tenantId ?? null,

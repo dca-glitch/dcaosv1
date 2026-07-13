@@ -16,6 +16,7 @@
 | `containsUnsafeStorageErrorContent` | same | Detection helper for storage-sensitive content | Lane 1 |
 | `redactWordPressErrorMessage` / `buildWordPressRedactedError` | `wordpress-error-redaction.ts` | Scrubs WP app-password / Authorization / token / ciphertext fragments | Lane 7 (WP) |
 | Email recipient / template redaction | `email-redaction.ts` | Recipient domain-only + template variable scrub | Notifications lane; may be working-tree only |
+| `errorMiddleware` JSON parse + stack harden | `apps/api/src/middleware/errorMiddleware.ts` | Malformed JSON → `400 INVALID_JSON` (no details); API error details never include `stack`/filesystem paths | Local API/auth DAST 2026-07-13 |
 
 ---
 
@@ -32,6 +33,7 @@ Patterns include (non-exhaustive): stack frames, `storageKey`, `tenants/...` pat
 | Client portal error safety | `apps/api/src/core/client-portal-error-safety.test.ts` | Lane 9 — do not edit |
 | Storage error redaction | `apps/api/src/storage/storage-error-redaction.test.ts` | Lane 1 — do not edit |
 | WordPress error redaction | `apps/api/src/services/wordpress-error-redaction.test.ts` | Lane 7 — do not edit |
+| Global error middleware JSON safety | `apps/api/src/middleware/errorMiddleware.test.ts` | Local API/auth DAST 2026-07-13 |
 
 ---
 

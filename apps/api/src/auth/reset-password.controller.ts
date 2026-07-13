@@ -6,6 +6,7 @@ import { generateTemporaryPassword } from "./password-generator";
 import { hashPassword } from "./password.service";
 import { recordPlatformAuditEvent } from "../security/audit-log.service";
 import { AUTH_RUNTIME_AUDIT_EVENTS } from "./auth.constants";
+import { revokeAllAuthSessionsForUser } from "./session-context.runtime";
 
 const prisma = createPrismaClient();
 const LOGIN_URL_BASE = process.env.APP_BASE_URL ?? "https://system.digitalcubeagency.net";
@@ -45,6 +46,8 @@ export const adminPasswordReset: RequestHandler = async (req, res) => {
       where: { id: userId },
       data: { passwordHash, forcePasswordChange: true }
     });
+
+    await revokeAllAuthSessionsForUser(userId);
 
     await recordPlatformAuditEvent({
       tenantId,
