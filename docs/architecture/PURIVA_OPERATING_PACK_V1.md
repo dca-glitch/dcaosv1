@@ -166,10 +166,28 @@ Puriva Operating Pack v1 now has shared typed configuration for the parts that w
 | Gate | Constant | Scope |
 |------|----------|-------|
 | G124 | `PURIVA_COMPLIANCE_PROFILE_V1` | Compliance risk classes, human review requirements, article/image client approval requirements, monthly report final-only rule, prohibited claim categories, immutable compliance boundaries |
-| G125 | `CLIENT_OPERATING_PACK_MODULE_ENTITLEMENT_CONFIG.puriva` | Pack-level module entitlement map (expanded in G210) |
+| G125 | `CLIENT_OPERATING_PACK_MODULE_ENTITLEMENT_CONFIG.puriva` | Pack-level module entitlement matrix (expanded in G210) |
 | G126 | `PURIVA_WORKFLOW_TEMPLATE_CATALOG` | Catalog-only workflow templates (expanded in G212) |
 
 These constants are intentionally pack configuration. They do not replace `Client`, `TenantModule`, workflow runtime, portal auth, or publication/integration services. DCA OS Lite remains **Internal Agency OS first**; Puriva is the first pack layered on generic Core/modules, not a fork.
+
+### Pack assembly refresh (2026-07-13)
+
+`PURIVA_OPERATING_PACK_V1` now also assembles:
+
+| Element | Constant |
+|---------|----------|
+| Identity | `PURIVA_IDENTITY_V1` |
+| Tone | `PURIVA_CONTENT_TONE_PROFILE_V1` |
+| Languages | `PURIVA_ALLOWED_LANGUAGE_V1` |
+| Image dimensions | `PURIVA_IMAGE_DIMENSION_PROFILE_V1` |
+| WordPress targets | `PURIVA_WORDPRESS_TARGET_CONFIG_V1` (includes staging host `purivastaging.digitalcubeagency.net`) |
+| Review rules | `PURIVA_REVIEW_RULES_V1` |
+| Fallbacks | `PURIVA_FALLBACK_POLICY_V1` |
+| Monthly AI cap | `PURIVA_MONTHLY_AI_CAP_USD = 100` |
+
+Staging constants / host allowlist: `scripts/lib/puriva-staging-operating-pack.mjs`.
+Monthly operator runbook: [`../runbooks/PURIVA_MONTHLY_OPERATION.md`](../runbooks/PURIVA_MONTHLY_OPERATION.md).
 
 ---
 

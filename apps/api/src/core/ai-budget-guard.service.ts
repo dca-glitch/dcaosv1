@@ -1,11 +1,12 @@
 import type { AiBudgetSnapshot } from "@dca-os-v1/shared";
+import { PURIVA_MONTHLY_AI_CAP_USD } from "@dca-os-v1/shared";
 
 export const AI_BUDGET_GUARD_VERSION = "AI_BUDGET_GUARD_V1";
 
-/** Puriva operating pack hard monthly AI cap (USD). */
-export const PURIVA_AI_MONTHLY_CAP_USD = 100;
+/** Puriva operating pack hard monthly AI cap (USD) — single source: shared pack constant. */
+export const PURIVA_AI_MONTHLY_CAP_USD = PURIVA_MONTHLY_AI_CAP_USD;
 
-const DEFAULT_MONTHLY_CAP_USD = 100;
+const DEFAULT_MONTHLY_CAP_USD = PURIVA_MONTHLY_AI_CAP_USD;
 
 const STEP_COST_ESTIMATES_USD: Record<string, number> = {
   research_pack: 0.15,

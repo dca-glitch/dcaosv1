@@ -95,6 +95,27 @@ describe("client-operating-packs", () => {
     assert.equal(PURIVA_OPERATING_PACK_V1.status, "launch_blocked");
   });
 
+  it("assembles Puriva Operating Pack identity, tone, budget, WP, and fallbacks", () => {
+    assert.equal(PURIVA_OPERATING_PACK_V1.monthlyAiCapUsd, 100);
+    assert.equal(PURIVA_OPERATING_PACK_V1.identity.name, "Puriva");
+    assert.equal(PURIVA_OPERATING_PACK_V1.identity.location, "Bali, Indonesia");
+    assert.ok(PURIVA_OPERATING_PACK_V1.contentToneProfile.voice.includes("medically_cautious"));
+    assert.deepEqual(PURIVA_OPERATING_PACK_V1.allowedLanguageProfile.languages, ["id", "en"]);
+    assert.equal(
+      PURIVA_OPERATING_PACK_V1.wordpressTargetConfig.stagingPreferred.siteUrl,
+      "https://purivastaging.digitalcubeagency.net"
+    );
+    assert.equal(PURIVA_OPERATING_PACK_V1.wordpressTargetConfig.productionDraftPrep.draftOnly, true);
+    assert.equal(PURIVA_OPERATING_PACK_V1.wordpressTargetConfig.productionDraftPrep.livePublish, false);
+    assert.equal(PURIVA_OPERATING_PACK_V1.reviewRules.imageApprovalBeforeWordpressDraft, true);
+    assert.equal(PURIVA_OPERATING_PACK_V1.reviewRules.manualReviewRequiredAlongsideAutomatedGuards, true);
+    assert.equal(PURIVA_OPERATING_PACK_V1.fallbackPolicy.stopWhenMonthlyAiCapWouldExceed, true);
+    assert.equal(PURIVA_OPERATING_PACK_V1.imageDimensionProfile.slots.hero.aspect, "16:9");
+    assert.ok(
+      PURIVA_COMPLIANCE_PROFILE_V1.prohibitedClaimPatterns.includes("fake doctor endorsement")
+    );
+  });
+
   it("publishes Puriva compliance profile constants", () => {
     assert.equal(PURIVA_COMPLIANCE_PROFILE_V1.profileKey, "puriva_compliance_profile_v1");
     assert.equal(PURIVA_COMPLIANCE_PROFILE_V1.packKey, "puriva");

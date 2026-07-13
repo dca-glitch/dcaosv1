@@ -23,6 +23,7 @@ export type PurivaMedicalComplianceFlag =
   | "permanent_result_claim"
   | "unsafe_weight_loss_claim"
   | "hospital_partner_claim_requires_verification"
+  | "fabricated_medical_authority"
   | "medical_review_required";
 
 export type PurivaComplianceSeverity = "low" | "medium" | "high" | "critical";

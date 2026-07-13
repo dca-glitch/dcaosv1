@@ -164,12 +164,50 @@
         "only clinic",
         "number one clinic",
         "#1 clinic",
-        "clinically proven to"
+        "clinically proven to",
+        "unmatched efficacy",
+        "market-leading outcomes",
+        "superior clinical outcomes"
       ],
       "severity": "medium",
       "action": "revise",
       "reviewerNote": "Unqualified superlative medical outcome claims should be softened.",
       "guidance": "Use neutral educational positioning and cite only approved, verifiable statements."
+    },
+    {
+      "id": "fake_doctor_endorsement",
+      "flags": ["fabricated_medical_authority", "medical_claim_risk", "medical_review_required"],
+      "patterns": [
+        "recommended by dr",
+        "recommended by doctor",
+        "as recommended by dr",
+        "doctor recommends",
+        "our doctors recommend",
+        "endorsed by our doctor",
+        "trusted medical authority",
+        "board-certified doctor says",
+        "as our physician confirms"
+      ],
+      "severity": "high",
+      "action": "require_medical_review",
+      "reviewerNote": "Fake or unverified clinician endorsements are not permitted.",
+      "guidance": "Use clinic educational framing only; do not invent named doctor endorsements or fabricated authority."
+    },
+    {
+      "id": "unsupported_bpom_claim",
+      "flags": ["hospital_partner_claim_requires_verification", "medical_review_required"],
+      "patterns": [
+        "bpom approved",
+        "bpom registered",
+        "izin bpom",
+        "terdaftar bpom",
+        "sudah terdaftar bpom",
+        "bpom clearance"
+      ],
+      "severity": "high",
+      "action": "require_medical_review",
+      "reviewerNote": "BPOM or regulatory registration claims require verified evidence before publication.",
+      "guidance": "Omit regulatory registration claims unless compliance supplies verified wording."
     }
   ],
   "safeEducationalPatterns": [

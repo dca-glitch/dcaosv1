@@ -126,4 +126,40 @@ describe("puriva-medical-compliance", () => {
     assert.ok(summary.includes("severity=high"));
     assert.ok(summary.includes("guaranteed_outcome"));
   });
+
+  it("flags guarantee weight-loss claims", () => {
+    const assessment = assessPurivaMedicalCompliance({
+      text: "We guarantee weight loss for every client who completes the program.",
+      categoryId: "wegovy_semaglutide_weight_management"
+    });
+    assert.ok(assessment.matches.some((match) => match.ruleId === "guaranteed_outcome"));
+    assert.notEqual(assessment.action, "allow");
+  });
+
+  it("flags fake doctor endorsement copy for medical review", () => {
+    const assessment = assessPurivaMedicalCompliance({
+      text: "As recommended by Dr. Sari, Puriva is the trusted medical authority for aesthetic care.",
+      categoryId: "general_aesthetic_services"
+    });
+    assert.ok(assessment.matches.some((match) => match.ruleId === "fake_doctor_endorsement"));
+    assert.equal(assessment.action, "require_medical_review");
+  });
+
+  it("flags unsupported BPOM registration claims for medical review", () => {
+    const assessment = assessPurivaMedicalCompliance({
+      text: "This device is BPOM registered and sudah terdaftar BPOM for clinic use.",
+      categoryId: "general_aesthetic_services"
+    });
+    assert.ok(assessment.matches.some((match) => match.ruleId === "unsupported_bpom_claim"));
+    assert.equal(assessment.action, "require_medical_review");
+  });
+
+  it("flags unsupported treatment superiority language", () => {
+    const assessment = assessPurivaMedicalCompliance({
+      text: "Our clinic delivers unmatched efficacy and superior clinical outcomes.",
+      categoryId: "general_aesthetic_services"
+    });
+    assert.ok(assessment.matches.some((match) => match.ruleId === "medical_outcome_superlative"));
+    assert.equal(assessment.action, "revise");
+  });
 });

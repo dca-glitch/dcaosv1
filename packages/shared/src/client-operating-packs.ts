@@ -118,6 +118,80 @@ export interface PurivaComplianceValidationResult {
   errors: readonly string[];
 }
 
+/** Tone of voice for Puriva content (config only; operators still review). */
+export interface PurivaContentToneProfile {
+  profileKey: "puriva_content_tone_profile_v1";
+  voice: readonly string[];
+  bannedHypeTokens: readonly string[];
+  sourceDoc: "docs/runbooks/PURIVA_OPERATIONAL_INTAKE_AND_COMPLIANCE.md";
+}
+
+/** Allowed publishing languages for Puriva MVP. */
+export interface PurivaAllowedLanguageProfile {
+  profileKey: "puriva_allowed_language_v1";
+  languages: readonly ("id" | "en")[];
+  mvpPrimary: "en";
+  requireClientApprovalForOtherLanguages: true;
+  safeEducationalPatternsRef: "puriva-medical-compliance.safeEducationalPatterns";
+}
+
+/** Image slot dimensions for Puriva packages (config; generation may still be disabled). */
+export interface PurivaImageDimensionProfile {
+  profileKey: "puriva_image_dimension_profile_v1";
+  slots: {
+    readonly hero: { width: 1920; height: 1080; aspect: "16:9" };
+    readonly supporting_1: { width: 1600; height: 1200; aspect: "4:3" };
+    readonly supporting_2: { width: 1600; height: 1200; aspect: "4:3" };
+    readonly social_preview: { width: 1080; height: 1080; aspect: "1:1" };
+  };
+}
+
+/** WordPress draft targets — production site vs staging-only host. */
+export interface PurivaWordpressTargetConfig {
+  profileKey: "puriva_wordpress_target_config_v1";
+  productionDraftPrep: {
+    label: string;
+    siteUrl: "https://puriva.id";
+    siteSlug: "puriva";
+    draftOnly: true;
+    livePublish: false;
+  };
+  stagingPreferred: {
+    label: string;
+    siteUrl: "https://purivastaging.digitalcubeagency.net";
+    siteSlug: "puriva-staging";
+    draftOnly: true;
+    livePublish: false;
+    note: "Use staging host for live draft proofs; never point staging at production WP unless owner-approved.";
+  };
+}
+
+/** Approval / review invariants for Puriva workflows. */
+export interface PurivaReviewRules {
+  profileKey: "puriva_review_rules_v1";
+  rejectReasonRequired: true;
+  regenerateRejectedImagesOnly: true;
+  upscaleAfterApprovalOnly: true;
+  imageApprovalBeforeWordpressDraft: true;
+  wordpressDraftOnlyNoAutoPublish: true;
+  monthlyReportFinalOnlyToClient: true;
+  clientCannotRejectFinalReport: true;
+  adminReviewMandatory: true;
+  manualReviewRequiredAlongsideAutomatedGuards: true;
+}
+
+/** Operational fallbacks when live providers are unavailable. */
+export interface PurivaFallbackPolicy {
+  profileKey: "puriva_fallback_policy_v1";
+  omitUnverifiedFacts: true;
+  useLocalDeterministicWhenLiveBlocked: true;
+  stopWhenMonthlyAiCapWouldExceed: true;
+  metricsPlaceholderWhenGaGscDeferred: true;
+  wordpressDraftOnly: true;
+  emailPriorityOverInSystemNotifications: true;
+  complianceBoundariesImmutable: true;
+}
+
 export interface ClientOperatingPackConfig {
   version: typeof CLIENT_OPERATING_PACKS_VERSION;
   packKey: ClientOperatingPackKey;
@@ -130,6 +204,21 @@ export interface ClientOperatingPackConfig {
   complianceProfile: PurivaComplianceProfile;
   moduleEntitlements: readonly ClientOperatingPackModuleEntitlement[];
   workflowTemplates: readonly ClientOperatingPackWorkflowTemplate[];
+  /** Monthly AI hard-cap USD (enforcement uses estimated spend unless actualCostUsd is trusted). */
+  monthlyAiCapUsd: 100;
+  contentToneProfile: PurivaContentToneProfile;
+  allowedLanguageProfile: PurivaAllowedLanguageProfile;
+  imageDimensionProfile: PurivaImageDimensionProfile;
+  wordpressTargetConfig: PurivaWordpressTargetConfig;
+  reviewRules: PurivaReviewRules;
+  fallbackPolicy: PurivaFallbackPolicy;
+  identity: {
+    name: "Puriva";
+    website: "https://puriva.id";
+    location: "Bali, Indonesia";
+    audience: readonly string[];
+    serviceCategories: readonly string[];
+  };
 }
 
 export const PURIVA_COMPLIANCE_PROFILE_V1 = {
@@ -158,7 +247,11 @@ export const PURIVA_COMPLIANCE_PROFILE_V1 = {
     "universal suitability",
     "permanent result",
     "unsafe rapid weight-loss promise",
-    "unverified hospital partner claim"
+    "unverified hospital partner claim",
+    "fake doctor endorsement",
+    "unsupported BPOM claim",
+    "unsupported treatment superiority",
+    "fabricated medical authority"
   ],
   requiredBoundaries: [
     "Content stays educational and consultative.",
@@ -166,9 +259,111 @@ export const PURIVA_COMPLIANCE_PROFILE_V1 = {
     "Prescription and stem-cell content requires licensed-provider framing.",
     "Delivery channels are website and social only; paid ads are future/out of scope.",
     "Metrics and trends must come from GA/GSC or another approved source.",
-    "Learning notes cannot weaken compliance boundaries."
+    "Learning notes cannot weaken compliance boundaries.",
+    "No before-and-after framing, fake clinicians, or guaranteed treatment results.",
+    "Automated scanners are necessary but not sufficient; manual review remains required."
   ]
 } as const satisfies PurivaComplianceProfile;
+
+export const PURIVA_CONTENT_TONE_PROFILE_V1 = {
+  profileKey: "puriva_content_tone_profile_v1",
+  voice: [
+    "calm",
+    "professional",
+    "clear",
+    "medically_cautious",
+    "premium_not_exaggerated",
+    "helpful",
+    "no_hype",
+    "no_guaranteed_outcomes",
+    "no_aggressive_sales"
+  ],
+  bannedHypeTokens: [
+    "miracle",
+    "guaranteed",
+    "instant results",
+    "life-changing",
+    "transform your body overnight",
+    "100% success"
+  ],
+  sourceDoc: "docs/runbooks/PURIVA_OPERATIONAL_INTAKE_AND_COMPLIANCE.md"
+} as const satisfies PurivaContentToneProfile;
+
+export const PURIVA_ALLOWED_LANGUAGE_V1 = {
+  profileKey: "puriva_allowed_language_v1",
+  languages: ["id", "en"] as const,
+  mvpPrimary: "en",
+  requireClientApprovalForOtherLanguages: true,
+  safeEducationalPatternsRef: "puriva-medical-compliance.safeEducationalPatterns"
+} as const satisfies PurivaAllowedLanguageProfile;
+
+export const PURIVA_IMAGE_DIMENSION_PROFILE_V1 = {
+  profileKey: "puriva_image_dimension_profile_v1",
+  slots: {
+    hero: { width: 1920, height: 1080, aspect: "16:9" },
+    supporting_1: { width: 1600, height: 1200, aspect: "4:3" },
+    supporting_2: { width: 1600, height: 1200, aspect: "4:3" },
+    social_preview: { width: 1080, height: 1080, aspect: "1:1" }
+  }
+} as const satisfies PurivaImageDimensionProfile;
+
+export const PURIVA_WORDPRESS_TARGET_CONFIG_V1 = {
+  profileKey: "puriva_wordpress_target_config_v1",
+  productionDraftPrep: {
+    label: "Puriva WordPress (draft prep only)",
+    siteUrl: "https://puriva.id",
+    siteSlug: "puriva",
+    draftOnly: true,
+    livePublish: false
+  },
+  stagingPreferred: {
+    label: "Puriva WordPress staging (draft only)",
+    siteUrl: "https://purivastaging.digitalcubeagency.net",
+    siteSlug: "puriva-staging",
+    draftOnly: true,
+    livePublish: false,
+    note: "Use staging host for live draft proofs; never point staging at production WP unless owner-approved."
+  }
+} as const satisfies PurivaWordpressTargetConfig;
+
+export const PURIVA_REVIEW_RULES_V1 = {
+  profileKey: "puriva_review_rules_v1",
+  rejectReasonRequired: true,
+  regenerateRejectedImagesOnly: true,
+  upscaleAfterApprovalOnly: true,
+  imageApprovalBeforeWordpressDraft: true,
+  wordpressDraftOnlyNoAutoPublish: true,
+  monthlyReportFinalOnlyToClient: true,
+  clientCannotRejectFinalReport: true,
+  adminReviewMandatory: true,
+  manualReviewRequiredAlongsideAutomatedGuards: true
+} as const satisfies PurivaReviewRules;
+
+export const PURIVA_FALLBACK_POLICY_V1 = {
+  profileKey: "puriva_fallback_policy_v1",
+  omitUnverifiedFacts: true,
+  useLocalDeterministicWhenLiveBlocked: true,
+  stopWhenMonthlyAiCapWouldExceed: true,
+  metricsPlaceholderWhenGaGscDeferred: true,
+  wordpressDraftOnly: true,
+  emailPriorityOverInSystemNotifications: true,
+  complianceBoundariesImmutable: true
+} as const satisfies PurivaFallbackPolicy;
+
+export const PURIVA_MONTHLY_AI_CAP_USD = 100 as const;
+
+export const PURIVA_IDENTITY_V1 = {
+  name: "Puriva",
+  website: "https://puriva.id",
+  location: "Bali, Indonesia",
+  audience: ["local_clients", "international_medical_tourists"] as const,
+  serviceCategories: [
+    "wegovy_semaglutide_weight_management",
+    "stem_cell_therapy",
+    "general_aesthetic_services",
+    "bali_medical_tourism_journey"
+  ] as const
+} as const;
 
 /**
  * G211 — Compliance profile validator (pure; no I/O).
@@ -524,7 +719,15 @@ export const PURIVA_OPERATING_PACK_V1 = {
   saasReadiness: CLIENT_OPERATING_PACK_SAAS_READINESS,
   complianceProfile: PURIVA_COMPLIANCE_PROFILE_V1,
   moduleEntitlements: PURIVA_MODULE_ENTITLEMENTS,
-  workflowTemplates: PURIVA_WORKFLOW_TEMPLATE_CATALOG
+  workflowTemplates: PURIVA_WORKFLOW_TEMPLATE_CATALOG,
+  monthlyAiCapUsd: PURIVA_MONTHLY_AI_CAP_USD,
+  contentToneProfile: PURIVA_CONTENT_TONE_PROFILE_V1,
+  allowedLanguageProfile: PURIVA_ALLOWED_LANGUAGE_V1,
+  imageDimensionProfile: PURIVA_IMAGE_DIMENSION_PROFILE_V1,
+  wordpressTargetConfig: PURIVA_WORDPRESS_TARGET_CONFIG_V1,
+  reviewRules: PURIVA_REVIEW_RULES_V1,
+  fallbackPolicy: PURIVA_FALLBACK_POLICY_V1,
+  identity: PURIVA_IDENTITY_V1
 } as const satisfies ClientOperatingPackConfig;
 
 export const CLIENT_OPERATING_PACK_CONFIGS = {

@@ -68,11 +68,24 @@ export const createClientPublicationTargetHandler: RequestHandler = async (req, 
   if (!input) {
     return void res.status(400).json(failure("PUBLICATION_TARGET_INVALID", "Publication target label and site URL are required."));
   }
-  const response = await createPublicationTargetForClient(authSession, req.params.clientId, input);
-  if (!response?.publicationTarget) {
-    return void res.status(404).json(failure("PUBLICATION_TARGET_NOT_CREATED", "Publication target could not be created."));
+  try {
+    const response = await createPublicationTargetForClient(authSession, req.params.clientId, input);
+    if (!response?.publicationTarget) {
+      return void res.status(404).json(failure("PUBLICATION_TARGET_NOT_CREATED", "Publication target could not be created."));
+    }
+    res.status(201).json(success(response, { scope: "client-publication-targets" }));
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Publication target create failed.";
+    const schemaLag = /does not exist in the current database/i.test(message);
+    return void res.status(schemaLag ? 503 : 500).json(
+      failure(
+        schemaLag ? "PUBLICATION_TARGET_SCHEMA_LAG" : "PUBLICATION_TARGET_CREATE_FAILED",
+        schemaLag
+          ? "Publication target schema is behind runtime. Apply pending migrations before creating targets."
+          : "Publication target could not be created."
+      )
+    );
   }
-  res.status(201).json(success(response, { scope: "client-publication-targets" }));
 };
 
 export const updateClientPublicationTargetHandler: RequestHandler = async (req, res) => {
