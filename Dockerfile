@@ -36,12 +36,18 @@ COPY packages/shared/package.json packages/shared/package.json
 
 RUN npm ci --omit=dev
 
-COPY --from=build /app/node_modules/.prisma node_modules/.prisma
-COPY --from=build /app/node_modules/@prisma/client node_modules/@prisma/client
-COPY --from=build /app/apps/api/dist apps/api/dist
-COPY --from=build /app/apps/web/dist apps/web/dist
-COPY --from=build /app/packages/data/prisma packages/data/prisma
-COPY --from=build /app/scripts/bootstrap-staging-admin.mjs scripts/bootstrap-staging-admin.mjs
+COPY --from=build --chown=node:node /app/node_modules/.prisma node_modules/.prisma
+COPY --from=build --chown=node:node /app/node_modules/@prisma/client node_modules/@prisma/client
+COPY --from=build --chown=node:node /app/apps/api/dist apps/api/dist
+COPY --from=build --chown=node:node /app/apps/web/dist apps/web/dist
+COPY --from=build --chown=node:node /app/packages/data/prisma packages/data/prisma
+COPY --from=build --chown=node:node /app/scripts/bootstrap-staging-admin.mjs scripts/bootstrap-staging-admin.mjs
+
+# npm ci above runs as root; hand ownership to the image `node` user before dropping privileges.
+# No chmod 777 / world-writable dirs. Build stage remains root. Postgres data is out of scope.
+RUN chown -R node:node /app
+
+USER node
 
 EXPOSE 4000
 
