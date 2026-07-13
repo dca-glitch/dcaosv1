@@ -123,6 +123,7 @@ Applied migration or local unit/integration proof alone does **not** justify `ST
 | Google Docs / Drive frontend | DEFERRED | BLOK 9 owner-deferred 2026-07-11 | Owner reactivation of BLOK 9 | No (explicitly deferred) | Yes if claimed as ready |
 | Component system | LOCAL FOUNDATION — canonical decision COMPLETE; Wave 1 + **Modal Wave COMPLETE** | Public system: `apps/web/src/components/ui`; private foundation: `apps/web/src/design-system`; [`CANONICAL_COMPONENT_SYSTEM.md`](./CANONICAL_COMPONENT_SYSTEM.md); import-guard baseline **0**; canonical Modal = `ui/Modal` (DS adapter + portal); legacy `components/Modal` **deleted**; 23/23 page consumers migrated | Remaining: Card adapter; DS Modal `aria-describedby` / nested stack (gated) | Soft — later waves remain | Soft |
 | Rollback / compatibility plan | ROLLBACK READY WITH CONDITIONS | Current staging `a8a74e6`; retained rollback API tag `staging-dcaosv1-staging-api:1b8d00d` + web backup `dist-before-a8a74e6-20260712-042923`; schema delta none; rollback rehearsal PASS (2026-07-12) | Owner-gated rollback only if needed; do not delete retained tags/backups | Soft | Yes |
+| Docker non-root runtime | STAGING LIVE PROVEN | Exact commit `80569c68f94481b33dd0a3c2a5a3ec17b41e31cd`; local candidate image `Config.User=node`; local and staging runtime UID/GID `1000/1000`; staging API container recreated only; no permission or restart regressions; staging API/web/static asset/auth smoke PASS | Production non-root proof and production deploy remain separately owner-gated | No | Yes |
 | Production | FROZEN | Staging PASS does not authorize production; artifact SHA / rollback target UNKNOWN | Turnstile/R2 rotation; G49/G50; explicit go/no-go | N/A (not staging) | Yes — frozen |
 
 ---
@@ -175,7 +176,6 @@ Applied migration or local unit/integration proof alone does **not** justify `ST
 | Production artifact SHA and rollback target | UNKNOWN / OPEN (production FROZEN; staging target remains `1b8d00d`) |
 | Staging credential availability for next live proofs | OPEN |
 | Production Turnstile and R2 credential rotation execution | OPEN — DEFERRED (Phase B/C) |
-
 ---
 
 ## 9. Current execution boundary

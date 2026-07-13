@@ -20,7 +20,7 @@ Production URL:
 system.digitalcubeagency.net
 ```
 
-Post-merge deployment note: Blocks 1–3 merged on `main` (`cc40160`). Local `main` is synced to `origin/main`. Current `main` is **not deployed** to production or staging. `system.digitalcubeagency.net` remains a live production VPS target; staging target `staging.digitalcubeagency.net` is documented (G1) but DNS not created.
+Post-merge deployment note: Blocks 1–3 merged on `main` (`cc40160`). Local `main` is synced to `origin/main`. Current `main` is **not deployed** to production. Controlled staging proof exists for the non-root runtime closeout commit `80569c68f94481b33dd0a3c2a5a3ec17b41e31cd`. `system.digitalcubeagency.net` remains a live production VPS target.
 
 ## Purpose
 

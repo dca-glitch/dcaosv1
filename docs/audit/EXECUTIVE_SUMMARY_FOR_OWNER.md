@@ -4,7 +4,7 @@
 
 DCA OS v1 has a local MVP foundation. It includes login/logout, session context, tenant context, module registry, read-only Team and Settings pages, local smoke, validation, and deployment preparation docs.
 
-The system is not deployed to VPS and is not ready for client access.
+Production is live and frozen for unrelated changes; this closeout does not authorize a production non-root deploy. The system is not ready for client access.
 
 ## What Is Safe Now
 
@@ -24,7 +24,7 @@ The system is not deployed to VPS and is not ready for client access.
 
 ## Top 10 Risks In Plain Language
 
-1. The app has not been proven on a VPS staging server yet.
+1. The app's Docker non-root runtime has now been proven on a controlled staging VPS deployment; production non-root remains unproven.
 2. Tenant isolation needs negative testing before any client data exists.
 3. Browser QA has not been completed because automation was unavailable.
 4. Password reset and invite flows do not exist yet.
@@ -42,8 +42,8 @@ The system is not deployed to VPS and is not ready for client access.
 - Create a staging database with no production data.
 - Approve migration and rollback plan.
 - Configure HTTPS/reverse proxy plan.
-- Run the approved staging smoke path and collect logs.
-- Run staging smoke and collect logs.
+- Preserve the completed staging proof logs.
+- Run any separately approved production proof path only after owner approval.
 
 ## What Must Happen Before Client Access
 
@@ -58,4 +58,4 @@ The system is not deployed to VPS and is not ready for client access.
 
 ## Recommended Decision
 
-Proceed only toward controlled VPS staging after the dry-run checklist is approved. Do not allow client access until the client-access checklist, tenant isolation tests, external security review, and operational controls are complete.
+Proceed only toward controlled production proof after the dry-run checklist is approved. Do not allow client access until the client-access checklist, tenant isolation tests, external security review, and operational controls are complete.
