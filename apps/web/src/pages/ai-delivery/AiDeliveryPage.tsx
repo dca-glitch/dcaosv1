@@ -1972,7 +1972,10 @@ export function AiDeliveryPage({
     setDeliverablesSaving(true);
     setDeliverablesError(null);
     try {
-      const saved = await onSaveDeliverable(projectId, deliverableEditorId, deliverableForm);
+      const payload = deliverableEditorId
+        ? deliverableForm
+        : { ...deliverableForm, status: "DRAFT" as const };
+      const saved = await onSaveDeliverable(projectId, deliverableEditorId, payload);
       if (saved && typeof onFetchDeliverables === "function") {
         const refreshedDeliverables = await onFetchDeliverables(projectId);
         setDeliverables(refreshedDeliverables);
@@ -3067,7 +3070,7 @@ export function AiDeliveryPage({
       ) : null}
       {openDeliverablesId ? (
         <AiDeliveryDeliverableModal
-          isOpen={Boolean(openDeliverablesId)}
+          isOpen={Boolean(openDeliverablesId) && !wordpressPublishConfirm}
           onClose={closeDeliverables}
           project={openDeliverablesProject}
           loading={deliverablesLoading}

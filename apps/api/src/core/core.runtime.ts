@@ -2689,6 +2689,12 @@ export async function updateAiDeliveryArticleImage(
         "Article image status must be changed through dedicated transition actions."
       );
     }
+    // Blank/omitted storageKey preserves the durable private asset. Summaries redact the
+    // key, so admin metadata saves must not wipe hasDocument / approval preview refs.
+    const nextStorageKey =
+      input.storageKey === undefined || toNullableString(input.storageKey) === null
+        ? existing.storageKey
+        : toNullableString(input.storageKey);
     const updated = await getAiDeliveryArticleImageDelegate(tx).update({
       where: { id: articleImageId },
       data: {
@@ -2699,7 +2705,7 @@ export async function updateAiDeliveryArticleImage(
         status,
         previewImageUrl: toNullableString(input.previewImageUrl),
         finalImageUrl: toNullableString(input.finalImageUrl),
-        storageKey: toNullableString(input.storageKey),
+        storageKey: nextStorageKey,
         notes: toNullableString(input.notes),
         isArchived: status === "ARCHIVED" ? true : existing.isArchived
       },
@@ -8941,7 +8947,8 @@ export async function createAiDeliveryDeliverable(
 
     const contentDraftId = toNullableString(input.contentDraftId);
     const articleImageId = toNullableString(input.articleImageId);
-    const status = normalizeAiDeliveryDeliverableStatus(input.status);
+    // Create always starts in DRAFT; workflow actions own later transitions.
+    const status = "DRAFT";
     const contentDraft = contentDraftId
       ? await getContentDraftForDeliverable(tx, tenantId, aiDeliveryProjectId, contentDraftId)
       : null;
@@ -9035,7 +9042,11 @@ export async function updateAiDeliveryDeliverable(
         description: input.description === undefined ? existing.description : toNullableString(input.description),
         deliveryType: normalizeAiDeliveryDeliverableDeliveryType(input.deliveryType),
         exportUrl: input.exportUrl === undefined ? existing.exportUrl : toNullableString(input.exportUrl),
-        storageKey: input.storageKey === undefined ? existing.storageKey : toNullableString(input.storageKey),
+        // Blank/null storageKey preserves the durable private document (same as article images).
+        storageKey:
+          input.storageKey === undefined || toNullableString(input.storageKey) === null
+            ? existing.storageKey
+            : toNullableString(input.storageKey),
         notes: input.notes === undefined ? existing.notes : toNullableString(input.notes)
       },
       select: aiDeliveryDeliverableSelect

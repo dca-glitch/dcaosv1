@@ -2,7 +2,7 @@ import { type FormEvent, type ReactNode, lazy, Suspense, useCallback, useEffect,
 import { Archive, BarChart2, ClipboardList, Clock } from "lucide-react";
 import { AppLayout } from "./components/AppLayout";
 import { AdminOperationsPanel } from "./components/admin/AdminOperationsPanel";
-import { Button, EmptyState, MetricCard, PageHeader, SectionPanel, StatusBadge, StatusNotice, Table } from "./components/ui";
+import { Button, EmptyState, LoadingState, MetricCard, PageHeader, SectionPanel, StatusBadge, StatusNotice, Table } from "./components/ui";
 import {
   BillsPage,
   type BillDocumentUploadValues,
@@ -2944,13 +2944,19 @@ export function App() {
   async function handleSaveAiDeliveryDeliverable(
     projectId: string,
     deliverableId: string | null,
-    values: Partial<AiDeliveryDeliverableSummary>
+    values: Partial<AiDeliveryDeliverableSummary> & { storageKey?: string | null }
   ): Promise<AiDeliveryDeliverableSummary | null> {
     setAppMessage(null);
     try {
+      // Summaries expose hasDocument but redact storageKey; edit forms set null/"".
+      // On update, omit blank storageKey so PUT does not clear the private document.
+      const body =
+        deliverableId && !(values.storageKey ?? "").trim()
+          ? (({ storageKey: _omit, ...rest }) => rest)(values)
+          : values;
       const response = await runAuthenticatedRequest<AiDeliveryDeliverableResponse>(
         deliverableId ? `/ai-delivery-projects/${projectId}/deliverables/${deliverableId}` : `/ai-delivery-projects/${projectId}/deliverables`,
-        { method: deliverableId ? "PUT" : "POST", body: values }
+        { method: deliverableId ? "PUT" : "POST", body }
       );
       if (!response) return null;
       if (!response.ok) {
@@ -3436,9 +3442,15 @@ export function App() {
   ): Promise<AiDeliveryArticleImageSummary | null> {
     setAppMessage(null);
     try {
+      // List/detail summaries redact storageKey; edit forms therefore hold "". On update,
+      // omit blank storageKey so the API preserves the durable private asset reference.
+      const body =
+        imageId && !(values.storageKey ?? "").trim()
+          ? (({ storageKey: _omit, ...rest }) => rest)(values)
+          : values;
       const response = await runAuthenticatedRequest<AiDeliveryArticleImageResponse>(
         imageId ? `/ai-delivery-projects/${projectId}/article-images/${imageId}` : `/ai-delivery-projects/${projectId}/article-images`,
-        { method: imageId ? "PUT" : "POST", body: values }
+        { method: imageId ? "PUT" : "POST", body }
       );
       if (!response) return null;
       if (!response.ok) {
@@ -4618,7 +4630,7 @@ export function App() {
           onDismiss={appMessage.tone !== "error" ? () => setAppMessage(null) : undefined}
         />
       ) : null}
-      {loading ? <div className="state-panel">Loading</div> : null}
+      {loading ? <LoadingState label="Loading" /> : null}
       {!loading && activeView === "dashboard" ? (
         <DashboardView
           activityAuditLogs={activityAuditLogs}
@@ -4912,7 +4924,7 @@ export function App() {
         />
       ) : null}
       {!loading && activeView === "design-system" ? (
-        <Suspense fallback={<EmptyState title="Loading design system" message="Preparing the showcase." />}>
+        <Suspense fallback={<LoadingState label="Loading design system" />}>
           <DesignShowcase />
         </Suspense>
       ) : null}

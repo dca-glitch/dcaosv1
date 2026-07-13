@@ -465,10 +465,8 @@ export function AiDeliveryDeliverableModal(props: AiDeliveryDeliverableModalProp
                     </>
                   ) : (
                     <>
-                      <select value={deliverableForm.status || "DRAFT"} onChange={(e) => onFormChange((current: AiDeliveryDeliverableFormValues) => ({ ...current, status: e.target.value }))}>
-                        {(["DRAFT","READY","DELIVERED","REVISION_REQUESTED","ACCEPTED","ARCHIVED"] as const).map((s) => <option key={s} value={s}>{s}</option>)}
-                      </select>
-                      <span className="muted-text">Use action buttons for ready, revision, accept, and restore.</span>
+                      <input type="text" readOnly value={formatDeliverableStatus("DRAFT")} />
+                      <span className="muted-text">New deliverables always start as Draft. Use workflow actions after create for ready, revision, accept, and restore.</span>
                     </>
                   )}
                 </label>
