@@ -37,11 +37,7 @@ const DEFAULT_BASELINE = path.join(
 );
 
 const LEGACY_ROOT_FILES = new Set([
-  "apps/web/src/components/Modal.tsx",
-  "apps/web/src/components/EmptyState.tsx",
-  "apps/web/src/components/ErrorState.tsx",
-  "apps/web/src/components/LoadingState.tsx",
-  "apps/web/src/components/StatusNotice.tsx"
+  "apps/web/src/components/Modal.tsx"
 ]);
 
 const DOMAIN_PREFIXES = [

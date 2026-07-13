@@ -386,10 +386,12 @@ Production PostgreSQL role password and `DATABASE_URL` were rotated, the product
 | Schema delta `1b8d00d..250e958` | **none** |
 | Point 1 — Vite | **COMPLETE** — Vite `6.4.3`; high finding closed; validate PASS; commit `95af080` |
 | Point 2 — Canonical component system | **COMPLETE** — public `apps/web/src/components/ui`; private `apps/web/src/design-system` |
-| Wave 0 — import guard | **COMPLETE** — commit `250e958`; 108 frozen existing violations; new = 0 |
+| Wave 0 — import guard | **COMPLETE** — commit `250e958`; historical freeze 108; **current baseline 24** after Wave 1 shrink; new = 0 |
 | Point 3 — Rollback plan | **COMPLETE** — verdict `ROLLBACK READY WITH CONDITIONS`; rehearsal **not executed** (separately gated); no SHA-tagged retained staging API image yet |
 | Point 4 — Orchestrator proof decision | **COMPLETE** — `HYBRID — PREFLIGHT + EMBEDDED LIVE PROOF`; Orchestrator remains `LOCAL FOUNDATION`; not `STAGING LIVE PROVEN` until plan→execute is wired |
-| Waves 1–5 UI migration | **OPEN** |
+| Canonical component doc | [`CANONICAL_COMPONENT_SYSTEM.md`](./project-control/CANONICAL_COMPONENT_SYSTEM.md) |
+| Wave 1 — first consolidation slice | **COMPLETE** — ui barrel exports Tabs/compound Table/ActivityItem; 3 page DS imports routed; unused root state shims deleted; Modal deferred |
+| Remaining UI migration / Modal Wave | **OPEN** — separately gated |
 | Next local Workstreams | **2–5** before staging Workstream 6 |
 | Production | FROZEN |
 | Canonical doc | [`AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md`](./project-control/AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md) |

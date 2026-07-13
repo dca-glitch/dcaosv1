@@ -34,6 +34,19 @@ export {
 } from "../../design-system";
 export type { StatusKey, StatusVisual } from "../../design-system";
 export { Table, type TableHeader, type TableProps, type TableRow } from "./Table";
+/** Compound table primitives + activity row — re-exported so pages never import design-system. */
+export {
+  Table as CompoundTable,
+  TableHead,
+  TableBody,
+  TableRow as CompoundTableRow,
+  Th,
+  Td,
+  TdDouble,
+  ActivityItem,
+  Tabs,
+  type TableDensity,
+} from "../../design-system";
 export {
   WorkflowBriefKnowledgeUsageSummary,
   parseWorkflowBriefKnowledgeContextMeta,

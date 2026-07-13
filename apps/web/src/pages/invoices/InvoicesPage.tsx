@@ -1,7 +1,9 @@
-import { Fragment, type FormEvent, useMemo, useState } from "react";
+﻿import { Fragment, type FormEvent, useMemo, useState } from "react";
 import { Modal } from "../../components/Modal";
 import {
   Button,
+  CompoundTable,
+  CompoundTableRow,
   EmptyState,
   ErrorState,
   FilterBar,
@@ -12,9 +14,13 @@ import {
   Select,
   StatusBadge,
   StatusSummaryBar,
+  TableBody,
+  TableHead,
+  Td,
+  TdDouble,
   Textarea,
+  Th,
 } from "../../components/ui";
-import { Table as DSTable, TableHead, TableBody, TableRow as DSTableRow, Th, Td, TdDouble } from "../../design-system";
 import type { ClientSummary } from "../clients/ClientsPage";
 import {
   buildInvoiceStatusSummary,
@@ -1161,9 +1167,9 @@ function InvoiceCards({ invoices, canEdit, onEditInvoice, onArchiveInvoice, onMa
 
   return (
     <div className="table-wrap finance-table-wrap table-scroll">
-      <DSTable aria-label="Invoices">
+      <CompoundTable aria-label="Invoices">
         <TableHead>
-          <DSTableRow>
+          <CompoundTableRow>
             <Th>Invoice</Th>
             <Th>Client</Th>
             <Th>Status</Th>
@@ -1171,17 +1177,17 @@ function InvoiceCards({ invoices, canEdit, onEditInvoice, onArchiveInvoice, onMa
             <Th align="right">Paid</Th>
             <Th>Due</Th>
             <Th>Actions</Th>
-          </DSTableRow>
+          </CompoundTableRow>
         </TableHead>
         <TableBody>
           {invoices.map((invoice) => {
             const overdue = isInvoiceOverdue(invoice);
             return (
               <Fragment key={invoice.id}>
-                <DSTableRow>
+                <CompoundTableRow>
                   <TdDouble
                     primary={invoice.title}
-                    secondary={[invoice.invoiceNumber || "No invoice number", invoice.project?.name ?? "No project"].filter(Boolean).join(" · ")}
+                    secondary={[invoice.invoiceNumber || "No invoice number", invoice.project?.name ?? "No project"].filter(Boolean).join(" Â· ")}
                   />
                   <Td secondary>{invoice.client.name}</Td>
                   <Td>
@@ -1217,19 +1223,19 @@ function InvoiceCards({ invoices, canEdit, onEditInvoice, onArchiveInvoice, onMa
                       ) : null}
                     </div>
                   </Td>
-                </DSTableRow>
+                </CompoundTableRow>
                 {invoice.payment ? (
-                  <DSTableRow key={`${invoice.id}-payment`}>
+                  <CompoundTableRow key={`${invoice.id}-payment`}>
                     <Td colSpan={7}>
                       <PaymentDetails currency={invoice.currency} payment={invoice.payment} />
                     </Td>
-                  </DSTableRow>
+                  </CompoundTableRow>
                 ) : null}
               </Fragment>
             );
           })}
         </TableBody>
-      </DSTable>
+      </CompoundTable>
     </div>
   );
 }
@@ -1268,9 +1274,9 @@ function RecurringInvoiceCards({ recurringInvoices, canEdit, onEditRecurringInvo
 
   return (
     <div className="table-wrap finance-table-wrap table-scroll">
-      <DSTable aria-label="Recurring invoices">
+      <CompoundTable aria-label="Recurring invoices">
         <TableHead>
-          <DSTableRow>
+          <CompoundTableRow>
             <Th>Schedule</Th>
             <Th>Client</Th>
             <Th>Status</Th>
@@ -1278,11 +1284,11 @@ function RecurringInvoiceCards({ recurringInvoices, canEdit, onEditRecurringInvo
             <Th>Interval</Th>
             <Th>Next run</Th>
             <Th>Actions</Th>
-          </DSTableRow>
+          </CompoundTableRow>
         </TableHead>
         <TableBody>
           {recurringInvoices.map((recurringInvoice) => (
-            <DSTableRow key={recurringInvoice.id}>
+            <CompoundTableRow key={recurringInvoice.id}>
               <TdDouble
                 primary={recurringInvoice.title}
                 secondary={recurringInvoice.project?.name ?? "No project"}
@@ -1318,10 +1324,10 @@ function RecurringInvoiceCards({ recurringInvoices, canEdit, onEditRecurringInvo
                   ) : null}
                 </div>
               </Td>
-            </DSTableRow>
+            </CompoundTableRow>
           ))}
         </TableBody>
-      </DSTable>
+      </CompoundTable>
     </div>
   );
 }
@@ -1534,7 +1540,7 @@ function LineItemsEditor({ currency, invoiceItems, lineItems, onChange, unitPric
 
     const quantity = 1;
     updateLineItem(index, {
-      description: [invoiceItem.name, invoiceItem.description].filter(Boolean).join(" — "),
+      description: [invoiceItem.name, invoiceItem.description].filter(Boolean).join(" â€” "),
       quantity,
       unitPriceCents: invoiceItem.unitPriceCents,
       totalCents: quantity * invoiceItem.unitPriceCents

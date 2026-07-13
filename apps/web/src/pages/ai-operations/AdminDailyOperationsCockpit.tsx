@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useId, useMemo, useState } from "react";
 import type { AiOperationsRunListItem, AiOperationsRunsResponse } from "@dca-os-v1/shared";
-import { Alert, Button, PageHeader, RingMetricTile, SectionPanel, Spinner, StatusBadge } from "../../components/ui";
-import { ActivityItem } from "../../design-system/components/Table";
+import { ActivityItem, Alert, Button, PageHeader, RingMetricTile, SectionPanel, Spinner, StatusBadge } from "../../components/ui";
 import {
   DEFERRED_GATED_ITEMS,
   PURIVA_DAILY_PATH,

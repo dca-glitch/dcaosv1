@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "note": "Frozen Wave 0 baseline. Shrink only with owner approval after violations are removed. Never auto-regenerate during validate.",
+  "note": "Frozen Wave 0 baseline. Shrink only with owner approval after violations are removed. Never auto-regenerate during validate. Shrunk 2026-07-13: routed Tabs/ActivityItem/compound Table via components/ui.",
   "entries": [
     {
       "importer": "apps/web/src/components/Modal.tsx",
@@ -75,12 +75,6 @@
       "rule": "legacy-root-component"
     },
     {
-      "importer": "apps/web/src/pages/ai-delivery/AiRunReviewModal.tsx",
-      "specifier": "../../design-system/components/Tabs",
-      "resolvedTarget": "apps/web/src/design-system/components/Tabs.tsx",
-      "rule": "ds-deep-component"
-    },
-    {
       "importer": "apps/web/src/pages/ai-delivery/MonthlyReportPanel.tsx",
       "specifier": "../../components/Modal",
       "resolvedTarget": "apps/web/src/components/Modal.tsx",
@@ -91,12 +85,6 @@
       "specifier": "../../components/Modal",
       "resolvedTarget": "apps/web/src/components/Modal.tsx",
       "rule": "legacy-root-component"
-    },
-    {
-      "importer": "apps/web/src/pages/ai-operations/AdminDailyOperationsCockpit.tsx",
-      "specifier": "../../design-system/components/Table",
-      "resolvedTarget": "apps/web/src/design-system/components/Table.tsx",
-      "rule": "ds-deep-component"
     },
     {
       "importer": "apps/web/src/pages/ai-operations/AiOperationsPage.tsx",
@@ -145,12 +133,6 @@
       "specifier": "../../components/Modal",
       "resolvedTarget": "apps/web/src/components/Modal.tsx",
       "rule": "legacy-root-component"
-    },
-    {
-      "importer": "apps/web/src/pages/invoices/InvoicesPage.tsx",
-      "specifier": "../../design-system",
-      "resolvedTarget": "apps/web/src/design-system/index.ts",
-      "rule": "ds-barrel"
     },
     {
       "importer": "apps/web/src/pages/projects/ProjectsPage.tsx",
