@@ -91,6 +91,7 @@
 | G50 production deploy | **Not executed** — frozen/deferred |
 | Puriva Launch | **Blocked** — live proof gates and product workflow gates required; G89-G707 add local foundations and docs only; no live provider/storage/email/Google/WordPress/image proof, staging/prod proof, or production deploy is claimed |
 | Roadmap tracks | Production Safety · Live Integration Proof · Client Operating Pack/Productization |
+| Docker non-root runtime | **STAGING NON-ROOT PROVEN** — exact commit `80569c68f94481b33dd0a3c2a5a3ec17b41e31cd`; local candidate image `Config.User=node`; local runtime UID/GID `1000/1000`; staging runtime UID/GID `1000/1000`; no permission or restart regressions; production non-root proof remains unproven and requires separate owner-approved production deploy/proof |
 
 Detail: [`AI_MODEL_ROUTING_POLICY.md`](./runbooks/AI_MODEL_ROUTING_POLICY.md) · [`G53_PRODUCTION_SAFETY_PLAN.md`](./runbooks/G53_PRODUCTION_SAFETY_PLAN.md) · [`deferred-scope-register.md`](./operator/deferred-scope-register.md) · §2.14 below.
 
@@ -455,6 +456,38 @@ Production PostgreSQL role password and `DATABASE_URL` were rotated, the product
 | Evidence | `/opt/dca/apps/dcaosv1/staging/backups/STAGING_PURIVA_DEPLOY_632d9a9_20260713-040821.txt` |
 
 **Truth labels (post-proof):** `PURIVA_CONFIGURATION_STAGING_RUNTIME=PASS`; `CROSS_TENANT_ISOLATION_STAGING=PASS`; `CLIENT_PORTAL_STAGING_BROWSER_PROOF=PASS`; `MONTHLY_REPORT_STAGING_COMPOSITION=PASS`.
+
+## Docker non-root staging proof closeout (2026-07-13)
+
+**Result:** PASS — `DOCKER NON-ROOT STAGING PASS`. The application image now uses the existing `node` user, local image/runtime proof passed, controlled staging deployment of the exact authorized commit passed, and no permission or restart regression was observed. Production was not redeployed.
+
+| Item | State |
+|------|--------|
+| Authorized commit | `80569c68f94481b33dd0a3c2a5a3ec17b41e31cd` |
+| GitHub CI | `success` |
+| Local candidate image `Config.User` | `node` |
+| Local runtime UID/GID | `1000/1000` |
+| Local API health | HTTP 200 |
+| Local database status | ready |
+| Local Prisma import | PASS |
+| Local permission errors | none |
+| Staging deployment | Exact authorized commit deployed; staging API container recreated only |
+| Staging API container | `d64094293ccd7d66c82003d219bce7f558acca062e757251ea7da24e5e5b3893` |
+| Staging image/user | `Config.User=node`; runtime UID/GID `1000/1000`; npm/node processes UID 1000 |
+| Staging restarts | `0` |
+| Staging errors | no `EACCES`, `EPERM`, or `permission denied` |
+| Staging PostgreSQL | healthy and unchanged |
+| Staging loopback API | HTTP 200 |
+| Staging public API | HTTP 200 |
+| Staging web | HTTP 200 |
+| Static asset | HTTP 200 |
+| Staging auth smoke | PASS |
+| Production | Not redeployed; production API/DB/Caddy unchanged |
+| Production non-root | **Not proven** |
+| Closeout classification | `DOCKER NON-ROOT STAGING PASS` |
+| Required flags | `DOCKER_ROOT_FINDING_CLOSED_FOR_STAGING=yes`; `PRODUCTION_NONROOT_PROVEN=no`; `PRODUCTION_DEPLOY_AUTHORIZED=no` |
+
+**Limitations:** This closes the Docker root finding for local and staging environments only. Production requires separate explicit owner authorization and production deploy/proof before that environment can be closed. This remaining production proof is not an active incident and does not block current owner onboarding.
 
 ## Staging RC deploy `9921bb3` closeout (2026-07-13)
 
