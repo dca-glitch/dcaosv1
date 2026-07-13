@@ -1,12 +1,12 @@
 # DCA OS Lite — Status (Source of Truth)
 
-**Last updated:** 2026-07-13 (Production controlled deploy of runtime `57f9c52` COMPLETE — admin/client live testing ready; external providers still owner-gated; Puriva full launch NOT claimed)
-**Production runtime:** `57f9c524118a5bf6c93270626cef7c8bd52d140b` (release tip docs `0e5ac4d…`)
+**Last updated:** 2026-07-13 (First-run onboarding + configurable Turnstile tests shipped on `main`; production clean-state reset authorized — see operator note; external providers still owner-gated; Puriva full launch NOT claimed)
+**Production runtime:** `57f9c524118a5bf6c93270626cef7c8bd52d140b` (pending web refresh + `TURNSTILE_ENABLED=false` overlay for clean owner setup)
 **Production artifact:** `/opt/dca/production-artifacts/57f9c52`
-**Production migration catch-up:** 39 pending applied via `prisma migrate deploy` (50 finished total); includes `20260713120000_add_client_operating_pack_key`
-**Production Puriva client:** `84878363-344e-4841-a6a4-96e0664d17c5` bound `PURIVA_OPERATING_PACK_V1` (`resolverSource=database_binding` proven via budget preview); Bali Medika `363d0672-…` remains unbound
-**Production classification:** `READY_FOR_CONTROLLED_LIVE_TESTING` · `PURIVA_FULL_LAUNCH=NOT_YET_CLAIMED` · live provider flags false · `SHARED_PROXY_ACTION=none`
-**Interactive browser login:** Turnstile-enabled; API acceptance used short-lived operator sessions (revoked). Owner interactive login still required for day-to-day UI testing.
+**Production migration catch-up:** 50 finished / 0 unfinished
+**Production clients:** acceptance Puriva + Bali placeholder scheduled for exact-ID removal during clean reset; owner then adds first real client via `#/setup`
+**Production classification:** `CLEAN_RESET_IN_PROGRESS` · Turnstile to be temporarily disabled for controlled owner setup · `PURIVA_FULL_LAUNCH=NOT_YET_CLAIMED` · live provider flags false · `SHARED_PROXY_ACTION=none`
+**Interactive browser login:** After reset: Turnstile temporarily disabled; password auth + rate limiting active; owner completes company settings + first client on `#/setup`. See [`docs/operator/PRODUCTION_CLEAN_STATE_RESET_2026-07-13.md`](./operator/PRODUCTION_CLEAN_STATE_RESET_2026-07-13.md).
 **Authoritative project control:** [`docs/project-control/AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md`](./project-control/AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md)
 **AI Policy / provider routing:** [`docs/architecture/AI_POLICY_PROVIDER_ROUTING.md`](./architecture/AI_POLICY_PROVIDER_ROUTING.md)
 **PRE-STAGING closure:** 2026-07-10 (local/no-live audit + safe fixes; see [`docs/operator/PRE_STAGING_CLOSURE_VERDICT.md`](./operator/PRE_STAGING_CLOSURE_VERDICT.md))
