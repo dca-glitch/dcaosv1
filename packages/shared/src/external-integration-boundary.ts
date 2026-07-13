@@ -9,7 +9,6 @@ export type ExternalIntegrationCategory =
   | "ai_provider"
   | "wordpress"
   | "private_storage"
-  | "ga_gsc"
   | "image_generation";
 
 export interface ExternalIntegrationBoundaryItem {
@@ -41,10 +40,6 @@ export function buildPurivaIntegrationBoundaryIndex(input: {
     ai_provider: ["Local deterministic default; OpenRouter live proof deferred."],
     wordpress: ["Draft prep local-only; live draft/publish proof deferred."],
     private_storage: ["R2 disabled-safe; real bucket IO proof deferred."],
-    ga_gsc: [
-      "Config-shape only; OAuth/token storage not implemented.",
-      "Design contracts exist for encrypted token record + state/callback/redirect (schemaImplemented:false, liveOAuthDeferred:true)."
-    ],
     image_generation: ["Foundation scaffold; live provider calls deferred."]
   };
 
@@ -62,7 +57,6 @@ export function buildPurivaIntegrationBoundaryIndex(input: {
     purivaBlockers: [
       "Live AI provider proof",
       "Image generation live proof",
-      "GA/GSC live sync proof",
       "WordPress live draft proof",
       "R2 real-bucket proof",
       "Transactional email live proof"

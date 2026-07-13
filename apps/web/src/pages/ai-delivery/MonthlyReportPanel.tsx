@@ -775,7 +775,7 @@ export function MonthlyReportPanel({
       {/* Computed Summary Section */}
       <SectionPanel
         className="monthly-report-summary-panel"
-        description="Read-only overview. FINAL reports use approved snapshots and client-safe metrics only. Live GA/GSC sync deferred."
+        description="Read-only overview. FINAL reports use approved snapshots and client-safe metrics only. Live GA/GSC sync WITHDRAWN."
         title="Computed Monthly Summary"
         tone="compact"
       >
@@ -811,7 +811,7 @@ export function MonthlyReportPanel({
             <dl className="brief-grid monthly-report-deferred-metrics">
               <div>
                 <dt>GA/GSC metrics</dt>
-                <dd><StatusBadge status="Deferred" /></dd>
+                <dd><StatusBadge status="Withdrawn" /></dd>
               </div>
               <div>
                 <dt>12-month trends</dt>
@@ -1298,7 +1298,7 @@ export function MonthlyReportPanel({
 
               <SectionPanel
                 className="metrics-section"
-                description="Manual snapshot import. Live Google sync deferred."
+                description="Manual or CSV snapshot import. Live Google sync WITHDRAWN — GA4/GSC/HYBRID are historical source labels only, not live."
                 title="GA/GSC Metrics"
                 tone="compact"
               >
@@ -1407,11 +1407,11 @@ export function MonthlyReportPanel({
                             value={metricsForm.sourceType}
                             onChange={(event) => setMetricsForm((current) => ({ ...current, sourceType: event.target.value as MonthlyMetricSourceType }))}
                           >
-                            <option value="HYBRID">HYBRID</option>
+                            <option value="HYBRID">HYBRID (historical label, not live)</option>
                             <option value="MANUAL">MANUAL</option>
                             <option value="CSV_IMPORT">CSV_IMPORT</option>
-                            <option value="GA4">GA4</option>
-                            <option value="GSC">GSC</option>
+                            <option value="GA4">GA4 (historical label, not live)</option>
+                            <option value="GSC">GSC (historical label, not live)</option>
                           </select>
                         </label>
                         <label>
@@ -1529,7 +1529,7 @@ export function MonthlyReportPanel({
 
                     {metrics.snapshots.length === 0 ? (
                       <p className="inline-empty muted-text">
-                        No snapshot metrics imported yet. Import a manual or CSV snapshot here; live GA/GSC sync is deferred and is not implied by empty metrics.
+                        No snapshot metrics imported yet. Import a manual or CSV snapshot here; live GA/GSC sync is WITHDRAWN and is not implied by empty metrics.
                       </p>
                     ) : (
                       <div className="table-wrap finance-table-wrap finance-table-wrap-spaced monthly-report-metrics-table monthly-report-table-scroll" aria-label="Monthly metrics snapshots">
@@ -1633,7 +1633,7 @@ export function MonthlyReportPanel({
                 ) : (
                   <EmptyState
                     title="Snapshot metrics not loaded yet"
-                    message="Create or open the persisted monthly report first, then import a manual or CSV snapshot. Live GA/GSC sync is deferred."
+                    message="Create or open the persisted monthly report first, then import a manual or CSV snapshot. Live GA/GSC sync is WITHDRAWN."
                   />
                 )}
               </SectionPanel>

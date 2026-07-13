@@ -290,8 +290,8 @@ async function main() {
 
     // Step 7: Deferred statuses explicit
     const deferred = summaryData?.deferred;
-    if (deferred?.gaGscMetricsStatus === "DEFERRED") {
-      pass("deferred.gaGscMetricsStatus = DEFERRED");
+    if (deferred?.gaGscMetricsStatus === "WITHDRAWN") {
+      pass("deferred.gaGscMetricsStatus = WITHDRAWN");
     } else {
       fail("deferred.gaGscMetricsStatus", `got ${deferred?.gaGscMetricsStatus}`);
     }

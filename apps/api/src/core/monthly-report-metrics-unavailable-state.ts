@@ -88,12 +88,12 @@ export function resolveMonthlyReportUnavailableState(
 
   const reasonAdminLabels: Record<MonthlyReportUnavailableReason, string> = {
     missing_source: "metrics unavailable — no source type",
-    not_live_proven: "metrics unavailable — GA/GSC not live-proven",
-    ga_gsc_disabled: "metrics unavailable — GA/GSC sync disabled",
-    ga_gsc_missing_config: "metrics unavailable — GA/GSC config incomplete",
+    not_live_proven: "metrics unavailable — GA/GSC live integration withdrawn",
+    ga_gsc_disabled: "metrics unavailable — GA/GSC sync withdrawn",
+    ga_gsc_missing_config: "metrics unavailable — GA/GSC live integration withdrawn (config incomplete)",
     snapshot_unapproved: "metrics unavailable — approved snapshot required",
     future_or_blocked_period: "metrics unavailable — reporting period not eligible",
-    mixed_unproven: "metrics unavailable — mixed sources not live-proven"
+    mixed_unproven: "metrics unavailable — mixed sources; GA/GSC live integration withdrawn"
   };
 
   return {

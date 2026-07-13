@@ -1,13 +1,11 @@
 import assert from "node:assert/strict";
 import { afterEach, describe, it } from "node:test";
-import { GA_GSC_ENV_KEYS } from "../config/ga-gsc.config";
 import { IMAGE_GENERATION_ENV_KEYS } from "../config/image-generation.config";
 import { WORDPRESS_INTEGRATION_ENV_KEYS } from "../config/wordpress-integration.config";
 import { getExternalIntegrationsReadinessSnapshot } from "./external-integrations-readiness.service";
 
 const trackedKeys = [
   ...Object.values(WORDPRESS_INTEGRATION_ENV_KEYS),
-  ...Object.values(GA_GSC_ENV_KEYS),
   ...Object.values(IMAGE_GENERATION_ENV_KEYS),
   "R2_ACCOUNT_ID",
   "R2_ACCESS_KEY_ID",
@@ -44,22 +42,23 @@ describe("external-integrations-readiness.service", () => {
     restoreEnv(initialEnv);
   });
 
-  it("returns five safe categories with empty integration env", () => {
+  it("returns four safe categories with empty integration env", () => {
     for (const key of trackedKeys) {
       delete process.env[key];
     }
 
     const readiness = getExternalIntegrationsReadinessSnapshot();
-    assert.equal(readiness.categories.length, 5);
+    assert.equal(readiness.categories.length, 4);
     assert.equal(readiness.summary.noLiveCallsInThisLayer, true);
     assert.deepEqual(
       readiness.categories.map((category) => category.key),
-      ["ai_provider", "wordpress", "private_storage", "ga_gsc", "image_generation"]
+      ["ai_provider", "wordpress", "private_storage", "image_generation"]
     );
 
     const serialized = JSON.stringify(readiness);
     assert.match(serialized, /ai_provider/);
     assert.doesNotMatch(serialized, /sk-or-/i);
+    assert.doesNotMatch(serialized, /ga_gsc/);
   });
 
   it("reports R2 configured_shape_ok from config shape only without bucket IO", () => {
@@ -173,20 +172,5 @@ describe("external-integrations-readiness.service", () => {
     assert.ok(
       wordpress?.wordpress?.missingKeys.includes(WORDPRESS_INTEGRATION_ENV_KEYS.credentialEncryptionMasterKey)
     );
-  });
-
-  it("reports GA/GSC configured_shape_ok without exposing OAuth secret values", () => {
-    for (const key of trackedKeys) {
-      delete process.env[key];
-    }
-    process.env[GA_GSC_ENV_KEYS.syncEnabled] = "true";
-    process.env[GA_GSC_ENV_KEYS.oauthClientId] = "client-id-smoke";
-    process.env[GA_GSC_ENV_KEYS.oauthClientSecret] = "client-secret-smoke";
-
-    const readiness = getExternalIntegrationsReadinessSnapshot();
-    const gaGsc = readiness.categories.find((category) => category.key === "ga_gsc");
-
-    assert.equal(gaGsc?.status, "configured_shape_ok");
-    assert.equal(JSON.stringify(readiness).includes("client-secret-smoke"), false);
   });
 });

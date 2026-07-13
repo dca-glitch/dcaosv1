@@ -443,7 +443,7 @@ export const PURIVA_MODULE_ENTITLEMENTS = [
     status: "partial",
     requiredForLaunch: true,
     clientVisibleSurface: true,
-    notes: "Monthly report scaffolds and final-only portal delivery; live GA/GSC proof still blocked."
+    notes: "Monthly report scaffolds and final-only portal delivery; live GA/GSC integration withdrawn — use MANUAL/CSV snapshots."
   },
   {
     moduleKey: "client-portal",
@@ -468,10 +468,10 @@ export const PURIVA_MODULE_ENTITLEMENTS = [
   },
   {
     moduleKey: "ga-gsc",
-    status: "future",
-    requiredForLaunch: true,
+    status: "disabled",
+    requiredForLaunch: false,
     clientVisibleSurface: false,
-    notes: "Live analytics sync and reporting proof deferred; metrics must use approved sources when live."
+    notes: "Owner WITHDRAWN live GA4/GSC; metrics use MANUAL/CSV approved snapshots only."
   },
   {
     moduleKey: "notifications",

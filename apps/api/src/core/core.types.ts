@@ -1142,7 +1142,7 @@ export interface AiDeliveryMonthlySummaryResponse {
     };
     contentPlanItems: AiDeliveryMonthlySummaryContentPlanItem[];
     deferred: {
-      gaGscMetricsStatus: "DEFERRED";
+      gaGscMetricsStatus: "WITHDRAWN";
       trendMonthsStatus: "DEFERRED";
       recommendationsStatus: "DEFERRED_REQUIRES_PERSISTED_REPORT";
     };

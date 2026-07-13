@@ -25,13 +25,6 @@ type PublicationTarget = {
   isDefault: boolean;
 };
 
-type AnalyticsProfile = {
-  gscSiteUrl: string | null;
-  ga4PropertyId: string | null;
-  defaultSourceType: string;
-  connectionStatus: string;
-};
-
 type PublicationLog = {
   id: string;
   action: string;
@@ -111,7 +104,6 @@ export function ClientHubPage({
   const [error, setError] = useState<string | null>(null);
   const [targets, setTargets] = useState<PublicationTarget[]>([]);
   const [logs, setLogs] = useState<PublicationLog[]>([]);
-  const [analytics, setAnalytics] = useState<AnalyticsProfile | null>(null);
   const [targetLabel, setTargetLabel] = useState("");
   const [targetUrl, setTargetUrl] = useState("");
   const [credentialTargetId, setCredentialTargetId] = useState("");
@@ -119,8 +111,6 @@ export function ClientHubPage({
   const [credentialMessage, setCredentialMessage] = useState<string | null>(null);
   const [credentialStatusByTargetId, setCredentialStatusByTargetId] = useState<Record<string, TargetCredentialStatus>>({});
   const [encryptionAvailable, setEncryptionAvailable] = useState<boolean | null>(null);
-  const [gscSiteUrl, setGscSiteUrl] = useState("");
-  const [ga4PropertyId, setGa4PropertyId] = useState("");
   const [catalogProducts, setCatalogProducts] = useState<CatalogProduct[]>([]);
   const [catalogInquiries, setCatalogInquiries] = useState<CatalogInquiry[]>([]);
   const [productName, setProductName] = useState("");
@@ -132,20 +122,16 @@ export function ClientHubPage({
     setLoading(true);
     setError(null);
     try {
-      const [targetResponse, logResponse, analyticsResponse, catalogResponse, inquiryResponse] = await Promise.all([
+      const [targetResponse, logResponse, catalogResponse, inquiryResponse] = await Promise.all([
         apiRequest<{ publicationTargets: PublicationTarget[] }>("GET", `/clients/${client.id}/publication-targets`),
         apiRequest<{ publicationLogs: PublicationLog[] }>("GET", `/clients/${client.id}/publication-logs`),
-        apiRequest<{ profile: AnalyticsProfile | null }>("GET", `/clients/${client.id}/analytics-profile`),
         apiRequest<{ catalogProducts: CatalogProduct[] }>("GET", `/clients/${client.id}/catalog-products`),
         apiRequest<{ catalogInquiries: CatalogInquiry[] }>("GET", `/clients/${client.id}/catalog-inquiries`)
       ]);
       setTargets(targetResponse.publicationTargets);
       setLogs(logResponse.publicationLogs);
-      setAnalytics(analyticsResponse.profile);
       setCatalogProducts(catalogResponse.catalogProducts);
       setCatalogInquiries(inquiryResponse.catalogInquiries);
-      setGscSiteUrl(analyticsResponse.profile?.gscSiteUrl ?? "");
-      setGa4PropertyId(analyticsResponse.profile?.ga4PropertyId ?? "");
 
       const credentialStatuses = await Promise.all(
         targetResponse.publicationTargets.map(async (target) => {
@@ -226,17 +212,6 @@ export function ClientHubPage({
     } catch (deleteError) {
       setCredentialMessage(deleteError instanceof Error ? deleteError.message : "Credentials could not be removed.");
     }
-  }
-
-  async function handleSaveAnalytics(event: FormEvent) {
-    event.preventDefault();
-    if (!hubCanEdit) return;
-    await apiRequest("PUT", `/clients/${client.id}/analytics-profile`, {
-      gscSiteUrl,
-      ga4PropertyId,
-      connectionStatus: "CONFIGURED"
-    });
-    await loadHub();
   }
 
   async function handleCreateCatalogProduct(event: FormEvent) {
@@ -435,29 +410,6 @@ export function ClientHubPage({
           ) : null}
         </SectionPanel>
       ) : null}
-
-      <SectionPanel tone="compact" title="Analytics profile">
-        <form className="form-grid" onSubmit={(event) => void handleSaveAnalytics(event)}>
-          <label>
-            GSC site URL
-            <input value={gscSiteUrl} onChange={(event) => setGscSiteUrl(event.target.value)} disabled={!hubCanEdit} />
-          </label>
-          <label>
-            GA4 property ID
-            <input value={ga4PropertyId} onChange={(event) => setGa4PropertyId(event.target.value)} disabled={!hubCanEdit} />
-          </label>
-          {hubCanEdit ? (
-            <Button type="submit" variant="secondary">
-              Save analytics profile
-            </Button>
-          ) : null}
-        </form>
-        {analytics ? (
-          <p className="muted-copy">
-            Connection status: <StatusBadge status={analytics.connectionStatus} />
-          </p>
-        ) : null}
-      </SectionPanel>
 
       <SectionPanel tone="compact" title="Product catalog" description="Inquiry-only catalog for Client Portal (Puriva skincare/products). No cart or checkout.">
         {catalogProducts.length === 0 ? (

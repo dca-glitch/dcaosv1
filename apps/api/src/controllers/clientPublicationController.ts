@@ -7,12 +7,10 @@ import {
   getPublicationTargetCredentialStatus,
   listPublicationLogsForClient,
   listPublicationTargetsForClient,
-  saveClientAnalyticsProfile,
   savePublicationTargetCredentials,
   updatePublicationTargetForClient
 } from "../core/client-publication.runtime";
 import type {
-  ClientAnalyticsProfileInputRequest,
   PublicationTargetCredentialUpsertRequest,
   PublicationTargetInputRequest
 } from "../core/core.types";
@@ -189,17 +187,18 @@ export const getClientAnalyticsProfileHandler: RequestHandler = async (req, res)
   res.json(success(response, { scope: "client-analytics-profile" }));
 };
 
-export const saveClientAnalyticsProfileHandler: RequestHandler = async (req, res) => {
+export const saveClientAnalyticsProfileHandler: RequestHandler = async (_req, res) => {
   const authSession = getAuthSession(res.locals);
   if (!authSession) {
     return void res.status(401).json(failure("UNAUTHORIZED", "Authentication required."));
   }
-  const input = (req.body ?? {}) as ClientAnalyticsProfileInputRequest;
-  const response = await saveClientAnalyticsProfile(authSession, req.params.clientId, input);
-  if (!response) {
-    return void res.status(404).json(failure("CLIENT_NOT_FOUND", "Client not found."));
-  }
-  res.json(success(response, { scope: "client-analytics-profile" }));
+  // Live GA4/GSC withdrawn — stop writes; GET remains read-only for SCHEMA_DEPRECATE_LATER rows.
+  return void res.status(410).json(
+    failure(
+      "GA4_GSC_LIVE_INTEGRATION_WITHDRAWN",
+      "Live GA4/GSC integration is withdrawn. Analytics profile writes are disabled; existing rows remain read-only until a future schema cleanup."
+    )
+  );
 };
 
 export const listClientPublicationLogsHandler: RequestHandler = async (req, res) => {

@@ -6,7 +6,6 @@ import {
   AI_PROVIDER_ENV_KEYS,
   getAiProviderConfig
 } from "../src/config/ai-provider.config.ts";
-import { GA_GSC_ENV_KEYS } from "../src/config/ga-gsc.config.ts";
 import { IMAGE_GENERATION_ENV_KEYS } from "../src/config/image-generation.config.ts";
 import { WORDPRESS_INTEGRATION_ENV_KEYS } from "../src/config/wordpress-integration.config.ts";
 import {
@@ -21,7 +20,6 @@ const smokeMarker = "[CHECK][EXTERNAL_INTEGRATIONS_READINESS]";
 const integrationEnvKeys = [
   ...Object.values(AI_PROVIDER_ENV_KEYS),
   ...Object.values(WORDPRESS_INTEGRATION_ENV_KEYS),
-  ...Object.values(GA_GSC_ENV_KEYS),
   ...Object.values(IMAGE_GENERATION_ENV_KEYS),
   "R2_ACCOUNT_ID",
   "R2_ACCESS_KEY_ID",
@@ -99,7 +97,7 @@ async function main() {
     clearIntegrationEnv();
 
     const emptySnapshot = getExternalIntegrationsReadinessSnapshot();
-    record("snapshot builds with empty integration env", emptySnapshot.categories.length === 5, `categories=${emptySnapshot.categories.length}`);
+    record("snapshot builds with empty integration env", emptySnapshot.categories.length === 4, `categories=${emptySnapshot.categories.length}`);
     record(
       "empty env image_generation disabled",
       findCategory(emptySnapshot, "image_generation")?.status === "disabled",
@@ -119,11 +117,6 @@ async function main() {
       "empty env R2 disabled",
       findCategory(emptySnapshot, "private_storage")?.status === "disabled",
       findCategory(emptySnapshot, "private_storage")?.privateStorage?.mode ?? "missing"
-    );
-    record(
-      "empty env GA/GSC disabled",
-      findCategory(emptySnapshot, "ga_gsc")?.status === "disabled",
-      findCategory(emptySnapshot, "ga_gsc")?.status ?? "missing"
     );
 
     const serialized = JSON.stringify(emptySnapshot);
@@ -245,40 +238,6 @@ async function main() {
       "partial R2 env reports missing_config",
       findCategory(r2Partial, "private_storage")?.status === "missing_config",
       findCategory(r2Partial, "private_storage")?.status ?? "missing"
-    );
-
-    clearIntegrationEnv();
-    setIntegrationEnv({
-      [GA_GSC_ENV_KEYS.syncEnabled]: "true"
-    });
-    const gaMissing = getExternalIntegrationsReadinessSnapshot();
-    record(
-      "GA/GSC sync on without OAuth is missing_config",
-      findCategory(gaMissing, "ga_gsc")?.status === "missing_config",
-      findCategory(gaMissing, "ga_gsc")?.status ?? "missing"
-    );
-
-    setIntegrationEnv({
-      [GA_GSC_ENV_KEYS.syncEnabled]: "true",
-      [GA_GSC_ENV_KEYS.oauthClientId]: "smoke-client-id",
-      [GA_GSC_ENV_KEYS.oauthClientSecret]: "smoke-client-secret"
-    });
-    const gaShaped = getExternalIntegrationsReadinessSnapshot();
-    record(
-      "GA/GSC OAuth shape reports configured_shape_ok",
-      findCategory(gaShaped, "ga_gsc")?.status === "configured_shape_ok",
-      findCategory(gaShaped, "ga_gsc")?.status ?? "missing"
-    );
-    record(
-      "GA/GSC readiness defers OAuth/sync",
-      findCategory(gaShaped, "ga_gsc")?.gaGsc?.liveOAuthDeferred === true &&
-        findCategory(gaShaped, "ga_gsc")?.gaGsc?.liveSyncDeferred === true,
-      "deferred"
-    );
-    record(
-      "GA/GSC readiness JSON omits OAuth secret value",
-      !JSON.stringify(gaShaped).includes("smoke-client-secret"),
-      "secret absent"
     );
 
     clearIntegrationEnv();

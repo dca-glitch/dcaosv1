@@ -18,15 +18,17 @@ describe("monthly-report-metrics-unavailable-state", () => {
     });
     assert.equal(disabled.unavailable, true);
     assert.equal(disabled.reason, "ga_gsc_disabled");
+    assert.match(disabled.adminLabel, /withdrawn/i);
 
     const missing = resolveMonthlyReportUnavailableState({
       metricsSource: { sourceType: "GA4", gaGscReadinessStatus: "missing_config" }
     });
     assert.equal(missing.unavailable, true);
     assert.equal(missing.reason, "ga_gsc_missing_config");
+    assert.match(missing.adminLabel, /withdrawn/i);
   });
 
-  it("G283: not live-proven and mixed unproven", () => {
+  it("G283: withdrawn GA/GSC and mixed unproven", () => {
     const notProven = resolveMonthlyReportUnavailableState({
       metricsSource: {
         sourceType: "HYBRID",
@@ -37,6 +39,7 @@ describe("monthly-report-metrics-unavailable-state", () => {
     assert.equal(notProven.unavailable, true);
     assert.equal(notProven.reason, "not_live_proven");
     assert.equal(notProven.clientMayUseLiveLanguage, false);
+    assert.match(notProven.adminLabel, /withdrawn/i);
 
     const mixed = resolveMonthlyReportUnavailableState({
       metricsSource: {
@@ -71,7 +74,7 @@ describe("monthly-report-metrics-unavailable-state", () => {
     assert.equal(draft.mayExposeToClient, false);
   });
 
-  it("G283: live proven metrics are not unavailable", () => {
+  it("G283: former live-proof inputs remain unavailable after GA/GSC withdrawal", () => {
     const live = resolveMonthlyReportUnavailableState({
       metricsSource: {
         sourceType: "HYBRID",
@@ -82,10 +85,10 @@ describe("monthly-report-metrics-unavailable-state", () => {
       reportStatus: "FINAL",
       approvedSnapshotId: "snap-1"
     });
-    assert.equal(live.unavailable, false);
-    assert.equal(live.truth, "live");
-    assert.equal(live.reason, null);
-    assert.equal(live.clientMayUseLiveLanguage, true);
+    assert.equal(live.unavailable, true);
+    assert.equal(live.truth, "unavailable");
+    assert.equal(live.clientMayUseLiveLanguage, false);
+    assert.match(live.adminLabel, /withdrawn/i);
   });
 
   it("G536: empty/unavailable state — snapshot_unapproved and empty metrics never use live language", () => {
@@ -98,10 +101,9 @@ describe("monthly-report-metrics-unavailable-state", () => {
         liveProofApproved: true
       }
     });
-    // Live-proven source truth is not unavailable; empty/unavailable path focuses on truth===unavailable.
-    // When source resolves to live, unavailable=false even without snapshot id on this helper.
-    assert.equal(unapproved.unavailable, false);
-    assert.equal(unapproved.clientMayUseLiveLanguage, true);
+    assert.equal(unapproved.unavailable, true);
+    assert.equal(unapproved.clientMayUseLiveLanguage, false);
+    assert.equal(unapproved.reason, "snapshot_unapproved");
 
     const snapshotGate = resolveMonthlyReportUnavailableState({
       reportStatus: "DRAFT",

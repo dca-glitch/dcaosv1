@@ -25,7 +25,7 @@ describe("monthlyReportPanel.helpers", () => {
     expect(formatReportStatus(null)).toBe("No status");
   });
 
-  it("builds shell copy with FINAL client-portal hint and deferred GA/GSC wording", () => {
+  it("builds shell copy with FINAL client-portal hint and WITHDRAWN GA/GSC wording", () => {
     const draft = buildReportShellCopy({
       status: "DRAFT",
       isArchived: false,
@@ -52,7 +52,7 @@ describe("monthlyReportPanel.helpers", () => {
     expect(finalCopy.documentState).toBe("Document attached");
     expect(finalCopy.handoffState).toBe("Handoff URL set");
     expect(finalCopy.visibilityState).toBe("Client-safe when FINAL");
-    expect(finalCopy.actionHint).toContain("Live GA/GSC sync remains deferred");
+    expect(finalCopy.actionHint).toContain("Live GA/GSC sync is WITHDRAWN");
 
     const archived = buildReportShellCopy({
       status: "FINAL",
