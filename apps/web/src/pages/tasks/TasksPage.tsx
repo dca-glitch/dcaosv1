@@ -1,6 +1,6 @@
 import { type FormEvent, useMemo, useState } from "react";
 import { Modal } from "../../components/ui";
-import { Alert, Button, Input, ModalActions, PageHeader, Select, Spinner, StatusBadge, Table, Textarea } from "../../components/ui";
+import { Button, EmptyState, ErrorState, Input, LoadingState, ModalActions, PageHeader, Select, StatusBadge, Table, Textarea } from "../../components/ui";
 import type { ProjectSummary } from "../projects/ProjectsPage";
 
 export type TaskSummary = {
@@ -169,16 +169,11 @@ export function TasksPage({ tasks, projects, canEdit, error, loading, onArchive,
   }
 
   if (loading) {
-    return (
-      <div className="state-panel loading-state-panel" role="status">
-        <Spinner size="sm" />
-        Loading tasks
-      </div>
-    );
+    return <LoadingState label="Loading tasks" />;
   }
 
   if (error) {
-    return <Alert message={error} title="Tasks unavailable" variant="danger" />;
+    return <ErrorState title="Tasks unavailable" message={error} />;
   }
 
   return (
@@ -220,7 +215,12 @@ export function TasksPage({ tasks, projects, canEdit, error, loading, onArchive,
       </div>
 
       {filteredTasks.length === 0 ? (
-        <p className="inline-empty muted-text">No tasks match the current filter.</p>
+        <EmptyState
+          kind="filtered"
+          message="Adjust filters or create a task to continue."
+          title="No tasks match the current filter"
+          variant="inline"
+        />
       ) : (
         <div className="table-wrap finance-table-wrap" aria-label="Tasks">
           <Table

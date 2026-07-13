@@ -1561,9 +1561,12 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
 
                     {canClientReviewPlan ? (
                       <div className="brief-detail-divider">
-                        <div className="brief-muted-note muted-text">Review this production plan</div>
+                        <label className="brief-muted-note muted-text" htmlFor="workflow-brief-reject-comment">
+                          Review this production plan
+                        </label>
                         <textarea
                           className="form-input brief-form-input-full"
+                          id="workflow-brief-reject-comment"
                           value={rejectComment}
                           onChange={(event) => setRejectComment(event.target.value)}
                           placeholder="Optional comment if requesting changes"

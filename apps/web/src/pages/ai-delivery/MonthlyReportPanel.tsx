@@ -1232,7 +1232,11 @@ export function MonthlyReportPanel({
                           <p className="muted-text">No MI context linked. Apply a READY handoff or finalized MI summary by ID.</p>
                           {onApplyMiHandoff ? (
                             <div className="monthly-report-mi-apply-row">
+                              <label className="sr-only" htmlFor="monthly-report-mi-handoff-id">
+                                Market Intelligence handoff ID
+                              </label>
                               <input
+                                id="monthly-report-mi-handoff-id"
                                 placeholder="Handoff ID"
                                 type="text"
                                 value={miApplyHandoffId}
@@ -1250,7 +1254,11 @@ export function MonthlyReportPanel({
                             </div>
                           ) : null}
                           <div className="monthly-report-mi-apply-row">
+                            <label className="sr-only" htmlFor="monthly-report-mi-summary-select">
+                              Finalized Market Intelligence summary
+                            </label>
                             <select
+                              id="monthly-report-mi-summary-select"
                               value={miApplySummaryId}
                               onChange={(e) => setMiApplySummaryId(e.target.value)}
                             >
@@ -1261,7 +1269,11 @@ export function MonthlyReportPanel({
                                 </option>
                               ))}
                             </select>
+                            <label className="sr-only" htmlFor="monthly-report-mi-summary-id">
+                              Market Intelligence summary ID fallback
+                            </label>
                             <input
+                              id="monthly-report-mi-summary-id"
                               placeholder="Or summary ID (fallback)"
                               type="text"
                               value={miApplySummaryId}

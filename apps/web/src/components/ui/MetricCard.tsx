@@ -31,7 +31,7 @@ export function MetricCard({ label, value, helper, accent, metricKey }: MetricCa
         padding: "var(--ds-card-padding-admin)",
       }}
     >
-      <p className="text-[9px] font-semibold uppercase tracking-widest text-text-muted">{label}</p>
+      <p className="text-[11px] font-semibold uppercase tracking-widest text-text-muted">{label}</p>
       <div className="flex items-baseline gap-1 mt-2">
         <span className="text-[26px] font-semibold leading-none text-text-primary font-mono">{value}</span>
       </div>
