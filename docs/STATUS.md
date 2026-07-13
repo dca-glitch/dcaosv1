@@ -1,12 +1,12 @@
 # DCA OS Lite — Status (Source of Truth)
 
-**Last updated:** 2026-07-13 (First-run onboarding + configurable Turnstile tests shipped on `main`; production clean-state reset authorized — see operator note; external providers still owner-gated; Puriva full launch NOT claimed)
-**Production runtime:** `57f9c524118a5bf6c93270626cef7c8bd52d140b` (pending web refresh + `TURNSTILE_ENABLED=false` overlay for clean owner setup)
-**Production artifact:** `/opt/dca/production-artifacts/57f9c52`
-**Production migration catch-up:** 50 finished / 0 unfinished
-**Production clients:** acceptance Puriva + Bali placeholder scheduled for exact-ID removal during clean reset; owner then adds first real client via `#/setup`
-**Production classification:** `CLEAN_RESET_IN_PROGRESS` · Turnstile to be temporarily disabled for controlled owner setup · `PURIVA_FULL_LAUNCH=NOT_YET_CLAIMED` · live provider flags false · `SHARED_PROXY_ACTION=none`
-**Interactive browser login:** After reset: Turnstile temporarily disabled; password auth + rate limiting active; owner completes company settings + first client on `#/setup`. See [`docs/operator/PRODUCTION_CLEAN_STATE_RESET_2026-07-13.md`](./operator/PRODUCTION_CLEAN_STATE_RESET_2026-07-13.md).
+**Last updated:** 2026-07-13 (Production clean-state reset COMPLETE — acceptance fixtures removed; Turnstile temporarily disabled; first-run onboarding ready; external providers still owner-gated; Puriva full launch NOT claimed)
+**Production runtime:** `57f9c524118a5bf6c93270626cef7c8bd52d140b` / image `bd61d5deb331` · web `index-DX4AMrb2.js` · tip docs pending closeout commit after `e36758b`
+**Production artifact:** `/opt/dca/production-artifacts/57f9c52` (web refreshed in place earlier; no redeploy on resume)
+**Production migration catch-up:** 50 finished / 0 unfinished (unchanged by clean reset)
+**Production clients:** 0 active (acceptance Puriva + Bali placeholder removed); owner adds first real client via `#/setup`
+**Production classification:** `CLEAN_FIRST_RUN_OWNER_SETUP` · `TURNSTILE_ENABLED=false` (temporary) · `PURIVA_FULL_LAUNCH=NOT_YET_CLAIMED` · live provider flags false · `SHARED_PROXY_ACTION=none`
+**Interactive browser login:** Turnstile temporarily disabled; password auth + rate limiting active; owner completes company settings + first client on `#/setup`. See [`docs/operator/PRODUCTION_CLEAN_STATE_RESET_2026-07-13.md`](./operator/PRODUCTION_CLEAN_STATE_RESET_2026-07-13.md).
 **Authoritative project control:** [`docs/project-control/AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md`](./project-control/AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md)
 **AI Policy / provider routing:** [`docs/architecture/AI_POLICY_PROVIDER_ROUTING.md`](./architecture/AI_POLICY_PROVIDER_ROUTING.md)
 **PRE-STAGING closure:** 2026-07-10 (local/no-live audit + safe fixes; see [`docs/operator/PRE_STAGING_CLOSURE_VERDICT.md`](./operator/PRE_STAGING_CLOSURE_VERDICT.md))
