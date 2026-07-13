@@ -1,6 +1,12 @@
 # DCA OS Lite — Status (Source of Truth)
 
-**Last updated:** 2026-07-13 (Puriva Operating Pack assembly + local monthly rehearsal PASS; production dry-run SAFE probes PASS; production frozen)
+**Last updated:** 2026-07-13 (Production controlled deploy of runtime `57f9c52` COMPLETE — admin/client live testing ready; external providers still owner-gated; Puriva full launch NOT claimed)
+**Production runtime:** `57f9c524118a5bf6c93270626cef7c8bd52d140b` (release tip docs `0e5ac4d…`)
+**Production artifact:** `/opt/dca/production-artifacts/57f9c52`
+**Production migration catch-up:** 39 pending applied via `prisma migrate deploy` (50 finished total); includes `20260713120000_add_client_operating_pack_key`
+**Production Puriva client:** `84878363-344e-4841-a6a4-96e0664d17c5` bound `PURIVA_OPERATING_PACK_V1` (`resolverSource=database_binding` proven via budget preview); Bali Medika `363d0672-…` remains unbound
+**Production classification:** `READY_FOR_CONTROLLED_LIVE_TESTING` · `PURIVA_FULL_LAUNCH=NOT_YET_CLAIMED` · live provider flags false · `SHARED_PROXY_ACTION=none`
+**Interactive browser login:** Turnstile-enabled; API acceptance used short-lived operator sessions (revoked). Owner interactive login still required for day-to-day UI testing.
 **Authoritative project control:** [`docs/project-control/AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md`](./project-control/AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md)
 **AI Policy / provider routing:** [`docs/architecture/AI_POLICY_PROVIDER_ROUTING.md`](./architecture/AI_POLICY_PROVIDER_ROUTING.md)
 **PRE-STAGING closure:** 2026-07-10 (local/no-live audit + safe fixes; see [`docs/operator/PRE_STAGING_CLOSURE_VERDICT.md`](./operator/PRE_STAGING_CLOSURE_VERDICT.md))
@@ -40,11 +46,11 @@
 
 | Item | State |
 |------|--------|
-| Latest baseline | PRE-STAGING CLOSURE on `main` (uncommitted working tree) atop pushed `5153721` — local/no-live bug scan + safe fixes + UI/UX truth-label polish + docs/operator closeout after G469–G708 foundations |
-| **PRE-STAGING local closure** | **PASS (local/no-live only)** — see [`PRE_STAGING_CLOSURE_VERDICT.md`](./operator/PRE_STAGING_CLOSURE_VERDICT.md). Does **not** mean launch ready, staging proven, or production ready |
+| Latest baseline | Production controlled deploy of runtime `57f9c52` on `main` (docs closeout follows); staging pack-binding prior tip `0e5ac4d` |
+| **PRE-STAGING local closure** | **PASS (local/no-live only)** — see [`PRE_STAGING_CLOSURE_VERDICT.md`](./operator/PRE_STAGING_CLOSURE_VERDICT.md). Historical; superseded by production deploy for env readiness |
 | **G69 merge** | **DONE** — G57–G68 fast-forward merged to `main`; final commit `64bfd06` |
-| Production readiness | **NO** — production remains frozen |
-| Next gate | GA/GSC live proof (WordPress dedicated staging one-draft COMPLETE) |
+| Production readiness | **CONTROLLED LIVE TESTING READY** — runtime `57f9c52` deployed; external providers owner-gated; Puriva full launch NOT claimed |
+| Next gate | Owner interactive Turnstile login + separately approved external-provider live proofs (GA/GSC / OpenAI / WP / Resend / R2 write) |
 | PRE-STAGING Lanes 14–15 | **Docs closeout** — stale-claim sweep + operator runbook refresh; no live proof; Puriva Launch **BLOCKED** |
 | G469-G708 final integration | **KEEP** — 20 lanes reconciled; local/no-IO foundations only; live R2, live email, live GA/GSC, live WordPress, live image, staging/prod live proofs, full notification E2E launch proof, trusted `actualCostUsd` ingestion, commit, push, deploy remain blocked (in-app notification persistence/UI foundation now exists — see notification rows below) |
 | G229-G468 final integration | **KEEP** — 12 lanes reconciled; local/no-IO foundations only; superseded as latest baseline by G469-G708 |

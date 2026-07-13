@@ -2,8 +2,8 @@
 
 **Document role:** Owner-approved project-control source for nomenclature and capability status before the next staging cycle.
 
-**Date:** 2026-07-12
-**Workstream:** WORKSTREAM 6 — controlled staging deploy `a8a74e6` (post local pre-staging convergence)
+**Date:** 2026-07-13
+**Workstream:** Production controlled deploy `57f9c52` + Puriva pack binding (admin/client live testing)
 
 ---
 
@@ -13,12 +13,12 @@
 |------|--------|
 | Repo | `C:\dcaosv1` |
 | Branch | `main` |
-| Repo baseline (HEAD) | Prefer `docs/STATUS.md` — Client Operating Pack DB binding lands after `9c4388d` Puriva staging composition tip |
-| Staging API baseline (last full API artifact) | Advance via controlled deploy after pack-binding commit; prior proven: `632d9a9` |
+| Repo baseline (HEAD) | Prefer `docs/STATUS.md` — production runtime `57f9c52`; tip may be docs-only after that SHA |
+| Staging API baseline (last full API artifact) | `57f9c52` (pack binding) / prior composition `632d9a9` |
 | Staging web baseline | In-place sync into `/opt/dca/apps/dcaosv1/staging/web/dist` when UI changes |
-| Rollback target (retained) | Immediate prior artifact under `/opt/dca/staging-artifacts/`; longer: `9921bb3` / `1b8d00d` |
-| Relation | Pack binding adds nullable `Client.operatingPackKey` migration; no production migrate without owner gate |
-| Production | FROZEN |
+| Production artifact | `/opt/dca/production-artifacts/57f9c52` · rollback image `app-dcaosv1-api:pre-57f9c52-20260713T050725Z` |
+| Relation | Pack binding `Client.operatingPackKey`; production catch-up of 39 migrations applied 2026-07-13 |
+| Production | DEPLOYED — `READY_FOR_CONTROLLED_LIVE_TESTING`; external providers owner-gated; Puriva full launch NOT claimed |
 | Remote freshness | `origin/main` must match repo HEAD after RC push |
 
 This document controls **nomenclature** and **status labels** for planning and execution before the next staging cycle. It does **not** replace technical runbooks (`STAGING_READINESS`, `PRODUCTION_DEPLOYMENT`, `PRODUCTION_ROLLBACK`, integration proof runbooks, or operator checklists).
