@@ -13,16 +13,17 @@
 |------|--------|
 | Repo | `C:\dcaosv1` |
 | Branch | `main` |
-| Repo baseline (HEAD) | `a8a74e60e05a6e9d21691bfc83bb0123899ba6f6` (`a8a74e6`) |
-| Staging baseline / current artifact | `a8a74e60e05a6e9d21691bfc83bb0123899ba6f6` (`a8a74e6`) |
+| Repo baseline (HEAD) | `67d9aa495fd253187876a9ba2e97d2aad43289d7` (`67d9aa4`) — Modal Wave docs-closeout; impl `a447b9e` |
+| Staging API baseline (last full API artifact) | Advance via controlled deploy; historically `57f1881` (image approve) atop earlier `a8a74e6` / `bd649d5` proofs |
+| Staging web baseline (Modal Wave) | Artifact `/opt/dca/staging-artifacts/a447b9e` (web-only); host dist `/opt/dca/apps/dcaosv1/staging/web/dist` |
 | Rollback target (retained) | `1b8d00db2f9d46ac6678abd576a02683ffa6d86c` (`1b8d00d`) |
-| Relation | `a8a74e6` is the controlled staging deploy of local pre-staging convergence; schema delta `1b8d00d..a8a74e6`: none |
-| Staging `a8a74e6` | PASS (health + required smokes) |
-| Validate at baseline | PASS |
+| Relation | Modal Wave web-only followed API/image-approve line; schema delta for Modal Wave: none |
 | Production | FROZEN |
-| Remote freshness | `origin/main` = `a8a74e6` (pre-docs-closeout deploy HEAD; docs closeout commit follows) |
+| Remote freshness | `origin/main` must match repo HEAD after RC push |
 
 This document controls **nomenclature** and **status labels** for planning and execution before the next staging cycle. It does **not** replace technical runbooks (`STAGING_READINESS`, `PRODUCTION_DEPLOYMENT`, `PRODUCTION_ROLLBACK`, integration proof runbooks, or operator checklists).
+
+**Static web deploy rule:** Never `rm -rf` + `mv` the Caddy-mounted `dist` directory (stale inode bind). Sync **into** the existing mount. Shared Caddy `--force-recreate` is a shared-infrastructure mutation — record `SHARED_PROXY_RESTART` / `SHARED_PROXY_RELOAD` separately from production app/API/DB mutation.
 
 ---
 

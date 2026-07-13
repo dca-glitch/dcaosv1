@@ -83,9 +83,9 @@ type ModalProps = {
 
 **Accessibility exceptions (documented):**
 
-* `aria-describedby` not wired in DS shell (no DS edit in this wave) — DEFERRED
-* `role="alertdialog"` not used by product confirms yet — DEFERRED
-* Nested dialog Escape stack order remains last-writer-wins — known limit; WP confirm still stacked over Deliverables
+* `aria-describedby` not wired in DS shell (no DS edit without owner gate) — **DEFERRED** (subtitle `<p>` has no `id` / dialog `aria-describedby`)
+* `role="alertdialog"` not used by product confirms yet — **DEFERRED**
+* Nested dialog Escape: WP confirm over Deliverables — **MITIGATED** via Deliverables `isOpen={open && !wordpressPublishConfirm}`
 
 ---
 
@@ -157,6 +157,6 @@ type ModalProps = {
 
 ## 11. Owner decisions still required
 
-* Whether to schedule DS Modal a11y hardening (`aria-describedby`, nested stack, `alertdialog`).
-* Whether to add a product `Card` adapter or keep MetricCard/SectionPanel only.
-* Staging web-only deploy + narrow Modal browser proof — **COMPLETE** on artifact `a447b9e` (2026-07-13).
+* Whether to schedule DS Modal a11y hardening (`aria-describedby`, `alertdialog`) — still requires DS edit gate.
+* Whether to add a product `Card` adapter or keep MetricCard/SectionPanel only — **DEFER** (no staging blocker).
+* Staging web-only Modal deploy + browser proof — **COMPLETE** on artifact `a447b9e` (2026-07-13); docs-closeout `67d9aa4`.

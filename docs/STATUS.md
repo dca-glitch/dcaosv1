@@ -1,6 +1,6 @@
 # DCA OS Lite — Status (Source of Truth)
 
-**Last updated:** 2026-07-13 (storageKey-only product image approval CLOSED; staging deploy `57f1881` PASS; narrow product `/approve` PROVEN; production frozen)
+**Last updated:** 2026-07-13 (pre-staging RC convergence in progress atop Modal Wave docs-closeout `67d9aa4`; production frozen)
 **Authoritative project control:** [`docs/project-control/AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md`](./project-control/AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md)
 **AI Policy / provider routing:** [`docs/architecture/AI_POLICY_PROVIDER_ROUTING.md`](./architecture/AI_POLICY_PROVIDER_ROUTING.md)
 **PRE-STAGING closure:** 2026-07-10 (local/no-live audit + safe fixes; see [`docs/operator/PRE_STAGING_CLOSURE_VERDICT.md`](./operator/PRE_STAGING_CLOSURE_VERDICT.md))
@@ -391,8 +391,9 @@ Production PostgreSQL role password and `DATABASE_URL` were rotated, the product
 | Point 4 — Orchestrator proof decision | **COMPLETE** — `HYBRID — PREFLIGHT + EMBEDDED LIVE PROOF`; Orchestrator remains `LOCAL FOUNDATION`; not `STAGING LIVE PROVEN` until plan→execute is wired |
 | Canonical component doc | [`CANONICAL_COMPONENT_SYSTEM.md`](./project-control/CANONICAL_COMPONENT_SYSTEM.md) |
 | Wave 1 — first consolidation slice | **COMPLETE** — ui barrel exports Tabs/compound Table/ActivityItem; unused root state shims deleted |
-| Modal Wave | **COMPLETE** — canonical `components/ui/Modal`; 23/23 page consumers migrated; legacy root Modal deleted; import-guard baseline 0; staging web-only `a447b9e` + Modal browser proof PASS |
-| Remaining UI migration | **OPEN** — Card adapter / domain empty clones / DS Modal a11y hardening (separately gated) |
+| Modal Wave | **COMPLETE** — canonical `components/ui/Modal`; 23/23 page consumers migrated; legacy root Modal deleted; import-guard baseline 0; impl `a447b9e`; docs-closeout `67d9aa4`; staging web-only artifact `a447b9e` + Modal browser proof PASS |
+| Modal staging Caddy | **SHARED_PROXY_RESTART (historical)** — Modal web-only deploy remounted staging static bind; production app/API/DB unchanged. Prefer future **in-place sync** into `/opt/dca/apps/dcaosv1/staging/web/dist` (preserve mount inode; no Caddy recreate). |
+| Remaining UI migration | **PARTIAL** — Card adapter DEFERRED; DS Modal `aria-describedby` DEFERRED (requires DS edit); WP-over-Deliverables Escape stack mitigated by suspending Deliverables `isOpen` while confirm open; state primitives + typography floors advanced in RC convergence |
 | Next local Workstreams | **2–5** before staging Workstream 6 |
 | Production | FROZEN |
 | Canonical doc | [`AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md`](./project-control/AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md) |
