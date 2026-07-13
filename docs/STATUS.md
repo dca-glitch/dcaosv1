@@ -1,6 +1,6 @@
 # DCA OS Lite — Status (Source of Truth)
 
-**Last updated:** 2026-07-13 (staging RC deploy `9921bb3` PASS — API recreate + in-place web sync; shared Caddy untouched; production frozen)
+**Last updated:** 2026-07-13 (Puriva Operating Pack assembly + local monthly rehearsal PASS; production dry-run SAFE probes PASS; production frozen)
 **Authoritative project control:** [`docs/project-control/AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md`](./project-control/AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md)
 **AI Policy / provider routing:** [`docs/architecture/AI_POLICY_PROVIDER_ROUTING.md`](./architecture/AI_POLICY_PROVIDER_ROUTING.md)
 **PRE-STAGING closure:** 2026-07-10 (local/no-live audit + safe fixes; see [`docs/operator/PRE_STAGING_CLOSURE_VERDICT.md`](./operator/PRE_STAGING_CLOSURE_VERDICT.md))
@@ -421,6 +421,30 @@ Production PostgreSQL role password and `DATABASE_URL` were rotated, the product
 | Evidence | `/opt/dca/apps/dcaosv1/staging/backups/STAGING_RC_WEB_FIX_9921bb3_20260713-030802.txt` |
 
 **Production safety:** This staging PASS does **not** authorize production deploy. GA/GSC, notification E2E, and DS Modal `aria-describedby` remain deferred.
+
+## Puriva pre-production readiness closeout (2026-07-13)
+
+**Result:** Local Operating Pack assembly + monthly rehearsal PASS; production dry-run SAFE probes PASS; production mutation false.
+
+| Item | State |
+|------|--------|
+| Repo HEAD at start | `096c073` (= `origin/main`) |
+| Staging RC runtime (unchanged this closeout until redeploy) | `9921bb3` |
+| Puriva Operating Pack | Assembled in `@dca-os-v1/shared` — identity, tone, languages, image dimensions, WP targets (incl. staging host), review rules, fallbacks, `$100` cap |
+| Staging WP allowlist | `purivastaging.digitalcubeagency.net` (`scripts/lib/puriva-staging-operating-pack.mjs`) |
+| Compliance | Expanded text guards (fake doctor, BPOM, superiority); `MANUAL_REVIEW_REQUIRED=true` |
+| Budget | `PURIVA_MONTHLY_AI_CAP_USD=100`; `BUDGET_TRACKING=PROVEN`; `BUDGET_HARD_ENFORCEMENT=ESTIMATED_SPEND_ONLY` |
+| Local monthly rehearsal | `node scripts/smoke-puriva-monthly-rehearsal-local.mjs` — **29/29 PASS**; correlation `puriva-rehearsal-d7806bec-…` |
+| Admin / client role | Local product-API proof PASS (client approve, portal reports, foreign project 404) |
+| Email / WP live / OpenAI / R2 | Prefer reuse prior staging island proofs; not re-executed in this closeout |
+| Production public probes | staging+prod `/api/v1/health` HTTP 200; HSTS present |
+| Production dry-run doc | [`PRODUCTION_DRY_RUN_PURIVA_PREPROD.md`](./runbooks/PRODUCTION_DRY_RUN_PURIVA_PREPROD.md) |
+| Monthly ops runbook | [`PURIVA_MONTHLY_OPERATION.md`](./runbooks/PURIVA_MONTHLY_OPERATION.md) |
+| GA4/GSC live | **DEFERRED** — fail-closed owner ID envs `PURIVA_GA4_PROPERTY_ID` / `PURIVA_GSC_SITE_PROPERTY` |
+| In-system notification E2E | **DEFERRED** |
+| Staging redeploy | **REQUIRED** for runtime code (pack/compliance/publication try-catch) — not executed in this closeout |
+| Production | **FROZEN** — `BLOCKED_OWNER_ACTION=APPROVE_PRODUCTION_DEPLOY` |
+| Go-live readiness | `READY_WITH_OWNER_GATES` (not full Puriva Launch READY) |
 
 ## WORKSTREAM 1A — project control reconciliation (2026-07-12) — historical
 
