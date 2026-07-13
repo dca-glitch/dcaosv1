@@ -11,7 +11,6 @@
 ```
 src/design-system/
 ├── tokens.css                   ← CSS vars + gradienty + base styles
-├── tailwind.config.ts           ← Tailwind z customowymi tokenami
 ├── components/
 │   ├── Button.tsx
 │   ├── Badge.tsx
@@ -27,12 +26,10 @@ src/design-system/
 └── index.ts                     ← Centralny export
 ```
 
-### 2. Zastąp tailwind.config.ts
+### 2. Tailwind config
 
-```bash
-# Kopiuj design-system/tailwind.config.ts do roota projektu
-copy src\design-system\tailwind.config.ts tailwind.config.ts
-```
+`apps/web/tailwind.config.ts` is the live Tailwind config used by the web app.
+The design-system package no longer owns a separate Tailwind config file.
 
 ### 3. Import CSS tokens w src/index.css
 
@@ -280,7 +277,7 @@ Najłatwiej ustawić na poziomie AppShell (`density` prop).
 ## FAQ
 
 **Q: Tailwind nie widzi customowych klas?**
-A: Sprawdź czy `tailwind.config.ts` jest w rocie projektu i czy `src/design-system/tokens.css` jest importowany w `src/index.css`.
+A: Sprawdź czy `apps/web/tailwind.config.ts` jest w rocie projektu i czy `src/design-system/tokens.css` jest importowany w `src/index.css`.
 
 **Q: Gradienty nie renderują się?**
 A: Sprawdź czy browser nie blokuje `var()` — to standard CSS, działa wszędzie od 2017.
@@ -292,7 +289,7 @@ A: `tokens.css` importuje z Google Fonts. Jeśli brak internetu — system fallb
 A: Otwórz `Badge.tsx`, dodaj wpis do obiektu `map` w `StatusBadge`.
 
 **Q: Jak zmienić szerokość sidebara?**
-A: Zmień `--sidebar-width` w `tokens.css` i `w-sidebar` w `tailwind.config.ts`.
+A: Zmień `--sidebar-width` w `tokens.css` i `w-sidebar` w `apps/web/tailwind.config.ts`.
 
 ---
 
