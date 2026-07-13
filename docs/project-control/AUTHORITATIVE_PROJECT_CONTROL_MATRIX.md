@@ -13,11 +13,11 @@
 |------|--------|
 | Repo | `C:\dcaosv1` |
 | Branch | `main` |
-| Repo baseline (HEAD) | Update at next docs closeout — prefer `docs/STATUS.md` for post-`9921bb3` truth; tip at Puriva preprod closeout tracks `origin/main` after pack commits |
-| Staging API baseline (last full API artifact) | Advance via controlled deploy; historically `57f1881` (image approve) atop earlier `a8a74e6` / `bd649d5` proofs; RC `9921bb3` is current staging runtime until next redeploy |
-| Staging web baseline (Modal Wave / RC) | RC `9921bb3` in-place sync; host dist `/opt/dca/apps/dcaosv1/staging/web/dist`; assets `index-DY5z8SCD.js` / `index-i_JTDDN4.css` |
-| Rollback target (retained) | `1b8d00db2f9d46ac6678abd576a02683ffa6d86c` (`1b8d00d`) |
-| Relation | Modal Wave web-only followed API/image-approve line; schema delta for Modal Wave: none; RC `9921bb3` migration SKIP |
+| Repo baseline (HEAD) | Prefer `docs/STATUS.md` — Puriva staging composition closeout on `632d9a9` (= `origin/main` at deploy) |
+| Staging API baseline (last full API artifact) | Current: `632d9a9` (Puriva Operating Pack). Prior retained: `9921bb3`; historically `57f1881` / `a8a74e6` / `bd649d5` |
+| Staging web baseline | `632d9a9` in-place sync; host dist `/opt/dca/apps/dcaosv1/staging/web/dist`; assets `index-DY5z8SCD.js` / `index-i_JTDDN4.css` |
+| Rollback target (retained) | Immediate: `/opt/dca/staging-artifacts/9921bb3`; longer: `1b8d00d` |
+| Relation | `9921bb3 → 632d9a9` Puriva pack/compliance/budget (no prisma delta); `MIGRATION=SKIP` |
 | Production | FROZEN |
 | Remote freshness | `origin/main` must match repo HEAD after RC push |
 

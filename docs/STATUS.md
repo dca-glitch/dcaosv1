@@ -398,9 +398,43 @@ Production PostgreSQL role password and `DATABASE_URL` were rotated, the product
 | Production | FROZEN |
 | Canonical doc | [`AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md`](./project-control/AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md) |
 
+## Puriva staging redeploy + composition closeout (2026-07-13)
+
+**Result:** PASS — controlled staging redeploy of `632d9a9` (Puriva Operating Pack runtime) + staging composition proven. Migration SKIP. Shared Caddy **not** restarted. Production app/API/DB/web unchanged. Live provider flags remain false. Full Puriva Launch READY is **not** claimed.
+
+| Item | State |
+|------|--------|
+| Target / ending staging runtime | `632d9a9b675f1b702aad61907d47dd453d544368` (`632d9a9`) |
+| Prior staging runtime | `9921bb3` (retained rollback artifact) |
+| Artifact | `/opt/dca/staging-artifacts/632d9a9` |
+| Tar SHA256 | `4AA689F26A045740152427C23BC30A76A12682DA5A5C8B1683958FA490284C3D` |
+| Migration | **SKIP** (no prisma delta `9921bb3..632d9a9`) |
+| Staging API | Recreated — id `ca684230…` StartedAt `2026-07-13T04:08:51Z` |
+| Staging DB | Unchanged — id `c70f523d…` StartedAt `2026-07-04T00:38:06Z` |
+| Web deploy | In-place sync into `/opt/dca/apps/dcaosv1/staging/web/dist`; assets `index-DY5z8SCD.js` / `index-i_JTDDN4.css` |
+| Shared proxy | `SHARED_PROXY_ACTION=none` — Caddy id/StartedAt unchanged (`fe598a24…` / `2026-07-13T02:26:36Z`) |
+| Production API/DB | Unchanged (`65b4b9d4…` / `db95bada…`) |
+| Live flags | `AI_TEXT_GATEWAY` present (masked); image/WP draft/email live / publish flags absent or false |
+| Pack runtime | **PASS** — `getClientOperatingPackConfig("puriva")` in staging API image; `$100` cap; EN primary; staging WP host; review/fallback profiles |
+| Client DB binding | **NOT_PROVEN** — convention/shared constants (no product DB pack-binding claim) |
+| Compliance staging | **PASS** — runtime assessor blocks/flags guarantee/cure/fake doctor/patient/before-after/BPOM/superiority/authority; allows cautious educational |
+| AI budget staging | **PASS** — `PURIVA_AI_MONTHLY_CAP_USD=100` in staging runtime |
+| Admin / client roles | **PASS** — composition smoke product APIs |
+| Cross-tenant staging | **PASS** — real foreign client/project/report/deliverable; Puriva↔foreign 403/404 fail-closed |
+| Monthly report staging | **PASS** — fixture/non-live metrics only; `MONTHLY_REPORT_LIVE_GA_GSC=DEFERRED` |
+| Client portal browser | **PASS** — `smoke-puriva-staging-browser.mjs` 29/29; desktop+mobile; expected client 403s on admin routes |
+| Composition smoke | `smoke-puriva-staging-composition.mjs` **49/49**; correlation `puriva-staging-composition-5cc345e5-…` |
+| Browser correlation | `puriva-staging-browser-3b2a26e5-…` |
+| Cleanup | Exact-ID archive of projects/deliverables/reports; retained archived client rows as evidence (no broad delete) |
+| Local validation | `npm.cmd run validate` PASS; focused Puriva unit PASS; `smoke:mvp:staging` PASS |
+| Go-live readiness | `READY_WITH_PRODUCTION_AND_GOOGLE_GATES` (production deploy + live GA4/GSC remain owner gates) |
+| Evidence | `/opt/dca/apps/dcaosv1/staging/backups/STAGING_PURIVA_DEPLOY_632d9a9_20260713-040821.txt` |
+
+**Truth labels (post-proof):** `PURIVA_CONFIGURATION_STAGING_RUNTIME=PASS`; `CROSS_TENANT_ISOLATION_STAGING=PASS`; `CLIENT_PORTAL_STAGING_BROWSER_PROOF=PASS`; `MONTHLY_REPORT_STAGING_COMPOSITION=PASS`.
+
 ## Staging RC deploy `9921bb3` closeout (2026-07-13)
 
-**Result:** PASS — controlled staging deploy of `9921bb3` (storageKey preserve + UI state/readability convergence + docs truth). Migration SKIP. Shared Caddy **not** restarted. Production app/API/DB unchanged.
+**Result:** PASS — controlled staging deploy of `9921bb3` (storageKey preserve + UI state/readability convergence + docs truth). Migration SKIP. Shared Caddy **not** restarted. Production app/API/DB unchanged. **Superseded as current staging runtime by `632d9a9` Puriva redeploy above.**
 
 | Item | State |
 |------|--------|
@@ -429,7 +463,7 @@ Production PostgreSQL role password and `DATABASE_URL` were rotated, the product
 | Item | State |
 |------|--------|
 | Repo HEAD at start | `096c073` (= `origin/main`) |
-| Staging RC runtime (unchanged this closeout until redeploy) | `9921bb3` |
+| Staging RC runtime (at preprod closeout; later superseded by `632d9a9`) | `9921bb3` |
 | Puriva Operating Pack | Assembled in `@dca-os-v1/shared` — identity, tone, languages, image dimensions, WP targets (incl. staging host), review rules, fallbacks, `$100` cap |
 | Staging WP allowlist | `purivastaging.digitalcubeagency.net` (`scripts/lib/puriva-staging-operating-pack.mjs`) |
 | Compliance | Expanded text guards (fake doctor, BPOM, superiority); `MANUAL_REVIEW_REQUIRED=true` |
@@ -442,9 +476,9 @@ Production PostgreSQL role password and `DATABASE_URL` were rotated, the product
 | Monthly ops runbook | [`PURIVA_MONTHLY_OPERATION.md`](./runbooks/PURIVA_MONTHLY_OPERATION.md) |
 | GA4/GSC live | **DEFERRED** — fail-closed owner ID envs `PURIVA_GA4_PROPERTY_ID` / `PURIVA_GSC_SITE_PROPERTY` |
 | In-system notification E2E | **DEFERRED** |
-| Staging redeploy | **REQUIRED** for runtime code (pack/compliance/publication try-catch) — not executed in this closeout |
+| Staging redeploy | **COMPLETE** on `632d9a9` — see Puriva staging redeploy + composition closeout above |
 | Production | **FROZEN** — `BLOCKED_OWNER_ACTION=APPROVE_PRODUCTION_DEPLOY` |
-| Go-live readiness | `READY_WITH_OWNER_GATES` (not full Puriva Launch READY) |
+| Go-live readiness | Advanced to `READY_WITH_PRODUCTION_AND_GOOGLE_GATES` after staging composition proof (not full Puriva Launch READY) |
 
 ## WORKSTREAM 1A — project control reconciliation (2026-07-12) — historical
 
