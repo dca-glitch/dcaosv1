@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Badge, Button, EmptyState, ErrorState, LoadingState, PageHeader, SectionPanel, Table } from "../components/ui";
+import { toBriefStatusPresentation } from "./client-portal/client-portal-status";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "/api/v1";
 const SESSION_STORAGE_KEY = "dcaosv1.authToken";
@@ -208,26 +209,6 @@ function urgencyLabel(value: string): string {
   return labels[value] ?? value;
 }
 
-function getBriefStatusBadge(
-  status: string,
-  role: string
-): { label: string; color: "amber" | "blue" | "green" } {
-  if (status === "DRAFT") return { label: "Draft", color: "amber" };
-  if (status === "SUBMITTED") return { label: "Submitted", color: "green" };
-  if (status === "AWAITING_CLIENT") {
-    return role === "client"
-      ? { label: "Awaiting your input", color: "blue" }
-      : { label: "Sent to Client", color: "blue" };
-  }
-  return { label: status, color: "amber" };
-}
-
-function briefBadgeVariant(color: "amber" | "blue" | "green"): "success" | "info" | "warning" {
-  if (color === "green") return "success";
-  if (color === "blue") return "info";
-  return "warning";
-}
-
 function formatArticleSummary(brief: AdminBriefRecord): string {
   const parts: string[] = [];
   if (brief.hubCount > 0) parts.push(`Hub ×${brief.hubCount}`);
@@ -270,8 +251,8 @@ function parseAdditionalContent(content: string): Record<string, string> {
 }
 
 function BriefStatusBadge({ status }: { status: string }) {
-  const badge = getBriefStatusBadge(status, "owner");
-  return <Badge variant={briefBadgeVariant(badge.color)}>{badge.label}</Badge>;
+  const badge = toBriefStatusPresentation(status, "admin");
+  return <Badge variant={badge.tone}>{badge.label}</Badge>;
 }
 
 type BriefDetailPanelProps = {

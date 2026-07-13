@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Alert, Badge, Button, EmptyState, Input, PageHeader, SectionPanel, Select, Spinner, Textarea } from "../components/ui";
+import { toBriefStatusPresentation } from "./client-portal/client-portal-status";
 import {
   clientPortalApiRequest,
   getClientPortalAuthToken,
@@ -403,26 +404,6 @@ function additionalContentFromFields(fields: AdditionalBriefFields): AdditionalC
   };
 }
 
-function getBriefStatusBadge(
-  status: string,
-  role: string
-): { label: string; color: "amber" | "blue" | "green" } {
-  if (status === "DRAFT") return { label: "Draft", color: "amber" };
-  if (status === "SUBMITTED") return { label: "Submitted", color: "green" };
-  if (status === "AWAITING_CLIENT") {
-    return role === "client"
-      ? { label: "Awaiting your input", color: "blue" }
-      : { label: "Sent to Client", color: "blue" };
-  }
-  return { label: status, color: "amber" };
-}
-
-function briefBadgeVariant(color: "amber" | "blue" | "green"): "success" | "info" | "warning" {
-  if (color === "green") return "success";
-  if (color === "blue") return "info";
-  return "warning";
-}
-
 function isBriefReadOnly(status: BriefStatus, isAdmin: boolean): boolean {
   if (status === "SUBMITTED") return true;
   if (status === "AWAITING_CLIENT" && isAdmin) return true;
@@ -531,8 +512,8 @@ function BriefPlanningReadOnly({ fields }: { fields: BriefPlanningFields }) {
 }
 
 function BriefStatusBadge({ status, role }: { status: string; role: string }) {
-  const badge = getBriefStatusBadge(status, role);
-  return <Badge variant={briefBadgeVariant(badge.color)}>{badge.label}</Badge>;
+  const badge = toBriefStatusPresentation(status, role === "client" ? "client" : "admin");
+  return <Badge variant={badge.tone}>{badge.label}</Badge>;
 }
 
 function PortalInlineLoading({ label }: { label: string }) {

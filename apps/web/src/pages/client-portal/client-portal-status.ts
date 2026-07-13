@@ -94,14 +94,33 @@ export function isClientPortalStatusVisible(status: string | null | undefined): 
   return toClientPortalStatusLabel(status) != null;
 }
 
+export type BriefStatusTone = "success" | "info" | "warning";
+
+export type BriefStatusPresentation = {
+  label: string;
+  tone: BriefStatusTone;
+};
+
+/** Shared brief status presentation for client/admin brief surfaces. */
+export function toBriefStatusPresentation(
+  status: "DRAFT" | "AWAITING_CLIENT" | "SUBMITTED" | string,
+  role: "admin" | "client"
+): BriefStatusPresentation {
+  if (status === "DRAFT") return { label: "Draft", tone: "warning" };
+  if (status === "SUBMITTED") return { label: "Submitted", tone: "success" };
+  if (status === "AWAITING_CLIENT") {
+    return role === "client"
+      ? { label: "Awaiting your input", tone: "info" }
+      : { label: "Sent to Client", tone: "info" };
+  }
+  return { label: "In progress", tone: "info" };
+}
+
 /** Map brief workflow status to a calm client-facing label. */
 export function toClientBriefStatusLabel(
   status: "DRAFT" | "AWAITING_CLIENT" | "SUBMITTED" | string
-): { label: string; tone: "success" | "info" | "warning" } {
-  if (status === "DRAFT") return { label: "Draft", tone: "warning" };
-  if (status === "SUBMITTED") return { label: "Submitted", tone: "success" };
-  if (status === "AWAITING_CLIENT") return { label: "Awaiting your input", tone: "info" };
-  return { label: "In progress", tone: "info" };
+): BriefStatusPresentation {
+  return toBriefStatusPresentation(status, "client");
 }
 
 /** Prefer canonical client vocabulary when a StatusKey is known. */
