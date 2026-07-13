@@ -55,6 +55,8 @@ export interface ClientSummary {
   legalEntityName: string | null;
   accountGroupName: string | null;
   migrationStatus: "ACTIVE" | "PLANNED_LICENSEE_TENANT" | "MIGRATED";
+  /** Canonical binding key e.g. PURIVA_OPERATING_PACK_V1; null = unbound. */
+  operatingPackKey: string | null;
   isArchived: boolean;
   projectCount: number;
   createdAt: string;
@@ -81,6 +83,8 @@ export interface ClientInputRequest {
   legalEntityName?: string | null;
   accountGroupName?: string | null;
   migrationStatus?: "ACTIVE" | "PLANNED_LICENSEE_TENANT" | "MIGRATED";
+  /** Canonical binding key or null to unbind; omit to leave unchanged on update. */
+  operatingPackKey?: string | null;
 }
 
 export interface PublicationTargetSummary {

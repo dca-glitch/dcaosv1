@@ -33,6 +33,7 @@ const client: ClientSummary = {
   legalEntityName: null,
   accountGroupName: null,
   migrationStatus: "ACTIVE",
+  operatingPackKey: null,
   isArchived: false,
   projectCount: 1,
   createdAt: "2026-06-01T00:00:00.000Z",

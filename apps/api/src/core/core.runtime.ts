@@ -393,6 +393,7 @@ function toClientSummary(client: {
   legalEntityName: string | null;
   accountGroupName: string | null;
   migrationStatus: string;
+  operatingPackKey: string | null;
   isArchived: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -413,12 +414,37 @@ function toClientSummary(client: {
     legalEntityName: client.legalEntityName,
     accountGroupName: client.accountGroupName,
     migrationStatus: client.migrationStatus as "ACTIVE" | "PLANNED_LICENSEE_TENANT" | "MIGRATED",
+    operatingPackKey: client.operatingPackKey,
     isArchived: client.isArchived,
     projectCount: client._count.projects,
     createdAt: client.createdAt.toISOString(),
     updatedAt: client.updatedAt.toISOString()
   };
 }
+
+const clientSummarySelect = {
+  id: true,
+  name: true,
+  email: true,
+  website: true,
+  billingDetails: true,
+  contactPerson: true,
+  taxId: true,
+  country: true,
+  clientKind: true,
+  legalEntityName: true,
+  accountGroupName: true,
+  migrationStatus: true,
+  operatingPackKey: true,
+  isArchived: true,
+  createdAt: true,
+  updatedAt: true,
+  _count: {
+    select: {
+      projects: true
+    }
+  }
+} as const;
 
 function toProjectSummary(project: {
   id: string;
@@ -793,28 +819,7 @@ export async function listClients(
         createdAt: "asc"
       }
     ],
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      website: true,
-      billingDetails: true,
-      contactPerson: true,
-      taxId: true,
-      country: true,
-      clientKind: true,
-      legalEntityName: true,
-      accountGroupName: true,
-      migrationStatus: true,
-      isArchived: true,
-      createdAt: true,
-      updatedAt: true,
-      _count: {
-        select: {
-          projects: true
-        }
-      }
-    }
+    select: clientSummarySelect
   });
 
   return {
@@ -828,28 +833,7 @@ async function getClientRecord(tx: PrismaTx, tenantId: string, clientId: string)
       id: clientId,
       tenantId
     },
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      website: true,
-      billingDetails: true,
-      contactPerson: true,
-      taxId: true,
-      country: true,
-      clientKind: true,
-      legalEntityName: true,
-      accountGroupName: true,
-      migrationStatus: true,
-      isArchived: true,
-      createdAt: true,
-      updatedAt: true,
-      _count: {
-        select: {
-          projects: true
-        }
-      }
-    }
+    select: clientSummarySelect
   });
 }
 
@@ -898,30 +882,10 @@ export async function createClient(
         migrationStatus:
           input.migrationStatus === "PLANNED_LICENSEE_TENANT" || input.migrationStatus === "MIGRATED"
             ? input.migrationStatus
-            : "ACTIVE"
+            : "ACTIVE",
+        operatingPackKey: input.operatingPackKey !== undefined ? input.operatingPackKey : null
       },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        website: true,
-        billingDetails: true,
-        contactPerson: true,
-        taxId: true,
-        country: true,
-        clientKind: true,
-        legalEntityName: true,
-        accountGroupName: true,
-        migrationStatus: true,
-        isArchived: true,
-        createdAt: true,
-        updatedAt: true,
-        _count: {
-          select: {
-            projects: true
-          }
-        }
-      }
+      select: clientSummarySelect
     });
 
     return {
@@ -964,30 +928,10 @@ export async function updateClient(
         migrationStatus:
           input.migrationStatus === "PLANNED_LICENSEE_TENANT" || input.migrationStatus === "MIGRATED" || input.migrationStatus === "ACTIVE"
             ? input.migrationStatus
-            : undefined
+            : undefined,
+        operatingPackKey: input.operatingPackKey !== undefined ? input.operatingPackKey : undefined
       },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        website: true,
-        billingDetails: true,
-        contactPerson: true,
-        taxId: true,
-        country: true,
-        clientKind: true,
-        legalEntityName: true,
-        accountGroupName: true,
-        migrationStatus: true,
-        isArchived: true,
-        createdAt: true,
-        updatedAt: true,
-        _count: {
-          select: {
-            projects: true
-          }
-        }
-      }
+      select: clientSummarySelect
     });
 
     return {
@@ -1029,28 +973,7 @@ export async function archiveClient(
       data: {
         isArchived: true
       },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        website: true,
-        billingDetails: true,
-        contactPerson: true,
-        taxId: true,
-        country: true,
-        clientKind: true,
-        legalEntityName: true,
-        accountGroupName: true,
-        migrationStatus: true,
-        isArchived: true,
-        createdAt: true,
-        updatedAt: true,
-        _count: {
-          select: {
-            projects: true
-          }
-        }
-      }
+      select: clientSummarySelect
     });
 
     return {
@@ -1081,28 +1004,7 @@ export async function restoreClient(
       data: {
         isArchived: false
       },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        website: true,
-        billingDetails: true,
-        contactPerson: true,
-        taxId: true,
-        country: true,
-        clientKind: true,
-        legalEntityName: true,
-        accountGroupName: true,
-        migrationStatus: true,
-        isArchived: true,
-        createdAt: true,
-        updatedAt: true,
-        _count: {
-          select: {
-            projects: true
-          }
-        }
-      }
+      select: clientSummarySelect
     });
 
     return {

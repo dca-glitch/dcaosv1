@@ -2342,7 +2342,10 @@ export function App() {
         clientId ? `/clients/${clientId}` : "/clients",
         {
           method: clientId ? "PUT" : "POST",
-          body: values
+          body: {
+            ...values,
+            operatingPackKey: values.operatingPackKey === "" ? null : values.operatingPackKey
+          }
         }
       );
 
@@ -4694,6 +4697,7 @@ export function App() {
                 legalEntityName: null,
                 accountGroupName: null,
                 migrationStatus: "ACTIVE",
+                operatingPackKey: null,
                 isArchived: false,
                 projectCount: 0,
                 createdAt: "",

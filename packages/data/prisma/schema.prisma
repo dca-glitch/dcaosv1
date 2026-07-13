@@ -527,6 +527,8 @@ model Client {
   legalEntityName   String?
   accountGroupName  String?
   migrationStatus   ClientMigrationStatus @default(ACTIVE)
+  /// Registry binding key (e.g. PURIVA_OPERATING_PACK_V1). Null = unbound. Validated in app against shared registry.
+  operatingPackKey  String?
   isArchived        Boolean            @default(false)
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
@@ -555,6 +557,7 @@ model Client {
   @@index([tenantId, isArchived])
   @@index([tenantId, clientKind])
   @@index([tenantId, migrationStatus])
+  @@index([tenantId, operatingPackKey])
 }
 
 model PublicationTarget {

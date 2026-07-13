@@ -398,9 +398,27 @@ Production PostgreSQL role password and `DATABASE_URL` were rotated, the product
 | Production | FROZEN |
 | Canonical doc | [`AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md`](./project-control/AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md) |
 
+## Client Operating Pack DB binding closeout (2026-07-13)
+
+**Result:** PASS — explicit `Client.operatingPackKey` binding + fail-closed resolver. Pack content remains code-defined in `@dca-os-v1/shared`. No silent Puriva default for unbound clients. Production migration/deploy remain owner-gated.
+
+| Item | State |
+|------|--------|
+| Schema | `Client.operatingPackKey String?` + index `(tenantId, operatingPackKey)` |
+| Migration | `20260713120000_add_client_operating_pack_key` (additive; no global default; no broad backfill) |
+| Canonical binding key | `PURIVA_OPERATING_PACK_V1` → registry packKey `puriva` |
+| Resolver | `apps/api/src/core/client-operating-pack.resolver.ts` — `resolverSource=database_binding` |
+| Null/unbound | Explicit `PACK_BINDING_MISSING`; no Puriva rules/cap |
+| Unknown key | Fail-closed `PACK_KEY_UNKNOWN` / HTTP 400 on write |
+| Admin UI | Clients list + create/edit select (registry only; no free-text) |
+| Client portal | Pack key/config **not** exposed |
+| Local validation | unit + web/api check + `validate` PASS; monthly rehearsal 29/29 |
+| Staging | Controlled migrate + API/web deploy required after push (see deploy closeout) |
+| Production | **FROZEN** — separate migrate/deploy approval |
+
 ## Puriva staging redeploy + composition closeout (2026-07-13)
 
-**Result:** PASS — controlled staging redeploy of `632d9a9` (Puriva Operating Pack runtime) + staging composition proven. Migration SKIP. Shared Caddy **not** restarted. Production app/API/DB/web unchanged. Live provider flags remain false. Full Puriva Launch READY is **not** claimed.
+**Result:** PASS — controlled staging redeploy of `632d9a9` (Puriva Operating Pack runtime) + staging composition proven. Migration SKIP. Shared Caddy **not** restarted. Production app/API/DB/web unchanged. Live provider flags remain false. Full Puriva Launch READY is **not** claimed. **Superseded for client DB binding by the closeout above.**
 
 | Item | State |
 |------|--------|

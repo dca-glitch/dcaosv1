@@ -20,6 +20,20 @@
 | Budget hard enforcement | Estimated spend kill-switch PROVEN; trusted `actualCostUsd` NOT_PROVEN |
 | Staging WP host | `purivastaging.digitalcubeagency.net` only |
 | Production WP | Draft/handoff only — never auto-publish |
+| Pack binding | Explicit `Client.operatingPackKey = PURIVA_OPERATING_PACK_V1` (DB). Unbound clients do not receive Puriva rules. No name/domain fallback. |
+
+---
+
+## 1b. Client Operating Pack binding (onboarding)
+
+1. Create or open the client record in admin Clients.
+2. Set **Operating pack** to `Puriva Operating Pack v1` (`PURIVA_OPERATING_PACK_V1`).
+3. Save — API validates against the shared registry (unknown keys rejected).
+4. Confirm `GET /clients/:id` shows `operatingPackKey: "PURIVA_OPERATING_PACK_V1"`.
+5. Runtime resolution uses `resolverSource=database_binding` only — never website/name/first-row.
+6. Leave unrelated clients **Unbound** (`null`).
+
+**Rollback:** set `operatingPackKey` back to Unbound for that client only. Schema rollback is drop-column (staging restore preferred if needed).
 
 ---
 

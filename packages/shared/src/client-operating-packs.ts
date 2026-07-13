@@ -748,6 +748,66 @@ export function listClientOperatingPackKeys(): ClientOperatingPackKey[] {
 }
 
 /**
+ * DB binding keys persisted on Client.operatingPackKey.
+ * Maps to registry packKey — pack content stays code-defined.
+ */
+export const CLIENT_OPERATING_PACK_BINDING_KEYS = {
+  PURIVA_OPERATING_PACK_V1: "puriva"
+} as const satisfies Record<string, ClientOperatingPackKey>;
+
+export type ClientOperatingPackBindingKey = keyof typeof CLIENT_OPERATING_PACK_BINDING_KEYS;
+
+export const PURIVA_OPERATING_PACK_BINDING_KEY = "PURIVA_OPERATING_PACK_V1" as const satisfies ClientOperatingPackBindingKey;
+
+export function listClientOperatingPackBindingKeys(): ClientOperatingPackBindingKey[] {
+  return Object.keys(CLIENT_OPERATING_PACK_BINDING_KEYS) as ClientOperatingPackBindingKey[];
+}
+
+/**
+ * Normalize a persisted or request binding value to the canonical DB binding key.
+ * Accepts binding keys (PURIVA_OPERATING_PACK_V1) and registry keys (puriva).
+ * Rejects unknown / typo values — no silent Puriva fallback.
+ */
+export function normalizeOperatingPackBindingKey(
+  raw: string | null | undefined
+): ClientOperatingPackBindingKey | null {
+  if (raw === null || raw === undefined) {
+    return null;
+  }
+  const trimmed = String(raw).trim();
+  if (!trimmed) {
+    return null;
+  }
+  if (trimmed in CLIENT_OPERATING_PACK_BINDING_KEYS) {
+    return trimmed as ClientOperatingPackBindingKey;
+  }
+  for (const [bindingKey, packKey] of Object.entries(CLIENT_OPERATING_PACK_BINDING_KEYS) as Array<
+    [ClientOperatingPackBindingKey, ClientOperatingPackKey]
+  >) {
+    if (packKey === trimmed) {
+      return bindingKey;
+    }
+  }
+  return null;
+}
+
+export function isRegisteredOperatingPackBindingKey(raw: string | null | undefined): boolean {
+  return normalizeOperatingPackBindingKey(raw) !== null;
+}
+
+export function getRegistryPackKeyFromBindingKey(
+  bindingKey: ClientOperatingPackBindingKey
+): ClientOperatingPackKey {
+  return CLIENT_OPERATING_PACK_BINDING_KEYS[bindingKey];
+}
+
+export function getClientOperatingPackConfigFromBindingKey(
+  bindingKey: ClientOperatingPackBindingKey
+): ClientOperatingPackConfig {
+  return getClientOperatingPackConfig(getRegistryPackKeyFromBindingKey(bindingKey));
+}
+
+/**
  * G351 — Launch-required module keys from entitlement matrix (config truth only).
  */
 export function getLaunchRequiredPackModuleKeys(

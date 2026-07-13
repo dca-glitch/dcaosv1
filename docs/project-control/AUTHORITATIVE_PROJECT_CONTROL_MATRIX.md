@@ -13,11 +13,11 @@
 |------|--------|
 | Repo | `C:\dcaosv1` |
 | Branch | `main` |
-| Repo baseline (HEAD) | Prefer `docs/STATUS.md` — Puriva staging composition closeout on `632d9a9` (= `origin/main` at deploy) |
-| Staging API baseline (last full API artifact) | Current: `632d9a9` (Puriva Operating Pack). Prior retained: `9921bb3`; historically `57f1881` / `a8a74e6` / `bd649d5` |
-| Staging web baseline | `632d9a9` in-place sync; host dist `/opt/dca/apps/dcaosv1/staging/web/dist`; assets `index-DY5z8SCD.js` / `index-i_JTDDN4.css` |
-| Rollback target (retained) | Immediate: `/opt/dca/staging-artifacts/9921bb3`; longer: `1b8d00d` |
-| Relation | `9921bb3 → 632d9a9` Puriva pack/compliance/budget (no prisma delta); `MIGRATION=SKIP` |
+| Repo baseline (HEAD) | Prefer `docs/STATUS.md` — Client Operating Pack DB binding lands after `9c4388d` Puriva staging composition tip |
+| Staging API baseline (last full API artifact) | Advance via controlled deploy after pack-binding commit; prior proven: `632d9a9` |
+| Staging web baseline | In-place sync into `/opt/dca/apps/dcaosv1/staging/web/dist` when UI changes |
+| Rollback target (retained) | Immediate prior artifact under `/opt/dca/staging-artifacts/`; longer: `9921bb3` / `1b8d00d` |
+| Relation | Pack binding adds nullable `Client.operatingPackKey` migration; no production migrate without owner gate |
 | Production | FROZEN |
 | Remote freshness | `origin/main` must match repo HEAD after RC push |
 

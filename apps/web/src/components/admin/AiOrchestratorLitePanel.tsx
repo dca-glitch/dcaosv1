@@ -211,7 +211,7 @@ export function AiOrchestratorLitePanel() {
         step: stepConfig.step,
         agentRole: stepConfig.agentRole,
         taskType: stepConfig.taskType,
-        operatingPackKey: "puriva",
+        operatingPackKey: "PURIVA_OPERATING_PACK_V1",
         stepReference: `puriva_content_production:${stepConfig.step}`
       }
     );
@@ -237,7 +237,7 @@ export function AiOrchestratorLitePanel() {
       step: stepConfig.step,
       agentRole: stepConfig.agentRole,
       taskType: stepConfig.taskType,
-      operatingPackKey: "puriva",
+      operatingPackKey: "PURIVA_OPERATING_PACK_V1",
       stepReference: `puriva_content_production:${stepConfig.step}`
     });
     if (!response.ok) {

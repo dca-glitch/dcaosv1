@@ -17,7 +17,7 @@ const OUTPUT_TYPE_TO_ORCHESTRATOR_TASK: Record<AiWorkflowOutputType, string> = {
   article_draft: "article_draft"
 };
 
-const DEFAULT_OPERATING_PACK_KEY = "puriva";
+const DEFAULT_OPERATING_PACK_KEY = null;
 
 export function mapWorkflowOutputTypeToOrchestratorTaskType(
   outputType: AiWorkflowOutputType

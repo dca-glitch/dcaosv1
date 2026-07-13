@@ -56,7 +56,8 @@ export const PURIVA_PROFILE = {
   country: "Indonesia",
   contactPerson: "Puriva Clinic",
   email: "hello@puriva.id",
-  clientKind: "AGENCY_CLIENT"
+  clientKind: "AGENCY_CLIENT",
+  operatingPackKey: "PURIVA_OPERATING_PACK_V1"
 };
 
 export const PURIVA_BUSINESS_NOTES = {
@@ -106,6 +107,13 @@ export function isPurivaClient(client) {
   if (!client || client.isArchived) {
     return false;
   }
+  if (
+    client.operatingPackKey === "PURIVA_OPERATING_PACK_V1" ||
+    client.operatingPackKey === "puriva"
+  ) {
+    return true;
+  }
+  // Discovery aid for pre-binding rows only — product resolver must use DB binding.
   const nameMatch = typeof client.name === "string" && client.name.trim().toLowerCase() === "puriva";
   const hostMatch = normalizeHostname(client.website) === "puriva.id";
   return nameMatch || hostMatch;

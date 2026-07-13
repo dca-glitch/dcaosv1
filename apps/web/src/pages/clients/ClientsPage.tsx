@@ -38,6 +38,7 @@ export type ClientSummary = {
   legalEntityName: string | null;
   accountGroupName: string | null;
   migrationStatus: "ACTIVE" | "PLANNED_LICENSEE_TENANT" | "MIGRATED";
+  operatingPackKey: string | null;
   isArchived: boolean;
   projectCount: number;
   createdAt: string;
@@ -56,6 +57,7 @@ export type ClientFormValues = {
   legalEntityName: string;
   accountGroupName: string;
   migrationStatus: "ACTIVE" | "PLANNED_LICENSEE_TENANT" | "MIGRATED";
+  operatingPackKey: "" | "PURIVA_OPERATING_PACK_V1";
 };
 
 export type ClientAccessUserSummary = {
@@ -118,7 +120,8 @@ const emptyForm = (): ClientFormValues => ({
   clientKind: "AGENCY_CLIENT",
   legalEntityName: "",
   accountGroupName: "",
-  migrationStatus: "ACTIVE"
+  migrationStatus: "ACTIVE",
+  operatingPackKey: ""
 });
 
 export function ClientsPage({
@@ -208,7 +211,11 @@ export function ClientsPage({
       clientKind: client.clientKind,
       legalEntityName: client.legalEntityName ?? "",
       accountGroupName: client.accountGroupName ?? "",
-      migrationStatus: client.migrationStatus
+      migrationStatus: client.migrationStatus,
+      operatingPackKey:
+        client.operatingPackKey === "PURIVA_OPERATING_PACK_V1" || client.operatingPackKey === "puriva"
+          ? "PURIVA_OPERATING_PACK_V1"
+          : ""
     });
     setIsEditorOpen(true);
   }
@@ -325,6 +332,7 @@ export function ClientsPage({
               headers={[
                 { label: "Client", align: "left" },
                 { label: "Kind", align: "left" },
+                { label: "Pack", align: "left" },
                 { label: "Health", align: "left" },
                 { label: "Projects", align: "right" },
                 { label: "Contact", align: "left" },
@@ -346,6 +354,9 @@ export function ClientsPage({
                       key={`${client.id}-kind`}
                       status={client.clientKind === "OWN_DOMAIN" ? "own-domain" : "agency-client"}
                     />,
+                    <span key={`${client.id}-pack`} className="muted-text">
+                      {client.operatingPackKey ?? "Unbound"}
+                    </span>,
                     <div key={`${client.id}-health`}>
                       <StatusBadge status={health.status} />
                       <div className="muted-text">{formatClientHealthDetail(health)}</div>
@@ -511,6 +522,22 @@ export function ClientsPage({
                 placeholder="https://example.com"
                 type="url"
                 value={draft.website}
+              />
+              <Select
+                fullWidth
+                helperText="Explicit Client Operating Pack binding. Unbound clients do not receive Puriva rules."
+                label="Operating pack"
+                onChange={(event) =>
+                  setDraft((current) => ({
+                    ...current,
+                    operatingPackKey: event.target.value as ClientFormValues["operatingPackKey"]
+                  }))
+                }
+                options={[
+                  { value: "", label: "Unbound (no pack)" },
+                  { value: "PURIVA_OPERATING_PACK_V1", label: "Puriva Operating Pack v1" }
+                ]}
+                value={draft.operatingPackKey}
               />
               <Select
                 fullWidth

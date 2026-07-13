@@ -1,12 +1,10 @@
 import type { AiBudgetSnapshot } from "@dca-os-v1/shared";
-import { PURIVA_MONTHLY_AI_CAP_USD } from "@dca-os-v1/shared";
+import { PURIVA_MONTHLY_AI_CAP_USD, normalizeOperatingPackBindingKey, getClientOperatingPackConfigFromBindingKey } from "@dca-os-v1/shared";
 
 export const AI_BUDGET_GUARD_VERSION = "AI_BUDGET_GUARD_V1";
 
 /** Puriva operating pack hard monthly AI cap (USD) — single source: shared pack constant. */
 export const PURIVA_AI_MONTHLY_CAP_USD = PURIVA_MONTHLY_AI_CAP_USD;
-
-const DEFAULT_MONTHLY_CAP_USD = PURIVA_MONTHLY_AI_CAP_USD;
 
 const STEP_COST_ESTIMATES_USD: Record<string, number> = {
   research_pack: 0.15,
@@ -22,11 +20,16 @@ const STEP_COST_ESTIMATES_USD: Record<string, number> = {
   local_deterministic: 0
 };
 
-export function resolveMonthlyCapUsd(operatingPackKey: string | null | undefined): number {
-  if (operatingPackKey === "puriva" || operatingPackKey === "PURIVA_OPERATING_PACK_V1") {
-    return PURIVA_AI_MONTHLY_CAP_USD;
+/**
+ * Resolve monthly AI cap from an operating-pack binding key.
+ * Unbound (null) and unknown keys return null — no silent Puriva $100 default.
+ */
+export function resolveMonthlyCapUsd(operatingPackKey: string | null | undefined): number | null {
+  const bindingKey = normalizeOperatingPackBindingKey(operatingPackKey);
+  if (!bindingKey) {
+    return null;
   }
-  return DEFAULT_MONTHLY_CAP_USD;
+  return getClientOperatingPackConfigFromBindingKey(bindingKey).monthlyAiCapUsd;
 }
 
 export function estimateStepCostUsd(taskType: string): number {
@@ -50,16 +53,20 @@ export interface AiBudgetGuardInput {
 }
 
 export function buildAiBudgetSnapshot(input: AiBudgetGuardInput): AiBudgetSnapshot {
-  const monthlyCapUsd = resolveMonthlyCapUsd(input.operatingPackKey);
+  const resolvedCap = resolveMonthlyCapUsd(input.operatingPackKey);
+  const packBound = resolvedCap !== null;
+  const monthlyCapUsd = packBound ? resolvedCap : 0;
   const routeCap = input.maxCostUsdPerRun;
   const estimatedStepCostUsd =
     typeof routeCap === "number" && routeCap > 0 ? routeCap : estimateStepCostUsd(input.taskType);
   const workflowStepCount = input.workflowStepCount ?? 1;
   const estimatedWorkflowCostUsd = Number((estimatedStepCostUsd * workflowStepCount).toFixed(4));
   const spentThisPeriodUsd = input.spentThisPeriodUsd ?? 0;
-  const remainingBudgetUsd = Number(Math.max(0, monthlyCapUsd - spentThisPeriodUsd - estimatedStepCostUsd).toFixed(4));
-  const projectedOverBudget = spentThisPeriodUsd + estimatedWorkflowCostUsd > monthlyCapUsd;
-  const killSwitchActive = spentThisPeriodUsd >= monthlyCapUsd;
+  const remainingBudgetUsd = packBound
+    ? Number(Math.max(0, monthlyCapUsd - spentThisPeriodUsd - estimatedStepCostUsd).toFixed(4))
+    : 0;
+  const projectedOverBudget = !packBound || spentThisPeriodUsd + estimatedWorkflowCostUsd > monthlyCapUsd;
+  const killSwitchActive = !packBound || spentThisPeriodUsd >= monthlyCapUsd;
 
   return {
     clientId: input.clientId ?? null,
@@ -82,6 +89,14 @@ export function isAiBudgetBlocked(
   blocked: boolean;
   reason: string | null;
 } {
+  const bindingKey = normalizeOperatingPackBindingKey(budget.operatingPackKey);
+  if (!bindingKey) {
+    return {
+      blocked: true,
+      reason: "Operating pack binding missing or unknown — AI budget is fail-closed until a registered pack is bound."
+    };
+  }
+
   if (budget.killSwitchActive) {
     return {
       blocked: true,

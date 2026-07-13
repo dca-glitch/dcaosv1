@@ -47,7 +47,8 @@ import {
   emitWorkflowBlockedNotification,
   listAiNotificationEvents
 } from "../services/ai-notification-events.service";
-import { buildPurivaIntegrationBoundaryIndex, AI_DELIVERY_DELIVERABLE_STATUSES as CANONICAL_AI_DELIVERY_DELIVERABLE_STATUSES } from "@dca-os-v1/shared";
+import { buildPurivaIntegrationBoundaryIndex, AI_DELIVERY_DELIVERABLE_STATUSES as CANONICAL_AI_DELIVERY_DELIVERABLE_STATUSES, normalizeOperatingPackBindingKey } from "@dca-os-v1/shared";
+import { resolveClientOperatingPack } from "../core/client-operating-pack.resolver";
 import { getPurivaAiPolicyProfile } from "../core/puriva-ai-policy-profile";
 import { getGoogleDriveExportPlanningSnapshot } from "../services/google-drive-export-planning.service";
 import { getExternalIntegrationsReadinessSnapshot } from "../core/external-integrations-readiness.service";
@@ -587,6 +588,21 @@ function getClientInput(body: unknown): ClientInputRequest | null {
     return null;
   }
 
+  let operatingPackKey: string | null | undefined = undefined;
+  if (Object.prototype.hasOwnProperty.call(value, "operatingPackKey")) {
+    if (value.operatingPackKey === null || value.operatingPackKey === "") {
+      operatingPackKey = null;
+    } else if (typeof value.operatingPackKey === "string") {
+      const normalized = normalizeOperatingPackBindingKey(value.operatingPackKey);
+      if (!normalized) {
+        return null;
+      }
+      operatingPackKey = normalized;
+    } else {
+      return null;
+    }
+  }
+
   return {
     name,
     email: getOptionalString(value.email, SHORT_TEXT_FIELD_MAX_LENGTH),
@@ -601,7 +617,8 @@ function getClientInput(body: unknown): ClientInputRequest | null {
     migrationStatus:
       value.migrationStatus === "PLANNED_LICENSEE_TENANT" || value.migrationStatus === "MIGRATED" || value.migrationStatus === "ACTIVE"
         ? value.migrationStatus
-        : undefined
+        : undefined,
+    operatingPackKey
   };
 }
 
@@ -1470,7 +1487,34 @@ export const previewAiMaterialRoutingHandler: RequestHandler = async (req, res) 
       : undefined;
 
     const clientId = typeof body.clientId === "string" ? body.clientId : null;
-    const operatingPackKey = typeof body.operatingPackKey === "string" ? body.operatingPackKey : null;
+    let operatingPackKey: string | null = null;
+    let packResolverSource: string = "unbound";
+    if (clientId) {
+      const resolved = await resolveClientOperatingPack({ tenantId, clientId });
+      if (resolved.ok) {
+        operatingPackKey = resolved.operatingPackKey;
+        packResolverSource = resolved.resolverSource;
+      } else if (resolved.reason === "CLIENT_NOT_FOUND") {
+        res.status(404).json(failure("CLIENT_NOT_FOUND", "Client was not found in the active tenant."));
+        return;
+      } else if (resolved.reason === "PACK_KEY_UNKNOWN") {
+        res.status(400).json(
+          failure("OPERATING_PACK_KEY_UNKNOWN", "Client operating pack binding is unknown and fail-closed.")
+        );
+        return;
+      } else {
+        operatingPackKey = null;
+        packResolverSource = `database_binding:${resolved.reason}`;
+      }
+    } else if (typeof body.operatingPackKey === "string") {
+      const normalized = normalizeOperatingPackBindingKey(body.operatingPackKey);
+      if (!normalized) {
+        res.status(400).json(failure("OPERATING_PACK_KEY_UNKNOWN", "operatingPackKey is not a registered binding key."));
+        return;
+      }
+      operatingPackKey = normalized;
+      packResolverSource = "request_override";
+    }
     const stepReference = typeof body.stepReference === "string" ? body.stepReference : `${workflow}:${step}`;
     const workflowRunId = typeof body.workflowRunId === "string" ? body.workflowRunId : null;
 
@@ -1509,6 +1553,7 @@ export const previewAiMaterialRoutingHandler: RequestHandler = async (req, res) 
         workflow,
         step,
         operatingPackKey,
+        packResolverSource,
         blockedReason: plan.blockedReason,
         modelRouting: {
           policyVersion: plan.preview.modelRouting.policyVersion,
@@ -1589,13 +1634,38 @@ export const workflowDryRunHandler: RequestHandler = async (req, res) => {
     const spentThisPeriodUsd = await sumSpentUsdForPeriod({ tenantId, clientId });
     const briefApproved = body.briefApproved === false ? false : true;
 
+    let operatingPackKey: string | null = null;
+    if (clientId) {
+      const resolved = await resolveClientOperatingPack({ tenantId, clientId });
+      if (resolved.ok) {
+        operatingPackKey = resolved.operatingPackKey;
+      } else if (resolved.reason === "CLIENT_NOT_FOUND") {
+        res.status(404).json(failure("CLIENT_NOT_FOUND", "Client was not found in the active tenant."));
+        return;
+      } else if (resolved.reason === "PACK_KEY_UNKNOWN") {
+        res.status(400).json(
+          failure("OPERATING_PACK_KEY_UNKNOWN", "Client operating pack binding is unknown and fail-closed.")
+        );
+        return;
+      } else {
+        operatingPackKey = null;
+      }
+    } else if (typeof body.operatingPackKey === "string") {
+      const normalized = normalizeOperatingPackBindingKey(body.operatingPackKey);
+      if (!normalized) {
+        res.status(400).json(failure("OPERATING_PACK_KEY_UNKNOWN", "operatingPackKey is not a registered binding key."));
+        return;
+      }
+      operatingPackKey = normalized;
+    }
+
     const adapterResult = planWorkflowStepWithOrchestrator({
       workflow,
       step,
       agentRole: agentRole as import("@dca-os-v1/shared").AiAgentRole,
       taskType: taskType as import("@dca-os-v1/shared").AiTaskType,
       clientId,
-      operatingPackKey: typeof body.operatingPackKey === "string" ? body.operatingPackKey : "puriva",
+      operatingPackKey,
       briefApproved,
       spentThisPeriodUsd,
       workflowReference: typeof body.workflowReference === "string" ? body.workflowReference : workflow,
