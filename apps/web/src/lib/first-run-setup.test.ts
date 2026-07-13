@@ -1,18 +1,17 @@
-import assert from "node:assert/strict";
-import { describe, it } from "node:test";
+import { describe, expect, it } from "vitest";
 import { deriveFirstRunSetupState } from "./first-run-setup";
 
 describe("deriveFirstRunSetupState", () => {
   it("skips setup for non-managers", () => {
     const state = deriveFirstRunSetupState(null, null, false);
-    assert.equal(state.setupIncomplete, false);
+    expect(state.setupIncomplete).toBe(false);
   });
 
   it("requires company profile and first client when empty", () => {
     const state = deriveFirstRunSetupState({ companyProfile: null }, { clients: [] }, true);
-    assert.equal(state.needsCompanyProfile, true);
-    assert.equal(state.needsFirstClient, true);
-    assert.equal(state.setupIncomplete, true);
+    expect(state.needsCompanyProfile).toBe(true);
+    expect(state.needsFirstClient).toBe(true);
+    expect(state.setupIncomplete).toBe(true);
   });
 
   it("requires only first client when company exists", () => {
@@ -21,9 +20,9 @@ describe("deriveFirstRunSetupState", () => {
       { clients: [] },
       true
     );
-    assert.equal(state.needsCompanyProfile, false);
-    assert.equal(state.needsFirstClient, true);
-    assert.equal(state.setupIncomplete, true);
+    expect(state.needsCompanyProfile).toBe(false);
+    expect(state.needsFirstClient).toBe(true);
+    expect(state.setupIncomplete).toBe(true);
   });
 
   it("is complete when company and active client exist", () => {
@@ -32,7 +31,7 @@ describe("deriveFirstRunSetupState", () => {
       { clients: [{ id: "c-1", isArchived: false }] },
       true
     );
-    assert.equal(state.setupIncomplete, false);
+    expect(state.setupIncomplete).toBe(false);
   });
 
   it("ignores archived clients for first-client check", () => {
@@ -41,6 +40,6 @@ describe("deriveFirstRunSetupState", () => {
       { clients: [{ id: "c-1", isArchived: true }] },
       true
     );
-    assert.equal(state.needsFirstClient, true);
+    expect(state.needsFirstClient).toBe(true);
   });
 });
