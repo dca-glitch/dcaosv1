@@ -135,6 +135,10 @@ import type {
 } from "./core.types";
 import type { AuthResolvedSessionContext } from "../auth/types";
 import {
+  hasArticleImageFinalReference,
+  hasArticleImagePreviewReference
+} from "./article-image-reference";
+import {
   getPrivateStorageDownloadReference,
   putPrivateStorageObject
 } from "../storage/private-storage.service";
@@ -2563,20 +2567,6 @@ function normalizeAiDeliveryArticleImageStatus(value: string | null | undefined)
   return value && AI_DELIVERY_ARTICLE_IMAGE_STATUSES.has(value) ? value as AiDeliveryArticleImageStatus : "DRAFT";
 }
 
-function hasArticleImagePreviewReference(image: {
-  previewImageUrl?: string | null;
-  finalImageUrl?: string | null;
-}) {
-  return Boolean((image.previewImageUrl ?? "").trim() || (image.finalImageUrl ?? "").trim());
-}
-
-function hasArticleImageFinalReference(image: {
-  finalImageUrl?: string | null;
-  storageKey?: string | null;
-}) {
-  return Boolean((image.finalImageUrl ?? "").trim() || (image.storageKey ?? "").trim());
-}
-
 function toAiDeliveryArticleImageSummary(image: any) {
   return {
     id: image.id,
@@ -2760,7 +2750,10 @@ async function transitionAiDeliveryArticleImageStatus(
       throwAiDeliveryConflict("AI_DELIVERY_ARTICLE_IMAGE_ACTION_BLOCKED", `Article image action is not allowed from status ${existing.status}.`);
     }
     if (options.requiresPreview && !hasArticleImagePreviewReference(existing)) {
-      throwAiDeliveryConflict("AI_DELIVERY_ARTICLE_IMAGE_PREVIEW_REFERENCE_REQUIRED", "Preview or final image reference is required before this action.");
+      throwAiDeliveryConflict(
+        "AI_DELIVERY_ARTICLE_IMAGE_PREVIEW_REFERENCE_REQUIRED",
+        "Preview URL, final URL, or private storage asset is required before this action."
+      );
     }
     if (options.requiresFinal && !hasArticleImageFinalReference(existing)) {
       throwAiDeliveryConflict("AI_DELIVERY_ARTICLE_IMAGE_FINAL_REFERENCE_REQUIRED", "Final image URL or storage key is required before this action.");

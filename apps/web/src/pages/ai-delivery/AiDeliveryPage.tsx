@@ -127,6 +127,8 @@ import {
   getDeliverableExportState,
   getErrorMessage,
   getMostRecentReview,
+  hasArticleImageFinalReferenceUi,
+  hasArticleImagePreviewReferenceUi,
   parseWorkflowRunResultPreview
 } from "./ai-delivery-formatters";
 
@@ -801,18 +803,18 @@ export function AiDeliveryPage({
   }, [activeContentDraftRecord]);
   const articleImageActionGuidance = useMemo(() => {
     if (!activeArticleImageRecord) {
-      return "Preview-ready requires a preview or final reference. Final-ready requires a final URL or storage key.";
+      return "Preview-ready requires a preview URL, final URL, or private stored asset. Final-ready requires a final URL or private stored asset.";
     }
     if (activeArticleImageRecord.isArchived) {
       return "Archived image records remain visible for admin history and cannot use active workflow actions.";
     }
-    const hasPreviewReference = Boolean((activeArticleImageRecord.previewImageUrl ?? "").trim() || (activeArticleImageRecord.finalImageUrl ?? "").trim());
-    const hasFinalReference = Boolean((activeArticleImageRecord.finalImageUrl ?? "").trim() || activeArticleImageRecord.hasDocument);
+    const hasPreviewReference = hasArticleImagePreviewReferenceUi(activeArticleImageRecord);
+    const hasFinalReference = hasArticleImageFinalReferenceUi(activeArticleImageRecord);
     if (!hasPreviewReference) {
-      return "Mark preview ready and Request changes require a preview or final reference on the active image record.";
+      return "Mark preview ready, Request changes, and Approve require a preview URL, final URL, or private stored asset on the active image record.";
     }
     if (!hasFinalReference) {
-      return "Mark final ready requires either a final image URL or storage key on the active image record.";
+      return "Mark final ready requires either a final image URL or private stored asset on the active image record.";
     }
     return "Use the image action buttons only after the linked draft and the required preview/final references are recorded.";
   }, [activeArticleImageRecord]);

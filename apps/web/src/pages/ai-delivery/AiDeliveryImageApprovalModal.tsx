@@ -7,6 +7,10 @@ import {
   AiDeliveryInlineLoading,
   AiDeliveryInlineNotice,
 } from "./ai-delivery-shared-ui";
+import {
+  hasArticleImageFinalReferenceUi,
+  hasArticleImagePreviewReferenceUi,
+} from "./ai-delivery-formatters";
 import "./ai-delivery-modals.css";
 import type {
   AiDeliveryArticleImageFormValues,
@@ -364,7 +368,9 @@ export function AiDeliveryImageApprovalModal({
                 <button
                   className="secondary-action"
                   disabled={
-                    saving || !(activeRecord.previewImageUrl ?? "").trim() || activeRecord.status === "PREVIEW_READY"
+                    saving ||
+                    !hasArticleImagePreviewReferenceUi(activeRecord) ||
+                    activeRecord.status === "PREVIEW_READY"
                   }
                   onClick={() => void onMarkPreviewReady(project.id, activeRecord.id)}
                   type="button"
@@ -375,10 +381,7 @@ export function AiDeliveryImageApprovalModal({
               {activeRecord && !activeRecord.isArchived ? (
                 <button
                   className="secondary-action"
-                  disabled={
-                    saving ||
-                    !((activeRecord.previewImageUrl ?? "").trim() || (activeRecord.finalImageUrl ?? "").trim())
-                  }
+                  disabled={saving || !hasArticleImagePreviewReferenceUi(activeRecord)}
                   onClick={() => void onRequestChanges(project.id, activeRecord.id)}
                   type="button"
                 >
@@ -390,7 +393,7 @@ export function AiDeliveryImageApprovalModal({
                   className="secondary-action"
                   disabled={
                     saving ||
-                    !((activeRecord.previewImageUrl ?? "").trim() || (activeRecord.finalImageUrl ?? "").trim()) ||
+                    !hasArticleImagePreviewReferenceUi(activeRecord) ||
                     activeRecord.status === "APPROVED"
                   }
                   onClick={() => void onApprove(project.id, activeRecord.id)}
@@ -404,7 +407,7 @@ export function AiDeliveryImageApprovalModal({
                   className="secondary-action"
                   disabled={
                     saving ||
-                    !((activeRecord.finalImageUrl ?? "").trim() || activeRecord.hasDocument) ||
+                    !hasArticleImageFinalReferenceUi(activeRecord) ||
                     activeRecord.status === "FINAL_READY"
                   }
                   onClick={() => void onMarkFinalReady(project.id, activeRecord.id)}
@@ -438,7 +441,11 @@ export function AiDeliveryImageApprovalModal({
                     {!image.isArchived ? (
                       <button
                         className="secondary-action"
-                        disabled={saving || !image.previewImageUrl || image.status === "PREVIEW_READY"}
+                        disabled={
+                          saving ||
+                          !hasArticleImagePreviewReferenceUi(image) ||
+                          image.status === "PREVIEW_READY"
+                        }
                         onClick={() => void onMarkPreviewReady(project.id, image.id)}
                         type="button"
                       >
@@ -448,7 +455,7 @@ export function AiDeliveryImageApprovalModal({
                     {!image.isArchived ? (
                       <button
                         className="secondary-action"
-                        disabled={saving || !(image.previewImageUrl || image.finalImageUrl)}
+                        disabled={saving || !hasArticleImagePreviewReferenceUi(image)}
                         onClick={() => void onRequestChanges(project.id, image.id)}
                         type="button"
                       >
@@ -458,7 +465,11 @@ export function AiDeliveryImageApprovalModal({
                     {!image.isArchived ? (
                       <button
                         className="secondary-action"
-                        disabled={saving || !(image.previewImageUrl || image.finalImageUrl) || image.status === "APPROVED"}
+                        disabled={
+                          saving ||
+                          !hasArticleImagePreviewReferenceUi(image) ||
+                          image.status === "APPROVED"
+                        }
                         onClick={() => void onApprove(project.id, image.id)}
                         type="button"
                       >
@@ -469,7 +480,9 @@ export function AiDeliveryImageApprovalModal({
                       <button
                         className="secondary-action"
                         disabled={
-                          saving || !(image.finalImageUrl || image.hasDocument) || image.status === "FINAL_READY"
+                          saving ||
+                          !hasArticleImageFinalReferenceUi(image) ||
+                          image.status === "FINAL_READY"
                         }
                         onClick={() => void onMarkFinalReady(project.id, image.id)}
                         type="button"

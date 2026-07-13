@@ -13,6 +13,27 @@ export function formatOptionalDate(value: string | null | undefined): string {
   return value ? new Date(value).toLocaleString() : "Not set";
 }
 
+/** Preview/approve/request-changes: URL fields or private hasDocument (storageKey). */
+export function hasArticleImagePreviewReferenceUi(image: {
+  previewImageUrl?: string | null;
+  finalImageUrl?: string | null;
+  hasDocument?: boolean;
+}): boolean {
+  return Boolean(
+    (image.previewImageUrl ?? "").trim() ||
+      (image.finalImageUrl ?? "").trim() ||
+      image.hasDocument
+  );
+}
+
+/** Final-ready: final URL or private hasDocument. */
+export function hasArticleImageFinalReferenceUi(image: {
+  finalImageUrl?: string | null;
+  hasDocument?: boolean;
+}): boolean {
+  return Boolean((image.finalImageUrl ?? "").trim() || image.hasDocument);
+}
+
 export function formatPreview(value: string | null | undefined): string {
   const text = (value ?? "").trim();
   if (!text) return "Not set";

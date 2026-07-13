@@ -1,6 +1,6 @@
 # DCA OS Lite — Status (Source of Truth)
 
-**Last updated:** 2026-07-13 (AI Delivery content-to-draft execution bridge LOCAL IMPLEMENTED / FAKE-PROVIDER AND REAL-PRISMA PROVEN; staging connected workflow not proven; production frozen)
+**Last updated:** 2026-07-13 (AI Delivery storageKey-only product image approval gap closed locally; bounded staging live proof COMPLETE / PASS; product approve staging proof pending deploy)
 **Authoritative project control:** [`docs/project-control/AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md`](./project-control/AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md)
 **AI Policy / provider routing:** [`docs/architecture/AI_POLICY_PROVIDER_ROUTING.md`](./architecture/AI_POLICY_PROVIDER_ROUTING.md)
 **PRE-STAGING closure:** 2026-07-10 (local/no-live audit + safe fixes; see [`docs/operator/PRE_STAGING_CLOSURE_VERDICT.md`](./operator/PRE_STAGING_CLOSURE_VERDICT.md))
@@ -305,6 +305,24 @@ Production PostgreSQL role password and `DATABASE_URL` were rotated, the product
 | Local proof | Isolated ephemeral loopback PostgreSQL; fake OpenAI/R2/WordPress/email; full CLI sequence including duplicate calls and cleanup |
 | Not claimed | Staging bridge deployment; connected staging execution; real provider calls; production readiness |
 | Staging baseline | Artifact `8a506c5` and additive migration are already deployed/applied; bridge commit remains local/PR-only until a separate owner deployment gate |
+
+## AI Delivery bounded staging live proof + product approval gap (2026-07-13)
+
+**Result:** KEEP — connected staging live proof **COMPLETE / PASS**; product API storageKey-only approve previously **NOT_PROVEN**, now **CLOSED locally** (staging re-proof after deploy).
+
+| Item | State |
+|------|--------|
+| Bounded staging live proof | **COMPLETE / PASS** — prepare → Stage A (1× OpenAI `gpt-image-1` + 1× private R2) → owner approval of exact image ID → Stage B (1× WP draft + 1× email) → idempotency → exact cleanup |
+| Proof correlation | `c0cc2bd5-f6ff-4151-bccc-97b1b3222198` |
+| Workflow run / article image | `7648ac50-…` / `10422e0c-…` |
+| Proof-only recipient override | Commit `25f846e` — CLI/env override of Stage B `ownerRecipient.email` only; normal app email resolution unchanged |
+| Owner approval of exact image ID | **PROVEN** (owner chat) |
+| Product API `/approve` during that live proof | **NOT_PROVEN** — Stage A had `storageKey` only; URL-only preview gate blocked product approve; Stage B used a status-only DB update (not product-API proof) |
+| Product gap fix (this closeout) | `hasArticleImagePreviewReference` accepts private `storageKey` (aligned with final-ready); admin UI enables Approve when `hasDocument`; R2 stays private; signed URLs remain ephemeral via existing download/download-reference |
+| Local regression | Unit + web tests for Stage A shape; optional integration when `AUTH_SEED_TEST_PASSWORD` set |
+| Narrow staging product-approve proof | Run after controlled staging deploy of this fix — no full OpenAI→WP→email rerun required |
+| Production | **Frozen** — unchanged |
+| Deferred non-blocking | GA4/GSC credentials; in-system notification E2E; production release — email remains priority notification path |
 
 ## Staging email one-send proof closeout (2026-07-12)
 

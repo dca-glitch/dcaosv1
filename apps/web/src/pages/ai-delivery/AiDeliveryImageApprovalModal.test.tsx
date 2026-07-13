@@ -296,6 +296,33 @@ describe("AiDeliveryImageApprovalModal", () => {
     expect(onEdit).toHaveBeenCalledWith(image);
   });
 
+  it("enables Approve for storageKey-only Stage A shape via hasDocument", () => {
+    const onApprove = vi.fn();
+    const stageA: AiDeliveryArticleImageSummary = {
+      ...image,
+      status: "PREVIEW_READY",
+      previewImageUrl: null,
+      finalImageUrl: null,
+      hasDocument: true,
+    };
+    render(
+      <AiDeliveryImageApprovalModal
+        {...baseProps({
+          form: { ...populatedForm, previewImageUrl: "", finalImageUrl: "", storageKey: "" },
+          editorId: stageA.id,
+          activeRecord: stageA,
+          articleImages: [stageA],
+          onApprove,
+        })}
+      />,
+    );
+    const dialog = getDialog();
+    const approveButtons = within(dialog).getAllByRole("button", { name: "Approve image" });
+    expect(approveButtons[0]).not.toBeDisabled();
+    fireEvent.click(approveButtons[0]!);
+    expect(onApprove).toHaveBeenCalledWith("p1", "img-1");
+  });
+
   it("does not render raw storage keys from hasDocument records or secrets", () => {
     const secretKey = "private/tenant/secret-storage-key-abc123";
     render(
