@@ -1,6 +1,6 @@
 # DCA OS Lite — Status (Source of Truth)
 
-**Last updated:** 2026-07-13 (AI Delivery storageKey-only product image approval gap closed locally; bounded staging live proof COMPLETE / PASS; product approve staging proof pending deploy)
+**Last updated:** 2026-07-13 (storageKey-only product image approval CLOSED; staging deploy `57f1881` PASS; narrow product `/approve` PROVEN; production frozen)
 **Authoritative project control:** [`docs/project-control/AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md`](./project-control/AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md)
 **AI Policy / provider routing:** [`docs/architecture/AI_POLICY_PROVIDER_ROUTING.md`](./architecture/AI_POLICY_PROVIDER_ROUTING.md)
 **PRE-STAGING closure:** 2026-07-10 (local/no-live audit + safe fixes; see [`docs/operator/PRE_STAGING_CLOSURE_VERDICT.md`](./operator/PRE_STAGING_CLOSURE_VERDICT.md))
@@ -320,7 +320,8 @@ Production PostgreSQL role password and `DATABASE_URL` were rotated, the product
 | Product API `/approve` during that live proof | **NOT_PROVEN** — Stage A had `storageKey` only; URL-only preview gate blocked product approve; Stage B used a status-only DB update (not product-API proof) |
 | Product gap fix (this closeout) | `hasArticleImagePreviewReference` accepts private `storageKey` (aligned with final-ready); admin UI enables Approve when `hasDocument`; R2 stays private; signed URLs remain ephemeral via existing download/download-reference |
 | Local regression | Unit + web tests for Stage A shape; optional integration when `AUTH_SEED_TEST_PASSWORD` set |
-| Narrow staging product-approve proof | Run after controlled staging deploy of this fix — no full OpenAI→WP→email rerun required |
+| Narrow staging product-approve proof | **PROVEN** on staging `57f1881` — correlation `approve-gap-a637cdad-…`; product `POST …/approve` → `APPROVED`; URLs remained null; no direct DB status update; OpenAI/WP/email = 0; exact R2+DB cleanup residual 0 |
+| Staging deploy | Artifact `/opt/dca/staging-artifacts/57f1881`; API recreated; DB/PG identity unchanged; migration SKIP; live flags false; production unchanged |
 | Production | **Frozen** — unchanged |
 | Deferred non-blocking | GA4/GSC credentials; in-system notification E2E; production release — email remains priority notification path |
 
