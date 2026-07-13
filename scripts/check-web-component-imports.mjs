@@ -37,6 +37,7 @@ const DEFAULT_BASELINE = path.join(
 );
 
 const LEGACY_ROOT_FILES = new Set([
+  // Removed after Modal Wave — recreating this path and importing it remains forbidden.
   "apps/web/src/components/Modal.tsx"
 ]);
 

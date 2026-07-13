@@ -1,5 +1,5 @@
 import { type FormEvent, useMemo, useState } from "react";
-import { Modal } from "../../components/Modal";
+import { Modal } from "../../components/ui";
 import {
   Button,
   EmptyState,
@@ -447,7 +447,7 @@ export function BillsPage({
       </SectionPanel>
 
       {isBillEditorOpen ? (
-        <Modal
+        <Modal isOpen
           eyebrow={billEditorId ? "Edit" : "Create"}
           onClose={() => {
             setBillEditorId(null);
@@ -598,7 +598,7 @@ export function BillsPage({
       ) : null}
 
       {isVendorEditorOpen ? (
-        <Modal eyebrow={vendorEditorId ? "Edit" : "Create"} onClose={() => setIsVendorEditorOpen(false)} size="sm" title={vendorEditorId ? "Edit Vendor" : "New Vendor"}>
+        <Modal isOpen eyebrow={vendorEditorId ? "Edit" : "Create"} onClose={() => setIsVendorEditorOpen(false)} size="sm" title={vendorEditorId ? "Edit Vendor" : "New Vendor"}>
           <form className="entity-form" onSubmit={handleVendorSubmit}>
             <div className="field-grid">
               <Input

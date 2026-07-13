@@ -1,5 +1,5 @@
 import React from "react";
-import { Modal } from "../../components/Modal";
+import { Modal } from "../../components/ui";
 import {
   AiDeliveryInlineAlert,
   AiDeliveryInlineEmpty,
@@ -64,7 +64,7 @@ export function AiDeliveryBriefModal({
   const editable = canEdit && canSave;
 
   return (
-    <Modal onClose={onClose} size="lg" title="AI Delivery Brief">
+    <Modal isOpen={isOpen} onClose={onClose} size="lg" title="AI Delivery Brief">
       {loading ? (
         <AiDeliveryInlineLoading label="Loading brief" />
       ) : project ? (

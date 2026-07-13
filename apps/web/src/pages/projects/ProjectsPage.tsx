@@ -1,5 +1,5 @@
 import { type FormEvent, useMemo, useState } from "react";
-import { Modal } from "../../components/Modal";
+import { Modal } from "../../components/ui";
 import {
   Button,
   EmptyState,
@@ -336,7 +336,7 @@ export function ProjectsPage({
       )}
 
       {pendingLifecycle ? (
-        <Modal
+        <Modal isOpen
           eyebrow="Confirm"
           onClose={() => {
             if (!lifecycleBusy) {
@@ -371,7 +371,7 @@ export function ProjectsPage({
       ) : null}
 
       {isEditorOpen ? (
-        <Modal onClose={closeEditor} title={editorProjectId ? "Edit Project" : "Add Project"}>
+        <Modal isOpen onClose={closeEditor} title={editorProjectId ? "Edit Project" : "Add Project"}>
           <form className="entity-form" onSubmit={handleSubmit}>
             <p className="muted-text">
               Used by admin team to organize work and billing. Archived items are hidden from active work but can be

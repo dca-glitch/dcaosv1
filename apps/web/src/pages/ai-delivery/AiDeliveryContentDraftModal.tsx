@@ -1,5 +1,5 @@
 import React from "react";
-import { Modal } from "../../components/Modal";
+import { Modal } from "../../components/ui";
 import { StatusBadge } from "../../components/ui";
 import {
   AiDeliveryInlineAlert,
@@ -118,7 +118,7 @@ export function AiDeliveryContentDraftModal({
   const activeDraftCount = contentDrafts.filter((draft) => !draft.isArchived).length;
 
   return (
-    <Modal onClose={onClose} size="lg" title="AI Content Production">
+    <Modal isOpen={isOpen} onClose={onClose} size="lg" title="AI Content Production">
       {loading ? (
         <AiDeliveryInlineLoading label="Loading content drafts" />
       ) : project ? (

@@ -1,6 +1,6 @@
 import { type FormEvent, useMemo, useState } from "react";
 import { ClientAccessPanel } from "../../components/clients/ClientAccessPanel";
-import { Modal } from "../../components/Modal";
+import { Modal } from "../../components/ui";
 import {
   Button,
   EmptyState,
@@ -410,7 +410,7 @@ export function ClientsPage({
       )}
 
       {pendingLifecycle ? (
-        <Modal
+        <Modal isOpen
           eyebrow={pendingLifecycle.action === "blocked" ? "Blocked" : "Confirm"}
           onClose={() => {
             if (!lifecycleBusy) {
@@ -463,7 +463,7 @@ export function ClientsPage({
       ) : null}
 
       {isEditorOpen ? (
-        <Modal
+        <Modal isOpen
           eyebrow={editorClientId ? "Edit" : "Create"}
           onClose={closeEditor}
           size="md"

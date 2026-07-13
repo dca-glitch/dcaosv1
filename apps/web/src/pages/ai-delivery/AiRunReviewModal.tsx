@@ -1,6 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { Modal } from "../../components/Modal";
-import { Alert, Button, Spinner, StatusBadge, Tabs } from "../../components/ui";
+import { Alert, Button, Modal, Spinner, StatusBadge, Tabs } from "../../components/ui";
 import { AiDeliveryWorkflowHistoryPanel } from "./AiDeliveryWorkflowHistoryPanel";
 import "./ai-delivery-modals.css";
 import type {
@@ -113,7 +112,7 @@ export function AiRunReviewModal({
   );
 
   return (
-    <Modal footer={footer} onClose={onClose} size="lg" title="Workflow Runs">
+    <Modal isOpen={isOpen} footer={footer} onClose={onClose} size="lg" title="Workflow Runs">
       <div className="ai-run-review-modal ai-delivery-lane-modal stack gap-md">
         <div className="ai-run-review-modal__header-meta">
           <p className="ai-run-review-modal__eyebrow muted-text m-0">AI Run Review</p>

@@ -1,5 +1,5 @@
 import { type FormEvent, useMemo, useState } from "react";
-import { Modal } from "../../components/Modal";
+import { Modal } from "../../components/ui";
 import {
   Button,
   EmptyState,
@@ -407,7 +407,7 @@ export function CreditNotesPage({
       />
 
       {isEditorOpen ? (
-        <Modal eyebrow={editorId ? "Edit" : "Create"} onClose={resetEditor} size="lg" title={editorId ? "Edit Credit Note" : "New Credit Note"}>
+        <Modal isOpen eyebrow={editorId ? "Edit" : "Create"} onClose={resetEditor} size="lg" title={editorId ? "Edit Credit Note" : "New Credit Note"}>
           <form className="entity-form" onSubmit={handleSubmit}>
             <p className="muted-text">Used to document a refund, correction, or billing adjustment. This does not register a payment by itself.</p>
             <ModalActions

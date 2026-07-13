@@ -1,63 +1,65 @@
-import { useId, useRef, type HTMLAttributes, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import { createPortal } from "react-dom";
-import { useOverlayA11y } from "../../design-system/useOverlayA11y";
+import DSModal from "../../design-system/components/Modal";
+import type { ModalSize as DSModalSize } from "../../design-system/components/Modal";
 
-export type ModalProps = HTMLAttributes<HTMLDivElement> & {
+/**
+ * Canonical product Modal — singular public API.
+ * Underlying shell: design-system Modal + portal to document.body.
+ * Do not import design-system Modal from pages.
+ */
+export type ModalSize = "sm" | "md" | "lg";
+
+export type ModalProps = {
   isOpen: boolean;
   onClose: () => void;
   title: string;
   children: ReactNode;
   footer?: ReactNode;
+  /** Product sizes (mapped to DS widths to preserve live layout). */
+  size?: ModalSize;
+  /** Product eyebrow → DS subtitle. */
+  eyebrow?: string;
+  /** Optional visible description; mapped to DS subtitle when eyebrow is absent. */
+  description?: string;
+  /** Backdrop click closes when true (default). */
+  closeOnBackdrop?: boolean;
 };
 
-/** Product Modal shell — preserves isOpen/onClose/title/footer API with overlay a11y. */
-export function Modal({ isOpen, onClose, title, children, footer, className, ...props }: ModalProps) {
-  const titleId = useId();
-  const panelRef = useRef<HTMLDivElement>(null);
-  useOverlayA11y(isOpen, onClose, panelRef);
+/** Preserve existing product width contract used by all live consumers. */
+const sizeMap: Record<ModalSize, DSModalSize> = {
+  sm: "md",
+  md: "xl",
+  lg: "full",
+};
 
-  if (!isOpen) {
+export function Modal({
+  isOpen,
+  onClose,
+  title,
+  children,
+  footer,
+  size = "md",
+  eyebrow,
+  description,
+  closeOnBackdrop = true,
+}: ModalProps) {
+  if (typeof document === "undefined") {
     return null;
   }
 
   return createPortal(
-    <div
-      className="modal-backdrop"
-      onClick={onClose}
-      role="presentation"
-      style={{
-        background: "var(--ds-modal-backdrop)",
-        backdropFilter: "blur(2px)",
-      }}
+    <DSModal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={title}
+      subtitle={eyebrow ?? description}
+      footer={footer}
+      size={sizeMap[size]}
+      closeOnBackdrop={closeOnBackdrop}
     >
-      <div
-        ref={panelRef}
-        aria-modal="true"
-        aria-labelledby={titleId}
-        className={["modal", "modal-panel", className].filter(Boolean).join(" ")}
-        role="dialog"
-        tabIndex={-1}
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          borderRadius: "var(--ds-radius-xl)",
-          border: "1px solid var(--ds-modal-border)",
-          background: "var(--ds-modal-gradient)",
-          boxShadow: "var(--ds-shadow-modal)",
-          maxHeight: "88vh",
-          overflow: "hidden",
-        }}
-        {...props}
-      >
-        <div className="modal-header">
-          <h2 id={titleId}>{title}</h2>
-          <button aria-label="Close" className="modal-close" onClick={onClose} type="button">
-            ✕
-          </button>
-        </div>
-        <div className="modal-body">{children}</div>
-        {footer ? <div className="modal-footer">{footer}</div> : null}
-      </div>
-    </div>,
+      {children}
+    </DSModal>,
     document.body,
   );
 }

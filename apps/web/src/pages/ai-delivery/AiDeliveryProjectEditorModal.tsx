@@ -1,5 +1,5 @@
 import React, { FormEvent } from "react";
-import { Modal } from "../../components/Modal";
+import { Modal } from "../../components/ui";
 import type { ClientSummary } from "../clients/ClientsPage";
 import type {
   AiDeliveryProjectFormValues,
@@ -48,7 +48,7 @@ export function AiDeliveryProjectEditorModal({
   }
 
   return (
-    <Modal onClose={onClose} title={isEdit ? "Edit AI Delivery" : "Add AI Delivery"}>
+    <Modal isOpen={isOpen} onClose={onClose} title={isEdit ? "Edit AI Delivery" : "Add AI Delivery"}>
       <form className="entity-form ai-delivery-modal-panel" onSubmit={onSubmit}>
         <div className="field-grid">
           <label>

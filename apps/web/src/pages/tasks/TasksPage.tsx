@@ -1,5 +1,5 @@
 import { type FormEvent, useMemo, useState } from "react";
-import { Modal } from "../../components/Modal";
+import { Modal } from "../../components/ui";
 import { Alert, Button, Input, ModalActions, PageHeader, Select, Spinner, StatusBadge, Table, Textarea } from "../../components/ui";
 import type { ProjectSummary } from "../projects/ProjectsPage";
 
@@ -280,7 +280,7 @@ export function TasksPage({ tasks, projects, canEdit, error, loading, onArchive,
       )}
 
       {isEditorOpen ? (
-        <Modal
+        <Modal isOpen
           eyebrow={editorTaskId ? "Edit" : "Create"}
           onClose={closeEditor}
           size="md"

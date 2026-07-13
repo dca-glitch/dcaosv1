@@ -4,8 +4,7 @@ import type {
   AiKnowledgeItemInputRequest,
   AiKnowledgeItemSummary
 } from "@dca-os-v1/shared";
-import { Modal } from "../../components/Modal";
-import { SectionPanel, Spinner, StatusBadge } from "../../components/ui";
+import { Modal, SectionPanel, Spinner, StatusBadge } from "../../components/ui";
 import type { AiDeliveryProjectSummary } from "./AiDeliveryPage";
 
 type AiKnowledgeContextPanelProps = {
@@ -156,7 +155,7 @@ export function AiKnowledgeContextPanel({
   }
 
   return (
-    <Modal onClose={onClose} title="AI Knowledge & Context Preview">
+    <Modal isOpen onClose={onClose} title="AI Knowledge & Context Preview">
       <div className="ai-knowledge-context-panel stack gap-md">
         {error ? <KnowledgeInlineError message={error} /> : null}
         {loading ? <KnowledgeInlineLoading label="Loading knowledge items" /> : null}

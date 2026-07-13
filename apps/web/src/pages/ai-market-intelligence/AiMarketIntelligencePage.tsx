@@ -8,7 +8,7 @@ import type {
   MarketIntelligenceSourceSummary,
   MarketIntelligenceSummaryRecord
 } from "@dca-os-v1/shared";
-import { Modal } from "../../components/Modal";
+import { Modal } from "../../components/ui";
 import {
   EmptyState,
   ErrorState,
@@ -1281,7 +1281,7 @@ export function AiMarketIntelligencePage({ clients }: AiMarketIntelligencePagePr
       </div>
 
       {showProjectModal ? (
-        <Modal onClose={() => setShowProjectModal(false)} title="Create research project">
+        <Modal isOpen onClose={() => setShowProjectModal(false)} title="Create research project">
           <form className="entity-form" onSubmit={handleCreateProject}>
             <p className="muted-text">Optional client/month fields help group research with AI Delivery and monthly reports.</p>
             <div className="field-grid">
@@ -1369,7 +1369,7 @@ export function AiMarketIntelligencePage({ clients }: AiMarketIntelligencePagePr
       ) : null}
 
       {showSourceModal ? (
-        <Modal onClose={() => setShowSourceModal(false)} title="Add research source">
+        <Modal isOpen onClose={() => setShowSourceModal(false)} title="Add research source">
           <form className="entity-form" onSubmit={handleCreateSource}>
             <div className="field-grid">
               <label className="field-span-2">
@@ -1409,7 +1409,7 @@ export function AiMarketIntelligencePage({ clients }: AiMarketIntelligencePagePr
       ) : null}
 
       {showInsightModal ? (
-        <Modal onClose={() => setShowInsightModal(false)} title="Add market insight">
+        <Modal isOpen onClose={() => setShowInsightModal(false)} title="Add market insight">
           <form className="entity-form" onSubmit={handleCreateInsight}>
             <div className="field-grid">
               <label className="field-span-2">
@@ -1455,7 +1455,7 @@ export function AiMarketIntelligencePage({ clients }: AiMarketIntelligencePagePr
       ) : null}
 
       {showFindingModal ? (
-        <Modal onClose={() => setShowFindingModal(false)} title="Add research finding">
+        <Modal isOpen onClose={() => setShowFindingModal(false)} title="Add research finding">
           <form className="entity-form" onSubmit={handleCreateFinding}>
             <div className="field-grid">
               <label>
@@ -1507,7 +1507,7 @@ export function AiMarketIntelligencePage({ clients }: AiMarketIntelligencePagePr
       ) : null}
 
       {editingFindingId ? (
-        <Modal onClose={() => setEditingFindingId(null)} title="Edit research finding">
+        <Modal isOpen onClose={() => setEditingFindingId(null)} title="Edit research finding">
           <div className="entity-form">
             <div className="field-grid">
               <label>
@@ -1559,7 +1559,7 @@ export function AiMarketIntelligencePage({ clients }: AiMarketIntelligencePagePr
       ) : null}
 
       {applySummaryId ? (
-        <Modal onClose={() => setApplySummaryId(null)} title="Apply finalized MI summary">
+        <Modal isOpen onClose={() => setApplySummaryId(null)} title="Apply finalized MI summary">
           <div className="entity-form">
             <label>
               Target

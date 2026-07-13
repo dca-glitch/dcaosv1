@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { Modal } from "../../components/Modal";
+import { Modal } from "../../components/ui";
 import { Button, EmptyState, PageHeader } from "../../components/ui";
 import type { ClientSummary } from "../clients/ClientsPage";
 import type { ProjectSummary as ProjectLinkSummary } from "../projects/ProjectsPage";
@@ -2879,7 +2879,7 @@ export function AiDeliveryPage({
         />
       ) : null}
       {openMiContextId ? (
-        <Modal onClose={closeMiContext} title="Market Intelligence Context">
+        <Modal isOpen onClose={closeMiContext} title="Market Intelligence Context">
           {miContextLoading ? (
             <AiDeliveryInlineLoading label="Loading Market Intelligence context" />
           ) : openMiContextProject ? (

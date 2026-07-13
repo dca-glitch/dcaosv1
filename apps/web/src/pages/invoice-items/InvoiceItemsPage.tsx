@@ -1,5 +1,5 @@
 import { type FormEvent, useMemo, useState } from "react";
-import { Modal } from "../../components/Modal";
+import { Modal } from "../../components/ui";
 import {
   Button,
   EmptyState,
@@ -236,7 +236,7 @@ export function InvoiceItemsPage({
       </SectionPanel>
 
       {isEditorOpen ? (
-        <Modal
+        <Modal isOpen
           onClose={closeEditor}
           title={editorId ? "Edit Service" : "Add Service"}
         >

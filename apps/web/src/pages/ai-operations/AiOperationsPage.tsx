@@ -7,7 +7,6 @@ import type {
   AiWorkflowContextUsageSummary
 } from "@dca-os-v1/shared";
 import { formatAiOperationsWorkflowKindLabel, formatAiWorkflowTokenEstimate } from "@dca-os-v1/shared";
-import { Modal } from "../../components/Modal";
 import {
   Alert,
   Button,
@@ -17,6 +16,7 @@ import {
   Input,
   LoadingState,
   MetricCard,
+  Modal,
   PageHeader,
   SectionPanel,
   Select,
@@ -100,7 +100,7 @@ function RunDetailModal({
   onClose: () => void;
 }) {
   return (
-    <Modal onClose={onClose} title={run ? `Run ${run.shortId}` : "AI run detail"}>
+    <Modal isOpen onClose={onClose} title={run ? `Run ${run.shortId}` : "AI run detail"}>
       {loading ? <LoadingState label="Loading run detail…" /> : null}
       {error ? <ErrorState message={error} title="Run detail blocked" /> : null}
       {!loading && !error && run ? (

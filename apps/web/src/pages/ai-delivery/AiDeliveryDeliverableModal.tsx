@@ -1,5 +1,5 @@
 import React from "react";
-import { Modal } from "../../components/Modal";
+import { Modal } from "../../components/ui";
 import { StatusBadge } from "../../components/ui";
 import {
   AiDeliveryInlineAlert,
@@ -248,7 +248,7 @@ export function AiDeliveryDeliverableModal(props: AiDeliveryDeliverableModalProp
   }
 
   return (
-    <Modal onClose={onClose} size="lg" title="Deliverables">
+    <Modal isOpen={isOpen} onClose={onClose} size="lg" title="Deliverables">
         {loading ? (
           <AiDeliveryInlineLoading label="Loading deliverables" />
         ) : project ? (

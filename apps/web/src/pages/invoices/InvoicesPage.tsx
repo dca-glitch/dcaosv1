@@ -1,5 +1,4 @@
 ﻿import { Fragment, type FormEvent, useMemo, useState } from "react";
-import { Modal } from "../../components/Modal";
 import {
   Button,
   CompoundTable,
@@ -9,6 +8,7 @@ import {
   FilterBar,
   Input,
   LoadingState,
+  Modal,
   ModalActions,
   PageHeader,
   Select,
@@ -740,7 +740,7 @@ export function InvoicesPage({
       )}
 
       {isInvoiceEditorOpen ? (
-        <Modal
+        <Modal isOpen
           eyebrow={invoiceEditorId ? "Edit" : "Create"}
           onClose={() => {
             setInvoiceEditorId(null);
@@ -895,7 +895,7 @@ export function InvoicesPage({
       ) : null}
 
       {isRecurringEditorOpen ? (
-        <Modal
+        <Modal isOpen
           eyebrow={recurringEditorId ? "Edit" : "Create"}
           onClose={() => {
             setRecurringEditorId(null);
@@ -1059,7 +1059,7 @@ export function InvoicesPage({
       ) : null}
 
       {isPaymentEditorOpen ? (
-        <Modal
+        <Modal isOpen
           eyebrow="Payment"
           onClose={() => {
             setPaymentInvoice(null);

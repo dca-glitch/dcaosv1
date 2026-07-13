@@ -1,5 +1,5 @@
 import React from "react";
-import { Modal } from "../../components/Modal";
+import { Modal } from "../../components/ui";
 import { EmptyState, MetricCard, SectionPanel, StatusBadge } from "../../components/ui";
 import {
   AiDeliveryInlineAlert,
@@ -164,7 +164,7 @@ export function AiDeliveryContentPlanModal(props: AiDeliveryContentPlanModalProp
   }
 
   return (
-    <Modal onClose={onClose} size="lg" title="Monthly SEO / Content Plan">
+    <Modal isOpen={isOpen} onClose={onClose} size="lg" title="Monthly SEO / Content Plan">
         {loading ? (
           <AiDeliveryInlineLoading label="Loading content plan" />
         ) : project ? (

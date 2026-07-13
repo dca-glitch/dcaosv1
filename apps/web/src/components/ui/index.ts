@@ -13,7 +13,7 @@ export {
 } from "./FormFields";
 export { LoadingState } from "./LoadingState";
 export { MetricCard } from "./MetricCard";
-export { Modal, type ModalProps } from "./Modal";
+export { Modal, type ModalProps, type ModalSize } from "./Modal";
 export { ModalActions } from "./ModalActions";
 export { PageHeader } from "./PageHeader";
 export { RingMeter, type RingMeterProps, type RingMeterSize } from "./RingMeter";

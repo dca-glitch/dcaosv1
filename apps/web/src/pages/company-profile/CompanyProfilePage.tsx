@@ -1,5 +1,5 @@
 import { type FormEvent, useState } from "react";
-import { Modal } from "../../components/Modal";
+import { Modal } from "../../components/ui";
 import {
   Button,
   EmptyState,
@@ -302,7 +302,7 @@ export function CompanyProfilePage({ companyProfile, canEdit, error, loading, on
       </SectionPanel>
 
       {isEditing ? (
-        <Modal onClose={closeEditor} title={companyProfile ? "Edit Company Profile" : "Create Company Profile"}>
+        <Modal isOpen onClose={closeEditor} title={companyProfile ? "Edit Company Profile" : "Create Company Profile"}>
           <form className="entity-form" onSubmit={handleSubmit}>
             <p className="muted-text">Used as issuer details on finance documents. Visible only to admin team unless used on generated documents.</p>
             <ModalActions disabled={saving} label={submitLabel} onCancel={closeEditor} saving={saving} />

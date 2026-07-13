@@ -1,5 +1,5 @@
 import React from "react";
-import { Modal } from "../../components/Modal";
+import { Modal } from "../../components/ui";
 import { StatusBadge } from "../../components/ui";
 import {
   AiDeliveryInlineAlert,
@@ -112,7 +112,7 @@ export function AiDeliveryResearchModal({
   }
 
   return (
-    <Modal onClose={onClose} size="lg" title="Research / Sources">
+    <Modal isOpen={isOpen} onClose={onClose} size="lg" title="Research / Sources">
       {loading ? (
         <AiDeliveryInlineLoading label="Loading research requests and sources" />
       ) : project ? (

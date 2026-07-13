@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Modal } from "../../components/Modal";
+import { Modal } from "../../components/ui";
 import { Alert, Button, EmptyState, Input, PageHeader, SectionPanel, Spinner, StatusBadge, Textarea, Toast } from "../../components/ui";
 import {
   DEFAULT_APPROVAL_CHECKLIST,
@@ -670,7 +670,7 @@ export function ArticleApprovalEditor({ deliverableId }: ArticleApprovalEditorPr
       ) : null}
 
       {showApproveModal ? (
-        <Modal
+        <Modal isOpen
           eyebrow="Deliverable Approval"
           onClose={() => setShowApproveModal(false)}
           size="md"
@@ -726,7 +726,7 @@ export function ArticleApprovalEditor({ deliverableId }: ArticleApprovalEditorPr
       ) : null}
 
       {showRejectModal ? (
-        <Modal
+        <Modal isOpen
           eyebrow="Request changes"
           onClose={() => setShowRejectModal(false)}
           size="md"

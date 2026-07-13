@@ -1,5 +1,5 @@
 import React from "react";
-import { Modal } from "../../components/Modal";
+import { Modal } from "../../components/ui";
 import { StatusBadge } from "../../components/ui";
 import {
   AiDeliveryInlineAlert,
@@ -128,7 +128,7 @@ export function AiDeliveryImageApprovalModal({
   const canSave = Boolean(form.contentDraftId && form.title.trim() && form.prompt.trim());
 
   return (
-    <Modal onClose={onClose} size="lg" title="Image Production Planning">
+    <Modal isOpen={isOpen} onClose={onClose} size="lg" title="Image Production Planning">
       {loading ? (
         <AiDeliveryInlineLoading label="Loading article image requests" />
       ) : project ? (

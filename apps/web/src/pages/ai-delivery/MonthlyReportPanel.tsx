@@ -1,5 +1,5 @@
 import React, { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
-import { Modal } from "../../components/Modal";
+import { Modal } from "../../components/ui";
 import { Button, EmptyState, MetricCard, SectionPanel, Spinner, StatusBadge } from "../../components/ui";
 import type { AiDeliveryProjectSummary } from "./AiDeliveryPage";
 import {
@@ -767,6 +767,7 @@ export function MonthlyReportPanel({
 
   return (
     <Modal
+      isOpen
       onClose={onClose}
       title={`Monthly Report — ${project.name}`}
     >

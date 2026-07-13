@@ -1,5 +1,5 @@
 import React from "react";
-import { Modal } from "../../components/Modal";
+import { Modal } from "../../components/ui";
 
 export type AiDeliveryWordPressPublishConfirmModalProps = {
   deliverableTitle: string;
@@ -24,6 +24,7 @@ export function AiDeliveryWordPressPublishConfirmModal({
 }: AiDeliveryWordPressPublishConfirmModalProps) {
   return (
     <Modal
+      isOpen
       title="Confirm WordPress publish"
       onClose={onCancel}
       footer={

@@ -120,7 +120,7 @@ Applied migration or local unit/integration proof alone does **not** justify `ST
 | GA/GSC | LOCAL FOUNDATION | Snapshot-first / config helpers | OAuth + live sync proof | Yes for WS7 GA/GSC step | Yes |
 | Market Intelligence | LOCAL FOUNDATION | Admin MI MVP local | Live ingestion / staging proof | Yes for WS7 MI step | Yes |
 | Google Docs / Drive frontend | DEFERRED | BLOK 9 owner-deferred 2026-07-11 | Owner reactivation of BLOK 9 | No (explicitly deferred) | Yes if claimed as ready |
-| Component system | LOCAL FOUNDATION — canonical decision COMPLETE; Wave 1 first slice COMPLETE | Public system: `apps/web/src/components/ui`; private foundation: `apps/web/src/design-system`; authoritative doc [`CANONICAL_COMPONENT_SYSTEM.md`](./CANONICAL_COMPONENT_SYSTEM.md); Wave 0 guard (`250e958`) + baseline now **24** frozen violations (Modal + DS bridge only; shrunk from historical 108); Wave 1 routed Tabs/compound Table/ActivityItem via ui + deleted unused root state shims | Modal Wave + remaining migration waves separately gated | Soft — Modal / later waves remain | Soft |
+| Component system | LOCAL FOUNDATION — canonical decision COMPLETE; Wave 1 + **Modal Wave COMPLETE** | Public system: `apps/web/src/components/ui`; private foundation: `apps/web/src/design-system`; [`CANONICAL_COMPONENT_SYSTEM.md`](./CANONICAL_COMPONENT_SYSTEM.md); import-guard baseline **0**; canonical Modal = `ui/Modal` (DS adapter + portal); legacy `components/Modal` **deleted**; 23/23 page consumers migrated | Remaining: Card adapter; DS Modal `aria-describedby` / nested stack (gated) | Soft — later waves remain | Soft |
 | Rollback / compatibility plan | ROLLBACK READY WITH CONDITIONS | Current staging `a8a74e6`; retained rollback API tag `staging-dcaosv1-staging-api:1b8d00d` + web backup `dist-before-a8a74e6-20260712-042923`; schema delta none; rollback rehearsal PASS (2026-07-12) | Owner-gated rollback only if needed; do not delete retained tags/backups | Soft | Yes |
 | Production | FROZEN | Staging PASS does not authorize production; artifact SHA / rollback target UNKNOWN | Turnstile/R2 rotation; G49/G50; explicit go/no-go | N/A (not staging) | Yes — frozen |
 
@@ -163,8 +163,8 @@ Applied migration or local unit/integration proof alone does **not** justify `ST
 
 | Decision | Status |
 |----------|--------|
-| Canonical component system (`components/ui` public + `design-system` private) | **COMPLETE** (WS1 Point 2) — see [`CANONICAL_COMPONENT_SYSTEM.md`](./CANONICAL_COMPONENT_SYSTEM.md); Wave 1 first consolidation slice COMPLETE; Modal Wave still open |
-| Wave 0 component import guard | **COMPLETE** (`250e958`; baseline was 108 at birth; **current frozen baseline = 24** after Wave 1 shrink) |
+| Canonical component system (`components/ui` public + `design-system` private) | **COMPLETE** — see [`CANONICAL_COMPONENT_SYSTEM.md`](./CANONICAL_COMPONENT_SYSTEM.md); Wave 1 + Modal Wave COMPLETE |
+| Wave 0 component import guard | **COMPLETE** (`250e958`; historical freeze 108; **current frozen baseline = 0** after Modal Wave) |
 | Orchestrator proof position in mandatory live-proof sequence | **COMPLETE decision** — `HYBRID — PREFLIGHT + EMBEDDED LIVE PROOF`. **AI-A staging preflight KEEP (2026-07-12):** Orchestrator = `CONFIG SHAPE PROVEN`. **Cannot** reach `STAGING LIVE PROVEN` until plan→execute is wired. **AI-B KEEP (2026-07-12):** AI Delivery OpenRouter path = `STAGING LIVE PROVEN` (not Orchestrator live). **R2 KEEP (2026-07-12):** private-storage exact object roundtrip = `STAGING LIVE PROVEN`. **OpenAI Images KEEP (2026-07-12):** staging one-image AI Policy path = `STAGING LIVE PROVEN` (one bounded neutral image only). **WordPress KEEP (2026-07-12):** dedicated staging one-draft create-and-trash = `STAGING LIVE PROVEN` on `bd649d5`. Next live integration gate = GA/GSC. |
 | Rollback / compatibility plan | **COMPLETE** — verdict `ROLLBACK READY WITH CONDITIONS`; known-good target `1b8d00d` |
 | Rollback rehearsal | **OPEN** — separately gated; **not executed** |
@@ -196,8 +196,9 @@ Applied migration or local unit/integration proof alone does **not** justify `ST
 |-------|--------|----------|
 | 1 — Vite security remediation | **COMPLETE** | Vite `6.4.3`; high finding closed; validate PASS; commit `95af080` |
 | 2 — Canonical component system decision | **COMPLETE** | Public: `apps/web/src/components/ui`; private: `apps/web/src/design-system` |
-| Wave 0 — import guard | **COMPLETE** | Commit `250e958`; historical freeze 108; current baseline **24** (Wave 1 shrink); new violations = 0 |
-| Wave 1 — first consolidation slice | **COMPLETE** (this workstream) | Canonical doc; ui barrel Tabs/compound Table/ActivityItem; 3 page DS imports routed; unused root Empty/Error/Loading/StatusNotice deleted; Modal deferred |
+| Wave 0 — import guard | **COMPLETE** | Commit `250e958`; historical freeze 108; current baseline **0** (Modal Wave); new violations = 0 |
+| Wave 1 — first consolidation slice | **COMPLETE** | Canonical doc; ui barrel Tabs/compound Table/ActivityItem; unused root Empty/Error/Loading/StatusNotice deleted |
+| Modal Wave | **COMPLETE** (this workstream) | `ui/Modal` = DS adapter + portal; 23/23 consumers on `components/ui`; legacy `components/Modal` deleted |
 | 3 — Rollback / compatibility plan | **COMPLETE** (rehearsal separately gated) | Verdict `ROLLBACK READY WITH CONDITIONS`; target `1b8d00d`; schema delta none |
 | 4 — Orchestrator proof decision | **COMPLETE** | `HYBRID — PREFLIGHT + EMBEDDED LIVE PROOF`; Orchestrator stays `LOCAL FOUNDATION` |
 
