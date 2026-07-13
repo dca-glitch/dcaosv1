@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useId, useMemo, useState } from "react";
 import type { AiOperationsRunListItem, AiOperationsRunsResponse } from "@dca-os-v1/shared";
-import { ActivityItem, Alert, Button, PageHeader, RingMetricTile, SectionPanel, Spinner, StatusBadge } from "../../components/ui";
+import { ActivityItem, Alert, Badge, Button, PageHeader, RingMetricTile, SectionPanel, Spinner, StatusBadge } from "../../components/ui";
 import {
   DEFERRED_GATED_ITEMS,
   PURIVA_DAILY_PATH,
@@ -52,7 +52,7 @@ function ActionStripItem({
     action.category === "approval"
       ? "ready"
       : action.category === "waiting"
-        ? "pending"
+        ? "waiting"
         : action.category;
   const relatedRun = action.relatedRun;
   const viewLabel = relatedRun
@@ -66,7 +66,7 @@ function ActionStripItem({
       aria-label={`${action.priorityLabel} priority. ${action.title}`}
     >
       <div className="action-strip-badge">
-        <StatusBadge status={badgeStatus} />
+        {badgeStatus === "waiting" ? <Badge variant="neutral">Waiting</Badge> : <StatusBadge status={badgeStatus} />}
       </div>
       <div className="action-strip-content flex-1">
         <p className="action-strip-title">{action.title}</p>
@@ -440,7 +440,7 @@ export function AdminDailyOperationsCockpit() {
                             : null}
                         </p>
                       </div>
-                      <StatusBadge status={primaryStatus === "unknown" ? "pending" : primaryStatus} />
+                      {primaryStatus === "unknown" ? <Badge variant="neutral">Unknown</Badge> : <StatusBadge status={primaryStatus} />}
                     </div>
                   );
                 })}
@@ -528,7 +528,7 @@ export function AdminDailyOperationsCockpit() {
                   <div className="dense-record-main">
                     <div className="dense-title">
                       <div className="dense-kicker">
-                        <StatusBadge status="Deferred" />
+                        <Badge variant="neutral">Deferred</Badge>
                       </div>
                       <h3>{label}</h3>
                     </div>
