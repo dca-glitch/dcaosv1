@@ -391,7 +391,7 @@ Production PostgreSQL role password and `DATABASE_URL` were rotated, the product
 | Point 4 — Orchestrator proof decision | **COMPLETE** — `HYBRID — PREFLIGHT + EMBEDDED LIVE PROOF`; Orchestrator remains `LOCAL FOUNDATION`; not `STAGING LIVE PROVEN` until plan→execute is wired |
 | Canonical component doc | [`CANONICAL_COMPONENT_SYSTEM.md`](./project-control/CANONICAL_COMPONENT_SYSTEM.md) |
 | Wave 1 — first consolidation slice | **COMPLETE** — ui barrel exports Tabs/compound Table/ActivityItem; unused root state shims deleted |
-| Modal Wave | **COMPLETE** — canonical `components/ui/Modal`; 23/23 page consumers migrated; legacy root Modal deleted; import-guard baseline 0 |
+| Modal Wave | **COMPLETE** — canonical `components/ui/Modal`; 23/23 page consumers migrated; legacy root Modal deleted; import-guard baseline 0; staging web-only `a447b9e` + Modal browser proof PASS |
 | Remaining UI migration | **OPEN** — Card adapter / domain empty clones / DS Modal a11y hardening (separately gated) |
 | Next local Workstreams | **2–5** before staging Workstream 6 |
 | Production | FROZEN |

@@ -159,4 +159,4 @@ type ModalProps = {
 
 * Whether to schedule DS Modal a11y hardening (`aria-describedby`, nested stack, `alertdialog`).
 * Whether to add a product `Card` adapter or keep MetricCard/SectionPanel only.
-* Staging web-only deploy + narrow Modal browser proof for this wave (required when runtime UI ships).
+* Staging web-only deploy + narrow Modal browser proof — **COMPLETE** on artifact `a447b9e` (2026-07-13).
