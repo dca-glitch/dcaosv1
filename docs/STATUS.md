@@ -413,7 +413,7 @@ Production PostgreSQL role password and `DATABASE_URL` were rotated, the product
 | Admin UI | Clients list + create/edit select (registry only; no free-text) |
 | Client portal | Pack key/config **not** exposed |
 | Local validation | unit + web/api check + `validate` PASS; monthly rehearsal 29/29 |
-| Staging | Controlled migrate + API/web deploy required after push (see deploy closeout) |
+| Staging | Controlled migrate + API/web deploy **COMPLETE** on `57f9c52`; artifact `/opt/dca/staging-artifacts/57f9c52`; migration applied; binding smoke 11/11; durable Puriva client `3afb9e45-…` bound to `PURIVA_OPERATING_PACK_V1` |
 | Production | **FROZEN** — separate migrate/deploy approval |
 
 ## Puriva staging redeploy + composition closeout (2026-07-13)
