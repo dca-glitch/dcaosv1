@@ -144,6 +144,7 @@ import {
 } from "../storage/private-storage.service";
 import { generateAiDeliveryMonthlyReportPdf } from "./monthly-report-pdf.service";
 import { generateAiDeliveryContentPlanPdf } from "./content-plan-pdf.service";
+import { resolveAiDeliveryDeliverableCreateStatus } from "./ai-delivery-deliverable-create-status-policy";
 import { recordAiDeliverySystemEvent } from "../services/system-events.service";
 import { AiDeliveryGuardError, isAiDeliveryGuardError } from "./ai-delivery-guard-error";
 import { buildMetricSnapshotImportUpdateData } from "./ai-delivery-metric-snapshot-import-policy";
@@ -8849,8 +8850,7 @@ export async function createAiDeliveryDeliverable(
 
     const contentDraftId = toNullableString(input.contentDraftId);
     const articleImageId = toNullableString(input.articleImageId);
-    // Create always starts in DRAFT; workflow actions own later transitions.
-    const status = "DRAFT";
+    const status = resolveAiDeliveryDeliverableCreateStatus(input.status);
     const contentDraft = contentDraftId
       ? await getContentDraftForDeliverable(tx, tenantId, aiDeliveryProjectId, contentDraftId)
       : null;

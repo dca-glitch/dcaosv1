@@ -1459,22 +1459,42 @@ async function runAiDeliveryApiRegression(token, fixtureProjects) {
   }
   pass("Same-project guard draft create returned a draft record for ready-state validation.");
 
+  const invalidReadyDeliverableTitle = `${smokeProjectMarker} invalid ready deliverable`;
+  const deliverablesBeforeInvalidReady = deliverables.length;
+  note(`Invalid ready deliverable proof will use title: ${invalidReadyDeliverableTitle}`);
+
   const invalidReadyDeliverableResponse = await request(`/ai-delivery-projects/${project.id}/deliverables`, {
     method: "POST",
     token,
     body: {
       contentDraftId: notReadyLocalDraft.id,
-      title: "Invalid ready deliverable",
+      title: invalidReadyDeliverableTitle,
       description: "Should be rejected because the linked draft is not approved.",
       deliveryType: "ARTICLE_DRAFT",
       status: "READY",
       notes: "Ready state must require approved links."
     }
   });
-  if (![404, 400].includes(invalidReadyDeliverableResponse.status) || invalidReadyDeliverableResponse.body?.ok !== false) {
-    fail("AI Delivery deliverable create accepted a ready status without approved assets.");
+  if (invalidReadyDeliverableResponse.status !== 400 || invalidReadyDeliverableResponse.body?.ok !== false) {
+    fail(`AI Delivery deliverable create rejected ready status with HTTP ${invalidReadyDeliverableResponse.status} instead of 400.`);
   }
-  pass("AI Delivery deliverable create rejected a ready status without approved assets.");
+  if (invalidReadyDeliverableResponse.body?.error?.code !== "AI_DELIVERY_DELIVERABLE_CREATE_STATUS_BLOCKED") {
+    fail("AI Delivery deliverable create did not return the expected status-blocked guard code.");
+  }
+  const deliverablesAfterInvalidReady = requireOkResponse(
+    "AI Delivery deliverables list after invalid ready create",
+    await request(`/ai-delivery-projects/${project.id}/deliverables`, { token })
+  )?.deliverables;
+  if (!Array.isArray(deliverablesAfterInvalidReady)) {
+    fail("AI Delivery deliverables list after invalid ready create did not return a deliverables array.");
+  }
+  if (deliverablesAfterInvalidReady.length !== deliverablesBeforeInvalidReady) {
+    fail("AI Delivery invalid ready deliverable create changed the persisted deliverable count.");
+  }
+  if (deliverablesAfterInvalidReady.some((deliverable) => deliverable.title === invalidReadyDeliverableTitle)) {
+    fail("AI Delivery invalid ready deliverable create persisted a blocked deliverable record.");
+  }
+  pass("AI Delivery deliverable create rejected a ready status without approved assets and persisted no blocked record.");
 
   const createdDeliverable = requireOkResponse(
     "AI Delivery deliverable create",
