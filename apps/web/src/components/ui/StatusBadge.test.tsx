@@ -1,3 +1,4 @@
+import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import {
   CLIENT_STATUS_LABELS,
@@ -8,7 +9,7 @@ import {
   isClientVisibleStatus,
   normalizeStatusKey,
 } from "../../design-system/status";
-import { getStatusTone as uiGetStatusTone } from "./StatusBadge";
+import { StatusBadge, getStatusTone as uiGetStatusTone } from "./StatusBadge";
 
 describe("getStatusTone", () => {
   it("maps success statuses", () => {
@@ -53,6 +54,7 @@ describe("STATUS map", () => {
     expect(normalizeStatusKey("PENDING_CLIENT_REVIEW")).toBe("awaiting_client");
     expect(normalizeStatusKey("Admin review")).toBe("in_review");
     expect(normalizeStatusKey("OVERDUE")).toBe("overdue");
+    expect(normalizeStatusKey("SUBMITTED")).toBe("completed");
   });
 
   it("exposes client-safe vocabulary", () => {
@@ -61,5 +63,51 @@ describe("STATUS map", () => {
     expect(isClientVisibleStatus("blocked")).toBe(false);
     expect(isClientVisibleStatus("failed")).toBe(false);
     expect(CLIENT_STATUS_LABELS.changes_requested).toBeNull();
+  });
+});
+
+describe("StatusBadge public contract", () => {
+  it("uses canonical key, default label, data-status, and token style", () => {
+    const { container } = render(<StatusBadge status="DRAFT" />);
+    const pill = container.querySelector(".ds-status-badge");
+    expect(pill).not.toBeNull();
+    expect(pill?.getAttribute("data-status")).toBe("draft");
+    expect(screen.getByText("Draft")).toBeTruthy();
+    expect(pill?.getAttribute("style") ?? "").toContain("var(--status-draft-text)");
+  });
+
+  it("resolves aliases to canonical data-status and label", () => {
+    const { container } = render(<StatusBadge status="DELIVERED" />);
+    expect(container.querySelector("[data-status='completed']")).not.toBeNull();
+    expect(screen.getByText("Completed")).toBeTruthy();
+  });
+
+  it("uses neutral unknown fallback for unrecognized status", () => {
+    const { container } = render(<StatusBadge status="WEIRD_INTERNAL_ENUM" />);
+    const pill = container.querySelector(".ds-status-badge");
+    expect(pill?.getAttribute("data-status")).toBe("unknown");
+    expect(screen.getByText("Weird Internal Enum")).toBeTruthy();
+    expect(pill?.getAttribute("style") ?? "").toContain("var(--status-draft-");
+  });
+
+  it("allows displayLabel without changing tone/data-status", () => {
+    const { container, rerender } = render(
+      <StatusBadge displayLabel="Sent to Client" status="AWAITING_CLIENT" />
+    );
+    const pill = container.querySelector(".ds-status-badge");
+    expect(screen.getByText("Sent to Client")).toBeTruthy();
+    expect(pill?.getAttribute("data-status")).toBe("awaiting_client");
+    const toneStyle = pill?.getAttribute("style") ?? "";
+
+    rerender(<StatusBadge status="AWAITING_CLIENT" />);
+    const canonical = container.querySelector(".ds-status-badge");
+    expect(canonical?.getAttribute("data-status")).toBe("awaiting_client");
+    expect(canonical?.getAttribute("style") ?? "").toBe(toneStyle);
+    expect(screen.getByText("Awaiting Client")).toBeTruthy();
+  });
+
+  it("forwards className", () => {
+    const { container } = render(<StatusBadge className="extra-pill" status="APPROVED" />);
+    expect(container.querySelector(".ds-status-badge.extra-pill")).not.toBeNull();
   });
 });

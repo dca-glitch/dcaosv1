@@ -20,9 +20,12 @@ import {
 
 describe("toClientPortalStatusLabel", () => {
   it("maps client-safe portal enums", () => {
+    expect(toClientPortalStatusLabel("ADMIN_REVIEW")).toBe("Under review");
+    expect(toClientPortalStatusLabel("SENT_TO_CLIENT")).toBe("Shared with you");
     expect(toClientPortalStatusLabel("PENDING_CLIENT_REVIEW")).toBe("Needs your review");
     expect(toClientPortalStatusLabel("DELIVERED")).toBe("Delivered");
     expect(toClientPortalStatusLabel("FINAL")).toBe("Complete");
+    expect(toClientPortalStatusLabel("APPROVED")).toBe("Approved");
     expect(toClientPortalStatusLabel("ACTIVE")).toBe("Active");
     expect(toClientPortalStatusLabel("ARCHIVED")).toBe("Archived");
   });

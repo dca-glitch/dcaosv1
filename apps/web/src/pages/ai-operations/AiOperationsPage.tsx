@@ -9,6 +9,7 @@ import type {
 import { formatAiOperationsWorkflowKindLabel, formatAiWorkflowTokenEstimate } from "@dca-os-v1/shared";
 import {
   Alert,
+  Badge,
   Button,
   EmptyState,
   ErrorState,
@@ -80,7 +81,7 @@ async function apiRequest<T>(path: string): Promise<ApiResponse<T>> {
 }
 
 function contextStatusBadge(status: AiWorkflowContextUsageSummary["status"]) {
-  return <StatusBadge status={contextStatusLabel(status)} />;
+  return <Badge variant="neutral">{contextStatusLabel(status)}</Badge>;
 }
 
 /**

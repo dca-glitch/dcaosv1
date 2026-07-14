@@ -182,7 +182,10 @@ export function AiDeliveryContentDraftModal({
                   <article className="entity-card" key={item.id ?? `${item.sortOrder}-${item.title}`}>
                     <div className="entity-card-header">
                       <div>
-                        <StatusBadge status={formatContentPlanItemApprovalStatus(item.approvalStatus)} />
+                        <StatusBadge
+                          displayLabel={formatContentPlanItemApprovalStatus(item.approvalStatus)}
+                          status={item.approvalStatus ?? "DRAFT"}
+                        />
                         <h4>
                           {item.sortOrder}. {item.title}
                         </h4>
@@ -421,7 +424,10 @@ export function AiDeliveryContentDraftModal({
               <article className="entity-card" key={draftItem.id}>
                 <div className="entity-card-header">
                   <div>
-                    <StatusBadge status={formatContentDraftStatus(draftItem.isArchived ? "ARCHIVED" : draftItem.status)} />
+                    <StatusBadge
+                      displayLabel={formatContentDraftStatus(draftItem.isArchived ? "ARCHIVED" : draftItem.status)}
+                      status={draftItem.isArchived ? "ARCHIVED" : draftItem.status}
+                    />
                     <h3>{draftItem.title}</h3>
                     <p>
                       {draftItem.contentPlanItem

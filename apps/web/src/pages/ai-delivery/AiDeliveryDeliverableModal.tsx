@@ -586,7 +586,10 @@ export function AiDeliveryDeliverableModal(props: AiDeliveryDeliverableModalProp
                 <article className="entity-card" key={d.id}>
                   <div className="entity-card-header">
                     <div>
-                      <StatusBadge status={formatDeliverableStatus(d.isArchived ? "ARCHIVED" : d.status)} />
+                      <StatusBadge
+                        displayLabel={formatDeliverableStatus(d.isArchived ? "ARCHIVED" : d.status)}
+                        status={d.isArchived ? "ARCHIVED" : d.status}
+                      />
                       <h3>{d.title}</h3>
                       <p>{formatEnumLabel(d.deliveryType)} - Updated {formatOptionalDate(d.updatedAt)}</p>
                     </div>
@@ -650,7 +653,12 @@ export function AiDeliveryDeliverableModal(props: AiDeliveryDeliverableModalProp
                     </div>
                     <div>
                       <dt>Status</dt>
-                      <dd><StatusBadge status={formatDeliverableStatus(d.isArchived ? "ARCHIVED" : d.status)} /></dd>
+                      <dd>
+                        <StatusBadge
+                          displayLabel={formatDeliverableStatus(d.isArchived ? "ARCHIVED" : d.status)}
+                          status={d.isArchived ? "ARCHIVED" : d.status}
+                        />
+                      </dd>
                     </div>
                     <div>
                       <dt>Latest publication</dt>
@@ -863,7 +871,16 @@ export function AiDeliveryDeliverableModal(props: AiDeliveryDeliverableModalProp
                 <dl className="brief-grid">
                   <div>
                     <dt>Deliverable status</dt>
-                    <dd><StatusBadge status={formatDeliverableStatus(selectedReviewDeliverable.isArchived ? "ARCHIVED" : selectedReviewDeliverable.status)} /></dd>
+                    <dd>
+                      <StatusBadge
+                        displayLabel={formatDeliverableStatus(
+                          selectedReviewDeliverable.isArchived ? "ARCHIVED" : selectedReviewDeliverable.status
+                        )}
+                        status={
+                          selectedReviewDeliverable.isArchived ? "ARCHIVED" : selectedReviewDeliverable.status
+                        }
+                      />
+                    </dd>
                   </div>
                   <div>
                     <dt>Latest review status</dt>

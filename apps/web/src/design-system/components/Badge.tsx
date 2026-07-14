@@ -47,18 +47,23 @@ const Badge: React.FC<BadgeProps> = ({
 export default Badge;
 
 /** Spec §4.2 status pill — colors from STATUS / CSS vars only. */
-export const StatusBadge: React.FC<{ status: string; className?: string }> = ({
+export const StatusBadge: React.FC<{
+  status: string;
+  displayLabel?: string;
+  className?: string;
+}> = ({
   status,
+  displayLabel,
   className = '',
 }) => {
   const visual = getStatusVisual(status) ?? STATUS[toneToStatusKey(getStatusTone(status))];
   const key = normalizeStatusKey(status);
-  const label = key ? STATUS[key].label : formatStatusLabel(status);
+  const label = displayLabel ?? (key ? STATUS[key].label : formatStatusLabel(status));
 
   return (
     <span
       className={`ds-badge ds-status-badge ${className}`.trim()}
-      data-status={key ?? undefined}
+      data-status={key ?? 'unknown'}
       style={statusBadgeStyle(visual)}
     >
       <span className="ds-badge-dot" aria-hidden="true" />

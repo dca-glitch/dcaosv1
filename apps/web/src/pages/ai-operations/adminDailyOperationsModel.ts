@@ -1,5 +1,5 @@
 import type { AiOperationsRunListItem } from "@dca-os-v1/shared";
-import { normalizeStatusKey, type StatusKey } from "../../design-system/status";
+import { normalizeStatusKey, type StatusKey } from "../../components/ui";
 
 export type ActionPriority = "critical" | "high" | "normal";
 

@@ -53,11 +53,11 @@ background:
 ```
 T.primary    #E2E6F2   Headings, KPI values, active labels, titles
 T.secondary  #9BA3BF   Body copy, descriptions, row text
-T.muted      #5C6380   Column headers, helper text, labels, small uppercase
+T.muted      #7F89A8   Column headers, helper text, labels, small uppercase
 T.faint      #3A4060   Timestamps, mono data, divider labels, least important
 ```
 
-**Rule:** All 9px uppercase tracking labels use `T.muted`, not `T.faint`. `T.faint` is reserved for timestamps and mono data only.
+**Rule:** All 9px uppercase tracking labels use `T.muted`, not `T.faint`. `T.faint` is reserved for timestamps and mono data only. Runtime token: `--ds-text-muted: #7F89A8` (Wave 2 Option B; do not document the retired `#5C6380`).
 
 ### 1.5 Panel CSS Helper
 
@@ -234,7 +234,7 @@ One canonical STATUS map. All components derive color, background, and border fr
 | `blocked` | Blocked | `#E07070` | `rgba(224,112,112,0.10)` | `rgba(224,112,112,0.17)` |
 | `failed` | Failed | `#E05050` | `rgba(224,80,80,0.10)` | `rgba(224,80,80,0.17)` |
 | `overdue` | Overdue | `#E06060` | `rgba(224,96,96,0.12)` | `rgba(224,96,96,0.22)` |
-| `archived` | Archived | `#5C6380` | `rgba(92,99,128,0.08)` | `rgba(92,99,128,0.12)` |
+| `archived` | Archived | `#7F89A8` | `rgba(127,137,168,0.09)` | `rgba(127,137,168,0.16)` |
 
 ### 3.2 Client-Safe Status Vocabulary
 
@@ -294,18 +294,31 @@ Client Portal must use these simplified labels instead of internal status keys:
 - Hover: `hover:opacity-80` on secondary. Primary preserves glow.
 - Disabled: `opacity-40 cursor-not-allowed`.
 
-### 4.2 Status Badges
+### 4.2 Status Badges vs generic Badge
+
+**Product imports (canonical):** `StatusBadge`, `ClientStatusBadge`, `Badge` from `components/ui`.
+
+| Primitive | Use for | Do not use for |
+|-----------|---------|----------------|
+| `StatusBadge` | Admin-facing lifecycle / workflow status | Categories, filters, static tags, proof-state maturity |
+| `ClientStatusBadge` / portal adapter | Client-safe lifecycle labels (hidden keys stay hidden) | Admin enums that must not leak |
+| `Badge` (tone variants) | Category, filter, metadata, operational chips | Business lifecycle status color |
 
 ```tsx
-<span className="inline-flex items-center text-[10px] font-medium px-2 py-[3px] rounded-full leading-none whitespace-nowrap"
-  style={{ color: s.text, background: s.bg, border: `1px solid ${s.border}` }}>
-  {s.label}
-</span>
+import { StatusBadge, Badge } from "../components/ui";
+
+// status = semantic key / enum (color + data-status); displayLabel = visible text only
+<StatusBadge status="AWAITING_CLIENT" displayLabel="Sent to Client" />
+
+// Non-status metadata stays on Badge
+<Badge variant="neutral">Deferred</Badge>
 ```
 
 **Rules:**
-- Always `rounded-full`. Never solid filled.
-- Always derive from STATUS map — never define inline.
+- Always `rounded-full` for status pills. Never solid filled.
+- Always derive color from the STATUS map / `--status-*` tokens — never define inline status colors.
+- Never use a translated display string as the tone source.
+- Proof-state (evidence maturity) is admin-only and separate from workflow status — do not invent a second status primitive for it without an owner gate.
 - Stage tags (inline in tables): `rounded` (square corners), mono font, surface bg.
 
 ### 4.3 KPI Tiles

@@ -564,7 +564,10 @@ export function ArticleApprovalEditor({ deliverableId }: ArticleApprovalEditorPr
                     </div>
                     <div className="portal-image-approval-body">
                       <div className="cf-record-kicker">
-                        <StatusBadge status={imageStatusLabel(image.approvalStatus)} />
+                        <StatusBadge
+                          displayLabel={imageStatusLabel(image.approvalStatus)}
+                          status={image.approvalStatus}
+                        />
                       </div>
                       <p className="cf-record-note">{image.altText}</p>
 

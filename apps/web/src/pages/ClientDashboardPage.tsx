@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Alert, Badge, Button, EmptyState, LoadingState, MetricCard, PageHeader, SectionPanel } from "../components/ui";
+import { Alert, Button, EmptyState, LoadingState, MetricCard, PageHeader, SectionPanel, StatusBadge } from "../components/ui";
 import {
   buildClientDashboardAttentionItems,
   buildClientDashboardKpis,
@@ -300,7 +300,7 @@ export function ClientDashboardPage({ user }: ClientDashboardPageProps) {
                 >
                   <div className="dense-record-main dense-record-main--stack">
                     <strong>{brief.title}</strong>
-                    <Badge variant={badge.tone}>{badge.label}</Badge>
+                    <StatusBadge displayLabel={badge.label} status={brief.status} />
                     {articleSummary ? <span className="muted-text text-small">{articleSummary}</span> : null}
                     <span className="muted-text text-small">{formatClientBriefDate(brief.createdAt)}</span>
                   </div>

@@ -1,5 +1,5 @@
 import React, { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
-import { Alert, Button, EmptyState, LoadingState, MetricCard, Modal, SectionPanel, StatusBadge } from "../../components/ui";
+import { Alert, Badge, Button, EmptyState, LoadingState, MetricCard, Modal, SectionPanel, StatusBadge } from "../../components/ui";
 import type { AiDeliveryProjectSummary } from "./AiDeliveryPage";
 import {
   MONTHLY_REPORT_WORKFLOW_STEPS,
@@ -796,11 +796,11 @@ export function MonthlyReportPanel({
             <dl className="brief-grid monthly-report-deferred-metrics">
               <div>
                 <dt>GA/GSC metrics</dt>
-                <dd><StatusBadge status="Withdrawn" /></dd>
+                <dd><Badge variant="neutral">Withdrawn</Badge></dd>
               </div>
               <div>
                 <dt>12-month trends</dt>
-                <dd><StatusBadge status="Deferred" /></dd>
+                <dd><Badge variant="neutral">Deferred</Badge></dd>
               </div>
             </dl>
 
@@ -899,7 +899,10 @@ export function MonthlyReportPanel({
             <div className="entity-card monthly-report-status-card">
               <div className="entity-card-header">
                 <div>
-                  <StatusBadge status={reportShellCopy?.status ?? formatReportStatus(report.status)} />
+                  <StatusBadge
+                    displayLabel={reportShellCopy?.status ?? formatReportStatus(report.status)}
+                    status={report.status}
+                  />
                   <h3>{reportShellCopy?.headline ?? `${project.name} monthly report`}</h3>
                   <p className="muted-text">
                     {project.targetMonth} • {project.client?.name ?? project.clientId}

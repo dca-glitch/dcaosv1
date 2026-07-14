@@ -248,7 +248,12 @@ export function AiDeliveryContentPlanModal(props: AiDeliveryContentPlanModalProp
                 <dl className="brief-grid">
                   <div>
                     <dt>Status</dt>
-                    <dd><StatusBadge status={formatContentPlanReviewStatus(plan)} /></dd>
+                    <dd>
+                      <StatusBadge
+                        displayLabel={formatContentPlanReviewStatus(plan)}
+                        status={plan?.status ?? "DRAFT"}
+                      />
+                    </dd>
                   </div>
                   <div>
                     <dt>Revisions</dt>

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Alert, Badge, Button, EmptyState, LoadingState, PageHeader, SectionPanel, StatusBadge } from "../components/ui";
+import { Alert, Button, EmptyState, LoadingState, PageHeader, SectionPanel, StatusBadge } from "../components/ui";
 import {
   clientPortalApiRequest,
   getClientPortalAuthToken,
@@ -278,7 +278,7 @@ function BriefArchiveRow({ brief }: { brief: BriefRecord }) {
         Brief #{formatBriefNumber(brief.briefNumber)} — {formatArchiveDate(brief.createdAt)}
       </span>
       <div className="cf-archive-item-meta">
-        <Badge variant={badge.tone}>{badge.label}</Badge>
+        <StatusBadge displayLabel={badge.label} status={brief.status} />
         <span>{formatArticleSummary(brief)}</span>
       </div>
     </article>
@@ -294,7 +294,9 @@ function ArticleArchiveRow({ article }: { article: ArticleRecord }) {
       <span className="cf-archive-item-title">{article.title}</span>
       <div className="cf-archive-item-meta">
         <span>Published {formatArchiveDate(publishedAt)}</span>
-        {statusLabel ? <StatusBadge status={statusLabel} /> : null}
+        {statusLabel && article.status ? (
+          <StatusBadge displayLabel={statusLabel} status={article.status} />
+        ) : null}
       </div>
     </article>
   );

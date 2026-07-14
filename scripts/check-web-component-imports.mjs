@@ -59,6 +59,7 @@ const UI_INDEX = "apps/web/src/components/ui/index.ts";
 const UI_DIR_PREFIX = "apps/web/src/components/ui/";
 const DS_COMPONENTS_PREFIX = "apps/web/src/design-system/components/";
 const DS_INDEX = "apps/web/src/design-system/index.ts";
+const DS_STATUS = "apps/web/src/design-system/status.ts";
 const DS_LAYOUT_FILES = new Set([
   "apps/web/src/design-system/components/Layout.tsx"
 ]);
@@ -68,7 +69,8 @@ const RULES = {
   UI_DEEP: "ui-deep-import",
   DS_DEEP: "ds-deep-component",
   DS_LAYOUT: "ds-layout",
-  DS_BARREL: "ds-barrel"
+  DS_BARREL: "ds-barrel",
+  DS_STATUS: "ds-status-registry"
 };
 
 const REPLACEMENT = {
@@ -81,7 +83,9 @@ const REPLACEMENT = {
   [RULES.DS_LAYOUT]:
     "Do not import design-system Layout/AppShell into product app code. Use components/shell / AppLayout.\nExisting use is frozen; new use is prohibited.",
   [RULES.DS_BARREL]:
-    "Expose the primitive through components/ui instead of importing the design-system barrel from app code.\nExisting use is frozen; new use is prohibited."
+    "Expose the primitive through components/ui instead of importing the design-system barrel from app code.\nExisting use is frozen; new use is prohibited.",
+  [RULES.DS_STATUS]:
+    "Import status helpers (normalizeStatusKey, STATUS, StatusBadge, ClientStatusBadge, …) from components/ui.\nDo not import design-system/status from page/domain code.\nAdapters under components/ui and design-system internals remain allowed."
 };
 
 function toPosix(p) {
@@ -271,7 +275,11 @@ function classifyImport(importerRel, specifier, targetRel) {
     return RULES.DS_BARREL;
   }
 
-  // design-system/status, panel, useOverlayA11y, showcase, tokens: allowed for now
+  if (targetRel === DS_STATUS) {
+    return RULES.DS_STATUS;
+  }
+
+  // design-system/panel, useOverlayA11y, showcase, tokens: allowed for now
   return null;
 }
 
@@ -535,7 +543,7 @@ function runCheck({ srcRoot, repoRoot, baselinePath, printOnly = false }) {
   console.log("Stale baseline entries: 0");
   const counts = countByRule(baseline.entries);
   console.log(
-    `By rule: legacy=${counts[RULES.LEGACY]} ui-deep=${counts[RULES.UI_DEEP]} ds-deep=${counts[RULES.DS_DEEP]} ds-barrel=${counts[RULES.DS_BARREL]} ds-layout=${counts[RULES.DS_LAYOUT]}`
+    `By rule: legacy=${counts[RULES.LEGACY]} ui-deep=${counts[RULES.UI_DEEP]} ds-deep=${counts[RULES.DS_DEEP]} ds-barrel=${counts[RULES.DS_BARREL]} ds-layout=${counts[RULES.DS_LAYOUT]} ds-status=${counts[RULES.DS_STATUS]}`
   );
 
   return {
@@ -859,6 +867,87 @@ function runSelfTests() {
         result.newViolations?.some((v) => v.rule === RULES.DS_BARREL),
         "expected ds-barrel"
       );
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  record("10 page import from design-system/status → FAIL", () => {
+    const { root, srcRoot } = writeTempTree({
+      "apps/web/src/components/ui/index.ts": uiIndex,
+      "apps/web/src/design-system/status.ts": `export function normalizeStatusKey(){return null}\n`,
+      "apps/web/src/pages/NewPage.tsx": `import { normalizeStatusKey } from "../design-system/status";\n`
+    });
+    try {
+      const baselinePath = path.join(root, "baseline.json");
+      writeFileSync(
+        baselinePath,
+        JSON.stringify({ version: 1, entries: [] }, null, 2),
+        "utf8"
+      );
+      const result = runCheck({
+        srcRoot,
+        repoRoot: root,
+        baselinePath,
+        printOnly: false
+      });
+      assert(result.ok === false, "expected FAIL");
+      assert(
+        result.newViolations?.some((v) => v.rule === RULES.DS_STATUS),
+        "expected ds-status-registry"
+      );
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  record("11 components/ui adapter importing design-system/status → PASS", () => {
+    const { root, srcRoot } = writeTempTree({
+      "apps/web/src/components/ui/index.ts": uiIndex,
+      "apps/web/src/components/ui/StatusBadge.tsx": `import { normalizeStatusKey } from "../../design-system/status";\nexport function StatusBadge(){return normalizeStatusKey("DRAFT")}\n`,
+      "apps/web/src/design-system/status.ts": `export function normalizeStatusKey(){return "draft"}\n`
+    });
+    try {
+      const baselinePath = path.join(root, "baseline.json");
+      writeFileSync(
+        baselinePath,
+        JSON.stringify({ version: 1, entries: [] }, null, 2),
+        "utf8"
+      );
+      const result = runCheck({
+        srcRoot,
+        repoRoot: root,
+        baselinePath,
+        printOnly: false
+      });
+      assert(result.ok === true, "expected PASS for ui status adapter");
+      assert(result.violations.length === 0, "expected zero violations");
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  record("12 page import from components/ui status helpers → PASS", () => {
+    const { root, srcRoot } = writeTempTree({
+      "apps/web/src/components/ui/index.ts": `export { normalizeStatusKey } from "../../design-system/status";\n`,
+      "apps/web/src/design-system/status.ts": `export function normalizeStatusKey(){return null}\n`,
+      "apps/web/src/pages/NewPage.tsx": `import { normalizeStatusKey } from "../components/ui";\n`
+    });
+    try {
+      const baselinePath = path.join(root, "baseline.json");
+      writeFileSync(
+        baselinePath,
+        JSON.stringify({ version: 1, entries: [] }, null, 2),
+        "utf8"
+      );
+      const result = runCheck({
+        srcRoot,
+        repoRoot: root,
+        baselinePath,
+        printOnly: false
+      });
+      assert(result.ok === true, "expected PASS for ui barrel status import");
+      assert(result.violations.length === 0, "expected zero violations");
     } finally {
       rmSync(root, { recursive: true, force: true });
     }

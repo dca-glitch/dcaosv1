@@ -111,6 +111,11 @@ export function normalizeStatusKey(input: string): StatusKey | null {
     awaiting_your_response: "awaiting_client",
     admin_review: "in_review",
     review: "in_review",
+    sent_to_client: "awaiting_client",
+    shared_with_you: "awaiting_client",
+    client_review_requested: "awaiting_client",
+    client_approved: "approved",
+    client_changes_requested: "changes_requested",
     revision_requested: "changes_requested",
     changes_req: "changes_requested",
     // Progress synonyms
@@ -119,6 +124,10 @@ export function normalizeStatusKey(input: string): StatusKey | null {
     pending: "ready",
     in_production: "in_progress",
     being_prepared: "in_progress",
+    ready_for_generation: "in_progress",
+    preparing_preview: "in_progress",
+    preview_ready: "ready",
+    final_ready: "completed",
     // Positive resolution
     accepted: "approved",
     delivered: "completed",
@@ -126,6 +135,7 @@ export function normalizeStatusKey(input: string): StatusKey | null {
     success: "completed",
     final: "completed",
     complete: "completed",
+    submitted: "completed",
     paid: "approved",
     active: "in_progress",
     enabled: "approved",
@@ -173,9 +183,19 @@ export function getStatusTone(status: string): LegacyStatusTone {
   const normalized = status.trim().toLowerCase().replace(/[\s_]+/g, "-");
 
   if (
-    ["accepted", "active", "approved", "delivered", "enabled", "final", "paid", "ready", "done", "success"].includes(
-      normalized,
-    )
+    [
+      "accepted",
+      "active",
+      "approved",
+      "delivered",
+      "enabled",
+      "final",
+      "paid",
+      "ready",
+      "done",
+      "success",
+      "submitted",
+    ].includes(normalized)
   ) {
     return "success";
   }

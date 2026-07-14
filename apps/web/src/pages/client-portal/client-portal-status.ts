@@ -3,7 +3,7 @@ import {
   isClientVisibleStatus,
   normalizeStatusKey,
   type StatusKey
-} from "../../design-system/status";
+} from "../../components/ui";
 
 /**
  * Fragments that must never appear as client-visible status copy.

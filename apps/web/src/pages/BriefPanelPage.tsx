@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Badge, Button, EmptyState, ErrorState, LoadingState, PageHeader, SectionPanel, Table } from "../components/ui";
+import { Button, EmptyState, ErrorState, LoadingState, PageHeader, SectionPanel, StatusBadge, Table } from "../components/ui";
 import { toBriefStatusPresentation } from "./client-portal/client-portal-status";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "/api/v1";
@@ -252,7 +252,7 @@ function parseAdditionalContent(content: string): Record<string, string> {
 
 function BriefStatusBadge({ status }: { status: string }) {
   const badge = toBriefStatusPresentation(status, "admin");
-  return <Badge variant={badge.tone}>{badge.label}</Badge>;
+  return <StatusBadge displayLabel={badge.label} status={status} />;
 }
 
 type BriefDetailPanelProps = {

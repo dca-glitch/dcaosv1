@@ -430,7 +430,10 @@ export function AiDeliveryImageApprovalModal({
               <article className="entity-card" key={image.id}>
                 <div className="entity-card-header">
                   <div>
-                    <StatusBadge status={formatArticleImageStatus(image.isArchived ? "ARCHIVED" : image.status)} />
+                    <StatusBadge
+                      displayLabel={formatArticleImageStatus(image.isArchived ? "ARCHIVED" : image.status)}
+                      status={image.isArchived ? "ARCHIVED" : image.status}
+                    />
                     <h3>{image.title}</h3>
                     <p>{image.contentDraft ? `Linked to draft: ${image.contentDraft.title}` : "No linked draft"}</p>
                   </div>

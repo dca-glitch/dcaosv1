@@ -18,7 +18,8 @@ const LABEL_FIRST_STATUSES = new Set([
 /**
  * Client-safe status pill for portal surfaces.
  * Uses ClientStatusBadge when the canonical map is appropriate; otherwise
- * renders the resolved client label via StatusBadge (never raw internal keys).
+ * renders StatusBadge with semantic `status` + portal `displayLabel`
+ * (never raw internal keys as visible text; never display text as tone source).
  */
 export function ClientPortalStatusBadge({ status, className }: ClientPortalStatusBadgeProps) {
   const label = toClientPortalStatusLabel(status);
@@ -33,5 +34,5 @@ export function ClientPortalStatusBadge({ status, className }: ClientPortalStatu
     return <ClientStatusBadge className={className} status={status} />;
   }
 
-  return <StatusBadge className={className} status={label} />;
+  return <StatusBadge className={className} displayLabel={label} status={status} />;
 }

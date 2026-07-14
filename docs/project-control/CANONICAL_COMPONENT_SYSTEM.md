@@ -33,11 +33,13 @@ import { Button, EmptyState, Badge, Spinner, Modal } from "../components/ui";
 * `apps/web/src/components/Modal.tsx` — **removed**; recreating + importing remains guard-blocked
 * Deep imports into `components/ui/<File>` from pages (use barrel)
 * Page imports from `design-system` barrel or `design-system/components/*`
+* Page/domain imports of `design-system/status` — use `components/ui` (`StatusBadge`, `normalizeStatusKey`, `STATUS`, …). Guard rule `ds-status-registry` (Visual Wave 3)
 * New generic primitives under `components/` root without a `ui` adapter
 * Replacing live shell with design-system Layout kit
 
-**Allowed for `components/ui` adapters only:** deep/barrel imports from `design-system` (guard exempts `ui/` importers).
+**Allowed for `components/ui` adapters only:** deep/barrel imports from `design-system` including `status.ts` (guard exempts `ui/` and `design-system/` importers).
 
+**Import allowlist:** `scripts/baselines/web-component-import-allowlist.json` stays at **0** entries.
 ---
 
 ## 3. Component family matrix
@@ -45,8 +47,8 @@ import { Button, EmptyState, Badge, Spinner, Modal } from "../components/ui";
 | Family | Canonical (import from `components/ui`) | Legacy / private | Migration status |
 |--------|-------------------------------------------|------------------|------------------|
 | Button | `ui/Button` → DS Button adapter | DS Button | Adapter DONE |
-| Badge (tone) | `ui/Badge` | DS Badge (variant names differ) | Canonical product API = ui Badge |
-| StatusBadge | `ui/StatusBadge` + ClientStatusBadge/StatusDot | DS status map | Adapter DONE |
+| Badge (tone) | `ui/Badge` | DS Badge (variant names differ) | Canonical for category / filter / metadata chips — not lifecycle |
+| StatusBadge | `ui/StatusBadge` (`status`, optional `displayLabel`) + ClientStatusBadge/StatusDot | DS status map (private) | Visual Wave 3 contract: status→tone/`data-status`; displayLabel→text only |
 | Spinner / Skeleton | `ui/Spinner` re-export | DS Spinner | DONE |
 | LoadingState | `ui/LoadingState` | — (removed root shim) | DONE |
 | EmptyState | `ui/EmptyState` (`title`/`message`) | DS EmptyState (`description`) — foundation only | Product API = ui |
@@ -137,8 +139,9 @@ type ModalProps = {
 | 0 | Import architecture guard + baseline freeze | COMPLETE (`250e958`; historical freeze 108) |
 | 1 | Tabs/compound Table/ActivityItem via ui; delete unused state shims | COMPLETE (`1292e46`) |
 | Modal Wave | Canonical `ui/Modal` DS adapter; migrate 23 consumers; delete legacy root Modal; baseline **0** | **COMPLETE** (this workstream) |
-| 2 | Optional Badge visual alignment | DEFERRED |
-| 3 | Domain inline empty/loading clones → ui states | DEFERRED |
+| Visual Wave 3 | Status/Badge convergence: `displayLabel`, brief→StatusBadge, status import guard, docs sync | **COMPLETE** (2026-07-14) — distinct from domain empty/loading clone wave below |
+| 2 | Optional Badge visual alignment (chip geometry) | DEFERRED |
+| 3 | Domain inline empty/loading clones → ui states | DEFERRED (naming collision with Visual Wave 3 — keep this row for empty/loading only) |
 | Later | Card ui adapter; `aria-describedby` / `alertdialog` via gated DS change; Tooltip/Menu | DEFERRED |
 
 ---

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Alert, Badge, Button, EmptyState, Input, LoadingState, PageHeader, SectionPanel, Select, Textarea } from "../components/ui";
+import { Alert, Button, EmptyState, Input, LoadingState, PageHeader, SectionPanel, Select, StatusBadge, Textarea } from "../components/ui";
 import { toBriefStatusPresentation } from "./client-portal/client-portal-status";
 import {
   clientPortalApiRequest,
@@ -513,7 +513,7 @@ function BriefPlanningReadOnly({ fields }: { fields: BriefPlanningFields }) {
 
 function BriefStatusBadge({ status, role }: { status: string; role: string }) {
   const badge = toBriefStatusPresentation(status, role === "client" ? "client" : "admin");
-  return <Badge variant={badge.tone}>{badge.label}</Badge>;
+  return <StatusBadge displayLabel={badge.label} status={status} />;
 }
 
 function PortalInlineLoading({ label }: { label: string }) {

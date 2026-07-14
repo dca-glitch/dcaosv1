@@ -243,7 +243,11 @@ export function TasksPage({ tasks, projects, canEdit, error, loading, onArchive,
                 </div>,
                 task.project?.name ?? "No project",
                 task.project?.client?.name ?? "No client",
-                <StatusBadge key={`${task.id}-status`} status={formatStatusLabel(task.status, task.isArchived)} />,
+                <StatusBadge
+                  key={`${task.id}-status`}
+                  displayLabel={formatStatusLabel(task.status, task.isArchived)}
+                  status={task.isArchived ? "ARCHIVED" : task.status}
+                />,
                 formatRecurringLabel(task.recurringType),
                 formatDateLabel(task.dueDate),
                 <div className="finance-row-actions" key={`${task.id}-actions`}>
