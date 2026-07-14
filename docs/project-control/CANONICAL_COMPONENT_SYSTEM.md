@@ -50,13 +50,14 @@ import { Button, EmptyState, Badge, Spinner, Modal } from "../components/ui";
 | Badge (tone) | `ui/Badge` | DS Badge (variant names differ) | Canonical for category / filter / metadata chips — not lifecycle |
 | StatusBadge | `ui/StatusBadge` (`status`, optional `displayLabel`) + ClientStatusBadge/StatusDot | DS status map (private) | Visual Wave 3 contract: status→tone/`data-status`; displayLabel→text only |
 | Spinner / Skeleton | `ui/Spinner` re-export | DS Spinner | DONE |
-| LoadingState | `ui/LoadingState` | — (removed root shim) | DONE |
-| EmptyState | `ui/EmptyState` (`title`/`message`) | DS EmptyState (`description`) — foundation only | Product API = ui |
-| ErrorState | `ui/ErrorState` | — (removed root shim) | DONE |
-| Alert / Toast / SuccessState | `ui/Alert` | DS Alert | Adapter DONE |
+| LoadingState | `ui/LoadingState` (`role="status"`, polite live region; `page`/`inline`) | — | DONE — Wave 4 taxonomy docs |
+| EmptyState | `ui/EmptyState` (`title?`/`message`, `kind`, `page`/`inline`) | DS EmptyState (`description`) — foundation only | DONE — Wave 4 kinds + message-only inline |
+| ErrorState | `ui/ErrorState` (`page`/`inline`; alert + optional recovery) | — | DONE |
+| Alert / Toast / SuccessState | `ui/Alert` | DS Alert | Adapter DONE — do not replace all Alerts with ErrorState |
 | Input / Textarea / Select / Checkbox / RadioGroup | `ui/FormFields` | DS FormFields | Adapter DONE |
-| Table (simple) | `ui/Table` | — | DONE |
-| Table (compound) | `CompoundTable`, `TableHead`, `Th`, `Td`, `TdDouble`, `ActivityItem` via ui barrel | DS Table | DONE |
+| Table (simple) | `ui/Table` headers/rows adapter | DS Table private | DONE — use for straightforward lists |
+| Table (compound) | `CompoundTable`, `TableHead`, `Th`, `Td`, `TdDouble`, `ActivityItem` via ui barrel | DS Table | DONE — richer rows / expand / custom cells |
+| Table pagination | `TablePaginationBar` (public) | DS `TablePagination` (adapter-only) | Wave 4: product uses Bar only |
 | Tabs | `Tabs` via ui barrel | DS Tabs | DONE |
 | Modal | `ui/Modal` — controlled `isOpen`, portal, size `sm\|md\|lg`, `eyebrow`, `closeOnBackdrop` | DS Modal (private shell); root `components/Modal` **deleted** | **Modal Wave COMPLETE** — 23/23 page consumers |
 | PageHeader | `ui/PageHeader` only | DS PageHeader (different API — do not swap) | Locked |
@@ -139,9 +140,10 @@ type ModalProps = {
 | 0 | Import architecture guard + baseline freeze | COMPLETE (`250e958`; historical freeze 108) |
 | 1 | Tabs/compound Table/ActivityItem via ui; delete unused state shims | COMPLETE (`1292e46`) |
 | Modal Wave | Canonical `ui/Modal` DS adapter; migrate 23 consumers; delete legacy root Modal; baseline **0** | **COMPLETE** (this workstream) |
-| Visual Wave 3 | Status/Badge convergence: `displayLabel`, brief→StatusBadge, status import guard, docs sync | **COMPLETE** (2026-07-14) — distinct from domain empty/loading clone wave below |
+| Visual Wave 3 | Status/Badge convergence: `displayLabel`, brief→StatusBadge, status import guard, docs sync | **COMPLETE** (2026-07-14) |
+| Wave 4 | State taxonomy + table consolidation (empty kinds, scrollports, pagination Bar, Table tests) | **COMPLETE** (2026-07-14) — distinct from product IA / Card / Layout |
 | 2 | Optional Badge visual alignment (chip geometry) | DEFERRED |
-| 3 | Domain inline empty/loading clones → ui states | DEFERRED (naming collision with Visual Wave 3 — keep this row for empty/loading only) |
+| Residual empty clones | Shell NotificationPanel / handwritten App inline-empty / remaining muted empties | DEFERRED_NON_BLOCKING |
 | Later | Card ui adapter; `aria-describedby` / `alertdialog` via gated DS change; Tooltip/Menu | DEFERRED |
 
 ---

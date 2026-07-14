@@ -398,10 +398,18 @@ export function BillsPage({
 
       <SectionPanel tone="compact" title="Bills" description="Active and archived bill records for the workspace.">
       {filteredBills.length === 0 ? (
-        <EmptyState message="No bills match the current filter." title="No bills" variant="inline" />
+        <EmptyState
+          kind={bills.length === 0 ? "first-use" : "filtered"}
+          message={
+            bills.length === 0 ? "Create a bill once a vendor is ready." : "No bills match the current filter."
+          }
+          title={bills.length === 0 ? "No bills yet" : "No bills"}
+          variant="inline"
+        />
       ) : (
-        <div className="table-wrap finance-table-wrap" aria-label="Bills">
+        <div className="table-wrap finance-table-wrap">
           <Table
+            aria-label="Bills"
             className="finance-table"
             headers={[
               { label: "Vendor", align: "left" },

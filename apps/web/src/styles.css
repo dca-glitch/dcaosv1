@@ -981,10 +981,19 @@ textarea:focus-visible {
 .module-card,
 .metric-card,
 .section-panel,
-.summary-panel,
-.table-wrap {
+.summary-panel {
   position: relative;
   overflow: hidden;
+  transition: border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
+}
+
+/* Table wraps must scroll horizontally — do not inherit card overflow:hidden. */
+.table-wrap {
+  position: relative;
+  overflow-x: auto;
+  overflow-y: hidden;
+  max-width: 100%;
+  -webkit-overflow-scrolling: touch;
   transition: border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
 }
 
@@ -2010,9 +2019,23 @@ tr:hover td {
   padding: 8px 0;
 }
 
-.table-wrap.table-scroll {
+.table-wrap.table-scroll,
+.monthly-report-table-scroll {
   -webkit-overflow-scrolling: touch;
   max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+/* Named scrollport for keyboard / AT when the wrap is the primary overflow region. */
+.table-wrap[role="region"],
+.monthly-report-table-scroll[role="region"] {
+  outline: none;
+}
+
+.table-wrap[role="region"]:focus-visible,
+.monthly-report-table-scroll[role="region"]:focus-visible {
+  box-shadow: 0 0 0 2px rgba(82, 224, 255, 0.35);
 }
 
 @media (max-width: 1120px) {

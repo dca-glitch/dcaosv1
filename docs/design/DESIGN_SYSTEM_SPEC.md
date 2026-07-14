@@ -361,10 +361,28 @@ RingMeter SVG (50×50px, 2.5px stroke)
 
 ### 4.5 Tables
 
+**Product API (import from `components/ui` only):**
+
+| When | Use |
+|------|-----|
+| Straightforward headers → cells | Simple `Table` adapter |
+| Expandable rows, custom cell trees, compound markup | `CompoundTable` + `TableHead` / `TableBody` / `CompoundTableRow` / `Th` / `Td` / `TdDouble` |
+| Page-number controls | `TablePaginationBar` (not DS `TablePagination` from pages) |
+
+**Responsive policy (Wave 4):**
+
+* Preserve semantic `<table>` with a single intentional horizontal scrollport.
+* Product `.table-wrap` uses `overflow-x: auto` (never card-style `overflow: hidden`).
+* Prefer `aria-label` on the `Table` / `<table>`, not only on an unlabeled div.
+* Labeled scroll regions may expose `role="region"` + `tabIndex={0}` so keyboard users can focus the scrollport.
+* Do not convert tables to cards solely for mobile preference.
+
+**Visual tokens:**
+
 ```
 Header row:   background: L.surface  |  border-bottom: L.div  |  9px font-semibold uppercase T.muted
 Data row:     hover background: L.hover  |  border-bottom: L.div  |  12px font-medium T.primary
-Action cell:  opacity-0 group-hover:opacity-100
+Action cell:  prefer always-visible product actions; DS Td `actions` opacity-0 is unused in product routes
 ```
 
 **Admin density:** `px-4 py-2.5`  
@@ -372,6 +390,15 @@ Action cell:  opacity-0 group-hover:opacity-100
 
 No zebra striping. Hover is the only row highlight.
 
+### 4.5.1 Table-state composition
+
+Prefer existing public state components **instead of** the table (or inside the surrounding `SectionPanel`), not as invalid nodes inside `<tbody>`:
+
+* loading → `LoadingState`
+* true empty / filtered empty → `EmptyState` with correct `kind`
+* fetch failure → `ErrorState`
+
+Do not invent a second table framework.
 ### 4.6 Panels and Cards
 
 All panels use `panelCSS()`. PanelHeader pattern:
@@ -437,11 +464,11 @@ Use `sonner`. Toast colors:
 | Active | Slightly darker background. Brief. |
 | Selected | Indigo 10% bg, `#A5B4FC` text. No left border. |
 | Disabled | `opacity: 0.40`. `cursor-not-allowed`. No interaction. |
-| Loading | `animate-spin` spinner. Button disabled during load. |
-| Empty | Muted centered message in `T.faint`. No error tone. |
+| Loading | Product: `LoadingState` (`role="status"`, polite live region; `page` or `inline`). Control-only spinner remains valid with its own accessible label. |
+| Empty | Product: `EmptyState` with kinds `empty` \| `no-results` \| `filtered` \| `first-use` (`data-empty-kind`). Distinguish true-zero / first-use from filtered/search empties. Inline may be message-only. No error tone. |
 | Success | Sage icon + message. Toast or inline confirmation. |
 | Warning | Amber icon + message. Attention panel tint. |
-| Error | Coral icon + message. Inline banner or toast. |
+| Error | Product data failures: `ErrorState` (Alert danger + optional recovery). Form validation / action toasts stay on Alert/Toast — not page ErrorState. Deferred/disabled/withdrawn capabilities are **not** ErrorState. |
 | Overdue | Coral text on due date cell only. No row background change. |
 
 ---

@@ -263,7 +263,16 @@ export function ProjectsPage({
       </div>
 
       {filteredProjects.length === 0 ? (
-        <EmptyState message="No projects match the current filter." title="No projects" variant="inline" />
+        <EmptyState
+          kind={projects.length === 0 ? "first-use" : "filtered"}
+          message={
+            projects.length === 0
+              ? "Create a project to start tracking client work."
+              : "No projects match the current filter."
+          }
+          title={projects.length === 0 ? "No projects yet" : "No projects"}
+          variant="inline"
+        />
       ) : (
         <SectionPanel title="Project delivery" tone="compact">
           <div className="table-wrap table-scroll">

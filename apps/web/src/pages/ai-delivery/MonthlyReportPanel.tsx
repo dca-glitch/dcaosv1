@@ -836,15 +836,20 @@ export function MonthlyReportPanel({
             )}
 
             {(summary.contentPlanItems ?? []).length > 0 ? (
-              <div className="table-wrap finance-table-wrap monthly-report-table-scroll">
+              <div
+                className="table-wrap finance-table-wrap monthly-report-table-scroll"
+                role="region"
+                tabIndex={0}
+                aria-label="Content plan items (scrollable)"
+              >
                 <h4 className="monthly-report-plan-heading">Content plan items</h4>
-                <table className="finance-table">
+                <table className="finance-table" aria-label="Content plan items">
                   <thead>
                     <tr>
-                      <th>Title</th>
-                      <th>Type</th>
-                      <th>Keyword</th>
-                      <th>Status</th>
+                      <th scope="col">Title</th>
+                      <th scope="col">Type</th>
+                      <th scope="col">Keyword</th>
+                      <th scope="col">Status</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1520,21 +1525,26 @@ export function MonthlyReportPanel({
                         No snapshot metrics imported yet. Import a manual or CSV snapshot here; live GA/GSC sync is WITHDRAWN and is not implied by empty metrics.
                       </p>
                     ) : (
-                      <div className="table-wrap finance-table-wrap finance-table-wrap-spaced monthly-report-metrics-table monthly-report-table-scroll" aria-label="Monthly metrics snapshots">
-                        <table>
+                      <div
+                        className="table-wrap finance-table-wrap finance-table-wrap-spaced monthly-report-metrics-table monthly-report-table-scroll"
+                        role="region"
+                        tabIndex={0}
+                        aria-label="Monthly metrics snapshots (scrollable)"
+                      >
+                        <table aria-label="Monthly metrics snapshots">
                           <thead>
                             <tr>
-                              <th>Month</th>
-                              <th>Source</th>
-                              <th>Status</th>
-                              <th>Clicks</th>
-                              <th>Impressions</th>
-                              <th>CTR</th>
-                              <th>Position</th>
-                              <th>Sessions</th>
-                              <th>Users</th>
-                              <th>Page views</th>
-                              <th>Imported</th>
+                              <th scope="col">Month</th>
+                              <th scope="col">Source</th>
+                              <th scope="col">Status</th>
+                              <th scope="col">Clicks</th>
+                              <th scope="col">Impressions</th>
+                              <th scope="col">CTR</th>
+                              <th scope="col">Position</th>
+                              <th scope="col">Sessions</th>
+                              <th scope="col">Users</th>
+                              <th scope="col">Page views</th>
+                              <th scope="col">Imported</th>
                               <th>Approved</th>
                               <th>Actions</th>
                             </tr>
@@ -1584,13 +1594,18 @@ export function MonthlyReportPanel({
                     )}
 
                     {metrics.computedTrendSummary.last12Months.length > 0 ? (
-                      <div className="table-wrap monthly-report-table-scroll monthly-report-metrics-table" aria-label="Monthly metrics trend summary">
-                        <table>
+                      <div
+                        className="table-wrap monthly-report-table-scroll monthly-report-metrics-table"
+                        role="region"
+                        tabIndex={0}
+                        aria-label="Monthly metrics trend summary (scrollable)"
+                      >
+                        <table aria-label="Monthly metrics trend summary">
                           <thead>
                             <tr>
-                              <th>Month</th>
-                              <th>Source</th>
-                              <th>Clicks</th>
+                              <th scope="col">Month</th>
+                              <th scope="col">Source</th>
+                              <th scope="col">Clicks</th>
                               <th>Impressions</th>
                               <th>CTR</th>
                               <th>Position</th>

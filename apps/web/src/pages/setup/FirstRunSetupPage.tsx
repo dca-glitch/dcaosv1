@@ -2,6 +2,7 @@ import { type FormEvent, useMemo, useState } from "react";
 import {
   Button,
   EmptyState,
+  ErrorState,
   Input,
   PageHeader,
   SectionPanel,
@@ -127,7 +128,7 @@ export function FirstRunSetupPage({
           Password authentication stays required. External providers remain disabled until you enable them later.
         </p>
         {error || localError ? (
-          <EmptyState
+          <ErrorState
             message={error ?? localError ?? ""}
             title="Could not continue"
             variant="inline"

@@ -1670,8 +1670,9 @@ function TeamView({
           ) : members.length === 0 ? (
             <p className="inline-empty muted-text">Active tenant members appear here once membership records exist.</p>
           ) : (
-            <div className="table-wrap" aria-label="Tenant members">
+            <div className="table-wrap">
               <Table
+                aria-label="Tenant members"
                 headers={[
                   { label: "User name", align: "left" },
                   { label: "User email", align: "left" },

@@ -169,15 +169,20 @@ export function AiKnowledgeContextPanel({
               {items.length === 0 ? (
                 <p className="inline-empty muted-text">No items yet. Create RAW, then approve for prompt use.</p>
               ) : (
-                <div className="table-scroll ai-knowledge-table-wrap">
-                  <table className="data-table compact">
+                <div
+                  className="table-wrap table-scroll ai-knowledge-table-wrap"
+                  role="region"
+                  tabIndex={0}
+                  aria-label="Knowledge items (scrollable)"
+                >
+                  <table className="data-table compact" aria-label="Knowledge items">
                     <thead>
                       <tr>
-                        <th>Title</th>
-                        <th>Type</th>
-                        <th>Status</th>
-                        <th>Prompt</th>
-                        <th />
+                        <th scope="col">Title</th>
+                        <th scope="col">Type</th>
+                        <th scope="col">Status</th>
+                        <th scope="col">Prompt</th>
+                        <th scope="col"><span className="sr-only">Actions</span></th>
                       </tr>
                     </thead>
                     <tbody>

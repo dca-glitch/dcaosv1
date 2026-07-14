@@ -216,14 +216,19 @@ export function TasksPage({ tasks, projects, canEdit, error, loading, onArchive,
 
       {filteredTasks.length === 0 ? (
         <EmptyState
-          kind="filtered"
-          message="Adjust filters or create a task to continue."
-          title="No tasks match the current filter"
+          kind={tasks.length === 0 ? "first-use" : "filtered"}
+          message={
+            tasks.length === 0
+              ? "Create a task to continue."
+              : "Adjust filters or create a task to continue."
+          }
+          title={tasks.length === 0 ? "No tasks yet" : "No tasks match the current filter"}
           variant="inline"
         />
       ) : (
-        <div className="table-wrap finance-table-wrap" aria-label="Tasks">
+        <div className="table-wrap finance-table-wrap">
           <Table
+            aria-label="Tasks"
             className="finance-table tasks-table"
             headers={[
               { label: "Task", align: "left" },

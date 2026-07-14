@@ -173,7 +173,16 @@ export function ClientAccessPanel({
       ) : null}
 
       {!accessLoading && filteredRecords.length === 0 ? (
-        <EmptyState message="No users linked to this client." title="No access records" variant="inline" />
+        <EmptyState
+          kind={accessRecords.length === 0 ? "first-use" : "filtered"}
+          message={
+            accessRecords.length === 0
+              ? "No users linked to this client."
+              : "No access records match the current filter."
+          }
+          title={accessRecords.length === 0 ? "No access records" : "No matching access records"}
+          variant="inline"
+        />
       ) : null}
 
       {filteredRecords.length > 0 ? (

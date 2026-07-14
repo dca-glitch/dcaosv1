@@ -1,5 +1,5 @@
 import React from "react";
-import { Alert, LoadingState } from "../../components/ui";
+import { Alert, EmptyState, LoadingState } from "../../components/ui";
 
 export function AiDeliveryInlineLoading({ label }: { label: string }) {
   return <LoadingState label={label} variant="inline" />;
@@ -13,7 +13,25 @@ export function AiDeliveryInlineNotice({ children }: { children: React.ReactNode
   return <p className="ai-delivery-inline-notice muted-text text-sm">{children}</p>;
 }
 
-/** Domain empty copy as children; chrome uses shared inline-empty styling. */
-export function AiDeliveryInlineEmpty({ children }: { children: React.ReactNode }) {
-  return <div className="inline-empty muted-text">{children}</div>;
+/**
+ * Thin domain adapter → canonical EmptyState.
+ * Preserves exact children copy as message-only inline empty (first-use default).
+ */
+export function AiDeliveryInlineEmpty({
+  children,
+  kind = "first-use",
+}: {
+  children: React.ReactNode;
+  kind?: "empty" | "no-results" | "filtered" | "first-use";
+}) {
+  const message =
+    typeof children === "string"
+      ? children.trim()
+      : Array.isArray(children)
+        ? children.map((c) => (typeof c === "string" ? c : "")).join("").trim()
+        : typeof children === "number"
+          ? String(children)
+          : "";
+
+  return <EmptyState kind={kind} message={message || "Nothing here yet."} variant="inline" />;
 }

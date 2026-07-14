@@ -26,6 +26,9 @@ export const Table: React.FC<TableProps> = ({
     <div
       className={`overflow-x-auto rounded-xl border border-border ${className}`}
       data-density={density}
+      role={ariaLabel ? 'region' : undefined}
+      tabIndex={ariaLabel ? 0 : undefined}
+      aria-label={ariaLabel ? `${ariaLabel} (scrollable)` : undefined}
       style={{ background: 'var(--ds-panel-gradient)' }}
       {...props}
     >
@@ -218,8 +221,8 @@ export const TablePagination: React.FC<TablePaginationProps> = ({
 
   return (
     <div className="flex items-center justify-between px-4 py-2.5 border-t border-border-subtle">
-      <span className="text-caption text-text-muted font-mono">
-        {start}–{end} of {total}
+      <span className="text-caption text-text-muted font-mono" aria-live="polite">
+        {start}–{end} of {total}. Page {page}.
       </span>
       <div className="flex items-center gap-1">
         <button
@@ -231,7 +234,7 @@ export const TablePagination: React.FC<TablePaginationProps> = ({
         >
           ←
         </button>
-        <span className="px-2 text-caption text-text-muted font-mono" aria-live="polite">
+        <span className="px-2 text-caption text-text-muted font-mono" aria-hidden="true">
           {page}
         </span>
         <button

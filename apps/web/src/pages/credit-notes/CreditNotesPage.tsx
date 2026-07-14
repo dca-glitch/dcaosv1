@@ -585,8 +585,9 @@ function CreditNoteCards({ creditNotes, canEdit, onEditCreditNote, onIssueCredit
   }
 
   return (
-    <div className="table-wrap finance-table-wrap" aria-label="Credit notes">
+    <div className="table-wrap finance-table-wrap">
       <Table
+        aria-label="Credit notes"
         className="finance-table"
         headers={[
           { label: "Credit note", align: "left" },

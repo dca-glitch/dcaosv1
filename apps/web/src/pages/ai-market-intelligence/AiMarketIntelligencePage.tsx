@@ -886,6 +886,7 @@ export function AiMarketIntelligencePage({ clients }: AiMarketIntelligencePagePr
                 ) : (
                   <div className="mi-table-wrap table-wrap table-scroll">
                     <Table
+                      aria-label="Market intelligence sources"
                       headers={[
                         { label: "Status" },
                         { label: "Title" },
@@ -934,6 +935,7 @@ export function AiMarketIntelligencePage({ clients }: AiMarketIntelligencePagePr
                 ) : (
                   <div className="mi-table-wrap table-wrap table-scroll">
                     <Table
+                      aria-label="Market intelligence findings"
                       headers={[
                         { label: "Category" },
                         { label: "Priority" },

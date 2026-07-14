@@ -953,6 +953,60 @@ function runSelfTests() {
     }
   });
 
+  record("13 page import design-system/components/Table → FAIL", () => {
+    const { root, srcRoot } = writeTempTree({
+      "apps/web/src/components/ui/index.ts": uiIndex,
+      "apps/web/src/design-system/components/Table.tsx": `export const Table = () => null;\n`,
+      "apps/web/src/pages/NewPage.tsx": `import { Table } from "../design-system/components/Table";\n`
+    });
+    try {
+      const baselinePath = path.join(root, "baseline.json");
+      writeFileSync(
+        baselinePath,
+        JSON.stringify({ version: 1, entries: [] }, null, 2),
+        "utf8"
+      );
+      const result = runCheck({
+        srcRoot,
+        repoRoot: root,
+        baselinePath,
+        printOnly: false
+      });
+      assert(result.ok === false, "expected FAIL");
+      assert(
+        result.newViolations?.some((v) => v.rule === RULES.DS_DEEP),
+        "expected ds-deep-component for Table"
+      );
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  record("14 page import EmptyState from components/ui barrel → PASS", () => {
+    const { root, srcRoot } = writeTempTree({
+      "apps/web/src/components/ui/index.ts": `export function EmptyState(){return null}\nexport function Table(){return null}\n`,
+      "apps/web/src/pages/NewPage.tsx": `import { EmptyState, Table } from "../components/ui";\n`
+    });
+    try {
+      const baselinePath = path.join(root, "baseline.json");
+      writeFileSync(
+        baselinePath,
+        JSON.stringify({ version: 1, entries: [] }, null, 2),
+        "utf8"
+      );
+      const result = runCheck({
+        srcRoot,
+        repoRoot: root,
+        baselinePath,
+        printOnly: false
+      });
+      assert(result.ok === true, "expected PASS for ui barrel state/table import");
+      assert(result.violations.length === 0, "expected zero violations");
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
   const failed = results.filter((r) => !r.ok);
   console.log("");
   console.log(

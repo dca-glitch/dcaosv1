@@ -3,18 +3,28 @@ import type { ReactNode } from "react";
 type EmptyStateKind = "empty" | "no-results" | "filtered" | "first-use";
 
 type EmptyStateProps = {
-  title: string;
+  /** Optional for inline message-only empties; required for page variant. */
+  title?: string;
   message: string;
   action?: ReactNode;
   variant?: "page" | "inline";
-  /** Optional semantic kind for future styling; copy stays caller-owned. */
+  /** Semantic kind for styling and tests; copy stays caller-owned. */
   kind?: EmptyStateKind;
 };
 
 /** Legacy product EmptyState API (title/message) — not the DS description API. */
 export function EmptyState({ title, message, action, variant = "page", kind = "empty" }: EmptyStateProps) {
   if (variant === "inline") {
-    const titleText = title.trim().endsWith(".") ? title.trim() : `${title.trim()}.`;
+    const trimmedTitle = (title ?? "").trim();
+    if (!trimmedTitle) {
+      return (
+        <div className="inline-empty" data-empty-kind={kind}>
+          <p className="muted-text">{message}</p>
+          {action ? <div className="state-action">{action}</div> : null}
+        </div>
+      );
+    }
+    const titleText = trimmedTitle.endsWith(".") ? trimmedTitle : `${trimmedTitle}.`;
     return (
       <div className="inline-empty" data-empty-kind={kind}>
         <p className="muted-text">
@@ -28,7 +38,7 @@ export function EmptyState({ title, message, action, variant = "page", kind = "e
   return (
     <div className="state-panel empty-state-panel" data-empty-kind={kind}>
       <span className="state-orb" aria-hidden="true" />
-      <h3>{title}</h3>
+      <h3>{title ?? "Nothing here"}</h3>
       <p>{message}</p>
       {action ? <div className="state-action">{action}</div> : null}
     </div>
