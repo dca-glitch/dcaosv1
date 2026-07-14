@@ -1222,8 +1222,18 @@ function getAiDeliveryDeliverableInput(body: unknown): AiDeliveryDeliverableInpu
   const value = (body ?? {}) as Record<string, unknown>;
   const title = getRequiredString(value.title, SHORT_TEXT_FIELD_MAX_LENGTH);
   const deliveryType = typeof value.deliveryType === "string" ? value.deliveryType.trim().toUpperCase() : "CONTENT_PACKAGE";
-  const status = typeof value.status === "string" ? value.status.trim().toUpperCase() : "DRAFT";
-  if (!title || !AI_DELIVERY_DELIVERABLE_TYPES.has(deliveryType) || !AI_DELIVERY_DELIVERABLE_STATUSES.has(status)) {
+  const hasStatus = Object.prototype.hasOwnProperty.call(value, "status");
+  const status = hasStatus
+    ? typeof value.status === "string"
+      ? value.status.trim().toUpperCase()
+      : undefined
+    : undefined;
+
+  if (
+    !title ||
+    !AI_DELIVERY_DELIVERABLE_TYPES.has(deliveryType) ||
+    (hasStatus && (typeof value.status !== "string" || !status || !AI_DELIVERY_DELIVERABLE_STATUSES.has(status)))
+  ) {
     return null;
   }
 

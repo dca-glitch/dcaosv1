@@ -6,13 +6,30 @@ export const AI_DELIVERY_DELIVERABLE_CREATE_STATUS_BLOCKED_MESSAGE =
   "Deliverables must be created in DRAFT. Use the dedicated workflow action to change status.";
 
 export function resolveAiDeliveryDeliverableCreateStatus(
-  requestedStatus: string | null | undefined
+  requestedStatus: unknown
 ): AiDeliveryDeliverableStatus {
-  if (requestedStatus === undefined || requestedStatus === null || requestedStatus.trim().length === 0) {
+  if (requestedStatus === undefined) {
     return "DRAFT";
   }
 
-  const parsed = parseAiDeliveryDeliverableStatus(requestedStatus);
+  if (typeof requestedStatus !== "string") {
+    throw new AiDeliveryGuardError(
+      400,
+      AI_DELIVERY_DELIVERABLE_CREATE_STATUS_BLOCKED,
+      AI_DELIVERY_DELIVERABLE_CREATE_STATUS_BLOCKED_MESSAGE
+    );
+  }
+
+  const trimmed = requestedStatus.trim();
+  if (!trimmed) {
+    throw new AiDeliveryGuardError(
+      400,
+      AI_DELIVERY_DELIVERABLE_CREATE_STATUS_BLOCKED,
+      AI_DELIVERY_DELIVERABLE_CREATE_STATUS_BLOCKED_MESSAGE
+    );
+  }
+
+  const parsed = parseAiDeliveryDeliverableStatus(trimmed);
   if (parsed === "DRAFT") {
     return "DRAFT";
   }

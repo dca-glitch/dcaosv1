@@ -8,7 +8,7 @@ import {
   resolveAiDeliveryDeliverableCreateStatus
 } from "./ai-delivery-deliverable-create-status-policy";
 
-function assertBlockedCreateStatus(status: string) {
+function assertBlockedCreateStatus(status: unknown) {
   assert.throws(
     () => resolveAiDeliveryDeliverableCreateStatus(status),
     (error: unknown) =>
@@ -22,10 +22,15 @@ function assertBlockedCreateStatus(status: string) {
 describe("ai delivery deliverable create status policy", () => {
   it("allows omitted and explicit draft status values", () => {
     assert.equal(resolveAiDeliveryDeliverableCreateStatus(undefined), "DRAFT");
-    assert.equal(resolveAiDeliveryDeliverableCreateStatus(null), "DRAFT");
     assert.equal(resolveAiDeliveryDeliverableCreateStatus("DRAFT"), "DRAFT");
     assert.equal(resolveAiDeliveryDeliverableCreateStatus("draft"), "DRAFT");
     assert.equal(resolveAiDeliveryDeliverableCreateStatus("  DrAfT  "), "DRAFT");
+  });
+
+  it("blocks explicit malformed values with the stable guard response", () => {
+    for (const value of [null, "", "   ", 123, true, false, {}, [], "nonsense"]) {
+      assertBlockedCreateStatus(value);
+    }
   });
 
   it("blocks every canonical non-draft status", () => {
@@ -37,10 +42,5 @@ describe("ai delivery deliverable create status policy", () => {
       assertBlockedCreateStatus(status.toLowerCase());
       assertBlockedCreateStatus(`  ${status.toLowerCase()}  `);
     }
-  });
-
-  it("blocks unknown statuses with the same guarded create policy", () => {
-    assertBlockedCreateStatus("nonsense");
-    assertBlockedCreateStatus("workflow-controlled");
   });
 });
